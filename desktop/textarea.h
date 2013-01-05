@@ -42,22 +42,130 @@ struct textarea;
 typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
 		int width, int height);
 
+/**
+ * Create a text area
+ *
+ * \param x X coordinate of left border
+ * \param y Y coordinate of top border
+ * \param width width of the text area
+ * \param height width of the text area
+ * \param flags text area flags
+ * \param style font style
+ * \param redraw_start_callback will be called when textarea wants to redraw
+ * \param redraw_end_callback will be called when textarea finisjes redrawing
+ * \param data user specified data which will be passed to redraw callbacks
+ * \return Opaque handle for textarea or 0 on error
+ */
 struct textarea *textarea_create(int width, int height, 
 		textarea_flags flags, const plot_font_style_t *style,
 		textarea_redraw_request_callback redraw_request, void *data);
+
+/**
+ * Destroy a text area
+ *
+ * \param ta Text area to destroy
+ */
 void textarea_destroy(struct textarea *ta);
+
+/**
+ * Set the text in a text area, discarding any current text
+ *
+ * \param ta Text area
+ * \param text UTF-8 text to set text area's contents to
+ * \return true on success, false on memory exhaustion
+ */
 bool textarea_set_text(struct textarea *ta, const char *text);
+
+/**
+ * Extract the text from a text area
+ *
+ * \param ta Text area
+ * \param buf Pointer to buffer to receive data, or NULL
+ *            to read length required
+ * \param len Length (bytes) of buffer pointed to by buf, or 0 to read length
+ * \return Length (bytes) written/required or -1 on error
+ */
 int textarea_get_text(struct textarea *ta, char *buf, unsigned int len);
+
+/**
+ * Set the caret's position
+ *
+ * \param ta 		Text area
+ * \param caret 	0-based character index to place caret at, -1 removes
+ * 			the caret
+ * \return true on success false otherwise
+ */
 bool textarea_set_caret(struct textarea *ta, int caret);
+
+/**
+ * Get the caret's position
+ *
+ * \param ta Text area
+ * \return 0-based character index of caret location, or -1 on error
+ */
 int textarea_get_caret(struct textarea *ta);
+
+/**
+ * Handle redraw requests for text areas
+ *
+ * \param redraw Redraw request block
+ * \param x0	left X coordinate of redraw area
+ * \param y0	top Y coordinate of redraw area
+ * \param x1	right X coordinate of redraw area
+ * \param y1	bottom Y coordinate of redraw area
+ * \param ctx	current redraw context
+ */
 void textarea_redraw(struct textarea *ta, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx);
+
+/**
+ * Key press handling for text areas.
+ *
+ * \param ta	The text area which got the keypress
+ * \param key	The ucs4 character codepoint
+ * \return     	true if the keypress is dealt with, false otherwise.
+ */
 bool textarea_keypress(struct textarea *ta, uint32_t key);
+
+/**
+ * Handles all kinds of mouse action
+ *
+ * \param ta	Text area
+ * \param mouse	the mouse state at action moment
+ * \param x	X coordinate
+ * \param y	Y coordinate
+ * \return true if action was handled false otherwise
+ */
 bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
+
+/**
+ * Handles the end of a drag operation
+ *
+ * \param ta	Text area
+ * \param mouse	the mouse state at drag end moment
+ * \param x	X coordinate
+ * \param y	Y coordinate
+ * \return true if drag end was handled false otherwise
+ */
 bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
+
+/**
+ * Gets the dimensions of a textarea
+ *
+ * \param width		if not NULL, gets updated to the width of the textarea
+ * \param height	if not NULL, gets updated to the height of the textarea
+ */
 void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
+
+/**
+ * Set the dimensions of a textarea, causing a reflow and
+ * emitting a redraw request.
+ *
+ * \param width 	the new width of the textarea
+ * \param height	the new height of the textarea
+ */
 void textarea_set_dimensions(struct textarea *ta, int width, int height);
 #endif
 
