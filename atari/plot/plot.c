@@ -255,9 +255,9 @@ inline static void plot_get_visible_grect(GRECT * out)
 /*	all values of the region are set to zero.								*/
 inline static void update_visible_rect(void)
 {
-	GRECT screen;
-	GRECT common;
-	GRECT frame;
+	GRECT screen;		// dimensions of the screen
+	GRECT frame;		// dimensions of the drawing area
+	GRECT common;		// dimensions of intersection of both
 
 	screen.g_x = 0;
 	screen.g_y = 0;
@@ -269,14 +269,14 @@ inline static void update_visible_rect(void)
 	common.g_w = frame.g_w = view.w;
 	common.g_h = frame.g_h = view.h;
 
-	if( rc_intersect( &screen, &common ) ) {
+	if (rc_intersect(&screen, &common)) {
 		view.vis_w = common.g_w;
 		view.vis_h = common.g_h;
-		if( view.x < screen.g_x )
+		if (view.x < screen.g_x)
 			view.vis_x = frame.g_w - common.g_w;
 		else
 			view.vis_x = 0;
-		if( view.y <screen.g_y )
+		if (view.y <screen.g_y)
 			view.vis_y = frame.g_h - common.g_h;
 		else
 			view.vis_y = 0;
@@ -320,33 +320,6 @@ inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
 	*ret = out;
 	return ( true );
 }
-
-/* convert framebuffer clipping to vdi clipping and activates it */
-inline static void plot_vdi_clip(bool set)
-{
-	// TODO : check this
-
-	if( set == true ) {
-		struct rect c;
-		short vdiflags[58];
-		short newclip[4];
-		plot_get_clip(&c);
-		vq_extnd(atari_plot_vdi_handle, 1, (short*)&vdiflags);
-		prev_vdi_clip[0] = vdiflags[45];
-		prev_vdi_clip[1] = vdiflags[46];
-		prev_vdi_clip[2] = vdiflags[47];
-		prev_vdi_clip[3] = vdiflags[48];
-		newclip[0] = view.x + MAX(c.x0, 0);
-		newclip[1] = view.y + MAX(c.y0, 0);
-		newclip[2] = MIN(view.x+view.w, newclip[0] + (c.x1 - c.x0) )-1;
-		newclip[3] = MIN(view.y+view.h, newclip[1] + (c.y1 - c.y0) )-1;
-		//dbg_pxy("plot_vdi_clip", newclip);
-		vs_clip(atari_plot_vdi_handle, 1, (short*)&newclip );
-	} else {
-		vs_clip(atari_plot_vdi_handle, 1, (short *)&prev_vdi_clip );
-	}
-}
-
 
 /* copy an rectangle from the plot buffer to screen */
 /* because this is an on-screen plotter, this is an screen to screen copy. */
@@ -1833,7 +1806,7 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	//printf("line: %d,%d,%d,%d\n", x0,  y0,  x1,  y1);
 
 
-	plot_vdi_clip(true);
+	//plot_vdi_clip(true);
 	if( sw == 0)
 		sw = 1;
 	NSLT2VDI(lt, pstyle)
@@ -1845,7 +1818,7 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	vsl_width(atari_plot_vdi_handle, (short)sw);
 	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 	v_pline(atari_plot_vdi_handle, 2, (short *)&pxy );
-	plot_vdi_clip(false);
+	//plot_vdi_clip(false);
     return (true);
 }
 
@@ -1857,7 +1830,7 @@ static bool plot_polygon(const int *p, unsigned int n,
 	short d[4];
 	if (vdi_sysinfo.maxpolycoords > 0)
 		assert( (signed int)n < vdi_sysinfo.maxpolycoords);
-	plot_vdi_clip(true);
+
 	vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
 	vsf_style(atari_plot_vdi_handle, 1);
 	for (i = 0; i<n*2; i=i+2) {
@@ -1873,7 +1846,7 @@ static bool plot_polygon(const int *p, unsigned int n,
 		vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 		v_pline(atari_plot_vdi_handle, n+1,  (short *)&pxy);
 	}
-	plot_vdi_clip(false);
+
     return ( true );
 }
 
@@ -1912,11 +1885,40 @@ bool plot_get_dimensions(GRECT *dst)
 
 bool plot_clip(const struct rect *clip)
 {
-	// FIXME: consider the canvas size
+	GRECT canvas, screen, gclip, isection;
+	short pxy[4];
+
+	screen.g_x = 0;
+	screen.g_y = 0;
+	screen.g_w = vdi_sysinfo.scr_w;
+	screen.g_h = vdi_sysinfo.scr_h;
+
+	plot_get_dimensions(&canvas);
+
 	view.clipping.x0 = clip->x0;
 	view.clipping.y0 = clip->y0;
 	view.clipping.x1 = clip->x1;
 	view.clipping.y1 = clip->y1;
+
+	plot_get_clip_grect(&gclip);
+
+	gclip.g_x += canvas.g_x;
+	gclip.g_y += canvas.g_y;
+
+	rc_intersect(&canvas, &gclip);
+
+	//dbg_grect("canvas clipped: ", &gclip);
+
+	assert(rc_intersect(&screen, &gclip));
+
+	//dbg_grect("canvas clipped to screen", &gclip);
+
+	pxy[0] = gclip.g_x;
+	pxy[1] = gclip.g_y;
+	pxy[2] = pxy[0] + gclip.g_w;
+	pxy[3] = pxy[1] + gclip.g_h;
+
+	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy);
 
     return ( true );
 }
@@ -1949,7 +1951,6 @@ static bool plot_text(int x, int y, const char *text, size_t length, const plot_
 
 static bool plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
 {
-	plot_vdi_clip(true);
 	if (pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
 		vsf_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 		vsf_perimeter(atari_plot_vdi_handle, 1);
@@ -1961,14 +1962,14 @@ static bool plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
 		vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
 		v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
 	}
-	plot_vdi_clip(false);
-    return ( true );
+
+    return(true);
 }
 
 static bool plot_arc(int x, int y, int radius, int angle1, int angle2,
                      const plot_style_t *pstyle)
 {
-	//plot_vdi_clip(true);
+
 	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 	if (pstyle->fill_type == PLOT_OP_TYPE_NONE)
 		return(true);
@@ -1983,7 +1984,7 @@ static bool plot_arc(int x, int y, int radius, int angle1, int angle2,
 		vsf_perimeter(atari_plot_vdi_handle, 1);
 		v_arc(atari_plot_vdi_handle, view.x + x, view.y + y, radius, angle1*10, angle2*10);
 	}
-	//plot_vdi_clip(true);
+
     return (true);
 }
 
