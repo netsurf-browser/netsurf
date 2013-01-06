@@ -753,9 +753,9 @@ static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct I
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_update_pointer(gwin->win, GUI_POINTER_WAIT, false);
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 	ami_print_ui(gwin->bw->current_content);
-	ami_update_pointer(gwin->win, GUI_POINTER_DEFAULT, false);
+	ami_reset_pointer(gwin);
 }
 
 static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -766,7 +766,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_update_pointer(gwin->win, GUI_POINTER_WAIT, false);
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	temp = ASPrintf("%s|%s|%s", messages_get("OK"),
 								messages_get("HelpCredits"),
@@ -800,7 +800,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 	else if(sel == 0)
 		browser_window_create("about:licence", NULL, 0, true, false);
 
-	ami_update_pointer(gwin->win, GUI_POINTER_DEFAULT, false);
+	ami_reset_pointer(gwin);
 }
 
 static void ami_menu_item_project_quit(struct Hook *hook, APTR window, struct IntuiMessage *msg)

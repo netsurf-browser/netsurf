@@ -174,18 +174,24 @@ void ami_get_theme_filename(char *filename, char *themestring, bool protocol)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	ami_update_pointer(g->shared->win, shape, false);
+	ami_set_pointer(g->shared, shape, true);
+}
+
+void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update)
+{
+	if(gwin->mouse_pointer == shape) return;
+	ami_update_pointer(gwin->win, shape);
+	if(update == true) gwin->mouse_pointer = shape;
 }
 
 /* reset the mouse pointer back to what NetSurf last set it as */
-void ami_reset_pointer(struct Window *win)
+void ami_reset_pointer(struct gui_window_2 *gwin)
 {
-	ami_update_pointer(win, mouseptrcurrent, true);
+	ami_update_pointer(gwin->win, gwin->mouse_pointer);
 }
 
-void ami_update_pointer(struct Window *win, gui_pointer_shape shape, bool reapply)
+void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
-	if((mouseptrcurrent == shape) && (reapply == false)) return;
 	if(drag_save_data) return;
 
 	if(nsoption_bool(use_os_pointers))
@@ -193,24 +199,24 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape, bool reappl
 		switch(shape)
 		{
 			case GUI_POINTER_DEFAULT:
-				SetWindowPointer(win,TAG_DONE);
+				SetWindowPointer(win, TAG_DONE);
 			break;
 
 			case GUI_POINTER_WAIT:
 				SetWindowPointer(win,
-					WA_BusyPointer,TRUE,
-					WA_PointerDelay,TRUE,
+					WA_BusyPointer, TRUE,
+					WA_PointerDelay, TRUE,
 					TAG_DONE);
 			break;
 
 			default:
 				if(mouseptrobj[shape])
 				{
-					SetWindowPointer(win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
+					SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
 				}
 				else
 				{
-					SetWindowPointer(win,TAG_DONE);
+					SetWindowPointer(win, TAG_DONE);
 				}
 			break;
 		}
@@ -219,34 +225,28 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape, bool reappl
 	{
 		if(mouseptrobj[shape])
 		{
-			SetWindowPointer(win,WA_Pointer,mouseptrobj[shape],TAG_DONE);
+			SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
 		}
 		else
 		{
 			if(shape ==	GUI_POINTER_WAIT)
 			{
 				SetWindowPointer(win,
-					WA_BusyPointer,TRUE,
-					WA_PointerDelay,TRUE,
+					WA_BusyPointer, TRUE,
+					WA_PointerDelay, TRUE,
 					TAG_DONE);
 			}
 			else
 			{
-				SetWindowPointer(win,TAG_DONE);
+				SetWindowPointer(win, TAG_DONE);
 			}
 		}
 	}
-
-	mouseptrcurrent = shape;	
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
 {
-	if(mouseptrcurrent != AMI_GUI_POINTER_BLANK)
-	{
-		SetWindowPointer(g->shared->win,WA_Pointer,mouseptrobj[AMI_GUI_POINTER_BLANK],TAG_DONE);
-		mouseptrcurrent = AMI_GUI_POINTER_BLANK;
-	}
+	ami_set_pointer(g->shared, AMI_GUI_POINTER_BLANK, true);
 }
 
 void ami_init_mouse_pointers(void)
