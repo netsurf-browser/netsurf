@@ -48,7 +48,6 @@ struct bitmap *throbber_nsbm = NULL;
 ULONG throbber_frames,throbber_update_interval;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
-static int mouseptrcurrent=0;
 
 char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_default",
