@@ -3599,8 +3599,6 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	struct rect clip;
 	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
 	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 				
 	browserglob.shared_pens = &gwin->shared_pens;
 	
@@ -3633,6 +3631,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(height <= 0) return;
 
 // printf("%ld %ld %ld %ld\n",left, top, width, height);
+
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
