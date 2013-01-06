@@ -1286,6 +1286,6 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 		}
 	}
 
-	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	glob = &browserglob;
 }
