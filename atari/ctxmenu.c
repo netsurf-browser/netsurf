@@ -165,7 +165,7 @@ void context_popup(struct gui_window * gw, short x, short y)
     pop_menu.mn_tree = get_tree(POP_CTX);
     pop_menu.mn_menu = 0;
     pop_menu.mn_item = POP_CTX_CUT_SEL;
-    pop_menu.mn_scroll = SCROLL_LISTBOX;
+    pop_menu.mn_scroll = SCROLL_NO;
     pop_menu.mn_keystate = 0;
 
 	menu_popup(&pop_menu, x, y, &me_data);

@@ -999,10 +999,11 @@ void gui_options_init_defaults(void)
 {
     /* Set defaults for absent option strings */
     nsoption_setnull_charp(cookie_file, strdup("cookies"));
-
     if (nsoption_charp(cookie_file) == NULL) {
         die("Failed initialising string options");
     }
+
+    nsoption_set_int(min_reflow_period, 350);
 }
 
 static void gui_init(int argc, char** argv)

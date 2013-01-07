@@ -70,30 +70,15 @@
 #define LOGIN_BT_LOGIN 5  /* BUTTON in tree LOGIN */
 #define LOGIN_BT_ABORT 6  /* BUTTON in tree LOGIN */
 
-#define VERIFY 6  /* form/dial */
-#define VERIFY_LBL_HOST 3  /* TEXT in tree VERIFY */
-#define VERIFY_BT_ACCEPT 4  /* BUTTON in tree VERIFY */
-#define VERIFY_BT_REJECT 5  /* BUTTON in tree VERIFY */
-#define VERIFY_BT_NEXT_CERT 7  /* BUTTON in tree VERIFY */
-#define VERIFY_BOX_DETAILS 8  /* BOX in tree VERIFY */
-#define VERIFY_BOX_H 9  /* BOX in tree VERIFY */
-#define VERIFY_BT_SCROLL_R 10  /* BOXCHAR in tree VERIFY */
-#define VERIFY_BT_SCROLL_L 11  /* BOXCHAR in tree VERIFY */
-#define VERIFY_BOX_MOVER_H 12  /* BOX in tree VERIFY */
-#define VERIFY_BT_SCROLL_U 13  /* BOXCHAR in tree VERIFY */
-#define VERIFY_BT_SCROLL_D 14  /* BOXCHAR in tree VERIFY */
-#define VERIFY_BOX_V 15  /* BOX in tree VERIFY */
-#define VERIFY_MOVER_V 16  /* BOX in tree VERIFY */
+#define THROBBER 6  /* form/dial */
 
-#define THROBBER 7  /* form/dial */
-
-#define TOOLBAR_HOTLIST 8  /* form/dial */
+#define TOOLBAR_HOTLIST 7  /* form/dial */
 #define TOOLBAR_HOTLIST_ADD 1  /* CICON in tree TOOLBAR_HOTLIST */
 #define TOOLBAR_HOTLIST_CREATE_FOLDER 2  /* CICON in tree TOOLBAR_HOTLIST */
 #define TOOLBAR_HOTLIST_DELETE 3  /* CICON in tree TOOLBAR_HOTLIST */
 #define TOOLBAR_HOTLIST_EDIT 4  /* CICON in tree TOOLBAR_HOTLIST */
 
-#define SEARCH 9  /* form/dial */
+#define SEARCH 8  /* form/dial */
 #define SEARCH_TB_SRCH 1  /* FTEXT in tree SEARCH */
 #define SEARCH_LBL_SHOWALL 2  /* STRING in tree SEARCH */
 #define SEARCH_LBL_CASESENSE 3  /* STRING in tree SEARCH */
@@ -103,7 +88,7 @@
 #define SEARCH_CB_SHOWALL 7  /* BUTTON in tree SEARCH */
 #define SEARCH_CB_FWD 8  /* BUTTON in tree SEARCH */
 
-#define DOWNLOAD 10  /* form/dial */
+#define DOWNLOAD 9  /* form/dial */
 /* Width ist 400, code depends on that! If you change it, change it in download.c */
 #define DOWNLOAD_PROGRESS 1  /* BOX in tree DOWNLOAD */
 #define DOWNLOAD_PROGRESS_DONE 2  /* BOX in tree DOWNLOAD */
@@ -115,9 +100,9 @@
 #define DOWNLOAD_LBL_SPEED 8  /* TEXT in tree DOWNLOAD */
 #define DOWNLOAD_CB_CLOSE_RDY 9  /* BOXCHAR in tree DOWNLOAD */
 
-#define ABOUT 11  /* form/dial */
+#define ABOUT 10  /* form/dial */
 
-#define POP_CTX 12  /* form/dial */
+#define POP_CTX 11  /* form/dial */
 #define POP_CTX_CUT_SEL 1  /* TEXT in tree POP_CTX */
 #define POP_CTX_COPY_SEL 2  /* TEXT in tree POP_CTX */
 #define POP_CTX_PASTE_SEL 3  /* TEXT in tree POP_CTX */
@@ -129,56 +114,7 @@
 #define POP_CTX_VIEW_SOURCE 10  /* TEXT in tree POP_CTX */
 #define POP_CTX_SAVE_LINK_AS 11  /* TEXT in tree POP_CTX */
 
-#define CHOICES 13  /* form/dial */
-#define CHOICES_REG_BROWSER 1  /* BUTTON in tree CHOICES */
-#define CHOICES_REG_RENDER 2  /* BUTTON in tree CHOICES */
-#define CHOICES_REG_STYLE 3  /* BUTTON in tree CHOICES */
-#define CHOICES_REG_NETWORK 4  /* BUTTON in tree CHOICES */
-#define CHOICES_REG_PATH 5  /* BUTTON in tree CHOICES */
-#define CHOICES_REG_CACHE 6  /* BUTTON in tree CHOICES */
-#define CHOICES_TAB_STYLE 7  /* BUTTON in tree CHOICES */
-#define CHOICES_BT_TOOLBAR_ICONSET 11  /* BUTTON in tree CHOICES */
-#define CHOICES_INPUT_TOOLBAR_BGCOLOR 13  /* FTEXT in tree CHOICES */
-#define CHOICES_TAB_RENDER 14  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_TRANSPARENCY 15  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_ENABLE_ANIMATION 17  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_INCREMENTAL_REFLOW 18  /* BUTTON in tree CHOICES */
-#define CHOICES_EDIT_MIN_REFLOW_PERIOD 20  /* FTEXT in tree CHOICES */
-#define CHOICES_DEC_INCREMENTAL_REFLOW 21  /* BOXCHAR in tree CHOICES */
-#define CHOICES_INC_INCREMENTAL_REFLOW 22  /* BOXCHAR in tree CHOICES */
-#define CHOICES_TAB_PATH 24  /* BUTTON in tree CHOICES */
-#define CHOICES_TAB_CACHE 25  /* BUTTON in tree CHOICES */
-#define CHOICES_INC_MEM_CACHE 29  /* BOXCHAR in tree CHOICES */
-#define CHOICES_DEC_MEM_CACHE 30  /* BOXCHAR in tree CHOICES */
-#define CHOICES_STR_MAX_MEM_CACHE 31  /* STRING in tree CHOICES */
-#define CHOICES_TAB_BROWSER 32  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_HIDE_ADVERTISEMENT 34  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_DISABLE_POPUP_WINDOWS 35  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_SEND_DO_NOT_TRACK 36  /* BUTTON in tree CHOICES */
-#define CHOICES_BT_SEL_LOCALE 38  /* BUTTON in tree CHOICES */
-#define CHOICES_BT_GUI_LANG 41  /* BUTTON in tree CHOICES */
-#define CHOICES_EDIT_HISTORY_AGE 44  /* FTEXT in tree CHOICES */
-#define CHOICES_DEC_HISTORY_AGE 45  /* BOXCHAR in tree CHOICES */
-#define CHOICES_INC_HISTORY_AGE 46  /* BOXCHAR in tree CHOICES */
-#define CHOICES_CB_SEND_HTTP_REFERRER 50  /* BUTTON in tree CHOICES */
-#define CHOICES_EDIT_HOMEPAGE 51  /* FTEXT in tree CHOICES */
-#define CHOICES_BT_CLEAR_HISTORY 52  /* BUTTON in tree CHOICES */
-#define CHOICES_TAB_NETWORK 53  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_USE_PROXY 55  /* BUTTON in tree CHOICES */
-#define CHOICES_EDIT_PROXY_HOST 56  /* FTEXT in tree CHOICES */
-#define CHOICES_CB_PROXY_AUTH 57  /* BUTTON in tree CHOICES */
-#define CHOICES_EDIT_PROXY_USERNAME 58  /* FTEXT in tree CHOICES */
-#define CHOICES_EDIT_PROXY_PASSWORD 59  /* FTEXT in tree CHOICES */
-#define CHOICES_EDIT_PROXY_PORT 61  /* FTEXT in tree CHOICES */
-#define CHOICES_EDIT_MAX_FETCHERS 66  /* FTEXT in tree CHOICES */
-#define CHOICES_INC_MAX_FETCHERS 67  /* BOXCHAR in tree CHOICES */
-#define CHOICES_DEC_MAX_FETCHERS 68  /* BOXCHAR in tree CHOICES */
-#define CHOICES_CB_FG_IMAGES 69  /* BUTTON in tree CHOICES */
-#define CHOICES_CB_BG_IMAGES 70  /* BUTTON in tree CHOICES */
-#define CHOICES_ABORT 72  /* BUTTON in tree CHOICES */
-#define CHOICES_OK 73  /* BUTTON in tree CHOICES */
-
-#define VSCROLLER 14  /* form/dial */
+#define VSCROLLER 12  /* form/dial */
 #define VSCROLLER_AREA 1  /* BOX in tree VSCROLLER */
 #define VSCROLLER_SLIDER_AREA 2  /* BUTTON in tree VSCROLLER */
 #define VSCROLLER_SLIDER 3  /* BUTTON in tree VSCROLLER */
@@ -187,7 +123,7 @@
 #define VSCROLLER_BT_UP 6  /* IBOX in tree VSCROLLER */
 #define VSCROLLER_BT_UP_PIC 4  /* CICON in tree VSCROLLER */
 
-#define SETTINGS 15  /* form/dial */
+#define SETTINGS 13  /* form/dial */
 #define SETTINGS_SAVE 1  /* BUTTON in tree SETTINGS */
 #define SETTINGS_ABORT 2  /* BUTTON in tree SETTINGS */
 #define SETTINGS_GROUP_BROWSER 3  /* IBOX in tree SETTINGS */
@@ -244,9 +180,33 @@
 #define SETTINGS_CB_ENABLE_ANIMATION 67  /* BOXCHAR in tree SETTINGS */
 #define SETTINGS_CB_BG_IMAGES 102  /* BOXCHAR in tree SETTINGS */
 #define SETTINGS_CB_FG_IMAGES 105  /* BOXCHAR in tree SETTINGS */
+#define SETTINGS_EDIT_MIN_REFLOW_PERIOD 109  /* FTEXT in tree SETTINGS */
+#define SETTINGS_DEC_INCREMENTAL_REFLOW 110  /* BOXCHAR in tree SETTINGS */
+#define SETTINGS_INC_INCREMENTAL_REFLOW 111  /* BOXCHAR in tree SETTINGS */
 #define SETTINGS_GROUP_RENDERING_00 86  /* IBOX in tree SETTINGS */
 #define SETTINGS_EDIT_DOWNLOAD_PATH 90  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_HOTLIST_FILE 91  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_CA_BUNDLE 92  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_CA_CERTS_PATH 93  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_EDITOR 94  /* FTEXT in tree SETTINGS */
+
+#define POP_LANGUAGE 14  /* form/dial */
+#define POP_LANGUAGE_CS 1  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_DE 2  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_EN 3  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_EN_GB 4  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_DE_DE 5  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_EN_US 6  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_ES 7  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_FR 8  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_IT 9  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_NL 10  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_NO 11  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_PL 12  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_RU 13  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_SK 14  /* STRING in tree POP_LANGUAGE */
+#define POP_LANGUAGE_SV 15  /* STRING in tree POP_LANGUAGE */
+
+#define POP_FONT_RENDERER 15  /* form/dial */
+#define POP_FONT_RENDERER_INTERNAL 1  /* STRING in tree POP_FONT_RENDERER */
+#define POP_FONT_RENDERER_FREETYPE 2  /* STRING in tree POP_FONT_RENDERER */

@@ -543,7 +543,7 @@ short guiwin_init(void)
 {
     if(v_vdi_h == -1) {
         short dummy;
-        static short work_in[12] = {1,1,1,1,1,1,1,1,1,1,2,1};
+        short work_in[12] = {Getrez()+2,1,1,1,1,1,1,1,1,1,2,1};
         v_vdi_h=graf_handle(&dummy, &dummy, &dummy, &dummy);
         v_opnvwk(work_in, &v_vdi_h, work_out);
     }
