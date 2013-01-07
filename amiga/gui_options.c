@@ -1502,10 +1502,7 @@ void ami_gui_opts_use(bool save)
 	bool rescan_fonts = false;
 	bool old_tab_always_show;
 
-	SetWindowPointer(gow->win,
-		WA_BusyPointer, TRUE,
-		WA_PointerDelay, TRUE,
-		TAG_DONE);	
+	ami_update_pointer(gow->win, GUI_POINTER_WAIT);
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	nsoption_set_charp(homepage_url, (char *)strdup((char *)data));
@@ -1863,9 +1860,7 @@ void ami_gui_opts_use(bool save)
 
 	ami_menu_check_toggled = true;
 
-	SetWindowPointer(gow->win,
-		WA_Pointer, NULL,
-		TAG_DONE);
+	ami_update_pointer(gow->win, GUI_POINTER_DEFAULT);
 }
 
 void ami_gui_opts_close(void)

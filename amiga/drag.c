@@ -142,7 +142,7 @@ void ami_drag_save(struct Window *win)
 		return;
 	}
 
-	ami_update_pointer(win, GUI_POINTER_WAIT, false);
+	ami_update_pointer(win, GUI_POINTER_WAIT);
 
 	switch(drag_save)
 	{
@@ -189,7 +189,8 @@ void ami_drag_save(struct Window *win)
 
 	drag_save = 0;
 	drag_save_data = NULL;
-	ami_update_pointer(win, GUI_POINTER_DEFAULT, false);
+	
+	ami_update_pointer(win, GUI_POINTER_DEFAULT);
 }
 
 void ami_drag_icon_show(struct Window *win, const char *type)
@@ -205,12 +206,12 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 
 	if(nsoption_bool(drag_save_icons) == false)
 	{
-		ami_update_pointer(win, AMI_GUI_POINTER_DRAG, false);
+		ami_update_pointer(win, AMI_GUI_POINTER_DRAG);
 		return;
 	}
 	else
 	{
-		ami_update_pointer(win, GUI_POINTER_DEFAULT, false);
+		ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	}
 
 	if(!strcmp(type, "drawer")) deftype = WBDRAWER;
@@ -266,7 +267,7 @@ void ami_drag_icon_move(void)
 void ami_drag_icon_close(struct Window *win)
 {
 	if(drag_icon) CloseWindow(drag_icon);
-	if(win) ami_update_pointer(win, GUI_POINTER_DEFAULT, false);
+	if(win) ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	drag_icon = NULL;
 	drag_in_progress = FALSE;
 }
