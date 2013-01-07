@@ -162,10 +162,9 @@ static void textarea_normalise_text(struct textarea *ta,
  */
 static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 {
-	int swap = -1;
+	int swap;
 
-	/* if start is after end they get swapped, start won't and end will
-	   be selected this way */
+	/* Ensure start is the beginning of the selection */
 	if (c_start > c_end) {
 		swap = c_start;
 		c_start = c_end;
@@ -174,13 +173,6 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 
 	ta->selection_start = c_start;
 	ta->selection_end = c_end;
-
-	if (!(ta->flags & TEXTAREA_READONLY)) {
-		if (swap == -1)
-			return textarea_set_caret(ta, c_end);
-		else
-			return textarea_set_caret(ta, c_start);
-	}
 
 	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
 
@@ -1382,31 +1374,28 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
-		if (!(ta->flags & TEXTAREA_READONLY))
+		if (!(ta->flags & TEXTAREA_READONLY)) {
 			textarea_set_caret_xy(ta, x, y);
+			ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
+		}
 		if (ta->selection_start != -1) {
+			/* remove selection */
 			ta->selection_start = ta->selection_end = -1;
 			ta->redraw_request(ta->data, 0, 0,
 					ta->vis_width,
 					ta->vis_height);
 		}
-	}
-	else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
+
+	} else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
 			textarea_set_caret_xy(ta, x, y);
 			return textarea_select_fragment(ta);
 		}
-	}
-	else if (mouse & BROWSER_MOUSE_DRAG_1) {
-		ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
-		if (!(ta->flags & TEXTAREA_READONLY))
-			return textarea_set_caret(ta, -1);
-	}
-	else if (mouse & BROWSER_MOUSE_HOLDING_1) {
+
+	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1)) {
 		c_start = ta->drag_start_char;
 		c_end = textarea_get_xy_offset(ta, x, y);
 		return textarea_select(ta, c_start, c_end);
-
 	}
 
 	return true;
