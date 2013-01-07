@@ -23,6 +23,31 @@
 
  #include "gemtk.h"
 
+char *get_text(OBJECT * tree, short idx)
+{
+	static char p[]="";
+	USERBLK *user;
+	char *retval;
+
+	switch (tree[idx].ob_type & 0x00FF) {
+		case G_BUTTON:
+		case G_STRING:
+		case G_TITLE:
+			return( tree[idx].ob_spec.free_string);
+		case G_TEXT:
+		case G_BOXTEXT:
+		case G_FTEXT:
+		case G_FBOXTEXT:
+			return (tree[idx].ob_spec.tedinfo->te_ptext);
+		case G_ICON:
+		case G_CICON:
+			return (tree[idx].ob_spec.iconblk->ib_ptext);
+			break;
+
+		default: break;
+	}
+	return (p);
+}
 
 OBJECT *get_tree(int idx)
 {
@@ -55,4 +80,27 @@ GRECT * obj_screen_rect(OBJECT * tree, short obj)
 	get_objframe(tree, obj, &obj_screen);
 
 	return(&obj_screen);
+}
+
+
+void obj_mouse_sprite(OBJECT *tree, int index)
+{
+    MFORM mform;
+    int dum;
+
+    if ((tree[index].ob_type & 0xFF) != G_ICON)
+        return;
+
+    dum = tree[index].ob_spec.iconblk->ib_char;
+    mform . mf_nplanes = 1;
+    mform . mf_fg = (dum>>8)&0x0F;
+    mform . mf_bg = dum>>12;
+    mform . mf_xhot = 0; /* to prevent the mform to "jump" on the */
+    mform . mf_yhot = 0; /* screen (zebulon rules!) */
+
+    for( dum = 0; dum<16; dum ++) {
+        mform . mf_mask[dum] = tree[index].ob_spec.iconblk->ib_pmask[dum];
+        mform . mf_data[dum] = tree[index].ob_spec.iconblk->ib_pdata[dum];
+    }
+    graf_mouse(USER_DEF, &mform);
 }

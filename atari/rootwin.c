@@ -30,10 +30,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <windom.h>
 #include <assert.h>
 #include <math.h>
 #include <osbind.h>
+
+#include <mt_gem.h>
 
 #include "utils/log.h"
 #include "desktop/gui.h"
@@ -67,6 +68,7 @@
 
 extern struct gui_window *input_window;
 extern EVMULT_OUT aes_event_out;
+extern GRECT desk_area;
 
 struct rootwin_data_s {
     struct s_gui_win_root *rootwin;
@@ -231,8 +233,8 @@ int window_create(struct gui_window * gw,
 
     redraw_slots_init(&gw->root->redraw_slots, 8);
 
-    // TODO: use desk size
-    gw->root->aes_handle = wind_create(flags, 40, 40, app.w, app.h);
+    gw->root->aes_handle = wind_create(flags, 40, 40, desk_area.g_w,
+									desk_area.g_h);
     if(gw->root->aes_handle<0) {
         free(gw->root->title);
         free(gw->root);
@@ -245,8 +247,8 @@ int window_create(struct gui_window * gw,
     data->rootwin = gw->root;
     guiwin_set_user_data(gw->root->win, (void*)data);
     struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(gw->root->win);
-    slid->y_unit_px = 16;
-    slid->x_unit_px = 16;
+    slid->y_unit_px = 32;
+    slid->x_unit_px = 32;
 
     /* create toolbar component: */
     guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
@@ -277,7 +279,7 @@ int window_create(struct gui_window * gw,
     }
 
     // Setup some window defaults:
-    wind_set_str(gw->root->aes_handle, WF_ICONTITLE, (char*)"NetSurf");
+    wind_set_str(gw->root->aes_handle, WF_NAME, (char*)"NetSurf");
     wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
     wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
     wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
@@ -351,7 +353,6 @@ int window_destroy(ROOTWIN *rootwin)
 }
 
 
-
 void window_open(ROOTWIN *rootwin, GRECT pos)
 {
     GRECT br, g;
@@ -373,7 +374,6 @@ void window_open(ROOTWIN *rootwin, GRECT pos)
     input_window = rootwin->active_gui_window;
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
 }
-
 
 
 /* update back forward buttons (see tb_update_buttons (bug) ) */
@@ -423,12 +423,17 @@ void window_scroll_by(ROOTWIN *root, int sx, int sy)
     guiwin_update_slider(root->win, GUIWIN_VH_SLIDER);
 }
 
+/**
+* Set the dimensions of the scrollable content.
+*
+*/
 void window_set_content_size(ROOTWIN *rootwin, int width, int height)
 {
     GRECT area;
     struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(rootwin->win);
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &area);
+
     slid->x_units = (width/slid->x_unit_px);
     slid->y_units = (height/slid->y_unit_px);
     if(slid->x_units < slid->x_pos)
@@ -436,7 +441,6 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
     if(slid->y_units < slid->y_pos)
         slid->y_pos = 0;
     guiwin_update_slider(rootwin->win, GUIWIN_VH_SLIDER);
-    // TODO: reset slider to 0
 }
 
 /* set focus to an arbitary element */
@@ -684,7 +688,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
     int i, scroll_x, scroll_y;
     uint16_t *fd_addr;
     struct guiwin_scroll_info_s *slid;
-    short colors[2] = {BLACK, WHITE};
+    short colors[2] = {G_BLACK, G_WHITE};
     bool render_required = false;
 
     // avoid duplicate draw of the caret:

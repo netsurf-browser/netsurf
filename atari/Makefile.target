@@ -68,7 +68,7 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -Dsmall $(WARNFLAGS) -Dnsatari \
 LDFLAGS += -lcflib -lcurl
 LDFLAGS += -lcss -lparserutils -ldom -lwapcaplet -lhubbub
 LDFLAGS += -lssl -lcrypto
-LDFLAGS += -lz -liconv -lcares -lHermes -lwindom -lgem -lm
+LDFLAGS += -lz -liconv -lcares -lHermes -lgem -lm
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 
@@ -85,7 +85,6 @@ S_ATARI := \
 	download.c \
 	thumbnail.c \
 	login.c \
-	verify_ssl.c \
 	treeview.c \
 	hotlist.c \
 	history.c\

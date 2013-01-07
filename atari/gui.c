@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
-#include <windom.h>
 #include <hubbub/hubbub.h>
 
 #include "content/urldb.h"
@@ -63,7 +62,6 @@
 #include "atari/rootwin.h"
 #include "atari/statusbar.h"
 #include "atari/toolbar.h"
-#include "atari/verify_ssl.h"
 #include "atari/hotlist.h"
 #include "atari/history.h"
 #include "atari/login.h"
@@ -562,8 +560,9 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 
 static void throbber_advance( void * data )
 {
-    LGRECT work;
+
     struct gui_window * gw = (struct gui_window *)data;
+
     if (gw->root == NULL)
         return;
     if (gw->root->toolbar == NULL)
@@ -851,10 +850,7 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
     LOG((""));
 
     bool bres;
-    /*bres = verify_ssl_form_do(url, certs, num);
-    if( bres )
-    	urldb_set_cert_permissions(url, true);
-    */
+
     // TODO: localize string
     int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort]");
     bres = (b==1)? true : false;
@@ -921,7 +917,8 @@ process_cmdline(int argc, char** argv)
         option_window_x = nsoption_int(window_x);
         option_window_y = nsoption_int(window_y);
 
-        if (option_window_width <= app.w && option_window_height < app.h) {
+        if (option_window_width <= desk_area.g_w
+			&& option_window_height < desk_area.g_h) {
             set_default_dimensions = false;
         }
     }
@@ -929,10 +926,10 @@ process_cmdline(int argc, char** argv)
     if (set_default_dimensions) {
         if( sys_type() == SYS_TOS ) {
             /* on single tasking OS, start as fulled window: */
-            option_window_width = app.w;
-            option_window_height = app.h-20;
-            option_window_x = app.w/2-(option_window_width/2);
-            option_window_y = (app.h/2)-(option_window_height/2);
+            option_window_width = desk_area.g_w;
+            option_window_height = desk_area.g_h;
+            option_window_x = desk_area.g_w/2-(option_window_width/2);
+            option_window_y = (desk_area.g_h/2)-(option_window_height/2);
         } else {
             option_window_width = 600;
             option_window_height = 360;
@@ -1019,6 +1016,8 @@ static void gui_init(int argc, char** argv)
         die("Uable to open GEM Resource file!");
     }
 
+	wind_get_grect(0, WF_WORKXYWH, &desk_area);
+
     create_cursor(0, POINT_HAND, NULL, &gem_cursors.hand );
     create_cursor(0, TEXT_CRSR,  NULL, &gem_cursors.ibeam );
     create_cursor(0, THIN_CROSS, NULL, &gem_cursors.cross);
@@ -1060,16 +1059,19 @@ static void gui_init(int argc, char** argv)
     if (process_cmdline(argc,argv) != true)
         die("unable to process command line.\n");
 
+	LOG(("Initializing NKC..."));
     nkc_init();
+
+
+	LOG(("Initializing plotters..."));
     plot_init(nsoption_charp(atari_font_driver));
+
     tree_set_icon_dir(nsoption_charp(tree_icons_path));
 
-	wind_get_grect(0, WF_WORKXYWH, &desk_area);
 	aes_event_in.emi_m1leave = MO_LEAVE;
 	aes_event_in.emi_m1.g_w = 1;
 	aes_event_in.emi_m1.g_h = 1;
-	next_poll = clock() + (CLOCKS_PER_SEC>>3);
-
+	//next_poll = clock() + (CLOCKS_PER_SEC>>3);
 }
 
 static char *theapp = (char*)"NetSurf";
@@ -1103,26 +1105,40 @@ int main(int argc, char** argv)
     freopen("stdout.log", "a+", stdout);
     freopen("stderr.log", "a+", stderr);
 #endif
-    // todo: replace with appl_init
-    ApplInit();
-    gl_apid = _AESapid;
+
     graf_mouse(BUSY_BEE, NULL);
+
+    init_app(NULL);
+
     init_os_info();
+
     atari_find_resource((char*)&messages, "messages", "res/messages");
     atari_find_resource((char*)&options, "Choices", "Choices");
+
+    LOG(("Initialising core..."));
     netsurf_init(&argc, &argv, options, messages);
+
+    LOG(("Initializing GUI..."));
     gui_init(argc, argv);
+
+    LOG(("Initializing GUI2"));
     gui_init2(argc, argv);
-    browser_window_create(option_homepage_url, 0, 0, true, false);
+
     graf_mouse( ARROW , NULL);
+
+	LOG(("Creating initial browser window..."));
+    browser_window_create(option_homepage_url, 0, 0, true, false);
+
+    LOG(("Entering NetSurf mainloop..."));
     netsurf_main_loop();
+
     netsurf_exit();
     LOG(("ApplExit"));
-    ApplExit();
 #ifdef WITH_DBG_LOGFILE
     fclose(stdout);
     fclose(stderr);
 #endif
+	exit_gem();
 
     return 0;
 }

@@ -19,7 +19,6 @@
 #ifndef NS_ATARI_MISC_H
 #define NS_ATARI_MISC_H
 
-#include <windom.h>
 #include "cflib.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -49,7 +48,6 @@ void gem_set_cursor( MFORM_EX * cursor );
 hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
                            void * pw );
 void dbg_grect(const char * str, GRECT * r);
-void dbg_lgrect( char * str, LGRECT * r);
 void dbg_pxy(const char * str, short * pxy);
 void dbg_rect(const char * str, int * pxy);
 void * ldg_open( char * name, short * global );

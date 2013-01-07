@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdio.h>
 
-//#include "windom.h"
 #include "gemtk.h"
 #include "cflib.h"
 

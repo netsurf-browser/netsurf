@@ -24,7 +24,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
-#include <windom.h>
 
 #include "content/urldb.h"
 #include "content/fetch.h"
@@ -142,11 +141,11 @@ static void on_redraw(struct gui_download_window *dw, GRECT *clip)
 	tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100),
 													DOWNLOAD_BAR_MAX ), 1);
 	if (dw->close_on_finish) {
-		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state |= (SELECTED | CROSSED);
+		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state |= (OS_SELECTED | OS_CROSSED);
 	} else {
-		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state &= ~(SELECTED | CROSSED);
+		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state &= ~(OS_SELECTED | OS_CROSSED);
 	}
-	tree[DOWNLOAD_BT_ABORT].ob_state &= ~SELECTED;
+	tree[DOWNLOAD_BT_ABORT].ob_state &= ~OS_SELECTED;
 
 	/*Walk the AES rectangle list and redraw the visible areas of the window: */
 	wind_get_grect(dw->aes_handle, WF_FIRSTXYWH, &visible);
@@ -218,19 +217,20 @@ static char * select_filepath( const char * path, const char * filename )
 	char res_file[PATH_MAX];
 	char * ret = NULL;
 
-
-	strncpy( res_path, path, PATH_MAX );
-	strncpy( res_file, filename, PATH_MAX );
+	strncpy(res_path, path, PATH_MAX);
+	strncpy(res_file, filename, PATH_MAX);
 	res_file[PATH_MAX-1] = 0;
 	res_path[PATH_MAX-1] = 0;
-	if( mt_FselInput( &app, res_path, res_file, (char*)"*",
-					(char*)messages_get("SaveAsNS"), res_path, NULL ) ) {
-		assert( (strlen( res_path ) + strlen( res_file ) + 2) < PATH_MAX );
-		snprintf(tmp, PATH_MAX, "%s%s", res_path, res_file );
-		ret = malloc( strlen(tmp)+1 );
-		strcpy( ret, tmp );
+
+	if(select_file(res_path, res_file, (char*)"*",
+					(char*)messages_get("SaveAsNS"), NULL)) {
+		snprintf(tmp, PATH_MAX, "%s%s", res_path, res_file);
+		ret = malloc(strlen(tmp)+1);
+		strcpy(ret, tmp);
 	}
-	return( ret );
+
+	printf("download file: %s\n", ret);
+	return(ret);
 }
 
 struct gui_download_window * gui_download_window_create(download_context *ctx,

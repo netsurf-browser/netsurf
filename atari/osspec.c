@@ -25,7 +25,6 @@
 #include <string.h>
 #include <mint/osbind.h>
 #include <mint/cookie.h>
-#include <windom.h>
 
 #include "utils/log.h"
 #include "atari/osspec.h"

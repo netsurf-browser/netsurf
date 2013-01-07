@@ -39,7 +39,7 @@ struct s_menu_item_evnt {
 };
 
 static void register_menu_str(struct s_menu_item_evnt * mi);
-static void __CDECL evnt_menu(WINDOW * win, short buff[8]);
+//static void __CDECL evnt_menu(WINDOW * win, short buff[8]);
 
 extern void *h_gem_rsrc;
 extern bool html_redraw_debug;
@@ -152,12 +152,13 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 {
 	assert(h_gem_menu != NULL);
 
-	char * str = ObjcString(h_gem_menu, mi->rid, NULL );
-	int l = strlen(str);
-	int i = l;
-	int x = -1;
 	struct s_accelerator * accel = &mi->accel;
+	int i, l=0, x=-1;
+	char str[255];
 
+	get_string(h_gem_menu, mi->rid, NULL);
+
+	i = l = strlen(str);
 	while (i > 2) {
 		if( str[i] == '['){
 			x = i;
@@ -208,7 +209,7 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 		}
 	}
 }
-
+/*
 static void __CDECL evnt_menu(WINDOW * win, short buff[8])
 {
 	int title = buff[3];
@@ -219,6 +220,7 @@ static void __CDECL evnt_menu(WINDOW * win, short buff[8])
 
 	deskmenu_dispatch_item(buff[3], buff[4]);
 }
+*/
 
 /*
 	Menu item event handlers:
@@ -524,7 +526,6 @@ void deskmenu_init(void)
 	/* parse and update menu items:  */
 	i = 0;
 	while( menu_evnt_tbl[i].rid != -1 ) {
-		char * str = ObjcString(h_gem_menu, menu_evnt_tbl[i].rid, NULL );
 		register_menu_str( &menu_evnt_tbl[i] );
 		/* Update menu string if not null: */
 		if( menu_evnt_tbl[i].menustr != NULL ){

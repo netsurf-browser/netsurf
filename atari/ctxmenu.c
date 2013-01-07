@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <windom.h>
 #include <mint/osbind.h>
 
 #include "desktop/gui.h"
@@ -126,6 +125,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	int err = 0;
 	char * editor, *lastslash;
 	char cmdline[PATH_MAX];
+	MENU pop_menu, me_data;
 
 	pop = get_tree( POP_CTX );
 	if (pop == NULL)
@@ -136,36 +136,40 @@ void context_popup(struct gui_window * gw, short x, short y)
         Disable all items by default:
     */
 	for( choice = POP_FIRST_ITEM; choice<=POP_LAST_ITEM; choice++ ){
-		SET_BIT(pop[ choice ].ob_state, DISABLED, 1);
+		SET_BIT(pop[ choice ].ob_state, OS_DISABLED, 1);
 	}
 
 	if( ctx->flags & CNT_INTERACTIVE ){
-        	SET_BIT(pop[ POP_CTX_PASTE_SEL ].ob_state, DISABLED, 0);
+        	SET_BIT(pop[ POP_CTX_PASTE_SEL ].ob_state, OS_DISABLED, 0);
     	}
 
 	if( (ctx->flags & CNT_BROWSER) ){
-		SET_BIT(pop[ POP_CTX_SELECT_ALL ].ob_state, DISABLED, 0);
-		SET_BIT(pop[ POP_CTX_COPY_SEL ].ob_state, DISABLED, 0);
-		SET_BIT(pop[ POP_CTX_VIEW_SOURCE ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_SELECT_ALL ].ob_state, OS_DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_COPY_SEL ].ob_state, OS_DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_VIEW_SOURCE ].ob_state, OS_DISABLED, 0);
 	}
 
 	if( ctx->flags & CNT_HREF ){
-		SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_SAVE_LINK_AS ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, OS_DISABLED, 0);
+        SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, OS_DISABLED, 0);
+        SET_BIT(pop[ POP_CTX_SAVE_LINK_AS ].ob_state, OS_DISABLED, 0);
 	}
 
 	if( ctx->flags & CNT_IMG ){
-		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
-		SET_BIT(pop[ POP_CTX_COPY_URL ].ob_state, DISABLED, 0);
-		SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, OS_DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_COPY_URL ].ob_state, OS_DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, OS_DISABLED, 0);
 	}
 
-	choice = MenuPopUp(
-		pop, x, y,
-		-1, -1, -1,
-		P_WNDW + P_CHCK
-	);
+	// point mn_tree tree to states popup:
+    pop_menu.mn_tree = get_tree(POP_CTX);
+    pop_menu.mn_menu = 0;
+    pop_menu.mn_item = POP_CTX_CUT_SEL;
+    pop_menu.mn_scroll = SCROLL_LISTBOX;
+    pop_menu.mn_keystate = 0;
+
+	menu_popup(&pop_menu, x, y, &me_data);
+    choice = me_data.mn_item;
 
 	switch( choice ){
 		case POP_CTX_COPY_SEL:
@@ -243,6 +247,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					if (fp_tmpfile != NULL){
 						fwrite(data, size, 1, fp_tmpfile);
 						fclose(fp_tmpfile );
+						/*
 						lastslash = strrchr(editor, '/');
 						if (lastslash == NULL)
 							lastslash = strrchr(editor, '\\');
@@ -250,16 +255,25 @@ void context_popup(struct gui_window * gw, short x, short y)
 							lastslash = editor;
 						else
 							lastslash++;
-						if(is_process_running(lastslash)){
-							err = ShelWrite( editor, tempfile , editor, 1, 0);
+						*/
+
+						if(strlen(tempfile)<=125){
+							shel_write(1,1,0,editor,tempfile);
+						}
+
+						/*if(is_process_running(lastslash)){
+							if(strlen(tempfile)<=125){
+								shel_write(1,1,0,editor,tempfile);
+							}
 						} else {
-							/* check for max length of simple commandline param: */
+							// check for max length of simple commandline param:
 							if(strlen(tempfile)<=125){
 								sprintf(cmdline, "%c%s", (char)strlen(tempfile),
 												tempfile);
 								Pexec(100, editor, cmdline, NULL);
 							}
 						}
+						*/
 					} else {
 						printf("Could not open temp file: %s!\n", tempfile );
 					}

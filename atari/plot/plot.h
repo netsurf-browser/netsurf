@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <windom.h>
 #include <assert.h>
 #include <mint/osbind.h>
 #include <mint/cookie.h>

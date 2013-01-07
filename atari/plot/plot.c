@@ -22,7 +22,8 @@
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
-#include <windom.h>
+
+#include <mt_gem.h>
 
 #include "image/bitmap.h"
 #include "utils/log.h"
@@ -35,6 +36,8 @@
 #include "atari/gui.h"
 #include "desktop/options.h"
 #include "atari/plot/plot.h"
+
+void vq_scrninfo(VdiHdl handle, short *work_out);
 
 struct s_view {
     short x;                /* drawing (screen) offset x					*/
@@ -166,7 +169,7 @@ static HermesHandle hermes_res_h;
 static short prev_vdi_clip[4];
 static struct bitmap snapshot;
 
-int atari_plot_vdi_handle;
+VdiHdl atari_plot_vdi_handle = -1;
 unsigned long atari_plot_flags;
 unsigned long atari_font_flags;
 
@@ -740,7 +743,7 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 	/* allocate memory for the snapshot */
 	{
 		int scr_stride = MFDB_STRIDE( w );
-		int scr_size = ( ((scr_stride >> 3) * h) * app.nplanes );
+		int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
 		if(size_buf_std == 0 ){
 			/* init screen mfdb */
 			buf_std.fd_addr = malloc( scr_size );
@@ -757,7 +760,7 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 			size_buf_std = 0;
 			return( NULL );
 		}
-		buf_std.fd_nplanes = app.nplanes;
+		buf_std.fd_nplanes = 8;
 		buf_std.fd_w = scr_stride;
 		buf_std.fd_h = h;
 		buf_std.fd_stand = 1;
@@ -767,7 +770,7 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 	MFDB * native = snapshot_create_native_mfdb(x,y,w,h );
 	assert( native );
 
-	vr_trnfm(atari_plot_vdi_handle, native, &buf_std );
+	vr_trnfm(atari_plot_vdi_handle, native, &buf_std);
 	return( &buf_std );
 }
 
@@ -1445,7 +1448,7 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
 	MFDB screen, tran;
 	MFDB * src;
 	short pxy[8];
-	short c[2] = {fgcolor, WHITE};
+	short c[2] = {fgcolor, G_WHITE};
 	GRECT off;
 
 	plot_get_clip_grect(&off);
@@ -1515,7 +1518,15 @@ int plot_init(char * fdrvrname)
     if( nsoption_int(atari_font_monochrom) == 1 )
         atari_font_flags |= FONTPLOT_FLAG_MONOGLYPH;
 
-    atari_plot_vdi_handle = app.graf.handle;
+	if(atari_plot_vdi_handle == -1) {
+
+		short dummy;
+		short work_in[12] = {Getrez()+2,1,1,1,1,1,1,1,1,1,2,1};
+        short work_out[57];
+        atari_plot_vdi_handle=graf_handle(&dummy, &dummy, &dummy, &dummy);
+        v_opnvwk(work_in, &atari_plot_vdi_handle, work_out);
+        LOG(("Plot VDI handle: %d", atari_plot_vdi_handle));
+    }
 	read_vdi_sysinfo(atari_plot_vdi_handle, &vdi_sysinfo);
     if(verbose_log) {
         dump_vdi_info(atari_plot_vdi_handle) ;
@@ -1530,7 +1541,7 @@ int plot_init(char * fdrvrname)
     }
 
     memset(&view, 0, sizeof(struct s_view));
-    atari_plot_bpp_virt = app.nplanes;
+    atari_plot_bpp_virt = vdi_sysinfo.scr_bpp;
 	view.x = loc_pos.g_x;
 	view.y = loc_pos.g_y;
 	view.w = loc_pos.g_w;
@@ -1557,14 +1568,14 @@ int plot_init(char * fdrvrname)
 	assert(Hermes_Init());
 
 #ifdef WITH_8BPP_SUPPORT
-	bitmap_convert = (app.nplanes > 8) ? bitmap_convert_tc : bitmap_convert_8;
+	bitmap_convert = (vdi_sysinfo.scr_bpp > 8) ? bitmap_convert_tc : bitmap_convert_8;
 
 	/* Setup color lookup tables and palette */
 	i = 0;
 	unsigned char * col;
 	unsigned char rgbcol[4];
 	unsigned char graytone=0;
-	if( app.nplanes <= 8 ){
+	if( vdi_sysinfo.scr_bpp <= 8 ){
 		for( i=0; i<=255; i++ ) {
 
 			// get the current color and save it for restore:
@@ -1573,7 +1584,7 @@ int plot_init(char * fdrvrname)
 				pal[i][0] = sys_pal[i][0];
 		 		pal[i][1] = sys_pal[i][1];
 				pal[i][2] = sys_pal[i][2];
-			} else if( app.nplanes >= 8 ) {
+			} else if( vdi_sysinfo.scr_bpp >= 8 ) {
 				if ( i < OFFSET_CUST_PAL ){
 					pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
 					pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];

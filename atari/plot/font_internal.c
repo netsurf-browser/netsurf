@@ -26,8 +26,6 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 
-#include <windom.h>
-
 extern unsigned long atari_plot_flags;
 extern int atari_plot_vdi_handle;
 

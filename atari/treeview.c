@@ -176,33 +176,32 @@ static void __CDECL on_mbutton_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
 {
 	struct guiwin_scroll_info_s *slid;
 	GRECT work;
+	short mx, my;
 
 	if(tv == NULL)
 		return;
-	if( evnt.mbut & 2 ) {
-		/* do not handle right click */
-		return;
-	}
 
 	guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
 	slid = guiwin_get_scroll_info(tv->window);
+	mx = ev_out->emo_mouse.p_x;
+	my = ev_out->emo_mouse.p_y;
 
 	/* mouse click relative origin: */
 
-	short origin_rel_x = (ev_out->emo_mouse.p_x-work.g_x) +
+	short origin_rel_x = (mx-work.g_x) +
 							(slid->x_pos*slid->x_unit_px);
-	short origin_rel_y = (ev_out->emo_mouse.p_y-work.g_y) +
+	short origin_rel_y = (my-work.g_y) +
 							(slid->y_pos*slid->y_unit_px);
 
 	if( origin_rel_x >= 0 && origin_rel_y >= 0
-		&& evnt.mx < work.g_x + work.g_w
-		&& evnt.my < work.g_y + work.g_h )
+		&& mx < work.g_x + work.g_w
+		&& my < work.g_y + work.g_h )
 	{
 		int bms;
 		bool ignore=false;
 		short cur_rel_x, cur_rel_y, dummy, mbut;
 
-		if( evnt.nb_click == 2 ){
+		if (ev_out->emo_mclicks == 2) {
 			tree_mouse_action(tv->tree,
 							BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_DOUBLE_CLICK,
 							origin_rel_x, origin_rel_y );
@@ -212,7 +211,7 @@ static void __CDECL on_mbutton_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
 		graf_mkstate(&cur_rel_x, &cur_rel_x, &mbut, &dummy);
 		if( (mbut&1) == 0 ){
 			bms = BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1;
-			if( evnt.nb_click == 2 ) {
+			if(ev_out->emo_mclicks == 2 ) {
 				bms = BROWSER_MOUSE_DOUBLE_CLICK;
 			}
 			tree_mouse_action(tv->tree, bms, origin_rel_x, origin_rel_y );

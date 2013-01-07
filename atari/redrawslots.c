@@ -17,9 +17,10 @@
  */
 
 #include <stdbool.h>
-#include "windom.h"
 #include "utils/types.h"
 #include "atari/redrawslots.h"
+
+#include "atari/gemtk/gemtk.h"
 
 void redraw_slots_init(struct s_redrw_slots * slots, short size)
 {

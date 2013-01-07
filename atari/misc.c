@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
 #include <sys/types.h>
 #include <mint/osbind.h>
-#include <windom.h>
 
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -37,6 +37,7 @@
 #include "utils/url.h"
 #include "utils/log.h"
 #include "content/fetch.h"
+
 #include "atari/gui.h"
 #include "atari/toolbar.h"
 
@@ -322,7 +323,7 @@ void gem_set_cursor( MFORM_EX * cursor )
 	if( flags == cursor->flags && number == cursor->number )
 		return;
 	if( cursor->flags & MFORM_EX_FLAG_USERFORM ) {
-		MouseSprite( cursor->tree, cursor->number);
+		obj_mouse_sprite(cursor->tree, cursor->number);
 	} else {
 		graf_mouse(cursor->number, NULL );
 	}
@@ -472,7 +473,8 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
  * \param name	 Default file name
  * \return a static char pointer or null if the user aborted the selection.
  */
-const char * file_select( const char * title, const char * name ) {
+const char * file_select(const char * title, const char * name ) {
+
 	static char path[PATH_MAX]=""; // First usage : current directory
 	static char fullname[PATH_MAX]="";
 	char tmpname[255];
@@ -481,25 +483,20 @@ const char * file_select( const char * title, const char * name ) {
 	if( strlen(name)>254)
 		return( NULL );
 
-	strcpy( tmpname, name );
+	strcpy(tmpname, name);
 
 	if( use_title == NULL ){
 		use_title = (char*)"";
 	}
 
-	if( FselInput( path, tmpname, (char*)"",  use_title, NULL, NULL)) {
+	if (select_file(path, tmpname, (char*)"*", use_title, NULL)) {
 		snprintf(fullname, PATH_MAX, "%s%s", path, tmpname);
-		return( (const char*)&fullname  );
+		return((const char*)&fullname);
 	}
+
 	return( NULL );
 }
 
-
-void dbg_lgrect( char * str, LGRECT * r )
-{
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
-		r->g_x, r->g_y, r->g_w, r->g_h );
-}
 
 void dbg_grect(const char * str, GRECT * r)
 {

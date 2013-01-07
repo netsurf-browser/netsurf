@@ -39,6 +39,12 @@ unsigned short _systype (void);
 */
 bool rc_intersect_ro(GRECT *a, GRECT *b);
 
+/*
+* Convert keycode returned by evnt_multi to ascii value
+*/
+int keybd2ascii( int keybd, int shift);
+
+
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
 		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))
@@ -183,8 +189,9 @@ void guiwin_clear(GUIWIN *win);
 /* -------------------------------------------------------------------------- */
 /* AES OBJECT TREE TOOLS                                                      */
 /* -------------------------------------------------------------------------- */
-
+char *get_text(OBJECT * tree, short idx);
 GRECT * obj_screen_rect(OBJECT * tree, short obj);
 bool obj_is_inside(OBJECT * tree, short obj, GRECT *area);
 OBJECT *get_tree(int idx);
+void obj_mouse_sprite(OBJECT *tree, int index);
 #endif // GEMTK_H_INCLUDED

@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <windom.h>
 
 #include "desktop/gui.h"
 #include "desktop/browser.h"
@@ -141,6 +140,23 @@ static SEARCH_FORM_SESSION get_search_session(GUIWIN * win)
 	return (current);
 }
 
+
+
+static void set_text( short idx, char * text, int len )
+{
+	char spare[255];
+
+	if( len > 254 )
+		len = 254;
+	if( text != NULL ){
+		strncpy(spare, text, 254);
+	} else {
+		strcpy(spare, "");
+	}
+
+	set_string(dlgtree, idx, spare);
+}
+
 static void destroy_search_session(SEARCH_FORM_SESSION s)
 {
 	if(s != NULL ){
@@ -152,26 +168,26 @@ static void destroy_search_session(SEARCH_FORM_SESSION s)
 static int apply_form(GUIWIN *win, struct s_search_form_state * s)
 {
 	OBJECT * obj = dlgtree;
+	char * cstr;
+
 	if( obj == NULL ){
 		goto error;
 	}
+
 	s->flags = 0;
-	if( (obj[SEARCH_CB_FWD].ob_state & SELECTED) != 0 )
+	if( (obj[SEARCH_CB_FWD].ob_state & OS_SELECTED) != 0 )
 		s->flags = SEARCH_FLAG_FORWARDS;
-	if( (obj[SEARCH_CB_CASESENSE].ob_state & SELECTED) != 0 )
+	if( (obj[SEARCH_CB_CASESENSE].ob_state & OS_SELECTED) != 0 )
 		s->flags |= SEARCH_FLAG_CASE_SENSITIVE;
-	if( (obj[SEARCH_CB_SHOWALL].ob_state & SELECTED) != 0 )
+	if( (obj[SEARCH_CB_SHOWALL].ob_state & OS_SELECTED) != 0 )
 		s->flags |= SEARCH_FLAG_SHOWALL;
 
-	char * cstr = ObjcString( obj, SEARCH_TB_SRCH, NULL );
-	if( cstr != NULL ) {
-		strncpy((char*)&s->text[0], cstr, 31 );
-	}
+	cstr = get_text(dlgtree, SEARCH_TB_SRCH);
+	snprintf(s->text, 31, "%s", cstr);
 	return ( 0 );
 
 error:
 	s->flags = SEARCH_FLAG_FORWARDS;
-	/* s->forward = true; */
 	strncpy((char*)&s->text[0], "", 31 );
 	return( 1 );
 }
@@ -184,8 +200,8 @@ static bool form_changed(GUIWIN * w)
 	SEARCH_FORM_SESSION s = get_search_session(w);
 	if( s == NULL )
 		return false;
-	OBJECT * obj = (OC_FORM,  w);
-	assert( s != NULL && obj != NULL );
+	OBJECT * obj = dlgtree;
+	assert(s != NULL && obj != NULL);
 	uint32_t flags_old = s->state.flags;
 	apply_form(w, &cur);
 
@@ -196,7 +212,8 @@ static bool form_changed(GUIWIN * w)
 		return( true );
 	}
 
-	char * cstr = ObjcString( obj, SEARCH_TB_SRCH, NULL );
+	char * cstr;
+	cstr = get_text(obj, SEARCH_TB_SRCH);
 	if (cstr != NULL){
 		if (strcmp(cstr, (char*)&s->state.text) != 0) {
 			return (true);
@@ -207,7 +224,7 @@ static bool form_changed(GUIWIN * w)
 }
 
 
-static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void *unused2)
+static void __CDECL evnt_bt_srch_click(GUIWIN * win, int index, int unused, void *unused2)
 {
 
 	bool fwd;
@@ -215,31 +232,31 @@ static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void
 	OBJECT * obj = dlgtree;
 	search_flags_t flags = 0;
 
-	ObjcChange(OC_FORM, win, index, ~SELECTED , TRUE);
+
 	if( form_changed(searchwin) ){
 		browser_window_search_destroy_context(s->bw);
-		apply_form(searchwin, &s->state );
+		apply_form(searchwin, &s->state);
 	} else {
 		/* get search direction manually: */
-		if( (obj[SEARCH_CB_FWD].ob_state & SELECTED) != 0 )
+		if( (obj[SEARCH_CB_FWD].ob_state & OS_SELECTED) != 0 )
 			s->state.flags |= SEARCH_FLAG_FORWARDS;
 		 else
 			s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 	}
 	if( browser_window_search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-		browser_window_search_step(s->bw, s->state.flags,  ObjcString( obj, SEARCH_TB_SRCH, NULL ) );
+		browser_window_search_step(s->bw, s->state.flags,  get_text(obj, SEARCH_TB_SRCH));
 	}
 
 }
 
-static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unused2)
+static void __CDECL evnt_cb_click(GUIWIN *win, int index, int unused, void *unused2)
 {
 
 	short newstate;
 
 }
 
-static void __CDECL evnt_close( WINDOW *win, short buff[8])
+static void __CDECL evnt_close(GUIWIN *win, short buff[8])
 {
 
 }
@@ -322,7 +339,7 @@ SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw)
 	EvntAdd(sfs->formwind, WM_CLOSED, evnt_close, EV_TOP);
 */
 	apply_form(searchwin, &sfs->state );
-	set_string(dlgtree, SEARCH_TB_SRCH, "");
+	set_text(SEARCH_TB_SRCH, "", 31);
 
 	return( current );
 

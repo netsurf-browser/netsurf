@@ -97,32 +97,6 @@ static void set_text( short idx, char * text, int len )
 
 
 
-static char *get_text(OBJECT * tree, short idx)
-{
-	static char p[]="";
-	USERBLK *user;
-	char *retval;
-
-	switch (tree[idx].ob_type & 0x00FF) {
-		case G_BUTTON:
-		case G_STRING:
-		case G_TITLE:
-			return( tree[idx].ob_spec.free_string);
-		case G_TEXT:
-		case G_BOXTEXT:
-		case G_FTEXT:
-		case G_FBOXTEXT:
-			return (tree[idx].ob_spec.tedinfo->te_ptext);
-		case G_ICON:
-		case G_CICON:
-			return (tree[idx].ob_spec.iconblk->ib_ptext);
-			break;
-
-		default: break;
-	}
-	return (p);
-}
-
 
 /**
  * Toogle all objects which are directly influenced by other GUI elements
@@ -298,6 +272,7 @@ static void form_event(int index, int external)
 		"cs", "de", "de-de" , "en", "en-gb", "en-us", "es",
 		"fr", "it", "nl", "no", "pl", "ru", "sk", "sv"
 	};
+
 	int num_locales = (sizeof(locales)/sizeof(char*));
 	short x, y;
 	int choice;
@@ -352,9 +327,11 @@ static void form_event(int index, int external)
 		case SETTINGS_BT_SEL_FONT_RENDERER:
 			if( external ){
 				objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
+				// TODO: add menu popup
+				/*
 				choice = MenuPopUp (font_driver_items, x, y,
 									num_font_drivers,
-									 -1, -1, P_LIST + P_WNDW + P_CHCK );
+									 -1, -1, P_LIST + P_WNDW + P_CHCK);
 				if( choice > 0 &&
 					choice <= num_font_drivers ){
 						set_text(SETTINGS_BT_SEL_FONT_RENDERER,
@@ -362,6 +339,7 @@ static void form_event(int index, int external)
 									LABEL_FONT_RENDERER_MAX_LEN);
 						OBJ_REDRAW(SETTINGS_BT_SEL_FONT_RENDERER);
 				}
+				*/
 			}
 			tmp = get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
 			if( strcmp(tmp, "freetype") == 0 ){
@@ -373,12 +351,15 @@ static void form_event(int index, int external)
 
 		case SETTINGS_BT_SEL_LOCALE:
 			objc_offset(dlgtree, SETTINGS_BT_SEL_LOCALE, &x, &y);
+			// TODO: open locales popup
+			/*
 			choice = MenuPopUp ( locales, x, y,
 								num_locales,
 								 -1, -1, P_LIST + P_WNDW + P_CHCK );
 			if( choice > 0 && choice <= num_locales ){
 				set_text(SETTINGS_BT_SEL_LOCALE, (char*)locales[choice-1], 5);
 			}
+			*/
 			OBJ_REDRAW(SETTINGS_BT_SEL_LOCALE);
 			break;
 
