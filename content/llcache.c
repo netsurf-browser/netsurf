@@ -846,14 +846,14 @@ static nserror llcache_object_add_to_list(llcache_object *object,
 }
 
 /**
- * Determine if an object is still fresh
+ * Determine the remaining lifetime of a cache object using the
  *
  * \param object  Object to consider
  * \return True if object is still fresh, false otherwise
  */
-static bool llcache_object_is_fresh(const llcache_object *object)
+static int
+llcache_object_rfc2616_remaining_lifetime(const llcache_cache_control *cd)
 {
-	const llcache_cache_control *cd = &object->cache;
 	int current_age, freshness_lifetime;
 	time_t now = time(NULL);
 
@@ -873,24 +873,51 @@ static bool llcache_object_is_fresh(const llcache_object *object)
 		freshness_lifetime = 0;
 
 #ifdef LLCACHE_TRACE
-	LOG(("%p: (%d > %d || %d != %d)", object, 
-			freshness_lifetime, current_age,
-			object->fetch.state, LLCACHE_FETCH_COMPLETE));
+	LOG(("%d:%d", freshness_lifetime, current_age));
+#endif
+
+	if ((cd->no_cache == LLCACHE_VALIDATE_FRESH) &&
+	    (freshness_lifetime > current_age)) {
+		/* object was not forbidden from being returned from
+		 * the cache unvalidated (i.e. the response contained
+		 * a no-cache directive)
+		 *
+		 * The object current age is within the freshness lifetime.
+		 */
+		return freshness_lifetime - current_age;
+	}
+
+	return 0; /* object has no remaining lifetime */
+}
+
+/**
+ * Determine if an object is still fresh
+ *
+ * \param object  Object to consider
+ * \return True if object is still fresh, false otherwise
+ */
+static bool llcache_object_is_fresh(const llcache_object *object)
+{
+	int remaining_lifetime;
+	const llcache_cache_control *cd = &object->cache;
+
+	remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(cd);
+
+#ifdef LLCACHE_TRACE
+	LOG(("%p: (%d > 0 || %d != %d)", object,
+	     remaining_lifetime,
+	     object->fetch.state, LLCACHE_FETCH_COMPLETE));
 #endif
 
 	/* The object is fresh if:
+	 * - it was not forbidden from being returned from the cache
+	 *   unvalidated.
 	 *
-	 * it was not forbidden from being returned from the cache 
-	 * unvalidated (i.e. the response contained a no-cache directive)
-	 *
-	 * and:
-	 *
-	 *    its current age is within the freshness lifetime
-	 * or if we're still fetching the object
+         * - it has remaining lifetime or still being fetched.
 	 */
-	return (cd->no_cache == LLCACHE_VALIDATE_FRESH && 
-			(freshness_lifetime > current_age || 
-			object->fetch.state != LLCACHE_FETCH_COMPLETE));
+	return ((cd->no_cache == LLCACHE_VALIDATE_FRESH) &&
+		((remaining_lifetime > 0) ||
+		 (object->fetch.state != LLCACHE_FETCH_COMPLETE)));
 }
 
 /**
@@ -1576,7 +1603,7 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 	
 		error = llcache_send_event_to_users(object, &event);
 	} else {
-		/* Flag that we've tried to downgrade, so that if the 
+		/* Flag that we've tried to downgrade, so that if the
 		 * fetch fails again, we give up */
 		object->fetch.tried_with_tls_downgrade = true;
 		error = llcache_object_refetch(object);
@@ -2139,6 +2166,7 @@ void llcache_clean(void)
 {
 	llcache_object *object, *next;
 	uint32_t llcache_size = 0;
+	int remaining_lifetime;
 
 #ifdef LLCACHE_TRACE
 	LOG(("Attempting cache clean"));
@@ -2175,17 +2203,25 @@ void llcache_clean(void)
 	for (object = llcache->cached_objects; object != NULL; object = next) {
 		next = object->next;
 
-		if ((object->users == NULL) && 
+		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(&object->cache);
+
+		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
-		    (llcache_object_is_fresh(object) == false) &&
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false)) {
+
+			if (remaining_lifetime > 0) {
+				/* object is fresh */
+				llcache_size += object->source_len + sizeof(*object);
+			} else {
+				/* object is not fresh */
 #ifdef LLCACHE_TRACE
-			LOG(("Found victim %p", object));
+				LOG(("Found stale cacheable object (%p) with no users or pending fetches", object));
 #endif
-			llcache_object_remove_from_list(object,
-					&llcache->cached_objects);
-			llcache_object_destroy(object);
+				llcache_object_remove_from_list(object,
+						&llcache->cached_objects);
+				llcache_object_destroy(object);
+			}
 		} else {
 			llcache_size += object->source_len + sizeof(*object);
 		}
@@ -2199,11 +2235,10 @@ void llcache_clean(void)
 				object = next) {
 			next = object->next;
 
-			if (object->users == NULL && 
-					object->candidate_count == 0 &&
-					object->fetch.fetch == NULL &&
-					object->fetch.outstanding_query == 
-							false) {
+			if ((object->users == NULL) && 
+			    (object->candidate_count == 0) &&
+			    (object->fetch.fetch == NULL) &&
+			    (object->fetch.outstanding_query == false)) {
 #ifdef LLCACHE_TRACE
 				LOG(("Found victim %p", object));
 #endif
