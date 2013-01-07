@@ -106,9 +106,7 @@ struct textarea {
 
 	void *data; /** < Callback data for both callback functions */
 
-	int drag_start_char; /**< Character index at which the drag was
-			      * started
-			      */
+	int drag_start_char; /**< Character index of drag start */
 };
 
 
