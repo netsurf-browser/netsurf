@@ -45,8 +45,6 @@ typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
 /**
  * Create a text area
  *
- * \param x X coordinate of left border
- * \param y Y coordinate of top border
  * \param width width of the text area
  * \param height width of the text area
  * \param flags text area flags
