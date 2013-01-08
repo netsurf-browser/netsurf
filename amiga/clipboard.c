@@ -137,7 +137,7 @@ bool ami_clipboard_check_for_utf8(struct IFFHandle *iffh) {
 	return utf8_chunk;
 }
 
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+void gui_get_clipboard(char **buffer, size_t *length)
 {
 	/* This and the other clipboard code is heavily based on the RKRM examples */
 	struct ContextNode *cn;
@@ -193,7 +193,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 						rlen, &clip);
 				}
 
-				browser_window_paste_text(g->shared->bw,clip,rlen,true);
+				//browser_window_paste_text(g->shared->bw,clip,rlen,true);
 			}
 			if(rlen < 0) error = rlen;
 		}
@@ -202,7 +202,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 		{
 			while((rlen = ReadChunkBytes(iffh, readbuf, 1024)) > 0)
 			{
-				browser_window_paste_text(g->shared->bw, readbuf, rlen, true);
+				//browser_window_paste_text(g->shared->bw, readbuf, rlen, true);
 			}
 			if(rlen < 0) error = rlen;
 		}
@@ -210,22 +210,24 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	CloseIFF(iffh);
 }
 
-bool gui_empty_clipboard(void)
+void gui_set_clipboard(const char *buffer, size_t length,
+	nsclipboard_styles styles[], int n_styles)
 {
-	/* Put a half-completed FTXT on the clipboard and leave it open for more additions */
-
+	char *text;
 	struct CSet cset = {0};
 
-	if(!(OpenIFF(iffh,IFFF_WRITE)))
+	if(buffer == NULL) return;
+
+	if(!(OpenIFF(iffh, IFFF_WRITE)))
 	{
-		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
+		if(!(PushChunk(iffh, ID_FTXT, ID_FORM, IFFSIZE_UNKNOWN)))
 		{
 			if(nsoption_bool(utf8_clipboard))
 			{
-				if(!(PushChunk(iffh,0,ID_CSET,32)))
+				if(!(PushChunk(iffh, 0, ID_CSET, 32)))
 				{
 					cset.CodeSet = 106; // UTF-8
-					WriteChunkBytes(iffh,&cset,32);
+					WriteChunkBytes(iffh, &cset, 32);
 					PopChunk(iffh);
 				}
 			}
@@ -233,82 +235,39 @@ bool gui_empty_clipboard(void)
 		else
 		{
 			PopChunk(iffh);
-			return false;
 		}
-		return true;
-	}
-	return false;
-}
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
-	/* This might crash or at least not work if gui_empty_clipboard isn't called first,
-	   and gui_commit_clipboard after.
-	   These only seem to be called from desktop/textinput.c in this specific order, if they
-	   are added elsewhere this might need a rewrite. */
+		if(!(PushChunk(iffh, 0, ID_CHRS, IFFSIZE_UNKNOWN))) {
+			if(nsoption_bool(utf8_clipboard)) {
+				WriteChunkBytes(iffh, buffer, length);
+			} else {
+				if(utf8_to_local_encoding(buffer, length, &text) == UTF8_CONVERT_OK) {
+					char *p;
 
-	char *buffer;
+					p = text;
 
-	if(text == NULL) return true;
-	
-	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) {
-		if(nsoption_bool(utf8_clipboard)) {
-			WriteChunkBytes(iffh,text,length);
-		} else {
-			if(utf8_to_local_encoding(text, length, &buffer) == UTF8_CONVERT_OK) {
-				char *p;
-
-				p = buffer;
-
-				while(*p != '\0') {
-					if(*p == 0xa0) *p = 0x20;
-					p++;
+					while(*p != '\0') {
+						if(*p == 0xa0) *p = 0x20;
+						p++;
+					}
+					WriteChunkBytes(iffh, text, strlen(text));
+					ami_utf8_free(text);
 				}
-				WriteChunkBytes(iffh, buffer, strlen(buffer));
-				ami_utf8_free(buffer);
 			}
+
+			PopChunk(iffh);
+		} else {
+			PopChunk(iffh);
 		}
 
-		if(space) WriteChunkBytes(iffh," ",1);
-		PopChunk(iffh);
-	} else {
-		PopChunk(iffh);
-		return false;
+		if(!(PushChunk(iffh, 0, ID_UTF8, IFFSIZE_UNKNOWN))) {
+			WriteChunkBytes(iffh, buffer, length);
+			PopChunk(iffh);
+		} else {
+			PopChunk(iffh);
+		}
+		CloseIFF(iffh);
 	}
-
-	if(!(PushChunk(iffh, 0, ID_UTF8, IFFSIZE_UNKNOWN))) {
-		WriteChunkBytes(iffh, text, length);
-		if(space) WriteChunkBytes(iffh, " ", 1);
-		PopChunk(iffh);
-	} else {
-		PopChunk(iffh);
-		return false;
-	}
-		
-	return true;
-}
-
-bool gui_commit_clipboard(void)
-{
-	if(iffh) CloseIFF(iffh);
-
-	return true;
-}
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	bool success;
-
-	if(s->defined == false) return false;
-	if(!gui_empty_clipboard()) return false;
-
-	success = selection_copy_to_clipboard(s);
-
-	/* commit regardless, otherwise we leave the clipboard in an unusable state */
-	gui_commit_clipboard();
-
-	return success;
 }
 
 struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
@@ -361,13 +320,14 @@ void ami_drag_selection(struct selection *s)
 	if(ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
 		iffh = ami_clipboard_init_internal(1);
-
+#if 0
+/* TODO: fix this */
 		if(gui_copy_to_clipboard(s))
 		{
 			browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
 			browser_window_key_press(gwin->bw, KEY_PASTE);
 		}
-
+#endif
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
 	}
@@ -407,11 +367,7 @@ void ami_drag_selection(struct selection *s)
 
 bool ami_easy_clipboard(char *text)
 {
-	if(!gui_empty_clipboard()) return false;
-	if(!gui_add_to_clipboard(text,strlen(text),false,plot_style_font))
-		return false;
-	if(!gui_commit_clipboard()) return false;
-
+	gui_set_clipboard(text, strlen(text), NULL, 0);
 	return true;
 }
 
