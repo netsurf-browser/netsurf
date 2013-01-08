@@ -37,117 +37,62 @@ static struct gui_clipboard {
 } gui_clipboard;
 
 
+
+
 /**
- * Empty the clipboard, called prior to gui_add_to_clipboard and
- * gui_commit_clipboard
+ * Core asks front end for clipboard contents.
  *
- * \return true iff successful
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
  */
-
-bool gui_empty_clipboard(void)
+void gui_get_clipboard(char **buffer, size_t *length)
 {
-	const size_t init_size = 1024;
+	*buffer = NULL;
+	*length = 0;
 
-	if (gui_clipboard.buffer_len == 0) {
-		gui_clipboard.buffer = malloc(init_size);
-		if (gui_clipboard.buffer == NULL)
-			return false;
+	if (gui_clipboard.length > 0) {
+		assert(gui_clipboard.buffer != NULL);
+		LOG(("Pasting %i bytes: \"%s\"\n", gui_clipboard.length,
+				gui_clipboard.buffer));
 
-		gui_clipboard.buffer_len = init_size;
+		*buffer = malloc(gui_clipboard.length);
+
+		if (*buffer != NULL) {
+			memcpy(*buffer, gui_clipboard.buffer,
+					gui_clipboard.length);
+			*length = gui_clipboard.length;
+		}
+	}
+}
+
+
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
+{
+	if (gui_clipboard.buffer_len < length + 1) {
+		/* Make buffer big enough */
+		char *new_buff;
+
+		new_buff = realloc(gui_clipboard.buffer, length + 1);
+		if (new_buff == NULL)
+			return;
+
+		gui_clipboard.buffer = new_buff;
+		gui_clipboard.buffer_len = length + 1;
 	}
 
 	gui_clipboard.length = 0;
 
-	return true;
-}
-
-
-/**
- * Add some text to the clipboard, optionally appending a trailing space.
- *
- * \param text text to be added
- * \param length length of text in bytes
- * \param space indicates whether a trailing space should be appended
- * \param fstyle The font style
- * \return true if successful
- */
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
-	size_t new_length = gui_clipboard.length + length + (space ? 1 : 0) + 1;
-
-	if (new_length > gui_clipboard.buffer_len) {
-		size_t new_alloc = new_length + (new_length / 4);
-		char *new_buff;
-
-		new_buff = realloc(gui_clipboard.buffer, new_alloc);
-		if (new_buff == NULL)
-			return false;
-
-		gui_clipboard.buffer = new_buff;
-		gui_clipboard.buffer_len = new_alloc;
-	}
-
-	memcpy(gui_clipboard.buffer + gui_clipboard.length, text, length);
-	gui_clipboard.length += length;
-
-	if (space)
-		gui_clipboard.buffer[gui_clipboard.length++] = ' ';
-
+	memcpy(gui_clipboard.buffer, buffer, length);
+	gui_clipboard.length = length;
 	gui_clipboard.buffer[gui_clipboard.length] = '\0';
-
-	return true;
-}
-
-
-/**
- * Commit the changes made by gui_empty_clipboard and gui_add_to_clipboard.
- *
- * \return true iff successful
- */
-
-bool gui_commit_clipboard(void)
-{
-	/* TODO: Stick the clipboard in some fbtk buffer? */
-	return true;
-}
-
-
-/**
- * Copy the selected contents to the clipboard
- *
- * \param s  selection
- * \return true iff successful, ie. cut operation can proceed without losing data
- */
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (!gui_empty_clipboard())
-		return false;
-
-	selection_copy_to_clipboard(s);
-
-	return gui_commit_clipboard();
-}
-
-
-/**
- * Request to paste the clipboard contents into a textarea/input field
- * at a given position.
- *
- * \param  g  gui window
- * \param  x  x ordinate at which to paste text
- * \param  y  y ordinate at which to paste text
- */
-
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
-{
-	if (gui_clipboard.length > 0) {
-		LOG(("Pasting %i chars: \"%s\"\n", gui_clipboard.length,
-				gui_clipboard.buffer));
-		browser_window_paste_text(g->bw, gui_clipboard.buffer,
-				gui_clipboard.length, true);
-	}
 }
 
