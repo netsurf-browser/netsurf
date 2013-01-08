@@ -971,21 +971,21 @@ MULTIHANDLER(copy)
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_copy_clipboard(GTK_EDITABLE(g->url_bar));
 	else
-		gui_copy_to_clipboard(browser_window_get_selection(bw));
+		browser_window_key_press(bw, KEY_COPY_SELECTION);
 
 	return TRUE;
 }
 
 MULTIHANDLER(paste)
 {
-	struct gui_window *gui = g->top_level;
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	GtkWidget *focused = gtk_window_get_focus(g->window);
 
 	/* If the url bar has focus, let gtk handle it */
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_paste_clipboard (GTK_EDITABLE (focused));
 	else
-		gui_paste_from_clipboard(gui, 0, 0);
+		browser_window_key_press(bw, KEY_PASTE);
 
 	return TRUE;
 }

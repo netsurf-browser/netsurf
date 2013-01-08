@@ -31,31 +31,10 @@ static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
 
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
-	/* add the text from this box */
-	current_selection = g_string_append_len(current_selection,
-		text, length);
-	if (space) g_string_append(current_selection, " ");
-	return true;
-}
 
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
-	if (s->defined && selection_copy_to_clipboard(s))
-		gui_commit_clipboard();
-	return true;
-}
 
 void gui_start_selection(struct gui_window *g)
 {
-	if (current_selection == NULL)
-		current_selection = g_string_new(NULL);
-	else
-		g_string_set_size(current_selection, 0);
-		
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_layout(g)));
 }
 
@@ -63,34 +42,61 @@ void gui_clear_selection(struct gui_window *g)
 {
 }
 
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length)
 {
-	gchar *text;
-	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
- 	text = gtk_clipboard_wait_for_text (clipboard);
- 	/* clipboard_wait... converts the string to utf8 for us */
- 	if (text != NULL)
-		browser_window_paste_text(nsgtk_get_browser_window(g), 
-				text, strlen(text), true);
-	g_free(text);
+	gchar *gtext;
+
+	*buffer = NULL;
+	*length = 0;
+
+	/* get clipboard contents from gtk */
+	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+	gtext = gtk_clipboard_wait_for_text(clipboard); /* conv to utf-8 */
+
+	if (gtext == NULL)
+		return;
+
+	*length = strlen(gtext);
+	*buffer = malloc(*length);
+	if (*buffer == NULL) {
+		*length = 0;
+		g_free(gtext);
+		return;
+	}
+
+	memcpy(*buffer, gtext, *length);
+
+	g_free(gtext);
 }
 
-bool gui_empty_clipboard(void)
+
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
 {
+	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+
 	if (!current_selection)
 		current_selection = g_string_new(NULL);
 	else
 		g_string_set_size(current_selection, 0);
 
-	return true;
-}
+	current_selection = g_string_append_len(current_selection,
+			buffer, length);
 
-bool gui_commit_clipboard(void)
-{
-	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
 	gtk_clipboard_set_text(clipboard, current_selection->str, -1);
-	gui_empty_clipboard();
-	
-	return true;
 }
  
