@@ -91,8 +91,8 @@ struct textarea {
 	int caret_x;			/**< cached X coordinate of the caret */
 	int caret_y;			/**< cached Y coordinate of the caret */
 
-	int selection_start;	/**< Character index of sel start(inclusive) */
-	int selection_end;	/**< Character index of sel end(exclusive) */
+	int sel_start;	/**< Character index of sel start(inclusive) */
+	int sel_end;	/**< Character index of sel end(exclusive) */
 
 	plot_font_style_t fstyle;	/**< Text style */
 
@@ -171,8 +171,8 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 		c_end = swap;
 	}
 
-	ta->selection_start = c_start;
-	ta->selection_end = c_end;
+	ta->sel_start = c_start;
+	ta->sel_end = c_end;
 
 	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
 
@@ -638,8 +638,8 @@ struct textarea *textarea_create(int width, int height,
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
 	ret->caret_x = MARGIN_LEFT;
 	ret->caret_y = 0;
-	ret->selection_start = -1;
-	ret->selection_end = -1;
+	ret->sel_start = -1;
+	ret->sel_end = -1;
 
 	ret->line_count = 0;
 	ret->lines = NULL;
@@ -954,14 +954,14 @@ void textarea_redraw(struct textarea *ta, int x, int y,
 			c_len++;
 
 		/* check if a part of the line is selected, won't happen if no
-		  selection (ta->selection_end = -1) */
-		if (ta->selection_end != -1 &&
-				c_pos < (unsigned)ta->selection_end &&
-				c_pos + c_len > (unsigned)ta->selection_start) {
+		  selection (ta->sel_end = -1) */
+		if (ta->sel_end != -1 &&
+				c_pos < (unsigned)ta->sel_end &&
+				c_pos + c_len > (unsigned)ta->sel_start) {
 
 			/* offset from the beginning of the line */
-			offset = ta->selection_start - c_pos;
-			chars = ta->selection_end - c_pos -
+			offset = ta->sel_start - c_pos;
+			chars = ta->sel_end - c_pos -
 					(offset > 0 ? offset:0);
 
 			line_text = &(ta->text[ta->lines[line].b_start]);
@@ -1028,8 +1028,8 @@ void textarea_redraw(struct textarea *ta, int x, int y,
 				&ta->fstyle);
 	}
 
-	if ((ta->selection_end == -1 ||
-			ta->selection_start == ta->selection_end) &&
+	if ((ta->sel_end == -1 ||
+			ta->sel_start == ta->sel_end) &&
 			x + ta->caret_x >= clip->x0 &&
 			x + ta->caret_x <= clip->x1) {
 		/* There is no selection and caret is in horizontal
@@ -1074,8 +1074,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_SELECT_ALL:
 			caret = ta->text_utf8_len;
 
- 			ta->selection_start = 0;
-			ta->selection_end = ta->text_utf8_len;
+ 			ta->sel_start = 0;
+			ta->sel_end = ta->text_utf8_len;
  			redraw = true;
  			break;
 		case KEY_COPY_SELECTION:
@@ -1083,14 +1083,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_DELETE_LEFT:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
+			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
-				     		ta->selection_start,
-						ta->selection_end, ""))
+				     		ta->sel_start,
+						ta->sel_end, ""))
 					return false;
 
-				caret = ta->selection_start;
-				ta->selection_start = ta->selection_end = -1;
+				caret = ta->sel_start;
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			} else {
 				if (caret) {
@@ -1109,7 +1109,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if(!textarea_insert_text(ta, caret, "\n"))
 				return false;
 			caret++;
-			ta->selection_start = ta->selection_end = -1;
+			ta->sel_start = ta->sel_end = -1;
 			redraw = true;
 			break;
 		case KEY_CUT_LINE:
@@ -1118,8 +1118,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			break;
 		case KEY_ESCAPE:
 		case KEY_CLEAR_SELECTION:
-			ta->selection_start = -1;
-			ta->selection_end = -1;
+			ta->sel_start = -1;
+			ta->sel_end = -1;
 			redraw = true;
 			break;
 		case KEY_LEFT:
@@ -1127,8 +1127,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				break;
 			if (caret)
 				caret--;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1137,8 +1137,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				break;
 			if (caret < ta->text_utf8_len)
 				caret++;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1157,8 +1157,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_UP:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			if (ta->flags & TEXTAREA_MULTILINE) {
@@ -1207,8 +1207,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_DOWN:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			if (ta->flags & TEXTAREA_MULTILINE) {
@@ -1246,14 +1246,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_DELETE_RIGHT:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
+			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
-				     		ta->selection_start,
-						ta->selection_end, ""))
+				     		ta->sel_start,
+						ta->sel_end, ""))
 					return false;
 
-				caret = ta->selection_start;
-				ta->selection_start = ta->selection_end = -1;
+				caret = ta->sel_start;
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			} else {
 				if (caret < ta->text_utf8_len) {
@@ -1268,8 +1268,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 			caret -= ta->caret_pos.char_off;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1284,8 +1284,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					ta->lines[ta->caret_pos.line].b_length
 					- 1] == ' ')
 				caret--;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1293,8 +1293,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 			caret = 0;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1302,8 +1302,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 			caret = ta->text_utf8_len;
-			if (ta->selection_start != -1) {
-				ta->selection_start = ta->selection_end = -1;
+			if (ta->sel_start != -1) {
+				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
 			break;
@@ -1313,12 +1313,12 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_DELETE_LINE_END:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
+			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
-				     		ta->selection_start,
-						ta->selection_end, ""))
+				     		ta->sel_start,
+						ta->sel_end, ""))
 					return false;
-				ta->selection_start = ta->selection_end = -1;
+				ta->sel_start = ta->sel_end = -1;
 			} else {
 				b_off = ta->lines[ta->caret_pos.line].b_start;
 				b_len = ta->lines[ta->caret_pos.line].b_length;
@@ -1333,12 +1333,12 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_DELETE_LINE_START:
 			if (readonly)
 				break;
-			if (ta->selection_start != -1) {
+			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
-				     		ta->selection_start,
-						ta->selection_end, ""))
+				     		ta->sel_start,
+						ta->sel_end, ""))
 					return false;
-				ta->selection_start = ta->selection_end = -1;
+				ta->sel_start = ta->sel_end = -1;
 			} else {
 				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.char_off,
@@ -1378,9 +1378,9 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			textarea_set_caret_xy(ta, x, y);
 			ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
 		}
-		if (ta->selection_start != -1) {
+		if (ta->sel_start != -1) {
 			/* remove selection */
-			ta->selection_start = ta->selection_end = -1;
+			ta->sel_start = ta->sel_end = -1;
 			ta->redraw_request(ta->data, 0, 0,
 					ta->vis_width,
 					ta->vis_height);
