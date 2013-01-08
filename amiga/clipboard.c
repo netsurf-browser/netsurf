@@ -299,7 +299,6 @@ struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 	return sel;
 }
 
-#if 0
 void ami_drag_selection(struct selection *s)
 {
 	int x;
@@ -364,7 +363,6 @@ void ami_drag_selection(struct selection *s)
 		}
 	}
 }
-#endif
 
 bool ami_easy_clipboard(char *text)
 {
