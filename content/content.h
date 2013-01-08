@@ -78,8 +78,7 @@ typedef enum {
 	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
 	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
 	CONTENT_MSG_SAVELINK,  /**< Allow URL to be saved */
-	CONTENT_MSG_POINTER,   /**< Wants a specific mouse pointer set */
-	CONTENT_MSG_PASTE      /**< Inform that content wants clipboard paste */
+	CONTENT_MSG_POINTER    /**< Wants a specific mouse pointer set */
 } content_msg;
 
 /** RFC5988 metadata link */

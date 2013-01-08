@@ -1545,12 +1545,6 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_set_pointer(bw, event->data.pointer);
 		break;
 
-	case CONTENT_MSG_PASTE:
-		/* Content wants a clipboard paste */
-		gui_paste_from_clipboard(bw->window,
-				event->data.paste.x, event->data.paste.y);
-		break;
-
 	default:
 		assert(0);
 	}
