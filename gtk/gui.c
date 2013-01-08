@@ -1028,7 +1028,19 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 		return gdk_keyval_to_unicode(key->keyval);
 	case 'u':
 		if (key->state & GDK_CONTROL_MASK)
-			return KEY_CLEAR_SELECTION;
+			return KEY_CUT_LINE;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'c':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_COPY_SELECTION;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'v':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_PASTE;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'x':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_CUT_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
 	case GDK_KEY(Escape):
 		return KEY_ESCAPE;
