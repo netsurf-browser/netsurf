@@ -130,7 +130,7 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 	/* safe keys that can be handled whether input claimed or not */
 	switch (key) {
 		case KEY_COPY_SELECTION:
-			gui_copy_to_clipboard(bw->cur_sel);
+			selection_copy_to_clipboard(bw->cur_sel);
 			return true;
 
 		case KEY_CLEAR_SELECTION:
@@ -172,6 +172,8 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
  * \param  utf8_len  length (bytes) of text block
  * \param  last      true iff this is the last chunk (update screen too)
  * \return true iff successful
+ *
+ * TODO: Remove this function.
  */
 
 bool browser_window_paste_text(struct browser_window *bw, const char *utf8,

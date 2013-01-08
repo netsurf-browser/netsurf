@@ -76,6 +76,13 @@ static bool textinput_input_paste_text(struct browser_window *bw,
 #define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
 
 
+static struct textinput_buffer {
+	char *buffer;
+	size_t buffer_len;
+	size_t length;
+} textinput_buffer;
+
+
 
 /**
  * Given the x,y co-ordinates of a point within a textarea, return the
@@ -525,6 +532,69 @@ static struct box *textinput_line_below(struct box *text_box)
 
 
 /**
+ * Add some text to the buffer, optionally appending a trailing space.
+ *
+ * \param text text to be added
+ * \param length length of text in bytes
+ * \param space indicates whether a trailing space should be appended
+ * \param fstyle The font style
+ * \return true if successful
+ */
+
+static bool textinput_add_to_buffer(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
+{
+	size_t new_length = textinput_buffer.length + length + (space ? 1 : 0) + 1;
+
+	if (new_length > textinput_buffer.buffer_len) {
+		size_t new_alloc = new_length + (new_length / 4);
+		char *new_buff;
+
+		new_buff = realloc(textinput_buffer.buffer, new_alloc);
+		if (new_buff == NULL)
+			return false;
+
+		textinput_buffer.buffer = new_buff;
+		textinput_buffer.buffer_len = new_alloc;
+	}
+
+	memcpy(textinput_buffer.buffer + textinput_buffer.length, text, length);
+	textinput_buffer.length += length;
+
+	if (space)
+		textinput_buffer.buffer[textinput_buffer.length++] = ' ';
+
+	textinput_buffer.buffer[textinput_buffer.length] = '\0';
+
+	return true;
+}
+
+
+/**
+ * Empty the buffer, called prior to textinput_add_to_buffer sequence
+ *
+ * \return true iff successful
+ */
+
+static bool textinput_empty_buffer(void)
+{
+	const size_t init_size = 1024;
+
+	if (textinput_buffer.buffer_len == 0) {
+		textinput_buffer.buffer = malloc(init_size);
+		if (textinput_buffer.buffer == NULL)
+			return false;
+
+		textinput_buffer.buffer_len = init_size;
+	}
+
+	textinput_buffer.length = 0;
+
+	return true;
+}
+
+
+/**
  * Cut a range of text from a text box,
  * possibly placing it on the global clipboard.
  *
@@ -546,27 +616,26 @@ static bool textinput_textarea_cut(struct content *c,
 	bool success = true;
 	bool del = false;	/* caller expects start_box to persist */
 
-	if (clipboard && !gui_empty_clipboard())
+	if (textinput_empty_buffer() == false) {
 		return false;
+	}
 
 	while (box && box != end_box) {
 		/* read before deletion, in case the whole box goes */
 		struct box *next = box->next;
 
 		if (box->type == BOX_BR) {
-			if (clipboard && !gui_add_to_clipboard("\n", 1, false,
-					plot_style_font)) {
-				gui_commit_clipboard();
+			if (clipboard && !textinput_add_to_buffer("\n", 1,
+					false, plot_style_font)) {
 				return false;
 			}
 			box_unlink_and_free(box);
 		} else {
 			/* append box text to clipboard and then delete it */
 			if (clipboard &&
-				!gui_add_to_clipboard(box->text + start_idx,
+				!textinput_add_to_buffer(box->text + start_idx,
 					box->length - start_idx,
 					SPACE_LEN(box), plot_style_font)) {
-				gui_commit_clipboard();
 				return false;
 			}
 
@@ -575,7 +644,6 @@ static bool textinput_textarea_cut(struct content *c,
 						start_idx,
 						(box->length + SPACE_LEN(box)) -
 						start_idx) && clipboard) {
-					gui_commit_clipboard();
 					return false;
 				}
 			} else {
@@ -592,7 +660,7 @@ static bool textinput_textarea_cut(struct content *c,
 
 	/* and the last box */
 	if (box) {
-		if (clipboard && !gui_add_to_clipboard(box->text + start_idx,
+		if (clipboard && !textinput_add_to_buffer(box->text + start_idx,
 				end_idx - start_idx, end_idx > box->length,
 				plot_style_font)) {
 			success = false;
@@ -608,10 +676,12 @@ static bool textinput_textarea_cut(struct content *c,
 		}
 	}
 
-	if (clipboard && !gui_commit_clipboard())
-		success = false;
+	if (clipboard) {
+		gui_set_clipboard(textinput_buffer.buffer,
+				textinput_buffer.length, NULL, 0);
+	}
 
-	return success;
+	return true;
 }
 
 
@@ -1310,14 +1380,18 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		union content_msg_data msg_data;
-		msg_data.paste.x = box_x + inline_container->x +
-				text_box->x + pixel_offset;
-		msg_data.paste.y = box_y + inline_container->y + text_box->y;
-		content_broadcast(c, CONTENT_MSG_PASTE, msg_data);
+		char *buff;
+		size_t buff_len;
+		bool success;
 
-		/* screen updated and caret repositioned already */
-		return true;
+		gui_get_clipboard(&buff, &buff_len);
+		if (utf8 == NULL)
+			return false;
+
+		success = browser_window_paste_text(bw, buff, buff_len, true);
+		free(buff);
+
+		return success;
 	}
 
 	case KEY_CUT_SELECTION:
@@ -1804,7 +1878,6 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 	struct box *text_box = input->children->children;
 	size_t box_offset = input->gadget->caret_box_offset;
 	size_t end_offset;
-	int pixel_offset = input->gadget->caret_pixel_offset;
 	int box_x, box_y;
 	struct form* form = input->gadget->form;
 	bool changed = false;
@@ -1954,14 +2027,18 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		union content_msg_data msg_data;
-		msg_data.paste.x = box_x + input->children->x + text_box->x +
-				pixel_offset;
-		msg_data.paste.y = box_y + input->children->y + text_box->y;
-		content_broadcast(c, CONTENT_MSG_PASTE, msg_data);
+		char *buff;
+		size_t buff_len;
+		bool success;
 
-		/* screen updated and caret repositioned already */
-		return true;
+		gui_get_clipboard(&buff, &buff_len);
+		if (utf8 == NULL)
+			return false;
+
+		success = browser_window_paste_text(bw, buff, buff_len, true);
+		free(buff);
+
+		return success;
 	}
 
 	case KEY_CUT_SELECTION:
