@@ -774,8 +774,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_COPY, 0, 0);
 		} else if (gw->bw != NULL) {
-			gui_copy_to_clipboard(
-					browser_window_get_selection(gw->bw));
+			browser_window_key_press(gw->bw, KEY_COPY_SELECTION);
 		}
 		break;
 
@@ -791,7 +790,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, WM_PASTE, 0, 0);
 		else
-			gui_paste_from_clipboard(gw, 0, 0);
+			browser_window_key_press(gw->bw, KEY_PASTE);
 		break;
 	}
 
