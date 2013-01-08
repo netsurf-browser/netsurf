@@ -119,12 +119,33 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
 void gui_clear_selection(struct gui_window *g);
 
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y);
-bool gui_empty_clipboard(void);
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle);
-bool gui_commit_clipboard(void);
-bool gui_copy_to_clipboard(struct selection *s);
+
+
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length);
+
+typedef struct nsnsclipboard_styles {
+	size_t start;			/**< Start of run */
+
+	plot_font_style_t style;	/**< Style to give text run */
+} nsclipboard_styles;
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles);
+
+
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control);
