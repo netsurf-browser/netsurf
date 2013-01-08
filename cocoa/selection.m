@@ -105,10 +105,3 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (selection_defined( s ) && selection_copy_to_clipboard( s ))
-		gui_commit_clipboard();
-	return true;
-}
-
