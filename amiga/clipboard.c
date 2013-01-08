@@ -137,10 +137,62 @@ bool ami_clipboard_check_for_utf8(struct IFFHandle *iffh) {
 	return utf8_chunk;
 }
 
+char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
+{
+	struct CollectionItem *ci_curr = ci;
+	size_t len = 0;
+	char *text = NULL, *p, *clip;
+
+	/* Scan the collected chunks to find out the total size */
+	do {
+		len += ci_curr->ci_Size;
+	} while (ci_curr = ci_curr->ci_Next);
+
+	text = malloc(len);
+
+	if(text == NULL) return NULL;
+
+	/* p points to the end of the buffer. This is because the chunks are
+	 * in the list in reverse order. */
+	p = text + len;
+	ci_curr = ci;
+
+	do {
+		p -= ci_curr->ci_Size;
+
+		switch(codeset) {
+			case 106:
+				memcpy(p, ci_curr->ci_Data, ci_curr->ci_Size);
+			break;
+
+			/* If codeset isn't 106 (UTF-8) we need to convert to UTF-8.
+			 * TODO: ensure buffer is big enough for converted text */
+
+			case 0:
+				utf8_from_local_encoding(ci_curr->ci_Data, ci_curr->ci_Size, &clip);
+				memcpy(p, clip, ci_curr->ci_Size);
+				free(clip);
+			break;
+
+			default:
+				utf8_from_enc(ci_curr->ci_Data,
+						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
+										codeset, DFCS_MIMENAME),
+						ci_curr->ci_Size, &clip);
+				memcpy(p, clip, ci_curr->ci_Size);
+				free(clip);
+			break;
+		}
+	} while (ci_curr = ci_curr->ci_Next);
+
+	*text_length = len;
+	return text;
+}
+
 void gui_get_clipboard(char **buffer, size_t *length)
 {
-	/* This and the other clipboard code is heavily based on the RKRM examples */
 	struct ContextNode *cn;
+	struct CollectionItem *ci = NULL;
 	ULONG rlen=0,error;
 	struct CSet cset;
 	LONG codeset = 0;
@@ -150,17 +202,11 @@ void gui_get_clipboard(char **buffer, size_t *length)
 
 	cset.CodeSet = 0;
 
-	if(ami_clipboard_check_for_utf8(iffh))
-		utf8_chunks = true;
-	
 	if(OpenIFF(iffh,IFFF_READ)) return;
 	
-	if(utf8_chunks == false) {
-		if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
-		if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
-	} else {
-		if(StopChunk(iffh,ID_FTXT,ID_UTF8)) return;
-	}
+	if(CollectionChunk(iffh,ID_FTXT,ID_CHRS)) return;
+	if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
+	if(CollectionChunk(iffh,ID_FTXT,ID_UTF8)) return;
 	
 	while(1)
 	{
@@ -170,43 +216,26 @@ void gui_get_clipboard(char **buffer, size_t *length)
 
 		cn = CurrentChunk(iffh);
 
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET)&&(utf8_chunks == false))
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
 		{
-			rlen = ReadChunkBytes(iffh,&cset,32);
+			/* Ideally when we stop here, we need to convert all CHRS chunks up to this
+			 * point based on the previous codeset.  However, for simplicity, we just
+			 * assume only one CSET chunk is present and only take note of the last
+			 * CSET chunk if there is more than one.
+			 */
+
+			rlen = ReadChunkBytes(iffh, &cset, 32);
 			if(cset.CodeSet == 1) codeset = 106;
 				else codeset = cset.CodeSet;
 		}
-
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS)&&(utf8_chunks == false))
-		{
-			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
-			{
-				if(codeset == 0)
-				{
-					utf8_from_local_encoding(readbuf,rlen,&clip);
-				}
-				else
-				{
-					utf8_from_enc(readbuf,
-						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
-										codeset, DFCS_MIMENAME),
-						rlen, &clip);
-				}
-
-				//browser_window_paste_text(g->shared->bw,clip,rlen,true);
-			}
-			if(rlen < 0) error = rlen;
-		}
-
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_UTF8)&&(utf8_chunks == true))
-		{
-			while((rlen = ReadChunkBytes(iffh, readbuf, 1024)) > 0)
-			{
-				//browser_window_paste_text(g->shared->bw, readbuf, rlen, true);
-			}
-			if(rlen < 0) error = rlen;
-		}
 	}
+
+	if(ci = FindCollection(iffh, ID_FTXT, ID_UTF8)) {
+		*buffer = ami_clipboard_cat_collection(ci, 106, length);
+	} else if(ci = FindCollection(iffh, ID_FTXT, ID_CHRS)) {
+		*buffer = ami_clipboard_cat_collection(ci, codeset, length);
+	}
+
 	CloseIFF(iffh);
 }
 
