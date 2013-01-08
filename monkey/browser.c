@@ -327,34 +327,28 @@ gui_clear_selection(struct gui_window *g)
 {
 }
 
-void
-gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length)
 {
 }
 
-bool
-gui_empty_clipboard(void)
-{
-  return true;
-}
 
-bool
-gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
 {
-  return true;
-}
-
-bool
-gui_commit_clipboard(void)
-{
-  return true;
-}
-
-bool
-gui_copy_to_clipboard(struct selection *s)
-{
-  return true;
 }
 
 void
