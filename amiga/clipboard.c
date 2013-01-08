@@ -250,7 +250,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 						if(*p == 0xa0) *p = 0x20;
 						p++;
 					}
-					WriteChunkBytes(iffh, textr, strlen(text));
+					WriteChunkBytes(iffh, text, strlen(text));
 					ami_utf8_free(text);
 				}
 			}
