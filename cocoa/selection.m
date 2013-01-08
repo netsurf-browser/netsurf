@@ -28,7 +28,6 @@ static NSMutableString *cocoa_clipboard_string;
 
 void gui_start_selection(struct gui_window *g)
 {
-	gui_empty_clipboard();
 }
 
 void gui_clear_selection(struct gui_window *g)
@@ -54,7 +53,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 		const char *text = [string UTF8String];
 		*length = strlen(text);
 
-		*buffer = malloc(gui_clipboard.length);
+		*buffer = malloc(*length);
 
 		if (*buffer != NULL) {
 			memcpy(*buffer, text, *length);
