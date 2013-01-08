@@ -77,6 +77,9 @@ struct selection_string {
 	char *buffer;
 	size_t buffer_len;
 	size_t length;
+
+	int n_styles;
+	nsclipboard_styles *styles;
 };
 
 
@@ -743,69 +746,6 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 
 
 /**
- * Selection traversal routine for appending text to the current contents
- * of the clipboard.
- *
- * \param  text		pointer to text being added, or NULL for newline
- * \param  length	length of text to be appended (bytes)
- * \param  box		pointer to text box, or NULL if from textplain
- * \param  handle	unused handle, we don't need one
- * \param  whitespace_text    whitespace to place before text for formatting
- *                            may be NULL
- * \param  whitespace_length  length of whitespace_text
- * \return true iff successful and traversal should continue
- */
-
-static bool selection_copy_clip_handler(const char *text, size_t length,
-		struct box *box, void *handle, const char *whitespace_text,
-		size_t whitespace_length)
-{
-	bool add_space = false;
-	plot_font_style_t style = *plot_style_font;
-
-	/* add any whitespace which precedes the text from this box */
-	if (whitespace_text != NULL && whitespace_length > 0) {
-		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false, &style)) {
-			return false;
-		}
-	}
-
-	if (box != NULL) {
-		/* HTML */
-		add_space = (box->space != 0);
-
-		if (box->style != NULL) {
-			/* Override default font style */
-			font_plot_style_from_css(box->style, &style);
-		} else {
-			/* If there's no style, there must be no text */
-			assert(box->text == NULL);
-		}
-	}
-
-	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, add_space, &style))
-		return false;
-
-	return true;
-}
-
-
-/**
- * Copy the selected contents to the clipboard
- *
- * \param s  selection
- * \return true iff successful, ie. cut operation can proceed without losing data
- */
-
-bool selection_copy_to_clipboard(struct selection *s)
-{
-	return selection_traverse(s, selection_copy_clip_handler, NULL);
-}
-
-
-/**
  * Append text to selection string.
  *
  * \param  text        text to be added
@@ -816,11 +756,34 @@ bool selection_copy_to_clipboard(struct selection *s)
  */
 
 static bool selection_string_append(const char *text, size_t length, bool space,
-		struct selection_string *sel_string)
+		plot_font_style_t *style, struct selection_string *sel_string)
 {
 	size_t new_length = sel_string->length + length + (space ? 1 : 0) + 1;
 
+	if (style != NULL) {
+		/* Add text run style */
+		nsclipboard_styles *new_styles;
+
+		if (sel_string->n_styles == 0)
+			assert(sel_string->length == 0);
+
+		new_styles = realloc(sel_string->styles,
+				(sel_string->n_styles + 1) *
+				sizeof(nsclipboard_styles));
+		if (new_styles == NULL)
+			return false;
+
+		sel_string->styles = new_styles;
+
+		sel_string->styles[sel_string->n_styles].style = *style;
+		sel_string->styles[sel_string->n_styles].start =
+				sel_string->length;
+
+		sel_string->n_styles++;
+	}
+
 	if (new_length > sel_string->buffer_len) {
+		/* Need to extend buffer */
 		size_t new_alloc = new_length + (new_length / 4);
 		char *new_buff;
 
@@ -832,12 +795,14 @@ static bool selection_string_append(const char *text, size_t length, bool space,
 		sel_string->buffer_len = new_alloc;
 	}
 
+	/* Copy text onto end of existing text in buffer */
 	memcpy(sel_string->buffer + sel_string->length, text, length);
 	sel_string->length += length;
 
 	if (space)
 		sel_string->buffer[sel_string->length++] = ' ';
 
+	/* Ensure NULL termination */
 	sel_string->buffer[sel_string->length] = '\0';
 
 	return true;
@@ -862,11 +827,13 @@ static bool selection_copy_handler(const char *text, size_t length,
 		size_t whitespace_length)
 {
 	bool add_space = false;
+	plot_font_style_t style;
+	plot_font_style_t *pstyle = NULL;
 
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text != NULL && whitespace_length > 0) {
 		if (!selection_string_append(whitespace_text,
-				whitespace_length, false, handle)) {
+				whitespace_length, false, pstyle, handle)) {
 			return false;
 		}
 	}
@@ -874,10 +841,19 @@ static bool selection_copy_handler(const char *text, size_t length,
 	if (box != NULL) {
 		/* HTML */
 		add_space = (box->space != 0);
+
+		if (box->style != NULL) {
+			/* Override default font style */
+			font_plot_style_from_css(box->style, &style);
+			pstyle = &style;
+		} else {
+			/* If there's no style, there must be no text */
+			assert(box->text == NULL);
+		}
 	}
 
 	/* add the text from this box */
-	if (!selection_string_append(text, length, add_space, handle))
+	if (!selection_string_append(text, length, add_space, pstyle, handle))
 		return false;
 
 	return true;
@@ -891,25 +867,66 @@ static bool selection_copy_handler(const char *text, size_t length,
  * \return string of selected text, or NULL.  Ownership passed to caller.
  */
 
-char * selection_get_copy(struct selection *s)
+char *selection_get_copy(struct selection *s)
 {
 	struct selection_string sel_string = {
 		.buffer = NULL,
 		.buffer_len = 0,
-		.length = 0
+		.length = 0,
+
+		.n_styles = 0,
+		.styles = NULL
 	};
 
 	if (s == NULL || !s->defined)
 		return NULL;
 
 	if (!selection_traverse(s, selection_copy_handler, &sel_string)) {
-		if (sel_string.buffer != NULL) {
-			free(sel_string.buffer);
-		}
+		free(sel_string.buffer);
+		free(sel_string.styles);
 		return NULL;
 	}
 
+	free(sel_string.styles);
+
 	return sel_string.buffer;
+}
+
+
+
+/**
+ * Copy the selected contents to the clipboard
+ *
+ * \param s  selection
+ * \return true iff successful
+ */
+bool selection_copy_to_clipboard(struct selection *s)
+{
+	struct selection_string sel_string = {
+		.buffer = NULL,
+		.buffer_len = 0,
+		.length = 0,
+
+		.n_styles = 0,
+		.styles = NULL
+	};
+
+	if (s == NULL || !s->defined)
+		return false;
+
+	if (!selection_traverse(s, selection_copy_handler, &sel_string)) {
+		free(sel_string.buffer);
+		free(sel_string.styles);
+		return false;
+	}
+
+	gui_set_clipboard(sel_string.buffer, sel_string.length,
+			sel_string.styles, sel_string.n_styles);
+
+	free(sel_string.buffer);
+	free(sel_string.styles);
+
+	return true;
 }
 
 

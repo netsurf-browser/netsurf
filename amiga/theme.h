@@ -35,5 +35,10 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw);
 
 void ami_init_mouse_pointers(void);
 void ami_mouse_pointers_free(void);
-void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
+void ami_set_pointer(struct gui_window_2 *gwin, gui_pointer_shape shape, bool update);
+void ami_reset_pointer(struct gui_window_2 *gwin);
+/* Use the following ONLY if nothing other than the Intuition window pointer is available,
+ * and ALWAYS in preference to SetWindowPointer(), as it features more pointers and uses
+ * the correct ones specified in user preferences. */
+void ami_update_pointer(struct Window *win, gui_pointer_shape shape); 
 #endif

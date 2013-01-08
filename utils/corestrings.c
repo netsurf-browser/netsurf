@@ -638,7 +638,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(href);
 	CSS_DOM_STRING_INTERN(hreflang);
 	CSS_DOM_STRING_INTERN(hspace);
-	CSS_DOM_STRING_INTERN(http_equiv);
+	/* http-equiv: see below */
 	CSS_DOM_STRING_INTERN(id);
 	CSS_DOM_STRING_INTERN(input);
 	CSS_DOM_STRING_INTERN(invalid);

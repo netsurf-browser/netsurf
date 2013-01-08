@@ -81,7 +81,7 @@ static bool fetch_data_can_fetch(const nsurl *url)
 }
 
 static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
-		 bool only_2xx, const char *post_urlenc,
+		 bool only_2xx, bool downgrade_tls, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {

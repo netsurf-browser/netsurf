@@ -184,33 +184,6 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 
 
 /**
- * Empty the clipboard, called prior to gui_add_to_clipboard and
- * gui_commit_clipboard
- *
- * \return true iff successful
- */
-
-bool gui_empty_clipboard(void)
-{
-	const int init_size = 1024;
-
-	if (!clip_alloc) {
-		clipboard = malloc(init_size);
-		if (!clipboard) {
-			LOG(("out of memory"));
-			warn_user("NoMemory", 0);
-			return false;
-		}
-		clip_alloc = init_size;
-	}
-
-	clip_length = 0;
-
-	return true;
-}
-
-
-/**
  * Perform tasks after a selection has been cleared.
  *
  * \param g  gui window
@@ -224,63 +197,35 @@ void gui_clear_selection(struct gui_window *g)
 
 
 /**
- * Add some text to the clipboard, optionally appending a trailing space.
+ * Core tells front end to put given text in clipboard
  *
- * \param  text    text to be added
- * \param  length  length of text in bytes
- * \param  space   indicates whether a trailing space should be appended also
- * \param  fstyle  font plot style for text
- * \return true iff successful
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
  */
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
 {
-	size_t new_length = clip_length + length + (space ? 1 : 0);
+	utf8_convert_ret res;
+	char *new_cb;
 
-	if (new_length > clip_alloc) {
-		size_t new_alloc = clip_alloc + (clip_alloc / 4);
-		char *new_cb;
+	if (length == 0)
+		return;
 
-		if (new_alloc < new_length) new_alloc = new_length;
+	/* Convert to local encoding */
+	res = utf8_to_local_encoding(buffer, length, &new_cb);
 
-		new_cb = realloc(clipboard, new_alloc);
-		if (!new_cb) return false;
+	if (res != UTF8_CONVERT_OK || new_cb == NULL)
+		return;
 
-		clipboard = new_cb;
-		clip_alloc = new_alloc;
-	}
-
-	memcpy(clipboard + clip_length, text, length);
-	clip_length += length;
-	if (space) clipboard[clip_length++] = ' ';
-
-	return true;
-}
-
-
-/**
- * Commit the changes made by gui_empty_clipboard and gui_add_to_clipboard.
- *
- * \return true iff successful
- */
-
-bool gui_commit_clipboard(void)
-{
-	if (clip_length) {
-		utf8_convert_ret res;
-		char *new_cb;
-
-		res = utf8_to_local_encoding(clipboard, clip_length, &new_cb);
-		if (res == UTF8_CONVERT_OK) {
-			free(clipboard);
-			clipboard = new_cb;
-/* \todo utf8_to_local_encoding should return the length! */
-			clip_alloc = clip_length = strlen(new_cb);
-		}
-	}
+	/* Replace existing clipboard contents with converted text */
+	free(clipboard);
+	clipboard = new_cb;
+	clip_alloc = clip_length = strlen(new_cb);
 
 	if (!owns_clipboard) {
+		/* Tell RO we now own clipboard */
 		wimp_full_message_claim_entity msg;
 		os_error *error;
 
@@ -302,44 +247,20 @@ bool gui_commit_clipboard(void)
 	}
 
 	LOG(("clipboard now holds %zd bytes", clip_length));
-
-	return true;
-}
-
-
-
-/**
- * Copy the selected contents to the global clipboard,
- * and claim ownership of the clipboard from other apps.
- *
- * \param s  selection
- * \return true iff successful, ie. cut operation can proceed without losing data
- */
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (!gui_empty_clipboard())
-		return false;
-
-	selection_copy_to_clipboard(s);
-
-	return gui_commit_clipboard();
 }
 
 
 /**
- * Request to paste the clipboard contents into a textarea/input field
- * at a given position. Note that the actual operation may take place
- * straight away (local clipboard) or in a number of chunks at some
- * later time (clipboard owned by another app).
+ * Core asks front end for clipboard contents.
  *
- * \param  g  gui window
- * \param  x  x ordinate at which to paste text
- * \param  y  y ordinate at which to paste text
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
  */
-
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+void gui_get_clipboard(char **buffer, size_t *length)
 {
+	*buffer = NULL;
+	*length = 0;
+
 	if (owns_clipboard) {
 		if (clip_length > 0) {
 			char *utf8;
@@ -349,14 +270,17 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 			ret = utf8_from_local_encoding(clipboard,
 					clip_length, &utf8);
 			if (ret == UTF8_CONVERT_OK) {
-				browser_window_paste_text(g->bw, utf8,
-						strlen(utf8), true);
-				free(utf8);
+				*buffer = utf8;
+				*length = strlen(utf8);
 			}
 		}
-	}
-	else {
-		wimp_full_message_data_request msg;
+	} else {
+		/** TODO: Handle case when we don't own the clipboard */
+
+/*  http://www.starfighter.acornarcade.com/mysite/articles/SelectionModel.html
+ */
+
+/*		wimp_full_message_data_request msg;
 		os_error *error;
 		os_coord pos;
 
@@ -381,7 +305,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 		}
-	}
+*/	}
 }
 
 

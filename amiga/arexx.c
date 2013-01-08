@@ -275,7 +275,8 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 	if(!bw) return;
 
-	ami_update_pointer(bw->window->shared->win,GUI_POINTER_WAIT);
+	ami_set_pointer(bw->window->shared, GUI_POINTER_WAIT, false);
+					
 	if(fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0))
 	{
 		if(source_data = content_get_source_data(bw->current_content, &source_size))
@@ -285,7 +286,7 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(hlcache_handle_get_url(bw->current_content)));
 	}
 
-	ami_update_pointer(bw->window->shared->win,GUI_POINTER_DEFAULT);
+	ami_reset_pointer(bw->window->shared);
 }
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))

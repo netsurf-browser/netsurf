@@ -10,6 +10,57 @@
 
 webidlfile "dom.idl";
 
+preamble %{
+#include "comment.h"
+#include "text.h"
+#include "htmlelement.h"
+%}
+
+
+prologue %{
+/* CAUTION this expects all javascript Node objects private pointers
+ * to have private->node in the same place.
+ */
+static struct dom_node *jsnode_to_domnode(JSContext *cx, JSObject *jsnode)
+{
+	struct jsclass_private *jsnode_private;
+
+	if (jsnode == NULL) {
+		return NULL;
+	}
+
+	/* element */
+	jsnode_private = JS_GetInstancePrivate(cx,
+					       jsnode,
+					       &JSClass_HTMLElement,
+					       NULL);
+	if (jsnode_private != NULL) {
+		return (struct dom_node *)jsnode_private->node;
+	}
+
+	/* text */
+	jsnode_private = JS_GetInstancePrivate(cx,
+					       jsnode,
+					       &JSClass_Text,
+					       NULL);
+	if (jsnode_private != NULL) {
+		return (struct dom_node *)jsnode_private->node;
+	}
+
+	/* comment */
+	jsnode_private = JS_GetInstancePrivate(cx,
+					       jsnode,
+					       &JSClass_Comment,
+					       NULL);
+	if (jsnode_private != NULL) {
+		return (struct dom_node *)jsnode_private->node;
+	}
+
+	return NULL;
+}
+
+%}
+
 /* interface Node members */
 
 getter nodeType %{
@@ -74,34 +125,26 @@ getter textContent %{
 	}
 %}
 
-
+/* interface Node { Node appendChild(Node node); } */
 operation appendChild %{
+	struct dom_node *domnode; /* dom node from js input node */
 	struct dom_node *result = NULL;
 	dom_exception exc;
-
-	struct jsclass_private *node_private;
 	dom_node_type node_type;
 
-	JSLOG("appending %p", node);
-
-	/* CAUTION this expects all Node objects private pointers to
-	 * have private->node in the same place
-	 */
-	/* text */
-	node_private = JS_GetInstancePrivate(cx, node, &JSClass_Text, NULL);
-	if (node_private == NULL) {
-		/* element */
-		node_private = JS_GetInstancePrivate(cx, node, &JSClass_HTMLElement, NULL);
-	}
-
-	if (node_private == NULL) {
-		/* type error? */
+	domnode = jsnode_to_domnode(cx, node);
+	if (domnode == NULL) {
+		/* should cause Error: NOT_FOUND_ERR: DOM Exception 8 */
+		JSLOG("Error: NOT_FOUND_ERR: DOM Exception 8");
 		return JS_FALSE;
 	}
 
+	JSLOG("appending js node %p (dom %p)", node, domnode);
+
 	/* append the found element */
-	exc = dom_node_append_child(private->node, node_private->node, &result);
+	exc = dom_node_append_child(private->node, domnode, &result);
 	if (exc != DOM_NO_ERR) {
+		JSLOG("Error: DOM Exception (libdom append child)");
 		return JS_FALSE;
 	}
 

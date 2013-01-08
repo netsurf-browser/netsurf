@@ -77,6 +77,7 @@ struct curl_fetch_info {
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
+	bool downgrade_tls;	/**< Downgrade to TLS <= 1.0 */
 	nsurl *url;		/**< URL of this fetch. */
 	lwc_string *host;	/**< The hostname of this fetch. */
 	struct curl_slist *headers;	/**< List of request headers. */
@@ -114,7 +115,7 @@ static bool fetch_curl_initialise(lwc_string *scheme);
 static void fetch_curl_finalise(lwc_string *scheme);
 static bool fetch_curl_can_fetch(const nsurl *url);
 static void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
-		 bool only_2xx, const char *post_urlenc,
+		 bool only_2xx, bool downgrade_tls, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers);
 static bool fetch_curl_start(void *vfetch);
@@ -348,7 +349,7 @@ bool fetch_curl_can_fetch(const nsurl *url)
  */
 
 void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
-		 bool only_2xx, const char *post_urlenc,
+		 bool only_2xx, bool downgrade_tls, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
@@ -370,6 +371,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
+	fetch->downgrade_tls = downgrade_tls;
 	fetch->headers = NULL;
 	fetch->url = nsurl_ref(url);
 	fetch->host = nsurl_get_component(url, NSURL_HOST);
@@ -665,14 +667,28 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 CURLcode
 fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 {
+	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	SSL_CTX *sslctx = _sslctx;
+	long options = SSL_OP_ALL;
+
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
 	SSL_CTX_set_cert_verify_callback(sslctx, fetch_curl_cert_verify_callback,
 					 parm);
+
+	if (f->downgrade_tls) {
+#ifdef SSL_OP_NO_TLSv1_1
+		/* Disable TLS1.1, if the server can't cope with it */
+		options |= SSL_OP_NO_TLSv1_1;
+#endif
+	}
+
 #ifdef SSL_OP_NO_TLSv1_2
 	/* Disable TLS1.2, as it causes some servers to stall. */
-	SSL_CTX_set_options(sslctx, SSL_OP_NO_TLSv1_2);
+	options |= SSL_OP_NO_TLSv1_2;
 #endif
+
+	SSL_CTX_set_options(sslctx, options);
+
 	return CURLE_OK;
 }
 
@@ -851,17 +867,16 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		else {
 			finished = true;
 		}
-	} else if (result == CURLE_WRITE_ERROR && f->stopped)
+	} else if (result == CURLE_WRITE_ERROR && f->stopped) {
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
 		;
-	else if (result == CURLE_SSL_PEER_CERTIFICATE ||
+	} else if (result == CURLE_SSL_PEER_CERTIFICATE ||
 			result == CURLE_SSL_CACERT) {
 		memcpy(certs, f->cert_data, sizeof(certs));
 		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
-	}
-	else {
+	} else {
 		LOG(("Unknown cURL response code %d", result));
 		error = true;
 	}
@@ -955,8 +970,12 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		msg.data.cert_err.num_certs = i;
 		fetch_send_callback(&msg, f->fetch_handle);
 	} else if (error) {
-		msg.type = FETCH_ERROR;
-		msg.data.error = fetch_error_buffer;
+		if (result != CURLE_SSL_CONNECT_ERROR) {
+			msg.type = FETCH_ERROR;
+			msg.data.error = fetch_error_buffer;
+		} else {
+			msg.type = FETCH_SSL_ERR;
+		}
 
 		fetch_send_callback(&msg, f->fetch_handle);
 	}

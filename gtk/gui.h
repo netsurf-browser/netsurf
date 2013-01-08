@@ -54,6 +54,7 @@ extern char *toolbar_indices_file_location;
 extern char *options_file_location; /**< location where user options are written */
 extern char *res_dir_location;
 extern char *print_options_file_location;
+extern char *themelist_file_location;
 
 extern GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 

@@ -41,6 +41,6 @@ void nsgtk_theme_init(void);
 void nsgtk_theme_prepare(void);
 void nsgtk_theme_implement(struct gtk_scaffolding *g);
 char *nsgtk_theme_name(void);
-void nsgtk_theme_set_name(char *name);
+void nsgtk_theme_set_name(const char *name);
 
 #endif

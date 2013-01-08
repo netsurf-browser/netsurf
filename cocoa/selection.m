@@ -28,7 +28,6 @@ static NSMutableString *cocoa_clipboard_string;
 
 void gui_start_selection(struct gui_window *g)
 {
-	gui_empty_clipboard();
 }
 
 void gui_clear_selection(struct gui_window *g)
@@ -36,53 +35,73 @@ void gui_clear_selection(struct gui_window *g)
 }
 
 
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length)
 {
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
 	NSString *string = [pb stringForType: NSStringPboardType];
+
+	*buffer = NULL;
+	*length = 0;
+
 	if (string) {
 		const char *text = [string UTF8String];
-		browser_window_paste_text( [(BrowserViewController *)g browser], text, strlen(text), true );
+		*length = strlen(text);
+
+		*buffer = malloc(*length);
+
+		if (*buffer != NULL) {
+			memcpy(*buffer, text, *length);
+		} else {
+			*length = 0;
+		}
 	}
 }
 
-bool gui_empty_clipboard(void)
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
 {
+	/* Empty clipboard string */
 	if (nil == cocoa_clipboard_string) {
 		cocoa_clipboard_string = [[NSMutableString alloc] init];
 	} else {
 		[cocoa_clipboard_string setString: @""];
 	}
-	return true;
-}
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
+	/* Add text to clipboard string */
 	if (nil == cocoa_clipboard_string) return false;
 	
-	[cocoa_clipboard_string appendString: [[[NSString alloc] initWithBytes: text 
-																	length: length 
-																  encoding: NSUTF8StringEncoding] 
-										   autorelease]];
-	if (space) [cocoa_clipboard_string appendString: @" "];
+	[cocoa_clipboard_string appendString: [[[NSString alloc] 
+				initWithBytes: buffer
+				length: length
+				encoding: NSUTF8StringEncoding] 
+				autorelease]];
 	
-	return true;
-}
-
-bool gui_commit_clipboard(void)
-{
+	/* Stick it on the pasteboard */
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
 	[pb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: nil];
 	bool result = [pb setString: cocoa_clipboard_string forType: NSStringPboardType];
-	if (result) gui_empty_clipboard();
-	return result;
-}
 
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (selection_defined( s ) && selection_copy_to_clipboard( s ))
-		gui_commit_clipboard();
-	return true;
+	if (result) {
+		/* Empty clipboard string */
+		if (nil == cocoa_clipboard_string) {
+			cocoa_clipboard_string = [[NSMutableString alloc] init];
+		} else {
+			[cocoa_clipboard_string setString: @""];
+		}
+	}
 }
 

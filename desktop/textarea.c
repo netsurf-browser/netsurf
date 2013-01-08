@@ -65,7 +65,7 @@ struct line_info {
 	unsigned int b_length;		/**< Byte length of line */
 };
 
-struct text_area {
+struct textarea {
 
 	int scroll_x, scroll_y;		/**< scroll offsets of the textarea
 					 * content
@@ -106,165 +106,362 @@ struct text_area {
 
 	void *data; /** < Callback data for both callback functions */
 
-	int drag_start_char; /**< Character index at which the drag was
-			      * started
-			      */
+	int drag_start_char; /**< Character index of drag start */
 };
 
 
-static bool textarea_insert_text(struct text_area *ta, unsigned int index,
-		const char *text);
-static bool textarea_replace_text(struct text_area *ta, unsigned int start,
-		unsigned int end, const char *text);
-static bool textarea_reflow(struct text_area *ta, unsigned int line);
-static unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y);
-static bool textarea_set_caret_xy(struct text_area *ta, int x, int y);
-static bool textarea_scroll_visible(struct text_area *ta);
-static bool textarea_select(struct text_area *ta, int c_start, int c_end);
-static bool textarea_select_fragment(struct text_area *ta);
-static void textarea_normalise_text(struct text_area *ta,
-		unsigned int b_start, unsigned int b_len);
 
 /**
- * Create a text area
+ * Normalises any line endings within the text, replacing CRLF or CR with
+ * LF as necessary. If the textarea is single line, then all linebreaks are
+ * converted into spaces.
  *
- * \param x X coordinate of left border
- * \param y Y coordinate of top border
- * \param width width of the text area
- * \param height width of the text area
- * \param flags text area flags
- * \param style font style
- * \param redraw_start_callback will be called when textarea wants to redraw
- * \param redraw_end_callback will be called when textarea finisjes redrawing
- * \param data user specified data which will be passed to redraw callbacks
- * \return Opaque handle for textarea or 0 on error
+ * \param ta		Text area
+ * \param b_start	Byte offset to start at
+ * \param b_len		Byte length to check
  */
-struct text_area *textarea_create(int width, int height,
-		unsigned int flags, const plot_font_style_t *style,
-		textarea_redraw_request_callback redraw_request, void *data)
+static void textarea_normalise_text(struct textarea *ta,
+		unsigned int b_start, unsigned int b_len)
 {
-	struct text_area *ret;
+	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true:false;
+	unsigned int index;
 
-	if (redraw_request == NULL) {
-		LOG(("no callback provided"));
-		return NULL;
+	/* Remove CR characters. If it's a CRLF pair delete it ot replace it
+	 * with LF otherwise.
+	 */
+	for (index = 0; index < b_len; index++) {
+		if (ta->text[b_start + index] == '\r') {
+			if (b_start + index + 1 <= ta->text_len &&
+					ta->text[b_start + index + 1] == '\n') {
+				ta->text_len--;
+				ta->text_utf8_len--;
+				memmove(ta->text + b_start + index,
+						ta->text + b_start + index + 1,
+						ta->text_len - b_start - index);
+			}
+			else
+				ta->text[b_start + index] = '\n';
+		}
+		/* Replace newlines with spaces if this is a single line
+		 * textarea.
+		 */
+		if (!multi && (ta->text[b_start + index] == '\n'))
+			ta->text[b_start + index] = ' ';
 	}
 
-	ret = malloc(sizeof(struct text_area));
-	if (ret == NULL) {
-		LOG(("malloc failed"));
-		return NULL;
-	}
-
-	ret->redraw_request = redraw_request;
-	ret->data = data;
-	ret->vis_width = width;
-	ret->vis_height = height;
-	ret->scroll_x = 0;
-	ret->scroll_y = 0;
-	ret->drag_start_char = 0;
-
-
-	ret->flags = flags;
-	ret->text = malloc(64);
-	if (ret->text == NULL) {
-		LOG(("malloc failed"));
-		free(ret);
-		return NULL;
-	}
-	ret->text[0] = '\0';
-	ret->text_alloc = 64;
-	ret->text_len = 1;
-	ret->text_utf8_len = 0;
-
-	ret->fstyle = *style;
-
-	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, INTTOFIX((style->size / FONT_SIZE_SCALE))))), F_72));
-
-	ret->caret_pos.line = ret->caret_pos.char_off = 0;
-	ret->caret_x = MARGIN_LEFT;
-	ret->caret_y = 0;
-	ret->selection_start = -1;
-	ret->selection_end = -1;
-
-	ret->line_count = 0;
-	ret->lines = NULL;
-
-	return ret;
 }
 
 
 /**
- * Destroy a text area
+ * Selects a character range in the textarea and redraws it
  *
- * \param ta Text area to destroy
+ * \param ta		Text area
+ * \param c_start	First character (inclusive)
+ * \param c_end		Last character (exclusive)
+ * \return 		true on success false otherwise
  */
-void textarea_destroy(struct text_area *ta)
+static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 {
-	free(ta->text);
-	free(ta->lines);
-	free(ta);
+	int swap;
+
+	/* Ensure start is the beginning of the selection */
+	if (c_start > c_end) {
+		swap = c_start;
+		c_start = c_end;
+		c_end = swap;
+	}
+
+	ta->selection_start = c_start;
+	ta->selection_end = c_end;
+
+	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
+
+	return true;
 }
 
 
 /**
- * Set the text in a text area, discarding any current text
+ * Selects a text fragment, relative to current caret position.
  *
- * \param ta Text area
- * \param text UTF-8 text to set text area's contents to
- * \return true on success, false on memory exhaustion
+ * \param ta  Text area
+ * \return True on success, false otherwise
  */
-bool textarea_set_text(struct text_area *ta, const char *text)
+static bool textarea_select_fragment(struct textarea * ta)
 {
-	unsigned int len = strlen(text) + 1;
+	int caret_pos, sel_start = 0, sel_end = 0, index;
+	size_t b_start, b_end;
 
-	if (len >= ta->text_alloc) {
-		char *temp = realloc(ta->text, len + 64);
-		if (temp == NULL) {
-			LOG(("realloc failed"));
+	/* Fragment separators must be suitable for URLs and ordinary text */
+	static const char *sep = " /:.\r\n";
+
+	caret_pos = textarea_get_caret(ta);
+	if (caret_pos < 0) {
+		return false;
+	}
+
+	/* Compute byte offset of caret position */
+	for (b_start = 0, index = 0; index < caret_pos;
+			b_start = utf8_next(ta->text, ta->text_len,
+					    b_start),
+			index++) {
+		/* Cache the character offset of the last separator */
+		if (strchr(sep, ta->text[b_start]) != NULL) {
+			/* Add one to start to skip over separator */
+			sel_start = index + 1;
+		}
+	}
+
+	/* Search for next separator, if any */
+	for (b_end = b_start; b_end < ta->text_len;
+			b_end = utf8_next(ta->text, ta->text_len,
+					  b_end),
+			index++) {
+		if (strchr(sep, ta->text[b_end]) != NULL) {
+			sel_end = index;
+			break;
+		}
+	}
+
+	if (sel_start < sel_end) {
+		textarea_select(ta, sel_start, sel_end);
+		return true;
+	}
+
+	return false;
+}
+
+
+/**
+ * Scrolls a textarea to make the caret visible (doesn't perform a redraw)
+ *
+ * \param ta	The text area to be scrolled
+ * \return 	true if textarea was scrolled false otherwise
+ */
+static bool textarea_scroll_visible(struct textarea *ta)
+{
+	int x0, x1, y0, y1, x, y;
+	int index, b_off;
+	bool scrolled = false;
+
+	if (ta->caret_pos.char_off == -1)
+		return false;
+
+	x0 = MARGIN_LEFT;
+	x1 = ta->vis_width - MARGIN_RIGHT;
+	y0 = 0;
+	y1 = ta->vis_height;
+
+	index = textarea_get_caret(ta);
+
+	/* find byte offset of caret position */
+	for (b_off = 0; index-- > 0;
+			b_off = utf8_next(ta->text, ta->text_len, b_off))
+		; /* do nothing */
+
+	nsfont.font_width(&ta->fstyle,
+			ta->text + ta->lines[ta->caret_pos.line].b_start,
+			b_off - ta->lines[ta->caret_pos.line].b_start,
+			&x);
+
+	/* top-left of caret */
+	x += MARGIN_LEFT - ta->scroll_x;
+	y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
+
+	/* check and change vertical scroll */
+	if (y < y0) {
+		ta->scroll_y -= y0 - y;
+		scrolled = true;
+	} else if (y + ta->line_height > y1) {
+		ta->scroll_y += y + ta->line_height - y1;
+		scrolled = true;
+	}
+
+
+	/* check and change horizontal scroll */
+	if (x < x0) {
+		ta->scroll_x -= x0 - x ;
+		scrolled = true;
+	} else if (x > x1 - 1) {
+		ta->scroll_x += x - (x1 - 1);
+		scrolled = true;
+	}
+
+	return scrolled;
+}
+
+
+/**
+ * Reflow a text area from the given line onwards
+ *
+ * \param ta Text area to reflow
+ * \param line Line number to begin reflow on
+ * \return true on success false otherwise
+ */
+static bool textarea_reflow(struct textarea *ta, unsigned int line)
+{
+	char *text;
+	unsigned int len;
+	size_t b_off;
+	int x;
+	char *space;
+	unsigned int line_count = 0;
+
+	/** \todo pay attention to line parameter */
+	/** \todo create horizontal scrollbar if needed */
+
+	ta->line_count = 0;
+
+	if (ta->lines == NULL) {
+		ta->lines =
+			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
+		if (ta->lines == NULL) {
+			LOG(("malloc failed"));
 			return false;
 		}
-		ta->text = temp;
-		ta->text_alloc = len + 64;
 	}
 
-	memcpy(ta->text, text, len);
-	ta->text_len = len;
-	ta->text_utf8_len = utf8_length(ta->text);
+	if (!(ta->flags & TEXTAREA_MULTILINE)) {
+		/* Single line */
+		ta->lines[line_count].b_start = 0;
+		ta->lines[line_count++].b_length = ta->text_len - 1;
 
-	textarea_normalise_text(ta, 0, len);
+		ta->line_count = line_count;
 
-	return textarea_reflow(ta, 0);
+		return true;
+	}
+
+	for (len = ta->text_len - 1, text = ta->text; len > 0;
+			len -= b_off, text += b_off) {
+
+		nsfont.font_split(&ta->fstyle, text, len,
+				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
+				&b_off, &x);
+
+		if (line_count > 0 && line_count % LINE_CHUNK_SIZE == 0) {
+			struct line_info *temp = realloc(ta->lines,
+					(line_count + LINE_CHUNK_SIZE) *
+					sizeof(struct line_info));
+			if (temp == NULL) {
+				LOG(("realloc failed"));
+				return false;
+			}
+
+			ta->lines = temp;
+		}
+
+		/* handle LF */
+		for (space = text; space <= text + b_off; space++) {
+			if (*space == '\n')
+				break;
+		}
+
+		if (space <= text + b_off) {
+			/* Found newline; use it */
+			ta->lines[line_count].b_start = text - ta->text;
+			ta->lines[line_count++].b_length = space - text;
+
+			b_off = space + 1 - text;
+
+			if (len - b_off == 0) {
+				/* reached end of input => add last line */
+				ta->lines[line_count].b_start =
+						text + b_off - ta->text;
+				ta->lines[line_count++].b_length = 0;
+			}
+
+			continue;
+		}
+
+		if (len - b_off > 0) {
+			/* find last space (if any) */
+			for (space = text + b_off; space > text; space--)
+				if (*space == ' ')
+					break;
+
+			if (space != text)
+				b_off = space + 1 - text;
+		}
+
+		ta->lines[line_count].b_start = text - ta->text;
+		ta->lines[line_count++].b_length = b_off;
+	}
+
+	ta->line_count = line_count;
+
+	return true;
 }
 
 
 /**
- * Extract the text from a text area
+ * get character offset from the beginning of the text for some coordinates
+ *
+ * \param ta		Text area
+ * \param x		X coordinate
+ * \param y		Y coordinate
+ * \return		character offset
+ */
+static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
+{
+	size_t b_off, temp;
+	unsigned int c_off;
+	int line;
+
+	if (!ta->line_count)
+		return 0;
+
+	x = x - MARGIN_LEFT + ta->scroll_x;
+	y = y + ta->scroll_y;
+
+	if (x < 0)
+		x = 0;
+
+	line = y / ta->line_height;
+
+	if (line < 0)
+		line = 0;
+	if (ta->line_count - 1 < line)
+		line = ta->line_count - 1;
+
+	nsfont.font_position_in_string(&ta->fstyle,
+			ta->text + ta->lines[line].b_start,
+			ta->lines[line].b_length, x, &b_off, &x);
+
+	/* If the calculated byte offset corresponds with the number of bytes
+	 * in the line, and the line has been soft-wrapped, then ensure the
+	 * caret offset is before the trailing space character, rather than
+	 * after it. Otherwise, the caret will be placed at the start of the
+	 * following line, which is undesirable.
+	 */
+	if (b_off == (unsigned)ta->lines[line].b_length &&
+			ta->text[ta->lines[line].b_start +
+			ta->lines[line].b_length - 1] == ' ')
+		b_off--;
+
+	for (temp = 0, c_off = 0; temp < b_off + ta->lines[line].b_start;
+			temp = utf8_next(ta->text, ta->text_len, temp))
+		c_off++;
+
+	return c_off;
+}
+
+
+/**
+ * Set the caret's position
  *
  * \param ta Text area
- * \param buf Pointer to buffer to receive data, or NULL
- *            to read length required
- * \param len Length (bytes) of buffer pointed to by buf, or 0 to read length
- * \return Length (bytes) written/required or -1 on error
+ * \param x X position of caret in a window relative to text area top left
+ * \param y Y position of caret in a window relative to text area top left
+ * \return true on success false otherwise
  */
-int textarea_get_text(struct text_area *ta, char *buf, unsigned int len)
+static bool textarea_set_caret_xy(struct textarea *ta, int x, int y)
 {
-	if (buf == NULL && len == 0) {
-		/* want length */
-		return ta->text_len;
-	} else if (buf == NULL) {
-		/* Can't write to NULL */
-		return -1;
-	}
+	unsigned int c_off;
 
-	if (len < ta->text_len) {
-		LOG(("buffer too small"));
-		return -1;
-	}
+	if (ta->flags & TEXTAREA_READONLY)
+		return true;
 
-	memcpy(buf, ta->text, ta->text_len);
-
-	return ta->text_len;
+	c_off = textarea_get_xy_offset(ta, x, y);
+	return textarea_set_caret(ta, c_off);
 }
 
 
@@ -276,7 +473,7 @@ int textarea_get_text(struct text_area *ta, char *buf, unsigned int len)
  * \param text UTF-8 text to insert
  * \return false on memory exhaustion, true otherwise
  */
-bool textarea_insert_text(struct text_area *ta, unsigned int index,
+static bool textarea_insert_text(struct textarea *ta, unsigned int index,
 		const char *text)
 {
 	unsigned int b_len = strlen(text);
@@ -330,7 +527,7 @@ bool textarea_insert_text(struct text_area *ta, unsigned int index,
  * \param text UTF-8 text to insert
  * \return false on memory exhaustion, true otherwise
  */
-bool textarea_replace_text(struct text_area *ta, unsigned int start,
+static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 		unsigned int end, const char *text)
 {
 	unsigned int b_len = strlen(text);
@@ -391,15 +588,124 @@ bool textarea_replace_text(struct text_area *ta, unsigned int start,
 }
 
 
-/**
- * Set the caret's position
- *
- * \param ta 		Text area
- * \param caret 	0-based character index to place caret at, -1 removes
- * 			the caret
- * \return true on success false otherwise
- */
-bool textarea_set_caret(struct text_area *ta, int caret)
+
+
+/* exported interface, documented in textarea.h */
+struct textarea *textarea_create(int width, int height,
+		textarea_flags flags, const plot_font_style_t *style,
+		textarea_redraw_request_callback redraw_request, void *data)
+{
+	struct textarea *ret;
+
+	if (redraw_request == NULL) {
+		LOG(("no callback provided"));
+		return NULL;
+	}
+
+	ret = malloc(sizeof(struct textarea));
+	if (ret == NULL) {
+		LOG(("malloc failed"));
+		return NULL;
+	}
+
+	ret->redraw_request = redraw_request;
+	ret->data = data;
+	ret->vis_width = width;
+	ret->vis_height = height;
+	ret->scroll_x = 0;
+	ret->scroll_y = 0;
+	ret->drag_start_char = 0;
+
+
+	ret->flags = flags;
+	ret->text = malloc(64);
+	if (ret->text == NULL) {
+		LOG(("malloc failed"));
+		free(ret);
+		return NULL;
+	}
+	ret->text[0] = '\0';
+	ret->text_alloc = 64;
+	ret->text_len = 1;
+	ret->text_utf8_len = 0;
+
+	ret->fstyle = *style;
+
+	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
+			FMUL(nscss_screen_dpi,
+			INTTOFIX((style->size / FONT_SIZE_SCALE))))), F_72));
+
+	ret->caret_pos.line = ret->caret_pos.char_off = 0;
+	ret->caret_x = MARGIN_LEFT;
+	ret->caret_y = 0;
+	ret->selection_start = -1;
+	ret->selection_end = -1;
+
+	ret->line_count = 0;
+	ret->lines = NULL;
+
+	return ret;
+}
+
+
+/* exported interface, documented in textarea.h */
+void textarea_destroy(struct textarea *ta)
+{
+	free(ta->text);
+	free(ta->lines);
+	free(ta);
+}
+
+
+/* exported interface, documented in textarea.h */
+bool textarea_set_text(struct textarea *ta, const char *text)
+{
+	unsigned int len = strlen(text) + 1;
+
+	if (len >= ta->text_alloc) {
+		char *temp = realloc(ta->text, len + 64);
+		if (temp == NULL) {
+			LOG(("realloc failed"));
+			return false;
+		}
+		ta->text = temp;
+		ta->text_alloc = len + 64;
+	}
+
+	memcpy(ta->text, text, len);
+	ta->text_len = len;
+	ta->text_utf8_len = utf8_length(ta->text);
+
+	textarea_normalise_text(ta, 0, len);
+
+	return textarea_reflow(ta, 0);
+}
+
+
+/* exported interface, documented in textarea.h */
+int textarea_get_text(struct textarea *ta, char *buf, unsigned int len)
+{
+	if (buf == NULL && len == 0) {
+		/* want length */
+		return ta->text_len;
+	} else if (buf == NULL) {
+		/* Can't write to NULL */
+		return -1;
+	}
+
+	if (len < ta->text_len) {
+		LOG(("buffer too small"));
+		return -1;
+	}
+
+	memcpy(buf, ta->text, ta->text_len);
+
+	return ta->text_len;
+}
+
+
+/* exported interface, documented in textarea.h */
+bool textarea_set_caret(struct textarea *ta, int caret)
 {
 	unsigned int c_len;
 	unsigned int b_off;
@@ -500,7 +806,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 				ta->text +
 				ta->lines[ta->caret_pos.line].b_start,
 				b_off - ta->lines[ta->caret_pos.line].b_start,
-    				&x);
+				&x);
 
 		x += MARGIN_LEFT - ta->scroll_x;
 		ta->caret_x = x;
@@ -532,86 +838,8 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 }
 
 
-/**
- * get character offset from the beginning of the text for some coordinates
- *
- * \param ta		Text area
- * \param x		X coordinate
- * \param y		Y coordinate
- * \return		character offset
- */
-unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
-{
-	size_t b_off, temp;
-	unsigned int c_off;
-	int line;
-
-	if (!ta->line_count)
-		return 0;
-
-	x = x - MARGIN_LEFT + ta->scroll_x;
-	y = y + ta->scroll_y;
-
-	if (x < 0)
-		x = 0;
-
-	line = y / ta->line_height;
-
-	if (line < 0)
-		line = 0;
-	if (ta->line_count - 1 < line)
-		line = ta->line_count - 1;
-
-	nsfont.font_position_in_string(&ta->fstyle,
-			ta->text + ta->lines[line].b_start,
-	   		ta->lines[line].b_length, x, &b_off, &x);
-
-	/* If the calculated byte offset corresponds with the number of bytes
-	 * in the line, and the line has been soft-wrapped, then ensure the
-	 * caret offset is before the trailing space character, rather than
-	 * after it. Otherwise, the caret will be placed at the start of the
-	 * following line, which is undesirable.
-	 */
-	if (b_off == (unsigned)ta->lines[line].b_length &&
-			ta->text[ta->lines[line].b_start +
-			ta->lines[line].b_length - 1] == ' ')
-		b_off--;
-
-	for (temp = 0, c_off = 0; temp < b_off + ta->lines[line].b_start;
-			temp = utf8_next(ta->text, ta->text_len, temp))
-		c_off++;
-
-	return c_off;
-}
-
-
-/**
- * Set the caret's position
- *
- * \param ta Text area
- * \param x X position of caret in a window relative to text area top left
- * \param y Y position of caret in a window relative to text area top left
- * \return true on success false otherwise
- */
-bool textarea_set_caret_xy(struct text_area *ta, int x, int y)
-{
-	unsigned int c_off;
-
-	if (ta->flags & TEXTAREA_READONLY)
-		return true;
-
-	c_off = textarea_get_xy_offset(ta, x, y);
-	return textarea_set_caret(ta, c_off);
-}
-
-
-/**
- * Get the caret's position
- *
- * \param ta Text area
- * \return 0-based character index of caret location, or -1 on error
- */
-int textarea_get_caret(struct text_area *ta)
+/* exported interface, documented in textarea.h */
+int textarea_get_caret(struct textarea *ta)
 {
 	unsigned int c_off = 0, b_off;
 
@@ -628,119 +856,9 @@ int textarea_get_caret(struct text_area *ta)
 	return c_off + ta->caret_pos.char_off;
 }
 
-/**
- * Reflow a text area from the given line onwards
- *
- * \param ta Text area to reflow
- * \param line Line number to begin reflow on
- * \return true on success false otherwise
- */
-bool textarea_reflow(struct text_area *ta, unsigned int line)
-{
-	char *text;
-	unsigned int len;
-	size_t b_off;
-	int x;
-	char *space;
-	unsigned int line_count = 0;
 
-	/** \todo pay attention to line parameter */
-	/** \todo create horizontal scrollbar if needed */
-
-	ta->line_count = 0;
-
-	if (ta->lines == NULL) {
-		ta->lines =
-			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
-		if (ta->lines == NULL) {
-			LOG(("malloc failed"));
-			return false;
-		}
-	}
-
-	if (!(ta->flags & TEXTAREA_MULTILINE)) {
-		/* Single line */
-		ta->lines[line_count].b_start = 0;
-		ta->lines[line_count++].b_length = ta->text_len - 1;
-
-		ta->line_count = line_count;
-
-		return true;
-	}
-
-	for (len = ta->text_len - 1, text = ta->text; len > 0;
-			len -= b_off, text += b_off) {
-
-		nsfont.font_split(&ta->fstyle, text, len,
-				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
-				&b_off, &x);
-
-		if (line_count > 0 && line_count % LINE_CHUNK_SIZE == 0) {
-			struct line_info *temp = realloc(ta->lines,
-					(line_count + LINE_CHUNK_SIZE) *
-					sizeof(struct line_info));
-			if (temp == NULL) {
-				LOG(("realloc failed"));
-				return false;
-			}
-
-			ta->lines = temp;
-		}
-
-		/* handle LF */
-		for (space = text; space <= text + b_off; space++) {
-			if (*space == '\n')
-				break;
-		}
-
-		if (space <= text + b_off) {
-			/* Found newline; use it */
-			ta->lines[line_count].b_start = text - ta->text;
-			ta->lines[line_count++].b_length = space - text;
-
-			b_off = space + 1 - text;
-
-			if (len - b_off == 0) {
-				/* reached end of input => add last line */
-				ta->lines[line_count].b_start =
-						text + b_off - ta->text;
-				ta->lines[line_count++].b_length = 0;
-			}
-
-			continue;
-		}
-
-		if (len - b_off > 0) {
-			/* find last space (if any) */
-			for (space = text + b_off; space > text; space--)
-				if (*space == ' ')
-					break;
-
-			if (space != text)
-				b_off = space + 1 - text;
-		}
-
-		ta->lines[line_count].b_start = text - ta->text;
-		ta->lines[line_count++].b_length = b_off;
-	}
-
-	ta->line_count = line_count;
-
-	return true;
-}
-
-
-/**
- * Handle redraw requests for text areas
- *
- * \param redraw Redraw request block
- * \param x0	left X coordinate of redraw area
- * \param y0	top Y coordinate of redraw area
- * \param x1	right X coordinate of redraw area
- * \param y1	bottom Y coordinate of redraw area
- * \param ctx	current redraw context
- */
-void textarea_redraw(struct text_area *ta, int x, int y,
+/* exported interface, documented in textarea.h */
+void textarea_redraw(struct textarea *ta, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -927,14 +1045,9 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 	}
 }
 
-/**
- * Key press handling for text areas.
- *
- * \param ta	The text area which got the keypress
- * \param key	The ucs4 character codepoint
- * \return     	true if the keypress is dealt with, false otherwise.
- */
-bool textarea_keypress(struct text_area *ta, uint32_t key)
+
+/* exported interface, documented in textarea.h */
+bool textarea_keypress(struct textarea *ta, uint32_t key)
 {
 	char utf8[6];
 	unsigned int caret, caret_init, length, l_len, b_off, b_len;
@@ -1252,122 +1365,45 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 	return true;
 }
 
-/**
- * Scrolls a textarea to make the caret visible (doesn't perform a redraw)
- *
- * \param ta	The text area to be scrolled
- * \return 	true if textarea was scrolled false otherwise
- */
-bool textarea_scroll_visible(struct text_area *ta)
-{
-	int x0, x1, y0, y1, x, y;
-	int index, b_off;
-	bool scrolled = false;
 
-	if (ta->caret_pos.char_off == -1)
-		return false;
-
-	x0 = MARGIN_LEFT;
-	x1 = ta->vis_width - MARGIN_RIGHT;
-	y0 = 0;
-	y1 = ta->vis_height;
-
-	index = textarea_get_caret(ta);
-
-	/* find byte offset of caret position */
-	for (b_off = 0; index-- > 0;
-			b_off = utf8_next(ta->text, ta->text_len, b_off))
-		; /* do nothing */
-
-	nsfont.font_width(&ta->fstyle,
-			ta->text + ta->lines[ta->caret_pos.line].b_start,
-			b_off - ta->lines[ta->caret_pos.line].b_start,
-			&x);
-
-	/* top-left of caret */
-	x += MARGIN_LEFT - ta->scroll_x;
-	y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
-
-	/* check and change vertical scroll */
-	if (y < y0) {
-		ta->scroll_y -= y0 - y;
-		scrolled = true;
-	} else if (y + ta->line_height > y1) {
-		ta->scroll_y += y + ta->line_height - y1;
-		scrolled = true;
-	}
-
-
-	/* check and change horizontal scroll */
-	if (x < x0) {
-		ta->scroll_x -= x0 - x ;
-		scrolled = true;
-	} else if (x > x1 - 1) {
-		ta->scroll_x += x - (x1 - 1);
-		scrolled = true;
-	}
-
-	return scrolled;
-}
-
-
-/**
- * Handles all kinds of mouse action
- *
- * \param ta	Text area
- * \param mouse	the mouse state at action moment
- * \param x	X coordinate
- * \param y	Y coordinate
- * \return true if action was handled false otherwise
- */
-bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
+/* exported interface, documented in textarea.h */
+bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_start, c_end;
 
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
-		if (!(ta->flags & TEXTAREA_READONLY))
+		if (!(ta->flags & TEXTAREA_READONLY)) {
 			textarea_set_caret_xy(ta, x, y);
+			ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
+		}
 		if (ta->selection_start != -1) {
+			/* remove selection */
 			ta->selection_start = ta->selection_end = -1;
 			ta->redraw_request(ta->data, 0, 0,
 					ta->vis_width,
 					ta->vis_height);
 		}
-	}
-	else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
+
+	} else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
 			textarea_set_caret_xy(ta, x, y);
 			return textarea_select_fragment(ta);
 		}
-	}
-	else if (mouse & BROWSER_MOUSE_DRAG_1) {
-		ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
-		if (!(ta->flags & TEXTAREA_READONLY))
-			return textarea_set_caret(ta, -1);
-	}
-	else if (mouse & BROWSER_MOUSE_HOLDING_1) {
+
+	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1)) {
 		c_start = ta->drag_start_char;
 		c_end = textarea_get_xy_offset(ta, x, y);
 		return textarea_select(ta, c_start, c_end);
-
 	}
 
 	return true;
 }
 
 
-/**
- * Handles the end of a drag operation
- *
- * \param ta	Text area
- * \param mouse	the mouse state at drag end moment
- * \param x	X coordinate
- * \param y	Y coordinate
- * \return true if drag end was handled false otherwise
- */
-bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
+/* exported interface, documented in textarea.h */
+bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_end;
@@ -1376,141 +1412,9 @@ bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
 	return textarea_select(ta, ta->drag_start_char, c_end);
 }
 
-/**
- * Selects a character range in the textarea and redraws it
- *
- * \param ta		Text area
- * \param c_start	First character (inclusive)
- * \param c_end		Last character (exclusive)
- * \return 		true on success false otherwise
- */
-bool textarea_select(struct text_area *ta, int c_start, int c_end)
-{
-	int swap = -1;
 
-	/* if start is after end they get swapped, start won't and end will
-	   be selected this way */
-	if (c_start > c_end) {
-		swap = c_start;
-		c_start = c_end;
-		c_end = swap;
-	}
-
-	ta->selection_start = c_start;
-	ta->selection_end = c_end;
-
-	if (!(ta->flags & TEXTAREA_READONLY)) {
-		if (swap == -1)
-			return textarea_set_caret(ta, c_end);
-		else
-			return textarea_set_caret(ta, c_start);
-	}
-
-	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
-
-	return true;
-}
-
-
-/**
- * Selects a text fragment, relative to current caret position.
- *
- * \param ta  Text area
- * \return True on success, false otherwise
- */
-static bool textarea_select_fragment(struct text_area * ta)
-{
-	int caret_pos, sel_start = 0, sel_end = 0, index;
-	size_t b_start, b_end;
-
-	/* Fragment separators must be suitable for URLs and ordinary text */
-	static const char *sep = " /:.\r\n";
-
-	caret_pos = textarea_get_caret(ta);
-	if (caret_pos < 0) {
-		return false;
-	}
-
-	/* Compute byte offset of caret position */
-	for (b_start = 0, index = 0; index < caret_pos;
-			b_start = utf8_next(ta->text, ta->text_len,
-					    b_start),
-			index++) {
-		/* Cache the character offset of the last separator */
-		if (strchr(sep, ta->text[b_start]) != NULL) {
-			/* Add one to start to skip over separator */
-			sel_start = index + 1;
-		}
-	}
-
-	/* Search for next separator, if any */
-	for (b_end = b_start; b_end < ta->text_len;
-			b_end = utf8_next(ta->text, ta->text_len,
-					  b_end),
-			index++) {
-		if (strchr(sep, ta->text[b_end]) != NULL) {
-			sel_end = index;
-			break;
-		}
-	}
-
-	if (sel_start < sel_end) {
-		textarea_select(ta, sel_start, sel_end);
-		return true;
-	}
-
-	return false;
-}
-
-
-/**
- * Normalises any line endings within the text, replacing CRLF or CR with
- * LF as necessary. If the textarea is single line, then all linebreaks are
- * converted into spaces.
- *
- * \param ta		Text area
- * \param b_start	Byte offset to start at
- * \param b_len		Byte length to check
- */
-void textarea_normalise_text(struct text_area *ta,
-		unsigned int b_start, unsigned int b_len)
-{
-	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true:false;
-	unsigned int index;
-
-	/* Remove CR characters. If it's a CRLF pair delete it ot replace it
-	 * with LF otherwise.
-	 */
-	for (index = 0; index < b_len; index++) {
-		if (ta->text[b_start + index] == '\r') {
-			if (b_start + index + 1 <= ta->text_len &&
-					ta->text[b_start + index + 1] == '\n') {
-				ta->text_len--;
-				ta->text_utf8_len--;
-				memmove(ta->text + b_start + index,
-						ta->text + b_start + index + 1,
-						ta->text_len - b_start - index);
-			}
-			else
-				ta->text[b_start + index] = '\n';
-		}
-		/* Replace newlines with spaces if this is a single line
-		 * textarea.
-		 */
-		if (!multi && (ta->text[b_start + index] == '\n'))
-			ta->text[b_start + index] = ' ';
-	}
-
-}
-
-
-/**
- * Gets the dimensions of a textarea
- *
- * \param width		if not NULL, gets updated to the width of the textarea
- * \param height	if not NULL, gets updated to the height of the textarea
- */
-void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
+/* exported interface, documented in textarea.h */
+void textarea_get_dimensions(struct textarea *ta, int *width, int *height)
 {
 	if (width != NULL)
 		*width = ta->vis_width;
@@ -1518,14 +1422,9 @@ void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
 		*height = ta->vis_height;
 }
 
-/**
- * Set the dimensions of a textarea, causing a reflow and
- * emitting a redraw request.
- *
- * \param width 	the new width of the textarea
- * \param height	the new height of the textarea
- */
-void textarea_set_dimensions(struct text_area *ta, int width, int height)
+
+/* exported interface, documented in textarea.h */
+void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
 	ta->vis_width = width;
 	ta->vis_height = height;

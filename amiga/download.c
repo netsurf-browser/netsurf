@@ -356,7 +356,8 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname,savereq->fr_File,1024);
-		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
+
+		ami_set_pointer(g->shared, GUI_POINTER_WAIT, false);
 
 		if(ami_download_check_overwrite(fname, g->shared->win, 0))
 		{
@@ -383,7 +384,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 			}
 			FreeVec(linkname);
 		}
-		ami_update_pointer(g->shared->win,GUI_POINTER_DEFAULT);
+		ami_reset_pointer(g->shared);
 	}
 }
 

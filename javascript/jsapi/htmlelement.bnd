@@ -8,8 +8,6 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-#include "dom.bnd"
-
 webidlfile "html.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
@@ -33,6 +31,8 @@ preamble %{
 #include "location.h"
 
 %}
+
+#include "dom.bnd"
 
 binding htmlelement {
 	type js_libdom; /* the binding type */

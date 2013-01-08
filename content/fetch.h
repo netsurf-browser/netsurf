@@ -43,7 +43,8 @@ typedef enum {
 	FETCH_REDIRECT,
 	FETCH_NOTMODIFIED,
 	FETCH_AUTH,
-	FETCH_CERT_ERR
+	FETCH_CERT_ERR,
+	FETCH_SSL_ERR
 } fetch_msg_type;
 
 typedef struct fetch_msg {
@@ -103,7 +104,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 		fetch_callback callback,
 		void *p, bool only_2xx, const char *post_urlenc,
 		const struct fetch_multipart_data *post_multipart,
-		bool verifiable,
+		bool verifiable, bool downgrade_tls,
 		const char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
@@ -123,17 +124,17 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 
 /* API for fetchers themselves */
 
-typedef bool (*fetcher_initialise)(lwc_string *);
-typedef bool (*fetcher_can_fetch)(const nsurl *);
-typedef void* (*fetcher_setup_fetch)(struct fetch *, nsurl *,
-                                     bool, const char *,
-                                     const struct fetch_multipart_data *,
-                                     const char **);
-typedef bool (*fetcher_start_fetch)(void *);
-typedef void (*fetcher_abort_fetch)(void *);
-typedef void (*fetcher_free_fetch)(void *);
-typedef void (*fetcher_poll_fetcher)(lwc_string *);
-typedef void (*fetcher_finalise)(lwc_string *);
+typedef bool (*fetcher_initialise)(lwc_string *scheme);
+typedef bool (*fetcher_can_fetch)(const nsurl *url);
+typedef void *(*fetcher_setup_fetch)(struct fetch *parent_fetch, nsurl *url,
+		bool only_2xx, bool downgrade_tls, const char *post_urlenc,
+		const struct fetch_multipart_data *post_multipart,
+		const char **headers);
+typedef bool (*fetcher_start_fetch)(void *fetch);
+typedef void (*fetcher_abort_fetch)(void *fetch);
+typedef void (*fetcher_free_fetch)(void *fetch);
+typedef void (*fetcher_poll_fetcher)(lwc_string *scheme);
+typedef void (*fetcher_finalise)(lwc_string *scheme);
 
 /** Register a fetcher for a scheme
  *

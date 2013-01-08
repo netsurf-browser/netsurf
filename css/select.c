@@ -2516,20 +2516,17 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 			}
 
 			if ((width == NULL) ||
-			    dom_string_lwc_isequal(width,
+			    dom_string_caseless_lwc_isequal(width,
 					corestring_lwc_text) ||
-			    dom_string_lwc_isequal(width,
+			    dom_string_caseless_lwc_isequal(width,
 					corestring_lwc_search) ||
-			    dom_string_lwc_isequal(width,
+			    dom_string_caseless_lwc_isequal(width,
 					corestring_lwc_file) ||
-			    dom_string_lwc_isequal(width,
+			    dom_string_caseless_lwc_isequal(width,
 			    		corestring_lwc_password)) {
 				hint->data.length.unit = CSS_UNIT_EX;
-
 			}
 			dom_string_unref(width);
-
-
 		}
 
 		return CSS_OK;
@@ -2669,11 +2666,13 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	if (dom_string_lwc_isequal(align, corestring_lwc_left)) {
+	if (dom_string_caseless_lwc_isequal(align,
+			corestring_lwc_left)) {
 		hint->status = CSS_FLOAT_LEFT;
 		dom_string_unref(align);
 		return CSS_OK;
-	} else if (dom_string_lwc_isequal(align, corestring_lwc_right)) {
+	} else if (dom_string_caseless_lwc_isequal(align,
+			corestring_lwc_right)) {
 		hint->status = CSS_FLOAT_RIGHT;
 		dom_string_unref(align);
 		return CSS_OK;

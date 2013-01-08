@@ -36,9 +36,10 @@
 #include "amiga/os3support.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
+#include "amiga/theme.h"
+
 #include <proto/intuition.h>
 #include <proto/exec.h>
-
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/string.h>
@@ -277,10 +278,10 @@ void ami_search_set_status(bool found, void *p)
 
 void ami_search_set_hourglass(bool active, void *p)
 {
-	SetWindowPointer(fwin->win,
-					WA_BusyPointer,active,
-					WA_PointerDelay,active,
-					TAG_DONE);
+	if(active)
+		ami_update_pointer(fwin->win, GUI_POINTER_WAIT);
+	else
+		ami_update_pointer(fwin->win, GUI_POINTER_DEFAULT);
 }
 
 /**

@@ -59,7 +59,6 @@
 #include "desktop/tree.h"
 #include "css/utils.h"
 #include "gtk/compat.h"
-#include "gtk/dialogs/options.h"
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
 #include "gtk/download.h"
@@ -85,6 +84,7 @@ char *toolbar_indices_file_location;
 char *res_dir_location;
 char *print_options_file_location;
 char *languages_file_location;
+char *themelist_file_location;
 
 GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 
@@ -362,6 +362,17 @@ static void gui_init(int argc, char** argv, char **respath)
 	if ((languages_file_location == NULL) || 
 	    (strlen(languages_file_location) < 10)) {
 		die("Unable to find resources.\n");		
+	}
+
+	/* find the theme list file */	
+	themelist_file_location = filepath_find(respath, "themelist");
+	if ((themelist_file_location != NULL) &&
+		(strlen(themelist_file_location) < 10)) {
+		free(themelist_file_location);
+		themelist_file_location = NULL;
+	}
+	if (themelist_file_location == NULL) { 
+		LOG(("Unable to find themelist - disabling"));
 	}
 
 	/* Obtain resources path location. 
@@ -1017,7 +1028,19 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 		return gdk_keyval_to_unicode(key->keyval);
 	case 'u':
 		if (key->state & GDK_CONTROL_MASK)
-			return KEY_CLEAR_SELECTION;
+			return KEY_CUT_LINE;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'c':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_COPY_SELECTION;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'v':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_PASTE;
+		return gdk_keyval_to_unicode(key->keyval);
+	case 'x':
+		if (key->state & GDK_CONTROL_MASK)
+			return KEY_CUT_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
 	case GDK_KEY(Escape):
 		return KEY_ESCAPE;

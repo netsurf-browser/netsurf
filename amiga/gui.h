@@ -120,6 +120,7 @@ struct gui_window_2 {
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;
 	struct MinList shared_pens;
+	gui_pointer_shape mouse_pointer;
 };
 
 struct gui_window

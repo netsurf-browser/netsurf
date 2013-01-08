@@ -142,7 +142,7 @@ void ami_drag_save(struct Window *win)
 		return;
 	}
 
-	ami_update_pointer(win,GUI_POINTER_WAIT);
+	ami_update_pointer(win, GUI_POINTER_WAIT);
 
 	switch(drag_save)
 	{
@@ -189,7 +189,8 @@ void ami_drag_save(struct Window *win)
 
 	drag_save = 0;
 	drag_save_data = NULL;
-	ami_update_pointer(win,GUI_POINTER_DEFAULT);
+	
+	ami_update_pointer(win, GUI_POINTER_DEFAULT);
 }
 
 void ami_drag_icon_show(struct Window *win, const char *type)

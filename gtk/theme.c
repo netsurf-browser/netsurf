@@ -32,7 +32,7 @@
 #include "gtk/theme.h"
 #include "gtk/window.h"
 #include "desktop/options.h"
-#include "gtk/dialogs/options.h"
+#include "gtk/dialogs/preferences.h"
 #include "utils/container.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -157,28 +157,32 @@ static bool nsgtk_theme_verify(const char *themename)
 
 void nsgtk_theme_init(void)
 {
-	size_t len;
-	if (nsoption_int(current_theme) == 0) {
+	int theme;
+	nsgtk_scaffolding *list = scaf_list;
+	FILE *fp;
+	char buf[50];
+	int row_count = 0;
+
+	theme = nsoption_int(current_theme);
+
+	/* check if default theme is selected */
+	if (theme == 0) {
 		return;
 	}
 
-	len = SLEN("themelist") + strlen(res_dir_location) + 1;
-	char themefile[len];
-	snprintf(themefile, len, "%s%s", res_dir_location, "themelist");
-	nsgtk_scaffolding *list = scaf_list;
 	nsgtk_theme_verify(NULL);
-	FILE *fp = fopen(themefile, "r");
+	fp = fopen(themelist_file_location, "r");
 	if (fp == NULL)
 		return;
-	char buf[50];
-	int row_count = 0;
+
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
 		if (buf[0] == '\0')
 			continue;
 
-		if (row_count++ == nsoption_int(current_theme)) {
-			if (current_theme_name != NULL)
+		if (row_count++ == theme) {
+			if (current_theme_name != NULL) {
 				free(current_theme_name);
+			}
 			/* clear the '\n' ["\n\0"->"\0\0"] */
 			buf[strlen(buf) - 1] = '\0';
 			current_theme_name = strdup(buf);
@@ -204,13 +208,25 @@ char *nsgtk_theme_name(void)
 }
 
 /**
- * set static global current_theme_name from param; caller is responsible
- * for the integrity of the global reference
+ * set static global current_theme_name from param
  */
 
-void nsgtk_theme_set_name(char *name)
+void nsgtk_theme_set_name(const char *name)
 {
-	current_theme_name = name;
+	if ((name == NULL) && (current_theme_name == NULL)) {
+		return; /* setting it to the same thing */
+	} else if ((name == NULL) && (current_theme_name != NULL)) {
+		free(current_theme_name);
+		current_theme_name = NULL;		
+	} else if ((name != NULL) && (current_theme_name == NULL)) {
+		current_theme_name = strdup(name);
+		nsgtk_theme_prepare();				
+	} else if (strcmp(name, current_theme_name) != 0) {
+		/* disimilar new name */
+		free(current_theme_name);
+		current_theme_name = strdup(name);
+		nsgtk_theme_prepare();		
+	}	
 }
 
 /**
@@ -260,9 +276,7 @@ void nsgtk_theme_add(const char *themename)
 	gtk_widget_show_all(notification);
 
 	/* update combo */
-	if (wndPreferences != NULL) {
-		nsgtk_options_combo_theme_add(themename);
-	}
+	nsgtk_preferences_theme_add(themename);
 }
 
 

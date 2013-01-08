@@ -20,6 +20,7 @@ JSAPI_BINDING_location := javascript/jsapi/location.bnd
 JSAPI_BINDING_htmlcollection := javascript/jsapi/htmlcollection.bnd
 JSAPI_BINDING_nodelist := javascript/jsapi/nodelist.bnd
 JSAPI_BINDING_text := javascript/jsapi/text.bnd
+JSAPI_BINDING_comment := javascript/jsapi/comment.bnd
 JSAPI_BINDING_node := javascript/jsapi/node.bnd
 JSAPI_BINDING_event := javascript/jsapi/event.bnd
 
