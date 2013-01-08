@@ -1727,8 +1727,15 @@ void gui_clear_selection(struct gui_window *w)
 {
 }
 
-void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length)
 {
+	/* TODO: Implement this */
 	HANDLE clipboard_handle;
 	char *content;
 
@@ -1740,14 +1747,18 @@ void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
 	}
 }
 
-bool gui_empty_clipboard(void)
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
 {
-	return false;
-}
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
+	/* TODO: Implement this */
 	HANDLE hnew;
 	char *new, *original;
 	HANDLE h = GetClipboardData(CF_TEXT);
@@ -1759,7 +1770,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space,
 	size_t len = strlen(original) + 1;
 	hnew = GlobalAlloc(GHND, length + len);
 	new = (char *)GlobalLock(hnew);
-	snprintf(new, length + len, "%s%s", original, text);
+	snprintf(new, length + len, "%s%s", original, buffer);
 
 	if (h != NULL) {
 		GlobalUnlock(h);
@@ -1767,29 +1778,6 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space,
 	}
 	GlobalUnlock(hnew);
 	SetClipboardData(CF_TEXT, hnew);
-	return true;
-}
-
-bool gui_commit_clipboard(void)
-{
-	return false;
-}
-
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (selection_defined(s)) {
-		/* TODO: Fix this, so it's not looking inside selection
-		 *       object */
-
-/*		OpenClipboard(s->bw->window->main);
-		EmptyClipboard();
-		if (selection_copy_to_clipboard(s)) {
-			CloseClipboard();
-			return true;
-		}
-*/	}
-	return false;
 }
 
 
