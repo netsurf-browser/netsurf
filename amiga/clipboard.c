@@ -320,14 +320,13 @@ void ami_drag_selection(struct selection *s)
 	if(ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
 		iffh = ami_clipboard_init_internal(1);
-#if 0
-/* TODO: fix this */
-		if(gui_copy_to_clipboard(s))
+
+		if(selection_copy_to_clipboard(s))
 		{
 			browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
 			browser_window_key_press(gwin->bw, KEY_PASTE);
 		}
-#endif
+
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
 	}
