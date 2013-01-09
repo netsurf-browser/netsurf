@@ -628,7 +628,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	*length = 0;
 	*buffer = 0;
 
-	clip = scrap_txt_read(&app);
+	clip = scrap_txt_read();
 
 	if(clip == NULL){
 		return;
@@ -675,7 +675,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 
 		ret = utf8_to_local_encoding(buffer,length, &clip);
 		if (ret == UTF8_CONVERT_OK) {
-			scrap_txt_write(&app, clip);
+			scrap_txt_write(clip);
 		} else {
 			assert(ret == UTF8_CONVERT_OK);
 		}
