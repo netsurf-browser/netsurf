@@ -20,7 +20,7 @@
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "utils/utf8.h"
+#include "desktop/options.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
@@ -30,8 +30,9 @@
 #include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
-#include "desktop/options.h"
 #include "amiga/utf8.h"
+
+#include "utils/utf8.h"
 
 #include <proto/iffparse.h>
 #include <proto/intuition.h>
@@ -201,9 +202,6 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	ULONG rlen=0,error;
 	struct CSet cset;
 	LONG codeset = 0;
-	char *clip;
-	bool utf8_chunks = false;
-	STRPTR readbuf = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR);
 
 	cset.CodeSet = 0;
 
