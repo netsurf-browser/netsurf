@@ -17,7 +17,7 @@ struct s_url_widget
 {
     /* widget is only redrawn when this flag is set */
 	bool redraw;
-	struct text_area *textarea;
+	struct textarea *textarea;
 	GRECT rdw_area;
 	GRECT area;
 };
