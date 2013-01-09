@@ -117,35 +117,52 @@ void gui_clear_selection(struct gui_window *g)
 	OffMenu(g->shared->win, AMI_MENU_COPY);
 }
 
-bool ami_clipboard_check_for_utf8(struct IFFHandle *iffh) {
-	struct ContextNode *cn;
-	ULONG error;
-	bool utf8_chunk = false;
-	
-	if(OpenIFF(iffh, IFFF_READ)) return false;
-	
-	ami_clipboard_iffp_clear_stopchunk(iffh, ID_FTXT, ID_CSET);
-	ami_clipboard_iffp_clear_stopchunk(iffh, ID_FTXT, ID_CHRS);
-	
-	if(!StopChunk(iffh, ID_FTXT, ID_UTF8)) {
-		error = ParseIFF(iffh, IFFPARSE_SCAN);
-		if(error != IFFERR_EOF)
-			utf8_chunk = true; /* or a real error, but that'll get caught later */
-	}
-	CloseIFF(iffh);
-
-	return utf8_chunk;
-}
-
 char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
 {
-	struct CollectionItem *ci_curr = ci;
+	struct CollectionItem *ci_new = NULL, *ci_next, *ci_curr = ci;
 	size_t len = 0;
 	char *text = NULL, *p, *clip;
 
-	/* Scan the collected chunks to find out the total size */
+	/* Scan the collected chunks to find out the total size.
+	 * If they are not in UTF-8, convert the chunks first and create a new CollectionItem list.
+	 */
 	do {
-		len += ci_curr->ci_Size;
+		switch(codeset) {
+			case 106:
+				len += ci_curr->ci_Size;
+			break;
+			
+			case 0:
+				if(ci_new) {
+					ci_next->ci_Next = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next = ci_next->ci_Next;
+				} else {
+					ci_new = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next = ci_new;
+				}
+				
+				utf8_from_local_encoding(ci_curr->ci_Data, ci_curr->ci_Size, &ci_next->ci_Data);
+				ci_next->ci_Size = strlen(ci_next->ci_Data);
+				len += ci_next->ci_Size;
+			break;
+
+			default:
+				if(ci_new) {
+					ci_next->ci_Next = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next = ci_next->ci_Next;
+				} else {
+					ci_new = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next = ci_new;
+				}
+				
+				utf8_from_enc(ci_curr->ci_Data,
+						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
+										codeset, DFCS_MIMENAME),
+						ci_curr->ci_Size, &clip);
+				ci_next->ci_Size = strlen(ci_next->ci_Data);
+				len += ci_next->ci_Size;
+			break;
+		}
 	} while (ci_curr = ci_curr->ci_Next);
 
 	text = malloc(len);
@@ -155,35 +172,23 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 	/* p points to the end of the buffer. This is because the chunks are
 	 * in the list in reverse order. */
 	p = text + len;
-	ci_curr = ci;
+
+	if(ci_new) {
+		ci_curr = ci;
+	} else {
+		ci_curr = ci_new;
+	}
 
 	do {
 		p -= ci_curr->ci_Size;
-
-		switch(codeset) {
-			case 106:
-				memcpy(p, ci_curr->ci_Data, ci_curr->ci_Size);
-			break;
-
-			/* If codeset isn't 106 (UTF-8) we need to convert to UTF-8.
-			 * TODO: ensure buffer is big enough for converted text */
-
-			case 0:
-				utf8_from_local_encoding(ci_curr->ci_Data, ci_curr->ci_Size, &clip);
-				memcpy(p, clip, ci_curr->ci_Size);
-				free(clip);
-			break;
-
-			default:
-				utf8_from_enc(ci_curr->ci_Data,
-						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
-										codeset, DFCS_MIMENAME),
-						ci_curr->ci_Size, &clip);
-				memcpy(p, clip, ci_curr->ci_Size);
-				free(clip);
-			break;
+		memcpy(p, ci_curr->ci_Data, ci_curr->ci_Size);
+		ci_next = ci_curr->ci_Next;
+		
+		if(ci_new) {
+			free(ci_curr->ci_Data);
+			FreeVec(ci_curr);
 		}
-	} while (ci_curr = ci_curr->ci_Next);
+	} while (ci_curr = ci_next);
 
 	*text_length = len;
 	return text;
