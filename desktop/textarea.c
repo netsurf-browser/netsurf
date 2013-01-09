@@ -391,12 +391,13 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 
 
 /**
- * get character offset from the beginning of the text for some coordinates
+ * get byte/character offset from the beginning of the text for some coordinates
  *
  * \param ta		Text area
  * \param x		X coordinate
  * \param y		Y coordinate
- * \return		character offset
+ * \param b_off		Updated to byte offset
+ * \param c_off		Updated to character offset
  */
 static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
 		size_t *b_off, unsigned int *c_off)
@@ -435,7 +436,8 @@ static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
 	 * after it. Otherwise, the caret will be placed at the start of the
 	 * following line, which is undesirable.
 	 */
-	if (bpos == (unsigned)ta->lines[line].b_length &&
+	if (ta->flags & TEXTAREA_MULTILINE &&
+			bpos == (unsigned)ta->lines[line].b_length &&
 			ta->text[ta->lines[line].b_start +
 			ta->lines[line].b_length - 1] == ' ')
 		bpos--;
@@ -476,15 +478,15 @@ static bool textarea_set_caret_xy(struct textarea *ta, int x, int y)
 /**
  * Insert text into the text area
  *
- * \param ta Text area
- * \param index 0-based character index to insert at
- * \param text UTF-8 text to insert
+ * \param ta		Text area
+ * \param index		0-based character index to insert at
+ * \param text		UTF-8 text to insert
+ * \param b_len		Byte length of UTF-8 text
  * \return false on memory exhaustion, true otherwise
  */
 static bool textarea_insert_text(struct textarea *ta, unsigned int index,
-		const char *text)
+		const char *text, size_t b_len)
 {
-	unsigned int b_len = strlen(text);
 	size_t b_off;
 
 	if (ta->flags & TEXTAREA_READONLY)
@@ -495,9 +497,9 @@ static bool textarea_insert_text(struct textarea *ta, unsigned int index,
 		index = ta->text_utf8_len;
 
 	/* find byte offset of insertion point */
-	for (b_off = 0; index-- > 0;
+	for (b_off = 0; index > 0;
 			b_off = utf8_next(ta->text, ta->text_len, b_off))
-		; /* do nothing */
+		index--;
 
 	if (b_len + ta->text_len >= ta->text_alloc) {
 		char *temp = realloc(ta->text, b_len + ta->text_len + 64);
@@ -516,7 +518,7 @@ static bool textarea_insert_text(struct textarea *ta, unsigned int index,
 	/* Insert new text */
 	memcpy(ta->text + b_off, text, b_len);
 	ta->text_len += b_len;
-	ta->text_utf8_len += utf8_length(text);
+	ta->text_utf8_len += utf8_bounded_length(text, b_len);
 
 	textarea_normalise_text(ta, b_off, b_len);
 
@@ -529,16 +531,18 @@ static bool textarea_insert_text(struct textarea *ta, unsigned int index,
 /**
  * Replace text in a text area
  *
- * \param ta Text area
- * \param start Start character index of replaced section (inclusive)
- * \param end End character index of replaced section (exclusive)
- * \param text UTF-8 text to insert
+ * \param ta		Text area
+ * \param start		Start character index of replaced section (inclusive)
+ * \param end		End character index of replaced section (exclusive)
+ * \param rep		Replacement UTF-8 text to insert
+ * \param rep_len	Byte length of replacement UTF-8 text
+ * \param add_to_clipboard	True iff replaced text to be added to clipboard
  * \return false on memory exhaustion, true otherwise
  */
 static bool textarea_replace_text(struct textarea *ta, unsigned int start,
-		unsigned int end, const char *text)
+		unsigned int end, const char *rep, size_t rep_len,
+		bool add_to_clipboard)
 {
-	unsigned int b_len = strlen(text);
 	size_t b_start, b_end, diff;
 
 	if (ta->flags & TEXTAREA_READONLY)
@@ -549,8 +553,8 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 	if (end > ta->text_utf8_len)
 		end = ta->text_utf8_len;
 
-	if (start == end)
-		return textarea_insert_text(ta, start, text);
+	if (start == end && rep != NULL)
+		return textarea_insert_text(ta, start, rep, rep_len);
 
 	if (start > end)
 		return false;
@@ -567,9 +571,20 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 			b_end = utf8_next(ta->text, ta->text_len, b_end))
 		; /* do nothing */
 
-	if (b_len + ta->text_len - (b_end - b_start) >= ta->text_alloc) {
+	/* Place CUTs on clipboard */
+	if (add_to_clipboard)
+		gui_set_clipboard(ta->text + b_start, b_end - b_start,
+				NULL, 0);
+
+	if (rep == NULL) {
+		/* No replacement text */
+		return true;
+	}
+
+	/* Ensure textarea's text buffer is large enough */
+	if (rep_len + ta->text_len - (b_end - b_start) >= ta->text_alloc) {
 		char *temp = realloc(ta->text,
-			b_len + ta->text_len - (b_end - b_start) + 64);
+			rep_len + ta->text_len - (b_end - b_start) + 64);
 		if (temp == NULL) {
 			LOG(("realloc failed"));
 			return false;
@@ -577,19 +592,19 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 
 		ta->text = temp;
 		ta->text_alloc =
-			b_len + ta->text_len - (b_end - b_start) + 64;
+			rep_len + ta->text_len - (b_end - b_start) + 64;
 	}
 
 	/* Shift text following to new position */
-	memmove(ta->text + b_start + b_len, ta->text + b_end,
+	memmove(ta->text + b_start + rep_len, ta->text + b_end,
 			ta->text_len - b_end);
 
 	/* Insert new text */
-	memcpy(ta->text + b_start, text, b_len);
+	memcpy(ta->text + b_start, rep, rep_len);
 
-	ta->text_len += b_len - (b_end - b_start);
+	ta->text_len += rep_len - (b_end - b_start);
 	ta->text_utf8_len = utf8_length(ta->text);
-	textarea_normalise_text(ta, b_start, b_len);
+	textarea_normalise_text(ta, b_start, rep_len);
 
 	/** \todo calculate line to reflow from */
 	return textarea_reflow(ta, 0);
@@ -729,7 +744,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 	c_len = ta->text_utf8_len;
 
-	if (caret != -1 && (unsigned)caret > c_len)
+	if (caret != -1 && caret > (signed)c_len)
 		caret = c_len;
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
@@ -1073,10 +1088,23 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		length = utf8_from_ucs4(key, utf8);
 		utf8[length] = '\0';
 
-		if (!textarea_insert_text(ta, caret, utf8))
-			return false;
-		caret++;
-		redraw = true;
+		if (ta->sel_start != -1) {
+			if (!textarea_replace_text(ta,
+					ta->sel_start,
+					ta->sel_end, utf8, length, false))
+				return false;
+
+			caret = ta->sel_start + 1;
+			ta->sel_start = ta->sel_end = -1;
+			redraw = true;
+		} else {
+			if (!textarea_replace_text(ta,
+					caret, caret,
+					utf8, length, false))
+				return false;
+			caret++;
+			redraw = true;
+		}
 
 	} else switch (key) {
 		case KEY_SELECT_ALL:
@@ -1087,6 +1115,13 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
  			redraw = true;
  			break;
 		case KEY_COPY_SELECTION:
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta,
+						ta->sel_start,
+						ta->sel_end,
+						NULL, 0, true))
+					return false;
+			}
 			break;
 		case KEY_DELETE_LEFT:
 			if (readonly)
@@ -1094,37 +1129,83 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 				     		ta->sel_start,
-						ta->sel_end, ""))
+						ta->sel_end, "", 0, false))
 					return false;
 
 				caret = ta->sel_start;
 				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
-			} else {
-				if (caret) {
-					if (!textarea_replace_text(ta,
-					     		caret - 1,
-							caret, ""))
-						return false;
-					caret--;
-					redraw = true;
-				}
+			} else if (caret > 0) {
+				if (!textarea_replace_text(ta,
+						caret - 1,
+						caret, "", 0, false))
+					return false;
+				caret--;
+				redraw = true;
 			}
 			break;
 		case KEY_NL:
 			if (readonly)
 				break;
-			if(!textarea_insert_text(ta, caret, "\n"))
+			if(!textarea_insert_text(ta, caret, "\n", 1))
 				return false;
 			caret++;
 			ta->sel_start = ta->sel_end = -1;
 			redraw = true;
 			break;
 		case KEY_CUT_LINE:
+			break;
 		case KEY_PASTE:
+		{
+			if (readonly)
+				break;
+			char *clipboard;
+			size_t clipboard_length;
+			size_t clipboard_chars;
+
+			gui_get_clipboard(&clipboard, &clipboard_length);
+			clipboard_chars = utf8_bounded_length(clipboard,
+					clipboard_length);
+
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta,
+						ta->sel_start, ta->sel_end,
+						clipboard, clipboard_length,
+						false))
+					return false;
+
+				caret = ta->sel_start + clipboard_chars;
+				ta->sel_start = ta->sel_end = -1;
+				redraw = true;
+			} else {
+				if (!textarea_replace_text(ta,
+						caret, caret,
+						clipboard, clipboard_length,
+						false))
+					return false;
+				caret += clipboard_chars;
+				redraw = true;
+			}
+
+			free(clipboard);
+		}
+			break;
 		case KEY_CUT_SELECTION:
+			if (readonly)
+				break;
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta,
+						ta->sel_start,
+						ta->sel_end, "", 0, true))
+					return false;
+
+				caret = ta->sel_start;
+				ta->sel_start = ta->sel_end = -1;
+				redraw = true;
+			}
 			break;
 		case KEY_ESCAPE:
+			/* Fall through to KEY_CLEAR_SELECTION */
 		case KEY_CLEAR_SELECTION:
 			ta->sel_start = -1;
 			ta->sel_end = -1;
@@ -1133,7 +1214,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_LEFT:
 			if (readonly)
 				break;
-			if (caret)
+			if (caret > 0)
 				caret--;
 			if (ta->sel_start != -1) {
 				ta->sel_start = ta->sel_end = -1;
@@ -1158,8 +1239,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				   KEY_UP */
 				line = ta->caret_pos.line - (ta->vis_height +
 						ta->line_height - 1) /
-						ta->line_height
-						+ 1;
+						ta->line_height + 1;
 			}
 			/* fall through */
 		case KEY_UP:
@@ -1257,7 +1337,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 				     		ta->sel_start,
-						ta->sel_end, ""))
+						ta->sel_end, "", 0, false))
 					return false;
 
 				caret = ta->sel_start;
@@ -1265,8 +1345,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				redraw = true;
 			} else {
 				if (caret < ta->text_utf8_len) {
-					if (!textarea_replace_text(ta, caret,
-							caret + 1, ""))
+					if (!textarea_replace_text(ta,
+							caret, caret + 1,
+							"", 0, false))
 						return false;
 					redraw = true;
 				}
@@ -1324,7 +1405,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 				     		ta->sel_start,
-						ta->sel_end, ""))
+						ta->sel_end, "", 0, false))
 					return false;
 				ta->sel_start = ta->sel_end = -1;
 			} else {
@@ -1333,7 +1414,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				l_len = utf8_bounded_length(&(ta->text[b_off]),
 						b_len);
 				if (!textarea_replace_text(ta, caret,
-						caret + l_len, ""))
+						caret + l_len, "", 0, false))
 					return false;
 			}
 			redraw = true;
@@ -1344,14 +1425,13 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 				     		ta->sel_start,
-						ta->sel_end, ""))
+						ta->sel_end, "", 0, false))
 					return false;
 				ta->sel_start = ta->sel_end = -1;
 			} else {
 				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.char_off,
-      						caret,
-						""))
+					caret, "", 0, false))
 					return false;
 				caret -= ta->caret_pos.char_off;
 			}
