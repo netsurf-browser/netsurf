@@ -176,7 +176,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		case POP_CTX_PASTE_SEL:
-			gui_paste_from_clipboard(gw, x, y);
+			browser_window_key_press(gw->browser->bw, KEY_PASTE);
 		break;
 
 		case POP_CTX_SELECT_ALL:

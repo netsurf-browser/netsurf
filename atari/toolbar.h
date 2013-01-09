@@ -56,7 +56,7 @@ struct s_tb_button
 struct s_url_widget
 {
 	bool redraw;		 	/* widget is only redrawn when this flag is set */
-	struct text_area *textarea;
+	struct textarea *textarea;
 	COMPONENT * comp;
 	GRECT rdw_area;
 };
