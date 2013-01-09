@@ -612,124 +612,78 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *w)
 
 void gui_start_selection(struct gui_window *w)
 {
-	gui_empty_clipboard();
+
 }
 
-void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
+/**
+ * Core asks front end for clipboard contents.
+ *
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  length  Byte length of UTF-8 text in buffer
+ */
+void gui_get_clipboard(char **buffer, size_t *length)
 {
-	char * clip = scrap_txt_read( &app );
-	if( clip == NULL )
+	char *clip;
+	size_t clip_len;
+
+	*length = 0;
+	*buffer = 0;
+
+	clip = scrap_txt_read(&app);
+
+	if(clip == NULL){
 		return;
-	int clip_length = strlen( clip );
-	if (clip_length > 0) {
-		char *utf8;
+	} else {
+
+		// clipboard is in atari encoding, convert it to utf8:
+
+		char *utf8 = NULL;
 		utf8_convert_ret ret;
-		/* Clipboard is in local encoding so
-		 * convert to UTF8 */
-		ret = utf8_from_local_encoding(clip,
-				clip_length, &utf8);
+
+		clip_len = strlen(clip);
+		if (clip_len > 0) {
+			ret = utf8_to_local_encoding(clip, clip_len, &utf8);
+			if (ret == UTF8_CONVERT_OK && utf8 != NULL) {
+				*buffer = utf8;
+				*length = strlen(utf8);
+			}
+			else {
+				assert(ret == UTF8_CONVERT_OK && utf8 != NULL);
+			}
+		}
+
+		free(clip);
+	}
+}
+
+/**
+ * Core tells front end to put given text in clipboard
+ *
+ * \param  buffer    UTF-8 text, owned by core
+ * \param  length    Byte length of UTF-8 text in buffer
+ * \param  styles    Array of styles given to text runs, owned by core, or NULL
+ * \param  n_styles  Number of text run styles in array
+ */
+void gui_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
+{
+	if (length > 0 && buffer != NULL) {
+
+		// convert utf8 input to atari encoding:
+
+		utf8_convert_ret ret;
+		char *clip = NULL;
+
+		ret = utf8_to_local_encoding(buffer,length, &clip);
 		if (ret == UTF8_CONVERT_OK) {
-			browser_window_paste_text(w->browser->bw, utf8,
-					strlen(utf8), true);
-			free(utf8);
-		}
-		free( clip );
-	}
-}
-
-bool gui_empty_clipboard(void)
-{
-	if( tmp_clipboard != NULL ){
-		free( tmp_clipboard );
-		tmp_clipboard = NULL;
-	}
-	return true;
-}
-
-bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space,
-		const plot_font_style_t *fstyle)
-{
-	LOG(("(%s): %s (%d)\n", (space)?"space":"", (char*)text_utf8, (int)length_utf8));
-	char * oldptr = tmp_clipboard;
-	size_t oldlen = 0;
-	size_t newlen = 0;
-	char * text = NULL;
-	char * text2 = NULL;
-	bool retval;
-	int length = 0;
-	if( length_utf8 > 0 && text_utf8 != NULL ) {
-		utf8_to_local_encoding(text_utf8,length_utf8,&text);
-		if( text == NULL ) {
-			LOG(("Conversion failed (%s)", text_utf8));
-			goto error;
+			scrap_txt_write(&app, clip);
 		} else {
-			text2 = text;
+			assert(ret == UTF8_CONVERT_OK);
 		}
-	} else {
-		if( space == false ) {
-			goto success;
-		}
-		text = malloc(length + 2);
-		if( text == NULL ) {
-			goto error;
-		}
-		text2 = text;
-		text[length+1] = 0;
-		memset(text, ' ', length+1);
+		free(clip);
 	}
-	length = strlen(text);
-	if( tmp_clipboard != NULL ) {
-		oldlen = strlen( tmp_clipboard );
-	}
-	newlen = oldlen + length + 1;
-	if( tmp_clipboard == NULL){
-		tmp_clipboard = malloc(newlen);
-		if( tmp_clipboard == NULL ) {
-			goto error;
-		}
-		strncpy(tmp_clipboard, text, newlen);
-	} else {
-		tmp_clipboard = realloc( tmp_clipboard, newlen);
-		if( tmp_clipboard == NULL ) {
-			goto error;
-		}
-		strncpy(tmp_clipboard, oldptr, newlen);
-		strncat(tmp_clipboard, text, newlen-oldlen);
-	}
-	goto success;
-
-error:
-	retval = false;
-	goto fin;
-
-success:
-	retval = true;
-
-fin:
-	if( text2 != NULL )
-		free( text2 );
-	return(retval);
-
 }
 
-bool gui_commit_clipboard(void)
-{
-	int r = scrap_txt_write(&app, tmp_clipboard);
-	return( (r>0)?true:false );
-}
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	bool ret = false;
-	if( s->defined ) {
-		gui_empty_clipboard();
-		if(selection_copy_to_clipboard(s)){
-			ret = gui_commit_clipboard();
-		}
-	}
-	gui_empty_clipboard();
-	return ret;
-}
 
 
 void gui_create_form_select_menu(struct browser_window *bw,
