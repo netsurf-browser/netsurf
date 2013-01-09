@@ -173,11 +173,11 @@ void context_popup(struct gui_window * gw, short x, short y)
 
 	switch( choice ){
 		case POP_CTX_COPY_SEL:
-			browser_window_key_press( gw->browser->bw, KEY_COPY_SELECTION );
+			browser_window_key_press(gw->browser->bw, KEY_COPY_SELECTION);
 		break;
 
 		case POP_CTX_CUT_SEL:
-			browser_window_key_press( gw->browser->bw, KEY_CUT_SELECTION );
+			browser_window_key_press(gw->browser->bw, KEY_CUT_SELECTION);
 		break;
 
 		case POP_CTX_PASTE_SEL:
@@ -185,11 +185,11 @@ void context_popup(struct gui_window * gw, short x, short y)
 		break;
 
 		case POP_CTX_SELECT_ALL:
-			browser_window_key_press( gw->browser->bw, KEY_SELECT_ALL );
+			browser_window_key_press(gw->browser->bw, KEY_SELECT_ALL);
 		break;
 
 		case POP_CTX_SAVE_AS:
-			if( ctx->ccdata.object != NULL ) {
+			if (ctx->ccdata.object != NULL) {
 				if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ) {
 					browser_window_download(
 						gw->browser->bw,
@@ -200,7 +200,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 			}
 
 		case POP_CTX_SAVE_LINK_AS:
-			if( ctx->ccdata.link_url != NULL ) {
+			if (ctx->ccdata.link_url != NULL) {
 				browser_window_download(
 					gw->browser->bw,
 					ctx->ccdata.link_url,
@@ -211,7 +211,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 		break;
 
 		case POP_CTX_COPY_URL:
-			if( (ctx->flags & CNT_IMG) && (ctx->ccdata.object != NULL) ){
+			if ((ctx->flags & CNT_IMG) && (ctx->ccdata.object != NULL)) {
 				if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ){
 					scrap_txt_write((char*)nsurl_access(
 							hlcache_handle_get_url(ctx->ccdata.object)));
@@ -220,13 +220,13 @@ void context_popup(struct gui_window * gw, short x, short y)
 		break;
 
 		case POP_CTX_COPY_LINK:
-			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url != NULL ){
+			if ((ctx->flags & CNT_HREF) && ctx->ccdata.link_url != NULL) {
 				scrap_txt_write((char*)ctx->ccdata.link_url);
 			}
 		break;
 
 		case POP_CTX_OPEN_NEW:
-			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url) {
+			if ((ctx->flags & CNT_HREF) && ctx->ccdata.link_url) {
 				browser_window_create(
 					ctx->ccdata.link_url,
 					gw->browser->bw,
