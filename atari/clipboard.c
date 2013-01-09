@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <mint/osbind.h>
+#include <cflib.h>
 #include "atari/clipboard.h"
 
 
