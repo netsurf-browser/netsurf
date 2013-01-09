@@ -78,7 +78,6 @@
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
-char *tmp_clipboard;
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
@@ -765,10 +764,6 @@ void gui_quit(void)
 	}
 	LOG(("Shutting down plotter"));
 	plot_finalise();
-	if( tmp_clipboard != NULL ){
-		free( tmp_clipboard );
-		tmp_clipboard = NULL;
-	}
 	LOG(("done"));
 }
 
