@@ -79,13 +79,11 @@ struct textarea {
 	unsigned int text_alloc;	/**< Size of allocated text */
 	unsigned int text_len;		/**< Length of text, in bytes */
 	unsigned int text_utf8_len;	/**< Length of text, in characters
-					 * without the trailing NUL
-					 */
+					 * without the trailing NUL */
 	struct {
 		int line;		/**< Line caret is on */
 		int char_off;		/**< Character index of caret within the
-					 * specified line
-					 */
+					 * specified line */
 	} caret_pos;
 
 	int caret_x;			/**< cached X coordinate of the caret */
@@ -400,14 +398,17 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
  * \param y		Y coordinate
  * \return		character offset
  */
-static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
+static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
+		size_t *b_off, unsigned int *c_off)
 {
-	size_t b_off, temp;
-	unsigned int c_off;
+	size_t bpos, temp; /* Byte positions in utf8 string */
+	unsigned int cpos; /* Character positions in utf8 string */
 	int line;
 
-	if (!ta->line_count)
-		return 0;
+	if (!ta->line_count) {
+		*b_off = *c_off = 0;
+		return;
+	}
 
 	x = x - MARGIN_LEFT + ta->scroll_x;
 	y = y + ta->scroll_y;
@@ -422,9 +423,11 @@ static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
 	if (ta->line_count - 1 < line)
 		line = ta->line_count - 1;
 
+	/* Get byte position */
 	nsfont.font_position_in_string(&ta->fstyle,
 			ta->text + ta->lines[line].b_start,
-			ta->lines[line].b_length, x, &b_off, &x);
+			ta->lines[line].b_length, x, &bpos, &x);
+
 
 	/* If the calculated byte offset corresponds with the number of bytes
 	 * in the line, and the line has been soft-wrapped, then ensure the
@@ -432,16 +435,19 @@ static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
 	 * after it. Otherwise, the caret will be placed at the start of the
 	 * following line, which is undesirable.
 	 */
-	if (b_off == (unsigned)ta->lines[line].b_length &&
+	if (bpos == (unsigned)ta->lines[line].b_length &&
 			ta->text[ta->lines[line].b_start +
 			ta->lines[line].b_length - 1] == ' ')
-		b_off--;
+		bpos--;
 
-	for (temp = 0, c_off = 0; temp < b_off + ta->lines[line].b_start;
+	/* Get character position */
+	for (temp = 0, cpos = 0; temp < bpos + ta->lines[line].b_start;
 			temp = utf8_next(ta->text, ta->text_len, temp))
-		c_off++;
+		cpos++;
 
-	return c_off;
+	/* Set the return values */
+	*b_off = bpos;
+	*c_off = cpos;
 }
 
 
@@ -455,12 +461,14 @@ static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
  */
 static bool textarea_set_caret_xy(struct textarea *ta, int x, int y)
 {
+	size_t b_off;
 	unsigned int c_off;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
 
-	c_off = textarea_get_xy_offset(ta, x, y);
+	textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
+
 	return textarea_set_caret(ta, c_off);
 }
 
@@ -1371,12 +1379,16 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_start, c_end;
+	size_t b_off;
+	unsigned int c_off;
 
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
 			textarea_set_caret_xy(ta, x, y);
-			ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
+			
+			textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
+			ta->drag_start_char = c_off;
 		}
 		if (ta->sel_start != -1) {
 			/* remove selection */
@@ -1393,8 +1405,9 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		}
 
 	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1)) {
+		textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
 		c_start = ta->drag_start_char;
-		c_end = textarea_get_xy_offset(ta, x, y);
+		c_end = c_off;
 		return textarea_select(ta, c_start, c_end);
 	}
 
@@ -1407,8 +1420,11 @@ bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_end;
+	size_t b_off;
+	unsigned int c_off;
 
-	c_end = textarea_get_xy_offset(ta, x, y);
+	textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
+	c_end = c_off;
 	return textarea_select(ta, ta->drag_start_char, c_end);
 }
 
