@@ -122,7 +122,7 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 {
 	struct CollectionItem *ci_new = NULL, *ci_next, *ci_curr = ci;
 	size_t len = 0;
-	char *text = NULL, *p, *clip;
+	char *text = NULL, *p;
 
 	/* Scan the collected chunks to find out the total size.
 	 * If they are not in UTF-8, convert the chunks first and create a new CollectionItem list.
@@ -142,7 +142,7 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 					ci_next = ci_new;
 				}
 				
-				utf8_from_local_encoding(ci_curr->ci_Data, ci_curr->ci_Size, &ci_next->ci_Data);
+				utf8_from_local_encoding(ci_curr->ci_Data, ci_curr->ci_Size, (char **)&ci_next->ci_Data);
 				ci_next->ci_Size = strlen(ci_next->ci_Data);
 				len += ci_next->ci_Size;
 			break;
@@ -159,7 +159,7 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 				utf8_from_enc(ci_curr->ci_Data,
 						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
 										codeset, DFCS_MIMENAME),
-						ci_curr->ci_Size, &clip);
+						ci_curr->ci_Size, (char **)&ci_next->ci_Data);
 				ci_next->ci_Size = strlen(ci_next->ci_Data);
 				len += ci_next->ci_Size;
 			break;
@@ -199,43 +199,26 @@ void gui_get_clipboard(char **buffer, size_t *length)
 {
 	struct ContextNode *cn;
 	struct CollectionItem *ci = NULL;
+	struct StoredProperty *sp = NULL;
 	ULONG rlen=0,error;
-	struct CSet cset;
+	struct CSet *cset;
 	LONG codeset = 0;
-
-	cset.CodeSet = 0;
 
 	if(OpenIFF(iffh,IFFF_READ)) return;
 	
 	if(CollectionChunk(iffh,ID_FTXT,ID_CHRS)) return;
-	if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
+	if(PropChunk(iffh,ID_FTXT,ID_CSET)) return;
 	if(CollectionChunk(iffh,ID_FTXT,ID_UTF8)) return;
 	
-	while(1)
-	{
-		error = ParseIFF(iffh,IFFPARSE_SCAN);
-		if(error == IFFERR_EOC) continue;
-		else if(error) break;
-
-		cn = CurrentChunk(iffh);
-
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
-		{
-			/* Ideally when we stop here, we need to convert all CHRS chunks up to this
-			 * point based on the previous codeset.  However, for simplicity, we just
-			 * assume only one CSET chunk is present and only take note of the last
-			 * CSET chunk if there is more than one.
-			 */
-
-			rlen = ReadChunkBytes(iffh, &cset, 32);
-			if(cset.CodeSet == 1) codeset = 106;
-				else codeset = cset.CodeSet;
-		}
-	}
+	error = ParseIFF(iffh,IFFPARSE_SCAN);
 
 	if(ci = FindCollection(iffh, ID_FTXT, ID_UTF8)) {
 		*buffer = ami_clipboard_cat_collection(ci, 106, length);
 	} else if(ci = FindCollection(iffh, ID_FTXT, ID_CHRS)) {
+		if(sp = FindProp(iffh, ID_FTXT, ID_CSET)) {
+			cset = (struct CSet *)sp->sp_Data;
+			codeset = cset->CodeSet;
+		}
 		*buffer = ami_clipboard_cat_collection(ci, codeset, length);
 	}
 
