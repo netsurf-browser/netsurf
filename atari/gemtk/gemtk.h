@@ -132,51 +132,118 @@ typedef struct gui_window_s GUIWIN;
 typedef short (*guiwin_event_handler_f)(GUIWIN *gw,
 										EVMULT_OUT *ev_out, short msg[8]);
 struct guiwin_scroll_info_s {
+
+	/** Definition of a content unit (horizontal) measured in pixel  */
 	int x_unit_px;
+
+	/** Definition of content unit (vertical) measured in pixel */
 	int y_unit_px;
+
+	/** Current scroll position (in content units) */
 	int x_pos;
+
+	/** Current scroll position (in content units) */
 	int y_pos;
+
+	/** Size of content (horizontal) measured in content units */
 	int x_units;
+
+	/** Size of content (vertical) measured in content units */
 	int y_units;
 };
 
+/** Well known areas inside the window */
 enum guwin_area_e {
 	GUIWIN_AREA_WORK = 0,
 	GUIWIN_AREA_TOOLBAR,
 	GUIWIN_AREA_CONTENT
 };
 
-short guiwin_init(void);
-void guiwin_exit(void);
-GUIWIN * guiwin_add(short handle, uint32_t flags,
-					guiwin_event_handler_f handler);
-GUIWIN *guiwin_find(short handle);
-short guiwin_remove(GUIWIN *win);
-GUIWIN *guiwin_validate_ptr(GUIWIN *win);
-short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out,
-									short msg[8]);
-void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
-short guiwin_get_handle(GUIWIN *win);
-uint32_t guiwin_get_state(GUIWIN *win);
-void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx,
-						uint32_t flags);
-void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
-void guiwin_set_user_data(GUIWIN *win, void *data);
-void *guiwin_get_user_data(GUIWIN *win);
-struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
-void guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
-void guiwin_set_content_units(GUIWIN * win, short x, short y);
-void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
-bool guiwin_update_slider(GUIWIN *win, short mode);
-void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
-void guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
+/* -------------------------------------------------------------------------- */
+/* GUIWIN functions (document in guiwin.c)                                    */
+/* -------------------------------------------------------------------------- */
+
+short
+guiwin_init(void);
+
+void
+guiwin_exit(void);
+
+GUIWIN *
+guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f handler);
+
+GUIWIN *
+guiwin_find(short handle);
+
+short
+guiwin_remove(GUIWIN *win);
+
+GUIWIN *
+guiwin_validate_ptr(GUIWIN *win);
+
+short
+guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]);
+
+void
+guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
+
+short
+guiwin_get_handle(GUIWIN *win);
+
+uint32_t
+guiwin_get_state(GUIWIN *win);
+
+void
+guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags);
+
+void
+guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
+
+void
+guiwin_set_user_data(GUIWIN *win, void *data);
+
+void *
+guiwin_get_user_data(GUIWIN *win);
+
+struct guiwin_scroll_info_s *
+guiwin_get_scroll_info(GUIWIN *win);
+
+void
+guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
+
+void
+guiwin_set_content_units(GUIWIN * win, short x, short y);
+
+void
+guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
+
+bool
+guiwin_update_slider(GUIWIN *win, short mode);
+
+void
+guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
+
+void
+guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
 					short d);
-void guiwin_send_redraw(GUIWIN *win, GRECT *area);
-VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
-bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
-void guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
-void guiwin_form_redraw(GUIWIN *gw, GRECT *clip);
-void guiwin_clear(GUIWIN *win);
+
+void
+guiwin_send_redraw(GUIWIN *win, GRECT *area);
+
+VdiHdl
+guiwin_get_vdi_handle(GUIWIN *win);
+
+bool
+guiwin_has_intersection(GUIWIN *win, GRECT *work);
+
+void
+guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
+
+void
+guiwin_form_redraw(GUIWIN *gw, GRECT *clip);
+
+void
+guiwin_clear(GUIWIN *win);
 
 /* -------------------------------------------------------------------------- */
 /* AES SCROLLER MODULE                                                        */

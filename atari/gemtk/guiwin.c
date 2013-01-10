@@ -37,6 +37,7 @@ struct gui_window_s {
     OBJECT *toolbar;
     short toolbar_edit_obj;
     short toolbar_idx;
+    GRECT toolbar_dim;
     OBJECT *form;
     short form_edit_obj;
     short form_focus_obj;
@@ -281,6 +282,9 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     return(retval);
 }
 
+/**
+* Preprocess mouse events
+*/
 static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
@@ -421,6 +425,9 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     return(retval);
 }
 
+/**
+* Preprocess keyboard events (for forms/toolbars)
+*/
 static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
 
@@ -457,6 +464,10 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     }
 }
 
+/**
+* Event Dispatcher function. The guiwin API doesn't own an event loop,
+* so you have to inform it for every event that you want it to handle.
+*/
 short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 {
     GUIWIN *dest;
@@ -539,6 +550,9 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
     return(retval);
 }
 
+/**
+*	Initialises the guiwin API
+*/
 short guiwin_init(void)
 {
     if(v_vdi_h == -1) {
@@ -555,6 +569,14 @@ void guiwin_exit(void)
     v_clsvwk(v_vdi_h);
 }
 
+/**
+* Adds and AES handle to the guiwin list and creates and GUIWIN management
+* structure.
+*
+* \param handle The AES handle
+* \param flags Creation flags, configures how the AES window is handled
+* \param cb event handler function for that window
+*/
 GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
 {
 
@@ -584,6 +606,9 @@ GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
     return(win);
 }
 
+/**
+* Returns an GUIWIN* for AES handle, when that AES window is managed by guiwin
+*/
 GUIWIN *guiwin_find(short handle)
 {
     GUIWIN *g;
@@ -597,6 +622,10 @@ GUIWIN *guiwin_find(short handle)
     return(NULL);
 }
 
+
+/**
+* Check's if the pointer is managed by the guiwin API.
+*/
 GUIWIN *guiwin_validate_ptr(GUIWIN *win)
 {
     GUIWIN *g;
@@ -610,6 +639,10 @@ GUIWIN *guiwin_validate_ptr(GUIWIN *win)
     return(NULL);
 }
 
+/**
+* Remove an GUIWIN from the list of managed windows.
+* Call this when the AES window is closed or deleted.
+*/
 short guiwin_remove(GUIWIN *win)
 {
     win = guiwin_validate_ptr(win);
@@ -630,6 +663,11 @@ short guiwin_remove(GUIWIN *win)
     return(0);
 }
 
+/** Calculate & get a well known area within the GUIWIN.
+* \param win The GUIWIN ptr.
+* \param mode Specifies the area to retrieve.
+* \param dest The calculated rectangle.
+*/
 void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 {
 
@@ -642,32 +680,43 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
         if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
             dest->g_x += tb_area.g_w;
             dest->g_w -= tb_area.g_w;
-        } else {
-            dest->g_y += tb_area.g_h;
+        }
+        else {
+			dest->g_y += tb_area.g_h;
             dest->g_h -= tb_area.g_h;
         }
     } else if (mode == GUIWIN_AREA_TOOLBAR) {
-        if (win->toolbar != NULL) {
-            if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
-                dest->g_w = win->toolbar[win->toolbar_idx].ob_width;
-            } else {
-                dest->g_h = win->toolbar[win->toolbar_idx].ob_height;
-            }
-        } else {
-            dest->g_h = 0;
-            dest->g_w = 0;
-        }
+    	if (win->toolbar) {
+			if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
+			   dest->g_w = win->toolbar[win->toolbar_idx].ob_width;
+			} else {
+				dest->g_h = win->toolbar[win->toolbar_idx].ob_height;
+			}
+    	}
+    	else {
+			dest->g_w = 0;
+			dest->g_h = 0;
+    	}
     }
 }
 
-void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
+
+/**
+*	Scroll the content area (GUIWIN_AREA_CONTENT) in the specified dimension
+*	(GUIWIN_VSLIDER, GUIWIN_HSLIDER)
+*	\param win The GUIWIN
+* 	\param orientation GUIWIN_VSLIDER or GUIWIN_HSLIDER
+* 	\param units the amout to scroll (pass negative values to scroll up)
+*	\param refresh Sliders will be updated when this flag is set
+*/
+void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
 {
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(gw);
+    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
     int oldpos = 0, newpos = 0, vis_units=0, pix = 0;
     int abs_pix = 0;
     GRECT *redraw=NULL, g, g_ro;
 
-    guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+    guiwin_get_grectw(win, GUIWIN_AREA_CONTENT, &g);
     g_ro = g;
 
     if (orientation == GUIWIN_VSLIDER) {
@@ -691,7 +740,7 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
             if(pix < 0 ) {
                 // blit screen area:
                 g.g_h -= abs_pix;
-                move_rect(gw, &g, 0, abs_pix);
+                move_rect(win, &g, 0, abs_pix);
                 g.g_y = g_ro.g_y;
                 g.g_h = abs_pix;
                 redraw = &g;
@@ -699,7 +748,7 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
                 // blit screen area:
                 g.g_y += abs_pix;
                 g.g_h -= abs_pix;
-                move_rect(gw, &g, 0, -abs_pix);
+                move_rect(win, &g, 0, -abs_pix);
                 g.g_y = g_ro.g_y + g_ro.g_h - abs_pix;
                 g.g_h = abs_pix;
                 redraw = &g;
@@ -727,7 +776,7 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
             if(pix < 0 ) {
                 // blit screen area:
                 g.g_w -= abs_pix;
-                move_rect(gw, &g, abs_pix, 0);
+                move_rect(win, &g, abs_pix, 0);
                 g.g_x = g_ro.g_x;
                 g.g_w = abs_pix;
                 redraw = &g;
@@ -735,7 +784,7 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
                 // blit screen area:
                 g.g_x += abs_pix;
                 g.g_w -= abs_pix;
-                move_rect(gw, &g, -abs_pix, 0);
+                move_rect(win, &g, -abs_pix, 0);
                 g.g_x = g_ro.g_x + g_ro.g_w - abs_pix;
                 g.g_w = abs_pix;
                 redraw = &g;
@@ -744,14 +793,19 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
     }
 
     if (refresh) {
-        guiwin_update_slider(gw, orientation);
+        guiwin_update_slider(win, orientation);
     }
 
     if ((redraw != NULL) && (redraw->g_h > 0)) {
-        guiwin_send_redraw(gw, redraw);
+        guiwin_send_redraw(win, redraw);
     }
 }
 
+/**
+* Refresh the sliders of the window.
+* \param win the GUIWIN
+* \param mode bitmask, valid bits: GUIWIN_VSLIDER, GUIWIN_HSLIDER
+*/
 bool guiwin_update_slider(GUIWIN *win, short mode)
 {
     GRECT viewport;
@@ -765,6 +819,8 @@ bool guiwin_update_slider(GUIWIN *win, short mode)
 
     old_x = slid->x_pos;
     old_y = slid->y_pos;
+
+    // TODO: check if the window has sliders of that direction...?
 
     if((mode & GUIWIN_VSLIDER) && (slid->y_unit_px > 0)) {
         if ( slid->y_units < (long)viewport.g_h/slid->y_unit_px) {
@@ -807,26 +863,48 @@ bool guiwin_update_slider(GUIWIN *win, short mode)
     return(false);
 }
 
+/**
+* Return the AES handle for the GUIWIN.
+*/
 short guiwin_get_handle(GUIWIN *win)
 {
     return(win->handle);
 }
 
+/**
+* Return the VDI handle for an GUIWIN.
+*/
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win)
 {
     return(v_vdi_h);
 }
 
+/**
+* Returns the state bitmask of the window
+*/
 uint32_t guiwin_get_state(GUIWIN *win)
 {
     return(win->state);
 }
 
+
+/**
+* Set and new event handler function.
+*/
 void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb)
 {
     win->handler_func = cb;
 }
 
+/**
+* Configure the window so that it shows an toolbar or at least reserves
+* an area to draw an toolbar.
+* \param win The GUIWIN
+* \param toolbar the AES form
+* \param idx index within the toolbar tree (0 in most cases...)
+* \param flags optional configuration flags
+*/
+//TODO: document flags
 void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
 {
     win->toolbar = toolbar;
@@ -837,20 +915,32 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
     }
 }
 
+/**
+* Attach an arbitary pointer to the GUIWIN
+*/
 void guiwin_set_user_data(GUIWIN *win, void *data)
 {
     win->user_data = data;
 }
 
+/**
+* Retrieve the user_data pointer attached to the GUIWIN.
+*/
 void *guiwin_get_user_data(GUIWIN *win)
 {
     return(win->user_data);
 }
 
+/** Get the scroll management structure for a GUIWIN
+*/
 struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
+/**
+*	Get the amount of content dimensions within the window
+* 	which is calculated by using the scroll_info attached to the GUIWIN.
+*/
 void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
 {
     struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
@@ -861,6 +951,12 @@ void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
     slid->x_unit_px = y;
 }
 
+
+/** Set the size of the content measured in content units
+* \param win the GUIWIN
+* \param x horizontal size
+* \param y vertical size
+*/
 void guiwin_set_content_units(GUIWIN * win, short x, short y)
 {
     struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
@@ -871,6 +967,14 @@ void guiwin_set_content_units(GUIWIN * win, short x, short y)
     slid->y_units = y;
 }
 
+/** Send an Message to a GUIWIN using AES message pipe
+* \param win the GUIWIN which shall receive the message
+* \param msg_type the WM_ message definition
+* \param a the 4th parameter to appl_write
+* \param b the 5th parameter to appl_write
+* \param c the 6th parameter to appl_write
+* \param d the 7th parameter to appl_write
+*/
 void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
                      short d)
 {
@@ -888,6 +992,7 @@ void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     appl_write(gl_apid, 16, &msg);
 }
 
+// TODO: rename, document and implement alternative (guiwin_exec_event)
 void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 {
     short msg[8], retval;
@@ -940,6 +1045,8 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
     //appl_write(gl_apid, 16, &msg);
 }
 
+/** Attach an AES FORM to the GUIWIN, similar feature like the toolbar
+*/
 void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index)
 {
 	DEBUG_PRINT(("Setting form %p (%d) for window %p\n", tree, index, win));
@@ -949,6 +1056,8 @@ void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index)
     win->form_idx = index;
 }
 
+/** Checks if a GUIWIN is overlapped by other windows.
+*/
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
 {
     GRECT area, mywork;
@@ -971,6 +1080,8 @@ bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
     return(retval);
 }
 
+/** Execute an toolbar redraw
+*/
 void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
 {
     GRECT tb_area, tb_area_ro, g;
@@ -1003,7 +1114,8 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
     }
 }
 
-
+/** Execute FORM redraw
+*/
 void guiwin_form_redraw(GUIWIN *gw, GRECT *clip)
 {
     GRECT area, area_ro, g;
@@ -1044,6 +1156,8 @@ void guiwin_form_redraw(GUIWIN *gw, GRECT *clip)
 }
 
 
+/** Fill the content area with white color
+*/
 void guiwin_clear(GUIWIN *win)
 {
     GRECT area, g;
