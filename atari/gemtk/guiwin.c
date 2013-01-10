@@ -224,7 +224,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         break;
 
     case WM_FULLED:
-        wind_get_grect(gw->handle, WF_FULLXYWH, &g);
+        wind_get_grect(DESKTOP_HANDLE, WF_WORKXYWH, &g);
         wind_get_grect(gw->handle, WF_CURRXYWH, &g2);
         if(g.g_w == g2.g_w && g.g_h == g2.g_h) {
             wind_get_grect(gw->handle, WF_PREVXYWH, &g);
@@ -716,7 +716,7 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
     int abs_pix = 0;
     GRECT *redraw=NULL, g, g_ro;
 
-    guiwin_get_grectw(win, GUIWIN_AREA_CONTENT, &g);
+    guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &g);
     g_ro = g;
 
     if (orientation == GUIWIN_VSLIDER) {
@@ -732,7 +732,7 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
         if(oldpos == newpos)
             return;
 
-        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
+        if (units>=vis_units || guiwin_has_intersection(win, &g_ro)) {
             // send complete redraw
             redraw = &g_ro;
         } else {
@@ -768,7 +768,7 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
 
         if(oldpos == newpos)
             return;
-        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
+        if (units>=vis_units || guiwin_has_intersection(win, &g_ro)) {
             // send complete redraw
             redraw = &g_ro;
         } else {

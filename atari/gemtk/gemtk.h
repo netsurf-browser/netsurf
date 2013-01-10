@@ -128,7 +128,11 @@ short msg_box_show(short type, const char * msg);
 #define GUIWIN_WM_FORM				1001
 
 struct gui_window_s;
+
+/** list struct for managing AES windows */
 typedef struct gui_window_s GUIWIN;
+
+/** GUIWIN event handler */
 typedef short (*guiwin_event_handler_f)(GUIWIN *gw,
 										EVMULT_OUT *ev_out, short msg[8]);
 struct guiwin_scroll_info_s {
