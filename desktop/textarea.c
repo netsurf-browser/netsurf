@@ -301,7 +301,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 	unsigned int len;
 	size_t b_off;
 	int x;
-	char *space;
+	char *space, *para_end;
 	unsigned int line_count = 0;
 
 	/** \todo pay attention to line parameter */
@@ -331,15 +331,22 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 	for (len = ta->text_len - 1, text = ta->text; len > 0;
 			len -= b_off, text += b_off) {
 
-		nsfont.font_split(&ta->fstyle, text, len,
+		/* Find end of paragraph */
+		for (para_end = text; para_end < text + len; para_end++) {
+			if (*para_end == '\n')
+				break;
+		}
+
+		/* Wrap current line in paragraph */
+		nsfont.font_split(&ta->fstyle, text, para_end - text,
 				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
 
 		if (b_off == 0) {
 			/* Text wasn't split */
-			b_off = len;
+			b_off = para_end - text;
 		}
-		/* b_off now marks space, or end of text */
+		/* b_off now marks space, or end of paragraph */
 
 		if (line_count > 0 && line_count % LINE_CHUNK_SIZE == 0) {
 			struct line_info *temp = realloc(ta->lines,
@@ -353,19 +360,14 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 			ta->lines = temp;
 		}
 
-		/* handle LF */
-		for (space = text; space <= text + b_off; space++) {
-			if (*space == '\n')
-				break;
-		}
-		/* space now marks newline, or b_off -- whichever's first */
-
-		if (space < text + b_off) {
-			/* Found newline; use it */
+		if (para_end == text + b_off && *para_end == '\n') {
+			/* Not found any spaces to wrap at, and we
+			 * have a newline char */
 			ta->lines[line_count].b_start = text - ta->text;
-			ta->lines[line_count++].b_length = space - text;
+			ta->lines[line_count++].b_length = para_end - text;
 
-			b_off = space + 1 - text;
+			/* Jump newline */
+			b_off++;
 
 			if (len - b_off == 0) {
 				/* reached end of input => add last line */
