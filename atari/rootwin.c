@@ -165,7 +165,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
-        guiwin_get_grect(data->rootwin->win, GUIWIN_AREA_CONTENT,
+        window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
                          &content_area);
         if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
                          content_area)) {
@@ -437,7 +437,7 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
     GRECT area;
     struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(rootwin->win);
 
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &area);
+    window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
 
     slid->x_units = (width/slid->x_unit_px);
     slid->y_units = (height/slid->y_unit_px);
@@ -452,7 +452,7 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
 void window_set_focus(struct s_gui_win_root *rootwin,
                       enum focus_element_type type, void * element)
 {
-    struct text_area * ta;
+    struct textarea * ta;
 
     assert(rootwin != NULL);
 
@@ -833,8 +833,8 @@ void window_process_redraws(ROOTWIN * rootwin)
 
     redraw_active = true;
 
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &content_area);
+	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
+	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
 
@@ -971,7 +971,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     }
 
     window_set_focus(gw->root, BROWSER, (void*)gw->browser );
-    guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &cwork);
+    window_get_grect(gw->root, BROWSER_AREA_CONTENT, &cwork);
 
     /* convert screen coords to component coords: */
     mx = aes_event_out.emo_mouse.p_x - cwork.g_x;
@@ -1092,7 +1092,7 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
 
             GRECT g;
             GUIWIN * w = bw->window->root->win;
-            guiwin_get_grect(w, GUIWIN_AREA_CONTENT, &g);
+            window_get_grect(bw->window->root, BROWSER_AREA_CONTENT, &g);
 
             struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w);
 
@@ -1217,7 +1217,7 @@ static void on_resized(ROOTWIN *rootwin)
 //    }
 
     rootwin->loc = g;
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &g);
+    window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &g);
     toolbar_set_dimensions(rootwin->toolbar, &g);
 }
 
