@@ -324,7 +324,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             short msg_out[8] = {WM_TOOLBAR, gl_apid,
                                 0, gw->handle,
                                 obj_idx, ev_out->emo_mclicks,
-                                ev_out->emo_kmeta, 0
+                                ev_out->emo_kmeta, ev_out->emo_mbutton
                                };
             ev_out->emo_events = MU_MESAG;
             // notify the window about toolbar click:
