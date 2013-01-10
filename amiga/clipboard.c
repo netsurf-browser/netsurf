@@ -175,9 +175,9 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 	p = text + len;
 
 	if(ci_new) {
-		ci_curr = ci;
-	} else {
 		ci_curr = ci_new;
+	} else {
+		ci_curr = ci;
 	}
 
 	do {
@@ -209,6 +209,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	if(CollectionChunk(iffh,ID_FTXT,ID_CHRS)) return;
 	if(PropChunk(iffh,ID_FTXT,ID_CSET)) return;
 	if(CollectionChunk(iffh,ID_FTXT,ID_UTF8)) return;
+	if(StopOnExit(iffh, ID_FTXT, ID_FORM)) return;
 	
 	error = ParseIFF(iffh,IFFPARSE_SCAN);
 
