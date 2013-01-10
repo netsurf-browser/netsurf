@@ -238,7 +238,6 @@ static bool textarea_select_fragment(struct textarea * ta)
 static bool textarea_scroll_visible(struct textarea *ta)
 {
 	int x0, x1, y0, y1, x, y;
-	int index, b_off;
 	bool scrolled = false;
 
 	if (ta->caret_pos.char_off == -1)
@@ -249,21 +248,8 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	y0 = 0;
 	y1 = ta->vis_height;
 
-	index = textarea_get_caret(ta);
-
-	/* find byte offset of caret position */
-	for (b_off = 0; index-- > 0;
-			b_off = utf8_next(ta->text, ta->text_len, b_off))
-		; /* do nothing */
-
-	nsfont.font_width(&ta->fstyle,
-			ta->text + ta->lines[ta->caret_pos.line].b_start,
-			b_off - ta->lines[ta->caret_pos.line].b_start,
-			&x);
-
-	/* top-left of caret */
-	x += MARGIN_LEFT - ta->scroll_x;
-	y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
+	x = ta->caret_x - ta->scroll_x;
+	y = ta->caret_y - ta->scroll_y;
 
 	/* check and change vertical scroll */
 	if (y < y0) {
