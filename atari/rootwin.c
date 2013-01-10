@@ -123,6 +123,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             on_resized(data->rootwin);
             break;
 
+		case WM_ICONIFY:
+			// TODO: find next active gui window and schedule redraw for that.
+			break;
+
         case WM_TOPPED:
         case WM_NEWTOP:
         case WM_UNICONIFY:
@@ -133,7 +137,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             if (data->rootwin->active_gui_window != NULL) {
-                printf("destroy...\n");
+            	LOG(("WM_CLOSED initiated destroy for bw %p",
+						data->rootwin->active_gui_window->browser->bw));
                 browser_window_destroy(
                     data->rootwin->active_gui_window->browser->bw);
             }
@@ -144,7 +149,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             break;
 
         case WM_TOOLBAR:
-            toolbar_mouse_input(data->rootwin->toolbar, msg[4]);
+			toolbar_mouse_input(data->rootwin->toolbar, msg[4], msg[7]);
             break;
 
         default:
