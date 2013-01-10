@@ -831,9 +831,9 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 				b_off - ta->lines[ta->caret_pos.line].b_start,
 				&x);
 
-		x += MARGIN_LEFT - ta->scroll_x;
+		x += MARGIN_LEFT;
 		ta->caret_x = x;
-		y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
+		y = ta->line_height * ta->caret_pos.line;
 		ta->caret_y = y;
 
 		if (textarea_scroll_visible(ta)) {
@@ -1051,20 +1051,17 @@ void textarea_redraw(struct textarea *ta, int x, int y,
 				&ta->fstyle);
 	}
 
-	if ((ta->sel_end == -1 ||
-			ta->sel_start == ta->sel_end) &&
-			x + ta->caret_x >= clip->x0 &&
-			x + ta->caret_x <= clip->x1) {
-		/* There is no selection and caret is in horizontal
-		 * clip range. */
-		int caret_height = ta->line_height - 1;
-		r.y0 = y + ta->caret_y + text_y_offset;
-		if (r.y0 + caret_height >= clip->y0 && r.y0 <= clip->y1)
-			/* Caret in vertical clip range; plot */
-			plot->line(x + ta->caret_x, r.y0,
-				  	x + ta->caret_x,
-					r.y0 + caret_height,
-					&pstyle_stroke_caret);
+	x -= ta->scroll_x;
+	y -= ta->scroll_y;
+
+	if (ta->sel_end == -1 || ta->sel_start == ta->sel_end) {
+		/* There is no selection; draw caret */
+		int caret_y = y + ta->caret_y + text_y_offset;
+		int caret_height = caret_y + ta->line_height - 1;
+
+		plot->line(x + ta->caret_x, caret_y,
+				x + ta->caret_x, caret_height,
+				&pstyle_stroke_caret);
 	}
 }
 
