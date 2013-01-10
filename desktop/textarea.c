@@ -335,6 +335,12 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
 				&b_off, &x);
 
+		if (b_off == 0) {
+			/* Text wasn't split */
+			b_off = len;
+		}
+		/* b_off now marks space, or end of text */
+
 		if (line_count > 0 && line_count % LINE_CHUNK_SIZE == 0) {
 			struct line_info *temp = realloc(ta->lines,
 					(line_count + LINE_CHUNK_SIZE) *
@@ -352,8 +358,9 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 			if (*space == '\n')
 				break;
 		}
+		/* space now marks newline, or b_off -- whichever's first */
 
-		if (space <= text + b_off) {
+		if (space < text + b_off) {
 			/* Found newline; use it */
 			ta->lines[line_count].b_start = text - ta->text;
 			ta->lines[line_count++].b_length = space - text;
@@ -368,10 +375,9 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 			}
 
 			continue;
-		}
 
-		if (len - b_off > 0) {
-			/* find last space (if any) */
+		} else if (len - b_off > 0) {
+			/* soft wraped, find last space (if any) */
 			for (space = text + b_off; space > text; space--)
 				if (*space == ' ')
 					break;
