@@ -568,7 +568,7 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 	diff = end - start;
 
 	/* find byte offset of replace start */
-	for (b_start = 0; start > 0;
+	for (b_start = 0; start-- > 0;
 			b_start = utf8_next(ta->text, ta->text_len, b_start))
 		; /* do nothing */
 
