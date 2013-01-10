@@ -55,11 +55,11 @@ void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area);
 void toolbar_set_url(struct s_toolbar *tb, const char *text);
 bool toolbar_text_input(struct s_toolbar *tb, char *text);
 bool toolbar_key_input(struct s_toolbar *tb, short nkc);
-void toolbar_mouse_input(struct s_toolbar *tb, short obj);
+void toolbar_mouse_input(struct s_toolbar *tb, short obj, short mbut);
 void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
                             short idx);
 void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *g);
-struct text_area *toolbar_get_textarea(struct s_toolbar *tb,
+struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
 void toolbar_set_throbber_state(struct s_toolbar *tb, bool active);
 void toolbar_set_attached(struct s_toolbar *tb, bool attached);

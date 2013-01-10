@@ -619,7 +619,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 }
 
 
-void toolbar_mouse_input(struct s_toolbar *tb, short obj)
+void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 {
     LOG((""));
     GRECT work;
@@ -638,6 +638,9 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj)
 	        end of text */
         if (!window_url_widget_has_focus(tb->owner)) {
             window_set_focus(tb->owner, URL_WIDGET, (void*)&tb->url );
+        }
+        if (button & 2) {
+			// TODO: open a context popup
         }
         /* url widget has focus and mouse button is still pressed... */
         else if (mb & 1) {
@@ -717,7 +720,7 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
 }
 
 
-struct text_area *toolbar_get_textarea(struct s_toolbar *tb,
+struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which)
 {
     return(tb->url.textarea);
