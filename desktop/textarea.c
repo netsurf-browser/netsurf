@@ -1058,12 +1058,12 @@ void textarea_redraw(struct textarea *ta, int x, int y,
 		/* There is no selection and caret is in horizontal
 		 * clip range. */
 		int caret_height = ta->line_height - 1;
-		y += ta->caret_y + text_y_offset;
-		if (y + caret_height >= clip->y0 && y <= clip->y1)
+		r.y0 = y + ta->caret_y + text_y_offset;
+		if (r.y0 + caret_height >= clip->y0 && r.y0 <= clip->y1)
 			/* Caret in vertical clip range; plot */
-			plot->line(x + ta->caret_x, y + ta->caret_y,
+			plot->line(x + ta->caret_x, r.y0,
 				  	x + ta->caret_x,
-					y + ta->caret_y + caret_height,
+					r.y0 + caret_height,
 					&pstyle_stroke_caret);
 	}
 }
@@ -1081,7 +1081,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	caret_init = caret = textarea_get_caret(ta);
 	line = ta->caret_pos.line;
 	readonly = (ta->flags & TEXTAREA_READONLY ? true:false);
-
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
 		/* normal character insertion */
