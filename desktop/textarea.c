@@ -803,10 +803,14 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 		ta->caret_y = y;
 
 		if (textarea_scroll_visible(ta)) {
+			/* Scrolled; redraw everything */
 			ta->redraw_request(ta->data, 0, 0,
 					ta->vis_width,
 					ta->vis_height);
 		} else {
+			/* Just caret moved, redraw it */
+			x -= ta->scroll_x;
+			y -= ta->scroll_y;
 			x0 = max(x - 1, MARGIN_LEFT);
 			y0 = max(y + text_y_offset, 0);
 			x1 = min(x + 1, ta->vis_width - MARGIN_RIGHT);
