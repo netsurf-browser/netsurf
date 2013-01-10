@@ -568,7 +568,7 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 	diff = end - start;
 
 	/* find byte offset of replace start */
-	for (b_start = 0; start-- > 0;
+	for (b_start = 0; start > 0;
 			b_start = utf8_next(ta->text, ta->text_len, b_start))
 		; /* do nothing */
 
@@ -608,7 +608,7 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 	/* Insert new text */
 	memcpy(ta->text + b_start, rep, rep_len);
 
-	ta->text_len += rep_len - (b_end - b_start);
+	ta->text_len += (int)rep_len - (b_end - b_start);
 	ta->text_utf8_len = utf8_length(ta->text);
 	textarea_normalise_text(ta, b_start, rep_len);
 
@@ -763,36 +763,8 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {
-		index = textarea_get_caret(ta);
-		if (index == -1)
-			return false;
-
-		/* the redraw might happen in response to a text-change and
-		the caret position might be beyond the current text */
-		if ((unsigned)index > c_len)
-			index = c_len;
-
-		/* find byte offset of caret position */
-		for (b_off = 0; index-- > 0;
-				b_off = utf8_next(ta->text,
-				ta->text_len, b_off))
-			; /* do nothing */
-
-		nsfont.font_width(&ta->fstyle,
-				ta->text +
-				ta->lines[ta->caret_pos.line].b_start,
-				b_off - ta->lines[ta->caret_pos.line].b_start,
-    				&x);
-
-		x += MARGIN_LEFT - ta->scroll_x;
-
-		y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
-
-		/* set the caret coordinate beyond the redraw rectangle */
-		ta->caret_x = x - 2;
-
-		x0 = x - 1;
-		y0 = y + text_y_offset;
+		x0 = ta->caret_x - ta->scroll_x;
+		y0 = ta->caret_y - ta->scroll_y;
 		width = 2;
 		height = ta->line_height;
 
