@@ -48,7 +48,6 @@
 
 
 #define CNT_INVALID 0
-#define CNT_URLINPUT 32
 #define CNT_BROWSER 64
 #define CNT_HREF 128
 #define CNT_SELECTION 256
@@ -66,7 +65,7 @@ struct s_context_info ctxinfo;
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
 	hlcache_handle *h;
-	GRECT bwrect;
+	GRECT area;
 	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
 	int sx, sy;
@@ -74,41 +73,43 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	h = bw->current_content;
 	ctxinfo.flags = 0;
 
-	guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &bwrect);
-	mx -= bwrect.g_x;
-	my -= bwrect.g_y;
-	if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) ){
-		// TODO: check for urlinput location
-		// and set CNT_URLINPUT
-		return(&ctxinfo);
-	}
+	window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
+	if (POINT_WITHIN(mx, my, area)) {
 
-	if (!bw->current_content || content_get_type(h) != CONTENT_HTML){
-		return(&ctxinfo);
-	}
+		mx -= area.g_x;
+		my -= area.g_y;
 
-	ctxinfo.flags |= CNT_BROWSER;
-
-	memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
-
-	gui_window_get_scroll(gw, &sx, &sy);
-
-	browser_window_get_contextual_content( gw->browser->bw, mx+sx, my+sy,
-			(struct contextual_content*)&ctxinfo.ccdata);
-
-	if( ctxinfo.ccdata.link_url ){
-		ctxinfo.flags |= CNT_HREF;
-	}
-	if( ctxinfo.ccdata.object) {
-		if( content_get_type(ctxinfo.ccdata.object) == CONTENT_IMAGE ){
-			ctxinfo.flags |= CNT_IMG;
+		if (!bw->current_content || content_get_type(h) != CONTENT_HTML){
+			return(&ctxinfo);
 		}
+
+		ctxinfo.flags |= CNT_BROWSER;
+
+		memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
+
+		gui_window_get_scroll(gw, &sx, &sy);
+
+		browser_window_get_contextual_content( gw->browser->bw, mx+sx, my+sy,
+				(struct contextual_content*)&ctxinfo.ccdata);
+
+		if( ctxinfo.ccdata.link_url ){
+			ctxinfo.flags |= CNT_HREF;
+		}
+		if( ctxinfo.ccdata.object) {
+			if( content_get_type(ctxinfo.ccdata.object) == CONTENT_IMAGE ){
+				ctxinfo.flags |= CNT_IMG;
+			}
+		}
+		if ( ctxinfo.ccdata.form_features == CTX_FORM_TEXT )
+			ctxinfo.flags |= (CNT_INTERACTIVE | CNT_SELECTION);
 	}
-	if ( ctxinfo.ccdata.form_features == CTX_FORM_TEXT )
-		ctxinfo.flags |= (CNT_INTERACTIVE | CNT_SELECTION);
-	return( &ctxinfo );
+
+	return(&ctxinfo);
+
+
 }
 
+//TODO: do not open popup for gui_window, but for a rootwin?
 void context_popup(struct gui_window * gw, short x, short y)
 {
 

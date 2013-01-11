@@ -79,14 +79,15 @@
 #define TOOLBAR_HOTLIST_EDIT 4  /* CICON in tree TOOLBAR_HOTLIST */
 
 #define SEARCH 8  /* form/dial */
-#define SEARCH_TB_SRCH 1  /* FTEXT in tree SEARCH */
-#define SEARCH_LBL_SHOWALL 2  /* STRING in tree SEARCH */
-#define SEARCH_LBL_CASESENSE 3  /* STRING in tree SEARCH */
-#define SEARCH_BT_SEARCH 4  /* BUTTON in tree SEARCH */
-#define SEARCH_LBL_FWD 5  /* STRING in tree SEARCH */
-#define SEARCH_CB_CASESENSE 6  /* BUTTON in tree SEARCH */
-#define SEARCH_CB_SHOWALL 7  /* BUTTON in tree SEARCH */
-#define SEARCH_CB_FWD 8  /* BUTTON in tree SEARCH */
+#define SEARCH_BT_SEARCH 1  /* BUTTON in tree SEARCH */
+#define SEARCH_LBL_FWD 2  /* STRING in tree SEARCH */
+#define SEARCH_CB_FWD 3  /* BUTTON in tree SEARCH */
+#define SEARCH_BT_SEARCH_BACK 4  /* BUTTON in tree SEARCH */
+#define SEARCH_CB_CASESENSE 6  /* BOXCHAR in tree SEARCH */
+#define SEARCH_CB_SHOWALL 7  /* BOXCHAR in tree SEARCH */
+#define SEARCH_LBL_SHOWALL 8  /* STRING in tree SEARCH */
+#define SEARCH_LBL_CASESENSE 9  /* TEXT in tree SEARCH */
+#define SEARCH_TB_SRCH 10  /* FTEXT in tree SEARCH */
 
 #define DOWNLOAD 9  /* form/dial */
 /* Width ist 400, code depends on that! If you change it, change it in download.c */

@@ -348,6 +348,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
             slid = guiwin_get_scroll_info(gw);
 
+			// adjust form position (considering window and scroll position):
             gw->form[gw->form_idx].ob_x = content_area.g_x -
                                           (slid->x_pos * slid->x_unit_px);
             gw->form[gw->form_idx].ob_y = content_area.g_y -
@@ -367,6 +368,10 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                 DEBUG_PRINT(("type: %d, xtype: %d\n", type, xtype));
 
                 if (type == G_FTEXT || type == G_FBOXTEXT)  {
+
+                	// edit field handling, this causes ugly redraws when the
+                	// form is scrolled and larger than the window in which
+                	// it is attached.
 
                     // report mouse click to the tree:
                     retval = form_button(gw->form, gw->form_focus_obj,

@@ -547,14 +547,55 @@ void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
 
 void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
 {
+
+	d->g_x = 0;
+	d->g_y = 0;
+	d->g_w = 0;
+	d->g_h = 0;
+
     if (which == BROWSER_AREA_TOOLBAR) {
         guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
     } else if (which == BROWSER_AREA_CONTENT) {
-        guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, d);
-    } else if (which == BROWSER_AREA_URL_INPUT) {
-        toolbar_get_grect(rootwin->toolbar, TOOLBAR_URL_AREA, d);
-    } else {
 
+    	GRECT search_area;
+
+		guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, d);
+
+
+        window_get_grect(rootwin, BROWSER_AREA_SEARCH, &search_area);
+
+        d->g_y += search_area.g_h;
+        d->g_h -= search_area.g_h;
+
+    } else if (which == BROWSER_AREA_URL_INPUT) {
+
+        toolbar_get_grect(rootwin->toolbar, TOOLBAR_URL_AREA, d);
+
+    } else if (which == BROWSER_AREA_SEARCH) {
+		// TODO: check if search is open
+		GRECT work;
+		OBJECT * tree;
+
+		guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
+		guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
+		tree = get_tree(SEARCH);
+
+		d->g_x = work.g_x;
+		d->g_w = work.g_w;
+		d->g_y += d->g_h;
+		d->g_h = tree->ob_height;
+    }
+    else {
+
+    }
+
+
+	// sanitize the results
+    if (d->g_h < 0) {
+		d->g_h = 0;
+    }
+    if (d->g_w < 0) {
+		d->g_w = 0;
     }
 
 }
@@ -822,7 +863,7 @@ exit:
 
 void window_process_redraws(ROOTWIN * rootwin)
 {
-    GRECT work, visible_ro, tb_area, content_area;
+    GRECT work, visible_ro, tb_area, search_area, content_area;
     short i;
 	short scroll_x=0, scroll_y=0;
     bool toolbar_rdrw_required;
@@ -834,6 +875,7 @@ void window_process_redraws(ROOTWIN * rootwin)
     redraw_active = true;
 
 	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
+	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &search_area);
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
@@ -877,6 +919,11 @@ void window_process_redraws(ROOTWIN * rootwin)
                 toolbar_redraw(rootwin->toolbar, &rdrw_area);
             }
 
+			rdrw_area = rdrw_area_ro;
+            if (rc_intersect(&search_area, &rdrw_area)) {
+                search_redraw(NULL, &rdrw_area);
+            }
+
             rdrw_area = rdrw_area_ro;
             if (rc_intersect(&content_area, &rdrw_area)) {
 
@@ -901,7 +948,7 @@ void window_process_redraws(ROOTWIN * rootwin)
                     caret_pos.g_w = caret->dimensions.g_w;
                     caret_pos.g_h = caret->dimensions.g_h;
 
-                    if(rc_intersect_ro(&caret_pos, &content_area)) {
+                    if (rc_intersect_ro(&caret_pos, &content_area)) {
                         caret_rdrw_required = true;
                     }
                 }

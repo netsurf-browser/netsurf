@@ -3,7 +3,7 @@ ResourceMaster v3.65
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@2@1@2@1@
-#M 20010100@0@7728@632@
+#M 20010100@0@7728@633@
 #T 0@1@MAINMENU@@62@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -74,15 +74,16 @@ ResourceMaster v3.65
 #O 2@33@CREATE_FOLDER@@
 #O 3@33@DELETE@@
 #O 4@33@EDIT@@
-#T 8@2@SEARCH@@9@@
-#O 1@29@TB_SRCH@@
-#O 2@28@LBL_SHOWALL@@
-#O 3@28@LBL_CASESENSE@@
-#O 4@26@BT_SEARCH@@
-#O 5@28@LBL_FWD@@
-#O 6@26@CB_CASESENSE@@
-#O 7@26@CB_SHOWALL@@
-#O 8@26@CB_FWD@@
+#T 8@2@SEARCH@@11@@
+#O 1@26@BT_SEARCH@@
+#O 2@28@LBL_FWD@@
+#O 3@26@CB_FWD@@
+#O 4@26@BT_SEARCH_BACK@@
+#O 6@27@CB_CASESENSE@@
+#O 7@27@CB_SHOWALL@@
+#O 8@28@LBL_SHOWALL@@
+#O 9@21@LBL_CASESENSE@@
+#O 10@29@TB_SRCH@@
 #T 9@2@DOWNLOAD@@10@@
 #O 1@20@PROGRESS@Width ist 400, code depends on that! If you change it, change it in download.c@
 #O 2@20@PROGRESS_DONE@@
@@ -197,4 +198,4 @@ ResourceMaster v3.65
 #T 15@2@POP_FONT_RENDERER@@3@@
 #O 1@28@INTERNAL@@
 #O 2@28@FREETYPE@@
-#c 27079@
+#c 25055@

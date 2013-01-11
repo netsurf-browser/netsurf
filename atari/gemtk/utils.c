@@ -54,13 +54,26 @@ typedef struct {
     char *unshift;
     char *shift;
     char *capslock;
-} MY_KEYTAB;
+} KEYTAB;
 
 int keybd2ascii( int keybd, int shift)
 {
 
-    MY_KEYTAB *key;
-    key = (MY_KEYTAB *)Keytbl( (char*)-1, (char*)-1, (char*)-1);
+    KEYTAB *key;
+    key = (KEYTAB *)Keytbl( (char*)-1, (char*)-1, (char*)-1);
     return (shift)?key->shift[keybd>>8]:key->unshift[keybd>>8];
 }
+
+void gemtk_clip_grect(VdiHdl vh, GRECT *rect)
+{
+	short pxy[4];
+
+	pxy[0] = rect->g_x;
+	pxy[1] = rect->g_y;
+	pxy[2] = pxy[0] + rect->g_w-1;
+	pxy[3] = pxy[1] + rect->g_h-1;
+
+	vs_clip_pxy(vh, pxy);
+}
+
 

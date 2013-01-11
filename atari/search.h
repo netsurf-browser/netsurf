@@ -44,4 +44,6 @@ typedef struct s_search_form_session * SEARCH_FORM_SESSION;
 SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw);
 void search_destroy(struct gui_window * gw);
 
+void search_redraw(void *session, GRECT *clip);
+
 #endif

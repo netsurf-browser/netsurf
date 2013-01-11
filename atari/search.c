@@ -37,6 +37,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "atari/gui.h"
+#include "atari/rootwin.h"
 #include "atari/misc.h"
 #include "atari/search.h"
 #include "atari/gemtk/gemtk.h"
@@ -134,6 +135,32 @@ void nsatari_search_set_back_state(bool active, void *p)
 	LOG(("%p: set back state: %d\n", p, active));
 }
 
+void search_redraw(void *session, GRECT *clip)
+{
+	GRECT area, clipped_area;
+	struct gui_window *gw = input_window;
+	short pxy[4];
+	VdiHdl vh;
+
+	if(gw == NULL)
+		return;
+
+	window_get_grect(gw->root, BROWSER_AREA_SEARCH, &area);
+
+	clipped_area = area;
+
+	if (!rc_intersect(clip, &clipped_area)) {
+		return;
+	}
+
+	OBJECT * tree = get_tree(SEARCH);
+	tree->ob_x = area.g_x;
+	tree->ob_y = area.g_y;
+	tree->ob_width = area.g_w;
+	tree->ob_height = area.g_h;
+
+	objc_draw_grect(tree, 0, 8, &clipped_area);
+}
 
 static SEARCH_FORM_SESSION get_search_session(GUIWIN * win)
 {

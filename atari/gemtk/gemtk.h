@@ -44,6 +44,8 @@ bool rc_intersect_ro(GRECT *a, GRECT *b);
 */
 int keybd2ascii( int keybd, int shift);
 
+/** set VDI clip area by passing an GRECT */
+void gemtk_clip_grect(VdiHdl vh, GRECT *rect);
 
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
