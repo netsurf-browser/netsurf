@@ -318,7 +318,7 @@ SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw)
 
 	if (dlgtree == NULL) {
 		dlgtree = get_tree(SEARCH);
-		if (dlgtree == NULL ) {
+		if (dlgtree == NULL) {
 			return( NULL );
 		}
 	}

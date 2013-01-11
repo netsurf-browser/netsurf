@@ -19,11 +19,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <cflib.h>
-
 
 #include <gem.h>
-#include <mt_gem.h>
+#include <gemx.h>
+#include <cflib.h>
+
 #include "gemtk.h"
 
 //#define DEBUG_PRINT(x)		printf x
@@ -374,29 +374,30 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                 	// it is attached.
 
                     // report mouse click to the tree:
-                    retval = form_button(gw->form, gw->form_focus_obj,
-                                      ev_out->emo_mclicks, &nextobj);
+                    retval = form_wbutton(gw->form, gw->form_focus_obj,
+                                      ev_out->emo_mclicks, &nextobj,
+                                      gw->handle);
 
                     // end edit mode for active edit object:
                     if(gw->form_edit_obj != -1) {
-                        objc_edit(gw->form, gw->form_edit_obj,
+                        objc_wedit(gw->form, gw->form_edit_obj,
                                   ev_out->emo_kreturn, &edit_idx,
-                                  EDEND);
+                                  EDEND, gw->handle);
                     }
 
                     // activate the new edit object:
                     gw->form_edit_obj = gw->form_focus_obj;
-                    objc_edit(gw->form, gw->form_edit_obj,
+                    objc_wedit(gw->form, gw->form_edit_obj,
                               ev_out->emo_kreturn, &edit_idx,
-                              EDINIT);
+                              EDINIT, gw->handle);
 
                 } else {
 
                     // end edit mode for active edit object:
                     if(gw->form_edit_obj != -1) {
-                        objc_edit(gw->form, gw->form_edit_obj,
+                        objc_wedit(gw->form, gw->form_edit_obj,
                                   ev_out->emo_kreturn, &edit_idx,
-                                  EDEND);
+                                  EDEND, gw->handle);
                         gw->form_edit_obj = -1;
                     }
 
@@ -443,28 +444,28 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         short edit_idx;
         short r;
 
-        r = form_keybd(gw->form, gw->form_edit_obj, next_edit_obj,
+        r = form_wkeybd(gw->form, gw->form_edit_obj, next_edit_obj,
                        ev_out->emo_kreturn,
-                       &next_edit_obj, &next_char);
+                       &next_edit_obj, &next_char, gw->handle);
 
         if (next_edit_obj != gw->form_edit_obj) {
 
 			if(gw->form_edit_obj != -1) {
-				objc_edit(gw->form, gw->form_edit_obj,
+				objc_wedit(gw->form, gw->form_edit_obj,
                       ev_out->emo_kreturn, &edit_idx,
-                      EDEND);
+                      EDEND, gw->handle);
 			}
 
             gw->form_edit_obj = next_edit_obj;
 
-            objc_edit(gw->form, gw->form_edit_obj,
+            objc_wedit(gw->form, gw->form_edit_obj,
                       ev_out->emo_kreturn, &edit_idx,
-                      EDINIT);
+                      EDINIT, gw->handle);
         } else {
             if(next_char > 13)
-                r = objc_edit(gw->form, gw->form_edit_obj,
+                r = objc_wedit(gw->form, gw->form_edit_obj,
                               ev_out->emo_kreturn, &edit_idx,
-                              EDCHAR);
+                              EDCHAR, gw->handle);
         }
     }
 }
