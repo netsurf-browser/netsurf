@@ -3630,23 +3630,21 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(width <= 0) return;
 	if(height <= 0) return;
 
-// printf("%ld %ld %ld %ld\n",left, top, width, height);
-
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
 		clip.y1 = nsoption_int(redraw_tile_size_y);
+		if(clip.y1 > height) clip.y1 = height;
 		if((((y - sy) * gwin->bw->scale) + clip.y1) > bbox->Height)
 			clip.y1 = bbox->Height - ((y - sy) * gwin->bw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
 			clip.x1 = nsoption_int(redraw_tile_size_x);
+			if(clip.x1 > width) clip.x1 = width;
 			if((((x - sx) * gwin->bw->scale) + clip.x1) > bbox->Width)
 				clip.x1 = bbox->Width - ((x - sx) * gwin->bw->scale);
-
-//printf("%ld %ld -> %ld %ld\n",clip.x0 - (int)(x), clip.y0 - (int)(y), clip.x1, clip.y1);
 
 			if(browser_window_redraw(gwin->bw,
 				clip.x0 - (int)x,
