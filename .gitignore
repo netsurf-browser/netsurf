@@ -15,7 +15,6 @@ windows/res/preferences
 test/nsurl
 test/urldbtest
 test/llcache
-utils/translit.c
 utils/testament.h
 codedocs
 nsgtk
