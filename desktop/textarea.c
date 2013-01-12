@@ -75,6 +75,17 @@ struct textarea {
 	int vis_width;			/**< Visible width, in pixels */
 	int vis_height;			/**< Visible height, in pixels */
 
+	int pad_top;
+	int pad_right;
+	int pad_bottom;
+	int pad_left;
+
+	int border_width;
+	colour border_col;
+
+	plot_font_style_t fstyle;	/**< Text style */
+	plot_font_style_t sel_fstyle;	/**< Text style */
+
 	char *text;			/**< UTF-8 text */
 	unsigned int text_alloc;	/**< Size of allocated text */
 	unsigned int text_len;		/**< Length of text, in bytes */
@@ -91,8 +102,6 @@ struct textarea {
 
 	int sel_start;	/**< Character index of sel start(inclusive) */
 	int sel_end;	/**< Character index of sel end(exclusive) */
-
-	plot_font_style_t fstyle;	/**< Text style */
 
 	int line_count;			/**< Count of lines */
 #define LINE_CHUNK_SIZE 16
@@ -608,8 +617,7 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 
 
 /* exported interface, documented in textarea.h */
-struct textarea *textarea_create(int width, int height,
-		textarea_flags flags, const plot_font_style_t *style,
+struct textarea *textarea_create(const textarea_setup *setup,
 		textarea_redraw_request_callback redraw_request, void *data)
 {
 	struct textarea *ret;
@@ -627,14 +635,30 @@ struct textarea *textarea_create(int width, int height,
 
 	ret->redraw_request = redraw_request;
 	ret->data = data;
-	ret->vis_width = width;
-	ret->vis_height = height;
+
+	ret->flags = setup->flags;
+	ret->vis_width = setup->width;
+	ret->vis_height = setup->height;
+
+	ret->pad_top = setup->pad_top;
+	ret->pad_right = setup->pad_right;
+	ret->pad_bottom = setup->pad_bottom;
+	ret->pad_left = setup->pad_left;
+
+	ret->border_width = setup->border_width;
+	ret->border_col = setup->border_col;
+
+	ret->fstyle = setup->text;
+
+	ret->sel_fstyle = setup->text;
+	ret->sel_fstyle.foreground = setup->selected_text;
+	ret->sel_fstyle.background = setup->selected_bg;
+
 	ret->scroll_x = 0;
 	ret->scroll_y = 0;
 	ret->drag_start_char = 0;
 
 
-	ret->flags = flags;
 	ret->text = malloc(64);
 	if (ret->text == NULL) {
 		LOG(("malloc failed"));
@@ -646,11 +670,10 @@ struct textarea *textarea_create(int width, int height,
 	ret->text_len = 1;
 	ret->text_utf8_len = 0;
 
-	ret->fstyle = *style;
-
 	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
 			FMUL(nscss_screen_dpi,
-			INTTOFIX((style->size / FONT_SIZE_SCALE))))), F_72));
+			INTTOFIX((setup->text.size /
+			FONT_SIZE_SCALE))))), F_72));
 
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
 	ret->caret_x = MARGIN_LEFT;

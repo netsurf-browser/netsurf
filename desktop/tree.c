@@ -2935,6 +2935,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 {
 	struct node *parent;
 	int width, height;
+	textarea_setup ta_setup;
 
 	assert(tree != NULL);
 	assert(element != NULL);
@@ -2959,8 +2960,23 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 		width -= NODE_INSTEP;
 
-	tree->textarea = textarea_create(width, height, TEXTAREA_DEFAULT,
-			&plot_fstyle, tree_textarea_redraw_request, tree);
+	ta_setup.flags = TEXTAREA_DEFAULT;
+	ta_setup.width = width;
+	ta_setup.height = height;
+	ta_setup.pad_top = 0;
+	ta_setup.pad_right = 4;
+	ta_setup.pad_bottom = 0;
+	ta_setup.pad_left = 4;
+	ta_setup.border_width = 1;
+	ta_setup.border_col = 0x000000;
+	ta_setup.selected_text = 0xffffff;
+	ta_setup.selected_bg = 0x000000;
+	ta_setup.text = plot_fstyle;
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+
+	tree->textarea = textarea_create(&ta_setup,
+			tree_textarea_redraw_request, tree);
 	if (tree->textarea == NULL) {
 		tree_stop_edit(tree, false);
 		return;

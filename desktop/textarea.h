@@ -36,6 +36,26 @@ typedef enum textarea_flags {
 	TEXTAREA_READONLY		= (1 << 2)
 } textarea_flags;
 
+typedef struct textarea_setup {
+	textarea_flags flags;
+
+	int width;
+	int height;
+
+	int pad_top;
+	int pad_right;
+	int pad_bottom;
+	int pad_left;
+
+	int border_width;
+	colour border_col;
+
+	colour selected_text;
+	colour selected_bg;
+	plot_font_style_t text;
+
+} textarea_setup;
+
 
 struct textarea;
 
@@ -54,8 +74,7 @@ typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
  * \param data user specified data which will be passed to redraw callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct textarea *textarea_create(int width, int height, 
-		textarea_flags flags, const plot_font_style_t *style,
+struct textarea *textarea_create(const textarea_setup *setup,
 		textarea_redraw_request_callback redraw_request, void *data);
 
 /**
