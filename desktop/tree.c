@@ -2078,7 +2078,10 @@ void tree_draw(struct tree *tree, int x, int y,
 			y = y + tree->editing->box.y;
 			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 				x += NODE_INSTEP;
-			textarea_redraw(tree->textarea, x, y, &clip, &new_ctx);
+			textarea_redraw(tree->textarea, x, y,
+					plot_style_fill_tree_background.
+							fill_colour,
+					&clip, &new_ctx);
 		}
 	}
 

@@ -874,7 +874,7 @@ int textarea_get_caret(struct textarea *ta)
 
 
 /* exported interface, documented in textarea.h */
-void textarea_redraw(struct textarea *ta, int x, int y,
+void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;

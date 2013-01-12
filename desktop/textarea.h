@@ -37,22 +37,22 @@ typedef enum textarea_flags {
 } textarea_flags;
 
 typedef struct textarea_setup {
-	textarea_flags flags;
+	textarea_flags flags;	/**< Setup flags */
 
-	int width;
-	int height;
+	int width;		/**< Textarea width */
+	int height;		/**< Textarea height */
 
-	int pad_top;
-	int pad_right;
-	int pad_bottom;
-	int pad_left;
+	int pad_top;		/**< Textarea top padding */
+	int pad_right;		/**< Textarea right padding */
+	int pad_bottom;		/**< Textarea bottom padding */
+	int pad_left;		/**< Textarea left padding */
 
-	int border_width;
-	colour border_col;
+	int border_width;	/**< Textarea border width */
+	colour border_col;	/**< Textarea border colour */
 
-	colour selected_text;
-	colour selected_bg;
-	plot_font_style_t text;
+	colour selected_text;	/**< Textarea selected text colour */
+	colour selected_bg;	/**< Textarea selection background colour */
+	plot_font_style_t text;	/**< Font and textarea background colour */
 
 } textarea_setup;
 
@@ -65,13 +65,9 @@ typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
 /**
  * Create a text area
  *
- * \param width width of the text area
- * \param height width of the text area
- * \param flags text area flags
- * \param style font style
- * \param redraw_start_callback will be called when textarea wants to redraw
- * \param redraw_end_callback will be called when textarea finisjes redrawing
- * \param data user specified data which will be passed to redraw callbacks
+ * \param setup	textarea settings and style
+ * \param redraw_callback will be called when textarea wants to redraw
+ * \param data	user specified data which will be passed to callbacks
  * \return Opaque handle for textarea or 0 on error
  */
 struct textarea *textarea_create(const textarea_setup *setup,
@@ -125,14 +121,14 @@ int textarea_get_caret(struct textarea *ta);
 /**
  * Handle redraw requests for text areas
  *
- * \param redraw Redraw request block
- * \param x0	left X coordinate of redraw area
- * \param y0	top Y coordinate of redraw area
- * \param x1	right X coordinate of redraw area
- * \param y1	bottom Y coordinate of redraw area
+ * \param ta	textarea to render
+ * \param x	x coordinate of textarea top
+ * \param y	y coordinate of textarea left
+ * \param bg	background colour under textarea
+ * \param clip	clip rectangle
  * \param ctx	current redraw context
  */
-void textarea_redraw(struct textarea *ta, int x, int y,
+void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx);
 
 /**
