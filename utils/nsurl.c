@@ -720,6 +720,9 @@ static nserror nsurl__create_from_section(const char * const url_s,
 		break;
 	}
 
+	if (end < start)
+		end = start;
+
 	length = end - start;
 
 	/* Stage 1: Normalise the required section */
