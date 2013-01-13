@@ -43,14 +43,9 @@ If (("<NetSurf$Publisher>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetS
 If (("<NetSurf$Description>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Description "Web browser"
 
 | NetSurf Sprites
-|
-| The sprite file used is based on the OS and SpriteExtend versions:
-|   RO <> 5 and SpriteExtend <  1.50 uses !Sprites<nn>
-|   RO <> 5 and SpriteExtend >= 1.50 uses ASprites<nn>
-|   RO =  5                          uses 5Sprites<nn>
-Set NetSurf$Sprites <NetSurf$Dir>.ASprites
-RMEnsure SpriteExtend 1.50 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
-If (("<Boot$OSVersion>" >= "500") AND ("<Boot$OSVersion>" < "600")) Then IconSprites <NetSurf$Dir>.5Sprites Else IconSprites <NetSurf$Sprites>
+Set NetSurf$Sprites "!Sprites"
+/<NetSurf$Dir>.ChkSprites
+IconSprites <NetSurf$Dir>.<NetSurf$Sprites>
 Unset NetSurf$Sprites
 
 | Acorn URI protocol
