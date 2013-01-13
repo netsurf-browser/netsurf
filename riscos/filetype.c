@@ -305,9 +305,21 @@ int ro_content_native_type(hlcache_handle *c)
  */
 int ro_content_filetype_from_mime_type(lwc_string *mime_type)
 {
-	int file_type;
+	int file_type, index;
 	os_error *error;
 
+	/* Search internal type map */
+	for (index = TYPE_MAP_COUNT; index > 0; index--) {
+		const struct type_entry *e = &type_map[index - 1];
+
+		if (strlen(e->mime_type) == lwc_string_length(mime_type) &&
+				strncasecmp(e->mime_type,
+				lwc_string_data(mime_type),
+				lwc_string_length(mime_type)) == 0)
+			return e->file_type;
+	}
+
+	/* Ask MimeMap module */
 	error = xmimemaptranslate_mime_type_to_filetype(
 			lwc_string_data(mime_type), (bits *) &file_type);
 	if (error)
