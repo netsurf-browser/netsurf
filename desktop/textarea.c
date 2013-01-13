@@ -34,18 +34,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-#define MARGIN_LEFT 4
-#define MARGIN_RIGHT 4
 #define CARET_COLOR 0x0000FF
-/* background color for readonly textarea */
-#define BORDER_COLOR 0x000000
-#define SELECTION_COL 0xFFDDDD
-
-static plot_style_t pstyle_stroke_border = {
-    .stroke_type = PLOT_OP_TYPE_SOLID,
-    .stroke_colour = BORDER_COLOR,
-    .stroke_width = 1,
-};
 
 static plot_style_t pstyle_stroke_caret = {
     .stroke_type = PLOT_OP_TYPE_SOLID,
@@ -245,8 +234,8 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	if (ta->caret_pos.char_off == -1)
 		return false;
 
-	x0 = MARGIN_LEFT;
-	x1 = ta->vis_width - MARGIN_RIGHT;
+	x0 = ta->border_width + ta->pad_left;
+	x1 = ta->vis_width - (ta->border_width + ta->pad_left);
 	y0 = 0;
 	y1 = ta->vis_height;
 
@@ -267,8 +256,8 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	if (x < x0) {
 		ta->scroll_x -= x0 - x ;
 		scrolled = true;
-	} else if (x > x1 - 1) {
-		ta->scroll_x += x - (x1 - 1);
+	} else if (x > x1) {
+		ta->scroll_x += x - x1;
 		scrolled = true;
 	}
 
@@ -291,6 +280,10 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 	int x;
 	char *space, *para_end;
 	unsigned int line_count = 0;
+	int avail_width = ta->vis_width - 2 * ta->border_width -
+			ta->pad_left - ta->pad_right;
+	if (avail_width < 0)
+		avail_width = 0;
 
 	/** \todo pay attention to line parameter */
 	/** \todo create horizontal scrollbar if needed */
@@ -327,8 +320,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int line)
 
 		/* Wrap current line in paragraph */
 		nsfont.font_split(&ta->fstyle, text, para_end - text,
-				ta->vis_width - MARGIN_LEFT - MARGIN_RIGHT,
-				&b_off, &x);
+				avail_width, &b_off, &x);
 
 		if (b_off == 0) {
 			/* Text wasn't split */
@@ -407,8 +399,8 @@ static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
 		return;
 	}
 
-	x = x - MARGIN_LEFT + ta->scroll_x;
-	y = y + ta->scroll_y;
+	x = x - ta->border_width - ta->pad_left + ta->scroll_x;
+	y = y - ta->border_width - ta->pad_top + ta->scroll_y;
 
 	if (x < 0)
 		x = 0;
@@ -668,8 +660,8 @@ struct textarea *textarea_create(const textarea_setup *setup,
 			INTTOFIX((setup->text.size /
 			FONT_SIZE_SCALE))))), F_72));
 
-	ret->caret_pos.line = ret->caret_pos.char_off = 0;
-	ret->caret_x = MARGIN_LEFT;
+	ret->caret_pos.line = ret->caret_pos.char_off = -1;
+	ret->caret_x = 0;
 	ret->caret_y = 0;
 	ret->sel_start = -1;
 	ret->sel_end = -1;
@@ -759,7 +751,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		/* Multiline textarea */
-		text_y_offset = 0;
+		text_y_offset = ta->border_width + ta->pad_top;
 	} else {
 		/* Single line text area; text is vertically centered */
 		text_y_offset = (ta->vis_height - ta->line_height + 1) / 2;
@@ -813,7 +805,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 				b_off - ta->lines[ta->caret_pos.line].b_start,
 				&x);
 
-		x += MARGIN_LEFT;
+		x += ta->border_width + ta->pad_left;
 		ta->caret_x = x;
 		y = ta->line_height * ta->caret_pos.line;
 		ta->caret_y = y;
@@ -827,9 +819,9 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 			/* Just caret moved, redraw it */
 			x -= ta->scroll_x;
 			y -= ta->scroll_y;
-			x0 = max(x - 1, MARGIN_LEFT);
+			x0 = max(x - 1, ta->border_width);
 			y0 = max(y + text_y_offset, 0);
-			x1 = min(x + 1, ta->vis_width - MARGIN_RIGHT);
+			x1 = min(x + 1, ta->vis_width - ta->border_width);
 			y1 = min(y + ta->line_height + text_y_offset,
 					ta->vis_height);
 
@@ -852,6 +844,9 @@ int textarea_get_caret(struct textarea *ta)
 {
 	unsigned int c_off = 0, b_off;
 
+	/* Ensure caret isn't hidden */
+	if (ta->caret_pos.char_off < 0)
+		textarea_set_caret(ta, 0);
 
 	/* if the text is a trailing NUL only */
 	if (ta->text_utf8_len == 0)
@@ -884,7 +879,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		.stroke_width = 0,
 		.stroke_colour = NS_TRANSPARENT,
 		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = ta->fstyle.background
+		.fill_colour = ta->border_col
 	};
 
 	r = *clip;
@@ -922,15 +917,29 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		r.y1 = y + ta->vis_height;
 
 	plot->clip(&r);
-	plot->rectangle(r.x0, r.y0, r.x1, r.y1, &plot_style_fill_bg);
-	plot->rectangle(x, y,
-			x + ta->vis_width - 1, y + ta->vis_height - 1,
-			&pstyle_stroke_border);
+	if (ta->border_col != NS_TRANSPARENT &&
+			ta->border_width > 0) {
+		/* Plot border */
+		plot->rectangle(x, y, x + ta->vis_width, y + ta->vis_height,
+				&plot_style_fill_bg);
+	}
+	if (ta->fstyle.background != NS_TRANSPARENT) {
+		/* Plot background */
+		plot_style_fill_bg.fill_colour = ta->fstyle.background;
+		plot->rectangle(x + ta->border_width, y + ta->border_width,
+				x + ta->vis_width - ta->border_width,
+				y + ta->vis_height - ta->border_width,
+				&plot_style_fill_bg);
+	}
 
-	if (r.x0 < x + MARGIN_LEFT)
-		r.x0 = x + MARGIN_LEFT;
-	if (r.x1 > x + ta->vis_width - MARGIN_RIGHT)
-		r.x1 = x + ta->vis_width - MARGIN_RIGHT;
+	if (r.x0 < x + ta->border_width)
+		r.x0 = x + ta->border_width;
+	if (r.x1 > x + ta->vis_width - ta->border_width)
+		r.x1 = x + ta->vis_width - ta->border_width;
+	if (r.y0 < y + ta->border_width)
+		r.y0 = y + ta->border_width;
+	if (r.y1 > y + ta->vis_width - ta->border_width)
+		r.y1 = y + ta->vis_height - ta->border_width;
 
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->text,
@@ -938,14 +947,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	else
 		c_pos = 0;
 
+	text_y_offset = text_y_offset_baseline = ta->border_width;
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		/* Multiline textarea */
-		text_y_offset = 0;
-		text_y_offset_baseline = (ta->line_height * 3 + 2) / 4;
+		text_y_offset += ta->pad_top;
+		text_y_offset_baseline += (ta->line_height * 3 + 2) / 4 +
+				ta->pad_top;
 	} else {
 		/* Single line text area; text is vertically centered */
-		text_y_offset = (ta->vis_height - ta->line_height + 1) / 2;
-		text_y_offset_baseline = (ta->vis_height * 3 + 2) / 4;
+		int vis_height = ta->vis_height - 2 * ta->border_width;
+		text_y_offset += (vis_height - ta->line_height + 1) / 2;
+		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
 	}
 
 	plot_style_fill_bg.fill_colour = ta->sel_fstyle.background;
@@ -956,6 +968,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		if (ta->lines[line].b_length == 0)
 			continue;
 
+		/* reset clip rectangle */
 		plot->clip(&r);
 
 		c_len = utf8_bounded_length(
@@ -963,7 +976,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				ta->lines[line].b_length);
 
 		b_end = 0;
-		right = x + MARGIN_LEFT;
+		right = x + ta->border_width + ta->pad_left;
 
 		do {
 			sel_start = ta->sel_start;
@@ -1014,9 +1027,9 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 			left = right;
 			nsfont.font_width(&ta->fstyle, line_text,
 					b_end, &right);
-			right += x + MARGIN_LEFT;
+			right += x + ta->border_width + ta->pad_left;
 
-			/* set clip */
+			/* set clip rectangle for line part */
 			s = r;
 			if (s.x0 < left)
 				s.x0 = left;
@@ -1036,7 +1049,8 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 			}
 
 			/* draw text */
-			plot->text(x + MARGIN_LEFT - ta->scroll_x,
+			plot->text(x + ta->border_width + ta->pad_left -
+					ta->scroll_x,
 					y + line * ta->line_height +
 					text_y_offset_baseline - ta->scroll_y,
 					ta->text + ta->lines[line].b_start,
@@ -1048,9 +1062,10 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		} while (c_pos < c_pos + c_len);
 
 		/* if there is a newline between the lines, skip it */
-		if (line < ta->line_count - 1 && ta->lines[line + 1].b_start !=
-				ta->lines[line].b_start +
-				ta->lines[line].b_length)
+		if (line < ta->line_count - 1 &&
+				ta->lines[line + 1].b_start !=
+						ta->lines[line].b_start +
+						ta->lines[line].b_length)
 			c_pos++;
 	}
 
@@ -1061,7 +1076,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	if (ta->sel_end == -1 || ta->sel_start == ta->sel_end) {
 		/* There is no selection; draw caret */
 		int caret_y = y + ta->caret_y + text_y_offset;
-		int caret_height = caret_y + ta->line_height - 1;
+		int caret_height = caret_y + ta->line_height;
 
 		plot->line(x + ta->caret_x, caret_y,
 				x + ta->caret_x, caret_height,

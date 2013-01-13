@@ -52,7 +52,7 @@ typedef struct textarea_setup {
 
 	colour selected_text;	/**< Textarea selected text colour */
 	colour selected_bg;	/**< Textarea selection background colour */
-	plot_font_style_t text;	/**< Font and textarea background colour */
+	plot_font_style_t text;	/**< Textarea background colour and font */
 
 } textarea_setup;
 
