@@ -944,6 +944,8 @@ void ro_gui_cleanup(void)
 {
 	ro_gui_buffer_close();
 	xhourglass_off();
+	/* Uninstall NetSurf-specific fonts */
+	xos_cli("FontRemove NetSurf:Resources.Fonts.");
 }
 
 
