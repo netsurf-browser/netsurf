@@ -3885,13 +3885,13 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 	BeginRefresh(gwin->win);
 
 	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx - 1;
 	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx + 2;
 	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy - 1;
 	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
@@ -3900,13 +3900,13 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 	while(regrect)
 	{
 		x0 = ((regrect->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx - 1;
 		x1 = ((regrect->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx + 2;
 		y0 = ((regrect->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy - 1;
 		y1 = ((regrect->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy + 2;
 
 		regrect = regrect->Next;
 
