@@ -3591,7 +3591,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
-void ami_do_redraw_tiled(struct gui_window_2 *gwin,
+void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int left, int top, int width, int height,
 	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
 {
@@ -3630,7 +3630,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(width <= 0) return;
 	if(height <= 0) return;
 
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+	if(busy) ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
@@ -3668,7 +3668,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 		}
 	}
 	
-	ami_reset_pointer(gwin);
+	if(busy) ami_reset_pointer(gwin);
 }
 
 
@@ -3683,7 +3683,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
  */
 
-void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
+void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
 		int x0, int y0, int x1, int y1)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
@@ -3714,7 +3714,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	ami_do_redraw_tiled(g->shared, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
+	ami_do_redraw_tiled(g->shared, busy, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
 	return;
 }
 
@@ -3735,7 +3735,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	if(!g) return;
 
-	ami_do_redraw_limits(g, g->shared->bw,
+	ami_do_redraw_limits(g, g->shared->bw, true,
 			rect->x0, rect->y0,
 			rect->x1, rect->y1);
 }
@@ -3794,14 +3794,14 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, (height / gwin->bw->scale) + oldv - 1,
 					hcurrent + (width / gwin->bw->scale),
 					vcurrent + (height / gwin->bw->scale) + 1);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, vcurrent,
 					hcurrent + (width / gwin->bw->scale),
 					oldv);
@@ -3809,14 +3809,14 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(hcurrent>oldh) /* Going right */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					(width / gwin->bw->scale) + oldh , vcurrent,
 					hcurrent + (width / gwin->bw->scale),
 					vcurrent + (height / gwin->bw->scale));
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, vcurrent,
 					oldh, vcurrent + (height / gwin->bw->scale));
 		}
@@ -3834,7 +3834,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(nsoption_bool(direct_render) == false)
 		{
-			ami_do_redraw_tiled(gwin, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
+			ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
 		else
 		{
@@ -3880,7 +3880,8 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 	sy = gwin->bw->window->scrolly;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
-
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+	
 	BeginRefresh(gwin->win);
 
 	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
@@ -3894,7 +3895,7 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
-	ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+	ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
 
 	while(regrect)
 	{
@@ -3909,10 +3910,12 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 
 		regrect = regrect->Next;
 
-		ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+		ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
 	}
 
 	EndRefresh(gwin->win, TRUE);
+	
+	ami_reset_pointer(gwin);
 }
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
@@ -4330,7 +4333,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if((nsoption_bool(kiosk_mode) == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
-	ami_do_redraw_limits(g, g->shared->bw, g->c_x, g->c_y,
+	ami_do_redraw_limits(g, g->shared->bw, true, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
 
 	g->c_h = 0;
