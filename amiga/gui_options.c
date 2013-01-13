@@ -33,10 +33,11 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
+#include "amiga/theme.h"
+#include "amiga/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser_private.h"
 #include "desktop/options.h"
-#include "amiga/utf8.h"
 #include "desktop/searchweb.h"
 
 #include <proto/window.h>
@@ -1582,10 +1583,12 @@ void ami_gui_opts_use(bool save)
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
-	if (data) {
+	if ((data == TRUE) && (nsoption_bool(window_simple_refresh) == false)) {
 		nsoption_set_bool(window_simple_refresh, true);
-	} else {
+		nsoption_set_int(screen_compositing, 0);
+	} else if ((data == FALSE) && (nsoption_bool(window_simple_refresh) == true)) {
 		nsoption_set_bool(window_simple_refresh, false);
+		nsoption_set_int(screen_compositing, -1);
 	}
 	
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
