@@ -707,7 +707,7 @@ void tb_url_redraw( struct gui_window * gw )
 							.x1 = todo[0]+todo[2],
 							.y1 = todo[1]+todo[3]
 						};
-						textarea_redraw( t->url.textarea, 0, 0, &clip, &ctx );
+						textarea_redraw( t->url.textarea, 0, 0, 0xffffff, &clip, &ctx );
 					}
 					if (wind_get(gw->root->handle->handle, WF_NEXTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
@@ -770,11 +770,22 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 
 	int ta_height = toolbar_styles[t->style].height;
 	ta_height -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
-	t->url.textarea = textarea_create( 300,
-									ta_height,
-									0,
-									&font_style_url, tb_txt_request_redraw,
-									t );
+	textarea_setup ta_setup;
+	ta_setup.flags = TEXTAREA_DEFAULT;
+	ta_setup.width = 300;
+	ta_setup.height = ta_height;
+	ta_setup.pad_top = 0;
+	ta_setup.pad_right = 4;
+	ta_setup.pad_bottom = 0;
+	ta_setup.pad_left = 4;
+	ta_setup.border_width = 1;
+	ta_setup.border_col = 0x000000;
+	ta_setup.selected_text = 0xffffff;
+	ta_setup.selected_bg = 0x000000;
+	ta_setup.text = font_style_url;
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+	t->url.textarea = textarea_create( &ta_setup, tb_txt_request_redraw, t );
 	if( t->url.textarea != NULL ){
 		textarea_set_text(t->url.textarea, "http://");
 	}
