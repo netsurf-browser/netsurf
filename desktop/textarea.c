@@ -38,15 +38,8 @@
 #define MARGIN_RIGHT 4
 #define CARET_COLOR 0x0000FF
 /* background color for readonly textarea */
-#define READONLY_BG 0xD9D9D9
-#define BACKGROUND_COL 0xFFFFFF
 #define BORDER_COLOR 0x000000
 #define SELECTION_COL 0xFFDDDD
-
-static plot_style_t pstyle_fill_selection = {
-    .fill_type = PLOT_OP_TYPE_SOLID,
-    .fill_colour = SELECTION_COL,
-};
 
 static plot_style_t pstyle_stroke_border = {
     .stroke_type = PLOT_OP_TYPE_SOLID,
@@ -878,15 +871,21 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
-	int line0, line1, line;
-	int chars, offset, text_y_offset, text_y_offset_baseline;
-	unsigned int c_pos, c_len, b_start, b_end, line_len;
+	int line0, line1, line, left, right;
+	int chars, text_y_offset, text_y_offset_baseline;
+	unsigned int c_pos, c_len, c_len_part, b_start, b_end, line_len;
+	unsigned int sel_start, sel_end;
 	char *line_text;
-	struct rect r;
-        plot_style_t plot_style_fill_bg = {
-            .fill_type = PLOT_OP_TYPE_SOLID,
-            .fill_colour = BACKGROUND_COL,
-        };
+	struct rect r, s;
+	bool selected = false;
+	plot_font_style_t *fstyle;
+	plot_style_t plot_style_fill_bg = {
+		.stroke_type = PLOT_OP_TYPE_NONE,
+		.stroke_width = 0,
+		.stroke_colour = NS_TRANSPARENT,
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = ta->fstyle.background
+	};
 
 	r = *clip;
 
@@ -898,9 +897,6 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	if (ta->lines == NULL)
 		/* Nothing to redraw */
 		return;
-
-        if (ta->flags & TEXTAREA_READONLY)
-            plot_style_fill_bg.fill_colour = READONLY_BG;
 
 	line0 = (r.y0 - y + ta->scroll_y) / ta->line_height - 1;
 	line1 = (r.y1 - y + ta->scroll_y) / ta->line_height + 1;
@@ -928,14 +924,13 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	plot->clip(&r);
 	plot->rectangle(r.x0, r.y0, r.x1, r.y1, &plot_style_fill_bg);
 	plot->rectangle(x, y,
-		       x + ta->vis_width - 1, y + ta->vis_height - 1,
-		       &pstyle_stroke_border);
+			x + ta->vis_width - 1, y + ta->vis_height - 1,
+			&pstyle_stroke_border);
 
 	if (r.x0 < x + MARGIN_LEFT)
 		r.x0 = x + MARGIN_LEFT;
 	if (r.x1 > x + ta->vis_width - MARGIN_RIGHT)
 		r.x1 = x + ta->vis_width - MARGIN_RIGHT;
-	plot->clip(&r);
 
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->text,
@@ -953,97 +948,113 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		text_y_offset_baseline = (ta->vis_height * 3 + 2) / 4;
 	}
 
+	plot_style_fill_bg.fill_colour = ta->sel_fstyle.background;
+
 	for (line = line0; (line <= line1) &&
 			(y + line * ta->line_height <= r.y1 + ta->scroll_y);
 			line++) {
 		if (ta->lines[line].b_length == 0)
 			continue;
 
+		plot->clip(&r);
+
 		c_len = utf8_bounded_length(
 				&(ta->text[ta->lines[line].b_start]),
 				ta->lines[line].b_length);
 
-		/* if there is a newline between the lines count it too */
-		if (line < ta->line_count - 1 && ta->lines[line + 1].b_start !=
-				ta->lines[line].b_start +
-				ta->lines[line].b_length)
-			c_len++;
+		b_end = 0;
+		right = x + MARGIN_LEFT;
 
-		/* check if a part of the line is selected, won't happen if no
-		  selection (ta->sel_end = -1) */
-		if (ta->sel_end != -1 &&
-				c_pos < (unsigned)ta->sel_end &&
-				c_pos + c_len > (unsigned)ta->sel_start) {
+		do {
+			sel_start = ta->sel_start;
+			sel_end = ta->sel_end;
+			/* get length of part of line */
+			if (ta->sel_end == -1 || ta->sel_end == ta->sel_start ||
+					sel_end <= c_pos ||
+					sel_start > c_pos + c_len) {
+				/* rest of line unselected */
+				selected = false;
+				c_len_part = c_len;
+				fstyle = &ta->fstyle;
 
-			/* offset from the beginning of the line */
-			offset = ta->sel_start - c_pos;
-			chars = ta->sel_end - c_pos -
-					(offset > 0 ? offset:0);
+			} else if (sel_start <= c_pos &&
+					sel_end > c_pos + c_len) {
+				/* rest of line selected */
+				selected = true;
+				c_len_part = c_len;
+				fstyle = &ta->sel_fstyle;
+
+			} else if (sel_start > c_pos) {
+				/* next part of line unselected */
+				selected = false;
+				c_len_part = sel_start - c_pos;
+				fstyle = &ta->fstyle;
+
+			} else if (sel_end > c_pos) {
+				/* next part of line selected */
+				selected = true;
+				c_len_part = sel_end - c_pos;
+				fstyle = &ta->sel_fstyle;
+
+			} else {
+				assert(0);
+			}
 
 			line_text = &(ta->text[ta->lines[line].b_start]);
 			line_len = ta->lines[line].b_length;
 
-			if (offset > 0) {
+			/* find b_start and b_end for this part of the line */
+			b_start = b_end;
 
-				/* find byte start of the selected part */
-				for (b_start = 0; offset > 0; offset--)
-					b_start = utf8_next(line_text,
-							line_len,
-       							b_start);
-				nsfont.font_width(&ta->fstyle, line_text,
-						b_start, &r.x0);
-				r.x0 += x + MARGIN_LEFT;
+			chars = c_len_part;
+			for (b_end = b_start; chars > 0; chars--)
+				b_end = utf8_next(line_text, line_len, b_end);
+
+			/* find clip left/right for this part of line */
+			left = right;
+			nsfont.font_width(&ta->fstyle, line_text,
+					b_end, &right);
+			right += x + MARGIN_LEFT;
+
+			/* set clip */
+			s = r;
+			if (s.x0 < left)
+				s.x0 = left;
+			if (s.x1 > right)
+				s.x1 = right;
+			plot->clip(&s);
+
+			if (selected) {
+				/* draw selection fill */
+				plot->rectangle(s.x0 - ta->scroll_x,
+					y + line * ta->line_height + 1 -
+					ta->scroll_y + text_y_offset,
+					s.x1 - ta->scroll_x,
+					y + (line + 1) * ta->line_height + 1 -
+					ta->scroll_y + text_y_offset,
+					&plot_style_fill_bg);
 			}
-			else {
-				r.x0 = x + MARGIN_LEFT;
-				b_start = 0;
-			}
 
+			/* draw text */
+			plot->text(x + MARGIN_LEFT - ta->scroll_x,
+					y + line * ta->line_height +
+					text_y_offset_baseline - ta->scroll_y,
+					ta->text + ta->lines[line].b_start,
+					ta->lines[line].b_length, fstyle);
 
-			if (chars >= 0) {
+			c_pos += c_len_part;
+			c_len -= c_len_part;
 
-				/* find byte end of the selected part */
-				for (b_end = b_start; chars > 0 &&
-						b_end < line_len;
-						chars--) {
-					b_end = utf8_next(line_text, line_len,
-       							b_end);
-				}
-			}
-			else
-				b_end = ta->lines[line].b_length;
+		} while (c_pos < c_pos + c_len);
 
-			b_end -= b_start;
-			nsfont.font_width(&ta->fstyle,
-					&(ta->text[ta->lines[line].b_start +
-					b_start]),
-					b_end, &r.x1);
-			r.x1 += r.x0;
-			plot->rectangle(r.x0 - ta->scroll_x, y +
-				       line * ta->line_height +
-				       1 - ta->scroll_y + text_y_offset,
-				       r.x1 - ta->scroll_x,
-				       y + (line + 1) * ta->line_height -
-				       1 - ta->scroll_y + text_y_offset,
-				       &pstyle_fill_selection);
-
-		}
-
-		c_pos += c_len;
-
-		r.y0 = y + line * ta->line_height + text_y_offset_baseline;
-
-		ta->fstyle.background =
-			   	(ta->flags & TEXTAREA_READONLY) ?
-					READONLY_BG : BACKGROUND_COL,
-
-		plot->text(x + MARGIN_LEFT - ta->scroll_x,
-				r.y0 - ta->scroll_y,
-			  	ta->text + ta->lines[line].b_start,
-			   	ta->lines[line].b_length,
-				&ta->fstyle);
+		/* if there is a newline between the lines, skip it */
+		if (line < ta->line_count - 1 && ta->lines[line + 1].b_start !=
+				ta->lines[line].b_start +
+				ta->lines[line].b_length)
+			c_pos++;
 	}
 
+	plot->clip(&r);
 	x -= ta->scroll_x;
 	y -= ta->scroll_y;
 
@@ -1099,10 +1110,10 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_SELECT_ALL:
 			caret = ta->text_utf8_len;
 
- 			ta->sel_start = 0;
+			ta->sel_start = 0;
 			ta->sel_end = ta->text_utf8_len;
- 			redraw = true;
- 			break;
+			redraw = true;
+			break;
 		case KEY_COPY_SELECTION:
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
