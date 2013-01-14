@@ -481,7 +481,8 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
     bool handler_called = false;
 
     if( (ev_out->emo_events & MU_MESAG) != 0 ) {
-        DEBUG_PRINT(("guiwin_handle_event_multi_fast: %d\n", msg[0]));
+        DEBUG_PRINT(("guiwin_handle_event_multi_fast: %d (%x)\n", msg[0],
+					msg[0]));
         switch (msg[0]) {
         case WM_REDRAW:
         case WM_CLOSED:
@@ -680,6 +681,9 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
     assert(win != NULL);
 
     wind_get_grect(win->handle, WF_WORKXYWH, dest);
+
+	dbg_grect("gw base rect", dest);
+
     if (mode == GUIWIN_AREA_CONTENT) {
         GRECT tb_area;
         guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
@@ -694,10 +698,11 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
     } else if (mode == GUIWIN_AREA_TOOLBAR) {
     	if (win->toolbar) {
 			if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
-			   dest->g_w = win->toolbar[win->toolbar_idx].ob_width;
+				dest->g_w = win->toolbar[win->toolbar_idx].ob_width;
 			} else {
 				dest->g_h = win->toolbar[win->toolbar_idx].ob_height;
 			}
+			dbg_grect("gw tb rect", dest);
     	}
     	else {
 			dest->g_w = 0;
@@ -921,6 +926,22 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
     }
 }
 
+/**  Update width/height of the toolbar region
+* \param win the GUIWIN
+* \param w The new width of the toolbar area
+* \param h The new height of the toolbar area
+*/
+void guiwin_set_toolbar_size(GUIWIN *win, uint16_t w, uint16_t h)
+{
+	bool is_custom = (win->flags & GW_FLAG_CUSTOM_TOOLBAR);
+
+	if (win->toolbar && is_custom == false) {
+		assert(win->toolbar_idx > -1);
+		win->toolbar[win->toolbar_idx].ob_width = w;
+		win->toolbar[win->toolbar_idx].ob_height = h;
+	}
+}
+
 /**
 * Attach an arbitary pointer to the GUIWIN
 */
@@ -1104,8 +1125,8 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
 
         // Update object position:
         gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
-        gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
         gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
+        gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
         gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
 
         wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);

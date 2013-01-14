@@ -123,22 +123,25 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             on_resized(data->rootwin);
             break;
 
-		case WM_ICONIFY:
-			// TODO: find next active gui window and schedule redraw for that.
-			break;
+        case WM_ICONIFY:
+            // TODO: find next active gui window and schedule redraw for that.
+            break;
 
         case WM_TOPPED:
         case WM_NEWTOP:
         case WM_UNICONIFY:
             input_window = data->rootwin->active_gui_window;
+            // TODO: use something like "restore_active_gui_window_state()"
+            toolbar_set_reflow(data->rootwin->toolbar, true);
+            printf("top msg\n");
             break;
 
         case WM_CLOSED:
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             if (data->rootwin->active_gui_window != NULL) {
-            	LOG(("WM_CLOSED initiated destroy for bw %p",
-						data->rootwin->active_gui_window->browser->bw));
+                LOG(("WM_CLOSED initiated destroy for bw %p",
+                     data->rootwin->active_gui_window->browser->bw));
                 browser_window_destroy(
                     data->rootwin->active_gui_window->browser->bw);
             }
@@ -149,7 +152,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             break;
 
         case WM_TOOLBAR:
-			toolbar_mouse_input(data->rootwin->toolbar, msg[4], msg[7]);
+            toolbar_mouse_input(data->rootwin->toolbar, msg[4], msg[7]);
             break;
 
         default:
@@ -239,7 +242,7 @@ int window_create(struct gui_window * gw,
     redraw_slots_init(&gw->root->redraw_slots, 8);
 
     gw->root->aes_handle = wind_create(flags, 40, 40, desk_area.g_w,
-									desk_area.g_h);
+                                       desk_area.g_h);
     if(gw->root->aes_handle<0) {
         free(gw->root->title);
         free(gw->root);
@@ -269,11 +272,11 @@ int window_create(struct gui_window * gw,
 
     assert(gw->browser);
 
-	gw->browser->bw = bw;
-	if(clone)
-		gw->browser->bw->scale = clone->scale;
-	else
-		gw->browser->bw->scale = 1;
+    gw->browser->bw = bw;
+    if(clone)
+        gw->browser->bw->scale = clone->scale;
+    else
+        gw->browser->bw->scale = 1;
 
 
     /* create statusbar component: */
@@ -548,55 +551,47 @@ void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
 void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
 {
 
-	d->g_x = 0;
-	d->g_y = 0;
-	d->g_w = 0;
-	d->g_h = 0;
+    d->g_x = 0;
+    d->g_y = 0;
+    d->g_w = 0;
+    d->g_h = 0;
 
     if (which == BROWSER_AREA_TOOLBAR) {
-        guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
+        // guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
+        toolbar_get_grect(rootwin->toolbar, 0, d);
+        dbg_grect("toolbar reported size: ", d);
     } else if (which == BROWSER_AREA_CONTENT) {
 
-    	GRECT search_area;
+        GRECT tb_area;
 
-		guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, d);
+        guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, d);
+        toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
 
-
-        window_get_grect(rootwin, BROWSER_AREA_SEARCH, &search_area);
-
-        d->g_y += search_area.g_h;
-        d->g_h -= search_area.g_h;
+        d->g_y += tb_area.g_h;
+        d->g_h -= tb_area.g_h;
 
     } else if (which == BROWSER_AREA_URL_INPUT) {
 
-        toolbar_get_grect(rootwin->toolbar, TOOLBAR_URL_AREA, d);
+        toolbar_get_grect(rootwin->toolbar, TOOLBAR_AREA_URL, d);
 
     } else if (which == BROWSER_AREA_SEARCH) {
-		// TODO: check if search is open
-		GRECT work;
-		OBJECT * tree;
-
-		guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
-		guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
-		tree = get_tree(SEARCH);
-
-		d->g_x = work.g_x;
-		d->g_w = work.g_w;
-		d->g_y += d->g_h;
-		d->g_h = tree->ob_height;
-    }
-    else {
+        // todo: check if search is visible
+        toolbar_get_grect(rootwin->toolbar, TOOLBAR_AREA_SEARCH, d);
+    } else {
 
     }
 
 
-	// sanitize the results
+    // sanitize the results
     if (d->g_h < 0) {
-		d->g_h = 0;
+        d->g_h = 0;
     }
     if (d->g_w < 0) {
-		d->g_w = 0;
+        d->g_w = 0;
     }
+
+    printf("window_get_grect %d:", which);
+    dbg_grect("", d);
 
 }
 
@@ -852,8 +847,8 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
         // draw caret to screen coords:
         vrt_cpyfm(vh, /*MD_REPLACE*/ MD_XOR, pxy, &caret->symbol, &screen, colors);
 
-		// update state:
-		caret->state |= CARET_STATE_VISIBLE;
+        // update state:
+        caret->state |= CARET_STATE_VISIBLE;
     }
 
 exit:
@@ -863,22 +858,24 @@ exit:
 
 void window_process_redraws(ROOTWIN * rootwin)
 {
-    GRECT work, visible_ro, tb_area, search_area, content_area;
+    GRECT work, visible_ro, tb_area, content_area;
     short i;
-	short scroll_x=0, scroll_y=0;
+    short scroll_x=0, scroll_y=0;
     bool toolbar_rdrw_required;
     bool caret_rdrw_required = false;
     struct guiwin_scroll_info_s *slid =NULL;
     int caret_h = 0;
     struct s_caret *caret = &rootwin->caret;
 
+    printf("process redraw...\n");
+
     redraw_active = true;
 
-	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
-	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &search_area);
-	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
+    window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
+    window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
+    dbg_grect("window_process_redraws toolbar area", &tb_area);
 
     while(plot_lock() == false);
 
@@ -919,11 +916,6 @@ void window_process_redraws(ROOTWIN * rootwin)
                 toolbar_redraw(rootwin->toolbar, &rdrw_area);
             }
 
-			rdrw_area = rdrw_area_ro;
-            if (rc_intersect(&search_area, &rdrw_area)) {
-                search_redraw(NULL, &rdrw_area);
-            }
-
             rdrw_area = rdrw_area_ro;
             if (rc_intersect(&content_area, &rdrw_area)) {
 
@@ -931,7 +923,7 @@ void window_process_redraws(ROOTWIN * rootwin)
                     slid = guiwin_get_scroll_info(rootwin->win);
 
                     scroll_x = slid->x_pos * slid->x_unit_px;
-					scroll_y = slid->y_pos * slid->y_unit_px;
+                    scroll_y = slid->y_pos * slid->y_unit_px;
                 }
 
                 window_redraw_content(rootwin, &content_area, &rdrw_area,
@@ -1226,6 +1218,8 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
     GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
 
+    dbg_grect("on_redraw", &clip);
+
     if(guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(rootwin, &clip);
@@ -1236,7 +1230,8 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
 static void on_resized(ROOTWIN *rootwin)
 {
-    GRECT g;
+    GRECT g, toolbar_area;
+    OBJECT *toolbar;
     struct gui_window *gw;
 
     gw = window_get_active_gui_window(rootwin);
@@ -1264,8 +1259,21 @@ static void on_resized(ROOTWIN *rootwin)
 //    }
 
     rootwin->loc = g;
-    window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &g);
+
+    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &g);
+    dbg_grect("new toolbar area1", &g);
+
+    /* fetch old, height: */
+    toolbar_get_grect(rootwin->toolbar, 0, &toolbar_area);
+    g.g_h = toolbar_area.g_h;
+
+    /* update origin and width: */
+    dbg_grect("new toolbar area2", &g);
     toolbar_set_dimensions(rootwin->toolbar, &g);
+
+    /* fetch new coords: */
+    toolbar_get_grect(rootwin->toolbar, 0, &g);
+
 }
 
 static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
@@ -1318,7 +1326,7 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                 mx = mx - content_area.g_x;
                 my = my - content_area.g_y;
                 if( (mx < 0 || mx > content_area.g_w)
-					|| (my < 0 || my > content_area.g_h) )
+                        || (my < 0 || my > content_area.g_h) )
                     return;
 
                 utf8_convert_ret ret;

@@ -223,6 +223,9 @@ guiwin_set_content_units(GUIWIN * win, short x, short y);
 void
 guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
 
+void
+guiwin_set_toolbar_size(GUIWIN *win, uint16_t w, uint16_t h);
+
 bool
 guiwin_update_slider(GUIWIN *win, short mode);
 

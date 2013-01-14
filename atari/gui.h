@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <mt_gem.h>
 
+#include "atari/search.h"
 #include "atari/redrawslots.h"
 #include "atari/gemtk/gemtk.h"
 
@@ -149,6 +150,7 @@ struct gui_window {
     char * url;
 	struct bitmap * icon;
 	struct s_caret caret;
+	struct search_form_session *search;
 	struct gui_window *next, *prev;
 };
 

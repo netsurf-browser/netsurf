@@ -95,13 +95,10 @@ extern EVMULT_OUT aes_event_out;
 
 static OBJECT * aes_toolbar = NULL;
 static OBJECT * throbber_form = NULL;
-static char * toolbar_image_folder = (char *)"default";
-static uint32_t toolbar_bg_color = 0xFFFFFF;
-static hlcache_handle * toolbar_image;
-static hlcache_handle * throbber_image;
-static bool toolbar_image_ready = false;
-static bool throbber_image_ready = false;
 static bool init = false;
+static int area_navigation_height = 0;
+static int area_search_height = 0;
+static int area_full_height = 0;
 
 static plot_font_style_t font_style_url = {
     .family = PLOT_FONT_FAMILY_SANS_SERIF,
@@ -151,27 +148,21 @@ static struct s_tb_button tb_buttons[] =
 	{ 0, 0, {0,0}, 0, -1, 0, {0,0,0,0}}
 };
 
+// TODO: most of this struct can be deleted
 struct s_toolbar_style {
 	int font_height_pt;
-	int height;
-	int icon_width;
-	int icon_height;
-	int button_hmargin;
-	int button_vmargin;
-	/* RRGGBBAA: */
-	uint32_t icon_bgcolor;
 };
 
 static struct s_toolbar_style toolbar_styles[] =
 {
 	/* small (18 px height) */
-	{ 9, 18, 16, 16, 0, 0, 0 },
+	{9},
 	/* medium (default - 26 px height) */
-	{14, 26, 24, 24, 1, 4, 0 },
+	{14},
 	/* large ( 49 px height ) */
-	{18, 34, 64, 64, 2, 0, 0 },
+	{18},
 	/* custom style: */
-	{18, 34, 64, 64, 2, 0, 0 }
+	{18}
 };
 
 static const struct redraw_context toolbar_rdrw_ctx = {
@@ -212,7 +203,7 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
         return;
     }
 
-	toolbar_get_grect(tb, TOOLBAR_URL_AREA, &area);
+	toolbar_get_grect(tb, TOOLBAR_AREA_URL, &area);
 	area.g_x += x;
 	area.g_y += y;
 	area.g_w = w;
@@ -228,48 +219,49 @@ static struct s_tb_button *button_init(struct s_toolbar *tb, OBJECT * tree, int 
 	*instance = tb_buttons[index];
 	instance->owner = tb;
 
-	instance->area.g_w = toolbar_styles[tb->style].icon_width + \
-		( toolbar_styles[tb->style].button_vmargin * 2);
-
     return(instance);
 }
 
 
 void toolbar_init( void )
 {
-	int i=0, n;
-	short vdicolor[3];
-	uint32_t rgbcolor;
-
     aes_toolbar = get_tree(TOOLBAR);
     throbber_form = get_tree(THROBBER);
+
+    area_full_height = aes_toolbar->ob_height;
+	area_search_height = aes_toolbar[TOOLBAR_AREA_SEARCH].ob_height;
+	area_navigation_height = aes_toolbar[TOOLBAR_AREA_NAVIGATION].ob_height;
+
+    init = true;
 }
 
 
 void toolbar_exit(void)
 {
-	if (toolbar_image)
-		hlcache_handle_release(toolbar_image);
-	if (throbber_image)
-		hlcache_handle_release(throbber_image);
+
 }
 
 
 struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 {
 	int i;
+	GRECT url_area;
+	struct s_toolbar *t;
 
 	LOG((""));
 
-	struct s_toolbar *t = calloc(sizeof(struct s_toolbar), 1);
+	assert(init == true);
+
+	t = calloc(sizeof(struct s_toolbar), 1);
 
 	assert(t);
 
+	/* initialize the toolbar values: */
 	t->owner = owner;
 	t->style = 1;
-
-	/* create the root component: */
-	t->area.g_h = toolbar_styles[t->style].height;
+	t->search_visible = false;
+	t->visible = true;
+	t->reflow = true;
 
 	/* count buttons and add them as components: */
 	i = 0;
@@ -287,15 +279,12 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	font_style_url.size =
 		toolbar_styles[t->style].font_height_pt * FONT_SIZE_SCALE;
 
-	int ta_height = toolbar_styles[t->style].height;
-	ta_height -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
-	t->url.textarea = textarea_create(300, ta_height, 0, &font_style_url,
+	toolbar_get_grect(t, TOOLBAR_AREA_URL, &url_area);
+	url_area.g_h -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
+	t->url.textarea = textarea_create(300, url_area.g_h, 0, &font_style_url,
                                    tb_txt_request_redraw, t);
 
 	/* create the throbber widget: */
-	t->throbber.area.g_h = toolbar_styles[t->style].height;
-	t->throbber.area.g_w = toolbar_styles[t->style].icon_width + \
-		(2*toolbar_styles[t->style].button_vmargin );
 	t->throbber.index = THROBBER_INACTIVE_INDEX;
 	t->throbber.max_index = THROBBER_MAX_INDEX;
 	t->throbber.running = false;
@@ -309,8 +298,27 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 void toolbar_destroy(struct s_toolbar *tb)
 {
     free(tb->buttons);
-	textarea_destroy( tb->url.textarea );
+	textarea_destroy(tb->url.textarea);
 	free(tb);
+}
+
+static int toolbar_calculate_height(struct s_toolbar *tb)
+{
+	int r = 0;
+
+	if (tb->visible == false) {
+		printf("toolbar height calc: %d (hidden)\n", 0);
+		return(0);
+	}
+
+	r += area_navigation_height;
+
+	if (tb->search_visible) {
+		r += area_search_height;
+	}
+
+	printf("toolbar height calc: %d \n", r);
+	return(r);
 }
 
 static void toolbar_reflow(struct s_toolbar *tb)
@@ -321,13 +329,30 @@ static void toolbar_reflow(struct s_toolbar *tb)
     aes_toolbar->ob_x = tb->area.g_x;
     aes_toolbar->ob_y = tb->area.g_y;
     aes_toolbar->ob_width = tb->area.g_w;
-    aes_toolbar->ob_height = tb->area.g_h;
+    aes_toolbar->ob_height = toolbar_calculate_height(tb);
 
+	// expand the "main" areas to the current width:
+    aes_toolbar[TOOLBAR_AREA_NAVIGATION].ob_width = tb->area.g_w;
+    aes_toolbar[TOOLBAR_AREA_SEARCH].ob_width = tb->area.g_w;
+
+    if (tb->search_visible) {
+		aes_toolbar[TOOLBAR_AREA_SEARCH].ob_state &= ~OF_HIDETREE;
+    } else {
+    	aes_toolbar[TOOLBAR_AREA_SEARCH].ob_state |= OF_HIDETREE;
+
+    }
+
+	// align the throbber area at right edge:
     aes_toolbar[TOOLBAR_THROBBER_AREA].ob_x = tb->area.g_w
         - aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width;
 
-    aes_toolbar[TOOLBAR_URL_AREA].ob_width = tb->area.g_w
-       - (aes_toolbar[TOOLBAR_NAVIGATION_AREA].ob_width
+	// align the search button:
+	aes_toolbar[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_x = tb->area.g_w
+        - aes_toolbar[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_width;
+
+	// center the URL area:
+    aes_toolbar[TOOLBAR_AREA_URL].ob_width = tb->area.g_w
+       - (aes_toolbar[TOOLBAR_AREA_BUTTONS].ob_width
        + aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width + 1);
 
 
@@ -359,7 +384,7 @@ static void toolbar_reflow(struct s_toolbar *tb)
 
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 {
-    GRECT area;
+    GRECT area, area_ro;
 
     if (tb->attached == false) {
         return;
@@ -368,27 +393,26 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
     if(tb->reflow == true)
         toolbar_reflow(tb);
 
+	dbg_grect("toolbar redraw clip", clip);
 
     objc_draw_grect(aes_toolbar,0,8,clip);
-
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
 
-    GRECT url_area;
-    toolbar_get_grect(tb, TOOLBAR_URL_AREA, &area);
-    url_area = area;
+    toolbar_get_grect(tb, TOOLBAR_AREA_URL, &area_ro);
+    area = area_ro;
+
     if (rc_intersect(clip, &area)) {
 
         struct rect r = {
-							.x0 = 0,
-							.y0 = 0,
-							.x1 = url_area.g_w,
-							.y1 = url_area.g_h
+							.x0 = area.g_x - area_ro.g_x,
+							.y0 = area.g_y - area_ro.g_y,
+							.x1 = area.g_w,
+							.y1 = area.g_h
 						};
 
-        r.x0 = area.g_x - url_area.g_x;
+        r.x0 = area.g_x - area_ro.g_x;
         r.x1 = r.x0 + area.g_w;
-        plot_set_dimensions(url_area.g_x, url_area.g_y, url_area.g_w,
-                            url_area.g_h);
+        plot_set_dimensions(area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
         textarea_redraw(tb->url.textarea, 0, 0, &r, &toolbar_rdrw_ctx);
     }
 }
@@ -455,7 +479,7 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
             window_schedule_redraw_grect(tb->owner, &area);
         }
         else {
-            toolbar_get_grect(tb, TOOLBAR_NAVIGATION_AREA, &area);
+            toolbar_get_grect(tb, TOOLBAR_AREA_BUTTONS, &area);
             window_schedule_redraw_grect(tb->owner, &area);
         }
     }
@@ -465,22 +489,24 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
 {
 
-
+	dbg_grect("toolbar_set_dimensions", area);
     if (area->g_w != tb->area.g_w || area->g_h != tb->area.g_h)  {
+
         tb->area = *area;
+
         /* reflow now, just for url input calucation: */
         toolbar_reflow(tb);
         /* this will request an textarea redraw: */
         textarea_set_dimensions(tb->url.textarea,
-                                aes_toolbar[TOOLBAR_URL_AREA].ob_width,
-                                20);
+                                aes_toolbar[TOOLBAR_AREA_URL].ob_width,
+                                aes_toolbar[TOOLBAR_AREA_URL].ob_height);
     }
     else {
         tb->area = *area;
     }
-         /* reflow for next redraw: */
-        /* TODO: that's only required because we do not reset others toolbars reflow
-            state on reflow */
+	/* reflow for next redraw: */
+    /* TODO: that's only required because we do not reset others toolbars reflow
+             state on reflow */
     tb->reflow = true;
 }
 
@@ -492,7 +518,7 @@ void toolbar_set_url(struct s_toolbar *tb, const char * text)
 
     if (tb->attached) {
         GRECT area;
-        toolbar_get_grect(tb, TOOLBAR_URL_AREA, &area);
+        toolbar_get_grect(tb, TOOLBAR_AREA_URL, &area);
         window_schedule_redraw_grect(tb->owner, &area);
         struct gui_window * gw = window_get_active_gui_window(tb->owner);
         assert(gw != NULL);
@@ -514,6 +540,28 @@ void toolbar_set_throbber_state(struct s_toolbar *tb, bool active)
     tb->reflow = true;
     toolbar_get_grect(tb, TOOLBAR_THROBBER_AREA, &throbber_area);
     window_schedule_redraw_grect(tb->owner, &throbber_area);
+}
+
+void toolbar_set_visible(struct s_toolbar *tb, short area, bool visible)
+{
+	if (area == 0) {
+		if ((visible == false) && (tb->visible == true)) {
+			tb->visible = false;
+			tb->reflow = true;
+		} else if((visible == true) && (tb->visible == false)) {
+			tb->visible = false;
+			tb->reflow = true;
+		}
+	}
+	else if (area == TOOLBAR_AREA_SEARCH) {
+		tb->search_visible = visible;
+		tb->reflow = true;
+	}
+}
+
+void toolbar_set_reflow(struct s_toolbar *tb, bool do_reflow)
+{
+	tb->reflow = true;
 }
 
 void toolbar_set_attached(struct s_toolbar *tb, bool attached)
@@ -626,10 +674,10 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 	short mx, my, mb, kstat;
 	int old;
 
-    if (obj==TOOLBAR_URL_AREA){
+    if (obj==TOOLBAR_AREA_URL){
 
         graf_mkstate( &mx, &my, &mb,  &kstat );
-        toolbar_get_grect(tb, TOOLBAR_URL_AREA, &work);
+        toolbar_get_grect(tb, TOOLBAR_AREA_URL, &work);
         mx -= work.g_x;
         my -= work.g_y;
 
@@ -676,7 +724,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 				textarea_mouse_action( tb->url.textarea,
 						BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1, mx,
 						my);
-                toolbar_get_grect(tb, TOOLBAR_URL_AREA, &work);
+                toolbar_get_grect(tb, TOOLBAR_AREA_URL, &work);
                 window_schedule_redraw_grect(tb->owner, &work);
 			} else {
 				textarea_mouse_action(tb->url.textarea,
@@ -688,8 +736,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
         if (bt != NULL && bt->state != button_off) {
             bt->cb_click(tb);
             struct gui_window * gw = window_get_active_gui_window(tb->owner);
-            toolbar_update_buttons(tb, gw->browser->bw,
-                                   0);
+            toolbar_update_buttons(tb, gw->browser->bw, 0);
         }
 
     }
@@ -699,24 +746,30 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 /**
 * Receive a specific region of the toolbar.
 * @param tb - the toolbar pointer
-* @param which - the area to retrieve:  TOOLBAR_URL_AREA,
-*                                       TOOLBAR_NAVIGATION_AREA,
-*                                       TOOLBAR_THROBBER_AREA
+* @param which - the area to retrieve:  0 to receive the workarea,
+										all other values must be
+										an resource ID of the TOOLBAR tree.
 * @param dst - GRECT pointer receiving the area.
 */
 
 void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
 {
+	#define LAST_TOOLBAR_AREA TOOLBAR_AREA_SEARCH
+
     if (tb->reflow == true) {
         toolbar_reflow(tb);
     }
 
     objc_offset(aes_toolbar, which, &dst->g_x, &dst->g_y);
+
     dst->g_w = aes_toolbar[which].ob_width;
     dst->g_h = aes_toolbar[which].ob_height;
+    //aes_toolbar[which].ob_height;
 
-    //printf("Toolbar get grect (%d): ", which);
-    //dbg_grect("", dst);
+    printf("Toolbar get grect (%d): ", which);
+    dbg_grect("", dst);
+
+    #undef LAST_TOOLBAR_AREA
 }
 
 
@@ -788,8 +841,11 @@ void toolbar_stop_click(struct s_toolbar *tb)
     struct gui_window * gw;
 
     gw = window_get_active_gui_window(tb->owner);
+
     assert(gw != NULL);
+
     bw = gw->browser->bw;
+
     assert(bw != NULL);
 
 	browser_window_stop(bw);

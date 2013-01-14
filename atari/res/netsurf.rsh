@@ -41,13 +41,24 @@
 #define MAINMENU_M_HELP_CONTENT 61  /* STRING in tree MAINMENU */
 
 #define TOOLBAR 1  /* form/dial */
-#define TOOLBAR_NAVIGATION_AREA 1  /* BOX in tree TOOLBAR */
+#define TOOLBAR_AREA_SEARCH 9  /* BOX in tree TOOLBAR */
+#define TOOLBAR_BT_SEARCH 10  /* BUTTON in tree TOOLBAR */
+#define TOOLBAR_BT_SEARCH_BACK 12  /* BUTTON in tree TOOLBAR */
+#define TOOLBAR_CB_CASESENSE 14  /* BOXCHAR in tree TOOLBAR */
+#define TOOLBAR_CB_SHOWALL 15  /* BOXCHAR in tree TOOLBAR */
+#define TOOLBAR_LBL_SHOWALL 16  /* STRING in tree TOOLBAR */
+#define TOOLBAR_LBL_CASESENSE 17  /* TEXT in tree TOOLBAR */
+#define TOOLBAR_TB_SRCH 18  /* FTEXT in tree TOOLBAR */
+#define TOOLBAR_SEARCH_ALIGN_RIGHT 20  /* IBOX in tree TOOLBAR */
+#define TOOLBAR_CLOSE_SEARCH 11  /* BUTTON in tree TOOLBAR */
+#define TOOLBAR_AREA_NAVIGATION 19  /* BOX in tree TOOLBAR */
+#define TOOLBAR_AREA_BUTTONS 1  /* IBOX in tree TOOLBAR */
 #define TOOLBAR_BT_BACK 2  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_HOME 3  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_FORWARD 4  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_STOP 5  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_RELOAD 6  /* CICON in tree TOOLBAR */
-#define TOOLBAR_URL_AREA 7  /* BOX in tree TOOLBAR */
+#define TOOLBAR_AREA_URL 7  /* BOX in tree TOOLBAR */
 #define TOOLBAR_THROBBER_AREA 8  /* BOX in tree TOOLBAR */
 
 #define ICONIFY 2  /* form/dial */
@@ -80,14 +91,13 @@
 
 #define SEARCH 8  /* form/dial */
 #define SEARCH_BT_SEARCH 1  /* BUTTON in tree SEARCH */
-#define SEARCH_LBL_FWD 2  /* STRING in tree SEARCH */
-#define SEARCH_CB_FWD 3  /* BUTTON in tree SEARCH */
-#define SEARCH_BT_SEARCH_BACK 4  /* BUTTON in tree SEARCH */
-#define SEARCH_CB_CASESENSE 6  /* BOXCHAR in tree SEARCH */
-#define SEARCH_CB_SHOWALL 7  /* BOXCHAR in tree SEARCH */
-#define SEARCH_LBL_SHOWALL 8  /* STRING in tree SEARCH */
-#define SEARCH_LBL_CASESENSE 9  /* TEXT in tree SEARCH */
-#define SEARCH_TB_SRCH 10  /* FTEXT in tree SEARCH */
+#define SEARCH_CB_FWD 2  /* BUTTON in tree SEARCH */
+#define SEARCH_BT_SEARCH_BACK 3  /* BUTTON in tree SEARCH */
+#define SEARCH_CB_CASESENSE 5  /* BOXCHAR in tree SEARCH */
+#define SEARCH_CB_SHOWALL 6  /* BOXCHAR in tree SEARCH */
+#define SEARCH_LBL_SHOWALL 7  /* STRING in tree SEARCH */
+#define SEARCH_LBL_CASESENSE 8  /* TEXT in tree SEARCH */
+#define SEARCH_TB_SRCH 9  /* FTEXT in tree SEARCH */
 
 #define DOWNLOAD 9  /* form/dial */
 /* Width ist 400, code depends on that! If you change it, change it in download.c */

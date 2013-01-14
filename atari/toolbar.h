@@ -15,10 +15,7 @@ enum toolbar_textarea {
 
 struct s_url_widget
 {
-    /* widget is only redrawn when this flag is set */
-	bool redraw;
 	struct textarea *textarea;
-	GRECT rdw_area;
 	GRECT area;
 };
 
@@ -27,7 +24,6 @@ struct s_throbber_widget
 	short index;
 	short max_index;
 	bool running;
-	GRECT area;
 };
 
 struct s_toolbar
@@ -35,15 +31,16 @@ struct s_toolbar
 	struct s_gui_win_root *owner;
 	struct s_url_widget url;
 	struct s_throbber_widget throbber;
-	GRECT btdim;
 	GRECT area;
 	/* size & location of buttons: */
 	struct s_tb_button * buttons;
-	bool attached;
 	int btcnt;
 	int style;
+	bool attached;
 	bool redraw;
     bool reflow;
+    bool visible;
+    bool search_visible;
 };
 
 
@@ -63,6 +60,8 @@ struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
 void toolbar_set_throbber_state(struct s_toolbar *tb, bool active);
 void toolbar_set_attached(struct s_toolbar *tb, bool attached);
+void toolbar_set_visible(struct s_toolbar *tb, short area, bool visible);
+void toolbar_set_reflow(struct s_toolbar *tb, bool do_reflow);
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip);
 void toolbar_throbber_progress(struct s_toolbar *tb);
 /* public events handlers: */

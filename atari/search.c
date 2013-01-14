@@ -135,6 +135,7 @@ void nsatari_search_set_back_state(bool active, void *p)
 	LOG(("%p: set back state: %d\n", p, active));
 }
 
+/*
 void search_redraw(void *session, GRECT *clip)
 {
 	GRECT area, clipped_area;
@@ -161,6 +162,7 @@ void search_redraw(void *session, GRECT *clip)
 
 	objc_draw_grect(tree, 0, 8, &clipped_area);
 }
+*/
 
 static SEARCH_FORM_SESSION get_search_session(GUIWIN * win)
 {
@@ -368,6 +370,6 @@ SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw)
 	apply_form(searchwin, &sfs->state );
 	set_text(SEARCH_TB_SRCH, "", 31);
 
-	return( current );
+	return(current);
 
 }
