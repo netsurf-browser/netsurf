@@ -237,7 +237,7 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	x0 = ta->border_width + ta->pad_left;
 	x1 = ta->vis_width - (ta->border_width + ta->pad_left);
 	y0 = 0;
-	y1 = ta->vis_height;
+	y1 = ta->vis_height - 2 * ta->border_width;
 
 	x = ta->caret_x - ta->scroll_x;
 	y = ta->caret_y - ta->scroll_y;
@@ -754,13 +754,14 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 		text_y_offset = ta->border_width + ta->pad_top;
 	} else {
 		/* Single line text area; text is vertically centered */
-		text_y_offset = (ta->vis_height - ta->line_height + 1) / 2;
+		text_y_offset = ta->border_width;
+		text_y_offset += (ta->vis_height - ta->line_height + 1) / 2;
 	}
 
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {
 		x0 = ta->caret_x - ta->scroll_x;
-		y0 = ta->caret_y - ta->scroll_y;
+		y0 = ta->caret_y + text_y_offset - ta->scroll_y;
 		width = 2;
 		height = ta->line_height;
 
