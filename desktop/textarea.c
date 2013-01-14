@@ -235,7 +235,7 @@ static bool textarea_scroll_visible(struct textarea *ta)
 		return false;
 
 	x0 = ta->border_width + ta->pad_left;
-	x1 = ta->vis_width - (ta->border_width + ta->pad_left);
+	x1 = ta->vis_width - (ta->border_width + ta->pad_right);
 	y0 = 0;
 	y1 = ta->vis_height - 2 * ta->border_width;
 
