@@ -264,8 +264,11 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	/* If scrolled, set new pos. */
 	if (xs != ta->scroll_x && ta->bar_x != NULL) {
 		scrollbar_set(ta->bar_x, xs, false);
-		ta->scroll_x = scrollbar_get_offset(ta->bar_x);
-		scrolled = true;
+		xs = scrollbar_get_offset(ta->bar_x);
+		if (xs != ta->scroll_x) {
+			ta->scroll_x = xs;
+			scrolled = true;
+		}
 
 	} else if (ta->flags & TEXTAREA_MULTILINE && ta->bar_x == NULL &&
 			ta->scroll_x != 0) {
@@ -291,8 +294,11 @@ static bool textarea_scroll_visible(struct textarea *ta)
 		/* If scrolled, set new pos. */
 		if (ys != ta->scroll_y && ta->bar_y != NULL) {
 			scrollbar_set(ta->bar_y, ys, false);
-			ta->scroll_y = scrollbar_get_offset(ta->bar_y);
-			scrolled = true;
+			ys = scrollbar_get_offset(ta->bar_y);
+			if (ys != ta->scroll_y) {
+				ta->scroll_y = ys;
+				scrolled = true;
+			}
 
 		} else if (ta->bar_y == NULL && ta->scroll_y != 0) {
 			ta->scroll_y = 0;
@@ -1673,10 +1679,10 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
-			textarea_set_caret_xy(ta, x, y);
-			
 			textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
 			ta->drag_start_char = c_off;
+
+			textarea_set_caret(ta, c_off);
 		}
 		if (ta->sel_start != -1) {
 			/* remove selection */
