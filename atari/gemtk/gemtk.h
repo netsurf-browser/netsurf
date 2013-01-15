@@ -102,11 +102,10 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
 #define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
-#define GW_FLAG_TOOLBAR_REDRAW      0x10	// enable internal toolbar redraw
+//#define GW_FLAG_TOOLBAR_REDRAW      0x10	// enable internal toolbar redraw
 #define GW_FLAG_CUSTOM_SCROLLING	0x20	// no internal scroller handling
 
-#define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM \
-                            | GW_FLAG_TOOLBAR_REDRAW)
+#define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM)
 
 #define GW_STATUS_ICONIFIED			0x01
 #define GW_STATUS_SHADED			0x02
@@ -136,7 +135,10 @@ typedef struct gui_window_s GUIWIN;
 
 /** GUIWIN event handler */
 typedef short (*guiwin_event_handler_f)(GUIWIN *gw,
-										EVMULT_OUT *ev_out, short msg[8]);
+		EVMULT_OUT *ev_out, short msg[8]);
+
+typedef void (*guiwin_redraw_f)(GUIWIN *win, uint16_t msg, GRECT *clip);
+
 struct guiwin_scroll_info_s {
 
 	/** Definition of a content unit (horizontal) measured in pixel  */
@@ -175,84 +177,62 @@ guiwin_init(void);
 void
 guiwin_exit(void);
 
-GUIWIN *
-guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f handler);
+GUIWIN * guiwin_add(short handle, uint32_t flags,
+		guiwin_event_handler_f handler);
 
-GUIWIN *
-guiwin_find(short handle);
+GUIWIN * guiwin_find(short handle);
 
-short
-guiwin_remove(GUIWIN *win);
+short guiwin_remove(GUIWIN *win);
 
-GUIWIN *
-guiwin_validate_ptr(GUIWIN *win);
+GUIWIN * guiwin_validate_ptr(GUIWIN *win);
 
-short
-guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]);
+short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]);
 
-void
-guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
+void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
 
-short
-guiwin_get_handle(GUIWIN *win);
+short guiwin_get_handle(GUIWIN *win);
 
-uint32_t
-guiwin_get_state(GUIWIN *win);
+uint32_t guiwin_get_state(GUIWIN *win);
 
-void
-guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags);
+void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx,
+		uint32_t flags);
 
-void
-guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
+void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
 
-void
-guiwin_set_user_data(GUIWIN *win, void *data);
+void guiwin_set_user_data(GUIWIN *win, void *data);
 
-void *
-guiwin_get_user_data(GUIWIN *win);
+void * guiwin_get_user_data(GUIWIN *win);
 
-struct guiwin_scroll_info_s *
-guiwin_get_scroll_info(GUIWIN *win);
+struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
 
-void
-guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
+void guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
 
-void
-guiwin_set_content_units(GUIWIN * win, short x, short y);
+void guiwin_set_content_units(GUIWIN * win, short x, short y);
 
-void
-guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
+void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
 
-void
-guiwin_set_toolbar_size(GUIWIN *win, uint16_t w, uint16_t h);
+void guiwin_set_toolbar_size(GUIWIN *win, uint16_t s);
 
-bool
-guiwin_update_slider(GUIWIN *win, short mode);
+void guiwin_set_toolbar_redraw_func(GUIWIN *win, guiwin_redraw_f func);
 
-void
-guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
+bool guiwin_update_slider(GUIWIN *win, short mode);
 
-void
-guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
-					short d);
+void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
 
-void
-guiwin_send_redraw(GUIWIN *win, GRECT *area);
+void guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
+		short d);
 
-VdiHdl
-guiwin_get_vdi_handle(GUIWIN *win);
+void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 
-bool
-guiwin_has_intersection(GUIWIN *win, GRECT *work);
+VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 
-void
-guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
+bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
 
-void
-guiwin_form_redraw(GUIWIN *gw, GRECT *clip);
+void guiwin_toolbar_redraw(GUIWIN *win, uint16_t msg, GRECT *clip);
 
-void
-guiwin_clear(GUIWIN *win);
+void guiwin_form_redraw(GUIWIN *gw, GRECT *clip);
+
+void guiwin_clear(GUIWIN *win);
 
 /* -------------------------------------------------------------------------- */
 /* AES SCROLLER MODULE                                                        */

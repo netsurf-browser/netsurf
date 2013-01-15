@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <gem.h>
+#include <mt_gem.h>
 #include "gemtk.h"
 
 /* -------------------------------------------------------------------------- */
@@ -64,14 +64,15 @@ int keybd2ascii( int keybd, int shift)
     return (shift)?key->shift[keybd>>8]:key->unshift[keybd>>8];
 }
 
+
 void gemtk_clip_grect(VdiHdl vh, GRECT *rect)
 {
-	short pxy[4];
+	PXY pxy[2];
 
-	pxy[0] = rect->g_x;
-	pxy[1] = rect->g_y;
-	pxy[2] = pxy[0] + rect->g_w-1;
-	pxy[3] = pxy[1] + rect->g_h-1;
+	pxy[0].p_x = rect->g_x;
+	pxy[0].p_y = rect->g_y;
+	pxy[1].p_x = pxy[0].p_x + rect->g_w - 1;
+	pxy[1].p_y = pxy[0].p_y + rect->g_h - 1;
 
 	vs_clip_pxy(vh, pxy);
 }

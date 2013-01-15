@@ -54,6 +54,20 @@ static void on_abort_click(struct gui_download_window *dw);
 static void on_cbrdy_click(struct gui_download_window *dw);
 static void on_close(struct gui_download_window * dw);
 static void on_redraw(struct gui_download_window *dw, GRECT *clip);
+static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip);
+
+static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
+{
+    struct gui_download_window *data;
+
+	if (msg != WM_REDRAW) {
+		data = guiwin_get_user_data(win);
+
+		assert(data);
+
+		on_redraw(data, clip);
+	}
+}
 
 static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
@@ -236,7 +250,7 @@ static char * select_filepath( const char * path, const char * filename )
 struct gui_download_window * gui_download_window_create(download_context *ctx,
 		struct gui_window *parent)
 {
-	char *filename;
+	const char *filename;
 	char *destination;
 	char gdos_path[PATH_MAX];
 	const char * url;
@@ -254,7 +268,7 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 		return(NULL);
 	}
 
-	filename = download_context_get_filename(ctx);
+	filename = download_context_get_filename((const download_context*)ctx);
 	dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
 	if( dlgres == 3){
 		return( NULL );
@@ -298,7 +312,6 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 		char spare[200];
 		snprintf(spare, 200, "Couldn't open %s for writing!", gdw->destination);
 		msg_box_show(MSG_BOX_ALERT, spare);
-		free(filename);
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
@@ -311,19 +324,17 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 	gdw->aes_handle = wind_create_grect(CLOSER | NAME | MOVER, &desk_area);
 	wind_set_str(gdw->aes_handle, WF_NAME, "Download");
 	unsigned long gwflags = GW_FLAG_DEFAULTS;
-	gwflags &= ~GW_FLAG_TOOLBAR_REDRAW;
 	gdw->guiwin = guiwin_add(gdw->aes_handle, gwflags, on_aes_event);
 	if( gdw->guiwin == NULL || gdw->fd == NULL ){
 		die("could not create guiwin");
-		free( filename );
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
 	guiwin_set_user_data(gdw->guiwin, gdw);
 	guiwin_set_toolbar(gdw->guiwin, tree, 0, 0);
+	guiwin_set_toolbar_redraw_func(gdw->guiwin, toolbar_redraw_cb);
 
 	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
-	free( filename );
 	LOG(("created download: %s (total size: %d)",
 		gdw->destination, gdw->size_total
 	));

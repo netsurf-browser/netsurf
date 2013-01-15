@@ -485,12 +485,42 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
     }
 }
 
+void toolbar_set_width(struct s_toolbar *tb, short w)
+{
+	GRECT cur;
+
+	toolbar_get_grect(tb, 0, &cur);
+
+	if (w != cur.g_w) {
+
+		tb->area.g_w = w;
+
+        /* reflow now, just for url input calucation: */
+        toolbar_reflow(tb);
+        /* this will request an textarea redraw: */
+        textarea_set_dimensions(tb->url.textarea,
+                                aes_toolbar[TOOLBAR_AREA_URL].ob_width,
+                                aes_toolbar[TOOLBAR_AREA_URL].ob_height);
+		tb->reflow = true;
+	}
+}
+
+void toolbar_set_origin(struct s_toolbar *tb, short x, short y)
+{
+	GRECT cur;
+
+	toolbar_get_grect(tb, 0, &cur);
+
+	if (x != cur.g_x || y != cur.g_y) {
+		tb->area.g_x = x;
+		tb->area.g_y = y;
+		tb->reflow = true;
+	}
+}
 
 void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
 {
-
-	dbg_grect("toolbar_set_dimensions", area);
-    if (area->g_w != tb->area.g_w || area->g_h != tb->area.g_h)  {
+    if (area->g_w != tb->area.g_w)  {
 
         tb->area = *area;
 
@@ -676,7 +706,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 
     if (obj==TOOLBAR_AREA_URL){
 
-        graf_mkstate( &mx, &my, &mb,  &kstat );
+        graf_mkstate(&mx, &my, &mb,  &kstat);
         toolbar_get_grect(tb, TOOLBAR_AREA_URL, &work);
         mx -= work.g_x;
         my -= work.g_y;
@@ -733,6 +763,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
         }
     } else {
         struct s_tb_button *bt = find_button(tb, obj);
+        printf("found button: %p\n", bt);
         if (bt != NULL && bt->state != button_off) {
             bt->cb_click(tb);
             struct gui_window * gw = window_get_active_gui_window(tb->owner);

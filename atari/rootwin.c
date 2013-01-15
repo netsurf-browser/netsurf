@@ -83,6 +83,7 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8]);
 static short on_window_key_input(ROOTWIN * rootwin, unsigned short nkc);
 static bool on_content_mouse_click(ROOTWIN *rootwin);
 static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area);
+static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip);
 
 static bool redraw_active = false;
 
@@ -91,11 +92,6 @@ static const struct redraw_context rootwin_rdrw_ctx = {
     .background_images = true,
     .plot = &atari_plotters
 };
-
-/* -------------------------------------------------------------------------- */
-/* Module public functions:                                                   */
-/* -------------------------------------------------------------------------- */
-
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
@@ -209,6 +205,9 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     return(retval);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Module public functions:                                                   */
+/* -------------------------------------------------------------------------- */
 
 int window_create(struct gui_window * gw,
                   struct browser_window * bw,
@@ -218,6 +217,8 @@ int window_create(struct gui_window * gw,
     int err = 0;
     bool tb, sb;
     int flags;
+    struct rootwin_data_s *data;
+    struct guiwin_scroll_info_s *slid;
 
     tb = (inflags & WIDGET_TOOLBAR);
     sb = (inflags & WIDGET_STATUSBAR);
@@ -251,24 +252,25 @@ int window_create(struct gui_window * gw,
     gw->root->win = guiwin_add(gw->root->aes_handle,
                                GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
 
-    struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
+    data = malloc(sizeof(struct rootwin_data_s));
     data->rootwin = gw->root;
     guiwin_set_user_data(gw->root->win, (void*)data);
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(gw->root->win);
+    slid = guiwin_get_scroll_info(gw->root->win);
     slid->y_unit_px = 32;
     slid->x_unit_px = 32;
 
-    /* create toolbar component: */
-    guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
-    if( tb ) {
+    /* create */
+    if(tb) {
         gw->root->toolbar = toolbar_create(gw->root);
         assert(gw->root->toolbar);
+        guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
+		guiwin_set_toolbar_redraw_func(gw->root->win, toolbar_redraw_cb);
     } else {
         gw->root->toolbar = NULL;
     }
 
     /* create browser component: */
-    gw->browser = (CMP_BROWSER)malloc( sizeof(struct s_browser) );
+    gw->browser = (struct s_browser *)malloc( sizeof(struct s_browser));
 
     assert(gw->browser);
 
@@ -871,7 +873,8 @@ void window_process_redraws(ROOTWIN * rootwin)
 
     redraw_active = true;
 
-    window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
+    toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
+    guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
     window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
@@ -1230,7 +1233,7 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
 static void on_resized(ROOTWIN *rootwin)
 {
-    GRECT g, toolbar_area;
+    GRECT g, work;
     OBJECT *toolbar;
     struct gui_window *gw;
 
@@ -1244,8 +1247,13 @@ static void on_resized(ROOTWIN *rootwin)
         return;
 
     wind_get_grect(rootwin->aes_handle, WF_CURRXYWH, &g);
+	guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
 
     if (rootwin->loc.g_w != g.g_w || rootwin->loc.g_h != g.g_h) {
+
+		/* resized */
+    	toolbar_set_width(rootwin->toolbar, work.g_w);
+
         if ( gw->browser->bw->current_content != NULL ) {
             /* Reformat will happen when redraw is processed: */
             // TODO: call reformat directly, this was introduced because
@@ -1254,26 +1262,12 @@ static void on_resized(ROOTWIN *rootwin)
             rootwin->active_gui_window->browser->reformat_pending = true;
         }
     }
-//    if (rootwin->loc.g_x != g.g_x || rootwin->loc.g_y != g.g_y) {
-//        // moved
-//    }
+    if (rootwin->loc.g_x != g.g_x || rootwin->loc.g_y != g.g_y) {
+        /* moved */
+        toolbar_set_origin(rootwin->toolbar, work.g_x, work.g_y);
+    }
 
     rootwin->loc = g;
-
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &g);
-    dbg_grect("new toolbar area1", &g);
-
-    /* fetch old, height: */
-    toolbar_get_grect(rootwin->toolbar, 0, &toolbar_area);
-    g.g_h = toolbar_area.g_h;
-
-    /* update origin and width: */
-    dbg_grect("new toolbar area2", &g);
-    toolbar_set_dimensions(rootwin->toolbar, &g);
-
-    /* fetch new coords: */
-    toolbar_get_grect(rootwin->toolbar, 0, &g);
-
 }
 
 static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
@@ -1354,3 +1348,15 @@ error:
     ddclose( dd_hdl);
 }
 
+static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
+{
+	struct rootwin_data_s * ud;
+
+	if (msg != WM_REDRAW) {
+		ud = guiwin_get_user_data(win);
+
+		assert(ud);
+
+		toolbar_redraw(ud->rootwin->toolbar, clip);
+	}
+}

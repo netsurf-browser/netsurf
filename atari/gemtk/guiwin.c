@@ -26,24 +26,62 @@
 
 #include "gemtk.h"
 
-//#define DEBUG_PRINT(x)		printf x
-#define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)		printf x
+//#define DEBUG_PRINT(x)
 
 struct gui_window_s {
+
+	/** The AES handle of the window */
     short handle;
+
+    /** the generic event handler function for events passed to the client */
     guiwin_event_handler_f handler_func;
+
+    /** The custom toolbar redraw function, if any */
+    guiwin_redraw_f toolbar_redraw_func;
+
+    /** window configuration */
     uint32_t flags;
+
+    /** window state */
     uint32_t state;
+
+    /** AES Tree used as toolbar */
     OBJECT *toolbar;
+
+    /** Current edit object selected in the toolbar, if any. */
     short toolbar_edit_obj;
+
+    /** Current selected object in the toolbar, if any. */
+    short toolbar_focus_obj;
+
+    /** Describes the start of the toolbar tree (usually 0) */
     short toolbar_idx;
-    GRECT toolbar_dim;
+
+    /** depending on the flag GW_FLAG_HAS_VTOOLBAR this defines the toolbar
+		height or the toolbar width (GW_FLAG_HAS_VTOOLBAR means width).
+	*/
+    short toolbar_size;
+
+    /** AES Object tree to be used for windowed dialogs. */
     OBJECT *form;
+
+	/** Current form edit object, if any. */
     short form_edit_obj;
+
+    /** Current form focus object, if any */
     short form_focus_obj;
+
+    /** Describes the start of the form tree */
     short form_idx;
+
+    /** Scroll state */
     struct guiwin_scroll_info_s scroll_info;
+
+    /** Arbitary data set by the user */
     void *user_data;
+
+    /** linked list items */
     struct gui_window_s *next, *prev;
 };
 
@@ -256,13 +294,12 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         break;
 
     case WM_REDRAW:
-        if ((gw->flags & GW_FLAG_TOOLBAR_REDRAW)
-                && (gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
+        if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
             g.g_x = msg[4];
             g.g_y = msg[5];
             g.g_w = msg[6];
             g.g_h = msg[7];
-            guiwin_toolbar_redraw(gw, &g);
+            guiwin_toolbar_redraw(gw, WM_REDRAW, &g);
         }
         if (gw->form != NULL) {
 			g.g_x = msg[4];
@@ -287,7 +324,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 */
 static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
-    short retval = 0;
+    short retval = 0, obj_idx = 0;
 
     DEBUG_PRINT(("preproc_mu_button\n"));
 
@@ -301,25 +338,39 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
         if (POINT_WITHIN(ev_out->emo_mouse.p_x,
                          ev_out->emo_mouse.p_y, tb_area)) {
-            // send WM_TOOLBAR message
+
             gw->toolbar[gw->toolbar_idx].ob_x = tb_area.g_x;
             gw->toolbar[gw->toolbar_idx].ob_y = tb_area.g_y;
-            short obj_idx = objc_find(gw->toolbar,
+			obj_idx = objc_find(gw->toolbar,
                                       gw->toolbar_idx, 8,
                                       ev_out->emo_mouse.p_x,
                                       ev_out->emo_mouse.p_y);
 
+			gw->toolbar_focus_obj = obj_idx;
+
             DEBUG_PRINT(("Toolbar index: %d\n", obj_idx));
-            if (obj_idx > 0) {
-                if ((gw->toolbar[obj_idx].ob_flags & OF_SELECTABLE)!=0
-                        && ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
-                        && ((gw->flags & GW_FLAG_TOOLBAR_REDRAW) == 1)) {
-                    gw->toolbar[obj_idx].ob_state |= OS_SELECTED;
-                    // TODO: optimize redraw by setting the object clip:
-                    guiwin_toolbar_redraw(gw, NULL);
-                }
+            if (obj_idx > -1
+				&& (gw->toolbar[obj_idx].ob_state & OS_DISABLED)== 0
+					&& ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)) {
+
+                uint16_t type = (gw->toolbar[obj_idx].ob_type & 0xFF);
+                uint16_t nextobj;
+
+                DEBUG_PRINT(("type: %d\n", type));
+                // report mouse click to the tree:
+                retval = form_wbutton(gw->toolbar, gw->toolbar_focus_obj,
+                                ev_out->emo_mclicks, &nextobj,
+                                gw->handle);
+				if (nextobj == obj_idx
+					&& (type == G_FTEXT || type == G_FBOXTEXT))  {
+						gw->toolbar_edit_obj = obj_idx;
+				}
+				else {
+					gw->toolbar_edit_obj = -1;
+				}
             }
 
+			// send WM_TOOLBAR message
             short oldevents = ev_out->emo_events;
             short msg_out[8] = {WM_TOOLBAR, gl_apid,
                                 0, gw->handle,
@@ -354,76 +405,42 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             gw->form[gw->form_idx].ob_y = content_area.g_y -
                                           (slid->y_pos * slid->y_unit_px);
 
-            gw->form_focus_obj = objc_find(gw->form, gw->form_idx, 8,
+            obj_idx = objc_find(gw->form, gw->form_idx, 8,
                                            ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
-
+			gw->form_focus_obj = obj_idx;
 			DEBUG_PRINT(("Window Form click, obj: %d\n", gw->form_focus_obj));
-            if (gw->form_focus_obj > -1
-                    && (gw->form[gw->form_focus_obj].ob_state & OS_DISABLED)== 0) {
+            if (obj_idx > -1
+                    && (gw->form[obj_idx].ob_state & OS_DISABLED)== 0) {
 
-                uint16_t type = (gw->form[gw->form_focus_obj].ob_type & 0xFF);
-                uint16_t xtype = (gw->form[gw->form_focus_obj].ob_type & 0xFF00);
-                uint16_t nextobj, edit_idx;
+                uint16_t type = (gw->form[obj_idx].ob_type & 0xFF);
+                uint16_t nextobj;
 
-                DEBUG_PRINT(("type: %d, xtype: %d\n", type, xtype));
+                DEBUG_PRINT(("type: %d\n", type));
 
-                if (type == G_FTEXT || type == G_FBOXTEXT)  {
+				retval = form_wbutton(gw->form, gw->form_focus_obj,
+                                ev_out->emo_mclicks, &nextobj,
+                                gw->handle);
 
-                	// edit field handling, this causes ugly redraws when the
-                	// form is scrolled and larger than the window in which
-                	// it is attached.
+				if (nextobj == obj_idx
+					&& (type == G_FTEXT || type == G_FBOXTEXT))  {
+						gw->form_edit_obj = obj_idx;
+				}
+				else {
+					gw->form_edit_obj = -1;
+				}
 
-                    // report mouse click to the tree:
-                    retval = form_wbutton(gw->form, gw->form_focus_obj,
-                                      ev_out->emo_mclicks, &nextobj,
-                                      gw->handle);
-
-                    // end edit mode for active edit object:
-                    if(gw->form_edit_obj != -1) {
-                        objc_wedit(gw->form, gw->form_edit_obj,
-                                  ev_out->emo_kreturn, &edit_idx,
-                                  EDEND, gw->handle);
-                    }
-
-                    // activate the new edit object:
-                    gw->form_edit_obj = gw->form_focus_obj;
-                    objc_wedit(gw->form, gw->form_edit_obj,
-                              ev_out->emo_kreturn, &edit_idx,
-                              EDINIT, gw->handle);
-
-                } else {
-
-                    // end edit mode for active edit object:
-                    if(gw->form_edit_obj != -1) {
-                        objc_wedit(gw->form, gw->form_edit_obj,
-                                  ev_out->emo_kreturn, &edit_idx,
-                                  EDEND, gw->handle);
-                        gw->form_edit_obj = -1;
-                    }
-
-                    if ((xtype & GW_XTYPE_CHECKBOX) != 0) {
-
-                        if ((gw->form[gw->form_focus_obj].ob_state & OS_SELECTED) != 0) {
-                            gw->form[gw->form_focus_obj].ob_state &= ~(OS_SELECTED|OS_CROSSED);
-                        } else {
-                            gw->form[gw->form_focus_obj].ob_state |= (OS_SELECTED|OS_CROSSED);
-                        }
-						guiwin_form_redraw(gw, obj_screen_rect(gw->form,
-                                                           gw->form_focus_obj));
-                    }
-                    short oldevents = ev_out->emo_events;
-                    short msg_out[8] = {GUIWIN_WM_FORM, gl_apid,
-                                        0, gw->handle,
-                                        gw->form_focus_obj, ev_out->emo_mclicks,
-                                        ev_out->emo_kmeta, 0
-                                       };
-                    ev_out->emo_events = MU_MESAG;
-                    // notify the window about form click:
-                    gw->handler_func(gw, ev_out, msg_out);
-                    ev_out->emo_events = oldevents;
-                    retval = 1;
-                    evnt_timer(150);
-                }
+                short oldevents = ev_out->emo_events;
+                short msg_out[8] = { GUIWIN_WM_FORM, gl_apid,
+										0, gw->handle,
+										gw->form_focus_obj, ev_out->emo_mclicks,
+										ev_out->emo_kmeta, 0
+									};
+				ev_out->emo_events = MU_MESAG;
+				// notify the window about form click:
+				gw->handler_func(gw, ev_out, msg_out);
+				ev_out->emo_events = oldevents;
+				retval = 1;
+				evnt_timer(150);
             }
         }
     }
@@ -682,8 +699,6 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 
     wind_get_grect(win->handle, WF_WORKXYWH, dest);
 
-	dbg_grect("gw base rect", dest);
-
     if (mode == GUIWIN_AREA_CONTENT) {
         GRECT tb_area;
         guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
@@ -698,9 +713,9 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
     } else if (mode == GUIWIN_AREA_TOOLBAR) {
     	if (win->toolbar) {
 			if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
-				dest->g_w = win->toolbar[win->toolbar_idx].ob_width;
+				dest->g_w = win->toolbar_size;
 			} else {
-				dest->g_h = win->toolbar[win->toolbar_idx].ob_height;
+				dest->g_h = win->toolbar_size;
 			}
 			dbg_grect("gw tb rect", dest);
     	}
@@ -921,25 +936,32 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
     win->toolbar = toolbar;
     win->toolbar_idx = idx;
     win->toolbar_edit_obj = -1;
-    if(flags & GW_FLAG_HAS_VTOOLBAR) {
+    if (flags & GW_FLAG_HAS_VTOOLBAR) {
         win->flags |= GW_FLAG_HAS_VTOOLBAR;
+        win->toolbar_size = win->toolbar[idx].ob_width;
+    }
+    else {
+		win->toolbar_size = win->toolbar[idx].ob_height;
     }
 }
 
 /**  Update width/height of the toolbar region
 * \param win the GUIWIN
-* \param w The new width of the toolbar area
-* \param h The new height of the toolbar area
+* \param s depending on the flag GW_FLAG_HAS_VTOOLBAR this is the width or the height
 */
-void guiwin_set_toolbar_size(GUIWIN *win, uint16_t w, uint16_t h)
+void guiwin_set_toolbar_size(GUIWIN *win, uint16_t s)
 {
-	bool is_custom = (win->flags & GW_FLAG_CUSTOM_TOOLBAR);
+	win->toolbar_size = s;
+}
 
-	if (win->toolbar && is_custom == false) {
-		assert(win->toolbar_idx > -1);
-		win->toolbar[win->toolbar_idx].ob_width = w;
-		win->toolbar[win->toolbar_idx].ob_height = h;
-	}
+/** Set an custom toolbar redraw function which is called instead of
+*	default drawing routine.
+* \param win the GUIWIN
+* \param func the custom redraw function
+*/
+void guiwin_set_toolbar_redraw_func(GUIWIN *win, guiwin_redraw_f func)
+{
+	win->toolbar_redraw_func = func;
 }
 
 /**
@@ -1108,8 +1130,10 @@ bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
 }
 
 /** Execute an toolbar redraw
+* \param msg specifies the AES message which initiated the redraw, or 0 when
+*				the function was called without AES message context.
 */
-void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
+void guiwin_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 {
     GRECT tb_area, tb_area_ro, g;
 
@@ -1121,22 +1145,32 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
 
     tb_area = tb_area_ro;
 
-    if(rc_intersect(clip, &tb_area)) {
+    if (rc_intersect(clip, &tb_area)) {
 
-        // Update object position:
-        gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
-        gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
-        gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
-        gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
+		if (gw->toolbar_redraw_func != NULL) {
 
-        wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
-        while (g.g_h > 0 || g.g_w > 0) {
-            if(rc_intersect(&tb_area, &g)) {
-                objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
-                          g.g_w, g.g_h);
+			// customized redraw:
+			gw->toolbar_redraw_func(gw, msg, &tb_area);
 
-            }
-            wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
+		} else {
+
+			// Default redraw action
+
+			// Update object position:
+			gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
+			gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
+			gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
+			gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
+
+			wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
+			while (g.g_h > 0 || g.g_w > 0) {
+				if(rc_intersect(&tb_area, &g)) {
+					objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
+							  g.g_w, g.g_h);
+
+				}
+				wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
+			}
         }
     }
 }

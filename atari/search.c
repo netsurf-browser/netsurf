@@ -368,7 +368,7 @@ SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw)
 	EvntAdd(sfs->formwind, WM_CLOSED, evnt_close, EV_TOP);
 */
 	apply_form(searchwin, &sfs->state );
-	set_text(SEARCH_TB_SRCH, "", 31);
+	set_text(SEARCH_TB_SRCH, (char*)"", 31);
 
 	return(current);
 

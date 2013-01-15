@@ -27,6 +27,9 @@
 
 #define SEARCH_MAX_SLEN 24
 
+struct gui_window;
+struct browser_window;
+
 struct s_search_form_state
 {
 	char text[32];
