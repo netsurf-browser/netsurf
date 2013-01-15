@@ -1251,9 +1251,9 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 
 	plot->clip(clip);
 
-	if (ta->sel_end == -1 || ta->sel_start == ta->sel_end &&
+	if ((ta->sel_end == -1 || ta->sel_start == ta->sel_end) &&
 			ta->caret_pos.char_off >= 0) {
-		/* There is no selection; draw caret */
+		/* There is no selection, and caret visible: draw caret */
 		int caret_y = y - ta->scroll_y + ta->caret_y + text_y_offset;
 		int caret_height = caret_y + ta->line_height;
 
