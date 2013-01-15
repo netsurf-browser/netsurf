@@ -307,7 +307,6 @@ static int toolbar_calculate_height(struct s_toolbar *tb)
 	int r = 0;
 
 	if (tb->visible == false) {
-		printf("toolbar height calc: %d (hidden)\n", 0);
 		return(0);
 	}
 
@@ -317,7 +316,6 @@ static int toolbar_calculate_height(struct s_toolbar *tb)
 		r += area_search_height;
 	}
 
-	printf("toolbar height calc: %d \n", r);
 	return(r);
 }
 
@@ -393,7 +391,9 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
     if(tb->reflow == true)
         toolbar_reflow(tb);
 
-	// dbg_grect("toolbar redraw clip", clip);
+	//TODO: fix redraw under popup menu ... that not handled correctly somehow.
+
+	//dbg_grect("toolbar redraw clip", clip);
 
     objc_draw_grect(aes_toolbar,0,8,clip);
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
@@ -403,16 +403,14 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 
     if (rc_intersect(clip, &area)) {
 
-        struct rect r = {
-							.x0 = area.g_x - area_ro.g_x,
-							.y0 = area.g_y - area_ro.g_y,
-							.x1 = area.g_w,
-							.y1 = area.g_h
-						};
-
-        r.x0 = area.g_x - area_ro.g_x;
-        r.x1 = r.x0 + area.g_w;
         plot_set_dimensions(area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
+        struct rect r = {
+					.x0 = MAX(0,area.g_x - area_ro.g_x),
+					.y0 = MAX(0,area.g_y - area_ro.g_y),
+					.x1 = MAX(0,area.g_x - area_ro.g_x) + area.g_w,
+					.y1 = MAX(0,area.g_y - area_ro.g_y) + area.g_h
+		};
+		//dbg_rect("tb textarea clip: ", &r);
         textarea_redraw(tb->url.textarea, 0, 0, &r, &toolbar_rdrw_ctx);
     }
 }
