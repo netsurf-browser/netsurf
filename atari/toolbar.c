@@ -393,7 +393,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
     if(tb->reflow == true)
         toolbar_reflow(tb);
 
-	dbg_grect("toolbar redraw clip", clip);
+	// dbg_grect("toolbar redraw clip", clip);
 
     objc_draw_grect(aes_toolbar,0,8,clip);
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
@@ -797,8 +797,8 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
     dst->g_h = aes_toolbar[which].ob_height;
     //aes_toolbar[which].ob_height;
 
-    printf("Toolbar get grect (%d): ", which);
-    dbg_grect("", dst);
+    //printf("Toolbar get grect (%d): ", which);
+    //dbg_grect("", dst);
 
     #undef LAST_TOOLBAR_AREA
 }

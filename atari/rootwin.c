@@ -561,7 +561,7 @@ void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
     if (which == BROWSER_AREA_TOOLBAR) {
         // guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
         toolbar_get_grect(rootwin->toolbar, 0, d);
-        dbg_grect("toolbar reported size: ", d);
+
     } else if (which == BROWSER_AREA_CONTENT) {
 
         GRECT tb_area;
@@ -592,8 +592,8 @@ void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
         d->g_w = 0;
     }
 
-    printf("window_get_grect %d:", which);
-    dbg_grect("", d);
+    //printf("window_get_grect %d:", which);
+    //dbg_grect("", d);
 
 }
 
@@ -868,8 +868,6 @@ void window_process_redraws(ROOTWIN * rootwin)
     struct guiwin_scroll_info_s *slid =NULL;
     int caret_h = 0;
     struct s_caret *caret = &rootwin->caret;
-
-    printf("process redraw...\n");
 
     redraw_active = true;
 
@@ -1221,7 +1219,7 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
     GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
 
-    dbg_grect("on_redraw", &clip);
+    //dbg_grect("on_redraw", &clip);
 
     if(guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};

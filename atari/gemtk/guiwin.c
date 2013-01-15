@@ -26,8 +26,8 @@
 
 #include "gemtk.h"
 
-#define DEBUG_PRINT(x)		printf x
-//#define DEBUG_PRINT(x)
+//#define DEBUG_PRINT(x)		printf x
+#define DEBUG_PRINT(x)
 
 struct gui_window_s {
 
@@ -717,7 +717,6 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 			} else {
 				dest->g_h = win->toolbar_size;
 			}
-			dbg_grect("gw tb rect", dest);
     	}
     	else {
 			dest->g_w = 0;
