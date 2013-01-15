@@ -4333,7 +4333,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if((nsoption_bool(kiosk_mode) == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
-	ami_do_redraw_limits(g, g->shared->bw, true, g->c_x, g->c_y,
+	ami_do_redraw_limits(g, g->shared->bw, false, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
 
 	g->c_h = 0;
