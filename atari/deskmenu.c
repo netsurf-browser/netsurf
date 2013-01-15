@@ -130,86 +130,6 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 
 
 /*
-	Parse encoded menu key shortcut
-
-	The format is:
-
-	"[" 		-   marks start of the shortcut
-	"@,^,<" 	-   If the keyshortcut is only valid
-					with modifier keys, one of these characters must directly
-					follow the start mark.
-					Meaning:
-					@ -> Alternate
-					^ -> Control
-	"#"			-   keycode or ascii character.
-					The value is handled as keycode if the character value
-					is <= 28 ( Atari chracter table )
-					or if it is interpreted as function key string.
-					(strings: F1 - F10)
-
-*/
-static void register_menu_str( struct s_menu_item_evnt * mi )
-{
-	assert(h_gem_menu != NULL);
-
-	struct s_accelerator * accel = &mi->accel;
-	int i, l=0, x=-1;
-	char str[255];
-
-	get_string(h_gem_menu, mi->rid, NULL);
-
-	i = l = strlen(str);
-	while (i > 2) {
-		if( str[i] == '['){
-			x = i;
-			break;
-		}
-		i--;
-	}
-	if( x > -1 ){
-		mi->menustr = malloc( l+1 );
-		strcpy(mi->menustr, str );
-		mi->menustr[x]=' ';
-		x++;
-		if( str[x] == '@' ){
-			accel->mod = K_ALT;
-			mi->menustr[x] = 0x07;
-			x++;
-		}
-		else if( str[x] == '^' ) {
-			accel->mod = K_CTRL;
-			x++;
-		}
-		if( str[x] <= 28 ){
-			// parse symbol
-			unsigned short keycode=0;
-			switch( str[x] ){
-					case 0x03:
-					accel->keycode = NK_RIGHT;
-				break;
-					case 0x04:
-					accel->keycode = NK_LEFT;
-				break;
-					case 0x1B:
-					accel->keycode = NK_ESC;
-				break;
-					default:
-				break;
-			}
-		} else {
-			if(str[x] == 'F' && ( str[x+1] >= '1' && str[x+1] <= '9') ){
-				// parse function key
-				short fkey = atoi(  &str[x+1] );
-				if( (fkey >= 0) && (fkey <= 10) ){
-					accel->keycode = NK_F1 - 1 + fkey;
-				}
-			} else {
-				accel->ascii = str[x];
-			}
-		}
-	}
-}
-/*
 static void __CDECL evnt_menu(WINDOW * win, short buff[8])
 {
 	int title = buff[3];
@@ -515,6 +435,87 @@ static void __CDECL menu_help_content(short item, short title, void *data)
 */
 
 
+/*
+	Parse encoded menu key shortcut
+
+	The format is:
+
+	"[" 		-   marks start of the shortcut
+	"@,^,<" 	-   If the keyshortcut is only valid
+					with modifier keys, one of these characters must directly
+					follow the start mark.
+					Meaning:
+					@ -> Alternate
+					^ -> Control
+	"#"			-   keycode or ascii character.
+					The value is handled as keycode if the character value
+					is <= 28 ( Atari chracter table )
+					or if it is interpreted as function key string.
+					(strings: F1 - F10)
+
+*/
+static void register_menu_str( struct s_menu_item_evnt * mi )
+{
+	assert(h_gem_menu != NULL);
+
+	struct s_accelerator * accel = &mi->accel;
+	int i, l=0, x=-1;
+	char str[255];
+
+	get_string(h_gem_menu, mi->rid, &str);
+
+	i = l = strlen(str);
+	while (i > 2) {
+		if( str[i] == '['){
+			x = i;
+			break;
+		}
+		i--;
+	}
+	if( x > -1 ){
+		mi->menustr = malloc( l+1 );
+		strcpy(mi->menustr, str );
+		mi->menustr[x]=' ';
+		x++;
+		if( str[x] == '@' ){
+			accel->mod = K_ALT;
+			mi->menustr[x] = 0x07;
+			x++;
+		}
+		else if( str[x] == '^' ) {
+			accel->mod = K_CTRL;
+			x++;
+		}
+		if( str[x] <= 28 ){
+			// parse symbol
+			unsigned short keycode=0;
+			switch( str[x] ){
+					case 0x03:
+					accel->keycode = NK_RIGHT;
+				break;
+					case 0x04:
+					accel->keycode = NK_LEFT;
+				break;
+					case 0x1B:
+					accel->keycode = NK_ESC;
+				break;
+					default:
+				break;
+			}
+		} else {
+			if(str[x] == 'F' && ( str[x+1] >= '1' && str[x+1] <= '9') ){
+				// parse function key
+				short fkey = atoi(  &str[x+1] );
+				if( (fkey >= 0) && (fkey <= 10) ){
+					accel->keycode = NK_F1 - 1 + fkey;
+				}
+			} else {
+				accel->ascii = str[x];
+			}
+		}
+	}
+}
+
 /**
 *	Setup & display an desktop menu.
 */
@@ -525,7 +526,9 @@ void deskmenu_init(void)
 
 	h_gem_menu = get_tree(MAINMENU);
 
-	// TODO: remove that call somehow...
+
+	/* Install menu: */
+	menu_bar(h_gem_menu, MENU_INSTALL);
 
 	/* parse and update menu items:  */
 	i = 0;
@@ -539,9 +542,6 @@ void deskmenu_init(void)
 		i++;
 	}
 	deskmenu_update();
-
-	/* Install menu: */
-	menu_bar(h_gem_menu, MENU_INSTALL);
 	/* Redraw menu: */
 	menu_bar(h_gem_menu, MENU_UPDATE);
 }
