@@ -358,8 +358,9 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		return false;
 	}
 
-	while (*char_offset && string[*char_offset] != ' ')
-		(*char_offset)--;
+	if (*char_offset != length)
+		while (*char_offset && string[*char_offset] != ' ')
+			(*char_offset)--;
 
 	code = rufl_width(font_family, font_style, font_size,
 			string, *char_offset,
