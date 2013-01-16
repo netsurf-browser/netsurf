@@ -42,10 +42,9 @@ static OBJECT * dlgtree;
 
 #define OBJ_SELECTED(idx) ((bool)((dlgtree[idx].ob_state & OS_SELECTED)!=0))
 
-#define OBJ_CHECK(idx) (dlgtree[idx].ob_state |= (OS_SELECTED | OS_CROSSED));
+#define OBJ_CHECK(idx) (dlgtree[idx].ob_state |= (OS_SELECTED));
 
-#define OBJ_UNCHECK(idx) (dlgtree[idx].ob_state &= ~(OS_SELECTED)); \
-							(dlgtree[idx].ob_state &= ~(OS_CROSSED));
+#define OBJ_UNCHECK(idx) (dlgtree[idx].ob_state &= ~(OS_SELECTED));
 
 #define OBJ_REDRAW(idx) guiwin_send_redraw(settings_guiwin, \
 										obj_screen_rect(dlgtree, idx));
@@ -286,12 +285,10 @@ static void form_event(int index, int external)
             ENABLE_OBJ(SETTINGS_EDIT_PROXY_HOST);
             ENABLE_OBJ(SETTINGS_EDIT_PROXY_PORT);
             ENABLE_OBJ(SETTINGS_CB_PROXY_AUTH);
-            ENABLE_OBJ(SETTINGS_LBL_PROXY_AUTH);
         } else {
             DISABLE_OBJ(SETTINGS_EDIT_PROXY_HOST);
             DISABLE_OBJ(SETTINGS_EDIT_PROXY_PORT);
             DISABLE_OBJ(SETTINGS_CB_PROXY_AUTH);
-            DISABLE_OBJ(SETTINGS_LBL_PROXY_AUTH);
         }
         FORMEVENT(SETTINGS_CB_PROXY_AUTH);
         OBJ_REDRAW(SETTINGS_CB_USE_PROXY);
