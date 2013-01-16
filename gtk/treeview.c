@@ -254,7 +254,7 @@ gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	
 	switch (event->button) {
 		case 1: tw->mouse_state |= BROWSER_MOUSE_PRESS_1; break;
-		case 3: tw->mouse_state |= BROWSER_MOUSE_PRESS_2; break;
+		case 2: tw->mouse_state |= BROWSER_MOUSE_PRESS_2; break;
 	}
 	/* Handle the modifiers too */
 	if (event->state & GDK_SHIFT_MASK)
