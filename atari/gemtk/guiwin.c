@@ -382,6 +382,10 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             gw->handler_func(gw, ev_out, msg_out);
             ev_out->emo_events = oldevents;
             retval = 1;
+        } else {
+			if (gw->toolbar_edit_obj != -1) {
+				gw->toolbar_edit_obj = -1;
+			}
         }
     }
 
@@ -443,6 +447,10 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 				evnt_timer(150);
             }
         }
+        else {
+			gw->form_edit_obj = -1;
+
+        }
     }
 
     return(retval);
@@ -453,6 +461,40 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 */
 static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
+	short retval = 0;
+
+    if((gw->toolbar != NULL) && (gw->toolbar_edit_obj > -1) ) {
+
+        short next_edit_obj = gw->toolbar_edit_obj;
+        short next_char = -1;
+        short edit_idx;
+        short r;
+
+        r = form_wkeybd(gw->toolbar, gw->toolbar_edit_obj, next_edit_obj,
+                       ev_out->emo_kreturn,
+                       &next_edit_obj, &next_char, gw->handle);
+
+        if (next_edit_obj != gw->toolbar_edit_obj) {
+
+			if(gw->toolbar_edit_obj != -1) {
+				objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
+                      ev_out->emo_kreturn, &edit_idx,
+                      EDEND, gw->handle);
+			}
+
+            gw->toolbar_edit_obj = next_edit_obj;
+
+            objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
+                      ev_out->emo_kreturn, &edit_idx,
+                      EDINIT, gw->handle);
+        } else {
+            if(next_char > 13)
+                r = objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
+                              ev_out->emo_kreturn, &edit_idx,
+                              EDCHAR, gw->handle);
+        }
+        retval = 1;
+    }
 
     if((gw->form != NULL) && (gw->form_edit_obj > -1) ) {
 
@@ -485,6 +527,7 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                               EDCHAR, gw->handle);
         }
     }
+    return(retval);
 }
 
 /**
@@ -563,6 +606,9 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 
             if ((ev_out->emo_events & MU_KEYBD)) {
                 retval = preproc_mu_keybd(dest, ev_out, msg);
+                if(retval != 0) {
+                    handler_called = true;
+                }
             }
 
             if (handler_called==false) {

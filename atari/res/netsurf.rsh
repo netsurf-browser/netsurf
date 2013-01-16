@@ -48,7 +48,7 @@
 #define TOOLBAR_CB_SHOWALL 6  /* BUTTON in tree TOOLBAR */
 #define TOOLBAR_TB_SRCH 7  /* FTEXT in tree TOOLBAR */
 #define TOOLBAR_SEARCH_ALIGN_RIGHT 8  /* IBOX in tree TOOLBAR */
-#define TOOLBAR_CLOSE_SEARCH 9  /* BUTTON in tree TOOLBAR */
+#define TOOLBAR_BT_CLOSE_SEARCH 9  /* BUTTON in tree TOOLBAR */
 #define TOOLBAR_AREA_NAVIGATION 10  /* BOX in tree TOOLBAR */
 #define TOOLBAR_AREA_BUTTONS 11  /* IBOX in tree TOOLBAR */
 #define TOOLBAR_BT_BACK 12  /* CICON in tree TOOLBAR */

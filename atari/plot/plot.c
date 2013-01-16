@@ -1685,6 +1685,7 @@ bool plot_unlock(void)
 	wind_update(END_MCTRL);
 	wind_update(END_UPDATE);
 	graf_mouse(M_ON, NULL);
+	vs_clip_off(atari_plot_vdi_handle);
 	atari_plot_flags &=  ~PLOT_FLAG_LOCKED;
 	return(false);
 }
@@ -1906,10 +1907,10 @@ bool plot_clip(const struct rect *clip)
 
 	plot_get_dimensions(&canvas);
 
-	view.clipping.x0 = clip->x0;
 	view.clipping.y0 = clip->y0;
-	view.clipping.x1 = clip->x1;
 	view.clipping.y1 = clip->y1;
+	view.clipping.x0 = clip->x0;
+	view.clipping.x1 = clip->x1;
 
 	plot_get_clip_grect(&gclip);
 
@@ -1918,9 +1919,18 @@ bool plot_clip(const struct rect *clip)
 
 	rc_intersect(&canvas, &gclip);
 
-	//dbg_grect("canvas clipped: ", &gclip);
+	if(gclip.g_h < 0){
+		gclip.g_h = 0;
+	}
 
-	assert(rc_intersect(&screen, &gclip));
+	if (!rc_intersect(&screen, &gclip)) {
+		dbg_rect("cliprect: ", &view.clipping);
+		dbg_grect("screen: ", &canvas);
+		dbg_grect("canvas clipped: ", &gclip);
+		//assert(1 == 0);
+	}
+
+	//assert(rc_intersect(&screen, &gclip));
 
 	//dbg_grect("canvas clipped to screen", &gclip);
 
@@ -1947,7 +1957,9 @@ bool plot_get_clip(struct rect * out)
 void plot_get_clip_grect(GRECT * out)
 {
     struct rect clip={0,0,0,0};
+
     plot_get_clip(&clip);
+
     out->g_x = clip.x0;
     out->g_y = clip.y0;
     out->g_w = clip.x1 - clip.x0;

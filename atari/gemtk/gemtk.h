@@ -102,7 +102,6 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
 #define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
-//#define GW_FLAG_TOOLBAR_REDRAW      0x10	// enable internal toolbar redraw
 #define GW_FLAG_CUSTOM_SCROLLING	0x20	// no internal scroller handling
 
 #define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM)
@@ -110,8 +109,7 @@ short msg_box_show(short type, const char * msg);
 #define GW_STATUS_ICONIFIED			0x01
 #define GW_STATUS_SHADED			0x02
 
-#define GW_XTYPE_CHECKBOX			(101 << 8)
-#define GW_CB_SELECTED 				(OS_SELECTED | OS_CROSSED)
+#define GW_CB_SELECTED 				(OS_SELECTED)
 
 #define GUIWIN_VSLIDER 				0x01
 #define GUIWIN_HSLIDER 				0x02

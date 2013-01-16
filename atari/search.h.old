@@ -21,7 +21,6 @@
  *
  */
 
-#include "desktop/search.h"
 
 #ifndef NS_ATARI_SEARCH_H
 #define NS_ATARI_SEARCH_H
@@ -45,10 +44,9 @@ struct s_search_form_session {
 
 typedef struct s_search_form_session * SEARCH_FORM_SESSION;
 
-struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
-		struct browser_window *bw);
-void nsatari_search_session_destroy(struct s_search_form_session *s);
-void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
-		search_flags_t f);
+SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw);
+void search_destroy(struct gui_window * gw);
+
+struct s_search_session
 
 #endif

@@ -512,8 +512,10 @@ void dbg_pxy(const char * str, short * pxy )
 
 void dbg_rect(const char * str, int * pxy)
 {
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
-		pxy[0], pxy[1], pxy[2], pxy[3] );
+	printf("%s: x0: %d, y0: %d, x1: %d, y1: %d (w: %d, h: %d)\n", str,
+		pxy[0], pxy[1], pxy[2], pxy[3],
+		pxy[2] - pxy[0],
+		pxy[3] - pxy[1] );
 }
 
 /* some LDG functions here to reduce dependencies */

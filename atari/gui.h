@@ -150,7 +150,7 @@ struct gui_window {
     char * url;
 	struct bitmap * icon;
 	struct s_caret caret;
-	struct search_form_session *search;
+	struct s_search_form_session *search;
 	struct gui_window *next, *prev;
 };
 

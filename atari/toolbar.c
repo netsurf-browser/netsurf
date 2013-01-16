@@ -410,7 +410,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 					.x1 = MAX(0,area.g_x - area_ro.g_x) + area.g_w,
 					.y1 = MAX(0,area.g_y - area_ro.g_y) + area.g_h
 		};
-		//dbg_rect("tb textarea clip: ", &r);
+		dbg_rect("tb textarea clip: ", &r);
         textarea_redraw(tb->url.textarea, 0, 0, &r, &toolbar_rdrw_ctx);
     }
 }
@@ -701,6 +701,9 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
     GRECT work;
 	short mx, my, mb, kstat;
 	int old;
+	OBJECT * toolbar_tree;
+	struct gui_window * gw;
+
 
     if (obj==TOOLBAR_AREA_URL){
 
@@ -759,9 +762,28 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 						BROWSER_MOUSE_PRESS_1, mx, my );
 			}
         }
-    } else {
+    }
+	else if (obj==TOOLBAR_BT_SEARCH_FWD) {
+		gw = tb->owner->active_gui_window;
+		toolbar_tree = get_tree(TOOLBAR);
+		if (gw->search == NULL) {
+			struct browser_window * bw = gw->browser->bw;
+			gw->search = nsatari_search_session_create(toolbar_tree, bw);
+		}
+		assert(gw->search);
+		nsatari_search_perform(gw->search, toolbar_tree, SEARCH_FLAG_FORWARDS);
+	}
+	else if (obj==TOOLBAR_BT_CLOSE_SEARCH) {
+		gw = tb->owner->active_gui_window;
+		toolbar_tree = get_tree(TOOLBAR);
+		if (gw->search != NULL) {
+			nsatari_search_session_destroy(gw->search);
+			gw->search = NULL;
+		}
+		window_close_search(tb->owner);
+	}
+    else {
         struct s_tb_button *bt = find_button(tb, obj);
-        printf("found button: %p\n", bt);
         if (bt != NULL && bt->state != button_off) {
             bt->cb_click(tb);
             struct gui_window * gw = window_get_active_gui_window(tb->owner);

@@ -598,6 +598,32 @@ void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
 }
 
 
+void window_open_search(ROOTWIN *rootwin)
+{
+	struct browser_window *bw;
+	GRECT area;
+
+	bw = rootwin->active_gui_window->browser->bw;
+
+	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, true);
+	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &area);
+	window_schedule_redraw_grect(rootwin, &area);
+	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
+	browser_window_reformat(bw, false, area.g_w, area.g_h);
+}
+
+void window_close_search(ROOTWIN *rootwin)
+{
+	struct browser_window *bw;
+	GRECT area;
+
+	bw = rootwin->active_gui_window->browser->bw;
+
+	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
+	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
+	browser_window_reformat(bw, false, area.g_w, area.g_h);
+}
+
 /**
  * Redraw the favicon
 */
@@ -885,15 +911,15 @@ void window_process_redraws(ROOTWIN * rootwin)
         // hide caret:
         window_place_caret(rootwin, 0, -1, -1, -1, &content_area);
     }
-
+/*
     short pxy_clip[4];
-
     pxy_clip[0] = tb_area.g_x;
     pxy_clip[0] = tb_area.g_y;
     pxy_clip[0] = pxy_clip[0] + tb_area.g_w + content_area.g_w - 1;
     pxy_clip[0] = pxy_clip[1] + tb_area.g_h + content_area.g_h - 1;
     vs_clip(guiwin_get_vdi_handle(rootwin->win), 1, pxy_clip);
-
+	//guiwin_clear(rootwin->win);
+*/
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
 
@@ -914,7 +940,7 @@ void window_process_redraws(ROOTWIN * rootwin)
             GRECT rdrw_area = rdrw_area_ro;
 
             if (rc_intersect(&tb_area, &rdrw_area)) {
-                toolbar_redraw(rootwin->toolbar, &rdrw_area);
+				toolbar_redraw(rootwin->toolbar, &rdrw_area);
             }
 
             rdrw_area = rdrw_area_ro;
@@ -945,6 +971,7 @@ void window_process_redraws(ROOTWIN * rootwin)
                         caret_rdrw_required = true;
                     }
                 }
+
             }
         }
         wind_get_grect(rootwin->aes_handle, WF_NEXTXYWH, &visible_ro);
@@ -952,7 +979,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 
 
     // disable clipping:
-    vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
+    //vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
 
     if (caret_rdrw_required && ((rootwin->caret.state & CARET_STATE_ENABLED)!=0)) {
 

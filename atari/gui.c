@@ -255,7 +255,7 @@ void gui_window_destroy(struct gui_window *w)
 		gui_set_input_gui_window(NULL);
     }
 
-    search_destroy(w);
+	nsatari_search_session_destroy(w->search);
     free(w->browser);
     free(w->status);
     free(w->title);

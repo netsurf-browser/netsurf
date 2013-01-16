@@ -269,9 +269,7 @@ static void __CDECL menu_find(short item, short title, void *data)
 	static bool visible = false;
 	LOG(("%s", __FUNCTION__));
 	if( input_window != NULL ){
-		visible = !visible;
-		toolbar_set_visible(input_window->root->toolbar, TOOLBAR_AREA_SEARCH,
-							visible);
+		window_open_search(input_window->root);
 	}
 }
 
