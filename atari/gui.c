@@ -218,11 +218,8 @@ gui_create_browser_window(struct browser_window *bw,
         };
         gui_window_set_url(gw, "");
         gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
-        window_set_active_gui_window(gw->root, gw);
-        window_open(gw->root, pos );
-        /* Recalculate windows browser area now */
         gui_set_input_gui_window(gw);
-        /* TODO:... this line: placeholder to create a local history widget ... */
+        window_open(gw->root, gw, pos);
     }
 
     /* add the window to the window list: */

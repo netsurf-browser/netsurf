@@ -269,7 +269,7 @@ static void __CDECL menu_find(short item, short title, void *data)
 	static bool visible = false;
 	LOG(("%s", __FUNCTION__));
 	if( input_window != NULL ){
-		window_open_search(input_window->root);
+		window_open_search(input_window->root, true);
 	}
 }
 
@@ -460,7 +460,7 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 	int i, l=0, x=-1;
 	char str[255];
 
-	get_string(h_gem_menu, mi->rid, &str);
+	get_string(h_gem_menu, mi->rid, str);
 
 	i = l = strlen(str);
 	while (i > 2) {

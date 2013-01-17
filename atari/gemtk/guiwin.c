@@ -356,7 +356,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                 uint16_t type = (gw->toolbar[obj_idx].ob_type & 0xFF);
                 uint16_t nextobj;
 
-                DEBUG_PRINT(("type: %d\n", type));
+                DEBUG_PRINT(("toolbar item type: %d\n", type));
                 // report mouse click to the tree:
                 retval = form_wbutton(gw->toolbar, gw->toolbar_focus_obj,
                                 ev_out->emo_mclicks, &nextobj,
@@ -383,6 +383,8 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             ev_out->emo_events = oldevents;
             retval = 1;
         } else {
+        	printf("not within");
+        	dbg_grect("tb", &tb_area);
 			if (gw->toolbar_edit_obj != -1) {
 				gw->toolbar_edit_obj = -1;
 			}

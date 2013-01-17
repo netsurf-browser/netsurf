@@ -51,8 +51,8 @@ int window_create(struct gui_window * gw,
 /* Destroys WinDom part of gui_window */
 int window_destroy(ROOTWIN *rootwin);
 
-/* show the window */
-void window_open(ROOTWIN *rootwin, GRECT pos);
+/** show the window at specified position and make gw the active tab. */
+void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos);
 
 void window_snd_redraw(ROOTWIN *rootwin, short x, short y, short w, short h );
 /* Update Shade / Unshade state of the fwd/back buttons*/
@@ -73,7 +73,8 @@ void window_set_title(ROOTWIN *rootwin, char * text);
 void window_set_content_size(ROOTWIN *rootwin, int w, int h);
 void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp );
 void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
-void window_open_search(ROOTWIN *rootwin);
+void window_restore_active_gui_window(ROOTWIN *rootwin);
+void window_open_search(ROOTWIN *rootwin, bool reformat);
 void window_close_search(ROOTWIN *rootwin);
 void window_scroll_by(ROOTWIN *rootwin, int x, int y);
 void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area);

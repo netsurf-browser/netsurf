@@ -21,6 +21,7 @@
  *
  */
 
+#include <assert.h>
  #include "gemtk.h"
 
 char *get_text(OBJECT * tree, short idx)
@@ -47,6 +48,47 @@ char *get_text(OBJECT * tree, short idx)
 		default: break;
 	}
 	return (p);
+}
+
+static void set_text(OBJECT *obj, short idx, char * text, int len)
+{
+	char spare[255];
+
+	if( len > 254 )
+		len = 254;
+	if( text != NULL ){
+		strncpy(spare, text, 254);
+	} else {
+		strcpy(spare, "");
+	}
+
+	set_string(obj, idx, spare);
+}
+
+char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt)
+{
+	char spare[204];
+	short type = 0;
+	short maxlen = 0;
+	TEDINFO *ted;
+
+
+	type = (tree[idx].ob_type & 0xFF);
+	if (type == G_FTEXT || type == G_FBOXTEXT) {
+		TEDINFO *ted = ((TEDINFO *)get_obspec(tree, idx));
+		maxlen = ted->te_txtlen+1;
+		if (maxlen > 200) {
+			maxlen = 200;
+		}
+		else if (maxlen < 0) {
+			maxlen = 0;
+		}
+	} else {
+		assert((type == G_FTEXT) || (type == G_FBOXTEXT));
+	}
+
+	snprintf(spare, maxlen, "%s", txt);
+	set_string(tree, idx, spare);
 }
 
 OBJECT *get_tree(int idx)

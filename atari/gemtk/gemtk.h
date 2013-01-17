@@ -243,6 +243,7 @@ void guiwin_clear(GUIWIN *win);
 /* -------------------------------------------------------------------------- */
 /* AES OBJECT TREE TOOLS                                                      */
 /* -------------------------------------------------------------------------- */
+char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt);
 char *get_text(OBJECT * tree, short idx);
 GRECT * obj_screen_rect(OBJECT * tree, short obj);
 bool obj_is_inside(OBJECT * tree, short obj, GRECT *area);

@@ -128,6 +128,8 @@ void nsatari_search_set_back_state(bool active, void *p)
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	/* deactivate back cb */
 	LOG(("%p: set back state: %d\n", p, active));
+
+	s->state.back_avail = true;
 	// TODO: update gui
 }
 
@@ -146,12 +148,12 @@ static int apply_form(OBJECT *obj, struct s_search_form_state *s)
 		s->flags |= SEARCH_FLAG_SHOWALL;
 
 	cstr = get_text(obj, TOOLBAR_TB_SRCH);
-	snprintf(s->text, 11, "%s", cstr);
+	snprintf(s->text, 32, "%s", cstr);
 	return ( 0 );
 
 }
 
-static void set_text(OBJECT *obj, short idx, char * text, int len )
+static void set_text(OBJECT *obj, short idx, char * text, int len)
 {
 	char spare[255];
 
@@ -164,6 +166,33 @@ static void set_text(OBJECT *obj, short idx, char * text, int len )
 	}
 
 	set_string(obj, idx, spare);
+}
+
+void nsatari_search_restore_form( struct s_search_form_session *s, OBJECT *obj)
+{
+	if ((s->state.flags & SEARCH_FLAG_SHOWALL) != 0) {
+		obj[TOOLBAR_CB_SHOWALL].ob_state |= OS_SELECTED;
+	}
+	else {
+		obj[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
+	}
+
+	if ((s->state.flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) {
+		obj[TOOLBAR_CB_CASESENSE].ob_state |= OS_SELECTED;
+	}
+	else {
+		obj[TOOLBAR_CB_CASESENSE].ob_state &= ~OS_SELECTED;
+	}
+
+	if (s->state.back_avail == false) {
+		obj[TOOLBAR_BT_SEARCH_BACK].ob_state |= OS_DISABLED;
+	} else {
+		obj[TOOLBAR_BT_SEARCH_BACK].ob_state &= ~OS_DISABLED;
+	}
+
+	TEDINFO *t = ((TEDINFO *)get_obspec(obj, TOOLBAR_TB_SRCH));
+	set_text(obj, TOOLBAR_TB_SRCH, s->state.text, t->te_txtlen);
+
 }
 
 void nsatari_search_session_destroy(struct s_search_form_session *s)
@@ -228,7 +257,7 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 
 	if( browser_window_search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-		printf("searching for: %s\n", get_text(obj, TOOLBAR_TB_SRCH));
+		LOG(("searching for: %s\n", get_text(obj, TOOLBAR_TB_SRCH)));
 		browser_window_search_step(s->bw, s->state.flags,
 									get_text(obj, TOOLBAR_TB_SRCH));
 	}
@@ -243,9 +272,11 @@ struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
 
 	sfs = calloc(1, sizeof(struct s_search_form_session));
 
+	assert(obj);
 	assert(sfs);
 
 	sfs->bw = bw;
+
 	apply_form(obj, &sfs->state);
 
 	browser_window_search_destroy_context(bw);

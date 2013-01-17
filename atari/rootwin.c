@@ -109,6 +109,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         switch (msg[0]) {
 
         case WM_REDRAW:
+			LOG(("WM_REDRAW"));
             on_redraw(data->rootwin, msg);
             break;
 
@@ -116,6 +117,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_SIZED:
         case WM_MOVED:
         case WM_FULLED:
+			LOG(("WM_SIZED"));
             on_resized(data->rootwin);
             break;
 
@@ -126,10 +128,11 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_TOPPED:
         case WM_NEWTOP:
         case WM_UNICONIFY:
-            input_window = data->rootwin->active_gui_window;
+			LOG(("WM_TOPPED"));
+            gui_set_input_gui_window(data->rootwin->active_gui_window);
+            window_restore_active_gui_window(data->rootwin);
             // TODO: use something like "restore_active_gui_window_state()"
-            toolbar_set_reflow(data->rootwin->toolbar, true);
-            printf("top msg\n");
+
             break;
 
         case WM_CLOSED:
@@ -312,6 +315,7 @@ void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
     // find the next active tab:
     while( w != NULL ) {
         if(w->root == rootwin && w != gw) {
+        	LOG(("activating next tab %p", w));
             gui_set_input_gui_window(w);
             break;
         }
@@ -363,9 +367,11 @@ int window_destroy(ROOTWIN *rootwin)
 }
 
 
-void window_open(ROOTWIN *rootwin, GRECT pos)
+void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
 {
     GRECT br, g;
+
+    rootwin->active_gui_window = gw;
 
     assert(rootwin->active_gui_window != NULL);
 
@@ -380,9 +386,38 @@ void window_open(ROOTWIN *rootwin, GRECT pos)
     toolbar_set_attached(rootwin->toolbar, true);
     toolbar_set_dimensions(rootwin->toolbar, &g);
     window_update_back_forward(rootwin);
-    /*TBD: get already present content and set size? */
-    input_window = rootwin->active_gui_window;
+
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
+}
+
+void window_restore_active_gui_window(ROOTWIN *rootwin)
+{
+	GRECT tb_area;
+	struct gui_window *gw;
+
+	LOG((""));
+
+	assert(rootwin->active_gui_window);
+
+	gw = rootwin->active_gui_window;
+
+    window_set_icon(rootwin, gw->icon);
+    window_set_stauts(rootwin, gw->status);
+    window_set_title(rootwin, gw->title);
+
+	if (gw->search != NULL) {
+		nsatari_search_restore_form(gw->search, get_tree(TOOLBAR));
+		window_open_search(rootwin, false);
+    } else {
+		toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
+    }
+
+	toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
+	guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
+
+	window_update_back_forward(rootwin);
+
+    toolbar_set_url(rootwin->toolbar, gw->url);
 }
 
 
@@ -521,19 +556,24 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
 
 void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 {
+	struct gui_window *old_gw = rootwin->active_gui_window;
+
+	LOG((""));
+
     if (rootwin->active_gui_window != NULL) {
         if(rootwin->active_gui_window == gw) {
+        	LOG(("nothing to do..."));
             return;
         }
     }
-    rootwin->active_gui_window = gw;
 
-    window_set_icon(rootwin, gw->icon);
-    window_set_stauts(rootwin, gw->status);
-    window_set_title(rootwin, gw->title);
-    toolbar_set_url(rootwin->toolbar, gw->url);
-    // TODO: implement window_restore_browser()
-    // window_restore_browser(gw->browser);
+	// TODO: when the window isn't on top, initiate WM_TOPPED.
+
+	rootwin->active_gui_window = gw;
+	if (old_gw != NULL) {
+		LOG(("restoring window..."));
+		window_restore_active_gui_window(rootwin);
+	}
 }
 
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin) {
@@ -598,28 +638,64 @@ void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
 }
 
 
-void window_open_search(ROOTWIN *rootwin)
+void window_open_search(ROOTWIN *rootwin, bool reformat)
 {
 	struct browser_window *bw;
+	struct gui_window *gw;
 	GRECT area;
+	OBJECT *obj;
+	static bool init = false;
 
-	bw = rootwin->active_gui_window->browser->bw;
+	LOG((""));
+
+	gw = rootwin->active_gui_window;
+	bw = gw->browser->bw;
+	obj = get_tree(TOOLBAR);
+
+	if (init == false) {
+		obj[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
+		obj[TOOLBAR_CB_CASESENSE].ob_state &= ~OS_SELECTED;
+		gemtk_obj_set_str_safe(obj, TOOLBAR_TB_SRCH, (char*)"");
+		init = true;
+	}
+
+	if (gw->search == NULL) {
+		gw->search = nsatari_search_session_create(obj, bw);
+	}
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, true);
+	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &area);
+	guiwin_set_toolbar_size(rootwin->win, area.g_h);
 	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &area);
 	window_schedule_redraw_grect(rootwin, &area);
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
-	browser_window_reformat(bw, false, area.g_w, area.g_h);
+	if (reformat) {
+		browser_window_reformat(bw, false, area.g_w, area.g_h);
+	}
 }
 
 void window_close_search(ROOTWIN *rootwin)
 {
 	struct browser_window *bw;
+	struct gui_window *gw;
 	GRECT area;
+	OBJECT *obj;
 
-	bw = rootwin->active_gui_window->browser->bw;
+
+	gw = rootwin->active_gui_window;
+	bw = gw->browser->bw;
+	obj = get_tree(TOOLBAR);
+
+	if (gw->search != NULL) {
+		nsatari_search_session_destroy(gw->search);
+		gw->search = NULL;
+	}
+
+	obj[TOOLBAR_BT_CLOSE_SEARCH].ob_state &= ~OS_SELECTED;
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
+	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &area);
+	guiwin_set_toolbar_size(rootwin->win, area.g_h);
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
 	browser_window_reformat(bw, false, area.g_w, area.g_h);
 }
@@ -898,11 +974,11 @@ void window_process_redraws(ROOTWIN * rootwin)
     redraw_active = true;
 
     toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
-    guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
+    //guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
     window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
-    dbg_grect("window_process_redraws toolbar area", &tb_area);
+    //dbg_grect("window_process_redraws toolbar area", &tb_area);
 
     while(plot_lock() == false);
 
@@ -1033,7 +1109,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     struct guiwin_scroll_info_s *slid;
 
     gw = window_get_active_gui_window(rootwin);
-    if( input_window != gw ) {
+    if(input_window != gw) {
         gui_set_input_gui_window(gw);
     }
 
