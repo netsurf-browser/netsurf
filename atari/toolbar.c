@@ -411,6 +411,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 					.y1 = MAX(0,area.g_y - area_ro.g_y) + area.g_h
 		};
 		//dbg_rect("tb textarea clip: ", &r);
+		// TODO: let this be handled by an userdef object redraw function:
         textarea_redraw(tb->url.textarea, 0, 0, &r, &toolbar_rdrw_ctx);
     }
 }

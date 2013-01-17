@@ -257,6 +257,7 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 	struct gui_download_window * gdw;
 	int dlgres = 0;
 	OBJECT * tree = get_tree(DOWNLOAD);
+	char alert[200];
 
 
 	LOG(("Creating download window for gui window: %p", parent));
@@ -269,7 +270,9 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 	}
 
 	filename = download_context_get_filename((const download_context*)ctx);
-	dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
+	snprintf(alert, 200, "[2][Accept download?|%.*s][Yes|Save as...|No]",
+			40,filename);
+	dlgres = form_alert(2, alert);
 	if( dlgres == 3){
 		return( NULL );
 	}

@@ -383,8 +383,6 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             ev_out->emo_events = oldevents;
             retval = 1;
         } else {
-        	printf("not within");
-        	dbg_grect("tb", &tb_area);
 			if (gw->toolbar_edit_obj != -1) {
 				gw->toolbar_edit_obj = -1;
 			}
