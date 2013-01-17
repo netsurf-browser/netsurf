@@ -101,6 +101,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     static short prev_x=0;
     static short prev_y=0;
     struct rootwin_data_s * data = guiwin_get_user_data(win);
+    struct gui_window *tmp;
 
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
@@ -123,6 +124,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
         case WM_ICONIFY:
             // TODO: find next active gui window and schedule redraw for that.
+			tmp = window_list;
+			while(tmp != NULL){
+				if(tmp->root != data->rootwin){
+					guiwin_send_msg(tmp->root->win, WM_TOPPED, 0, 0, 0, 0);
+					break;
+				}
+				tmp = tmp->next;
+			}
             break;
 
         case WM_TOPPED:
@@ -548,7 +557,6 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
     if (rootwin->icon != NULL) {
         short info, dummy;
         if (guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
-            printf("set & redraw\n");
             window_redraw_favicon(rootwin, NULL);
         }
     }
@@ -709,7 +717,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
 
     assert(rootwin);
 
-    printf("window_redraw_favicon: root: %p, win: %p\n", rootwin, rootwin->win);
+    //printf("window_redraw_favicon: root: %p, win: %p\n", rootwin, rootwin->win);
 
     guiwin_clear(rootwin->win);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
@@ -723,7 +731,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
     }
 
     if (rootwin->icon == NULL) {
-        printf("window_redraw_favicon OBJCTREE\n");
+        //printf("window_redraw_favicon OBJCTREE\n");
         OBJECT * tree = get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
