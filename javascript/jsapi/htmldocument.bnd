@@ -52,6 +52,9 @@ binding document {
 	/** location instantiated on first use */
 	property unshared location;
 
+        /* compatability mode instantiated on first use */
+	property unshared compatMode;
+
 	/* events through a single interface */
 	property unshared type EventHandler;
 }
@@ -66,7 +69,7 @@ api finalise %{
 
 
 getter location %{
-	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx,vp))) {
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
 		/* already created - return it */
 		return JS_TRUE;
 	}
@@ -94,6 +97,32 @@ getter documentURI %{
 	}
 	jsret = JSVAL_TO_STRING(jsstr);
 %}
+
+
+getter compatMode %{
+	/* Returns the string "CSS1Compat" if document is in no-quirks
+	 * mode or limited-quirks mode, and "BackCompat", if document
+	 * is in quirks mode.
+	 */
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created, just use it */
+		return JS_TRUE;
+	}
+	if (private->htmlc->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
+		jsret = JS_NewStringCopyN(cx, "BackCompat", SLEN("BackCompat"));
+	} else {
+		jsret = JS_NewStringCopyN(cx, "CSS1Compat", SLEN("CSS1Compat"));
+	}
+
+%}
+
+/*
+getter characterSet %{
+%}
+
+getter contentType %{
+%}
+*/
 
 getter cookie %{
 	char *cookie_str;

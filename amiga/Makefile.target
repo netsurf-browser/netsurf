@@ -59,7 +59,7 @@ else
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
   ifeq ($(SUBTARGET),os3)
-    LDFLAGS += -liconv
+    LDFLAGS += -lpbl -liconv
   else
     LDFLAGS += -lauto -lpbl -liconv
   endif

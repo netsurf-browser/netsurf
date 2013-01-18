@@ -75,6 +75,8 @@
 
 
 /* native proprty definition */
+#define JSAPI_PROP_DEFAULT(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
@@ -195,6 +197,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 
 /* proprty native calls */
+#define JSAPI_PROP_DEFAULT(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
@@ -307,6 +311,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_THIS_OBJECT(cx,vp) JS_THIS_OBJECT(cx,vp)
 
 /* proprty native calls */
+#define JSAPI_PROP_DEFAULT(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsid jsapi_id, vp)
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsid jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
