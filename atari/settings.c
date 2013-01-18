@@ -273,10 +273,14 @@ static void form_event(int index, int external)
     switch(index) {
 
     case SETTINGS_SAVE:
+		OBJ_UNCHECK(index);
+        OBJ_REDRAW(index);
         save_settings();
         break;
 
     case SETTINGS_ABORT:
+		OBJ_UNCHECK(index);
+        OBJ_REDRAW(index);
         close_settings();
         break;
 
