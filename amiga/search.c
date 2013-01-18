@@ -174,6 +174,9 @@ void ami_search_open(struct gui_window *gwin)
 	fwin->node = AddObject(window_list,AMINS_FINDWINDOW);
 	fwin->node->objstruct = fwin;
 	gwin->shared->searchwin = fwin;
+	
+	ActivateLayoutGadget((struct Gadget *)fwin->objects[GID_MAIN], fwin->win,
+			NULL, fwin->objects[GID_SEARCHSTRING]);
 }
 
 void ami_search_close(void)
