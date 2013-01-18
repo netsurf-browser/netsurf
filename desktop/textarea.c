@@ -48,6 +48,18 @@ struct line_info {
 	unsigned int b_length;		/**< Byte length of line */
 };
 
+typedef enum textarea_drag_type_internal {
+	TEXTAREA_DRAG_NONE,
+	TEXTAREA_DRAG_SCROLLBAR,
+	TEXTAREA_DRAG_SELECTION
+} textarea_drag_type_internal;
+struct textarea_drag {
+	textarea_drag_type_internal type;
+	union {
+		struct scrollbar* scrollbar;
+	} data;
+};
+
 struct textarea {
 
 	int scroll_x, scroll_y;		/**< scroll offsets for the textarea */
@@ -83,8 +95,8 @@ struct textarea {
 	int caret_x;			/**< cached X coordinate of the caret */
 	int caret_y;			/**< cached Y coordinate of the caret */
 
-	int sel_start;	/**< Character index of sel start(inclusive) */
-	int sel_end;	/**< Character index of sel end(exclusive) */
+	int sel_start;	/**< Character index of sel start (inclusive) */
+	int sel_end;	/**< Character index of sel end (exclusive) */
 
 	int h_extent;			/**< Width of content in px */
 	int v_extent;			/**< Height of content in px */
@@ -96,9 +108,10 @@ struct textarea {
 	/** Callback function for a redraw request */
 	textarea_redraw_request_callback redraw_request;
 
-	void *data; /** < Callback data for both callback functions */
+	void *data;			/**< Client data for callback */
 
-	int drag_start_char; /**< Character index of drag start */
+	int drag_start_char;		/**< Character index of drag start */
+	struct textarea_drag drag_info;	/**< Drag information */
 };
 
 
@@ -327,10 +340,16 @@ static void textarea_scrollbar_callback(void *client_data,
 					ta->vis_width,
 					ta->vis_height);
 			break;
+
 		case SCROLLBAR_MSG_SCROLL_START:
+			ta->drag_info.type = TEXTAREA_DRAG_SCROLLBAR;
+			ta->drag_info.data.scrollbar =
+					scrollbar_data->scrollbar;
 			/* TODO: Tell textarea client we're handling a drag */
 			break;
+
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
+			ta->drag_info.type = TEXTAREA_DRAG_NONE;
 			/* TODO: Tell textarea client drag finished */
 			break;
 	}
@@ -825,6 +844,7 @@ struct textarea *textarea_create(const textarea_setup *setup,
 	ret->bar_x = NULL;
 	ret->bar_y = NULL;
 	ret->drag_start_char = 0;
+	ret->drag_info.type = TEXTAREA_DRAG_NONE;
 
 
 	ret->text = malloc(64);
@@ -1378,6 +1398,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			size_t clipboard_chars;
 
 			gui_get_clipboard(&clipboard, &clipboard_length);
+			if (clipboard == NULL)
+				return false;
 			clipboard_chars = utf8_bounded_length(clipboard,
 					clipboard_length);
 
@@ -1673,8 +1695,50 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_start, c_end;
+	int sx, sy; /* xy coord offset for scrollbar */
+	int sl; /* scrollbar length */
 	size_t b_off;
 	unsigned int c_off;
+
+	if (ta->drag_info.type == TEXTAREA_DRAG_SCROLLBAR) {
+		if (ta->drag_info.data.scrollbar == ta->bar_x) {
+			x -= ta->border_width;
+			y -= ta->vis_height - ta->border_width -
+					SCROLLBAR_WIDTH;
+		} else {
+			x -= ta->vis_width - ta->border_width -
+					SCROLLBAR_WIDTH;
+			y -= ta->border_width;
+		}
+		scrollbar_mouse_action(ta->drag_info.data.scrollbar,
+				mouse, x, y);
+		return true;
+	}
+
+	/* Horizontal scrollbar */
+	if (ta->bar_x != NULL && ta->drag_info.type == TEXTAREA_DRAG_NONE) {
+		sx = x - ta->border_width;
+		sy = y - (ta->vis_height - ta->border_width - SCROLLBAR_WIDTH);
+		sl = ta->vis_width - 2 * ta->border_width -
+				(ta->bar_y != NULL ? SCROLLBAR_WIDTH : 0);
+
+		if (sx >= 0 && sy >= 0 && sx < sl && sy < SCROLLBAR_WIDTH) {
+			scrollbar_mouse_action(ta->bar_x, mouse, sx, sy);
+			return true;
+		}
+	}
+
+	/* Vertical scrollbar */
+	if (ta->bar_y != NULL && ta->drag_info.type == TEXTAREA_DRAG_NONE) {
+		sx = x - (ta->vis_width - ta->border_width - SCROLLBAR_WIDTH);
+		sy = y - ta->border_width;
+		sl = ta->vis_height - 2 * ta->border_width;
+
+		if (sx >= 0 && sy >= 0 && sx < SCROLLBAR_WIDTH && sy < sl) {
+			scrollbar_mouse_action(ta->bar_y, mouse, sx, sy);
+			return true;
+		}
+	}
 
 	/* mouse button pressed above the text area, move caret */
 	if (mouse & BROWSER_MOUSE_PRESS_1) {
@@ -1702,6 +1766,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
 		c_start = ta->drag_start_char;
 		c_end = c_off;
+		ta->drag_info.type = TEXTAREA_DRAG_SELECTION;
 		return textarea_select(ta, c_start, c_end);
 	}
 
@@ -1717,9 +1782,32 @@ bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 	size_t b_off;
 	unsigned int c_off;
 
-	textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
-	c_end = c_off;
-	return textarea_select(ta, ta->drag_start_char, c_end);
+	switch (ta->drag_info.type) {
+	case TEXTAREA_DRAG_SCROLLBAR:
+		if (ta->drag_info.data.scrollbar == ta->bar_x) {
+			x -= ta->border_width;
+			y -= ta->vis_height - ta->border_width -
+					SCROLLBAR_WIDTH;
+		} else {
+			x -= ta->vis_width - ta->border_width -
+					SCROLLBAR_WIDTH;
+			y -= ta->border_width;
+		}
+		scrollbar_mouse_drag_end(ta->drag_info.data.scrollbar,
+				mouse, x, y);
+		return true;
+
+	case TEXTAREA_DRAG_SELECTION:
+		textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
+		c_end = c_off;
+		ta->drag_info.type = TEXTAREA_DRAG_NONE;
+		return textarea_select(ta, ta->drag_start_char, c_end);
+
+	default:
+		break;
+	}
+
+	return false;
 }
 
 
