@@ -205,6 +205,26 @@ BOOL ami_search_event(void)
 	case WMHI_GADGETUP:
 		switch(result & WMHI_GADGETMASK)
 		{
+			case GID_SEARCHSTRING:
+				browser_window_search_destroy_context(
+						fwin->gwin->shared->bw);
+				ami_search_set_forward_state(
+					true, NULL);
+				ami_search_set_back_state(
+					true, NULL);
+						
+				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_PREV],
+					fwin->win, NULL,
+					GA_Disabled, FALSE,
+					TAG_DONE);
+
+				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_NEXT],
+					fwin->win, NULL,
+					GA_Disabled, FALSE,
+					TAG_DONE);
+	
+				/* fall through */
+
 			case GID_NEXT:
 				search_insert = true;
 				flags = SEARCH_FLAG_FORWARDS |
@@ -231,25 +251,6 @@ BOOL ami_search_event(void)
 							flags,
 							ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
-				break;
-
-			case GID_SEARCHSTRING:
-				browser_window_search_destroy_context(
-						fwin->gwin->shared->bw);
-				ami_search_set_forward_state(
-					true, NULL);
-				ami_search_set_back_state(
-					true, NULL);
-						
-				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_PREV],
-					fwin->win, NULL,
-					GA_Disabled, FALSE,
-					TAG_DONE);
-
-				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_NEXT],
-					fwin->win, NULL,
-					GA_Disabled, FALSE,
-					TAG_DONE);
 			break;
 		}
 		break;
