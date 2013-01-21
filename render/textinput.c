@@ -1380,7 +1380,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		char *buff;
+		char *buff = NULL;
 		size_t buff_len;
 		bool success;
 
@@ -2027,7 +2027,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		char *buff;
+		char *buff = NULL;
 		size_t buff_len;
 		bool success;
 
