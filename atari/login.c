@@ -54,7 +54,7 @@ bool login_form_do(nsurl * url, char * realm, char ** out)
 
 	// TODO: use auth details for predefined login data
 	// auth = urldb_get_auth_details(url, realm);
-	tree = get_tree(LOGIN);
+	tree = gemtk_obj_get_tree(LOGIN);
 
 	assert(tree != NULL);
 

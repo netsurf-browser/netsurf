@@ -61,7 +61,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 			case WM_TOOLBAR:
 
-				tv = (NSTREEVIEW) guiwin_get_user_data(win);
+				tv = (NSTREEVIEW) gemtk_wm_get_user_data(win);
 
 				switch	(msg[4]) {
 					case TOOLBAR_HOTLIST_CREATE_FOLDER:
@@ -74,7 +74,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 					case TOOLBAR_HOTLIST_DELETE:
 						hotlist_delete_selected();
-						guiwin_send_redraw(tv->window, NULL);
+						gemtk_wm_send_redraw(tv->window, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
@@ -82,10 +82,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 						break;
 				}
 
-				get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
-				guiwin_get_grect(tv->window, GUIWIN_AREA_TOOLBAR, &tb_area);
+				gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
+				gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_TOOLBAR, &tb_area);
 				evnt_timer(150);
-				guiwin_send_redraw(tv->window, &tb_area);
+				gemtk_wm_send_redraw(tv->window, &tb_area);
 			break;
 
 			case WM_CLOSED:
@@ -117,18 +117,18 @@ void hotlist_init(void)
 			int flags = ATARI_TREEVIEW_WIDGETS;
 			short handle = -1;
 			GRECT desk;
-			OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
+			OBJECT * tree = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
 			assert( tree );
 			hl.open = false;
 
 			handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
-			hl.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
+			hl.window = gemtk_wm_add(handle, GEMTK_WM_FLAG_DEFAULTS, NULL);
 			if( hl.window == NULL ) {
 				LOG(("Failed to allocate Hotlist"));
 				return;
 			}
 			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
-			guiwin_set_toolbar(hl.window, tree, 0, 0);
+			gemtk_wm_set_toolbar(hl.window, tree, 0, 0);
 			hl.tv = atari_treeview_create(
 				hotlist_get_tree_flags(),
 				hl.window,
@@ -169,17 +169,17 @@ void hotlist_open(void)
 	    pos.g_w = desk_area.g_w / 4;
 	    pos.g_h = desk_area.g_h;
 
-		wind_open_grect(guiwin_get_handle(hl.window), &pos);
+		wind_open_grect(gemtk_wm_get_handle(hl.window), &pos);
 		hl.open = true;
 		atari_treeview_open( hl.tv );
 	} else {
-		wind_set(guiwin_get_handle(hl.window), WF_TOP, 1, 0, 0, 0);
+		wind_set(gemtk_wm_get_handle(hl.window), WF_TOP, 1, 0, 0, 0);
 	}
 }
 
 void hotlist_close(void)
 {
-	wind_close(guiwin_get_handle(hl.window));
+	wind_close(gemtk_wm_get_handle(hl.window));
 	hl.open = false;
 	atari_treeview_close( hl.tv );
 }
@@ -194,8 +194,8 @@ void hotlist_destroy(void)
 		hotlist_cleanup( (char*)&hl.path );
 		if (hl.open)
 			hotlist_close();
-		wind_delete(guiwin_get_handle(hl.window));
-		guiwin_remove(hl.window);
+		wind_delete(gemtk_wm_get_handle(hl.window));
+		gemtk_wm_remove(hl.window);
 		hl.window = NULL;
 		atari_treeview_destroy( hl.tv  );
 		hl.init = false;

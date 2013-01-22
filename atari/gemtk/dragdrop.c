@@ -50,7 +50,7 @@ static long pipesig;
 * 	-1: Fehler beim Erzeugen der Pipe
 */
 
-short ddcreate(short *pipe)
+short gemtk_dd_create(short *pipe)
 {
 	long fd = -1;
 
@@ -83,7 +83,7 @@ short ddcreate(short *pipe)
 
 	/* Signalhandler konfigurieren */
 
-	ddgetsig(&pipesig);
+	gemtk_dd_getsig(&pipesig);
 
 
 	return((short) fd);
@@ -113,7 +113,7 @@ short ddcreate(short *pipe)
 *	-3: Fehler bei appl_write()
 */
 
-short ddmessage(short apid, short fd, short winid, short mx, short my, short kstate, short pipeid)
+short gemtk_dd_message(short apid, short fd, short winid, short mx, short my, short kstate, short pipeid)
 {
 	char c;
 	short i, msg[8];
@@ -135,7 +135,7 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 
 	if (i == 0)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-3);
 	}
 
@@ -148,7 +148,7 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 	{
 		/* Timeout eingetreten */
 
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-2);
 	}
 
@@ -157,13 +157,13 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 
 	if (Fread(fd, 1L, &c) != 1L)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-1);
 	}
 
 	if (c != DD_OK)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-1);
 	}
 
@@ -187,11 +187,11 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 * 	-1: Fehler beim Lesen aus der Pipe
 */
 
-short ddrexts(short fd, char *exts)
+short gemtk_dd_rexts(short fd, char *exts)
 {
 	if (Fread(fd, DD_EXTSIZE, exts) != DD_EXTSIZE)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-1);
 	}
 
@@ -204,7 +204,7 @@ short ddrexts(short fd, char *exts)
 *	Testet, ob der EmpfÑnger einen Datentyp akzeptiert
 *
 *	Eingabeparameter:
-*	fd		-	Filehandle (von ddcreate())
+*	fd		-	Filehandle (von gemtk_dd_create())
 *	ext		-	Zeiger auf Datentyp (4 Bytes zB. "ARGS")
 *	text	-	Zeiger auf Datenbeschreibung (optional, zB. "DESKTOP args")
 *	name	-	Zeiger auf Datendateiname (optional, zB. "SAMPLE.TXT")
@@ -223,7 +223,7 @@ short ddrexts(short fd, char *exts)
 *	DD_CLIPBOARD	-	Drop erfolgte auf Clipboard
 */
 
-short ddstry(short fd, char *ext, char *text, char *name, long size)
+short gemtk_dd_stry(short fd, char *ext, char *text, char *name, long size)
 {
 	char c;
 	short hdrlen, i;
@@ -264,11 +264,11 @@ short ddstry(short fd, char *ext, char *text, char *name, long size)
 *	Pipe schlieûen (Drag&Drop beenden/abbrechen)
 */
 
-void ddclose(short fd)
+void gemtk_dd_close(short fd)
 {
 	/* Signalhandler restaurieren */
 
-	ddsetsig(pipesig);
+	gemtk_dd_setsig(pipesig);
 
 
 	Fclose(fd);
@@ -288,7 +288,7 @@ void ddclose(short fd)
 *	keine
 */
 
-void ddgetsig(long *oldsig)
+void gemtk_dd_getsig(long *oldsig)
 {
 	*oldsig = (long) Psignal(SIGPIPE, (void *) SIG_IGN);
 }
@@ -298,7 +298,7 @@ void ddgetsig(long *oldsig)
 *	Signalhandler nach D&D restaurieren
 *
 *	Eingabeparameter:
-*	oldsig	-	Alter Handlerwert (von ddgetsig)
+*	oldsig	-	Alter Handlerwert (von gemtk_dd_getsig)
 *
 * 	Ausgabeparameter:
 *	keine
@@ -307,7 +307,7 @@ void ddgetsig(long *oldsig)
 *	keine
 */
 
-void ddsetsig(long oldsig)
+void gemtk_dd_setsig(long oldsig)
 {
 	if (oldsig != -32L)
 		Psignal(SIGPIPE, (void *) oldsig);
@@ -332,7 +332,7 @@ void ddsetsig(long oldsig)
 *	-1	-	Drag&Drop abgebrochen
 */
 
-short ddopen(short ddnam, char ddmsg)
+short gemtk_dd_open(short ddnam, char ddmsg)
 {
 	long fd;
 
@@ -347,12 +347,12 @@ short ddopen(short ddnam, char ddmsg)
 
 	/* Signalhandler konfigurieren */
 
-	ddgetsig(&pipesig);
+	gemtk_dd_getsig(&pipesig);
 
 
 	if (Fwrite((short) fd, 1L, &ddmsg) != 1L)
 	{
-		ddclose((short) fd);
+		gemtk_dd_close((short) fd);
 		return(-1);
 	}
 
@@ -380,11 +380,11 @@ short ddopen(short ddnam, char ddmsg)
 * 	-1: Fehler beim Schreiben in die Pipe
 */
 
-short ddsexts(short fd, char *exts)
+short gemtk_dd_sexts(short fd, char *exts)
 {
 	if (Fwrite(fd, DD_EXTSIZE, exts) != DD_EXTSIZE)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-1);
 	}
 
@@ -397,7 +397,7 @@ short ddsexts(short fd, char *exts)
 *	NÑchsten Header vom Sender holen
 *
 *	Eingabeparameter:
-*	fd		-	Filehandle der Pipe (von ddopen())
+*	fd		-	Filehandle der Pipe (von gemtk_dd_open())
 *
 *	Ausgabeparameters:
 *	name	-	Zeiger auf Buffer fÅr Datenbeschreibung (min. DD_NAMEMAX!)
@@ -419,7 +419,7 @@ short ddsexts(short fd, char *exts)
 *		les string sont limitÇ a 128 octets
 */
 
-short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
+short gemtk_dd_rtry(short fd, char *name, char *file, char *whichext, long *size)
 {
 	char buf[DD_NAMEMAX * 2];
 	short hdrlen, i, len;
@@ -490,7 +490,7 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 *	Sendet der Senderapplikation eine 1 Byte Antwort
 *
 *	Eingabeparameter:
-*	fd	-	Filehandle der Pipe (von ddopen())
+*	fd	-	Filehandle der Pipe (von gemtk_dd_open())
 *	ack	-	Byte das gesendet werden soll (zB. DD_OK)
 *
 *	Ausgabeparameter:
@@ -501,11 +501,11 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 *	-1: Fehler (die Pipe wird automatisch geschlossen!)
 */
 
-short ddreply(short fd, char ack)
+short gemtk_dd_reply(short fd, char ack)
 {
 	if (Fwrite(fd, 1L, &ack) != 1L)
 	{
-		ddclose(fd);
+		gemtk_dd_close(fd);
 		return(-1);
 	}
 

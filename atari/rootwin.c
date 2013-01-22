@@ -100,7 +100,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     static bool prev_url = false;
     static short prev_x=0;
     static short prev_y=0;
-    struct rootwin_data_s * data = guiwin_get_user_data(win);
+    struct rootwin_data_s * data = gemtk_wm_get_user_data(win);
     struct gui_window *tmp;
 
 
@@ -127,7 +127,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			tmp = window_list;
 			while(tmp != NULL){
 				if(tmp->root != data->rootwin){
-					guiwin_send_msg(tmp->root->win, WM_TOPPED, 0, 0, 0, 0);
+					gemtk_wm_send_msg(tmp->root->win, WM_TOPPED, 0, 0, 0, 0);
 					break;
 				}
 				tmp = tmp->next;
@@ -230,7 +230,7 @@ int window_create(struct gui_window * gw,
     bool tb, sb;
     int flags;
     struct rootwin_data_s *data;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
 
     tb = (inflags & WIDGET_TOOLBAR);
     sb = (inflags & WIDGET_STATUSBAR);
@@ -261,13 +261,13 @@ int window_create(struct gui_window * gw,
         free(gw->root);
         return( -1 );
     }
-    gw->root->win = guiwin_add(gw->root->aes_handle,
-                               GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
+    gw->root->win = gemtk_wm_add(gw->root->aes_handle,
+                               GEMTK_WM_FLAG_PREPROC_WM | GEMTK_WM_FLAG_RECV_PREPROC_WM, handle_event);
 
     data = malloc(sizeof(struct rootwin_data_s));
     data->rootwin = gw->root;
-    guiwin_set_user_data(gw->root->win, (void*)data);
-    slid = guiwin_get_scroll_info(gw->root->win);
+    gemtk_wm_set_user_data(gw->root->win, (void*)data);
+    slid = gemtk_wm_get_scroll_info(gw->root->win);
     slid->y_unit_px = 32;
     slid->x_unit_px = 32;
 
@@ -275,8 +275,8 @@ int window_create(struct gui_window * gw,
     if(tb) {
         gw->root->toolbar = toolbar_create(gw->root);
         assert(gw->root->toolbar);
-        guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
-		guiwin_set_toolbar_redraw_func(gw->root->win, toolbar_redraw_cb);
+        gemtk_wm_set_toolbar(gw->root->win, gemtk_obj_get_tree(TOOLBAR), 0, 0);
+		gemtk_wm_set_toolbar_redraw_func(gw->root->win, toolbar_redraw_cb);
     } else {
         gw->root->toolbar = NULL;
     }
@@ -346,8 +346,8 @@ int window_destroy(ROOTWIN *rootwin)
 
     LOG(("%p", rootwin));
 
-    if (guiwin_get_user_data(rootwin->win) != NULL) {
-        free(guiwin_get_user_data(rootwin->win));
+    if (gemtk_wm_get_user_data(rootwin->win) != NULL) {
+        free(gemtk_wm_get_user_data(rootwin->win));
     }
 
     // make sure we do not destroy windows which have gui_windows attached:
@@ -368,7 +368,7 @@ int window_destroy(ROOTWIN *rootwin)
     if(rootwin->title)
         free(rootwin->title);
 
-    guiwin_remove(rootwin->win);
+    gemtk_wm_remove(rootwin->win);
     wind_close(rootwin->aes_handle);
     wind_delete(rootwin->aes_handle);
     free(rootwin);
@@ -391,7 +391,7 @@ void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
     if(rootwin->statusbar != NULL) {
         sb_attach(rootwin->statusbar, rootwin->active_gui_window);
     }
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &g);
+    gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_TOOLBAR, &g);
     toolbar_set_attached(rootwin->toolbar, true);
     toolbar_set_dimensions(rootwin->toolbar, &g);
     window_update_back_forward(rootwin);
@@ -415,14 +415,14 @@ void window_restore_active_gui_window(ROOTWIN *rootwin)
     window_set_title(rootwin, gw->title);
 
 	if (gw->search != NULL) {
-		nsatari_search_restore_form(gw->search, get_tree(TOOLBAR));
+		nsatari_search_restore_form(gw->search, gemtk_obj_get_tree(TOOLBAR));
 		window_open_search(rootwin, false);
     } else {
 		toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
     }
 
 	toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
-	guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
+	gemtk_wm_set_toolbar_size(rootwin->win, tb_area.g_h);
 
 	window_update_back_forward(rootwin);
 
@@ -461,7 +461,7 @@ void window_scroll_by(ROOTWIN *root, int sx, int sy)
 {
     int units;
     GRECT content_area;
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(root->win);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(root->win);
 
     if(sx < 0) {
         sx = 0;
@@ -472,9 +472,9 @@ void window_scroll_by(ROOTWIN *root, int sx, int sy)
     int xunits = sx / slid->x_unit_px;
     int yunits = sy / slid->y_unit_px;
 
-    guiwin_scroll(root->win, GUIWIN_VSLIDER, yunits - slid->y_pos, false);
-    guiwin_scroll(root->win, GUIWIN_HSLIDER, xunits - slid->x_pos, false);
-    guiwin_update_slider(root->win, GUIWIN_VH_SLIDER);
+    gemtk_wm_scroll(root->win, GEMTK_WM_VSLIDER, yunits - slid->y_pos, false);
+    gemtk_wm_scroll(root->win, GEMTK_WM_HSLIDER, xunits - slid->x_pos, false);
+    gemtk_wm_update_slider(root->win, GEMTK_WM_VH_SLIDER);
 }
 
 /**
@@ -484,7 +484,7 @@ void window_scroll_by(ROOTWIN *root, int sx, int sy)
 void window_set_content_size(ROOTWIN *rootwin, int width, int height)
 {
     GRECT area;
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(rootwin->win);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(rootwin->win);
 
     window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
 
@@ -494,7 +494,7 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
         slid->x_pos = 0;
     if(slid->y_units < slid->y_pos)
         slid->y_pos = 0;
-    guiwin_update_slider(rootwin->win, GUIWIN_VH_SLIDER);
+    gemtk_wm_update_slider(rootwin->win, GEMTK_WM_VH_SLIDER);
 }
 
 /* set focus to an arbitary element */
@@ -556,7 +556,7 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
     /* redraw window when it is iconyfied: */
     if (rootwin->icon != NULL) {
         short info, dummy;
-        if (guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
+        if (gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
             window_redraw_favicon(rootwin, NULL);
         }
     }
@@ -590,9 +590,9 @@ struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin) {
 
 void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
 {
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
 
-    slid = guiwin_get_scroll_info(rootwin->win);
+    slid = gemtk_wm_get_scroll_info(rootwin->win);
 
     *x = slid->x_pos * slid->x_unit_px;
     *y = slid->y_pos * slid->y_unit_px;
@@ -607,14 +607,14 @@ void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
     d->g_h = 0;
 
     if (which == BROWSER_AREA_TOOLBAR) {
-        // guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
+        // gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_TOOLBAR, d);
         toolbar_get_grect(rootwin->toolbar, 0, d);
 
     } else if (which == BROWSER_AREA_CONTENT) {
 
         GRECT tb_area;
 
-        guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, d);
+        gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_WORK, d);
         toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
 
         d->g_y += tb_area.g_h;
@@ -658,7 +658,7 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
-	obj = get_tree(TOOLBAR);
+	obj = gemtk_obj_get_tree(TOOLBAR);
 
 	if (init == false) {
 		obj[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
@@ -673,7 +673,7 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, true);
 	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &area);
-	guiwin_set_toolbar_size(rootwin->win, area.g_h);
+	gemtk_wm_set_toolbar_size(rootwin->win, area.g_h);
 	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &area);
 	window_schedule_redraw_grect(rootwin, &area);
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
@@ -692,7 +692,7 @@ void window_close_search(ROOTWIN *rootwin)
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
-	obj = get_tree(TOOLBAR);
+	obj = gemtk_obj_get_tree(TOOLBAR);
 
 	if (gw->search != NULL) {
 		nsatari_search_session_destroy(gw->search);
@@ -703,7 +703,7 @@ void window_close_search(ROOTWIN *rootwin)
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
 	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &area);
-	guiwin_set_toolbar_size(rootwin->win, area.g_h);
+	gemtk_wm_set_toolbar_size(rootwin->win, area.g_h);
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
 	browser_window_reformat(bw, false, area.g_w, area.g_h);
 }
@@ -719,8 +719,8 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
 
     //printf("window_redraw_favicon: root: %p, win: %p\n", rootwin, rootwin->win);
 
-    guiwin_clear(rootwin->win);
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
+    gemtk_wm_clear(rootwin->win);
+    gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_WORK, &work);
 
     if (clip == NULL) {
         clip = &work;
@@ -732,7 +732,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
 
     if (rootwin->icon == NULL) {
         //printf("window_redraw_favicon OBJCTREE\n");
-        OBJECT * tree = get_tree(ICONIFY);
+        OBJECT * tree = gemtk_obj_get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
         tree->ob_width = work.g_w;
@@ -766,7 +766,7 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
 
     //dbg_grect("window_schedule_redraw_grect input ", area);
 
-    guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
+    gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_WORK, &work);
     if(!rc_intersect(area, &work))
         return;
 
@@ -777,7 +777,7 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
 
 static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
                                   GRECT *clip,
-                                  struct guiwin_scroll_info_s * slid,
+                                  struct gemtk_wm_scroll_info_s * slid,
                                   struct browser_window *bw)
 {
 
@@ -834,13 +834,13 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
                         int content_y, int h, GRECT *work)
 {
     struct s_caret *caret = &rootwin->caret;
-    VdiHdl vh = guiwin_get_vdi_handle(rootwin->win);
+    VdiHdl vh = gemtk_wm_get_vdi_handle(rootwin->win);
     short pxy[8];
     GRECT mywork, caret_pos;
     MFDB screen;
     int i, scroll_x, scroll_y;
     uint16_t *fd_addr;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
     short colors[2] = {G_BLACK, G_WHITE};
     bool render_required = false;
 
@@ -857,7 +857,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
         window_get_grect(rootwin, BROWSER_AREA_CONTENT, &mywork);
         work = &mywork;
     }
-    slid = guiwin_get_scroll_info(rootwin->win);
+    slid = gemtk_wm_get_scroll_info(rootwin->win);
 
     scroll_x = slid->x_pos * slid->x_unit_px;
     scroll_y = slid->y_pos * slid->y_unit_px;
@@ -965,7 +965,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
 
 exit:
     // disable clipping:
-    vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy);
+    vs_clip(gemtk_wm_get_vdi_handle(rootwin->win), 0, pxy);
 }
 
 void window_process_redraws(ROOTWIN * rootwin)
@@ -975,14 +975,14 @@ void window_process_redraws(ROOTWIN * rootwin)
     short scroll_x=0, scroll_y=0;
     bool toolbar_rdrw_required;
     bool caret_rdrw_required = false;
-    struct guiwin_scroll_info_s *slid =NULL;
+    struct gemtk_wm_scroll_info_s *slid =NULL;
     int caret_h = 0;
     struct s_caret *caret = &rootwin->caret;
 
     redraw_active = true;
 
     toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
-    //guiwin_set_toolbar_size(rootwin->win, tb_area.g_h);
+    //gemtk_wm_set_toolbar_size(rootwin->win, tb_area.g_h);
     window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
@@ -1001,8 +1001,8 @@ void window_process_redraws(ROOTWIN * rootwin)
     pxy_clip[0] = tb_area.g_y;
     pxy_clip[0] = pxy_clip[0] + tb_area.g_w + content_area.g_w - 1;
     pxy_clip[0] = pxy_clip[1] + tb_area.g_h + content_area.g_h - 1;
-    vs_clip(guiwin_get_vdi_handle(rootwin->win), 1, pxy_clip);
-	//guiwin_clear(rootwin->win);
+    vs_clip(gemtk_wm_get_vdi_handle(rootwin->win), 1, pxy_clip);
+	//gemtk_wm_clear(rootwin->win);
 */
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
@@ -1031,7 +1031,7 @@ void window_process_redraws(ROOTWIN * rootwin)
             if (rc_intersect(&content_area, &rdrw_area)) {
 
                 if(slid == NULL) {
-                    slid = guiwin_get_scroll_info(rootwin->win);
+                    slid = gemtk_wm_get_scroll_info(rootwin->win);
 
                     scroll_x = slid->x_pos * slid->x_unit_px;
                     scroll_y = slid->y_pos * slid->y_unit_px;
@@ -1051,7 +1051,7 @@ void window_process_redraws(ROOTWIN * rootwin)
                     caret_pos.g_w = caret->dimensions.g_w;
                     caret_pos.g_h = caret->dimensions.g_h;
 
-                    if (rc_intersect_ro(&caret_pos, &content_area)) {
+                    if (gemtk_rc_intersect_ro(&caret_pos, &content_area)) {
                         caret_rdrw_required = true;
                     }
                 }
@@ -1063,7 +1063,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 
 
     // disable clipping:
-    //vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
+    //vs_clip(gemtk_wm_get_vdi_handle(rootwin->win), 0, pxy_clip);
 
     if (caret_rdrw_required && ((rootwin->caret.state & CARET_STATE_ENABLED)!=0)) {
 
@@ -1089,7 +1089,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
 {
     int mx, my, sx, sy;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
     struct gui_window *gw;
     struct browser_window *bw;
 
@@ -1097,7 +1097,7 @@ static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
     mx = aes_event_out.emo_mouse.p_x - content_area->g_x;
     my = aes_event_out.emo_mouse.p_y - content_area->g_y;
 
-    slid = guiwin_get_scroll_info(rootwin->win);
+    slid = gemtk_wm_get_scroll_info(rootwin->win);
     gw = window_get_active_gui_window(rootwin);
     bw = gw->browser->bw;
 
@@ -1114,7 +1114,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     GRECT cwork;
     browser_mouse_state bmstate = 0;
     struct gui_window *gw;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
 
     gw = window_get_active_gui_window(rootwin);
     if(input_window != gw) {
@@ -1147,7 +1147,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     }
 
     /* convert component coords to scrolled content coords: */
-    slid = guiwin_get_scroll_info(rootwin->win);
+    slid = gemtk_wm_get_scroll_info(rootwin->win);
     int sx_origin = mx;
     int sy_origin = my;
 
@@ -1245,49 +1245,49 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
             GUIWIN * w = bw->window->root->win;
             window_get_grect(bw->window->root, BROWSER_AREA_CONTENT, &g);
 
-            struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w);
+            struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w);
 
             switch( ik ) {
             case KEY_LINE_START:
-                guiwin_scroll(w, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
+                gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -(g.g_w/slid->x_unit_px),
                               false);
                 break;
 
             case KEY_LINE_END:
-                guiwin_scroll(w, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
+                gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, (g.g_w/slid->x_unit_px),
                               false);
                 break;
 
             case KEY_PAGE_UP:
-                guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
+                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
                               false);
                 break;
 
             case KEY_PAGE_DOWN:
-                guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
+                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
                               false);
                 break;
 
             case KEY_RIGHT:
-                guiwin_scroll(w, GUIWIN_HSLIDER, -1, false);
+                gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -1, false);
                 break;
 
             case KEY_LEFT:
-                guiwin_scroll(w, GUIWIN_HSLIDER, 1, false);
+                gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, 1, false);
                 break;
 
             case KEY_UP:
-                guiwin_scroll(w, GUIWIN_VSLIDER, -1, false);
+                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, -1, false);
                 break;
 
             case KEY_DOWN:
-                guiwin_scroll(w, GUIWIN_VSLIDER, 1, false);
+                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, 1, false);
                 break;
 
             default:
                 break;
             }
-            guiwin_update_slider(w, GUIWIN_VSLIDER|GUIWIN_HSLIDER);
+            gemtk_wm_update_slider(w, GEMTK_WM_VSLIDER|GEMTK_WM_HSLIDER);
         }
     }
 
@@ -1332,7 +1332,7 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
     //dbg_grect("on_redraw", &clip);
 
-    if(guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
+    if(gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(rootwin, &clip);
     } else {
@@ -1356,7 +1356,7 @@ static void on_resized(ROOTWIN *rootwin)
         return;
 
     wind_get_grect(rootwin->aes_handle, WF_CURRXYWH, &g);
-	guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
+	gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_WORK, &work);
 
     if (rootwin->loc.g_w != g.g_w || rootwin->loc.g_h != g.g_h) {
 
@@ -1398,22 +1398,22 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
     if( gw == NULL )
         return;
 
-    if(guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED)
+    if(gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED)
         return;
 
-    dd_hdl = ddopen( msg[7], DD_OK);
+    dd_hdl = gemtk_dd_open( msg[7], DD_OK);
     if( dd_hdl<0)
         return;	/* pipe not open */
     memset( ext, 0, 32);
     strcpy( ext, "ARGS");
-    dd_msg = ddsexts( dd_hdl, ext);
+    dd_msg = gemtk_dd_sexts( dd_hdl, ext);
     if( dd_msg<0)
         goto error;
-    dd_msg = ddrtry( dd_hdl, (char*)&name[0], (char*)&file[0], (char*)&ext[0], &size);
+    dd_msg = gemtk_dd_rtry( dd_hdl, (char*)&name[0], (char*)&file[0], (char*)&ext[0], &size);
     if( size+1 >= PATH_MAX )
         goto error;
     if( !strncmp( ext, "ARGS", 4) && dd_msg > 0) {
-        ddreply(dd_hdl, DD_OK);
+        gemtk_dd_reply(dd_hdl, DD_OK);
         buff = (char*)malloc(sizeof(char)*(size+1));
         if (buff != NULL) {
             if (Fread(dd_hdl, size, buff ) == size)
@@ -1454,7 +1454,7 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
         }
     }
 error:
-    ddclose( dd_hdl);
+    gemtk_dd_close( dd_hdl);
 }
 
 static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
@@ -1462,7 +1462,7 @@ static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
 	struct rootwin_data_s * ud;
 
 	if (msg != WM_REDRAW) {
-		ud = guiwin_get_user_data(win);
+		ud = gemtk_wm_get_user_data(win);
 
 		assert(ud);
 

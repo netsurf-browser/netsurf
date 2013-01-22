@@ -21,7 +21,7 @@
 
 #include <atari/gui.h>
 
-#define GUIWIN_VISIBLE(gw) (gw->root->handle->status & WS_OPEN)
+#define GEMTK_WM_VISIBLE(gw) (gw->root->handle->status & WS_OPEN)
 #define GEMWIN_VISIBLE(win) (win->status & WS_OPEN)
 
 #define WIDGET_STATUSBAR  	0x1

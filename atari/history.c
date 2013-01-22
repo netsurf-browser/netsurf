@@ -63,18 +63,18 @@ void global_history_open( void )
 	    pos.g_w = desk_area.g_w / 4;
 	    pos.g_h = desk_area.g_h;
 
-		wind_open(guiwin_get_handle(gl_history.window), pos.g_x, pos.g_y,
+		wind_open(gemtk_wm_get_handle(gl_history.window), pos.g_x, pos.g_y,
             pos.g_w, pos.g_h);
 		gl_history.open = true;
 		atari_treeview_open(gl_history.tv);
 	} else {
-		wind_set(guiwin_get_handle(gl_history.window), WF_TOP, 1, 0, 0, 0);
+		wind_set(gemtk_wm_get_handle(gl_history.window), WF_TOP, 1, 0, 0, 0);
 	}
 }
 
 void global_history_close( void )
 {
-    wind_close(guiwin_get_handle(gl_history.window));
+    wind_close(gemtk_wm_get_handle(gl_history.window));
 	gl_history.open = false;
 	atari_treeview_close(gl_history.tv);
 }
@@ -111,7 +111,7 @@ bool global_history_init( void )
 
         gl_history.open = false;
         handle = wind_create(flags, 40, 40, desk_area.g_w, desk_area.g_h);
-        gl_history.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
+        gl_history.window = gemtk_wm_add(handle, GEMTK_WM_FLAG_DEFAULTS, NULL);
         if( gl_history.window == NULL ) {
 			LOG(("Failed to allocate history window"));
 			return( false );
@@ -144,8 +144,8 @@ void global_history_destroy( void )
 		history_global_cleanup();
 		if( gl_history.open )
 			global_history_close();
-		wind_delete(guiwin_get_handle(gl_history.window));
-		guiwin_remove(gl_history.window);
+		wind_delete(gemtk_wm_get_handle(gl_history.window));
+		gemtk_wm_remove(gl_history.window);
 		gl_history.window = NULL;
 		atari_treeview_destroy(gl_history.tv);
 		gl_history.init = false;

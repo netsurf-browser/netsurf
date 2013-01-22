@@ -24,7 +24,7 @@
 #include <assert.h>
  #include "gemtk.h"
 
-char *get_text(OBJECT * tree, short idx)
+char *gemtk_obj_get_text(OBJECT * tree, short idx)
 {
 	static char p[]="";
 	USERBLK *user;
@@ -91,7 +91,7 @@ char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt)
 	set_string(tree, idx, spare);
 }
 
-OBJECT *get_tree(int idx)
+OBJECT *gemtk_obj_get_tree(int idx)
 {
 
   OBJECT *tree;
@@ -101,7 +101,7 @@ OBJECT *get_tree(int idx)
   return tree;
 }
 
-bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
+bool gemtk_obj_is_inside(OBJECT * tree, short obj, GRECT *area)
 {
 	GRECT obj_screen;
 	bool ret = false;
@@ -115,7 +115,7 @@ bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
 	return(ret);
 }
 
-GRECT * obj_screen_rect(OBJECT * tree, short obj)
+GRECT * gemtk_obj_screen_rect(OBJECT * tree, short obj)
 {
 	static GRECT obj_screen;
 

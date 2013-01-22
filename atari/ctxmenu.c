@@ -128,7 +128,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	char cmdline[PATH_MAX];
 	MENU pop_menu, me_data;
 
-	pop = get_tree( POP_CTX );
+	pop = gemtk_obj_get_tree( POP_CTX );
 	if (pop == NULL)
         	return;
 	ctx = get_context_info(gw, x, y);
@@ -163,7 +163,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	}
 
 	// point mn_tree tree to states popup:
-    pop_menu.mn_tree = get_tree(POP_CTX);
+    pop_menu.mn_tree = gemtk_obj_get_tree(POP_CTX);
     pop_menu.mn_menu = 0;
     pop_menu.mn_item = POP_CTX_CUT_SEL;
     pop_menu.mn_scroll = SCROLL_NO;

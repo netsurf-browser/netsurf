@@ -29,16 +29,16 @@
 //#define DEBUG_PRINT(x)		printf x
 #define DEBUG_PRINT(x)
 
-struct gui_window_s {
+struct gemtk_window_s {
 
 	/** The AES handle of the window */
     short handle;
 
     /** the generic event handler function for events passed to the client */
-    guiwin_event_handler_f handler_func;
+    gemtk_wm_event_handler_f handler_func;
 
     /** The custom toolbar redraw function, if any */
-    guiwin_redraw_f toolbar_redraw_func;
+    gemtk_wm_redraw_f toolbar_redraw_func;
 
     /** window configuration */
     uint32_t flags;
@@ -58,8 +58,8 @@ struct gui_window_s {
     /** Describes the start of the toolbar tree (usually 0) */
     short toolbar_idx;
 
-    /** depending on the flag GW_FLAG_HAS_VTOOLBAR this defines the toolbar
-		height or the toolbar width (GW_FLAG_HAS_VTOOLBAR means width).
+    /** depending on the flag GEMTK_WM_FLAG_HAS_VTOOLBAR this defines the toolbar
+		height or the toolbar width (GEMTK_WM_FLAG_HAS_VTOOLBAR means width).
 	*/
     short toolbar_size;
 
@@ -76,13 +76,13 @@ struct gui_window_s {
     short form_idx;
 
     /** Scroll state */
-    struct guiwin_scroll_info_s scroll_info;
+    struct gemtk_wm_scroll_info_s scroll_info;
 
     /** Arbitary data set by the user */
     void *user_data;
 
     /** linked list items */
-    struct gui_window_s *next, *prev;
+    struct gemtk_window_s *next, *prev;
 };
 
 static GUIWIN * winlist;
@@ -95,7 +95,7 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     long dum = 0L;
     GRECT g;
 
-    VdiHdl vh = guiwin_get_vdi_handle(win);
+    VdiHdl vh = gemtk_wm_get_vdi_handle(win);
 
     while(!wind_update(BEG_UPDATE));
     graf_mouse(M_OFF, 0L);
@@ -126,14 +126,14 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     GRECT g, g_ro, g2;
     short retval = 1;
     int val = 1, old_val;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
 
     switch(msg[0]) {
 
     case WM_HSLID:
-        guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+        gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &g);
         wind_set(gw->handle, WF_HSLIDE, msg[4], 0, 0, 0);
-        slid = guiwin_get_scroll_info(gw);
+        slid = gemtk_wm_get_scroll_info(gw);
         val = (float)(slid->x_units-(g.g_w/slid->x_unit_px))/1000*(float)msg[4];
         if(val != slid->x_pos) {
             if (val < slid->x_pos) {
@@ -141,14 +141,14 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             } else {
                 val = val-slid->x_pos;
             }
-            guiwin_scroll(gw, GUIWIN_HSLIDER, val, false);
+            gemtk_wm_scroll(gw, GEMTK_WM_HSLIDER, val, false);
         }
         break;
 
     case WM_VSLID:
-        guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+        gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &g);
         wind_set(gw->handle, WF_VSLIDE, msg[4], 0, 0, 0);
-        slid = guiwin_get_scroll_info(gw);
+        slid = gemtk_wm_get_scroll_info(gw);
         val = (float)(slid->y_units-(g.g_h/slid->y_unit_px))/1000*(float)msg[4];
         if(val != slid->y_pos) {
             if (val < slid->y_pos) {
@@ -156,62 +156,62 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             } else {
                 val = val -slid->y_pos;
             }
-            guiwin_scroll(gw, GUIWIN_VSLIDER, val, false);
+            gemtk_wm_scroll(gw, GEMTK_WM_VSLIDER, val, false);
         }
         break;
 
     case WM_ARROWED:
-        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
+        if((gw->flags & GEMTK_WM_FLAG_CUSTOM_SCROLLING) == 0) {
 
-            slid = guiwin_get_scroll_info(gw);
-            guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+            slid = gemtk_wm_get_scroll_info(gw);
+            gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &g);
             g_ro = g;
 
             switch(msg[4]) {
 
             case WA_UPPAGE:
                 /* scroll page up */
-                guiwin_scroll(gw, GUIWIN_VSLIDER, -(g.g_h/slid->y_unit_px),
+                gemtk_wm_scroll(gw, GEMTK_WM_VSLIDER, -(g.g_h/slid->y_unit_px),
                               true);
                 break;
 
             case WA_UPLINE:
                 /* scroll line up */
-                guiwin_scroll(gw, GUIWIN_VSLIDER, -1, true);
+                gemtk_wm_scroll(gw, GEMTK_WM_VSLIDER, -1, true);
                 break;
 
             case WA_DNPAGE:
                 /* scroll page down */
-                guiwin_scroll(gw, GUIWIN_VSLIDER, g.g_h/slid->y_unit_px,
+                gemtk_wm_scroll(gw, GEMTK_WM_VSLIDER, g.g_h/slid->y_unit_px,
                               true);
                 break;
 
             case WA_DNLINE:
                 /* scroll line down */
-                guiwin_scroll(gw, GUIWIN_VSLIDER, +1, true);
+                gemtk_wm_scroll(gw, GEMTK_WM_VSLIDER, +1, true);
                 break;
 
             case WA_LFPAGE:
                 /* scroll page left */
-                guiwin_scroll(gw, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
+                gemtk_wm_scroll(gw, GEMTK_WM_HSLIDER, -(g.g_w/slid->x_unit_px),
                               true);
                 break;
 
             case WA_LFLINE:
                 /* scroll line left */
-                guiwin_scroll(gw, GUIWIN_HSLIDER, -1,
+                gemtk_wm_scroll(gw, GEMTK_WM_HSLIDER, -1,
                               true);
                 break;
 
             case WA_RTPAGE:
                 /* scroll page right */
-                guiwin_scroll(gw, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
+                gemtk_wm_scroll(gw, GEMTK_WM_HSLIDER, (g.g_w/slid->x_unit_px),
                               true);
                 break;
 
             case WA_RTLINE:
                 /* scroll line right */
-                guiwin_scroll(gw, GUIWIN_HSLIDER, 1,
+                gemtk_wm_scroll(gw, GEMTK_WM_HSLIDER, 1,
                               true);
                 break;
 
@@ -231,8 +231,8 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
         if (gw->form) {
 
-			guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
-			slid = guiwin_get_scroll_info(gw);
+			gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &g);
+			slid = gemtk_wm_get_scroll_info(gw);
 
 			gw->form[gw->form_idx].ob_x = g.g_x -
 					(slid->x_pos * slid->x_unit_px);
@@ -251,9 +251,9 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         g.g_h = MIN(msg[7], g2.g_h);
         if(g2.g_w != g.g_w || g2.g_h != g.g_h) {
             wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, g.g_w, g.g_h);
-            if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
-                if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
-                    guiwin_send_redraw(gw, NULL);
+            if((gw->flags & GEMTK_WM_FLAG_CUSTOM_SCROLLING) == 0) {
+                if(gemtk_wm_update_slider(gw, GEMTK_WM_VH_SLIDER)) {
+                    gemtk_wm_send_redraw(gw, NULL);
                 }
             }
         }
@@ -268,45 +268,45 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             wind_get_grect(gw->handle, WF_PREVXYWH, &g);
         }
         wind_set_grect(gw->handle, WF_CURRXYWH, &g);
-        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
-            if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
-                guiwin_send_redraw(gw, NULL);
+        if((gw->flags & GEMTK_WM_FLAG_CUSTOM_SCROLLING) == 0) {
+            if(gemtk_wm_update_slider(gw, GEMTK_WM_VH_SLIDER)) {
+                gemtk_wm_send_redraw(gw, NULL);
             }
         }
         break;
 
     case WM_ICONIFY:
         wind_set(gw->handle, WF_ICONIFY, msg[4], msg[5], msg[6], msg[7]);
-        gw->state |= GW_STATUS_ICONIFIED;
+        gw->state |= GEMTK_WM_STATUS_ICONIFIED;
         break;
 
     case WM_UNICONIFY:
         wind_set(gw->handle, WF_UNICONIFY, msg[4], msg[5], msg[6], msg[7]);
-        gw->state &= ~(GW_STATUS_ICONIFIED);
+        gw->state &= ~(GEMTK_WM_STATUS_ICONIFIED);
         break;
 
     case WM_SHADED:
-        gw->state |= GW_STATUS_SHADED;
+        gw->state |= GEMTK_WM_STATUS_SHADED;
         break;
 
     case WM_UNSHADED:
-        gw->state &= ~(GW_STATUS_SHADED);
+        gw->state &= ~(GEMTK_WM_STATUS_SHADED);
         break;
 
     case WM_REDRAW:
-        if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
+        if ((gw->flags & GEMTK_WM_FLAG_CUSTOM_TOOLBAR) == 0) {
             g.g_x = msg[4];
             g.g_y = msg[5];
             g.g_w = msg[6];
             g.g_h = msg[7];
-            guiwin_toolbar_redraw(gw, WM_REDRAW, &g);
+            gemtk_wm_toolbar_redraw(gw, WM_REDRAW, &g);
         }
         if (gw->form != NULL) {
 			g.g_x = msg[4];
             g.g_y = msg[5];
             g.g_w = msg[6];
             g.g_h = msg[7];
-			guiwin_form_redraw(gw, &g);
+			gemtk_wm_form_redraw(gw, &g);
         }
         break;
 
@@ -329,12 +329,12 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     DEBUG_PRINT(("preproc_mu_button\n"));
 
     // toolbar handling:
-    if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0
+    if ((gw->flags & GEMTK_WM_FLAG_CUSTOM_TOOLBAR) == 0
             && gw->toolbar != NULL) {
 
         GRECT tb_area;
 
-        guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area);
+        gemtk_wm_get_grect(gw, GEMTK_WM_AREA_TOOLBAR, &tb_area);
 
         if (POINT_WITHIN(ev_out->emo_mouse.p_x,
                          ev_out->emo_mouse.p_y, tb_area)) {
@@ -351,7 +351,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             DEBUG_PRINT(("Toolbar index: %d\n", obj_idx));
             if (obj_idx > -1
 				&& (gw->toolbar[obj_idx].ob_state & OS_DISABLED)== 0
-					&& ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)) {
+					&& ((gw->flags & GEMTK_WM_FLAG_CUSTOM_TOOLBAR) == 0)) {
 
                 uint16_t type = (gw->toolbar[obj_idx].ob_type & 0xFF);
                 uint16_t nextobj;
@@ -392,16 +392,16 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     if (gw->form != NULL) {
 
         GRECT content_area;
-        struct guiwin_scroll_info_s *slid;
+        struct gemtk_wm_scroll_info_s *slid;
 
         DEBUG_PRINT(("preproc_mu_button: handling form click.\n"));
 
-        guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &content_area);
+        gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &content_area);
 
         if (POINT_WITHIN(ev_out->emo_mouse.p_x,
                          ev_out->emo_mouse.p_y, content_area)) {
 
-            slid = guiwin_get_scroll_info(gw);
+            slid = gemtk_wm_get_scroll_info(gw);
 
 			// adjust form position (considering window and scroll position):
             gw->form[gw->form_idx].ob_x = content_area.g_x -
@@ -434,7 +434,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 				}
 
                 short oldevents = ev_out->emo_events;
-                short msg_out[8] = { GUIWIN_WM_FORM, gl_apid,
+                short msg_out[8] = { GEMTK_WM_WM_FORM, gl_apid,
 										0, gw->handle,
 										gw->form_focus_obj, ev_out->emo_mclicks,
 										ev_out->emo_kmeta, 0
@@ -534,14 +534,14 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 * Event Dispatcher function. The guiwin API doesn't own an event loop,
 * so you have to inform it for every event that you want it to handle.
 */
-short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
+short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 {
     GUIWIN *dest;
     short retval = 0;
     bool handler_called = false;
 
     if( (ev_out->emo_events & MU_MESAG) != 0 ) {
-        DEBUG_PRINT(("guiwin_handle_event_multi_fast: %d (%x)\n", msg[0],
+        DEBUG_PRINT(("gemtk_wm_handle_event_multi_fast: %d (%x)\n", msg[0],
 					msg[0]));
         switch (msg[0]) {
         case WM_REDRAW:
@@ -565,12 +565,12 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
         case AP_DRAGDROP:
         case AP_TERM:
         case AP_TFAIL:
-            dest = guiwin_find(msg[3]);
+            dest = gemtk_wm_find(msg[3]);
             if (dest) {
                 DEBUG_PRINT(("Found WM_ dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
-                if (dest->flags&GW_FLAG_PREPROC_WM) {
+                if (dest->flags&GEMTK_WM_FLAG_PREPROC_WM) {
                     retval = preproc_wm(dest, ev_out, msg);
-                    if(((retval == 0)||(dest->flags&GW_FLAG_RECV_PREPROC_WM))) {
+                    if(((retval == 0)||(dest->flags&GEMTK_WM_FLAG_RECV_PREPROC_WM))) {
                         retval = dest->handler_func(dest, ev_out, msg);
                         handler_called = true;
                     }
@@ -590,7 +590,7 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
         h_aes = wind_find(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
         if(h_aes > 0 && (ev_out->emo_events != MU_TIMER))  {
 
-            dest = guiwin_find(h_aes);
+            dest = gemtk_wm_find(h_aes);
 
             if (dest == NULL || dest->handler_func == NULL)
                 return(0);
@@ -623,7 +623,7 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 /**
 *	Initialises the guiwin API
 */
-short guiwin_init(void)
+short gemtk_wm_init(void)
 {
     if(v_vdi_h == -1) {
         short dummy;
@@ -634,7 +634,7 @@ short guiwin_init(void)
     return(0);
 }
 
-void guiwin_exit(void)
+void gemtk_wm_exit(void)
 {
     v_clsvwk(v_vdi_h);
 }
@@ -647,13 +647,13 @@ void guiwin_exit(void)
 * \param flags Creation flags, configures how the AES window is handled
 * \param cb event handler function for that window
 */
-GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
+GUIWIN * gemtk_wm_add(short handle, uint32_t flags, gemtk_wm_event_handler_f cb)
 {
 
     GUIWIN *win = calloc(sizeof(GUIWIN),1);
 
     assert(win!=NULL);
-    DEBUG_PRINT(("guiwin_add: %d, %p, cb: %p\n", handle, win, cb));
+    DEBUG_PRINT(("gemtk_wm_add: %d, %p, cb: %p\n", handle, win, cb));
 
     win->handle = handle;
     win->handler_func = cb;
@@ -679,7 +679,7 @@ GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
 /**
 * Returns an GUIWIN* for AES handle, when that AES window is managed by guiwin
 */
-GUIWIN *guiwin_find(short handle)
+GUIWIN *gemtk_wm_find(short handle)
 {
     GUIWIN *g;
     DEBUG_PRINT(("guiwin search handle: %d\n", handle));
@@ -696,13 +696,13 @@ GUIWIN *guiwin_find(short handle)
 /**
 * Check's if the pointer is managed by the guiwin API.
 */
-GUIWIN *guiwin_validate_ptr(GUIWIN *win)
+GUIWIN *gemtk_wm_validate_ptr(GUIWIN *win)
 {
     GUIWIN *g;
     for( g = winlist; g != NULL; g=g->next ) {
-        DEBUG_PRINT(("guiwin guiwin_validate_ptr check: %p\n", g));
+        DEBUG_PRINT(("guiwin gemtk_wm_validate_ptr check: %p\n", g));
         if(g == win) {
-            DEBUG_PRINT(("guiwin_validate_ptr valid: %p\n", g));
+            DEBUG_PRINT(("gemtk_wm_validate_ptr valid: %p\n", g));
             return(g);
         }
     }
@@ -713,9 +713,9 @@ GUIWIN *guiwin_validate_ptr(GUIWIN *win)
 * Remove an GUIWIN from the list of managed windows.
 * Call this when the AES window is closed or deleted.
 */
-short guiwin_remove(GUIWIN *win)
+short gemtk_wm_remove(GUIWIN *win)
 {
-    win = guiwin_validate_ptr(win);
+    win = gemtk_wm_validate_ptr(win);
     if (win == NULL)
         return(-1);
 
@@ -738,17 +738,17 @@ short guiwin_remove(GUIWIN *win)
 * \param mode Specifies the area to retrieve.
 * \param dest The calculated rectangle.
 */
-void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
+void gemtk_wm_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 {
 
     assert(win != NULL);
 
     wind_get_grect(win->handle, WF_WORKXYWH, dest);
 
-    if (mode == GUIWIN_AREA_CONTENT) {
+    if (mode == GEMTK_WM_AREA_CONTENT) {
         GRECT tb_area;
-        guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
-        if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
+        gemtk_wm_get_grect(win, GEMTK_WM_AREA_TOOLBAR, &tb_area);
+        if (win->flags & GEMTK_WM_FLAG_HAS_VTOOLBAR) {
             dest->g_x += tb_area.g_w;
             dest->g_w -= tb_area.g_w;
         }
@@ -756,9 +756,9 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 			dest->g_y += tb_area.g_h;
             dest->g_h -= tb_area.g_h;
         }
-    } else if (mode == GUIWIN_AREA_TOOLBAR) {
+    } else if (mode == GEMTK_WM_AREA_TOOLBAR) {
     	if (win->toolbar) {
-			if (win->flags & GW_FLAG_HAS_VTOOLBAR) {
+			if (win->flags & GEMTK_WM_FLAG_HAS_VTOOLBAR) {
 				dest->g_w = win->toolbar_size;
 			} else {
 				dest->g_h = win->toolbar_size;
@@ -773,24 +773,24 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 
 
 /**
-*	Scroll the content area (GUIWIN_AREA_CONTENT) in the specified dimension
-*	(GUIWIN_VSLIDER, GUIWIN_HSLIDER)
+*	Scroll the content area (GEMTK_WM_AREA_CONTENT) in the specified dimension
+*	(GEMTK_WM_VSLIDER, GEMTK_WM_HSLIDER)
 *	\param win The GUIWIN
-* 	\param orientation GUIWIN_VSLIDER or GUIWIN_HSLIDER
+* 	\param orientation GEMTK_WM_VSLIDER or GEMTK_WM_HSLIDER
 * 	\param units the amout to scroll (pass negative values to scroll up)
 *	\param refresh Sliders will be updated when this flag is set
 */
-void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
+void gemtk_wm_scroll(GUIWIN *win, short orientation, int units, bool refresh)
 {
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(win);
     int oldpos = 0, newpos = 0, vis_units=0, pix = 0;
     int abs_pix = 0;
     GRECT *redraw=NULL, g, g_ro;
 
-    guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &g);
+    gemtk_wm_get_grect(win, GEMTK_WM_AREA_CONTENT, &g);
     g_ro = g;
 
-    if (orientation == GUIWIN_VSLIDER) {
+    if (orientation == GEMTK_WM_VSLIDER) {
         pix = units*slid->y_unit_px;
         abs_pix = abs(pix);
         oldpos = slid->y_pos;
@@ -803,7 +803,7 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
         if(oldpos == newpos)
             return;
 
-        if (units>=vis_units || guiwin_has_intersection(win, &g_ro)) {
+        if (units>=vis_units || gemtk_wm_has_intersection(win, &g_ro)) {
             // send complete redraw
             redraw = &g_ro;
         } else {
@@ -839,7 +839,7 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
 
         if(oldpos == newpos)
             return;
-        if (units>=vis_units || guiwin_has_intersection(win, &g_ro)) {
+        if (units>=vis_units || gemtk_wm_has_intersection(win, &g_ro)) {
             // send complete redraw
             redraw = &g_ro;
         } else {
@@ -864,36 +864,36 @@ void guiwin_scroll(GUIWIN *win, short orientation, int units, bool refresh)
     }
 
     if (refresh) {
-        guiwin_update_slider(win, orientation);
+        gemtk_wm_update_slider(win, orientation);
     }
 
     if ((redraw != NULL) && (redraw->g_h > 0)) {
-        guiwin_send_redraw(win, redraw);
+        gemtk_wm_send_redraw(win, redraw);
     }
 }
 
 /**
 * Refresh the sliders of the window.
 * \param win the GUIWIN
-* \param mode bitmask, valid bits: GUIWIN_VSLIDER, GUIWIN_HSLIDER
+* \param mode bitmask, valid bits: GEMTK_WM_VSLIDER, GEMTK_WM_HSLIDER
 */
-bool guiwin_update_slider(GUIWIN *win, short mode)
+bool gemtk_wm_update_slider(GUIWIN *win, short mode)
 {
     GRECT viewport;
-    struct guiwin_scroll_info_s * slid;
+    struct gemtk_wm_scroll_info_s * slid;
     unsigned long size, pos;
     int old_x, old_y;
 
-    short handle = guiwin_get_handle(win);
-    guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &viewport);
-    slid = guiwin_get_scroll_info(win);
+    short handle = gemtk_wm_get_handle(win);
+    gemtk_wm_get_grect(win, GEMTK_WM_AREA_CONTENT, &viewport);
+    slid = gemtk_wm_get_scroll_info(win);
 
     old_x = slid->x_pos;
     old_y = slid->y_pos;
 
     // TODO: check if the window has sliders of that direction...?
 
-    if((mode & GUIWIN_VSLIDER) && (slid->y_unit_px > 0)) {
+    if((mode & GEMTK_WM_VSLIDER) && (slid->y_unit_px > 0)) {
         if ( slid->y_units < (long)viewport.g_h/slid->y_unit_px) {
             size = 1000L;
         } else
@@ -910,7 +910,7 @@ bool guiwin_update_slider(GUIWIN *win, short mode)
             wind_set(handle, WF_VSLIDE, 0, 0, 0, 0);
         }
     }
-    if((mode & GUIWIN_HSLIDER) && (slid->x_unit_px > 0)) {
+    if((mode & GEMTK_WM_HSLIDER) && (slid->x_unit_px > 0)) {
         if ( slid->x_units < (long)viewport.g_w/slid->x_unit_px)
             size = 1000L;
         else
@@ -937,7 +937,7 @@ bool guiwin_update_slider(GUIWIN *win, short mode)
 /**
 * Return the AES handle for the GUIWIN.
 */
-short guiwin_get_handle(GUIWIN *win)
+short gemtk_wm_get_handle(GUIWIN *win)
 {
     return(win->handle);
 }
@@ -945,7 +945,7 @@ short guiwin_get_handle(GUIWIN *win)
 /**
 * Return the VDI handle for an GUIWIN.
 */
-VdiHdl guiwin_get_vdi_handle(GUIWIN *win)
+VdiHdl gemtk_wm_get_vdi_handle(GUIWIN *win)
 {
     return(v_vdi_h);
 }
@@ -953,7 +953,7 @@ VdiHdl guiwin_get_vdi_handle(GUIWIN *win)
 /**
 * Returns the state bitmask of the window
 */
-uint32_t guiwin_get_state(GUIWIN *win)
+uint32_t gemtk_wm_get_state(GUIWIN *win)
 {
     return(win->state);
 }
@@ -962,7 +962,7 @@ uint32_t guiwin_get_state(GUIWIN *win)
 /**
 * Set and new event handler function.
 */
-void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb)
+void gemtk_wm_set_event_handler(GUIWIN *win,gemtk_wm_event_handler_f cb)
 {
     win->handler_func = cb;
 }
@@ -976,13 +976,13 @@ void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb)
 * \param flags optional configuration flags
 */
 //TODO: document flags
-void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
+void gemtk_wm_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
 {
     win->toolbar = toolbar;
     win->toolbar_idx = idx;
     win->toolbar_edit_obj = -1;
-    if (flags & GW_FLAG_HAS_VTOOLBAR) {
-        win->flags |= GW_FLAG_HAS_VTOOLBAR;
+    if (flags & GEMTK_WM_FLAG_HAS_VTOOLBAR) {
+        win->flags |= GEMTK_WM_FLAG_HAS_VTOOLBAR;
         win->toolbar_size = win->toolbar[idx].ob_width;
     }
     else {
@@ -992,9 +992,9 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
 
 /**  Update width/height of the toolbar region
 * \param win the GUIWIN
-* \param s depending on the flag GW_FLAG_HAS_VTOOLBAR this is the width or the height
+* \param s depending on the flag GEMTK_WM_FLAG_HAS_VTOOLBAR this is the width or the height
 */
-void guiwin_set_toolbar_size(GUIWIN *win, uint16_t s)
+void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s)
 {
 	win->toolbar_size = s;
 }
@@ -1004,7 +1004,7 @@ void guiwin_set_toolbar_size(GUIWIN *win, uint16_t s)
 * \param win the GUIWIN
 * \param func the custom redraw function
 */
-void guiwin_set_toolbar_redraw_func(GUIWIN *win, guiwin_redraw_f func)
+void gemtk_wm_set_toolbar_redraw_func(GUIWIN *win, gemtk_wm_redraw_f func)
 {
 	win->toolbar_redraw_func = func;
 }
@@ -1012,7 +1012,7 @@ void guiwin_set_toolbar_redraw_func(GUIWIN *win, guiwin_redraw_f func)
 /**
 * Attach an arbitary pointer to the GUIWIN
 */
-void guiwin_set_user_data(GUIWIN *win, void *data)
+void gemtk_wm_set_user_data(GUIWIN *win, void *data)
 {
     win->user_data = data;
 }
@@ -1020,14 +1020,14 @@ void guiwin_set_user_data(GUIWIN *win, void *data)
 /**
 * Retrieve the user_data pointer attached to the GUIWIN.
 */
-void *guiwin_get_user_data(GUIWIN *win)
+void *gemtk_wm_get_user_data(GUIWIN *win)
 {
     return(win->user_data);
 }
 
 /** Get the scroll management structure for a GUIWIN
 */
-struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
+struct gemtk_wm_scroll_info_s *gemtk_wm_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
@@ -1035,9 +1035,9 @@ struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
 *	Get the amount of content dimensions within the window
 * 	which is calculated by using the scroll_info attached to the GUIWIN.
 */
-void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
+void gemtk_wm_set_scroll_grid(GUIWIN * win, short x, short y)
 {
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(win);
 
     assert(slid != NULL);
 
@@ -1051,9 +1051,9 @@ void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
 * \param x horizontal size
 * \param y vertical size
 */
-void guiwin_set_content_units(GUIWIN * win, short x, short y)
+void gemtk_wm_set_content_units(GUIWIN * win, short x, short y)
 {
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(win);
 
     assert(slid != NULL);
 
@@ -1069,7 +1069,7 @@ void guiwin_set_content_units(GUIWIN * win, short x, short y)
 * \param c the 6th parameter to appl_write
 * \param d the 7th parameter to appl_write
 */
-void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
+void gemtk_wm_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
                      short d)
 {
     short msg[8];
@@ -1086,8 +1086,8 @@ void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     appl_write(gl_apid, 16, &msg);
 }
 
-// TODO: rename, document and implement alternative (guiwin_exec_event)
-void guiwin_send_redraw(GUIWIN *win, GRECT *area)
+// TODO: rename, document and implement alternative (gemtk_wm_exec_event)
+void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area)
 {
     short msg[8], retval;
     GRECT work;
@@ -1107,10 +1107,10 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
     EVMULT_OUT event_out;
 
     if (area == NULL) {
-        guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
+        gemtk_wm_get_grect(win, GEMTK_WM_AREA_WORK, &work);
         if (work.g_w < 1 || work.g_h < 1) {
             if (win->toolbar != NULL) {
-                guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &work);
+                gemtk_wm_get_grect(win, GEMTK_WM_AREA_TOOLBAR, &work);
                 if (work.g_w < 1 || work.g_h < 1) {
                     return;
                 }
@@ -1130,7 +1130,7 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 
     event_out.emo_events = MU_MESAG;
     retval = preproc_wm(win, &event_out, msg);
-    if (retval == 0 || (win->flags & GW_FLAG_PREPROC_WM) != 0){
+    if (retval == 0 || (win->flags & GEMTK_WM_FLAG_PREPROC_WM) != 0){
 		win->handler_func(win, &event_out, msg);
     }
 
@@ -1141,7 +1141,7 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 
 /** Attach an AES FORM to the GUIWIN, similar feature like the toolbar
 */
-void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index)
+void gemtk_wm_set_form(GUIWIN *win, OBJECT *tree, short index)
 {
 	DEBUG_PRINT(("Setting form %p (%d) for window %p\n", tree, index, win));
     win->form = tree;
@@ -1152,13 +1152,13 @@ void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index)
 
 /** Checks if a GUIWIN is overlapped by other windows.
 */
-bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
+bool gemtk_wm_has_intersection(GUIWIN *win, GRECT *work)
 {
     GRECT area, mywork;
     bool retval = true;
 
     if (work == NULL) {
-        guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &mywork);
+        gemtk_wm_get_grect(win, GEMTK_WM_AREA_CONTENT, &mywork);
         work = &mywork;
     }
 
@@ -1178,11 +1178,11 @@ bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
 * \param msg specifies the AES message which initiated the redraw, or 0 when
 *				the function was called without AES message context.
 */
-void guiwin_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
+void gemtk_wm_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 {
     GRECT tb_area, tb_area_ro, g;
 
-    guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area_ro);
+    gemtk_wm_get_grect(gw, GEMTK_WM_AREA_TOOLBAR, &tb_area_ro);
 
     if(clip == NULL) {
         clip = &tb_area_ro;
@@ -1222,19 +1222,19 @@ void guiwin_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 
 /** Execute FORM redraw
 */
-void guiwin_form_redraw(GUIWIN *gw, GRECT *clip)
+void gemtk_wm_form_redraw(GUIWIN *gw, GRECT *clip)
 {
     GRECT area, area_ro, g;
 	int scroll_px_x, scroll_px_y;
-	struct guiwin_scroll_info_s *slid;
+	struct gemtk_wm_scroll_info_s *slid;
 	//int new_x, new_y, old_x, old_y;
 	short edit_idx;
 
-	DEBUG_PRINT(("guiwin_form_redraw\n"));
+	DEBUG_PRINT(("gemtk_wm_form_redraw\n"));
 
 	// calculate form coordinates, include scrolling:
-    guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &area_ro);
-	slid = guiwin_get_scroll_info(gw);
+    gemtk_wm_get_grect(gw, GEMTK_WM_AREA_CONTENT, &area_ro);
+	slid = gemtk_wm_get_scroll_info(gw);
 
 	// Update form position:
 	gw->form[gw->form_idx].ob_x = area_ro.g_x - (slid->x_pos * slid->x_unit_px);
@@ -1264,19 +1264,19 @@ void guiwin_form_redraw(GUIWIN *gw, GRECT *clip)
 
 /** Fill the content area with white color
 */
-void guiwin_clear(GUIWIN *win)
+void gemtk_wm_clear(GUIWIN *win)
 {
     GRECT area, g;
     short pxy[4];
     VdiHdl vh;
 
-    vh = guiwin_get_vdi_handle(win);
+    vh = gemtk_wm_get_vdi_handle(win);
 
-    if(win->state & GW_STATUS_ICONIFIED) {
+    if(win->state & GEMTK_WM_STATUS_ICONIFIED) {
         // also clear the toolbar area when iconified:
-        guiwin_get_grect(win, GUIWIN_AREA_WORK, &area);
+        gemtk_wm_get_grect(win, GEMTK_WM_AREA_WORK, &area);
     } else {
-        guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &area);
+        gemtk_wm_get_grect(win, GEMTK_WM_AREA_CONTENT, &area);
     }
 
     vsf_interior(vh, FIS_SOLID);

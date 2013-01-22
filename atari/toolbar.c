@@ -232,8 +232,8 @@ void toolbar_init( void )
 {
 	static USERBLK userblk;
 
-    aes_toolbar = get_tree(TOOLBAR);
-    throbber_form = get_tree(THROBBER);
+    aes_toolbar = gemtk_obj_get_tree(TOOLBAR);
+    throbber_form = gemtk_obj_get_tree(THROBBER);
 
 	userblk.ub_code = toolbar_url_userdraw;
     userblk.ub_parm = (long) aes_toolbar[TOOLBAR_AREA_URL].ob_spec.userblk;
@@ -777,7 +777,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
     }
 	else if (obj==TOOLBAR_BT_SEARCH_FWD) {
 		gw = tb->owner->active_gui_window;
-		toolbar_tree = get_tree(TOOLBAR);
+		toolbar_tree = gemtk_obj_get_tree(TOOLBAR);
 		assert(gw->search);
 		nsatari_search_perform(gw->search, toolbar_tree, SEARCH_FLAG_FORWARDS);
 	}

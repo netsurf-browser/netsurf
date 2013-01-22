@@ -46,16 +46,16 @@ static OBJECT * dlgtree;
 
 #define OBJ_UNCHECK(idx) (dlgtree[idx].ob_state &= ~(OS_SELECTED));
 
-#define OBJ_REDRAW(idx) guiwin_send_redraw(settings_guiwin, \
-										obj_screen_rect(dlgtree, idx));
+#define OBJ_REDRAW(idx) gemtk_wm_send_redraw(settings_guiwin, \
+										gemtk_obj_screen_rect(dlgtree, idx));
 
 #define DISABLE_OBJ(idx) (dlgtree[idx].ob_state |= OS_DISABLED); \
-						 guiwin_send_redraw(settings_guiwin, \
-											obj_screen_rect(dlgtree, idx));
+						 gemtk_wm_send_redraw(settings_guiwin, \
+											gemtk_obj_screen_rect(dlgtree, idx));
 
 #define ENABLE_OBJ(idx) (dlgtree[idx].ob_state &= ~(OS_DISABLED)); \
-						 guiwin_send_redraw(settings_guiwin, \
-											obj_screen_rect(dlgtree, idx));
+						 gemtk_wm_send_redraw(settings_guiwin, \
+											gemtk_obj_screen_rect(dlgtree, idx));
 
 #define FORMEVENT(idx) form_event(idx, 0);
 
@@ -181,21 +181,21 @@ static void display_settings(void)
     set_text( SETTINGS_BT_SEL_FONT_RENDERER, nsoption_charp(atari_font_driver),
               LABEL_FONT_RENDERER_MAX_LEN );
     SET_BIT(dlgtree[SETTINGS_CB_TRANSPARENCY].ob_state,
-            GW_CB_SELECTED, nsoption_int(atari_transparency) ? 1 : 0 );
+            OS_SELECTED, nsoption_int(atari_transparency) ? 1 : 0 );
     SET_BIT(dlgtree[SETTINGS_CB_ENABLE_ANIMATION].ob_state,
-            GW_CB_SELECTED, nsoption_bool(animate_images) ? 1 : 0 );
+            OS_SELECTED, nsoption_bool(animate_images) ? 1 : 0 );
     SET_BIT(dlgtree[SETTINGS_CB_FG_IMAGES].ob_state,
-            GW_CB_SELECTED, nsoption_bool(foreground_images) ? 1 : 0 );
+            OS_SELECTED, nsoption_bool(foreground_images) ? 1 : 0 );
     SET_BIT(dlgtree[SETTINGS_CB_BG_IMAGES].ob_state,
-            GW_CB_SELECTED, nsoption_bool(background_images) ? 1 : 0 );
+            OS_SELECTED, nsoption_bool(background_images) ? 1 : 0 );
 
 
     // TODO: enable this option?
     /*	SET_BIT(dlgtree[SETTINGS_CB_INCREMENTAL_REFLOW].ob_state,
-    			GW_CB_SELECTED, nsoption_bool(incremental_reflow) ? 1 : 0 );*/
+    			OS_SELECTED, nsoption_bool(incremental_reflow) ? 1 : 0 );*/
 
     SET_BIT(dlgtree[SETTINGS_CB_ANTI_ALIASING].ob_state,
-            GW_CB_SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
+            OS_SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
 
 
     // TODO: activate this option?
@@ -221,9 +221,9 @@ static void display_settings(void)
     set_text( SETTINGS_EDIT_PROXY_PASSWORD, nsoption_charp(http_proxy_auth_pass),
               INPUT_PROXY_PASSWORD_MAX_LEN );
     SET_BIT(dlgtree[SETTINGS_CB_USE_PROXY].ob_state,
-            GW_CB_SELECTED, nsoption_bool(http_proxy) ? 1 : 0 );
+            OS_SELECTED, nsoption_bool(http_proxy) ? 1 : 0 );
     SET_BIT(dlgtree[SETTINGS_CB_PROXY_AUTH].ob_state,
-            GW_CB_SELECTED, nsoption_int(http_proxy_auth) ? 1 : 0 );
+            OS_SELECTED, nsoption_int(http_proxy_auth) ? 1 : 0 );
 
     tmp_option_max_cached_fetch_handles = nsoption_int(max_cached_fetch_handles);
     snprintf( spare, 255, "%2d", nsoption_int(max_cached_fetch_handles) );
@@ -320,7 +320,7 @@ static void form_event(int index, int external)
         if( external ) {
             objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
             // point mn_tree tree to states popup:
-            pop_menu.mn_tree = get_tree(POP_FONT_RENDERER);
+            pop_menu.mn_tree = gemtk_obj_get_tree(POP_FONT_RENDERER);
             pop_menu.mn_menu = 0;
             pop_menu.mn_item = POP_FONT_RENDERER_INTERNAL;
             pop_menu.mn_scroll = SCROLL_NO;
@@ -329,7 +329,7 @@ static void form_event(int index, int external)
 			// find the selected menu item and uncheck others:
             for(i=pop_menu.mn_item; i<=num_font_drivers; i++) {
                 get_string(pop_menu.mn_tree, i, spare);
-                tmp = get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
+                tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
                 if (strcasecmp(&spare[2], tmp)) {
                     menu_icheck(pop_menu.mn_tree, i, 0);
                 } else {
@@ -351,7 +351,7 @@ static void form_event(int index, int external)
                 OBJ_REDRAW(SETTINGS_BT_SEL_FONT_RENDERER);
             }
         }
-        tmp = get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
+        tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
         if (strcasecmp(tmp, "freetype") == 0) {
             ENABLE_OBJ(SETTINGS_CB_ANTI_ALIASING);
         } else {
@@ -363,7 +363,7 @@ static void form_event(int index, int external)
         objc_offset(dlgtree, SETTINGS_BT_SEL_LOCALE, &x, &y);
 
         // point mn_tree tree to states popup:
-        pop_menu.mn_tree = get_tree(POP_LANGUAGE);
+        pop_menu.mn_tree = gemtk_obj_get_tree(POP_LANGUAGE);
         pop_menu.mn_menu = 0;
         pop_menu.mn_item = POP_LANGUAGE_CS;
         pop_menu.mn_scroll = SCROLL_NO;
@@ -372,7 +372,7 @@ static void form_event(int index, int external)
 		// find the selected menu item and uncheck others:
         for(i=pop_menu.mn_item; i<=num_locales; i++) {
             get_string(pop_menu.mn_tree, i, spare);
-            tmp = get_text(dlgtree, SETTINGS_BT_SEL_LOCALE);
+            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE);
             if (strcasecmp(&spare[2], tmp)) {
                 menu_icheck(pop_menu.mn_tree, i, 0);
             } else {
@@ -586,19 +586,19 @@ static void apply_settings(void)
         nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
     }
     nsoption_set_charp(http_proxy_auth_pass,
-                       get_text(dlgtree, SETTINGS_EDIT_PROXY_PASSWORD));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_PROXY_PASSWORD));
     nsoption_set_charp(http_proxy_auth_user,
-                       get_text(dlgtree, SETTINGS_EDIT_PROXY_USERNAME));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_PROXY_USERNAME));
     nsoption_set_charp(http_proxy_host,
-                       get_text(dlgtree, SETTINGS_EDIT_PROXY_HOST));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_PROXY_HOST));
     nsoption_set_int(http_proxy_port,
-                     atoi( get_text(dlgtree, SETTINGS_EDIT_PROXY_PORT) ));
+                     atoi( gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_PROXY_PORT) ));
     nsoption_set_int(max_fetchers_per_host,
-                     atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS_PER_HOST)));
+                     atoi( gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS_PER_HOST)));
     nsoption_set_int(max_cached_fetch_handles,
-                     atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_CACHED_CONNECTIONS)));
+                     atoi( gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_MAX_CACHED_CONNECTIONS)));
     nsoption_set_int(max_fetchers,
-                     atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS) ));
+                     atoi( gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS) ));
     nsoption_set_bool(foreground_images,
                       OBJ_SELECTED( SETTINGS_CB_FG_IMAGES ));
     nsoption_set_bool(background_images,
@@ -610,7 +610,7 @@ static void apply_settings(void)
 
     /* "Rendering" tab: */
     nsoption_set_charp(atari_font_driver,
-                       get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER));
     nsoption_set_bool(atari_transparency,
                       OBJ_SELECTED(SETTINGS_CB_TRANSPARENCY));
     nsoption_set_bool(animate_images,
@@ -625,17 +625,17 @@ static void apply_settings(void)
 
     /* "Paths" tabs: */
     nsoption_set_charp(ca_bundle,
-                       get_text(dlgtree, SETTINGS_EDIT_CA_BUNDLE));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_CA_BUNDLE));
     nsoption_set_charp(ca_path,
-                       get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
     nsoption_set_charp(homepage_url,
-                       get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
     nsoption_set_charp(hotlist_file,
-                       get_text(dlgtree, SETTINGS_EDIT_HOTLIST_FILE));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_HOTLIST_FILE));
     nsoption_set_charp(atari_editor,
-                       get_text(dlgtree, SETTINGS_EDIT_EDITOR));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_EDITOR));
     nsoption_set_charp(downloads_path,
-                       get_text(dlgtree, SETTINGS_EDIT_DOWNLOAD_PATH));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_DOWNLOAD_PATH));
 
     /* "Cache" tab: */
     nsoption_set_int(memory_cache_size,
@@ -647,15 +647,15 @@ static void apply_settings(void)
     nsoption_set_bool(block_ads,
                       OBJ_SELECTED(SETTINGS_CB_HIDE_ADVERTISEMENT));
     nsoption_set_charp(accept_language,
-                       get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));
     nsoption_set_int(expire_url,
-                     atoi(get_text(dlgtree, SETTINGS_EDIT_HISTORY_AGE)));
+                     atoi(gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_HISTORY_AGE)));
     nsoption_set_bool(send_referer,
                       OBJ_SELECTED(SETTINGS_CB_SEND_HTTP_REFERRER));
     nsoption_set_bool(do_not_track,
                       OBJ_SELECTED(SETTINGS_CB_SEND_DO_NOT_TRACK));
     nsoption_set_charp(homepage_url,
-                       get_text(dlgtree, SETTINGS_EDIT_HOMEPAGE));
+                       gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_HOMEPAGE));
 }
 
 static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
@@ -663,7 +663,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     short retval = 0;
     GRECT clip, work;
     static short edit_idx = 0;
-    struct guiwin_scroll_info_s *slid;
+    struct gemtk_wm_scroll_info_s *slid;
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
@@ -678,7 +678,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             break;
 
         case WM_SIZED:
-            guiwin_update_slider(win, GUIWIN_VH_SLIDER);
+            gemtk_wm_update_slider(win, GEMTK_WM_VH_SLIDER);
             break;
 
         case WM_MOVED:
@@ -691,7 +691,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             }
             break;
 
-        case GUIWIN_WM_FORM:
+        case GEMTK_WM_WM_FORM:
             form_event(msg[4], 1);
             break;
 
@@ -714,18 +714,18 @@ void open_settings(void)
     if (h_aes_win == 0) {
 
         GRECT curr, area;
-        struct guiwin_scroll_info_s *slid;
+        struct gemtk_wm_scroll_info_s *slid;
         uint32_t kind = CLOSER | NAME | MOVER | VSLIDE | HSLIDE | UPARROW
                         | DNARROW | LFARROW | RTARROW | SIZER | FULLER;
 
-        dlgtree = get_tree(SETTINGS);
+        dlgtree = gemtk_obj_get_tree(SETTINGS);
         area.g_x = area.g_y = 0;
         area.g_w = MIN(dlgtree->ob_width, desk_area.g_w);
         area.g_h = MIN(dlgtree->ob_height, desk_area.g_h);
         wind_calc_grect(WC_BORDER, kind, &area, &area);
         h_aes_win = wind_create_grect(kind, &area);
         wind_set_str(h_aes_win, WF_NAME, "Settings");
-        settings_guiwin = guiwin_add(h_aes_win, GW_FLAG_DEFAULTS,
+        settings_guiwin = gemtk_wm_add(h_aes_win, GEMTK_WM_FLAG_DEFAULTS,
                                      on_aes_event);
         curr.g_w = MIN(dlgtree->ob_width, desk_area.g_w);
         curr.g_h = MIN(dlgtree->ob_height, desk_area.g_h-64);
@@ -742,22 +742,22 @@ void open_settings(void)
 
         wind_open_grect(h_aes_win, &curr);
 
-        guiwin_set_form(settings_guiwin, dlgtree, 0);
-        guiwin_set_scroll_grid(settings_guiwin, 32, 32);
-        guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &area);
+        gemtk_wm_set_form(settings_guiwin, dlgtree, 0);
+        gemtk_wm_set_scroll_grid(settings_guiwin, 32, 32);
+        gemtk_wm_get_grect(settings_guiwin, GEMTK_WM_AREA_CONTENT, &area);
 
-        slid = guiwin_get_scroll_info(settings_guiwin);
-        guiwin_set_content_units(settings_guiwin,
+        slid = gemtk_wm_get_scroll_info(settings_guiwin);
+        gemtk_wm_set_content_units(settings_guiwin,
                                  (dlgtree->ob_width/slid->x_unit_px),
                                  (dlgtree->ob_height/slid->y_unit_px));
-        guiwin_update_slider(settings_guiwin, GUIWIN_VH_SLIDER);
+        gemtk_wm_update_slider(settings_guiwin, GEMTK_WM_VH_SLIDER);
     }
 }
 
 void close_settings(void)
 {
     LOG((""));
-    guiwin_remove(settings_guiwin);
+    gemtk_wm_remove(settings_guiwin);
     settings_guiwin = NULL;
     wind_close(h_aes_win);
     wind_delete(h_aes_win);

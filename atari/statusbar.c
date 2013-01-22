@@ -220,7 +220,7 @@ void sb_destroy( CMP_STATUSBAR s )
 
 void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw)
 {
-	sb->aes_win = guiwin_get_handle(gw->root->win);
+	sb->aes_win = gemtk_wm_get_handle(gw->root->win);
 	sb->attached = true;
 }
 

@@ -164,7 +164,7 @@ void gui_poll(bool active)
 			aes_event_in.emi_m1.g_x = mx;
 			aes_event_in.emi_m1.g_y = my;
 			evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-			if(!guiwin_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
+			if(!gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
 				if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
 					LOG(("WM: %d\n", aes_msg_out[0]));
 					switch(aes_msg_out[0]) {
@@ -368,12 +368,12 @@ void gui_window_redraw_window(struct gui_window *gw)
 void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	GRECT area;
-	struct guiwin_scroll_info_s *slid;
+	struct gemtk_wm_scroll_info_s *slid;
 
     if (gw == NULL)
         return;
 
-    slid = guiwin_get_scroll_info(gw->root->win);
+    slid = gemtk_wm_get_scroll_info(gw->root->win);
 
     window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
 	area.g_x += rect->x0 - (slid->x_pos * slid->x_unit_px);
@@ -642,10 +642,10 @@ gui_window_set_search_ico(hlcache_handle *ico)
 
 void gui_window_new_content(struct gui_window *w)
 {
-	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w->root->win);
+	struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w->root->win);
 	slid->x_pos = 0;
 	slid->y_pos = 0;
-	guiwin_update_slider(w->root->win, GUIWIN_VH_SLIDER);
+	gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
     gui_window_redraw_window(w);
 }
 
@@ -835,7 +835,7 @@ void gui_quit(void)
     urldb_save(nsoption_charp(url_file));
 
     deskmenu_destroy();
-    guiwin_exit();
+    gemtk_wm_exit();
 
     rsrc_free();
 
@@ -972,7 +972,7 @@ static void gui_init(int argc, char** argv)
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizeall);
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizenesw);
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizenwse);
-    cursors = get_tree(CURSOR);
+    cursors = gemtk_obj_get_tree(CURSOR);
     create_cursor(MFORM_EX_FLAG_USERFORM, CURSOR_APPSTART,
                   cursors, &gem_cursors.appstarting);
     gem_set_cursor( &gem_cursors.appstarting );
@@ -1028,7 +1028,7 @@ static void gui_init2(int argc, char** argv)
     if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
         menu_register( _AESapid, (char*)"  NetSurf ");
     }
-    guiwin_init();
+    gemtk_wm_init();
     global_history_init();
     hotlist_init();
     toolbar_init();

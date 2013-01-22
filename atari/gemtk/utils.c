@@ -39,7 +39,7 @@ unsigned short _systype (void)
     return _systype_v;
 }
 
-bool rc_intersect_ro(GRECT *a, GRECT *b)
+bool gemtk_rc_intersect_ro(GRECT *a, GRECT *b)
 {
     GRECT r1, r2;
 
@@ -56,7 +56,7 @@ typedef struct {
     char *capslock;
 } KEYTAB;
 
-int keybd2ascii( int keybd, int shift)
+int gemtk_keybd2ascii( int keybd, int shift)
 {
 
     KEYTAB *key;

@@ -8,9 +8,9 @@
 # define min(x,y) ((x<y) ? x : y )
 #endif
 
-short msg_box_show(short type, const char * msg)
+short gemtk_msg_box_show(short type, const char * msg)
 {
-	#define MSG_BOX_STR_SIZE 256
+	#define GEMTK_MSG_BOX_STR_SIZE 256
 	short retval=0, i=0, z=0, l=0;
 	char c;
 	int len_msg = strlen(msg);
@@ -19,13 +19,13 @@ short msg_box_show(short type, const char * msg)
 	const char *str_yes = "Yes";
 	const char *str_no = "No";
 	const char *str_ok = "OK";
-	char msg_box_str[MSG_BOX_STR_SIZE];
+	char msg_box_str[GEMTK_MSG_BOX_STR_SIZE];
 	char *dst = msg_box_str;
 
-	memset(msg_box_str, 0, MSG_BOX_STR_SIZE);
+	memset(msg_box_str, 0, GEMTK_MSG_BOX_STR_SIZE);
 
-	strncat(msg_box_str, "[1]", MSG_BOX_STR_SIZE);
-	strncat(msg_box_str, "[", MSG_BOX_STR_SIZE);
+	strncat(msg_box_str, "[1]", GEMTK_MSG_BOX_STR_SIZE);
+	strncat(msg_box_str, "[", GEMTK_MSG_BOX_STR_SIZE);
 
 	dst = msg_box_str + strlen(msg_box_str);
 
@@ -61,24 +61,24 @@ short msg_box_show(short type, const char * msg)
 			dst++;
 		}
 	}
-	strncat(msg_box_str, "][", MSG_BOX_STR_SIZE);
+	strncat(msg_box_str, "][", GEMTK_MSG_BOX_STR_SIZE);
 
-	if(type == MSG_BOX_CONFIRM){
-		strncat(msg_box_str, str_yes, MSG_BOX_STR_SIZE);
-		strncat(msg_box_str, "|", MSG_BOX_STR_SIZE);
-		strncat(msg_box_str, str_no, MSG_BOX_STR_SIZE);
+	if(type == GEMTK_MSG_BOX_CONFIRM){
+		strncat(msg_box_str, str_yes, GEMTK_MSG_BOX_STR_SIZE);
+		strncat(msg_box_str, "|", GEMTK_MSG_BOX_STR_SIZE);
+		strncat(msg_box_str, str_no, GEMTK_MSG_BOX_STR_SIZE);
 	} else {
-		strncat(msg_box_str, str_ok, MSG_BOX_STR_SIZE);
+		strncat(msg_box_str, str_ok, GEMTK_MSG_BOX_STR_SIZE);
 	}
-	strncat(msg_box_str, "]", MSG_BOX_STR_SIZE);
+	strncat(msg_box_str, "]", GEMTK_MSG_BOX_STR_SIZE);
 
 	retval = form_alert(type, msg_box_str);
-	if(type == MSG_BOX_CONFIRM){
+	if(type == GEMTK_MSG_BOX_CONFIRM){
 		if(retval != 1){
 			retval = 0;
 		}
 	}
 	return(retval);
 
-	#undef MSG_BOX_STR_SIZE
+	#undef GEMTK_MSG_BOX_STR_SIZE
 }

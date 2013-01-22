@@ -61,13 +61,13 @@ void warn_user(const char *warning, const char *detail)
 	snprintf(message, len, messages_get(warning), detail);
 
 	printf("%s\n", message);
-	msg_box_show(MSG_BOX_ALERT, message);
+	gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT, message);
 }
 
 void die(const char *error)
 {
 	printf("%s\n", error);
-	msg_box_show(MSG_BOX_ALERT, error);
+	gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT, error);
 	exit(1);
 }
 
@@ -123,7 +123,7 @@ struct gui_window * find_guiwin_by_aes_handle(short handle){
 
 	while(gw != NULL) {
 		if( gw->root->win != NULL
-			&& guiwin_get_handle(gw->root->win) == handle ) {
+			&& gemtk_wm_get_handle(gw->root->win) == handle ) {
 				return(gw);
 		}
 		else

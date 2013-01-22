@@ -314,7 +314,7 @@ static void __CDECL menu_savewin(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if (input_window && input_window->browser) {
 		GRECT rect;
-		wind_get_grect(guiwin_get_handle(input_window->root->win), WF_CURRXYWH,
+		wind_get_grect(gemtk_wm_get_handle(input_window->root->win), WF_CURRXYWH,
                  &rect);
 		option_window_width = rect.g_w;
 		option_window_height = rect.g_h;
@@ -522,7 +522,7 @@ void deskmenu_init(void)
 {
 	int i;
 
-	h_gem_menu = get_tree(MAINMENU);
+	h_gem_menu = gemtk_obj_get_tree(MAINMENU);
 
 
 	/* Install menu: */
@@ -616,7 +616,7 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 	bool done = 0;
 	int i = 0;
 
-	sascii = keybd2ascii(kcode, K_LSHIFT);
+	sascii = gemtk_keybd2ascii(kcode, K_LSHIFT);
 
 	/* Iterate through the menu function table: */
 	while( menu_evnt_tbl[i].rid != -1 && done == false) {

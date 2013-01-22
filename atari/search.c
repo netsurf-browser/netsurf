@@ -147,7 +147,7 @@ static int apply_form(OBJECT *obj, struct s_search_form_state *s)
 	if( (obj[TOOLBAR_CB_SHOWALL].ob_state & OS_SELECTED) != 0 )
 		s->flags |= SEARCH_FLAG_SHOWALL;
 
-	cstr = get_text(obj, TOOLBAR_TB_SRCH);
+	cstr = gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH);
 	snprintf(s->text, 32, "%s", cstr);
 	return ( 0 );
 
@@ -222,7 +222,7 @@ static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 	}
 
 	char * cstr;
-	cstr = get_text(obj, TOOLBAR_TB_SRCH);
+	cstr = gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH);
 	if (cstr != NULL){
 		if (strcmp(cstr, (char*)&s->state.text) != 0) {
 			return (true);
@@ -257,9 +257,9 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 
 	if( browser_window_search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-		LOG(("searching for: %s\n", get_text(obj, TOOLBAR_TB_SRCH)));
+		LOG(("searching for: %s\n", gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH)));
 		browser_window_search_step(s->bw, s->state.flags,
-									get_text(obj, TOOLBAR_TB_SRCH));
+									gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
 	}
 
 }

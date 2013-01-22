@@ -36,13 +36,13 @@ struct atari_treeview
 	POINT extent;
 	POINT click;
 	POINT startdrag;
-	guiwin_event_handler_f user_func;
+	gemtk_wm_event_handler_f user_func;
 };
 
 typedef struct atari_treeview * NSTREEVIEW;
 
 NSTREEVIEW atari_treeview_create( uint32_t flags, GUIWIN *win,
-								guiwin_event_handler_f user_func);
+								gemtk_wm_event_handler_f user_func);
 void atari_treeview_destroy( NSTREEVIEW tv );
 void atari_treeview_open( NSTREEVIEW tv );
 void atari_treeview_close( NSTREEVIEW tv );
