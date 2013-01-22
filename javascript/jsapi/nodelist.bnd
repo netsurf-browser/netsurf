@@ -39,6 +39,41 @@ binding nodelist {
 	private "struct html_content *" htmlc;
 }
 
+api finalise %{
+        if (private != NULL) {
+                dom_nodelist_unref(private->nodelist);
+        }
+%}
+
+/* default handler for numericaly indexed property values */
+api getproperty %{
+	jsval queryprop;
+	int idx;
+	JSObject *jsret = NULL; /* Node */
+        dom_exception err;
+        dom_node *domnode;
+
+	JSAPI_PROP_IDVAL(cx, &queryprop);
+	if (JSVAL_IS_INT(queryprop)) {
+		idx = JSVAL_TO_INT(queryprop);
+		LOG(("Index was %d", idx));
+
+
+		err = dom_nodelist_item(private->nodelist, idx, &domnode);
+		if (err != DOM_NO_ERR)  {
+			return JS_FALSE;
+		}
+
+		if (domnode != NULL) {
+			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)domnode, private->htmlc);
+
+			JSLOG("return object:%p", jsret);
+
+			JSAPI_PROP_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsret));
+		}
+	}
+%}
+
 getter length %{
         dom_exception err;
 
@@ -62,9 +97,3 @@ operation item %{
         }
 %}
 
-api finalise %{
-        if (private != NULL) {
-                dom_nodelist_unref(private->nodelist);
-        }
-%}
-       
