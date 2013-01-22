@@ -31,13 +31,13 @@ struct s_toolbar
 	struct s_gui_win_root *owner;
 	struct s_url_widget url;
 	struct s_throbber_widget throbber;
+	OBJECT *form;
 	GRECT area;
 	/* size & location of buttons: */
 	struct s_tb_button * buttons;
 	int btcnt;
 	int style;
 	bool attached;
-	bool redraw;
     bool reflow;
     bool visible;
     bool search_visible;
@@ -54,6 +54,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short mbut);
 void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
                             short idx);
 void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *g);
+OBJECT *toolbar_get_form(struct s_toolbar *tb);
 struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
 void toolbar_set_throbber_state(struct s_toolbar *tb, bool active);

@@ -139,7 +139,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_UNICONIFY:
 			LOG(("WM_TOPPED"));
             gui_set_input_gui_window(data->rootwin->active_gui_window);
-            window_restore_active_gui_window(data->rootwin);
+            //window_restore_active_gui_window(data->rootwin);
             // TODO: use something like "restore_active_gui_window_state()"
 
             break;
@@ -275,7 +275,7 @@ int window_create(struct gui_window * gw,
     if(tb) {
         gw->root->toolbar = toolbar_create(gw->root);
         assert(gw->root->toolbar);
-        gemtk_wm_set_toolbar(gw->root->win, gemtk_obj_get_tree(TOOLBAR), 0, 0);
+        gemtk_wm_set_toolbar(gw->root->win, gw->root->toolbar->form, 0, 0);
 		gemtk_wm_set_toolbar_redraw_func(gw->root->win, toolbar_redraw_cb);
     } else {
         gw->root->toolbar = NULL;
@@ -415,10 +415,7 @@ void window_restore_active_gui_window(ROOTWIN *rootwin)
     window_set_title(rootwin, gw->title);
 
 	if (gw->search != NULL) {
-		nsatari_search_restore_form(gw->search, gemtk_obj_get_tree(TOOLBAR));
-		window_open_search(rootwin, false);
-    } else {
-		toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
+		// TODO: update search session (especially browser window)
     }
 
 	toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
@@ -509,21 +506,26 @@ void window_set_focus(struct s_gui_win_root *rootwin,
         LOG(("Set focus: %p (%d)\n", element, type));
         rootwin->focus.type = type;
         rootwin->focus.element = element;
-        if( element != NULL ) {
-            switch( type ) {
+		switch( type ) {
 
-            case URL_WIDGET:
+		case URL_WIDGET:
                 // TODO: make something like: toolbar_text_select_all();
-                ta = toolbar_get_textarea(rootwin->toolbar,
-                                          URL_INPUT_TEXT_AREA);
-                textarea_keypress(ta, KEY_SELECT_ALL);
-                break;
+			toolbar_key_input(rootwin->toolbar, (short)(NKF_CTRL | 'A') );
+/*
+			ta = toolbar_get_textarea(rootwin->toolbar,
+										URL_INPUT_TEXT_AREA);
+			textarea_keypress(ta, KEY_SELECT_ALL);
+			*/
+			break;
 
-            default:
-                break;
+		case SEARCH_INPUT:
+			gemtk_wm_set_toolbar_edit_obj(rootwin->win, TOOLBAR_TB_SRCH, 0);
+			break;
 
-            }
-        }
+		default:
+			break;
+
+		}
     }
 }
 
@@ -584,7 +586,8 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 	}
 }
 
-struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin) {
+struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin)
+{
     return(rootwin->active_gui_window);
 }
 
@@ -652,20 +655,12 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 	struct gui_window *gw;
 	GRECT area;
 	OBJECT *obj;
-	static bool init = false;
 
 	LOG((""));
 
 	gw = rootwin->active_gui_window;
 	bw = gw->browser->bw;
-	obj = gemtk_obj_get_tree(TOOLBAR);
-
-	if (init == false) {
-		obj[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
-		obj[TOOLBAR_CB_CASESENSE].ob_state &= ~OS_SELECTED;
-		gemtk_obj_set_str_safe(obj, TOOLBAR_TB_SRCH, (char*)"");
-		init = true;
-	}
+	obj = toolbar_get_form(rootwin->toolbar);
 
 	if (gw->search == NULL) {
 		gw->search = nsatari_search_session_create(obj, bw);
@@ -676,6 +671,9 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 	gemtk_wm_set_toolbar_size(rootwin->win, area.g_h);
 	window_get_grect(rootwin, BROWSER_AREA_SEARCH, &area);
 	window_schedule_redraw_grect(rootwin, &area);
+	window_process_redraws(rootwin);
+	window_set_focus(rootwin, SEARCH_INPUT, NULL);
+
 	window_get_grect(rootwin, BROWSER_AREA_CONTENT, &area);
 	if (reformat) {
 		browser_window_reformat(bw, false, area.g_w, area.g_h);
@@ -698,8 +696,6 @@ void window_close_search(ROOTWIN *rootwin)
 		nsatari_search_session_destroy(gw->search);
 		gw->search = NULL;
 	}
-
-	obj[TOOLBAR_BT_CLOSE_SEARCH].ob_state &= ~OS_SELECTED;
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
 	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &area);

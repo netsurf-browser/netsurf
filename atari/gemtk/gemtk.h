@@ -171,8 +171,7 @@ enum guwin_area_e {
 short
 gemtk_wm_init(void);
 
-void
-gemtk_wm_exit(void);
+void gemtk_wm_exit(void);
 
 GUIWIN * gemtk_wm_add(short handle, uint32_t flags,
 		gemtk_wm_event_handler_f handler);
@@ -209,6 +208,8 @@ void gemtk_wm_set_content_units(GUIWIN * win, short x, short y);
 void gemtk_wm_set_form(GUIWIN *win, OBJECT *tree, short index);
 
 void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s);
+
+void gemtk_wm_set_toolbar_edit_obj(GUIWIN *win, uint16_t obj, short kreturn);
 
 void gemtk_wm_set_toolbar_redraw_func(GUIWIN *win, gemtk_wm_redraw_f func);
 
@@ -248,4 +249,5 @@ GRECT * gemtk_obj_screen_rect(OBJECT * tree, short obj);
 bool gemtk_obj_is_inside(OBJECT * tree, short obj, GRECT *area);
 OBJECT *gemtk_obj_get_tree(int idx);
 void gemtk_obj_mouse_sprite(OBJECT *tree, int index);
+OBJECT *gemtk_obj_tree_copy(OBJECT *tree);
 #endif // GEMTK_H_INCLUDED

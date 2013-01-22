@@ -39,6 +39,7 @@
 #include "atari/gui.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
+#include "atari/toolbar.h"
 #include "atari/search.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
@@ -111,10 +112,23 @@ void nsatari_search_add_recent(const char *string, void *p)
 
 void nsatari_search_set_forward_state(bool active, void *p)
 {
+	struct gui_window *gw;
+	OBJECT *toolbar;
+	GRECT area;
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	/* deactivate back cb */
 	LOG(("%p: set forward state: %d\n", p, active));
-	// TODO: update gui
+
+	gw = s->bw->window;
+
+	toolbar = toolbar_get_form(gw->root->toolbar);
+	if(active)
+		toolbar[TOOLBAR_BT_SEARCH_FWD].ob_state &= ~OS_DISABLED;
+	else
+		toolbar[TOOLBAR_BT_SEARCH_FWD].ob_state |= OS_DISABLED;
+	window_get_grect(gw->root, BROWSER_AREA_SEARCH, &area);
+	window_schedule_redraw_grect(gw->root, &area);
+
 }
 
 /**
@@ -125,12 +139,23 @@ void nsatari_search_set_forward_state(bool active, void *p)
 
 void nsatari_search_set_back_state(bool active, void *p)
 {
+	struct gui_window *gw;
+	OBJECT *toolbar;
+	GRECT area;
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	/* deactivate back cb */
 	LOG(("%p: set back state: %d\n", p, active));
 
-	s->state.back_avail = true;
-	// TODO: update gui
+	s->state.back_avail = active;
+	gw = s->bw->window;
+
+	toolbar = toolbar_get_form(gw->root->toolbar);
+	if(active)
+		toolbar[TOOLBAR_BT_SEARCH_BACK].ob_state &= ~OS_DISABLED;
+	else
+		toolbar[TOOLBAR_BT_SEARCH_BACK].ob_state |= OS_DISABLED;
+	window_get_grect(gw->root, BROWSER_AREA_SEARCH, &area);
+	window_schedule_redraw_grect(gw->root, &area);
 }
 
 
@@ -204,7 +229,7 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 	}
 }
 
-/* checks for search parameters changes */
+/** checks for search parameters changes */
 static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 {
 	bool check;
@@ -241,9 +266,10 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 	search_flags_t flags = f;
 
 	assert(s!=null);
+	assert(input_window->browser->bw == s->bw);
+
 
 	if(search_session_compare(s, obj)){
-		printf("reset search form\n");
 		browser_window_search_destroy_context(s->bw);
 		apply_form(obj, &s->state);
 	} else {

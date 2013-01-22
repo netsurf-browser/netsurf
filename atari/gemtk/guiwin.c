@@ -476,17 +476,8 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
         if (next_edit_obj != gw->toolbar_edit_obj) {
 
-			if(gw->toolbar_edit_obj != -1) {
-				objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
-                      ev_out->emo_kreturn, &edit_idx,
-                      EDEND, gw->handle);
-			}
-
-            gw->toolbar_edit_obj = next_edit_obj;
-
-            objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
-                      ev_out->emo_kreturn, &edit_idx,
-                      EDINIT, gw->handle);
+			gemtk_wm_set_toolbar_edit_obj(gw, next_edit_obj,
+											ev_out->emo_kreturn);
         } else {
             if(next_char > 13)
                 r = objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
@@ -997,6 +988,25 @@ void gemtk_wm_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flag
 void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s)
 {
 	win->toolbar_size = s;
+}
+
+/** Set the current active edit object */
+void gemtk_wm_set_toolbar_edit_obj(GUIWIN *win, uint16_t obj, short kreturn)
+{
+	short edit_idx;
+
+	if (obj != win->toolbar_edit_obj) {
+
+		if(win->toolbar_edit_obj != -1) {
+			objc_wedit(win->toolbar, win->toolbar_edit_obj, kreturn, &edit_idx,
+						EDEND, win->handle);
+		}
+
+		win->toolbar_edit_obj = obj;
+
+		objc_wedit(win->toolbar, win->toolbar_edit_obj, kreturn, &edit_idx,
+					EDINIT, win->handle);
+	}
 }
 
 /** Set an custom toolbar redraw function which is called instead of

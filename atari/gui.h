@@ -75,6 +75,7 @@ struct s_gem_cursors {
 enum focus_element_type {
 	WIDGET_NONE=0,
 	URL_WIDGET,
+	SEARCH_INPUT,
 	BROWSER
 };
 

@@ -239,6 +239,12 @@ void toolbar_init( void )
     userblk.ub_parm = (long) aes_toolbar[TOOLBAR_AREA_URL].ob_spec.userblk;
     aes_toolbar[TOOLBAR_AREA_URL].ob_spec.userblk = &userblk;
 
+	aes_toolbar[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
+	aes_toolbar[TOOLBAR_CB_CASESENSE].ob_state &= ~OS_SELECTED;
+
+	/* init default values: */
+	gemtk_obj_set_str_safe(aes_toolbar, TOOLBAR_TB_SRCH, (char*)"");
+
     area_full_height = aes_toolbar->ob_height;
 	area_search_height = aes_toolbar[TOOLBAR_AREA_SEARCH].ob_height;
 	area_navigation_height = aes_toolbar[TOOLBAR_AREA_NAVIGATION].ob_height;
@@ -273,6 +279,10 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	t->search_visible = false;
 	t->visible = true;
 	t->reflow = true;
+
+	/* dublicate the form template: */
+	t->form = gemtk_obj_tree_copy(aes_toolbar);
+
 
 	/* count buttons and add them as components: */
 	i = 0;
@@ -309,7 +319,10 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 void toolbar_destroy(struct s_toolbar *tb)
 {
     free(tb->buttons);
+	free(tb->form);
+
 	textarea_destroy(tb->url.textarea);
+
 	free(tb);
 }
 
@@ -335,56 +348,56 @@ static void toolbar_reflow(struct s_toolbar *tb)
     int i;
 
     // position toolbar areas:
-    aes_toolbar->ob_x = tb->area.g_x;
-    aes_toolbar->ob_y = tb->area.g_y;
-    aes_toolbar->ob_width = tb->area.g_w;
-    aes_toolbar->ob_height = toolbar_calculate_height(tb);
+    tb->form->ob_x = tb->area.g_x;
+    tb->form->ob_y = tb->area.g_y;
+    tb->form->ob_width = tb->area.g_w;
+    tb->form->ob_height = toolbar_calculate_height(tb);
 
 	// expand the "main" areas to the current width:
-    aes_toolbar[TOOLBAR_AREA_NAVIGATION].ob_width = tb->area.g_w;
-    aes_toolbar[TOOLBAR_AREA_SEARCH].ob_width = tb->area.g_w;
+    tb->form[TOOLBAR_AREA_NAVIGATION].ob_width = tb->area.g_w;
+    tb->form[TOOLBAR_AREA_SEARCH].ob_width = tb->area.g_w;
 
     if (tb->search_visible) {
-		aes_toolbar[TOOLBAR_AREA_SEARCH].ob_state &= ~OF_HIDETREE;
+		tb->form[TOOLBAR_AREA_SEARCH].ob_state &= ~OF_HIDETREE;
     } else {
-    	aes_toolbar[TOOLBAR_AREA_SEARCH].ob_state |= OF_HIDETREE;
+    	tb->form[TOOLBAR_AREA_SEARCH].ob_state |= OF_HIDETREE;
 
     }
 
 	// align the throbber area at right edge:
-    aes_toolbar[TOOLBAR_THROBBER_AREA].ob_x = tb->area.g_w
-        - aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width;
+    tb->form[TOOLBAR_THROBBER_AREA].ob_x = tb->area.g_w
+        - tb->form[TOOLBAR_THROBBER_AREA].ob_width;
 
 	// align the search button:
-	aes_toolbar[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_x = tb->area.g_w
-        - aes_toolbar[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_width;
+	tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_x = tb->area.g_w
+        - tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_width;
 
 	// center the URL area:
-    aes_toolbar[TOOLBAR_AREA_URL].ob_width = tb->area.g_w
-       - (aes_toolbar[TOOLBAR_AREA_BUTTONS].ob_width
-       + aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width + 1);
+    tb->form[TOOLBAR_AREA_URL].ob_width = tb->area.g_w
+       - (tb->form[TOOLBAR_AREA_BUTTONS].ob_width
+       + tb->form[TOOLBAR_THROBBER_AREA].ob_width + 1);
 
 
     // position throbber image:
     throbber_form[tb->throbber.index].ob_x = tb->area.g_x +
-        aes_toolbar[TOOLBAR_THROBBER_AREA].ob_x;
+        tb->form[TOOLBAR_THROBBER_AREA].ob_x;
 
     throbber_form[tb->throbber.index].ob_x = tb->area.g_x
-        + aes_toolbar[TOOLBAR_THROBBER_AREA].ob_x +
-        ((aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width
+        + tb->form[TOOLBAR_THROBBER_AREA].ob_x +
+        ((tb->form[TOOLBAR_THROBBER_AREA].ob_width
         - throbber_form[tb->throbber.index].ob_width) >> 1);
 
     throbber_form[tb->throbber.index].ob_y = tb->area.g_y +
-        ((aes_toolbar[TOOLBAR_THROBBER_AREA].ob_height
+        ((tb->form[TOOLBAR_THROBBER_AREA].ob_height
         - throbber_form[tb->throbber.index].ob_height) >> 1);
 
     // set button states:
     for (i=0; i < tb->btcnt; i++ ) {
         if (tb->buttons[i].state == button_off) {
-            aes_toolbar[tb->buttons[i].rsc_id].ob_state |= OS_DISABLED;
+            tb->form[tb->buttons[i].rsc_id].ob_state |= OS_DISABLED;
         }
         else if (tb->buttons[i].state == button_on) {
-            aes_toolbar[tb->buttons[i].rsc_id].ob_state &= ~OS_DISABLED;
+            tb->form[tb->buttons[i].rsc_id].ob_state &= ~OS_DISABLED;
         }
 	}
     tb->reflow = false;
@@ -406,7 +419,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 
 	//dbg_grect("toolbar redraw clip", clip);
 
-    objc_draw_grect(aes_toolbar,0,8,clip);
+    objc_draw_grect(tb->form,0,8,clip);
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
 
     toolbar_get_grect(tb, TOOLBAR_AREA_URL, &area_ro);
@@ -509,8 +522,8 @@ void toolbar_set_width(struct s_toolbar *tb, short w)
         toolbar_reflow(tb);
         /* this will request an textarea redraw: */
         textarea_set_dimensions(tb->url.textarea,
-                                aes_toolbar[TOOLBAR_AREA_URL].ob_width,
-                                aes_toolbar[TOOLBAR_AREA_URL].ob_height);
+                                tb->form[TOOLBAR_AREA_URL].ob_width,
+                                tb->form[TOOLBAR_AREA_URL].ob_height);
 		tb->reflow = true;
 	}
 }
@@ -538,8 +551,8 @@ void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
         toolbar_reflow(tb);
         /* this will request an textarea redraw: */
         textarea_set_dimensions(tb->url.textarea,
-                                aes_toolbar[TOOLBAR_AREA_URL].ob_width,
-                                aes_toolbar[TOOLBAR_AREA_URL].ob_height);
+                                tb->form[TOOLBAR_AREA_URL].ob_width,
+                                tb->form[TOOLBAR_AREA_URL].ob_height);
     }
     else {
         tb->area = *area;
@@ -728,10 +741,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 	    /* select whole text when newly focused, otherwise set caret to
 	        end of text */
         if (!window_url_widget_has_focus(tb->owner)) {
-            window_set_focus(tb->owner, URL_WIDGET, (void*)&tb->url );
-        }
-        if (button & 2) {
-			// TODO: open a context popup
+            window_set_focus(tb->owner, URL_WIDGET, (void*)&tb->url);
         }
         /* url widget has focus and mouse button is still pressed... */
         else if (mb & 1) {
@@ -756,14 +766,17 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 
 			textarea_drag_end( tb->url.textarea, 0, mx, my);
         }
+        else if (button & 2) {
+			// TODO: open a context popup
+        }
         else {
             /* when execution reaches here, mouse input is a click or dclick */
             /* TODO: recognize click + shitoolbar_update_buttonsft key */
 			int mstate = BROWSER_MOUSE_PRESS_1;
-			if( (kstat & (K_LSHIFT|K_RSHIFT)) != 0 ){
+			if ((kstat & (K_LSHIFT|K_RSHIFT)) != 0) {
 				mstate = BROWSER_MOUSE_MOD_1;
 			}
-            if( aes_event_out.emo_mclicks == 2 ){
+            if (aes_event_out.emo_mclicks == 2 ) {
 				textarea_mouse_action( tb->url.textarea,
 						BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1, mx,
 						my);
@@ -775,13 +788,21 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 			}
         }
     }
+    else if(obj==TOOLBAR_TB_SRCH) {
+		window_set_focus(tb->owner, SEARCH_INPUT, NULL);
+    }
 	else if (obj==TOOLBAR_BT_SEARCH_FWD) {
 		gw = tb->owner->active_gui_window;
-		toolbar_tree = gemtk_obj_get_tree(TOOLBAR);
 		assert(gw->search);
-		nsatari_search_perform(gw->search, toolbar_tree, SEARCH_FLAG_FORWARDS);
+		nsatari_search_perform(gw->search, tb->form, SEARCH_FLAG_FORWARDS);
+	}
+	else if (obj==TOOLBAR_BT_SEARCH_BACK) {
+		gw = tb->owner->active_gui_window;
+		assert(gw->search);
+		nsatari_search_perform(gw->search, tb->form, 0);
 	}
 	else if (obj==TOOLBAR_BT_CLOSE_SEARCH) {
+		tb->form[TOOLBAR_BT_CLOSE_SEARCH].ob_state &= ~OS_SELECTED;
 		window_close_search(tb->owner);
 	}
     else {
@@ -813,11 +834,11 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
         toolbar_reflow(tb);
     }
 
-    objc_offset(aes_toolbar, which, &dst->g_x, &dst->g_y);
+    objc_offset(tb->form, which, &dst->g_x, &dst->g_y);
 
-    dst->g_w = aes_toolbar[which].ob_width;
-    dst->g_h = aes_toolbar[which].ob_height;
-    //aes_toolbar[which].ob_height;
+    dst->g_w = tb->form[which].ob_width;
+    dst->g_h = tb->form[which].ob_height;
+    //tb->form[which].ob_height;
 
     //printf("Toolbar get grect (%d): ", which);
     //dbg_grect("", dst);
@@ -830,6 +851,11 @@ struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which)
 {
     return(tb->url.textarea);
+}
+
+OBJECT *toolbar_get_form(struct s_toolbar *tb)
+{
+	return(tb->form);
 }
 
 
