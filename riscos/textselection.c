@@ -56,10 +56,16 @@ static bool drag_claimed = false;
 static bool owns_clipboard = false;
 static bool owns_caret_and_selection = false;
 
-/* current clipboard contents if we own the clipboard */
+/* Current clipboard contents if we own the clipboard 
+ * Current paste buffer if we don't
+ */
 static char *clipboard = NULL;
-static size_t clip_alloc = 0;
 static size_t clip_length = 0;
+
+/* Paste context */
+static ro_gui_selection_prepare_paste_cb paste_cb = NULL;
+static void *paste_cb_pw = NULL;
+static int paste_prev_message = 0;
 
 static void ro_gui_discard_clipboard_contents(void);
 static void ro_gui_dragging_bounced(wimp_message *message);
@@ -207,22 +213,21 @@ void gui_clear_selection(struct gui_window *g)
 void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
-	utf8_convert_ret res;
 	char *new_cb;
 
 	if (length == 0)
 		return;
 
-	/* Convert to local encoding */
-	res = utf8_to_local_encoding(buffer, length, &new_cb);
-
-	if (res != UTF8_CONVERT_OK || new_cb == NULL)
+	new_cb = malloc(length);
+	if (new_cb == NULL)
 		return;
 
-	/* Replace existing clipboard contents with converted text */
+	memcpy(new_cb, buffer, length);
+
+	/* Replace existing clipboard contents */
 	free(clipboard);
 	clipboard = new_cb;
-	clip_alloc = clip_length = strlen(new_cb);
+	clip_length = length;
 
 	if (!owns_clipboard) {
 		/* Tell RO we now own clipboard */
@@ -253,7 +258,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 /**
  * Core asks front end for clipboard contents.
  *
- * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+ * \param  buffer  UTF-8 text, allocated by front end, ownership yielded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
 void gui_get_clipboard(char **buffer, size_t *length)
@@ -261,51 +266,14 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	*buffer = NULL;
 	*length = 0;
 
-	if (owns_clipboard) {
-		if (clip_length > 0) {
-			char *utf8;
-			utf8_convert_ret ret;
-			/* Clipboard is in local encoding so
-			 * convert to UTF8 */
-			ret = utf8_from_local_encoding(clipboard,
-					clip_length, &utf8);
-			if (ret == UTF8_CONVERT_OK) {
-				*buffer = utf8;
-				*length = strlen(utf8);
-			}
+	if (clip_length > 0) {
+		char *cb = malloc(clip_length);
+		if (cb != NULL) {
+			memcpy(cb, clipboard, clip_length);
+			*buffer = cb;
+			*length = clip_length;
 		}
-	} else {
-		/** TODO: Handle case when we don't own the clipboard */
-
-/*  http://www.starfighter.acornarcade.com/mysite/articles/SelectionModel.html
- */
-
-/*		wimp_full_message_data_request msg;
-		os_error *error;
-		os_coord pos;
-
-		if (!ro_gui_window_to_screen_pos(g, x, y, &pos))
-			return;
-
-		msg.size = sizeof(msg);
-		msg.your_ref = 0;
-		msg.action = message_DATA_REQUEST;
-		msg.w = g->window;
-		msg.i = -1;
-		msg.pos.x = pos.x;
-		msg.pos.y = pos.y;
-		msg.flags = wimp_DATA_REQUEST_CLIPBOARD;
-		msg.file_types[0] = osfile_TYPE_TEXT;
-		msg.file_types[1] = ~0;
-
-		error = xwimp_send_message(wimp_USER_MESSAGE,
-				(wimp_message*)&msg, wimp_BROADCAST);
-		if (error) {
-			LOG(("xwimp_send_message: 0x%x : %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-*/	}
+	}
 }
 
 
@@ -316,9 +284,162 @@ void gui_get_clipboard(char **buffer, size_t *length)
 
 void ro_gui_discard_clipboard_contents(void)
 {
-	if (clip_alloc) free(clipboard);
-	clip_alloc = 0;
+	free(clipboard);
 	clip_length = 0;
+}
+
+
+static void ro_gui_selection_prepare_paste_complete(void)
+{
+	ro_gui_selection_prepare_paste_cb cb = paste_cb;
+	void *pw = paste_cb_pw;
+
+	paste_cb = NULL;
+	paste_cb_pw = NULL;
+	paste_prev_message = 0;
+
+	cb(pw);
+}
+
+static void ro_gui_selection_prepare_paste_bounced(wimp_message *message)
+{
+	ro_gui_selection_prepare_paste_complete();
+}
+
+/**
+ * Prepare to paste data from another application
+ *
+ * \param w   Window being pasted into
+ * \param cb  Callback to call once preparation is complete
+ * \param pw  Private data for callback
+ */
+
+void ro_gui_selection_prepare_paste(wimp_w w,
+		ro_gui_selection_prepare_paste_cb cb, void *pw)
+{
+	if (owns_clipboard) {
+		/* We own the clipboard: we're already prepared */
+		cb(pw);
+	} else {
+		/* Someone else owns the clipboard: request its contents */
+		wimp_full_message_data_request msg;
+		bool success;
+
+		ro_gui_discard_clipboard_contents();
+
+		msg.size = sizeof(msg);
+		msg.your_ref = 0;
+		msg.action = message_DATA_REQUEST;
+		msg.w = w;
+		msg.i = -1;
+		msg.pos.x = 0;
+		msg.pos.y = 0;
+		msg.flags = wimp_DATA_REQUEST_CLIPBOARD;
+		msg.file_types[0] = osfile_TYPE_TEXT;
+		msg.file_types[1] = ~0;
+
+		success = ro_message_send_message(wimp_USER_MESSAGE_RECORDED,
+				(wimp_message *) &msg, wimp_BROADCAST,
+				ro_gui_selection_prepare_paste_bounced);
+		if (success == false) {
+			/* Ensure key is handled, anyway */
+			cb(pw);
+		} else {
+			/* Set up paste context */
+			paste_cb = cb;
+			paste_cb_pw = pw;
+			paste_prev_message = msg.my_ref;
+		}
+	}
+}
+
+/**
+ * Prepare to paste data from another application (step 2)
+ *
+ * \param dataxfer  DataSave message
+ * \return True if message was handled, false otherwise
+ */
+bool ro_gui_selection_prepare_paste_datasave(
+		wimp_full_message_data_xfer *dataxfer)
+{
+	bool success;
+
+	/* Ignore messages that aren't for us */
+	if (dataxfer->your_ref == 0 || dataxfer->your_ref != paste_prev_message)
+		return false;
+
+	/* We're done if the paste data isn't text */
+	if (dataxfer->file_type != osfile_TYPE_TEXT) {
+		ro_gui_selection_prepare_paste_complete();
+		return true;
+	}
+
+	/* Generate and send DataSaveAck */
+	dataxfer->your_ref = dataxfer->my_ref;
+	dataxfer->size = offsetof(wimp_full_message_data_xfer, file_name) + 16;
+	dataxfer->action = message_DATA_SAVE_ACK;
+	dataxfer->est_size = -1;
+	memcpy(dataxfer->file_name, "<Wimp$Scrap>", SLEN("<Wimp$Scrap>") + 1);
+
+	success = ro_message_send_message(wimp_USER_MESSAGE_RECORDED,
+			(wimp_message *) dataxfer, dataxfer->sender,
+			ro_gui_selection_prepare_paste_bounced);
+	if (success == false) {
+		ro_gui_selection_prepare_paste_complete();
+	} else {
+		paste_prev_message = dataxfer->my_ref;
+	}
+
+	return true;
+}
+
+
+/**
+ * Prepare to paste data from another application (step 3)
+ *
+ * \param dataxfer  DataLoad message
+ * \return True if message was handled, false otherwise
+ */
+bool ro_gui_selection_prepare_paste_dataload(
+		wimp_full_message_data_xfer *dataxfer)
+{
+	FILE *fp;
+	long size;
+	char *local_cb;
+	utf8_convert_ret ret;
+
+	/* Ignore messages that aren't for us */
+	if (dataxfer->your_ref == 0 || dataxfer->your_ref != paste_prev_message)
+		return false;
+
+	fp = fopen(dataxfer->file_name, "r");
+	if (fp != NULL) {
+		fseek(fp, 0, SEEK_END);
+		size = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		local_cb = malloc(size);
+		if (local_cb != NULL) {
+			fread(local_cb, 1, size, fp);
+
+			fclose(fp);
+
+			ret = utf8_from_local_encoding(local_cb, size,
+					&clipboard);
+			if (ret == UTF8_CONVERT_OK) {
+				clip_length = strlen(clipboard);
+			}
+		}
+	}
+
+	/* Send DataLoadAck */
+	dataxfer->action = message_DATA_LOAD_ACK;
+	dataxfer->your_ref = dataxfer->my_ref;
+	ro_message_send_message(wimp_USER_MESSAGE,
+			(wimp_message *) dataxfer, dataxfer->sender, NULL);
+
+	ro_gui_selection_prepare_paste_complete();
+	return true;
 }
 
 
@@ -398,18 +519,31 @@ void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 
 bool ro_gui_save_clipboard(const char *path)
 {
+	char *local_cb;
+	utf8_convert_ret ret;
 	os_error *error;
 
 	assert(clip_length > 0 && clipboard);
+
+	ret = utf8_to_local_encoding(clipboard, clip_length, &local_cb);
+	if (ret != UTF8_CONVERT_OK) {
+		warn_user("SaveError", "Could not convert");
+		return false;
+	}
+
 	error = xosfile_save_stamped(path, osfile_TYPE_TEXT,
-			(byte*)clipboard,
-			(byte*)clipboard + clip_length);
+			(byte*) local_cb,
+			(byte*) local_cb + strlen(local_cb));
+
+	free(local_cb);
+
 	if (error) {
 		LOG(("xosfile_save_stamped: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
 		return false;
 	}
+
 	return true;
 }
 
