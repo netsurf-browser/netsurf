@@ -1391,11 +1391,12 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			break;
 		case KEY_PASTE:
 		{
-			if (readonly)
-				break;
 			char *clipboard;
 			size_t clipboard_length;
 			size_t clipboard_chars;
+
+			if (readonly)
+				break;
 
 			gui_get_clipboard(&clipboard, &clipboard_length);
 			if (clipboard == NULL)

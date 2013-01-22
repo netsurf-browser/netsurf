@@ -1662,12 +1662,6 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 void gui_start_selection(struct gui_window *g)
 {
-	current_selection.Truncate(0);
-	while (current_selection_textruns.ItemAt(0)) {
-		text_run *run = (text_run *)current_selection_textruns.RemoveItem(0L);
-		delete run;
-	}
-
 	if (!g->view->LockLooper())
 		return;
 
@@ -1680,9 +1674,12 @@ void gui_clear_selection(struct gui_window *g)
 {
 }
 
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+void gui_get_clipboard(char **buffer, size_t *length)
 {
 	BMessage *clip;
+	*length = 0;
+	*buffer = NULL;
+
 	if (be_clipboard->Lock()) {
 		clip = be_clipboard->Data();
 		if (clip) {
@@ -1690,83 +1687,46 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 			int32 textlen;
 			if (clip->FindData("text/plain", B_MIME_TYPE, 
 				(const void **)&text, &textlen) >= B_OK) {
-				browser_window_paste_text(g->bw,text,textlen,true);
+				*buffer = (char *)malloc(textlen);
+				*length = textlen;
+				memcpy(*buffer, text, textlen);
 			}
 		}
 		be_clipboard->Unlock();
 	}
 }
 
-bool gui_empty_clipboard(void)
-{
-	current_selection.Truncate(0);
-	while (current_selection_textruns.ItemAt(0)) {
-		text_run *run = (text_run *)current_selection_textruns.RemoveItem(0L);
-		delete run;
-	}
-	return true;
-}
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space,
-		const plot_font_style_t *fstyle)
-{
-	BString s;
-	BFont font;
-	text_run *run = new text_run;
-
-	nsbeos_style_to_font(font, fstyle);
-	run->offset = current_selection.Length();
-	run->font = font;
-	run->color = nsbeos_rgb_colour(fstyle->foreground);
-	current_selection_textruns.AddItem(run);
-
-	s.SetTo(text, length);
-	current_selection << s;
-	if (space)
-		current_selection << " ";
-  	return true;
-}
-
-bool gui_commit_clipboard(void)
+void gui_set_clipboard(const char *buffer, size_t length,
+	nsclipboard_styles styles[], int n_styles)
 {
 	BMessage *clip;
-
-	if (current_selection.Length() == 0)
-		return true;
 
 	if (be_clipboard->Lock()) {
 		be_clipboard->Clear();
 		clip = be_clipboard->Data();
 		if (clip) {
-			clip->AddData("text/plain", B_MIME_TYPE, 
-				current_selection.String(), 
-				current_selection.Length());
+			clip->AddData("text/plain", B_MIME_TYPE, buffer, length);
+
 			int arraySize = sizeof(text_run_array) + 
-				current_selection_textruns.CountItems() * sizeof(text_run);
+				n_styles * sizeof(text_run);
 			text_run_array *array = (text_run_array *)malloc(arraySize);
-			array->count = current_selection_textruns.CountItems();
-			for (int i = 0; i < array->count; i++)
-				memcpy(&array->runs[i], current_selection_textruns.ItemAt(i), 
-					sizeof(text_run));
+			array->count = n_styles;
+			for (int i = 0; i < n_styles; i++) {
+				BFont font;
+				nsbeos_style_to_font(font, &styles[i].style);
+				array->runs[i].offset = styles[i].start;
+				array->runs[i].font = font;
+				array->runs[i].color =
+					nsbeos_rgb_colour(styles[i].style.foreground);
+			}
 			clip->AddData("application/x-vnd.Be-text_run_array", B_MIME_TYPE, 
 				array, arraySize);
 			free(array);
-			
-			gui_empty_clipboard();
 			be_clipboard->Commit();
 		}
 		be_clipboard->Unlock();
 	}
-	return true;
 }
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	if (s->defined && selection_copy_to_clipboard(s))
-		gui_commit_clipboard();
-	return true;
-}
-
 
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
