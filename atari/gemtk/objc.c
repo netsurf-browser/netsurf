@@ -125,7 +125,7 @@ GRECT * obj_screen_rect(OBJECT * tree, short obj)
 }
 
 
-void obj_mouse_sprite(OBJECT *tree, int index)
+void gemtk_obj_mouse_sprite(OBJECT *tree, int index)
 {
     MFORM mform;
     int dum;

@@ -323,7 +323,7 @@ void gem_set_cursor( MFORM_EX * cursor )
 	if( flags == cursor->flags && number == cursor->number )
 		return;
 	if( cursor->flags & MFORM_EX_FLAG_USERFORM ) {
-		obj_mouse_sprite(cursor->tree, cursor->number);
+		gemtk_obj_mouse_sprite(cursor->tree, cursor->number);
 	} else {
 		graf_mouse(cursor->number, NULL );
 	}

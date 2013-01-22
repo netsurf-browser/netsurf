@@ -248,5 +248,5 @@ char *get_text(OBJECT * tree, short idx);
 GRECT * obj_screen_rect(OBJECT * tree, short obj);
 bool obj_is_inside(OBJECT * tree, short obj, GRECT *area);
 OBJECT *get_tree(int idx);
-void obj_mouse_sprite(OBJECT *tree, int index);
+void gemtk_obj_mouse_sprite(OBJECT *tree, int index);
 #endif // GEMTK_H_INCLUDED

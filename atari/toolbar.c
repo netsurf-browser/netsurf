@@ -223,10 +223,21 @@ static struct s_tb_button *button_init(struct s_toolbar *tb, OBJECT * tree, int 
 }
 
 
+static short __CDECL toolbar_url_userdraw(PARMBLK *parmblock)
+{
+	return(0);
+}
+
 void toolbar_init( void )
 {
+	static USERBLK userblk;
+
     aes_toolbar = get_tree(TOOLBAR);
     throbber_form = get_tree(THROBBER);
+
+	userblk.ub_code = toolbar_url_userdraw;
+    userblk.ub_parm = (long) aes_toolbar[TOOLBAR_AREA_URL].ob_spec.userblk;
+    aes_toolbar[TOOLBAR_AREA_URL].ob_spec.userblk = &userblk;
 
     area_full_height = aes_toolbar->ob_height;
 	area_search_height = aes_toolbar[TOOLBAR_AREA_SEARCH].ob_height;
@@ -270,8 +281,8 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	}
 	t->btcnt = i;
 	t->buttons = malloc(t->btcnt * sizeof(struct s_tb_button));
-	memset( t->buttons, 0, t->btcnt * sizeof(struct s_tb_button));
-	for (i=0; i < t->btcnt; i++ ) {
+	memset(t->buttons, 0, t->btcnt * sizeof(struct s_tb_button));
+	for (i=0; i < t->btcnt; i++) {
 		button_init(t, aes_toolbar, i, &t->buttons[i]);
 	}
 
@@ -438,11 +449,11 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
         }
 	}
 
-	if (button == TOOLBAR_BT_HOME || button <= 0 ){
+	if (button == TOOLBAR_BT_HOME || button <= 0 ) {
 
 	}
 
-	if( button == TOOLBAR_BT_FORWARD || button <= 0 ){
+	if (button == TOOLBAR_BT_FORWARD || button <= 0 ) {
 		bt = find_button(tb, TOOLBAR_BT_FORWARD);
 		enable = browser_window_forward_available(bw);
         if (enable) {
@@ -452,7 +463,7 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
         }
 	}
 
-	if( button == TOOLBAR_BT_RELOAD || button <= 0 ){
+	if (button == TOOLBAR_BT_RELOAD || button <= 0 ) {
 	    bt = find_button(tb, TOOLBAR_BT_RELOAD);
 		enable = browser_window_reload_available(bw);
         if (enable) {
@@ -590,7 +601,7 @@ void toolbar_set_visible(struct s_toolbar *tb, short area, bool visible)
 
 void toolbar_set_reflow(struct s_toolbar *tb, bool do_reflow)
 {
-	tb->reflow = true;
+	tb->reflow = do_reflow;
 }
 
 void toolbar_set_attached(struct s_toolbar *tb, bool attached)
@@ -743,7 +754,7 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 				my = my - (work.g_y + TOOLBAR_URL_MARGIN_TOP);
             } while (mb & 1);
 
-			textarea_drag_end( tb->url.textarea, 0, mx, my );
+			textarea_drag_end( tb->url.textarea, 0, mx, my);
         }
         else {
             /* when execution reaches here, mouse input is a click or dclick */
