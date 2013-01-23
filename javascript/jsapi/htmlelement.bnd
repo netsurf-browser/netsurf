@@ -149,6 +149,31 @@ operation getAttribute %{
 	}
 %}
 
+/* void Element::setAttribute(DOMString name, DOMString value); */
+operation setAttribute %{
+	dom_string *value_dom;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_string_create((unsigned char*)name, name_len, &value_dom);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(name_dom);
+		return JS_FALSE;
+	}
+
+	exc = dom_element_set_attribute(private->node, name_dom, value_dom);
+	dom_string_unref(name_dom);
+	dom_string_unref(value_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+%}
+
 /*
  * DOM 3 has these as the element traversal  extension
  *
