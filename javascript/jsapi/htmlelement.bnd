@@ -126,6 +126,29 @@ api finalise %{
 
 /* interface Element in dom idl */
 
+/* DOMString? Element::getAttribute(DOMString name); */
+operation getAttribute %{
+	dom_string *value;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_get_attribute(private->node, name_dom, &value);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(value), dom_string_length(value));
+		dom_string_unref(value);
+	}
+%}
+
 /*
  * DOM 3 has these as the element traversal  extension
  *
