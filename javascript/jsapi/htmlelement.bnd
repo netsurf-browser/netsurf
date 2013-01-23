@@ -114,6 +114,9 @@ binding htmlelement {
 	private "dom_element *" node;
 	private "struct html_content *" htmlc;
 
+	/* tag name retrieved first time its fetched and doesnt change */
+	property unshared tagName;
+
 	/* events through a single interface */
 	property unshared type EventHandler;
 }
@@ -125,6 +128,23 @@ api finalise %{
 %}
 
 /* interface Element in dom idl */
+
+/* readonly attribute DOMString Element::tagName; */
+getter tagName %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+	dom_exception exc;
+	dom_string *name;
+
+	exc = dom_element_get_tag_name(private->node, &name);
+	if (name != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(name), dom_string_length(name));
+		dom_string_unref(name);
+	}
+%}
 
 /* DOMString? Element::getAttribute(DOMString name); */
 operation getAttribute %{
