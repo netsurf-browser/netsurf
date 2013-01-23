@@ -244,6 +244,28 @@ operation removeAttribute %{
 	}
 %}
 
+/* boolean Element::hasAttribute(DOMString name); */
+operation hasAttribute %{
+	bool result;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_has_attribute(private->node, name_dom, &result);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (result) {
+		jsret = JS_TRUE;
+	}
+%}
+
 /*
  *
  * Dom 4 says this should return a htmlcollection, libdom currently
