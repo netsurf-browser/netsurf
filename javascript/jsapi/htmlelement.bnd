@@ -227,6 +227,23 @@ operation setAttribute %{
 	}
 %}
 
+/* void Element::removeAttribute(DOMString name); */
+operation removeAttribute %{
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_remove_attribute(private->node, name_dom);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+%}
+
 /*
  *
  * Dom 4 says this should return a htmlcollection, libdom currently
