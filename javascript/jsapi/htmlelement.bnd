@@ -29,6 +29,7 @@ preamble %{
 #include "htmlelement.h"
 #include "text.h"
 #include "location.h"
+#include "nodelist.h"
 
 %}
 

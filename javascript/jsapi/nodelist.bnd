@@ -56,7 +56,7 @@ api getproperty %{
 	JSAPI_PROP_IDVAL(cx, &queryprop);
 	if (JSVAL_IS_INT(queryprop)) {
 		idx = JSVAL_TO_INT(queryprop);
-		LOG(("Index was %d", idx));
+		JSDBG("Index was %d", idx);
 
 
 		err = dom_nodelist_item(private->nodelist, idx, &domnode);
@@ -67,7 +67,7 @@ api getproperty %{
 		if (domnode != NULL) {
 			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)domnode, private->htmlc);
 
-			JSLOG("return object:%p", jsret);
+			JSDBG("return object:%p", jsret);
 
 			JSAPI_PROP_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsret));
 		}

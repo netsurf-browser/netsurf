@@ -376,5 +376,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #endif
 
 #define JSLOG(args...) LOG((args))
+#ifdef ENABLE_VERBOSE_JS_DEBUG
+#define JSDBG(args...) LOG((args))
+#else
+#define JSDBG(args...)
+#endif
 
 #endif
