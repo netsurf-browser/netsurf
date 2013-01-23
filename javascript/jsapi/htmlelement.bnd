@@ -147,6 +147,22 @@ getter tagName %{
 	}
 %}
 
+/* attribute DOMString Element::id; */
+getter id %{
+	dom_string *value;
+	dom_exception exc;
+
+	exc = dom_element_get_attribute(private->node, corestring_dom_id, &value);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(value), dom_string_length(value));
+		dom_string_unref(value);
+	}
+%}
+
 /* DOMString? Element::getAttribute(DOMString name); */
 operation getAttribute %{
 	dom_string *value;
