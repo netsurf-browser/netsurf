@@ -219,6 +219,7 @@ operation getElementById %{
  * Dom 4 says this should return a htmlcollection, libdom currently
  * returns DOM 3 spec of a nodelist
  */
+/* HTMLCollection Document::getElementsByTagName(DOMString localName); */
 operation getElementsByTagName %{
 	dom_string *localName_dom;
 	/* dom_html_collection *collection;*/
