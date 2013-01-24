@@ -2371,11 +2371,13 @@ void ami_quit_netsurf_delayed(void)
 	}
 }
 
-void ami_gui_close_screen(struct Screen *scrn)
+void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 {
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn)) return;
+	if(locked_screen == TRUE) return;
 
+	/* If this is our own screen, wait for visitor windows to close */
 	LOG(("Waiting for visitor windows to close..."));
 	do {
 		Delay(50);
@@ -2404,10 +2406,7 @@ void gui_quit(void)
 	FreeScreenDrawInfo(scrn, dri);
 
 	ami_close_fonts();
-
-	/* If it is our public screen, close it or wait until the visitor windows leave */
-	if(locked_screen == FALSE) ami_gui_close_screen(scrn);
-
+	ami_gui_close_screen(scrn, locked_screen);
 	FreeVec(nsscreentitle);
 
 	ami_context_menu_free();
