@@ -4,10 +4,9 @@
  *   by Daniel "Trixie" Jedlicka
  */
 
+#undef __USE_INLINE__
 
 #include "amigaguide_class.h"
-
-
 
 struct localObjectData
 {

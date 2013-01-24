@@ -53,6 +53,7 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
+#include "amiga/help.h"
 #include "amiga/history.h"
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
@@ -385,6 +386,7 @@ void ami_open_resources(void)
 							TAG_DONE))) die(messages_get("NoMemory"));
 
 	ami_file_req_init();
+	ami_help_init(NULL);
 }
 
 void ami_set_options(void)
@@ -666,6 +668,8 @@ void ami_openscreen(void)
 
 	gui_system_colour_finalize();
 	gui_system_colour_init();
+	
+	ami_help_new_screen(scrn);
 }
 
 void ami_openscreenfirst(void)
@@ -1002,6 +1006,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			else nskey = KEY_TAB;
 		break;
 		case RAWKEY_F5:
+		case RAWKEY_HELP:
 			// don't translate
 			nskey = keycode;
 		break;
@@ -1823,6 +1828,10 @@ void ami_handle_msg(void)
 									if(browser_window_reload_available(gwin->bw))
 										browser_window_reload(gwin->bw,false);
 								break;
+								
+								case RAWKEY_HELP: // help
+									ami_help_open(AMI_HELP_GUI);
+								break;
 							}
 						}
 					}
@@ -2410,6 +2419,7 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
+	ami_help_free();
 	ami_file_req_free();
 
 	ami_openurl_close();
