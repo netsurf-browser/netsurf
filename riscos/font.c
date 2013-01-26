@@ -255,6 +255,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_width: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*width = 0;
 		return false;
 	}
 
@@ -303,6 +304,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_x_to_offset: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 
@@ -355,6 +358,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_split: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 
@@ -386,6 +391,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_width: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 
