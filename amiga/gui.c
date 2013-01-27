@@ -386,7 +386,7 @@ void ami_open_resources(void)
 							TAG_DONE))) die(messages_get("NoMemory"));
 
 	ami_file_req_init();
-//	ami_help_init(NULL);
+	//ami_help_init(NULL);
 }
 
 void ami_set_options(void)
@@ -669,7 +669,7 @@ void ami_openscreen(void)
 	gui_system_colour_finalize();
 	gui_system_colour_init();
 	
-//	ami_help_new_screen(scrn);
+	//ami_help_new_screen(scrn);
 }
 
 void ami_openscreenfirst(void)
@@ -2418,7 +2418,7 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
-//	ami_help_free();
+	//ami_help_free();
 	ami_file_req_free();
 
 	ami_openurl_close();

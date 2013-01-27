@@ -370,8 +370,8 @@ void ami_mouse_pointers_free(void)
 	{
 		if(mouseptrbm[i])
 		{
-			FreeRaster(mouseptrbm[i]->Planes[0],16,16);
-			FreeRaster(mouseptrbm[i]->Planes[1],16,16);
+			FreeRaster(mouseptrbm[i]->Planes[0],32,32);
+			FreeRaster(mouseptrbm[i]->Planes[1],32,32);
 			FreeVec(mouseptrbm[i]);
 		}
 	}
