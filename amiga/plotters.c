@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009, 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-09, 2012-13 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -100,6 +100,18 @@ const struct plotter_table amiplot = {
 	.path = ami_path,
 	.option_knockout = true,
 };
+
+colour ami_abgr_to_argb(colour c) {
+	colour argb = 0x00000000;
+
+	/* NB: We force the alpha byte to be 0xff, as it is not set by the core. */
+	argb = 0xff000000 |
+		((c & 0x00ff0000) >> 16) |
+		(c & 0x0000ff00) |
+		((c & 0x000000ff) << 16);
+
+	return argb;
+}
 
 #ifdef NS_AMIGA_CAIRO
 void ami_cairo_set_colour(cairo_t *cr,colour c)
@@ -285,7 +297,7 @@ static void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
-			p96EncodeColor(RGBFB_A8B8G8R8, colour),
+			ami_abgr_to_argb(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
@@ -297,7 +309,7 @@ static void ami_plot_setopen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			p96EncodeColor(RGBFB_A8B8G8R8, colour),
+			ami_abgr_to_argb(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
