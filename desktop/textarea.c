@@ -43,8 +43,6 @@ static plot_style_t pstyle_stroke_caret = {
     .stroke_width = 1,
 };
 
-static struct textarea_msg msg;
-
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
 	unsigned int b_length;		/**< Byte length of line */
@@ -164,6 +162,7 @@ static void textarea_normalise_text(struct textarea *ta,
 static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 {
 	int swap;
+	struct textarea_msg msg;
 
 	/* Ensure start is the beginning of the selection */
 	if (c_start > c_end) {
@@ -336,6 +335,7 @@ static void textarea_scrollbar_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data)
 {
 	struct textarea *ta = client_data;
+	struct textarea_msg msg;
 
 	switch(scrollbar_data->msg) {
 	case SCROLLBAR_MSG_MOVED:
@@ -840,6 +840,7 @@ static bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 	int c_end;
 	size_t b_off;
 	unsigned int c_off;
+	struct textarea_msg msg;
 
 	assert(ta->drag_info.type != TEXTAREA_DRAG_NONE);
 
@@ -1037,6 +1038,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	int x0, y0, x1, y1;
 	int text_y_offset;
 	int width, height;
+	struct textarea_msg msg;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -1409,6 +1411,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 /* exported interface, documented in textarea.h */
 bool textarea_keypress(struct textarea *ta, uint32_t key)
 {
+	struct textarea_msg msg;
 	char utf8[6];
 	unsigned int caret, caret_init, length, l_len, b_off, b_len;
 	int c_line, c_chars, line;
@@ -1808,6 +1811,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 	int sl; /* scrollbar length */
 	size_t b_off;
 	unsigned int c_off;
+	struct textarea_msg msg;
 
 	if (ta->drag_info.type != TEXTAREA_DRAG_NONE &&
 			mouse == BROWSER_MOUSE_HOVER) {
@@ -1920,6 +1924,8 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height)
 /* exported interface, documented in textarea.h */
 void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
+	struct textarea_msg msg;
+
 	ta->vis_width = width;
 	ta->vis_height = height;
 	textarea_reflow(ta, 0);
