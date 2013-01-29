@@ -43,18 +43,14 @@ static plot_style_t pstyle_stroke_caret = {
     .stroke_width = 1,
 };
 
+static struct textarea_msg msg;
+
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
 	unsigned int b_length;		/**< Byte length of line */
 };
-
-typedef enum textarea_drag_type_internal {
-	TEXTAREA_DRAG_NONE,
-	TEXTAREA_DRAG_SCROLLBAR,
-	TEXTAREA_DRAG_SELECTION
-} textarea_drag_type_internal;
 struct textarea_drag {
-	textarea_drag_type_internal type;
+	textarea_drag_type type;
 	union {
 		struct scrollbar* scrollbar;
 	} data;
@@ -106,7 +102,7 @@ struct textarea {
 	int line_height;		/**< Line height obtained from style */
 
 	/** Callback function for a redraw request */
-	textarea_redraw_request_callback redraw_request;
+	textarea_client_callback callback;
 
 	void *data;			/**< Client data for callback */
 
@@ -179,7 +175,14 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 	ta->sel_start = c_start;
 	ta->sel_end = c_end;
 
-	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = 0;
+	msg.data.redraw.y0 = 0;
+	msg.data.redraw.x1 = ta->vis_width;
+	msg.data.redraw.y1 = ta->vis_height;
+
+	ta->callback(ta->data, &msg);
 
 	return true;
 }
@@ -322,6 +325,7 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	return scrolled;
 }
 
+
 /**
  * Callback for scrollbar widget.
  */
@@ -331,27 +335,46 @@ static void textarea_scrollbar_callback(void *client_data,
 	struct textarea *ta = client_data;
 
 	switch(scrollbar_data->msg) {
-		case SCROLLBAR_MSG_MOVED:
-			/* Scrolled; redraw everything */
-			ta->scroll_x = scrollbar_get_offset(ta->bar_x);
-			ta->scroll_y = scrollbar_get_offset(ta->bar_y);
+	case SCROLLBAR_MSG_MOVED:
+		/* Scrolled; redraw everything */
+		ta->scroll_x = scrollbar_get_offset(ta->bar_x);
+		ta->scroll_y = scrollbar_get_offset(ta->bar_y);
 
-			ta->redraw_request(ta->data, 0, 0,
-					ta->vis_width,
-					ta->vis_height);
-			break;
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+		msg.data.redraw.x0 = 0;
+		msg.data.redraw.y0 = 0;
+		msg.data.redraw.x1 = ta->vis_width;
+		msg.data.redraw.y1 = ta->vis_height;
 
-		case SCROLLBAR_MSG_SCROLL_START:
-			ta->drag_info.type = TEXTAREA_DRAG_SCROLLBAR;
-			ta->drag_info.data.scrollbar =
-					scrollbar_data->scrollbar;
-			/* TODO: Tell textarea client we're handling a drag */
-			break;
+		ta->callback(ta->data, &msg);
+		break;
 
-		case SCROLLBAR_MSG_SCROLL_FINISHED:
-			ta->drag_info.type = TEXTAREA_DRAG_NONE;
-			/* TODO: Tell textarea client drag finished */
-			break;
+	case SCROLLBAR_MSG_SCROLL_START:
+		ta->drag_info.type = TEXTAREA_DRAG_SCROLLBAR;
+		ta->drag_info.data.scrollbar = scrollbar_data->scrollbar;
+
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_DRAG_REPORT;
+		msg.data.drag = ta->drag_info.type;
+
+		/* Tell client we're handling a drag */
+		ta->callback(ta->data, &msg);
+		break;
+
+	case SCROLLBAR_MSG_SCROLL_FINISHED:
+		ta->drag_info.type = TEXTAREA_DRAG_NONE;
+
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_DRAG_REPORT;
+		msg.data.drag = ta->drag_info.type;
+
+		/* Tell client we finished handling the drag */
+		ta->callback(ta->data, &msg);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -799,15 +822,79 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 }
 
 
+/**
+ * Handles the end of a drag operation
+ *
+ * \param ta	Text area
+ * \param mouse	the mouse state at drag end moment
+ * \param x	X coordinate
+ * \param y	Y coordinate
+ * \return true if drag end was handled false otherwise
+ */
+static bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
+		int x, int y)
+{
+	int c_end;
+	size_t b_off;
+	unsigned int c_off;
+
+	assert(ta->drag_info.type != TEXTAREA_DRAG_NONE);
+
+	switch (ta->drag_info.type) {
+	case TEXTAREA_DRAG_SCROLLBAR:
+		if (ta->drag_info.data.scrollbar == ta->bar_x) {
+			x -= ta->border_width;
+			y -= ta->vis_height - ta->border_width -
+					SCROLLBAR_WIDTH;
+		} else {
+			x -= ta->vis_width - ta->border_width -
+					SCROLLBAR_WIDTH;
+			y -= ta->border_width;
+		}
+		scrollbar_mouse_drag_end(ta->drag_info.data.scrollbar,
+				mouse, x, y);
+		assert(ta->drag_info.type == TEXTAREA_DRAG_NONE);
+
+		/* Return, since drag end already reported to textarea client */
+		return true;
+
+	case TEXTAREA_DRAG_SELECTION:
+		ta->drag_info.type = TEXTAREA_DRAG_NONE;
+
+		textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
+		c_end = c_off;
+
+		if (!textarea_select(ta, ta->drag_start_char, c_end))
+			return false;
+
+		break;
+
+	default:
+		return false;
+	}
+
+	/* Report drag end to client, if not already reported */
+	assert(ta->drag_info.type == TEXTAREA_DRAG_NONE);
+
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_DRAG_REPORT;
+	msg.data.drag = ta->drag_info.type;
+
+	ta->callback(ta->data, &msg);
+
+	return true;
+}
+
+
 
 
 /* exported interface, documented in textarea.h */
 struct textarea *textarea_create(const textarea_setup *setup,
-		textarea_redraw_request_callback redraw_request, void *data)
+		textarea_client_callback callback, void *data)
 {
 	struct textarea *ret;
 
-	if (redraw_request == NULL) {
+	if (callback == NULL) {
 		LOG(("no callback provided"));
 		return NULL;
 	}
@@ -818,7 +905,7 @@ struct textarea *textarea_create(const textarea_setup *setup,
 		return NULL;
 	}
 
-	ret->redraw_request = redraw_request;
+	ret->callback = callback;
 	ret->data = data;
 
 	ret->flags = setup->flags;
@@ -972,7 +1059,14 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 		width = 2;
 		height = ta->line_height;
 
-		ta->redraw_request(ta->data, x0, y0, width, height);
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+		msg.data.redraw.x0 = x0;
+		msg.data.redraw.y0 = y0;
+		msg.data.redraw.x1 = x0 + width;
+		msg.data.redraw.y1 = y0 + height;
+
+		ta->callback(ta->data, &msg);
 	}
 
 	/* check if the caret has to be drawn at all */
@@ -1032,8 +1126,14 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 			height = y1 - y0;
 
 			if (width > 0 && height > 0) {
-				ta->redraw_request(ta->data, x0, y0,
-						width, height);
+				msg.ta = ta;
+				msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+				msg.data.redraw.x0 = x0;
+				msg.data.redraw.y0 = y0;
+				msg.data.redraw.x1 = x0 + width;
+				msg.data.redraw.y1 = y0 + height;
+
+				ta->callback(ta->data, &msg);
 			}
 		}
 	}
@@ -1147,8 +1247,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				(ta->bar_x != NULL ? SCROLLBAR_WIDTH : 0);
 
 	if (line0 > 0)
-		c_pos = utf8_bounded_length(ta->text,
-				ta->lines[line0].b_start - 1);
+		c_pos = utf8_bounded_length(ta->text, ta->lines[line0].b_start);
 	else
 		c_pos = 0;
 
@@ -1683,8 +1782,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		textarea_set_caret(ta, caret);
 	//TODO:redraw only the important part
 	if (redraw) {
-		ta->redraw_request(ta->data, 0, 0,
-				ta->vis_width, ta->vis_height);
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+		msg.data.redraw.x0 = 0;
+		msg.data.redraw.y0 = 0;
+		msg.data.redraw.x1 = ta->vis_width;
+		msg.data.redraw.y1 = ta->vis_height;
+
+		ta->callback(ta->data, &msg);
 	}
 
 	return true;
@@ -1701,7 +1806,14 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 	size_t b_off;
 	unsigned int c_off;
 
+	if (ta->drag_info.type != TEXTAREA_DRAG_NONE &&
+			mouse == BROWSER_MOUSE_HOVER) {
+		/* There is a drag that we must end */
+		textarea_drag_end(ta, mouse, x, y);
+	}
+
 	if (ta->drag_info.type == TEXTAREA_DRAG_SCROLLBAR) {
+		/* Scrollbar drag in progress; pass input to scrollbar */
 		if (ta->drag_info.data.scrollbar == ta->bar_x) {
 			x -= ta->border_width;
 			y -= ta->vis_height - ta->border_width -
@@ -1718,6 +1830,8 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 	/* Horizontal scrollbar */
 	if (ta->bar_x != NULL && ta->drag_info.type == TEXTAREA_DRAG_NONE) {
+		/* No drag happening, but mouse input is over scrollbar;
+		 * pass input to scrollbar */
 		sx = x - ta->border_width;
 		sy = y - (ta->vis_height - ta->border_width - SCROLLBAR_WIDTH);
 		sl = ta->vis_width - 2 * ta->border_width -
@@ -1731,6 +1845,8 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 	/* Vertical scrollbar */
 	if (ta->bar_y != NULL && ta->drag_info.type == TEXTAREA_DRAG_NONE) {
+		/* No drag happening, but mouse input is over scrollbar;
+		 * pass input to scrollbar */
 		sx = x - (ta->vis_width - ta->border_width - SCROLLBAR_WIDTH);
 		sy = y - ta->border_width;
 		sl = ta->vis_height - 2 * ta->border_width;
@@ -1752,9 +1868,15 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		if (ta->sel_start != -1) {
 			/* remove selection */
 			ta->sel_start = ta->sel_end = -1;
-			ta->redraw_request(ta->data, 0, 0,
-					ta->vis_width,
-					ta->vis_height);
+
+			msg.ta = ta;
+			msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+			msg.data.redraw.x0 = 0;
+			msg.data.redraw.y0 = 0;
+			msg.data.redraw.x1 = ta->vis_width;
+			msg.data.redraw.y1 = ta->vis_height;
+
+			ta->callback(ta->data, &msg);
 		}
 
 	} else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
@@ -1768,47 +1890,17 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		c_start = ta->drag_start_char;
 		c_end = c_off;
 		ta->drag_info.type = TEXTAREA_DRAG_SELECTION;
+
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_DRAG_REPORT;
+		msg.data.drag = ta->drag_info.type;
+
+		ta->callback(ta->data, &msg);
+
 		return textarea_select(ta, c_start, c_end);
 	}
 
 	return true;
-}
-
-
-/* exported interface, documented in textarea.h */
-bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y)
-{
-	int c_end;
-	size_t b_off;
-	unsigned int c_off;
-
-	switch (ta->drag_info.type) {
-	case TEXTAREA_DRAG_SCROLLBAR:
-		if (ta->drag_info.data.scrollbar == ta->bar_x) {
-			x -= ta->border_width;
-			y -= ta->vis_height - ta->border_width -
-					SCROLLBAR_WIDTH;
-		} else {
-			x -= ta->vis_width - ta->border_width -
-					SCROLLBAR_WIDTH;
-			y -= ta->border_width;
-		}
-		scrollbar_mouse_drag_end(ta->drag_info.data.scrollbar,
-				mouse, x, y);
-		return true;
-
-	case TEXTAREA_DRAG_SELECTION:
-		textarea_get_xy_offset(ta, x, y, &b_off, &c_off);
-		c_end = c_off;
-		ta->drag_info.type = TEXTAREA_DRAG_NONE;
-		return textarea_select(ta, ta->drag_start_char, c_end);
-
-	default:
-		break;
-	}
-
-	return false;
 }
 
 
@@ -1828,5 +1920,13 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 	ta->vis_width = width;
 	ta->vis_height = height;
 	textarea_reflow(ta, 0);
-	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
+
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = 0;
+	msg.data.redraw.y0 = 0;
+	msg.data.redraw.x1 = ta->vis_width;
+	msg.data.redraw.y1 = ta->vis_height;
+
+	ta->callback(ta->data, &msg);
 }

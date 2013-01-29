@@ -29,12 +29,36 @@
 #include "desktop/browser.h"
 #include "desktop/plot_style.h"
 
+
+struct textarea;
+
 /* Text area flags */
-typedef enum textarea_flags {
+typedef enum {
 	TEXTAREA_DEFAULT		= (1 << 0),
 	TEXTAREA_MULTILINE		= (1 << 1),
 	TEXTAREA_READONLY		= (1 << 2)
 } textarea_flags;
+
+typedef enum {
+	TEXTAREA_DRAG_NONE,
+	TEXTAREA_DRAG_SCROLLBAR,
+	TEXTAREA_DRAG_SELECTION
+} textarea_drag_type;
+
+typedef enum {
+	TEXTAREA_MSG_DRAG_REPORT,	/**< Textarea drag start/end report */
+	TEXTAREA_MSG_REDRAW_REQUEST	/**< Textarea redraw request */
+} textarea_msg_type;
+
+struct textarea_msg {
+	struct textarea *ta;
+
+	textarea_msg_type type;
+	union {
+		textarea_drag_type drag;
+		struct rect redraw;
+	} data;
+};
 
 typedef struct textarea_setup {
 	textarea_flags flags;	/**< Setup flags */
@@ -56,11 +80,13 @@ typedef struct textarea_setup {
 
 } textarea_setup;
 
-
-struct textarea;
-
-typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
-		int width, int height);
+/**
+ * Client callback for the textarea
+ *
+ * \param data		user data passed at textarea creation
+ * \param textarea_msg	textarea message data
+ */
+typedef void(*textarea_client_callback)(void *data, struct textarea_msg *msg);
 
 /**
  * Create a text area
@@ -71,7 +97,7 @@ typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
  * \return Opaque handle for textarea or 0 on error
  */
 struct textarea *textarea_create(const textarea_setup *setup,
-		textarea_redraw_request_callback redraw_request, void *data);
+		textarea_client_callback callback, void *data);
 
 /**
  * Destroy a text area
@@ -150,18 +176,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key);
  * \return true if action was handled false otherwise
  */
 bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y);
-
-/**
- * Handles the end of a drag operation
- *
- * \param ta	Text area
- * \param mouse	the mouse state at drag end moment
- * \param x	X coordinate
- * \param y	Y coordinate
- * \return true if drag end was handled false otherwise
- */
-bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
 
 /**

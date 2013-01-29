@@ -653,6 +653,25 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
 	}
 }
 
+
+static void tb_txt_callback(void *data, struct textarea_msg *msg)
+{
+	switch (msg->type) {
+	case TEXTAREA_MSG_DRAG_REPORT:
+		break;
+
+	case TEXTAREA_MSG_REDRAW_REQUEST:
+		tb_txt_redraw_request(data,
+				msg->data.redraw.x0, msg->data.redraw.y0,
+				msg->data.redraw.x1 - msg->data.redraw.x0,
+				msg->data.redraw.y1 - msg->data.redraw.y0);
+		break;
+
+	default:
+		break;
+	}
+}
+
 void tb_url_redraw( struct gui_window * gw )
 {
 
@@ -785,7 +804,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	ta_setup.text = font_style_url;
 	ta_setup.text.foreground = 0x000000;
 	ta_setup.text.background = 0xffffff;
-	t->url.textarea = textarea_create( &ta_setup, tb_txt_request_redraw, t );
+	t->url.textarea = textarea_create( &ta_setup, tb_txt_callback, t );
 	if( t->url.textarea != NULL ){
 		textarea_set_text(t->url.textarea, "http://");
 	}
