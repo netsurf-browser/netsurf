@@ -172,6 +172,9 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 		c_end = swap;
 	}
 
+	if (ta->sel_start == c_start && ta->sel_end == c_end)
+		return true;
+
 	ta->sel_start = c_start;
 	ta->sel_end = c_end;
 
