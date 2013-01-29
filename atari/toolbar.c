@@ -564,7 +564,7 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 				mx = mx - (work.g_x + TOOLBAR_URL_MARGIN_LEFT);
 				my = my - (work.g_y + TOOLBAR_URL_MARGIN_TOP);
 			}while( mb & 1 );
-				textarea_drag_end( tb->url.textarea, 0, mx, my );
+				textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_HOVER, mx, my );
 		} else {
 			/* TODO: recognize click + shift key */
 			int mstate = BROWSER_MOUSE_PRESS_1;
@@ -661,7 +661,7 @@ static void tb_txt_callback(void *data, struct textarea_msg *msg)
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:
-		tb_txt_redraw_request(data,
+		tb_txt_request_redraw(data,
 				msg->data.redraw.x0, msg->data.redraw.y0,
 				msg->data.redraw.x1 - msg->data.redraw.x0,
 				msg->data.redraw.y1 - msg->data.redraw.y0);
