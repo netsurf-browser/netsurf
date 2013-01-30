@@ -1173,6 +1173,7 @@ int textarea_get_caret(struct textarea *ta)
 void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	struct textarea_msg msg;
 	const struct plotter_table *plot = ctx->plot;
 	int line0, line1, line, left, right;
 	int chars, text_y_offset, text_y_offset_baseline;
@@ -1383,13 +1384,33 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 
 	if ((ta->sel_end == -1 || ta->sel_start == ta->sel_end) &&
 			ta->caret_pos.char_off >= 0) {
-		/* There is no selection, and caret visible: draw caret */
+		/* There is no selection, and caret visible: show caret */
 		int caret_y = y - ta->scroll_y + ta->caret_y + text_y_offset;
-		int caret_height = caret_y + ta->line_height;
 
-		plot->line(x - ta->scroll_x + ta->caret_x, caret_y,
-				x - ta->scroll_x + ta->caret_x, caret_height,
-				&pstyle_stroke_caret);
+		if (ta->flags & TEXTAREA_INTERNAL_CARET) {
+			/* Render our own caret */
+			plot->line(x - ta->scroll_x + ta->caret_x, caret_y,
+					x - ta->scroll_x + ta->caret_x,
+					caret_y + ta->line_height,
+					&pstyle_stroke_caret);
+		} else {
+			/* Tell client where caret should be placed */
+			msg.ta = ta;
+			msg.type = TEXTAREA_MSG_MOVED_CARET;
+			msg.data.caret.hidden = false;
+			msg.data.caret.x = x - ta->scroll_x + ta->caret_x;
+			msg.data.caret.y = caret_y;
+			msg.data.caret.height = ta->line_height;
+
+			ta->callback(ta->data, &msg);
+		}
+	} else if (!(ta->flags & TEXTAREA_INTERNAL_CARET)) {
+		/* Caret hidden, and client is responsible: tell client */
+		msg.ta = ta;
+		msg.type = TEXTAREA_MSG_MOVED_CARET;
+		msg.data.caret.hidden = true;
+
+		ta->callback(ta->data, &msg);
 	}
 
 	if (ta->bar_x != NULL)

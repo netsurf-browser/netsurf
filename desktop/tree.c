@@ -2972,7 +2972,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 
 	tree->ta_height = height;
 
-	ta_setup.flags = TEXTAREA_DEFAULT;
+	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
 	ta_setup.width = width;
 	ta_setup.height = tree->ta_height;
 	ta_setup.pad_top = 0;

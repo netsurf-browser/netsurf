@@ -34,9 +34,10 @@ struct textarea;
 
 /* Text area flags */
 typedef enum {
-	TEXTAREA_DEFAULT		= (1 << 0),
-	TEXTAREA_MULTILINE		= (1 << 1),
-	TEXTAREA_READONLY		= (1 << 2)
+	TEXTAREA_DEFAULT		= (1 << 0),	/**< Standard input */
+	TEXTAREA_MULTILINE		= (1 << 1),	/**< Multiline area */
+	TEXTAREA_READONLY		= (1 << 2),	/**< Non-editable */
+	TEXTAREA_INTERNAL_CARET		= (1 << 3)	/**< Render own caret */
 } textarea_flags;
 
 typedef enum {
@@ -47,7 +48,8 @@ typedef enum {
 
 typedef enum {
 	TEXTAREA_MSG_DRAG_REPORT,	/**< Textarea drag start/end report */
-	TEXTAREA_MSG_REDRAW_REQUEST	/**< Textarea redraw request */
+	TEXTAREA_MSG_REDRAW_REQUEST,	/**< Textarea redraw request */
+	TEXTAREA_MSG_MOVED_CARET	/**< Textarea caret moved */
 } textarea_msg_type;
 
 struct textarea_msg {
@@ -57,6 +59,12 @@ struct textarea_msg {
 	union {
 		textarea_drag_type drag;
 		struct rect redraw;
+		struct {
+			bool hidden;
+			int x;
+			int y;
+			int height;
+		} caret;
 	} data;
 };
 

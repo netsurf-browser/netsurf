@@ -790,7 +790,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	int ta_height = toolbar_styles[t->style].height;
 	ta_height -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
 	textarea_setup ta_setup;
-	ta_setup.flags = TEXTAREA_DEFAULT;
+	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
 	ta_setup.width = 300;
 	ta_setup.height = ta_height;
 	ta_setup.pad_top = 0;
