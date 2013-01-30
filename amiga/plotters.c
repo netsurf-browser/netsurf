@@ -707,6 +707,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 
 	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 	{
+#ifdef __amigaos4__
 		uint32 comptype = COMPOSITE_Src;
 		if(!bitmap->opaque) 
 			comptype = COMPOSITE_Src_Over_Dest;
@@ -722,6 +723,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_OffsetX,x,
 					COMPTAG_OffsetY,y,
 					TAG_DONE);
+#endif
 	}
 	else
 	{
@@ -871,6 +873,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 
 			if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 			{
+#ifdef __amigaos4__
 				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm, rp->BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX,bfmsg->Bounds.MinX,
@@ -882,6 +885,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					COMPTAG_OffsetX,xf,
 					COMPTAG_OffsetY,yf,
 					TAG_DONE);
+#endif
 			}
 			else
 			{

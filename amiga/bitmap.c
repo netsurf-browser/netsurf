@@ -402,6 +402,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 
 		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
+#ifdef __amigaos4__
 			uint32 comptype = COMPOSITE_Src;
 			uint32 flags = 0;
 
@@ -420,9 +421,9 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 						COMPTAG_OffsetY,0,
 						COMPTAG_FriendBitMap,friendbm,
 						TAG_DONE);
+#endif
 		}
-		else /* do it the old-fashioned way.  This is pretty slow, but probably
-		uses Composite() on OS4.1 anyway, so we're only saving a blit really. */
+		else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
 		{
 			bsa.bsa_SrcX = 0;
 			bsa.bsa_SrcY = 0;

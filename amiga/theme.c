@@ -265,6 +265,7 @@ void ami_init_mouse_pointers(void)
 		mouseptrobj[i] = NULL;
 		char ptrfname[1024];
 
+#ifdef __amigaos4__
 		if(nsoption_bool(truecolour_mouse_pointers))
 		{
 			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
@@ -316,6 +317,7 @@ void ami_init_mouse_pointers(void)
 				}
 			}
 		}
+#endif
 
 		if(!mouseptrobj[i])
 		{

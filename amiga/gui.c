@@ -477,15 +477,19 @@ void ami_set_options(void)
 
 	tree_set_icon_dir(strdup("ENV:Sys"));
 
-
 	nsoption_setnull_charp(arexx_dir, (char *)strdup("Rexx"));
-
 	nsoption_setnull_charp(arexx_startup, (char *)strdup("Startup.nsrx"));
-
 	nsoption_setnull_charp(arexx_shutdown, (char *)strdup("Shutdown.nsrx"));
 
 	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
 	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
+	
+#ifndef __amigaos4__
+	nsoption_set_bool(download_notify, false);
+	nsoption_set_bool(context_menu, false);
+	nsoption_set_bool(font_antialiasing, false);
+	nsoption_set_bool(truecolour_mouse_pointers, false);
+#endif
 }
 
 void ami_amiupdate(void)
