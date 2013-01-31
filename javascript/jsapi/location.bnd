@@ -61,6 +61,20 @@ getter href %{
 	}
 %}
 
+setter href %{
+	JSString *url_jsstr = NULL;
+	int url_len = 0;
+	char *url = NULL;
+
+	url_jsstr = JS_ValueToString(cx, vp);
+	if (url_jsstr != NULL) {
+		JSString_to_char(url_jsstr, url, url_len);
+		browser_window_go(private->htmlc->bw, url, NULL, false);
+	} else {
+		JSLOG("failed to convert string value");
+	}
+%}
+
 getter protocol %{
 	lwc_string *component;
 	component = nsurl_get_component(private->url, NSURL_SCHEME);
