@@ -75,10 +75,9 @@
 
 
 /* native proprty definition */
-#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
-#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
+#define JSAPI_PROP(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsval jsapi_id, vp)
+#define JSAPI_STRICTPROP JSAPI_PROP
 
 /* native property return value */
 #define JSAPI_PROP_RVAL(cx, vp) (*(vp))
@@ -193,12 +192,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 
 
-
 /* proprty native calls */
-#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
-#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
+#define JSAPI_PROP(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsval jsapi_id, vp)
+#define JSAPI_STRICTPROP JSAPI_PROP
 
 /* native property return value */
 #define JSAPI_PROP_RVAL JS_RVAL
@@ -307,10 +304,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_THIS_OBJECT(cx,vp) JS_THIS_OBJECT(cx,vp)
 
 /* proprty native calls */
-#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsid jsapi_id, vp)
-#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsid jsapi_id, JSBool strict, vp)
+#define JSAPI_PROP(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsid jsapi_id, vp)
+#define JSAPI_STRICTPROP(name, cx, obj, vp) \
+	jsapi_property_##name(cx, obj, jsid jsapi_id, JSBool strict, vp)
 
 /* native property return value */
 #define JSAPI_PROP_RVAL JS_RVAL
@@ -379,5 +376,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #endif
 
 #define JSLOG(args...) LOG((args))
+#ifdef ENABLE_VERBOSE_JS_DEBUG
+#define JSDBG(args...) LOG((args))
+#else
+#define JSDBG(args...)
+#endif
 
 #endif

@@ -160,8 +160,7 @@ struct tree {
 	int height;			/* Tree height */
 	unsigned int flags;		/* Tree flags */
 	struct textarea *textarea;	/* Handle for UTF-8 textarea */
-	bool textarea_drag_start;	/* whether the start of a mouse drag
-					   was in the textarea */
+	int ta_height;			/* Textarea height */
 	struct node_element *editing;	/* Node element being edited */
 
 	bool redraw;			/* Flag indicating whether the tree
@@ -263,7 +262,6 @@ struct tree *tree_create(unsigned int flags,
 	tree->height = 0;
 	tree->flags = flags;
 	tree->textarea = NULL;
-	tree->textarea_drag_start = false;
 	tree->editing = NULL;
 	tree->redraw = false;
 	tree->drag = TREE_NO_DRAG;
@@ -2078,7 +2076,10 @@ void tree_draw(struct tree *tree, int x, int y,
 			y = y + tree->editing->box.y;
 			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 				x += NODE_INSTEP;
-			textarea_redraw(tree->textarea, x, y, &clip, &new_ctx);
+			textarea_redraw(tree->textarea, x, y,
+					plot_style_fill_tree_background.
+							fill_colour,
+					&clip, &new_ctx);
 		}
 	}
 
@@ -2427,9 +2428,9 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 			x0 += NODE_INSTEP;
 		x1 = tree->editing->box.x + tree->editing->box.width;
 		y0 = tree->editing->box.y;
-		y1 = tree->editing->box.y + tree->editing->box.height;
+		y1 = tree->editing->box.y + tree->ta_height;
 
-		if (tree->textarea_drag_start &&
+		if (tree->drag == TREE_TEXTAREA_DRAG &&
 				(mouse & (BROWSER_MOUSE_HOLDING_1 |
 				BROWSER_MOUSE_HOLDING_2))) {
 			/* Track the drag path */
@@ -2438,27 +2439,13 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 			return true;
 		}
 
-
-
 		if ((x >= x0) && (x < x1) && (y >= y0) && (y < y1)) {
-			/* Inside the textarea */
-			if (mouse & (BROWSER_MOUSE_DRAG_1 |
-				     BROWSER_MOUSE_DRAG_2)) {
-				/* Drag starting */
-				tree->textarea_drag_start = true;
-				tree->drag = TREE_TEXTAREA_DRAG;
-			} else {
-				/* Other action */
-				tree->textarea_drag_start = false;
-			}
 			textarea_mouse_action(tree->textarea, mouse,
 					      x - x0, y - y0);
 			return true;
 
 		}
 	}
-
-	tree->textarea_drag_start = false;
 
 	/* we are not interested in the drag path, return */
 	if (mouse & (BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_HOLDING_2))
@@ -2832,25 +2819,25 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 	struct node *node;
 	int x, y;
 
-	if (tree->textarea_drag_start) {
+	switch (tree->drag) {
+	case TREE_NO_DRAG:
+	case TREE_UNKNOWN_DRAG:
+		break;
+
+	case TREE_TEXTAREA_DRAG:
 		x = tree->editing->box.x;
 		y = tree->editing->box.y;
 		if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 			x += NODE_INSTEP;
-		textarea_drag_end(tree->textarea, mouse, x1 - x, y1 - y);
-	}
-
-	tree->textarea_drag_start = false;
-
-	switch (tree->drag) {
-	case TREE_NO_DRAG:
-	case TREE_TEXTAREA_DRAG:
-	case TREE_UNKNOWN_DRAG:
+		textarea_mouse_action(tree->textarea, BROWSER_MOUSE_HOVER,
+				x1 - x, y1 - y);
 		break;
+
 	case TREE_SELECT_DRAG:
 		tree_handle_selection_area(tree, y0, y1 - y0,
 					   (mouse | BROWSER_MOUSE_HOLDING_2));
 		break;
+
 	case TREE_MOVE_DRAG:
 		if (!(tree->flags & TREE_MOVABLE))
 			return;
@@ -2872,7 +2859,6 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
  */
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
-
 	if (tree->editing != NULL)
 		switch (key) {
 		case KEY_ESCAPE:
@@ -2909,19 +2895,43 @@ int tree_alphabetical_sort(struct node *n1, struct node *n2)
  * check the redraw flag of the tree before requesting a redraw and change the
  * position to tree origin relative.
  */
-static void tree_textarea_redraw_request(void *data, int x, int y,
-		int width, int height)
+
+static void tree_textarea_callback(void *data, struct textarea_msg *msg)
 {
 	struct tree *tree = data;
-	x = x + tree->editing->box.x;
-	y = y + tree->editing->box.y;
-	if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
-		x += NODE_INSTEP;
+	int x, y;
 
-	if (tree->redraw)
-		tree->callbacks->redraw_request(x, y,
-						width, height,
-						tree->client_data);
+	switch (msg->type) {
+	case TEXTAREA_MSG_DRAG_REPORT:
+		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
+			/* Textarea drag finished */
+			tree->drag = TREE_NO_DRAG;
+		} else {
+			/* Textarea drag started */
+			tree->drag = TREE_TEXTAREA_DRAG;
+		}
+		break;
+
+	case TEXTAREA_MSG_REDRAW_REQUEST:
+		x = msg->data.redraw.x0 + tree->editing->box.x;
+		y = msg->data.redraw.y0 + tree->editing->box.y;
+
+		if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
+			x += NODE_INSTEP;
+
+		/* Redraw the textarea */
+		if (tree->redraw)
+			tree->callbacks->redraw_request(x, y,
+					msg->data.redraw.x1 -
+						msg->data.redraw.x0,
+					msg->data.redraw.y1 -
+						msg->data.redraw.y0,
+					tree->client_data);
+		break;
+
+	default:
+		break;
+	}
 }
 
 
@@ -2935,6 +2945,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 {
 	struct node *parent;
 	int width, height;
+	textarea_setup ta_setup;
 
 	assert(tree != NULL);
 	assert(element != NULL);
@@ -2959,8 +2970,25 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 		width -= NODE_INSTEP;
 
-	tree->textarea = textarea_create(width, height, TEXTAREA_DEFAULT,
-			&plot_fstyle, tree_textarea_redraw_request, tree);
+	tree->ta_height = height;
+
+	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
+	ta_setup.width = width;
+	ta_setup.height = tree->ta_height;
+	ta_setup.pad_top = 0;
+	ta_setup.pad_right = 4;
+	ta_setup.pad_bottom = 0;
+	ta_setup.pad_left = 4;
+	ta_setup.border_width = 1;
+	ta_setup.border_col = 0x000000;
+	ta_setup.selected_text = 0xffffff;
+	ta_setup.selected_bg = 0x000000;
+	ta_setup.text = plot_fstyle;
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+
+	tree->textarea = textarea_create(&ta_setup,
+			tree_textarea_callback, tree);
 	if (tree->textarea == NULL) {
 		tree_stop_edit(tree, false);
 		return;

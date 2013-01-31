@@ -74,6 +74,7 @@
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
 #include "riscos/content-handlers/sprite.h"
+#include "riscos/textselection.h"
 #include "riscos/toolbar.h"
 #include "riscos/thumbnail.h"
 #include "riscos/url_complete.h"
@@ -2600,6 +2601,14 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 }
 
 
+static void ro_gui_window_paste_cb(void *pw)
+{
+	struct browser_window *bw = pw;
+
+	browser_window_key_press(bw, KEY_PASTE);
+}
+
+
 /**
  * Handle selections from a browser window menu
  *
@@ -2833,7 +2842,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		browser_window_key_press(bw, KEY_CUT_SELECTION);
 		break;
 	case BROWSER_SELECTION_PASTE:
-		browser_window_key_press(bw, KEY_PASTE);
+		ro_gui_selection_prepare_paste(w, ro_gui_window_paste_cb, bw);
 		break;
 	case BROWSER_SELECTION_ALL:
 		browser_window_key_press(bw, KEY_SELECT_ALL);

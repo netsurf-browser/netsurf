@@ -105,3 +105,10 @@ Iconv Changelog
   - Toolchain used to build 0.10 turns out to have produced broken code.
   - Minor additions to the charset alias mapping file.
 
+0.12 20-Jan-2013
+---------------
+
+  - Master alias mapping file now lives in ROOL repository.
+  - Correct handling of trailing valid shift sequences. Previously would
+    erroneously report EINVAL, instead of silently accepting them.
+  - Add proper transliteration behaviour when requested using //TRANSLIT.

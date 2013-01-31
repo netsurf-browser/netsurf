@@ -52,6 +52,9 @@ binding document {
 	/** location instantiated on first use */
 	property unshared location;
 
+        /* compatability mode instantiated on first use */
+	property unshared compatMode;
+
 	/* events through a single interface */
 	property unshared type EventHandler;
 }
@@ -66,7 +69,7 @@ api finalise %{
 
 
 getter location %{
-	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx,vp))) {
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
 		/* already created - return it */
 		return JS_TRUE;
 	}
@@ -94,6 +97,32 @@ getter documentURI %{
 	}
 	jsret = JSVAL_TO_STRING(jsstr);
 %}
+
+
+getter compatMode %{
+	/* Returns the string "CSS1Compat" if document is in no-quirks
+	 * mode or limited-quirks mode, and "BackCompat", if document
+	 * is in quirks mode.
+	 */
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created, just use it */
+		return JS_TRUE;
+	}
+	if (private->htmlc->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
+		jsret = JS_NewStringCopyN(cx, "BackCompat", SLEN("BackCompat"));
+	} else {
+		jsret = JS_NewStringCopyN(cx, "CSS1Compat", SLEN("CSS1Compat"));
+	}
+
+%}
+
+/*
+getter characterSet %{
+%}
+
+getter contentType %{
+%}
+*/
 
 getter cookie %{
 	char *cookie_str;
@@ -144,7 +173,7 @@ getter body %{
 	dom_node *body;
 	dom_exception exc;
 
-	JSLOG("Getting your body");
+	JSDBG("Getting your body");
 
 	/* document (html) element */
 	exc = dom_document_get_document_element(private->node, &element);
@@ -160,7 +189,7 @@ getter body %{
 		dom_node_unref(element);
 	}
 
-	JSLOG("returning jsobject %p",jsret);
+	JSDBG("returning jsobject %p",jsret);
 
 %}
 
@@ -190,6 +219,7 @@ operation getElementById %{
  * Dom 4 says this should return a htmlcollection, libdom currently
  * returns DOM 3 spec of a nodelist
  */
+/* HTMLCollection Document::getElementsByTagName(DOMString localName); */
 operation getElementsByTagName %{
 	dom_string *localName_dom;
 	/* dom_html_collection *collection;*/
@@ -236,7 +266,7 @@ operation createTextNode %{
 
 	if (data != NULL) {
 
-		JSLOG("Creating text node for string \"%s\"", data);
+		JSDBG("Creating text node for string \"%s\"", data);
 		exc = dom_string_create((unsigned char*)data, data_len, &data_dom);
 		if (exc != DOM_NO_ERR) {
 			return JS_FALSE;
@@ -251,7 +281,7 @@ operation createTextNode %{
 		jsret = jsapi_new_Text(cx, NULL, NULL, text, private->htmlc);
 	}
 
-	JSLOG("returning jsobject %p",jsret);
+	JSDBG("returning jsobject %p",jsret);
 
 %}
 
@@ -263,7 +293,7 @@ operation createComment %{
 
 	if (data != NULL) {
 
-		JSLOG("Creating string \"%s\"", data);
+		JSDBG("Creating string \"%s\"", data);
 		exc = dom_string_create((unsigned char*)data,
 					data_len,
 					&data_dom);
@@ -271,7 +301,7 @@ operation createComment %{
 			return JS_FALSE;
 		}
 
-		JSLOG("Creating comment object for dom string \"%s\"",
+		JSDBG("Creating comment object for dom string \"%s\"",
 		      dom_string_data(data_dom));
 		exc = dom_document_create_comment(private->node,
 						  data_dom,
@@ -284,7 +314,7 @@ operation createComment %{
 		jsret = jsapi_new_Comment(cx, NULL, NULL, comment, private->htmlc);
 	}
 
-	JSLOG("returning jsobject %p", jsret);
+	JSDBG("returning jsobject %p", jsret);
 
 %}
 
@@ -295,7 +325,7 @@ operation createElement %{
 	dom_element *element;
 
 	if (localName != NULL) {
-		JSLOG("Creating text node for string \"%s\"", localName);
+		JSDBG("Creating text node for string \"%s\"", localName);
 		exc = dom_string_create((unsigned char*)localName, localName_len, &localName_dom);
 		if (exc != DOM_NO_ERR) {
 			return JS_FALSE;
@@ -310,7 +340,7 @@ operation createElement %{
 		jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
 	}
 
-	JSLOG("returning jsobject %p",jsret);
+	JSDBG("returning jsobject %p",jsret);
 
 %}
 

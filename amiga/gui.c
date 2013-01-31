@@ -53,6 +53,7 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
+#include "amiga/help.h"
 #include "amiga/history.h"
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
@@ -385,6 +386,7 @@ void ami_open_resources(void)
 							TAG_DONE))) die(messages_get("NoMemory"));
 
 	ami_file_req_init();
+	//ami_help_init(NULL);
 }
 
 void ami_set_options(void)
@@ -475,15 +477,19 @@ void ami_set_options(void)
 
 	tree_set_icon_dir(strdup("ENV:Sys"));
 
-
 	nsoption_setnull_charp(arexx_dir, (char *)strdup("Rexx"));
-
 	nsoption_setnull_charp(arexx_startup, (char *)strdup("Startup.nsrx"));
-
 	nsoption_setnull_charp(arexx_shutdown, (char *)strdup("Shutdown.nsrx"));
 
 	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
 	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
+	
+#ifndef __amigaos4__
+	nsoption_set_bool(download_notify, false);
+	nsoption_set_bool(context_menu, false);
+	nsoption_set_bool(font_antialiasing, false);
+	nsoption_set_bool(truecolour_mouse_pointers, false);
+#endif
 }
 
 void ami_amiupdate(void)
@@ -666,6 +672,8 @@ void ami_openscreen(void)
 
 	gui_system_colour_finalize();
 	gui_system_colour_init();
+	
+	//ami_help_new_screen(scrn);
 }
 
 void ami_openscreenfirst(void)
@@ -1002,6 +1010,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			else nskey = KEY_TAB;
 		break;
 		case RAWKEY_F5:
+		case RAWKEY_HELP:
 			// don't translate
 			nskey = keycode;
 		break;
@@ -1823,6 +1832,10 @@ void ami_handle_msg(void)
 									if(browser_window_reload_available(gwin->bw))
 										browser_window_reload(gwin->bw,false);
 								break;
+								
+								case RAWKEY_HELP: // help
+									//ami_help_open(AMI_HELP_GUI);
+								break;
 							}
 						}
 					}
@@ -2362,11 +2375,13 @@ void ami_quit_netsurf_delayed(void)
 	}
 }
 
-void ami_gui_close_screen(struct Screen *scrn)
+void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 {
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn)) return;
+	if(locked_screen == TRUE) return;
 
+	/* If this is our own screen, wait for visitor windows to close */
 	LOG(("Waiting for visitor windows to close..."));
 	do {
 		Delay(50);
@@ -2395,10 +2410,7 @@ void gui_quit(void)
 	FreeScreenDrawInfo(scrn, dri);
 
 	ami_close_fonts();
-
-	/* If it is our public screen, close it or wait until the visitor windows leave */
-	if(locked_screen == FALSE) ami_gui_close_screen(scrn);
-
+	ami_gui_close_screen(scrn, locked_screen);
 	FreeVec(nsscreentitle);
 
 	ami_context_menu_free();
@@ -2410,6 +2422,7 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
+	//ami_help_free();
 	ami_file_req_free();
 
 	ami_openurl_close();
@@ -3591,7 +3604,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
-void ami_do_redraw_tiled(struct gui_window_2 *gwin,
+void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int left, int top, int width, int height,
 	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
 {
@@ -3630,23 +3643,21 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(width <= 0) return;
 	if(height <= 0) return;
 
-// printf("%ld %ld %ld %ld\n",left, top, width, height);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+	if(busy) ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
 		clip.y1 = nsoption_int(redraw_tile_size_y);
+		if(clip.y1 > height) clip.y1 = height;
 		if((((y - sy) * gwin->bw->scale) + clip.y1) > bbox->Height)
 			clip.y1 = bbox->Height - ((y - sy) * gwin->bw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
 			clip.x1 = nsoption_int(redraw_tile_size_x);
+			if(clip.x1 > width) clip.x1 = width;
 			if((((x - sx) * gwin->bw->scale) + clip.x1) > bbox->Width)
 				clip.x1 = bbox->Width - ((x - sx) * gwin->bw->scale);
-
-//printf("%ld %ld -> %ld %ld\n",clip.x0 - (int)(x), clip.y0 - (int)(y), clip.x1, clip.y1);
 
 			if(browser_window_redraw(gwin->bw,
 				clip.x0 - (int)x,
@@ -3670,7 +3681,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 		}
 	}
 	
-	ami_reset_pointer(gwin);
+	if(busy) ami_reset_pointer(gwin);
 }
 
 
@@ -3685,7 +3696,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
  */
 
-void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
+void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
 		int x0, int y0, int x1, int y1)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
@@ -3716,7 +3727,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	ami_do_redraw_tiled(g->shared, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
+	ami_do_redraw_tiled(g->shared, busy, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
 	return;
 }
 
@@ -3737,7 +3748,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	if(!g) return;
 
-	ami_do_redraw_limits(g, g->shared->bw,
+	ami_do_redraw_limits(g, g->shared->bw, true,
 			rect->x0, rect->y0,
 			rect->x1, rect->y1);
 }
@@ -3796,14 +3807,14 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, (height / gwin->bw->scale) + oldv - 1,
 					hcurrent + (width / gwin->bw->scale),
 					vcurrent + (height / gwin->bw->scale) + 1);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, vcurrent,
 					hcurrent + (width / gwin->bw->scale),
 					oldv);
@@ -3811,14 +3822,14 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(hcurrent>oldh) /* Going right */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					(width / gwin->bw->scale) + oldh , vcurrent,
 					hcurrent + (width / gwin->bw->scale),
 					vcurrent + (height / gwin->bw->scale));
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
 					hcurrent, vcurrent,
 					oldh, vcurrent + (height / gwin->bw->scale));
 		}
@@ -3836,7 +3847,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(nsoption_bool(direct_render) == false)
 		{
-			ami_do_redraw_tiled(gwin, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
+			ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
 		else
 		{
@@ -3882,39 +3893,42 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 	sy = gwin->bw->window->scrolly;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
-
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+	
 	BeginRefresh(gwin->win);
 
 	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx - 1;
 	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx + 2;
 	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy - 1;
 	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
-	ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+	ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
 
 	while(regrect)
 	{
 		x0 = ((regrect->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx - 1;
 		x1 = ((regrect->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx;
+			browser_window_get_scale(gwin->bw)) + sx + 2;
 		y0 = ((regrect->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy - 1;
 		y1 = ((regrect->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy;
+			browser_window_get_scale(gwin->bw)) + sy + 2;
 
 		regrect = regrect->Next;
 
-		ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+		ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
 	}
 
 	EndRefresh(gwin->win, TRUE);
+	
+	ami_reset_pointer(gwin);
 }
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
@@ -4332,7 +4346,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if((nsoption_bool(kiosk_mode) == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
-	ami_do_redraw_limits(g, g->shared->bw, g->c_x, g->c_y,
+	ami_do_redraw_limits(g, g->shared->bw, false, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
 
 	g->c_h = 0;

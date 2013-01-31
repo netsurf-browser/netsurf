@@ -382,6 +382,10 @@
 (set #user-options (tackon #user-dir "Choices"))
 (set #options-exist (exists #user-options))
 (set #searchengines-exist (exists (tackon @default-dest "Resources/SearchEngines")))
+(set #user-hotlist (tackon #user-dir "Hotlist"))
+(set #hotlist-exist (exists #user-hotlist))
+(set #old-hotlist (tackon @default-dest "Resources/Hotlist"))
+(set #old-hotlist-exist (exists #old-hotlist))
 (set #aiss-theme "")
 
 (if (= #options-exist 0)
@@ -408,6 +412,20 @@
 		)
 
 		(set #theme (tackon "PROGDIR:Resources/Themes/" #themeshort))
+	)
+)
+
+(if (= #hotlist-exist 0)
+	(if (= #old-hotlist-exist 1)
+		(
+			(copyfiles
+				(prompt "Migrating NetSurf 2.x Hotlist")
+				(help @copyfiles-help)
+				(source #old-hotlist)
+				(dest #user-dir)
+				(optional "askuser" "force" "oknodelete")
+			)
+		)
 	)
 )
 

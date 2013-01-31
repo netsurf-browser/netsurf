@@ -944,6 +944,8 @@ void ro_gui_cleanup(void)
 {
 	ro_gui_buffer_close();
 	xhourglass_off();
+	/* Uninstall NetSurf-specific fonts */
+	xos_cli("FontRemove NetSurf:Resources.Fonts.");
 }
 
 
@@ -1280,6 +1282,22 @@ void ro_gui_drag_end(wimp_dragged *drag)
  * Handle Key_Pressed events.
  */
 
+static void ro_gui_keypress_cb(void *pw)
+{
+	wimp_key *key = (wimp_key *) pw;
+
+	if (ro_gui_wimp_event_keypress(key) == false) {
+		os_error *error = xwimp_process_key(key->c);
+		if (error) {
+			LOG(("xwimp_process_key: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+
+	free(key);
+}
+
 void ro_gui_keypress(wimp_key *key)
 {
 	if (key->c == wimp_KEY_ESCAPE &&
@@ -1290,8 +1308,17 @@ void ro_gui_keypress(wimp_key *key)
 			(easier than finding somewhere safe to abort the drag) */
 		ro_gui_drag_box_cancel();
 		gui_current_drag_type = GUI_DRAG_NONE;
-	}
-	else if (!ro_gui_wimp_event_keypress(key)) {
+	} else if (key->c == 22 /* Ctrl-V */) {
+		wimp_key *copy;
+
+		/* Must copy the keypress as it's on the stack */
+		copy = malloc(sizeof(wimp_key));
+		if (copy == NULL)
+			return;
+		memcpy(copy, key, sizeof(wimp_key));
+
+		ro_gui_selection_prepare_paste(key->w, ro_gui_keypress_cb, copy);
+	} else if (ro_gui_wimp_event_keypress(key) == false) {
 		os_error *error = xwimp_process_key(key->c);
 		if (error) {
 			LOG(("xwimp_process_key: 0x%x: %s",
@@ -1318,9 +1345,10 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
 				if (ro_print_current_window)
 					ro_print_dataload_bounce(message);
-			}
-			else
+			} else if (ro_gui_selection_prepare_paste_dataload(
+					(wimp_full_message_data_xfer *) message) == false) {
 				ro_msg_dataload(message);
+			}
 			break;
 
 		case message_DATA_LOAD_ACK:
@@ -1769,6 +1797,9 @@ void ro_msg_datasave(wimp_message *message)
 //	ro_gui_selection_drag_reset();
 
 	ro_msg_terminate_filename(dataxfer);
+
+	if (ro_gui_selection_prepare_paste_datasave(dataxfer))
+		return;
 
 	switch (dataxfer->file_type) {
 		case FILETYPE_ACORN_URI:

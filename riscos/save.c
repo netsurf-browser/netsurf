@@ -1239,6 +1239,11 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	}
 
 	/* filename is utf8 */
+	if (save_type == GUI_SAVE_COMPLETE && leaf_len > 0) {
+		leaf_buf[0] = '!';
+		leaf_buf++;
+		leaf_len--;
+	}
 	strncpy(leaf_buf, name, leaf_len);
 	leaf_buf[leaf_len - 1] = 0;
 

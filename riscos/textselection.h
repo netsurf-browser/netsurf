@@ -26,6 +26,14 @@
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
 
+typedef void (*ro_gui_selection_prepare_paste_cb)(void *pw);
+
+void ro_gui_selection_prepare_paste(wimp_w w,
+		ro_gui_selection_prepare_paste_cb cb, void *pw);
+bool ro_gui_selection_prepare_paste_datasave(
+		wimp_full_message_data_xfer *dataxfer);
+bool ro_gui_selection_prepare_paste_dataload(
+		wimp_full_message_data_xfer *dataxfer);
 
 void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim);

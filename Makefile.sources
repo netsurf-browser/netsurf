@@ -74,21 +74,3 @@ S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 content/fetchers/about.c: testament utils/testament.h
 desktop/version.c: testament utils/testament.h
 
-# Some extra rules for building the transliteration table.
-ifeq ($(HOST),riscos)
-utils/translit.c: transtab
-	$(VQ)echo "TRANSTAB: utils/translit.c"
-	$(Q)dir utils
-	$(Q)$(PERL) tt2code < transtab > translit.c
-	$(Q)dir ^
-else
-utils/translit.c: transtab
-	$(VQ)echo "TRANSTAB: utils/translit.c"
-	$(Q)cd utils; $(PERL) tt2code < transtab > translit.c
-endif
-
-clean-intermediates:
-	$(VQ)echo "   CLEAN: intermediates"
-	$(Q)$(RM) utils/translit.c
-
-CLEANS += clean-intermediates

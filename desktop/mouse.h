@@ -28,8 +28,12 @@
 /* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
  *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
 typedef enum {
-	BROWSER_MOUSE_PRESS_1   = 1,	/* button 1 pressed */
-	BROWSER_MOUSE_PRESS_2   = 2,	/* button 2 pressed */
+	BROWSER_MOUSE_HOVER = 0,		/* No mouse buttons pressed,
+						 * May be used to indicate
+						 * hover or end of drag. */
+
+	BROWSER_MOUSE_PRESS_1   = (1 << 0),	/* button 1 pressed */
+	BROWSER_MOUSE_PRESS_2   = (1 << 1),	/* button 2 pressed */
 
 					/* note: click meaning is different for
 					 * different front ends. On RISC OS, it
@@ -40,27 +44,29 @@ typedef enum {
 					 * click is fired when the mouse button
 					 * is released, if the operation wasn't
 					 * a drag. */
-	BROWSER_MOUSE_CLICK_1   = 4,	/* button 1 clicked. */
-	BROWSER_MOUSE_CLICK_2   = 8,	/* button 2 clicked. */
 
-	BROWSER_MOUSE_DOUBLE_CLICK = 16, /* button 1 double clicked */
+	BROWSER_MOUSE_CLICK_1   = (1 << 2),	/* button 1 clicked. */
+	BROWSER_MOUSE_CLICK_2   = (1 << 3),	/* button 2 clicked. */
 
-	BROWSER_MOUSE_DRAG_1    = 32,	/* start of button 1 drag operation */
-	BROWSER_MOUSE_DRAG_2    = 64,	/* start of button 2 drag operation */
+	BROWSER_MOUSE_DOUBLE_CLICK = (1 << 4),	/* button 1 double clicked */
 
-	BROWSER_MOUSE_DRAG_ON   = 128,	/* a drag operation was started and
-					 * a mouse button is still pressed */
+	BROWSER_MOUSE_DRAG_1    = (1 << 5),	/* start of button 1 drag */
+	BROWSER_MOUSE_DRAG_2    = (1 << 6),	/* start of button 2 drag */
 
-	BROWSER_MOUSE_HOLDING_1 = 256,	/* while button 1 drag is in progress */
-	BROWSER_MOUSE_HOLDING_2 = 512,	/* while button 2 drag is in progress */
+	BROWSER_MOUSE_DRAG_ON   = (1 << 7),	/* a drag operation was started
+						 * and a mouse button is still
+						 * pressed */
+
+	BROWSER_MOUSE_HOLDING_1 = (1 << 8),	/* during button 1 drag */
+	BROWSER_MOUSE_HOLDING_2 = (1 << 9),	/* during button 2 drag */
 
 
-	BROWSER_MOUSE_MOD_1     = 1024,	/* primary modifier key pressed
-					 * (eg. Shift) */
-	BROWSER_MOUSE_MOD_2     = 2048,	/* secondary modifier key pressed
-					 * (eg. Ctrl) */
-	BROWSER_MOUSE_MOD_3     = 4096	/* secondary modifier key pressed
-					 * (eg. Alt) */
+	BROWSER_MOUSE_MOD_1     = (1 << 10),	/* 1st modifier key pressed
+						 * (eg. Shift) */
+	BROWSER_MOUSE_MOD_2     = (1 << 11),	/* 2nd modifier key pressed
+						 * (eg. Ctrl) */
+	BROWSER_MOUSE_MOD_3     = (1 << 12)	/* 3rd modifier key pressed
+						 * (eg. Alt) */
 } browser_mouse_state;
 
 

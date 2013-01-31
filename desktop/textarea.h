@@ -29,34 +29,83 @@
 #include "desktop/browser.h"
 #include "desktop/plot_style.h"
 
-/* Text area flags */
-typedef enum textarea_flags {
-	TEXTAREA_DEFAULT		= (1 << 0),
-	TEXTAREA_MULTILINE		= (1 << 1),
-	TEXTAREA_READONLY		= (1 << 2)
-} textarea_flags;
-
 
 struct textarea;
 
-typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
-		int width, int height);
+/* Text area flags */
+typedef enum {
+	TEXTAREA_DEFAULT		= (1 << 0),	/**< Standard input */
+	TEXTAREA_MULTILINE		= (1 << 1),	/**< Multiline area */
+	TEXTAREA_READONLY		= (1 << 2),	/**< Non-editable */
+	TEXTAREA_INTERNAL_CARET		= (1 << 3)	/**< Render own caret */
+} textarea_flags;
+
+typedef enum {
+	TEXTAREA_DRAG_NONE,
+	TEXTAREA_DRAG_SCROLLBAR,
+	TEXTAREA_DRAG_SELECTION
+} textarea_drag_type;
+
+typedef enum {
+	TEXTAREA_MSG_DRAG_REPORT,	/**< Textarea drag start/end report */
+	TEXTAREA_MSG_REDRAW_REQUEST,	/**< Textarea redraw request */
+	TEXTAREA_MSG_MOVED_CARET	/**< Textarea caret moved */
+} textarea_msg_type;
+
+struct textarea_msg {
+	struct textarea *ta;
+
+	textarea_msg_type type;
+	union {
+		textarea_drag_type drag;
+		struct rect redraw;
+		struct {
+			bool hidden;
+			int x;
+			int y;
+			int height;
+		} caret;
+	} data;
+};
+
+typedef struct textarea_setup {
+	textarea_flags flags;	/**< Setup flags */
+
+	int width;		/**< Textarea width */
+	int height;		/**< Textarea height */
+
+	int pad_top;		/**< Textarea top padding */
+	int pad_right;		/**< Textarea right padding */
+	int pad_bottom;		/**< Textarea bottom padding */
+	int pad_left;		/**< Textarea left padding */
+
+	int border_width;	/**< Textarea border width */
+	colour border_col;	/**< Textarea border colour */
+
+	colour selected_text;	/**< Textarea selected text colour */
+	colour selected_bg;	/**< Textarea selection background colour */
+	plot_font_style_t text;	/**< Textarea background colour and font */
+
+} textarea_setup;
+
+/**
+ * Client callback for the textarea
+ *
+ * \param data		user data passed at textarea creation
+ * \param textarea_msg	textarea message data
+ */
+typedef void(*textarea_client_callback)(void *data, struct textarea_msg *msg);
 
 /**
  * Create a text area
  *
- * \param width width of the text area
- * \param height width of the text area
- * \param flags text area flags
- * \param style font style
- * \param redraw_start_callback will be called when textarea wants to redraw
- * \param redraw_end_callback will be called when textarea finisjes redrawing
- * \param data user specified data which will be passed to redraw callbacks
+ * \param setup	textarea settings and style
+ * \param redraw_callback will be called when textarea wants to redraw
+ * \param data	user specified data which will be passed to callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct textarea *textarea_create(int width, int height, 
-		textarea_flags flags, const plot_font_style_t *style,
-		textarea_redraw_request_callback redraw_request, void *data);
+struct textarea *textarea_create(const textarea_setup *setup,
+		textarea_client_callback callback, void *data);
 
 /**
  * Destroy a text area
@@ -106,14 +155,14 @@ int textarea_get_caret(struct textarea *ta);
 /**
  * Handle redraw requests for text areas
  *
- * \param redraw Redraw request block
- * \param x0	left X coordinate of redraw area
- * \param y0	top Y coordinate of redraw area
- * \param x1	right X coordinate of redraw area
- * \param y1	bottom Y coordinate of redraw area
+ * \param ta	textarea to render
+ * \param x	x coordinate of textarea top
+ * \param y	y coordinate of textarea left
+ * \param bg	background colour under textarea
+ * \param clip	clip rectangle
  * \param ctx	current redraw context
  */
-void textarea_redraw(struct textarea *ta, int x, int y,
+void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx);
 
 /**
@@ -135,18 +184,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key);
  * \return true if action was handled false otherwise
  */
 bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y);
-
-/**
- * Handles the end of a drag operation
- *
- * \param ta	Text area
- * \param mouse	the mouse state at drag end moment
- * \param x	X coordinate
- * \param y	Y coordinate
- * \return true if drag end was handled false otherwise
- */
-bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
 
 /**

@@ -29,6 +29,7 @@ preamble %{
 #include "htmlelement.h"
 #include "text.h"
 #include "location.h"
+#include "nodelist.h"
 
 %}
 
@@ -114,6 +115,9 @@ binding htmlelement {
 	private "dom_element *" node;
 	private "struct html_content *" htmlc;
 
+	/* tag name retrieved first time its fetched and doesnt change */
+	property unshared tagName;
+
 	/* events through a single interface */
 	property unshared type EventHandler;
 }
@@ -125,6 +129,180 @@ api finalise %{
 %}
 
 /* interface Element in dom idl */
+
+/* readonly attribute DOMString Element::tagName; */
+getter tagName %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+	dom_exception exc;
+	dom_string *name;
+
+	exc = dom_element_get_tag_name(private->node, &name);
+	if (name != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(name), dom_string_length(name));
+		dom_string_unref(name);
+	}
+%}
+
+/* attribute DOMString Element::id; */
+getter id %{
+	dom_string *value;
+	dom_exception exc;
+
+	exc = dom_element_get_attribute(private->node, corestring_dom_id, &value);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(value), dom_string_length(value));
+		dom_string_unref(value);
+	}
+%}
+
+/* attribute DOMString Element::className; */
+getter className %{
+	dom_string *value;
+	dom_exception exc;
+
+	exc = dom_element_get_attribute(private->node, corestring_dom_class, &value);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(value), dom_string_length(value));
+		dom_string_unref(value);
+	}
+%}
+
+/* DOMString? Element::getAttribute(DOMString name); */
+operation getAttribute %{
+	dom_string *value;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_get_attribute(private->node, name_dom, &value);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(value), dom_string_length(value));
+		dom_string_unref(value);
+	}
+%}
+
+/* void Element::setAttribute(DOMString name, DOMString value); */
+operation setAttribute %{
+	dom_string *value_dom;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_string_create((unsigned char*)name, name_len, &value_dom);
+	if (exc != DOM_NO_ERR) {
+		dom_string_unref(name_dom);
+		return JS_FALSE;
+	}
+
+	exc = dom_element_set_attribute(private->node, name_dom, value_dom);
+	dom_string_unref(name_dom);
+	dom_string_unref(value_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+%}
+
+/* void Element::removeAttribute(DOMString name); */
+operation removeAttribute %{
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_remove_attribute(private->node, name_dom);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+%}
+
+/* boolean Element::hasAttribute(DOMString name); */
+operation hasAttribute %{
+	bool result;
+	dom_string *name_dom;
+	dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)name, name_len, &name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_has_attribute(private->node, name_dom, &result);
+	dom_string_unref(name_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (result) {
+		jsret = JS_TRUE;
+	}
+%}
+
+/*
+ *
+ * Dom 4 says this should return a htmlcollection, libdom currently
+ * returns DOM 3 spec of a nodelist
+ */
+/* HTMLCollection Element::getElementsByTagName(DOMString localName); */
+operation getElementsByTagName %{
+	dom_string *localName_dom;
+	/* dom_html_collection *collection;*/
+	dom_nodelist *nodelist;
+	dom_exception exc;
+
+	exc = dom_string_create((uint8_t *)localName, localName_len, &localName_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	exc = dom_element_get_elements_by_tag_name(private->node, localName_dom, /*&collection*/&nodelist);
+	dom_string_unref(localName_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (/*collection*/nodelist != NULL) {
+		/*jsret = jsapi_new_HTMLCollection(cx,
+						 NULL,
+						 NULL,
+						 collection,
+						 private->htmlc);*/
+		jsret = jsapi_new_NodeList(cx,
+						 NULL,
+						 NULL,
+						 nodelist,
+						 private->htmlc);
+	}
+
+%}
 
 /*
  * DOM 3 has these as the element traversal  extension

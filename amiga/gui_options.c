@@ -33,10 +33,12 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
+#include "amiga/help.h"
+#include "amiga/theme.h"
+#include "amiga/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser_private.h"
 #include "desktop/options.h"
-#include "amiga/utf8.h"
 #include "desktop/searchweb.h"
 
 #include <proto/window.h>
@@ -729,12 +731,14 @@ void ami_gui_opts_open(void)
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_MOUSE],
+#ifdef __amigaos4__
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTRTRUE] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTRTRUE,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTRTRUE],
          	           					GA_Selected, nsoption_bool(truecolour_mouse_pointers),
             	    				CheckBoxEnd,
+#endif
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTROS] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
@@ -1070,6 +1074,7 @@ void ami_gui_opts_open(void)
 											LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
 										LabelEnd,
 									LayoutEnd,
+#ifdef __amigaos4__
 									LAYOUT_AddChild,VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
@@ -1081,6 +1086,7 @@ void ami_gui_opts_open(void)
          	           						GA_Selected, nsoption_bool(font_antialiasing),
             	    					CheckBoxEnd,
 									LayoutEnd,
+#endif
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
@@ -1205,6 +1211,7 @@ void ami_gui_opts_open(void)
          	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
          	           						GA_Selected, nsoption_bool(ask_overwrite),
     	        	    				CheckBoxEnd,
+#ifdef __amigaos4__
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_NOTIFY] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_NOTIFY,
          	    	       					GA_RelVerify, TRUE,
@@ -1212,6 +1219,7 @@ void ami_gui_opts_open(void)
          	           						GA_Text, gadlab[GID_OPTS_NOTIFY],
          	           						GA_Selected, nsoption_bool(download_notify),
 										CheckBoxEnd,
+#endif
 									LayoutEnd,
 									LAYOUT_AddChild, gow->objects[GID_OPTS_DLDIR] = GetFileObject,
 										GA_ID, GID_OPTS_DLDIR,
@@ -1244,12 +1252,14 @@ void ami_gui_opts_open(void)
 											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
 											GA_Selected, nsoption_bool(close_no_quit),
 	        	        				CheckBoxEnd,
+#ifdef __amigaos4__
 		                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObject,
 											GA_ID, GID_OPTS_DOCKY,
         	 	           					GA_RelVerify, TRUE,
          		           					GA_Text, gadlab[GID_OPTS_DOCKY],
          		           					GA_Selected, !nsoption_bool(hide_docky_icon),
 	            		    			CheckBoxEnd,
+#endif
 									LayoutEnd, // behaviour
 									CHILD_WeightedHeight, 0,
 
@@ -1292,12 +1302,14 @@ void ami_gui_opts_open(void)
 									LAYOUT_BevelStyle, BVS_GROUP,
 									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
 									LAYOUT_SpaceOuter, TRUE,
+#ifdef __amigaos4__
 	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CONTEXTMENU] = CheckBoxObject,
    	    	          					GA_ID, GID_OPTS_CONTEXTMENU,
        	 	           					GA_RelVerify, TRUE,
    	     	           					GA_Text, gadlab[GID_OPTS_CONTEXTMENU],
    	     	           					GA_Selected, nsoption_bool(context_menu),
            	    					CheckBoxEnd,
+#endif
 			               			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_FASTSCROLL,
          	           					GA_RelVerify, TRUE,
@@ -1582,10 +1594,12 @@ void ami_gui_opts_use(bool save)
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
-	if (data) {
+	if ((data == TRUE) && (nsoption_bool(window_simple_refresh) == false)) {
 		nsoption_set_bool(window_simple_refresh, true);
-	} else {
+		nsoption_set_int(screen_compositing, 0);
+	} else if ((data == FALSE) && (nsoption_bool(window_simple_refresh) == true)) {
 		nsoption_set_bool(window_simple_refresh, false);
+		nsoption_set_int(screen_compositing, -1);
 	}
 	
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
@@ -1887,6 +1901,16 @@ BOOL ami_gui_opts_event(void)
 				return TRUE;
 			break;
 
+			case WMHI_GADGETHELP:
+				if((result & WMHI_GADGETMASK) == 0) {
+					/* Pointer not over our window */
+					ami_help_open(AMI_HELP_MAIN);
+				} else {
+					/* TODO: Make this sensitive to the tab the user is currently on */
+					ami_help_open(AMI_HELP_PREFS);
+				}
+			break;
+			
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{

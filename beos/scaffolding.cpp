@@ -812,13 +812,13 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		}
 		case B_COPY:
-			gui_copy_to_clipboard(browser_window_get_selection(bw));
+			browser_window_key_press(bw, KEY_COPY_SELECTION);
 			break;
 		case B_CUT:
-			browser_window_key_press(bw, 24);
+			browser_window_key_press(bw, KEY_CUT_SELECTION);
 			break;
 		case B_PASTE:
-			gui_paste_from_clipboard(scaffold->top_level, 0, 0);
+			browser_window_key_press(bw, KEY_PASTE);
 			break;
 		case B_SELECT_ALL:
 			LOG(("Selecting all text"));

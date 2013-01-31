@@ -265,6 +265,7 @@ void ami_init_mouse_pointers(void)
 		mouseptrobj[i] = NULL;
 		char ptrfname[1024];
 
+#ifdef __amigaos4__
 		if(nsoption_bool(truecolour_mouse_pointers))
 		{
 			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
@@ -316,6 +317,7 @@ void ami_init_mouse_pointers(void)
 				}
 			}
 		}
+#endif
 
 		if(!mouseptrobj[i])
 		{
@@ -370,8 +372,8 @@ void ami_mouse_pointers_free(void)
 	{
 		if(mouseptrbm[i])
 		{
-			FreeRaster(mouseptrbm[i]->Planes[0],16,16);
-			FreeRaster(mouseptrbm[i]->Planes[1],16,16);
+			FreeRaster(mouseptrbm[i]->Planes[0],32,32);
+			FreeRaster(mouseptrbm[i]->Planes[1],32,32);
 			FreeVec(mouseptrbm[i]);
 		}
 	}

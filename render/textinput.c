@@ -1380,12 +1380,12 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		char *buff;
+		char *buff = NULL;
 		size_t buff_len;
 		bool success;
 
 		gui_get_clipboard(&buff, &buff_len);
-		if (utf8 == NULL)
+		if (buff == NULL)
 			return false;
 
 		success = browser_window_paste_text(bw, buff, buff_len, true);
@@ -2027,12 +2027,12 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_PASTE:
 	{
-		char *buff;
+		char *buff = NULL;
 		size_t buff_len;
 		bool success;
 
 		gui_get_clipboard(&buff, &buff_len);
-		if (utf8 == NULL)
+		if (buff == NULL)
 			return false;
 
 		success = browser_window_paste_text(bw, buff, buff_len, true);

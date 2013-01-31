@@ -78,9 +78,9 @@ NETSURF_USE_HARU_PDF := NO
 NETSURF_STRIP_BINARY := NO
 
 # Template used for constructing the User Agent: string.  The first two
-# replacements are major/minor version, second two are OS and architecture.
+# replacements are major/minor version, next is OS.
 # Please don't be tempted to mention Mozilla here!  Let's let that lie die.
-NETSURF_UA_FORMAT_STRING := "NetSurf/%d.%d (%s; %s)"
+NETSURF_UA_FORMAT_STRING := "NetSurf/%d.%d (%s)"
 
 # Default home page, if one is not defined by the user.  Note that this
 # option does not apply to the RISC OS version, as it has its own local

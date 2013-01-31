@@ -255,6 +255,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_width: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*width = 0;
 		return false;
 	}
 
@@ -303,6 +304,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_x_to_offset: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 
@@ -355,11 +358,27 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_split: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 
-	while (*char_offset && string[*char_offset] != ' ')
-		(*char_offset)--;
+	if (*char_offset != length) {
+		/* we found something to split at */
+		size_t orig = *char_offset;
+
+		/* ensure a space at <= the split point we found */
+		while (*char_offset && string[*char_offset] != ' ')
+			(*char_offset)--;
+
+		/* nothing valid found <= split point, advance to next space */
+		if (*char_offset == 0) {
+			*char_offset = orig;
+			while (*char_offset != length &&
+					string[*char_offset] != ' ')
+				(*char_offset)++;
+		}
+	}
 
 	code = rufl_width(font_family, font_style, font_size,
 			string, *char_offset,
@@ -372,6 +391,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			LOG(("rufl_width: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
+		*char_offset = 0;
+		*actual_x = 0;
 		return false;
 	}
 

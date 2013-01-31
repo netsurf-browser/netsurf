@@ -502,7 +502,8 @@ png_cache_convert_error:
 
 	free((png_bytep *) row_pointers);
 
-	bitmap_modified((struct bitmap *)bitmap);
+	if (bitmap != NULL)
+		bitmap_modified((struct bitmap *)bitmap);
 
 	return (struct bitmap *)bitmap;
 }
