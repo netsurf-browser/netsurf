@@ -213,6 +213,25 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
     return;
 }
 
+static void tb_txt_callback(void *data, struct textarea_msg *msg)
+{
+	switch (msg->type) {
+
+		case TEXTAREA_MSG_DRAG_REPORT:
+		break;
+
+		case TEXTAREA_MSG_REDRAW_REQUEST:
+			tb_txt_request_redraw(data,
+				msg->data.redraw.x0, msg->data.redraw.y0,
+				msg->data.redraw.x1 - msg->data.redraw.x0,
+				msg->data.redraw.y1 - msg->data.redraw.y0);
+		break;
+
+		default:
+		break;
+	}
+}
+
 static struct s_tb_button *button_init(struct s_toolbar *tb, OBJECT * tree, int index,
 							struct s_tb_button * instance)
 {
@@ -302,8 +321,23 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 
 	toolbar_get_grect(t, TOOLBAR_AREA_URL, &url_area);
 	url_area.g_h -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
-	t->url.textarea = textarea_create(300, url_area.g_h, 0, &font_style_url,
-                                   tb_txt_request_redraw, t);
+
+	textarea_setup ta_setup;
+	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
+	ta_setup.width = 300;
+	ta_setup.height = url_area.g_h;
+	ta_setup.pad_top = 0;
+	ta_setup.pad_right = 4;
+	ta_setup.pad_bottom = 0;
+	ta_setup.pad_left = 4;
+	ta_setup.border_width = 1;
+	ta_setup.border_col = 0x000000;
+	ta_setup.selected_text = 0xffffff;
+	ta_setup.selected_bg = 0x000000;
+	ta_setup.text = font_style_url;
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+	t->url.textarea = textarea_create(&ta_setup, tb_txt_callback, t);
 
 	/* create the throbber widget: */
 	t->throbber.index = THROBBER_INACTIVE_INDEX;
@@ -436,7 +470,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 		};
 		//dbg_rect("tb textarea clip: ", &r);
 		// TODO: let this be handled by an userdef object redraw function:
-        textarea_redraw(tb->url.textarea, 0, 0, &r, &toolbar_rdrw_ctx);
+        textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, &r, &toolbar_rdrw_ctx);
     }
 }
 
@@ -764,7 +798,8 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 				my = my - (work.g_y + TOOLBAR_URL_MARGIN_TOP);
             } while (mb & 1);
 
-			textarea_drag_end( tb->url.textarea, 0, mx, my);
+			textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_HOVER, mx,
+									my);
         }
         else if (button & 2) {
 			// TODO: open a context popup
