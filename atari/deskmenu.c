@@ -268,8 +268,13 @@ static void __CDECL menu_find(short item, short title, void *data)
 {
 	static bool visible = false;
 	LOG(("%s", __FUNCTION__));
-	if( input_window != NULL ){
-		window_open_search(input_window->root, true);
+	if (input_window != NULL) {
+		if (input_window->search) {
+			window_close_search(input_window->root);
+		}
+		else {
+			window_open_search(input_window->root, true);
+		}
 	}
 }
 

@@ -654,9 +654,9 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 {
 
 	assert(tb!=NULL);
+
 	GRECT work;
 	bool ret = false;
-
 	struct gui_window *gw = window_get_active_gui_window(tb->owner);
 
 	assert( gw != NULL );

@@ -115,7 +115,7 @@ bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
 bool plot_line( int x0, int y0, int x1, int y1, const plot_style_t *style );
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
                       unsigned long bg, unsigned long flags);
-bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
+bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
 						uint32_t flags);
 bool plot_copy_rect(GRECT src, GRECT dst);
 
@@ -123,7 +123,7 @@ bool plot_copy_rect(GRECT src, GRECT dst);
 void vdi1000_to_rgb( unsigned short * in, unsigned char * out );
 
 /* convert an bgra color to vdi1000 color */
-void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
+void rgb_to_vdi1000( unsigned char * in, RGB1000 *out);
 
 /* convert an rgb color to an index into the web palette */
 short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);

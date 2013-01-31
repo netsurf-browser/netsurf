@@ -245,10 +245,18 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #ifdef WITH_8BPP_SUPPORT
     	if( app.nplanes > 8 ){
 #endif
-			unsigned short out[4];
-			rgb_to_vdi1000( (unsigned char*)&fstyle->foreground, (unsigned short*)&out );
-			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
-			plot_blit_mfdb(&loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
+			//unsigned short out[4];
+			RGB1000 out;
+			//rgb_to_vdi1000( (unsigned char*)&fstyle->foreground, (unsigned short*)&out );
+			out.blue = 0;
+			out.green = 1000;
+			out.red = 0;
+			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, (short *)&out);
+			vq_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, 1, (short *)&out);
+			//printf("r:%d,g:%d,b:%d", out.red, out.green, out.blue);
+			//vsl_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR);
+			//vsf_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR);
+			plot_blit_mfdb(&loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS);
 #ifdef WITH_8BPP_SUPPORT
 		} else {
 			unsigned char c = RGB_TO_VDI(fstyle->foreground);

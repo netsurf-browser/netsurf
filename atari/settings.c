@@ -691,7 +691,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             }
             break;
 
-        case GEMTK_WM_WM_FORM:
+        case GEMTK_WM_WM_FORM_CLICK:
             form_event(msg[4], 1);
             break;
 

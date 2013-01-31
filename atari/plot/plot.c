@@ -193,9 +193,10 @@ inline static void vsl_rgbcolor(short vdih, colour cin)
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 	#endif
-		unsigned short c[4];
-		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c);
-		vs_color(vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0]);
+		//unsigned short c[4];
+		RGB1000 c;
+		rgb_to_vdi1000( (unsigned char*)&cin, &c);
+		vs_color(vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c);
 		vsl_color(vdih, OFFSET_CUSTOM_COLOR);
 	#ifdef WITH_8BPP_SUPPORT
 	} else {
@@ -219,9 +220,9 @@ inline static void vsf_rgbcolor(short vdih, colour cin)
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 	#endif
-		unsigned short c[4];
-		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
-		vs_color( vdih, OFFSET_CUSTOM_COLOR, &c[0] );
+		RGB1000 c;
+		rgb_to_vdi1000( (unsigned char*)&cin, &c);
+		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c);
 		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
 	#ifdef WITH_8BPP_SUPPORT
 	} else {
@@ -512,14 +513,14 @@ static struct s_vdi_sysinfo * read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo 
 /*
 	Convert an RGB color to an VDI Color
 */
-inline void rgb_to_vdi1000(unsigned char * in, unsigned short * out)
+inline void rgb_to_vdi1000(unsigned char * in, RGB1000 *out)
 {
     double r = ((double)in[3]/255); /* prozentsatz red   */
     double g = ((double)in[2]/255);	/* prozentsatz green */
     double b = ((double)in[1]/255);	/* prozentsatz blue  */
-    out[0] = 1000 * r + 0.5;
-    out[1] = 1000 * g + 0.5;
-    out[2] = 1000 * b + 0.5;
+    out->red = 1000 * r + 0.5;
+    out->green = 1000 * g + 0.5;
+    out->blue = 1000 * b + 0.5;
     return;
 }
 
@@ -1441,14 +1442,14 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
 	return(true);
 }
 
-bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
+bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
 						uint32_t flags)
 {
 
 	MFDB screen, tran;
 	MFDB * src;
 	short pxy[8];
-	short c[2] = {fgcolor, G_WHITE};
+	short c[2] = {fgcolor, 0};
 	GRECT off;
 
 	plot_get_clip_grect(&off);
@@ -1457,29 +1458,30 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
 	}
 
 	init_mfdb( 0, loc->g_w, loc->g_h, 0, &screen );
-
-	if( insrc->fd_stand ){
-		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h,
-			MFDB_FLAG_NOALLOC,
-			&tran
-		);
-		if( size_buf_scr == 0 ){
-			buf_scr.fd_addr = malloc( size );
-			size_buf_scr = size;
-		} else {
-			if( size > size_buf_scr ) {
-				buf_scr.fd_addr = realloc(
-					buf_scr.fd_addr, size
-				);
-				size_buf_scr = size;
-			}
-		}
-		tran.fd_addr = buf_scr.fd_addr;
-		vr_trnfm(atari_plot_vdi_handle, insrc, &tran );
-		src = &tran;
-	} else {
+//
+//	if( insrc->fd_stand){
+//		printf("st\n");
+//		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h,
+//			MFDB_FLAG_NOALLOC,
+//			&tran
+//		);
+//		if( size_buf_scr == 0 ){
+//			buf_scr.fd_addr = malloc( size );
+//			size_buf_scr = size;
+//		} else {
+//			if( size > size_buf_scr ) {
+//				buf_scr.fd_addr = realloc(
+//					buf_scr.fd_addr, size
+//				);
+//				size_buf_scr = size;
+//			}
+//		}
+//		tran.fd_addr = buf_scr.fd_addr;
+//		vr_trnfm(atari_plot_vdi_handle, insrc, &tran );
+//		src = &tran;
+//	} else {
 		src = insrc;
-	}
+//	}
 
 	pxy[0] = off.g_x - loc->g_x;
 	pxy[1] = off.g_y - loc->g_y;
@@ -1492,7 +1494,7 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
 
 
 	if( flags & PLOT_FLAG_TRANS && src->fd_nplanes == 1){
-		vrt_cpyfm(atari_plot_vdi_handle, MD_TRANS, (short*)pxy, src, &screen, (short*)&c );
+		vrt_cpyfm(atari_plot_vdi_handle, MD_REPLACE/*MD_TRANS*/, (short*)pxy, src, &screen, (short*)&c);
 	} else {
 		/* this method only plots transparent bitmaps, right now... */
 	}

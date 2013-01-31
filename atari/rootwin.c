@@ -96,12 +96,13 @@ static const struct redraw_context rootwin_rdrw_ctx = {
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
-    GRECT content_area;
+    GRECT area;
     static bool prev_url = false;
     static short prev_x=0;
     static short prev_y=0;
     struct rootwin_data_s * data = gemtk_wm_get_user_data(win);
     struct gui_window *tmp;
+    OBJECT *obj;
 
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
@@ -177,9 +178,9 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
         window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
-                         &content_area);
+                         &area);
         if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
-                         content_area)) {
+                         area)) {
             on_content_mouse_click(data->rootwin);
         }
     }
@@ -191,10 +192,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             // The window found at x,y is an gui_window
             // and it's the input window.
             window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
-                             &content_area);
+                             &area);
             if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
-                             content_area)) {
-                on_content_mouse_move(data->rootwin, &content_area);
+                             area)) {
+                on_content_mouse_move(data->rootwin, &area);
             } else {
                 GRECT tb_area;
                 window_get_grect(data->rootwin, BROWSER_AREA_URL_INPUT, &tb_area);
@@ -1303,18 +1304,20 @@ static short on_window_key_input(ROOTWIN *rootwin, unsigned short nkc)
         /* make sure we report for the root window and report...: */
         done = toolbar_key_input(gw->root->toolbar, nkc);
     }  else  {
-        gw_tmp = window_list;
-        /* search for active browser component: */
-        while( gw_tmp != NULL && done == false ) {
-            /* todo: only handle when input_window == ontop */
-            if( window_widget_has_focus(input_window->root, BROWSER,
-                                        (void*)gw_tmp->browser)) {
-                done = on_content_keypress(gw_tmp->browser->bw, nkc);
-                break;
-            } else {
-                gw_tmp = gw_tmp->next;
-            }
-        }
+        if( window_widget_has_focus(input_window->root, BROWSER,
+			(void*)input_window->browser)) {
+			done = on_content_keypress(input_window->browser->bw, nkc);
+		}
+		else if(window_widget_has_focus(input_window->root, SEARCH_INPUT, NULL)) {
+			OBJECT * obj;
+				obj = toolbar_get_form(input_window->root->toolbar);
+				obj[TOOLBAR_BT_SEARCH_FWD].ob_state &= ~OS_DISABLED;
+				obj[TOOLBAR_BT_SEARCH_BACK].ob_state &= ~OS_DISABLED;
+				window_schedule_redraw_grect(input_window->root,
+							gemtk_obj_screen_rect(obj, TOOLBAR_BT_SEARCH_FWD));
+				window_schedule_redraw_grect(input_window->root,
+							gemtk_obj_screen_rect(obj, TOOLBAR_BT_SEARCH_BACK));
+		}
     }
     return((done==true) ? 1 : 0);
 }

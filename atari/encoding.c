@@ -67,3 +67,5 @@ int atari_to_ucs4(unsigned char atari)
 		ucs4 = (int)atari;
 	return( ucs4 );
 }
+
+

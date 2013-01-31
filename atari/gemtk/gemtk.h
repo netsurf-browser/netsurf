@@ -112,7 +112,7 @@ short gemtk_msg_box_show(short type, const char * msg);
 
 #define GEMTK_WM_VSLIDER 				0x01
 #define GEMTK_WM_HSLIDER 				0x02
-#define GEMTK_WM_VH_SLIDER 			0x03
+#define GEMTK_WM_VH_SLIDER 				0x03
 
 /*
 	Message sent to the client application when an AES object is
@@ -123,7 +123,8 @@ short gemtk_msg_box_show(short type, const char * msg);
 	msg[5] = Number of clicks.
 	msg[6] = Modifier keys.
 */
-#define GEMTK_WM_WM_FORM				1001
+#define GEMTK_WM_WM_FORM_CLICK			1001
+#define GEMTK_WM_WM_FORM_KEY			1002
 
 struct gemtk_window_s;
 
@@ -182,6 +183,10 @@ short gemtk_wm_remove(GUIWIN *win);
 
 GUIWIN * gemtk_wm_validate_ptr(GUIWIN *win);
 
+GUIWIN *gemtk_wm_link(GUIWIN *win);
+
+GUIWIN *gemtk_wm_unlink(GUIWIN *win);
+
 short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]);
 
 void gemtk_wm_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
@@ -223,6 +228,8 @@ void gemtk_wm_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
 void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area);
 
 VdiHdl gemtk_wm_get_vdi_handle(GUIWIN *win);
+
+short getm_wm_get_toolbar_edit_obj(GUIWIN *win);
 
 bool gemtk_wm_has_intersection(GUIWIN *win, GRECT *work);
 

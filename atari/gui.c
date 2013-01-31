@@ -81,7 +81,6 @@ struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
 long next_poll;
 bool rendering = false;
-bool gui_poll_repeat = false;
 GRECT desk_area;
 
 
@@ -117,81 +116,68 @@ short aes_msg_out[8];
 void gui_poll(bool active)
 {
 
+	struct gui_window *tmp;
     short mx, my, dummy;
-	unsigned short nkc = 0;
-
-	gui_poll_repeat = false;
+    unsigned short nkc = 0;
 
     aes_event_in.emi_tlow = schedule_run();
 
-	if(active || rendering)
-		aes_event_in.emi_tlow = 0;
+    if(active || rendering)
+        aes_event_in.emi_tlow = 0;
 
-	if(aes_event_in.emi_tlow < 0){
-		aes_event_in.emi_tlow = 10000;
-		printf("long poll!\n");
-	}
+    if(aes_event_in.emi_tlow < 0) {
+        aes_event_in.emi_tlow = 10000;
+        printf("long poll!\n");
+    }
 
     struct gui_window * g;
 
     if( !active ) {
-		if(input_window && input_window->root->redraw_slots.areas_used > 0){
-			window_process_redraws(input_window->root);
-		}
-        /* this suits for stuff with lower priority */
-        /* TBD: really be spare on redraws??? */
-        hotlist_redraw();
-        global_history_redraw();
+        if(input_window && input_window->root->redraw_slots.areas_used > 0) {
+            window_process_redraws(input_window->root);
+        }
     }
 
-	// Handle events until there are no more messages pending or
-	// until the engine indicates activity:
-	bool skip = false;
-/*
-	if (active || rendering){
-		if ((clock() < next_poll)){
-			skip = true;
-		} else {
-			next_poll = clock() + (CLOCKS_PER_SEC>>5);
+    graf_mkstate(&mx, &my, &dummy, &dummy);
+    aes_event_in.emi_m1.g_x = mx;
+    aes_event_in.emi_m1.g_y = my;
+    evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
+    if(!gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
+        if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
+            LOG(("WM: %d\n", aes_msg_out[0]));
+            switch(aes_msg_out[0]) {
+
+            case MN_SELECTED:
+                LOG(("Menu Item: %d\n",aes_msg_out[4]));
+                deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
+                break;
+            default:
+                break;
+            }
+        }
+        if((aes_event_out.emo_events & MU_KEYBD) != 0) {
+            uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
+                                        (short)aes_event_out.emo_kreturn);
+            deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
+                                       aes_event_out.emo_kmeta, nkc);
+        }
+    }
+
+    tmp = window_list;
+    while(tmp){
+		if(tmp->root->redraw_slots.areas_used > 0){
+			window_process_redraws(tmp->root);
 		}
-	}
-*/
-	//if (skip == false) {
-		do {
-			short mx, my, dummy;
+		tmp = tmp->next;
+    }
 
-			graf_mkstate(&mx, &my, &dummy, &dummy);
-			aes_event_in.emi_m1.g_x = mx;
-			aes_event_in.emi_m1.g_y = my;
-			evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-			if(!gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
-				if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
-					LOG(("WM: %d\n", aes_msg_out[0]));
-					switch(aes_msg_out[0]) {
+    if(hl.tv->redraw){
+		atari_treeview_redraw(hl.tv);
+    }
 
-						case MN_SELECTED:
-							LOG(("Menu Item: %d\n",aes_msg_out[4]));
-							deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
-							break;
-						default:
-							break;
-						}
-				}
-				if((aes_event_out.emo_events & MU_KEYBD) != 0) {
-					uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
-										(short)aes_event_out.emo_kreturn);
-					deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
-												aes_event_out.emo_kmeta, nkc);
-				}
-			}
-		} while ( gui_poll_repeat && !(active||rendering));
-		if(input_window && input_window->root->redraw_slots.areas_used > 0){
-			window_process_redraws(input_window->root);
-		}
-	//} else {
-		//printf("skip poll %d (%d)\n", next_poll, clock());
-	//}
-
+    if(gl_history.tv->redraw){
+		atari_treeview_redraw(gl_history.tv);
+    }
 }
 
 
@@ -248,11 +234,11 @@ void gui_window_destroy(struct gui_window *w)
 
     LOG(("%s\n", __FUNCTION__ ));
 
-	if (input_window == w) {
-		gui_set_input_gui_window(NULL);
+    if (input_window == w) {
+        gui_set_input_gui_window(NULL);
     }
 
-	nsatari_search_session_destroy(w->search);
+    nsatari_search_session_destroy(w->search);
     free(w->browser);
     free(w->status);
     free(w->title);
@@ -273,11 +259,11 @@ void gui_window_destroy(struct gui_window *w)
     free(w);
     w = NULL;
 
-    if(input_window == NULL){
+    if(input_window == NULL) {
         w = window_list;
         while( w != NULL ) {
             if(w->root) {
-            	gui_set_input_gui_window(w);
+                gui_set_input_gui_window(w);
                 break;
             }
             w = w->next;
@@ -307,7 +293,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
         int l;
         char * conv;
         l = strlen(title)+1;
-        if (utf8_to_local_encoding(title, l, &conv) == UTF8_CONVERT_OK ) {
+        if (utf8_to_local_encoding(title, l-1, &conv) == UTF8_CONVERT_OK ) {
             l = MIN((uint32_t)atari_sysinfo.aes_max_win_title_len, strlen(conv));
             if(gw->title == NULL)
                 gw->title = malloc(l);
@@ -367,8 +353,8 @@ void gui_window_redraw_window(struct gui_window *gw)
 
 void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
-	GRECT area;
-	struct gemtk_wm_scroll_info_s *slid;
+    GRECT area;
+    struct gemtk_wm_scroll_info_s *slid;
 
     if (gw == NULL)
         return;
@@ -376,8 +362,8 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
     slid = gemtk_wm_get_scroll_info(gw->root->win);
 
     window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
-	area.g_x += rect->x0 - (slid->x_pos * slid->x_unit_px);
-	area.g_y += rect->y0 - (slid->y_pos * slid->y_unit_px);
+    area.g_x += rect->x0 - (slid->x_pos * slid->x_unit_px);
+    area.g_y += rect->y0 - (slid->y_pos * slid->y_unit_px);
     area.g_w = rect->x1 - rect->x0;
     area.g_h = rect->y1 - rect->y0;
     //dbg_grect("update box", &area);
@@ -386,11 +372,11 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
-	int x,y;
+    int x,y;
     if (w == NULL)
         return false;
 
-	window_get_scroll(w->root, sx, sy);
+    window_get_scroll(w->root, sx, sy);
 
     return( true );
 }
@@ -399,12 +385,12 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
     int units = 0;
     if ((w == NULL)
-		|| (w->browser->bw == NULL)
-			|| (w->browser->bw->current_content == NULL))
-				return;
+            || (w->browser->bw == NULL)
+            || (w->browser->bw->current_content == NULL))
+        return;
 
-	//printf("scroll %d, %d\n", sx, sy);
-	window_scroll_by(w->root, sx, sy);
+    LOG(("scroll (gui_window: %p) %d, %d\n", w, sx, sy));
+    window_scroll_by(w->root, sx, sy);
     return;
 
 }
@@ -412,9 +398,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int y1)
 {
     LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
-    printf("scroll visible\n");
     gui_window_set_scroll(w,x0,y0);
-    //browser_schedule_redraw_rect( w, 0, 0, x1-x0,y1-y0);
 }
 
 
@@ -427,11 +411,11 @@ void gui_window_update_extent(struct gui_window *gw)
 
     if( gw->browser->bw->current_content != NULL ) {
         // TODO: store content size!
-        if(window_get_active_gui_window(gw->root) == gw){
+        if(window_get_active_gui_window(gw->root) == gw) {
             window_set_content_size( gw->root,
-                                      content_get_width(gw->browser->bw->current_content),
-                                      content_get_height(gw->browser->bw->current_content)
-                                    );
+                                     content_get_width(gw->browser->bw->current_content),
+                                     content_get_height(gw->browser->bw->current_content)
+                                   );
             window_update_back_forward(gw->root);
             GRECT area;
             window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
@@ -549,7 +533,7 @@ void gui_window_set_url(struct gui_window *w, const char *url)
     }
     strncpy(w->url, url, l);
     w->url[l] = 0;
-    if(input_window == w->root->active_gui_window){
+    if(input_window == w->root->active_gui_window) {
         toolbar_set_url(w->root->toolbar, url);
     }
 }
@@ -599,8 +583,8 @@ void gui_window_stop_throbber(struct gui_window *w)
 /* Place caret in window */
 void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 {
-	window_place_caret(w->root, 1, x, y, height, NULL);
-	w->root->caret.state |= CARET_STATE_ENABLED;
+    window_place_caret(w->root, 1, x, y, height, NULL);
+    w->root->caret.state |= CARET_STATE_ENABLED;
     return;
 }
 
@@ -614,11 +598,11 @@ gui_window_remove_caret(struct gui_window *w)
     if (w == NULL)
         return;
 
-	if ((w->root->caret.state & CARET_STATE_ENABLED) != 0) {
-		//printf("gw hide caret\n");
-		window_place_caret(w->root, 0, -1, -1, -1, NULL);
-		w->root->caret.state &= ~CARET_STATE_ENABLED;
-	}
+    if ((w->root->caret.state & CARET_STATE_ENABLED) != 0) {
+        //printf("gw hide caret\n");
+        window_place_caret(w->root, 0, -1, -1, -1, NULL);
+        w->root->caret.state &= ~CARET_STATE_ENABLED;
+    }
     return;
 }
 
@@ -629,7 +613,7 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
     bmp_icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
     g->icon = bmp_icon;
-    if(input_window == g){
+    if(input_window == g) {
         window_set_icon(g->root, bmp_icon);
     }
 }
@@ -642,10 +626,10 @@ gui_window_set_search_ico(hlcache_handle *ico)
 
 void gui_window_new_content(struct gui_window *w)
 {
-	struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w->root->win);
-	slid->x_pos = 0;
-	slid->y_pos = 0;
-	gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
+    struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w->root->win);
+    slid->x_pos = 0;
+    slid->y_pos = 0;
+    gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
     gui_window_redraw_window(w);
 }
 
@@ -696,37 +680,36 @@ void gui_start_selection(struct gui_window *w)
  */
 void gui_get_clipboard(char **buffer, size_t *length)
 {
-	char *clip;
-	size_t clip_len;
+    char *clip;
+    size_t clip_len;
 
-	*length = 0;
-	*buffer = 0;
+    *length = 0;
+    *buffer = 0;
 
-	clip = scrap_txt_read();
+    clip = scrap_txt_read();
 
-	if(clip == NULL){
-		return;
-	} else {
+    if(clip == NULL) {
+        return;
+    } else {
 
-		// clipboard is in atari encoding, convert it to utf8:
+        // clipboard is in atari encoding, convert it to utf8:
 
-		char *utf8 = NULL;
-		utf8_convert_ret ret;
+        char *utf8 = NULL;
+        utf8_convert_ret ret;
 
-		clip_len = strlen(clip);
-		if (clip_len > 0) {
-			ret = utf8_to_local_encoding(clip, clip_len, &utf8);
-			if (ret == UTF8_CONVERT_OK && utf8 != NULL) {
-				*buffer = utf8;
-				*length = strlen(utf8);
-			}
-			else {
-				assert(ret == UTF8_CONVERT_OK && utf8 != NULL);
-			}
-		}
+        clip_len = strlen(clip);
+        if (clip_len > 0) {
+            ret = utf8_to_local_encoding(clip, clip_len, &utf8);
+            if (ret == UTF8_CONVERT_OK && utf8 != NULL) {
+                *buffer = utf8;
+                *length = strlen(utf8);
+            } else {
+                assert(ret == UTF8_CONVERT_OK && utf8 != NULL);
+            }
+        }
 
-		free(clip);
-	}
+        free(clip);
+    }
 }
 
 /**
@@ -738,23 +721,23 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  n_styles  Number of text run styles in array
  */
 void gui_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles)
+                       nsclipboard_styles styles[], int n_styles)
 {
-	if (length > 0 && buffer != NULL) {
+    if (length > 0 && buffer != NULL) {
 
-		// convert utf8 input to atari encoding:
+        // convert utf8 input to atari encoding:
 
-		utf8_convert_ret ret;
-		char *clip = NULL;
+        utf8_convert_ret ret;
+        char *clip = NULL;
 
-		ret = utf8_to_local_encoding(buffer,length, &clip);
-		if (ret == UTF8_CONVERT_OK) {
-			scrap_txt_write(clip);
-		} else {
-			assert(ret == UTF8_CONVERT_OK);
-		}
-		free(clip);
-	}
+        ret = utf8_to_local_encoding(buffer,length, &clip);
+        if (ret == UTF8_CONVERT_OK) {
+            scrap_txt_write(clip);
+        } else {
+            assert(ret == UTF8_CONVERT_OK);
+        }
+        free(clip);
+    }
 }
 
 
@@ -787,7 +770,7 @@ void gui_401login_open(nsurl *url, const char *realm,
         free( out );
     }
     if (cb != NULL) {
-		cb(bres, cbpw);
+        cb(bres, cbpw);
     }
 
 }
@@ -810,8 +793,8 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 
 void gui_set_input_gui_window(struct gui_window *gw)
 {
-	LOG(("Setting input window from: %p to %p\n", input_window, gw));
-	input_window = gw;
+    LOG(("Setting input window from: %p to %p\n", input_window, gw));
+    input_window = gw;
 }
 
 void gui_quit(void)
@@ -863,7 +846,7 @@ process_cmdline(int argc, char** argv)
         option_window_y = nsoption_int(window_y);
 
         if (option_window_width <= desk_area.g_w
-			&& option_window_height < desk_area.g_h) {
+                && option_window_height < desk_area.g_h) {
             set_default_dimensions = false;
         }
     }
@@ -962,7 +945,7 @@ static void gui_init(int argc, char** argv)
         die("Uable to open GEM Resource file!");
     }
 
-	wind_get_grect(0, WF_WORKXYWH, &desk_area);
+    wind_get_grect(0, WF_WORKXYWH, &desk_area);
 
     create_cursor(0, POINT_HAND, NULL, &gem_cursors.hand );
     create_cursor(0, TEXT_CRSR,  NULL, &gem_cursors.ibeam );
@@ -1005,19 +988,19 @@ static void gui_init(int argc, char** argv)
     if (process_cmdline(argc,argv) != true)
         die("unable to process command line.\n");
 
-	LOG(("Initializing NKC..."));
+    LOG(("Initializing NKC..."));
     nkc_init();
 
 
-	LOG(("Initializing plotters..."));
+    LOG(("Initializing plotters..."));
     plot_init(nsoption_charp(atari_font_driver));
 
     tree_set_icon_dir(nsoption_charp(tree_icons_path));
 
-	aes_event_in.emi_m1leave = MO_LEAVE;
-	aes_event_in.emi_m1.g_w = 1;
-	aes_event_in.emi_m1.g_h = 1;
-	//next_poll = clock() + (CLOCKS_PER_SEC>>3);
+    aes_event_in.emi_m1leave = MO_LEAVE;
+    aes_event_in.emi_m1.g_w = 1;
+    aes_event_in.emi_m1.g_h = 1;
+    //next_poll = clock() + (CLOCKS_PER_SEC>>3);
 }
 
 static char *theapp = (char*)"NetSurf";
@@ -1072,7 +1055,7 @@ int main(int argc, char** argv)
 
     graf_mouse( ARROW , NULL);
 
-	LOG(("Creating initial browser window..."));
+    LOG(("Creating initial browser window..."));
     browser_window_create(option_homepage_url, 0, 0, true, false);
 
     LOG(("Entering NetSurf mainloop..."));
@@ -1084,7 +1067,7 @@ int main(int argc, char** argv)
     fclose(stdout);
     fclose(stderr);
 #endif
-	exit_gem();
+    exit_gem();
 
     return 0;
 }

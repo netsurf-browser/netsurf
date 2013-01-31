@@ -434,7 +434,7 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 				}
 
                 short oldevents = ev_out->emo_events;
-                short msg_out[8] = { GEMTK_WM_WM_FORM, gl_apid,
+                short msg_out[8] = { GEMTK_WM_WM_FORM_CLICK, gl_apid,
 										0, gw->handle,
 										gw->form_focus_obj, ev_out->emo_mclicks,
 										ev_out->emo_kmeta, 0
@@ -484,7 +484,9 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                               ev_out->emo_kreturn, &edit_idx,
                               EDCHAR, gw->handle);
         }
-        retval = 1;
+        //retval = 1;
+        /*gemtk_wm_send_msg(gw, GEMTK_WM_WM_FORM_KEY, gw->toolbar_edit_obj,
+						ev_out->emo_kreturn, 0, 0);*/
     }
 
     if((gw->form != NULL) && (gw->form_edit_obj > -1) ) {
@@ -649,19 +651,7 @@ GUIWIN * gemtk_wm_add(short handle, uint32_t flags, gemtk_wm_event_handler_f cb)
     win->handle = handle;
     win->handler_func = cb;
     win->flags = flags;
-    if (winlist == NULL) {
-        winlist = win;
-        win->next = NULL;
-        win->prev = NULL;
-    } else {
-        GUIWIN *tmp = winlist;
-        while( tmp->next != NULL ) {
-            tmp = tmp->next;
-        }
-        tmp->next = win;
-        win->prev = tmp;
-        win->next = NULL;
-    }
+	gemtk_wm_link(win);
 
     DEBUG_PRINT(("Added guiwin: %p, tb: %p\n", win, win->toolbar));
     return(win);
@@ -700,15 +690,41 @@ GUIWIN *gemtk_wm_validate_ptr(GUIWIN *win)
     return(NULL);
 }
 
-/**
-* Remove an GUIWIN from the list of managed windows.
-* Call this when the AES window is closed or deleted.
-*/
-short gemtk_wm_remove(GUIWIN *win)
+GUIWIN *gemtk_wm_link(GUIWIN *win)
 {
-    win = gemtk_wm_validate_ptr(win);
-    if (win == NULL)
-        return(-1);
+	/* Make sure the window is not linked: */
+	GUIWIN *win_val = gemtk_wm_validate_ptr(win);
+	if(win_val){
+		DEBUG_PRINT(("GUIWIN %p is already linked!\n", win));
+		return(NULL);
+	}
+
+	if (winlist == NULL) {
+        winlist = win;
+        win->next = NULL;
+        win->prev = NULL;
+    } else {
+        GUIWIN *tmp = winlist;
+        while( tmp->next != NULL ) {
+            tmp = tmp->next;
+        }
+        tmp->next = win;
+        win->prev = tmp;
+        win->next = NULL;
+    }
+}
+
+GUIWIN *gemtk_wm_unlink(GUIWIN *win)
+{
+	GUIWIN * win_val;
+
+	/* Make sure the window is linked: */
+	win_val = gemtk_wm_validate_ptr(win);
+    if (win_val == NULL){
+    	DEBUG_PRINT(("GUIWIN %p is not linked!\n", win));
+		return(NULL);
+    }
+
 
     /* unlink the window: */
     if(win->prev != NULL ) {
@@ -719,6 +735,16 @@ short gemtk_wm_remove(GUIWIN *win)
     if (win->next != NULL) {
         win->next->prev = win->prev;
     }
+    return(win);
+}
+
+/**
+* Remove an GUIWIN from the list of managed windows and free the GUIWIN.
+* Call this when the AES window is closed or deleted.
+*/
+short gemtk_wm_remove(GUIWIN *win)
+{
+	gemtk_wm_unlink(win);
     DEBUG_PRINT(("guiwin free: %p\n", win));
     free(win);
     return(0);
@@ -988,6 +1014,11 @@ void gemtk_wm_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flag
 void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s)
 {
 	win->toolbar_size = s;
+}
+
+short getm_wm_get_toolbar_edit_obj(GUIWIN *win)
+{
+	return(win->toolbar_edit_obj);
 }
 
 /** Set the current active edit object */

@@ -83,7 +83,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	NSTREEVIEW tv=NULL;
 
-    printf("Hotlist event %d, open: %d\n", ev_out->emo_events, gl_history.open);
+    //printf("Hotlist event %d, open: %d\n", ev_out->emo_events, gl_history.open);
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
@@ -120,6 +120,8 @@ bool global_history_init( void )
 
 		gl_history.tv = atari_treeview_create(history_global_get_tree_flags(),
                                         gl_history.window, handle_event);
+
+		gemtk_wm_unlink(gl_history.window);
 
         if (gl_history.tv == NULL) {
             /* TODO: handle it properly, clean up previous allocs */

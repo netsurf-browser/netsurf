@@ -292,14 +292,17 @@ NSTREEVIEW atari_treeview_create(uint32_t flags, GUIWIN *win,
 void atari_treeview_open( NSTREEVIEW tv )
 {
 	if( tv->window != NULL ) {
+		gemtk_wm_link(tv->window);
 		tree_set_redraw(tv->tree, true);
+
 	}
 }
 
-void atari_treeview_close( NSTREEVIEW tv )
+void atari_treeview_close(NSTREEVIEW tv)
 {
-	if( tv->window != NULL ) {
+	if(tv->window != NULL) {
 		tree_set_redraw(tv->tree, false);
+		gemtk_wm_unlink(tv->window);
 	}
 }
 
@@ -340,7 +343,7 @@ bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y
 
 
 
-void atari_treeview_redraw( NSTREEVIEW tv)
+void atari_treeview_redraw(NSTREEVIEW tv)
 {
 	if (tv != NULL) {
 		if( tv->redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {

@@ -89,7 +89,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			break;
 
 			case WM_CLOSED:
-				hotlist_destroy();
+				hotlist_close();
 			break;
 
 			default: break;
@@ -129,6 +129,7 @@ void hotlist_init(void)
 			}
 			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
 			gemtk_wm_set_toolbar(hl.window, tree, 0, 0);
+			gemtk_wm_unlink(hl.window);
 			hl.tv = atari_treeview_create(
 				hotlist_get_tree_flags(),
 				hl.window,
@@ -181,7 +182,7 @@ void hotlist_close(void)
 {
 	wind_close(gemtk_wm_get_handle(hl.window));
 	hl.open = false;
-	atari_treeview_close( hl.tv );
+	atari_treeview_close(hl.tv);
 }
 
 void hotlist_destroy(void)
@@ -197,7 +198,7 @@ void hotlist_destroy(void)
 		wind_delete(gemtk_wm_get_handle(hl.window));
 		gemtk_wm_remove(hl.window);
 		hl.window = NULL;
-		atari_treeview_destroy( hl.tv  );
+		atari_treeview_destroy(hl.tv);
 		hl.init = false;
 	}
 	LOG(("done"));

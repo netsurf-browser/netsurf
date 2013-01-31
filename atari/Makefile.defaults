@@ -32,6 +32,10 @@
   # Valid options: YES, NO
   NETSURF_USE_ATARI_NETSURF_FONT := YES
 
+  # Enable VDI Font rendering
+  # Valid options: YES, NO
+  NETSURF_USE_ATARI_VDI_FONT := NO
+
   # Configure support for screen drivers with no true colour mode
   # Valid options: YES, NO
   NETSURF_USE_ATARI_8BPP_SUPPORT := NO

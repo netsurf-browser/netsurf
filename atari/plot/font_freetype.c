@@ -607,9 +607,10 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #ifdef WITH_8BPP_SUPPORT
 		if( app.nplanes > 8 ){
 #endif
-			unsigned short out[4];
-			rgb_to_vdi1000( (unsigned char*)&c, (unsigned short*)&out );
-			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0]);
+			RGB1000 out;
+			rgb_to_vdi1000( (unsigned char*)&c, &out);
+			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR,
+						(unsigned short*)&out);
 #ifdef WITH_8BPP_SUPPORT
 		} else {
 			c = RGB_TO_VDI(c);
