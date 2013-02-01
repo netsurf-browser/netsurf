@@ -37,7 +37,8 @@ typedef enum {
 	TEXTAREA_DEFAULT		= (1 << 0),	/**< Standard input */
 	TEXTAREA_MULTILINE		= (1 << 1),	/**< Multiline area */
 	TEXTAREA_READONLY		= (1 << 2),	/**< Non-editable */
-	TEXTAREA_INTERNAL_CARET		= (1 << 3)	/**< Render own caret */
+	TEXTAREA_INTERNAL_CARET		= (1 << 3),	/**< Render own caret */
+	TEXTAREA_PASSWORD		= (1 << 4)	/**< Obscured display */
 } textarea_flags;
 
 typedef enum {
