@@ -322,8 +322,8 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	toolbar_get_grect(t, TOOLBAR_AREA_URL, &url_area);
 	url_area.g_h -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
 
+	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
 	textarea_setup ta_setup;
-	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
 	ta_setup.width = 300;
 	ta_setup.height = url_area.g_h;
 	ta_setup.pad_top = 0;
@@ -337,7 +337,8 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	ta_setup.text = font_style_url;
 	ta_setup.text.foreground = 0x000000;
 	ta_setup.text.background = 0xffffff;
-	t->url.textarea = textarea_create(&ta_setup, tb_txt_callback, t);
+	t->url.textarea = textarea_create(ta_flags, &ta_setup,
+			tb_txt_callback, t);
 
 	/* create the throbber widget: */
 	t->throbber.index = THROBBER_INACTIVE_INDEX;

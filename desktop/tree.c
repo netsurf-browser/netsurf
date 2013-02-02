@@ -2946,6 +2946,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	struct node *parent;
 	int width, height;
 	textarea_setup ta_setup;
+	textarea_flags ta_flags;
 
 	assert(tree != NULL);
 	assert(element != NULL);
@@ -2972,7 +2973,8 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 
 	tree->ta_height = height;
 
-	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
+	ta_flags = TEXTAREA_INTERNAL_CARET;
+
 	ta_setup.width = width;
 	ta_setup.height = tree->ta_height;
 	ta_setup.pad_top = 0;
@@ -2987,7 +2989,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	ta_setup.text.foreground = 0x000000;
 	ta_setup.text.background = 0xffffff;
 
-	tree->textarea = textarea_create(&ta_setup,
+	tree->textarea = textarea_create(ta_flags, &ta_setup,
 			tree_textarea_callback, tree);
 	if (tree->textarea == NULL) {
 		tree_stop_edit(tree, false);

@@ -70,8 +70,6 @@ struct textarea_msg {
 };
 
 typedef struct textarea_setup {
-	textarea_flags flags;	/**< Setup flags */
-
 	int width;		/**< Textarea width */
 	int height;		/**< Textarea height */
 
@@ -105,7 +103,8 @@ typedef void(*textarea_client_callback)(void *data, struct textarea_msg *msg);
  * \param data	user specified data which will be passed to callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct textarea *textarea_create(const textarea_setup *setup,
+struct textarea *textarea_create(const textarea_flags flags,
+		const textarea_setup *setup,
 		textarea_client_callback callback, void *data);
 
 /**

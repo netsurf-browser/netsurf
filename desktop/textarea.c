@@ -948,14 +948,15 @@ static bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 
 
 /* exported interface, documented in textarea.h */
-struct textarea *textarea_create(const textarea_setup *setup,
+struct textarea *textarea_create(const textarea_flags flags,
+		const textarea_setup *setup,
 		textarea_client_callback callback, void *data)
 {
 	struct textarea *ret;
 
 	/* Sanity check flags */
-	assert(!(setup->flags & TEXTAREA_MULTILINE &&
-			setup->flags & TEXTAREA_PASSWORD));
+	assert(!(flags & TEXTAREA_MULTILINE &&
+			flags & TEXTAREA_PASSWORD));
 
 	if (callback == NULL) {
 		LOG(("no callback provided"));
@@ -971,7 +972,7 @@ struct textarea *textarea_create(const textarea_setup *setup,
 	ret->callback = callback;
 	ret->data = data;
 
-	ret->flags = setup->flags;
+	ret->flags = flags;
 	ret->vis_width = setup->width;
 	ret->vis_height = setup->height;
 
@@ -1008,7 +1009,7 @@ struct textarea *textarea_create(const textarea_setup *setup,
 	ret->text.len = 1;
 	ret->text.utf8_len = 0;
 
-	if (setup->flags & TEXTAREA_PASSWORD) {
+	if (flags & TEXTAREA_PASSWORD) {
 		ret->password.data = malloc(64);
 		if (ret->password.data == NULL) {
 			LOG(("malloc failed"));
