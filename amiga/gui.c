@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1050,6 +1050,24 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
+bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+	int space_x, int space_y)
+{
+	int ns_x = space_x;
+	int ns_y = space_y;
+
+	ns_x /= gwin->bw->scale;
+	ns_y /= gwin->bw->scale;
+
+	ns_x += gwin->bw->window->scrollx;
+	ns_y += gwin->bw->window->scrolly;
+
+	*x = ns_x;
+	*y = ns_y;
+
+	return true;	
+}
+
 bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int mouse_x, int mouse_y)
 {
@@ -1069,19 +1087,7 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
 		return false;
 
-	ns_x /= gwin->bw->scale;
-	ns_y /= gwin->bw->scale;
-
-	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-
-	ns_x += xs;
-	ns_y += ys;
-
-	*x = ns_x;
-	*y = ns_y;
-
-	return true;	
+	return ami_spacebox_to_ns_coords(gwin, x, y, ns_x, ns_y);
 }
 
 void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
@@ -1756,7 +1762,22 @@ void ami_handle_msg(void)
 									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 							break;
 
-/* The following aren't available from the menu at the moment */
+							case '-':
+								if(browser_window_get_scale(gwin->bw) > 0.1)
+									browser_window_set_scale(gwin->bw,
+										browser_window_get_scale(gwin->bw) - 0.1, false);
+							break;
+							
+							case '=':
+								browser_window_set_scale(gwin->bw, 1.0, false);
+							break;
+
+							case '+':
+								browser_window_set_scale(gwin->bw,
+									browser_window_get_scale(gwin->bw) + 0.1, false);
+							break;
+							
+							/* The following aren't available from the menu at the moment */
 
 							case 'r': // reload
 								if(browser_window_reload_available(gwin->bw))
@@ -3734,7 +3755,8 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool 
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	ami_do_redraw_tiled(g->shared, busy, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
+	ami_do_redraw_tiled(g->shared, busy, x0, y0,
+		(x1 - x0) * bw->scale, (y1 - y0) * bw->scale, sx, sy, bbox, &ctx);
 	return;
 }
 
@@ -3831,10 +3853,13 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 			gwin->redraw_scroll = false;
 
  		if(gwin->new_content) gwin->redraw_scroll = false;
+//		if(gwin->bw->scale != 1.0) gwin->redraw_scroll = false;
 	}
 
 	if(gwin->redraw_scroll)
 	{
+		int x0, y0, x1, y1;
+		
 		gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
 		gui_window_remove_caret(gwin->bw->window);
 
@@ -3845,31 +3870,28 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
-					hcurrent, (height / gwin->bw->scale) + oldv - 1,
-					hcurrent + (width / gwin->bw->scale),
-					vcurrent + (height / gwin->bw->scale) + 1);
+			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, height - (vcurrent - oldv) - 1);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
-					hcurrent, vcurrent,
-					hcurrent + (width / gwin->bw->scale),
-					oldv);
+			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, oldv - vcurrent + 1);
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
-					(width / gwin->bw->scale) + oldh , vcurrent,
-					hcurrent + (width / gwin->bw->scale),
-					vcurrent + (height / gwin->bw->scale));
+			ami_spacebox_to_ns_coords(gwin, &x0, &y0, width - (hcurrent - oldh), 0);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true,
-					hcurrent, vcurrent,
-					oldh, vcurrent + (height / gwin->bw->scale));
+			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, oldh - hcurrent + 1, height + 1);
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 	}
 	else
