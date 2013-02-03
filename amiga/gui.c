@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1053,18 +1053,14 @@ void ami_update_quals(struct gui_window_2 *gwin)
 bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int space_x, int space_y)
 {
-	int xs, ys;
 	int ns_x = space_x;
 	int ns_y = space_y;
 
 	ns_x /= gwin->bw->scale;
 	ns_y /= gwin->bw->scale;
 
-	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-
-	ns_x += xs;
-	ns_y += ys;
+	ns_x += gwin->bw->window->scrollx;
+	ns_y += gwin->bw->window->scrolly;
 
 	*x = ns_x;
 	*y = ns_y;
@@ -3874,7 +3870,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, height - (vcurrent - oldv));
+			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, height - (vcurrent - oldv) - 1);
 			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
 			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
