@@ -3875,26 +3875,26 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 		if(vcurrent>oldv) /* Going down */
 		{
 			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, height - (vcurrent - oldv));
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width, height);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
 			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
 			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width, oldv - vcurrent);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, oldv - vcurrent + 1);
 			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
 			ami_spacebox_to_ns_coords(gwin, &x0, &y0, width - (hcurrent - oldh), 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width, height);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
 			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
 			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, oldh - hcurrent, height);
+			ami_spacebox_to_ns_coords(gwin, &x1, &y1, oldh - hcurrent + 1, height + 1);
 			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
 		}
 	}
