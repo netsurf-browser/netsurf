@@ -1766,7 +1766,22 @@ void ami_handle_msg(void)
 									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 							break;
 
-/* The following aren't available from the menu at the moment */
+							case '-':
+								if(browser_window_get_scale(gwin->bw) > 0.1)
+									browser_window_set_scale(gwin->bw,
+										browser_window_get_scale(gwin->bw) - 0.1, false);
+							break;
+							
+							case '=':
+								browser_window_set_scale(gwin->bw, 1.0, false);
+							break;
+
+							case '+':
+								browser_window_set_scale(gwin->bw,
+									browser_window_get_scale(gwin->bw) + 0.1, false);
+							break;
+							
+							/* The following aren't available from the menu at the moment */
 
 							case 'r': // reload
 								if(browser_window_reload_available(gwin->bw))
