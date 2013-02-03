@@ -189,6 +189,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg);
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
+static void gui_window_update_box_deferred(struct gui_window *g);
 
 STRPTR ami_locale_langs(void)
 {
@@ -1937,9 +1938,13 @@ void ami_handle_msg(void)
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			if(gwin->redraw_required || gwin->bw->reformat_pending)
+			if(gwin->redraw_required || gwin->bw->reformat_pending) {
 				ami_do_redraw(gwin);
+				gwin->bw->window->deferred = false;
+			}
 
+			gui_window_update_box_deferred(gwin->bw->window);
+			
 			if(gwin->bw->window->throbbing)
 				ami_update_throbber(gwin,false);
 
@@ -2819,6 +2824,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	NewList(&g->dllist);
+	g->deferred_rects = NewObjList();
 
 	if(new_tab && clone)
 	{
@@ -3469,6 +3475,7 @@ void gui_window_destroy(struct gui_window *g)
 	}
 
 	ami_free_download_list(&g->dllist);
+	FreeObjList(g->deferred_rects);
 
 	curbw = NULL;
 
@@ -3744,13 +3751,44 @@ void gui_window_redraw_window(struct gui_window *g)
 		g->shared->redraw_required = true;
 }
 
+static void gui_window_update_box_deferred(struct gui_window *g)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct rect *rect;
+	
+	if(!g) return;
+	if(IsMinListEmpty(g->deferred_rects)) return;
+
+	node = (struct nsObject *)GetHead((struct List *)g->deferred_rects);
+
+	do {
+		if(g->deferred == true) {
+			rect = (struct rect *)node->objstruct;
+		
+			ami_do_redraw_limits(g, g->shared->bw, true,
+				rect->x0, rect->y0, rect->x1, rect->y1);
+			}
+
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		DelObject(node);
+	} while(node = nnode);
+
+	g->deferred = false;
+}
+
 void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
+	struct nsObject *nsobj;
+	struct rect *deferred_rect;
 	if(!g) return;
-
-	ami_do_redraw_limits(g, g->shared->bw, true,
-			rect->x0, rect->y0,
-			rect->x1, rect->y1);
+	
+	g->deferred = true;
+	deferred_rect = AllocVec(sizeof(struct rect), MEMF_PRIVATE);
+	CopyMem(rect, deferred_rect, sizeof(struct rect));
+	
+	nsobj = AddObject(g->deferred_rects, AMINS_RECT);
+	nsobj->objstruct = deferred_rect;
 }
 
 void ami_do_redraw(struct gui_window_2 *gwin)
