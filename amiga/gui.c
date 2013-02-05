@@ -3782,21 +3782,55 @@ static void gui_window_update_box_deferred(struct gui_window *g)
 	if(!g) return;
 	if(IsMinListEmpty(g->deferred_rects)) return;
 
+	if(g->deferred == true) {
+		ami_set_pointer(g->shared, GUI_POINTER_WAIT, false);
+	} else {
+		LOG(("Ignoring deferred box redraw queue"));
+	}
+
 	node = (struct nsObject *)GetHead((struct List *)g->deferred_rects);
 
 	do {
 		if(g->deferred == true) {
 			rect = (struct rect *)node->objstruct;
-		
-			ami_do_redraw_limits(g, g->shared->bw, true,
+			ami_do_redraw_limits(g, g->shared->bw, false,
 				rect->x0, rect->y0, rect->x1, rect->y1);
-			}
-
+		}
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		DelObject(node);
 	} while(node = nnode);
 
-	g->deferred = false;
+	if(g->deferred == true) {
+		ami_reset_pointer(g->shared);
+		g->deferred = false;
+	}
+}
+
+static bool gui_window_update_box_deferred_check(struct MinList *deferred_rects,
+				const struct rect *new_rect)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct rect *rect;
+	
+	if(IsMinListEmpty(deferred_rects)) return true;
+
+	node = (struct nsObject *)GetHead((struct List *)deferred_rects);
+
+	do {
+		rect = (struct rect *)node->objstruct;
+		
+		if((rect->x0 == new_rect->x0) &&
+			(rect->y0 == new_rect->y0) &&
+			(rect->x1 == new_rect->x1) &&
+			(rect->y1 == new_rect->y1)) {
+			return false;
+		}
+
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+	} while(node = nnode);
+
+	return true;
 }
 
 void gui_window_update_box(struct gui_window *g, const struct rect *rect)
@@ -3805,12 +3839,16 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	struct rect *deferred_rect;
 	if(!g) return;
 	
-	g->deferred = true;
-	deferred_rect = AllocVec(sizeof(struct rect), MEMF_PRIVATE);
-	CopyMem(rect, deferred_rect, sizeof(struct rect));
+	if(gui_window_update_box_deferred_check(g->deferred_rects, rect)) {
+		g->deferred = true;
+		deferred_rect = AllocVec(sizeof(struct rect), MEMF_PRIVATE);
+		CopyMem(rect, deferred_rect, sizeof(struct rect));
 	
-	nsobj = AddObject(g->deferred_rects, AMINS_RECT);
-	nsobj->objstruct = deferred_rect;
+		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
+		nsobj->objstruct = deferred_rect;
+	} else {
+		LOG(("Ignoring duplicate box redraw already queued"));
+	}
 }
 
 void ami_do_redraw(struct gui_window_2 *gwin)
