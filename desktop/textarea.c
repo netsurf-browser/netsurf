@@ -498,6 +498,13 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			avail_width = 0;
 		h_extent = avail_width;
 
+		if (ta->text.len == 1) {
+			/* Handle empty textarea */
+			assert(ta->text.data[0] == '\0');
+			ta->lines[line].b_start = 0;
+			ta->lines[line++].b_length = 1;
+		}
+
 		restart = false;
 		for (len = ta->text.len - 1, text = ta->text.data; len > 0;
 				len -= b_off, text += b_off) {
@@ -658,7 +665,6 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
  * \param ta		Text area
  * \param x		X coordinate
  * \param y		Y coordinate
- * \param b_off		Updated to byte offset
  * \param c_off		Updated to character offset
  */
 static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
@@ -1033,7 +1039,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 		ret->show = &ret->text;
 	}
 
-	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
+	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.3),
 			FMUL(nscss_screen_dpi,
 			INTTOFIX((setup->text.size /
 			FONT_SIZE_SCALE))))), F_72));
@@ -1365,8 +1371,10 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	for (line = line0; (line <= line1) &&
 			(y + line * ta->line_height <= r.y1 + ta->scroll_y);
 			line++) {
-		if (ta->lines[line].b_length == 0)
+		if (ta->lines[line].b_length == 0) {
+			c_pos++;
 			continue;
+		}
 
 		/* reset clip rectangle */
 		plot->clip(&r);
@@ -2043,6 +2051,31 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 
 	ta->vis_width = width;
 	ta->vis_height = height;
+	textarea_reflow(ta, 0);
+
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = 0;
+	msg.data.redraw.y0 = 0;
+	msg.data.redraw.x1 = ta->vis_width;
+	msg.data.redraw.y1 = ta->vis_height;
+
+	ta->callback(ta->data, &msg);
+}
+
+
+/* exported interface, documented in textarea.h */
+void textarea_set_layout(struct textarea *ta, int width, int height,
+		int top, int right, int bottom, int left)
+{
+	struct textarea_msg msg;
+
+	ta->vis_width = width;
+	ta->vis_height = height;
+	ta->pad_top = top;
+	ta->pad_right = right;
+	ta->pad_bottom = bottom;
+	ta->pad_left = left;
 	textarea_reflow(ta, 0);
 
 	msg.ta = ta;

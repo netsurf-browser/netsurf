@@ -128,7 +128,7 @@ bool textarea_set_text(struct textarea *ta, const char *text);
  *
  * \param ta Text area
  * \param buf Pointer to buffer to receive data, or NULL
- *            to read length required
+ *            to read length required (includes trailing '\0')
  * \param len Length (bytes) of buffer pointed to by buf, or 0 to read length
  * \return Length (bytes) written/required or -1 on error
  */
@@ -202,5 +202,19 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
  * \param height	the new height of the textarea
  */
 void textarea_set_dimensions(struct textarea *ta, int width, int height);
+
+/**
+ * Set the dimensions and padding of a textarea, causing a reflow and
+ * emitting a redraw request.
+ *
+ * \param width 	the new width of the textarea
+ * \param height	the new height of the textarea
+ * \param top		the new top padding of the textarea
+ * \param right		the new right padding of the textarea
+ * \param bottom	the new bottom padding of the textarea
+ * \param left		the new left padding of the textarea
+ */
+void textarea_set_layout(struct textarea *ta, int width, int height,
+		int top, int right, int bottom, int left);
 #endif
 
