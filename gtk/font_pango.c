@@ -196,7 +196,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	if (line != NULL) {
 		/* Pango split the text. The line's start_index indicates the 
 		 * start of the character after the line break. */
-		index = line->start_index;
+		int orig = index = line->start_index;
 
 		/* We must ensure that the split character is a space so that
 		 * we meet the API postcondition. Therefore, scan backwards
@@ -205,6 +205,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		while (index > 0) {
 			if (string[--index] == ' ')
 				break;
+		}
+
+		if (index == 0) {
+			index = orig;
+			while (index != (int)length && string[index] != ' ')
+				index++;
 		}
 	}
 
