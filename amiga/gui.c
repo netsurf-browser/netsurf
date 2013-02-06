@@ -3818,16 +3818,24 @@ static bool gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 	node = (struct nsObject *)GetHead((struct List *)deferred_rects);
 
 	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		rect = (struct rect *)node->objstruct;
 		
-		if((rect->x0 == new_rect->x0) &&
-			(rect->y0 == new_rect->y0) &&
-			(rect->x1 == new_rect->x1) &&
-			(rect->y1 == new_rect->y1)) {
+		if((rect->x0 <= new_rect->x0) &&
+			(rect->y0 <= new_rect->y0) &&
+			(rect->x1 >= new_rect->x1) &&
+			(rect->y1 >= new_rect->y1)) {
 			return false;
 		}
-
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		
+		if ((new_rect->x0 <= rect->x0) &&
+			(new_rect->y0 <= rect->y0) &&
+			(new_rect->x1 >= rect->x1) &&
+			(new_rect->y1 >= rect->y1)) {
+			LOG(("Removing queued redraw that is a subset of new box redraw"));
+			DelObject(node);
+			/* Don't return - we might find more */
+		}
 	} while(node = nnode);
 
 	return true;
@@ -3847,7 +3855,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;
 	} else {
-		LOG(("Ignoring duplicate box redraw already queued"));
+		LOG(("Ignoring duplicate or subset of queued box redraw"));
 	}
 }
 
