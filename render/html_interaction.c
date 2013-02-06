@@ -35,6 +35,7 @@
 #include "desktop/options.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
+#include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -592,94 +593,18 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				status = messages_get("FormBadSubmit");
 			}
 			break;
-		case GADGET_TEXTAREA:
-			status = messages_get("FormTextarea");
-			pointer = get_pointer_shape(gadget_box, false);
-
-			if (mouse & (BROWSER_MOUSE_PRESS_1 |
-					BROWSER_MOUSE_PRESS_2)) {
-				if (text_box && selection_root(&html->sel) !=
-						gadget_box)
-					selection_init(&html->sel, gadget_box);
-
-				textinput_textarea_click(c, mouse,
-						gadget_box,
-						gadget_box_x,
-						gadget_box_y,
-						x - gadget_box_x,
-						y - gadget_box_y);
-			}
-
-			if (text_box) {
-				int pixel_offset;
-				size_t idx;
-
-				font_plot_style_from_css(text_box->style, 
-						&fstyle);
-
-				nsfont.font_position_in_string(&fstyle,
-					text_box->text,
-					text_box->length,
-					x - gadget_box_x - text_box->x,
-					&idx,
-					&pixel_offset);
-
-				selection_click(&html->sel, mouse,
-						text_box->byte_offset + idx);
-
-				if (selection_dragging(&html->sel)) {
-					browser_window_set_drag_type(bw,
-							DRAGGING_SELECTION,
-							NULL);
-					status = messages_get("Selecting");
-				}
-			}
-			else if (mouse & BROWSER_MOUSE_PRESS_1)
-				selection_clear(&html->sel, true);
-			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
-			status = messages_get("FormTextbox");
+		case GADGET_TEXTAREA:
+			if (gadget->type == GADGET_TEXTAREA)
+				status = messages_get("FormTextarea");
+			else
+				status = messages_get("FormTextbox");
+
 			pointer = get_pointer_shape(gadget_box, false);
 
-			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
-					!(mouse & (BROWSER_MOUSE_MOD_1 |
-					BROWSER_MOUSE_MOD_2))) {
-				textinput_input_click(c,
-						gadget_box,
-						gadget_box_x,
-						gadget_box_y,
-						x - gadget_box_x,
-						y - gadget_box_y);
-			}
-			if (text_box) {
-				int pixel_offset;
-				size_t idx;
-
-				if (mouse & (BROWSER_MOUSE_DRAG_1 |
-						BROWSER_MOUSE_DRAG_2))
-					selection_init(&html->sel, gadget_box);
-
-				font_plot_style_from_css(text_box->style,
-						&fstyle);
-
-				nsfont.font_position_in_string(&fstyle,
-					text_box->text,
-					text_box->length,
-					x - gadget_box_x - text_box->x,
-					&idx,
-					&pixel_offset);
-
-				selection_click(&html->sel, mouse,
-						text_box->byte_offset + idx);
-
-				if (selection_dragging(&html->sel))
-					browser_window_set_drag_type(bw,
-							DRAGGING_SELECTION,
-							NULL);
-			}
-			else if (mouse & BROWSER_MOUSE_PRESS_1)
-				selection_clear(&html->sel, true);
+			textarea_mouse_action(gadget->data.text.ta, mouse,
+					x - gadget_box_x, y - gadget_box_y);
 			break;
 		case GADGET_HIDDEN:
 			/* not possible: no box generated */

@@ -38,6 +38,7 @@
 #include "css/select.h"
 #include "desktop/options.h"
 #include "render/box.h"
+#include "render/box_textarea.h"
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "utils/corestrings.h"
@@ -111,7 +112,6 @@ static bool box_image(BOX_SPECIAL_PARAMS);
 static bool box_textarea(BOX_SPECIAL_PARAMS);
 static bool box_select(BOX_SPECIAL_PARAMS);
 static bool box_input(BOX_SPECIAL_PARAMS);
-static bool box_input_text(BOX_SPECIAL_PARAMS, bool password);
 static bool box_button(BOX_SPECIAL_PARAMS);
 static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_create_frameset(struct content_html_frames *f, dom_node *n,
@@ -2497,6 +2497,38 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 
 /**
+ * Helper function for adding textarea widget to box.
+ *
+ * This is a load of hacks to ensure boxes replaced with textareas
+ * can be handled by the layout code.
+ */
+
+static bool box_input_text(html_content *html, struct box *box,
+		struct dom_node *node)
+{
+	struct box *inline_container, *inline_box;
+
+	box->type = BOX_INLINE_BLOCK;
+
+	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, html->bctx);
+	if (!inline_container)
+		return false;
+	inline_container->type = BOX_INLINE_CONTAINER;
+	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
+			html->bctx);
+	if (!inline_box)
+		return false;
+	inline_box->type = BOX_TEXT;
+	inline_box->text = talloc_strdup(html->bctx, "");
+
+	box_add_child(inline_container, inline_box);
+	box_add_child(box, inline_container);
+
+	return box_textarea_create_textarea(html, box, node);
+}
+
+
+/**
  * Form control [17.4].
  */
 
@@ -2518,7 +2550,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	if (type && dom_string_caseless_lwc_isequal(type,
 			corestring_lwc_password)) {
-		if (box_input_text(n, content, box, 0, true) == false)
+		if (box_input_text(content, box, n) == false)
 			goto no_memory;
 
 	} else if (type && dom_string_caseless_lwc_isequal(type,
@@ -2620,7 +2652,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		}
 	} else {
 		/* the default type is "text" */
-		if (box_input_text(n, content, box, 0, false) == false)
+		if (box_input_text(content, box, n) == false)
 			goto no_memory;
 	}
 
@@ -2635,52 +2667,6 @@ no_memory:
 		dom_string_unref(type);
 
 	return false;
-}
-
-
-/**
- * Helper function for box_input().
- */
-
-bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
-{
-	struct box *inline_container, *inline_box;
-
-	box->type = BOX_INLINE_BLOCK;
-
-	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content->bctx);
-	if (!inline_container)
-		return false;
-	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
-			content->bctx);
-	if (!inline_box)
-		return false;
-	inline_box->type = BOX_TEXT;
-	if (password) {
-		inline_box->length = strlen(box->gadget->value);
-		inline_box->text = talloc_array(content->bctx, char,
-				inline_box->length + 1);
-		if (!inline_box->text)
-			return false;
-		memset(inline_box->text, '*', inline_box->length);
-		inline_box->text[inline_box->length] = '\0';
-	} else {
-		/* replace spaces/TABs with hard spaces to prevent line
-		 * wrapping */
-		char *text = cnv_space2nbsp(box->gadget->value);
-		if (!text)
-			return false;
-		inline_box->text = talloc_strdup(content->bctx, text);
-		free(text);
-		if (!inline_box->text)
-			return false;
-		inline_box->length = strlen(inline_box->text);
-	}
-	box_add_child(inline_container, inline_box);
-	box_add_child(box, inline_container);
-
-	return true;
 }
 
 
@@ -2924,89 +2910,15 @@ no_memory:
 
 bool box_textarea(BOX_SPECIAL_PARAMS)
 {
-	/* A textarea is an INLINE_BLOCK containing a single INLINE_CONTAINER,
-	 * which contains the text as runs of TEXT separated by BR. There is
-	 * at least one TEXT. The first and last boxes are TEXT.
-	 * Consecutive BR may not be present. These constraints are satisfied
-	 * by using a 0-length TEXT for blank lines. */
-
-	const char *current;
-	dom_string *area_data = NULL;
-	dom_exception err;
-	struct box *inline_container, *inline_box, *br_box;
-	char *s;
-	size_t len;
-
-	box->type = BOX_INLINE_BLOCK;
+	/* Get the form_control for the DOM node */
 	box->gadget = html_forms_get_control_for_node(content->forms, n);
 	if (box->gadget == NULL)
 		return false;
+
 	box->gadget->box = box;
 
-	inline_container = box_create(NULL, 0, false, 0, 0, box->title, 0,
-			content->bctx);
-	if (inline_container == NULL)
+	if (!box_input_text(content, box, n))
 		return false;
-	inline_container->type = BOX_INLINE_CONTAINER;
-	box_add_child(box, inline_container);
-
-	err = dom_node_get_text_content(n, &area_data);
-	if (err != DOM_NO_ERR)
-		return false;
-
-	if (area_data != NULL) {
-		current = dom_string_data(area_data);
-	} else {
-		/* No content, or failed reading it: use a blank string */
-		current = "";
-	}
-
-	while (true) {
-		/* BOX_TEXT */
-		len = strcspn(current, "\r\n");
-		s = talloc_strndup(content->bctx, current, len);
-		if (s == NULL) {
-			if (area_data != NULL)
-				dom_string_unref(area_data);
-			return false;
-		}
-
-		inline_box = box_create(NULL, box->style, false, 0, 0,
-				box->title, 0, content->bctx);
-		if (inline_box == NULL) {
-			if (area_data != NULL)
-				dom_string_unref(area_data);
-			return false;
-		}
-		inline_box->type = BOX_TEXT;
-		inline_box->text = s;
-		inline_box->length = len;
-		box_add_child(inline_container, inline_box);
-
-		current += len;
-		if (current[0] == 0)
-			/* finished */
-			break;
-
-		/* BOX_BR */
-		br_box = box_create(NULL, box->style, false, 0, 0, box->title,
-				0, content->bctx);
-		if (br_box == NULL) {
-			if (area_data != NULL)
-				dom_string_unref(area_data);
-			return false;
-		}
-		br_box->type = BOX_BR;
-		box_add_child(inline_container, br_box);
-
-		if (current[0] == '\r' && current[1] == '\n')
-			current += 2;
-		else
-			current++;
-	}
-
-	if (area_data != NULL)
-		dom_string_unref(area_data);
 
 	*convert_children = false;
 	return true;

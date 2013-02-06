@@ -102,6 +102,10 @@ typedef struct html_content {
 	 *  scrollbar, or NULL when no scrollbar drags active */
 	struct scrollbar *scrollbar;
 
+	/** Textarea capturing all mouse events, updated to any active HTML
+	 *  textarea, or NULL when no textarea drags active */
+	struct textarea *textarea;
+
 	/** Open core-handled form SELECT menu,
 	 *  or NULL if none currently open. */
 	struct form_control *visible_select_menu;
@@ -162,7 +166,8 @@ bool html_scripts_exec(html_content *c);
 
 /* in render/html_forms.c */
 struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);
-struct form_control *html_forms_get_control_for_node(struct form *forms, dom_node *node);
+struct form_control *html_forms_get_control_for_node(struct form *forms,
+		dom_node *node);
 
 /* Useful dom_string pointers */
 struct dom_string;

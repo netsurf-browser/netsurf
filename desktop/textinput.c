@@ -127,7 +127,13 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 
 	assert(bw->window != NULL);
 
-	/* safe keys that can be handled whether input claimed or not */
+	if (focus->caret_callback) {
+		/* Pass keypress onto anything that has claimed input focus */
+		return focus->caret_callback(focus, key,
+				focus->caret_p1, focus->caret_p2);
+	}
+
+	/* TODO: pass these to content to deal with */
 	switch (key) {
 		case KEY_COPY_SELECTION:
 			selection_copy_to_clipboard(bw->cur_sel);
@@ -135,6 +141,10 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 
 		case KEY_CLEAR_SELECTION:
 			selection_clear(bw->cur_sel, true);
+			return true;
+
+		case KEY_SELECT_ALL:
+			selection_select_all(bw->cur_sel);
 			return true;
 
 		case KEY_ESCAPE:
@@ -145,19 +155,6 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 			/* if there's no selection,
 			 * leave Escape for the caller */
 			return false;
-	}
-
-	if (focus->caret_callback) {
-		/* Pass keypress onto anything that has claimed input focus */
-		return focus->caret_callback(focus, key,
-				focus->caret_p1, focus->caret_p2);
-	}
-
-	/* keys we can't handle here if cursor is in form */
-	switch (key) {
-		case KEY_SELECT_ALL:
-			selection_select_all(bw->cur_sel);
-			return true;
 	}
 
 	return false;

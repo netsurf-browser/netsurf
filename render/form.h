@@ -34,6 +34,7 @@ struct form_control;
 struct form_option;
 struct form_select_menu;
 struct html_content;
+struct dom_string;
 
 /** Form submit method. */
 typedef enum {
@@ -73,6 +74,12 @@ typedef enum {
 	GADGET_BUTTON
 } form_control_type;
 
+/** Data for textarea */
+struct form_textarea_data {
+	struct html_content *html;
+	struct form_control *gadget;
+};
+
 /** Form control. */
 struct form_control {
 	void *node;			/**< Corresponding DOM node */
@@ -111,6 +118,11 @@ struct form_control {
 			struct form_option *current;
 			struct form_select_menu *menu;
 		} select;
+		struct {
+			struct textarea *ta;
+			struct dom_string *initial;
+			struct form_textarea_data data;
+		} text;			/**< input type=text or textarea */
 	} data;
 
 	struct form_control *prev;      /**< Previous control in this form */

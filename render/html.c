@@ -344,6 +344,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->page = NULL;
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
+	c->textarea = NULL;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jscontext = NULL;

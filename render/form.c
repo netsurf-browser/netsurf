@@ -43,6 +43,7 @@
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
+#include "desktop/textarea.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -85,7 +86,6 @@ static plot_font_style_t plot_fstyle_entry = {
 	.foreground = 0x000000,
 };
 
-static char *form_textarea_value(struct form_control *textarea);
 static char *form_acceptable_charset(struct form *form);
 static char *form_encode_item(const char *item, const char *charset,
 		const char *fallback);
@@ -252,6 +252,17 @@ void form_free_control(struct form_control *control)
 			form_free_select_menu(control);
 	}
 
+	if (control->type == GADGET_TEXTAREA ||
+			control->type == GADGET_TEXTBOX ||
+			control->type == GADGET_PASSWORD) {
+
+		if (control->data.text.initial != NULL)
+			dom_string_unref(control->data.text.initial);
+
+		if (control->data.text.ta != NULL)
+			textarea_destroy(control->data.text.ta);
+	}
+
 	free(control);
 }
 
@@ -350,8 +361,6 @@ bool form_successful_controls(struct form *form,
 
 		switch (control->type) {
 			case GADGET_HIDDEN:
-			case GADGET_TEXTBOX:
-			case GADGET_PASSWORD:
 				if (control->value)
 					value = ENCODE_ITEM(control->value);
 				else
@@ -416,17 +425,26 @@ bool form_successful_controls(struct form *form,
 				continue;
 				break;
 
+			case GADGET_TEXTBOX:
+			case GADGET_PASSWORD:
 			case GADGET_TEXTAREA:
-				{
+			{
 				char *v2;
+				int ta_len = textarea_get_text(
+						control->data.text.ta,
+						NULL, 0);
 
-				/* textarea */
-				value = form_textarea_value(control);
+				value = malloc(ta_len);
 				if (!value) {
 					LOG(("failed handling textarea"));
 					goto no_memory;
 				}
-				if (value[0] == 0) {
+				textarea_get_text(control->data.text.ta,
+						value, ta_len);
+
+				if (control->type == GADGET_TEXTAREA &&
+						value[0] == '\0') {
+					/* Textarea not submitted if empty */
 					free(value);
 					continue;
 				}
@@ -440,7 +458,7 @@ bool form_successful_controls(struct form *form,
 
 				free(value);
 				value = v2;
-				}
+			}
 				break;
 
 			case GADGET_IMAGE: {
@@ -613,59 +631,6 @@ no_memory:
 	return false;
 
 #undef ENCODE_ITEM
-}
-
-
-/**
- * Find the value for a textarea control.
- *
- * \param  textarea  control of type GADGET_TEXTAREA
- * \return  the value as a UTF-8 string on heap, or 0 on memory exhaustion
- */
-char *form_textarea_value(struct form_control *textarea)
-{
-	unsigned int len = 0;
-	char *value, *s;
-	struct box *text_box;
-
-	/* Textarea may have no associated box if styled with display: none */
-	if (textarea->box == NULL) {
-		/* Return the empty string: caller treats this as a 
-		 * non-successful control. */
-		return strdup("");
-	}
-
-	/* find required length */
-	for (text_box = textarea->box->children->children; text_box;
-			text_box = text_box->next) {
-		if (text_box->type == BOX_TEXT)
-			len += text_box->length + 1;
-		else /* BOX_BR */
-			len += 2;
-	}
-
-	/* construct value */
-	s = value = malloc(len + 1);
-	if (!s)
-		return NULL;
-
-	for (text_box = textarea->box->children->children; text_box;
-			text_box = text_box->next) {
-		if (text_box->type == BOX_TEXT) {
-			strncpy(s, text_box->text, text_box->length);
-			s += text_box->length;
-			if (text_box->next && text_box->next->type != BOX_BR)
-				/* only add space if this isn't
-				 * the last box on a line (or in the area) */
-				*s++ = ' ';
-		} else { /* BOX_BR */
-			*s++ = '\r';
-			*s++ = '\n';
-		}
-	}
-	*s = 0;
-
-	return value;
 }
 
 

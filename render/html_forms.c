@@ -523,7 +523,8 @@ invent_fake_gadget(dom_node *node)
 }
 
 /* documented in html_internal.h */
-struct form_control *html_forms_get_control_for_node(struct form *forms, dom_node *node)
+struct form_control *html_forms_get_control_for_node(struct form *forms,
+		dom_node *node)
 {
 	struct form *f;
 	struct form_control *ctl = NULL;

@@ -41,6 +41,7 @@
 #include "desktop/options.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
+#include "desktop/textarea.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -2109,7 +2110,11 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
 			(bg_box->type != BOX_INLINE || bg_box->object ||
-			bg_box->flags & IFRAME || box->flags & REPLACE_DIM)) {
+			bg_box->flags & IFRAME || box->flags & REPLACE_DIM ||
+			(bg_box->gadget != NULL &&
+			(bg_box->gadget->type == GADGET_TEXTAREA ||
+			bg_box->gadget->type == GADGET_TEXTBOX ||
+			bg_box->gadget->type == GADGET_PASSWORD)))) {
 		/* find intersection of clip box and border edge */
 		struct rect p;
 		p.x0 = x - border_left < r.x0 ? r.x0 : x - border_left;
@@ -2154,7 +2159,11 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	if (box->style && box->type != BOX_TEXT &&
 			box->type != BOX_INLINE_END &&
 			(box->type != BOX_INLINE || box->object ||
-			box->flags & IFRAME || box->flags & REPLACE_DIM) &&
+			box->flags & IFRAME || box->flags & REPLACE_DIM ||
+			(box->gadget != NULL &&
+			(box->gadget->type == GADGET_TEXTAREA ||
+			box->gadget->type == GADGET_TEXTBOX ||
+			box->gadget->type == GADGET_PASSWORD))) &&
 			(border_top || border_right ||
 			 border_bottom || border_left)) {
 		if (!html_redraw_borders(box, x_parent, y_parent,
@@ -2397,6 +2406,13 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				width, height, box, scale,
 				current_background_color, ctx))
 			return false;
+
+	} else if (box->gadget &&
+			(box->gadget->type == GADGET_TEXTAREA ||
+			box->gadget->type == GADGET_PASSWORD ||
+			box->gadget->type == GADGET_TEXTBOX)) {
+		textarea_redraw(box->gadget->data.text.ta,
+				x, y, current_background_color, &r, ctx);
 
 	} else if (box->text) {
 		if (!html_redraw_text_box(html, box, x, y, &r, scale,

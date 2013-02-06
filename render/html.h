@@ -46,6 +46,7 @@ struct http_parameter;
 struct imagemap;
 struct object_params;
 struct plotters;
+struct textarea;
 struct scrollbar;
 struct scrollbar_msg_data;
 struct search_context;

@@ -46,6 +46,7 @@
 #include "content/content_protected.h"
 #include "desktop/options.h"
 #include "desktop/scrollbar.h"
+#include "desktop/textarea.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -648,6 +649,20 @@ bool layout_block_context(struct box *block, int viewport_height,
 			CSS_POSITION_ABSOLUTE) {
 		/* Block is in normal flow */
 		layout_apply_minmax_height(block, NULL);
+	}
+
+	if (block->gadget &&
+			(block->gadget->type == GADGET_TEXTAREA ||
+			block->gadget->type == GADGET_PASSWORD ||
+			block->gadget->type == GADGET_TEXTBOX)) {
+		int ta_width = block->padding[LEFT] + block->width +
+				block->padding[RIGHT];
+		int ta_height = block->padding[TOP] + block->height +
+				block->padding[BOTTOM];
+		textarea_set_layout(block->gadget->data.text.ta,
+				ta_width, ta_height,
+				block->padding[TOP], block->padding[RIGHT],
+				block->padding[BOTTOM], block->padding[LEFT]);
 	}
 
 	return true;
