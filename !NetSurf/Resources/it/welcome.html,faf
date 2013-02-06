@@ -18,7 +18,7 @@
 <div class="onlycontent">
 <h2 class="version">Benvenuti su NetSurf</h2>
 
-<p class="intro">NetSurf è la nostra idea di browser, per questo abbiamo scelto di renderlo piccolo e veloce e stiamo lavorando per renderlo sempre migliore, se hai qualche suggerimento o semplicemente hai bisogno di aiuto contattaci! Grazie per aver scelto NetSurf!</p>
+<p class="intro">NetSurf è la nostra idea di browser, per questo abbiamo scelto di renderlo veloce e sicuro ed ogni giorno lavoriamo per renderlo migliore, se hai qualche suggerimento o semplicemente hai bisogno di aiuto contattaci!<br><br> Grazie per aver scelto NetSurf!</p>
 
 <form method="get" action="http://www.google.it/search">
 <div class="websearch">

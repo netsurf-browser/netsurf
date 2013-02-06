@@ -39,11 +39,11 @@ de.all.NetSurf:NetSurf
 fr.all.NetSurf:NetSurf
 it.all.NetSurf:NetSurf
 nl.all.NetSurf:NetSurf
-en.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
-de.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
-fr.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
-it.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
-nl.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
+en.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+de.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+fr.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+it.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+nl.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
 
 # Menus
 # =====
@@ -325,12 +325,12 @@ nl.all.OptDefault:Als standaard instellen
 en.all.ForeImg:Foreground images
 de.all.ForeImg:Vordergrundbilder
 fr.all.ForeImg:Images de premier plan
-it.all.ForeImg:Immagini in primo piano
+it.all.ForeImg:In primo piano
 nl.all.ForeImg:Voorgrondafbeelding
 en.all.BackImg:Background images
 de.all.BackImg:Hintergrundbilder
 fr.all.BackImg:Images de fond
-it.all.BackImg:Immagini in sottofondo
+it.all.BackImg:In sottofondo
 nl.all.BackImg:Achtergrondafbeelding
 
 # Main -> Display -> Toolbars menu
@@ -402,12 +402,12 @@ nl.all.Window:Venster
 en.all.HotlistAdd:Add to hotlist
 de.all.HotlistAdd:Eintrag hinzufügen
 fr.all.HotlistAdd:Ajouter aux favoris
-it.all.HotlistAdd:Aggiungi ai segnalibri
+it.all.HotlistAdd:Aggiungi
 nl.all.HotlistAdd:Toevoegen aan bladwijzers
 en.all.HotlistShow:Show hotlist...  F6
 de.all.HotlistShow:Hotlist zeigen...  F6
 fr.all.HotlistShow:Montrer les favoris...  F6
-it.all.HotlistShow:Mostra segnalibri...  F6
+it.all.HotlistShow:Mostra...  F6
 nl.all.HotlistShow:Toon bladwijzers  F6
 
 # Main -> Utilities -> History menu
@@ -818,7 +818,7 @@ nl.all.ClearNS:Clear selection
 en.all.Browser:Browser
 de.all.Browser:Browser
 fr.all.Browser:Browser
-it.all.Browser:Visualizza
+it.all.Browser:Strumenti
 nl.all.Browser:Browser
 en.all.HistGlobalNS:Show global history...
 de.all.HistGlobalNS:Zeige globale History...
@@ -1823,12 +1823,12 @@ nl.gtk.gtkImages:_Images
 en.gtk.gtkForegroundImages:_Foreground Images
 de.gtk.gtkForegroundImages:_Vordergrundbilder
 fr.gtk.gtkForegroundImages:_Images de premier plan
-it.gtk.gtkForegroundImages:Immagini in _primo piano
+it.gtk.gtkForegroundImages:In _primo piano
 nl.gtk.gtkForegroundImages:_Foreground Images
 en.gtk.gtkBackgroundImages:_Background Images
 de.gtk.gtkBackgroundImages:_Hintergrundbilder
 fr.gtk.gtkBackgroundImages:_Images d'arrière plan
-it.gtk.gtkBackgroundImages:Immagini in _sottofondo
+it.gtk.gtkBackgroundImages:In _sottofondo
 nl.gtk.gtkBackgroundImages:_Background Images
 en.gtk.gtkToolbars:_Toolbars
 de.gtk.gtkToolbars:_Werkzeugleisten
@@ -2196,12 +2196,12 @@ nl.all.SSLCerts:SSL certificates
 en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
 fr.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-it.all.SSLError:NetSurf non � stato in grado di verificare l'autenticit� di questo certificato SSL, per favore verifica i dettagli presenti di seguito.
+it.all.SSLError:NetSurf non � stato in grado di verificare l'autenticit� di questo certificato SSL, per favore verifica i dettagli presenti di seguito
 nl.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 en.all.SSL_Certificate_Subject:Subject: %s
 de.all.SSL_Certificate_Subject:Subject: %s
 fr.all.SSL_Certificate_Subject:Subject: %s
-it.all.SSL_Certificate_Subject:Oggetto: %s
+it.all.SSL_Certificate_Subject:Soggetto: %s
 nl.all.SSL_Certificate_Subject:Subject: %s
 en.all.SSL_Certificate_Issuer:Issuer: %s
 de.all.SSL_Certificate_Issuer:Issuer: %s
@@ -5622,7 +5622,7 @@ nl.all.SearchProvider:Search provider
 en.ami.OptionDocky:Show in AmiDock
 de.ami.OptionDocky:In AmiDock zeigen
 fr.ami.OptionDocky:Show in AmiDock
-it.ami.OptionDocky:Mostra icona su AmiDock
+it.ami.OptionDocky:Mostra icona di NetSurf su AmiDock
 nl.ami.OptionDocky:Show in AmiDock
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard

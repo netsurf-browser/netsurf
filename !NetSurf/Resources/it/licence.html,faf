@@ -35,7 +35,7 @@ dl.components > dd > span + span {
 
 <h1>Licenza d'uso</h1>
 
-<p style="text-align: justify">Il codice sorgente di NetSurf, la sua documentazione, i file delle traduzioni e le definizioni UI sono rilasciati liberamente secondo i termini della Licenza Pubblica Generica GNU cosi com'è pubblicata dalla Free Software Foundation nella versione 2.0 o successiva, inoltre, come eccezione particolare è possibile collegare il codice sorgente di NetSurf a quello della libreria OpenSSL oppure distribuirli insieme usando una versione modificata della libreria stessa avente però la medesima licenza d'uso.</p>
+<p style="text-align: justify">Il codice sorgente di NetSurf, la sua documentazione, nonchè i file delle traduzioni e le definizioni UI sono rilasciati liberamente secondo i termini della Licenza Pubblica Generica GNU cosi com'è pubblicata dalla Free Software Foundation nella versione 2.0 o successiva, inoltre, come eccezione particolare è possibile collegare il codice sorgente di NetSurf a quello della libreria OpenSSL oppure distribuirli insieme usando una versione modificata della libreria stessa avente però la medesima licenza d'uso.</p>
 
 <p style="text-align: justify">Comunque è necessario rispettare a tutti gli effetti la Licenza Pubblica Generica GNU versione 2.0 per tutte le parti del codice sorgente utilizzato ad eccezione della libreria OpenSSL.</p>
 
@@ -52,25 +52,25 @@ dl.components > dd > span + span {
 <dl class="components">
 <dt><a href="http://www.netsurf-browser.org/">NetSurf</a></dt>
 <dd>
-<span>&copy; 2002&ndash;2012 The NetSurf Developers</span>
+<span>&copy; 2002&ndash;2013 The NetSurf Developers</span>
 <span><a href="#gplv2">GPLv2</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libcss/">LibCSS</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2012 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2013 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/hubbub/">Hubbub</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2012 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
+<span>&copy; 2007&ndash;2013 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libparserutils/">LibParserUtils</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2012 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2013 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -106,7 +106,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.netsurf-browser.org/projects/libnsfb/">Libnsfb</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2012 Vincent Sanders<br>&copy; 2009&ndash;2012 Michael Drake</span>
+<span>&copy; 2009&ndash;2013 Vincent Sanders<br>&copy; 2009&ndash;2013 Michael Drake</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -118,7 +118,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.netsurf-browser.org/projects/libwapcaplet">LibWapcaplet</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2012 NetSurf Browser Project, Daniel Silverstone</span>
+<span>&copy; 2009&ndash;2013 NetSurf Browser Project, Daniel Silverstone</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 </dl>
@@ -1888,7 +1888,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 </div>
 
 <div class="footer">
-<p>Copyright 2003&ndash;2012 The NetSurf Developers</p>
+<p>Copyright 2003&ndash;2013 The NetSurf Developers</p>
 </div>
 
 </body>
