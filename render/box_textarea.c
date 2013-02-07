@@ -175,8 +175,11 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 		if (msg->data.caret.hidden) {
 			browser_window_remove_caret(html->bw);
 		} else {
+			int x, y;
+			box_coords(box, &x, &y);
 			browser_window_place_caret(html->bw,
-					msg->data.caret.x, msg->data.caret.y,
+					x + msg->data.caret.x,
+					y + msg->data.caret.y,
 					msg->data.caret.height,
 					box_textarea_browser_caret_callback,
 					box_textarea_browser_paste_callback,
