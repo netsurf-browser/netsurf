@@ -47,23 +47,7 @@
 /**
  * Text selection works by labelling each node in the box tree with its
  * start index in the textual representation of the tree's content.
- *
- * Text input fields and text areas have their own number spaces so that
- * they can be relabelled more efficiently when editing (rather than relabel
- * the entire box tree) and so that selections are either wholly within
- * or wholly without the textarea/input box.
  */
-
-#define IS_INPUT(box) ((box) && (box)->gadget && \
-	((box)->gadget->type == GADGET_TEXTAREA || \
-		(box)->gadget->type == GADGET_TEXTBOX || \
-		(box)->gadget->type == GADGET_PASSWORD))
-
-/** check whether the given text box is in the same number space as the
-    current selection; number spaces are identified by their uppermost nybble */
-
-#define NUMBER_SPACE(x) ((x) & 0xF0000000U)
-#define SAME_SPACE(s, offset) (NUMBER_SPACE((s)->max_idx) == NUMBER_SPACE(offset))
 
 #define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
 
@@ -99,7 +83,7 @@ static bool save_handler(const char *text, size_t length, struct box *box,
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
-		unsigned int num_space, seln_traverse_handler handler,
+		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
 static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
@@ -188,13 +172,7 @@ void selection_reinit(struct selection *s, struct box *root)
 
 	assert(s);
 
-	if (IS_INPUT(root)) {
-		static int next_idx = 0;
-		if (!++next_idx) next_idx = 1;
-		root_idx = next_idx << 28;
-	}
-	else
-		root_idx = 0;
+	root_idx = 0;
 
 //	if (s->root == root) {
 //		/* keep the same number space as before, because we want
@@ -255,8 +233,7 @@ void selection_init(struct selection *s, struct box *root)
 
 bool selection_read_only(struct selection *s)
 {
-	return !s->root || !NUMBER_SPACE(s->root->byte_offset);
-
+	return true;
 }
 
 
@@ -280,13 +257,10 @@ unsigned selection_label_subtree(struct box *box, unsigned idx)
 		idx += box->length + SPACE_LEN(box);
 
 	while (child) {
-		if (!IS_INPUT(child)) {
-			if (child->list_marker)
-				idx = selection_label_subtree(
-						child->list_marker, idx);
+		if (child->list_marker)
+			idx = selection_label_subtree(child->list_marker, idx);
 
-			idx = selection_label_subtree(child, idx);
-		}
+		idx = selection_label_subtree(child, idx);
 		child = child->next;
 	}
 
@@ -316,9 +290,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		return false; /* not our problem */
 
 	top = browser_window_get_root(top);
-
-	if (!SAME_SPACE(s, idx))
-		return false;	/* not our problem */
 
 	if (selection_defined(s)) {
 		if (idx > s->start_idx) {
@@ -421,9 +392,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 void selection_track(struct selection *s, browser_mouse_state mouse,
 		unsigned idx)
 {
-	if (!SAME_SPACE(s, idx))
-		return;
-
 	if (!mouse) {
 		s->drag_state = DRAG_NONE;
 	}
@@ -516,7 +484,6 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  * \param  box        box subtree
  * \param  start_idx  start of range within textual representation (bytes)
  * \param  end_idx    end of range
- * \param  num_space  number space of the selection
  * \param  handler    handler function to call
  * \param  handle     handle to pass
  * \param  before     type of whitespace to place before next encountered text
@@ -526,7 +493,7 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
  */
 
 bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
-		unsigned int num_space, seln_traverse_handler handler,
+		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker)
 {
@@ -547,7 +514,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		/* do the marker box before continuing with the rest of the
 		 * list element */
 		if (!traverse_tree(box->list_marker, start_idx, end_idx,
-				num_space, handler, handle, before, first,
+				handler, handle, before, first,
 				true))
 			return false;
 	}
@@ -568,8 +535,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	else {
 		whitespace_text = NULL;
 	}
-	if (num_space == NUMBER_SPACE(box->byte_offset) &&
-			box->type != BOX_BR &&
+	if (box->type != BOX_BR &&
 			!((box->type == BOX_FLOAT_LEFT ||
 			box->type == BOX_FLOAT_RIGHT) &&
 			!box->text)) {
@@ -607,7 +573,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 			 * the tree */
 			struct box *next = child->next;
 
-			if (!traverse_tree(child, start_idx, end_idx, num_space,
+			if (!traverse_tree(child, start_idx, end_idx,
 					handler, handle, before, first, false))
 				return false;
 
@@ -642,8 +608,7 @@ static bool selection_traverse(struct selection *s,
 	if (s->root) {
 		/* HTML */
 		return traverse_tree(s->root, s->start_idx, s->end_idx,
-				NUMBER_SPACE(s->max_idx), handler, handle,
-				&before, &first, false);
+				handler, handle, &before, &first, false);
 	}
 
 	/* Text */
@@ -727,7 +692,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 
 	if (s->root) {
 		if (!traverse_tree(s->root, start_idx, end_idx,
-				NUMBER_SPACE(s->max_idx), redraw_handler, &rdw,
+				redraw_handler, &rdw,
 				NULL, NULL, false))
 			return;
 	}
@@ -977,10 +942,7 @@ void selection_select_all(struct selection *s)
 	assert(s);
 	s->defined = true;
 	
-	if (IS_INPUT(s->root))
-		selection_set_start(s, s->root->children->children->byte_offset);
-	else
-		selection_set_start(s, 0);
+	selection_set_start(s, 0);
 	selection_set_end(s, s->max_idx);
 }
 
