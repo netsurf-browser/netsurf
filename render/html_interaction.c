@@ -42,7 +42,6 @@
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
-#include "render/textinput.h"
 #include "javascript/js.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
