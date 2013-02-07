@@ -76,8 +76,7 @@ getter location %{
 	jsret = jsapi_new_Location(cx,
 				   NULL,
 				   NULL,
-				   llcache_handle_get_url(private->htmlc->base.llcache),
-				   private->htmlc);
+				   llcache_handle_get_url(private->htmlc->base.llcache));
 %}
 
 getter URL %{

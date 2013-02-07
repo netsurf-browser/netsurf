@@ -26,6 +26,8 @@ preamble %{
 
 #include "location.h"
 
+struct browser_window *jsapi_get_browser_window(JSContext *cx);
+
 %}
 
 binding location {
@@ -34,16 +36,50 @@ binding location {
 	interface Location; /* Web IDL interface to generate */
 
 	private "nsurl *" url;
-	private "struct html_content *" htmlc; 
 
 	property unshared href;
 
 }
 
 operation reload %{
-	browser_window_reload(private->htmlc->bw, false);
+	struct browser_window *bw;
+	bw = jsapi_get_browser_window(cx);
+	if (bw != NULL) {
+		browser_window_reload(bw, false);
+	} else {
+		JSLOG("failed to get browser context");
+	}
 %}
 
+/* void Location::assign(DOMString url); */
+operation assign %{
+	nsurl *joined;
+	struct browser_window *bw;
+
+	bw = jsapi_get_browser_window(cx);
+	if (bw != NULL) {
+		nsurl_join(private->url, url, &joined);
+		browser_window_go(bw, nsurl_access(joined), NULL, true);
+		nsurl_unref(joined);
+	} else {
+		JSLOG("failed to get browser context");
+	}
+%}
+
+/* void Location::replace(DOMString url); */
+operation replace %{
+	nsurl *joined;
+	struct browser_window *bw;
+
+	bw = jsapi_get_browser_window(cx);
+	if (bw != NULL) {
+		nsurl_join(private->url, url, &joined);
+		browser_window_go(bw, nsurl_access(joined), NULL, false);
+		nsurl_unref(joined);
+	} else {
+		JSLOG("failed to get browser context");
+	}
+%}
 
 getter href %{
 	char *url_s = NULL;
@@ -65,13 +101,25 @@ setter href %{
 	JSString *url_jsstr = NULL;
 	int url_len = 0;
 	char *url = NULL;
+	struct browser_window *bw;
+	nsurl *joined;
 
-	url_jsstr = JS_ValueToString(cx, *vp);
-	if (url_jsstr != NULL) {
-		JSString_to_char(url_jsstr, url, url_len);
-		browser_window_go(private->htmlc->bw, url, NULL, false);
+	bw = jsapi_get_browser_window(cx);
+
+	if (bw != NULL) {
+		url_jsstr = JS_ValueToString(cx, *vp);
+		if (url_jsstr != NULL) {
+			JSString_to_char(url_jsstr, url, url_len);
+
+			nsurl_join(private->url, url, &joined);
+
+			browser_window_go(bw, nsurl_access(joined), NULL, false);
+			nsurl_unref(joined);
+		} else {
+			JSLOG("failed to convert string value");
+		}
 	} else {
-		JSLOG("failed to convert string value");
+		JSLOG("failed to get browser context");
 	}
 %}
 

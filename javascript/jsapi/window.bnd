@@ -40,6 +40,27 @@ preamble %{
 #include "window.h"
 #include "location.h"
 
+struct browser_window *jsapi_get_browser_window(JSContext *cx);
+
+%}
+
+prologue %{
+
+struct browser_window *jsapi_get_browser_window(JSContext *cx)
+{
+	struct jsclass_private *private;
+
+	private = JS_GetInstancePrivate(cx,
+					JS_GetGlobalObject(cx),
+					&JSClass_Window,
+					NULL);
+	if (private != NULL) {
+		return private->bw;
+	}
+
+	return NULL;
+}
+
 %}
 
 binding window {
