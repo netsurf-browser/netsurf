@@ -396,6 +396,8 @@ void browser_window_set_drag_type(struct browser_window *bw,
 		top_bw->drag_window = bw;
 
 		switch (type) {
+		case DRAGGING_SELECTION:
+			return;
 		case DRAGGING_SCR_X:
 		case DRAGGING_SCR_Y:
 		case DRAGGING_CONTENT_SCROLLBAR:
@@ -1554,10 +1556,10 @@ nserror browser_window_callback(hlcache_handle *c,
 			bdt = DRAGGING_NONE;
 			break;
 		case CONTENT_DRAG_SCROLL:
-			bdt = DRAGGING_SELECTION;
+			bdt = DRAGGING_CONTENT_SCROLLBAR;
 			break;
 		case CONTENT_DRAG_SELECTION:
-			bdt = DRAGGING_CONTENT_SCROLLBAR;
+			bdt = DRAGGING_SELECTION;
 			break;
 		}
 		browser_window_set_drag_type(bw, bdt, event->data.drag.rect);

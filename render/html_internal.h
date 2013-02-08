@@ -141,6 +141,14 @@ void html_set_status(html_content *c, const char *extra);
 
 void html__redraw_a_box(html_content *html, struct box *box);
 
+/**
+ * Set our drag status, and inform whatever owns the content
+ *
+ * \param html		HTML content
+ * \param drag_type	Type of drag
+ * \param drag_owner	What owns the drag
+ * \param rect		Pointer movement bounds
+ */
 void html_set_drag_type(html_content *html, html_drag_type drag_type,
 		union html_drag_owner drag_owner, const struct rect *rect);
 

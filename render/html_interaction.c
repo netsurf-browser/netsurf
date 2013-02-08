@@ -943,6 +943,7 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 	}
 }
 
+/* Documented in html_internal.h */
 void html_set_drag_type(html_content *html, html_drag_type drag_type,
 		union html_drag_owner drag_owner, const struct rect *rect)
 {
