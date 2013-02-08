@@ -1302,7 +1302,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
-	int line0, line1, line, left, right;
+	int line0, line1, line, left, right, line_y;
 	int chars, text_y_offset, text_y_offset_baseline;
 	unsigned int c_pos, c_len, c_len_part, b_start, b_end, line_len;
 	unsigned int sel_start, sel_end;
@@ -1478,22 +1478,20 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				s.x1 = right;
 			plot->clip(&s);
 
+			line_y = y + line * ta->line_height - ta->scroll_y;
+
 			if (selected) {
 				/* draw selection fill */
-				plot->rectangle(s.x0,
-					y + line * ta->line_height + 1 -
-					ta->scroll_y + text_y_offset,
-					s.x1,
-					y + (line + 1) * ta->line_height + 1 -
-					ta->scroll_y + text_y_offset,
+				plot->rectangle(s.x0, line_y + text_y_offset,
+					s.x1, line_y + ta->line_height +
+							text_y_offset,
 					&plot_style_fill_bg);
 			}
 
 			/* draw text */
 			plot->text(x + ta->border_width + ta->pad_left -
 					ta->scroll_x,
-					y + line * ta->line_height +
-					text_y_offset_baseline - ta->scroll_y,
+					line_y + text_y_offset_baseline,
 					ta->show->data +
 							ta->lines[line].b_start,
 					ta->lines[line].b_length, fstyle);
@@ -2062,20 +2060,9 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height)
 /* exported interface, documented in textarea.h */
 void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
-	struct textarea_msg msg;
-
 	ta->vis_width = width;
 	ta->vis_height = height;
 	textarea_reflow(ta, 0);
-
-	msg.ta = ta;
-	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-	msg.data.redraw.x0 = 0;
-	msg.data.redraw.y0 = 0;
-	msg.data.redraw.x1 = ta->vis_width;
-	msg.data.redraw.y1 = ta->vis_height;
-
-	ta->callback(ta->data, &msg);
 }
 
 
@@ -2083,8 +2070,6 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 void textarea_set_layout(struct textarea *ta, int width, int height,
 		int top, int right, int bottom, int left)
 {
-	struct textarea_msg msg;
-
 	ta->vis_width = width;
 	ta->vis_height = height;
 	ta->pad_top = top;
@@ -2092,13 +2077,4 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	ta->pad_bottom = bottom;
 	ta->pad_left = left;
 	textarea_reflow(ta, 0);
-
-	msg.ta = ta;
-	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-	msg.data.redraw.x0 = 0;
-	msg.data.redraw.y0 = 0;
-	msg.data.redraw.x1 = ta->vis_width;
-	msg.data.redraw.y1 = ta->vis_height;
-
-	ta->callback(ta->data, &msg);
 }

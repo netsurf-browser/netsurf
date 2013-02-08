@@ -196,7 +196,7 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
 
 /**
  * Set the dimensions of a textarea, causing a reflow and
- * emitting a redraw request.
+ * Does not emit a redraw request.  Up to client to call textarea_redraw.
  *
  * \param width 	the new width of the textarea
  * \param height	the new height of the textarea
@@ -204,8 +204,8 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
 void textarea_set_dimensions(struct textarea *ta, int width, int height);
 
 /**
- * Set the dimensions and padding of a textarea, causing a reflow and
- * emitting a redraw request.
+ * Set the dimensions and padding of a textarea, causing a reflow.
+ * Does not emit a redraw request.  Up to client to call textarea_redraw.
  *
  * \param width 	the new width of the textarea
  * \param height	the new height of the textarea
