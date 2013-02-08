@@ -1840,8 +1840,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					&& line < ta->line_count - 1)
 				b_len--;
 
-			l_len = utf8_bounded_length(
-					&(ta->text.data[b_off]),
+			l_len = utf8_bounded_length(&(ta->text.data[b_off]),
 					b_len);
 
 			ta->caret_pos.line = line;
@@ -1891,8 +1890,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					line < ta->line_count - 1)
 				b_len--;
 
-			l_len = utf8_bounded_length(
-					&(ta->text.data[b_off]),
+			l_len = utf8_bounded_length(&(ta->text.data[b_off]),
 					b_len);
 
 			ta->caret_pos.line = line;
