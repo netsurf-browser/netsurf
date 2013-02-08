@@ -2102,9 +2102,25 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 	} else if (mouse & BROWSER_MOUSE_HOLDING_1 &&
 			ta->drag_info.type == TEXTAREA_DRAG_SELECTION) {
 		/* Selection track */
+		int scrx = 0;
+		int scry = 0;
+
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_start = ta->drag_start_char;
 		c_end = c_off;
+
+		/* selection auto-scroll */
+		if (x < 0)
+			scrx = x / 4;
+		if (y < 0)
+			scry = y / 4;
+		if (x > ta->vis_width)
+			scrx = (x - ta->vis_width) / 4;
+		if (y > ta->vis_height)
+			scry = (y - ta->vis_height) / 4;
+
+		textarea_scroll(ta, scrx, scry);
+
 		return textarea_select(ta, c_start, c_end);
 	}
 
