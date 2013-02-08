@@ -2653,8 +2653,8 @@ html_get_contextual_content(struct content *c,
  * \param c	html content to look inside
  * \param x	x-coordinate of point of interest
  * \param y	y-coordinate of point of interest
- * \param scrx	x-coordinate of point of interest
- * \param scry	y-coordinate of point of interest
+ * \param scrx	number of px try to scroll something in x direction
+ * \param scry	number of px try to scroll something in y direction
  * \return true iff scroll was consumed by something in the content
  */
 static bool
