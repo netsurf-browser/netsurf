@@ -1836,7 +1836,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			c_line = ta->caret_pos.line;
 			c_chars = ta->caret_pos.char_off;
 
-			if (ta->text.data[b_off + b_len - 1] == ' '
+			if (b_len > 0 && ta->text.data[b_off + b_len - 1] == ' '
 					&& line < ta->line_count - 1)
 				b_len--;
 
