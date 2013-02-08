@@ -2078,3 +2078,19 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	ta->pad_left = left;
 	textarea_reflow(ta, 0);
 }
+
+
+/* exported interface, documented in textarea.h */
+bool textarea_scroll(struct textarea *ta, int scrx, int scry)
+{
+	bool handled_scroll = false;
+
+	if (ta->bar_x != NULL && scrx != 0 &&
+			scrollbar_scroll(ta->bar_x, scrx))
+		handled_scroll = true;
+	if (ta->bar_y != NULL && scry != 0 &&
+			scrollbar_scroll(ta->bar_y, scry))
+		handled_scroll = true;
+
+	return handled_scroll;
+}

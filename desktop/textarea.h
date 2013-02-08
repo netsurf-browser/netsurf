@@ -219,5 +219,16 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height);
  */
 void textarea_set_layout(struct textarea *ta, int width, int height,
 		int top, int right, int bottom, int left);
+
+/**
+ * Scroll a textarea by an amount.  Only does anything if multi-line textarea
+ * has scrollbars.  If it scrolls, it will emit a redraw request.
+ *
+ * \param ta	textarea widget
+ * \param scrx	number of px try to scroll in x direction
+ * \param scry	number of px try to scroll in y direction
+ * \return true iff the textarea was scrolled
+ */
+bool textarea_scroll(struct textarea *ta, int scrx, int scry);
 #endif
 

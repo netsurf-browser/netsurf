@@ -35,6 +35,7 @@
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
+#include "desktop/textarea.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -2679,6 +2680,14 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 		/* Pass into iframe */
 		if (box->iframe && browser_window_scroll_at_point(box->iframe,
 				x - box_x, y - box_y, scrx, scry) == true)
+			return true;
+
+		/* Pass into textarea widget */
+		if (box->gadget && (box->gadget->type == GADGET_TEXTAREA ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_TEXTBOX) &&
+				textarea_scroll(box->gadget->data.text.ta,
+						scrx, scry) == true)
 			return true;
 
 		/* Pass into object */
