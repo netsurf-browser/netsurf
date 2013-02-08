@@ -224,9 +224,10 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	html_content *html = (html_content*) c;
-	browser_drag_type drag_type = browser_window_get_drag_type(bw);
+	union html_drag_owner drag_owner;
 
-	if (drag_type == DRAGGING_SELECTION && !mouse) {
+	if (html->drag_type == HTML_DRAG_SELECTION && !mouse) {
+		/* End of selection drag */
 		int dir = -1;
 		size_t idx;
 
@@ -238,40 +239,37 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		if (idx != 0)
 			selection_track(&html->sel, mouse, idx);
 
-		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
+		drag_owner.no_owner = true;
+		html_set_drag_type(html, HTML_DRAG_NONE, drag_owner, NULL);
 	}
 
-	switch (drag_type) {
-		case DRAGGING_SELECTION: {
-			struct box *box;
-			int dir = -1;
-			int dx, dy;
+	if (html->drag_type == HTML_DRAG_SELECTION) {
+		/* Selection drag */
+		struct box *box;
+		int dir = -1;
+		int dx, dy;
 
-			if (selection_dragging_start(&html->sel))
-				dir = 1;
+		if (selection_dragging_start(&html->sel))
+			dir = 1;
 
-			box = box_pick_text_box(html, x, y, dir, &dx, &dy);
+		box = box_pick_text_box(html, x, y, dir, &dx, &dy);
 
-			if (box) {
-				int pixel_offset;
-				size_t idx;
-				plot_font_style_t fstyle;
+		if (box != NULL) {
+			int pixel_offset;
+			size_t idx;
+			plot_font_style_t fstyle;
 
-				font_plot_style_from_css(box->style, &fstyle);
+			font_plot_style_from_css(box->style, &fstyle);
 
-				nsfont.font_position_in_string(&fstyle,
-						box->text, box->length,
-						dx, &idx, &pixel_offset);
+			nsfont.font_position_in_string(&fstyle,
+					box->text, box->length,
+					dx, &idx, &pixel_offset);
 
-				selection_track(&html->sel, mouse,
-						box->byte_offset + idx);
-			}
+			selection_track(&html->sel, mouse,
+					box->byte_offset + idx);
 		}
-		break;
-
-		default:
-			html_mouse_action(c, bw, mouse, x, y);
-			break;
+	} else {
+		html_mouse_action(c, bw, mouse, x, y);
 	}
 }
 
@@ -356,29 +354,30 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		return;
 	}
 
-	if (!mouse && html->scrollbar != NULL) {
-		/* drag end: scrollbar */
-		html_overflow_scroll_drag_end(html->scrollbar, mouse, x, y);
-	}
+	if (html->drag_type == HTML_DRAG_SCROLLBAR) {
+		struct scrollbar *scr = html->drag_owner.scrollbar;
+		struct html_scrollbar_data *data = scrollbar_get_data(scr);
 
-	if (html->scrollbar != NULL) {
-		struct html_scrollbar_data *data =
-				scrollbar_get_data(html->scrollbar);
+		if (!mouse) {
+			/* drag end: scrollbar */
+			html_overflow_scroll_drag_end(scr, mouse, x, y);
+		}
+
 		box = data->box;
 		box_coords(box, &box_x, &box_y);
-		if (scrollbar_is_horizontal(html->scrollbar)) {
+		if (scrollbar_is_horizontal(scr)) {
 			scroll_mouse_x = x - box_x ;
 			scroll_mouse_y = y - (box_y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
 					SCROLLBAR_WIDTH);
-			status = scrollbar_mouse_action(html->scrollbar, mouse,
+			status = scrollbar_mouse_action(scr, mouse,
 					scroll_mouse_x, scroll_mouse_y);
 		} else {
 			scroll_mouse_x = x - (box_x + box->padding[LEFT] +
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH);
 			scroll_mouse_y = y - box_y;
-			status = scrollbar_mouse_action(html->scrollbar, mouse, 
+			status = scrollbar_mouse_action(scr, mouse, 
 					scroll_mouse_x, scroll_mouse_y);
 		}
 
@@ -387,8 +386,35 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		return;
 	}
 
+	if (html->drag_type == HTML_DRAG_TEXTAREA_SELECTION ||
+			html->drag_type == HTML_DRAG_TEXTAREA_SCROLLBAR) {
+		box = html->drag_owner.textarea;
+		assert(box->gadget != NULL);
+		assert(box->gadget->type == GADGET_TEXTAREA ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_TEXTBOX);
+
+		box_coords(box, &box_x, &box_y);
+		textarea_mouse_action(box->gadget->data.text.ta, mouse,
+				x - box_x, y - box_y);
+
+		/* TODO: Set appropriate statusbar message */
+		return;
+	}
+
+	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION ||
+			html->drag_type == HTML_DRAG_CONTENT_SCROLL) {
+		box = html->drag_owner.content;
+		assert(box->object != NULL);
+
+		box_coords(box, &box_x, &box_y);
+		content_mouse_track(box->object, bw, mouse,
+				x - box_x, y - box_y);
+		return;
+	}
+
 	/* Content related drags handled by now */
-	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
+	assert(html->drag_type == HTML_DRAG_NONE);
 
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars 
@@ -734,11 +760,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					/* key presses must be directed at the
 					 * main browser window, paste text
 					 * operations ignored */
+					html_drag_type drag_type;
+					union html_drag_owner drag_owner;
 
 					if (selection_dragging(&html->sel)) {
-						browser_window_set_drag_type(bw,
-							DRAGGING_SELECTION,
-							NULL);
+						drag_type = HTML_DRAG_SELECTION;
+						drag_owner.no_owner = true;
+						html_set_drag_type(html,
+								drag_type,
+								drag_owner,
+								NULL);
 						status = messages_get(
 								"Selecting");
 					}
@@ -845,35 +876,34 @@ void html_overflow_scroll_callback(void *client_data,
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
 	union content_msg_data msg_data;
+	html_drag_type drag_type;
+	union html_drag_owner drag_owner;
 	
 	switch(scrollbar_data->msg) {
-		case SCROLLBAR_MSG_MOVED:
-			html__redraw_a_box(html, box);
-			break;
-		case SCROLLBAR_MSG_SCROLL_START:
-		{
-			struct rect rect = {
-				.x0 = scrollbar_data->x0,
-				.y0 = scrollbar_data->y0,
-				.x1 = scrollbar_data->x1,
-				.y1 = scrollbar_data->y1
-			};
-			browser_window_set_drag_type(html->bw,
-					DRAGGING_CONTENT_SCROLLBAR, &rect);
+	case SCROLLBAR_MSG_MOVED:
+		html__redraw_a_box(html, box);
+		break;
+	case SCROLLBAR_MSG_SCROLL_START:
+	{
+		struct rect rect = {
+			.x0 = scrollbar_data->x0,
+			.y0 = scrollbar_data->y0,
+			.x1 = scrollbar_data->x1,
+			.y1 = scrollbar_data->y1
+		};
+		drag_type = HTML_DRAG_SCROLLBAR;
+		drag_owner.scrollbar = scrollbar_data->scrollbar;
+		html_set_drag_type(html, drag_type, drag_owner, &rect);
+	}
+		break;
+	case SCROLLBAR_MSG_SCROLL_FINISHED:
+		drag_type = HTML_DRAG_NONE;
+		drag_owner.no_owner = true;
+		html_set_drag_type(html, drag_type, drag_owner, NULL);
 
-			html->scrollbar = scrollbar_data->scrollbar;
-		}
-			break;
-		case SCROLLBAR_MSG_SCROLL_FINISHED:
-			html->scrollbar = NULL;
-
-			browser_window_set_drag_type(html->bw,
-					DRAGGING_NONE, NULL);
-
-			msg_data.pointer = BROWSER_POINTER_AUTO;
-			content_broadcast(data->c, CONTENT_MSG_POINTER,
-					msg_data);
-			break;
+		msg_data.pointer = BROWSER_POINTER_AUTO;
+		content_broadcast(data->c, CONTENT_MSG_POINTER, msg_data);
+		break;
 	}
 }
 
@@ -911,4 +941,40 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 		scrollbar_mouse_drag_end(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
 	}
+}
+
+void html_set_drag_type(html_content *html, html_drag_type drag_type,
+		union html_drag_owner drag_owner, const struct rect *rect)
+{
+	union content_msg_data msg_data;
+
+	assert(html != NULL);
+
+	html->drag_type = drag_type;
+	html->drag_owner = drag_owner;
+
+	switch (drag_type) {
+	case HTML_DRAG_NONE:
+		assert(drag_owner.no_owner == true);
+		msg_data.drag.type = CONTENT_DRAG_NONE;
+		break;
+
+	case HTML_DRAG_SCROLLBAR:
+	case HTML_DRAG_TEXTAREA_SCROLLBAR:
+	case HTML_DRAG_CONTENT_SCROLL:
+		msg_data.drag.type = CONTENT_DRAG_SCROLL;
+		break;
+
+	case HTML_DRAG_SELECTION:
+		assert(drag_owner.no_owner == true);
+		/* Fall through */
+	case HTML_DRAG_TEXTAREA_SELECTION:
+	case HTML_DRAG_CONTENT_SELECTION:
+		msg_data.drag.type = CONTENT_DRAG_SELECTION;
+		break;
+	}
+	msg_data.drag.rect = rect;
+
+	/* Inform the content's drag status change */
+	content_broadcast((struct content *)html, CONTENT_MSG_DRAG, msg_data);
 }

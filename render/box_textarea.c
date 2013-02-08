@@ -28,6 +28,7 @@
 #include "render/box_textarea.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "utils/log.h"
 
 
 static bool box_textarea_browser_caret_callback(struct browser_window *bw,
@@ -124,23 +125,20 @@ static bool box_textarea_browser_paste_callback(struct browser_window *bw,
 static void box_textarea_callback(void *data, struct textarea_msg *msg)
 {
 	struct form_textarea_data *d = data;
-	struct content *c = (struct content *)d->html;
 	struct html_content *html = d->html;
 	struct form_control *gadget = d->gadget;
 	struct box *box = gadget->box;
-	union content_msg_data msg_data;
 
 	switch (msg->type) {
 	case TEXTAREA_MSG_DRAG_REPORT:
 		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
 			/* Textarea drag finished */
-			html->textarea = NULL;
+			html_drag_type drag_type = HTML_DRAG_NONE;
+			union html_drag_owner drag_owner;
+			drag_owner.no_owner = true;
 
-			browser_window_set_drag_type(html->bw,
-					DRAGGING_NONE, NULL);
-
-			msg_data.pointer = BROWSER_POINTER_AUTO;
-			content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+			html_set_drag_type(d->html, drag_type, drag_owner,
+					NULL);
 		} else {
 			/* Textarea drag started */
 			struct rect rect = {
@@ -149,16 +147,25 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 				.x1 = INT_MAX,
 				.y1 = INT_MAX
 			};
-			browser_drag_type bdt;
+			html_drag_type drag_type;
+			union html_drag_owner drag_owner;
+			drag_owner.textarea = box;
 
-			if (msg->data.drag == TEXTAREA_DRAG_SCROLLBAR)
-				bdt = DRAGGING_CONTENT_TEXTAREA_SCROLLBAR;
-			else
-				bdt = DRAGGING_CONTENT_TEXTAREA_SELECTION;
+			switch (msg->data.drag) {
+			case TEXTAREA_DRAG_SCROLLBAR:
+				drag_type = HTML_DRAG_TEXTAREA_SCROLLBAR;
+				break;
+			case TEXTAREA_DRAG_SELECTION:
+				drag_type = HTML_DRAG_TEXTAREA_SELECTION;
+				break;
+			default:
+				LOG(("Drag type not handled."));
+				assert(0);
+				break;
+			}
 
-			browser_window_set_drag_type(html->bw, bdt, &rect);
-
-			html->textarea = msg->ta;
+			html_set_drag_type(d->html, drag_type, drag_owner,
+					&rect);
 		}
 		break;
 

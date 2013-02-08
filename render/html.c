@@ -343,8 +343,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->iframe = NULL;
 	c->page = NULL;
 	c->font_func = &nsfont;
-	c->scrollbar = NULL;
-	c->textarea = NULL;
+	c->drag_type = HTML_DRAG_NONE;
+	c->drag_owner.no_owner = true;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jscontext = NULL;
@@ -1306,6 +1306,29 @@ html_object_callback(hlcache_handle *object,
 		/* These messages are for browser window layer.
 		 * we're not interested, so pass them on. */
 		content_broadcast(&c->base, event->type, event->data);
+		break;
+
+	case CONTENT_MSG_DRAG:
+	{
+		html_drag_type drag_type = HTML_DRAG_NONE;
+		union html_drag_owner drag_owner;
+		drag_owner.content = box;
+
+		switch (event->data.drag.type) {
+		case CONTENT_DRAG_NONE:
+			drag_type = HTML_DRAG_NONE;
+			drag_owner.no_owner = true;
+			break;
+		case CONTENT_DRAG_SCROLL:
+			drag_type = HTML_DRAG_CONTENT_SCROLL;
+			break;
+		case CONTENT_DRAG_SELECTION:
+			drag_type = HTML_DRAG_CONTENT_SELECTION;
+			break;
+		}
+		html_set_drag_type(c, drag_type, drag_owner,
+				event->data.drag.rect);
+	}
 		break;
 
 	default:

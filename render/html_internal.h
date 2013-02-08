@@ -27,6 +27,22 @@
 #include "desktop/selection.h"
 #include "render/html.h"
 
+typedef enum {
+	HTML_DRAG_NONE,			/** No drag */
+	HTML_DRAG_SELECTION,		/** Own; Text selection */
+	HTML_DRAG_SCROLLBAR,		/** Not own; drag in scrollbar widget */
+	HTML_DRAG_TEXTAREA_SELECTION,	/** Not own; drag in textarea widget */
+	HTML_DRAG_TEXTAREA_SCROLLBAR,	/** Not own; drag in textarea widget */
+	HTML_DRAG_CONTENT_SELECTION,	/** Not own; drag in child content */
+	HTML_DRAG_CONTENT_SCROLL	/** Not own; drag in child content */
+} html_drag_type;
+union html_drag_owner {
+	bool no_owner;
+	struct box *content;
+	struct scrollbar *scrollbar;
+	struct box *textarea;
+}; /**< For drags we don't own */
+
 /** Data specific to CONTENT_HTML. */
 typedef struct html_content {
 	struct content base;
@@ -98,13 +114,10 @@ typedef struct html_content {
 	 * object within a page. */
 	struct html_content *page;
 
-	/** Scrollbar capturing all mouse events, updated to any active HTML
-	 *  scrollbar, or NULL when no scrollbar drags active */
-	struct scrollbar *scrollbar;
-
-	/** Textarea capturing all mouse events, updated to any active HTML
-	 *  textarea, or NULL when no textarea drags active */
-	struct textarea *textarea;
+	/* Current drag type */
+	html_drag_type drag_type;
+	/** Widget capturing all mouse events */
+	union html_drag_owner drag_owner;
 
 	/** Open core-handled form SELECT menu,
 	 *  or NULL if none currently open. */
@@ -127,6 +140,9 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 void html_set_status(html_content *c, const char *extra);
 
 void html__redraw_a_box(html_content *html, struct box *box);
+
+void html_set_drag_type(html_content *html, html_drag_type drag_type,
+		union html_drag_owner drag_owner, const struct rect *rect);
 
 struct browser_window *html_get_browser_window(struct content *c);
 struct search_context *html_get_search(struct content *c);

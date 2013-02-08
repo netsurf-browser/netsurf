@@ -1545,6 +1545,25 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_set_pointer(bw, event->data.pointer);
 		break;
 
+	case CONTENT_MSG_DRAG:
+	{
+		browser_drag_type bdt = DRAGGING_NONE;
+
+		switch (event->data.drag.type) {
+		case CONTENT_DRAG_NONE:
+			bdt = DRAGGING_NONE;
+			break;
+		case CONTENT_DRAG_SCROLL:
+			bdt = DRAGGING_SELECTION;
+			break;
+		case CONTENT_DRAG_SELECTION:
+			bdt = DRAGGING_CONTENT_SCROLLBAR;
+			break;
+		}
+		browser_window_set_drag_type(bw, bdt, event->data.drag.rect);
+	}
+		break;
+
 	default:
 		assert(0);
 	}
