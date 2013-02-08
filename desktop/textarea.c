@@ -1821,38 +1821,38 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
-			if (ta->flags & TEXTAREA_MULTILINE) {
-				line--;
-				if (line < 0)
-					line = 0;
-				if (line == ta->caret_pos.line)
-					break;
+			if (!(ta->flags & TEXTAREA_MULTILINE))
+				break;
 
-				b_off = ta->lines[line].b_start;
-				b_len = ta->lines[line].b_length;
+			line--;
+			if (line < 0)
+				line = 0;
+			if (line == ta->caret_pos.line)
+				break;
 
-				c_line = ta->caret_pos.line;
-				c_chars = ta->caret_pos.char_off;
+			b_off = ta->lines[line].b_start;
+			b_len = ta->lines[line].b_length;
 
-				if (ta->text.data[b_off + b_len - 1] == ' '
-						&& line < ta->line_count - 1)
-					b_len--;
+			c_line = ta->caret_pos.line;
+			c_chars = ta->caret_pos.char_off;
 
-				l_len = utf8_bounded_length(
-						&(ta->text.data[b_off]),
-						b_len);
+			if (ta->text.data[b_off + b_len - 1] == ' '
+					&& line < ta->line_count - 1)
+				b_len--;
 
+			l_len = utf8_bounded_length(
+					&(ta->text.data[b_off]),
+					b_len);
 
-				ta->caret_pos.line = line;
-				ta->caret_pos.char_off = min(l_len,
-						(unsigned)
-						ta->caret_pos.char_off);
+			ta->caret_pos.line = line;
+			ta->caret_pos.char_off = min(l_len,
+					(unsigned)ta->caret_pos.char_off);
 
-				caret = textarea_get_caret(ta);
+			caret = textarea_get_caret(ta);
 
-				ta->caret_pos.line = c_line;
-				ta->caret_pos.char_off = c_chars;
-			}
+			ta->caret_pos.line = c_line;
+			ta->caret_pos.char_off = c_chars;
+
 			break;
 		case KEY_PAGE_DOWN:
 			if (readonly)
@@ -1872,38 +1872,38 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				ta->sel_start = ta->sel_end = -1;
 				redraw = true;
 			}
-			if (ta->flags & TEXTAREA_MULTILINE) {
-				line++;
-				if (line > ta->line_count - 1)
-					line = ta->line_count - 1;
-				if (line == ta->caret_pos.line)
-					break;
+			if (!(ta->flags & TEXTAREA_MULTILINE))
+				break;
 
-				b_off = ta->lines[line].b_start;
-				b_len = ta->lines[line].b_length;
+			line++;
+			if (line > ta->line_count - 1)
+				line = ta->line_count - 1;
+			if (line == ta->caret_pos.line)
+				break;
 
-				c_line = ta->caret_pos.line;
-				c_chars = ta->caret_pos.char_off;
+			b_off = ta->lines[line].b_start;
+			b_len = ta->lines[line].b_length;
 
-				if (ta->text.data[b_off + b_len - 1] == ' '
-						&& line < ta->line_count - 1)
-					b_len--;
+			c_line = ta->caret_pos.line;
+			c_chars = ta->caret_pos.char_off;
 
-				l_len = utf8_bounded_length(
-						&(ta->text.data[b_off]),
-						b_len);
+			if (ta->text.data[b_off + b_len - 1] == ' ' &&
+					line < ta->line_count - 1)
+				b_len--;
 
+			l_len = utf8_bounded_length(
+					&(ta->text.data[b_off]),
+					b_len);
 
-				ta->caret_pos.line = line;
-				ta->caret_pos.char_off = min(l_len,
-						(unsigned)
-						ta->caret_pos.char_off);
+			ta->caret_pos.line = line;
+			ta->caret_pos.char_off = min(l_len,
+					(unsigned)ta->caret_pos.char_off);
 
-				caret = textarea_get_caret(ta);
+			caret = textarea_get_caret(ta);
 
-				ta->caret_pos.line = c_line;
-				ta->caret_pos.char_off = c_chars;
-			}
+			ta->caret_pos.line = c_line;
+			ta->caret_pos.char_off = c_chars;
+
 			break;
 		case KEY_DELETE_RIGHT:
 			if (readonly)
