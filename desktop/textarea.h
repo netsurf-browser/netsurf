@@ -189,6 +189,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 /**
  * Gets the dimensions of a textarea
  *
+ * \param ta		textarea widget
  * \param width		if not NULL, gets updated to the width of the textarea
  * \param height	if not NULL, gets updated to the height of the textarea
  */
@@ -198,6 +199,7 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
  * Set the dimensions of a textarea, causing a reflow and
  * Does not emit a redraw request.  Up to client to call textarea_redraw.
  *
+ * \param ta		textarea widget
  * \param width 	the new width of the textarea
  * \param height	the new height of the textarea
  */
@@ -207,6 +209,7 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height);
  * Set the dimensions and padding of a textarea, causing a reflow.
  * Does not emit a redraw request.  Up to client to call textarea_redraw.
  *
+ * \param ta		textarea widget
  * \param width 	the new width of the textarea
  * \param height	the new height of the textarea
  * \param top		the new top padding of the textarea
