@@ -260,10 +260,10 @@ static bool textarea_select_fragment(struct textarea * ta)
 static bool textarea_scroll_visible(struct textarea *ta)
 {
 	int x0, x1, y0, y1; /* area we want caret inside */
-	int xc, yc; /* area centre */
 	int x, y; /* caret pos */
 	int xs = ta->scroll_x;
 	int ys = ta->scroll_y;
+	int vis;
 	bool scrolled = false;
 
 	if (ta->caret_pos.char_off == -1)
@@ -271,56 +271,66 @@ static bool textarea_scroll_visible(struct textarea *ta)
 
 	x0 = ta->border_width + ta->pad_left;
 	x1 = ta->vis_width - (ta->border_width + ta->pad_right);
-	y0 = 0;
-	y1 = ta->vis_height - 2 * ta->border_width -
-			ta->pad_top - ta->pad_bottom;
-	xc = (x1 - x0) / 2 + x0;
-	yc = (y1 - y0) / 2 + y0;
 
+	/* Adjust scroll pos for reduced extents */
+	vis = ta->vis_width - 2 * ta->border_width;
+	if (ta->h_extent - xs < vis)
+		xs -= vis - (ta->h_extent - xs);
+
+	/* Get caret pos on screen */
 	x = ta->caret_x - xs;
-	y = ta->caret_y + ta->line_height / 2 - ys;
 
-	/* horizontal scroll; centre caret */
-	xs += x - xc;
+	/* scroll as required */
+	if (x < x0)
+		xs += (x - x0);
+	else if (x > x1)
+		xs += (x - x1);
 
-	/* force back into range */
-	if (xs < 0)
-		xs = 0;
-	else if (xs > ta->h_extent - (x1 - x0))
-		xs = ta->h_extent - (x1 - x0);
-
-	/* If scrolled, set new pos. */
-	if (xs != ta->scroll_x && ta->bar_x != NULL) {
-		scrollbar_set(ta->bar_x, xs, false);
-		xs = scrollbar_get_offset(ta->bar_x);
-		if (xs != ta->scroll_x) {
-			ta->scroll_x = xs;
-			scrolled = true;
-		}
-
-	} else if (ta->flags & TEXTAREA_MULTILINE && ta->bar_x == NULL &&
-			ta->scroll_x != 0) {
+	if (ta->bar_x == NULL && ta->scroll_x != 0 &&
+			ta->flags & TEXTAREA_MULTILINE) {
+		/* Scrollbar removed, set to zero */
 		ta->scroll_x = 0;
 		scrolled = true;
 
-	} else if (xs != ta->scroll_x && !(ta->flags & TEXTAREA_MULTILINE)) {
-		ta->scroll_x = xs;
-		scrolled = true;
+	} else if (xs != ta->scroll_x) {
+		/* Scrolled, set new pos. */
+		if (ta->bar_x != NULL) {
+			scrollbar_set(ta->bar_x, xs, false);
+			xs = scrollbar_get_offset(ta->bar_x);
+			if (xs != ta->scroll_x) {
+				ta->scroll_x = xs;
+				scrolled = true;
+			}
+
+		} else if (!(ta->flags & TEXTAREA_MULTILINE)) {
+			ta->scroll_x = xs;
+			scrolled = true;
+
+		}
 	}
 
 	/* check and change vertical scroll */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		/* vertical scroll; centre caret */
-		ys += y - yc;
+		y0 = 0;
+		y1 = ta->vis_height - 2 * ta->border_width -
+				ta->pad_top - ta->pad_bottom;
 
-		/* force back into range */
-		if (ys < 0)
-			ys = 0;
-		else if (ys > ta->v_extent - (y1 - y0))
-			ys = ta->v_extent - (y1 - y0);
+		/* Adjust scroll pos for reduced extents */
+		vis = ta->vis_height - 2 * ta->border_width;
+		if (ta->v_extent - xs < vis)
+			xs -= vis - (ta->v_extent - xs);
 
-		/* If scrolled, set new pos. */
+		/* Get caret pos on screen */
+		y = ta->caret_y - ys;
+
+		/* scroll as required */
+		if (y < y0)
+			ys += (y - y0);
+		else if (y > y1)
+			ys += (y - y1);
+
 		if (ys != ta->scroll_y && ta->bar_y != NULL) {
+			/* Scrolled, set new pos. */
 			scrollbar_set(ta->bar_y, ys, false);
 			ys = scrollbar_get_offset(ta->bar_y);
 			if (ys != ta->scroll_y) {
@@ -329,6 +339,7 @@ static bool textarea_scroll_visible(struct textarea *ta)
 			}
 
 		} else if (ta->bar_y == NULL && ta->scroll_y != 0) {
+			/* Scrollbar removed, set to zero */
 			ta->scroll_y = 0;
 			scrolled = true;
 		}
@@ -483,7 +494,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 		if (x > w)
 			w = x;
 
-		ta->h_extent = w + ta->pad_left - ta->pad_right;
+		ta->h_extent = w + ta->pad_left + ta->pad_right;
 		ta->line_count = 1;
 
 		return true;
@@ -2074,7 +2085,8 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			return textarea_select_fragment(ta);
 		}
 
-	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1)) {
+	} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+		/* Selection start */
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_start = ta->drag_start_char;
 		c_end = c_off;
@@ -2086,6 +2098,13 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		ta->callback(ta->data, &msg);
 
+		return textarea_select(ta, c_start, c_end);
+	} else if (mouse & BROWSER_MOUSE_HOLDING_1 &&
+			ta->drag_info.type == TEXTAREA_DRAG_SELECTION) {
+		/* Selection track */
+		textarea_get_xy_offset(ta, x, y, &c_off);
+		c_start = ta->drag_start_char;
+		c_end = c_off;
 		return textarea_select(ta, c_start, c_end);
 	}
 
