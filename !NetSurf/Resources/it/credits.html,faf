@@ -17,7 +17,7 @@ div#DevList ul {
 
 <h1>Ringraziamenti</h1>
 
-<p>NetSurf è stato sviluppato per voi dalle seguenti persone:</p>
+<p>NetSurf è stato sviluppato dalle seguenti persone:</p>
 
 <div id="DevList">
 
@@ -91,7 +91,7 @@ div#DevList ul {
 </div>
 
 <div class="footer">
-<p><br>Copyright 2003&ndash;2012 The NetSurf Developers</p>
+<p><br>Copyright 2003&ndash;2013 The NetSurf Developers</p>
 </div>
 
 </body>

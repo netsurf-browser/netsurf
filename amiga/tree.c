@@ -513,8 +513,8 @@ void ami_tree_open(struct treeview_window *twin,int type)
 		case AMI_TREE_SSLCERT:
 			twin->wintitle = ami_utf8_easy((char *)messages_get("SSLCerts"));
 			twin->sslerr = ami_utf8_easy((char *)messages_get("SSLError"));
-			twin->sslaccept = ami_utf8_easy((char *)messages_get("Accept"));
-			twin->sslreject = ami_utf8_easy((char *)messages_get("Reject"));
+			twin->sslaccept = ami_utf8_easy((char *)messages_get("SSL_Certificate_Accept"));
+			twin->sslreject = ami_utf8_easy((char *)messages_get("SSL_Certificate_Reject"));
 		break;
 	}
 
