@@ -2796,7 +2796,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		/* Redraw box. */
 		html__redraw_a_box(html, file_box);
 
-	} else if (html->bw != NULL) {
+	} else {
 		/* File dropped on text input */
 
 		size_t file_len;
@@ -2805,7 +2805,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		char *utf8_buff;
 		utf8_convert_ret ret;
 		unsigned int size;
-		struct browser_window *bw;
+		int bx, by;
 
 		/* Open file */
 		fp = fopen(file, "rb");
@@ -2861,13 +2861,13 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		size = strlen(utf8_buff);
 
 		/* Simulate a click over the input box, to place caret */
-		browser_window_mouse_click(html->bw,
-				BROWSER_MOUSE_PRESS_1, x, y);
-
-		bw = browser_window_get_root(html->bw);
+		box_coords(text_box, &bx, &by);
+		textarea_mouse_action(text_box->gadget->data.text.ta,
+				BROWSER_MOUSE_PRESS_1, x - bx, y - by);
 
 		/* Paste the file as text */
-		browser_window_paste_text(bw, utf8_buff, size, true);
+		textarea_drop_text(text_box->gadget->data.text.ta,
+				utf8_buff, size);
 
 		free(utf8_buff);
 	}

@@ -1111,6 +1111,52 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 
 
 /* exported interface, documented in textarea.h */
+bool textarea_drop_text(struct textarea *ta, const char *text,
+		size_t text_length)
+{
+	struct textarea_msg msg;
+	unsigned int caret_pos;
+	size_t text_chars;
+
+	if (ta->flags & TEXTAREA_READONLY)
+		return false;
+
+	if (text == NULL)
+		return false;
+
+	text_chars = utf8_bounded_length(text, text_length);
+	caret_pos = textarea_get_caret(ta);
+
+	if (ta->sel_start != -1) {
+		if (!textarea_replace_text(ta, ta->sel_start, ta->sel_end,
+				text, text_length, false))
+			return false;
+
+		caret_pos = ta->sel_start + text_chars;
+		ta->sel_start = ta->sel_end = -1;
+	} else {
+		if (!textarea_replace_text(ta, caret_pos, caret_pos,
+				text, text_length, false))
+			return false;
+		caret_pos += text_chars;
+	}
+
+	textarea_set_caret(ta, caret_pos);
+
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = 0;
+	msg.data.redraw.y0 = 0;
+	msg.data.redraw.x1 = ta->vis_width;
+	msg.data.redraw.y1 = ta->vis_height;
+
+	ta->callback(ta->data, &msg);
+
+	return true;
+}
+
+
+/* exported interface, documented in textarea.h */
 int textarea_get_text(struct textarea *ta, char *buf, unsigned int len)
 {
 	if (buf == NULL && len == 0) {

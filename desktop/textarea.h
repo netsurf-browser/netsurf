@@ -124,6 +124,16 @@ void textarea_destroy(struct textarea *ta);
 bool textarea_set_text(struct textarea *ta, const char *text);
 
 /**
+ * Insert the text in a text area at the caret, replacing any selection.
+ *
+ * \param ta Text area
+ * \param text UTF-8 text to set text area's contents to
+ * \return true on success, false on memory exhaustion or if ta lacks caret
+ */
+bool textarea_drop_text(struct textarea *ta, const char *text,
+		size_t text_length);
+
+/**
  * Extract the text from a text area
  *
  * \param ta Text area
