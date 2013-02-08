@@ -2079,7 +2079,7 @@ void tree_draw(struct tree *tree, int x, int y,
 			textarea_redraw(tree->textarea, x, y,
 					plot_style_fill_tree_background.
 							fill_colour,
-					&clip, &new_ctx);
+					1.0, &clip, &new_ctx);
 		}
 	}
 

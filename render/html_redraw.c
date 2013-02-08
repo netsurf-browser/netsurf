@@ -2411,8 +2411,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			(box->gadget->type == GADGET_TEXTAREA ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_TEXTBOX)) {
-		textarea_redraw(box->gadget->data.text.ta,
-				x, y, current_background_color, &r, ctx);
+		textarea_redraw(box->gadget->data.text.ta, x, y,
+				current_background_color, scale, &r, ctx);
 
 	} else if (box->text) {
 		if (!html_redraw_text_box(html, box, x, y, &r, scale,

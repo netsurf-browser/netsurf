@@ -169,10 +169,11 @@ int textarea_get_caret(struct textarea *ta);
  * \param x	x coordinate of textarea top
  * \param y	y coordinate of textarea left
  * \param bg	background colour under textarea
+ * \param scale scale to render at
  * \param clip	clip rectangle
  * \param ctx	current redraw context
  */
-void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
+void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 		const struct rect *clip, const struct redraw_context *ctx);
 
 /**

@@ -1355,7 +1355,7 @@ int textarea_get_caret(struct textarea *ta)
 
 
 /* exported interface, documented in textarea.h */
-void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
+void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -1366,7 +1366,9 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 	char *line_text;
 	struct rect r, s;
 	bool selected = false;
-	plot_font_style_t *fstyle;
+	plot_font_style_t fstyle;
+	int fsize = ta->fstyle.size;
+	int line_height = ta->line_height;
 	plot_style_t plot_style_fill_bg = {
 		.stroke_type = PLOT_OP_TYPE_NONE,
 		.stroke_width = 0,
@@ -1404,10 +1406,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		r.x0 = x;
 	if (r.y0 < y)
 		r.y0 = y;
-	if (r.x1 > x + ta->vis_width)
-		r.x1 = x + ta->vis_width;
-	if (r.y1 > y + ta->vis_height)
-		r.y1 = y + ta->vis_height;
+	if (scale == 1.0) {
+		if (r.x1 > x + ta->vis_width)
+			r.x1 = x + ta->vis_width;
+		if (r.y1 > y + ta->vis_height)
+			r.y1 = y + ta->vis_height;
+	} else {
+		if (r.x1 > x + ta->vis_width * scale)
+			r.x1 = x + ta->vis_width * scale;
+		if (r.y1 > y + ta->vis_height * scale)
+			r.y1 = y + ta->vis_height * scale;
+	}
 
 	plot->clip(&r);
 	if (ta->border_col != NS_TRANSPARENT &&
@@ -1425,16 +1434,32 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				&plot_style_fill_bg);
 	}
 
-	if (r.x0 < x + ta->border_width)
-		r.x0 = x + ta->border_width;
-	if (r.x1 > x + ta->vis_width - ta->border_width)
-		r.x1 = x + ta->vis_width - ta->border_width;
-	if (r.y0 < y + ta->border_width)
-		r.y0 = y + ta->border_width;
-	if (r.y1 > y + ta->vis_height - ta->border_width -
-			(ta->bar_x != NULL ? SCROLLBAR_WIDTH : 0))
-		r.y1 = y + ta->vis_height - ta->border_width -
-				(ta->bar_x != NULL ? SCROLLBAR_WIDTH : 0);
+	if (scale == 1.0) {
+		if (r.x0 < x + ta->border_width)
+			r.x0 = x + ta->border_width;
+		if (r.x1 > x + ta->vis_width - ta->border_width)
+			r.x1 = x + ta->vis_width - ta->border_width;
+		if (r.y0 < y + ta->border_width)
+			r.y0 = y + ta->border_width;
+		if (r.y1 > y + ta->vis_height - ta->border_width -
+				(ta->bar_x != NULL ? SCROLLBAR_WIDTH : 0))
+			r.y1 = y + ta->vis_height - ta->border_width -
+					(ta->bar_x != NULL ? SCROLLBAR_WIDTH :
+							0);
+	} else {
+		if (r.x0 < x + ta->border_width * scale)
+			r.x0 = x + ta->border_width * scale;
+		if (r.x1 > x + (ta->vis_width - ta->border_width) * scale)
+			r.x1 = x + (ta->vis_width - ta->border_width) * scale;
+		if (r.y0 < y + ta->border_width * scale)
+			r.y0 = y + ta->border_width * scale;
+		if (r.y1 > y + (ta->vis_height - ta->border_width -
+				(ta->bar_x != NULL ? SCROLLBAR_WIDTH : 0)) *
+				scale)
+			r.y1 = y + (ta->vis_height - ta->border_width -
+					(ta->bar_x != NULL ? SCROLLBAR_WIDTH :
+							0) * scale);
+	}
 
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->show->data,
@@ -1453,6 +1478,14 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 		int vis_height = ta->vis_height - 2 * ta->border_width;
 		text_y_offset += (vis_height - ta->line_height + 1) / 2;
 		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
+	}
+
+	if (scale != 1.0) {
+		text_y_offset *= scale;
+		text_y_offset_baseline *= scale;
+
+		fsize *= scale;
+		line_height *= scale;
 	}
 
 	plot_style_fill_bg.fill_colour = ta->sel_fstyle.background;
@@ -1485,30 +1518,31 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				/* rest of line unselected */
 				selected = false;
 				c_len_part = c_len;
-				fstyle = &ta->fstyle;
+				fstyle = ta->fstyle;
 
 			} else if (sel_start <= c_pos &&
 					sel_end > c_pos + c_len) {
 				/* rest of line selected */
 				selected = true;
 				c_len_part = c_len;
-				fstyle = &ta->sel_fstyle;
+				fstyle = ta->sel_fstyle;
 
 			} else if (sel_start > c_pos) {
 				/* next part of line unselected */
 				selected = false;
 				c_len_part = sel_start - c_pos;
-				fstyle = &ta->fstyle;
+				fstyle = ta->fstyle;
 
 			} else if (sel_end > c_pos) {
 				/* next part of line selected */
 				selected = true;
 				c_len_part = sel_end - c_pos;
-				fstyle = &ta->sel_fstyle;
+				fstyle = ta->sel_fstyle;
 
 			} else {
 				assert(0);
 			}
+			fstyle.size = fsize;
 
 			line_text = &(ta->show->data[ta->lines[line].b_start]);
 			line_len = ta->lines[line].b_length;
@@ -1522,7 +1556,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 
 			/* find clip left/right for this part of line */
 			left = right;
-			nsfont.font_width(&ta->fstyle, line_text,
+			nsfont.font_width(&fstyle, line_text,
 					b_end, &right);
 			right += x + ta->border_width + ta->pad_left -
 					ta->scroll_x;
@@ -1533,14 +1567,20 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 				s.x0 = left;
 			if (s.x1 > right)
 				s.x1 = right;
+
 			plot->clip(&s);
 
-			line_y = y + line * ta->line_height - ta->scroll_y;
+			line_y = line * ta->line_height - ta->scroll_y;
+
+			if (scale != 1.0) {
+				line_y *= scale;
+			}
 
 			if (selected) {
 				/* draw selection fill */
-				plot->rectangle(s.x0, line_y + text_y_offset,
-					s.x1, line_y + ta->line_height +
+				plot->rectangle(s.x0, y + line_y +
+					text_y_offset,
+					s.x1, y + line_y + line_height +
 							text_y_offset,
 					&plot_style_fill_bg);
 			}
@@ -1548,10 +1588,10 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 			/* draw text */
 			plot->text(x + ta->border_width + ta->pad_left -
 					ta->scroll_x,
-					line_y + text_y_offset_baseline,
+					y + line_y + text_y_offset_baseline,
 					ta->show->data +
 							ta->lines[line].b_start,
-					ta->lines[line].b_length, fstyle);
+					ta->lines[line].b_length, &fstyle);
 
 			c_pos += c_len_part;
 			c_len -= c_len_part;
@@ -1584,17 +1624,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg,
 
 	if (ta->bar_x != NULL)
 		scrollbar_redraw(ta->bar_x,
-				x + ta->border_width,
-				y + ta->vis_height - ta->border_width -
+				x / scale + ta->border_width,
+				y / scale + ta->vis_height - ta->border_width -
 						SCROLLBAR_WIDTH,
-				clip, 1.0, ctx);
+				clip, scale, ctx);
 
 	if (ta->bar_y != NULL)
 		scrollbar_redraw(ta->bar_y,
-				x + ta->vis_width - ta->border_width -
+				x / scale + ta->vis_width - ta->border_width -
 						SCROLLBAR_WIDTH,
-				y + ta->border_width,
-				clip, 1.0, ctx);
+				y / scale + ta->border_width,
+				clip, scale, ctx);
 }
 
 
