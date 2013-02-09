@@ -533,6 +533,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			assert(ta->text.data[0] == '\0');
 			ta->lines[line].b_start = 0;
 			ta->lines[line++].b_length = 0;
+			ta->line_count = 1;
 		}
 
 		restart = false;
