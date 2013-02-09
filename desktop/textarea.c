@@ -326,8 +326,8 @@ static bool textarea_scroll_visible(struct textarea *ta)
 		/* scroll as required */
 		if (y < y0)
 			ys += (y - y0);
-		else if (y > y1)
-			ys += (y - y1);
+		else if (y + ta->line_height > y1)
+			ys += (y + ta->line_height - y1);
 
 		if (ys != ta->scroll_y && ta->bar_y != NULL) {
 			/* Scrolled, set new pos. */
