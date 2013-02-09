@@ -528,7 +528,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			/* Handle empty textarea */
 			assert(ta->text.data[0] == '\0');
 			ta->lines[line].b_start = 0;
-			ta->lines[line++].b_length = 1;
+			ta->lines[line++].b_length = 0;
 		}
 
 		restart = false;
@@ -731,9 +731,11 @@ static void textarea_get_xy_offset(struct textarea *ta, int x, int y,
 	 * following line, which is undesirable.
 	 */
 	if (ta->flags & TEXTAREA_MULTILINE &&
+			ta->show->data[ta->lines[line].b_start +
+					ta->lines[line].b_length] > 0 &&
 			bpos == (unsigned)ta->lines[line].b_length &&
 			ta->show->data[ta->lines[line].b_start +
-			ta->lines[line].b_length - 1] == ' ')
+					ta->lines[line].b_length - 1] == ' ')
 		bpos--;
 
 	/* Get character position */
