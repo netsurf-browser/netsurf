@@ -1722,11 +1722,24 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_NL:
 			if (readonly)
 				break;
-			if(!textarea_insert_text(ta, caret, "\n", 1))
-				return false;
-			caret++;
-			ta->sel_start = ta->sel_end = -1;
-			redraw = true;
+
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta,
+						ta->sel_start, ta->sel_end,
+						"\n", 1, false))
+					return false;
+
+				caret = ta->sel_start + 1;
+				ta->sel_start = ta->sel_end = -1;
+				redraw = true;
+			} else {
+				if (!textarea_replace_text(ta,
+						caret, caret,
+						"\n", 1, false))
+					return false;
+				caret++;
+				redraw = true;
+			}
 			break;
 		case KEY_CUT_LINE:
 			break;
