@@ -264,16 +264,18 @@ static bool textarea_scroll_visible(struct textarea *ta)
 	int xs = ta->scroll_x;
 	int ys = ta->scroll_y;
 	int vis;
+	int scrollbar_width;
 	bool scrolled = false;
 
 	if (ta->caret_pos.char_off == -1)
 		return false;
 
+	scrollbar_width = (ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH;
 	x0 = ta->border_width + ta->pad_left;
 	x1 = ta->vis_width - (ta->border_width + ta->pad_right);
 
 	/* Adjust scroll pos for reduced extents */
-	vis = ta->vis_width - 2 * ta->border_width;
+	vis = ta->vis_width - 2 * ta->border_width - scrollbar_width;
 	if (ta->h_extent - xs < vis)
 		xs -= vis - (ta->h_extent - xs);
 
@@ -311,12 +313,13 @@ static bool textarea_scroll_visible(struct textarea *ta)
 
 	/* check and change vertical scroll */
 	if (ta->flags & TEXTAREA_MULTILINE) {
+		scrollbar_width = (ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH;
 		y0 = 0;
 		y1 = ta->vis_height - 2 * ta->border_width -
 				ta->pad_top - ta->pad_bottom;
 
 		/* Adjust scroll pos for reduced extents */
-		vis = ta->vis_height - 2 * ta->border_width;
+		vis = ta->vis_height - 2 * ta->border_width - scrollbar_width;
 		if (ta->v_extent - ys < vis)
 			ys -= vis - (ta->v_extent - ys);
 
