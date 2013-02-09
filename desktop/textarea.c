@@ -317,8 +317,8 @@ static bool textarea_scroll_visible(struct textarea *ta)
 
 		/* Adjust scroll pos for reduced extents */
 		vis = ta->vis_height - 2 * ta->border_width;
-		if (ta->v_extent - xs < vis)
-			xs -= vis - (ta->v_extent - xs);
+		if (ta->v_extent - ys < vis)
+			ys -= vis - (ta->v_extent - ys);
 
 		/* Get caret pos on screen */
 		y = ta->caret_y - ys;
