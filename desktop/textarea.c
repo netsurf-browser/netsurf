@@ -2150,11 +2150,12 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		/* selection auto-scroll */
 		if (x < 0)
 			scrx = x / 4;
+		else if (x > ta->vis_width)
+			scrx = (x - ta->vis_width) / 4;
+
 		if (y < 0)
 			scry = y / 4;
-		if (x > ta->vis_width)
-			scrx = (x - ta->vis_width) / 4;
-		if (y > ta->vis_height)
+		else if (y > ta->vis_height)
 			scry = (y - ta->vis_height) / 4;
 
 		textarea_scroll(ta, scrx, scry);
