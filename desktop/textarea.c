@@ -519,7 +519,10 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 
 	do {
 		/* Set line count to start point */
-		line = start;
+		if (restart)
+			line = 0;
+		else
+			line = start;
 
 		/* Find available width */
 		avail_width = ta->vis_width - 2 * ta->border_width -
