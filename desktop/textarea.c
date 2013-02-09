@@ -2230,8 +2230,8 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	ta->vis_width = width;
 	ta->vis_height = height;
 	ta->pad_top = top;
-	ta->pad_right = right;
-	ta->pad_bottom = bottom;
+	ta->pad_right = right + ((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
+	ta->pad_bottom = bottom + ((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 	ta->pad_left = left;
 	textarea_reflow(ta, 0);
 }
