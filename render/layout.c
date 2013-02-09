@@ -1446,8 +1446,10 @@ void layout_float_find_dimensions(int available_width,
 	if (margin[RIGHT] == AUTO)
 		margin[RIGHT] = 0;
 
-	padding[RIGHT] += scrollbar_width;
-	padding[BOTTOM] += scrollbar_width;
+        if (box->gadget == NULL) {
+		padding[RIGHT] += scrollbar_width;
+		padding[BOTTOM] += scrollbar_width;
+	}
 
 	if (box->object && !(box->flags & REPLACE_DIM) &&
 			content_get_type(box->object) != CONTENT_HTML) {
