@@ -1718,6 +1718,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				redraw = true;
 			}
 			break;
+		case KEY_CR:
 		case KEY_NL:
 			if (readonly)
 				break;
