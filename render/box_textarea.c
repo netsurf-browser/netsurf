@@ -259,13 +259,21 @@ bool box_textarea_create_textarea(html_content *html,
 	ta_setup.pad_right = 4;
 	ta_setup.pad_bottom = 4;
 	ta_setup.pad_left = 4;
+
+	/* Set remaining data */
 	ta_setup.border_width = 0;
 	ta_setup.border_col = 0x000000;
-	ta_setup.selected_text = 0xffffff;
-	ta_setup.selected_bg = 0x000000;
 	ta_setup.text = fstyle;
-	ta_setup.text.foreground = 0x000000;
 	ta_setup.text.background = NS_TRANSPARENT;
+	/* Make selected text either black or white, as gives greatest contrast
+	 * with background colour. (Calc lightness of background colour and
+	 * choose the one the lightness is furthest from.) */
+	ta_setup.selected_text =
+			(((((fstyle.foreground & 0x0000ff)      ) * 19) / 64 +
+			  (((fstyle.foreground & 0x00ff00) >>  8) * 38) / 64 +
+			  (((fstyle.foreground & 0xff0000) >> 16) *  7) / 64) >
+			 (0xff / 2)) ? 0x000000 : 0xffffff;
+	ta_setup.selected_bg = fstyle.foreground;
 
 	/* Hand reference to dom text over to gadget */
 	gadget->data.text.initial = dom_text;
