@@ -82,6 +82,7 @@ struct textarea {
 
 	plot_font_style_t fstyle;	/**< Text style, inc. textarea bg col */
 	plot_font_style_t sel_fstyle;	/**< Selected text style */
+	int line_height;		/**< Line height obtained from style */
 
 	struct textarea_utf8 text;	/**< Textarea text content */
 #define PASSWORD_REPLACEMENT "\xe2\x80\xa2"
@@ -102,10 +103,12 @@ struct textarea {
 
 	int h_extent;			/**< Width of content in px */
 	int v_extent;			/**< Height of content in px */
+
 	int line_count;			/**< Count of lines */
+
 #define LINE_CHUNK_SIZE 16
 	struct line_info *lines;	/**< Line info array */
-	int line_height;		/**< Line height obtained from style */
+	unsigned int lines_alloc_size;	/**< Number of LINE_CHUNK_SIZEs */
 
 	/** Callback function for messages to client */
 	textarea_client_callback callback;
@@ -447,6 +450,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			LOG(("malloc failed"));
 			return false;
 		}
+		ta->lines_alloc_size = LINE_CHUNK_SIZE;
 	}
 
 	if (!(ta->flags & TEXTAREA_MULTILINE)) {
@@ -569,9 +573,11 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 						ta->line_height;
 			}
 
-			if (line > 0 && line % LINE_CHUNK_SIZE == 0) {
+			/* Ensure enough storage for lines data */
+			if (line > ta->lines_alloc_size - 2) {
+				/* Up to two lines my be added in a pass */
 				struct line_info *temp = realloc(ta->lines,
-						(line + LINE_CHUNK_SIZE) *
+						(line + 2 + LINE_CHUNK_SIZE) *
 						sizeof(struct line_info));
 				if (temp == NULL) {
 					LOG(("realloc failed"));
@@ -579,6 +585,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 				}
 
 				ta->lines = temp;
+				ta->lines_alloc_size = line + 2 +
+						LINE_CHUNK_SIZE;
 			}
 
 			if (para_end == text + b_off && *para_end == '\n') {
@@ -1079,6 +1087,9 @@ struct textarea *textarea_create(const textarea_flags flags,
 
 	ret->line_count = 0;
 	ret->lines = NULL;
+	ret->lines_alloc_size = 0;
+
+	textarea_reflow(ret, 0);
 
 	return ret;
 }
@@ -1349,6 +1360,9 @@ int textarea_get_caret(struct textarea *ta)
 	/* if the text is a trailing NUL only */
 	if (ta->text.utf8_len == 0)
 		return 0;
+
+	if (ta->caret_pos.line >= ta->line_count)
+		return ta->text.utf8_len;
 
 	/* Calculate character offset of this line's start */
 	for (b_off = 0; b_off < ta->lines[ta->caret_pos.line].b_start;
