@@ -2706,7 +2706,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		x = x_previous;
 
-		if ((split_box->type == BOX_INLINE ||
+		if (!no_wrap && (split_box->type == BOX_INLINE ||
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
 				!(split_box->flags & REPLACE_DIM) &&
@@ -2725,10 +2725,10 @@ bool layout_line(struct box *first, int *width, int *y,
 				space = i;
 		}
 
-		/* space != 0 implies split_box->text != 0
+		/* space != 0 implies split_box->text != NULL
 		 * and that there is a place we could split the text at */
 
-		if (space == 0 || no_wrap)
+		if (space == 0)
 			w = split_box->width;
 		else {
 			/* find width of the text to where we could split */
@@ -2750,7 +2750,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				!left && !right && inline_count == 1) {
 			/* first word of box doesn't fit, but no floats and
 			 * first box on line so force in */
-			if (space == 0 || no_wrap) {
+			if (space == 0) {
 				/* only one word in this box, or not text
 				 * or white-space:nowrap */
 				b = split_box->next;
