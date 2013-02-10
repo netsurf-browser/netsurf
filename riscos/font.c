@@ -319,15 +319,22 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  *
  * \param  fstyle       style for this text
  * \param  string       UTF-8 string to measure
- * \param  length       length of string
+ * \param  length       length of string, in bytes
  * \param  x            width available
- * \param  char_offset  updated to offset in string of actual_x, [0..length]
+ * \param  char_offset  updated to offset in string of actual_x, [1..length]
  * \param  actual_x     updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  *
- * On exit, [char_offset == 0 ||
- *           string[char_offset] == ' ' ||
- *           char_offset == length]
+ * On exit, char_offset indicates first character after split point.
+ *
+ * Note: char_offset of 0 should never be returned.
+ *
+ *   Returns:
+ *     char_offset giving split point closest to x, where actual_x <= x
+ *   else
+ *     char_offset giving split point closest to x, where actual_x > x
+ *
+ * Returning char_offset == length means no split possible
  */
 
 bool nsfont_split(const plot_font_style_t *fstyle,
