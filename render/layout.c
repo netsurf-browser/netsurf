@@ -2164,19 +2164,20 @@ static bool layout_text_box_split(html_content *content,
 	int space_width = split_box->space;
 	struct box *c2;
 	const struct font_functions *font_func = content->font_func;
+	bool space = (split_box->text[new_length] == ' ');
+	int used_length = new_length + (space ? 1 : 0);
 
-	if (space_width == 0) {
-		/* Currently split_box has no space. */
-		/* Get the space width because the split_box will need it */
-		/* Don't set it in split_box yet, or it will get cloned. */
+	if ((space && space_width == 0) || space_width == UNKNOWN_WIDTH) {
+		/* We're need to add a space, and we don't know how big
+		 * it's to be, OR we have a space of unknown width anyway;
+		 * Calculate space width */
 		font_func->font_width(fstyle, " ", 1, &space_width);
-	} else if (space_width == UNKNOWN_WIDTH) {
-		/* Split_box has a space but its width is unknown. */
-		/* Get the space width because the split_box will need it */
-		/* Set it in split_box, so it gets cloned. */
-		font_func->font_width(fstyle, " ", 1, &space_width);
-		split_box->space = space_width;
 	}
+
+	if (split_box->space == UNKNOWN_WIDTH)
+		split_box->space = space_width;
+	if (!space)
+		space_width = 0;
 
 	/* Create clone of split_box, c2 */
 	c2 = talloc_memdup(content->bctx, split_box, sizeof *c2);
@@ -2190,18 +2191,18 @@ static bool layout_text_box_split(html_content *content,
 		/* TODO: Move text inputs to core textarea widget and remove
 		 *       this */
 		c2->text = talloc_strndup(content->bctx,
-				split_box->text + new_length + 1,
-				split_box->length - (new_length + 1));
+				split_box->text + used_length,
+				split_box->length - used_length);
 		if (!c2->text)
 			return false;
 	} else {
-		c2->text += new_length + 1;
+		c2->text += used_length;
 	}
 
 	/* Set c2 according to the remaining text */
 	c2->width -= new_width + space_width;
 	c2->flags &= ~MEASURED; /* width has been estimated */
-	c2->length = split_box->length - (new_length + 1);
+	c2->length = split_box->length - used_length;
 
 	/* Update split_box for its reduced text */
 	split_box->width = new_width;
@@ -2217,7 +2218,14 @@ static bool layout_text_box_split(html_content *content,
 		c2->next->prev = c2;
 	else
 		c2->parent->last = c2;
-
+#ifdef LAYOUT_DEBUG
+		LOG(("split_box %p len: %u \"%.*s\"",
+				split_box, split_box->length,
+				split_box->length, split_box->text));
+		LOG(("  new_box %p len: %u \"%.*s\"",
+				c2, c2->length,
+				c2->length, c2->text));
+#endif
 	return true;
 }
 
@@ -2713,8 +2721,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 	if (x1 - x0 < x && split_box) {
 		/* the last box went over the end */
-		unsigned int i;
-		size_t space = 0;
+		size_t split = 0;
 		int w;
 		bool no_wrap = css_computed_white_space(
 				split_box->style) == CSS_WHITE_SPACE_NOWRAP ||
@@ -2723,56 +2730,45 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		x = x_previous;
 
-		if ((split_box->type == BOX_INLINE ||
+		if (!no_wrap && (split_box->type == BOX_INLINE ||
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
 				!(split_box->flags & REPLACE_DIM) &&
 				!(split_box->flags & IFRAME) &&
 				!split_box->gadget && split_box->text) {
-			/* skip leading spaces, otherwise code gets fooled into
-			 * thinking it's all one long word */
-			for (i = 0; i != split_box->length &&
-					split_box->text[i] == ' '; i++)
-				;
-			/* find end of word */
-			for (; i != split_box->length &&
-					split_box->text[i] != ' '; i++)
-				;
-			if (i != split_box->length)
-				space = i;
-		}
 
-		/* space != 0 implies split_box->text != 0 */
-
-		if (space == 0 || no_wrap)
-			w = split_box->width;
-		else {
 			font_plot_style_from_css(split_box->style, &fstyle);
 			/** \todo handle errors */
-			font_func->font_width(&fstyle, split_box->text,
-					space, &w);
+			font_func->font_split(&fstyle,
+					split_box->text, split_box->length,
+					x1 - x0 - x - space_before, &split, &w);
 		}
 
+		/* split == 0 implies that text can't be split */
+
+		if (split == 0)
+			w = split_box->width;
+
 #ifdef LAYOUT_DEBUG
-		LOG(("splitting: split_box %p \"%.*s\", space %zu, w %i, "
+		LOG(("splitting: split_box %p \"%.*s\", spilt %zu, w %i, "
 				"left %p, right %p, inline_count %u",
 				split_box, (int) split_box->length,
-				split_box->text, space, w,
+				split_box->text, split, w,
 				left, right, inline_count));
 #endif
 
-		if ((space == 0 || x1 - x0 <= x + space_before + w) &&
+		if ((split == 0 || x1 - x0 <= x + space_before + w) &&
 				!left && !right && inline_count == 1) {
 			/* first word of box doesn't fit, but no floats and
 			 * first box on line so force in */
-			if (space == 0 || no_wrap) {
+			if (split == 0 || split == split_box->length) {
 				/* only one word in this box, or not text
 				 * or white-space:nowrap */
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
 				if (!layout_text_box_split(content, &fstyle,
-						split_box, space, w))
+						split_box, split, w))
 					return false;
 				b = split_box->next;
 			}
@@ -2780,7 +2776,7 @@ bool layout_line(struct box *first, int *width, int *y,
 #ifdef LAYOUT_DEBUG
 			LOG(("forcing"));
 #endif
-		} else if ((space == 0 || x1 - x0 <= x + space_before + w) &&
+		} else if ((split == 0 || x1 - x0 <= x + space_before + w) &&
 				inline_count == 1) {
 			/* first word of first box doesn't fit, but a float is
 			 * taking some of the width so move below it */
@@ -2807,7 +2803,7 @@ bool layout_line(struct box *first, int *width, int *y,
 #ifdef LAYOUT_DEBUG
 			LOG(("moving below float"));
 #endif
-                } else if (space == 0 || x1 - x0 <= x + space_before + w) {
+                } else if (split == 0 || x1 - x0 <= x + space_before + w) {
                 	/* first word of box doesn't fit so leave box for next
                 	 * line */
 			b = split_box;
@@ -2816,21 +2812,14 @@ bool layout_line(struct box *first, int *width, int *y,
 #endif
 		} else {
 			/* fit as many words as possible */
-			assert(space != 0);
-			font_plot_style_from_css(split_box->style, &fstyle);
-			/** \todo handle errors */
-			font_func->font_split(&fstyle,
-					split_box->text, split_box->length,
-					x1 - x0 - x - space_before, &space, &w);
+			assert(split != 0);
 #ifdef LAYOUT_DEBUG
 			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
-					split_box->text, x1 - x0, space, w));
+					split_box->text, x1 - x0, split, w));
 #endif
-			if (space == 0)
-				space = 1;
-			if (space != split_box->length) {
+			if (split != split_box->length) {
 				if (!layout_text_box_split(content, &fstyle,
-						split_box, space, w))
+						split_box, split, w))
 					return false;
 				b = split_box->next;
 			}

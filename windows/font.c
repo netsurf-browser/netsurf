@@ -208,14 +208,22 @@ static bool nsfont_split(const plot_font_style_t *style,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+	int c_off;
 	nsfont_position_in_string(style, string, length, x, char_offset, 
 			actual_x);
+	c_off = *char_offset;
 	if (*char_offset == length) {
 		printf("%s %d\n",string, (int)(*char_offset));
 		return true;
 	}
 	while ((string[*char_offset] != ' ') && (*char_offset > 0))
 		(*char_offset)--;
+	if (*char_offset == 0) {
+		*char_offset = c_off;
+		while (*char_offset < length && string[*char_offset] != ' ') {
+			(*char_offset)++;
+		}
+	}
 	nsfont_position_in_string(style, string, *char_offset, x, char_offset,
 			actual_x);
 	return true;

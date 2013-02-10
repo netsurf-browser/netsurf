@@ -164,7 +164,7 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 			last_space_idx = nxtchr;
 		}
 		*actual_x += cellw;
-		if (*actual_x > x) {
+		if (*actual_x > x && last_space_idx != 0) {
 			*actual_x = last_space_x;
 			*char_offset = last_space_idx;
 			//printf("at: %s\n", lstr);
