@@ -118,7 +118,7 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 					  size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-	*char_offset = x / fb_font->width;
+	int c_off = *char_offset = x / fb_font->width;
 	if (*char_offset > length) {
 		 *char_offset = length;
 	} else {
@@ -127,6 +127,13 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 				break;
 			(*char_offset)--;
 		}
+                if (*char_offset == 0) {
+                        *char_offset = c_off;
+                        while (*char_offset < length &&
+                                        string[*char_offset] != ' ') {
+                                (*char_offset)++;
+                        }
+                }
 	}
 	*actual_x = *char_offset * fb_font->width;
 	return( 1  );

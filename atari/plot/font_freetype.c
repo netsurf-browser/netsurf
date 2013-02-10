@@ -443,8 +443,9 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 			last_space_idx = nxtchr;
 		}
 		*actual_x += glyph->advance.x >> 16;
-		if (*actual_x > x) {
-			/* string has exceeded available width return previous space*/
+		if (*actual_x > x && last_space_idx != 0) {
+			/* string has exceeded available width and we've
+			 * found a space; return previous space */
 			*actual_x = last_space_x;
 			*char_offset = last_space_idx;
 			return true;
