@@ -1726,15 +1726,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 
 				caret = ta->sel_start;
 				ta->sel_start = ta->sel_end = -1;
-				redraw = true;
 			} else if (caret > 0) {
 				if (!textarea_replace_text(ta,
 						caret - 1,
 						caret, "", 0, false))
 					return false;
 				caret--;
-				redraw = true;
 			}
+			redraw = true;
 			break;
 		case KEY_CR:
 		case KEY_NL:
@@ -1749,17 +1748,47 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 
 				caret = ta->sel_start + 1;
 				ta->sel_start = ta->sel_end = -1;
-				redraw = true;
 			} else {
 				if (!textarea_replace_text(ta,
 						caret, caret,
 						"\n", 1, false))
 					return false;
 				caret++;
-				redraw = true;
 			}
+			redraw = true;
 			break;
 		case KEY_CUT_LINE:
+			/* Not actually CUT to clipboard, just delete */
+			if (readonly)
+				break;
+			if (ta->sel_start != -1) {
+				if (!textarea_replace_text(ta,
+						ta->sel_start,
+						ta->sel_end, "", 0, false))
+					return false;
+				ta->sel_start = ta->sel_end = -1;
+			} else {
+				if (ta->lines[line].b_length != 0) {
+					/* Delete line */
+					b_off = ta->lines[line].b_start;
+					b_len = ta->lines[line].b_length;
+					l_len = utf8_bounded_length(
+							&(ta->text.data[b_off]),
+							b_len);
+					caret -= ta->caret_pos.char_off;
+					if (!textarea_replace_text(ta, caret,
+							caret + l_len, "", 0,
+							false))
+						return false;
+				} else if (caret < ta->text.utf8_len) {
+					/* Delete blank line */
+					if (!textarea_replace_text(ta,
+							caret, caret + 1, "", 0,
+							false))
+						return false;
+				}
+			}
+			redraw = true;
 			break;
 		case KEY_PASTE:
 		{
@@ -1785,7 +1814,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 
 				caret = ta->sel_start + clipboard_chars;
 				ta->sel_start = ta->sel_end = -1;
-				redraw = true;
 			} else {
 				if (!textarea_replace_text(ta,
 						caret, caret,
@@ -1793,8 +1821,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						false))
 					return false;
 				caret += clipboard_chars;
-				redraw = true;
 			}
+			redraw = true;
 
 			free(clipboard);
 		}
@@ -2019,8 +2047,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					return false;
 				ta->sel_start = ta->sel_end = -1;
 			} else {
-				b_off = ta->lines[ta->caret_pos.line].b_start;
-				b_len = ta->lines[ta->caret_pos.line].b_length;
+				b_off = ta->lines[line].b_start;
+				b_len = ta->lines[line].b_length;
 				l_len = utf8_bounded_length(
 						&(ta->text.data[b_off]),
 						b_len);
