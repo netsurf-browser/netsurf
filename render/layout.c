@@ -2712,8 +2712,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				!(split_box->flags & REPLACE_DIM) &&
 				!(split_box->flags & IFRAME) &&
 				!split_box->gadget && split_box->text) {
-			/* skip leading spaces, otherwise code gets fooled into
-			 * thinking it's all one long word */
+			/* skip leading spaces */
 			for (i = 0; i != split_box->length &&
 					split_box->text[i] == ' '; i++)
 				;
@@ -2721,15 +2720,18 @@ bool layout_line(struct box *first, int *width, int *y,
 			for (; i != split_box->length &&
 					split_box->text[i] != ' '; i++)
 				;
+			/* if not at end of text, we've found a split point */
 			if (i != split_box->length)
 				space = i;
 		}
 
-		/* space != 0 implies split_box->text != 0 */
+		/* space != 0 implies split_box->text != 0
+		 * and that there is a place we could split the text at */
 
 		if (space == 0 || no_wrap)
 			w = split_box->width;
 		else {
+			/* find width of the text to where we could split */
 			font_plot_style_from_css(split_box->style, &fstyle);
 			/** \todo handle errors */
 			font_func->font_width(&fstyle, split_box->text,
