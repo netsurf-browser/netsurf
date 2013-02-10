@@ -1961,7 +1961,6 @@ void ami_handle_msg(void)
 		{
 			if(gwin->redraw_required || gwin->bw->reformat_pending) {
 				ami_do_redraw(gwin);
-				gwin->bw->window->deferred = false;
 			}
 
 			gui_window_update_box_deferred(gwin->bw->window);
@@ -3904,6 +3903,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 	if(gwin->redraw_scroll)
 	{
+		struct rect rect;
 		int x0, y0, x1, y1;
 		
 		gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
@@ -3916,28 +3916,28 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, height - (vcurrent - oldv) - 1);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
+			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, height - (vcurrent - oldv) - 1);
+			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
+			gui_window_update_box(gwin->bw->window, &rect);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
-			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, oldv - vcurrent + 1);
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
+			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
+			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, oldv - vcurrent + 1);
+			gui_window_update_box(gwin->bw->window, &rect);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
-			ami_spacebox_to_ns_coords(gwin, &x0, &y0, width - (hcurrent - oldh), 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, width + 1, height + 1);
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
+			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, width - (hcurrent - oldh), 0);
+			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
+			gui_window_update_box(gwin->bw->window, &rect);
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
-			ami_spacebox_to_ns_coords(gwin, &x0, &y0, 0, 0);
-			ami_spacebox_to_ns_coords(gwin, &x1, &y1, oldh - hcurrent + 1, height + 1);
-			ami_do_redraw_limits(gwin->bw->window, gwin->bw, true, x0, y0, x1, y1);
+			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
+			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, oldh - hcurrent + 1, height + 1);
+			gui_window_update_box(gwin->bw->window, &rect);
 		}
 	}
 	else
@@ -3975,6 +3975,8 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 			
 			ami_reset_pointer(gwin);
 		}
+		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
+		gwin->bw->window->deferred = false;
 	}
 
 	ami_update_buttons(gwin);
