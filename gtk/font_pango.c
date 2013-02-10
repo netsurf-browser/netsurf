@@ -153,17 +153,24 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  fstyle	plot style for this text
- * \param  string	UTF-8 string to measure
- * \param  length	length of string
- * \param  x		width available
- * \param  char_offset	updated to offset in string of actual_x, [0..length]
- * \param  actual_x	updated to x coordinate of character closest to x
+ * \param  fstyle       style for this text
+ * \param  string       UTF-8 string to measure
+ * \param  length       length of string, in bytes
+ * \param  x            width available
+ * \param  char_offset  updated to offset in string of actual_x, [1..length]
+ * \param  actual_x     updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  *
- * On exit, [char_offset == 0 ||
- *	     string[char_offset] == ' ' ||
- *	     char_offset == length]
+ * On exit, char_offset indicates first character after split point.
+ *
+ * Note: char_offset of 0 should never be returned.
+ *
+ *   Returns:
+ *     char_offset giving split point closest to x, where actual_x <= x
+ *   else
+ *     char_offset giving split point closest to x, where actual_x > x
+ *
+ * Returning char_offset == length means no split possible
  */
 
 bool nsfont_split(const plot_font_style_t *fstyle,
@@ -197,15 +204,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		/* Pango split the text. The line's start_index indicates the 
 		 * start of the character after the line break. */
 		index = line->start_index;
-
-		/* We must ensure that the split character is a space so that
-		 * we meet the API postcondition. Therefore, scan backwards
-		 * through the string and stop when we hit the start of 
-		 * the string or find a space. */
-		while (index > 0) {
-			if (string[--index] == ' ')
-				break;
-		}
 	}
 
 	g_object_unref(layout);
