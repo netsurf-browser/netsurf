@@ -64,6 +64,14 @@
 	(((((c0 >>  8) & 0xff) + ((c1 >>  8) & 0xff)) >> 1) <<  8) |	\
 	(((( c0        & 0xff) + ( c1        & 0xff)) >> 1) <<  0)
 
+/* Choose either black or white, depending on which is furthest from the
+ * percieved lightness of the supplied colour, c0. */
+#define colour_to_bw_furthest(c0)					\
+	((((((c0 & 0x0000ff) *  77) >>  8) +				\
+	   (((c0 & 0x00ff00) * 151) >> 16) +				\
+	   (((c0 & 0xff0000) *  28) >> 24)) >				\
+	  (0xff / 2)) ? 0x000000 : 0xffffff)
+
 /* get a bitmap pixel (image/bitmap.h) into a plot colour */
 #define pixel_to_colour(b)					\
 	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)
