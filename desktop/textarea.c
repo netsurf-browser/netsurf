@@ -2050,7 +2050,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				b_len = ta->lines[line].b_length;
 				l_len = utf8_bounded_length(
 						&(ta->text.data[b_off]),
-						b_len);
+						b_len) - ta->caret_pos.char_off;
 				if (!textarea_replace_text(ta, caret,
 						caret + l_len, "", 0, false))
 					return false;
