@@ -1488,8 +1488,6 @@ void layout_float_find_dimensions(int available_width,
 				size = INTTOFIX(10);
 				width = FIXTOINT(nscss_len2px(size, unit,
 						box->style));
-			} else {
-				width -= scrollbar_width;
 			}
 			if (height == AUTO) {
 				size = INTTOFIX(4);
