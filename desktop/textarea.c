@@ -1241,7 +1241,8 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	}
 
 	/* Delete the old caret */
-	if (ta->caret_pos.char_off != -1) {
+	if (ta->caret_pos.char_off != -1 &&
+			ta->flags & TEXTAREA_INTERNAL_CARET) {
 		x0 = ta->caret_x - ta->scroll_x;
 		y0 = ta->caret_y - ta->scroll_y;
 		width = 2;
