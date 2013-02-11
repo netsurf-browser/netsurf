@@ -471,7 +471,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 		};
 		//dbg_rect("tb textarea clip: ", &r);
 		// TODO: let this be handled by an userdef object redraw function:
-        textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, &r, &toolbar_rdrw_ctx);
+        textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, 1.0, &r, &toolbar_rdrw_ctx);
     }
 }
 
