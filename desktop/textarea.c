@@ -1600,6 +1600,15 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 			/* set clip rectangle for line part */
 			s = r;
+
+			if (s.x1 < left || s.x0 > right) {
+				/* Skip this span, it's outside the visible */
+				c_pos += c_len_part;
+				c_len -= c_len_part;
+				continue;
+			}
+
+			/* Adjust clip rectangle to span limits */
 			if (s.x0 < left)
 				s.x0 = left;
 			if (s.x1 > right)
