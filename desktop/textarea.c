@@ -1643,21 +1643,22 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 			c_pos++;
 	}
 
-	plot->clip(clip);
-
-	if ((ta->sel_end == -1 || ta->sel_start == ta->sel_end) &&
+	if (ta->flags & TEXTAREA_INTERNAL_CARET &&
+			(ta->sel_end == -1 || ta->sel_start == ta->sel_end) &&
 			ta->caret_pos.char_off >= 0) {
-		/* There is no selection, and caret visible: show caret */
+		/* No native caret, there is no selection, and caret visible */
 		int caret_y = y - ta->scroll_y + ta->caret_y;
 
-		if (ta->flags & TEXTAREA_INTERNAL_CARET) {
-			/* Render our own caret */
-			plot->line(x - ta->scroll_x + ta->caret_x, caret_y,
-					x - ta->scroll_x + ta->caret_x,
-					caret_y + ta->line_height,
-					&pstyle_stroke_caret);
-		}
+		plot->clip(&r);
+
+		/* Render our own caret */
+		plot->line(x - ta->scroll_x + ta->caret_x, caret_y,
+				x - ta->scroll_x + ta->caret_x,
+				caret_y + ta->line_height,
+				&pstyle_stroke_caret);
 	}
+
+	plot->clip(clip);
 
 	if (ta->bar_x != NULL)
 		scrollbar_redraw(ta->bar_x,
