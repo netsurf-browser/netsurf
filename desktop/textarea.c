@@ -498,7 +498,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 		ta->lines[0].b_length = ta->show->len - 1;
 
 		nsfont.font_width(&ta->fstyle, ta->show->data,
-				ta->show->len, &x);
+				ta->show->len - 1, &x);
 
 		if (x > w)
 			w = x;
