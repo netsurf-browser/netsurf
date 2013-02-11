@@ -170,9 +170,11 @@ static void textarea_normalise_text(struct textarea *ta,
  * \param ta		Text area
  * \param c_start	First character (inclusive)
  * \param c_end		Last character (exclusive)
+ * \parm  force_redraw  Redraw whether selection changed or not
  * \return 		true on success false otherwise
  */
-static bool textarea_select(struct textarea *ta, int c_start, int c_end)
+static bool textarea_select(struct textarea *ta, int c_start, int c_end,
+		bool force_redraw)
 {
 	int swap;
 	struct textarea_msg msg;
@@ -184,7 +186,8 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end)
 		c_end = swap;
 	}
 
-	if (ta->sel_start == c_start && ta->sel_end == c_end)
+	if (ta->sel_start == c_start && ta->sel_end == c_end &&
+			!force_redraw)
 		return true;
 
 	ta->sel_start = c_start;
@@ -246,7 +249,7 @@ static bool textarea_select_fragment(struct textarea * ta)
 	}
 
 	if (sel_start < sel_end) {
-		textarea_select(ta, sel_start, sel_end);
+		textarea_select(ta, sel_start, sel_end, false);
 		return true;
 	}
 
@@ -968,7 +971,7 @@ static bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_end = c_off;
 
-		if (!textarea_select(ta, ta->drag_start_char, c_end))
+		if (!textarea_select(ta, ta->drag_start_char, c_end, false))
 			return false;
 
 		break;
@@ -2225,12 +2228,13 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		ta->callback(ta->data, &msg);
 
-		return textarea_select(ta, c_start, c_end);
+		return textarea_select(ta, c_start, c_end, false);
 	} else if (mouse & BROWSER_MOUSE_HOLDING_1 &&
 			ta->drag_info.type == TEXTAREA_DRAG_SELECTION) {
 		/* Selection track */
 		int scrx = 0;
 		int scry = 0;
+		bool need_redraw;
 
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_start = ta->drag_start_char;
@@ -2247,9 +2251,9 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		else if (y > ta->vis_height)
 			scry = (y - ta->vis_height) / 4;
 
-		textarea_scroll(ta, scrx, scry);
+		need_redraw = textarea_scroll(ta, scrx, scry);
 
-		return textarea_select(ta, c_start, c_end);
+		return textarea_select(ta, c_start, c_end, need_redraw);
 	}
 
 	return true;
@@ -2294,12 +2298,33 @@ bool textarea_scroll(struct textarea *ta, int scrx, int scry)
 {
 	bool handled_scroll = false;
 
-	if (ta->bar_x != NULL && scrx != 0 &&
-			scrollbar_scroll(ta->bar_x, scrx))
-		handled_scroll = true;
-	if (ta->bar_y != NULL && scry != 0 &&
-			scrollbar_scroll(ta->bar_y, scry))
-		handled_scroll = true;
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		/* Multi line textareas have scrollbars to handle this */
+		if (ta->bar_x != NULL && scrx != 0 &&
+				scrollbar_scroll(ta->bar_x, scrx))
+			handled_scroll = true;
+		if (ta->bar_y != NULL && scry != 0 &&
+				scrollbar_scroll(ta->bar_y, scry))
+			handled_scroll = true;
+
+	} else {
+		/* Single line.  Can only scroll horizontally. */
+		int xs = ta->scroll_x;
+
+		/* Apply offset */
+		xs += scrx;
+
+		/* Clamp to limits */
+		if (xs < 0)
+			xs = 0;
+		else if (xs > ta->h_extent - ta->vis_width)
+			xs = ta->h_extent - ta->vis_width;
+
+		if (xs != ta->scroll_x) {
+			ta->scroll_x = xs;
+			handled_scroll = true;
+		}
+	}
 
 	return handled_scroll;
 }
