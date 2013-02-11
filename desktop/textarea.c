@@ -310,7 +310,6 @@ static bool textarea_scroll_visible(struct textarea *ta)
 		} else if (!(ta->flags & TEXTAREA_MULTILINE)) {
 			ta->scroll_x = xs;
 			scrolled = true;
-
 		}
 	}
 
@@ -1222,6 +1221,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	int text_y_offset;
 	int width, height;
 	struct textarea_msg msg;
+	bool scrolled;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -1301,8 +1301,9 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 		y = ta->line_height * ta->caret_pos.line + text_y_offset;
 		ta->caret_y = y;
 
-		if (!textarea_scroll_visible(ta) &&
-				ta->flags & TEXTAREA_INTERNAL_CARET) {
+		scrolled = textarea_scroll_visible(ta);
+
+		if (!scrolled && ta->flags & TEXTAREA_INTERNAL_CARET) {
 			/* Didn't scroll, just moved caret.
 			 * Caret is internal caret, redraw it */
 			x -= ta->scroll_x;
@@ -1326,6 +1327,18 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 				ta->callback(ta->data, &msg);
 			}
+		} else if (scrolled && !(ta->flags & TEXTAREA_MULTILINE)) {
+			/* Textarea scrolled, whole area needs redraw */
+			/* With multi-line textareas, the scrollbar
+			 * callback will have requested redraw. */
+			msg.ta = ta;
+			msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+			msg.data.redraw.x0 = 0;
+			msg.data.redraw.y0 = 0;
+			msg.data.redraw.x1 = ta->vis_width;
+			msg.data.redraw.y1 = ta->vis_height;
+
+			ta->callback(ta->data, &msg);
 		}
 
 		if (!(ta->flags & TEXTAREA_INTERNAL_CARET)) {
