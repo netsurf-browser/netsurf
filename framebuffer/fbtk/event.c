@@ -316,7 +316,7 @@ fbtk_keycode_to_ucs4(int code, fbtk_modifier_type mods)
 			break;
 
 		case NSFB_KEY_u:
-			ucs4 = KEY_CUT_LINE;
+			ucs4 = KEY_DELETE_LINE;
 			break;
 
 		case NSFB_KEY_v:

@@ -1757,8 +1757,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			redraw = true;
 			break;
-		case KEY_CUT_LINE:
-			/* Not actually CUT to clipboard, just delete */
+		case KEY_DELETE_LINE:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
