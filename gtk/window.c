@@ -321,6 +321,12 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 		return FALSE;
 	}
 
+	/* Modify for double & triple clicks */
+	if (event->type == GDK_3BUTTON_PRESS)
+		g->mouse.state |= BROWSER_MOUSE_TRIPLE_CLICK;
+	else if (event->type == GDK_2BUTTON_PRESS)
+		g->mouse.state |= BROWSER_MOUSE_DOUBLE_CLICK;
+
 	/* Handle the modifiers too */
 	if (event->state & GDK_SHIFT_MASK)
 		g->mouse.state |= BROWSER_MOUSE_MOD_1;
@@ -358,7 +364,7 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
-	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2)) {
+	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
 		browser_window_mouse_click(g->bw, g->mouse.state,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale);
