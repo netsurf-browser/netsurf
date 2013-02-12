@@ -481,7 +481,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.title_flags = wimp_ICON_TEXT |
 			wimp_ICON_INDIRECTED |
 			wimp_ICON_HCENTRED;
-	window.work_flags = wimp_BUTTON_CLICK_DRAG <<
+	window.work_flags = wimp_BUTTON_DOUBLE_CLICK_DRAG <<
 			wimp_ICON_BUTTON_TYPE_SHIFT;
 	window.sprite_area = wimpspriteop_AREA;
 	window.xmin = 1;
@@ -1775,7 +1775,7 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 		browser_window_mouse_click(g->bw,
 				ro_gui_mouse_click_state(pointer->buttons,
-				wimp_BUTTON_CLICK_DRAG),
+				wimp_BUTTON_DOUBLE_CLICK_DRAG),
 				pos.x, pos.y);
 
 	return true;
@@ -3271,7 +3271,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 		browser_window_mouse_track(g->bw,
 				ro_gui_mouse_drag_state(pointer->buttons,
-						wimp_BUTTON_CLICK_DRAG),
+						wimp_BUTTON_DOUBLE_CLICK_DRAG),
 				pos.x, pos.y);
 }
 
