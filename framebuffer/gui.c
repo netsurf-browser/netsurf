@@ -59,7 +59,7 @@
 #include "desktop/history_core.h"
 #include "content/fetch.h"
 
-#define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrut"
+#define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
 
 fbtk_widget_t *fbtk;
 

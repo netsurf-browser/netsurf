@@ -97,7 +97,7 @@ Configuring
     t - throbber/activity indicator
     c - close the current window
 
-    The default layout is "blfsrut" there should be no more than a
+    The default layout is "blfsrutc" there should be no more than a
     single url bar entry. If the option is set to the empty string (no
     spaces permitted) the toolbar is disabled altogether.
 
