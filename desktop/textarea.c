@@ -258,6 +258,57 @@ static bool textarea_select_fragment(struct textarea * ta)
 
 
 /**
+ * Selects paragraph, at current caret position.
+ *
+ * \param ta  textarea widget
+ * \return True on success, false otherwise
+ */
+static bool textarea_select_paragraph(struct textarea * ta)
+{
+	int caret_pos, index;
+	int sel_start = 0;
+	int sel_end = ta->show->utf8_len;
+	size_t b_start, b_end;
+
+	caret_pos = textarea_get_caret(ta);
+	if (caret_pos < 0) {
+		return false;
+	}
+
+	/* Work through text up to caret, looking for a place to start
+	 * selection */
+	for (b_start = 0, index = 0; index < caret_pos;
+			b_start = utf8_next(ta->show->data, ta->show->len,
+					    b_start),
+			index++) {
+		/* Set selection start as character after any new line found */
+		if (ta->show->data[b_start] == '\n') {
+			/* Add one to start to skip over separator */
+			sel_start = index + 1;
+		}
+	}
+
+	/* Search for end of selection */
+	for (b_end = b_start; b_end < ta->show->len;
+			b_end = utf8_next(ta->show->data, ta->show->len,
+					  b_end),
+			index++) {
+		if (ta->show->data[b_end] == '\n') {
+			sel_end = index;
+			break;
+		}
+	}
+
+	if (sel_start < sel_end) {
+		textarea_select(ta, sel_start, sel_end, false);
+		return true;
+	}
+
+	return false;
+}
+
+
+/**
  * Scrolls a textarea to make the caret visible (doesn't perform a redraw)
  *
  * \param ta	The text area to be scrolled
@@ -2195,6 +2246,11 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		/* Select word */
 		textarea_set_caret_xy(ta, x, y);
 		return textarea_select_fragment(ta);
+
+	} else if (mouse & BROWSER_MOUSE_TRIPLE_CLICK) {
+		/* Select paragraph */
+		textarea_set_caret_xy(ta, x, y);
+		return textarea_select_paragraph(ta);
 
 	} else if (mouse & BROWSER_MOUSE_PRESS_1) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
