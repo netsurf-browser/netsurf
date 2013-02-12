@@ -31,38 +31,32 @@
 
 /* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
-	((((3 * ((c1 >> 16) & 0xff)) >> 2) << 16) |			\
-	 (((3 * ((c1 >>  8) & 0xff)) >> 2) <<  8) |	 		\
-	 (((3 * ( c1        & 0xff)) >> 2) <<  0))
+	((((3 * (c1 & 0xff00ff)) >> 2) & 0xff00ff) |			\
+	 (((3 * (c1 & 0x00ff00)) >> 2) & 0x00ff00))
 
 /* Darken a colour by taking nine sixteenths of each channel's intensity */
-#define double_darken_colour(c1)			 		\
-	((((9 * ((c1 >> 16) & 0xff)) >> 4) << 16) |			\
-	 (((9 * ((c1 >>  8) & 0xff)) >> 4) <<  8) |	 		\
-	 (((9 * ( c1        & 0xff)) >> 4) <<  0))
+#define double_darken_colour(c1)					\
+	((((9 * (c1 & 0xff00ff)) >> 4) & 0xff00ff) |			\
+	 (((9 * (c1 & 0x00ff00)) >> 4) & 0x00ff00))
 
-/* Lighten a colour by taking three quarters of each channel's intensity
- * and adding a full quarter
- */
+/* Lighten a colour by taking 12/16ths of each channel's intensity
+ * and adding a full 4/16ths intensity */
 #define lighten_colour(c1)						\
-	(((((3 * ((c1 >> 16) & 0xff)) >> 2) + 64) << 16) |		\
-	 ((((3 * ((c1 >>  8) & 0xff)) >> 2) + 64) <<  8) |		\
-	 ((((3 * ( c1        & 0xff)) >> 2) + 64) <<  0))
+	(((((3 * (c1 & 0xff00ff)) >> 2) + 0x400040) & 0xff00ff) |	\
+	 ((((3 * (c1 & 0x00ff00)) >> 2) + 0x004000) & 0x00ff00))
 
-/* Lighten a colour by taking nine sixteenths of each channel's intensity and
- * adding a full intensity 7/16ths */
+/* Lighten a colour by taking 9/16ths of each channel's intensity
+ * and adding a full 7/16ths intensity */
 #define double_lighten_colour(c1)					\
-	(((((9 * ((c1 >> 16) & 0xff)) >> 4) + 112) << 16) |		\
-	 ((((9 * ((c1 >>  8) & 0xff)) >> 4) + 112) <<  8) |		\
-	 ((((9 * ( c1        & 0xff)) >> 4) + 112) <<  0))
+	(((((9 * (c1 & 0xff00ff)) >> 4) + 0x700070) & 0xff00ff) |	\
+	 ((((9 * (c1 & 0x00ff00)) >> 4) + 0x007000) & 0x00ff00))
 
 /* Blend two colours by taking half the intensity of each channel in the first
  * colour and adding them to half the intensity of each channel in the second
  * colour */
 #define blend_colour(c0, c1)						\
-	(((((c0 >> 16) & 0xff) + ((c1 >> 16) & 0xff)) >> 1) << 16) |	\
-	(((((c0 >>  8) & 0xff) + ((c1 >>  8) & 0xff)) >> 1) <<  8) |	\
-	(((( c0        & 0xff) + ( c1        & 0xff)) >> 1) <<  0)
+	(((((c0 & 0xff00ff) + (c1 & 0xff00ff)) >> 1) & 0xff00ff) |	\
+	 ((((c0 & 0x00ff00) + (c1 & 0x00ff00)) >> 1) & 0x00ff00))
 
 /* Choose either black or white, depending on which is furthest from the
  * percieved lightness of the supplied colour, c0. */
