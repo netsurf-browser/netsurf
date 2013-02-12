@@ -1511,14 +1511,19 @@ void ami_handle_msg(void)
 								{
 									if(DoubleClick(gwin->lastclick.tv_sec,
 												gwin->lastclick.tv_usec,
-												curtime.tv_sec, curtime.tv_usec))
-										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+												curtime.tv_sec, curtime.tv_usec)) {
+										if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+											gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
+										} else {
+											gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+										}
+									}
 								}
 
 								browser_window_mouse_click(gwin->bw,
 									gwin->mouse_state | gwin->key_state,x,y);
 
-								if(gwin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
 								{
 									gwin->lastclick.tv_sec = 0;
 									gwin->lastclick.tv_usec = 0;
@@ -1533,6 +1538,7 @@ void ami_handle_msg(void)
 							{
 								browser_window_mouse_track(gwin->bw, 0, x, y);
 							}
+							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
 						break;
 
@@ -1547,14 +1553,19 @@ void ami_handle_msg(void)
 								{
 									if(DoubleClick(gwin->lastclick.tv_sec,
 												gwin->lastclick.tv_usec,
-												curtime.tv_sec, curtime.tv_usec))
-										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+												curtime.tv_sec, curtime.tv_usec)) {
+										if(gwin->prev_mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+											gwin->mouse_state |= BROWSER_MOUSE_TRIPLE_CLICK;
+										} else {
+											gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+										}
+									}
 								}
 
 								browser_window_mouse_click(gwin->bw,
 									gwin->mouse_state | gwin->key_state,x,y);
 
-								if(gwin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
 								{
 									gwin->lastclick.tv_sec = 0;
 									gwin->lastclick.tv_usec = 0;
@@ -1569,6 +1580,7 @@ void ami_handle_msg(void)
 							{
 								browser_window_mouse_track(gwin->bw, 0, x, y);
 							}
+							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
 						break;
 

@@ -109,6 +109,7 @@ struct gui_window_2 {
 	char *status;
 	char *wintitle;
 	char *helphints[GID_LAST];
+	browser_mouse_state prev_mouse_state;
 	struct timeval lastclick;
 	BOOL rmbtrapped;
 	struct AppIcon *appicon; /* iconify appicon */
