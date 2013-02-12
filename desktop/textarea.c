@@ -1258,6 +1258,9 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 		msg.data.redraw.x1 = x0 + width;
 		msg.data.redraw.y1 = y0 + height;
 
+		/* Ensure it is hidden */
+		ta->caret_pos.char_off = -1;
+
 		ta->callback(ta->data, &msg);
 	}
 
