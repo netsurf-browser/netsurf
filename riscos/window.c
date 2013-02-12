@@ -4826,9 +4826,13 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		wimp_icon_flags type)
 {
 	browser_mouse_state state = 0; /* Blank state with nothing set */
+	static struct {
+		enum { CLICK_SINGLE, CLICK_DOUBLE, CLICK_TRIPLE } type;
+		unsigned int time;
+	} last_click;
 
 	switch (type) {
-	case wimp_BUTTON_CLICK_DRAG:		/* Used for browser window */
+	case wimp_BUTTON_CLICK_DRAG:
 		/* Handle single clicks. */
 
 		/* We fire core PRESS and CLICK events together for "action on
@@ -4838,24 +4842,77 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		if (buttons & (wimp_CLICK_ADJUST)) /* Adjust click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
 		break;
-	case wimp_BUTTON_DOUBLE_CLICK_DRAG:	/* Used for treeview window */
-		/* Handle single and double clicks. */
+
+	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
+		/* Handle single, double, and triple clicks. */
 
 		/* Single clicks: Fire PRESS and CLICK events together
 		 * for "action on press" behaviour. */
-		if (buttons & (wimp_SINGLE_SELECT)) /* Select single click */
+		if (buttons & (wimp_SINGLE_SELECT)) {
+			/* Select single click */
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
-		if (buttons & (wimp_SINGLE_ADJUST)) /* Adjust single click */
+		} else if (buttons & (wimp_SINGLE_ADJUST)) {
+			/* Adjust single click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
+		}
 
 		/* Double clicks: Fire PRESS, CLICK, and DOUBLE_CLICK
 		 * events together for "action on 2nd press" behaviour. */
-		if (buttons & (wimp_DOUBLE_SELECT)) /* Select double click */
+		if (buttons & (wimp_DOUBLE_SELECT)) {
+			/* Select double click */
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
-		if (buttons & (wimp_DOUBLE_ADJUST)) /* Adjust double click */
+		} else if (buttons & (wimp_DOUBLE_ADJUST)) {
+			/* Adjust double click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
+		}
+
+		/* Need to consider what we have and decide whether to fire
+		 * triple click instead */
+		switch (state) {
+		case BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1:
+		case BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2:
+			/* WIMP told us single click, but maybe we want to call
+			 * it a triple click */
+
+			if (last_click.type == CLICK_DOUBLE) {
+				if (wallclock() < last_click.time + 50) {
+					/* Triple click!  Fire PRESS, CLICK, and
+					 * TRIPLE_CLICK events together for
+					 * "action on 3nd press" behaviour. */
+					last_click.type = CLICK_TRIPLE;
+					state |= BROWSER_MOUSE_TRIPLE_CLICK;
+				} else {
+					/* Single click */
+					last_click.type = CLICK_SINGLE;
+				}
+			} else {
+				/* Single click */
+				last_click.type = CLICK_SINGLE;
+			}
+			break;
+
+		case BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
+				BROWSER_MOUSE_DOUBLE_CLICK:
+		case BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2 |
+				BROWSER_MOUSE_DOUBLE_CLICK:
+			/* Wimp told us double click, but we may want to
+			 * call it single click */
+
+			if (last_click.type == CLICK_TRIPLE) {
+				state &= ~BROWSER_MOUSE_DOUBLE_CLICK;
+				last_click.type = CLICK_SINGLE;
+			} else {
+				last_click.type = CLICK_DOUBLE;
+				last_click.time = wallclock();
+			}
+			break;
+
+		default:
+			last_click.type = CLICK_SINGLE;
+			break;
+		}
 		break;
 	}
 
