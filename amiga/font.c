@@ -272,21 +272,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		utf16next = utf16[utf16charlen];
 
-		if(x < tx) {
-			/* If we've run out of space, and no space has been found, tell the core to split here.
-			 * This shouldn't work, but it does. Without it we randomly get non-split lines. */
-			if(coffset == 0) {
-				*actual_x = tx;
-				coffset = utf8clen;
-			}
-			break;
-		} else {
-			if(*utf16 == 0x0020) {
-				*actual_x = tx;
-				coffset = utf8clen;
-			}
-		}
-
 		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
 
 		if(tempx == 0)
@@ -311,6 +296,21 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		tx += tempx;
 		utf16 += utf16charlen;
 		utf8clen += utf8len;
+		
+		if(x < tx) {
+			/* If we've run out of space, and no space has been found, tell the core to split here.
+			 * This shouldn't work, but it does. Without it we randomly get non-split lines. */
+			if(coffset == 0) {
+				*actual_x = tx;
+				coffset = utf8clen;
+			}
+			break;
+		} else {
+			if((*utf16 == 0x0020) || (i == (len - 1))) {
+				*actual_x = tx;
+				coffset = utf8clen;
+			}
+		}
 	}
 
 	free(outf16);
