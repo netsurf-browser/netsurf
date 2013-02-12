@@ -599,9 +599,15 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
+	browser_mouse_state mouse;
 	float scale = gw->bw->scale;
 	int x = (cbi->x + bwidget->scrollx) / scale;
 	int y = (cbi->y + bwidget->scrolly) / scale;
+	unsigned int time_now;
+	static struct {
+		enum { CLICK_SINGLE, CLICK_DOUBLE, CLICK_TRIPLE } type;
+		unsigned int time;
+	} last_click;
 
 	if (cbi->event->type != NSFB_EVENT_KEY_DOWN &&
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
@@ -651,6 +657,10 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		break;
 	case NSFB_EVENT_KEY_UP:
+
+		mouse = 0;
+		time_now = wallclock();
+
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
 			if (gui_drag.state == GUI_DRAG_DRAG) {
@@ -671,8 +681,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			/* This is a click;
 			 * clear PRESSED state and pass to core */
 			gui_drag.state = GUI_DRAG_NONE;
-			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_CLICK_1, x, y);
+			mouse = BROWSER_MOUSE_CLICK_1;
 			break;
 
 		case NSFB_KEY_MOUSE_3:
@@ -693,14 +702,38 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			/* This is a click;
 			 * clear PRESSED state and pass to core */
 			gui_drag.state = GUI_DRAG_NONE;
-			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_CLICK_2, x, y);
+			mouse = BROWSER_MOUSE_CLICK_2;
 			break;
 
 		default:
 			break;
 
 		}
+
+		/* Determine if it's a double or triple click, allowing
+		 * 0.5 seconds (50cs) between clicks */
+		if (time_now < last_click.time + 50) {
+			if (last_click.type == CLICK_SINGLE) {
+				/* Set double click */
+				mouse |= BROWSER_MOUSE_DOUBLE_CLICK;
+				last_click.type = CLICK_DOUBLE;
+
+			} else if (last_click.type == CLICK_DOUBLE) {
+				/* Set triple click */
+				mouse |= BROWSER_MOUSE_TRIPLE_CLICK;
+				last_click.type = CLICK_TRIPLE;
+			} else {
+				/* Set normal click */
+				last_click.type = CLICK_SINGLE;
+			}
+		} else {
+			last_click.type = CLICK_SINGLE;
+		}
+
+		if (mouse)
+			browser_window_mouse_click(gw->bw, mouse, x, y);
+
+		last_click.time = time_now;
 
 		break;
 	default:
