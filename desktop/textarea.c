@@ -2274,7 +2274,25 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			ta->callback(ta->data, &msg);
 		}
 
-	} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+	} else if (mouse & BROWSER_MOUSE_PRESS_2) {
+		c_start = textarea_get_caret(ta);
+		textarea_get_xy_offset(ta, x, y, &c_off);
+
+		if (ta->sel_start != -1) {
+			/* Adjust selection */
+			c_start = (ta->sel_end - ta->sel_start) / 2 +
+					ta->sel_start;
+			c_start = ((unsigned)c_start > c_off) ?
+					ta->sel_end : ta->sel_start;
+			ta->drag_start_char = c_start;
+			return textarea_select(ta, c_start, c_off, false);
+		} else {
+			/* Select to caret */
+			ta->drag_start_char = c_start;
+			return textarea_select(ta, c_start, c_off, false);
+		}
+
+	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 		/* Selection start */
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_start = ta->drag_start_char;
@@ -2289,7 +2307,8 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		return textarea_select(ta, c_start, c_end, false);
 
-	} else if (mouse & BROWSER_MOUSE_HOLDING_1 &&
+	} else if (mouse &
+			(BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_HOLDING_2) &&
 			ta->drag_info.type == TEXTAREA_DRAG_SELECTION) {
 		/* Selection track */
 		int scrx = 0;
