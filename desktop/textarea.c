@@ -2190,16 +2190,22 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		}
 	}
 
-	/* mouse button pressed above the text area, move caret */
-	if (mouse & BROWSER_MOUSE_PRESS_1) {
+	/* Mouse action is textarea's responsibility */
+	if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
+		/* Select word */
+		textarea_set_caret_xy(ta, x, y);
+		return textarea_select_fragment(ta);
+
+	} else if (mouse & BROWSER_MOUSE_PRESS_1) {
 		if (!(ta->flags & TEXTAREA_READONLY)) {
+			/* Place caret */
 			textarea_get_xy_offset(ta, x, y, &c_off);
 			ta->drag_start_char = c_off;
 
 			textarea_set_caret(ta, c_off);
 		}
 		if (ta->sel_start != -1) {
-			/* remove selection */
+			/* Clear selection */
 			ta->sel_start = ta->sel_end = -1;
 
 			msg.ta = ta;
@@ -2210,12 +2216,6 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			msg.data.redraw.y1 = ta->vis_height;
 
 			ta->callback(ta->data, &msg);
-		}
-
-	} else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
-		if (!(ta->flags & TEXTAREA_READONLY)) {
-			textarea_set_caret_xy(ta, x, y);
-			return textarea_select_fragment(ta);
 		}
 
 	} else if (mouse & BROWSER_MOUSE_DRAG_1) {
@@ -2232,6 +2232,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		ta->callback(ta->data, &msg);
 
 		return textarea_select(ta, c_start, c_end, false);
+
 	} else if (mouse & BROWSER_MOUSE_HOLDING_1 &&
 			ta->drag_info.type == TEXTAREA_DRAG_SELECTION) {
 		/* Selection track */
