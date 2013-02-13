@@ -80,6 +80,9 @@ struct textarea {
 	int border_width;	/**< Border width, in pixels */
 	colour border_col;	/**< Border colour */
 
+	int text_y_offset;		/**< Vertical dist to 1st line top */
+	int text_y_offset_baseline;	/**< Vertical dist to 1st baseline */
+
 	plot_font_style_t fstyle;	/**< Text style, inc. textarea bg col */
 	plot_font_style_t sel_fstyle;	/**< Selected text style */
 	int line_height;		/**< Line height obtained from style */
@@ -1044,6 +1047,32 @@ static bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 }
 
 
+/**
+ * Setup text offsets after height / border / padding change
+ *
+ * \param ta	Textarea widget
+ */
+static void textarea_setup_text_offsets(struct textarea *ta)
+{
+	int text_y_offset, text_y_offset_baseline;
+
+	text_y_offset = text_y_offset_baseline = ta->border_width;
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		/* Multiline textarea */
+		text_y_offset += ta->pad_top;
+		text_y_offset_baseline += (ta->line_height * 3 + 2) / 4 +
+				ta->pad_top;
+	} else {
+		/* Single line text area; text is vertically centered */
+		int vis_height = ta->vis_height - 2 * ta->border_width;
+		text_y_offset += (vis_height - ta->line_height + 1) / 2;
+		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
+	}
+
+	ta->text_y_offset = text_y_offset;
+	ta->text_y_offset_baseline = text_y_offset_baseline;
+}
+
 
 
 /* exported interface, documented in textarea.h */
@@ -1146,6 +1175,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 	ret->lines = NULL;
 	ret->lines_alloc_size = 0;
 
+	textarea_setup_text_offsets(ret);
 	textarea_reflow(ret, 0);
 
 	return ret;
@@ -1272,7 +1302,6 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	int index;
 	int x, y;
 	int x0, y0, x1, y1;
-	int text_y_offset;
 	int width, height;
 	struct textarea_msg msg;
 	bool scrolled;
@@ -1284,15 +1313,6 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 	if (caret != -1 && caret > (signed)c_len)
 		caret = c_len;
-
-	if (ta->flags & TEXTAREA_MULTILINE) {
-		/* Multiline textarea */
-		text_y_offset = ta->border_width + ta->pad_top;
-	} else {
-		/* Single line text area; text is vertically centered */
-		text_y_offset = ta->border_width;
-		text_y_offset += (ta->vis_height - ta->line_height + 1) / 2;
-	}
 
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1 &&
@@ -1355,7 +1375,7 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 
 		x += ta->border_width + ta->pad_left;
 		ta->caret_x = x;
-		y = ta->line_height * ta->caret_pos.line + text_y_offset;
+		y = ta->line_height * ta->caret_pos.line + ta->text_y_offset;
 		ta->caret_y = y;
 
 		scrolled = textarea_scroll_visible(ta);
@@ -1561,18 +1581,8 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 	else
 		c_pos = 0;
 
-	text_y_offset = text_y_offset_baseline = ta->border_width;
-	if (ta->flags & TEXTAREA_MULTILINE) {
-		/* Multiline textarea */
-		text_y_offset += ta->pad_top;
-		text_y_offset_baseline += (ta->line_height * 3 + 2) / 4 +
-				ta->pad_top;
-	} else {
-		/* Single line text area; text is vertically centered */
-		int vis_height = ta->vis_height - 2 * ta->border_width;
-		text_y_offset += (vis_height - ta->line_height + 1) / 2;
-		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
-	}
+	text_y_offset = ta->text_y_offset;
+	text_y_offset_baseline = ta->text_y_offset_baseline;
 
 	if (scale != 1.0) {
 		text_y_offset *= scale;
@@ -2354,6 +2364,8 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
 	ta->vis_width = width;
 	ta->vis_height = height;
+
+	textarea_setup_text_offsets(ta);
 	textarea_reflow(ta, 0);
 }
 
@@ -2368,6 +2380,8 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	ta->pad_right = right + ((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
 	ta->pad_bottom = bottom + ((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 	ta->pad_left = left;
+
+	textarea_setup_text_offsets(ta);
 	textarea_reflow(ta, 0);
 }
 
