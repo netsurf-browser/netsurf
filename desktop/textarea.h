@@ -198,6 +198,14 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
 
 /**
+ * Clear any selection in the textarea.
+ *
+ * \param ta	textarea widget
+ * \return true if there was a selection to clear, false otherwise
+ */
+bool textarea_clear_selection(struct textarea *ta);
+
+/**
  * Gets the dimensions of a textarea
  *
  * \param ta		textarea widget

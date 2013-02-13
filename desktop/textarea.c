@@ -1934,10 +1934,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		case KEY_ESCAPE:
 			/* Fall through to KEY_CLEAR_SELECTION */
 		case KEY_CLEAR_SELECTION:
-			ta->sel_start = -1;
-			ta->sel_end = -1;
-			redraw = true;
-			break;
+			return textarea_clear_selection(ta);
 		case KEY_LEFT:
 			if (readonly)
 				break;
@@ -2272,16 +2269,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		}
 		if (ta->sel_start != -1) {
 			/* Clear selection */
-			ta->sel_start = ta->sel_end = -1;
-
-			msg.ta = ta;
-			msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-			msg.data.redraw.x0 = 0;
-			msg.data.redraw.y0 = 0;
-			msg.data.redraw.x1 = ta->vis_width;
-			msg.data.redraw.y1 = ta->vis_height;
-
-			ta->callback(ta->data, &msg);
+			textarea_clear_selection(ta);
 		}
 
 	} else if (mouse & BROWSER_MOUSE_PRESS_2) {
@@ -2344,6 +2332,30 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		return textarea_select(ta, c_start, c_end, need_redraw);
 	}
+
+	return true;
+}
+
+
+/* exported interface, documented in textarea.h */
+bool textarea_clear_selection(struct textarea *ta)
+{
+	struct textarea_msg msg;
+
+	if (ta->sel_start == -1)
+		/* No selection to clear */
+		return false;
+
+	ta->sel_start = ta->sel_end = -1;
+
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = 0;
+	msg.data.redraw.y0 = 0;
+	msg.data.redraw.x1 = ta->vis_width;
+	msg.data.redraw.y1 = ta->vis_height;
+
+	ta->callback(ta->data, &msg);
 
 	return true;
 }
