@@ -189,7 +189,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg);
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
-static void gui_window_update_box_deferred(struct gui_window *g);
+static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 
 STRPTR ami_locale_langs(void)
 {
@@ -1975,7 +1975,7 @@ void ami_handle_msg(void)
 				ami_do_redraw(gwin);
 			}
 
-			gui_window_update_box_deferred(gwin->bw->window);
+			ami_gui_window_update_box_deferred(gwin->bw->window, true);
 			
 			if(gwin->bw->window->throbbing)
 				ami_update_throbber(gwin,false);
@@ -3784,7 +3784,7 @@ void gui_window_redraw_window(struct gui_window *g)
 		g->shared->redraw_required = true;
 }
 
-static void gui_window_update_box_deferred(struct gui_window *g)
+static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -3793,7 +3793,7 @@ static void gui_window_update_box_deferred(struct gui_window *g)
 	if(!g) return;
 	if(IsMinListEmpty(g->deferred_rects)) return;
 
-	if(g->deferred == true) {
+	if(draw == true) {
 		ami_set_pointer(g->shared, GUI_POINTER_WAIT, false);
 	} else {
 		LOG(("Ignoring deferred box redraw queue"));
@@ -3802,7 +3802,7 @@ static void gui_window_update_box_deferred(struct gui_window *g)
 	node = (struct nsObject *)GetHead((struct List *)g->deferred_rects);
 
 	do {
-		if(g->deferred == true) {
+		if(draw == true) {
 			rect = (struct rect *)node->objstruct;
 			ami_do_redraw_limits(g, g->shared->bw, false,
 				rect->x0, rect->y0, rect->x1, rect->y1);
@@ -3811,13 +3811,10 @@ static void gui_window_update_box_deferred(struct gui_window *g)
 		DelObject(node);
 	} while(node = nnode);
 
-	if(g->deferred == true) {
-		ami_reset_pointer(g->shared);
-		g->deferred = false;
-	}
+	if(draw == true) ami_reset_pointer(g->shared);
 }
 
-static bool gui_window_update_box_deferred_check(struct MinList *deferred_rects,
+static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 				const struct rect *new_rect)
 {
 	struct nsObject *node;
@@ -3858,11 +3855,9 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	struct rect *deferred_rect;
 	if(!g) return;
 	
-	if(gui_window_update_box_deferred_check(g->deferred_rects, rect)) {
-		g->deferred = true;
+	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect)) {
 		deferred_rect = AllocVec(sizeof(struct rect), MEMF_PRIVATE);
 		CopyMem(rect, deferred_rect, sizeof(struct rect));
-	
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;
 	} else {
@@ -3988,7 +3983,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 			ami_reset_pointer(gwin);
 		}
 		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
-		gwin->bw->window->deferred = false;
+		ami_gui_window_update_box_deferred(gwin->bw->window, false);
 	}
 
 	ami_update_buttons(gwin);

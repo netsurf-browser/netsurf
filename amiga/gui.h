@@ -142,7 +142,6 @@ struct gui_window
 	hlcache_handle *favicon;
 	bool throbbing;
 	char *tabtitle;
-	bool deferred;
 	struct MinList *deferred_rects;
 };
 
