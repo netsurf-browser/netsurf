@@ -1768,8 +1768,7 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 	ro_gui_url_complete_close();
 
 	/* set input focus */
-	if (pointer->buttons == wimp_CLICK_SELECT ||
-			pointer->buttons == wimp_CLICK_ADJUST)
+	if (pointer->buttons & (wimp_SINGLE_SELECT | wimp_SINGLE_ADJUST))
 		gui_window_place_caret(g, -100, -100, 0);
 
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
@@ -4953,7 +4952,7 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 	browser_mouse_state state = 0; /* Blank state with nothing set */
 
 	/* If mouse buttons aren't held, turn off drags */
-	if (!(buttons & (wimp_CLICK_SELECT) || buttons & (wimp_CLICK_ADJUST))) {
+	if (!(buttons & (wimp_CLICK_SELECT | wimp_CLICK_ADJUST))) {
 		mouse_drag_select = false;
 		mouse_drag_adjust = false;
 	}
