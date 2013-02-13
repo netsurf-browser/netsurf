@@ -285,6 +285,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 void ro_gui_discard_clipboard_contents(void)
 {
 	free(clipboard);
+	clipboard = NULL;
 	clip_length = 0;
 }
 
@@ -418,18 +419,20 @@ bool ro_gui_selection_prepare_paste_dataload(
 		size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 
-		local_cb = malloc(size);
-		if (local_cb != NULL) {
-			fread(local_cb, 1, size, fp);
+		if (size > 0) {
+			local_cb = malloc(size);
+			if (local_cb != NULL) {
+				fread(local_cb, 1, size, fp);
 
-			fclose(fp);
-
-			ret = utf8_from_local_encoding(local_cb, size,
-					&clipboard);
-			if (ret == UTF8_CONVERT_OK) {
-				clip_length = strlen(clipboard);
+				ret = utf8_from_local_encoding(local_cb, size,
+						&clipboard);
+				if (ret == UTF8_CONVERT_OK) {
+					clip_length = strlen(clipboard);
+				}
 			}
 		}
+
+		fclose(fp);
 	}
 
 	/* Send DataLoadAck */
