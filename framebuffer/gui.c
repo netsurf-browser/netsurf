@@ -528,6 +528,8 @@ main(int argc, char** argv)
 	struct browser_window *bw;
 	char *options;
 	char *messages;
+	nsurl *url;
+	nserror error;
 
 	setbuf(stderr, NULL);
 
@@ -543,12 +545,27 @@ main(int argc, char** argv)
 
 	gui_init(argc, argv);
 
+	/* create an initial browser window */
+
 	LOG(("calling browser_window_create"));
-	bw = browser_window_create(feurl, 0, 0, true, false);
 
-	netsurf_main_loop();
+	error = nsurl_create(feurl, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      &bw);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		netsurf_main_loop();
 
-	browser_window_destroy(bw);
+		browser_window_destroy(bw);
+	}
 
 	netsurf_exit();
 

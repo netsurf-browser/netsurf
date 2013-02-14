@@ -659,34 +659,29 @@ void browser_window_debug_dump(struct browser_window *bw, FILE *f)
 }
 
 
-/**
- * Create and open a new root browser window with the given page.
- *
- * \param  url	    URL to start fetching in the new window
- * \param  referer  The referring uri or NULL if none
- * \param  clone    The browser window to clone
- * \param history_add add to history
- * \param new_tab create a new tab
- * \return new browser window or NULL on error
- */
+/* exported interface, documented in desktop/browser.h */
 
-struct browser_window *
-browser_window_create(nsurl *url,
-		      nsurl *referer,
+nserror
+browser_window_create(enum browser_window_nav_flags flags,
+		      nsurl *url,
+		      nsurl *referrer,
 		      struct browser_window *clone,
-		      bool history_add, 
-		      bool new_tab)
+		      struct browser_window **ret_bw)
 {
 	struct browser_window *bw;
 	struct browser_window *top;
 
-	assert(clone || history_add);
+	/* caller must provide window to clone or be adding to history */
+	assert(clone ||
+	       ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0));
 
-	if ((bw = calloc(1, sizeof *bw)) == NULL) {
+
+	if ((bw = calloc(1, sizeof(struct browser_window))) == NULL) {
 		warn_user("NoMemory", 0);
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
+	/* new javascript context for window */
 	bw->jsctx = js_newcontext();
 
 	/* Initialise common parts */
@@ -705,23 +700,25 @@ browser_window_create(nsurl *url,
 	 * so find that. */
 	top = browser_window_get_root(clone);
 
-	bw->window = gui_create_browser_window(bw, top, new_tab);
+	bw->window = gui_create_browser_window(bw,
+				top,
+				((flags & BROWSER_WINDOW_GO_FLAG_TAB) != 0));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
-		return NULL;
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	if (url != NULL) {
-		enum browser_window_nav_flags flags;
-		flags = BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
-		if (history_add) {
-			flags |= BROWSER_WINDOW_GO_FLAG_HISTORY;
-		}
-		browser_window_navigate(bw, url, referer, flags, NULL, NULL, NULL);
+		flags |= BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
+		browser_window_navigate(bw, url, referrer, flags, NULL, NULL, NULL);
 	}
 
-	return bw;
+	if (ret_bw != NULL) {
+		*ret_bw = bw;
+	}
+
+	return NSERROR_OK;
 }
 
 
@@ -2315,6 +2312,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	struct browser_window *top;
 	hlcache_handle *c;
 	int rdepth;
+	nserror error;
 
 	/* use the base target if we don't have one */
 	c = bw->current_content;
@@ -2353,9 +2351,15 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * OR
 		 * - button_2 opens in new tab and the link target is "_blank"
 		 */
-		bw_target = browser_window_create(NULL, NULL, bw, false, true);
-		if (!bw_target)
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_TAB,
+					      NULL,
+					      NULL,
+					      bw,
+					      &bw_target);
+		if (error != NSERROR_OK) {
 			return bw;
+		}
 		return bw_target;
 	} else if (((!nsoption_bool(button_2_tab)) &&
 		    (mouse & BROWSER_MOUSE_CLICK_2)) ||
@@ -2374,9 +2378,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * - button_2 doesn't open in new tabs and the link target is
 		 *   "_blank"
 		 */
-		bw_target = browser_window_create(NULL, NULL, bw, false, false);
-		if (!bw_target)
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					      NULL,
+					      NULL,
+					      bw,
+					      &bw_target);
+		if (error != NSERROR_OK) {
 			return bw;
+		}
 		return bw_target;
 	} else if ((target == TARGET_SELF) || (!strcasecmp(target, "_self"))) {
 		return bw;
@@ -2408,9 +2417,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (!nsoption_bool(target_blank))
 		return bw;
 
-	bw_target = browser_window_create(NULL, NULL, bw, false, false);
-	if (!bw_target)
+	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				      NULL,
+				      NULL,
+				      bw,
+				      &bw_target);
+	if (error != NSERROR_OK) {
 		return bw;
+	}
 
 	/* frame names should begin with an alphabetic character (a-z,A-Z),
 	 * however in practice you get things such as '_new' and '2left'. The

@@ -718,6 +718,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 	const char *source_data;
 	ULONG source_size;
 	struct bitmap *bm;
+	nsurl *url;
+	nserror error;
 
     if(GetAttrs(item,PMIA_ID,&itemid,
 					PMIA_UserData,&userdata,
@@ -776,14 +778,40 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_FRAMEWIN:
 			case CMID_URLOPENWIN:
-				bw = browser_window_create(userdata, gwin->bw,
-					nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)), true, false);
+				error = nsurl_create(userdata, &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+								      url,
+								      hlcache_handle_get_url(gwin->bw->current_content),
+								      gwin->bw,
+								      &bw);
+					nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
+
+			
 			break;
 
 			case CMID_FRAMETAB:
 			case CMID_URLOPENTAB:
-				bw = browser_window_create(userdata, gwin->bw,
-					nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)), true, true);
+				error = nsurl_create(userdata, &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+								      BROWSER_WINDOW_GO_FLAG_HISTORY |
+								      BROWSER_WINDOW_GO_FLAG_TAB,
+								      url,
+								      hlcache_handle_get_url(gwin->bw->current_content),
+								      gwin->bw,
+								      &bw);
+					nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
+
 			break;
 
 			case CMID_FRAMESAVE:

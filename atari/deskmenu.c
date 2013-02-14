@@ -148,18 +148,59 @@ static void __CDECL evnt_menu(WINDOW * win, short buff[8])
 
 static void __CDECL menu_about(short item, short title, void *data)
 {
-	LOG(("%s", __FUNCTION__));
+	nsurl *url;
+	nserror error;
 	char buf[PATH_MAX];
+
+	LOG(("%s", __FUNCTION__));
 	strcpy((char*)&buf, "file://");
 	strncat((char*)&buf, (char*)"./doc/README.TXT",
 			PATH_MAX - (strlen("file://")+1) );
-	browser_window_create((char*)&buf, 0, 0, true, false);
+
+	error = nsurl_create(buf, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} 
 }
 
 static void __CDECL menu_new_win(short item, short title, void *data)
 {
+	nsurl *url;
+	nserror error;
+	const char *addr;
+
 	LOG(("%s", __FUNCTION__));
-	browser_window_create(option_homepage_url, 0, 0, true, false);
+		
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 static void __CDECL menu_open_url(short item, short title, void *data)
@@ -170,7 +211,12 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 
 	gw = input_window;
 	if( gw == NULL ) {
-		bw = browser_window_create("", 0, 0, true, false);
+		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				      BROWSER_WINDOW_GO_FLAG_HISTORY,
+				      NULL,
+				      NULL,
+				      NULL,
+				      &bw);
 		gw = bw->window;
 	}
 	/* Loose focus: */
@@ -185,17 +231,31 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 
 static void __CDECL menu_open_file(short item, short title, void *data)
 {
-	struct gui_window * gw;
-	struct browser_window * bw ;
 
 	LOG(("%s", __FUNCTION__));
 
 	const char * filename = file_select(messages_get("OpenFile"), "");
 	if( filename != NULL ){
-		char * url = local_file_to_url( filename );
-		if( url ){
-			bw = browser_window_create(url, NULL, NULL, true, false);
-			free( url );
+		char * urltxt = local_file_to_url( filename );
+		if( urltxt ){
+			nsurl *url;
+			nserror error;
+
+			error = nsurl_create(urltxt, &url);
+			if (error == NSERROR_OK) {
+				error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+							      BROWSER_WINDOW_GO_FLAG_HISTORY,
+							      url,
+							      NULL,
+							      NULL,
+							      NULL);
+				nsurl_unref(url);
+				
+			}
+			if (error != NSERROR_OK) {
+				warn_user(messages_get_errorcode(error), 0);
+			}
+			free( urltxt );
 		}
 	}
 }

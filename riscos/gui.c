@@ -777,8 +777,24 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 
-	if (open_window)
-			browser_window_create(url, NULL, 0, true, false);
+	if (open_window) {
+		nsurl *urlns;
+		nserror errorns;
+
+		errorns = nsurl_create(yrl, &urlns);
+		if (errorns == NSERROR_OK) {
+			errorns = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+							BROWSER_WINDOW_GO_FLAG_HISTORY,
+							urlns,
+							NULL,
+							NULL,
+							NULL);
+			nsurl_unref(urlns);
+		}
+		if (errorns != NSERROR_OK) {
+			warn_user(messages_get_errorcode(errorns), 0);
+		}
+	}
 
 	free(url);
 }
@@ -1498,9 +1514,9 @@ void ro_msg_dataload(wimp_message *message)
 	char *urltxt = NULL;
 	char *title = NULL;
 	struct gui_window *g;
-	os_error *error;
+	os_error *oserror;
 	nsurl *url;
-	nserror nserror;
+	nserror error;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
@@ -1556,12 +1572,10 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 
 
-	nserror = nsurl_create(urltxt, &url);
-	if (nserror != NSERROR_OK) {
-		warn_user(messages_get_errorcode(nserror), 0);
-	} else {
+	error = nsurl_create(urltxt, &url);
+	if (nserror == NSERROR_OK) {
 		if (g) {
-			browser_window_navigate(g->bw,
+			error = browser_window_navigate(g->bw,
 					url,
 					NULL,
 					BROWSER_WINDOW_GO_FLAG_HISTORY |
@@ -1577,25 +1591,32 @@ void ro_msg_dataload(wimp_message *message)
 #endif
 
 		} else {
-			browser_window_create(url, NULL, NULL, true, false);
+			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
 		}
-
 		nsurl_unref(url);
 	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 
+	free(urltxt);
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
-	if (error) {
+	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (oserror) {
 		LOG(("xwimp_send_message: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
+				oserror->errnum, oserror->errmess));
+		warn_user("WimpError", oserror->errmess);
 		return;
 	}
 
-	free(urltxt);
 }
 
 
@@ -1896,7 +1917,9 @@ void ro_msg_dataopen(wimp_message *message)
 	int file_type = message->data.data_xfer.file_type;
 	char *url = 0;
 	size_t len;
-	os_error *error;
+	os_error *oserror;
+	nsurl *urlns;
+	nserror error;
 
 	if (file_type == 0xb28)			/* ANT URL file */
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
@@ -1924,11 +1947,11 @@ void ro_msg_dataopen(wimp_message *message)
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
-	if (error) {
+	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (oserror) {
 		LOG(("xwimp_send_message: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
+				oserror->errnum, oserror->errmess));
+		warn_user("WimpError", oserror->errmess);
 		return;
 	}
 
@@ -1937,10 +1960,21 @@ void ro_msg_dataopen(wimp_message *message)
 		 * functions called above */
 		return;
 
-	/* create a new window with the file */
-	browser_window_create(url, NULL, 0, true, false);
-
+	error = nsurl_create(url, &urlns);
 	free(url);
+	if (error == NSERROR_OK) {
+	/* create a new window with the file */
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      urlns,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(urlns);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 

@@ -686,6 +686,8 @@ void ami_openscreenfirst(void)
 
 static void gui_init2(int argc, char** argv)
 {
+	nsurl *url;
+	nserror error;
 	struct browser_window *bw = NULL;
 	struct RDArgs *args;
 	STRPTR temp_homepage_url = NULL;
@@ -726,7 +728,20 @@ static void gui_init2(int argc, char** argv)
 
 				if(notalreadyrunning)
 				{
-					bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
+					error = nsurl_create(temp_homepage_url, &url);
+					if (error == NSERROR_OK) {
+						error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+								BROWSER_WINDOW_GO_FLAG_HISTORY,
+								url,
+								NULL,
+								NULL,
+								&bw);
+						nsurl_unref(url);
+					}
+					if (error != NSERROR_OK) {
+						warn_user(messages_get_errorcode(error), 0);
+					}
+
 					free(temp_homepage_url);
 				}
 			}
@@ -762,14 +777,36 @@ static void gui_init2(int argc, char** argv)
 
 				if(notalreadyrunning)
 				{
-					if(!first)
-					{
-						bw = browser_window_create(temp_homepage_url, 0, 0, true,false);
- 						first=1;
+					error = nsurl_create(temp_homepage_url, &url);
+					
+
+					if (error == NSERROR_OK) {
+						if(!first)
+						{
+							error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+										      BROWSER_WINDOW_GO_FLAG_HISTORY,
+										      url,
+										      NULL,
+										      NULL,
+										      &bw);
+
+							first=1;
+						}
+						else
+						{
+							error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+										      BROWSER_WINDOW_GO_FLAG_HISTORY,
+										      url,
+										      NULL,
+										      bw,
+										      &bw);
+
+						}
+						nsurl_unref(url);
+
 					}
-					else
-					{
-						bw = browser_window_create(temp_homepage_url, bw, 0, true,false);
+					if (error != NSERROR_OK) {
+						warn_user(messages_get_errorcode(error), 0);
 					}
 					free(temp_homepage_url);
 					temp_homepage_url = NULL;
@@ -841,8 +878,21 @@ static void gui_init2(int argc, char** argv)
 		if(applibport) applibsig = (1L << applibport->mp_SigBit);
 	}
 
-	if(!bw && (nsoption_bool(startup_no_window) == false))
-		bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true,false);
+	if(!bw && (nsoption_bool(startup_no_window) == false)) {
+		error = nsurl_create(nsoption_charp(homepage_url), &url);
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+						      BROWSER_WINDOW_GO_FLAG_HISTORY,
+						      url,
+						      NULL,
+						      NULL,
+						      NULL);
+			nsurl_unref(url);
+		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
+	}
 }
 
 /** Normal entry point from OS */
@@ -1622,7 +1672,25 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_ADDTAB:
-							browser_window_create(nsoption_charp(homepage_url), gwin->bw, 0, true, true);
+						{
+							nsurl *urlns;
+							nserror error;
+
+							error = nsurl_create(nsoption_charp(homepage_url), &urlns);
+							if (error == NSERROR_OK) {
+								error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+											      BROWSER_WINDOW_GO_FLAG_HISTORY |
+											      BROWSER_WINDOW_GO_FLAG_TAB,
+											      urlns,
+											      NULL,
+											      gwin->bw,
+											      NULL);
+								nsurl_unref(urlns);
+							}
+							if (error != NSERROR_OK) {
+								warn_user(messages_get_errorcode(error), 0);
+							}
+						}
 						break;
 
 						case GID_URL:
@@ -1756,15 +1824,47 @@ void ami_handle_msg(void)
 						switch(nskey)
 						{
 							case 'n':
-								if ((nsoption_bool(kiosk_mode) == false))
-									browser_window_create(nsoption_charp(homepage_url), NULL,
-										0, true, false);
+								if ((nsoption_bool(kiosk_mode) == false)) {
+									nsurl *urlns;
+									nserror error;
+
+									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
+									if (error == NSERROR_OK) {
+										error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+													      BROWSER_WINDOW_GO_FLAG_HISTORY,
+													      urlns,
+													      NULL,
+													      gwin->bw,
+													      NULL);
+										nsurl_unref(urlns);
+									}
+									if (error != NSERROR_OK) {
+										warn_user(messages_get_errorcode(error), 0);
+									}
+
+								}
 							break;
 
 							case 't':
-								if((nsoption_bool(kiosk_mode) == false))
-									browser_window_create(nsoption_charp(homepage_url),
-										gwin->bw, 0, true, true);
+								if((nsoption_bool(kiosk_mode) == false)) {
+									nsurl *urlns;
+									nserror error;
+
+									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
+									if (error == NSERROR_OK) {
+										error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+													      BROWSER_WINDOW_GO_FLAG_HISTORY,
+													      urlns,
+													      NULL,
+													      gwin->bw,
+													      NULL);
+										nsurl_unref(urlns);
+									}
+									if (error != NSERROR_OK) {
+										warn_user(messages_get_errorcode(error), 0);
+									}
+
+								}
 							break;
 
 							case 'k':
@@ -2139,7 +2239,13 @@ void ami_handle_appmsg(void)
 								}
 								else
 								{
-									browser_window_create(url, NULL, gwin->bw, true, true);
+									browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+											      BROWSER_WINDOW_GO_FLAG_HISTORY |
+											      BROWSER_WINDOW_GO_FLAG_TAB,
+											      url,
+											      NULL,
+											      gwin->bw,
+											      NULL);
 								}
 								nsurl_unref(url);
 							}
@@ -2174,7 +2280,14 @@ void ami_handle_appmsg(void)
 									}
 									else
 									{
-										browser_window_create(url, NULL, gwin->bw, true, true);
+										browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+												      BROWSER_WINDOW_GO_FLAG_HISTORY |
+												      BROWSER_WINDOW_GO_FLAG_TAB,
+												      url,
+												      NULL,
+												      gwin->bw,
+												      NULL);
+										
 									}
 									nsurl_unref(url);
 								}
@@ -2197,6 +2310,8 @@ void ami_handle_applib(void)
 {
 	struct ApplicationMsg *applibmsg;
 	struct browser_window *bw;
+	nsurl *url;
+	nserror error;
 
 	if(!applibport) return;
 
@@ -2205,7 +2320,22 @@ void ami_handle_applib(void)
 		switch (applibmsg->type)
 		{
 			case APPLIBMT_NewBlankDoc:
-				bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true, false);
+			{
+
+				error = nsurl_create(nsoption_charp(homepage_url), &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+								      url,
+								      NULL,
+								      NULL,
+								      &bw);
+					nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
+			}
 			break;
 
 			case APPLIBMT_OpenDoc:
@@ -2215,7 +2345,20 @@ void ami_handle_applib(void)
 				char *tempurl;
 
 				tempurl = path_to_url(applibopdmsg->fileName);
-				bw = browser_window_create(tempurl, 0, 0, true, false);
+
+				error = nsurl_create(tempurl, &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+								      url,
+								      NULL,
+								      NULL,
+								      &bw);
+					nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
 				free(tempurl);
 			}
 			break;
@@ -2229,7 +2372,21 @@ void ami_handle_applib(void)
 				}
 				else
 				{
-					bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true, false);
+					error = nsurl_create(nsoption_charp(homepage_url), &url);
+					if (error == NSERROR_OK) {
+						error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+									      BROWSER_WINDOW_GO_FLAG_HISTORY,
+									      url,
+									      NULL,
+									      NULL,
+									      &bw);
+						nsurl_unref(url);
+					}
+					if (error != NSERROR_OK) {
+						warn_user(messages_get_errorcode(error), 0);
+					}
+
+
 				}
 			break;
 

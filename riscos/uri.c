@@ -42,6 +42,8 @@ void ro_uri_message_received(wimp_message *msg)
 	char* uri_requested;
 	int uri_length;
 	nsurl *nsurl;
+	nsurl *url;
+	nserror error;
 
 	uri_handle = uri_message->handle;
 
@@ -69,9 +71,20 @@ void ro_uri_message_received(wimp_message *msg)
 
 	xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
 
-	browser_window_create(uri_requested, NULL, 0, true, false);
-
+	error = nsurl_create(uri_requested, &url);
 	free(uri_requested);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 bool ro_uri_launch(const char *uri)

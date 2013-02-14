@@ -356,7 +356,7 @@ node_callback_resp tree_url_node_callback(void *user_data,
 {
 	struct tree *tree;
 	struct node_element *element;
-	nsurl *nsurl;
+	nsurl *url;
 	nserror error;
 	const char *text;
 	char *norm_text;
@@ -372,13 +372,13 @@ node_callback_resp tree_url_node_callback(void *user_data,
 			 */
 		case TREE_ELEMENT_URL:
 			/* reset URL characteristics */
-			error = nsurl_create(msg_data->data.text, &nsurl);
+			error = nsurl_create(msg_data->data.text, &url);
 			if (error != NSERROR_OK) {
 				warn_user("NoMemory", 0);
 				return NODE_CALLBACK_REJECT;
 			}
-			urldb_reset_url_visit_data(nsurl);
-			nsurl_unref(nsurl);
+			urldb_reset_url_visit_data(url);
+			nsurl_unref(url);
 			return NODE_CALLBACK_HANDLED;
 		case TREE_ELEMENT_TITLE:
 			return NODE_CALLBACK_HANDLED;
@@ -393,29 +393,45 @@ node_callback_resp tree_url_node_callback(void *user_data,
 		element = tree_node_find_element(msg_data->node,
 						 TREE_ELEMENT_URL, NULL);
 		if (element != NULL) {
+			nserror error;
+			enum browser_window_nav_flags flags;
+
 			text = tree_node_element_get_text(element);
-			if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
-				msg_data->data.bw = browser_window_create(text,
-						msg_data->data.bw, 0, true, true);
-			} else {
-				browser_window_create(text, NULL, 0,
-						      true, false);
+
+			error = nsurl_create(text, &url);
+			if (error == NSERROR_OK) {
+				flags = BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					BROWSER_WINDOW_GO_FLAG_HISTORY;
+				if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
+					flags |= BROWSER_WINDOW_GO_FLAG_TAB;
+				}
+				error = browser_window_create(flags,
+							      url,
+							      NULL,
+							      msg_data->data.bw,
+							      &msg_data->data.bw);
+				nsurl_unref(url);
 			}
+			if (error != NSERROR_OK) {
+				warn_user(messages_get_errorcode(error), 0);
+			}
+
 			return NODE_CALLBACK_HANDLED;
 		}
 		break;
+
 	case NODE_ELEMENT_EDIT_FINISHING:
 
 		text = msg_data->data.text;
 
 		if (msg_data->flag == TREE_ELEMENT_URL) {
 			size_t len;
-			error = nsurl_create(text, &nsurl);
+			error = nsurl_create(text, &url);
 			if (error != NSERROR_OK) {
 				warn_user("NoMemory", 0);
 				return NODE_CALLBACK_REJECT;
 			}
-			error = nsurl_get(nsurl, NSURL_WITH_FRAGMENT,
+			error = nsurl_get(url, NSURL_WITH_FRAGMENT,
 					&norm_text, &len);
 			if (error != NSERROR_OK) {
 				warn_user("NoMemory", 0);
@@ -424,20 +440,20 @@ node_callback_resp tree_url_node_callback(void *user_data,
 
 			msg_data->data.text = norm_text;
 
-			data = urldb_get_url_data(nsurl);
+			data = urldb_get_url_data(url);
 			if (data == NULL) {
-				urldb_add_url(nsurl);
-				urldb_set_url_persistence(nsurl, true);
-				data = urldb_get_url_data(nsurl);
+				urldb_add_url(url);
+				urldb_set_url_persistence(url, true);
+				data = urldb_get_url_data(url);
 				if (data == NULL) {
-					nsurl_unref(nsurl);
+					nsurl_unref(url);
 					return NODE_CALLBACK_REJECT;
 				}
 			}
 			tree = user_data;
 			tree_update_URL_node(tree, msg_data->node,
-					     nsurl, NULL);
-			nsurl_unref(nsurl);
+					     url, NULL);
+			nsurl_unref(url);
 		}
 		else if (msg_data->flag == TREE_ELEMENT_TITLE) {
 			while (isspace(*text))

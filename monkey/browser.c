@@ -394,11 +394,29 @@ gui_window_save_link(struct gui_window *g, const char *url,
 static void
 monkey_window_handle_new(int argc, char **argv)
 {
-  struct browser_window *bw;
+  nsurl *url = NULL;
+  nserror error = NSERROR_OK;
+
   if (argc > 3)
     return;
-  bw = browser_window_create((argc == 3) ? argv[2] : NULL, NULL, NULL, true, false);
-  (void) bw;
+
+  if (argc == 3) {
+    error = nsurl_create(argv[2], &url);
+  }
+  if (error == NSERROR_OK) {
+    error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				  BROWSER_WINDOW_GO_FLAG_HISTORY,
+				  url,
+				  NULL,
+				  NULL,
+				  NULL);
+    if (url != NULL) {
+      nsurl_unref(url);
+    }
+  }
+  if (error != NSERROR_OK) {
+    warn_user(messages_get_errorcode(error), 0);
+  }
 }
 
 static void

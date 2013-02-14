@@ -254,11 +254,14 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	gtk_widget_show(GTK_WIDGET(wndSource));
 
 }
+
 void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 {
 	const char *source_data;
 	unsigned long source_size;
 	char *ndata = 0;
+	nsurl *url;
+	nserror error;
 
 	source_data = content_get_source_data(bw->current_content, 
 			&source_size);
@@ -298,8 +301,23 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 		warn_user(messages_get("NoMemory"), 0);
 		return;
 	}
+
 	/* Open tab */
-	browser_window_create(fileurl, bw, NULL, false, true);
+	error = nsurl_create(fileurl, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_TAB,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
+	}
 	free(fileurl);
 }
 

@@ -118,15 +118,30 @@ void ro_gui_iconbar_initialise(void)
 bool ro_gui_iconbar_click(wimp_pointer *pointer)
 {
 	int key_down = 0;
+	nsurl *url;
+	nserror error;
 
 	switch (pointer->buttons) {
 	case wimp_CLICK_SELECT:
 		if (nsoption_charp(homepage_url) != NULL) {
-			browser_window_create(nsoption_charp(homepage_url), 
-					NULL, 0, true, false);
+			error = nsurl_create(nsoption_charp(homepage_url), &url);
 		} else {
-			browser_window_create(NETSURF_HOMEPAGE,
-					NULL, 0, true, false);
+			error = nsurl_create(NETSURF_HOMEPAGE, &url);
+		}
+
+		/* create an initial browser window */
+		error = nsurl_create(addr, &url);
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					BROWSER_WINDOW_GO_FLAG_HISTORY,
+					url,
+					NULL,
+					NULL,
+					NULL);
+			nsurl_unref(url);
+		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
 		}
 		break;
 

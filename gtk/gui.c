@@ -351,8 +351,10 @@ nsurl *gui_get_resource_url(const char *path)
 static void gui_init(int argc, char** argv, char **respath)
 {
 	char buf[PATH_MAX];
-	const char *addr = NETSURF_HOMEPAGE;
 	char *resource_filename;
+	const char *addr;
+	nsurl *url;
+	nserror error;
 
 	/* check user options */
 	check_options(respath);
@@ -457,15 +459,32 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	sslcert_init(tree_content_icon_name);
 
-        if (nsoption_charp(homepage_url) != NULL) {
-                addr = nsoption_charp(homepage_url);
+	/* If there is a url specified on the command line use it */
+	if (argc > 1) {
+		addr = argv[1];
+	} else if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
 	}
 
-	if (2 <= argc)
-		addr = argv[1];
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		netsurf_main_loop();
+	}
 
-        /* Last step of initialization. Opens the main browser window. */
-	browser_window_create(addr, 0, 0, true, false);
 }
 
 
@@ -524,8 +543,6 @@ int main(int argc, char** argv)
 
 	gui_init(argc, argv, respaths);
 
-	netsurf_main_loop();
-	
 	/* Ensure all scaffoldings are destroyed before we go into exit */
 	while (scaf_list != NULL)
 		nsgtk_scaffolding_destroy(scaf_list);

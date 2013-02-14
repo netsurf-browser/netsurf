@@ -461,7 +461,12 @@ void history_go(struct browser_window *bw,
 	if (new_window) {
 		current = history->current;
 		history->current = entry;
-		browser_window_create(url, NULL, bw, false, false);
+
+		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				      url,
+				      NULL,
+				      bw,
+				      NULL);
 		history->current = current;
 	} else {
 		history->current = entry;

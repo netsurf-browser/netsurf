@@ -744,7 +744,11 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_FILE_OPEN_WINDOW:
-		browser_window_create(NULL, gw->bw, NULL, false, false);
+		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				      NULL,
+				      NULL,
+				      gw->bw,
+				      NULL);
 		break;
 
 	case IDM_FILE_CLOSE_WINDOW:

@@ -54,6 +54,7 @@ void ro_url_message_received(wimp_message *message)
 			(inetsuite_message_open_url*) &message->data;
 	os_error *error;
 	nsurl *nsurl;
+	nserror errorns;
 
 	/* If the url_message->indirect.tag is non-zero,
 	 * then the message data is contained within the message block.
@@ -111,7 +112,7 @@ void ro_url_message_received(wimp_message *message)
 		return;
 	}
 
-	nsurl_unref(nsurl);
+	free(url);
 
 	/* send ack */
 	message->your_ref = message->my_ref;
@@ -124,9 +125,18 @@ void ro_url_message_received(wimp_message *message)
 	}
 
 	/* create new browser window */
-	browser_window_create(url, 0, 0, true, false);
+	errorns = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				      BROWSER_WINDOW_GO_FLAG_HISTORY,
+				      nsurl,
+				      NULL,
+				      NULL,
+				      NULL);
 
-	free(url);
+
+	nsurl_unref(nsurl);
+	if (errorns != NSERROR_OK) {
+		warn_user(messages_get_errorcode(errorns), 0);
+	}
 }
 
 

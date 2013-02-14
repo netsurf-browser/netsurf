@@ -579,15 +579,28 @@ static void nsgtk_openfile_open(const char *filename)
 MULTIHANDLER(newwindow)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	const char *url = nsoption_charp(homepage_url);
+	const char *addr;
+	nsurl *url;
+	nserror error;
 
-	if (url != NULL)
-		url = NULL;
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
 
-	if (url == NULL)
-		url = NETSURF_HOMEPAGE;
-
-	browser_window_create(url, bw, NULL, false, false);
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 
 	return TRUE;
 }
@@ -595,25 +608,41 @@ MULTIHANDLER(newwindow)
 MULTIHANDLER(newtab)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nsurl *url;
+	nserror error;
 
-	if (nsoption_bool(new_blank)) {
-		browser_window_create(NULL, bw, NULL, false, true);
-		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
-		nsgtk_widget_override_background_color(window, 
-						       GTK_STATE_NORMAL, 
-						       0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
-	} else {
-		const char *url = nsoption_charp(homepage_url);
-
-		if (url != NULL)
-			url = NULL;
-
-		if (url == NULL)
-			url = NETSURF_HOMEPAGE;
-
-		browser_window_create(url, bw, NULL, false, true);
+	if (!nsoption_bool(new_blank)) {
+		const char *addr;
+		if (nsoption_charp(homepage_url) != NULL) {
+			addr = nsoption_charp(homepage_url);
+		} else {
+			addr = NETSURF_HOMEPAGE;
+		}
+		error = nsurl_create(addr, &url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
 	}
 
+	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				      BROWSER_WINDOW_GO_FLAG_TAB,
+				      url,
+				      NULL,
+				      bw,
+				      NULL);
+	if (url != NULL) {
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else if (nsoption_bool(new_blank)) {
+		/** @todo what the heck is this for? */
+		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
+		nsgtk_widget_override_background_color(window, 
+			GTK_STATE_NORMAL, 
+			0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
+	}
+	
 	return TRUE;
 }
 
@@ -968,11 +997,25 @@ MENUHANDLER(link_openwin)
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nsurl *url;
+	nserror error;
 
 	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
-	browser_window_create(current_menu_ctx.link_url, bw, NULL, true, false);
+	error = nsurl_create(current_menu_ctx.link_url, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} 
 
 	return TRUE;
 }
@@ -985,12 +1028,29 @@ MENUHANDLER(link_opentab)
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nsurl *url;
+	nserror error;
 
 	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
 	temp_open_background = 1;
-	browser_window_create(current_menu_ctx.link_url, bw, NULL, true, true);
+
+	error = nsurl_create(current_menu_ctx.link_url, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY |
+					      BROWSER_WINDOW_GO_FLAG_TAB,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} 
+
 	temp_open_background = -1;
 
 	return TRUE;

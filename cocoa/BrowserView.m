@@ -575,12 +575,43 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (IBAction) cmOpenURLInTab: (id) sender;
 {
-	browser_window_create( [[sender representedObject] UTF8String], browser, NULL, true, true );
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create([[sender representedObject] UTF8String], &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY |
+                                              BROWSER_WINDOW_GO_FLAG_TAB,
+					      url,
+					      NULL,
+					      browser,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 - (IBAction) cmOpenURLInWindow: (id) sender;
 {
-	browser_window_create( [[sender representedObject] UTF8String], browser, NULL, true, false );
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create([[sender representedObject] UTF8String], &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      browser,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 - (IBAction) cmDownloadURL: (id) sender;

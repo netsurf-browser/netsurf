@@ -208,10 +208,11 @@ void context_popup(struct gui_window * gw, short x, short y)
 		case POP_CTX_SAVE_LINK_AS:
 			if (ctx->ccdata.link_url != NULL) {
 				nsurl *url;
-				if (nsurl_create(ctx->ccdata.link_url, &url) != NSERROR_OK) {
-					warn_user("NoMemory", 0);
-				} else {
-					browser_window_navigate(
+				nserror error;
+
+				error = nsurl_create(ctx->ccdata.link_url, &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_navigate(
 						gw->browser->bw,
 						url,
 						hlcache_handle_get_url(gw->browser->bw->current_content),
@@ -222,6 +223,9 @@ void context_popup(struct gui_window * gw, short x, short y)
 						NULL
 						);
 						nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
 				}
 			}
 
@@ -244,12 +248,22 @@ void context_popup(struct gui_window * gw, short x, short y)
 
 		case POP_CTX_OPEN_NEW:
 			if ((ctx->flags & CNT_HREF) && ctx->ccdata.link_url) {
-				browser_window_create(
-					ctx->ccdata.link_url,
-					gw->browser->bw,
-					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content)),
-					true, false
-				);
+				nsurl *url;
+				nserror error;
+
+				error = nsurl_create(ctx->ccdata.link_url, &url);
+				if (error == NSERROR_OK) {
+					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+							BROWSER_WINDOW_GO_FLAG_HISTORY,
+							url,
+							hlcache_handle_get_url(gw->browser->bw->current_content),
+							gw->browser->bw
+						);
+					nsurl_unref(url);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
 			}
 		break;
 

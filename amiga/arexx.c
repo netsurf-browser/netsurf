@@ -257,11 +257,22 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[2])
 	{
-		browser_window_create(url, NULL, NULL, true, true);
+		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				      BROWSER_WINDOW_GO_FLAG_HISTORY |
+				      BROWSER_WINDOW_GO_FLAG_TAB,
+				      url,
+				      NULL,
+				      NULL,
+				      NULL);
 	}
 	else if(cmd->ac_ArgList[1])
 	{
-		browser_window_create(url, NULL, NULL, true, false);
+		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				      BROWSER_WINDOW_GO_FLAG_HISTORY,
+				      url,
+				      NULL,
+				      NULL,
+				      NULL);
 	}
 	else
 	{
@@ -278,7 +289,12 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		}
 		else
 		{
-			browser_window_create(url, NULL, NULL, true, false);
+			browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
 		}
 	}
 	nsurl_unref(url);

@@ -39,24 +39,74 @@
 
 - (void) newDocument: (id) sender;
 {
-	browser_window_create( nsoption_charp(homepage_url), NULL, NULL, true, false );
+	nsurl *url;
+	nserror error;
+
+        if (nsoption_charp(homepage_url) != NULL) {
+                error = nsurl_create(nsoption_charp(homepage_url), &url);
+	} else {
+                error = nsurl_create(NETSURF_HOMEPAGE, &url);
+	}
+
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 - (void) openDocument: (id) sender;
 {
+	nsurl *url;
+	nserror error;
+
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 	[openPanel setAllowsMultipleSelection: YES];
 	if ([openPanel runModalForTypes: nil] == NSOKButton) {
 		for (NSURL *url in [openPanel URLs]) {
-			browser_window_create( [[url absoluteString] UTF8String], NULL, NULL, true, false );
+                        error = nsurl_create([[url absoluteString] UTF8String], &url);
+                        if (error == NSERROR_OK) {
+                                error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+                                nsurl_unref(url);
+                        }
+                        if (error != NSERROR_OK) {
+                                warn_user(messages_get_errorcode(error), 0);
+                        }
 		}
 	}
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
-    NSString *urlAsString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-	browser_window_create( [urlAsString UTF8String], NULL, NULL, true, false );
+	nsurl *url;
+	nserror error;
+        NSString *urlAsString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
+
+	error = nsurl_create([urlAsString UTF8String], &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 - (IBAction) showSearchWindow: (id) sender;
@@ -124,9 +174,25 @@
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
 {
-    NSURL *url = [NSURL fileURLWithPath: filename];
-    browser_window_create( [[url absoluteString] UTF8String], NULL, NULL, true, false );
-    return YES;
+ 	nsurl *url;
+	nserror error;
+        NSURL *urltxt = [NSURL fileURLWithPath: filename];
+
+	error = nsurl_create([[urltxt absoluteString] UTF8String], &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+        return YES;
 }
 
 

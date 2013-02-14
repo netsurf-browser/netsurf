@@ -59,14 +59,32 @@ static nserror search_web_ico_callback(hlcache_handle *ico,
 bool search_web_new_window(struct browser_window *bw, const char *searchterm)
 {
 	char *encsearchterm;
-	char *url;
-	if (url_escape(searchterm,0, true, NULL, &encsearchterm) != 
-			URL_FUNC_OK)
+	char *urltxt;
+	nsurl *url;
+	nserror error;
+
+	if (url_escape(searchterm,0, true, NULL, &encsearchterm) != URL_FUNC_OK)
 		return false;
-	url = search_web_get_url(encsearchterm);
+
+	urltxt = search_web_get_url(encsearchterm);
 	free(encsearchterm);
-	browser_window_create(url, bw, NULL, true, true);
-	free(url);
+
+	error = nsurl_create(urltxt, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY |
+					      BROWSER_WINDOW_GO_FLAG_TAB,
+					      url,
+					      NULL,
+					      bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+	free(urltxt);
 	return true;
 }
 

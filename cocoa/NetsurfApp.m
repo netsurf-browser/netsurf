@@ -175,6 +175,9 @@ void gui_options_init_defaults(void)
 
 int main( int argc, char **argv )
 {
+	nsurl *url;
+	nserror error;
+
 	cocoa_autorelease();
 		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
@@ -193,7 +196,20 @@ int main( int argc, char **argv )
 		/* skip -psn_* and other possible options */
 		if (argv[i][0] == '-')
 			continue;
-		browser_window_create( argv[i], NULL, NULL, true, false );
+
+                error = nsurl_create(argv[i], &url);
+                if (error == NSERROR_OK) {
+                        error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+                                                      BROWSER_WINDOW_GO_FLAG_HISTORY,
+                                                      url,
+                                                      NULL,
+                                                      NULL,
+                                                      NULL);
+                        nsurl_unref(url);
+                }
+                if (error != NSERROR_OK) {
+                        warn_user(messages_get_errorcode(error), 0);
+                }
 	}
 
 	[app run];

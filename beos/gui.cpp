@@ -426,14 +426,33 @@ nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init2(int argc, char** argv)
 {
-	const char *addr = NETSURF_HOMEPAGE;
+	const char *addr;
+	nsurl *url;
+	nserror error;
 
-	if (nsoption_charp(homepage_url) != NULL)
+	if (argc > 1) {
+		addr = argv[1];
+	} else if (nsoption_charp(homepage_url) != NULL) {
 		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
 
-	if (argc > 1) addr = argv[1];
-	if (gFirstRefsReceived) addr = NULL;
-	browser_window_create(addr, 0, 0, true, false);
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
 	if (gFirstRefsReceived) {
 		// resend the refs we got before having a window to send them to
 		be_app_messenger.SendMessage(gFirstRefsReceived);

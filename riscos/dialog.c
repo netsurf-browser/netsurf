@@ -705,17 +705,35 @@ void ro_gui_dialog_update_zoom(struct gui_window *g) {
 
 
 bool ro_gui_dialog_openurl_apply(wimp_w w) {
-	const char *url;
+	const char *urltxt;
 	char *url2;
+	nsurl *url;
+	nserror error;
 
-	url = ro_gui_get_icon_string(w, ICON_OPENURL_URL);
-	url2 = strdup(url);
-	if (url2 != NULL) {
-		browser_window_create(url2, 0, 0, true, false);
-		free(url2);
-		return true;
+	urltxt = ro_gui_get_icon_string(w, ICON_OPENURL_URL);
+	url2 = strdup(urltxt); /** @todo why is this copied */
+	if (url2 == NULL) {
+		return false;
 	}
-	return false;
+
+	error = nsurl_create(url2, &url);
+	free(url2);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+				BROWSER_WINDOW_GO_FLAG_HISTORY,
+				url,
+				NULL,
+				NULL,
+				NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+		return false;
+	}
+
+	return true;
+	
 }
 
 

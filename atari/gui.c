@@ -1027,6 +1027,9 @@ static void gui_init2(int argc, char** argv)
 int main(int argc, char** argv)
 {
     char messages[PATH_MAX];
+	const char *addr;
+	nsurl *url;
+	nserror error;
 
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
@@ -1056,10 +1059,29 @@ int main(int argc, char** argv)
     graf_mouse( ARROW , NULL);
 
     LOG(("Creating initial browser window..."));
-    browser_window_create(option_homepage_url, 0, 0, true, false);
+    if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
 
-    LOG(("Entering NetSurf mainloop..."));
-    netsurf_main_loop();
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		LOG(("Entering NetSurf mainloop..."));
+		netsurf_main_loop();
+	}
 
     netsurf_exit();
     LOG(("ApplExit"));

@@ -150,7 +150,27 @@
 
 - (IBAction) newTab: (id) sender;
 {
-	browser_window_create( nsoption_charp(homepage_url), [activeBrowser browser], NULL, false, true );
+	nsurl *url;
+	nserror error;
+
+        if (nsoption_charp(homepage_url) != NULL) {
+                error = nsurl_create(nsoption_charp(homepage_url), &url);
+	} else {
+                error = nsurl_create(NETSURF_HOMEPAGE, &url);
+	}
+        if (error == NSERROR_OK) {
+                error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+                                              BROWSER_WINDOW_GO_FLAG_HISTORY |
+                                              BROWSER_WINDOW_GO_FLAG_TAB,
+                                              url,
+                                              NULL,
+                                              [activeBrowser browser],
+                                              NULL);
+                nsurl_unref(url);
+        }
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        }
 }
 
 - (IBAction) closeCurrentTab: (id) sender;

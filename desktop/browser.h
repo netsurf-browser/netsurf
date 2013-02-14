@@ -73,6 +73,8 @@ enum browser_window_nav_flags {
 	BROWSER_WINDOW_GO_FLAG_DOWNLOAD = 2,
 	/** this transaction is verifiable */
 	BROWSER_WINDOW_GO_FLAG_VERIFIABLE = 4,
+	/** open a new tab rather than a new window */
+	BROWSER_WINDOW_GO_FLAG_TAB = 8,
 };
 
 void browser_window_initialise_common(struct browser_window *bw,
@@ -81,29 +83,29 @@ void browser_window_initialise_common(struct browser_window *bw,
 /**
  * Create and open a new root browser window with the given page.
  *
- * \param  url	    URL to start fetching in the new window
- * \param  referer  The referring uri or NULL if none
- * \param  clone    The browser window to clone
- * \param history_add add to history
- * \param new_tab create a new tab
- * \return new browser window or NULL on error
+ * \param flags Flags to control operation
+ * \param url URL to start fetching in the new window or NULL for blank
+ * \param referer The referring uri or NULL if none
+ * \param clone The browser window to clone
+ * \param bw pointer to created browser window or untouched on error.
+ * \return error code
  */
-struct browser_window *browser_window_create(nsurl *url,
-					     nsurl *referer,
-					     struct browser_window *clone,
-					     bool history_add, 
-					     bool new_tab);
+nserror browser_window_create(enum browser_window_nav_flags flags,
+			      nsurl *url,
+			      nsurl *referrer,
+			      struct browser_window *clone,
+			      struct browser_window **bw);
 
 /**
  * Start fetching a page in a browser window.
  *
  * \param bw		  browser window
  * \param url		  URL to start fetching
+ * \param flags           Flags to control operation
  * \param referrer	  The referring uri or NULL if none
  * \param post_urlenc	  url encoded post data or NULL if none
  * \param post_multipart  multipart post data or NULL if none
  * \param parent	  Parent content or NULL if none
- * \param flags           Flags to control operation
  *
  * Any existing fetches in the window are aborted.
  *

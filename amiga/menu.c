@@ -700,18 +700,46 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 
 static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	struct browser_window *bw;
+	nsurl *url;
+	nserror error;
 
-	bw = browser_window_create(nsoption_charp(homepage_url), NULL, 0, true, false);
+	error = nsurl_create(nsoption_charp(homepage_url), &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	struct browser_window *bw;
 	struct gui_window_2 *gwin;
+	nsurl *url;
+	nserror error;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	bw = browser_window_create(nsoption_charp(homepage_url), gwin->bw, 0, true, true);
+
+	error = nsurl_create(nsoption_charp(homepage_url), &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY |
+					      BROWSER_WINDOW_GO_FLAG_TAB,
+					      url,
+					      NULL,
+					      gwin->bw,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -763,6 +791,8 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 	struct gui_window_2 *gwin;
 	char *temp, *temp2;
 	int sel;
+	nsurl *url;
+	nserror error;
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
@@ -795,10 +825,24 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 	free(temp2);
 
-	if(sel == 2)
-		browser_window_create("about:credits", NULL, 0, true, false);
-	else if(sel == 0)
-		browser_window_create("about:licence", NULL, 0, true, false);
+	if(sel == 2) {
+		error = nsurl_create("about:credits", &url);
+	} else if(sel == 0) {
+		error = nsurl_create("about:licence", &url);
+	}
+
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 
 	ami_reset_pointer(gwin);
 }

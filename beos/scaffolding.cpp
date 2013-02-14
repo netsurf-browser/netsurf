@@ -786,9 +786,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                 nserror error;
 
                                 error = nsurl_create(url.String(), &nsurl);
-                                if (error != NSERROR_OK) {
-                                        warn_user(messages_get_errorcode(error), 0);
-                                } else {
+                                if (error == NSERROR_OK) {
                                         if (/*message->WasDropped() &&*/ i == 0) {
                                                 browser_window_navigate(bw,
                                                                 nsurl,
@@ -799,21 +797,40 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                                                 NULL,
                                                                 NULL);
                                         } else {
-                                                browser_window_create(nsurl, NULL, bw, false, false);
+                                                error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                                nsurl,
+                                                                NULL,
+                                                                bw,
+                                                                NULL);
                                         }
                                         nsurl_unref(nsurl);
                                 }
-
-                                
+                                if (error != NSERROR_OK) {
+                                  warn_user(messages_get_errorcode(error), 0);
+                                }
 			}
 			break;
 		}
 		case B_ARGV_RECEIVED:
 		{
 			int32 i;
-			BString url;
-			for (i = 1; message->FindString("argv", i, &url) >= B_OK; i++) {
-				browser_window_create(url.String(), bw, NULL, false, false);
+			BString urltxt;
+                        nsurl *url;
+                        nserror error;
+
+			for (i = 1; message->FindString("argv", i, &urltxt) >= B_OK; i++) {
+                                error = nsurl_create(urltxt.String(), &url);
+                                if (error == NSERROR_OK) {
+                                        error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                                      url,
+                                                                      NULL,
+                                                                      bw,
+                                                                      NULL);
+                                        nsurl_unref(url);
+                                }
+                                if (error != NSERROR_OK) {
+                                        warn_user(messages_get_errorcode(error), 0);
+                                }
 			}
 			break;
 		}
@@ -1010,13 +1027,28 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_NEW_WINDOW:
 		{
 			BString text;
+                        nsurl *url;
+                        nserror error;
+
 			if (!scaffold->url_bar->LockLooper())
 				break;
 			text = scaffold->url_bar->Text();
 			scaffold->url_bar->UnlockLooper();
 
 			NSBrowserWindow::activeWindow = scaffold->window;
-			browser_window_create(text.String(), bw, NULL, false, false);
+
+                        error = nsurl_create(text.String(), &url);
+                        if (error == NSERROR_OK) {
+                                error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                              url,
+                                                              NULL,
+                                                              bw,
+                                                              NULL);
+                                nsurl_unref(url);
+                        }
+                        if (error != NSERROR_OK) {
+                                warn_user(messages_get_errorcode(error), 0);
+                        }
 			break;
 		}
 		case BROWSER_VIEW_SOURCE:

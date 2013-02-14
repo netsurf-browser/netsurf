@@ -135,12 +135,10 @@ static const char *cocoa_hotlist_path( void )
 	nserror error;
 
 	error = nsurl_create(urltxt, &url);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
+	if (error == NSERROR_OK) {
                 BrowserViewController *tab = [(NetSurfApp *)NSApp frontTab];
                 if (tab != nil) {
-                        browser_window_navigate([tab browser],
+                        error = browser_window_navigate([tab browser],
                                                 url,
                                                 NULL,
                                                 BROWSER_WINDOW_GO_FLAG_HISTORY |
@@ -149,13 +147,18 @@ static const char *cocoa_hotlist_path( void )
                                                 NULL,
                                                 NULL);
                 } else {
-                        browser_window_create( url, NULL, NULL, true, false );
+                        error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
                 }
-
                 nsurl_unref(url);
 	}
-
-	
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 - (IBAction) addBookmark: (id) sender;

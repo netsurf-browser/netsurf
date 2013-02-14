@@ -100,8 +100,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	LPWSTR *argvw;
 	char *messages;
 	nserror ret;
-	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
+	const char *addr;
+	nsurl *url;
+	nserror error;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -150,14 +151,30 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {
 		addr = argv[1];
-	} else {
+	} else if (nsoption_charp(homepage_url) != NULL) {
 		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
 	}
 
 	LOG(("calling browser_window_create"));
-	bw = browser_window_create(addr, 0, 0, true, false);
 
-	netsurf_main_loop();
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		netsurf_main_loop();
+	}
 
 	netsurf_exit();
 
