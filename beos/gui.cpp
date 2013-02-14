@@ -1071,7 +1071,7 @@ static void nsbeos_ssl_accept(beosButton *w, gpointer data)
 	beosWindow *wnd = session[3];
 	
   	urldb_set_cert_permissions(url, true);
-	browser_window_go(bw, url, 0, true);	
+	browser_window_navigate(bw, url, 0, true);	
 	
 	beos_widget_destroy(beos_WIDGET(wnd));
 	g_object_unref(G_OBJECT(x));

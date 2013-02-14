@@ -291,7 +291,23 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 	DisposeObject(dw->objects[OID_MAIN]);
 	DelObject(dw->node);
-	if(queuedl) browser_window_download(bw,dln2->node.ln_Name,NULL);
+	if(queuedl) {
+		nsurl *url;
+		if (nsurl_create(dln2->node.ln_Name, &url) != NSERROR_OK) {
+			warn_user("NoMemory", 0);
+		} else {
+			browser_window_navigate(bw,
+				url,
+				NULL,
+				BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				NULL,
+				NULL,
+				NULL);
+			nsurl_unref(url);
+		}
+	}
+
 }
 
 BOOL ami_download_window_event(struct gui_download_window *dw)

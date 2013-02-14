@@ -128,15 +128,34 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) openBookmarkURL: (id) sender;
 {
-	const char *url = [[sender representedObject] UTF8String];
-	NSParameterAssert( url != NULL );
-	
-	BrowserViewController *tab = [(NetSurfApp *)NSApp frontTab];
-	if (tab != nil) {
-		browser_window_go( [tab browser], url, NULL, true );
+	const char *urltxt = [[sender representedObject] UTF8String];
+	NSParameterAssert( urltxt != NULL );
+
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create(urltxt, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
 	} else {
-		browser_window_create( url, NULL, NULL, true, false );
+                BrowserViewController *tab = [(NetSurfApp *)NSApp frontTab];
+                if (tab != nil) {
+                        browser_window_navigate([tab browser],
+                                                url,
+                                                NULL,
+                                                BROWSER_WINDOW_GO_FLAG_HISTORY |
+                                                BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                NULL,
+                                                NULL,
+                                                NULL);
+                } else {
+                        browser_window_create( url, NULL, NULL, true, false );
+                }
+
+                nsurl_unref(url);
 	}
+
+	
 }
 
 - (IBAction) addBookmark: (id) sender;

@@ -585,7 +585,19 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (IBAction) cmDownloadURL: (id) sender;
 {
-	browser_window_download( browser, [[sender representedObject] UTF8String], NULL );
+	nsurl *url;
+
+	if (nsurl_create([[sender representedObject] UTF8String], &url) == NSERROR_OK) {
+                browser_window_navigate(browser,
+                                        url,
+                                        NULL,
+                                        BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+                                        BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                        NULL,
+                                        NULL,
+                                        NULL);
+          nsurl_unref(url);
+	}
 }
 
 - (IBAction) cmImageCopy: (id) sender;
@@ -622,17 +634,37 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
 {
-    NSPasteboard *pb = [sender draggingPasteboard];
+	nsurl *url;
+	nserror error;
 
-    NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: @"public.url", NSURLPboardType,  nil]];
+        NSPasteboard *pb = [sender draggingPasteboard];
 
-	NSString *url = nil;
-	if ([type isEqualToString: NSURLPboardType]) url = [[NSURL URLFromPasteboard: pb] absoluteString];
-	else url = [pb stringForType: type];
+        NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: @"public.url", NSURLPboardType,  nil]];
+
+	NSString *urlstr = nil;
+
+	if ([type isEqualToString: NSURLPboardType]) {
+                urlstr = [[NSURL URLFromPasteboard: pb] absoluteString];
+	} else {
+                urlstr = [pb stringForType: type];
+        }
 	
-	browser_window_go( browser, [url UTF8String], NULL, true );
+	error = nsurl_create([urlstr UTF8String], &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(browser,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 	
-    return YES;
+        return YES;
 }
 
 // MARK: -

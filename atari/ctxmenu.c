@@ -192,21 +192,37 @@ void context_popup(struct gui_window * gw, short x, short y)
 		case POP_CTX_SAVE_AS:
 			if (ctx->ccdata.object != NULL) {
 				if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ) {
-					browser_window_download(
+					browser_window_navigate(
 						gw->browser->bw,
-						nsurl_access(hlcache_handle_get_url(ctx->ccdata.object)),
-						nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
-					);
+						hlcache_handle_get_url(ctx->ccdata.object),
+						hlcache_handle_get_url(gw->browser->bw->current_content),
+						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL
+						);
 				}
 			}
 
 		case POP_CTX_SAVE_LINK_AS:
 			if (ctx->ccdata.link_url != NULL) {
-				browser_window_download(
-					gw->browser->bw,
-					ctx->ccdata.link_url,
-					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
-				);
+				nsurl *url;
+				if (nsurl_create(ctx->ccdata.link_url, &url) != NSERROR_OK) {
+					warn_user("NoMemory", 0);
+				} else {
+					browser_window_navigate(
+						gw->browser->bw,
+						url,
+						hlcache_handle_get_url(gw->browser->bw->current_content),
+						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL
+						);
+						nsurl_unref(url);
+				}
 			}
 
 		break;

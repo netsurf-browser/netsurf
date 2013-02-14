@@ -67,7 +67,23 @@
 
 - (IBAction) navigate: (id) sender;
 {
-	browser_window_go( browser, [url UTF8String], NULL, true );
+	nsurl *unsrl;
+	nserror error;
+
+	error = nsurl_create([url UTF8String], &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(browser,
+					nsurl,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 }
 
 - (void) awakeFromNib;
@@ -115,7 +131,24 @@
 
 - (IBAction) goHome: (id) sender;
 {
-	browser_window_go( browser, nsoption_charp(homepage_url), NULL, true );
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create(nsoption_charp(homepage_url), &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(browser,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
 }
 
 - (IBAction) reloadPage: (id) sender;

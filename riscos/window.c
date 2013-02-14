@@ -2763,9 +2763,24 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		}
 		break;
 	case BROWSER_LINK_DOWNLOAD:
-		if (current_menu_url != NULL)
-			browser_window_download(bw, current_menu_url,
-					nsurl_access(hlcache_handle_get_url(h)));
+		if (current_menu_url != NULL) {
+			nsurl *url;
+			nserror error;
+
+			error = nsurl_create(current_menu_url, &url);
+			if (error != NSERROR_OK) {
+				warn_user(messages_get_errorcode(error), 0);
+			} else {
+				browser_window_navigate(bw,
+					url, 
+					hlcache_handle_get_url(h), 
+					BROWSER_WINDOW_GO_FLAG_DOWNLOAD | 
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE, 
+					NULL,
+					NULL,
+					NULL);
+				nsurl_unref(url);
+			}
 		break;
 	case BROWSER_LINK_NEW_WINDOW:
 		if (current_menu_url != NULL)
@@ -3845,16 +3860,34 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
  * \param  url  url to be launched
  */
 
-void ro_gui_window_launch_url(struct gui_window *g, const char *url)
+void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 {
-	char *url2;
+	char *url2; /** @todo The risc os maintainer needs to examine why the url is copied here */
+	nsurl *url;
+	nserror error;
 
 	ro_gui_url_complete_close();
 
-	url2 = strdup(url);
+	url2 = strdup(url1);
 	if (url2 != NULL) {
+
 		gui_window_set_url(g, url2);
-		browser_window_go(g->bw, url2, 0, true);
+
+		error = nsurl_create(url2, &url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		} else {
+			browser_window_navigate(g->bw,
+				url,
+				NULL,
+				BROWSER_WINDOW_GO_FLAG_HISTORY |
+				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				NULL,
+				NULL,
+				NULL);
+			nsurl_unref(url);
+		}
+
 		free(url2);
 	}
 }
@@ -3885,7 +3918,14 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
 	}
 
 	if (nsurl_compare(current, parent, NSURL_COMPLETE) == false) {
-		browser_window_go(g->bw, nsurl_access(parent), 0, true);
+		browser_window_navigate(g->bw,
+					parent,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
 	}
 
 	nsurl_unref(current);
@@ -3902,14 +3942,32 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
 
 void ro_gui_window_action_home(struct gui_window *g)
 {
+	static const char *addr = NETSURF_HOMEPAGE;
+	nsurl *url;
+	nserror error;
+
 	if (g == NULL || g->bw == NULL)
 		return;
 
-	if ((nsoption_charp(homepage_url)) && (nsoption_charp(homepage_url)[0])) {
-		browser_window_go(g->bw, nsoption_charp(homepage_url), 0, true);
-	} else {
-		browser_window_go(g->bw, NETSURF_HOMEPAGE, 0, true);
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
 	}
+
+	error = nsurl_create(addr, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(g->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
 }
 
 

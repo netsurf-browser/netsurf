@@ -704,10 +704,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
-			browser_window_go_post(bw, nsurl_access(url), 0, 0,
-					false,
-					nsurl_access(content_get_url(c)),
-					true, true, 0);
+			browser_window_navigate(bw,
+				url,
+				content_get_url(c),
+				BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				NULL,
+				NULL,
+				NULL);
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
@@ -856,9 +860,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				gadget->form, gadget);
 		break;
 	case ACTION_GO:
-		browser_window_go(browser_window_find_target(bw, target, mouse),
-				nsurl_access(url),
-				nsurl_access(content_get_url(c)), true);
+		browser_window_navigate(browser_window_find_target(bw, target, mouse),
+					url,
+					content_get_url(c),
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
 		break;
 	case ACTION_NONE:
 		break;

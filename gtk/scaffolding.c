@@ -442,16 +442,35 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	char *url;
-	if (search_is_url(gtk_entry_get_text(GTK_ENTRY(g->url_bar)))
-			== false)
-		url = search_web_from_term(gtk_entry_get_text(GTK_ENTRY(
+	char *urltxt;
+	nsurl *url;
+	nserror error;
+
+	if (search_is_url(gtk_entry_get_text(GTK_ENTRY(g->url_bar))) == false) {
+		urltxt = search_web_from_term(gtk_entry_get_text(GTK_ENTRY(
 				g->url_bar)));
-	else
-		url = strdup(gtk_entry_get_text(GTK_ENTRY(g->url_bar)));
-	browser_window_go(bw, url, 0, true);
-	if (url != NULL)
-		free(url);
+	} else {
+		urltxt = strdup(gtk_entry_get_text(GTK_ENTRY(g->url_bar)));
+	}
+
+	if (urltxt != NULL) {
+		error = nsurl_create(urltxt, &url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		} else {
+			browser_window_navigate(bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+			nsurl_unref(url);
+		}
+		free(urltxt);
+	}
+
 	return TRUE;
 }
 
@@ -525,14 +544,34 @@ static void nsgtk_window_tabs_remove(GtkNotebook *notebook,
  */
 static void nsgtk_openfile_open(const char *filename)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(
-			current_model->top_level);
-	char url[strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1];
+	struct browser_window *bw; 
+	char *urltxt;
+	nsurl *url;
+	nserror error;
 
-	sprintf(url, FILE_SCHEME_PREFIX"%s", filename);
+	bw = nsgtk_get_browser_window(current_model->top_level);
 
-	browser_window_go(bw, url, 0, true);
+	urltxt = malloc(strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1);
 
+	if (urltxt != NULL) {
+		sprintf(urltxt, FILE_SCHEME_PREFIX"%s", filename);
+
+		error = nsurl_create(urltxt, &url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		} else {
+			browser_window_navigate(bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+			nsurl_unref(url);
+		}
+		free(urltxt);
+	}
 }
 
 /* signal handlers for menu entries */
@@ -898,6 +937,7 @@ MULTIHANDLER(quit)
 
 MENUHANDLER(savelink)
 {
+	nsurl *url;
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
@@ -905,8 +945,17 @@ MENUHANDLER(savelink)
 	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
-	browser_window_download(bw, current_menu_ctx.link_url,
-			current_menu_ctx.link_url);
+	if (nsurl_create(current_menu_ctx.link_url, &url) == NSERROR_OK) {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return TRUE;
 }
@@ -1365,14 +1414,28 @@ MULTIHANDLER(forward)
 MULTIHANDLER(home)
 {
 	static const char *addr = NETSURF_HOMEPAGE;
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nsurl *url;
+	nserror error;
 
 	if (nsoption_charp(homepage_url) != NULL) {
 		addr = nsoption_charp(homepage_url);
 	}
 
-	browser_window_go(bw, addr, 0, true);
+	error = nsurl_create(addr, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return TRUE;
 }
@@ -1472,24 +1535,68 @@ MULTIHANDLER(closetab)
 
 MULTIHANDLER(contents)
 {
-	browser_window_go(nsgtk_get_browser_window(g->top_level), 
-			  "http://www.netsurf-browser.org/documentation/", 0, true);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return TRUE;
 }
 
 MULTIHANDLER(guide)
 {
-	browser_window_go(nsgtk_get_browser_window(g->top_level), 
-			  "http://www.netsurf-browser.org/documentation/guide", 0, true);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nsurl *url;
+
+	if (nsurl_create("http://www.netsurf-browser.org/documentation/guide", &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return TRUE;
 }
 
 MULTIHANDLER(info)
 {
-	browser_window_go(nsgtk_get_browser_window(g->top_level), 
-			  "http://www.netsurf-browser.org/documentation/info", 0, true);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	nsurl *url;
+
+	if (nsurl_create("http://www.netsurf-browser.org/documentation/info", &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return TRUE;
 }

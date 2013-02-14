@@ -1443,12 +1443,21 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 {
 	char *data = NULL;
 	struct fetch_multipart_data *success;
-	nsurl *action;
+	nsurl *action_url;
 	nsurl *action_query;
+	nserror error;
 
 	assert(form != NULL);
 
 	if (form_successful_controls(form, submit_button, &success) == false) {
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	/* Decompose action */
+	if (nsurl_create(form->action, &action_url) != NSERROR_OK) {
+		free(data);
+		fetch_multipart_data_destroy(success);
 		warn_user("NoMemory", 0);
 		return;
 	}
@@ -1462,28 +1471,26 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 			return;
 		}
 
-		/* Decompose action */
-		if (nsurl_create(form->action, &action) != NSERROR_OK) {
-			free(data);
-			fetch_multipart_data_destroy(success);
-			warn_user("NoMemory", 0);
-			return;
-		}
-
 		/* Replace query segment */
-		if (nsurl_replace_query(action, data, &action_query) !=
-				NSERROR_OK) {
-			nsurl_unref(action);
+		error = nsurl_replace_query(action_url, data, &action_query); 
+		if (error != NSERROR_OK) {
+			nsurl_unref(action_query);
 			free(data);
 			fetch_multipart_data_destroy(success);
-			warn_user("NoMemory", 0);
+			warn_user(messages_get_errorcode(error), 0);
 			return;
 		}
 
 		/* Construct submit url */
-		browser_window_go(target, nsurl_access(action_query),
-				nsurl_access(page_url), true);
-		nsurl_unref(action);
+		browser_window_navigate(target,
+					action_query,
+					page_url,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+
 		nsurl_unref(action_query);
 		break;
 
@@ -1492,19 +1499,34 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		if (data == NULL) {
 			fetch_multipart_data_destroy(success);
 			warn_user("NoMemory", 0);
+			nsurl_unref(action_url);
 			return;
 		}
 
-		browser_window_go_post(target, form->action, data, 0,
-				true, nsurl_access(page_url), false, true, 0);
+		browser_window_navigate(target,
+					action_url,
+					page_url,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					data,
+					NULL,
+					NULL);
 		break;
 
 	case method_POST_MULTIPART:
-		browser_window_go_post(target, form->action, 0, success,
-				true, nsurl_access(page_url), false, true, 0);
+		browser_window_navigate(target, 
+					action_url, 
+					page_url,
+					BROWSER_WINDOW_GO_FLAG_HISTORY | 
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL, 
+					success, 
+					NULL);
+
 		break;
 	}
 
+	nsurl_unref(action_url);
 	fetch_multipart_data_destroy(success);
 	free(data);
 }

@@ -1633,8 +1633,23 @@ void ami_handle_msg(void)
 							{
 								storage = (ULONG)search_web_from_term((char *)storage);
 							}
+							{
+								nsurl *url;
 
-							browser_window_go(gwin->bw,(char *)storage, NULL, true);
+								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
+									warn_user("NoMemory", 0);
+								} else {
+									browser_window_navigate(gwin->bw,
+											url,
+											NULL,
+											BROWSER_WINDOW_GO_FLAG_HISTORY |
+											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											NULL,
+											NULL,
+											NULL);
+									nsurl_unref(url);
+								}
+							}
 						break;
 
 						case GID_TOOLBARLAYOUT:
@@ -1647,12 +1662,43 @@ void ami_handle_msg(void)
 								(Object *)gwin->objects[GID_SEARCHSTRING],
 								(ULONG *)&storage);
 							storage = (ULONG)search_web_from_term((char *)storage);
+							{
+								nsurl *url;
 
-							browser_window_go(gwin->bw,(char *)storage, NULL, true);
+								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
+									warn_user("NoMemory", 0);
+								} else {
+									browser_window_navigate(gwin->bw,
+											url,
+											NULL,
+											BROWSER_WINDOW_GO_FLAG_HISTORY |
+											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											NULL,
+											NULL,
+											NULL);
+									nsurl_unref(url);
+								}
+							}
 						break;
 
 						case GID_HOME:
-							browser_window_go(gwin->bw,nsoption_charp(homepage_url),NULL,true);	
+							{
+								nsurl *url;
+
+								if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+									warn_user("NoMemory", 0);
+								} else {
+									browser_window_navigate(gwin->bw,
+											url,
+											NULL,
+											BROWSER_WINDOW_GO_FLAG_HISTORY |
+											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											NULL,
+											NULL,
+											NULL);
+									nsurl_unref(url);
+								}
+							}
 						break;
 
 						case GID_STOP:
@@ -2070,16 +2116,32 @@ void ami_handle_appmsg(void)
 						if(ami_mouse_to_ns_coords(gwin, &x, &y,
 							appmsg->am_MouseX, appmsg->am_MouseY) == false)
 						{
+							nsurl *url;
 							urlfilename = path_to_url(filename);
 
-							if(i == 0)
-							{
-								browser_window_go(gwin->bw, urlfilename, NULL, true);
-								ActivateWindow(gwin->win);
+							if (nsurl_create(urlfilename, &url) != NSERROR_OK) {
+								warn_user("NoMemory", 0);
 							}
 							else
 							{
-								browser_window_create(urlfilename, gwin->bw, 0, true, true);
+								if(i == 0)
+								{
+									browser_window_navigate(gwin->bw,
+										url,
+										NULL,
+										BROWSER_WINDOW_GO_FLAG_HISTORY |
+										BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+										NULL,
+										NULL,
+										NULL);
+
+									ActivateWindow(gwin->win);
+								}
+								else
+								{
+									browser_window_create(url, NULL, gwin->bw, true, true);
+								}
+								nsurl_unref(url);
 							}
 
 							free(urlfilename);
@@ -2088,16 +2150,33 @@ void ami_handle_appmsg(void)
 						{
 							if(browser_window_drop_file_at_point(gwin->bw, x, y, filename) == false)
 							{
+								nsurl *url;
 								urlfilename = path_to_url(filename);
 
-								if(i == 0)
-								{
-									browser_window_go(gwin->bw, urlfilename, NULL, true);
-									ActivateWindow(gwin->win);
+								if (nsurl_create(urlfilename, &url) != NSERROR_OK) {
+									warn_user("NoMemory", 0);
 								}
 								else
 								{
-									browser_window_create(urlfilename, gwin->bw, 0, true, true);
+
+									if(i == 0)
+									{
+										browser_window_navigate(gwin->bw,
+											url,
+											NULL,
+											BROWSER_WINDOW_GO_FLAG_HISTORY |
+											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											NULL,
+											NULL,
+											NULL);
+
+										ActivateWindow(gwin->win);
+									}
+									else
+									{
+										browser_window_create(url, NULL, gwin->bw, true, true);
+									}
+									nsurl_unref(url);
 								}
 								free(urlfilename);
 							}
@@ -4519,7 +4598,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	struct IntuiWheelData *wheel;
 	Object *reqrefresh = NULL;
 	struct Node *node = NULL;
-	char *url;
+	char *urltxt;
+	nsurl *url;
 
 	switch(msg->Class)
 	{
@@ -4539,12 +4619,29 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				
 				case GID_HOTLIST:
 					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
-						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
-						
-						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
-							browser_window_create(url, gwin->bw, NULL, false, true);
+						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&urltxt, TAG_DONE);
+
+						if (nsurl_create(urltxt, &url) != NSERROR_OK) {
+							warn_user("NoMemory", 0);
 						} else {
-							browser_window_go(gwin->bw, url, NULL, true);
+							if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
+								browser_window_create(url,
+													  NULL,
+													  gwin->bw,
+													  false,
+													  true);
+							} else {
+								browser_window_navigate(gwin->bw,
+									url,
+									NULL,
+									BROWSER_WINDOW_GO_FLAG_HISTORY |
+									BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+									NULL,
+									NULL,
+									NULL);
+
+							}
+							nsurl_unref(url);
 						}
 					}
 				break;

@@ -59,7 +59,14 @@ operation assign %{
 	bw = jsapi_get_browser_window(cx);
 	if (bw != NULL) {
 		nsurl_join(private->url, url, &joined);
-		browser_window_go(bw, nsurl_access(joined), NULL, true);
+		browser_window_navigate(bw,
+					joined,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
 		nsurl_unref(joined);
 	} else {
 		JSLOG("failed to get browser context");
@@ -74,7 +81,13 @@ operation replace %{
 	bw = jsapi_get_browser_window(cx);
 	if (bw != NULL) {
 		nsurl_join(private->url, url, &joined);
-		browser_window_go(bw, nsurl_access(joined), NULL, false);
+		browser_window_navigate(bw,
+					joined,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
 		nsurl_unref(joined);
 	} else {
 		JSLOG("failed to get browser context");
@@ -113,7 +126,14 @@ setter href %{
 
 			nsurl_join(private->url, url, &joined);
 
-			browser_window_go(bw, nsurl_access(joined), NULL, false);
+			browser_window_navigate(bw,
+						joined,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+
 			nsurl_unref(joined);
 		} else {
 			JSLOG("failed to convert string value");

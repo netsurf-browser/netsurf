@@ -423,40 +423,52 @@ bool history_forward_available(struct history *history)
 
 
 /* Documented in history_core.h */
-void history_go(struct browser_window *bw, struct history *history,
-		struct history_entry *entry, bool new_window)
+void history_go(struct browser_window *bw, 
+		struct history *history,
+		struct history_entry *entry, 
+		bool new_window)
 {
-	char *url;
+	char *full_url;
+	nsurl *url;
 	struct history_entry *current;
+	nserror error;
 
 //	LOG(("%p %p %p", bw, history, entry));
 //	LOG(("%s %s %s",
 //		entry->page.url, entry->page.title, entry->page.frag_id));
 
 	if (entry->page.frag_id) {
-		url = malloc(strlen(entry->page.url) +
+		full_url = malloc(strlen(entry->page.url) +
 				strlen(entry->page.frag_id) + 5);
-		if (!url) {
+		if (full_url == NULL) {
 			warn_user("NoMemory", 0);
 			return;
 		}
-		sprintf(url, "%s#%s", entry->page.url, entry->page.frag_id);
+		sprintf(full_url, "%s#%s", entry->page.url, entry->page.frag_id);
+
+		error = nsurl_create(full_url, &url);
+		free(full_url);
+	} else {
+		error = nsurl_create(entry->page.url, &url);
 	}
-	else
-		url = entry->page.url;
+
+
+	if (error != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 
 	if (new_window) {
 		current = history->current;
 		history->current = entry;
-		browser_window_create(url, bw, 0, false, false);
+		browser_window_create(url, NULL, bw, false, false);
 		history->current = current;
 	} else {
 		history->current = entry;
-		browser_window_go(bw, url, 0, false);
+		browser_window_navigate(bw, url, NULL, BROWSER_WINDOW_GO_FLAG_VERIFIABLE, NULL, NULL, NULL);
 	}
 
-	if (entry->page.frag_id)
-		free(url);
+	nsurl_unref(url);
 }
 
 

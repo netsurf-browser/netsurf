@@ -431,9 +431,32 @@ monkey_window_handle_go(int argc, char **argv)
   if (gw == NULL) {
     fprintf(stdout, "ERROR WINDOW NUM BAD\n");
   } else {
-    browser_window_go(gw->bw, argv[3], (argc == 5) ? argv[4] : NULL, true);
-  }
+    nsurl *url;
+    nsurl *ref_url = NULL;
+    nserror error;
 
+    error = nsurl_create(argv[3], &url);
+    if (error != NSERROR_OK) {
+      warn_user(messages_get_errorcode(error), 0);
+    } else {
+      if (argc == 5) {
+	error = nsurl_create(argv[4], &ref_url);
+      }
+
+      browser_window_navigate(gw->bw,
+			      url,
+			      ref_url,
+			      BROWSER_WINDOW_GO_FLAG_HISTORY |
+			      BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+			      NULL,
+			      NULL,
+			      NULL);
+      nsurl_unref(url);
+      if (ref_url != NULL) {
+	nsurl_unref(ref_url);
+      }
+    }
+  }
 }
 
 static void

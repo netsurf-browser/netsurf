@@ -65,7 +65,9 @@ typedef enum {
 
 	NSERROR_CSS_BASE,               /**< CSS base sheet failed */
 
-	NSERROR_BAD_URL			/**< Bad URL */
+	NSERROR_BAD_URL,		/**< Bad URL */
+
+	NSERROR_FRAME_DEPTH             /**< Exceeded frame depth */
 } nserror;
 
 #endif

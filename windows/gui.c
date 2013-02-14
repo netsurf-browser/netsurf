@@ -114,15 +114,28 @@ void gui_poll(bool active)
 
 
 bool
-nsws_window_go(HWND hwnd, const char *url)
+nsws_window_go(HWND hwnd, const char *urltxt)
 {
-	struct gui_window * gw;
+	struct gui_window *gw;
+	nsurl *url;
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL)
 		return false;
 
-	browser_window_go(gw->bw, url, 0, true);
+	if (nsurl_create(urltxt, &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(gw->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 
 	return true;
 }
@@ -833,8 +846,24 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_HOME:
-		browser_window_go(gw->bw, nsoption_charp(homepage_url), 0, true);
+	{
+		nsurl *url;
+
+		if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+			warn_user("NoMemory", 0);
+		} else {
+			browser_window_navigate(gw->bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+			nsurl_unref(url);
+		}
 		break;
+	}
 
 	case IDM_NAV_STOP:
 		browser_window_stop(gw->bw);
@@ -979,13 +1008,30 @@ nsws_window_command(HWND hwnd,
 
 	case IDC_MAIN_LAUNCH_URL:
 	{
+		nsurl *url;
+
 		if (GetFocus() != gw->urlbar)
 			break;
+
 		int len = SendMessage(gw->urlbar, WM_GETTEXTLENGTH, 0, 0);
 		char addr[len + 1];
 		SendMessage(gw->urlbar, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)addr);
 		LOG(("launching %s\n", addr));
-		browser_window_go(gw->bw, addr, 0, true);
+
+		if (nsurl_create(addr, &url) != NSERROR_OK) {
+			warn_user("NoMemory", 0);
+		} else {
+			browser_window_navigate(gw->bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+			nsurl_unref(url);
+		}
+
 		break;
 	}
 

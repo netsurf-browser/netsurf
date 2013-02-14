@@ -705,10 +705,25 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 		}
 	}
 	else if (ik == KEY_CR || ik == KEY_NL) {
+		nsurl *url;
 		char tmp_url[PATH_MAX];
 		if ( textarea_get_text( tb->url.textarea, tmp_url, PATH_MAX) > 0 ) {
 			window_set_focus(tb->owner, BROWSER, gw->browser);
-			browser_window_go(gw->browser->bw, (const char*)&tmp_url, 0, true);
+
+			if (nsurl_create((const char*)&tmp_url, &url) != NSERROR_OK) {
+				warn_user("NoMemory", 0);
+			} else {
+				browser_window_navigate(gw->browser->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+				nsurl_unref(url);
+			}
+
 			ret = true;
 		}
 	}
@@ -939,14 +954,28 @@ void toolbar_forward_click(struct s_toolbar *tb)
 
 void toolbar_home_click(struct s_toolbar *tb)
 {
-    struct browser_window * bw;
-    struct gui_window * gw;
+	struct browser_window * bw;
+	struct gui_window * gw;
+	nsurl *url;
 
-    gw = window_get_active_gui_window(tb->owner);
-    assert(gw != NULL);
-    bw = gw->browser->bw;
-    assert(bw != NULL);
-	browser_window_go(bw, option_homepage_url, 0, true);
+	gw = window_get_active_gui_window(tb->owner);
+	assert(gw != NULL);
+	bw = gw->browser->bw;
+	assert(bw != NULL);
+
+	if (nsurl_create(nsoption_charp(option_homepage_url), &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+			nsurl_unref(url);
+	}
 }
 
 

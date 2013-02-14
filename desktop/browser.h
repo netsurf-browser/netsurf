@@ -60,30 +60,69 @@ typedef enum {
 	DRAGGING_OTHER
 } browser_drag_type;
 
-
 extern bool browser_reformat_pending;
 
-struct browser_window * browser_window_create(const char *url,
-		struct browser_window *clone, const char *referrer,
-		bool history_add, bool new_tab);
+/** flags to browser window go */
+enum browser_window_nav_flags {
+	BROWSER_WINDOW_GO_FLAG_NONE = 0,
+	/** The page is added to the window history, this should
+	 * be used when returning to a page in the window history.
+	 */
+	BROWSER_WINDOW_GO_FLAG_HISTORY = 1,
+	/** download rather than render the uri */
+	BROWSER_WINDOW_GO_FLAG_DOWNLOAD = 2,
+	/** this transaction is verifiable */
+	BROWSER_WINDOW_GO_FLAG_VERIFIABLE = 4,
+};
+
 void browser_window_initialise_common(struct browser_window *bw,
 		struct browser_window *clone);
-void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referrer, bool history_add);
-void browser_window_go_post(struct browser_window *bw,
-		const char *url, char *post_urlenc,
-		struct fetch_multipart_data *post_multipart,
-		bool add_to_history, const char *referer, bool download,
-		bool verifiable, struct hlcache_handle *parent);
-void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referrer, bool history_add,
-		struct hlcache_handle *parent);
+
+/**
+ * Create and open a new root browser window with the given page.
+ *
+ * \param  url	    URL to start fetching in the new window
+ * \param  referer  The referring uri or NULL if none
+ * \param  clone    The browser window to clone
+ * \param history_add add to history
+ * \param new_tab create a new tab
+ * \return new browser window or NULL on error
+ */
+struct browser_window *browser_window_create(nsurl *url,
+					     nsurl *referer,
+					     struct browser_window *clone,
+					     bool history_add, 
+					     bool new_tab);
+
+/**
+ * Start fetching a page in a browser window.
+ *
+ * \param bw		  browser window
+ * \param url		  URL to start fetching
+ * \param referrer	  The referring uri or NULL if none
+ * \param post_urlenc	  url encoded post data or NULL if none
+ * \param post_multipart  multipart post data or NULL if none
+ * \param parent	  Parent content or NULL if none
+ * \param flags           Flags to control operation
+ *
+ * Any existing fetches in the window are aborted.
+ *
+ * If post_urlenc and post_multipart are NULL the url is fetched using
+ * GET rather than POST.
+ *
+ */
+nserror browser_window_navigate(struct browser_window *bw,
+			     nsurl *url,
+			     nsurl *referrer,
+			     enum browser_window_nav_flags flags,
+			     char *post_urlenc,
+			     struct fetch_multipart_data *post_multipart,
+			     hlcache_handle *parent);
+
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
 void browser_window_set_dimensions(struct browser_window *bw,
 		int width, int height);
-void browser_window_download(struct browser_window *bw,
-		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 void browser_window_update_box(struct browser_window *bw, struct rect *rect);
 void browser_window_stop(struct browser_window *bw);

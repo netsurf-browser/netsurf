@@ -1495,10 +1495,12 @@ void ro_msg_dataload(wimp_message *message)
 {
 	int file_type = message->data.data_xfer.file_type;
 	int tree_file_type = file_type;
-	char *url = 0;
+	char *urltxt = NULL;
 	char *title = NULL;
 	struct gui_window *g;
 	os_error *error;
+	nsurl *url;
+	nserror nserror;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
@@ -1513,16 +1515,16 @@ void ro_msg_dataload(wimp_message *message)
 
 	switch (file_type) {
 		case FILETYPE_ACORN_URI:
-			url = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
+			urltxt = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
 					&title);
 			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_ANT_URL:
-			url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+			urltxt = ro_gui_url_file_parse(message->data.data_xfer.file_name);
 			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_IEURL:
-			url = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
+			urltxt = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
 			tree_file_type = 0xfaf;
 			break;
 
@@ -1541,26 +1543,46 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_ARTWORKS:
 		case FILETYPE_SVG:
 			/* display the actual file */
-			url = path_to_url(message->data.data_xfer.file_name);
+			urltxt = path_to_url(message->data.data_xfer.file_name);
 			break;
 
 		default:
 			return;
 	}
 
-	if (!url)
+	if (!urltxt)
 		/* error has already been reported by one of the
 		 * functions called above */
 		return;
 
-	if (g) {
-		browser_window_go(g->bw, url, 0, true);
-//	} else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
-//		/* Drop URL into hotlist */
-//		ro_gui_hotlist_url_drop(message, url);
+
+	nserror = nsurl_create(urltxt, &url);
+	if (nserror != NSERROR_OK) {
+		warn_user(messages_get_errorcode(nserror), 0);
 	} else {
-		browser_window_create(url, 0, 0, true, false);
+		if (g) {
+			browser_window_navigate(g->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+
+#if DROPURLHOTLIST /** @todo This was commented out should it be removed? */
+		} else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
+			/* Drop URL into hotlist */
+			ro_gui_hotlist_url_drop(message, urltxt);
+#endif
+
+		} else {
+			browser_window_create(url, NULL, NULL, true, false);
+		}
+
+		nsurl_unref(url);
 	}
+
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -1573,7 +1595,7 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 	}
 
-	free(url);
+	free(urltxt);
 }
 
 

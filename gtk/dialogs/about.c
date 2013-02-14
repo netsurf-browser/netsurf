@@ -28,7 +28,22 @@ static void
 nsgtk_about_dialog_credits(GtkWidget *button, gpointer data)
 {
 	struct browser_window *bw = data;
-	browser_window_go(bw, "about:credits", 0, true);
+	nsurl *url;
+
+	if (nsurl_create("about:credits", &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
 	gtk_widget_destroy(gtk_widget_get_toplevel(button));
 }
 
@@ -36,7 +51,22 @@ static void
 nsgtk_about_dialog_licence(GtkWidget *button, gpointer data)
 {
 	struct browser_window *bw = data;
-	browser_window_go(bw, "about:licence", 0, true);
+	nsurl *url;
+
+	if (nsurl_create("about:licence", &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
 	gtk_widget_destroy(gtk_widget_get_toplevel(button));
 }
 

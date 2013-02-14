@@ -709,17 +709,22 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 
 		/** \todo The interaction of components here is hideous */
 		/* Do NOT make any attempt to use any of the global url
-		 * completion variables after this call to browser_window_go.
+		 * completion variables after this call to browser_window_navigate.
 		 * They will be invalidated by (at least):
 		 *   + gui_window_set_url
 		 *   + destruction of (i)frames within the current page
 		 * Any attempt to use them will probably result in a crash.
 		 */
 
-		 browser_window_go(g->bw,
-				nsurl_access(url_complete_matches[
-					url_complete_matches_selection]),
-				0, true);
+		browser_window_navigate(g->bw,
+			url_complete_matches[url_complete_matches_selection],
+			NULL,
+			BROWSER_WINDOW_GO_FLAG_HISTORY |
+			BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+			NULL,
+			NULL,
+			NULL);
+
 		ro_gui_url_complete_close();
 
 	/* Adjust just sets the text */

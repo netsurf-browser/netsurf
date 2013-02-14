@@ -788,19 +788,54 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_FRAMESAVE:
 			case CMID_SAVEURL:
-				browser_window_download(gwin->bw, userdata,
-					nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)));
+			{
+				nsurl *url;
+				if (nsurl_create(userdata, &url) != NSERROR_OK) {
+					warn_user("NoMemory", 0);
+				} else {
+					browser_window_navigate(gwin->bw,
+						url,
+						hlcache_handle_get_url(gwin->bw->current_content),
+						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+					nsurl_unref(url);
+				}
+			}
 			break;
 
 			case CMID_FRAMESHOW:
 			case CMID_SHOWOBJ:
-				browser_window_go(gwin->bw, nsurl_access(hlcache_handle_get_url(userdata)),
-					nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)), true);
+				browser_window_navigate(gwin->bw,
+					hlcache_handle_get_url(userdata),
+					hlcache_handle_get_url(gwin->bw->current_content),
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+
 			break;
 
 			case CMID_URLOPEN:
-				browser_window_go(gwin->bw, userdata,
-					nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)), true);
+			{
+				nsurl *url;
+				if (nsurl_create(userdata, &url) != NSERROR_OK) {
+					warn_user("NoMemory", 0);
+				} else {
+					browser_window_navigate(gwin->bw,
+						url,
+						hlcache_handle_get_url(gwin->bw->current_content),
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+					nsurl_unref(url);
+				}
+			}
 			break;
 
 			case CMID_FRAMERELOAD:
@@ -860,7 +895,24 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			break;
 
 			case CMID_NAVHOME:
-				browser_window_go(gwin->bw, nsoption_charp(homepage_url), NULL, true);
+			{
+				nsurl *url;
+
+				if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+					warn_user("NoMemory", 0);
+				} else {
+					browser_window_navigate(gwin->bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+					nsurl_unref(url);
+				}
+
+			}
 			break;
 
 			case CMID_NAVBACK:
@@ -911,12 +963,26 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_SELSEARCH:
 			{
 				struct ami_text_selection *sel;
-				char *url;
+				char *urltxt;
+				nsurl *url;
 
 				if(sel = ami_selection_to_text(gwin))
 				{
-					url = search_web_from_term(sel->text);
-					browser_window_go(gwin->bw, url, NULL, true);
+					urltxt = search_web_from_term(sel->text);
+
+					if (nsurl_create(urltxt, &url) != NSERROR_OK) {
+						warn_user("NoMemory", 0);
+					} else {
+						browser_window_navigate(gwin->bw,
+							url,
+							NULL,
+							BROWSER_WINDOW_GO_FLAG_HISTORY |
+							BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+							NULL,
+							NULL,
+							NULL);
+						nsurl_unref(url);
+					}
 
 					FreeVec(sel);
 				}

@@ -1050,7 +1050,24 @@ static int
 fb_url_enter(void *pw, char *text)
 {
 	struct browser_window *bw = pw;
-	browser_window_go(bw, text, 0, true);
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create(text, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
 	return 0;
 }
 

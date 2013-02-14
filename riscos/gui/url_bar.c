@@ -690,19 +690,36 @@ bool ro_gui_url_bar_menu_prepare(struct url_bar *url_bar, wimp_i i,
 bool ro_gui_url_bar_menu_select(struct url_bar *url_bar, wimp_i i,
 		wimp_menu *menu, wimp_selection *selection, menu_action action)
 {
-	const char		*url;
-	struct gui_window	*g;
+	const char *urltxt;
+	struct gui_window *g;
 
 	if (url_bar == NULL || url_bar->suggest_icon != i ||
 			menu != ro_gui_url_suggest_menu)
 		return false;
 
-	url = ro_gui_url_suggest_get_selection(selection);
+	urltxt = ro_gui_url_suggest_get_selection(selection);
 	g = ro_gui_toolbar_lookup(url_bar->window);
 
-	if (url != NULL && g != NULL && g->bw != NULL) {
-		gui_window_set_url(g, url);
-		browser_window_go(g->bw, url, 0, true);
+	if (urltxt != NULL && g != NULL && g->bw != NULL) {
+		nsurl *url;
+		nserror error;
+
+		gui_window_set_url(g, urltxt);
+
+		error = nsurl_create(urltxt, &url);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		} else {
+			browser_window_navigate(g->bw,
+				url,
+				NULL,
+				BROWSER_WINDOW_GO_FLAG_HISTORY |
+				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				NULL,
+				NULL,
+				NULL);
+			nsurl_unref(url);
+		}
 	}
 
 	return true;

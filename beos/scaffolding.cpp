@@ -782,10 +782,29 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				} else
 					url << path.Path();
 
-				if (/*message->WasDropped() &&*/ i == 0)
-					browser_window_go(bw, url.String(), 0, true);
-				else
-					browser_window_create(url.String(), bw, NULL, false, false);
+                                nsurl *nsurl;
+                                nserror error;
+
+                                error = nsurl_create(url.String(), &nsurl);
+                                if (error != NSERROR_OK) {
+                                        warn_user(messages_get_errorcode(error), 0);
+                                } else {
+                                        if (/*message->WasDropped() &&*/ i == 0) {
+                                                browser_window_navigate(bw,
+                                                                nsurl,
+                                                                NULL,
+                                                                BROWSER_WINDOW_GO_FLAG_HISTORY |
+                                                                BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                                NULL,
+                                                                NULL,
+                                                                NULL);
+                                        } else {
+                                                browser_window_create(nsurl, NULL, bw, false, false);
+                                        }
+                                        nsurl_unref(nsurl);
+                                }
+
+                                
 			}
 			break;
 		}
@@ -808,7 +827,24 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			BString url;
 			if (message->FindString("be:url", &url) < B_OK)
 				break;
-			browser_window_go(bw, url.String(), 0, true);
+
+                        nsurl *nsurl;
+                        nserror error;
+
+                        error = nsurl_create(url.String(), &nsurl);
+                        if (error != NSERROR_OK) {
+                                warn_user(messages_get_errorcode(error), 0);
+                        } else {
+                                browser_window_navigate(bw,
+                                                        nsurl,
+                                                        NULL,
+                                                        BROWSER_WINDOW_GO_FLAG_HISTORY |
+                                                        BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+                                                        NULL,
+                                                        NULL,
+                                                        NULL);
+                                nsurl_unref(nsurl);
+                        }
 			break;
 		}
 		case B_COPY:
@@ -857,23 +893,58 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_NAVIGATE_HOME:
 		case 'home':
 		{
+                        nsurl *url;
+                        nserror error;
+
 			static const char *addr = NETSURF_HOMEPAGE;
 
-			if (nsoption_charp(homepage_url) != NULL)
+			if (nsoption_charp(homepage_url) != NULL) {
 				addr = nsoption_charp(homepage_url);
+                        }
 
-			browser_window_go(bw, addr, 0, true);
+                        error = nsurl_create(addr, &url);
+                        if (error != NSERROR_OK) {
+                                warn_user(messages_get_errorcode(error), 0);
+                        } else {
+                                browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+                                nsurl_unref(url);
+                        }
 			break;
 		}
 		case 'urle':
 		{
+                        nsurl *url;
+                        nserror error;
 			BString text;
+
 			if (!scaffold->url_bar->LockLooper())
 				break;
+
 			text = scaffold->url_bar->Text();
 			scaffold->scroll_view->Target()->MakeFocus();
 			scaffold->url_bar->UnlockLooper();
-			browser_window_go(bw, text.String(), 0, true);
+
+                        error = nsurl_create(text.String(), &url);
+                        if (error != NSERROR_OK) {
+                                warn_user(messages_get_errorcode(error), 0);
+                        } else {
+                                browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+                                nsurl_unref(url);
+                        }
 			break;
 		}
 		case 'urlc':
@@ -1136,7 +1207,7 @@ gboolean nsbeos_openfile_open(beosWidget *widget, gpointer data)
 
 	sprintf(url, "file://%s", filename);
 
-	browser_window_go(bw, url, 0, true);
+	browser_window_navigate(bw, url, 0, true);
 
 	g_free(filename);
 	free(url);

@@ -662,17 +662,20 @@ void browser_window_debug_dump(struct browser_window *bw, FILE *f)
 /**
  * Create and open a new root browser window with the given page.
  *
- * \param  url	    URL to start fetching in the new window (copied)
+ * \param  url	    URL to start fetching in the new window
+ * \param  referer  The referring uri or NULL if none
  * \param  clone    The browser window to clone
- * \param  referer  The referring uri (copied), or 0 if none
  * \param history_add add to history
  * \param new_tab create a new tab
  * \return new browser window or NULL on error
  */
 
-struct browser_window *browser_window_create(const char *url,
-		struct browser_window *clone,
-		const char *referer, bool history_add, bool new_tab)
+struct browser_window *
+browser_window_create(nsurl *url,
+		      nsurl *referer,
+		      struct browser_window *clone,
+		      bool history_add, 
+		      bool new_tab)
 {
 	struct browser_window *bw;
 	struct browser_window *top;
@@ -709,11 +712,15 @@ struct browser_window *browser_window_create(const char *url,
 		return NULL;
 	}
 
-	if (url) {
-		browser_window_go(bw, url, referer, history_add);
+	if (url != NULL) {
+		enum browser_window_nav_flags flags;
+		flags = BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
+		if (history_add) {
+			flags |= BROWSER_WINDOW_GO_FLAG_HISTORY;
+		}
+		browser_window_navigate(bw, url, referer, flags, NULL, NULL, NULL);
 	}
 
-	
 	return bw;
 }
 
@@ -755,92 +762,55 @@ void browser_window_initialise_common(struct browser_window *bw,
 	bw->status_miss = 0;
 }
 
-
 /**
- * Start fetching a page in a browser window.
- *
- * \param  bw	    browser window
- * \param  url	    URL to start fetching (copied)
- * \param  referer  the referring uri (copied), or 0 if none
- * \param history_add Add to history
- *
- * Any existing fetches in the window are aborted.
+ * implements the download operation of a window navigate
  */
-
-void browser_window_go(struct browser_window *bw, const char *url,
-		const char *referer, bool history_add)
+static nserror 
+browser_window_download(struct browser_window *bw,
+			nsurl *url,
+			nsurl *nsref, 
+			uint32_t fetch_flags,
+			bool fetch_is_post,
+			llcache_post_data *post)
 {
-	/* All fetches passing through here are verifiable
-	 * (i.e are the result of user action) */
-	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, true, NULL);
+	llcache_handle *l;
+	struct browser_window *root;
+	nserror error;
+
+	root = browser_window_get_root(bw);
+	assert(root != NULL);
+
+	fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
+	fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
+
+	error = llcache_handle_retrieve(url, fetch_flags, nsref, 
+					fetch_is_post ? post : NULL,
+					NULL, NULL, &l);
+	if (error == NSERROR_NO_FETCH_HANDLER) {
+		/* no internal handler for this type, call out to frontend */
+		gui_launch_url(nsurl_access(url));
+	} else if (error != NSERROR_OK) {
+		LOG(("Failed to fetch download: %d", error));
+	} else {
+		error = download_context_create(l, root->window);
+		if (error != NSERROR_OK) {
+			LOG(("Failed creating download context: %d", error));
+			llcache_handle_abort(l);
+			llcache_handle_release(l);
+		}
+	}
+
+	return error;
 }
 
-
-/**
- * Start a download of the given URL from a browser window.
- *
- * \param  bw	    browser window
- * \param  url	    URL to start downloading (copied)
- * \param  referer  the referring uri (copied), or 0 if none
- */
-
-void browser_window_download(struct browser_window *bw, const char *url,
-		const char *referer)
-{
-	browser_window_go_post(bw, url, 0, 0, false, referer,
-			true, true, NULL);
-}
-
-
-/**
- * Start fetching a page in a browser window.
- *
- * \param  bw	    browser window
- * \param  url	    URL to start fetching (copied)
- * \param  referer  the referring uri (copied), or 0 if none
- * \param history_add add to history
- * \param parent parent handle
- *
- * Any existing fetches in the window are aborted.
- */
-
-void browser_window_go_unverifiable(struct browser_window *bw,
-		const char *url, const char *referer, bool history_add,
-		hlcache_handle *parent)
-{
-	/* All fetches passing through here are unverifiable
-	 * (i.e are not the result of user action) */
-	browser_window_go_post(bw, url, 0, 0, history_add, referer,
-			false, false, parent);
-}
-
-/**
- * Start fetching a page in a browser window, POSTing form data.
- *
- * \param  bw		   browser window
- * \param  url		   URL to start fetching (copied)
- * \param  post_urlenc	   url encoded post data, or 0 if none
- * \param  post_multipart  multipart post data, or 0 if none
- * \param  add_to_history  add to window history
- * \param  referer	   the referring uri (copied), or 0 if none
- * \param  download	   download, rather than render the uri
- * \param  verifiable	   this transaction is verifiable
- * \param  parent	   Parent content, or NULL
- *
- * Any existing fetches in the window are aborted.
- *
- * If post_urlenc and post_multipart are 0 the url is fetched using GET.
- *
- * The page is not added to the window history if add_to_history is false.
- * This should be used when returning to a page in the window history.
- */
-
-void browser_window_go_post(struct browser_window *bw, const char *url,
-		char *post_urlenc,
-		struct fetch_multipart_data *post_multipart,
-		bool add_to_history, const char *referer, bool download,
-		bool verifiable, hlcache_handle *parent)
+/* exported interface documented in desktop/browser.h */
+nserror browser_window_navigate(struct browser_window *bw,
+			     nsurl *url,
+			     nsurl *referrer,
+			     enum browser_window_nav_flags flags,
+			     char *post_urlenc,
+			     struct fetch_multipart_data *post_multipart,
+			     hlcache_handle *parent)
 {
 	hlcache_handle *c;
 	int depth = 0;
@@ -851,24 +821,23 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	hlcache_child_context child;
 	nserror error;
 
-	nsurl *nsref = NULL;
-	nsurl *nsurl;
-
 	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
 	assert(url);
 
 	/* don't allow massively nested framesets */
-	for (cur = bw; cur->parent; cur = cur->parent)
+	for (cur = bw; cur->parent; cur = cur->parent) {
 		depth++;
+	}
 	if (depth > FRAME_DEPTH) {
 		LOG(("frame depth too high."));
-		return;
+		return NSERROR_FRAME_DEPTH;
 	}
 
 	/* Set up retrieval parameters */
-	if (verifiable)
+	if ((flags & BROWSER_WINDOW_GO_FLAG_VERIFIABLE) != 0) {
 		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
+	}
 
 	if (post_multipart != NULL) {
 		post.type = LLCACHE_POST_MULTIPART;
@@ -878,72 +847,46 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		post.data.urlenc = post_urlenc;
 	}
 
-	if (parent != NULL && content_get_type(parent) == CONTENT_HTML) {
+	if ((parent != NULL) && (content_get_type(parent) == CONTENT_HTML)) {
 		child.charset = html_get_encoding(parent);
 		child.quirks = content_get_quirks(parent);
 	}
 
-	error = nsurl_create(url, &nsurl);
-	if (error != NSERROR_OK) {
-		return;
-	}
+	url = nsurl_ref(url);
 
-	if (referer != NULL) {
-		error = nsurl_create(referer, &nsref);
-		if (error != NSERROR_OK) {
-			nsurl_unref(nsurl);
-			return;
-		}
+	if (referrer != NULL) {
+		referrer = nsurl_ref(referrer);
 	}
 
 	/* Get download out of the way */
-	if (download) {
-		llcache_handle *l;
-		struct browser_window *root;
-
-		root = browser_window_get_root(bw);
-		assert(root != NULL);
-
-		fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
-		fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
-
-		error = llcache_handle_retrieve(nsurl, fetch_flags, nsref, 
-				fetch_is_post ? &post : NULL,
-				NULL, NULL, &l);
-		if (error == NSERROR_NO_FETCH_HANDLER) {
-			gui_launch_url(nsurl_access(nsurl));
-		} else if (error != NSERROR_OK) {
-			LOG(("Failed to fetch download: %d", error));
-		} else {
-			error = download_context_create(l, root->window);
-			if (error != NSERROR_OK) {
-				LOG(("Failed creating download context: %d", 
-						error));
-				llcache_handle_abort(l);
-				llcache_handle_release(l);
-			}
+	if ((flags & BROWSER_WINDOW_GO_FLAG_DOWNLOAD) != 0) {
+		error = browser_window_download(bw, 
+						url, 
+						referrer, 
+						fetch_flags, 
+						fetch_is_post, 
+						&post);
+		nsurl_unref(url);
+		if (referrer != NULL) {
+			nsurl_unref(referrer);
 		}
-
-		nsurl_unref(nsurl);
-		if (nsref != NULL)
-			nsurl_unref(nsref);
-
-		return;
+		return error;
 	}
 
-	if (bw->frag_id != NULL)
+	if (bw->frag_id != NULL) {
 		lwc_string_unref(bw->frag_id);
+	}
 	bw->frag_id = NULL;
 
-	if (nsurl_has_component(nsurl, NSURL_FRAGMENT)) {
+	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
 		bool same_url = false;
 
-		bw->frag_id = nsurl_get_component(nsurl, NSURL_FRAGMENT);
+		bw->frag_id = nsurl_get_component(url, NSURL_FRAGMENT);
 
 		/* Compare new URL with existing one (ignoring fragments) */
-		if (bw->current_content != NULL && 
-				hlcache_handle_get_url(bw->current_content) != NULL) {
-			same_url = nsurl_compare(nsurl,
+		if ((bw->current_content != NULL) && 
+		    (hlcache_handle_get_url(bw->current_content) != NULL)) {
+			same_url = nsurl_compare(url,
 					hlcache_handle_get_url(bw->current_content),
 					NSURL_COMPLETE);
 		}
@@ -951,23 +894,30 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
-		if (same_url && fetch_is_post == false && 
-				nsurl_has_component(nsurl, NSURL_QUERY) ==
-						false) {
-			nsurl_unref(nsurl);
-			if (nsref != NULL)
-				nsurl_unref(nsref);
-			if (add_to_history)
-				history_add(bw->history, bw->current_content,
-						bw->frag_id == NULL ? NULL :
-						lwc_string_data(bw->frag_id));
+		if ((same_url) && 
+		    (fetch_is_post == false) && 
+		    (nsurl_has_component(url, NSURL_QUERY) == false)) {
+			nsurl_unref(url);
+
+			if (referrer != NULL) {
+				nsurl_unref(referrer);
+			}
+
+			if ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0) {
+				history_add(bw->history, 
+					    bw->current_content,
+					    bw->frag_id == NULL ? NULL :
+					    lwc_string_data(bw->frag_id));
+			}
+
 			browser_window_update(bw, false);
+
 			if (bw->current_content != NULL) {
 				browser_window_refresh_url_bar(bw,
 					hlcache_handle_get_url(bw->current_content),
 					bw->frag_id);
 			}
-			return;
+			return NSERROR_OK;
 		}
 	}
 
@@ -975,53 +925,55 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_remove_caret(bw);
 	browser_window_destroy_children(bw);
 
-	LOG(("Loading '%s'", nsurl_access(nsurl)));
+	LOG(("Loading '%s'", nsurl_access(url)));
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	bw->history_add = add_to_history;
+	if ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0) {
+		bw->history_add = true;
+	}
 
 	/* Verifiable fetches may trigger a download */
-	if (verifiable)
+	if ((flags & BROWSER_WINDOW_GO_FLAG_VERIFIABLE) != 0) {
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
+	}
 
-	error = hlcache_handle_retrieve(nsurl,
+	error = hlcache_handle_retrieve(url,
 			fetch_flags | HLCACHE_RETRIEVE_SNIFF_TYPE,
-			nsref,
+			referrer,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL,
 			CONTENT_ANY, &c);
 
 	switch (error) {
-	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
-		gui_launch_url(nsurl_access(nsurl));
-		nsurl_unref(nsurl);
-		if (nsref != NULL)
-			nsurl_unref(nsref);
-		break;
-
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
-		browser_window_refresh_url_bar(bw, nsurl, NULL);
-
-		nsurl_unref(nsurl);
-		if (nsref != NULL)
-			nsurl_unref(nsref);
+		browser_window_refresh_url_bar(bw, url, NULL);
 		break;
 
-	default: /* assume out of memory */
-		/* TODO: fix all fetcher errors being reported as OOM? */
-		nsurl_unref(nsurl);
-		if (nsref != NULL)
-			nsurl_unref(nsref);
-		browser_window_set_status(bw, messages_get("NoMemory"));
-		warn_user("NoMemory", 0);
+	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
+		/** @todo does this always try and download even unverifiable content? */
+		gui_launch_url(nsurl_access(url));
+		break;
 
+	default: /* report error to user */
+		browser_window_set_status(bw, messages_get_errorcode(error));
+		/** @todo should the caller report the error? */
+		warn_user(messages_get_errorcode(error), 0);
+		break;
+
+	}
+
+	nsurl_unref(url);
+	if (referrer != NULL) {
+		nsurl_unref(referrer);
 	}
 
 	/* Record time */
 	bw->last_action = wallclock();
+
+	return error;
 }
 
 
@@ -1658,9 +1610,10 @@ void browser_window_convert_to_download(struct browser_window *bw,
 void browser_window_refresh(void *p)
 {
 	struct browser_window *bw = p;
-	bool history_add = true;
-	const char *url;
-	const char *refresh;
+	nsurl *url;
+	nsurl *refresh;
+	hlcache_handle *parent = NULL;
+	enum browser_window_nav_flags flags = BROWSER_WINDOW_GO_FLAG_NONE;
 
 	assert(bw->current_content != NULL &&
 		(content_get_status(bw->current_content) == 
@@ -1670,16 +1623,17 @@ void browser_window_refresh(void *p)
 
 	/* Ignore if the refresh URL has gone
 	 * (may happen if a fetch error occurred) */
-	refresh = nsurl_access(content_get_refresh_url(bw->current_content));
+	refresh = content_get_refresh_url(bw->current_content);
 	if (refresh == NULL)
 		return;
 
 	/* mark this content as invalid so it gets flushed from the cache */
 	content_invalidate_reuse_data(bw->current_content);
 
-	url = nsurl_access(hlcache_handle_get_url(bw->current_content));
-	if (url != NULL && strcmp(url, refresh) == 0)
-		history_add = false;
+	url = hlcache_handle_get_url(bw->current_content);
+	if ((url == NULL) || (nsurl_compare(url, refresh, NSURL_COMPLETE))) {
+		flags |= BROWSER_WINDOW_GO_FLAG_HISTORY;
+	}
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
 	 * if it were an HTTP redirect, and thus make the resulting fetch
@@ -1689,11 +1643,19 @@ void browser_window_refresh(void *p)
 	 * all.
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		browser_window_go(bw, refresh, url, history_add);
+		flags |= BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
 	} else {
-		browser_window_go_unverifiable(bw, refresh, url, history_add, 
-				bw->current_content);
+		parent = bw->current_content;
 	}
+
+	browser_window_navigate(bw,
+				refresh,
+				url,
+				flags,
+				NULL,
+				NULL,
+				parent);
+
 }
 
 
@@ -1962,8 +1924,13 @@ void browser_window_reload(struct browser_window *bw, bool all)
 
 	content_invalidate_reuse_data(bw->current_content);
 
-	browser_window_go(bw, nsurl_access(
-			hlcache_handle_get_url(bw->current_content)), 0, false);
+	browser_window_navigate(bw,
+				hlcache_handle_get_url(bw->current_content),
+				NULL,
+				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				NULL,
+				NULL,
+				NULL);
 }
 
 
@@ -2386,7 +2353,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * OR
 		 * - button_2 opens in new tab and the link target is "_blank"
 		 */
-		bw_target = browser_window_create(NULL, bw, NULL, false, true);
+		bw_target = browser_window_create(NULL, NULL, bw, false, true);
 		if (!bw_target)
 			return bw;
 		return bw_target;
@@ -2407,7 +2374,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * - button_2 doesn't open in new tabs and the link target is
 		 *   "_blank"
 		 */
-		bw_target = browser_window_create(NULL, bw, NULL, false, false);
+		bw_target = browser_window_create(NULL, NULL, bw, false, false);
 		if (!bw_target)
 			return bw;
 		return bw_target;
@@ -2441,7 +2408,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (!nsoption_bool(target_blank))
 		return bw;
 
-	bw_target = browser_window_create(NULL, bw, NULL, false, false);
+	bw_target = browser_window_create(NULL, NULL, bw, false, false);
 	if (!bw_target)
 		return bw;
 

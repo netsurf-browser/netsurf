@@ -223,11 +223,17 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 {
 	struct dlnode *dln;
 	struct browser_window *bw = curbw;
+	nsurl *url;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[4]) && (cmd->ac_ArgList[5]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
+
+	if (nsurl_create((char *)cmd->ac_ArgList[0], &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 
 	if(cmd->ac_ArgList[3])
 	{
@@ -238,27 +244,44 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;
 		AddTail(&bw->window->dllist, (struct Node *)dln);
-		if(!bw->download) browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
+		if(!bw->download) {
+			browser_window_navigate(curbw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		}
 	}
 	else if(cmd->ac_ArgList[2])
 	{
-		browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,true);
+		browser_window_create(url, NULL, NULL, true, true);
 	}
 	else if(cmd->ac_ArgList[1])
 	{
-		browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+		browser_window_create(url, NULL, NULL, true, false);
 	}
 	else
 	{
 		if(bw)
 		{
-			browser_window_go(bw,(char *)cmd->ac_ArgList[0],NULL,true);
+			browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
 		}
 		else
 		{
-			browser_window_create((char *)cmd->ac_ArgList[0],NULL,NULL,true,false);
+			browser_window_create(url, NULL, NULL, true, false);
 		}
 	}
+	nsurl_unref(url);
 }
 
 STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -456,13 +479,28 @@ STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct browser_window *bw = curbw;
+	nsurl *url;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw) browser_window_go(bw, nsoption_charp(homepage_url), NULL, true);
+	if(bw == NULL) return;
+
+	if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 }
 
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))

@@ -80,6 +80,7 @@ static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 void ami_file_open(struct gui_window_2 *gwin)
 {
 	char *temp, *temp2;
+	nsurl *url;
 
 	if(AslRequestTags(filereq,
 			ASLFR_TitleText, messages_get("NetSurf"),
@@ -94,7 +95,21 @@ void ami_file_open(struct gui_window_2 *gwin)
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
 			temp2 = path_to_url(temp);
-			browser_window_go(gwin->bw, temp2, NULL, true);
+
+			if (nsurl_create(temp2, &url) != NSERROR_OK) {
+				warn_user("NoMemory", 0);
+			} else {
+				browser_window_navigate(gwin->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+				nsurl_unref(url);
+			}
+
 			free(temp2);
 			FreeVec(temp);
 		}

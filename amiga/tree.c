@@ -317,8 +317,24 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 		{
 			if(gwin = ami_window_at_pointer(AMINS_WINDOW))
 			{
-				browser_window_go(gwin->bw, tree_url_node_get_url(selected_node),
-					NULL, true);
+				nsurl *url;
+				nserror error;
+
+				error = nsurl_create(tree_url_node_get_url(selected_node), &url);
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				} else {
+					browser_window_navigate(gwin->bw,
+						url,
+						NULL,
+						BROWSER_WINDOW_GO_FLAG_HISTORY |
+						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						NULL,
+						NULL,
+						NULL);
+					nsurl_unref(url);
+				}
+
 			}
 			else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
 				(tw != twin) && (tw->type == AMI_TREE_HOTLIST))

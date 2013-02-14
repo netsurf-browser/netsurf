@@ -985,11 +985,28 @@ static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct In
 
 static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	char *url = hook->h_Data;
+	nsurl *url;
+	nserror error;
+	char *urltxt = hook->h_Data;
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(url) browser_window_go(gwin->bw, url, NULL, true);
+	if(urltxt == NULL) return;
+
+	error = nsurl_create(addr, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(gwin->bw,
+					url,
+					NULL,
+					BROWSER_WINDOW_GO_FLAG_HISTORY |
+					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
 }
 
 static void ami_menu_item_settings_edit(struct Hook *hook, APTR window, struct IntuiMessage *msg)
