@@ -185,7 +185,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			bool clip_changed = false;
 			bool text_visible = true;
 			int startx, endx;
-			plot_style_t *pstyle_fill_hback = plot_style_fill_white;
+			plot_style_t pstyle_fill_hback = *plot_style_fill_white;
 			plot_font_style_t fstyle_hback = plot_fstyle;
 
 			if (end_idx > utf8_len) {
@@ -221,15 +221,12 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 						&plot_fstyle))
 				return false;
 
-			/* decide whether highlighted portion is to be
-			 * white-on-black or black-on-white */
-			if ((fstyle->background & 0x808080) == 0x808080)
-				pstyle_fill_hback = plot_style_fill_black;
+			pstyle_fill_hback.fill_colour = fstyle->foreground;
 
 			/* highlighted portion */
 			if (!plot->rectangle(x + startx, y, x + endx,
 					y + height * scale,
-					pstyle_fill_hback))
+					&pstyle_fill_hback))
 				return false;
 
 			if (start_idx > 0) {
@@ -250,9 +247,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			}
 
 			fstyle_hback.background =
-				pstyle_fill_hback->fill_colour;
-			fstyle_hback.foreground =
-				pstyle_fill_hback->fill_colour ^ 0xffffff;
+				pstyle_fill_hback.fill_colour;
+			fstyle_hback.foreground = colour_to_bw_furthest(
+				pstyle_fill_hback.fill_colour);
 
 			if (text_visible &&
 				!plot->text(x, y + (int)(height * 0.75 * scale),
