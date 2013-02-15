@@ -133,6 +133,10 @@ const char *fetch_filetype(const char *unix_path)
 			strcpy(mimetype,"text/html");
 			found = TRUE;
 		}
+		if(strncmp(unix_path + strlen(unix_path) - 3, ".js", 3) == 0) {
+			strcpy(mimetype,"application/javascript");
+			found = TRUE;
+		}
 	}
 
 	if(!found) strcpy(mimetype,"text/plain"); /* If all else fails */
