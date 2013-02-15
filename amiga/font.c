@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -261,9 +261,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
-	for(i=0;i<len;i++)
-	{
-		utf8len = utf8_char_byte_length(string+utf8clen);
+	while(utf8clen <= length) {
+		utf8len = utf8_char_byte_length(string + utf8clen);
 
 		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
 			utf16charlen = 1;
@@ -294,29 +293,25 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		}
 
 		tx += tempx;
-		utf16 += utf16charlen;
-		utf8clen += utf8len;
 		
-		if(x < tx) {
-			/* If we've run out of space, and no space has been found, tell the core to split here.
-			 * This shouldn't work, but it does. Without it we randomly get non-split lines. */
-			if(coffset == 0) {
-				*actual_x = tx;
-				coffset = utf8clen;
-			}
+		if((x < tx) && (coffset != 0)) {
+			/* We've run out of space, and a space has been found, split there. */
 			break;
 		} else {
-			if((*utf16 == 0x0020) || (i == (len - 1))) {
+			if((*utf16 == 0x0020) || (utf8clen == length)) {
 				*actual_x = tx;
 				coffset = utf8clen;
 			}
 		}
+		utf16 += utf16charlen;
+		utf8clen += utf8len;
 	}
 
 	free(outf16);
 
 	if(coffset == 0) {
 		*char_offset = length;
+		*actual_x = tx;
 	} else {
 		*char_offset = coffset;
 	}
