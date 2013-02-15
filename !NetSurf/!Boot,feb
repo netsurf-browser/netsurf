@@ -29,6 +29,7 @@ Set File$Type_B60 PNG
 Set File$Type_C85 JPEG
 Set File$Type_F78 JNG
 Set File$Type_F79 CSS
+Set File$Type_F81 JSScript
 Set File$Type_F83 MNG
 Set File$Type_F91 URI
 Set File$Type_FAF HTML
