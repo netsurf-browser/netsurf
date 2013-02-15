@@ -608,6 +608,7 @@
 (p_setmimetype "webp" "image/webp")
 (p_setmimetype "lha" "application/x-lha")
 (p_setmimetype "zip" "application/x-zip")
+(p_setmimetype "js" "application/javascript")
 
 (complete 98)
 
