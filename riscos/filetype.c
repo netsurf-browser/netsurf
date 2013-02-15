@@ -46,6 +46,7 @@ static const struct type_entry type_map[] = {
 	{0xd94, "image/x-artworks"},
 	{0xf78, "image/jng"},
 	{0xf79, "text/css"},
+	{0xf81, "application/javascript"},
 	{0xf83, "image/mng"},
 	{0xfaf, "text/html"},
 	{0xff9, "image/x-riscos-sprite"},
