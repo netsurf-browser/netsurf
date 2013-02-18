@@ -37,9 +37,11 @@
 #include "riscos/global_history.h"
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
+#include "desktop/browser.h"
 #include "desktop/options.h"
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/utils.h"
 
 static bool ro_gui_iconbar_click(wimp_pointer *pointer);
@@ -202,12 +204,13 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_CONTENTS:
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-						      BROWSER_WINDOW_GO_FLAG_HISTORY,
-						      url,
-						      NULL,
-						      NULL,
-						      NULL);
+			error = browser_window_create(
+					BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
+					url,
+					NULL,
+					NULL,
+					NULL);
 			nsurl_unref(url);
 		}
 		if (error != NSERROR_OK) {

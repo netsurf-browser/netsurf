@@ -36,6 +36,7 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/utils.h"
 
 #define URLBAR_HEIGHT 52
