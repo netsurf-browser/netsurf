@@ -39,6 +39,7 @@
 #include "riscos/uri.h"
 #include "riscos/url_protocol.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 

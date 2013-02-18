@@ -2641,7 +2641,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	struct toolbar		*toolbar;
 	wimp_window_state	state;
 	nsurl *url;
-	nserror error;
+	nserror error = NSERROR_OK;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
