@@ -67,22 +67,22 @@
 
 - (IBAction) navigate: (id) sender;
 {
-	nsurl *unsrl;
+	nsurl *urlns;
 	nserror error;
 
-	error = nsurl_create([url UTF8String], &url);
+	error = nsurl_create([url UTF8String], &urlns);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
 		browser_window_navigate(browser,
-					nsurl,
+					urlns,
 					NULL,
 					BROWSER_WINDOW_HISTORY |
 					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
-		nsurl_unref(url);
+		nsurl_unref(urlns);
 	}
 }
 
@@ -131,24 +131,24 @@
 
 - (IBAction) goHome: (id) sender;
 {
-	nsurl *url;
-	nserror error;
+        nsurl *urlns;
+        nserror error;
 
-	error = nsurl_create(nsoption_charp(homepage_url), &url);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(browser,
-					url,
-					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-
+        error = nsurl_create(nsoption_charp(homepage_url), &urlns);
+        if (error == NSERROR_OK) {
+                error = browser_window_navigate(browser,
+                                                urlns,
+                                                NULL,
+                                                BROWSER_WINDOW_HISTORY |
+                                                BROWSER_WINDOW_VERIFIABLE,
+                                                NULL,
+                                                NULL,
+                                                NULL);
+                nsurl_unref(urlns);
+        }
+        if (error != NSERROR_OK) {
+                warn_user(messages_get_errorcode(error), 0);
+        }
 }
 
 - (IBAction) reloadPage: (id) sender;

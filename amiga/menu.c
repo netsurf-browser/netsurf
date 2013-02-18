@@ -1037,7 +1037,7 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 
 	if(urltxt == NULL) return;
 
-	error = nsurl_create(addr, &url);
+	error = nsurl_create(urltxt, &url);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {

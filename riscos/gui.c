@@ -781,7 +781,7 @@ static void gui_init2(int argc, char** argv)
 		nsurl *urlns;
 		nserror errorns;
 
-		errorns = nsurl_create(yrl, &urlns);
+		errorns = nsurl_create(url, &urlns);
 		if (errorns == NSERROR_OK) {
 			errorns = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 							BROWSER_WINDOW_HISTORY,

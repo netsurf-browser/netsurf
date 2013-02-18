@@ -41,22 +41,21 @@ void ro_uri_message_received(wimp_message *msg)
 	uri_h uri_handle;
 	char* uri_requested;
 	int uri_length;
-	nsurl *nsurl;
 	nsurl *url;
 	nserror error;
 
 	uri_handle = uri_message->handle;
 
-	if (nsurl_create(uri_message->uri, &nsurl) != NSERROR_OK) {
+	if (nsurl_create(uri_message->uri, &url) != NSERROR_OK) {
 		return;
 	}
 
-	if (!fetch_can_fetch(nsurl)) {
-		nsurl_unref(nsurl);
+	if (!fetch_can_fetch(url)) {
+		nsurl_unref(url);
 		return;
 	}
 
-	nsurl_unref(nsurl);
+	nsurl_unref(url);
 
 	uri_message->your_ref = uri_message->my_ref;
 	uri_message->action = message_URI_PROCESS_ACK;

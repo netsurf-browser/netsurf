@@ -257,7 +257,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 							BROWSER_WINDOW_HISTORY,
 							url,
 							hlcache_handle_get_url(gw->browser->bw->current_content),
-							gw->browser->bw
+								      gw->browser->bw,
+								      NULL
 						);
 					nsurl_unref(url);
 				}

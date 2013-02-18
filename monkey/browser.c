@@ -25,6 +25,7 @@
 #include "desktop/gui.h"
 #include "utils/ring.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 
 #include "monkey/browser.h"
 #include "monkey/plot.h"

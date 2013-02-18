@@ -4782,11 +4782,12 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 							warn_user("NoMemory", 0);
 						} else {
 							if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
-								browser_window_create(url,
-													  NULL,
-													  gwin->bw,
-													  false,
-													  true);
+								browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+										      BROWSER_WINDOW_TAB,
+										      url,
+										      NULL,
+										      gwin->bw
+										      NULL);
 							} else {
 								browser_window_navigate(gwin->bw,
 									url,

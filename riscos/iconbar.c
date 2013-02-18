@@ -130,7 +130,6 @@ bool ro_gui_iconbar_click(wimp_pointer *pointer)
 		}
 
 		/* create an initial browser window */
-		error = nsurl_create(addr, &url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 					BROWSER_WINDOW_HISTORY,
@@ -193,15 +192,29 @@ void ro_gui_iconbar_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
+	nsurl *url;
+	nserror error;
+
 	if (w != wimp_ICON_BAR || i != wimp_ICON_WINDOW)
 		return false;
 
 	switch (action) {
 	case HELP_OPEN_CONTENTS:
-		browser_window_create(
-				"http://www.netsurf-browser.org/documentation/",
-				NULL, 0, true, false);
+		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
+						      BROWSER_WINDOW_GO_FLAG_HISTORY,
+						      url,
+						      NULL,
+						      NULL,
+						      NULL);
+			nsurl_unref(url);
+		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
 		return true;
+	
 	case BROWSER_NAVIGATE_URL:
 		ro_gui_dialog_prepare_open_url();
 		ro_gui_dialog_open_persistent(NULL, dialog_openurl, true);
