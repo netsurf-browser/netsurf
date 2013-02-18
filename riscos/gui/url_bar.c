@@ -713,8 +713,8 @@ bool ro_gui_url_bar_menu_select(struct url_bar *url_bar, wimp_i i,
 			browser_window_navigate(g->bw,
 				url,
 				NULL,
-				BROWSER_WINDOW_GO_FLAG_HISTORY |
-				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				BROWSER_WINDOW_HISTORY |
+				BROWSER_WINDOW_VERIFIABLE,
 				NULL,
 				NULL,
 				NULL);

@@ -77,8 +77,8 @@
 		browser_window_navigate(browser,
 					nsurl,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -141,8 +141,8 @@
 		browser_window_navigate(browser,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

@@ -102,8 +102,8 @@ void ami_file_open(struct gui_window_2 *gwin)
 				browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

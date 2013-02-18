@@ -461,8 +461,8 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_GO_FLAG_HISTORY |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -563,8 +563,8 @@ static void nsgtk_openfile_open(const char *filename)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_GO_FLAG_HISTORY |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -591,7 +591,7 @@ MULTIHANDLER(newwindow)
 
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 					      url,
 					      NULL,
 					      bw,
@@ -624,8 +624,8 @@ MULTIHANDLER(newtab)
 		}
 	}
 
-	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				      BROWSER_WINDOW_GO_FLAG_TAB,
+	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				      BROWSER_WINDOW_TAB,
 				      url,
 				      NULL,
 				      bw,
@@ -978,8 +978,8 @@ MENUHANDLER(savelink)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_DOWNLOAD |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1005,8 +1005,8 @@ MENUHANDLER(link_openwin)
 
 	error = nsurl_create(current_menu_ctx.link_url, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      bw,
@@ -1038,9 +1038,9 @@ MENUHANDLER(link_opentab)
 
 	error = nsurl_create(current_menu_ctx.link_url, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY |
-					      BROWSER_WINDOW_GO_FLAG_TAB,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY |
+					      BROWSER_WINDOW_TAB,
 					      url,
 					      NULL,
 					      bw,
@@ -1489,8 +1489,8 @@ MULTIHANDLER(home)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1606,8 +1606,8 @@ MULTIHANDLER(contents)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1628,8 +1628,8 @@ MULTIHANDLER(guide)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1650,8 +1650,8 @@ MULTIHANDLER(info)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

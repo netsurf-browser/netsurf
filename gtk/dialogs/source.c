@@ -307,8 +307,8 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_TAB,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_TAB,
 					      url,
 					      NULL,
 					      bw,

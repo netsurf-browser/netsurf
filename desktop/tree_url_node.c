@@ -400,10 +400,10 @@ node_callback_resp tree_url_node_callback(void *user_data,
 
 			error = nsurl_create(text, &url);
 			if (error == NSERROR_OK) {
-				flags = BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY;
+				flags = BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY;
 				if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
-					flags |= BROWSER_WINDOW_GO_FLAG_TAB;
+					flags |= BROWSER_WINDOW_TAB;
 				}
 				error = browser_window_create(flags,
 							      url,

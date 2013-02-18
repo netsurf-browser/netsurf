@@ -551,8 +551,8 @@ main(int argc, char** argv)
 
 	error = nsurl_create(feurl, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -1077,8 +1077,8 @@ fb_url_enter(void *pw, char *text)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

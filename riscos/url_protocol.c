@@ -125,8 +125,8 @@ void ro_url_message_received(wimp_message *message)
 	}
 
 	/* create new browser window */
-	errorns = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				      BROWSER_WINDOW_GO_FLAG_HISTORY,
+	errorns = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				      BROWSER_WINDOW_HISTORY,
 				      nsurl,
 				      NULL,
 				      NULL,

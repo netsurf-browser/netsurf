@@ -74,8 +74,8 @@ void ro_uri_message_received(wimp_message *msg)
 	error = nsurl_create(uri_requested, &url);
 	free(uri_requested);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

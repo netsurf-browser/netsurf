@@ -248,8 +248,8 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(curbw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_DOWNLOAD |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -257,9 +257,9 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[2])
 	{
-		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				      BROWSER_WINDOW_GO_FLAG_HISTORY |
-				      BROWSER_WINDOW_GO_FLAG_TAB,
+		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				      BROWSER_WINDOW_HISTORY |
+				      BROWSER_WINDOW_TAB,
 				      url,
 				      NULL,
 				      NULL,
@@ -267,8 +267,8 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[1])
 	{
-		browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				      BROWSER_WINDOW_HISTORY,
 				      url,
 				      NULL,
 				      NULL,
@@ -281,16 +281,16 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
 		}
 		else
 		{
-			browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+			browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -510,8 +510,8 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

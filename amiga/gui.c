@@ -730,8 +730,8 @@ static void gui_init2(int argc, char** argv)
 				{
 					error = nsurl_create(temp_homepage_url, &url);
 					if (error == NSERROR_OK) {
-						error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-								BROWSER_WINDOW_GO_FLAG_HISTORY,
+						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+								BROWSER_WINDOW_HISTORY,
 								url,
 								NULL,
 								NULL,
@@ -783,8 +783,8 @@ static void gui_init2(int argc, char** argv)
 					if (error == NSERROR_OK) {
 						if(!first)
 						{
-							error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-										      BROWSER_WINDOW_GO_FLAG_HISTORY,
+							error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+										      BROWSER_WINDOW_HISTORY,
 										      url,
 										      NULL,
 										      NULL,
@@ -794,8 +794,8 @@ static void gui_init2(int argc, char** argv)
 						}
 						else
 						{
-							error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-										      BROWSER_WINDOW_GO_FLAG_HISTORY,
+							error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+										      BROWSER_WINDOW_HISTORY,
 										      url,
 										      NULL,
 										      bw,
@@ -881,8 +881,8 @@ static void gui_init2(int argc, char** argv)
 	if(!bw && (nsoption_bool(startup_no_window) == false)) {
 		error = nsurl_create(nsoption_charp(homepage_url), &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-						      BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+						      BROWSER_WINDOW_HISTORY,
 						      url,
 						      NULL,
 						      NULL,
@@ -1678,9 +1678,9 @@ void ami_handle_msg(void)
 
 							error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 							if (error == NSERROR_OK) {
-								error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-											      BROWSER_WINDOW_GO_FLAG_HISTORY |
-											      BROWSER_WINDOW_GO_FLAG_TAB,
+								error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+											      BROWSER_WINDOW_HISTORY |
+											      BROWSER_WINDOW_TAB,
 											      urlns,
 											      NULL,
 											      gwin->bw,
@@ -1710,8 +1710,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_GO_FLAG_HISTORY |
-											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											BROWSER_WINDOW_HISTORY |
+											BROWSER_WINDOW_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1739,8 +1739,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_GO_FLAG_HISTORY |
-											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											BROWSER_WINDOW_HISTORY |
+											BROWSER_WINDOW_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1759,8 +1759,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_GO_FLAG_HISTORY |
-											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											BROWSER_WINDOW_HISTORY |
+											BROWSER_WINDOW_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1830,8 +1830,8 @@ void ami_handle_msg(void)
 
 									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 									if (error == NSERROR_OK) {
-										error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-													      BROWSER_WINDOW_GO_FLAG_HISTORY,
+										error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+													      BROWSER_WINDOW_HISTORY,
 													      urlns,
 													      NULL,
 													      gwin->bw,
@@ -1852,8 +1852,8 @@ void ami_handle_msg(void)
 
 									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 									if (error == NSERROR_OK) {
-										error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-													      BROWSER_WINDOW_GO_FLAG_HISTORY,
+										error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+													      BROWSER_WINDOW_HISTORY,
 													      urlns,
 													      NULL,
 													      gwin->bw,
@@ -2229,8 +2229,8 @@ void ami_handle_appmsg(void)
 									browser_window_navigate(gwin->bw,
 										url,
 										NULL,
-										BROWSER_WINDOW_GO_FLAG_HISTORY |
-										BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+										BROWSER_WINDOW_HISTORY |
+										BROWSER_WINDOW_VERIFIABLE,
 										NULL,
 										NULL,
 										NULL);
@@ -2239,9 +2239,9 @@ void ami_handle_appmsg(void)
 								}
 								else
 								{
-									browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-											      BROWSER_WINDOW_GO_FLAG_HISTORY |
-											      BROWSER_WINDOW_GO_FLAG_TAB,
+									browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+											      BROWSER_WINDOW_HISTORY |
+											      BROWSER_WINDOW_TAB,
 											      url,
 											      NULL,
 											      gwin->bw,
@@ -2270,8 +2270,8 @@ void ami_handle_appmsg(void)
 										browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_GO_FLAG_HISTORY |
-											BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+											BROWSER_WINDOW_HISTORY |
+											BROWSER_WINDOW_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -2280,9 +2280,9 @@ void ami_handle_appmsg(void)
 									}
 									else
 									{
-										browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-												      BROWSER_WINDOW_GO_FLAG_HISTORY |
-												      BROWSER_WINDOW_GO_FLAG_TAB,
+										browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+												      BROWSER_WINDOW_HISTORY |
+												      BROWSER_WINDOW_TAB,
 												      url,
 												      NULL,
 												      gwin->bw,
@@ -2324,8 +2324,8 @@ void ami_handle_applib(void)
 
 				error = nsurl_create(nsoption_charp(homepage_url), &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+								      BROWSER_WINDOW_HISTORY,
 								      url,
 								      NULL,
 								      NULL,
@@ -2348,8 +2348,8 @@ void ami_handle_applib(void)
 
 				error = nsurl_create(tempurl, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+								      BROWSER_WINDOW_HISTORY,
 								      url,
 								      NULL,
 								      NULL,
@@ -2374,8 +2374,8 @@ void ami_handle_applib(void)
 				{
 					error = nsurl_create(nsoption_charp(homepage_url), &url);
 					if (error == NSERROR_OK) {
-						error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-									      BROWSER_WINDOW_GO_FLAG_HISTORY,
+						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+									      BROWSER_WINDOW_HISTORY,
 									      url,
 									      NULL,
 									      NULL,
@@ -4791,8 +4791,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 								browser_window_navigate(gwin->bw,
 									url,
 									NULL,
-									BROWSER_WINDOW_GO_FLAG_HISTORY |
-									BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+									BROWSER_WINDOW_HISTORY |
+									BROWSER_WINDOW_VERIFIABLE,
 									NULL,
 									NULL,
 									NULL);

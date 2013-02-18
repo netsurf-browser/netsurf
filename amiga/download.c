@@ -299,8 +299,8 @@ void gui_download_window_done(struct gui_download_window *dw)
 			browser_window_navigate(bw,
 				url,
 				NULL,
-				BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				BROWSER_WINDOW_DOWNLOAD |
+				BROWSER_WINDOW_VERIFIABLE,
 				NULL,
 				NULL,
 				NULL);

@@ -404,8 +404,8 @@ monkey_window_handle_new(int argc, char **argv)
     error = nsurl_create(argv[2], &url);
   }
   if (error == NSERROR_OK) {
-    error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				  BROWSER_WINDOW_GO_FLAG_HISTORY,
+    error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				  BROWSER_WINDOW_HISTORY,
 				  url,
 				  NULL,
 				  NULL,
@@ -464,8 +464,8 @@ monkey_window_handle_go(int argc, char **argv)
       browser_window_navigate(gw->bw,
 			      url,
 			      ref_url,
-			      BROWSER_WINDOW_GO_FLAG_HISTORY |
-			      BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+			      BROWSER_WINDOW_HISTORY |
+			      BROWSER_WINDOW_VERIFIABLE,
 			      NULL,
 			      NULL,
 			      NULL);

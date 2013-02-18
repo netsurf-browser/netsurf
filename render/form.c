@@ -1485,8 +1485,8 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target,
 					action_query,
 					page_url,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1506,8 +1506,8 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target,
 					action_url,
 					page_url,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					data,
 					NULL,
 					NULL);
@@ -1517,8 +1517,8 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target, 
 					action_url, 
 					page_url,
-					BROWSER_WINDOW_GO_FLAG_HISTORY | 
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY | 
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL, 
 					success, 
 					NULL);

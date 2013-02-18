@@ -780,8 +780,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_URLOPENWIN:
 				error = nsurl_create(userdata, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-								      BROWSER_WINDOW_GO_FLAG_HISTORY,
+					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+								      BROWSER_WINDOW_HISTORY,
 								      url,
 								      hlcache_handle_get_url(gwin->bw->current_content),
 								      gwin->bw,
@@ -799,9 +799,9 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_URLOPENTAB:
 				error = nsurl_create(userdata, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-								      BROWSER_WINDOW_GO_FLAG_HISTORY |
-								      BROWSER_WINDOW_GO_FLAG_TAB,
+					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+								      BROWSER_WINDOW_HISTORY |
+								      BROWSER_WINDOW_TAB,
 								      url,
 								      hlcache_handle_get_url(gwin->bw->current_content),
 								      gwin->bw,
@@ -824,8 +824,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_DOWNLOAD |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -839,8 +839,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				browser_window_navigate(gwin->bw,
 					hlcache_handle_get_url(userdata),
 					hlcache_handle_get_url(gwin->bw->current_content),
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -856,8 +856,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BROWSER_WINDOW_GO_FLAG_HISTORY |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -932,8 +932,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_GO_FLAG_HISTORY |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -1004,8 +1004,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 						browser_window_navigate(gwin->bw,
 							url,
 							NULL,
-							BROWSER_WINDOW_GO_FLAG_HISTORY |
-							BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+							BROWSER_WINDOW_HISTORY |
+							BROWSER_WINDOW_VERIFIABLE,
 							NULL,
 							NULL,
 							NULL);

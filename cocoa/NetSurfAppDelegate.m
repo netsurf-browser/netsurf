@@ -49,8 +49,8 @@
 	}
 
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -73,8 +73,8 @@
 		for (NSURL *url in [openPanel URLs]) {
                         error = nsurl_create([[url absoluteString] UTF8String], &url);
                         if (error == NSERROR_OK) {
-                                error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+                                error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -96,8 +96,8 @@
 
 	error = nsurl_create([urlAsString UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -180,8 +180,8 @@
 
 	error = nsurl_create([[urltxt absoluteString] UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

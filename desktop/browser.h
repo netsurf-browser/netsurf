@@ -64,17 +64,17 @@ extern bool browser_reformat_pending;
 
 /** flags to browser window go */
 enum browser_window_nav_flags {
-	BROWSER_WINDOW_GO_FLAG_NONE = 0,
+	BROWSER_WINDOW_NONE = 0,
 	/** The page is added to the window history, this should
 	 * be used when returning to a page in the window history.
 	 */
-	BROWSER_WINDOW_GO_FLAG_HISTORY = 1,
+	BROWSER_WINDOW_HISTORY = 1,
 	/** download rather than render the uri */
-	BROWSER_WINDOW_GO_FLAG_DOWNLOAD = 2,
+	BROWSER_WINDOW_DOWNLOAD = 2,
 	/** this transaction is verifiable */
-	BROWSER_WINDOW_GO_FLAG_VERIFIABLE = 4,
+	BROWSER_WINDOW_VERIFIABLE = 4,
 	/** open a new tab rather than a new window */
-	BROWSER_WINDOW_GO_FLAG_TAB = 8,
+	BROWSER_WINDOW_TAB = 8,
 };
 
 void browser_window_initialise_common(struct browser_window *bw,

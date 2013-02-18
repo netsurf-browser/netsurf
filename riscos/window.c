@@ -1922,8 +1922,8 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	{
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2668,8 +2668,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_CONTENTS:
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2681,8 +2681,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_GUIDE:
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/guide", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2694,8 +2694,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_INFORMATION:
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/info", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2707,8 +2707,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_CREDITS:
 		error = nsurl_create("about:credits", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2720,8 +2720,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_LICENCE:
 		error = nsurl_create("about:licence", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					BROWSER_WINDOW_GO_FLAG_HISTORY,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -2828,8 +2828,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 				error = browser_window_navigate(bw,
 						url, 
 						hlcache_handle_get_url(h), 
-						BROWSER_WINDOW_GO_FLAG_DOWNLOAD | 
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE, 
+						BROWSER_WINDOW_DOWNLOAD | 
+						BROWSER_WINDOW_VERIFIABLE, 
 						NULL,
 						NULL,
 						NULL);
@@ -2842,8 +2842,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		if (current_menu_url != NULL) {
 			error = nsurl_create(current_menu_url, &url);
 			if (error == NSERROR_OK) {
-				error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-						BROWSER_WINDOW_GO_FLAG_HISTORY,
+				error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+						BROWSER_WINDOW_HISTORY,
 						url,
 						hlcache_handle_get_url(h),
 						bw,
@@ -3682,7 +3682,7 @@ void ro_gui_window_toolbar_click(void *data,
 			hlcache_handle *h = g->bw->current_content;
 			nserror error;
 
-			error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					g->bw,
@@ -3963,8 +3963,8 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 			browser_window_navigate(g->bw,
 				url,
 				NULL,
-				BROWSER_WINDOW_GO_FLAG_HISTORY |
-				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				BROWSER_WINDOW_HISTORY |
+				BROWSER_WINDOW_VERIFIABLE,
 				NULL,
 				NULL,
 				NULL);
@@ -4004,8 +4004,8 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
 		browser_window_navigate(g->bw,
 					parent,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -4041,8 +4041,8 @@ void ro_gui_window_action_home(struct gui_window *g)
 		error = browser_window_navigate(g->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_GO_FLAG_HISTORY |
-					BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+					BROWSER_WINDOW_HISTORY |
+					BROWSER_WINDOW_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -4068,7 +4068,7 @@ void ro_gui_window_action_navigate_back_new(struct gui_window *g)
 	if (g == NULL || g->bw == NULL)
 		return;
 
-	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 				      NULL,
 				      NULL,
 				      g->bw,
@@ -4096,7 +4096,7 @@ void ro_gui_window_action_navigate_forward_new(struct gui_window *g)
 	if (g == NULL || g->bw == NULL)
 		return;
 
-	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 				      NULL,
 				      NULL,
 				      g->bw,
@@ -4123,7 +4123,7 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL)
 		return;
 
-	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 				      hlcache_handle_get_url(g->bw->current_content),
 				      NULL,
 				      g->bw,

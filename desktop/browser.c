@@ -673,7 +673,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 
 	/* caller must provide window to clone or be adding to history */
 	assert(clone ||
-	       ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0));
+	       ((flags & BROWSER_WINDOW_HISTORY) != 0));
 
 
 	if ((bw = calloc(1, sizeof(struct browser_window))) == NULL) {
@@ -702,7 +702,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 
 	bw->window = gui_create_browser_window(bw,
 				top,
-				((flags & BROWSER_WINDOW_GO_FLAG_TAB) != 0));
+				((flags & BROWSER_WINDOW_TAB) != 0));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
@@ -710,7 +710,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 	}
 
 	if (url != NULL) {
-		flags |= BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
+		flags |= BROWSER_WINDOW_VERIFIABLE;
 		browser_window_navigate(bw, url, referrer, flags, NULL, NULL, NULL);
 	}
 
@@ -832,7 +832,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Set up retrieval parameters */
-	if ((flags & BROWSER_WINDOW_GO_FLAG_VERIFIABLE) != 0) {
+	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
 		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
 	}
 
@@ -856,7 +856,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Get download out of the way */
-	if ((flags & BROWSER_WINDOW_GO_FLAG_DOWNLOAD) != 0) {
+	if ((flags & BROWSER_WINDOW_DOWNLOAD) != 0) {
 		error = browser_window_download(bw, 
 						url, 
 						referrer, 
@@ -900,7 +900,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 				nsurl_unref(referrer);
 			}
 
-			if ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0) {
+			if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
 				history_add(bw->history, 
 					    bw->current_content,
 					    bw->frag_id == NULL ? NULL :
@@ -925,12 +925,12 @@ nserror browser_window_navigate(struct browser_window *bw,
 	LOG(("Loading '%s'", nsurl_access(url)));
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	if ((flags & BROWSER_WINDOW_GO_FLAG_HISTORY) != 0) {
+	if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
 		bw->history_add = true;
 	}
 
 	/* Verifiable fetches may trigger a download */
-	if ((flags & BROWSER_WINDOW_GO_FLAG_VERIFIABLE) != 0) {
+	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
 	}
 
@@ -1610,7 +1610,7 @@ void browser_window_refresh(void *p)
 	nsurl *url;
 	nsurl *refresh;
 	hlcache_handle *parent = NULL;
-	enum browser_window_nav_flags flags = BROWSER_WINDOW_GO_FLAG_NONE;
+	enum browser_window_nav_flags flags = BROWSER_WINDOW_NONE;
 
 	assert(bw->current_content != NULL &&
 		(content_get_status(bw->current_content) == 
@@ -1629,7 +1629,7 @@ void browser_window_refresh(void *p)
 
 	url = hlcache_handle_get_url(bw->current_content);
 	if ((url == NULL) || (nsurl_compare(url, refresh, NSURL_COMPLETE))) {
-		flags |= BROWSER_WINDOW_GO_FLAG_HISTORY;
+		flags |= BROWSER_WINDOW_HISTORY;
 	}
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
@@ -1640,7 +1640,7 @@ void browser_window_refresh(void *p)
 	 * all.
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		flags |= BROWSER_WINDOW_GO_FLAG_VERIFIABLE;
+		flags |= BROWSER_WINDOW_VERIFIABLE;
 	} else {
 		parent = bw->current_content;
 	}
@@ -1924,7 +1924,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	browser_window_navigate(bw,
 				hlcache_handle_get_url(bw->current_content),
 				NULL,
-				BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+				BROWSER_WINDOW_VERIFIABLE,
 				NULL,
 				NULL,
 				NULL);
@@ -2351,8 +2351,8 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * OR
 		 * - button_2 opens in new tab and the link target is "_blank"
 		 */
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-					      BROWSER_WINDOW_GO_FLAG_TAB,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_TAB,
 					      NULL,
 					      NULL,
 					      bw,
@@ -2378,7 +2378,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * - button_2 doesn't open in new tabs and the link target is
 		 *   "_blank"
 		 */
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 					      NULL,
 					      NULL,
 					      bw,
@@ -2417,7 +2417,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (!nsoption_bool(target_blank))
 		return bw;
 
-	error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
 				      NULL,
 				      NULL,
 				      bw,

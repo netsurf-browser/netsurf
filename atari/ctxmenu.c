@@ -196,8 +196,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						hlcache_handle_get_url(ctx->ccdata.object),
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_DOWNLOAD |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL
@@ -216,8 +216,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						url,
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BROWSER_WINDOW_GO_FLAG_DOWNLOAD |
-						BROWSER_WINDOW_GO_FLAG_VERIFIABLE,
+						BROWSER_WINDOW_DOWNLOAD |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL
@@ -253,8 +253,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 
 				error = nsurl_create(ctx->ccdata.link_url, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-							BROWSER_WINDOW_GO_FLAG_HISTORY,
+					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+							BROWSER_WINDOW_HISTORY,
 							url,
 							hlcache_handle_get_url(gw->browser->bw->current_content),
 							gw->browser->bw

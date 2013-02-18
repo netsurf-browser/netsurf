@@ -719,8 +719,8 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	error = nsurl_create(url2, &url);
 	free(url2);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_GO_FLAG_VERIFIABLE |
-				BROWSER_WINDOW_GO_FLAG_HISTORY,
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				BROWSER_WINDOW_HISTORY,
 				url,
 				NULL,
 				NULL,
