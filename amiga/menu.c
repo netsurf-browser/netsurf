@@ -791,7 +791,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 	struct gui_window_2 *gwin;
 	char *temp, *temp2;
 	int sel;
-	nsurl *url;
+	nsurl *url = NULL;
 	nserror error;
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -831,17 +831,19 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 		error = nsurl_create("about:licence", &url);
 	}
 
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	if(url) {
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+							  BROWSER_WINDOW_HISTORY,
+							  url,
+							  NULL,
+							  NULL,
+							  NULL);
+			nsurl_unref(url);
+		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
 	}
 
 	ami_reset_pointer(gwin);
