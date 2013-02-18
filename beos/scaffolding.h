@@ -187,9 +187,6 @@ bool nsbeos_scaffolding_is_busy(nsbeos_scaffolding *scaffold);
 
 void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view);
 
-#if 0 /* GTK */
-void nsbeos_attach_toplevel_viewport(nsbeos_scaffolding *g, GtkViewport *vp);
-#endif
 
 void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *message);
 
@@ -200,8 +197,5 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold);
 
 void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where);
 
-#if 0 /* GTK */
-void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, guint button);
-#endif
 
 #endif /* NETSURF_BEOS_SCAFFOLDING_H */

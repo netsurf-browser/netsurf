@@ -86,20 +86,6 @@ struct gui_window {
 	//volatile BMessage	*lastRedraw;
 	// UNUSED YET
 	BRect				pendingRedraw;
-#if 0 /* GTK */
-	/* Within GTK, a gui_window is a scrolled window
-	 * with a viewport inside
-	 * with a gtkfixed in that
-	 * with a drawing area in that
-	 * The scrolled window is optional and only chosen
-	 * for frames which need it. Otherwise we just use
-	 * a viewport.
-	 */
-	GtkScrolledWindow	*scrolledwindow;
-	GtkViewport		*viewport;
-	GtkFixed		*fixed;
-	GtkDrawingArea		*drawing_area;
-#endif
 
 	/* Keep gui_windows in a list for cleanup later */
 	struct gui_window	*next, *prev;
@@ -122,9 +108,6 @@ static void nsbeos_window_moved_event(BView *view, gui_window *g, BMessage *even
 /* Other useful bits */
 static void nsbeos_redraw_caret(struct gui_window *g);
 
-#if 0 /* GTK */
-static GdkCursor *nsbeos_create_menu_cursor(void);
-#endif
 
 // #pragma mark - class NSBrowserFrameView
 
@@ -269,18 +252,6 @@ NSBrowserFrameView::Draw(BRect updateRect)
 }
 
 
-#if 0
-void
-NSBrowserFrameView::FrameMoved(BPoint new_location)
-{
-	BMessage *message = Window()->DetachCurrentMessage();
-	// discard any other pending resize, 
-	// so we don't end up processing them all, the last one matters.
-	//atomic_add(&fGuiWindow->pending_resizes, 1);
-	nsbeos_pipe_message(message, this, fGuiWindow);
-	BView::FrameMoved(new_location);
-}
-#endif
 
 void
 NSBrowserFrameView::FrameResized(float new_width, float new_height)
@@ -430,78 +401,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* Attach our viewport into the scaffold */
 	nsbeos_attach_toplevel_view(g->scaffold, g->view);
 
-#warning WRITEME
-#if 0 /* GTK */
-	GtkPolicyType scrollpolicy;
-
-	/* Construct our primary elements */
-	g->fixed = GTK_FIXED(gtk_fixed_new());
-	g->drawing_area = GTK_DRAWING_AREA(gtk_drawing_area_new());
-	gtk_fixed_put(g->fixed, GTK_WIDGET(g->drawing_area), 0, 0);
-	gtk_container_set_border_width(GTK_CONTAINER(g->fixed), 0);
-
-	g->scrolledwindow = 0;
-	g->viewport = GTK_VIEWPORT(gtk_viewport_new(NULL, NULL)); /* Need to attach adjustments */
-	gtk_container_add(GTK_CONTAINER(g->viewport), GTK_WIDGET(g->fixed));
-
-	/* Attach our viewport into the scaffold */
-	nsbeos_attach_toplevel_viewport(g->scaffold, g->viewport);
-
-	gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
-	gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
-	if (g->scrolledwindow)
-		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
-	/* And enable visibility from our viewport down */
-	gtk_widget_show(GTK_WIDGET(g->viewport));
-	gtk_widget_show(GTK_WIDGET(g->fixed));
-	gtk_widget_show(GTK_WIDGET(g->drawing_area));
-
-	switch(bw->scrolling) {
-	case SCROLLING_NO:
-		scrollpolicy = GTK_POLICY_NEVER;
-		break;
-	case SCROLLING_YES:
-		scrollpolicy = GTK_POLICY_ALWAYS;
-		break;
-	case SCROLLING_AUTO:
-	default:
-		scrollpolicy = GTK_POLICY_AUTOMATIC;
-		break;
-	};
-
-
-	if (g->scrolledwindow)
-		gtk_scrolled_window_set_policy(g->scrolledwindow,
-				scrollpolicy, scrollpolicy);
-
-	/* set the events we're interested in receiving from the browser's
-	 * drawing area.
-	 */
-	gtk_widget_add_events(GTK_WIDGET(g->drawing_area),
-				GDK_EXPOSURE_MASK |
-				GDK_LEAVE_NOTIFY_MASK |
-				GDK_BUTTON_PRESS_MASK |
-				GDK_POINTER_MOTION_MASK |
-				GDK_KEY_PRESS_MASK |
-				GDK_KEY_RELEASE_MASK);
-	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(g->drawing_area), GTK_CAN_FOCUS);
-
-	/* set the default background colour of the drawing area to white. */
-	gtk_widget_modify_bg(GTK_WIDGET(g->drawing_area), GTK_STATE_NORMAL,
-				&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
-
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	CONNECT(g->drawing_area, "expose_event", nsgtk_window_expose_event, g);
-	CONNECT(g->drawing_area, "motion_notify_event",
-		nsgtk_window_motion_notify_event, g);
-	CONNECT(g->drawing_area, "button_press_event",
-	    	nsgtk_window_button_press_event, g);
-	CONNECT(g->drawing_area, "key_press_event",
-		nsgtk_window_keypress_event, g);
-	CONNECT(g->viewport, "size_allocate",
-		nsgtk_window_size_allocate_event, g);
-#endif
 
 	return g;
 }
@@ -973,108 +872,6 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	g->view->UnlockLooper();
 }
 
-#warning WRITEME
-#if 0 /* GTK */
-gboolean nsbeos_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
-					gpointer data)
-{
-	struct gui_window *g = data;
-	uint32_t nskey = gdkkey_to_nskey(event);
-
-	if (browser_window_key_press(g->bw, nskey))
-		return TRUE;
-
-	if (event->state == 0) {
-		double value;
-		GtkAdjustment *vscroll = gtk_viewport_get_vadjustment(g->viewport);
-
-		GtkAdjustment *hscroll = gtk_viewport_get_hadjustment(g->viewport);
-
-		GtkAdjustment *scroll;
-
-		const GtkAllocation *const alloc =
-			&GTK_WIDGET(g->viewport)->allocation;
-
-		switch (event->keyval) {
-		default:
-			return TRUE;
-
-		case GDK_Home:
-		case GDK_KP_Home:
-			scroll = vscroll;
-			value = scroll->lower;
-			break;
-
-		case GDK_End:
-		case GDK_KP_End:
-			scroll = vscroll;
-			value = scroll->upper - alloc->height;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Left:
-		case GDK_KP_Left:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Up:
-		case GDK_KP_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Right:
-		case GDK_KP_Right:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->width)
-				value = scroll->upper - alloc->width;
-			break;
-
-		case GDK_Down:
-		case GDK_KP_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
-
-		case GDK_Page_Up:
-		case GDK_KP_Page_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->page_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Page_Down:
-		case GDK_KP_Page_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->page_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
-		}
-
-		gtk_adjustment_set_value(scroll, value);
-	}
-
-	return TRUE;
-}
-
-#endif
 
 void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 {
@@ -1083,10 +880,8 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 	int32 height;
 
 	// drop this event if we have at least 2 resize pending
-#if 1
 	if (atomic_add(&g->pending_resizes, -1) > 1)
 		return;
-#endif
 
 	if (event->FindInt32("width", &width) < B_OK)
 		width = -1;
@@ -1096,29 +891,6 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 	height++;
 
 
-#if 0
-	hlcache_handle *content;
-
-	content = g->bw->current_content;
-
-	/* reformat or change extent if necessary */
-	if ((content) && (g->old_width != width || g->old_height != height)) {
-	  	/* Ctrl-resize of a top-level window scales the content size */
-#if 0
-		if ((g->old_width > 0) && (g->old_width != width) && (!g->bw->parent) &&
-				(ro_gui_ctrl_pressed()))
-			new_scale = (g->bw->scale * width) / g->old_width;
-#endif
-		g->bw->reformat_pending = true;
-		browser_reformat_pending = true;
-	}
-	if (g->update_extent || g->old_width != width || g->old_height != height) {
-		g->old_width = width;
-		g->old_height = height;
-		g->update_extent = false;
-		gui_window_set_extent(g, width, height);
-	}
-#endif
 		g->bw->reformat_pending = true;
 		browser_reformat_pending = true;
 
@@ -1178,19 +950,6 @@ void nsbeos_window_process_reformats(void)
 				bounds.Height() + 1);
 	}
 
-#warning WRITEME
-#if 0 /* GTK */
-	for (g = window_list; g; g = g->next) {
-		GtkWidget *widget = GTK_WIDGET(g->viewport);
-		if (!g->bw->reformat_pending)
-			continue;
-		g->bw->reformat_pending = false;
-		browser_window_reformat(g->bw,
-				false,
-				widget->allocation.width - 2,
-				widget->allocation.height);
-	}
-#endif
 }
 
 
@@ -1238,17 +997,6 @@ void gui_window_destroy(struct gui_window *g)
 	//XXX 
 	//looper->Unlock();
 
-#warning FIXME
-
-#if 0 /* GTK */
-	/* If we're a top-level gui_window, destroy our scaffold */
-	if (g->scrolledwindow == NULL) {
-	  	gtk_widget_destroy(GTK_WIDGET(g->viewport));
-		nsgtk_scaffolding_destroy(g->scaffold);
-	} else {
-	  	gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
-	}
-#endif
 
 	free(g);
 
@@ -1325,18 +1073,6 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 		*sy = (int)g->view->ScrollBar(B_VERTICAL)->Value();
 		
 	g->view->UnlockLooper();
-#warning WRITEME
-#if 0 /* GTK */
-	GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
-	GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
-
-	assert(vadj);
-	assert(hadj);
-
-	*sy = (int)(gtk_adjustment_get_value(vadj));
-	*sx = (int)(gtk_adjustment_get_value(hadj));
-
-#endif
 	return true;
 }
 
@@ -1355,30 +1091,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		g->view->ScrollBar(B_VERTICAL)->SetValue(sy);
 		
 	g->view->UnlockLooper();
-#warning WRITEME
-#if 0 /* GTK */
-	GtkAdjustment *vadj = gtk_viewport_get_vadjustment(g->viewport);
-	GtkAdjustment *hadj = gtk_viewport_get_hadjustment(g->viewport);
-	gdouble vlower, vpage, vupper, hlower, hpage, hupper, x = (double)sx, y = (double)sy;
-	
-	assert(vadj);
-	assert(hadj);
-	
-	g_object_get(vadj, "page-size", &vpage, "lower", &vlower, "upper", &vupper, NULL);
-	g_object_get(hadj, "page-size", &hpage, "lower", &hlower, "upper", &hupper, NULL);
-	
-	if (x < hlower)
-		x = hlower;
-	if (x > (hupper - hpage))
-		x = hupper - hpage;
-	if (y < vlower)
-		y = vlower;
-	if (y > (vupper - vpage))
-		y = vupper - vpage;
-	
-	gtk_adjustment_set_value(vadj, y);
-	gtk_adjustment_set_value(hadj, x);
-#endif
 }
 
 
@@ -1411,22 +1123,8 @@ void gui_window_update_extent(struct gui_window *g)
 		g->view->ScrollBar(B_VERTICAL)->SetSteps(10, 50);
 	}
 
-#if 0
-	g->view->ResizeTo(
-		g->bw->current_content->width * g->bw->scale /* - 1*/,
-		g->bw->current_content->height * g->bw->scale /* - 1*/);
-#endif
 
 	g->view->UnlockLooper();
-
-#warning WRITEME
-#if 0 /* GTK */
-	gtk_widget_set_size_request(GTK_WIDGET(g->drawing_area),
-			g->bw->current_content->width * g->bw->scale,
-			g->bw->current_content->height * g->bw->scale);
-
-	gtk_widget_set_size_request(GTK_WIDGET(g->viewport), 0, 0);
-#endif
 }
 
 /* some cursors like those in Firefox */
@@ -1492,11 +1190,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	case GUI_POINTER_POINT:
 		cursor = new BCursor(kLinkCursorBits);
 		allocated = true;
-#if 0 // it's ugly anyway
-#ifdef B_ZETA_VERSION
-		cursor = (BCursor *)B_CURSOR_LINK;
-#endif
-#endif
 		break;
 	case GUI_POINTER_CARET:
 		cursor = (BCursor *)B_CURSOR_I_BEAM;
@@ -1509,58 +1202,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		cursor = new BCursor(kWatch2CursorBits);
 		allocated = true;
 		break;
-#if 0 /* GTK */
-	case GUI_POINTER_UP:
-		cursortype = GDK_TOP_SIDE;
-		break;
-	case GUI_POINTER_DOWN:
-		cursortype = GDK_BOTTOM_SIDE;
-		break;
-	case GUI_POINTER_LEFT:
-		cursortype = GDK_LEFT_SIDE;
-		break;
-	case GUI_POINTER_RIGHT:
-		cursortype = GDK_RIGHT_SIDE;
-		break;
-	case GUI_POINTER_LD:
-		cursortype = GDK_BOTTOM_LEFT_CORNER;
-		break;
-	case GUI_POINTER_RD:
-		cursortype = GDK_BOTTOM_RIGHT_CORNER;
-		break;
-	case GUI_POINTER_LU:
-		cursortype = GDK_TOP_LEFT_CORNER;
-		break;
-	case GUI_POINTER_RU:
-		cursortype = GDK_TOP_RIGHT_CORNER;
-		break;
-	case GUI_POINTER_CROSS:
-		cursortype = GDK_CROSS;
-		break;
-	case GUI_POINTER_MOVE:
-		cursortype = GDK_FLEUR;
-		break;
-	case GUI_POINTER_WAIT:
-		cursortype = GDK_WATCH;
-		break;
-	case GUI_POINTER_HELP:
-		cursortype = GDK_QUESTION_ARROW;
-		break;
-	case GUI_POINTER_MENU:
-		cursor = nsbeos_create_menu_cursor();
-		nullcursor = true;
-		break;
-	case GUI_POINTER_PROGRESS:
-		/* In reality, this needs to be the funky left_ptr_watch
-		 * which we can't do easily yet.
-		 */
-		cursortype = GDK_WATCH;
-		break;
-	/* The following we're not sure about */
-	case GUI_POINTER_NO_DROP:
-	case GUI_POINTER_NOT_ALLOWED:
-	case GUI_POINTER_DEFAULT:
-#endif
 	default:
 		cursor = (BCursor *)B_CURSOR_SYSTEM_DEFAULT;
 		allocated = false;

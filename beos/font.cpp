@@ -257,10 +257,6 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 
 	oldbg = view->LowColor();
 	drawing_mode oldmode = view->DrawingMode();
-#if 0
-	if (oldbg != background)
-		view->SetLowColor(background);
-#endif
 	view->SetLowColor(B_TRANSPARENT_32_BIT);
 
 	//view->SetScale() XXX

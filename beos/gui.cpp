@@ -112,16 +112,6 @@ static BMessage *gFirstRefsReceived = NULL;
 
 static int sEventPipe[2];
 
-#if 0 /* GTK */
-static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
-		hlcache_handle *c, const struct ssl_cert_info *certs,
-		unsigned long num);
-static void nsbeos_ssl_accept(BButton *w, gpointer data);
-static void nsbeos_ssl_reject(BButton *w, gpointer data);
-static void nsbeos_select_menu_clicked(BCheckMenuItem *checkmenuitem,
-					gpointer user_data);
-#endif
-
 // #pragma mark - class NSBrowserFrameView
 
 
@@ -216,59 +206,6 @@ NSBrowserApplication::QuitRequested()
 // #pragma mark - implementation
 
 
-// XXX doesn't work
-#if 0
-static char *generate_default_css()
-{
-	BString text;
-	rgb_color colBg = { 255, 255, 255, 255 };
-	rgb_color colFg = { 0, 0, 0, 255 };
-	rgb_color colControlBg = { 255, 255, 255, 255 };
-	rgb_color colControlFg = { 0, 0, 0, 255 };
-	const char *url = "file://beosdefault.css";
-
-	text << "/*\n";
-	text << " * This file is part of NetSurf, http://netsurf-browser.org/\n";
-	text << " */\n";
-	text << "\n";
-	text << "/* Load base stylesheet. */\n";
-	text << "\n";
-	text << "@import \"default.css\";\n";
-	text << "\n";
-	text << "/* Apply BeOS specific rules. */\n";
-	text << "\n";
-	text << "\n";
-	text << "\n";
-	text << "\n";
-
-	text << "input { font-size: 95%; border: medium inset #ddd; }\n";
-	text << "input[type=button], input[type=reset], input[type=submit], button {\n";
-	text << "	background-color: #ddd; border: medium outset #ddd; }\n";
-	text << "input[type=checkbox], input[type=radio] { font-size: 105%; }\n";
-	text << "input[type=file] { background-color: #ddd; border: medium inset #ddd; }\n";
-	text << "\n";
-	text << "select { background-color: #ddd; border: medium inset #ddd; font-size: 95%; }\n";
-	text << "select:after { border-left:4px ridge #ddd; }\n";
-	text << "\n";
-	text << "textarea { font-size: 95%; border: medium inset #ddd; }\n";
-
-	struct content *c;
-	c = content_create(url);
-	if (c == NULL)
-		return NULL;
-
-	const char *params[] = { 0 };
-	if (!content_set_type(c, CONTENT_CSS, "text/css", params, NULL))
-		return NULL;
-
-	if (!content_process_data(c, text.String(), text.Length()))
-		return NULL;
-
-	content_set_done(c);
-
-	return strdup(url);
-}
-#endif
 
 /* realpath fallback on R5 */
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
@@ -572,11 +509,6 @@ void gui_init(int argc, char** argv)
 #undef STROF
 	}
 
-#if 0
-	find_resource(buf, "throbber.gif", "./beos/res/throbber.gif");
-	nsbeos_throbber_initialise_from_gif(buf);
-#endif
-
 	if (nsbeos_throbber == NULL)
 		die("Unable to load throbber image.\n");
 
@@ -614,14 +546,6 @@ void gui_init(int argc, char** argv)
 	SETFONTDEFAULT(font_mono, "Bitstream Vera Sans Mono");
 	SETFONTDEFAULT(font_cursive, "Bitstream Vera Serif");
 	SETFONTDEFAULT(font_fantasy, "Bitstream Vera Serif");
-#if 0
-	SETFONTDEFAULT(font_sans, "Swis721 BT");
-	SETFONTDEFAULT(font_serif, "Dutch801 Rm BT");
-	//SETFONTDEFAULT(font_mono, "Monospac821 BT");
-	SETFONTDEFAULT(font_mono, "Courier10 BT");
-	SETFONTDEFAULT(font_cursive, "Swis721 BT");
-	SETFONTDEFAULT(font_fantasy, "Swis721 BT");
-#endif
 #endif
 
 	nsbeos_options_init();
@@ -663,21 +587,6 @@ void gui_init(int argc, char** argv)
 	if (!replicated)
 		be_app->Unlock();
 
-#if 0 /* GTK */
-	wndAbout = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndAbout"));
-	beos_label_set_text(beos_LABEL(
-		glade_xml_get_widget(gladeWindows, "labelVersion")),
-		netsurf_version);
-	beos_image_set_from_file(beos_IMAGE(
-		glade_xml_get_widget(gladeWindows, "imageLogo")),
-		find_resource(buf, "netsurf-logo.png", "netsurf-logo.png"));
-	fontdesc = pango_font_description_from_string("Monospace 8");
-	beos_widget_modify_font(beos_WIDGET(
-		glade_xml_get_widget(gladeWindows, "textviewGPL")), fontdesc);
-
-	wndWarning = beos_WINDOW(glade_xml_get_widget(gladeWindows, "wndWarning"));
-	wndOpenFile = beos_DIALOG(glade_xml_get_widget(gladeWindows, "wndOpenFile"));
-#endif
 }
 
 
@@ -803,57 +712,11 @@ void gui_quit(void)
 }
 
 
-#if 0 /* GTK */
-static void nsbeos_select_menu_clicked(BCheckMenuItem *checkmenuitem,
-					gpointer user_data) 
-{
-	form_select_process_selection(select_menu_bw->current_content,
-			select_menu_control, (intptr_t)user_data);
-}
-#endif
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 	CALLED();
-#if 0 /* GTK */
-
-	intptr_t i;
-	struct form_option *option;
-	
-	beosWidget *menu_item;
-
-	/* control->data.select.multiple is true if multiple selections
-	 * are allowable.  We ignore this, as the core handles it for us.
-	 * Yay. \o/
-	 */
-	
-	if (select_menu != NULL)
-		beos_widget_destroy(select_menu);
-	
-	select_menu = beos_menu_new();
-	select_menu_bw = bw;
-	select_menu_control = control;
-
-	for (i = 0, option = control->data.select.items; option;
-		i++, option = option->next) {
-		menu_item = beos_check_menu_item_new_with_label(option->text);
-		if (option->selected)
-			beos_check_menu_item_set_active(
-				beos_CHECK_MENU_ITEM(menu_item), TRUE);
-		
-		g_signal_connect(menu_item, "toggled",
-			G_CALLBACK(nsbeos_select_menu_clicked), (gpointer)i);
-		
-		beos_menu_shell_append(beos_MENU_SHELL(select_menu), menu_item);
-	}
-	
-	beos_widget_show_all(select_menu);
-	
-	beos_menu_popup(beos_MENU(select_menu), NULL, NULL, NULL,
-			NULL /* data */, 0, beos_get_current_event_time());
-
-#endif
 }
 
 void 
@@ -928,21 +791,6 @@ void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *se
 	BMessage m(B_REFS_RECEIVED);
 	m.AddRef("refs", &ref);
 
-#if 0
-	if (selection && selection->defined) {
-		int32 line = -1;
-		if (content_get_type(content) == CONTENT_HTML) {
-			// XXX: use selection, find line in source code
-		}
-		if (content_get_type(content) == CONTENT_TEXTPLAIN) {
-				line = MAKELINE_FROM_IDX(start_idx);
-		}
-		// not CSS!
-		
-		if (line > -1)
-			message.AddInt32("be:line", line);
-	}
-#endif
 
 	// apps to try
 	const char *editorSigs[] = {
@@ -1011,16 +859,11 @@ void warn_user(const char *warning, const char *detail)
 	BString text(warning);
 	if (detail)
 		text << ":\n" << detail;
-#if 0
-	alert = new BAlert("NetSurf Warning", text.String(), "Ok", NULL, NULL, 
-		B_WIDTH_AS_USUAL, B_WARNING_ALERT);
-	alert->Go();
-#else
+
 	alert = new BAlert("NetSurf Warning", text.String(), "Debug", "Ok", NULL, 
 		B_WIDTH_AS_USUAL, B_WARNING_ALERT);
 	if (alert->Go() < 1)
 		debugger("warn_user");
-#endif
 }
 
 void die(const char * const error)
@@ -1029,16 +872,12 @@ void die(const char * const error)
 	BAlert *alert;
 	BString text("Cannot continue:\n");
 	text << error;
-#if 0
-	alert = new BAlert("NetSurf Error", text.String(), "Ok", NULL, NULL, 
-		B_WIDTH_AS_USUAL, B_STOP_ALERT);
-	alert->Go();
-#else
+
 	alert = new BAlert("NetSurf Error", text.String(), "Debug", "Ok", NULL, 
 		B_WIDTH_AS_USUAL, B_STOP_ALERT);
 	if (alert->Go() < 1)
 		debugger("die");
-#endif
+
 	exit(EXIT_FAILURE);
 }
 
@@ -1047,9 +886,6 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		void *cbpw)
 {
 	CALLED();
-#if 0 /* GTK */
-	nsbeos_create_ssl_verify_window(bw, c, certs, num);
-#endif
 }
 
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
@@ -1057,59 +893,8 @@ static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
 		unsigned long num)
 {
 	CALLED();
-#if 0 /* GTK */
-	GladeXML *x = glade_xml_new(glade_file_location, NULL, NULL);
-	beosWindow *wnd = beos_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
-	beosButton *accept, *reject;
-	void **session = calloc(sizeof(void *), 4);
-	
-	session[0] = bw;
-	session[1] = strdup(c->url);
-	session[2] = x;
-	session[3] = wnd;
-	
-	accept = beos_BUTTON(glade_xml_get_widget(x, "sslaccept"));
-	reject = beos_BUTTON(glade_xml_get_widget(x, "sslreject"));
-	
-	g_signal_connect(G_OBJECT(accept), "clicked",
-			G_CALLBACK(nsbeos_ssl_accept), (gpointer)session);
-	g_signal_connect(G_OBJECT(reject), "clicked",
-			G_CALLBACK(nsbeos_ssl_reject), (gpointer)session);
-	
-	beos_widget_show(beos_WIDGET(wnd));	
-#endif
 }
 
-#if 0 /* GTK */
-static void nsbeos_ssl_accept(beosButton *w, gpointer data)
-{
-	void **session = data;
-	struct browser_window *bw = session[0];
-	char *url = session[1];
-	GladeXML *x = session[2];
-	beosWindow *wnd = session[3];
-	
-  	urldb_set_cert_permissions(url, true);
-	browser_window_navigate(bw, url, 0, true);	
-	
-	beos_widget_destroy(beos_WIDGET(wnd));
-	g_object_unref(G_OBJECT(x));
-	free(url);
-	free(session);
-}
-
-static void nsbeos_ssl_reject(beosButton *w, gpointer data)
-{
-	void **session = data;
-	GladeXML *x = session[2];
-	beosWindow *wnd = session[3];
-		
-	beos_widget_destroy(beos_WIDGET(wnd));
-	g_object_unref(G_OBJECT(x));
-	free(session[1]);
-	free(session);
-}
-#endif
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)

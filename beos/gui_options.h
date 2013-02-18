@@ -22,9 +22,6 @@
 
 #include <Window.h>
 
-#if 0 /* GTK */
-extern GtkWindow *wndPreferences;
-#endif
 extern BWindow *wndPreferences;
 
 void nsbeos_options_init(void);		/** Init options and load window */

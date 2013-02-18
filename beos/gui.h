@@ -33,10 +33,6 @@ extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
 
 
-#if 0 /* GTK */
-//extern GladeXML *gladeWindows;
-//extern char *glade_file_location;
-#endif
 extern char *options_file_location;
 
 class NSBrowserApplication : public BApplication {
@@ -58,9 +54,6 @@ extern void schedule_run(void);
 extern BWindow *wndAbout;
 
 extern BWindow *wndTooltip;
-#if 0 /* GTK */
-//extern GtkLabel *labelTooltip;
-#endif
 
 extern BFilePanel *wndOpenFile;
 

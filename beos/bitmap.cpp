@@ -267,16 +267,6 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 	if (roster->Translate(&stream, NULL, NULL, &file, type) < B_OK)
 		return false;
 
-#if 0 /* GTK */
-	GError *err = NULL;
-
-	gdk_pixbuf_save(bitmap->primary, path, "png", &err, NULL);
-
-	if (err == NULL)
-		/* TODO: report an error here */
-		return false;
-
-#endif
 	return true;
 }
 

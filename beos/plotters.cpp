@@ -47,15 +47,6 @@ extern "C" {
 #warning MAKE ME static
 /*static*/ BView *current_view;
 
-#if 0 /* GTK */
-GtkWidget *current_widget;
-GdkDrawable *current_drawable;
-GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-cairo_t *current_cr;
-#endif
-#endif
-
 /*
  * NOTE: BeOS rects differ from NetSurf ones:
  * the right-bottom pixel is actually part of the BRect!
@@ -76,9 +67,6 @@ static bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags);
 
-#if 0 /* GTK */
-static GdkRectangle cliprect;
-#endif
 
 #warning make patterns nicer
 static const pattern kDottedPattern = { 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa };
@@ -151,20 +139,6 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 		//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-		nsbeos_set_colour(style->fill_colour);
-		nsbeos_set_solid();
-#ifdef CAIRO_VERSION
-		if (nsoption_bool(render_cairo)) {
-			cairo_set_line_width(current_cr, 0);
-			cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
-			cairo_fill(current_cr);
-			cairo_stroke(current_cr);
-		} else
-#endif
-			gdk_draw_rectangle(current_drawable, current_gc,
-					   TRUE, x0, y0, x1 - x0, y1 - y0);
-#endif
 	}
 
         if (style->stroke_type != PLOT_OP_TYPE_NONE) { 
@@ -204,21 +178,6 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 		//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-#ifdef CAIRO_VERSION
-		if (nsoption_bool(render_cairo)) {
-			if (line_width == 0)
-				line_width = 1;
-
-			cairo_set_line_width(current_cr, line_width);
-			cairo_rectangle(current_cr, x0, y0, width, height);
-			cairo_stroke(current_cr);
-		} else
-#endif
-			gdk_draw_rectangle(current_drawable, current_gc,
-					   FALSE, x0, y0, width, height);
-		return true;
-#endif
 	}
 
 	return true;
@@ -265,21 +224,6 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-#ifdef CAIRO_VERSION
-	if (nsoption_bool(render_cairo)) {
-		if (width == 0)
-			width = 1;
-
-		cairo_set_line_width(current_cr, width);
-		cairo_move_to(current_cr, x0, y0 - 0.5);
-		cairo_line_to(current_cr, x1, y1 - 0.5);
-		cairo_stroke(current_cr);
-	} else
-#endif
-		gdk_draw_line(current_drawable, current_gc,
-			      x0, y0, x1, y1);
-#endif
 	return true;
 }
 
@@ -335,21 +279,6 @@ bool nsbeos_plot_clip(const struct rect *ns_clip)
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-#ifdef CAIRO_VERSION
-  	if (nsoption_bool(render_cairo)) {
-		cairo_reset_clip(current_cr);
-		cairo_rectangle(current_cr, clip->x0, clip->y0,
-			clip->x1 - clip->x0, clip->y1 - clip->y0);
-		cairo_clip(current_cr);
-	}
-#endif
-	cliprect.x = clip->x0;
-	cliprect.y = clip->y0;
-	cliprect.width = clip->x1 - clip->x0;
-	cliprect.height = clip->y1 - clip->y0;
-	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
-#endif
 	return true;
 }
 
@@ -381,31 +310,6 @@ bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style)
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-	nsbeos_set_colour(c);
-	nsbeos_set_solid();
-#ifdef CAIRO_VERSION
-	if (nsoption_bool(render_cairo)) {
-		if (filled)
-			cairo_set_line_width(current_cr, 0);
-		else
-			cairo_set_line_width(current_cr, 1);
-
-		cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
-
-		if (filled)
-			cairo_fill(current_cr);
-
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_arc(current_drawable, current_gc,
-		filled ? TRUE : FALSE, x - (radius), y - radius,
-		radius * 2, radius * 2,
-		0,
-		360 * 64);
-
-#endif
 	return true;
 }
 
@@ -428,24 +332,6 @@ bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, const plo
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-	nsbeos_set_colour(style->fill_colour);
-	nsbeos_set_solid();
-#ifdef CAIRO_VERSION
-	if (nsoption_bool(render_cairo)) {
-		cairo_set_line_width(current_cr, 1);
-		cairo_arc(current_cr, x, y, radius,
-		    (angle1 + 90) * (M_PI / 180),
-		    (angle2 + 90) * (M_PI / 180));
-		cairo_stroke(current_cr);
-	} else
-#endif
-	gdk_draw_arc(current_drawable, current_gc,
-		FALSE, x - (radius), y - radius,
-		radius * 2, radius * 2,
-		angle1 * 64, angle2 * 64);
-
-#endif
 	return true;
 }
 
@@ -495,43 +381,6 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-	/* XXX: This currently ignores the background colour supplied.
-	 * Does this matter?
-	 */
-
-	if (width == 0 || height == 0)
-		return true;
-
-	if (gdk_pixbuf_get_width(pixbuf) == width &&
-			gdk_pixbuf_get_height(pixbuf) == height) {
-		gdk_draw_pixbuf(current_drawable, current_gc,
-				pixbuf,
-				0, 0,
-				x, y,
-				width, height,
-				GDK_RGB_DITHER_MAX, 0, 0);
-
-	} else {
-		GdkPixbuf *scaled;
-		scaled = gdk_pixbuf_scale_simple(pixbuf,
-				width, height,
-                                nsoption_bool(render_resample) ? GDK_INTERP_BILINEAR
-							: GDK_INTERP_NEAREST);
-		if (!scaled)
-			return false;
-
-		gdk_draw_pixbuf(current_drawable, current_gc,
-				scaled,
-				0, 0,
-				x, y,
-				width, height,
-				GDK_RGB_DITHER_MAX, 0, 0);
-
-		g_object_unref(scaled);
-	}
-
-#endif
 	return true;
 }
 
@@ -605,51 +454,6 @@ bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 	}
 
 #warning WRITEME
-#if 0 /* GTK */
-	int doneheight = 0, donewidth = 0;
-	GdkPixbuf *primary;
-	GdkPixbuf *pretiled;
-
-	if (!(repeat_x || repeat_y)) {
-		/* Not repeating at all, so just pass it on */
-		return nsbeos_plot_bitmap(x,y,width,height,bitmap,bg);
-	}
-
-        if (repeat_x && !repeat_y)
-                pretiled = gtk_bitmap_get_pretile_x(bitmap);
-        if (repeat_x && repeat_y)
-                pretiled = gtk_bitmap_get_pretile_xy(bitmap);
-        if (!repeat_x && repeat_y)
-                pretiled = gtk_bitmap_get_pretile_y(bitmap);
-        primary = gtk_bitmap_get_primary(bitmap);
-        /* use the primary and pretiled widths to scale the w/h provided */
-        width *= gdk_pixbuf_get_width(pretiled);
-        width /= gdk_pixbuf_get_width(primary);
-        height *= gdk_pixbuf_get_height(pretiled);
-        height /= gdk_pixbuf_get_height(primary);
-
-	if (y > cliprect.y)
-		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
-	else
-		doneheight = y;
-
-	while (doneheight < (cliprect.y + cliprect.height)) {
-		if (x > cliprect.x)
-			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
-		else
-			donewidth = x;
-		while (donewidth < (cliprect.x + cliprect.width)) {
-			nsbeos_plot_pixbuf(donewidth, doneheight,
-                                          width, height, pretiled, bg);
-			donewidth += width;
-			if (!repeat_x) break;
-		}
-		doneheight += height;
-		if (!repeat_y) break;
-	}
-
-
-#endif
 	return true;
 }
 
@@ -755,28 +559,6 @@ void nsbeos_set_colour(colour c)
 	rgb_color color = nsbeos_rgb_colour(c);
 	BView *view = nsbeos_current_gc();
 	view->SetHighColor(color);
-#if 0 /* GTK */
-	int r, g, b;
-	GdkColor colour;
-
-	r = c & 0xff;
-	g = (c & 0xff00) >> 8;
-	b = (c & 0xff0000) >> 16;
-
-	colour.red = r | (r << 8);
-	colour.green = g | (g << 8);
-	colour.blue = b | (b << 8);
-	colour.pixel = (r << 16) | (g << 8) | b;
-
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
-	gdk_gc_set_foreground(current_gc, &colour);
-#ifdef CAIRO_VERSION
-	if (nsoption_bool(render_cairo))
-		cairo_set_source_rgba(current_cr, r / 255.0,
-			g / 255.0, b / 255.0, 1.0);
-#endif
-#endif
 }
 
 /** Plot a caret.  It is assumed that the plotters have been set up. */
@@ -800,21 +582,6 @@ void nsbeos_plot_caret(int x, int y, int h)
 
 	//nsbeos_current_gc_unlock();
 
-#if 0 /* GTK */
-	GdkColor colour;
-
-	colour.red = 0;
-	colour.green = 0;
-	colour.blue = 0;
-	colour.pixel = 0;
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
-	gdk_gc_set_foreground(current_gc, &colour);
-
-	gdk_draw_line(current_drawable, current_gc,
-			x, y,
-			x, y + h - 1);
-#endif
 }
 
 #ifdef TEST_PLOTTERS

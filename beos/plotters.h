@@ -35,14 +35,6 @@ extern const struct plotter_table nsbeos_plotters;
 #include <View.h>
 
 extern BView *current_view;
-#if 0 /* GTK */
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
-#ifdef CAIRO_VERSION
-extern cairo_t *current_cr;
-#endif
-#endif
 
 extern BView *nsbeos_current_gc(void);
 extern BView *nsbeos_current_gc_lock(void);

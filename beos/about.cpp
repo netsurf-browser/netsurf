@@ -122,20 +122,7 @@ void nsbeos_about(struct gui_window *gui)
 	add_section(tv, "artists", artists);
 	add_section(tv, "documenters", documenters);
 	add_section(tv, url_label, url);
-#if 0
-	BView *p = tv->Parent();
-	//tv->MakeSelectable(true);
-	
-	//tv->ResizeBy(-B_V_SCROLL_BAR_WIDTH, 0);
-	//tv->ResizeBy(-B_V_SCROLL_BAR_WIDTH, 0);
-	if (p && p->RemoveChild(tv)) {
-		BScrollView *sv = new BScrollView("sv", tv, B_FOLLOW_ALL, 0, 
-			false, true, B_NO_BORDER);
-		p->AddChild(sv);
-	}
-	
-	//tv->ResizeToPreferred();
-#endif
+
 	// make space for controls
 	alert->ResizeBy(200, 500);
 	alert->MoveTo(alert->AlertPosition(alert->Frame().Width() + 1, 
