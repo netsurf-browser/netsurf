@@ -1853,7 +1853,8 @@ void ami_handle_msg(void)
 									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 									if (error == NSERROR_OK) {
 										error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-													      BROWSER_WINDOW_HISTORY,
+													      BROWSER_WINDOW_HISTORY |
+														  BROWSER_WINDOW_TAB,
 													      urlns,
 													      NULL,
 													      gwin->bw,
