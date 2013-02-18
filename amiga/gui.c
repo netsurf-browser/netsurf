@@ -4786,7 +4786,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 										      BROWSER_WINDOW_TAB,
 										      url,
 										      NULL,
-										      gwin->bw
+										      gwin->bw,
 										      NULL);
 							} else {
 								browser_window_navigate(gwin->bw,
