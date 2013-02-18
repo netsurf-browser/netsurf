@@ -1573,7 +1573,7 @@ void ro_msg_dataload(wimp_message *message)
 
 
 	error = nsurl_create(urltxt, &url);
-	if (nserror == NSERROR_OK) {
+	if (error == NSERROR_OK) {
 		if (g) {
 			error = browser_window_navigate(g->bw,
 					url,
@@ -1584,19 +1584,20 @@ void ro_msg_dataload(wimp_message *message)
 					NULL,
 					NULL);
 
-#if DROPURLHOTLIST /** @todo This was commented out should it be removed? */
-		} else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
+#ifdef DROPURLHOTLIST /** @todo This was commented out should it be removed? */
+		} else if (ro_gui_hotlist_check_window(
+				message->data.data_xfer.w)) {
 			/* Drop URL into hotlist */
 			ro_gui_hotlist_url_drop(message, urltxt);
 #endif
-
 		} else {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
+			error = browser_window_create(
+					BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
+					url,
+					NULL,
+					NULL,
+					NULL);
 		}
 		nsurl_unref(url);
 	}
@@ -1609,7 +1610,8 @@ void ro_msg_dataload(wimp_message *message)
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	oserror = xwimp_send_message(wimp_USER_MESSAGE, message,
+			message->sender);
 	if (oserror) {
 		LOG(("xwimp_send_message: 0x%x: %s",
 				oserror->errnum, oserror->errmess));
