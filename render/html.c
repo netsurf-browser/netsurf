@@ -1542,16 +1542,11 @@ static void html_inline_style_done(struct content_css_data *css, void *pw)
  * Process an inline stylesheet in the document.
  *
  * \param  c      content structure
- * \param  index  Index of stylesheet in stylesheet_content array,
- *                updated if successful
  * \param  style  xml node of style element
  * \return  true on success, false if an error occurred
  */
 
-static bool
-html_process_style_element(html_content *c,
-			   unsigned int *index,
-			   dom_node *style)
+static bool html_process_style_element(html_content *c, dom_node *style)
 {
 	dom_node *child, *next;
 	dom_string *val;
@@ -1585,20 +1580,18 @@ html_process_style_element(html_content *c,
 
 	/* Extend array */
 	stylesheets = realloc(c->stylesheets, 
-			      sizeof(struct html_stylesheet) * (*index + 1));
+			      sizeof(struct html_stylesheet) * (c->stylesheet_count + 1));
 	if (stylesheets == NULL)
 		goto no_memory;
 
 	c->stylesheets = stylesheets;
-	c->stylesheet_count++;
 
-	c->stylesheets[(*index)].type = HTML_STYLESHEET_INTERNAL;
-	c->stylesheets[(*index)].data.internal = NULL;
+	c->stylesheets[c->stylesheet_count].type = HTML_STYLESHEET_INTERNAL;
+	c->stylesheets[c->stylesheet_count].data.internal = NULL;
 
 	/* create stylesheet */
 	sheet = calloc(1, sizeof(struct content_css_data));
 	if (sheet == NULL) {
-		c->stylesheet_count--;
 		goto no_memory;
 	}
 
@@ -1607,7 +1600,6 @@ html_process_style_element(html_content *c,
 		html_inline_style_done, c);
 	if (error != NSERROR_OK) {
 		free(sheet);
-		c->stylesheet_count--;
 		content_broadcast_errorcode(&c->base, error);
 		return false;
 	}
@@ -1619,7 +1611,6 @@ html_process_style_element(html_content *c,
 	if (exc != DOM_NO_ERR) {
 		nscss_destroy_css_data(sheet);
 		free(sheet);
-		c->stylesheet_count--;
 		goto no_memory;
 	}
 
@@ -1631,7 +1622,6 @@ html_process_style_element(html_content *c,
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
 			free(sheet);
-			c->stylesheet_count--;
 			goto no_memory;
 		}
 
@@ -1641,7 +1631,6 @@ html_process_style_element(html_content *c,
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
 			free(sheet);
-			c->stylesheet_count--;
 			goto no_memory;
 		}
 
@@ -1652,7 +1641,6 @@ html_process_style_element(html_content *c,
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
 			free(sheet);
-			c->stylesheet_count--;
 			goto no_memory;
 		}
 
@@ -1674,8 +1662,8 @@ html_process_style_element(html_content *c,
 	}
 
 	/* Update index */
-	c->stylesheets[(*index)].data.internal = sheet;
-	(*index)++;
+	c->stylesheets[c->stylesheet_count].data.internal = sheet;
+	c->stylesheet_count++;
 
 	return true;
 
@@ -1686,17 +1674,8 @@ no_memory:
 
 
 
-struct find_stylesheet_ctx {
-	unsigned int count;
-	html_content *c;
-};
-
-/** callback to process stylesheet elements
- */
-static bool
-html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
+static bool html_process_stylesheet_link(html_content *htmlc, dom_node *node)
 {
-	struct find_stylesheet_ctx *ctx = (struct find_stylesheet_ctx *)vctx;
 	dom_string *rel, *type_attr, *media, *href;
 	struct html_stylesheet *stylesheets;
 	nsurl *joined;
@@ -1704,21 +1683,8 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	nserror ns_error;
 	hlcache_child_context child;
 
-	/* deal with style nodes */
-	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_style)) {
-		if (!html_process_style_element(ctx->c,	&ctx->count, node))
-			return false;
-		return true;
-	}
-
-	/* if it is not a link node skip it */
-	if (!dom_string_caseless_lwc_isequal(name, corestring_lwc_link)) {
-		return true;
-	}
-
 	/* rel=<space separated list, including 'stylesheet'> */
-	exc = dom_element_get_attribute(node,
-					corestring_dom_rel, &rel);
+	exc = dom_element_get_attribute(node, corestring_dom_rel, &rel);
 	if (exc != DOM_NO_ERR || rel == NULL)
 		return true;
 
@@ -1763,58 +1729,78 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	 * those with a title attribute) should be loaded
 	 * (see HTML4 14.3) */
 
-	ns_error = nsurl_join(ctx->c->base_url, dom_string_data(href), &joined);
+	ns_error = nsurl_join(htmlc->base_url, dom_string_data(href), &joined);
 	if (ns_error != NSERROR_OK) {
 		dom_string_unref(href);
 		goto no_memory;
 	}
 	dom_string_unref(href);
 
-	LOG(("linked stylesheet %i '%s'", ctx->count, nsurl_access(joined)));
+	LOG(("linked stylesheet %i '%s'", htmlc->stylesheet_count, nsurl_access(joined)));
 
-	/* start fetch */
-	stylesheets = realloc(ctx->c->stylesheets, 
-			      sizeof(struct html_stylesheet) * (ctx->count + 1));
+	/* extend stylesheets array to allow for new sheet */
+	stylesheets = realloc(htmlc->stylesheets,
+			      sizeof(struct html_stylesheet) * (htmlc->stylesheet_count + 1));
 	if (stylesheets == NULL) {
 		nsurl_unref(joined);
 		ns_error = NSERROR_NOMEM;
 		goto no_memory;
 	}
 
-	ctx->c->stylesheets = stylesheets;
-	ctx->c->stylesheet_count++;
-	ctx->c->stylesheets[ctx->count].type = HTML_STYLESHEET_EXTERNAL;
+	htmlc->stylesheets = stylesheets;
+	htmlc->stylesheets[htmlc->stylesheet_count].type = HTML_STYLESHEET_EXTERNAL;
 
-	child.charset = ctx->c->encoding;
-	child.quirks = ctx->c->base.quirks;
+	/* start fetch */
+	child.charset = htmlc->encoding;
+	child.quirks = htmlc->base.quirks;
 
 	ns_error = hlcache_handle_retrieve(joined,
 					   0,
-					   content_get_url(&ctx->c->base),
+					   content_get_url(&htmlc->base),
 					   NULL,
 					   html_convert_css_callback,
-					   ctx->c,
+					   htmlc,
 					   &child,
 					   CONTENT_CSS,
-					   &ctx->c->stylesheets[ctx->count].data.external);
+					   &htmlc->stylesheets[htmlc->stylesheet_count].data.external);
 
 	nsurl_unref(joined);
 
 	if (ns_error != NSERROR_OK)
 		goto no_memory;
 
-	ctx->c->base.active++;
-	LOG(("%d fetches active", ctx->c->base.active));
-
-	ctx->count++;
+	htmlc->base.active++;
+	LOG(("%d fetches active", htmlc->base.active));
+	htmlc->stylesheet_count++;
 
 	return true;
 
 no_memory:
-	content_broadcast_errorcode(&ctx->c->base, ns_error);
+	content_broadcast_errorcode(&htmlc->base, ns_error);
 	return false;
 }
 
+/** callback to process stylesheet elements
+ */
+static bool
+html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
+{
+	html_content *htmlc = vctx;
+
+	/* deal with style nodes */
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_style)) {
+		if (!html_process_style_element(htmlc, node))
+			return false;
+		return true;
+	}
+
+	/* if it is not a link node skip it */
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_link)) {
+		return html_process_stylesheet_link(htmlc, node);
+	}
+
+	return true;
+}
 
 /**
  * Process inline stylesheets and fetch linked stylesheets.
@@ -1830,12 +1816,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 {
 	nserror ns_error;
 	bool result;
-	struct find_stylesheet_ctx ctx;
 	hlcache_child_context child;
-
-	/* setup context */
-	ctx.c = c;
-	ctx.count = STYLESHEET_START;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the quirks mode style sheet,
@@ -1908,9 +1889,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	c->base.active++;
 	LOG(("%d fetches active", c->base.active));
 
-	result = libdom_treewalk(html, html_process_stylesheet, &ctx);
-
-	assert(c->stylesheet_count == ctx.count);
+	result = libdom_treewalk(html, html_process_stylesheet, c);
 
 	return result;
 
