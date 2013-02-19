@@ -400,15 +400,18 @@ node_callback_resp tree_url_node_callback(void *user_data,
 
 			error = nsurl_create(text, &url);
 			if (error == NSERROR_OK) {
+				struct browser_window *clone = NULL;
+
 				flags = BROWSER_WINDOW_VERIFIABLE |
 					BROWSER_WINDOW_HISTORY;
 				if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
 					flags |= BROWSER_WINDOW_TAB;
+					clone = msg_data->data.bw;
 				}
 				error = browser_window_create(flags,
 							      url,
 							      NULL,
-							      msg_data->data.bw,
+							      clone,
 							      &msg_data->data.bw);
 				nsurl_unref(url);
 			}
