@@ -377,8 +377,9 @@ html_convert_css_callback(hlcache_handle *css,
 		assert(0);
 	}
 
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
+	if (parent->base.active == 0) {
+		html_begin_conversion(parent);
+	}
 
 	return NSERROR_OK;
 }
@@ -489,10 +490,6 @@ static void html_inline_style_done(struct content_css_data *css, void *pw)
 
 	html->base.active--;
 	LOG(("%d fetches active", html->base.active));
-
-	if (html->base.active == 0) {
-		html_finish_conversion(html);
-	}
 }
 
 static nserror
@@ -813,7 +810,7 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			/* an element node has been inserted */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name)));
+				/* LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name))); */
 				if (dom_string_caseless_isequal(name, corestring_dom_link)) {
 					html_process_stylesheet_link(htmlc, (dom_node *)node);
 				}
@@ -839,7 +836,7 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 			/* an element node has been inserted */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name))); 
+				/* LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name)));  */
 				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
 					html_process_style_element_update(htmlc, (dom_node *)node);
 				} 
@@ -2008,14 +2005,6 @@ static void html_object_refresh(void *p)
 }
 
 
-
-
-
-
-
-
-
-
 /**
  * Convert a CONTENT_HTML for display.
  *
@@ -2056,6 +2045,7 @@ html_begin_conversion(html_content *htmlc)
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
 
+	LOG(("Completing parse"));
 	/* complete parsing */
 	error = dom_hubbub_parser_completed(htmlc->parser);
 	if (error != DOM_HUBBUB_OK) {
