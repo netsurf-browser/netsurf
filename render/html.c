@@ -487,8 +487,97 @@ static void html_inline_style_done(struct content_css_data *css, void *pw)
 {
 	html_content *html = pw;
 
-	if (--html->base.active == 0)
+	html->base.active--;
+	LOG(("%d fetches active", html->base.active));
+
+	if (html->base.active == 0) {
 		html_finish_conversion(html);
+	}
+}
+
+static nserror
+html_stylesheet_from_domnode(html_content *c,
+			     dom_node *node,
+			     struct content_css_data **ret_sheet)
+{
+	dom_node *child, *next;
+	dom_exception exc;
+	struct content_css_data *sheet;
+	nserror error;
+	css_error csserror;
+
+	/* create stylesheet */
+	sheet = calloc(1, sizeof(struct content_css_data));
+	if (sheet == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	error = nscss_create_css_data(sheet,
+		nsurl_access(c->base_url), NULL, c->quirks,
+		html_inline_style_done, c);
+	if (error != NSERROR_OK) {
+		free(sheet);
+		return error;
+	}
+
+	exc = dom_node_get_first_child(node, &child);
+	if (exc != DOM_NO_ERR) {
+		nscss_destroy_css_data(sheet);
+		free(sheet);
+		return NSERROR_DOM;
+	}
+
+	while (child != NULL) {
+		dom_string *data;
+
+		exc = dom_node_get_text_content(child, &data);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_DOM;
+		}
+
+		if (nscss_process_css_data(sheet, 
+				dom_string_data(data),
+				dom_string_byte_length(data)) == false) {
+			dom_string_unref(data);
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_CSS;
+		}
+
+		dom_string_unref(data);
+
+		exc = dom_node_get_next_sibling(child, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_DOM;
+		}
+
+		dom_node_unref(child);
+		child = next;
+	}
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+	/* Convert the content -- manually, as we want the result */
+	csserror = nscss_convert_css_data(sheet);
+	if (csserror != CSS_OK) {
+		/* conversion failed */
+		c->base.active--;
+		LOG(("%d fetches active", c->base.active));
+		nscss_destroy_css_data(sheet);
+		free(sheet);
+		return css_error_to_nserror(csserror);
+	}
+
+	*ret_sheet = sheet;
+	return NSERROR_OK;
 }
 
 /**
@@ -499,14 +588,12 @@ static void html_inline_style_done(struct content_css_data *css, void *pw)
  * \return  true on success, false if an error occurred
  */
 
-static bool html_process_style_element(html_content *c, dom_node *style)
+static struct html_stylesheet *
+html_create_style_element(html_content *c, dom_node *style)
 {
-	dom_node *child, *next;
 	dom_string *val;
 	dom_exception exc;
 	struct html_stylesheet *stylesheets;
-	struct content_css_data *sheet;
-	nserror error;
 
 	/* ensure sheets are initialised */
 	if (html_init_stylesheets(c) == false) {
@@ -519,7 +606,7 @@ static bool html_process_style_element(html_content *c, dom_node *style)
 		if (!dom_string_caseless_lwc_isequal(val,
 				corestring_lwc_text_css)) {
 			dom_string_unref(val);
-			return true;
+			return NULL;
 		}
 		dom_string_unref(val);
 	}
@@ -531,7 +618,7 @@ static bool html_process_style_element(html_content *c, dom_node *style)
 				strcasestr(dom_string_data(val),
 						"all") == NULL) {
 			dom_string_unref(val);
-			return true;
+			return NULL;
 		}
 		dom_string_unref(val);
 	}
@@ -539,98 +626,63 @@ static bool html_process_style_element(html_content *c, dom_node *style)
 	/* Extend array */
 	stylesheets = realloc(c->stylesheets, 
 			      sizeof(struct html_stylesheet) * (c->stylesheet_count + 1));
-	if (stylesheets == NULL)
-		goto no_memory;
+	if (stylesheets == NULL) {
 
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		return false;
+
+	}
 	c->stylesheets = stylesheets;
 
 	c->stylesheets[c->stylesheet_count].type = HTML_STYLESHEET_INTERNAL;
+	c->stylesheets[c->stylesheet_count].node = style;
 	c->stylesheets[c->stylesheet_count].data.internal = NULL;
+	c->stylesheet_count++;
 
-	/* create stylesheet */
-	sheet = calloc(1, sizeof(struct content_css_data));
-	if (sheet == NULL) {
-		goto no_memory;
+	return c->stylesheets + (c->stylesheet_count - 1);
+}
+
+static bool html_process_style_element_update(html_content *c, dom_node *style)
+{
+	struct content_css_data *sheet = NULL;
+	nserror error;
+	unsigned int i;
+	struct html_stylesheet *s;
+
+	/* Find sheet */
+	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
+		if ((s->type == HTML_STYLESHEET_INTERNAL) &&
+		    (s->node == style))
+			break;
+	}
+	if (i == c->stylesheet_count) {
+		s = html_create_style_element(c, style);
+	}
+	if (s == NULL) {
+		LOG(("Could not find or create inline stylesheet for %p", 
+		     style));
+		return false;
 	}
 
-	error = nscss_create_css_data(sheet,
-		nsurl_access(c->base_url), NULL, c->quirks,
-		html_inline_style_done, c);
+	LOG(("Found sheet %p slot %d for node %p", s,i, style));
+
+	error = html_stylesheet_from_domnode(c, style, &sheet);
 	if (error != NSERROR_OK) {
-		free(sheet);
+		LOG(("Failed to update sheet"));
 		content_broadcast_errorcode(&c->base, error);
 		return false;
 	}
 
-	/* can't just use xmlNodeGetContent(style), because that won't
-	 * give the content of comments which may be used to 'hide'
-	 * the content */
-	exc = dom_node_get_first_child(style, &child);
-	if (exc != DOM_NO_ERR) {
-		nscss_destroy_css_data(sheet);
-		free(sheet);
-		goto no_memory;
-	}
-
-	while (child != NULL) {
-		dom_string *data;
-
-		exc = dom_node_get_text_content(child, &data);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			goto no_memory;
-		}
-
-		if (nscss_process_css_data(sheet, dom_string_data(data),
-				dom_string_byte_length(data)) == false) {
-			dom_string_unref(data);
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			goto no_memory;
-		}
-
-		dom_string_unref(data);
-
-		exc = dom_node_get_next_sibling(child, &next);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			goto no_memory;
-		}
-
-		dom_node_unref(child);
-		child = next;
-	}
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	/* Convert the content -- manually, as we want the result */
-	if (nscss_convert_css_data(sheet) != CSS_OK) {
-		/* conversion failed */
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
-		nscss_destroy_css_data(sheet);
-		free(sheet);
-		sheet = NULL;
-	}
+	LOG(("Updating sheet %p with %p", s->data.internal, sheet));
 
 	/* Update index */
-	c->stylesheets[c->stylesheet_count].data.internal = sheet;
-	c->stylesheet_count++;
-
+	if (s->data.internal != NULL) {
+		nscss_destroy_css_data(s->data.internal);
+		free(s->data.internal);
+	}
+	s->data.internal = sheet;
 	return true;
-
-no_memory:
-	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
-	return false;
 }
-
-
 
 static bool html_process_stylesheet_link(html_content *htmlc, dom_node *node)
 {
@@ -761,12 +813,36 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			/* an element node has been inserted */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				/* LOG(("element htmlc:%p name:%s", htmlc, dom_string_data(name))); */
-				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
-					html_process_style_element(htmlc, (dom_node *)node);
-				} else if (dom_string_caseless_isequal(name, corestring_dom_link)) {
+				LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name)));
+				if (dom_string_caseless_isequal(name, corestring_dom_link)) {
 					html_process_stylesheet_link(htmlc, (dom_node *)node);
 				}
+			}
+		}
+	}
+}
+
+/* callback for DOMNodeInserted end type */
+static void
+dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
+{
+	dom_event_target *node;
+	dom_node_type type;
+	dom_string *name;
+	dom_exception exc;
+	html_content *htmlc = pw;
+
+	exc = dom_event_get_target(evt, &node);
+	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		exc = dom_node_get_node_type(node, &type);
+		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
+			/* an element node has been inserted */
+			exc = dom_node_get_node_name(node, &name);
+			if ((exc == DOM_NO_ERR) && (name != NULL)) {
+				LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name))); 
+				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
+					html_process_style_element_update(htmlc, (dom_node *)node);
+				} 
 			}
 		}
 	}
@@ -786,9 +862,12 @@ dom_event_fetcher(dom_string *type,
 {
 	//LOG(("type:%s", dom_string_data(type)));
 
-	if ((phase == DOM_DEFAULT_ACTION_END) &&
-	    dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {
-		return dom_default_action_DOMNodeInserted_cb;
+	if (phase == DOM_DEFAULT_ACTION_END) {
+		if (dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {
+			return dom_default_action_DOMNodeInserted_cb;
+		} else if (dom_string_isequal(type, corestring_dom_DOMSubtreeModified)) {
+			return dom_default_action_DOMSubtreeModified_cb;
+		}
 	}
 	return NULL;
 }

@@ -57,6 +57,7 @@ struct search_context;
 struct html_stylesheet {
 	/** Type of sheet */
 	enum { HTML_STYLESHEET_EXTERNAL, HTML_STYLESHEET_INTERNAL } type;
+	struct dom_node *node; /**< dom node associated with sheet */
 	union {
 		struct hlcache_handle *external;
 		struct content_css_data *internal;
