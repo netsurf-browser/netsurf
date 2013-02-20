@@ -194,6 +194,7 @@ nserror ami_mime_init(const char *mimefile)
 		ami_mime_list = NewObjList();
 
 	rargs = AllocDosObjectTags(DOS_RDARGS,TAG_DONE);
+	if(rargs == NULL) return NSERROR_NOMEM;
 
 	if(fh = FOpen(mimefile, MODE_OLDFILE, 0))
 	{
@@ -251,10 +252,12 @@ nserror ami_mime_init(const char *mimefile)
 					if (lerror != lwc_error_ok)
 						return NSERROR_NOMEM;
 				}
+				FreeArgs(rargs);
 			}
 		}
 		FClose(fh);
 	}
+	FreeDosObject(DOS_RDARGS, rargs);
 }
 
 void ami_mime_free(void)
