@@ -61,7 +61,6 @@ else
   ifeq ($(SUBTARGET),os3)
     LDFLAGS += -lpbl -liconv
   else
-    CFLAGS += -DAMIGA_NETSURF_REPLACE_ALLOC
     LDFLAGS += -lauto -lpbl -liconv
   endif
 endif
