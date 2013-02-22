@@ -824,8 +824,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, EM_SETSEL, 0, -1);
 		else
-			selection_select_all(
-					browser_window_get_selection(gw->bw));
+			browser_window_key_press(gw->bw, KEY_SELECT_ALL);
 		break;
 
 	case IDM_EDIT_SEARCH:
