@@ -103,7 +103,7 @@ void gui_start_selection(struct gui_window *g)
 	OnMenu(g->shared->win, AMI_MENU_CLEAR);
 	OnMenu(g->shared->win, AMI_MENU_COPY);
 
-	if(selection_read_only(browser_window_get_selection(g->shared->bw)) == false)
+	if (browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
 }
 
@@ -297,7 +297,7 @@ struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 
 	if (sel) {
 		/* Get selection string */
-		ss = selection_get_copy(browser_window_get_selection(gwin->bw));
+		ss = browser_window_get_selection(gwin->bw);
 		if (ss == NULL)
 			return sel;
 
