@@ -28,6 +28,7 @@
 
 #import "utils/corestrings.h"
 #import "utils/filename.h"
+#import "utils/messages.h"
 #import "utils/url.h"
 
 
@@ -238,15 +239,15 @@ static inline bool compare_float( float a, float b )
 	SEL action = [item action];
 	
 	if (action == @selector(copy:)) {
-		return browser_window_has_selection( browser );
+		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_COPY;
 	}
 	
 	if (action == @selector(cut:)) {
-		return browser_window_has_selection( browser ) && browser->caret_callback != NULL;
+		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_CUT;
 	}
 	
 	if (action == @selector(paste:)) {
-		return browser->paste_callback != NULL;
+		return browser_window_get_editor_flags( browser ) & BW_EDITOR_CAN_PASTE;
 	}
 	
 	if (action == @selector( stopLoading: )) {
