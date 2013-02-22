@@ -652,12 +652,12 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		if(browser_window_has_selection(g->shared->bw))
+		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_COPY)
 		{
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
 
-			if(selection_read_only(browser_window_get_selection(g->shared->bw)) == false)
+			if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
 				OnMenu(win,AMI_MENU_CUT);
 		}
 		if(g->c_h) OnMenu(win,AMI_MENU_PASTE);
