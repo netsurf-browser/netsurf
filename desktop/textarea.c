@@ -1818,7 +1818,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 
 	} else switch (key) {
 		case KEY_SELECT_ALL:
-			caret = ta->text.utf8_len;
 			textarea_select(ta, 0, ta->text.utf8_len, true);
 			return true;
 		case KEY_COPY_SELECTION:
