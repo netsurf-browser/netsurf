@@ -2183,9 +2183,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			return false;
 	}
 
-
-	if (caret != caret_init || redraw)
-		textarea_set_caret(ta, caret);
+	textarea_set_caret(ta, caret);
 
 	//TODO:redraw only the important part
 	if (redraw) {
