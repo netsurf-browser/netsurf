@@ -35,6 +35,7 @@
 #include "utils/utils.h"
 
 #define CARET_COLOR 0x0000FF
+#define TA_ALLOC_STEP 512
 
 static plot_style_t pstyle_stroke_caret = {
     .stroke_type = PLOT_OP_TYPE_SOLID,
@@ -551,14 +552,14 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			if (diff > 0 && b_len > ta->password.alloc) {
 				/* Increase password alloaction */
 				char *temp = realloc(ta->password.data,
-						b_len + 512);
+						b_len + TA_ALLOC_STEP);
 				if (temp == NULL) {
 					LOG(("realloc failed"));
 					return false;
 				}
 
 				ta->password.data = temp;
-				ta->password.alloc = b_len + 512;
+				ta->password.alloc = b_len + TA_ALLOC_STEP;
 			}
 
 			b_len--;
@@ -887,14 +888,15 @@ static bool textarea_insert_text(struct textarea *ta, unsigned int c_index,
 		c_index--;
 
 	if (b_len + ta->text.len >= ta->text.alloc) {
-		char *temp = realloc(ta->text.data, b_len + ta->text.len + 512);
+		char *temp = realloc(ta->text.data, b_len + ta->text.len +
+				TA_ALLOC_STEP);
 		if (temp == NULL) {
 			LOG(("realloc failed"));
 			return false;
 		}
 
 		ta->text.data = temp;
-		ta->text.alloc = b_len + ta->text.len + 512;
+		ta->text.alloc = b_len + ta->text.len + TA_ALLOC_STEP;
 	}
 
 	/* Shift text following up */
@@ -979,7 +981,8 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 	/* Ensure textarea's text buffer is large enough */
 	if (rep_len + ta->text.len - (b_end - b_start) >= ta->text.alloc) {
 		char *temp = realloc(ta->text.data,
-			rep_len + ta->text.len - (b_end - b_start) + 512);
+			rep_len + ta->text.len - (b_end - b_start) +
+					TA_ALLOC_STEP);
 		if (temp == NULL) {
 			LOG(("realloc failed"));
 			return false;
@@ -987,7 +990,8 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 
 		ta->text.data = temp;
 		ta->text.alloc =
-			rep_len + ta->text.len - (b_end - b_start) + 512;
+			rep_len + ta->text.len - (b_end - b_start) +
+					TA_ALLOC_STEP;
 	}
 
 	/* Shift text following to new position */
@@ -1149,19 +1153,19 @@ struct textarea *textarea_create(const textarea_flags flags,
 	ret->drag_info.type = TEXTAREA_DRAG_NONE;
 
 
-	ret->text.data = malloc(512);
+	ret->text.data = malloc(TA_ALLOC_STEP);
 	if (ret->text.data == NULL) {
 		LOG(("malloc failed"));
 		free(ret);
 		return NULL;
 	}
 	ret->text.data[0] = '\0';
-	ret->text.alloc = 512;
+	ret->text.alloc = TA_ALLOC_STEP;
 	ret->text.len = 1;
 	ret->text.utf8_len = 0;
 
 	if (flags & TEXTAREA_PASSWORD) {
-		ret->password.data = malloc(512);
+		ret->password.data = malloc(TA_ALLOC_STEP);
 		if (ret->password.data == NULL) {
 			LOG(("malloc failed"));
 			free(ret->text.data);
@@ -1169,7 +1173,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 			return NULL;
 		}
 		ret->password.data[0] = '\0';
-		ret->password.alloc = 512;
+		ret->password.alloc = TA_ALLOC_STEP;
 		ret->password.len = 1;
 		ret->password.utf8_len = 0;
 
@@ -1228,13 +1232,13 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 	unsigned int len = strlen(text) + 1;
 
 	if (len >= ta->text.alloc) {
-		char *temp = realloc(ta->text.data, len + 512);
+		char *temp = realloc(ta->text.data, len + TA_ALLOC_STEP);
 		if (temp == NULL) {
 			LOG(("realloc failed"));
 			return false;
 		}
 		ta->text.data = temp;
-		ta->text.alloc = len + 512;
+		ta->text.alloc = len + TA_ALLOC_STEP;
 	}
 
 	memcpy(ta->text.data, text, len);
