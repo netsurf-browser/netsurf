@@ -23,6 +23,7 @@
 #ifndef _NETSURF_UTILS_UTF8_H_
 #define _NETSURF_UTILS_UTF8_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum {
