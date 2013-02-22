@@ -183,6 +183,11 @@ static bool textarea_select(struct textarea *ta, int c_start, int c_end,
 	bool pre_existing_selection = (ta->sel_start != -1);
 	struct textarea_msg msg;
 
+	if (c_start == c_end) {
+		textarea_clear_selection(ta);
+		return true;
+	}
+
 	/* Ensure start is the beginning of the selection */
 	if (c_start > c_end) {
 		swap = c_start;
