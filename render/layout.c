@@ -3065,8 +3065,14 @@ struct box *layout_minmax_line(struct box *first,
 		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
 				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
+			bool no_wrap;
 			if (!b->text)
 				continue;
+
+			no_wrap = (css_computed_white_space(b->style) ==
+					CSS_WHITE_SPACE_NOWRAP ||
+					css_computed_white_space(b->style) ==
+					CSS_WHITE_SPACE_PRE);
 
 			if (b->width == UNKNOWN_WIDTH) {
 				/** \todo handle errors */
@@ -3111,11 +3117,15 @@ struct box *layout_minmax_line(struct box *first,
 				max += b->space;
 			}
 
-			/* min = widest word */
-			if (b->parent->flags & NEED_MIN) {
+			if (no_wrap) {
+				/* can't wrap, so min is the same as max */
+				min = max;
+
+			} else if (b->parent->flags & NEED_MIN) {
 				/* If we care what the minimum width is,
 				 * calculate it.  (It's only needed if we're
 				 * shrinking-to-fit.) */
+				/* min = widest single word */
 				i = 0;
 				do {
 					for (j = i; j != b->length &&
