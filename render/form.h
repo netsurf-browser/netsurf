@@ -94,11 +94,6 @@ struct form_control {
 	bool disabled;			/**< Whether control is disabled */
 
 	struct box *box;		/**< Box for control */
-	/** Caret details. */
-	struct box *caret_inline_container;
-	struct box *caret_text_box;
-	size_t caret_box_offset, caret_form_offset;
-	int caret_pixel_offset;
 
 	unsigned int length;		/**< Number of characters in control */
 	unsigned int maxlength;		/**< Maximum characters permitted */

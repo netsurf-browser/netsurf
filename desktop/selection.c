@@ -943,14 +943,6 @@ void selection_set_start(struct selection *s, unsigned offset)
 	s->start_idx = offset;
 	s->defined = (s->start_idx < s->end_idx);
 	
-	if (s->defined && s->root && s->root->gadget) {
-		/* update the caret text_box and offset so that it stays at the 
-		 * beginning of the selection */
-		s->root->gadget->caret_text_box = selection_get_start(s, 
-				&s->root->gadget->caret_box_offset);
-		assert(s->root->gadget->caret_text_box != NULL);
-	}
-
 	if (was_defined) {
 		if (offset < old_start)
 			selection_redraw(s, s->start_idx, old_start);
