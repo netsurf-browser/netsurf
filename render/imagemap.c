@@ -607,18 +607,20 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 bad_out:
 	ret = false;
 ok_free_map_out:
-	if (new_map->url != NULL)
-		nsurl_unref(new_map->url);
-	if (new_map->type == IMAGEMAP_POLY && 
-	    new_map->bounds.poly.ycoords != NULL)
-		free(new_map->bounds.poly.ycoords);
-	if (new_map->type == IMAGEMAP_POLY && 
-	    new_map->bounds.poly.xcoords != NULL)
-		free(new_map->bounds.poly.xcoords);
-	if (new_map->target != NULL)
-		free(new_map->target);
-	if (new_map != NULL)
+	if (new_map != NULL) {
+		if (new_map->url != NULL)
+			nsurl_unref(new_map->url);
+		if (new_map->type == IMAGEMAP_POLY &&
+				new_map->bounds.poly.ycoords != NULL)
+			free(new_map->bounds.poly.ycoords);
+		if (new_map->type == IMAGEMAP_POLY &&
+				new_map->bounds.poly.xcoords != NULL)
+			free(new_map->bounds.poly.xcoords);
+		if (new_map->target != NULL)
+			free(new_map->target);
+
 		free(new_map);
+	}
 ok_out:
 	if (href != NULL)
 		dom_string_unref(href);
