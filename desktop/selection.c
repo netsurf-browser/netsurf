@@ -77,9 +77,6 @@ static bool redraw_handler(const char *text, size_t length, struct box *box,
 		size_t whitespace_length);
 static void selection_redraw(struct selection *s, unsigned start_idx,
 		unsigned end_idx);
-static bool save_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length);
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
@@ -285,10 +282,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
 	struct browser_window *top = selection_get_browser_window(s);
-
-	if (top == NULL)
-		return false; /* not our problem */
-
 	top = browser_window_get_root(top);
 
 	if (selection_defined(s)) {
@@ -309,14 +302,12 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 	}
 	else if (!modkeys) {
 		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
-		/* Clear the selection if mouse is pressed outside the selection,
-		 * Otherwise clear on release (to allow for drags) */
-			browser_window_set_selection(top, s);
+		/* Clear the selection if mouse is pressed outside the
+		 * selection, Otherwise clear on release (to allow for drags) */
 
 			selection_clear(s, true);
 		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			/* start new selection drag */
-			browser_window_set_selection(top, s);
 
 			selection_clear(s, true);
 			
@@ -332,8 +323,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 			/* adjust selection, but only if there is one */
 			if (!selection_defined(s))
 				return false;	/* ignore Adjust drags */
-
-			browser_window_set_selection(top, s);
 
 			if (pos >= 0) {
 				selection_set_end(s, idx);
@@ -907,7 +896,6 @@ void selection_clear(struct selection *s, bool redraw)
 {
 	int old_start, old_end;
 	bool was_defined;
-	struct browser_window *top = selection_get_browser_window(s);
 
 	assert(s);
 	was_defined = selection_defined(s);
@@ -917,13 +905,6 @@ void selection_clear(struct selection *s, bool redraw)
 	s->defined = false;
 	s->start_idx = 0;
 	s->end_idx = 0;
-
-	if (!top)
-		return;
-
-	top = browser_window_get_root(top);
-
-	gui_clear_selection(top->window);
 
 	if (redraw && was_defined)
 		selection_redraw(s, old_start, old_end);
@@ -1106,111 +1087,6 @@ bool selection_highlighted(const struct selection *s,
 //	assert(IS_TEXT(box));
 
 //	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
-}
-
-
-/**
- * Selection traversal handler for saving the text to a file.
- *
- * \param  text		pointer to text being added, or NULL for newline
- * \param  length	length of text to be appended (bytes)
- * \param  box		pointer to text box (or NULL for textplain content)
- * \param  handle	our save_state workspace pointer
- * \param  whitespace_text    whitespace to place before text for formatting
- *                            may be NULL
- * \param  whitespace_length  length of whitespace_text
- * \return true iff the file writing succeeded and traversal should continue.
- */
-
-bool save_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
-{
-	struct save_text_state *sv = handle;
-	size_t new_length;
-	int space = 0;
-
-	assert(sv);
-
-	if (box && (box->space > 0))
-		space = 1;
-
-	if (whitespace_text)
-		length += whitespace_length;
-
-	new_length = sv->length + whitespace_length + length + space;
-	if (new_length >= sv->alloc) {
-		size_t new_alloc = sv->alloc + (sv->alloc / 4);
-		char *new_block;
-
-		if (new_alloc < new_length) new_alloc = new_length;
-
-		new_block = realloc(sv->block, new_alloc);
-		if (!new_block) return false;
-
-		sv->block = new_block;
-		sv->alloc = new_alloc;
-	}
-	if (whitespace_text) {
-		memcpy(sv->block + sv->length, whitespace_text,
-				whitespace_length);
-	}
-	memcpy(sv->block + sv->length + whitespace_length, text, length);
-	sv->length += length;
-
-	if (space == 1)
-		sv->block[sv->length++] = ' ';
-
-	return true;
-}
-
-
-/**
- * Save the given selection to a file.
- *
- * \param  s     selection object
- * \param  path  pathname to be used
- * \return true iff the save succeeded
- */
-
-bool selection_save_text(struct selection *s, const char *path)
-{
-	struct save_text_state sv = { NULL, 0, 0 };
-	utf8_convert_ret ret;
-	char *result;
-	FILE *out;
-
-	if (!selection_traverse(s, save_handler, &sv)) {
-		free(sv.block);
-		return false;
-	}
-
-	if (!sv.block)
-		return false;
-
-	ret = utf8_to_local_encoding(sv.block, sv.length, &result);
-	free(sv.block);
-
-	if (ret != UTF8_CONVERT_OK) {
-		LOG(("failed to convert to local encoding, return %d", ret));
-		return false;
-	}
-
-	out = fopen(path, "w");
-	if (out) {
-		int res = fputs(result, out);
-		if (res < 0) {
-			LOG(("Warning: writing data failed"));
-		}
-
-		res = fputs("\n", out);
-		fclose(out);
-		free(result);
-		return (res != EOF);
-	}
-	free(result);
-
-	return false;
 }
 
 

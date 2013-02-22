@@ -50,6 +50,7 @@ struct textarea;
 struct scrollbar;
 struct scrollbar_msg_data;
 struct search_context;
+struct selection;
 
 /**
  * Container for stylesheets used by an HTML document

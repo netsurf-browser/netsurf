@@ -50,6 +50,8 @@ utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
 utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		size_t len, char **result);
 
+bool utf8_save_text(const char *utf8_text, const char *path);
+
 /* These two are platform specific */
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result);

@@ -41,4 +41,15 @@ struct dom_node;
 bool box_textarea_create_textarea(html_content *html,
 		struct box *box, struct dom_node *node);
 
+
+/**
+ * Handle form textarea keypress input
+ *
+ * \param html    html content object
+ * \param box     box with textarea widget
+ * \param key     keypress
+ * \return true iff keypress handled
+ */
+bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key);
+
 #endif

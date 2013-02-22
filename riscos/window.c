@@ -145,7 +145,7 @@ static void ro_gui_window_save_toolbar_buttons(void *data, char *config);
 static void ro_gui_window_update_theme(void *data, bool ok);
 
 static bool ro_gui_window_import_text(struct gui_window *g,
-		const char *filename, bool toolbar);
+		const char *filename);
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
 
@@ -2167,11 +2167,13 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	hlcache_handle		*h = NULL;
 	bool			export_sprite, export_draw;
 	os_coord		pos;
+	browser_editor_flags	editor_flags;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
 	bw = g->bw;
 	h = g->bw->current_content;
+	editor_flags = browser_window_get_editor_flags(bw);
 
 	/* If this is the form select menu, handle it now and then exit.
 	 * Otherwise, carry on to the main browser window menu.
@@ -2327,20 +2329,19 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			 * be selected */
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_SAVE,
-			!browser_window_has_selection(bw));
+			editor_flags & ~BW_EDITOR_CAN_COPY);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_COPY,
-			!browser_window_has_selection(bw));
+			editor_flags & ~BW_EDITOR_CAN_COPY);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CUT,
-			!browser_window_has_selection(bw) ||
-			selection_read_only(browser_window_get_selection(bw)));
+			editor_flags & ~BW_EDITOR_CAN_CUT);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_PASTE,
-			h == NULL || bw->paste_callback == NULL);
+			editor_flags & ~BW_EDITOR_CAN_PASTE);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CLEAR,
-			!browser_window_has_selection(bw));
+			editor_flags & ~BW_EDITOR_CAN_COPY);
 
 
 	/* Navigate Submenu */
@@ -2477,7 +2478,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case BROWSER_SELECTION_SAVE:
-		if (browser_window_has_selection(bw))
+		if (browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_COPY)
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
 					browser_window_get_selection(bw),
 					NULL, NULL);
@@ -3722,14 +3723,15 @@ void ro_gui_window_toolbar_click(void *data,
 bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message)
 {
 	if (message->data.data_xfer.file_type == osfile_TYPE_TEXT &&
-		ro_gui_window_import_text(g, message->data.data_xfer.file_name, true)) {
-
+			ro_gui_window_import_text(g,
+					message->data.data_xfer.file_name)) {
 		os_error *error;
 
 		/* send DataLoadAck */
 		message->action = message_DATA_LOAD_ACK;
 		message->your_ref = message->my_ref;
-		error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+		error = xwimp_send_message(wimp_USER_MESSAGE, message,
+				message->sender);
 		if (error) {
 			LOG(("xwimp_send_message: 0x%x: %s\n",
 					error->errnum, error->errmess));
@@ -4546,14 +4548,15 @@ void ro_gui_window_update_theme(void *data, bool ok)
  * \return true iff successful
  */
 
-bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
-		bool toolbar)
+bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 {
 	fileswitch_object_type obj_type;
 	os_error *error;
-	char *buf, *utf8_buf;
+	char *buf, *utf8_buf, *sp;
 	int size;
 	utf8_convert_ret ret;
+	const char *ep;
+	char *p;
 
 	error = xosfile_read_stamped(filename, &obj_type, NULL, NULL,
 			&size, NULL, NULL);
@@ -4596,24 +4599,19 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 	}
 	size = strlen(utf8_buf);
 
-	if (toolbar) {
-		const char *ep = utf8_buf + size;
-		const char *sp;
-		char *p = utf8_buf;
+	ep = utf8_buf + size;
+	p = utf8_buf;
 
-		/* skip leading whitespace */
-		while (isspace(*p)) p++;
+	/* skip leading whitespace */
+	while (isspace(*p)) p++;
 
-		sp = p;
-		while (*p && *p != '\r' && *p != '\n')
-			p += utf8_next(p, ep - p, 0);
-		*p = '\0';
+	sp = p;
+	while (*p && *p != '\r' && *p != '\n')
+		p += utf8_next(p, ep - p, 0);
+	*p = '\0';
 
-		if (p > sp)
-			ro_gui_window_launch_url(g, sp);
-	}
-	else
-		browser_window_paste_text(g->bw, utf8_buf, size, true);
+	if (p > sp)
+		ro_gui_window_launch_url(g, sp);
 
 	free(buf);
 	free(utf8_buf);

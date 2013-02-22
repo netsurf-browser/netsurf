@@ -374,13 +374,15 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 	} else {
 		struct browser_window *bw =
 				nsgtk_get_browser_window(g->top_level);
-		has_selection = browser_window_has_selection(bw);
+		browser_editor_flags edit_f =
+				browser_window_get_editor_flags(bw);
 
-		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
-		g->buttons[CUT_BUTTON]->sensitivity = (has_selection &&
-				bw->caret_callback != 0);
+		g->buttons[COPY_BUTTON]->sensitivity =
+				edit_f & BW_EDITOR_CAN_COPY;
+		g->buttons[CUT_BUTTON]->sensitivity =
+				edit_f & BW_EDITOR_CAN_CUT;
 		g->buttons[PASTE_BUTTON]->sensitivity =
-				(bw->paste_callback != 0);
+				edit_f & BW_EDITOR_CAN_PASTE;
 	}
 
 	nsgtk_scaffolding_set_sensitivity(g);
@@ -1120,7 +1122,7 @@ MULTIHANDLER(selectall)
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
 		LOG(("Selecting all document text"));
-		selection_select_all(browser_window_get_selection(bw));
+		browser_window_key_press(bw, KEY_SELECT_ALL);
 	}
 
 	return TRUE;

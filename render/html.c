@@ -346,6 +346,10 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->font_func = &nsfont;
 	c->drag_type = HTML_DRAG_NONE;
 	c->drag_owner.no_owner = true;
+	c->selection_type = HTML_SELECTION_NONE;
+	c->selection_owner.none = true;
+	c->focus_type = HTML_FOCUS_SELF;
+	c->focus_owner.self = true;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jscontext = NULL;
@@ -1309,6 +1313,28 @@ html_object_callback(hlcache_handle *object,
 		content_broadcast(&c->base, event->type, event->data);
 		break;
 
+	case CONTENT_MSG_CARET:
+	{
+		union html_focus_owner focus_owner;
+		focus_owner.content = box;
+
+		switch (event->data.caret.type) {
+		case CONTENT_CARET_REMOVE:
+		case CONTENT_CARET_HIDE:
+			html_set_focus(c, HTML_FOCUS_CONTENT, focus_owner,
+					true, 0, 0, 0, NULL);
+			break;
+		case CONTENT_CARET_SET_POS:
+			html_set_focus(c, HTML_FOCUS_CONTENT, focus_owner,
+					false, event->data.caret.pos.x,
+					event->data.caret.pos.y,
+					event->data.caret.pos.height,
+					event->data.caret.pos.clip);
+			break;
+		}
+	}
+		break;
+
 	case CONTENT_MSG_DRAG:
 	{
 		html_drag_type drag_type = HTML_DRAG_NONE;
@@ -1329,6 +1355,23 @@ html_object_callback(hlcache_handle *object,
 		}
 		html_set_drag_type(c, drag_type, drag_owner,
 				event->data.drag.rect);
+	}
+		break;
+
+	case CONTENT_MSG_SELECTION:
+	{
+		html_selection_type sel_type;
+		union html_selection_owner sel_owner;
+
+		if (event->data.selection.selection) {
+			sel_type = HTML_SELECTION_CONTENT;
+			sel_owner.content = box;
+		} else {
+			sel_type = HTML_SELECTION_NONE;
+			sel_owner.none = true;
+		}
+		html_set_selection(c, sel_type, sel_owner,
+				event->data.selection.read_only);
 	}
 		break;
 
@@ -1513,6 +1556,10 @@ html_convert_css_callback(hlcache_handle *css,
 					event->data);
 		}
 		break;
+
+	case CONTENT_MSG_POINTER:
+		/* Really don't want this to continue after the switch */
+		return NSERROR_OK;
 
 	default:
 		assert(0);
@@ -2513,8 +2560,13 @@ html_open(struct content *c,
 	html->bw = bw;
 	html->page = (html_content *) page;
 
+	html->drag_type = HTML_DRAG_NONE;
+	html->drag_owner.no_owner = true;
+
 	/* text selection */
 	selection_init(&html->sel, html->layout);
+	html->selection_type = HTML_SELECTION_NONE;
+	html->selection_owner.none = true;
 
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
@@ -2540,6 +2592,8 @@ static void html_close(struct content *c)
 {
 	html_content *html = (html_content *) c;
 	struct content_html_object *object, *next;
+
+	selection_clear(&html->sel, false);
 
 	if (html->search != NULL)
 		search_destroy_context(html->search);
@@ -2567,11 +2621,63 @@ static void html_close(struct content *c)
  * Return an HTML content's selection context
  */
 
-static struct selection *html_get_selection(struct content *c)
+static void html_clear_selection(struct content *c)
 {
 	html_content *html = (html_content *) c;
 
-	return &html->sel;
+	switch (html->selection_type) {
+	case HTML_SELECTION_NONE:
+		/* Nothing to do */
+		assert(html->selection_owner.none == true);
+		break;
+	case HTML_SELECTION_TEXTAREA:
+		textarea_clear_selection(html->selection_owner.textarea->
+				gadget->data.text.ta);
+		break;
+	case HTML_SELECTION_SELF:
+		assert(html->selection_owner.none == false);
+		selection_clear(&html->sel, true);
+		break;
+	case HTML_SELECTION_CONTENT:
+		content_clear_selection(html->selection_owner.content->object);
+		break;
+	default:
+		break;
+	}
+
+	/* There is no selection now. */
+	html->selection_type = HTML_SELECTION_NONE;
+	html->selection_owner.none = true;
+}
+
+
+/**
+ * Return an HTML content's selection context
+ */
+
+static char *html_get_selection(struct content *c)
+{
+	html_content *html = (html_content *) c;
+
+	switch (html->selection_type) {
+	case HTML_SELECTION_TEXTAREA:
+		return textarea_get_selection(html->selection_owner.textarea->
+				gadget->data.text.ta);
+	case HTML_SELECTION_SELF:
+		assert(html->selection_owner.none == false);
+		return selection_get_copy(&html->sel);
+	case HTML_SELECTION_CONTENT:
+		return content_get_selection(
+				html->selection_owner.content->object);
+	case HTML_SELECTION_NONE:
+		/* Nothing to do */
+		assert(html->selection_owner.none == true);
+		break;
+	default:
+		break;
+	}
+
+	return NULL;
 }
 
 
@@ -3214,10 +3320,12 @@ static const content_handler html_content_handler = {
 	.stop = html_stop,
 	.mouse_track = html_mouse_track,
 	.mouse_action = html_mouse_action,
+	.keypress = html_keypress,
 	.redraw = html_redraw,
 	.open = html_open,
 	.close = html_close,
 	.get_selection = html_get_selection,
+	.clear_selection = html_clear_selection,
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
 	.drop_file_at_point = html_drop_file_at_point,

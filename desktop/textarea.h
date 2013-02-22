@@ -45,28 +45,39 @@ typedef enum {
 	TEXTAREA_DRAG_NONE,
 	TEXTAREA_DRAG_SCROLLBAR,
 	TEXTAREA_DRAG_SELECTION
-} textarea_drag_type;
+} textarea_drag_type;			/**< Textarea drag status */
 
 typedef enum {
 	TEXTAREA_MSG_DRAG_REPORT,	/**< Textarea drag start/end report */
+	TEXTAREA_MSG_SELECTION_REPORT,	/**< Textarea text selection presence */
 	TEXTAREA_MSG_REDRAW_REQUEST,	/**< Textarea redraw request */
-	TEXTAREA_MSG_MOVED_CARET	/**< Textarea caret moved */
+	TEXTAREA_MSG_CARET_UPDATE	/**< Textarea caret */
 } textarea_msg_type;
 
 struct textarea_msg {
-	struct textarea *ta;
+	struct textarea *ta;		/**< The textarea widget */
 
-	textarea_msg_type type;
+	textarea_msg_type type;		/**< Indicates message data type */
 	union {
-		textarea_drag_type drag;
-		struct rect redraw;
+		textarea_drag_type drag;	/**< With _DRAG_REPORT */
 		struct {
-			bool hidden;
-			int x;
-			int y;
-			int height;
-		} caret;
-	} data;
+			bool have_selection;	/**< Selection exists */
+			bool read_only;		/**< Selection can't be cut */
+		} selection;			/**< With _SELECTION_REPORT */
+		struct rect redraw;		/**< With _REDRAW_REQUEST */
+		struct {
+			enum {
+				TEXTAREA_CARET_SET_POS,	/**< Set coord/height */
+				TEXTAREA_CARET_HIDE	/**< Hide */
+			} type;
+			struct {
+				int x;			/**< Carret x-coord */
+				int y;			/**< Carret y-coord */
+				int height;		/**< Carret height */
+				struct rect *clip;	/**< Carret clip rect */
+			} pos;			/**< With _CARET_SET_POS */
+		} caret;			/**< With _CARET_UPDATE */
+	} data;				/**< Depends on msg type */
 };
 
 typedef struct textarea_setup {
@@ -204,6 +215,14 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
  * \return true if there was a selection to clear, false otherwise
  */
 bool textarea_clear_selection(struct textarea *ta);
+
+/**
+ * Get selected text, ownership passed to caller, which needs to free() it.
+ *
+ * \param ta  Textarea widget
+ * \return Selected text, or NULL if none.
+ */
+char *textarea_get_selection(struct textarea *ta);
 
 /**
  * Gets the dimensions of a textarea

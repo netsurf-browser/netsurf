@@ -63,11 +63,7 @@
  * \param p2  Callback private data pointer, passed to callback function
  */
 void browser_window_place_caret(struct browser_window *bw,
-		int x, int y, int height,
-		browser_caret_callback caret_cb,
-		browser_paste_callback paste_cb,
-		browser_move_callback move_cb,
-		void *p1, void *p2)
+		int x, int y, int height)
 {
 	struct browser_window *root_bw;
 	int pos_x = 0;
@@ -81,14 +77,10 @@ void browser_window_place_caret(struct browser_window *bw,
 	y = y * bw->scale + pos_y;
 
 	gui_window_place_caret(root_bw->window, x, y, height * bw->scale);
-	bw->caret_callback = caret_cb;
-	bw->paste_callback = paste_cb;
-	bw->move_callback = move_cb;
-	bw->caret_p1 = p1;
-	bw->caret_p2 = p2;
 
 	/* Set focus browser window */
 	root_bw->focus = bw;
+	root_bw->can_edit = true;
 }
 
 
@@ -97,20 +89,19 @@ void browser_window_place_caret(struct browser_window *bw,
  *
  * \param bw  The browser window from which to remove caret
  */
-void browser_window_remove_caret(struct browser_window *bw)
+void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 {
 	struct browser_window *root_bw;
 
 	root_bw = browser_window_get_root(bw);
 
+	if (only_hide)
+		root_bw->can_edit = true;
+	else
+		root_bw->can_edit = false;
+
 	if (root_bw && root_bw->window)
 		gui_window_remove_caret(root_bw->window);
-
-	bw->caret_callback = NULL;
-	bw->paste_callback = NULL;
-	bw->move_callback = NULL;
-	bw->caret_p1 = NULL;
-	bw->caret_p2 = NULL;
 }
 
 
@@ -127,59 +118,12 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 
 	assert(bw->window != NULL);
 
-	if (focus->caret_callback) {
-		/* Pass keypress onto anything that has claimed input focus */
-		return focus->caret_callback(focus, key,
-				focus->caret_p1, focus->caret_p2);
-	}
+	if (focus == NULL)
+		focus = bw;
 
-	/* TODO: pass these to content to deal with */
-	switch (key) {
-		case KEY_COPY_SELECTION:
-			selection_copy_to_clipboard(bw->cur_sel);
-			return true;
-
-		case KEY_CLEAR_SELECTION:
-			selection_clear(bw->cur_sel, true);
-			return true;
-
-		case KEY_SELECT_ALL:
-			selection_select_all(bw->cur_sel);
-			return true;
-
-		case KEY_ESCAPE:
-			if (bw->cur_sel && selection_defined(bw->cur_sel)) {
-				selection_clear(bw->cur_sel, true);
-				return true;
-			}
-			/* if there's no selection,
-			 * leave Escape for the caller */
-			return false;
-	}
-
-	return false;
-}
-
-
-/**
- * Paste a block of text into a browser window at the caret position.
- *
- * \param  bw        browser window
- * \param  utf8      pointer to block of text
- * \param  utf8_len  length (bytes) of text block
- * \param  last      true iff this is the last chunk (update screen too)
- * \return true iff successful
- *
- * TODO: Remove this function.
- */
-
-bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
-		unsigned utf8_len, bool last)
-{
-	if (!bw->focus || !bw->focus->paste_callback)
+	if (focus->current_content == NULL)
 		return false;
 
-	return bw->focus->paste_callback(bw->focus, utf8, utf8_len, last,
-			bw->focus->caret_p1, bw->focus->caret_p2);
+	return content_keypress(focus->current_content, key);
 }
 

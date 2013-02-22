@@ -474,3 +474,42 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 }
 
 
+/**
+ * Save the given utf8 text to a file, converting to local encoding.
+ *
+ * \param  utf8_text	text to save to file
+ * \param  path		pathname to save to
+ * \return true iff the save succeeded
+ */
+
+bool utf8_save_text(const char *utf8_text, const char *path)
+{
+	utf8_convert_ret ret;
+	char *conv;
+	FILE *out;
+
+	ret = utf8_to_local_encoding(utf8_text, strlen(utf8_text), &conv);
+
+	if (ret != UTF8_CONVERT_OK) {
+		LOG(("failed to convert to local encoding, return %d", ret));
+		return false;
+	}
+
+	out = fopen(path, "w");
+	if (out) {
+		int res = fputs(conv, out);
+		if (res < 0) {
+			LOG(("Warning: writing data failed"));
+		}
+
+		res = fputs("\n", out);
+		fclose(out);
+		free(conv);
+		return (res != EOF);
+	}
+	free(conv);
+
+	return false;
+}
+
+

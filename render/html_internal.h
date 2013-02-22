@@ -43,6 +43,29 @@ union html_drag_owner {
 	struct box *textarea;
 }; /**< For drags we don't own */
 
+typedef enum {
+	HTML_SELECTION_NONE,		/** No selection */
+	HTML_SELECTION_TEXTAREA,	/** Selection in one of our textareas */
+	HTML_SELECTION_SELF,		/** Selection in this html content */
+	HTML_SELECTION_CONTENT		/** Selection in child content */
+} html_selection_type;
+union html_selection_owner {
+	bool none;
+	struct box *textarea;
+	struct box *content;
+}; /**< For getting at selections in this content or things in this content */
+
+typedef enum {
+	HTML_FOCUS_SELF,		/** Focus is our own */
+	HTML_FOCUS_CONTENT,		/** Focus belongs to child content */
+	HTML_FOCUS_TEXTAREA		/** Focus belongs to textarea */
+} html_focus_type;
+union html_focus_owner {
+	bool self;
+	struct box *textarea;
+	struct box *content;
+}; /**< For directing input */
+
 /** Data specific to CONTENT_HTML. */
 typedef struct html_content {
 	struct content base;
@@ -114,17 +137,27 @@ typedef struct html_content {
 	 * object within a page. */
 	struct html_content *page;
 
-	/* Current drag type */
+	/** Current drag type */
 	html_drag_type drag_type;
 	/** Widget capturing all mouse events */
 	union html_drag_owner drag_owner;
 
+	/** Current selection state */
+	html_selection_type selection_type;
+	/** Current selection owner */
+	union html_selection_owner selection_owner;
+
+	/** Current input focus target type */
+	html_focus_type focus_type;
+	/** Current input focus target */
+	union html_focus_owner focus_owner;
+
+	/** HTML content's own text selection object */
+	struct selection sel;
+
 	/** Open core-handled form SELECT menu,
 	 *  or NULL if none currently open. */
 	struct form_control *visible_select_menu;
-
-	/** Selection state */
-	struct selection sel;
 
 	/** Context for free text search, or NULL if none */
 	struct search_context *search;
@@ -151,6 +184,34 @@ void html__redraw_a_box(html_content *html, struct box *box);
  */
 void html_set_drag_type(html_content *html, html_drag_type drag_type,
 		union html_drag_owner drag_owner, const struct rect *rect);
+
+/**
+ * Set our selection status, and inform whatever owns the content
+ *
+ * \param html			HTML content
+ * \param selection_type	Type of selection
+ * \param selection_owner	What owns the selection
+ * \param read_only		True iff selection is read only
+ */
+void html_set_selection(html_content *html, html_selection_type selection_type,
+		union html_selection_owner selection_owner, bool read_only);
+
+/**
+ * Set our input focus, and inform whatever owns the content
+ *
+ * \param html			HTML content
+ * \param focus_type		Type of input focus
+ * \param focus_owner		What owns the focus
+ * \param hide_caret		True iff caret to be hidden
+ * \param x			Carret x-coord rel to owner
+ * \param y			Carret y-coord rel to owner
+ * \param height		Carret height
+ * \param clip			Carret clip rect
+ */
+void html_set_focus(html_content *html, html_focus_type focus_type,
+		union html_focus_owner focus_owner, bool hide_caret,
+		int x, int y, int height, const struct rect *clip);
+
 
 struct browser_window *html_get_browser_window(struct content *c);
 struct search_context *html_get_search(struct content *c);
@@ -179,6 +240,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
+bool html_keypress(struct content *c, uint32_t key);
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 

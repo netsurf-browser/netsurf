@@ -219,7 +219,6 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->no_resize = true;
 		window->margin_width = cur->margin_width;
 		window->margin_height = cur->margin_height;
-		window->cur_sel = bw->cur_sel;
 		window->scale = bw->scale;
 		if (cur->name) {
 			window->name = strdup(cur->name);
@@ -338,7 +337,6 @@ void browser_window_create_frameset(struct browser_window *bw,
 					warn_user("NoMemory", 0);
 			}
 
-			window->cur_sel = bw->cur_sel;
 			window->scale = bw->scale;
 
 			/* linking */

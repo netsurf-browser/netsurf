@@ -31,14 +31,11 @@
 #include "utils/log.h"
 
 
-static bool box_textarea_browser_caret_callback(struct browser_window *bw,
-		uint32_t key, void *p1, void *p2)
+bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 {
-	struct box *box = p1;
 	struct form_control *gadget = box->gadget;
 	struct textarea *ta = gadget->data.text.ta;
 	struct form* form = box->gadget->form;
-	html_content *html = p2;
 	struct content *c = (struct content *) html;
 
 	assert(ta != NULL);
@@ -104,21 +101,6 @@ static bool box_textarea_browser_caret_callback(struct browser_window *bw,
 }
 
 
-static void box_textarea_browser_move_callback(struct browser_window *bw,
-		void *p1, void *p2)
-{
-}
-
-
-static bool box_textarea_browser_paste_callback(struct browser_window *bw,
-		const char *utf8, unsigned utf8_len, bool last,
-		void *p1, void *p2)
-{
-	printf("AWWOOOOOGA!\n");
-	return true;
-}
-
-
 /**
  * Callback for html form textareas.
  */
@@ -175,23 +157,43 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 		html__redraw_a_box(html, box);
 		break;
 
-	case TEXTAREA_MSG_MOVED_CARET:
+	case TEXTAREA_MSG_SELECTION_REPORT:
+		if (msg->data.selection.have_selection) {
+			/* Textarea now has a selection */
+			union html_selection_owner sel_owner;
+			sel_owner.textarea = box;
+
+			html_set_selection(d->html, HTML_SELECTION_TEXTAREA,
+					sel_owner,
+					msg->data.selection.read_only);
+		} else {
+			/* The textarea now has no selection */
+			union html_selection_owner sel_owner;
+			sel_owner.none = true;
+
+			html_set_selection(d->html, HTML_SELECTION_NONE,
+					sel_owner, true);
+		}
+		break;
+
+	case TEXTAREA_MSG_CARET_UPDATE:
 		if (html->bw == NULL)
 			break;
 
-		if (msg->data.caret.hidden) {
-			browser_window_remove_caret(html->bw);
+		if (msg->data.caret.type == TEXTAREA_CARET_HIDE) {
+			union html_focus_owner focus_owner;
+			focus_owner.textarea = box;
+			html_set_focus(d->html, HTML_FOCUS_TEXTAREA,
+					focus_owner, true, 0, 0, 0, NULL);
 		} else {
-			int x, y;
-			box_coords(box, &x, &y);
-			browser_window_place_caret(html->bw,
-					x + msg->data.caret.x,
-					y + msg->data.caret.y,
-					msg->data.caret.height,
-					box_textarea_browser_caret_callback,
-					box_textarea_browser_paste_callback,
-					box_textarea_browser_move_callback,
-					box, html);
+			union html_focus_owner focus_owner;
+			focus_owner.textarea = box;
+			html_set_focus(d->html, HTML_FOCUS_TEXTAREA,
+					focus_owner, false,
+					msg->data.caret.pos.x,
+					msg->data.caret.pos.y,
+					msg->data.caret.pos.height,
+					msg->data.caret.pos.clip);
 		}
 		break;
 	}

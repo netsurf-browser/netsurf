@@ -79,7 +79,7 @@
 
 static gui_save_type gui_save_current_type;
 static hlcache_handle *gui_save_content = NULL;
-static struct selection *gui_save_selection = NULL;
+static char *gui_save_selection = NULL;
 static const char *gui_save_url = NULL;
 static const char *gui_save_title = NULL;
 static int gui_save_filetype;
@@ -246,7 +246,7 @@ void ro_gui_saveas_quit(void)
  */
 
 void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
-		struct selection *s, const char *url, const char *title)
+		char *s, const char *url, const char *title)
 {
 	char name_buf[FILENAME_MAX];
 	size_t leaf_offset = 0;
@@ -258,6 +258,9 @@ void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
 			(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
 			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) ||
 			(save_type == GUI_SAVE_TEXT_SELECTION) || h);
+
+	if (gui_save_selection == NULL)
+		free(gui_save_selection);
 
 	gui_save_selection = s;
 	gui_save_url = url;
@@ -414,7 +417,11 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 		return;
 	}
 
-	gui_save_selection = s;
+
+	if (gui_save_selection == NULL)
+		free(gui_save_selection);
+
+	gui_save_selection = selection_get_copy(s);
 
 	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, NULL,
 			save_leafname, LEAFNAME_MAX,
@@ -890,8 +897,15 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 			break;
 
 		case GUI_SAVE_TEXT_SELECTION:
-			if (!selection_save_text(gui_save_selection, path))
+			if (gui_save_selection == NULL)
 				return false;
+			if (!utf8_save_text(gui_save_selection, path)) {
+				free(gui_save_selection);
+				gui_save_selection = NULL;
+				return false;
+			}
+			free(gui_save_selection);
+			gui_save_selection = NULL;
 			xosfile_set_type(path, 0xfff);
 			break;
 

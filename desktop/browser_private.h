@@ -52,18 +52,6 @@ struct browser_window {
 	/** Window history structure. */
 	struct history *history;
 
-	/** Handler for keyboard input, or 0. */
-	browser_caret_callback caret_callback;
-	/** Handler for pasting text, or 0. */
-	browser_paste_callback paste_callback;
-	/** Handler for repositioning caret, or 0. */
-	browser_move_callback move_callback;
-
-	/** User parameters for caret_callback, paste_callback, and
-	 *  move_callback */
-	void *caret_p1;
-	void *caret_p2;
-
 	/** Platform specific window data. */
 	struct gui_window *window;
 
@@ -158,8 +146,12 @@ struct browser_window {
 	/** Last time a link was followed in this window */
 	unsigned int last_action;
 
-	/** Current selection, or NULL if none */
-	struct selection *cur_sel;
+	/** Current selection */
+	struct {
+		struct browser_window *bw;
+		bool read_only;
+	} selection;
+	bool can_edit;
 
 	/** Current context for free text search, or NULL if none */
 	struct search_context *cur_search;

@@ -475,6 +475,26 @@ void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
 
 
 /**
+ * Handle keypresses.
+ *
+ * \param  h	Content handle
+ * \param  key	The UCS4 character codepoint
+ * \return true if key handled, false otherwise
+ */
+
+bool content_keypress(struct hlcache_handle *h, uint32_t key)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != NULL);
+
+	if (c->handler->keypress != NULL)
+		return c->handler->keypress(c, key);
+
+	return false;
+}
+
+
+/**
  * Request a redraw of an area of a content
  *
  * \param h	  high-level cache handle
@@ -738,10 +758,26 @@ void content_close(hlcache_handle *h)
 
 
 /**
- * Find this content's selection context, if it has one.
+ * Tell a content that any selection it has, or one of its objects has, must be
+ * cleared.
  */
 
-struct selection *content_get_selection(hlcache_handle *h)
+void content_clear_selection(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->get_selection != NULL)
+		c->handler->clear_selection(c);
+}
+
+
+/**
+ * Get a text selection from a content.  Ownership is passed to the caller,
+ * who must free() it.
+ */
+
+char * content_get_selection(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);

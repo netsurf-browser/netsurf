@@ -58,13 +58,15 @@ struct content_handler {
 			browser_mouse_state mouse, int x, int y);
 	void (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
+	bool (*keypress)(struct content *c, uint32_t key);
 	bool (*redraw)(struct content *c, struct content_redraw_data *data,
 			const struct rect *clip,
 			const struct redraw_context *ctx);
 	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page, struct object_params *params);
 	void (*close)(struct content *c);
-	struct selection * (*get_selection)(struct content *c);
+	void (*clear_selection)(struct content *c);
+	char * (*get_selection)(struct content *c);
 	void (*get_contextual_content)(struct content *c, int x, int y,
 			struct contextual_content *data);
 	bool (*scroll_at_point)(struct content *c, int x, int y,

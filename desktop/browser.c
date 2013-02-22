@@ -428,42 +428,69 @@ struct browser_window * browser_window_get_root(struct browser_window *bw)
 }
 
 /* exported interface, documented in browser.h */
-bool browser_window_has_selection(struct browser_window *bw)
+browser_editor_flags browser_window_get_editor_flags(struct browser_window *bw)
 {
+	browser_editor_flags ed_flags = BW_EDITOR_NONE;
 	assert(bw->window);
+	assert(bw->parent == NULL);
 
-	if (bw->cur_sel != NULL && selection_defined(bw->cur_sel)) {
-		return true;
-	} else {
-		return false;
+	if (bw->selection.bw != NULL) {
+		ed_flags |= BW_EDITOR_CAN_COPY;
+
+		if (!bw->selection.read_only)
+			ed_flags |= BW_EDITOR_CAN_CUT;
 	}
+
+	if (bw->can_edit)
+		ed_flags |= BW_EDITOR_CAN_PASTE;
+
+	return ed_flags;
 }
 
 /* exported interface, documented in browser.h */
-void browser_window_set_selection(struct browser_window *bw,
-		struct selection *s)
+char * browser_window_get_selection(struct browser_window *bw)
 {
 	assert(bw->window);
+	assert(bw->parent == NULL);
 
-	if (bw->cur_sel != s && bw->cur_sel != NULL) {
-		/* Clear any existing selection */
-		selection_clear(bw->cur_sel, true);
-	}
+	if (bw->selection.bw == NULL ||
+			bw->selection.bw->current_content == NULL)
+		return NULL;
 
-	/* Replace current selection pointer */
-	if (s == NULL && bw->current_content != NULL) {
-		bw->cur_sel = content_get_selection(bw->current_content);
-	} else {
-		bw->cur_sel = s;
-	}
+	return content_get_selection(bw->selection.bw->current_content);
 }
 
-/* exported interface, documented in browser.h */
-struct selection *browser_window_get_selection(struct browser_window *bw)
+/**
+ * Set or remove a selection.
+ *
+ * \param bw		browser window with selection
+ * \param selection	true if bw has a selection, false if removing selection
+ * \param read_only	true iff selection is read only (e.g. can't cut it)
+ */
+static void browser_window_set_selection(struct browser_window *bw,
+		bool selection, bool read_only)
 {
-	assert(bw->window);
+	struct browser_window *top;
 
-	return bw->cur_sel;
+	assert(bw != NULL);
+
+	top = browser_window_get_root(bw);
+
+	assert(top != NULL);
+
+	if (bw != top->selection.bw && top->selection.bw != NULL &&
+			top->selection.bw->current_content != NULL) {
+		/* clear old selection */
+		content_clear_selection(top->selection.bw->current_content);
+	}
+
+	if (selection) {
+		top->selection.bw = bw;
+	} else {
+		top->selection.bw = NULL;
+	}
+
+	top->selection.read_only = read_only;
 }
 
 /* exported interface, documented in browser.h */
@@ -739,7 +766,6 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_clone(clone->history);
 
 	/* window characteristics */
-	bw->cur_sel = NULL;
 	bw->cur_search = NULL;
 	bw->refresh_interval = -1;
 
@@ -919,7 +945,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	browser_window_stop(bw);
-	browser_window_remove_caret(bw);
+	browser_window_remove_caret(bw, false);
 	browser_window_destroy_children(bw);
 
 	LOG(("Loading '%s'", nsurl_access(url)));
@@ -1159,7 +1185,7 @@ browser_window_callback_errorcode(hlcache_handle *c,
 		bw->loading_content = NULL;
 	} else if (c == bw->current_content) {
 		bw->current_content = NULL;
-		browser_window_remove_caret(bw);
+		browser_window_remove_caret(bw, false);
 	}
 
 	hlcache_handle_release(c);
@@ -1230,7 +1256,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_get_dimensions(bw, &width, &height, true);
 		content_reformat(c, false, width, height);
 
-		browser_window_remove_caret(bw);
+		browser_window_remove_caret(bw, false);
 
 		if (bw->window)
 			gui_window_new_content(bw->window);
@@ -1258,11 +1284,6 @@ nserror browser_window_callback(hlcache_handle *c,
 				/* This is safe as we've just added the URL */
 				global_history_add(urldb_get_url(url));
 			}
-		}
-
-		if (bw->window != NULL) {
-			browser_window_set_selection(bw,
-					content_get_selection(c));
 		}
 
 		/* frames */
@@ -1315,7 +1336,7 @@ nserror browser_window_callback(hlcache_handle *c,
 			bw->loading_content = NULL;
 		else if (c == bw->current_content) {
 			bw->current_content = NULL;
-			browser_window_remove_caret(bw);
+			browser_window_remove_caret(bw, false);
 		}
 
 		hlcache_handle_release(c);
@@ -1355,8 +1376,7 @@ nserror browser_window_callback(hlcache_handle *c,
 				browser_window_recalculate_iframes(bw);
 		}
 
-		if (bw->move_callback)
-			bw->move_callback(bw, bw->caret_p1, bw->caret_p2);
+		/* TODO: get caret pos redraw */
 
 		if (!(event->data.background)) {
 			/* Reformatted content should be redrawn */
@@ -1513,6 +1533,29 @@ nserror browser_window_callback(hlcache_handle *c,
 		}
 		browser_window_set_drag_type(bw, bdt, event->data.drag.rect);
 	}
+		break;
+
+	case CONTENT_MSG_CARET:
+		switch (event->data.caret.type) {
+		case CONTENT_CARET_REMOVE:
+			browser_window_remove_caret(bw, false);
+			break;
+		case CONTENT_CARET_HIDE:
+			browser_window_remove_caret(bw, true);
+			break;
+		case CONTENT_CARET_SET_POS:
+			browser_window_place_caret(bw,
+					event->data.caret.pos.x,
+					event->data.caret.pos.y,
+					event->data.caret.pos.height);
+			break;
+		}
+		break;
+
+	case CONTENT_MSG_SELECTION:
+		browser_window_set_selection(bw,
+				event->data.selection.selection,
+				event->data.selection.read_only);
 		break;
 
 	default:
@@ -2083,10 +2126,8 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		if (top->focus == bw)
 			top->focus = top;
 
-		if (bw->current_content != NULL &&
-				top->cur_sel == content_get_selection(
-						bw->current_content)) {
-			browser_window_set_selection(top, NULL);
+		if (top->selection.bw == bw) {
+			browser_window_set_selection(top, false, false);
 		}
 	}
 
@@ -2734,7 +2775,18 @@ void browser_window_mouse_click(struct browser_window *bw,
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:
 	case CONTENT_TEXTPLAIN:
+	{
+		/* Give bw focus */
+		struct browser_window *root_bw = browser_window_get_root(bw);
+		if (bw != root_bw->focus) {
+			browser_window_remove_caret(bw, false);
+			browser_window_set_selection(bw, false, true);
+			root_bw->focus = bw;
+		}
+
+		/* Pass mouse action to content */
 		content_mouse_action(c, bw, mouse, x, y);
+	}
 		break;
 	default:
 		if (mouse & BROWSER_MOUSE_MOD_2) {

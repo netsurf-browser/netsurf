@@ -40,6 +40,7 @@
 #include "desktop/plotters.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
+#include "desktop/textinput.h"
 #include "render/font.h"
 #include "render/search.h"
 #include "render/textplain.h"
@@ -107,6 +108,7 @@ static void textplain_mouse_track(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
+static bool textplain_keypress(struct content *c, uint32_t key);
 static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
@@ -114,7 +116,7 @@ static bool textplain_redraw(struct content *c, struct content_redraw_data *data
 static void textplain_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 void textplain_close(struct content *c);
-struct selection *textplain_get_selection(struct content *c);
+char *textplain_get_selection(struct content *c);
 struct search_context *textplain_get_search(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
@@ -139,6 +141,7 @@ static const content_handler textplain_content_handler = {
 	.destroy = textplain_destroy,
 	.mouse_track = textplain_mouse_track,
 	.mouse_action = textplain_mouse_action,
+	.keypress = textplain_keypress,
 	.redraw = textplain_redraw,
 	.open = textplain_open,
 	.close = textplain_close,
@@ -716,6 +719,46 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 
 
 /**
+ * Handle keypresses.
+ *
+ * \param  c	content of type CONTENT_TEXTPLAIN
+ * \param  key	The UCS4 character codepoint
+ * \return true if key handled, false otherwise
+ */
+
+bool textplain_keypress(struct content *c, uint32_t key)
+{
+	textplain_content *text = (textplain_content *) c;
+	struct selection *sel = &text->sel;
+
+	switch (key) {
+	case KEY_COPY_SELECTION:
+		selection_copy_to_clipboard(sel);
+		return true;
+
+	case KEY_CLEAR_SELECTION:
+		selection_clear(sel, true);
+		return true;
+
+	case KEY_SELECT_ALL:
+		selection_select_all(sel);
+		return true;
+
+	case KEY_ESCAPE:
+		if (selection_defined(sel)) {
+			selection_clear(sel, true);
+			return true;
+		}
+
+		/* if there's no selection, leave Escape for the caller */
+		return false;
+	}
+
+	return false;
+}
+
+
+/**
  * Draw a CONTENT_TEXTPLAIN using the current set of plotters (plot).
  *
  * \param  c	 content of type CONTENT_TEXTPLAIN
@@ -893,11 +936,11 @@ void textplain_close(struct content *c)
  * Return an textplain content's selection context
  */
 
-struct selection *textplain_get_selection(struct content *c)
+char *textplain_get_selection(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
-	return &text->sel;
+	return selection_get_copy(&text->sel);
 }
 
 

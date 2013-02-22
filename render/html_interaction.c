@@ -223,54 +223,7 @@ static size_t html_selection_drag_end(struct html_content *html,
 void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
-	html_content *html = (html_content*) c;
-	union html_drag_owner drag_owner;
-
-	if (html->drag_type == HTML_DRAG_SELECTION && !mouse) {
-		/* End of selection drag */
-		int dir = -1;
-		size_t idx;
-
-		if (selection_dragging_start(&html->sel))
-			dir = 1;
-
-		idx = html_selection_drag_end(html, mouse, x, y, dir);
-
-		if (idx != 0)
-			selection_track(&html->sel, mouse, idx);
-
-		drag_owner.no_owner = true;
-		html_set_drag_type(html, HTML_DRAG_NONE, drag_owner, NULL);
-	}
-
-	if (html->drag_type == HTML_DRAG_SELECTION) {
-		/* Selection drag */
-		struct box *box;
-		int dir = -1;
-		int dx, dy;
-
-		if (selection_dragging_start(&html->sel))
-			dir = 1;
-
-		box = box_pick_text_box(html, x, y, dir, &dx, &dy);
-
-		if (box != NULL) {
-			int pixel_offset;
-			size_t idx;
-			plot_font_style_t fstyle;
-
-			font_plot_style_from_css(box->style, &fstyle);
-
-			nsfont.font_position_in_string(&fstyle,
-					box->text, box->length,
-					dx, &idx, &pixel_offset);
-
-			selection_track(&html->sel, mouse,
-					box->byte_offset + idx);
-		}
-	} else {
-		html_mouse_action(c, bw, mouse, x, y);
-	}
+	html_mouse_action(c, bw, mouse, x, y);
 }
 
 
@@ -323,6 +276,11 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
 	struct dom_node *node = NULL;
+	union html_drag_owner drag_owner;
+	union html_selection_owner sel_owner;
+	bool click = mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2 |
+			BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2 |
+			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2);
 
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
@@ -349,7 +307,55 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					&width, &height);
 			html->visible_select_menu = NULL;
 			browser_window_redraw_rect(bw, box_x, box_y,
-					width, height);					
+					width, height);
+		}
+		return;
+	}
+
+	if (html->drag_type == HTML_DRAG_SELECTION) {
+		/* Selection drag */
+
+		if (!mouse) {
+			/* End of selection drag */
+			int dir = -1;
+			size_t idx;
+
+			if (selection_dragging_start(&html->sel))
+				dir = 1;
+
+			idx = html_selection_drag_end(html, mouse, x, y, dir);
+
+			if (idx != 0)
+				selection_track(&html->sel, mouse, idx);
+
+			drag_owner.no_owner = true;
+			html_set_drag_type(html, HTML_DRAG_NONE,
+					drag_owner, NULL);
+			return;
+		}
+
+		struct box *box;
+		int dir = -1;
+		int dx, dy;
+
+		if (selection_dragging_start(&html->sel))
+			dir = 1;
+
+		box = box_pick_text_box(html, x, y, dir, &dx, &dy);
+
+		if (box != NULL) {
+			int pixel_offset;
+			size_t idx;
+			plot_font_style_t fstyle;
+
+			font_plot_style_from_css(box->style, &fstyle);
+
+			nsfont.font_position_in_string(&fstyle,
+					box->text, box->length,
+					dx, &idx, &pixel_offset);
+
+			selection_track(&html->sel, mouse,
+					box->byte_offset + idx);
 		}
 		return;
 	}
@@ -404,6 +410,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION ||
 			html->drag_type == HTML_DRAG_CONTENT_SCROLL) {
+		box = html->drag_owner.content;
+		assert(box->object != NULL);
+
+		box_coords(box, &box_x, &box_y);
+		content_mouse_track(box->object, bw, mouse,
+				x - box_x, y - box_y);
+		return;
+	}
+
+	if (html->drag_type == HTML_DRAG_CONTENT_SELECTION) {
 		box = html->drag_owner.content;
 		assert(box->object != NULL);
 
@@ -536,7 +552,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				/* mouse inside padding box */
 				
 				if ((box->scroll_y != NULL) && 
-				    (x > (padding_right - SCROLLBAR_WIDTH))) {
+						(x > (padding_right -
+							SCROLLBAR_WIDTH))) {
 					/* mouse above vertical box scroll */
 					
 					scrollbar = box->scroll_y;
@@ -546,7 +563,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					break;
 				
 				} else if ((box->scroll_x != NULL) &&
-					   (y > (padding_bottom - SCROLLBAR_WIDTH))) {
+						(y > (padding_bottom -
+					   		SCROLLBAR_WIDTH))) {
 					/* mouse above horizontal box scroll */
 							
 					scrollbar = box->scroll_x;
@@ -628,6 +646,15 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 			pointer = get_pointer_shape(gadget_box, false);
 
+			if (click && (html->selection_type !=
+					HTML_SELECTION_TEXTAREA ||
+					html->selection_owner.textarea !=
+					gadget_box)) {
+				sel_owner.none = true;
+				html_set_selection(html, HTML_SELECTION_NONE,
+						sel_owner, true);
+			}
+
 			textarea_mouse_action(gadget->data.text.ta, mouse,
 					x - gadget_box_x, y - gadget_box_y);
 			break;
@@ -679,6 +706,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					x - pos_x, y - pos_y);
 		}
 	} else if (html_object_box) {
+
+		if (click && (html->selection_type != HTML_SELECTION_CONTENT ||
+				html->selection_owner.content !=
+						html_object_box)) {
+			sel_owner.none = true;
+			html_set_selection(html, HTML_SELECTION_NONE,
+					sel_owner, true);
+		}
 		if (mouse & BROWSER_MOUSE_CLICK_1 ||
 				mouse & BROWSER_MOUSE_CLICK_2) {
 			content_mouse_action(html_object_box->object,
@@ -738,11 +773,18 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		/* if clicking in the main page, remove the selection from any
 		 * text areas */
 		if (!done) {
-			struct box *layout = html->layout;
-
-			if (mouse && (mouse < BROWSER_MOUSE_MOD_1) &&
-					selection_root(&html->sel) != layout) {
-				selection_init(&html->sel, layout);
+			
+			if (click && html->focus_type != HTML_FOCUS_SELF) {
+				union html_focus_owner fo;
+				fo.self = true;
+				html_set_focus(html, HTML_FOCUS_SELF, fo,
+						true, 0, 0, 0, NULL);
+			}
+			if (click && html->selection_type !=
+					HTML_SELECTION_SELF) {
+				sel_owner.none = true;
+				html_set_selection(html, HTML_SELECTION_NONE,
+						sel_owner, true);
 			}
 
 			if (text_box) {
@@ -781,8 +823,24 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					done = true;
 				}
 
-			} else if (mouse & BROWSER_MOUSE_PRESS_1)
+			} else if (mouse & BROWSER_MOUSE_PRESS_1) {
+				union html_selection_owner sel_owner;
+				sel_owner.none = true;
 				selection_clear(&html->sel, true);
+			}
+
+			if (selection_defined(&html->sel)) {
+				sel_owner.none = false;
+				html_set_selection(html, HTML_SELECTION_SELF,
+						sel_owner,
+						selection_read_only(
+								&html->sel));
+			} else if (click && html->selection_type !=
+					HTML_SELECTION_NONE) {
+				sel_owner.none = true;
+				html_set_selection(html, HTML_SELECTION_NONE,
+						sel_owner, true);
+			}
 		}
 
 		if (!done) {
@@ -832,7 +890,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 		if (mouse && mouse < BROWSER_MOUSE_MOD_1) {
 			/* ensure key presses still act on the browser window */
-			browser_window_remove_caret(bw);
+			union html_focus_owner fo;
+			fo.self = true;
+			html_set_focus(html, HTML_FOCUS_SELF, fo,
+					true, 0, 0, 0, NULL);
 		}
 	}
 
@@ -872,6 +933,61 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	case ACTION_NONE:
 		break;
 	}
+}
+
+
+/**
+ * Handle keypresses.
+ *
+ * \param  c	content of type CONTENT_TEXTPLAIN
+ * \param  key	The UCS4 character codepoint
+ * \return true if key handled, false otherwise
+ */
+
+bool html_keypress(struct content *c, uint32_t key)
+{
+	html_content *html = (html_content *) c;
+	struct selection *sel = &html->sel;
+	struct box *box;
+
+	switch (html->focus_type) {
+	case HTML_FOCUS_CONTENT:
+		box = html->focus_owner.content;
+		return content_keypress(box->object, key);
+
+	case HTML_FOCUS_TEXTAREA:
+		box = html->focus_owner.textarea;
+		return textarea_keypress(box->gadget->data.text.ta, key);
+
+	default:
+		/* Deal with it below */
+		break;
+	}
+
+	switch (key) {
+	case KEY_COPY_SELECTION:
+		selection_copy_to_clipboard(sel);
+		return true;
+
+	case KEY_CLEAR_SELECTION:
+		selection_clear(sel, true);
+		return true;
+
+	case KEY_SELECT_ALL:
+		selection_select_all(sel);
+		return true;
+
+	case KEY_ESCAPE:
+		if (selection_defined(sel)) {
+			selection_clear(sel, true);
+			return true;
+		}
+
+		/* if there's no selection, leave Escape for the caller */
+		return false;
+	}
+
+	return false;
 }
 
 
@@ -985,6 +1101,131 @@ void html_set_drag_type(html_content *html, html_drag_type drag_type,
 	}
 	msg_data.drag.rect = rect;
 
-	/* Inform the content's drag status change */
+	/* Inform of the content's drag status change */
 	content_broadcast((struct content *)html, CONTENT_MSG_DRAG, msg_data);
+}
+
+/* Documented in html_internal.h */
+void html_set_focus(html_content *html, html_focus_type focus_type,
+		union html_focus_owner focus_owner, bool hide_caret,
+		int x, int y, int height, const struct rect *clip)
+{
+	union content_msg_data msg_data;
+	int x_off = 0;
+	int y_off = 0;
+	bool textarea_lost_focus = html->focus_type == HTML_FOCUS_TEXTAREA &&
+			focus_type != HTML_FOCUS_TEXTAREA;
+
+	assert(html != NULL);
+
+	switch (focus_type) {
+	case HTML_FOCUS_SELF:
+		assert(focus_owner.self == true);
+		if (html->focus_type == HTML_FOCUS_SELF)
+			/* Don't need to tell anyone anything */
+			return;
+		break;
+
+	case HTML_FOCUS_CONTENT:
+		box_coords(focus_owner.content, &x_off, &y_off);
+		break;
+
+	case HTML_FOCUS_TEXTAREA:
+		box_coords(focus_owner.textarea, &x_off, &y_off);
+		break;
+	}
+
+	html->focus_type = focus_type;
+	html->focus_owner = focus_owner;
+
+	if (textarea_lost_focus) {
+		msg_data.caret.type = CONTENT_CARET_REMOVE;
+	} else if (focus_type != HTML_FOCUS_SELF && hide_caret) {
+		msg_data.caret.type = CONTENT_CARET_HIDE;
+	} else {
+		msg_data.caret.type = CONTENT_CARET_SET_POS;
+		msg_data.caret.pos.x = x + x_off;
+		msg_data.caret.pos.y = y + y_off;
+		msg_data.caret.pos.height = height;
+		msg_data.caret.pos.clip = clip;
+	}
+
+	/* Inform of the content's drag status change */
+	content_broadcast((struct content *)html, CONTENT_MSG_CARET, msg_data);
+}
+
+/* Documented in html_internal.h */
+void html_set_selection(html_content *html, html_selection_type selection_type,
+		union html_selection_owner selection_owner, bool read_only)
+{
+	union content_msg_data msg_data;
+	struct box *box;
+	bool changed = false;
+	bool same_type = html->selection_type == selection_type;
+
+	assert(html != NULL);
+
+	if ((selection_type == HTML_SELECTION_NONE &&
+			html->selection_type != HTML_SELECTION_NONE) ||
+			(selection_type != HTML_SELECTION_NONE &&
+			html->selection_type == HTML_SELECTION_NONE))
+		/* Existance of selection has changed, and we'll need to
+		 * inform our owner */
+		changed = true;
+
+	/* Clear any existing selection */
+	if (html->selection_type != HTML_SELECTION_NONE) {
+		switch (html->selection_type) {
+		case HTML_SELECTION_SELF:
+			if (same_type)
+				break;
+			selection_clear(&html->sel, true);
+			break;
+		case HTML_SELECTION_TEXTAREA:
+			if (same_type && html->selection_owner.textarea ==
+					selection_owner.textarea)
+				break;
+			box = html->selection_owner.textarea;
+			textarea_clear_selection(box->gadget->data.text.ta);
+			break;
+		case HTML_SELECTION_CONTENT:
+			if (same_type && html->selection_owner.content ==
+					selection_owner.content)
+				break;
+			box = html->selection_owner.content;
+			content_clear_selection(box->object);
+			break;
+		default:
+			break;
+		}
+	}
+
+	html->selection_type = selection_type;
+	html->selection_owner = selection_owner;
+
+	if (!changed)
+		/* Don't need to report lack of change to owner */
+		return;
+
+	/* Prepare msg */
+	switch (selection_type) {
+	case HTML_SELECTION_NONE:
+		assert(selection_owner.none == true);
+		msg_data.selection.selection = false;
+		break;
+	case HTML_SELECTION_SELF:
+		assert(selection_owner.none == false);
+		/* fall through */
+	case HTML_SELECTION_TEXTAREA:
+	case HTML_SELECTION_CONTENT:
+		msg_data.selection.selection = true;
+		break;
+	default:
+		break;
+	}
+	msg_data.selection.read_only = read_only;
+
+	/* Inform of the content's selection status change */
+	content_broadcast((struct content *)html, CONTENT_MSG_SELECTION,
+			msg_data);
 }

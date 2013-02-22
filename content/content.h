@@ -79,6 +79,8 @@ typedef enum {
 	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
 	CONTENT_MSG_SAVELINK,  /**< Allow URL to be saved */
 	CONTENT_MSG_POINTER,   /**< Wants a specific mouse pointer set */
+	CONTENT_MSG_SELECTION, /**< A selection made or cleared */
+	CONTENT_MSG_CARET,     /**< Caret movement / hiding */
 	CONTENT_MSG_DRAG       /**< A drag started or ended */
 } content_msg;
 
@@ -153,6 +155,25 @@ union content_msg_data {
 	} savelink;
 	/** CONTENT_MSG_POINTER - Mouse pointer to set */
 	browser_pointer_shape pointer;
+	/** CONTENT_MSG_SELECTION - Selection made or cleared */
+	struct {
+		bool selection; /**< false for selection cleared */
+		bool read_only;
+	} selection;
+	/** CONTENT_MSG_CARET - set caret position or, hide caret */
+	struct {
+		enum {
+			CONTENT_CARET_SET_POS,
+			CONTENT_CARET_HIDE,
+			CONTENT_CARET_REMOVE
+		} type;
+		struct {
+			int x;				/**< Carret x-coord */
+			int y;				/**< Carret y-coord */
+			int height;			/**< Carret height */
+			const struct rect *clip;	/**< Carret clip rect */
+		} pos;			/**< With CONTENT_CARET_SET_POS */
+	} caret;
 	/** CONTENT_MSG_DRAG - Drag start or end */
 	struct {
 		enum {
@@ -219,12 +240,14 @@ void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+bool content_keypress(struct hlcache_handle *h, uint32_t key);
 bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 void content_close(struct hlcache_handle *h);
-struct selection *content_get_selection(struct hlcache_handle *h);
+void content_clear_selection(struct hlcache_handle *h);
+char * content_get_selection(struct hlcache_handle *h);
 void content_get_contextual_content(struct hlcache_handle *h,
 		int x, int y, struct contextual_content *data);
 bool content_scroll_at_point(struct hlcache_handle *h,

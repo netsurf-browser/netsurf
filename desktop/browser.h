@@ -40,14 +40,6 @@ struct history;
 struct selection;
 struct fetch_multipart_data;
 
-typedef bool (*browser_caret_callback)(struct browser_window *bw, uint32_t key,
-		void *p1, void *p2);
-typedef void (*browser_move_callback)(struct browser_window *bw,
-		void *p1, void *p2);
-typedef bool (*browser_paste_callback)(struct browser_window *bw,
-		const char *utf8, unsigned utf8_len, bool last,
-		void *p1, void *p2);
-
 
 typedef enum {
 	DRAGGING_NONE,
@@ -59,6 +51,13 @@ typedef enum {
 	DRAGGING_CONTENT_SCROLLBAR,
 	DRAGGING_OTHER
 } browser_drag_type;
+
+typedef enum {
+	BW_EDITOR_NONE		=  0,		/**< No selection, no editing */
+	BW_EDITOR_CAN_COPY	= (1 << 0),	/**< Have selection */
+	BW_EDITOR_CAN_CUT  	= (1 << 1),	/**< Selection not read-only */
+	BW_EDITOR_CAN_PASTE	= (1 << 2)	/**< Can paste, input */
+} browser_editor_flags;
 
 extern bool browser_reformat_pending;
 
@@ -206,15 +205,9 @@ bool browser_window_stop_available(struct browser_window *bw);
 
 /* In desktop/textinput.c */
 void browser_window_place_caret(struct browser_window *bw,
-		int x, int y, int height,
-		browser_caret_callback caret_cb,
-		browser_paste_callback paste_cb,
-		browser_move_callback move_cb,
-		void *p1, void *p2);
-void browser_window_remove_caret(struct browser_window *bw);
+		int x, int y, int height);
+void browser_window_remove_caret(struct browser_window *bw, bool only_hide);
 bool browser_window_key_press(struct browser_window *bw, uint32_t key);
-bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
-		unsigned utf8_len, bool last);
 
 
 /**
@@ -327,29 +320,22 @@ browser_drag_type browser_window_get_drag_type(struct browser_window *bw);
 struct browser_window * browser_window_get_root(struct browser_window *bw);
 
 /**
- * Check whether browser window contains a selection
+ * Check whether browser window can accept a cut/copy/paste, or has a selection
+ * that could be saved.
  *
  * \param  bw    The browser window
- * \return true if browser window contains a selection
+ * \return flags indicating editor flags
  */
-bool browser_window_has_selection(struct browser_window *bw);
+browser_editor_flags browser_window_get_editor_flags(struct browser_window *bw);
 
 /**
- * Set pointer to current selection.  Clears any existing selection.
+ * Get the current selection from a root browser window, ownership passed to
+ * caller, who must free() it.
  *
  * \param  bw    The browser window
- * \param  s     The new selection
+ * \return the selected text string, or NULL
  */
-void browser_window_set_selection(struct browser_window *bw,
-		struct selection *s);
-
-/**
- * Get the current selection context from a root browser window
- *
- * \param  bw    The browser window
- * \return the selection context, or NULL
- */
-struct selection *browser_window_get_selection(struct browser_window *bw);
+char * browser_window_get_selection(struct browser_window *bw);
 
 
 /**
