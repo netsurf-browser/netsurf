@@ -23,6 +23,7 @@
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
+#import "utils/messages.h"
 
 @interface NetSurfAppDelegate ()
 
@@ -64,22 +65,22 @@
 
 - (void) openDocument: (id) sender;
 {
-	nsurl *url;
+	nsurl *u;
 	nserror error;
 
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 	[openPanel setAllowsMultipleSelection: YES];
 	if ([openPanel runModalForTypes: nil] == NSOKButton) {
 		for (NSURL *url in [openPanel URLs]) {
-                        error = nsurl_create([[url absoluteString] UTF8String], &url);
+                        error = nsurl_create([[url absoluteString] UTF8String], &u);
                         if (error == NSERROR_OK) {
                                 error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 					      BROWSER_WINDOW_HISTORY,
-					      url,
+					      u,
 					      NULL,
 					      NULL,
 					      NULL);
-                                nsurl_unref(url);
+                                nsurl_unref(u);
                         }
                         if (error != NSERROR_OK) {
                                 warn_user(messages_get_errorcode(error), 0);

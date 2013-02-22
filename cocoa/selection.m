@@ -82,7 +82,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 
 	/* Add text to clipboard string */
-	if (nil == cocoa_clipboard_string) return false;
+	if (nil == cocoa_clipboard_string) return;
 	
 	[cocoa_clipboard_string appendString: [[[NSString alloc] 
 				initWithBytes: buffer

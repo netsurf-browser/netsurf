@@ -27,6 +27,7 @@
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
+#import "utils/messages.h"
 
 @interface BrowserWindowController ()
 
