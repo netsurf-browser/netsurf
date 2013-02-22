@@ -1785,12 +1785,12 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 {
 	struct textarea_msg msg;
 	char utf8[6];
-	unsigned int caret, caret_init, length, l_len, b_off, b_len;
+	unsigned int caret, length, l_len, b_off, b_len;
 	int c_line, c_chars, line;
 	bool redraw = false;
 	bool readonly;
 
-	caret_init = caret = textarea_get_caret(ta);
+	caret = textarea_get_caret(ta);
 	line = ta->caret_pos.line;
 	readonly = (ta->flags & TEXTAREA_READONLY ? true : false);
 
