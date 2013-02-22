@@ -1876,6 +1876,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start,
 						ta->sel_end, "", 0, false))
 					return false;
+				caret = ta->sel_start;
 				textarea_clear_selection(ta);
 			} else {
 				if (ta->lines[line].b_length != 0) {
@@ -1883,8 +1884,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					b_off = ta->lines[line].b_start;
 					b_len = ta->lines[line].b_length;
 					l_len = utf8_bounded_length(
-							&(ta->text.data[b_off]),
-							b_len);
+							&(ta->show->
+							data[b_off]), b_len);
 					caret -= ta->caret_pos.char_off;
 					if (!textarea_replace_text(ta, caret,
 							caret + l_len, "", 0,
@@ -2141,12 +2142,13 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start,
 						ta->sel_end, "", 0, false))
 					return false;
+				caret = ta->sel_start;
 				textarea_clear_selection(ta);
 			} else {
 				b_off = ta->lines[line].b_start;
 				b_len = ta->lines[line].b_length;
 				l_len = utf8_bounded_length(
-						&(ta->text.data[b_off]),
+						&(ta->show->data[b_off]),
 						b_len) - ta->caret_pos.char_off;
 				if (!textarea_replace_text(ta, caret,
 						caret + l_len, "", 0, false))
@@ -2162,6 +2164,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start,
 						ta->sel_end, "", 0, false))
 					return false;
+				caret = ta->sel_start;
 				textarea_clear_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta,
