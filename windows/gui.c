@@ -367,8 +367,10 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 
 static void nsws_update_edit(struct gui_window *w)
 {
+	browser_editor_flags editor_flags = (w->bw == NULL) ?
+			BW_EDITOR_NONE : browser_window_get_editor_flags(w->bw);
 	bool paste, copy, del;
-	bool sel = (w->bw != NULL && browser_window_has_selection(w->bw));
+	bool sel = (editor_flags & BW_EDITOR_CAN_COPY);
 	if (GetFocus() == w->urlbar) {
 		DWORD i, ii;
 		SendMessage(w->urlbar, EM_GETSEL, (WPARAM)&i, (LPARAM)&ii);
@@ -377,9 +379,9 @@ static void nsws_update_edit(struct gui_window *w)
 		del = (i != ii);
 
 	} else if (sel){
-		paste = (w->bw->paste_callback != NULL);
+		paste = (editor_flags & BW_EDITOR_CAN_PASTE);
 		copy = sel;
-		del = (sel && (w->bw->caret_callback != NULL));
+		del = (editor_flags & BW_EDITOR_CAN_CUT);
 	} else {
 		paste = false;
 		copy = false;
