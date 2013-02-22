@@ -212,6 +212,10 @@ struct form_control *form_new_control(void *node, form_control_type type)
  */
 void form_add_control(struct form *form, struct form_control *control)
 {
+	if (form == NULL) {
+		return;
+	}
+
 	control->form = form;
 
 	if (form->controls != NULL) {

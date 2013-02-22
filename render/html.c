@@ -311,7 +311,567 @@ void html_finish_conversion(html_content *c)
 	dom_node_unref(html);
 }
 
+/**
+ * Callback for fetchcache() for linked stylesheets.
+ */
 
+static nserror
+html_convert_css_callback(hlcache_handle *css,
+			  const hlcache_event *event,
+			  void *pw)
+{
+	html_content *parent = pw;
+	unsigned int i;
+	struct html_stylesheet *s;
+
+	/* Find sheet */
+	for (i = 0, s = parent->stylesheets;
+			i != parent->stylesheet_count; i++, s++) {
+		if (s->type == HTML_STYLESHEET_EXTERNAL &&
+				s->data.external == css)
+			break;
+	}
+
+	assert(i != parent->stylesheet_count);
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		break;
+
+	case CONTENT_MSG_READY:
+		break;
+
+	case CONTENT_MSG_DONE:
+		LOG(("done stylesheet slot %d '%s'", i,
+				nsurl_access(hlcache_handle_get_url(css))));
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("stylesheet %s failed: %s",
+				nsurl_access(hlcache_handle_get_url(css)),
+				event->data.error));
+		hlcache_handle_release(css);
+		s->data.external = NULL;
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+		content_add_error(&parent->base, "?", 0);
+		break;
+
+	case CONTENT_MSG_STATUS:
+		if (event->data.explicit_status_text == NULL) {
+			/* Object content's status text updated */
+			html_set_status(parent,
+					content_get_status_message(css));
+			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+					event->data);
+		} else {
+			/* Object content wants to set explicit message */
+			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+					event->data);
+		}
+		break;
+
+	case CONTENT_MSG_POINTER:
+		/* Really don't want this to continue after the switch */
+		return NSERROR_OK;
+
+	default:
+		assert(0);
+	}
+
+	if (parent->base.active == 0) {
+		html_begin_conversion(parent);
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * Initialise core stylesheets
+ *
+ * \param c content structure
+ * \return true on success, false if an error occurred
+ */
+
+static bool html_init_stylesheets(html_content *c)
+{
+	nserror ns_error;
+	hlcache_child_context child;
+
+	if (c->stylesheets != NULL) {
+		return true; /* already initialised */
+	}
+
+	/* stylesheet 0 is the base style sheet,
+	 * stylesheet 1 is the quirks mode style sheet,
+	 * stylesheet 2 is the adblocking stylesheet,
+	 * stylesheet 3 is the user stylesheet */
+	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
+	if (c->stylesheets == NULL) {
+		ns_error = NSERROR_NOMEM;
+		goto html_find_stylesheets_no_memory;
+	}
+
+	c->stylesheets[STYLESHEET_BASE].type = HTML_STYLESHEET_EXTERNAL;
+	c->stylesheets[STYLESHEET_BASE].data.external = NULL;
+	c->stylesheets[STYLESHEET_QUIRKS].type = HTML_STYLESHEET_EXTERNAL;
+	c->stylesheets[STYLESHEET_QUIRKS].data.external = NULL;
+	c->stylesheets[STYLESHEET_ADBLOCK].type = HTML_STYLESHEET_EXTERNAL;
+	c->stylesheets[STYLESHEET_ADBLOCK].data.external = NULL;
+	c->stylesheets[STYLESHEET_USER].type = HTML_STYLESHEET_EXTERNAL;
+	c->stylesheets[STYLESHEET_USER].data.external = NULL;
+	c->stylesheet_count = STYLESHEET_START;
+
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
+
+	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
+			content_get_url(&c->base), NULL,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
+			&c->stylesheets[STYLESHEET_BASE].data.external);
+	if (ns_error != NSERROR_OK)
+		goto html_find_stylesheets_no_memory;
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
+		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
+				0, content_get_url(&c->base), NULL,
+				html_convert_css_callback, c, &child,
+				CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
+		if (ns_error != NSERROR_OK)
+			goto html_find_stylesheets_no_memory;
+
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+
+	}
+
+	if (nsoption_bool(block_ads)) {
+		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
+				0, content_get_url(&c->base), NULL,
+				html_convert_css_callback, c, &child, CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_ADBLOCK].
+						data.external);
+		if (ns_error != NSERROR_OK)
+			goto html_find_stylesheets_no_memory;
+
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+
+	}
+
+	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
+			content_get_url(&c->base), NULL,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
+			&c->stylesheets[STYLESHEET_USER].data.external);
+	if (ns_error != NSERROR_OK)
+		goto html_find_stylesheets_no_memory;
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+	return true;
+
+html_find_stylesheets_no_memory:
+	content_broadcast_errorcode(&c->base, ns_error);
+	return false;
+}
+
+/**
+ * Handle notification of inline style completion
+ *
+ * \param css  Inline style object
+ * \param pw   Private data
+ */
+static void html_inline_style_done(struct content_css_data *css, void *pw)
+{
+	html_content *html = pw;
+
+	html->base.active--;
+	LOG(("%d fetches active", html->base.active));
+}
+
+static nserror
+html_stylesheet_from_domnode(html_content *c,
+			     dom_node *node,
+			     struct content_css_data **ret_sheet)
+{
+	dom_node *child, *next;
+	dom_exception exc;
+	struct content_css_data *sheet;
+	nserror error;
+	css_error csserror;
+
+	/* create stylesheet */
+	sheet = calloc(1, sizeof(struct content_css_data));
+	if (sheet == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	error = nscss_create_css_data(sheet,
+		nsurl_access(c->base_url), NULL, c->quirks,
+		html_inline_style_done, c);
+	if (error != NSERROR_OK) {
+		free(sheet);
+		return error;
+	}
+
+	exc = dom_node_get_first_child(node, &child);
+	if (exc != DOM_NO_ERR) {
+		nscss_destroy_css_data(sheet);
+		free(sheet);
+		return NSERROR_DOM;
+	}
+
+	while (child != NULL) {
+		dom_string *data;
+
+		exc = dom_node_get_text_content(child, &data);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_DOM;
+		}
+
+		if (nscss_process_css_data(sheet, 
+				dom_string_data(data),
+				dom_string_byte_length(data)) == false) {
+			dom_string_unref(data);
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_CSS;
+		}
+
+		dom_string_unref(data);
+
+		exc = dom_node_get_next_sibling(child, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			free(sheet);
+			return NSERROR_DOM;
+		}
+
+		dom_node_unref(child);
+		child = next;
+	}
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+	/* Convert the content -- manually, as we want the result */
+	csserror = nscss_convert_css_data(sheet);
+	if (csserror != CSS_OK) {
+		/* conversion failed */
+		c->base.active--;
+		LOG(("%d fetches active", c->base.active));
+		nscss_destroy_css_data(sheet);
+		free(sheet);
+		return css_error_to_nserror(csserror);
+	}
+
+	*ret_sheet = sheet;
+	return NSERROR_OK;
+}
+
+/**
+ * Process an inline stylesheet in the document.
+ *
+ * \param  c      content structure
+ * \param  style  xml node of style element
+ * \return  true on success, false if an error occurred
+ */
+
+static struct html_stylesheet *
+html_create_style_element(html_content *c, dom_node *style)
+{
+	dom_string *val;
+	dom_exception exc;
+	struct html_stylesheet *stylesheets;
+
+	/* ensure sheets are initialised */
+	if (html_init_stylesheets(c) == false) {
+		return false;
+	}
+
+	/* type='text/css', or not present (invalid but common) */
+	exc = dom_element_get_attribute(style, corestring_dom_type, &val);
+	if (exc == DOM_NO_ERR && val != NULL) {
+		if (!dom_string_caseless_lwc_isequal(val,
+				corestring_lwc_text_css)) {
+			dom_string_unref(val);
+			return NULL;
+		}
+		dom_string_unref(val);
+	}
+
+	/* media contains 'screen' or 'all' or not present */
+	exc = dom_element_get_attribute(style, corestring_dom_media, &val);
+	if (exc == DOM_NO_ERR && val != NULL) {
+		if (strcasestr(dom_string_data(val), "screen") == NULL &&
+				strcasestr(dom_string_data(val),
+						"all") == NULL) {
+			dom_string_unref(val);
+			return NULL;
+		}
+		dom_string_unref(val);
+	}
+
+	/* Extend array */
+	stylesheets = realloc(c->stylesheets, 
+			      sizeof(struct html_stylesheet) * (c->stylesheet_count + 1));
+	if (stylesheets == NULL) {
+
+		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
+		return false;
+
+	}
+	c->stylesheets = stylesheets;
+
+	c->stylesheets[c->stylesheet_count].type = HTML_STYLESHEET_INTERNAL;
+	c->stylesheets[c->stylesheet_count].node = style;
+	c->stylesheets[c->stylesheet_count].data.internal = NULL;
+	c->stylesheet_count++;
+
+	return c->stylesheets + (c->stylesheet_count - 1);
+}
+
+static bool html_process_style_element_update(html_content *c, dom_node *style)
+{
+	struct content_css_data *sheet = NULL;
+	nserror error;
+	unsigned int i;
+	struct html_stylesheet *s;
+
+	/* Find sheet */
+	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
+		if ((s->type == HTML_STYLESHEET_INTERNAL) &&
+		    (s->node == style))
+			break;
+	}
+	if (i == c->stylesheet_count) {
+		s = html_create_style_element(c, style);
+	}
+	if (s == NULL) {
+		LOG(("Could not find or create inline stylesheet for %p", 
+		     style));
+		return false;
+	}
+
+	LOG(("Found sheet %p slot %d for node %p", s,i, style));
+
+	error = html_stylesheet_from_domnode(c, style, &sheet);
+	if (error != NSERROR_OK) {
+		LOG(("Failed to update sheet"));
+		content_broadcast_errorcode(&c->base, error);
+		return false;
+	}
+
+	LOG(("Updating sheet %p with %p", s->data.internal, sheet));
+
+	/* Update index */
+	if (s->data.internal != NULL) {
+		nscss_destroy_css_data(s->data.internal);
+		free(s->data.internal);
+	}
+	s->data.internal = sheet;
+	return true;
+}
+
+static bool html_process_stylesheet_link(html_content *htmlc, dom_node *node)
+{
+	dom_string *rel, *type_attr, *media, *href;
+	struct html_stylesheet *stylesheets;
+	nsurl *joined;
+	dom_exception exc;
+	nserror ns_error;
+	hlcache_child_context child;
+
+	/* ensure sheets are initialised */
+	if (html_init_stylesheets(htmlc) == false) {
+		return false;
+	}
+
+	/* rel=<space separated list, including 'stylesheet'> */
+	exc = dom_element_get_attribute(node, corestring_dom_rel, &rel);
+	if (exc != DOM_NO_ERR || rel == NULL)
+		return true;
+
+	if (strcasestr(dom_string_data(rel), "stylesheet") == 0) {
+		dom_string_unref(rel);
+		return true;
+	} else if (strcasestr(dom_string_data(rel), "alternate") != 0) {
+		/* Ignore alternate stylesheets */
+		dom_string_unref(rel);
+		return true;
+	}
+	dom_string_unref(rel);
+
+	/* type='text/css' or not present */
+	exc = dom_element_get_attribute(node, corestring_dom_type, &type_attr);
+	if (exc == DOM_NO_ERR && type_attr != NULL) {
+		if (!dom_string_caseless_lwc_isequal(type_attr,
+				corestring_lwc_text_css)) {
+			dom_string_unref(type_attr);
+			return true;
+		}
+		dom_string_unref(type_attr);
+	}
+
+	/* media contains 'screen' or 'all' or not present */
+	exc = dom_element_get_attribute(node, corestring_dom_media, &media);
+	if (exc == DOM_NO_ERR && media != NULL) {
+		if (strcasestr(dom_string_data(media), "screen") == NULL &&
+		    strcasestr(dom_string_data(media), "all") == NULL) {
+			dom_string_unref(media);
+			return true;
+		}
+		dom_string_unref(media);
+	}
+
+	/* href='...' */
+	exc = dom_element_get_attribute(node, corestring_dom_href, &href);
+	if (exc != DOM_NO_ERR || href == NULL)
+		return true;
+
+	/* TODO: only the first preferred stylesheets (ie.
+	 * those with a title attribute) should be loaded
+	 * (see HTML4 14.3) */
+
+	ns_error = nsurl_join(htmlc->base_url, dom_string_data(href), &joined);
+	if (ns_error != NSERROR_OK) {
+		dom_string_unref(href);
+		goto no_memory;
+	}
+	dom_string_unref(href);
+
+	LOG(("linked stylesheet %i '%s'", htmlc->stylesheet_count, nsurl_access(joined)));
+
+	/* extend stylesheets array to allow for new sheet */
+	stylesheets = realloc(htmlc->stylesheets,
+			      sizeof(struct html_stylesheet) * (htmlc->stylesheet_count + 1));
+	if (stylesheets == NULL) {
+		nsurl_unref(joined);
+		ns_error = NSERROR_NOMEM;
+		goto no_memory;
+	}
+
+	htmlc->stylesheets = stylesheets;
+	htmlc->stylesheets[htmlc->stylesheet_count].type = HTML_STYLESHEET_EXTERNAL;
+
+	/* start fetch */
+	child.charset = htmlc->encoding;
+	child.quirks = htmlc->base.quirks;
+
+	ns_error = hlcache_handle_retrieve(joined,
+					   0,
+					   content_get_url(&htmlc->base),
+					   NULL,
+					   html_convert_css_callback,
+					   htmlc,
+					   &child,
+					   CONTENT_CSS,
+					   &htmlc->stylesheets[htmlc->stylesheet_count].data.external);
+
+	nsurl_unref(joined);
+
+	if (ns_error != NSERROR_OK)
+		goto no_memory;
+
+	htmlc->stylesheet_count++;
+
+	htmlc->base.active++;
+	LOG(("%d fetches active", htmlc->base.active));
+
+	return true;
+
+no_memory:
+	content_broadcast_errorcode(&htmlc->base, ns_error);
+	return false;
+}
+
+/* callback for DOMNodeInserted end type */
+static void
+dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
+{
+	dom_event_target *node;
+	dom_node_type type;
+	dom_string *name;
+	dom_exception exc;
+	html_content *htmlc = pw;
+
+	exc = dom_event_get_target(evt, &node);
+	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		exc = dom_node_get_node_type(node, &type);
+		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
+			/* an element node has been inserted */
+			exc = dom_node_get_node_name(node, &name);
+			if ((exc == DOM_NO_ERR) && (name != NULL)) {
+				/* LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name))); */
+				if (dom_string_caseless_isequal(name, corestring_dom_link)) {
+					html_process_stylesheet_link(htmlc, (dom_node *)node);
+				}
+			}
+		}
+	}
+}
+
+/* callback for DOMNodeInserted end type */
+static void
+dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
+{
+	dom_event_target *node;
+	dom_node_type type;
+	dom_string *name;
+	dom_exception exc;
+	html_content *htmlc = pw;
+
+	exc = dom_event_get_target(evt, &node);
+	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		exc = dom_node_get_node_type(node, &type);
+		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
+			/* an element node has been inserted */
+			exc = dom_node_get_node_name(node, &name);
+			if ((exc == DOM_NO_ERR) && (name != NULL)) {
+				/* LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name)));  */
+				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
+					html_process_style_element_update(htmlc, (dom_node *)node);
+				} 
+			}
+		}
+	}
+}
+
+/* callback function selector
+ *
+ * selects a callback function for libdom to call based on the type and phase.
+ * dom_default_action_phase from events/document_event.h
+ *
+ * @return callback function pointer or NULL for none
+ */
+static dom_default_action_callback
+dom_event_fetcher(dom_string *type,
+		  dom_default_action_phase phase,
+		  void **pw)
+{
+	//LOG(("type:%s", dom_string_data(type)));
+
+	if (phase == DOM_DEFAULT_ACTION_END) {
+		if (dom_string_isequal(type, corestring_dom_DOMNodeInserted)) {
+			return dom_default_action_DOMNodeInserted_cb;
+		} else if (dom_string_isequal(type, corestring_dom_DOMSubtreeModified)) {
+			return dom_default_action_DOMSubtreeModified_cb;
+		}
+	}
+	return NULL;
+}
 
 static nserror
 html_create_html_data(html_content *c, const http_parameter *params)
@@ -384,7 +944,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = c;
-	parse_params.daf = NULL;
+	parse_params.daf = dom_event_fetcher;
 
 	error = dom_hubbub_parser_create(&parse_params,
 					 &c->parser,
@@ -502,7 +1062,7 @@ html_process_encoding_change(struct content *c,
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = html;
-	parse_params.daf = NULL;
+	parse_params.daf = dom_event_fetcher;
 
 	/* Create new binding, using the new encoding */
 	error = dom_hubbub_parser_create(&parse_params,
@@ -1492,480 +2052,6 @@ static void html_object_refresh(void *p)
 }
 
 
-
-
-
-/**
- * Callback for fetchcache() for linked stylesheets.
- */
-
-static nserror
-html_convert_css_callback(hlcache_handle *css,
-			  const hlcache_event *event,
-			  void *pw)
-{
-	html_content *parent = pw;
-	unsigned int i;
-	struct html_stylesheet *s;
-
-	/* Find sheet */
-	for (i = 0, s = parent->stylesheets;
-			i != parent->stylesheet_count; i++, s++) {
-		if (s->type == HTML_STYLESHEET_EXTERNAL &&
-				s->data.external == css)
-			break;
-	}
-
-	assert(i != parent->stylesheet_count);
-
-	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
-
-	case CONTENT_MSG_DONE:
-		LOG(("done stylesheet slot %d '%s'", i,
-				nsurl_access(hlcache_handle_get_url(css))));
-		parent->base.active--;
-		LOG(("%d fetches active", parent->base.active));
-		break;
-
-	case CONTENT_MSG_ERROR:
-		LOG(("stylesheet %s failed: %s",
-				nsurl_access(hlcache_handle_get_url(css)),
-				event->data.error));
-		hlcache_handle_release(css);
-		s->data.external = NULL;
-		parent->base.active--;
-		LOG(("%d fetches active", parent->base.active));
-		content_add_error(&parent->base, "?", 0);
-		break;
-
-	case CONTENT_MSG_STATUS:
-		if (event->data.explicit_status_text == NULL) {
-			/* Object content's status text updated */
-			html_set_status(parent,
-					content_get_status_message(css));
-			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-					event->data);
-		} else {
-			/* Object content wants to set explicit message */
-			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-					event->data);
-		}
-		break;
-
-	case CONTENT_MSG_POINTER:
-		/* Really don't want this to continue after the switch */
-		return NSERROR_OK;
-
-	default:
-		assert(0);
-	}
-
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
-
-	return NSERROR_OK;
-}
-
-/**
- * Handle notification of inline style completion
- *
- * \param css  Inline style object
- * \param pw   Private data
- */
-static void html_inline_style_done(struct content_css_data *css, void *pw)
-{
-	html_content *html = pw;
-
-	if (--html->base.active == 0)
-		html_finish_conversion(html);
-}
-
-/**
- * Process an inline stylesheet in the document.
- *
- * \param  c      content structure
- * \param  index  Index of stylesheet in stylesheet_content array,
- *                updated if successful
- * \param  style  xml node of style element
- * \return  true on success, false if an error occurred
- */
-
-static bool
-html_process_style_element(html_content *c,
-			   unsigned int *index,
-			   dom_node *style)
-{
-	dom_node *child, *next;
-	dom_string *val;
-	dom_exception exc;
-	struct html_stylesheet *stylesheets;
-	struct content_css_data *sheet;
-	nserror error;
-
-	/* type='text/css', or not present (invalid but common) */
-	exc = dom_element_get_attribute(style, corestring_dom_type, &val);
-	if (exc == DOM_NO_ERR && val != NULL) {
-		if (!dom_string_caseless_lwc_isequal(val,
-				corestring_lwc_text_css)) {
-			dom_string_unref(val);
-			return true;
-		}
-		dom_string_unref(val);
-	}
-
-	/* media contains 'screen' or 'all' or not present */
-	exc = dom_element_get_attribute(style, corestring_dom_media, &val);
-	if (exc == DOM_NO_ERR && val != NULL) {
-		if (strcasestr(dom_string_data(val), "screen") == NULL &&
-				strcasestr(dom_string_data(val),
-						"all") == NULL) {
-			dom_string_unref(val);
-			return true;
-		}
-		dom_string_unref(val);
-	}
-
-	/* Extend array */
-	stylesheets = realloc(c->stylesheets, 
-			      sizeof(struct html_stylesheet) * (*index + 1));
-	if (stylesheets == NULL)
-		goto no_memory;
-
-	c->stylesheets = stylesheets;
-	c->stylesheet_count++;
-
-	c->stylesheets[(*index)].type = HTML_STYLESHEET_INTERNAL;
-	c->stylesheets[(*index)].data.internal = NULL;
-
-	/* create stylesheet */
-	sheet = calloc(1, sizeof(struct content_css_data));
-	if (sheet == NULL) {
-		c->stylesheet_count--;
-		goto no_memory;
-	}
-
-	error = nscss_create_css_data(sheet,
-		nsurl_access(c->base_url), NULL, c->quirks,
-		html_inline_style_done, c);
-	if (error != NSERROR_OK) {
-		free(sheet);
-		c->stylesheet_count--;
-		content_broadcast_errorcode(&c->base, error);
-		return false;
-	}
-
-	/* can't just use xmlNodeGetContent(style), because that won't
-	 * give the content of comments which may be used to 'hide'
-	 * the content */
-	exc = dom_node_get_first_child(style, &child);
-	if (exc != DOM_NO_ERR) {
-		nscss_destroy_css_data(sheet);
-		free(sheet);
-		c->stylesheet_count--;
-		goto no_memory;
-	}
-
-	while (child != NULL) {
-		dom_string *data;
-
-		exc = dom_node_get_text_content(child, &data);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			c->stylesheet_count--;
-			goto no_memory;
-		}
-
-		if (nscss_process_css_data(sheet, dom_string_data(data),
-				dom_string_byte_length(data)) == false) {
-			dom_string_unref(data);
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			c->stylesheet_count--;
-			goto no_memory;
-		}
-
-		dom_string_unref(data);
-
-		exc = dom_node_get_next_sibling(child, &next);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(child);
-			nscss_destroy_css_data(sheet);
-			free(sheet);
-			c->stylesheet_count--;
-			goto no_memory;
-		}
-
-		dom_node_unref(child);
-		child = next;
-	}
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	/* Convert the content -- manually, as we want the result */
-	if (nscss_convert_css_data(sheet) != CSS_OK) {
-		/* conversion failed */
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
-		nscss_destroy_css_data(sheet);
-		free(sheet);
-		sheet = NULL;
-	}
-
-	/* Update index */
-	c->stylesheets[(*index)].data.internal = sheet;
-	(*index)++;
-
-	return true;
-
-no_memory:
-	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
-	return false;
-}
-
-
-
-struct find_stylesheet_ctx {
-	unsigned int count;
-	html_content *c;
-};
-
-/** callback to process stylesheet elements
- */
-static bool
-html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
-{
-	struct find_stylesheet_ctx *ctx = (struct find_stylesheet_ctx *)vctx;
-	dom_string *rel, *type_attr, *media, *href;
-	struct html_stylesheet *stylesheets;
-	nsurl *joined;
-	dom_exception exc;
-	nserror ns_error;
-	hlcache_child_context child;
-
-	/* deal with style nodes */
-	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_style)) {
-		if (!html_process_style_element(ctx->c,	&ctx->count, node))
-			return false;
-		return true;
-	}
-
-	/* if it is not a link node skip it */
-	if (!dom_string_caseless_lwc_isequal(name, corestring_lwc_link)) {
-		return true;
-	}
-
-	/* rel=<space separated list, including 'stylesheet'> */
-	exc = dom_element_get_attribute(node,
-					corestring_dom_rel, &rel);
-	if (exc != DOM_NO_ERR || rel == NULL)
-		return true;
-
-	if (strcasestr(dom_string_data(rel), "stylesheet") == 0) {
-		dom_string_unref(rel);
-		return true;
-	} else if (strcasestr(dom_string_data(rel), "alternate") != 0) {
-		/* Ignore alternate stylesheets */
-		dom_string_unref(rel);
-		return true;
-	}
-	dom_string_unref(rel);
-
-	/* type='text/css' or not present */
-	exc = dom_element_get_attribute(node, corestring_dom_type, &type_attr);
-	if (exc == DOM_NO_ERR && type_attr != NULL) {
-		if (!dom_string_caseless_lwc_isequal(type_attr,
-				corestring_lwc_text_css)) {
-			dom_string_unref(type_attr);
-			return true;
-		}
-		dom_string_unref(type_attr);
-	}
-
-	/* media contains 'screen' or 'all' or not present */
-	exc = dom_element_get_attribute(node, corestring_dom_media, &media);
-	if (exc == DOM_NO_ERR && media != NULL) {
-		if (strcasestr(dom_string_data(media), "screen") == NULL &&
-		    strcasestr(dom_string_data(media), "all") == NULL) {
-			dom_string_unref(media);
-			return true;
-		}
-		dom_string_unref(media);
-	}
-
-	/* href='...' */
-	exc = dom_element_get_attribute(node, corestring_dom_href, &href);
-	if (exc != DOM_NO_ERR || href == NULL)
-		return true;
-
-	/* TODO: only the first preferred stylesheets (ie.
-	 * those with a title attribute) should be loaded
-	 * (see HTML4 14.3) */
-
-	ns_error = nsurl_join(ctx->c->base_url, dom_string_data(href), &joined);
-	if (ns_error != NSERROR_OK) {
-		dom_string_unref(href);
-		goto no_memory;
-	}
-	dom_string_unref(href);
-
-	LOG(("linked stylesheet %i '%s'", ctx->count, nsurl_access(joined)));
-
-	/* start fetch */
-	stylesheets = realloc(ctx->c->stylesheets, 
-			      sizeof(struct html_stylesheet) * (ctx->count + 1));
-	if (stylesheets == NULL) {
-		nsurl_unref(joined);
-		ns_error = NSERROR_NOMEM;
-		goto no_memory;
-	}
-
-	ctx->c->stylesheets = stylesheets;
-	ctx->c->stylesheet_count++;
-	ctx->c->stylesheets[ctx->count].type = HTML_STYLESHEET_EXTERNAL;
-
-	child.charset = ctx->c->encoding;
-	child.quirks = ctx->c->base.quirks;
-
-	ns_error = hlcache_handle_retrieve(joined,
-					   0,
-					   content_get_url(&ctx->c->base),
-					   NULL,
-					   html_convert_css_callback,
-					   ctx->c,
-					   &child,
-					   CONTENT_CSS,
-					   &ctx->c->stylesheets[ctx->count].data.external);
-
-	nsurl_unref(joined);
-
-	if (ns_error != NSERROR_OK)
-		goto no_memory;
-
-	ctx->c->base.active++;
-	LOG(("%d fetches active", ctx->c->base.active));
-
-	ctx->count++;
-
-	return true;
-
-no_memory:
-	content_broadcast_errorcode(&ctx->c->base, ns_error);
-	return false;
-}
-
-
-/**
- * Process inline stylesheets and fetch linked stylesheets.
- *
- * Uses STYLE and LINK elements inside and outside HEAD
- *
- * \param c content structure
- * \param html dom node of html element
- * \return true on success, false if an error occurred
- */
-
-static bool html_find_stylesheets(html_content *c, dom_node *html)
-{
-	nserror ns_error;
-	bool result;
-	struct find_stylesheet_ctx ctx;
-	hlcache_child_context child;
-
-	/* setup context */
-	ctx.c = c;
-	ctx.count = STYLESHEET_START;
-
-	/* stylesheet 0 is the base style sheet,
-	 * stylesheet 1 is the quirks mode style sheet,
-	 * stylesheet 2 is the adblocking stylesheet,
-	 * stylesheet 3 is the user stylesheet */
-	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
-	if (c->stylesheets == NULL) {
-		ns_error = NSERROR_NOMEM;
-		goto html_find_stylesheets_no_memory;
-	}
-
-	c->stylesheets[STYLESHEET_BASE].type = HTML_STYLESHEET_EXTERNAL;
-	c->stylesheets[STYLESHEET_BASE].data.external = NULL;
-	c->stylesheets[STYLESHEET_QUIRKS].type = HTML_STYLESHEET_EXTERNAL;
-	c->stylesheets[STYLESHEET_QUIRKS].data.external = NULL;
-	c->stylesheets[STYLESHEET_ADBLOCK].type = HTML_STYLESHEET_EXTERNAL;
-	c->stylesheets[STYLESHEET_ADBLOCK].data.external = NULL;
-	c->stylesheets[STYLESHEET_USER].type = HTML_STYLESHEET_EXTERNAL;
-	c->stylesheets[STYLESHEET_USER].data.external = NULL;
-	c->stylesheet_count = STYLESHEET_START;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
-
-	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
-			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &child, CONTENT_CSS,
-			&c->stylesheets[STYLESHEET_BASE].data.external);
-	if (ns_error != NSERROR_OK)
-		goto html_find_stylesheets_no_memory;
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
-		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
-				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child,
-				CONTENT_CSS,
-				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
-		if (ns_error != NSERROR_OK)
-			goto html_find_stylesheets_no_memory;
-
-		c->base.active++;
-		LOG(("%d fetches active", c->base.active));
-
-	}
-
-	if (nsoption_bool(block_ads)) {
-		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
-				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child, CONTENT_CSS,
-				&c->stylesheets[STYLESHEET_ADBLOCK].
-						data.external);
-		if (ns_error != NSERROR_OK)
-			goto html_find_stylesheets_no_memory;
-
-		c->base.active++;
-		LOG(("%d fetches active", c->base.active));
-
-	}
-
-	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
-			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &child, CONTENT_CSS,
-			&c->stylesheets[STYLESHEET_USER].data.external);
-	if (ns_error != NSERROR_OK)
-		goto html_find_stylesheets_no_memory;
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	result = libdom_treewalk(html, html_process_stylesheet, &ctx);
-
-	assert(c->stylesheet_count == ctx.count);
-
-	return result;
-
-html_find_stylesheets_no_memory:
-	content_broadcast_errorcode(&c->base, ns_error);
-	return false;
-}
-
 /**
  * Convert a CONTENT_HTML for display.
  *
@@ -2006,6 +2092,7 @@ html_begin_conversion(html_content *htmlc)
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
 
+	LOG(("Completing parse"));
 	/* complete parsing */
 	error = dom_hubbub_parser_completed(htmlc->parser);
 	if (error != DOM_HUBBUB_OK) {
@@ -2154,14 +2241,12 @@ html_begin_conversion(html_content *htmlc)
 	}
 
 	dom_node_unref(head);
+	dom_node_unref(html);
 
-	/* get stylesheets */
-	if (html_find_stylesheets(htmlc, html) == false) {
-		dom_node_unref(html);
+	/* ensure stylesheets are initialised */
+	if (html_init_stylesheets(htmlc) == false) {
 		return false;
 	}
-
-	dom_node_unref(html);
 
 	if (htmlc->base.active == 0) {
 		html_finish_conversion(htmlc);
