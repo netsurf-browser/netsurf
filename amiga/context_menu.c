@@ -989,13 +989,13 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_SELSEARCH:
 			{
-				struct ami_text_selection *sel;
+				char *sel;
 				char *urltxt;
 				nsurl *url;
 
-				if(sel = ami_selection_to_text(gwin))
+				if(sel = browser_window_get_selection(gwin->bw))
 				{
-					urltxt = search_web_from_term(sel->text);
+					urltxt = search_web_from_term(sel);
 
 					if (nsurl_create(urltxt, &url) != NSERROR_OK) {
 						warn_user("NoMemory", 0);
@@ -1010,8 +1010,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 							NULL);
 						nsurl_unref(url);
 					}
-
-					FreeVec(sel);
+					free(sel);
 				}
 			}
 			break;

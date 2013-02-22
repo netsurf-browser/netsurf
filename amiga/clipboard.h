@@ -26,18 +26,11 @@ struct selection;
 struct gui_window;
 struct gui_window_2;
 
-struct ami_text_selection
-{
-	char text[1024];
-	int length;
-};
-
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
 void ami_drag_selection(struct gui_window *g);
 bool ami_easy_clipboard(char *text);
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap);
-struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin);
 #ifdef WITH_NS_SVG
 bool ami_easy_clipboard_svg(struct hlcache_handle *c);
 #endif

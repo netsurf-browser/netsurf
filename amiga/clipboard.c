@@ -286,35 +286,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
-struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
-{
-	struct ami_text_selection *sel;
-	int len;
-	char *ss;
-
-	sel = AllocVec(sizeof(struct ami_text_selection),
-			MEMF_PRIVATE | MEMF_CLEAR);
-
-	if (sel) {
-		/* Get selection string */
-		ss = browser_window_get_selection(gwin->bw);
-		if (ss == NULL)
-			return sel;
-
-		len = strlen(ss);
-
-		if (len > sizeof(sel->text))
-			len = sizeof(sel->text) - 1;
-
-		memcpy(sel->text, ss, len);
-		sel->length = len;
-		sel->text[sel->length] = '\0';
-
-		free(ss);
-	}
-	return sel;
-}
-
 void ami_drag_selection(struct gui_window *g)
 {
 	int x;
