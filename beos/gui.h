@@ -60,7 +60,7 @@ extern BFilePanel *wndOpenFile;
 void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui);
 void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaffolding *scaffold);
 
-void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *selection);
+void nsbeos_gui_view_source(struct hlcache_handle *content);
 image_id nsbeos_find_app_path(char *path);
 
 void nsbeos_update_system_ui_colors(void);

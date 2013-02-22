@@ -57,7 +57,6 @@ extern "C" {
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
 #include "desktop/options.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -743,7 +742,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case B_SELECT_ALL:
 			LOG(("Selecting all text"));
-			selection_select_all(browser_window_get_selection(bw));
+			browser_window_key_press(bw, KEY_SELECT_ALL);
 			break;
 		case B_NETPOSITIVE_BACK:
 		case BROWSER_NAVIGATE_BACK:
@@ -923,8 +922,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		{
 			if (!bw || !bw->current_content)
 				break;
-			nsbeos_gui_view_source(bw->current_content,
-					browser_window_get_selection(bw));
+			nsbeos_gui_view_source(bw->current_content);
 			break;
 		}
 		case BROWSER_OBJECT:

@@ -728,7 +728,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
  * Send the source of a content to a text editor.
  */
 
-void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *selection)
+void nsbeos_gui_view_source(struct hlcache_handle *content)
 {
 	char *temp_name;
 	bool done = false;
