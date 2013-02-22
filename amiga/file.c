@@ -148,7 +148,7 @@ static void ami_file_set_type(const char *path, lwc_string *mime_type)
 
 void ami_file_save(int type, char *fname, struct Window *win,
 		struct hlcache_handle *object, struct hlcache_handle *favicon,
-		struct selection *sel)
+		struct browser_window *bw)
 {
 	BPTR lock = 0;
 	const char *source_data;
@@ -209,7 +209,13 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_SELECTION:
-				selection_save_text(sel, fname);
+				if(source_data = browser_window_get_selection(bw)) {
+					if(fh = FOpen(fname, MODE_NEWFILE,0)) {
+						FWrite(fh, source_data, 1, strlen(source_data));
+						FClose(fh);
+					}
+					free(source_data);
+				}
 			break;
 		}
 		if(object) SetComment(fname, nsurl_access(hlcache_handle_get_url(object)));
@@ -219,7 +225,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 }
 
 void ami_file_save_req(int type, struct gui_window_2 *gwin,
-		struct hlcache_handle *object, struct selection *sel)
+		struct hlcache_handle *object)
 {
 	char *fname = AllocVec(1024, MEMF_CLEAR | MEMF_PRIVATE);
 
@@ -232,7 +238,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname, savereq->fr_File, 1024);
 
-		ami_file_save(type, fname, gwin->win, object, gwin->bw->window->favicon, sel);
+		ami_file_save(type, fname, gwin->win, object, gwin->bw->window->favicon, gwin->bw);
 	}
 
 	if(fname) FreeVec(fname);

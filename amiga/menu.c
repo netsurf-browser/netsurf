@@ -757,7 +757,7 @@ static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct In
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_file_save_req(type, gwin, gwin->bw->current_content, NULL);
+	ami_file_save_req(type, gwin, gwin->bw->current_content);
 }
 
 static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struct IntuiMessage *msg)

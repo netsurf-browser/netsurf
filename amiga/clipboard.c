@@ -315,15 +315,18 @@ struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 	return sel;
 }
 
-void ami_drag_selection(struct selection *s)
+void ami_drag_selection(struct gui_window *g)
 {
 	int x;
 	int y;
 	char *utf8text;
-	struct ami_text_selection *sel;
+	char *sel;
 	struct IFFHandle *old_iffh = iffh;
 	struct gui_window_2 *gwin = ami_window_at_pointer(AMINS_WINDOW);
-
+	
+	/* NB: 'gwin' is at the drop point, 'g' is where the selection was dragged from.
+	 * These may be different if the selection has been dragged between windows. */
+	
 	if(!gwin)
 	{
 		DisplayBeep(scrn);
@@ -337,11 +340,9 @@ void ami_drag_selection(struct selection *s)
 	{
 		iffh = ami_clipboard_init_internal(1);
 
-		if(selection_copy_to_clipboard(s))
-		{
-			browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
-			browser_window_key_press(gwin->bw, KEY_PASTE);
-		}
+		browser_window_key_press(g->shared->bw, KEY_COPY_SELECTION);
+		browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
+		browser_window_key_press(gwin->bw, KEY_PASTE);
 
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
@@ -353,23 +354,23 @@ void ami_drag_selection(struct selection *s)
 
 		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
 		{
-			if(sel = ami_selection_to_text(gwin))
+			if(sel = browser_window_get_selection(g->shared->bw))
 			{
-				utf8text = ami_utf8_easy(sel->text);
+				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
-				FreeVec(sel);
+				free(sel);
 				ami_utf8_free(utf8text);
 			}
 		}
 		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
 		{
-			if(sel = ami_selection_to_text(gwin))
+			if(sel = browser_window_get_selection(g->shared->bw))
 			{
-				utf8text = ami_utf8_easy(sel->text);
+				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
 					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
-				FreeVec(sel);
+				free(sel);
 				ami_utf8_free(utf8text);
 			}
 		}

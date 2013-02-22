@@ -1879,7 +1879,7 @@ void ami_handle_msg(void)
 
 							case 's':
 								ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-									gwin->bw->current_content, NULL);
+									gwin->bw->current_content);
 							break;
 
 							case 'p':

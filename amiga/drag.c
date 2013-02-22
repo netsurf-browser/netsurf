@@ -94,7 +94,7 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 	ami_drag_icon_show(g->shared->win, "ascii");
 
 	ami_autoscroll = TRUE;
-	drag_save_data = s;
+	drag_save_data = g;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
 }
 
@@ -126,7 +126,7 @@ void ami_drag_save(struct Window *win)
 	else if(which == WBO_NONE)
 	{
 		if(drag_save == GUI_SAVE_TEXT_SELECTION)
-			ami_drag_selection((struct selection *)drag_save_data);
+			ami_drag_selection((struct gui_window *)drag_save_data);
 		else DisplayBeep(scrn);
 
 		drag_save = 0;

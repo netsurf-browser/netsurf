@@ -23,6 +23,7 @@
 struct bitmap;
 struct hlcache_handle;
 struct selection;
+struct gui_window;
 struct gui_window_2;
 
 struct ami_text_selection
@@ -33,7 +34,7 @@ struct ami_text_selection
 
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
-void ami_drag_selection(struct selection *s);
+void ami_drag_selection(struct gui_window *g);
 bool ami_easy_clipboard(char *text);
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap);
 struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin);

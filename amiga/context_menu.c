@@ -892,18 +892,18 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_SAVEOBJ:
 			case CMID_PAGESAVE:
 				ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-					(struct hlcache_handle *)userdata, NULL);
+					(struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_PAGESAVECOMPLETE:
 			case CMID_FRAMESAVECOMPLETE:
 				ami_file_save_req(AMINS_SAVE_COMPLETE, gwin,
-					(struct hlcache_handle *)userdata, NULL);
+					(struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_SAVEIFFOBJ:
 				ami_file_save_req(AMINS_SAVE_IFF, gwin,
-					(struct hlcache_handle *)userdata, NULL);
+					(struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_PLUGINCMD:
@@ -984,8 +984,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			break;
 
 			case CMID_SELSAVE:
-				ami_file_save_req(AMINS_SAVE_SELECTION, gwin, NULL,
-					browser_window_get_selection(gwin->bw));
+				ami_file_save_req(AMINS_SAVE_SELECTION, gwin, NULL);
 			break;
 
 			case CMID_SELSEARCH:

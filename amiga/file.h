@@ -39,7 +39,7 @@ void ami_file_req_free(void);
 
 void ami_file_open(struct gui_window_2 *gwin);
 void ami_file_save_req(int type, struct gui_window_2 *gwin,
-		struct hlcache_handle *object, struct selection *sel);
+		struct hlcache_handle *object);
 void ami_file_save(int type, char *fname, struct Window *win,
 		struct hlcache_handle *object, struct hlcache_handle *favicon,
-		struct selection *sel);
+		struct browser_window *bw);
