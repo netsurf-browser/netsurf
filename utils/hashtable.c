@@ -92,7 +92,7 @@ struct hash_table *hash_create(unsigned int chains)
 	}
 
 	r->nchains = chains;
-	r->chain = calloc(chains, sizeof(struct hash_entry));
+	r->chain = calloc(chains, sizeof(struct hash_entry *));
 
 	if (r->chain == NULL) {
 		LOG(("Not enough memory for %d hash table chains.", chains));
