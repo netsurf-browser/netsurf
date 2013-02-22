@@ -38,6 +38,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
+#include "render/box_textarea.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html_internal.h"
@@ -957,7 +958,7 @@ bool html_keypress(struct content *c, uint32_t key)
 
 	case HTML_FOCUS_TEXTAREA:
 		box = html->focus_owner.textarea;
-		return textarea_keypress(box->gadget->data.text.ta, key);
+		return box_textarea_keypress(html, box, key);
 
 	default:
 		/* Deal with it below */
