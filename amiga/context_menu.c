@@ -476,8 +476,8 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 
 		case CMSUB_SEL:
 			bw = userdata;
-			BOOL disabled_readonly = selection_read_only(browser_window_get_selection(bw));
-			BOOL disabled_noselection = !browser_window_has_selection(bw);
+			BOOL disabled_readonly = browser_window_get_editor_flags(bw) & ~BW_EDITOR_CAN_PASTE;
+			BOOL disabled_noselection = browser_window_get_editor_flags(bw) & ~BW_EDITOR_CAN_COPY;
 
 			IDoMethod(ctxmenuobj,PM_INSERT,
 				NewObject(POPUPMENU_GetItemClass(), NULL,
