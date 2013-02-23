@@ -852,9 +852,6 @@ static bool textarea_set_caret_xy(struct textarea *ta, int x, int y)
 {
 	unsigned int c_off;
 
-	if (ta->flags & TEXTAREA_READONLY)
-		return true;
-
 	textarea_get_xy_offset(ta, x, y, &c_off);
 
 	return textarea_set_caret(ta, c_off);
@@ -949,7 +946,9 @@ static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 {
 	size_t b_start, b_end;
 
-	if (ta->flags & TEXTAREA_READONLY)
+	if ((ta->flags & TEXTAREA_READONLY) &&
+			 !(rep == NULL && rep_len == 0 && add_to_clipboard))
+		/* Can't edit if readonly, and we're not just copying */
 		return true;
 
 	if (start > ta->text.utf8_len)
@@ -1332,9 +1331,6 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	int width, height;
 	struct textarea_msg msg;
 	bool scrolled;
-
-	if (ta->flags & TEXTAREA_READONLY)
-		return true;
 
 	c_len = ta->show->utf8_len;
 
@@ -2273,13 +2269,11 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		return textarea_select_paragraph(ta);
 
 	} else if (mouse & BROWSER_MOUSE_PRESS_1) {
-		if (!(ta->flags & TEXTAREA_READONLY)) {
-			/* Place caret */
-			textarea_get_xy_offset(ta, x, y, &c_off);
-			ta->drag_start_char = c_off;
+		/* Place caret */
+		textarea_get_xy_offset(ta, x, y, &c_off);
+		ta->drag_start_char = c_off;
 
-			textarea_set_caret(ta, c_off);
-		}
+		textarea_set_caret(ta, c_off);
 		if (ta->sel_start != -1) {
 			/* Clear selection */
 			textarea_clear_selection(ta);

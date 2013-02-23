@@ -209,10 +209,9 @@ bool box_textarea_create_textarea(html_content *html,
 	textarea_setup ta_setup;
 	textarea_flags ta_flags;
 	plot_font_style_t fstyle;
+	bool read_only = false;
 	struct form_control *gadget = box->gadget;
 	const char *text;
-
-	/** TODO: Read only textarea */
 
 	assert(gadget != NULL);
 	assert(gadget->type == GADGET_TEXTAREA ||
@@ -221,6 +220,13 @@ bool box_textarea_create_textarea(html_content *html,
 
 	if (gadget->type == GADGET_TEXTAREA) {
 		ta_flags = TEXTAREA_MULTILINE;
+		dom_html_text_area_element *textarea =
+				(dom_html_text_area_element *) node;
+
+		err = dom_html_text_area_element_get_read_only(
+				textarea, &read_only);
+		if (err != DOM_NO_ERR)
+			return false;
 
 		/* Get the textarea's initial content */
 		err = dom_node_get_text_content(node, &dom_text);
@@ -229,6 +235,11 @@ bool box_textarea_create_textarea(html_content *html,
 
 	} else {
 		dom_html_input_element *input = (dom_html_input_element *) node;
+
+		err = dom_html_input_element_get_read_only(
+				input, &read_only);
+		if (err != DOM_NO_ERR)
+			return false;
 
 		if (gadget->type == GADGET_PASSWORD)
 			ta_flags = TEXTAREA_PASSWORD;
@@ -248,6 +259,9 @@ bool box_textarea_create_textarea(html_content *html,
 		 * use a blank string */
 		text = "";
 	}
+
+	if (read_only)
+		ta_flags |= TEXTAREA_READONLY;
 
 	gadget->data.text.data.html = html;
 	gadget->data.text.data.gadget = gadget;
