@@ -328,7 +328,7 @@ void ro_gui_selection_prepare_paste(wimp_w w,
 
 		ro_gui_discard_clipboard_contents();
 
-		msg.size = sizeof(msg);
+		msg.size = 48; /* There's only one filetype listed. */
 		msg.your_ref = 0;
 		msg.action = message_DATA_REQUEST;
 		msg.w = w;
