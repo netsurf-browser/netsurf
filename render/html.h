@@ -182,8 +182,17 @@ struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 nsurl *html_get_base_url(struct hlcache_handle *h);
 const char *html_get_base_target(struct hlcache_handle *h);
+
+/**
+ * Retrieve stylesheets used by HTML document
+ *
+ * \param h Content to retrieve stylesheets from
+ * \param n Pointer to location to receive number of sheets
+ * \return Pointer to array of stylesheets
+ */
 struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h,
 		unsigned int *n);
+
 struct content_html_object *html_get_objects(struct hlcache_handle *h,
 		unsigned int *n);
 bool html_get_id_offset(struct hlcache_handle *h, lwc_string *frag_id,

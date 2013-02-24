@@ -42,6 +42,7 @@ extern lwc_string *corestring_lwc_bottom;
 extern lwc_string *corestring_lwc_button;
 extern lwc_string *corestring_lwc_caption;
 extern lwc_string *corestring_lwc_center;
+extern lwc_string *corestring_lwc_charset;
 extern lwc_string *corestring_lwc_checkbox;
 extern lwc_string *corestring_lwc_circle;
 extern lwc_string *corestring_lwc_col;

@@ -255,6 +255,24 @@ struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);
 struct form_control *html_forms_get_control_for_node(struct form *forms,
 		dom_node *node);
 
+/* in render/html_css.c */
+nserror html_css_init(void);
+void html_css_fini(void);
+
+/**
+ * Initialise core stylesheets for a content
+ *
+ * \param c content structure to update
+ * \return nserror
+ */
+nserror html_css_new_stylesheets(html_content *c);
+nserror html_css_free_stylesheets(html_content *html);
+
+bool html_css_process_link(html_content *htmlc, dom_node *node);
+bool html_css_update_style(html_content *c, dom_node *style);
+
+nserror html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx);
+
 /* Useful dom_string pointers */
 struct dom_string;
 
