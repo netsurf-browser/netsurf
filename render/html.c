@@ -247,6 +247,8 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				if (dom_string_caseless_isequal(name, corestring_dom_link)) {
 					html_css_process_link(htmlc, (dom_node *)node);
 				}
+
+				dom_string_unref(name);
 			}
 		}
 	}
@@ -273,6 +275,8 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
 					html_css_update_style(htmlc, (dom_node *)node);
 				} 
+
+				dom_string_unref(name);
 			}
 		}
 	}
