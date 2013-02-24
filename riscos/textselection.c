@@ -429,6 +429,8 @@ bool ro_gui_selection_prepare_paste_dataload(
 				if (ret == UTF8_CONVERT_OK) {
 					clip_length = strlen(clipboard);
 				}
+
+				free(local_cb);
 			}
 		}
 
