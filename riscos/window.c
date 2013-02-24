@@ -2088,13 +2088,14 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	case IS_WIMP_KEY | wimp_KEY_RIGHT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
-	case IS_WIMP_KEY + wimp_KEY_UP:
-	case IS_WIMP_KEY + wimp_KEY_DOWN:
-	case IS_WIMP_KEY + wimp_KEY_PAGE_UP:
-	case IS_WIMP_KEY + wimp_KEY_PAGE_DOWN:
+	case IS_WIMP_KEY | wimp_KEY_UP:
+	case IS_WIMP_KEY | wimp_KEY_DOWN:
+	case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
+	case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
 	case wimp_KEY_HOME:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
-	case IS_WIMP_KEY + wimp_KEY_END:
+	case IS_WIMP_KEY | wimp_KEY_END:
+	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
 		if (is_toolbar)
 			return false;
 		break;
@@ -2113,10 +2114,10 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		xscroll = wimp_SCROLL_COLUMN_RIGHT;
 		break;
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
-		xscroll = 0x80000000;
+		xscroll = 0x7fffffff;
 		break;
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
-		xscroll = 0x7fffffff;
+		xscroll = 0x80000000;
 		break;
 	case IS_WIMP_KEY | wimp_KEY_UP:
 		yscroll = wimp_SCROLL_LINE_UP;
