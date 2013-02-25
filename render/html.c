@@ -287,6 +287,12 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
  * selects a callback function for libdom to call based on the type and phase.
  * dom_default_action_phase from events/document_event.h
  *
+ * The principle events are:
+ *   DOMSubtreeModified
+ *   DOMAttrModified
+ *   DOMNodeInserted
+ *   DOMNodeInsertedIntoDocument
+ *
  * @return callback function pointer or NULL for none
  */
 static dom_default_action_callback
@@ -1508,9 +1514,29 @@ static void html_object_refresh(void *p)
 static bool html_convert(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
+	dom_exception exc; /* returned by libdom functions */
+
+	/* The quirk check and associated stylesheet fetch is "safe"
+	 * once the root node has been inserted into the document
+	 * which must have happened by this point in the parse.
+	 *
+	 * faliure to retrive the quirk mode or to start the
+	 * stylesheet fetch is non fatal as this "only" affects the
+	 * render and it would annoy the user to fail the entire
+	 * render for want of a quirks stylesheet.
+	 */
+	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
+	if (exc == DOM_NO_ERR) {
+		html_css_quirks_stylesheets(htmlc);
+		LOG(("quirks set to %d", htmlc->quirks));
+	}
 
 	htmlc->base.active--; /* the html fetch is no longer active */
 	LOG(("%d fetches active", htmlc->base.active));
+
+	/* The parse cannot be completed here because it may be paused
+	 * untill all the resources being fetched have completed.
+	 */
 
 	/* if there are no active fetches in progress no scripts are
 	 * being fetched or they completed already.
@@ -1549,21 +1575,12 @@ html_begin_conversion(html_content *htmlc)
 		return false;
 	}
 
-
 	/* complete script execution */
 	html_scripts_exec(htmlc);
 
 	/* fire a simple event that bubbles named DOMContentLoaded at
 	 * the Document.
 	 */
-
-	/* quirks mode */
-	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
-	if (exc != DOM_NO_ERR) {
-		LOG(("error retrieving quirks"));
-		/** @todo should this be fatal to the conversion? */
-	} 
-	LOG(("quirks set to %d", htmlc->quirks));
 
 	/* get encoding */
 	if (htmlc->encoding == NULL) {

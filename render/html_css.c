@@ -184,6 +184,34 @@ nserror html_css_free_stylesheets(html_content *html)
 }
 
 /* exported interface documented in render/html_internal.h */
+nserror html_css_quirks_stylesheets(html_content *c)
+{
+	nserror ns_error = NSERROR_OK;
+	hlcache_child_context child;
+
+	assert(c->stylesheets != NULL);
+
+	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
+		child.charset = c->encoding;
+		child.quirks = c->base.quirks;
+
+		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
+				0, content_get_url(&c->base), NULL,
+				html_convert_css_callback, c, &child,
+				CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
+		if (ns_error != NSERROR_OK) {
+			return ns_error;
+		}
+
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+	}
+
+	return ns_error;
+}
+
+/* exported interface documented in render/html_internal.h */
 nserror html_css_new_stylesheets(html_content *c)
 {
 	nserror ns_error;
@@ -226,20 +254,6 @@ nserror html_css_new_stylesheets(html_content *c)
 	c->base.active++;
 	LOG(("%d fetches active", c->base.active));
 
-	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
-		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
-				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child,
-				CONTENT_CSS,
-				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
-		if (ns_error != NSERROR_OK) {
-			return ns_error;
-		}
-
-		c->base.active++;
-		LOG(("%d fetches active", c->base.active));
-
-	}
 
 	if (nsoption_bool(block_ads)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,

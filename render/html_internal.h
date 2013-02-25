@@ -266,6 +266,7 @@ void html_css_fini(void);
  * \return nserror
  */
 nserror html_css_new_stylesheets(html_content *c);
+nserror html_css_quirks_stylesheets(html_content *c);
 nserror html_css_free_stylesheets(html_content *html);
 
 bool html_css_process_link(html_content *htmlc, dom_node *node);
