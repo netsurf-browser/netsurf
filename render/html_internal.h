@@ -165,10 +165,6 @@ typedef struct html_content {
 } html_content;
 
 
-bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
-		content_type permitted_types,
-		int available_width, int available_height,
-		bool background);
 
 void html_set_status(html_content *c, const char *extra);
 
@@ -273,6 +269,30 @@ bool html_css_process_link(html_content *htmlc, dom_node *node);
 bool html_css_update_style(html_content *c, dom_node *style);
 
 nserror html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx);
+
+/* in render/html_object.c */
+
+/**
+ * Start a fetch for an object required by a page.
+ *
+ * \param  c                 content of type CONTENT_HTML
+ * \param  url               URL of object to fetch (copied)
+ * \param  box               box that will contain the object
+ * \param  permitted_types   bitmap of acceptable types
+ * \param  available_width   estimate of width of object
+ * \param  available_height  estimate of height of object
+ * \param  background        this is a background image
+ * \return  true on success, false on memory exhaustion
+ */
+bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
+		content_type permitted_types,
+		int available_width, int available_height,
+		bool background);
+
+nserror html_object_free_objects(html_content *html);
+nserror html_object_close_objects(html_content *html);
+nserror html_object_open_objects(html_content *html, struct browser_window *bw);
+nserror html_object_abort_objects(html_content *html);
 
 /* Useful dom_string pointers */
 struct dom_string;

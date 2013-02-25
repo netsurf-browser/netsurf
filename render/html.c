@@ -69,27 +69,6 @@ static const char *html_types[] = {
 	"text/html"
 };
 
-/* forward declared functions */
-static void html_object_refresh(void *p);
-
-static void html_destroy_objects(html_content *html)
-{
-	while (html->object_list != NULL) {
-		struct content_html_object *victim = html->object_list;
-
-		if (victim->content != NULL) {
-			LOG(("object %p", victim->content));
-
-			if (content_get_type(victim->content) == CONTENT_HTML)
-				schedule_remove(html_object_refresh, victim);
-
-			hlcache_handle_release(victim->content);
-		}
-
-		html->object_list = victim->next;
-		free(victim);
-	}
-}
 
 /**
  * Perform post-box-creation conversion of a document
@@ -107,7 +86,7 @@ static void html_box_convert_done(html_content *c, bool success)
 
 	/* Clean up and report error if unsuccessful or aborted */
 	if ((success == false) || (c->aborted)) {
-		html_destroy_objects(c);
+		html_object_free_objects(c);
 
 		if (success == false) {
 			content_broadcast_errorcode(&c->base, NSERROR_BOX_CONVERT);
@@ -130,7 +109,7 @@ static void html_box_convert_done(html_content *c, bool success)
 
 	exc = dom_document_get_document_element(c->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		/** @todo should this call html_destroy_objects(c);
+		/** @todo should this call html_object_free_objects(c);
 		 * like the other error paths 
 		 */
 		LOG(("error retrieving html element from dom"));
@@ -143,7 +122,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	err = imagemap_extract(c);
 	if (err != NSERROR_OK) {
 		LOG(("imagemap extraction failed"));
-		html_destroy_objects(c);
+		html_object_free_objects(c);
 		content_broadcast_errorcode(&c->base, err);
 		content_set_error(&c->base);
 		dom_node_unref(html);
@@ -217,7 +196,7 @@ void html_finish_conversion(html_content *c)
 	error = dom_to_box(html, c, html_box_convert_done);
 	if (error != NSERROR_OK) {
 		dom_node_unref(html);
-		html_destroy_objects(c);
+		html_object_free_objects(c);
 		content_broadcast_errorcode(&c->base, error);
 		content_set_error(&c->base);
 		return;
@@ -1092,409 +1071,9 @@ static nserror html_meta_refresh(html_content *c, dom_node *head)
 	return ns_error;
 }
 
-/**
- * Update a box whose content has completed rendering.
- */
 
-static void
-html_object_done(struct box *box,
-		 hlcache_handle *object,
-		 bool background)
-{
-	struct box *b;
 
-	if (background) {
-		box->background = object;
-		return;
-	}
 
-	box->object = object;
-
-	if (!(box->flags & REPLACE_DIM)) {
-		/* invalidate parent min, max widths */
-		for (b = box; b; b = b->parent)
-			b->max_width = UNKNOWN_MAX_WIDTH;
-
-		/* delete any clones of this box */
-		while (box->next && (box->next->flags & CLONE)) {
-			/* box_free_box(box->next); */
-			box->next = box->next->next;
-		}
-	}
-}
-
-/**
- * Handle object fetching or loading failure.
- *
- * \param  box         box containing object which failed to load
- * \param  content     document of type CONTENT_HTML
- * \param  background  the object was the background image for the box
- */
-
-static void
-html_object_failed(struct box *box, html_content *content, bool background)
-{
-	/* Nothing to do */
-	return;
-}
-
-/**
- * Callback for hlcache_handle_retrieve() for objects.
- */
-
-static nserror
-html_object_callback(hlcache_handle *object,
-		     const hlcache_event *event,
-		     void *pw)
-{
-	struct content_html_object *o = pw;
-	html_content *c = (html_content *) o->parent;
-	int x, y;
-	struct box *box;
-
-	assert(c->base.status != CONTENT_STATUS_ERROR);
-
-	box = o->box;
-
-	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		if (c->base.status != CONTENT_STATUS_LOADING && c->bw != NULL)
-			content_open(object,
-					c->bw, &c->base,
-					box->object_params);
-		break;
-
-	case CONTENT_MSG_READY:
-		if (content_can_reformat(object)) {
-			/* TODO: avoid knowledge of box internals here */
-			content_reformat(object, false,
-					box->max_width != UNKNOWN_MAX_WIDTH ?
-							box->width : 0,
-					box->max_width != UNKNOWN_MAX_WIDTH ?
-							box->height : 0);
-
-			/* Adjust parent content for new object size */
-			html_object_done(box, object, o->background);
-			if (c->base.status == CONTENT_STATUS_READY ||
-					c->base.status == CONTENT_STATUS_DONE)
-				content__reformat(&c->base, false,
-						c->base.available_width,
-						c->base.height);
-		}
-		break;
-
-	case CONTENT_MSG_DONE:
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
-
-		html_object_done(box, object, o->background);
-
-		if (c->base.status != CONTENT_STATUS_LOADING &&
-				box->flags & REPLACE_DIM) {
-			union content_msg_data data;
-
-			if (!box_visible(box))
-				break;
-
-			box_coords(box, &x, &y);
-
-			data.redraw.x = x + box->padding[LEFT];
-			data.redraw.y = y + box->padding[TOP];
-			data.redraw.width = box->width;
-			data.redraw.height = box->height;
-			data.redraw.full_redraw = true;
-
-			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
-		}
-		break;
-
-	case CONTENT_MSG_ERROR:
-		hlcache_handle_release(object);
-
-		o->content = NULL;
-
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
-
-		content_add_error(&c->base, "?", 0);
-		html_object_failed(box, c, o->background);
-		break;
-
-	case CONTENT_MSG_STATUS:
-		if (event->data.explicit_status_text == NULL) {
-			/* Object content's status text updated */
-			union content_msg_data data;
-			data.explicit_status_text =
-					content_get_status_message(object);
-			html_set_status(c, data.explicit_status_text);
-			content_broadcast(&c->base, CONTENT_MSG_STATUS, data);
-		} else {
-			/* Object content wants to set explicit message */
-			content_broadcast(&c->base, CONTENT_MSG_STATUS,
-					event->data);
-		}
-		break;
-
-	case CONTENT_MSG_REFORMAT:
-		break;
-
-	case CONTENT_MSG_REDRAW:
-		if (c->base.status != CONTENT_STATUS_LOADING) {
-			union content_msg_data data = event->data;
-
-			if (!box_visible(box))
-				break;
-
-			box_coords(box, &x, &y);
-
-			if (hlcache_handle_get_content(object) ==
-					event->data.redraw.object) {
-				data.redraw.x = data.redraw.x *
-					box->width / content_get_width(object);
-				data.redraw.y = data.redraw.y *
-					box->height /
-					content_get_height(object);
-				data.redraw.width = data.redraw.width *
-					box->width / content_get_width(object);
-				data.redraw.height = data.redraw.height *
-					box->height /
-					content_get_height(object);
-				data.redraw.object_width = box->width;
-				data.redraw.object_height = box->height;
-			}
-
-			data.redraw.x += x + box->padding[LEFT];
-			data.redraw.y += y + box->padding[TOP];
-			data.redraw.object_x += x + box->padding[LEFT];
-			data.redraw.object_y += y + box->padding[TOP];
-
-			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
-		}
-		break;
-
-	case CONTENT_MSG_REFRESH:
-		if (content_get_type(object) == CONTENT_HTML) {
-			/* only for HTML objects */
-			schedule(event->data.delay * 100,
-					html_object_refresh, o);
-		}
-
-		break;
-
-	case CONTENT_MSG_LINK:
-		/* Don't care about favicons that aren't on top level content */
-		break;
-
-	case CONTENT_MSG_GETCTX: 
-		*(event->data.jscontext) = NULL;
-		break;
-
-	case CONTENT_MSG_SCROLL:
-		if (box->scroll_x != NULL)
-			scrollbar_set(box->scroll_x, event->data.scroll.x0,
-					false);
-		if (box->scroll_y != NULL)
-			scrollbar_set(box->scroll_y, event->data.scroll.y0,
-					false);
-		break;
-
-	case CONTENT_MSG_DRAGSAVE:
-	{
-		union content_msg_data msg_data;
-		if (event->data.dragsave.content == NULL)
-			msg_data.dragsave.content = object;
-		else
-			msg_data.dragsave.content =
-					event->data.dragsave.content;
-
-		content_broadcast(&c->base, CONTENT_MSG_DRAGSAVE, msg_data);
-	}
-		break;
-
-	case CONTENT_MSG_SAVELINK:
-	case CONTENT_MSG_POINTER:
-		/* These messages are for browser window layer.
-		 * we're not interested, so pass them on. */
-		content_broadcast(&c->base, event->type, event->data);
-		break;
-
-	case CONTENT_MSG_CARET:
-	{
-		union html_focus_owner focus_owner;
-		focus_owner.content = box;
-
-		switch (event->data.caret.type) {
-		case CONTENT_CARET_REMOVE:
-		case CONTENT_CARET_HIDE:
-			html_set_focus(c, HTML_FOCUS_CONTENT, focus_owner,
-					true, 0, 0, 0, NULL);
-			break;
-		case CONTENT_CARET_SET_POS:
-			html_set_focus(c, HTML_FOCUS_CONTENT, focus_owner,
-					false, event->data.caret.pos.x,
-					event->data.caret.pos.y,
-					event->data.caret.pos.height,
-					event->data.caret.pos.clip);
-			break;
-		}
-	}
-		break;
-
-	case CONTENT_MSG_DRAG:
-	{
-		html_drag_type drag_type = HTML_DRAG_NONE;
-		union html_drag_owner drag_owner;
-		drag_owner.content = box;
-
-		switch (event->data.drag.type) {
-		case CONTENT_DRAG_NONE:
-			drag_type = HTML_DRAG_NONE;
-			drag_owner.no_owner = true;
-			break;
-		case CONTENT_DRAG_SCROLL:
-			drag_type = HTML_DRAG_CONTENT_SCROLL;
-			break;
-		case CONTENT_DRAG_SELECTION:
-			drag_type = HTML_DRAG_CONTENT_SELECTION;
-			break;
-		}
-		html_set_drag_type(c, drag_type, drag_owner,
-				event->data.drag.rect);
-	}
-		break;
-
-	case CONTENT_MSG_SELECTION:
-	{
-		html_selection_type sel_type;
-		union html_selection_owner sel_owner;
-
-		if (event->data.selection.selection) {
-			sel_type = HTML_SELECTION_CONTENT;
-			sel_owner.content = box;
-		} else {
-			sel_type = HTML_SELECTION_NONE;
-			sel_owner.none = true;
-		}
-		html_set_selection(c, sel_type, sel_owner,
-				event->data.selection.read_only);
-	}
-		break;
-
-	default:
-		assert(0);
-	}
-
-	if (c->base.status == CONTENT_STATUS_READY && c->base.active == 0 &&
-			(event->type == CONTENT_MSG_LOADING ||
-			event->type == CONTENT_MSG_DONE ||
-			event->type == CONTENT_MSG_ERROR)) {
-		/* all objects have arrived */
-		content__reformat(&c->base, false, c->base.available_width,
-				c->base.height);
-		html_set_status(c, "");
-		content_set_done(&c->base);
-	}
-
-	/* If  1) the configuration option to reflow pages while objects are
-	 *        fetched is set
-	 *     2) an object is newly fetched & converted,
-	 *     3) the box's dimensions need to change due to being replaced
-	 *     4) the object's parent HTML is ready for reformat,
-	 *     5) the time since the previous reformat is more than the
-	 *        configured minimum time between reformats
-	 * then reformat the page to display newly fetched objects */
-	else if (nsoption_bool(incremental_reflow) &&
-			event->type == CONTENT_MSG_DONE &&
-			!(box->flags & REPLACE_DIM) &&
-			(c->base.status == CONTENT_STATUS_READY ||
-			 c->base.status == CONTENT_STATUS_DONE) &&
-			(wallclock() > c->base.reformat_time)) {
-		content__reformat(&c->base, false, c->base.available_width,
-				c->base.height);
-	}
-
-	return NSERROR_OK;
-}
-
-/**
- * Start a fetch for an object required by a page, replacing an existing object.
- *
- * \param  object          Object to replace
- * \param  url             URL of object to fetch (copied)
- * \return  true on success, false on memory exhaustion
- */
-
-static bool html_replace_object(struct content_html_object *object, nsurl *url)
-{
-	html_content *c;
-	hlcache_child_context child;
-	html_content *page;
-	nserror error;
-
-	assert(object != NULL);
-
-	c = (html_content *) object->parent;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
-
-	if (object->content != NULL) {
-		/* remove existing object */
-		if (content_get_status(object->content) != CONTENT_STATUS_DONE) {
-			c->base.active--;
-			LOG(("%d fetches active", c->base.active));
-		}
-
-		hlcache_handle_release(object->content);
-		object->content = NULL;
-
-		object->box->object = NULL;
-	}
-
-	/* initialise fetch */
-	error = hlcache_handle_retrieve(url, HLCACHE_RETRIEVE_SNIFF_TYPE,
-			content_get_url(&c->base), NULL,
-			html_object_callback, object, &child,
-			object->permitted_types,
-			&object->content);
-
-	if (error != NSERROR_OK)
-		return false;
-
-	for (page = c; page != NULL; page = page->page) {
-		page->base.active++;
-		LOG(("%d fetches active", c->base.active));
-
-		page->base.status = CONTENT_STATUS_READY;
-	}
-
-	return true;
-}
-
-/**
- * schedule() callback for object refresh
- */
-
-static void html_object_refresh(void *p)
-{
-	struct content_html_object *object = p;
-	nsurl *refresh_url;
-
-	assert(content_get_type(object->content) == CONTENT_HTML);
-
-	refresh_url = content_get_refresh_url(object->content);
-
-	/* Ignore if refresh URL has gone
-	 * (may happen if fetch errored) */
-	if (refresh_url == NULL)
-		return;
-
-	content_invalidate_reuse_data(object->content);
-
-	if (!html_replace_object(object, refresh_url)) {
-		/** \todo handle memory exhaustion */
-	}
-}
 
 
 /**
@@ -1707,74 +1286,6 @@ html_begin_conversion(html_content *htmlc)
 }
 
 
-
-
-/**
- * Start a fetch for an object required by a page.
- *
- * \param  c                 content of type CONTENT_HTML
- * \param  url               URL of object to fetch (copied)
- * \param  box               box that will contain the object
- * \param  permitted_types   bitmap of acceptable types
- * \param  available_width   estimate of width of object
- * \param  available_height  estimate of height of object
- * \param  background        this is a background image
- * \return  true on success, false on memory exhaustion
- */
-
-bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
-		content_type permitted_types,
-		int available_width, int available_height,
-		bool background)
-{
-	struct content_html_object *object;
-	hlcache_child_context child;
-	nserror error;
-
-	/* If we've already been aborted, don't bother attempting the fetch */
-	if (c->aborted)
-		return true;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
-
-	object = calloc(1, sizeof(struct content_html_object));
-	if (object == NULL) {
-		return false;
-	}
-
-	object->parent = (struct content *) c;
-	object->next = NULL;
-	object->content = NULL;
-	object->box = box;
-	object->permitted_types = permitted_types;
-	object->background = background;
-
-	error = hlcache_handle_retrieve(url,
-			HLCACHE_RETRIEVE_SNIFF_TYPE,
-			content_get_url(&c->base), NULL,
-			html_object_callback, object, &child,
-			object->permitted_types, &object->content);
-       	if (error != NSERROR_OK) {
-		free(object);
-		return error != NSERROR_NOMEM;
-	}
-
-	/* add to content object list */
-	object->next = c->object_list;
-	c->object_list = object;
-
-	c->num_objects++;
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	return true;
-}
-
-
-
-
-
 /**
  * Stop loading a CONTENT_HTML.
  */
@@ -1782,7 +1293,6 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 static void html_stop(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
-	struct content_html_object *object;
 
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
@@ -1790,31 +1300,9 @@ static void html_stop(struct content *c)
 		 * html_convert/html_finish_conversion will do the rest */
 		htmlc->aborted = true;
 		break;
+
 	case CONTENT_STATUS_READY:
-		for (object = htmlc->object_list; object != NULL;
-				object = object->next) {
-			if (object->content == NULL)
-				continue;
-
-			if (content_get_status(object->content) ==
-					CONTENT_STATUS_DONE)
-				; /* already loaded: do nothing */
-			else if (content_get_status(object->content) ==
-					CONTENT_STATUS_READY)
-				hlcache_handle_abort(object->content);
-				/* Active count will be updated when
-				 * html_object_callback receives
- 				 * CONTENT_MSG_DONE from this object */
-			else {
-				hlcache_handle_abort(object->content);
-				hlcache_handle_release(object->content);
-				object->content = NULL;
-
-				c->active--;
-				LOG(("%d fetches active", c->active));
-
-			}
-		}
+		html_object_abort_objects(htmlc);
 
 		/* If there are no further active fetches and we're still
  		 * in the READY state, transition to the DONE state. */
@@ -1824,9 +1312,11 @@ static void html_stop(struct content *c)
 		}
 
 		break;
+
 	case CONTENT_STATUS_DONE:
 		/* Nothing to do */
 		break;
+
 	default:
 		LOG(("Unexpected status %d", c->status));
 		assert(0);
@@ -2038,7 +1528,7 @@ static void html_destroy(struct content *c)
 	html_free_scripts(html);
 
 	/* Free objects */
-	html_destroy_objects(html);
+	html_object_free_objects(html);
 
 	/* free layout */
 	html_free_layout(html);
@@ -2078,7 +1568,6 @@ html_open(struct content *c,
 	  struct object_params *params)
 {
 	html_content *html = (html_content *) c;
-	struct content_html_object *object, *next;
 
 	html->bw = bw;
 	html->page = (html_content *) page;
@@ -2091,19 +1580,7 @@ html_open(struct content *c,
 	html->selection_type = HTML_SELECTION_NONE;
 	html->selection_owner.none = true;
 
-	for (object = html->object_list; object != NULL; object = next) {
-		next = object->next;
-
-		if (object->content == NULL)
-			continue;
-
-		if (content_get_type(object->content) == CONTENT_NONE)
-			continue;
-
-		content_open(object->content,
-				bw, c,
-				object->box->object_params);
-	}
+	html_object_open_objects(html, bw);
 }
 
 
@@ -2114,7 +1591,6 @@ html_open(struct content *c,
 static void html_close(struct content *c)
 {
 	html_content *html = (html_content *) c;
-	struct content_html_object *object, *next;
 
 	selection_clear(&html->sel, false);
 
@@ -2123,20 +1599,7 @@ static void html_close(struct content *c)
 
 	html->bw = NULL;
 
-	for (object = html->object_list; object != NULL; object = next) {
-		next = object->next;
-
-		if (object->content == NULL)
-			continue;
-
-		if (content_get_type(object->content) == CONTENT_NONE)
-			continue;
-
-		if (content_get_type(object->content) == CONTENT_HTML)
-			schedule_remove(html_object_refresh, object);
-
-		content_close(object->content);
-	}
+	html_object_close_objects(html);
 }
 
 
@@ -2728,24 +2191,6 @@ const char *html_get_base_target(hlcache_handle *h)
 	return c->base_target;
 }
 
-/**
- * Retrieve objects used by HTML document
- *
- * \param h  Content to retrieve objects from
- * \param n  Pointer to location to receive number of objects
- * \return Pointer to list of objects
- */
-struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
-{
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
-
-	assert(c != NULL);
-	assert(n != NULL);
-
-	*n = c->num_objects;
-
-	return c->object_list;
-}
 
 /**
  * Retrieve layout coordinates of box with given id
