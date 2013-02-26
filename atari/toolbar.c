@@ -313,8 +313,8 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	font_style_url.size =
 		toolbar_styles[t->style].font_height_pt * FONT_SIZE_SCALE;
 
+	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
 	textarea_setup ta_setup;
-	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
 	ta_setup.width = 300;
 	ta_setup.height = t->form[TOOLBAR_AREA_URL].ob_height;
 	ta_setup.pad_top = 0;
