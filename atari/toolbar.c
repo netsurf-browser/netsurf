@@ -61,11 +61,6 @@
 #define THROBBER_MAX_INDEX 12
 #define THROBBER_INACTIVE_INDEX 13
 
-#define TOOLBAR_URL_MARGIN_LEFT 	2
-#define TOOLBAR_URL_MARGIN_RIGHT 	2
-#define TOOLBAR_URL_MARGIN_TOP		2
-#define TOOLBAR_URL_MARGIN_BOTTOM	2
-
 enum e_toolbar_button_states {
         button_on = 0,
         button_off = 1
@@ -281,7 +276,6 @@ void toolbar_exit(void)
 struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 {
 	int i;
-	GRECT url_area;
 	struct s_toolbar *t;
 
 	LOG((""));
@@ -319,13 +313,10 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	font_style_url.size =
 		toolbar_styles[t->style].font_height_pt * FONT_SIZE_SCALE;
 
-	toolbar_get_grect(t, TOOLBAR_AREA_URL, &url_area);
-	url_area.g_h -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
-
-	textarea_flags ta_flags = TEXTAREA_INTERNAL_CARET;
 	textarea_setup ta_setup;
+	ta_setup.flags = TEXTAREA_INTERNAL_CARET;
 	ta_setup.width = 300;
-	ta_setup.height = url_area.g_h;
+	ta_setup.height = t->form[TOOLBAR_AREA_URL].ob_height;
 	ta_setup.pad_top = 0;
 	ta_setup.pad_right = 4;
 	ta_setup.pad_bottom = 0;
@@ -587,7 +578,7 @@ void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
         /* this will request an textarea redraw: */
         textarea_set_dimensions(tb->url.textarea,
                                 tb->form[TOOLBAR_AREA_URL].ob_width,
-                                tb->form[TOOLBAR_AREA_URL].ob_height);
+                                tb->form[TOOLBAR_AREA_URL].ob_height-1);
     }
     else {
         tb->area = *area;
@@ -810,8 +801,8 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 					window_process_redraws(tb->owner);
 				}
 				graf_mkstate( &mx, &my, &mb,  &kstat );
-				mx = mx - (work.g_x + TOOLBAR_URL_MARGIN_LEFT);
-				my = my - (work.g_y + TOOLBAR_URL_MARGIN_TOP);
+				mx = mx - (work.g_x);
+				my = my - (work.g_y);
             } while (mb & 1);
 
 			textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_HOVER, mx,
