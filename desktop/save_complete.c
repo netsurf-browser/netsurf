@@ -363,8 +363,8 @@ static bool save_complete_save_html_stylesheet(save_complete_ctx *ctx,
 {
 	if (sheet->type == HTML_STYLESHEET_INTERNAL) {
 		if (save_complete_save_imported_sheets(ctx,
-				sheet->data.internal->imports, 
-				sheet->data.internal->import_count) == false)
+				sheet->data.internal.data->imports, 
+				sheet->data.internal.data->import_count) == false)
 			return false;
 
 		return true;

@@ -61,7 +61,10 @@ struct html_stylesheet {
 	struct dom_node *node; /**< dom node associated with sheet */
 	union {
 		struct hlcache_handle *external;
-		struct content_css_data *internal;
+		struct {
+			struct content_css_data *data;
+			bool done;
+		} internal;
 	} data;	/**< Sheet data */
 };
 

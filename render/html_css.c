@@ -174,8 +174,9 @@ nserror html_css_free_stylesheets(html_content *html)
 		    (html->stylesheets[i].data.external != NULL)) {
 			hlcache_handle_release(html->stylesheets[i].data.external);
 		} else if ((html->stylesheets[i].type == HTML_STYLESHEET_INTERNAL) &&
-			   (html->stylesheets[i].data.internal != NULL)) {
-			nscss_destroy_css_data(html->stylesheets[i].data.internal);
+			   (html->stylesheets[i].data.internal.data != NULL)) {
+			nscss_destroy_css_data(html->stylesheets[i].data.internal.data);
+			free(html->stylesheets[i].data.internal.data);
 		}
 	}
 	free(html->stylesheets);
@@ -293,19 +294,42 @@ nserror html_css_new_stylesheets(html_content *c)
 static void html_inline_style_done(struct content_css_data *css, void *pw)
 {
 	html_content *html = pw;
+	size_t i;
+
+	LOG(("Inline style %p done", css));
+
+	/* Search HTML content for sheet */
+	for (i = 0; i < html->stylesheet_count; i++) {
+		if (html->stylesheets[i].type == HTML_STYLESHEET_INTERNAL &&
+				html->stylesheets[i].data.internal.data == css)
+			break;
+	}
+
+	/* Not found: must have been replaced, so destroy it */
+	if (i == html->stylesheet_count) {
+		LOG(("Not found: destroying"));
+		nscss_destroy_css_data(css);
+		free(css);
+	} else {
+		html->stylesheets[i].data.internal.done = true;
+	}
 
 	html->base.active--;
 	LOG(("%d fetches active", html->base.active));
+	if (html->base.active == 0) {
+		html_begin_conversion(html);
+	}
 }
 
 static nserror
 html_stylesheet_from_domnode(html_content *c,
-			     dom_node *node,
-			     struct content_css_data **ret_sheet)
+			     struct html_stylesheet *s,
+			     dom_node *node)
 {
 	dom_node *child, *next;
 	dom_exception exc;
-	struct content_css_data *sheet;
+	struct content_css_data *sheet, *old_sheet;
+	bool old_sheet_done;
 	nserror error;
 	css_error csserror;
 
@@ -368,6 +392,14 @@ html_stylesheet_from_domnode(html_content *c,
 	c->base.active++;
 	LOG(("%d fetches active", c->base.active));
 
+	LOG(("Updating sheet %p with %p", s->data.internal, sheet));
+
+	/* Update index */
+	old_sheet = s->data.internal.data;
+	old_sheet_done = s->data.internal.done;
+	s->data.internal.data = sheet;
+	s->data.internal.done = false;
+
 	/* Convert the content -- manually, as we want the result */
 	csserror = nscss_convert_css_data(sheet);
 	if (csserror != CSS_OK) {
@@ -376,10 +408,18 @@ html_stylesheet_from_domnode(html_content *c,
 		LOG(("%d fetches active", c->base.active));
 		nscss_destroy_css_data(sheet);
 		free(sheet);
+		s->data.internal.data = old_sheet;
+		s->data.internal.done = old_sheet_done;
 		return css_error_to_nserror(csserror);
 	}
 
-	*ret_sheet = sheet;
+	/* Clean up old sheet if it was already complete */
+	if (old_sheet != NULL && old_sheet_done) {
+		LOG(("Destroying old sheet %p", old_sheet));
+		nscss_destroy_css_data(old_sheet);
+		free(old_sheet);
+	}
+
 	return NSERROR_OK;
 }
 
@@ -434,7 +474,8 @@ html_create_style_element(html_content *c, dom_node *style)
 
 	c->stylesheets[c->stylesheet_count].type = HTML_STYLESHEET_INTERNAL;
 	c->stylesheets[c->stylesheet_count].node = style;
-	c->stylesheets[c->stylesheet_count].data.internal = NULL;
+	c->stylesheets[c->stylesheet_count].data.internal.data = NULL;
+	c->stylesheets[c->stylesheet_count].data.internal.done = false;
 	c->stylesheet_count++;
 
 	return c->stylesheets + (c->stylesheet_count - 1);
@@ -442,7 +483,6 @@ html_create_style_element(html_content *c, dom_node *style)
 
 bool html_css_update_style(html_content *c, dom_node *style)
 {
-	struct content_css_data *sheet = NULL;
 	nserror error;
 	unsigned int i;
 	struct html_stylesheet *s;
@@ -462,23 +502,15 @@ bool html_css_update_style(html_content *c, dom_node *style)
 		return false;
 	}
 
-	LOG(("Found sheet %p slot %d for node %p", s,i, style));
+	LOG(("Found sheet %p slot %d for node %p", s, i, style));
 
-	error = html_stylesheet_from_domnode(c, style, &sheet);
+	error = html_stylesheet_from_domnode(c, s, style);
 	if (error != NSERROR_OK) {
 		LOG(("Failed to update sheet"));
 		content_broadcast_errorcode(&c->base, error);
 		return false;
 	}
 
-	LOG(("Updating sheet %p with %p", s->data.internal, sheet));
-
-	/* Update index */
-	if (s->data.internal != NULL) {
-		nscss_destroy_css_data(s->data.internal);
-		free(s->data.internal);
-	}
-	s->data.internal = sheet;
 	return true;
 }
 
@@ -623,7 +655,7 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 		    (hsheet->data.external != NULL)) {
 			sheet = nscss_get_stylesheet(hsheet->data.external);
 		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
-			sheet = hsheet->data.internal->sheet;
+			sheet = hsheet->data.internal.data->sheet;
 		}
 
 		if (sheet != NULL) {
