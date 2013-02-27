@@ -37,6 +37,7 @@
 typedef struct html_css_fetcher_item {
 	uint32_t key;
 	dom_string *data;
+	nsurl *base_url;
 
 	struct html_css_fetcher_item *r_next, *r_prev;
 } html_css_fetcher_item;
@@ -142,6 +143,7 @@ static void html_css_fetcher_free(void *ctx)
 
 	nsurl_unref(c->url);
 	if (c->item != NULL) {
+		nsurl_unref(c->item->base_url);
 		dom_string_unref(c->item->data);
 		RING_REMOVE(items, c->item);
 		free(c->item);
@@ -195,7 +197,7 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 			/* Nothing to do */
 			assert(c->locked == false);
 		} else if (c->item != NULL) {
-			char header[64];
+			char header[4096];
 
 			fetch_set_http_code(c->parent_fetch, 200);
 
@@ -214,6 +216,18 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 				snprintf(header, sizeof header, 
 					"Content-Length: %"SSIZET_FMT,
 					dom_string_byte_length(c->item->data));
+				msg.type = FETCH_HEADER;
+				msg.data.header_or_data.buf = 
+						(const uint8_t *) header;
+				msg.data.header_or_data.len = strlen(header);
+				html_css_fetcher_send_callback(&msg, c);
+			}
+
+			if (c->aborted == false) {
+				snprintf(header, sizeof header, 
+					"X-NS-Base: %.*s",
+					(int) nsurl_length(c->item->base_url),
+					nsurl_access(c->item->base_url));
 				msg.type = FETCH_HEADER;
 				msg.data.header_or_data.buf = 
 						(const uint8_t *) header;
@@ -280,7 +294,8 @@ void html_css_fetcher_register(void)
 		html_css_fetcher_finalise);
 }
 
-nserror html_css_fetcher_add_item(dom_string *data, uint32_t *key)
+nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
+		uint32_t *key)
 {
 	html_css_fetcher_item *item = malloc(sizeof(*item));
 
@@ -290,6 +305,7 @@ nserror html_css_fetcher_add_item(dom_string *data, uint32_t *key)
 
 	*key = item->key = current_key++;
 	item->data = dom_string_ref(data);
+	item->base_url = nsurl_ref(base_url);
 
 	RING_INSERT(items, item);
 

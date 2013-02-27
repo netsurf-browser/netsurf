@@ -268,11 +268,13 @@ nserror html_css_free_stylesheets(html_content *html);
 bool html_css_process_link(html_content *htmlc, dom_node *node);
 bool html_css_update_style(html_content *c, dom_node *style);
 
-nserror html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx);
+nserror html_css_new_selection_context(html_content *c,
+		css_select_ctx **ret_select_ctx);
 
 /* in render/html_css_fetcher.c */
 void html_css_fetcher_register(void);
-nserror html_css_fetcher_add_item(dom_string *data, uint32_t *key);
+nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
+		uint32_t *key);
 
 /* in render/html_object.c */
 

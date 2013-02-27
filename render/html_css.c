@@ -296,7 +296,7 @@ html_stylesheet_from_domnode(html_content *c,
 		return NSERROR_OK;
 	}
 
-	error = html_css_fetcher_add_item(style, &key);
+	error = html_css_fetcher_add_item(style, c->base_url, &key);
 	if (error != NSERROR_OK) {
 		dom_string_unref(style);
 		return error;

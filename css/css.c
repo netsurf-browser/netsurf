@@ -129,6 +129,7 @@ nserror nscss_create(const content_handler *handler,
 {
 	nscss_content *result;
 	const char *charset = NULL;
+	const char *xnsbase = NULL;
 	lwc_string *charset_value = NULL;
 	union content_msg_data msg_data;
 	nserror error;
@@ -155,9 +156,14 @@ nserror nscss_create(const content_handler *handler,
 		charset = lwc_string_data(charset_value);
 	}
 
+	/* Compute base URL for stylesheet */
+	xnsbase = llcache_handle_get_header(llcache, "X-NS-Base");
+	if (xnsbase == NULL) {
+		xnsbase = nsurl_access(content_get_url(&result->base));
+	}
+
 	error = nscss_create_css_data(&result->data, 
-			nsurl_access(content_get_url(&result->base)),
-			charset, result->base.quirks, 
+			xnsbase, charset, result->base.quirks, 
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
