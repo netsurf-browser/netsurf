@@ -57,15 +57,8 @@ struct selection;
  */
 struct html_stylesheet {
 	/** Type of sheet */
-	enum { HTML_STYLESHEET_EXTERNAL, HTML_STYLESHEET_INTERNAL } type;
 	struct dom_node *node; /**< dom node associated with sheet */
-	union {
-		struct hlcache_handle *external;
-		struct {
-			struct content_css_data *data;
-			bool done;
-		} internal;
-	} data;	/**< Sheet data */
+	struct hlcache_handle *sheet;
 };
 
 /**

@@ -94,6 +94,7 @@
 #include "utils/nsurl.h"
 #include "utils/types.h"
 
+struct content;
 struct box;
 struct browser_window;
 struct column;

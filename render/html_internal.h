@@ -270,6 +270,10 @@ bool html_css_update_style(html_content *c, dom_node *style);
 
 nserror html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx);
 
+/* in render/html_css_fetcher.c */
+void html_css_fetcher_register(void);
+nserror html_css_fetcher_add_item(dom_string *data, uint32_t *key);
+
 /* in render/html_object.c */
 
 /**

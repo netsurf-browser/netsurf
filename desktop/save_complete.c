@@ -361,19 +361,10 @@ static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
 static bool save_complete_save_html_stylesheet(save_complete_ctx *ctx,
 		struct html_stylesheet *sheet)
 {
-	if (sheet->type == HTML_STYLESHEET_INTERNAL) {
-		if (save_complete_save_imported_sheets(ctx,
-				sheet->data.internal.data->imports, 
-				sheet->data.internal.data->import_count) == false)
-			return false;
-
-		return true;
-	}
-
-	if (sheet->data.external == NULL)
+	if (sheet->sheet == NULL)
 		return true;
 
-	return save_complete_save_stylesheet(ctx, sheet->data.external);
+	return save_complete_save_stylesheet(ctx, sheet->sheet);
 }
 
 static bool save_complete_save_html_stylesheets(save_complete_ctx *ctx,

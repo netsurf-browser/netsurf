@@ -1954,10 +1954,8 @@ void browser_window_reload(struct browser_window *bw, bool all)
 		sheets = html_get_stylesheets(c, &count);
 
 		for (i = STYLESHEET_START; i != count; i++) {
-			if (sheets[i].type == HTML_STYLESHEET_EXTERNAL &&
-					sheets[i].data.external != NULL) {
-				content_invalidate_reuse_data(
-						sheets[i].data.external);
+			if (sheets[i].sheet != NULL) {
+				content_invalidate_reuse_data(sheets[i].sheet);
 			}
 		}
 	}

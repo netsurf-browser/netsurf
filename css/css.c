@@ -36,6 +36,30 @@
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE
 
+struct content_css_data;
+
+/**
+ * Type of callback called when a CSS object has finished
+ *
+ * \param css  CSS object that has completed
+ * \param pw   Client-specific data
+ */
+typedef void (*nscss_done_callback)(struct content_css_data *css, void *pw);
+
+/**
+ * CSS content data
+ */
+struct content_css_data
+{
+	css_stylesheet *sheet;		/**< Stylesheet object */
+	char *charset;			/**< Character set of stylesheet */
+	struct nscss_import *imports;	/**< Array of imported sheets */
+	uint32_t import_count;		/**< Number of sheets imported */
+	uint32_t next_to_register;	/**< Index of next import to register */
+	nscss_done_callback done;	/**< Completion callback */
+	void *pw;			/**< Client data */
+};
+
 /**
  * CSS content data
  */
@@ -66,6 +90,14 @@ static void nscss_destroy(struct content *c);
 static nserror nscss_clone(const struct content *old, struct content **newc);
 static bool nscss_matches_quirks(const struct content *c, bool quirks);
 static content_type nscss_content_type(void);
+
+static nserror nscss_create_css_data(struct content_css_data *c,
+		const char *url, const char *charset, bool quirks,
+		nscss_done_callback done, void *pw);
+static css_error nscss_process_css_data(struct content_css_data *c, const char *data, 
+		unsigned int size);
+static css_error nscss_convert_css_data(struct content_css_data *c);
+static void nscss_destroy_css_data(struct content_css_data *c);
 
 static void nscss_content_done(struct content_css_data *css, void *pw);
 static css_error nscss_handle_import(void *pw, css_stylesheet *parent, 
@@ -155,7 +187,7 @@ nserror nscss_create(const content_handler *handler,
  * \param pw       Client data for \a done
  * \return NSERROR_OK on success, NSERROR_NOMEM on memory exhaustion
  */
-nserror nscss_create_css_data(struct content_css_data *c,
+static nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks,
 		nscss_done_callback done, void *pw)
 {
@@ -227,8 +259,8 @@ bool nscss_process_data(struct content *c, const char *data, unsigned int size)
  * \param size  Number of bytes to process
  * \return CSS_OK on success, appropriate error otherwise
  */
-css_error nscss_process_css_data(struct content_css_data *c, const char *data, 
-		unsigned int size)
+static css_error nscss_process_css_data(struct content_css_data *c,
+		const char *data, unsigned int size)
 {
 	return css_stylesheet_append_data(c->sheet, 
 			(const uint8_t *) data, size);
@@ -262,7 +294,7 @@ bool nscss_convert(struct content *c)
  * \param c  CSS data to convert
  * \return CSS error
  */
-css_error nscss_convert_css_data(struct content_css_data *c)
+static css_error nscss_convert_css_data(struct content_css_data *c)
 {
 	css_error error;
 
@@ -310,7 +342,7 @@ void nscss_destroy(struct content *c)
  *
  * \param c  CSS data to clean up
  */
-void nscss_destroy_css_data(struct content_css_data *c)
+static void nscss_destroy_css_data(struct content_css_data *c)
 {
 	uint32_t i;
 
