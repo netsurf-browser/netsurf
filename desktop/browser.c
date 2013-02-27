@@ -844,9 +844,10 @@ nserror browser_window_navigate(struct browser_window *bw,
 	hlcache_child_context child;
 	nserror error;
 
-	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
 	assert(url);
+
+	LOG(("bw %p, url %s", bw, nsurl_access(url)));
 
 	/* don't allow massively nested framesets */
 	for (cur = bw; cur->parent; cur = cur->parent) {
