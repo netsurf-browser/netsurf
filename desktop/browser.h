@@ -64,9 +64,7 @@ extern bool browser_reformat_pending;
 /** flags to browser window go */
 enum browser_window_nav_flags {
 	BROWSER_WINDOW_NONE = 0,
-	/** The page is added to the window history, this should
-	 * be used when returning to a page in the window history.
-	 */
+	/** this will form a new history node (don't set for back/reload/etc) */
 	BROWSER_WINDOW_HISTORY = 1,
 	/** download rather than render the uri */
 	BROWSER_WINDOW_DOWNLOAD = 2,
