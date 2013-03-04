@@ -952,9 +952,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	LOG(("Loading '%s'", nsurl_access(url)));
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
-		bw->history_add = true;
-	}
+	bw->history_add = (flags & BROWSER_WINDOW_HISTORY);
 
 	/* Verifiable fetches may trigger a download */
 	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
