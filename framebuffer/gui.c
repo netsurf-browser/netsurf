@@ -1740,7 +1740,8 @@ gui_window_remove_caret_cb(fbtk_widget_t *widget)
 }
 
 void
-gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
 

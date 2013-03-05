@@ -56,7 +56,7 @@
  * \param x		X coordinate of the caret
  * \param y		Y coordinate
  * \param height	Height of caret
- * \param clip		Clip rectangle for caret
+ * \param clip		Clip rectangle for caret, or NULL if none
  */
 void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, const struct rect *clip)
@@ -65,6 +65,7 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
 	int pos_x = 0;
 	int pos_y = 0;
 	struct rect cr;
+	struct rect *crp = NULL;
 
 	/* Find top level browser window */
 	root_bw = browser_window_get_root(bw);
@@ -79,12 +80,12 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		cr.y0 += pos_y;
 		cr.x1 += pos_x;
 		cr.y1 += pos_y;
+		crp = &cr;
 	}
 
 	/* TODO: intersect with bw viewport */
-	/* TODO: pass clip rect out to GUI */
 
-	gui_window_place_caret(root_bw->window, x, y, height * bw->scale);
+	gui_window_place_caret(root_bw->window, x, y, height * bw->scale, crp);
 
 	/* Set focus browser window */
 	root_bw->focus = bw;

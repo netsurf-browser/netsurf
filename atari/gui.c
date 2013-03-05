@@ -581,7 +581,8 @@ void gui_window_stop_throbber(struct gui_window *w)
 }
 
 /* Place caret in window */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
+		const struct rect *clip)
 {
     window_place_caret(w->root, 1, x, y, height, NULL);
     w->root->caret.state |= CARET_STATE_ENABLED;

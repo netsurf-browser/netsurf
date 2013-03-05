@@ -1059,7 +1059,8 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
 {
 	nsgtk_redraw_caret(g);
 

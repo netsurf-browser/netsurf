@@ -252,7 +252,8 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	UNIMPL();
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
 {
 	[[(BrowserViewController *)g browserView] addCaretAt: cocoa_point( x, y ) 
 												  height: cocoa_px_to_pt( height )];

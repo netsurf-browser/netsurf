@@ -581,7 +581,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (ro_toolbar_take_caret(g->toolbar))
 		ro_gui_url_complete_start(g->toolbar);
 	else
-		gui_window_place_caret(g, -100, -100, 0);
+		gui_window_place_caret(g, -100, -100, 0, NULL);
 
 	return g;
 }
@@ -1125,9 +1125,11 @@ void gui_window_set_search_ico(hlcache_handle *ico)
  * \param  x	   coordinates of caret
  * \param  y	   coordinates of caret
  * \param  height  height of caret
+ * \param  clip	   clip rectangle, or NULL if none
  */
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
 {
 	os_error *error;
 
@@ -1165,7 +1167,7 @@ void gui_window_remove_caret(struct gui_window *g)
 		return;
 
 	/* hide caret, but keep input focus */
-	gui_window_place_caret(g, -100, -100, 0);
+	gui_window_place_caret(g, -100, -100, 0, NULL);
 }
 
 
@@ -1769,7 +1771,7 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 
 	/* set input focus */
 	if (pointer->buttons & (wimp_SINGLE_SELECT | wimp_SINGLE_ADJUST))
-		gui_window_place_caret(g, -100, -100, 0);
+		gui_window_place_caret(g, -100, -100, 0, NULL);
 
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 		browser_window_mouse_click(g->bw,

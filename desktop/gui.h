@@ -94,7 +94,8 @@ void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon);
 void gui_window_set_search_ico(hlcache_handle *ico);
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);

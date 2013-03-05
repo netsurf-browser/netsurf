@@ -2130,7 +2130,7 @@ void ami_handle_msg(void)
 			if(gwin->bw->window->c_h)
 			{
 				gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
-					gwin->bw->window->c_y, gwin->bw->window->c_h);
+					gwin->bw->window->c_y, gwin->bw->window->c_h, NULL);
 			}
 		}
 	} while(node = nnode);
@@ -4651,7 +4651,8 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	return 0;
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
 {
 	struct IBox *bbox;
 	ULONG xs,ys;
