@@ -1546,7 +1546,8 @@ nserror browser_window_callback(hlcache_handle *c,
 			browser_window_place_caret(bw,
 					event->data.caret.pos.x,
 					event->data.caret.pos.y,
-					event->data.caret.pos.height);
+					event->data.caret.pos.height,
+					event->data.caret.pos.clip);
 			break;
 		}
 		break;

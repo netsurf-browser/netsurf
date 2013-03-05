@@ -52,22 +52,19 @@
 /**
  * Position the caret and assign a callback for key presses.
  *
- * \param bw  The browser window in which to place the caret
- * \param x   X coordinate of the caret
- * \param y   Y coordinate
- * \param height    Height of caret
- * \param caret_cb  Callback function for keypresses
- * \param paste_cb  Callback function for pasting text
- * \param move_cb   Callback function for caret movement
- * \param p1  Callback private data pointer, passed to callback function
- * \param p2  Callback private data pointer, passed to callback function
+ * \param bw		The browser window in which to place the caret
+ * \param x		X coordinate of the caret
+ * \param y		Y coordinate
+ * \param height	Height of caret
+ * \param clip		Clip rectangle for caret
  */
-void browser_window_place_caret(struct browser_window *bw,
-		int x, int y, int height)
+void browser_window_place_caret(struct browser_window *bw, int x, int y,
+		int height, const struct rect *clip)
 {
 	struct browser_window *root_bw;
 	int pos_x = 0;
 	int pos_y = 0;
+	struct rect cr;
 
 	/* Find top level browser window */
 	root_bw = browser_window_get_root(bw);
@@ -75,6 +72,17 @@ void browser_window_place_caret(struct browser_window *bw,
 
 	x = x * bw->scale + pos_x;
 	y = y * bw->scale + pos_y;
+
+	if (clip != NULL) {
+		cr = *clip;
+		cr.x0 += pos_x;
+		cr.y0 += pos_y;
+		cr.x1 += pos_x;
+		cr.y1 += pos_y;
+	}
+
+	/* TODO: intersect with bw viewport */
+	/* TODO: pass clip rect out to GUI */
 
 	gui_window_place_caret(root_bw->window, x, y, height * bw->scale);
 

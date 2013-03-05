@@ -1144,11 +1144,20 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	} else if (focus_type != HTML_FOCUS_SELF && hide_caret) {
 		msg_data.caret.type = CONTENT_CARET_HIDE;
 	} else {
+		struct rect cr;
+		if (clip != NULL) {
+			cr = *clip;
+			cr.x0 += x_off;
+			cr.y0 += y_off;
+			cr.x1 += x_off;
+			cr.y1 += y_off;
+		}
+
 		msg_data.caret.type = CONTENT_CARET_SET_POS;
 		msg_data.caret.pos.x = x + x_off;
 		msg_data.caret.pos.y = y + y_off;
 		msg_data.caret.pos.height = height;
-		msg_data.caret.pos.clip = clip;
+		msg_data.caret.pos.clip = (clip == NULL) ? NULL : &cr;
 	}
 
 	/* Inform of the content's drag status change */

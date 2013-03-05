@@ -202,8 +202,8 @@ bool browser_window_stop_available(struct browser_window *bw);
 
 
 /* In desktop/textinput.c */
-void browser_window_place_caret(struct browser_window *bw,
-		int x, int y, int height);
+void browser_window_place_caret(struct browser_window *bw, int x, int y,
+		int height, const struct rect *clip);
 void browser_window_remove_caret(struct browser_window *bw, bool only_hide);
 bool browser_window_key_press(struct browser_window *bw, uint32_t key);
 
