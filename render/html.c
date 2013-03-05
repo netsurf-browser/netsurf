@@ -230,6 +230,7 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				dom_string_unref(name);
 			}
 		}
+		dom_node_unref(node);
 	}
 }
 
@@ -258,6 +259,7 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 				dom_string_unref(name);
 			}
 		}
+		dom_node_unref(node);
 	}
 }
 
