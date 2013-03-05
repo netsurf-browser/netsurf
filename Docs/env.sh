@@ -18,12 +18,20 @@ if [ "x${TARGET_ABI}" = "x" ]; then
 fi
 
 if [ "x${TARGET_WORKSPACE}" = "x" ]; then
-    TARGET_WORKSPACE=${HOME}/netsurf/workspace
+    TARGET_WORKSPACE=${HOME}/dev-netsurf/workspace
+fi
+
+if [ "x${USE_CPUS}" = "x" ]; then
+    NCPUS=$(grep -c "^processor" /proc/cpuinfo 2>/dev/null)
+    NCPUS="${NCPUS:-1}"
+    NCPUS=$((NCPUS * 2))
+    USE_CPUS="-j${NCPUS}"
 fi
 
 # setup environment
 echo "TARGET_ABI=${TARGET_ABI}"
 echo "TARGET_WORKSPACE=${TARGET_WORKSPACE}"
+echo "USE_CPUS=${USE_CPUS}"
 
 export PREFIX=${TARGET_WORKSPACE}/inst-${TARGET_ABI}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig::
@@ -48,7 +56,7 @@ NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libmng-dev librsvg2-dev liblcms1-dev libj
 # apt get commandline to install necessary dev packages
 ns-apt-get-install()
 {
-    sudo apt-get install ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB}
+    sudo apt-get install $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB})
 }
 
 # git pull in all repos parameters are passed to git pull
@@ -68,7 +76,7 @@ ns-pull()
 ns-clone()
 {
     mkdir -p ${TARGET_WORKSPACE}
-    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
+    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
 	echo -n "     GIT: Cloning ${REPO}: "
 	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
 	    echo "Repository already present"
@@ -84,11 +92,11 @@ ns-clone()
 }
 
 # issues a make command to all libraries
-ns-make()
+ns-make-libs()
 {
-    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS}; do 
-	echo "    MAKE: make -C ${REPO} $*"
-        make -C ${TARGET_WORKSPACE}/${REPO} TARGET=${TARGET_ABI} $*
+    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS}); do 
+	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
+        make -C ${TARGET_WORKSPACE}/${REPO} TARGET=${TARGET_ABI} $USE_CPUS $*
     done
 }
 
@@ -97,5 +105,12 @@ ns-pull-install()
 {
     ns-pull $*
 
-    ns-make install
+    ns-make-libs install
 }
+
+# Passes appropriate flags to make
+ns-make()
+{
+    make $USE_CPUS "$@"
+}
+
