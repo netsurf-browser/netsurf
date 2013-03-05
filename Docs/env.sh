@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# NetSurf Library, tool and browser support script
+#
+# Usage: source env.sh
+# TARGET_ABI sets the target for library builds
+# TARGET_WORKSPACE is the workspace directory to keep the sandboxes
+#
+# This script allows NetSurf and its libraries to be built without
+#   requiring installation into a system.
+#
+# Copyright 2013 Vincent Sanders <vince@netsurf-browser.org>
+# Released under the MIT Licence
+
+# parameters
+if [ "x${TARGET_ABI}" = "x" ]; then
+    TARGET_ABI=$(uname -s)
+fi
+
+if [ "x${TARGET_WORKSPACE}" = "x" ]; then
+    TARGET_WORKSPACE=${HOME}/netsurf/workspace
+fi
+
+# setup environment
+echo "TARGET_ABI=${TARGET_ABI}"
+echo "TARGET_WORKSPACE=${TARGET_WORKSPACE}"
+
+export PREFIX=${TARGET_WORKSPACE}/inst-${TARGET_ABI}
+export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig::
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
+export PATH=${PATH}:${PREFIX}/bin
+
+NS_GIT="git://git.netsurf-browser.org"
+# internal libraries all frontends require (order is important)
+NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libsvgtiny librosprite"
+# internal libraries only required by some frontends
+NS_FRONTEND_LIBS="libnsfb"
+# tools required to build the browser
+NS_TOOLS="nsgenjsbind"
+# The browser itself
+NS_BROWSER="netsurf"
+
+# deb packages
+NS_DEV_DEB="build-essential pkg-config git gperf"
+NS_TOOL_DEB="flex bison"
+NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libmng-dev librsvg2-dev liblcms1-dev libjpeg-dev libmozjs-dev"
+
+# apt get commandline to install necessary dev packages
+ns-apt-get-install()
+{
+    sudo apt-get install ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB}
+}
+
+# git pull in all repos parameters are passed to git pull
+ns-pull()
+{
+    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
+	echo -n "     GIT: Pulling ${REPO}: "
+	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
+	    (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
+	else
+	    echo "Repository not present"	    
+	fi
+    done
+}
+
+# clone all repositories
+ns-clone()
+{
+    mkdir -p ${TARGET_WORKSPACE}
+    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
+	echo -n "     GIT: Cloning ${REPO}: "
+	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
+	    echo "Repository already present"
+	else
+	    (cd ${TARGET_WORKSPACE} && git clone ${NS_GIT}/${REPO}.git; )
+	fi
+    done
+
+    # put current env.sh in place in workspace
+    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ];then
+	cp ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ${TARGET_WORKSPACE}/env.sh
+    fi
+}
+
+# issues a make command to all libraries
+ns-make()
+{
+    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS}; do 
+	echo "    MAKE: make -C ${REPO} $*"
+        make -C ${TARGET_WORKSPACE}/${REPO} TARGET=${TARGET_ABI} $*
+    done
+}
+
+# pulls all repos and makes and installs the libraries and tools
+ns-pull-install()
+{
+    ns-pull $*
+
+    ns-make install
+}
