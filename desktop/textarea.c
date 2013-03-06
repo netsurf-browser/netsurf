@@ -2375,22 +2375,28 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		/* Selection track */
 		int scrx = 0;
 		int scry = 0;
+		int w, h;
 		bool need_redraw;
 
 		textarea_get_xy_offset(ta, x, y, &c_off);
 		c_start = ta->drag_start_char;
 		c_end = c_off;
 
-		/* selection auto-scroll */
-		if (x < 0)
-			scrx = x / 4;
-		else if (x > ta->vis_width)
-			scrx = (x - ta->vis_width) / 4;
+		w = ta->vis_width - ta->border_width -
+				((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
+		h = ta->vis_height - ta->border_width -
+				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 
-		if (y < 0)
-			scry = y / 4;
-		else if (y > ta->vis_height)
-			scry = (y - ta->vis_height) / 4;
+		/* selection auto-scroll */
+		if (x < ta->border_width)
+			scrx = (x - ta->border_width) / 4;
+		else if (x > w)
+			scrx = (x - w) / 4;
+
+		if (y < ta->border_width)
+			scry = (y - ta->border_width) / 4;
+		else if (y > h)
+			scry = (y - h) / 4;
 
 		need_redraw = textarea_scroll(ta, scrx, scry);
 
