@@ -2970,11 +2970,19 @@ struct box *layout_minmax_line(struct box *first,
 	float frac;
 	size_t i, j;
 	struct box *b;
+	struct box *block;
 	plot_font_style_t fstyle;
+	bool no_wrap;
 
 	assert(first->parent);
 	assert(first->parent->parent);
 	assert(first->parent->parent->style);
+
+	block = first->parent->parent;
+	no_wrap = (css_computed_white_space(block->style) ==
+			CSS_WHITE_SPACE_NOWRAP ||
+			css_computed_white_space(block->style) ==
+			CSS_WHITE_SPACE_PRE);
 
 	*line_has_height = false;
 
@@ -3065,11 +3073,11 @@ struct box *layout_minmax_line(struct box *first,
 		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
 				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
-			bool no_wrap;
+			bool no_wrap_box;
 			if (!b->text)
 				continue;
 
-			no_wrap = (css_computed_white_space(b->style) ==
+			no_wrap_box = (css_computed_white_space(b->style) ==
 					CSS_WHITE_SPACE_NOWRAP ||
 					css_computed_white_space(b->style) ==
 					CSS_WHITE_SPACE_PRE);
@@ -3118,8 +3126,15 @@ struct box *layout_minmax_line(struct box *first,
 			}
 
 			if (no_wrap) {
-				/* can't wrap, so min is the same as max */
+				/* Don't wrap due to block style,
+				 * so min is the same as max */
 				min = max;
+
+			} else if (no_wrap_box) {
+				/* This inline box can't be wrapped,
+				 * for min, consider box's width */
+				if (min < b->width)
+					min = b->width;
 
 			} else if (b->parent->flags & NEED_MIN) {
 				/* If we care what the minimum width is,
