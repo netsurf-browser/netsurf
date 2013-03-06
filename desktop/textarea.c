@@ -460,7 +460,8 @@ static void textarea_scrollbar_callback(void *client_data,
 
 		ta->callback(ta->data, &msg);
 
-		if (!(ta->flags & TEXTAREA_INTERNAL_CARET)) {
+		if (!(ta->flags & TEXTAREA_INTERNAL_CARET) &&
+				ta->sel_start == -1) {
 			/* Tell client where caret should be placed */
 			struct rect cr = {
 				.x0 = ta->border_width,
