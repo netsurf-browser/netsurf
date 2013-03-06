@@ -463,19 +463,35 @@ static void textarea_scrollbar_callback(void *client_data,
 		if (!(ta->flags & TEXTAREA_INTERNAL_CARET) &&
 				ta->sel_start == -1) {
 			/* Tell client where caret should be placed */
+			int x = ta->caret_x - ta->scroll_x;
+			int y = ta->caret_y - ta->scroll_y;
+			int h = ta->line_height;
 			struct rect cr = {
 				.x0 = ta->border_width,
 				.y0 = ta->border_width,
-				.x1 = ta->vis_width - ta->border_width,
-				.y1 = ta->vis_height - ta->border_width
+				.x1 = ta->vis_width - ta->border_width -
+						((ta->bar_y == NULL) ?
+						0 : SCROLLBAR_WIDTH),
+				.y1 = ta->vis_height - ta->border_width -
+						((ta->bar_x == NULL) ?
+						0 : SCROLLBAR_WIDTH)
 			};
+
 			msg.ta = ta;
 			msg.type = TEXTAREA_MSG_CARET_UPDATE;
-			msg.data.caret.type = TEXTAREA_CARET_SET_POS;
-			msg.data.caret.pos.x = ta->caret_x - ta->scroll_x;
-			msg.data.caret.pos.y = ta->caret_y - ta->scroll_y;
-			msg.data.caret.pos.height = ta->line_height;
-			msg.data.caret.pos.clip = &cr;
+
+			if ((x >= cr.x0 && x < cr.x1) &&
+					(y + h >= cr.y0 && y < cr.y1)) {
+				/* Caret inside textarea */
+				msg.data.caret.type = TEXTAREA_CARET_SET_POS;
+				msg.data.caret.pos.x = x;
+				msg.data.caret.pos.y = y;
+				msg.data.caret.pos.height = h;
+				msg.data.caret.pos.clip = &cr;
+			} else {
+				/* Caret fully outside textarea */
+				msg.data.caret.type = TEXTAREA_CARET_HIDE;
+			}
 
 			ta->callback(ta->data, &msg);
 		}
@@ -1453,8 +1469,12 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 			struct rect cr = {
 				.x0 = ta->border_width,
 				.y0 = ta->border_width,
-				.x1 = ta->vis_width - ta->border_width,
-				.y1 = ta->vis_height - ta->border_width
+				.x1 = ta->vis_width - ta->border_width -
+						((ta->bar_y == NULL) ?
+						0 : SCROLLBAR_WIDTH),
+				.y1 = ta->vis_height - ta->border_width -
+						((ta->bar_x == NULL) ?
+						0 : SCROLLBAR_WIDTH)
 			};
 			msg.ta = ta;
 			msg.type = TEXTAREA_MSG_CARET_UPDATE;
@@ -2391,8 +2411,12 @@ bool textarea_clear_selection(struct textarea *ta)
 		struct rect cr = {
 			.x0 = ta->border_width,
 			.y0 = ta->border_width,
-			.x1 = ta->vis_width - ta->border_width,
-			.y1 = ta->vis_height - ta->border_width
+			.x1 = ta->vis_width - ta->border_width -
+					((ta->bar_y == NULL) ?
+					0 : SCROLLBAR_WIDTH),
+			.y1 = ta->vis_height - ta->border_width -
+					((ta->bar_x == NULL) ?
+					0 : SCROLLBAR_WIDTH)
 		};
 		msg.ta = ta;
 		msg.type = TEXTAREA_MSG_CARET_UPDATE;
