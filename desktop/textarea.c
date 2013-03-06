@@ -2229,22 +2229,22 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 }
 
 
-/* exported interface, documented in textarea.h */
-bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y)
+/* Handle textarea scrollbar mouse action
+ * Helper for textarea_mouse_action()
+ *
+ * \param ta	Text area
+ * \param mouse	the mouse state at action moment
+ * \param x	X coordinate
+ * \param y	Y coordinate
+ * \return true if action was handled false otherwise
+ */
+static bool textarea_mouse_scrollbar_action(struct textarea *ta,
+		browser_mouse_state mouse, int x, int y)
 {
-	int c_start, c_end;
 	int sx, sy; /* xy coord offset for scrollbar */
 	int sl; /* scrollbar length */
-	unsigned int c_off;
-	struct textarea_msg msg;
 
-	if (ta->drag_info.type != TEXTAREA_DRAG_NONE &&
-			mouse == BROWSER_MOUSE_HOVER) {
-		/* There is a drag that we must end */
-		textarea_drag_end(ta, mouse, x, y);
-	}
-
+	/* Existing scrollbar drag */
 	if (ta->drag_info.type == TEXTAREA_DRAG_SCROLLBAR) {
 		/* Scrollbar drag in progress; pass input to scrollbar */
 		if (ta->drag_info.data.scrollbar == ta->bar_x) {
@@ -2288,6 +2288,30 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			scrollbar_mouse_action(ta->bar_y, mouse, sx, sy);
 			return true;
 		}
+	}
+
+	return false;
+}
+
+
+/* exported interface, documented in textarea.h */
+bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
+		int x, int y)
+{
+	int c_start, c_end;
+	unsigned int c_off;
+	struct textarea_msg msg;
+
+	if (ta->drag_info.type != TEXTAREA_DRAG_NONE &&
+			mouse == BROWSER_MOUSE_HOVER) {
+		/* There is a drag that we must end */
+		textarea_drag_end(ta, mouse, x, y);
+	}
+
+	/* Mouse action might be a scrollbar's responsibility */
+	if (textarea_mouse_scrollbar_action(ta, mouse, x, y)) {
+		/* Mouse action was handled by a scrollbar */
+		return true;
 	}
 
 	/* Mouse action is textarea's responsibility */
