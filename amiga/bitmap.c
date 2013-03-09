@@ -276,6 +276,18 @@ size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
+#ifndef __amigaos4__
+void ami_bitmap_argb_to_rgba(struct bitmap *bm)
+{
+	if(bm == NULL) return;
+	
+	ULONG *data = (ULONG *)bitmap_get_buffer(bm);
+	for(int i = 0; i < ((bitmap_get_rowstride(bm) / sizeof(ULONG)) * bitmap_get_height(bm)); i++) { 
+		data[i] = (data[i] << 8) | (data[i] >> 24);
+	}
+}
+#endif
+
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 {
 	Object *dto;
@@ -318,6 +330,11 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 {
 	Object *dto;
 	struct bitmap *bm = NULL;
+#ifdef __amigaos4__
+	int bm_format = PBPAFMT_RGBA;
+#else
+	int bm_format = PBPAFMT_ARGB;
+#endif
 
 	if(dto = NewDTObject(filename,
 					DTA_GroupID, GID_PICTURE,
@@ -332,9 +349,11 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 			bm = bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
 
 			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
-				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
+				bm_format, bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
-				
+#ifndef __amigaos4__
+				ami_bitmap_argb_to_rgba(bitmap);
+#endif				
 			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
