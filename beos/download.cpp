@@ -192,11 +192,12 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	download->window = new NSDownloadWindow(ctx);
 
 	// Also ask the user where to save the file
-	// TODO inject the suggested name somehow
 	BMessage* msg = new BMessage(B_SAVE_REQUESTED);
 
 	BFilePanel* panel = new BFilePanel(B_SAVE_PANEL,
 		new BMessenger(download->window), NULL, 0, false);
+
+	panel->SetSaveText(download_context_get_filename(ctx));
 
 	msg->AddPointer("source", panel);
 	msg->AddPointer("dw", download);
