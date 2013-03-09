@@ -219,9 +219,9 @@ bool box_textarea_create_textarea(html_content *html,
 			gadget->type == GADGET_PASSWORD);
 
 	if (gadget->type == GADGET_TEXTAREA) {
-		ta_flags = TEXTAREA_MULTILINE;
 		dom_html_text_area_element *textarea =
 				(dom_html_text_area_element *) node;
+		ta_flags = TEXTAREA_MULTILINE;
 
 		err = dom_html_text_area_element_get_read_only(
 				textarea, &read_only);

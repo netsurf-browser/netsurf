@@ -315,6 +315,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	if (html->drag_type == HTML_DRAG_SELECTION) {
 		/* Selection drag */
+		struct box *box;
+		int dir = -1;
+		int dx, dy;
 
 		if (!mouse) {
 			/* End of selection drag */
@@ -334,10 +337,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					drag_owner, NULL);
 			return;
 		}
-
-		struct box *box;
-		int dir = -1;
-		int dx, dy;
 
 		if (selection_dragging_start(&html->sel))
 			dir = 1;
