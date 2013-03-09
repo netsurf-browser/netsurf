@@ -140,7 +140,6 @@ struct replicant_thread_info {
 
 
 static int open_windows = 0;		/**< current number of open browsers */
-static struct beos_scaffolding *current_model; /**< current window for model dialogue use */
 static NSBaseView *replicant_view = NULL; /**< if not NULL, the replicant View we are running NetSurf for */
 static sem_id replicant_done_sem = -1;
 
@@ -558,7 +557,7 @@ static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffold
 }
 
 
-void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
+static void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
 {
 	if (!g->top_view->LockLooper())
 		return;
@@ -592,7 +591,6 @@ NSBrowserWindow::activeWindow = NULL;
 
 void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *message)
 {
-	int width, height;
 	struct browser_window *bw;
 	bw = nsbeos_get_browser_for_gui(scaffold->top_level);
 	bool reloadAll = false;
@@ -649,32 +647,28 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				} else
 					url << path.Path();
 
-                                nsurl *nsurl;
-                                nserror error;
+                nsurl *nsurl;
+                nserror error;
 
-                                error = nsurl_create(url.String(), &nsurl);
-                                if (error == NSERROR_OK) {
-                                        if (/*message->WasDropped() &&*/ i == 0) {
-                                                browser_window_navigate(bw,
-                                                                nsurl,
-                                                                NULL,
-                                                                BROWSER_WINDOW_HISTORY |
-                                                                BROWSER_WINDOW_VERIFIABLE,
-                                                                NULL,
-                                                                NULL,
-                                                                NULL);
-                                        } else {
-                                                error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
-                                                                nsurl,
-                                                                NULL,
-                                                                bw,
-                                                                NULL);
-                                        }
-                                        nsurl_unref(nsurl);
-                                }
-                                if (error != NSERROR_OK) {
-                                  warn_user(messages_get_errorcode(error), 0);
-                                }
+                error = nsurl_create(url.String(), &nsurl);
+				if (error == NSERROR_OK) {
+					if (/*message->WasDropped() &&*/ i == 0) {
+						browser_window_navigate(bw, nsurl, NULL,
+							(browser_window_nav_flags)
+							(BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE),
+							NULL, NULL, NULL);
+					} else {
+						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+								nsurl,
+								NULL,
+								bw,
+								NULL);
+					}
+					nsurl_unref(nsurl);
+				}
+				if (error != NSERROR_OK) {
+					warn_user(messages_get_errorcode(error), 0);
+				}
 			}
 			break;
 		}
@@ -712,23 +706,23 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			if (message->FindString("be:url", &url) < B_OK)
 				break;
 
-                        nsurl *nsurl;
-                        nserror error;
+			nsurl *nsurl;
+			nserror error;
 
-                        error = nsurl_create(url.String(), &nsurl);
-                        if (error != NSERROR_OK) {
-                                warn_user(messages_get_errorcode(error), 0);
-                        } else {
-                                browser_window_navigate(bw,
-                                                        nsurl,
-                                                        NULL,
-                                                        BROWSER_WINDOW_HISTORY |
-                                                        BROWSER_WINDOW_VERIFIABLE,
-                                                        NULL,
-                                                        NULL,
-                                                        NULL);
-                                nsurl_unref(nsurl);
-                        }
+			error = nsurl_create(url.String(), &nsurl);
+			if (error != NSERROR_OK) {
+				warn_user(messages_get_errorcode(error), 0);
+			} else {
+				browser_window_navigate(bw,
+						nsurl,
+						NULL,
+						(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE),
+						NULL,
+						NULL,
+						NULL);
+				nsurl_unref(nsurl);
+			}
 			break;
 		}
 		case B_COPY:
@@ -777,35 +771,35 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case BROWSER_NAVIGATE_HOME:
 		case 'home':
 		{
-                        nsurl *url;
-                        nserror error;
+			nsurl *url;
+			nserror error;
 
 			static const char *addr = NETSURF_HOMEPAGE;
 
 			if (nsoption_charp(homepage_url) != NULL) {
 				addr = nsoption_charp(homepage_url);
-                        }
+			}
 
-                        error = nsurl_create(addr, &url);
-                        if (error != NSERROR_OK) {
-                                warn_user(messages_get_errorcode(error), 0);
-                        } else {
-                                browser_window_navigate(bw,
+			error = nsurl_create(addr, &url);
+			if (error != NSERROR_OK) {
+				warn_user(messages_get_errorcode(error), 0);
+			} else {
+				browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE),
 					NULL,
 					NULL,
 					NULL);
-                                nsurl_unref(url);
-                        }
+				nsurl_unref(url);
+			}
 			break;
 		}
 		case 'urle':
 		{
-                        nsurl *url;
-                        nserror error;
+            nsurl *url;
+            nserror error;
 			BString text;
 
 			if (!scaffold->url_bar->LockLooper())
@@ -822,8 +816,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                 browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
+						BROWSER_WINDOW_VERIFIABLE),
 					NULL,
 					NULL,
 					NULL);
@@ -1034,7 +1028,6 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold)
 
 void nsbeos_window_update_back_forward(struct beos_scaffolding *g)
 {
-	int width, height;
 	struct browser_window *bw = nsbeos_get_browser_for_gui(g->top_level);
 
 	if (!g->top_view->LockLooper())

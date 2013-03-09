@@ -378,12 +378,12 @@ static void gui_init2(int argc, char** argv)
 	/* create an initial browser window */
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
+		error = browser_window_create((browser_window_nav_flags)
+			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
+			url,
+			NULL,
+			NULL,
+			NULL);
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
@@ -414,7 +414,7 @@ int main(int argc, char** argv)
 		new NSBrowserApplication;
 	}
 
-	char* messages = "/boot/apps/netsurf/res/en/Messages";
+	const char* messages = "/boot/apps/netsurf/res/en/Messages";
 
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options.Path(), messages);
@@ -439,7 +439,7 @@ int gui_init_replicant(int argc, char** argv)
 		options.Append("x-vnd.NetSurf");
 	}
 
-	char* messages = "/boot/apps/netsurf/res/en/Messages";
+	const char* messages = "/boot/apps/netsurf/res/en/Messages";
 
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options.Path(), messages);
