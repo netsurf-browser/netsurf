@@ -30,7 +30,7 @@ S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
 	tree_url_node.c version.c
 
 # Javascript source
-include Makefile.sources.javascript
+include javascript/Makefile
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\
