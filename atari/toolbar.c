@@ -143,7 +143,6 @@ static struct s_tb_button tb_buttons[] =
 	{ 0, 0, {0,0}, 0, -1, 0, {0,0,0,0}}
 };
 
-// TODO: most of this struct can be deleted
 struct s_toolbar_style {
 	int font_height_pt;
 };
