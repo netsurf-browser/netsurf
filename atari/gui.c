@@ -941,9 +941,13 @@ static void gui_init(int argc, char** argv)
     OBJECT * cursors;
 
     atari_find_resource(buf, "netsurf.rsc", "./res/netsurf.rsc");
-    LOG(("%s ", (char*)&buf));
+    LOG(("Using RSC file: %s ", (char*)&buf));
     if (rsrc_load(buf)==0) {
-        die("Uable to open GEM Resource file!");
+
+		char msg[1024];
+
+		snprintf(msg, 1024, "Unable to open GEM Resource file (%s)!", buf);
+        die(msg);
     }
 
     wind_get_grect(0, WF_WORKXYWH, &desk_area);
@@ -1029,6 +1033,8 @@ int main(int argc, char** argv)
 {
     char messages[PATH_MAX];
 	const char *addr;
+	char * file_url = NULL;
+	struct stat stat_buf;
 	nsurl *url;
 	nserror error;
 
@@ -1060,11 +1066,14 @@ int main(int argc, char** argv)
     graf_mouse( ARROW , NULL);
 
     LOG(("Creating initial browser window..."));
-    if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
+    addr = option_homepage_url;
+    if (strncmp(addr, "file://", 7)) {
+		if (stat(addr, &stat_buf) == 0) {
+			file_url = malloc(strlen(addr)+8);
+			sprintf(file_url, "file://%s", addr);
+			addr = file_url;
+		}
+    }
 
 	/* create an initial browser window */
 	error = nsurl_create(addr, &url);
@@ -1085,11 +1094,14 @@ int main(int argc, char** argv)
 	}
 
     netsurf_exit();
-    LOG(("ApplExit"));
+
+    free(file_url);
+
 #ifdef WITH_DBG_LOGFILE
     fclose(stdout);
     fclose(stderr);
 #endif
+	LOG(("exit_gem"));
     exit_gem();
 
     return 0;
