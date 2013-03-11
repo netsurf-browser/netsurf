@@ -2236,13 +2236,16 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
  * \param mouse	the mouse state at action moment
  * \param x	X coordinate
  * \param y	Y coordinate
- * \return true if action was handled false otherwise
+ * \return textarea mouse state
  */
-static bool textarea_mouse_scrollbar_action(struct textarea *ta,
-		browser_mouse_state mouse, int x, int y)
+static textarea_mouse_status textarea_mouse_scrollbar_action(
+		struct textarea *ta, browser_mouse_state mouse, int x, int y)
 {
 	int sx, sy; /* xy coord offset for scrollbar */
 	int sl; /* scrollbar length */
+
+	assert(SCROLLBAR_MOUSE_USED == (1 << 0));
+	assert(TEXTAREA_MOUSE_SCR_USED == (1 << 3));
 
 	/* Existing scrollbar drag */
 	if (ta->drag_info.type == TEXTAREA_DRAG_SCROLLBAR) {
@@ -2256,9 +2259,8 @@ static bool textarea_mouse_scrollbar_action(struct textarea *ta,
 					SCROLLBAR_WIDTH;
 			y -= ta->border_width;
 		}
-		scrollbar_mouse_action(ta->drag_info.data.scrollbar,
-				mouse, x, y);
-		return true;
+		return (scrollbar_mouse_action(ta->drag_info.data.scrollbar,
+				mouse, x, y) << 3);
 	}
 
 	/* Horizontal scrollbar */
@@ -2271,8 +2273,8 @@ static bool textarea_mouse_scrollbar_action(struct textarea *ta,
 				(ta->bar_y != NULL ? SCROLLBAR_WIDTH : 0);
 
 		if (sx >= 0 && sy >= 0 && sx < sl && sy < SCROLLBAR_WIDTH) {
-			scrollbar_mouse_action(ta->bar_x, mouse, sx, sy);
-			return true;
+			return (scrollbar_mouse_action(ta->bar_x, mouse,
+					sx, sy) << 3);
 		}
 	}
 
@@ -2285,22 +2287,23 @@ static bool textarea_mouse_scrollbar_action(struct textarea *ta,
 		sl = ta->vis_height - 2 * ta->border_width;
 
 		if (sx >= 0 && sy >= 0 && sx < SCROLLBAR_WIDTH && sy < sl) {
-			scrollbar_mouse_action(ta->bar_y, mouse, sx, sy);
-			return true;
+			return (scrollbar_mouse_action(ta->bar_y, mouse,
+					sx, sy) << 3);
 		}
 	}
 
-	return false;
+	return TEXTAREA_MOUSE_NONE;
 }
 
 
 /* exported interface, documented in textarea.h */
-bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y)
+textarea_mouse_status textarea_mouse_action(struct textarea *ta,
+		browser_mouse_state mouse, int x, int y)
 {
 	int c_start, c_end;
 	unsigned int c_off;
 	struct textarea_msg msg;
+	textarea_mouse_status status = TEXTAREA_MOUSE_NONE;
 
 	if (ta->drag_info.type != TEXTAREA_DRAG_NONE &&
 			mouse == BROWSER_MOUSE_HOVER) {
@@ -2309,21 +2312,26 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 	}
 
 	/* Mouse action might be a scrollbar's responsibility */
-	if (textarea_mouse_scrollbar_action(ta, mouse, x, y)) {
+	status = textarea_mouse_scrollbar_action(ta, mouse, x, y);
+	if (status != TEXTAREA_MOUSE_NONE) {
 		/* Mouse action was handled by a scrollbar */
-		return true;
+		return status;
 	}
+
+	status |= TEXTAREA_MOUSE_EDITOR;
 
 	/* Mouse action is textarea's responsibility */
 	if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
 		/* Select word */
 		textarea_set_caret_xy(ta, x, y);
-		return textarea_select_fragment(ta);
+		textarea_select_fragment(ta);
+		status |= TEXTAREA_MOUSE_USED;
 
 	} else if (mouse & BROWSER_MOUSE_TRIPLE_CLICK) {
 		/* Select paragraph */
 		textarea_set_caret_xy(ta, x, y);
-		return textarea_select_paragraph(ta);
+		textarea_select_paragraph(ta);
+		status |= TEXTAREA_MOUSE_USED;
 
 	} else if (mouse & BROWSER_MOUSE_PRESS_1) {
 		/* Place caret */
@@ -2335,6 +2343,7 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			/* Clear selection */
 			textarea_clear_selection(ta);
 		}
+		status |= TEXTAREA_MOUSE_USED;
 
 	} else if (mouse & BROWSER_MOUSE_PRESS_2) {
 		c_start = textarea_get_caret(ta);
@@ -2347,12 +2356,13 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 			c_start = ((unsigned)c_start > c_off) ?
 					ta->sel_end : ta->sel_start;
 			ta->drag_start_char = c_start;
-			return textarea_select(ta, c_start, c_off, false);
+			textarea_select(ta, c_start, c_off, false);
 		} else {
 			/* Select to caret */
 			ta->drag_start_char = c_start;
-			return textarea_select(ta, c_start, c_off, false);
+			textarea_select(ta, c_start, c_off, false);
 		}
+		status |= TEXTAREA_MOUSE_USED;
 
 	} else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 		/* Selection start */
@@ -2367,7 +2377,8 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		ta->callback(ta->data, &msg);
 
-		return textarea_select(ta, c_start, c_end, false);
+		textarea_select(ta, c_start, c_end, false);
+		status |= TEXTAREA_MOUSE_USED;
 
 	} else if (mouse &
 			(BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_HOLDING_2) &&
@@ -2400,10 +2411,16 @@ bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 
 		need_redraw = textarea_scroll(ta, scrx, scry);
 
-		return textarea_select(ta, c_start, c_end, need_redraw);
+		textarea_select(ta, c_start, c_end, need_redraw);
+		status |= TEXTAREA_MOUSE_USED;
 	}
 
-	return true;
+	if (ta->sel_start != -1) {
+		/* Have selection */
+		status |= TEXTAREA_MOUSE_SELECTION;
+	}
+
+	return status;
 }
 
 

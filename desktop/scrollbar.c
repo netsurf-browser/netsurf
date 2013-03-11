@@ -613,12 +613,12 @@ static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
 /*
  * Exported function.  Documented in scrollbar.h
  */
-const char *scrollbar_mouse_action(struct scrollbar *s,
+scrollbar_mouse_status scrollbar_mouse_action(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y)
 {
 	int x0, y0, x1, y1;
 	int val;
-	const char *status;
+	scrollbar_mouse_status status = SCROLLBAR_MOUSE_NONE;
 	bool h;
 
 	/* we want mouse presses and mouse drags that were not started at the
@@ -642,7 +642,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 
 	if (!s->dragging && !(x >= x0 && x <= x1 && y >= y0 && y <= y1)) {
 		/* Not a drag and mouse outside scrollbar widget */
-		return NULL;
+		return SCROLLBAR_MOUSE_NONE;
 	}
 
 
@@ -660,9 +660,9 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 					!(s->drag_content));
 		if (s->pair_drag) {
 			scrollbar_mouse_action(s->pair, mouse, x, y);
-			status = messages_get("ScrollBoth");
+			status = SCROLLBAR_MOUSE_BOTH;
 		} else
-			status = messages_get(h ? "ScrollH" : "ScrollV");
+			status = h ? SCROLLBAR_MOUSE_HRZ : SCROLLBAR_MOUSE_VRT;
 
 		return status;
 	}
@@ -670,7 +670,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 	if (val < SCROLLBAR_WIDTH) {
 		/* left/up arrow */
 		
-		status = messages_get(h ? "ScrollLeft" : "ScrollUp");
+		status = h ? SCROLLBAR_MOUSE_LFT : SCROLLBAR_MOUSE_UP;
 		if (but1)
 			scrollbar_set(s, s->offset - SCROLLBAR_WIDTH, false);
 		else if (but2)
@@ -679,7 +679,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 	} else if (val < SCROLLBAR_WIDTH + s->bar_pos) {
 		/* well between left/up arrow and bar */
 
-		status = messages_get(h ? "ScrollPLeft" : "ScrollPUp");
+		status = h ? SCROLLBAR_MOUSE_PLFT : SCROLLBAR_MOUSE_PUP;
 
 		if (but1)
 			scrollbar_set(s, s->offset - s->length, false);
@@ -689,7 +689,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 	} else if (val > s->length - SCROLLBAR_WIDTH) {
 		/* right/down arrow */
 
-		status = messages_get(h ? "ScrollRight" : "ScrollDown");
+		status = h ? SCROLLBAR_MOUSE_RGT : SCROLLBAR_MOUSE_DWN;
 
 		if (but1)
 			scrollbar_set(s, s->offset + SCROLLBAR_WIDTH, false);
@@ -700,7 +700,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 			s->bar_len) {
 		/* well between right/down arrow and bar */
 
-		status = messages_get(h ? "ScrollPRight" : "ScrollPDown");
+		status = h ? SCROLLBAR_MOUSE_PRGT : SCROLLBAR_MOUSE_PDWN;
 		if (but1)
 			scrollbar_set(s, s->offset + s->length, false);
 		else if (but2)
@@ -709,7 +709,7 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 	else {
 		/* scrollbar position indication bar */
 		
-		status = messages_get(h ? "ScrollH" : "ScrollV");
+		status = h ? SCROLLBAR_MOUSE_HRZ : SCROLLBAR_MOUSE_VRT;
 	}
 
 	
@@ -723,6 +723,50 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 				(mouse & BROWSER_MOUSE_DRAG_2) ? true : false);
 
 	return status;
+}
+
+
+/*
+ * Exported function.  Documented in scrollbar.h
+ */
+const char *scrollbar_mouse_status_to_message(scrollbar_mouse_status status)
+{
+	switch ((unsigned int) status) {
+	case SCROLLBAR_MOUSE_UP:
+	case SCROLLBAR_MOUSE_UP | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollUp");
+	case SCROLLBAR_MOUSE_PUP:
+	case SCROLLBAR_MOUSE_PUP | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollPUp");
+	case SCROLLBAR_MOUSE_VRT:
+	case SCROLLBAR_MOUSE_VRT | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollV");
+	case SCROLLBAR_MOUSE_PDWN:
+	case SCROLLBAR_MOUSE_PDWN | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollPDown");
+	case SCROLLBAR_MOUSE_DWN:
+	case SCROLLBAR_MOUSE_DWN | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollDown");
+	case SCROLLBAR_MOUSE_LFT:
+	case SCROLLBAR_MOUSE_LFT | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollLeft");
+	case SCROLLBAR_MOUSE_PLFT:
+	case SCROLLBAR_MOUSE_PLFT | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollPLeft");
+	case SCROLLBAR_MOUSE_HRZ:
+	case SCROLLBAR_MOUSE_HRZ | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollH");
+	case SCROLLBAR_MOUSE_PRGT:
+	case SCROLLBAR_MOUSE_PRGT | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollPRight");
+	case SCROLLBAR_MOUSE_RGT:
+	case SCROLLBAR_MOUSE_RGT | SCROLLBAR_MOUSE_USED:
+		return messages_get("ScrollRight");
+	default:
+		break;
+	}
+
+	return NULL;
 }
 
 

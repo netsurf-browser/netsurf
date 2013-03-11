@@ -376,15 +376,19 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			scroll_mouse_y = y - (box_y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
 					SCROLLBAR_WIDTH);
-			status = scrollbar_mouse_action(scr, mouse,
-					scroll_mouse_x, scroll_mouse_y);
+			status = scrollbar_mouse_status_to_message(
+					scrollbar_mouse_action(scr, mouse,
+							scroll_mouse_x,
+							scroll_mouse_y));
 		} else {
 			scroll_mouse_x = x - (box_x + box->padding[LEFT] +
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH);
 			scroll_mouse_y = y - box_y;
-			status = scrollbar_mouse_action(scr, mouse, 
-					scroll_mouse_x, scroll_mouse_y);
+			status = scrollbar_mouse_status_to_message(
+					scrollbar_mouse_action(scr, mouse,
+							scroll_mouse_x,
+							scroll_mouse_y));
 		}
 
 		msg_data.explicit_status_text = status;
@@ -586,10 +590,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	 * mistake; they will refer to the last box returned by box_at_point */
 
 	if (scrollbar) {
-		status = scrollbar_mouse_action(scrollbar, mouse,
-				scroll_mouse_x, scroll_mouse_y);
+		status = scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(scrollbar, mouse,
+						scroll_mouse_x,
+						scroll_mouse_y));
 		pointer = BROWSER_POINTER_DEFAULT;
 	} else if (gadget) {
+		textarea_mouse_status ta_status;
+
 		switch (gadget->type) {
 		case GADGET_SELECT:
 			status = messages_get("FormSelect");
@@ -600,7 +608,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				form_open_select_menu(c, gadget,
 						form_select_menu_callback,
 						c);
-				pointer =  BROWSER_POINTER_DEFAULT;
+				pointer = BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
 				gui_create_form_select_menu(bw, gadget);
 			break;
@@ -644,8 +652,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			else
 				status = messages_get("FormTextbox");
 
-			pointer = get_pointer_shape(gadget_box, false);
-
 			if (click && (html->selection_type !=
 					HTML_SELECTION_TEXTAREA ||
 					html->selection_owner.textarea !=
@@ -655,8 +661,17 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						sel_owner, true);
 			}
 
-			textarea_mouse_action(gadget->data.text.ta, mouse,
-					x - gadget_box_x, y - gadget_box_y);
+			ta_status = textarea_mouse_action(gadget->data.text.ta,
+					mouse, x - gadget_box_x,
+					y - gadget_box_y);
+
+			if (ta_status & TEXTAREA_MOUSE_EDITOR) {
+				pointer = get_pointer_shape(gadget_box, false);
+			} else {
+				pointer = BROWSER_POINTER_DEFAULT;
+				status = scrollbar_mouse_status_to_message(
+						ta_status >> 3);
+			}
 			break;
 		case GADGET_HIDDEN:
 			/* not possible: no box generated */

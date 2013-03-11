@@ -1249,8 +1249,9 @@ const char *form_select_mouse_action(struct form_control *control,
 		 * event is taking place on the scrollbar widget area
 		 */
 		x -= scrollbar_x;
-		return scrollbar_mouse_action(menu->scrollbar,
-				    mouse, x, y);
+		return scrollbar_mouse_status_to_message(
+				scrollbar_mouse_action(menu->scrollbar,
+						mouse, x, y));
 	}
 	
 	

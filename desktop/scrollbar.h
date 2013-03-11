@@ -152,6 +152,23 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
  */
 bool scrollbar_is_horizontal(struct scrollbar *s);
 
+/* Scrollbar mouse input status flags */
+typedef enum {
+	SCROLLBAR_MOUSE_NONE	= 0,		/**< Not relevant */
+	SCROLLBAR_MOUSE_USED	= (1 <<  0),	/**< Took action with input */
+	SCROLLBAR_MOUSE_BOTH	= (1 <<  1),	/**< Scrolling both bars */
+	SCROLLBAR_MOUSE_UP	= (1 <<  2),	/**< Hover: scroll up */
+	SCROLLBAR_MOUSE_PUP	= (1 <<  3),	/**< Hover: scroll page up */
+	SCROLLBAR_MOUSE_VRT	= (1 <<  4),	/**< Hover: vert. drag bar */
+	SCROLLBAR_MOUSE_PDWN	= (1 <<  5),	/**< Hover: scroll page down */
+	SCROLLBAR_MOUSE_DWN	= (1 <<  6),	/**< Hover: scroll down */
+	SCROLLBAR_MOUSE_LFT	= (1 <<  7),	/**< Hover: scroll left */
+	SCROLLBAR_MOUSE_PLFT	= (1 <<  8),	/**< Hover: scroll page left */
+	SCROLLBAR_MOUSE_HRZ	= (1 <<  9),	/**< Hover: horiz. drag bar */
+	SCROLLBAR_MOUSE_PRGT	= (1 << 10),	/**< Hover: scroll page right */
+	SCROLLBAR_MOUSE_RGT	= (1 << 11)	/**< Hover: scroll right */
+} scrollbar_mouse_status;
+
 /**
  * Handle mouse actions other then drag ends.
  *
@@ -159,10 +176,18 @@ bool scrollbar_is_horizontal(struct scrollbar *s);
  * \param mouse	mouse state
  * \param x	X coordinate of the mouse
  * \param y	Y coordinate of the mouse
- * \return	message for the status bar or NULL on failure
+ * \return	the scrollbar mouse status
  */
-const char *scrollbar_mouse_action(struct scrollbar *s,
+scrollbar_mouse_status scrollbar_mouse_action(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y);
+
+/**
+ * Get a status bar message from a scrollbar mouse input status.
+ *
+ * \param status	Status to convert to message
+ * \return		Message for the status bar or NULL on failure
+ */
+const char *scrollbar_mouse_status_to_message(scrollbar_mouse_status status);
 
 /**
  * Handle end of mouse drags.

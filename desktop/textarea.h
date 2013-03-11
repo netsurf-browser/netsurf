@@ -196,6 +196,26 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
  */
 bool textarea_keypress(struct textarea *ta, uint32_t key);
 
+/* Text area mouse input status flags */
+typedef enum {
+	TEXTAREA_MOUSE_NONE	= 0,		/**< Not relevant */
+	TEXTAREA_MOUSE_USED	= (1 <<  0),	/**< Took action with input */
+	TEXTAREA_MOUSE_EDITOR	= (1 <<  1),	/**< Hover: caret pointer */
+	TEXTAREA_MOUSE_SELECTION= (1 <<  2),	/**< Hover: selection */
+	TEXTAREA_MOUSE_SCR_USED	= (1 <<  3),	/**< Scrollbar action */
+	TEXTAREA_MOUSE_SCR_BOTH	= (1 <<  4),	/**< Scrolling both bars */
+	TEXTAREA_MOUSE_SCR_UP	= (1 <<  5),	/**< Hover: scroll up */
+	TEXTAREA_MOUSE_SCR_PUP	= (1 <<  6),	/**< Hover: scroll page up */
+	TEXTAREA_MOUSE_SCR_VRT	= (1 <<  7),	/**< Hover: vert. drag bar */
+	TEXTAREA_MOUSE_SCR_PDWN	= (1 <<  8),	/**< Hover: scroll page down */
+	TEXTAREA_MOUSE_SCR_DWN	= (1 <<  9),	/**< Hover: scroll down */
+	TEXTAREA_MOUSE_SCR_LFT	= (1 << 10),	/**< Hover: scroll left */
+	TEXTAREA_MOUSE_SCR_PLFT	= (1 << 11),	/**< Hover: scroll page left */
+	TEXTAREA_MOUSE_SCR_HRZ	= (1 << 12),	/**< Hover: horiz. drag bar */
+	TEXTAREA_MOUSE_SCR_PRGT	= (1 << 13),	/**< Hover: scroll page right */
+	TEXTAREA_MOUSE_SCR_RGT	= (1 << 14)	/**< Hover: scroll right */
+} textarea_mouse_status;
+
 /**
  * Handles all kinds of mouse action
  *
@@ -203,10 +223,10 @@ bool textarea_keypress(struct textarea *ta, uint32_t key);
  * \param mouse	the mouse state at action moment
  * \param x	X coordinate
  * \param y	Y coordinate
- * \return true if action was handled false otherwise
+ * \return the textarea mouse status
  */
-bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
-		int x, int y);
+textarea_mouse_status textarea_mouse_action(struct textarea *ta,
+		browser_mouse_state mouse, int x, int y);
 
 /**
  * Clear any selection in the textarea.
