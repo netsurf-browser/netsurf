@@ -468,7 +468,40 @@ include $(TARGET)/Makefile.target
 # General source file setup
 # ----------------------------------------------------------------------------
 
-include Makefile.sources
+# Content sources
+include content/Makefile
+
+# Content fetchers sources
+include content/fetchers/Makefile
+
+# CSS sources
+include css/Makefile
+
+# render sources
+include render/Makefile
+
+# utility sources
+include utils/Makefile
+
+# http utility sources
+include utils/http/Makefile
+
+# Desktop sources
+include desktop/Makefile
+
+# Javascript source
+include javascript/Makefile
+
+# Image content handler sources
+include image/Makefile
+
+# PDF saving sources
+include desktop/save_pdf/Makefile
+
+# S_COMMON are sources common to all builds
+S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \
+	$(S_HTTP) $(S_DESKTOP) $(S_JAVASCRIPT)
+
 
 # ----------------------------------------------------------------------------
 # Source file setup

@@ -61,3 +61,5 @@ $(eval $(foreach V,$(filter JSAPI_BINDING_%,$(.VARIABLES)),$(call convert_jsapi_
 else
 S_JAVASCRIPT += none.c
 endif
+
+S_JAVASCRIPT := $(addprefix javascript/,$(S_JAVASCRIPT)) $(S_JSAPI_BINDING)
