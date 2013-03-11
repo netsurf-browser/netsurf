@@ -392,9 +392,17 @@ void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
     if(rootwin->statusbar != NULL) {
         sb_attach(rootwin->statusbar, rootwin->active_gui_window);
     }
+
+    /* Set initial size of the toolbar region: */
     gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_TOOLBAR, &g);
     toolbar_set_attached(rootwin->toolbar, true);
     toolbar_set_dimensions(rootwin->toolbar, &g);
+
+    /* initially hide the search area of the toolbar: */
+    toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
+	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &g);
+	gemtk_wm_set_toolbar_size(rootwin->win, g.g_h);
+
     window_update_back_forward(rootwin);
 
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
@@ -978,7 +986,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 
     redraw_active = true;
 
-    toolbar_get_grect(rootwin->toolbar, 0, &tb_area);
+    window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &tb_area);
     //gemtk_wm_set_toolbar_size(rootwin->win, tb_area.g_h);
     window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
 
