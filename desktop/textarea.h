@@ -166,14 +166,6 @@ int textarea_get_text(struct textarea *ta, char *buf, unsigned int len);
 bool textarea_set_caret(struct textarea *ta, int caret);
 
 /**
- * Get the caret's position
- *
- * \param ta Text area
- * \return 0-based character index of caret location, or -1 on error
- */
-int textarea_get_caret(struct textarea *ta);
-
-/**
  * Handle redraw requests for text areas
  *
  * \param ta	textarea to render

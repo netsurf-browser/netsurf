@@ -169,6 +169,36 @@ static void textarea_normalise_text(struct textarea *ta,
 
 
 /**
+ * Get the caret's position
+ *
+ * \param ta Text area
+ * \return 0-based character index of caret location, or -1 on error
+ */
+static int textarea_get_caret(struct textarea *ta)
+{
+	unsigned int c_off = 0, b_off;
+
+	/* Ensure caret isn't hidden */
+	if (ta->caret_pos.char_off < 0)
+		textarea_set_caret(ta, 0);
+
+	/* if the text is a trailing NUL only */
+	if (ta->text.utf8_len == 0)
+		return 0;
+
+	if (ta->caret_pos.line >= ta->line_count)
+		return ta->text.utf8_len;
+
+	/* Calculate character offset of this line's start */
+	for (b_off = 0; b_off < ta->lines[ta->caret_pos.line].b_start;
+			b_off = utf8_next(ta->text.data, ta->text.len, b_off))
+		c_off++;
+
+	return c_off + ta->caret_pos.char_off;
+}
+
+
+/**
  * Selects a character range in the textarea and redraws it
  *
  * \param ta		Text area
@@ -1497,31 +1527,6 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 	}
 
 	return true;
-}
-
-
-/* exported interface, documented in textarea.h */
-int textarea_get_caret(struct textarea *ta)
-{
-	unsigned int c_off = 0, b_off;
-
-	/* Ensure caret isn't hidden */
-	if (ta->caret_pos.char_off < 0)
-		textarea_set_caret(ta, 0);
-
-	/* if the text is a trailing NUL only */
-	if (ta->text.utf8_len == 0)
-		return 0;
-
-	if (ta->caret_pos.line >= ta->line_count)
-		return ta->text.utf8_len;
-
-	/* Calculate character offset of this line's start */
-	for (b_off = 0; b_off < ta->lines[ta->caret_pos.line].b_start;
-			b_off = utf8_next(ta->text.data, ta->text.len, b_off))
-		c_off++;
-
-	return c_off + ta->caret_pos.char_off;
 }
 
 
