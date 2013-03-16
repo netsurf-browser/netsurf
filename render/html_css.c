@@ -33,6 +33,7 @@
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/schedule.h"
 
 static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
@@ -254,35 +255,19 @@ html_create_style_element(html_content *c, dom_node *style)
 
 	c->stylesheets[c->stylesheet_count].node = dom_node_ref(style);
 	c->stylesheets[c->stylesheet_count].sheet = NULL;
+	c->stylesheets[c->stylesheet_count].modified = false;
 	c->stylesheet_count++;
 
 	return c->stylesheets + (c->stylesheet_count - 1);
 }
 
-bool html_css_update_style(html_content *c, dom_node *style)
+static bool html_css_process_modified_style(html_content *c,
+		struct html_stylesheet *s)
 {
-	nserror error;
-	unsigned int i;
-	struct html_stylesheet *s;
 	hlcache_handle *sheet = NULL;
+	nserror error;
 
-	/* Find sheet */
-	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
-		if (s->node == style)
-			break;
-	}
-	if (i == c->stylesheet_count) {
-		s = html_create_style_element(c, style);
-	}
-	if (s == NULL) {
-		LOG(("Could not find or create inline stylesheet for %p",
-		     style));
-		return false;
-	}
-
-	LOG(("Found sheet %p slot %d for node %p", s, i, style));
-
-	error = html_stylesheet_from_domnode(c, style, &sheet);
+	error = html_stylesheet_from_domnode(c, s->node, &sheet);
 	if (error != NSERROR_OK) {
 		LOG(("Failed to update sheet"));
 		content_broadcast_errorcode(&c->base, error);
@@ -305,6 +290,53 @@ bool html_css_update_style(html_content *c, dom_node *style)
 		}
 		s->sheet = sheet;
 	}
+
+	s->modified = false;
+
+	return true;
+}
+
+static void html_css_process_modified_styles(void *pw)
+{
+	html_content *c = pw;
+	struct html_stylesheet *s;
+	unsigned int i;
+	bool all_done = true;
+
+	for (i = 0, s = c->stylesheets; i != c->stylesheet_count; i++, s++) {
+		if (c->stylesheets[i].modified) {
+			all_done &= html_css_process_modified_style(c, s);
+		}
+	}
+
+	/* If we failed to process any sheet, schedule a retry */
+	if (all_done == false) {
+		schedule(100, html_css_process_modified_styles, c);
+	}
+}
+
+bool html_css_update_style(html_content *c, dom_node *style)
+{
+	unsigned int i;
+	struct html_stylesheet *s;
+
+	/* Find sheet */
+	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
+		if (s->node == style)
+			break;
+	}
+	if (i == c->stylesheet_count) {
+		s = html_create_style_element(c, style);
+	}
+	if (s == NULL) {
+		LOG(("Could not find or create inline stylesheet for %p",
+		     style));
+		return false;
+	}
+
+	s->modified = true;
+
+	schedule(0, html_css_process_modified_styles, c);
 
 	return true;
 }
@@ -384,6 +416,7 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 
 	htmlc->stylesheets = stylesheets;
 	htmlc->stylesheets[htmlc->stylesheet_count].node = NULL;
+	htmlc->stylesheets[htmlc->stylesheet_count].modified = false;
 
 	/* start fetch */
 	child.charset = htmlc->encoding;
@@ -434,6 +467,8 @@ struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
 nserror html_css_free_stylesheets(html_content *html)
 {
 	unsigned int i;
+
+	schedule_remove(html_css_process_modified_styles, html);
 
 	for (i = 0; i != html->stylesheet_count; i++) {
 		if (html->stylesheets[i].sheet != NULL) {
