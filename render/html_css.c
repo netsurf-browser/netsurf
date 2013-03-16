@@ -172,6 +172,9 @@ nserror html_css_free_stylesheets(html_content *html)
 		if (html->stylesheets[i].sheet != NULL) {
 			hlcache_handle_release(html->stylesheets[i].sheet);
 		}
+		if (html->stylesheets[i].node != NULL) {
+			dom_node_unref(html->stylesheets[i].node);
+		}
 	}
 	free(html->stylesheets);
 
@@ -377,7 +380,7 @@ html_create_style_element(html_content *c, dom_node *style)
 	}
 	c->stylesheets = stylesheets;
 
-	c->stylesheets[c->stylesheet_count].node = style;
+	c->stylesheets[c->stylesheet_count].node = dom_node_ref(style);
 	c->stylesheets[c->stylesheet_count].sheet = NULL;
 	c->stylesheet_count++;
 
@@ -508,6 +511,7 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	}
 
 	htmlc->stylesheets = stylesheets;
+	htmlc->stylesheets[htmlc->stylesheet_count].node = NULL;
 
 	/* start fetch */
 	child.charset = htmlc->encoding;
