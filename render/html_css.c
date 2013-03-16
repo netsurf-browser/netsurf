@@ -33,6 +33,7 @@
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/schedule.h"
 
 static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
@@ -149,131 +150,6 @@ html_convert_css_callback(hlcache_handle *css,
 	return NSERROR_OK;
 }
 
-/* exported interface documented in render/html.h */
-struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
-{
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
-
-	assert(c != NULL);
-	assert(n != NULL);
-
-	*n = c->stylesheet_count;
-
-	return c->stylesheets;
-}
-
-
-/* exported interface documented in render/html_internal.h */
-nserror html_css_free_stylesheets(html_content *html)
-{
-	unsigned int i;
-
-	for (i = 0; i != html->stylesheet_count; i++) {
-		if (html->stylesheets[i].sheet != NULL) {
-			hlcache_handle_release(html->stylesheets[i].sheet);
-		}
-	}
-	free(html->stylesheets);
-
-	return NSERROR_OK;
-}
-
-/* exported interface documented in render/html_internal.h */
-nserror html_css_quirks_stylesheets(html_content *c)
-{
-	nserror ns_error = NSERROR_OK;
-	hlcache_child_context child;
-
-	assert(c->stylesheets != NULL);
-
-	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
-		child.charset = c->encoding;
-		child.quirks = c->base.quirks;
-
-		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
-				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child,
-				CONTENT_CSS,
-				&c->stylesheets[STYLESHEET_QUIRKS].sheet);
-		if (ns_error != NSERROR_OK) {
-			return ns_error;
-		}
-
-		c->base.active++;
-		LOG(("%d fetches active", c->base.active));
-	}
-
-	return ns_error;
-}
-
-/* exported interface documented in render/html_internal.h */
-nserror html_css_new_stylesheets(html_content *c)
-{
-	nserror ns_error;
-	hlcache_child_context child;
-
-	if (c->stylesheets != NULL) {
-		return NSERROR_OK; /* already initialised */
-	}
-
-	/* stylesheet 0 is the base style sheet,
-	 * stylesheet 1 is the quirks mode style sheet,
-	 * stylesheet 2 is the adblocking stylesheet,
-	 * stylesheet 3 is the user stylesheet */
-	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
-	if (c->stylesheets == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	c->stylesheets[STYLESHEET_BASE].sheet = NULL;
-	c->stylesheets[STYLESHEET_QUIRKS].sheet = NULL;
-	c->stylesheets[STYLESHEET_ADBLOCK].sheet = NULL;
-	c->stylesheets[STYLESHEET_USER].sheet = NULL;
-	c->stylesheet_count = STYLESHEET_START;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
-
-	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
-			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &child, CONTENT_CSS,
-			&c->stylesheets[STYLESHEET_BASE].sheet);
-	if (ns_error != NSERROR_OK) {
-		return ns_error;
-	}
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-
-	if (nsoption_bool(block_ads)) {
-		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
-				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child, CONTENT_CSS,
-				&c->stylesheets[STYLESHEET_ADBLOCK].sheet);
-		if (ns_error != NSERROR_OK) {
-			return ns_error;
-		}
-
-		c->base.active++;
-		LOG(("%d fetches active", c->base.active));
-
-	}
-
-	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
-			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &child, CONTENT_CSS,
-			&c->stylesheets[STYLESHEET_USER].sheet);
-	if (ns_error != NSERROR_OK) {
-		return ns_error;
-	}
-
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
-
-	return ns_error;
-}
-
 static nserror
 html_stylesheet_from_domnode(html_content *c,
 			     dom_node *node,
@@ -377,37 +253,21 @@ html_create_style_element(html_content *c, dom_node *style)
 	}
 	c->stylesheets = stylesheets;
 
-	c->stylesheets[c->stylesheet_count].node = style;
+	c->stylesheets[c->stylesheet_count].node = dom_node_ref(style);
 	c->stylesheets[c->stylesheet_count].sheet = NULL;
+	c->stylesheets[c->stylesheet_count].modified = false;
 	c->stylesheet_count++;
 
 	return c->stylesheets + (c->stylesheet_count - 1);
 }
 
-bool html_css_update_style(html_content *c, dom_node *style)
+static bool html_css_process_modified_style(html_content *c,
+		struct html_stylesheet *s)
 {
-	nserror error;
-	unsigned int i;
-	struct html_stylesheet *s;
 	hlcache_handle *sheet = NULL;
+	nserror error;
 
-	/* Find sheet */
-	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
-		if (s->node == style)
-			break;
-	}
-	if (i == c->stylesheet_count) {
-		s = html_create_style_element(c, style);
-	}
-	if (s == NULL) {
-		LOG(("Could not find or create inline stylesheet for %p",
-		     style));
-		return false;
-	}
-
-	LOG(("Found sheet %p slot %d for node %p", s, i, style));
-
-	error = html_stylesheet_from_domnode(c, style, &sheet);
+	error = html_stylesheet_from_domnode(c, s->node, &sheet);
 	if (error != NSERROR_OK) {
 		LOG(("Failed to update sheet"));
 		content_broadcast_errorcode(&c->base, error);
@@ -430,6 +290,53 @@ bool html_css_update_style(html_content *c, dom_node *style)
 		}
 		s->sheet = sheet;
 	}
+
+	s->modified = false;
+
+	return true;
+}
+
+static void html_css_process_modified_styles(void *pw)
+{
+	html_content *c = pw;
+	struct html_stylesheet *s;
+	unsigned int i;
+	bool all_done = true;
+
+	for (i = 0, s = c->stylesheets; i != c->stylesheet_count; i++, s++) {
+		if (c->stylesheets[i].modified) {
+			all_done &= html_css_process_modified_style(c, s);
+		}
+	}
+
+	/* If we failed to process any sheet, schedule a retry */
+	if (all_done == false) {
+		schedule(100, html_css_process_modified_styles, c);
+	}
+}
+
+bool html_css_update_style(html_content *c, dom_node *style)
+{
+	unsigned int i;
+	struct html_stylesheet *s;
+
+	/* Find sheet */
+	for (i = 0, s = c->stylesheets;	i != c->stylesheet_count; i++, s++) {
+		if (s->node == style)
+			break;
+	}
+	if (i == c->stylesheet_count) {
+		s = html_create_style_element(c, style);
+	}
+	if (s == NULL) {
+		LOG(("Could not find or create inline stylesheet for %p",
+		     style));
+		return false;
+	}
+
+	s->modified = true;
+
+	schedule(0, html_css_process_modified_styles, c);
 
 	return true;
 }
@@ -508,6 +415,8 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	}
 
 	htmlc->stylesheets = stylesheets;
+	htmlc->stylesheets[htmlc->stylesheet_count].node = NULL;
+	htmlc->stylesheets[htmlc->stylesheet_count].modified = false;
 
 	/* start fetch */
 	child.charset = htmlc->encoding;
@@ -538,6 +447,136 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 no_memory:
 	content_broadcast_errorcode(&htmlc->base, ns_error);
 	return false;
+}
+
+/* exported interface documented in render/html.h */
+struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
+{
+	html_content *c = (html_content *) hlcache_handle_get_content(h);
+
+	assert(c != NULL);
+	assert(n != NULL);
+
+	*n = c->stylesheet_count;
+
+	return c->stylesheets;
+}
+
+
+/* exported interface documented in render/html_internal.h */
+nserror html_css_free_stylesheets(html_content *html)
+{
+	unsigned int i;
+
+	schedule_remove(html_css_process_modified_styles, html);
+
+	for (i = 0; i != html->stylesheet_count; i++) {
+		if (html->stylesheets[i].sheet != NULL) {
+			hlcache_handle_release(html->stylesheets[i].sheet);
+		}
+		if (html->stylesheets[i].node != NULL) {
+			dom_node_unref(html->stylesheets[i].node);
+		}
+	}
+	free(html->stylesheets);
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in render/html_internal.h */
+nserror html_css_quirks_stylesheets(html_content *c)
+{
+	nserror ns_error = NSERROR_OK;
+	hlcache_child_context child;
+
+	assert(c->stylesheets != NULL);
+
+	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
+		child.charset = c->encoding;
+		child.quirks = c->base.quirks;
+
+		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
+				0, content_get_url(&c->base), NULL,
+				html_convert_css_callback, c, &child,
+				CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_QUIRKS].sheet);
+		if (ns_error != NSERROR_OK) {
+			return ns_error;
+		}
+
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+	}
+
+	return ns_error;
+}
+
+/* exported interface documented in render/html_internal.h */
+nserror html_css_new_stylesheets(html_content *c)
+{
+	nserror ns_error;
+	hlcache_child_context child;
+
+	if (c->stylesheets != NULL) {
+		return NSERROR_OK; /* already initialised */
+	}
+
+	/* stylesheet 0 is the base style sheet,
+	 * stylesheet 1 is the quirks mode style sheet,
+	 * stylesheet 2 is the adblocking stylesheet,
+	 * stylesheet 3 is the user stylesheet */
+	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
+	if (c->stylesheets == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	c->stylesheets[STYLESHEET_BASE].sheet = NULL;
+	c->stylesheets[STYLESHEET_QUIRKS].sheet = NULL;
+	c->stylesheets[STYLESHEET_ADBLOCK].sheet = NULL;
+	c->stylesheets[STYLESHEET_USER].sheet = NULL;
+	c->stylesheet_count = STYLESHEET_START;
+
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
+
+	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
+			content_get_url(&c->base), NULL,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
+			&c->stylesheets[STYLESHEET_BASE].sheet);
+	if (ns_error != NSERROR_OK) {
+		return ns_error;
+	}
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+
+	if (nsoption_bool(block_ads)) {
+		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
+				0, content_get_url(&c->base), NULL,
+				html_convert_css_callback, c, &child, CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_ADBLOCK].sheet);
+		if (ns_error != NSERROR_OK) {
+			return ns_error;
+		}
+
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+
+	}
+
+	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
+			content_get_url(&c->base), NULL,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
+			&c->stylesheets[STYLESHEET_USER].sheet);
+	if (ns_error != NSERROR_OK) {
+		return ns_error;
+	}
+
+	c->base.active++;
+	LOG(("%d fetches active", c->base.active));
+
+	return ns_error;
 }
 
 nserror

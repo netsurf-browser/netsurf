@@ -56,9 +56,9 @@ struct selection;
  * Container for stylesheets used by an HTML document
  */
 struct html_stylesheet {
-	/** Type of sheet */
 	struct dom_node *node; /**< dom node associated with sheet */
 	struct hlcache_handle *sheet;
+	bool modified;
 };
 
 /**
