@@ -118,6 +118,24 @@ size_t utf8_bounded_length(const char *s, size_t l)
 }
 
 /**
+ * Calculate the length (in bytes) of a bounded UTF-8 string
+ *
+ * \param s  The string
+ * \param l  Maximum length of input (in bytes)
+ * \param c  Maximum number of characters to measure
+ * \return Length of string, in bytes
+ */
+size_t utf8_bounded_byte_length(const char *s, size_t l, size_t c)
+{
+	size_t len = 0;
+
+	while (len < l && c-- > 0)
+		len = utf8_next(s, l, len);
+
+	return len;
+}
+
+/**
  * Calculate the length (in bytes) of a UTF-8 character
  *
  * \param s  Pointer to start of character

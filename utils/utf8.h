@@ -37,6 +37,7 @@ size_t utf8_from_ucs4(uint32_t c, char *s);
 
 size_t utf8_length(const char *s);
 size_t utf8_bounded_length(const char *s, size_t l);
+size_t utf8_bounded_byte_length(const char *s, size_t l, size_t c);
 
 size_t utf8_char_byte_length(const char *s);
 
