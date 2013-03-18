@@ -143,7 +143,7 @@ html_convert_css_callback(hlcache_handle *css,
 		assert(0);
 	}
 
-	if (parent->base.active == 0) {
+	if (html_can_begin_conversion(parent)) {
 		html_begin_conversion(parent);
 	}
 

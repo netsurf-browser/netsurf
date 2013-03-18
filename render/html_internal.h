@@ -221,6 +221,14 @@ void html_set_search(struct content *c, struct search_context *s);
 void html_finish_conversion(html_content *htmlc);
 
 /**
+ * Test if an HTML content conversion can begin
+ *
+ * \param htmlc		html content to test
+ * \return true iff the html content conversion can begin
+ */
+bool html_can_begin_conversion(html_content *htmlc);
+
+/**
  * Begin conversion of an HTML document
  *
  * \param htmlc Content to convert

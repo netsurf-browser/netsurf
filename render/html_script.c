@@ -255,7 +255,7 @@ convert_script_defer_cb(hlcache_handle *script,
 	/* if there are no active fetches remaining begin post parse
 	 * conversion
 	 */
-	if (parent->base.active == 0) {
+	if (html_can_begin_conversion(parent)) {
 		html_begin_conversion(parent);
 	}
 
@@ -349,7 +349,7 @@ convert_script_sync_cb(hlcache_handle *script,
 	/* if there are no active fetches remaining begin post parse
 	 * conversion
 	 */
-	if (parent->base.active == 0) {
+	if (html_can_begin_conversion(parent)) {
 		html_begin_conversion(parent);
 	}
 
