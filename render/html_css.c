@@ -306,8 +306,6 @@ static void html_css_process_modified_styles(void *pw)
 
 	for (i = 0, s = c->stylesheets; i != c->stylesheet_count; i++, s++) {
 		if (c->stylesheets[i].modified) {
-			LOG(("Processing modified inline stylesheet for %p",
-					c->stylesheets[i].node));
 			all_done &= html_css_process_modified_style(c, s);
 		}
 	}
@@ -329,7 +327,6 @@ bool html_css_update_style(html_content *c, dom_node *style)
 			break;
 	}
 	if (i == c->stylesheet_count) {
-		LOG(("Creating inline stylesheet for %p", style));
 		s = html_create_style_element(c, style);
 	}
 	if (s == NULL) {
