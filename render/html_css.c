@@ -244,7 +244,8 @@ html_create_style_element(html_content *c, dom_node *style)
 
 	/* Extend array */
 	stylesheets = realloc(c->stylesheets,
-			      sizeof(struct html_stylesheet) * (c->stylesheet_count + 1));
+			      sizeof(struct html_stylesheet) *
+			      (c->stylesheet_count + 1));
 	if (stylesheets == NULL) {
 
 		content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
@@ -305,6 +306,8 @@ static void html_css_process_modified_styles(void *pw)
 
 	for (i = 0, s = c->stylesheets; i != c->stylesheet_count; i++, s++) {
 		if (c->stylesheets[i].modified) {
+			LOG(("Processing modified inline stylesheet for %p",
+					c->stylesheets[i].node));
 			all_done &= html_css_process_modified_style(c, s);
 		}
 	}
@@ -326,11 +329,12 @@ bool html_css_update_style(html_content *c, dom_node *style)
 			break;
 	}
 	if (i == c->stylesheet_count) {
+		LOG(("Creating inline stylesheet for %p", style));
 		s = html_create_style_element(c, style);
 	}
 	if (s == NULL) {
 		LOG(("Could not find or create inline stylesheet for %p",
-		     style));
+				style));
 		return false;
 	}
 
@@ -403,11 +407,13 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	}
 	dom_string_unref(href);
 
-	LOG(("linked stylesheet %i '%s'", htmlc->stylesheet_count, nsurl_access(joined)));
+	LOG(("linked stylesheet %i '%s'", htmlc->stylesheet_count,
+			nsurl_access(joined)));
 
 	/* extend stylesheets array to allow for new sheet */
 	stylesheets = realloc(htmlc->stylesheets,
-			      sizeof(struct html_stylesheet) * (htmlc->stylesheet_count + 1));
+			      sizeof(struct html_stylesheet) *
+			      (htmlc->stylesheet_count + 1));
 	if (stylesheets == NULL) {
 		nsurl_unref(joined);
 		ns_error = NSERROR_NOMEM;
@@ -422,15 +428,11 @@ bool html_css_process_link(html_content *htmlc, dom_node *node)
 	child.charset = htmlc->encoding;
 	child.quirks = htmlc->base.quirks;
 
-	ns_error = hlcache_handle_retrieve(joined,
-					   0,
-					   content_get_url(&htmlc->base),
-					   NULL,
-					   html_convert_css_callback,
-					   htmlc,
-					   &child,
-					   CONTENT_CSS,
-					   &htmlc->stylesheets[htmlc->stylesheet_count].sheet);
+	ns_error = hlcache_handle_retrieve(joined, 0,
+			content_get_url(&htmlc->base),
+			NULL, html_convert_css_callback,
+			htmlc, &child, CONTENT_CSS,
+			&htmlc->stylesheets[htmlc->stylesheet_count].sheet);
 
 	nsurl_unref(joined);
 
@@ -525,7 +527,8 @@ nserror html_css_new_stylesheets(html_content *c)
 	 * stylesheet 1 is the quirks mode style sheet,
 	 * stylesheet 2 is the adblocking stylesheet,
 	 * stylesheet 3 is the user stylesheet */
-	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
+	c->stylesheets = calloc(STYLESHEET_START,
+			sizeof(struct html_stylesheet));
 	if (c->stylesheets == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -554,7 +557,8 @@ nserror html_css_new_stylesheets(html_content *c)
 	if (nsoption_bool(block_ads)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child, CONTENT_CSS,
+				html_convert_css_callback,
+				c, &child, CONTENT_CSS,
 				&c->stylesheets[STYLESHEET_ADBLOCK].sheet);
 		if (ns_error != NSERROR_OK) {
 			return ns_error;
