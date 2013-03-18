@@ -2332,19 +2332,19 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			 * be selected */
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_SAVE,
-			editor_flags & ~BW_EDITOR_CAN_COPY);
+			~editor_flags & BW_EDITOR_CAN_COPY);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_COPY,
-			editor_flags & ~BW_EDITOR_CAN_COPY);
+			~editor_flags & BW_EDITOR_CAN_COPY);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CUT,
-			editor_flags & ~BW_EDITOR_CAN_CUT);
+			~editor_flags & BW_EDITOR_CAN_CUT);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_PASTE,
-			editor_flags & ~BW_EDITOR_CAN_PASTE);
+			~editor_flags & BW_EDITOR_CAN_PASTE);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CLEAR,
-			editor_flags & ~BW_EDITOR_CAN_COPY);
+			~editor_flags & BW_EDITOR_CAN_COPY);
 
 
 	/* Navigate Submenu */
