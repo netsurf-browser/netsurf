@@ -152,9 +152,17 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:
-		/* Redraw the textarea */
-		/* TODO: don't redraw whole box, just the part asked for */
-		html__redraw_a_box(html, box);
+	{
+		/* Request redraw of the required textarea rectangle */
+		int x, y;
+		box_coords(box, &x, &y);
+
+		content__request_redraw((struct content *)html,
+				x + msg->data.redraw.x0,
+				y + msg->data.redraw.y0,
+				msg->data.redraw.x1 - msg->data.redraw.x0,
+				msg->data.redraw.y1 - msg->data.redraw.y0);
+	}
 		break;
 
 	case TEXTAREA_MSG_SELECTION_REPORT:
