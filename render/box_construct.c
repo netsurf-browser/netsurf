@@ -3142,20 +3142,23 @@ bool box_extract_link(const char *rel, nsurl *base, nsurl **result)
 	}
 	s[j] = 0;
 
-	/* extract first quoted string out of "javascript:" link */
-	if (strncmp(s, "javascript:", 11) == 0) {
-		apos0 = strchr(s, '\'');
-		if (apos0)
-			apos1 = strchr(apos0 + 1, '\'');
-		quot0 = strchr(s, '"');
-		if (quot0)
-			quot1 = strchr(quot0 + 1, '"');
-		if (apos0 && apos1 && (!quot0 || !quot1 || apos0 < quot0)) {
-			*apos1 = 0;
-			s1 = apos0 + 1;
-		} else if (quot0 && quot1) {
-			*quot1 = 0;
-			s1 = quot0 + 1;
+	if (nsoption_bool(enable_javascript) == false) {
+		/* extract first quoted string out of "javascript:" link */
+		if (strncmp(s, "javascript:", 11) == 0) {
+			apos0 = strchr(s, '\'');
+			if (apos0)
+				apos1 = strchr(apos0 + 1, '\'');
+			quot0 = strchr(s, '"');
+			if (quot0)
+				quot1 = strchr(quot0 + 1, '"');
+			if (apos0 && apos1 && 
+					(!quot0 || !quot1 || apos0 < quot0)) {
+				*apos1 = 0;
+				s1 = apos0 + 1;
+			} else if (quot0 && quot1) {
+				*quot1 = 0;
+				s1 = quot0 + 1;
+			}
 		}
 	}
 
