@@ -461,6 +461,7 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 	int swap;
 	bool pre_existing_selection = (ta->sel_start != -1);
 	struct textarea_msg msg;
+	int line_start = 0, line_end = 0;
 
 	if (b_start == b_end) {
 		textarea_clear_selection(ta);
@@ -478,17 +479,63 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 			!force_redraw)
 		return true;
 
-	ta->sel_start = b_start;
-	ta->sel_end = b_end;
-
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-	msg.data.redraw.x0 = 0;
-	msg.data.redraw.y0 = 0;
-	msg.data.redraw.x1 = ta->vis_width;
-	msg.data.redraw.y1 = ta->vis_height;
+
+	if (force_redraw || !pre_existing_selection ||
+			(ta->sel_start != b_start && ta->sel_end != b_end)) {
+		/* Asked to redraw everything, or there's a new selection, or
+		 * both ends of the selection have moved */
+		msg.data.redraw.x0 = 0;
+		msg.data.redraw.y0 = 0;
+		msg.data.redraw.x1 = ta->vis_width;
+		msg.data.redraw.y1 = ta->vis_height;
+	} else {
+		/* Redraw to cover change in selection start or change in
+		 * selection end */
+		int b_low, b_high;
+		if (ta->sel_start != b_start) {
+			/* Selection start changed */
+			if (ta->sel_start < b_start) {
+				b_low = ta->sel_start;
+				b_high = b_start;
+			} else {
+				b_low = b_start;
+				b_high = ta->sel_start;
+			}
+		} else {
+			/* Selection end changed */
+			if (ta->sel_end < b_end) {
+				b_low = ta->sel_end;
+				b_high = b_end;
+			} else {
+				b_low = b_end;
+				b_high = ta->sel_end;
+			}
+		}
+
+		for (line_end = 0; line_end < ta->line_count - 1; line_end++)
+			if (ta->lines[line_end + 1].b_start > b_low) {
+				line_start = line_end;
+				break;
+			}
+		for (; line_end < ta->line_count - 1; line_end++)
+			if (ta->lines[line_end + 1].b_start > b_high)
+				break;
+
+		msg.data.redraw.x0 = 0;
+		msg.data.redraw.y0 = max(0, ta->line_height * line_start +
+				ta->text_y_offset - ta->scroll_y);
+		msg.data.redraw.x1 = ta->vis_width;
+		msg.data.redraw.y1 = min(ta->vis_height,
+				ta->line_height * line_end + ta->text_y_offset +
+				ta->line_height - ta->scroll_y);
+	}
 
 	ta->callback(ta->data, &msg);
+
+	ta->sel_start = b_start;
+	ta->sel_end = b_end;
 
 	if (!pre_existing_selection && ta->sel_start != -1) {
 		/* Didn't have a selection before, but do now */
