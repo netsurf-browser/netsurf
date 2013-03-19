@@ -493,10 +493,10 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 	} else {
 		/* Redraw to cover change in selection start or change in
 		 * selection end */
-		int b_low, b_high;
+		unsigned int b_low, b_high;
 		if (ta->sel_start != b_start) {
 			/* Selection start changed */
-			if (ta->sel_start < b_start) {
+			if ((signed)ta->sel_start < b_start) {
 				b_low = ta->sel_start;
 				b_high = b_start;
 			} else {
@@ -505,7 +505,7 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 			}
 		} else {
 			/* Selection end changed */
-			if (ta->sel_end < b_end) {
+			if ((signed)ta->sel_end < b_end) {
 				b_low = ta->sel_end;
 				b_high = b_end;
 			} else {
