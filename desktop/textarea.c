@@ -346,9 +346,8 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 			if (ta->lines[i + 1].b_start > b_off)
 				break;
 
+		/* Set new caret pos */
 		ta->caret_pos.line = i;
-
-		/* Now calculate the char. offset of the caret in this line */
 		ta->caret_pos.byte_off = b_off - ta->lines[i].b_start;
 
 		/* Finally, redraw the caret */
@@ -2331,7 +2330,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 
 	textarea_set_caret_internal(ta, caret);
 
-	//TODO:redraw only the important part
+	/* TODO: redraw only the bit that changed */
 	if (redraw) {
 		msg.ta = ta;
 		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
