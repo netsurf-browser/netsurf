@@ -551,7 +551,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
 			WA_Height, scrn->Height / 2,
-			WA_CustomScreen,scrn,
+			WA_PubScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
@@ -631,7 +631,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WA_Left, left,
 			WA_Width, width,
 			WA_Height, height,
-			WA_CustomScreen,scrn,
+			WA_PubScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |

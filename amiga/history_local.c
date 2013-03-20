@@ -100,7 +100,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			WA_DragBar, TRUE,
 			WA_CloseGadget, TRUE,
 			WA_SizeGadget, TRUE,
-			WA_CustomScreen,scrn,
+			WA_PubScreen,scrn,
 			WA_InnerWidth,width,
 			WA_InnerHeight,height + 10,
 			WINDOW_SharedPort,sport,

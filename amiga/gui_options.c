@@ -522,7 +522,7 @@ void ami_gui_opts_open(void)
 			WA_DragBar, TRUE,
 			WA_CloseGadget, TRUE,
 			WA_SizeGadget, FALSE,
-			WA_CustomScreen,scrn,
+			WA_PubScreen,scrn,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gow,
 			WINDOW_IconifyGadget, FALSE,
