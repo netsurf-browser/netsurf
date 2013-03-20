@@ -248,12 +248,11 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0,i=0;
 	size_t len;
-	int utf8len, utf8clen = 0;
+	int utf8_pos = 0;
 	int32 tempx = 0;
 	size_t coffset = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
-	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
@@ -261,10 +260,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
-	while(utf8clen < length) {
-		str_pos += utf8clen;
-		utf8len = utf8_char_byte_length(str_pos);
-
+	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
 			utf16charlen = 1;
 		else
@@ -296,12 +292,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		tx += tempx;
 		
 		if ((x < tx) && (coffset != 0)) {
-			/* We've run out of space, and a space has been found, split there. */
+			/* Reached available width, and a space has been found; split there. */
 			break;
 
-		} else if (*str_pos == ' ') {
+		} else if (*(string + str_pos) == ' ') {
 			*actual_x = tx;
-			coffset = utf8clen;
+			coffset = utf8_pos;
 
 			if (x < tx) {
 				/* Out of space, so don't look further */
@@ -309,7 +305,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 		utf16 += utf16charlen;
-		utf8clen += utf8len;
+		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
 	free(outf16);
