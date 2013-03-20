@@ -240,7 +240,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	ULONG co;
-	const char *str_pos = string;
 	uint16 *utf16 = NULL,*outf16 = NULL;
 	uint16 utf16next = 0;
 	FIXED kern = 0;
@@ -295,7 +294,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			/* Reached available width, and a space has been found; split there. */
 			break;
 
-		} else if (*(string + str_pos) == ' ') {
+		} else if (*(string + utf8_pos) == ' ') {
 			*actual_x = tx;
 			coffset = utf8_pos;
 
