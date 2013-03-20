@@ -300,7 +300,7 @@ static bool textarea_scroll_visible(struct textarea *ta)
  *
  * \param ta		Text area
  * \param caret_b	Byte offset to caret
- * \return true iff caret placed
+ * \return true iff caret placement caused a scroll
  */
 static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 {
@@ -311,7 +311,7 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 	int x0, y0, x1, y1;
 	int width, height;
 	struct textarea_msg msg;
-	bool scrolled;
+	bool scrolled = false;
 
 	if (caret_b != -1 && caret_b > (signed)(ta->show->len - 1))
 		caret_b = ta->show->len - 1;
@@ -353,8 +353,6 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 
 		/* Finally, redraw the caret */
 		index = textarea_get_caret(ta);
-		if (index == -1)
-			return false;
 
 		/* find byte offset of caret position */
 		b_off = index;
@@ -442,7 +440,7 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
 		ta->callback(ta->data, &msg);
 	}
 
-	return true;
+	return scrolled;
 }
 
 
@@ -1109,7 +1107,7 @@ static size_t textarea_get_b_off_xy(struct textarea *ta, int x, int y,
  * \param x		X coordinate
  * \param y		Y coordinate
  * \param visible	true iff (x,y) is wrt visiable area, false for global
- * \return true on success false otherwise
+ * \return true iff caret placement caused a scroll
  */
 static bool textarea_set_caret_xy(struct textarea *ta, int x, int y,
 		bool visible)
@@ -1640,15 +1638,17 @@ bool textarea_set_caret(struct textarea *ta, int caret)
 {
 	int b_off;
 
-	if (caret < 0)
-		return textarea_set_caret_internal(ta, -1);
-	else if (caret == 0)
-		return textarea_set_caret_internal(ta, 0);
+	if (caret < 0) {
+		textarea_set_caret_internal(ta, -1);
+	} else if (caret == 0) {
+		textarea_set_caret_internal(ta, 0);
+	} else {
+		b_off = utf8_bounded_byte_length(ta->show->data,
+				ta->show->len - 1, caret);
+		textarea_set_caret_internal(ta, b_off);
+	}
 
-	b_off = utf8_bounded_byte_length(ta->show->data,
-			ta->show->len - 1, caret);
-
-	return textarea_set_caret_internal(ta, b_off);
+	return true;
 }
 
 
@@ -2161,7 +2161,6 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			x = ta->caret_x;
 			y = ta->text_y_offset_baseline + line * ta->line_height;
 			textarea_set_caret_xy(ta, x, y, false);
-			caret = textarea_get_caret(ta);
 
 			return true;
 		case KEY_DOWN:
@@ -2359,7 +2358,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			return false;
 	}
 
-	textarea_set_caret_internal(ta, caret);
+	redraw &= ~textarea_set_caret_internal(ta, caret);
 
 	/* TODO: redraw only the bit that changed */
 	if (redraw) {
