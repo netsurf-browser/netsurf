@@ -481,15 +481,17 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = ta->border_width;
+	msg.data.redraw.x1 = ta->vis_width - ta->border_width -
+			((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
 
 	if (force_redraw || !pre_existing_selection ||
 			(ta->sel_start != b_start && ta->sel_end != b_end)) {
 		/* Asked to redraw everything, or there's a new selection, or
 		 * both ends of the selection have moved */
-		msg.data.redraw.x0 = 0;
-		msg.data.redraw.y0 = 0;
-		msg.data.redraw.x1 = ta->vis_width;
-		msg.data.redraw.y1 = ta->vis_height;
+		msg.data.redraw.y0 = ta->border_width;
+		msg.data.redraw.y1 = ta->vis_height - ta->border_width -
+				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 	} else {
 		/* Redraw to cover change in selection start or change in
 		 * selection end */
@@ -523,11 +525,11 @@ static bool textarea_select(struct textarea *ta, int b_start, int b_end,
 			if (ta->lines[line_end + 1].b_start > b_high)
 				break;
 
-		msg.data.redraw.x0 = 0;
-		msg.data.redraw.y0 = max(0, ta->line_height * line_start +
+		msg.data.redraw.y0 = max(ta->border_width,
+				ta->line_height * line_start +
 				ta->text_y_offset - ta->scroll_y);
-		msg.data.redraw.x1 = ta->vis_width;
-		msg.data.redraw.y1 = min(ta->vis_height,
+		msg.data.redraw.y1 = min(ta->vis_height - ta->border_width -
+				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH),
 				ta->line_height * line_end + ta->text_y_offset +
 				ta->line_height - ta->scroll_y);
 	}
@@ -2365,10 +2367,12 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	if (redraw) {
 		msg.ta = ta;
 		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-		msg.data.redraw.x0 = 0;
-		msg.data.redraw.y0 = 0;
-		msg.data.redraw.x1 = ta->vis_width;
-		msg.data.redraw.y1 = ta->vis_height;
+		msg.data.redraw.x0 = ta->border_width;
+		msg.data.redraw.y0 = ta->border_width;
+		msg.data.redraw.x1 = ta->vis_width - ta->border_width -
+				((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
+		msg.data.redraw.y1 = ta->vis_height - ta->border_width -
+				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 
 		ta->callback(ta->data, &msg);
 	}
@@ -2587,10 +2591,12 @@ bool textarea_clear_selection(struct textarea *ta)
 
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-	msg.data.redraw.x0 = 0;
-	msg.data.redraw.y0 = 0;
-	msg.data.redraw.x1 = ta->vis_width;
-	msg.data.redraw.y1 = ta->vis_height;
+	msg.data.redraw.x0 = ta->border_width;
+	msg.data.redraw.y0 = ta->border_width;
+	msg.data.redraw.x1 = ta->vis_width - ta->border_width -
+			((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
+	msg.data.redraw.y1 = ta->vis_height - ta->border_width -
+			((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
 
 	ta->callback(ta->data, &msg);
 
