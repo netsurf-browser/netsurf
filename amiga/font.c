@@ -240,7 +240,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	ULONG co;
-	char *ostr = (char *)string;
+	const char *str_pos = string;
 	uint16 *utf16 = NULL,*outf16 = NULL;
 	uint16 utf16next = 0;
 	FIXED kern = 0;
@@ -262,7 +262,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*actual_x = 0;
 
 	while(utf8clen < length) {
-		utf8len = utf8_char_byte_length(string + utf8clen);
+		str_pos += utf8clen;
+		utf8len = utf8_char_byte_length(str_pos);
 
 		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
 			utf16charlen = 1;
@@ -294,13 +295,18 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		tx += tempx;
 		
-		if((x < tx) && (coffset != 0)) {
+		if ((x < tx) && (coffset != 0)) {
 			/* We've run out of space, and a space has been found, split there. */
 			break;
 
-		} else if (*utf16 == 0x0020) {
+		} else if (*str_pos == ' ') {
 			*actual_x = tx;
 			coffset = utf8clen;
+
+			if (x < tx) {
+				/* Out of space, so don't look further */
+				break;
+			}
 		}
 		utf16 += utf16charlen;
 		utf8clen += utf8len;
