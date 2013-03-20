@@ -1860,16 +1860,14 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 			/* find clip left/right for this part of line */
 			left = right;
-			if (b_len_part != b_len || selected) {
+			if (b_len_part != b_len) {
 				nsfont.font_width(&fstyle, line_text, b_end,
 						&right);
-				right += x + ta->border_width + ta->pad_left -
-						ta->scroll_x;
 			} else {
-				right = x + ta->vis_width - ta->border_width -
-						(ta->bar_y != NULL ?
-						SCROLLBAR_WIDTH : 0);
+				right = ta->lines[line].width;
 			}
+			right += x + ta->border_width + ta->pad_left -
+					ta->scroll_x;
 
 			/* set clip rectangle for line part */
 			s = r;
