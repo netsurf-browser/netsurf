@@ -1963,11 +1963,15 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	struct textarea_msg msg;
 	char utf8[6];
 	unsigned int caret, length, b_off, b_len;
+	int h_extent = ta->h_extent;
+	int v_extent = ta->v_extent;
 	int line;
 	int byte_delta = 0;
 	int x, y;
 	bool redraw = false;
 	bool readonly;
+	bool bar_x = ta->bar_x;
+	bool bar_y = ta->bar_y;
 
 	/* Word separators */
 	static const char *sep = " .\n";
@@ -2361,16 +2365,23 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	redraw &= ~textarea_set_caret_internal(ta, caret);
 
 	/* TODO: redraw only the bit that changed */
-	if (redraw) {
-		msg.ta = ta;
-		msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-		msg.data.redraw.x0 = ta->border_width;
-		msg.data.redraw.y0 = ta->border_width;
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
+	msg.data.redraw.x0 = ta->border_width;
+	msg.data.redraw.y0 = ta->border_width;
+
+	if (bar_x != (ta->bar_x != NULL) || bar_y != (ta->bar_y != NULL) ||
+			h_extent != ta->h_extent || v_extent != ta->v_extent) {
+		/* Must redraw since scrollbars have changed */
+		msg.data.redraw.x1 = ta->vis_width - ta->border_width;
+		msg.data.redraw.y1 = ta->vis_height - ta->border_width;
+		ta->callback(ta->data, &msg);
+
+	} else if (redraw) {
 		msg.data.redraw.x1 = ta->vis_width - ta->border_width -
 				((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
 		msg.data.redraw.y1 = ta->vis_height - ta->border_width -
 				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
-
 		ta->callback(ta->data, &msg);
 	}
 
