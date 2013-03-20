@@ -285,6 +285,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			if (x < tx) {
 				/* Beyond available width,
 				 * so don't look further */
+				free(outf16);
 				return true;
 			}
 		}
@@ -294,6 +295,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
+			free(outf16);
 			return true;
 		}
 
