@@ -835,8 +835,12 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 
 	if ((signed)start > ta->line_count)
 		start = 0;
-	/** \todo pay attention to start param, for now force start at zero */
-	start = 0;
+
+	/* Have to start on line before where the changes are in case an
+	 * added space makes the text before the space on a soft-wrapped line
+	 * fit on the line above */
+	if (start != 0)
+		start--;
 
 	do {
 		/* Set line count to start point */
@@ -852,6 +856,15 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			avail_width = 0;
 		h_extent = avail_width;
 
+		/* Set up initial length and text offset */
+		if (line == 0) {
+			len = ta->text.len - 1;
+			text = ta->text.data;
+		} else {
+			len = ta->text.len - 1 - ta->lines[line].b_start;
+			text = ta->text.data + ta->lines[line].b_start;
+		}
+
 		if (ta->text.len == 1) {
 			/* Handle empty textarea */
 			assert(ta->text.data[0] == '\0');
@@ -861,9 +874,7 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 		}
 
 		restart = false;
-		for (len = ta->text.len - 1, text = ta->text.data; len > 0;
-				len -= b_off, text += b_off) {
-
+		for (; len > 0; len -= b_off, text += b_off) {
 			/* Find end of paragraph */
 			for (para_end = text; para_end < text + len;
 					para_end++) {
@@ -1108,7 +1119,7 @@ static bool textarea_set_caret_xy(struct textarea *ta, int x, int y,
 static bool textarea_insert_text(struct textarea *ta, const char *text,
 		size_t b_off, size_t b_len, int *byte_delta)
 {
-	int char_delta;
+	int char_delta, line;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -1159,8 +1170,11 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 		*byte_delta = ta->text.len - *byte_delta;
 	}
 
-	/** \todo calculate line to reflow from */
-	return textarea_reflow(ta, 0);
+	for (line = 0; line < ta->line_count - 1; line++)
+		if (ta->lines[line + 1].b_start > b_off)
+			break;
+
+	return textarea_reflow(ta, line);
 }
 
 
@@ -1210,7 +1224,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
 		bool add_to_clipboard, int *byte_delta)
 {
-	int char_delta;
+	int char_delta, line;
 	*byte_delta = 0;
 
 	if ((ta->flags & TEXTAREA_READONLY) &&
@@ -1290,8 +1304,11 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		*byte_delta = ta->text.len - *byte_delta;
 	}
 
-	/** \todo calculate line to reflow from */
-	return textarea_reflow(ta, 0);
+	for (line = 0; line < ta->line_count - 1; line++)
+		if (ta->lines[line + 1].b_start > b_start)
+			break;
+
+	return textarea_reflow(ta, line);
 }
 
 
