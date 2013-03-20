@@ -46,6 +46,7 @@ static plot_style_t pstyle_stroke_caret = {
 struct line_info {
 	unsigned int b_start;		/**< Byte offset of line start */
 	unsigned int b_length;		/**< Byte length of line */
+	int width;			/**< Width in pixels of line */
 };
 struct textarea_drag {
 	textarea_drag_type type;
@@ -819,6 +820,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 		nsfont.font_width(&ta->fstyle, ta->show->data,
 				ta->show->len - 1, &x);
 
+		ta->lines[0].width = x;
+
 		if (x > w)
 			w = x;
 
@@ -861,15 +864,23 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			len = ta->text.len - 1;
 			text = ta->text.data;
 		} else {
+			unsigned int i;
 			len = ta->text.len - 1 - ta->lines[line].b_start;
 			text = ta->text.data + ta->lines[line].b_start;
+
+			for (i = 0; i < line; i++) {
+				if (ta->lines[i].width > h_extent) {
+					h_extent = ta->lines[i].width;
+				}
+			}
 		}
 
 		if (ta->text.len == 1) {
 			/* Handle empty textarea */
 			assert(ta->text.data[0] == '\0');
 			ta->lines[line].b_start = 0;
-			ta->lines[line++].b_length = 0;
+			ta->lines[line].b_length = 0;
+			ta->lines[line++].width = 0;
 			ta->line_count = 1;
 		}
 
@@ -929,7 +940,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 				/* Not found any spaces to wrap at, and we
 				 * have a newline char */
 				ta->lines[line].b_start = text - ta->text.data;
-				ta->lines[line++].b_length = para_end - text;
+				ta->lines[line].b_length = para_end - text;
+				ta->lines[line++].width = x;
 
 				/* Jump newline */
 				b_off++;
@@ -939,7 +951,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 					 * add last line */
 					ta->lines[line].b_start = text +
 							b_off - ta->text.data;
-					ta->lines[line++].b_length = 0;
+					ta->lines[line].b_length = 0;
+					ta->lines[line++].width = x;
 				}
 
 				if (line > scroll_lines && ta->bar_y == NULL)
@@ -960,7 +973,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			}
 
 			ta->lines[line].b_start = text - ta->text.data;
-			ta->lines[line++].b_length = b_off;
+			ta->lines[line].b_length = b_off;
+			ta->lines[line++].width = x;
 
 			if (line > scroll_lines && ta->bar_y == NULL)
 				break;
