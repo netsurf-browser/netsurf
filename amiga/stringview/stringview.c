@@ -69,7 +69,7 @@ struct Gadget *gad;
 	gad = (struct Gadget *)obj;
 
 	SetAttrs( data->WindowObject,
-		WA_PubScreen, msg->gpi_GInfo->gi_Window->WScreen,
+		WA_CustomScreen, msg->gpi_GInfo->gi_Window->WScreen,
 		WA_Left,	data->WinXPos,
 		WA_Top,		data->WinYPos,
 		WA_Width,	data->WinWidth,
