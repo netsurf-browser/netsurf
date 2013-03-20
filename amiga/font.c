@@ -245,11 +245,9 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	FIXED kern = 0;
 	int utf16charlen = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
-	uint32 tx=0,i=0;
-	size_t len;
+	uint32 tx=0;
 	int utf8_pos = 0;
 	int32 tempx = 0;
-	size_t coffset = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -269,52 +267,47 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
 
-		if(tempx == 0)
-		{
-			if(ufont == NULL)
-			{
+		if (tempx == 0) {
+			if (ufont == NULL)
 				ufont = ami_open_outline_font(fstyle, *utf16);
-			}
 
-			if(ufont)
-			{
-				tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
+			if (ufont)
+				tempx = ami_font_width_glyph(ufont, *utf16,
+						utf16next, emwidth);
+		}
+
+		/* Check whether we have a space */
+		if (*(string + utf8_pos) == ' ') {
+			/* Got a space */
+			*actual_x = tx;
+			*char_offset = utf8_pos;
+
+			if (x < tx) {
+				/* Beyond available width,
+				 * so don't look further */
+				return true;
 			}
-/*
-			if(tempx == 0)
-			{
-				tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
-			}
-*/
 		}
 
 		tx += tempx;
-		
-		if ((x < tx) && (coffset != 0)) {
-			/* Reached available width, and a space has been found; split there. */
-			break;
 
-		} else if (*(string + utf8_pos) == ' ') {
-			*actual_x = tx;
-			coffset = utf8_pos;
-
-			if (x < tx) {
-				/* Out of space, so don't look further */
-				break;
-			}
+		if ((x < tx) && (*char_offset != 0)) {
+			/* Reached available width, and a space was found;
+			 * split there. */
+			return true;
 		}
+
 		utf16 += utf16charlen;
 		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
 	free(outf16);
 
-	if(coffset == 0) {
-		*char_offset = length;
-		*actual_x = tx;
-	} else {
-		*char_offset = coffset;
-	}
+	/* No spaces to split at, or everything fits */
+	assert(*char_offset == 0 || x >= tx);
+
+	*char_offset = length;
+	*actual_x = tx;
 	
 	return true;
 }
