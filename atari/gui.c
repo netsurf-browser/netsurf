@@ -1067,10 +1067,9 @@ int main(int argc, char** argv)
 
     LOG(("Creating initial browser window..."));
     addr = option_homepage_url;
-    if (strncmp(addr, "file://", 7)) {
+    if (strncmp(addr, "file://", 7) && strncmp(addr, "http://", 7)) {
 		if (stat(addr, &stat_buf) == 0) {
-			file_url = malloc(strlen(addr)+8);
-			sprintf(file_url, "file://%s", addr);
+			file_url = local_file_to_url(addr);
 			addr = file_url;
 		}
     }
