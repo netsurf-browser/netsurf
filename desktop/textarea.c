@@ -747,12 +747,17 @@ static void textarea_scrollbar_callback(void *client_data,
 /**
  * Reflow a single line textarea
  *
- * \param ta Text area to reflow
+ * \param ta 	Textarea widget to reflow
+ * \param b_off	0-based byte offset in ta->show's text to start of modification
+ * \param r	Modified/reduced to area where redraw is required
  * \return true on success false otherwise
  */
-static bool textarea_reflow_singleline(struct textarea *ta)
+static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
+		struct rect *r)
 {
 	int x;
+	int shift;
+	int retained_width = 0;
 	int w = ta->vis_width - 2 * ta->border_width -
 			ta->pad_left - ta->pad_right;
 
@@ -766,6 +771,10 @@ static bool textarea_reflow_singleline(struct textarea *ta)
 			return false;
 		}
 		ta->lines_alloc_size = LINE_CHUNK_SIZE;
+
+		ta->lines[0].b_start = 0;
+		ta->lines[0].b_length = 0;
+		ta->lines[0].width = 0;
 	}
 
 	if (ta->flags & TEXTAREA_PASSWORD &&
@@ -802,12 +811,23 @@ static bool textarea_reflow_singleline(struct textarea *ta)
 		ta->password.utf8_len = ta->text.utf8_len;
 	}
 
-	ta->lines[0].b_start = 0;
-	ta->lines[0].b_length = ta->show->len - 1;
-
 	nsfont.font_width(&ta->fstyle, ta->show->data,
 			ta->show->len - 1, &x);
 
+	if (b_off != ta->lines[0].b_length) {
+		nsfont.font_width(&ta->fstyle, ta->show->data,
+				b_off, &retained_width);
+	} else {
+		retained_width = ta->lines[0].width;
+	}
+
+	shift = ta->border_width + ta->pad_left - ta->scroll_x;
+
+	r->x0 = max(r->x0, retained_width + shift - 1);
+	r->x1 = min(r->x1, max(x, ta->lines[0].width) + shift + 1);
+
+	ta->lines[0].b_start = 0;
+	ta->lines[0].b_length = ta->show->len - 1;
 	ta->lines[0].width = x;
 
 	if (x > w)
@@ -1158,6 +1178,7 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 		size_t b_off, size_t b_len, int *byte_delta, struct rect *r)
 {
 	int char_delta, line;
+	const size_t show_b_off = b_off;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -1218,7 +1239,7 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 		 if (!textarea_reflow_multiline(ta, line))
 		 	return false;
 	} else {
-		 if (!textarea_reflow_singleline(ta))
+		 if (!textarea_reflow_singleline(ta, show_b_off, r))
 		 	return false;
 	}
 
@@ -1274,6 +1295,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
 	int char_delta, line;
+	const size_t show_b_off = b_start;
 	*byte_delta = 0;
 
 	if ((ta->flags & TEXTAREA_READONLY) &&
@@ -1372,7 +1394,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		 if (!textarea_reflow_multiline(ta, line))
 		 	return false;
 	} else {
-		 if (!textarea_reflow_singleline(ta))
+		 if (!textarea_reflow_singleline(ta, show_b_off, r))
 		 	return false;
 	}
 
@@ -1476,6 +1498,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 		textarea_client_callback callback, void *data)
 {
 	struct textarea *ret;
+	struct rect r = {0, 0, 0, 0};
 
 	/* Sanity check flags */
 	assert(!(flags & TEXTAREA_MULTILINE &&
@@ -1575,7 +1598,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 	if (flags & TEXTAREA_MULTILINE)
 		 textarea_reflow_multiline(ret, 0);
 	else
-		 textarea_reflow_singleline(ret);
+		 textarea_reflow_singleline(ret, 0, &r);
 
 	return ret;
 }
@@ -1602,6 +1625,7 @@ void textarea_destroy(struct textarea *ta)
 bool textarea_set_text(struct textarea *ta, const char *text)
 {
 	unsigned int len = strlen(text) + 1;
+	struct rect r = {0, 0, 0, 0};
 
 	if (len >= ta->text.alloc) {
 		char *temp = realloc(ta->text.data, len + TA_ALLOC_STEP);
@@ -1623,7 +1647,7 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 		 if (!textarea_reflow_multiline(ta, 0))
 		 	return false;
 	} else {
-		 if (!textarea_reflow_singleline(ta))
+		 if (!textarea_reflow_singleline(ta, 0, &r))
 		 	return false;
 	}
 
@@ -2437,21 +2461,18 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 	/* TODO: redraw only the bit that changed */
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
-	msg.data.redraw.x0 = ta->border_width;
-	msg.data.redraw.y0 = ta->border_width;
 
 	if (bar_x != (ta->bar_x != NULL) || bar_y != (ta->bar_y != NULL) ||
 			h_extent != ta->h_extent || v_extent != ta->v_extent) {
 		/* Must redraw since scrollbars have changed */
+		msg.data.redraw.x0 = ta->border_width;
+		msg.data.redraw.y0 = ta->border_width;
 		msg.data.redraw.x1 = ta->vis_width - ta->border_width;
 		msg.data.redraw.y1 = ta->vis_height - ta->border_width;
 		ta->callback(ta->data, &msg);
 
 	} else if (redraw) {
-		msg.data.redraw.x1 = ta->vis_width - ta->border_width -
-				((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
-		msg.data.redraw.y1 = ta->vis_height - ta->border_width -
-				((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
+		msg.data.redraw = r;
 		ta->callback(ta->data, &msg);
 	}
 
@@ -2756,6 +2777,8 @@ void textarea_get_dimensions(struct textarea *ta, int *width, int *height)
 /* exported interface, documented in textarea.h */
 void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
+	struct rect r = {0, 0, 0, 0};
+
 	ta->vis_width = width;
 	ta->vis_height = height;
 
@@ -2764,7 +2787,7 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		 textarea_reflow_multiline(ta, 0);
 	} else {
-		 textarea_reflow_singleline(ta);
+		 textarea_reflow_singleline(ta, 0, &r);
 	}
 }
 
@@ -2773,6 +2796,8 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 void textarea_set_layout(struct textarea *ta, int width, int height,
 		int top, int right, int bottom, int left)
 {
+	struct rect r = {0, 0, 0, 0};
+
 	ta->vis_width = width;
 	ta->vis_height = height;
 	ta->pad_top = top;
@@ -2785,7 +2810,7 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		 textarea_reflow_multiline(ta, 0);
 	} else {
-		 textarea_reflow_singleline(ta);
+		 textarea_reflow_singleline(ta, 0, &r);
 	}
 }
 
