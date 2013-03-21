@@ -745,13 +745,90 @@ static void textarea_scrollbar_callback(void *client_data,
 
 
 /**
+ * Reflow a single line textarea
+ *
+ * \param ta Text area to reflow
+ * \return true on success false otherwise
+ */
+static bool textarea_reflow_singleline(struct textarea *ta)
+{
+	int x;
+	int w = ta->vis_width - 2 * ta->border_width -
+			ta->pad_left - ta->pad_right;
+
+	assert(!(ta->flags & TEXTAREA_MULTILINE));
+
+	if (ta->lines == NULL) {
+		ta->lines =
+			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
+		if (ta->lines == NULL) {
+			LOG(("malloc failed"));
+			return false;
+		}
+		ta->lines_alloc_size = LINE_CHUNK_SIZE;
+	}
+
+	if (ta->flags & TEXTAREA_PASSWORD &&
+			ta->text.utf8_len != ta->password.utf8_len) {
+		/* Make password-obscured text have same number of
+		 * characters as underlying text */
+		unsigned int c, b;
+		int diff = ta->text.utf8_len - ta->password.utf8_len;
+		unsigned int rep_len = PASSWORD_REPLACEMENT_W;
+		unsigned int b_len = ta->text.utf8_len * rep_len + 1;
+
+		if (diff > 0 && b_len > ta->password.alloc) {
+			/* Increase password alloaction */
+			char *temp = realloc(ta->password.data,
+					b_len + TA_ALLOC_STEP);
+			if (temp == NULL) {
+				LOG(("realloc failed"));
+				return false;
+			}
+
+			ta->password.data = temp;
+			ta->password.alloc = b_len + TA_ALLOC_STEP;
+		}
+
+		b_len--;
+		for (c = 0; c < b_len; c += rep_len) {
+			for (b = 0; b < rep_len; b++) {
+				ta->password.data[c + b] =
+						PASSWORD_REPLACEMENT[b];
+			}
+		}
+		ta->password.data[b_len] = '\0';
+		ta->password.len = b_len + 1;
+		ta->password.utf8_len = ta->text.utf8_len;
+	}
+
+	ta->lines[0].b_start = 0;
+	ta->lines[0].b_length = ta->show->len - 1;
+
+	nsfont.font_width(&ta->fstyle, ta->show->data,
+			ta->show->len - 1, &x);
+
+	ta->lines[0].width = x;
+
+	if (x > w)
+		w = x;
+
+	ta->h_extent = w + ta->pad_left + ta->pad_right;
+	ta->line_count = 1;
+
+	return true;
+}
+
+
+
+/**
  * Reflow a text area from the given line onwards
  *
  * \param ta Text area to reflow
  * \param start Line number to begin reflow on
  * \return true on success false otherwise
  */
-static bool textarea_reflow(struct textarea *ta, unsigned int start)
+static bool textarea_reflow_multiline(struct textarea *ta, unsigned int start)
 {
 	char *text;
 	unsigned int len;
@@ -765,6 +842,8 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 	int v_extent; /* vertical extent */
 	bool restart = false;
 
+	assert(ta->flags & TEXTAREA_MULTILINE);
+
 	if (ta->lines == NULL) {
 		ta->lines =
 			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
@@ -773,62 +852,6 @@ static bool textarea_reflow(struct textarea *ta, unsigned int start)
 			return false;
 		}
 		ta->lines_alloc_size = LINE_CHUNK_SIZE;
-	}
-
-	if (!(ta->flags & TEXTAREA_MULTILINE)) {
-		/* Single line */
-		int w = ta->vis_width - 2 * ta->border_width -
-				ta->pad_left - ta->pad_right;
-
-		if (ta->flags & TEXTAREA_PASSWORD &&
-				ta->text.utf8_len != ta->password.utf8_len) {
-			/* Make password-obscured text have same number of
-			 * characters as underlying text */
-			unsigned int c, b;
-			int diff = ta->text.utf8_len - ta->password.utf8_len;
-			unsigned int rep_len = PASSWORD_REPLACEMENT_W;
-			unsigned int b_len = ta->text.utf8_len * rep_len + 1;
-
-			if (diff > 0 && b_len > ta->password.alloc) {
-				/* Increase password alloaction */
-				char *temp = realloc(ta->password.data,
-						b_len + TA_ALLOC_STEP);
-				if (temp == NULL) {
-					LOG(("realloc failed"));
-					return false;
-				}
-
-				ta->password.data = temp;
-				ta->password.alloc = b_len + TA_ALLOC_STEP;
-			}
-
-			b_len--;
-			for (c = 0; c < b_len; c += rep_len) {
-				for (b = 0; b < rep_len; b++) {
-					ta->password.data[c + b] =
-							PASSWORD_REPLACEMENT[b];
-				}
-			}
-			ta->password.data[b_len] = '\0';
-			ta->password.len = b_len + 1;
-			ta->password.utf8_len = ta->text.utf8_len;
-		}
-
-		ta->lines[0].b_start = 0;
-		ta->lines[0].b_length = ta->show->len - 1;
-
-		nsfont.font_width(&ta->fstyle, ta->show->data,
-				ta->show->len - 1, &x);
-
-		ta->lines[0].width = x;
-
-		if (x > w)
-			w = x;
-
-		ta->h_extent = w + ta->pad_left + ta->pad_right;
-		ta->line_count = 1;
-
-		return true;
 	}
 
 	/* Find max number of lines before vertical scrollbar is required */
@@ -1125,13 +1148,14 @@ static bool textarea_set_caret_xy(struct textarea *ta, int x, int y,
  * \param text		UTF-8 text to insert
  * \param b_off		0-based byte offset in ta->show's text to insert at
  * \param b_len		Byte length of UTF-8 text
- * \param byte_delta	Change in number of bytes in textarea (ta->show)
+ * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param r		Modified/reduced to area where redraw is required
  * \return false on memory exhaustion, true otherwise
  *
  * Note: b_off must be for ta->show
  */
 static bool textarea_insert_text(struct textarea *ta, const char *text,
-		size_t b_off, size_t b_len, int *byte_delta)
+		size_t b_off, size_t b_len, int *byte_delta, struct rect *r)
 {
 	int char_delta, line;
 
@@ -1173,10 +1197,12 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 	char_delta = ta->text.utf8_len;
 	*byte_delta = ta->text.len;
 
+	/* Update lengths, and normalise */
 	ta->text.len += b_len;
 	ta->text.utf8_len += utf8_bounded_length(text, b_len);
 	textarea_normalise_text(ta, b_off, b_len);
 
+	/* Get byte delta */
 	if (ta->flags & TEXTAREA_PASSWORD) {
 		char_delta = ta->text.utf8_len - char_delta;
 		*byte_delta = char_delta * PASSWORD_REPLACEMENT_W;
@@ -1184,11 +1210,19 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 		*byte_delta = ta->text.len - *byte_delta;
 	}
 
-	for (line = 0; line < ta->line_count - 1; line++)
-		if (ta->lines[line + 1].b_start > b_off)
-			break;
+	/* See to reflow */
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		for (line = 0; line < ta->line_count - 1; line++)
+			if (ta->lines[line + 1].b_start > b_off)
+				break;
+		 if (!textarea_reflow_multiline(ta, line))
+		 	return false;
+	} else {
+		 if (!textarea_reflow_singleline(ta))
+		 	return false;
+	}
 
-	return textarea_reflow(ta, line);
+	return true;
 }
 
 
@@ -1228,7 +1262,8 @@ static inline void textarea_char_to_byte_offset(struct textarea_utf8 *text,
  * \param rep		Replacement UTF-8 text to insert
  * \param rep_len	Byte length of replacement UTF-8 text
  * \param add_to_clipboard	True iff replaced text to be added to clipboard
- * \param byte_delta	Change in number of bytes in textarea (ta->show)
+ * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param r		Updated to area where redraw is required
  * \return false on memory exhaustion, true otherwise
  *
  * Note, b_start and b_end must be the byte offsets in ta->show, so in the
@@ -1236,7 +1271,7 @@ static inline void textarea_char_to_byte_offset(struct textarea_utf8 *text,
  */
 static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
-		bool add_to_clipboard, int *byte_delta)
+		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
 	int char_delta, line;
 	*byte_delta = 0;
@@ -1251,9 +1286,18 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 	if (b_end > ta->show->len - 1)
 		b_end = ta->show->len - 1;
 
+	/* Set up initial redraw rect */
+	r->x0 = ta->border_width;
+	r->y0 = ta->border_width;
+	r->x1 = ta->vis_width - ta->border_width -
+			((ta->bar_y == NULL) ? 0 : SCROLLBAR_WIDTH);
+	r->y1 = ta->vis_height - ta->border_width -
+			((ta->bar_x == NULL) ? 0 : SCROLLBAR_WIDTH);
+
+	/* Early exit if just inserting */
 	if (b_start == b_end && rep != NULL)
 		return textarea_insert_text(ta, rep, b_start, rep_len,
-				byte_delta);
+				byte_delta, r);
 
 	if (b_start > b_end)
 		return false;
@@ -1307,10 +1351,12 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 	char_delta = ta->text.utf8_len;
 	*byte_delta = ta->text.len;
 
+	/* Update lengths, and normalise */
 	ta->text.len += (int)rep_len - (b_end - b_start);
 	ta->text.utf8_len = utf8_length(ta->text.data);
 	textarea_normalise_text(ta, b_start, rep_len);
 
+	/* Get byte delta */
 	if (ta->flags & TEXTAREA_PASSWORD) {
 		char_delta = ta->text.utf8_len - char_delta;
 		*byte_delta = char_delta * PASSWORD_REPLACEMENT_W;
@@ -1318,11 +1364,19 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		*byte_delta = ta->text.len - *byte_delta;
 	}
 
-	for (line = 0; line < ta->line_count - 1; line++)
-		if (ta->lines[line + 1].b_start > b_start)
-			break;
+	/* See to reflow */
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		for (line = 0; line < ta->line_count - 1; line++)
+			if (ta->lines[line + 1].b_start > b_start)
+				break;
+		 if (!textarea_reflow_multiline(ta, line))
+		 	return false;
+	} else {
+		 if (!textarea_reflow_singleline(ta))
+		 	return false;
+	}
 
-	return textarea_reflow(ta, line);
+	return true;
 }
 
 
@@ -1517,7 +1571,11 @@ struct textarea *textarea_create(const textarea_flags flags,
 	ret->lines_alloc_size = 0;
 
 	textarea_setup_text_offsets(ret);
-	textarea_reflow(ret, 0);
+
+	if (flags & TEXTAREA_MULTILINE)
+		 textarea_reflow_multiline(ret, 0);
+	else
+		 textarea_reflow_singleline(ret);
 
 	return ret;
 }
@@ -1561,7 +1619,15 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 
 	textarea_normalise_text(ta, 0, len);
 
-	return textarea_reflow(ta, 0);
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		 if (!textarea_reflow_multiline(ta, 0))
+		 	return false;
+	} else {
+		 if (!textarea_reflow_singleline(ta))
+		 	return false;
+	}
+
+	return true;
 }
 
 
@@ -1570,6 +1636,7 @@ bool textarea_drop_text(struct textarea *ta, const char *text,
 		size_t text_length)
 {
 	struct textarea_msg msg;
+	struct rect r;	/**< Redraw rectangle */
 	unsigned int caret_pos;
 	int byte_delta;
 
@@ -1583,14 +1650,14 @@ bool textarea_drop_text(struct textarea *ta, const char *text,
 
 	if (ta->sel_start != -1) {
 		if (!textarea_replace_text(ta, ta->sel_start, ta->sel_end,
-				text, text_length, false, &byte_delta))
+				text, text_length, false, &byte_delta, &r))
 			return false;
 
 		caret_pos = ta->sel_end;
 		ta->sel_start = ta->sel_end = -1;
 	} else {
 		if (!textarea_replace_text(ta, caret_pos, caret_pos,
-				text, text_length, false, &byte_delta))
+				text, text_length, false, &byte_delta, &r))
 			return false;
 	}
 
@@ -1961,6 +2028,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 bool textarea_keypress(struct textarea *ta, uint32_t key)
 {
 	struct textarea_msg msg;
+	struct rect r;	/**< Redraw rectangle */
 	char utf8[6];
 	unsigned int caret, length, b_off, b_len;
 	int h_extent = ta->h_extent;
@@ -1988,14 +2056,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		if (ta->sel_start != -1) {
 			if (!textarea_replace_text(ta,
 					ta->sel_start, ta->sel_end, utf8,
-					length, false, &byte_delta))
+					length, false, &byte_delta, &r))
 				return false;
 
 			caret = ta->sel_end;
 			textarea_clear_selection(ta);
 		} else {
 			if (!textarea_replace_text(ta, caret, caret,
-					utf8, length, false, &byte_delta))
+					utf8, length, false, &byte_delta, &r))
 				return false;
 			redraw = true;
 		}
@@ -2009,7 +2077,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						NULL, 0, true, &byte_delta))
+						NULL, 0, true, &byte_delta, &r))
 					return false;
 			}
 			break;
@@ -2019,7 +2087,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 
 				caret = ta->sel_end;
@@ -2027,7 +2095,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			} else if (caret > 0) {
 				b_off = utf8_prev(ta->show->data, caret);
 				if (!textarea_replace_text(ta, b_off, caret,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				redraw = true;
 			}
@@ -2039,7 +2107,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 
 				caret = ta->sel_end;
@@ -2048,7 +2116,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				b_off = utf8_next(ta->show->data,
 						ta->show->len - 1, caret);
 				if (!textarea_replace_text(ta, caret, b_off,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				caret = b_off;
 				redraw = true;
@@ -2063,14 +2131,16 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"\n", 1, false, &byte_delta))
+						"\n", 1, false,
+						&byte_delta, &r))
 					return false;
 
 				caret = ta->sel_end;
 				textarea_clear_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta, caret, caret,
-						"\n", 1, false, &byte_delta))
+						"\n", 1, false,
+						&byte_delta, &r))
 					return false;
 				redraw = true;
 			}
@@ -2092,7 +2162,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
 						clipboard, clipboard_length,
-						false, &byte_delta))
+						false, &byte_delta, &r))
 					return false;
 
 				caret = ta->sel_end;
@@ -2101,7 +2171,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				if (!textarea_replace_text(ta,
 						caret, caret,
 						clipboard, clipboard_length,
-						false, &byte_delta))
+						false, &byte_delta, &r))
 					return false;
 				redraw = true;
 			}
@@ -2116,7 +2186,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, true, &byte_delta))
+						"", 0, true, &byte_delta, &r))
 					return false;
 
 				caret = ta->sel_end;
@@ -2291,7 +2361,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				caret = ta->sel_end;
 				textarea_clear_selection(ta);
@@ -2302,14 +2372,14 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					b_len = ta->lines[line].b_length;
 					if (!textarea_replace_text(ta, caret,
 							caret + b_len, "", 0,
-							false, &byte_delta))
+							false, &byte_delta, &r))
 						return false;
 					caret = caret + b_len;
 				} else if (caret < ta->show->len - 1) {
 					/* Delete blank line */
 					if (!textarea_replace_text(ta,
 							caret, caret + 1, "", 0,
-							false, &byte_delta))
+							false, &byte_delta, &r))
 						return false;
 					caret++;
 				}
@@ -2323,7 +2393,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				caret = ta->sel_end;
 				textarea_clear_selection(ta);
@@ -2331,7 +2401,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				b_len = ta->lines[line].b_length;
 				b_off = ta->lines[line].b_start + b_len;
 				if (!textarea_replace_text(ta, caret, b_off,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				caret = b_off;
 				redraw = true;
@@ -2344,7 +2414,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
-						"", 0, false, &byte_delta))
+						"", 0, false, &byte_delta, &r))
 					return false;
 				caret = ta->sel_end;
 				textarea_clear_selection(ta);
@@ -2352,7 +2422,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.byte_off,
 						caret, "", 0, false,
-						&byte_delta))
+						&byte_delta, &r))
 					return false;
 				redraw = true;
 			}
@@ -2690,7 +2760,12 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 	ta->vis_height = height;
 
 	textarea_setup_text_offsets(ta);
-	textarea_reflow(ta, 0);
+
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		 textarea_reflow_multiline(ta, 0);
+	} else {
+		 textarea_reflow_singleline(ta);
+	}
 }
 
 
@@ -2706,7 +2781,12 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	ta->pad_left = left;
 
 	textarea_setup_text_offsets(ta);
-	textarea_reflow(ta, 0);
+
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		 textarea_reflow_multiline(ta, 0);
+	} else {
+		 textarea_reflow_singleline(ta);
+	}
 }
 
 
