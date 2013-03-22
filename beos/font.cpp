@@ -141,11 +141,12 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	font.GetEscapements(string, len, escapements);
 	// slow but it should work
 	for (i = 0; string[index] && i < len; i++) {
-		if (x < current)
-			break;
 		esc += escapements[i];
 		current = font.Size() * esc;
 		index += utf8_char_len(&string[index]);
+		// is current char already too far away?
+		if (x < current)
+			break;
 	}
 	*actual_x = (int)current;
 	*char_offset = i; //index;

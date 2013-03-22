@@ -142,6 +142,7 @@ struct replicant_thread_info {
 static int open_windows = 0;		/**< current number of open browsers */
 static NSBaseView *replicant_view = NULL; /**< if not NULL, the replicant View we are running NetSurf for */
 static sem_id replicant_done_sem = -1;
+static thread_id replicant_thread = -1;
 
 static void nsbeos_window_update_back_forward(struct beos_scaffolding *);
 static void nsbeos_throb(void *);
@@ -224,9 +225,14 @@ NSBaseView::NSBaseView(BMessage *archive)
 NSBaseView::~NSBaseView()
 {
 	//warn_user ("~NSBaseView()", NULL);
-	BMessage *message = new BMessage(B_QUIT_REQUESTED);
-	nsbeos_pipe_message_top(message, NULL, fScaffolding);
-	while (acquire_sem(replicant_done_sem) == EINTR);
+	if (replicated) {
+		BMessage *message = new BMessage(B_QUIT_REQUESTED);
+		nsbeos_pipe_message_top(message, NULL, fScaffolding);
+		while (acquire_sem(replicant_done_sem) == EINTR);
+		//debugger("plop");
+		status_t status = -1;
+		wait_for_thread(replicant_thread, &status);
+	}
 }
 
 
@@ -397,15 +403,15 @@ NSBaseView::Instantiate(BMessage *archive)
 	gui_init_replicant(2, info->args);
 
 	replicant_done_sem = create_sem(0, "NS Replicant created");
-	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
+	replicant_thread = spawn_thread(nsbeos_replicant_main_thread,
 		"NetSurf Main Thread", B_NORMAL_PRIORITY, info);
-	if (nsMainThread < B_OK) {
+	if (replicant_thread < B_OK) {
 		delete_sem(replicant_done_sem);
 		delete info;
 		delete view;
 		return NULL;
 	}
-	resume_thread(nsMainThread);
+	resume_thread(replicant_thread);
 	//XXX: deadlocks BeHappy
 	//while (acquire_sem(replicant_done_sem) == EINTR);
 
