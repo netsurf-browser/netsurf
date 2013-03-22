@@ -842,16 +842,17 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
 
 
 /**
- * Reflow a text area from the given line onwards
+ * Reflow a multiline textarea from the given line onwards
  *
- * \param ta Text area to reflow
- * \param start Line number to begin reflow on
+ * \param ta		Textarea to reflow
+ * \param b_start	0-based byte offset in ta->text to start of modification
  * \return true on success false otherwise
  */
-static bool textarea_reflow_multiline(struct textarea *ta, unsigned int start)
+static bool textarea_reflow_multiline(struct textarea *ta, size_t b_start)
 {
 	char *text;
 	unsigned int len;
+	unsigned int start;
 	size_t b_off;
 	int x;
 	char *space, *para_end;
@@ -874,13 +875,15 @@ static bool textarea_reflow_multiline(struct textarea *ta, unsigned int start)
 		ta->lines_alloc_size = LINE_CHUNK_SIZE;
 	}
 
+	/* Get line of start of changes */
+	for (start = 0; (signed) start < ta->line_count - 1; start++)
+		if (ta->lines[start + 1].b_start > b_start)
+			break;
+
 	/* Find max number of lines before vertical scrollbar is required */
 	scroll_lines = (ta->vis_height - 2 * ta->border_width -
 				ta->pad_top - ta->pad_bottom) /
 				ta->line_height;
-
-	if ((signed)start > ta->line_count)
-		start = 0;
 
 	/* Have to start on line before where the changes are in case an
 	 * added space makes the text before the space on a soft-wrapped line
@@ -1177,7 +1180,7 @@ static bool textarea_set_caret_xy(struct textarea *ta, int x, int y,
 static bool textarea_insert_text(struct textarea *ta, const char *text,
 		size_t b_off, size_t b_len, int *byte_delta, struct rect *r)
 {
-	int char_delta, line;
+	int char_delta;
 	const size_t show_b_off = b_off;
 
 	if (ta->flags & TEXTAREA_READONLY)
@@ -1233,10 +1236,7 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		for (line = 0; line < ta->line_count - 1; line++)
-			if (ta->lines[line + 1].b_start > b_off)
-				break;
-		 if (!textarea_reflow_multiline(ta, line))
+		 if (!textarea_reflow_multiline(ta, show_b_off))
 		 	return false;
 	} else {
 		 if (!textarea_reflow_singleline(ta, show_b_off, r))
@@ -1294,7 +1294,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
 		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
-	int char_delta, line;
+	int char_delta;
 	const size_t show_b_off = b_start;
 	*byte_delta = 0;
 
@@ -1388,10 +1388,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		for (line = 0; line < ta->line_count - 1; line++)
-			if (ta->lines[line + 1].b_start > b_start)
-				break;
-		 if (!textarea_reflow_multiline(ta, line))
+		 if (!textarea_reflow_multiline(ta, b_start))
 		 	return false;
 	} else {
 		 if (!textarea_reflow_singleline(ta, show_b_off, r))
