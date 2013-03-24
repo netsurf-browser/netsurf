@@ -206,76 +206,56 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint32 tx=0,i=0;
 	size_t len, utf8len = 0;
 	uint8 *utf8;
+	int utf8_pos = 0;
 	uint32 co = 0;
 	int utf16charlen;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
-	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
-
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
 	*char_offset = length;
+	*actual_x = 0;
 
-	for(i=0;i<len;i++)
-	{
+	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
 			utf16charlen = 1;
 		else
 			utf16charlen = 2;
 
-		utf8len = utf8_char_byte_length(string);
-
 		utf16next = &utf16[utf16charlen];
 
 		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 
-		if(tempx == 0)
-		{
-			if(ufont == NULL)
-			{
+		if (tempx == 0) {
+			if (ufont == NULL)
 				ufont = ami_open_outline_font(fstyle, *utf16);
-			}
 
-			if(ufont)
-			{
-				tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
-			}
-/*
-			if(tempx == 0)
-			{
-				tempx = ami_font_width_glyph(ofont, NULL, 0xfffd, utf16next, emwidth);
-			}
-*/
-		}
-
-		if(x < (tx + tempx))
-		{
-			*actual_x = tx;
-			i = len+1;
-		}
-		else
-		{
-			co += utf8len;
+			if (ufont)
+				tempx = ami_font_width_glyph(ufont, utf16,
+						utf16next, emwidth);
 		}
 
 		tx += tempx;
-		string += utf8len;
+
+		if(tx < x) {
+			*actual_x = tx;
+		} else {
+			*char_offset = utf8_pos;
+			free(outf16);
+			return true;
+		}
+
 		utf16 += utf16charlen;
+		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
-	if(co >= (length))
-	{
-		*actual_x = tx;
-		co = length;
-	}
-
-	*char_offset = co;
+	*actual_x = tx;
+	*char_offset = length;
 
 	free(outf16);
-
 	return true;
 }
 
