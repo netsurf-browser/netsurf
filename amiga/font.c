@@ -72,6 +72,74 @@ struct ami_font_node
 	struct TimeVal lastused;
 };
 
+const uint16 sc_table[] = {
+		0x0061, 0x1D00, /* a */
+		0x0062, 0x0299, /* b */
+		0x0063, 0x1D04, /* c */
+		0x0064, 0x1D05, /* d */
+		0x0065, 0x1D07, /* e */
+		0x0066, 0xA730, /* f */
+		0x0067, 0x0262, /* g */
+		0x0068, 0x029C, /* h */
+		0x0069, 0x026A, /* i */
+		0x006A, 0x1D0A, /* j */
+		0x006B, 0x1D0B, /* k */
+		0x006C, 0x029F, /* l */
+		0x006D, 0x1D0D, /* m */
+		0x006E, 0x0274, /* n */
+		0x006F, 0x1D0F, /* o */
+		0x0070, 0x1D18, /* p */
+		0x0071, 0xA7EE, /* q (proposed) (Adobe codepoint 0xF771) */
+		0x0072, 0x0280, /* r */
+		0x0073, 0xA731, /* s */
+		0x0074, 0x1D1B, /* t */
+		0x0075, 0x1D1C, /* u */
+		0x0076, 0x1D20, /* v */
+		0x0077, 0x1D21, /* w */
+		0x0078, 0xA7EF, /* x (proposed) (Adobe codepoint 0xF778) */
+		0x0079, 0x028F, /* y */
+		0x007A, 0x1D22, /* z */
+
+		0x00C6, 0x1D01, /* ae */
+		0x0153, 0x0276, /* oe */
+
+#if 0
+/* TODO: fill in the non-small caps character ids for these */
+		0x0000, 0x1D03, /* barred b */
+		0x0000, 0x0281, /* inverted r */
+		0x0000, 0x1D19, /* reversed r */
+		0x0000, 0x1D1A, /* turned r */
+		0x0000, 0x029B, /* g with hook */
+		0x0000, 0x1D06, /* eth Ð */
+		0x0000, 0x1D0C, /* l with stroke */
+		0x0000, 0xA7FA, /* turned m */
+		0x0000, 0x1D0E, /* reversed n */
+		0x0000, 0x1D10, /* open o */
+		0x0000, 0x1D15, /* ou */
+		0x0000, 0x1D23, /* ezh */
+		0x0000, 0x1D26, /* gamma */
+		0x0000, 0x1D27, /* lamda */
+		0x0000, 0x1D28, /* pi */
+		0x0000, 0x1D29, /* rho */
+		0x0000, 0x1D2A, /* psi */
+		0x0000, 0x1D2B, /* el */
+		0x0000, 0xA776, /* rum */
+
+		0x0000, 0x1DDB, /* combining g */
+		0x0000, 0x1DDE, /* combining l */
+		0x0000, 0x1DDF, /* combining m */
+		0x0000, 0x1DE1, /* combining n */
+		0x0000, 0x1DE2, /* combining r */
+
+		0x0000, 0x1DA6, /* modifier i */
+		0x0000, 0x1DA7, /* modifier i with stroke */
+		0x0000, 0x1DAB, /* modifier l */
+		0x0000, 0x1DB0, /* modifier n */
+		0x0000, 0x1DB8, /* modifier u */
+#endif
+		0, 0};
+
+
 struct MinList *ami_font_list = NULL;
 struct List ami_diskfontlib_list;
 lwc_string *glypharray[0xffff + 1];
@@ -79,9 +147,9 @@ ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
+		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 char1, uint16 char2, uint32 emwidth);
+		uint16 *char1, uint16 *char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		uint16 codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
@@ -132,7 +200,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
-	uint16 utf16next = 0;
+	uint16 *utf16next = NULL;
 	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0,i=0;
@@ -160,9 +228,9 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 		utf8len = utf8_char_byte_length(string);
 
-		utf16next = utf16[utf16charlen];
+		utf16next = &utf16[utf16charlen];
 
-		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
+		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 
 		if(tempx == 0)
 		{
@@ -173,7 +241,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 			if(ufont)
 			{
-				tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
+				tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
 			}
 /*
 			if(tempx == 0)
@@ -241,7 +309,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 {
 	ULONG co;
 	uint16 *utf16 = NULL,*outf16 = NULL;
-	uint16 utf16next = 0;
+	uint16 *utf16next = NULL;
 	FIXED kern = 0;
 	int utf16charlen = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
@@ -263,16 +331,16 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		else
 			utf16charlen = 2;
 
-		utf16next = utf16[utf16charlen];
+		utf16next = &utf16[utf16charlen];
 
-		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
+		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 
 		if (tempx == 0) {
 			if (ufont == NULL)
 				ufont = ami_open_outline_font(fstyle, *utf16);
 
 			if (ufont)
-				tempx = ami_font_width_glyph(ufont, *utf16,
+				tempx = ami_font_width_glyph(ufont, utf16,
 						utf16next, emwidth);
 		}
 
@@ -517,7 +585,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 }
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
+		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
 	UBYTE *glyphbm;
@@ -532,8 +600,8 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	}
  
 	if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode, char1,
-			OT_GlyphCode2, char2,
+			OT_GlyphCode, *char1,
+			OT_GlyphCode2, *char2,
 			TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(&ofont->olf_EEngine,
@@ -577,7 +645,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 }
 
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 char1, uint16 char2, uint32 emwidth)
+		uint16 *char1, uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
 	FIXED kern = 0;
@@ -586,8 +654,8 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	struct GlyphWidthEntry *gwnode;
 
 	if(ESetInfo(&ofont->olf_EEngine,
-			OT_GlyphCode, char1,
-			OT_GlyphCode2, char1,
+			OT_GlyphCode, *char1,
+			OT_GlyphCode2, *char1,
 			TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(&ofont->olf_EEngine,
@@ -601,8 +669,8 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 			if(char2) {
 				if(ESetInfo(&ofont->olf_EEngine,
-						OT_GlyphCode, char1,
-						OT_GlyphCode2, char2,
+						OT_GlyphCode, *char1,
+						OT_GlyphCode2, *char2,
 						TAG_END) == OTERR_Success)
 				{
 					EObtainInfo(&ofont->olf_EEngine,
@@ -617,81 +685,14 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	return char_advance;
 }
 
-uint16 ami_font_translate_smallcaps(uint16 utf16char)
+const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 {
-	uint16 *p;
-	uint16 sc_table[] = {
-		0x0061, 0x1D00, /* a */
-		0x0062, 0x0299, /* b */
-		0x0063, 0x1D04, /* c */
-		0x0064, 0x1D05, /* d */
-		0x0065, 0x1D07, /* e */
-		0x0066, 0xA730, /* f */
-		0x0067, 0x0262, /* g */
-		0x0068, 0x029C, /* h */
-		0x0069, 0x026A, /* i */
-		0x006A, 0x1D0A, /* j */
-		0x006B, 0x1D0B, /* k */
-		0x006C, 0x029F, /* l */
-		0x006D, 0x1D0D, /* m */
-		0x006E, 0x0274, /* n */
-		0x006F, 0x1D0F, /* o */
-		0x0070, 0x1D18, /* p */
-		0x0071, 0xA7EE, /* q (proposed) (Adobe codepoint 0xF771) */
-		0x0072, 0x0280, /* r */
-		0x0073, 0xA731, /* s */
-		0x0074, 0x1D1B, /* t */
-		0x0075, 0x1D1C, /* u */
-		0x0076, 0x1D20, /* v */
-		0x0077, 0x1D21, /* w */
-		0x0078, 0xA7EF, /* x (proposed) (Adobe codepoint 0xF778) */
-		0x0079, 0x028F, /* y */
-		0x007A, 0x1D22, /* z */
-
-		0x00C6, 0x1D01, /* ae */
-		0x0153, 0x0276, /* oe */
-
-#if 0
-/* TODO: fill in the non-small caps character ids for these */
-		0x0000, 0x1D03, /* barred b */
-		0x0000, 0x0281, /* inverted r */
-		0x0000, 0x1D19, /* reversed r */
-		0x0000, 0x1D1A, /* turned r */
-		0x0000, 0x029B, /* g with hook */
-		0x0000, 0x1D06, /* eth Ð */
-		0x0000, 0x1D0C, /* l with stroke */
-		0x0000, 0xA7FA, /* turned m */
-		0x0000, 0x1D0E, /* reversed n */
-		0x0000, 0x1D10, /* open o */
-		0x0000, 0x1D15, /* ou */
-		0x0000, 0x1D23, /* ezh */
-		0x0000, 0x1D26, /* gamma */
-		0x0000, 0x1D27, /* lamda */
-		0x0000, 0x1D28, /* pi */
-		0x0000, 0x1D29, /* rho */
-		0x0000, 0x1D2A, /* psi */
-		0x0000, 0x1D2B, /* el */
-		0x0000, 0xA776, /* rum */
-
-		0x0000, 0x1DDB, /* combining g */
-		0x0000, 0x1DDE, /* combining l */
-		0x0000, 0x1DDF, /* combining m */
-		0x0000, 0x1DE1, /* combining n */
-		0x0000, 0x1DE2, /* combining r */
-
-		0x0000, 0x1DA6, /* modifier i */
-		0x0000, 0x1DA7, /* modifier i with stroke */
-		0x0000, 0x1DAB, /* modifier l */
-		0x0000, 0x1DB0, /* modifier n */
-		0x0000, 0x1DB8, /* modifier u */
-#endif
-		0, 0};
-
+	const uint16 *p;
 	p = &sc_table[0];
 
 	while (*p != 0)
 	{
-		if(*p == utf16char) return p[1];
+		if(*p == *utf16char) return &p[1];
 		p++;
 	}
 
@@ -702,8 +703,8 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
-	uint16 utf16charsc = 0, utf16nextsc = 0;
-	uint16 utf16next = 0;
+	uint16 *utf16charsc = 0, *utf16nextsc = 0;
+	uint16 *utf16next = 0;
 	int utf16charlen;
 	struct OutlineFont *ofont, *ufont = NULL;
 	ULONG i,gx,gy;
@@ -727,12 +728,12 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 		else
 			utf16charlen = 2;
 
-		utf16next = utf16[utf16charlen];
+		utf16next = &utf16[utf16charlen];
 
 		if(fstyle->flags & FONTF_SMALLCAPS)
 		{
-			utf16charsc = ami_font_translate_smallcaps(*utf16);
-			utf16nextsc = ami_font_translate_smallcaps(utf16next);
+			utf16charsc = (uint16 *)ami_font_translate_smallcaps(utf16);
+			utf16nextsc = (uint16 *)ami_font_translate_smallcaps(utf16next);
 
 			if(rp) {
 				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
@@ -745,10 +746,10 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 
 		if(tempx == 0) {
 			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next,
+				tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
 								dx + x, dy, emwidth, aa);
 			} else {
-				tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
+				tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 			}
 		}
 
@@ -762,10 +763,10 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 			if(ufont)
 			{
 				if(rp) {
-					tempx = ami_font_plot_glyph(ufont, rp, *utf16, utf16next,
+					tempx = ami_font_plot_glyph(ufont, rp, utf16, utf16next,
 												dx + x, dy, emwidth, aa);
 				} else {
-					tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
+					tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
 				}
 			}
 /*
