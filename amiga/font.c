@@ -216,7 +216,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
-	*char_offset = length;
+	*char_offset = 0;
 	*actual_x = 0;
 
 	while (utf8_pos < length) {
@@ -239,17 +239,20 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		}
 
 		tx += tempx;
+		utf16 += utf16charlen;
+		utf8_pos = utf8_next(string, length, utf8_pos);
 
 		if(tx < x) {
 			*actual_x = tx;
-		} else {
 			*char_offset = utf8_pos;
+		} else {
+			if((x - *actual_x) > (tx - x)) {
+				*actual_x = tx;
+				*char_offset = utf8_pos;
+			}
 			free(outf16);
 			return true;
 		}
-
-		utf16 += utf16charlen;
-		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
 	*actual_x = tx;
