@@ -1249,11 +1249,11 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		 if (!textarea_reflow_multiline(ta, show_b_off))
-		 	return false;
+		if (!textarea_reflow_multiline(ta, show_b_off))
+			return false;
 	} else {
-		 if (!textarea_reflow_singleline(ta, show_b_off, r))
-		 	return false;
+		if (!textarea_reflow_singleline(ta, show_b_off, r))
+			return false;
 	}
 
 	return true;
@@ -1401,11 +1401,11 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		 if (!textarea_reflow_multiline(ta, b_start))
-		 	return false;
+		if (!textarea_reflow_multiline(ta, b_start))
+			return false;
 	} else {
-		 if (!textarea_reflow_singleline(ta, show_b_off, r))
-		 	return false;
+		if (!textarea_reflow_singleline(ta, show_b_off, r))
+			return false;
 	}
 
 	return true;
