@@ -861,8 +861,8 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
  * \param b_start	0-based byte offset in ta->text to start of modification
  * \return true on success false otherwise
  */
-static bool textarea_reflow_multiline(struct textarea *ta, const size_t b_start,
-		struct rect *r)
+static bool textarea_reflow_multiline(struct textarea *ta,
+		const size_t b_start, const int b_length, struct rect *r)
 {
 	char *text;
 	unsigned int len;
@@ -876,6 +876,7 @@ static bool textarea_reflow_multiline(struct textarea *ta, const size_t b_start,
 	int h_extent; /* horizontal extent */
 	int v_extent; /* vertical extent */
 	bool restart = false;
+	bool skip_line = false;
 
 	assert(ta->flags & TEXTAREA_MULTILINE);
 
@@ -1101,11 +1102,27 @@ static bool textarea_reflow_multiline(struct textarea *ta, const size_t b_start,
 
 	/* Don't need to redraw above changes, so update redraw request rect*/
 	if (ta->lines[start].b_start + ta->lines[start].b_length < b_start &&
-			restart == false)
+			restart == false) {
 		/* Start line is unchanged */
 		start++;
+		skip_line = true;
+	}
+
 	r->y0 = max(r->y0, (signed)(ta->line_height * start +
 			ta->text_y_offset - ta->scroll_y));
+
+	/* Reduce redraw region to single line if possible */
+	if ((skip_line || start == 0) &&
+			ta->lines[start].b_start + ta->lines[start].b_length >=
+			b_start + b_length) {
+		text = ta->text.data + ta->lines[start].b_start +
+				ta->lines[start].b_length;
+		if (*text == '\0' || *text == '\n') {
+			r->y1 = min(r->y1, (signed)
+					(ta->line_height * (start + 1) +
+					ta->text_y_offset - ta->scroll_y));
+		}
+	}
 
 	return true;
 }
@@ -1258,7 +1275,7 @@ static bool textarea_insert_text(struct textarea *ta, const char *text,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		if (!textarea_reflow_multiline(ta, show_b_off, r))
+		if (!textarea_reflow_multiline(ta, show_b_off, b_len, r))
 			return false;
 	} else {
 		if (!textarea_reflow_singleline(ta, show_b_off, r))
@@ -1410,7 +1427,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 
 	/* See to reflow */
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		if (!textarea_reflow_multiline(ta, b_start, r))
+		if (!textarea_reflow_multiline(ta, b_start, *byte_delta, r))
 			return false;
 	} else {
 		if (!textarea_reflow_singleline(ta, show_b_off, r))
@@ -1615,7 +1632,7 @@ struct textarea *textarea_create(const textarea_flags flags,
 	textarea_setup_text_offsets(ret);
 
 	if (flags & TEXTAREA_MULTILINE)
-		 textarea_reflow_multiline(ret, 0, &r);
+		 textarea_reflow_multiline(ret, 0, 0, &r);
 	else
 		 textarea_reflow_singleline(ret, 0, &r);
 
@@ -1663,7 +1680,7 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 	textarea_normalise_text(ta, 0, len);
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		 if (!textarea_reflow_multiline(ta, 0, &r))
+		 if (!textarea_reflow_multiline(ta, 0, len - 1, &r))
 		 	return false;
 	} else {
 		 if (!textarea_reflow_singleline(ta, 0, &r))
@@ -2819,7 +2836,7 @@ void textarea_set_dimensions(struct textarea *ta, int width, int height)
 	textarea_setup_text_offsets(ta);
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		 textarea_reflow_multiline(ta, 0, &r);
+		 textarea_reflow_multiline(ta, 0, ta->show->len -1, &r);
 	} else {
 		 textarea_reflow_singleline(ta, 0, &r);
 	}
@@ -2842,7 +2859,7 @@ void textarea_set_layout(struct textarea *ta, int width, int height,
 	textarea_setup_text_offsets(ta);
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
-		 textarea_reflow_multiline(ta, 0, &r);
+		 textarea_reflow_multiline(ta, 0, ta->show->len -1, &r);
 	} else {
 		 textarea_reflow_singleline(ta, 0, &r);
 	}
