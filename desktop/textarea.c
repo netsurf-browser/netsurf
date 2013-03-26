@@ -824,9 +824,11 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
 		ta->password.utf8_len = ta->text.utf8_len;
 	}
 
+	/* Measure new width */
 	nsfont.font_width(&ta->fstyle, ta->show->data,
 			ta->show->len - 1, &x);
 
+	/* Get width of retained text */
 	if (b_off != ta->lines[0].b_length) {
 		nsfont.font_width(&ta->fstyle, ta->show->data,
 				b_off, &retained_width);
@@ -859,6 +861,7 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
  *
  * \param ta		Textarea to reflow
  * \param b_start	0-based byte offset in ta->text to start of modification
+ * \param b_length	Byte length of change in textarea text
  * \return true on success false otherwise
  */
 static bool textarea_reflow_multiline(struct textarea *ta,
@@ -1115,12 +1118,31 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	if ((skip_line || start == 0) &&
 			ta->lines[start].b_start + ta->lines[start].b_length >=
 			b_start + b_length) {
-		text = ta->text.data + ta->lines[start].b_start +
+		size_t b_line_end = ta->lines[start].b_start +
 				ta->lines[start].b_length;
+		text = ta->text.data + b_line_end;
 		if (*text == '\0' || *text == '\n') {
 			r->y1 = min(r->y1, (signed)
 					(ta->line_height * (start + 1) +
 					ta->text_y_offset - ta->scroll_y));
+			if (b_start > ta->lines[start].b_start &&
+					b_start <= b_line_end) {
+				/* Remove unchanged text at start of line
+				 * from redraw region */
+				int retained_width = 0;
+				size_t retain_end = b_start -
+						ta->lines[start].b_start;
+				text = ta->text.data + ta->lines[start].b_start;
+
+				nsfont.font_width(&ta->fstyle, text,
+						retain_end, &retained_width);
+
+				r->x0 = max(r->x0,
+						retained_width +
+						ta->border_width +
+						ta->pad_left -
+						ta->scroll_x - 1);
+			}
 		}
 	}
 
