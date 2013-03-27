@@ -691,7 +691,8 @@ static void textarea_scrollbar_callback(void *client_data,
 		ta->callback(ta->data, &msg);
 
 		if (!(ta->flags & TEXTAREA_INTERNAL_CARET) &&
-				ta->sel_start == -1) {
+				ta->sel_start < 0 &&
+				ta->caret_pos.byte_off >= 0) {
 			/* Tell client where caret should be placed */
 			int x = ta->caret_x - ta->scroll_x;
 			int y = ta->caret_y - ta->scroll_y;
