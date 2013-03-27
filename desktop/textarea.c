@@ -2627,6 +2627,13 @@ textarea_mouse_status textarea_mouse_action(struct textarea *ta,
 		return status;
 	}
 
+	/* Might be outside textarea, and not dragging */
+	if ((x >= ta->vis_width || y >= ta->vis_height) &&
+			ta->drag_info.type == TEXTAREA_DRAG_NONE &&
+			ta->flags & TEXTAREA_MULTILINE) {
+		return status;
+	}
+
 	status |= TEXTAREA_MOUSE_EDITOR;
 
 	/* Mouse action is textarea's responsibility */
