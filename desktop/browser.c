@@ -1375,7 +1375,8 @@ nserror browser_window_callback(hlcache_handle *c,
 				browser_window_recalculate_iframes(bw);
 		}
 
-		/* TODO: get caret pos redraw */
+		/* Hide any caret, but don't remove it */
+		browser_window_remove_caret(bw, true);
 
 		if (!(event->data.background)) {
 			/* Reformatted content should be redrawn */
