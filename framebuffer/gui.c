@@ -729,7 +729,9 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		/* Determine if it's a double or triple click, allowing
 		 * 0.5 seconds (50cs) between clicks */
-		if (time_now < last_click.time + 50) {
+		if (time_now < last_click.time + 50 &&
+				cbi->event->value.keycode != NSFB_KEY_MOUSE_4 &&
+				cbi->event->value.keycode != NSFB_KEY_MOUSE_5) {
 			if (last_click.type == CLICK_SINGLE) {
 				/* Set double click */
 				mouse |= BROWSER_MOUSE_DOUBLE_CLICK;
