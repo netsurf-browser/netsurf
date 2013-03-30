@@ -673,7 +673,6 @@ GUIWIN *gemtk_wm_find(short handle)
     return(NULL);
 }
 
-
 /**
 * Check's if the pointer is managed by the guiwin API.
 */
@@ -690,6 +689,9 @@ GUIWIN *gemtk_wm_validate_ptr(GUIWIN *win)
     return(NULL);
 }
 
+/**
+* Add the GUIWIN to the list of handled windows.
+*/
 GUIWIN *gemtk_wm_link(GUIWIN *win)
 {
 	/* Make sure the window is not linked: */
@@ -714,6 +716,9 @@ GUIWIN *gemtk_wm_link(GUIWIN *win)
     }
 }
 
+/**
+* Remove the GUIWIN from the list of handled windows.
+*/
 GUIWIN *gemtk_wm_unlink(GUIWIN *win)
 {
 	GUIWIN * win_val;
