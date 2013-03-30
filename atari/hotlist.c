@@ -157,7 +157,6 @@ void hotlist_init(void)
 
 void hotlist_open(void)
 {
-	hotlist_init();
 	if( hl.init == false ) {
 		return;
 	}
@@ -220,8 +219,9 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	NSTREEVIEW tv = hl.tv;
 	if(hl.tv == NULL )
 		return;
-	// TODO: do no open hotlist, and remove guiwin on close...
+
 	hotlist_open();
+
 	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
 		hotlist_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
 	} else {
