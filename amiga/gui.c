@@ -190,7 +190,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
-static void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
+static void ami_do_redraw(struct gui_window_2 *g);
 
 STRPTR ami_locale_langs(void)
 {
@@ -2119,11 +2119,10 @@ void ami_handle_msg(void)
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			/* Catch any reformats tagged by the core - not sure this is required
+			/* Catch any reformats tagged by the core - only used by scale? */
 			if(gwin->bw->reformat_pending) {
 				ami_do_redraw(gwin);
 			}
-			*/
 			
 			if(gwin->bw->window->throbbing)
 				ami_update_throbber(gwin,false);
@@ -3887,13 +3886,13 @@ static void ami_redraw_callback(struct gui_window_2 *gwin)
 	}
 }
 
-static void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
+void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
 	schedule(0, ami_redraw_callback, gwin);
 	if(full_redraw) gwin->redraw_required = true;
 }
 
-void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
+static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int left, int top, int width, int height,
 	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
 {
@@ -3985,7 +3984,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
  */
 
-void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
+static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
 		int x0, int y0, int x1, int y1)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
@@ -4116,7 +4115,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	ami_schedule_redraw(g->shared, false);
 }
 
-void ami_do_redraw(struct gui_window_2 *gwin)
+static void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	struct Region *reg = NULL;
 	struct Rectangle rect;

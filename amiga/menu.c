@@ -1005,7 +1005,7 @@ static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct 
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	gwin->redraw_required = true;
+	ami_schedule_redraw(gwin, true);
 	gwin->new_content = true;
 }
 
