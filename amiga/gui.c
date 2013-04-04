@@ -190,6 +190,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
+static void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
 
 STRPTR ami_locale_langs(void)
 {
@@ -2047,7 +2048,7 @@ void ami_handle_msg(void)
 							}
 
 							gwin->bw->reformat_pending = true;
-							gwin->redraw_required = true;
+							ami_schedule_redraw(gwin, true);
 						break;
 					}
 				break;
@@ -2118,20 +2119,14 @@ void ami_handle_msg(void)
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			if(gwin->redraw_required || gwin->bw->reformat_pending) {
+			/* Catch any reformats tagged by the core - not sure this is required
+			if(gwin->bw->reformat_pending) {
 				ami_do_redraw(gwin);
 			}
-
-			ami_gui_window_update_box_deferred(gwin->bw->window, true);
+			*/
 			
 			if(gwin->bw->window->throbbing)
 				ami_update_throbber(gwin,false);
-
-			if(gwin->bw->window->c_h)
-			{
-				gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
-					gwin->bw->window->c_y, gwin->bw->window->c_h, NULL);
-			}
 		}
 	} while(node = nnode);
 
@@ -2301,9 +2296,6 @@ void ami_handle_appmsg(void)
 			}
 		}
 		ReplyMsg((struct Message *)appmsg);
-
-		if(gwin->redraw_required)
-			ami_do_redraw(gwin);
 	}
 }
 
@@ -2873,8 +2865,8 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				gwin->win, NULL, TRUE);
 		
 		if(gwin->bw) {
-			gwin->redraw_required = true;
 			gwin->bw->reformat_pending = true;
+			ami_schedule_redraw(gwin, true);
 		}
 	}
 }
@@ -2915,8 +2907,8 @@ void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	gwin->redraw_required = true;
 	gwin->bw->reformat_pending = true;
+	ami_schedule_redraw(gwin, true);
 }
 
 void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
@@ -3019,8 +3011,8 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 			gwin->win, NULL, TRUE);
 
 	if(gwin->bw) {
-		gwin->redraw_required = true;
 		gwin->bw->reformat_pending = true;
+		ami_schedule_redraw(gwin, true);
 	}
 }
 
@@ -3880,6 +3872,27 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
+static void ami_redraw_callback(struct gui_window_2 *gwin)
+{
+	if(gwin->redraw_required || gwin->bw->reformat_pending) {
+		ami_do_redraw(gwin);
+	}
+
+	ami_gui_window_update_box_deferred(gwin->bw->window, true);
+
+	if(gwin->bw->window->c_h)
+	{
+		gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
+		gwin->bw->window->c_y, gwin->bw->window->c_h, NULL);
+	}
+}
+
+static void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
+{
+	schedule(0, ami_redraw_callback, gwin);
+	if(full_redraw) gwin->redraw_required = true;
+}
+
 void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 	int left, int top, int width, int height,
 	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
@@ -4018,7 +4031,7 @@ void gui_window_redraw_window(struct gui_window *g)
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-		g->shared->redraw_required = true;
+		ami_schedule_redraw(g->shared, true);
 }
 
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
@@ -4100,6 +4113,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	} else {
 		LOG(("Ignoring duplicate or subset of queued box redraw"));
 	}
+	ami_schedule_redraw(g->shared, false);
 }
 
 void ami_do_redraw(struct gui_window_2 *gwin)
@@ -4355,7 +4369,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 				SCROLLER_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
 		}
-		g->shared->redraw_required = true;
+		ami_schedule_redraw(g->shared, true);
 
 		if(nsoption_bool(faster_scroll) == true) g->shared->redraw_scroll = true;
 			else g->shared->redraw_scroll = false;
@@ -4773,7 +4787,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
-					gwin->redraw_required = true;
+					ami_schedule_redraw(gwin, true);
  				break;
 				
 				case GID_HOTLIST:
