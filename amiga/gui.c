@@ -2121,7 +2121,7 @@ void ami_handle_msg(void)
 		{
 			/* Catch any reformats tagged by the core - only used by scale? */
 			if(gwin->bw->reformat_pending) {
-				ami_do_redraw(gwin);
+				ami_schedule_redraw(gwin, true);
 			}
 			
 			if(gwin->bw->window->throbbing)
