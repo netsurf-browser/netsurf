@@ -19,7 +19,7 @@
 #ifndef AMIGA_SCHEDULE_H
 #define AMIGA_SCHEDULE_H
 #include <proto/timer.h>
-
+#include "utils/schedule.h"
 #include "amiga/os3support.h"
 
 struct Device *TimerBase;

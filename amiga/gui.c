@@ -3871,8 +3871,10 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
-static void ami_redraw_callback(struct gui_window_2 *gwin)
+static void ami_redraw_callback(void *p)
 {
+	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
+
 	if(gwin->redraw_required || gwin->bw->reformat_pending) {
 		ami_do_redraw(gwin);
 	}
@@ -3886,6 +3888,13 @@ static void ami_redraw_callback(struct gui_window_2 *gwin)
 	}
 }
 
+/**
+ * Schedule a redraw of the browser window - Amiga-specific function
+ *
+ * \param  gwin         a struct gui_window_2
+ * \param  full_redraw  set to true to schedule a full redraw,
+                        should only be set to false when called from gui_window_update_box()
+ */
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
 	schedule(0, ami_redraw_callback, gwin);
