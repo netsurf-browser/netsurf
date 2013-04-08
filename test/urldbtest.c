@@ -144,7 +144,7 @@ char *test_urldb_get_cookie(const char *url)
 	nsurl *nsurl = make_url(url);
 	char *ret;
 
-	ret = urldb_get_cookie(nsurl);
+	ret = urldb_get_cookie(nsurl, true);
 	nsurl_unref(nsurl);
 
 	return ret;
@@ -263,7 +263,7 @@ int main(void)
 	nsurl_unref(urlr);
 
 	url = make_url("https://www.foo.com/blah/wxyzabc");
-	urldb_get_cookie(url);
+	urldb_get_cookie(url, true);
 	nsurl_unref(url);
 
 	/* 1563546 */
