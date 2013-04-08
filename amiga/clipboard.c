@@ -85,8 +85,9 @@ void ami_clipboard_init(void)
 
 void ami_clipboard_free_internal(struct IFFHandle *iffhandle)
 {
+	if(iffhandle == NULL) return;
 	if(iffhandle->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffhandle->iff_Stream);
-	if(iffhandle) FreeIFF(iffhandle);
+	FreeIFF(iffhandle);
 }
 
 void ami_clipboard_free(void)
