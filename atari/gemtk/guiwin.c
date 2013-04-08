@@ -605,7 +605,7 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
             }
 
             if (handler_called==false) {
-                dest->handler_func(dest, ev_out, msg);
+                retval = dest->handler_func(dest, ev_out, msg);
             }
         }
     }

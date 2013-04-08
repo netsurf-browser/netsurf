@@ -174,6 +174,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         uint16_t nkc = gem_to_norm( (short)ev_out->emo_kmeta,
                                     (short)ev_out->emo_kreturn);
         retval = on_window_key_input(data->rootwin, nkc);
+        // printf("on_window_key_input: %d\n", retval);
 
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
@@ -745,7 +746,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
         objc_draw(tree, 0, 8, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
     } else {
         // TODO: consider the clipping rectangle
-        printf("window_redraw_favicon image %p\n", rootwin->icon);
+        //printf("window_redraw_favicon image %p\n", rootwin->icon);
         struct rect work_clip = { 0,0,work.g_w,work.g_h };
         int xoff=0;
         if (work.g_w > work.g_h) {
@@ -1256,37 +1257,45 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
             case KEY_LINE_START:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -(g.g_w/slid->x_unit_px),
                               false);
+				r = true;
                 break;
 
             case KEY_LINE_END:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, (g.g_w/slid->x_unit_px),
                               false);
+				r = true;
                 break;
 
             case KEY_PAGE_UP:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
                               false);
+				r = true;
                 break;
 
             case KEY_PAGE_DOWN:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
                               false);
+				r = true;
                 break;
 
             case KEY_RIGHT:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -1, false);
+				r = true;
                 break;
 
             case KEY_LEFT:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, 1, false);
+				r = true;
                 break;
 
             case KEY_UP:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, -1, false);
+				r = true;
                 break;
 
             case KEY_DOWN:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, 1, false);
+                r = true;
                 break;
 
             default:

@@ -142,7 +142,7 @@ void gui_poll(bool active)
     aes_event_in.emi_m1.g_x = mx;
     aes_event_in.emi_m1.g_y = my;
     evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-    if(!gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
+    if(gemtk_wm_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out) == 0) {
         if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
             LOG(("WM: %d\n", aes_msg_out[0]));
             switch(aes_msg_out[0]) {
