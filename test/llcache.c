@@ -134,6 +134,16 @@ void cookies_remove(const struct cookie_data *data)
 void bitmap_destroy(void *bitmap)
 {
 }
+/* image/image.h -- used by urldb 
+ *
+ * URLdb shouldn't care about bitmaps. 
+ * This is because the legacy RO thumbnail stuff was hacked in and must die.
+ */
+bool image_bitmap_plot(struct bitmap *bitmap, struct content_redraw_data *data, 
+		const struct rect *clip, const struct redraw_context *ctx)
+{
+	return true;
+}
 
 /* content/fetchers/fetch_file.h -- used by fetcher core
  *
@@ -171,14 +181,20 @@ bool test_initialise(lwc_string *scheme)
 	return true;
 }
 
+bool test_can_fetch(const nsurl *url)
+{
+	/* Nothing to do */
+	return true;
+}
+
 void test_finalise(lwc_string *scheme)
 {
 	/* Nothing to do */
 }
 
-void *test_setup_fetch(struct fetch *parent, nsurl *url, bool only_2xx, 
-		const char *post_urlenc, 
-		const struct fetch_multipart_data *post_multipart, 
+void *test_setup_fetch(struct fetch *parent, nsurl *url, bool only_2xx,
+		bool downgrade_tls, const char *post_urlenc,
+		const struct fetch_multipart_data *post_multipart,
 		const char **headers)
 {
 	test_context *ctx = calloc(1, sizeof(test_context));
@@ -291,9 +307,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	fetch_add_fetcher(scheme, test_initialise, test_setup_fetch, 
-			test_start_fetch, test_abort_fetch, test_free_fetch, 
-			test_poll, test_finalise);
+	fetch_add_fetcher(scheme, test_initialise, test_can_fetch,
+			test_setup_fetch, test_start_fetch, test_abort_fetch,
+			test_free_fetch, test_poll, test_finalise);
 
 	/* Initialise low-level cache */
 	error = llcache_initialise(query_handler, NULL, 1024 * 1024);
