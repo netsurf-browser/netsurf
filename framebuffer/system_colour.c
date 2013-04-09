@@ -44,7 +44,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 	}, {
 		"ActiveCaption",
 		SLEN("ActiveCaption"),
-		0xffdddddd,
+		0xffddddcc,
 		&nsoption_colour(sys_colour_ActiveCaption),
 		NULL
 	}, {
@@ -62,13 +62,13 @@ static struct gui_system_colour_ctx colour_list[] = {
 	}, {
 		"ButtonFace",
 		SLEN("ButtonFace"),
-		0xffaaaaaa,
+		0xffdddddd,
 		&nsoption_colour(sys_colour_ButtonFace),
 		NULL
 	}, {
 		"ButtonHighlight",
 		SLEN("ButtonHighlight"),
-		0xffdddddd,
+		0xffcccccc,
 		&nsoption_colour(sys_colour_ButtonHighlight),
 		NULL
 	}, {
@@ -92,7 +92,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 	}, {
 		"GrayText",
 		SLEN("GrayText"),
-		0xffcccccc,
+		0xff777777,
 		&nsoption_colour(sys_colour_GrayText),
 		NULL
 	}, {
@@ -110,7 +110,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 	}, {
 		"InactiveBorder",
 		SLEN("InactiveBorder"),
-		0xffffffff,
+		0xff000000,
 		&nsoption_colour(sys_colour_InactiveBorder),
 		NULL
 	}, {
