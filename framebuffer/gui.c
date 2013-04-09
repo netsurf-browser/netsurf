@@ -427,12 +427,12 @@ process_cmdline(int argc, char** argv)
 	fename = "sdl";
 	febpp = 32;
 
-	if ((nsoption_int(window_width) != 0) && 
-	    (nsoption_int(window_height) != 0)) {
-		fewidth = nsoption_int(window_width);
-		feheight = nsoption_int(window_height);
-	} else {
+	fewidth = nsoption_int(window_width);
+	if (fewidth <= 0) {
 		fewidth = 800;
+	}
+	feheight = nsoption_int(window_height);
+	if (feheight <= 0) {
 		feheight = 600;
 	}
 
