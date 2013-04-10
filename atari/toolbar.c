@@ -953,6 +953,10 @@ void toolbar_home_click(struct s_toolbar *tb)
 	bw = gw->browser->bw;
 	assert(bw != NULL);
 
+	if(nsoption_charp(homepage_url) == NULL){
+		return;
+	}
+
 	if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 	} else {
