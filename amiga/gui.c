@@ -3058,10 +3058,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char addtab[100],addtab_s[100],addtab_g[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
+	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
 
 	if (!scrn) ami_openscreenfirst();
 
 	if (nsoption_bool(kiosk_mode)) new_tab = false;
+	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 	bw->scale = 1.0;
 
 	if(clone)
@@ -3305,7 +3307,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_SizeBBottom, TRUE,
        	   	WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-						IDCMP_RAWKEY | //IDCMP_SIZEVERIFY |
+						IDCMP_RAWKEY | idcmp_sizeverify |
 						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 						IDCMP_REFRESHWINDOW |
 						IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
@@ -3898,7 +3900,7 @@ static void ami_redraw_callback(void *p)
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
 	int cs = 0;
-	if(gwin->bw->reformat_pending) cs = 20;
+	if(gwin->bw->reformat_pending) cs = nsoption_int(reformat_delay);
 	schedule(cs, ami_redraw_callback, gwin);
 	if(full_redraw) gwin->redraw_required = true;
 }
