@@ -604,6 +604,7 @@ clean-builddir:
 CLEANS += clean-builddir
 
 all-program: $(EXETARGET) post-exe
+	$(call split_install_messages, '[^\.]+', !NetSurf/Resources)
 
 .PHONY: testament
 testament utils/testament.h:
