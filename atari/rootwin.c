@@ -1267,7 +1267,7 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
                 break;
 
             case KEY_PAGE_UP:
-                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
+                gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, -(g.g_h/slid->y_unit_px),
                               false);
 				r = true;
                 break;
