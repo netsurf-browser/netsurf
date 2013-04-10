@@ -334,9 +334,13 @@ void gem_set_cursor( MFORM_EX * cursor )
 long nkc_to_input_key(short nkc, long * ucs4_out)
 {
 	unsigned char ascii = (nkc & 0xFF);
-	nkc = (nkc & (NKF_CTRL|NKF_SHIFT|0xFF));
 	long ik = 0;
+
+	// initialize result:
 	*ucs4_out = 0;
+
+	// sanitize input key:
+	nkc = (nkc & (NKF_CTRL|NKF_SHIFT|0xFF));
 
 	/* shift + cntrl key: */
 	if( ((nkc & NKF_CTRL) == NKF_CTRL) && ((nkc & (NKF_SHIFT))!=0) ) {
