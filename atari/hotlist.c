@@ -44,9 +44,6 @@
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
-//TODO: remove/add guiwin handle on close / open - so that the list
-// is kept tiny.
-
 extern GRECT desk_area;
 
 struct atari_hotlist hl;
@@ -124,7 +121,8 @@ void hotlist_init(void)
 			handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
 			hl.window = gemtk_wm_add(handle, GEMTK_WM_FLAG_DEFAULTS, NULL);
 			if( hl.window == NULL ) {
-				LOG(("Failed to allocate Hotlist"));
+				gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT,
+									"Failed to allocate Hotlist");
 				return;
 			}
 			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
