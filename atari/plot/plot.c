@@ -1928,9 +1928,9 @@ bool plot_clip(const struct rect *clip)
 	}
 
 	if (!rc_intersect(&screen, &gclip)) {
-		dbg_rect("cliprect: ", &view.clipping);
-		dbg_grect("screen: ", &canvas);
-		dbg_grect("canvas clipped: ", &gclip);
+		//dbg_rect("cliprect: ", &view.clipping);
+		//dbg_grect("screen: ", &canvas);
+		//dbg_grect("canvas clipped: ", &gclip);
 		//assert(1 == 0);
 	}
 
