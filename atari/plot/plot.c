@@ -1883,6 +1883,8 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 	if (doupdate==true)
 		update_visible_rect();
 
+	//dbg_rect("plot_set_dimensions", &newclip);
+
 	plot_clip(&newclip);
     return(true);
 }
@@ -1946,6 +1948,10 @@ bool plot_clip(const struct rect *clip)
     return ( true );
 }
 
+VdiHdl plot_get_vdi_handle(void)
+{
+	return(atari_plot_vdi_handle);
+}
 
 bool plot_get_clip(struct rect * out)
 {

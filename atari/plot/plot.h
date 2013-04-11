@@ -111,6 +111,7 @@ bool plot_get_clip(struct rect * out);
 /* Get clipping for current framebuffer as GRECT */
 void plot_get_clip_grect(GRECT * out);
 bool plot_clip(const struct rect *clip);
+VdiHdl plot_get_vdi_handle(void);
 bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
 bool plot_line( int x0, int y0, int x1, int y1, const plot_style_t *style );
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,

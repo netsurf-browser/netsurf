@@ -717,9 +717,9 @@ void window_close_search(ROOTWIN *rootwin)
 /**
  * Redraw the favicon
 */
-void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
+void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip_ro)
 {
-    GRECT work;
+    GRECT work, visible, clip;
 
     assert(rootwin);
 
@@ -728,34 +728,79 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
     gemtk_wm_clear(rootwin->win);
     gemtk_wm_get_grect(rootwin->win, GEMTK_WM_AREA_WORK, &work);
 
-    if (clip == NULL) {
-        clip = &work;
+    if (clip_ro == NULL) {
+        clip = work;
     } else {
-        if(!rc_intersect(&work, clip)) {
+    	clip = *clip_ro;
+        if(!rc_intersect(&work, &clip)) {
             return;
         }
     }
 
+    //dbg_grect("favicon redrw area", clip);
+	//dbg_grect("favicon work area", &work);
+
     if (rootwin->icon == NULL) {
         //printf("window_redraw_favicon OBJCTREE\n");
+
         OBJECT * tree = gemtk_obj_get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
         tree->ob_width = work.g_w;
         tree->ob_height = work.g_h;
-        objc_draw(tree, 0, 8, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
+
+        wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible);
+		while (visible.g_h > 0 && visible.g_w > 0) {
+
+			if (rc_intersect(&clip, &visible)) {
+				//dbg_grect("redraw vis area", &visible);
+				objc_draw(tree, 0, 8, visible.g_x, visible.g_y, visible.g_w,
+							visible.g_h);
+			} else {
+				//dbg_grect("redraw vis area outside", &visible);
+			}
+
+			wind_get_grect(rootwin->aes_handle, WF_NEXTXYWH, &visible);
+		}
+
     } else {
-        // TODO: consider the clipping rectangle
         //printf("window_redraw_favicon image %p\n", rootwin->icon);
+        VdiHdl plot_vdi_handle = plot_get_vdi_handle();
         struct rect work_clip = { 0,0,work.g_w,work.g_h };
+        short pxy[4];
         int xoff=0;
+
         if (work.g_w > work.g_h) {
             xoff = ((work.g_w-work.g_h)/2);
             work.g_w = work.g_h;
         }
-        plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w, work.g_h);
-        plot_clip(&work_clip);
-        atari_plotters.bitmap(0, 0, work.g_w, work.g_h, rootwin->icon, 0xffffff, 0);
+        plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w,
+							work.g_h);
+		//plot_clip(&work_clip);
+
+		wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible);
+		while (visible.g_h > 0 && visible.g_w > 0) {
+
+			if (rc_intersect(&clip, &visible)) {
+
+				//dbg_grect("redraw vis area", &visible);
+
+				// Manually clip drawing region:
+				pxy[0] = visible.g_x;
+				pxy[1] = visible.g_y;
+				pxy[2] = pxy[0] + visible.g_w-1;
+				pxy[3] = pxy[1] + visible.g_h-1;
+				vs_clip(plot_vdi_handle, 1, (short*)&pxy);
+				//dbg_pxy("vdi clip", (short*)&pxy);
+
+				atari_plotters.bitmap(0, 0, work.g_w, work.g_h,
+										rootwin->icon, 0xffffff, 0);
+			} else {
+				//dbg_grect("redraw vis area outside", &visible);
+			}
+
+			wind_get_grect(rootwin->aes_handle, WF_NEXTXYWH, &visible);
+		}
     }
 }
 
@@ -1350,7 +1395,7 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
     if(gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
-        window_redraw_favicon(rootwin, &clip);
+        window_redraw_favicon(rootwin, NULL);
     } else {
         window_schedule_redraw_grect(rootwin, &clip);
     }
