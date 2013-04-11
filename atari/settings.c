@@ -46,15 +46,15 @@ static OBJECT * dlgtree;
 
 #define OBJ_UNCHECK(idx) (dlgtree[idx].ob_state &= ~(OS_SELECTED));
 
-#define OBJ_REDRAW(idx) gemtk_wm_send_redraw(settings_guiwin, \
+#define OBJ_REDRAW(idx) gemtk_wm_exec_redraw(settings_guiwin, \
 										gemtk_obj_screen_rect(dlgtree, idx));
 
 #define DISABLE_OBJ(idx) (dlgtree[idx].ob_state |= OS_DISABLED); \
-						 gemtk_wm_send_redraw(settings_guiwin, \
+						 gemtk_wm_exec_redraw(settings_guiwin, \
 											gemtk_obj_screen_rect(dlgtree, idx));
 
 #define ENABLE_OBJ(idx) (dlgtree[idx].ob_state &= ~(OS_DISABLED)); \
-						 gemtk_wm_send_redraw(settings_guiwin, \
+						 gemtk_wm_exec_redraw(settings_guiwin, \
 											gemtk_obj_screen_rect(dlgtree, idx));
 
 #define FORMEVENT(idx) form_event(idx, 0);

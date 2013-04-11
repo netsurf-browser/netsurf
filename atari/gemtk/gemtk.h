@@ -225,7 +225,10 @@ void gemtk_wm_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
 void gemtk_wm_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
 		short d);
 
-void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area);
+short gemtk_wm_exec_msg(GUIWIN *win, short msg_type, short a, short b, short c,
+		short d);
+
+void gemtk_wm_exec_redraw(GUIWIN *win, GRECT *area);
 
 VdiHdl gemtk_wm_get_vdi_handle(GUIWIN *win);
 

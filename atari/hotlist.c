@@ -71,7 +71,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 					case TOOLBAR_HOTLIST_DELETE:
 						hotlist_delete_selected();
-						gemtk_wm_send_redraw(tv->window, NULL);
+						gemtk_wm_exec_redraw(tv->window, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
@@ -82,7 +82,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 				gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
 				gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_TOOLBAR, &tb_area);
 				evnt_timer(150);
-				gemtk_wm_send_redraw(tv->window, &tb_area);
+				gemtk_wm_exec_redraw(tv->window, &tb_area);
 			break;
 
 			case WM_CLOSED:

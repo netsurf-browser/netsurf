@@ -188,7 +188,7 @@ static void on_cbrdy_click(struct gui_download_window *dw)
 	if (dw->close_on_finish && dw->status == NSATARI_DOWNLOAD_COMPLETE) {
 		gemtk_wm_send_msg(dw->guiwin, WM_CLOSED, 0,0,0,0);
 	}
-	gemtk_wm_send_redraw(dw->guiwin, NULL);
+	gemtk_wm_exec_redraw(dw->guiwin, NULL);
 	evnt_timer(250);
 }
 
@@ -379,7 +379,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
 		dw->abort = false;
 		download_context_abort(dw->ctx);
-		gemtk_wm_send_redraw(dw->guiwin, NULL);
+		gemtk_wm_exec_redraw(dw->guiwin, NULL);
 		return(NSERROR_OK);
 	}
 
@@ -411,7 +411,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : "?"
 		);
 
-		gemtk_wm_send_redraw(dw->guiwin, NULL);
+		gemtk_wm_exec_redraw(dw->guiwin, NULL);
 	}
 	return NSERROR_OK;
 }
@@ -422,7 +422,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 	LOG(("%s", error_msg));
 	strncpy((char*)&dw->lbl_file, error_msg, MAX_SLEN_LBL_FILE-1);
 	dw->status = NSATARI_DOWNLOAD_ERROR;
-	gemtk_wm_send_redraw(dw->guiwin, NULL);
+	gemtk_wm_exec_redraw(dw->guiwin, NULL);
 	gui_window_set_status(input_window, messages_get("Done") );
 	// TODO: change abort to close
 }
@@ -451,7 +451,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 			human_friendly_bytesize(dw->size_downloaded),
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
 		);
-		gemtk_wm_send_redraw(dw->guiwin, NULL);
+		gemtk_wm_exec_redraw(dw->guiwin, NULL);
 	}
 	gui_window_set_status(input_window, messages_get("Done") );
 }

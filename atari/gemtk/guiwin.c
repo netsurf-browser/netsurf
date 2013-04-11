@@ -253,7 +253,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, g.g_w, g.g_h);
             if((gw->flags & GEMTK_WM_FLAG_CUSTOM_SCROLLING) == 0) {
                 if(gemtk_wm_update_slider(gw, GEMTK_WM_VH_SLIDER)) {
-                    gemtk_wm_send_redraw(gw, NULL);
+                    gemtk_wm_exec_redraw(gw, NULL);
                 }
             }
         }
@@ -270,7 +270,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         wind_set_grect(gw->handle, WF_CURRXYWH, &g);
         if((gw->flags & GEMTK_WM_FLAG_CUSTOM_SCROLLING) == 0) {
             if(gemtk_wm_update_slider(gw, GEMTK_WM_VH_SLIDER)) {
-                gemtk_wm_send_redraw(gw, NULL);
+                gemtk_wm_exec_redraw(gw, NULL);
             }
         }
         break;
@@ -890,7 +890,7 @@ void gemtk_wm_scroll(GUIWIN *win, short orientation, int units, bool refresh)
     }
 
     if ((redraw != NULL) && (redraw->g_h > 0)) {
-        gemtk_wm_send_redraw(win, redraw);
+        gemtk_wm_exec_redraw(win, redraw);
     }
 }
 
@@ -1132,12 +1132,21 @@ void gemtk_wm_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     appl_write(gl_apid, 16, &msg);
 }
 
-// TODO: rename, document and implement alternative (gemtk_wm_exec_event)
-void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area)
+/** Directly execute an Message to a GUIWIN using internal dispatcher
+* \param win the GUIWIN which shall receive the message
+* \param msg_type the WM_ message definition
+* \param a the 4th parameter to appl_write
+* \param b the 5th parameter to appl_write
+* \param c the 6th parameter to appl_write
+* \param d the 7th parameter to appl_write
+*/
+short gemtk_wm_exec_msg(GUIWIN *win, short msg_type, short a, short b, short c,
+                     short d)
 {
     short msg[8], retval;
     GRECT work;
 
+    EVMULT_OUT event_out;
     EVMULT_IN event_in = {
         .emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
         .emi_bclicks = 258,
@@ -1150,7 +1159,30 @@ void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area)
         .emi_tlow = 0,
         .emi_thigh = 0
     };
-    EVMULT_OUT event_out;
+
+    msg[0] = msg_type;
+    msg[1] = gl_apid;
+    msg[2] = 0;
+    msg[3] = win->handle;
+    msg[4] = a;
+    msg[5] = b;
+    msg[6] = c;
+    msg[7] = d;
+
+    event_out.emo_events = MU_MESAG;
+    retval = preproc_wm(win, &event_out, msg);
+    if (retval == 0 || (win->flags & GEMTK_WM_FLAG_PREPROC_WM) != 0){
+		retval = win->handler_func(win, &event_out, msg);
+    }
+
+    return(retval);
+}
+
+// TODO: rename, document and implement alternative (gemtk_wm_exec_event)
+void gemtk_wm_exec_redraw(GUIWIN *win, GRECT *area)
+{
+    //short retval;
+    GRECT work;
 
     if (area == NULL) {
         gemtk_wm_get_grect(win, GEMTK_WM_AREA_WORK, &work);
@@ -1165,24 +1197,8 @@ void gemtk_wm_send_redraw(GUIWIN *win, GRECT *area)
         area = &work;
     }
 
-    msg[0] = WM_REDRAW;
-    msg[1] = gl_apid;
-    msg[2] = 0;
-    msg[3] = win->handle;
-    msg[4] = area->g_x;
-    msg[5] = area->g_y;
-    msg[6] = area->g_w;
-    msg[7] = area->g_h;
-
-    event_out.emo_events = MU_MESAG;
-    retval = preproc_wm(win, &event_out, msg);
-    if (retval == 0 || (win->flags & GEMTK_WM_FLAG_PREPROC_WM) != 0){
-		win->handler_func(win, &event_out, msg);
-    }
-
-
-
-    //appl_write(gl_apid, 16, &msg);
+    gemtk_wm_exec_msg(win, WM_REDRAW, area->g_x, area->g_y, area->g_w,
+		area->g_h);
 }
 
 /** Attach an AES FORM to the GUIWIN, similar feature like the toolbar
