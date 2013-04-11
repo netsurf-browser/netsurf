@@ -96,7 +96,7 @@
 	.use_pubscreen = NULL,				\
 	.modeid = NULL,					\
 	.screen_compositing = -1,			\
-	.amiga_ydpi = 72,				\
+	.amiga_ydpi = 85,				\
 	.cache_bitmaps = 0,				\
 	.theme = NULL,					\
 	.utf8_clipboard = false,			\
