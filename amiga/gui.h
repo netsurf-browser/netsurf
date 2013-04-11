@@ -97,6 +97,7 @@ struct gui_window_2 {
 	int temp;
 	bool redraw_scroll;
 	bool new_content;
+	bool redraw_scheduled;
 	char *menulab[AMI_MENU_AREXX_MAX + 1];
 	char menukey[AMI_MENU_AREXX_MAX + 1];
 	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
