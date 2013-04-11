@@ -191,6 +191,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
+static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
 STRPTR ami_locale_langs(void)
 {
