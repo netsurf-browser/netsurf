@@ -3781,6 +3781,7 @@ void gui_window_destroy(struct gui_window *g)
 	}
 
 	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_schedule_redraw_remove(g->shared);
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
@@ -3909,6 +3910,11 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 	if(gwin->bw->reformat_pending) cs = nsoption_int(reformat_delay);
 	schedule(cs, ami_redraw_callback, gwin);
 	gwin->redraw_scheduled = true;
+}
+
+static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
+{
+	schedule_remove(ami_redraw_callback, gwin);
 }
 
 static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
