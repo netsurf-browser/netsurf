@@ -37,7 +37,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <glib.h>
-#include <glib/gi18n.h>
 
 #include "content/content.h"
 #include "content/fetch.h"
