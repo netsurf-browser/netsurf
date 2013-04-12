@@ -34,7 +34,7 @@ echo "TARGET_WORKSPACE=${TARGET_WORKSPACE}"
 echo "USE_CPUS=${USE_CPUS}"
 
 export PREFIX=${TARGET_WORKSPACE}/inst-${TARGET_ABI}
-export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig::
+export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}::
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
 
@@ -98,6 +98,13 @@ ns-make-libs()
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
         make -C ${TARGET_WORKSPACE}/${REPO} TARGET=${TARGET_ABI} $USE_CPUS $*
     done
+}
+
+# issues a make command to all libraries
+ns-make-libnsfb()
+{
+    echo "    MAKE: make -C libnsfb $USE_CPUS $*"
+    make -C ${TARGET_WORKSPACE}/libnsfb TARGET=${TARGET_ABI} $USE_CPUS $*
 }
 
 # pulls all repos and makes and installs the libraries and tools
