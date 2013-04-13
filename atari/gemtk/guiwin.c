@@ -588,9 +588,13 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
             if (dest == NULL || dest->handler_func == NULL)
                 return(0);
 
-            if ((ev_out->emo_events & MU_BUTTON) != 0) {
+			DEBUG_PRINT(("Found Event receiver GUIWIN: %p (%d), flags: %d, cb: %p\n",
+							dest, dest->handle, dest->flags, dest->handler_func));
 
-                DEBUG_PRINT(("Found MU_BUTTON dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
+            if ((ev_out->emo_events & MU_BUTTON) != 0) {
+				DEBUG_PRINT(("gemtk_wm_handle_event_multi_fast: MU_BUTTON -> "
+								"%d / %d\n", ev_out->emo_mouse.p_x,
+								ev_out->emo_mouse.p_y));
                 retval = preproc_mu_button(dest, ev_out, msg);
                 if(retval != 0) {
                     handler_called = true;
@@ -598,6 +602,8 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
             }
 
             if ((ev_out->emo_events & MU_KEYBD)) {
+				DEBUG_PRINT(("gemtk_wm_handle_event_multi_fast: MU_KEYBD -> %x\n",
+								ev_out->emo_kreturn));
                 retval = preproc_mu_keybd(dest, ev_out, msg);
                 if(retval != 0) {
                     handler_called = true;
