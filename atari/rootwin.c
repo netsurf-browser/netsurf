@@ -173,11 +173,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         // handle key
         uint16_t nkc = gem_to_norm( (short)ev_out->emo_kmeta,
                                     (short)ev_out->emo_kreturn);
+		LOG(("rootwin MU_KEYBD input, nkc: %x\n", nkc));
         retval = on_window_key_input(data->rootwin, nkc);
         // printf("on_window_key_input: %d\n", retval);
 
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
+		LOG(("rootwin MU_BUTTON input, x: %d, y: %d\n", ev_out->emo_mouse.p_x,
+			ev_out->emo_mouse.p_x));
         window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
                          &area);
         if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
@@ -470,10 +473,10 @@ void window_scroll_by(ROOTWIN *root, int sx, int sy)
     GRECT content_area;
     struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(root->win);
 
-    if(sx < 0) {
+    if (sx < 0) {
         sx = 0;
     }
-    if(sy<0) {
+    if (sy < 0) {
         sy = 0;
     }
     int xunits = sx / slid->x_unit_px;
@@ -1342,6 +1345,11 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, 1, false);
                 r = true;
                 break;
+
+			case KEY_TEXT_START:
+				window_scroll_by(bw->window->root, 0, 0);
+				r = true;
+				break;
 
             default:
                 break;

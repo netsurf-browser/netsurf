@@ -117,7 +117,7 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_VIEW, MAINMENU_M_STOP, menu_stop, {0,NK_ESC,K_ALT}, NULL},
 	{T_NAV, MAINMENU_M_BACK, menu_back, {0,NK_LEFT,K_ALT}, NULL},
 	{T_NAV, MAINMENU_M_FORWARD, menu_forward, {0,NK_RIGHT,K_ALT}, NULL},
-	{T_NAV, MAINMENU_M_HOME, menu_home, {0,NK_CLRHOME,0}, NULL},
+	{T_NAV, MAINMENU_M_HOME, menu_home, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_LHISTORY,menu_lhistory, {0,NK_F7,0}, NULL},
 	{T_UTIL, MAINMENU_M_GHISTORY, menu_ghistory, {0,NK_F7,K_CTRL}, NULL},
 	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, menu_add_bookmark, {'D',0,K_CTRL}, NULL},
@@ -169,7 +169,7 @@ static void __CDECL menu_about(short item, short title, void *data)
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	} 
+	}
 }
 
 static void __CDECL menu_new_win(short item, short title, void *data)
@@ -179,7 +179,7 @@ static void __CDECL menu_new_win(short item, short title, void *data)
 	const char *addr;
 
 	LOG(("%s", __FUNCTION__));
-		
+
 	if (nsoption_charp(homepage_url) != NULL) {
 		addr = nsoption_charp(homepage_url);
 	} else {
@@ -250,7 +250,7 @@ static void __CDECL menu_open_file(short item, short title, void *data)
 							      NULL,
 							      NULL);
 				nsurl_unref(url);
-				
+
 			}
 			if (error != NSERROR_OK) {
 				warn_user(messages_get_errorcode(error), 0);
