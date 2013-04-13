@@ -1178,10 +1178,8 @@ short gemtk_wm_exec_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     return(retval);
 }
 
-// TODO: rename, document and implement alternative (gemtk_wm_exec_event)
 void gemtk_wm_exec_redraw(GUIWIN *win, GRECT *area)
 {
-    //short retval;
     GRECT work;
 
     if (area == NULL) {
