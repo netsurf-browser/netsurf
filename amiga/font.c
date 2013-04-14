@@ -239,7 +239,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		}
 
 		tx += tempx;
-		utf16 += utf16charlen;
+		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
 
 		if(tx < x) {
@@ -350,7 +350,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			return true;
 		}
 
-		utf16 += utf16charlen;
+		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
