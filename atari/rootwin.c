@@ -1061,6 +1061,8 @@ void window_process_redraws(ROOTWIN * rootwin)
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
 
+    	//dbg_grect("visible ", &visible_ro);
+
         // TODO: optimze the rectangle list -
         // remove rectangles which were completly inside the visible area.
         // that way we don't have to loop over again...
@@ -1074,7 +1076,10 @@ void window_process_redraws(ROOTWIN * rootwin)
                 rootwin->redraw_slots.areas[i].y1 -
                 rootwin->redraw_slots.areas[i].y0
             };
-            rc_intersect(&visible_ro, &rdrw_area_ro);
+
+            if (!rc_intersect(&visible_ro, &rdrw_area_ro)) {
+				continue;
+            }
             GRECT rdrw_area = rdrw_area_ro;
 
             if (rc_intersect(&tb_area, &rdrw_area)) {
