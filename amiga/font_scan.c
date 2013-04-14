@@ -71,10 +71,15 @@ struct ami_font_scan_window {
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return font name or NULL
  */
-const char *ami_font_scan_lookup(uint16 code, lwc_string **glypharray)
+const char *ami_font_scan_lookup(uint16 *code, lwc_string **glypharray)
 {
-	if(glypharray[code] == NULL) return NULL;
-		else return lwc_string_data(glypharray[code]);
+	if(*code >= 0xd800 && *code <= 0xdbff) {
+		/* This is a multi-byte character, we don't support falback for these yet. */
+		return NULL;
+	}
+
+	if(glypharray[*code] == NULL) return NULL;
+		else return lwc_string_data(glypharray[*code]);
 }
 
 /**
@@ -207,6 +212,7 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 	ULONG foundglyphs = 0;
 	ULONG serif = 0;
 	lwc_error lerror;
+	ULONG unicoderanges = 0;
 
 	ofont = OpenOutlineFont(fontname, NULL, OFF_OPEN);
 
@@ -219,7 +225,8 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 		TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(&ofont->olf_EEngine,
-			OT_WidthList, &widthlist, TAG_END) == 0)
+			OT_WidthList, &widthlist,
+			TAG_END) == 0)
 		{
 			gwnode = (struct GlyphWidthEntry *)GetHead((struct List *)widthlist);
 			do {
@@ -229,9 +236,19 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 					foundglyphs++;
 				}
 			} while(gwnode = (struct GlyphWidthEntry *)GetSucc((struct Node *)gwnode));
+			EReleaseInfo(&ofont->olf_EEngine,
+				OT_WidthList, widthlist,
+				TAG_END);
 		}
 	}
 
+	if(EObtainInfo(&ofont->olf_EEngine, OT_UnicodeRanges, &unicoderanges, TAG_END) == 0) {
+		if(unicoderanges & UCR_SURROGATES) LOG(("%s supports UTF-16 surrogates", fontname));
+		EReleaseInfo(&ofont->olf_EEngine,
+			OT_UnicodeRanges, unicoderanges,
+			TAG_END);
+	}
+		
 	CloseOutlineFont(ofont, NULL);
 
 	return foundglyphs;

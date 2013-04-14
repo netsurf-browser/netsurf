@@ -151,7 +151,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		uint16 *char1, uint16 *char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 codepoint);
+		uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
@@ -220,7 +220,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	*actual_x = 0;
 
 	while (utf8_pos < length) {
-		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
+		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16charlen = 1;
 		else
 			utf16charlen = 2;
@@ -231,7 +231,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 		if (tempx == 0) {
 			if (ufont == NULL)
-				ufont = ami_open_outline_font(fstyle, *utf16);
+				ufont = ami_open_outline_font(fstyle, utf16);
 
 			if (ufont)
 				tempx = ami_font_width_glyph(ufont, utf16,
@@ -309,7 +309,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*actual_x = 0;
 
 	while (utf8_pos < length) {
-		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
+		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16charlen = 1;
 		else
 			utf16charlen = 2;
@@ -320,7 +320,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		if (tempx == 0) {
 			if (ufont == NULL)
-				ufont = ami_open_outline_font(fstyle, *utf16);
+				ufont = ami_open_outline_font(fstyle, utf16);
 
 			if (ufont)
 				tempx = ami_font_width_glyph(ufont, utf16,
@@ -432,7 +432,7 @@ struct ami_font_node *ami_font_open(const char *font)
  * \return outline font or NULL on error
  */
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 codepoint)
+		uint16 *codepoint)
 {
 	struct ami_font_node *node;
 	struct OutlineFont *ofont;
@@ -576,6 +576,16 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	FIXED kern = 0;
 	ULONG glyphmaptag = OT_GlyphMap8Bit;
 	ULONG template_type = BLITT_ALPHATEMPLATE;
+
+	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+		/* We don't support UTF-16 surrogates yet, so just return. */
+		return 0;
+	}
+	
+	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+		/* Don't attempt to kern a UTF-16 surrogate */
+		char2 = 0;
+	}
 	
 	if(aa == false) {
 		glyphmaptag = OT_GlyphMap;
@@ -621,6 +631,10 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 			EReleaseInfo(&ofont->olf_EEngine,
 				glyphmaptag, glyph,
 				TAG_END);
+				
+			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+				OT_TextKernPair, kern,
+				TAG_END);
 		}
 	}
 
@@ -636,6 +650,16 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	FIXED char1w;
 	struct GlyphWidthEntry *gwnode;
 
+	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+		/* We don't support UTF-16 surrogates yet, so just return. */
+		return 0;
+	}
+
+	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+		/* Don't attempt to kern a UTF-16 surrogate */
+		char2 = 0;
+	}
+	
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode, *char1,
 			OT_GlyphCode2, *char1,
@@ -662,6 +686,14 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 				}
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
+			
+			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+				OT_TextKernPair, kern,
+				TAG_END);
+				
+			EReleaseInfo(&ofont->olf_EEngine,
+				OT_WidthList, gwlist,
+				TAG_END);
 		}
 	}
 
@@ -706,7 +738,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 
 	while(*utf16 != 0)
 	{
-		if ((*utf16 < 0xD800) || (0xDFFF < *utf16))
+		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16charlen = 1;
 		else
 			utf16charlen = 2;
@@ -740,7 +772,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 		{
 			if(ufont == NULL)
 			{
-				ufont = ami_open_outline_font(fstyle, *utf16);
+				ufont = ami_open_outline_font(fstyle, utf16);
 			}
 
 			if(ufont)
