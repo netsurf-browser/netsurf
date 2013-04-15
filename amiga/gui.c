@@ -2461,25 +2461,7 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 
 void gui_poll(bool active)
 {
-	/* However, down here we are waiting for the user to do something or for a
-	   scheduled event to kick in (the active variable seems to have no real
-	   bearing on reality, but is supposed to indicate that NetSurf wants
-	   control back ASAP, so we poll in that case).
-	   schedule_run checks every event, really they need to be sorted so only
-	   the first event needs to be run on each signal. */
-
-	if(0)
-	{
-		ami_handle_msg();
-		ami_handle_appmsg();
-		ami_handle_applib();
-		ami_arexx_handle();
-		schedule_run(TRUE);
-	}
-	else
-	{
-		ami_get_msg();
-	}
+	ami_get_msg();
 }
 
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
