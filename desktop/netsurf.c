@@ -254,6 +254,7 @@ int netsurf_main_loop(void)
 		if(fetch_active)
 			schedule(0, netsurf_fetch_callback, NULL);
 		gui_poll(fetch_active);
+		hlcache_poll();
 	}
 
 	return 0;
