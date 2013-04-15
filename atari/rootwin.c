@@ -403,13 +403,13 @@ void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
     toolbar_set_dimensions(rootwin->toolbar, &g);
 
     /* initially hide the search area of the toolbar: */
-    toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, false);
-	window_get_grect(rootwin, BROWSER_AREA_TOOLBAR, &g);
-	gemtk_wm_set_toolbar_size(rootwin->win, g.g_h);
+	window_close_search(rootwin);
 
     window_update_back_forward(rootwin);
 
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
+
+
 }
 
 void window_restore_active_gui_window(ROOTWIN *rootwin)

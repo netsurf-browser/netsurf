@@ -37,7 +37,7 @@ struct gemtk_window_s {
     /** the generic event handler function for events passed to the client */
     gemtk_wm_event_handler_f handler_func;
 
-    /** The custom toolbar redraw function, if any */
+    /** The toolbar redraw function, if any */
     gemtk_wm_redraw_f toolbar_redraw_func;
 
     /** window configuration */
@@ -294,7 +294,8 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         break;
 
     case WM_REDRAW:
-        if ((gw->flags & GEMTK_WM_FLAG_CUSTOM_TOOLBAR) == 0) {
+        if ((gw->flags & GEMTK_WM_FLAG_CUSTOM_TOOLBAR) == 0
+			&& (gw->toolbar != NULL)) {
             g.g_x = msg[4];
             g.g_y = msg[5];
             g.g_w = msg[6];
@@ -356,8 +357,9 @@ static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
                 uint16_t type = (gw->toolbar[obj_idx].ob_type & 0xFF);
                 uint16_t nextobj;
 
-                DEBUG_PRINT(("toolbar item type: %d\n", type));
-                // report mouse click to the tree:
+                DEBUG_PRINT(("toolbar item type: %d, toolbar_edit_obj: %d\n",
+							type, gw->toolbar_edit_obj));
+                // Report mouse click to the tree:
                 retval = form_wbutton(gw->toolbar, gw->toolbar_focus_obj,
                                 ev_out->emo_mclicks, &nextobj,
                                 gw->handle);
@@ -463,26 +465,29 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
 	short retval = 0;
 
-    if((gw->toolbar != NULL) && (gw->toolbar_edit_obj > -1) ) {
+    if ((gw->toolbar != NULL) && (gw->toolbar_edit_obj > -1)) {
 
         short next_edit_obj = gw->toolbar_edit_obj;
         short next_char = -1;
         short edit_idx;
         short r;
 
+		DEBUG_PRINT(("%s, gw: %p, toolbar_edit_obj: %d\n", __FUNCTION__, gw,
+				gw->toolbar_edit_obj));
+
         r = form_wkeybd(gw->toolbar, gw->toolbar_edit_obj, next_edit_obj,
                        ev_out->emo_kreturn,
                        &next_edit_obj, &next_char, gw->handle);
 
         if (next_edit_obj != gw->toolbar_edit_obj) {
-
 			gemtk_wm_set_toolbar_edit_obj(gw, next_edit_obj,
 											ev_out->emo_kreturn);
         } else {
-            if(next_char > 13)
+            if (next_char > 13) {
                 r = objc_wedit(gw->toolbar, gw->toolbar_edit_obj,
                               ev_out->emo_kreturn, &edit_idx,
                               EDCHAR, gw->handle);
+            }
         }
         //retval = 1;
         /*gemtk_wm_send_msg(gw, GEMTK_WM_WM_FORM_KEY, gw->toolbar_edit_obj,
@@ -521,6 +526,33 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         }
     }
     return(retval);
+}
+
+/**
+* Default toolbar redraw function
+*/
+static void std_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
+{
+	GRECT g;
+
+	assert(gw->toolbar);
+	assert(gw->toolbar_idx >= 0);
+
+	// Update object position:
+	gw->toolbar[gw->toolbar_idx].ob_x = clip->g_x;
+	gw->toolbar[gw->toolbar_idx].ob_y = clip->g_y;
+	gw->toolbar[gw->toolbar_idx].ob_width = clip->g_w;
+	gw->toolbar[gw->toolbar_idx].ob_height = clip->g_h;
+
+	wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
+	while (g.g_h > 0 || g.g_w > 0) {
+		if(rc_intersect(clip, &g)) {
+			objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
+					g.g_w, g.g_h);
+
+		}
+		wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
+	}
 }
 
 /**
@@ -1016,11 +1048,12 @@ void gemtk_wm_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flag
     else {
 		win->toolbar_size = win->toolbar[idx].ob_height;
     }
+	gemtk_wm_set_toolbar_redraw_func(win, std_toolbar_redraw);
 }
 
 /**  Update width/height of the toolbar region
 * \param win the GUIWIN
-* \param s depending on the flag GEMTK_WM_FLAG_HAS_VTOOLBAR this is the width or the height
+* \param s the width or height, depending on the flag GEMTK_WM_FLAG_HAS_VTOOLBAR
 */
 void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s)
 {
@@ -1037,7 +1070,13 @@ void gemtk_wm_set_toolbar_edit_obj(GUIWIN *win, uint16_t obj, short kreturn)
 {
 	short edit_idx;
 
+	DEBUG_PRINT(("%s, win: %p, obj: %d, kret: %d\n", __FUNCTION__,
+				win, obj, kreturn));
+
 	if (obj != win->toolbar_edit_obj) {
+
+		DEBUG_PRINT(("%s, current edit obj: %d\n", __FUNCTION__,
+					win->toolbar_edit_obj));
 
 		if(win->toolbar_edit_obj != -1) {
 			objc_wedit(win->toolbar, win->toolbar_edit_obj, kreturn, &edit_idx,
@@ -1048,6 +1087,8 @@ void gemtk_wm_set_toolbar_edit_obj(GUIWIN *win, uint16_t obj, short kreturn)
 
 		objc_wedit(win->toolbar, win->toolbar_edit_obj, kreturn, &edit_idx,
 					EDINIT, win->handle);
+	} else {
+		DEBUG_PRINT(("%s, nothing to do!\n", __FUNCTION__));
 	}
 }
 
@@ -1257,32 +1298,7 @@ void gemtk_wm_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
     tb_area = tb_area_ro;
 
     if (rc_intersect(clip, &tb_area)) {
-
-		if (gw->toolbar_redraw_func != NULL) {
-
-			// customized redraw:
-			gw->toolbar_redraw_func(gw, msg, &tb_area);
-
-		} else {
-
-			// Default redraw action
-
-			// Update object position:
-			gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
-			gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
-			gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
-			gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
-
-			wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
-			while (g.g_h > 0 || g.g_w > 0) {
-				if(rc_intersect(&tb_area, &g)) {
-					objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
-							  g.g_w, g.g_h);
-
-				}
-				wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
-			}
-        }
+		gw->toolbar_redraw_func(gw, msg, &tb_area);
     }
 }
 
