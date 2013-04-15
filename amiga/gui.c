@@ -17,7 +17,6 @@
  */
 
 /* NetSurf core includes */
-#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
