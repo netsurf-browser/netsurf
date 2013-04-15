@@ -634,6 +634,12 @@ void toolbar_set_visible(struct s_toolbar *tb, short area, bool visible)
 	else if (area == TOOLBAR_AREA_SEARCH) {
 		tb->search_visible = visible;
 		tb->reflow = true;
+		OBJECT *frm = toolbar_get_form(tb);
+		if(visible == false){
+			frm[TOOLBAR_AREA_SEARCH].ob_flags |= OF_HIDETREE;
+		} else {
+			frm[TOOLBAR_AREA_SEARCH].ob_flags &= ~OF_HIDETREE;
+		}
 	}
 }
 
