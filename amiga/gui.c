@@ -2468,7 +2468,7 @@ void gui_poll(bool active)
 	   schedule_run checks every event, really they need to be sorted so only
 	   the first event needs to be run on each signal. */
 
-	if(active)
+	if(0)
 	{
 		ami_handle_msg();
 		ami_handle_appmsg();
