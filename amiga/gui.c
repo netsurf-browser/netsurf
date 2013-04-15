@@ -17,6 +17,7 @@
  */
 
 /* NetSurf core includes */
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
@@ -2459,27 +2460,19 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 	}
 }
 
+static void ami_gui_fetch_callback(void *p)
+{
+	/* This doesn't need to do anything - the scheduled event will
+	 * send a message to trigger Wait() to return, thereby causing
+	 * the event function to return, and NetSurf to call
+	 * hlcache_poll() as part of the usual fetch/event loop.
+	 */
+}
+
 void gui_poll(bool active)
 {
-	/* However, down here we are waiting for the user to do something or for a
-	   scheduled event to kick in (the active variable seems to have no real
-	   bearing on reality, but is supposed to indicate that NetSurf wants
-	   control back ASAP, so we poll in that case).
-	   schedule_run checks every event, really they need to be sorted so only
-	   the first event needs to be run on each signal. */
-
-	if(active)
-	{
-		ami_handle_msg();
-		ami_handle_appmsg();
-		ami_handle_applib();
-		ami_arexx_handle();
-		schedule_run(TRUE);
-	}
-	else
-	{
-		ami_get_msg();
-	}
+	if(active) schedule(0, ami_gui_fetch_callback, NULL);
+	ami_get_msg();
 }
 
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
