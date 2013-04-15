@@ -2462,7 +2462,11 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 
 static void ami_gui_fetch_callback(void *p)
 {
-	hlcache_poll();
+	/* This doesn't need to do anything - the scheduled event will
+	 * send a message to trigger Wait() to return, thereby causing
+	 * the event function to return, and NetSurf to call
+	 * hlcache_poll() as part of the usual fetch/event loop.
+	 */
 }
 
 void gui_poll(bool active)
