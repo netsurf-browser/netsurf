@@ -239,6 +239,10 @@ nserror netsurf_init(int *pargc,
 	return ret;
 }
 
+static void netsurf_fetch_callback(void *p)
+{
+	hlcache_poll();
+}
 
 /**
  * Gui NetSurf main loop.
@@ -246,8 +250,9 @@ nserror netsurf_init(int *pargc,
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
+		if(fetch_active)
+			schedule(0, netsurf_fetch_callback, NULL);
 		gui_poll(fetch_active);
-		hlcache_poll();
 	}
 
 	return 0;
