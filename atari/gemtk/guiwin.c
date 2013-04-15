@@ -26,8 +26,8 @@
 
 #include "gemtk.h"
 
-//#define DEBUG_PRINT(x)		printf x
-#define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)		printf x
+//#define DEBUG_PRINT(x)
 
 struct gemtk_window_s {
 
@@ -533,16 +533,18 @@ static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 */
 static void std_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 {
-	GRECT g;
+	GRECT g, tb_area;
+
+    gemtk_wm_get_grect(gw, GEMTK_WM_AREA_TOOLBAR, &tb_area);
 
 	assert(gw->toolbar);
 	assert(gw->toolbar_idx >= 0);
 
 	// Update object position:
-	gw->toolbar[gw->toolbar_idx].ob_x = clip->g_x;
-	gw->toolbar[gw->toolbar_idx].ob_y = clip->g_y;
-	gw->toolbar[gw->toolbar_idx].ob_width = clip->g_w;
-	gw->toolbar[gw->toolbar_idx].ob_height = clip->g_h;
+	gw->toolbar[gw->toolbar_idx].ob_x = tb_area.g_x;
+	gw->toolbar[gw->toolbar_idx].ob_y = tb_area.g_y;
+	gw->toolbar[gw->toolbar_idx].ob_width = tb_area.g_w;
+	gw->toolbar[gw->toolbar_idx].ob_height = tb_area.g_h;
 
 	wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
 	while (g.g_h > 0 || g.g_w > 0) {
