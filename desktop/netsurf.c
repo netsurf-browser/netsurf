@@ -27,7 +27,6 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include "utils/schedule.h"
 #include "utils/utsname.h"
 #include "content/content_factory.h"
 #include "content/fetch.h"
@@ -240,10 +239,6 @@ nserror netsurf_init(int *pargc,
 	return ret;
 }
 
-static void netsurf_fetch_callback(void *p)
-{
-	hlcache_poll();
-}
 
 /**
  * Gui NetSurf main loop.
@@ -251,8 +246,6 @@ static void netsurf_fetch_callback(void *p)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		if(fetch_active)
-			schedule(0, netsurf_fetch_callback, NULL);
 		gui_poll(fetch_active);
 		hlcache_poll();
 	}
