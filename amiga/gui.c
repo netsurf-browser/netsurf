@@ -2459,8 +2459,14 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 	}
 }
 
+static void ami_gui_fetch_callback(void *p)
+{
+	hlcache_poll();
+}
+
 void gui_poll(bool active)
 {
+	if(active) schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
 }
 
