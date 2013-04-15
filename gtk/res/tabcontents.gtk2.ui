@@ -10,6 +10,9 @@
           <object class="GtkLayout" id="layout">
             <property name="visible">True</property>
             <property name="app_paintable">True</property>
+            <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_STRUCTURE_MASK | GDK_SCROLL_MASK</property>
+            <property name="hadjustment">layouthadjustment</property>
+            <property name="vadjustment">layoutvadjustment</property>
           </object>
         </child>
         <child>
@@ -47,6 +50,7 @@
             <child>
               <object class="GtkHScrollbar" id="hscrollbar">
                 <property name="visible">True</property>
+                <property name="adjustment">layouthadjustment</property>
               </object>
               <packing>
                 <property name="resize">True</property>
@@ -64,6 +68,7 @@
           <object class="GtkVScrollbar" id="vscrollbar">
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
+            <property name="adjustment">layoutvadjustment</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -72,4 +77,16 @@
           </packing>
         </child>
       </object>
+  <object class="GtkAdjustment" id="layouthadjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="layoutvadjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
 </interface>

@@ -673,14 +673,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
 
-	/* connect the scrollbars to the layout widget */
-	nsgtk_layout_set_hadjustment(g->layout,
-			gtk_range_get_adjustment(GTK_RANGE(
-			gtk_builder_get_object(xml, "hscrollbar"))));
-	nsgtk_layout_set_vadjustment(g->layout,
-			gtk_range_get_adjustment(GTK_RANGE(
-			gtk_builder_get_object(xml, "vscrollbar"))));
-
 	/* add the tab to the scaffold */
 	bool tempback = true;
 	switch (temp_open_background) {
@@ -744,7 +736,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			nsgtk_window_keypress_event, g);
 	CONNECT(g->layout, "size_allocate",
 			nsgtk_window_size_allocate_event, g);
-	CONNECT(g->layout, "scroll_event",
+	CONNECT(g->layout, "scroll-event",
 			nsgtk_window_scroll_event, g);
 	return g;
 }
