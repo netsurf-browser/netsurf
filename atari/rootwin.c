@@ -408,8 +408,6 @@ void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
     window_update_back_forward(rootwin);
 
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
-
-
 }
 
 void window_restore_active_gui_window(ROOTWIN *rootwin)
@@ -837,13 +835,6 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
 
     struct rect redraw_area;
     GRECT content_area_rel;
-
-    if(bw->window->browser->reformat_pending) {
-        browser_window_reformat(bw, true, content_area->g_w,
-                                content_area->g_h);
-        bw->window->browser->reformat_pending = false;
-        //return;
-    }
 
     //dbg_grect("browser redraw, content area", content_area);
     //dbg_grect("browser redraw, content clip", clip);
@@ -1438,11 +1429,7 @@ static void on_resized(ROOTWIN *rootwin)
     	toolbar_set_width(rootwin->toolbar, work.g_w);
 
         if ( gw->browser->bw->current_content != NULL ) {
-            /* Reformat will happen when redraw is processed: */
-            // TODO: call reformat directly, this was introduced because
-            // of bad AES knowledge, it's ok to call it directly here...
-            //printf("reformat......\n");
-            rootwin->active_gui_window->browser->reformat_pending = true;
+            browser_window_reformat(gw->browser->bw, true, work.g_w, work.g_h);
         }
     }
     if (rootwin->loc.g_x != g.g_x || rootwin->loc.g_y != g.g_y) {
