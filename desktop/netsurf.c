@@ -27,6 +27,7 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
+#include "utils/schedule.h"
 #include "utils/utsname.h"
 #include "content/content_factory.h"
 #include "content/fetch.h"
