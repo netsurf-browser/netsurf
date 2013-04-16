@@ -102,6 +102,7 @@ short gemtk_msg_box_show(short type, const char * msg);
 #define GEMTK_WM_FLAG_RECV_PREPROC_WM	0x02	// get notified even when pre-processed
 #define GEMTK_WM_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
 #define GEMTK_WM_FLAG_CUSTOM_TOOLBAR	0x08	// no internal toolbar handling
+												// (Except considering it's size)
 #define GEMTK_WM_FLAG_CUSTOM_SCROLLING	0x20	// no internal scroller handling
 
 #define GEMTK_WM_FLAG_DEFAULTS  \
