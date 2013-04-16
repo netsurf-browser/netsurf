@@ -421,6 +421,7 @@ size_t bitmap_get_bpp(void *bitmap)
 bool bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 		HermesFormat *fmt, int nw, int nh)
 {
+	unsigned int state = 0;
 	short bpp = bitmap_get_bpp( img );
 	int stride = bitmap_get_rowstride( img );
 	int err;
@@ -436,7 +437,10 @@ bool bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 	}
 
 	/* allocate the mem for resized bitmap */
-	img->resized = bitmap_create_ex( nw, nh, bpp, nw*bpp, 0, NULL );
+	if (img->opaque == true) {
+		state |= BITMAP_OPAQUE;
+	}
+	img->resized = bitmap_create_ex( nw, nh, bpp, nw*bpp, state, NULL );
 	if( img->resized == NULL ) {
 			printf("W: %d, H: %d, bpp: %d\n", nw, nh, bpp);
 			assert(img->resized);
