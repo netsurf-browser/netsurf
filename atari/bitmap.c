@@ -117,7 +117,6 @@ void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int st
 			bitmap->bpp = bpp;
 			bitmap->resized = NULL;
 			bitmap->rowstride = rowstride;
-			bitmap->opaque = true;
         } else {
 			free(bitmap);
 			bitmap=NULL;
