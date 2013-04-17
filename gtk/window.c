@@ -176,6 +176,9 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	current_widget = (GtkWidget *)gw->layout;
 	current_cr = cr;
 
+	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(gw->layout);
+	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(gw->layout);
+
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
 
 	clip.x0 = x1;
@@ -183,7 +186,11 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	clip.x1 = x2;
 	clip.y1 = y2;
 
-	browser_window_redraw(gw->bw, 0, 0, &clip, &ctx);
+	browser_window_redraw(gw->bw,
+			      -gtk_adjustment_get_value(hscroll),
+			      -gtk_adjustment_get_value(vscroll),
+			      &clip,
+			      &ctx);
 
 	if (gw->careth != 0) {
 		nsgtk_plot_caret(gw->caretx, gw->carety, gw->careth);
