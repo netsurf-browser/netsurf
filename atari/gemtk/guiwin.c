@@ -103,7 +103,7 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     /* get intersection with screen area */
     wind_get_grect(0, WF_CURRXYWH, &g);
     if(!rc_intersect(&g, rect)){
-		return;
+		goto error;
     }
     xy[0] = rect->g_x;
     xy[1] = rect->g_y;
@@ -115,6 +115,7 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     xy[7] = xy[3] + dy;
     vro_cpyfm(vh, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
 
+error:
     graf_mouse(M_ON, 0L);
     wind_update(END_UPDATE);
 }
