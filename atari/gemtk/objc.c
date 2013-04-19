@@ -89,6 +89,8 @@ char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt)
 
     snprintf(spare, maxlen, "%s", txt);
     set_string(tree, idx, spare);
+
+    return(0);
 }
 
 OBJECT *gemtk_obj_get_tree(int idx)

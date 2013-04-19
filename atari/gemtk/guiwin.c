@@ -757,6 +757,7 @@ GUIWIN *gemtk_wm_link(GUIWIN *win)
         win->prev = tmp;
         win->next = NULL;
     }
+    return(win);
 }
 
 /**
