@@ -59,6 +59,8 @@ sub main ()
     my $opt_ok;
     my @input;
     my %message;
+    my $last_key;
+    my $last_plat;
 
     # option parsing:
     Getopt::Long::Configure( GETOPT_OPTS );
@@ -93,11 +95,33 @@ sub main ()
     {
         use bytes;
 
-        if( !/#/     &&
-            !/^\s*$/ &&
-            /^([a-z]{2})\.([^.]+)\.([^:]+):/ )
+        my( $lang, $plat, $key );
+
+        if( /^([a-z]{2})\.([^.]+)\.([^:]+):/ )
         {
-            my( $lang, $plat, $key ) = ( $1, $2, $3 );
+            ( $lang, $plat, $key ) = ( $1, $2, $3 );
+        }
+
+        if( $key || $message{ $last_key } )
+        {
+            #print( $output "## $last_key -> $key\n" );
+            # the key changed but we have a message for it still pending:
+            if( $last_key && $message{ $last_key } && ($key ne $last_key) )
+            {
+                my $plt = $last_plat;
+                my $str = $message{ $last_key };
+                my $msg = qq|$opt{lang}.$last_plat.$last_key:$str\n|;
+
+                print( $output $msg );
+                delete( $message{ $last_key } );
+
+                # if the line following our new translation is not blank,
+                # generate a synthetic group-separator:
+                if( !/^\s*$/ ) { print( $output "\n") }
+            }
+
+            $last_key  = $key;
+            $last_plat = $plat;
 
             if( $lang eq $opt{lang} )
             {
@@ -106,7 +130,8 @@ sub main ()
                     ( $opt{plat} eq 'any' ||   # all platforms ok
                       $opt{plat} eq $plat  ) ) # specified platform matched
                 {
-                    print( $output $val ? qq|$1.$2.$3:$val\n| : $_ );
+                    print( $output qq|$1.$2.$3:$val\n| );
+                    delete( $message{ $key } );
                     next;
                 }
             }
@@ -201,7 +226,7 @@ sub parser ()
 
         while ( <$stream> )
         {
-            if( /(\S+)\s*=\s?(.*)/ )
+            if( /([^#]\S+)\s*=\s?(.*)/ )
             {
                 my $key = $1;
                 my $val = $2;
