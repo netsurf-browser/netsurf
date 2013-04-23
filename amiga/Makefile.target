@@ -132,10 +132,10 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
     ifeq ($(HOST),amiga)
-		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
-		$(Q)cp $(AMIGA_LIBS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
-		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
-		$(Q)cp --preserve=timestamps $(AMIGA_SOBJS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
+#		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
+#		$(Q)cp $(AMIGA_LIBS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
+#		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
+#		$(Q)cp --preserve=timestamps $(AMIGA_SOBJS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
     endif
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
