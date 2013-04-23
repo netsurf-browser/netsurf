@@ -193,7 +193,7 @@ sub parser ()
 {
     package msgfmt::java;
 
-    sub unescape { $_[0] =~ s/\\([\\':])/$1/g; $_[0] }
+    sub unescape { $_[0] =~ s/\\([^abfnrtv])/$1/g; $_[0] }
     sub parse
     {
         my $cache  = shift();
