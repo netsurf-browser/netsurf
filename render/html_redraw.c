@@ -1482,9 +1482,9 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 				bg_data.repeat_x = repeat_x;
 				bg_data.repeat_y = repeat_y;
 
-				if (!content_redraw(background->background,
-						&bg_data, &r, ctx))
-					return false;
+				/* We just continue if redraw fails */
+				content_redraw(background->background,
+						&bg_data, &r, ctx);
 			}
 		}
 
@@ -1634,8 +1634,8 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 			bg_data.repeat_x = repeat_x;
 			bg_data.repeat_y = repeat_y;
 
-			if (!content_redraw(box->background, &bg_data, &r, ctx))
-				return false;
+			/* We just continue if redraw fails */
+			content_redraw(box->background, &bg_data, &r, ctx);
 		}
 	}
 
