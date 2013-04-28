@@ -156,14 +156,21 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
  
 	ULONG depth = 32;
 	struct DrawInfo *dri;
-	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
+	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	if((depth < 16) || (nsoption_int(cairo_renderer) == -1)) {
 		palette_mapped = true;
-		// friend = scrn->RastPort.BitMap;
 	} else {
 		palette_mapped = false;
+		
+		/* If we're not palette-mapping allocate using a friend BitMap if the
+		 * depth is 32bpp.  In all other cases using a friend BitMap causes a
+		 * hard lockup or odd/missing graphical effects.
+		 */
+
+		if(depth == 32)
+			friend = scrn->RastPort.BitMap;
 	}
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
