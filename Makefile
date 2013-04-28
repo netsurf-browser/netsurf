@@ -593,6 +593,7 @@ endif
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
 	$(Q)$(RM) $(EXETARGET)
+	$(call clean_install_messages, !NetSurf/Resources)
 
 clean-testament:
 	$(VQ)echo "   CLEAN: utils/testament.h"
@@ -746,6 +747,16 @@ define split_install_messages
 		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
 	)
 endef
+
+# Clean Message target
+# 1 = Destination directory (where resources being installed, creates en/Messages etc)
+# 2 = suffix after language name
+define clean_install_messages
+	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGCLEAN: $(LANG) in $(1)
+		$(Q)$(RM) -f $(1)$(2)/$(LANG)/Messages
+	)
+endef
+
 
 # Target installs executable on the host system 
 install: all-program install-$(TARGET)
