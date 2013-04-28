@@ -584,7 +584,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		char2 = 0;
+		*char2 = 0;
 	}
 	
 	if(aa == false) {
@@ -622,7 +622,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 
 			kern = 0;
 
-			if(char2) EObtainInfo(&ofont->olf_EEngine,
+			if(*char2) EObtainInfo(&ofont->olf_EEngine,
 								OT_TextKernPair, &kern,
 								TAG_END);
 
@@ -632,7 +632,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 				glyphmaptag, glyph,
 				TAG_END);
 				
-			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 		}
@@ -657,7 +657,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		char2 = 0;
+		*char2 = 0;
 	}
 	
 	if(ESetInfo(&ofont->olf_EEngine,
@@ -674,7 +674,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 			kern = 0;
 
-			if(char2) {
+			if(*char2) {
 				if(ESetInfo(&ofont->olf_EEngine,
 						OT_GlyphCode, *char1,
 						OT_GlyphCode2, *char2,
@@ -687,7 +687,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 			
-			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 				
