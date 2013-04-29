@@ -669,54 +669,66 @@ nsgtk_preferences_buttonAddTheme_clicked(GtkButton *button, struct ppref *priv)
 {
 	char *filename, *directory;
 	size_t len;
-	GtkWidget *fc = gtk_file_chooser_dialog_new(
-		messages_get("gtkAddThemeTitle"),
-		GTK_WINDOW(priv->dialog),
-		GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-		GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	GtkWidget *fc;
+	char *themesfolder;
+	gint res;
+
+	fc  = gtk_file_chooser_dialog_new(messages_get("gtkAddThemeTitle"),
+					  GTK_WINDOW(priv->dialog),
+					  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+					  GTK_STOCK_OK,
+					  GTK_RESPONSE_ACCEPT,
+					  GTK_STOCK_CANCEL,
+					  GTK_RESPONSE_CANCEL,
+					  NULL);
 	len = SLEN("themes") + strlen(res_dir_location) + 1;
-	char themesfolder[len];
+
+	themesfolder = malloc(len);
+
 	snprintf(themesfolder, len, "%sthemes", res_dir_location);
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc),
-					    themesfolder);
-	gint res = gtk_dialog_run(GTK_DIALOG(fc));
+
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc), themesfolder);
+
+	res = gtk_dialog_run(GTK_DIALOG(fc));
 	if (res == GTK_RESPONSE_ACCEPT) {
-		filename = gtk_file_chooser_get_current_folder(
-			GTK_FILE_CHOOSER(fc));
-		if (strcmp(filename, themesfolder) != 0) {
-			directory = strrchr(filename, '/');
-			*directory = '\0';
+		filename = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(fc));
+		if (filename != NULL) {
 			if (strcmp(filename, themesfolder) != 0) {
-				warn_user(messages_get(
-						  "gtkThemeFolderInstructions"),
-					  0);
-				gtk_widget_destroy(GTK_WIDGET(fc));
-				if (filename != NULL)
-					g_free(filename);
-				return;
+				directory = strrchr(filename, '/');
+				*directory = '\0';
+				if (strcmp(filename, themesfolder) != 0) {
+					warn_user(messages_get(
+							  "gtkThemeFolderInstructions"),
+						  0);
+
+					if (filename != NULL)
+						g_free(filename);
+
+				} else {
+					directory++;
+					nsgtk_theme_add(directory);
+				}
 			} else {
-				directory++;
-			}
-		} else {
-			if (filename != NULL)
 				g_free(filename);
-			filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(fc));
-			if (strcmp(filename, themesfolder) == 0) {
-				warn_user(messages_get("gtkThemeFolderSub"),
-					  0);
-				gtk_widget_destroy(GTK_WIDGET(fc));
-				g_free(filename);
-				return;
+
+				filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+
+				if (strcmp(filename, themesfolder) == 0) {
+					warn_user(messages_get("gtkThemeFolderSub"),
+						  0);
+				} else {
+					directory = strrchr(filename, '/') + 1;
+					nsgtk_theme_add(directory);
+				}
 			}
-			directory = strrchr(filename, '/') + 1;
-		}
-		gtk_widget_destroy(GTK_WIDGET(fc));
-		nsgtk_theme_add(directory);
-		if (filename != NULL)
+
 			g_free(filename);
+		}
 	}
+
+	free(themesfolder);
+
+	gtk_widget_destroy(fc);
 }
 
 /* Tabs */
