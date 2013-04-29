@@ -99,11 +99,7 @@ bool selection_highlighted(const struct selection *s,
 		unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx);
 
-bool selection_save_text(struct selection *s, const char *path);
-
 void selection_update(struct selection *s, size_t byte_offset, int change,
-		bool redraw);	
-		
-unsigned selection_label_subtree(struct box *box, unsigned idx);
+		bool redraw);
 
 #endif
