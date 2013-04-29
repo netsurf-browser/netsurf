@@ -171,16 +171,6 @@ void selection_reinit(struct selection *s, struct box *root)
 
 	root_idx = 0;
 
-//	if (s->root == root) {
-//		/* keep the same number space as before, because we want
-//		   to keep the selection too */
-//		root_idx = (s->max_idx & 0xF0000000U);
-//	}
-//	else {
-//		static int next_idx = 0;
-//		root_idx = (next_idx++) << 28;
-//	}
-
 	s->root = root;
 	if (root) {
 		s->max_idx = selection_label_subtree(root, root_idx);
@@ -337,13 +327,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			gui_start_selection(top->window);
 		}
-		/* Selection should be cleared when button is released but in
-		 * the RO interface click is the same as press */
-//		else if (!pos && (mouse & BROWSER_MOUSE_CLICK_1)) {
-//			/* clear selection */
-//			selection_clear(s, true);
-//			s->drag_state = DRAG_NONE;
-//		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
 			/* ignore Adjust clicks when there's no selection */
@@ -1074,11 +1057,6 @@ bool selection_highlighted(const struct selection *s,
 	*end_idx = min(end, s->end_idx) - start;
 
 	return true;
-
-//	assert(box);
-//	assert(IS_TEXT(box));
-
-//	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
 }
 
 
