@@ -52,13 +52,11 @@
 #include "desktop/options.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
-#include "desktop/textinput.h"
 #include "desktop/plotters.h"
 
 #include "javascript/js.h"
 
 #include "render/form.h"
-#include "render/textplain.h"
 #include "render/html.h"
 #include "render/box.h"
 #include "utils/log.h"
