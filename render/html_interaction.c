@@ -847,9 +847,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			if (selection_defined(&html->sel)) {
 				sel_owner.none = false;
 				html_set_selection(html, HTML_SELECTION_SELF,
-						sel_owner,
-						selection_read_only(
-								&html->sel));
+						sel_owner, true);
 			} else if (click && html->selection_type !=
 					HTML_SELECTION_NONE) {
 				sel_owner.none = true;
