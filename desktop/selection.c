@@ -211,19 +211,6 @@ void selection_init(struct selection *s, struct box *root)
 
 
 /**
- * Indicate whether the selected text is read only, ie. cannot be modified.
- *
- * \param  s   selection object
- * \return true iff the selection is read only
- */
-
-bool selection_read_only(struct selection *s)
-{
-	return true;
-}
-
-
-/**
  * Label each text box in the given box subtree with its position
  * in a textual representation of the content.
  *
