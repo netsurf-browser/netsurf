@@ -160,7 +160,7 @@ void selection_destroy(struct selection *s)
  * resized causing the layout to change.
  *
  * \param  s     selection object
- * \param  root  the box (page/textarea) to be used as the root node for this selection
+ * \param  root  the root box for html document or NULL for text/plain
  */
 
 void selection_reinit(struct selection *s, struct box *root)
@@ -194,7 +194,7 @@ void selection_reinit(struct selection *s, struct box *root)
  * ie. selections are confined to that subtree.
  *
  * \param  s     selection object
- * \param  root  the box (page/textarea) to be used as the root node for this selection
+ * \param  root  the root box for html document or NULL for text/plain
  */
 
 void selection_init(struct selection *s, struct box *root)
