@@ -42,7 +42,6 @@
 #include "render/font.h"
 #include "content/content.h"
 #include "content/content_type.h"
-#include "render/textplain.h"
 
 #include "utils/log.h"
 
