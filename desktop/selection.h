@@ -83,9 +83,6 @@ void selection_select_all(struct selection *s);
 void selection_set_start(struct selection *s, unsigned idx);
 void selection_set_end(struct selection *s, unsigned idx);
 
-struct box *selection_get_start(struct selection *s, size_t *pidx);
-struct box *selection_get_end(struct selection *s, size_t *pidx);
-
 bool selection_click(struct selection *s, browser_mouse_state mouse,
 		unsigned idx);
 void selection_track(struct selection *s, browser_mouse_state mouse,

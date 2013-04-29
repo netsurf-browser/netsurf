@@ -83,7 +83,6 @@ static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
-static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
 
 
 /**
@@ -960,73 +959,6 @@ void selection_set_end(struct selection *s, unsigned offset)
 	}
 	else if (selection_defined(s))
 		selection_redraw(s, s->start_idx, s->end_idx);
-}
-
-
-/**
- * Get the box and index of the specified byte offset within the
- * textual representation.
- *
- * \param  b       root node of search
- * \param  offset  byte offset within textual representation
- * \param  pidx    receives byte index of selection start point within box
- * \return ptr to box, or NULL if no selection defined
- */
-
-struct box *get_box(struct box *b, unsigned offset, size_t *pidx)
-{
-	struct box *child = b->children;
-
-	if (b->text) {
-
-		if (offset >= b->byte_offset &&
-			offset <= b->byte_offset + b->length + SPACE_LEN(b)) {
-
-			/* it's in this box */
-			*pidx = offset - b->byte_offset;
-			return b;
-		}
-	}
-
-	/* find the first child that could contain this offset */
-	if (child) {
-		struct box *next = child->next;
-		while (next && next->byte_offset < offset) {
-			child = next;
-			next = child->next;
-		}
-		return get_box(child, offset, pidx);
-	}
-
-	return NULL;
-}
-
-
-/**
- * Get the box and index of the selection start, if defined.
- *
- * \param  s     selection object
- * \param  pidx  receives byte index of selection start point within box
- * \return ptr to box, or NULL if no selection defined
- */
-
-struct box *selection_get_start(struct selection *s, size_t *pidx)
-{
-	return (s->defined ? get_box(s->root, s->start_idx, pidx) : NULL);
-}
-
-
-/**
- * Get the box and index of the selection end, if defined.
- *
- * \param  s     selection object
- * \param  pidx  receives byte index of selection end point within box
- * \return ptr to box, or NULL if no selection defined.
- */
-
-struct box *selection_get_end(struct selection *s, size_t *pidx)
-{
-	return (s->defined ? get_box(s->root, s->end_idx, pidx) : NULL);
 }
 
 
