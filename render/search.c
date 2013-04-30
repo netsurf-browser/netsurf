@@ -74,13 +74,7 @@ struct search_context {
 };
 
 
-/**
- * create a search_context
- * \param h the hlcache_handle the search_context is connected to
- * \param callbacks the callbacks to modify appearance according to results
- * \param p the pointer to send to the callbacks
- * \return true for success
- */
+/* Exported function documented in search.h */
 struct search_context * search_create_context(hlcache_handle *h,
 		struct search_callbacks callbacks)
 {
@@ -569,15 +563,7 @@ static void search_text(const char *string, int string_len,
 }
 
 
-/**
- * Begins/continues the search process
- * Note that this may be called many times for a single search.
- *
- * \param bw the browser_window to search in
- * \param flags the flags forward/back etc
- * \param string the string to match
- */
-
+/* Exported function documented in search.h */
 void search_step(struct search_context *context, search_flags_t flags,
 		const char *string)
 {
@@ -619,18 +605,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 }
 
 
-/**
- * Determines whether any portion of the given text box should be
- * selected because it matches the current search string.
- *
- * \param  bw            browser window
- * \param  start_offset  byte offset within text of string to be checked
- * \param  end_offset    byte offset within text
- * \param  start_idx     byte offset within string of highlight start
- * \param  end_idx       byte offset of highlight end
- * \return true iff part of the box should be highlighted
- */
-
+/* Exported function documented in search.h */
 bool search_term_highlighted(struct content *c,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx,
@@ -650,11 +625,7 @@ bool search_term_highlighted(struct content *c,
 }
 
 
-/**
- * Specifies whether all matches or just the current match should
- * be highlighted in the search text.
- */
-
+/* Exported function documented in search.h */
 void search_show_all(bool all, struct search_context *context)
 {
 	struct list_entry *a;
@@ -693,10 +664,7 @@ void search_show_all(bool all, struct search_context *context)
 }
 
 
-/**
- * Ends the search process, invalidating all state
- * freeing the list of found boxes
- */
+/* Exported function documented in search.h */
 void search_destroy_context(struct search_context *context)
 {
 	assert(context != NULL);
