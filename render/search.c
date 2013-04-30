@@ -63,14 +63,14 @@ struct list_entry {
 };
 
 struct search_context {
-	struct search_callbacks		callbacks;
-	struct content	 		*c;
-	struct list_entry 		*found;
-	struct list_entry 		*current; /* first for select all */
-	char 				*string;
-	bool 				prev_case_sens;
-	bool 				newsearch;
-	bool				is_html;
+	struct search_callbacks callbacks;
+	struct content *c;
+	struct list_entry *found;
+	struct list_entry *current; /* first for select all */
+	char *string;
+	bool prev_case_sens;
+	bool newsearch;
+	bool is_html;
 };
 
 
@@ -143,8 +143,8 @@ static void free_matches(struct search_context *context)
 	a = context->found->next;
 
 	/* empty the list before clearing and deleting the
-	   selections because the the clearing updates the
-	   screen immediately, causing nested accesses to the list */
+	 * selections because the the clearing updates the
+	 * screen immediately, causing nested accesses to the list */
 
 	context->found->prev = NULL;
 	context->found->next = NULL;
@@ -235,11 +235,11 @@ static const char *find_pattern(const char *string, int s_len,
 				}
 
 				matches = true;
-			}
-			else
+			} else {
 				matches = false;
-		}
-		else if (s < es) {
+			}
+
+		} else if (s < es) {
 			char ch = *p;
 			if (ch == '#')
 				matches = true;
@@ -253,16 +253,17 @@ static const char *find_pattern(const char *string, int s_len,
 				ss = s;  /* remember first non-'*' char */
 				first = false;
 			}
-		}
-		else
+		} else {
 			matches = false;
+		}
 
 		if (matches) {
 			p++; s++;
-		}
-		else {
-			/* doesn't match, resume with stacked context if we have one */
-			if (--top < 0) return NULL;  /* no match, give up */
+		} else {
+			/* doesn't match,
+			 * resume with stacked context if we have one */
+			if (--top < 0)
+				return NULL;  /* no match, give up */
 
 			ss = context[top].ss;
 			s  = context[top].s;
@@ -303,10 +304,12 @@ static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 
 	entry->next = 0;
 	entry->prev = context->found->prev;
+
 	if (context->found->prev == NULL)
 		context->found->next = entry;
 	else
 		context->found->prev->next = entry;
+
 	context->found->prev = entry;
 
 	return entry;
@@ -341,7 +344,8 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 			const char *pos = find_pattern(text, length,
 					pattern, p_len, case_sens,
 					&match_length);
-			if (!pos) break;
+			if (!pos)
+				break;
 
 			/* found string in box => add to list */
 			match_offset = pos - cur->text;
@@ -403,7 +407,8 @@ static bool find_occurrences_text(const char *pattern, int p_len,
 				const char *pos = find_pattern(text, length,
 						pattern, p_len, case_sens,
 						&match_length);
-				if (!pos) break;
+				if (!pos)
+					break;
 
 				/* found string in line => add to list */
 				start_idx = offset + (pos - text);
@@ -455,9 +460,6 @@ static void search_text(const char *string, int string_len,
 			return;
 	}
 
-	/* LOG(("do_search '%s' - '%s' (%p, %p) %p (%d, %d) %d",
-		search_data.string, string, search_data.content, c, search_data.found->next,
-		search_data.prev_case_sens, case_sens, forwards)); */
 
 	/* check if we need to start a new search or continue an old one */
 	if (context->newsearch) {
@@ -465,6 +467,7 @@ static void search_text(const char *string, int string_len,
 
 		if (context->string != NULL)
 			free(context->string);
+
 		context->current = NULL;
 		free_matches(context);
 
@@ -502,19 +505,17 @@ static void search_text(const char *string, int string_len,
 					context->callbacks.gui_p);
 
 		context->prev_case_sens = case_sensitive;
-/* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
-		search_data.current->prev, search_data.current->next)); */
+
 		/* new search, beginning at the top of the page */
 		context->current = context->found->next;
 		context->newsearch = false;
-	}
-	else if (context->current != NULL) {
+
+	} else if (context->current != NULL) {
 		/* continued search in the direction specified */
 		if (forwards) {
 			if (context->current->next)
 				context->current = context->current->next;
-		}
-		else {
+		} else {
 			if (context->current->prev)
 				context->current = context->current->prev;
 		}
@@ -525,6 +526,7 @@ static void search_text(const char *string, int string_len,
 	if (context->callbacks.gui->status != NULL)
 		context->callbacks.gui->status((context->current != NULL),
 				context->callbacks.gui_p);
+
 	search_show_all(showall, context);
 
 	if (context->callbacks.gui->back_state != NULL)
@@ -580,8 +582,9 @@ void search_step(struct search_context *context, search_flags_t flags,
 				context->callbacks.gui_p);
 
 	string_len = strlen(string);
-	for(i = 0; i < string_len; i++)
-		if (string[i] != '#' && string[i] != '*') break;
+	for (i = 0; i < string_len; i++)
+		if (string[i] != '#' && string[i] != '*')
+			break;
 	if (i >= string_len) {
 		union content_msg_data msg_data;
 		free_matches(context);
@@ -613,11 +616,11 @@ bool search_term_highlighted(struct content *c,
 {
 	if (c == context->c) {
 		struct list_entry *a;
-		for(a = context->found->next; a; a = a->next)
+		for (a = context->found->next; a; a = a->next)
 			if (a->sel && selection_defined(a->sel) &&
-				selection_highlighted(a->sel,
-					start_offset, end_offset,
-					start_idx, end_idx))
+					selection_highlighted(a->sel,
+						start_offset, end_offset,
+						start_idx, end_idx))
 				return true;
 	}
 
@@ -675,10 +678,11 @@ void search_destroy_context(struct search_context *context)
 
 	if (context->c != NULL) {
 
-		if (context->is_html)
+		if (context->is_html) {
 			html_set_search(context->c, NULL);
-		else
+		} else {
 			textplain_set_search(context->c, NULL);
+		}
 	}
 	if ((context->string != NULL) && (context->callbacks.gui != NULL) &&
 			(context->callbacks.gui->add_recent != NULL)) {
