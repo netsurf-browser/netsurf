@@ -605,7 +605,7 @@ clean-builddir:
 CLEANS += clean-builddir
 
 all-program: $(EXETARGET) post-exe
-	$(call split_install_messages, '[^\.]+', !NetSurf/Resources)
+	$(call split_install_messages, any, !NetSurf/Resources)
 
 .PHONY: testament
 testament utils/testament.h:
@@ -744,7 +744,7 @@ FAT_LANGUAGES=de en fr it nl
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
 		$(Q)mkdir -p $(2)/$(LANG)$(3)
-		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
+		$(Q)$(PERL) utils/split-messages.pl -l $(LANG) -p $(1) -f messages resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
 	)
 endef
 
