@@ -687,7 +687,6 @@ void table_used_bottom_border_for_cell(struct box *cell)
 		
 		if (table_border_is_more_eyecatching(&a, a_src, &b, b_src)) {
 			a = b;
-			a_src = b_src;
 		}
 	}
 
