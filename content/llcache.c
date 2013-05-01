@@ -539,8 +539,11 @@ static nserror llcache_fetch_parse_header(llcache_object *object,
 		/* extract ETag header */
 		free(object->cache.etag);
 		object->cache.etag = strdup(*value);
-		if (object->cache.etag == NULL)
+		if (object->cache.etag == NULL) {
+			free(*name);
+			free(*value);
 			return NSERROR_NOMEM;
+		}
 	} else if (14 < len && strcasecmp(*name, "Last-Modified") == 0) {
 		/* extract Last-Modified header */
 		object->cache.last_modified = curl_getdate(*value, NULL);
@@ -613,8 +616,9 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 	}
 
 	error = llcache_fetch_parse_header(object, data, len, &name, &value);
-	if (error != NSERROR_OK)
+	if (error != NSERROR_OK) {
 		return error;
+	}
 
 	/* Append header data to the object's headers array */
 	temp = realloc(object->headers, (object->num_headers + 1) * 
