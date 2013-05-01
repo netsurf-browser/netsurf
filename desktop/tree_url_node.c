@@ -565,18 +565,20 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 
 	error = nsurl_create(url2, &url);
 
-	free(url2);
-
 	if (error != NSERROR_OK) {
 		LOG(("Failed normalising '%s'", url2));
 
-		warn_user("NoMemory", NULL);
+		free(url2);
+
+		warn_user(messages_get_errorcode(error), NULL);
 
 		free(title);
 		dom_node_unref(a);
 
 		return;
 	}
+
+	free(url2);
 
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
