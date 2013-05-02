@@ -92,7 +92,7 @@ WIN_RES_OBJ := installer.nsi NetSurf.ico netsurf.png welcome.html default.css
 WIN_RES_INS_OBJ := $(addprefix windows/res/,$(WIN_RES_OBJ)) $(OBJROOT)/messages
 
 $(OBJROOT)/messages: resources/FatMessages
-	$(PERL) utils/split-messages.pl en all < resources/FatMessages > $@
+	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages resources/FatMessages > $@
 
 netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
 	makensis -V4 -NOCD windows/res/installer.nsi 

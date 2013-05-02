@@ -171,7 +171,7 @@ install-framebuffer:
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
 	$(Q)cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
 	$(Q)for F in $(NETSURF_FRAMEBUFFER_RESOURCE_LIST); do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
-	$(Q)$(PERL) utils/split-messages.pl en all < resources/FatMessages | gzip -9n > $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)messages
+	$(Q)$(SPLIT_MESSAGES) -l en -p fb -f messages resources/FatMessages | gzip -9n > $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)messages
 
 # ----------------------------------------------------------------------------
 # Package target

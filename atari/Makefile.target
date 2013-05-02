@@ -191,9 +191,8 @@ endif
 	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(ATARI_TARGET_DIR)res/internal.css
 	$(Q)cp \!NetSurf/Resources/SearchEngines $(ATARI_TARGET_DIR)res/search
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-#	$(Q)cp resources/FatMessages $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-	$(Q)$(PERL) utils/split-messages.pl en all < resources/FatMessages > $(ATARI_TARGET_DIR)res/messages
+	$(Q)$(SPLIT_MESSAGES) -l en -p atari -f messages resources/FatMessages > $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp \!NetSurf/Resources/en/welcome.html,faf $(ATARI_TARGET_DIR)res/welcome.html
 	$(Q)cp \!NetSurf/Resources/en/licence.html,faf $(ATARI_TARGET_DIR)res/licence.html
 	$(Q)cp \!NetSurf/Resources/en/credits.html,faf $(ATARI_TARGET_DIR)res/credits.html

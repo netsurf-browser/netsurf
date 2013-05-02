@@ -137,6 +137,7 @@ PERL=perl
 MKDIR=mkdir
 TOUCH=touch
 STRIP=strip
+SPLIT_MESSAGES=$(PERL) utils/split-messages.pl
 
 # Override this only if the host compiler is called something different
 HOST_CC := gcc
@@ -744,7 +745,7 @@ FAT_LANGUAGES=de en fr it nl
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
 		$(Q)mkdir -p $(2)/$(LANG)$(3)
-		$(Q)$(PERL) utils/split-messages.pl -l $(LANG) -p $(1) -f messages resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
+		$(Q)$(SPLIT_MESSAGES) -l $(LANG) -p $(1) -f messages resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
 	)
 endef
 
