@@ -92,6 +92,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	if (fallback_charset != NULL) {
 		c->fallback_charset = strdup(fallback_charset);
 		if (c->fallback_charset == NULL) {
+			free(user_sentinel);
 			return NSERROR_NOMEM;
 		}
 	}
