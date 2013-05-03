@@ -683,6 +683,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 
 		dir = tree_create_folder_node(tctx->tree, tctx->directory,
 				title, true, false, false);
+		free(title);
 		if (dir == NULL) {
 			dom_string_unref(name);
 			return false;
