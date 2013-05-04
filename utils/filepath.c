@@ -89,20 +89,12 @@ char *filepath_sfindfile(char *str, const char *format, ...)
 /* exported interface documented in filepath.h */
 char *filepath_findfile(const char *format, ...)
 {
-	char *str;
 	char *ret;
 	va_list ap;
 
-	str = malloc(PATH_MAX);
-	if (str == NULL)
-		return NULL; /* unable to allocate memory */
-
 	va_start(ap, format);
-	ret = filepath_vsfindfile(str, format, ap);
+	ret = filepath_vsfindfile(NULL, format, ap);
 	va_end(ap);
-
-	if (ret == NULL)
-		free(str);
 
 	return ret;
 }
