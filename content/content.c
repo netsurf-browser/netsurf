@@ -1338,6 +1338,7 @@ nserror content__clone(const struct content *c, struct content *nc)
 
 	error = llcache_handle_clone(c->llcache, &(nc->llcache));
 	if (error != NSERROR_OK) {
+		free(user_sentinel);
 		return error;
 	}
 	
