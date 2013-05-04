@@ -119,19 +119,22 @@ static node_callback_resp sslcert_node_callback(void *user_data,
 
 static struct node *sslcert_create_node(const struct ssl_cert_info *cert)
 {
-	struct node *node;
+	struct node *node = NULL;
 	struct node_element *element;
 	char *text;
 
 	text = messages_get_buff("SSL_Certificate_Subject", cert->subject);
-	if (text == NULL)
-		return NULL;
-
-	node = tree_create_leaf_node(NULL, NULL, text, false, false, false);
-	if (node == NULL) {
+	if (text != NULL) {
+		node = tree_create_leaf_node(NULL,
+					     NULL,
+					     text,
+					     false, false, false);
 		free(text);
+	}
+	if (node == NULL) {
 		return NULL;
 	}
+
 	tree_set_node_user_callback(node, sslcert_node_callback, NULL);
 
 	/* add issuer node */

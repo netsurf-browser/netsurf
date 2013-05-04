@@ -264,19 +264,12 @@ static struct node *cookies_create_cookie_node(struct node *parent,
 					       const struct cookie_data *data)
 {
 	struct node *node;
-	char *name;
 
-	name = strdup(data->name);
-	if (name == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	node = tree_create_leaf_node(cookies_tree, NULL, name,
+	node = tree_create_leaf_node(cookies_tree,
+				     NULL,
+				     data->name,
 				     false, false, false);
 	if (node == NULL) {
-		free(name);
 		return NULL;
 	}
 
