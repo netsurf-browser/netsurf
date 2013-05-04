@@ -596,7 +596,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 
 	/* counter-reset */
 	val = css_computed_counter_reset(style, &counter);
-	if ((val = CSS_COUNTER_RESET_NONE) || (counter == NULL)) {
+	if ((val == CSS_COUNTER_RESET_NONE) || (counter == NULL)) {
 		fprintf(stream, "counter-reset: none ");
 	} else {
 		fprintf(stream, "counter-reset:");
