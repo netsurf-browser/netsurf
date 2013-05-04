@@ -1328,40 +1328,33 @@ struct content *content_clone(struct content *c)
  */
 nserror content__clone(const struct content *c, struct content *nc)
 {
-	struct content_user *user_sentinel;
 	nserror error;
-
-	user_sentinel = calloc(1, sizeof(struct content_user));
-	if (user_sentinel == NULL) {
-		return NSERROR_NOMEM;
-	}
 
 	error = llcache_handle_clone(c->llcache, &(nc->llcache));
 	if (error != NSERROR_OK) {
-		free(user_sentinel);
 		return error;
 	}
-	
-	llcache_handle_change_callback(nc->llcache, 
-			content_llcache_callback, nc);
+
+	llcache_handle_change_callback(nc->llcache,
+				       content_llcache_callback, nc);
 
 	nc->mime_type = lwc_string_ref(c->mime_type);
 	nc->handler = c->handler;
 
 	nc->status = c->status;
-	
+
 	nc->width = c->width;
 	nc->height = c->height;
 	nc->available_width = c->available_width;
 	nc->quirks = c->quirks;
-	
+
 	if (c->fallback_charset != NULL) {
 		nc->fallback_charset = strdup(c->fallback_charset);
 		if (nc->fallback_charset == NULL) {
 			return NSERROR_NOMEM;
 		}
 	}
-	
+
 	if (c->refresh != NULL) {
 		nc->refresh = nsurl_ref(c->refresh);
 		if (nc->refresh == NULL) {
@@ -1372,21 +1365,24 @@ nserror content__clone(const struct content *c, struct content *nc)
 	nc->time = c->time;
 	nc->reformat_time = c->reformat_time;
 	nc->size = c->size;
-	
+
 	if (c->title != NULL) {
 		nc->title = strdup(c->title);
 		if (nc->title == NULL) {
 			return NSERROR_NOMEM;
 		}
 	}
-	
+
 	nc->active = c->active;
 
-	nc->user_list = user_sentinel;
-	
+	nc->user_list = calloc(1, sizeof(struct content_user));
+	if (nc->user_list == NULL) {
+		return NSERROR_NOMEM;
+	}
+
 	memcpy(&(nc->status_message), &(c->status_message), 120);
 	memcpy(&(nc->sub_status), &(c->sub_status), 80);
-	
+
 	nc->locked = c->locked;
 	nc->total_size = c->total_size;
 	nc->http_code = c->http_code;
