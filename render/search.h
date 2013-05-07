@@ -27,30 +27,17 @@
 struct search_context;
 
 /**
- * Called when a search context is destroyed
- * \param context  search context being invalidated
- * \param p        pointer for client data
- */
-typedef void (*search_invalidate_callback)(struct search_context *context,
-		void *p);
-
-struct search_callbacks {
-	struct gui_search_callbacks *gui;
-	void *gui_p; /* private gui owned data */
-	search_invalidate_callback invalidate;
-	void *p; /* private client data */
-};
-
-/**
  * create a search_context
  *
- * \param h the hlcache_handle the search_context is connected to
+ * \param c 	the content the search_context is connected to
+ * \param type	the content type of c
  * \param callbacks the callbacks to modify appearance according to results
- * \param p the pointer to send to the callbacks
+ * \param p 	the pointer to send to the callbacks
  * \return true for success
  */
-struct search_context * search_create_context(struct hlcache_handle *h, 
-		struct search_callbacks callbacks);
+struct search_context * search_create_context(struct content *c,
+		content_type type, struct gui_search_callbacks *callbacks,
+		void *gui_data);
 
 /**
  * Ends the search process, invalidating all state

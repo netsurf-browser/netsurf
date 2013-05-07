@@ -764,7 +764,6 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_clone(clone->history);
 
 	/* window characteristics */
-	bw->cur_search = NULL;
 	bw->refresh_interval = -1;
 
 	bw->reformat_pending = false;
@@ -2127,10 +2126,6 @@ void browser_window_destroy_internal(struct browser_window *bw)
 			browser_window_set_selection(top, false, false);
 		}
 	}
-
-	/* Destroying a search context causes it to redraw any deselected,
-	 * content areas, so do this first */
-	browser_window_search_destroy_context(bw);
 
 	/* Destruction order is important: we must ensure that the frontend 
 	 * destroys any window(s) associated with this browser window before 

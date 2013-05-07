@@ -153,9 +153,6 @@ struct browser_window {
 	} selection;
 	bool can_edit;
 
-	/** Current context for free text search, or NULL if none */
-	struct search_context *cur_search;
-
 	/** current javascript context */
 	struct jscontext *jsctx;
 

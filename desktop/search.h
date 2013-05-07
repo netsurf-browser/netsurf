@@ -22,10 +22,14 @@
 #include <ctype.h>
 #include <string.h>
 
+struct browser_window;
+
 typedef enum {
-	SEARCH_FLAG_CASE_SENSITIVE = (1 << 0),
-	SEARCH_FLAG_FORWARDS = (1 << 1),
-	SEARCH_FLAG_SHOWALL = (1 << 2)
+	SEARCH_FLAG_NONE		= 0,
+	SEARCH_FLAG_CASE_SENSITIVE 	= (1 << 0),
+	SEARCH_FLAG_FORWARDS 		= (1 << 1),
+	SEARCH_FLAG_BACKWARDS 		= (1 << 2),
+	SEARCH_FLAG_SHOWALL 		= (1 << 3)
 } search_flags_t;
 
 /**
@@ -74,13 +78,9 @@ struct gui_search_callbacks {
 };
 
 
-bool browser_window_search_create_context(struct browser_window *bw, 
-		struct gui_search_callbacks *gui_callbacks, void *gui_p);
-void browser_window_search_destroy_context(struct browser_window *bw);
-bool browser_window_search_verify_new(struct browser_window *bw,
-		struct gui_search_callbacks *gui_callbacks, void *gui_p);
-void browser_window_search_step(struct browser_window *bw,
+void browser_window_search(struct browser_window *bw,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
 		search_flags_t flags, const char *string);
-void browser_window_search_show_all(bool all, struct browser_window *bw);
+void browser_window_search_clear(struct browser_window *bw);
 
 #endif

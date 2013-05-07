@@ -45,6 +45,7 @@
 #include "render/search.h"
 #include "render/textplain.h"
 #include "render/html.h"
+#include "render/search.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -73,6 +74,8 @@ typedef struct textplain_content {
 
 	/** Context for free text search, or NULL if none */
 	struct search_context *search;
+	/** Current search string, or NULL if none */
+	char *search_string;
 } textplain_content;
 
 
@@ -109,6 +112,10 @@ static void textplain_mouse_track(struct content *c, struct browser_window *bw,
 static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 static bool textplain_keypress(struct content *c, uint32_t key);
+static void textplain_search(struct content *c,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string);
+static void textplain_search_clear(struct content *c);
 static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
@@ -117,7 +124,6 @@ static void textplain_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 void textplain_close(struct content *c);
 char *textplain_get_selection(struct content *c);
-struct search_context *textplain_get_search(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(void);
@@ -142,6 +148,8 @@ static const content_handler textplain_content_handler = {
 	.mouse_track = textplain_mouse_track,
 	.mouse_action = textplain_mouse_action,
 	.keypress = textplain_keypress,
+	.search = textplain_search,
+	.search_clear = textplain_search_clear,
 	.redraw = textplain_redraw,
 	.open = textplain_open,
 	.close = textplain_close,
@@ -759,6 +767,79 @@ bool textplain_keypress(struct content *c, uint32_t key)
 
 
 /**
+ * Handle search.
+ *
+ * \param  c			content of type text
+ * \param  gui_callbacks	vtable for updating front end
+ * \param  gui_data		front end private data
+ * \param  flags		search flags
+ * \param  string		search string
+ */
+void textplain_search(struct content *c,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	assert(c != NULL);
+
+	if (string != NULL && text->search_string != NULL &&
+			strcmp(string, text->search_string) == 0 &&
+			text->search != NULL) {
+		/* Continue prev. search */
+		search_step(text->search, flags, string);
+
+	} else if (string != NULL) {
+		/* New search */
+		free(text->search_string);
+		text->search_string = strdup(string);
+		if (text->search_string == NULL)
+			return;
+
+		if (text->search != NULL) {
+			search_destroy_context(text->search);
+			text->search = NULL;
+		}
+
+		text->search = search_create_context(c, CONTENT_TEXTPLAIN,
+				gui_callbacks, gui_data);
+
+		if (text->search == NULL)
+			return;
+
+		search_step(text->search, flags, string);
+
+	} else {
+		/* Clear search */
+		textplain_search_clear(c);
+
+		free(text->search_string);
+		text->search_string = NULL;
+	}
+}
+
+
+/**
+ * Terminate a search.
+ *
+ * \param  c			content of type text
+ */
+void textplain_search_clear(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	assert(c != NULL);
+
+	free(text->search_string);
+	text->search_string = NULL;
+
+	if (text->search != NULL)
+		search_destroy_context(text->search);
+	text->search = NULL;
+}
+
+
+/**
  * Draw a CONTENT_TEXTPLAIN using the current set of plotters (plot).
  *
  * \param  c	 content of type CONTENT_TEXTPLAIN
@@ -941,36 +1022,6 @@ char *textplain_get_selection(struct content *c)
 	textplain_content *text = (textplain_content *) c;
 
 	return selection_get_copy(&text->sel);
-}
-
-
-/**
- * Set an TEXTPLAIN content's search context
- *
- * \param c	content of type text
- * \param s	search context, or NULL if none
- */
-
-void textplain_set_search(struct content *c, struct search_context *s)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	text->search = s;
-}
-
-
-/**
- * Return an TEXTPLAIN content's search context
- *
- * \param c	content of type text
- * \return content's search context, or NULL if none
- */
-
-struct search_context *textplain_get_search(struct content *c)
-{
-	textplain_content *text = (textplain_content *) c;
-
-	return text->search;
 }
 
 /**
