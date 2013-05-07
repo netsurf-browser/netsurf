@@ -27,29 +27,52 @@
 struct search_context;
 
 /**
- * Called when a search context is destroyed
- * \param context  search context being invalidated
- * \param p        pointer for client data
+ * create a search_context
+ *
+ * \param c 	the content the search_context is connected to
+ * \param type	the content type of c
+ * \param callbacks the callbacks to modify appearance according to results
+ * \param p 	the pointer to send to the callbacks
+ * \return true for success
  */
-typedef void (*search_invalidate_callback)(struct search_context *context,
-		void *p);
+struct search_context * search_create_context(struct content *c,
+		content_type type, struct gui_search_callbacks *callbacks,
+		void *gui_data);
 
-struct search_callbacks {
-	struct gui_search_callbacks *gui;
-	void *gui_p; /* private gui owned data */
-	search_invalidate_callback invalidate;
-	void *p; /* private client data */
-};
-
-
-struct search_context * search_create_context(struct hlcache_handle *h, 
-		struct search_callbacks callbacks);
+/**
+ * Ends the search process, invalidating all state
+ * freeing the list of found boxes
+ */
 void search_destroy_context(struct search_context *context);
+
+/**
+ * Begins/continues the search process
+ * Note that this may be called many times for a single search.
+ *
+ * \param bw the browser_window to search in
+ * \param flags the flags forward/back etc
+ * \param string the string to match
+ */
 void search_step(struct search_context *context, search_flags_t flags,
 		const char * string);
+
+/**
+ * Specifies whether all matches or just the current match should
+ * be highlighted in the search text.
+ */
 void search_show_all(bool all, struct search_context *context);
 
-
+/**
+ * Determines whether any portion of the given text box should be
+ * selected because it matches the current search string.
+ *
+ * \param  bw            browser window
+ * \param  start_offset  byte offset within text of string to be checked
+ * \param  end_offset    byte offset within text
+ * \param  start_idx     byte offset within string of highlight start
+ * \param  end_idx       byte offset of highlight end
+ * \return true iff part of the box should be highlighted
+ */
 bool search_term_highlighted(struct content *c,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx,

@@ -63,36 +63,27 @@ struct list_entry {
 };
 
 struct search_context {
-	struct search_callbacks		callbacks;
-	struct content	 		*c;
-	struct list_entry 		*found;
-	struct list_entry 		*current; /* first for select all */
-	char 				*string;
-	bool 				prev_case_sens;
-	bool 				newsearch;
-	bool				is_html;
+	struct gui_search_callbacks *gui;
+	void *gui_p;
+	struct content *c;
+	struct list_entry *found;
+	struct list_entry *current; /* first for select all */
+	char *string;
+	bool prev_case_sens;
+	bool newsearch;
+	bool is_html;
 };
 
 
-/**
- * create a search_context
- * \param h the hlcache_handle the search_context is connected to
- * \param callbacks the callbacks to modify appearance according to results
- * \param p the pointer to send to the callbacks
- * \return true for success
- */
-struct search_context * search_create_context(hlcache_handle *h,
-		struct search_callbacks callbacks)
+/* Exported function documented in search.h */
+struct search_context * search_create_context(struct content *c,
+		content_type type, struct gui_search_callbacks *callbacks,
+		void *gui_data)
 {
 	struct search_context *context;
 	struct list_entry *search_head;
-	struct content *c = hlcache_handle_get_content(h);
 
-	if (h == NULL)
-		return NULL;
-
-	if (content_get_type(h) != CONTENT_HTML &&
-			content_get_type(h) != CONTENT_TEXTPLAIN) {
+	if (type != CONTENT_HTML && type != CONTENT_TEXTPLAIN) {
 		return NULL;
 	}
 
@@ -123,14 +114,9 @@ struct search_context * search_create_context(hlcache_handle *h,
 	context->prev_case_sens = false;
 	context->newsearch = true;
 	context->c = c;
-	context->is_html = (content_get_type(h) == CONTENT_HTML) ? true : false;
-	context->callbacks = callbacks;
-
-	if (context->is_html) {
-		html_set_search(context->c, context);
-	} else {
-		textplain_set_search(context->c, context);
-	}
+	context->is_html = (type == CONTENT_HTML) ? true : false;
+	context->gui = callbacks;
+	context->gui_p = gui_data;
 
 	return context;
 }
@@ -149,8 +135,8 @@ static void free_matches(struct search_context *context)
 	a = context->found->next;
 
 	/* empty the list before clearing and deleting the
-	   selections because the the clearing updates the
-	   screen immediately, causing nested accesses to the list */
+	 * selections because the the clearing updates the
+	 * screen immediately, causing nested accesses to the list */
 
 	context->found->prev = NULL;
 	context->found->next = NULL;
@@ -241,11 +227,11 @@ static const char *find_pattern(const char *string, int s_len,
 				}
 
 				matches = true;
-			}
-			else
+			} else {
 				matches = false;
-		}
-		else if (s < es) {
+			}
+
+		} else if (s < es) {
 			char ch = *p;
 			if (ch == '#')
 				matches = true;
@@ -259,16 +245,17 @@ static const char *find_pattern(const char *string, int s_len,
 				ss = s;  /* remember first non-'*' char */
 				first = false;
 			}
-		}
-		else
+		} else {
 			matches = false;
+		}
 
 		if (matches) {
 			p++; s++;
-		}
-		else {
-			/* doesn't match, resume with stacked context if we have one */
-			if (--top < 0) return NULL;  /* no match, give up */
+		} else {
+			/* doesn't match,
+			 * resume with stacked context if we have one */
+			if (--top < 0)
+				return NULL;  /* no match, give up */
 
 			ss = context[top].ss;
 			s  = context[top].s;
@@ -309,10 +296,12 @@ static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 
 	entry->next = 0;
 	entry->prev = context->found->prev;
+
 	if (context->found->prev == NULL)
 		context->found->next = entry;
 	else
 		context->found->prev->next = entry;
+
 	context->found->prev = entry;
 
 	return entry;
@@ -347,7 +336,8 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 			const char *pos = find_pattern(text, length,
 					pattern, p_len, case_sens,
 					&match_length);
-			if (!pos) break;
+			if (!pos)
+				break;
 
 			/* found string in box => add to list */
 			match_offset = pos - cur->text;
@@ -409,7 +399,8 @@ static bool find_occurrences_text(const char *pattern, int p_len,
 				const char *pos = find_pattern(text, length,
 						pattern, p_len, case_sens,
 						&match_length);
-				if (!pos) break;
+				if (!pos)
+					break;
 
 				/* found string in line => add to list */
 				start_idx = offset + (pos - text);
@@ -461,9 +452,6 @@ static void search_text(const char *string, int string_len,
 			return;
 	}
 
-	/* LOG(("do_search '%s' - '%s' (%p, %p) %p (%d, %d) %d",
-		search_data.string, string, search_data.content, c, search_data.found->next,
-		search_data.prev_case_sens, case_sens, forwards)); */
 
 	/* check if we need to start a new search or continue an old one */
 	if (context->newsearch) {
@@ -471,6 +459,7 @@ static void search_text(const char *string, int string_len,
 
 		if (context->string != NULL)
 			free(context->string);
+
 		context->current = NULL;
 		free_matches(context);
 
@@ -480,10 +469,8 @@ static void search_text(const char *string, int string_len,
 			context->string[string_len] = '\0';
 		}
 
-		if ((context->callbacks.gui != NULL) &&
-				(context->callbacks.gui->hourglass != NULL))
-			context->callbacks.gui->hourglass(true,
-					context->callbacks.gui_p);
+		if ((context->gui != NULL) && (context->gui->hourglass != NULL))
+			context->gui->hourglass(true, context->gui_p);
 
 		if (context->is_html == true) {
 			res = find_occurrences_html(string, string_len,
@@ -495,53 +482,48 @@ static void search_text(const char *string, int string_len,
 
 		if (!res) {
 			free_matches(context);
-			if ((context->callbacks.gui != NULL) &&
-					(context->callbacks.gui->hourglass !=
-					NULL))
-				context->callbacks.gui->hourglass(false,
-						context->callbacks.gui_p);
+			if ((context->gui != NULL) &&
+					(context->gui->hourglass != NULL))
+				context->gui->hourglass(false, context->gui_p);
 			return;
 		}
-		if ((context->callbacks.gui != NULL) &&
-				(context->callbacks.gui->hourglass != NULL))
-			context->callbacks.gui->hourglass(false,
-					context->callbacks.gui_p);
+		if ((context->gui != NULL) &&
+				(context->gui->hourglass != NULL))
+			context->gui->hourglass(false, context->gui_p);
 
 		context->prev_case_sens = case_sensitive;
-/* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
-		search_data.current->prev, search_data.current->next)); */
+
 		/* new search, beginning at the top of the page */
 		context->current = context->found->next;
 		context->newsearch = false;
-	}
-	else if (context->current != NULL) {
+
+	} else if (context->current != NULL) {
 		/* continued search in the direction specified */
 		if (forwards) {
 			if (context->current->next)
 				context->current = context->current->next;
-		}
-		else {
+		} else {
 			if (context->current->prev)
 				context->current = context->current->prev;
 		}
 	}
 
-	if (context->callbacks.gui == NULL)
+	if (context->gui == NULL)
 		return;
-	if (context->callbacks.gui->status != NULL)
-		context->callbacks.gui->status((context->current != NULL),
-				context->callbacks.gui_p);
+	if (context->gui->status != NULL)
+		context->gui->status((context->current != NULL),
+				context->gui_p);
+
 	search_show_all(showall, context);
 
-	if (context->callbacks.gui->back_state != NULL)
-		context->callbacks.gui->back_state((context->current != NULL) &&
+	if (context->gui->back_state != NULL)
+		context->gui->back_state((context->current != NULL) &&
 				(context->current->prev != NULL),
-				context->callbacks.gui_p);
-	if (context->callbacks.gui->forward_state != NULL)
-		context->callbacks.gui->forward_state(
-				(context->current != NULL) &&
-					(context->current->next != NULL),
-				context->callbacks.gui_p);
+				context->gui_p);
+	if (context->gui->forward_state != NULL)
+		context->gui->forward_state((context->current != NULL) &&
+				(context->current->next != NULL),
+				context->gui_p);
 
 	if (context->current == NULL)
 		return;
@@ -569,45 +551,34 @@ static void search_text(const char *string, int string_len,
 }
 
 
-/**
- * Begins/continues the search process
- * Note that this may be called many times for a single search.
- *
- * \param bw the browser_window to search in
- * \param flags the flags forward/back etc
- * \param string the string to match
- */
-
+/* Exported function documented in search.h */
 void search_step(struct search_context *context, search_flags_t flags,
 		const char *string)
 {
 	int string_len;
 	int i = 0;
 
-	if ((context == NULL) || (context->callbacks.gui == NULL)) {
+	if ((context == NULL) || (context->gui == NULL)) {
 		warn_user("SearchError", 0);
 		return;
 	}
 
-	if (context->callbacks.gui->add_recent != NULL)
-		context->callbacks.gui->add_recent(string,
-				context->callbacks.gui_p);
+	if (context->gui->add_recent != NULL)
+		context->gui->add_recent(string, context->gui_p);
 
 	string_len = strlen(string);
-	for(i = 0; i < string_len; i++)
-		if (string[i] != '#' && string[i] != '*') break;
+	for (i = 0; i < string_len; i++)
+		if (string[i] != '#' && string[i] != '*')
+			break;
 	if (i >= string_len) {
 		union content_msg_data msg_data;
 		free_matches(context);
-		if (context->callbacks.gui->status != NULL)
-			context->callbacks.gui->status(true,
-					context->callbacks.gui_p);
-		if (context->callbacks.gui->back_state != NULL)
-			context->callbacks.gui->back_state(false,
-					context->callbacks.gui_p);
-		if (context->callbacks.gui->forward_state != NULL)
-			context->callbacks.gui->forward_state(false,
-					context->callbacks.gui_p);
+		if (context->gui->status != NULL)
+			context->gui->status(true, context->gui_p);
+		if (context->gui->back_state != NULL)
+			context->gui->back_state(false, context->gui_p);
+		if (context->gui->forward_state != NULL)
+			context->gui->forward_state(false, context->gui_p);
 
 		msg_data.scroll.area = false;
 		msg_data.scroll.x0 = 0;
@@ -619,18 +590,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 }
 
 
-/**
- * Determines whether any portion of the given text box should be
- * selected because it matches the current search string.
- *
- * \param  bw            browser window
- * \param  start_offset  byte offset within text of string to be checked
- * \param  end_offset    byte offset within text
- * \param  start_idx     byte offset within string of highlight start
- * \param  end_idx       byte offset of highlight end
- * \return true iff part of the box should be highlighted
- */
-
+/* Exported function documented in search.h */
 bool search_term_highlighted(struct content *c,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx,
@@ -638,11 +598,11 @@ bool search_term_highlighted(struct content *c,
 {
 	if (c == context->c) {
 		struct list_entry *a;
-		for(a = context->found->next; a; a = a->next)
+		for (a = context->found->next; a; a = a->next)
 			if (a->sel && selection_defined(a->sel) &&
-				selection_highlighted(a->sel,
-					start_offset, end_offset,
-					start_idx, end_idx))
+					selection_highlighted(a->sel,
+						start_offset, end_offset,
+						start_idx, end_idx))
 				return true;
 	}
 
@@ -650,11 +610,7 @@ bool search_term_highlighted(struct content *c,
 }
 
 
-/**
- * Specifies whether all matches or just the current match should
- * be highlighted in the search text.
- */
-
+/* Exported function documented in search.h */
 void search_show_all(bool all, struct search_context *context)
 {
 	struct list_entry *a;
@@ -693,29 +649,14 @@ void search_show_all(bool all, struct search_context *context)
 }
 
 
-/**
- * Ends the search process, invalidating all state
- * freeing the list of found boxes
- */
+/* Exported function documented in search.h */
 void search_destroy_context(struct search_context *context)
 {
 	assert(context != NULL);
 
-	if (context->callbacks.invalidate != NULL) {
-		context->callbacks.invalidate(context, context->callbacks.p);
-	}
-
-	if (context->c != NULL) {
-
-		if (context->is_html)
-			html_set_search(context->c, NULL);
-		else
-			textplain_set_search(context->c, NULL);
-	}
-	if ((context->string != NULL) && (context->callbacks.gui != NULL) &&
-			(context->callbacks.gui->add_recent != NULL)) {
-		context->callbacks.gui->add_recent(context->string,
-				context->callbacks.gui_p);
+	if ((context->string != NULL) && (context->gui != NULL) &&
+			(context->gui->add_recent != NULL)) {
+		context->gui->add_recent(context->string, context->gui_p);
 		free(context->string);
 	}
 	free_matches(context);

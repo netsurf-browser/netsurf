@@ -43,6 +43,7 @@
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
+#include "render/search.h"
 #include "javascript/js.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -847,9 +848,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			if (selection_defined(&html->sel)) {
 				sel_owner.none = false;
 				html_set_selection(html, HTML_SELECTION_SELF,
-						sel_owner,
-						selection_read_only(
-								&html->sel));
+						sel_owner, true);
 			} else if (click && html->selection_type !=
 					HTML_SELECTION_NONE) {
 				sel_owner.none = true;
@@ -954,7 +953,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 /**
  * Handle keypresses.
  *
- * \param  c	content of type CONTENT_TEXTPLAIN
+ * \param  c	content of type HTML
  * \param  key	The UCS4 character codepoint
  * \return true if key handled, false otherwise
  */
@@ -1003,6 +1002,79 @@ bool html_keypress(struct content *c, uint32_t key)
 	}
 
 	return false;
+}
+
+
+/**
+ * Handle search.
+ *
+ * \param  c			content of type HTML
+ * \param  gui_callbacks	vtable for updating front end
+ * \param  gui_data		front end private data
+ * \param  flags		search flags
+ * \param  string		search string
+ */
+void html_search(struct content *c,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string)
+{
+	html_content *html = (html_content *)c;
+
+	assert(c != NULL);
+
+	if (string != NULL && html->search_string != NULL &&
+			strcmp(string, html->search_string) == 0 &&
+			html->search != NULL) {
+		/* Continue prev. search */
+		search_step(html->search, flags, string);
+
+	} else if (string != NULL) {
+		/* New search */
+		free(html->search_string);
+		html->search_string = strdup(string);
+		if (html->search_string == NULL)
+			return;
+
+		if (html->search != NULL) {
+			search_destroy_context(html->search);
+			html->search = NULL;
+		}
+
+		html->search = search_create_context(c, CONTENT_HTML,
+				gui_callbacks, gui_data);
+
+		if (html->search == NULL)
+			return;
+
+		search_step(html->search, flags, string);
+
+	} else {
+		/* Clear search */
+		html_search_clear(c);
+
+		free(html->search_string);
+		html->search_string = NULL;
+	}
+}
+
+
+/**
+ * Terminate a search.
+ *
+ * \param  c			content of type HTML
+ */
+void html_search_clear(struct content *c)
+{
+	html_content *html = (html_content *)c;
+
+	assert(c != NULL);
+
+	free(html->search_string);
+	html->search_string = NULL;
+
+	if (html->search != NULL)
+		search_destroy_context(html->search);
+	html->search = NULL;
 }
 
 

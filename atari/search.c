@@ -224,7 +224,7 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 {
 	if (s != NULL) {
 		LOG((""));
-		browser_window_search_destroy_context(s->bw);
+		browser_window_search_clear(s->bw);
 		free(s);
 	}
 }
@@ -270,7 +270,7 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 
 
 	if(search_session_compare(s, obj)){
-		browser_window_search_destroy_context(s->bw);
+		browser_window_search_clear(s->bw);
 		apply_form(obj, &s->state);
 	} else {
 
@@ -282,11 +282,9 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 	else
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 
-	if( browser_window_search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-		LOG(("searching for: %s\n", gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH)));
-		browser_window_search_step(s->bw, s->state.flags,
-									gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
-	}
+	browser_window_search(s->bw, &nsatari_search_callbacks, s,
+			s->state.flags,
+			gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
 
 }
 
@@ -305,7 +303,7 @@ struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
 
 	apply_form(obj, &sfs->state);
 
-	browser_window_search_destroy_context(bw);
+	browser_window_search_clear(bw);
 
 	return(sfs);
 }

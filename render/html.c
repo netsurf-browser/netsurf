@@ -330,6 +330,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->selection_owner.none = true;
 	c->focus_type = HTML_FOCUS_SELF;
 	c->focus_owner.self = true;
+	c->search = NULL;
+	c->search_string = NULL;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jscontext = NULL;
@@ -2006,36 +2008,6 @@ static void html_debug_dump(struct content *c, FILE *f)
 }
 
 
-/**
- * Set an HTML content's search context
- *
- * \param c	content of type html
- * \param s	search context, or NULL if none
- */
-
-void html_set_search(struct content *c, struct search_context *s)
-{
-	html_content *html = (html_content *) c;
-
-	html->search = s;
-}
-
-
-/**
- * Return an HTML content's search context
- *
- * \param c	content of type html
- * \return content's search context, or NULL if none
- */
-
-struct search_context *html_get_search(struct content *c)
-{
-	html_content *html = (html_content *) c;
-
-	return html->search;
-}
-
-
 #if ALWAYS_DUMP_FRAMESET
 /**
  * Print a frameset tree to stderr.
@@ -2276,6 +2248,8 @@ static const content_handler html_content_handler = {
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
 	.drop_file_at_point = html_drop_file_at_point,
+	.search = html_search,
+	.search_clear = html_search_clear,
 	.debug_dump = html_debug_dump,
 	.clone = html_clone,
 	.type = html_content_type,

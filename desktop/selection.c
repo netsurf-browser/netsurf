@@ -83,7 +83,7 @@ static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
-
+static unsigned selection_label_subtree(struct box *box, unsigned idx);
 
 /**
  * Get the browser window containing the content a selection object belongs to.
@@ -207,19 +207,6 @@ void selection_init(struct selection *s, struct box *root)
 	s->drag_state = DRAG_NONE;
 
 	selection_reinit(s, root);
-}
-
-
-/**
- * Indicate whether the selected text is read only, ie. cannot be modified.
- *
- * \param  s   selection object
- * \return true iff the selection is read only
- */
-
-bool selection_read_only(struct selection *s)
-{
-	return true;
 }
 
 
@@ -989,30 +976,4 @@ bool selection_highlighted(const struct selection *s,
 	*end_idx = min(end, s->end_idx) - start;
 
 	return true;
-}
-
-
-/**
- * Adjust the selection to reflect a change in the selected text,
- * eg. editing in a text area/input field.
- *
- * \param  s            selection object
- * \param  byte_offset  byte offset of insertion/removal point
- * \param  change       byte size of change, +ve = insertion, -ve = removal
- * \param  redraw       true iff the screen should be updated
- */
-
-void selection_update(struct selection *s, size_t byte_offset,
-		int change, bool redraw)
-{
-	if (selection_defined(s) &&
-		byte_offset >= s->start_idx &&
-		byte_offset < s->end_idx)
-	{
-		if (change > 0)
-			s->end_idx += change;
-		else
-			s->end_idx +=
-				max(change, (int)(byte_offset - s->end_idx));
-	}
 }

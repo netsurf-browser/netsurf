@@ -832,6 +832,28 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
+void content_search(struct hlcache_handle *h,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->search != NULL)
+		c->handler->search(c, gui_callbacks, gui_data, flags, string);
+}
+
+
+void content_search_clear(struct hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->search_clear != NULL)
+		c->handler->search_clear(c);
+}
+
+
 void content_debug_dump(struct hlcache_handle *h, FILE *f)
 {
 	struct content *c = hlcache_handle_get_content(h);
