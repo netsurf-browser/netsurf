@@ -2334,7 +2334,7 @@ nl.all.SSLCerts:SSL certificates
 en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prÃ¼fen. Bitte die Details unten beachten.
 fr.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-it.all.SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL, per favore verifica i dettagli presenti di seguito
+it.all.SSLError:NetSurf non Ã¨ stato in grado di verificare l'autenticitÃ  di questo certificato SSL, per favore verifica i dettagli presenti di seguito
 nl.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 en.all.SSL_Certificate_Subject:Subject: %s
 de.all.SSL_Certificate_Subject:Subject: %s
@@ -2744,7 +2744,7 @@ nl.all.HotlistSaveError:The hotlist was unable to be correctly saved.
 en.all.TreeLoadError:The tree was unable to be correctly loaded.
 de.all.TreeLoadError:The tree was unable to be correctly loaded.
 fr.all.TreeLoadError:The tree was unable to be correctly loaded.
-it.all.TreeLoadError:L'albero non è stato caricato correttamente.
+it.all.TreeLoadError:L'albero non Ã¨ stato caricato correttamente.
 nl.all.TreeLoadError:The tree was unable to be correctly loaded.
 en.all.NoDirError:%s is not a directory
 de.all.NoDirError:%s ist kein Verzeichnis.
@@ -5011,7 +5011,7 @@ nl.ro.HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave thes
 en.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 de.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 fr.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
-it.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
+it.ro.HelpInterfaceConfig16:This indicates whether NetSurfÂ willÂ useÂ anÂ externalÂ hotlistÂ clientÂ ifÂ available,Â inÂ preferenceÂ toÂ theÂ internalÂ hotlist.
 nl.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 en.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
 de.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.

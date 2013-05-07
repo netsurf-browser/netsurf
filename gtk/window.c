@@ -384,105 +384,91 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
-				GdkEventScroll *event, gpointer data)
+static gboolean
+nsgtk_window_scroll_event(GtkWidget *widget,
+			  GdkEventScroll *event,
+			  gpointer data)
 {
 	struct gui_window *g = data;
 	double value;
+	double deltax = 0;
+	double deltay = 0;
 	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(g->layout);
 	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(g->layout);
 	GtkAllocation alloc;
 
-	LOG(("%d", event->direction));
 	switch (event->direction) {
 	case GDK_SCROLL_LEFT:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				-100, 0) != true) {
-			/* core did not handle event do horizontal scroll */
+		deltax = -1.0;
+		break;
 
-			value = gtk_adjustment_get_value(hscroll) -
-				(nsgtk_adjustment_get_step_increment(hscroll) *2);
+	case GDK_SCROLL_UP:
+		deltay = -1.0;
+		break;
 
+	case GDK_SCROLL_RIGHT:
+		deltax = 1.0;
+		break;
+
+	case GDK_SCROLL_DOWN:
+		deltay = 1.0;
+		break;
+
+#if GTK_CHECK_VERSION(3,4,0)
+	case GDK_SCROLL_SMOOTH:
+		gdk_event_get_scroll_deltas((GdkEvent *)event, &deltax, &deltay);
+		break;
+#endif
+	default:
+		LOG(("Unhandled mouse scroll direction"));
+		return TRUE;
+	}
+
+	deltax *= nsgtk_adjustment_get_step_increment(hscroll);
+	deltay *= nsgtk_adjustment_get_step_increment(vscroll);
+
+	LOG(("Scrolling %f, %f", deltax, deltay));
+
+	if (browser_window_scroll_at_point(g->bw,
+					   event->x / g->bw->scale,
+					   event->y / g->bw->scale,
+					   deltax, deltay) != true) {
+
+		/* core did not handle event so change adjustments */
+
+		/* Horizontal */
+		if (deltax != 0) {
+			value = gtk_adjustment_get_value(hscroll) + deltax;
+
+			/* @todo consider gtk_widget_get_allocated_width() */
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+			if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width) {
+				value = nsgtk_adjustment_get_upper(hscroll) - alloc.width;
+			}
 			if (value < nsgtk_adjustment_get_lower(hscroll)) {
 				value = nsgtk_adjustment_get_lower(hscroll);
 			}
 
 			gtk_adjustment_set_value(hscroll, value);
 		}
-		break;
 
-	case GDK_SCROLL_UP:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				0, -100) != true) {
-			/* core did not handle event change vertical
-			 * adjustment. 
-			 */
+		/* Vertical */
+		if (deltay != 0) {
+			value = gtk_adjustment_get_value(vscroll) + deltay;
 
-			value = gtk_adjustment_get_value(vscroll) -
-				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
+			/* @todo consider gtk_widget_get_allocated_height */
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
+			if (value > (nsgtk_adjustment_get_upper(vscroll) - alloc.height)) {
+				value = nsgtk_adjustment_get_upper(vscroll) - alloc.height;
+			}
 			if (value < nsgtk_adjustment_get_lower(vscroll)) {
 				value = nsgtk_adjustment_get_lower(vscroll);
 			}
 
 			gtk_adjustment_set_value(vscroll, value);
 		}
-		break;
-
-	case GDK_SCROLL_RIGHT:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				100, 0) != true) {
-
-			/* core did not handle event change horizontal
-			 * adjustment. 
-			 */
-
-			value = gtk_adjustment_get_value(hscroll) +
-				(nsgtk_adjustment_get_step_increment(hscroll) * 2);
-
-			/* @todo consider gtk_widget_get_allocated_width() */
-			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
-
-			if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width) {
-				value = nsgtk_adjustment_get_upper(hscroll) - 
-					alloc.width;
-			}
-
-			gtk_adjustment_set_value(hscroll, value);
-		}
-		break;
-
-	case GDK_SCROLL_DOWN:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				0, 100) != true) {
-			/* core did not handle event change vertical
-			 * adjustment. 
-			 */
-
-			value = gtk_adjustment_get_value(vscroll) +
-				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
-			/* @todo consider gtk_widget_get_allocated_height */
-			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
-
-			if (value > nsgtk_adjustment_get_upper(vscroll) - alloc.height) {
-				value = nsgtk_adjustment_get_upper(vscroll) - 
-					alloc.height;
-			}
-
-			gtk_adjustment_set_value(vscroll, value);
-		}
-		break;
-
-	default:
-		break;
 	}
 
 	return TRUE;

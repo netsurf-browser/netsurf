@@ -175,33 +175,24 @@ static bool history_global_initialise_node(const char *title,
 					   time_t base, int days_back)
 {
 	struct tm *full_time;
-	char *buffer;
 	struct node *node;
 
 	base += days_back * 60 * 60 * 24;
 	if (title == NULL) {
 		full_time = localtime(&base);
-		buffer = strdup(messages_get(weekday_msg_name[full_time->tm_wday]));
-	} else {
-		buffer = strdup(title);
+		title = messages_get(weekday_msg_name[full_time->tm_wday]);
 	}
 
-	if (buffer == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return false;
-	}
-
-	node = tree_create_folder_node(NULL, NULL, buffer,
-				       false, true, true);
+	node = tree_create_folder_node(NULL, NULL, title, false, true, true);
 	if (node == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		free(buffer);
+		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return false;
 	}
-	if (folder_icon != NULL)
+
+	if (folder_icon != NULL) {
 		tree_set_node_icon(global_history_tree, node, folder_icon);
+	}
+
 	tree_set_node_user_callback(node, history_global_node_callback, NULL);
 
 	global_history_base_node[global_history_base_node_count] = node;

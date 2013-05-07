@@ -117,7 +117,7 @@ struct node_element {
 	struct node *parent;		/**< Parent node */
 	node_element_type type;		/**< Element type */
 	struct node_element_box box;	/**< Element bounding box */
-	const char *text;		/**< Text for the element */
+	char *text; /**< Text for the element */
 	void *bitmap;			/**< Bitmap for the element */
 	struct node_element *next;	/**< Next node element */
 	unsigned int flag;		/**< Client specified flag for data
@@ -233,26 +233,19 @@ struct tree *tree_create(unsigned int flags,
 		const struct treeview_table *callbacks, void *client_data)
 {
 	struct tree *tree;
-	char *title;
 
 	tree = calloc(sizeof(struct tree), 1);
 	if (tree == NULL) {
 		LOG(("calloc failed"));
-		warn_user("NoMemory", 0);
+		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return NULL;
 	}
 
-	title = strdup("Root");
-	if (title == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		free(tree);
-		return NULL;
-	}
-	tree->root = tree_create_folder_node(NULL, NULL, title,
+	tree->root = tree_create_folder_node(NULL,
+					     NULL,
+					     messages_get("Root"),
 					     false, false, false);
 	if (tree->root == NULL) {
-		free(title);
 		free(tree);
 		return NULL;
 	}
@@ -553,18 +546,7 @@ static void tree_recalculate_node_sizes(struct tree *tree, struct node *node,
 }
 
 
-/**
- * Creates a folder node with the specified title, and optionally links it into
- * the tree.
- *
- * \param tree		    the owner tree of 'parent', may be NULL
- * \param parent	    the parent node, or NULL not to link
- * \param title		    the node title (not copied, used directly)
- * \param editable	    if true, the node title will be editable
- * \param retain_in_memory  if true, the node will stay in memory after deletion
- * \param deleted	    if true, the node is created with the deleted flag
- * \return		    the newly created node.
- */
+/* exported interface documented in desktop/tree.h */
 struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
 		bool deleted)
@@ -575,16 +557,20 @@ struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 
 	node = calloc(sizeof(struct node), 1);
 	if (node == NULL) {
-		LOG(("calloc failed"));
-		warn_user("NoMemory", 0);
 		return NULL;
 	}
+
+	node->data.text = strdup(title);
+	if (node->data.text == NULL) {
+		free(node);
+		return NULL;
+	}
+
 	node->folder = true;
 	node->retain_in_memory = retain_in_memory;
 	node->deleted = deleted;
 	node->data.parent = node;
 	node->data.type = NODE_ELEMENT_TEXT;
-	node->data.text = title;
 	node->data.flag = TREE_ELEMENT_TITLE;
 	node->data.editable = editable;
 	node->sort = NULL;
@@ -592,25 +578,14 @@ struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 	node->previous = NULL;
 
 	tree_recalculate_node_sizes(tree, node, true);
-	if (parent != NULL)
+	if (parent != NULL) {
 		tree_link_node(tree, parent, node, false);
+	}
 
 	return node;
 }
 
-
-/**
- * Creates a leaf node with the specified title, and optionally links it into
- * the tree.
- *
- * \param tree		    the owner tree of 'parent', may be NULL
- * \param parent	    the parent node, or NULL not to link
- * \param title		    the node title (not copied, used directly)
- * \param editable	    if true, the node title will be editable
- * \param retain_in_memory  if true, the node will stay in memory after deletion
- * \param deleted	    if true, the node is created with the deleted flag
- * \return		    the newly created node.
- */
+/* exported interface documented in desktop/tree.h */
 struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
 		bool deleted)
@@ -621,8 +596,12 @@ struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 
 	node = calloc(sizeof(struct node), 1);
 	if (node == NULL) {
-		LOG(("calloc failed"));
-		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	node->data.text = strdup(title);
+	if (node->data.text == NULL) {
+		free(node);
 		return NULL;
 	}
 
@@ -631,7 +610,6 @@ struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 	node->deleted = deleted;
 	node->data.parent = node;
 	node->data.type = NODE_ELEMENT_TEXT;
-	node->data.text = title;
 	node->data.flag = TREE_ELEMENT_TITLE;
 	node->data.editable = editable;
 	node->sort = NULL;
@@ -639,8 +617,9 @@ struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 	node->previous = NULL;
 
 	tree_recalculate_node_sizes(tree, node, true);
-	if (parent != NULL)
+	if (parent != NULL) {
 		tree_link_node(tree, parent, node, false);
+	}
 
 	return node;
 }
@@ -1502,18 +1481,20 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 
 	assert(element != NULL);
 
-	if (tree != NULL && element == tree->editing)
+	if ((tree != NULL) && (element == tree->editing)) {
 		tree_stop_edit(tree, false);
+	}
 
-	if (text != NULL && (element->type == NODE_ELEMENT_TEXT ||
-			     element->type == NODE_ELEMENT_TEXT_PLUS_ICON)) {
+	if ((text != NULL) &&
+	    (element->type == NODE_ELEMENT_TEXT ||
+	     element->type == NODE_ELEMENT_TEXT_PLUS_ICON)) {
 		if (element->text != NULL) {
-			if(strcmp(element->text, text) == 0) text_changed = true;
-
+			if (strcmp(element->text, text) == 0) {
+				text_changed = true;
+			}
 			response = NODE_CALLBACK_NOT_HANDLED;
-			if (!element->editable &&
-			    element->parent->user_callback !=
-			    NULL) {
+			if ((!element->editable) &&
+			    (element->parent->user_callback != NULL)) {
 				msg_data.msg = NODE_DELETE_ELEMENT_TXT;
 				msg_data.flag = element->flag;
 				msg_data.node = element->parent;
@@ -1522,14 +1503,16 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 					element->parent->callback_data,
 					&msg_data);
 			}
-			if (response != NODE_CALLBACK_HANDLED)
-				free((void *)element->text);
+			if (response != NODE_CALLBACK_HANDLED) {
+				free(element->text);
+			}
 		}
-		element->text = text;
+		element->text = (char *)text;
 	}
 
-	if (bitmap != NULL && (element->type == NODE_ELEMENT_BITMAP ||
-			       element->type == NODE_ELEMENT_TEXT_PLUS_ICON)) {
+	if ((bitmap != NULL) &&
+	    ((element->type == NODE_ELEMENT_BITMAP) ||
+	     (element->type == NODE_ELEMENT_TEXT_PLUS_ICON))) {
 		if (element->bitmap != NULL) {
 			response = NODE_CALLBACK_NOT_HANDLED;
 			if (element->parent->user_callback != NULL) {
@@ -1541,10 +1524,11 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 					element->parent->callback_data,
 					&msg_data);
 			}
-			if (response != NODE_CALLBACK_HANDLED)
+
+			if (response != NODE_CALLBACK_HANDLED) {
 				free(element->bitmap);
-		}
-		else {
+			}
+		} else {
 			/* Increase the box width to accomodate the new icon */
 			element->box.width += NODE_INSTEP;
 		}

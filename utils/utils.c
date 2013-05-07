@@ -98,26 +98,34 @@ char *remove_underscores(const char *s, bool replacespace)
 /**
  * Replace consecutive whitespace with a single space.
  *
+ * @todo determine if squash_whitespace utf-8 safe and that it needs to be
+ *
  * \param  s  source string
- * \return  heap allocated result, or 0 on memory exhaustion
+ * \return  heap allocated result, or NULL on memory exhaustion
  */
 
-char * squash_whitespace(const char *s)
+char *squash_whitespace(const char *s)
 {
-	char *c = malloc(strlen(s) + 1);
+	char *c;
 	int i = 0, j = 0;
-	if (!c)
-		return 0;
-	do {
-		if (s[i] == ' ' || s[i] == '\n' || s[i] == '\r' ||
-				s[i] == '\t') {
-			c[j++] = ' ';
-			while (s[i] == ' ' || s[i] == '\n' || s[i] == '\r' ||
-					s[i] == '\t')
-				i++;
-		}
-		c[j++] = s[i++];
-	} while (s[i - 1] != 0);
+
+	c = malloc(strlen(s) + 1);
+	if (c != NULL) {
+		do {
+			if (s[i] == ' ' ||
+			    s[i] == '\n' ||
+			    s[i] == '\r' ||
+			    s[i] == '\t') {
+				c[j++] = ' ';
+				while (s[i] == ' ' ||
+				       s[i] == '\n' ||
+				       s[i] == '\r' ||
+				       s[i] == '\t')
+					i++;
+			}
+			c[j++] = s[i++];
+		} while (s[i - 1] != 0);
+	}
 	return c;
 }
 

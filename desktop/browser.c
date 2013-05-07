@@ -2889,6 +2889,8 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
+	assert(bw != NULL);
+
 	browser_window_set_drag_type(bw, DRAGGING_PAGE_SCROLL, NULL);
 
 	bw->drag_start_x = x;

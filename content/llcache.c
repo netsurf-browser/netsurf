@@ -1185,6 +1185,7 @@ static nserror llcache_object_add_user(llcache_object *object,
 {
 	assert(user->next == NULL);
 	assert(user->prev == NULL);
+	assert(user->handle != NULL);
 
 	user->handle->object = object;
 
