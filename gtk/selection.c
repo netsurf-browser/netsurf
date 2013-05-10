@@ -22,7 +22,6 @@
 #include "utils/log.h"
 
 #include "desktop/gui.h"
-#include "desktop/selection.h"
 #include "desktop/browser.h"
 #include "gtk/selection.h"
 #include "gtk/window.h"

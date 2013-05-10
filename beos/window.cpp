@@ -26,7 +26,6 @@ extern "C" {
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "desktop/options.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "utils/log.h"
@@ -1297,7 +1296,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 
 }

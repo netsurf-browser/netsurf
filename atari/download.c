@@ -32,7 +32,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/download.h"
 #include "render/html.h"

@@ -53,7 +53,6 @@
 #include "desktop/hotlist.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/thumbnail.h"
 #include "desktop/tree.h"

@@ -27,7 +27,6 @@
 #include "oslib/wimp.h"
 #include "content/hlcache.h"
 #include "desktop/gui.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"

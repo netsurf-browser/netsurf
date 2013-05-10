@@ -40,8 +40,6 @@
 #include "desktop/options.h"
 #include "amiga/theme.h"
 
-#include "desktop/selection.h"
-
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -89,7 +87,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 	drag_save = type;
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 	ami_drag_icon_show(g->shared->win, "ascii");
 

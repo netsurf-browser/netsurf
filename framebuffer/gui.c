@@ -1844,7 +1844,7 @@ gui_drag_save_object(gui_save_type type,
 }
 
 void
-gui_drag_save_selection(struct selection *s, struct gui_window *g)
+gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 

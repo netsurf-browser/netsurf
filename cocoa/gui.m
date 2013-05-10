@@ -30,7 +30,6 @@
 #import "desktop/browser_private.h"
 #import "desktop/options.h"
 #import "desktop/textinput.h"
-#import "desktop/selection.h"
 #import "desktop/401login.h"
 #import "utils/utils.h"
 #import "image/ico.h"
@@ -291,7 +290,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 {
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 

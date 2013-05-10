@@ -38,7 +38,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
 #include "utils/log.h"
@@ -1766,7 +1765,8 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 {
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *w)
+
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 

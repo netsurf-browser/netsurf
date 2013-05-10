@@ -50,7 +50,6 @@ typedef enum {
 struct gui_window;
 struct gui_download_window;
 struct browser_window;
-struct selection;
 struct form_control;
 
 #include <stdbool.h>
@@ -116,7 +115,7 @@ void gui_download_window_done(struct gui_download_window *dw);
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g);
-void gui_drag_save_selection(struct selection *s, struct gui_window *g);
+void gui_drag_save_selection(struct gui_window *g, const char *selection);
 void gui_start_selection(struct gui_window *g);
 void gui_clear_selection(struct gui_window *g);
 
