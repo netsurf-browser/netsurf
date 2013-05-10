@@ -273,8 +273,9 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		((mouse & BROWSER_MOUSE_DRAG_1) ||
 		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
-
-		gui_drag_save_selection(s, top->window);
+		char *sel = selection_get_copy(s);
+		gui_drag_save_selection(top->window, sel);
+		free(sel);
 	}
 	else if (!modkeys) {
 		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {

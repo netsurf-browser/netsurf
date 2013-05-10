@@ -291,7 +291,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 {
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 
