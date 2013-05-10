@@ -32,7 +32,6 @@
 #import "desktop/options.h"
 #import "desktop/plotters.h"
 #import "desktop/save_complete.h"
-#import "desktop/selection.h"
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
 #import "render/html.h"

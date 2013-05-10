@@ -18,7 +18,6 @@
 
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/options.h"
 

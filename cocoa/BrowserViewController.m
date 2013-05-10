@@ -24,7 +24,6 @@
 #import "desktop/history_core.h"
 #import "desktop/textinput.h"
 #import "desktop/options.h"
-#import "desktop/selection.h"
 
 #import "utils/corestrings.h"
 #import "utils/filename.h"

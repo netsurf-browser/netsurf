@@ -48,7 +48,6 @@
 #include "desktop/save_text.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "gtk/cookies.h"

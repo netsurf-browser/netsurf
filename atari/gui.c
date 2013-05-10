@@ -42,7 +42,6 @@
 
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"

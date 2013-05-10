@@ -29,7 +29,6 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
-#include "desktop/selection.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

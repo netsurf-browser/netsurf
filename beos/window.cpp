@@ -26,7 +26,6 @@ extern "C" {
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "desktop/options.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "utils/log.h"

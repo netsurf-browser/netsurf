@@ -27,7 +27,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"

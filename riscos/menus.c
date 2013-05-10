@@ -41,7 +41,6 @@
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "riscos/dialog.h"
 #include "riscos/configure.h"

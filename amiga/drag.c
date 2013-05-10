@@ -40,8 +40,6 @@
 #include "desktop/options.h"
 #include "amiga/theme.h"
 
-#include "desktop/selection.h"
-
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"

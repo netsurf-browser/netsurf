@@ -33,7 +33,6 @@
 #include "desktop/options.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/selection.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"

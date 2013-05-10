@@ -38,7 +38,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
 #include "utils/log.h"

@@ -42,7 +42,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
-#include "desktop/selection.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree_url_node.h"

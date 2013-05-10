@@ -43,7 +43,6 @@
 #include "amiga/utf8.h"
 
 #include "desktop/download.h"
-#include "desktop/selection.h"
 #include "desktop/save_complete.h"
 
 #include "image/ico.h"

@@ -33,7 +33,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/save_text.h"
-#include "desktop/selection.h"
 
 #include "utils/messages.h"
 #include "utils/url.h"

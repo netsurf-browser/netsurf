@@ -30,7 +30,6 @@
 #import "desktop/browser_private.h"
 #import "desktop/options.h"
 #import "desktop/textinput.h"
-#import "desktop/selection.h"
 #import "desktop/401login.h"
 #import "utils/utils.h"
 #import "image/ico.h"
