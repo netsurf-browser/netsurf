@@ -4424,12 +4424,17 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	struct IBox *bbox;
+	struct IBox *bbox, zbox;
 	ULONG cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
-
+	/*
+	zbox.Top = ~0;
+	zbox.Left = ~0;
+	zbox.Width = (WORD)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale);
+	zbox.Height = (WORD)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale);
+	*/
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
@@ -4459,7 +4464,7 @@ void gui_window_update_extent(struct gui_window *g)
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
-
+		//SetWindowAttr(g->shared->win, WA_Zoom, &zbox, sizeof(ULONG));
 	}
 	g->shared->new_content = true;
 }
