@@ -818,6 +818,10 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_DOWN:
 		switch (cbi->event->value.keycode) {
 
+		case NSFB_KEY_DELETE:
+			browser_window_key_press(gw->bw, KEY_DELETE_RIGHT);
+			break;
+
 		case NSFB_KEY_PAGEUP:
 			if (browser_window_key_press(gw->bw,
 					KEY_PAGE_UP) == false)
