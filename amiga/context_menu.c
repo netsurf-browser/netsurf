@@ -485,7 +485,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCUT],
 							PMIA_ID,CMID_SELCUT,
-							PMIA_Disabled, !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_PASTE),
+							PMIA_Disabled, !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_CUT),
 							PMIA_CommKey, "X",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
