@@ -149,7 +149,7 @@ case ${TARGET} in
 
     "gtk")
 	case ${label} in
-	    "linux")
+	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
 		;;
 
@@ -167,8 +167,47 @@ case ${TARGET} in
 
     "framebuffer")
 	case ${label} in
-	    "linux")
+	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
+		;;
+
+	    "i686-apple-darwin10")
+		ARTIFACT_TARGET=Darwin
+		;;
+
+	    "powerpc-apple-darwin9")
+		ARTIFACT_TARGET=powerpc-apple-darwin9
+		;;
+
+	    "arm-unknown-riscos")
+		ARTIFACT_TARGET=riscos
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		;;
+
+	    "m68k-atari-mint")
+		ARTIFACT_TARGET=m68k-atari-mint
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		;;
+
+	    "m5475-atari-mint")
+		ATARIARCH=v4e
+		ARTIFACT_TARGET=m5475-atari-mint
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		;;
+
+	    "i686-w64-mingw32")
+		ARTIFACT_TARGET=windows
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		;;
+
+	    "ppc-amigaos")
+		ARTIFACT_TARGET=amiga
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
 		;;
 
 	    *)
@@ -186,7 +225,7 @@ case ${TARGET} in
     "monkey")
 	# monkey target can be built on most of the supported architectures
 	case ${label} in
-	    "linux")
+	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
 		;;
 
