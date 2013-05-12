@@ -169,8 +169,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 		 * hard lockup or odd/missing graphical effects.
 		 */
 
-		if(depth == 32)
-			friend = scrn->RastPort.BitMap;
+		if(depth == 32) friend = scrn->RastPort.BitMap;
 	}
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
