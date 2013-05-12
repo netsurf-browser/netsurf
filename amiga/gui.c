@@ -1591,6 +1591,8 @@ void ami_handle_msg(void)
 							}
 							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
+							
+							ami_menu_update_disabled(gwin->bw->window, gwin->bw->current_content);
 						break;
 
 						case MIDDLEUP:

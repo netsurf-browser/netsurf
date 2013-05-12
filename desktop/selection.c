@@ -283,7 +283,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		 * selection, Otherwise clear on release (to allow for drags) */
 
 			selection_clear(s, true);
-			gui_clear_selection(top->window);
 		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			/* start new selection drag */
 
