@@ -655,11 +655,14 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 		{
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
-
-			if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
-				OnMenu(win,AMI_MENU_CUT);
 		}
-		if(g->c_h) OnMenu(win,AMI_MENU_PASTE);
+
+		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
+			OnMenu(win,AMI_MENU_CUT);
+		
+		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_PASTE)
+			OnMenu(win,AMI_MENU_PASTE);
+
 		OnMenu(win,AMI_MENU_SELECTALL);
 		OnMenu(win,AMI_MENU_FIND);
 		OffMenu(win,AMI_MENU_SAVEAS_IFF);
@@ -671,9 +674,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OffMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		OffMenu(win,AMI_MENU_PASTE);
 		OffMenu(win,AMI_MENU_SELECTALL);
-		OffMenu(win,AMI_MENU_CLEAR);
 		OffMenu(win,AMI_MENU_FIND);
 
 #ifdef WITH_NS_SVG
@@ -687,7 +688,6 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 		}
 		else
 		{
-			OffMenu(win,AMI_MENU_COPY);
 			OffMenu(win,AMI_MENU_SAVEAS_IFF);
 		}
 	}
