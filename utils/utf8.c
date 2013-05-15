@@ -419,6 +419,33 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		return UTF8_CONVERT_NOMEM;
 	}
 
+	/* we cache the last used conversion descriptor,
+	 * so check if we're trying to use it here */
+	if (strncasecmp(last_cd.from, "UTF-8", sizeof(last_cd.from)) == 0 &&
+			strncasecmp(last_cd.to, encname,
+					sizeof(last_cd.to)) == 0) {
+		cd = last_cd.cd;
+	}
+	else {
+		/* no match, so create a new cd */
+		cd = iconv_open(encname, "UTF-8");
+		if (cd == (iconv_t)-1) {
+			if (errno == EINVAL)
+				return UTF8_CONVERT_BADENC;
+			/* default to no memory */
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		/* close the last cd - we don't care if this fails */
+		if (last_cd.cd)
+			iconv_close(last_cd.cd);
+
+		/* and copy the to/from/cd data into last_cd */
+		strncpy(last_cd.from, "UTF-8", sizeof(last_cd.from));
+		strncpy(last_cd.to, encname, sizeof(last_cd.to));
+		last_cd.cd = cd;
+	}
+
 	/* Worst case is ASCII -> UCS4, with all characters escaped: 
 	 * "&#xYYYYYY;", thus each input character may become a string 
 	 * of 10 UCS4 characters, each 4 bytes in length */
