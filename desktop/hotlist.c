@@ -199,9 +199,13 @@ unsigned int hotlist_get_tree_flags(void)
  */
 void hotlist_cleanup(const char *hotlist_path)
 {
+	LOG(("Exporting hotlist..."));
 	hotlist_export(hotlist_path);
+	LOG(("Releasing handles..."));
 	hlcache_handle_release(folder_icon);
+	LOG(("Clearing hotlist tree nodes..."));
 	tree_url_node_cleanup();
+	LOG(("Hotlist cleaned up."));
 }
 
 
