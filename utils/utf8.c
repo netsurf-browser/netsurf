@@ -198,6 +198,13 @@ static struct {
 	iconv_t cd;	/**< Iconv conversion descriptor */
 } last_cd;
 
+static inline void utf8_clear_cd_cache(void)
+{
+	last_cd.from[0] = '\0';
+	last_cd.to[0] = '\0';
+	last_cd.cd = 0;
+}
+
 /**
  * Finalise the UTF-8 library
  */
@@ -207,9 +214,7 @@ void utf8_finalise(void)
 		iconv_close(last_cd.cd);
 
 	/* paranoia follows */
-	last_cd.from[0] = '\0';
-	last_cd.to[0] = '\0';
-	last_cd.cd = 0;
+	utf8_clear_cd_cache();
 }
 
 /**
@@ -331,9 +336,7 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 		/* clear the cached conversion descriptor as it's invalid */
 		if (last_cd.cd)
 			iconv_close(last_cd.cd);
-		last_cd.from[0] = '\0';
-		last_cd.to[0] = '\0';
-		last_cd.cd = 0;
+		utf8_clear_cd_cache();
 		/** \todo handle the various cases properly
 		 * There are 3 possible error cases:
 		 * a) Insufficiently large output buffer
@@ -411,25 +414,18 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 	if (len == 0)
 		len = strlen(string);
 
-	cd = iconv_open(encname, "UTF-8");
-	if (cd == (iconv_t) -1) {
-		if (errno == EINVAL)
-			return UTF8_CONVERT_BADENC;
-		/* default to no memory */
-		return UTF8_CONVERT_NOMEM;
-	}
-
 	/* we cache the last used conversion descriptor,
 	 * so check if we're trying to use it here */
 	if (strncasecmp(last_cd.from, "UTF-8", sizeof(last_cd.from)) == 0 &&
 			strncasecmp(last_cd.to, encname,
-					sizeof(last_cd.to)) == 0) {
+					sizeof(last_cd.to)) == 0 &&
+			last_cd.cd != 0) {
 		cd = last_cd.cd;
 	}
 	else {
 		/* no match, so create a new cd */
 		cd = iconv_open(encname, "UTF-8");
-		if (cd == (iconv_t)-1) {
+		if (cd == (iconv_t) -1) {
 			if (errno == EINVAL)
 				return UTF8_CONVERT_BADENC;
 			/* default to no memory */
@@ -448,11 +444,13 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 
 	/* Worst case is ASCII -> UCS4, with all characters escaped: 
 	 * "&#xYYYYYY;", thus each input character may become a string 
-	 * of 10 UCS4 characters, each 4 bytes in length */
-	origoutlen = outlen = len * 10 * 4;
+	 * of 10 UCS4 characters, each 4 bytes in length, plus four for
+	 * terminating the string */
+	origoutlen = outlen = len * 10 * 4 + 4;
 	origout = out = malloc(outlen);
 	if (out == NULL) {
 		iconv_close(cd);
+		utf8_clear_cd_cache();
 		return UTF8_CONVERT_NOMEM;
 	}
 
@@ -471,6 +469,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 				if (ret != UTF8_CONVERT_OK) {
 					free(origout);
 					iconv_close(cd);
+					utf8_clear_cd_cache();
 					return ret;
 				}
 			}
@@ -484,6 +483,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 			if (ret != UTF8_CONVERT_OK) {
 				free(origout);
 				iconv_close(cd);
+				utf8_clear_cd_cache();
 				return ret;
 			}
 
@@ -501,19 +501,21 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		if (ret != UTF8_CONVERT_OK) {
 			free(origout);
 			iconv_close(cd);
+			utf8_clear_cd_cache();
 			return ret;
 		}
 	}
 
-	iconv_close(cd);
+	/* Terminate string */
+	memset(out, 0, 4);
+	outlen -= 4;
 
 	/* Shrink-wrap */
-	*result = realloc(origout, origoutlen - outlen + 4);
+	*result = realloc(origout, origoutlen - outlen);
 	if (*result == NULL) {
 		free(origout);
 		return UTF8_CONVERT_NOMEM;
 	}
-	memset(*result + (origoutlen - outlen), 0, 4);
 
 	return UTF8_CONVERT_OK;
 }
