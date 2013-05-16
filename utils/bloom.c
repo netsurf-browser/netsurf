@@ -20,7 +20,6 @@
  * Trivial bloom filter */
 
 #include <stdlib.h>
-#include <stdio.h>
 #include "utils/bloom.h"
 
 /**
@@ -79,10 +78,11 @@ void bloom_insert_str(struct bloom_filter *b, const char *s, size_t z)
 
 void bloom_insert_hash(struct bloom_filter *b, uint32_t hash)
 {
-	int index = hash % b->size;
-	int bit = hash % 8;
+	unsigned int index = hash % (b->size << 3);
+	unsigned int byte_index = index >> 3;
+	unsigned int bit_index = index & 7;
 
-	b->filter[index] |= (1 << bit);
+	b->filter[byte_index] |= (1 << bit_index);
 	b->items++;
 }
 
@@ -94,10 +94,11 @@ bool bloom_search_str(struct bloom_filter *b, const char *s, size_t z)
 
 bool bloom_search_hash(struct bloom_filter *b, uint32_t hash)
 {
-	int index = hash % b->size;
-	int bit = hash % 8;	
+	unsigned int index = hash % (b->size << 3);
+	unsigned int byte_index = index >> 3;
+	unsigned int bit_index = index & 7;
 	
-	return (b->filter[index] & (1 << bit)) != 0;
+	return (b->filter[byte_index] & (1 << bit_index)) != 0;
 }
 
 uint32_t bloom_items(struct bloom_filter *b)
