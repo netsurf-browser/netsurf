@@ -1552,38 +1552,59 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 	*match = false;
 
 	/** \todo Implement visted check in a more performant way */
-
 #ifdef SUPPORT_VISITED
+
 	nscss_select_ctx *ctx = pw;
-	xmlNode *n = node;
+	nsurl *url;
+	nserror error;
+	const struct url_data *data;
 
-	if (strcasecmp((const char *) n->name, "a") == 0) {
-		nsurl *url;
-		nserror error;
-		const struct url_data *data;
-		xmlChar *href = xmlGetProp(n, (const xmlChar *) "href");
+	dom_exception exc;
+	dom_node *n = node;
+	dom_string *s = NULL;
 
-		if (href == NULL)
-			return CSS_OK;
-
-		/* Make href absolute */
-		/* TODO: this duplicates what we do for box->href */
-		error = nsurl_join(ctx->base_url, (const char *)href, &url);
-
-		xmlFree(href);
-		if (error != NSERROR_OK) {
-			return CSS_NOMEM;
-		}
-
-		data = urldb_get_url_data(nsurl_access(url));
-
-		/* Visited if in the db and has
-		 * non-zero visit count */
-		if (data != NULL && data->visits > 0)
-			*match = true;
-
-		nsurl_unref(url);
+	exc = dom_node_get_node_name(n, &s);
+	if ((exc != DOM_NO_ERR) || (s == NULL)) {
+		return CSS_NOMEM;
 	}
+
+	if (!dom_string_caseless_lwc_isequal(s, corestring_lwc_a)) {
+		/* Can't be visited; not ancher element */
+		dom_string_unref(s);
+		return CSS_OK;
+	}
+
+	/* Finished with node name string */
+	dom_string_unref(s);
+	s = NULL;
+
+	exc = dom_element_get_attribute(n, corestring_dom_href, &s);
+	if ((exc != DOM_NO_ERR) || (s == NULL)) {
+		/* Can't be visited; not got a URL */
+		return CSS_OK;
+	}
+
+	/* Make href absolute */
+	/* TODO: this duplicates what we do for box->href
+	 *       should we put the absolute URL on the dom node? */
+	error = nsurl_join(ctx->base_url, dom_string_data(s), &url);
+
+	/* Finished with href string */
+	dom_string_unref(s);
+
+	if (error != NSERROR_OK) {
+		/* Couldn't make nsurl object */
+		return CSS_NOMEM;
+	}
+
+	data = urldb_get_url_data(url);
+
+	/* Visited if in the db and has
+	 * non-zero visit count */
+	if (data != NULL && data->visits > 0)
+		*match = true;
+
+	nsurl_unref(url);
 #endif
 
 	return CSS_OK;
