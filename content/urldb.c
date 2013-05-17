@@ -107,6 +107,7 @@
 #include "utils/filename.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/bloom.h"
 
 struct cookie_internal_data {
 	char *name;		/**< Cookie name */
@@ -327,6 +328,8 @@ static int loaded_cookie_file_version;
 #define MIN_URL_FILE_VERSION 106
 #define URL_FILE_VERSION 106
 
+static struct bloom_filter *url_bloom;
+
 /**
  * Import an URL database from file, replacing any existing database
  *
@@ -346,7 +349,10 @@ void urldb_load(const char *filename)
 
 	assert(filename);
 
-	LOG(("Loading URL file"));
+	LOG(("Loading URL file %s", filename));
+
+        if (url_bloom == NULL)
+                url_bloom = bloom_create(16384);
 
 	fp = fopen(filename, "r");
 	if (!fp) {
@@ -445,6 +451,11 @@ void urldb_load(const char *filename)
 					(port ? ":" : ""),
 					(port ? ports : ""),
 					s);
+
+                        if (url_bloom != NULL)
+                                bloom_insert_str(url_bloom,
+                                                 url,
+                                                 strlen(url));
 
 			/* TODO: store URLs in pre-parsed state, and make
 			 *       a nsurl_load to generate the nsurl more
@@ -782,6 +793,13 @@ bool urldb_add_url(nsurl *url)
 	unsigned int port_int;
 
 	assert(url);
+        
+        if (url_bloom == NULL)
+                url_bloom = bloom_create(16384);
+        
+        if (url_bloom != NULL)
+                bloom_insert_str(url_bloom, nsurl_access(url),
+                                nsurl_length(url));
 
 	/* Copy and merge path/query strings */
 	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &path_query, &len) !=
@@ -1857,6 +1875,14 @@ struct path_data *urldb_find_url(nsurl *url)
 	bool match;
 
 	assert(url);
+        
+        if (url_bloom != NULL) {
+                if (bloom_search_str(url_bloom,
+                                     nsurl_access(url),
+                                     nsurl_length(url)) == false) {
+                                        return NULL;
+                }
+        }
 
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	if (scheme == NULL)
@@ -3951,6 +3977,10 @@ void urldb_destroy(void)
 		b = a->next;
 		urldb_destroy_host_tree(a);
 	}
+        
+        /* And the bloom filter */
+        if (url_bloom != NULL)
+                bloom_destroy(url_bloom);
 }
 
 /**
