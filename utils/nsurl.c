@@ -154,6 +154,7 @@ struct nsurl {
 	struct nsurl_components components;
 
 	int count;	/* Number of references to NetSurf URL object */
+	uint32_t hash;	/* Hash value for nsurl identification */
 
 	size_t length;	/* Length of string */
 	char string[FLEX_ARRAY_LEN_DECL];	/* Full URL as a string */
@@ -1185,6 +1186,43 @@ static void nsurl_get_string(const struct nsurl_components *url, char *url_s,
 }
 
 
+/**
+ * Calculate hash value
+ *
+ * \param url		NetSurf URL object to set hash value for
+ */
+static void nsurl_calc_hash(nsurl *url)
+{
+	uint32_t hash = 0;
+
+	if (url->components.scheme)
+		hash ^= lwc_string_hash_value(url->components.scheme);
+
+	if (url->components.username)
+		hash ^= lwc_string_hash_value(url->components.username);
+
+	if (url->components.password)
+		hash ^= lwc_string_hash_value(url->components.password);
+
+	if (url->components.host)
+		hash ^= lwc_string_hash_value(url->components.host);
+
+	if (url->components.port)
+		hash ^= lwc_string_hash_value(url->components.port);
+
+	if (url->components.path)
+		hash ^= lwc_string_hash_value(url->components.path);
+
+	if (url->components.query)
+		hash ^= lwc_string_hash_value(url->components.query);
+
+	if (url->components.fragment)
+		hash ^= lwc_string_hash_value(url->components.fragment);
+
+	url->hash = hash;
+}
+
+
 #ifdef NSURL_DEBUG
 /**
  * Dump a NetSurf URL's internal components
@@ -1281,6 +1319,9 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 
 	/* Fill out the url string */
 	nsurl_get_string(&c, (*url)->string, &str_len, str_flags);
+
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*url);
 
 	/* Give the URL a reference */
 	(*url)->count = 1;
@@ -1615,6 +1656,15 @@ size_t nsurl_length(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
+uint32_t nsurl_hash(const nsurl *url)
+{
+	assert(url != NULL);
+
+	return url->hash;
+}
+
+
+/* exported interface, documented in nsurl.h */
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 {
 	struct url_markers m;
@@ -1819,6 +1869,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	/* Fill out the url string */
 	nsurl_get_string(&c, (*joined)->string, &str_len, str_flags);
 
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*joined);
+
 	/* Give the URL a reference */
 	(*joined)->count = 1;
 
@@ -1870,6 +1923,9 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	memcpy(pos, url->string, length);
 	pos += length;
 	*pos = '\0';
+
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*no_frag);
 
 	/* Give the URL a reference */
 	(*no_frag)->count = 1;
@@ -1935,6 +1991,9 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 			lwc_string_ref(frag);
 
 	(*new_url)->components.scheme_type = url->components.scheme_type;
+
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*new_url);
 
 	/* Give the URL a reference */
 	(*new_url)->count = 1;
@@ -2018,6 +2077,9 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 			nsurl__component_copy(url->components.fragment);
 
 	(*new_url)->components.scheme_type = url->components.scheme_type;
+
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*new_url);
 
 	/* Give the URL a reference */
 	(*new_url)->count = 1;
@@ -2113,6 +2175,9 @@ nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 	(*new_url)->components.fragment = NULL;
 
 	(*new_url)->components.scheme_type = url->components.scheme_type;
+
+	/* Get the nsurl's hash */
+	nsurl_calc_hash(*new_url);
 
 	/* Give the URL a reference */
 	(*new_url)->count = 1;

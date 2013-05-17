@@ -208,6 +208,15 @@ size_t nsurl_length(const nsurl *url);
 
 
 /**
+ * Get a URL's hash value
+ *
+ * \param url	  NetSurf URL get hash value for.
+ * \return the hash value
+ */
+uint32_t nsurl_hash(const nsurl *url);
+
+
+/**
  * Join a base url to a relative link part, creating a new NetSurf URL object
  *
  * \param base	  NetSurf URL containing the base to join rel to
