@@ -328,7 +328,16 @@ static int loaded_cookie_file_version;
 #define MIN_URL_FILE_VERSION 106
 #define URL_FILE_VERSION 106
 
+/* Bloom filter used for short-circuting the false case of "is this
+ * URL in the database?".  BLOOM_SIZE controls how large the filter is
+ * in bytes.  Primitive experimentation shows that for a filter of X
+ * bytes filled with X items, searching for X items not in the filter
+ * has a 5% false-positive rate.  We set it to 32kB, which should be
+ * enough for all but the largest databases, while not being shockingly
+ * wasteful on memory.
+ */
 static struct bloom_filter *url_bloom;
+#define BLOOM_SIZE (1024 * 32)
 
 /**
  * Import an URL database from file, replacing any existing database
@@ -352,7 +361,7 @@ void urldb_load(const char *filename)
 	LOG(("Loading URL file %s", filename));
 
         if (url_bloom == NULL)
-                url_bloom = bloom_create(16384);
+                url_bloom = bloom_create(BLOOM_SIZE);
 
 	fp = fopen(filename, "r");
 	if (!fp) {
@@ -795,7 +804,7 @@ bool urldb_add_url(nsurl *url)
 	assert(url);
         
         if (url_bloom == NULL)
-                url_bloom = bloom_create(16384);
+                url_bloom = bloom_create(BLOOM_SIZE);
         
         if (url_bloom != NULL)
                 bloom_insert_str(url_bloom, nsurl_access(url),
