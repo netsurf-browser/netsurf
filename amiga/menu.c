@@ -79,9 +79,9 @@ BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
 
-ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin);
+ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
-		ULONG *item, bool count, struct gui_window_2 *gwin);
+		int *item, struct gui_window_2 *gwin);
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
 
 /* Functions for menu selections */
@@ -157,12 +157,12 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			const char *label, char key, struct bitmap *bm, void *func, void *hookdata)
 {
 	gwin->menutype[num] = type;
-	
-	if(label != NM_BARLABEL)
-		gwin->menulab[num] = ami_utf8_easy((char *)messages_get(label));
-	else
+
+	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0))
 		gwin->menulab[num] = NM_BARLABEL;
-	
+	else
+		gwin->menulab[num] = ami_utf8_easy((char *)messages_get(label));
+
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
@@ -306,13 +306,18 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
 	int i;
 
-	ami_init_menulabs(gwin);
 	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
+	ami_init_menulabs(gwin);
+	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
 
 	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
 		gwin->menu[i].nm_Type = gwin->menutype[i];
-		gwin->menu[i].nm_Label = gwin->menulab[i];
+		if(gwin->menuobj[i])
+			gwin->menu[i].nm_Label = gwin->menuobj[i];
+		else
+			gwin->menu[i].nm_Label = gwin->menulab[i];
+
 		if(gwin->menukey[i]) gwin->menu[i].nm_CommKey = &gwin->menukey[i];
 		gwin->menu[i].nm_Flags = 0;
 		if(gwin->menu_hook[i].h_Entry) gwin->menu[i].nm_UserData = &gwin->menu_hook[i];
@@ -336,7 +341,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	if(nsoption_bool(background_images) == true)
 		gwin->menu[M_IMGBACK].nm_Flags |= CHECKED;
 
-	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
 	ami_menu_arexx_scan(gwin);
 
 	/* Set up scheduler to refresh the hotlist menu */
@@ -410,13 +414,13 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	gwin->menu[item].nm_Label = NULL;
 }
 
-ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
+ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 {
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
 	WORD gen = 0;
-	ULONG item;
+	int item;
 
 	item = AMI_MENU_HOTLIST;
 
@@ -427,7 +431,7 @@ ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
 		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistMenu")) == 0))
 		{
 			// found menu
-			ami_menu_scan_2(tree, tree_node_get_child(node), &gen, &item, count, gwin);
+			ami_menu_scan_2(tree, tree_node_get_child(node), &gen, &item, gwin);
 		}
 	}
 
@@ -435,11 +439,12 @@ ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
 }
 
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
-		ULONG *item, bool count, struct gui_window_2 *gwin)
+		int *item, struct gui_window_2 *gwin)
 {
 	struct node *tempnode;
 	struct node_element *element=NULL;
 	struct node *node;
+	UBYTE menu_type;
 
 	*gen = *gen + 1;
 
@@ -449,35 +454,19 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		{
 			if(*item >= AMI_MENU_HOTLIST_MAX) return;
 
-			if(!count)
-			{
-				if(*gen == 1) gwin->menu[*item].nm_Type = NM_ITEM;
-				if(*gen == 2) gwin->menu[*item].nm_Type = NM_SUB;
+			if(*gen == 1) menu_type = NM_ITEM;
+			if(*gen == 2) menu_type = NM_SUB;
 
-				if(strcmp(tree_url_node_get_title(node),"--"))
-				{
-					gwin->menulab[*item] = ami_utf8_easy((char *)tree_url_node_get_title(node));
-				}
-				else
-				{
-					gwin->menulab[*item] = NM_BARLABEL;
-				}
-
-				gwin->menu[*item].nm_Label = gwin->menulab[*item];
-				gwin->menu_hook[*item].h_Entry = (HOOKFUNC)ami_menu_item_hotlist_entries;
-				gwin->menu_hook[*item].h_Data = (void *)tree_url_node_get_url(node);
-				gwin->menu[*item].nm_UserData = (HOOKFUNC)&gwin->menu_hook[*item];
-				if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
-						gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
-			}
+			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node), 0, NULL,
+				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
+			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
+					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
 
 			*item = *item + 1;
 		}
 
 		if (tree_node_get_child(node))
-		{
-			ami_menu_scan_2(tree,tree_node_get_child(node),gen,item,count,gwin);
-		}
+			ami_menu_scan_2(tree, tree_node_get_child(node), gen, item, gwin);
 	}
 
 	*gen = *gen - 1;
