@@ -158,11 +158,18 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 {
 	gwin->menutype[num] = type;
 
-	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0))
+	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
 		gwin->menulab[num] = NM_BARLABEL;
-	else
-		gwin->menulab[num] = ami_utf8_easy((char *)messages_get(label));
-
+	} else {
+		if((num >= AMI_MENU_HOTLIST) && (num <= AMI_MENU_HOTLIST_MAX)) {
+			gwin->menulab[num] = ami_utf8_easy(label);
+		} else if((num >= AMI_MENU_AREXX) && (num <= AMI_MENU_AREXX_MAX)) {
+			gwin->menulab[num] = strdup(label);		
+		} else {
+			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
+		}
+	}
+	
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
@@ -309,12 +316,13 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
 	ami_init_menulabs(gwin);
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
+	ami_menu_arexx_scan(gwin);
 
 	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
 		gwin->menu[i].nm_Type = gwin->menutype[i];
 		if(gwin->menuobj[i])
-			gwin->menu[i].nm_Label = gwin->menuobj[i];
+			gwin->menu[i].nm_Label = (void *)gwin->menuobj[i];
 		else
 			gwin->menu[i].nm_Label = gwin->menulab[i];
 
@@ -341,8 +349,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	if(nsoption_bool(background_images) == true)
 		gwin->menu[M_IMGBACK].nm_Flags |= CHECKED;
 
-	ami_menu_arexx_scan(gwin);
-
 	/* Set up scheduler to refresh the hotlist menu */
 	if(nsoption_int(menu_refresh) > 0)
 		schedule(nsoption_int(menu_refresh), (void *)ami_menu_refresh, gwin);
@@ -359,6 +365,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	char matchpatt[16];
 	LONG cont;
 	struct ExAllData *ead;
+	char *menu_lab;
 
 	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
 	{
@@ -386,18 +393,12 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 						{
 							gwin->menu[item].nm_Type = NM_ITEM;
 							if(ead->ed_Comment[0] != '\0')
-							{
-								gwin->menulab[item] = (char *)strdup(ead->ed_Comment);
-							}
+								menu_lab = ead->ed_Comment;
 							else
-							{
-								gwin->menulab[item] = (char *)strdup(ead->ed_Name);
-							}
+								menu_lab = ead->ed_Name;
 
-							gwin->menu[item].nm_Label = gwin->menulab[item];
-							gwin->menu_hook[item].h_Entry = (HOOKFUNC)ami_menu_item_arexx_entries;
-							gwin->menu_hook[item].h_Data = (char *)strdup(ead->ed_Name);
-							gwin->menu[item].nm_UserData = (HOOKFUNC)&gwin->menu_hook[item];
+							ami_menu_alloc_item(gwin, item, NM_ITEM, menu_lab, 0, NULL,
+								ami_menu_item_arexx_entries, (void *)strdup(ead->ed_Name));
 
 							item++;
 						}
