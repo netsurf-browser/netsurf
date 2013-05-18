@@ -64,17 +64,6 @@
 #include "utils/messages.h"
 #include "utils/schedule.h"
 
-#define IMAGE_MENU_ITEM(n, i, t) \
-	gwin->menulab[n] = LabelObject, \
-		LABEL_DrawInfo, dri, \
-		LABEL_DisposeImage, TRUE, \
-		LABEL_Image, BitMapObject, \
-			BITMAP_Screen, scrn, \
-			BITMAP_SourceFile, i, \
-		BitMapEnd, \
-		LABEL_Text, t, \
-	LabelEnd;
-
 BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
@@ -169,7 +158,31 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
 		}
 	}
-	
+
+	if((GadToolsBase->LibNode.lib_Version > 53) ||
+		((GadToolsBase->LibNode.lib_Version == 53) && (GadToolsBase->LibNode.lib_Revision >= 5)) {
+		/* GadTools 53.5+ only. For now we will only create the menu
+			using label.image if there's a bitmap associated with the item. */
+		if(bitmap != NULL) {
+			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+			struct BitMap *menu_icon = ami_bitmap_get_native(bitmap, 16, 16, NULL);
+
+			gwin->menuobj[n] = LabelObject,
+				LABEL_DrawInfo, dri,
+				LABEL_DisposeImage, TRUE,
+				LABEL_Image, BitMapObject,
+					BITMAP_Screen, scrn,
+					BITMAP_BitMap, menu_icon,
+					BITMAP_Width, 16,
+					BITMAP_Height, 16,
+				BitMapEnd,
+				LABEL_Text, gwin->menulab[num],
+			LabelEnd;
+
+			FreeScreenDrawInfo(scrn, dri);
+		}
+	}
+
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
@@ -178,7 +191,6 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
-	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 
 	gwin->menutype = AllocVec(AMI_MENU_AREXX_MAX + 1, MEMF_PRIVATE | MEMF_CLEAR);
 
@@ -290,8 +302,6 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 			ami_menu_item_arexx_execute, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_A1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	gwin->menutype[AMI_MENU_AREXX_MAX] = NM_END;
-	
-	FreeScreenDrawInfo(scrn, dri);
 }
 
 /* Menu refresh for hotlist */
