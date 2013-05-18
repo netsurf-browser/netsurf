@@ -458,7 +458,8 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 			if(*gen == 1) menu_type = NM_ITEM;
 			if(*gen == 2) menu_type = NM_SUB;
 
-			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node), 0, NULL,
+			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
+				0, tree_url_node_get_icon(node),
 				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
 			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
 					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
