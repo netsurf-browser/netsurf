@@ -1551,10 +1551,6 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 {
 	*match = false;
 
-	/** \todo Implement visted check in a more performant way */
-#define SUPPORT_VISITED
-#ifdef SUPPORT_VISITED
-
 	nscss_select_ctx *ctx = pw;
 	nsurl *url;
 	nserror error;
@@ -1606,7 +1602,6 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 		*match = true;
 
 	nsurl_unref(url);
-#endif
 
 	return CSS_OK;
 }
