@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9,2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -178,6 +178,8 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 				BitMapEnd,
 				LABEL_Text, gwin->menulab[num],
 			LabelEnd;
+
+			gwin->menutype[num] |= MENU_IMAGE;
 
 			FreeScreenDrawInfo(scrn, dri);
 		}
