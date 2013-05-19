@@ -43,6 +43,9 @@ use constant GETOPT_SPEC =>
       password|w=s
       help|h|? );
 
+# ensure no locale translation is applied and leave it all in UTF-8
+use bytes;
+
 # default option values:
 my %opt = qw( resource messagesany project netsurf user netsurf );
 
