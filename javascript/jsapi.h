@@ -23,10 +23,19 @@
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
 #define _NETSURF_JAVASCRIPT_JSAPI_H_
 
+/* include teh correct header */
 #ifdef WITH_MOZJS
 #include "js/jsapi.h"
 #else
 #include "mozjs/jsapi.h"
+#endif
+
+/* logging macros */
+#define JSLOG(args...) LOG((args))
+#ifdef ENABLE_VERBOSE_JS_DEBUG
+#define JSDBG(args...) LOG((args))
+#else
+#define JSDBG(args...)
 #endif
 
 #if JS_VERSION < 180
@@ -375,11 +384,6 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #endif
 
-#define JSLOG(args...) LOG((args))
-#ifdef ENABLE_VERBOSE_JS_DEBUG
-#define JSDBG(args...) LOG((args))
-#else
-#define JSDBG(args...)
-#endif
+/************************** **************************/
 
 #endif

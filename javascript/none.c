@@ -35,7 +35,7 @@ void js_finalise(void)
 {
 }
 
-jscontext *js_newcontext(void)
+jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
 {
 	return NULL;
 }

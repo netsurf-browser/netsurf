@@ -26,6 +26,8 @@
 typedef struct jscontext jscontext;
 typedef struct jsobject jsobject;
 
+typedef bool(jscallback)(void *ctx);
+
 struct dom_document;
 struct dom_node;
 struct dom_string;
@@ -38,9 +40,13 @@ void js_finalise(void);
 
 /** Create a new javascript context.
  *
- * There aare usually one context per browser context
+ * There is usually one context per browser context
+ *
+ * \param timeout elapsed wallclock time (in seconds)  before \a callback is called
+ * \param cb the callback when the runtime exceeds the timeout
+ * \param cbctx The context to pass to the callback
  */
-jscontext *js_newcontext(void);
+jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx);
 
 /** Destroy a previously created context */
 void js_destroycontext(jscontext *ctx);

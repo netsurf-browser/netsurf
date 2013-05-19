@@ -683,6 +683,16 @@ void browser_window_debug_dump(struct browser_window *bw, FILE *f)
 		content_debug_dump(bw->current_content, f);
 }
 
+static bool gui_slow_script(void *ctx)
+{
+	static int count = 0;
+	LOG(("Continuing execution %d", count));
+	count++;
+	if (count >= 2) {
+		return false;
+	}
+	return true;
+}
 
 /* exported interface, documented in desktop/browser.h */
 
@@ -707,7 +717,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 	}
 
 	/* new javascript context for window */
-	bw->jsctx = js_newcontext();
+	bw->jsctx = js_newcontext(10, gui_slow_script, NULL);
 
 	/* Initialise common parts */
 	browser_window_initialise_common(bw, clone);
