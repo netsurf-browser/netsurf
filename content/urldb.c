@@ -107,6 +107,7 @@
 #include "utils/filename.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/bloom.h"
 
 struct cookie_internal_data {
 	char *name;		/**< Cookie name */
@@ -327,6 +328,17 @@ static int loaded_cookie_file_version;
 #define MIN_URL_FILE_VERSION 106
 #define URL_FILE_VERSION 106
 
+/* Bloom filter used for short-circuting the false case of "is this
+ * URL in the database?".  BLOOM_SIZE controls how large the filter is
+ * in bytes.  Primitive experimentation shows that for a filter of X
+ * bytes filled with X items, searching for X items not in the filter
+ * has a 5% false-positive rate.  We set it to 32kB, which should be
+ * enough for all but the largest databases, while not being shockingly
+ * wasteful on memory.
+ */
+static struct bloom_filter *url_bloom;
+#define BLOOM_SIZE (1024 * 32)
+
 /**
  * Import an URL database from file, replacing any existing database
  *
@@ -346,7 +358,10 @@ void urldb_load(const char *filename)
 
 	assert(filename);
 
-	LOG(("Loading URL file"));
+	LOG(("Loading URL file %s", filename));
+
+        if (url_bloom == NULL)
+                url_bloom = bloom_create(BLOOM_SIZE);
 
 	fp = fopen(filename, "r");
 	if (!fp) {
@@ -455,6 +470,11 @@ void urldb_load(const char *filename)
 				LOG(("Failed inserting '%s'", url));
 				die("Memory exhausted whilst loading "
 						"URL file");
+			}
+                        
+			if (url_bloom != NULL) {
+				uint32_t hash = nsurl_hash(nsurl);
+				bloom_insert_hash(url_bloom, hash);
 			}
 
 			/* Copy and merge path/query strings */
@@ -782,6 +802,14 @@ bool urldb_add_url(nsurl *url)
 	unsigned int port_int;
 
 	assert(url);
+        
+        if (url_bloom == NULL)
+                url_bloom = bloom_create(BLOOM_SIZE);
+        
+        if (url_bloom != NULL) {
+                uint32_t hash = nsurl_hash(url);
+                bloom_insert_hash(url_bloom, hash);
+        }
 
 	/* Copy and merge path/query strings */
 	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &path_query, &len) !=
@@ -1857,6 +1885,13 @@ struct path_data *urldb_find_url(nsurl *url)
 	bool match;
 
 	assert(url);
+        
+	if (url_bloom != NULL) {
+		if (bloom_search_hash(url_bloom,
+					nsurl_hash(url)) == false) {
+					return NULL;
+		}
+	}
 
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	if (scheme == NULL)
@@ -3951,6 +3986,10 @@ void urldb_destroy(void)
 		b = a->next;
 		urldb_destroy_host_tree(a);
 	}
+        
+        /* And the bloom filter */
+        if (url_bloom != NULL)
+                bloom_destroy(url_bloom);
 }
 
 /**
