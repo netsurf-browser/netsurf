@@ -155,7 +155,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	 * Also applies to the further gfx/layers functions and memory below */
  
 	ULONG depth = 32;
-	struct DrawInfo *dri;
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
