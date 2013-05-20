@@ -461,11 +461,6 @@ void urldb_load(const char *filename)
 					(port ? ports : ""),
 					s);
 
-                        if (url_bloom != NULL)
-                                bloom_insert_str(url_bloom,
-                                                 url,
-                                                 strlen(url));
-
 			/* TODO: store URLs in pre-parsed state, and make
 			 *       a nsurl_load to generate the nsurl more
 			 *       swiftly.
@@ -475,6 +470,11 @@ void urldb_load(const char *filename)
 				LOG(("Failed inserting '%s'", url));
 				die("Memory exhausted whilst loading "
 						"URL file");
+			}
+                        
+			if (url_bloom != NULL) {
+				uint32_t hash = nsurl_hash(nsurl);
+				bloom_insert_hash(url_bloom, hash);
 			}
 
 			/* Copy and merge path/query strings */
@@ -806,9 +806,10 @@ bool urldb_add_url(nsurl *url)
         if (url_bloom == NULL)
                 url_bloom = bloom_create(BLOOM_SIZE);
         
-        if (url_bloom != NULL)
-                bloom_insert_str(url_bloom, nsurl_access(url),
-                                nsurl_length(url));
+        if (url_bloom != NULL) {
+                uint32_t hash = nsurl_hash(url);
+                bloom_insert_hash(url_bloom, hash);
+        }
 
 	/* Copy and merge path/query strings */
 	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &path_query, &len) !=
@@ -1885,13 +1886,12 @@ struct path_data *urldb_find_url(nsurl *url)
 
 	assert(url);
         
-        if (url_bloom != NULL) {
-                if (bloom_search_str(url_bloom,
-                                     nsurl_access(url),
-                                     nsurl_length(url)) == false) {
-                                        return NULL;
-                }
-        }
+	if (url_bloom != NULL) {
+		if (bloom_search_hash(url_bloom,
+					nsurl_hash(url)) == false) {
+					return NULL;
+		}
+	}
 
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	if (scheme == NULL)
