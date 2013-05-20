@@ -155,7 +155,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	 * Also applies to the further gfx/layers functions and memory below */
  
 	ULONG depth = 32;
-	struct DrawInfo *dri;
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
@@ -163,13 +162,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 		palette_mapped = true;
 	} else {
 		palette_mapped = false;
-		
-		/* If we're not palette-mapping allocate using a friend BitMap if the
-		 * depth is 32bpp.  In all other cases using a friend BitMap causes a
-		 * hard lockup or odd/missing graphical effects.
-		 */
-
-		if(depth == 32) friend = scrn->RastPort.BitMap;
 	}
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
