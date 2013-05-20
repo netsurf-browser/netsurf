@@ -1134,17 +1134,14 @@ static bool html_convert(struct content *c)
 bool html_can_begin_conversion(html_content *htmlc)
 {
 	unsigned int i;
-	bool got_modified_stylesheet = false;
+
+	if (htmlc->base.active != 0)
+		return false;
 
 	for (i = 0; i != htmlc->stylesheet_count; i++) {
-		if (htmlc->stylesheets[i].modified) {
-			got_modified_stylesheet = true;
-			break;
-		}
+		if (htmlc->stylesheets[i].modified)
+			return false;
 	}
-
-	if (htmlc->base.active != 0 || got_modified_stylesheet)
-		return false;
 
 	return true;
 }
