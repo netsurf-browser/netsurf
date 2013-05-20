@@ -185,11 +185,56 @@ bool bitmap_get_opaque(void *vbitmap)
 unsigned char *bitmap_get_buffer(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	int pixel_loop;
+	int pixel_count;
+	uint32_t *pixels;
+	uint32_t pixel;
+	cairo_format_t fmt;
+
 	assert(gbitmap);
 	
 	cairo_surface_flush(gbitmap->surface);
+	pixels = (uint32_t *)cairo_image_surface_get_data(gbitmap->surface);
+
+	if (!gbitmap->converted)
+		return (unsigned char *) pixels;
+
+	fmt = cairo_image_surface_get_format(gbitmap->surface);
+	pixel_count = cairo_image_surface_get_width(gbitmap->surface) *
+			cairo_image_surface_get_height(gbitmap->surface);
+
+	if (fmt == CAIRO_FORMAT_RGB24) {
+		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			pixel = pixels[pixel_loop];
+			pixels[pixel_loop] = (pixel & 0xff00ff00) |
+				((pixel & 0xff) << 16) |
+				((pixel & 0xff0000) >> 16);
+		}
+	} else {
+		uint32_t t, r, g, b;
+		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			pixel = pixels[pixel_loop];
+			t = (pixel & 0xff000000) >> 24;
+			if (t == 0) {
+				pixels[pixel_loop] = 0;
+			} else {
+				r = ((pixel & 0xff0000) >> 8) / t;
+				g = ((pixel & 0xff00)) / t;
+				b = ((pixel & 0xff) << 8) / t;
+
+				r = (r > 255) ? 255 : r;
+				g = (g > 255) ? 255 : g;
+				b = (b > 255) ? 255 : b;
+
+				pixels[pixel_loop] = (t << 24) |
+					(r) | (g << 8) | (b << 16);
+			}
+		}
+	}
+
+	gbitmap->converted = false;
 	
-	return cairo_image_surface_get_data(gbitmap->surface);
+	return (unsigned char *) pixels;
 }
 
 
@@ -285,6 +330,11 @@ void bitmap_modified(void *vbitmap) {
 	pixel_count = cairo_image_surface_get_width(gbitmap->surface) * 
 		cairo_image_surface_get_height(gbitmap->surface);
 	pixels = (uint32_t *)cairo_image_surface_get_data(gbitmap->surface);
+
+	if (gbitmap->converted) {
+		cairo_surface_mark_dirty(gbitmap->surface);
+		return;
+	}
 
 	if (fmt == CAIRO_FORMAT_RGB24) {
 		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
