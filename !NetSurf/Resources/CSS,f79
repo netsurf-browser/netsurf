@@ -90,6 +90,7 @@ th { font-weight: bold; text-align: center; }
 td[nowrap], th[nowrap] { white-space: nowrap; }
 
 a:link { color: #00f; text-decoration: underline; }
+a:visited { color: #609; }
 
 img { color: #888; }
 
