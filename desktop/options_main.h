@@ -87,6 +87,8 @@
 	bool animate_images;					\
 	/** Whether to execute javascript */			\
 	bool enable_javascript;					\
+	/** how long to wait for a script to run */		\
+	int script_timeout;					\
 	/** How many days to retain URL data for */		\
 	int expire_url;						\
 	/** Default font family */				\
@@ -268,7 +270,8 @@
 	.suppress_curl_debug = true,			\
 	.target_blank = true,				\
 	.button_2_tab = true,				\
-	.enable_javascript = true
+	.enable_javascript = true,			\
+	.script_timeout = 10
 
 #define NSOPTION_MAIN_SYS_COLOUR_DEFAULTS		\
 	.sys_colour_ActiveBorder = 0x00000000,		\
@@ -318,7 +321,7 @@
 	{ "accept_language",	OPTION_STRING,	&nsoptions.accept_language }, \
 	{ "accept_charset",	OPTION_STRING,	&nsoptions.accept_charset }, \
 	{ "memory_cache_size",	OPTION_INTEGER,	&nsoptions.memory_cache_size },	\
-	{ "disc_cache_size",	OPTION_INTEGER,	&nsoptions.disc_cache_size },	\
+	{ "disc_cache_size",	OPTION_INTEGER,	&nsoptions.disc_cache_size }, \
 	{ "disc_cache_age",	OPTION_INTEGER,	&nsoptions.disc_cache_age }, \
 	{ "block_advertisements", OPTION_BOOL,	&nsoptions.block_ads },	\
 	{ "do_not_track", OPTION_BOOL,	&nsoptions.do_not_track },	\
@@ -327,7 +330,8 @@
 	{ "foreground_images",	OPTION_BOOL,	&nsoptions.foreground_images },	\
 	{ "background_images",	OPTION_BOOL,	&nsoptions.background_images },	\
 	{ "animate_images",	OPTION_BOOL,	&nsoptions.animate_images }, \
-	{ "enable_javascript",	OPTION_BOOL,	&nsoptions.enable_javascript},	\
+	{ "enable_javascript",	OPTION_BOOL,	&nsoptions.enable_javascript}, \
+	{ "script_timeout",	OPTION_INTEGER,	&nsoptions.script_timeout}, \
 	{ "expire_url",		OPTION_INTEGER,	&nsoptions.expire_url }, \
 	{ "font_default",	OPTION_INTEGER,	&nsoptions.font_default }, \
 	{ "ca_bundle",		OPTION_STRING,	&nsoptions.ca_bundle },	\
