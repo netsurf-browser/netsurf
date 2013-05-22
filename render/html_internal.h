@@ -90,6 +90,9 @@ typedef struct html_content {
 	/** Content has been aborted in the LOADING state */
 	bool aborted;
 
+	/** Whether a meta refresh has been handled */
+	bool refresh;
+
         /** A talloc context purely for the render box tree */
 	int *bctx;
 	/** Box tree, or NULL. */
