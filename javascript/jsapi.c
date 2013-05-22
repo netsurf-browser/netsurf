@@ -138,7 +138,7 @@ static JSBool heartbeat_callback(JSContext *cx)
 	return ret;
 }
 
-#if JS_VERSION >= 185
+#if JS_VERSION >= 180
 
 struct heartbeat {
 	JSContext *cx;
@@ -259,7 +259,7 @@ static JSBool branch_callback(JSContext *cx, JSScript *script)
 	if (priv->branch_count == 0) {
 		priv->branch_count = priv->branch_reset; /* reset branch count */
 
-		ret = heartbeat(cx);
+		ret = heartbeat_callback(cx);
 	}
 	return ret;
 }
@@ -288,6 +288,8 @@ setup_heartbeat(JSContext *cx, int timeout, jscallback *cb, void *cbctx)
 	JS_SetContextPrivate(cx, priv);
 
 	JS_SetBranchCallback(cx, branch_callback);
+
+	return true;
 }
 
 static struct heartbeat *enable_heartbeat(JSContext *cx)
