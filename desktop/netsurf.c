@@ -143,15 +143,6 @@ nserror netsurf_init(int *pargc,
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
-#ifndef HAVE_STDOUT
-	ret = nslog_init(nslog_ensure, pargc, *pargv);
-#else
-	ret = nslog_init(NULL, pargc, *pargv);
-#endif
-
-	if (ret != NSERROR_OK) 
-		return ret;
-
 	LOG(("version '%s'", netsurf_version));
 	if (uname(&utsname) < 0)
 		LOG(("Failed to extract machine information"));

@@ -1037,6 +1037,7 @@ int main(int argc, char** argv)
 	nsurl *url;
 	nserror error;
 
+    /* @todo logging file descriptor update belongs in a nslog_init callback */
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
 #ifdef WITH_DBG_LOGFILE
@@ -1052,6 +1053,11 @@ int main(int argc, char** argv)
 
     atari_find_resource((char*)&messages, "messages", "res/messages");
     atari_find_resource((char*)&options, "Choices", "Choices");
+
+    /* initialise logging - not fatal if it fails but not much we can
+     * do about it
+     */
+    nslog_init(NULL, &argc, argv);
 
     LOG(("Initialising core..."));
     netsurf_init(&argc, &argv, options, messages);

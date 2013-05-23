@@ -66,9 +66,9 @@ void gui_quit(void)
 }
 
 /** 
- * Ensures output stdio stream is available
+ * Ensures output logging stream is available
  */
-bool nslog_ensure(FILE *fptr)
+static bool nslog_ensure(FILE *fptr)
 {
 	/* mwindows compile flag normally invalidates standard io unless
 	 *  already redirected 
@@ -136,8 +136,17 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	options_file_location = filepath_find(respaths, "preferences");
 
+	/* initialise logging - not fatal if it fails but not much we
+	 * can do about it 
+	 */
+	nslog_init(nslog_ensure, &argc, argv);
+
 	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options_file_location, messages);
+	ret = netsurf_init(&argc, &argv, options_file_location, messages);
+	if (ret != NSERROR_OK) {
+		free(options_file_location);
+		return 1;
+	}
 
 	free(messages);
 

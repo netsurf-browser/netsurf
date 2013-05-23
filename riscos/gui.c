@@ -799,6 +799,17 @@ static void gui_init2(int argc, char** argv)
 	free(url);
 }
 
+/** 
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
@@ -808,8 +819,6 @@ int main(int argc, char** argv)
 	os_var_type type;
 	int used = -1;  /* slightly better with older OSLib versions */
 	os_error *error;
-
-	setbuf(stderr, NULL);
 
 	/* Consult NetSurf$Logging environment variable to decide if logging
 	 * is required. */
@@ -827,6 +836,11 @@ int main(int argc, char** argv)
 			verbose_log = false;
 		}
 	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
 	/* Pass a NULL pointer for Messages path, because until the Choices
 	 * are loaded in netsurf_init, we don't know the Messages path. */

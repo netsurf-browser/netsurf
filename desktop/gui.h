@@ -64,10 +64,6 @@ struct form_control;
 #include "desktop/search.h"
 #include "utils/errors.h"
 
-/** \todo remove these when each frontend calls nslog_init */
-#include <stdio.h>
-bool nslog_ensure(FILE *fptr);
-
 void gui_poll(bool active);
 void gui_quit(void);
 

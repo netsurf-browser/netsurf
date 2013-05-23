@@ -929,6 +929,11 @@ int main(int argc, char** argv)
 	amiga_plugin_hack_init();
 	amiga_datatypes_init();
 
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
 	netsurf_init(&argc, &argv, current_user_options, messages);
 
 	amiga_icon_init();

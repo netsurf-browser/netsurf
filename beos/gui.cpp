@@ -398,11 +398,20 @@ static void gui_init2(int argc, char** argv)
 	}
 }
 
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
-	setbuf(stderr, NULL);
-
 	BPath options;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
 		options.Append("x-vnd.NetSurf");
@@ -416,11 +425,16 @@ int main(int argc, char** argv)
 
 	const char* messages = "/boot/apps/netsurf/res/en/Messages";
 
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options.Path(), messages);
 
-    gui_init(argc, argv);
-    gui_init2(argc, argv);
+        gui_init(argc, argv);
+        gui_init2(argc, argv);
 
 	netsurf_main_loop();
 
@@ -432,14 +446,17 @@ int main(int argc, char** argv)
 /** called when replicated from NSBaseView::Instantiate() */
 int gui_init_replicant(int argc, char** argv)
 {
-	setbuf(stderr, NULL);
-
 	BPath options;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
 		options.Append("x-vnd.NetSurf");
 	}
 
 	const char* messages = "/boot/apps/netsurf/res/en/Messages";
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options.Path(), messages);

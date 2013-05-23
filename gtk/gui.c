@@ -515,6 +515,17 @@ static void nsgtk_check_homedir(void)
 }
 
 /**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
+/**
  * Main entry point from OS.
  */
 int main(int argc, char** argv)
@@ -529,11 +540,13 @@ int main(int argc, char** argv)
 
 	gtk_init(&argc, &argv);
 	
-        /* set standard error to be non-buffering */
-	setbuf(stderr, NULL);
-
 	options = filepath_find(respaths, "Choices");
 	messages = filepath_find(respaths, "Messages");
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
 	netsurf_init(&argc, &argv, options, messages);
 

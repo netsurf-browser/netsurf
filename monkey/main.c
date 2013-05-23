@@ -97,6 +97,17 @@ void gui_options_init_defaults(void)
   /* Set defaults for absent option strings */
 }
 
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+  /* set log stream to be non-buffering */
+  setbuf(fptr, NULL);
+
+  return true;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -114,6 +125,11 @@ main(int argc, char **argv)
   
   options = filepath_find(respaths, "Choices");
   messages = filepath_find(respaths, "Messages");
+
+  /* initialise logging. Not fatal if it fails but not much we can do
+   * about it either.
+   */
+  nslog_init(nslog_stream_configure, &argc, argv);
 
   netsurf_init(&argc, &argv, options, messages);
   

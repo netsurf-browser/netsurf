@@ -182,6 +182,11 @@ int main( int argc, char **argv )
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
 
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
 	netsurf_init(&argc, &argv, options, messages);
 
 	/* Initialise filename allocator */

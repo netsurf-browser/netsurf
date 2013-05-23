@@ -516,6 +516,17 @@ gui_init(int argc, char** argv)
 	urldb_load_cookies(nsoption_charp(cookie_file));
 }
 
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
 /** Entry point from OS.
  *
  * /param argc The number of arguments in the string vector.
@@ -531,12 +542,15 @@ main(int argc, char** argv)
 	nsurl *url;
 	nserror error;
 
-	setbuf(stderr, NULL);
-
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
 
 	options = filepath_find(respaths, "Choices");
 	messages = filepath_find(respaths, "messages");
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
 	netsurf_init(&argc, &argv, options, messages);
 
