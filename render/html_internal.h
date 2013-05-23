@@ -93,6 +93,9 @@ typedef struct html_content {
 	/** Whether a meta refresh has been handled */
 	bool refresh;
 
+	/* Title element node */
+	dom_node *title;
+
         /** A talloc context purely for the render box tree */
 	int *bctx;
 	/** Box tree, or NULL. */

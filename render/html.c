@@ -243,9 +243,6 @@ static bool html_process_title(html_content *c, dom_node *node)
 	char *title_str;
 	bool success;
 
-	if (c->base.title != NULL)
-		return true;
-
 	exc = dom_node_get_text_content(node, &title);
 	if ((exc != DOM_NO_ERR) || (title == NULL)) {
 		return false;
@@ -588,7 +585,7 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			/* an element node has been inserted */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				/* LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name))); */
+
 				if (dom_string_caseless_isequal(name,
 						corestring_dom_link)) {
 					/* Handle stylesheet loading */
@@ -607,6 +604,10 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 						name, corestring_lwc_base)) {
 					html_process_base(htmlc,
 							(dom_node *)node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_title) &&
+						htmlc->title == NULL) {
+					htmlc->title = dom_node_ref(node);
 				}
 
 				dom_string_unref(name);
@@ -628,15 +629,24 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 
 	exc = dom_event_get_target(evt, &node);
 	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		if (htmlc->title == (dom_node *)node) {
+			/* Node is our title node */
+			html_process_title(htmlc, (dom_node *)node);
+			dom_node_unref(node);
+			return;
+		}
+
 		exc = dom_node_get_node_type(node, &type);
 		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
-			/* an element node has been inserted */
+			/* an element node has been modified */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				/* LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name)));  */
-				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
-					html_css_update_style(htmlc, (dom_node *)node);
-				} 
+
+				if (dom_string_caseless_isequal(name,
+						corestring_dom_style)) {
+					html_css_update_style(htmlc,
+							(dom_node *)node);
+				}
 
 				dom_string_unref(name);
 			}
@@ -691,6 +701,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->base_target = NULL;
 	c->aborted = false;
 	c->refresh = false;
+	c->title = NULL;
 	c->bctx = NULL;
 	c->layout = NULL;
 	c->background_colour = NS_TRANSPARENT;
@@ -944,61 +955,6 @@ html_process_data(struct content *c, const char *data, unsigned int size)
 	return true;	
 }
 
-/**
- * Process elements in <head>.
- *
- * \param  c     content structure
- * \param  head  xml node of head element
- * \return  true on success, false on memory exhaustion
- *
- * The title and base href are extracted if present.
- */
-
-static nserror html_head(html_content *c, dom_node *head)
-{
-	dom_node *node;
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *node_name;
-	dom_node_type node_type;
-	dom_node *next_node;
-
-	exc = dom_node_get_first_child(head, &node);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-
-	while (node != NULL) {
-		exc = dom_node_get_node_type(node, &node_type);
-
-		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
-			exc = dom_node_get_node_name(node, &node_name);
-
-			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
-				if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_title)) {
-					html_process_title(c, node);
-				}
-			}
-			if (node_name != NULL) {
-				dom_string_unref(node_name);
-			}
-		}
-
-		/* move to next node */
-		exc = dom_node_get_next_sibling(node, &next_node);
-		dom_node_unref(node);
-		if (exc == DOM_NO_ERR) {
-			node = next_node;
-		} else {
-			node = NULL;
-		}
-	}
-
-	return NSERROR_OK;
-}
-
-
 
 /**
  * Convert a CONTENT_HTML for display.
@@ -1069,7 +1025,7 @@ bool html_can_begin_conversion(html_content *htmlc)
 bool
 html_begin_conversion(html_content *htmlc)
 {
-	dom_node *html, *head;
+	dom_node *html;
 	nserror ns_error;
 	struct form *f;
 	dom_exception exc; /* returned by libdom functions */
@@ -1141,18 +1097,6 @@ html_begin_conversion(html_content *htmlc)
 	}
 	dom_string_unref(node_name);
 
-	head = libdom_find_first_element(html, corestring_lwc_head);
-	if (head != NULL) {
-		ns_error = html_head(htmlc, head);
-		if (ns_error != NSERROR_OK) {
-			content_broadcast_errorcode(&htmlc->base, ns_error);
-
-			dom_node_unref(html);
-			dom_node_unref(head);
-			return false;
-		}
-	}
-
 	/* Retrieve forms from parser */
 	htmlc->forms = html_forms_get_forms(htmlc->encoding,
 			(dom_html_document *) htmlc->document);
@@ -1176,7 +1120,6 @@ html_begin_conversion(html_content *htmlc)
 			content_broadcast_errorcode(&htmlc->base, ns_error);
 
 			dom_node_unref(html);
-			dom_node_unref(head);
 			return false;
 		}
 
@@ -1188,7 +1131,6 @@ html_begin_conversion(html_content *htmlc)
 						    NSERROR_NOMEM);
 
 			dom_node_unref(html);
-			dom_node_unref(head);
 			return false;
 		}
 
@@ -1199,13 +1141,11 @@ html_begin_conversion(html_content *htmlc)
 				content_broadcast_errorcode(&htmlc->base, 
 							    NSERROR_NOMEM);
 				dom_node_unref(html);
-				dom_node_unref(head);
 				return false;
 			}
 		}
 	}
 
-	dom_node_unref(head);
 	dom_node_unref(html);
 
 	if (htmlc->base.active == 0) {
@@ -1419,6 +1359,12 @@ static void html_destroy(struct content *c)
 
 	if (html->document != NULL) {
 		dom_node_unref(html->document);
+		html->document = NULL;
+	}
+
+	if (html->title != NULL) {
+		dom_node_unref(html->title);
+		html->title = NULL;
 	}
 
 	/* Free base target */
