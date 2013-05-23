@@ -138,8 +138,8 @@ nserror netsurf_init(int *pargc,
 	 * way of determining the cause of the SIGPIPE (other than using
 	 * sigaction() and some mechanism for getting the file descriptor
 	 * out of libcurl). However, we expect nothing else to generate a
-	 * SIGPIPE, anyway, so may as well just ignore them all. */
-	
+	 * SIGPIPE, anyway, so may as well just ignore them all.
+	 */
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
@@ -152,9 +152,6 @@ nserror netsurf_init(int *pargc,
 	if (ret != NSERROR_OK) 
 		return ret;
 
-#ifdef _MEMDEBUG_H_
-	memdebug_memdebug("memdump");
-#endif
 	LOG(("version '%s'", netsurf_version));
 	if (uname(&utsname) < 0)
 		LOG(("Failed to extract machine information"));
