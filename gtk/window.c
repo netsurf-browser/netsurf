@@ -426,8 +426,6 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 	deltax *= nsgtk_adjustment_get_step_increment(hscroll);
 	deltay *= nsgtk_adjustment_get_step_increment(vscroll);
 
-	LOG(("Scrolling %f, %f", deltax, deltay));
-
 	if (browser_window_scroll_at_point(g->bw,
 					   event->x / g->bw->scale,
 					   event->y / g->bw->scale,
