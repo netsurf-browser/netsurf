@@ -144,6 +144,180 @@ static void html_box_convert_done(html_content *c, bool success)
 	dom_node_unref(html);
 }
 
+
+/** process link node */
+static bool html_process_link(html_content *c, dom_node *node)
+{
+	struct content_rfc5988_link link; /* the link added to the content */
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *atr_string;
+	nserror error;
+
+	memset(&link, 0, sizeof(struct content_rfc5988_link));
+
+	/* check that the relation exists - w3c spec says must be present */
+	exc = dom_element_get_attribute(node, corestring_dom_rel, &atr_string);
+	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
+		return false;
+	}
+	/* get a lwc string containing the link relation */
+	exc = dom_string_intern(atr_string, &link.rel);
+	dom_string_unref(atr_string);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	/* check that the href exists - w3c spec says must be present */
+	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
+	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
+		lwc_string_unref(link.rel);
+		return false;
+	}
+
+	/* get nsurl */
+	error = nsurl_join(c->base_url, dom_string_data(atr_string),
+			&link.href);
+	dom_string_unref(atr_string);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(link.rel);
+		return false;
+	}
+
+	/* look for optional properties -- we don't care if internment fails */
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_hreflang, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the href lang */
+		exc = dom_string_intern(atr_string, &link.hreflang);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_type, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the type */
+		exc = dom_string_intern(atr_string, &link.type);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_media, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the media */
+		exc = dom_string_intern(atr_string, &link.media);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_sizes, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the sizes */
+		exc = dom_string_intern(atr_string, &link.sizes);
+		dom_string_unref(atr_string);
+	}
+
+	/* add to content */
+	content__add_rfc5988_link(&c->base, &link);
+
+	if (link.sizes != NULL)
+		lwc_string_unref(link.sizes);
+	if (link.media != NULL)
+		lwc_string_unref(link.media);
+	if (link.type != NULL)
+		lwc_string_unref(link.type);
+	if (link.hreflang != NULL)
+		lwc_string_unref(link.hreflang);
+
+	nsurl_unref(link.href);
+	lwc_string_unref(link.rel);
+
+	return true;
+}
+
+/** process title node */
+static bool html_process_title(html_content *c, dom_node *node)
+{
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *title;
+	char *title_str;
+	bool success;
+
+	if (c->base.title != NULL)
+		return true;
+
+	exc = dom_node_get_text_content(node, &title);
+	if ((exc != DOM_NO_ERR) || (title == NULL)) {
+		return false;
+	}
+
+	title_str = squash_whitespace(dom_string_data(title));
+	dom_string_unref(title);
+
+	if (title_str == NULL) {
+		return false;
+	}
+
+	success = content__set_title(&c->base, title_str);
+
+	free(title_str);
+
+	return success;
+}
+
+static bool html_process_base(html_content *c, dom_node *node)
+{
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *atr_string;
+
+	/* get href attribute if present */
+	exc = dom_element_get_attribute(node,
+			corestring_dom_href, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		nsurl *url;
+		nserror error;
+
+		/* get url from string */
+		error = nsurl_create(dom_string_data(atr_string), &url);
+		dom_string_unref(atr_string);
+		if (error == NSERROR_OK) {
+			if (c->base_url != NULL)
+				nsurl_unref(c->base_url);
+			c->base_url = url;
+		}
+	}
+
+
+	/* get target attribute if present and not already set */
+	if (c->base_target != NULL) {
+		return true;
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_target, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* Validation rules from the HTML5 spec for the base element:
+		 *  The target must be one of _blank, _self, _parent, or
+		 *  _top or any identifier which does not begin with an
+		 *  underscore
+		 */
+		if (*dom_string_data(atr_string) != '_' ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__blank) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__self) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__parent) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__top)) {
+			c->base_target = strdup(dom_string_data(atr_string));
+		}
+		dom_string_unref(atr_string);
+	}
+
+	return true;
+}
+
 static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 {
 	union content_msg_data msg_data;
@@ -417,13 +591,21 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 				/* LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name))); */
 				if (dom_string_caseless_isequal(name,
 						corestring_dom_link)) {
+					/* Handle stylesheet loading */
 					html_css_process_link(htmlc,
+							(dom_node *)node);
+					/* Generic link handling */
+					html_process_link(htmlc,
 							(dom_node *)node);
 
 				} else if (dom_string_caseless_lwc_isequal(name,
 						corestring_lwc_meta) &&
 						htmlc->refresh == false) {
 					html_meta_refresh_process_element(htmlc,
+							(dom_node *)node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_base)) {
+					html_process_base(htmlc,
 							(dom_node *)node);
 				}
 
@@ -762,180 +944,6 @@ html_process_data(struct content *c, const char *data, unsigned int size)
 	return true;	
 }
 
-
-/** process link node */
-static bool html_process_link(html_content *c, dom_node *node)
-{
-	struct content_rfc5988_link link; /* the link added to the content */
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *atr_string;
-	nserror error;
-
-	memset(&link, 0, sizeof(struct content_rfc5988_link));
-
-	/* check that the relation exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, corestring_dom_rel, &atr_string);
-	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
-		return false;
-	}
-	/* get a lwc string containing the link relation */
-	exc = dom_string_intern(atr_string, &link.rel);
-	dom_string_unref(atr_string);
-	if (exc != DOM_NO_ERR) {
-		return false;
-	}
-
-	/* check that the href exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
-	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
-		lwc_string_unref(link.rel);
-		return false;
-	}
-
-	/* get nsurl */
-	error = nsurl_join(c->base_url, dom_string_data(atr_string),
-			&link.href);
-	dom_string_unref(atr_string);
-	if (error != NSERROR_OK) {
-		lwc_string_unref(link.rel);
-		return false;
-	}
-
-	/* look for optional properties -- we don't care if internment fails */
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_hreflang, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the href lang */
-		exc = dom_string_intern(atr_string, &link.hreflang);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_type, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the type */
-		exc = dom_string_intern(atr_string, &link.type);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_media, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the media */
-		exc = dom_string_intern(atr_string, &link.media);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_sizes, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the sizes */
-		exc = dom_string_intern(atr_string, &link.sizes);
-		dom_string_unref(atr_string);
-	}
-
-	/* add to content */
-	content__add_rfc5988_link(&c->base, &link);
-
-	if (link.sizes != NULL)
-		lwc_string_unref(link.sizes);
-	if (link.media != NULL)
-		lwc_string_unref(link.media);
-	if (link.type != NULL)
-		lwc_string_unref(link.type);
-	if (link.hreflang != NULL)
-		lwc_string_unref(link.hreflang);
-
-	nsurl_unref(link.href);
-	lwc_string_unref(link.rel);
-
-	return true;
-}
-
-/** process title node */
-static bool html_process_title(html_content *c, dom_node *node)
-{
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *title;
-	char *title_str;
-	bool success;
-
-	if (c->base.title != NULL)
-		return true;
-
-	exc = dom_node_get_text_content(node, &title);
-	if ((exc != DOM_NO_ERR) || (title == NULL)) {
-		return false;
-	}
-
-	title_str = squash_whitespace(dom_string_data(title));
-	dom_string_unref(title);
-
-	if (title_str == NULL) {
-		return false;
-	}
-
-	success = content__set_title(&c->base, title_str);
-
-	free(title_str);
-
-	return success;
-}
-
-static bool html_process_base(html_content *c, dom_node *node)
-{
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *atr_string;
-
-	/* get href attribute if present */
-	exc = dom_element_get_attribute(node,
-			corestring_dom_href, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		nsurl *url;
-		nserror error;
-
-		/* get url from string */
-		error = nsurl_create(dom_string_data(atr_string), &url);
-		dom_string_unref(atr_string);
-		if (error == NSERROR_OK) {
-			if (c->base_url != NULL)
-				nsurl_unref(c->base_url);
-			c->base_url = url;
-		}
-	}
-
-
-	/* get target attribute if present and not already set */
-	if (c->base_target != NULL) {
-		return true;
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_target, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* Validation rules from the HTML5 spec for the base element:
-		 *  The target must be one of _blank, _self, _parent, or
-		 *  _top or any identifier which does not begin with an
-		 *  underscore
-		 */
-		if (*dom_string_data(atr_string) != '_' ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__blank) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__self) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__parent) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__top)) {
-			c->base_target = strdup(dom_string_data(atr_string));
-		}
-		dom_string_unref(atr_string);
-	}
-
-	return true;
-}
-
 /**
  * Process elements in <head>.
  *
@@ -970,14 +978,6 @@ static nserror html_head(html_content *c, dom_node *head)
 						node_name,
 						corestring_lwc_title)) {
 					html_process_title(c, node);
-				} else if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_base)) {
-					html_process_base(c, node);
-				} else if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_link)) {
-					html_process_link(c, node);
 				}
 			}
 			if (node_name != NULL) {
