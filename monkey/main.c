@@ -31,6 +31,7 @@
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/sslcert.h"
+#include "utils/log.h"
 #include "utils/filepath.h"
 #include "utils/url.h"
 
