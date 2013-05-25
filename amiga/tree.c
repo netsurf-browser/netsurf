@@ -1000,6 +1000,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							{
 								case 0: // export
 									if(AslRequestTags(savereq,
+										ASLFR_Window, twin->win,
+										ASLFR_SleepWindow, TRUE,
 										ASLFR_TitleText,messages_get("NetSurf"),
 										ASLFR_Screen,scrn,
 										ASLFR_InitialFile,"tree_export.html",

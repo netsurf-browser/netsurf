@@ -728,6 +728,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 		{
 			case CMID_SELECTFILE:
 				if(AslRequestTags(filereq,
+					ASLFR_Window, gwin->win,
+					ASLFR_SleepWindow, TRUE,
 					ASLFR_TitleText,messages_get("NetSurf"),
 					ASLFR_Screen,scrn,
 					ASLFR_DoSaveMode,FALSE,

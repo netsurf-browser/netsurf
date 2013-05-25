@@ -83,6 +83,8 @@ void ami_file_open(struct gui_window_2 *gwin)
 
 	if(AslRequestTags(filereq,
 			ASLFR_TitleText, messages_get("NetSurf"),
+			ASLFR_Window, gwin->win,
+			ASLFR_SleepWindow, TRUE,
 			ASLFR_Screen, scrn,
 			ASLFR_DoSaveMode, FALSE,
 			ASLFR_RejectIcons, TRUE,
@@ -213,7 +215,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 						FWrite(fh, source_data, 1, strlen(source_data));
 						FClose(fh);
 					}
-					free(source_data);
+					free((void *)source_data);
 				}
 			break;
 		}
@@ -229,6 +231,8 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	char *fname = AllocVec(1024, MEMF_CLEAR | MEMF_PRIVATE);
 
 	if(AslRequestTags(savereq,
+			ASLFR_Window, gwin->win,
+			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
 			ASLFR_InitialFile, object ? FilePart(nsurl_access(hlcache_handle_get_url(object))) : "",

@@ -963,6 +963,8 @@ static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct I
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(AslRequestTags(filereq,
+						ASLFR_Window, gwin->win,
+						ASLFR_SleepWindow, TRUE,
 						ASLFR_TitleText, messages_get("NetSurf"),
 						ASLFR_Screen, scrn,
 						ASLFR_DoSaveMode, FALSE,

@@ -105,6 +105,8 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	else
 	{
 		if(AslRequestTags(savereq,
+			ASLFR_Window, gui->shared->win,
+			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText,messages_get("NetSurf"),
 			ASLFR_Screen,scrn,
 			ASLFR_InitialFile, download_context_get_filename(ctx),
@@ -351,6 +353,8 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 	linkname = ASPrintf("Link_to_%s",FilePart(url));
 
 	if(AslRequestTags(savereq,
+		ASLFR_Window, g->shared->win,
+		ASLFR_SleepWindow, TRUE,
 		ASLFR_TitleText,messages_get("NetSurf"),
 		ASLFR_Screen,scrn,
 		ASLFR_InitialFile,linkname,
