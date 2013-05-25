@@ -308,7 +308,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
-	while (utf8_pos <= length) {
+	do {
 		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16charlen = 1;
 		else
@@ -351,7 +351,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		tx += tempx;		
 		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
-	}
+	} while (utf8_pos < length);
 
 	free(outf16);
 
