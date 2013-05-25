@@ -29,7 +29,7 @@
 #import "desktop/history_core.h"
 #import "desktop/mouse.h"
 #import "desktop/netsurf.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "desktop/plotters.h"
 #import "desktop/save_complete.h"
 #import "desktop/textinput.h"
@@ -163,7 +163,7 @@ void cocoa_autorelease( void )
 	pool = [[NSAutoreleasePool alloc] init];
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

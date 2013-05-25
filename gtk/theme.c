@@ -31,7 +31,7 @@
 #include "gtk/menu.h"
 #include "gtk/theme.h"
 #include "gtk/window.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "gtk/dialogs/preferences.h"
 #include "utils/container.h"
 #include "utils/log.h"

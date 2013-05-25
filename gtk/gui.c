@@ -49,7 +49,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
@@ -241,7 +241,7 @@ nsgtk_init_glade(char **respath)
 	widWarning = GTK_WIDGET(gtk_builder_get_object(gladeWarning, "labelWarning"));
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	char *hdir = getenv("HOME");

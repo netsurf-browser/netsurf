@@ -30,7 +30,7 @@
 #include "utils/log.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"

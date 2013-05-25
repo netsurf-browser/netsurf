@@ -60,7 +60,7 @@
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/sslcert.h"
 #include "desktop/tree.h"
@@ -328,7 +328,7 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

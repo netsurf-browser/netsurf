@@ -28,7 +28,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plot_style.h"
 
 struct gui_system_colour_ctx {

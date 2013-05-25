@@ -45,7 +45,7 @@
 #include "content/fetchers/curl.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"

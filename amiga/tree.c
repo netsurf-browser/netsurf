@@ -53,7 +53,7 @@
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
 #include "desktop/history_global_core.h"

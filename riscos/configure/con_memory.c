@@ -17,7 +17,7 @@
  */
 
 #include <stdbool.h>
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/bitmap.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"

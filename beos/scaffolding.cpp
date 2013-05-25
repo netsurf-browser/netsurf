@@ -56,7 +56,7 @@ extern "C" {
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "render/form.h"

@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include <cflib.h>
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plot_style.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/settings.h"

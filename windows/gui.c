@@ -36,7 +36,7 @@
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "render/html.h"

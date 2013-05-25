@@ -49,7 +49,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/knockout.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/plotters.h"

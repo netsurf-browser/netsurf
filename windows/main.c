@@ -24,7 +24,7 @@
 #include <windows.h>
 
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "utils/utils.h"
 #include "utils/log.h"
@@ -80,7 +80,7 @@ static bool nslog_ensure(FILE *fptr)
 	return true;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

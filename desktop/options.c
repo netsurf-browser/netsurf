@@ -36,7 +36,7 @@
 #include "desktop/plot_style.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "desktop/options.h"
+#include "utils/nsoptions.h"
 
 struct ns_options nsoptions = {
 	NSOPTION_MAIN_DEFAULTS,

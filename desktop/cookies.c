@@ -31,7 +31,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/tree.h"
 #include "utils/log.h"
 #include "utils/messages.h"

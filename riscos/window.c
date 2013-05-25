@@ -69,7 +69,7 @@
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
 #include "riscos/content-handlers/sprite.h"

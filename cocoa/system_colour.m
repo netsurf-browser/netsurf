@@ -24,7 +24,7 @@
 #import "utils/utils.h"
 #import "utils/log.h"
 #import "desktop/gui.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 
 struct gui_system_colour_ctx {
 	const char *name;

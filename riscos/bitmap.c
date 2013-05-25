@@ -39,7 +39,7 @@
 #include "image/bitmap.h"
 #include "riscos/bitmap.h"
 #include "riscos/image.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/palettes.h"
 #include "riscos/content-handlers/sprite.h"
 #include "riscos/tinct.h"

@@ -33,7 +33,7 @@
 #include "desktop/browser_private.h"
 #include "desktop/netsurf.h"
 #include "desktop/print.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"

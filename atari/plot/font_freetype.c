@@ -22,7 +22,7 @@
 #include <ft2build.h>
 #include FT_CACHE_H
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"

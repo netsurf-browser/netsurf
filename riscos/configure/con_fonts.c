@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 #include "css/css.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plot_style.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"

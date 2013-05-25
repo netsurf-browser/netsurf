@@ -23,7 +23,7 @@
 #include "amiga/gui.h"
 #include "amiga/hotlist.h"
 #include "amiga/theme.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "desktop/browser_private.h"
 

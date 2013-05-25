@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "render/box.h"
 #include "render/html_internal.h"

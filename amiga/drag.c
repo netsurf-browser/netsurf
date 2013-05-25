@@ -37,7 +37,7 @@
 #include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/theme.h"
 
 #include "utils/errors.h"

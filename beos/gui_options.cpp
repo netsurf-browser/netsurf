@@ -23,7 +23,7 @@
 #include <string.h>
 extern "C" {
 #include "utils/log.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 }
 #include "beos/gui.h"
 #include "beos/scaffolding.h"

@@ -37,7 +37,7 @@
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"

@@ -44,7 +44,7 @@
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "riscos/dialog.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"

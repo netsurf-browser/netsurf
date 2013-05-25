@@ -31,7 +31,7 @@
 #include "css/utils.h"
 #include "render/font.h"
 #include "riscos/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

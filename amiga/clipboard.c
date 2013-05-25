@@ -19,7 +19,7 @@
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"

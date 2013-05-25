@@ -20,7 +20,7 @@
 #include <math.h>
 
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/utils.h"

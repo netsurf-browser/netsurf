@@ -30,7 +30,7 @@
 #include <proto/utility.h>
 #include <proto/openurl.h>
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/url.h"
 
 struct Library *OpenURLBase = NULL;

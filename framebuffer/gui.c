@@ -36,7 +36,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -476,7 +476,7 @@ process_cmdline(int argc, char** argv)
 	return true;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

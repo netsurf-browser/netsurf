@@ -32,7 +32,7 @@
 #include "desktop/browser.h"
 #include "desktop/frames.h"
 #include "desktop/mouse.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/textarea.h"

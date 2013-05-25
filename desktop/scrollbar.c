@@ -27,7 +27,7 @@
 
 #include "desktop/mouse.h"
 #include "desktop/scrollbar.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/plot_style.h"
 #include "utils/log.h"

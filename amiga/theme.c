@@ -37,7 +37,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/drag.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/theme.h"
 #include "desktop/searchweb.h"
 #include "utils/messages.h"

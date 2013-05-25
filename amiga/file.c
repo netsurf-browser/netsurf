@@ -29,7 +29,7 @@
 #include "content/fetch.h"
 
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/save_text.h"

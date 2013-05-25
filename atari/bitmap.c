@@ -22,7 +22,7 @@
 
 
 #include "assert.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "image/bitmap.h"
 #include "atari/bitmap.h"
 #include "atari/plot/plot.h"

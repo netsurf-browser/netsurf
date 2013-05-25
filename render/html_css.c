@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/html_internal.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"

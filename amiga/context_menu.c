@@ -34,7 +34,7 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"

@@ -32,7 +32,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/tree_url_node.h"
 #include "utils/corestrings.h"
 #include "utils/libdom.h"

@@ -34,7 +34,7 @@
 #include "render/font.h"
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

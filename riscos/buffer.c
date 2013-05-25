@@ -27,7 +27,7 @@
 #include "oslib/wimpreadsysinfo.h"
 #include "riscos/buffer.h"
 #include "riscos/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimputils.h"

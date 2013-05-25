@@ -28,7 +28,7 @@
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
 #import "desktop/browser_private.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "desktop/textinput.h"
 #import "desktop/401login.h"
 #import "utils/utils.h"

@@ -23,7 +23,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "utils/config.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/configure/configure.h"
 #include "riscos/configure.h"
 #include "riscos/dialog.h"

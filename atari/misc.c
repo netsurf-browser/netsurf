@@ -31,7 +31,7 @@
 #include "desktop/mouse.h"
 #include "desktop/cookies.h"
 #include "desktop/tree.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"

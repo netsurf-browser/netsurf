@@ -27,7 +27,7 @@
 #include "css/select.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/url.h"

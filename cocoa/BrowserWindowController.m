@@ -26,7 +26,7 @@
 #import "cocoa/NetsurfApp.h"
 
 #import "desktop/browser.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "utils/messages.h"
 
 @interface BrowserWindowController ()

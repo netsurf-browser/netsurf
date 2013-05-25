@@ -24,7 +24,7 @@
 #include "gtk/gui.h"
 #include "desktop/browser.h"
 #include "content/content.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/search.h"
 #include "utils/utils.h"
 #include "gtk/search.h"

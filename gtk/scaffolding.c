@@ -37,7 +37,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"

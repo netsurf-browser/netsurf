@@ -37,7 +37,7 @@
 #include "css/css.h"
 #include "image/bitmap.h"
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/html.h"
 #include "render/textplain.h"
 

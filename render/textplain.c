@@ -36,7 +36,7 @@
 #include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"

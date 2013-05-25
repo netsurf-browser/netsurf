@@ -18,7 +18,7 @@
 
 
 #include "desktop/hotlist.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "gtk/gui.h"

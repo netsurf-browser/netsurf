@@ -22,7 +22,7 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 

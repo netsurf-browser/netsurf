@@ -27,7 +27,7 @@
 #import "desktop/history_core.h"
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "utils/messages.h"
 
 @interface BrowserView ()

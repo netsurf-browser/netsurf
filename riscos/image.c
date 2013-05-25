@@ -22,7 +22,7 @@
 #include "oslib/osspriteop.h"
 #include "riscos/image.h"
 #include "riscos/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/tinct.h"
 #include "utils/log.h"
 #include "utils/utils.h"

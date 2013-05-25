@@ -42,7 +42,7 @@
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"

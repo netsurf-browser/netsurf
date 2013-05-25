@@ -53,7 +53,7 @@ extern "C" {
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "render/form.h"
 #include "utils/filename.h"
@@ -467,7 +467,7 @@ int gui_init_replicant(int argc, char** argv)
 	return 0;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

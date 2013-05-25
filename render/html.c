@@ -32,7 +32,7 @@
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"

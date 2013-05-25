@@ -31,7 +31,7 @@
 #include <hpdf.h>
 
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"

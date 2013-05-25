@@ -49,7 +49,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/save_draw.h"

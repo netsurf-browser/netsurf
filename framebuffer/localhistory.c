@@ -35,7 +35,7 @@
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/messages.h"

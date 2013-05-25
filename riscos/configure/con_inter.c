@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"

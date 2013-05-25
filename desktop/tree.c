@@ -34,7 +34,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "render/font.h"
 #include "utils/log.h"

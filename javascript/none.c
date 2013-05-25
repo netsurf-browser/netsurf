@@ -21,7 +21,7 @@
  */
 
 #include "content/content.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "javascript/js.h"
 #include "utils/log.h"

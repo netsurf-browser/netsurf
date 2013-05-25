@@ -28,7 +28,7 @@
 #include <graphics/composite.h>
 #endif
 #include <graphics/gfxbase.h>
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include <proto/datatypes.h>
 #include <datatypes/pictureclass.h>
 #include <proto/dos.h>

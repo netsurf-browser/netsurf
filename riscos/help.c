@@ -35,7 +35,7 @@
 #include "riscos/help.h"
 #include "riscos/iconbar.h"
 #include "riscos/menus.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"

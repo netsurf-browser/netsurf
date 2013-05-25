@@ -30,7 +30,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "render/box.h"

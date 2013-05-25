@@ -22,8 +22,8 @@ preamble %{
 #include <stdlib.h>
 
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
 #include "utils/config.h"
+#include "utils/nsoption.h"
 #include "utils/useragent.h"
 #include "utils/log.h"
 #include "utils/utsname.h"

@@ -34,7 +34,7 @@
 #include "amiga/download.h"
 #include "amiga/icon.h"
 #include "amiga/object.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/file.h"

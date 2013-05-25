@@ -23,7 +23,7 @@
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
@@ -553,7 +553,7 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
 	/* Set defaults for absent option strings */

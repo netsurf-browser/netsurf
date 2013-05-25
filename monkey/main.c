@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #include "monkey/filetype.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
@@ -92,7 +92,7 @@ static void quit_handler(int argc, char **argv)
   netsurf_quit = true;
 }
 
-/* Documented in desktop/options.h */
+/* Documented in utils/nsoption.h */
 void gui_options_init_defaults(void)
 {
   /* Set defaults for absent option strings */

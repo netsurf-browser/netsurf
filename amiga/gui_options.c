@@ -38,7 +38,7 @@
 #include "amiga/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 
 #include <proto/window.h>

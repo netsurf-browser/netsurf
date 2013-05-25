@@ -41,7 +41,7 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
 #include "riscos/toolbar.h"

@@ -20,7 +20,7 @@
 #include "swis.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"

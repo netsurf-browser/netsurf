@@ -38,7 +38,7 @@
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
 #include "utils/messages.h"

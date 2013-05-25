@@ -18,7 +18,7 @@
 
 #include "css/css.h"
 #include "render/font.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/utf8.h"
 
 

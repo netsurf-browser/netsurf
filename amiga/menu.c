@@ -50,7 +50,7 @@
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
 #include "amiga/menu.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"

@@ -30,7 +30,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/download.h"

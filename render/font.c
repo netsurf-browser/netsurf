@@ -18,7 +18,7 @@
 
 #include "css/css.h"
 #include "css/utils.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/font.h"
 
 static plot_font_generic_family_t plot_font_generic_family(

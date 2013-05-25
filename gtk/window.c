@@ -30,7 +30,7 @@
 #include "gtk/window.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "gtk/compat.h"

@@ -38,7 +38,7 @@
 #include "css/utils.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"

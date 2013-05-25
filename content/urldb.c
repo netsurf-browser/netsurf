@@ -101,7 +101,7 @@
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/filename.h"

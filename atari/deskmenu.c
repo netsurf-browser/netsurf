@@ -5,7 +5,7 @@
 #include "utils/url.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"
