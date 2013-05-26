@@ -334,9 +334,10 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"<tr><th></th><th></th><th></th></tr>\n");
 
 	do {
-		res = nsoption_snoptionf(buffer + slen, sizeof buffer - slen,
-				opt_loop,
-				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>\n");
+		res = nsoption_snoptionf(buffer + slen, 
+					 sizeof buffer - slen,
+					 opt_loop,
+					 "<tr><th>%k</th><td>%t</td><td>%V</td></tr>\n");
 		if (res <= 0) 
 			break; /* last option */
 

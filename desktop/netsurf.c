@@ -115,10 +115,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
  * Initialise components used by gui NetSurf.
  */
 
-nserror netsurf_init(int *pargc, 
-		     char ***pargv, 
-		     const char *options, 
-		     const char *messages)
+nserror netsurf_init(const char *messages)
 {
 	nserror error;
 	struct utsname utsname;
@@ -143,7 +140,7 @@ nserror netsurf_init(int *pargc,
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
-	LOG(("version '%s'", netsurf_version));
+	LOG(("NetSurf version '%s'", netsurf_version));
 	if (uname(&utsname) < 0)
 		LOG(("Failed to extract machine information"));
 	else
@@ -151,10 +148,6 @@ nserror netsurf_init(int *pargc,
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
-
-	LOG(("Using '%s' for Options file", options));
-	nsoption_read(options);
-	gui_options_init_defaults();
 
 	messages_load(messages);
 
@@ -175,7 +168,7 @@ nserror netsurf_init(int *pargc,
 	/* image cache is 25% of total memory cache size */
 	image_cache_parameters.limit = (hlcache_parameters.limit * 25) / 100;
 
-	/* image cache hysteresis is 20% of teh image cache size */
+	/* image cache hysteresis is 20% of the image cache size */
 	image_cache_parameters.hysteresis = (image_cache_parameters.limit * 20) / 100;
 
 	/* account for image cache use from total */
@@ -219,8 +212,6 @@ nserror netsurf_init(int *pargc,
 
 	/* Initialize system colours */
 	gui_system_colour_init();
-
-	nsoption_commandline(pargc, *pargv);
 
 	js_initialise();
 
