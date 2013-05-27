@@ -1415,7 +1415,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 	gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0, 0);
 
-	statusbar_width = nsoption_int(toolbar_status_width) *
+	statusbar_width = nsoption_int(toolbar_status_size) *
 		fbtk_get_width(gw->window) / 10000;
 
 	/* toolbar */

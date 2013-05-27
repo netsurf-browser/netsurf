@@ -131,7 +131,7 @@ static void display_settings(void)
     set_text( SETTINGS_EDIT_HOMEPAGE, nsoption_charp(homepage_url),
               INPUT_HOMEPAGE_URL_MAX_LEN );
 
-    if( nsoption_bool(block_ads) ) {
+    if( nsoption_bool(block_advertisements) ) {
         OBJ_CHECK( SETTINGS_CB_HIDE_ADVERTISEMENT );
     } else {
         OBJ_UNCHECK( SETTINGS_CB_HIDE_ADVERTISEMENT );
@@ -644,7 +644,7 @@ static void apply_settings(void)
     /* "Browser" tab: */
     nsoption_set_bool(target_blank,
                       !OBJ_SELECTED(SETTINGS_CB_DISABLE_POPUP_WINDOWS));
-    nsoption_set_bool(block_ads,
+    nsoption_set_bool(block_advertisements,
                       OBJ_SELECTED(SETTINGS_CB_HIDE_ADVERTISEMENT));
     nsoption_set_charp(accept_language,
                        gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));

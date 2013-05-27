@@ -374,7 +374,7 @@ SPINBUTTON_SIGNALS(spinDiscCacheAge, disc_cache_age, 1.0)
 TOGGLEBUTTON_SIGNALS(checkDisablePopups, disable_popups)
 
 /* hide adverts */
-TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_ads)
+TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_advertisements)
 
 /* enable javascript */
 TOGGLEBUTTON_SIGNALS(checkEnableJavascript, enable_javascript)

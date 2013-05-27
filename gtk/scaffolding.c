@@ -1286,7 +1286,7 @@ MULTIHANDLER(savewindowsize)
 	int x,y,w,h;
 
 	if (GTK_IS_PANED(g->status_pane)) {
-		nsoption_set_int(toolbar_status_width,
+		nsoption_set_int(toolbar_status_size,
 				 gtk_paned_get_position(g->status_pane));
 	}
 	gtk_window_get_position(g->window, &x, &y);

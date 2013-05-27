@@ -579,7 +579,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_HIDEADS,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_HIDEADS],
-         	           						GA_Selected, nsoption_bool(block_ads),
+         	           						GA_Selected, nsoption_bool(block_advertisements),
             	    					CheckBoxEnd,
 									LayoutEnd, // content blocking
 									LAYOUT_AddChild,VGroupObject,
@@ -1531,9 +1531,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(block_ads, true);
+		nsoption_set_bool(block_advertisements, true);
 	} else {
-		nsoption_set_bool(block_ads, false);
+		nsoption_set_bool(block_advertisements, false);
 	}
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_HISTORY],(ULONG *)&nsoption_int(expire_url));

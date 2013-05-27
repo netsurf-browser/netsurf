@@ -554,7 +554,7 @@ nserror html_css_new_stylesheets(html_content *c)
 	LOG(("%d fetches active", c->base.active));
 
 
-	if (nsoption_bool(block_ads)) {
+	if (nsoption_bool(block_advertisements)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback,

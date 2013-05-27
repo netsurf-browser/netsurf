@@ -521,7 +521,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/* Add in a toolbar and status bar */
 	g->status_bar = ro_gui_status_bar_create(g->window,
-						 nsoption_int(toolbar_status_width));
+						 nsoption_int(toolbar_status_size));
 	g->toolbar = ro_toolbar_create(NULL, g->window,
 			THEME_STYLE_BROWSER_TOOLBAR, TOOLBAR_FLAGS_NONE,
 			&ro_gui_window_toolbar_callbacks, g,
@@ -4712,7 +4712,7 @@ void ro_gui_window_default_options(struct browser_window *bw)
 				  ro_toolbar_get_display_throbber(gui->toolbar));
 	}
 	if (gui->status_bar != NULL)
-		nsoption_set_int(toolbar_status_width,
+		nsoption_set_int(toolbar_status_size,
 				 ro_gui_status_bar_get_width(gui->status_bar));
 }
 

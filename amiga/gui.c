@@ -3673,7 +3673,7 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
 
-	gad1percent = nsoption_int(toolbar_status_width) / 10000.0;
+	gad1percent = nsoption_int(toolbar_status_size) / 10000.0;
 
 	*size1 = (ULONG)(available_width * gad1percent);
 	*size2 = (ULONG)(available_width * (1 - gad1percent));

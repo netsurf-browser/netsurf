@@ -583,7 +583,7 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 		/* advert blocking */
 		sub = GetDlgItem(hwnd, IDC_PREFS_ADVERTS);
 		SendMessage(sub, BM_SETCHECK, 
-			    (WPARAM) ((nsoption_bool(block_ads)) ? 
+			    (WPARAM) ((nsoption_bool(block_advertisements)) ? 
 				  BST_CHECKED : BST_UNCHECKED), 0);
 
 		/* Referrer sending */
@@ -615,7 +615,7 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 			nsoption_set_bool(suppress_images,
 					  (IsDlgButtonChecked(hwnd, IDC_PREFS_IMAGES) == BST_CHECKED) ? true : false);
 
-			nsoption_set_bool(block_ads, (IsDlgButtonChecked(hwnd, 
+			nsoption_set_bool(block_advertisements, (IsDlgButtonChecked(hwnd, 
 									 IDC_PREFS_ADVERTS) == BST_CHECKED) ? true : false);
 
 			nsoption_set_bool(send_referer, (IsDlgButtonChecked(hwnd, 

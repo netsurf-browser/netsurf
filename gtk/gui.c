@@ -292,8 +292,8 @@ static void check_options(char **respath)
 	 * The GTK front end now correctly uses it as a proportion of window
 	 * width.  Here we assume that a value of less than 15% is wrong
 	 * and set to the default two thirds. */
-	if (nsoption_int(toolbar_status_width) < 1500) {
-		nsoption_set_int(toolbar_status_width, 6667);
+	if (nsoption_int(toolbar_status_size) < 1500) {
+		nsoption_set_int(toolbar_status_size, 6667);
 	}
 
 	/* user options should be stored in the users home directory */

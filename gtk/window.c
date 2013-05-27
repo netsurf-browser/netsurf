@@ -593,12 +593,12 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 
 	if (g->paned != NULL) {
 		/* Set status bar / scroll bar proportion according to
-		 * option_toolbar_status_width */
+		 * option_toolbar_status_size */
 		/* TODO: Probably want to detect when the user adjusts the
 		 *       status bar width, remember that proportion for the
 		 *       window, and use that here. */
 		gtk_paned_set_position(g->paned, 
-				       (nsoption_int(toolbar_status_width) *
+				       (nsoption_int(toolbar_status_size) *
 					allocation->width) / 10000);
 	}
 
