@@ -72,14 +72,14 @@ EXETARGET := NetSurf
 # ----------------------------------------------------------------------------
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c file.c	\
+S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c file.c		\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
-	cookies.c context_menu.c clipboard.c help.c	font_scan.c			\
-	launch.c search.c history_local.c download.c iff_dr2d.c 	\
-	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c system_colour.c \
+	cookies.c context_menu.c clipboard.c help.c	font_scan.c	\
+	launch.c search.c history_local.c download.c iff_dr2d.	c 	\
+	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c  		\
 	datatypes.c dt_picture.c dt_anim.c dt_sound.c plugin_hack.c	\
-	stringview/stringview.c stringview/urlhistory.c				\
+	stringview/stringview.c stringview/urlhistory.c			\
 	agclass/amigaguide_class.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 

@@ -391,7 +391,54 @@ void ami_open_resources(void)
 	//ami_help_init(NULL);
 }
 
-void ami_set_options(void)
+/**
+ * set option from pen
+ */
+static nserror
+ami_colour_option_from_pen(struct nsoption_s *opts,
+			   UWORD pen,
+			   enum nsoption_e option,
+			   colour def_colour)
+{
+	ULONG colour[3];
+	struct DrawInfo *drinfo;
+
+	if((option < NSOPTION_SYS_COLOUR_START) ||
+	   (option > NSOPTION_SYS_COLOUR_END) ||
+	   (opts[option].type != OPTION_COLOUR)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if(scrn != NULL) {
+		drinfo = GetScreenDrawInfo(scrn);
+		if(drinfo != NULL) {
+
+			if(pen == AMINS_SCROLLERPEN) pen = ami_system_colour_scrollbar_fgpen(drinfo);
+
+			/* Get the colour of the pen being used for "pen" */
+			GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
+
+			/* convert it to a color */
+			def_colour = ((colour[0] & 0xff000000) >> 24) |
+				((colour[1] & 0xff000000) >> 16) |
+				((colour[2] & 0xff000000) >> 8);
+
+			FreeScreenDrawInfo(screen, drinfo);
+		}
+	}
+
+	opts[option].value.c = def_colour;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Set option defaults for amiga frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror ami_set_options(struct nsoption_s *defaults)
 {
 	STRPTR tempacceptlangs;
 	BPTR lock = 0;
@@ -440,9 +487,6 @@ void ami_set_options(void)
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
 	
-	nsoption_setnull_charp(search_engines_file,
-			(char *)strdup("PROGDIR:Resources/SearchEngines"));
-
 	search_engines_file_location = nsoption_charp(search_engines_file);
 
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
@@ -474,14 +518,7 @@ void ami_set_options(void)
 		}
 	}
 
-	nsoption_setnull_charp(theme,
-			(char *)strdup("PROGDIR:Resources/Themes/Default"));
-
 	tree_set_icon_dir(strdup("ENV:Sys"));
-
-	nsoption_setnull_charp(arexx_dir, (char *)strdup("Rexx"));
-	nsoption_setnull_charp(arexx_startup, (char *)strdup("Startup.nsrx"));
-	nsoption_setnull_charp(arexx_shutdown, (char *)strdup("Shutdown.nsrx"));
 
 	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
 	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
@@ -492,6 +529,38 @@ void ami_set_options(void)
 	nsoption_set_bool(font_antialiasing, false);
 	nsoption_set_bool(truecolour_mouse_pointers, false);
 #endif
+
+	/* set system colours for amiga ui */
+	ami_colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
+	ami_colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
+	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
+	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Background, 0x00aa0000);
+	ami_colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
+	ami_colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);
+	ami_colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
+	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_ButtonText, 0x00000000);
+	ami_colour_option_from_pen(defaults, FILLTEXTPEN, NSOPTION_sys_colour_CaptionText, 0x00000000);
+	ami_colour_option_from_pen(defaults, DISABLEDTEXTPEN, NSOPTION_sys_colour_GrayText, 0x00777777);
+	ami_colour_option_from_pen(defaults, SELECTPEN, NSOPTION_sys_colour_Highlight, 0x00ee0000);
+	ami_colour_option_from_pen(defaults, SELECTTEXTPEN, NSOPTION_sys_colour_HighlightText, 0x00000000);
+	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
+	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
+	ami_colour_option_from_pen(defaults, INACTIVEFILLTEXTPEN, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
+	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);/* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
+	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_InfoText, 0x00000000);
+	ami_colour_option_from_pen(defaults, MENUBACKGROUNDPEN, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
+	ami_colour_option_from_pen(defaults, MENUTEXTPEN, NSOPTION_sys_colour_MenuText, 0x00000000);
+	ami_colour_option_from_pen(defaults, AMINS_SCROLLERPEN, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);
+	ami_colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
+	ami_colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
+	ami_colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
+	ami_colour_option_from_pen(defaults, HALFSHINEPEN, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
+	ami_colour_option_from_pen(defaults, HALFSHADOWPEN, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
+	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Window, 0x00aaaaaa);
+	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, 0x00000000);
+	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_WindowText, 0x00000000);
+
+	return NSERROR_OK;
 }
 
 void ami_amiupdate(void)
@@ -551,13 +620,6 @@ nsurl *gui_get_resource_url(const char *path)
 	}
 
 	return url;
-}
-
-/* Documented in utils/nsoption.h */
-void gui_options_init_defaults(void)
-{
-	/* Set defaults for absent option strings */
-	ami_set_options(); /* check options and set defaults where required */
 }
 
 void gui_init(int argc, char** argv)
@@ -905,7 +967,7 @@ int main(int argc, char** argv)
 	char temp[1024];
 	BPTR lock = 0;
 	int32 user = 0;
-	
+	nserror ret;
 	Object *splash_window = ami_gui_splash_open();
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
@@ -934,7 +996,18 @@ int main(int argc, char** argv)
 	 */
 	nslog_init(NULL, &argc, argv);
 
-	netsurf_init(&argc, &argv, current_user_options, messages);
+	/* user options setup */
+	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(current_user_options, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	ret = netsurf_init(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
 
 	amiga_icon_init();
 
