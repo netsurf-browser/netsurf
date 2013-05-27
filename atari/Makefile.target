@@ -96,7 +96,6 @@ S_ATARI := \
 	toolbar.c \
 	statusbar.c \
 	osspec.c \
-	system_colour.c \
 	ctxmenu.c \
 	settings.c \
 	deskmenu.c \
