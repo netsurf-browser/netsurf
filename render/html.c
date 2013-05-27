@@ -1227,8 +1227,8 @@ static void html_reformat(struct content *c, int width, int height)
 
 	time_taken = wallclock() - time_before;
 	c->reformat_time = wallclock() +
-		((time_taken * 3 < nsoption_int(min_reflow_period) ?
-		  nsoption_int(min_reflow_period) : time_taken * 3));
+		((time_taken * 3 < nsoption_uint(min_reflow_period) ?
+		  nsoption_uint(min_reflow_period) : time_taken * 3));
 }
 
 
