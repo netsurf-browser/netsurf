@@ -92,10 +92,16 @@ static void quit_handler(int argc, char **argv)
   netsurf_quit = true;
 }
 
-/* Documented in utils/nsoption.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for monkey frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
-  /* Set defaults for absent option strings */
+  /* currently no default overrides */
+  return NSERROR_OK;
 }
 
 /**
@@ -115,7 +121,8 @@ main(int argc, char **argv)
   char *messages;
   char *options;
   char buf[PATH_MAX];
-  
+  nserror ret;
+
   /* Unbuffer stdin/out/err */
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
@@ -123,19 +130,29 @@ main(int argc, char **argv)
   
   /* Prep the search paths */
   respaths = nsmonkey_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"MONKEY_RESPATH":./monkey/res");
-  
-  options = filepath_find(respaths, "Choices");
-  messages = filepath_find(respaths, "Messages");
 
   /* initialise logging. Not fatal if it fails but not much we can do
    * about it either.
    */
   nslog_init(nslog_stream_configure, &argc, argv);
 
-  netsurf_init(&argc, &argv, options, messages);
-  
-  free(messages);
+  /* user options setup */
+  ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+  if (ret != NSERROR_OK) {
+    die("Options failed to initialise");
+  }
+  options = filepath_find(respaths, "Choices");
+  nsoption_read(options, NULL);
   free(options);
+  nsoption_commandline(&argc, argv, NULL);
+
+  /* common initialisation */
+  messages = filepath_find(respaths, "Messages");
+  ret = netsurf_init(messages);
+  free(messages);
+  if (ret != NSERROR_OK) {
+    die("NetSurf failed to initialise");
+  }
     
   filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
   gtk_fetch_filetype_init(buf);
