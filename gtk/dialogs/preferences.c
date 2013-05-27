@@ -999,7 +999,7 @@ G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_response(GtkDialog *dlg, gint resid)
 {
 	if (resid == GTK_RESPONSE_CLOSE) {
-		nsoption_write(options_file_location);
+		nsoption_write(options_file_location, NULL, NULL);
 		gtk_widget_hide(GTK_WIDGET(dlg));
 	}
 }
@@ -1008,7 +1008,7 @@ G_MODULE_EXPORT gboolean
 nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 						struct ppref *priv)
 {
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 	gtk_widget_hide(GTK_WIDGET(dlg));
 
 	/* delt with it by hiding window, no need to destory widget by
@@ -1019,7 +1019,7 @@ nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 {
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 }
 
 

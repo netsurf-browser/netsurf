@@ -1297,7 +1297,7 @@ MULTIHANDLER(savewindowsize)
 	nsoption_set_int(window_x, x);
 	nsoption_set_int(window_y, y);
 
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 
 	return TRUE;
 }
