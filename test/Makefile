@@ -26,9 +26,12 @@ nsurl_SRCS := utils/log.c utils/nsurl.c test/nsurl.c
 nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet)
 nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet)
 
+nsoption_SRCS := utils/log.c utils/nsoption.c test/nsoption.c
+nsoption_CFLAGS := -Dnsgtk
+
 .PHONY: all
 
-all: llcache urldbtest nsurl
+all: llcache urldbtest nsurl nsoption
 
 llcache: $(addprefix ../,$(llcache_SRCS))
 	$(CC) $(CFLAGS) $(llcache_CFLAGS) $^ -o $@ $(LDFLAGS) $(llcache_LDFLAGS)
@@ -39,7 +42,10 @@ urldbtest: $(addprefix ../,$(urldbtest_SRCS))
 nsurl: $(addprefix ../,$(nsurl_SRCS))
 	$(CC) $(CFLAGS) $(nsurl_CFLAGS) $^ -o $@ $(LDFLAGS) $(nsurl_LDFLAGS)
 
+nsoption: $(addprefix ../,$(nsoption_SRCS))
+	$(CC) $(CFLAGS) $(nsoption_CFLAGS) $^ -o $@ $(LDFLAGS) $(nsoption_LDFLAGS)
+
 .PHONY: clean
 
 clean:
-	$(RM) llcache urldbtest nsurl
+	$(RM) llcache urldbtest nsurl nsoption
