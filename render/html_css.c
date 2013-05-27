@@ -103,6 +103,9 @@ html_convert_css_callback(hlcache_handle *css,
 	case CONTENT_MSG_READY:
 		break;
 
+	case CONTENT_MSG_REDIRECT:
+		break;
+
 	case CONTENT_MSG_DONE:
 		LOG(("done stylesheet slot %d '%s'", i,
 				nsurl_access(hlcache_handle_get_url(css))));

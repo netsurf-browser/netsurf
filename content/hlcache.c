@@ -593,6 +593,17 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		break;
 	case LLCACHE_EVENT_PROGRESS:
 		break;
+	case LLCACHE_EVENT_REDIRECT:
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_REDIRECT;
+			hlevent.data.redirect.from = event->data.redirect.from;
+			hlevent.data.redirect.to = event->data.redirect.to;
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
+		}
+		break;
 	}
 
 	return NSERROR_OK;

@@ -1355,6 +1355,11 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_stop_throbber(bw);
 		break;
 
+	case CONTENT_MSG_REDIRECT:
+		if (urldb_add_url(event->data.redirect.from))
+			urldb_update_url_visit_data(event->data.redirect.from);
+		break;
+
 	case CONTENT_MSG_STATUS:
 		if (event->data.explicit_status_text == NULL) {
 			/* Object content's status text updated */

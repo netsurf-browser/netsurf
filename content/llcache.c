@@ -1224,6 +1224,7 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	bool match;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
+	llcache_event event;
 
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
@@ -1238,8 +1239,6 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	/* Forcibly stop redirecting if we've followed too many redirects */
 #define REDIRECT_LIMIT 10
 	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
-		llcache_event event;
-
 		LOG(("Too many nested redirects"));
 
 		event.type = LLCACHE_EVENT_ERROR;
@@ -1253,6 +1252,18 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	error = nsurl_join(object->url, target, &url);
 	if (error != NSERROR_OK)
 		return error;
+
+	/* Inform users of redirect */
+	event.type = LLCACHE_EVENT_REDIRECT;
+	event.data.redirect.from = object->url;
+	event.data.redirect.to = url;
+
+	error = llcache_send_event_to_users(object, &event);
+
+	if (error != NSERROR_OK) {
+		nsurl_unref(url);
+		return error;
+	}
 
 	/* Reject attempts to redirect from unvalidated to validated schemes
 	 * A "validated" scheme is one over which we have some guarantee that

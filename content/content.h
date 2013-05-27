@@ -69,6 +69,7 @@ typedef enum {
 	CONTENT_MSG_DONE,      /**< finished */
 	CONTENT_MSG_ERROR,     /**< error occurred */
 	CONTENT_MSG_ERRORCODE, /**< error occurred return nserror */
+	CONTENT_MSG_REDIRECT,  /**< fetch url redirect occured */
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
@@ -103,6 +104,11 @@ union content_msg_data {
 	const char *error;
         /** CONTENT_MSG_ERRORCODE - Error code */
 	nserror errorcode;
+        /** CONTENT_MSG_REDIRECT - Redirect info */
+	struct {
+		nsurl *from;	/**< Redirect origin */
+		nsurl *to;	/**< Redirect target */
+	} redirect;		/**< Fetch URL redirect occured */
 	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
 		int x, y, width, height;

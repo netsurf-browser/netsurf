@@ -203,6 +203,7 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_REFORMAT:
+	case CONTENT_MSG_REDIRECT:
 		break;
 
 	case CONTENT_MSG_REDRAW:

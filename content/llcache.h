@@ -56,6 +56,8 @@ typedef enum {
 
 	LLCACHE_EVENT_ERROR,		/**< An error occurred during fetch */
 	LLCACHE_EVENT_PROGRESS,		/**< Fetch progress update */
+
+	LLCACHE_EVENT_REDIRECT		/**< Fetch URL redirect occured */
 } llcache_event_type;
 
 /** Low-level cache events */
@@ -67,6 +69,10 @@ typedef struct {
 			size_t len;	/**< Length of buffer, in bytes */
 		} data;			/**< Received data */
 		const char *msg;	/**< Error or progress message */
+		struct {
+			nsurl *from;	/**< Redirect origin */
+			nsurl *to;	/**< Redirect target */
+		} redirect;		/**< Fetch URL redirect occured */
 	} data;				/**< Event data */
 } llcache_event;
 

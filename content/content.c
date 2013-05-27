@@ -188,6 +188,11 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		msg_data.explicit_status_text = NULL;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 		break;
+	case LLCACHE_EVENT_REDIRECT:
+		msg_data.redirect.from = event->data.redirect.from;
+		msg_data.redirect.to = event->data.redirect.to;
+		content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
+		break;
 	}
 
 	return error;
