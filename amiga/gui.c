@@ -745,8 +745,10 @@ void ami_openscreen(void)
 	dri = GetScreenDrawInfo(scrn);
 	ami_font_setdevicedpi(id);
 
+/* TODO: Reset system colours so they are correct for the new screen
 	gui_system_colour_finalize();
 	gui_system_colour_init();
+*/
 	
 	//ami_help_new_screen(scrn);
 }
