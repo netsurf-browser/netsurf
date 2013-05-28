@@ -220,6 +220,7 @@ nserror nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts);
  * %t - The options type
  * %V - value (HTML formatting)
  * %v - value (plain formatting)
+ * %p - provenance either "user" or "default"
  *
  * @param string The buffer in which to place the results.
  * @param size The size of the string buffer.

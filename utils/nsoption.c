@@ -155,6 +155,58 @@ static void nsoption_validate(struct nsoption_s *opts)
 	}
 }
 
+static bool 
+nsoption_is_set(struct nsoption_s *opts,
+		struct nsoption_s *defs,
+		enum nsoption_e entry)
+{
+	bool ret = false;
+
+	switch (opts[entry].type) {
+	case OPTION_BOOL:
+		if (opts[entry].value.b != defs[entry].value.b) {
+			ret = true;
+		}
+		break;
+
+	case OPTION_INTEGER:
+		if (opts[entry].value.i != defs[entry].value.i) {
+			ret = true;
+		}
+		break;
+
+	case OPTION_UINT:
+		if (opts[entry].value.u != defs[entry].value.u) {
+			ret = true;
+		}
+		break;
+
+	case OPTION_COLOUR:
+		if (opts[entry].value.c != defs[entry].value.c) {
+			ret = true;
+		}
+		break;
+
+	case OPTION_STRING:
+		/* set if:
+		 *  - defs is null.
+		 *  - default is null but value is not.
+		 *  - default and value pointers are different
+		 *    (acts as a null check because of previous check)
+		 *    and the strings content differ.
+		 */
+		if (((defs[entry].value.s == NULL) &&
+		     (opts[entry].value.s != NULL)) ||
+		    ((defs[entry].value.s != opts[entry].value.s) &&
+		     (strcmp(opts[entry].value.s, defs[entry].value.s) != 0))) {
+			ret = true;
+		}
+		break;
+
+	}
+	return ret;
+}
+
 /** Output choices to file stream
  *
  * @param fp the file stream to write to
@@ -169,66 +221,52 @@ nsoption_output(FILE *fp,
 		bool all)
 {
 	unsigned int entry;
+	bool show;
+	colour rgbcolour; /* RRGGBB */
+
 	for (entry = 0; entry < NSOPTION_LISTEND; entry++) {
+		show = all || nsoption_is_set(opts, defs, entry);
+
+		if (show == false) {
+			continue;
+		}
+
 		switch (opts[entry].type) {
 		case OPTION_BOOL:
-			if (all ||
-			    (opts[entry].value.b != defs[entry].value.b)) {
-				    fprintf(fp, "%s:%c\n",
-					    opts[entry].key,
-					    opts[entry].value.b ? '1' : '0');
-				}
+			fprintf(fp, "%s:%c\n",
+				opts[entry].key,
+				opts[entry].value.b ? '1' : '0');
 			break;
 
 		case OPTION_INTEGER:
-			if (all ||
-			    (opts[entry].value.i != defs[entry].value.i)) {
-				    fprintf(fp, "%s:%i\n",
-					    opts[entry].key,
-					    opts[entry].value.i);
-			    }
+			fprintf(fp, "%s:%i\n",
+				opts[entry].key,
+				opts[entry].value.i);
+
 			break;
 
 		case OPTION_UINT:
-			if (all ||
-			    (opts[entry].value.u != defs[entry].value.u)) {
-				    fprintf(fp, "%s:%u\n",
-					    opts[entry].key,
-					    opts[entry].value.u);
-			    }
+			fprintf(fp, "%s:%u\n",
+				opts[entry].key,
+				opts[entry].value.u);
 			break;
 
 		case OPTION_COLOUR:
-			if (all ||
-			    (opts[entry].value.c != defs[entry].value.c)) {
-				    colour rgbcolour; /* RRGGBB */
-				    rgbcolour = (((0x000000FF & opts[entry].value.c) << 16) |
-						 ((0x0000FF00 & opts[entry].value.c) << 0) |
-						 ((0x00FF0000 & opts[entry].value.c) >> 16));
-				    fprintf(fp, "%s:%06x\n",
-					    opts[entry].key,
-					    rgbcolour);
-			    }
+			rgbcolour = (((0x000000FF & opts[entry].value.c) << 16) |
+				     ((0x0000FF00 & opts[entry].value.c) << 0) |
+				     ((0x00FF0000 & opts[entry].value.c) >> 16));
+			fprintf(fp, "%s:%06x\n",
+				opts[entry].key,
+				rgbcolour);
+
 			break;
 
 		case OPTION_STRING:
-			/* output the key if:
-			 *  - defs is null.
-			 *  - default is null but value is not.
-			 *  - default and value pointers are different
-			 *    (acts as a null check because of previous check)
-			 *    and the strings content differ.
-			 */
-			if (all ||
-			    ((defs[entry].value.s == NULL) &&
-			     (opts[entry].value.s != NULL)) ||
-			    ((defs[entry].value.s != opts[entry].value.s) &&
-			     (strcmp(opts[entry].value.s, defs[entry].value.s) != 0))) {
-				fprintf(fp, "%s:%s\n",
-					opts[entry].key,
-					((opts[entry].value.s == NULL) ||
-					 (*opts[entry].value.s == 0)) ? "" : opts[entry].value.s);
-			}
+			fprintf(fp, "%s:%s\n",
+				opts[entry].key,
+				((opts[entry].value.s == NULL) ||
+				 (*opts[entry].value.s == 0)) ? "" : opts[entry].value.s);
+
 			break;
 		}
 	}
@@ -283,7 +321,8 @@ nsoption_output_value_html(struct nsoption_s *option,
 		slen = snprintf(string + pos,
 				size - pos,
 				"<span style=\"background-color: #%06x; "
-				"color: #%06x;\">#%06x</span>",
+				"color: #%06x; "
+				"font-family:Monospace; \">#%06X</span>",
 				rgbcolour,
 				(~rgbcolour) & 0xffffff,
 				rgbcolour);
@@ -628,6 +667,20 @@ nsoption_snoptionf(char *string,
 						 size - slen,
 						 "%s",
 						 option->key);
+				break;
+
+			case 'p':
+				if (nsoption_is_set(nsoptions, 
+						    nsoptions_default, 
+						    option_idx)) {
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "user");
+				} else {
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "default");
+				}
 				break;
 
 			case 't':
