@@ -102,6 +102,8 @@
 #include <intuition/icclass.h>
 #include <graphics/rpattr.h>
 #include <workbench/workbench.h>
+#include <intuition/gui.h>
+#include <intuition/screens.h>
 
 /* ReAction libraries */
 #include <proto/bevel.h>
