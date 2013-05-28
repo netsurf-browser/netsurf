@@ -395,19 +395,15 @@ nsoption_init(nsoption_set_default_t *set_defaults,
 	src = &defaults[0];
 	dst = opts;
 
+	memcpy(dst, src, sizeof(defaults));
+
 	while (src->key != NULL) {
-		dst->key = src->key;
-		dst->key_len = src->key_len;
-		dst->type = src->type;
 		if ((src->type == OPTION_STRING) && (src->value.s != NULL)) {
 			dst->value.s = strdup(src->value.s);
-		} else {
-			dst->value = src->value;
 		}
 		src++;
 		dst++;
 	}
-	dst->key = src->key;
 
 	/* return values if wanted */
 	if (popts != NULL) {
