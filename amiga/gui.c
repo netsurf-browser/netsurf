@@ -393,11 +393,21 @@ void ami_open_resources(void)
 	//ami_help_init(NULL);
 }
 
+static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
+{
+	LONG scrollerfillpen = FALSE;
+
+	GetGUIAttrs(NULL, drinfo, GUIA_PropKnobColor, &scrollerfillpen, TAG_DONE);
+
+	if(scrollerfillpen) return FILLPEN;
+		else return FOREGROUNDPEN;
+}
+
 /**
  * set option from pen
  */
 static nserror
-ami_colour_option_from_pen(struct nsoption_s *opts,
+colour_option_from_pen(struct nsoption_s *opts,
 			   UWORD pen,
 			   enum nsoption_e option,
 			   colour def_colour)
@@ -533,34 +543,34 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 #endif
 
 	/* set system colours for amiga ui */
-	ami_colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
-	ami_colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
-	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
-	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Background, 0x00aa0000);
-	ami_colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
-	ami_colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);
-	ami_colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
-	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_ButtonText, 0x00000000);
-	ami_colour_option_from_pen(defaults, FILLTEXTPEN, NSOPTION_sys_colour_CaptionText, 0x00000000);
-	ami_colour_option_from_pen(defaults, DISABLEDTEXTPEN, NSOPTION_sys_colour_GrayText, 0x00777777);
-	ami_colour_option_from_pen(defaults, SELECTPEN, NSOPTION_sys_colour_Highlight, 0x00ee0000);
-	ami_colour_option_from_pen(defaults, SELECTTEXTPEN, NSOPTION_sys_colour_HighlightText, 0x00000000);
-	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
-	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
-	ami_colour_option_from_pen(defaults, INACTIVEFILLTEXTPEN, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
-	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);/* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
-	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_InfoText, 0x00000000);
-	ami_colour_option_from_pen(defaults, MENUBACKGROUNDPEN, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
-	ami_colour_option_from_pen(defaults, MENUTEXTPEN, NSOPTION_sys_colour_MenuText, 0x00000000);
-	ami_colour_option_from_pen(defaults, AMINS_SCROLLERPEN, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);
-	ami_colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
-	ami_colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
-	ami_colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
-	ami_colour_option_from_pen(defaults, HALFSHINEPEN, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
-	ami_colour_option_from_pen(defaults, HALFSHADOWPEN, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
-	ami_colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Window, 0x00aaaaaa);
-	ami_colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, 0x00000000);
-	ami_colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_WindowText, 0x00000000);
+	colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
+	colour_option_from_pen(defaults, FILLPEN, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
+	colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
+	colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Background, 0x00aa0000);
+	colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
+	colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);
+	colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
+	colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_ButtonText, 0x00000000);
+	colour_option_from_pen(defaults, FILLTEXTPEN, NSOPTION_sys_colour_CaptionText, 0x00000000);
+	colour_option_from_pen(defaults, DISABLEDTEXTPEN, NSOPTION_sys_colour_GrayText, 0x00777777);
+	colour_option_from_pen(defaults, SELECTPEN, NSOPTION_sys_colour_Highlight, 0x00ee0000);
+	colour_option_from_pen(defaults, SELECTTEXTPEN, NSOPTION_sys_colour_HighlightText, 0x00000000);
+	colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
+	colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
+	colour_option_from_pen(defaults, INACTIVEFILLTEXTPEN, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
+	colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);/* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
+	colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_InfoText, 0x00000000);
+	colour_option_from_pen(defaults, MENUBACKGROUNDPEN, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
+	colour_option_from_pen(defaults, MENUTEXTPEN, NSOPTION_sys_colour_MenuText, 0x00000000);
+	colour_option_from_pen(defaults, AMINS_SCROLLERPEN, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);
+	colour_option_from_pen(defaults, FORESHADOWPEN, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
+	colour_option_from_pen(defaults, FOREGROUNDPEN, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
+	colour_option_from_pen(defaults, FORESHINEPEN, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
+	colour_option_from_pen(defaults, HALFSHINEPEN, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
+	colour_option_from_pen(defaults, HALFSHADOWPEN, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
+	colour_option_from_pen(defaults, BACKGROUNDPEN, NSOPTION_sys_colour_Window, 0x00aaaaaa);
+	colour_option_from_pen(defaults, INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, 0x00000000);
+	colour_option_from_pen(defaults, TEXTPEN, NSOPTION_sys_colour_WindowText, 0x00000000);
 
 	return NSERROR_OK;
 }
