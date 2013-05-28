@@ -103,10 +103,11 @@ strtooption(const char *value, struct nsoption_s *option)
 		break;
 
 	case OPTION_COLOUR:
-		sscanf(value, "%x", &rgbcolour);
-		option->value.c = (((0x000000FF & rgbcolour) << 16) |
-				   ((0x0000FF00 & rgbcolour) << 0) |
-				   ((0x00FF0000 & rgbcolour) >> 16));
+		if (sscanf(value, "%x", &rgbcolour) == 1) {
+			option->value.c = (((0x000000FF & rgbcolour) << 16) |
+					   ((0x0000FF00 & rgbcolour) << 0) |
+					   ((0x00FF0000 & rgbcolour) >> 16));
+		}
 		break;
 
 	case OPTION_STRING:
