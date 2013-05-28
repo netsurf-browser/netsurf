@@ -311,9 +311,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	found = ami_gui_check_resource(fullpath, file);
 	if(found) return true;
 
-	/* Secondly check the user's selected theme.  NB: ami_locate_resource()
-	 * gets called for Messages before options are loaded */
-
 	if(nsoption_charp(theme))
 	{
 		strcpy(fullpath, nsoption_charp(theme));
@@ -993,9 +990,6 @@ int main(int argc, char** argv)
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 
-	if(ami_locate_resource(messages, "Messages") == false)
-		die("Cannot open Messages file");
-
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
@@ -1018,6 +1012,9 @@ int main(int argc, char** argv)
 	nsoption_read(current_user_options, NULL);
 	nsoption_commandline(&argc, argv, NULL);
 
+	if(ami_locate_resource(messages, "Messages") == false)
+		die("Cannot open Messages file");
+	
 	ret = netsurf_init(messages);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
