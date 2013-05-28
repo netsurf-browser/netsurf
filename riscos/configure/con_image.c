@@ -77,11 +77,11 @@ bool ro_gui_options_image_initialise(wimp_w w)
 
 	/* set the current values */
 	for (i = 0; (i < 4); i++) {
-		if ((unsigned int)nsoption_int(fg_plot_style) == tinct_options[i])
+		if ((unsigned int)nsoption_int(plot_fg_quality) == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_FOREGROUND_FIELD,
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
-		if ((unsigned int)nsoption_int(bg_plot_style) == tinct_options[i])
+		if ((unsigned int)nsoption_int(plot_bg_quality) == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
@@ -252,8 +252,8 @@ void ro_gui_options_update_shading(wimp_w w)
 bool ro_gui_options_image_ok(wimp_w w)
 {
 	ro_gui_options_image_read(w, 
-				  (unsigned int *)&nsoption_int(bg_plot_style),
-				  (unsigned int *)&nsoption_int(fg_plot_style));
+				  (unsigned int *)&nsoption_int(plot_bg_quality),
+				  (unsigned int *)&nsoption_int(plot_fg_quality));
 
 	nsoption_set_int(minimum_gif_delay,
 			 ro_gui_get_icon_decimal(w, IMAGE_SPEED_FIELD, 2));

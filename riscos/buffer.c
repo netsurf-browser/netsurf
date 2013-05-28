@@ -274,7 +274,7 @@ void ro_gui_buffer_close(void)
 		_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 				(char *)(buffer + 1),
 				clipping.x0, clipping.y0,
-				nsoption_int(fg_plot_style));
+				nsoption_int(plot_fg_quality));
 	else
 		xosspriteop_put_sprite_user_coords(osspriteop_PTR,
 			buffer, (osspriteop_id)(buffer + 1),

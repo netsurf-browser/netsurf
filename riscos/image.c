@@ -69,8 +69,8 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 	req_height *= 2;
 	width *= 2;
 	height *= 2;
-	tinct_options = background ? nsoption_int(bg_plot_style) :
-		nsoption_int(fg_plot_style);
+	tinct_options = background ? nsoption_int(plot_bg_quality) :
+		nsoption_int(plot_fg_quality);
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
 			return image_redraw_tinct(header, x, y,

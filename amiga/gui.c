@@ -131,6 +131,8 @@
 #include <math.h>
 #include <string.h>
 
+define AMINS_SCROLLERPEN NUMDRIPENS
+
 #define NSA_KBD_SCROLL_PX 10
 
 /* Extra mouse button defines to match those in intuition/intuition.h */
@@ -668,10 +670,10 @@ void ami_openscreen(void)
 
 	if (nsoption_charp(use_pubscreen) == NULL)
 	{
-		if((nsoption_charp(modeid)) && 
-		   (strncmp(nsoption_charp(modeid), "0x", 2) == 0))
+		if((nsoption_charp(screen_modeid)) && 
+		   (strncmp(nsoption_charp(screen_modeid), "0x", 2) == 0))
 		{
-			id = strtoul(nsoption_charp(modeid), NULL, 0);
+			id = strtoul(nsoption_charp(screen_modeid), NULL, 0);
 		}
 		else
 		{
@@ -687,8 +689,8 @@ void ami_openscreen(void)
 					char *modeid = malloc(20);
 					id = screenmodereq->sm_DisplayID;
 					sprintf(modeid, "0x%lx", id);
-					nsoption_set_charp(modeid, modeid);
-					nsoption_write(current_user_options);
+					nsoption_set_charp(screen_modeid, modeid);
+					nsoption_write(current_user_options, NULL, NULL);
 				}
 				FreeAslRequest(screenmodereq);
 			}
@@ -3196,7 +3198,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
-		if(nsoption_bool(new_tab_active))
+		if(nsoption_bool(new_tab_is_active))
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 							CLICKTAB_Current,g->tab,
@@ -3209,7 +3211,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->tabs++;
 		g->shared->next_tab++;
 
-		if(nsoption_bool(new_tab_active)) ami_switch_tab(g->shared,false);
+		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
 
 		ami_update_buttons(g->shared);
 

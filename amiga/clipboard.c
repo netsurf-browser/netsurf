@@ -238,7 +238,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	{
 		if(!(PushChunk(iffh, ID_FTXT, ID_FORM, IFFSIZE_UNKNOWN)))
 		{
-			if(nsoption_bool(utf8_clipboard))
+			if(nsoption_bool(clipboard_write_utf8))
 			{
 				if(!(PushChunk(iffh, 0, ID_CSET, 32)))
 				{
@@ -254,7 +254,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 		}
 
 		if(!(PushChunk(iffh, 0, ID_CHRS, IFFSIZE_UNKNOWN))) {
-			if(nsoption_bool(utf8_clipboard)) {
+			if(nsoption_bool(clipboard_write_utf8)) {
 				WriteChunkBytes(iffh, buffer, length);
 			} else {
 				if(utf8_to_local_encoding(buffer, length, &text) == UTF8_CONVERT_OK) {

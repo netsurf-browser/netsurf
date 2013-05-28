@@ -47,7 +47,6 @@
 #include <stdbool.h>
 
 #include "utils/errors.h"
-typedef uint32_t colour;
 
 /* allow targets to include any necessary headers of their own */
 #define NSOPTION_BOOL(NAME, DEFAULT)

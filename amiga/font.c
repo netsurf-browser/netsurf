@@ -881,10 +881,10 @@ void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
-	ULONG ydpi = nsoption_int(amiga_ydpi);
-	ULONG xdpi = nsoption_int(amiga_ydpi);
+	ULONG ydpi = nsoption_int(screen_ydpi);
+	ULONG xdpi = nsoption_int(screen_ydpi);
 
-	nscss_screen_dpi = INTTOFIX(nsoption_int(amiga_ydpi));
+	nscss_screen_dpi = INTTOFIX(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
 	{

@@ -193,7 +193,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(drag_save_data) return;
 
-	if(nsoption_bool(use_os_pointers))
+	if(nsoption_bool(os_mouse_pointers))
 	{
 		switch(shape)
 		{

@@ -664,7 +664,7 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 
 void ro_gui_save_options(void)
 {
-	nsoption_write("<NetSurf$ChoicesSave>");
+	nsoption_write("<NetSurf$ChoicesSave>", NULL, NULL);
 }
 
 bool ro_gui_dialog_zoom_apply(wimp_w w) {

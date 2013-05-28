@@ -953,7 +953,7 @@ static void ami_menu_item_settings_snapshot(struct Hook *hook, APTR window, stru
 
 static void ami_menu_item_settings_save(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	nsoption_write(current_user_options);
+	nsoption_write(current_user_options, NULL, NULL);
 }
 
 static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct IntuiMessage *msg)

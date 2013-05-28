@@ -637,7 +637,7 @@ void gui_init(int argc, char** argv)
 	find_resource(buf, "Choices", "%/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
-	nsoption_read(buf);
+	nsoption_read(buf, NULL);
 
 
 	/* check what the font settings are, setting them to a default font

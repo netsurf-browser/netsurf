@@ -435,9 +435,10 @@ void ami_gui_opts_open(void)
 		screennamedisabled = TRUE;
 	}
 
-	if((nsoption_charp(modeid)) && (strncmp(nsoption_charp(modeid),"0x",2) == 0))
+	if((nsoption_charp(screen_modeid)) && 
+	   (strncmp(nsoption_charp(screen_modeid),"0x",2) == 0))
 	{
-		screenmodeid = strtoul(nsoption_charp(modeid),NULL,0);
+		screenmodeid = strtoul(nsoption_charp(screen_modeid),NULL,0);
 	}
 
 	if(nsoption_bool(http_proxy))
@@ -743,7 +744,7 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
-         	           					GA_Selected, nsoption_bool(use_os_pointers),
+         	           					GA_Selected, nsoption_bool(os_mouse_pointers),
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
@@ -1163,7 +1164,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_TAB_ACTIVE,
          	        	   					GA_RelVerify, TRUE,
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
+         	     	      					GA_Selected, !nsoption_bool(new_tab_is_active),
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_LAST,
@@ -1274,7 +1275,7 @@ void ami_gui_opts_open(void)
       		              					GA_ID, GID_OPTS_CLIPBOARD,
          		           					GA_RelVerify, TRUE,
          	    	       					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
-         	    	       					GA_Selected, nsoption_bool(utf8_clipboard),
+         	    	       					GA_Selected, nsoption_bool(clipboard_write_utf8),
             	    					CheckBoxEnd,
 									LayoutEnd, // clipboard
 									CHILD_WeightedHeight, 0,
@@ -1590,7 +1591,7 @@ void ami_gui_opts_use(bool save)
 	{
 		char *modeid = malloc(20);
 		sprintf(modeid,"0x%lx", id);
-		nsoption_set_charp(modeid, modeid);
+		nsoption_set_charp(screen_modeid, modeid);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
@@ -1614,9 +1615,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTROS],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(use_os_pointers, true);
+		nsoption_set_bool(os_mouse_pointers, true);
 	} else {
-		nsoption_set_bool(use_os_pointers, false);
+		nsoption_set_bool(os_mouse_pointers, false);
 	}
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
@@ -1667,7 +1668,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(animate_images, true);
 	}
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&nsoption_int(amiga_ydpi));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&nsoption_int(screen_ydpi));
 	ami_font_setdevicedpi(id); // id set above
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
@@ -1740,9 +1741,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(new_tab_active, false);
+		nsoption_set_bool(new_tab_is_active, false);
 	} else {
-		nsoption_set_bool(new_tab_active, true);
+		nsoption_set_bool(new_tab_is_active, true);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);
@@ -1784,9 +1785,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(utf8_clipboard, true);
+		nsoption_set_bool(clipboard_write_utf8, true);
 	} else {
-		nsoption_set_bool(utf8_clipboard, false);
+		nsoption_set_bool(clipboard_write_utf8, false);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CONTEXTMENU],(ULONG *)&data);
@@ -1868,7 +1869,7 @@ void ami_gui_opts_use(bool save)
 	}
 
 	if(save == true) {
-		nsoption_write(current_user_options);
+		nsoption_write(current_user_options, NULL, NULL);
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
 

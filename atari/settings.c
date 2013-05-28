@@ -113,8 +113,8 @@ static void save_settings(void)
 {
     apply_settings();
     // Save settings
-    nsoption_write( (const char*)&options );
-    nsoption_read( (const char*)&options );
+    nsoption_write( (const char*)&options, NULL, NULL);
+    nsoption_read( (const char*)&options , NULL);
     close_settings();
     form_alert(1, "[1][Some options require an netsurf restart!][OK]");
     deskmenu_update();

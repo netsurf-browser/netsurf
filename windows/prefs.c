@@ -675,7 +675,6 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 		win_perror("PropertySheet");
 	} else if (ret > 0) {
 		/* user saved changes */
-		nsoption_write(options_file_location);
+		nsoption_write(options_file_location, NULL, NULL);
 	}
-
 }

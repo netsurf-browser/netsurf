@@ -389,7 +389,7 @@ static void __CDECL menu_savewin(short item, short title, void *data)
 		nsoption_set_int(window_height, rect.g_h);
 		nsoption_set_int(window_x, rect.g_x);
 		nsoption_set_int(window_y, rect.g_y);
-		nsoption_write((const char*)&options);
+		nsoption_write((const char*)&options, NULL, NULL);
 	}
 
 }
