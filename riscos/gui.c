@@ -84,7 +84,6 @@
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
 #include "riscos/content-handlers/sprite.h"
-#include "riscos/system_colour.h"
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"
@@ -328,45 +327,86 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-/* Documented in utils/nsoption.h */
-void gui_options_init_defaults(void)
+/**
+ * set option from wimp
+ */
+static nserror
+set_colour_from_wimp(struct nsoption_s *opts,
+                   wimp_colour wimp,
+                   enum nsoption_e option,
+                   colour def_colour)
+{
+	os_error *error;
+	os_PALETTE(20) palette;
+
+	error = xwimp_read_palette((os_palette *) &palette);
+	if (error != NULL) {
+		LOG(("xwimp_read_palette: 0x%x: %s",
+		     error->errnum, error->errmess));
+	} else {
+		def_colour = palette.entries[wimp];
+	}
+
+        return def_colour;
+}
+
+/**
+ * Set option defaults for riscos frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ *
+ * @TODO -- The wimp_COLOUR_... values here map the colour definitions
+ *          to parts of the RISC OS desktop palette.  In places this
+ *          is fairly arbitrary, and could probably do with
+ *          re-checking.
+ *
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
-	nsoption_setnull_charp(theme, strdup("Aletheia"));
-	nsoption_setnull_charp(toolbar_browser, strdup("0123|58|9"));
-	nsoption_setnull_charp(toolbar_hotlist, strdup("40|12|3"));
-	nsoption_setnull_charp(toolbar_history, strdup("0|12|3"));
-	nsoption_setnull_charp(toolbar_cookies, strdup("0|12"));
 	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
 	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
 	nsoption_setnull_charp(cookie_jar, strdup(CHOICES_PREFIX "Cookies"));
-	nsoption_setnull_charp(url_path, strdup("NetSurf:URL"));
-	nsoption_setnull_charp(url_save, strdup(CHOICES_PREFIX "URL"));
-	nsoption_setnull_charp(hotlist_path, strdup("NetSurf:Hotlist"));
-	nsoption_setnull_charp(hotlist_save, strdup(CHOICES_PREFIX "Hotlist"));
-	nsoption_setnull_charp(recent_path, strdup("NetSurf:Recent"));
-	nsoption_setnull_charp(recent_save, strdup(CHOICES_PREFIX "Recent"));
-	nsoption_setnull_charp(theme_path, strdup("NetSurf:Themes"));
-	nsoption_setnull_charp(theme_save, strdup(CHOICES_PREFIX "Themes"));
 
-	if (nsoption_charp(theme) == NULL ||
-			nsoption_charp(toolbar_browser) == NULL ||
-			nsoption_charp(toolbar_hotlist) == NULL ||
-			nsoption_charp(toolbar_history) == NULL ||
-			nsoption_charp(toolbar_cookies) == NULL ||
-			nsoption_charp(ca_bundle) == NULL ||
-			nsoption_charp(cookie_file) == NULL ||
-			nsoption_charp(cookie_jar) == NULL ||
-			nsoption_charp(url_path) == NULL ||
-			nsoption_charp(url_save) == NULL ||
-			nsoption_charp(hotlist_path) == NULL ||
-			nsoption_charp(hotlist_save) == NULL ||
-			nsoption_charp(recent_path) == NULL ||
-			nsoption_charp(recent_save) == NULL ||
-			nsoption_charp(theme_path) == NULL ||
-			nsoption_charp(theme_save) == NULL) {
-		die("Failed initialising string options");
+	if (nsoption_charp(ca_bundle) == NULL ||
+	    nsoption_charp(cookie_file) == NULL ||
+	    nsoption_charp(cookie_jar) == NULL) {
+		LOG(("Failed initialising string options"));
+		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* set default system colours for riscos ui */
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_CREAM, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
+	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
+	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_Background, 0x00aa0000);/* \TODO -- Check */
+	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
+	set_colour_from_wimp(defaults, wimp_COLOUR_DARK_GREY, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);/* \TODO -- Check */
+	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ButtonText, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_CaptionText, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_MID_LIGHT_GREY, NSOPTION_sys_colour_GrayText, 0x00777777);/* \TODO -- Check */
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_Highlight, 0x00ee0000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_HighlightText, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_LIGHT_GREY, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
+	set_colour_from_wimp(defaults, wimp_COLOUR_CREAM, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_InfoText, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_MenuText, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_LIGHT_GREY, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);/* \TODO -- Check */
+	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
+	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
+	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
+	set_colour_from_wimp(defaults, wimp_COLOUR_WHITE, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
+	set_colour_from_wimp(defaults, wimp_COLOUR_MID_DARK_GREY, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
+	set_colour_from_wimp(defaults, wimp_COLOUR_VERY_LIGHT_GREY, NSOPTION_sys_colour_Window, 0x00aaaaaa);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_WindowFrame, 0x00000000);
+	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_WindowText, 0x00000000);
+
+	return NSERROR_OK;
 }
 
 /**
@@ -819,6 +859,7 @@ int main(int argc, char** argv)
 	os_var_type type;
 	int used = -1;  /* slightly better with older OSLib versions */
 	os_error *error;
+	nserror ret;
 
 	/* Consult NetSurf$Logging environment variable to decide if logging
 	 * is required. */
@@ -842,25 +883,37 @@ int main(int argc, char** argv)
 	 */
 	nslog_init(nslog_stream_configure, &argc, argv);
 
-	/* Pass a NULL pointer for Messages path, because until the Choices
-	 * are loaded in netsurf_init, we don't know the Messages path. */
-	netsurf_init(&argc, &argv, "NetSurf:Choices", NULL);
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read("NetSurf:Choices", NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* Choose the interface language to use */
+	ro_gui_choose_language();
+
+	/* select language-specific Messages */
+	if (((length = snprintf(path,
+				sizeof(path),
+			       "NetSurf:Resources.%s.Messages",
+				nsoption_charp(language))) < 0) || 
+	    (length >= (int)sizeof(path))) {
+		die("Failed to locate Messages resource.");
+	}
+
+	/* common initialisation */
+	ret = netsurf_init(path);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
 
 	artworks_init();
 	draw_init();
 	sprite_init();
 
-	/* Choose the interface language to use */
-	ro_gui_choose_language();
-
-	/* Load in our language-specific Messages */
-	if ((length = snprintf(path, sizeof(path),
-			"NetSurf:Resources.%s.Messages",
-			nsoption_charp(language))) < 0 || length >= (int)sizeof(path))
-		die("Failed to locate Messages resource.");
-	/* We disabled core Messages load, so have to load them here */
-	messages_load(path);
-	/* Also load some extra RISC OS specific Messages */
+	/* Load some extra RISC OS specific Messages */
 	messages_load("NetSurf:Resources.LangNames");
 
 	gui_init(argc, argv);
@@ -1406,11 +1459,9 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_MODE_CHANGE:
 			ro_gui_get_screen_properties();
 			rufl_invalidate_cache();
-			ro_gui_system_colour_update();
 			break;
 
 		case message_PALETTE_CHANGE:
-			ro_gui_system_colour_update();
 			break;
 
 		case message_FONT_CHANGED:
