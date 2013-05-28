@@ -308,7 +308,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
-	do {
+	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16charlen = 1;
 		else
@@ -326,6 +326,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 				tempx = ami_font_width_glyph(ufont, utf16,
 						utf16next, emwidth);
 		}
+
+		tx += tempx;
 
 		/* Check whether we have a space */
 		if (*(string + utf8_pos) == ' ') {
@@ -348,10 +350,9 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			return true;
 		}
 
-		tx += tempx;		
 		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
-	} while (utf8_pos < length);
+	};
 
 	free(outf16);
 
