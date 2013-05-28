@@ -418,14 +418,14 @@ ami_colour_option_from_pen(struct nsoption_s *opts,
 			if(pen == AMINS_SCROLLERPEN) pen = ami_system_colour_scrollbar_fgpen(drinfo);
 
 			/* Get the colour of the pen being used for "pen" */
-			GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
+			GetRGB32(scrn->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
 
 			/* convert it to a color */
 			def_colour = ((colour[0] & 0xff000000) >> 24) |
 				((colour[1] & 0xff000000) >> 16) |
 				((colour[2] & 0xff000000) >> 8);
 
-			FreeScreenDrawInfo(screen, drinfo);
+			FreeScreenDrawInfo(scrn, drinfo);
 		}
 	}
 
