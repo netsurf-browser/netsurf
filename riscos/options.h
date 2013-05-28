@@ -32,8 +32,6 @@
 
 #endif
 
-NSOPTION_BOOL(use_mouse_gestures, false)
-NSOPTION_BOOL(allow_text_selection, false)
 NSOPTION_STRING(theme, "Aletheia")
 NSOPTION_STRING(language, NULL)
 NSOPTION_INTEGER(plot_fg_quality, tinct_ERROR_DIFFUSE)
@@ -55,7 +53,7 @@ NSOPTION_BOOL(no_plugins, false)
 NSOPTION_BOOL(block_popups, false)
 NSOPTION_INTEGER(image_memory_direct, -1)
 NSOPTION_INTEGER(image_memory_compressed, -1)
-NSOPTION_BOOL(strip_extensions, true)
+NSOPTION_BOOL(strip_extensions, false)
 NSOPTION_BOOL(confirm_overwrite, true)
 NSOPTION_STRING(url_path, "NetSurf:URL")
 NSOPTION_STRING(url_save, CHOICES_PREFIX "URL")
