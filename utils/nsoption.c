@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "desktop/plot_style.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -324,7 +325,7 @@ nsoption_output_value_html(struct nsoption_s *option,
 				"color: #%06x; "
 				"font-family:Monospace; \">#%06X</span>",
 				rgbcolour,
-				(~rgbcolour) & 0xffffff,
+				colour_to_bw_furthest(rgbcolour),
 				rgbcolour);
 		break;
 
