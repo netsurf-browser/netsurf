@@ -80,13 +80,20 @@ static bool nslog_ensure(FILE *fptr)
 	return true;
 }
 
-/* Documented in utils/nsoption.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for framebuffer frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
 
 	/* ensure homepage option has a default */
 	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
+
+	return NSERROR_OK;
 }
 
 /**
@@ -132,7 +139,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	respaths = nsws_init_resource("${APPDATA}\\NetSurf:${HOME}\\.netsurf:${NETSURFRES}:${PROGRAMFILES}\\NetSurf\\NetSurf\\:"NETSURF_WINDOWS_RESPATH);
 
-	messages = filepath_find(respaths, "messages");
 
 	options_file_location = filepath_find(respaths, "preferences");
 
@@ -141,14 +147,23 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	 */
 	nslog_init(nslog_ensure, &argc, argv);
 
-	/* initialise netsurf */
-	ret = netsurf_init(&argc, &argv, options_file_location, messages);
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options_file_location, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "messages");
+	ret = netsurf_init(messages);
+	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);
+		LOG(("NetSurf failed to initialise"));
 		return 1;
 	}
-
-	free(messages);
 
 	ret = nsws_create_main_class(hInstance);
 	ret = nsws_create_drawable_class(hInstance);
