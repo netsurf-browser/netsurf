@@ -208,8 +208,6 @@ int main( int argc, char **argv )
 		die("NetSurf failed to initialise");
 	}
 
-	netsurf_init(&argc, &argv, options, messages);
-
 	/* Initialise filename allocator */
 	filename_initialise();
 

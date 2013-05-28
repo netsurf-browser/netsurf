@@ -943,7 +943,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_DPI_Y] = IntegerObject,
 											GA_ID, GID_OPTS_DPI_Y,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(amiga_ydpi),
+											INTEGER_Number, nsoption_int(screen_ydpi),
 											INTEGER_Minimum, 60,
 											INTEGER_Maximum, 150,
 											INTEGER_Arrows, TRUE,

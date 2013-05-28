@@ -131,7 +131,7 @@
 #include <math.h>
 #include <string.h>
 
-define AMINS_SCROLLERPEN NUMDRIPENS
+#define AMINS_SCROLLERPEN NUMDRIPENS
 
 #define NSA_KBD_SCROLL_PX 10
 
