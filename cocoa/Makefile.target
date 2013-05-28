@@ -98,7 +98,6 @@ S_COCOA := \
 	url.m \
 	utf8.m \
 	utils.m \
-	system_colour.m \
 	ArrowBox.m \
 	ArrowWindow.m \
 	BlackScroller.m \
