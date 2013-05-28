@@ -2065,8 +2065,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		if (r.y0 < clip->y0) r.y0 = clip->y0;
 		if (clip->x1 < r.x1) r.x1 = clip->x1;
 		if (clip->y1 < r.y1) r.y1 = clip->y1;
-		/* no point trying to draw 0-width/height boxes */
-		if (r.x0 == r.x1 || r.y0 == r.y1)
+		/* Nothing to do for invalid rectangles */
+		if (r.x0 >= r.x1 || r.y0 >= r.y1)
 			/* not an error */
 			return ((!plot->group_end) || (plot->group_end()));
 		/* clip to it */
