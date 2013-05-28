@@ -339,7 +339,7 @@ set_colour_from_wimp(struct nsoption_s *opts,
 	os_error *error;
 	os_PALETTE(20) palette;
 
-	error = xwimp_read_palette((os_palette *) &palette);
+	error = xwimp_read_true_palette((os_palette *) &palette);
 	if (error != NULL) {
 		LOG(("xwimp_read_palette: 0x%x: %s",
 		     error->errnum, error->errmess));
