@@ -344,10 +344,13 @@ set_colour_from_wimp(struct nsoption_s *opts,
 		LOG(("xwimp_read_palette: 0x%x: %s",
 		     error->errnum, error->errmess));
 	} else {
-		def_colour = palette.entries[wimp];
+		/* entries are in B0G0R0LL */
+		def_colour = palette.entries[wimp] >> 8;
 	}
 
-        return def_colour;
+	opts[option].value.c = def_colour;
+
+	return NSERROR_OK;
 }
 
 /**
