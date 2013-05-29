@@ -22,6 +22,7 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 
+#include "css/utils.h"
 #include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "utils/log.h"
@@ -102,15 +103,7 @@ const struct plotter_table amiplot = {
 };
 
 colour ami_abgr_to_argb(colour c) {
-	colour argb = 0x00000000;
-
-	/* NB: We force the alpha byte to be 0xff, as it is not set by the core. */
-	argb = 0xff000000 |
-		((c & 0x00ff0000) >> 16) |
-		(c & 0x0000ff00) |
-		((c & 0x000000ff) << 16);
-
-	return argb;
+	return ns_color_to_nscss(c);
 }
 
 #ifdef NS_AMIGA_CAIRO
