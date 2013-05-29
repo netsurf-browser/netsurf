@@ -133,8 +133,11 @@ strtooption(const char *value, struct nsoption_s *option)
 }
 
 /* validate options to sane values */
-static void nsoption_validate(struct nsoption_s *opts)
+static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 {
+	int cloop;
+	bool black = true;
+
 	if (opts[NSOPTION_font_size].value.i  < 50) {
 		opts[NSOPTION_font_size].value.i = 50;
 	}
@@ -153,6 +156,27 @@ static void nsoption_validate(struct nsoption_s *opts)
 
 	if (opts[NSOPTION_memory_cache_size].value.i < 0) {
 		opts[NSOPTION_memory_cache_size].value.i = 0;
+	}
+
+	/* to aid migration from old, broken, configuration files this
+	 * checks to see if all the system colours are set to black
+	 * and returns them to defaults instead 
+	 */
+
+	for (cloop = NSOPTION_SYS_COLOUR_START; 
+	     cloop <= NSOPTION_SYS_COLOUR_END; 
+	     cloop++) {
+		if (opts[cloop].value.c != 0) {
+			black = false;
+			break;
+		}
+	}
+	if (black == true) {
+		for (cloop = NSOPTION_SYS_COLOUR_START; 
+		     cloop <= NSOPTION_SYS_COLOUR_END; 
+		     cloop++) {
+			opts[cloop].value.c = defs[cloop].value.c;
+		}
 	}
 }
 
@@ -468,6 +492,7 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 {
 	char s[100];
 	FILE *fp;
+	struct nsoption_s *defs;
 
 	if (path == NULL) {
 		return NSERROR_BAD_PARAMETER;
@@ -477,6 +502,9 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 	if (opts == NULL) {
 		opts = nsoptions;
 	}
+
+	/* @todo is this and API bug not being a parameter */
+	defs = nsoptions_default;	
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -515,7 +543,7 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 
 	fclose(fp);
 
-	nsoption_validate(opts);
+	nsoption_validate(opts, defs);
 
 	return NSERROR_OK;
 }
