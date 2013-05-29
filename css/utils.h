@@ -27,17 +27,32 @@ extern css_fixed nscss_screen_dpi;
 
 /**
  * Convert a CSS color to a NetSurf colour primitive
- * 
+ *
  * ARGB -> (1-A)BGR
  *
  * \param color  The CSS color to convert
  * \return Corresponding NetSurf colour primitive
  */
-#define nscss_color_to_ns(color) \
-		(0xff000000 - ((color) & 0xff000000)) | \
-		(((color) & 0xff0000) >> 16) | \
-		((color) & 0xff00) | \
-		(((color) & 0xff) << 16)
+#define nscss_color_to_ns(c) \
+		( ((~c) & 0xff000000)        | \
+		 ((( c) & 0xff0000  ) >> 16) | \
+		  (( c) & 0xff00    )        | \
+		 ((( c) & 0xff      ) << 16))
+
+
+/**
+ * Convert a NetSurf color to a CSS colour primitive
+ *
+ * (1-A)BGR -> ARGB
+ *
+ * \param color  The NetSurf color to convert
+ * \return Corresponding CSS colour primitive
+ */
+#define ns_color_to_nscss(c) \
+		( ((~c) & 0xff000000)        | \
+		 ((( c) & 0xff0000  ) >> 16) | \
+		  (( c) & 0xff00    )        | \
+		 ((( c) & 0xff      ) << 16))
 
 /**
  * Determine if a CSS color primitive is transparent
