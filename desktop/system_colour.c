@@ -69,7 +69,7 @@ void gui_system_colour_finalize(void)
 
 colour gui_system_colour_char(const char *name)
 {
-	colour ret = 0xff00000;
+	colour ret = 0;
 	unsigned int ccount;
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
@@ -82,7 +82,7 @@ colour gui_system_colour_char(const char *name)
 	return ret;
 }
 
-#define ns_color_to_nscss(c) ((0xff - ((c >> 24) & 0xFF)) | (c & 0xFF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16))
+#define ns_color_to_nscss(c) (((0xff - ((c) >> 24) & 0xff) << 24) | ((c) & 0xFF00) | (((c) >> 16) & 0xFF) | (((c) & 0xFF) << 16))
 
 css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 {
