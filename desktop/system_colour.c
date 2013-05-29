@@ -82,7 +82,7 @@ colour gui_system_colour_char(const char *name)
 	return ret;
 }
 
-#define ns_color_to_nscss(c) (((0xff - ((c) >> 24) & 0xff) << 24) | ((c) & 0xFF00) | (((c) >> 16) & 0xFF) | (((c) & 0xFF) << 16))
+#define ns_color_to_nscss(c) (((0xff - (((c) >> 24) & 0xff)) << 24) | ((c) & 0xFF00) | (((c) >> 16) & 0xFF) | (((c) & 0xFF) << 16))
 
 css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 {
