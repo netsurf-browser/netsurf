@@ -690,7 +690,7 @@ void ami_openscreen(void)
 		compositing = ~0UL;
 	else compositing = nsoption_int(screen_compositing);
 
-	if (nsoption_charp(use_pubscreen) == NULL)
+	if (nsoption_charp(pubscreen_name) == NULL)
 	{
 		if((nsoption_charp(screen_modeid)) && 
 		   (strncmp(nsoption_charp(screen_modeid), "0x", 2) == 0))
@@ -739,15 +739,15 @@ void ami_openscreen(void)
 			}
 			else
 			{
-				nsoption_set_charp(use_pubscreen,
+				nsoption_set_charp(pubscreen_name,
 						   strdup("Workbench"));
 			}
 		}
 	}
 
-	if (nsoption_charp(use_pubscreen) != NULL)
+	if (nsoption_charp(pubscreen_name) != NULL)
 	{
-		scrn = LockPubScreen(nsoption_charp(use_pubscreen));
+		scrn = LockPubScreen(nsoption_charp(pubscreen_name));
 
 		if(scrn == NULL)
 		{
@@ -3275,9 +3275,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		ULONG addtabclosegadget = TAG_IGNORE;
 		ULONG iconifygadget = FALSE;
 
-		if (nsoption_charp(use_pubscreen) && 
+		if (nsoption_charp(pubscreen_name) && 
 		    (locked_screen == TRUE) &&
-		    (strcmp(nsoption_charp(use_pubscreen), "Workbench") == 0))
+		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
 		ami_create_menu(g->shared);
 

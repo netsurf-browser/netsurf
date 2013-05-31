@@ -415,9 +415,9 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
-	if(nsoption_charp(use_pubscreen))
+	if(nsoption_charp(pubscreen_name))
 	{
-		if(strcmp(nsoption_charp(use_pubscreen),"Workbench") == 0)
+		if(strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0)
 		{
 			screenoptsselected = 1;
 			screennamedisabled = TRUE;
@@ -694,7 +694,7 @@ void ami_gui_opts_open(void)
 												GA_ID, GID_OPTS_SCREENNAME,
 												GA_RelVerify, TRUE,
 												GA_Disabled,screennamedisabled,
-												STRINGA_TextVal, nsoption_bool(use_pubscreen),
+												STRINGA_TextVal, nsoption_charp(pubscreen_name),
 												STRINGA_BufferPos,0,
 											StringEnd,
 										LayoutEnd,
@@ -1573,16 +1573,16 @@ void ami_gui_opts_use(bool save)
 	switch(data)
 	{
 		case 0:
-			nsoption_set_charp(use_pubscreen, strdup("\0"));
+			nsoption_set_charp(pubscreen_name, strdup("\0"));
 			break;
 
 		case 1:
-			nsoption_set_charp(use_pubscreen, (char *)strdup("Workbench"));
+			nsoption_set_charp(pubscreen_name, (char *)strdup("Workbench"));
 			break;
 
 		case 2:
 			GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_SCREENNAME],(ULONG *)&data);
-			nsoption_set_charp(use_pubscreen, (char *)strdup((char *)data));
+			nsoption_set_charp(pubscreen_name, (char *)strdup((char *)data));
 			break;
 	}
 
