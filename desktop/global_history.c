@@ -643,3 +643,8 @@ void global_history_redraw(int x, int y, struct rect *clip,
 	treeview_redraw(gh_ctx.tree, x, y, clip, ctx);
 }
 
+void global_history_mouse_action(browser_mouse_state mouse, int x, int y)
+{
+	treeview_mouse_action(gh_ctx.tree, mouse, x, y);
+}
+

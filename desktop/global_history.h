@@ -31,4 +31,7 @@ nserror global_history_fini(struct core_window_callback_table *cw_t,
 
 void global_history_redraw(int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);
+
+void global_history_mouse_action(browser_mouse_state mouse, int x, int y);
+
 #endif
