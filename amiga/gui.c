@@ -443,6 +443,22 @@ colour_option_from_pen(struct nsoption_s *opts,
 	return NSERROR_OK;
 }
 
+static void ami_set_screen_defaults(struct Screen *scrn)
+{
+	if((nsoption_int(window_x) == 0) &&
+		(nsoption_int(window_y) == 0) &&
+		(nsoption_int(window_width) == 0) &&
+		(nsoption_int(window_height) == 0)) {
+		nsoption_set_int(window_x, 0);
+		nsoption_set_int(window_y, scrn->BarHeight + 1);
+		nsoption_set_int(window_width, scrn->Width);
+		nsoption_set_int(window_height, scrn->Height - scrn->BarHeight - 1);
+	}
+	
+	/* TODO: Update screen colour defaults here */
+}
+
+
 /**
  * Set option defaults for amiga frontend
  *
@@ -531,9 +547,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 
 	tree_set_icon_dir(strdup("ENV:Sys"));
 
-	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
-	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
-	
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
 	nsoption_set_bool(context_menu, false);
@@ -745,10 +758,7 @@ void ami_openscreen(void)
 	dri = GetScreenDrawInfo(scrn);
 	ami_font_setdevicedpi(id);
 
-/* TODO: Reset system colours so they are correct for the new screen
-	gui_system_colour_finalize();
-	gui_system_colour_init();
-*/
+	ami_set_screen_defaults(scrn);
 	
 	//ami_help_new_screen(scrn);
 }
