@@ -173,6 +173,90 @@ struct tree {
 	struct node *def_folder;	/* Node to be used for additions by default */
 };
 
+
+
+
+#include "desktop/treeview.h"
+#include "desktop/global_history.h"
+
+static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
+{
+}
+
+static void treeview_test_update_size(struct core_window *cw,
+		int width, int height)
+{
+}
+
+static void treeview_test_scroll_visible(struct core_window *cw, struct rect r)
+{
+}
+
+static void treeview_test_get_window_dimensions(struct core_window *cw,
+			int *width, int *height)
+{
+}
+
+struct core_window_callback_table cw_t = {
+	.redraw_request = treeview_test_redraw_request,
+	.update_size = treeview_test_update_size,
+	.scroll_visible = treeview_test_scroll_visible,
+	.get_window_dimensions = treeview_test_get_window_dimensions
+};
+
+static void treeview_test_init(struct tree *tree)
+{
+	nserror err;
+
+	treeview_init();
+
+	err = global_history_init(&cw_t, (struct core_window *)tree);
+
+	if (err != NSERROR_OK) {
+		warn_user("Duffed it.", 0);
+	}
+}
+
+static void treeview_test_fini(struct tree *tree)
+{
+	nserror err;
+
+	err = global_history_fini(&cw_t, (struct core_window *)tree);
+
+	treeview_fini();
+
+	if (err != NSERROR_OK) {
+		warn_user("Duffed it.", 0);
+	}
+}
+
+static void treeview_test_redraw(struct tree *tree, int x, int y,
+		int clip_x, int clip_y, int clip_width, int clip_height,
+		const struct redraw_context *ctx)
+{
+	struct rect clip;
+	clip.x0 = clip_x;
+	clip.y0 = clip_y;
+	clip.x1 = clip_x + clip_width;
+	clip.y1 = clip_y + clip_height;
+
+	global_history_redraw(x, y, &clip, ctx);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void tree_set_icon_dir(char *icon_dir)
 {
 	LOG(("Tree icon directory set to %s", icon_dir));
@@ -275,6 +359,10 @@ struct tree *tree_create(unsigned int flags,
 		TREE_LINE_HEIGHT = TREE_ICON_SIZE + 2;
 
 	tree_setup_colours();
+
+	if (flags == TREE_MOVABLE) {
+		treeview_test_init(tree);
+	}
 
 	return tree;
 }
@@ -1118,6 +1206,10 @@ static void tree_delete_node_internal(struct tree *tree, struct node *node,
 void tree_delete(struct tree *tree)
 {
 	tree->redraw = false;
+
+	if (tree->flags == TREE_MOVABLE) {
+		treeview_test_fini(tree);
+	}
 
 	if (tree->root->child != NULL)
 		tree_delete_node_internal(tree, tree->root->child, true);
@@ -2032,6 +2124,12 @@ void tree_draw(struct tree *tree, int x, int y,
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
+
+	if (tree->flags == TREE_MOVABLE) {
+		treeview_test_redraw(tree, x, y, clip_x, clip_y,
+				clip_width, clip_height, ctx);
+		return;
+	}
 
 	/* Start knockout rendering if it's available for this plotter */
 	if (ctx->plot->option_knockout)
