@@ -243,6 +243,12 @@ static void treeview_test_redraw(struct tree *tree, int x, int y,
 	global_history_redraw(x, y, &clip, ctx);
 }
 
+static void treeview_test_mouse_action(struct tree *tree,
+		browser_mouse_state mouse, int x, int y)
+{
+	global_history_mouse_action(mouse, x, y);
+}
+
 
 
 
@@ -2494,6 +2500,11 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
+
+	if (tree->flags == TREE_MOVABLE) {
+		treeview_test_mouse_action(tree, mouse, x, y);
+		return true;
+	}
 
 	if (tree->root->child == NULL)
 		return true;
