@@ -57,8 +57,15 @@ struct treeview_field {
 	struct treeview_text value;
 };
 
+enum treeview_node_flags {
+	TREE_NODE_NONE		= 0,		/**< No node flags set */
+	TREE_NODE_EXPANDED	= (1 << 0),	/**< Whether node is expanded */
+	TREE_NODE_SELECTED	= (1 << 1)	/**< Whether node is selected */
+
+};
+
 struct treeview_node {
-	bool expanded;
+	enum treeview_node_flags flags;
 	enum treeview_node_type type;
 
 	uint32_t height;
@@ -148,7 +155,7 @@ static nserror treeview_create_node_root(struct treeview_node **root)
 		return NSERROR_NOMEM;
 	}
 
-	n->expanded = true;
+	n->flags = TREE_NODE_EXPANDED;
 	n->type = TREE_NODE_ROOT;
 
 	n->height = 0;
@@ -213,7 +220,7 @@ static inline void treeview_insert_node(struct treeview_node *a,
 
 	assert(a->parent != NULL);
 
-	if (a->parent->expanded) {
+	if (a->parent->flags & TREE_NODE_EXPANDED) {
 		/* Parent is expanded, so inserted node will be visible and
 		 * affect layout */
 		b = a;
@@ -255,7 +262,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 		return NSERROR_NOMEM;
 	}
 
-	n->expanded = false;
+	n->flags = TREE_NODE_NONE;
 	n->type = TREE_NODE_FOLDER;
 
 	n->height = tree_g.line_height;
@@ -304,7 +311,7 @@ nserror treeview_update_node_entry(struct treeview *tree,
 	entry->text.value.len = fields[0].value_len;
 	entry->text.value.width = 0;
 
-	if (entry->parent->expanded) {
+	if (entry->parent->flags & TREE_NODE_EXPANDED) {
 		/* Text will be seen, get its width */
 		nsfont.font_width(&plot_style_odd.text,
 				entry->text.value.data,
@@ -324,7 +331,7 @@ nserror treeview_update_node_entry(struct treeview *tree,
 		e->fields[i].value.data = fields[i].value;
 		e->fields[i].value.len = fields[i].value_len;
 
-		if (entry->expanded) {
+		if (entry->flags & TREE_NODE_EXPANDED) {
 			/* Text will be seen, get its width */
 			nsfont.font_width(&plot_style_odd.text,
 					e->fields[i].value.data,
@@ -369,7 +376,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 
 	n = (struct treeview_node *) e;
 
-	n->expanded = false;
+	n->flags = TREE_NODE_NONE;
 	n->type = TREE_NODE_ENTRY;
 
 	n->height = tree_g.line_height;
@@ -549,7 +556,7 @@ static bool treeview_walk(struct treeview_node *root,
 		void *ctx)
 {
 	struct treeview_node *node;
-	int inset = tree_g.window_padding;
+	int inset = tree_g.window_padding - tree_g.step_width;
 
 	node = root;
 
@@ -611,7 +618,7 @@ nserror treeview_node_expand(struct treeview *tree,
 	assert(tree != NULL);
 	assert(node != NULL);
 
-	if (node->expanded) {
+	if (node->flags & TREE_NODE_EXPANDED) {
 		/* What madness is this? */
 		LOG(("Tried to expand an expanded node."));
 		return NSERROR_OK;
@@ -626,7 +633,7 @@ nserror treeview_node_expand(struct treeview *tree,
 		}
 
 		do {
-			assert(child->expanded == false);
+			assert((child->flags & TREE_NODE_EXPANDED) == false);
 			if (child->text.value.width == 0) {
 				nsfont.font_width(&plot_style_odd.text,
 						child->text.value.data,
@@ -667,7 +674,7 @@ nserror treeview_node_expand(struct treeview *tree,
 	}
 
 	/* Update the node */
-	node->expanded = true;
+	node->flags &= TREE_NODE_EXPANDED;
 
 	/* And parent's heights */
 	do {
@@ -689,11 +696,12 @@ static bool treeview_node_contract_cb(struct treeview_node *node, int inset,
 	assert(node != NULL);
 	assert(node->type != TREE_NODE_ROOT);
 
-	if (node->expanded == false) {
+	if ((node->flags & TREE_NODE_EXPANDED) == false) {
 		/* Nothing to do. */
 		return false;
 	}
 
+	node->flags |= ~TREE_NODE_EXPANDED;
 	height_reduction = node->height - tree_g.line_height;
 
 	assert(height_reduction >= 0);
@@ -710,7 +718,7 @@ nserror treeview_node_contract(struct treeview *tree,
 {
 	assert(node != NULL);
 
-	if (node->expanded == false) {
+	if ((node->flags & TREE_NODE_EXPANDED) == false) {
 		/* What madness is this? */
 		LOG(("Tried to contract a contracted node."));
 		return NSERROR_OK;
@@ -749,10 +757,12 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	int x0, y0, y1;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
 	enum treeview_resource_id res;
+	plot_style_t *bg;
+	plot_font_style_t *text;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
-	assert(tree->root->expanded == true);
+	assert(tree->root->flags & TREE_NODE_EXPANDED);
 
 	/* Start knockout rendering if it's available for this plotter */
 	if (ctx->plot->option_knockout)
@@ -777,7 +787,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 	while (node != NULL) {
 		int i;
-		struct treeview_node *next = node->expanded ?
+		struct treeview_node *next = node->flags & TREE_NODE_EXPANDED ?
 				node->children : NULL;
 
 		if (next != NULL) {
@@ -822,23 +832,30 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		}
 
 		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
+		if (node->flags & TREE_NODE_SELECTED) {
+			bg = &style->sbg;
+			text = &style->stext;
+		} else {
+			bg = &style->bg;
+			text = &style->text;
+		}
 
 		/* Render background */
 		y0 = render_y;
 		y1 = render_y + tree_g.line_height;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, &(style->bg));
+		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg);
 
 		/* Render toggle */
-		if (node->expanded) {
+		if (node->flags & TREE_NODE_EXPANDED) {
 			new_ctx.plot->text(inset, render_y + baseline,
 					treeview_furn[TREE_FURN_CONTRACT].data,
 					treeview_furn[TREE_FURN_CONTRACT].len,
-					&(style->text));
+					text);
 		} else {
 			new_ctx.plot->text(inset, render_y + baseline,
 					treeview_furn[TREE_FURN_EXPAND].data,
 					treeview_furn[TREE_FURN_EXPAND].len,
-					&(style->text));
+					text);
 		}
 
 		/* Render icon */
@@ -862,7 +879,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		x0 = inset + tree_g.step_width + tree_g.icon_step;
 		new_ctx.plot->text(x0, render_y + baseline,
 				node->text.value.data, node->text.value.len,
-				&(style->text));
+				text);
 
 		/* Rendered the node */
 		render_y += tree_g.line_height;
@@ -874,7 +891,8 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		}
 
 
-		if (node->type != TREE_NODE_ENTRY || !node->expanded)
+		if (node->type != TREE_NODE_ENTRY ||
+				!(node->flags & TREE_NODE_EXPANDED))
 			/* Done everything for this node */
 			continue;
 
@@ -882,7 +900,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		/* Reneder expanded entry background */
 		y0 = render_y;
 		y1 = render_y + tree_g.line_height * tree->n_fields;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, &(style->bg));
+		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg);
 
 		/* Render expanded entry fields */
 		entry = (struct treeview_node_entry *)node;
@@ -897,18 +915,18 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 						render_y + baseline,
 						ef->value.data,
 						ef->value.len,
-						&(style->text));
+						text);
 
 				new_ctx.plot->text(x0 + max_width,
 						render_y + baseline,
 						entry->fields[i].value.data,
 						entry->fields[i].value.len,
-						&(style->text));
+						text);
 			} else {
 				new_ctx.plot->text(x0, render_y + baseline,
 						entry->fields[i].value.data,
 						entry->fields[i].value.len,
-						&(style->text));
+						text);
 
 			}
 
@@ -928,13 +946,48 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	if (render_y < clip->y1) {
 		/* Fill the blank area at the bottom */
 		y0 = render_y;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1, &(style->bg));
+		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1, bg);
 		
 	}
 
 	/* Rendering complete */
 	if (ctx->plot->option_knockout)
 		knockout_plot_end();
+}
+
+struct treeview_mouse_action {
+	browser_mouse_state mouse;
+	int x;
+	int y;
+	int current_y;
+};
+static bool treeview_node_mouse_action_cb(struct treeview_node *node,
+		int inset, void *ctx)
+{
+	struct treeview_mouse_action *ma = ctx;
+
+	/* Skip line if we've not reached mouse y */
+	if (ma->y > ma->current_y + tree_g.line_height) {
+		ma->current_y += tree_g.line_height;
+		return false; /* Don't want to abort tree walk */
+	}
+
+	if (ma->mouse & BROWSER_MOUSE_CLICK_1)
+		node->flags ^= TREE_NODE_SELECTED;
+
+	return true; /* Reached line with click; stop walking tree */
+}
+void treeview_mouse_action(struct treeview *tree,
+		browser_mouse_state mouse, int x, int y)
+{
+	struct treeview_mouse_action ma;
+
+	ma.mouse = mouse;
+	ma.x = x;
+	ma.y = y;
+	ma.current_y = 0;
+
+	treeview_walk(tree->root, treeview_node_mouse_action_cb, &ma);
 }
 
 

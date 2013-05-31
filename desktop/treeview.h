@@ -118,6 +118,17 @@ nserror treeview_node_contract(struct treeview *tree,
 void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);
 
+/**
+ * Handles all kinds of mouse action
+ *
+ * \param tree	Treeview
+ * \param mouse	the mouse state at action moment
+ * \param x	X coordinate
+ * \param y	Y coordinate
+ */
+void treeview_mouse_action(struct treeview *tree,
+		browser_mouse_state mouse, int x, int y);
+
 struct treeview_node * treeview_get_root(struct treeview *tree);
 
 #endif
