@@ -23,6 +23,8 @@
 #ifndef _NETSURF_UTILS_TYPES_H_
 #define _NETSURF_UTILS_TYPES_H_
 
+#include <stdbool.h>
+
 struct plotter_table;
 struct hlcache_handle;
 
