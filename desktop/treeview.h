@@ -86,7 +86,7 @@ nserror treeview_create(struct treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
-		const struct core_window *cw);
+		struct core_window *cw);
 
 nserror treeview_destroy(struct treeview *tree);
 

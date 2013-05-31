@@ -97,7 +97,7 @@ struct treeview {
 
 	const struct treeview_callback_table *callbacks;
 	const struct core_window_callback_table *cw_t; /**< Core window callback table */
-	const struct core_window *cw_h; /**< Core window handle */
+	struct core_window *cw_h; /**< Core window handle */
 };
 
 
@@ -461,7 +461,7 @@ nserror treeview_create(struct treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
-		const struct core_window *cw)
+		struct core_window *cw)
 {
 	nserror error;
 	int i;
