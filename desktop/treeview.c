@@ -551,7 +551,7 @@ nserror treeview_destroy(struct treeview *tree)
  * \param ctx      Context to pass to callback
  * \return true iff callback caused premature abort
  */
-static bool treeview_walk(struct treeview_node *root, bool full,
+static bool treeview_walk_internal(struct treeview_node *root, bool full,
 		bool (*callback)(struct treeview_node *node,
 				int inset, void *ctx),
 		void *ctx)
@@ -727,7 +727,7 @@ nserror treeview_node_contract(struct treeview *tree,
 	}
 
 	/* Contract children. */
-	treeview_walk(node, false, treeview_node_contract_cb, NULL);
+	treeview_walk_internal(node, false, treeview_node_contract_cb, NULL);
 
 	/* Contract node */
 	treeview_node_contract_cb(node, 0, NULL);
@@ -998,7 +998,8 @@ void treeview_mouse_action(struct treeview *tree,
 	ma.y = y;
 	ma.current_y = 0;
 
-	treeview_walk(tree->root, false, treeview_node_mouse_action_cb, &ma);
+	treeview_walk_internal(tree->root, false,
+			treeview_node_mouse_action_cb, &ma);
 }
 
 
