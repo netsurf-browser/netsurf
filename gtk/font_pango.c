@@ -253,7 +253,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 	pango_layout_set_text(layout, string, length);
 	line = pango_layout_get_line(layout, 0);
 	
-	cairo_move_to(current_cr, x, y + 0.5);
+	cairo_move_to(current_cr, x, y);
 	nsgtk_set_colour(fstyle->foreground);
 	pango_cairo_show_layout_line(current_cr, line);
 
