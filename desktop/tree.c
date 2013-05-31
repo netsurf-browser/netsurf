@@ -181,7 +181,7 @@ struct tree {
 
 static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
 {
-	struct tree *tree = cw;
+	struct tree *tree = (struct tree *)cw;
 
 	tree->callbacks->redraw_request(r.x0, r.y0,
 			r.x1 - r.x0, r.y1 - r.y0,
