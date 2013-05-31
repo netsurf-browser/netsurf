@@ -546,22 +546,24 @@ nserror treeview_destroy(struct treeview *tree)
 /* Walk a treeview subtree, calling a callback at each node (depth first)
  *
  * \param root     Root to walk tree from (doesn't get a callback call)
+ * \param full     Iff true, visit children of collapsed nodes
  * \param callback Function to call on each node
  * \param ctx      Context to pass to callback
  * \return true iff callback caused premature abort
  */
-static bool treeview_walk(struct treeview_node *root,
+static bool treeview_walk(struct treeview_node *root, bool full,
 		bool (*callback)(struct treeview_node *node,
 				int inset, void *ctx),
 		void *ctx)
 {
-	struct treeview_node *node;
+	struct treeview_node *node, *next;
 	int inset = tree_g.window_padding - tree_g.step_width;
 
 	node = root;
 
 	while (node != NULL) {
-		struct treeview_node *next = node->children;
+		next = (full || (node->flags & TREE_NODE_EXPANDED)) ?
+				node->children : NULL;
 
 		if (next != NULL) {
 			/* down to children */
@@ -674,7 +676,7 @@ nserror treeview_node_expand(struct treeview *tree,
 	}
 
 	/* Update the node */
-	node->flags &= TREE_NODE_EXPANDED;
+	node->flags |= TREE_NODE_EXPANDED;
 
 	/* And parent's heights */
 	do {
@@ -725,7 +727,7 @@ nserror treeview_node_contract(struct treeview *tree,
 	}
 
 	/* Contract children. */
-	treeview_walk(node, treeview_node_contract_cb, NULL);
+	treeview_walk(node, false, treeview_node_contract_cb, NULL);
 
 	/* Contract node */
 	treeview_node_contract_cb(node, 0, NULL);
@@ -746,7 +748,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
-	struct treeview_node *node, *root;
+	struct treeview_node *node, *root, *next;
 	struct treeview_node_entry *entry;
 	struct treeview_node_style *style = &plot_style_odd;
 	struct content_redraw_data data;
@@ -787,7 +789,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 	while (node != NULL) {
 		int i;
-		struct treeview_node *next = node->flags & TREE_NODE_EXPANDED ?
+		next = (node->flags & TREE_NODE_EXPANDED) ?
 				node->children : NULL;
 
 		if (next != NULL) {
@@ -883,7 +885,6 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		/* Rendered the node */
 		render_y += tree_g.line_height;
-
 		if (render_y > clip->y1) {
 			/* Passed the bottom of what's in the clip region.
 			 * Done. */
@@ -956,6 +957,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 }
 
 struct treeview_mouse_action {
+	struct treeview *tree;
 	browser_mouse_state mouse;
 	int x;
 	int y;
@@ -965,6 +967,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node,
 		int inset, void *ctx)
 {
 	struct treeview_mouse_action *ma = ctx;
+	struct rect r;
 
 	/* Skip line if we've not reached mouse y */
 	if (ma->y > ma->current_y + tree_g.line_height) {
@@ -972,8 +975,15 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node,
 		return false; /* Don't want to abort tree walk */
 	}
 
-	if (ma->mouse & BROWSER_MOUSE_CLICK_1)
+	if (ma->mouse & BROWSER_MOUSE_CLICK_1) {
 		node->flags ^= TREE_NODE_SELECTED;
+
+		r.x0 = 0;
+		r.y0 = ma->current_y;
+		r.x1 = INT_MAX;
+		r.y1 = ma->current_y + tree_g.line_height;
+		ma->tree->cw_t->redraw_request(ma->tree->cw_h, r);
+	}
 
 	return true; /* Reached line with click; stop walking tree */
 }
@@ -982,12 +992,13 @@ void treeview_mouse_action(struct treeview *tree,
 {
 	struct treeview_mouse_action ma;
 
+	ma.tree = tree;
 	ma.mouse = mouse;
 	ma.x = x;
 	ma.y = y;
 	ma.current_y = 0;
 
-	treeview_walk(tree->root, treeview_node_mouse_action_cb, &ma);
+	treeview_walk(tree->root, false, treeview_node_mouse_action_cb, &ma);
 }
 
 
