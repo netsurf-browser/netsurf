@@ -339,6 +339,17 @@ const char *tree_url_node_get_url(struct node *node)
 	return tree_node_element_get_text(element);
 }
 
+
+struct bitmap *tree_url_node_get_icon(struct node *node)
+{
+	struct node_element *element;
+	element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+	if (element == NULL)
+		return NULL;
+	return tree_node_element_get_icon(element);
+}
+
+
 void tree_url_node_edit_title(struct tree *tree, struct node *node)
 {
 	struct node_element *element;

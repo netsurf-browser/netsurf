@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9,2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -63,17 +63,6 @@
 #include "desktop/textinput.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
-
-#define IMAGE_MENU_ITEM(n, i, t) \
-	gwin->menulab[n] = LabelObject, \
-		LABEL_DrawInfo, dri, \
-		LABEL_DisposeImage, TRUE, \
-		LABEL_Image, BitMapObject, \
-			BITMAP_Screen, scrn, \
-			BITMAP_SourceFile, i, \
-		BitMapEnd, \
-		LABEL_Text, t, \
-	LabelEnd;
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -169,7 +158,33 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
 		}
 	}
-	
+
+	if((GadToolsBase->lib_Version > 53) ||
+		((GadToolsBase->lib_Version == 53) && (GadToolsBase->lib_Revision >= 5))) {
+		/* GadTools 53.5+ only. For now we will only create the menu
+			using label.image if there's a bitmap associated with the item. */
+		if(bm != NULL) {
+			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+			struct BitMap *menu_icon = ami_bitmap_get_native(bm, 16, 16, NULL);
+
+			gwin->menuobj[num] = LabelObject,
+				LABEL_DrawInfo, dri,
+				LABEL_DisposeImage, TRUE,
+				LABEL_Image, BitMapObject,
+					BITMAP_Screen, scrn,
+					BITMAP_BitMap, menu_icon,
+					BITMAP_Width, 16,
+					BITMAP_Height, 16,
+				BitMapEnd,
+				LABEL_Text, gwin->menulab[num],
+			LabelEnd;
+
+			gwin->menutype[num] |= MENU_IMAGE;
+
+			FreeScreenDrawInfo(scrn, dri);
+		}
+	}
+
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
@@ -178,7 +193,6 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
-	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 
 	gwin->menutype = AllocVec(AMI_MENU_AREXX_MAX + 1, MEMF_PRIVATE | MEMF_CLEAR);
 
@@ -290,8 +304,6 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 			ami_menu_item_arexx_execute, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_A1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	gwin->menutype[AMI_MENU_AREXX_MAX] = NM_END;
-	
-	FreeScreenDrawInfo(scrn, dri);
 }
 
 /* Menu refresh for hotlist */
@@ -458,7 +470,8 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 			if(*gen == 1) menu_type = NM_ITEM;
 			if(*gen == 2) menu_type = NM_SUB;
 
-			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node), 0, NULL,
+			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
+				0, tree_url_node_get_icon(node),
 				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
 			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
 					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;

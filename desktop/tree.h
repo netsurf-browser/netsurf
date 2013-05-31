@@ -200,6 +200,7 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 		const char *text, void *bitmap);
 bool tree_update_element_text(struct tree *tree, struct node_element *element, char *text);
 const char *tree_node_element_get_text(struct node_element *element);
+struct bitmap *tree_node_element_get_icon(struct node_element *element);
 struct node *tree_get_root(struct tree *tree);
 bool tree_is_edited(struct tree *tree);
 tree_drag_type tree_drag_status(struct tree *tree);

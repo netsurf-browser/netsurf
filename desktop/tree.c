@@ -1655,6 +1655,17 @@ const char *tree_node_element_get_text(struct node_element *element)
 
 
 /**
+ * Returns the node element's icon
+ *
+ * \return  the node element's icon
+ */
+struct bitmap *tree_node_element_get_icon(struct node_element *element)
+{
+	return element->bitmap;
+}
+
+
+/**
  * Get the root node of a tree
  *
  * \param tree	the tree to get the root of

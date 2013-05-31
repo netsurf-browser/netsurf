@@ -102,9 +102,6 @@ const struct plotter_table amiplot = {
 	.option_knockout = true,
 };
 
-colour ami_abgr_to_argb(colour c) {
-	return ns_color_to_nscss(c);
-}
 
 #ifdef NS_AMIGA_CAIRO
 void ami_cairo_set_colour(cairo_t *cr,colour c)
@@ -288,7 +285,7 @@ static void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
-			ami_abgr_to_argb(colour),
+			ns_color_to_nscss(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
@@ -300,7 +297,7 @@ static void ami_plot_setopen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			ami_abgr_to_argb(colour),
+			ns_color_to_nscss(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
