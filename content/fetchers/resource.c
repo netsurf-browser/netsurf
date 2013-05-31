@@ -81,7 +81,10 @@ static const char *fetch_resource_paths[] = {
 	"licence.html",
 	"welcome.html",
 	"favicon.ico",
-	"netsurf.png"
+	"netsurf.png",
+	"icons/content.png",
+	"icons/directory.png",
+	"icons/search.png"
 };
 static struct fetch_resource_map_entry {
 	lwc_string *path;
