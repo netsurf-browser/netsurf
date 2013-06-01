@@ -568,9 +568,9 @@ main(int argc, char** argv)
 		die("Options failed to initialise");
 	}
 	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, NULL);
+	nsoption_read(options, nsoptions);
 	free(options);
-	nsoption_commandline(&argc, argv, NULL);
+	nsoption_commandline(&argc, argv, nsoptions);
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "Messages");
@@ -624,6 +624,9 @@ main(int argc, char** argv)
 	}
 
 	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }

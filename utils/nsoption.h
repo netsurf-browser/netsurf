@@ -34,7 +34,7 @@
  * pointer to the active options table and be implemented as functions
  * within nsoptions.c
  *
- * Indirect acees would have an impact on performance of NetSurf as
+ * Indirect access would have an impact on performance of NetSurf as
  * the expected option lookup cost is currently that of a simple
  * dereference (which this current implementation keeps).
  */
@@ -91,15 +91,17 @@ enum { OPTION_HTTP_PROXY_AUTH_NONE = 0,
 #define DEFAULT_EXPORT_SCALE 0.7
 
 #ifndef DEFAULT_REFLOW_PERIOD
-#define DEFAULT_REFLOW_PERIOD 25 /* time in cs */
+/** Default reflow time in cs */
+#define DEFAULT_REFLOW_PERIOD 25
 #endif
 
+/** The options type. */
 enum nsoption_type_e {
-	OPTION_BOOL,
-	OPTION_INTEGER,
-	OPTION_UINT,
-	OPTION_STRING,
-	OPTION_COLOUR
+	OPTION_BOOL, /**< Option is a boolean. */
+	OPTION_INTEGER, /**< Option is an integer. */
+	OPTION_UINT, /**< Option is an unsigned integer */
+	OPTION_STRING, /**< option is a heap allocated string. */
+	OPTION_COLOUR /**< Option  is a netsurf colour. */
 };
 
 struct nsoption_s {
@@ -149,17 +151,24 @@ enum nsoption_e {
 #undef NSOPTION_UINT
 #undef NSOPTION_COLOUR
 
-/* global option table */
+/**
+ * global active option table.
+ */
 extern struct nsoption_s *nsoptions;
 
-/* global default option table */
+/**
+ * global default option table.
+ */
 extern struct nsoption_s *nsoptions_default;
 
-/* default setting callback */
+/**
+ * default setting callback.
+ */
 typedef nserror(nsoption_set_default_t)(struct nsoption_s *defaults);
 
 
-/** Initialise option system.
+/**
+ * Initialise option system.
  *
  * @param set_default callback to allow the customisation of the default
  *                    options.
@@ -170,7 +179,20 @@ typedef nserror(nsoption_set_default_t)(struct nsoption_s *defaults);
 nserror nsoption_init(nsoption_set_default_t *set_default, struct nsoption_s **popts, struct nsoption_s **pdefs);
 
 
-/** Read choices file and set them in the passed table
+/**
+ * Finalise option system
+ *
+ * Releases all resources allocated in the initialisation.
+ *
+ * @param opts the options table or NULL to use global table.
+ * @param defs the default options table to use or NULL to use global table
+ * return The error status
+ */
+nserror nsoption_finalise(struct nsoption_s *opts, struct nsoption_s *defs);
+
+
+/**
+ * Read choices file and set them in the passed table
  *
  * @param path The path to read the file from
  * @param opts The options table to enerate values from or NULL to use global
@@ -179,7 +201,8 @@ nserror nsoption_init(nsoption_set_default_t *set_default, struct nsoption_s **p
 nserror nsoption_read(const char *path, struct nsoption_s *opts);
 
 
-/** Write options that have changed from the defaults to a file.
+/**
+ * Write options that have changed from the defaults to a file.
  *
  * The \a nsoption_dump can be used to output all entries not just
  * changed ones.
@@ -201,6 +224,7 @@ nserror nsoption_write(const char *path, struct nsoption_s *opts, struct nsoptio
  */
 nserror nsoption_dump(FILE *outf, struct nsoption_s *opts);
 
+
 /**
  * Process commandline and set options approriately.
  *
@@ -210,6 +234,7 @@ nserror nsoption_dump(FILE *outf, struct nsoption_s *opts);
  * @return The error status
  */
 nserror nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts);
+
 
 /**
  * Fill a buffer with an option using a format.
@@ -231,40 +256,85 @@ nserror nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts);
 int nsoption_snoptionf(char *string, size_t size, enum nsoption_e option, const char *fmt);
 
 
-
-
-/* value acessors - caution should be taken with type as this is not verified */
+/**
+ * Get the value of a boolean option.
+ *
+ * Gets the value of an option assuming it is a boolean type.
+ * @note option type is unchecked so care must be taken in caller.
+ */
 #define nsoption_bool(OPTION) (nsoptions[NSOPTION_##OPTION].value.b)
+
+
+/**
+ * Get the value of an integer option.
+ *
+ * Gets the value of an option assuming it is a integer type.
+ * @note option type is unchecked so care must be taken in caller.
+ */
 #define nsoption_int(OPTION) (nsoptions[NSOPTION_##OPTION].value.i)
+
+
+/**
+ * Get the value of an unsigned integer option.
+ *
+ * Gets the value of an option assuming it is a integer type.
+ * @note option type is unchecked so care must be taken in caller.
+ */
 #define nsoption_uint(OPTION) (nsoptions[NSOPTION_##OPTION].value.u)
+
+
+/**
+ * Get the value of a string option.
+ *
+ * Gets the value of an option assuming it is a string type.
+ * @note option type is unchecked so care must be taken in caller.
+ */
 #define nsoption_charp(OPTION) (nsoptions[NSOPTION_##OPTION].value.s)
+
+
+/**
+ * Get the value of a netsurf colour option.
+ *
+ * Gets the value of an option assuming it is a colour type.
+ * @note option type is unchecked so care must be taken in caller.
+ */
 #define nsoption_colour(OPTION) (nsoptions[NSOPTION_##OPTION].value.c)
 
-#define nsoption_set_bool(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.b = VALUE
-#define nsoption_set_int(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.i = VALUE
-#define nsoption_set_colour(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.c = VALUE
-#define nsoption_set_charp(OPTION, VALUE)				\
-	do {								\
-		if (nsoptions[NSOPTION_##OPTION].value.s != NULL) {	\
-			free(nsoptions[NSOPTION_##OPTION].value.s);	\
-		}							\
-		nsoptions[NSOPTION_##OPTION].value.s = VALUE;		\
-		if ((nsoptions[NSOPTION_##OPTION].value.s != NULL) &&	\
-		    (*nsoptions[NSOPTION_##OPTION].value.s == 0)) {	\
-			free(nsoptions[NSOPTION_##OPTION].value.s);	\
-			nsoptions[NSOPTION_##OPTION].value.s = NULL;	\
-		}							\
-	} while (0)
 
-/* if a string option is unset set it otherwise leave it set */
+/** set a boolean option in the default table */
+#define nsoption_set_bool(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.b = VALUE
+
+
+/** set an integer option in the default table */
+#define nsoption_set_int(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.i = VALUE
+
+
+/** set a colour option in the default table */
+#define nsoption_set_colour(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.c = VALUE
+
+
+/**
+ * Set string option in specified table.
+ *
+ * Sets the string option to the value given freeing any resources
+ * currently allocated to the option. If the passed string is empty it
+ * is converted to the NULL value.
+ *
+ * @param opts The table to set option in
+ * @param option_idx The option
+ * @param s The string to set. This is used directly and not copied.
+ */
+nserror nsoption_set_tbl_charp(struct nsoption_s *opts, enum nsoption_e option_idx, char *s);
+
+/** set string option in default table */
+#define nsoption_set_charp(OPTION, VALUE) \
+	nsoption_set_tbl_charp(nsoptions, NSOPTION_##OPTION, VALUE)
+
+/** set string option in default table if currently unset */
 #define nsoption_setnull_charp(OPTION, VALUE)				\
 	do {								\
 		if (nsoptions[NSOPTION_##OPTION].value.s == NULL) {	\
-			nsoptions[NSOPTION_##OPTION].value.s = VALUE;	\
-			if (*nsoptions[NSOPTION_##OPTION].value.s == 0) { \
-				free(nsoptions[NSOPTION_##OPTION].value.s); \
-				nsoptions[NSOPTION_##OPTION].value.s = NULL; \
-			}						\
+			nsoption_set_tbl_charp(nsoptions, NSOPTION_##OPTION, VALUE); \
 		} else {						\
 			free(VALUE);					\
 		}							\
