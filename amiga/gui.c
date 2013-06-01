@@ -674,8 +674,7 @@ void gui_init(int argc, char** argv)
 
 static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
 {
-	gui_system_colour_finalize();
-	gui_system_colour_init();
+	ami_set_screen_defaults(scrn);
 }
 
 void ami_openscreen(void)
