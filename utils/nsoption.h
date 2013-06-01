@@ -270,5 +270,20 @@ int nsoption_snoptionf(char *string, size_t size, enum nsoption_e option, const 
 		}							\
 	} while (0)
 
+/* accessors for default options - user option is updated if it is set as per default */
+#define nsoption_default_set_bool(OPTION, VALUE)				\
+	if (nsoptions_default[NSOPTION_##OPTION].value.b == nsoptions[NSOPTION_##OPTION].value.b)	\
+		nsoptions[NSOPTION_##OPTION].value.b = VALUE;	\
+	nsoptions_default[NSOPTION_##OPTION].value.b = VALUE
+
+#define nsoption_default_set_int(OPTION, VALUE)				\
+	if (nsoptions_default[NSOPTION_##OPTION].value.i == nsoptions[NSOPTION_##OPTION].value.i)	\
+		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
+	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
+
+#define nsoption_default_set_colour(OPTION, VALUE)				\
+	if (nsoptions_default[NSOPTION_##OPTION].value.c == nsoptions[NSOPTION_##OPTION].value.c)	\
+		nsoptions[NSOPTION_##OPTION].value.c = VALUE;	\
+	nsoptions_default[NSOPTION_##OPTION].value.c = VALUE
 
 #endif
