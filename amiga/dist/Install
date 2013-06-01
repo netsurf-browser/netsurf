@@ -558,7 +558,7 @@
 			(help @textfile-help)
 			(dest #user-options)
 			(append "theme:" #theme "\n")
-			(append "use_pubscreen:Workbench\n")
+			(append "pubscreen_name:Workbench\n")
 		)
 
 		(if (= #hotlist-exist 0)

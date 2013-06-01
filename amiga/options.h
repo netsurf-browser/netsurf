@@ -27,7 +27,7 @@
 
 NSOPTION_STRING(url_file, NULL)
 NSOPTION_STRING(hotlist_file, NULL)
-NSOPTION_STRING(use_pubscreen, NULL)
+NSOPTION_STRING(pubscreen_name, NULL)
 NSOPTION_STRING(screen_modeid, NULL)
 NSOPTION_INTEGER(screen_compositing, -1)
 NSOPTION_INTEGER(screen_ydpi, 85)
