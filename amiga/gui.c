@@ -196,6 +196,12 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
+/* accessors for default options - user option is updated if it is set as per default */
+#define nsoption_default_set_int(OPTION, VALUE)				\
+	if (nsoptions_default[NSOPTION_##OPTION].value.i == nsoptions[NSOPTION_##OPTION].value.i)	\
+		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
+	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
+
 STRPTR ami_locale_langs(void)
 {
 	struct Locale *locale;
