@@ -450,7 +450,10 @@ static void ami_set_screen_defaults(struct Screen *scrn)
 	nsoption_default_set_int(window_y, scrn->BarHeight + 1);
 	nsoption_default_set_int(window_width, scrn->Width);
 	nsoption_default_set_int(window_height, scrn->Height - scrn->BarHeight - 1);
-	
+
+	nsoption_default_set_int(redraw_tile_size_x, scrn->Width);
+	nsoption_default_set_int(redraw_tile_size_y, scrn->Height);
+
 	/* set system colours for amiga ui */
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
