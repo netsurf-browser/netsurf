@@ -445,15 +445,10 @@ colour_option_from_pen(struct nsoption_s *opts,
 
 static void ami_set_screen_defaults(struct Screen *scrn)
 {
-	if((nsoption_int(window_x) == 0) &&
-		(nsoption_int(window_y) == 0) &&
-		(nsoption_int(window_width) == 0) &&
-		(nsoption_int(window_height) == 0)) {
-		nsoption_set_int(window_x, 0);
-		nsoption_set_int(window_y, scrn->BarHeight + 1);
-		nsoption_set_int(window_width, scrn->Width);
-		nsoption_set_int(window_height, scrn->Height - scrn->BarHeight - 1);
-	}
+	nsoption_default_set_int(window_x, 0);
+	nsoption_default_set_int(window_y, scrn->BarHeight + 1);
+	nsoption_default_set_int(window_width, scrn->Width);
+	nsoption_default_set_int(window_height, scrn->Height - scrn->BarHeight - 1);
 	
 	/* TODO: Update screen colour defaults here */
 }
