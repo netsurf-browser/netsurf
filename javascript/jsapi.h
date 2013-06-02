@@ -359,21 +359,19 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_CLASS_NO_INTERNAL_MEMBERS JSCLASS_NO_INTERNAL_MEMBERS
 
 /* GC marking */
-#ifdef JSCLASS_MARK_IS_TRACE
-/* mark requires casting */
-#define JSAPI_JSCLASS_MARK_IS_TRACE JSCLASS_MARK_IS_TRACE
-#define JSAPI_JSCLASS_MARKOP(x) ((JSMarkOp)x)
-#else
-/* mark does not require casting */
+
+/* mark API is always JSTraceOp now */
 #define JSAPI_JSCLASS_MARK_IS_TRACE 0
 #define JSAPI_JSCLASS_MARKOP(x) (x)
-#endif
 
-#define JSAPI_MARKOP(name) JSBool name(JSTracer *trc, JSObject *obj)
+#define JSAPI_MARKOP(name) void name(JSTracer *trc, JSObject *obj)
 
 #define JSAPI_MARKCX trc->context
 
-#define JSAPI_GCMARK(thing) JS_CallTracer(trc, thing, JSTRACE_OBJECT);
+#define JSAPI_GCMARK(thing) JS_CallTracer(trc, JSVAL_TO_TRACEABLE(OBJECT_TO_JSVAL(thing)), JSTRACE_OBJECT);
+
+
+
 
 /* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddObjectRoot(cx, obj)

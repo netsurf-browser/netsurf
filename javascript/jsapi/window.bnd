@@ -11,6 +11,7 @@
 
 webidlfile "html.idl";
 webidlfile "dom.idl";
+webidlfile "console.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
 hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
@@ -61,6 +62,72 @@ struct browser_window *jsapi_get_browser_window(JSContext *cx)
 	return NULL;
 }
 
+static bool
+init_user_prototypes(JSContext *cx,
+		     struct jsclass_private *private,
+		     JSObject *parent)
+{
+	/* Initialises all the user javascript classes to make their
+	 * prototypes available.
+	 */
+	/** @todo should we be managing these prototype objects ourselves */
+	private->prototype_Document = jsapi_InitClass_Document(cx, parent);
+	if (private->prototype_Document == NULL) {
+		return false;
+	}
+
+	private->prototype_Navigator = jsapi_InitClass_Navigator(cx, parent);
+	if (private->prototype_Navigator == NULL) {
+		return false;
+	}
+
+	private->prototype_Location = jsapi_InitClass_Location(cx, parent);
+	if (private->prototype_Location == NULL) {
+		return false;
+	}
+
+	private->prototype_Console = jsapi_InitClass_Console(cx, parent);
+	if (private->prototype_Console == NULL) {
+		return false;
+	}
+
+	private->prototype_HTMLElement = jsapi_InitClass_HTMLElement(cx, parent);
+	if (private->prototype_HTMLElement == NULL) {
+		return false;
+	}
+
+	private->prototype_HTMLCollection = jsapi_InitClass_HTMLCollection(cx, parent);
+	if (private->prototype_HTMLCollection == NULL) {
+		return false;
+	}
+
+	private->prototype_NodeList = jsapi_InitClass_NodeList(cx, parent);
+	if (private->prototype_NodeList == NULL) {
+		return false;
+	}
+
+	private->prototype_Text = jsapi_InitClass_Text(cx, parent);
+	if (private->prototype_Text == NULL) {
+		return false;
+	}
+
+	private->prototype_Comment = jsapi_InitClass_Comment(cx, parent);
+	if (private->prototype_Comment == NULL) {
+		return false;
+	}
+
+	private->prototype_Node = jsapi_InitClass_Node(cx, parent);
+	if (private->prototype_Node == NULL) {
+		return false;
+	}
+
+	private->prototype_Event = jsapi_InitClass_Event(cx, parent);
+	if (private->prototype_Event == NULL) {
+		return false;
+	}
+	return true;
+}
+
 %}
 
 binding window {
@@ -71,23 +138,83 @@ binding window {
 	private "struct browser_window *" bw;
 	private "struct html_content *" htmlc;
 
-	internal "JSObject *" document;
-	internal "JSObject *" navigator;
-	internal "JSObject *" console;
+	/* prototypes held in this object */
+	internal "JSObject *" prototype_Document;
+	internal "JSObject *" prototype_Navigator;
+	internal "JSObject *" prototype_Location;
+	internal "JSObject *" prototype_Console;
+	internal "JSObject *" prototype_HTMLElement;
+	internal "JSObject *" prototype_HTMLCollection;
+	internal "JSObject *" prototype_NodeList;
+	internal "JSObject *" prototype_Text;
+	internal "JSObject *" prototype_Comment;
+	internal "JSObject *" prototype_Node;
+	internal "JSObject *" prototype_Event;
 
+	/** document instantiated on first use */
+	property unshared document;
+
+	/** navigator instantiated on first use */
+	property unshared navigator;
+
+	/** console instantiated on first use */
+	property unshared console;
+
+        /** location is unshared */
+	property unshared location;
+
+	/** @todo instantiate forms, history etc. attributes */
+
+	/* events through a single interface */
 	property unshared type EventHandler;
 }
 
 api mark %{
+
+	LOG(("jscontext:%p jsobject:%p private:%p", JSAPI_MARKCX, obj, private));
 	if (private != NULL) {
-		if (private->document != NULL) {
-			JSAPI_GCMARK(private->document);
+		if (private->prototype_Document != NULL) {
+			JSAPI_GCMARK(private->prototype_Document);
 		}
-		if (private->navigator != NULL) {
-			JSAPI_GCMARK(private->navigator);
+
+		if (private->prototype_Navigator != NULL) {
+			JSAPI_GCMARK(private->prototype_Navigator);
 		}
-		if (private->console != NULL) {
-			JSAPI_GCMARK(private->console);
+
+		if (private->prototype_Location != NULL) {
+			JSAPI_GCMARK(private->prototype_Location);
+		}
+
+		if (private->prototype_Console != NULL) {
+			JSAPI_GCMARK(private->prototype_Console);
+		}
+
+		if (private->prototype_HTMLElement != NULL) {
+			JSAPI_GCMARK(private->prototype_HTMLElement);
+		}
+
+		if (private->prototype_HTMLCollection != NULL) {
+			JSAPI_GCMARK(private->prototype_HTMLCollection);
+		}
+
+		if (private->prototype_NodeList != NULL) {
+			JSAPI_GCMARK(private->prototype_NodeList);
+		}
+
+		if (private->prototype_Text != NULL) {
+			JSAPI_GCMARK(private->prototype_Text);
+		}
+
+		if (private->prototype_Comment != NULL) {
+			JSAPI_GCMARK(private->prototype_Comment);
+		}
+
+		if (private->prototype_Node != NULL) {
+			JSAPI_GCMARK(private->prototype_Node);
+		}
+
+		if (private->prototype_Event != NULL) {
+			JSAPI_GCMARK(private->prototype_Event);
 		}
 	}
 %}
@@ -96,8 +223,6 @@ api global %{
 %}
 
 api init %{
-	JSObject *user_proto;
-
 	prototype = JS_NewCompartmentAndGlobalObject(cx, &JSClass_Window, NULL);
 	if (prototype == NULL) {
 		return NULL;
@@ -127,66 +252,6 @@ api init %{
 	/* add properties to prototype */
 	if (!JS_DefineProperties(cx, prototype, jsclass_properties))
 		return NULL;
-
-	/* Initialises all the user javascript classes to make their
-	 * prototypes available.
-	 */
-	/** @todo should we be managing these prototype objects ourselves */
-	user_proto = jsapi_InitClass_Document(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Navigator(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Location(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Console(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_HTMLElement(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_HTMLCollection(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_NodeList(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Text(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Comment(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Node(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
-	user_proto = jsapi_InitClass_Event(cx, prototype);
-	if (user_proto == NULL) {
-		return NULL;
-	}
-
 %}
 
 api new %{
@@ -196,32 +261,45 @@ api new %{
 	/* the window object is the global so its prototype *is* the instance */
 	newobject = prototype;
 
-	/* instantiate the subclasses off the window global */
-	private->document = jsapi_new_Document(cx,
-					       NULL,
-					       newobject,
-					       (dom_document *)dom_node_ref(htmlc->document),
-					       htmlc);
-	if (private->document == NULL) {
+	if (init_user_prototypes(cx, private, prototype) == false) {
+		/* prototype initialisation failed */
 		free(private);
 		return NULL;
 	}
-
-	private->navigator = jsapi_new_Navigator(cx, NULL, newobject);
-	if (private->navigator == NULL) {
-		free(private);
-		return NULL;
-	}
-
-	private->console = jsapi_new_Console(cx, NULL, newobject);
-	if (private->console == NULL) {
-		free(private);
-		return NULL;
-	}
-
-	/** @todo forms, history */
 
 	LOG(("Created new window object %p", newobject));
+%}
+
+getter document %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+	/* instantiate the subclasses off the window global */
+	jsret = jsapi_new_Document(cx,
+				   NULL,
+				   NULL,
+				   (dom_document *)dom_node_ref(private->htmlc->document),
+				   private->htmlc);
+%}
+
+getter navigator %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+	jsret = jsapi_new_Navigator(cx, NULL, NULL);
+%}
+
+getter console %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+	jsret = jsapi_new_Console(cx, NULL, NULL);
 %}
 
 operation confirm %{
@@ -273,9 +351,21 @@ operation dispatchEvent %{
 %}
 
 getter location %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx, vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
+/* should get the docuemnts location
 	jsval loc;
 	JS_GetProperty(cx, private->document, "location", &loc);
 	jsret = JSVAL_TO_OBJECT(loc);
+*/
+
+	jsret = jsapi_new_Location(cx,
+				   NULL,
+				   NULL,
+				   llcache_handle_get_url(private->htmlc->base.llcache));
 %}
 
 getter window %{

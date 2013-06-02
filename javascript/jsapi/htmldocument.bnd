@@ -60,6 +60,7 @@ binding document {
 }
 
 api finalise %{
+	LOG(("jscontext:%p jsobject:%p private:%p", cx, obj, private));
 	if (private != NULL) {
 		JSLOG("dom_document %p in content %p",
 		     private->node, private->htmlc);
