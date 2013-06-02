@@ -917,7 +917,7 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 
-    	nsoption_setnull_charp(homepage_url, (char *)strdup(NETSURF_HOMEPAGE));
+	nsoption_setnull_charp(homepage_url, (char *)strdup(NETSURF_HOMEPAGE));
 
 	if(!notalreadyrunning)
 	{
@@ -933,7 +933,6 @@ static void gui_init2(int argc, char** argv)
 			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
 		}
 		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
-		IDoMethod(arexx_obj,AM_EXECUTE,"TOFRONT","NETSURF",NULL,NULL,NULL,NULL);
 		FreeVec(sendcmd);
 
 		netsurf_quit=true;
@@ -3745,6 +3744,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 	search_web_retrieve_ico(false);
+
+	ScreenToFront(scrn);
 
 	return g;
 }
