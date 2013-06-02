@@ -291,6 +291,8 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
 	path_add_part(fullpath, 1024, remapped);
 
+	LOG(("Checking for %s", fullpath));
+	
 	if(lock = Lock(fullpath, ACCESS_READ))
 	{
 		UnLock(lock);
