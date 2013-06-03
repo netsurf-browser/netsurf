@@ -554,12 +554,14 @@ int main(int argc, char** argv)
 	/* user options setup */
 	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
+		fprintf(stderr, "Options failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
 	}
 	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, NULL);
+	nsoption_read(options, nsoptions);
 	free(options);
-	nsoption_commandline(&argc, argv, NULL);
+	nsoption_commandline(&argc, argv, nsoptions);
 	check_options(respaths); /* check user options */
 
 	/* common initialisation */
@@ -567,7 +569,9 @@ int main(int argc, char** argv)
 	ret = netsurf_init(messages);
 	free(messages);
 	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
+		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
 	}
 
 	/* run the browser */
@@ -580,6 +584,9 @@ int main(int argc, char** argv)
 	
 	/* common finalisation */
 	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }

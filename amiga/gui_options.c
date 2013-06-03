@@ -1818,6 +1818,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(hide_docky_icon, true);
 	}
 
+#ifdef WITH_PDF_EXPORT
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_TOP],(ULONG *)&nsoption_int(margin_top));
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_LEFT],(ULONG *)&nsoption_int(margin_left));
@@ -1862,6 +1863,7 @@ void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(enable_PDF_password, false);
 	}
+#endif
 
 	if(rescan_fonts == true) {
 		ami_font_finiscanner();

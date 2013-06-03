@@ -54,7 +54,8 @@ struct nsoption_s *nsoptions_default = NULL;
 #define NSOPTION_COLOUR(NAME, DEFAULT) \
 	{ #NAME, sizeof(#NAME) - 1, OPTION_COLOUR, { .c = DEFAULT } },
 
-struct nsoption_s defaults[] = {
+/** The table of compiled in default options */
+static struct nsoption_s defaults[] = {
 #include "desktop/options.h"
 
 #if defined(riscos)
@@ -160,11 +161,11 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 
 	/* to aid migration from old, broken, configuration files this
 	 * checks to see if all the system colours are set to black
-	 * and returns them to defaults instead 
+	 * and returns them to defaults instead
 	 */
 
-	for (cloop = NSOPTION_SYS_COLOUR_START; 
-	     cloop <= NSOPTION_SYS_COLOUR_END; 
+	for (cloop = NSOPTION_SYS_COLOUR_START;
+	     cloop <= NSOPTION_SYS_COLOUR_END;
 	     cloop++) {
 		if (opts[cloop].value.c != 0) {
 			black = false;
@@ -172,18 +173,26 @@ static void nsoption_validate(struct nsoption_s *opts, struct nsoption_s *defs)
 		}
 	}
 	if (black == true) {
-		for (cloop = NSOPTION_SYS_COLOUR_START; 
-		     cloop <= NSOPTION_SYS_COLOUR_END; 
+		for (cloop = NSOPTION_SYS_COLOUR_START;
+		     cloop <= NSOPTION_SYS_COLOUR_END;
 		     cloop++) {
 			opts[cloop].value.c = defs[cloop].value.c;
 		}
 	}
 }
 
-static bool 
-nsoption_is_set(struct nsoption_s *opts,
-		struct nsoption_s *defs,
-		enum nsoption_e entry)
+/**
+ * Determines if an option is different between two option tables.
+ *
+ * @param opts The first table to compare.
+ * @param defs The second table to compare.
+ * @param entry The option to compare.
+ * @return true if the option differs false if not.
+ */
+static bool
+nsoption_is_set(const struct nsoption_s *opts,
+		const struct nsoption_s *defs,
+		const enum nsoption_e entry)
 {
 	bool ret = false;
 
@@ -232,11 +241,12 @@ nsoption_is_set(struct nsoption_s *opts,
 	return ret;
 }
 
-/** Output choices to file stream
+/**
+ * Output choices to file stream
  *
- * @param fp the file stream to write to
- * @param opts The options table to write
- * @param defs the default value table to compare with.
+ * @param fp The file stream to write to.
+ * @param opts The options table to write.
+ * @param defs The default value table to compare with.
  * @param all Output all entries not just ones changed from defaults
  */
 static nserror
@@ -245,14 +255,12 @@ nsoption_output(FILE *fp,
 		struct nsoption_s *defs,
 		bool all)
 {
-	unsigned int entry;
-	bool show;
+	unsigned int entry; /* index to option being output */
 	colour rgbcolour; /* RRGGBB */
 
 	for (entry = 0; entry < NSOPTION_LISTEND; entry++) {
-		show = all || nsoption_is_set(opts, defs, entry);
-
-		if (show == false) {
+		if ((all == false) &&
+		    (nsoption_is_set(opts, defs, entry) == false)) {
 			continue;
 		}
 
@@ -302,11 +310,11 @@ nsoption_output(FILE *fp,
 /**
  * Output an option value into a string, in HTML format.
  *
- * \param option  The option to output the value of.
- * \param size    The size of the string buffer.
- * \param pos     The current position in string
- * \param string  The string in which to output the value.
- * \return The number of bytes written to string or -1 on error
+ * @param option The option to output the value of.
+ * @param size The size of the string buffer.
+ * @param pos The current position in string
+ * @param string The string in which to output the value.
+ * @return The number of bytes written to string or -1 on error
  */
 static size_t
 nsoption_output_value_html(struct nsoption_s *option,
@@ -372,11 +380,11 @@ nsoption_output_value_html(struct nsoption_s *option,
 /**
  * Output an option value into a string, in plain text format.
  *
- * \param option  The option to output the value of.
- * \param size    The size of the string buffer.
- * \param pos     The current position in string
- * \param string  The string in which to output the value.
- * \return The number of bytes written to string or -1 on error
+ * @param option The option to output the value of.
+ * @param size The size of the string buffer.
+ * @param pos The current position in string
+ * @param string The string in which to output the value.
+ * @return The number of bytes written to string or -1 on error
  */
 static size_t
 nsoption_output_value_text(struct nsoption_s *option,
@@ -429,6 +437,69 @@ nsoption_output_value_text(struct nsoption_s *option,
 	return slen;
 }
 
+/**
+ * Duplicates an option table.
+ *
+ * Allocates a new option table and copies an existing one into it.
+ *
+ * @param src The source table to copy
+ */
+static nserror
+nsoption_dup(struct nsoption_s *src, struct nsoption_s **pdst)
+{
+	struct nsoption_s *dst;
+	dst = malloc(sizeof(defaults));
+	if (dst == NULL) {
+		return NSERROR_NOMEM;
+	}
+	*pdst = dst;
+
+	/* copy the source table into the destination table */
+	memcpy(dst, src, sizeof(defaults));
+
+	while (src->key != NULL) {
+		if ((src->type == OPTION_STRING) &&
+		    (src->value.s != NULL)) {
+			dst->value.s = strdup(src->value.s);
+		}
+		src++;
+		dst++;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * frees an option table.
+ *
+ * Iterates through an option table a freeing resources as required
+ * finally freeing the option table itself.
+ *
+ * @param opts The option table to free.
+ */
+static nserror
+nsoption_free(struct nsoption_s *opts)
+{
+	struct nsoption_s *cur; /* option being freed */
+
+	if (opts == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	cur = opts;
+
+	while (cur->key != NULL) {
+		if ((cur->type == OPTION_STRING) && (cur->value.s != NULL)) {
+			free(cur->value.s);
+		}
+		cur++;
+	}
+	free(opts);
+
+	return NSERROR_OK;
+}
+
+
 /* exported interface documented in utils/nsoption.h */
 nserror
 nsoption_init(nsoption_set_default_t *set_defaults,
@@ -436,38 +507,37 @@ nsoption_init(nsoption_set_default_t *set_defaults,
 	      struct nsoption_s **pdefs)
 {
 	nserror ret;
-	struct nsoption_s *src;
-	struct nsoption_s *dst;
+	struct nsoption_s *defs;
 	struct nsoption_s *opts;
+
+	ret = nsoption_dup(&defaults[0], &defs);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
 
 	/* update the default table */
 	if (set_defaults != NULL) {
-		nsoptions = &defaults[0];
-		ret = set_defaults(&defaults[0]);
+		/** @todo it would be better if the frontends actually
+		 * set values in the passed in table instead of
+		 * assuming the global one.
+		 */
+		opts = nsoptions;
+		nsoptions = defs;
+
+		ret = set_defaults(defs);
 
 		if (ret != NSERROR_OK) {
-			nsoptions = NULL;
+			nsoptions = opts;
+			nsoption_free(defs);
 			return ret;
 		}
 	}
 
-	opts = malloc(sizeof(defaults));
-	if (opts == NULL) {
-		return NSERROR_NOMEM;
-	}
-
 	/* copy the default values into the working set */
-	src = &defaults[0];
-	dst = opts;
-
-	memcpy(dst, src, sizeof(defaults));
-
-	while (src->key != NULL) {
-		if ((src->type == OPTION_STRING) && (src->value.s != NULL)) {
-			dst->value.s = strdup(src->value.s);
-		}
-		src++;
-		dst++;
+	ret = nsoption_dup(defs, &opts);
+	if (ret != NSERROR_OK) {
+		nsoption_free(defs);
+		return ret;
 	}
 
 	/* return values if wanted */
@@ -478,13 +548,33 @@ nsoption_init(nsoption_set_default_t *set_defaults,
 	}
 
 	if (pdefs != NULL) {
-		*pdefs = &defaults[0];
+		*pdefs = defs;
+	} else {
+		nsoptions_default = defs;
 	}
 
 	return NSERROR_OK;
 }
 
+/* exported interface documented in utils/nsoption.h */
+nserror nsoption_finalise(struct nsoption_s *opts, struct nsoption_s *defs)
+{
+	/* check to see if global table selected */
+	if (opts == NULL) {
+		opts = nsoptions;
+	}
 
+	nsoption_free(opts);
+
+	/* check to see if global table selected */
+	if (defs == NULL) {
+		defs = nsoptions_default;
+	}
+
+	nsoption_free(defs);
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in utils/nsoption.h */
 nserror
@@ -503,8 +593,8 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 		opts = nsoptions;
 	}
 
-	/* @todo is this and API bug not being a parameter */
-	defs = nsoptions_default;	
+	/** @todo is this and API bug not being a parameter */
+	defs = nsoptions_default;
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -569,7 +659,7 @@ nsoption_write(const char *path,
 
 	/* check to see if global table selected */
 	if (defs == NULL) {
-		defs = &defaults[0];
+		defs = nsoptions_default;
 	}
 
 	fp = fopen(path, "w");
@@ -699,8 +789,8 @@ nsoption_snoptionf(char *string,
 				break;
 
 			case 'p':
-				if (nsoption_is_set(nsoptions, 
-						    nsoptions_default, 
+				if (nsoption_is_set(nsoptions,
+						    nsoptions_default,
 						    option_idx)) {
 					slen += snprintf(string + slen,
 							 size - slen,
@@ -773,4 +863,34 @@ nsoption_snoptionf(char *string,
 	string[min(slen, size - 1)] = '\0';
 
 	return slen;
+}
+
+/* exported interface documented in options.h */
+nserror
+nsoption_set_tbl_charp(struct nsoption_s *opts,
+		       enum nsoption_e option_idx,
+		       char *s)
+{
+	struct nsoption_s *option;
+
+	option = &opts[option_idx];
+
+	/* ensure it is a string option */
+	if (option->type != OPTION_STRING) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* free any existing string */
+	if (option->value.s != NULL) {
+		free(option->value.s);
+	}
+
+	option->value.s = s;
+
+	/* check for empty string */
+	if ((option->value.s != NULL) && (*option->value.s == 0)) {
+		free(option->value.s);
+		option->value.s = NULL;
+	}
+	return NSERROR_OK;
 }

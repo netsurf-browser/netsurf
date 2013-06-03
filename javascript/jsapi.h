@@ -23,7 +23,7 @@
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
 #define _NETSURF_JAVASCRIPT_JSAPI_H_
 
-/* include teh correct header */
+/* include the correct header */
 #ifdef WITH_MOZJS
 #include "js/jsapi.h"
 #else
@@ -155,8 +155,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_GCMARK(thing) JS_MarkGCThing(cx, thing, "object", arg)
 
-/* Macros for manipulating GC root */
+#define JSAPI_MARKOP_RETURN(value) return value
 
+
+/* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
@@ -270,6 +272,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_GCMARK(thing) JS_CallTracer(trc, thing, JSTRACE_OBJECT);
 
+#define JSAPI_MARKOP_RETURN(value) return value
+
 /* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
@@ -360,20 +364,23 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 /* GC marking */
 #ifdef JSCLASS_MARK_IS_TRACE
-/* mark requires casting */
+/* mark function pointer requires casting */
 #define JSAPI_JSCLASS_MARK_IS_TRACE JSCLASS_MARK_IS_TRACE
 #define JSAPI_JSCLASS_MARKOP(x) ((JSMarkOp)x)
 #else
-/* mark does not require casting */
+/* mark function pointer does not require casting */
 #define JSAPI_JSCLASS_MARK_IS_TRACE 0
 #define JSAPI_JSCLASS_MARKOP(x) (x)
 #endif
 
-#define JSAPI_MARKOP(name) JSBool name(JSTracer *trc, JSObject *obj)
+#define JSAPI_MARKOP(name) void name(JSTracer *trc, JSObject *obj)
 
 #define JSAPI_MARKCX trc->context
 
 #define JSAPI_GCMARK(thing) JS_CallTracer(trc, thing, JSTRACE_OBJECT);
+
+#define JSAPI_MARKOP_RETURN(value)
+
 
 /* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddObjectRoot(cx, obj)

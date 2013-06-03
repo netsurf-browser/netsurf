@@ -154,8 +154,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 		palette_mapped = false;
 	}
 
-	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
-	if(nsoption_int(redraw_tile_size_y) <= 0) nsoption_set_int(redraw_tile_size_y, scrn->Height);
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
