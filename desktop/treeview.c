@@ -110,9 +110,6 @@ struct treeview_node_style {
 
 	plot_style_t sbg;		/**< Selected background */
 	plot_font_style_t stext;	/**< Selected text */
-
-	plot_style_t sabg;		/**< Selection area background */
-	plot_font_style_t satext;	/**< Selection area text */
 };
 
 struct treeview_node_style plot_style_odd;
@@ -1205,16 +1202,6 @@ static void treeview_init_plot_styles(void)
 			gui_system_colour_char("HighlightText");
 	plot_style_even.stext.background = gui_system_colour_char("Highlight");
 
-	/* Selection area background colour */
-	plot_style_even.sabg = plot_style_even.bg;
-	plot_style_even.sabg.fill_colour = mix_colour(
-			plot_style_even.bg.fill_colour,
-			plot_style_even.sbg.fill_colour, 255 * 3 / 4);
-
-	/* Selection area text colour */
-	plot_style_even.satext = plot_style_even.text;
-	plot_style_even.satext.background = plot_style_even.sabg.fill_colour;
-
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
@@ -1226,13 +1213,6 @@ static void treeview_init_plot_styles(void)
 
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
-
-	plot_style_odd.sabg = plot_style_even.sabg;
-	plot_style_odd.sabg.fill_colour = mix_colour(
-			plot_style_even.sabg.fill_colour,
-			plot_style_even.satext.foreground, 255 * 15 / 16);
-	plot_style_odd.satext = plot_style_even.satext;
-	plot_style_odd.satext.background = plot_style_odd.sabg.fill_colour;
 }
 
 
