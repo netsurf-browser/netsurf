@@ -31,7 +31,7 @@
 #define FIELD_FIRST_ENTRY 1
 
 struct treeview_globals {
-	uint32_t line_height;
+	int line_height;
 	int furniture_width;
 	int step_width;
 	int window_padding;
@@ -68,7 +68,7 @@ struct treeview_node {
 	enum treeview_node_flags flags;
 	enum treeview_node_type type;
 
-	uint32_t height;
+	int height;
 
 	struct treeview_node *parent;
 	struct treeview_node *sibling_prev;
@@ -821,9 +821,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
 				tree_g.line_height;
 
-		if (clip->y0 >= 0 &&
-				render_y + tree_g.line_height <
-						(unsigned)clip->y0) {
+		if ((render_y + tree_g.line_height) < clip->y0) {
 			/* This node's line is above clip region */
 			render_y += height;
 			continue;
