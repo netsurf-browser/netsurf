@@ -20,6 +20,7 @@
  * Treeview handling (implementation).
  */
 
+#include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
@@ -1175,7 +1176,7 @@ void treeview_mouse_action(struct treeview *tree,
 	    ((c0 & 0x00ff00) * (      p))   ) >> 8) & 0x00ff00))
 
 
-static void treeview_init_plot_styles(void)
+static void treeview_init_plot_styles(int font_pt_size)
 {
 	/* Background colour */
 	plot_style_even.bg.stroke_type = PLOT_OP_TYPE_NONE;
@@ -1186,7 +1187,7 @@ static void treeview_init_plot_styles(void)
 
 	/* Text colour */
 	plot_style_even.text.family = PLOT_FONT_FAMILY_SANS_SERIF;
-	plot_style_even.text.size = 11 * FONT_SIZE_SCALE;
+	plot_style_even.text.size = font_pt_size * FONT_SIZE_SCALE;
 	plot_style_even.text.weight = 400;
 	plot_style_even.text.flags = FONTF_NONE;
 	plot_style_even.text.foreground = gui_system_colour_char("WindowText");
@@ -1277,11 +1278,16 @@ static void treeview_init_furniture(void)
 
 nserror treeview_init(void)
 {
-	treeview_init_plot_styles();
+	int font_px_size;
+	int font_pt_size = 11;
+
+	treeview_init_plot_styles(font_pt_size);
 	treeview_init_resources();
 	treeview_init_furniture();
 
-	tree_g.line_height = 20;
+	font_px_size = (font_pt_size * FIXTOINT(nscss_screen_dpi) + 36) / 72;
+
+	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;
 	tree_g.icon_step = 23;
