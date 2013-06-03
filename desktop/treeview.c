@@ -796,29 +796,20 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 			node = next;
 			inset += tree_g.step_width;
 		} else {
-			/* no children */
-			next = node->sibling_next;
+			/* No children.  As long as we're not at the root,
+			 * go to next sibling if present, or nearest ancestor
+			 * with a next sibling. */
 
-			if (next != NULL) {
-				/* on to next sibling */
-				node = next;
-			} else {
-				/* no next sibling */
-				while (node != root) {
-					next = node->sibling_next;
-
-					if (next != NULL) {
-						break;
-					}
-					node = node->parent;
-					inset -= tree_g.step_width;
-				}
-
-				if (node == root)
-					break;
-
-				node = node->sibling_next;
+			while (node != root &&
+					node->sibling_next == NULL) {
+				node = node->parent;
+				inset -= tree_g.step_width;
 			}
+
+			if (node == root)
+				break;
+
+			node = node->sibling_next;
 		}
 
 		assert(node != NULL);
