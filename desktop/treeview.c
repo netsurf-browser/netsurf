@@ -31,7 +31,7 @@
 #define FIELD_FIRST_ENTRY 1
 
 struct treeview_globals {
-	int line_height;
+	uint32_t line_height;
 	int furniture_width;
 	int step_width;
 	int window_padding;
@@ -81,7 +81,7 @@ struct treeview_node {
 };
 
 struct treeview_node_entry {
-	struct treeview_node *base;
+	struct treeview_node base;
 	struct treeview_field fields[];
 };
 
@@ -328,18 +328,18 @@ nserror treeview_update_node_entry(struct treeview *tree,
 				fields[i].field, &match) == lwc_error_ok &&
 				match == true);
 
-		e->fields[i].value.data = fields[i].value;
-		e->fields[i].value.len = fields[i].value_len;
+		e->fields[i - 1].value.data = fields[i].value;
+		e->fields[i - 1].value.len = fields[i].value_len;
 
 		if (entry->flags & TREE_NODE_EXPANDED) {
 			/* Text will be seen, get its width */
 			nsfont.font_width(&plot_style_odd.text,
-					e->fields[i].value.data,
-					e->fields[i].value.len,
-					&(e->fields[i].value.width));
+					e->fields[i - 1].value.data,
+					e->fields[i - 1].value.len,
+					&(e->fields[i - 1].value.width));
 		} else {
 			/* Invalidate the width, since it's not needed yet */
-			entry->text.value.width = 0;
+			e->fields[i - 1].value.width = 0;
 		}
 	}
 
@@ -369,10 +369,11 @@ nserror treeview_create_node_entry(struct treeview *tree,
 	}
 
 	e = malloc(sizeof(struct treeview_node_entry) +
-			tree->n_fields * sizeof(struct treeview_field));
+			(tree->n_fields - 1) * sizeof(struct treeview_field));
 	if (e == NULL) {
 		return NSERROR_NOMEM;
 	}
+
 
 	n = (struct treeview_node *) e;
 
@@ -403,9 +404,9 @@ nserror treeview_create_node_entry(struct treeview *tree,
 				fields[i].field, &match) == lwc_error_ok &&
 				match == true);
 
-		e->fields[i].value.data = fields[i].value;
-		e->fields[i].value.len = fields[i].value_len;
-		e->fields[i].value.width = 0;
+		e->fields[i - 1].value.data = fields[i].value;
+		e->fields[i - 1].value.len = fields[i].value_len;
+		e->fields[i - 1].value.width = 0;
 	}
 
 	treeview_insert_node(n, relation, rel);
@@ -416,11 +417,15 @@ nserror treeview_create_node_entry(struct treeview *tree,
 }
 
 
-nserror treeview_delete_node(struct treeview_node *n)
+nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 {
+	struct treeview_node_msg msg;
+	msg.msg = TREE_MSG_NODE_DELETE;
+	msg.data.node_delete.node = n;
+
 	/* Destroy children first */
 	while (n->children != NULL) {
-		treeview_delete_node(n->children);
+		treeview_delete_node(tree, n->children);
 	}
 
 	/* Unlink node from tree */
@@ -441,8 +446,10 @@ nserror treeview_delete_node(struct treeview_node *n)
 	/* Handle any special treatment */
 	switch (n->type) {
 	case TREE_NODE_ENTRY:
+		tree->callbacks->entry(msg, n->client_data);
 		break;
 	case TREE_NODE_FOLDER:
+		tree->callbacks->folder(msg, n->client_data);
 		break;
 	case TREE_NODE_ROOT:
 		break;
@@ -528,7 +535,7 @@ nserror treeview_destroy(struct treeview *tree)
 	assert(tree != NULL);
 
 	/* Destroy nodes */
-	treeview_delete_node(tree->root);
+	treeview_delete_node(tree, tree->root);
 
 	/* Destroy feilds */
 	for (f = 0; f <= tree->n_fields; f++) {
@@ -573,7 +580,7 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 			/* no children */
 			next = node->sibling_next;
 
-			if (next != NULL) {
+			if (next != NULL && node != root) {
 				/* on to next sibling */
 				node = next;
 			} else {
@@ -655,7 +662,7 @@ nserror treeview_node_expand(struct treeview *tree,
 
 		e = (struct treeview_node_entry *)node;
 
-		for (i = 1; i < tree->n_fields; i++) {
+		for (i = 0; i < tree->n_fields - 1; i++) {
 
 			if (e->fields[i].value.width == 0) {
 				nsfont.font_width(&plot_style_odd.text,
@@ -703,7 +710,7 @@ static bool treeview_node_contract_cb(struct treeview_node *node, int inset,
 		return false;
 	}
 
-	node->flags |= ~TREE_NODE_EXPANDED;
+	node->flags ^= TREE_NODE_EXPANDED;
 	height_reduction = node->height - tree_g.line_height;
 
 	assert(height_reduction >= 0);
@@ -711,7 +718,8 @@ static bool treeview_node_contract_cb(struct treeview_node *node, int inset,
 	do {
 		node->height -= height_reduction;
 		node = node->parent;
-	} while (node->parent != NULL);
+	} while (node->parent != NULL &&
+			node->parent->flags & TREE_NODE_EXPANDED);
 
 	return false; /* Don't want to abort tree walk */
 }
@@ -761,6 +769,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	enum treeview_resource_id res;
 	plot_style_t *bg;
 	plot_font_style_t *text;
+	int height;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -826,10 +835,14 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		assert(node != root);
 
 		count++;
+		height = (node->type == TREE_NODE_ENTRY) ? node->height :
+				tree_g.line_height;
 
-		if (render_y + tree_g.line_height < clip->y0) {
+		if (clip->y0 >= 0 &&
+				render_y + tree_g.line_height <
+						(unsigned)clip->y0) {
 			/* This node's line is above clip region */
-			render_y += tree_g.line_height;
+			render_y += height;
 			continue;
 		}
 
@@ -844,7 +857,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		/* Render background */
 		y0 = render_y;
-		y1 = render_y + tree_g.line_height;
+		y1 = render_y + height;
 		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg);
 
 		/* Render toggle */
@@ -897,19 +910,14 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 			/* Done everything for this node */
 			continue;
 
-
-		/* Reneder expanded entry background */
-		y0 = render_y;
-		y1 = render_y + tree_g.line_height * tree->n_fields;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg);
-
 		/* Render expanded entry fields */
 		entry = (struct treeview_node_entry *)node;
-		for (i = 0; i < tree->n_fields; i++) {
-			struct treeview_field *ef = &(tree->fields[i]);
-			int max_width = tree->field_width;
+		for (i = 0; i < tree->n_fields - 1; i++) {
+			struct treeview_field *ef = &(tree->fields[i + 1]);
 
 			if (ef->flags & TREE_FLAG_SHOW_NAME) {
+				int max_width = tree->field_width;
+
 				new_ctx.plot->text(x0 + max_width -
 							ef->value.width -
 							tree_g.step_width,
@@ -956,6 +964,122 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		knockout_plot_end();
 }
 
+struct treeview_selection_walk_data {
+	enum {
+		TREEVIEW_WALK_HAS_SELECTION,
+		TREEVIEW_WALK_CLEAR_SELECTION,
+		TREEVIEW_WALK_SELECT_ALL
+	} purpose;
+	union {
+		bool has_selection;
+		struct {
+			bool required;
+			struct rect *rect;
+		} redraw;
+	} data;
+	int current_y;
+};
+static bool treeview_node_selection_walk_cb(struct treeview_node *node,
+		int inset, void *ctx)
+{
+	struct treeview_selection_walk_data *sw = ctx;
+	int height;
+	bool changed = false;
+
+	height = (node->type == TREE_NODE_ENTRY) ? node->height :
+			tree_g.line_height;
+	sw->current_y += height;
+
+	switch (sw->purpose) {
+	case TREEVIEW_WALK_HAS_SELECTION:
+		if (node->flags & TREE_NODE_SELECTED) {
+			sw->data.has_selection = true;
+			return true; /* Can abort tree walk */
+		}
+		break;
+
+	case TREEVIEW_WALK_CLEAR_SELECTION:
+		if (node->flags & TREE_NODE_SELECTED) {
+			node->flags ^= TREE_NODE_SELECTED;
+			changed = true;
+		}
+		break;
+
+	case TREEVIEW_WALK_SELECT_ALL:
+		if (!(node->flags & TREE_NODE_SELECTED)) {
+			node->flags ^= TREE_NODE_SELECTED;
+			changed = true;
+		}
+		break;
+	}
+
+	if (changed) {
+		if (sw->data.redraw.required == false) {
+			sw->data.redraw.required = true;
+			sw->data.redraw.rect->y0 = sw->current_y - height;
+		}
+
+		if (sw->current_y > sw->data.redraw.rect->y1) {
+			sw->data.redraw.rect->y1 = sw->current_y;
+		}
+	}
+
+	return false; /* Don't stop walk */
+}
+
+bool treeview_has_selection(struct treeview *tree)
+{
+	struct treeview_selection_walk_data sw;
+
+	sw.purpose = TREEVIEW_WALK_HAS_SELECTION;
+	sw.data.has_selection = false;
+
+	treeview_walk_internal(tree->root, false,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.has_selection;
+}
+
+bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
+{
+	struct treeview_selection_walk_data sw;
+
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = INT_MAX;
+	rect->y1 = 0;
+
+	sw.purpose = TREEVIEW_WALK_CLEAR_SELECTION;
+	sw.data.redraw.required = false;
+	sw.data.redraw.rect = rect;
+	sw.current_y = 0;
+
+	treeview_walk_internal(tree->root, false,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.redraw.required;
+}
+
+bool treeview_select_all(struct treeview *tree, struct rect *rect)
+{
+	struct treeview_selection_walk_data sw;
+
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = INT_MAX;
+	rect->y1 = 0;
+
+	sw.purpose = TREEVIEW_WALK_SELECT_ALL;
+	sw.data.redraw.required = false;
+	sw.data.redraw.rect = rect;
+	sw.current_y = 0;
+
+	treeview_walk_internal(tree->root, false,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.redraw.required;
+}
+
 struct treeview_mouse_action {
 	struct treeview *tree;
 	browser_mouse_state mouse;
@@ -968,20 +1092,73 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node,
 {
 	struct treeview_mouse_action *ma = ctx;
 	struct rect r;
+	bool redraw = false;
+	int height;
+	enum {
+		TV_NODE_ACTION_NONE		= 0,
+		TV_NODE_ACTION_SELECTION	= (1 << 0)
+	} action = TV_NODE_ACTION_NONE;
+	nserror err;
+
+	r.x0 = 0;
+	r.x1 = INT_MAX;
+
+	height = (node->type == TREE_NODE_ENTRY) ? node->height :
+			tree_g.line_height;
 
 	/* Skip line if we've not reached mouse y */
-	if (ma->y > ma->current_y + tree_g.line_height) {
-		ma->current_y += tree_g.line_height;
+	if (ma->y > ma->current_y + height) {
+		ma->current_y += height;
 		return false; /* Don't want to abort tree walk */
 	}
 
-	if (ma->mouse & BROWSER_MOUSE_CLICK_1) {
+	if ((ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) &&
+			(ma->mouse & BROWSER_MOUSE_CLICK_1)) {
+		/* Clear any existing selection */
+		redraw |= treeview_clear_selection(ma->tree, &r);
+
+		/* TODO: launch callback for entry */
+		/* TODO: for now expand/collapse both directories and entries */
+		if (node->flags & TREE_NODE_EXPANDED) {
+			err = treeview_node_contract(ma->tree, node);
+		} else {
+			err = treeview_node_expand(ma->tree, node);
+		}
+		redraw = true;
+		r.y0 = ma->current_y;
+		r.y1 = INT_MAX;
+
+	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
+			!(node->flags & TREE_NODE_SELECTED)) {
+		/* Clear any existing selection */
+		redraw |= treeview_clear_selection(ma->tree, &r);
+
+		/* Select node */
+		action |= TV_NODE_ACTION_SELECTION;
+
+	} else if (ma->mouse & BROWSER_MOUSE_PRESS_2) {
+		/* Toggle selection of node */
+		action |= TV_NODE_ACTION_SELECTION;
+	}
+
+	if (action & TV_NODE_ACTION_SELECTION) {
+		/* Handle change in selection */
 		node->flags ^= TREE_NODE_SELECTED;
 
-		r.x0 = 0;
-		r.y0 = ma->current_y;
-		r.x1 = INT_MAX;
-		r.y1 = ma->current_y + tree_g.line_height;
+		/* Redraw */
+		if (!redraw) {
+			r.y0 = ma->current_y;
+			r.y1 = ma->current_y + height;
+			redraw = true;
+		} else {
+			if (r.y0 > ma->current_y)
+				r.y0 = ma->current_y;
+			if (r.y1 < ma->current_y + height)
+				r.y1 = ma->current_y + height;
+		}
+	}
+
+	if (redraw) {
 		ma->tree->cw_t->redraw_request(ma->tree->cw_h, r);
 	}
 

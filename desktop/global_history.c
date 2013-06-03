@@ -60,6 +60,7 @@ struct global_history_ctx {
 struct global_history_ctx gh_ctx;
 
 struct global_history_entry {
+	int slot;
 	nsurl *url;
 	time_t t;
 	struct treeview_node *entry;
@@ -77,8 +78,7 @@ struct global_history_entry *gh_list[N_DAYS];
  * \param url The URL to find
  * \return Pointer to node, or NULL if not found
  */
-static struct global_history_entry *global_history_find(nsurl *url,
-		int *slot)
+static struct global_history_entry *global_history_find(nsurl *url)
 {
 	int i;
 	struct global_history_entry *e;
@@ -89,7 +89,6 @@ static struct global_history_entry *global_history_find(nsurl *url,
 		while (e != NULL) {
 			if (nsurl_compare(e->url, url,
 					NSURL_COMPLETE) == true) {
-				*slot = i;
 				return e;
 			}
 			e = e->next;
@@ -136,20 +135,20 @@ static nserror global_history_create_treeview_field_data(
 		const struct url_data *data)
 {
 	e->data[0].field = gh_ctx.fields[0].field;
+	e->data[0].value = strdup(data->title);
 	e->data[0].value_len = strlen(data->title);
-	e->data[0].value = data->title;
 
 	e->data[1].field = gh_ctx.fields[1].field;
 	e->data[1].value = nsurl_access(e->url);
-	e->data[1].value_len = strlen(nsurl_access(e->url));
+	e->data[1].value_len = nsurl_length(e->url);
 
 	e->data[2].field = gh_ctx.fields[2].field;
-	e->data[2].value = "node last visit data";
-	e->data[2].value_len = SLEN("node last visit data");
+	e->data[2].value = "Date time";
+	e->data[2].value_len = SLEN("Last visited");
 
 	e->data[3].field = gh_ctx.fields[3].field;
-	e->data[3].value = "node visi count data";
-	e->data[3].value_len = SLEN("node visi count data");
+	e->data[3].value = "Count";
+	e->data[3].value_len = SLEN("Count");
 
 	return NSERROR_OK;
 }
@@ -197,6 +196,7 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 		return false;
 	}
 
+	e->slot = slot;
 	e->url = nsurl_ref(url);
 	e->t = data->last_visit;
 	e->entry = NULL;
@@ -215,6 +215,7 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 	} else if (gh_list[slot]->t < e->t) {
 		/* Insert at list head */
 		e->next = gh_list[slot];
+		gh_list[slot]->prev = e;
 		gh_list[slot] = e;
 	} else {
 		struct global_history_entry *prev = gh_list[slot];
@@ -247,12 +248,12 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 }
 
 static void global_history_delete_entry_internal(
-		struct global_history_entry *e,
-		int slot)
+		struct global_history_entry *e)
 {
-	if (gh_list[slot] == e) {
+	/* Unlink */
+	if (gh_list[e->slot] == e) {
 		/* e is first entry */
-		gh_list[slot] = e->next;
+		gh_list[e->slot] = e->next;
 
 		if (e->next != NULL)
 			e->next->prev = NULL;
@@ -267,8 +268,9 @@ static void global_history_delete_entry_internal(
 		e->next->prev = e->prev;
 	}
 
-	/* TODO: Delete treeview node */
-
+	/* Destroy */
+	free((void *)e->data[0].value); /* Eww */
+	nsurl_unref(e->url);
 	free(e);
 }
 
@@ -283,7 +285,6 @@ static bool global_history_add_entry(nsurl *url,
 		const struct url_data *data)
 {
 	int slot;
-	int existing_slot;
 	struct global_history_entry *e;
 	time_t visit_date;
 	time_t earliest_date = gh_ctx.today - (N_DAYS - 1) * N_SEC_PER_DAY;
@@ -307,10 +308,10 @@ static bool global_history_add_entry(nsurl *url,
 		/* The treeview for global history already exists */
 
 		/* See if there's already an entry for this URL */
-		e = global_history_find(url, &existing_slot);
+		e = global_history_find(url);
 		if (e != NULL) {
 			/* Existing entry.  Delete it. */
-			global_history_delete_entry_internal(e, existing_slot);
+			treeview_delete_node(gh_ctx.tree, e->entry);
 			return true;
 		}
 	}
@@ -374,7 +375,7 @@ static nserror global_history_initialise_entry_fields(void)
 	return NSERROR_OK;
 
 error:
-	for (i = 0; i < N_FIELDS - 1; i++)
+	for (i = 0; i < N_FIELDS; i++)
 		if (gh_ctx.fields[i].field != NULL)
 			lwc_string_unref(gh_ctx.fields[i].field);
 
@@ -422,8 +423,8 @@ static nserror global_history_initialise_time(void)
  *
  * \return true on success, false on memory exhaustion
  */
-static nserror global_history_init_dir(
-		enum global_history_folders f, const char *label, int age)
+static nserror global_history_init_dir(enum global_history_folders f,
+		const char *label, int age)
 {
 	nserror err;
 	time_t t = gh_ctx.today;
@@ -439,7 +440,7 @@ static nserror global_history_init_dir(
 		rel = TREE_REL_SIBLING_NEXT;
 	}
 
-	gh_ctx.folders[f].data.field = gh_ctx.fields[4].field;
+	gh_ctx.folders[f].data.field = gh_ctx.fields[N_FIELDS - 1].field;
 	gh_ctx.folders[f].data.value = label;
 	gh_ctx.folders[f].data.value_len = strlen(label);
 	err = treeview_create_node_folder(gh_ctx.tree,
@@ -530,6 +531,16 @@ static nserror global_history_tree_node_folder_cb(
 static nserror global_history_tree_node_entry_cb(
 		struct treeview_node_msg msg, void *data)
 {
+	struct global_history_entry *e = (struct global_history_entry *)data;
+
+	switch (msg.msg) {
+	case TREE_MSG_NODE_DELETE:
+		global_history_delete_entry_internal(e);
+		break;
+
+	case TREE_MSG_FIELD_EDIT:
+		break;
+	}
 	return NSERROR_OK;
 }
 struct treeview_callback_table tree_cb_t = {
@@ -583,6 +594,8 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 		return err;
 	}
 
+	LOG(("Building global history treeview"));
+
 	/* Add the history to the treeview */
 	err = global_history_init_entries();
 	if (err != NSERROR_OK) {
@@ -614,25 +627,17 @@ nserror global_history_fini(struct core_window_callback_table *cw_t,
 	int i;
 	nserror err;
 
+	LOG(("Finalising global history"));
+
 	/* Destroy the global history treeview */
 	err = treeview_destroy(gh_ctx.tree);
-
-	/* Free global history entry data */
-	for (i = 0; i < N_DAYS; i++) {
-		struct global_history_entry *t;
-		struct global_history_entry *e = gh_list[i];
-		while (e != NULL) {
-			t = e;
-			e = e->next;
-			nsurl_unref(t->url);
-			free(t);
-		}
-	}
 
 	/* Free global history treeview entry fields */
 	for (i = 0; i < N_FIELDS; i++)
 		if (gh_ctx.fields[i].field != NULL)
 			lwc_string_unref(gh_ctx.fields[i].field);
+
+	LOG(("Finalised global history"));
 
 	return NSERROR_OK;
 }

@@ -108,7 +108,7 @@ nserror treeview_update_node_entry(struct treeview *tree,
 		const struct treeview_field_data fields[],
 		void *data);
 
-nserror treeview_delete_node(struct treeview_node *n);
+nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n);
 
 nserror treeview_node_expand(struct treeview *tree,
 		struct treeview_node *node);
@@ -130,5 +130,25 @@ void treeview_mouse_action(struct treeview *tree,
 		browser_mouse_state mouse, int x, int y);
 
 struct treeview_node * treeview_get_root(struct treeview *tree);
+
+bool treeview_has_selection(struct treeview *tree);
+
+/**
+ * Clear any selection in a treeview
+ *
+ * \param tree	treeview to clear selection in
+ * \param rect	redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+bool treeview_clear_selection(struct treeview *tree, struct rect *rect);
+
+/**
+ * Select all in a treeview
+ *
+ * \param tree	treeview to select all in
+ * \param rect	redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+bool treeview_select_all(struct treeview *tree, struct rect *rect);
 
 #endif
