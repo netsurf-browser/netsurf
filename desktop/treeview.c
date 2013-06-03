@@ -30,6 +30,9 @@
 #define FIELD_FOLDER 0
 #define FIELD_FIRST_ENTRY 1
 
+/* TODO: get rid of REDRAW_MAX -- need to be able to know window size */
+#define REDRAW_MAX 8000
+
 struct treeview_globals {
 	int line_height;
 	int furniture_width;
@@ -1028,7 +1031,7 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
 
 	rect->x0 = 0;
 	rect->y0 = 0;
-	rect->x1 = INT_MAX;
+	rect->x1 = REDRAW_MAX;
 	rect->y1 = 0;
 
 	sw.purpose = TREEVIEW_WALK_CLEAR_SELECTION;
@@ -1048,7 +1051,7 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect)
 
 	rect->x0 = 0;
 	rect->y0 = 0;
-	rect->x1 = INT_MAX;
+	rect->x1 = REDRAW_MAX;
 	rect->y1 = 0;
 
 	sw.purpose = TREEVIEW_WALK_SELECT_ALL;
@@ -1083,7 +1086,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node,
 	nserror err;
 
 	r.x0 = 0;
-	r.x1 = INT_MAX;
+	r.x1 = REDRAW_MAX;
 
 	height = (node->type == TREE_NODE_ENTRY) ? node->height :
 			tree_g.line_height;
@@ -1108,7 +1111,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node,
 		}
 		redraw = true;
 		r.y0 = ma->current_y;
-		r.y1 = INT_MAX;
+		r.y1 = REDRAW_MAX;
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED)) {
