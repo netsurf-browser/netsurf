@@ -244,8 +244,7 @@ static void treeview_test_redraw(struct tree *tree, int x, int y,
 	clip.y0 = clip_y;
 	clip.x1 = clip_x + clip_width;
 	clip.y1 = clip_y + clip_height;
-LOG(("x:%i, y:%i, clip x0:%i, clip y0:%i, clip x1:%i, clip y1:%i\n",
-		x, y, clip.x0, clip.y0, clip.x1, clip.y1));
+
 	global_history_redraw(x, y, &clip, ctx);
 }
 
