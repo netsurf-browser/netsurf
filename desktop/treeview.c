@@ -756,7 +756,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	int render_y = 0;
 	int x0, y0, y1;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
-	enum treeview_resource_id res;
+	enum treeview_resource_id res = TREE_RES_CONTENT;
 	plot_style_t *bg;
 	plot_font_style_t *text;
 	int height;
@@ -823,6 +823,8 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		assert(node != NULL);
 		assert(node != root);
+		assert(node->type == TREE_NODE_FOLDER ||
+				node->type == TREE_NODE_ENTRY);
 
 		count++;
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
@@ -945,7 +947,8 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	if (render_y < clip->y1) {
 		/* Fill the blank area at the bottom */
 		y0 = render_y;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1, bg);
+		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1,
+				&plot_style_even.bg);
 		
 	}
 
