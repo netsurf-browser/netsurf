@@ -858,7 +858,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		if (node->type == TREE_NODE_ENTRY)
 			res = TREE_RES_CONTENT;
 		else if (node->type == TREE_NODE_FOLDER)
-			res = TREE_NODE_FOLDER;
+			res = TREE_RES_FOLDER;
 
 		if (treeview_res[res].ready) {
 			/* Icon resource is available */
