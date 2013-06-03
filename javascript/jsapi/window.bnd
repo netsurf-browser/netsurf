@@ -252,6 +252,9 @@ api init %{
 	/* add properties to prototype */
 	if (!JS_DefineProperties(cx, prototype, jsclass_properties))
 		return NULL;
+
+	/* as the global just got changed, force a GC run */
+	JS_GC(cx);
 %}
 
 api new %{
