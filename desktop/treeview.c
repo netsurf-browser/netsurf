@@ -821,7 +821,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
 				tree_g.line_height;
 
-		if ((render_y + tree_g.line_height) < r.y0) {
+		if ((render_y + height) < r.y0) {
 			/* This node's line is above clip region */
 			render_y += height;
 			continue;
