@@ -378,6 +378,11 @@ getter self %{
 	jsret = obj;
 %}
 
+/* very iffy implementation */
+getter top %{
+	jsret = obj;
+%}
+
 getter EventHandler %{
 	/* this implementation is unique to the window object as it is
 	 * not a dom node.
