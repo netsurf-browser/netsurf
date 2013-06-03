@@ -144,7 +144,7 @@ static nserror global_history_create_treeview_field_data(
 
 	e->data[2].field = gh_ctx.fields[2].field;
 	e->data[2].value = "Date time";
-	e->data[2].value_len = SLEN("Last visited");
+	e->data[2].value_len = SLEN("Date time");
 
 	e->data[3].field = gh_ctx.fields[3].field;
 	e->data[3].value = "Count";
