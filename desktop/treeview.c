@@ -753,7 +753,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	struct rect r;
 	int inset = tree_g.window_padding - tree_g.step_width;
 	uint32_t count = 0;
-	int render_y = 0;
+	int render_y = y;
 	int x0, y0, y1;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
 	enum treeview_resource_id res = TREE_RES_CONTENT;
@@ -821,7 +821,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
 				tree_g.line_height;
 
-		if ((render_y + tree_g.line_height) < clip->y0) {
+		if ((render_y + tree_g.line_height) < r.y0) {
 			/* This node's line is above clip region */
 			render_y += height;
 			continue;
@@ -879,7 +879,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		/* Rendered the node */
 		render_y += tree_g.line_height;
-		if (render_y > clip->y1) {
+		if (render_y > r.y1) {
 			/* Passed the bottom of what's in the clip region.
 			 * Done. */
 			break;
@@ -926,14 +926,14 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		/* Finshed rendering expanded entry */
 
-		if (render_y > clip->y1) {
+		if (render_y > r.y1) {
 			/* Passed the bottom of what's in the clip region.
 			 * Done. */
 			break;
 		}
 	}
 
-	if (render_y < clip->y1) {
+	if (render_y < r.y1) {
 		/* Fill the blank area at the bottom */
 		y0 = render_y;
 		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1,
