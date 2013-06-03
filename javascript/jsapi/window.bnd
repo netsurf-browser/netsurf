@@ -171,7 +171,6 @@ binding window {
 
 api mark %{
 
-	LOG(("jscontext:%p jsobject:%p private:%p", JSAPI_MARKCX, obj, private));
 	if (private != NULL) {
 		if (private->prototype_Document != NULL) {
 			JSAPI_GCMARK(private->prototype_Document);
