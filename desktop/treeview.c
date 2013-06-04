@@ -1078,11 +1078,16 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 	struct treeview_mouse_action *ma = ctx;
 	struct rect r;
 	bool redraw = false;
+	bool click;
 	int height;
 	enum {
 		TV_NODE_ACTION_NONE		= 0,
 		TV_NODE_ACTION_SELECTION	= (1 << 0)
 	} action = TV_NODE_ACTION_NONE;
+	enum {
+		TV_NODE_SECTION_TOGGLE,
+		TV_NODE_SECTION_NODE
+	} section = TV_NODE_SECTION_NODE;
 	nserror err;
 
 	r.x0 = 0;
@@ -1097,24 +1102,41 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		return false; /* Don't want to abort tree walk */
 	}
 
-	if ((ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) &&
-			(ma->mouse & BROWSER_MOUSE_CLICK_1)) {
+	/* Find where the mouse is */
+	if (ma->x >= node->inset - 1 &&
+			ma->x < node->inset + tree_g.step_width) {
+		section = TV_NODE_SECTION_TOGGLE;
+	}
+
+	click = ma->mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2);
+
+	if (((node->type == TREE_NODE_FOLDER) &&
+			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) ||
+			(section == TV_NODE_SECTION_TOGGLE && click)) {
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
-		/* TODO: launch callback for entry */
-		/* TODO: for now expand/collapse both directories and entries */
 		if (node->flags & TREE_NODE_EXPANDED) {
 			err = treeview_node_contract(ma->tree, node);
 		} else {
 			err = treeview_node_expand(ma->tree, node);
 		}
 		redraw = true;
-		r.y0 = ma->current_y;
+		if (r.y0 > ma->current_y)
+			r.y0 = ma->current_y;
 		r.y1 = REDRAW_MAX;
 
+	} else if ((node->type == TREE_NODE_ENTRY) &&
+			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) {
+		/* Clear any existing selection */
+		redraw |= treeview_clear_selection(ma->tree, &r);
+
+		/* Tell client an entry was launched */
+		/* TODO */
+
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
-			!(node->flags & TREE_NODE_SELECTED)) {
+			!(node->flags & TREE_NODE_SELECTED) &&
+			section != TV_NODE_SECTION_TOGGLE) {
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
