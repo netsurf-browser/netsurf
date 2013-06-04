@@ -199,7 +199,7 @@ static inline void treeview_insert_node(struct treeview_node *a,
 	assert(b != NULL);
 
 	switch (rel) {
-	case TREE_REL_CHILD:
+	case TREE_REL_FIRST_CHILD:
 		assert(b->type != TREE_NODE_ENTRY);
 		a->parent = b;
 		a->sibling_next = b->children;
@@ -208,7 +208,7 @@ static inline void treeview_insert_node(struct treeview_node *a,
 		b->children = a;
 		break;
 
-	case TREE_REL_SIBLING_NEXT:
+	case TREE_REL_NEXT_SIBLING:
 		assert(b->type != TREE_NODE_ROOT);
 		a->sibling_prev = b;
 		a->sibling_next = b->sibling_next;
@@ -261,7 +261,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 
 	if (relation == NULL) {
 		relation = tree->root;
-		rel = TREE_REL_CHILD;
+		rel = TREE_REL_FIRST_CHILD;
 	}
 
 	n = malloc(sizeof(struct treeview_node));
@@ -372,7 +372,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 
 	if (relation == NULL) {
 		relation = tree->root;
-		rel = TREE_REL_CHILD;
+		rel = TREE_REL_FIRST_CHILD;
 	}
 
 	e = malloc(sizeof(struct treeview_node_entry) +

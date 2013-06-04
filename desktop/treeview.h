@@ -33,8 +33,8 @@ struct treeview;
 struct treeview_node;
 
 enum treeview_relationship {
-	TREE_REL_CHILD,
-	TREE_REL_SIBLING_NEXT
+	TREE_REL_FIRST_CHILD,
+	TREE_REL_NEXT_SIBLING
 };
 
 enum treeview_msg {

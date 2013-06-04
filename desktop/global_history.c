@@ -175,7 +175,7 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
 	}
 
 	err = treeview_create_node_entry(gh_ctx.tree, &(e->entry),
-			parent, TREE_REL_CHILD, e->data, e);
+			parent, TREE_REL_FIRST_CHILD, e->data, e);
 	if (err != NSERROR_OK) {
 		return err;
 	}
@@ -429,7 +429,7 @@ static nserror global_history_init_dir(enum global_history_folders f,
 	nserror err;
 	time_t t = gh_ctx.today;
 	struct treeview_node *relation = NULL;
-	enum treeview_relationship rel = TREE_REL_CHILD;
+	enum treeview_relationship rel = TREE_REL_FIRST_CHILD;
 
 	t -= age * N_SEC_PER_DAY;
 
@@ -437,7 +437,7 @@ static nserror global_history_init_dir(enum global_history_folders f,
 
 	if (f != GH_TODAY) {
 		relation = gh_ctx.folders[f - 1].folder;
-		rel = TREE_REL_SIBLING_NEXT;
+		rel = TREE_REL_NEXT_SIBLING;
 	}
 
 	gh_ctx.folders[f].data.field = gh_ctx.fields[N_FIELDS - 1].field;
