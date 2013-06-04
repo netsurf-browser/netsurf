@@ -546,7 +546,10 @@ static nserror global_history_tree_node_entry_cb(
 		global_history_delete_entry_internal(e);
 		break;
 
-	case TREE_MSG_FIELD_EDIT:
+	case TREE_MSG_NODE_EDIT:
+		break;
+
+	case TREE_MSG_NODE_LAUNCH:
 		break;
 	}
 	return NSERROR_OK;
