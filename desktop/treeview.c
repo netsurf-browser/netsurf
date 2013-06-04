@@ -109,9 +109,11 @@ struct treeview {
 struct treeview_node_style {
 	plot_style_t bg;		/**< Background */
 	plot_font_style_t text;		/**< Text */
+	plot_font_style_t itext;	/**< Entry field text */
 
 	plot_style_t sbg;		/**< Selected background */
 	plot_font_style_t stext;	/**< Selected text */
+	plot_font_style_t sitext;	/**< Selected entry field text */
 };
 
 struct treeview_node_style plot_style_odd;
@@ -757,8 +759,9 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	int x0, y0, y1;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
 	enum treeview_resource_id res = TREE_RES_CONTENT;
-	plot_style_t *bg;
-	plot_font_style_t *text;
+	plot_style_t *bg_style;
+	plot_font_style_t *text_style;
+	plot_font_style_t *infotext_style;
 	int height;
 
 	assert(tree != NULL);
@@ -828,29 +831,31 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 
 		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
 		if (node->flags & TREE_NODE_SELECTED) {
-			bg = &style->sbg;
-			text = &style->stext;
+			bg_style = &style->sbg;
+			text_style = &style->stext;
+			infotext_style = &style->sitext;
 		} else {
-			bg = &style->bg;
-			text = &style->text;
+			bg_style = &style->bg;
+			text_style = &style->text;
+			infotext_style = &style->itext;
 		}
 
 		/* Render background */
 		y0 = render_y;
 		y1 = render_y + height;
-		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg);
+		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg_style);
 
 		/* Render toggle */
 		if (node->flags & TREE_NODE_EXPANDED) {
 			new_ctx.plot->text(inset, render_y + baseline,
 					treeview_furn[TREE_FURN_CONTRACT].data,
 					treeview_furn[TREE_FURN_CONTRACT].len,
-					text);
+					text_style);
 		} else {
 			new_ctx.plot->text(inset, render_y + baseline,
 					treeview_furn[TREE_FURN_EXPAND].data,
 					treeview_furn[TREE_FURN_EXPAND].len,
-					text);
+					text_style);
 		}
 
 		/* Render icon */
@@ -864,7 +869,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 			data.x = inset + tree_g.step_width;
 			data.y = render_y + ((tree_g.line_height -
 					treeview_res[res].height + 1) / 2);
-			data.background_colour = style->bg.fill_colour;
+			data.background_colour = bg_style->fill_colour;
 
 			content_redraw(treeview_res[res].c,
 					&data, &r, &new_ctx);
@@ -874,7 +879,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		x0 = inset + tree_g.step_width + tree_g.icon_step;
 		new_ctx.plot->text(x0, render_y + baseline,
 				node->text.value.data, node->text.value.len,
-				text);
+				text_style);
 
 		/* Rendered the node */
 		render_y += tree_g.line_height;
@@ -904,18 +909,18 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 						render_y + baseline,
 						ef->value.data,
 						ef->value.len,
-						text);
+						infotext_style);
 
 				new_ctx.plot->text(x0 + max_width,
 						render_y + baseline,
 						entry->fields[i].value.data,
 						entry->fields[i].value.len,
-						text);
+						infotext_style);
 			} else {
 				new_ctx.plot->text(x0, render_y + baseline,
 						entry->fields[i].value.data,
 						entry->fields[i].value.len,
-						text);
+						infotext_style);
 
 			}
 
@@ -1190,6 +1195,12 @@ static void treeview_init_plot_styles(int font_pt_size)
 	plot_style_even.text.foreground = gui_system_colour_char("WindowText");
 	plot_style_even.text.background = gui_system_colour_char("Window");
 
+	/* Entry field text colour */
+	plot_style_even.itext = plot_style_even.text;
+	plot_style_even.itext.foreground = mix_colour(
+			plot_style_even.text.foreground,
+			plot_style_even.text.background, 255 * 10 / 16);
+
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
 	plot_style_even.sbg.fill_colour = gui_system_colour_char("Highlight");
@@ -1200,6 +1211,12 @@ static void treeview_init_plot_styles(int font_pt_size)
 			gui_system_colour_char("HighlightText");
 	plot_style_even.stext.background = gui_system_colour_char("Highlight");
 
+	/* Selected entry field text colour */
+	plot_style_even.sitext = plot_style_even.stext;
+	plot_style_even.sitext.foreground = mix_colour(
+			plot_style_even.stext.foreground,
+			plot_style_even.stext.background, 255 * 25 / 32);
+
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
@@ -1208,9 +1225,14 @@ static void treeview_init_plot_styles(int font_pt_size)
 			plot_style_even.text.foreground, 255 * 15 / 16);
 	plot_style_odd.text = plot_style_even.text;
 	plot_style_odd.text.background = plot_style_odd.bg.fill_colour;
+	plot_style_odd.itext = plot_style_odd.text;
+	plot_style_odd.itext.foreground = mix_colour(
+			plot_style_odd.text.foreground,
+			plot_style_odd.text.background, 255 * 10 / 16);
 
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
+	plot_style_odd.sitext = plot_style_even.sitext;
 }
 
 
