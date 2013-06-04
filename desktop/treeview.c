@@ -1121,7 +1121,9 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		/* Select node */
 		action |= TV_NODE_ACTION_SELECTION;
 
-	} else if (ma->mouse & BROWSER_MOUSE_PRESS_2) {
+	} else if (ma->mouse & BROWSER_MOUSE_PRESS_2 ||
+			(ma->mouse & BROWSER_MOUSE_PRESS_1 &&
+			 ma->mouse & BROWSER_MOUSE_MOD_2)) {
 		/* Toggle selection of node */
 		action |= TV_NODE_ACTION_SELECTION;
 	}
