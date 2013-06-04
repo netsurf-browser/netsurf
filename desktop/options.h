@@ -56,6 +56,9 @@ NSOPTION_STRING(http_proxy_auth_user, NULL)
 /** Proxy authentication password */
 NSOPTION_STRING(http_proxy_auth_pass, NULL)
 
+/** Proxy omission list */
+NSOPTION_STRING(http_proxy_noproxy, "localhost")
+
 /** Default font size / 0.1pt. */
 NSOPTION_INTEGER(font_size, 128)
 
