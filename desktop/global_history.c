@@ -594,8 +594,6 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 		return err;
 	}
 
-	LOG(("Building global history treeview"));
-
 	/* Add the history to the treeview */
 	err = global_history_init_entries();
 	if (err != NSERROR_OK) {
