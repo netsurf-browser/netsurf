@@ -39,19 +39,19 @@ enum treeview_relationship {
 
 enum treeview_msg {
 	TREE_MSG_NODE_DELETE,
-	TREE_MSG_FIELD_EDIT
+	TREE_MSG_NODE_EDIT,
+	TREE_MSG_NODE_LAUNCH
 };
 struct treeview_node_msg {
 	enum treeview_msg msg; /**< The message type */
 	union {
 		struct {
-			struct treeview_node *node;
-		} node_delete;
+			lwc_string *feild; /* The field being edited */
+			const char *text;  /* The proposed new value */
+		} node_edit; /* Client may call treeview_update_node_* */
 		struct {
-			struct treeview_node *node;
-			lwc_string *feild;
-			const char *text;
-		} field_edit;
+			browser_mouse_state mouse; /* Button / modifier used */
+		} node_launch;
 	} data; /**< The message data. */
 };
 

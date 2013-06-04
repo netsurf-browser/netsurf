@@ -428,7 +428,6 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 {
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
-	msg.data.node_delete.node = n;
 
 	/* Destroy children first */
 	while (n->children != NULL) {
@@ -1116,11 +1115,14 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
+		/* Toggle node expansion */
 		if (node->flags & TREE_NODE_EXPANDED) {
 			err = treeview_node_contract(ma->tree, node);
 		} else {
 			err = treeview_node_expand(ma->tree, node);
 		}
+
+		/* Set up redraw */
 		redraw = true;
 		if (r.y0 > ma->current_y)
 			r.y0 = ma->current_y;
@@ -1128,11 +1130,15 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 
 	} else if ((node->type == TREE_NODE_ENTRY) &&
 			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) {
+		struct treeview_node_msg msg;
+		msg.msg = TREE_MSG_NODE_LAUNCH;
+		msg.data.node_launch.mouse = ma->mouse;
+
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
 		/* Tell client an entry was launched */
-		/* TODO */
+		tree->callbacks->entry(msg, n->client_data);
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED) &&
