@@ -620,8 +620,11 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, nsoption_charp(http_proxy_host));
 		SETOPT(CURLOPT_PROXYPORT, (long) nsoption_int(http_proxy_port));
 
+#if LIBCURL_VERSION_NUM >= 0x071304
+		/* Added in 7.19.4 */
 		/* setup the omission list */
 		SETOPT(CURLOPT_NOPROXY, nsoption_charp(http_proxy_noproxy));
+#endif
 
 		if (nsoption_int(http_proxy_auth) != OPTION_HTTP_PROXY_AUTH_NONE) {
 			SETOPT(CURLOPT_PROXYAUTH,
