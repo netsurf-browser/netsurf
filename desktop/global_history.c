@@ -508,14 +508,22 @@ static nserror global_history_init_entries(void)
 
 	/* Itterate over all global history data, inserting it into treeview */
 	for (i = 0; i < N_DAYS; i++) {
+		struct global_history_entry *l = NULL;
 		struct global_history_entry *e = gh_list[i];
-		
+
+		/* Insert in reverse order; find last */
 		while (e != NULL) {
-			err = global_history_entry_insert(e, i);
+			l = e;
+			e = e->next;
+		}
+
+		/* Insert the entries into the treeview */
+		while (l != NULL) {
+			err = global_history_entry_insert(l, i);
 			if (err != NSERROR_OK) {
 				return err;
 			}
-			e = e->next;
+			l = l->prev;
 		}
 	}
 
