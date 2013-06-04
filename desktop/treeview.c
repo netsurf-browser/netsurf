@@ -28,9 +28,6 @@
 #include "render/font.h"
 #include "utils/log.h"
 
-#define FIELD_FOLDER 0
-#define FIELD_FIRST_ENTRY 1
-
 /* TODO: get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000
 
@@ -1138,7 +1135,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
 		/* Tell client an entry was launched */
-		tree->callbacks->entry(msg, n->client_data);
+		ma->tree->callbacks->entry(msg, node->client_data);
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED) &&
