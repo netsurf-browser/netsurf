@@ -73,6 +73,7 @@ struct treeview_node {
 	enum treeview_node_type type;
 
 	int height;
+	int inset;
 
 	struct treeview_node *parent;
 	struct treeview_node *sibling_prev;
@@ -160,6 +161,7 @@ static nserror treeview_create_node_root(struct treeview_node **root)
 	n->type = TREE_NODE_ROOT;
 
 	n->height = 0;
+	n->inset = tree_g.window_padding - tree_g.step_width;
 
 	n->text.flags = TREE_FLAG_NONE;
 	n->text.field = NULL;
@@ -220,6 +222,8 @@ static inline void treeview_insert_node(struct treeview_node *a,
 	}
 
 	assert(a->parent != NULL);
+
+	a->inset = a->parent->inset + tree_g.step_width;
 
 	if (a->parent->flags & TREE_NODE_EXPANDED) {
 		/* Parent is expanded, so inserted node will be visible and
@@ -560,12 +564,10 @@ nserror treeview_destroy(struct treeview *tree)
  * \return true iff callback caused premature abort
  */
 static bool treeview_walk_internal(struct treeview_node *root, bool full,
-		bool (*callback)(struct treeview_node *node,
-				int inset, void *ctx),
+		bool (*callback)(struct treeview_node *node, void *ctx),
 		void *ctx)
 {
 	struct treeview_node *node, *next;
-	int inset = tree_g.window_padding - tree_g.step_width;
 
 	node = root;
 
@@ -576,7 +578,6 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 		if (next != NULL) {
 			/* Down to children */
 			node = next;
-			inset += tree_g.step_width;
 		} else {
 			/* No children.  As long as we're not at the root,
 			 * go to next sibling if present, or nearest ancestor
@@ -585,7 +586,6 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 			while (node != root &&
 					node->sibling_next == NULL) {
 				node = node->parent;
-				inset -= tree_g.step_width;
 			}
 
 			if (node == root)
@@ -597,7 +597,7 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 		assert(node != NULL);
 		assert(node != root);
 
-		if (callback(node, inset, ctx)) {
+		if (callback(node, ctx)) {
 			/* callback caused early termination */
 			return true;
 		}
@@ -688,8 +688,7 @@ nserror treeview_node_expand(struct treeview *tree,
 }
 
 
-static bool treeview_node_contract_cb(struct treeview_node *node, int inset,
-		void *ctx)
+static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
 {
 	int height_reduction;
 
@@ -729,7 +728,7 @@ nserror treeview_node_contract(struct treeview *tree,
 	treeview_walk_internal(node, false, treeview_node_contract_cb, NULL);
 
 	/* Contract node */
-	treeview_node_contract_cb(node, 0, NULL);
+	treeview_node_contract_cb(node, NULL);
 
 	return NSERROR_OK;
 }
@@ -752,9 +751,9 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	struct treeview_node_style *style = &plot_style_odd;
 	struct content_redraw_data data;
 	struct rect r;
-	int inset = tree_g.window_padding - tree_g.step_width;
 	uint32_t count = 0;
 	int render_y = y;
+	int inset;
 	int x0, y0, y1;
 	int baseline = (tree_g.line_height * 3 + 2) / 4;
 	enum treeview_resource_id res = TREE_RES_CONTENT;
@@ -795,7 +794,6 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		if (next != NULL) {
 			/* down to children */
 			node = next;
-			inset += tree_g.step_width;
 		} else {
 			/* No children.  As long as we're not at the root,
 			 * go to next sibling if present, or nearest ancestor
@@ -804,7 +802,6 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 			while (node != root &&
 					node->sibling_next == NULL) {
 				node = node->parent;
-				inset -= tree_g.step_width;
 			}
 
 			if (node == root)
@@ -819,6 +816,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 				node->type == TREE_NODE_ENTRY);
 
 		count++;
+		inset = node->inset;
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
 				tree_g.line_height;
 
@@ -963,7 +961,7 @@ struct treeview_selection_walk_data {
 	int current_y;
 };
 static bool treeview_node_selection_walk_cb(struct treeview_node *node,
-		int inset, void *ctx)
+		void *ctx)
 {
 	struct treeview_selection_walk_data *sw = ctx;
 	int height;
@@ -1070,8 +1068,7 @@ struct treeview_mouse_action {
 	int y;
 	int current_y;
 };
-static bool treeview_node_mouse_action_cb(struct treeview_node *node,
-		int inset, void *ctx)
+static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 {
 	struct treeview_mouse_action *ma = ctx;
 	struct rect r;
