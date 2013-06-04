@@ -134,9 +134,11 @@ static nserror global_history_create_treeview_field_data(
 		struct global_history_entry *e,
 		const struct url_data *data)
 {
+	const char *title = (data->title != NULL) ? data->title : "<No title>";
+
 	e->data[0].field = gh_ctx.fields[0].field;
-	e->data[0].value = strdup(data->title);
-	e->data[0].value_len = strlen(data->title);
+	e->data[0].value = strdup(title);
+	e->data[0].value_len = strlen(title);
 
 	e->data[1].field = gh_ctx.fields[1].field;
 	e->data[1].value = nsurl_access(e->url);
