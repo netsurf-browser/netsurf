@@ -1120,10 +1120,10 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		}
 
 		/* Set up redraw */
-		redraw = true;
-		if (r.y0 > ma->current_y)
+		if (!redraw || r.y0 > ma->current_y)
 			r.y0 = ma->current_y;
 		r.y1 = REDRAW_MAX;
+		redraw = true;
 
 	} else if ((node->type == TREE_NODE_ENTRY) &&
 			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) {
