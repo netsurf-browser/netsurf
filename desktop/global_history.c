@@ -135,22 +135,39 @@ static nserror global_history_create_treeview_field_data(
 		const struct url_data *data)
 {
 	const char *title = (data->title != NULL) ? data->title : "<No title>";
+	char buffer[16];
+	const char *last_visited;
+	char *last_visited2;
+	int len;
 
 	e->data[0].field = gh_ctx.fields[0].field;
 	e->data[0].value = strdup(title);
-	e->data[0].value_len = strlen(title);
+	e->data[0].value_len = (e->data[0].value != NULL) ? strlen(title) : 0;
 
 	e->data[1].field = gh_ctx.fields[1].field;
 	e->data[1].value = nsurl_access(e->url);
 	e->data[1].value_len = nsurl_length(e->url);
 
+	last_visited = ctime(&data->last_visit);
+	last_visited2 = strdup(last_visited);
+	if (last_visited2 != NULL) {
+		assert(last_visited2[24] == '\n');
+		last_visited2[24] = '\0';
+	}
+
 	e->data[2].field = gh_ctx.fields[2].field;
-	e->data[2].value = "Date time";
-	e->data[2].value_len = SLEN("Date time");
+	e->data[2].value = last_visited2;
+	e->data[2].value_len = (last_visited2 != NULL) ? 24 : 0;
+
+	len = snprintf(buffer, 16, "%u", data->visits);
+	if (len == 16) {
+		len--;
+		buffer[len] = '\0';
+	}
 
 	e->data[3].field = gh_ctx.fields[3].field;
-	e->data[3].value = "Count";
-	e->data[3].value_len = SLEN("Count");
+	e->data[3].value = strdup(buffer);
+	e->data[3].value_len = len;
 
 	return NSERROR_OK;
 }
@@ -272,6 +289,8 @@ static void global_history_delete_entry_internal(
 
 	/* Destroy */
 	free((void *)e->data[0].value); /* Eww */
+	free((void *)e->data[2].value); /* Eww */
+	free((void *)e->data[3].value); /* Eww */
 	nsurl_unref(e->url);
 	free(e);
 }
