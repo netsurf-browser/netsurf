@@ -2182,11 +2182,13 @@ en.gtk.preferencesProxyType:Proxy type
 en.gtk.preferencesProxyHost:Host
 en.gtk.preferencesProxyUsername:Username
 en.gtk.preferencesProxyPassword:Password
+en.gtk.preferencesProxyNoproxy:No Proxy For
 en.gtk.preferencesProxyTypeTooltip:The type of HTTP proxy server.
 en.gtk.preferencesProxyHostTooltip:Host name of your proxy server.
 en.gtk.preferencesProxyPortTooltip:Port number to connect to on proxy server.
-en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy
-en.gtk.preferencesProxyPasswordTooltip:Password to access the proxy
+en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy.
+en.gtk.preferencesProxyPasswordTooltip:Password to access the proxy.
+en.gtk.preferencesProxyNoproxyTooltip:Comma separated list of host names that should not be proxied.
 en.gtk.preferencesFetching:<b>Fetching</b>
 en.gtk.preferencesFetchingMax:Maximum fetchers
 en.gtk.preferencesFetchingPerhost:Fetches per host

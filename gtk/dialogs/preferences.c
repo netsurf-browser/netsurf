@@ -45,6 +45,7 @@ struct ppref {
 	GtkEntry *entryProxyHost;
 	GtkEntry *entryProxyUser;
 	GtkEntry *entryProxyPassword;
+	GtkEntry *entryProxyNoproxy;
 	GtkSpinButton *spinProxyPort;
 
 	/* dynamic list stores */
@@ -200,6 +201,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 	gboolean port;
 	gboolean user;
 	gboolean pass;
+	gboolean noproxy;
 
 	switch (proxyval) {
 	case 0: /* no proxy */
@@ -207,6 +209,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = FALSE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = FALSE;
 		break;
 
 	case 1: /* proxy with no auth */
@@ -214,6 +217,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = TRUE;
 		break;
 
 	case 2: /* proxy with basic auth */
@@ -221,6 +225,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = TRUE;
 		pass = TRUE;
+		noproxy = TRUE;
 		break;
 
 	case 3: /* proxy with ntlm auth */
@@ -228,6 +233,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = TRUE;
 		pass = TRUE;
+		noproxy = TRUE;
 		break;
 
 	case 4: /* system proxy */
@@ -235,6 +241,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = FALSE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = FALSE;
 		break;
 
 	default:
@@ -245,6 +252,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->spinProxyPort), port);
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyUser), user);
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyPassword), pass);
+	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyNoproxy), noproxy);
 
 }
 
@@ -321,6 +329,9 @@ ENTRY_SIGNALS(entryProxyUser, http_proxy_auth_user)
 
 /* password */
 ENTRY_SIGNALS(entryProxyPassword, http_proxy_auth_pass)
+
+/* no proxy */
+ENTRY_SIGNALS(entryProxyNoproxy, http_proxy_noproxy)
 
 /* Fetching */
 
@@ -1069,6 +1080,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	priv->spinProxyPort = GB(SPIN_BUTTON, spinProxyPort);
 	priv->entryProxyUser = GB(ENTRY, entryProxyUser);
 	priv->entryProxyPassword = GB(ENTRY, entryProxyPassword);
+	priv->entryProxyNoproxy = GB(ENTRY, entryProxyNoproxy);
 #undef GB
 
 	/* connect all signals ready to use */
