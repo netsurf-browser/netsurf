@@ -159,32 +159,6 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 		}
 	}
 
-	if((GadToolsBase->lib_Version > 53) ||
-		((GadToolsBase->lib_Version == 53) && (GadToolsBase->lib_Revision >= 5))) {
-		/* GadTools 53.5+ only. For now we will only create the menu
-			using label.image if there's a bitmap associated with the item. */
-		if(bm != NULL) {
-			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-			struct BitMap *menu_icon = ami_bitmap_get_native(bm, 16, 16, NULL);
-
-			gwin->menuobj[num] = LabelObject,
-				LABEL_DrawInfo, dri,
-				LABEL_DisposeImage, TRUE,
-				LABEL_Image, BitMapObject,
-					BITMAP_Screen, scrn,
-					BITMAP_BitMap, menu_icon,
-					BITMAP_Width, 16,
-					BITMAP_Height, 16,
-				BitMapEnd,
-				LABEL_Text, gwin->menulab[num],
-			LabelEnd;
-
-			gwin->menutype[num] |= MENU_IMAGE;
-
-			FreeScreenDrawInfo(scrn, dri);
-		}
-	}
-
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
