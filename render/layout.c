@@ -2911,7 +2911,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		if ((d->type == BOX_INLINE && d->inline_end) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
-				d->type == BOX_INLINE_END) {
+				d->type == BOX_INLINE_END ||
+				d->object != NULL) {
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 			switch (css_computed_vertical_align(d->style, &value,
