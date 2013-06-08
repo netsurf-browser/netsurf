@@ -5475,6 +5475,11 @@ de.all.Proxy:HTTP Proxy
 fr.all.Proxy:HTTP Proxy
 it.all.Proxy:Proxy HTTP
 nl.all.Proxy:HTTP Proxy
+en.ami.ProxyBypass:Bypass proxy for
+de.ami.ProxyBypass:Bypass proxy for
+fr.ami.ProxyBypass:Bypass proxy for
+it.ami.ProxyBypass:Bypass proxy for
+nl.ami.ProxyBypass:Bypass proxy for
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
 fr.all.Fetching:Fetching

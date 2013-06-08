@@ -96,6 +96,7 @@ enum
 	GID_OPTS_PROXY_PORT,
 	GID_OPTS_PROXY_USER,
 	GID_OPTS_PROXY_PASS,
+	GID_OPTS_PROXY_BYPASS,
 	GID_OPTS_FETCHMAX,
 	GID_OPTS_FETCHHOST,
 	GID_OPTS_FETCHCACHE,
@@ -278,6 +279,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_PROXY_HOST] = (char *)ami_utf8_easy((char *)messages_get("Host"));
 	gadlab[GID_OPTS_PROXY_USER] = (char *)ami_utf8_easy((char *)messages_get("Username"));
 	gadlab[GID_OPTS_PROXY_PASS] = (char *)ami_utf8_easy((char *)messages_get("Password"));
+	gadlab[GID_OPTS_PROXY_BYPASS] = (char *)ami_utf8_easy((char *)messages_get("ProxyBypass"));
 	gadlab[GID_OPTS_FETCHMAX] = (char *)ami_utf8_easy((char *)messages_get("FetchesMax"));
 	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesHost"));
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
@@ -401,7 +403,7 @@ void ami_gui_opts_open(void)
 	ULONG screenmodeid = 0;
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
-	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
+	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
@@ -441,7 +443,7 @@ void ami_gui_opts_open(void)
 		screenmodeid = strtoul(nsoption_charp(screen_modeid),NULL,0);
 	}
 
-	if(nsoption_bool(http_proxy))
+	if(nsoption_bool(http_proxy) == true)
 	{
 		proxytype = nsoption_int(http_proxy_auth) + 1;
 		switch(nsoption_int(http_proxy_auth))
@@ -453,6 +455,8 @@ void ami_gui_opts_open(void)
 				proxyhostdisabled = FALSE;
 			break;
 		}
+	} else {
+		proxybypassdisabled = TRUE;
 	}
 
 	sprintf(animspeed,"%.2f",(float)(nsoption_int(minimum_gif_delay)/100.0));
@@ -818,6 +822,16 @@ void ami_gui_opts_open(void)
 									StringEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_PROXY_PASS],
+									LabelEnd,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_BYPASS] = StringObject,
+										GA_ID, GID_OPTS_PROXY_BYPASS,
+										GA_RelVerify, TRUE,
+										GA_Disabled, proxybypassdisabled,
+										STRINGA_TextVal, nsoption_charp(http_proxy_noproxy),
+										STRINGA_BufferPos, 0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY_BYPASS],
 									LabelEnd,
 								LayoutEnd, // proxy
 								CHILD_WeightedHeight, 0,
@@ -1642,6 +1656,9 @@ void ami_gui_opts_use(bool save)
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_PASS],(ULONG *)&data);
 	nsoption_set_charp(http_proxy_auth_pass, (char *)strdup((char *)data));
 
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_BYPASS],(ULONG *)&data);
+	nsoption_set_charp(http_proxy_noproxy, (char *)strdup((char *)data));
+
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&nsoption_int(max_fetchers));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&nsoption_int(max_cached_fetch_handles));
@@ -2013,6 +2030,8 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 							case 1:
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_HOST],
@@ -2024,6 +2043,8 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 
 							case 2:
@@ -2036,6 +2057,8 @@ BOOL ami_gui_opts_event(void)
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_USER],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}
