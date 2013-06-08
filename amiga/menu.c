@@ -192,8 +192,10 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 			ami_menu_item_project_save, (void *)AMINS_SAVE_TEXT);
 	ami_menu_alloc_item(gwin, M_SAVECOMP,  NM_SUB, "SaveCompNS",    0, NULL,
 			ami_menu_item_project_save, (void *)AMINS_SAVE_COMPLETE);
+#ifdef WITH_PDF_EXPORT
 	ami_menu_alloc_item(gwin, M_SAVEPDF,   NM_SUB, "PDFNS",         0, NULL,
 			ami_menu_item_project_save, (void *)AMINS_SAVE_PDF);
+#endif
 	ami_menu_alloc_item(gwin, M_SAVEIFF,   NM_SUB, "IFF",           0, NULL,
 			ami_menu_item_project_save, (void *)AMINS_SAVE_IFF);
 	ami_menu_alloc_item(gwin, M_BAR_P2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
@@ -317,9 +319,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 		if(gwin->menu_hook[i].h_Entry) gwin->menu[i].nm_UserData = &gwin->menu_hook[i];
 	}
 
-#ifndef WITH_PDF_EXPORT
-	gwin->menu[M_SAVEPDF].nm_Flags = NM_ITEMDISABLED;
-#endif
 #if defined(WITH_JS) || defined(WITH_MOZJS)
 	gwin->menu[M_JS].nm_Flags = CHECKIT | MENUTOGGLE;
 	if(nsoption_bool(enable_javascript) == true)
@@ -466,7 +465,7 @@ void ami_menu_update_checked(struct gui_window_2 *gwin)
 
 	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
 	if(!menustrip) return;
-
+#if defined(WITH_JS) || defined(WITH_MOZJS)
 	if(nsoption_bool(enable_javascript) == true) {
 		if((ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED) == 0)
 			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
@@ -474,7 +473,7 @@ void ami_menu_update_checked(struct gui_window_2 *gwin)
 		if(ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED)
 			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
 	}
-
+#endif
 	if(nsoption_bool(foreground_images) == true) {
 		if((ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED) == 0)
 			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
