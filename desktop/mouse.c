@@ -30,12 +30,13 @@
  */
 void browser_mouse_state_dump(browser_mouse_state mouse)
 {
-	LOG(("mouse state: %s %s %s %s %s %s %s %s %s %s %s %s %s",
+	LOG(("mouse state: %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
 			mouse & BROWSER_MOUSE_PRESS_1 		? "P1" : "  ",
 			mouse & BROWSER_MOUSE_PRESS_2 		? "P2" : "  ",
 			mouse & BROWSER_MOUSE_CLICK_1 		? "C1" : "  ",
 			mouse & BROWSER_MOUSE_CLICK_2 		? "C2" : "  ",
 			mouse & BROWSER_MOUSE_DOUBLE_CLICK	? "DC" : "  ",
+			mouse & BROWSER_MOUSE_TRIPLE_CLICK	? "TC" : "  ",
 			mouse & BROWSER_MOUSE_DRAG_1		? "D1" : "  ",
 			mouse & BROWSER_MOUSE_DRAG_2 		? "D2" : "  ",
 			mouse & BROWSER_MOUSE_DRAG_ON 		? "DO" : "  ",
