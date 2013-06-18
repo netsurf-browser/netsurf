@@ -209,6 +209,7 @@ static nserror treeview_create_node_root(struct treeview_node **root)
 	return NSERROR_OK;
 }
 
+
 /**
  * Insert a treeview node into a treeview
  *
@@ -272,6 +273,7 @@ static inline void treeview_insert_node(struct treeview_node *a,
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_create_node_folder(struct treeview *tree,
 		struct treeview_node **folder,
 		struct treeview_node *relation,
@@ -319,7 +321,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 }
 
 
-
+/* Exported interface, documented in treeview.h */
 nserror treeview_update_node_entry(struct treeview *tree,
 		struct treeview_node *entry,
 		const struct treeview_field_data fields[],
@@ -380,6 +382,7 @@ nserror treeview_update_node_entry(struct treeview *tree,
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_create_node_entry(struct treeview *tree,
 		struct treeview_node **entry,
 		struct treeview_node *relation,
@@ -450,6 +453,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 {
 	struct treeview_node_msg msg;
@@ -496,6 +500,7 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_create(struct treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
@@ -571,6 +576,8 @@ nserror treeview_create(struct treeview **tree,
 	return NSERROR_OK;
 }
 
+
+/* Exported interface, documented in treeview.h */
 nserror treeview_destroy(struct treeview *tree)
 {
 	int f;
@@ -645,6 +652,7 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_node_expand(struct treeview *tree,
 		struct treeview_node *node)
 {
@@ -751,6 +759,7 @@ static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
 
 	return false; /* Don't want to abort tree walk */
 }
+/* Exported interface, documented in treeview.h */
 nserror treeview_node_contract(struct treeview *tree,
 		struct treeview_node *node)
 {
@@ -771,15 +780,8 @@ nserror treeview_node_contract(struct treeview *tree,
 	return NSERROR_OK;
 }
 
-/**
- * Redraws a treeview.
- *
- * \param tree		the tree to draw
- * \param x		X coordinate to draw the tree at (wrt plot origin)
- * \param y		Y coordinate to draw the tree at (wrt plot origin)
- * \param clip_x	clipping rectangle (wrt tree origin)
- * \param ctx		current redraw context
- */
+/* Exported interface, documented in treeview.h */
+/* Exported interface, documented in treeview.h */
 void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
 {
@@ -1081,6 +1083,8 @@ static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 	return false; /* Don't stop walk */
 }
 
+
+/* Exported interface, documented in treeview.h */
 bool treeview_has_selection(struct treeview *tree)
 {
 	struct treeview_selection_walk_data sw;
@@ -1094,6 +1098,8 @@ bool treeview_has_selection(struct treeview *tree)
 	return sw.data.has_selection;
 }
 
+
+/* Exported interface, documented in treeview.h */
 bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
@@ -1114,6 +1120,8 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
 	return sw.data.redraw.required;
 }
 
+
+/* Exported interface, documented in treeview.h */
 bool treeview_select_all(struct treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
@@ -1367,6 +1375,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 
 	return true; /* Reached line with click; stop walking tree */
 }
+/* Exported interface, documented in treeview.h */
 void treeview_mouse_action(struct treeview *tree,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -1521,6 +1530,7 @@ static void treeview_init_furniture(void)
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_init(void)
 {
 	int font_px_size;
@@ -1541,6 +1551,7 @@ nserror treeview_init(void)
 }
 
 
+/* Exported interface, documented in treeview.h */
 nserror treeview_fini(void)
 {
 	int i;

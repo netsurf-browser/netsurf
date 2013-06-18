@@ -225,7 +225,7 @@ nserror treeview_node_contract(struct treeview *tree,
  * \param tree		Treeview object to render
  * \param x		X coordinate to render treeview at
  * \param x		Y coordinate to render treeview at
- * \param clip		Current clip rectangle
+ * \param clip		Current clip rectangle (wrt tree origin)
  * \param ctx		Current redraw context
  */
 void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
