@@ -177,6 +177,12 @@ static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
 };
 
 
+/**
+ * Create treeview's root node
+ *
+ * \param root		Returns root node
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
 static nserror treeview_create_node_root(struct treeview_node **root)
 {
 	struct treeview_node *n;
@@ -735,6 +741,7 @@ nserror treeview_node_expand(struct treeview *tree,
 }
 
 
+/** Treewalk node callback for handling node contraction. */
 static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
 {
 	int height_reduction;
@@ -781,7 +788,7 @@ nserror treeview_node_contract(struct treeview *tree,
 	return NSERROR_OK;
 }
 
-/* Exported interface, documented in treeview.h */
+
 /* Exported interface, documented in treeview.h */
 void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
@@ -1028,6 +1035,7 @@ struct treeview_selection_walk_data {
 	} data;
 	int current_y;
 };
+/** Treewalk node callback for handling selection related actions. */
 static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 		void *ctx)
 {
@@ -1143,6 +1151,10 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect)
 	return sw.data.redraw.required;
 }
 
+
+/**
+ * Commit a current selection drag, modifying the node's selection state.
+ */
 static void treeview_commit_selection_drag(struct treeview *tree)
 {
 	struct treeview_selection_walk_data sw;
@@ -1167,8 +1179,9 @@ struct treeview_mouse_action {
 	browser_mouse_state mouse;
 	int x;
 	int y;
-	int current_y;
+	int current_y;	/* Y coordinate value of top of current node */
 };
+/** Treewalk node callback for handling mouse action. */
 static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 {
 	struct treeview_mouse_action *ma = ctx;
@@ -1404,8 +1417,8 @@ void treeview_mouse_action(struct treeview *tree,
 
 /* Mix two colours according to the proportion given by p.
  * Where 0 <= p <= 255
- * p=0   gives result=c0
- * p=255 gives result=c1
+ * p=0   gives result ==> c1
+ * p=255 gives result ==> c0
  */
 #define mix_colour(c0, c1, p)						\
 	((((((c1 & 0xff00ff) * (255 - p)) +				\
@@ -1414,6 +1427,9 @@ void treeview_mouse_action(struct treeview *tree,
 	    ((c0 & 0x00ff00) * (      p))   ) >> 8) & 0x00ff00))
 
 
+/**
+ * Initialise the plot styles from CSS system colour values.
+ */
 static void treeview_init_plot_styles(int font_pt_size)
 {
 	/* Background colour */
@@ -1495,6 +1511,9 @@ static nserror treeview_res_cb(hlcache_handle *handle,
 }
 
 
+/**
+ * Fetch content resources used by treeview.
+ */
 static void treeview_init_resources(void)
 {
 	int i;
@@ -1512,6 +1531,9 @@ static void treeview_init_resources(void)
 }
 
 
+/**
+ * Measures width of characters used to represent treeview furniture.
+ */
 static void treeview_init_furniture(void)
 {
 	int i;
