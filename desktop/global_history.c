@@ -105,7 +105,8 @@ static struct global_history_entry *global_history_find(nsurl *url)
 /**
  * Initialise the treeview directories
  *
- * \return true on success, false on memory exhaustion
+ * \param f		Ident for folder to create
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror global_history_create_dir(enum global_history_folders f)
 {
@@ -236,6 +237,13 @@ static inline nserror global_history_get_parent_treeview_node(
 }
 
 
+/**
+ * Set a global history entry's data from the url_data.
+ *
+ * \param e		Global history entry to set up
+ * \param url_data	Data associated with entry's URL
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
 static nserror global_history_create_treeview_field_data(
 		struct global_history_entry *e,
 		const struct url_data *data)
@@ -309,6 +317,21 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
 }
 
 
+/**
+ * Add an entry to the global history (creates the entry).
+ *
+ * If the treeview has already been created, the entry will be added to the
+ * treeview.  Otherwise, the entry will have to be added to the treeview later.
+ *
+ * When we first create the global history we create it without the treeview, to
+ * simplfy sorting the entries.
+ *
+ * \param url		URL for entry to add to history
+ * \param slot		Global histroy slot to contain history entry
+ * \param data		URL data for the entry
+ * \param got_treeview	Whether the treeview has been created already
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
 static nserror global_history_add_entry_internal(nsurl *url, int slot,
 		const struct url_data *data, bool got_treeview)
 {
