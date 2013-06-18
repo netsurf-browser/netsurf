@@ -262,7 +262,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 				      BROWSER_WINDOW_TAB,
 				      url,
 				      NULL,
-				      NULL,
+				      bw,
 				      NULL);
 	}
 	else if(cmd->ac_ArgList[1])
