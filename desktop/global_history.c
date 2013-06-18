@@ -76,7 +76,7 @@ struct global_history_entry *gh_list[N_DAYS];
  * Find an entry in the global history
  *
  * \param url The URL to find
- * \return Pointer to node, or NULL if not found
+ * \return Pointer to history entry, or NULL if not found
  */
 static struct global_history_entry *global_history_find(nsurl *url)
 {
@@ -89,15 +89,25 @@ static struct global_history_entry *global_history_find(nsurl *url)
 		while (e != NULL) {
 			if (nsurl_compare(e->url, url,
 					NSURL_COMPLETE) == true) {
+				/* Got a match */
 				return e;
 			}
 			e = e->next;
 		}
 
 	}
+
+	/* No match found */
 	return NULL;
 }
 
+/**
+ * Get the treeview folder for history entires in a particular slot
+ *
+ * \param parent	Updated to parent folder.
+ * \param slot		Global history slot of entry we want folder node for
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
 static inline nserror global_history_get_parent_treeview_node(
 		struct treeview_node **parent, int slot)
 {
@@ -123,6 +133,8 @@ static inline nserror global_history_get_parent_treeview_node(
 
 	/* Get the folder */
 	f = &(gh_ctx.folders[folder_index]);
+
+	/* TODO: Create the folder if f==NULL */
 
 	/* Return the parent treeview folder */
 	*parent = f->folder;
@@ -266,9 +278,21 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 	return NSERROR_OK;
 }
 
+
+/**
+ * Delete a global history entry
+ *
+ * This does not delete the treeview node, rather it should only be called from
+ * the treeview node delete event message.
+ *
+ * \param e		Entry to delete
+ */
 static void global_history_delete_entry_internal(
 		struct global_history_entry *e)
 {
+	assert(e != NULL);
+	assert(e->entry == NULL);
+
 	/* Unlink */
 	if (gh_list[e->slot] == e) {
 		/* e is first entry */
@@ -564,6 +588,7 @@ static nserror global_history_tree_node_entry_cb(
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
+		e->entry = NULL;
 		global_history_delete_entry_internal(e);
 		break;
 
