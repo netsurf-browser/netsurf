@@ -27,7 +27,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/knockout.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
 #include "utils/log.h"

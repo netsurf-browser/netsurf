@@ -90,7 +90,7 @@ endif
 S_BEOS := about.cpp bitmap.cpp download.cpp fetch_rsrc.cpp filetype.cpp \
 	font.cpp gui.cpp login.cpp gui_options.cpp plotters.cpp		\
 	scaffolding.cpp search.cpp schedule.cpp	thumbnail.cpp treeview.cpp \
-	throbber.cpp window.cpp system_colour.cpp
+	throbber.cpp window.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
 
 RDEF_BEOS := res.rdef

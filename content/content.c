@@ -37,7 +37,7 @@
 #include "css/css.h"
 #include "image/bitmap.h"
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/html.h"
 #include "render/textplain.h"
 
@@ -92,6 +92,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	if (fallback_charset != NULL) {
 		c->fallback_charset = strdup(fallback_charset);
 		if (c->fallback_charset == NULL) {
+			free(user_sentinel);
 			return NSERROR_NOMEM;
 		}
 	}
@@ -186,6 +187,11 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		content_set_status(c, event->data.msg);
 		msg_data.explicit_status_text = NULL;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		break;
+	case LLCACHE_EVENT_REDIRECT:
+		msg_data.redirect.from = event->data.redirect.from;
+		msg_data.redirect.to = event->data.redirect.to;
+		content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
 		break;
 	}
 
@@ -831,6 +837,28 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
+void content_search(struct hlcache_handle *h,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->search != NULL)
+		c->handler->search(c, gui_callbacks, gui_data, flags, string);
+}
+
+
+void content_search_clear(struct hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->search_clear != NULL)
+		c->handler->search_clear(c);
+}
+
+
 void content_debug_dump(struct hlcache_handle *h, FILE *f)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -1327,39 +1355,33 @@ struct content *content_clone(struct content *c)
  */
 nserror content__clone(const struct content *c, struct content *nc)
 {
-	struct content_user *user_sentinel;
 	nserror error;
-
-	user_sentinel = calloc(1, sizeof(struct content_user));
-	if (user_sentinel == NULL) {
-		return NSERROR_NOMEM;
-	}
 
 	error = llcache_handle_clone(c->llcache, &(nc->llcache));
 	if (error != NSERROR_OK) {
 		return error;
 	}
-	
-	llcache_handle_change_callback(nc->llcache, 
-			content_llcache_callback, nc);
+
+	llcache_handle_change_callback(nc->llcache,
+				       content_llcache_callback, nc);
 
 	nc->mime_type = lwc_string_ref(c->mime_type);
 	nc->handler = c->handler;
 
 	nc->status = c->status;
-	
+
 	nc->width = c->width;
 	nc->height = c->height;
 	nc->available_width = c->available_width;
 	nc->quirks = c->quirks;
-	
+
 	if (c->fallback_charset != NULL) {
 		nc->fallback_charset = strdup(c->fallback_charset);
 		if (nc->fallback_charset == NULL) {
 			return NSERROR_NOMEM;
 		}
 	}
-	
+
 	if (c->refresh != NULL) {
 		nc->refresh = nsurl_ref(c->refresh);
 		if (nc->refresh == NULL) {
@@ -1370,21 +1392,24 @@ nserror content__clone(const struct content *c, struct content *nc)
 	nc->time = c->time;
 	nc->reformat_time = c->reformat_time;
 	nc->size = c->size;
-	
+
 	if (c->title != NULL) {
 		nc->title = strdup(c->title);
 		if (nc->title == NULL) {
 			return NSERROR_NOMEM;
 		}
 	}
-	
+
 	nc->active = c->active;
 
-	nc->user_list = user_sentinel;
-	
+	nc->user_list = calloc(1, sizeof(struct content_user));
+	if (nc->user_list == NULL) {
+		return NSERROR_NOMEM;
+	}
+
 	memcpy(&(nc->status_message), &(c->status_message), 120);
 	memcpy(&(nc->sub_status), &(c->sub_status), 80);
-	
+
 	nc->locked = c->locked;
 	nc->total_size = c->total_size;
 	nc->http_code = c->http_code;

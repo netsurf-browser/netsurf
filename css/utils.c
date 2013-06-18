@@ -21,7 +21,7 @@
 
 #include "css/utils.h"
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 
 /** Screen DPI in fixed point units: defaults to 90, which RISC OS uses */

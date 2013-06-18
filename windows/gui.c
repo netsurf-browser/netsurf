@@ -36,9 +36,8 @@
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
 #include "utils/log.h"
@@ -932,7 +931,7 @@ nsws_window_command(HWND hwnd,
 		nsoption_set_int(window_y, r.top);
 		nsoption_set_int(window_width, r.right - r.left);
 		nsoption_set_int(window_height, r.bottom - r.top);
-		nsoption_write(options_file_location);
+		nsoption_write(options_file_location, NULL, NULL);
 		break;
 	}
 
@@ -1766,7 +1765,8 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 {
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *w)
+
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 

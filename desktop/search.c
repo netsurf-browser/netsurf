@@ -30,7 +30,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "render/box.h"
@@ -44,93 +44,44 @@
 #include "utils/utils.h"
 
 
-/* callback informing us that a search context is nolonger valid */
-static void browser_window_search_invalidate(struct search_context *context,
-		void *p)
+
+
+/**
+ * Starts or continues an existing search.
+ *
+ * \param bw 		the browser_window to search
+ * \param callbacks 	callbacks vtable to update frontend according to results
+ * \param gui_data	a pointer returned to the callbacks
+ * \param flags		search flags
+ * \param string	string to search for
+ */
+void browser_window_search(struct browser_window *bw,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string)
 {
-	struct browser_window *bw = p;
-	assert(bw != NULL);
-
-	if (bw->cur_search != NULL && bw->cur_search == context) {
-		/* The browser's current search is the one being invalidated */
-		bw->cur_search = NULL;
-	}
-}
-
-
-bool browser_window_search_create_context(struct browser_window *bw, 
-		struct gui_search_callbacks *gui_callbacks, void *gui_p)
-{
-	struct search_callbacks callbacks;
-	assert(bw != NULL);
 	assert(gui_callbacks != NULL);
 
-	if (bw->cur_search != NULL)
-		search_destroy_context(bw->cur_search);
-	bw->cur_search = NULL;
+	if (bw == NULL || bw->current_content == NULL)
+		return;
 
-	if (!bw->current_content)
-		return false;
-
-	callbacks.gui = gui_callbacks;
-	callbacks.gui_p = gui_p;
-	callbacks.invalidate = browser_window_search_invalidate;
-	callbacks.p = bw;
-	bw->cur_search = search_create_context(bw->current_content, callbacks);
-
-	if (bw->cur_search == NULL)
-		return false;
-
-	return true;
-}
-
-
-void browser_window_search_destroy_context(struct browser_window *bw)
-{
-	assert(bw != NULL);
-
-	if (bw->cur_search != NULL)
-		search_destroy_context(bw->cur_search);
-	bw->cur_search = NULL;
+	content_search(bw->current_content, gui_callbacks, gui_data,
+			flags, string);
 }
 
 
 /**
- * to simplify calls to search_step(); checks that the browser_window is
- * non-NULL, creates a new search_context in case of a new search
- * \param bw the browser_window the search refers to
- * \param callbacks the callbacks to modify appearance according to results
- * \param gui_p a pointer returned to the callbacks
- * \return true for success
+ * Clear up a search.  Frees any memory used by the search
+ *
+ * \param bw 		the browser_window to search
+ * \param callbacks 	callbacks vtable to update frontend according to results
+ * \param gui_data	a pointer returned to the callbacks
+ * \param flags		search flags
+ * \param string	string to search for
  */
-bool browser_window_search_verify_new(struct browser_window *bw,
-		struct gui_search_callbacks *gui_callbacks, void *gui_p)
+void browser_window_search_clear(struct browser_window *bw)
 {
-	if (bw == NULL)
-		return false;
-	if (bw->cur_search == NULL)
-		return browser_window_search_create_context(bw,
-				gui_callbacks, gui_p);
+	if (bw == NULL || bw->current_content == NULL)
+		return;
 
-	return true;
+	content_search_clear(bw->current_content);
 }
-
-
-void browser_window_search_step(struct browser_window *bw,
-		search_flags_t flags, const char *string)
-{
-	assert(bw != NULL);
-
-	if (bw->cur_search != NULL)
-		search_step(bw->cur_search, flags, string);
-}
-
-
-void browser_window_search_show_all(bool all, struct browser_window *bw)
-{
-	assert(bw != NULL);
-
-	if (bw->cur_search != NULL)
-		search_show_all(all, bw->cur_search);
-}
-

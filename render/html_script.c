@@ -285,12 +285,6 @@ convert_script_sync_cb(hlcache_handle *script,
 	assert(i != parent->scripts_count);
 
 	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
-
 	case CONTENT_MSG_DONE:
 		LOG(("script %d done '%s'", i,
 				nsurl_access(hlcache_handle_get_url(script))));
@@ -339,10 +333,18 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		break;
 
+	case CONTENT_MSG_LOADING:
+	case CONTENT_MSG_READY:
 	case CONTENT_MSG_STATUS:
+	case CONTENT_MSG_REDIRECT:
+		/* messages content handler will legitamately recive
+		 * but does not need to handle
+		 */
 		break;
 
 	default:
+		/* all other messages are unexpected and fatal */
+		LOG(("Unhandled message type %d", event->type));
 		assert(0);
 	}
 

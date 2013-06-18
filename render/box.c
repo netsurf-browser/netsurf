@@ -34,7 +34,7 @@
 #include "css/utils.h"
 #include "css/dump.h"
 #include "desktop/scrollbar.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html_internal.h"

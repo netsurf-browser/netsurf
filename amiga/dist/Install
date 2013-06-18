@@ -415,20 +415,6 @@
 	)
 )
 
-(if (= #hotlist-exist 0)
-	(if (= #old-hotlist-exist 1)
-		(
-			(copyfiles
-				(prompt "Migrating NetSurf 2.x Hotlist")
-				(help @copyfiles-help)
-				(source #old-hotlist)
-				(dest #user-dir)
-				(optional "askuser" "force" "oknodelete")
-			)
-		)
-	)
-)
-
 (complete 18)
 
 (if (>= osver 53)
@@ -572,7 +558,21 @@
 			(help @textfile-help)
 			(dest #user-options)
 			(append "theme:" #theme "\n")
-			(append "use_pubscreen:Workbench\n")
+			(append "pubscreen_name:Workbench\n")
+		)
+
+		(if (= #hotlist-exist 0)
+			(if (= #old-hotlist-exist 1)
+				(
+					(copyfiles
+						(prompt "Migrating NetSurf 2.x Hotlist")
+						(help @copyfiles-help)
+						(source #old-hotlist)
+						(dest #user-dir)
+						(optional "askuser" "force" "oknodelete")
+					)
+				)
+			)
 		)
 	)
 )

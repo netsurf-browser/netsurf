@@ -37,7 +37,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
@@ -48,7 +48,6 @@
 #include "desktop/save_text.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "gtk/cookies.h"
@@ -1287,7 +1286,7 @@ MULTIHANDLER(savewindowsize)
 	int x,y,w,h;
 
 	if (GTK_IS_PANED(g->status_pane)) {
-		nsoption_set_int(toolbar_status_width,
+		nsoption_set_int(toolbar_status_size,
 				 gtk_paned_get_position(g->status_pane));
 	}
 	gtk_window_get_position(g->window, &x, &y);
@@ -1298,7 +1297,7 @@ MULTIHANDLER(savewindowsize)
 	nsoption_set_int(window_x, x);
 	nsoption_set_int(window_y, y);
 
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 
 	return TRUE;
 }
@@ -1423,7 +1422,7 @@ MULTIHANDLER(reload)
 		return TRUE;
 
 	/* clear potential search effects */
-	browser_window_search_destroy_context(bw);
+	browser_window_search_clear(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
@@ -1442,7 +1441,7 @@ MULTIHANDLER(back)
 		return TRUE;
 
 	/* clear potential search effects */
-	browser_window_search_destroy_context(bw);
+	browser_window_search_clear(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
@@ -1462,7 +1461,7 @@ MULTIHANDLER(forward)
 		return TRUE;
 
 	/* clear potential search effects */
-	browser_window_search_destroy_context(bw);
+	browser_window_search_clear(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
@@ -2431,7 +2430,7 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
 	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
 	if (vis) {
 		if (bw != NULL)
-			browser_window_search_destroy_context(bw);
+			browser_window_search_clear(bw);
 		nsgtk_search_set_forward_state(true, bw);
 		nsgtk_search_set_back_state(true, bw);
 		gtk_widget_hide(GTK_WIDGET(g->search->bar));
@@ -2468,7 +2467,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	nsgtk_window_update_back_forward(sc);
 
 	/* clear effects of potential searches */
-	browser_window_search_destroy_context(bw);
+	browser_window_search_clear(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);

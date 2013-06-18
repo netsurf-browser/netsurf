@@ -36,7 +36,7 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/box.h"
 #include "render/box_textarea.h"
 #include "render/form.h"

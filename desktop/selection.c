@@ -83,8 +83,7 @@ static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler,
 		void *handle, save_text_whitespace *before, bool *first,
 		bool do_marker);
-static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
-
+static unsigned selection_label_subtree(struct box *box, unsigned idx);
 
 /**
  * Get the browser window containing the content a selection object belongs to.
@@ -160,7 +159,7 @@ void selection_destroy(struct selection *s)
  * resized causing the layout to change.
  *
  * \param  s     selection object
- * \param  root  the box (page/textarea) to be used as the root node for this selection
+ * \param  root  the root box for html document or NULL for text/plain
  */
 
 void selection_reinit(struct selection *s, struct box *root)
@@ -170,16 +169,6 @@ void selection_reinit(struct selection *s, struct box *root)
 	assert(s);
 
 	root_idx = 0;
-
-//	if (s->root == root) {
-//		/* keep the same number space as before, because we want
-//		   to keep the selection too */
-//		root_idx = (s->max_idx & 0xF0000000U);
-//	}
-//	else {
-//		static int next_idx = 0;
-//		root_idx = (next_idx++) << 28;
-//	}
 
 	s->root = root;
 	if (root) {
@@ -204,7 +193,7 @@ void selection_reinit(struct selection *s, struct box *root)
  * ie. selections are confined to that subtree.
  *
  * \param  s     selection object
- * \param  root  the box (page/textarea) to be used as the root node for this selection
+ * \param  root  the root box for html document or NULL for text/plain
  */
 
 void selection_init(struct selection *s, struct box *root)
@@ -218,19 +207,6 @@ void selection_init(struct selection *s, struct box *root)
 	s->drag_state = DRAG_NONE;
 
 	selection_reinit(s, root);
-}
-
-
-/**
- * Indicate whether the selected text is read only, ie. cannot be modified.
- *
- * \param  s   selection object
- * \return true iff the selection is read only
- */
-
-bool selection_read_only(struct selection *s)
-{
-	return true;
 }
 
 
@@ -297,8 +273,9 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		((mouse & BROWSER_MOUSE_DRAG_1) ||
 		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
-
-		gui_drag_save_selection(s, top->window);
+		char *sel = selection_get_copy(s);
+		gui_drag_save_selection(top->window, sel);
+		free(sel);
 	}
 	else if (!modkeys) {
 		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
@@ -337,13 +314,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			gui_start_selection(top->window);
 		}
-		/* Selection should be cleared when button is released but in
-		 * the RO interface click is the same as press */
-//		else if (!pos && (mouse & BROWSER_MOUSE_CLICK_1)) {
-//			/* clear selection */
-//			selection_clear(s, true);
-//			s->drag_state = DRAG_NONE;
-//		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
 			/* ignore Adjust clicks when there's no selection */
@@ -981,73 +951,6 @@ void selection_set_end(struct selection *s, unsigned offset)
 
 
 /**
- * Get the box and index of the specified byte offset within the
- * textual representation.
- *
- * \param  b       root node of search
- * \param  offset  byte offset within textual representation
- * \param  pidx    receives byte index of selection start point within box
- * \return ptr to box, or NULL if no selection defined
- */
-
-struct box *get_box(struct box *b, unsigned offset, size_t *pidx)
-{
-	struct box *child = b->children;
-
-	if (b->text) {
-
-		if (offset >= b->byte_offset &&
-			offset <= b->byte_offset + b->length + SPACE_LEN(b)) {
-
-			/* it's in this box */
-			*pidx = offset - b->byte_offset;
-			return b;
-		}
-	}
-
-	/* find the first child that could contain this offset */
-	if (child) {
-		struct box *next = child->next;
-		while (next && next->byte_offset < offset) {
-			child = next;
-			next = child->next;
-		}
-		return get_box(child, offset, pidx);
-	}
-
-	return NULL;
-}
-
-
-/**
- * Get the box and index of the selection start, if defined.
- *
- * \param  s     selection object
- * \param  pidx  receives byte index of selection start point within box
- * \return ptr to box, or NULL if no selection defined
- */
-
-struct box *selection_get_start(struct selection *s, size_t *pidx)
-{
-	return (s->defined ? get_box(s->root, s->start_idx, pidx) : NULL);
-}
-
-
-/**
- * Get the box and index of the selection end, if defined.
- *
- * \param  s     selection object
- * \param  pidx  receives byte index of selection end point within box
- * \return ptr to box, or NULL if no selection defined.
- */
-
-struct box *selection_get_end(struct selection *s, size_t *pidx)
-{
-	return (s->defined ? get_box(s->root, s->end_idx, pidx) : NULL);
-}
-
-
-/**
  * Tests whether a text range lies partially within the selection, if there is
  * a selection defined, returning the start and end indexes of the bytes
  * that should be selected.
@@ -1074,35 +977,4 @@ bool selection_highlighted(const struct selection *s,
 	*end_idx = min(end, s->end_idx) - start;
 
 	return true;
-
-//	assert(box);
-//	assert(IS_TEXT(box));
-
-//	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
-}
-
-
-/**
- * Adjust the selection to reflect a change in the selected text,
- * eg. editing in a text area/input field.
- *
- * \param  s            selection object
- * \param  byte_offset  byte offset of insertion/removal point
- * \param  change       byte size of change, +ve = insertion, -ve = removal
- * \param  redraw       true iff the screen should be updated
- */
-
-void selection_update(struct selection *s, size_t byte_offset,
-		int change, bool redraw)
-{
-	if (selection_defined(s) &&
-		byte_offset >= s->start_idx &&
-		byte_offset < s->end_idx)
-	{
-		if (change > 0)
-			s->end_idx += change;
-		else
-			s->end_idx +=
-				max(change, (int)(byte_offset - s->end_idx));
-	}
 }

@@ -53,7 +53,7 @@
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
 #include "desktop/history_global_core.h"
@@ -1000,6 +1000,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							{
 								case 0: // export
 									if(AslRequestTags(savereq,
+										ASLFR_Window, twin->win,
+										ASLFR_SleepWindow, TRUE,
 										ASLFR_TitleText,messages_get("NetSurf"),
 										ASLFR_Screen,scrn,
 										ASLFR_InitialFile,"tree_export.html",

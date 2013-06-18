@@ -34,7 +34,7 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
@@ -42,7 +42,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
-#include "desktop/selection.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree_url_node.h"
@@ -486,7 +485,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCUT],
 							PMIA_ID,CMID_SELCUT,
-							PMIA_Disabled, disabled_noselection && disabled_readonly,
+							PMIA_Disabled, !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_CUT),
 							PMIA_CommKey, "X",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -729,6 +728,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 		{
 			case CMID_SELECTFILE:
 				if(AslRequestTags(filereq,
+					ASLFR_Window, gwin->win,
+					ASLFR_SleepWindow, TRUE,
 					ASLFR_TitleText,messages_get("NetSurf"),
 					ASLFR_Screen,scrn,
 					ASLFR_DoSaveMode,FALSE,

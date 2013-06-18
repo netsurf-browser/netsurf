@@ -40,9 +40,8 @@
 #include "desktop/netsurf.h"
 #include "desktop/401login.h"
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
@@ -661,7 +660,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
     TODO();
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *w)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
     LOG((""));
     TODO();
@@ -923,16 +922,21 @@ nsurl *gui_get_resource_url(const char *path)
     return url;
 }
 
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for atari frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
     /* Set defaults for absent option strings */
     nsoption_setnull_charp(cookie_file, strdup("cookies"));
     if (nsoption_charp(cookie_file) == NULL) {
-        die("Failed initialising string options");
+        LOG(("Failed initialising string options"));
+	return NSERROR_BAD_PARAMETER;
     }
-
-    nsoption_set_int(min_reflow_period, 350);
+    return NSERROR_OK;
 }
 
 static void gui_init(int argc, char** argv)
@@ -1032,12 +1036,13 @@ static void gui_init2(int argc, char** argv)
 int main(int argc, char** argv)
 {
     char messages[PATH_MAX];
-	const char *addr;
-	char * file_url = NULL;
-	struct stat stat_buf;
-	nsurl *url;
-	nserror error;
+    const char *addr;
+    char * file_url = NULL;
+    struct stat stat_buf;
+    nsurl *url;
+    nserror ret;
 
+    /* @todo logging file descriptor update belongs in a nslog_init callback */
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
 #ifdef WITH_DBG_LOGFILE
@@ -1054,8 +1059,25 @@ int main(int argc, char** argv)
     atari_find_resource((char*)&messages, "messages", "res/messages");
     atari_find_resource((char*)&options, "Choices", "Choices");
 
+    /* initialise logging - not fatal if it fails but not much we can
+     * do about it
+     */
+    nslog_init(NULL, &argc, argv);
+
+    /* user options setup */
+    ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+    if (ret != NSERROR_OK) {
+	die("Options failed to initialise");
+    }
+    nsoption_read(options, NULL);
+    nsoption_commandline(&argc, argv, NULL);
+
+    /* common initialisation */
     LOG(("Initialising core..."));
-    netsurf_init(&argc, &argv, options, messages);
+    ret = netsurf_init(messages);
+    if (ret != NSERROR_OK) {
+	die("NetSurf failed to initialise");
+    }
 
     LOG(("Initializing GUI..."));
     gui_init(argc, argv);
@@ -1074,23 +1096,23 @@ int main(int argc, char** argv)
 		}
     }
 
-	/* create an initial browser window */
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		LOG(("Entering NetSurf mainloop..."));
-		netsurf_main_loop();
-	}
+    /* create an initial browser window */
+    ret = nsurl_create(addr, &url);
+    if (ret == NSERROR_OK) {
+	ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+				    BROWSER_WINDOW_HISTORY,
+				    url,
+				    NULL,
+				    NULL,
+				    NULL);
+	nsurl_unref(url);
+    }
+    if (ret != NSERROR_OK) {
+	warn_user(messages_get_errorcode(ret), 0);
+    } else {
+	LOG(("Entering NetSurf mainloop..."));
+	netsurf_main_loop();
+    }
 
     netsurf_exit();
 

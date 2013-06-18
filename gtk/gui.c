@@ -49,7 +49,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
@@ -241,8 +241,13 @@ nsgtk_init_glade(char **respath)
 	widWarning = GTK_WIDGET(gtk_builder_get_object(gladeWarning, "labelWarning"));
 }
 
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for gtk frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
 	char *hdir = getenv("HOME");
 	char buf[PATH_MAX];
@@ -252,8 +257,10 @@ void gui_options_init_defaults(void)
 	nsoption_setnull_charp(cookie_file, strdup(buf));
 	nsoption_setnull_charp(cookie_jar, strdup(buf));
 	if (nsoption_charp(cookie_file) == NULL ||
-			nsoption_charp(cookie_jar) == NULL)
-		die("Failed initialising cookie options");
+	    nsoption_charp(cookie_jar) == NULL) {
+		LOG(("Failed initialising cookie options"));
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	if (nsoption_charp(downloads_directory) == NULL) {
 		snprintf(buf, PATH_MAX, "%s/", hdir);
@@ -276,8 +283,18 @@ void gui_options_init_defaults(void)
 			nsoption_charp(ca_path) == NULL ||
 			nsoption_charp(downloads_directory) == NULL ||
 			nsoption_charp(hotlist_path) == NULL) {
-		die("Failed initialising string options");
+		LOG(("Failed initialising string options"));
+		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* set default font names */
+	nsoption_set_charp(font_sans, strdup("Sans"));
+	nsoption_set_charp(font_serif, strdup("Serif"));
+	nsoption_set_charp(font_mono, strdup("Monospace"));
+	nsoption_set_charp(font_cursive, strdup("Serif"));
+	nsoption_set_charp(font_fantasy, strdup("Serif"));
+
+	return NSERROR_OK;
 }
 
 static void check_options(char **respath)
@@ -292,8 +309,8 @@ static void check_options(char **respath)
 	 * The GTK front end now correctly uses it as a proportion of window
 	 * width.  Here we assume that a value of less than 15% is wrong
 	 * and set to the default two thirds. */
-	if (nsoption_int(toolbar_status_width) < 1500) {
-		nsoption_set_int(toolbar_status_width, 6667);
+	if (nsoption_int(toolbar_status_size) < 1500) {
+		nsoption_set_int(toolbar_status_size, 6667);
 	}
 
 	/* user options should be stored in the users home directory */
@@ -308,15 +325,6 @@ static void check_options(char **respath)
 	LOG(("Using '%s' as Print Settings file", buf));
 	print_options_file_location = strdup(buf);
 
-	/* check what the font settings are, setting them to a default font
-	 * if they're not set - stops Pango whinging
-	 */
-#define SETFONTDEFAULT(OPTION,y) if (nsoption_charp(OPTION) == NULL) nsoption_set_charp(OPTION, strdup((y)))
-	SETFONTDEFAULT(font_sans, "Sans");
-	SETFONTDEFAULT(font_serif, "Serif");
-	SETFONTDEFAULT(font_mono, "Monospace");
-	SETFONTDEFAULT(font_cursive, "Serif");
-	SETFONTDEFAULT(font_fantasy, "Serif");
 
 }
 
@@ -354,9 +362,6 @@ static void gui_init(int argc, char** argv, char **respath)
 	const char *addr;
 	nsurl *url;
 	nserror error;
-
-	/* check user options */
-	check_options(respath);
 
 	/* find the languages file */	
 	languages_file_location = filepath_find(respath, "languages");
@@ -515,12 +520,24 @@ static void nsgtk_check_homedir(void)
 }
 
 /**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
+/**
  * Main entry point from OS.
  */
 int main(int argc, char** argv)
 {
 	char *messages;
 	char *options;
+	nserror ret;
 
 	/* check home directory is available */
 	nsgtk_check_homedir();
@@ -529,24 +546,47 @@ int main(int argc, char** argv)
 
 	gtk_init(&argc, &argv);
 	
-        /* set standard error to be non-buffering */
-	setbuf(stderr, NULL);
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Options failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
 	options = filepath_find(respaths, "Choices");
-	messages = filepath_find(respaths, "Messages");
-
-	netsurf_init(&argc, &argv, options, messages);
-
-	free(messages);
+	nsoption_read(options, nsoptions);
 	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+	check_options(respaths); /* check user options */
 
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
+
+	/* run the browser */
 	gui_init(argc, argv, respaths);
 
 	/* Ensure all scaffoldings are destroyed before we go into exit */
-	while (scaf_list != NULL)
+	while (scaf_list != NULL) {
 		nsgtk_scaffolding_destroy(scaf_list);
+	}
 	
+	/* common finalisation */
 	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }

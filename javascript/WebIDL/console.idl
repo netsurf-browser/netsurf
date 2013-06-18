@@ -18,3 +18,7 @@ interface Console {
   void trace();
   void warn(DOMString msg, Substitition... subst);
 };
+
+partial interface Window {
+  readonly attribute Console console;
+};

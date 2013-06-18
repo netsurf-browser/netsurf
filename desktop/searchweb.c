@@ -27,7 +27,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "utils/config.h"
 #include "utils/log.h"

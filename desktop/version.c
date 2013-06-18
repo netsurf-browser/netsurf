@@ -1,6 +1,6 @@
 #include "utils/testament.h"
 
-const char * const netsurf_version = "3.0 (Dev"
+const char * const netsurf_version = "3.1 (Dev"
 #if defined(CI_BUILD)
 	" CI #" CI_BUILD
 #endif

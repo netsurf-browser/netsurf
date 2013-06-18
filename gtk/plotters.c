@@ -37,7 +37,7 @@
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "render/font.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "gtk/bitmap.h"
 
 GtkWidget *current_widget;

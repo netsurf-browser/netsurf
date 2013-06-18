@@ -43,8 +43,10 @@ NS_GIT="git://git.netsurf-browser.org"
 NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libsvgtiny librosprite"
 # internal libraries only required by some frontends
 NS_FRONTEND_LIBS="libnsfb"
+# internal libraries required for the risc os target abi
+NS_RISCOS_LIBS="librufl libpencil"
 # tools required to build the browser
-NS_TOOLS="nsgenjsbind"
+NS_TOOLS="nsgenbind"
 # The browser itself
 NS_BROWSER="netsurf"
 
@@ -52,6 +54,11 @@ NS_BROWSER="netsurf"
 NS_DEV_DEB="build-essential pkg-config git gperf"
 NS_TOOL_DEB="flex bison"
 NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libmng-dev librsvg2-dev liblcms1-dev libjpeg-dev libmozjs-dev"
+
+#add target specific libraries
+if [ "x${TARGET_ABI}" = "xriscos" ]; then
+     NS_FRONTEND_LIBS="${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS}"
+fi
 
 # apt get commandline to install necessary dev packages
 ns-apt-get-install()
@@ -76,7 +83,7 @@ ns-pull()
 ns-clone()
 {
     mkdir -p ${TARGET_WORKSPACE}
-    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
+    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
 	echo -n "     GIT: Cloning ${REPO}: "
 	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
 	    echo "Repository already present"

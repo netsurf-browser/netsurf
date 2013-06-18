@@ -47,7 +47,7 @@
 #include "content/fetchers/about.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -331,12 +331,13 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"</p>\n"
 			"<h1>NetSurf Browser Config</h1>\n"
 			"<table class=\"config\">\n"
-			"<tr><th></th><th></th><th></th></tr>\n");
+			"<tr><th>Option</th><th>Type</th><th>Provenance</th><th>Setting</th></tr>\n");
 
 	do {
-		res = nsoption_snoptionf(buffer + slen, sizeof buffer - slen,
-				opt_loop,
-				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>\n");
+		res = nsoption_snoptionf(buffer + slen, 
+					 sizeof buffer - slen,
+					 opt_loop,
+					 "<tr><th>%k</th><td>%t</td><td>%p</td><td>%V</td></tr>\n");
 		if (res <= 0) 
 			break; /* last option */
 

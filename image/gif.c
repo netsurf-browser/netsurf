@@ -37,7 +37,7 @@
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "image/image.h"
 #include "image/bitmap.h"

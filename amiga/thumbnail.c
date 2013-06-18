@@ -20,7 +20,7 @@
 #include "desktop/browser.h"
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"

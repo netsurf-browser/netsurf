@@ -49,16 +49,14 @@
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/knockout.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
-#include "desktop/textinput.h"
 #include "desktop/plotters.h"
 
 #include "javascript/js.h"
 
 #include "render/form.h"
-#include "render/textplain.h"
 #include "render/html.h"
 #include "render/box.h"
 #include "utils/log.h"
@@ -685,6 +683,19 @@ void browser_window_debug_dump(struct browser_window *bw, FILE *f)
 		content_debug_dump(bw->current_content, f);
 }
 
+/** slow script handler
+*/
+static bool slow_script(void *ctx)
+{
+	static int count = 0;
+	LOG(("Continuing execution %d", count));
+	count++;
+	if (count > 1) {
+		count = 0;
+		return false;
+	}
+	return true;
+}
 
 /* exported interface, documented in desktop/browser.h */
 
@@ -709,7 +720,9 @@ browser_window_create(enum browser_window_nav_flags flags,
 	}
 
 	/* new javascript context for window */
-	bw->jsctx = js_newcontext();
+	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
+				  slow_script,
+				  NULL);
 
 	/* Initialise common parts */
 	browser_window_initialise_common(bw, clone);
@@ -766,7 +779,6 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_clone(clone->history);
 
 	/* window characteristics */
-	bw->cur_search = NULL;
 	bw->refresh_interval = -1;
 
 	bw->reformat_pending = false;
@@ -1341,6 +1353,11 @@ nserror browser_window_callback(hlcache_handle *c,
 		hlcache_handle_release(c);
 
 		browser_window_stop_throbber(bw);
+		break;
+
+	case CONTENT_MSG_REDIRECT:
+		if (urldb_add_url(event->data.redirect.from))
+			urldb_update_url_visit_data(event->data.redirect.from);
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -2130,10 +2147,6 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		}
 	}
 
-	/* Destroying a search context causes it to redraw any deselected,
-	 * content areas, so do this first */
-	browser_window_search_destroy_context(bw);
-
 	/* Destruction order is important: we must ensure that the frontend 
 	 * destroys any window(s) associated with this browser window before 
 	 * we attempt any destructive cleanup. 
@@ -2896,6 +2909,8 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
+	assert(bw != NULL);
+
 	browser_window_set_drag_type(bw, DRAGGING_PAGE_SCROLL, NULL);
 
 	bw->drag_start_x = x;

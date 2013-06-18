@@ -29,7 +29,6 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
-#include "desktop/selection.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -86,15 +85,11 @@ static struct gui_search_callbacks ami_search_callbacks = {
  */
 void ami_search_open(struct gui_window *gwin)
 {
-	if (browser_window_search_create_context(gwin->shared->bw,
-			&ami_search_callbacks, NULL) == false)
-		return;
-
 	search_insert = true;
 
 	if(fwin)
 	{
-		browser_window_search_destroy_context(fwin->gwin->shared->bw);
+		browser_window_search_clear(fwin->gwin->shared->bw);
 		ami_search_set_forward_state(true, NULL);
 		ami_search_set_back_state(true, NULL);
 		fwin->gwin->shared->searchwin = NULL;
@@ -181,7 +176,7 @@ void ami_search_open(struct gui_window *gwin)
 
 void ami_search_close(void)
 {
-	browser_window_search_destroy_context(fwin->gwin->shared->bw);
+	browser_window_search_clear(fwin->gwin->shared->bw);
 	ami_search_set_forward_state(true, NULL);
 	ami_search_set_back_state(true, NULL);
 	fwin->gwin->shared->searchwin = NULL;
@@ -206,7 +201,7 @@ BOOL ami_search_event(void)
 		switch(result & WMHI_GADGETMASK)
 		{
 			case GID_SEARCHSTRING:
-				browser_window_search_destroy_context(
+				browser_window_search_clear(
 						fwin->gwin->shared->bw);
 				ami_search_set_forward_state(
 					true, NULL);
@@ -229,13 +224,10 @@ BOOL ami_search_event(void)
 				search_insert = true;
 				flags = SEARCH_FLAG_FORWARDS |
 					ami_search_flags();
-				if (browser_window_search_verify_new(
+				browser_window_search(
 						fwin->gwin->shared->bw,
-						&ami_search_callbacks, NULL))
-					browser_window_search_step(
-							fwin->gwin->shared->bw,
-							flags,
-							ami_search_string());
+						&ami_search_callbacks, NULL,
+						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
 			break;
 
@@ -243,13 +235,10 @@ BOOL ami_search_event(void)
 				search_insert = true;
 				flags = ~SEARCH_FLAG_FORWARDS &
 					ami_search_flags();
-				if (browser_window_search_verify_new(
+				browser_window_search(
 						fwin->gwin->shared->bw,
-						&ami_search_callbacks, NULL))
-					browser_window_search_step(
-							fwin->gwin->shared->bw,
-							flags,
-							ami_search_string());
+						&ami_search_callbacks, NULL,
+						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
 			break;
 		}

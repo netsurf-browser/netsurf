@@ -25,7 +25,6 @@
 #include <string.h>
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/selection.h"
 #include "framebuffer/gui.h"
 #include "utils/log.h"
 

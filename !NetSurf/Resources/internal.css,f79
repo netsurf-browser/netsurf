@@ -164,14 +164,33 @@ body#dirlist span.size + span.size {
  * configuration listing style 
  */
 
-body#configlist table.config th {
-	text-align: left; }
+body#configlist table.config {
+	border-spacing: 0; }
 
-body#configlist table.config td {
+body#configlist table.config tr:nth-child(2n-1) {
+	background: #eee; }
+
+body#configlist table.config tr:first-child th {
+	text-align: left;
+	font-weight: bold;
+	font-family: sans-serif;
+	background: #ddd; }
+
+body#configlist table.config tr th {
+	text-align: left;
+	font-weight: normal;
+	font-family: monospace; }
+
+body#configlist table.config td, body#configlist table.config th {
 	padding-left: 1em; }
 
-body#configlist table.config td + td {
+body#configlist table.config tr *:nth-child(3) {
 	padding-left: 3em; }
+
+body#configlist table.config tr *:nth-child(4) {
+	padding-left: 3em;
+	font-family: monospace;
+	padding-right: 1em; }
 
 body#configlist .null-content {
         font-style: italic; }

@@ -576,7 +576,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 
 	/* counter-increment */
 	val = css_computed_counter_increment(style, &counter);
-	if (counter == NULL) {
+	if ((val == CSS_COUNTER_INCREMENT_NONE) || (counter == NULL)) {
 		fprintf(stream, "counter-increment: none ");
 	} else {
 		fprintf(stream, "counter-increment:");
@@ -596,7 +596,7 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 
 	/* counter-reset */
 	val = css_computed_counter_reset(style, &counter);
-	if (counter == NULL) {
+	if ((val == CSS_COUNTER_RESET_NONE) || (counter == NULL)) {
 		fprintf(stream, "counter-reset: none ");
 	} else {
 		fprintf(stream, "counter-reset:");

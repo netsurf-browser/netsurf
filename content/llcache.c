@@ -539,8 +539,11 @@ static nserror llcache_fetch_parse_header(llcache_object *object,
 		/* extract ETag header */
 		free(object->cache.etag);
 		object->cache.etag = strdup(*value);
-		if (object->cache.etag == NULL)
+		if (object->cache.etag == NULL) {
+			free(*name);
+			free(*value);
 			return NSERROR_NOMEM;
+		}
 	} else if (14 < len && strcasecmp(*name, "Last-Modified") == 0) {
 		/* extract Last-Modified header */
 		object->cache.last_modified = curl_getdate(*value, NULL);
@@ -613,8 +616,9 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 	}
 
 	error = llcache_fetch_parse_header(object, data, len, &name, &value);
-	if (error != NSERROR_OK)
+	if (error != NSERROR_OK) {
 		return error;
+	}
 
 	/* Append header data to the object's headers array */
 	temp = realloc(object->headers, (object->num_headers + 1) * 
@@ -1181,6 +1185,7 @@ static nserror llcache_object_add_user(llcache_object *object,
 {
 	assert(user->next == NULL);
 	assert(user->prev == NULL);
+	assert(user->handle != NULL);
 
 	user->handle->object = object;
 
@@ -1219,6 +1224,7 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	bool match;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
+	llcache_event event;
 
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
@@ -1233,8 +1239,6 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	/* Forcibly stop redirecting if we've followed too many redirects */
 #define REDIRECT_LIMIT 10
 	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
-		llcache_event event;
-
 		LOG(("Too many nested redirects"));
 
 		event.type = LLCACHE_EVENT_ERROR;
@@ -1248,6 +1252,18 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	error = nsurl_join(object->url, target, &url);
 	if (error != NSERROR_OK)
 		return error;
+
+	/* Inform users of redirect */
+	event.type = LLCACHE_EVENT_REDIRECT;
+	event.data.redirect.from = object->url;
+	event.data.redirect.to = url;
+
+	error = llcache_send_event_to_users(object, &event);
+
+	if (error != NSERROR_OK) {
+		nsurl_unref(url);
+		return error;
+	}
 
 	/* Reject attempts to redirect from unvalidated to validated schemes
 	 * A "validated" scheme is one over which we have some guarantee that

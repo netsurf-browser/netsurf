@@ -21,7 +21,6 @@
 #import "cocoa/BrowserViewController.h"
 
 #import "desktop/browser_private.h"
-#import "desktop/selection.h"
 
 
 static NSMutableString *cocoa_clipboard_string;

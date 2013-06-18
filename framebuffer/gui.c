@@ -36,7 +36,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -476,23 +476,109 @@ process_cmdline(int argc, char** argv)
 	return true;
 }
 
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for framebuffer frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
 	nsoption_setnull_charp(cookie_file, strdup("~/.netsurf/Cookies"));
 	nsoption_setnull_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
 
 	if (nsoption_charp(cookie_file) == NULL ||
-			nsoption_charp(cookie_jar == NULL)) {
-		die("Failed initialising cookie options");
+	    nsoption_charp(cookie_jar) == NULL) {
+		LOG(("Failed initialising cookie options"));
+		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* set system colours for framebuffer ui */
+	nsoption_set_colour(sys_colour_ActiveBorder, 0x00000000);
+	nsoption_set_colour(sys_colour_ActiveCaption, 0x00ddddcc);
+	nsoption_set_colour(sys_colour_AppWorkspace, 0x00eeeeee);
+	nsoption_set_colour(sys_colour_Background, 0x00aa0000);
+	nsoption_set_colour(sys_colour_ButtonFace, 0x00dddddd);
+	nsoption_set_colour(sys_colour_ButtonHighlight, 0x00cccccc);
+	nsoption_set_colour(sys_colour_ButtonShadow, 0x00bbbbbb);
+	nsoption_set_colour(sys_colour_ButtonText, 0x00000000);
+	nsoption_set_colour(sys_colour_CaptionText, 0x00000000);
+	nsoption_set_colour(sys_colour_GrayText, 0x00777777);
+	nsoption_set_colour(sys_colour_Highlight, 0x00ee0000);
+	nsoption_set_colour(sys_colour_HighlightText, 0x00000000);
+	nsoption_set_colour(sys_colour_InactiveBorder, 0x00000000);
+	nsoption_set_colour(sys_colour_InactiveCaption, 0x00ffffff);
+	nsoption_set_colour(sys_colour_InactiveCaptionText, 0x00cccccc);
+	nsoption_set_colour(sys_colour_InfoBackground, 0x00aaaaaa);
+	nsoption_set_colour(sys_colour_InfoText, 0x00000000);
+	nsoption_set_colour(sys_colour_Menu, 0x00aaaaaa);
+	nsoption_set_colour(sys_colour_MenuText, 0x00000000);
+	nsoption_set_colour(sys_colour_Scrollbar, 0x00aaaaaa);
+	nsoption_set_colour(sys_colour_ThreeDDarkShadow, 0x00555555);
+	nsoption_set_colour(sys_colour_ThreeDFace, 0x00dddddd);
+	nsoption_set_colour(sys_colour_ThreeDHighlight, 0x00aaaaaa);
+	nsoption_set_colour(sys_colour_ThreeDLightShadow, 0x00999999);
+	nsoption_set_colour(sys_colour_ThreeDShadow, 0x00777777);
+	nsoption_set_colour(sys_colour_Window, 0x00aaaaaa);
+	nsoption_set_colour(sys_colour_WindowFrame, 0x00000000);
+	nsoption_set_colour(sys_colour_WindowText, 0x00000000);
+
+	return NSERROR_OK;
 }
 
-static void
-gui_init(int argc, char** argv)
+
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
 {
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector.
+ * /param argv The argument string vector.
+ * /return The return code to the OS
+ */
+int
+main(int argc, char** argv)
+{
+	struct browser_window *bw;
+	char *options;
+	char *messages;
+	nsurl *url;
+	nserror ret;
 	nsfb_t *nsfb;
+
+	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	options = filepath_find(respaths, "Choices");
+	nsoption_read(options, nsoptions);
+	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
 
 	/* Override, since we have no support for non-core SELECT menu */
 	nsoption_set_bool(core_select_menu, true);
@@ -514,44 +600,14 @@ gui_init(int argc, char** argv)
 	fbtk_enable_oskb(fbtk);
 
 	urldb_load_cookies(nsoption_charp(cookie_file));
-}
-
-/** Entry point from OS.
- *
- * /param argc The number of arguments in the string vector.
- * /param argv The argument string vector.
- * /return The return code to the OS
- */
-int
-main(int argc, char** argv)
-{
-	struct browser_window *bw;
-	char *options;
-	char *messages;
-	nsurl *url;
-	nserror error;
-
-	setbuf(stderr, NULL);
-
-	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
-
-	options = filepath_find(respaths, "Choices");
-	messages = filepath_find(respaths, "messages");
-
-	netsurf_init(&argc, &argv, options, messages);
-
-	free(messages);
-	free(options);
-
-	gui_init(argc, argv);
 
 	/* create an initial browser window */
 
 	LOG(("calling browser_window_create"));
 
-	error = nsurl_create(feurl, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+	ret = nsurl_create(feurl, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 					      BROWSER_WINDOW_HISTORY,
 					      url,
 					      NULL,
@@ -559,8 +615,8 @@ main(int argc, char** argv)
 					      &bw);
 		nsurl_unref(url);
 	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	} else {
 		netsurf_main_loop();
 
@@ -568,6 +624,9 @@ main(int argc, char** argv)
 	}
 
 	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
 }
@@ -817,6 +876,10 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	switch (cbi->event->type) {
 	case NSFB_EVENT_KEY_DOWN:
 		switch (cbi->event->value.keycode) {
+
+		case NSFB_KEY_DELETE:
+			browser_window_key_press(gw->bw, KEY_DELETE_RIGHT);
+			break;
 
 		case NSFB_KEY_PAGEUP:
 			if (browser_window_key_press(gw->bw,
@@ -1397,7 +1460,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 	gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0, 0);
 
-	statusbar_width = nsoption_int(toolbar_status_width) *
+	statusbar_width = nsoption_int(toolbar_status_size) *
 		fbtk_get_width(gw->window) / 10000;
 
 	/* toolbar */
@@ -1844,7 +1907,7 @@ gui_drag_save_object(gui_save_type type,
 }
 
 void
-gui_drag_save_selection(struct selection *s, struct gui_window *g)
+gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 }
 

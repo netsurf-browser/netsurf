@@ -42,7 +42,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
-#include "desktop/selection.h"
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/form.h"
@@ -50,7 +49,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/save_draw.h"
@@ -395,7 +394,7 @@ void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
  * \param  g  gui window
  */
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
@@ -421,7 +420,10 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 	if (gui_save_selection == NULL)
 		free(gui_save_selection);
 
-	gui_save_selection = selection_get_copy(s);
+	if (selection == NULL)
+		gui_save_selection = strdup("");
+	else
+		gui_save_selection = strdup(selection);
 
 	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, NULL,
 			save_leafname, LEAFNAME_MAX,

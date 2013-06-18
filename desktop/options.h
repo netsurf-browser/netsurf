@@ -1,6 +1,5 @@
 /*
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,171 +17,261 @@
  */
 
 /** \file
- * Option reading and saving (interface).
+ * Option available on all platforms
  *
- * Non-platform specific options can be added by editing this file and
- * netsurf/desktop/options.c
+ * Non-platform specific options can be added by editing this file 
  *
  * Platform specific options should be added in the platform options.h.
  *
- * The following types of options are supported:
- *  - bool (OPTION_BOOL)
- *  - int (OPTION_INTEGER)
- *  - char* (OPTION_STRING) (must be allocated on heap, may be 0, free before
- *                           assigning a new value)
+ * This header is specificaly intented to be included multiple times
+ *   with different macro definitions so there is no guard
  */
 
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
-#define _NETSURF_DESKTOP_OPTIONS_INCLUDING_
-
-#include <stdbool.h>
-#include <stdio.h>
-
 #include "desktop/plot_style.h"
-#include "desktop/options_main.h"
 
-#if defined(riscos)
-#include "riscos/options.h"
-#elif defined(nsgtk)
-#include "gtk/options.h"
-#elif defined(nsbeos)
-#include "beos/options.h"
-#elif defined(nsamiga)
-#include "amiga/options.h"
-#elif defined(nsframebuffer)
-#include "framebuffer/options.h"
-#elif defined(nsatari)
-#include "atari/options.h"
-#elif defined(nsmonkey)
-#include "monkey/options.h"
-#else
-#define NSOPTION_EXTRA_DEFINE
-#define NSOPTION_EXTRA_DEFAULTS
-#define NSOPTION_EXTRA_TABLE
-#endif
-
-/* allow the colour defaults to be overidden by the frontends */
-#ifndef NSOPTION_SYS_COLOUR_DEFAULTS
-#define NSOPTION_SYS_COLOUR_DEFAULTS NSOPTION_MAIN_SYS_COLOUR_DEFAULTS
-#endif
-
-#undef _NETSURF_DESKTOP_OPTIONS_INCLUDING_
-
-
-enum { OPTION_HTTP_PROXY_AUTH_NONE = 0,
-       OPTION_HTTP_PROXY_AUTH_BASIC = 1,
-       OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
-
-#define DEFAULT_MARGIN_TOP_MM 10
-#define DEFAULT_MARGIN_BOTTOM_MM 10
-#define DEFAULT_MARGIN_LEFT_MM 10
-#define DEFAULT_MARGIN_RIGHT_MM 10
-#define DEFAULT_EXPORT_SCALE 0.7
-#ifdef riscos
-#define DEFAULT_REFLOW_PERIOD 100 /* time in cs */
-#else
-#define DEFAULT_REFLOW_PERIOD 25 /* time in cs */
-#endif
-
-struct ns_options {
-	NSOPTION_MAIN_DEFINE;
-	NSOPTION_EXTRA_DEFINE;
-};
-
-/* global option struct */
-extern struct ns_options nsoptions;
-
-/* acessors */
-#define nsoption_bool(OPTION) (nsoptions.OPTION)
-#define nsoption_int(OPTION) (nsoptions.OPTION)
-#define nsoption_charp(OPTION) (nsoptions.OPTION)
-#define nsoption_colour(OPTION) (nsoptions.OPTION)
-
-#define nsoption_set_bool(OPTION, VALUE) nsoptions.OPTION = VALUE
-#define nsoption_set_int(OPTION, VALUE) nsoptions.OPTION = VALUE
-#define nsoption_set_colour(OPTION, VALUE) nsoptions.OPTION = VALUE
-#define nsoption_set_charp(OPTION, VALUE) do {	\
-	if (nsoptions.OPTION != NULL) {		\
-		free(nsoptions.OPTION);		\
-	}					\
-	nsoptions.OPTION = VALUE;               \
-        if ((nsoptions.OPTION != NULL) &&	\
-	    (*nsoptions.OPTION == 0)) {		\
-            free(nsoptions.OPTION);             \
-            nsoptions.OPTION = NULL;            \
-        }                                       \
-    } while (0)
-
-#define nsoption_setnull_charp(OPTION, VALUE)           \
-    do {                                                \
-        if (nsoptions.OPTION == NULL) {                 \
-            nsoptions.OPTION = VALUE;                   \
-            if (*nsoptions.OPTION == 0) {               \
-                free(nsoptions.OPTION);                 \
-                nsoptions.OPTION = NULL;                \
-            }                                           \
-        } else {                                        \
-            free(VALUE);                                \
-        }                                               \
-    } while (0)
-
-
-/**
- * Read options from a file.
- *
- * \param  path  name of file to read options from
- *
- * Option variables corresponding to lines in the file are updated. Missing
- * options are unchanged. If the file fails to open, options are unchanged.
- */
-void nsoption_read(const char *path);
-
-/**
- * Save options to a file.
- *
- * \param  path  name of file to write options to
- *
- * Errors are ignored.
- */
-void nsoption_write(const char *path);
-
-/**
- * Dump user options to stream
- *
- * \param outf output stream to dump options to.
- */
-void nsoption_dump(FILE *outf);
-
-/**
- * Fill a buffer with an option using a format.
- *
- * The format string is copied into the output buffer with the
- * following replaced:
- * %k - The options key
- * %t - The options type
- * %V - value - HTML type formatting
- * %v - value - plain formatting
- *
- * \param string  The buffer in which to place the results.
- * \param size    The size of the string buffer.
- * \param option  The opaque option number.
- * \param fmt     The format string.
- * \return The number of bytes written to \a string or -1 on error
- */
-int nsoption_snoptionf(char *string, size_t size, unsigned int option,
-		const char *fmt);
-
-/**
- * Process commandline and set options approriately.
- */
-void nsoption_commandline(int *pargc, char **argv);
-
-/**
- * Set default values for unset front-end specific options
- */
-void gui_options_init_defaults(void);
+/* defines for system colour table */
+#define NSOPTION_SYS_COLOUR_START NSOPTION_sys_colour_ActiveBorder
+#define NSOPTION_SYS_COLOUR_END NSOPTION_sys_colour_WindowText
 
 #endif
 
+/** An HTTP proxy should be used. */
+NSOPTION_BOOL(http_proxy, false) 
+
+/** Hostname of proxy. */
+NSOPTION_STRING(http_proxy_host, NULL) 
+
+/** Proxy port. */
+NSOPTION_INTEGER(http_proxy_port, 8080) 
+
+/** Proxy authentication method. */
+NSOPTION_INTEGER(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE) 
+
+/** Proxy authentication user name */
+NSOPTION_STRING(http_proxy_auth_user, NULL)
+
+/** Proxy authentication password */
+NSOPTION_STRING(http_proxy_auth_pass, NULL)
+
+/** Proxy omission list */
+NSOPTION_STRING(http_proxy_noproxy, "localhost")
+
+/** Default font size / 0.1pt. */
+NSOPTION_INTEGER(font_size, 128)
+
+/** Minimum font size. */
+NSOPTION_INTEGER(font_min_size, 85)
+
+/** Default sans serif font */
+NSOPTION_STRING(font_sans, NULL)
+/** Default serif font */
+NSOPTION_STRING(font_serif, NULL)
+
+/** Default monospace font */
+NSOPTION_STRING(font_mono, NULL)
+
+/** Default cursive font */
+NSOPTION_STRING(font_cursive, NULL)
+
+/** Default fantasy font */
+NSOPTION_STRING(font_fantasy, NULL)
+
+/** Accept-Language header. */
+NSOPTION_STRING(accept_language, NULL)
+
+/** Accept-Charset header. */
+NSOPTION_STRING(accept_charset, NULL)
+
+/** Preferred maximum size of memory cache / bytes. */
+NSOPTION_INTEGER(memory_cache_size, 12 * 1024 * 1024)
+
+/** Preferred expiry size of disc cache / bytes. */
+NSOPTION_INTEGER(disc_cache_size, 1024 * 1024 * 1024)
+
+/** Preferred expiry age of disc cache / days. */
+NSOPTION_INTEGER(disc_cache_age, 28)
+
+/** Whether to block advertisements */
+NSOPTION_BOOL(block_advertisements, false)
+
+/** Disable website tracking, see	                
+ * http://www.w3.org/Submission/2011/SUBM-web-tracking-protection-20110224/#dnt-uas */
+NSOPTION_BOOL(do_not_track, false)
+
+/** Minimum GIF animation delay */
+NSOPTION_INTEGER(minimum_gif_delay, 10)
+
+/** Whether to send the referer HTTP header */
+NSOPTION_BOOL(send_referer, true)
+
+/** Whether to fetch foreground images */
+NSOPTION_BOOL(foreground_images, true)
+
+/** Whether to fetch background images */
+NSOPTION_BOOL(background_images, true)
+
+/** Whether to animate images */
+NSOPTION_BOOL(animate_images, true)
+
+/** Whether to execute javascript */
+NSOPTION_BOOL(enable_javascript, false)
+
+/** Maximum time (in seconds) to wait for a script to run */
+NSOPTION_INTEGER(script_timeout, 10)
+
+/** How many days to retain URL data for */
+NSOPTION_INTEGER(expire_url, 28)
+
+/** Default font family */
+NSOPTION_INTEGER(font_default, PLOT_FONT_FAMILY_SANS_SERIF)
+
+/** ca-bundle location */
+NSOPTION_STRING(ca_bundle, NULL)
+
+/** ca-path location */
+NSOPTION_STRING(ca_path, NULL)
+
+/** Cookie file location */
+NSOPTION_STRING(cookie_file, NULL)
+
+/** Cookie jar location */
+NSOPTION_STRING(cookie_jar, NULL)
+
+/** Home page location */
+NSOPTION_STRING(homepage_url, NULL)
+
+/** search web from url bar */
+NSOPTION_BOOL(search_url_bar, false)
+
+/** default web search provider */
+NSOPTION_INTEGER(search_provider, 0)
+
+/** URL completion in url bar */
+NSOPTION_BOOL(url_suggestion, true)
+
+/** default x position of new windows */
+NSOPTION_INTEGER(window_x, 0)
+
+/** default y position of new windows */
+NSOPTION_INTEGER(window_y, 0)
+
+/** default width of new windows */
+NSOPTION_INTEGER(window_width, 0)
+
+/** default height of new windows */
+NSOPTION_INTEGER(window_height, 0)
+
+/** width of screen when above options were saved */
+NSOPTION_INTEGER(window_screen_width, 0)
+
+/** height of screen when above options were saved */
+NSOPTION_INTEGER(window_screen_height, 0)
+
+/** default size of status bar vs. h scroll bar */
+NSOPTION_INTEGER(toolbar_status_size, 6667)
+
+/** default window scale */
+NSOPTION_INTEGER(scale, 100)
+
+/* Whether to reflow web pages while objects are fetching */
+NSOPTION_BOOL(incremental_reflow, true)
+
+/* Minimum time (in cs) between HTML reflows while objects are fetching */
+NSOPTION_UINT(min_reflow_period, DEFAULT_REFLOW_PERIOD)
+
+/* use core selection menu */
+NSOPTION_BOOL(core_select_menu, false)
+
+/******** Fetcher options ********/
+
+/** Maximum simultaneous active fetchers */
+NSOPTION_INTEGER(max_fetchers, 24)
+
+/** Maximum simultaneous active fetchers per host.
+ * (<=option_max_fetchers else it makes no sense) Note that rfc2616
+ * section 8.1.4 says that there should be no more than two keepalive
+ * connections per host. None of the main browsers follow this as it
+ * slows page fetches down considerably.  See
+ * https://bugzilla.mozilla.org/show_bug.cgi?id=423377#c4
+ */
+NSOPTION_INTEGER(max_fetchers_per_host, 5)
+
+/** Maximum number of inactive fetchers cached.  The total number of
+ * handles netsurf will therefore have open is this plus
+ * option_max_fetchers.
+ */
+NSOPTION_INTEGER(max_cached_fetch_handles, 6)
+
+/** Suppress debug output from cURL. */
+NSOPTION_BOOL(suppress_curl_debug, true)
+
+/** Whether to allow target="_blank" */
+NSOPTION_BOOL(target_blank, true)
+
+/** Whether second mouse button opens in new tab */
+NSOPTION_BOOL(button_2_tab, true)
+
+/******** PDF / Print options ********/
+
+/** top margin of exported page */
+NSOPTION_INTEGER(margin_top, DEFAULT_MARGIN_TOP_MM)
+
+/** bottom margin of exported page */
+NSOPTION_INTEGER(margin_bottom, DEFAULT_MARGIN_BOTTOM_MM)
+
+/** left margin of exported page */
+NSOPTION_INTEGER(margin_left, DEFAULT_MARGIN_LEFT_MM)
+
+/** right margin of exported page */
+NSOPTION_INTEGER(margin_right, DEFAULT_MARGIN_RIGHT_MM)
+
+/** scale of exported content */
+NSOPTION_INTEGER(export_scale, DEFAULT_EXPORT_SCALE * 100)
+
+/** suppressing images in printed content */
+NSOPTION_BOOL(suppress_images, false)
+
+/** turning off all backgrounds for printed content */
+NSOPTION_BOOL(remove_backgrounds, false)
+
+/** turning on content loosening for printed content */
+NSOPTION_BOOL(enable_loosening, true)
+
+/** compression of PDF documents */
+NSOPTION_BOOL(enable_PDF_compression, true)
+
+/** setting a password and encoding PDF documents */
+NSOPTION_BOOL(enable_PDF_password, false)
+
+/******** System colours ********/
+NSOPTION_COLOUR(sys_colour_ActiveBorder, 0x00d3d3d3)
+NSOPTION_COLOUR(sys_colour_ActiveCaption, 0x00f1f1f1)
+NSOPTION_COLOUR(sys_colour_AppWorkspace, 0x00f1f1f1)
+NSOPTION_COLOUR(sys_colour_Background, 0x006e6e6e)
+NSOPTION_COLOUR(sys_colour_ButtonFace, 0x00f9f9f9)
+NSOPTION_COLOUR(sys_colour_ButtonHighlight, 0x00ffffff)
+NSOPTION_COLOUR(sys_colour_ButtonShadow, 0x00aeaeae)
+NSOPTION_COLOUR(sys_colour_ButtonText, 0x004c4c4c)
+NSOPTION_COLOUR(sys_colour_CaptionText, 0x004c4c4c)
+NSOPTION_COLOUR(sys_colour_GrayText, 0x00505050)
+NSOPTION_COLOUR(sys_colour_Highlight, 0x00c00800)
+NSOPTION_COLOUR(sys_colour_HighlightText, 0x00ffffff)
+NSOPTION_COLOUR(sys_colour_InactiveBorder, 0x00f1f1f1)
+NSOPTION_COLOUR(sys_colour_InactiveCaption, 0x00e6e6e6)
+NSOPTION_COLOUR(sys_colour_InactiveCaptionText, 0x00a6a6a6)
+NSOPTION_COLOUR(sys_colour_InfoBackground, 0x008fdfef)
+NSOPTION_COLOUR(sys_colour_InfoText, 0x00000000)
+NSOPTION_COLOUR(sys_colour_Menu, 0x00f1f1f1)
+NSOPTION_COLOUR(sys_colour_MenuText, 0x004e4e4e)
+NSOPTION_COLOUR(sys_colour_Scrollbar, 0x00cccccc)
+NSOPTION_COLOUR(sys_colour_ThreeDDarkShadow, 0x00aeaeae)
+NSOPTION_COLOUR(sys_colour_ThreeDFace, 0x00f9f9f9)
+NSOPTION_COLOUR(sys_colour_ThreeDHighlight, 0x00ffffff)
+NSOPTION_COLOUR(sys_colour_ThreeDLightShadow, 0x00ffffff)
+NSOPTION_COLOUR(sys_colour_ThreeDShadow, 0x00d5d5d5)
+NSOPTION_COLOUR(sys_colour_Window, 0x00f1f1f1)
+NSOPTION_COLOUR(sys_colour_WindowFrame, 0x004e4e4e)
+NSOPTION_COLOUR(sys_colour_WindowText, 0x00000000)

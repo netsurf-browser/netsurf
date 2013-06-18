@@ -35,7 +35,7 @@
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"

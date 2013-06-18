@@ -30,7 +30,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
 #include "render/box.h"

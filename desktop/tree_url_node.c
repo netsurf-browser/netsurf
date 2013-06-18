@@ -32,7 +32,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/tree_url_node.h"
 #include "utils/corestrings.h"
 #include "utils/libdom.h"
@@ -126,35 +126,41 @@ void tree_url_node_cleanup()
  * \param parent     the node to link to
  * \param url        the URL (copied)
  * \param data	     the URL data to use
- * \param title	     the custom title to use
+ * \param title	     custom title to use or NULL to use url
  * \return the node created, or NULL for failure
  */
 struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
 		nsurl *url, const char *title,
 		tree_node_user_callback user_callback, void *callback_data)
 {
-	struct node *node;
+	struct node *node = NULL;
 	struct node_element *element;
-	char *text_cp, *squashed;
 
-	squashed = squash_whitespace(title ? title : nsurl_access(url));
-	text_cp = strdup(squashed);
-	if (text_cp == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return NULL;
+	if (title == NULL) {
+		node = tree_create_leaf_node(tree,
+					     parent,
+					     nsurl_access(url),
+					     true, false, false);
+	} else {
+		char *squashed;
+
+		squashed = squash_whitespace(title);
+		if (squashed != NULL) {
+			node = tree_create_leaf_node(tree,
+						     parent,
+						     squashed,
+						     true, false, false);
+			free(squashed);
+		}
 	}
-	free(squashed);
-	node = tree_create_leaf_node(tree, parent, text_cp, true, false,
-				     false);
 	if (node == NULL) {
-		free(text_cp);
 		return NULL;
 	}
 
-	if (user_callback != NULL)
+	if (user_callback != NULL) {
 		tree_set_node_user_callback(node, user_callback,
 					    callback_data);
+	}
 
 	tree_create_node_element(node, NODE_ELEMENT_BITMAP,
 				 TREE_ELEMENT_THUMBNAIL, false);
@@ -165,7 +171,7 @@ struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
 	element = tree_create_node_element(node, NODE_ELEMENT_TEXT,
 					   TREE_ELEMENT_URL, true);
 	if (element != NULL) {
-		text_cp = strdup(nsurl_access(url));
+		char *text_cp = strdup(nsurl_access(url));
 		if (text_cp == NULL) {
 			tree_delete_node(tree, node, false);
 			LOG(("malloc failed"));
@@ -194,22 +200,18 @@ struct node *tree_create_URL_node_readonly(struct tree *tree,
 {
 	struct node *node;
 	struct node_element *element;
-	char *title;
+	const char *title;
 
 	assert(url && data);
 
 	if (data->title != NULL) {
-		title = strdup(data->title);
+		title = data->title;
 	} else {
-		title = strdup(nsurl_access(url));
+		title = nsurl_access(url);
 	}
-
-	if (title == NULL)
-		return NULL;
 
 	node = tree_create_leaf_node(tree, parent, title, false, false, false);
 	if (node == NULL) {
-		free(title);
 		return NULL;
 	}
 
@@ -336,6 +338,17 @@ const char *tree_url_node_get_url(struct node *node)
 		return NULL;
 	return tree_node_element_get_text(element);
 }
+
+
+struct bitmap *tree_url_node_get_icon(struct node *node)
+{
+	struct node_element *element;
+	element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+	if (element == NULL)
+		return NULL;
+	return tree_node_element_get_icon(element);
+}
+
 
 void tree_url_node_edit_title(struct tree *tree, struct node *node)
 {
@@ -565,18 +578,20 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 
 	error = nsurl_create(url2, &url);
 
-	free(url2);
-
 	if (error != NSERROR_OK) {
 		LOG(("Failed normalising '%s'", url2));
 
-		warn_user("NoMemory", NULL);
+		free(url2);
+
+		warn_user(messages_get_errorcode(error), NULL);
 
 		free(title);
 		dom_node_unref(a);
 
 		return;
 	}
+
+	free(url2);
 
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
@@ -681,6 +696,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 
 		dir = tree_create_folder_node(tctx->tree, tctx->directory,
 				title, true, false, false);
+		free(title);
 		if (dir == NULL) {
 			dom_string_unref(name);
 			return false;

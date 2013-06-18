@@ -39,7 +39,7 @@
 #include "css/css.h"
 #include "css/utils.h"
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_pdf/font_haru.h"
 #include "render/font.h"
 #include "utils/log.h"

@@ -17,7 +17,7 @@
  */
 
 #include <stdbool.h>
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
@@ -44,7 +44,7 @@ bool ro_gui_options_content_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS,
-                                       nsoption_bool(block_ads));
+                                       nsoption_bool(block_advertisements));
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS,
                                        nsoption_bool(block_popups));
 	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS,
@@ -88,7 +88,7 @@ void ro_gui_options_content_default(wimp_pointer *pointer)
 
 bool ro_gui_options_content_ok(wimp_w w)
 {
-	nsoption_set_bool(block_ads,
+	nsoption_set_bool(block_advertisements,
 			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS));
 
 	nsoption_set_bool(block_popups,

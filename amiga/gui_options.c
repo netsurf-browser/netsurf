@@ -38,7 +38,7 @@
 #include "amiga/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 
 #include <proto/window.h>
@@ -96,6 +96,7 @@ enum
 	GID_OPTS_PROXY_PORT,
 	GID_OPTS_PROXY_USER,
 	GID_OPTS_PROXY_PASS,
+	GID_OPTS_PROXY_BYPASS,
 	GID_OPTS_FETCHMAX,
 	GID_OPTS_FETCHHOST,
 	GID_OPTS_FETCHCACHE,
@@ -278,6 +279,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_PROXY_HOST] = (char *)ami_utf8_easy((char *)messages_get("Host"));
 	gadlab[GID_OPTS_PROXY_USER] = (char *)ami_utf8_easy((char *)messages_get("Username"));
 	gadlab[GID_OPTS_PROXY_PASS] = (char *)ami_utf8_easy((char *)messages_get("Password"));
+	gadlab[GID_OPTS_PROXY_BYPASS] = (char *)ami_utf8_easy((char *)messages_get("ProxyBypass"));
 	gadlab[GID_OPTS_FETCHMAX] = (char *)ami_utf8_easy((char *)messages_get("FetchesMax"));
 	gadlab[GID_OPTS_FETCHHOST] = (char *)ami_utf8_easy((char *)messages_get("FetchesHost"));
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
@@ -401,7 +403,7 @@ void ami_gui_opts_open(void)
 	ULONG screenmodeid = 0;
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
-	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
+	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
@@ -415,9 +417,9 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
-	if(nsoption_charp(use_pubscreen))
+	if(nsoption_charp(pubscreen_name))
 	{
-		if(strcmp(nsoption_charp(use_pubscreen),"Workbench") == 0)
+		if(strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0)
 		{
 			screenoptsselected = 1;
 			screennamedisabled = TRUE;
@@ -435,12 +437,13 @@ void ami_gui_opts_open(void)
 		screennamedisabled = TRUE;
 	}
 
-	if((nsoption_charp(modeid)) && (strncmp(nsoption_charp(modeid),"0x",2) == 0))
+	if((nsoption_charp(screen_modeid)) && 
+	   (strncmp(nsoption_charp(screen_modeid),"0x",2) == 0))
 	{
-		screenmodeid = strtoul(nsoption_charp(modeid),NULL,0);
+		screenmodeid = strtoul(nsoption_charp(screen_modeid),NULL,0);
 	}
 
-	if(nsoption_bool(http_proxy))
+	if(nsoption_bool(http_proxy) == true)
 	{
 		proxytype = nsoption_int(http_proxy_auth) + 1;
 		switch(nsoption_int(http_proxy_auth))
@@ -452,6 +455,8 @@ void ami_gui_opts_open(void)
 				proxyhostdisabled = FALSE;
 			break;
 		}
+	} else {
+		proxybypassdisabled = TRUE;
 	}
 
 	sprintf(animspeed,"%.2f",(float)(nsoption_int(minimum_gif_delay)/100.0));
@@ -579,7 +584,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_HIDEADS,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_HIDEADS],
-         	           						GA_Selected, nsoption_bool(block_ads),
+         	           						GA_Selected, nsoption_bool(block_advertisements),
             	    					CheckBoxEnd,
 									LayoutEnd, // content blocking
 									LAYOUT_AddChild,VGroupObject,
@@ -693,7 +698,7 @@ void ami_gui_opts_open(void)
 												GA_ID, GID_OPTS_SCREENNAME,
 												GA_RelVerify, TRUE,
 												GA_Disabled,screennamedisabled,
-												STRINGA_TextVal, nsoption_bool(use_pubscreen),
+												STRINGA_TextVal, nsoption_charp(pubscreen_name),
 												STRINGA_BufferPos,0,
 											StringEnd,
 										LayoutEnd,
@@ -743,7 +748,7 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
-         	           					GA_Selected, nsoption_bool(use_os_pointers),
+         	           					GA_Selected, nsoption_bool(os_mouse_pointers),
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
@@ -817,6 +822,16 @@ void ami_gui_opts_open(void)
 									StringEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_PROXY_PASS],
+									LabelEnd,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_BYPASS] = StringObject,
+										GA_ID, GID_OPTS_PROXY_BYPASS,
+										GA_RelVerify, TRUE,
+										GA_Disabled, proxybypassdisabled,
+										STRINGA_TextVal, nsoption_charp(http_proxy_noproxy),
+										STRINGA_BufferPos, 0,
+									StringEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_PROXY_BYPASS],
 									LabelEnd,
 								LayoutEnd, // proxy
 								CHILD_WeightedHeight, 0,
@@ -942,7 +957,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_DPI_Y] = IntegerObject,
 											GA_ID, GID_OPTS_DPI_Y,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(amiga_ydpi),
+											INTEGER_Number, nsoption_int(screen_ydpi),
 											INTEGER_Minimum, 60,
 											INTEGER_Maximum, 150,
 											INTEGER_Arrows, TRUE,
@@ -1163,7 +1178,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_TAB_ACTIVE,
          	        	   					GA_RelVerify, TRUE,
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
+         	     	      					GA_Selected, !nsoption_bool(new_tab_is_active),
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_LAST,
@@ -1274,7 +1289,7 @@ void ami_gui_opts_open(void)
       		              					GA_ID, GID_OPTS_CLIPBOARD,
          		           					GA_RelVerify, TRUE,
          	    	       					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
-         	    	       					GA_Selected, nsoption_bool(utf8_clipboard),
+         	    	       					GA_Selected, nsoption_bool(clipboard_write_utf8),
             	    					CheckBoxEnd,
 									LayoutEnd, // clipboard
 									CHILD_WeightedHeight, 0,
@@ -1531,9 +1546,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(block_ads, true);
+		nsoption_set_bool(block_advertisements, true);
 	} else {
-		nsoption_set_bool(block_ads, false);
+		nsoption_set_bool(block_advertisements, false);
 	}
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_HISTORY],(ULONG *)&nsoption_int(expire_url));
@@ -1572,16 +1587,16 @@ void ami_gui_opts_use(bool save)
 	switch(data)
 	{
 		case 0:
-			nsoption_set_charp(use_pubscreen, strdup("\0"));
+			nsoption_set_charp(pubscreen_name, strdup("\0"));
 			break;
 
 		case 1:
-			nsoption_set_charp(use_pubscreen, (char *)strdup("Workbench"));
+			nsoption_set_charp(pubscreen_name, (char *)strdup("Workbench"));
 			break;
 
 		case 2:
 			GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_SCREENNAME],(ULONG *)&data);
-			nsoption_set_charp(use_pubscreen, (char *)strdup((char *)data));
+			nsoption_set_charp(pubscreen_name, (char *)strdup((char *)data));
 			break;
 	}
 
@@ -1590,7 +1605,7 @@ void ami_gui_opts_use(bool save)
 	{
 		char *modeid = malloc(20);
 		sprintf(modeid,"0x%lx", id);
-		nsoption_set_charp(modeid, modeid);
+		nsoption_set_charp(screen_modeid, modeid);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
@@ -1614,9 +1629,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTROS],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(use_os_pointers, true);
+		nsoption_set_bool(os_mouse_pointers, true);
 	} else {
-		nsoption_set_bool(use_os_pointers, false);
+		nsoption_set_bool(os_mouse_pointers, false);
 	}
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
@@ -1640,6 +1655,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_PASS],(ULONG *)&data);
 	nsoption_set_charp(http_proxy_auth_pass, (char *)strdup((char *)data));
+
+	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_BYPASS],(ULONG *)&data);
+	nsoption_set_charp(http_proxy_noproxy, (char *)strdup((char *)data));
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&nsoption_int(max_fetchers));
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
@@ -1667,7 +1685,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(animate_images, true);
 	}
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&nsoption_int(amiga_ydpi));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&nsoption_int(screen_ydpi));
 	ami_font_setdevicedpi(id); // id set above
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
@@ -1740,9 +1758,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(new_tab_active, false);
+		nsoption_set_bool(new_tab_is_active, false);
 	} else {
-		nsoption_set_bool(new_tab_active, true);
+		nsoption_set_bool(new_tab_is_active, true);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);
@@ -1784,9 +1802,9 @@ void ami_gui_opts_use(bool save)
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if (data) {
-		nsoption_set_bool(utf8_clipboard, true);
+		nsoption_set_bool(clipboard_write_utf8, true);
 	} else {
-		nsoption_set_bool(utf8_clipboard, false);
+		nsoption_set_bool(clipboard_write_utf8, false);
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CONTEXTMENU],(ULONG *)&data);
@@ -1817,6 +1835,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(hide_docky_icon, true);
 	}
 
+#ifdef WITH_PDF_EXPORT
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_TOP],(ULONG *)&nsoption_int(margin_top));
 
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_LEFT],(ULONG *)&nsoption_int(margin_left));
@@ -1861,6 +1880,7 @@ void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(enable_PDF_password, false);
 	}
+#endif
 
 	if(rescan_fonts == true) {
 		ami_font_finiscanner();
@@ -1868,7 +1888,7 @@ void ami_gui_opts_use(bool save)
 	}
 
 	if(save == true) {
-		nsoption_write(current_user_options);
+		nsoption_write(current_user_options, NULL, NULL);
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
 
@@ -2010,6 +2030,8 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
+								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 							break;
 							case 1:
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_HOST],
@@ -2021,6 +2043,8 @@ BOOL ami_gui_opts_event(void)
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
 								gow->win,NULL, GA_Disabled, TRUE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 
 							case 2:
@@ -2033,6 +2057,8 @@ BOOL ami_gui_opts_event(void)
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_USER],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_PASS],
+								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
+								RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_PROXY_BYPASS],
 								gow->win,NULL, GA_Disabled, FALSE, TAG_DONE);
 							break;
 						}

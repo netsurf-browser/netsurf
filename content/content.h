@@ -38,6 +38,7 @@
 #include "utils/types.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
+#include "desktop/search.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 
@@ -68,6 +69,7 @@ typedef enum {
 	CONTENT_MSG_DONE,      /**< finished */
 	CONTENT_MSG_ERROR,     /**< error occurred */
 	CONTENT_MSG_ERRORCODE, /**< error occurred return nserror */
+	CONTENT_MSG_REDIRECT,  /**< fetch url redirect occured */
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
@@ -102,6 +104,11 @@ union content_msg_data {
 	const char *error;
         /** CONTENT_MSG_ERRORCODE - Error code */
 	nserror errorcode;
+        /** CONTENT_MSG_REDIRECT - Redirect info */
+	struct {
+		nsurl *from;	/**< Redirect origin */
+		nsurl *to;	/**< Redirect target */
+	} redirect;		/**< Fetch URL redirect occured */
 	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
 		int x, y, width, height;
@@ -254,6 +261,10 @@ bool content_scroll_at_point(struct hlcache_handle *h,
 		int x, int y, int scrx, int scry);
 bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
+void content_search(struct hlcache_handle *h,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string);
+void content_search_clear(struct hlcache_handle *h);
 void content_debug_dump(struct hlcache_handle *h, FILE *f);
 struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 		lwc_string *rel);

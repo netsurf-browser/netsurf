@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "desktop/browser.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/gui.h"

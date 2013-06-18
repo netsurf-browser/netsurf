@@ -33,7 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"

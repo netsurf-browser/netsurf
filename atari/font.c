@@ -42,7 +42,7 @@
 #include "render/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 

@@ -23,7 +23,7 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "amiga/object.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
@@ -327,6 +327,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 						utf16next, emwidth);
 		}
 
+		tx += tempx;
+
 		/* Check whether we have a space */
 		if (*(string + utf8_pos) == ' ') {
 			/* Got a space */
@@ -341,8 +343,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 
-		tx += tempx;
-
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
@@ -352,7 +352,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
-	}
+	};
 
 	free(outf16);
 
@@ -584,7 +584,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		char2 = 0;
+		*char2 = 0;
 	}
 	
 	if(aa == false) {
@@ -622,7 +622,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 
 			kern = 0;
 
-			if(char2) EObtainInfo(&ofont->olf_EEngine,
+			if(*char2) EObtainInfo(&ofont->olf_EEngine,
 								OT_TextKernPair, &kern,
 								TAG_END);
 
@@ -632,7 +632,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 				glyphmaptag, glyph,
 				TAG_END);
 				
-			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 		}
@@ -657,7 +657,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		char2 = 0;
+		*char2 = 0;
 	}
 	
 	if(ESetInfo(&ofont->olf_EEngine,
@@ -674,7 +674,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 			kern = 0;
 
-			if(char2) {
+			if(*char2) {
 				if(ESetInfo(&ofont->olf_EEngine,
 						OT_GlyphCode, *char1,
 						OT_GlyphCode2, *char2,
@@ -687,7 +687,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 			
-			if(char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 				
@@ -882,10 +882,10 @@ void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
-	ULONG ydpi = nsoption_int(amiga_ydpi);
-	ULONG xdpi = nsoption_int(amiga_ydpi);
+	ULONG ydpi = nsoption_int(screen_ydpi);
+	ULONG xdpi = nsoption_int(screen_ydpi);
 
-	nscss_screen_dpi = INTTOFIX(nsoption_int(amiga_ydpi));
+	nscss_screen_dpi = INTTOFIX(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
 	{

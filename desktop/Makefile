@@ -1,9 +1,9 @@
 # Sources for desktop
 
 S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
-	mouse.c options.c plot_style.c print.c search.c searchweb.c	\
+	mouse.c plot_style.c print.c search.c searchweb.c	\
 	scrollbar.c sslcert.c textarea.c thumbnail.c tree.c 		\
-	tree_url_node.c version.c
+	tree_url_node.c version.c system_colour.c
 
 S_DESKTOP := $(addprefix desktop/,$(S_DESKTOP))
 

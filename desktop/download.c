@@ -238,6 +238,9 @@ static nserror download_callback(llcache_handle *handle,
 
 	case LLCACHE_EVENT_PROGRESS:
 		break;
+
+	case LLCACHE_EVENT_REDIRECT:
+		break;
 	}
 
 	return error;

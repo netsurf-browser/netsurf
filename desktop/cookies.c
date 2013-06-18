@@ -31,7 +31,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/tree.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -264,19 +264,12 @@ static struct node *cookies_create_cookie_node(struct node *parent,
 					       const struct cookie_data *data)
 {
 	struct node *node;
-	char *name;
 
-	name = strdup(data->name);
-	if (name == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	node = tree_create_leaf_node(cookies_tree, NULL, name,
+	node = tree_create_leaf_node(cookies_tree,
+				     NULL,
+				     data->name,
 				     false, false, false);
 	if (node == NULL) {
-		free(name);
 		return NULL;
 	}
 
@@ -329,44 +322,33 @@ static void cookies_schedule_callback(const void *scheduled_data)
 	const struct cookie_data *data = scheduled_data;
 	struct node *node = NULL;
 	struct node *cookie_node = NULL;
-	char *domain_cp;
 
 	assert(data != NULL);
 
 	node = cookies_find(cookies_tree_root, data->domain);
 
 	if (node == NULL) {
-		domain_cp = strdup(data->domain);
-		if (domain_cp == NULL) {
-			LOG(("malloc failed"));
-			warn_user("NoMemory", 0);
-			return;
-		}
-		/* ownership of domain_cp passed to tree, if node creation
-		 * does not fail */
 		node = tree_create_folder_node(cookies_tree,
-					       cookies_tree_root, domain_cp,
+					       cookies_tree_root,
+					       data->domain,
 					       false, false, false);
 		if (node != NULL) {
-			tree_set_node_user_callback(node, cookies_node_callback,
+			tree_set_node_user_callback(node,
+						    cookies_node_callback,
 						    NULL);
 			tree_set_node_icon(cookies_tree, node, folder_icon);
-
-		} else {
-			free(domain_cp);
 		}
 	}
 
-	if (node == NULL)
-		return;
+	if (node != NULL) {
+		cookie_node = cookies_find(node, data->name);
+		if (cookie_node == NULL) {
+			cookies_create_cookie_node(node, data);
+		} else {
+			cookies_update_cookie_node(cookie_node, data);
+		}
 
-	cookie_node = cookies_find(node, data->name);
-	if (cookie_node == NULL)
-		cookies_create_cookie_node(node, data);
-	else
-		cookies_update_cookie_node(cookie_node, data);
-
-	return;
+	}
 }
 
 /**

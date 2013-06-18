@@ -137,12 +137,39 @@ void tree_setup_colours(void);
 struct tree *tree_create(unsigned int flags,
 		const struct treeview_table *callbacks,
   		void *client_data);
+
+/**
+ * Creates a folder node with the specified title, and optionally links it into
+ * the tree.
+ *
+ * \param tree		    the owner tree of 'parent', may be NULL
+ * \param parent	    the parent node, or NULL not to link
+ * \param title		    the node title
+ * \param editable	    if true, the node title will be editable
+ * \param retain_in_memory  if true, the node will stay in memory after deletion
+ * \param deleted	    if true, the node is created with the deleted flag
+ * \return		    the newly created node or NULL on error.
+ */
 struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
   		bool deleted);
+
+/**
+ * Creates a leaf node with the specified title, and optionally links it into
+ * the tree.
+ *
+ * \param tree		    the owner tree of 'parent', may be NULL
+ * \param parent	    the parent node, or NULL not to link
+ * \param title		    the node title.
+ * \param editable	    if true, the node title will be editable
+ * \param retain_in_memory  if true, the node will stay in memory after deletion
+ * \param deleted	    if true, the node is created with the deleted flag
+ * \return		    the newly created node or NULL on error.
+ */
 struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
   		bool deleted);
+
 struct node_element *tree_create_node_element(struct node *parent,
 		node_element_type type, unsigned int flag, bool editable);
 void tree_link_node(struct tree *tree, struct node *link, struct node *node,
@@ -173,6 +200,7 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 		const char *text, void *bitmap);
 bool tree_update_element_text(struct tree *tree, struct node_element *element, char *text);
 const char *tree_node_element_get_text(struct node_element *element);
+struct bitmap *tree_node_element_get_icon(struct node_element *element);
 struct node *tree_get_root(struct tree *tree);
 bool tree_is_edited(struct tree *tree);
 tree_drag_type tree_drag_status(struct tree *tree);

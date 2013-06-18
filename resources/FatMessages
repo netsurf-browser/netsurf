@@ -2077,6 +2077,146 @@ fr.gtk.gtkThemeAdd:Le thÃ¨me a Ã©tÃ© ajoutÃ© avec succes
 it.gtk.gtkThemeAdd:Il tema Ã¨ stato aggiunto con successo
 nl.gtk.gtkThemeAdd:Theme added successfully
 
+# GTK preferences dialog
+
+en.gtk.preferencesTitle:Netsurf Preferences
+
+# Main tab
+en.gtk.preferencesMainTabtitle:Main
+en.gtk.preferencesStartup:<b>Startup</b>
+en.gtk.preferencesStartupPage:Page:
+en.gtk.preferencesStartupPageTooltip:The default startup page
+en.gtk.preferencesStartupPageDefault:Use Default Page
+en.gtk.preferencesStartupPageCurrent:Use Current Page
+en.gtk.preferencesSearch:<b>Search</b>
+en.gtk.preferencesSearchURLBar:Search from URL bar
+en.gtk.preferencesSearchProvider:Provider:
+en.gtk.preferencesSearchProviderTooltip:The default web search provider
+en.gtk.preferencesDownloads:<b>Downloads</b>
+en.gtk.preferencesDownloadsRemove:Remove download from list when complete
+en.gtk.preferencesDownloadsConfirm:Confirm before overwriting files
+en.gtk.preferencesDownloadsLocation:Location:
+en.gtk.preferencesDownloadsLocationTooltip:The default location downloaded files are put
+
+# Appearance tab
+en.gtk.preferencesAppearanceTabtitle:Appearance
+en.gtk.preferencesThemes:<b>Themes</b>
+en.gtk.preferencesThemesAdd:Add Theme...
+en.gtk.preferencesTabs:<b>Tabs</b>
+en.gtk.preferencesTabsAlways:Always show tab bar
+en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
+en.gtk.preferencesTabsNewly:Newly opened tabs are blank
+en.gtk.preferencesTabsPosition:Position:
+en.gtk.preferencesSource:<b>Source</b>
+en.gtk.preferencesSourceOpen:Open source view in new:
+en.gtk.preferencesSourceWindow:window
+en.gtk.preferencesSourceTab:tab
+en.gtk.preferencesURLbar:<b>URLbar</b>
+en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
+en.gtk.preferencesToolbar:<b>Toolbar</b>
+en.gtk.preferencesToolbarButtons:Buttons:
+# Theme list
+en.gtk.preferencesThemeTypeDefault:Default
+# Tab position list
+en.gtk.preferencesTabLocTop:Top
+en.gtk.preferencesTabLocLeft:Left
+en.gtk.preferencesTabLocBottom:Bottom
+en.gtk.preferencesTabLocRight:Right
+# button list
+en.gtk.preferencesButtonTypeSmall:Small Icons
+en.gtk.preferencesButtonTypeLarge:Large Icons
+en.gtk.preferencesButtonTypeLargeText:Large Icons and Text
+en.gtk.preferencesButtonTypeText:Text only
+
+# content tab
+en.gtk.preferencesContentTabtitle:Content
+en.gtk.preferencesControl:<b>Control</b>
+en.gtk.preferencesControlPrevent:Prevent pop-up windows
+en.gtk.preferencesControlHide:Hide Adverts
+en.gtk.preferencesControlEnable:Enable JavaScript
+en.gtk.preferencesControlDisable:Disable plug-ins
+en.gtk.preferencesControlHigh:High quality image scaling
+en.gtk.preferencesControlLoad:Load and display
+en.gtk.preferencesAnimation:<b>Animation</b>
+en.gtk.preferencesAnimationEnable:Enable
+en.gtk.preferencesAnimationMinimum:Minimum time between frames:
+en.gtk.preferencesAnimationMinimumTooltip:Do not update animations any more often than this.
+en.gtk.preferencesFonts:<b>Fonts</b>
+en.gtk.preferencesFontsDefault:Default
+en.gtk.preferencesFontsSize:Size
+en.gtk.preferencesFontsSizeTooltip:The base-line font size to use.
+en.gtk.preferencesFontsPreview:_Preview
+en.gtk.preferencesLanguage:<b>Language</b>
+en.gtk.preferencesLanguagePreferred:Preferred language:
+en.gtk.preferencesLanguagePreferredTooltip:The preferred language for web pages
+# Image loading list
+en.gtk.preferencesImageLoadBoth:foreground and background images
+en.gtk.preferencesImageLoadFore:foreground images
+en.gtk.preferencesImageLoadBack:background images
+en.gtk.preferencesImageLoadNone:no images
+# font type list
+en.gtk.preferencesFonttypeSans:Sans-serif
+en.gtk.preferencesFonttypeSerif:Serif
+en.gtk.preferencesFonttypeMonospace:Monospace
+en.gtk.preferencesFonttypeCursive:Cursive
+en.gtk.preferencesFonttypeFantasy:Fantasy
+
+en.gtk.preferencesPrivacyTabtitle:Privacy
+en.gtk.preferencesGeneral:<b>General</b>
+en.gtk.preferencesGeneralReferral:Enable referral submission
+en.gtk.preferencesGeneralDNT:Enable sending "Do Not Track" request
+en.gtk.preferencesHistory:<b>History</b>
+en.gtk.preferencesHistoryShow:Local history shows URL in tooltip
+en.gtk.preferencesHistoryRemember:Remember browsing history for up to
+en.gtk.preferencesHistoryDays:days
+en.gtk.preferencesCache:<b>Cache</b>
+en.gtk.preferencesCacheMemory:Memory cache size
+en.gtk.preferencesCacheDisc:Disc cache size
+en.gtk.preferencesCacheExpire:Expire cache entries after
+en.gtk.preferencesCacheMaintinance:Maintinance
+en.gtk.preferencesCacheDays:days
+
+en.gtk.preferencesNetworkTabtitle:Network
+en.gtk.preferencesProxy:<b>HTTP Proxy</b>
+en.gtk.preferencesProxyType:Proxy type
+en.gtk.preferencesProxyHost:Host
+en.gtk.preferencesProxyUsername:Username
+en.gtk.preferencesProxyPassword:Password
+en.gtk.preferencesProxyNoproxy:No Proxy For
+en.gtk.preferencesProxyTypeTooltip:The type of HTTP proxy server.
+en.gtk.preferencesProxyHostTooltip:Host name of your proxy server.
+en.gtk.preferencesProxyPortTooltip:Port number to connect to on proxy server.
+en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy.
+en.gtk.preferencesProxyPasswordTooltip:Password to access the proxy.
+en.gtk.preferencesProxyNoproxyTooltip:Comma separated list of host names that should not be proxied.
+en.gtk.preferencesFetching:<b>Fetching</b>
+en.gtk.preferencesFetchingMax:Maximum fetchers
+en.gtk.preferencesFetchingPerhost:Fetches per host
+en.gtk.preferencesFetchingCached:Cached connections
+en.gtk.preferencesFetchingMaxTooltip:Maximum number of concurrent items to fetch at once.
+en.gtk.preferencesFetchingPerhostTooltip:Maximum number of item fetches per web server.
+en.gtk.preferencesFetchingCachedTooltip:Number of connections to keep in case they are needed again.
+# Proxy type list
+en.gtk.preferencesProxyTypeDirect:Direct connection
+en.gtk.preferencesProxyTypeManual:Manual with no authentication
+en.gtk.preferencesProxyTypeBasic:Manual with basic authentication
+en.gtk.preferencesProxyTypeNLTM:Manual with NTLM authentication
+en.gtk.preferencesProxyTypeSystem:System settings
+
+en.gtk.preferencesPDFTabtitle:PDF
+en.gtk.preferencesAppearance:<b>Appearance</b>
+en.gtk.preferencesAppearanceImages:No images in output
+en.gtk.preferencesAppearanceBackground:No background images in output
+en.gtk.preferencesAppearanceScalefit:Scale output to fit page
+en.gtk.preferencesAppearanceScale:Scale output
+en.gtk.preferencesMargins:<b>Margins</b>
+en.gtk.preferencesMarginsMeasurements:measurements in mm
+en.gtk.preferencesGeneration:<b>Generation</b>
+en.gtk.preferencesGenerationCompressed:Output is compressed
+en.gtk.preferencesGenerationPassword:Output has a password
+
+
+
 # Printing user interface tokens
 # ==============================
 #
@@ -2196,7 +2336,7 @@ nl.all.SSLCerts:SSL certificates
 en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prÃ¼fen. Bitte die Details unten beachten.
 fr.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-it.all.SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL, per favore verifica i dettagli presenti di seguito
+it.all.SSLError:NetSurf non Ã¨ stato in grado di verificare l'autenticitÃ  di questo certificato SSL, per favore verifica i dettagli presenti di seguito
 nl.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 en.all.SSL_Certificate_Subject:Subject: %s
 de.all.SSL_Certificate_Subject:Subject: %s
@@ -2606,7 +2746,7 @@ nl.all.HotlistSaveError:The hotlist was unable to be correctly saved.
 en.all.TreeLoadError:The tree was unable to be correctly loaded.
 de.all.TreeLoadError:The tree was unable to be correctly loaded.
 fr.all.TreeLoadError:The tree was unable to be correctly loaded.
-it.all.TreeLoadError:L'albero non è stato caricato correttamente.
+it.all.TreeLoadError:L'albero non Ã¨ stato caricato correttamente.
 nl.all.TreeLoadError:The tree was unable to be correctly loaded.
 en.all.NoDirError:%s is not a directory
 de.all.NoDirError:%s ist kein Verzeichnis.
@@ -4873,7 +5013,7 @@ nl.ro.HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave thes
 en.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 de.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 fr.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
-it.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
+it.ro.HelpInterfaceConfig16:This indicates whether NetSurfÂ willÂ useÂ anÂ externalÂ hotlistÂ clientÂ ifÂ available,Â inÂ preferenceÂ toÂ theÂ internalÂ hotlist.
 nl.ro.HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 en.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
 de.ro.HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
@@ -5335,6 +5475,11 @@ de.all.Proxy:HTTP Proxy
 fr.all.Proxy:HTTP Proxy
 it.all.Proxy:Proxy HTTP
 nl.all.Proxy:HTTP Proxy
+en.ami.ProxyBypass:Bypass proxy for
+de.ami.ProxyBypass:Bypass proxy for
+fr.ami.ProxyBypass:Bypass proxy for
+it.ami.ProxyBypass:Bypass proxy for
+nl.ami.ProxyBypass:Bypass proxy for
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
 fr.all.Fetching:Fetching

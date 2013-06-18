@@ -22,7 +22,7 @@
 #include <ft2build.h>
 #include FT_CACHE_H
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"
@@ -318,7 +318,7 @@ static bool ft_font_init(void)
 	/* Default font, Sans Serif */
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
 	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
-											nsoption_charp(atari_face_sans_serif),
+											nsoption_charp(font_face_sans_serif),
                             				FONT_RESOURCE_PATH "ss.ttf",
                             				FONT_PKG_PATH FONT_FILE_SANS
 										);
@@ -331,55 +331,55 @@ static bool ft_font_init(void)
 
 	/* Sans Serif Bold*/
 	font_faces[FONT_FACE_SANS_SERIF_BOLD] =
-			ft_new_face(nsoption_charp(atari_face_sans_serif_bold),
+			ft_new_face(nsoption_charp(font_face_sans_serif_bold),
                             FONT_RESOURCE_PATH "ssb.ttf",
                             FONT_PKG_PATH FONT_FILE_SANS_BOLD);
 
 	/* Sans Serif Italic */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC] =
-			ft_new_face(nsoption_charp(atari_face_sans_serif_italic),
+			ft_new_face(nsoption_charp(font_face_sans_serif_italic),
                             FONT_RESOURCE_PATH "ssi.ttf",
                             FONT_PKG_PATH FONT_FILE_SANS_OBLIQUE);
 
 	/* Sans Serif Italic Bold */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC_BOLD] =
-			ft_new_face(nsoption_charp(atari_face_sans_serif_italic_bold),
+			ft_new_face(nsoption_charp(font_face_sans_serif_italic_bold),
                             FONT_RESOURCE_PATH "ssib.ttf",
                             FONT_PKG_PATH FONT_FILE_SANS_BOLD_OBLIQUE);
 
 	/* Monospaced */
 	font_faces[FONT_FACE_MONOSPACE] =
-			ft_new_face(nsoption_charp(atari_face_monospace),
+			ft_new_face(nsoption_charp(font_face_monospace),
                             FONT_RESOURCE_PATH "mono.ttf",
                             FONT_PKG_PATH FONT_FILE_MONO);
 
 	/* Mospaced Bold */
 	font_faces[FONT_FACE_MONOSPACE_BOLD] =
-			ft_new_face(nsoption_charp(atari_face_monospace_bold),
+			ft_new_face(nsoption_charp(font_face_monospace_bold),
                             FONT_RESOURCE_PATH "monob.ttf",
                             FONT_PKG_PATH FONT_FILE_MONO_BOLD);
 
 	/* Serif */
 	font_faces[FONT_FACE_SERIF] =
-			ft_new_face(nsoption_charp(atari_face_serif),
+			ft_new_face(nsoption_charp(font_face_serif),
                             FONT_RESOURCE_PATH "s.ttf",
                             FONT_PKG_PATH FONT_FILE_SERIF);
 
 	/* Serif Bold */
 	font_faces[FONT_FACE_SERIF_BOLD] =
-			ft_new_face(nsoption_charp(atari_face_serif_bold),
+			ft_new_face(nsoption_charp(font_face_serif_bold),
                             FONT_RESOURCE_PATH "sb.ttf",
                             FONT_PKG_PATH FONT_FILE_SERIF_BOLD);
 
 	/* Cursive */
 	font_faces[FONT_FACE_CURSIVE] =
-			ft_new_face(nsoption_charp(atari_face_cursive),
+			ft_new_face(nsoption_charp(font_face_cursive),
                             FONT_RESOURCE_PATH "cursive.ttf",
                             FONT_PKG_PATH FONT_FILE_OBLIQUE);
 
 	/* Fantasy */
 	font_faces[FONT_FACE_FANTASY] =
-			ft_new_face(nsoption_charp(atari_face_fantasy),
+			ft_new_face(nsoption_charp(font_face_fantasy),
                             FONT_RESOURCE_PATH "fantasy.ttf",
                             FONT_PKG_PATH FONT_FILE_FANTASY);
 

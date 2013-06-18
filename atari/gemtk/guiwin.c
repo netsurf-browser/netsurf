@@ -26,8 +26,8 @@
 
 #include "gemtk.h"
 
-#define DEBUG_PRINT(x)		printf x
-//#define DEBUG_PRINT(x)
+//#define DEBUG_PRINT(x)		printf x
+#define DEBUG_PRINT(x)
 
 struct gemtk_window_s {
 
@@ -102,7 +102,9 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
 
     /* get intersection with screen area */
     wind_get_grect(0, WF_CURRXYWH, &g);
-    rc_intersect(&g, rect);
+    if(!rc_intersect(&g, rect)){
+		goto error;
+    }
     xy[0] = rect->g_x;
     xy[1] = rect->g_y;
     xy[2] = xy[0] + rect->g_w-1;
@@ -113,6 +115,7 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     xy[7] = xy[3] + dy;
     vro_cpyfm(vh, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
 
+error:
     graf_mouse(M_ON, 0L);
     wind_update(END_UPDATE);
 }
@@ -754,6 +757,7 @@ GUIWIN *gemtk_wm_link(GUIWIN *win)
         win->prev = tmp;
         win->next = NULL;
     }
+    return(win);
 }
 
 /**

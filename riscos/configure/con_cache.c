@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 #include "oslib/hourglass.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"

@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
+#include <signal.h>
+
 #include "javascript/jsapi.h"
 #include "render/html_internal.h"
 #include "content/content.h"
@@ -26,6 +29,8 @@
 
 #include "window.h"
 #include "event.h"
+
+#define ENABLE_JS_HEARTBEAT 1
 
 static JSRuntime *rt; /* global runtime */
 
@@ -56,7 +61,8 @@ void js_finalise(void)
 }
 
 /* The error reporter callback. */
-static void js_reportError(JSContext *cx, const char *message, JSErrorReport *report)
+static void
+js_reportError(JSContext *cx, const char *message, JSErrorReport *report)
 {
 	JSLOG("%s:%u:%s",
 	      report->filename ? report->filename : "<no filename>",
@@ -64,7 +70,250 @@ static void js_reportError(JSContext *cx, const char *message, JSErrorReport *re
 	      message);
 }
 
-jscontext *js_newcontext(void)
+/* heartbeat routines */
+#ifndef ENABLE_JS_HEARTBEAT
+
+struct heartbeat;
+
+/* prepares a context with a heartbeat handler */
+static bool
+setup_heartbeat(JSContext *cx, int timeout, jscallback *cb, void *cbctx)
+{
+	return true;
+}
+
+/* enables the heartbeat on a context */
+static struct heartbeat *enable_heartbeat(JSContext *cx)
+{
+	return NULL;
+}
+
+/* disables heartbeat on a context */
+static bool
+disable_heartbeat(struct heartbeat *hb)
+{
+	return true;
+}
+
+#else
+
+/* private context for heartbeats */
+struct jscontext_priv {
+	int timeout;
+	jscallback *cb;
+	void *cbctx;
+
+	unsigned int branch_reset; /**< reset value for branch counter */
+	unsigned int branch_count; /**< counter for branch callback */
+	time_t last; /**< last time heartbeat happened */
+	time_t end; /**< end time for the current script execution */
+};
+
+/** execution heartbeat */
+static JSBool heartbeat_callback(JSContext *cx)
+{
+	struct jscontext_priv *priv = JS_GetContextPrivate(cx);
+	JSBool ret = JS_TRUE;
+	time_t now = time(NULL);
+
+	/* dynamically update the branch times to ensure we do not get
+	 * called back more than once a second
+	 */
+	if (now == priv->last) {
+		priv->branch_reset = priv->branch_reset * 2;
+	}
+	priv->last = now;
+
+	JSLOG("Running heatbeat at %d end %d", now , priv->end);
+
+	if ((priv->cb != NULL) &&
+	    (now > priv->end)) {
+		if (priv->cb(priv->cbctx) == false) {
+			ret = JS_FALSE; /* abort */
+		} else {
+			priv->end = time(NULL) + priv->timeout;
+		}
+	}
+
+	return ret;
+}
+
+#if JS_VERSION >= 180
+
+struct heartbeat {
+	JSContext *cx;
+	struct sigaction sact; /* signal handler action to restore */
+	int alm; /* alarm value to restore */
+};
+
+static struct heartbeat *cur_hb;
+
+static bool
+setup_heartbeat(JSContext *cx, int timeout, jscallback *cb, void *cbctx)
+{
+	struct jscontext_priv *priv;
+
+	if (timeout == 0) {
+		return true;
+	}
+
+	priv = calloc(1, sizeof(*priv));
+	if (priv == NULL) {
+		return false;
+	}
+
+	priv->timeout = timeout;
+	priv->cb = cb;
+	priv->cbctx = cbctx;
+
+	JS_SetContextPrivate(cx, priv);
+
+	/* if heartbeat is enabled disable JIT or callbacks do not happen */
+	JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_JIT);
+
+	JS_SetOperationCallback(cx, heartbeat_callback);
+
+	return true;
+}
+
+static void sig_alm_handler(int signum)
+{
+	JS_TriggerOperationCallback(cur_hb->cx);
+	alarm(1);
+	JSDBG("alarm signal handler for context %p", cur_hb->cx);
+}
+
+static struct heartbeat *enable_heartbeat(JSContext *cx)
+{
+	struct jscontext_priv *priv = JS_GetContextPrivate(cx);
+	struct sigaction sact;
+	struct heartbeat *hb;
+
+	if (priv == NULL) {
+		return NULL;
+	}
+
+	priv->last = time(NULL);
+	priv->end = priv->last + priv->timeout;
+
+	hb = malloc(sizeof(*hb));
+	if (hb != NULL) {
+		sigemptyset(&sact.sa_mask);
+		sact.sa_flags = 0;
+		sact.sa_handler = sig_alm_handler;
+		if (sigaction(SIGALRM, &sact, &hb->sact) == 0) {
+			cur_hb = hb;
+			hb->cx = cx;
+			hb->alm = alarm(1);
+		} else {
+			free(hb);
+			hb = NULL;
+			LOG(("Unable to set heartbeat"));
+		}
+	}
+	return hb;
+}
+
+/** disable heartbeat
+ *
+ * /param hb heartbeat to disable may be NULL
+ * /return true on success.
+ */
+static bool
+disable_heartbeat(struct heartbeat *hb)
+{
+	if (hb != NULL) {
+		sigaction(SIGALRM, &hb->sact, NULL); /* restore old handler */
+		alarm(hb->alm); /* restore alarm signal */
+	}
+	return true;
+}
+
+#else
+
+/* need to setup callback to prevent long running scripts infinite
+ * hanging.
+ *
+ * old method is to use:
+ *  JSBranchCallback JS_SetBranchCallback(JSContext *cx, JSBranchCallback cb);
+ * which gets called a *lot* and should only do something every 5k calls
+ * The callback function
+ *  JSBool (*JSBranchCallback)(JSContext *cx, JSScript *script);
+ * returns JS_TRUE to carry on and JS_FALSE to abort execution
+ * single thread of execution on the context
+ * documented in
+ *   https://developer.mozilla.org/en-US/docs/SpiderMonkey/JSAPI_Reference/JS_SetBranchCallback
+ *
+ */
+
+#define INITIAL_BRANCH_RESET 5000
+
+struct heartbeat;
+
+static JSBool branch_callback(JSContext *cx, JSScript *script)
+{
+	struct jscontext_priv *priv = JS_GetContextPrivate(cx);
+	JSBool ret = JS_TRUE;
+
+	priv->branch_count--;
+	if (priv->branch_count == 0) {
+		priv->branch_count = priv->branch_reset; /* reset branch count */
+
+		ret = heartbeat_callback(cx);
+	}
+	return ret;
+}
+
+static bool
+setup_heartbeat(JSContext *cx, int timeout, jscallback *cb, void *cbctx)
+{
+	struct jscontext_priv *priv;
+
+	if (timeout == 0) {
+		return true;
+	}
+
+	priv = calloc(1, sizeof(*priv));
+	if (priv == NULL) {
+		return false;
+	}
+
+	priv->timeout = timeout;
+	priv->cb = cb;
+	priv->cbctx = cbctx;
+
+	priv->branch_reset = INITIAL_BRANCH_RESET;
+	priv->branch_count = priv->branch_reset;
+
+	JS_SetContextPrivate(cx, priv);
+
+	JS_SetBranchCallback(cx, branch_callback);
+
+	return true;
+}
+
+static struct heartbeat *enable_heartbeat(JSContext *cx)
+{
+	struct jscontext_priv *priv = JS_GetContextPrivate(cx);
+
+	if (priv != NULL) {
+		priv->last = time(NULL);
+		priv->end = priv->last + priv->timeout;
+	}
+	return NULL;
+}
+
+static bool
+disable_heartbeat(struct heartbeat *hb)
+{
+	return true;
+}
+
+#endif
+
+#endif
+
+jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
 {
 	JSContext *cx;
 
@@ -76,9 +325,15 @@ jscontext *js_newcontext(void)
 	if (cx == NULL) {
 		return NULL;
 	}
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_JIT );
+
+	/* set options on context */
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_JIT);
+
 	JS_SetVersion(cx, JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, js_reportError);
+
+	/* run a heartbeat */
+	setup_heartbeat(cx, timeout, cb, cbctx);
 
 	/*JS_SetGCZeal(cx, 2); */
 
@@ -90,9 +345,15 @@ jscontext *js_newcontext(void)
 void js_destroycontext(jscontext *ctx)
 {
 	JSContext *cx = (JSContext *)ctx;
+	struct jscontext_priv *priv;
+
 	if (cx != NULL) {
 		JSLOG("Destroying Context %p", cx);
+		priv = JS_GetContextPrivate(cx);
+
 		JS_DestroyContext(cx);
+
+		free(priv);
 	}
 }
 
@@ -124,10 +385,14 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	return (jsobject *)window;
 }
 
+
+
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	JSContext *cx = (JSContext *)ctx;
 	jsval rval;
+	JSBool eval_res;
+	struct heartbeat *hb;
 
 	/* JSLOG("%p \"%s\"",cx ,txt); */
 
@@ -143,10 +408,16 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 		return false;
 	}
 
-	if (JS_EvaluateScript(cx,
-			      JS_GetGlobalObject(cx),
-			      txt, txtlen,
-			      "<head>", 0, &rval) == JS_TRUE) {
+	hb = enable_heartbeat(cx);
+
+	eval_res = JS_EvaluateScript(cx,
+				     JS_GetGlobalObject(cx),
+				     txt, txtlen,
+				     "<head>", 0, &rval);
+
+	disable_heartbeat(hb);
+
+	if (eval_res == JS_TRUE) {
 
 		return true;
 	}
@@ -168,6 +439,7 @@ bool js_fire_event(jscontext *ctx, const char *type, dom_document *doc, dom_node
 	dom_exception exc;
 	dom_event *event;
 	dom_string *type_dom;
+	struct heartbeat *hb;
 
 	if (cx == NULL) {
 		return false;
@@ -201,6 +473,8 @@ bool js_fire_event(jscontext *ctx, const char *type, dom_document *doc, dom_node
 			return false;
 		}
 
+		hb = enable_heartbeat(cx);
+
 		/* dispatch event at the window object */
 		argv[0] = OBJECT_TO_JSVAL(jsevent);
 
@@ -210,6 +484,9 @@ bool js_fire_event(jscontext *ctx, const char *type, dom_document *doc, dom_node
 					  1,
 					  argv,
 					  &rval);
+
+		disable_heartbeat(hb);
+
 	} else {
 		JSLOG("Dispatching event %s at %p", type, node);
 
@@ -264,15 +541,15 @@ js_dom_event_listener(struct dom_event *event, void *pw)
 		jsevent = jsapi_new_Event(private->cx, NULL, NULL, event);
 		if (jsevent != NULL) {
 
-		/* dispatch event at the window object */
-		event_argv[0] = OBJECT_TO_JSVAL(jsevent);
+			/* dispatch event at the window object */
+			event_argv[0] = OBJECT_TO_JSVAL(jsevent);
 
-		JS_CallFunctionValue(private->cx,
-				     NULL,
-				     private->funcval,
-				     1,
-				     event_argv,
-				     &event_rval);
+			JS_CallFunctionValue(private->cx,
+					     NULL,
+					     private->funcval,
+					     1,
+					     event_argv,
+					     &event_rval);
 		}
 	}
 }

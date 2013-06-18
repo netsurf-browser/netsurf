@@ -28,7 +28,7 @@ extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
-nserror netsurf_init(int *argc, char ***argv, const char *options, const char *messages);
+nserror netsurf_init(const char *messages);
 extern void netsurf_exit(void);
 extern int netsurf_main_loop(void);
 

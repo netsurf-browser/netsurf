@@ -23,11 +23,10 @@
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
-#include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
@@ -103,6 +102,8 @@
 #include <intuition/icclass.h>
 #include <graphics/rpattr.h>
 #include <workbench/workbench.h>
+#include <intuition/gui.h>
+#include <intuition/screens.h>
 
 /* ReAction libraries */
 #include <proto/bevel.h>
@@ -131,6 +132,8 @@
 /* newlib includes */
 #include <math.h>
 #include <string.h>
+
+#define AMINS_SCROLLERPEN NUMDRIPENS
 
 #define NSA_KBD_SCROLL_PX 10
 
@@ -192,6 +195,12 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
+
+/* accessors for default options - user option is updated if it is set as per default */
+#define nsoption_default_set_int(OPTION, VALUE)				\
+	if (nsoptions_default[NSOPTION_##OPTION].value.i == nsoptions[NSOPTION_##OPTION].value.i)	\
+		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
+	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
 STRPTR ami_locale_langs(void)
 {
@@ -282,6 +291,8 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
 	path_add_part(fullpath, 1024, remapped);
 
+	LOG(("Checking for %s", fullpath));
+	
 	if(lock = Lock(fullpath, ACCESS_READ))
 	{
 		UnLock(lock);
@@ -307,9 +318,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	strcpy(fullpath, current_user_dir);
 	found = ami_gui_check_resource(fullpath, file);
 	if(found) return true;
-
-	/* Secondly check the user's selected theme.  NB: ami_locate_resource()
-	 * gets called for Messages before options are loaded */
 
 	if(nsoption_charp(theme))
 	{
@@ -392,7 +400,108 @@ void ami_open_resources(void)
 	//ami_help_init(NULL);
 }
 
-void ami_set_options(void)
+static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
+{
+	LONG scrollerfillpen = FALSE;
+
+	GetGUIAttrs(NULL, drinfo, GUIA_PropKnobColor, &scrollerfillpen, TAG_DONE);
+
+	if(scrollerfillpen) return FILLPEN;
+		else return FOREGROUNDPEN;
+}
+
+/**
+ * set option from pen
+ */
+static nserror
+colour_option_from_pen(UWORD pen,
+			   enum nsoption_e option,
+			   struct Screen *screen,
+			   colour def_colour)
+{
+	ULONG colour[3];
+	struct DrawInfo *drinfo;
+
+	if((option < NSOPTION_SYS_COLOUR_START) ||
+	   (option > NSOPTION_SYS_COLOUR_END) ||
+	   (nsoptions[option].type != OPTION_COLOUR)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if(screen != NULL) {
+		drinfo = GetScreenDrawInfo(screen);
+		if(drinfo != NULL) {
+
+			if(pen == AMINS_SCROLLERPEN) pen = ami_system_colour_scrollbar_fgpen(drinfo);
+
+			/* Get the colour of the pen being used for "pen" */
+			GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
+
+			/* convert it to a color */
+			def_colour = ((colour[0] & 0xff000000) >> 24) |
+				((colour[1] & 0xff000000) >> 16) |
+				((colour[2] & 0xff000000) >> 8);
+
+			FreeScreenDrawInfo(screen, drinfo);
+		}
+	}
+
+	if (nsoptions_default[option].value.c == nsoptions[option].value.c)
+		nsoptions[option].value.c = def_colour;
+	nsoptions_default[option].value.c = def_colour;
+
+	return NSERROR_OK;
+}
+
+static void ami_set_screen_defaults(struct Screen *screen)
+{
+	nsoption_default_set_int(window_x, 0);
+	nsoption_default_set_int(window_y, screen->BarHeight + 1);
+	nsoption_default_set_int(window_width, screen->Width);
+	nsoption_default_set_int(window_height, screen->Height - screen->BarHeight - 1);
+
+	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
+	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
+
+	/* set system colours for amiga ui */
+	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, screen, 0x00000000);
+	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, screen, 0x00dddddd);
+	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_AppWorkspace, screen, 0x00eeeeee);
+	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Background, screen, 0x00aa0000);
+	colour_option_from_pen(FOREGROUNDPEN, NSOPTION_sys_colour_ButtonFace, screen, 0x00aaaaaa);
+	colour_option_from_pen(FORESHINEPEN, NSOPTION_sys_colour_ButtonHighlight, screen, 0x00cccccc);
+	colour_option_from_pen(FORESHADOWPEN, NSOPTION_sys_colour_ButtonShadow, screen, 0x00bbbbbb);
+	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_ButtonText, screen, 0x00000000);
+	colour_option_from_pen(FILLTEXTPEN, NSOPTION_sys_colour_CaptionText, screen, 0x00000000);
+	colour_option_from_pen(DISABLEDTEXTPEN, NSOPTION_sys_colour_GrayText, screen, 0x00777777);
+	colour_option_from_pen(SELECTPEN, NSOPTION_sys_colour_Highlight, screen, 0x00ee0000);
+	colour_option_from_pen(SELECTTEXTPEN, NSOPTION_sys_colour_HighlightText, screen, 0x00000000);
+	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveBorder, screen, 0x00000000);
+	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_InactiveCaption, screen, 0x00ffffff);
+	colour_option_from_pen(INACTIVEFILLTEXTPEN, NSOPTION_sys_colour_InactiveCaptionText, screen, 0x00cccccc);
+	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_InfoBackground, screen, 0x00aaaaaa);/* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
+	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_InfoText, screen, 0x00000000);
+	colour_option_from_pen(MENUBACKGROUNDPEN, NSOPTION_sys_colour_Menu, screen, 0x00aaaaaa);
+	colour_option_from_pen(MENUTEXTPEN, NSOPTION_sys_colour_MenuText, screen, 0x00000000);
+	colour_option_from_pen(AMINS_SCROLLERPEN, NSOPTION_sys_colour_Scrollbar, screen, 0x00aaaaaa);
+	colour_option_from_pen(FORESHADOWPEN, NSOPTION_sys_colour_ThreeDDarkShadow, screen, 0x00555555);
+	colour_option_from_pen(FOREGROUNDPEN, NSOPTION_sys_colour_ThreeDFace, screen, 0x00dddddd);
+	colour_option_from_pen(FORESHINEPEN, NSOPTION_sys_colour_ThreeDHighlight, screen, 0x00aaaaaa);
+	colour_option_from_pen(HALFSHINEPEN, NSOPTION_sys_colour_ThreeDLightShadow, screen, 0x00999999);
+	colour_option_from_pen(HALFSHADOWPEN, NSOPTION_sys_colour_ThreeDShadow, screen, 0x00777777);
+	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Window, screen, 0x00aaaaaa);
+	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, screen, 0x00000000);
+	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_WindowText, screen, 0x00000000);
+}
+
+
+/**
+ * Set option defaults for amiga frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror ami_set_options(struct nsoption_s *defaults)
 {
 	STRPTR tempacceptlangs;
 	BPTR lock = 0;
@@ -441,9 +550,6 @@ void ami_set_options(void)
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
 	
-	nsoption_setnull_charp(search_engines_file,
-			(char *)strdup("PROGDIR:Resources/SearchEngines"));
-
 	search_engines_file_location = nsoption_charp(search_engines_file);
 
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
@@ -475,24 +581,16 @@ void ami_set_options(void)
 		}
 	}
 
-	nsoption_setnull_charp(theme,
-			(char *)strdup("PROGDIR:Resources/Themes/Default"));
-
 	tree_set_icon_dir(strdup("ENV:Sys"));
 
-	nsoption_setnull_charp(arexx_dir, (char *)strdup("Rexx"));
-	nsoption_setnull_charp(arexx_startup, (char *)strdup("Startup.nsrx"));
-	nsoption_setnull_charp(arexx_shutdown, (char *)strdup("Shutdown.nsrx"));
-
-	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
-	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
-	
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
 	nsoption_set_bool(context_menu, false);
 	nsoption_set_bool(font_antialiasing, false);
 	nsoption_set_bool(truecolour_mouse_pointers, false);
 #endif
+
+	return NSERROR_OK;
 }
 
 void ami_amiupdate(void)
@@ -554,13 +652,6 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
-{
-	/* Set defaults for absent option strings */
-	ami_set_options(); /* check options and set defaults where required */
-}
-
 void gui_init(int argc, char** argv)
 {
 	BPTR lock = 0;
@@ -592,8 +683,7 @@ void gui_init(int argc, char** argv)
 
 static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
 {
-	gui_system_colour_finalize();
-	gui_system_colour_init();
+	ami_set_screen_defaults(scrn);
 }
 
 void ami_openscreen(void)
@@ -605,12 +695,12 @@ void ami_openscreen(void)
 		compositing = ~0UL;
 	else compositing = nsoption_int(screen_compositing);
 
-	if (nsoption_charp(use_pubscreen) == NULL)
+	if (nsoption_charp(pubscreen_name) == NULL)
 	{
-		if((nsoption_charp(modeid)) && 
-		   (strncmp(nsoption_charp(modeid), "0x", 2) == 0))
+		if((nsoption_charp(screen_modeid)) && 
+		   (strncmp(nsoption_charp(screen_modeid), "0x", 2) == 0))
 		{
-			id = strtoul(nsoption_charp(modeid), NULL, 0);
+			id = strtoul(nsoption_charp(screen_modeid), NULL, 0);
 		}
 		else
 		{
@@ -626,8 +716,8 @@ void ami_openscreen(void)
 					char *modeid = malloc(20);
 					id = screenmodereq->sm_DisplayID;
 					sprintf(modeid, "0x%lx", id);
-					nsoption_set_charp(modeid, modeid);
-					nsoption_write(current_user_options);
+					nsoption_set_charp(screen_modeid, modeid);
+					nsoption_write(current_user_options, NULL, NULL);
 				}
 				FreeAslRequest(screenmodereq);
 			}
@@ -654,15 +744,15 @@ void ami_openscreen(void)
 			}
 			else
 			{
-				nsoption_set_charp(use_pubscreen,
+				nsoption_set_charp(pubscreen_name,
 						   strdup("Workbench"));
 			}
 		}
 	}
 
-	if (nsoption_charp(use_pubscreen) != NULL)
+	if (nsoption_charp(pubscreen_name) != NULL)
 	{
-		scrn = LockPubScreen(nsoption_charp(use_pubscreen));
+		scrn = LockPubScreen(nsoption_charp(pubscreen_name));
 
 		if(scrn == NULL)
 		{
@@ -673,8 +763,7 @@ void ami_openscreen(void)
 	dri = GetScreenDrawInfo(scrn);
 	ami_font_setdevicedpi(id);
 
-	gui_system_colour_finalize();
-	gui_system_colour_init();
+	ami_set_screen_defaults(scrn);
 	
 	//ami_help_new_screen(scrn);
 }
@@ -688,6 +777,7 @@ void ami_openscreenfirst(void)
 
 static void gui_init2(int argc, char** argv)
 {
+	struct Screen *screen;
 	nsurl *url;
 	nserror error;
 	struct browser_window *bw = NULL;
@@ -707,6 +797,16 @@ static void gui_init2(int argc, char** argv)
 
 	/* Treeview init code ends up calling a font function which needs this */
 	glob = &browserglob;
+
+	/* ...and this ensures the treeview at least gets the WB colour palette to work with */
+	if(scrn == NULL) {
+		if(screen = LockPubScreen("Workbench")) {
+			ami_set_screen_defaults(screen);
+			UnlockPubScreen(NULL, screen);
+		}
+	} else {
+		ami_set_screen_defaults(scrn);
+	}
 	/**/
 
 	ami_hotlist_initialise(nsoption_charp(hotlist_file));
@@ -817,7 +917,7 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 
-    	nsoption_setnull_charp(homepage_url, (char *)strdup(NETSURF_HOMEPAGE));
+	nsoption_setnull_charp(homepage_url, (char *)strdup(NETSURF_HOMEPAGE));
 
 	if(!notalreadyrunning)
 	{
@@ -833,7 +933,6 @@ static void gui_init2(int argc, char** argv)
 			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
 		}
 		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
-		IDoMethod(arexx_obj,AM_EXECUTE,"TOFRONT","NETSURF",NULL,NULL,NULL,NULL);
 		FreeVec(sendcmd);
 
 		netsurf_quit=true;
@@ -906,7 +1005,7 @@ int main(int argc, char** argv)
 	char temp[1024];
 	BPTR lock = 0;
 	int32 user = 0;
-	
+	nserror ret;
 	Object *splash_window = ami_gui_splash_open();
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
@@ -918,9 +1017,6 @@ int main(int argc, char** argv)
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 
-	if(ami_locate_resource(messages, "Messages") == false)
-		die("Cannot open Messages file");
-
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
@@ -930,7 +1026,26 @@ int main(int argc, char** argv)
 	amiga_plugin_hack_init();
 	amiga_datatypes_init();
 
-	netsurf_init(&argc, &argv, current_user_options, messages);
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(current_user_options, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	if(ami_locate_resource(messages, "Messages") == false)
+		die("Cannot open Messages file");
+	
+	ret = netsurf_init(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
 
 	amiga_icon_init();
 
@@ -3119,7 +3234,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
-		if(nsoption_bool(new_tab_active))
+		if(nsoption_bool(new_tab_is_active))
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
 							CLICKTAB_Current,g->tab,
@@ -3132,7 +3247,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->tabs++;
 		g->shared->next_tab++;
 
-		if(nsoption_bool(new_tab_active)) ami_switch_tab(g->shared,false);
+		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
 
 		ami_update_buttons(g->shared);
 
@@ -3175,9 +3290,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		ULONG addtabclosegadget = TAG_IGNORE;
 		ULONG iconifygadget = FALSE;
 
-		if (nsoption_charp(use_pubscreen) && 
+		if (nsoption_charp(pubscreen_name) && 
 		    (locked_screen == TRUE) &&
-		    (strcmp(nsoption_charp(use_pubscreen), "Workbench") == 0))
+		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
 		ami_create_menu(g->shared);
 
@@ -3630,6 +3745,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 	search_web_retrieve_ico(false);
 
+	ScreenToFront(scrn);
+
 	return g;
 }
 
@@ -3669,7 +3786,7 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
 
-	gad1percent = nsoption_int(toolbar_status_width) / 10000.0;
+	gad1percent = nsoption_int(toolbar_status_size) / 10000.0;
 
 	*size1 = (ULONG)(available_width * gad1percent);
 	*size2 = (ULONG)(available_width * (1 - gad1percent));
@@ -4425,12 +4542,17 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	struct IBox *bbox;
+	struct IBox *bbox, zbox;
 	ULONG cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
-
+	/*
+	zbox.Top = ~0;
+	zbox.Left = ~0;
+	zbox.Width = (WORD)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale);
+	zbox.Height = (WORD)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale);
+	*/
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
@@ -4460,7 +4582,7 @@ void gui_window_update_extent(struct gui_window *g)
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
-
+		//SetWindowAttr(g->shared->win, WA_Zoom, &zbox, sizeof(ULONG));
 	}
 	g->shared->new_content = true;
 }

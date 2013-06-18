@@ -75,16 +75,11 @@ void selection_reinit(struct selection *s, struct box *root);
 /* bool selection_dragging_start(struct selection *s); */
 #define selection_dragging_start(s) ((s)->drag_state == DRAG_START)
 
-bool selection_read_only(struct selection *s);
-
 void selection_clear(struct selection *s, bool redraw);
 void selection_select_all(struct selection *s);
 
 void selection_set_start(struct selection *s, unsigned idx);
 void selection_set_end(struct selection *s, unsigned idx);
-
-struct box *selection_get_start(struct selection *s, size_t *pidx);
-struct box *selection_get_end(struct selection *s, size_t *pidx);
 
 bool selection_click(struct selection *s, browser_mouse_state mouse,
 		unsigned idx);
@@ -101,12 +96,5 @@ char * selection_get_copy(struct selection *s);
 bool selection_highlighted(const struct selection *s,
 		unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx);
-
-bool selection_save_text(struct selection *s, const char *path);
-
-void selection_update(struct selection *s, size_t byte_offset, int change,
-		bool redraw);	
-		
-unsigned selection_label_subtree(struct box *box, unsigned idx);
 
 #endif

@@ -111,7 +111,7 @@ S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
 	selection.c history.c window.c filetype.c download.c menu.c	\
 	print.c search.c tabs.c theme.c toolbar.c gettext.c		\
-	compat.c cookies.c hotlist.c system_colour.c			\
+	compat.c cookies.c hotlist.c 					\
 	$(addprefix dialogs/,preferences.c about.c source.c)
 
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
@@ -136,7 +136,7 @@ GTK_RESOURCES_LIST := $(addprefix gtk/res/, $(GTK_RESOURCES_LIST)) \
 			$(wildcard gtk/res/*.gtk*.ui)
 
 # translations with more than just Messages files
-GTK_TRANSLATIONS_HTML := de en it ja
+GTK_TRANSLATIONS_HTML := de en fr it ja nl
 
 install-gtk:
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
@@ -147,7 +147,7 @@ install-gtk:
 	$(Q)install -m 0644 gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons
 	$(Q)install -m 0644 gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
 	$(Q)tar -c -h -C gtk/res -f - themes | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
-	$(Q)tar -c -h -C gtk/res -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
+	$(Q)tar -c -h -C gtk/res -f - C $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
 
 # ----------------------------------------------------------------------------

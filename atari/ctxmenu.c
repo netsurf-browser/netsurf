@@ -42,7 +42,7 @@
 #include "atari/rootwin.h"
 #include "atari/misc.h"
 #include "atari/clipboard.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/ctxmenu.h"
 

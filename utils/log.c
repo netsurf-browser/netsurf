@@ -31,9 +31,9 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {
 	nserror ret = NSERROR_OK;
 
-	if (((*pargc) > 1) && 
-	    (argv[1][0] == '-') && 
-	    (argv[1][1] == 'v') && 
+	if (((*pargc) > 1) &&
+	    (argv[1][0] == '-') &&
+	    (argv[1][1] == 'v') &&
 	    (argv[1][2] == 0)) {
 		int argcmv;
 		for (argcmv = 2; argcmv < (*pargc); argcmv++) {
@@ -43,15 +43,17 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 
 		/* ensure we actually show logging */
 		verbose_log = true;
-		
-		/* ensure stderr is available */
-		if (ensure != NULL) {
-			if (ensure(stderr) == false) {
-				/* failed to ensure output */
-				ret = NSERROR_INIT_FAILED;
-			}
-		}
 	}
+
+	/* ensure output file handle is correctly configured */
+	if ((verbose_log == true) &&
+	    (ensure != NULL) &&
+	    (ensure(stderr) == false)) {
+		/* failed to ensure output configuration */
+		ret = NSERROR_INIT_FAILED;
+		verbose_log = false;
+	}
+
 	return ret;
 }
 

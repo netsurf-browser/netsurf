@@ -53,7 +53,7 @@ extern "C" {
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "render/form.h"
 #include "utils/filename.h"
@@ -398,11 +398,121 @@ static void gui_init2(int argc, char** argv)
 	}
 }
 
+
+#if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
+/* more ui_colors, R5 only had a few defined... */
+#define B_PANEL_TEXT_COLOR ((color_which)10)
+#define B_DOCUMENT_BACKGROUND_COLOR ((color_which)11)
+#define B_DOCUMENT_TEXT_COLOR ((color_which)12)
+#define B_CONTROL_BACKGROUND_COLOR ((color_which)13)
+#define B_CONTROL_TEXT_COLOR ((color_which)14)
+#define B_CONTROL_BORDER_COLOR ((color_which)15)
+#define B_CONTROL_HIGHLIGHT_COLOR ((color_which)16)
+#define B_NAVIGATION_BASE_COLOR ((color_which)4)
+#define B_NAVIGATION_PULSE_COLOR ((color_which)17)
+#define B_SHINE_COLOR ((color_which)18)
+#define B_SHADOW_COLOR ((color_which)19)
+#define B_MENU_SELECTED_BORDER_COLOR ((color_which)9)
+#define B_TOOL_TIP_BACKGROUND_COLOR ((color_which)20)
+#define B_TOOL_TIP_TEXT_COLOR ((color_which)21)
+#define B_SUCCESS_COLOR ((color_which)100)
+#define B_FAILURE_COLOR ((color_which)101)
+#define B_MENU_SELECTED_BACKGROUND_COLOR B_MENU_SELECTION_BACKGROUND_COLOR
+#define B_RANDOM_COLOR ((color_which)0x80000000)
+#define B_MICHELANGELO_FAVORITE_COLOR ((color_which)0x80000001)
+#define B_DSANDLER_FAVORITE_SKY_COLOR ((color_which)0x80000002)
+#define B_DSANDLER_FAVORITE_INK_COLOR ((color_which)0x80000003)
+#define B_DSANDLER_FAVORITE_SHOES_COLOR ((color_which)0x80000004)
+#define B_DAVE_BROWN_FAVORITE_COLOR ((color_which)0x80000005)
+#endif
+#if defined(B_BEOS_VERSION_DANO)
+#define B_TOOL_TIP_BACKGROUND_COLOR B_TOOLTIP_BACKGROUND_COLOR
+#define B_TOOL_TIP_TEXT_COLOR B_TOOLTIP_TEXT_COLOR
+#define
+#endif
+#define NOCOL ((color_which)0)
+
+/**
+ * set option from pen
+ */
+static nserror
+set_colour_from_ui(struct nsoption_s *opts,
+                   color_which ui,
+                   enum nsoption_e option,
+                   colour def_colour)
+{
+        if (ui != NOCOL) {
+                rgb_color c;
+                if (ui == B_DESKTOP_COLOR) {
+			BScreen s;
+			c = s.DesktopColor();
+                } else {
+                        c = ui_color(ui);
+                }
+
+                def_colour = ((((uint32_t)c.blue << 16) & 0xff0000) |
+                              ((c.green << 8) & 0x00ff00) |
+                              ((c.red) & 0x0000ff));
+        }
+        return def_colour;
+}
+
+/**
+ * Set option defaults for framebuffer frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
+{
+	/* set system colours for beos ui */
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
+	set_colour_from_ui(defaults, B_WINDOW_TAB_COLOR, NSOPTION_sys_colour_ActiveCaption, 0x00dddddd);
+	set_colour_from_ui(defaults, B_PANEL_BACKGROUND_COLOR, NSOPTION_sys_colour_AppWorkspace, 0x00eeeeee);
+	set_colour_from_ui(defaults, B_DESKTOP_COLOR, NSOPTION_sys_colour_Background, 0x00aa0000);
+	set_colour_from_ui(defaults, B_CONTROL_BACKGROUND_COLOR, NSOPTION_sys_colour_ButtonFace, 0x00aaaaaa);
+	set_colour_from_ui(defaults, B_CONTROL_HIGHLIGHT_COLOR, NSOPTION_sys_colour_ButtonHighlight, 0x00cccccc);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ButtonShadow, 0x00bbbbbb);
+	set_colour_from_ui(defaults, B_CONTROL_TEXT_COLOR, NSOPTION_sys_colour_ButtonText, 0x00000000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_CaptionText, 0x00000000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_GrayText, 0x00777777);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_Highlight, 0x00ee0000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_HighlightText, 0x00000000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveBorder, 0x00000000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveCaption, 0x00ffffff);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_InactiveCaptionText, 0x00cccccc);
+	set_colour_from_ui(defaults, B_TOOL_TIP_BACKGROUND_COLOR, NSOPTION_sys_colour_InfoBackground, 0x00aaaaaa);
+	set_colour_from_ui(defaults, B_TOOL_TIP_TEXT_COLOR, NSOPTION_sys_colour_InfoText, 0x00000000);
+	set_colour_from_ui(defaults, B_MENU_BACKGROUND_COLOR, NSOPTION_sys_colour_Menu, 0x00aaaaaa);
+	set_colour_from_ui(defaults, B_MENU_ITEM_TEXT_COLOR, NSOPTION_sys_colour_MenuText, 0x00000000);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_Scrollbar, 0x00aaaaaa);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDDarkShadow, 0x00555555);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDFace, 0x00dddddd);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDHighlight, 0x00aaaaaa);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDLightShadow, 0x00999999);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_ThreeDShadow, 0x00777777);
+	set_colour_from_ui(defaults, B_DOCUMENT_BACKGROUND_COLOR, NSOPTION_sys_colour_Window, 0x00aaaaaa);
+	set_colour_from_ui(defaults, NOCOL, NSOPTION_sys_colour_WindowFrame, 0x00000000);
+	set_colour_from_ui(defaults, B_DOCUMENT_TEXT_COLOR, NSOPTION_sys_colour_WindowText, 0x00000000);
+
+	return NSERROR_OK;
+}
+
+/**
+ * Ensures output logging stream is correctly configured
+ */
+static bool nslog_stream_configure(FILE *fptr)
+{
+        /* set log stream to be non-buffering */
+	setbuf(fptr, NULL);
+
+	return true;
+}
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
-	setbuf(stderr, NULL);
-
+	nserror ret;
 	BPath options;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
 		options.Append("x-vnd.NetSurf");
@@ -416,11 +526,27 @@ int main(int argc, char** argv)
 
 	const char* messages = "/boot/apps/netsurf/res/en/Messages";
 
-	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options.Path(), messages);
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
-    gui_init(argc, argv);
-    gui_init2(argc, argv);
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	ret = netsurf_init(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+        gui_init(argc, argv);
+        gui_init2(argc, argv);
 
 	netsurf_main_loop();
 
@@ -432,14 +558,17 @@ int main(int argc, char** argv)
 /** called when replicated from NSBaseView::Instantiate() */
 int gui_init_replicant(int argc, char** argv)
 {
-	setbuf(stderr, NULL);
-
 	BPath options;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
 		options.Append("x-vnd.NetSurf");
 	}
 
 	const char* messages = "/boot/apps/netsurf/res/en/Messages";
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
 
 	/* initialise netsurf */
 	netsurf_init(&argc, &argv, options.Path(), messages);
@@ -449,13 +578,6 @@ int gui_init_replicant(int argc, char** argv)
 
 	return 0;
 }
-
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
-{
-	/* Set defaults for absent option strings */
-}
-
 
 void gui_init(int argc, char** argv)
 {
@@ -515,7 +637,7 @@ void gui_init(int argc, char** argv)
 	find_resource(buf, "Choices", "%/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
-	nsoption_read(buf);
+	nsoption_read(buf, NULL);
 
 
 	/* check what the font settings are, setting them to a default font

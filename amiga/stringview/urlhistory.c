@@ -29,7 +29,7 @@
 #include "urlhistory.h"
 
 #include "content/urldb.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 static struct List PageList;
 

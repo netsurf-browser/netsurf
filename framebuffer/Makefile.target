@@ -138,7 +138,7 @@ $(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V
 # S_FRAMEBUFFER are sources purely for the framebuffer build
 S_FRAMEBUFFER := gui.c framebuffer.c tree.c schedule.c			\
 	thumbnail.c misc.c bitmap.c filetype.c login.c findfile.c	\
-	localhistory.c system_colour.c clipboard.c
+	localhistory.c clipboard.c
 
 S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\
 	text.c scroll.c osk.c 
@@ -171,7 +171,7 @@ install-framebuffer:
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
 	$(Q)cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
 	$(Q)for F in $(NETSURF_FRAMEBUFFER_RESOURCE_LIST); do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
-	$(Q)$(PERL) utils/split-messages.pl en all < resources/FatMessages | gzip -9n > $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)messages
+	$(Q)$(SPLIT_MESSAGES) -l en -p fb -f messages resources/FatMessages | gzip -9n > $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)messages
 
 # ----------------------------------------------------------------------------
 # Package target

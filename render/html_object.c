@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "render/box.h"
 #include "render/html_internal.h"
@@ -203,6 +203,7 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_REFORMAT:
+	case CONTENT_MSG_REDIRECT:
 		break;
 
 	case CONTENT_MSG_REDRAW:

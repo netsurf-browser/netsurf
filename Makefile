@@ -137,6 +137,7 @@ PERL=perl
 MKDIR=mkdir
 TOUCH=touch
 STRIP=strip
+SPLIT_MESSAGES=$(PERL) utils/split-messages.pl
 
 # Override this only if the host compiler is called something different
 HOST_CC := gcc
@@ -270,8 +271,21 @@ else
                 CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
               endif
 	    else
-              # All other targets (GTK, Framebuffer)
-              PKG_CONFIG := pkg-config
+              ifeq ($(findstring framebuffer,$(TARGET)),framebuffer)
+                ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+                  PKG_CONFIG := pkg-config
+                else
+                  PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config                
+                endif
+
+                ifneq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+                  CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+                  CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
+                endif
+              else
+                # All native targets (GTK)
+                PKG_CONFIG := pkg-config
+              endif
             endif
           endif
         endif
@@ -593,6 +607,7 @@ endif
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
 	$(Q)$(RM) $(EXETARGET)
+	$(call clean_install_messages, !NetSurf/Resources)
 
 clean-testament:
 	$(VQ)echo "   CLEAN: utils/testament.h"
@@ -604,7 +619,7 @@ clean-builddir:
 CLEANS += clean-builddir
 
 all-program: $(EXETARGET) post-exe
-	$(call split_install_messages, '[^\.]+', !NetSurf/Resources)
+	$(call split_install_messages, any, !NetSurf/Resources)
 
 .PHONY: testament
 testament utils/testament.h:
@@ -743,9 +758,32 @@ FAT_LANGUAGES=de en fr it nl
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
 		$(Q)mkdir -p $(2)/$(LANG)$(3)
-		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
+		$(Q)$(SPLIT_MESSAGES) -l $(LANG) -p $(1) -f messages resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
 	)
 endef
+
+# Clean Message target
+# 1 = Destination directory (where resources being installed, creates en/Messages etc)
+# 2 = suffix after language name
+define clean_install_messages
+	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGCLEAN: $(LANG) in $(1)
+		$(Q)$(RM) -f $(1)$(2)/$(LANG)/Messages
+	)
+endef
+
+.PHONY: messages-split-tfx messages-fetch-tfx messages-import-tfx
+
+# split fat messages into properties files suitable for uploading to transifex
+messages-split-tfx:
+	for splitlang in $(FAT_LANGUAGES);do perl ./utils/split-messages.pl -l $${splitlang} -f transifex -p any -o Messages.any.$${splitlang}.tfx resources/FatMessages;done
+
+# download property files from transifex
+messages-fetch-tfx:
+	for splitlang in $(FAT_LANGUAGES);do $(RM) Messages.any.$${splitlang}.tfx ; perl ./utils/fetch-transifex.pl -w insecure -l $${splitlang} -o Messages.any.$${splitlang}.tfx ;done
+
+# merge property files into fat messages
+messages-import-tfx: messages-fetch-tfx
+	for tfxlang in $(FAT_LANGUAGES);do perl ./utils/import-messages.pl -l $${tfxlang} -p any -f transifex -o resources/FatMessages -i resources/FatMessages -I Messages.any.$${tfxlang}.tfx ; $(RM) Messages.any.$${tfxlang}.tfx; done
 
 # Target installs executable on the host system 
 install: all-program install-$(TARGET)

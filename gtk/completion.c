@@ -21,7 +21,7 @@
 
 #include "content/urldb.h"
 #include "utils/log.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 GtkListStore *nsgtk_completion_list;
 

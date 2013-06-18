@@ -30,10 +30,9 @@
 #include "gtk/window.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/selection.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
@@ -176,6 +175,9 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	current_widget = (GtkWidget *)gw->layout;
 	current_cr = cr;
 
+	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(gw->layout);
+	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(gw->layout);
+
 	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
 
 	clip.x0 = x1;
@@ -183,7 +185,11 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 	clip.x1 = x2;
 	clip.y1 = y2;
 
-	browser_window_redraw(gw->bw, 0, 0, &clip, &ctx);
+	browser_window_redraw(gw->bw,
+			      -gtk_adjustment_get_value(hscroll),
+			      -gtk_adjustment_get_value(vscroll),
+			      &clip,
+			      &ctx);
 
 	if (gw->careth != 0) {
 		nsgtk_plot_caret(gw->caretx, gw->carety, gw->careth);
@@ -377,105 +383,89 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
-				GdkEventScroll *event, gpointer data)
+static gboolean
+nsgtk_window_scroll_event(GtkWidget *widget,
+			  GdkEventScroll *event,
+			  gpointer data)
 {
 	struct gui_window *g = data;
 	double value;
+	double deltax = 0;
+	double deltay = 0;
 	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(g->layout);
 	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(g->layout);
 	GtkAllocation alloc;
 
-	LOG(("%d", event->direction));
 	switch (event->direction) {
 	case GDK_SCROLL_LEFT:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				-100, 0) != true) {
-			/* core did not handle event do horizontal scroll */
+		deltax = -1.0;
+		break;
 
-			value = gtk_adjustment_get_value(hscroll) -
-				(nsgtk_adjustment_get_step_increment(hscroll) *2);
+	case GDK_SCROLL_UP:
+		deltay = -1.0;
+		break;
 
+	case GDK_SCROLL_RIGHT:
+		deltax = 1.0;
+		break;
+
+	case GDK_SCROLL_DOWN:
+		deltay = 1.0;
+		break;
+
+#if GTK_CHECK_VERSION(3,4,0)
+	case GDK_SCROLL_SMOOTH:
+		gdk_event_get_scroll_deltas((GdkEvent *)event, &deltax, &deltay);
+		break;
+#endif
+	default:
+		LOG(("Unhandled mouse scroll direction"));
+		return TRUE;
+	}
+
+	deltax *= nsgtk_adjustment_get_step_increment(hscroll);
+	deltay *= nsgtk_adjustment_get_step_increment(vscroll);
+
+	if (browser_window_scroll_at_point(g->bw,
+					   event->x / g->bw->scale,
+					   event->y / g->bw->scale,
+					   deltax, deltay) != true) {
+
+		/* core did not handle event so change adjustments */
+
+		/* Horizontal */
+		if (deltax != 0) {
+			value = gtk_adjustment_get_value(hscroll) + deltax;
+
+			/* @todo consider gtk_widget_get_allocated_width() */
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+			if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width) {
+				value = nsgtk_adjustment_get_upper(hscroll) - alloc.width;
+			}
 			if (value < nsgtk_adjustment_get_lower(hscroll)) {
 				value = nsgtk_adjustment_get_lower(hscroll);
 			}
 
 			gtk_adjustment_set_value(hscroll, value);
 		}
-		break;
 
-	case GDK_SCROLL_UP:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				0, -100) != true) {
-			/* core did not handle event change vertical
-			 * adjustment. 
-			 */
+		/* Vertical */
+		if (deltay != 0) {
+			value = gtk_adjustment_get_value(vscroll) + deltay;
 
-			value = gtk_adjustment_get_value(vscroll) -
-				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
+			/* @todo consider gtk_widget_get_allocated_height */
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
+			if (value > (nsgtk_adjustment_get_upper(vscroll) - alloc.height)) {
+				value = nsgtk_adjustment_get_upper(vscroll) - alloc.height;
+			}
 			if (value < nsgtk_adjustment_get_lower(vscroll)) {
 				value = nsgtk_adjustment_get_lower(vscroll);
 			}
 
 			gtk_adjustment_set_value(vscroll, value);
 		}
-		break;
-
-	case GDK_SCROLL_RIGHT:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				100, 0) != true) {
-
-			/* core did not handle event change horizontal
-			 * adjustment. 
-			 */
-
-			value = gtk_adjustment_get_value(hscroll) +
-				(nsgtk_adjustment_get_step_increment(hscroll) * 2);
-
-			/* @todo consider gtk_widget_get_allocated_width() */
-			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
-
-			if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width) {
-				value = nsgtk_adjustment_get_upper(hscroll) - 
-					alloc.width;
-			}
-
-			gtk_adjustment_set_value(hscroll, value);
-		}
-		break;
-
-	case GDK_SCROLL_DOWN:
-		if (browser_window_scroll_at_point(g->bw,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale,
-				0, 100) != true) {
-			/* core did not handle event change vertical
-			 * adjustment. 
-			 */
-
-			value = gtk_adjustment_get_value(vscroll) +
-				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
-			/* @todo consider gtk_widget_get_allocated_height */
-			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
-
-			if (value > nsgtk_adjustment_get_upper(vscroll) - alloc.height) {
-				value = nsgtk_adjustment_get_upper(vscroll) - 
-					alloc.height;
-			}
-
-			gtk_adjustment_set_value(vscroll, value);
-		}
-		break;
-
-	default:
-		break;
 	}
 
 	return TRUE;
@@ -603,12 +593,12 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 
 	if (g->paned != NULL) {
 		/* Set status bar / scroll bar proportion according to
-		 * option_toolbar_status_width */
+		 * option_toolbar_status_size */
 		/* TODO: Probably want to detect when the user adjusts the
 		 *       status bar width, remember that proportion for the
 		 *       window, and use that here. */
 		gtk_paned_set_position(g->paned, 
-				       (nsoption_int(toolbar_status_width) *
+				       (nsoption_int(toolbar_status_size) *
 					allocation->width) / 10000);
 	}
 
@@ -673,14 +663,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
 
-	/* connect the scrollbars to the layout widget */
-	nsgtk_layout_set_hadjustment(g->layout,
-			gtk_range_get_adjustment(GTK_RANGE(
-			gtk_builder_get_object(xml, "hscrollbar"))));
-	nsgtk_layout_set_vadjustment(g->layout,
-			gtk_range_get_adjustment(GTK_RANGE(
-			gtk_builder_get_object(xml, "vscrollbar"))));
-
 	/* add the tab to the scaffold */
 	bool tempback = true;
 	switch (temp_open_background) {
@@ -744,7 +726,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			nsgtk_window_keypress_event, g);
 	CONNECT(g->layout, "size_allocate",
 			nsgtk_window_size_allocate_event, g);
-	CONNECT(g->layout, "scroll_event",
+	CONNECT(g->layout, "scroll-event",
 			nsgtk_window_scroll_event, g);
 	return g;
 }
@@ -1095,7 +1077,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 
 }

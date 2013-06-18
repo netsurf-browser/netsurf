@@ -22,7 +22,8 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 
-#include "desktop/options.h"
+#include "css/utils.h"
+#include "utils/nsoption.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 
@@ -101,17 +102,6 @@ const struct plotter_table amiplot = {
 	.option_knockout = true,
 };
 
-colour ami_abgr_to_argb(colour c) {
-	colour argb = 0x00000000;
-
-	/* NB: We force the alpha byte to be 0xff, as it is not set by the core. */
-	argb = 0xff000000 |
-		((c & 0x00ff0000) >> 16) |
-		(c & 0x0000ff00) |
-		((c & 0x000000ff) << 16);
-
-	return argb;
-}
 
 #ifdef NS_AMIGA_CAIRO
 void ami_cairo_set_colour(cairo_t *cr,colour c)
@@ -155,19 +145,15 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	 * Also applies to the further gfx/layers functions and memory below */
  
 	ULONG depth = 32;
-	struct DrawInfo *dri;
-	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
+	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
 	if((depth < 16) || (nsoption_int(cairo_renderer) == -1)) {
 		palette_mapped = true;
-		// friend = scrn->RastPort.BitMap;
 	} else {
 		palette_mapped = false;
 	}
 
-	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
-	if(nsoption_int(redraw_tile_size_y) <= 0) nsoption_set_int(redraw_tile_size_y, scrn->Height);
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
@@ -297,7 +283,7 @@ static void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
-			ami_abgr_to_argb(colour),
+			ns_color_to_nscss(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
@@ -309,7 +295,7 @@ static void ami_plot_setopen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			ami_abgr_to_argb(colour),
+			ns_color_to_nscss(colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);

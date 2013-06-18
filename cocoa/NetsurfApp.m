@@ -29,10 +29,9 @@
 #import "desktop/history_core.h"
 #import "desktop/mouse.h"
 #import "desktop/netsurf.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "desktop/plotters.h"
 #import "desktop/save_complete.h"
-#import "desktop/selection.h"
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
 #import "render/html.h"
@@ -164,13 +163,20 @@ void cocoa_autorelease( void )
 	pool = [[NSAutoreleasePool alloc] init];
 }
 
-/* Documented in desktop/options.h */
-void gui_options_init_defaults(void)
+/**
+ * Set option defaults for cocoa frontend
+ *
+ * @param defaults The option table to update.
+ * @return error status.
+ */
+static nserror set_defaults(struct nsoption_s *defaults)
 {
 	/* Set defaults for absent option strings */
 	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
 
 	nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
+
+        return NSERROR_OK;
 }
 
 int main( int argc, char **argv )
@@ -183,7 +189,24 @@ int main( int argc, char **argv )
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
 
-	netsurf_init(&argc, &argv, options, messages);
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
+	/* user options setup */
+	error = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (error != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	error = netsurf_init(messages);
+	if (error != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
 
 	/* Initialise filename allocator */
 	filename_initialise();

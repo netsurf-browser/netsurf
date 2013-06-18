@@ -67,7 +67,7 @@ S_RESOURCES := windows_resource.o
 S_WINDOWS := main.c window.c gui.c drawable.c misc.c plot.c findfile.c	\
 	  font.c bitmap.c about.c prefs.c download.c filetype.c		\
 	  localhistory.c login.c schedule.c thumbnail.c tree.c		\
-	  windbg.c system_colour.c
+	  windbg.c
 S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
 
 # This is the final source build list
@@ -92,7 +92,7 @@ WIN_RES_OBJ := installer.nsi NetSurf.ico netsurf.png welcome.html default.css
 WIN_RES_INS_OBJ := $(addprefix windows/res/,$(WIN_RES_OBJ)) $(OBJROOT)/messages
 
 $(OBJROOT)/messages: resources/FatMessages
-	$(PERL) utils/split-messages.pl en all < resources/FatMessages > $@
+	$(Q)$(SPLIT_MESSAGES) -l en -p win -f messages resources/FatMessages > $@
 
 netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
 	makensis -V4 -NOCD windows/res/installer.nsi 

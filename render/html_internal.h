@@ -90,6 +90,12 @@ typedef struct html_content {
 	/** Content has been aborted in the LOADING state */
 	bool aborted;
 
+	/** Whether a meta refresh has been handled */
+	bool refresh;
+
+	/* Title element node */
+	dom_node *title;
+
         /** A talloc context purely for the render box tree */
 	int *bctx;
 	/** Box tree, or NULL. */
@@ -161,6 +167,8 @@ typedef struct html_content {
 
 	/** Context for free text search, or NULL if none */
 	struct search_context *search;
+	/** Search string or NULL */
+	char *search_string;
 
 } html_content;
 
@@ -210,8 +218,6 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 
 
 struct browser_window *html_get_browser_window(struct content *c);
-struct search_context *html_get_search(struct content *c);
-void html_set_search(struct content *c, struct search_context *s);
 
 /**
  * Complete conversion of an HTML document
@@ -247,6 +253,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 bool html_keypress(struct content *c, uint32_t key);
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
+void html_search(struct content *c,
+		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+		search_flags_t flags, const char *string);
+void html_search_clear(struct content *c);
 
 
 /* in render/html_script.c */

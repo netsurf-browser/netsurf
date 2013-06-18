@@ -30,7 +30,7 @@
 #include "desktop/gui.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "gtk/download.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"

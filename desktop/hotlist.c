@@ -121,7 +121,6 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
 {
 	struct node *node;
 	const struct url_data *url_data;
-	char *name;
 	int hlst_loop;
 
 	/* Either load or create a hotlist */
@@ -143,18 +142,15 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
 		return true;
 	}
 
-
 	/* failed to load hotlist file, use default list */
-	name = strdup("NetSurf");
-	if (name == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return false;
-	}
-	node = tree_create_folder_node(hotlist_tree, hotlist_tree_root,
-			name, true, false, false);
+	node = tree_create_folder_node(hotlist_tree,
+				       hotlist_tree_root,
+				       messages_get("NetSurf"),
+				       true,
+				       false,
+				       false);
 	if (node == NULL) {
-		free(name);
+		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return false;
 	}
 
@@ -203,9 +199,13 @@ unsigned int hotlist_get_tree_flags(void)
  */
 void hotlist_cleanup(const char *hotlist_path)
 {
+	LOG(("Exporting hotlist..."));
 	hotlist_export(hotlist_path);
+	LOG(("Releasing handles..."));
 	hlcache_handle_release(folder_icon);
+	LOG(("Clearing hotlist tree nodes..."));
 	tree_url_node_cleanup();
+	LOG(("Hotlist cleaned up."));
 }
 
 
@@ -373,14 +373,7 @@ void hotlist_collapse_addresses(void)
 void hotlist_add_folder(bool selected)
 {
 	struct node *node, *parent = NULL;
-	struct node_element *element;
-	char *title = strdup("Untitled");
 
-	if (title == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return;
-	}
 	creating_node = true;
 
 	if (selected == true) {
@@ -394,16 +387,21 @@ void hotlist_add_folder(bool selected)
 		parent = tree_get_default_folder_node(hotlist_tree);
 	}
 
-	node = tree_create_folder_node(hotlist_tree, parent, title,
-				       true, false, false);
+	node = tree_create_folder_node(hotlist_tree,
+				       parent,
+				       messages_get("Untitled"),
+				       true,
+				       false,
+				       false);
 	if (node == NULL) {
-		free(title);
+		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return;
 	}
+
 	tree_set_node_user_callback(node, hotlist_node_callback, NULL);
 	tree_set_node_icon(hotlist_tree, node, folder_icon);
- 	element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
- 	tree_start_edit(hotlist_tree, element);
+	tree_start_edit(hotlist_tree,
+			tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL));
 }
 
 /**

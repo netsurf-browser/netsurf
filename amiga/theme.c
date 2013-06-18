@@ -37,7 +37,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/drag.h"
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/theme.h"
 #include "desktop/searchweb.h"
 #include "utils/messages.h"
@@ -193,7 +193,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(drag_save_data) return;
 
-	if(nsoption_bool(use_os_pointers))
+	if(nsoption_bool(os_mouse_pointers))
 	{
 		switch(shape)
 		{

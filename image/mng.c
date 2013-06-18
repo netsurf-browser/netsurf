@@ -28,7 +28,7 @@
 #include <time.h>
 #include <libmng.h>
 #include "content/content_protected.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/mng.h"

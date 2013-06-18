@@ -98,7 +98,6 @@ S_COCOA := \
 	url.m \
 	utf8.m \
 	utils.m \
-	system_colour.m \
 	ArrowBox.m \
 	ArrowWindow.m \
 	BlackScroller.m \
@@ -168,7 +167,7 @@ $$(OBJROOT)/$(1).lproj: $(2)
 	$(VQ)echo Bundling language $(1)
 	$(Q)mkdir -p $$@
 	$(Q)cp -pLR $(2) $$@
-	$(Q)$(PERL) utils/split-messages.pl $(1) cocoa < resources/FatMessages > $$@/Messages
+	$(Q)$(SPLIT_MESSAGES) -l $(1) -p cocoa -f messages resources/FatMessages > $$@/Messages
 endef
 
 # compile_xib (xib) (lang)

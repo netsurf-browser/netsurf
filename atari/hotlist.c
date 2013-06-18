@@ -27,7 +27,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"

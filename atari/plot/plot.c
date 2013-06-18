@@ -34,7 +34,7 @@
 
 #include "atari/bitmap.h"
 #include "atari/gui.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "atari/plot/plot.h"
 
 void vq_scrninfo(VdiHdl handle, short *work_out);

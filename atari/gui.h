@@ -132,7 +132,6 @@ struct s_browser
 {
 	struct browser_window * bw;
 	bool attached;
-	bool reformat_pending;
 };
 
 /*

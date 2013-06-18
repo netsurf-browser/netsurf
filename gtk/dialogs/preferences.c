@@ -20,7 +20,7 @@
 #include <math.h>
 
 #include "desktop/browser_private.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -45,6 +45,7 @@ struct ppref {
 	GtkEntry *entryProxyHost;
 	GtkEntry *entryProxyUser;
 	GtkEntry *entryProxyPassword;
+	GtkEntry *entryProxyNoproxy;
 	GtkSpinButton *spinProxyPort;
 
 	/* dynamic list stores */
@@ -200,6 +201,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 	gboolean port;
 	gboolean user;
 	gboolean pass;
+	gboolean noproxy;
 
 	switch (proxyval) {
 	case 0: /* no proxy */
@@ -207,6 +209,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = FALSE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = FALSE;
 		break;
 
 	case 1: /* proxy with no auth */
@@ -214,6 +217,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = TRUE;
 		break;
 
 	case 2: /* proxy with basic auth */
@@ -221,6 +225,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = TRUE;
 		pass = TRUE;
+		noproxy = TRUE;
 		break;
 
 	case 3: /* proxy with ntlm auth */
@@ -228,6 +233,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = TRUE;
 		user = TRUE;
 		pass = TRUE;
+		noproxy = TRUE;
 		break;
 
 	case 4: /* system proxy */
@@ -235,6 +241,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 		port = FALSE;
 		user = FALSE;
 		pass = FALSE;
+		noproxy = FALSE;
 		break;
 
 	default:
@@ -245,6 +252,7 @@ static void set_proxy_widgets_sensitivity(int proxyval, struct ppref *priv)
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->spinProxyPort), port);
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyUser), user);
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyPassword), pass);
+	gtk_widget_set_sensitive(GTK_WIDGET(priv->entryProxyNoproxy), noproxy);
 
 }
 
@@ -322,6 +330,9 @@ ENTRY_SIGNALS(entryProxyUser, http_proxy_auth_user)
 /* password */
 ENTRY_SIGNALS(entryProxyPassword, http_proxy_auth_pass)
 
+/* no proxy */
+ENTRY_SIGNALS(entryProxyNoproxy, http_proxy_noproxy)
+
 /* Fetching */
 
 /* maximum fetchers */
@@ -374,7 +385,7 @@ SPINBUTTON_SIGNALS(spinDiscCacheAge, disc_cache_age, 1.0)
 TOGGLEBUTTON_SIGNALS(checkDisablePopups, disable_popups)
 
 /* hide adverts */
-TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_ads)
+TOGGLEBUTTON_SIGNALS(checkHideAdverts, block_advertisements)
 
 /* enable javascript */
 TOGGLEBUTTON_SIGNALS(checkEnableJavascript, enable_javascript)
@@ -669,54 +680,66 @@ nsgtk_preferences_buttonAddTheme_clicked(GtkButton *button, struct ppref *priv)
 {
 	char *filename, *directory;
 	size_t len;
-	GtkWidget *fc = gtk_file_chooser_dialog_new(
-		messages_get("gtkAddThemeTitle"),
-		GTK_WINDOW(priv->dialog),
-		GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-		GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	GtkWidget *fc;
+	char *themesfolder;
+	gint res;
+
+	fc  = gtk_file_chooser_dialog_new(messages_get("gtkAddThemeTitle"),
+					  GTK_WINDOW(priv->dialog),
+					  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+					  GTK_STOCK_OK,
+					  GTK_RESPONSE_ACCEPT,
+					  GTK_STOCK_CANCEL,
+					  GTK_RESPONSE_CANCEL,
+					  NULL);
 	len = SLEN("themes") + strlen(res_dir_location) + 1;
-	char themesfolder[len];
+
+	themesfolder = malloc(len);
+
 	snprintf(themesfolder, len, "%sthemes", res_dir_location);
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc),
-					    themesfolder);
-	gint res = gtk_dialog_run(GTK_DIALOG(fc));
+
+	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(fc), themesfolder);
+
+	res = gtk_dialog_run(GTK_DIALOG(fc));
 	if (res == GTK_RESPONSE_ACCEPT) {
-		filename = gtk_file_chooser_get_current_folder(
-			GTK_FILE_CHOOSER(fc));
-		if (strcmp(filename, themesfolder) != 0) {
-			directory = strrchr(filename, '/');
-			*directory = '\0';
+		filename = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(fc));
+		if (filename != NULL) {
 			if (strcmp(filename, themesfolder) != 0) {
-				warn_user(messages_get(
-						  "gtkThemeFolderInstructions"),
-					  0);
-				gtk_widget_destroy(GTK_WIDGET(fc));
-				if (filename != NULL)
-					g_free(filename);
-				return;
+				directory = strrchr(filename, '/');
+				*directory = '\0';
+				if (strcmp(filename, themesfolder) != 0) {
+					warn_user(messages_get(
+							  "gtkThemeFolderInstructions"),
+						  0);
+
+					if (filename != NULL)
+						g_free(filename);
+
+				} else {
+					directory++;
+					nsgtk_theme_add(directory);
+				}
 			} else {
-				directory++;
-			}
-		} else {
-			if (filename != NULL)
 				g_free(filename);
-			filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(fc));
-			if (strcmp(filename, themesfolder) == 0) {
-				warn_user(messages_get("gtkThemeFolderSub"),
-					  0);
-				gtk_widget_destroy(GTK_WIDGET(fc));
-				g_free(filename);
-				return;
+
+				filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
+
+				if (strcmp(filename, themesfolder) == 0) {
+					warn_user(messages_get("gtkThemeFolderSub"),
+						  0);
+				} else {
+					directory = strrchr(filename, '/') + 1;
+					nsgtk_theme_add(directory);
+				}
 			}
-			directory = strrchr(filename, '/') + 1;
-		}
-		gtk_widget_destroy(GTK_WIDGET(fc));
-		nsgtk_theme_add(directory);
-		if (filename != NULL)
+
 			g_free(filename);
+		}
 	}
+
+	free(themesfolder);
+
+	gtk_widget_destroy(fc);
 }
 
 /* Tabs */
@@ -987,7 +1010,7 @@ G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_response(GtkDialog *dlg, gint resid)
 {
 	if (resid == GTK_RESPONSE_CLOSE) {
-		nsoption_write(options_file_location);
+		nsoption_write(options_file_location, NULL, NULL);
 		gtk_widget_hide(GTK_WIDGET(dlg));
 	}
 }
@@ -996,7 +1019,7 @@ G_MODULE_EXPORT gboolean
 nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 						struct ppref *priv)
 {
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 	gtk_widget_hide(GTK_WIDGET(dlg));
 
 	/* delt with it by hiding window, no need to destory widget by
@@ -1007,7 +1030,7 @@ nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 {
-	nsoption_write(options_file_location);
+	nsoption_write(options_file_location, NULL, NULL);
 }
 
 
@@ -1057,6 +1080,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	priv->spinProxyPort = GB(SPIN_BUTTON, spinProxyPort);
 	priv->entryProxyUser = GB(ENTRY, entryProxyUser);
 	priv->entryProxyPassword = GB(ENTRY, entryProxyPassword);
+	priv->entryProxyNoproxy = GB(ENTRY, entryProxyNoproxy);
 #undef GB
 
 	/* connect all signals ready to use */

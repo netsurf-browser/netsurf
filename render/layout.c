@@ -44,7 +44,7 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "content/content_protected.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
 #include "render/box.h"
@@ -2911,7 +2911,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		if ((d->type == BOX_INLINE && d->inline_end) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
-				d->type == BOX_INLINE_END) {
+				d->type == BOX_INLINE_END ||
+				d->object != NULL) {
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
 			switch (css_computed_vertical_align(d->style, &value,
@@ -4957,6 +4958,22 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 			box->border[RIGHT].width;
 	*desc_y1 = box->padding[TOP] + box->height + box->padding[BOTTOM] +
 			box->border[BOTTOM].width;
+
+	/* To stop the top of text getting clipped when css line-height is
+	 * reduced, we increase the top of the descendant bbox. */
+	if (box->type == BOX_BLOCK && box->style != NULL &&
+			css_computed_overflow(box->style) ==
+					CSS_OVERFLOW_VISIBLE &&
+			box->object == NULL) {
+		css_fixed font_size = 0;
+		css_unit font_unit = CSS_UNIT_PT;
+		int text_height;
+
+		css_computed_font_size(box->style, &font_size, &font_unit);
+		text_height = nscss_len2px(font_size, font_unit, box->style);
+
+		*desc_y0 = (*desc_y0 < -text_height) ? *desc_y0 : -text_height;
+	}
 }
 
 

@@ -50,7 +50,6 @@ typedef enum {
 struct gui_window;
 struct gui_download_window;
 struct browser_window;
-struct selection;
 struct form_control;
 
 #include <stdbool.h>
@@ -64,10 +63,6 @@ struct form_control;
 #include "desktop/mouse.h"
 #include "desktop/search.h"
 #include "utils/errors.h"
-
-/** \todo remove these when each frontend calls nslog_init */
-#include <stdio.h>
-bool nslog_ensure(FILE *fptr);
 
 void gui_poll(bool active);
 void gui_quit(void);
@@ -116,7 +111,7 @@ void gui_download_window_done(struct gui_download_window *dw);
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g);
-void gui_drag_save_selection(struct selection *s, struct gui_window *g);
+void gui_drag_save_selection(struct gui_window *g, const char *selection);
 void gui_start_selection(struct gui_window *g);
 void gui_clear_selection(struct gui_window *g);
 

@@ -32,7 +32,7 @@
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
@@ -145,6 +145,369 @@ static void html_box_convert_done(html_content *c, bool success)
 }
 
 
+/** process link node */
+static bool html_process_link(html_content *c, dom_node *node)
+{
+	struct content_rfc5988_link link; /* the link added to the content */
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *atr_string;
+	nserror error;
+
+	memset(&link, 0, sizeof(struct content_rfc5988_link));
+
+	/* check that the relation exists - w3c spec says must be present */
+	exc = dom_element_get_attribute(node, corestring_dom_rel, &atr_string);
+	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
+		return false;
+	}
+	/* get a lwc string containing the link relation */
+	exc = dom_string_intern(atr_string, &link.rel);
+	dom_string_unref(atr_string);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
+
+	/* check that the href exists - w3c spec says must be present */
+	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
+	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
+		lwc_string_unref(link.rel);
+		return false;
+	}
+
+	/* get nsurl */
+	error = nsurl_join(c->base_url, dom_string_data(atr_string),
+			&link.href);
+	dom_string_unref(atr_string);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(link.rel);
+		return false;
+	}
+
+	/* look for optional properties -- we don't care if internment fails */
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_hreflang, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the href lang */
+		exc = dom_string_intern(atr_string, &link.hreflang);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_type, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the type */
+		exc = dom_string_intern(atr_string, &link.type);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_media, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the media */
+		exc = dom_string_intern(atr_string, &link.media);
+		dom_string_unref(atr_string);
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_sizes, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* get a lwc string containing the sizes */
+		exc = dom_string_intern(atr_string, &link.sizes);
+		dom_string_unref(atr_string);
+	}
+
+	/* add to content */
+	content__add_rfc5988_link(&c->base, &link);
+
+	if (link.sizes != NULL)
+		lwc_string_unref(link.sizes);
+	if (link.media != NULL)
+		lwc_string_unref(link.media);
+	if (link.type != NULL)
+		lwc_string_unref(link.type);
+	if (link.hreflang != NULL)
+		lwc_string_unref(link.hreflang);
+
+	nsurl_unref(link.href);
+	lwc_string_unref(link.rel);
+
+	return true;
+}
+
+/** process title node */
+static bool html_process_title(html_content *c, dom_node *node)
+{
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *title;
+	char *title_str;
+	bool success;
+
+	exc = dom_node_get_text_content(node, &title);
+	if ((exc != DOM_NO_ERR) || (title == NULL)) {
+		return false;
+	}
+
+	title_str = squash_whitespace(dom_string_data(title));
+	dom_string_unref(title);
+
+	if (title_str == NULL) {
+		return false;
+	}
+
+	success = content__set_title(&c->base, title_str);
+
+	free(title_str);
+
+	return success;
+}
+
+static bool html_process_base(html_content *c, dom_node *node)
+{
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *atr_string;
+
+	/* get href attribute if present */
+	exc = dom_element_get_attribute(node,
+			corestring_dom_href, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		nsurl *url;
+		nserror error;
+
+		/* get url from string */
+		error = nsurl_create(dom_string_data(atr_string), &url);
+		dom_string_unref(atr_string);
+		if (error == NSERROR_OK) {
+			if (c->base_url != NULL)
+				nsurl_unref(c->base_url);
+			c->base_url = url;
+		}
+	}
+
+
+	/* get target attribute if present and not already set */
+	if (c->base_target != NULL) {
+		return true;
+	}
+
+	exc = dom_element_get_attribute(node,
+			corestring_dom_target, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* Validation rules from the HTML5 spec for the base element:
+		 *  The target must be one of _blank, _self, _parent, or
+		 *  _top or any identifier which does not begin with an
+		 *  underscore
+		 */
+		if (*dom_string_data(atr_string) != '_' ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__blank) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__self) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__parent) ||
+				dom_string_caseless_lwc_isequal(atr_string,
+						corestring_lwc__top)) {
+			c->base_target = strdup(dom_string_data(atr_string));
+		}
+		dom_string_unref(atr_string);
+	}
+
+	return true;
+}
+
+static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
+{
+	union content_msg_data msg_data;
+	const char *url, *end, *refresh = NULL;
+	char *new_url;
+	char quote = '\0';
+	dom_string *equiv, *content;
+	dom_exception exc;
+	nsurl *nsurl;
+	nserror error = NSERROR_OK;
+
+	exc = dom_element_get_attribute(n, corestring_dom_http_equiv, &equiv);
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
+
+	if (equiv == NULL) {
+		return NSERROR_OK;
+	}
+
+	if (!dom_string_caseless_lwc_isequal(equiv, corestring_lwc_refresh)) {
+		dom_string_unref(equiv);
+		return NSERROR_OK;
+	}
+
+	dom_string_unref(equiv);
+
+	exc = dom_element_get_attribute(n, corestring_dom_content, &content);
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
+
+	if (content == NULL) {
+		return NSERROR_OK;
+	}
+
+	end = dom_string_data(content) + dom_string_byte_length(content);
+
+	/* content  := *LWS intpart fracpart? *LWS [';' *LWS *1url *LWS]
+	 * intpart  := 1*DIGIT
+	 * fracpart := 1*('.' | DIGIT)
+	 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
+	 * url-nq   := *urlchar
+	 * url-sq   := "'" *(urlchar | '"') "'"
+	 * url-dq   := '"' *(urlchar | "'") '"'
+	 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
+	 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
+	 */
+
+	url = dom_string_data(content);
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* intpart */
+	if (url == end || (*url < '0' || '9' < *url)) {
+		/* Empty content, or invalid timeval */
+		dom_string_unref(content);
+		return NSERROR_OK;
+	}
+
+	msg_data.delay = (int) strtol(url, &new_url, 10);
+	/* a very small delay and self-referencing URL can cause a loop
+	 * that grinds machines to a halt. To prevent this we set a
+	 * minimum refresh delay of 1s. */
+	if (msg_data.delay < 1) {
+		msg_data.delay = 1;
+	}
+
+	url = new_url;
+
+	/* fracpart? (ignored, as delay is integer only) */
+	while (url < end && (('0' <= *url && *url <= '9') ||
+			*url == '.')) {
+		url++;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* ';' */
+	if (url < end && *url == ';')
+		url++;
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	if (url == end) {
+		/* Just delay specified, so refresh current page */
+		dom_string_unref(content);
+
+		c->base.refresh = nsurl_ref(
+				content_get_url(&c->base));
+
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+
+		return NSERROR_OK;
+	}
+
+	/* "url" */
+	if (url <= end - 3) {
+		if (strncasecmp(url, "url", 3) == 0) {
+			url += 3;
+		} else {
+			/* Unexpected input, ignore this header */
+			dom_string_unref(content);
+			return NSERROR_OK;
+		}
+	} else {
+		/* Insufficient input, ignore this header */
+		dom_string_unref(content);
+		return NSERROR_OK;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* '=' */
+	if (url < end) {
+		if (*url == '=') {
+			url++;
+		} else {
+			/* Unexpected input, ignore this header */
+			dom_string_unref(content);
+			return NSERROR_OK;
+		}
+	} else {
+		/* Insufficient input, ignore this header */
+		dom_string_unref(content);
+		return NSERROR_OK;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* '"' or "'" */
+	if (url < end && (*url == '"' || *url == '\'')) {
+		quote = *url;
+		url++;
+	}
+
+	/* Start of URL */
+	refresh = url;
+
+	if (quote != 0) {
+		/* url-sq | url-dq */
+		while (url < end && *url != quote)
+			url++;
+	} else {
+		/* url-nq */
+		while (url < end && !isspace(*url))
+			url++;
+	}
+
+	/* '"' or "'" or *LWS (we don't care) */
+	if (url > refresh) {
+		/* There's a URL */
+		new_url = strndup(refresh, url - refresh);
+		if (new_url == NULL) {
+			dom_string_unref(content);
+			return NSERROR_NOMEM;
+		}
+
+		error = nsurl_join(c->base_url, new_url, &nsurl);
+		if (error == NSERROR_OK) {
+			/* broadcast valid refresh url */
+
+			c->base.refresh = nsurl;
+
+			content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+			c->refresh = true;
+		}
+
+		free(new_url);
+
+	}
+
+	dom_string_unref(content);
+
+	return error;
+}
+
+
 /**
  * Complete conversion of an HTML document
  *
@@ -222,9 +585,29 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 			/* an element node has been inserted */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				/* LOG(("element htmlc:%p node %p name:%s", htmlc, node, dom_string_data(name))); */
-				if (dom_string_caseless_isequal(name, corestring_dom_link)) {
-					html_css_process_link(htmlc, (dom_node *)node);
+
+				if (dom_string_caseless_isequal(name,
+						corestring_dom_link)) {
+					/* Handle stylesheet loading */
+					html_css_process_link(htmlc,
+							(dom_node *)node);
+					/* Generic link handling */
+					html_process_link(htmlc,
+							(dom_node *)node);
+
+				} else if (dom_string_caseless_lwc_isequal(name,
+						corestring_lwc_meta) &&
+						htmlc->refresh == false) {
+					html_meta_refresh_process_element(htmlc,
+							(dom_node *)node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_base)) {
+					html_process_base(htmlc,
+							(dom_node *)node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_title) &&
+						htmlc->title == NULL) {
+					htmlc->title = dom_node_ref(node);
 				}
 
 				dom_string_unref(name);
@@ -246,15 +629,24 @@ dom_default_action_DOMSubtreeModified_cb(struct dom_event *evt, void *pw)
 
 	exc = dom_event_get_target(evt, &node);
 	if ((exc == DOM_NO_ERR) && (node != NULL)) {
+		if (htmlc->title == (dom_node *)node) {
+			/* Node is our title node */
+			html_process_title(htmlc, (dom_node *)node);
+			dom_node_unref(node);
+			return;
+		}
+
 		exc = dom_node_get_node_type(node, &type);
 		if ((exc == DOM_NO_ERR) && (type == DOM_ELEMENT_NODE)) {
-			/* an element node has been inserted */
+			/* an element node has been modified */
 			exc = dom_node_get_node_name(node, &name);
 			if ((exc == DOM_NO_ERR) && (name != NULL)) {
-				/* LOG(("element htmlc:%p node:%p name:%s", htmlc, node, dom_string_data(name)));  */
-				if (dom_string_caseless_isequal(name, corestring_dom_style)) {
-					html_css_update_style(htmlc, (dom_node *)node);
-				} 
+
+				if (dom_string_caseless_isequal(name,
+						corestring_dom_style)) {
+					html_css_update_style(htmlc,
+							(dom_node *)node);
+				}
 
 				dom_string_unref(name);
 			}
@@ -308,6 +700,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->base_url = nsurl_ref(content_get_url(&c->base));
 	c->base_target = NULL;
 	c->aborted = false;
+	c->refresh = false;
+	c->title = NULL;
 	c->bctx = NULL;
 	c->layout = NULL;
 	c->background_colour = NS_TRANSPARENT;
@@ -330,6 +724,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->selection_owner.none = true;
 	c->focus_type = HTML_FOCUS_SELF;
 	c->focus_owner.self = true;
+	c->search = NULL;
+	c->search_string = NULL;
 	c->scripts_count = 0;
 	c->scripts = NULL;
 	c->jscontext = NULL;
@@ -560,524 +956,6 @@ html_process_data(struct content *c, const char *data, unsigned int size)
 }
 
 
-/** process link node */
-static bool html_process_link(html_content *c, dom_node *node)
-{
-	struct content_rfc5988_link link; /* the link added to the content */
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *atr_string;
-	nserror error;
-
-	memset(&link, 0, sizeof(struct content_rfc5988_link));
-
-	/* check that the relation exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, corestring_dom_rel, &atr_string);
-	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
-		return false;
-	}
-	/* get a lwc string containing the link relation */
-	exc = dom_string_intern(atr_string, &link.rel);
-	dom_string_unref(atr_string);
-	if (exc != DOM_NO_ERR) {
-		return false;
-	}
-
-	/* check that the href exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
-	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
-		lwc_string_unref(link.rel);
-		return false;
-	}
-
-	/* get nsurl */
-	error = nsurl_join(c->base_url, dom_string_data(atr_string),
-			&link.href);
-	dom_string_unref(atr_string);
-	if (error != NSERROR_OK) {
-		lwc_string_unref(link.rel);
-		return false;
-	}
-
-	/* look for optional properties -- we don't care if internment fails */
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_hreflang, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the href lang */
-		exc = dom_string_intern(atr_string, &link.hreflang);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_type, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the type */
-		exc = dom_string_intern(atr_string, &link.type);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_media, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the media */
-		exc = dom_string_intern(atr_string, &link.media);
-		dom_string_unref(atr_string);
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_sizes, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* get a lwc string containing the sizes */
-		exc = dom_string_intern(atr_string, &link.sizes);
-		dom_string_unref(atr_string);
-	}
-
-	/* add to content */
-	content__add_rfc5988_link(&c->base, &link);
-
-	if (link.sizes != NULL)
-		lwc_string_unref(link.sizes);
-	if (link.media != NULL)
-		lwc_string_unref(link.media);
-	if (link.type != NULL)
-		lwc_string_unref(link.type);
-	if (link.hreflang != NULL)
-		lwc_string_unref(link.hreflang);
-
-	nsurl_unref(link.href);
-	lwc_string_unref(link.rel);
-
-	return true;
-}
-
-/** process title node */
-static bool html_process_title(html_content *c, dom_node *node)
-{
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *title;
-	char *title_str;
-	bool success;
-
-	if (c->base.title != NULL)
-		return true;
-
-	exc = dom_node_get_text_content(node, &title);
-	if ((exc != DOM_NO_ERR) || (title == NULL)) {
-		return false;
-	}
-
-	title_str = squash_whitespace(dom_string_data(title));
-	dom_string_unref(title);
-
-	if (title_str == NULL) {
-		return false;
-	}
-
-	success = content__set_title(&c->base, title_str);
-
-	free(title_str);
-
-	return success;
-}
-
-static bool html_process_base(html_content *c, dom_node *node)
-{
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *atr_string;
-
-	/* get href attribute if present */
-	exc = dom_element_get_attribute(node,
-			corestring_dom_href, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		nsurl *url;
-		nserror error;
-
-		/* get url from string */
-		error = nsurl_create(dom_string_data(atr_string), &url);
-		dom_string_unref(atr_string);
-		if (error == NSERROR_OK) {
-			if (c->base_url != NULL)
-				nsurl_unref(c->base_url);
-			c->base_url = url;
-		}
-	}
-
-
-	/* get target attribute if present and not already set */
-	if (c->base_target != NULL) {
-		return true;
-	}
-
-	exc = dom_element_get_attribute(node,
-			corestring_dom_target, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
-		/* Validation rules from the HTML5 spec for the base element:
-		 *  The target must be one of _blank, _self, _parent, or
-		 *  _top or any identifier which does not begin with an
-		 *  underscore
-		 */
-		if (*dom_string_data(atr_string) != '_' ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__blank) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__self) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__parent) ||
-		    dom_string_caseless_lwc_isequal(atr_string,
-		    		corestring_lwc__top)) {
-			c->base_target = strdup(dom_string_data(atr_string));
-		}
-		dom_string_unref(atr_string);
-	}
-
-	return true;
-}
-
-/**
- * Process elements in <head>.
- *
- * \param  c     content structure
- * \param  head  xml node of head element
- * \return  true on success, false on memory exhaustion
- *
- * The title and base href are extracted if present.
- */
-
-static nserror html_head(html_content *c, dom_node *head)
-{
-	dom_node *node;
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *node_name;
-	dom_node_type node_type;
-	dom_node *next_node;
-
-	exc = dom_node_get_first_child(head, &node);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-
-	while (node != NULL) {
-		exc = dom_node_get_node_type(node, &node_type);
-
-		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
-			exc = dom_node_get_node_name(node, &node_name);
-
-			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
-				if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_title)) {
-					html_process_title(c, node);
-				} else if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_base)) {
-					html_process_base(c, node);
-				} else if (dom_string_caseless_lwc_isequal(
-						node_name,
-						corestring_lwc_link)) {
-					html_process_link(c, node);
-				}
-			}
-			if (node_name != NULL) {
-				dom_string_unref(node_name);
-			}
-		}
-
-		/* move to next node */
-		exc = dom_node_get_next_sibling(node, &next_node);
-		dom_node_unref(node);
-		if (exc == DOM_NO_ERR) {
-			node = next_node;
-		} else {
-			node = NULL;
-		}
-	}
-
-	return NSERROR_OK;
-}
-
-static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
-{
-	union content_msg_data msg_data;
-	const char *url, *end, *refresh = NULL;
-	char *new_url;
-	char quote = '\0';
-	dom_string *equiv, *content;
-	dom_exception exc;
-	nsurl *nsurl;
-	nserror error = NSERROR_OK;
-
-	exc = dom_element_get_attribute(n, corestring_dom_http_equiv, &equiv);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-
-	if (equiv == NULL) {
-		return NSERROR_OK;
-	}
-
-	if (!dom_string_caseless_lwc_isequal(equiv, corestring_lwc_refresh)) {
-		dom_string_unref(equiv);
-		return NSERROR_OK;
-	}
-
-	dom_string_unref(equiv);
-
-	exc = dom_element_get_attribute(n, corestring_dom_content, &content);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-
-	if (content == NULL) {
-		return NSERROR_OK;
-	}
-
-	end = dom_string_data(content) + dom_string_byte_length(content);
-
-	/* content  := *LWS intpart fracpart? *LWS [';' *LWS *1url *LWS]
-	 * intpart  := 1*DIGIT
-	 * fracpart := 1*('.' | DIGIT)
-	 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
-	 * url-nq   := *urlchar
-	 * url-sq   := "'" *(urlchar | '"') "'"
-	 * url-dq   := '"' *(urlchar | "'") '"'
-	 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
-	 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
-	 */
-
-	url = dom_string_data(content);
-
-	/* *LWS */
-	while (url < end && isspace(*url)) {
-		url++;
-	}
-
-	/* intpart */
-	if (url == end || (*url < '0' || '9' < *url)) {
-		/* Empty content, or invalid timeval */
-		dom_string_unref(content);
-		return NSERROR_OK;
-	}
-
-	msg_data.delay = (int) strtol(url, &new_url, 10);
-	/* a very small delay and self-referencing URL can cause a loop
-	 * that grinds machines to a halt. To prevent this we set a
-	 * minimum refresh delay of 1s. */
-	if (msg_data.delay < 1) {
-		msg_data.delay = 1;
-	}
-
-	url = new_url;
-
-	/* fracpart? (ignored, as delay is integer only) */
-	while (url < end && (('0' <= *url && *url <= '9') ||
-			*url == '.')) {
-		url++;
-	}
-
-	/* *LWS */
-	while (url < end && isspace(*url)) {
-		url++;
-	}
-
-	/* ';' */
-	if (url < end && *url == ';')
-		url++;
-
-	/* *LWS */
-	while (url < end && isspace(*url)) {
-		url++;
-	}
-
-	if (url == end) {
-		/* Just delay specified, so refresh current page */
-		dom_string_unref(content);
-
-		c->base.refresh = nsurl_ref(
-				content_get_url(&c->base));
-
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
-
-		return NSERROR_OK;
-	}
-
-	/* "url" */
-	if (url <= end - 3) {
-		if (strncasecmp(url, "url", 3) == 0) {
-			url += 3;
-		} else {
-			/* Unexpected input, ignore this header */
-			dom_string_unref(content);
-			return NSERROR_OK;
-		}
-	} else {
-		/* Insufficient input, ignore this header */
-		dom_string_unref(content);
-		return NSERROR_OK;
-	}
-
-	/* *LWS */
-	while (url < end && isspace(*url)) {
-		url++;
-	}
-
-	/* '=' */
-	if (url < end) {
-		if (*url == '=') {
-			url++;
-		} else {
-			/* Unexpected input, ignore this header */
-			dom_string_unref(content);
-			return NSERROR_OK;
-		}
-	} else {
-		/* Insufficient input, ignore this header */
-		dom_string_unref(content);
-		return NSERROR_OK;
-	}
-
-	/* *LWS */
-	while (url < end && isspace(*url)) {
-		url++;
-	}
-
-	/* '"' or "'" */
-	if (url < end && (*url == '"' || *url == '\'')) {
-		quote = *url;
-		url++;
-	}
-
-	/* Start of URL */
-	refresh = url;
-
-	if (quote != 0) {
-		/* url-sq | url-dq */
-		while (url < end && *url != quote)
-			url++;
-	} else {
-		/* url-nq */
-		while (url < end && !isspace(*url))
-			url++;
-	}
-
-	/* '"' or "'" or *LWS (we don't care) */
-	if (url > refresh) {
-		/* There's a URL */
-		new_url = strndup(refresh, url - refresh);
-		if (new_url == NULL) {
-			dom_string_unref(content);
-			return NSERROR_NOMEM;
-		}
-
-		error = nsurl_join(c->base_url, new_url, &nsurl);
-		if (error == NSERROR_OK) {
-			/* broadcast valid refresh url */
-
-			c->base.refresh = nsurl;
-
-			content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
-		}
-
-		free(new_url);
-
-	}
-
-	dom_string_unref(content);
-
-	return error;
-}
-
-/**
- * Search for meta refresh
- *
- * http://wp.netscape.com/assist/net_sites/pushpull.html
- *
- * \param c content structure
- * \param head xml node of head element
- * \return true on success, false otherwise (error reported)
- */
-
-static nserror html_meta_refresh(html_content *c, dom_node *head)
-{
-	dom_node *n, *next;
-	dom_exception exc;
-	nserror ns_error = NSERROR_OK;
-
-	if (head == NULL) {
-		return ns_error;
-	}
-
-	exc = dom_node_get_first_child(head, &n);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-
-	while (n != NULL) {
-		dom_node_type type;
-
-		exc = dom_node_get_node_type(n, &type);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return NSERROR_DOM;
-		}
-
-		if (type == DOM_ELEMENT_NODE) {
-			dom_string *name;
-
-			exc = dom_node_get_node_name(n, &name);
-			if (exc != DOM_NO_ERR) {
-				dom_node_unref(n);
-				return NSERROR_DOM;
-			}
-
-			/* Recurse into noscript elements */
-			if (dom_string_caseless_lwc_isequal(name, corestring_lwc_noscript)) {
-				ns_error = html_meta_refresh(c, n);
-				if (ns_error != NSERROR_OK) {
-					/* Some error occurred */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return ns_error;
-				} else if (c->base.refresh != NULL) {
-					/* Meta refresh found - stop */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return NSERROR_OK;
-				}
-			} else if (dom_string_caseless_lwc_isequal(name, corestring_lwc_meta)) {
-				ns_error = html_meta_refresh_process_element(c, n);
-				if (ns_error != NSERROR_OK) {
-					/* Some error occurred */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return ns_error;
-				} else if (c->base.refresh != NULL) {
-					/* Meta refresh found - stop */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return NSERROR_OK;
-				}
-			}
-			dom_string_unref(name);
-		}
-
-		exc = dom_node_get_next_sibling(n, &next);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return NSERROR_DOM;
-		}
-
-		dom_node_unref(n);
-		n = next;
-	}
-
-	return ns_error;
-}
-
-
-
-
-
-
 /**
  * Convert a CONTENT_HTML for display.
  *
@@ -1132,17 +1010,14 @@ static bool html_convert(struct content *c)
 bool html_can_begin_conversion(html_content *htmlc)
 {
 	unsigned int i;
-	bool got_modified_stylesheet = false;
+
+	if (htmlc->base.active != 0)
+		return false;
 
 	for (i = 0; i != htmlc->stylesheet_count; i++) {
-		if (htmlc->stylesheets[i].modified) {
-			got_modified_stylesheet = true;
-			break;
-		}
+		if (htmlc->stylesheets[i].modified)
+			return false;
 	}
-
-	if (htmlc->base.active != 0 || got_modified_stylesheet)
-		return false;
 
 	return true;
 }
@@ -1150,7 +1025,7 @@ bool html_can_begin_conversion(html_content *htmlc)
 bool
 html_begin_conversion(html_content *htmlc)
 {
-	dom_node *html, *head;
+	dom_node *html;
 	nserror ns_error;
 	struct form *f;
 	dom_exception exc; /* returned by libdom functions */
@@ -1222,28 +1097,6 @@ html_begin_conversion(html_content *htmlc)
 	}
 	dom_string_unref(node_name);
 
-	head = libdom_find_first_element(html, corestring_lwc_head);
-	if (head != NULL) {
-		ns_error = html_head(htmlc, head);
-		if (ns_error != NSERROR_OK) {
-			content_broadcast_errorcode(&htmlc->base, ns_error);
-
-			dom_node_unref(html);
-			dom_node_unref(head);
-			return false;
-		}
-
-		/* handle meta refresh */
-		ns_error = html_meta_refresh(htmlc, head);
-		if (ns_error != NSERROR_OK) {
-			content_broadcast_errorcode(&htmlc->base, ns_error);
-
-			dom_node_unref(html);
-			dom_node_unref(head);
-			return false;
-		}
-	}
-
 	/* Retrieve forms from parser */
 	htmlc->forms = html_forms_get_forms(htmlc->encoding,
 			(dom_html_document *) htmlc->document);
@@ -1267,7 +1120,6 @@ html_begin_conversion(html_content *htmlc)
 			content_broadcast_errorcode(&htmlc->base, ns_error);
 
 			dom_node_unref(html);
-			dom_node_unref(head);
 			return false;
 		}
 
@@ -1279,7 +1131,6 @@ html_begin_conversion(html_content *htmlc)
 						    NSERROR_NOMEM);
 
 			dom_node_unref(html);
-			dom_node_unref(head);
 			return false;
 		}
 
@@ -1290,13 +1141,11 @@ html_begin_conversion(html_content *htmlc)
 				content_broadcast_errorcode(&htmlc->base, 
 							    NSERROR_NOMEM);
 				dom_node_unref(html);
-				dom_node_unref(head);
 				return false;
 			}
 		}
 	}
 
-	dom_node_unref(head);
 	dom_node_unref(html);
 
 	if (htmlc->base.active == 0) {
@@ -1378,8 +1227,8 @@ static void html_reformat(struct content *c, int width, int height)
 
 	time_taken = wallclock() - time_before;
 	c->reformat_time = wallclock() +
-		((time_taken * 3 < nsoption_int(min_reflow_period) ?
-		  nsoption_int(min_reflow_period) : time_taken * 3));
+		((time_taken * 3 < nsoption_uint(min_reflow_period) ?
+		  nsoption_uint(min_reflow_period) : time_taken * 3));
 }
 
 
@@ -1510,6 +1359,12 @@ static void html_destroy(struct content *c)
 
 	if (html->document != NULL) {
 		dom_node_unref(html->document);
+		html->document = NULL;
+	}
+
+	if (html->title != NULL) {
+		dom_node_unref(html->title);
+		html->title = NULL;
 	}
 
 	/* Free base target */
@@ -2006,36 +1861,6 @@ static void html_debug_dump(struct content *c, FILE *f)
 }
 
 
-/**
- * Set an HTML content's search context
- *
- * \param c	content of type html
- * \param s	search context, or NULL if none
- */
-
-void html_set_search(struct content *c, struct search_context *s)
-{
-	html_content *html = (html_content *) c;
-
-	html->search = s;
-}
-
-
-/**
- * Return an HTML content's search context
- *
- * \param c	content of type html
- * \return content's search context, or NULL if none
- */
-
-struct search_context *html_get_search(struct content *c)
-{
-	html_content *html = (html_content *) c;
-
-	return html->search;
-}
-
-
 #if ALWAYS_DUMP_FRAMESET
 /**
  * Print a frameset tree to stderr.
@@ -2276,6 +2101,8 @@ static const content_handler html_content_handler = {
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
 	.drop_file_at_point = html_drop_file_at_point,
+	.search = html_search,
+	.search_clear = html_search_clear,
 	.debug_dump = html_debug_dump,
 	.clone = html_clone,
 	.type = html_content_type,

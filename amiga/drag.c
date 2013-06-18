@@ -37,10 +37,8 @@
 #include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "amiga/theme.h"
-
-#include "desktop/selection.h"
 
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -57,7 +55,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 {
 	const char *filetype = NULL;
 
-	if(strcmp(nsoption_charp(use_pubscreen), "Workbench")) return;
+	if(strcmp(nsoption_charp(pubscreen_name), "Workbench")) return;
 
 	switch(type)
 	{
@@ -89,7 +87,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 	drag_save = type;
 }
 
-void gui_drag_save_selection(struct selection *s, struct gui_window *g)
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
 {
 	ami_drag_icon_show(g->shared->win, "ascii");
 
@@ -108,7 +106,7 @@ void ami_drag_save(struct Window *win)
 	ami_drag_icon_close(NULL);
 	ami_autoscroll = FALSE;
 
-	if(nsoption_charp(use_pubscreen) && (strcmp(nsoption_charp(use_pubscreen),"Workbench") == 0))
+	if(nsoption_charp(pubscreen_name) && (strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0))
 	{
 		which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
 									WBOBJA_Type,&type,

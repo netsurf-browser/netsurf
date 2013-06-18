@@ -45,7 +45,7 @@
 #include "amiga/object.h"
 #include "amiga/utf8.h"
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 

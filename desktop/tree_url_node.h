@@ -43,6 +43,7 @@ void tree_update_URL_node(struct tree *tree, struct node *node,
 		nsurl *url, const struct url_data *data);
 const char *tree_url_node_get_title(struct node *node);
 const char *tree_url_node_get_url(struct node *node);
+struct bitmap *tree_url_node_get_icon(struct node *node);
 void tree_url_node_edit_title(struct tree *tree, struct node *node);
 void tree_url_node_edit_url(struct tree *tree, struct node *node);
 

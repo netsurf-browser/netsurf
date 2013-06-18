@@ -22,7 +22,7 @@
 #import "cocoa/font.h"
 
 #import "css/css.h"
-#import "desktop/options.h"
+#import "utils/nsoption.h"
 #import "render/font.h"
 #import "desktop/plotters.h"
 

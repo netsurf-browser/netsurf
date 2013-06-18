@@ -39,7 +39,7 @@
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"

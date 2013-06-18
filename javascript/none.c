@@ -21,7 +21,7 @@
  */
 
 #include "content/content.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "javascript/js.h"
 #include "utils/log.h"
@@ -35,7 +35,7 @@ void js_finalise(void)
 {
 }
 
-jscontext *js_newcontext(void)
+jscontext *js_newcontext(int timeout, jscallback *cb, void *cbctx)
 {
 	return NULL;
 }

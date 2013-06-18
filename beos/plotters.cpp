@@ -35,7 +35,7 @@ extern "C" {
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 }
 #include "beos/font.h"
 #include "beos/gui.h"

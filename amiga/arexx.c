@@ -23,7 +23,7 @@
 #include "amiga/gui.h"
 #include "amiga/hotlist.h"
 #include "amiga/theme.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 
 #include "desktop/browser_private.h"
 
@@ -455,13 +455,13 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 {
 	cmd->ac_RC = 0;
 
-	if(nsoption_charp(use_pubscreen) == NULL)
+	if(nsoption_charp(pubscreen_name) == NULL)
 	{
 		strcpy(result,"NetSurf");
 	}
 	else
 	{
-		strcpy(result, nsoption_charp(use_pubscreen));
+		strcpy(result, nsoption_charp(pubscreen_name));
 	}
 
 	cmd->ac_Result = result;

@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "render/html_internal.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
@@ -101,6 +101,9 @@ html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_READY:
+		break;
+
+	case CONTENT_MSG_REDIRECT:
 		break;
 
 	case CONTENT_MSG_DONE:
@@ -551,7 +554,7 @@ nserror html_css_new_stylesheets(html_content *c)
 	LOG(("%d fetches active", c->base.active));
 
 
-	if (nsoption_bool(block_ads)) {
+	if (nsoption_bool(block_advertisements)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback,

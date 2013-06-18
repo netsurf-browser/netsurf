@@ -38,7 +38,7 @@
 #include "css/utils.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
@@ -1482,9 +1482,9 @@ static bool html_redraw_background(int x, int y, struct box *box, float scale,
 				bg_data.repeat_x = repeat_x;
 				bg_data.repeat_y = repeat_y;
 
-				if (!content_redraw(background->background,
-						&bg_data, &r, ctx))
-					return false;
+				/* We just continue if redraw fails */
+				content_redraw(background->background,
+						&bg_data, &r, ctx);
 			}
 		}
 
@@ -1634,8 +1634,8 @@ static bool html_redraw_inline_background(int x, int y, struct box *box,
 			bg_data.repeat_x = repeat_x;
 			bg_data.repeat_y = repeat_y;
 
-			if (!content_redraw(box->background, &bg_data, &r, ctx))
-				return false;
+			/* We just continue if redraw fails */
+			content_redraw(box->background, &bg_data, &r, ctx);
 		}
 	}
 
@@ -2065,8 +2065,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		if (r.y0 < clip->y0) r.y0 = clip->y0;
 		if (clip->x1 < r.x1) r.x1 = clip->x1;
 		if (clip->y1 < r.y1) r.y1 = clip->y1;
-		/* no point trying to draw 0-width/height boxes */
-		if (r.x0 == r.x1 || r.y0 == r.y1)
+		/* Nothing to do for invalid rectangles */
+		if (r.x0 >= r.x1 || r.y0 >= r.y1)
 			/* not an error */
 			return ((!plot->group_end) || (plot->group_end()));
 		/* clip to it */

@@ -21,7 +21,7 @@
 #include <windows.h>
 #include <commctrl.h>
 
-#include "desktop/options.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -583,7 +583,7 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 		/* advert blocking */
 		sub = GetDlgItem(hwnd, IDC_PREFS_ADVERTS);
 		SendMessage(sub, BM_SETCHECK, 
-			    (WPARAM) ((nsoption_bool(block_ads)) ? 
+			    (WPARAM) ((nsoption_bool(block_advertisements)) ? 
 				  BST_CHECKED : BST_UNCHECKED), 0);
 
 		/* Referrer sending */
@@ -615,7 +615,7 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 			nsoption_set_bool(suppress_images,
 					  (IsDlgButtonChecked(hwnd, IDC_PREFS_IMAGES) == BST_CHECKED) ? true : false);
 
-			nsoption_set_bool(block_ads, (IsDlgButtonChecked(hwnd, 
+			nsoption_set_bool(block_advertisements, (IsDlgButtonChecked(hwnd, 
 									 IDC_PREFS_ADVERTS) == BST_CHECKED) ? true : false);
 
 			nsoption_set_bool(send_referer, (IsDlgButtonChecked(hwnd, 
@@ -675,7 +675,6 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 		win_perror("PropertySheet");
 	} else if (ret > 0) {
 		/* user saved changes */
-		nsoption_write(options_file_location);
+		nsoption_write(options_file_location, NULL, NULL);
 	}
-
 }
