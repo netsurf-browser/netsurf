@@ -327,7 +327,7 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
  * simplfy sorting the entries.
  *
  * \param url		URL for entry to add to history
- * \param slot		Global histroy slot to contain history entry
+ * \param slot		Global history slot to contain history entry
  * \param data		URL data for the entry
  * \param got_treeview	Whether the treeview has been created already
  * \return NSERROR_OK on success, or appropriate error otherwise
