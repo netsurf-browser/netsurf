@@ -101,6 +101,93 @@ static struct global_history_entry *global_history_find(nsurl *url)
 	return NULL;
 }
 
+
+/**
+ * Initialise the treeview directories
+ *
+ * \return true on success, false on memory exhaustion
+ */
+static nserror global_history_create_dir(enum global_history_folders f)
+{
+	nserror err;
+	time_t t = gh_ctx.today;
+	struct treeview_node *relation = NULL;
+	enum treeview_relationship rel = TREE_REL_FIRST_CHILD;
+	const char *label;
+	int age;
+	int i;
+
+	switch (f) {
+	case GH_TODAY:
+		label = "DateToday";
+		age = 0;
+		break;
+	case GH_YESTERDAY:
+		label = "DateYesterday";
+		age = 1;
+		break;
+	case GH_2_DAYS_AGO:
+		label = "Date2Days";
+		age = 2;
+		break;
+	case GH_3_DAYS_AGO:
+		label = "Date3Days";
+		age = 3;
+		break;
+	case GH_4_DAYS_AGO:
+		label = "Date4Days";
+		age = 4;
+		break;
+	case GH_5_DAYS_AGO:
+		label = "Date5Days";
+		age = 5;
+		break;
+	case GH_6_DAYS_AGO:
+		label = "Date6Days";
+		age = 6;
+		break;
+	case GH_LAST_WEEK:
+		label = "Date1Week";
+		age = 7;
+		break;
+	case GH_2_WEEKS_AGO:
+		label = "Date2Week";
+		age = 14;
+		break;
+	case GH_3_WEEKS_AGO:
+		label = "Date3Week";
+		age = 21;
+		break;
+	default:
+		assert(0);
+		break;
+	}
+
+	t -= age * N_SEC_PER_DAY;
+
+	label = messages_get(label);
+
+	for (i = f - 1; i >= 0; i--) {
+		if (gh_ctx.folders[i].folder != NULL) {
+			relation = gh_ctx.folders[i].folder;
+			rel = TREE_REL_NEXT_SIBLING;
+			break;
+		}
+	}
+
+	gh_ctx.folders[f].data.field = gh_ctx.fields[N_FIELDS - 1].field;
+	gh_ctx.folders[f].data.value = label;
+	gh_ctx.folders[f].data.value_len = strlen(label);
+	err = treeview_create_node_folder(gh_ctx.tree,
+			&gh_ctx.folders[f].folder,
+			relation, rel,
+			&gh_ctx.folders[f].data,
+			&gh_ctx.folders[f]);
+
+	return err;
+}
+
+
 /**
  * Get the treeview folder for history entires in a particular slot
  *
@@ -113,6 +200,7 @@ static inline nserror global_history_get_parent_treeview_node(
 {
 	int folder_index;
 	struct global_history_folder *f;
+	nserror err;
 
 	if (slot < 7) {
 		folder_index = slot;
@@ -134,7 +222,13 @@ static inline nserror global_history_get_parent_treeview_node(
 	/* Get the folder */
 	f = &(gh_ctx.folders[folder_index]);
 
-	/* TODO: Create the folder if f==NULL */
+	if (f->folder == NULL) {
+		err = global_history_create_dir(folder_index);
+		if (err != NSERROR_OK) {
+			*parent = NULL;
+			return err;
+		}
+	}
 
 	/* Return the parent treeview folder */
 	*parent = f->folder;
@@ -464,84 +558,6 @@ static nserror global_history_initialise_time(void)
 
 
 /**
- * Initialise the treeview directories
- *
- * \return true on success, false on memory exhaustion
- */
-static nserror global_history_init_dir(enum global_history_folders f,
-		const char *label, int age)
-{
-	nserror err;
-	time_t t = gh_ctx.today;
-	struct treeview_node *relation = NULL;
-	enum treeview_relationship rel = TREE_REL_FIRST_CHILD;
-
-	t -= age * N_SEC_PER_DAY;
-
-	label = messages_get(label);
-
-	if (f != GH_TODAY) {
-		relation = gh_ctx.folders[f - 1].folder;
-		rel = TREE_REL_NEXT_SIBLING;
-	}
-
-	gh_ctx.folders[f].data.field = gh_ctx.fields[N_FIELDS - 1].field;
-	gh_ctx.folders[f].data.value = label;
-	gh_ctx.folders[f].data.value_len = strlen(label);
-	err = treeview_create_node_folder(gh_ctx.tree,
-			&gh_ctx.folders[f].folder,
-			relation, rel,
-			&gh_ctx.folders[f].data,
-			&gh_ctx.folders[f]);
-
-	return err;
-}
-
-
-/**
- * Initialise the treeview directories
- *
- * \return true on success, false on memory exhaustion
- */
-static nserror global_history_init_dirs(void)
-{
-	nserror err;
-
-	err = global_history_init_dir(GH_TODAY, "DateToday", 0);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_YESTERDAY, "DateYesterday", 1);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_2_DAYS_AGO, "Date2Days", 2);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_3_DAYS_AGO, "Date3Days", 3);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_4_DAYS_AGO, "Date4Days", 4);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_5_DAYS_AGO, "Date5Days", 5);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_6_DAYS_AGO, "Date6Days", 6);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_LAST_WEEK, "Date1Week", 7);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_2_WEEKS_AGO, "Date2Week", 14);
-	if (err != NSERROR_OK) return err;
-
-	err = global_history_init_dir(GH_3_WEEKS_AGO, "Date3Week", 21);
-	if (err != NSERROR_OK) return err;
-
-	return NSERROR_OK;
-}
-
-
-/**
  * Initialise the treeview entries
  *
  * \return true on success, false on memory exhaustion
@@ -640,8 +656,8 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 		return err;
 	}
 
-	/* Add the folders to the treeview */
-	err = global_history_init_dirs();
+	/* Ensure there is a folder for today */
+	err = global_history_create_dir(GH_TODAY);
 	if (err != NSERROR_OK) {
 		return err;
 	}
