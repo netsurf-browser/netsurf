@@ -46,12 +46,9 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
  * internal data.  After calling this if global history is required again,
  * global_history_init must be called.
  *
- * \param cw_t		Callback table for core_window containing the treeview
- * \param cw		The core_window in which the treeview is shown
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror global_history_fini(struct core_window_callback_table *cw_t,
-		void *core_window_handle);
+nserror global_history_fini(void);
 
 /**
  * Redraw the global history.

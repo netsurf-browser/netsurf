@@ -644,15 +644,9 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	return NSERROR_OK;
 }
 
-/**
- * Finalises the global history module.
- *
- * \param 
- * \param 
- * \return true on success, false on memory exhaustion
- */
-nserror global_history_fini(struct core_window_callback_table *cw_t,
-		void *core_window_handle)
+
+/* Exported interface, documented in global_history.h */
+nserror global_history_fini(void)
 {
 	int i;
 	nserror err;

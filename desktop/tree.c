@@ -226,7 +226,7 @@ static void treeview_test_fini(struct tree *tree)
 {
 	nserror err;
 
-	err = global_history_fini(&cw_t, (struct core_window *)tree);
+	err = global_history_fini();
 
 	treeview_fini();
 
