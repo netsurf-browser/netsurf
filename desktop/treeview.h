@@ -242,8 +242,6 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 void treeview_mouse_action(struct treeview *tree,
 		browser_mouse_state mouse, int x, int y);
 
-struct treeview_node * treeview_get_root(struct treeview *tree);
-
 /**
  * Determine whether treeview has a selection
  *

@@ -1551,12 +1551,3 @@ nserror treeview_fini(void)
 
 	return NSERROR_OK;
 }
-
-
-struct treeview_node * treeview_get_root(struct treeview *tree)
-{
-	assert(tree != NULL);
-	assert(tree->root != NULL);
-
-	return tree->root;
-}
