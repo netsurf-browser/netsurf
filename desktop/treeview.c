@@ -46,15 +46,15 @@ enum treeview_node_type {
 };
 
 enum treeview_node_section {
-	TV_NODE_SECTION_TOGGLE,
-	TV_NODE_SECTION_ON_NODE,
-	TV_NODE_SECTION_NONE
-};
+	TV_NODE_SECTION_TOGGLE,		/**< Expansion toggle */
+	TV_NODE_SECTION_ON_NODE,	/**< Node content (text, icon) */
+	TV_NODE_SECTION_NONE		/**< Empty area */
+}; /**< Section type of a treeview at a point */
 
 struct treeview_text {
-	const char *data;
-	uint32_t len;
-	int width;
+	const char *data;	/**< Text string */
+	uint32_t len;		/**< Lenfth of string in bytes */
+	int width;		/**< Width of text in px */
 };
 
 struct treeview_field {
@@ -72,33 +72,33 @@ enum treeview_node_flags {
 };
 
 struct treeview_node {
-	enum treeview_node_flags flags;
-	enum treeview_node_type type;
+	enum treeview_node_flags flags;	/**< Node flags */
+	enum treeview_node_type type;	/**< Node type */
 
-	int height;
-	int inset;
+	int height;	/**< Includes height of any descendants (pixels) */
+	int inset;	/**< Node's inset depending on tree depth (pixels) */
 
 	struct treeview_node *parent;
 	struct treeview_node *sibling_prev;
 	struct treeview_node *sibling_next;
 	struct treeview_node *children;
 
-	void *client_data;
+	void *client_data;  /**< Passed to client on node event msg callback */
 
-	struct treeview_field text;
-};
+	struct treeview_field text; /** Text to show for node (default field) */
+}; /**< Treeview node */
 
 struct treeview_node_entry {
 	struct treeview_node base;
 	struct treeview_field fields[];
-};
+}; /**< Entry class inherits node base class */
 
 struct treeview_pos {
-	int x;
-	int y;
-	int node_y;
-	int node_h;
-};
+	int x;		/**< Mouse X coordinate */
+	int y;		/**< Mouse Y coordinate */
+	int node_y;	/**< Top of node at y */
+	int node_h;	/**< Height of node at y */
+}; /**< A mouse position wrt treeview */
 
 struct treeview_drag {
 	enum {
@@ -106,28 +106,29 @@ struct treeview_drag {
 		TV_DRAG_SELECTION,
 		TV_DRAG_MOVE,
 		TV_DRAG_TEXTAREA
-	} type;
-	struct treeview_node *start_node;
-	bool selected;		/* Whether start node is selected */
-	enum treeview_node_section section;
-	struct treeview_pos start;
-	struct treeview_pos prev;
-};
+	} type;	/**< Drag type */
+	struct treeview_node *start_node;	/**< Start node */
+	bool selected;				/**< Start node is selected */
+	enum treeview_node_section section;	/**< Node section at start */
+	struct treeview_pos start;		/**< Start pos */
+	struct treeview_pos prev;		/**< Previous pos */
+}; /**< Drag state */
 
 struct treeview {
-	uint32_t view_height;
-	uint32_t view_width;
+	uint32_t view_height;		/** Viewport size */
+	uint32_t view_width;		/** Viewport size */
 
-	struct treeview_node *root;
+	struct treeview_node *root;	/**< Root node */
 
-	struct treeview_field *fields;
-	int n_fields; /* fields[n_fields] is folder, lower are entry fields */
-	int field_width;
+	struct treeview_field *fields;	/**< Array of fields */
+	int n_fields; /**< fields[n_fields] is folder, lower are entry fields */
+	int field_width; /**< Max width of shown field names */
 
-	struct treeview_drag drag;
+	struct treeview_drag drag;			 /**< Drag state */
 
-	const struct treeview_callback_table *callbacks;
-	const struct core_window_callback_table *cw_t; /**< Core window callback table */
+	const struct treeview_callback_table *callbacks; /**< For node events */
+
+	const struct core_window_callback_table *cw_t; /**< Window cb table */
 	struct core_window *cw_h; /**< Core window handle */
 };
 
@@ -142,15 +143,15 @@ struct treeview_node_style {
 	plot_font_style_t sitext;	/**< Selected entry field text */
 };
 
-struct treeview_node_style plot_style_odd;
-struct treeview_node_style plot_style_even;
+struct treeview_node_style plot_style_odd;	/**< Plot style for odd rows */
+struct treeview_node_style plot_style_even;	/**< Plot style for even rows */
 
 struct treeview_resource {
 	const char *url;
 	struct hlcache_handle *c;
 	int height;
 	bool ready;
-};
+}; /**< Treeview content resource data */
 enum treeview_resource_id {
 	TREE_RES_CONTENT = 0,
 	TREE_RES_FOLDER,
@@ -161,7 +162,7 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 	{ "resource:icons/content.png", NULL, 0, false },
 	{ "resource:icons/directory.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }
-};
+}; /**< Treeview content resources */
 
 
 
@@ -171,8 +172,8 @@ enum treeview_furniture_id {
 	TREE_FURN_LAST
 };
 static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
-	{ "\xe2\x96\xb8", 3, 0 },
-	{ "\xe2\x96\xbe", 3, 0 }
+	{ "\xe2\x96\xb8", 3, 0 }, /* U+25B8: Right-pointing small triangle */
+	{ "\xe2\x96\xbe", 3, 0 }  /* U+25BE: Down-pointing small triangle */
 };
 
 
