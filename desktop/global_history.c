@@ -580,13 +580,8 @@ struct treeview_callback_table tree_cb_t = {
 	.entry = global_history_tree_node_entry_cb
 };
 
-/**
- * Initialises the global history module.
- *
- * \param 
- * \param 
- * \return true on success, false on memory exhaustion
- */
+
+/* Exported interface, documented in global_history.h */
 nserror global_history_init(struct core_window_callback_table *cw_t,
 		void *core_window_handle)
 {
@@ -666,12 +661,16 @@ nserror global_history_fini(void)
 	return NSERROR_OK;
 }
 
+
+/* Exported interface, documented in global_history.h */
 void global_history_redraw(int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
 {
 	treeview_redraw(gh_ctx.tree, x, y, clip, ctx);
 }
 
+
+/* Exported interface, documented in global_history.h */
 void global_history_mouse_action(browser_mouse_state mouse, int x, int y)
 {
 	treeview_mouse_action(gh_ctx.tree, mouse, x, y);
