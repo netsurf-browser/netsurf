@@ -45,6 +45,12 @@ enum treeview_node_type {
 	TREE_NODE_ENTRY
 };
 
+enum treeview_node_section {
+	TV_NODE_SECTION_TOGGLE,
+	TV_NODE_SECTION_ON_NODE,
+	TV_NODE_SECTION_NONE
+};
+
 struct treeview_text {
 	const char *data;
 	uint32_t len;
@@ -87,6 +93,27 @@ struct treeview_node_entry {
 	struct treeview_field fields[];
 };
 
+struct treeview_pos {
+	int x;
+	int y;
+	int node_y;
+	int node_h;
+};
+
+struct treeview_drag {
+	enum {
+		TV_DRAG_NONE,
+		TV_DRAG_SELECTION,
+		TV_DRAG_MOVE,
+		TV_DRAG_TEXTAREA
+	} type;
+	struct treeview_node *start_node;
+	bool selected;		/* Whether start node is selected */
+	enum treeview_node_section section;
+	struct treeview_pos start;
+	struct treeview_pos prev;
+};
+
 struct treeview {
 	uint32_t view_height;
 	uint32_t view_width;
@@ -96,6 +123,8 @@ struct treeview {
 	struct treeview_field *fields;
 	int n_fields; /* fields[n_fields] is folder, lower are entry fields */
 	int field_width;
+
+	struct treeview_drag drag;
 
 	const struct treeview_callback_table *callbacks;
 	const struct core_window_callback_table *cw_t; /**< Core window callback table */
@@ -525,6 +554,17 @@ nserror treeview_create(struct treeview **tree,
 	(*tree)->callbacks = callbacks;
 	(*tree)->n_fields = n_fields - 1;
 
+	(*tree)->drag.type = TV_DRAG_NONE;
+	(*tree)->drag.start_node = NULL;
+	(*tree)->drag.start.x = 0;
+	(*tree)->drag.start.y = 0;
+	(*tree)->drag.start.node_y = 0;
+	(*tree)->drag.start.node_h = 0;
+	(*tree)->drag.prev.x = 0;
+	(*tree)->drag.prev.y = 0;
+	(*tree)->drag.prev.node_y = 0;
+	(*tree)->drag.prev.node_h = 0;
+
 	(*tree)->cw_t = cw_t;
 	(*tree)->cw_h = cw;
 
@@ -759,10 +799,20 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 	plot_font_style_t *text_style;
 	plot_font_style_t *infotext_style;
 	int height;
+	int sel_min, sel_max;
+	bool invert_selection;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 	assert(tree->root->flags & TREE_NODE_EXPANDED);
+
+	if (tree->drag.start.y > tree->drag.prev.y) {
+		sel_min = tree->drag.prev.y;
+		sel_max = tree->drag.start.y;
+	} else {
+		sel_min = tree->drag.start.y;
+		sel_max = tree->drag.prev.y;
+	}
 
 	/* Start knockout rendering if it's available for this plotter */
 	if (ctx->plot->option_knockout)
@@ -826,7 +876,16 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		}
 
 		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
-		if (node->flags & TREE_NODE_SELECTED) {
+		if (tree->drag.type == TV_DRAG_SELECTION &&
+				(render_y + height > sel_min &&
+				render_y < sel_max)) {
+			invert_selection = true;
+		} else {
+			invert_selection = false;
+		}
+		if ((node->flags & TREE_NODE_SELECTED && !invert_selection) ||
+				(!(node->flags & TREE_NODE_SELECTED) &&
+				invert_selection)) {
 			bg_style = &style->sbg;
 			text_style = &style->stext;
 			infotext_style = &style->sitext;
@@ -950,7 +1009,8 @@ struct treeview_selection_walk_data {
 	enum {
 		TREEVIEW_WALK_HAS_SELECTION,
 		TREEVIEW_WALK_CLEAR_SELECTION,
-		TREEVIEW_WALK_SELECT_ALL
+		TREEVIEW_WALK_SELECT_ALL,
+		TREEVIEW_WALK_COMMIT_SELECT_DRAG
 	} purpose;
 	union {
 		bool has_selection;
@@ -958,6 +1018,10 @@ struct treeview_selection_walk_data {
 			bool required;
 			struct rect *rect;
 		} redraw;
+		struct {
+			int sel_min;
+			int sel_max;
+		} drag;
 	} data;
 	int current_y;
 };
@@ -993,6 +1057,14 @@ static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 			changed = true;
 		}
 		break;
+
+	case TREEVIEW_WALK_COMMIT_SELECT_DRAG:
+		if (sw->current_y > sw->data.drag.sel_min &&
+				sw->current_y - height <
+						sw->data.drag.sel_max) {
+			node->flags ^= TREE_NODE_SELECTED;
+		}
+		return false; /* Don't stop walk */
 	}
 
 	if (changed) {
@@ -1062,6 +1134,25 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect)
 	return sw.data.redraw.required;
 }
 
+static void treeview_commit_selection_drag(struct treeview *tree)
+{
+	struct treeview_selection_walk_data sw;
+
+	sw.purpose = TREEVIEW_WALK_COMMIT_SELECT_DRAG;
+	sw.current_y = 0;
+
+	if (tree->drag.start.y > tree->drag.prev.y) {
+		sw.data.drag.sel_min = tree->drag.prev.y;
+		sw.data.drag.sel_max = tree->drag.start.y;
+	} else {
+		sw.data.drag.sel_min = tree->drag.start.y;
+		sw.data.drag.sel_max = tree->drag.prev.y;
+	}
+
+	treeview_walk_internal(tree->root, false,
+			treeview_node_selection_walk_cb, &sw);
+}
+
 struct treeview_mouse_action {
 	struct treeview *tree;
 	browser_mouse_state mouse;
@@ -1080,10 +1171,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 		TV_NODE_ACTION_NONE		= 0,
 		TV_NODE_ACTION_SELECTION	= (1 << 0)
 	} action = TV_NODE_ACTION_NONE;
-	enum {
-		TV_NODE_SECTION_TOGGLE,
-		TV_NODE_SECTION_NODE
-	} section = TV_NODE_SECTION_NODE;
+	enum treeview_node_section section = TV_NODE_SECTION_NONE;
 	nserror err;
 
 	r.x0 = 0;
@@ -1099,9 +1187,112 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 	}
 
 	/* Find where the mouse is */
-	if (ma->x >= node->inset - 1 &&
-			ma->x < node->inset + tree_g.step_width) {
-		section = TV_NODE_SECTION_TOGGLE;
+	if (ma->y <= ma->current_y + tree_g.line_height) {
+		if (ma->x >= node->inset - 1 &&
+				ma->x < node->inset + tree_g.step_width) {
+			/* Over expansion toggle */
+			section = TV_NODE_SECTION_TOGGLE;
+
+		} else if (ma->x >= node->inset + tree_g.step_width &&
+				ma->x < node->inset + tree_g.step_width +
+				tree_g.icon_step + node->text.value.width) {
+			/* On node */
+			section = TV_NODE_SECTION_ON_NODE;
+		}
+	} else if (node->type == TREE_NODE_ENTRY &&
+			height > tree_g.line_height) {
+		/* Expanded entries */
+		int x = node->inset + tree_g.step_width + tree_g.icon_step;
+		int y = ma->current_y + tree_g.line_height;
+		int i;
+		struct treeview_node_entry *entry =
+				(struct treeview_node_entry *)node;
+		for (i = 0; i < ma->tree->n_fields - 1; i++) {
+			struct treeview_field *ef = &(ma->tree->fields[i + 1]);
+
+			if (ma->y > y + tree_g.line_height) {
+				y += tree_g.line_height;
+				continue;
+			}
+
+			if (ef->flags & TREE_FLAG_SHOW_NAME) {
+				int max_width = ma->tree->field_width;
+
+				if (ma->x >= x + max_width - ef->value.width -
+						tree_g.step_width &&
+						ma->x < x + max_width -
+						tree_g.step_width) {
+					/* On a field name */
+					section = TV_NODE_SECTION_ON_NODE;
+
+				} else if (ma->x >= x + max_width &&
+						ma->x < x + max_width +
+						entry->fields[i].value.width) {
+					/* On a field value */
+					section = TV_NODE_SECTION_ON_NODE;
+				}
+			} else {
+				if (ma->x >= x && ma->x < x +
+						entry->fields[i].value.width) {
+					/* On a field value */
+					section = TV_NODE_SECTION_ON_NODE;
+				}
+			}
+
+			break;
+		}
+	}
+
+	/* Record what position / section a drag started on */
+	if (ma->mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
+			ma->tree->drag.type == TV_DRAG_NONE) {
+		ma->tree->drag.selected = node->flags & TREE_NODE_SELECTED;
+		ma->tree->drag.start_node = node;
+		ma->tree->drag.section = section;
+		ma->tree->drag.start.x = ma->x;
+		ma->tree->drag.start.y = ma->y;
+		ma->tree->drag.start.node_y = ma->current_y;
+		ma->tree->drag.start.node_h = height;
+
+		ma->tree->drag.prev.x = ma->x;
+		ma->tree->drag.prev.y = ma->y;
+		ma->tree->drag.prev.node_y = ma->current_y;
+		ma->tree->drag.prev.node_h = height;
+	}
+
+	/* Handle drag start */
+	if (ma->tree->drag.type == TV_DRAG_NONE) {
+		if (ma->mouse & BROWSER_MOUSE_DRAG_1 &&
+				ma->tree->drag.selected == false &&
+				ma->tree->drag.section ==
+						TV_NODE_SECTION_NONE) {
+			ma->tree->drag.type = TV_DRAG_SELECTION;
+		} else if (ma->mouse & BROWSER_MOUSE_DRAG_2) {
+			ma->tree->drag.type = TV_DRAG_SELECTION;
+		}
+
+		if (ma->tree->drag.start_node != NULL &&
+				ma->tree->drag.type == TV_DRAG_SELECTION) {
+			ma->tree->drag.start_node->flags ^= TREE_NODE_SELECTED;
+		}
+	}
+
+	/* Handle selection drags */
+	if (ma->tree->drag.type == TV_DRAG_SELECTION) {
+		int curr_y1 = ma->current_y + height;
+		int prev_y1 = ma->tree->drag.prev.node_y +
+				ma->tree->drag.prev.node_h;
+
+		r.y0 = (ma->current_y < ma->tree->drag.prev.node_y) ?
+				ma->current_y : ma->tree->drag.prev.node_y;
+		r.y1 = (curr_y1 > prev_y1) ? curr_y1 : prev_y1;
+
+		redraw = true;
+
+		ma->tree->drag.prev.x = ma->x;
+		ma->tree->drag.prev.y = ma->y;
+		ma->tree->drag.prev.node_y = ma->current_y;
+		ma->tree->drag.prev.node_h = height;
 	}
 
 	click = ma->mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2);
@@ -1180,6 +1371,14 @@ void treeview_mouse_action(struct treeview *tree,
 		browser_mouse_state mouse, int x, int y)
 {
 	struct treeview_mouse_action ma;
+
+	if (mouse == BROWSER_MOUSE_HOVER &&
+			tree->drag.type == TV_DRAG_SELECTION) {
+		treeview_commit_selection_drag(tree);
+		tree->drag.type = TV_DRAG_NONE;
+		tree->drag.start_node = NULL;
+		return;
+	}
 
 	ma.tree = tree;
 	ma.mouse = mouse;
