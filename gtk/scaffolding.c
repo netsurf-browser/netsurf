@@ -127,7 +127,6 @@ struct gtk_scaffolding {
 	GtkImage			*throbber;
 	struct gtk_search		*search;
 	GtkWidget			*webSearchEntry;
-	GtkPaned			*status_pane;
 
 	int 				offset;
 	int				toolbarmem;
@@ -545,7 +544,7 @@ static void nsgtk_window_tabs_remove(GtkNotebook *notebook,
  */
 static void nsgtk_openfile_open(const char *filename)
 {
-	struct browser_window *bw; 
+	struct browser_window *bw;
 	char *urltxt;
 	nsurl *url;
 	nserror error;
@@ -639,11 +638,11 @@ MULTIHANDLER(newtab)
 	} else if (nsoption_bool(new_blank)) {
 		/** @todo what the heck is this for? */
 		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
-		nsgtk_widget_override_background_color(window, 
-			GTK_STATE_NORMAL, 
+		nsgtk_widget_override_background_color(window,
+			GTK_STATE_NORMAL,
 			0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
 	}
-	
+
 	return TRUE;
 }
 
@@ -1016,7 +1015,7 @@ MENUHANDLER(link_openwin)
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	} 
+	}
 
 	return TRUE;
 }
@@ -1050,7 +1049,7 @@ MENUHANDLER(link_opentab)
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	} 
+	}
 
 	temp_open_background = -1;
 
@@ -1285,10 +1284,6 @@ MULTIHANDLER(savewindowsize)
 {
 	int x,y,w,h;
 
-	if (GTK_IS_PANED(g->status_pane)) {
-		nsoption_set_int(toolbar_status_size,
-				 gtk_paned_get_position(g->status_pane));
-	}
 	gtk_window_get_position(g->window, &x, &y);
 	gtk_window_get_size(g->window, &w, &h);
 
@@ -1682,7 +1677,7 @@ BUTTONHANDLER(history)
 
 #if GTK_CHECK_VERSION(3,0,0)
 
-static gboolean 
+static gboolean
 nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
 	struct rect clip;
@@ -1721,7 +1716,7 @@ nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 #else
 
 /* signal handler functions for the local history window */
-static gboolean 
+static gboolean
 nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 {
 	struct rect clip;
@@ -1820,25 +1815,25 @@ static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup
 	SIG_CONNECT(nmenu->popup_menu, "hide",
 		    nsgtk_window_popup_menu_hidden, g);
 
-	g_signal_connect(nmenu->savelink_menuitem, "activate", 
+	g_signal_connect(nmenu->savelink_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_savelink_activate_menu), g);
 
-	g_signal_connect(nmenu->opentab_menuitem, "activate", 
+	g_signal_connect(nmenu->opentab_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_link_opentab_activate_menu), g);
 
-	g_signal_connect(nmenu->openwin_menuitem, "activate", 
+	g_signal_connect(nmenu->openwin_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_link_openwin_activate_menu), g);
 
-	g_signal_connect(nmenu->cut_menuitem, "activate", 
+	g_signal_connect(nmenu->cut_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_cut_activate_menu), g);
 
-	g_signal_connect(nmenu->copy_menuitem, "activate", 
+	g_signal_connect(nmenu->copy_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_copy_activate_menu), g);
 
-	g_signal_connect(nmenu->paste_menuitem, "activate", 
+	g_signal_connect(nmenu->paste_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_paste_activate_menu), g);
 
-	g_signal_connect(nmenu->customize_menuitem, "activate", 
+	g_signal_connect(nmenu->customize_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_customize_activate_menu), g);
 
 	/* set initial popup menu visibility */
@@ -1942,10 +1937,10 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	 * or some sensible default if they're not set yet.
 	 */
 	if (nsoption_int(window_width) > 0) {
-		gtk_window_move(g->window, 
-				nsoption_int(window_x), 
+		gtk_window_move(g->window,
+				nsoption_int(window_x),
 				nsoption_int(window_y));
-		gtk_window_resize(g->window, 
+		gtk_window_resize(g->window,
 				  nsoption_int(window_width),
 				  nsoption_int(window_height));
 	} else {
@@ -1962,7 +1957,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		GtkIconSize tooliconsize;
 		GtkToolbarStyle toolbarstyle;
 
-		g_object_get(settings, 
+		g_object_get(settings,
 			     "gtk-toolbar-icon-size", &tooliconsize,
 			     "gtk-toolbar-style", &toolbarstyle, NULL);
 
@@ -2077,8 +2072,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect history window signals to their handlers */
-	nsgtk_connect_draw_event(GTK_WIDGET(g->history_window->drawing_area), 
-				 G_CALLBACK(nsgtk_history_draw_event), 
+	nsgtk_connect_draw_event(GTK_WIDGET(g->history_window->drawing_area),
+				 G_CALLBACK(nsgtk_history_draw_event),
 				 g->history_window);
 	/*CONNECT(g->history_window->drawing_area, "motion_notify_event",
 			nsgtk_history_motion_notify_event, g->history_window);*/
@@ -2107,12 +2102,10 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	CONNECT(g->search->entry, "key-press-event", nsgtk_search_entry_key, g);
 	CONNECT(g->search->buttons[2], "clicked",
 			nsgtk_search_close_button_clicked, g);
-	CONNECT(g->search->caseSens, "toggled", nsgtk_search_entry_changed,
-			g);
-
+	CONNECT(g->search->caseSens, "toggled", nsgtk_search_entry_changed, g);
 
 	CONNECT(g->tool_bar, "popup-context-menu",
-			nsgtk_window_tool_bar_clicked, g);
+		nsgtk_window_tool_bar_clicked, g);
 
 	/* create popup menu */
 	nsgtk_new_scaffolding_popup(g, group);
@@ -2242,13 +2235,13 @@ nsgtk_scaffolding_set_icon(struct gui_window *gw)
 	GdkPixbuf *icon_pixbuf = nsgtk_get_icon(gw);
 
 	/* check icon needs to be shown */
-	if ((icon_pixbuf == NULL) || 
+	if ((icon_pixbuf == NULL) ||
 	    (sc->top_level != gw)) {
 		return;
 	}
 
-	nsgtk_entry_set_icon_from_pixbuf(sc->url_bar, 
-					 GTK_ENTRY_ICON_PRIMARY, 
+	nsgtk_entry_set_icon_from_pixbuf(sc->url_bar,
+					 GTK_ENTRY_ICON_PRIMARY,
 					 icon_pixbuf);
 
 	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
@@ -2260,7 +2253,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	nsgtk_scaffolding *current;
 	GdkPixbuf *srch_pixbuf;
 
-	if ((ico == NULL) && 
+	if ((ico == NULL) &&
 	    (ico = search_web_ico()) == NULL) {
 		return;
 	}
@@ -2278,7 +2271,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 	/* add ico to each window's toolbar */
 	for (current = scaf_list; current != NULL; current = current->next) {
-		nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry, 
+		nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
 						 GTK_ENTRY_ICON_PRIMARY,
 						 srch_pixbuf);
 	}

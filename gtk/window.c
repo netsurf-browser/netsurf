@@ -44,6 +44,10 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+/* helper macro to conenct signals to callbacks */
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+
 extern const GdkPixdata menu_cursor_pixdata;
 
 struct gui_window {
@@ -83,8 +87,11 @@ struct gui_window {
 	/** statusbar */
 	GtkLabel *status_bar;
 
-	/** scrollbar paned */
+	/** status pane */
 	GtkPaned *paned;
+
+	/** has the status pane had its first size operation yet? */
+	bool paned_sized;
 
 	/** to allow disactivation / resume of normal window behaviour */
 	gulong signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
@@ -147,7 +154,7 @@ float nsgtk_get_scale_for_gui(struct gui_window *g)
 
 #if GTK_CHECK_VERSION(3,0,0)
 
-static gboolean 
+static gboolean
 nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
 	struct gui_window *gw = data;
@@ -202,7 +209,7 @@ nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 #else
 
-static gboolean 
+static gboolean
 nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
 	struct gui_window *gw = data;
@@ -480,7 +487,7 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
 
-	if ((event->state & 0x7) != 0) 
+	if ((event->state & 0x7) != 0)
 		return TRUE;
 
 	double value;
@@ -591,16 +598,48 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 	g->bw->reformat_pending = true;
 	browser_reformat_pending = true;
 
-	if (g->paned != NULL) {
-		/* Set status bar / scroll bar proportion according to
-		 * option_toolbar_status_size */
-		/* TODO: Probably want to detect when the user adjusts the
-		 *       status bar width, remember that proportion for the
-		 *       window, and use that here. */
-		gtk_paned_set_position(g->paned, 
-				       (nsoption_int(toolbar_status_size) *
-					allocation->width) / 10000);
+
+	return TRUE;
+}
+
+
+/**  when the pane position is changed update the user option
+ *
+ * The slightly awkward implementation with the first allocation flag
+ * is necessary because the initial window creation does not cause an
+ * allocate-event signal so the position value in the pane is incorrect
+ * and we cannot know what it should be until after the allocation
+ * (which did not generate a signal) is done as the user position is a
+ * percentage of pane total width not an absolute value.
+ */
+static void
+nsgtk_paned_notify__position(GObject *gobject, GParamSpec *pspec, gpointer data)
+{
+	struct gui_window *g = data;
+	GtkAllocation pane_alloc;
+
+	gtk_widget_get_allocation(GTK_WIDGET(g->paned), &pane_alloc);
+
+	if (g->paned_sized == false)
+	{
+		g->paned_sized = true;
+		gtk_paned_set_position(g->paned,
+		(nsoption_int(toolbar_status_size) * pane_alloc.width) / 10000);
+		return;
 	}
+
+	nsoption_set_int(toolbar_status_size,
+	 ((gtk_paned_get_position(g->paned) * 10000) / (pane_alloc.width - 1)));
+}
+
+/** Set status bar / scroll bar proportion according to user option
+ * when pane is resized.
+ */
+static gboolean nsgtk_paned_size_allocate_event(GtkWidget *widget,
+		GtkAllocation *allocation, gpointer data)
+{
+	gtk_paned_set_position(GTK_PANED(widget),
+	       (nsoption_int(toolbar_status_size) * allocation->width) / 10000);
 
 	return TRUE;
 }
@@ -611,6 +650,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					     bool new_tab)
 {
 	struct gui_window *g; /**< what we're creating to return */
+	GError* error = NULL;
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
@@ -621,7 +661,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	LOG(("Creating gui window %p for browser window %p", g, bw));
 
 	g->bw = bw;
-	g->paned = NULL;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 	if (clone != NULL) {
@@ -630,8 +669,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		bw->scale = (float) nsoption_int(scale) / 100.0;
 	}
 
-	g->careth = 0;
-
+	/* attach scaffold */
 	if (new_tab) {
 		assert(clone != NULL);
 		g->scaffold = clone->window->scaffold;
@@ -639,7 +677,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);
 	}
-
 	if (g->scaffold == NULL) {
 		warn_user("NoMemory", 0);
 		free(g);
@@ -649,10 +686,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* Construct our primary elements */
 
 	/* top-level document (not a frame) => create a new tab */
-	GError* error = NULL;
 	GtkBuilder* xml = gtk_builder_new();
-	if (!gtk_builder_add_from_file(xml, 
-				       glade_file_location->tabcontents, 
+	if (!gtk_builder_add_from_file(xml,
+				       glade_file_location->tabcontents,
 				       &error)) {
 		g_warning ("Couldn't load builder file: %s", error->message);
 		g_error_free(error);
@@ -706,28 +742,35 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	nsgtk_widget_set_can_focus(GTK_WIDGET(g->layout), TRUE);
 
 	/* set the default background colour of the drawing area to white. */
-	nsgtk_widget_override_background_color(GTK_WIDGET(g->layout), 
+	nsgtk_widget_override_background_color(GTK_WIDGET(g->layout),
 					       GTK_STATE_NORMAL, 0, 0xffff, 0xffff, 0xffff);
 
 
-	nsgtk_connect_draw_event(GTK_WIDGET(g->layout), G_CALLBACK(nsgtk_window_draw_event), g);
+	nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
+				 G_CALLBACK(nsgtk_window_draw_event), g);
 
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-
-	CONNECT(g->layout, "motion_notify_event",
+	/* layout signals */
+	CONNECT(g->layout, "motion-notify-event",
 			nsgtk_window_motion_notify_event, g);
 	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] =
-			CONNECT(g->layout, "button_press_event",
+			CONNECT(g->layout, "button-press-event",
 			nsgtk_window_button_press_event, g);
-	CONNECT(g->layout, "button_release_event",
+	CONNECT(g->layout, "button-release-event",
 			nsgtk_window_button_release_event, g);
-	CONNECT(g->layout, "key_press_event",
+	CONNECT(g->layout, "key-press-event",
 			nsgtk_window_keypress_event, g);
-	CONNECT(g->layout, "size_allocate",
+	CONNECT(g->layout, "size-allocate",
 			nsgtk_window_size_allocate_event, g);
 	CONNECT(g->layout, "scroll-event",
 			nsgtk_window_scroll_event, g);
+
+	/* status pane signals */
+	CONNECT(g->paned, "size-allocate",
+		nsgtk_paned_size_allocate_event, g);
+
+	CONNECT(g->paned, "notify::position",
+		nsgtk_paned_notify__position, g);
+
 	return g;
 }
 
@@ -813,8 +856,8 @@ void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 		if (icon_bitmap != NULL) {
 			LOG(("Using %p bitmap", icon_bitmap));
 			gw->icon = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
-		} 
-	} 
+		}
+	}
 
 	if (gw->icon == NULL) {
 		LOG(("Using default favicon"));
@@ -1029,7 +1072,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 				gtk_widget_get_display(
 					GTK_WIDGET(g->layout)),
 					cursortype);
-	gdk_window_set_cursor(nsgtk_widget_get_window(GTK_WIDGET(g->layout)), 
+	gdk_window_set_cursor(nsgtk_widget_get_window(GTK_WIDGET(g->layout)),
 			      cursor);
 
 	if (!nullcursor)
@@ -1100,4 +1143,3 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	LOG(("width: %i", *width));
 	LOG(("height: %i", *height));
 }
-
