@@ -426,6 +426,7 @@
 					" by launching a web browser.\n\n"
 					"The installation will update the configuration of "
 					"OS4.1 to allow URLs to be opened by NetSurf.")
+				(default 1)
 			)
 		)
 	)
@@ -610,6 +611,54 @@
 (p_setmimetype "zip" "application/x-zip")
 (p_setmimetype "js" "application/javascript")
 
+(complete 97)
+
+(if (>= osver 53)
+	(if (= (exists "Rexx:NetSurf") 0)
+		(
+			(textfile
+				(prompt "Creating NetSurf launch helper")
+				(help @textfile-help)
+				(dest "Rexx:NetSurf")
+				(append "/*\n"
+" * Copyright 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>\n"
+" *\n"
+" * This file is part of NetSurf, http://www.netsurf-browser.org/\n"
+" *\n"
+" * NetSurf is free software; you can redistribute it and/or modify\n"
+" * it under the terms of the GNU General Public License as published by\n"
+" * the Free Software Foundation; version 2 of the License.\n"
+" *\n"
+" * NetSurf is distributed in the hope that it will be useful,\n"
+" * but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+" * GNU General Public License for more details.\n"
+" *\n"
+" * You should have received a copy of the GNU General Public License\n"
+" * along with this program.  If not, see <http://www.gnu.org/licenses/>.\n"
+" */\n"
+"\n"
+"/* This is a convenience script for launching NetSurf from the Shell.\n"
+" * If NetSurf is already running it will open the supplied URL in a new tab.\n"
+" * This can be used in URL Prefs in place of directly calling APPDIR:NetSurf.\n"
+" */\n"
+"\n"
+"options results\n"
+"parse arg url\n"
+"\n"
+"if show('P', 'NETSURF') then do\n"
+" address NETSURF 'OPEN' url 'NEWTAB'\n"
+" address NETSURF 'TOFRONT'\n"
+"end\n"
+"else do\n"
+" address command 'APPDIR:NetSurf URL' url\n"
+"end\n")
+			)
+			(protect "Rexx:NetSurf" "+se")
+		)
+	)
+)
+
 (complete 98)
 
 (if (= #addlaunchhandler 1)
@@ -621,23 +670,23 @@
 
 		(working "Adding NetSurf to launch-handler config")
 		(if (= (p_chk_launch-handler "FILE.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"file:///%s*\"\"")
+			(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"file:///%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "HTTP.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://%s*\"\"")
+			(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "HTTPS.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"https://%s*\"\"")
+			(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"https://%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "WWW.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://www.%s*\"\"")
+			(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://www.%s*\"\"")
 		)
 
 ;		(if (= (p_chk_launch-handler "FTP.LH") 0)
-;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"ftp://%s*\"\"")
+;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"ftp://%s*\"\"")
 ;		)
 	)
 )
