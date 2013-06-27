@@ -605,9 +605,9 @@ MULTIHANDLER(newwindow)
 	return TRUE;
 }
 
-MULTIHANDLER(newtab)
+nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 	nsurl *url;
 	nserror error;
 
@@ -633,16 +633,16 @@ MULTIHANDLER(newtab)
 	if (url != NULL) {
 		nsurl_unref(url);
 	}
+	return error;
+}
+
+MULTIHANDLER(newtab)
+{
+	nserror error;
+	nsgtk_scaffolding_new_tab(g->top_level);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	} else if (nsoption_bool(new_blank)) {
-		/** @todo what the heck is this for? */
-		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
-		nsgtk_widget_override_background_color(window,
-			GTK_STATE_NORMAL,
-			0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
 	}
-
 	return TRUE;
 }
 
@@ -947,11 +947,6 @@ MULTIHANDLER(print)
 
 MULTIHANDLER(closewindow)
 {
-	/* close all tabs first */
-	gint numbertabs = gtk_notebook_get_n_pages(g->notebook);
-	while (numbertabs-- > 1) {
-		nsgtk_tab_close_current(g->notebook);
-	}
 	nsgtk_window_close(g);
 	gtk_widget_destroy(GTK_WIDGET(g->window));
 	return TRUE;
@@ -1570,14 +1565,15 @@ MULTIHANDLER(openlocation)
 
 MULTIHANDLER(nexttab)
 {
-	gtk_notebook_next_page(g->notebook);
+	nsgtk_tab_next(g->notebook);
 
 	return TRUE;
 }
 
 MULTIHANDLER(prevtab)
 {
-	gtk_notebook_prev_page(g->notebook);
+
+	nsgtk_tab_prev(g->notebook);
 
 	return TRUE;
 }
@@ -2015,7 +2011,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
 	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));
-	nsgtk_tab_init(g->notebook);
+	nsgtk_tab_init(g);
 
 	gtk_widget_set_size_request(GTK_WIDGET(
 			g->buttons[HISTORY_BUTTON]->button), 20, -1);
@@ -2164,21 +2160,21 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	return g;
 }
 
-void gui_window_set_title(struct gui_window *_g, const char *title)
+void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 	static char suffix[] = " - NetSurf";
   	char nt[strlen(title) + strlen(suffix) + 1];
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	struct gtk_scaffolding *gs = nsgtk_get_scaffold(gw);
 
-	nsgtk_tab_set_title(_g, title);
+	nsgtk_tab_set_title(gw, title);
 
-	if (g->top_level == _g) {
+	if (gs->top_level == gw) {
 		if (title == NULL || title[0] == '\0') {
-			gtk_window_set_title(g->window, "NetSurf");
+			gtk_window_set_title(gs->window, "NetSurf");
 		} else {
 			strcpy(nt, title);
 			strcat(nt, suffix);
-			gtk_window_set_title(g->window, nt);
+			gtk_window_set_title(gs->window, nt);
 		}
 	}
 }

@@ -812,9 +812,9 @@ void nsgtk_window_process_reformats(void)
 }
 
 
-void nsgtk_window_destroy_browser(struct gui_window *g)
+void nsgtk_window_destroy_browser(struct gui_window *gw)
 {
-	browser_window_destroy(g->bw);
+	browser_window_destroy(gw->bw);
 }
 
 void gui_window_destroy(struct gui_window *g)

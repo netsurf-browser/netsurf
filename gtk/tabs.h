@@ -21,10 +21,12 @@
 
 struct gui_window;
 
-void nsgtk_tab_init(GtkNotebook *notebook);
+void nsgtk_tab_init(struct gtk_scaffolding *gs);
 void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background);
 void nsgtk_tab_set_title(struct gui_window *g, const char *title);
 void nsgtk_tab_options_changed(GtkNotebook *notebook);
-void nsgtk_tab_close_current(GtkNotebook *notebook);
+nserror nsgtk_tab_close_current(GtkNotebook *notebook);
+nserror nsgtk_tab_prev(GtkNotebook *notebook);
+nserror nsgtk_tab_next(GtkNotebook *notebook);
 
 #endif

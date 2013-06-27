@@ -155,4 +155,6 @@ void nsgtk_scaffolding_set_icon(struct gui_window *gw);
 gboolean nsgtk_window_url_activate_event(GtkWidget *, gpointer);
 gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 
+nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
+
 #endif /* NETSURF_GTK_SCAFFOLDING_H */
