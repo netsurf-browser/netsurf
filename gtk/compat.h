@@ -56,6 +56,17 @@ typedef enum {
 #if !GTK_CHECK_VERSION(3,0,0)
 typedef GtkStateType GtkStateFlags;
 typedef GtkStyle GtkStyleContext;
+
+#if GTK_CHECK_VERSION(2,22,0)
+enum {
+	GTK_IN_DESTRUCTION = 1 << 0,
+};
+#define GTK_OBJECT_FLAGS(obj)		  (GTK_OBJECT (obj)->flags)
+#endif
+
+#define gtk_widget_in_destruction(widget) \
+	(GTK_OBJECT_FLAGS(GTK_OBJECT(widget)) & GTK_IN_DESTRUCTION)
+
 #endif
 
 GtkWidget *nsgtk_entry_new(void);
