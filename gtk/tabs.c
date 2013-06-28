@@ -115,7 +115,7 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 
 /** callback when page is switched */
 
-static 	gint srcpagenum;
+static gint srcpagenum;
 
 /** The switch-page signal handler
  *
@@ -146,7 +146,8 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 	addpage = g_object_get_data(G_OBJECT(notebook), "addtab");
 
 	if (selpage == addpage) {
-		if ((srcpagenum != -1) && (srcpagenum != selpagenum)) {
+		if ((srcpagenum != -1) &&
+		    (srcpagenum != (gint)selpagenum)) {
 			/* ensure the add tab is not actually selected */
 			LOG(("src %d sel %d",srcpagenum,selpagenum ));
 			srcpage = gtk_notebook_get_nth_page(notebook, srcpagenum);
@@ -176,7 +177,8 @@ static void nsgtk_tab_page_reordered(GtkNotebook *notebook,
 	pages = gtk_notebook_get_n_pages(notebook);
 	addpage = g_object_get_data(G_OBJECT(notebook), "addtab");
 
-	if ((page_num == (pages - 1)) && (child != addpage)) {
+	if (((gint)page_num == (pages - 1)) &&
+	    (child != addpage)) {
 		/* moved tab to end */
 		gtk_notebook_reorder_child(notebook, addpage, -1);
 	}
@@ -242,7 +244,7 @@ nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 
 	if (addpage != NULL) {
 		pagec--; /* skip the add tab */
-		if (page == pagec) {
+		if ((gint)page == pagec) {
 			/* ensure the add new tab cannot be current */
 			gtk_notebook_set_current_page(notebook, page - 1);
 		}
@@ -289,40 +291,42 @@ void nsgtk_tab_init(struct gtk_scaffolding *gs)
 }
 
 /* exported interface documented in gtk/tabs.h */
-void nsgtk_tab_add(struct gui_window *window,
+void nsgtk_tab_add(struct gui_window *gw,
 		   GtkWidget *tab_contents,
 		   bool background)
 {
-	GtkNotebook *tabs;
+	GtkNotebook *notebook;
 	GtkWidget *tabBox;
 	gint remember;
 	gint pages;
 	gint newpage;
 
-	tabs = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(window));
+	g_object_set_data(G_OBJECT(tab_contents), "gui_window", gw);
 
-	tabBox = nsgtk_tab_label_setup(window);
+	notebook = nsgtk_scaffolding_notebook(nsgtk_get_scaffold(gw));
 
-	nsgtk_window_set_tab(window, tabBox);
+	tabBox = nsgtk_tab_label_setup(gw);
 
-	remember = gtk_notebook_get_current_page(tabs);
+	nsgtk_window_set_tab(gw, tabBox);
 
-	pages = gtk_notebook_get_n_pages(tabs);
+	remember = gtk_notebook_get_current_page(notebook);
 
-	newpage = gtk_notebook_insert_page(tabs, tab_contents, tabBox, pages - 1);
+	pages = gtk_notebook_get_n_pages(notebook);
 
-	gtk_notebook_set_tab_reorderable(tabs, tab_contents, true);
+	newpage = gtk_notebook_insert_page(notebook, tab_contents, tabBox, pages - 1);
+
+	gtk_notebook_set_tab_reorderable(notebook, tab_contents, true);
 
 	gtk_widget_show_all(tab_contents);
 
 	if (background) {
-		gtk_notebook_set_current_page(tabs, remember);
+		gtk_notebook_set_current_page(notebook, remember);
 	} else {
-		gtk_notebook_set_current_page(tabs, newpage);
+		gtk_notebook_set_current_page(notebook, newpage);
 	}
 
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
-			nsgtk_get_scaffold(window))));
+			nsgtk_get_scaffold(gw))));
 }
 
 /* exported interface documented in gtk/tabs.h */
@@ -370,7 +374,7 @@ nserror nsgtk_tab_close_current(GtkNotebook *notebook)
 	if (gw == NULL) {
 		return NSERROR_OK;
 	}
-	
+
 	nsgtk_window_destroy_browser(gw);
 
 	return NSERROR_OK;

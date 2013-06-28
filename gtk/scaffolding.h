@@ -144,7 +144,27 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *g);
 
 void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g);
 
+/** update the sensitivity of context sensitive UI elements
+ *
+ * widgets altered in arrays:
+ *   main
+ *   right click menu
+ *   location
+ *   popup
+ * current arrays are:
+ *   stop
+ *   reload
+ *   cut
+ *   copy
+ *   paste
+ *   back
+ *   forward
+ *   nexttab
+ *   prevtab
+ *   closetab
+ */
 void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g);
+
 void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g);
 void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, gdouble x,
     gdouble y);

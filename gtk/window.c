@@ -78,6 +78,9 @@ struct gui_window {
 	/** previous event location */
 	int last_x, last_y;
 
+	/** The top level container (tabContents) */
+	GtkWidget *container;
+
 	/** display widget for this page or frame */
 	GtkLayout *layout;
 
@@ -644,6 +647,14 @@ static gboolean nsgtk_paned_size_allocate_event(GtkWidget *widget,
 	return TRUE;
 }
 
+/* destroy the browsing context as there is nothing to display it now */
+static void window_destroy(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *gw = data;
+
+	browser_window_destroy(gw->bw);
+}
+
 /* Core interface docuemnted in desktop/gui.h to create a gui_window */
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					     struct browser_window *clone,
@@ -651,6 +662,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 {
 	struct gui_window *g; /**< what we're creating to return */
 	GError* error = NULL;
+	bool tempback;
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
@@ -685,7 +697,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/* Construct our primary elements */
 
-	/* top-level document (not a frame) => create a new tab */
+	/* top-level document create a new tab */
 	GtkBuilder* xml = gtk_builder_new();
 	if (!gtk_builder_add_from_file(xml,
 				       glade_file_location->tabcontents,
@@ -695,33 +707,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return 0;
 	}
 
+	g->container = GTK_WIDGET(gtk_builder_get_object(xml, "tabContents"));
 	g->layout = GTK_LAYOUT(gtk_builder_get_object(xml, "layout"));
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
 
-	/* add the tab to the scaffold */
-	bool tempback = true;
-	switch (temp_open_background) {
-	case -1:
-		tempback = !(nsoption_bool(focus_new));
-		break;
-	case 0:
-		tempback = false;
-		break;
-	case 1:
-		tempback = true;
-		break;
-	}
 
-	GtkWidget *tab_contents = GTK_WIDGET(gtk_builder_get_object(xml, "tabContents"));
-	g_object_set_data(G_OBJECT(tab_contents), "gui_window", g);
-	nsgtk_tab_add(g, tab_contents, tempback);
-
-	g_object_unref(xml);
-
-	/* Attach ourselves to the list (push_top) */
-	if (window_list)
+	/* add new gui window to global list (push_top) */
+	if (window_list) {
 		window_list->prev = g;
+	}
 	g->next = window_list;
 	g->prev = NULL;
 	window_list = g;
@@ -743,8 +738,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/* set the default background colour of the drawing area to white. */
 	nsgtk_widget_override_background_color(GTK_WIDGET(g->layout),
-					       GTK_STATE_NORMAL, 0, 0xffff, 0xffff, 0xffff);
-
+					       GTK_STATE_NORMAL,
+					       0, 0xffff, 0xffff, 0xffff);
 
 	nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
 				 G_CALLBACK(nsgtk_window_draw_event), g);
@@ -770,6 +765,29 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	CONNECT(g->paned, "notify::position",
 		nsgtk_paned_notify__position, g);
+
+	/* gtk container destructor */
+	CONNECT(g->container, "destroy",
+		window_destroy, g);
+
+	/* add the tab container to the scaffold notebook */
+	switch (temp_open_background) {
+	case -1:
+		tempback = !(nsoption_bool(focus_new));
+		break;
+	case 0:
+		tempback = false;
+		break;
+	default:
+		tempback = true;
+		break;
+	}
+	nsgtk_tab_add(g, g->container, tempback);
+
+	/* safe to drop the reference to the xml as the container is
+	 * referenced by the notebook now.
+	 */
+	g_object_unref(xml);
 
 	return g;
 }
@@ -811,31 +829,30 @@ void nsgtk_window_process_reformats(void)
 	}
 }
 
-
 void nsgtk_window_destroy_browser(struct gui_window *gw)
 {
-	browser_window_destroy(gw->bw);
+	/* remove tab */
+	gtk_widget_destroy(gw->container);
 }
 
 void gui_window_destroy(struct gui_window *g)
 {
-	if (g->prev)
-		g->prev->next = g->next;
-	else
-		window_list = g->next;
-
-	if (g->next)
-		g->next->prev = g->prev;
-
-
-	LOG(("Destroying gui_window %p", g));
+	LOG(("gui_window: %p", g));
 	assert(g != NULL);
 	assert(g->bw != NULL);
-	LOG(("	   Scaffolding: %p", g->scaffold));
-	LOG(("	   Window name: %s", g->bw->name));
+	LOG(("scaffolding: %p", g->scaffold));
 
-	/* tab => remove tab */
-	gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(g->layout)));
+	if (g->prev) {
+		g->prev->next = g->next;
+	} else {
+		window_list = g->next;
+	}
+
+	if (g->next) {
+		g->next->prev = g->prev;
+	}
+
+	LOG(("window list head: %p", window_list));
 }
 
 /**
