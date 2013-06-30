@@ -191,6 +191,9 @@ static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
 static void treeview_test_update_size(struct core_window *cw,
 		int width, int height)
 {
+	struct tree *tree = (struct tree *)cw;
+
+	tree->callbacks->resized(tree, width, height, tree->client_data);
 }
 
 static void treeview_test_scroll_visible(struct core_window *cw, struct rect r)
