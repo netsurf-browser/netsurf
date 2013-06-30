@@ -139,16 +139,12 @@ struct gtk_scaffolding {
 
 	int				throb_frame;
 	struct gui_window		*top_level;
-	int				being_destroyed;
 
 	bool				fullscreen;
 
 	/* keep global linked list for gui interface adjustments */
 	struct gtk_scaffolding 		*next, *prev;
 };
-
-/** current number of open browser windows */
-static int open_windows = 0;
 
 /** current window for model dialogue use */
 static struct gtk_scaffolding *current_model;
@@ -251,60 +247,57 @@ static void popup_menu_show(struct nsgtk_popup_submenu *menu, bool submenu,
 /* event handlers and support functions for them */
 
 /**
- * resource cleanup function for window closure.
+ * resource cleanup function for window destruction.
  */
-static void nsgtk_window_close(struct gtk_scaffolding *g)
+static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 {
-	/* close all tabs first */
-	gint numbertabs = gtk_notebook_get_n_pages(g->notebook);
-	while (numbertabs-- > 1) {
-		nsgtk_tab_close_current(g->notebook);
-	}
-	LOG(("Being Destroyed = %d", g->being_destroyed));
+	struct gtk_scaffolding *gs = data;
 
-	if ((g->history_window) && (g->history_window->window)) {
-		gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
+	LOG(("scaffold:%p", gs));
+
+	if ((gs->history_window) && (gs->history_window->window)) {
+		gtk_widget_destroy(GTK_WIDGET(gs->history_window->window));
 	}
 
-	if (--open_windows == 0)
+	if (gs->prev != NULL) {
+		gs->prev->next = gs->next;
+	} else {
+		scaf_list = gs->next;
+	}
+	if (gs->next != NULL) {
+		gs->next->prev = gs->prev;
+	}
+
+	LOG(("scaffold list head: %p", scaf_list));
+
+	if (scaf_list == NULL) {
+		/* no more open windows */
 		netsurf_quit = true;
-
-	if (!g->being_destroyed) {
-		g->being_destroyed = 1;
-		nsgtk_window_destroy_browser(g->top_level);
 	}
-	if (g->prev != NULL)
-		g->prev->next = g->next;
-	else
-		scaf_list = g->next;
-
-	if (g->next != NULL)
-		g->next->prev = g->prev;
-
 }
 
-static gboolean nsgtk_window_delete_event(GtkWidget *widget,
+/* signal delivered on window delete event, allowing to halt close if
+ * download is in progress
+ */
+static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 		GdkEvent *event, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	if ((open_windows != 1) ||
-	    nsgtk_check_for_downloads(GTK_WINDOW(widget)) == false) {
-		nsgtk_window_close(g);
+	struct gtk_scaffolding *g = data;
+
+	if (nsgtk_check_for_downloads(GTK_WINDOW(widget)) == false) {
 		gtk_widget_destroy(GTK_WIDGET(g->window));
 	}
 	return TRUE;
 }
 
 /* exported interface documented in gtk_scaffold.h */
-void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g)
+void nsgtk_scaffolding_destroy(nsgtk_scaffolding *gs)
 {
-	/* Our top_level has asked us to die */
-	LOG(("Being Destroyed = %d", g->being_destroyed));
-	if (g->being_destroyed) return;
-	g->being_destroyed = 1;
-	nsgtk_window_close(g);
-	/* We're now unlinked, so let's finally destroy ourselves */
-	nsgtk_window_destroy_browser(g->top_level);
+	LOG(("scaffold: %p", gs));
+
+	if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) != TRUE) {
+		gtk_widget_destroy(GTK_WIDGET(gs->window));
+	}
 }
 
 /**
@@ -522,21 +515,32 @@ static void nsgtk_window_tabs_add(GtkNotebook *notebook,
 /**
  * Update the menus when the number of tabs changes.
  */
-static void nsgtk_window_tabs_remove(GtkNotebook *notebook,
-		GtkWidget *page, guint page_num, struct gtk_scaffolding *g)
+static void
+nsgtk_window_tabs_remove(GtkNotebook *notebook,
+			 GtkWidget *page,
+			 guint page_num,
+			 struct gtk_scaffolding *gs)
 {
-
-	if (gtk_notebook_get_n_pages(notebook) == 0) {
-		nsgtk_scaffolding_destroy(g);
-	} else {
-	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
-	g_object_set(g->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
-	g_object_set(g->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
-	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
-	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
-	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
-	nsgtk_scaffolding_set_sensitivity(g);
+	/* if the scaffold is being destroyed it is not useful to
+	 * update the state, futher many of the widgets may have
+	 * already been destroyed.
+	 */
+	if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) == TRUE) {
+		return;
 	}
+
+	if (gtk_notebook_get_n_pages(notebook) == 1) {
+		nsgtk_scaffolding_destroy(gs);
+		return;
+	}
+
+	gboolean visible = gtk_notebook_get_show_tabs(gs->notebook);
+	g_object_set(gs->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	g_object_set(gs->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	gs->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
+	gs->buttons[PREVTAB_BUTTON]->sensitivity = visible;
+	gs->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
+	nsgtk_scaffolding_set_sensitivity(gs);
 }
 
 /**
@@ -605,9 +609,9 @@ MULTIHANDLER(newwindow)
 	return TRUE;
 }
 
-MULTIHANDLER(newtab)
+nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 	nsurl *url;
 	nserror error;
 
@@ -633,16 +637,17 @@ MULTIHANDLER(newtab)
 	if (url != NULL) {
 		nsurl_unref(url);
 	}
+	return error;
+}
+
+MULTIHANDLER(newtab)
+{
+	nserror error;
+
+	error = nsgtk_scaffolding_new_tab(g->top_level);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	} else if (nsoption_bool(new_blank)) {
-		/** @todo what the heck is this for? */
-		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
-		nsgtk_widget_override_background_color(window,
-			GTK_STATE_NORMAL,
-			0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
 	}
-
 	return TRUE;
 }
 
@@ -947,12 +952,6 @@ MULTIHANDLER(print)
 
 MULTIHANDLER(closewindow)
 {
-	/* close all tabs first */
-	gint numbertabs = gtk_notebook_get_n_pages(g->notebook);
-	while (numbertabs-- > 1) {
-		nsgtk_tab_close_current(g->notebook);
-	}
-	nsgtk_window_close(g);
 	gtk_widget_destroy(GTK_WIDGET(g->window));
 	return TRUE;
 }
@@ -1570,14 +1569,15 @@ MULTIHANDLER(openlocation)
 
 MULTIHANDLER(nexttab)
 {
-	gtk_notebook_next_page(g->notebook);
+	nsgtk_tab_next(g->notebook);
 
 	return TRUE;
 }
 
 MULTIHANDLER(prevtab)
 {
-	gtk_notebook_prev_page(g->notebook);
+
+	nsgtk_tab_prev(g->notebook);
 
 	return TRUE;
 }
@@ -1846,12 +1846,13 @@ static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup
 
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
-	struct gtk_scaffolding *g = malloc(sizeof(*g));
+	struct gtk_scaffolding *g;
 	char *searchname;
 	int i;
 	GtkAccelGroup *group;
 	GError* error = NULL;
 
+	g = malloc(sizeof(*g));
 	if (g == NULL) {
 		warn_user("NoMemory", 0);
 		return NULL;
@@ -1860,8 +1861,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
 
 	g->top_level = toplevel;
-
-	open_windows++;
 
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
@@ -2015,7 +2014,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
 	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));
-	nsgtk_tab_init(g->notebook);
+	nsgtk_tab_init(g);
 
 	gtk_widget_set_size_request(GTK_WIDGET(
 			g->buttons[HISTORY_BUTTON]->button), 20, -1);
@@ -2087,8 +2086,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g_signal_connect_after(g->notebook, "page-removed",
 			G_CALLBACK(nsgtk_window_tabs_remove), g);
 
-	/* connect signals to handlers. */
-	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, g);
+	/* connect main window signals to their handlers. */
+	CONNECT(g->window, "delete-event", scaffolding_window_delete_event, g);
+	CONNECT(g->window, "destroy", scaffolding_window_destroy, g);
 
 	/* toolbar URL bar menu bar search bar signal handlers */
 	CONNECT(g->menu_bar->edit_submenu->edit, "show", nsgtk_window_edit_menu_clicked, g);
@@ -2136,8 +2136,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	nsgtk_scaffolding_initial_sensitivity(g);
 
-	g->being_destroyed = 0;
-
 	g->fullscreen = false;
 
 
@@ -2164,21 +2162,21 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	return g;
 }
 
-void gui_window_set_title(struct gui_window *_g, const char *title)
+void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 	static char suffix[] = " - NetSurf";
   	char nt[strlen(title) + strlen(suffix) + 1];
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	struct gtk_scaffolding *gs = nsgtk_get_scaffold(gw);
 
-	nsgtk_tab_set_title(_g, title);
+	nsgtk_tab_set_title(gw, title);
 
-	if (g->top_level == _g) {
+	if (gs->top_level == gw) {
 		if (title == NULL || title[0] == '\0') {
-			gtk_window_set_title(g->window, "NetSurf");
+			gtk_window_set_title(gs->window, "NetSurf");
 		} else {
 			strcpy(nt, title);
 			strcat(nt, suffix);
-			gtk_window_set_title(g->window, nt);
+			gtk_window_set_title(gs->window, nt);
 		}
 	}
 }
@@ -2473,8 +2471,10 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	}
 }
 
+/* exported interface documented in scaffolding.h */
 void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g)
 {
+	int i;
 #define SENSITIVITY(q)\
 		i = q##_BUTTON;\
 		if (g->buttons[i]->main != NULL)\
@@ -2495,7 +2495,6 @@ void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g)
 					g->buttons[i]->popup),\
 					g->buttons[i]->sensitivity);
 
-	int i;
 	SENSITIVITY(STOP)
 	SENSITIVITY(RELOAD)
 	SENSITIVITY(CUT)
