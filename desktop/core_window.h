@@ -32,7 +32,13 @@ struct core_window_callback_table {
 	/** Request a redraw of the window. */
 	void (*redraw_request)(struct core_window *cw, struct rect r);
 
-	/** Update the limits of the window */
+	/**
+	 * Update the limits of the window
+	 *
+	 * \param cw		the core window object
+	 * \param width		the width in px, or negative if don't care
+	 * \param height	the height in px, or negative if don't care
+	 */
 	void (*update_size)(struct core_window *cw, int width, int height);
 
 	/** Scroll the window to make area visible */
