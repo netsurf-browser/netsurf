@@ -115,7 +115,6 @@ struct treeview_drag {
 }; /**< Drag state */
 
 struct treeview {
-	uint32_t view_height;		/** Viewport size */
 	uint32_t view_width;		/** Viewport size */
 
 	struct treeview_node *root;	/**< Root node */
@@ -324,6 +323,9 @@ nserror treeview_create_node_folder(struct treeview *tree,
 
 	*folder = n;
 
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
 	return NSERROR_OK;
 }
 
@@ -456,6 +458,9 @@ nserror treeview_create_node_entry(struct treeview *tree,
 
 	*entry = n;
 
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
 	return NSERROR_OK;
 }
 
@@ -499,6 +504,9 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 	default:
 		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	/* Free the node */
 	free(n);
@@ -737,6 +745,9 @@ nserror treeview_node_expand(struct treeview *tree,
 
 	node->height += additional_height;
 
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
 	return NSERROR_OK;
 }
 
@@ -762,8 +773,7 @@ static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
 	do {
 		node->height -= height_reduction;
 		node = node->parent;
-	} while (node->parent != NULL &&
-			node->parent->flags & TREE_NODE_EXPANDED);
+	} while (node != NULL);
 
 	return false; /* Don't want to abort tree walk */
 }
@@ -784,6 +794,9 @@ nserror treeview_node_contract(struct treeview *tree,
 
 	/* Contract node */
 	treeview_node_contract_cb(node, NULL);
+
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
 }
