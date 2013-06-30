@@ -470,6 +470,7 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 {
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
+	struct treeview_node *p;
 
 	/* Destroy children first */
 	while (n->children != NULL) {
@@ -489,6 +490,13 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 	if (n->sibling_next != NULL) {
 		/* Always need to do this */
 		n->sibling_next->sibling_prev = n->sibling_prev;
+	}
+
+	/* Reduce ancestor heights */
+	p = n->parent;
+	while (p != NULL && p->flags & TREE_NODE_EXPANDED) {
+		p->height -= n->height;
+		p = p->parent;
 	}
 
 	/* Handle any special treatment */
