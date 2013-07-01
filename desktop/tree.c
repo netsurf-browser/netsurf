@@ -257,6 +257,11 @@ static void treeview_test_mouse_action(struct tree *tree,
 	global_history_mouse_action(mouse, x, y);
 }
 
+static void treeview_test_keypress(struct tree *tree, uint32_t key)
+{
+	global_history_keypress(key);
+}
+
 
 
 
@@ -2976,6 +2981,11 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
  */
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
+	if (tree->flags == TREE_MOVABLE) {
+		treeview_test_keypress(tree, key);
+		return true;
+	}
+
 	if (tree->editing != NULL)
 		switch (key) {
 		case KEY_ESCAPE:
