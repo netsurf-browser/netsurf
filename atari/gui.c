@@ -810,7 +810,7 @@ void gui_quit(void)
         gw = tmp;
     }
 
-    global_history_destroy();
+    atari_global_history_destroy();
     hotlist_destroy();
     toolbar_exit();
 
@@ -1021,7 +1021,7 @@ static void gui_init2(int argc, char** argv)
         menu_register( _AESapid, (char*)"  NetSurf ");
     }
     gemtk_wm_init();
-    global_history_init();
+    atari_global_history_init();
     hotlist_init();
     toolbar_init();
 }

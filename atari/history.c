@@ -48,9 +48,9 @@ extern GRECT desk_area;
 struct s_atari_global_history gl_history;
 
 
-void global_history_open( void )
+void atari_global_history_open( void )
 {
-	global_history_init();
+	atari_global_history_init();
 	if (gl_history.init == false ) {
 		return;
 	}
@@ -89,7 +89,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		switch (msg[0]) {
 
 			case WM_CLOSED:
-				global_history_close();
+				atari_global_history_close();
 			break;
 
 			default: break;
@@ -100,7 +100,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	// ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
 }
 
-bool global_history_init( void )
+bool atari_global_history_init( void )
 {
 
     if( gl_history.init == false ) {
@@ -136,7 +136,7 @@ bool global_history_init( void )
 }
 
 
-void global_history_destroy( void )
+void atari_global_history_destroy( void )
 {
 
 	if( gl_history.init == false ) {
@@ -145,7 +145,7 @@ void global_history_destroy( void )
 	if( gl_history.window != NULL ) {
 		history_global_cleanup();
 		if( gl_history.open )
-			global_history_close();
+			atari_global_history_close();
 		wind_delete(gemtk_wm_get_handle(gl_history.window));
 		gemtk_wm_remove(gl_history.window);
 		gl_history.window = NULL;
@@ -155,7 +155,7 @@ void global_history_destroy( void )
 	LOG(("done"));
 }
 
-void global_history_redraw( void )
+void atari_global_history_redraw( void )
 {
 	atari_treeview_redraw( gl_history.tv );
 }

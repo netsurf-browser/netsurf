@@ -33,12 +33,12 @@ struct s_atari_global_history {
 
 extern struct s_atari_global_history gl_history;
 
-bool global_history_init( void );
-void global_history_destroy( void );
-void global_history_open( void );
-void global_history_close( void );
+bool atari_global_history_init( void );
+void atari_global_history_destroy( void );
+void atari_global_history_open( void );
+void atari_global_history_close( void );
 
-void global_history_redraw( void );
+void atari_global_history_redraw( void );
 
 
 
