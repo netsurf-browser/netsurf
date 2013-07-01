@@ -138,6 +138,7 @@ nserror treeview_destroy(struct treeview *tree);
  * \param rel		Folder's relationship to relation
  * \param field		Field data
  * \param data		Client data for node event callbacks
+ * \param quiet		True to suppress corewindow height update callback
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Field name must match name past in treeview_create fields[N-1].
@@ -149,7 +150,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 		struct treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
-		void *data);
+		void *data, bool quiet);
 
 /**
  * Create an entry node in given treeview
@@ -160,6 +161,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
  * \param rel		Folder's relationship to relation
  * \param fields	Array of field data
  * \param data		Client data for node event callbacks
+ * \param quiet		True to suppress corewindow height update callback
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Fields array names must match names past in treeview_create fields[0...N-2].
@@ -171,7 +173,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 		struct treeview_node *relation, 
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
-		void *data);
+		void *data, bool quiet);
 
 /**
  * Update an entry node in given treeview
@@ -277,5 +279,13 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect);
  * \return true iff redraw required
  */
 bool treeview_select_all(struct treeview *tree, struct rect *rect);
+
+/**
+ * Find current height of a treeview
+ *
+ * \param tree		Treeview object to find height of
+ * \return height of treeview in px
+ */
+int treeview_get_height(struct treeview *tree);
 
 #endif

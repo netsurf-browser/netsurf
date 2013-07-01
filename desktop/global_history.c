@@ -56,6 +56,7 @@ struct global_history_ctx {
 	struct global_history_folder folders[GH_N_FOLDERS];
 	time_t today;
 	int weekday;
+	bool built;
 };
 struct global_history_ctx gh_ctx;
 
@@ -183,7 +184,8 @@ static nserror global_history_create_dir(enum global_history_folders f)
 			&gh_ctx.folders[f].folder,
 			relation, rel,
 			&gh_ctx.folders[f].data,
-			&gh_ctx.folders[f]);
+			&gh_ctx.folders[f],
+			!gh_ctx.built);
 
 	return err;
 }
@@ -308,7 +310,8 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
 	}
 
 	err = treeview_create_node_entry(gh_ctx.tree, &(e->entry),
-			parent, TREE_REL_FIRST_CHILD, e->data, e);
+			parent, TREE_REL_FIRST_CHILD, e->data, e,
+			!gh_ctx.built);
 	if (err != NSERROR_OK) {
 		return err;
 	}
@@ -690,6 +693,11 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	if (err != NSERROR_OK) {
 		return err;
 	}
+
+	/* History tree is built
+	 * We suppress the treeview height callback on entry insertion before
+	 * the treeview is built. */
+	gh_ctx.built = true;
 
 	/* Expand the "Today" folder node */
 	err = treeview_node_expand(gh_ctx.tree,
