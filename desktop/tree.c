@@ -212,54 +212,76 @@ struct core_window_callback_table cw_t = {
 	.get_window_dimensions = treeview_test_get_window_dimensions
 };
 
-static void treeview_test_init(struct tree *tree)
+static bool treeview_test_init(struct tree *tree)
 {
 	nserror err;
+
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
 
 	treeview_init();
-
 	err = global_history_init(&cw_t, (struct core_window *)tree);
-
 	if (err != NSERROR_OK) {
 		warn_user("Duffed it.", 0);
 	}
+
+	return true;
 }
 
-static void treeview_test_fini(struct tree *tree)
+static bool treeview_test_fini(struct tree *tree)
 {
 	nserror err;
 
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
+
 	err = global_history_fini();
-
 	treeview_fini();
-
 	if (err != NSERROR_OK) {
 		warn_user("Duffed it.", 0);
 	}
+
+	return true;
 }
 
-static void treeview_test_redraw(struct tree *tree, int x, int y,
+static bool treeview_test_redraw(struct tree *tree, int x, int y,
 		int clip_x, int clip_y, int clip_width, int clip_height,
 		const struct redraw_context *ctx)
 {
 	struct rect clip;
+
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
+
 	clip.x0 = clip_x;
 	clip.y0 = clip_y;
 	clip.x1 = clip_x + clip_width;
 	clip.y1 = clip_y + clip_height;
 
 	global_history_redraw(x, y, &clip, ctx);
+
+	return true;
 }
 
-static void treeview_test_mouse_action(struct tree *tree,
+static bool treeview_test_mouse_action(struct tree *tree,
 		browser_mouse_state mouse, int x, int y)
 {
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
+
 	global_history_mouse_action(mouse, x, y);
+
+	return true;
 }
 
-static void treeview_test_keypress(struct tree *tree, uint32_t key)
+static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 {
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
+
 	global_history_keypress(key);
+
+	return true;
 }
 
 
@@ -2156,9 +2178,10 @@ void tree_draw(struct tree *tree, int x, int y,
 	assert(tree->root != NULL);
 
 	if (tree->flags == TREE_MOVABLE) {
-		treeview_test_redraw(tree, x, y, clip_x, clip_y,
-				clip_width, clip_height, ctx);
-		return;
+		if (treeview_test_redraw(tree, x, y, clip_x, clip_y,
+				clip_width, clip_height, ctx)) {
+			return;
+		}
 	}
 
 	/* Start knockout rendering if it's available for this plotter */
@@ -2526,8 +2549,9 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	assert(tree->root != NULL);
 
 	if (tree->flags == TREE_MOVABLE) {
-		treeview_test_mouse_action(tree, mouse, x, y);
-		return true;
+		if (treeview_test_mouse_action(tree, mouse, x, y)) {
+			return true;
+		}
 	}
 
 	if (tree->root->child == NULL)
@@ -2937,8 +2961,10 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 	int x, y;
 
 	if (tree->flags & TREE_MOVABLE) {
-		treeview_test_mouse_action(tree, BROWSER_MOUSE_HOVER, x1, y1);
-		return;
+		if (treeview_test_mouse_action(tree, BROWSER_MOUSE_HOVER,
+				x1, y1)) {
+			return;
+		}
 	}
 
 	switch (tree->drag) {
@@ -2982,8 +3008,9 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
 	if (tree->flags == TREE_MOVABLE) {
-		treeview_test_keypress(tree, key);
-		return true;
+		if (treeview_test_keypress(tree, key)) {
+			return true;
+		}
 	}
 
 	if (tree->editing != NULL)
