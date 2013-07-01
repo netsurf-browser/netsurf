@@ -72,7 +72,7 @@ void atari_global_history_open( void )
 	}
 }
 
-void global_history_close( void )
+void atari_global_history_close( void )
 {
     wind_close(gemtk_wm_get_handle(gl_history.window));
 	gl_history.open = false;
