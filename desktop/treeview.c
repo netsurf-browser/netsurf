@@ -1414,7 +1414,10 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 void treeview_mouse_action(struct treeview *tree,
 		browser_mouse_state mouse, int x, int y)
 {
-	struct treeview_mouse_action ma;
+	bool redraw = false;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
 
 	if (mouse == BROWSER_MOUSE_HOVER &&
 			tree->drag.type == TV_DRAG_SELECTION) {
@@ -1424,14 +1427,87 @@ void treeview_mouse_action(struct treeview *tree,
 		return;
 	}
 
-	ma.tree = tree;
-	ma.mouse = mouse;
-	ma.x = x;
-	ma.y = y;
-	ma.current_y = 0;
+	if (y > tree->root->height) {
+		/* Below tree */
+		struct rect r;
 
-	treeview_walk_internal(tree->root, false,
-			treeview_node_mouse_action_cb, &ma);
+		r.x0 = 0;
+		r.x1 = REDRAW_MAX;
+
+		/* Record what position / section a drag started on */
+		if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
+				tree->drag.type == TV_DRAG_NONE) {
+			tree->drag.selected = false;
+			tree->drag.start_node = NULL;
+			tree->drag.section = TV_NODE_SECTION_NONE;
+			tree->drag.start.x = x;
+			tree->drag.start.y = y;
+			tree->drag.start.node_y = tree->root->height;
+			tree->drag.start.node_h = 0;
+
+			tree->drag.prev.x = x;
+			tree->drag.prev.y = y;
+			tree->drag.prev.node_y = tree->root->height;
+			tree->drag.prev.node_h = 0;
+		}
+
+		/* Handle drag start */
+		if (tree->drag.type == TV_DRAG_NONE) {
+			if (mouse & BROWSER_MOUSE_DRAG_1 &&
+					tree->drag.selected == false &&
+					tree->drag.section ==
+							TV_NODE_SECTION_NONE) {
+				tree->drag.type = TV_DRAG_SELECTION;
+			} else if (mouse & BROWSER_MOUSE_DRAG_2) {
+				tree->drag.type = TV_DRAG_SELECTION;
+			}
+
+			if (tree->drag.start_node != NULL &&
+					tree->drag.type == TV_DRAG_SELECTION) {
+				tree->drag.start_node->flags ^=
+						TREE_NODE_SELECTED;
+			}
+		}
+
+		/* Handle selection drags */
+		if (tree->drag.type == TV_DRAG_SELECTION) {
+			int curr_y1 = tree->root->height;
+			int prev_y1 = tree->drag.prev.node_y +
+					tree->drag.prev.node_h;
+
+			r.y0 = tree->drag.prev.node_y;
+			r.y1 = (curr_y1 > prev_y1) ? curr_y1 : prev_y1;
+
+			redraw = true;
+
+			tree->drag.prev.x = x;
+			tree->drag.prev.y = y;
+			tree->drag.prev.node_y = curr_y1;
+			tree->drag.prev.node_h = 0;
+		}
+
+		if (mouse & BROWSER_MOUSE_PRESS_1) {
+			/* Clear any existing selection */
+			redraw |= treeview_clear_selection(tree, &r);
+		}
+
+		if (redraw) {
+			tree->cw_t->redraw_request(tree->cw_h, r);
+		}
+
+	} else {
+		/* On tree */
+		struct treeview_mouse_action ma;
+
+		ma.tree = tree;
+		ma.mouse = mouse;
+		ma.x = x;
+		ma.y = y;
+		ma.current_y = 0;
+
+		treeview_walk_internal(tree->root, false,
+				treeview_node_mouse_action_cb, &ma);
+	}
 }
 
 
