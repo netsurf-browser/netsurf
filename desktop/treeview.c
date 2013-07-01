@@ -1041,7 +1041,8 @@ struct treeview_selection_walk_data {
 		TREEVIEW_WALK_HAS_SELECTION,
 		TREEVIEW_WALK_CLEAR_SELECTION,
 		TREEVIEW_WALK_SELECT_ALL,
-		TREEVIEW_WALK_COMMIT_SELECT_DRAG
+		TREEVIEW_WALK_COMMIT_SELECT_DRAG,
+		TREEVIEW_WALK_DELETE_SELECTION
 	} purpose;
 	union {
 		bool has_selection;
@@ -1055,6 +1056,7 @@ struct treeview_selection_walk_data {
 		} drag;
 	} data;
 	int current_y;
+	struct treeview *tree;
 };
 /** Treewalk node callback for handling selection related actions. */
 static bool treeview_node_selection_walk_cb(struct treeview_node *node,
@@ -1073,6 +1075,13 @@ static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 		if (node->flags & TREE_NODE_SELECTED) {
 			sw->data.has_selection = true;
 			return true; /* Can abort tree walk */
+		}
+		break;
+
+	case TREEVIEW_WALK_DELETE_SELECTION:
+		if (node->flags & TREE_NODE_SELECTED) {
+			treeview_delete_node(sw->tree, node);
+			changed = true;
 		}
 		break;
 
@@ -1196,6 +1205,34 @@ static void treeview_commit_selection_drag(struct treeview *tree)
 }
 
 
+/**
+ * Commit a current selection drag, modifying the node's selection state.
+ */
+static bool treeview_delete_selection(struct treeview *tree, struct rect *rect)
+{
+	struct treeview_selection_walk_data sw;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = REDRAW_MAX;
+	rect->y1 = tree->root->height;
+
+	sw.purpose = TREEVIEW_WALK_DELETE_SELECTION;
+	sw.data.redraw.required = false;
+	sw.data.redraw.rect = rect;
+	sw.current_y = 0;
+	sw.tree = tree;
+
+	treeview_walk_internal(tree->root, false,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.redraw.required;
+}
+
+
 /* Exported interface, documented in treeview.h */
 bool treeview_keypress(struct treeview *tree, uint32_t key)
 {
@@ -1213,7 +1250,7 @@ bool treeview_keypress(struct treeview *tree, uint32_t key)
 			break;
 		case KEY_DELETE_LEFT:
 		case KEY_DELETE_RIGHT:
-			/* TODO: Delete selection */
+			redraw = treeview_delete_selection(tree, &r);
 			break;
 		case KEY_CR:
 		case KEY_NL:
