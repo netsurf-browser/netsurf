@@ -1195,6 +1195,54 @@ static void treeview_commit_selection_drag(struct treeview *tree)
 			treeview_node_selection_walk_cb, &sw);
 }
 
+
+/* Exported interface, documented in treeview.h */
+bool treeview_keypress(struct treeview *tree, uint32_t key)
+{
+	struct rect r;	/**< Redraw rectangle */
+	bool redraw = false;
+
+	assert(tree != NULL);
+
+	switch (key) {
+		case KEY_SELECT_ALL:
+			redraw = treeview_select_all(tree, &r);
+			break;
+		case KEY_COPY_SELECTION:
+			/* TODO: Copy selection as text */
+			break;
+		case KEY_DELETE_LEFT:
+		case KEY_DELETE_RIGHT:
+			/* TODO: Delete selection */
+			break;
+		case KEY_CR:
+		case KEY_NL:
+			/* TODO: Launch selection */
+			break;
+		case KEY_ESCAPE:
+		case KEY_CLEAR_SELECTION:
+			redraw = treeview_clear_selection(tree, &r);
+			break;
+		/* TODO: Trivial keyboard navigation */
+		case KEY_LEFT:
+			break;
+		case KEY_RIGHT:
+			break;
+		case KEY_UP:
+			break;
+		case KEY_DOWN:
+			break;
+		default:
+			return false;
+	}
+
+	if (redraw) {
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
+
+	return true;
+}
+
 struct treeview_mouse_action {
 	struct treeview *tree;
 	browser_mouse_state mouse;

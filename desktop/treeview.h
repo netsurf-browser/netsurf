@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "desktop/core_window.h"
+#include "desktop/textinput.h"
 #include "utils/types.h"
 
 struct treeview;
@@ -230,6 +231,15 @@ nserror treeview_node_contract(struct treeview *tree,
  */
 void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);
+
+/**
+ * Key press handling for treeviews.
+ *
+ * \param tree		The treeview which got the keypress
+ * \param key		The ucs4 character codepoint
+ * \return true if the keypress is dealt with, false otherwise.
+ */
+bool treeview_keypress(struct treeview *tree, uint32_t key);
 
 /**
  * Handles all kinds of mouse action
