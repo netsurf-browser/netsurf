@@ -740,3 +740,10 @@ void global_history_mouse_action(browser_mouse_state mouse, int x, int y)
 	treeview_mouse_action(gh_ctx.tree, mouse, x, y);
 }
 
+
+/* Exported interface, documented in global_history.h */
+void global_history_keypress(uint32_t key)
+{
+	treeview_keypress(gh_ctx.tree, key);
+}
+

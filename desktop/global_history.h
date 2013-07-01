@@ -70,4 +70,13 @@ void global_history_redraw(int x, int y, struct rect *clip,
  */
 void global_history_mouse_action(browser_mouse_state mouse, int x, int y);
 
+
+/**
+ * Key press handling.
+ *
+ * \param key		The ucs4 character codepoint
+ * \return true if the keypress is dealt with, false otherwise.
+ */
+void global_history_keypress(uint32_t key);
+
 #endif
