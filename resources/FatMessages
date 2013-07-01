@@ -1134,6 +1134,34 @@ fr.all.TreeClear:Clear default
 it.all.TreeClear:Annulla predefinito
 nl.all.TreeClear:Clear default
 
+# Treeview field labels
+#
+en.all.TreeviewLabelTitle:Title
+de.all.TreeviewLabelTitle:Title
+fr.all.TreeviewLabelTitle:Title
+it.all.TreeviewLabelTitle:Title
+nl.all.TreeviewLabelTitle:Title
+en.all.TreeviewLabelURL:URL
+de.all.TreeviewLabelURL:URL
+fr.all.TreeviewLabelURL:URL
+it.all.TreeviewLabelURL:URL
+nl.all.TreeviewLabelURL:URL
+en.all.TreeviewLabelLastVisit:Last visit
+de.all.TreeviewLabelLastVisit:Last visit
+fr.all.TreeviewLabelLastVisit:Last visit
+it.all.TreeviewLabelLastVisit:Last visit
+nl.all.TreeviewLabelLastVisit:Last visit
+en.all.TreeviewLabelVisits:Visits
+de.all.TreeviewLabelVisits:Visits
+fr.all.TreeviewLabelVisits:Visits
+it.all.TreeviewLabelVisits:Visits
+nl.all.TreeviewLabelVisits:Visits
+en.all.TreeviewLabelPeriod:Period
+de.all.TreeviewLabelPeriod:Period
+fr.all.TreeviewLabelPeriod:Period
+it.all.TreeviewLabelPeriod:Period
+nl.all.TreeviewLabelPeriod:Period
+
 
 # Tree export
 #
@@ -1248,17 +1276,42 @@ de.all.DateYesterday:Gestern
 fr.all.DateYesterday:Hier
 it.all.DateYesterday:Ieri
 nl.all.DateYesterday:gisteren
-en.all.Date1Week:Last week
-de.all.Date1Week:vorige Woche
-fr.all.Date1Week:La semaine dernière
-it.all.Date1Week:Ultima settimana
-nl.all.Date1Week:vorige week
-en.all.Date2Week:2 weeks ago
+en.all.Date2Days:Two days ago
+de.all.Date2Days:2 days ago
+fr.all.Date2Days:2 days ago
+it.all.Date2Days:2 days ago
+nl.all.Date2Days:2 days ago
+en.all.Date3Days:Three days ago
+de.all.Date3Days:3 days ago
+fr.all.Date3Days:3 days ago
+it.all.Date3Days:3 days ago
+nl.all.Date3Days:3 days ago
+en.all.Date4Days:Four days ago
+de.all.Date4Days:4 days ago
+fr.all.Date4Days:4 days ago
+it.all.Date4Days:4 days ago
+nl.all.Date4Days:4 days ago
+en.all.Date5Days:Five days ago
+de.all.Date5Days:5 days ago
+fr.all.Date5Days:5 days ago
+it.all.Date5Days:5 days ago
+nl.all.Date5Days:5 days ago
+en.all.Date6Days:Six days ago
+de.all.Date6Days:6 days ago
+fr.all.Date6Days:6 days ago
+it.all.Date6Days:6 days ago
+nl.all.Date6Days:6 days ago
+en.all.Date1Week:A week ago
+de.all.Date1Week:A week ago
+fr.all.Date1Week:A week ago
+it.all.Date1Week:A week ago
+nl.all.Date1Week:A week ago
+en.all.Date2Week:Two weeks ago
 de.all.Date2Week:vor 2 Wochen
 fr.all.Date2Week:Il y a 2 semaines
 it.all.Date2Week:2 settimane fa
 nl.all.Date2Week:2 weken geleden
-en.all.Date3Week:3 weeks ago
+en.all.Date3Week:Three weeks ago
 de.all.Date3Week:vor 3 Wochen
 fr.all.Date3Week:Il y a 3 semaines
 it.all.Date3Week:3 settimane fa

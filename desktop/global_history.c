@@ -497,41 +497,51 @@ static bool global_history_add_entry(nsurl *url,
 static nserror global_history_initialise_entry_fields(void)
 {
 	int i;
+	const char *label;
 
 	for (i = 0; i < N_FIELDS; i++)
 		gh_ctx.fields[i].field = NULL;
 
-	/* TODO: use messages */
 	gh_ctx.fields[0].flags = TREE_FLAG_DEFAULT;
-	if (lwc_intern_string("Title", SLEN("Title"),
+	label = "TreeviewLabelTitle";
+	label = messages_get(label);
+	if (lwc_intern_string(label, strlen(label),
 			&gh_ctx.fields[0].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
 	gh_ctx.fields[1].flags = TREE_FLAG_NONE;
-	if (lwc_intern_string("URL", SLEN("URL"),
+	label = "TreeviewLabelURL";
+	label = messages_get(label);
+	if (lwc_intern_string(label, strlen(label),
 			&gh_ctx.fields[1].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
 	gh_ctx.fields[2].flags = TREE_FLAG_SHOW_NAME;
-	if (lwc_intern_string("Last visit", SLEN("Last visit"),
+	label = "TreeviewLabelLastVisit";
+	label = messages_get(label);
+	if (lwc_intern_string(label, strlen(label),
 			&gh_ctx.fields[2].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
 	gh_ctx.fields[3].flags = TREE_FLAG_SHOW_NAME;
-	if (lwc_intern_string("Visits", SLEN("Visits"),
+	label = "TreeviewLabelVisits";
+	label = messages_get(label);
+	if (lwc_intern_string(label, strlen(label),
 			&gh_ctx.fields[3].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
 	gh_ctx.fields[4].flags = TREE_FLAG_DEFAULT;
-	if (lwc_intern_string("Period", SLEN("Period"),
+	label = "TreeviewLabelPeriod";
+	label = messages_get(label);
+	if (lwc_intern_string(label, strlen(label),
 			&gh_ctx.fields[4].field) !=
 			lwc_error_ok) {
 		return false;
