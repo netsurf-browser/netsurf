@@ -201,15 +201,34 @@ static void treeview_test_scroll_visible(struct core_window *cw, struct rect r)
 }
 
 static void treeview_test_get_window_dimensions(struct core_window *cw,
-			int *width, int *height)
+		int *width, int *height)
 {
+}
+
+static void treeview_test_drag_status(struct core_window *cw,
+		core_window_drag_status ds)
+{
+	struct tree *tree = (struct tree *)cw;
+
+	switch (ds) {
+	case CORE_WINDOW_DRAG_NONE:
+		tree->drag = TREE_NO_DRAG;
+		break;
+
+	case CORE_WINDOW_DRAG_SELECTION:
+		tree->drag = TREE_SELECT_DRAG;
+		break;
+	default:
+		break;
+	}
 }
 
 struct core_window_callback_table cw_t = {
 	.redraw_request = treeview_test_redraw_request,
 	.update_size = treeview_test_update_size,
 	.scroll_visible = treeview_test_scroll_visible,
-	.get_window_dimensions = treeview_test_get_window_dimensions
+	.get_window_dimensions = treeview_test_get_window_dimensions,
+	.drag_status = treeview_test_drag_status
 };
 
 static bool treeview_test_init(struct tree *tree)

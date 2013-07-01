@@ -27,6 +27,11 @@
 
 struct core_window;
 
+typedef enum {
+	CORE_WINDOW_DRAG_NONE,
+	CORE_WINDOW_DRAG_SELECTION
+} core_window_drag_status;
+
 /** Callbacks to achieve various core window functionality. */
 struct core_window_callback_table {
 	/** Request a redraw of the window. */
@@ -47,6 +52,15 @@ struct core_window_callback_table {
 	/** Get window viewport dimensions */
 	void (*get_window_dimensions)(struct core_window *cw,
 			int *width, int *height);
+
+	/**
+	 * Inform corewindow owner of drag status
+	 *
+	 * \param cw		the core window object
+	 * \param ds		the current drag status
+	 */
+	void (*drag_status)(struct core_window *cw,
+			core_window_drag_status ds);
 };
 
 

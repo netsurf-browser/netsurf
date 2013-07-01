@@ -1395,8 +1395,13 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 				ma->tree->drag.section ==
 						TV_NODE_SECTION_NONE) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
+			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+					CORE_WINDOW_DRAG_SELECTION);
+
 		} else if (ma->mouse & BROWSER_MOUSE_DRAG_2) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
+			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+					CORE_WINDOW_DRAG_SELECTION);
 		}
 
 		if (ma->tree->drag.start_node != NULL &&
@@ -1509,6 +1514,8 @@ void treeview_mouse_action(struct treeview *tree,
 		treeview_commit_selection_drag(tree);
 		tree->drag.type = TV_DRAG_NONE;
 		tree->drag.start_node = NULL;
+
+		tree->cw_t->drag_status(tree->cw_h, CORE_WINDOW_DRAG_NONE);
 		return;
 	}
 
