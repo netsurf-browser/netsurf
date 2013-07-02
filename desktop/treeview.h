@@ -38,6 +38,11 @@ enum treeview_relationship {
 	TREE_REL_NEXT_SIBLING
 };					/**< Relationship between nodes */
 
+typedef enum {
+	TREE_CREATE_NONE		= (0),		/* No flags set */
+	TREE_CREATE_SUPPRESS_RESIZE	= (1 << 0)	/* Suppress callback */
+} treeview_node_create_flags;
+
 enum treeview_msg {
 	TREE_MSG_NODE_DELETE,		/**< Node to be deleted */
 	TREE_MSG_NODE_EDIT,		/**< Node to be edited */
@@ -138,7 +143,7 @@ nserror treeview_destroy(struct treeview *tree);
  * \param rel		Folder's relationship to relation
  * \param field		Field data
  * \param data		Client data for node event callbacks
- * \param quiet		True to suppress corewindow height update callback
+ * \param flags		Node creation flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Field name must match name past in treeview_create fields[N-1].
@@ -150,7 +155,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 		struct treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
-		void *data, bool quiet);
+		void *data, treeview_node_create_flags flags);
 
 /**
  * Create an entry node in given treeview
@@ -161,7 +166,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
  * \param rel		Folder's relationship to relation
  * \param fields	Array of field data
  * \param data		Client data for node event callbacks
- * \param quiet		True to suppress corewindow height update callback
+ * \param flags		Node creation flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Fields array names must match names past in treeview_create fields[0...N-2].
@@ -173,7 +178,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 		struct treeview_node *relation, 
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
-		void *data, bool quiet);
+		void *data, treeview_node_create_flags flags);
 
 /**
  * Update an entry node in given treeview

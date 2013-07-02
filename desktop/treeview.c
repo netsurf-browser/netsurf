@@ -285,7 +285,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 		struct treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
-		void *data, bool quiet)
+		void *data, treeview_node_create_flags flags)
 {
 	struct treeview_node *n;
 
@@ -324,7 +324,7 @@ nserror treeview_create_node_folder(struct treeview *tree,
 	*folder = n;
 
 	/* Inform front end of change in dimensions */
-	if (!quiet)
+	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
 		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
@@ -398,7 +398,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 		struct treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
-		void *data, bool quiet)
+		void *data, treeview_node_create_flags flags)
 {
 	bool match;
 	struct treeview_node_entry *e;
@@ -460,7 +460,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 	*entry = n;
 
 	/* Inform front end of change in dimensions */
-	if (!quiet)
+	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
 		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
