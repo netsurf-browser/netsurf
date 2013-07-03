@@ -78,10 +78,10 @@ struct treeview_node {
 	int height;	/**< Includes height of any descendants (pixels) */
 	int inset;	/**< Node's inset depending on tree depth (pixels) */
 
-	struct treeview_node *parent;
-	struct treeview_node *sibling_prev;
-	struct treeview_node *sibling_next;
-	struct treeview_node *children;
+	treeview_node *parent;
+	treeview_node *sibling_prev;
+	treeview_node *sibling_next;
+	treeview_node *children;
 
 	void *client_data;  /**< Passed to client on node event msg callback */
 
@@ -89,7 +89,7 @@ struct treeview_node {
 }; /**< Treeview node */
 
 struct treeview_node_entry {
-	struct treeview_node base;
+	treeview_node base;
 	struct treeview_field fields[];
 }; /**< Entry class inherits node base class */
 
@@ -107,7 +107,7 @@ struct treeview_drag {
 		TV_DRAG_MOVE,
 		TV_DRAG_TEXTAREA
 	} type;	/**< Drag type */
-	struct treeview_node *start_node;	/**< Start node */
+	treeview_node *start_node;	/**< Start node */
 	bool selected;				/**< Start node is selected */
 	enum treeview_node_section section;	/**< Node section at start */
 	struct treeview_pos start;		/**< Start pos */
@@ -119,7 +119,7 @@ struct treeview {
 
 	treeview_flags flags;		/** Treeview behaviour settings */
 
-	struct treeview_node *root;	/**< Root node */
+	treeview_node *root;	/**< Root node */
 
 	struct treeview_field *fields;	/**< Array of fields */
 	int n_fields; /**< fields[n_fields] is folder, lower are entry fields */
@@ -184,9 +184,9 @@ static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
  * \param root		Returns root node
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror treeview_create_node_root(struct treeview_node **root)
+static nserror treeview_create_node_root(treeview_node **root)
 {
-	struct treeview_node *n;
+	treeview_node *n;
 
 	n = malloc(sizeof(struct treeview_node));
 	if (n == NULL) {
@@ -225,8 +225,8 @@ static nserror treeview_create_node_root(struct treeview_node **root)
  * \param b    tree node to insert a as a relation of
  * \param rel  a's relationship to b
  */
-static inline void treeview_insert_node(struct treeview_node *a,
-		struct treeview_node *b,
+static inline void treeview_insert_node(treeview_node *a,
+		treeview_node *b,
 		enum treeview_relationship rel)
 {
 	assert(a != NULL);
@@ -282,14 +282,14 @@ static inline void treeview_insert_node(struct treeview_node *a,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_create_node_folder(struct treeview *tree,
-		struct treeview_node **folder,
-		struct treeview_node *relation,
+nserror treeview_create_node_folder(treeview *tree,
+		treeview_node **folder,
+		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
 		void *data, treeview_node_create_flags flags)
 {
-	struct treeview_node *n;
+	treeview_node *n;
 
 	assert(data != NULL);
 	assert(tree != NULL);
@@ -334,8 +334,8 @@ nserror treeview_create_node_folder(struct treeview *tree,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_update_node_entry(struct treeview *tree,
-		struct treeview_node *entry,
+nserror treeview_update_node_entry(treeview *tree,
+		treeview_node *entry,
 		const struct treeview_field_data fields[],
 		void *data)
 {
@@ -395,16 +395,16 @@ nserror treeview_update_node_entry(struct treeview *tree,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_create_node_entry(struct treeview *tree,
-		struct treeview_node **entry,
-		struct treeview_node *relation,
+nserror treeview_create_node_entry(treeview *tree,
+		treeview_node **entry,
+		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
 		void *data, treeview_node_create_flags flags)
 {
 	bool match;
 	struct treeview_node_entry *e;
-	struct treeview_node *n;
+	treeview_node *n;
 	int i;
 
 	assert(data != NULL);
@@ -423,7 +423,7 @@ nserror treeview_create_node_entry(struct treeview *tree,
 	}
 
 
-	n = (struct treeview_node *) e;
+	n = (treeview_node *) e;
 
 	n->flags = TREE_NODE_NONE;
 	n->type = TREE_NODE_ENTRY;
@@ -479,12 +479,12 @@ nserror treeview_create_node_entry(struct treeview *tree,
  *
  * Will emit folder or entry deletion msg callback.
  */
-static nserror treeview_delete_node_internal(struct treeview *tree,
-		struct treeview_node *n, bool interaction)
+static nserror treeview_delete_node_internal(treeview *tree,
+		treeview_node *n, bool interaction)
 {
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
-	struct treeview_node *p;
+	treeview_node *p;
 	static int nest_depth = 0;
 
 	if (interaction && (tree->flags & TREEVIEW_NO_DELETES)) {
@@ -560,14 +560,14 @@ static nserror treeview_delete_node_internal(struct treeview *tree,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
+nserror treeview_delete_node(treeview *tree, treeview_node *n)
 {
 	return treeview_delete_node_internal(tree, n, false);
 }
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_create(struct treeview **tree,
+nserror treeview_create(treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
@@ -646,7 +646,7 @@ nserror treeview_create(struct treeview **tree,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_destroy(struct treeview *tree)
+nserror treeview_destroy(treeview *tree)
 {
 	int f;
 
@@ -677,12 +677,12 @@ nserror treeview_destroy(struct treeview *tree)
  * \param ctx		Context to pass to callback
  * \return true iff callback caused premature abort
  */
-static bool treeview_walk_internal(struct treeview_node *root, bool full,
-		bool (*callback_bwd)(struct treeview_node *node, void *ctx),
-		bool (*callback_fwd)(struct treeview_node *node, void *ctx),
+static bool treeview_walk_internal(treeview_node *root, bool full,
+		bool (*callback_bwd)(treeview_node *n, void *ctx),
+		bool (*callback_fwd)(treeview_node *n, void *ctx),
 		void *ctx)
 {
-	struct treeview_node *node, *next;
+	treeview_node *node, *next;
 
 	node = root;
 
@@ -732,10 +732,10 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_node_expand(struct treeview *tree,
-		struct treeview_node *node)
+nserror treeview_node_expand(treeview *tree,
+		treeview_node *node)
 {
-	struct treeview_node *child;
+	treeview_node *child;
 	struct treeview_node_entry *e;
 	int additional_height = 0;
 	int i;
@@ -818,7 +818,7 @@ nserror treeview_node_expand(struct treeview *tree,
 
 
 /** Treewalk node callback for handling node contraction. */
-static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
+static bool treeview_node_contract_cb(treeview_node *node, void *ctx)
 {
 	int height_reduction;
 
@@ -843,8 +843,8 @@ static bool treeview_node_contract_cb(struct treeview_node *node, void *ctx)
 	return false; /* Don't want to abort tree walk */
 }
 /* Exported interface, documented in treeview.h */
-nserror treeview_node_contract(struct treeview *tree,
-		struct treeview_node *node)
+nserror treeview_node_contract(treeview *tree,
+		treeview_node *node)
 {
 	assert(node != NULL);
 
@@ -869,11 +869,11 @@ nserror treeview_node_contract(struct treeview *tree,
 
 
 /* Exported interface, documented in treeview.h */
-void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
+void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
-	struct treeview_node *node, *root, *next;
+	treeview_node *node, *root, *next;
 	struct treeview_node_entry *entry;
 	struct treeview_node_style *style = &plot_style_odd;
 	struct content_redraw_data data;
@@ -1114,10 +1114,10 @@ struct treeview_selection_walk_data {
 		} drag;
 	} data;
 	int current_y;
-	struct treeview *tree;
+	treeview *tree;
 };
 /** Treewalk node callback for handling selection related actions. */
-static bool treeview_node_selection_walk_cb(struct treeview_node *node,
+static bool treeview_node_selection_walk_cb(treeview_node *node,
 		void *ctx)
 {
 	struct treeview_selection_walk_data *sw = ctx;
@@ -1182,7 +1182,7 @@ static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 
 
 /* Exported interface, documented in treeview.h */
-bool treeview_has_selection(struct treeview *tree)
+bool treeview_has_selection(treeview *tree)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1197,7 +1197,7 @@ bool treeview_has_selection(struct treeview *tree)
 
 
 /* Exported interface, documented in treeview.h */
-bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
+bool treeview_clear_selection(treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1219,7 +1219,7 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
 
 
 /* Exported interface, documented in treeview.h */
-bool treeview_select_all(struct treeview *tree, struct rect *rect)
+bool treeview_select_all(treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1243,7 +1243,7 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect)
 /**
  * Commit a current selection drag, modifying the node's selection state.
  */
-static void treeview_commit_selection_drag(struct treeview *tree)
+static void treeview_commit_selection_drag(treeview *tree)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1266,7 +1266,7 @@ static void treeview_commit_selection_drag(struct treeview *tree)
 /**
  * Commit a current selection drag, modifying the node's selection state.
  */
-static bool treeview_delete_selection(struct treeview *tree, struct rect *rect)
+static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1292,7 +1292,7 @@ static bool treeview_delete_selection(struct treeview *tree, struct rect *rect)
 
 
 /* Exported interface, documented in treeview.h */
-bool treeview_keypress(struct treeview *tree, uint32_t key)
+bool treeview_keypress(treeview *tree, uint32_t key)
 {
 	struct rect r;	/**< Redraw rectangle */
 	bool redraw = false;
@@ -1339,14 +1339,14 @@ bool treeview_keypress(struct treeview *tree, uint32_t key)
 }
 
 struct treeview_mouse_action {
-	struct treeview *tree;
+	treeview *tree;
 	browser_mouse_state mouse;
 	int x;
 	int y;
 	int current_y;	/* Y coordinate value of top of current node */
 };
 /** Treewalk node callback for handling mouse action. */
-static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
+static bool treeview_node_mouse_action_cb(treeview_node *node, void *ctx)
 {
 	struct treeview_mouse_action *ma = ctx;
 	struct rect r;
@@ -1559,7 +1559,7 @@ static bool treeview_node_mouse_action_cb(struct treeview_node *node, void *ctx)
 	return true; /* Reached line with click; stop walking tree */
 }
 /* Exported interface, documented in treeview.h */
-void treeview_mouse_action(struct treeview *tree,
+void treeview_mouse_action(treeview *tree,
 		browser_mouse_state mouse, int x, int y)
 {
 	bool redraw = false;

@@ -30,8 +30,8 @@
 #include "desktop/textinput.h"
 #include "utils/types.h"
 
-struct treeview;
-struct treeview_node;
+typedef struct treeview treeview;
+typedef struct treeview_node treeview_node;
 
 enum treeview_relationship {
 	TREE_REL_FIRST_CHILD,
@@ -127,7 +127,7 @@ nserror treeview_fini(void);
  *
  * So fields[0] and fields[N-1] have TREE_FLAG_DEFAULT set.
  */
-nserror treeview_create(struct treeview **tree,
+nserror treeview_create(treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
@@ -141,7 +141,7 @@ nserror treeview_create(struct treeview **tree,
  *
  * Will emit folder and entry deletion msg callbacks for all nodes in treeview.
  */
-nserror treeview_destroy(struct treeview *tree);
+nserror treeview_destroy(treeview *tree);
 
 /**
  * Create a folder node in given treeview
@@ -159,9 +159,9 @@ nserror treeview_destroy(struct treeview *tree);
  *
  * If relation is NULL, will insert as child of root node.
  */
-nserror treeview_create_node_folder(struct treeview *tree,
-		struct treeview_node **folder,
-		struct treeview_node *relation,
+nserror treeview_create_node_folder(treeview *tree,
+		treeview_node **folder,
+		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
 		void *data, treeview_node_create_flags flags);
@@ -182,9 +182,9 @@ nserror treeview_create_node_folder(struct treeview *tree,
  *
  * If relation is NULL, will insert as child of root node.
  */
-nserror treeview_create_node_entry(struct treeview *tree,
-		struct treeview_node **entry,
-		struct treeview_node *relation, 
+nserror treeview_create_node_entry(treeview *tree,
+		treeview_node **entry,
+		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
 		void *data, treeview_node_create_flags flags);
@@ -200,8 +200,8 @@ nserror treeview_create_node_entry(struct treeview *tree,
  *
  * Fields array names must match names past in treeview_create fields[0...N-2].
  */
-nserror treeview_update_node_entry(struct treeview *tree,
-		struct treeview_node *entry,
+nserror treeview_update_node_entry(treeview *tree,
+		treeview_node *entry,
 		const struct treeview_field_data fields[],
 		void *data);
 
@@ -214,7 +214,7 @@ nserror treeview_update_node_entry(struct treeview *tree,
  *
  * Will emit folder or entry deletion msg callback.
  */
-nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n);
+nserror treeview_delete_node(treeview *tree, treeview_node *n);
 
 /**
  * Expand a treeview node
@@ -223,8 +223,7 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n);
  * \param node		Node to expand
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror treeview_node_expand(struct treeview *tree,
-		struct treeview_node *node);
+nserror treeview_node_expand(treeview *tree, treeview_node *node);
 
 /**
  * Contract a treeview node
@@ -233,8 +232,7 @@ nserror treeview_node_expand(struct treeview *tree,
  * \param node		Node to contract
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror treeview_node_contract(struct treeview *tree,
-		struct treeview_node *node);
+nserror treeview_node_contract(treeview *tree, treeview_node *node);
 
 /**
  * Redraw a treeview object
@@ -245,7 +243,7 @@ nserror treeview_node_contract(struct treeview *tree,
  * \param clip		Current clip rectangle (wrt tree origin)
  * \param ctx		Current redraw context
  */
-void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
+void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);
 
 /**
@@ -255,7 +253,7 @@ void treeview_redraw(struct treeview *tree, int x, int y, struct rect *clip,
  * \param key		The ucs4 character codepoint
  * \return true if the keypress is dealt with, false otherwise.
  */
-bool treeview_keypress(struct treeview *tree, uint32_t key);
+bool treeview_keypress(treeview *tree, uint32_t key);
 
 /**
  * Handles all kinds of mouse action
@@ -265,7 +263,7 @@ bool treeview_keypress(struct treeview *tree, uint32_t key);
  * \param x		X coordinate
  * \param y		Y coordinate
  */
-void treeview_mouse_action(struct treeview *tree,
+void treeview_mouse_action(treeview *tree,
 		browser_mouse_state mouse, int x, int y);
 
 /**
@@ -274,7 +272,7 @@ void treeview_mouse_action(struct treeview *tree,
  * \param tree		Treeview object to delete node from
  * \return true iff treeview has a selection
  */
-bool treeview_has_selection(struct treeview *tree);
+bool treeview_has_selection(treeview *tree);
 
 /**
  * Clear any selection in a treeview
@@ -283,7 +281,7 @@ bool treeview_has_selection(struct treeview *tree);
  * \param rect		Redraw rectangle (if redraw required)
  * \return true iff redraw required
  */
-bool treeview_clear_selection(struct treeview *tree, struct rect *rect);
+bool treeview_clear_selection(treeview *tree, struct rect *rect);
 
 /**
  * Select all in a treeview
@@ -292,7 +290,7 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect);
  * \param rect		Redraw rectangle (if redraw required)
  * \return true iff redraw required
  */
-bool treeview_select_all(struct treeview *tree, struct rect *rect);
+bool treeview_select_all(treeview *tree, struct rect *rect);
 
 /**
  * Find current height of a treeview
@@ -300,6 +298,6 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect);
  * \param tree		Treeview object to find height of
  * \return height of treeview in px
  */
-int treeview_get_height(struct treeview *tree);
+int treeview_get_height(treeview *tree);
 
 #endif

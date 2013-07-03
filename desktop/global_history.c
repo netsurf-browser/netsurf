@@ -46,12 +46,12 @@ enum global_history_folders {
 };
 
 struct global_history_folder {
-	struct treeview_node *folder;
+	treeview_node *folder;
 	struct treeview_field_data data;
 };
 
 struct global_history_ctx {
-	struct treeview *tree;
+	treeview *tree;
 	struct treeview_field_desc fields[N_FIELDS];
 	struct global_history_folder folders[GH_N_FOLDERS];
 	time_t today;
@@ -64,7 +64,7 @@ struct global_history_entry {
 	int slot;
 	nsurl *url;
 	time_t t;
-	struct treeview_node *entry;
+	treeview_node *entry;
 	struct global_history_entry *next;
 	struct global_history_entry *prev;
 
@@ -113,7 +113,7 @@ static nserror global_history_create_dir(enum global_history_folders f)
 {
 	nserror err;
 	time_t t = gh_ctx.today;
-	struct treeview_node *relation = NULL;
+	treeview_node *relation = NULL;
 	enum treeview_relationship rel = TREE_REL_FIRST_CHILD;
 	const char *label;
 	int age;
@@ -200,7 +200,7 @@ static nserror global_history_create_dir(enum global_history_folders f)
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static inline nserror global_history_get_parent_treeview_node(
-		struct treeview_node **parent, int slot)
+		treeview_node **parent, int slot)
 {
 	int folder_index;
 	struct global_history_folder *f;
@@ -304,7 +304,7 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
 {
 	nserror err;
 
-	struct treeview_node *parent;
+	treeview_node *parent;
 	err = global_history_get_parent_treeview_node(&parent, slot);
 	if (err != NSERROR_OK) {
 		return err;
