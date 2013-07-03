@@ -117,6 +117,8 @@ struct treeview_drag {
 struct treeview {
 	uint32_t view_width;		/** Viewport size */
 
+	treeview_flags flags;		/** Treeview behaviour settings */
+
 	struct treeview_node *root;	/**< Root node */
 
 	struct treeview_field *fields;	/**< Array of fields */
@@ -530,7 +532,7 @@ nserror treeview_create(struct treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
-		struct core_window *cw)
+		struct core_window *cw, treeview_flags flags)
 {
 	nserror error;
 	int i;
@@ -594,6 +596,8 @@ nserror treeview_create(struct treeview **tree,
 	(*tree)->drag.prev.y = 0;
 	(*tree)->drag.prev.node_y = 0;
 	(*tree)->drag.prev.node_h = 0;
+
+	(*tree)->flags = flags;
 
 	(*tree)->cw_t = cw_t;
 	(*tree)->cw_h = cw;

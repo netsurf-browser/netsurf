@@ -41,7 +41,14 @@ enum treeview_relationship {
 typedef enum {
 	TREE_CREATE_NONE		= (0),		/* No flags set */
 	TREE_CREATE_SUPPRESS_RESIZE	= (1 << 0)	/* Suppress callback */
-} treeview_node_create_flags;
+} treeview_node_create_flags;					/**< Relationship between nodes */
+
+typedef enum {
+	TREEVIEW_NO_FLAGS		= (0),		/* No flags set */
+	TREEVIEW_READ_ONLY		= (1 << 0),	/* No edits */
+	TREEVIEW_NO_MOVES		= (1 << 1),	/* No node drags */
+	TREEVIEW_DELETE_EMPTY_DIRS	= (1 << 2)	/* Del. dirs on empty */
+} treeview_flags;
 
 enum treeview_msg {
 	TREE_MSG_NODE_DELETE,		/**< Node to be deleted */
@@ -108,6 +115,7 @@ nserror treeview_fini(void);
  * \param fields	Array of treeview fields
  * \param cw_t		Callback table for core_window containing the treeview
  * \param cw		The core_window in which the treeview is shown
+ * \param flags		Treeview behaviour flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * The fields array order is as follows (N = n_fields):
@@ -122,7 +130,7 @@ nserror treeview_create(struct treeview **tree,
 		const struct treeview_callback_table *callbacks,
 		int n_fields, struct treeview_field_desc fields[],
 		const struct core_window_callback_table *cw_t,
-		struct core_window *cw);
+		struct core_window *cw, treeview_flags flags);
 
 /**
  * Destroy a treeview object
