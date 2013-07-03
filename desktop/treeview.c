@@ -724,8 +724,8 @@ nserror treeview_node_expand(struct treeview *tree,
 	case TREE_NODE_FOLDER:
 		child = node->children;
 		if (child == NULL) {
-			/* Can't expand an empty node */
-			return NSERROR_OK;
+			/* Allow expansion of empty folders */
+			break;
 		}
 
 		do {
@@ -781,7 +781,8 @@ nserror treeview_node_expand(struct treeview *tree,
 	node->height += additional_height;
 
 	/* Inform front end of change in dimensions */
-	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	if (additional_height != 0)
+		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
 }
