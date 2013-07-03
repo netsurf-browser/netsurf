@@ -485,15 +485,18 @@ static nserror treeview_delete_node_internal(struct treeview *tree,
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
 	struct treeview_node *p;
+	static int nest_depth = 0;
 
 	if (interaction && (tree->flags & TREEVIEW_NO_DELETES)) {
 		return NSERROR_OK;
 	}
 
 	/* Destroy children first */
+	nest_depth++;
 	while (n->children != NULL) {
 		treeview_delete_node_internal(tree, n->children, interaction);
 	}
+	nest_depth--;
 
 	/* Unlink node from tree */
 	if (n->parent != NULL && n->parent->children == n) {
@@ -531,8 +534,23 @@ static nserror treeview_delete_node_internal(struct treeview *tree,
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	/* Inform front end of change in dimensions */
-	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	if (nest_depth == 0) {
+		/* This is the node we were originally asked to delete */
+
+		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS &&
+				n->parent != NULL &&
+				n->parent->type != TREE_NODE_ROOT &&
+				n->parent->children == NULL) {
+			/* Delete empty parent */
+			nest_depth++;
+			treeview_delete_node_internal(tree, n->parent,
+					interaction);
+			nest_depth--;
+		}
+
+		/* Inform front end of change in dimensions */
+		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	}
 
 	/* Free the node */
 	free(n);
