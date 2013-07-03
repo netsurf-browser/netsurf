@@ -670,14 +670,16 @@ nserror treeview_destroy(struct treeview *tree)
 
 /* Walk a treeview subtree, calling a callback at each node (depth first)
  *
- * \param root     Root to walk tree from (doesn't get a callback call)
- * \param full     Iff true, visit children of collapsed nodes
- * \param callback Function to call on each node
- * \param ctx      Context to pass to callback
+ * \param root		Root to walk tree from (doesn't get a callback call)
+ * \param full		Iff true, visit children of collapsed nodes
+ * \param callback_bwd	Function to call on each node in backwards order
+ * \param callback_fwd	Function to call on each node in forwards order
+ * \param ctx		Context to pass to callback
  * \return true iff callback caused premature abort
  */
 static bool treeview_walk_internal(struct treeview_node *root, bool full,
-		bool (*callback)(struct treeview_node *node, void *ctx),
+		bool (*callback_bwd)(struct treeview_node *node, void *ctx),
+		bool (*callback_fwd)(struct treeview_node *node, void *ctx),
 		void *ctx)
 {
 	struct treeview_node *node, *next;
@@ -698,19 +700,28 @@ static bool treeview_walk_internal(struct treeview_node *root, bool full,
 
 			while (node != root &&
 					node->sibling_next == NULL) {
+				if (callback_bwd != NULL &&
+						callback_bwd(node, ctx)) {
+					/* callback caused early termination */
+					return true;
+				}
 				node = node->parent;
 			}
 
 			if (node == root)
 				break;
 
+			if (callback_bwd != NULL && callback_bwd(node, ctx)) {
+				/* callback caused early termination */
+				return true;
+			}
 			node = node->sibling_next;
 		}
 
 		assert(node != NULL);
 		assert(node != root);
 
-		if (callback(node, ctx)) {
+		if (callback_fwd != NULL && callback_fwd(node, ctx)) {
 			/* callback caused early termination */
 			return true;
 		}
@@ -844,7 +855,8 @@ nserror treeview_node_contract(struct treeview *tree,
 	}
 
 	/* Contract children. */
-	treeview_walk_internal(node, false, treeview_node_contract_cb, NULL);
+	treeview_walk_internal(node, false, NULL,
+			treeview_node_contract_cb, NULL);
 
 	/* Contract node */
 	treeview_node_contract_cb(node, NULL);
@@ -1177,7 +1189,7 @@ bool treeview_has_selection(struct treeview *tree)
 	sw.purpose = TREEVIEW_WALK_HAS_SELECTION;
 	sw.data.has_selection = false;
 
-	treeview_walk_internal(tree->root, false,
+	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.has_selection;
@@ -1199,7 +1211,7 @@ bool treeview_clear_selection(struct treeview *tree, struct rect *rect)
 	sw.data.redraw.rect = rect;
 	sw.current_y = 0;
 
-	treeview_walk_internal(tree->root, false,
+	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
@@ -1221,7 +1233,7 @@ bool treeview_select_all(struct treeview *tree, struct rect *rect)
 	sw.data.redraw.rect = rect;
 	sw.current_y = 0;
 
-	treeview_walk_internal(tree->root, false,
+	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
@@ -1246,7 +1258,7 @@ static void treeview_commit_selection_drag(struct treeview *tree)
 		sw.data.drag.sel_max = tree->drag.prev.y;
 	}
 
-	treeview_walk_internal(tree->root, false,
+	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
 }
 
@@ -1272,7 +1284,7 @@ static bool treeview_delete_selection(struct treeview *tree, struct rect *rect)
 	sw.current_y = 0;
 	sw.tree = tree;
 
-	treeview_walk_internal(tree->root, false,
+	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
@@ -1643,7 +1655,7 @@ void treeview_mouse_action(struct treeview *tree,
 		ma.y = y;
 		ma.current_y = 0;
 
-		treeview_walk_internal(tree->root, false,
+		treeview_walk_internal(tree->root, false, NULL,
 				treeview_node_mouse_action_cb, &ma);
 	}
 }
