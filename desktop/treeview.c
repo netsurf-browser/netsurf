@@ -469,16 +469,30 @@ nserror treeview_create_node_entry(struct treeview *tree,
 }
 
 
-/* Exported interface, documented in treeview.h */
-nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
+/**
+ * Delete a treeview node
+ *
+ * \param tree		Treeview object to delete node from
+ * \param n		Node to delete
+ * \param interaction	Delete is result of user interaction with treeview
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * Will emit folder or entry deletion msg callback.
+ */
+static nserror treeview_delete_node_internal(struct treeview *tree,
+		struct treeview_node *n, bool interaction)
 {
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
 	struct treeview_node *p;
 
+	if (interaction && (tree->flags & TREEVIEW_NO_DELETES)) {
+		return NSERROR_OK;
+	}
+
 	/* Destroy children first */
 	while (n->children != NULL) {
-		treeview_delete_node(tree, n->children);
+		treeview_delete_node_internal(tree, n->children, interaction);
 	}
 
 	/* Unlink node from tree */
@@ -524,6 +538,13 @@ nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
 	free(n);
 
 	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in treeview.h */
+nserror treeview_delete_node(struct treeview *tree, struct treeview_node *n)
+{
+	return treeview_delete_node_internal(tree, n, false);
 }
 
 
@@ -614,7 +635,7 @@ nserror treeview_destroy(struct treeview *tree)
 	assert(tree != NULL);
 
 	/* Destroy nodes */
-	treeview_delete_node(tree, tree->root);
+	treeview_delete_node_internal(tree, tree->root, false);
 
 	/* Destroy feilds */
 	for (f = 0; f <= tree->n_fields; f++) {
@@ -1086,7 +1107,7 @@ static bool treeview_node_selection_walk_cb(struct treeview_node *node,
 
 	case TREEVIEW_WALK_DELETE_SELECTION:
 		if (node->flags & TREE_NODE_SELECTED) {
-			treeview_delete_node(sw->tree, node);
+			treeview_delete_node_internal(sw->tree, node, true);
 			changed = true;
 		}
 		break;

@@ -44,10 +44,11 @@ typedef enum {
 } treeview_node_create_flags;					/**< Relationship between nodes */
 
 typedef enum {
-	TREEVIEW_NO_FLAGS		= (0),		/* No flags set */
-	TREEVIEW_READ_ONLY		= (1 << 0),	/* No edits */
-	TREEVIEW_NO_MOVES		= (1 << 1),	/* No node drags */
-	TREEVIEW_DELETE_EMPTY_DIRS	= (1 << 2)	/* Del. dirs on empty */
+	TREEVIEW_NO_FLAGS	= (0),		/**< No flags set */
+	TREEVIEW_NO_MOVES	= (1 << 0),	/**< No node drags */
+	TREEVIEW_NO_DELETES	= (1 << 1),	/**< No node deletes */
+	TREEVIEW_READ_ONLY	= TREEVIEW_NO_MOVES | TREEVIEW_NO_DELETES,
+	TREEVIEW_DEL_EMPTY_DIRS	= (1 << 2)	/**< Delete dirs on empty */
 } treeview_flags;
 
 enum treeview_msg {
