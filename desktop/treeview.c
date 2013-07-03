@@ -675,14 +675,16 @@ nserror treeview_destroy(treeview *tree)
  * \param callback_bwd	Function to call on each node in backwards order
  * \param callback_fwd	Function to call on each node in forwards order
  * \param ctx		Context to pass to callback
- * \return true iff callback caused premature abort
+ * \return NSERROR_OK on success, or appropriate error otherwise
  */
-static bool treeview_walk_internal(treeview_node *root, bool full,
-		bool (*callback_bwd)(treeview_node *n, void *ctx),
-		bool (*callback_fwd)(treeview_node *n, void *ctx),
+static nserror treeview_walk_internal(treeview_node *root, bool full,
+		nserror (*callback_bwd)(treeview_node *n, void *ctx, bool *end),
+		nserror (*callback_fwd)(treeview_node *n, void *ctx, bool *end),
 		void *ctx)
 {
 	treeview_node *node, *next;
+	bool abort = false;
+	nserror err;
 
 	node = root;
 
@@ -700,10 +702,18 @@ static bool treeview_walk_internal(treeview_node *root, bool full,
 
 			while (node != root &&
 					node->sibling_next == NULL) {
-				if (callback_bwd != NULL &&
-						callback_bwd(node, ctx)) {
-					/* callback caused early termination */
-					return true;
+				if (callback_bwd != NULL) {
+					/* Backwards callback */
+					err = callback_bwd(node, ctx, &abort);
+
+					if (err != NSERROR_OK) {
+						return err;
+
+					} else if (abort) {
+						/* callback requested early
+						 * termination */
+						return NSERROR_OK;
+					}
 				}
 				node = node->parent;
 			}
@@ -711,9 +721,18 @@ static bool treeview_walk_internal(treeview_node *root, bool full,
 			if (node == root)
 				break;
 
-			if (callback_bwd != NULL && callback_bwd(node, ctx)) {
-				/* callback caused early termination */
-				return true;
+			if (callback_bwd != NULL) {
+				/* Backwards callback */
+				err = callback_bwd(node, ctx, &abort);
+
+				if (err != NSERROR_OK) {
+					return err;
+
+				} else if (abort) {
+					/* callback requested early
+					 * termination */
+					return NSERROR_OK;
+				}
 			}
 			node = node->sibling_next;
 		}
@@ -721,13 +740,20 @@ static bool treeview_walk_internal(treeview_node *root, bool full,
 		assert(node != NULL);
 		assert(node != root);
 
-		if (callback_fwd != NULL && callback_fwd(node, ctx)) {
-			/* callback caused early termination */
-			return true;
-		}
+		if (callback_fwd != NULL) {
+			/* Forwards callback */
+			err = callback_fwd(node, ctx, &abort);
 
+			if (err != NSERROR_OK) {
+				return err;
+
+			} else if (abort) {
+				/* callback requested early termination */
+				return NSERROR_OK;
+			}
+		}
 	}
-	return false;
+	return NSERROR_OK;
 }
 
 
@@ -818,7 +844,8 @@ nserror treeview_node_expand(treeview *tree,
 
 
 /** Treewalk node callback for handling node contraction. */
-static bool treeview_node_contract_cb(treeview_node *node, void *ctx)
+static nserror treeview_node_contract_cb(treeview_node *node, void *ctx,
+		bool *end)
 {
 	int height_reduction;
 
@@ -827,7 +854,7 @@ static bool treeview_node_contract_cb(treeview_node *node, void *ctx)
 
 	if ((node->flags & TREE_NODE_EXPANDED) == false) {
 		/* Nothing to do. */
-		return false;
+		return NSERROR_OK;
 	}
 
 	node->flags ^= TREE_NODE_EXPANDED;
@@ -840,7 +867,7 @@ static bool treeview_node_contract_cb(treeview_node *node, void *ctx)
 		node = node->parent;
 	} while (node != NULL);
 
-	return false; /* Don't want to abort tree walk */
+	return NSERROR_OK;
 }
 /* Exported interface, documented in treeview.h */
 nserror treeview_node_contract(treeview *tree,
@@ -859,7 +886,7 @@ nserror treeview_node_contract(treeview *tree,
 			treeview_node_contract_cb, NULL);
 
 	/* Contract node */
-	treeview_node_contract_cb(node, NULL);
+	treeview_node_contract_cb(node, NULL, false);
 
 	/* Inform front end of change in dimensions */
 	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
@@ -1117,12 +1144,13 @@ struct treeview_selection_walk_data {
 	treeview *tree;
 };
 /** Treewalk node callback for handling selection related actions. */
-static bool treeview_node_selection_walk_cb(treeview_node *node,
-		void *ctx)
+static nserror treeview_node_selection_walk_cb(treeview_node *node,
+		void *ctx, bool *end)
 {
 	struct treeview_selection_walk_data *sw = ctx;
 	int height;
 	bool changed = false;
+	nserror err;
 
 	height = (node->type == TREE_NODE_ENTRY) ? node->height :
 			tree_g.line_height;
@@ -1132,13 +1160,18 @@ static bool treeview_node_selection_walk_cb(treeview_node *node,
 	case TREEVIEW_WALK_HAS_SELECTION:
 		if (node->flags & TREE_NODE_SELECTED) {
 			sw->data.has_selection = true;
-			return true; /* Can abort tree walk */
+			*end = true; /* Can abort tree walk */
+			return NSERROR_OK;
 		}
 		break;
 
 	case TREEVIEW_WALK_DELETE_SELECTION:
 		if (node->flags & TREE_NODE_SELECTED) {
-			treeview_delete_node_internal(sw->tree, node, true);
+			err = treeview_delete_node_internal(sw->tree, node,
+					true);
+			if (err != NSERROR_OK) {
+				return err;
+			}
 			changed = true;
 		}
 		break;
@@ -1163,7 +1196,7 @@ static bool treeview_node_selection_walk_cb(treeview_node *node,
 						sw->data.drag.sel_max) {
 			node->flags ^= TREE_NODE_SELECTED;
 		}
-		return false; /* Don't stop walk */
+		return NSERROR_OK;
 	}
 
 	if (changed) {
@@ -1177,7 +1210,7 @@ static bool treeview_node_selection_walk_cb(treeview_node *node,
 		}
 	}
 
-	return false; /* Don't stop walk */
+	return NSERROR_OK;
 }
 
 
@@ -1264,7 +1297,7 @@ static void treeview_commit_selection_drag(treeview *tree)
 
 
 /**
- * Commit a current selection drag, modifying the node's selection state.
+ * Delete a selection.
  */
 static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 {
@@ -1346,7 +1379,8 @@ struct treeview_mouse_action {
 	int current_y;	/* Y coordinate value of top of current node */
 };
 /** Treewalk node callback for handling mouse action. */
-static bool treeview_node_mouse_action_cb(treeview_node *node, void *ctx)
+static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
+		bool *end)
 {
 	struct treeview_mouse_action *ma = ctx;
 	struct rect r;
@@ -1369,7 +1403,7 @@ static bool treeview_node_mouse_action_cb(treeview_node *node, void *ctx)
 	/* Skip line if we've not reached mouse y */
 	if (ma->y > ma->current_y + height) {
 		ma->current_y += height;
-		return false; /* Don't want to abort tree walk */
+		return NSERROR_OK; /* Don't want to abort tree walk */
 	}
 
 	/* Find where the mouse is */
@@ -1500,6 +1534,9 @@ static bool treeview_node_mouse_action_cb(treeview_node *node, void *ctx)
 		} else {
 			err = treeview_node_expand(ma->tree, node);
 		}
+		if (err != NSERROR_OK) {
+			return err;
+		}
 
 		/* Set up redraw */
 		if (!redraw || r.y0 > ma->current_y)
@@ -1556,7 +1593,8 @@ static bool treeview_node_mouse_action_cb(treeview_node *node, void *ctx)
 		ma->tree->cw_t->redraw_request(ma->tree->cw_h, r);
 	}
 
-	return true; /* Reached line with click; stop walking tree */
+	*end = true; /* Reached line with click; stop walking tree */
+	return NSERROR_OK;
 }
 /* Exported interface, documented in treeview.h */
 void treeview_mouse_action(treeview *tree,
