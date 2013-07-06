@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
+#include "css/utils.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "render/box.h"
@@ -215,26 +216,109 @@ html_object_callback(hlcache_handle *object,
 
 			box_coords(box, &x, &y);
 
-			if (hlcache_handle_get_content(object) ==
-					event->data.redraw.object) {
-				data.redraw.x = data.redraw.x *
-					box->width / content_get_width(object);
-				data.redraw.y = data.redraw.y *
-					box->height /
-					content_get_height(object);
-				data.redraw.width = data.redraw.width *
-					box->width / content_get_width(object);
-				data.redraw.height = data.redraw.height *
-					box->height /
-					content_get_height(object);
+			if (object == box->background) {
+				/* Redraw request is for background */
+				css_fixed hpos = 0, vpos = 0;
+				css_unit hunit = CSS_UNIT_PX;
+				css_unit vunit = CSS_UNIT_PX;
+				int width = box->padding[LEFT] + box->width +
+						box->padding[RIGHT];
+				int height = box->padding[TOP] + box->height +
+						box->padding[BOTTOM];
+				int t, h, l, w;
+
+				/* Need to know background-position */
+				css_computed_background_position(box->style,
+						&hpos, &hunit, &vpos, &vunit);
+
+				w = content_get_width(box->background);
+				if (hunit == CSS_UNIT_PCT) {
+					l = (width - w) * hpos / INTTOFIX(100);
+				} else {
+					l = FIXTOINT(nscss_len2px(hpos, hunit,
+							box->style));
+				}
+
+				h = content_get_height(box->background);
+				if (vunit == CSS_UNIT_PCT) {
+					t = (height - h) * vpos / INTTOFIX(100);
+				} else {
+					t = FIXTOINT(nscss_len2px(vpos, vunit,
+							box->style));
+				}
+
+				/* Redraw area depends on background-repeat */
+				switch (css_computed_background_repeat(
+						box->style)) {
+				case CSS_BACKGROUND_REPEAT_REPEAT:
+					data.redraw.x = 0;
+					data.redraw.y = 0;
+					data.redraw.width = box->width;
+					data.redraw.height = box->height;
+					break;
+
+				case CSS_BACKGROUND_REPEAT_REPEAT_X:
+					data.redraw.x = 0;
+					data.redraw.y = t;
+					data.redraw.width = box->width;
+					data.redraw.height = h;
+					break;
+
+				case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+					data.redraw.x = l;
+					data.redraw.y = 0;
+					data.redraw.width = w;
+					data.redraw.height = box->height;
+					break;
+
+				case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+					data.redraw.x = l;
+					data.redraw.y = t;
+					data.redraw.width = w;
+					data.redraw.height = h;
+					break;
+
+				default:
+					break;
+				}
+
 				data.redraw.object_width = box->width;
 				data.redraw.object_height = box->height;
-			}
 
-			data.redraw.x += x + box->padding[LEFT];
-			data.redraw.y += y + box->padding[TOP];
-			data.redraw.object_x += x + box->padding[LEFT];
-			data.redraw.object_y += y + box->padding[TOP];
+				/* Add offset to box */
+				data.redraw.x += x;
+				data.redraw.y += y;
+				data.redraw.object_x += x;
+				data.redraw.object_y += y;
+
+				content_broadcast(&c->base,
+						CONTENT_MSG_REDRAW, data);
+				break;
+
+			} else {
+				/* Non-background case */
+				int w = content_get_width(object);
+				int h = content_get_height(object);
+				if (hlcache_handle_get_content(object) ==
+						event->data.redraw.object) {
+					data.redraw.x = data.redraw.x *
+							box->width / w;
+					data.redraw.y = data.redraw.y *
+							box->height / h;
+					data.redraw.width = data.redraw.width *
+							box->width / w;
+					data.redraw.height =
+							data.redraw.height *
+							box->height / h;
+					data.redraw.object_width = box->width;
+					data.redraw.object_height = box->height;
+				}
+
+				data.redraw.x += x + box->padding[LEFT];
+				data.redraw.y += y + box->padding[TOP];
+				data.redraw.object_x += x + box->padding[LEFT];
+				data.redraw.object_y += y + box->padding[TOP];
+			}
 
 			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
 		}
