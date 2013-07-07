@@ -259,23 +259,19 @@ html_object_callback(hlcache_handle *object,
 
 				case CSS_BACKGROUND_REPEAT_REPEAT_X:
 					data.redraw.x = 0;
-					data.redraw.y = t;
+					data.redraw.y += t;
 					data.redraw.width = box->width;
-					data.redraw.height = h;
 					break;
 
 				case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-					data.redraw.x = l;
+					data.redraw.x += l;
 					data.redraw.y = 0;
-					data.redraw.width = w;
 					data.redraw.height = box->height;
 					break;
 
 				case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-					data.redraw.x = l;
-					data.redraw.y = t;
-					data.redraw.width = w;
-					data.redraw.height = h;
+					data.redraw.x += l;
+					data.redraw.y += t;
 					break;
 
 				default:
