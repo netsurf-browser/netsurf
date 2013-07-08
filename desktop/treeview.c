@@ -1405,6 +1405,8 @@ bool treeview_select_all(treeview *tree, struct rect *rect)
 
 /**
  * Commit a current selection drag, modifying the node's selection state.
+ *
+ * \param tree		Treeview object to commit drag selection in
  */
 static void treeview_commit_selection_drag(treeview *tree)
 {
@@ -1428,6 +1430,10 @@ static void treeview_commit_selection_drag(treeview *tree)
 
 /**
  * Delete a selection.
+ *
+ * \param tree		Treeview object to delete selected nodes from
+ * \param rect		Updated to redraw rectangle
+ * \return true iff redraw required.
  */
 static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 {
@@ -1458,6 +1464,7 @@ struct treeview_launch_walk_data {
 	int selected_depth;
 	treeview *tree;
 };
+/** Treewalk node walk backward callback for tracking folder selection. */
 static nserror treeview_node_launch_walk_bwd_cb(treeview_node *n, void *ctx,
 		bool *end)
 {
@@ -1469,6 +1476,7 @@ static nserror treeview_node_launch_walk_bwd_cb(treeview_node *n, void *ctx,
 
 	return NSERROR_OK;
 }
+/** Treewalk node walk forward callback for launching nodes. */
 static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
 		bool *skip_children, bool *end)
 {
@@ -1490,6 +1498,12 @@ static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
 }
 /**
  * Launch a selection.
+ *
+ * \param tree		Treeview object to launch selected nodes in
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * Note: Selected entries are launched.
+ *       Entries that are descendants of selected folders are also launched.
  */
 static nserror treeview_launch_selection(treeview *tree)
 {
