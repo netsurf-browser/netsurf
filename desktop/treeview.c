@@ -1515,7 +1515,7 @@ static nserror treeview_launch_selection(treeview *tree)
 	lw.selected_depth = 0;
 	lw.tree = tree;
 
-	return treeview_walk_internal(tree->root, false,
+	return treeview_walk_internal(tree->root, true,
 			treeview_node_launch_walk_bwd_cb,
 			treeview_node_launch_walk_fwd_cb, &lw);
 }
