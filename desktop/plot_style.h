@@ -66,6 +66,14 @@
 	   (((c0 & 0xff0000) *  28) >> 24)) >				\
 	  (0xff / 2)) ? 0x000000 : 0xffffff)
 
+/* Mix two colours according to the proportion given by p, where 0 <= p <= 255
+ * p = 0 gives result ==> c1,  p = 255 gives result ==> c0 */
+#define mix_colour(c0, c1, p)						\
+	((((((c1 & 0xff00ff) * (255 - p)) +				\
+	    ((c0 & 0xff00ff) * (      p))   ) >> 8) & 0xff00ff) |	\
+	 (((((c1 & 0x00ff00) * (255 - p)) +				\
+	    ((c0 & 0x00ff00) * (      p))   ) >> 8) & 0x00ff00))
+
 /* get a bitmap pixel (image/bitmap.h) into a plot colour */
 #define pixel_to_colour(b)					\
 	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)

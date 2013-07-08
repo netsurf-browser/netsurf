@@ -1903,19 +1903,6 @@ void treeview_mouse_action(treeview *tree,
 }
 
 
-
-/* Mix two colours according to the proportion given by p.
- * Where 0 <= p <= 255
- * p=0   gives result ==> c1
- * p=255 gives result ==> c0
- */
-#define mix_colour(c0, c1, p)						\
-	((((((c1 & 0xff00ff) * (255 - p)) +				\
-	    ((c0 & 0xff00ff) * (      p))   ) >> 8) & 0xff00ff) |	\
-	 (((((c1 & 0x00ff00) * (255 - p)) +				\
-	    ((c0 & 0x00ff00) * (      p))   ) >> 8) & 0x00ff00))
-
-
 /**
  * Initialise the plot styles from CSS system colour values.
  */
