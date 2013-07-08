@@ -1454,6 +1454,59 @@ static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 }
 
 
+struct treeview_launch_walk_data {
+	int selected_depth;
+	treeview *tree;
+};
+static nserror treeview_node_launch_walk_bwd_cb(treeview_node *n, void *ctx,
+		bool *end)
+{
+	struct treeview_launch_walk_data *lw = ctx;
+
+	if (n->type == TREE_NODE_FOLDER && n->flags == TREE_NODE_SELECTED) {
+		lw->selected_depth--;
+	}
+
+	return NSERROR_OK;
+}
+static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
+		bool *skip_children, bool *end)
+{
+	struct treeview_launch_walk_data *lw = ctx;
+
+	if (n->type == TREE_NODE_FOLDER && n->flags & TREE_NODE_SELECTED) {
+		lw->selected_depth++;
+
+	} else if (n->type == TREE_NODE_ENTRY &&
+			(n->flags & TREE_NODE_SELECTED ||
+					lw->selected_depth > 0)) {
+		struct treeview_node_msg msg;
+		msg.msg = TREE_MSG_NODE_LAUNCH;
+		msg.data.node_launch.mouse = BROWSER_MOUSE_HOVER;
+		lw->tree->callbacks->entry(msg, n->client_data);
+	}
+
+	return NSERROR_OK;
+}
+/**
+ * Launch a selection.
+ */
+static nserror treeview_launch_selection(treeview *tree)
+{
+	struct treeview_launch_walk_data lw;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	lw.selected_depth = 0;
+	lw.tree = tree;
+
+	return treeview_walk_internal(tree->root, false,
+			treeview_node_launch_walk_bwd_cb,
+			treeview_node_launch_walk_fwd_cb, &lw);
+}
+
+
 /* Exported interface, documented in treeview.h */
 bool treeview_keypress(treeview *tree, uint32_t key)
 {
@@ -1482,7 +1535,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 			break;
 		case KEY_CR:
 		case KEY_NL:
-			/* TODO: Launch selection */
+			err = treeview_launch_selection(tree);
 			break;
 		case KEY_ESCAPE:
 		case KEY_CLEAR_SELECTION:
