@@ -1528,6 +1528,7 @@ struct treeview_nav_state {
 	treeview_node *next;
 	treeview_node *last;
 	int n_selected;
+	int prev_n_selected;
 };
 /** Treewalk node callback for handling mouse action. */
 static nserror treeview_node_nav_cb(treeview_node *node, void *ctx,
@@ -1548,8 +1549,9 @@ static nserror treeview_node_nav_cb(treeview_node *node, void *ctx,
 		if (ns->n_selected == 0) {
 			ns->prev = node;
 
-		} else if (ns->next == NULL) {
+		} else if (ns->prev_n_selected < ns->n_selected) {
 			ns->next = node;
+			ns->prev_n_selected = ns->n_selected;
 		}
 	}
 	ns->last = node;
@@ -1576,7 +1578,8 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		.curr = NULL,
 		.next = NULL,
 		.last = NULL,
-		.n_selected = 0
+		.n_selected = 0,
+		.prev_n_selected = 0
 	};
 	bool redraw = false;
 
