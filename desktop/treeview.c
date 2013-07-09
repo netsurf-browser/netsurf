@@ -1556,7 +1556,17 @@ static nserror treeview_node_nav_cb(treeview_node *node, void *ctx,
 
 	return NSERROR_OK;
 }
-/* Exported interface, documented in treeview.h */
+/**
+ * Handle keyboard navigation.
+ *
+ * \param tree		Treeview object to launch selected nodes in
+ * \param key		The ucs4 character codepoint
+ * \param rect		Updated to redraw rectangle
+ * \return true if treeview needs redraw, false otherwise
+ *
+ * Note: Selected entries are launched.
+ *       Entries that are descendants of selected folders are also launched.
+ */
 static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		struct rect *rect)
 {
@@ -1651,38 +1661,38 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	assert(tree != NULL);
 
 	switch (key) {
-		case KEY_SELECT_ALL:
-			redraw = treeview_select_all(tree, &r);
-			break;
-		case KEY_COPY_SELECTION:
-			/* TODO: Copy selection as text */
-			break;
-		case KEY_DELETE_LEFT:
-		case KEY_DELETE_RIGHT:
-			redraw = treeview_delete_selection(tree, &r);
+	case KEY_SELECT_ALL:
+		redraw = treeview_select_all(tree, &r);
+		break;
+	case KEY_COPY_SELECTION:
+		/* TODO: Copy selection as text */
+		break;
+	case KEY_DELETE_LEFT:
+	case KEY_DELETE_RIGHT:
+		redraw = treeview_delete_selection(tree, &r);
 
-			if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
-				/* Delete any empty nodes */
-				err = treeview_delete_empty_nodes(tree);
-				r.y0 = 0;
-			}
-			break;
-		case KEY_CR:
-		case KEY_NL:
-			err = treeview_launch_selection(tree);
-			break;
-		case KEY_ESCAPE:
-		case KEY_CLEAR_SELECTION:
-			redraw = treeview_clear_selection(tree, &r);
-			break;
-		case KEY_LEFT:
-		case KEY_RIGHT:
-		case KEY_UP:
-		case KEY_DOWN:
-			redraw = treeview_keyboard_navigation(tree, key, &r);
-			break;
-		default:
-			return false;
+		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
+			/* Delete any empty nodes */
+			err = treeview_delete_empty_nodes(tree);
+			r.y0 = 0;
+		}
+		break;
+	case KEY_CR:
+	case KEY_NL:
+		err = treeview_launch_selection(tree);
+		break;
+	case KEY_ESCAPE:
+	case KEY_CLEAR_SELECTION:
+		redraw = treeview_clear_selection(tree, &r);
+		break;
+	case KEY_LEFT:
+	case KEY_RIGHT:
+	case KEY_UP:
+	case KEY_DOWN:
+		redraw = treeview_keyboard_navigation(tree, key, &r);
+		break;
+	default:
+		return false;
 	}
 
 	if (redraw) {
