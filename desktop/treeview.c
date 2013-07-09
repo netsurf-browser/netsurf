@@ -1521,6 +1521,126 @@ static nserror treeview_launch_selection(treeview *tree)
 }
 
 
+struct treeview_nav_state {
+	treeview *tree;
+	treeview_node *prev;
+	treeview_node *curr;
+	treeview_node *next;
+	treeview_node *last;
+	int n_selected;
+};
+/** Treewalk node callback for handling mouse action. */
+static nserror treeview_node_nav_cb(treeview_node *node, void *ctx,
+		bool *skip_children, bool *end)
+{
+	struct treeview_nav_state *ns = ctx;
+
+	if (node == ns->tree->root)
+		return NSERROR_OK;
+
+	if (node->flags & TREE_NODE_SELECTED) {
+		ns->n_selected++;
+		if (ns->curr == NULL) {
+			ns->curr = node;
+		}
+
+	} else {
+		if (ns->n_selected == 0) {
+			ns->prev = node;
+
+		} else if (ns->next == NULL) {
+			ns->next = node;
+		}
+	}
+	ns->last = node;
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in treeview.h */
+static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
+		struct rect *rect)
+{
+	struct treeview_nav_state ns = {
+		.tree = tree,
+		.prev = NULL,
+		.curr = NULL,
+		.next = NULL,
+		.last = NULL,
+		.n_selected = 0
+	};
+	bool redraw = false;
+
+	/* Fill out the nav. state struct, by examining the current selection
+	 * state */
+	treeview_walk_internal(tree->root, false, NULL,
+			treeview_node_nav_cb, &ns);
+	if (ns.next == NULL)
+		ns.next = tree->root->children;
+	if (ns.prev == NULL)
+		ns.prev = ns.last;
+
+	/* Clear any existing selection */
+	redraw = treeview_clear_selection(tree, rect);
+
+	switch (key) {
+	case KEY_LEFT:
+		if (ns.curr != NULL &&
+				ns.curr->parent != NULL &&
+				ns.curr->parent->type != TREE_NODE_ROOT) {
+			/* Step to parent */
+			ns.curr->parent->flags |= TREE_NODE_SELECTED;
+
+		} else if (ns.curr != NULL && tree->root->children != NULL) {
+			/* Select first node in tree */
+			tree->root->children->flags |= TREE_NODE_SELECTED;
+		}
+		break;
+
+	case KEY_RIGHT:
+		if (ns.curr != NULL &&
+				ns.curr->children != NULL) {
+			/* Step to first child */
+			if (!(ns.curr->flags & TREE_NODE_EXPANDED)) {
+				/* Need to expand node */
+				treeview_node_expand(tree, ns.curr);
+			}
+			ns.curr->children->flags |= TREE_NODE_SELECTED;
+
+		} else if (ns.curr != NULL) {
+			/* Retain current node selection */
+			ns.curr->flags |= TREE_NODE_SELECTED;
+		}
+		break;
+
+	case KEY_UP:
+		if (ns.prev != NULL) {
+			/* Step to previous node */
+			ns.prev->flags |= TREE_NODE_SELECTED;
+		}
+		break;
+
+	case KEY_DOWN:
+		if (ns.next != NULL) {
+			/* Step to next node */
+			ns.next->flags |= TREE_NODE_SELECTED;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	/* TODO: Deal with redraw area properly */
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = REDRAW_MAX;
+	rect->y1 = tree->root->height;
+	redraw = true;
+
+	return redraw;
+}
+
+
 /* Exported interface, documented in treeview.h */
 bool treeview_keypress(treeview *tree, uint32_t key)
 {
@@ -1555,14 +1675,11 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 		case KEY_CLEAR_SELECTION:
 			redraw = treeview_clear_selection(tree, &r);
 			break;
-		/* TODO: Trivial keyboard navigation */
 		case KEY_LEFT:
-			break;
 		case KEY_RIGHT:
-			break;
 		case KEY_UP:
-			break;
 		case KEY_DOWN:
+			redraw = treeview_keyboard_navigation(tree, key, &r);
 			break;
 		default:
 			return false;
@@ -1574,6 +1691,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 
 	return true;
 }
+
 
 struct treeview_mouse_action {
 	treeview *tree;
