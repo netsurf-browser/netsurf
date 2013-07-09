@@ -1607,14 +1607,24 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		break;
 
 	case KEY_RIGHT:
-		if (ns.curr != NULL &&
-				ns.curr->children != NULL) {
-			/* Step to first child */
+		if (ns.curr != NULL) {
 			if (!(ns.curr->flags & TREE_NODE_EXPANDED)) {
-				/* Need to expand node */
+				/* Toggle node to expanded */
 				treeview_node_expand(tree, ns.curr);
+				if (ns.curr->children != NULL) {
+					/* Step to first child */
+					ns.curr->children->flags |=
+							TREE_NODE_SELECTED;
+				} else {
+					/* Retain current node selection */
+					ns.curr->flags |= TREE_NODE_SELECTED;
+				}
+			} else {
+				/* Toggle node to contracted */
+				treeview_node_contract(tree, ns.curr);
+				/* Retain current node selection */
+				ns.curr->flags |= TREE_NODE_SELECTED;
 			}
-			ns.curr->children->flags |= TREE_NODE_SELECTED;
 
 		} else if (ns.curr != NULL) {
 			/* Retain current node selection */
