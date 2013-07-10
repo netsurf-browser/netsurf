@@ -26,7 +26,7 @@
 #import "content/fetch.h"
 #import "css/utils.h"
 #import "desktop/gui.h"
-#import "desktop/history_core.h"
+#import "desktop/local_history.h"
 #import "desktop/mouse.h"
 #import "desktop/netsurf.h"
 #import "utils/nsoption.h"

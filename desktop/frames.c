@@ -32,7 +32,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/gui.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"

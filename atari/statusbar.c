@@ -29,7 +29,7 @@
 
 #include "utils/log.h"
 #include "desktop/gui.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"

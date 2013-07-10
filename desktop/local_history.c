@@ -32,7 +32,7 @@
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
@@ -422,7 +422,7 @@ bool history_forward_available(struct history *history)
 }
 
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 void history_go(struct browser_window *bw, 
 		struct history *history,
 		struct history_entry *entry, 
@@ -782,7 +782,7 @@ struct history_entry *history_find_position(struct history_entry *entry,
 	return 0;
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 void history_enumerate_forward(struct history *history, 
 	history_enumerate_cb cb, void *user_data)
 {
@@ -797,7 +797,7 @@ void history_enumerate_forward(struct history *history,
 	}
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 void history_enumerate_back(struct history *history, 
 	history_enumerate_cb cb, void *user_data)
 {
@@ -812,7 +812,7 @@ void history_enumerate_back(struct history *history,
 	}
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 void history_enumerate(const struct history *history, history_enumerate_cb cb, 
 	void *user_data)
 {
@@ -845,19 +845,19 @@ static bool history_enumerate_entry(const struct history *history,
 	return true;
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 const char *history_entry_get_url(const struct history_entry *entry)
 {
 	return entry->page.url;
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 const char *history_entry_get_fragment_id(const struct history_entry *entry)
 {
 	return entry->page.frag_id;
 }
 
-/* Documented in history_core.h */
+/* Documented in local_history.h */
 const char *history_entry_get_title(const struct history_entry *entry)
 {
 	return entry->page.title;

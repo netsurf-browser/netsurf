@@ -56,7 +56,7 @@
 #include "framebuffer/font.h"
 
 #include "content/urldb.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "content/fetch.h"
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"

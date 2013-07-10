@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
 #include "desktop/browser_private.h"

@@ -21,7 +21,7 @@
 #import "cocoa/BrowserWindowController.h"
 
 #import "desktop/browser_private.h"
-#import "desktop/history_core.h"
+#import "desktop/local_history.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 

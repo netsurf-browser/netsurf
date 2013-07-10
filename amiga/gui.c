@@ -20,7 +20,7 @@
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"

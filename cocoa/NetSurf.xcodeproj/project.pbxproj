@@ -47,8 +47,8 @@
 		260F1F8B12D620E800D9B07F /* frames.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = frames.c; sourceTree = "<group>"; };
 		260F1F8C12D620E800D9B07F /* frames.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = frames.h; sourceTree = "<group>"; };
 		260F1F8D12D620E800D9B07F /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
-		260F1F8E12D620E800D9B07F /* history_core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = history_core.c; sourceTree = "<group>"; };
-		260F1F8F12D620E800D9B07F /* history_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = history_core.h; sourceTree = "<group>"; };
+		260F1F8E12D620E800D9B07F /* local_history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = local_history.c; sourceTree = "<group>"; };
+		260F1F8F12D620E800D9B07F /* local_history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = local_history.h; sourceTree = "<group>"; };
 		260F1F9012D620E800D9B07F /* history_global_core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = history_global_core.c; sourceTree = "<group>"; };
 		260F1F9112D620E800D9B07F /* history_global_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = history_global_core.h; sourceTree = "<group>"; };
 		260F1F9212D620E800D9B07F /* hotlist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hotlist.c; sourceTree = "<group>"; };
@@ -404,8 +404,8 @@
 				260F1F8B12D620E800D9B07F /* frames.c */,
 				260F1F8C12D620E800D9B07F /* frames.h */,
 				260F1F8D12D620E800D9B07F /* gui.h */,
-				260F1F8E12D620E800D9B07F /* history_core.c */,
-				260F1F8F12D620E800D9B07F /* history_core.h */,
+				260F1F8E12D620E800D9B07F /* local_history.c */,
+				260F1F8F12D620E800D9B07F /* local_history.h */,
 				260F1F9012D620E800D9B07F /* history_global_core.c */,
 				260F1F9112D620E800D9B07F /* history_global_core.h */,
 				260F1F9212D620E800D9B07F /* hotlist.c */,

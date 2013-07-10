@@ -49,7 +49,7 @@
 #include "desktop/cookies.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"
-#include "desktop/history_core.h"
+#include "desktop/local_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
