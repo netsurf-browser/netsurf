@@ -944,6 +944,10 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		 * inline container as if they were not absolutely positioned.
 		 * Layout expects and handles this. */
 		box->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
+	} else if (props.node_is_root) {
+		/* Special case for root element: force it to BLOCK, or the
+		 * rest of the layout will break. */
+		box->type = BOX_BLOCK;
 	} else {
 		/* Normal mapping */
 		box->type = box_map[css_computed_display(box->style, 
@@ -972,8 +976,9 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 			return false;
 	}
 
-	if (box->type == BOX_NONE || css_computed_display(box->style, 
-			props.node_is_root) == CSS_DISPLAY_NONE) {
+	if (box->type == BOX_NONE || (css_computed_display(box->style,
+			props.node_is_root) == CSS_DISPLAY_NONE &&
+			props.node_is_root == false)) {
 		css_select_results_destroy(styles);
 		box->styles = NULL;
 		box->style = NULL;
