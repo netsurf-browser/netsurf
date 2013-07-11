@@ -38,7 +38,7 @@
 #include "image/bitmap.h"
 #include "render/font.h"
 #include "utils/log.h"
-#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 
@@ -48,8 +48,8 @@
 #define BOTTOM_MARGIN 30
 
 struct history_page {
-	char *url;    /**< Page URL, never 0. */
-	char *frag_id; /** Fragment identifier, or 0. */
+	nsurl *url;    /**< Page URL, never 0. */
+	lwc_string *frag_id; /** Fragment identifier, or 0. */
 	char *title;  /**< Page title, never 0. */
 };
 
@@ -175,15 +175,16 @@ struct history_entry *history_clone_entry(struct history *history,
 	if (!new_entry)
 		return 0;
 	memcpy(new_entry, entry, sizeof *entry);
-	new_entry->page.url = strdup(entry->page.url);
+	new_entry->page.url = nsurl_ref(entry->page.url);
 	if (entry->page.frag_id)
-		new_entry->page.frag_id = strdup(entry->page.frag_id);
+		new_entry->page.frag_id = lwc_string_ref(entry->page.frag_id);
 	new_entry->page.title = strdup(entry->page.title);
 	if (!new_entry->page.url || !new_entry->page.title ||
 			((entry->page.frag_id) && (!new_entry->page.frag_id))) {
-		free(new_entry->page.url);
+		nsurl_unref(new_entry->page.url);
+		if (new_entry->page.frag_id)
+			lwc_string_unref(new_entry->page.frag_id);
 		free(new_entry->page.title);
-		free(new_entry->page.frag_id);
 		free(new_entry);
 		return 0;
 	}
@@ -218,21 +219,18 @@ struct history_entry *history_clone_entry(struct history *history,
  *
  * \param  history  opaque history structure, as returned by history_create()
  * \param  content  content to add to history
- * \param  frag_id  fragment identifier
+ * \param  frag_id  fragment identifier, or NULL.
  *
  * The page is added after the current entry and becomes current.
  */
 
 void history_add(struct history *history, hlcache_handle *content,
-		const char *frag_id)
+		lwc_string *frag_id)
 {
 	struct history_entry *entry;
 	nsurl *nsurl = hlcache_handle_get_url(content);
-	char *url;
 	char *title;
 	struct bitmap *bitmap;
-	nserror error;
-	size_t url_len;
 
 	assert(history);
 	assert(content);
@@ -242,24 +240,16 @@ void history_add(struct history *history, hlcache_handle *content,
 	if (entry == NULL)
 		return;
 
-	/* TODO: use a nsurl? */
-	error = nsurl_get(nsurl, NSURL_WITH_FRAGMENT, &url, &url_len);
-	if (error != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-		free(entry);
-		return;
-	}
-
 	title = strdup(content_get_title(content));
 	if (title == NULL) {
 		warn_user("NoMemory", 0);
-		free(url);
 		free(entry);
 		return;
 	}
 
-	entry->page.url = url;
-	entry->page.frag_id = frag_id ? strdup(frag_id) : 0;
+	entry->page.url = nsurl_ref(nsurl);
+	entry->page.frag_id = frag_id ? lwc_string_ref(frag_id) : 0;
+
 	entry->page.title = title;
 	entry->back = history->current;
 	entry->next = 0;
@@ -358,9 +348,9 @@ void history_free_entry(struct history_entry *entry)
 		return;
 	history_free_entry(entry->forward);
 	history_free_entry(entry->next);
-	free(entry->page.url);
+	nsurl_unref(entry->page.url);
 	if (entry->page.frag_id)
-		free(entry->page.frag_id);
+		lwc_string_unref(entry->page.frag_id);
 	free(entry->page.title);
 	free(entry);
 }
@@ -428,7 +418,6 @@ void history_go(struct browser_window *bw,
 		struct history_entry *entry, 
 		bool new_window)
 {
-	char *full_url;
 	nsurl *url;
 	struct history_entry *current;
 	nserror error;
@@ -438,24 +427,15 @@ void history_go(struct browser_window *bw,
 //		entry->page.url, entry->page.title, entry->page.frag_id));
 
 	if (entry->page.frag_id) {
-		full_url = malloc(strlen(entry->page.url) +
-				strlen(entry->page.frag_id) + 5);
-		if (full_url == NULL) {
+		error = nsurl_refragment(entry->page.url,
+				entry->page.frag_id, &url);
+
+		if (error != NSERROR_OK) {
 			warn_user("NoMemory", 0);
 			return;
 		}
-		sprintf(full_url, "%s#%s", entry->page.url, entry->page.frag_id);
-
-		error = nsurl_create(full_url, &url);
-		free(full_url);
 	} else {
-		error = nsurl_create(entry->page.url, &url);
-	}
-
-
-	if (error != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-		return;
+		url = nsurl_ref(entry->page.url);
 	}
 
 	if (new_window) {
@@ -747,7 +727,7 @@ const char *history_position_url(struct history *history, int x, int y)
 	if (!entry)
 		return 0;
 
-	return entry->page.url;
+	return nsurl_access(entry->page.url);
 }
 
 
@@ -848,13 +828,13 @@ static bool history_enumerate_entry(const struct history *history,
 /* Documented in local_history.h */
 const char *history_entry_get_url(const struct history_entry *entry)
 {
-	return entry->page.url;
+	return nsurl_access(entry->page.url);
 }
 
 /* Documented in local_history.h */
 const char *history_entry_get_fragment_id(const struct history_entry *entry)
 {
-	return entry->page.frag_id;
+	return (entry->page.frag_id) ? lwc_string_data(entry->page.frag_id) : 0;
 }
 
 /* Documented in local_history.h */

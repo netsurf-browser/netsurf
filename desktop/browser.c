@@ -941,9 +941,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 			if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
 				history_add(bw->history, 
-					    bw->current_content,
-					    bw->frag_id == NULL ? NULL :
-					    lwc_string_data(bw->frag_id));
+					    bw->current_content, bw->frag_id);
 			}
 
 			browser_window_update(bw, false);
@@ -1285,8 +1283,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (bw->history_add && bw->history) {
 			nsurl *url = hlcache_handle_get_url(c);
 
-			history_add(bw->history, c, bw->frag_id == NULL ? NULL :
-					lwc_string_data(bw->frag_id));
+			history_add(bw->history, c, bw->frag_id);
 			if (urldb_add_url(url)) {
 				urldb_set_url_title(url, content_get_title(c));
 				urldb_update_url_visit_data(url);

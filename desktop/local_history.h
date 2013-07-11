@@ -24,6 +24,7 @@
 #define _NETSURF_DESKTOP_HISTORY_H_
 
 #include <stdbool.h>
+#include <libwapcaplet/libwapcaplet.h>
 
 struct hlcache_handle;
 struct history;
@@ -34,7 +35,7 @@ struct redraw_context;
 struct history *history_create(void);
 struct history *history_clone(struct history *history);
 void history_add(struct history *history, struct hlcache_handle *content,
-		const char *frag_id);
+		lwc_string *frag_id);
 void history_update(struct history *history, struct hlcache_handle *content);
 void history_destroy(struct history *history);
 void history_back(struct browser_window *bw, struct history *history);
