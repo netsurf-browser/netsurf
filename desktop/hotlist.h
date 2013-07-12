@@ -42,6 +42,8 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path, const char*
 unsigned int hotlist_get_tree_flags(void);
 void hotlist_cleanup(const char *hotlist_path);
 
+void hotlist_visited(struct hlcache_handle *c);
+
 bool hotlist_export(const char *path);
 void hotlist_edit_selected(void);
 void hotlist_delete_selected(void);

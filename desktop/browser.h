@@ -344,10 +344,6 @@ char * browser_window_get_selection(struct browser_window *bw);
  */
 void browser_window_debug_dump(struct browser_window *bw, FILE *f);
 
-
-/* In platform specific hotlist.c. */
-void hotlist_visited(struct hlcache_handle *c);
-
 /* In platform specific theme_install.c. */
 #ifdef WITH_THEME_INSTALL
 void theme_install_start(struct hlcache_handle *c);
