@@ -74,23 +74,6 @@ bool browser_reformat_pending;
 /** maximum frame depth */
 #define FRAME_DEPTH 8
 
-static nserror browser_window_callback(hlcache_handle *c,
-		const hlcache_event *event, void *pw);
-static void browser_window_refresh(void *p);
-static bool browser_window_check_throbber(struct browser_window *bw);
-static void browser_window_convert_to_download(struct browser_window *bw, 
-		llcache_handle *stream);
-static void browser_window_start_throbber(struct browser_window *bw);
-static void browser_window_stop_throbber(struct browser_window *bw);
-static void browser_window_destroy_children(struct browser_window *bw);
-static void browser_window_destroy_internal(struct browser_window *bw);
-static void browser_window_set_scale_internal(struct browser_window *bw,
-		float scale);
-static void browser_window_find_target_internal(struct browser_window *bw,
-		const char *target, int depth, struct browser_window *page,
-		int *rdepth, struct browser_window **bw_target);
-static void browser_window_mouse_drag_end(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y);
 
 
 /**
@@ -839,174 +822,63 @@ browser_window_download(struct browser_window *bw,
 	return error;
 }
 
-/* exported interface documented in desktop/browser.h */
-nserror browser_window_navigate(struct browser_window *bw,
-			     nsurl *url,
-			     nsurl *referrer,
-			     enum browser_window_nav_flags flags,
-			     char *post_urlenc,
-			     struct fetch_multipart_data *post_multipart,
-			     hlcache_handle *parent)
+
+static bool browser_window_check_throbber(struct browser_window *bw)
 {
-	hlcache_handle *c;
-	int depth = 0;
-	struct browser_window *cur;
-	uint32_t fetch_flags = 0;
-	bool fetch_is_post = (post_urlenc != NULL || post_multipart != NULL);
-	llcache_post_data post;
-	hlcache_child_context child;
-	nserror error;
+	int children, index;
 
-	assert(bw);
-	assert(url);
+	if (bw->throbbing)
+		return true;
 
-	LOG(("bw %p, url %s", bw, nsurl_access(url)));
-
-	/* don't allow massively nested framesets */
-	for (cur = bw; cur->parent; cur = cur->parent) {
-		depth++;
-	}
-	if (depth > FRAME_DEPTH) {
-		LOG(("frame depth too high."));
-		return NSERROR_FRAME_DEPTH;
-	}
-
-	/* Set up retrieval parameters */
-	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
-		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
-	}
-
-	if (post_multipart != NULL) {
-		post.type = LLCACHE_POST_MULTIPART;
-		post.data.multipart = post_multipart;
-	} else if (post_urlenc != NULL) {
-		post.type = LLCACHE_POST_URL_ENCODED;
-		post.data.urlenc = post_urlenc;
-	}
-
-	if ((parent != NULL) && (content_get_type(parent) == CONTENT_HTML)) {
-		child.charset = html_get_encoding(parent);
-		child.quirks = content_get_quirks(parent);
-	}
-
-	url = nsurl_ref(url);
-
-	if (referrer != NULL) {
-		referrer = nsurl_ref(referrer);
-	}
-
-	/* Get download out of the way */
-	if ((flags & BROWSER_WINDOW_DOWNLOAD) != 0) {
-		error = browser_window_download(bw, 
-						url, 
-						referrer, 
-						fetch_flags, 
-						fetch_is_post, 
-						&post);
-		nsurl_unref(url);
-		if (referrer != NULL) {
-			nsurl_unref(referrer);
-		}
-		return error;
-	}
-
-	if (bw->frag_id != NULL) {
-		lwc_string_unref(bw->frag_id);
-	}
-	bw->frag_id = NULL;
-
-	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
-		bool same_url = false;
-
-		bw->frag_id = nsurl_get_component(url, NSURL_FRAGMENT);
-
-		/* Compare new URL with existing one (ignoring fragments) */
-		if ((bw->current_content != NULL) && 
-		    (hlcache_handle_get_url(bw->current_content) != NULL)) {
-			same_url = nsurl_compare(url,
-					hlcache_handle_get_url(bw->current_content),
-					NSURL_COMPLETE);
-		}
-
-		/* if we're simply moving to another ID on the same page,
-		 * don't bother to fetch, just update the window.
-		 */
-		if ((same_url) && 
-		    (fetch_is_post == false) && 
-		    (nsurl_has_component(url, NSURL_QUERY) == false)) {
-			nsurl_unref(url);
-
-			if (referrer != NULL) {
-				nsurl_unref(referrer);
-			}
-
-			if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
-				history_add(bw->history, 
-					    bw->current_content, bw->frag_id);
-			}
-
-			browser_window_update(bw, false);
-
-			if (bw->current_content != NULL) {
-				browser_window_refresh_url_bar(bw,
-					hlcache_handle_get_url(bw->current_content),
-					bw->frag_id);
-			}
-			return NSERROR_OK;
+	if (bw->children) {
+		children = bw->rows * bw->cols;
+		for (index = 0; index < children; index++) {
+			if (browser_window_check_throbber(&bw->children[index]))
+				return true;
 		}
 	}
-
-	browser_window_stop(bw);
-	browser_window_remove_caret(bw, false);
-	browser_window_destroy_children(bw);
-
-	LOG(("Loading '%s'", nsurl_access(url)));
-
-	browser_window_set_status(bw, messages_get("Loading"));
-	bw->history_add = (flags & BROWSER_WINDOW_HISTORY);
-
-	/* Verifiable fetches may trigger a download */
-	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
-		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
+	if (bw->iframes) {
+		for (index = 0; index < bw->iframe_count; index++) {
+			if (browser_window_check_throbber(&bw->iframes[index]))
+				return true;
+		}
 	}
+	return false;
+}
 
-	error = hlcache_handle_retrieve(url,
-			fetch_flags | HLCACHE_RETRIEVE_SNIFF_TYPE,
-			referrer,
-			fetch_is_post ? &post : NULL,
-			browser_window_callback, bw,
-			parent != NULL ? &child : NULL,
-			CONTENT_ANY, &c);
 
-	switch (error) {
-	case NSERROR_OK:
-		bw->loading_content = c;
-		browser_window_start_throbber(bw);
-		browser_window_refresh_url_bar(bw, url, NULL);
-		break;
+/**
+ * Start the busy indicator.
+ *
+ * \param  bw  browser window
+ */
 
-	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
-		/** @todo does this always try and download even unverifiable content? */
-		gui_launch_url(nsurl_access(url));
-		break;
+static void browser_window_start_throbber(struct browser_window *bw)
+{
+	bw->throbbing = true;
 
-	default: /* report error to user */
-		browser_window_set_status(bw, messages_get_errorcode(error));
-		/** @todo should the caller report the error? */
-		warn_user(messages_get_errorcode(error), 0);
-		break;
+	while (bw->parent)
+		bw = bw->parent;
 
-	}
+	gui_window_start_throbber(bw->window);
+}
 
-	nsurl_unref(url);
-	if (referrer != NULL) {
-		nsurl_unref(referrer);
-	}
 
-	/* Record time */
-	bw->last_action = wallclock();
+/**
+ * Stop the busy indicator.
+ *
+ * \param  bw  browser window
+ */
 
-	return error;
+static void browser_window_stop_throbber(struct browser_window *bw)
+{
+	bw->throbbing = false;
+
+	while (bw->parent)
+		bw = bw->parent;
+
+	if (!browser_window_check_throbber(bw))
+		gui_window_stop_throbber(bw->window);
 }
 
 
@@ -1203,11 +1075,96 @@ browser_window_callback_errorcode(hlcache_handle *c,
 	browser_window_stop_throbber(bw);
 }
 
+
+/**
+ * Handle meta http-equiv refresh time elapsing by loading a new page.
+ *
+ * \param  p  browser window to refresh with new page
+ */
+
+static void browser_window_refresh(void *p)
+{
+	struct browser_window *bw = p;
+	nsurl *url;
+	nsurl *refresh;
+	hlcache_handle *parent = NULL;
+	enum browser_window_nav_flags flags = BROWSER_WINDOW_NONE;
+
+	assert(bw->current_content != NULL &&
+		(content_get_status(bw->current_content) == 
+				CONTENT_STATUS_READY ||
+		content_get_status(bw->current_content) == 
+				CONTENT_STATUS_DONE));
+
+	/* Ignore if the refresh URL has gone
+	 * (may happen if a fetch error occurred) */
+	refresh = content_get_refresh_url(bw->current_content);
+	if (refresh == NULL)
+		return;
+
+	/* mark this content as invalid so it gets flushed from the cache */
+	content_invalidate_reuse_data(bw->current_content);
+
+	url = hlcache_handle_get_url(bw->current_content);
+	if ((url == NULL) || (nsurl_compare(url, refresh, NSURL_COMPLETE))) {
+		flags |= BROWSER_WINDOW_HISTORY;
+	}
+
+	/* Treat an (almost) immediate refresh in a top-level browser window as
+	 * if it were an HTTP redirect, and thus make the resulting fetch
+	 * verifiable.
+	 *
+	 * See fetchcache.c for why redirected fetches should be verifiable at
+	 * all.
+	 */
+	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
+		flags |= BROWSER_WINDOW_VERIFIABLE;
+	} else {
+		parent = bw->current_content;
+	}
+
+	browser_window_navigate(bw,
+				refresh,
+				url,
+				flags,
+				NULL,
+				NULL,
+				parent);
+
+}
+
+
+/**
+ * Transfer the loading_content to a new download window.
+ */
+
+static void browser_window_convert_to_download(struct browser_window *bw,
+		llcache_handle *stream)
+{
+	struct browser_window *root = browser_window_get_root(bw);
+	nserror error;
+
+	assert(root != NULL);
+
+	error = download_context_create(stream, root->window);
+	if (error != NSERROR_OK) {
+		llcache_handle_abort(stream);
+		llcache_handle_release(stream);
+	}
+
+	/* remove content from browser window */
+	hlcache_handle_release(bw->loading_content);
+	bw->loading_content = NULL;
+
+	browser_window_stop_throbber(bw);
+}
+
+
 /**
  * Callback for fetchcache() for browser window fetches.
  */
 
-nserror browser_window_callback(hlcache_handle *c,
+static nserror browser_window_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
 	struct browser_window *bw = pw;
@@ -1427,7 +1384,8 @@ nserror browser_window_callback(hlcache_handle *c,
 				&icon_str) == lwc_error_ok) {
 			if (lwc_string_caseless_isequal(
 					event->data.rfc5988_link->rel, 
-					icon_str, &icon_match) != lwc_error_ok) {
+					icon_str,
+					&icon_match) != lwc_error_ok) {
 				icon_match = false;
 			}
 			lwc_string_unref(icon_str);
@@ -1582,6 +1540,319 @@ nserror browser_window_callback(hlcache_handle *c,
 }
 
 
+/* Have to forward declare browser_window_destroy_internal */
+static void browser_window_destroy_internal(struct browser_window *bw);
+
+/**
+ * Close and destroy all child browser window.
+ *
+ * \param  bw  browser window
+ */
+static void browser_window_destroy_children(struct browser_window *bw)
+{
+	int i;
+
+	if (bw->children) {
+		for (i = 0; i < (bw->rows * bw->cols); i++)
+			browser_window_destroy_internal(&bw->children[i]);
+		free(bw->children);
+		bw->children = NULL;
+		bw->rows = 0;
+		bw->cols = 0;
+	}
+	if (bw->iframes) {
+		for (i = 0; i < bw->iframe_count; i++)
+			browser_window_destroy_internal(&bw->iframes[i]);
+		free(bw->iframes);
+		bw->iframes = NULL;
+		bw->iframe_count = 0;
+	}
+}
+
+
+/**
+ * Release all memory associated with a browser window.
+ *
+ * \param  bw  browser window
+ */
+void browser_window_destroy_internal(struct browser_window *bw)
+{
+	assert(bw);
+
+	LOG(("Destroying window"));
+
+	if (bw->children != NULL || bw->iframes != NULL)
+		browser_window_destroy_children(bw);
+
+	schedule_remove(browser_window_refresh, bw);
+
+	/* If this brower window is not the root window, and has focus, unset
+	 * the root browser window's focus pointer. */
+	if (!bw->window) {
+		struct browser_window *top = browser_window_get_root(bw);
+
+		if (top->focus == bw)
+			top->focus = top;
+
+		if (top->selection.bw == bw) {
+			browser_window_set_selection(top, false, false);
+		}
+	}
+
+	/* Destruction order is important: we must ensure that the frontend 
+	 * destroys any window(s) associated with this browser window before 
+	 * we attempt any destructive cleanup. 
+	 */
+
+	if (bw->window) {
+		/* Only the root window has a GUI window */
+		gui_window_destroy(bw->window);
+	}
+
+	if (bw->loading_content != NULL) {
+		hlcache_handle_abort(bw->loading_content);
+		hlcache_handle_release(bw->loading_content);
+		bw->loading_content = NULL;
+	}
+
+	if (bw->current_content != NULL) {
+		content_status status = content_get_status(bw->current_content);
+		if (status == CONTENT_STATUS_READY || 
+				status == CONTENT_STATUS_DONE)
+			content_close(bw->current_content);
+
+		hlcache_handle_release(bw->current_content);
+		bw->current_content = NULL;
+	}
+
+	if (bw->loading_favicon != NULL) {
+		hlcache_handle_abort(bw->loading_favicon);
+		hlcache_handle_release(bw->loading_favicon);
+		bw->loading_favicon = NULL;
+	}
+
+	if (bw->current_favicon != NULL) {
+		content_status status = content_get_status(bw->current_favicon);
+
+		if (status == CONTENT_STATUS_READY ||
+		    status == CONTENT_STATUS_DONE)
+			content_close(bw->current_favicon);
+
+		hlcache_handle_release(bw->current_favicon);
+		bw->current_favicon = NULL;
+	}
+
+	if (bw->box != NULL) {
+		bw->box->iframe = NULL;
+		bw->box = NULL;
+	}
+
+	if (bw->jsctx != NULL) {
+		js_destroycontext(bw->jsctx);
+	}
+
+	/* These simply free memory, so are safe here */
+
+	if (bw->frag_id != NULL)
+		lwc_string_unref(bw->frag_id);
+
+	history_destroy(bw->history);
+
+	free(bw->name);
+	free(bw->status_text);
+	bw->status_text = NULL;
+	LOG(("Status text cache match:miss %d:%d",
+			bw->status_match, bw->status_miss));
+}
+
+
+/**
+ * Close and destroy a browser window.
+ *
+ * \param  bw  browser window
+ */
+void browser_window_destroy(struct browser_window *bw)
+{
+	/* can't destoy child windows on their own */
+	assert(!bw->parent);
+
+	/* destroy */
+	browser_window_destroy_internal(bw);
+	free(bw);
+}
+
+
+/* exported interface documented in desktop/browser.h */
+nserror browser_window_navigate(struct browser_window *bw,
+			     nsurl *url,
+			     nsurl *referrer,
+			     enum browser_window_nav_flags flags,
+			     char *post_urlenc,
+			     struct fetch_multipart_data *post_multipart,
+			     hlcache_handle *parent)
+{
+	hlcache_handle *c;
+	int depth = 0;
+	struct browser_window *cur;
+	uint32_t fetch_flags = 0;
+	bool fetch_is_post = (post_urlenc != NULL || post_multipart != NULL);
+	llcache_post_data post;
+	hlcache_child_context child;
+	nserror error;
+
+	assert(bw);
+	assert(url);
+
+	LOG(("bw %p, url %s", bw, nsurl_access(url)));
+
+	/* don't allow massively nested framesets */
+	for (cur = bw; cur->parent; cur = cur->parent) {
+		depth++;
+	}
+	if (depth > FRAME_DEPTH) {
+		LOG(("frame depth too high."));
+		return NSERROR_FRAME_DEPTH;
+	}
+
+	/* Set up retrieval parameters */
+	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
+		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
+	}
+
+	if (post_multipart != NULL) {
+		post.type = LLCACHE_POST_MULTIPART;
+		post.data.multipart = post_multipart;
+	} else if (post_urlenc != NULL) {
+		post.type = LLCACHE_POST_URL_ENCODED;
+		post.data.urlenc = post_urlenc;
+	}
+
+	if ((parent != NULL) && (content_get_type(parent) == CONTENT_HTML)) {
+		child.charset = html_get_encoding(parent);
+		child.quirks = content_get_quirks(parent);
+	}
+
+	url = nsurl_ref(url);
+
+	if (referrer != NULL) {
+		referrer = nsurl_ref(referrer);
+	}
+
+	/* Get download out of the way */
+	if ((flags & BROWSER_WINDOW_DOWNLOAD) != 0) {
+		error = browser_window_download(bw, 
+						url, 
+						referrer, 
+						fetch_flags, 
+						fetch_is_post, 
+						&post);
+		nsurl_unref(url);
+		if (referrer != NULL) {
+			nsurl_unref(referrer);
+		}
+		return error;
+	}
+
+	if (bw->frag_id != NULL) {
+		lwc_string_unref(bw->frag_id);
+	}
+	bw->frag_id = NULL;
+
+	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
+		bool same_url = false;
+
+		bw->frag_id = nsurl_get_component(url, NSURL_FRAGMENT);
+
+		/* Compare new URL with existing one (ignoring fragments) */
+		if ((bw->current_content != NULL) && 
+		    (hlcache_handle_get_url(bw->current_content) != NULL)) {
+			same_url = nsurl_compare(url,
+					hlcache_handle_get_url(bw->current_content),
+					NSURL_COMPLETE);
+		}
+
+		/* if we're simply moving to another ID on the same page,
+		 * don't bother to fetch, just update the window.
+		 */
+		if ((same_url) && 
+		    (fetch_is_post == false) && 
+		    (nsurl_has_component(url, NSURL_QUERY) == false)) {
+			nsurl_unref(url);
+
+			if (referrer != NULL) {
+				nsurl_unref(referrer);
+			}
+
+			if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
+				history_add(bw->history, 
+					    bw->current_content, bw->frag_id);
+			}
+
+			browser_window_update(bw, false);
+
+			if (bw->current_content != NULL) {
+				browser_window_refresh_url_bar(bw,
+					hlcache_handle_get_url(bw->current_content),
+					bw->frag_id);
+			}
+			return NSERROR_OK;
+		}
+	}
+
+	browser_window_stop(bw);
+	browser_window_remove_caret(bw, false);
+	browser_window_destroy_children(bw);
+
+	LOG(("Loading '%s'", nsurl_access(url)));
+
+	browser_window_set_status(bw, messages_get("Loading"));
+	bw->history_add = (flags & BROWSER_WINDOW_HISTORY);
+
+	/* Verifiable fetches may trigger a download */
+	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
+		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
+	}
+
+	error = hlcache_handle_retrieve(url,
+			fetch_flags | HLCACHE_RETRIEVE_SNIFF_TYPE,
+			referrer,
+			fetch_is_post ? &post : NULL,
+			browser_window_callback, bw,
+			parent != NULL ? &child : NULL,
+			CONTENT_ANY, &c);
+
+	switch (error) {
+	case NSERROR_OK:
+		bw->loading_content = c;
+		browser_window_start_throbber(bw);
+		browser_window_refresh_url_bar(bw, url, NULL);
+		break;
+
+	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
+		/** @todo does this always try and download even unverifiable content? */
+		gui_launch_url(nsurl_access(url));
+		break;
+
+	default: /* report error to user */
+		browser_window_set_status(bw, messages_get_errorcode(error));
+		/** @todo should the caller report the error? */
+		warn_user(messages_get_errorcode(error), 0);
+		break;
+
+	}
+
+	nsurl_unref(url);
+	if (referrer != NULL) {
+		nsurl_unref(referrer);
+	}
+
+	/* Record time */
+	bw->last_action = wallclock();
+
+	return error;
+}
+
+
 /*
  * Get the dimensions of the area a browser window occupies
  *
@@ -1630,147 +1901,6 @@ void browser_window_set_dimensions(struct browser_window *bw,
 	}
 }
 
-
-/**
- * Transfer the loading_content to a new download window.
- */
-
-void browser_window_convert_to_download(struct browser_window *bw,
-		llcache_handle *stream)
-{
-	struct browser_window *root = browser_window_get_root(bw);
-	nserror error;
-
-	assert(root != NULL);
-
-	error = download_context_create(stream, root->window);
-	if (error != NSERROR_OK) {
-		llcache_handle_abort(stream);
-		llcache_handle_release(stream);
-	}
-
-	/* remove content from browser window */
-	hlcache_handle_release(bw->loading_content);
-	bw->loading_content = NULL;
-
-	browser_window_stop_throbber(bw);
-}
-
-
-/**
- * Handle meta http-equiv refresh time elapsing by loading a new page.
- *
- * \param  p  browser window to refresh with new page
- */
-
-void browser_window_refresh(void *p)
-{
-	struct browser_window *bw = p;
-	nsurl *url;
-	nsurl *refresh;
-	hlcache_handle *parent = NULL;
-	enum browser_window_nav_flags flags = BROWSER_WINDOW_NONE;
-
-	assert(bw->current_content != NULL &&
-		(content_get_status(bw->current_content) == 
-				CONTENT_STATUS_READY ||
-		content_get_status(bw->current_content) == 
-				CONTENT_STATUS_DONE));
-
-	/* Ignore if the refresh URL has gone
-	 * (may happen if a fetch error occurred) */
-	refresh = content_get_refresh_url(bw->current_content);
-	if (refresh == NULL)
-		return;
-
-	/* mark this content as invalid so it gets flushed from the cache */
-	content_invalidate_reuse_data(bw->current_content);
-
-	url = hlcache_handle_get_url(bw->current_content);
-	if ((url == NULL) || (nsurl_compare(url, refresh, NSURL_COMPLETE))) {
-		flags |= BROWSER_WINDOW_HISTORY;
-	}
-
-	/* Treat an (almost) immediate refresh in a top-level browser window as
-	 * if it were an HTTP redirect, and thus make the resulting fetch
-	 * verifiable.
-	 *
-	 * See fetchcache.c for why redirected fetches should be verifiable at
-	 * all.
-	 */
-	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		flags |= BROWSER_WINDOW_VERIFIABLE;
-	} else {
-		parent = bw->current_content;
-	}
-
-	browser_window_navigate(bw,
-				refresh,
-				url,
-				flags,
-				NULL,
-				NULL,
-				parent);
-
-}
-
-
-/**
- * Start the busy indicator.
- *
- * \param  bw  browser window
- */
-
-void browser_window_start_throbber(struct browser_window *bw)
-{
-	bw->throbbing = true;
-
-	while (bw->parent)
-		bw = bw->parent;
-
-	gui_window_start_throbber(bw->window);
-}
-
-
-/**
- * Stop the busy indicator.
- *
- * \param  bw  browser window
- */
-
-void browser_window_stop_throbber(struct browser_window *bw)
-{
-	bw->throbbing = false;
-
-	while (bw->parent)
-		bw = bw->parent;
-
-	if (!browser_window_check_throbber(bw))
-		gui_window_stop_throbber(bw->window);
-}
-
-bool browser_window_check_throbber(struct browser_window *bw)
-{
-	int children, index;
-
-	if (bw->throbbing)
-		return true;
-
-	if (bw->children) {
-		children = bw->rows * bw->cols;
-		for (index = 0; index < children; index++) {
-			if (browser_window_check_throbber(&bw->children[index]))
-				return true;
-		}
-	}
-	if (bw->iframes) {
-		for (index = 0; index < bw->iframe_count; index++) {
-			if (browser_window_check_throbber(&bw->iframes[index]))
-				return true;
-		}
-	}
-	return false;
-}
 
 /**
  * Redraw browser window, set extent to content, and update title.
@@ -2071,148 +2201,6 @@ void browser_window_set_pointer(struct browser_window *bw,
 
 
 /**
- * Close and destroy a browser window.
- *
- * \param  bw  browser window
- */
-
-void browser_window_destroy(struct browser_window *bw)
-{
-	/* can't destoy child windows on their own */
-	assert(!bw->parent);
-
-	/* destroy */
-	browser_window_destroy_internal(bw);
-	free(bw);
-}
-
-
-/**
- * Close and destroy all child browser window.
- *
- * \param  bw  browser window
- */
-
-void browser_window_destroy_children(struct browser_window *bw)
-{
-	int i;
-
-	if (bw->children) {
-		for (i = 0; i < (bw->rows * bw->cols); i++)
-			browser_window_destroy_internal(&bw->children[i]);
-		free(bw->children);
-		bw->children = NULL;
-		bw->rows = 0;
-		bw->cols = 0;
-	}
-	if (bw->iframes) {
-		for (i = 0; i < bw->iframe_count; i++)
-			browser_window_destroy_internal(&bw->iframes[i]);
-		free(bw->iframes);
-		bw->iframes = NULL;
-		bw->iframe_count = 0;
-	}
-}
-
-
-/**
- * Release all memory associated with a browser window.
- *
- * \param  bw  browser window
- */
-
-void browser_window_destroy_internal(struct browser_window *bw)
-{
-	assert(bw);
-
-	LOG(("Destroying window"));
-
-	if (bw->children != NULL || bw->iframes != NULL)
-		browser_window_destroy_children(bw);
-
-	schedule_remove(browser_window_refresh, bw);
-
-	/* If this brower window is not the root window, and has focus, unset
-	 * the root browser window's focus pointer. */
-	if (!bw->window) {
-		struct browser_window *top = browser_window_get_root(bw);
-
-		if (top->focus == bw)
-			top->focus = top;
-
-		if (top->selection.bw == bw) {
-			browser_window_set_selection(top, false, false);
-		}
-	}
-
-	/* Destruction order is important: we must ensure that the frontend 
-	 * destroys any window(s) associated with this browser window before 
-	 * we attempt any destructive cleanup. 
-	 */
-
-	if (bw->window) {
-		/* Only the root window has a GUI window */
-		gui_window_destroy(bw->window);
-	}
-
-	if (bw->loading_content != NULL) {
-		hlcache_handle_abort(bw->loading_content);
-		hlcache_handle_release(bw->loading_content);
-		bw->loading_content = NULL;
-	}
-
-	if (bw->current_content != NULL) {
-		content_status status = content_get_status(bw->current_content);
-		if (status == CONTENT_STATUS_READY || 
-				status == CONTENT_STATUS_DONE)
-			content_close(bw->current_content);
-
-		hlcache_handle_release(bw->current_content);
-		bw->current_content = NULL;
-	}
-
-	if (bw->loading_favicon != NULL) {
-		hlcache_handle_abort(bw->loading_favicon);
-		hlcache_handle_release(bw->loading_favicon);
-		bw->loading_favicon = NULL;
-	}
-
-	if (bw->current_favicon != NULL) {
-		content_status status = content_get_status(bw->current_favicon);
-
-		if (status == CONTENT_STATUS_READY ||
-		    status == CONTENT_STATUS_DONE)
-			content_close(bw->current_favicon);
-
-		hlcache_handle_release(bw->current_favicon);
-		bw->current_favicon = NULL;
-	}
-
-	if (bw->box != NULL) {
-		bw->box->iframe = NULL;
-		bw->box = NULL;
-	}
-
-	if (bw->jsctx != NULL) {
-		js_destroycontext(bw->jsctx);
-	}
-
-	/* These simply free memory, so are safe here */
-
-	if (bw->frag_id != NULL)
-		lwc_string_unref(bw->frag_id);
-
-	history_destroy(bw->history);
-
-	free(bw->name);
-	free(bw->status_text);
-	bw->status_text = NULL;
-	LOG(("Status text cache match:miss %d:%d",
-			bw->status_match, bw->status_miss));
-}
-
-
-/**
  * Reformat a browser window contents to a new width or height.
  *
  * \param  bw      the browser window to reformat
@@ -2246,29 +2234,8 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 	content_reformat(c, background, width, height);
 }
 
-
-/**
- * Sets the scale of a browser window
- *
- * \param bw	The browser window to scale
- * \param scale	The new scale
- * \param all	Scale all windows in the tree (ie work up aswell as down)
- */
-
-void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
-{
-	while (bw->parent && all)
-		bw = bw->parent;
-
-	browser_window_set_scale_internal(bw, scale);
-
-	if (bw->parent)
-		bw = bw->parent;
-
-	browser_window_recalculate_frameset(bw);
-}
-
-void browser_window_set_scale_internal(struct browser_window *bw, float scale)
+static void browser_window_set_scale_internal(struct browser_window *bw,
+		float scale)
 {
 	int i;
 	hlcache_handle *c;
@@ -2292,6 +2259,28 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 		browser_window_set_scale_internal(&bw->children[i], scale);
 	for (i = 0; i < bw->iframe_count; i++)
 		browser_window_set_scale_internal(&bw->iframes[i], scale);
+}
+
+
+/**
+ * Sets the scale of a browser window
+ *
+ * \param bw	The browser window to scale
+ * \param scale	The new scale
+ * \param all	Scale all windows in the tree (ie work up aswell as down)
+ */
+
+void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
+{
+	while (bw->parent && all)
+		bw = bw->parent;
+
+	browser_window_set_scale_internal(bw, scale);
+
+	if (bw->parent)
+		bw = bw->parent;
+
+	browser_window_recalculate_frameset(bw);
 }
 
 
@@ -2346,6 +2335,52 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		nsurl_unref(display_url);
 	}
 }
+
+
+static void browser_window_find_target_internal(struct browser_window *bw,
+		const char *target, int depth, struct browser_window *page,
+		int *rdepth, struct browser_window **bw_target)
+{
+	int i;
+
+	if ((bw->name) && (!strcasecmp(bw->name, target))) {
+		if ((bw == page) || (depth > *rdepth)) {
+			*rdepth = depth;
+			*bw_target = bw;
+		}
+	}
+
+	if ((!bw->children) && (!bw->iframes))
+		return;
+
+	depth++;
+
+	if (bw->children != NULL) {
+		for (i = 0; i < (bw->cols * bw->rows); i++) {
+			if ((bw->children[i].name) &&
+					(!strcasecmp(bw->children[i].name, 
+					target))) {
+				if ((page == &bw->children[i]) || 
+						(depth > *rdepth)) {
+					*rdepth = depth;
+					*bw_target = &bw->children[i];
+				}
+			}
+			if (bw->children[i].children)
+				browser_window_find_target_internal(
+						&bw->children[i],
+						target, depth, page, 
+						rdepth, bw_target);
+		}
+	}
+
+	if (bw->iframes != NULL) {
+		for (i = 0; i < bw->iframe_count; i++)
+			browser_window_find_target_internal(&bw->iframes[i], 
+					target, depth, page, rdepth, bw_target);
+	}
+}
+
 
 /**
  * Locate a browser window in the specified stack according.
@@ -2492,47 +2527,58 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	return bw_target;
 }
 
-void browser_window_find_target_internal(struct browser_window *bw,
-		const char *target, int depth, struct browser_window *page,
-		int *rdepth, struct browser_window **bw_target)
+
+/**
+ * Handles the end of a drag operation in a browser window.
+ *
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ *
+ * TODO: Remove this function, once these things are associated with content,
+ *       rather than bw.
+ */
+
+static void browser_window_mouse_drag_end(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
 {
-	int i;
+	int scr_x, scr_y;
 
-	if ((bw->name) && (!strcasecmp(bw->name, target))) {
-		if ((bw == page) || (depth > *rdepth)) {
-			*rdepth = depth;
-			*bw_target = bw;
-		}
-	}
+	switch (bw->drag_type) {
+	case DRAGGING_SELECTION:
+	case DRAGGING_OTHER:
+	case DRAGGING_CONTENT_SCROLLBAR:
+		/* Drag handled by content handler */
+		break;
 
-	if ((!bw->children) && (!bw->iframes))
-		return;
+	case DRAGGING_SCR_X:
 
-	depth++;
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
 
-	if (bw->children != NULL) {
-		for (i = 0; i < (bw->cols * bw->rows); i++) {
-			if ((bw->children[i].name) &&
-					(!strcasecmp(bw->children[i].name, 
-					target))) {
-				if ((page == &bw->children[i]) || 
-						(depth > *rdepth)) {
-					*rdepth = depth;
-					*bw_target = &bw->children[i];
-				}
-			}
-			if (bw->children[i].children)
-				browser_window_find_target_internal(
-						&bw->children[i],
-						target, depth, page, 
-						rdepth, bw_target);
-		}
-	}
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
 
-	if (bw->iframes != NULL) {
-		for (i = 0; i < bw->iframe_count; i++)
-			browser_window_find_target_internal(&bw->iframes[i], 
-					target, depth, page, rdepth, bw_target);
+		scrollbar_mouse_drag_end(bw->scroll_x, mouse, scr_x, scr_y);
+
+		bw->drag_type = DRAGGING_NONE;
+		break;
+
+	case DRAGGING_SCR_Y:
+
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		scrollbar_mouse_drag_end(bw->scroll_y, mouse, scr_x, scr_y);
+
+		bw->drag_type = DRAGGING_NONE;
+		break;
+
+	default:
+		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
+		break;
 	}
 }
 
@@ -2820,61 +2866,6 @@ void browser_window_mouse_click(struct browser_window *bw,
 			browser_window_page_drag_start(bw, x, y);
 			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
 		}
-		break;
-	}
-}
-
-
-/**
- * Handles the end of a drag operation in a browser window.
- *
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- *
- * TODO: Remove this function, once these things are associated with content,
- *       rather than bw.
- */
-
-void browser_window_mouse_drag_end(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y)
-{
-	int scr_x, scr_y;
-
-	switch (bw->drag_type) {
-	case DRAGGING_SELECTION:
-	case DRAGGING_OTHER:
-	case DRAGGING_CONTENT_SCROLLBAR:
-		/* Drag handled by content handler */
-		break;
-
-	case DRAGGING_SCR_X:
-
-		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
-
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		scrollbar_mouse_drag_end(bw->scroll_x, mouse, scr_x, scr_y);
-
-		bw->drag_type = DRAGGING_NONE;
-		break;
-
-	case DRAGGING_SCR_Y:
-
-		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
-
-		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
-		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
-
-		scrollbar_mouse_drag_end(bw->scroll_y, mouse, scr_x, scr_y);
-
-		bw->drag_type = DRAGGING_NONE;
-		break;
-
-	default:
-		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 		break;
 	}
 }
