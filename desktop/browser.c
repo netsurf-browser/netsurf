@@ -1767,7 +1767,8 @@ nserror browser_window_navigate(struct browser_window *bw,
 		if ((bw->current_content != NULL) && 
 		    (hlcache_handle_get_url(bw->current_content) != NULL)) {
 			same_url = nsurl_compare(url,
-					hlcache_handle_get_url(bw->current_content),
+					hlcache_handle_get_url(
+							bw->current_content),
 					NSURL_COMPLETE);
 		}
 
@@ -1792,7 +1793,8 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 			if (bw->current_content != NULL) {
 				browser_window_refresh_url_bar(bw,
-					hlcache_handle_get_url(bw->current_content),
+					hlcache_handle_get_url(
+							bw->current_content),
 					bw->frag_id);
 			}
 			return NSERROR_OK;
