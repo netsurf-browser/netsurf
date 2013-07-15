@@ -60,6 +60,9 @@ struct treeview_node_msg {
 	enum treeview_msg msg; /**< The message type */
 	union {
 		struct {
+			bool user; /* True iff delete by user interaction */
+		} delete;
+		struct {
 			lwc_string *feild; /* The field being edited */
 			const char *text;  /* The proposed new value */
 		} node_edit; /* Client may call treeview_update_node_* */

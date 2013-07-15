@@ -576,6 +576,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 struct treeview_node_delete {
 	treeview *tree;
 	int height_reduction;
+	bool user_interaction;
 };
 /** Treewalk node callback deleting nodes. */
 static nserror treeview_delete_node_walk_cb(treeview_node *n,
@@ -584,6 +585,7 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
 	struct treeview_node_delete *nd = (struct treeview_node_delete *)ctx;
 	struct treeview_node_msg msg;
 	msg.msg = TREE_MSG_NODE_DELETE;
+	msg.data.delete.user = nd->user_interaction;
 
 	assert(n->children == NULL);
 
@@ -651,7 +653,8 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 	treeview_node *p = n->parent;
 	struct treeview_node_delete nd = {
 		.tree = tree,
-		.height_reduction = 0
+		.height_reduction = 0,
+		.user_interaction = interaction
 	};
 
 	if (interaction && (tree->flags & TREEVIEW_NO_DELETES)) {
@@ -691,13 +694,14 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
  * Delete a treeview node
  *
  * \param tree		Treeview object to delete empty nodes from
+ * \param interaction	Delete is result of user interaction with treeview
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Note this must not be called within a treeview_walk.  It may delete the
  * walker's 'current' node, making it impossible to move on without invalid
  * reads.
  */
-static nserror treeview_delete_empty_nodes(treeview *tree)
+static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 {
 	treeview_node *node, *child, *parent, *next_sibling;
 	treeview_node *root = tree->root;
@@ -705,7 +709,8 @@ static nserror treeview_delete_empty_nodes(treeview *tree)
 	nserror err;
 	struct treeview_node_delete nd = {
 		.tree = tree,
-		.height_reduction = 0
+		.height_reduction = 0,
+		.user_interaction = interaction
 	};
 
 	node = root;
@@ -778,7 +783,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 
 	if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
 		/* Delete any empty nodes */
-		err = treeview_delete_empty_nodes(tree);
+		err = treeview_delete_empty_nodes(tree, false);
 		if (err != NSERROR_OK)
 			return err;
 	}
@@ -1686,7 +1691,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 
 		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
 			/* Delete any empty nodes */
-			err = treeview_delete_empty_nodes(tree);
+			err = treeview_delete_empty_nodes(tree, true);
 			r.y0 = 0;
 		}
 		break;
