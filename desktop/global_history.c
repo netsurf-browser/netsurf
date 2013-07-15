@@ -61,6 +61,8 @@ struct global_history_ctx {
 struct global_history_ctx gh_ctx;
 
 struct global_history_entry {
+	bool user_delete;
+
 	int slot;
 	nsurl *url;
 	time_t t;
@@ -349,6 +351,7 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 		return false;
 	}
 
+	e->user_delete = false;
 	e->slot = slot;
 	e->url = nsurl_ref(url);
 	e->t = data->last_visit;
@@ -433,11 +436,18 @@ static void global_history_delete_entry_internal(
 		e->next->prev = e->prev;
 	}
 
-	/* Destroy */
+	if (e->user_delete) {
+		/* User requested delete, so delete from urldb too. */
+		urldb_reset_url_visit_data(e->url);
+	}
+
+	/* Destroy fields */
 	free((void *)e->data[0].value); /* Eww */
 	free((void *)e->data[2].value); /* Eww */
 	free((void *)e->data[3].value); /* Eww */
 	nsurl_unref(e->url);
+
+	/* Destroy entry */
 	free(e);
 }
 
@@ -477,7 +487,7 @@ static bool global_history_add_entry(nsurl *url,
 		/* See if there's already an entry for this URL */
 		e = global_history_find(url);
 		if (e != NULL) {
-			/* Existing entry.  Delete it. */
+			/* Existing entry. */
 			treeview_delete_node(gh_ctx.tree, e->entry);
 			return true;
 		}
@@ -643,6 +653,7 @@ static nserror global_history_tree_node_entry_cb(
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
 		e->entry = NULL;
+		e->user_delete = msg.data.delete.user;
 		global_history_delete_entry_internal(e);
 		break;
 
