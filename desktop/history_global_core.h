@@ -28,7 +28,7 @@ bool history_global_initialise(struct tree *tree, const char* folder_icon_name);
 unsigned int history_global_get_tree_flags(void);
 void history_global_cleanup(void);
 
-void global_history_add(nsurl *url);
+void history_global_add(nsurl *url);
 
 bool history_global_export(const char *path);
 void history_global_delete_selected(void);

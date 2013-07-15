@@ -90,7 +90,7 @@ static struct node *history_global_find(const char *url)
  * \param data URL data associated with URL
  * \return true (for urldb_iterate_entries)
  */
-static bool global_history_add_internal(nsurl *url, const struct url_data *data)
+static bool history_global_add_internal(nsurl *url, const struct url_data *data)
 {
 	int i, j;
 	struct node *parent = NULL;
@@ -281,7 +281,7 @@ bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
 	LOG(("Building history tree"));
 
 	global_history_initialised = true;
-	urldb_iterate_entries(global_history_add_internal);
+	urldb_iterate_entries(history_global_add_internal);
 	global_history_initialised = false;
 	tree_set_node_expanded(global_history_tree, global_history_tree_root,
 			       false, true, true);
@@ -316,7 +316,7 @@ void history_global_cleanup(void)
  *
  * \param url the url to be added
  */
-void global_history_add(nsurl *url)
+void history_global_add(nsurl *url)
 {
 	const struct url_data *data;
 
@@ -324,7 +324,7 @@ void global_history_add(nsurl *url)
 	if (data == NULL)
 		return;
 
-	global_history_add_internal(url, data);
+	history_global_add_internal(url, data);
 }
 
 
