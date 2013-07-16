@@ -462,7 +462,6 @@ static bool global_history_add_entry(nsurl *url,
 		const struct url_data *data)
 {
 	int slot;
-	struct global_history_entry *e;
 	time_t visit_date;
 	time_t earliest_date = gh_ctx.today - (N_DAYS - 1) * N_SEC_PER_DAY;
 	bool got_treeview = gh_ctx.tree != NULL;
@@ -483,13 +482,12 @@ static bool global_history_add_entry(nsurl *url,
 
 	if (got_treeview == true) {
 		/* The treeview for global history already exists */
+		struct global_history_entry *e;
 
-		/* See if there's already an entry for this URL */
+		/* Delete any existing entry for this URL */
 		e = global_history_find(url);
 		if (e != NULL) {
-			/* Existing entry. */
 			treeview_delete_node(gh_ctx.tree, e->entry);
-			return true;
 		}
 	}
 
@@ -643,12 +641,26 @@ static nserror global_history_init_entries(void)
 static nserror global_history_tree_node_folder_cb(
 		struct treeview_node_msg msg, void *data)
 {
+	struct global_history_folder *f = data;
+
+	switch (msg.msg) {
+	case TREE_MSG_NODE_DELETE:
+		f->folder = NULL;
+		break;
+
+	case TREE_MSG_NODE_EDIT:
+		break;
+
+	case TREE_MSG_NODE_LAUNCH:
+		break;
+	}
+
 	return NSERROR_OK;
 }
 static nserror global_history_tree_node_entry_cb(
 		struct treeview_node_msg msg, void *data)
 {
-	struct global_history_entry *e = (struct global_history_entry *)data;
+	struct global_history_entry *e = data;
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
@@ -776,6 +788,23 @@ nserror global_history_fini(void)
 			lwc_string_unref(gh_ctx.fields[i].field);
 
 	LOG(("Finalised global history"));
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in global_history.h */
+nserror global_history_add(nsurl *url)
+{
+	const struct url_data *data;
+
+	data = urldb_get_url_data(url);
+	if (data == NULL) {
+		LOG(("Can't add URL to history that's not present in urldb."));
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	global_history_add_entry(url, data);
 
 	return NSERROR_OK;
 }

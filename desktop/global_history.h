@@ -22,6 +22,7 @@
 #include <stdbool.h>
 
 #include "desktop/core_window.h"
+#include "utils/nsurl.h"
 
 
 /**
@@ -49,6 +50,16 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror global_history_fini(void);
+
+/**
+ * Add an entry to the global history.
+ *
+ * If the URL already exists in the global history, the old node is removed.
+ *
+ * \param url		URL for node being added
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror global_history_add(nsurl *url);
 
 /**
  * Redraw the global history.
