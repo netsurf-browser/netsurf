@@ -45,6 +45,7 @@
 #include "desktop/browser_private.h"
 #include "desktop/download.h"
 #include "desktop/frames.h"
+#include "desktop/global_history.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
@@ -1247,8 +1248,12 @@ static nserror browser_window_callback(hlcache_handle *c,
 				urldb_update_url_visit_data(url);
 				urldb_set_url_content_type(url, 
 						content_get_type(c));
+
 				/* This is safe as we've just added the URL */
-				history_global_add(urldb_get_url(url));
+				if (nsoption_bool(temp_treeview_test) == false)
+					history_global_add(urldb_get_url(url));
+				else
+					global_history_add(urldb_get_url(url));
 			}
 		}
 
