@@ -80,8 +80,4 @@ struct core_window_callback_table {
 };
 
 
-void core_window_draw(struct core_window *cw, int x, int y, struct rect r,
-		const struct redraw_context *ctx);
-
-
 #endif
