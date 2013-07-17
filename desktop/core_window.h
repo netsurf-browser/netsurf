@@ -34,7 +34,12 @@ typedef enum {
 
 /** Callbacks to achieve various core window functionality. */
 struct core_window_callback_table {
-	/** Request a redraw of the window. */
+	/**
+	 * Request a redraw of the window
+	 *
+	 * \param cw		the core window object
+	 * \param r		rectangle to redraw
+	 */
 	void (*redraw_request)(struct core_window *cw, struct rect r);
 
 	/**
@@ -46,10 +51,21 @@ struct core_window_callback_table {
 	 */
 	void (*update_size)(struct core_window *cw, int width, int height);
 
-	/** Scroll the window to make area visible */
+	/**
+	 * Scroll the window to make area visible
+	 *
+	 * \param cw		the core window object
+	 * \param r		rectangle to make visible
+	 */
 	void (*scroll_visible)(struct core_window *cw, struct rect r);
 
-	/** Get window viewport dimensions */
+	/**
+	 * Get window viewport dimensions
+	 *
+	 * \param cw		the core window object
+	 * \param width		to be set to viewport width in px
+	 * \param height	to be set to viewport height in px
+	 */
 	void (*get_window_dimensions)(struct core_window *cw,
 			int *width, int *height);
 
