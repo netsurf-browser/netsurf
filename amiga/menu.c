@@ -199,16 +199,17 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	ami_menu_alloc_item(gwin, M_SAVEIFF,   NM_SUB, "IFF",           0, NULL,
 			ami_menu_item_project_save, (void *)AMINS_SAVE_IFF);
 	ami_menu_alloc_item(gwin, M_BAR_P2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
+	ami_menu_alloc_item(gwin, M_PRINT,    NM_ITEM, "PrintNS",     'P', NULL,
+			ami_menu_item_project_print, NULL);
+	ami_menu_alloc_item(gwin, M_BAR_P3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_CLOSETAB, NM_ITEM, "CloseTab",    'K', NULL,
 			ami_menu_item_project_closetab, NULL);
 	ami_menu_alloc_item(gwin, M_CLOSEWIN, NM_ITEM, "CloseWindow",   0, NULL,
 			ami_menu_item_project_closewin, NULL);
-	ami_menu_alloc_item(gwin, M_BAR_P3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);				
-	ami_menu_alloc_item(gwin, M_PRINT,    NM_ITEM, "PrintNS",     'P', NULL,
-			ami_menu_item_project_print, NULL);
-	ami_menu_alloc_item(gwin, M_BAR_P4,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
+	ami_menu_alloc_item(gwin, M_BAR_P4,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);				
 	ami_menu_alloc_item(gwin, M_ABOUT,    NM_ITEM, "About",       '?', NULL,
 			ami_menu_item_project_about, NULL);
+	ami_menu_alloc_item(gwin, M_BAR_P5,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);				
 	ami_menu_alloc_item(gwin, M_QUIT,     NM_ITEM, "Quit",        'Q', NULL,
 			ami_menu_item_project_quit, NULL);
 
