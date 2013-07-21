@@ -30,7 +30,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "utils/nsoption.h"
 #include "desktop/tree.h"
 #include "utils/log.h"
@@ -392,7 +392,7 @@ unsigned int cookies_get_tree_flags(void)
 }
 
 
-/* exported interface documented in cookies.h */
+/* exported interface documented in cookies_old.h */
 bool cookies_schedule_update(const struct cookie_data *data)
 {
 	assert(data != NULL);
@@ -405,7 +405,7 @@ bool cookies_schedule_update(const struct cookie_data *data)
 }
 
 
-/* exported interface documented in cookies.h */
+/* exported interface documented in cookies_old.h */
 void cookies_remove(const struct cookie_data *data)
 {
 	assert(data != NULL);
