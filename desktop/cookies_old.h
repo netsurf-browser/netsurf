@@ -20,8 +20,8 @@
  * Cookies (interface).
  */
 
-#ifndef _NETSURF_DESKTOP_COOKIES_H_
-#define _NETSURF_DESKTOP_COOKIES_H_
+#ifndef _NETSURF_DESKTOP_COOKIES_OLD_H_
+#define _NETSURF_DESKTOP_COOKIES_OLD_H_
 
 #include <stdbool.h>
 
