@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

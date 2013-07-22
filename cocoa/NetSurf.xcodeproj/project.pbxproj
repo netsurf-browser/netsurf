@@ -41,7 +41,7 @@
 		260F1F8512D620E800D9B07F /* browser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = browser.c; sourceTree = "<group>"; };
 		260F1F8612D620E800D9B07F /* browser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = browser.h; sourceTree = "<group>"; };
 		260F1F8712D620E800D9B07F /* cookies.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cookies.c; sourceTree = "<group>"; };
-		260F1F8812D620E800D9B07F /* cookies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cookies.h; sourceTree = "<group>"; };
+		260F1F8812D620E800D9B07F /* cookies_old.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cookies_old.h; sourceTree = "<group>"; };
 		260F1F8912D620E800D9B07F /* download.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = download.c; sourceTree = "<group>"; };
 		260F1F8A12D620E800D9B07F /* download.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = download.h; sourceTree = "<group>"; };
 		260F1F8B12D620E800D9B07F /* frames.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = frames.c; sourceTree = "<group>"; };
@@ -398,7 +398,7 @@
 				260F1F8512D620E800D9B07F /* browser.c */,
 				260F1F8612D620E800D9B07F /* browser.h */,
 				260F1F8712D620E800D9B07F /* cookies.c */,
-				260F1F8812D620E800D9B07F /* cookies.h */,
+				260F1F8812D620E800D9B07F /* cookies_old.h */,
 				260F1F8912D620E800D9B07F /* download.c */,
 				260F1F8A12D620E800D9B07F /* download.h */,
 				260F1F8B12D620E800D9B07F /* frames.c */,

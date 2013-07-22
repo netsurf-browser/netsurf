@@ -27,9 +27,8 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/mouse.h"
-#include "desktop/cookies.h"
 #include "desktop/tree.h"
 #include "utils/nsoption.h"
 #include "utils/messages.h"

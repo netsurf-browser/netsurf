@@ -30,7 +30,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "content/urldb.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/tree.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"

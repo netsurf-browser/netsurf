@@ -46,7 +46,7 @@
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/browser_private.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"
 #include "desktop/local_history.h"

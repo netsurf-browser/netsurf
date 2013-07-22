@@ -50,7 +50,7 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/401login.h"
 #include "desktop/browser_private.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"

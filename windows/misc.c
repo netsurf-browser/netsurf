@@ -25,7 +25,7 @@
 
 #include <windows.h>
 
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"

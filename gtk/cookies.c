@@ -21,7 +21,7 @@
  */
 
 
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "utils/log.h"

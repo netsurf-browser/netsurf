@@ -55,7 +55,7 @@
 #include "amiga/filetype.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree_url_node.h"

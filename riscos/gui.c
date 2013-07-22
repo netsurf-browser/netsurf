@@ -55,7 +55,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"

@@ -34,7 +34,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/cookies.h"
+#include "desktop/cookies_old.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
