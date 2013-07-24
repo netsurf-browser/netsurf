@@ -3835,7 +3835,6 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 				else
 					p->cookies_end = c->prev;
 
-				cookies_remove((struct cookie_data *)c);
 				urldb_free_cookie(c);
 
 				return;
