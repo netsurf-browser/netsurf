@@ -27,7 +27,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
-#define N_FIELDS 5
 #define N_DAYS 28
 #define N_SEC_PER_DAY (60 * 60 * 24)
 
@@ -43,6 +42,15 @@ enum global_history_folders {
 	GH_2_WEEKS_AGO,
 	GH_3_WEEKS_AGO,
 	GH_N_FOLDERS
+};
+
+enum global_history_fields {
+	GH_TITLE,
+	GH_URL,
+	GH_LAST_VISIT,
+	GH_VISITS,
+	GH_PERIOD,
+	N_FIELDS
 };
 
 struct global_history_folder {
@@ -259,13 +267,14 @@ static nserror global_history_create_treeview_field_data(
 	char *last_visited2;
 	int len;
 
-	e->data[0].field = gh_ctx.fields[0].field;
-	e->data[0].value = strdup(title);
-	e->data[0].value_len = (e->data[0].value != NULL) ? strlen(title) : 0;
+	e->data[GH_TITLE].field = gh_ctx.fields[GH_TITLE].field;
+	e->data[GH_TITLE].value = strdup(title);
+	e->data[GH_TITLE].value_len = (e->data[GH_TITLE].value != NULL) ?
+			strlen(title) : 0;
 
-	e->data[1].field = gh_ctx.fields[1].field;
-	e->data[1].value = nsurl_access(e->url);
-	e->data[1].value_len = nsurl_length(e->url);
+	e->data[GH_URL].field = gh_ctx.fields[GH_URL].field;
+	e->data[GH_URL].value = nsurl_access(e->url);
+	e->data[GH_URL].value_len = nsurl_length(e->url);
 
 	last_visited = ctime(&data->last_visit);
 	last_visited2 = strdup(last_visited);
@@ -274,9 +283,9 @@ static nserror global_history_create_treeview_field_data(
 		last_visited2[24] = '\0';
 	}
 
-	e->data[2].field = gh_ctx.fields[2].field;
-	e->data[2].value = last_visited2;
-	e->data[2].value_len = (last_visited2 != NULL) ? 24 : 0;
+	e->data[GH_LAST_VISIT].field = gh_ctx.fields[GH_LAST_VISIT].field;
+	e->data[GH_LAST_VISIT].value = last_visited2;
+	e->data[GH_LAST_VISIT].value_len = (last_visited2 != NULL) ? 24 : 0;
 
 	len = snprintf(buffer, 16, "%u", data->visits);
 	if (len == 16) {
@@ -284,9 +293,9 @@ static nserror global_history_create_treeview_field_data(
 		buffer[len] = '\0';
 	}
 
-	e->data[3].field = gh_ctx.fields[3].field;
-	e->data[3].value = strdup(buffer);
-	e->data[3].value_len = len;
+	e->data[GH_VISITS].field = gh_ctx.fields[GH_VISITS].field;
+	e->data[GH_VISITS].value = strdup(buffer);
+	e->data[GH_VISITS].value_len = len;
 
 	return NSERROR_OK;
 }
@@ -442,9 +451,9 @@ static void global_history_delete_entry_internal(
 	}
 
 	/* Destroy fields */
-	free((void *)e->data[0].value); /* Eww */
-	free((void *)e->data[2].value); /* Eww */
-	free((void *)e->data[3].value); /* Eww */
+	free((void *)e->data[GH_TITLE].value); /* Eww */
+	free((void *)e->data[GH_LAST_VISIT].value); /* Eww */
+	free((void *)e->data[GH_VISITS].value); /* Eww */
 	nsurl_unref(e->url);
 
 	/* Destroy entry */
@@ -512,47 +521,47 @@ static nserror global_history_initialise_entry_fields(void)
 	for (i = 0; i < N_FIELDS; i++)
 		gh_ctx.fields[i].field = NULL;
 
-	gh_ctx.fields[0].flags = TREE_FLAG_DEFAULT;
+	gh_ctx.fields[GH_TITLE].flags = TREE_FLAG_DEFAULT;
 	label = "TreeviewLabelTitle";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&gh_ctx.fields[0].field) !=
+			&gh_ctx.fields[GH_TITLE].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	gh_ctx.fields[1].flags = TREE_FLAG_NONE;
+	gh_ctx.fields[GH_URL].flags = TREE_FLAG_NONE;
 	label = "TreeviewLabelURL";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&gh_ctx.fields[1].field) !=
+			&gh_ctx.fields[GH_URL].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	gh_ctx.fields[2].flags = TREE_FLAG_SHOW_NAME;
+	gh_ctx.fields[GH_LAST_VISIT].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelLastVisit";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&gh_ctx.fields[2].field) !=
+			&gh_ctx.fields[GH_LAST_VISIT].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	gh_ctx.fields[3].flags = TREE_FLAG_SHOW_NAME;
+	gh_ctx.fields[GH_VISITS].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelVisits";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&gh_ctx.fields[3].field) !=
+			&gh_ctx.fields[GH_VISITS].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	gh_ctx.fields[4].flags = TREE_FLAG_DEFAULT;
+	gh_ctx.fields[GH_PERIOD].flags = TREE_FLAG_DEFAULT;
 	label = "TreeviewLabelPeriod";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&gh_ctx.fields[4].field) !=
+			&gh_ctx.fields[GH_PERIOD].field) !=
 			lwc_error_ok) {
 		return false;
 	}
