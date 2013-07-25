@@ -809,6 +809,10 @@ nserror global_history_add(nsurl *url)
 {
 	const struct url_data *data;
 
+	/* If we don't have a global history at the moment, just return OK */
+	if (gh_ctx.tree == NULL)
+		return NSERROR_OK;
+
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
 		LOG(("Can't add URL to history that's not present in urldb."));
