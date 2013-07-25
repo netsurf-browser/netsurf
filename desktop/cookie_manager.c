@@ -31,7 +31,7 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
-enum cookie_manager_fields {
+enum cookie_manager_field {
 	CM_NAME,
 	CM_CONTENT,
 	CM_DOMAIN,
@@ -176,6 +176,29 @@ static void cookie_manager_free_treeview_field_data(
 
 
 /**
+ * Build a cookie manager treeview field from given text
+ *
+ * \param field		Cookie manager treeview field to build
+ * \param e		Cookie manager entry to set the field in
+ * \param value		Text to set in field
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static inline nserror cookie_manager_field_builder(
+		enum cookie_manager_field field,
+		struct cookie_manager_entry *e,
+		const char *value)
+{
+	struct treeview_field_data *data = &e->data[field];
+
+	data->field = cm_ctx.fields[field].field;
+	data->value = strdup(value);
+	data->value_len = (value != NULL) ? strlen(value) : 0;
+
+	return NSERROR_OK;
+}
+
+
+/**
  * Set a cookie manager entry's data from the cookie_data.
  *
  * \param e		Cookie manager entry to set up
@@ -194,57 +217,29 @@ static nserror cookie_manager_set_treeview_field_data(
 	assert(e != NULL);
 	assert(data != NULL);
 
-	/* Set the Name text */
-	temp = data->name;
-	e->data[CM_NAME].field = cm_ctx.fields[CM_NAME].field;
-	e->data[CM_NAME].value = strdup(temp);
-	e->data[CM_NAME].value_len = (e->data[CM_NAME].value != NULL) ?
-			strlen(temp) : 0;
+	/* Set the fields up */
+	cookie_manager_field_builder(CM_NAME, e, data->name);
+	cookie_manager_field_builder(CM_CONTENT, e, data->value);
+	cookie_manager_field_builder(CM_DOMAIN, e, data->domain);
+	cookie_manager_field_builder(CM_PATH, e, data->path);
 
-	/* Set the Content text */
-	temp = data->value;
-	e->data[CM_CONTENT].field = cm_ctx.fields[CM_CONTENT].field;
-	e->data[CM_CONTENT].value = strdup(temp);
-	e->data[CM_CONTENT].value_len = (e->data[CM_CONTENT].value != NULL) ?
-			strlen(temp) : 0;
-
-	/* Set the Domain text */
-	temp = data->domain;
-	e->data[CM_DOMAIN].field = cm_ctx.fields[CM_DOMAIN].field;
-	e->data[CM_DOMAIN].value = strdup(temp);
-	e->data[CM_DOMAIN].value_len = (e->data[CM_DOMAIN].value != NULL) ?
-			strlen(temp) : 0;
-
-	/* Set the Path text */
-	temp = data->path;
-	e->data[CM_PATH].field = cm_ctx.fields[CM_PATH].field;
-	e->data[CM_PATH].value = strdup(temp);
-	e->data[CM_PATH].value_len = (e->data[CM_PATH].value != NULL) ?
-			strlen(temp) : 0;
-
-	/* Set the Expires date text */
+	/* Set the Expires date field */
 	date = ctime(&data->expires);
 	date2 = strdup(date);
 	if (date2 != NULL) {
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
+	cookie_manager_field_builder(CM_EXPIRES, e, date2);
 
-	e->data[CM_EXPIRES].field = cm_ctx.fields[CM_EXPIRES].field;
-	e->data[CM_EXPIRES].value = date2;
-	e->data[CM_EXPIRES].value_len = (date2 != NULL) ? 24 : 0;
-
-	/* Set the Last used date text */
+	/* Set the Last used date field */
 	date = ctime(&data->last_used);
 	date2 = strdup(date);
 	if (date2 != NULL) {
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
-
-	e->data[CM_LAST_USED].field = cm_ctx.fields[CM_LAST_USED].field;
-	e->data[CM_LAST_USED].value = date2;
-	e->data[CM_LAST_USED].value_len = (date2 != NULL) ? 24 : 0;
+	cookie_manager_field_builder(CM_LAST_USED, e, date2);
 
 	/* Set the Restrictions text */
 	/* TODO: use messages */
@@ -257,27 +252,16 @@ static nserror cookie_manager_set_treeview_field_data(
 	else
 		temp = "None";
 
-	e->data[CM_RESTRICTIONS].field = cm_ctx.fields[CM_RESTRICTIONS].field;
-	e->data[CM_RESTRICTIONS].value = strdup(temp);
-	e->data[CM_RESTRICTIONS].value_len =
-			(e->data[CM_RESTRICTIONS].value != NULL) ?
-			strlen(temp) : 0;
+	cookie_manager_field_builder(CM_RESTRICTIONS, e, temp);
 
 	/* Set the Version text */
 	snprintf(buffer, sizeof(buffer), "TreeVersion%i", data->version);
 	temp = messages_get(buffer);
-	e->data[CM_VERSION].field = cm_ctx.fields[CM_VERSION].field;
-	e->data[CM_VERSION].value = strdup(temp);
-	e->data[CM_VERSION].value_len = (e->data[CM_VERSION].value != NULL) ?
-			strlen(temp) : 0;
+	cookie_manager_field_builder(CM_VERSION, e, temp);
 
 	/* Set the Persistent text */
 	temp = data->no_destroy ? messages_get("Yes") : messages_get("No");
-	e->data[CM_PERSISTENT].field = cm_ctx.fields[CM_PERSISTENT].field;
-	e->data[CM_PERSISTENT].value = strdup(temp);
-	e->data[CM_PERSISTENT].value_len =
-			(e->data[CM_PERSISTENT].value != NULL) ?
-			strlen(temp) : 0;
+	cookie_manager_field_builder(CM_PERSISTENT, e, temp);
 
 	return NSERROR_OK;
 }
