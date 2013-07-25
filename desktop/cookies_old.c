@@ -365,6 +365,8 @@ bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const c
 	if (tree == NULL)
 		return false;
 
+	LOG(("Making cookie tree"));
+
 	folder_icon = tree_load_icon(folder_icon_name);
 	cookie_icon = tree_load_icon(cookie_icon_name);
 
@@ -376,6 +378,8 @@ bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const c
 	urldb_iterate_cookies(cookies_schedule_update);
 	tree_set_node_expanded(cookies_tree, cookies_tree_root,
 			       false, true, true);
+
+	LOG(("Made cookie tree"));
 
 	return true;
 }
