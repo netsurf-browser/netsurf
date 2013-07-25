@@ -247,6 +247,7 @@ static nserror cookie_manager_set_treeview_field_data(
 	e->data[CM_LAST_USED].value_len = (date2 != NULL) ? 24 : 0;
 
 	/* Set the Restrictions text */
+	/* TODO: use messages */
 	if (data->secure && data->http_only)
 		temp = "Secure hosts via https only";
 	else if (data->secure)
