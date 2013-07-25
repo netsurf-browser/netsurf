@@ -33,6 +33,12 @@
 typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;
 
+enum treeview_node_type {
+	TREE_NODE_ROOT		= (1 << 0),
+	TREE_NODE_FOLDER	= (1 << 1),
+	TREE_NODE_ENTRY		= (1 << 2)
+};
+
 enum treeview_relationship {
 	TREE_REL_FIRST_CHILD,
 	TREE_REL_NEXT_SIBLING
@@ -207,6 +213,37 @@ nserror treeview_update_node_entry(treeview *tree,
 		treeview_node *entry,
 		const struct treeview_field_data fields[],
 		void *data);
+
+
+/**
+ * Client callback for treeview_walk
+ *
+ * \param ctx		Client context
+ * \param node_data	Client data for the current treeview node
+ * \param type		The node type
+ * \param abort		Set to true to abort treeview walk prematurely
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+typedef nserror (*treeview_walk_callback)(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort);
+
+/**
+ * Walk (depth first) a treeview subtree, calling a callback at each node of
+ * required type.
+ *
+ * \param tree		Treeview object to walk
+ * \param root		Root node to walk tree from (or NULL for tree root)
+ * \param walk_cb	Function to call on each node
+ * \param ctx		Client context, passed back to callback function
+ * \param type		The node type(s) of interest
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ *
+ * Note, if deleting returned node, walk_cb must terminate the treeview walk by
+ * setting abort to true.
+ */
+nserror treeview_walk(treeview *tree, treeview_node *root,
+		treeview_walk_callback walk_cb, void *ctx,
+		enum treeview_node_type type);
 
 /**
  * Delete a treeview node

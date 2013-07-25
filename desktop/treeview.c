@@ -39,12 +39,6 @@ struct treeview_globals {
 	int icon_step;
 } tree_g;
 
-enum treeview_node_type {
-	TREE_NODE_ROOT,
-	TREE_NODE_FOLDER,
-	TREE_NODE_ENTRY
-};
-
 enum treeview_node_section {
 	TV_NODE_SECTION_TOGGLE,		/**< Expansion toggle */
 	TV_NODE_SECTION_ON_NODE,	/**< Node content (text, icon) */
@@ -570,6 +564,44 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 		child = skip_children ? NULL : child;
 	}
 	return NSERROR_OK;
+}
+
+
+struct treeview_walk_ctx {
+	treeview_walk_callback walk_cb;
+	void *ctx;
+	enum treeview_node_type type;
+};
+/** Treewalk node callback. */
+static nserror treeview_walk_cb(treeview_node *n, void *ctx,
+		bool *skip_children, bool *end)
+{
+	struct treeview_walk_ctx *tw = ctx;
+
+	if (n->type & tw->type) {
+		return tw->walk_cb(tw->ctx, n->client_data, tw->type, end);
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in treeview.h */
+nserror treeview_walk(treeview *tree, treeview_node *root,
+		treeview_walk_callback walk_cb, void *ctx,
+		enum treeview_node_type type)
+{
+	struct treeview_walk_ctx tw = {
+		.walk_cb = walk_cb,
+		.ctx = ctx,
+		.type = type
+	};
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	if (root == NULL)
+		root = tree->root;
+
+	return treeview_walk_internal(root, true, NULL, treeview_walk_cb, &tw);
 }
 
 
