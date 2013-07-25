@@ -68,6 +68,7 @@ struct cookie_manager_entry {
 
 struct treeview_walk_ctx {
 	const char *title;
+	size_t title_len;
 	struct cookie_manager_folder *folder;
 	struct cookie_manager_entry *entry;
 };
@@ -80,7 +81,9 @@ static nserror cookie_manager_walk_cb(void *ctx, void *node_data,
 	if (type == TREE_NODE_ENTRY) {
 		struct cookie_manager_entry *entry = node_data;
 
-		if (strcmp(tw->title, entry->data[CM_NAME].value) == 0) {
+		if (entry->data[CM_NAME].value_len == tw->title_len &&
+				strcmp(tw->title,
+				entry->data[CM_NAME].value) == 0) {
 			/* Found what we're looking for */
 			tw->entry = entry;
 			*abort = true;
@@ -89,7 +92,8 @@ static nserror cookie_manager_walk_cb(void *ctx, void *node_data,
 	} else if (type == TREE_NODE_FOLDER) {
 		struct cookie_manager_folder *folder = node_data;
 
-		if (strcmp(tw->title, folder->data.value) == 0) {
+		if (folder->data.value_len == tw->title_len &&
+				strcmp(tw->title, folder->data.value) == 0) {
 			/* Found what we're looking for */
 			tw->folder = folder;
 			*abort = true;
@@ -103,15 +107,18 @@ static nserror cookie_manager_walk_cb(void *ctx, void *node_data,
  *
  * \param root		Search root node, or NULL to search from tree's root
  * \param title		ID of the node to look for
+ * \param title_len	Byte length of title string
  * \param found		Updated to the matching node's cookie maanger entry
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror cookie_manager_find_entry(treeview_node *root,
-		const char *title, struct cookie_manager_entry **found)
+		const char *title, size_t title_len,
+		struct cookie_manager_entry **found)
 {
 	nserror err;
 	struct treeview_walk_ctx tw = {
 		.title = title,
+		.title_len = title_len,
 		.folder = NULL,
 		.entry = NULL
 	};
@@ -130,15 +137,18 @@ static nserror cookie_manager_find_entry(treeview_node *root,
  *
  * \param root		Search root node, or NULL to search from tree's root
  * \param title		ID of the node to look for
+ * \param title_len	Byte length of title string
  * \param found		Updated to the matching node's cookie maanger folder
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror cookie_manager_find_folder(treeview_node *root,
-		const char *title, struct cookie_manager_folder **found)
+		const char *title, size_t title_len,
+		struct cookie_manager_folder **found)
 {
 	nserror err;
 	struct treeview_walk_ctx tw = {
 		.title = title,
+		.title_len = title_len,
 		.folder = NULL,
 		.entry = NULL
 	};
@@ -408,7 +418,8 @@ bool cookie_manager_add(const struct cookie_data *data)
 	if (cm_ctx.tree == NULL)
 		return true;
 
-	err = cookie_manager_find_folder(NULL, data->domain, &parent);
+	err = cookie_manager_find_folder(NULL, data->domain,
+			strlen(data->domain), &parent);
 	if (err != NSERROR_OK) {
 		return false;
 	}
@@ -421,7 +432,8 @@ bool cookie_manager_add(const struct cookie_data *data)
 	}
 
 	/* Create cookie node */
-	err = cookie_manager_find_entry(parent->folder, data->name, &cookie);
+	err = cookie_manager_find_entry(parent->folder, data->name,
+			strlen(data->name), &cookie);
 	if (err != NSERROR_OK)
 		return false;
 
@@ -450,13 +462,15 @@ void cookie_manager_remove(const struct cookie_data *data)
 	if (cm_ctx.tree == NULL)
 		return;
 
-	err = cookie_manager_find_folder(NULL, data->domain, &parent);
+	err = cookie_manager_find_folder(NULL, data->domain,
+			strlen(data->domain), &parent);
 	if (err != NSERROR_OK || parent == NULL) {
 		/* Nothing to delete */
 		return;
 	}
 
-	err = cookie_manager_find_entry(parent->folder, data->name, &cookie);
+	err = cookie_manager_find_entry(parent->folder, data->name,
+			strlen(data->name), &cookie);
 	if (err != NSERROR_OK || cookie == NULL) {
 		/* Nothing to delete */
 		return;
