@@ -709,7 +709,7 @@ static nserror global_history_tree_node_entry_cb(
 	}
 	return NSERROR_OK;
 }
-struct treeview_callback_table tree_cb_t = {
+struct treeview_callback_table gh_tree_cb_t = {
 	.folder = global_history_tree_node_folder_cb,
 	.entry = global_history_tree_node_entry_cb
 };
@@ -741,7 +741,7 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	urldb_iterate_entries(global_history_add_entry);
 
 	/* Create the global history treeview */
-	err = treeview_create(&gh_ctx.tree, &tree_cb_t,
+	err = treeview_create(&gh_ctx.tree, &gh_tree_cb_t,
 			N_FIELDS, gh_ctx.fields,
 			cw_t, core_window_handle,
 			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS);
