@@ -788,6 +788,8 @@ nserror global_history_fini(void)
 
 	LOG(("Finalising global history"));
 
+	gh_ctx.built = false;
+
 	/* Destroy the global history treeview */
 	err = treeview_destroy(gh_ctx.tree);
 
