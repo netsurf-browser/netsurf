@@ -1162,6 +1162,58 @@ fr.all.TreeviewLabelPeriod:Period
 it.all.TreeviewLabelPeriod:Period
 nl.all.TreeviewLabelPeriod:Period
 
+en.all.TreeviewLabelName:Name
+de.all.TreeviewLabelName:Name
+fr.all.TreeviewLabelName:Name
+it.all.TreeviewLabelName:Name
+nl.all.TreeviewLabelName:Name
+en.all.TreeviewLabelContent:Content
+de.all.TreeviewLabelContent:Content
+fr.all.TreeviewLabelContent:Content
+it.all.TreeviewLabelContent:Content
+nl.all.TreeviewLabelContent:Content
+en.all.TreeviewLabelDomain:Domain
+de.all.TreeviewLabelDomain:Domain
+fr.all.TreeviewLabelDomain:Domain
+it.all.TreeviewLabelDomain:Domain
+nl.all.TreeviewLabelDomain:Domain
+en.all.TreeviewLabelPath:Path
+de.all.TreeviewLabelPath:Path
+fr.all.TreeviewLabelPath:Path
+it.all.TreeviewLabelPath:Path
+nl.all.TreeviewLabelPath:Path
+en.all.TreeviewLabelExpires:Expires
+de.all.TreeviewLabelExpires:Expires
+fr.all.TreeviewLabelExpires:Expires
+it.all.TreeviewLabelExpires:Expires
+nl.all.TreeviewLabelExpires:Expires
+en.all.TreeviewLabelLastUsed:Last used
+de.all.TreeviewLabelLastUsed:Last used
+fr.all.TreeviewLabelLastUsed:Last used
+it.all.TreeviewLabelLastUsed:Last used
+nl.all.TreeviewLabelLastUsed:Last used
+en.all.TreeviewLabelRestrictions:Restrictions
+de.all.TreeviewLabelRestrictions:Restrictions
+fr.all.TreeviewLabelRestrictions:Restrictions
+it.all.TreeviewLabelRestrictions:Restrictions
+nl.all.TreeviewLabelRestrictions:Restrictions
+en.all.TreeviewLabelVersion:Version
+de.all.TreeviewLabelVersion:Version
+fr.all.TreeviewLabelVersion:Version
+it.all.TreeviewLabelVersion:Version
+nl.all.TreeviewLabelVersion:Version
+en.all.TreeviewLabelPersistent:Persistent
+de.all.TreeviewLabelPersistent:Persistent
+fr.all.TreeviewLabelPersistent:Persistent
+it.all.TreeviewLabelPersistent:Persistent
+nl.all.TreeviewLabelPersistent:Persistent
+en.all.TreeviewLabelDomainFolder:Domain folder
+de.all.TreeviewLabelDomainFolder:Domain folder
+fr.all.TreeviewLabelDomainFolder:Domain folder
+it.all.TreeviewLabelDomainFolder:Domain folder
+nl.all.TreeviewLabelDomainFolder:Domain folder
+
+
 
 # Tree export
 #
