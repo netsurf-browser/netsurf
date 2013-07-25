@@ -357,7 +357,7 @@ static nserror global_history_add_entry_internal(nsurl *url, int slot,
 	/* Create new local history entry */
 	e = malloc(sizeof(struct global_history_entry));
 	if (e == NULL) {
-		return false;
+		return NSERROR_NOMEM;
 	}
 
 	e->user_delete = false;
