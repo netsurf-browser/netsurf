@@ -798,7 +798,7 @@ nserror global_history_fini(void)
 
 	LOG(("Finalised global history"));
 
-	return NSERROR_OK;
+	return err;
 }
 
 
