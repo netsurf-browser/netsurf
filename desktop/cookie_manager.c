@@ -32,30 +32,30 @@
 #include "utils/log.h"
 
 enum cookie_manager_field {
-	CM_NAME,
-	CM_CONTENT,
-	CM_DOMAIN,
-	CM_PATH,
-	CM_EXPIRES,
-	CM_LAST_USED,
-	CM_RESTRICTIONS,
-	CM_VERSION,
-	CM_PERSISTENT,
-	CM_DOMAIN_FOLDER,
-	N_FIELDS
+	COOKIE_M_NAME,
+	COOKIE_M_CONTENT,
+	COOKIE_M_DOMAIN,
+	COOKIE_M_PATH,
+	COOKIE_M_EXPIRES,
+	COOKIE_M_LAST_USED,
+	COOKIE_M_RESTRICTIONS,
+	COOKIE_M_VERSION,
+	COOKIE_M_PERSISTENT,
+	COOKIE_M_DOMAIN_FOLDER,
+	COOKIE_M_N_FIELDS
 };
 
 enum cookie_manager_value {
-	CM_HTTPS,
-	CM_SECURE,
-	CM_HTTP,
-	CM_NONE,
-	CM_NETSCAPE,
-	CM_RFC2109,
-	CM_RFC2965,
-	CM_YES,
-	CM_NO,
-	N_VALUES
+	COOKIE_M_HTTPS,
+	COOKIE_M_SECURE,
+	COOKIE_M_HTTP,
+	COOKIE_M_NONE,
+	COOKIE_M_NETSCAPE,
+	COOKIE_M_RFC2109,
+	COOKIE_M_RFC2965,
+	COOKIE_M_YES,
+	COOKIE_M_NO,
+	COOKIE_M_N_VALUES
 };
 
 struct cookie_manager_folder {
@@ -65,8 +65,8 @@ struct cookie_manager_folder {
 
 struct cookie_manager_ctx {
 	treeview *tree;
-	struct treeview_field_desc fields[N_FIELDS];
-	struct treeview_field_data values[N_VALUES];
+	struct treeview_field_desc fields[COOKIE_M_N_FIELDS];
+	struct treeview_field_data values[COOKIE_M_N_VALUES];
 	bool built;
 };
 struct cookie_manager_ctx cm_ctx;
@@ -76,7 +76,7 @@ struct cookie_manager_entry {
 
 	treeview_node *entry;
 
-	struct treeview_field_data data[N_FIELDS - 1];
+	struct treeview_field_data data[COOKIE_M_N_FIELDS - 1];
 };
 
 
@@ -95,9 +95,9 @@ static nserror cookie_manager_walk_cb(void *ctx, void *node_data,
 	if (type == TREE_NODE_ENTRY) {
 		struct cookie_manager_entry *entry = node_data;
 
-		if (entry->data[CM_NAME].value_len == tw->title_len &&
+		if (entry->data[COOKIE_M_NAME].value_len == tw->title_len &&
 				strcmp(tw->title,
-				entry->data[CM_NAME].value) == 0) {
+				entry->data[COOKIE_M_NAME].value) == 0) {
 			/* Found what we're looking for */
 			tw->entry = entry;
 			*abort = true;
@@ -187,12 +187,12 @@ static void cookie_manager_free_treeview_field_data(
 		struct cookie_manager_entry *e)
 {
 	/* Eww */
-	free((void *)e->data[CM_NAME].value);
-	free((void *)e->data[CM_CONTENT].value);
-	free((void *)e->data[CM_DOMAIN].value);
-	free((void *)e->data[CM_PATH].value);
-	free((void *)e->data[CM_EXPIRES].value);
-	free((void *)e->data[CM_LAST_USED].value);
+	free((void *)e->data[COOKIE_M_NAME].value);
+	free((void *)e->data[COOKIE_M_CONTENT].value);
+	free((void *)e->data[COOKIE_M_DOMAIN].value);
+	free((void *)e->data[COOKIE_M_PATH].value);
+	free((void *)e->data[COOKIE_M_EXPIRES].value);
+	free((void *)e->data[COOKIE_M_LAST_USED].value);
 }
 
 
@@ -235,14 +235,14 @@ static nserror cookie_manager_set_treeview_field_data(
 	assert(data != NULL);
 
 	/* Set the fields up */
-	cookie_manager_field_builder(CM_NAME,
-			&e->data[CM_NAME], strdup(data->name));
-	cookie_manager_field_builder(CM_CONTENT,
-			&e->data[CM_CONTENT], strdup(data->value));
-	cookie_manager_field_builder(CM_DOMAIN,
-			&e->data[CM_DOMAIN], strdup(data->domain));
-	cookie_manager_field_builder(CM_PATH,
-			&e->data[CM_PATH], strdup(data->path));
+	cookie_manager_field_builder(COOKIE_M_NAME,
+			&e->data[COOKIE_M_NAME], strdup(data->name));
+	cookie_manager_field_builder(COOKIE_M_CONTENT,
+			&e->data[COOKIE_M_CONTENT], strdup(data->value));
+	cookie_manager_field_builder(COOKIE_M_DOMAIN,
+			&e->data[COOKIE_M_DOMAIN], strdup(data->domain));
+	cookie_manager_field_builder(COOKIE_M_PATH,
+			&e->data[COOKIE_M_PATH], strdup(data->path));
 
 	/* Set the Expires date field */
 	date = ctime(&data->expires);
@@ -251,8 +251,8 @@ static nserror cookie_manager_set_treeview_field_data(
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
-	cookie_manager_field_builder(CM_EXPIRES,
-			&e->data[CM_EXPIRES], date2);
+	cookie_manager_field_builder(COOKIE_M_EXPIRES,
+			&e->data[COOKIE_M_EXPIRES], date2);
 
 	/* Set the Last used date field */
 	date = ctime(&data->last_used);
@@ -261,37 +261,37 @@ static nserror cookie_manager_set_treeview_field_data(
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
-	cookie_manager_field_builder(CM_LAST_USED,
-			&e->data[CM_LAST_USED], date2);
+	cookie_manager_field_builder(COOKIE_M_LAST_USED,
+			&e->data[COOKIE_M_LAST_USED], date2);
 
 	/* Set the Restrictions text */
 	if (data->secure && data->http_only)
-		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_HTTPS];
+		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_HTTPS];
 	else if (data->secure)
-		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_SECURE];
+		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_SECURE];
 	else if (data->http_only)
-		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_HTTP];
+		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_HTTP];
 	else
-		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_NONE];
+		e->data[COOKIE_M_RESTRICTIONS] = cm_ctx.values[COOKIE_M_NONE];
 
 	/* Set the Version text */
 	switch (data->version) {
 	case COOKIE_NETSCAPE:
-		e->data[CM_VERSION] = cm_ctx.values[CM_NETSCAPE];
+		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_NETSCAPE];
 		break;
 	case COOKIE_RFC2109:
-		e->data[CM_VERSION] = cm_ctx.values[CM_RFC2109];
+		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_RFC2109];
 		break;
 	case COOKIE_RFC2965:
-		e->data[CM_VERSION] = cm_ctx.values[CM_RFC2965];
+		e->data[COOKIE_M_VERSION] = cm_ctx.values[COOKIE_M_RFC2965];
 		break;
 	}
 
 	/* Set the Persistent text */
 	if (data->no_destroy)
-		e->data[CM_PERSISTENT] = cm_ctx.values[CM_YES];
+		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_YES];
 	else
-		e->data[CM_PERSISTENT] = cm_ctx.values[CM_NO];
+		e->data[COOKIE_M_PERSISTENT] = cm_ctx.values[COOKIE_M_NO];
 
 	return NSERROR_OK;
 }
@@ -404,7 +404,7 @@ static nserror cookie_manager_create_domain_folder(
 		return NSERROR_NOMEM;
 	}
 
-	f->data.field = cm_ctx.fields[N_FIELDS - 1].field;
+	f->data.field = cm_ctx.fields[COOKIE_M_N_FIELDS - 1].field;
 	f->data.value = strdup(data->domain);
 	f->data.value_len = (f->data.value != NULL) ?
 			strlen(data->domain) : 0;
@@ -511,95 +511,95 @@ static nserror cookie_manager_init_entry_fields(void)
 	int i;
 	const char *label;
 
-	for (i = 0; i < N_FIELDS; i++)
+	for (i = 0; i < COOKIE_M_N_FIELDS; i++)
 		cm_ctx.fields[i].field = NULL;
 
-	cm_ctx.fields[CM_NAME].flags = TREE_FLAG_DEFAULT;
+	cm_ctx.fields[COOKIE_M_NAME].flags = TREE_FLAG_DEFAULT;
 	label = "TreeviewLabelName";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_NAME].field) !=
+			&cm_ctx.fields[COOKIE_M_NAME].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_CONTENT].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_CONTENT].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelContent";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_CONTENT].field) !=
+			&cm_ctx.fields[COOKIE_M_CONTENT].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_DOMAIN].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_DOMAIN].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelDomain";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_DOMAIN].field) !=
+			&cm_ctx.fields[COOKIE_M_DOMAIN].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_PATH].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_PATH].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelPath";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_PATH].field) !=
+			&cm_ctx.fields[COOKIE_M_PATH].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_EXPIRES].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_EXPIRES].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelExpires";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_EXPIRES].field) !=
+			&cm_ctx.fields[COOKIE_M_EXPIRES].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_LAST_USED].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_LAST_USED].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelLastUsed";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_LAST_USED].field) !=
+			&cm_ctx.fields[COOKIE_M_LAST_USED].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_RESTRICTIONS].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_RESTRICTIONS].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelRestrictions";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_RESTRICTIONS].field) !=
+			&cm_ctx.fields[COOKIE_M_RESTRICTIONS].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_VERSION].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_VERSION].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelVersion";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_VERSION].field) !=
+			&cm_ctx.fields[COOKIE_M_VERSION].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_PERSISTENT].flags = TREE_FLAG_SHOW_NAME;
+	cm_ctx.fields[COOKIE_M_PERSISTENT].flags = TREE_FLAG_SHOW_NAME;
 	label = "TreeviewLabelPersistent";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_PERSISTENT].field) !=
+			&cm_ctx.fields[COOKIE_M_PERSISTENT].field) !=
 			lwc_error_ok) {
 		goto error;
 	}
 
-	cm_ctx.fields[CM_DOMAIN_FOLDER].flags = TREE_FLAG_DEFAULT;
+	cm_ctx.fields[COOKIE_M_DOMAIN_FOLDER].flags = TREE_FLAG_DEFAULT;
 	label = "TreeviewLabelDomainFolder";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
-			&cm_ctx.fields[CM_DOMAIN_FOLDER].field) !=
+			&cm_ctx.fields[COOKIE_M_DOMAIN_FOLDER].field) !=
 			lwc_error_ok) {
 		return false;
 	}
@@ -607,7 +607,7 @@ static nserror cookie_manager_init_entry_fields(void)
 	return NSERROR_OK;
 
 error:
-	for (i = 0; i < N_FIELDS; i++)
+	for (i = 0; i < COOKIE_M_N_FIELDS; i++)
 		if (cm_ctx.fields[i].field != NULL)
 			lwc_string_unref(cm_ctx.fields[i].field);
 
@@ -627,45 +627,45 @@ static nserror cookie_manager_init_common_values(void)
 
 	/* Set the Restrictions text */
 	temp = messages_get("CookieManagerHTTPS");
-	cookie_manager_field_builder(CM_RESTRICTIONS,
-			&cm_ctx.values[CM_HTTPS], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_RESTRICTIONS,
+			&cm_ctx.values[COOKIE_M_HTTPS], strdup(temp));
 
 	temp = messages_get("CookieManagerSecure");
-	cookie_manager_field_builder(CM_RESTRICTIONS,
-			&cm_ctx.values[CM_SECURE], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_RESTRICTIONS,
+			&cm_ctx.values[COOKIE_M_SECURE], strdup(temp));
 
 	temp = messages_get("CookieManagerHTTP");
-	cookie_manager_field_builder(CM_RESTRICTIONS,
-			&cm_ctx.values[CM_HTTP], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_RESTRICTIONS,
+			&cm_ctx.values[COOKIE_M_HTTP], strdup(temp));
 
 	temp = messages_get("None");
-	cookie_manager_field_builder(CM_RESTRICTIONS,
-			&cm_ctx.values[CM_NONE], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_RESTRICTIONS,
+			&cm_ctx.values[COOKIE_M_NONE], strdup(temp));
 
 	/* Set the Cookie version text */
 	assert(COOKIE_NETSCAPE == 0);
 	temp = messages_get("TreeVersion0");
-	cookie_manager_field_builder(CM_VERSION,
-			&cm_ctx.values[CM_NETSCAPE], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_VERSION,
+			&cm_ctx.values[COOKIE_M_NETSCAPE], strdup(temp));
 
 	assert(COOKIE_RFC2109 == 1);
 	temp = messages_get("TreeVersion1");
-	cookie_manager_field_builder(CM_VERSION,
-			&cm_ctx.values[CM_RFC2109], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_VERSION,
+			&cm_ctx.values[COOKIE_M_RFC2109], strdup(temp));
 
 	assert(COOKIE_RFC2965 == 2);
 	temp = messages_get("TreeVersion2");
-	cookie_manager_field_builder(CM_VERSION,
-			&cm_ctx.values[CM_RFC2965], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_VERSION,
+			&cm_ctx.values[COOKIE_M_RFC2965], strdup(temp));
 
 	/* Set the Persistent value text */
 	temp = messages_get("Yes");
-	cookie_manager_field_builder(CM_PERSISTENT,
-			&cm_ctx.values[CM_YES], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_PERSISTENT,
+			&cm_ctx.values[COOKIE_M_YES], strdup(temp));
 
 	temp = messages_get("No");
-	cookie_manager_field_builder(CM_PERSISTENT,
-			&cm_ctx.values[CM_NO], strdup(temp));
+	cookie_manager_field_builder(COOKIE_M_PERSISTENT,
+			&cm_ctx.values[COOKIE_M_NO], strdup(temp));
 
 	return NSERROR_OK;
 }
@@ -684,9 +684,9 @@ static void cookie_manager_delete_entry(struct cookie_manager_entry *e)
 
 	if (e->user_delete) {
 		/* Delete the cookie from URLdb */
-		domain = e->data[CM_DOMAIN].value;
-		path = e->data[CM_PATH].value;
-		name = e->data[CM_NAME].value;
+		domain = e->data[COOKIE_M_DOMAIN].value;
+		path = e->data[COOKIE_M_PATH].value;
+		name = e->data[COOKIE_M_NAME].value;
 
 		if ((domain != NULL) && (path != NULL) && (name != NULL)) {
 			
@@ -772,7 +772,7 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 
 	/* Create the cookie manager treeview */
 	err = treeview_create(&cm_ctx.tree, &cm_tree_cb_t,
-			N_FIELDS, cm_ctx.fields,
+			COOKIE_M_N_FIELDS, cm_ctx.fields,
 			cw_t, core_window_handle,
 			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS);
 	if (err != NSERROR_OK) {
@@ -808,12 +808,12 @@ nserror cookie_manager_fini(void)
 	err = treeview_destroy(cm_ctx.tree);
 
 	/* Free cookie manager treeview entry fields */
-	for (i = 0; i < N_FIELDS; i++)
+	for (i = 0; i < COOKIE_M_N_FIELDS; i++)
 		if (cm_ctx.fields[i].field != NULL)
 			lwc_string_unref(cm_ctx.fields[i].field);
 
 	/* Free cookie manager treeview common entry values */
-	for (i = 0; i < N_VALUES; i++)
+	for (i = 0; i < COOKIE_M_N_VALUES; i++)
 		if (cm_ctx.values[i].value != NULL)
 			free((void *) cm_ctx.values[i].value);
 
