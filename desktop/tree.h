@@ -45,6 +45,11 @@ enum tree_flags {
 				      * directory will be deleted
 				      * too.
 				      */
+	/* The following are to aid transition to new treeviews */
+	TREE_HISTORY =  64,
+	TREE_COOKIES = 128,
+	TREE_SSLCERT = 256,
+	TREE_HOTLIST = 512
 };
 
 /** A "flag" value to indicate the element data contains title

@@ -101,6 +101,7 @@
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
@@ -2540,7 +2541,13 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_schedule_update((struct cookie_data *)c);
+
+				if (nsoption_bool(temp_treeview_test) == false)
+					cookies_schedule_update(
+						(struct cookie_data *)c);
+				else
+					cookie_manager_add(
+						(struct cookie_data *)c);
 			}
 		}
 	}
@@ -2575,7 +2582,13 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_schedule_update((struct cookie_data *)c);
+
+				if (nsoption_bool(temp_treeview_test) == false)
+					cookies_schedule_update(
+						(struct cookie_data *)c);
+				else
+					cookie_manager_add(
+						(struct cookie_data *)c);
 			}
 		}
 
@@ -2618,7 +2631,12 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 				version = c->version;
 
 			c->last_used = now;
-			cookies_schedule_update((struct cookie_data *)c);
+
+			if (nsoption_bool(temp_treeview_test) == false)
+				cookies_schedule_update(
+					(struct cookie_data *)c);
+			else
+				cookie_manager_add((struct cookie_data *)c);
 		}
 
 	}
@@ -2651,7 +2669,12 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 				version = c->version;
 
 			c->last_used = now;
-			cookies_schedule_update((struct cookie_data *)c);
+
+			if (nsoption_bool(temp_treeview_test) == false)
+				cookies_schedule_update(
+					(struct cookie_data *)c);
+			else
+				cookie_manager_add((struct cookie_data *)c);
 		}
 	}
 
@@ -3405,8 +3428,12 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, lwc_string *scheme,
 				d->prev->next = d->next;
 			else
 				p->cookies = d->next;
-			
-			cookies_remove((struct cookie_data *)d);
+
+			if (nsoption_bool(temp_treeview_test) == false)
+				cookies_remove((struct cookie_data *)d);
+			else
+				cookie_manager_remove((struct cookie_data *)d);
+
 			urldb_free_cookie(d);
 			urldb_free_cookie(c);
 		} else {
@@ -3421,11 +3448,18 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, lwc_string *scheme,
 				c->prev->next = c;
 			else
 				p->cookies = c;
-			
-			cookies_remove((struct cookie_data *)d);
+
+			if (nsoption_bool(temp_treeview_test) == false)
+				cookies_remove((struct cookie_data *)d);
+			else
+				cookie_manager_remove((struct cookie_data *)d);
 			urldb_free_cookie(d);
-			
-			cookies_schedule_update((struct cookie_data *)c);
+
+			if (nsoption_bool(temp_treeview_test) == false)
+				cookies_schedule_update(
+						(struct cookie_data *)c);
+			else
+				cookie_manager_add((struct cookie_data *)c);
 		}
 	} else {
 		c->prev = p->cookies_end;
@@ -3436,7 +3470,10 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, lwc_string *scheme,
 			p->cookies = c;
 		p->cookies_end = c;
 
-		cookies_schedule_update((struct cookie_data *)c);
+		if (nsoption_bool(temp_treeview_test) == false)
+			cookies_schedule_update((struct cookie_data *)c);
+		else
+			cookie_manager_add((struct cookie_data *)c);
 	}
 
 	return true;

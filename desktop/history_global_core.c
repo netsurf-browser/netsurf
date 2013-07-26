@@ -297,7 +297,7 @@ bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
  */
 unsigned int history_global_get_tree_flags(void)
 {
-	return TREE_NO_FLAGS;
+	return TREE_NO_FLAGS | TREE_HISTORY;
 }
 
 

@@ -392,7 +392,7 @@ bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const c
  */
 unsigned int cookies_get_tree_flags(void)
 {
-	return TREE_DELETE_EMPTY_DIRS;
+	return TREE_DELETE_EMPTY_DIRS | TREE_COOKIES;
 }
 
 

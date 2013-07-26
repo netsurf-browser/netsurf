@@ -177,7 +177,10 @@ struct tree {
 
 
 #include "desktop/treeview.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
+
+int treeview_inits;
 
 static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
 {
@@ -238,10 +241,22 @@ static bool treeview_test_init(struct tree *tree)
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
-	treeview_init();
-	err = global_history_init(&cw_t, (struct core_window *)tree);
-	if (err != NSERROR_OK) {
-		warn_user("Duffed it.", 0);
+	treeview_inits++;
+
+	if (treeview_inits == 1)
+		treeview_init();
+
+	if (tree->flags & TREE_COOKIES) {
+		err = cookie_manager_init(&cw_t, (struct core_window *)tree);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't init new cookie manager.", 0);
+		}
+	}
+	if (tree->flags & TREE_HISTORY) {
+		err = global_history_init(&cw_t, (struct core_window *)tree);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't init new global history.", 0);
+		}
 	}
 
 	return true;
@@ -254,11 +269,22 @@ static bool treeview_test_fini(struct tree *tree)
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
-	err = global_history_fini();
-	treeview_fini();
-	if (err != NSERROR_OK) {
-		warn_user("Duffed it.", 0);
+	if (tree->flags & TREE_COOKIES) {
+		err = cookie_manager_fini();
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't finalise cookie manager.", 0);
+		}
 	}
+	if (tree->flags & TREE_HISTORY) {
+		err = global_history_fini();
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't finalise cookie manager.", 0);
+		}
+	}
+
+	if (treeview_inits == 1)
+		treeview_fini();
+	treeview_inits--;
 
 	return true;
 }
@@ -277,9 +303,16 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 	clip.x1 = clip_x + clip_width;
 	clip.y1 = clip_y + clip_height;
 
-	global_history_redraw(x, y, &clip, ctx);
+	if (tree->flags & TREE_COOKIES) {
+		cookie_manager_redraw(x, y, &clip, ctx);
+		return true;
+	}
+	if (tree->flags & TREE_HISTORY) {
+		global_history_redraw(x, y, &clip, ctx);
+		return true;
+	}
 
-	return true;
+	return false;
 }
 
 static bool treeview_test_mouse_action(struct tree *tree,
@@ -288,9 +321,16 @@ static bool treeview_test_mouse_action(struct tree *tree,
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
-	global_history_mouse_action(mouse, x, y);
+	if (tree->flags & TREE_COOKIES) {
+		cookie_manager_mouse_action(mouse, x, y);
+		return true;
+	}
+	if (tree->flags & TREE_HISTORY) {
+		global_history_mouse_action(mouse, x, y);
+		return true;
+	}
 
-	return true;
+	return false;
 }
 
 static bool treeview_test_keypress(struct tree *tree, uint32_t key)
@@ -298,9 +338,16 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
-	global_history_keypress(key);
+	if (tree->flags & TREE_COOKIES) {
+		cookie_manager_keypress(key);
+		return true;
+	}
+	if (tree->flags & TREE_HISTORY) {
+		global_history_keypress(key);
+		return true;
+	}
 
-	return true;
+	return false;
 }
 
 
@@ -420,9 +467,7 @@ struct tree *tree_create(unsigned int flags,
 
 	tree_setup_colours();
 
-	if (flags == TREE_MOVABLE) {
-		treeview_test_init(tree);
-	}
+	treeview_test_init(tree);
 
 	return tree;
 }
@@ -1267,9 +1312,7 @@ void tree_delete(struct tree *tree)
 {
 	tree->redraw = false;
 
-	if (tree->flags == TREE_MOVABLE) {
-		treeview_test_fini(tree);
-	}
+	treeview_test_fini(tree);
 
 	if (tree->root->child != NULL)
 		tree_delete_node_internal(tree, tree->root->child, true);
@@ -2196,11 +2239,9 @@ void tree_draw(struct tree *tree, int x, int y,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	if (tree->flags == TREE_MOVABLE) {
-		if (treeview_test_redraw(tree, x, y, clip_x, clip_y,
-				clip_width, clip_height, ctx)) {
-			return;
-		}
+	if (treeview_test_redraw(tree, x, y, clip_x, clip_y,
+			clip_width, clip_height, ctx)) {
+		return;
 	}
 
 	/* Start knockout rendering if it's available for this plotter */
@@ -2567,10 +2608,8 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	if (tree->flags == TREE_MOVABLE) {
-		if (treeview_test_mouse_action(tree, mouse, x, y)) {
-			return true;
-		}
+	if (treeview_test_mouse_action(tree, mouse, x, y)) {
+		return true;
 	}
 
 	if (tree->root->child == NULL)
@@ -3026,10 +3065,8 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
  */
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
-	if (tree->flags == TREE_MOVABLE) {
-		if (treeview_test_keypress(tree, key)) {
-			return true;
-		}
+	if (treeview_test_keypress(tree, key)) {
+		return true;
 	}
 
 	if (tree->editing != NULL)

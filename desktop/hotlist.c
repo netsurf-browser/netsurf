@@ -189,7 +189,7 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
  */
 unsigned int hotlist_get_tree_flags(void)
 {
-	return TREE_MOVABLE;
+	return TREE_MOVABLE | TREE_HOTLIST;
 }
 
 

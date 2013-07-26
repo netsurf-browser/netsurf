@@ -73,7 +73,7 @@ void sslcert_init(const char* icon_name)
  */
 unsigned int sslcert_get_tree_flags(void)
 {
-	return TREE_NO_DRAGS  | TREE_NO_SELECT;
+	return TREE_NO_DRAGS | TREE_NO_SELECT | TREE_SSLCERT;
 }
 
 
