@@ -45,6 +45,19 @@ enum cookie_manager_field {
 	N_FIELDS
 };
 
+enum cookie_manager_value {
+	CM_HTTPS,
+	CM_SECURE,
+	CM_HTTP,
+	CM_NONE,
+	CM_NETSCAPE,
+	CM_RFC2109,
+	CM_RFC2965,
+	CM_YES,
+	CM_NO,
+	N_VALUES
+};
+
 struct cookie_manager_folder {
 	treeview_node *folder;
 	struct treeview_field_data data;
@@ -53,6 +66,7 @@ struct cookie_manager_folder {
 struct cookie_manager_ctx {
 	treeview *tree;
 	struct treeview_field_desc fields[N_FIELDS];
+	struct treeview_field_data values[N_VALUES];
 	bool built;
 };
 struct cookie_manager_ctx cm_ctx;
@@ -179,9 +193,6 @@ static void cookie_manager_free_treeview_field_data(
 	free((void *)e->data[CM_PATH].value);
 	free((void *)e->data[CM_EXPIRES].value);
 	free((void *)e->data[CM_LAST_USED].value);
-	free((void *)e->data[CM_RESTRICTIONS].value);
-	free((void *)e->data[CM_VERSION].value);
-	free((void *)e->data[CM_PERSISTENT].value);
 }
 
 
@@ -189,17 +200,15 @@ static void cookie_manager_free_treeview_field_data(
  * Build a cookie manager treeview field from given text
  *
  * \param field		Cookie manager treeview field to build
- * \param e		Cookie manager entry to set the field in
+ * \param data		Cookie manager entry field data to set
  * \param value		Text to set in field
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static inline nserror cookie_manager_field_builder(
 		enum cookie_manager_field field,
-		struct cookie_manager_entry *e,
+		struct treeview_field_data *data,
 		const char *value)
 {
-	struct treeview_field_data *data = &e->data[field];
-
 	data->field = cm_ctx.fields[field].field;
 	data->value = strdup(value);
 	data->value_len = (value != NULL) ? strlen(value) : 0;
@@ -219,19 +228,21 @@ static nserror cookie_manager_set_treeview_field_data(
 		struct cookie_manager_entry *e,
 		const struct cookie_data *data)
 {
-	const char *temp;
 	const char *date;
 	char *date2;
-	char buffer[32];
 
 	assert(e != NULL);
 	assert(data != NULL);
 
 	/* Set the fields up */
-	cookie_manager_field_builder(CM_NAME, e, data->name);
-	cookie_manager_field_builder(CM_CONTENT, e, data->value);
-	cookie_manager_field_builder(CM_DOMAIN, e, data->domain);
-	cookie_manager_field_builder(CM_PATH, e, data->path);
+	cookie_manager_field_builder(CM_NAME,
+			&e->data[CM_NAME], data->name);
+	cookie_manager_field_builder(CM_CONTENT,
+			&e->data[CM_CONTENT], data->value);
+	cookie_manager_field_builder(CM_DOMAIN,
+			&e->data[CM_DOMAIN], data->domain);
+	cookie_manager_field_builder(CM_PATH,
+			&e->data[CM_PATH], data->path);
 
 	/* Set the Expires date field */
 	date = ctime(&data->expires);
@@ -240,7 +251,8 @@ static nserror cookie_manager_set_treeview_field_data(
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
-	cookie_manager_field_builder(CM_EXPIRES, e, date2);
+	cookie_manager_field_builder(CM_EXPIRES,
+			&e->data[CM_EXPIRES], date2);
 
 	/* Set the Last used date field */
 	date = ctime(&data->last_used);
@@ -249,29 +261,37 @@ static nserror cookie_manager_set_treeview_field_data(
 		assert(date2[24] == '\n');
 		date2[24] = '\0';
 	}
-	cookie_manager_field_builder(CM_LAST_USED, e, date2);
+	cookie_manager_field_builder(CM_LAST_USED,
+			&e->data[CM_LAST_USED], date2);
 
 	/* Set the Restrictions text */
-	/* TODO: use messages */
 	if (data->secure && data->http_only)
-		temp = "Secure hosts via https only";
+		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_HTTPS];
 	else if (data->secure)
-		temp = "Secure hosts only";
+		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_SECURE];
 	else if (data->http_only)
-		temp = "HTTP connections only";
+		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_HTTP];
 	else
-		temp = "None";
-
-	cookie_manager_field_builder(CM_RESTRICTIONS, e, temp);
+		e->data[CM_RESTRICTIONS] = cm_ctx.values[CM_NONE];
 
 	/* Set the Version text */
-	snprintf(buffer, sizeof(buffer), "TreeVersion%i", data->version);
-	temp = messages_get(buffer);
-	cookie_manager_field_builder(CM_VERSION, e, temp);
+	switch (data->version) {
+	case COOKIE_NETSCAPE:
+		e->data[CM_VERSION] = cm_ctx.values[CM_NETSCAPE];
+		break;
+	case COOKIE_RFC2109:
+		e->data[CM_VERSION] = cm_ctx.values[CM_RFC2109];
+		break;
+	case COOKIE_RFC2965:
+		e->data[CM_VERSION] = cm_ctx.values[CM_RFC2965];
+		break;
+	}
 
 	/* Set the Persistent text */
-	temp = data->no_destroy ? messages_get("Yes") : messages_get("No");
-	cookie_manager_field_builder(CM_PERSISTENT, e, temp);
+	if (data->no_destroy)
+		e->data[CM_PERSISTENT] = cm_ctx.values[CM_YES];
+	else
+		e->data[CM_PERSISTENT] = cm_ctx.values[CM_NO];
 
 	return NSERROR_OK;
 }
@@ -594,6 +614,65 @@ error:
 	return NSERROR_UNKNOWN;
 }
 
+
+
+/**
+ * Initialise the common entry values
+ *
+ * \return true on success, false on memory exhaustion
+ */
+static nserror cookie_manager_init_common_values(void)
+{
+	char buffer[24];
+	const char *temp;
+
+	/* Set the Restrictions text */
+	/* TODO: use messages */
+	temp = "Secure hosts via https only";
+	cookie_manager_field_builder(CM_RESTRICTIONS,
+			&cm_ctx.values[CM_HTTPS], temp);
+
+	temp = "Secure hosts only";
+	cookie_manager_field_builder(CM_RESTRICTIONS,
+			&cm_ctx.values[CM_SECURE], temp);
+
+	temp = "HTTP connections only";
+	cookie_manager_field_builder(CM_RESTRICTIONS,
+			&cm_ctx.values[CM_HTTP], temp);
+
+	temp = "None";
+	cookie_manager_field_builder(CM_RESTRICTIONS,
+			&cm_ctx.values[CM_NONE], temp);
+
+	/* Set the Cookie version text */
+	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_NETSCAPE);
+	temp = messages_get(buffer);
+	cookie_manager_field_builder(CM_VERSION,
+			&cm_ctx.values[CM_NETSCAPE], temp);
+
+	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_RFC2109);
+	temp = messages_get(buffer);
+	cookie_manager_field_builder(CM_VERSION,
+			&cm_ctx.values[CM_RFC2109], temp);
+
+	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_RFC2965);
+	temp = messages_get(buffer);
+	cookie_manager_field_builder(CM_VERSION,
+			&cm_ctx.values[CM_RFC2965], temp);
+
+	/* Set the Persistent value text */
+	temp = messages_get("Yes");
+	cookie_manager_field_builder(CM_PERSISTENT,
+			&cm_ctx.values[CM_YES], temp);
+
+	temp = messages_get("No");
+	cookie_manager_field_builder(CM_PERSISTENT,
+			&cm_ctx.values[CM_NO], temp);
+
+	return NSERROR_OK;
+}
+
+
 /**
  * Delete cookie manager entries (and optionally delete from urldb)
  *
@@ -686,6 +765,13 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 		return err;
 	}
 
+	/* Init. common treeview field values */
+	err = cookie_manager_init_common_values();
+	if (err != NSERROR_OK) {
+		cm_ctx.tree = NULL;
+		return err;
+	}
+
 	/* Create the cookie manager treeview */
 	err = treeview_create(&cm_ctx.tree, &cm_tree_cb_t,
 			N_FIELDS, cm_ctx.fields,
@@ -727,6 +813,11 @@ nserror cookie_manager_fini(void)
 	for (i = 0; i < N_FIELDS; i++)
 		if (cm_ctx.fields[i].field != NULL)
 			lwc_string_unref(cm_ctx.fields[i].field);
+
+	/* Free cookie manager treeview common entry values */
+	for (i = 0; i < N_VALUES; i++)
+		if (cm_ctx.values[i].value != NULL)
+			free((void *) cm_ctx.values[i].value);
 
 	LOG(("Finalised cookie manager"));
 
