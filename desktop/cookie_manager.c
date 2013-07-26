@@ -626,20 +626,19 @@ static nserror cookie_manager_init_common_values(void)
 	const char *temp;
 
 	/* Set the Restrictions text */
-	/* TODO: use messages */
-	temp = "Secure hosts via https only";
+	temp = messages_get("CookieManagerHTTPS");
 	cookie_manager_field_builder(CM_RESTRICTIONS,
 			&cm_ctx.values[CM_HTTPS], strdup(temp));
 
-	temp = "Secure hosts only";
+	temp = messages_get("CookieManagerSecure");
 	cookie_manager_field_builder(CM_RESTRICTIONS,
 			&cm_ctx.values[CM_SECURE], strdup(temp));
 
-	temp = "HTTP connections only";
+	temp = messages_get("CookieManagerHTTP");
 	cookie_manager_field_builder(CM_RESTRICTIONS,
 			&cm_ctx.values[CM_HTTP], strdup(temp));
 
-	temp = "None";
+	temp = messages_get("None");
 	cookie_manager_field_builder(CM_RESTRICTIONS,
 			&cm_ctx.values[CM_NONE], strdup(temp));
 

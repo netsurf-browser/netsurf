@@ -1214,6 +1214,25 @@ it.all.TreeviewLabelDomainFolder:Domain folder
 nl.all.TreeviewLabelDomainFolder:Domain folder
 
 
+# Cookie Manager field values
+#
+en.all.CookieManagerHTTPS:Secure hosts via https only
+de.all.CookieManagerHTTPS:Secure hosts via https only
+fr.all.CookieManagerHTTPS:Secure hosts via https only
+it.all.CookieManagerHTTPS:Secure hosts via https only
+nl.all.CookieManagerHTTPS:Secure hosts via https only
+en.all.CookieManagerSecure:Secure hosts only
+de.all.CookieManagerSecure:Secure hosts only
+fr.all.CookieManagerSecure:Secure hosts only
+it.all.CookieManagerSecure:Secure hosts only
+nl.all.CookieManagerSecure:Secure hosts only
+en.all.CookieManagerHTTP:HTTP connections only
+de.all.CookieManagerHTTP:HTTP connections only
+fr.all.CookieManagerHTTP:HTTP connections only
+it.all.CookieManagerHTTP:HTTP connections only
+nl.all.CookieManagerHTTP:HTTP connections only
+
+
 
 # Tree export
 #
