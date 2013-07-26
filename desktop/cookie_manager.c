@@ -623,7 +623,6 @@ error:
  */
 static nserror cookie_manager_init_common_values(void)
 {
-	char buffer[24];
 	const char *temp;
 
 	/* Set the Restrictions text */
@@ -645,18 +644,18 @@ static nserror cookie_manager_init_common_values(void)
 			&cm_ctx.values[CM_NONE], temp);
 
 	/* Set the Cookie version text */
-	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_NETSCAPE);
-	temp = messages_get(buffer);
+	assert(COOKIE_NETSCAPE == 0);
+	temp = messages_get("TreeVersion0");
 	cookie_manager_field_builder(CM_VERSION,
 			&cm_ctx.values[CM_NETSCAPE], temp);
 
-	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_RFC2109);
-	temp = messages_get(buffer);
+	assert(COOKIE_RFC2109 == 1);
+	temp = messages_get("TreeVersion1");
 	cookie_manager_field_builder(CM_VERSION,
 			&cm_ctx.values[CM_RFC2109], temp);
 
-	snprintf(buffer, sizeof(buffer), "TreeVersion%i", COOKIE_RFC2965);
-	temp = messages_get(buffer);
+	assert(COOKIE_RFC2965 == 2);
+	temp = messages_get("TreeVersion2");
 	cookie_manager_field_builder(CM_VERSION,
 			&cm_ctx.values[CM_RFC2965], temp);
 
