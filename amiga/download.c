@@ -39,7 +39,6 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/file.h"
 #include "amiga/misc.h"
-#include "amiga/schedule.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
