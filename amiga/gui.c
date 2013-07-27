@@ -2688,7 +2688,8 @@ void ami_quit_netsurf(void)
 				break;
 
 				case AMINS_WINDOW:
-					ami_close_all_tabs(gwin);				
+					ami_gui_appicon_remove(gwin);
+					ami_close_all_tabs(gwin);
 				break;
 			}
 
