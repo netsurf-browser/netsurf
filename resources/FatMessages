@@ -63,11 +63,11 @@ de.all.Info:Info
 fr.all.Info:Info
 it.all.Info:Info
 nl.all.Info:Informatie
-en.all.AppHelp:Help...  F1
-de.all.AppHelp:Hilfe...  F1
-fr.all.AppHelp:Aide...  F1
-it.all.AppHelp:Aiuto...  F1
-nl.all.AppHelp:Hulp...  F1
+en.ro.AppHelp:Help...  F1
+de.ro.AppHelp:Hilfe...  F1
+fr.ro.AppHelp:Aide...  F1
+it.ro.AppHelp:Aiuto...  F1
+nl.ro.AppHelp:Hulp...  F1
 en.all.Open:Open
 de.all.Open:Öffnen
 fr.all.Open:Ouvrir
@@ -88,7 +88,7 @@ nl.all.Quit:Stop
 #
 en.all.OpenURL:Open URL
 de.all.OpenURL:Öffne URL
-fr.all.OpenURL:Ouvrir l'URL...
+fr.all.OpenURL:Ouvrir l'URL
 it.all.OpenURL:Apri URL
 nl.all.OpenURL:Open URL
 
@@ -127,21 +127,21 @@ nl.ro.Help:Hulp
 
 # Main -> Page menu
 #
-en.all.PageInfo:Info  ^F1
-de.all.PageInfo:Info  ^F1
-fr.all.PageInfo:Info  ^F1
-it.all.PageInfo:Info  ^F1
-nl.all.PageInfo:Informatie  ^F1
-en.all.Save:Save  F3
-de.all.Save:Speichern  F3
-fr.all.Save:Sauver  F3
-it.all.Save:Salva  F3
-nl.all.Save:Bewaar  F3
-en.all.SaveComp:Full save  ⇑F3
-de.all.SaveComp:Alles speichern  ⇑F3
-fr.all.SaveComp:Sauvegarde Complète  ⇑F3
-it.all.SaveComp:Salva Tutto  ⇑F3
-nl.all.SaveComp:Bewaar alles  ⇑F3
+en.ro.PageInfo:Info  ^F1
+de.ro.PageInfo:Info  ^F1
+fr.ro.PageInfo:Info  ^F1
+it.ro.PageInfo:Info  ^F1
+nl.ro.PageInfo:Informatie  ^F1
+en.ro.Save:Save  F3
+de.ro.Save:Speichern  F3
+fr.ro.Save:Sauver  F3
+it.ro.Save:Salva  F3
+nl.ro.Save:Bewaar  F3
+en.ro.SaveComp:Full save  ⇑F3
+de.ro.SaveComp:Alles speichern  ⇑F3
+fr.ro.SaveComp:Sauvegarde Complète  ⇑F3
+it.ro.SaveComp:Salva Tutto  ⇑F3
+nl.ro.SaveComp:Bewaar alles  ⇑F3
 en.all.Export:Export
 de.all.Export:Exportieren
 fr.all.Export:Exporter
@@ -152,39 +152,39 @@ de.all.SaveURL:URL speichern
 fr.all.SaveURL:Sauver le lieu
 it.all.SaveURL:Salva indirizzo
 nl.all.SaveURL:Bewaar adres
-en.all.Print:Print  PRINT
-de.all.Print:Drucken  DRUCK
-fr.all.Print:Imprimer  PRINT
-it.all.Print:Stampa  STAMPA
-nl.all.Print:Afdrukken  PRINT
-en.all.NewWindow:New window  ^N
-de.all.NewWindow:Neues Fenster  ^N
-fr.all.NewWindow:Nouvelle fenêtre  ^N
-it.all.NewWindow:Nuova finestra  ^N
-nl.all.NewWindow:Nieuw venster  ^N
-en.all.ViewSrc:View source...  F8
-de.all.ViewSrc:Quellcode...  F8
-fr.all.ViewSrc:Voir le source...  F8
-it.all.ViewSrc:Mostra sorgente...  F8
-nl.all.ViewSrc:Bekijk HTML...  F8
+en.ro.Print:Print  PRINT
+de.ro.Print:Drucken  DRUCK
+fr.ro.Print:Imprimer  PRINT
+it.ro.Print:Stampa  STAMPA
+nl.ro.Print:Afdrukken  PRINT
+en.ro.NewWindow:New window  ^N
+de.ro.NewWindow:Neues Fenster  ^N
+fr.ro.NewWindow:Nouvelle fenêtre  ^N
+it.ro.NewWindow:Nuova finestra  ^N
+nl.ro.NewWindow:Nieuw venster  ^N
+en.ro.ViewSrc:View source...  F8
+de.ro.ViewSrc:Quellcode...  F8
+fr.ro.ViewSrc:Voir le source...  F8
+it.ro.ViewSrc:Mostra sorgente...  F8
+nl.ro.ViewSrc:Bekijk HTML...  F8
 
 # Main -> Page -> Export menu
 #
-en.all.Draw:Draw  ⇑^F3
-de.all.Draw:Draw  ⇑^F3
-fr.all.Draw:Draw  ⇑^F3
-it.all.Draw:Draw  ⇑^F3
-nl.all.Draw:Draw  ⇑^F3
+en.ro.Draw:Draw  ⇑^F3
+de.ro.Draw:Draw  ⇑^F3
+fr.ro.Draw:Draw  ⇑^F3
+it.ro.Draw:Draw  ⇑^F3
+nl.ro.Draw:Draw  ⇑^F3
 en.all.PDF:PDF
 de.all.PDF:PDF
 fr.all.PDF:PDF
 it.all.PDF:PDF
 nl.all.PDF:PDF
-en.all.Text:Text  ^F3
-de.all.Text:Text  ^F3
-fr.all.Text:Texte  ^F3
-it.all.Text:Testo  ^F3
-nl.all.Text:Tekst  ^F3
+en.ro.Text:Text  ^F3
+de.ro.Text:Text  ^F3
+fr.ro.Text:Texte  ^F3
+it.ro.Text:Testo  ^F3
+nl.ro.Text:Tekst  ^F3
 
 # Main -> Page -> Save location menu
 #
@@ -286,11 +286,11 @@ de.all.UpLevel:Eine Ebene hoch
 fr.all.UpLevel:Remonter d'un niveau
 it.all.UpLevel:Livello superiore
 nl.all.UpLevel:Een niveau omhoog
-en.all.Reload:Reload this page  ^F5
-de.all.Reload:Seite erneut laden  ^F5
-fr.all.Reload:Recharger cette page  ^F5
-it.all.Reload:Ricarica
-nl.all.Reload:Pagina opnieuw laden  ^F5
+en.ro.Reload:Reload this page  ^F5
+de.ro.Reload:Seite erneut laden  ^F5
+fr.ro.Reload:Recharger cette page  ^F5
+it.ro.Reload:Ricarica  ^F5
+nl.ro.Reload:Pagina opnieuw laden  ^F5
 en.all.Stop:Stop loading this page
 de.all.Stop:Ladevorgang abbrechen
 fr.all.Stop:Arrêter le chargement de la page
@@ -299,11 +299,11 @@ nl.all.Stop:Pagina ophalen afbreken
 
 # Main -> Display menu
 #
-en.all.ScaleView:Scale view  F11
-de.all.ScaleView:Vergrößerung  F11
-fr.all.ScaleView:Ajuster la vue  F11
-it.all.ScaleView:Visualizzazione graduale  F11
-nl.all.ScaleView:Pagina schalen  F11
+en.ro.ScaleView:Scale view  F11
+de.ro.ScaleView:Vergrößerung  F11
+fr.ro.ScaleView:Ajuster la vue  F11
+it.ro.ScaleView:Visualizzazione graduale  F11
+nl.ro.ScaleView:Pagina schalen  F11
 en.all.Images:Images
 de.all.Images:Bilder
 fr.all.Images:Images
@@ -391,11 +391,11 @@ de.all.Cookies:Cookies
 fr.all.Cookies:Cookies
 it.all.Cookies:Cookie
 nl.all.Cookies:Cookies
-en.all.FindText:Find text  F4
-de.all.FindText:Text suchen  F4
-fr.all.FindText:Recherche de texte  F4
-it.all.FindText:Trova testo  F4
-nl.all.FindText:Tekst zoeken  F4
+en.ro.FindText:Find text  F4
+de.ro.FindText:Text suchen  F4
+fr.ro.FindText:Recherche de texte  F4
+it.ro.FindText:Trova testo  F4
+nl.ro.FindText:Tekst zoeken  F4
 en.all.Window:Window
 de.all.Window:Fenster
 fr.all.Window:Fenêtre
@@ -409,24 +409,24 @@ de.all.HotlistAdd:Eintrag hinzufügen
 fr.all.HotlistAdd:Ajouter aux favoris
 it.all.HotlistAdd:Aggiungi
 nl.all.HotlistAdd:Toevoegen aan bladwijzers
-en.all.HotlistShow:Show hotlist...  F6
-de.all.HotlistShow:Hotlist zeigen...  F6
-fr.all.HotlistShow:Montrer les favoris...  F6
-it.all.HotlistShow:Mostra...  F6
-nl.all.HotlistShow:Toon bladwijzers  F6
+en.ro.HotlistShow:Show hotlist...  F6
+de.ro.HotlistShow:Hotlist zeigen...  F6
+fr.ro.HotlistShow:Montrer les favoris...  F6
+it.ro.HotlistShow:Mostra...  F6
+nl.ro.HotlistShow:Toon bladwijzers  F6
 
 # Main -> Utilities -> History menu
 #
-en.all.HistLocal:Show local history... F7
-de.all.HistLocal:History (lokal) zeigen... F7
-fr.all.HistLocal:Montrer l'historique local... F7
-it.all.HistLocal:Mostra cronologia locale... F7
-nl.all.HistLocal:Toon historie (lokaal)... F7
-en.all.HistGlobal:Show global history... ^F7
-de.all.HistGlobal:History (global) zeigen... ^F7
-fr.all.HistGlobal:Montrer l'historique global... ^F7
-it.all.HistGlobal:Mostra cronologia globale... ^F7
-nl.all.HistGlobal:Toon historie (globaal)... ^F7
+en.ro.HistLocal:Show local history... F7
+de.ro.HistLocal:History (lokal) zeigen... F7
+fr.ro.HistLocal:Montrer l'historique local... F7
+it.ro.HistLocal:Mostra cronologia locale... F7
+nl.ro.HistLocal:Toon historie (lokaal)... F7
+en.ro.HistGlobal:Show global history... ^F7
+de.ro.HistGlobal:History (global) zeigen... ^F7
+fr.ro.HistGlobal:Montrer l'historique global... ^F7
+it.ro.HistGlobal:Mostra cronologia globale... ^F7
+nl.ro.HistGlobal:Toon historie (globaal)... ^F7
 
 # Main -> Utilities -> Cookies menu
 en.all.ShowCookies:Show cookies...
@@ -516,31 +516,31 @@ de.all.Selection:Auswahl
 fr.all.Selection:Sélection
 it.all.Selection:Seleziona
 nl.all.Selection:Selectie
-en.all.SelectAll:Select all  ^A
-de.all.SelectAll:Alles auswählen  ^A
-fr.all.SelectAll:Tout sélectionner  ^A
-it.all.SelectAll:Seleziona Tutto  ^A
-nl.all.SelectAll:Selecteer alles  ^A
-en.all.Clear:Clear selection  ^Z
-de.all.Clear:Auswahl aufheben  ^Z
-fr.all.Clear:Effacer la sélection  ^Z
-it.all.Clear:Cancella selezione  ^Z
-nl.all.Clear:Selectie opheffen  ^Z
-en.all.Copy:Copy to clipboard  ^C
-de.all.Copy:Auswahl kopieren  ^C
-fr.all.Copy:Copier vers le presse-papier  ^C
-it.all.Copy:Copia nella clipboard  ^C
-nl.all.Copy:Copieer naar prikbord  ^C
-en.all.Cut:Cut to clipboard  ^X
-de.all.Cut:Ausschneiden  ^X
-fr.all.Cut:Cut to clipboard  ^X
-it.all.Cut:Taglia dalla clipboard  ^X
-nl.all.Cut:Cut to clipboard  ^X
-en.all.Paste:Paste from clipboard  ^V
-de.all.Paste:Einfügen  ^V
-fr.all.Paste:Paste from clipboard  ^V
-it.all.Paste:Incolla sulla clipboard  ^V
-nl.all.Paste:Paste from clipboard  ^V
+en.ro.SelectAll:Select all  ^A
+de.ro.SelectAll:Alles auswählen  ^A
+fr.ro.SelectAll:Tout sélectionner  ^A
+it.ro.SelectAll:Seleziona Tutto  ^A
+nl.ro.SelectAll:Selecteer alles  ^A
+en.ro.Clear:Clear selection  ^Z
+de.ro.Clear:Auswahl aufheben  ^Z
+fr.ro.Clear:Effacer la sélection  ^Z
+it.ro.Clear:Cancella selezione  ^Z
+nl.ro.Clear:Selectie opheffen  ^Z
+en.ro.Copy:Copy to clipboard  ^C
+de.ro.Copy:Auswahl kopieren  ^C
+fr.ro.Copy:Copier vers le presse-papier  ^C
+it.ro.Copy:Copia nella clipboard  ^C
+nl.ro.Copy:Copieer naar prikbord  ^C
+en.ro.Cut:Cut to clipboard  ^X
+de.ro.Cut:Ausschneiden  ^X
+fr.ro.Cut:Cut to clipboard  ^X
+it.ro.Cut:Taglia dalla clipboard  ^X
+nl.ro.Cut:Cut to clipboard  ^X
+en.ro.Paste:Paste from clipboard  ^V
+de.ro.Paste:Einfügen  ^V
+fr.ro.Paste:Paste from clipboard  ^V
+it.ro.Paste:Incolla sulla clipboard  ^V
+nl.ro.Paste:Paste from clipboard  ^V
 
 # Selection Menu
 #
@@ -549,16 +549,16 @@ de.all.Edit:Bearbeiten
 fr.all.Edit:Éditer
 it.all.Edit:Modifica
 nl.all.Edit:Bewerken
-en.all.Launch:Launch  RETURN
-de.all.Launch:Öffnen  RETURN
-fr.all.Launch:Lancer  RETURN
-it.all.Launch:Avvia  INVIO
-nl.all.Launch:Openen  RETURN
-en.all.Delete:Delete  ^X
-de.all.Delete:Löschen  ^X
-fr.all.Delete:Supprimer  ^X
-it.all.Delete:Cancella  ^X
-nl.all.Delete:Verwijderen  ^X
+en.ro.Launch:Launch  RETURN
+de.ro.Launch:Öffnen  RETURN
+fr.ro.Launch:Lancer  RETURN
+it.ro.Launch:Avvia  INVIO
+nl.ro.Launch:Openen  RETURN
+en.ro.Delete:Delete  ^X
+de.ro.Delete:Löschen  ^X
+fr.ro.Delete:Supprimer  ^X
+it.ro.Delete:Cancella  ^X
+nl.ro.Delete:Verwijderen  ^X
 en.all.ResetUsage:Reset statistics
 de.all.ResetUsage:Statistik zurücksetzen
 fr.all.ResetUsage:RAZ des statistiques
@@ -762,7 +762,7 @@ nl.all.TextNS:Text...
 en.all.SaveCompNS:Complete...
 de.all.SaveCompNS:Komplett...
 fr.all.SaveCompNS:Complete...
-it.all.SaveCompNS:HTML...
+it.all.SaveCompNS:Complete...
 nl.all.SaveCompNS:Complete...
 en.all.PDFNS:PDF...
 de.all.PDFNS:PDF...
