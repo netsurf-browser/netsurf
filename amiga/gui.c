@@ -2478,24 +2478,6 @@ void ami_handle_applib(void)
 					WindowToFront(curbw->window->shared->win);
 					ActivateWindow(curbw->window->shared->win);
 				}
-				else
-				{
-					error = nsurl_create(nsoption_charp(homepage_url), &url);
-					if (error == NSERROR_OK) {
-						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-									      BROWSER_WINDOW_HISTORY,
-									      url,
-									      NULL,
-									      NULL,
-									      &bw);
-						nsurl_unref(url);
-					}
-					if (error != NSERROR_OK) {
-						warn_user(messages_get_errorcode(error), 0);
-					}
-
-
-				}
 			break;
 
 			case APPLIBMT_OpenPrefs:
