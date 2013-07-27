@@ -44,6 +44,11 @@ de.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
 fr.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
 it.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
 nl.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+de.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+fr.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+it.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+nl.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 
 # Menus
 # =====

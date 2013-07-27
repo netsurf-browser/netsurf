@@ -958,7 +958,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 		else
@@ -971,7 +971,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 
