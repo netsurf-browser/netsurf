@@ -327,8 +327,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 						utf16next, emwidth);
 		}
 
-		tx += tempx;
-
 		/* Check whether we have a space */
 		if (*(string + utf8_pos) == ' ') {
 			/* Got a space */
@@ -343,6 +341,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 
+		tx += tempx;
+
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
@@ -352,7 +352,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 		utf16 = utf16next;
 		utf8_pos = utf8_next(string, length, utf8_pos);
-	};
+	}
 
 	free(outf16);
 

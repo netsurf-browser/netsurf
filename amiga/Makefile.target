@@ -120,7 +120,6 @@ netsurf.lha: $(EXETARGET)
 	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp -p $(EXETARGET) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
-#	$(call split_install_messages, ami, $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/)
 	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
 	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
