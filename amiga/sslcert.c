@@ -19,6 +19,7 @@
 #include <proto/exec.h>
 #include "amiga/tree.h"
 #include "amiga/sslcert.h"
+#include "desktop/sslcert_viewer.h"
 
 void gui_cert_verify(nsurl *url, 
 		const struct ssl_cert_info *certs, unsigned long num,
@@ -27,12 +28,12 @@ void gui_cert_verify(nsurl *url,
 	struct sslcert_session_data *data;
 	struct treeview_window *ssl_window;
 
-	data = sslcert_create_session_data(num, url, cb, cbpw);
+	sslcert_viewer_create_session_data(num, url, cb, cbpw,
+			certs, &data);
+	ssl_current_session = data;
 
 	ssl_window = ami_tree_create(sslcert_get_tree_flags(), data);
 	if(!ssl_window) return;
-
-	sslcert_load_tree(ami_tree_get_tree(ssl_window), certs, data);
 
 	ami_tree_open(ssl_window, AMI_TREE_SSLCERT);
 }

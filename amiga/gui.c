@@ -812,7 +812,6 @@ static void gui_init2(int argc, char** argv)
 	ami_hotlist_initialise(nsoption_charp(hotlist_file));
 	ami_cookies_initialise();
 	ami_global_history_initialise();
-	sslcert_init(tree_content_icon_name);
 
 	search_web_provider_details(nsoption_int(search_provider));
 
@@ -2772,7 +2771,6 @@ void gui_quit(void)
 	ami_hotlist_free(nsoption_charp(hotlist_file));
 	ami_cookies_free();
 	ami_global_history_free();
-	sslcert_cleanup();
 
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);

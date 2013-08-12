@@ -58,6 +58,7 @@
 #include "desktop/cookies_old.h"
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
+#include "desktop/sslcert_viewer.h"
 #include "desktop/tree_url_node.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -757,13 +758,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				switch(result & WMHI_GADGETMASK)
 				{
 					case GID_OPEN:
-						sslcert_accept(twin->ssl_data);
+						sslcert_viewer_accept(twin->ssl_data);
 						ami_tree_close(twin);
 						return TRUE;
 					break;
 
 					case GID_CANCEL:
-						sslcert_reject(twin->ssl_data);
+						sslcert_viewer_reject(twin->ssl_data);
 						ami_tree_close(twin);
 						return TRUE;
 					break;
@@ -1215,7 +1216,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 			case WMHI_CLOSEWINDOW:
 				if(twin->type == AMI_TREE_SSLCERT)
-					sslcert_reject(twin->ssl_data);
+					sslcert_viewer_reject(twin->ssl_data);
 				ami_tree_close(twin);
 				return TRUE;
 			break;
