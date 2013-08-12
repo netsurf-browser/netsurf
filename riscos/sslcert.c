@@ -34,6 +34,7 @@
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/sslcert.h"
+#include "desktop/sslcert_viewer.h"
 #include "desktop/gui.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
@@ -94,8 +95,6 @@ void ro_gui_cert_preinitialise(void)
 void ro_gui_cert_postinitialise(void)
 {
 	/* Initialise the SSL module. */
-
-	sslcert_init(tree_content_icon_name);
 }
 
 /**
@@ -148,6 +147,9 @@ void gui_cert_verify(nsurl *url,
 	}
 
 	/* Create the SSL data and build a tree from it. */
+	sslcert_viewer_create_session_data(num, url,
+			cb, cbpw, certs, &sslcert_window->data);
+	ssl_current_session = sslcert_window->data;
 
 	sslcert_window->tv = ro_treeview_create(sslcert_window->pane,
 			NULL, NULL, sslcert_get_tree_flags());
@@ -156,10 +158,6 @@ void gui_cert_verify(nsurl *url,
 		free(sslcert_window);
 		return;
 	}
-
-	sslcert_window->data = sslcert_create_session_data(num, url, cb, cbpw);
-	sslcert_load_tree(ro_treeview_get_tree(sslcert_window->tv),
-			certs, sslcert_window->data);
 
 	tree_set_redraw(ro_treeview_get_tree(sslcert_window->tv), true);
 
@@ -284,7 +282,7 @@ void ro_gui_cert_accept(wimp_pointer *pointer)
 	s = (struct ro_sslcert *) ro_gui_wimp_event_get_user_data(pointer->w);
 
 	if (s != NULL) {
-		sslcert_accept(s->data);
+		sslcert_viewer_accept(s->data);
 		ro_gui_dialog_close(s->window);
 		ro_gui_cert_release_window(s);
 	}
@@ -303,7 +301,7 @@ void ro_gui_cert_reject(wimp_pointer *pointer)
 	s = (struct ro_sslcert *) ro_gui_wimp_event_get_user_data(pointer->w);
 
 	if (s != NULL) {
-		sslcert_reject(s->data);
+		sslcert_viewer_reject(s->data);
 		ro_gui_dialog_close(s->window);
 		ro_gui_cert_release_window(s);
 	}

@@ -62,7 +62,6 @@
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
-#include "desktop/sslcert.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 #include "render/font.h"
@@ -944,7 +943,6 @@ void gui_quit(void)
 	history_global_cleanup();
 	cookies_cleanup();
 	hotlist_cleanup(nsoption_charp(hotlist_save));
-	sslcert_cleanup();
 	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);
