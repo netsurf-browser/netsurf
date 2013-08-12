@@ -20,24 +20,7 @@
 #ifndef _NETSURF_DESKTOP_SSLCERT_H_
 #define _NETSURF_DESKTOP_SSLCERT_H_
 
-#include <stdbool.h>
-
-#include "desktop/tree.h"
-
-struct sslcert_session_data;
-
-void sslcert_init(const char* icon_name);
 unsigned int sslcert_get_tree_flags(void);
-void sslcert_cleanup(void);
-
-struct sslcert_session_data *sslcert_create_session_data(unsigned long num,
-		nsurl *url, llcache_query_response cb, void *cbpw);
-bool sslcert_load_tree(struct tree *tree,
-		const struct ssl_cert_info *certs,
-		struct sslcert_session_data *data);
-		
-bool sslcert_reject(struct sslcert_session_data *session);
-bool sslcert_accept(struct sslcert_session_data *session);
 
 		
 #endif
