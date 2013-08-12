@@ -1213,6 +1213,32 @@ fr.all.TreeviewLabelDomainFolder:Domain folder
 it.all.TreeviewLabelDomainFolder:Domain folder
 nl.all.TreeviewLabelDomainFolder:Domain folder
 
+en.all.TreeviewLabelSerial:Serial
+de.all.TreeviewLabelSerial:Serial
+fr.all.TreeviewLabelSerial:Serial
+it.all.TreeviewLabelSerial:Serial
+nl.all.TreeviewLabelSerial:Serial
+en.all.TreeviewLabelType:Type
+de.all.TreeviewLabelType:Type
+fr.all.TreeviewLabelType:Type
+it.all.TreeviewLabelType:Type
+nl.all.TreeviewLabelType:Type
+en.all.TreeviewLabelValidUntil:Valid until
+de.all.TreeviewLabelValidUntil:Valid until
+fr.all.TreeviewLabelValidUntil:Valid until
+it.all.TreeviewLabelValidUntil:Valid until
+nl.all.TreeviewLabelValidUntil:Valid until
+en.all.TreeviewLabelValidFrom:Valid from
+de.all.TreeviewLabelValidFrom:Valid from
+fr.all.TreeviewLabelValidFrom:Valid from
+it.all.TreeviewLabelValidFrom:Valid from
+nl.all.TreeviewLabelValidFrom:Valid from
+en.all.TreeviewLabelIssuer:Issuer
+de.all.TreeviewLabelIssuer:Issuer
+fr.all.TreeviewLabelIssuer:Issuer
+it.all.TreeviewLabelIssuer:Issuer
+nl.all.TreeviewLabelIssuer:Issuer
+
 
 # Cookie Manager field values
 #
