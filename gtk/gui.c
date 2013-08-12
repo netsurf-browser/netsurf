@@ -54,6 +54,7 @@
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
 #include "desktop/sslcert.h"
+#include "desktop/sslcert_viewer.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "css/utils.h"
@@ -461,8 +462,6 @@ static void gui_init(int argc, char** argv, char **respath)
 	if (nsgtk_hotlist_init(glade_file_location->hotlist) == false)
 		die("Unable to initialise hotlist window.\n");
 
-	sslcert_init(tree_content_icon_name);
-
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {
 		addr = argv[1];
@@ -663,7 +662,6 @@ void gui_quit(void)
 	nsgtk_cookies_destroy();
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
-	sslcert_cleanup();
 	free(print_options_file_location);
 	free(search_engines_file_location);
 	free(search_default_ico_location);
@@ -787,8 +785,10 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		return;
 	}
 
-	data = sslcert_create_session_data(num, url, cb, cbpw);
-		
+	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
+			&data);
+	ssl_current_session = data;
+
 	window = GTK_WINDOW(gtk_builder_get_object(builder, "wndSSLProblem"));
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
@@ -798,8 +798,6 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	
 	if (ssl_window == NULL)
 		return;
-	
-	sslcert_load_tree(nsgtk_treeview_get_tree(ssl_window), certs, data);
 	
 	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
 	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));	
@@ -826,7 +824,7 @@ void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 	struct nsgtk_treeview *wnd = session[1];
 	struct sslcert_session_data *ssl_data = session[2];
 
-	sslcert_accept(ssl_data);
+	sslcert_viewer_accept(ssl_data);
   		
 	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
@@ -840,7 +838,7 @@ void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
 	struct nsgtk_treeview *wnd = session[1];
 	struct sslcert_session_data *ssl_data = session[2];
 
-	sslcert_reject(ssl_data);
+	sslcert_viewer_reject(ssl_data);
 	
 	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
