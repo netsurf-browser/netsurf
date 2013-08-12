@@ -179,6 +179,7 @@ struct tree {
 #include "desktop/treeview.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
+#include "desktop/sslcert_viewer.h"
 
 int treeview_inits;
 
@@ -258,6 +259,13 @@ static bool treeview_test_init(struct tree *tree)
 			warn_user("Couldn't init new global history.", 0);
 		}
 	}
+	if (tree->flags & TREE_SSLCERT) {
+		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
+				ssl_current_session);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't init new sslcert viewer.", 0);
+		}
+	}
 
 	return true;
 }
@@ -279,6 +287,12 @@ static bool treeview_test_fini(struct tree *tree)
 		err = global_history_fini();
 		if (err != NSERROR_OK) {
 			warn_user("Couldn't finalise cookie manager.", 0);
+		}
+	}
+	if (tree->flags & TREE_SSLCERT) {
+		err = sslcert_viewer_fini(ssl_current_session);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't finalise sslcert viewer.", 0);
 		}
 	}
 
@@ -311,6 +325,10 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 		global_history_redraw(x, y, &clip, ctx);
 		return true;
 	}
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
+		return true;
+	}
 
 	return false;
 }
@@ -329,6 +347,10 @@ static bool treeview_test_mouse_action(struct tree *tree,
 		global_history_mouse_action(mouse, x, y);
 		return true;
 	}
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_mouse_action(ssl_current_session, mouse, x, y);
+		return true;
+	}
 
 	return false;
 }
@@ -344,6 +366,10 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 	}
 	if (tree->flags & TREE_HISTORY) {
 		global_history_keypress(key);
+		return true;
+	}
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_keypress(ssl_current_session, key);
 		return true;
 	}
 

@@ -30,6 +30,10 @@
 #include "desktop/browser.h"
 #include "image/bitmap.h"
 
+struct sslcert_session_data;
+struct sslcert_session_data *ssl_current_session;
+
+
 struct hlcache_handle;
 
 /* Tree flags */
