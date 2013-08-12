@@ -30,7 +30,6 @@
 #include "content/fetchers/resource.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "desktop/sslcert.h"
 #include "utils/log.h"
 #include "utils/filepath.h"
 #include "utils/url.h"
@@ -60,10 +59,9 @@ void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
-  sslcert_cleanup();
-  free(nsoption_charp(cookie_file));
-  free(nsoption_charp(cookie_jar));
-  gtk_fetch_filetype_fin();
+	free(nsoption_charp(cookie_file));
+	free(nsoption_charp(cookie_jar));
+	gtk_fetch_filetype_fin();
 }
 
 nsurl *gui_get_resource_url(const char *path)
@@ -159,8 +157,6 @@ main(int argc, char **argv)
   
   urldb_load(nsoption_charp(url_file));
   urldb_load_cookies(nsoption_charp(cookie_file));
-
-  sslcert_init("content.png");
   
   monkey_prepare_input();
   monkey_register_handler("QUIT", quit_handler);
