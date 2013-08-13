@@ -28,7 +28,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "utils/nsoption.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/gui.h"
@@ -62,7 +62,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 				switch	(msg[4]) {
 					case TOOLBAR_HOTLIST_CREATE_FOLDER:
-						hotlist_add_folder(true);
+						hotlist_old_add_folder(true);
 						break;
 
 					case TOOLBAR_HOTLIST_ADD:
@@ -70,12 +70,12 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 						break;
 
 					case TOOLBAR_HOTLIST_DELETE:
-						hotlist_delete_selected();
+						hotlist_old_delete_selected();
 						gemtk_wm_exec_redraw(tv->window, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
-						hotlist_edit_selected();
+						hotlist_old_edit_selected();
 						break;
 				}
 
@@ -86,7 +86,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			break;
 
 			case WM_CLOSED:
-				hotlist_close();
+				atari_hotlist_close();
 			break;
 
 			default: break;
@@ -99,7 +99,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 
 
-void hotlist_init(void)
+void atari_hotlist_init(void)
 {
 	if (hl.init == false) {
 		if( strcmp(nsoption_charp(hotlist_file), "") == 0 ){
@@ -129,7 +129,7 @@ void hotlist_init(void)
 			gemtk_wm_set_toolbar(hl.window, tree, 0, 0);
 			gemtk_wm_unlink(hl.window);
 			hl.tv = atari_treeview_create(
-				hotlist_get_tree_flags(),
+				hotlist_old_get_tree_flags(),
 				hl.window,
 				handle_event
 			);
@@ -139,7 +139,7 @@ void hotlist_init(void)
 				return;
 			}
 
-			hotlist_initialise(
+			hotlist_old_initialise(
 				hl.tv->tree,
 				(char*)&hl.path,
 				"dir.png"
@@ -153,7 +153,7 @@ void hotlist_init(void)
 }
 
 
-void hotlist_open(void)
+void atari_hotlist_open(void)
 {
 	if( hl.init == false ) {
 		return;
@@ -175,23 +175,23 @@ void hotlist_open(void)
 	}
 }
 
-void hotlist_close(void)
+void atari_hotlist_close(void)
 {
 	wind_close(gemtk_wm_get_handle(hl.window));
 	hl.open = false;
 	atari_treeview_close(hl.tv);
 }
 
-void hotlist_destroy(void)
+void atari_hotlist_destroy(void)
 {
 
 	if( hl.init == false) {
 		return;
 	}
 	if( hl.window != NULL ) {
-		hotlist_cleanup( (char*)&hl.path );
+		hotlist_old_cleanup( (char*)&hl.path );
 		if (hl.open)
-			hotlist_close();
+			atari_hotlist_close();
 		wind_delete(gemtk_wm_get_handle(hl.window));
 		gemtk_wm_remove(hl.window);
 		hl.window = NULL;
@@ -201,7 +201,7 @@ void hotlist_destroy(void)
 	LOG(("done"));
 }
 
-void hotlist_redraw(void)
+void atari_hotlist_redraw(void)
 {
 	int i = 01;
 	atari_treeview_redraw(hl.tv);
@@ -218,11 +218,11 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	if(hl.tv == NULL )
 		return;
 
-	hotlist_open();
+	atari_hotlist_open();
 
 	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
-		hotlist_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
+		hotlist_old_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
 	} else {
-		hotlist_add_page( url );
+		hotlist_old_add_page( url );
 	}
 }

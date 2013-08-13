@@ -57,7 +57,7 @@
 #include "content/urldb.h"
 #include "desktop/cookies_old.h"
 #include "desktop/history_global_core.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/tree_url_node.h"
 #include "utils/utils.h"
@@ -340,7 +340,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 			else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
 				(tw != twin) && (tw->type == AMI_TREE_HOTLIST))
 			{
-				hotlist_add_page_xy(tree_url_node_get_url(selected_node), x, y);
+				hotlist_old_add_page_xy(tree_url_node_get_url(selected_node), x, y);
 			}
 		}
 		tree_drag_end(twin->tree, twin->mouse_state,
@@ -1014,7 +1014,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 										if(twin->type == AMI_TREE_HISTORY)
 											history_global_export(fname);
 										else if(twin->type == AMI_TREE_HOTLIST)
-											hotlist_export(fname);
+											hotlist_old_export(fname);
 										ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 									}
 								break;
@@ -1032,7 +1032,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_expand_all();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_expand_all();
+													hotlist_old_expand_all();
 												break;
 											}
 										break;
@@ -1047,7 +1047,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_expand_domains();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_expand_directories();
+													hotlist_old_expand_directories();
 												break;
 											}
 										break;
@@ -1062,7 +1062,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_expand_cookies();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_expand_addresses();
+													hotlist_old_expand_addresses();
 												break;
 											}
 										break;
@@ -1082,7 +1082,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_collapse_all();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_collapse_all();
+													hotlist_old_collapse_all();
 												break;
 											}
 										break;
@@ -1097,7 +1097,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_collapse_domains();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_collapse_directories();
+													hotlist_old_collapse_directories();
 												break;
 											}
 										break;
@@ -1112,7 +1112,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 													cookies_collapse_cookies();
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_collapse_addresses();
+													hotlist_old_collapse_addresses();
 												break;
 											}
 										break;
@@ -1163,7 +1163,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											cookies_delete_selected();
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_delete_selected();
+											hotlist_old_delete_selected();
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1179,7 +1179,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											cookies_select_all();
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_select_all();
+											hotlist_old_select_all();
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1195,7 +1195,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											cookies_clear_selection();
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_clear_selection();
+											hotlist_old_clear_selection();
 										break;
 									}
 									ami_tree_update_buttons(twin);

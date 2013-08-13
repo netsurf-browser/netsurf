@@ -811,7 +811,7 @@ void gui_quit(void)
     }
 
     atari_global_history_destroy();
-    hotlist_destroy();
+    atari_hotlist_destroy();
     toolbar_exit();
 
     urldb_save_cookies(nsoption_charp(cookie_file));
@@ -1022,7 +1022,7 @@ static void gui_init2(int argc, char** argv)
     }
     gemtk_wm_init();
     atari_global_history_init();
-    hotlist_init();
+    atari_hotlist_init();
     toolbar_init();
 }
 

@@ -17,7 +17,7 @@
  */
 
 
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
@@ -121,7 +121,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 			"hotlistDrawingArea"));
 
 	
-	hotlist_window = nsgtk_treeview_create(hotlist_get_tree_flags(), window,
+	hotlist_window = nsgtk_treeview_create(hotlist_old_get_tree_flags(), window,
 			scrolled, drawing_area);
 	
 	if (hotlist_window == NULL)
@@ -133,7 +133,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
 	
-	hotlist_initialise(nsgtk_treeview_get_tree(hotlist_window),
+	hotlist_old_initialise(nsgtk_treeview_get_tree(hotlist_window),
 			   nsoption_charp(hotlist_path), 
 			   tree_directory_icon_name);
 		
@@ -168,7 +168,7 @@ void nsgtk_hotlist_init_menu(void)
 void nsgtk_hotlist_destroy(void)
 {
 	/* TODO: what about gladeFile? */
-	hotlist_cleanup(nsoption_charp(hotlist_path));
+	hotlist_old_cleanup(nsoption_charp(hotlist_path));
 	nsgtk_treeview_destroy(hotlist_window);
 }
 
@@ -194,7 +194,7 @@ MENUHANDLER(export)
 		gchar *filename = gtk_file_chooser_get_filename(
 				GTK_FILE_CHOOSER(save_dialog));
 		
-		hotlist_export(filename);		
+		hotlist_old_export(filename);		
 		g_free(filename);
 	}
 	
@@ -205,80 +205,80 @@ MENUHANDLER(export)
 
 MENUHANDLER(new_folder)
 {
-	hotlist_add_folder(true);
+	hotlist_old_add_folder(true);
 	return TRUE;
 }
 
 MENUHANDLER(new_entry)
 {
-	hotlist_add_entry(true);
+	hotlist_old_add_entry(true);
 	return TRUE;
 }
 
 /* edit menu */
 MENUHANDLER(edit_selected)
 {
-	hotlist_edit_selected();
+	hotlist_old_edit_selected();
 	return TRUE;
 }
 
 MENUHANDLER(delete_selected)
 {
-	hotlist_delete_selected();
+	hotlist_old_delete_selected();
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	hotlist_select_all();
+	hotlist_old_select_all();
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	hotlist_clear_selection();
+	hotlist_old_clear_selection();
 	return TRUE;
 }
 
 /* view menu*/
 MENUHANDLER(expand_all)
 {
-	hotlist_expand_all();
+	hotlist_old_expand_all();
 	return TRUE;
 }
 
 MENUHANDLER(expand_directories)
 {
-	hotlist_expand_directories();
+	hotlist_old_expand_directories();
 	return TRUE;
 }
 
 MENUHANDLER(expand_addresses)
 {
-	hotlist_expand_addresses();
+	hotlist_old_expand_addresses();
 	return TRUE;
 }
 
 MENUHANDLER(collapse_all)
 {
-	hotlist_collapse_all();
+	hotlist_old_collapse_all();
 	return TRUE;
 }
 
 MENUHANDLER(collapse_directories)
 {
-	hotlist_collapse_directories();
+	hotlist_old_collapse_directories();
 	return TRUE;
 }
 
 MENUHANDLER(collapse_addresses)
 {
-	hotlist_collapse_addresses();
+	hotlist_old_collapse_addresses();
 	return TRUE;
 }
 
 MENUHANDLER(launch)
 {
-	hotlist_launch_selected(true);
+	hotlist_old_launch_selected(true);
 	return TRUE;
 }

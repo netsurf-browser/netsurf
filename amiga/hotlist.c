@@ -19,7 +19,7 @@
 #include <proto/exec.h>
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "utils/messages.h"
 
 bool ami_hotlist_find_dir(struct tree *tree, const char *dir_name)
@@ -56,11 +56,11 @@ void ami_hotlist_add_default_dirs(struct tree *tree)
 
 void ami_hotlist_initialise(const char *hotlist_file)
 {
-	hotlist_window = ami_tree_create(hotlist_get_tree_flags(), NULL);
+	hotlist_window = ami_tree_create(hotlist_old_get_tree_flags(), NULL);
 
 	if(!hotlist_window) return;
 
-	hotlist_initialise(ami_tree_get_tree(hotlist_window),
+	hotlist_old_initialise(ami_tree_get_tree(hotlist_window),
 			   hotlist_file,
 			   tree_directory_icon_name);
 			   
@@ -69,7 +69,7 @@ void ami_hotlist_initialise(const char *hotlist_file)
 
 void ami_hotlist_free(const char *hotlist_file)
 {
-	hotlist_cleanup(hotlist_file);
+	hotlist_old_cleanup(hotlist_file);
 	ami_tree_destroy(hotlist_window);
 	hotlist_window = NULL;
 }

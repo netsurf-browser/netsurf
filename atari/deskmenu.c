@@ -478,7 +478,7 @@ static void __CDECL menu_add_bookmark(short item, short title, void *data)
 static void __CDECL menu_bookmarks(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
-	hotlist_open();
+	atari_hotlist_open();
 }
 
 static void __CDECL menu_vlog(short item, short title, void *data)

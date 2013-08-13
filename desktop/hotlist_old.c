@@ -24,7 +24,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
@@ -35,8 +35,8 @@
 
 #define URL_CHUNK_LENGTH 512
 
-static struct tree *hotlist_tree;
-static struct node *hotlist_tree_root;
+static struct tree *hotlist_old_tree;
+static struct node *hotlist_old_tree_root;
 
 static bool creating_node;
 static hlcache_handle *folder_icon;
@@ -44,7 +44,7 @@ static hlcache_handle *folder_icon;
 static const struct {
 	const char *url;
 	const char *msg_key;
-} hotlist_default_entries[] = {
+} hotlist_old_default_entries[] = {
 	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
 	{ "http://www.netsurf-browser.org/downloads/riscos/testbuilds",
 	  "HotlistTestBuild" },
@@ -55,9 +55,9 @@ static const struct {
 	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
 	  "HotlistFeatureRequest" }
 };
-#define HOTLIST_ENTRIES_COUNT (sizeof(hotlist_default_entries) / sizeof(hotlist_default_entries[0]))
+#define hotlist_old_ENTRIES_COUNT (sizeof(hotlist_old_default_entries) / sizeof(hotlist_old_default_entries[0]))
 
-static node_callback_resp hotlist_node_callback(void *user_data,
+static node_callback_resp hotlist_old_node_callback(void *user_data,
 		struct node_msg_data *msg_data)
 {
 	struct node *node = msg_data->node;
@@ -74,7 +74,7 @@ static node_callback_resp hotlist_node_callback(void *user_data,
 		if (creating_node && !cancelled &&
 		    (is_folder == false) &&
 		    (msg_data->flag == TREE_ELEMENT_TITLE)) {
-			tree_url_node_edit_url(hotlist_tree, node);
+			tree_url_node_edit_url(hotlist_old_tree, node);
 		} else {
 			creating_node = false;
 		}
@@ -82,7 +82,7 @@ static node_callback_resp hotlist_node_callback(void *user_data,
 
 	case NODE_ELEMENT_EDIT_FINISHING:
 		if (creating_node && (is_folder == false))
-			return tree_url_node_callback(hotlist_tree, msg_data);
+			return tree_url_node_callback(hotlist_old_tree, msg_data);
 
 		if (is_folder == true) {
 			text = msg_data->data.text;
@@ -109,14 +109,14 @@ static node_callback_resp hotlist_node_callback(void *user_data,
 
 	default:
 		if (is_folder == false)
-			return tree_url_node_callback(hotlist_tree, msg_data);
+			return tree_url_node_callback(hotlist_old_tree, msg_data);
 	}
 
 	return NODE_CALLBACK_NOT_HANDLED;
 }
 
 /* exported interface documented in hotlist.h */
-bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
+bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path,
 		const char* folder_icon_name)
 {
 	struct node *node;
@@ -134,17 +134,17 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
 	if (tree == NULL)
 		return false;
 
-	hotlist_tree = tree;
-	hotlist_tree_root = tree_get_root(hotlist_tree);
+	hotlist_old_tree = tree;
+	hotlist_old_tree_root = tree_get_root(hotlist_old_tree);
 
-	if (tree_urlfile_load(hotlist_path, hotlist_tree,
-			hotlist_node_callback, NULL)) {
+	if (tree_urlfile_load(hotlist_path, hotlist_old_tree,
+			hotlist_old_node_callback, NULL)) {
 		return true;
 	}
 
 	/* failed to load hotlist file, use default list */
-	node = tree_create_folder_node(hotlist_tree,
-				       hotlist_tree_root,
+	node = tree_create_folder_node(hotlist_old_tree,
+				       hotlist_old_tree_root,
 				       messages_get("NetSurf"),
 				       true,
 				       false,
@@ -154,12 +154,12 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
 		return false;
 	}
 
-	tree_set_node_user_callback(node, hotlist_node_callback, NULL);
-	tree_set_node_icon(hotlist_tree, node, folder_icon);
+	tree_set_node_user_callback(node, hotlist_old_node_callback, NULL);
+	tree_set_node_icon(hotlist_old_tree, node, folder_icon);
 
-	for (hlst_loop = 0; hlst_loop != HOTLIST_ENTRIES_COUNT; hlst_loop++) {
+	for (hlst_loop = 0; hlst_loop != hotlist_old_ENTRIES_COUNT; hlst_loop++) {
 		nsurl *url;
-		if (nsurl_create(hotlist_default_entries[hlst_loop].url,
+		if (nsurl_create(hotlist_old_default_entries[hlst_loop].url,
 				&url) != NSERROR_OK) {
 			return false;
 		}
@@ -170,10 +170,10 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
 			url_data = urldb_get_url_data(url);
 		}
 		if (url_data != NULL) {
-			tree_create_URL_node(hotlist_tree, node, url,
-					messages_get(hotlist_default_entries[hlst_loop].msg_key),
-					hotlist_node_callback, NULL);
-			tree_update_URL_node(hotlist_tree, node, url, url_data);
+			tree_create_URL_node(hotlist_old_tree, node, url,
+					messages_get(hotlist_old_default_entries[hlst_loop].msg_key),
+					hotlist_old_node_callback, NULL);
+			tree_update_URL_node(hotlist_old_tree, node, url, url_data);
 		}
 		nsurl_unref(url);
 	}
@@ -187,7 +187,7 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path,
  *
  * \return the flags
  */
-unsigned int hotlist_get_tree_flags(void)
+unsigned int hotlist_old_get_tree_flags(void)
 {
 	return TREE_MOVABLE | TREE_HOTLIST;
 }
@@ -197,10 +197,10 @@ unsigned int hotlist_get_tree_flags(void)
  * Deletes the global history tree and saves the hotlist.
  * \param hotlist_path the path where the hotlist should be saved
  */
-void hotlist_cleanup(const char *hotlist_path)
+void hotlist_old_cleanup(const char *hotlist_path)
 {
 	LOG(("Exporting hotlist..."));
-	hotlist_export(hotlist_path);
+	hotlist_old_export(hotlist_path);
 	LOG(("Releasing handles..."));
 	hlcache_handle_release(folder_icon);
 	LOG(("Clearing hotlist tree nodes..."));
@@ -215,7 +215,7 @@ void hotlist_cleanup(const char *hotlist_path)
  * \param content  the content visited
  * \param node	   the node to update siblings and children of
  */
-static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
+static void hotlist_old_visited_internal(hlcache_handle *content, struct node *node)
 {
 	struct node *child;
 	const char *text;
@@ -224,7 +224,7 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
 
 	if (content == NULL || 
 	    hlcache_handle_get_url(content) == NULL ||
-	    hotlist_tree == NULL)
+	    hotlist_old_tree == NULL)
 		return;
 
 	nsurl = hlcache_handle_get_url(content);
@@ -234,13 +234,13 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
 		if (!tree_node_is_folder(node)) {
 			text = tree_url_node_get_url(node);
 			if (strcmp(text, url) == 0) {
-				tree_update_URL_node(hotlist_tree, node,
+				tree_update_URL_node(hotlist_old_tree, node,
 						nsurl, NULL);
 			}
 		}
 		child = tree_node_get_child(node);
 		if (child != NULL) {
-			hotlist_visited_internal(content, child);
+			hotlist_old_visited_internal(content, child);
 		}
 	}
 }
@@ -250,10 +250,10 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
  *
  * \param content  the content visited
  */
-void hotlist_visited(hlcache_handle *content)
+void hotlist_old_visited(hlcache_handle *content)
 {
-	if (hotlist_tree != NULL) {
-		hotlist_visited_internal(content, tree_get_root(hotlist_tree));
+	if (hotlist_old_tree != NULL) {
+		hotlist_old_visited_internal(content, tree_get_root(hotlist_old_tree));
 	}
 }
 
@@ -262,107 +262,107 @@ void hotlist_visited(hlcache_handle *content)
  *
  * \param path the path where the hotlist will be saved
  */
-bool hotlist_export(const char *path)
+bool hotlist_old_export(const char *path)
 {
-	return tree_urlfile_save(hotlist_tree, path, "NetSurf hotlist");
+	return tree_urlfile_save(hotlist_old_tree, path, "NetSurf hotlist");
 }
 
 /**
  * Edit the node which is currently selected. Works only if one node is
  * selected.
  */
-void hotlist_edit_selected(void)
+void hotlist_old_edit_selected(void)
 {
 	struct node *node;
 	struct node_element *element;
 
-	node = tree_get_selected_node(hotlist_tree_root);
+	node = tree_get_selected_node(hotlist_old_tree_root);
 
 	if (node != NULL) {
 		creating_node = true;
 		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		tree_start_edit(hotlist_tree, element);
+		tree_start_edit(hotlist_old_tree, element);
 	}
 }
 
 /**
  * Delete nodes which are currently selected.
  */
-void hotlist_delete_selected(void)
+void hotlist_old_delete_selected(void)
 {
-	tree_delete_selected_nodes(hotlist_tree, hotlist_tree_root);
+	tree_delete_selected_nodes(hotlist_old_tree, hotlist_old_tree_root);
 }
 
 /**
  * Select all nodes in the tree.
  */
-void hotlist_select_all(void)
+void hotlist_old_select_all(void)
 {
-	tree_set_node_selected(hotlist_tree, hotlist_tree_root,
+	tree_set_node_selected(hotlist_old_tree, hotlist_old_tree_root,
 			       true, true);
 }
 
 /**
  * Unselect all nodes.
  */
-void hotlist_clear_selection(void)
+void hotlist_old_clear_selection(void)
 {
-	tree_set_node_selected(hotlist_tree, hotlist_tree_root,
+	tree_set_node_selected(hotlist_old_tree, hotlist_old_tree_root,
 			       true, false);
 }
 
 /**
  * Expand grouping folders and history entries.
  */
-void hotlist_expand_all(void)
+void hotlist_old_expand_all(void)
 {
-	tree_set_node_expanded(hotlist_tree, hotlist_tree_root,
+	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
 			       true, true, true);
 }
 
 /**
  * Expand grouping folders only.
  */
-void hotlist_expand_directories(void)
+void hotlist_old_expand_directories(void)
 {
-	tree_set_node_expanded(hotlist_tree, hotlist_tree_root,
+	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
 			       true, true, false);
 }
 
 /**
  * Expand history entries only.
  */
-void hotlist_expand_addresses(void)
+void hotlist_old_expand_addresses(void)
 {
-	tree_set_node_expanded(hotlist_tree, hotlist_tree_root,
+	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
 			       true, false, true);
 }
 
 /**
  * Collapse grouping folders and history entries.
  */
-void hotlist_collapse_all(void)
+void hotlist_old_collapse_all(void)
 {
-	tree_set_node_expanded(hotlist_tree, hotlist_tree_root,
+	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
 			       false, true, true);
 }
 
 /**
  * Collapse grouping folders only.
  */
-void hotlist_collapse_directories(void)
+void hotlist_old_collapse_directories(void)
 {
-	tree_set_node_expanded(hotlist_tree, hotlist_tree_root,
+	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
 			       false, true, false);
 }
 
 /**
  * Collapse history entries only.
  */
-void hotlist_collapse_addresses(void)
+void hotlist_old_collapse_addresses(void)
 {
-	tree_set_node_expanded(hotlist_tree, 
-			       hotlist_tree_root, false, false, true);
+	tree_set_node_expanded(hotlist_old_tree, 
+			       hotlist_old_tree_root, false, false, true);
 }
 
 /**
@@ -370,24 +370,24 @@ void hotlist_collapse_addresses(void)
  *
  * \param selected create the folder in the currently-selected node
  */
-void hotlist_add_folder(bool selected)
+void hotlist_old_add_folder(bool selected)
 {
 	struct node *node, *parent = NULL;
 
 	creating_node = true;
 
 	if (selected == true) {
-		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
+		parent = tree_get_selected_node(tree_get_root(hotlist_old_tree));
 		if (parent && (tree_node_is_folder(parent) == false)) {
 			parent = tree_node_get_parent(parent);
 		}
 	}
 
 	if (parent == NULL) {
-		parent = tree_get_default_folder_node(hotlist_tree);
+		parent = tree_get_default_folder_node(hotlist_old_tree);
 	}
 
-	node = tree_create_folder_node(hotlist_tree,
+	node = tree_create_folder_node(hotlist_old_tree,
 				       parent,
 				       messages_get("Untitled"),
 				       true,
@@ -398,9 +398,9 @@ void hotlist_add_folder(bool selected)
 		return;
 	}
 
-	tree_set_node_user_callback(node, hotlist_node_callback, NULL);
-	tree_set_node_icon(hotlist_tree, node, folder_icon);
-	tree_start_edit(hotlist_tree,
+	tree_set_node_user_callback(node, hotlist_old_node_callback, NULL);
+	tree_set_node_icon(hotlist_old_tree, node, folder_icon);
+	tree_start_edit(hotlist_old_tree,
 			tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL));
 }
 
@@ -409,7 +409,7 @@ void hotlist_add_folder(bool selected)
  *
  * \param selected add the entry in the currently-selected node
  */
-void hotlist_add_entry(bool selected)
+void hotlist_old_add_entry(bool selected)
 {
 	struct node *node;
 	struct node *parent = NULL;
@@ -417,33 +417,33 @@ void hotlist_add_entry(bool selected)
 	creating_node = true;
 
 	if (selected == true) {
-		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
+		parent = tree_get_selected_node(tree_get_root(hotlist_old_tree));
 		if (parent && (tree_node_is_folder(parent) == false)) {
 			parent = tree_node_get_parent(parent);
 		}
 	}
 
 	if (parent == NULL) {
-		parent = tree_get_default_folder_node(hotlist_tree);
+		parent = tree_get_default_folder_node(hotlist_old_tree);
 	}
 
 	if (nsurl_create("http://netsurf-browser.org/", &url) != NSERROR_OK)
 		return;
-	node = tree_create_URL_node(hotlist_tree, parent, url, "Untitled",
-			hotlist_node_callback, NULL);
+	node = tree_create_URL_node(hotlist_old_tree, parent, url, "Untitled",
+			hotlist_old_node_callback, NULL);
 
 	nsurl_unref(url);
 
 	if (node == NULL)
 		return;
-	tree_set_node_user_callback(node, hotlist_node_callback, NULL);
-	tree_url_node_edit_title(hotlist_tree, node);
+	tree_set_node_user_callback(node, hotlist_old_node_callback, NULL);
+	tree_url_node_edit_title(hotlist_old_tree, node);
 }
 
 /**
  * Adds the currently viewed page to the hotlist
  */
-void hotlist_add_page(const char *url)
+void hotlist_old_add_page(const char *url)
 {
 	const struct url_data *data;
 	struct node *node, *parent;
@@ -459,10 +459,10 @@ void hotlist_add_page(const char *url)
 	if (data == NULL)
 		return;
 
-	parent = tree_get_default_folder_node(hotlist_tree);
-	node = tree_create_URL_node(hotlist_tree, parent, nsurl, NULL,
-			hotlist_node_callback, NULL);
-	tree_update_URL_node(hotlist_tree, node, nsurl, data);
+	parent = tree_get_default_folder_node(hotlist_old_tree);
+	node = tree_create_URL_node(hotlist_old_tree, parent, nsurl, NULL,
+			hotlist_old_node_callback, NULL);
+	tree_update_URL_node(hotlist_old_tree, node, nsurl, data);
 	nsurl_unref(nsurl);
 }
 
@@ -472,7 +472,7 @@ void hotlist_add_page(const char *url)
  * \param x	X cooridinate with respect to tree origin
  * \param y	Y cooridinate with respect to tree origin
  */
-void hotlist_add_page_xy(const char *url, int x, int y)
+void hotlist_old_add_page_xy(const char *url, int x, int y)
 {
 	const struct url_data *data;
 	struct node *link, *node;
@@ -492,10 +492,10 @@ void hotlist_add_page_xy(const char *url, int x, int y)
 		data = urldb_get_url_data(nsurl);
 	}
 	if (data != NULL) {
-		link = tree_get_link_details(hotlist_tree, x, y, &before);
+		link = tree_get_link_details(hotlist_old_tree, x, y, &before);
 		node = tree_create_URL_node(NULL, NULL, nsurl,
-					    NULL, hotlist_node_callback, NULL);
-		tree_link_node(hotlist_tree, link, node, before);
+					    NULL, hotlist_old_node_callback, NULL);
+		tree_link_node(hotlist_old_tree, link, node, before);
 	}
 	nsurl_unref(nsurl);
 }
@@ -505,9 +505,9 @@ void hotlist_add_page_xy(const char *url, int x, int y)
  *
  * \param  tabs  open multiple entries in tabs in the new window
  */
-void hotlist_launch_selected(bool tabs)
+void hotlist_old_launch_selected(bool tabs)
 {
-	tree_launch_selected(hotlist_tree, tabs);
+	tree_launch_selected(hotlist_old_tree, tabs);
 }
 
 /**
@@ -515,12 +515,12 @@ void hotlist_launch_selected(bool tabs)
  *
  * \param  clear  reset the default to tree root
  */
-bool hotlist_set_default_folder(bool clear)
+bool hotlist_old_set_default_folder(bool clear)
 {
 	if (clear == true) {
-		tree_clear_default_folder_node(hotlist_tree);
+		tree_clear_default_folder_node(hotlist_old_tree);
 		return true;
 	} else {
-		return tree_set_default_folder_node(hotlist_tree, NULL);
+		return tree_set_default_folder_node(hotlist_old_tree, NULL);
 	}
 }

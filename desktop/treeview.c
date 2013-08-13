@@ -148,12 +148,14 @@ struct treeview_resource {
 	bool ready;
 }; /**< Treeview content resource data */
 enum treeview_resource_id {
-	TREE_RES_CONTENT = 0,
+	TREE_RES_ARROW = 0,
+	TREE_RES_CONTENT,
 	TREE_RES_FOLDER,
 	TREE_RES_SEARCH,
 	TREE_RES_LAST
 };
 static struct treeview_resource treeview_res[TREE_RES_LAST] = {
+	{ "resource:icons/arrow-l.png", NULL, 0, false },
 	{ "resource:icons/content.png", NULL, 0, false },
 	{ "resource:icons/directory.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }

@@ -33,7 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
 #include "riscos/hotlist.h"
@@ -131,7 +131,7 @@ void ro_gui_hotlist_postinitialise(void)
 
 	hotlist_window.tv = ro_treeview_create(hotlist_window.window,
 			hotlist_window.toolbar, &ro_hotlist_treeview_callbacks,
-			hotlist_get_tree_flags());
+			hotlist_old_get_tree_flags());
 	if (hotlist_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;
@@ -142,7 +142,7 @@ void ro_gui_hotlist_postinitialise(void)
 
 	/* Initialise the hotlist into the tree. */
 
-	hotlist_initialise(ro_treeview_get_tree(hotlist_window.tv),
+	hotlist_old_initialise(ro_treeview_get_tree(hotlist_window.tv),
 			   nsoption_charp(hotlist_path),
 			   tree_directory_icon_name);
 
@@ -236,31 +236,31 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		hotlist_delete_selected();
+		hotlist_old_delete_selected();
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
-		hotlist_expand_addresses();
+		hotlist_old_expand_addresses();
 		break;
 
 	case TOOLBAR_BUTTON_COLLAPSE:
-		hotlist_collapse_addresses();
+		hotlist_old_collapse_addresses();
 		break;
 
 	case TOOLBAR_BUTTON_OPEN:
-		hotlist_expand_directories();
+		hotlist_old_expand_directories();
 		break;
 
 	case TOOLBAR_BUTTON_CLOSE:
-		hotlist_collapse_directories();
+		hotlist_old_collapse_directories();
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		hotlist_launch_selected(false);
+		hotlist_old_launch_selected(false);
 		break;
 
 	case TOOLBAR_BUTTON_CREATE:
-		hotlist_add_folder(true);
+		hotlist_old_add_folder(true);
 		break;
 
 	default:
@@ -375,43 +375,43 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_NEW_FOLDER:
-		hotlist_add_folder(true);
+		hotlist_old_add_folder(true);
 		return true;
 	case TREE_NEW_LINK:
-		hotlist_add_entry(true);
+		hotlist_old_add_entry(true);
 		return true;
 	case TREE_EXPAND_ALL:
-		hotlist_expand_all();
+		hotlist_old_expand_all();
 		return true;
 	case TREE_EXPAND_FOLDERS:
-		hotlist_expand_directories();
+		hotlist_old_expand_directories();
 		return true;
 	case TREE_EXPAND_LINKS:
-		hotlist_expand_addresses();
+		hotlist_old_expand_addresses();
 		return true;
 	case TREE_COLLAPSE_ALL:
-		hotlist_collapse_all();
+		hotlist_old_collapse_all();
 		return true;
 	case TREE_COLLAPSE_FOLDERS:
-		hotlist_collapse_directories();
+		hotlist_old_collapse_directories();
 		return true;
 	case TREE_COLLAPSE_LINKS:
-		hotlist_collapse_addresses();
+		hotlist_old_collapse_addresses();
 		return true;
 	case TREE_SELECTION_EDIT:
-		hotlist_edit_selected();
+		hotlist_old_edit_selected();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		hotlist_launch_selected(false);
+		hotlist_old_launch_selected(false);
 		return true;
 	case TREE_SELECTION_DELETE:
-		hotlist_delete_selected();
+		hotlist_old_delete_selected();
 		return true;
 	case TREE_SELECT_ALL:
-		hotlist_select_all();
+		hotlist_old_select_all();
 		return true;
 	case TREE_CLEAR_SELECTION:
-		hotlist_clear_selection();
+		hotlist_old_clear_selection();
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(hotlist_window.toolbar,
@@ -482,7 +482,7 @@ void ro_gui_hotlist_add_page(const char *url)
 	 */
 
 	if (!nsoption_bool(external_hotlists)) {
-		hotlist_add_page(url);
+		hotlist_old_add_page(url);
 		return;
 	}
 
@@ -543,7 +543,7 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 	LOG(("Hotlist AddURL Bounced"));
 
 	if (hotlist_url != NULL)
-		hotlist_add_page(hotlist_url);
+		hotlist_old_add_page(hotlist_url);
 
 	ro_gui_hotlist_add_cleanup();
 
@@ -606,7 +606,7 @@ void ro_gui_hotlist_url_drop(wimp_message *message, const char *url)
 				message->data.data_xfer.pos.x,
 				message->data.data_xfer.pos.y,
 				&x, &y);
-	hotlist_add_page_xy(url, x, y);
+	hotlist_old_add_page_xy(url, x, y);
 }
 #endif
 

@@ -24,7 +24,7 @@
 #import "cocoa/gui.h"
 
 #import "desktop/browser_private.h"
-#import "desktop/hotlist.h"
+#import "desktop/hotlist_old.h"
 #import "desktop/tree.h"
 #import "desktop/tree_url_node.h"
 #import "utils/messages.h"
@@ -49,8 +49,8 @@ static const char *cocoa_hotlist_path( void )
 {
 	if ((self = [super initWithWindowNibName: @"BookmarksWindow"]) == nil) return nil;
 	
-	tree = [[Tree alloc] initWithFlags: hotlist_get_tree_flags()];
-	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "directory.png" );
+	tree = [[Tree alloc] initWithFlags: hotlist_old_get_tree_flags()];
+	hotlist_old_initialise( [tree tree], cocoa_hotlist_path(), "directory.png" );
 	nodeForMenu = NSCreateMapTable( NSNonOwnedPointerMapKeyCallBacks, NSNonOwnedPointerMapValueCallBacks, 0 );
 	
 	[[NSNotificationCenter defaultCenter] addObserver:self 
@@ -68,14 +68,14 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) save;
 {
-	hotlist_export( cocoa_hotlist_path() );
+	hotlist_old_export( cocoa_hotlist_path() );
 }
 
 - (void) dealloc;
 {
 	[self setView: nil];
 	NSFreeMapTable( nodeForMenu );
-	hotlist_cleanup( cocoa_hotlist_path() );
+	hotlist_old_cleanup( cocoa_hotlist_path() );
 	[tree release];
 	
 	[[NSNotificationCenter defaultCenter] removeObserver: self];
@@ -167,7 +167,7 @@ static const char *cocoa_hotlist_path( void )
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
 	if (bw && bw->current_content) {
 		const char *url = nsurl_access(hlcache_handle_get_url( bw->current_content ));
-		hotlist_add_page( url );
+		hotlist_old_add_page( url );
 	}
 }
 
@@ -184,8 +184,8 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) windowDidLoad;
 {
-	hotlist_expand_all();
-	hotlist_collapse_all();
+	hotlist_old_expand_all();
+	hotlist_old_collapse_all();
 	
 	[view setTree: tree];
 }
@@ -200,17 +200,17 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) editSelected: (id) sender;
 {
-	hotlist_edit_selected();
+	hotlist_old_edit_selected();
 }
 
 - (IBAction) deleteSelected: (id) sender;
 {
-	hotlist_delete_selected();
+	hotlist_old_delete_selected();
 }
 
 - (IBAction) addFolder: (id) sender;
 {
-	hotlist_add_folder(true);
+	hotlist_old_add_folder(true);
 }
 
 @end

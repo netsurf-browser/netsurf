@@ -48,7 +48,7 @@
 #include "desktop/global_history.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/knockout.h"
 #include "desktop/local_history.h"
 #include "utils/nsoption.h"
@@ -1285,7 +1285,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_update_favicon(c, bw, NULL);
 
 		history_update(bw->history, c);
-		hotlist_visited(c);
+		hotlist_old_visited(c);
 
 		if (bw->refresh_interval != -1)
 			schedule(bw->refresh_interval,

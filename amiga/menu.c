@@ -57,7 +57,7 @@
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
 #include "desktop/tree_url_node.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
@@ -888,7 +888,7 @@ static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct Int
 			nsurl_access(hlcache_handle_get_url(bw->current_content)) == NULL)
 		return;
 
-	hotlist_add_page(nsurl_access(hlcache_handle_get_url(bw->current_content)));
+	hotlist_old_add_page(nsurl_access(hlcache_handle_get_url(bw->current_content)));
 }
 
 static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct IntuiMessage *msg)

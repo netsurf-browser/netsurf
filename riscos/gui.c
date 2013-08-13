@@ -58,7 +58,7 @@
 #include "desktop/cookies_old.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
-#include "desktop/hotlist.h"
+#include "desktop/hotlist_old.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
@@ -942,7 +942,7 @@ void gui_quit(void)
 	ro_gui_window_quit();
 	history_global_cleanup();
 	cookies_cleanup();
-	hotlist_cleanup(nsoption_charp(hotlist_save));
+	hotlist_old_cleanup(nsoption_charp(hotlist_save));
 	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);

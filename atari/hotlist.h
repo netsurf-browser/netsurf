@@ -34,13 +34,13 @@ struct atari_hotlist {
 
 extern struct atari_hotlist hl;
 
-void hotlist_init( void );
-void hotlist_open( void );
-void hotlist_close( void );
-void hotlist_destroy( void );
+void atari_hotlist_init( void );
+void atari_hotlist_open( void );
+void atari_hotlist_close( void );
+void atari_hotlist_destroy( void );
 void atari_hotlist_add_page( const char * url, const char * title );
 
-void hotlist_redraw( void );
+void atari_hotlist_redraw( void );
 
 
 #endif
