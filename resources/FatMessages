@@ -1249,6 +1249,12 @@ fr.all.TreeviewLabelIssuer:Issuer
 it.all.TreeviewLabelIssuer:Issuer
 nl.all.TreeviewLabelIssuer:Issuer
 
+en.all.TreeviewLabelFolder:Folder
+de.all.TreeviewLabelFolder:Folder
+fr.all.TreeviewLabelFolder:Folder
+it.all.TreeviewLabelFolder:Folder
+nl.all.TreeviewLabelFolder:Folder
+
 
 # Cookie Manager field values
 #
