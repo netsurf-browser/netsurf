@@ -239,6 +239,22 @@ static bool treeview_test_init(struct tree *tree)
 {
 	nserror err;
 
+	if (tree->flags & TREE_SSLCERT) {
+
+		treeview_inits++;
+
+		if (treeview_inits == 1)
+			treeview_init();
+
+		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
+				ssl_current_session);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't init new sslcert viewer.", 0);
+		}
+		return true;
+	}
+
+	/* Check if we're testing the new treeview */
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
@@ -259,13 +275,6 @@ static bool treeview_test_init(struct tree *tree)
 			warn_user("Couldn't init new global history.", 0);
 		}
 	}
-	if (tree->flags & TREE_SSLCERT) {
-		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
-				ssl_current_session);
-		if (err != NSERROR_OK) {
-			warn_user("Couldn't init new sslcert viewer.", 0);
-		}
-	}
 
 	return true;
 }
@@ -274,6 +283,20 @@ static bool treeview_test_fini(struct tree *tree)
 {
 	nserror err;
 
+	if (tree->flags & TREE_SSLCERT) {
+		err = sslcert_viewer_fini(ssl_current_session);
+		if (err != NSERROR_OK) {
+			warn_user("Couldn't finalise sslcert viewer.", 0);
+		}
+
+		if (treeview_inits == 1)
+			treeview_fini();
+		treeview_inits--;
+
+		return true;
+	}
+
+	/* Check if we're testing the new treeview */
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
@@ -287,12 +310,6 @@ static bool treeview_test_fini(struct tree *tree)
 		err = global_history_fini();
 		if (err != NSERROR_OK) {
 			warn_user("Couldn't finalise cookie manager.", 0);
-		}
-	}
-	if (tree->flags & TREE_SSLCERT) {
-		err = sslcert_viewer_fini(ssl_current_session);
-		if (err != NSERROR_OK) {
-			warn_user("Couldn't finalise sslcert viewer.", 0);
 		}
 	}
 
@@ -309,13 +326,19 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 {
 	struct rect clip;
 
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
-
 	clip.x0 = clip_x;
 	clip.y0 = clip_y;
 	clip.x1 = clip_x + clip_width;
 	clip.y1 = clip_y + clip_height;
+
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
+		return true;
+	}
+
+	/* Check if we're testing the new treeview */
+	if (nsoption_bool(temp_treeview_test) == false)
+		return false;
 
 	if (tree->flags & TREE_COOKIES) {
 		cookie_manager_redraw(x, y, &clip, ctx);
@@ -325,10 +348,6 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 		global_history_redraw(x, y, &clip, ctx);
 		return true;
 	}
-	if (tree->flags & TREE_SSLCERT) {
-		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
-		return true;
-	}
 
 	return false;
 }
@@ -336,6 +355,12 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 static bool treeview_test_mouse_action(struct tree *tree,
 		browser_mouse_state mouse, int x, int y)
 {
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_mouse_action(ssl_current_session, mouse, x, y);
+		return true;
+	}
+
+	/* Check if we're testing the new treeview */
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
@@ -347,16 +372,18 @@ static bool treeview_test_mouse_action(struct tree *tree,
 		global_history_mouse_action(mouse, x, y);
 		return true;
 	}
-	if (tree->flags & TREE_SSLCERT) {
-		sslcert_viewer_mouse_action(ssl_current_session, mouse, x, y);
-		return true;
-	}
 
 	return false;
 }
 
 static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 {
+	if (tree->flags & TREE_SSLCERT) {
+		sslcert_viewer_keypress(ssl_current_session, key);
+		return true;
+	}
+
+	/* Check if we're testing the new treeview */
 	if (nsoption_bool(temp_treeview_test) == false)
 		return false;
 
@@ -366,10 +393,6 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 	}
 	if (tree->flags & TREE_HISTORY) {
 		global_history_keypress(key);
-		return true;
-	}
-	if (tree->flags & TREE_SSLCERT) {
-		sslcert_viewer_keypress(ssl_current_session, key);
 		return true;
 	}
 
