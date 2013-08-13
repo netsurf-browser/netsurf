@@ -2,7 +2,7 @@
 
 S_DESKTOP := cookie_manager.c cookies_old.c history_global_core.c hotlist_old.c knockout.c	\
 	mouse.c plot_style.c print.c search.c searchweb.c	\
-	scrollbar.c sslcert.c sslcert_viewer.c textarea.c thumbnail.c tree.c 		\
+	scrollbar.c sslcert_viewer.c textarea.c thumbnail.c tree.c 		\
 	tree_url_node.c version.c system_colour.c global_history.c treeview.c
 
 S_DESKTOP := $(addprefix desktop/,$(S_DESKTOP))
