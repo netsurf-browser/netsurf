@@ -24,11 +24,6 @@
 #include "desktop/sslcert.h"
 #include "desktop/tree.h"
 
-
-
-
-
-
 /**
  * Get flags with which the sslcert tree should be created;
  *
@@ -36,7 +31,7 @@
  */
 unsigned int sslcert_get_tree_flags(void)
 {
-	return TREE_NO_DRAGS | TREE_NO_SELECT | TREE_SSLCERT;
+	return TREE_SSLCERT;
 }
 
 
