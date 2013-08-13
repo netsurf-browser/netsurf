@@ -235,7 +235,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	ami_menu_alloc_item(gwin, M_HISTGLBL, NM_ITEM, "HistGlobalNS",  0, NULL,
 			ami_menu_item_browser_globalhistory, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_B2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
-	ami_menu_alloc_item(gwin, M_COOKIES,  NM_ITEM, "ShowCookies",   0, NULL,
+	ami_menu_alloc_item(gwin, M_COOKIES,  NM_ITEM, "ShowCookiesNS",   0, NULL,
 			ami_menu_item_browser_cookies, NULL);
 	ami_menu_alloc_item(gwin, M_BAR_B3,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_SCALE,    NM_ITEM, "ScaleNS",       0, NULL, NULL, NULL);

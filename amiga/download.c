@@ -295,7 +295,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 			nsurl_unref(url);
 		}
 	}
-
 }
 
 BOOL ami_download_window_event(struct gui_download_window *dw)

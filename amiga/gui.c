@@ -957,7 +957,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 		else
@@ -970,7 +970,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, "Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.",
+				desc, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 
@@ -2477,24 +2477,6 @@ void ami_handle_applib(void)
 					WindowToFront(curbw->window->shared->win);
 					ActivateWindow(curbw->window->shared->win);
 				}
-				else
-				{
-					error = nsurl_create(nsoption_charp(homepage_url), &url);
-					if (error == NSERROR_OK) {
-						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-									      BROWSER_WINDOW_HISTORY,
-									      url,
-									      NULL,
-									      NULL,
-									      &bw);
-						nsurl_unref(url);
-					}
-					if (error != NSERROR_OK) {
-						warn_user(messages_get_errorcode(error), 0);
-					}
-
-
-				}
 			break;
 
 			case APPLIBMT_OpenPrefs:
@@ -2705,7 +2687,8 @@ void ami_quit_netsurf(void)
 				break;
 
 				case AMINS_WINDOW:
-					ami_close_all_tabs(gwin);				
+					ShowWindow(gwin->win, WINDOW_BACKMOST);
+					ami_close_all_tabs(gwin);
 				break;
 			}
 
