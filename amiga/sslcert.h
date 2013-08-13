@@ -18,7 +18,6 @@
 
 #ifndef AMIGA_SSLCERT_H
 #define AMIGA_SSLCERT_H
-#include "desktop/sslcert.h"
 
 void ami_ssl_free(struct treeview_window *twin);
 #endif

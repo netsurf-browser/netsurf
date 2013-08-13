@@ -53,7 +53,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
-#include "desktop/sslcert.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
@@ -793,8 +792,8 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
-	ssl_window = nsgtk_treeview_create(sslcert_get_tree_flags(),
-			window, scrolled, drawing_area);
+	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, window, scrolled,
+			drawing_area);
 	
 	if (ssl_window == NULL)
 		return;

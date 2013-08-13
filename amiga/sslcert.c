@@ -32,7 +32,7 @@ void gui_cert_verify(nsurl *url,
 			certs, &data);
 	ssl_current_session = data;
 
-	ssl_window = ami_tree_create(sslcert_get_tree_flags(), data);
+	ssl_window = ami_tree_create(TREE_SSLCERT, data);
 	if(!ssl_window) return;
 
 	ami_tree_open(ssl_window, AMI_TREE_SSLCERT);

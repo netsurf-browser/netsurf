@@ -33,7 +33,6 @@
 #include "content/fetch.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/sslcert.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/gui.h"
 #include "desktop/tree.h"
@@ -152,7 +151,7 @@ void gui_cert_verify(nsurl *url,
 	ssl_current_session = sslcert_window->data;
 
 	sslcert_window->tv = ro_treeview_create(sslcert_window->pane,
-			NULL, NULL, sslcert_get_tree_flags());
+			NULL, NULL, TREE_SSLCERT);
 	if (sslcert_window->tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		free(sslcert_window);

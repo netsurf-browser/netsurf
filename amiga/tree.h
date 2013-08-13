@@ -24,7 +24,6 @@
 #include "amiga/os3support.h"
 #include "amiga/gui.h"
 #include "desktop/tree.h"
-#include "desktop/sslcert.h"
 
 /* defined in front end code */
 extern const char tree_directory_icon_name[];
