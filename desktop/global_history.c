@@ -511,7 +511,7 @@ static bool global_history_add_entry(nsurl *url,
 /**
  * Initialise the treeview entry feilds
  *
- * \return true on success, false on memory exhaustion
+ * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror global_history_initialise_entry_fields(void)
 {
@@ -580,7 +580,7 @@ error:
 /**
  * Initialise the time
  *
- * \return true on success, false on memory exhaustion
+ * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror global_history_initialise_time(void)
 {
@@ -615,7 +615,7 @@ static nserror global_history_initialise_time(void)
 /**
  * Initialise the treeview entries
  *
- * \return true on success, false on memory exhaustion
+ * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror global_history_init_entries(void)
 {
