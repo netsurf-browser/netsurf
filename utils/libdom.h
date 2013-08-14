@@ -61,9 +61,9 @@ dom_node *libdom_find_element(dom_node *node, lwc_string *element_name);
  */
 dom_node *libdom_find_first_element(dom_node *parent, lwc_string *element_name);
 
-typedef bool (*libdom_iterate_cb)(dom_node *node, void *ctx);
+typedef nserror (*libdom_iterate_cb)(dom_node *node, void *ctx);
 
-void libdom_iterate_child_elements(dom_node *parent,
+nserror libdom_iterate_child_elements(dom_node *parent,
 		libdom_iterate_cb cb, void *ctx);
 
 nserror libdom_parse_file(const char *filename, const char *encoding,

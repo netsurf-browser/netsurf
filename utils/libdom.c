@@ -211,7 +211,8 @@ dom_node *libdom_find_first_element(dom_node *parent, lwc_string *element_name)
 }
 
 /* exported interface documented in libdom.h */
-void libdom_iterate_child_elements(dom_node *parent, 
+/* TODO: return appropriate errors */
+nserror libdom_iterate_child_elements(dom_node *parent, 
 		libdom_iterate_cb cb, void *ctx)
 {
 	dom_nodelist *children;
@@ -220,12 +221,12 @@ void libdom_iterate_child_elements(dom_node *parent,
 
 	error = dom_node_get_child_nodes(parent, &children);
 	if (error != DOM_NO_ERR || children == NULL)
-		return;
+		return NSERROR_NOMEM;
 
 	error = dom_nodelist_get_length(children, &num_children);
 	if (error != DOM_NO_ERR) {
 		dom_nodelist_unref(children);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	for (index = 0; index < num_children; index++) {
@@ -235,15 +236,16 @@ void libdom_iterate_child_elements(dom_node *parent,
 		error = dom_nodelist_item(children, index, &child);
 		if (error != DOM_NO_ERR) {
 			dom_nodelist_unref(children);
-			return;
+			return NSERROR_NOMEM;
 		}
 
 		error = dom_node_get_node_type(child, &type);
 		if (error == DOM_NO_ERR && type == DOM_ELEMENT_NODE) {
-			if (cb(child, ctx) == false) {
+			nserror err = cb(child, ctx);
+			if (err != NSERROR_OK) {
 				dom_node_unref(child);
 				dom_nodelist_unref(children);
-				return;
+				return err;
 			}
 		}
 
@@ -251,6 +253,8 @@ void libdom_iterate_child_elements(dom_node *parent,
 	}
 
 	dom_nodelist_unref(children);
+
+	return NSERROR_OK;
 }
 
 /* exported interface documented in libdom.h */

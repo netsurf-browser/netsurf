@@ -629,8 +629,9 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 	dom_node_unref(a);
 }
 
-static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
+static nserror tree_url_load_directory_cb(dom_node *node, void *ctx)
 {
+	/* TODO: return appropriate errors */
 	tree_url_load_ctx *tctx = ctx;
 	dom_string *name;
 	dom_exception error;
@@ -641,7 +642,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 
 	error = dom_node_get_node_name(node, &name);
 	if (error != DOM_NO_ERR || name == NULL)
-		return false;
+		return NSERROR_NOMEM;
 
 	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_li)) {
 		/* entry */
@@ -656,7 +657,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 			warn_user("TreeLoadError", "(Empty <h4> "
 					"or memory exhausted.)");
 			dom_string_unref(name);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		if (tctx->title != NULL)
@@ -675,7 +676,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 		error = dom_element_get_attribute(node, corestring_dom_id, &id);
 		if (error != DOM_NO_ERR) {
 			dom_string_unref(name);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		if (id != NULL) {
@@ -691,7 +692,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 				dom_string_byte_length(tctx->title));
 		if (title == NULL) {
 			dom_string_unref(name);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		dir = tree_create_folder_node(tctx->tree, tctx->directory,
@@ -699,7 +700,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 		free(title);
 		if (dir == NULL) {
 			dom_string_unref(name);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		if (dir_is_default)
@@ -732,7 +733,7 @@ static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
 
 	dom_string_unref(name);
 
-	return true;
+	return NSERROR_OK;
 }
 
 /**
