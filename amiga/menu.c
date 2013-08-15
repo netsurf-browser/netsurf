@@ -68,6 +68,8 @@ BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
 
+#define SUB_MENU_ARROW '\n'
+
 ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin);
@@ -145,7 +147,13 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			const char *label, char key, char *icon, void *func, void *hookdata)
 {
+	bool has_submenu = false;
 	gwin->menutype[num] = type;
+
+	if(key == SUB_MENU_ARROW) {
+		has_submenu = true;
+		key = '\0';
+	}
 
 	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
 		gwin->menulab[num] = NM_BARLABEL;
@@ -165,8 +173,16 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			using label.image if there's a bitmap associated with the item. */
 		if((icon != NULL) && (gwin->menulab[num] != NM_BARLABEL)) {
 			char menu_icon[100];
+			Object *submenuarrow = NULL;
 			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-			if(ami_locate_resource(&menu_icon, icon) == true) {
+			if(ami_locate_resource(menu_icon, icon) == true) {
+				if(has_submenu == true) {
+					submenuarrow = NewObject(NULL, "sysiclass",
+						SYSIA_Which, MENUSUB,
+						SYSIA_DrawInfo, dri,
+					TAG_DONE);
+				}
+					
 				gwin->menuobj[num] = LabelObject,
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,
@@ -176,6 +192,8 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 						BITMAP_Masking, TRUE,
 					BitMapEnd,
 					LABEL_Text, gwin->menulab[num],
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, submenuarrow,
 				LabelEnd;
 
 				if(gwin->menuobj[num]) gwin->menutype[num] |= MENU_IMAGE;
@@ -458,6 +476,7 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	struct node *node;
 	UBYTE menu_type;
 	char *icon;
+	char key;
 
 	*gen = *gen + 1;
 
@@ -470,14 +489,16 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 			if(*gen == 1) menu_type = NM_ITEM;
 			if(*gen == 2) menu_type = NM_SUB;
 
-			if(tree_node_is_folder(node) == true)
+			if(tree_node_is_folder(node) == true) {
 				icon = "icons/directory.png";
-			else
+				key = SUB_MENU_ARROW;
+			} else {
 				icon = "icons/content.png";
-			
+				key = '\0';
+			}
+
 			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
-				0, icon,
-				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
+				key, icon, ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
 			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
 					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
 
