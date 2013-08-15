@@ -208,8 +208,7 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  *
  * \param e		Entry to delete
  */
-static void hotlist_delete_entry_internal(
-		struct hotlist_entry *e)
+static void hotlist_delete_entry_internal(struct hotlist_entry *e)
 {
 	assert(e != NULL);
 	assert(e->entry == NULL);
@@ -232,7 +231,7 @@ static nserror hotlist_tree_node_folder_cb(
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
-		free((void*)f->value);
+		free((void*)f->value); /* Eww */
 		free(f);
 		break;
 
