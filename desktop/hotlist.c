@@ -522,7 +522,6 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 		/* Directory handling, part 2: Make node, and handle children */
 		char *title;
 		hotlist_load_ctx new_ctx;
-		struct treeview_field_data *field;
 		treeview_node *rel;
 
 		title = strndup(dom_string_data(current_ctx->title),
@@ -532,22 +531,10 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 			return NSERROR_NOMEM;
 		}
 
-		/* Create the folder node's title field */
-		field = malloc(sizeof(struct treeview_field_data));
-		if (field == NULL) {
-			dom_string_unref(name);
-			free(title);
-			return NSERROR_NOMEM;
-		}
-		field->field = hl_ctx.fields[HL_FOLDER].field;
-		field->value = title;
-		field->value_len = strlen(title);
+		/* Add folder node */
+		err = hotlist_add_folder_internal(title, current_ctx->rel,
+				current_ctx->relshp, &rel);
 
-		/* Create the folder node */
-		err = treeview_create_node_folder(current_ctx->tree,
-				&rel, current_ctx->rel, current_ctx->relshp,
-				field, field, hl_ctx.built ? TREE_CREATE_NONE :
-						TREE_CREATE_SUPPRESS_RESIZE);
 		current_ctx->rel = rel;
 		current_ctx->relshp = TREE_REL_NEXT_SIBLING;
 
@@ -664,6 +651,8 @@ static nserror hotlist_load(const char *path, bool *loaded)
 		warn_user("TreeLoadError", "(Failed building tree.)");
 		return NSERROR_OK;
 	}
+
+	*loaded = true;
 
 	return NSERROR_OK;
 }
