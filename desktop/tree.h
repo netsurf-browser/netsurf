@@ -32,6 +32,7 @@
 
 struct sslcert_session_data;
 struct sslcert_session_data *ssl_current_session;
+const char *tree_hotlist_path;
 
 
 struct hlcache_handle;

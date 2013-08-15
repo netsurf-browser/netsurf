@@ -121,6 +121,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 			"hotlistDrawingArea"));
 
 	
+	tree_hotlist_path = nsoption_charp(hotlist_path);
 	hotlist_window = nsgtk_treeview_create(hotlist_old_get_tree_flags(), window,
 			scrolled, drawing_area);
 	
@@ -132,7 +133,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 	
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
-	
+
 	hotlist_old_initialise(nsgtk_treeview_get_tree(hotlist_window),
 			   nsoption_charp(hotlist_path), 
 			   tree_directory_icon_name);
