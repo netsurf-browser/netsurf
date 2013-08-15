@@ -795,8 +795,6 @@ nserror hotlist_fini(const char *path)
 
 	LOG(("Finalising hotlist"));
 
-	hl_ctx.built = false;
-
 	/* Save the hotlist */
 	err = hotlist_export(path);
 	if (err != NSERROR_OK) {
@@ -805,6 +803,7 @@ nserror hotlist_fini(const char *path)
 
 	/* Destroy the hotlist treeview */
 	err = treeview_destroy(hl_ctx.tree);
+	hl_ctx.built = false;
 
 	/* Free hotlist treeview entry fields */
 	for (i = 0; i < HL_N_FIELDS; i++)
