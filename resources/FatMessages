@@ -1327,26 +1327,21 @@ de.all.HotlistHomepage:NetSurf Homepage
 fr.all.HotlistHomepage:Page d'accueil de NetSurf
 it.all.HotlistHomepage:Home Page di NetSurf
 nl.all.HotlistHomepage:NetSurf thuispagina
-en.all.HotlistTestBuild:NetSurf test builds
-de.all.HotlistTestBuild:NetSurf Testversionen
-fr.all.HotlistTestBuild:Versions test de NetSurf
-it.all.HotlistTestBuild:Ultima versione di NetSurf
-nl.all.HotlistTestBuild:NetSurf test versie
-en.all.HotlistDocumentation:NetSurf documentation
-de.all.HotlistDocumentation:NetSurf Dokumentation
-fr.all.HotlistDocumentation:Documentation de NetSurf
-it.all.HotlistDocumentation:Documentazione di NetSurf
-nl.all.HotlistDocumentation:NetSurf documentatie
-en.all.HotlistBugTracker:NetSurf bug tracker
-de.all.HotlistBugTracker:NetSurf Bug-Tracker
-fr.all.HotlistBugTracker:Le traqueur de bogues de NetSurf
-it.all.HotlistBugTracker:Bug Tracker di NetSurf
-nl.all.HotlistBugTracker:NetSurf bug tracker
-en.all.HotlistFeatureRequest:NetSurf feature requests
-de.all.HotlistFeatureRequest:NetSurf Verbesserungsvorschläge
-fr.all.HotlistFeatureRequest:Demandes de nouvelles fonctions de Netsurf
-it.all.HotlistFeatureRequest:Suggerimenti per NetSurf
-nl.all.HotlistFeatureRequest:NetSurf feature requests
+en.all.HotlistDocumentation:Documentation
+de.all.HotlistDocumentation:Dokumentation
+fr.all.HotlistDocumentation:Documentation
+it.all.HotlistDocumentation:Documentazione
+nl.all.HotlistDocumentation:Documentatie
+en.all.HotlistContact:Contact the NetSurf developers
+de.all.HotlistContact:Contact the NetSurf developers
+fr.all.HotlistContact:Contact the NetSurf developers
+it.all.HotlistContact:Contact the NetSurf developers
+nl.all.HotlistContact:Contact the NetSurf developers
+en.all.HotlistDownloads:Download the latest version
+de.all.HotlistDownloads:Download the latest version
+fr.all.HotlistDownloads:Download the latest version
+it.all.HotlistDownloads:Download the latest version
+nl.all.HotlistDownloads:Download the latest version
 
 # Default (Amiga) hotlist folder names
 #
