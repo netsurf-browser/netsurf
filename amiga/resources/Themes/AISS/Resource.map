@@ -1,2 +1,6 @@
 # Resource.map
 favicon.ico:TBimages:list_file
+icons/arrow-l.png:TBimages:list_mailreplied
+icons/search.png:TBimages:list_search
+icons/directory.png:list_drawer
+icons/content.png:list_file
