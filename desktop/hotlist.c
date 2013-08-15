@@ -820,20 +820,17 @@ nserror hotlist_fini(const char *path)
 /* Exported interface, documented in hotlist.h */
 nserror hotlist_add(nsurl *url)
 {
-	const struct url_data *data;
+	treeview_node *entry;
+	nserror err;
 
 	/* If we don't have a hotlist at the moment, just return OK */
 	if (hl_ctx.tree == NULL)
 		return NSERROR_OK;
 
-	data = urldb_get_url_data(url);
-	if (data == NULL) {
-		LOG(("Can't add URL to hotlist that's not present in urldb."));
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	/* TODO */
-	//hotlist_add_entry(url, data);
+	/* TODO: Don't just dump it at the top of the root node.
+	 *       Make an "Unsorted" folder for new additions. */
+	err = hotlist_add_entry_internal(url, NULL, NULL, NULL,
+			TREE_REL_FIRST_CHILD, &entry);
 
 	return NSERROR_OK;
 }
