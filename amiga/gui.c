@@ -319,6 +319,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	found = ami_gui_check_resource(fullpath, file);
 	if(found) return true;
 
+	/* Check current theme directory */
 	if(nsoption_charp(theme))
 	{
 		strcpy(fullpath, nsoption_charp(theme));
