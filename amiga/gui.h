@@ -158,6 +158,7 @@ BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
 void ami_gui_hotlist_toolbar_update_all(void);
 void ami_gui_tabs_toggle_all(void);
+bool ami_locate_resource(char *fullpath, const char *file);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

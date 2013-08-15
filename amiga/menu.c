@@ -143,7 +143,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 }
 
 static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
-			const char *label, char key, struct bitmap *bm, void *func, void *hookdata)
+			const char *label, char key, char *icon, void *func, void *hookdata)
 {
 	gwin->menutype[num] = type;
 
@@ -159,6 +159,31 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 		}
 	}
 
+	if((GadToolsBase->lib_Version > 53) ||
+		((GadToolsBase->lib_Version == 53) && (GadToolsBase->lib_Revision >= 6))) {
+		/* GadTools 53.6+ only. For now we will only create the menu
+			using label.image if there's a bitmap associated with the item. */
+		if((icon != NULL) && (gwin->menulab[num] != NM_BARLABEL)) {
+			char menu_icon[100];
+			struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+			if(ami_locate_resource(&menu_icon, icon) == true) {
+				gwin->menuobj[num] = LabelObject,
+					LABEL_DrawInfo, dri,
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, BitMapObject,
+						BITMAP_Screen, scrn,
+						BITMAP_SourceFile, menu_icon,
+						BITMAP_Masking, TRUE,
+					BitMapEnd,
+					LABEL_Text, gwin->menulab[num],
+				LabelEnd;
+
+				if(gwin->menuobj[num]) gwin->menutype[num] |= MENU_IMAGE;
+			}
+			FreeScreenDrawInfo(scrn, dri);
+		}
+	}
+	
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
@@ -432,6 +457,7 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	struct node_element *element=NULL;
 	struct node *node;
 	UBYTE menu_type;
+	char *icon;
 
 	*gen = *gen + 1;
 
@@ -444,8 +470,13 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 			if(*gen == 1) menu_type = NM_ITEM;
 			if(*gen == 2) menu_type = NM_SUB;
 
+			if(tree_node_is_folder(node) == true)
+				icon = "icons/directory.png";
+			else
+				icon = "icons/content.png";
+			
 			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
-				0, tree_url_node_get_icon(node),
+				0, icon,
 				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
 			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
 					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
