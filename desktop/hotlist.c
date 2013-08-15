@@ -356,10 +356,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 		return NSERROR_NOMEM;
 	}
 
-	/* We're loading external input.
-	 * This may be garbage, so attempt to normalise via nsurl
-	 */
-
+	/* Need to get URL as a nsurl object */
 	err = nsurl_create(dom_string_data(url1), &url);
 	dom_string_unref(url1);
 
@@ -373,6 +370,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 		return err;
 	}
 
+	/* Get the URL data */
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
 		/* No entry in database, so add one */
