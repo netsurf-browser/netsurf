@@ -604,15 +604,6 @@ static nserror hotlist_load(const char *path, bool *loaded)
 	ctx.title = NULL;
 
 	err = hotlist_load_directory(ul, &ctx);
-	if (err != NSERROR_OK) {
-		dom_node_unref(ul);
-		dom_node_unref(body);
-		dom_node_unref(html);
-		dom_node_unref(document);
-		warn_user("TreeLoadError",
-					"(<html>...<body>...<ul> not found.)");
-		return NSERROR_OK;
-	}
 
 	if (ctx.title != NULL) {
 		dom_string_unref(ctx.title);
@@ -623,6 +614,11 @@ static nserror hotlist_load(const char *path, bool *loaded)
 	dom_node_unref(body);
 	dom_node_unref(html);
 	dom_node_unref(document);
+
+	if (err != NSERROR_OK) {
+		warn_user("TreeLoadError", "(Failed building tree.)");
+		return NSERROR_OK;
+	}
 
 	return NSERROR_OK;
 }
