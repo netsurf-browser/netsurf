@@ -128,7 +128,7 @@ void ro_gui_hotlist_postinitialise(void)
 	}
 
 	/* Create the treeview with the window and toolbar. */
-
+	tree_hotlist_path = nsoption_charp(hotlist_path);
 	hotlist_window.tv = ro_treeview_create(hotlist_window.window,
 			hotlist_window.toolbar, &ro_hotlist_treeview_callbacks,
 			hotlist_old_get_tree_flags());

@@ -128,6 +128,7 @@ void atari_hotlist_init(void)
 			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
 			gemtk_wm_set_toolbar(hl.window, tree, 0, 0);
 			gemtk_wm_unlink(hl.window);
+			tree_hotlist_path = (const char*)&hl.path;
 			hl.tv = atari_treeview_create(
 				hotlist_old_get_tree_flags(),
 				hl.window,
