@@ -149,58 +149,6 @@ static nserror hotlist_entry_insert(struct hotlist_entry *e,
 
 
 /**
- * Add an entry to the hotlist (creates the entry).
- *
- * If the treeview has already been created, the entry will be added to the
- * treeview.  Otherwise, the entry will have to be added to the treeview later.
- *
- * When we first create the hotlist we create it without the treeview, to
- * simplfy sorting the entries.
- *
- * If set, 'title' must be allocated on the heap, ownership is yeilded to
- * this function.
- *
- * \param url		URL for entry to add to hotlist.
- * \param title		Title for entry, or NULL if using title from data
- * \param data		URL data for the entry
- * \param relation	Existing node to insert as relation of, or NULL
- * \param rel		Entry's relationship to relation
- * \param entry		Updated to new treeview entry node
- * \return NSERROR_OK on success, or appropriate error otherwise
- */
-static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
-		const struct url_data *data, treeview_node *relation,
-		enum treeview_relationship rel, treeview_node **entry)
-{
-	nserror err;
-	struct hotlist_entry *e;
-
-	/* Create new local hotlist entry */
-	e = malloc(sizeof(struct hotlist_entry));
-	if (e == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	e->url = nsurl_ref(url);
-	e->entry = NULL;
-
-	err = hotlist_create_treeview_field_data(e, title, data);
-	if (err != NSERROR_OK) {
-		return err;
-	}
-
-	err = hotlist_entry_insert(e, relation, rel);
-	if (err != NSERROR_OK) {
-		return err;
-	}
-
-	*entry = e->entry;
-
-	return NSERROR_OK;
-}
-
-
-/**
  * Delete a hotlist entry
  *
  * This does not delete the treeview node, rather it should only be called from
@@ -221,6 +169,78 @@ static void hotlist_delete_entry_internal(struct hotlist_entry *e)
 
 	/* Destroy entry */
 	free(e);
+}
+
+
+/**
+ * Add an entry to the hotlist (creates the entry).
+ *
+ * If the treeview has already been created, the entry will be added to the
+ * treeview.  Otherwise, the entry will have to be added to the treeview later.
+ *
+ * When we first create the hotlist we create it without the treeview, to
+ * simplfy sorting the entries.
+ *
+ * If set, 'title' must be allocated on the heap, ownership is yeilded to
+ * this function.
+ *
+ * \param url		URL for entry to add to hotlist.
+ * \param title		Title for entry, or NULL if using title from data
+ * \param data		URL data for the entry, or NULL
+ * \param relation	Existing node to insert as relation of, or NULL
+ * \param rel		Entry's relationship to relation
+ * \param entry		Updated to new treeview entry node
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
+		const struct url_data *data, treeview_node *relation,
+		enum treeview_relationship rel, treeview_node **entry)
+{
+	nserror err;
+	struct hotlist_entry *e;
+
+	if (data == NULL) {
+		/* Get the URL data */
+		data = urldb_get_url_data(url);
+		if (data == NULL) {
+			/* No entry in database, so add one */
+			urldb_add_url(url);
+			/* now attempt to get url data */
+			data = urldb_get_url_data(url);
+		}
+		if (data == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* Create new local hotlist entry */
+	e = malloc(sizeof(struct hotlist_entry));
+	if (e == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	e->url = nsurl_ref(url);
+	e->entry = NULL;
+
+	err = hotlist_create_treeview_field_data(e, title, data);
+	if (err != NSERROR_OK) {
+		nsurl_unref(e->url);
+		free(e);
+		return err;
+	}
+
+	err = hotlist_entry_insert(e, relation, rel);
+	if (err != NSERROR_OK) {
+		hotlist_delete_entry_internal(e);
+		return err;
+	}
+
+	/* Make this URL persistent */
+	urldb_set_url_persistence(url, true);
+
+	*entry = e->entry;
+
+	return NSERROR_OK;
 }
 
 
@@ -312,11 +332,9 @@ typedef struct {
 static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 {
 	dom_node *a;
-	dom_string *title1;
-	dom_string *url1;
+	dom_string *title1, *url1;
 	char *title;
 	nsurl *url;
-	const struct url_data *data;
 	dom_exception derror;
 	nserror err;
 
@@ -348,7 +366,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 				dom_string_byte_length(title1));
 		dom_string_unref(title1);
 	} else {
-		title = strdup("");
+		title = strdup("<No title>");
 	}
 	if (title == NULL) {
 		warn_user("NoMemory", NULL);
@@ -370,26 +388,8 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 		return err;
 	}
 
-	/* Get the URL data */
-	data = urldb_get_url_data(url);
-	if (data == NULL) {
-		/* No entry in database, so add one */
-		urldb_add_url(url);
-		/* now attempt to get url data */
-		data = urldb_get_url_data(url);
-	}
-	if (data == NULL) {
-		nsurl_unref(url);
-		free(title);
-
-		return NSERROR_NOMEM;
-	}
-
-	/* Make this URL persistent */
-	urldb_set_url_persistence(url, true);
-
 	/* Add the entry */
-	err = hotlist_add_entry_internal(url, title, data, ctx->rel,
+	err = hotlist_add_entry_internal(url, title, NULL, ctx->rel,
 			ctx->relshp, &ctx->rel);
 	nsurl_unref(url);
 	ctx->relshp = TREE_REL_NEXT_SIBLING;
