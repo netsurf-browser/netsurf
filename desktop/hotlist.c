@@ -175,12 +175,6 @@ static void hotlist_delete_entry_internal(struct hotlist_entry *e)
 /**
  * Add an entry to the hotlist (creates the entry).
  *
- * If the treeview has already been created, the entry will be added to the
- * treeview.  Otherwise, the entry will have to be added to the treeview later.
- *
- * When we first create the hotlist we create it without the treeview, to
- * simplfy sorting the entries.
- *
  * If set, 'title' must be allocated on the heap, ownership is yeilded to
  * this function.
  *
@@ -239,6 +233,59 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
 	urldb_set_url_persistence(url, true);
 
 	*entry = e->entry;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Add folder to the hotlist (creates the folder).
+ *
+ * If set, 'title' must be allocated on the heap, ownership is yeilded to
+ * this function.
+ *
+ * \param title		Title for entry, or NULL if using title from data
+ * \param relation	Existing node to insert as relation of, or NULL
+ * \param rel		Entry's relationship to relation
+ * \param folder	Updated to new treeview entry node
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_add_folder_internal(
+		const char *title, treeview_node *relation,
+		enum treeview_relationship rel, treeview_node **folder)
+{
+	struct treeview_field_data *field;
+	treeview_node *f;
+	nserror err;
+
+	if (title == NULL) {
+		/* TODO: use messages */
+		title = strdup("Folder");
+	}
+	if (title == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Create the title field */
+	field = malloc(sizeof(struct treeview_field_data));
+	if (field == NULL) {
+		free((void *)title); /* Eww */
+		return NSERROR_NOMEM;
+	}
+	field->field = hl_ctx.fields[HL_FOLDER].field;
+	field->value = title;
+	field->value_len = strlen(title);
+
+	err = treeview_create_node_folder(hl_ctx.tree,
+			&f, relation, rel, field, field, hl_ctx.built ?
+			TREE_CREATE_NONE : TREE_CREATE_SUPPRESS_RESIZE);
+	if (err != NSERROR_OK) {
+		free((void *)title); /* Eww */
+		free(field);
+		return err;
+	}
+
+	*folder = f;
 
 	return NSERROR_OK;
 }
@@ -629,7 +676,56 @@ static nserror hotlist_load(const char *path, bool *loaded)
  */
 static nserror hotlist_generate(void)
 {
-	/* TODO */
+	int i;
+	treeview_node *f;
+	treeview_node *e;
+	char *title;
+	nserror err;
+	nsurl *url;
+	static const struct {
+		const char *url;
+		const char *msg_key;
+	} default_entries[] = {
+		{ "http://www.netsurf-browser.org/",
+				"HotlistHomepage" },
+		{ "http://www.netsurf-browser.org/downloads/",
+				"HotlistDownloads" },
+		{ "http://www.netsurf-browser.org/documentation",
+				"HotlistDocumentation" },
+		{ "http://www.netsurf-browser.org/contact",
+				"HotlistContact" }
+	};
+	const int n_entries = sizeof(default_entries) /
+			sizeof(default_entries[0]);
+
+	/* First make "NetSurf" folder for defualt entries */
+	title = strdup("NetSurf");
+	err = hotlist_add_folder_internal(title, NULL,
+			TREE_REL_FIRST_CHILD, &f);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* And add entries as children of folder node */
+	for (i = n_entries - 1; i >= 0; i--) {
+		/* Get URL as nsurl object */
+		err = nsurl_create(default_entries[i].url, &url);
+		if (err != NSERROR_OK) {
+			return NSERROR_NOMEM;
+		}
+
+		title = strdup(messages_get(default_entries[i].msg_key));
+
+		/* Build the node */
+		err = hotlist_add_entry_internal(url, title,
+				NULL, f, TREE_REL_FIRST_CHILD, &e);
+		nsurl_unref(url);
+
+		if (err != NSERROR_OK) {
+			return NSERROR_NOMEM;
+		}
+	}
+
 	return NSERROR_OK;
 }
 
