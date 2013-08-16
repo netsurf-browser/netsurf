@@ -1272,6 +1272,7 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 		case GUI_DRAG_SCROLL:
 		case GUI_DRAG_SAVE:
 		case GUI_DRAG_FRAME:
+		case GUI_DRAG_TREEVIEW:
 			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
 				issues when a Wimp_DragBox drag operation is started */
 			break;
@@ -1298,6 +1299,7 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 		case GUI_DRAG_SCROLL:
 		case GUI_DRAG_SAVE:
 		case GUI_DRAG_FRAME:
+		case GUI_DRAG_TREEVIEW:
 			/* ignore entering new windows/frames */
 			break;
 		default:
