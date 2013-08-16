@@ -118,7 +118,6 @@ struct treeview_drag {
 struct treeview_move {
 	treeview_node *target;		/**< Move target */
 	int target_y;			/**< Y coord of top of target node */
-	int target_height;		/**< Height of target node */
 	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
 }; /**< Move details */
 
@@ -1854,7 +1853,6 @@ static bool treeview_set_move_indicator(treeview *tree,
 
 	tree->move.target = target;
 	tree->move.target_pos = target_pos;
-	tree->move.target_height = node_height;
 	tree->move.target_y = node_y;
 
 	/* TODO: proper values */
