@@ -39,10 +39,10 @@ struct treeview_globals {
 	int icon_step;
 } tree_g;
 
-enum treeview_node_section {
-	TV_NODE_SECTION_TOGGLE,		/**< Expansion toggle */
-	TV_NODE_SECTION_ON_NODE,	/**< Node content (text, icon) */
-	TV_NODE_SECTION_NONE		/**< Empty area */
+enum treeview_node_part {
+	TV_NODE_PART_TOGGLE,		/**< Expansion toggle */
+	TV_NODE_PART_ON_NODE,		/**< Node content (text, icon) */
+	TV_NODE_PART_NONE		/**< Empty area */
 }; /**< Section type of a treeview at a point */
 
 struct treeview_text {
@@ -102,10 +102,10 @@ struct treeview_drag {
 		TV_DRAG_TEXTAREA
 	} type;	/**< Drag type */
 	treeview_node *start_node;	/**< Start node */
-	bool selected;				/**< Start node is selected */
-	enum treeview_node_section section;	/**< Node section at start */
-	struct treeview_pos start;		/**< Start pos */
-	struct treeview_pos prev;		/**< Previous pos */
+	bool selected;			/**< Start node is selected */
+	enum treeview_node_part part;	/**< Node part at start */
+	struct treeview_pos start;	/**< Start pos */
+	struct treeview_pos prev;	/**< Previous pos */
 }; /**< Drag state */
 
 struct treeview {
@@ -1775,7 +1775,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		TV_NODE_ACTION_NONE		= 0,
 		TV_NODE_ACTION_SELECTION	= (1 << 0)
 	} action = TV_NODE_ACTION_NONE;
-	enum treeview_node_section section = TV_NODE_SECTION_NONE;
+	enum treeview_node_part part = TV_NODE_PART_NONE;
 	nserror err;
 
 	r.x0 = 0;
@@ -1795,13 +1795,13 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		if (ma->x >= node->inset - 1 &&
 				ma->x < node->inset + tree_g.step_width) {
 			/* Over expansion toggle */
-			section = TV_NODE_SECTION_TOGGLE;
+			part = TV_NODE_PART_TOGGLE;
 
 		} else if (ma->x >= node->inset + tree_g.step_width &&
 				ma->x < node->inset + tree_g.step_width +
 				tree_g.icon_step + node->text.value.width) {
 			/* On node */
-			section = TV_NODE_SECTION_ON_NODE;
+			part = TV_NODE_PART_ON_NODE;
 		}
 	} else if (node->type == TREE_NODE_ENTRY &&
 			height > tree_g.line_height) {
@@ -1827,19 +1827,19 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 						ma->x < x + max_width -
 						tree_g.step_width) {
 					/* On a field name */
-					section = TV_NODE_SECTION_ON_NODE;
+					part = TV_NODE_PART_ON_NODE;
 
 				} else if (ma->x >= x + max_width &&
 						ma->x < x + max_width +
 						entry->fields[i].value.width) {
 					/* On a field value */
-					section = TV_NODE_SECTION_ON_NODE;
+					part = TV_NODE_PART_ON_NODE;
 				}
 			} else {
 				if (ma->x >= x && ma->x < x +
 						entry->fields[i].value.width) {
 					/* On a field value */
-					section = TV_NODE_SECTION_ON_NODE;
+					part = TV_NODE_PART_ON_NODE;
 				}
 			}
 
@@ -1847,12 +1847,12 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		}
 	}
 
-	/* Record what position / section a drag started on */
+	/* Record what position / part a drag started on */
 	if (ma->mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
 			ma->tree->drag.type == TV_DRAG_NONE) {
 		ma->tree->drag.selected = node->flags & TREE_NODE_SELECTED;
 		ma->tree->drag.start_node = node;
-		ma->tree->drag.section = section;
+		ma->tree->drag.part = part;
 		ma->tree->drag.start.x = ma->x;
 		ma->tree->drag.start.y = ma->y;
 		ma->tree->drag.start.node_y = ma->current_y;
@@ -1868,8 +1868,8 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	if (ma->tree->drag.type == TV_DRAG_NONE) {
 		if (ma->mouse & BROWSER_MOUSE_DRAG_1 &&
 				ma->tree->drag.selected == false &&
-				ma->tree->drag.section ==
-						TV_NODE_SECTION_NONE) {
+				ma->tree->drag.part ==
+						TV_NODE_PART_NONE) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
 			ma->tree->cw_t->drag_status(ma->tree->cw_h,
 					CORE_WINDOW_DRAG_SELECTION);
@@ -1908,7 +1908,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 
 	if (((node->type == TREE_NODE_FOLDER) &&
 			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) ||
-			(section == TV_NODE_SECTION_TOGGLE && click)) {
+			(part == TV_NODE_PART_TOGGLE && click)) {
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
@@ -1942,7 +1942,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED) &&
-			section != TV_NODE_SECTION_TOGGLE) {
+			part != TV_NODE_PART_TOGGLE) {
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
@@ -2006,12 +2006,12 @@ void treeview_mouse_action(treeview *tree,
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
 
-		/* Record what position / section a drag started on */
+		/* Record what position / part a drag started on */
 		if (mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
 				tree->drag.type == TV_DRAG_NONE) {
 			tree->drag.selected = false;
 			tree->drag.start_node = NULL;
-			tree->drag.section = TV_NODE_SECTION_NONE;
+			tree->drag.part = TV_NODE_PART_NONE;
 			tree->drag.start.x = x;
 			tree->drag.start.y = y;
 			tree->drag.start.node_y = tree->root->height;
@@ -2027,8 +2027,7 @@ void treeview_mouse_action(treeview *tree,
 		if (tree->drag.type == TV_DRAG_NONE) {
 			if (mouse & BROWSER_MOUSE_DRAG_1 &&
 					tree->drag.selected == false &&
-					tree->drag.section ==
-							TV_NODE_SECTION_NONE) {
+					tree->drag.part == TV_NODE_PART_NONE) {
 				tree->drag.type = TV_DRAG_SELECTION;
 				tree->cw_t->drag_status(tree->cw_h,
 						CORE_WINDOW_DRAG_SELECTION);
