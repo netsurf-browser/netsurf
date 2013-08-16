@@ -2030,8 +2030,12 @@ void treeview_mouse_action(treeview *tree,
 					tree->drag.section ==
 							TV_NODE_SECTION_NONE) {
 				tree->drag.type = TV_DRAG_SELECTION;
+				tree->cw_t->drag_status(tree->cw_h,
+						CORE_WINDOW_DRAG_SELECTION);
 			} else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				tree->drag.type = TV_DRAG_SELECTION;
+				tree->cw_t->drag_status(tree->cw_h,
+						CORE_WINDOW_DRAG_SELECTION);
 			}
 
 			if (tree->drag.start_node != NULL &&
