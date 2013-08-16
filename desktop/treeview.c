@@ -65,6 +65,13 @@ enum treeview_node_flags {
 	TREE_NODE_SELECTED	= (1 << 1)	/**< Whether node is selected */
 };
 
+enum treeview_target_pos {
+	TV_TARGET_ABOVE,
+	TV_TARGET_INSIDE,
+	TV_TARGET_BELOW,
+	TV_TARGET_NONE
+};
+
 struct treeview_node {
 	enum treeview_node_flags flags;	/**< Node flags */
 	enum treeview_node_type type;	/**< Node type */
@@ -122,12 +129,7 @@ struct treeview {
 	struct treeview_drag drag;	/**< Drag state */
 	treeview_node *target;		/**< Move target */
 	treeview_node *target_display;	/**< Target indicator render node */
-	enum {
-		TV_TARGET_ABOVE,
-		TV_TARGET_INSIDE,
-		TV_TARGET_BELOW,
-		TV_TARGET_NONE
-	} target_pos;	/**< Drag type */
+	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
 
 	const struct treeview_callback_table *callbacks; /**< For node events */
 
@@ -1796,33 +1798,37 @@ static bool treeview_set_move_indicator(treeview *tree,
 		browser_mouse_state mouse, treeview_node *node,
 		int node_height, int mouse_pos, struct rect *rect)
 {
+	treeview_node *target;
+	treeview_node *target_display;
+	enum treeview_target_pos target_pos;
+
 	switch (node->type) {
 	case TREE_NODE_FOLDER:
 		if (mouse_pos <= node_height / 4) {
-			tree->target = node;
-			tree->target_display = node;
-			tree->target_pos = TV_TARGET_ABOVE;
+			target = node;
+			target_display = node;
+			target_pos = TV_TARGET_ABOVE;
 		} else if (mouse_pos <= (3 * node_height) / 4 ||
 				node->flags & TREE_NODE_EXPANDED) {
-			tree->target = node;
-			tree->target_display = node;
-			tree->target_pos = TV_TARGET_INSIDE;
+			target = node;
+			target_display = node;
+			target_pos = TV_TARGET_INSIDE;
 		} else {
-			tree->target = node;
-			tree->target_display = treeview_node_next(node, false);
-			tree->target_pos = TV_TARGET_BELOW;
+			target = node;
+			target_display = treeview_node_next(node, false);
+			target_pos = TV_TARGET_BELOW;
 		}
 		break;
 
 	case TREE_NODE_ENTRY:
 		if (mouse_pos <= node_height / 2) {
-			tree->target = node;
-			tree->target_display = node;
-			tree->target_pos = TV_TARGET_ABOVE;
+			target = node;
+			target_display = node;
+			target_pos = TV_TARGET_ABOVE;
 		} else {
-			tree->target = node;
-			tree->target_display = treeview_node_next(node, false);
-			tree->target_pos = TV_TARGET_BELOW;
+			target = node;
+			target_display = treeview_node_next(node, false);
+			target_pos = TV_TARGET_BELOW;
 		}
 		break;
 
@@ -1830,6 +1836,16 @@ static bool treeview_set_move_indicator(treeview *tree,
 		assert(node->type != TREE_NODE_ROOT);
 		return false;
 	}
+
+	if (target == tree->target && target_display == tree->target_display &&
+			target_pos == tree->target_pos) {
+		/* No change */
+		return false;
+	}
+
+	tree->target = target;
+	tree->target_display = target_display;
+	tree->target_pos = target_pos;
 
 	/* TODO: proper values */
 	rect->x0 = 0;
