@@ -1989,6 +1989,7 @@ void treeview_mouse_action(treeview *tree,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
+	/* Handle selection drag end */
 	if (mouse == BROWSER_MOUSE_HOVER &&
 			tree->drag.type == TV_DRAG_SELECTION) {
 		treeview_commit_selection_drag(tree);
