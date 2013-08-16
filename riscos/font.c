@@ -424,6 +424,7 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 {
 	const char *font_family;
 	unsigned int font_size;
+	unsigned int flags = rufl_BLEND_FONT;
 	rufl_style font_style;
 	rufl_code code;
 
@@ -431,9 +432,11 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 	if (font_size == 0)
 		return true;
 
+	if (no_font_blending || print_active)
+		flags = 0;
+
 	code = rufl_paint(font_family, font_style, font_size,
-			string, length, x, y,
-			print_active ? 0 : rufl_BLEND_FONT);
+			string, length, x, y, flags);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
 			LOG(("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
