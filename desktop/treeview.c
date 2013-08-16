@@ -1989,15 +1989,24 @@ void treeview_mouse_action(treeview *tree,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	/* Handle selection drag end */
-	if (mouse == BROWSER_MOUSE_HOVER &&
-			tree->drag.type == TV_DRAG_SELECTION) {
-		treeview_commit_selection_drag(tree);
-		tree->drag.type = TV_DRAG_NONE;
-		tree->drag.start_node = NULL;
+	/* Handle drag ends */
+	if (mouse == BROWSER_MOUSE_HOVER) {
+		switch (tree->drag.type) {
+		case TV_DRAG_SELECTION:
+			treeview_commit_selection_drag(tree);
+			tree->drag.type = TV_DRAG_NONE;
+			tree->drag.start_node = NULL;
 
-		tree->cw_t->drag_status(tree->cw_h, CORE_WINDOW_DRAG_NONE);
-		return;
+			tree->cw_t->drag_status(tree->cw_h,
+					CORE_WINDOW_DRAG_NONE);
+			return;
+		case TV_DRAG_MOVE:
+			/* TODO */
+			break;
+		default:
+			/* No drag to end */
+			break;
+		}
 	}
 
 	if (y > tree->root->height) {
