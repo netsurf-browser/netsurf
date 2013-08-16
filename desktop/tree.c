@@ -223,6 +223,11 @@ static void treeview_test_drag_status(struct core_window *cw,
 	case CORE_WINDOW_DRAG_SELECTION:
 		tree->drag = TREE_SELECT_DRAG;
 		break;
+
+	case CORE_WINDOW_DRAG_MOVE:
+		tree->drag = TREE_MOVE_DRAG;
+		break;
+
 	default:
 		break;
 	}
