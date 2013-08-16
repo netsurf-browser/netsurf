@@ -849,7 +849,7 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 	err = treeview_create(&hl_ctx.tree, &hl_tree_cb_t,
 			HL_N_FIELDS, hl_ctx.fields,
 			cw_t, core_window_handle,
-			TREEVIEW_NO_MOVES | TREEVIEW_DEL_EMPTY_DIRS);
+			TREEVIEW_NO_FLAGS);
 	if (err != NSERROR_OK) {
 		hl_ctx.tree = NULL;
 		return err;
