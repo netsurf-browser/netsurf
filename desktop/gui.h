@@ -44,6 +44,7 @@ typedef enum {
 typedef enum {
 	GDRAGGING_NONE,
 	GDRAGGING_SCROLLBAR,
+	GDRAGGING_SELECTION,
 	GDRAGGING_OTHER
 } gui_drag_type;
 
