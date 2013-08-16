@@ -380,6 +380,7 @@ void browser_window_set_drag_type(struct browser_window *bw,
 
 		switch (type) {
 		case DRAGGING_SELECTION:
+			/* TODO: tell front end */
 			return;
 		case DRAGGING_SCR_X:
 		case DRAGGING_SCR_Y:
