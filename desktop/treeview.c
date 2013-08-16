@@ -117,7 +117,8 @@ struct treeview_drag {
 
 struct treeview_move {
 	treeview_node *target;		/**< Move target */
-	treeview_node *target_display;	/**< Target indicator render node */
+	int target_y;			/**< Y coord of top of target node */
+	int target_height;		/**< Height of target node */
 	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
 }; /**< Move details */
 
@@ -948,7 +949,6 @@ nserror treeview_create(treeview **tree,
 	(*tree)->drag.prev.node_h = 0;
 
 	(*tree)->move.target = NULL;
-	(*tree)->move.target_display = NULL;
 	(*tree)->move.target_pos = TV_TARGET_NONE;
 
 	(*tree)->flags = flags;
@@ -1277,23 +1277,6 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 				node->text.value.data, node->text.value.len,
 				text_style);
 
-		/* Render move indicator arrow */
-		if (tree->move.target_display == node &&
-				treeview_res[TREE_RES_ARROW].ready) {
-			assert(tree->move.target != NULL);
-			data.x = tree->move.target->inset + tree_g.move_offset;
-			data.y = render_y + ((tree_g.line_height -
-					treeview_res[res].height + 1) / 2);
-			data.background_colour = bg_style->fill_colour;
-
-			if (tree->move.target_pos != TV_TARGET_INSIDE) {
-				data.y -= (tree_g.line_height + 1) / 2;
-			}
-
-			content_redraw(treeview_res[TREE_RES_ARROW].c,
-					&data, &r, &new_ctx);
-		}
-
 		/* Rendered the node */
 		render_y += tree_g.line_height;
 		if (render_y > r.y1) {
@@ -1355,7 +1338,25 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 		y0 = render_y;
 		new_ctx.plot->rectangle(r.x0, y0, r.x1, r.y1,
 				&plot_style_even.bg);
-		
+	}
+
+	/* All normal treeview rendering is done; render any overlays */
+	if (tree->move.target_pos != TV_TARGET_NONE &&
+			treeview_res[TREE_RES_ARROW].ready) {
+		/* Got a MOVE drag; render move indicator arrow */
+		if (tree->move.target != NULL) {
+			inset = tree->move.target->inset;
+		} else if (tree->root->children != NULL) {
+			inset = tree->root->children->inset;
+		} else {
+			assert(tree->root->children != NULL);
+		}
+		data.x = inset + tree_g.move_offset;
+		data.y = tree->move.target_y;
+		data.background_colour = plot_style_even.bg.fill_colour;
+
+		content_redraw(treeview_res[TREE_RES_ARROW].c,
+					&data, &r, &new_ctx);
 	}
 
 	/* Rendering complete */
@@ -1791,35 +1792,35 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
  * Set the drag&drop drop indicator
  *
  * \param tree		Treeview object to set node indicator in
- * \param mouse		The current mouse state
  * \param node		The treeview node with mouse pointer over it
  * \param node_height	The height of node
- * \param mouse_pos	Distanct in px from top of node to mouse pos
+ * \param node_y	The Y coord of the top of node
+ * \param mouse_y	Y coord of mouse position
  * \param rect		Redraw rectangle (if redraw required)
  * \return true iff redraw required
  */
 static bool treeview_set_move_indicator(treeview *tree,
-		browser_mouse_state mouse, treeview_node *node,
-		int node_height, int mouse_pos, struct rect *rect)
+		treeview_node *node, int node_height,
+		int node_y, int mouse_y, struct rect *rect)
 {
 	treeview_node *target;
-	treeview_node *target_display;
 	enum treeview_target_pos target_pos;
+	int mouse_pos = mouse_y - node_y;
+
+	node_y += (tree_g.line_height -
+			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
 	switch (node->type) {
 	case TREE_NODE_FOLDER:
 		if (mouse_pos <= node_height / 4) {
 			target = node;
-			target_display = node;
 			target_pos = TV_TARGET_ABOVE;
 		} else if (mouse_pos <= (3 * node_height) / 4 ||
 				node->flags & TREE_NODE_EXPANDED) {
 			target = node;
-			target_display = node;
 			target_pos = TV_TARGET_INSIDE;
 		} else {
 			target = node;
-			target_display = treeview_node_next(node, false);
 			target_pos = TV_TARGET_BELOW;
 		}
 		break;
@@ -1827,11 +1828,9 @@ static bool treeview_set_move_indicator(treeview *tree,
 	case TREE_NODE_ENTRY:
 		if (mouse_pos <= node_height / 2) {
 			target = node;
-			target_display = node;
 			target_pos = TV_TARGET_ABOVE;
 		} else {
 			target = node;
-			target_display = treeview_node_next(node, false);
 			target_pos = TV_TARGET_BELOW;
 		}
 		break;
@@ -1841,16 +1840,22 @@ static bool treeview_set_move_indicator(treeview *tree,
 		return false;
 	}
 
-	if (target == tree->move.target &&
-			target_display == tree->move.target_display &&
-			target_pos == tree->move.target_pos) {
+	if (target_pos == tree->move.target_pos &&
+			target == tree->move.target) {
 		/* No change */
 		return false;
 	}
 
+	if (target_pos == TV_TARGET_ABOVE) {
+		node_y -= (tree_g.line_height + 1) / 2;
+	} else if (target_pos == TV_TARGET_BELOW) {
+		node_y += node_height - (tree_g.line_height + 1) / 2;
+	}
+
 	tree->move.target = target;
-	tree->move.target_display = target_display;
 	tree->move.target_pos = target_pos;
+	tree->move.target_height = node_height;
+	tree->move.target_y = node_y;
 
 	/* TODO: proper values */
 	rect->x0 = 0;
@@ -2074,8 +2079,8 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		break;
 
 	case TV_DRAG_MOVE:
-		redraw |= treeview_set_move_indicator(ma->tree, ma->mouse,
-				node, height, ma->y - ma->current_y, &r);
+		redraw |= treeview_set_move_indicator(ma->tree,
+				node, height, ma->current_y, ma->y, &r);
 		break;
 
 	default:
@@ -2184,7 +2189,6 @@ void treeview_mouse_action(treeview *tree,
 			tree->drag.start_node = NULL;
 
 			tree->move.target = NULL;
-			tree->move.target_display = NULL;
 			tree->move.target_pos = TV_TARGET_NONE;
 
 			tree->cw_t->drag_status(tree->cw_h,
