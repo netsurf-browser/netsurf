@@ -56,6 +56,7 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 char ro_gui_desktop_font_family[80];
 int ro_gui_desktop_font_size = 12;
 rufl_style ro_gui_desktop_font_style = rufl_WEIGHT_400;
+bool no_font_blending = false;
 
 const struct font_functions nsfont = {
 	nsfont_width,
