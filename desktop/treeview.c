@@ -37,6 +37,7 @@ struct treeview_globals {
 	int step_width;
 	int window_padding;
 	int icon_step;
+	int move_offset;
 } tree_g;
 
 enum treeview_node_part {
@@ -62,7 +63,6 @@ enum treeview_node_flags {
 	TREE_NODE_NONE		= 0,		/**< No node flags set */
 	TREE_NODE_EXPANDED	= (1 << 0),	/**< Whether node is expanded */
 	TREE_NODE_SELECTED	= (1 << 1)	/**< Whether node is selected */
-
 };
 
 struct treeview_node {
@@ -119,7 +119,15 @@ struct treeview {
 	int n_fields; /**< fields[n_fields] is folder, lower are entry fields */
 	int field_width; /**< Max width of shown field names */
 
-	struct treeview_drag drag;			 /**< Drag state */
+	struct treeview_drag drag;	/**< Drag state */
+	treeview_node *target;		/**< Move target */
+	treeview_node *target_display;	/**< Target indicator render node */
+	enum {
+		TV_TARGET_ABOVE,
+		TV_TARGET_INSIDE,
+		TV_TARGET_BELOW,
+		TV_TARGET_NONE
+	} target_pos;	/**< Drag type */
 
 	const struct treeview_callback_table *callbacks; /**< For node events */
 
@@ -462,6 +470,43 @@ nserror treeview_create_node_entry(treeview *tree,
 		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
+}
+
+
+/* Find the next node in depth first tree order
+ *
+ * \param node		Start node
+ * \param full		Iff true, visit children of collapsed nodes
+ * \param next		Updated to next node, or NULL if 'node' is last node
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
+{
+	assert(node != NULL);
+
+	if ((full || (node->flags & TREE_NODE_EXPANDED)) &&
+			node->children != NULL) {
+		/* Next node is child */
+		node = node->children;
+	} else {
+		/* No children.  As long as we're not at the root,
+		 * go to next sibling if present, or nearest ancestor
+		 * with a next sibling. */
+
+		while (node != NULL && node->type != TREE_NODE_ROOT &&
+				node->sibling_next == NULL) {
+			node = node->parent;
+		}
+
+		if (node->type == TREE_NODE_ROOT) {
+			node = NULL;
+
+		} else if (node != NULL) {
+			node = node->sibling_next;
+		}
+	}
+
+	return node;
 }
 
 
@@ -896,6 +941,10 @@ nserror treeview_create(treeview **tree,
 	(*tree)->drag.prev.node_y = 0;
 	(*tree)->drag.prev.node_h = 0;
 
+	(*tree)->target = NULL;
+	(*tree)->target_display = NULL;
+	(*tree)->target_pos = TV_TARGET_NONE;
+
 	(*tree)->flags = flags;
 
 	(*tree)->cw_t = cw_t;
@@ -1222,6 +1271,23 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 				node->text.value.data, node->text.value.len,
 				text_style);
 
+		/* Render move indicator arrow */
+		if (tree->target_display == node &&
+				treeview_res[TREE_RES_ARROW].ready) {
+			assert(tree->target != NULL);
+			data.x = tree->target->inset + tree_g.move_offset;
+			data.y = render_y + ((tree_g.line_height -
+					treeview_res[res].height + 1) / 2);
+			data.background_colour = bg_style->fill_colour;
+
+			if (tree->target_pos != TV_TARGET_INSIDE) {
+				data.y -= (tree_g.line_height + 1) / 2;
+			}
+
+			content_redraw(treeview_res[TREE_RES_ARROW].c,
+					&data, &r, &new_ctx);
+		}
+
 		/* Rendered the node */
 		render_y += tree_g.line_height;
 		if (render_y > r.y1) {
@@ -1468,6 +1534,18 @@ static void treeview_commit_selection_drag(treeview *tree)
 
 
 /**
+ * Move a selection according to the current move drag.
+ *
+ * \param tree		Treeview object to move selected nodes in
+ */
+static nserror treeview_move_selection(treeview *tree)
+{
+	/* TODO */
+	return NSERROR_OK;
+}
+
+
+/**
  * Delete a selection.
  *
  * \param tree		Treeview object to delete selected nodes from
@@ -1703,6 +1781,66 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 }
 
 
+/**
+ * Set the drag&drop drop indicator
+ *
+ * \param tree		Treeview object to set node indicator in
+ * \param mouse		The current mouse state
+ * \param node		The treeview node with mouse pointer over it
+ * \param node_height	The height of node
+ * \param mouse_pos	Distanct in px from top of node to mouse pos
+ * \param rect		Redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+static bool treeview_set_move_indicator(treeview *tree,
+		browser_mouse_state mouse, treeview_node *node,
+		int node_height, int mouse_pos, struct rect *rect)
+{
+	switch (node->type) {
+	case TREE_NODE_FOLDER:
+		if (mouse_pos <= node_height / 4) {
+			tree->target = node;
+			tree->target_display = node;
+			tree->target_pos = TV_TARGET_ABOVE;
+		} else if (mouse_pos <= (3 * node_height) / 4 ||
+				node->flags & TREE_NODE_EXPANDED) {
+			tree->target = node;
+			tree->target_display = node;
+			tree->target_pos = TV_TARGET_INSIDE;
+		} else {
+			tree->target = node;
+			tree->target_display = treeview_node_next(node, false);
+			tree->target_pos = TV_TARGET_BELOW;
+		}
+		break;
+
+	case TREE_NODE_ENTRY:
+		if (mouse_pos <= node_height / 2) {
+			tree->target = node;
+			tree->target_display = node;
+			tree->target_pos = TV_TARGET_ABOVE;
+		} else {
+			tree->target = node;
+			tree->target_display = treeview_node_next(node, false);
+			tree->target_pos = TV_TARGET_BELOW;
+		}
+		break;
+
+	default:
+		assert(node->type != TREE_NODE_ROOT);
+		return false;
+	}
+
+	/* TODO: proper values */
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = 9000;
+	rect->y1 = 9000;
+
+	return true;
+}
+
+
 /* Exported interface, documented in treeview.h */
 bool treeview_keypress(treeview *tree, uint32_t key)
 {
@@ -1868,11 +2006,18 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	if (ma->tree->drag.type == TV_DRAG_NONE) {
 		if (ma->mouse & BROWSER_MOUSE_DRAG_1 &&
 				ma->tree->drag.selected == false &&
-				ma->tree->drag.part ==
-						TV_NODE_PART_NONE) {
+				ma->tree->drag.part == TV_NODE_PART_NONE) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
 			ma->tree->cw_t->drag_status(ma->tree->cw_h,
 					CORE_WINDOW_DRAG_SELECTION);
+
+		} else if (!(ma->tree->flags & TREEVIEW_NO_MOVES) &&
+				ma->mouse & BROWSER_MOUSE_DRAG_1 &&
+				(ma->tree->drag.selected == true ||
+				ma->tree->drag.part == TV_NODE_PART_ON_NODE)) {
+			ma->tree->drag.type = TV_DRAG_MOVE;
+			ma->tree->cw_t->drag_status(ma->tree->cw_h,
+					CORE_WINDOW_DRAG_MOVE);
 
 		} else if (ma->mouse & BROWSER_MOUSE_DRAG_2) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
@@ -1886,8 +2031,10 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		}
 	}
 
-	/* Handle selection drags */
-	if (ma->tree->drag.type == TV_DRAG_SELECTION) {
+	/* Handle active drags */
+	switch (ma->tree->drag.type) {
+	case TV_DRAG_SELECTION:
+	{
 		int curr_y1 = ma->current_y + height;
 		int prev_y1 = ma->tree->drag.prev.node_y +
 				ma->tree->drag.prev.node_h;
@@ -1902,6 +2049,16 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		ma->tree->drag.prev.y = ma->y;
 		ma->tree->drag.prev.node_y = ma->current_y;
 		ma->tree->drag.prev.node_h = height;
+	}
+		break;
+
+	case TV_DRAG_MOVE:
+		redraw |= treeview_set_move_indicator(ma->tree, ma->mouse,
+				node, height, ma->y - ma->current_y, &r);
+		break;
+
+	default:
+		break;
 	}
 
 	click = ma->mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2);
@@ -2001,8 +2158,17 @@ void treeview_mouse_action(treeview *tree,
 					CORE_WINDOW_DRAG_NONE);
 			return;
 		case TV_DRAG_MOVE:
-			/* TODO */
-			break;
+			treeview_move_selection(tree);
+			tree->drag.type = TV_DRAG_NONE;
+			tree->drag.start_node = NULL;
+
+			tree->target = NULL;
+			tree->target_display = NULL;
+			tree->target_pos = TV_TARGET_NONE;
+
+			tree->cw_t->drag_status(tree->cw_h,
+					CORE_WINDOW_DRAG_NONE);
+			return;
 		default:
 			/* No drag to end */
 			break;
@@ -2238,6 +2404,7 @@ nserror treeview_init(void)
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;
 	tree_g.icon_step = 23;
+	tree_g.move_offset = 18;
 
 	return NSERROR_OK;
 }
