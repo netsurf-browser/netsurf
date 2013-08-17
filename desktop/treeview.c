@@ -1792,7 +1792,6 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 	treeview_move_yank_selection(tree);
 
 	/* Move all nodes on tree->move.root to target location */
-	next = node->next_sib;
 	for (node = tree->move.root; node != NULL; node = next) {
 		next = node->next_sib;
 
