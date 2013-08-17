@@ -1850,7 +1850,21 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	node_y += (tree_g.line_height -
 			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
-	switch (target->type) {
+	if (target->flags & TREE_NODE_SELECTED) {
+		/* Find top selected ancestor */
+		while (target->parent &&
+				target->parent->flags & TREE_NODE_SELECTED) {
+			target = target->parent;
+		}
+
+		/* Find top ajdacent selected sibling */
+		while (target->sibling_prev &&
+				target->sibling_prev->flags & TREE_NODE_SELECTED) {
+			target = target->sibling_prev;
+		}
+		target_pos = TV_TARGET_ABOVE;
+
+	} else switch (target->type) {
 	case TREE_NODE_FOLDER:
 		if (mouse_pos <= node_height / 4) {
 			target_pos = TV_TARGET_ABOVE;
