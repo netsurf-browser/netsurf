@@ -1363,7 +1363,8 @@ struct treeview_selection_walk_data {
 		TREEVIEW_WALK_CLEAR_SELECTION,
 		TREEVIEW_WALK_SELECT_ALL,
 		TREEVIEW_WALK_COMMIT_SELECT_DRAG,
-		TREEVIEW_WALK_DELETE_SELECTION
+		TREEVIEW_WALK_DELETE_SELECTION,
+		TREEVIEW_WALK_PROPAGATE_SELECTION
 	} purpose;
 	union {
 		bool has_selection;
@@ -1407,6 +1408,15 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 				return err;
 			}
 			*skip_children = true;
+			changed = true;
+		}
+		break;
+
+	case TREEVIEW_WALK_PROPAGATE_SELECTION:
+		if (n->parent != NULL &&
+				n->parent->flags & TREE_NODE_SELECTED &&
+				!(n->flags & TREE_NODE_SELECTED)) {
+			n->flags ^= TREE_NODE_SELECTED;
 			changed = true;
 		}
 		break;
@@ -1565,6 +1575,38 @@ static bool treeview_delete_selection(treeview *tree, struct rect *rect)
 	rect->y1 = tree->root->height;
 
 	sw.purpose = TREEVIEW_WALK_DELETE_SELECTION;
+	sw.data.redraw.required = false;
+	sw.data.redraw.rect = rect;
+	sw.current_y = 0;
+	sw.tree = tree;
+
+	treeview_walk_internal(tree->root, false, NULL,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.redraw.required;
+}
+
+
+/**
+ * Propagate selection to visible descendants of selected nodes.
+ *
+ * \param tree		Treeview object to propagate selection in
+ * \param rect		Redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+static bool treeview_propagate_selection(treeview *tree, struct rect *rect)
+{
+	struct treeview_selection_walk_data sw;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = REDRAW_MAX;
+	rect->y1 = 0;
+
+	sw.purpose = TREEVIEW_WALK_PROPAGATE_SELECTION;
 	sw.data.redraw.required = false;
 	sw.data.redraw.rect = rect;
 	sw.current_y = 0;
@@ -1785,6 +1827,7 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
  * Set the drag&drop drop indicator
  *
  * \param tree		Treeview object to set node indicator in
+ * \param need_redraw	True iff we already have a redraw region
  * \param target	The treeview node with mouse pointer over it
  * \param node_height	The height of node
  * \param node_y	The Y coord of the top of target node
@@ -1792,14 +1835,13 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
  * \param rect		Redraw rectangle (if redraw required)
  * \return true iff redraw required
  */
-static bool treeview_set_move_indicator(treeview *tree,
+static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 		treeview_node *target, int node_height,
 		int node_y, int mouse_y, struct rect *rect)
 {
 	enum treeview_target_pos target_pos;
 	int mouse_pos = mouse_y - node_y;
 	int x;
-	bool need_redraw;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -1836,13 +1878,24 @@ static bool treeview_set_move_indicator(treeview *tree,
 	if (target_pos == tree->move.target_pos &&
 			target == tree->move.target) {
 		/* No change */
-		return false;
+		return need_redraw;
 	}
 
 	if (tree->move.target_pos != TV_TARGET_NONE) {
 		/* Need to clear old indicator position */
-		*rect = tree->move.target_area;
-		need_redraw = true;
+		if (need_redraw) {
+			if (rect->x0 > tree->move.target_area.x0)
+				rect->x0 = tree->move.target_area.x0;
+			if (tree->move.target_area.x1 > rect->x1)
+				rect->x1 = tree->move.target_area.x1;
+			if (rect->y0 > tree->move.target_area.y0)
+				rect->y0 = tree->move.target_area.y0;
+			if (tree->move.target_area.y1 > rect->y1)
+				rect->y1 = tree->move.target_area.y1;
+		} else {
+			*rect = tree->move.target_area;
+			need_redraw = true;
+		}
 	}
 
 	if (target_pos == TV_TARGET_ABOVE) {
@@ -1868,12 +1921,10 @@ static bool treeview_set_move_indicator(treeview *tree,
 	if (target_pos != TV_TARGET_NONE) {
 		/* Need to draw new indicator position */
 		if (need_redraw) {
-			if (rect->x0 != tree->move.target_area.x0) {
-				if (rect->x0 > tree->move.target_area.x0)
-					rect->x0 = tree->move.target_area.x0;
-				if (tree->move.target_area.x1 > rect->x1)
-					rect->x1 = tree->move.target_area.x1;
-			}
+			if (rect->x0 > tree->move.target_area.x0)
+				rect->x0 = tree->move.target_area.x0;
+			if (tree->move.target_area.x1 > rect->x1)
+				rect->x1 = tree->move.target_area.x1;
 			if (rect->y0 > tree->move.target_area.y0)
 				rect->y0 = tree->move.target_area.y0;
 			if (tree->move.target_area.y1 > rect->y1)
@@ -2065,6 +2116,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 			ma->tree->drag.type = TV_DRAG_MOVE;
 			ma->tree->cw_t->drag_status(ma->tree->cw_h,
 					CORE_WINDOW_DRAG_MOVE);
+			redraw |= treeview_propagate_selection(ma->tree, &r);
 
 		} else if (ma->mouse & BROWSER_MOUSE_DRAG_2) {
 			ma->tree->drag.type = TV_DRAG_SELECTION;
@@ -2100,7 +2152,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		break;
 
 	case TV_DRAG_MOVE:
-		redraw |= treeview_set_move_indicator(ma->tree,
+		redraw |= treeview_set_move_indicator(ma->tree, redraw,
 				node, height, ma->current_y, ma->y, &r);
 		break;
 
