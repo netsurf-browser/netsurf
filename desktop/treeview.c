@@ -517,6 +517,33 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 }
 
 
+/* Find y position of the top of a node
+ *
+ * \param tree		Treeview object to delete node from
+ * \param node		Node to get position of
+ * \return node's y position
+ */
+static int treeview_node_y(treeview *tree, treeview_node *node)
+{
+	treeview_node *n;
+	int y = 0;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	n = treeview_node_next(tree->root, false);
+
+	while (n != NULL && n != node) {
+		y += (node->type == TREE_NODE_ENTRY) ?
+				node->height : tree_g.line_height;
+
+		n = treeview_node_next(n, false);
+	}
+
+	return y;
+}
+
+
 /* Walk a treeview subtree, calling a callback at each node (depth first)
  *
  * \param root		Root to walk tree from (doesn't get a callback call)
@@ -1895,6 +1922,7 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 		treeview_node *target, int node_height,
 		int node_y, int mouse_y, struct rect *rect)
 {
+	treeview_node *orig = target;
 	enum treeview_target_pos target_pos;
 	int mouse_pos = mouse_y - node_y;
 	int x;
@@ -1902,9 +1930,6 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 	assert(tree->root->children != NULL);
-
-	node_y += (tree_g.line_height -
-			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
 	if (target->flags & TREE_NODE_SELECTED) {
 		/* Find top selected ancestor */
@@ -1968,11 +1993,19 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 		}
 	}
 
+	/* Offset for ABOVE / BELOW */
 	if (target_pos == TV_TARGET_ABOVE) {
+		if (target != orig) {
+			node_y = treeview_node_y(tree, target);
+		}
 		node_y -= (tree_g.line_height + 1) / 2;
 	} else if (target_pos == TV_TARGET_BELOW) {
 		node_y += node_height - (tree_g.line_height + 1) / 2;
 	}
+
+	/* Oftsets are all relative to centred (INSIDE) */
+	node_y += (tree_g.line_height -
+			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
 	if (target != NULL) {
 		x = target->inset + tree_g.move_offset;
