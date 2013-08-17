@@ -81,8 +81,8 @@ struct treeview_node {
 	int inset;	/**< Node's inset depending on tree depth (pixels) */
 
 	treeview_node *parent;
-	treeview_node *sibling_prev;
-	treeview_node *sibling_next;
+	treeview_node *prev_sib;
+	treeview_node *next_sib;
 	treeview_node *children;
 
 	void *client_data;  /**< Passed to client on node event msg callback */
@@ -217,8 +217,8 @@ static nserror treeview_create_node_root(treeview_node **root)
 	n->text.value.width = 0;
 
 	n->parent = NULL;
-	n->sibling_next = NULL;
-	n->sibling_prev = NULL;
+	n->next_sib = NULL;
+	n->prev_sib = NULL;
 	n->children = NULL;
 
 	n->client_data = NULL;
@@ -248,20 +248,20 @@ static inline void treeview_insert_node(treeview_node *a,
 	case TREE_REL_FIRST_CHILD:
 		assert(b->type != TREE_NODE_ENTRY);
 		a->parent = b;
-		a->sibling_next = b->children;
-		if (a->sibling_next)
-			a->sibling_next->sibling_prev = a;
+		a->next_sib = b->children;
+		if (a->next_sib)
+			a->next_sib->prev_sib = a;
 		b->children = a;
 		break;
 
 	case TREE_REL_NEXT_SIBLING:
 		assert(b->type != TREE_NODE_ROOT);
-		a->sibling_prev = b;
-		a->sibling_next = b->sibling_next;
+		a->prev_sib = b;
+		a->next_sib = b->next_sib;
 		a->parent = b->parent;
-		b->sibling_next = a;
-		if (a->sibling_next)
-			a->sibling_next->sibling_prev = a;
+		b->next_sib = a;
+		if (a->next_sib)
+			a->next_sib->prev_sib = a;
 		break;
 
 	default:
@@ -326,8 +326,8 @@ nserror treeview_create_node_folder(treeview *tree,
 	n->text.value.width = 0;
 
 	n->parent = NULL;
-	n->sibling_next = NULL;
-	n->sibling_prev = NULL;
+	n->next_sib = NULL;
+	n->prev_sib = NULL;
 	n->children = NULL;
 
 	n->client_data = data;
@@ -451,8 +451,8 @@ nserror treeview_create_node_entry(treeview *tree,
 	n->text.value.width = 0;
 
 	n->parent = NULL;
-	n->sibling_next = NULL;
-	n->sibling_prev = NULL;
+	n->next_sib = NULL;
+	n->prev_sib = NULL;
 	n->children = NULL;
 
 	n->client_data = data;
@@ -501,7 +501,7 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 		 * with a next sibling. */
 
 		while (node != NULL && node->type != TREE_NODE_ROOT &&
-				node->sibling_next == NULL) {
+				node->next_sib == NULL) {
 			node = node->parent;
 		}
 
@@ -509,7 +509,7 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 			node = NULL;
 
 		} else if (node != NULL) {
-			node = node->sibling_next;
+			node = node->next_sib;
 		}
 	}
 
@@ -541,7 +541,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 
 	node = root;
 	parent = node->parent;
-	next_sibling = node->sibling_next;
+	next_sibling = node->next_sib;
 	child = (!skip_children &&
 			(full || (node->flags & TREE_NODE_EXPANDED))) ?
 			node->children : NULL;
@@ -573,7 +573,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 				}
 				node = parent;
 				parent = node->parent;
-				next_sibling = node->sibling_next;
+				next_sibling = node->next_sib;
 			}
 
 			if (node == root)
@@ -599,7 +599,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 		assert(node != root);
 
 		parent = node->parent;
-		next_sibling = node->sibling_next;
+		next_sibling = node->next_sib;
 		child = (full || (node->flags & TREE_NODE_EXPANDED)) ?
 				node->children : NULL;
 
@@ -678,16 +678,16 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
 	/* Unlink node from tree */
 	if (n->parent != NULL && n->parent->children == n) {
 		/* Node is a first child */
-		n->parent->children = n->sibling_next;
+		n->parent->children = n->next_sib;
 
-	} else if (n->sibling_prev != NULL) {
+	} else if (n->prev_sib != NULL) {
 		/* Node is not first child */
-		n->sibling_prev->sibling_next = n->sibling_next;
+		n->prev_sib->next_sib = n->next_sib;
 	}
 
-	if (n->sibling_next != NULL) {
+	if (n->next_sib != NULL) {
 		/* Always need to do this */
-		n->sibling_next->sibling_prev = n->sibling_prev;
+		n->next_sib->prev_sib = n->prev_sib;
 	}
 
 	/* Reduce ancestor heights */
@@ -801,7 +801,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 
 	node = root;
 	parent = node->parent;
-	next_sibling = node->sibling_next;
+	next_sibling = node->next_sib;
 	child = (node->flags & TREE_NODE_EXPANDED) ? node->children : NULL;
 
 	while (node != NULL) {
@@ -827,7 +827,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 				}
 				node = parent;
 				parent = node->parent;
-				next_sibling = node->sibling_next;
+				next_sibling = node->next_sib;
 			}
 
 			if (node == root)
@@ -849,7 +849,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 		assert(node != root);
 
 		parent = node->parent;
-		next_sibling = node->sibling_next;
+		next_sibling = node->next_sib;
 		child = (node->flags & TREE_NODE_EXPANDED) ?
 				node->children : NULL;
 	}
@@ -1020,7 +1020,7 @@ nserror treeview_node_expand(treeview *tree,
 
 			additional_height += child->height;
 
-			child = child->sibling_next;
+			child = child->next_sib;
 		} while (child != NULL);
 
 		break;
@@ -1190,14 +1190,14 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 			 * with a next sibling. */
 
 			while (node != root &&
-					node->sibling_next == NULL) {
+					node->next_sib == NULL) {
 				node = node->parent;
 			}
 
 			if (node == root)
 				break;
 
-			node = node->sibling_next;
+			node = node->next_sib;
 		}
 
 		assert(node != NULL);
@@ -1742,6 +1742,8 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 	};
 	bool redraw = false;
 
+	rect->y1 = tree->root->height;
+
 	/* Fill out the nav. state struct, by examining the current selection
 	 * state */
 	treeview_walk_internal(tree->root, false, NULL,
@@ -1816,7 +1818,8 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 	rect->x0 = 0;
 	rect->y0 = 0;
 	rect->x1 = REDRAW_MAX;
-	rect->y1 = tree->root->height;
+	if (rect->y1 < tree->root->height)
+		rect->y1 = tree->root->height;
 	redraw = true;
 
 	return redraw;
@@ -1858,9 +1861,9 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 		}
 
 		/* Find top ajdacent selected sibling */
-		while (target->sibling_prev &&
-				target->sibling_prev->flags & TREE_NODE_SELECTED) {
-			target = target->sibling_prev;
+		while (target->prev_sib &&
+				target->prev_sib->flags & TREE_NODE_SELECTED) {
+			target = target->prev_sib;
 		}
 		target_pos = TV_TARGET_ABOVE;
 
