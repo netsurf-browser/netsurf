@@ -117,6 +117,7 @@ struct treeview_drag {
 }; /**< Drag state */
 
 struct treeview_move {
+	treeview_node *root;		/** Head of yanked node list */
 	treeview_node *target;		/**< Move target */
 	struct rect target_area;	/**< Pos/size of target indicator */
 	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
@@ -189,6 +190,110 @@ static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
 };
 
 
+/* Walk a treeview subtree, calling a callback at each node (depth first)
+ *
+ * \param root		Root to walk tree from (doesn't get a callback call)
+ * \param full		Iff true, visit children of collapsed nodes
+ * \param callback_bwd	Function to call on each node in backwards order
+ * \param callback_fwd	Function to call on each node in forwards order
+ * \param ctx		Context to pass to callback
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ *
+ * Note: Any node deletion must happen in callback_bwd.
+ */
+static nserror treeview_walk_internal(treeview_node *root, bool full,
+		nserror (*callback_bwd)(treeview_node *n, void *ctx, bool *end),
+		nserror (*callback_fwd)(treeview_node *n, void *ctx,
+				bool *skip_children, bool *end),
+		void *ctx)
+{
+	treeview_node *node, *child, *parent, *next_sibling;
+	bool abort = false;
+	bool skip_children = false;
+	nserror err;
+
+	node = root;
+	parent = node->parent;
+	next_sibling = node->next_sib;
+	child = (!skip_children &&
+			(full || (node->flags & TREE_NODE_EXPANDED))) ?
+			node->children : NULL;
+
+	while (node != NULL) {
+
+		if (child != NULL) {
+			/* Down to children */
+			node = child;
+		} else {
+			/* No children.  As long as we're not at the root,
+			 * go to next sibling if present, or nearest ancestor
+			 * with a next sibling. */
+
+			while (node != root &&
+					next_sibling == NULL) {
+				if (callback_bwd != NULL) {
+					/* Backwards callback */
+					err = callback_bwd(node, ctx, &abort);
+
+					if (err != NSERROR_OK) {
+						return err;
+
+					} else if (abort) {
+						/* callback requested early
+						 * termination */
+						return NSERROR_OK;
+					}
+				}
+				node = parent;
+				parent = node->parent;
+				next_sibling = node->next_sib;
+			}
+
+			if (node == root)
+				break;
+
+			if (callback_bwd != NULL) {
+				/* Backwards callback */
+				err = callback_bwd(node, ctx, &abort);
+
+				if (err != NSERROR_OK) {
+					return err;
+
+				} else if (abort) {
+					/* callback requested early
+					 * termination */
+					return NSERROR_OK;
+				}
+			}
+			node = next_sibling;
+		}
+
+		assert(node != NULL);
+		assert(node != root);
+
+		parent = node->parent;
+		next_sibling = node->next_sib;
+		child = (full || (node->flags & TREE_NODE_EXPANDED)) ?
+				node->children : NULL;
+
+		if (callback_fwd != NULL) {
+			/* Forwards callback */
+			err = callback_fwd(node, ctx, &skip_children, &abort);
+
+			if (err != NSERROR_OK) {
+				return err;
+
+			} else if (abort) {
+				/* callback requested early termination */
+				return NSERROR_OK;
+			}
+		}
+		child = skip_children ? NULL : child;
+	}
+	return NSERROR_OK;
+}
+
+
 /**
  * Create treeview's root node
  *
@@ -229,6 +334,18 @@ static nserror treeview_create_node_root(treeview_node **root)
 }
 
 
+/**
+ * Set a node's inset from its parent (can be used as treeview walk callback)
+ */
+static nserror treeview_set_inset_from_parent(treeview_node *n, void *ctx,
+		bool *skip_children, bool *end)
+{
+	if (n->parent != NULL)
+		n->inset = n->parent->inset + tree_g.step_width;
+
+	*skip_children = false;
+	return NSERROR_OK;
+}
 /**
  * Insert a treeview node into a treeview
  *
@@ -272,6 +389,10 @@ static inline void treeview_insert_node(treeview_node *a,
 	assert(a->parent != NULL);
 
 	a->inset = a->parent->inset + tree_g.step_width;
+	if (a->children != NULL) {
+		treeview_walk_internal(a, true, NULL,
+				treeview_set_inset_from_parent, NULL);
+	}
 
 	if (a->parent->flags & TREE_NODE_EXPANDED) {
 		/* Parent is expanded, so inserted node will be visible and
@@ -544,110 +665,6 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
 }
 
 
-/* Walk a treeview subtree, calling a callback at each node (depth first)
- *
- * \param root		Root to walk tree from (doesn't get a callback call)
- * \param full		Iff true, visit children of collapsed nodes
- * \param callback_bwd	Function to call on each node in backwards order
- * \param callback_fwd	Function to call on each node in forwards order
- * \param ctx		Context to pass to callback
- * \return NSERROR_OK on success, or appropriate error otherwise
- *
- * Note: Any node deletion must happen in callback_bwd.
- */
-static nserror treeview_walk_internal(treeview_node *root, bool full,
-		nserror (*callback_bwd)(treeview_node *n, void *ctx, bool *end),
-		nserror (*callback_fwd)(treeview_node *n, void *ctx,
-				bool *skip_children, bool *end),
-		void *ctx)
-{
-	treeview_node *node, *child, *parent, *next_sibling;
-	bool abort = false;
-	bool skip_children = false;
-	nserror err;
-
-	node = root;
-	parent = node->parent;
-	next_sibling = node->next_sib;
-	child = (!skip_children &&
-			(full || (node->flags & TREE_NODE_EXPANDED))) ?
-			node->children : NULL;
-
-	while (node != NULL) {
-
-		if (child != NULL) {
-			/* Down to children */
-			node = child;
-		} else {
-			/* No children.  As long as we're not at the root,
-			 * go to next sibling if present, or nearest ancestor
-			 * with a next sibling. */
-
-			while (node != root &&
-					next_sibling == NULL) {
-				if (callback_bwd != NULL) {
-					/* Backwards callback */
-					err = callback_bwd(node, ctx, &abort);
-
-					if (err != NSERROR_OK) {
-						return err;
-
-					} else if (abort) {
-						/* callback requested early
-						 * termination */
-						return NSERROR_OK;
-					}
-				}
-				node = parent;
-				parent = node->parent;
-				next_sibling = node->next_sib;
-			}
-
-			if (node == root)
-				break;
-
-			if (callback_bwd != NULL) {
-				/* Backwards callback */
-				err = callback_bwd(node, ctx, &abort);
-
-				if (err != NSERROR_OK) {
-					return err;
-
-				} else if (abort) {
-					/* callback requested early
-					 * termination */
-					return NSERROR_OK;
-				}
-			}
-			node = next_sibling;
-		}
-
-		assert(node != NULL);
-		assert(node != root);
-
-		parent = node->parent;
-		next_sibling = node->next_sib;
-		child = (full || (node->flags & TREE_NODE_EXPANDED)) ?
-				node->children : NULL;
-
-		if (callback_fwd != NULL) {
-			/* Forwards callback */
-			err = callback_fwd(node, ctx, &skip_children, &abort);
-
-			if (err != NSERROR_OK) {
-				return err;
-
-			} else if (abort) {
-				/* callback requested early termination */
-				return NSERROR_OK;
-			}
-		}
-		child = skip_children ? NULL : child;
-	}
-	return NSERROR_OK;
-}
-
-
 struct treeview_walk_ctx {
 	treeview_walk_callback walk_cb;
 	void *ctx;
@@ -686,22 +703,14 @@ nserror treeview_walk(treeview *tree, treeview_node *root,
 }
 
 
-struct treeview_node_delete {
-	treeview *tree;
-	int height_reduction;
-	bool user_interaction;
-};
-/** Treewalk node callback deleting nodes. */
-static nserror treeview_delete_node_walk_cb(treeview_node *n,
-		void *ctx, bool *end)
+/**
+ * Unlink a treeview node
+ *
+ * \param n		Node to unlink
+ * \return true iff ancestor heights need to be reduced
+ */
+static inline bool treeview_unlink_node(treeview_node *n)
 {
-	struct treeview_node_delete *nd = (struct treeview_node_delete *)ctx;
-	struct treeview_node_msg msg;
-	msg.msg = TREE_MSG_NODE_DELETE;
-	msg.data.delete.user = nd->user_interaction;
-
-	assert(n->children == NULL);
-
 	/* Unlink node from tree */
 	if (n->parent != NULL && n->parent->children == n) {
 		/* Node is a first child */
@@ -719,10 +728,32 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
 
 	/* Reduce ancestor heights */
 	if (n->parent != NULL && n->parent->flags & TREE_NODE_EXPANDED) {
-		int height = (n->type == TREE_NODE_ENTRY) ? n->height :
-				tree_g.line_height;
-		nd->height_reduction += height;
+		return true;
 	}
+
+	return false;
+}
+
+
+struct treeview_node_delete {
+	treeview *tree;
+	int height_reduction;
+	bool user_interaction;
+};
+/** Treewalk node callback deleting nodes. */
+static nserror treeview_delete_node_walk_cb(treeview_node *n,
+		void *ctx, bool *end)
+{
+	struct treeview_node_delete *nd = (struct treeview_node_delete *)ctx;
+	struct treeview_node_msg msg;
+	msg.msg = TREE_MSG_NODE_DELETE;
+	msg.data.delete.user = nd->user_interaction;
+
+	assert(n->children == NULL);
+
+	if (treeview_unlink_node(n))
+		nd->height_reduction += (n->type == TREE_NODE_ENTRY) ?
+				n->height : tree_g.line_height;
 
 	/* Handle any special treatment */
 	switch (n->type) {
@@ -975,6 +1006,7 @@ nserror treeview_create(treeview **tree,
 	(*tree)->drag.prev.node_y = 0;
 	(*tree)->drag.prev.node_h = 0;
 
+	(*tree)->move.root = NULL;
 	(*tree)->move.target = NULL;
 	(*tree)->move.target_pos = TV_TARGET_NONE;
 
@@ -1391,7 +1423,8 @@ struct treeview_selection_walk_data {
 		TREEVIEW_WALK_SELECT_ALL,
 		TREEVIEW_WALK_COMMIT_SELECT_DRAG,
 		TREEVIEW_WALK_DELETE_SELECTION,
-		TREEVIEW_WALK_PROPAGATE_SELECTION
+		TREEVIEW_WALK_PROPAGATE_SELECTION,
+		TREEVIEW_WALK_YANK_SELECTION
 	} purpose;
 	union {
 		bool has_selection;
@@ -1403,6 +1436,9 @@ struct treeview_selection_walk_data {
 			int sel_min;
 			int sel_max;
 		} drag;
+		struct {
+			treeview_node *prev;
+		} yank;
 	} data;
 	int current_y;
 	treeview *tree;
@@ -1469,6 +1505,36 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 			n->flags ^= TREE_NODE_SELECTED;
 		}
 		return NSERROR_OK;
+
+	case TREEVIEW_WALK_YANK_SELECTION:
+		if (n->flags & TREE_NODE_SELECTED) {
+			treeview_node *p = n->parent;
+			int h = 0;
+
+			if (treeview_unlink_node(n))
+				h = n->height;
+
+			/* Reduce ancestor heights */
+			while (p != NULL && p->flags & TREE_NODE_EXPANDED) {
+				p->height -= h;
+				p = p->parent;
+			}
+			if (sw->data.yank.prev == NULL) {
+				sw->tree->move.root = n;
+				n->parent = NULL;
+				n->prev_sib = NULL;
+				n->next_sib = NULL;
+			} else {
+				n->parent = NULL;
+				n->prev_sib = sw->data.yank.prev;
+				n->next_sib = NULL;
+				sw->data.yank.prev->next_sib = n;
+			}
+			sw->data.yank.prev = n;
+
+			*skip_children = true;
+		}
+		break;
 	}
 
 	if (changed) {
@@ -1571,14 +1637,20 @@ static void treeview_commit_selection_drag(treeview *tree)
 
 
 /**
- * Move a selection according to the current move drag.
+ * Yank a selection to the node move list.
  *
- * \param tree		Treeview object to move selected nodes in
+ * \param tree		Treeview object to yank selection from
  */
-static nserror treeview_move_selection(treeview *tree)
+static void treeview_move_yank_selection(treeview *tree)
 {
-	/* TODO */
-	return NSERROR_OK;
+	struct treeview_selection_walk_data sw;
+
+	sw.purpose = TREEVIEW_WALK_YANK_SELECTION;
+	sw.data.yank.prev = NULL;
+	sw.tree = tree;
+
+	treeview_walk_internal(tree->root, false, NULL,
+			treeview_node_selection_walk_cb, &sw);
 }
 
 
@@ -1643,6 +1715,111 @@ static bool treeview_propagate_selection(treeview *tree, struct rect *rect)
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.redraw.required;
+}
+
+
+/**
+ * Move a selection according to the current move drag.
+ *
+ * \param tree		Treeview object to move selected nodes in
+ * \param rect		Redraw rectangle
+ */
+static nserror treeview_move_selection(treeview *tree, struct rect *rect)
+{
+	treeview_node *node, *next, *parent;
+	treeview_node *relation;
+	enum treeview_relationship relationship;
+	int height;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+	assert(tree->root->children != NULL);
+	assert(tree->move.target_pos != TV_TARGET_NONE);
+
+	height = tree->root->height;
+
+	/* Identify target location */
+	switch (tree->move.target_pos) {
+	case TV_TARGET_ABOVE:
+		if (tree->move.target == NULL) {
+			/* Target: After last child of root */
+			relation = tree->root->children;
+			while (relation->next_sib != NULL) {
+				relation = relation->next_sib;
+			}
+			relationship = TREE_REL_NEXT_SIBLING;
+
+		} else if (tree->move.target->prev_sib != NULL) {
+			/* Target: After previous sibling */
+			relation = tree->move.target->prev_sib;
+			relationship = TREE_REL_NEXT_SIBLING;
+
+		} else {
+			/* Target: Target: First child of parent */
+			assert(tree->move.target->parent != NULL);
+			relation = tree->move.target->parent;
+			relationship = TREE_REL_FIRST_CHILD;
+		}
+		break;
+
+	case TV_TARGET_INSIDE:
+		assert(tree->move.target != NULL);
+		relation = tree->move.target;
+		relationship = TREE_REL_FIRST_CHILD;
+		break;
+
+	case TV_TARGET_BELOW:
+		assert(tree->move.target != NULL);
+		relation = tree->move.target;
+		relationship = TREE_REL_NEXT_SIBLING;
+		break;
+
+	default:
+		LOG(("Bad drop target for move."));
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (relationship == TREE_REL_FIRST_CHILD) {
+		parent = relation;
+	} else {
+		parent = relation->parent;
+	}
+
+	/* The node that we're moving selection to can't itself be selected */
+	assert(!(relation->flags & TREE_NODE_SELECTED));
+
+	/* Move all selected nodes from treeview to tree->move.root */
+	treeview_move_yank_selection(tree);
+
+	/* Move all nodes on tree->move.root to target location */
+	next = node->next_sib;
+	for (node = tree->move.root; node != NULL; node = next) {
+		next = node->next_sib;
+
+		if (!(parent->flags & TREE_NODE_EXPANDED)) {
+			if (node->flags & TREE_NODE_EXPANDED)
+				treeview_node_contract(tree, node);
+			node->flags &= ~TREE_NODE_SELECTED;
+		}
+
+		treeview_insert_node(node, relation, relationship);
+
+		relation = node;
+		relationship = TREE_REL_NEXT_SIBLING;
+	}
+	tree->move.root = NULL;
+
+	/* Tell window, if height has changed */
+	if (height != tree->root->height)
+		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
+	/* TODO: Deal with redraw area properly */
+	rect->x0 = 0;
+	rect->y0 = 0;
+	rect->x1 = REDRAW_MAX;
+	rect->y1 = REDRAW_MAX;
+
+	return NSERROR_OK;
 }
 
 
@@ -2291,6 +2468,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 void treeview_mouse_action(treeview *tree,
 		browser_mouse_state mouse, int x, int y)
 {
+	struct rect r;
 	bool redraw = false;
 
 	assert(tree != NULL);
@@ -2308,7 +2486,7 @@ void treeview_mouse_action(treeview *tree,
 					CORE_WINDOW_DRAG_NONE);
 			return;
 		case TV_DRAG_MOVE:
-			treeview_move_selection(tree);
+			treeview_move_selection(tree, &r);
 			tree->drag.type = TV_DRAG_NONE;
 			tree->drag.start_node = NULL;
 
@@ -2317,6 +2495,7 @@ void treeview_mouse_action(treeview *tree,
 
 			tree->cw_t->drag_status(tree->cw_h,
 					CORE_WINDOW_DRAG_NONE);
+			tree->cw_t->redraw_request(tree->cw_h, r);
 			return;
 		default:
 			/* No drag to end */
@@ -2326,7 +2505,6 @@ void treeview_mouse_action(treeview *tree,
 
 	if (y > tree->root->height) {
 		/* Below tree */
-		struct rect r;
 
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
