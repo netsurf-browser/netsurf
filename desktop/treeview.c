@@ -1137,6 +1137,8 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
 	assert(n != NULL);
 	assert(n->type != TREE_NODE_ROOT);
 
+	n->flags &= ~TREE_NODE_SELECTED;
+
 	if ((n->flags & TREE_NODE_EXPANDED) == false) {
 		/* Nothing to do. */
 		return NSERROR_OK;
@@ -1157,6 +1159,7 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
 /* Exported interface, documented in treeview.h */
 nserror treeview_node_contract(treeview *tree, treeview_node *node)
 {
+	bool selected;
 	assert(node != NULL);
 
 	if ((node->flags & TREE_NODE_EXPANDED) == false) {
@@ -1165,12 +1168,17 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 		return NSERROR_OK;
 	}
 
+	selected = node->flags & TREE_NODE_SELECTED;
+
 	/* Contract children. */
 	treeview_walk_internal(node, false, NULL,
 			treeview_node_contract_cb, NULL);
 
 	/* Contract node */
 	treeview_node_contract_cb(node, NULL, false, false);
+
+	if (selected)
+		node->flags |= TREE_NODE_SELECTED;
 
 	/* Inform front end of change in dimensions */
 	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
