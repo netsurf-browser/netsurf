@@ -1740,9 +1740,8 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		.n_selected = 0,
 		.prev_n_selected = 0
 	};
+	int h = tree->root->height;
 	bool redraw = false;
-
-	rect->y1 = tree->root->height;
 
 	/* Fill out the nav. state struct, by examining the current selection
 	 * state */
@@ -1818,11 +1817,65 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 	rect->x0 = 0;
 	rect->y0 = 0;
 	rect->x1 = REDRAW_MAX;
-	if (rect->y1 < tree->root->height)
+	if (tree->root->height > h)
 		rect->y1 = tree->root->height;
+	else
+		rect->y1 = h;
 	redraw = true;
 
 	return redraw;
+}
+
+
+/* Exported interface, documented in treeview.h */
+bool treeview_keypress(treeview *tree, uint32_t key)
+{
+	struct rect r;	/**< Redraw rectangle */
+	bool redraw = false;
+	nserror err;
+
+	assert(tree != NULL);
+
+	switch (key) {
+	case KEY_SELECT_ALL:
+		redraw = treeview_select_all(tree, &r);
+		break;
+	case KEY_COPY_SELECTION:
+		/* TODO: Copy selection as text */
+		break;
+	case KEY_DELETE_LEFT:
+	case KEY_DELETE_RIGHT:
+		redraw = treeview_delete_selection(tree, &r);
+
+		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
+			/* Delete any empty nodes */
+			err = treeview_delete_empty_nodes(tree, true);
+			r.y0 = 0;
+		}
+		break;
+	case KEY_CR:
+	case KEY_NL:
+		err = treeview_launch_selection(tree);
+		break;
+	case KEY_ESCAPE:
+	case KEY_CLEAR_SELECTION:
+		redraw = treeview_clear_selection(tree, &r);
+		break;
+	case KEY_LEFT:
+	case KEY_RIGHT:
+	case KEY_UP:
+	case KEY_DOWN:
+		redraw = treeview_keyboard_navigation(tree, key, &r);
+		break;
+	default:
+		return false;
+	}
+
+	if (redraw) {
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
+
+	return true;
 }
 
 
@@ -1953,58 +2006,6 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	}
 
 	return need_redraw;
-}
-
-
-/* Exported interface, documented in treeview.h */
-bool treeview_keypress(treeview *tree, uint32_t key)
-{
-	struct rect r;	/**< Redraw rectangle */
-	bool redraw = false;
-	nserror err;
-
-	assert(tree != NULL);
-
-	switch (key) {
-	case KEY_SELECT_ALL:
-		redraw = treeview_select_all(tree, &r);
-		break;
-	case KEY_COPY_SELECTION:
-		/* TODO: Copy selection as text */
-		break;
-	case KEY_DELETE_LEFT:
-	case KEY_DELETE_RIGHT:
-		redraw = treeview_delete_selection(tree, &r);
-
-		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
-			/* Delete any empty nodes */
-			err = treeview_delete_empty_nodes(tree, true);
-			r.y0 = 0;
-		}
-		break;
-	case KEY_CR:
-	case KEY_NL:
-		err = treeview_launch_selection(tree);
-		break;
-	case KEY_ESCAPE:
-	case KEY_CLEAR_SELECTION:
-		redraw = treeview_clear_selection(tree, &r);
-		break;
-	case KEY_LEFT:
-	case KEY_RIGHT:
-	case KEY_UP:
-	case KEY_DOWN:
-		redraw = treeview_keyboard_navigation(tree, key, &r);
-		break;
-	default:
-		return false;
-	}
-
-	if (redraw) {
-		tree->cw_t->redraw_request(tree->cw_h, r);
-	}
-
-	return true;
 }
 
 
