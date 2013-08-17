@@ -36,6 +36,7 @@ struct treeview_globals {
 	int furniture_width;
 	int step_width;
 	int window_padding;
+	int icon_size;
 	int icon_step;
 	int move_offset;
 } tree_g;
@@ -117,7 +118,7 @@ struct treeview_drag {
 
 struct treeview_move {
 	treeview_node *target;		/**< Move target */
-	int target_y;			/**< Y coord of top of target node */
+	struct rect target_area;	/**< Pos/size of target indicator */
 	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
 }; /**< Move details */
 
@@ -1169,8 +1170,8 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	node = root = tree->root;
 
 	/* Setup common content redraw data */
-	data.width = 17;
-	data.height = 17;
+	data.width = tree_g.icon_size;
+	data.height = tree_g.icon_size;
 	data.scale = 1;
 	data.repeat_x = false;
 	data.repeat_y = false;
@@ -1343,15 +1344,8 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	if (tree->move.target_pos != TV_TARGET_NONE &&
 			treeview_res[TREE_RES_ARROW].ready) {
 		/* Got a MOVE drag; render move indicator arrow */
-		if (tree->move.target != NULL) {
-			inset = tree->move.target->inset;
-		} else if (tree->root->children != NULL) {
-			inset = tree->root->children->inset;
-		} else {
-			assert(tree->root->children != NULL);
-		}
-		data.x = inset + tree_g.move_offset;
-		data.y = tree->move.target_y;
+		data.x = tree->move.target_area.x0;
+		data.y = tree->move.target_area.y0;
 		data.background_colour = plot_style_even.bg.fill_colour;
 
 		content_redraw(treeview_res[TREE_RES_ARROW].c,
@@ -1791,51 +1785,51 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
  * Set the drag&drop drop indicator
  *
  * \param tree		Treeview object to set node indicator in
- * \param node		The treeview node with mouse pointer over it
+ * \param target	The treeview node with mouse pointer over it
  * \param node_height	The height of node
- * \param node_y	The Y coord of the top of node
+ * \param node_y	The Y coord of the top of target node
  * \param mouse_y	Y coord of mouse position
  * \param rect		Redraw rectangle (if redraw required)
  * \return true iff redraw required
  */
 static bool treeview_set_move_indicator(treeview *tree,
-		treeview_node *node, int node_height,
+		treeview_node *target, int node_height,
 		int node_y, int mouse_y, struct rect *rect)
 {
-	treeview_node *target;
 	enum treeview_target_pos target_pos;
 	int mouse_pos = mouse_y - node_y;
+	int x;
+	bool need_redraw;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+	assert(tree->root->children != NULL);
 
 	node_y += (tree_g.line_height -
 			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
-	switch (node->type) {
+	switch (target->type) {
 	case TREE_NODE_FOLDER:
 		if (mouse_pos <= node_height / 4) {
-			target = node;
 			target_pos = TV_TARGET_ABOVE;
 		} else if (mouse_pos <= (3 * node_height) / 4 ||
-				node->flags & TREE_NODE_EXPANDED) {
-			target = node;
+				target->flags & TREE_NODE_EXPANDED) {
 			target_pos = TV_TARGET_INSIDE;
 		} else {
-			target = node;
 			target_pos = TV_TARGET_BELOW;
 		}
 		break;
 
 	case TREE_NODE_ENTRY:
 		if (mouse_pos <= node_height / 2) {
-			target = node;
 			target_pos = TV_TARGET_ABOVE;
 		} else {
-			target = node;
 			target_pos = TV_TARGET_BELOW;
 		}
 		break;
 
 	default:
-		assert(node->type != TREE_NODE_ROOT);
+		assert(target->type != TREE_NODE_ROOT);
 		return false;
 	}
 
@@ -1845,23 +1839,52 @@ static bool treeview_set_move_indicator(treeview *tree,
 		return false;
 	}
 
+	if (tree->move.target_pos != TV_TARGET_NONE) {
+		/* Need to clear old indicator position */
+		*rect = tree->move.target_area;
+		need_redraw = true;
+	}
+
 	if (target_pos == TV_TARGET_ABOVE) {
 		node_y -= (tree_g.line_height + 1) / 2;
 	} else if (target_pos == TV_TARGET_BELOW) {
 		node_y += node_height - (tree_g.line_height + 1) / 2;
 	}
 
+	if (target != NULL) {
+		x = target->inset + tree_g.move_offset;
+	} else {
+		x = tree->root->children->inset;
+	}
+
+	/* Update target details */
 	tree->move.target = target;
 	tree->move.target_pos = target_pos;
-	tree->move.target_y = node_y;
+	tree->move.target_area.x0 = x;
+	tree->move.target_area.y0 = node_y;
+	tree->move.target_area.x1 = tree_g.icon_size + x;
+	tree->move.target_area.y1 = tree_g.icon_size + node_y;
 
-	/* TODO: proper values */
-	rect->x0 = 0;
-	rect->y0 = 0;
-	rect->x1 = 9000;
-	rect->y1 = 9000;
+	if (target_pos != TV_TARGET_NONE) {
+		/* Need to draw new indicator position */
+		if (need_redraw) {
+			if (rect->x0 != tree->move.target_area.x0) {
+				if (rect->x0 > tree->move.target_area.x0)
+					rect->x0 = tree->move.target_area.x0;
+				if (tree->move.target_area.x1 > rect->x1)
+					rect->x1 = tree->move.target_area.x1;
+			}
+			if (rect->y0 > tree->move.target_area.y0)
+				rect->y0 = tree->move.target_area.y0;
+			if (tree->move.target_area.y1 > rect->y1)
+				rect->y1 = tree->move.target_area.y1;
+		} else {
+			*rect = tree->move.target_area;
+			need_redraw = true;
+		}
+	}
 
-	return true;
+	return need_redraw;
 }
 
 
@@ -2426,6 +2449,7 @@ nserror treeview_init(void)
 	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;
+	tree_g.icon_size = 17;
 	tree_g.icon_step = 23;
 	tree_g.move_offset = 18;
 
