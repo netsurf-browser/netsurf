@@ -744,7 +744,8 @@ static nserror hotlist_initialise_entry_fields(void)
 	for (i = 0; i < HL_N_FIELDS; i++)
 		hl_ctx.fields[i].field = NULL;
 
-	hl_ctx.fields[HL_TITLE].flags = TREE_FLAG_DEFAULT;
+	hl_ctx.fields[HL_TITLE].flags = TREE_FLAG_DEFAULT | 
+			TREE_FLAG_ALLOW_EDIT;
 	label = "TreeviewLabelTitle";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
@@ -753,7 +754,7 @@ static nserror hotlist_initialise_entry_fields(void)
 		goto error;
 	}
 
-	hl_ctx.fields[HL_URL].flags = TREE_FLAG_NONE;
+	hl_ctx.fields[HL_URL].flags = TREE_FLAG_ALLOW_EDIT;
 	label = "TreeviewLabelURL";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
@@ -780,7 +781,8 @@ static nserror hotlist_initialise_entry_fields(void)
 		goto error;
 	}
 
-	hl_ctx.fields[HL_FOLDER].flags = TREE_FLAG_DEFAULT;
+	hl_ctx.fields[HL_FOLDER].flags = TREE_FLAG_DEFAULT | 
+			TREE_FLAG_ALLOW_EDIT;
 	label = "TreeviewLabelFolder";
 	label = messages_get(label);
 	if (lwc_intern_string(label, strlen(label),
