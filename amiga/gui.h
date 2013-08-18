@@ -101,6 +101,7 @@ struct gui_window_2 {
 	char *menulab[AMI_MENU_AREXX_MAX + 1];
 	Object *menuobj[AMI_MENU_AREXX_MAX + 1];
 	char menukey[AMI_MENU_AREXX_MAX + 1];
+	char *menuicon[AMI_MENU_AREXX_MAX + 1];
 	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
 	UBYTE *menutype;
 	struct NewMenu *menu;
