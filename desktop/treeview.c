@@ -2431,6 +2431,12 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		/* Tell client an entry was launched */
 		ma->tree->callbacks->entry(msg, node->client_data);
 
+	} else if (ma->mouse & BROWSER_MOUSE_PRESS_2 ||
+			(ma->mouse & BROWSER_MOUSE_PRESS_1 &&
+			 ma->mouse & BROWSER_MOUSE_MOD_2)) {
+		/* Toggle selection of node */
+		action |= TV_NODE_ACTION_SELECTION;
+
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED) &&
 			part != TV_NODE_PART_TOGGLE) {
@@ -2440,11 +2446,6 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		/* Select node */
 		action |= TV_NODE_ACTION_SELECTION;
 
-	} else if (ma->mouse & BROWSER_MOUSE_PRESS_2 ||
-			(ma->mouse & BROWSER_MOUSE_PRESS_1 &&
-			 ma->mouse & BROWSER_MOUSE_MOD_2)) {
-		/* Toggle selection of node */
-		action |= TV_NODE_ACTION_SELECTION;
 	}
 
 	if (action & TV_NODE_ACTION_SELECTION) {
