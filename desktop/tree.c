@@ -182,6 +182,9 @@ struct tree {
 #include "desktop/global_history.h"
 #include "desktop/sslcert_viewer.h"
 
+struct sslcert_session_data *ssl_current_session = NULL;
+const char *tree_hotlist_path = NULL;
+
 int treeview_inits;
 
 static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
