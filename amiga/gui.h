@@ -101,6 +101,7 @@ struct gui_window_2 {
 	char *menulab[AMI_MENU_AREXX_MAX + 1];
 	Object *menuobj[AMI_MENU_AREXX_MAX + 1];
 	char menukey[AMI_MENU_AREXX_MAX + 1];
+	char *menuicon[AMI_MENU_AREXX_MAX + 1];
 	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
 	UBYTE *menutype;
 	struct NewMenu *menu;
@@ -158,6 +159,7 @@ BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
 void ami_gui_hotlist_toolbar_update_all(void);
 void ami_gui_tabs_toggle_all(void);
+bool ami_locate_resource(char *fullpath, const char *file);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

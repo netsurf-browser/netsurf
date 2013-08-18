@@ -143,8 +143,10 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 }
 
 static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
-			const char *label, char key, struct bitmap *bm, void *func, void *hookdata)
+			const char *label, char key, char *icon, void *func, void *hookdata)
 {
+	char menu_icon[1024];
+
 	gwin->menutype[num] = type;
 
 	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
@@ -158,10 +160,16 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			gwin->menulab[num] = ami_utf8_easy(messages_get(label));
 		}
 	}
-
+	
+	gwin->menuicon[num] = NULL;
 	if(key) gwin->menukey[num] = key;
 	if(func) gwin->menu_hook[num].h_Entry = (HOOKFUNC)func;
 	if(hookdata) gwin->menu_hook[num].h_Data = hookdata;
+
+	if(icon) {
+		if(ami_locate_resource(menu_icon, icon) == true)
+			gwin->menuicon[num] = (char *)strdup(menu_icon);
+	}
 }
 
 void ami_init_menulabs(struct gui_window_2 *gwin)
@@ -298,18 +306,71 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 			TAG_DONE);
 }
 
-struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
+struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
-	int i;
+	int i, j;
+	int txtlen = 0;
+	struct RastPort *rp = &scrn->RastPort;
+	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 
-	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
-	ami_init_menulabs(gwin);
-	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
-	ami_menu_arexx_scan(gwin);
-
-	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
+	for(i=0; i <= AMI_MENU_AREXX_MAX; i++)
 	{
+		if(gwin->menutype[i] == NM_TITLE) {
+			j = i + 1;
+			txtlen = 0;
+			do {
+				if(gwin->menulab[j] != NM_BARLABEL) {
+					if(gwin->menutype[j] == NM_ITEM) {
+						if((TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j])) +
+							TextLength(rp, &gwin->menukey[j], 1)) > txtlen) {
+							txtlen = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j])) +
+									TextLength(rp, &gwin->menukey[j], 1);
+							/**TODO: take account of the size of AMIGAKEY and other imagery too
+							 */
+						}
+					}
+				}
+				j++;
+			} while((gwin->menutype[j] != NM_TITLE) && (gwin->menutype[j] != 0));
+		}
+
+		if((GadToolsBase->lib_Version > 53) ||
+		((GadToolsBase->lib_Version == 53) && (GadToolsBase->lib_Revision >= 6))) {
+			/* GadTools 53.6+ only. For now we will only create the menu
+				using label.image if there's a bitmap associated with the item. */
+			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
+				Object *submenuarrow = NULL;
+
+				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
+					submenuarrow = NewObject(NULL, "sysiclass",
+						IA_Left, txtlen - TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])),
+						SYSIA_Which, MENUSUB,
+						SYSIA_DrawInfo, dri,
+					TAG_DONE);
+				}
+
+				/**TODO: Checkmark/MX images and keyboard shortcuts
+				 */
+				
+				gwin->menuobj[i] = LabelObject,
+					LABEL_DrawInfo, dri,
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, BitMapObject,
+						BITMAP_Screen, scrn,
+						BITMAP_SourceFile, gwin->menuicon[i],
+						BITMAP_Masking, TRUE,
+					BitMapEnd,
+					LABEL_Text, gwin->menulab[i],
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, submenuarrow,
+				LabelEnd;
+
+				if(gwin->menuobj[i]) gwin->menutype[i] |= MENU_IMAGE;
+			}
+		}
+
 		gwin->menu[i].nm_Type = gwin->menutype[i];
+		
 		if(gwin->menuobj[i])
 			gwin->menu[i].nm_Label = (void *)gwin->menuobj[i];
 		else
@@ -318,7 +379,27 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 		if(gwin->menukey[i]) gwin->menu[i].nm_CommKey = &gwin->menukey[i];
 		gwin->menu[i].nm_Flags = 0;
 		if(gwin->menu_hook[i].h_Entry) gwin->menu[i].nm_UserData = &gwin->menu_hook[i];
+		
+		if(gwin->menuicon[i]) {
+			free(gwin->menuicon[i]);
+			gwin->menuicon[i] = NULL;
+		}
 	}
+	
+	FreeScreenDrawInfo(scrn, dri);
+	
+	return gwin;
+}
+
+struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
+{
+	int i;
+
+	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
+	ami_init_menulabs(gwin);
+	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
+	ami_menu_arexx_scan(gwin);
+	gwin = ami_menu_layout(gwin);
 
 #if defined(WITH_JS) || defined(WITH_MOZJS)
 	gwin->menu[M_JS].nm_Flags = CHECKIT | MENUTOGGLE;
@@ -432,6 +513,8 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	struct node_element *element=NULL;
 	struct node *node;
 	UBYTE menu_type;
+	char *icon;
+	char key;
 
 	*gen = *gen + 1;
 
@@ -444,9 +527,14 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 			if(*gen == 1) menu_type = NM_ITEM;
 			if(*gen == 2) menu_type = NM_SUB;
 
+			if(tree_node_is_folder(node) == true) {
+				icon = "icons/directory.png";
+			} else {
+				icon = "icons/content.png";
+			}
+
 			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
-				0, tree_url_node_get_icon(node),
-				ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
+				0, icon, ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
 			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
 					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
 
