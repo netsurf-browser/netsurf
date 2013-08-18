@@ -68,8 +68,6 @@ BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
 
-#define SUB_MENU_ARROW '\n'
-
 ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin);
@@ -148,7 +146,7 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 			const char *label, char key, char *icon, void *func, void *hookdata)
 {
 	char menu_icon[1024];
-	bool has_submenu = false;
+
 	gwin->menutype[num] = type;
 
 	if((label == NM_BARLABEL) || (strcmp(label, "--") == 0)) {
