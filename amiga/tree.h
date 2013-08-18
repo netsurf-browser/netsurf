@@ -39,7 +39,7 @@ enum
 	AMI_TREE_SSLCERT
 };
 
-struct treeview_window *ami_tree_create(uint8 flags,
+struct treeview_window *ami_tree_create(int flags,
 			struct sslcert_session_data *ssl_data);
 void ami_tree_destroy(struct treeview_window *twin);
 struct tree *ami_tree_get_tree(struct treeview_window *twin);

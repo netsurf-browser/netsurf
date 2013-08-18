@@ -117,7 +117,7 @@ const struct treeview_table ami_tree_callbacks = {
 	.get_window_dimensions = ami_tree_get_window_dimensions
 };
 
-struct treeview_window *ami_tree_create(uint8 flags,
+struct treeview_window *ami_tree_create(int flags,
 			struct sslcert_session_data *ssl_data)
 {
 	struct treeview_window *twin;
