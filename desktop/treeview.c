@@ -24,6 +24,7 @@
 #include "desktop/gui.h"
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
+#include "desktop/textarea.h"
 #include "desktop/treeview.h"
 #include "render/font.h"
 #include "utils/log.h"
@@ -87,7 +88,7 @@ struct treeview_node {
 
 	void *client_data;  /**< Passed to client on node event msg callback */
 
-	struct treeview_field text; /** Text to show for node (default field) */
+	struct treeview_text text; /** Text to show for node (default field) */
 }; /**< Treeview node */
 
 struct treeview_node_entry {
@@ -117,16 +118,25 @@ struct treeview_drag {
 }; /**< Drag state */
 
 struct treeview_move {
-	treeview_node *root;		/** Head of yanked node list */
+	treeview_node *root;		/**< Head of yanked node list */
 	treeview_node *target;		/**< Move target */
 	struct rect target_area;	/**< Pos/size of target indicator */
 	enum treeview_target_pos target_pos;	/**< Pos wrt render node */
 }; /**< Move details */
 
-struct treeview {
-	uint32_t view_width;		/** Viewport size */
+struct treeview_edit {
+	treeview_node *node;		/**< Node being edited, or NULL */
+	struct textarea *textarea;	/**< Textarea for edit, or NULL */
+	int x;		/**< Textarea x position */
+	int y;		/**< Textarea y position */
+	int w;		/**< Textarea width */
+	int h;		/**< Textarea height */
+}; /**< Edit details */
 
-	treeview_flags flags;		/** Treeview behaviour settings */
+struct treeview {
+	uint32_t view_width;		/**< Viewport size */
+
+	treeview_flags flags;		/**< Treeview behaviour settings */
 
 	treeview_node *root;	/**< Root node */
 
@@ -136,6 +146,7 @@ struct treeview {
 
 	struct treeview_drag drag;	/**< Drag state */
 	struct treeview_move move;	/**< Move drag details */
+	struct treeview_edit edit;	/**< Edit details */
 
 	const struct treeview_callback_table *callbacks; /**< For node events */
 
@@ -315,11 +326,9 @@ static nserror treeview_create_node_root(treeview_node **root)
 	n->height = 0;
 	n->inset = tree_g.window_padding - tree_g.step_width;
 
-	n->text.flags = TREE_FLAG_NONE;
-	n->text.field = NULL;
-	n->text.value.data = NULL;
-	n->text.value.len = 0;
-	n->text.value.width = 0;
+	n->text.data = NULL;
+	n->text.len = 0;
+	n->text.width = 0;
 
 	n->parent = NULL;
 	n->next_sib = NULL;
@@ -403,11 +412,11 @@ static inline void treeview_insert_node(treeview_node *a,
 			b = b->parent;
 		} while (b->parent != NULL);
 
-		if (a->text.value.width == 0) {
+		if (a->text.width == 0) {
 			nsfont.font_width(&plot_style_odd.text,
-					a->text.value.data,
-					a->text.value.len,
-					&(a->text.value.width));
+					a->text.data,
+					a->text.len,
+					&(a->text.width));
 		}
 	}
 }
@@ -442,9 +451,9 @@ nserror treeview_create_node_folder(treeview *tree,
 
 	n->height = tree_g.line_height;
 
-	n->text.value.data = field->value;
-	n->text.value.len = field->value_len;
-	n->text.value.width = 0;
+	n->text.data = field->value;
+	n->text.len = field->value_len;
+	n->text.width = 0;
 
 	n->parent = NULL;
 	n->next_sib = NULL;
@@ -486,19 +495,19 @@ nserror treeview_update_node_entry(treeview *tree,
 	assert(lwc_string_isequal(tree->fields[0].field,
 			fields[0].field, &match) == lwc_error_ok &&
 			match == true);
-	entry->text.value.data = fields[0].value;
-	entry->text.value.len = fields[0].value_len;
-	entry->text.value.width = 0;
+	entry->text.data = fields[0].value;
+	entry->text.len = fields[0].value_len;
+	entry->text.width = 0;
 
 	if (entry->parent->flags & TREE_NODE_EXPANDED) {
 		/* Text will be seen, get its width */
 		nsfont.font_width(&plot_style_odd.text,
-				entry->text.value.data,
-				entry->text.value.len,
-				&(entry->text.value.width));
+				entry->text.data,
+				entry->text.len,
+				&(entry->text.width));
 	} else {
 		/* Just invalidate the width, since it's not needed now */
-		entry->text.value.width = 0;
+		entry->text.width = 0;
 	}
 
 	for (i = 1; i < tree->n_fields; i++) {
@@ -567,9 +576,9 @@ nserror treeview_create_node_entry(treeview *tree,
 	assert(lwc_string_isequal(tree->fields[0].field,
 			fields[0].field, &match) == lwc_error_ok &&
 			match == true);
-	n->text.value.data = fields[0].value;
-	n->text.value.len = fields[0].value_len;
-	n->text.value.width = 0;
+	n->text.data = fields[0].value;
+	n->text.len = fields[0].value_len;
+	n->text.width = 0;
 
 	n->parent = NULL;
 	n->next_sib = NULL;
@@ -735,6 +744,55 @@ static inline bool treeview_unlink_node(treeview_node *n)
 }
 
 
+/**
+ * Cancel the editing of a treeview node
+ *
+ * \param tree		Treeview object to cancel node editing in
+ * \param redraw	Set true iff redraw of removed textarea area required
+ */
+static void treeview_edit_cancel(treeview *tree, bool redraw)
+{
+	struct rect r;
+
+	if (tree->edit.textarea == NULL)
+		return;
+
+	textarea_destroy(tree->edit.textarea);
+
+	tree->edit.textarea = NULL;
+	tree->edit.node = NULL;
+
+	if (tree->drag.type == TV_DRAG_TEXTAREA)
+		tree->drag.type = TV_DRAG_NONE;
+
+	if (redraw) {
+		r.x0 = tree->edit.x;
+		r.y0 = tree->edit.y;
+		r.x1 = tree->edit.x + tree->edit.w;
+		r.y1 = tree->edit.y + tree->edit.h;
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
+}
+
+
+/**
+ * Complete a treeview edit, by informing the client with a change request msg
+ *
+ * \param tree		Treeview object to complete edit in
+ */
+static void treeview_edit_done(treeview *tree)
+{
+	if (tree->edit.textarea == NULL)
+		return;
+
+	/* Inform the treeview client with change request message */
+	/* TODO */
+
+	/* Finally, destroy the treeview, and redraw */
+	treeview_edit_cancel(tree, true);
+}
+
+
 struct treeview_node_delete {
 	treeview *tree;
 	int height_reduction;
@@ -768,6 +826,11 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
 	default:
 		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* Cancel any edit of this node */
+	if (nd->tree->edit.textarea != NULL &&
+			nd->tree->edit.node == n)
+		treeview_edit_cancel(nd->tree, false);
 
 	/* Free the node */
 	free(n);
@@ -1010,6 +1073,9 @@ nserror treeview_create(treeview **tree,
 	(*tree)->move.target = NULL;
 	(*tree)->move.target_pos = TV_TARGET_NONE;
 
+	(*tree)->edit.textarea = NULL;
+	(*tree)->edit.node = NULL;
+
 	(*tree)->flags = flags;
 
 	(*tree)->cw_t = cw_t;
@@ -1070,11 +1136,11 @@ nserror treeview_node_expand(treeview *tree,
 
 		do {
 			assert((child->flags & TREE_NODE_EXPANDED) == false);
-			if (child->text.value.width == 0) {
+			if (child->text.width == 0) {
 				nsfont.font_width(&plot_style_odd.text,
-						child->text.value.data,
-						child->text.value.len,
-						&(child->text.value.width));
+						child->text.data,
+						child->text.len,
+						&(child->text.width));
 			}
 
 			additional_height += child->height;
@@ -1341,7 +1407,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 		/* Render text */
 		x0 = inset + tree_g.step_width + tree_g.icon_step;
 		new_ctx.plot->text(x0, render_y + baseline,
-				node->text.value.data, node->text.value.len,
+				node->text.data, node->text.len,
 				text_style);
 
 		/* Rendered the node */
@@ -1417,6 +1483,13 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 
 		content_redraw(treeview_res[TREE_RES_ARROW].c,
 					&data, &r, &new_ctx);
+
+	} else if (tree->edit.textarea != NULL) {
+		/* Edit in progress; render textarea */
+		textarea_redraw(tree->edit.textarea,
+				tree->edit.x, tree->edit.y,
+				plot_style_even.bg.fill_colour, 1.0,
+				&r, &new_ctx);
 	}
 
 	/* Rendering complete */
@@ -2047,6 +2120,22 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 
 	assert(tree != NULL);
 
+	/* Pass to textarea, if editing in progress */
+	if (tree->edit.textarea != NULL) {
+		switch (key) {
+		case KEY_ESCAPE:
+			treeview_edit_cancel(tree, true);
+			return true;
+		case KEY_NL:
+		case KEY_CR:
+			treeview_edit_done(tree);
+			return true;
+		default:
+			return textarea_keypress(tree->edit.textarea, key);
+		}
+	}
+
+	/* Keypress to be handled by treeview */
 	switch (key) {
 	case KEY_SELECT_ALL:
 		redraw = treeview_select_all(tree, &r);
@@ -2226,6 +2315,170 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 }
 
 
+/**
+ * Callback for textarea_create, in desktop/treeview.h
+ */
+static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
+{
+	treeview *tree = data;
+	struct rect *r;
+
+	switch (msg->type) {
+	case TEXTAREA_MSG_DRAG_REPORT:
+		if (msg->data.drag == TEXTAREA_DRAG_NONE) {
+			/* Textarea drag finished */
+			tree->drag.type = TV_DRAG_NONE;
+		} else {
+			/* Textarea drag started */
+			tree->drag.type = TV_DRAG_TEXTAREA;
+		}
+		break;
+
+	case TEXTAREA_MSG_REDRAW_REQUEST:
+		r = &msg->data.redraw;
+		r->x0 += tree->edit.x;
+		r->y0 += tree->edit.y;
+		r->x1 += tree->edit.x;
+		r->y1 += tree->edit.y;
+
+		/* Redraw the textarea */
+		tree->cw_t->redraw_request(tree->cw_h, *r);
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+/**
+ * Start edit of node field, at given y-coord, if editable
+ *
+ * \param tree		Treeview object to consider editing in
+ * \param n		The treeview node to try editing
+ * \param node_y	The Y coord of the top of n
+ * \param mouse_x	X coord of mouse position
+ * \param mouse_y	Y coord of mouse position
+ * \param rect		Redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
+		int node_y, int mouse_x, int mouse_y, struct rect *rect)
+{
+	struct treeview_text *field_data = NULL;
+	struct treeview_field *ef, *field_desc;
+	int pos = node_y + tree_g.line_height;
+	int field_y = node_y;
+	int field_x;
+	int width, height;
+	textarea_setup ta_setup;
+	textarea_flags ta_flags;
+	bool success;
+
+	/* If the main field is editable, make field_data point to it */
+	ef = &(tree->fields[0]);
+	if (ef->flags & TREE_FLAG_ALLOW_EDIT) {
+		field_data = &n->text;
+		field_desc = ef;
+		field_y = node_y;
+	}
+
+	/* Check for editable entry fields */
+	if (n->type == TREE_NODE_ENTRY && n->height != tree_g.line_height) {
+		struct treeview_node_entry *e = (struct treeview_node_entry *)n;
+		int i;
+
+		for (i = 0; i < tree->n_fields - 1; i++) {
+			if (mouse_y <= pos)
+				continue;
+
+			ef = &(tree->fields[i + 1]);
+			pos += tree_g.line_height;
+			if (mouse_y <= pos && (ef->flags &
+					TREE_FLAG_ALLOW_EDIT)) {
+				field_data = &e->fields[i].value;
+				field_desc = ef;
+				field_y = pos - tree_g.line_height;
+			}
+		}
+	}
+
+	if (field_data == NULL) {
+		/* No editable field */
+		return false;
+	}
+
+	/* Get window width/height */
+	tree->cw_t->get_window_dimensions(tree->cw_h, &width, &height);
+
+	/* Anow textarea width/height */
+	field_x = n->inset + tree_g.step_width + tree_g.icon_step - 3;
+	width -= field_x;
+	height = tree_g.line_height;
+
+	/* Configure the textarea */
+	ta_flags = TEXTAREA_INTERNAL_CARET;
+
+	ta_setup.width = width;
+	ta_setup.height = height;
+	ta_setup.pad_top = 0;
+	ta_setup.pad_right = 2;
+	ta_setup.pad_bottom = 0;
+	ta_setup.pad_left = 2;
+	ta_setup.border_width = 1;
+	ta_setup.border_col = 0x000000;
+	ta_setup.selected_text = 0xffffff;
+	ta_setup.selected_bg = 0x000000;
+	ta_setup.text = plot_style_odd.text;
+	ta_setup.text.foreground = 0x000000;
+	ta_setup.text.background = 0xffffff;
+
+	/* Create text area */
+	tree->edit.textarea = textarea_create(ta_flags, &ta_setup,
+			treeview_textarea_callback, tree);
+	if (tree->edit.textarea == NULL) {
+		return false;
+	}
+
+	success = textarea_set_text(tree->edit.textarea, field_data->data);
+	if (!success) {
+		textarea_destroy(tree->edit.textarea);
+		return false;
+	}
+
+	tree->edit.node = n;
+
+	/* Position the caret */
+	mouse_x -= field_x;
+	if (mouse_x < 0)
+		mouse_x = 0;
+	else if (mouse_x >= width)
+		mouse_x = width - 1;
+
+	textarea_mouse_action(tree->edit.textarea,
+			BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1,
+			mouse_x, tree_g.line_height / 2);
+
+	/* Position the textarea */
+	tree->edit.x = field_x;
+	tree->edit.y = field_y;
+	tree->edit.w = width;
+	tree->edit.h = height;
+
+	/* Setup redraw rectangle */
+	if (rect->x0 > field_x)
+		rect->x0 = field_x;
+	if (rect->y0 > field_y)
+		rect->y0 = field_y;
+	if (rect->x1 < field_x + width)
+		rect->x1 = field_x + width;
+	if (rect->y1 < field_y + height)
+		rect->y1 = field_y + height;
+
+	return true;
+}
+
+
 struct treeview_mouse_action {
 	treeview *tree;
 	browser_mouse_state mouse;
@@ -2270,7 +2523,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 
 		} else if (ma->x >= node->inset + tree_g.step_width &&
 				ma->x < node->inset + tree_g.step_width +
-				tree_g.icon_step + node->text.value.width) {
+				tree_g.icon_step + node->text.width) {
 			/* On node */
 			part = TV_NODE_PART_ON_NODE;
 		}
@@ -2438,6 +2691,18 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		action |= TV_NODE_ACTION_SELECTION;
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
+//			ma->mouse & BROWSER_MOUSE_MOD_3 &&
+/* REMOVE */		ma->mouse & BROWSER_MOUSE_MOD_1 &&
+			part != TV_NODE_PART_TOGGLE) {
+
+		/* Clear any existing selection */
+		redraw |= treeview_clear_selection(ma->tree, &r);
+
+		/* Edit node */
+		redraw |= treeview_edit_node_at_point(ma->tree, node,
+				ma->current_y, ma->x, ma->y, &r);
+
+	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(node->flags & TREE_NODE_SELECTED) &&
 			part != TV_NODE_PART_TOGGLE) {
 		/* Clear any existing selection */
@@ -2481,6 +2746,31 @@ void treeview_mouse_action(treeview *tree,
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
+
+	/* Handle mouse drag captured by textarea */
+	if (tree->drag.type == TV_DRAG_TEXTAREA) {
+		textarea_mouse_action(tree->edit.textarea, mouse,
+				x - tree->edit.x, y - tree->edit.y);
+		return;
+	}
+
+	/* Handle textarea related mouse action */
+	if (tree->edit.textarea != NULL) {
+		int ta_x = x - tree->edit.x;
+		int ta_y = y - tree->edit.y;
+
+		if (ta_x > 0 && ta_x < tree->edit.w &&
+				ta_y > 0 && ta_y < tree->edit.h) {
+			/* Inside textarea */
+			textarea_mouse_action(tree->edit.textarea, mouse,
+					ta_x, ta_y);
+			return;
+
+		} else if (mouse != BROWSER_MOUSE_HOVER) {
+			/* Action outside textarea */
+			treeview_edit_cancel(tree, true);
+		}
+	}
 
 	/* Handle drag ends */
 	if (mouse == BROWSER_MOUSE_HOVER) {
