@@ -211,6 +211,10 @@ static void treeview_test_scroll_visible(struct core_window *cw, struct rect r)
 static void treeview_test_get_window_dimensions(struct core_window *cw,
 		int *width, int *height)
 {
+	struct tree *tree = (struct tree *)cw;
+
+	tree->callbacks->get_window_dimensions(width, height,
+			tree->client_data);
 }
 
 static void treeview_test_drag_status(struct core_window *cw,
