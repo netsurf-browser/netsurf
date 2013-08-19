@@ -2690,9 +2690,9 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		/* Toggle selection of node */
 		action |= TV_NODE_ACTION_SELECTION;
 
-	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
-//			ma->mouse & BROWSER_MOUSE_MOD_3 &&
-/* REMOVE */		ma->mouse & BROWSER_MOUSE_MOD_1 &&
+	} else if (ma->mouse & BROWSER_MOUSE_CLICK_1 &&
+			ma->mouse &
+				(BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_3) &&
 			part != TV_NODE_PART_TOGGLE) {
 
 		/* Clear any existing selection */
@@ -2703,6 +2703,8 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 				ma->current_y, ma->x, ma->y, &r);
 
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
+			!(ma->mouse &
+				(BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_3)) &&
 			!(node->flags & TREE_NODE_SELECTED) &&
 			part != TV_NODE_PART_TOGGLE) {
 		/* Clear any existing selection */
