@@ -64,8 +64,8 @@ struct core_window_callback_table {
 	 * Get window viewport dimensions
 	 *
 	 * \param cw		the core window object
-	 * \param width		to be set to viewport width in px
-	 * \param height	to be set to viewport height in px
+	 * \param width		to be set to viewport width in px, if non NULL
+	 * \param height	to be set to viewport height in px, if non NULL
 	 */
 	void (*get_window_dimensions)(struct core_window *cw,
 			int *width, int *height);
