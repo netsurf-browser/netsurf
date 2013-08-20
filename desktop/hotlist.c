@@ -336,6 +336,11 @@ static nserror hotlist_tree_node_entry_cb(
 		struct treeview_node_msg msg, void *data)
 {
 	struct hotlist_entry *e = data;
+	const char *old_text;
+	nsurl *old_url;
+	nsurl *url;
+	nserror err;
+	bool match;
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
@@ -344,6 +349,46 @@ static nserror hotlist_tree_node_entry_cb(
 		break;
 
 	case TREE_MSG_NODE_EDIT:
+		if (lwc_string_isequal(hl_ctx.fields[HL_TITLE].field,
+				msg.data.node_edit.field, &match) ==
+				lwc_error_ok && match == true &&
+				msg.data.node_edit.text != NULL &&
+				msg.data.node_edit.text[0] != '\0') {
+			/* Requst to change the entry title text */
+			old_text = e->data[HL_TITLE].value;
+			e->data[HL_TITLE].value =
+					strdup(msg.data.node_edit.text);
+
+			if (e->data[HL_TITLE].value == NULL) {
+				e->data[HL_TITLE].value = old_text;
+			} else {
+				e->data[HL_TITLE].value_len =
+						strlen(e->data[HL_TITLE].value);
+				treeview_update_node_entry(hl_ctx.tree,
+						e->entry, e->data, e);
+				free((void *)old_text);
+			}
+
+		} else if (lwc_string_isequal(hl_ctx.fields[HL_URL].field,
+				msg.data.node_edit.field, &match) ==
+				lwc_error_ok && match == true &&
+				msg.data.node_edit.text != NULL &&
+				msg.data.node_edit.text[0] != '\0') {
+			/* Requst to change the entry URL text */
+			err = nsurl_create(msg.data.node_edit.text, &url);
+			if (err != NSERROR_OK)
+				return err;
+
+			old_url = e->url;
+
+			e->url = url;
+			e->data[HL_URL].value = nsurl_access(url);
+			e->data[HL_URL].value_len = nsurl_length(e->url);
+
+			treeview_update_node_entry(hl_ctx.tree,
+					e->entry, e->data, e);
+			nsurl_unref(old_url);
+		}
 		break;
 
 	case TREE_MSG_NODE_LAUNCH:
