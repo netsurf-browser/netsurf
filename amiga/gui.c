@@ -2769,6 +2769,7 @@ void gui_quit(void)
 	FreeVec(nsscreentitle);
 
 	ami_context_menu_free();
+	ami_menu_free_glyphs();
 
 	ami_mouse_pointers_free();
 	ami_clipboard_free();

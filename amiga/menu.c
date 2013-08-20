@@ -35,6 +35,8 @@
 #include <images/label.h>
 #include <proto/bitmap.h>
 #include <images/bitmap.h>
+#include <proto/glyph.h>
+#include <images/glyph.h>
 
 #include <reaction/reaction_macros.h>
 
@@ -64,9 +66,20 @@
 #include "utils/messages.h"
 #include "utils/schedule.h"
 
+enum {
+	NSA_GLYPH_SUBMENU,
+	NSA_GLYPH_AMIGAKEY,
+	NSA_GLYPH_CHECKMARK,
+	NSA_GLYPH_MX,
+	NSA_GLYPH_MAX
+};
+
 BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
+Object *menu_glyph[NSA_GLYPH_MAX];
+int menu_glyph_width[NSA_GLYPH_MAX];
+bool menu_glyphs_loaded = false;
 
 ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
@@ -306,27 +319,66 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 			TAG_DONE);
 }
 
-struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
+static void ami_menu_load_glyphs(struct DrawInfo *dri)
+{
+	menu_glyph[NSA_GLYPH_SUBMENU] = NewObject(NULL, "sysiclass",
+										SYSIA_Which, MENUSUB,
+										SYSIA_DrawInfo, dri,
+									TAG_DONE);
+	menu_glyph[NSA_GLYPH_AMIGAKEY] = NewObject(NULL, "sysiclass",
+										SYSIA_Which, AMIGAKEY,
+										SYSIA_DrawInfo, dri,
+									TAG_DONE);
+	GetAttr(IA_Width, menu_glyph[NSA_GLYPH_SUBMENU],
+		(ULONG *)&menu_glyph_width[NSA_GLYPH_SUBMENU]);
+	GetAttr(IA_Width, menu_glyph[NSA_GLYPH_AMIGAKEY],
+		(ULONG *)&menu_glyph_width[NSA_GLYPH_AMIGAKEY]);
+	
+	menu_glyphs_loaded = true;
+}
+
+void ami_menu_free_glyphs(void)
+{
+	int i;
+	if(menu_glyphs_loaded == false) return;
+	
+	while(i < NSA_GLYPH_MAX) {
+		DisposeObject(menu_glyph[i]);
+		menu_glyph[i] = NULL;
+	};
+	
+	menu_glyphs_loaded = false;
+}
+
+static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
 	int txtlen = 0;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+	
+	if(menu_glyphs_loaded == false)
+		ami_menu_load_glyphs(dri);
 
 	for(i=0; i <= AMI_MENU_AREXX_MAX; i++)
 	{
 		if(gwin->menutype[i] == NM_TITLE) {
 			j = i + 1;
 			txtlen = 0;
+			int item_size = 0;
 			do {
 				if(gwin->menulab[j] != NM_BARLABEL) {
 					if(gwin->menutype[j] == NM_ITEM) {
-						if((TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j])) +
-							TextLength(rp, &gwin->menukey[j], 1)) > txtlen) {
-							txtlen = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j])) +
-									TextLength(rp, &gwin->menukey[j], 1);
-							/**TODO: take account of the size of AMIGAKEY and other imagery too
+						item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
+						if(gwin->menukey[j]) {
+							item_size += TextLength(rp, &gwin->menukey[j], 1);
+							item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
+							/**TODO: take account of the size of other imagery too
 							 */
+						}
+						
+						if(item_size > txtlen) {
+							txtlen = item_size;
 						}
 					}
 				}
@@ -339,14 +391,22 @@ struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 			/* GadTools 53.6+ only. For now we will only create the menu
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
+				int icon_width = 0;
 				Object *submenuarrow = NULL;
-
+				Object *icon = 	BitMapObject,
+						BITMAP_Screen, scrn,
+						BITMAP_SourceFile, gwin->menuicon[i],
+						BITMAP_Masking, TRUE,
+					BitMapEnd;
+				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
+				
 				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
 					submenuarrow = NewObject(NULL, "sysiclass",
-						IA_Left, txtlen - TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])),
-						SYSIA_Which, MENUSUB,
-						SYSIA_DrawInfo, dri,
-					TAG_DONE);
+										SYSIA_Which, MENUSUB,
+										SYSIA_DrawInfo, dri,
+										IA_Left, txtlen - TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
+													menu_glyph_width[NSA_GLYPH_SUBMENU] - icon_width,
+									TAG_DONE);
 				}
 
 				/**TODO: Checkmark/MX images and keyboard shortcuts
@@ -355,11 +415,7 @@ struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				gwin->menuobj[i] = LabelObject,
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,
-					LABEL_Image, BitMapObject,
-						BITMAP_Screen, scrn,
-						BITMAP_SourceFile, gwin->menuicon[i],
-						BITMAP_Masking, TRUE,
-					BitMapEnd,
+					LABEL_Image, icon,
 					LABEL_Text, gwin->menulab[i],
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, submenuarrow,

@@ -138,4 +138,5 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
+void ami_menu_free_glyphs(void);
 #endif
