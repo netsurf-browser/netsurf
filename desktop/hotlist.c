@@ -254,8 +254,8 @@ static nserror hotlist_add_folder_internal(
 		const char *title, treeview_node *relation,
 		enum treeview_relationship rel, treeview_node **folder)
 {
-	struct treeview_field_data *field;
-	treeview_node *f;
+	struct hotlist_folder *f;
+	treeview_node *n;
 	nserror err;
 
 	if (title == NULL) {
@@ -267,25 +267,26 @@ static nserror hotlist_add_folder_internal(
 	}
 
 	/* Create the title field */
-	field = malloc(sizeof(struct treeview_field_data));
-	if (field == NULL) {
+	f = malloc(sizeof(struct hotlist_folder));
+	if (f == NULL) {
 		free((void *)title); /* Eww */
 		return NSERROR_NOMEM;
 	}
-	field->field = hl_ctx.fields[HL_FOLDER].field;
-	field->value = title;
-	field->value_len = strlen(title);
+	f->data.field = hl_ctx.fields[HL_FOLDER].field;
+	f->data.value = title;
+	f->data.value_len = strlen(title);
 
 	err = treeview_create_node_folder(hl_ctx.tree,
-			&f, relation, rel, field, field, hl_ctx.built ?
+			&n, relation, rel, &f->data, f, hl_ctx.built ?
 			TREE_CREATE_NONE : TREE_CREATE_SUPPRESS_RESIZE);
 	if (err != NSERROR_OK) {
 		free((void *)title); /* Eww */
-		free(field);
+		free(f);
 		return err;
 	}
 
-	*folder = f;
+	f->folder = n;
+	*folder = n;
 
 	return NSERROR_OK;
 }
@@ -294,15 +295,35 @@ static nserror hotlist_add_folder_internal(
 static nserror hotlist_tree_node_folder_cb(
 		struct treeview_node_msg msg, void *data)
 {
-	struct treeview_field_data *f = data;
+	struct hotlist_folder *f = data;
+	const char *old_text;
+	bool match;
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
-		free((void*)f->value); /* Eww */
+		free((void*)f->data.value); /* Eww */
 		free(f);
 		break;
 
 	case TREE_MSG_NODE_EDIT:
+		if (lwc_string_isequal(hl_ctx.fields[HL_FOLDER].field,
+				msg.data.node_edit.field, &match) ==
+				lwc_error_ok && match == true &&
+				msg.data.node_edit.text != NULL &&
+				msg.data.node_edit.text[0] != '\0') {
+			/* Requst to change the folder title text */
+			old_text = f->data.value;
+			f->data.value = strdup(msg.data.node_edit.text);
+
+			if (f->data.value == NULL) {
+				f->data.value = old_text;
+			} else {
+				f->data.value_len = strlen(f->data.value);
+				treeview_update_node_folder(hl_ctx.tree,
+						f->folder, &f->data, f);
+				free((void *)old_text);
+			}
+		}
 		break;
 
 	case TREE_MSG_NODE_LAUNCH:
