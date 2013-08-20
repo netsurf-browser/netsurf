@@ -167,8 +167,6 @@ const char tree_directory_icon_name[] = "def_drawer.info";
 const char tree_content_icon_name[] = "def_project.info";
 static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
 
-static struct DrawInfo *dri;
-
 const char * const versvn;
 const char * const verdate;
 
@@ -761,11 +759,9 @@ void ami_openscreen(void)
 		}
 		locked_screen = TRUE;
 	}
-	dri = GetScreenDrawInfo(scrn);
-	ami_font_setdevicedpi(id);
 
+	ami_font_setdevicedpi(id);
 	ami_set_screen_defaults(scrn);
-	
 	//ami_help_new_screen(scrn);
 }
 
@@ -2762,7 +2758,6 @@ void gui_quit(void)
 	ami_arexx_cleanup();
 
 	ami_free_layers(&browserglob);
-	FreeScreenDrawInfo(scrn, dri);
 
 	ami_close_fonts();
 	ami_gui_close_screen(scrn, locked_screen);
@@ -3641,7 +3636,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if(nsoption_bool(kiosk_mode) == false)
 	{
 		ULONG sz, size1, size2;
-
+		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+		
 		sz = ami_get_border_gadget_balance(g->shared,
 				(ULONG *)&size1, (ULONG *)&size2);
 
@@ -3697,6 +3693,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		RefreshGadgets((APTR)g->shared->objects[GID_STATUS],
 				g->shared->win, NULL);
+				
+		FreeScreenDrawInfo(scrn, dri);
 				
 		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
 		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
