@@ -69,7 +69,7 @@ struct treeview_node_msg {
 			bool user; /* True iff delete by user interaction */
 		} delete;
 		struct {
-			lwc_string *feild; /* The field being edited */
+			lwc_string *field; /* The field being edited */
 			const char *text;  /* The proposed new value */
 		} node_edit; /* Client may call treeview_update_node_* */
 		struct {

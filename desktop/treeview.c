@@ -127,6 +127,7 @@ struct treeview_move {
 struct treeview_edit {
 	treeview_node *node;		/**< Node being edited, or NULL */
 	struct textarea *textarea;	/**< Textarea for edit, or NULL */
+	lwc_string *field;		/**< The field being edited, or NULL */
 	int x;		/**< Textarea x position */
 	int y;		/**< Textarea y position */
 	int w;		/**< Textarea width */
@@ -782,11 +783,54 @@ static void treeview_edit_cancel(treeview *tree, bool redraw)
  */
 static void treeview_edit_done(treeview *tree)
 {
+	int len, error;
+	char* new_text;
+	treeview_node *n = tree->edit.node;
+	struct treeview_node_msg msg;
+	msg.msg = TREE_MSG_NODE_EDIT;
+
 	if (tree->edit.textarea == NULL)
 		return;
 
+	assert(n != NULL);
+
+	/* Get new text length */
+	len = textarea_get_text(tree->edit.textarea, NULL, 0);
+
+	new_text = malloc(len);
+	if (new_text == NULL) {
+		/* TODO: don't just silently ignore */
+		return;
+	}
+
+	/* Get the new text from textarea */
+	error = textarea_get_text(tree->edit.textarea, new_text, len);
+	if (error == -1) {
+		/* TODO: don't just silently ignore */
+		free(new_text);
+		return;
+	}
+
 	/* Inform the treeview client with change request message */
-	/* TODO */
+	msg.data.node_edit.field = tree->edit.field;
+	msg.data.node_edit.text = new_text;
+
+	switch (n->type) {
+	case TREE_NODE_ENTRY:
+		tree->callbacks->entry(msg, n->client_data);
+		break;
+	case TREE_NODE_FOLDER:
+		tree->callbacks->folder(msg, n->client_data);
+		break;
+	case TREE_NODE_ROOT:
+		break;
+	default:
+		break;
+	}
+
+
+	/* Finished with the new text */
+	free(new_text);
 
 	/* Finally, destroy the treeview, and redraw */
 	treeview_edit_cancel(tree, true);
@@ -2447,6 +2491,7 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 	}
 
 	tree->edit.node = n;
+	tree->edit.field = ef->field;
 
 	/* Position the caret */
 	mouse_x -= field_x;
