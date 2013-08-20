@@ -404,20 +404,20 @@ static inline void treeview_insert_node(treeview_node *a,
 	}
 
 	if (a->parent->flags & TREE_NODE_EXPANDED) {
+		int height = a->height;
 		/* Parent is expanded, so inserted node will be visible and
 		 * affect layout */
-		b = a;
-		do {
-			b->parent->height += b->height;
-			b = b->parent;
-		} while (b->parent != NULL);
-
 		if (a->text.width == 0) {
 			nsfont.font_width(&plot_style_odd.text,
 					a->text.data,
 					a->text.len,
 					&(a->text.width));
 		}
+
+		do {
+			a->parent->height += height;
+			a = a->parent;
+		} while (a->parent != NULL);
 	}
 }
 
