@@ -476,6 +476,43 @@ nserror treeview_create_node_folder(treeview *tree,
 
 
 /* Exported interface, documented in treeview.h */
+nserror treeview_update_node_folder(treeview *tree,
+		treeview_node *folder,
+		const struct treeview_field_data *field,
+		void *data)
+{
+	bool match;
+
+	assert(data != NULL);
+	assert(tree != NULL);
+	assert(folder != NULL);
+	assert(data == folder->client_data);
+	assert(folder->parent != NULL);
+
+	assert(field != NULL);
+	assert(lwc_string_isequal(tree->fields[tree->n_fields].field,
+			field->field, &match) == lwc_error_ok &&
+			match == true);
+	folder->text.data = field->value;
+	folder->text.len = field->value_len;
+	folder->text.width = 0;
+
+	if (folder->parent->flags & TREE_NODE_EXPANDED) {
+		/* Text will be seen, get its width */
+		nsfont.font_width(&plot_style_odd.text,
+				folder->text.data,
+				folder->text.len,
+				&(folder->text.width));
+	} else {
+		/* Just invalidate the width, since it's not needed now */
+		folder->text.width = 0;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in treeview.h */
 nserror treeview_update_node_entry(treeview *tree,
 		treeview_node *entry,
 		const struct treeview_field_data fields[],
@@ -2420,7 +2457,10 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 	bool success;
 
 	/* If the main field is editable, make field_data point to it */
-	ef = &(tree->fields[0]);
+	if (n->type == TREE_NODE_ENTRY)
+		ef = &(tree->fields[0]);
+	else
+		ef = &(tree->fields[tree->n_fields]);
 	if (ef->flags & TREE_FLAG_ALLOW_EDIT) {
 		field_data = &n->text;
 		field_desc = ef;

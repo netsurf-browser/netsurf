@@ -199,6 +199,22 @@ nserror treeview_create_node_entry(treeview *tree,
 		void *data, treeview_node_create_flags flags);
 
 /**
+ * Update an folder node in given treeview
+ *
+ * \param tree		Treeview object in which to create entry
+ * \param folder	Folder node to update
+ * \param fields	New field data
+ * \param data		Client data for node event callbacks
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * Field name must match name past in treeview_create fields[N-1].
+ */
+nserror treeview_update_node_folder(treeview *tree,
+		treeview_node *folder,
+		const struct treeview_field_data *field,
+		void *data);
+
+/**
  * Update an entry node in given treeview
  *
  * \param tree		Treeview object in which to create entry
