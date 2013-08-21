@@ -2413,6 +2413,7 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 			/* Textarea drag started */
 			tree->drag.type = TV_DRAG_TEXTAREA;
 		}
+		tree->cw_t->drag_status(tree->cw_h, tree->drag.type);
 		break;
 
 	case TEXTAREA_MSG_REDRAW_REQUEST:

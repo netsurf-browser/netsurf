@@ -30,6 +30,7 @@ struct core_window;
 typedef enum {
 	CORE_WINDOW_DRAG_NONE,
 	CORE_WINDOW_DRAG_SELECTION,
+	CORE_WINDOW_DRAG_TEXT_SELECTION,
 	CORE_WINDOW_DRAG_MOVE
 } core_window_drag_status;
 
