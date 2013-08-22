@@ -713,29 +713,42 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
 
 
 struct treeview_walk_ctx {
-	treeview_walk_callback walk_cb;
+	treeview_walk_cb enter_cb;
+	treeview_walk_cb leave_cb;
 	void *ctx;
 	enum treeview_node_type type;
 };
-/** Treewalk node callback. */
-static nserror treeview_walk_cb(treeview_node *n, void *ctx,
+/** Treewalk node enter callback. */
+static nserror treeview_walk_fwd_cb(treeview_node *n, void *ctx,
 		bool *skip_children, bool *end)
 {
 	struct treeview_walk_ctx *tw = ctx;
 
 	if (n->type & tw->type) {
-		return tw->walk_cb(tw->ctx, n->client_data, tw->type, end);
+		return tw->enter_cb(tw->ctx, n->client_data, n->type, end);
+	}
+
+	return NSERROR_OK;
+}
+/** Treewalk node leave callback. */
+static nserror treeview_walk_bwd_cb(treeview_node *n, void *ctx, bool *end)
+{
+	struct treeview_walk_ctx *tw = ctx;
+
+	if (n->type & tw->type) {
+		return tw->leave_cb(tw->ctx, n->client_data, n->type, end);
 	}
 
 	return NSERROR_OK;
 }
 /* Exported interface, documented in treeview.h */
 nserror treeview_walk(treeview *tree, treeview_node *root,
-		treeview_walk_callback walk_cb, void *ctx,
-		enum treeview_node_type type)
+		treeview_walk_cb enter_cb, treeview_walk_cb leave_cb,
+		void *ctx, enum treeview_node_type type)
 {
 	struct treeview_walk_ctx tw = {
-		.walk_cb = walk_cb,
+		.enter_cb = enter_cb,
+		.leave_cb = leave_cb,
 		.ctx = ctx,
 		.type = type
 	};
@@ -746,7 +759,9 @@ nserror treeview_walk(treeview *tree, treeview_node *root,
 	if (root == NULL)
 		root = tree->root;
 
-	return treeview_walk_internal(root, true, NULL, treeview_walk_cb, &tw);
+	return treeview_walk_internal(root, true,
+			(leave_cb != NULL) ? treeview_walk_bwd_cb : NULL,
+			(enter_cb != NULL) ? treeview_walk_fwd_cb : NULL, &tw);
 }
 
 

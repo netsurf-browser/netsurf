@@ -137,8 +137,8 @@ static nserror cookie_manager_find_entry(treeview_node *root,
 		.entry = NULL
 	};
 
-	err = treeview_walk(cm_ctx.tree, root, cookie_manager_walk_cb, &tw,
-			TREE_NODE_ENTRY);
+	err = treeview_walk(cm_ctx.tree, root, cookie_manager_walk_cb, NULL,
+			&tw, TREE_NODE_ENTRY);
 	if (err != NSERROR_OK)
 		return err;
 
@@ -167,8 +167,8 @@ static nserror cookie_manager_find_folder(treeview_node *root,
 		.entry = NULL
 	};
 
-	err = treeview_walk(cm_ctx.tree, root, cookie_manager_walk_cb, &tw,
-			TREE_NODE_FOLDER);
+	err = treeview_walk(cm_ctx.tree, root, cookie_manager_walk_cb, NULL,
+			&tw, TREE_NODE_FOLDER);
 	if (err != NSERROR_OK)
 		return err;
 

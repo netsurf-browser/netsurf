@@ -240,7 +240,7 @@ nserror treeview_update_node_entry(treeview *tree,
  * \param abort		Set to true to abort treeview walk prematurely
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
-typedef nserror (*treeview_walk_callback)(void *ctx, void *node_data,
+typedef nserror (*treeview_walk_cb)(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort);
 
 /**
@@ -249,17 +249,21 @@ typedef nserror (*treeview_walk_callback)(void *ctx, void *node_data,
  *
  * \param tree		Treeview object to walk
  * \param root		Root node to walk tree from (or NULL for tree root)
- * \param walk_cb	Function to call on each node
+ * \param enter_cb	Function to call on entering nodes, or NULL
+ * \param leave_cb	Function to call on leaving nodes, or NULL
  * \param ctx		Client context, passed back to callback function
  * \param type		The node type(s) of interest
  * \return NSERROR_OK on success, or appropriate error otherwise
  *
- * Note, if deleting returned node, walk_cb must terminate the treeview walk by
+ * Example usage: To export a treeview as XML, XML elements can be opened in
+ * enter_cb, and closed in leave_cb.
+ *
+ * Note, if deleting returned node in enter_cb, the walk must be terminated by
  * setting abort to true.
  */
 nserror treeview_walk(treeview *tree, treeview_node *root,
-		treeview_walk_callback walk_cb, void *ctx,
-		enum treeview_node_type type);
+		treeview_walk_cb enter_cb, treeview_walk_cb leave_cb,
+		void *ctx, enum treeview_node_type type);
 
 /**
  * Delete a treeview node
