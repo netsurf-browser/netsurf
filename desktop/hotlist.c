@@ -1082,6 +1082,49 @@ nserror hotlist_add(nsurl *url)
 }
 
 
+struct treeview_has_url_walk_ctx {
+	nsurl *url;
+	bool found;
+};
+/** Callback for treeview_walk */
+static nserror hotlist_has_url_walk_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct treeview_has_url_walk_ctx *tw = ctx;
+
+	if (type == TREE_NODE_ENTRY) {
+		struct hotlist_entry *e = node_data;
+
+		if (nsurl_compare(e->url, tw->url, NSURL_COMPLETE) == true) {
+			/* Found what we're looking for */
+			tw->found = true;
+			*abort = true;
+		}
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in hotlist.h */
+bool hotlist_has_url(nsurl *url)
+{
+	nserror err;
+	struct treeview_has_url_walk_ctx tw = {
+		.url = url,
+		.found = false
+	};
+
+	if (hl_ctx.built == false)
+		return false;
+
+	err = treeview_walk(hl_ctx.tree, NULL, hotlist_has_url_walk_cb, NULL,
+			&tw, TREE_NODE_ENTRY);
+	if (err != NSERROR_OK)
+		return false;
+
+	return tw.found;
+}
+
+
 /* Exported interface, documented in hotlist.h */
 void hotlist_redraw(int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)

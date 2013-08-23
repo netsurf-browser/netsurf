@@ -62,6 +62,14 @@ nserror hotlist_fini(const char *path);
 nserror hotlist_add(nsurl *url);
 
 /**
+ * Check whether given URL is present in hotlist
+ *
+ * \param url		Address to look for in hotlist
+ * \return true iff url is present in hotlist, false otherwise
+ */
+bool hotlist_has_url(nsurl *url);
+
+/**
  * Redraw the hotlist.
  *
  * \param x		X coordinate to render treeview at
