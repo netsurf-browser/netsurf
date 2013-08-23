@@ -1165,6 +1165,75 @@ void hotlist_remove_url(nsurl *url)
 }
 
 
+struct treeview_update_url_walk_ctx {
+	nsurl *url;
+	const struct url_data *data;
+};
+/** Callback for treeview_walk */
+static nserror hotlist_update_url_walk_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct treeview_update_url_walk_ctx *tw = ctx;
+	struct hotlist_entry *e = node_data;
+	nserror err;
+
+	if (type != TREE_NODE_ENTRY) {
+		return NSERROR_OK;
+	}
+
+	if (nsurl_compare(e->url, tw->url, NSURL_COMPLETE) == true) {
+		/* Found match: Update the entry data */
+		free((void *)e->data[HL_LAST_VISIT].value); /* Eww */
+		free((void *)e->data[HL_VISITS].value); /* Eww */
+
+		if (tw->data == NULL) {
+			/* Get the URL data */
+			tw->data = urldb_get_url_data(tw->url);
+			if (tw->data == NULL) {
+				/* No entry in database, so add one */
+				urldb_add_url(tw->url);
+				/* now attempt to get url data */
+				tw->data = urldb_get_url_data(tw->url);
+			}
+			if (tw->data == NULL) {
+				return NSERROR_NOMEM;
+			}
+		}
+
+		err = hotlist_create_treeview_field_data(e,
+				e->data[HL_TITLE].value, tw->data);
+		if (err != NSERROR_OK)
+			return err;
+
+		err = treeview_update_node_entry(hl_ctx.tree,
+				e->entry, e->data, e);
+		if (err != NSERROR_OK)
+			return err;
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in hotlist.h */
+void hotlist_update_url(nsurl *url)
+{
+	nserror err;
+	struct treeview_update_url_walk_ctx tw = {
+		.url = url,
+		.data = NULL
+	};
+
+	if (hl_ctx.built == false)
+		return;
+
+	err = treeview_walk(hl_ctx.tree, NULL, hotlist_update_url_walk_cb, NULL,
+			&tw, TREE_NODE_ENTRY);
+	if (err != NSERROR_OK)
+		return;
+
+	return;
+}
+
+
 /* Exported interface, documented in hotlist.h */
 void hotlist_redraw(int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)

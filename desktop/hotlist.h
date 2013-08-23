@@ -77,6 +77,13 @@ bool hotlist_has_url(nsurl *url);
 void hotlist_remove_url(nsurl *url);
 
 /**
+ * Update given URL, e.g. new visited data
+ *
+ * \param url		Address to update entries for
+ */
+void hotlist_update_url(nsurl *url);
+
+/**
  * Redraw the hotlist.
  *
  * \param x		X coordinate to render treeview at
