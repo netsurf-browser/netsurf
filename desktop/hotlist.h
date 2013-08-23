@@ -54,12 +54,12 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 nserror hotlist_fini(const char *path);
 
 /**
- * Add an entry to the hotlist.
+ * Add an entry to the hotlist for given URL.
  *
  * \param url		URL for node being added
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_add(nsurl *url);
+nserror hotlist_add_url(nsurl *url);
 
 /**
  * Check whether given URL is present in hotlist
@@ -68,6 +68,13 @@ nserror hotlist_add(nsurl *url);
  * \return true iff url is present in hotlist, false otherwise
  */
 bool hotlist_has_url(nsurl *url);
+
+/**
+ * Remove any entries matching the given URL from the hotlist
+ *
+ * \param url		Address to look for in hotlist
+ */
+void hotlist_remove_url(nsurl *url);
 
 /**
  * Redraw the hotlist.

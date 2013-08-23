@@ -1064,7 +1064,7 @@ nserror hotlist_fini(const char *path)
 
 
 /* Exported interface, documented in hotlist.h */
-nserror hotlist_add(nsurl *url)
+nserror hotlist_add_url(nsurl *url)
 {
 	treeview_node *entry;
 	nserror err;
@@ -1122,6 +1122,46 @@ bool hotlist_has_url(nsurl *url)
 		return false;
 
 	return tw.found;
+}
+
+
+struct treeview_remove_url_walk_ctx {
+	nsurl *url;
+};
+/** Callback for treeview_walk */
+static nserror hotlist_remove_url_walk_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct treeview_remove_url_walk_ctx *tw = ctx;
+
+	if (type == TREE_NODE_ENTRY) {
+		struct hotlist_entry *e = node_data;
+
+		if (nsurl_compare(e->url, tw->url, NSURL_COMPLETE) == true) {
+			/* Found what we're looking for: delete it */
+			treeview_delete_node(hl_ctx.tree, e->entry);
+		}
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in hotlist.h */
+void hotlist_remove_url(nsurl *url)
+{
+	nserror err;
+	struct treeview_remove_url_walk_ctx tw = {
+		.url = url
+	};
+
+	if (hl_ctx.built == false)
+		return;
+
+	err = treeview_walk(hl_ctx.tree, NULL, NULL, hotlist_remove_url_walk_cb,
+			&tw, TREE_NODE_ENTRY);
+	if (err != NSERROR_OK)
+		return;
+
+	return;
 }
 
 
