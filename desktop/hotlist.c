@@ -303,6 +303,8 @@ static nserror hotlist_tree_node_folder_cb(
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
+		if (f == hl_ctx.default_folder)
+			hl_ctx.default_folder = NULL;
 		free((void*)f->data.value); /* Eww */
 		free(f);
 		break;
