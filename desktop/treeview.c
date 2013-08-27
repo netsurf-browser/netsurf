@@ -685,6 +685,37 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 }
 
 
+/* Find node at given y-position
+ *
+ * \param tree		Treeview object to delete node from
+ * \param target_y	Target y-position
+ * \return node at y_target
+ */
+static treeview_node * treeview_y_node(treeview *tree, int target_y)
+{
+	treeview_node *n;
+	int y = 0;
+	int h;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	n = treeview_node_next(tree->root, false);
+
+	while (n != NULL) {
+		h = (n->type == TREE_NODE_ENTRY) ?
+				n->height : tree_g.line_height;
+		if (target_y >= y && target_y < y + h)
+			return n;
+		y += h;
+
+		n = treeview_node_next(n, false);
+	}
+
+	return NULL;
+}
+
+
 /* Find y position of the top of a node
  *
  * \param tree		Treeview object to delete node from
@@ -1596,6 +1627,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 struct treeview_selection_walk_data {
 	enum {
 		TREEVIEW_WALK_HAS_SELECTION,
+		TREEVIEW_WALK_GET_FIRST_SELECTED,
 		TREEVIEW_WALK_CLEAR_SELECTION,
 		TREEVIEW_WALK_SELECT_ALL,
 		TREEVIEW_WALK_COMMIT_SELECT_DRAG,
@@ -1616,6 +1648,9 @@ struct treeview_selection_walk_data {
 		struct {
 			treeview_node *prev;
 		} yank;
+		struct {
+			treeview_node *n;
+		} first;
 	} data;
 	int current_y;
 	treeview *tree;
@@ -1636,6 +1671,14 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 	case TREEVIEW_WALK_HAS_SELECTION:
 		if (n->flags & TREE_NODE_SELECTED) {
 			sw->data.has_selection = true;
+			*end = true; /* Can abort tree walk */
+			return NSERROR_OK;
+		}
+		break;
+
+	case TREEVIEW_WALK_GET_FIRST_SELECTED:
+		if (n->flags & TREE_NODE_SELECTED) {
+			sw->data.first.n = n;
 			*end = true; /* Can abort tree walk */
 			return NSERROR_OK;
 		}
@@ -1741,6 +1784,26 @@ bool treeview_has_selection(treeview *tree)
 			treeview_node_selection_walk_cb, &sw);
 
 	return sw.data.has_selection;
+}
+
+
+/**
+ * Get first selected node (in any)
+ *
+ * \param tree		Treeview object in which to create folder
+ * \return the first selected treeview node, or NULL
+ */
+static treeview_node * treeview_get_first_selected(treeview *tree)
+{
+	struct treeview_selection_walk_data sw;
+
+	sw.purpose = TREEVIEW_WALK_GET_FIRST_SELECTED;
+	sw.data.first.n = NULL;
+
+	treeview_walk_internal(tree->root, false, NULL,
+			treeview_node_selection_walk_cb, &sw);
+
+	return sw.data.first.n;
 }
 
 
@@ -2057,6 +2120,50 @@ static nserror treeview_launch_selection(treeview *tree)
 	return treeview_walk_internal(tree->root, true,
 			treeview_node_launch_walk_bwd_cb,
 			treeview_node_launch_walk_fwd_cb, &lw);
+}
+
+
+/* Exported interface, documented in treeview.h */
+nserror treeview_get_relation(treeview *tree, treeview_node **relation,
+		enum treeview_relationship *rel, bool at_y, int y)
+{
+	treeview_node *n;
+
+	assert(tree != NULL);
+
+	if (at_y) {
+		n = treeview_y_node(tree, y);
+
+	} else {
+		n = treeview_get_first_selected(tree);
+	}
+
+	if (n != NULL && n->parent != NULL) {
+		if (n == n->parent->children) {
+			/* First child */
+			*relation = n->parent;
+			*rel = TREE_REL_FIRST_CHILD;
+		} else {
+			/* Not first child */
+			*relation = n->prev_sib;
+			*rel = TREE_REL_NEXT_SIBLING;
+		}
+	} else {
+		if (tree->root->children == NULL) {
+			/* First child of root */
+			*relation = tree->root;
+			*rel = TREE_REL_FIRST_CHILD;
+		} else {
+			/* Last child of root */
+			n = tree->root->children;
+			while (n->next_sib != NULL)
+				n = n->next_sib;
+			*relation = n;
+			*rel = TREE_REL_NEXT_SIBLING;
+		}
+	}
+
+	return NSERROR_OK;
 }
 
 
