@@ -175,7 +175,7 @@ static void hotlist_delete_entry_internal(struct hotlist_entry *e)
 
 
 /**
- * Add an entry to the hotlist (creates the entry).
+ * Create hotlist entry data for URL.
  *
  * If set, 'title' must be allocated on the heap, ownership is yeilded to
  * this function.
@@ -183,17 +183,18 @@ static void hotlist_delete_entry_internal(struct hotlist_entry *e)
  * \param url		URL for entry to add to hotlist.
  * \param title		Title for entry, or NULL if using title from data
  * \param data		URL data for the entry, or NULL
- * \param relation	Existing node to insert as relation of, or NULL
- * \param rel		Entry's relationship to relation
- * \param entry		Updated to new treeview entry node
+ * \param entry		Updated to new hotlist entry data
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
-static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
-		const struct url_data *data, treeview_node *relation,
-		enum treeview_relationship rel, treeview_node **entry)
+static nserror hotlist_create_entry(nsurl *url, const char *title,
+		const struct url_data *data, struct hotlist_entry **entry)
 {
 	nserror err;
 	struct hotlist_entry *e;
+
+	assert(url != NULL);
+
+	*entry = NULL;
 
 	if (data == NULL) {
 		/* Get the URL data */
@@ -222,6 +223,38 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
 	if (err != NSERROR_OK) {
 		nsurl_unref(e->url);
 		free(e);
+		return err;
+	}
+
+	*entry = e;
+
+	return NSERROR_OK;
+}
+
+
+/**
+ * Add an entry to the hotlist (creates the entry).
+ *
+ * If set, 'title' must be allocated on the heap, ownership is yeilded to
+ * this function.
+ *
+ * \param url		URL for entry to add to hotlist.
+ * \param title		Title for entry, or NULL if using title from data
+ * \param data		URL data for the entry, or NULL
+ * \param relation	Existing node to insert as relation of, or NULL
+ * \param rel		Entry's relationship to relation
+ * \param entry		Updated to new treeview entry node
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
+		const struct url_data *data, treeview_node *relation,
+		enum treeview_relationship rel, treeview_node **entry)
+{
+	nserror err;
+	struct hotlist_entry *e;
+
+	err = hotlist_create_entry(url, title, data, &e);
+	if (err != NSERROR_OK) {
 		return err;
 	}
 
@@ -262,7 +295,7 @@ static nserror hotlist_add_folder_internal(
 
 	if (title == NULL) {
 		/* TODO: use messages */
-		title = strdup("Folder");
+		title = strdup("New folder");
 	}
 	if (title == NULL) {
 		return NSERROR_NOMEM;
@@ -1277,6 +1310,63 @@ void hotlist_update_url(nsurl *url)
 		return;
 
 	return;
+}
+
+
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
+{
+	nserror err;
+	treeview_node *entry;
+	treeview_node *relation;
+	enum treeview_relationship rel;
+
+	if (url == NULL) {
+		err = nsurl_create("http://netsurf-browser.org/", &url);
+		if (err != NSERROR_OK) {
+			return err;
+		}
+		assert(url != NULL);
+	} else {
+		nsurl_ref(url);
+	}
+
+	err = treeview_get_relation(hl_ctx.tree, &relation, &rel, at_y, y);
+	if (err != NSERROR_OK) {
+		nsurl_unref(url);
+		return err;
+	}
+
+	err = hotlist_add_entry_internal(url, NULL, NULL,
+			relation, rel, &entry);
+	if (err != NSERROR_OK) {
+		nsurl_unref(url);
+		return err;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_add_folder(const char *title, bool at_y, int y)
+{
+	nserror err;
+	struct hotlist_folder *f;
+	treeview_node *relation;
+	enum treeview_relationship rel;
+
+	err = treeview_get_relation(hl_ctx.tree, &relation, &rel, at_y, y);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	err = hotlist_add_folder_internal(title, relation, rel, &f);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	return NSERROR_OK;
 }
 
 

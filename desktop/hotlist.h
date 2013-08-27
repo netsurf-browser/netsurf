@@ -84,6 +84,27 @@ void hotlist_remove_url(nsurl *url);
 void hotlist_update_url(nsurl *url);
 
 /**
+ * Add an entry to the hotlist for given Title/URL.
+ *
+ * \param url		URL for entry to be added, or NULL
+ * \param title		Title for entry being added, or NULL
+ * \param at_y		Iff true, insert at y-offest
+ * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y);
+
+/**
+ * Add a folder to the hotlist.
+ *
+ * \param url		Title for folder being added, or NULL
+ * \param at_y		Iff true, insert at y-offest
+ * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror hotlist_add_folder(const char *title, bool at_y, int y);
+
+/**
  * Redraw the hotlist.
  *
  * \param x		X coordinate to render treeview at
