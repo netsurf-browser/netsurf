@@ -55,6 +55,7 @@ struct hotlist_ctx {
 	treeview *tree;
 	struct treeview_field_desc fields[HL_N_FIELDS];
 	bool built;
+	struct hotlist_folder *default_folder;
 };
 struct hotlist_ctx hl_ctx;
 
@@ -248,12 +249,12 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  * \param title		Title for entry, or NULL if using title from data
  * \param relation	Existing node to insert as relation of, or NULL
  * \param rel		Entry's relationship to relation
- * \param folder	Updated to new treeview entry node
+ * \param folder	Updated to new hotlist folder data
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_add_folder_internal(
 		const char *title, treeview_node *relation,
-		enum treeview_relationship rel, treeview_node **folder)
+		enum treeview_relationship rel, struct hotlist_folder **folder)
 {
 	struct hotlist_folder *f;
 	treeview_node *n;
@@ -287,7 +288,7 @@ static nserror hotlist_add_folder_internal(
 	}
 
 	f->folder = n;
-	*folder = n;
+	*folder = f;
 
 	return NSERROR_OK;
 }
@@ -588,6 +589,8 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 					corestring_lwc_ul)) {
 		/* Directory handling, part 2: Make node, and handle children */
 		char *title;
+		dom_string *id;
+		struct hotlist_folder *f;
 		hotlist_load_ctx new_ctx;
 		treeview_node *rel;
 
@@ -600,8 +603,22 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 		/* Add folder node */
 		err = hotlist_add_folder_internal(title, current_ctx->rel,
-				current_ctx->relshp, &rel);
+				current_ctx->relshp, &f);
 
+		/* Check if folder should be default folder */
+		error = dom_element_get_attribute(node, corestring_dom_id, &id);
+		if (error != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return NSERROR_NOMEM;
+		}
+		if (id != NULL) {
+			if (dom_string_lwc_isequal(id, corestring_lwc_default))
+				hl_ctx.default_folder = f;
+
+			dom_string_unref(id);
+		}
+
+		rel = f->folder;
 		current_ctx->rel = rel;
 		current_ctx->relshp = TREE_REL_NEXT_SIBLING;
 
@@ -733,7 +750,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 static nserror hotlist_generate(void)
 {
 	int i;
-	treeview_node *f;
+	struct hotlist_folder *f;
 	treeview_node *e;
 	char *title;
 	nserror err;
@@ -774,7 +791,7 @@ static nserror hotlist_generate(void)
 
 		/* Build the node */
 		err = hotlist_add_entry_internal(url, title,
-				NULL, f, TREE_REL_FIRST_CHILD, &e);
+				NULL, f->folder, TREE_REL_FIRST_CHILD, &e);
 		nsurl_unref(url);
 
 		if (err != NSERROR_OK) {
@@ -829,7 +846,12 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 		if (ret != UTF8_CONVERT_OK)
 			return NSERROR_SAVE_FAILED;
 
-		fprintf(tw->fp, "<h4>%s</h4>\n<ul>\n", f_text);
+		if (f == hl_ctx.default_folder) {
+			fprintf(tw->fp, "<h4>%s</h4>\n<ul id=\"default\">\n",
+					f_text);
+		} else {
+			fprintf(tw->fp, "<h4>%s</h4>\n<ul>\n", f_text);
+		}
 
 		free(f_text);
 	}
@@ -999,6 +1021,10 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 	nserror err;
 
 	LOG(("Loading hotlist"));
+
+	hl_ctx.tree = NULL;
+	hl_ctx.built = false;
+	hl_ctx.default_folder = NULL;
 
 	/* Init. hotlist treeview entry fields */
 	err = hotlist_initialise_entry_fields();
