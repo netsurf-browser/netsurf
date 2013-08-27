@@ -1344,6 +1344,8 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
 		return err;
 	}
 
+	nsurl_unref(url);
+
 	return NSERROR_OK;
 }
 
