@@ -1275,6 +1275,15 @@ it.all.CookieManagerHTTP:HTTP connections only
 nl.all.CookieManagerHTTP:HTTP connections only
 
 
+# Hotlist default folder's default name
+#
+en.all.HotlistDefaultFolderName:Unsorted entries
+de.all.HotlistDefaultFolderName:Unsorted entries
+fr.all.HotlistDefaultFolderName:Unsorted entries
+it.all.HotlistDefaultFolderName:Unsorted entries
+nl.all.HotlistDefaultFolderName:Unsorted entries
+
+
 
 # Tree export
 #

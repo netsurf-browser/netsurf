@@ -1101,8 +1101,9 @@ nserror hotlist_add_url(nsurl *url)
 
 	/* Make the default folder, if we don't have one */
 	if (hl_ctx.default_folder == NULL) {
+		const char *temp = messages_get("HotlistDefaultFolderName");
 		struct hotlist_folder *f;
-		err = hotlist_add_folder_internal(strdup("Unsorted entries"),
+		err = hotlist_add_folder_internal(strdup(temp),
 				NULL, TREE_REL_FIRST_CHILD, &f);
 		if (err != NSERROR_OK)
 			return err;
