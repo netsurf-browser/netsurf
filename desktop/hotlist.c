@@ -246,9 +246,9 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  * If set, 'title' must be allocated on the heap, ownership is yeilded to
  * this function.
  *
- * \param title		Title for entry, or NULL if using title from data
+ * \param title		Title for folder, or NULL if using title from data
  * \param relation	Existing node to insert as relation of, or NULL
- * \param rel		Entry's relationship to relation
+ * \param rel		Folder's relationship to relation
  * \param folder	Updated to new hotlist folder data
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
@@ -1099,10 +1099,27 @@ nserror hotlist_add_url(nsurl *url)
 	if (hl_ctx.tree == NULL)
 		return NSERROR_OK;
 
-	/* TODO: Don't just dump it at the top of the root node.
-	 *       Make an "Unsorted" folder for new additions. */
-	err = hotlist_add_entry_internal(url, NULL, NULL, NULL,
+	/* Make the default folder, if we don't have one */
+	if (hl_ctx.default_folder == NULL) {
+		struct hotlist_folder *f;
+		err = hotlist_add_folder_internal(strdup("Unsorted entries"),
+				NULL, TREE_REL_FIRST_CHILD, &f);
+		if (err != NSERROR_OK)
+			return err;
+
+		if (f == NULL)
+			return NSERROR_NOMEM;
+
+		hl_ctx.default_folder = f;
+	}
+
+	/* Add new entry to default folder */
+	err = hotlist_add_entry_internal(url, NULL, NULL,
+			hl_ctx.default_folder->folder,
 			TREE_REL_FIRST_CHILD, &entry);
+
+	/* Ensure default folder is expanded */
+	err = treeview_node_expand(hl_ctx.tree, hl_ctx.default_folder->folder);
 
 	return NSERROR_OK;
 }
