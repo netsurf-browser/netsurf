@@ -20,10 +20,12 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "utils/nsoption.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
+#include "desktop/hotlist.h"
 #include "desktop/hotlist_old.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
@@ -463,6 +465,11 @@ void hotlist_old_add_page(const char *url)
 	node = tree_create_URL_node(hotlist_old_tree, parent, nsurl, NULL,
 			hotlist_old_node_callback, NULL);
 	tree_update_URL_node(hotlist_old_tree, node, nsurl, data);
+
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false)
+		hotlist_add_url(nsurl);
+
 	nsurl_unref(nsurl);
 }
 
