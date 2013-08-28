@@ -354,24 +354,6 @@ void treeview_mouse_action(treeview *tree,
 bool treeview_has_selection(treeview *tree);
 
 /**
- * Clear any selection in a treeview
- *
- * \param tree		Treeview object to clear selection in
- * \param rect		Redraw rectangle (if redraw required)
- * \return true iff redraw required
- */
-bool treeview_clear_selection(treeview *tree, struct rect *rect);
-
-/**
- * Select all in a treeview
- *
- * \param tree		Treeview object to select all in
- * \param rect		Redraw rectangle (if redraw required)
- * \return true iff redraw required
- */
-bool treeview_select_all(treeview *tree, struct rect *rect);
-
-/**
  * Edit the first selected node
  *
  * \param tree		Treeview object to edit selected node in

@@ -1807,8 +1807,14 @@ static treeview_node * treeview_get_first_selected(treeview *tree)
 }
 
 
-/* Exported interface, documented in treeview.h */
-bool treeview_clear_selection(treeview *tree, struct rect *rect)
+/**
+ * Clear any selection in a treeview
+ *
+ * \param tree		Treeview object to clear selection in
+ * \param rect		Redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+static bool treeview_clear_selection(treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
 
@@ -1829,8 +1835,14 @@ bool treeview_clear_selection(treeview *tree, struct rect *rect)
 }
 
 
-/* Exported interface, documented in treeview.h */
-bool treeview_select_all(treeview *tree, struct rect *rect)
+/**
+ * Select all in a treeview
+ *
+ * \param tree		Treeview object to select all in
+ * \param rect		Redraw rectangle (if redraw required)
+ * \return true iff redraw required
+ */
+static bool treeview_select_all(treeview *tree, struct rect *rect)
 {
 	struct treeview_selection_walk_data sw;
 
