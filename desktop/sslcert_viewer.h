@@ -111,7 +111,6 @@ void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
 void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
 		browser_mouse_state mouse, int x, int y);
 
-
 /**
  * Key press handling.
  *
@@ -121,5 +120,12 @@ void sslcert_viewer_mouse_action(struct sslcert_session_data *ssl_d,
  */
 void sslcert_viewer_keypress(struct sslcert_session_data *ssl_d,
 		uint32_t key);
+
+/**
+ * Find current height
+ *
+ * \return height in px
+ */
+int sslcert_viewer_get_height(struct sslcert_session_data *ssl_d);
 
 #endif

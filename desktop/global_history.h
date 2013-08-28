@@ -90,7 +90,6 @@ void global_history_redraw(int x, int y, struct rect *clip,
  */
 void global_history_mouse_action(browser_mouse_state mouse, int x, int y);
 
-
 /**
  * Key press handling.
  *
@@ -98,5 +97,19 @@ void global_history_mouse_action(browser_mouse_state mouse, int x, int y);
  * \return true if the keypress is dealt with, false otherwise.
  */
 void global_history_keypress(uint32_t key);
+
+/**
+ * Determine whether there is a selection
+ *
+ * \return true iff there is a selection
+ */
+bool global_history_has_selection(void);
+
+/**
+ * Find current height
+ *
+ * \return height in px
+ */
+int global_history_get_height(void);
 
 #endif

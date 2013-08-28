@@ -505,3 +505,10 @@ void sslcert_viewer_keypress(struct sslcert_session_data *ssl_d,
 {
 	treeview_keypress(ssl_d->tree, key);
 }
+
+
+/* Exported interface, documented in sslcert_viewer.h */
+int sslcert_viewer_get_height(struct sslcert_session_data *ssl_d)
+{
+	return treeview_get_height(ssl_d->tree);
+}

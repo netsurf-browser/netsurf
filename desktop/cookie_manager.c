@@ -844,3 +844,17 @@ void cookie_manager_keypress(uint32_t key)
 	treeview_keypress(cm_ctx.tree, key);
 }
 
+
+/* Exported interface, documented in cookie_manager.h */
+bool cookie_manager_has_selection(void)
+{
+	return treeview_has_selection(cm_ctx.tree);
+}
+
+
+/* Exported interface, documented in cookie_manager.h */
+int cookie_manager_get_height(void)
+{
+	return treeview_get_height(cm_ctx.tree);
+}
+

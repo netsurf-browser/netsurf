@@ -90,7 +90,6 @@ void cookie_manager_redraw(int x, int y, struct rect *clip,
  */
 void cookie_manager_mouse_action(browser_mouse_state mouse, int x, int y);
 
-
 /**
  * Key press handling.
  *
@@ -98,5 +97,19 @@ void cookie_manager_mouse_action(browser_mouse_state mouse, int x, int y);
  * \return true if the keypress is dealt with, false otherwise.
  */
 void cookie_manager_keypress(uint32_t key);
+
+/**
+ * Determine whether there is a selection
+ *
+ * \return true iff there is a selection
+ */
+bool cookie_manager_has_selection(void);
+
+/**
+ * Find current height
+ *
+ * \return height in px
+ */
+int cookie_manager_get_height(void);
 
 #endif

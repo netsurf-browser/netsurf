@@ -949,3 +949,17 @@ void global_history_keypress(uint32_t key)
 	treeview_keypress(gh_ctx.tree, key);
 }
 
+
+/* Exported interface, documented in global_history.h */
+bool global_history_has_selection(void)
+{
+	return treeview_has_selection(gh_ctx.tree);
+}
+
+
+/* Exported interface, documented in global_history.h */
+int global_history_get_height(void)
+{
+	return treeview_get_height(gh_ctx.tree);
+}
+
