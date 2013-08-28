@@ -1392,3 +1392,24 @@ void hotlist_keypress(uint32_t key)
 	treeview_keypress(hl_ctx.tree, key);
 }
 
+
+/* Exported interface, documented in hotlist.h */
+bool hotlist_has_selection(void)
+{
+	return treeview_has_selection(hl_ctx.tree);
+}
+
+
+/* Exported interface, documented in hotlist.h */
+void hotlist_edit_selection(void)
+{
+	treeview_edit_selection(hl_ctx.tree);
+}
+
+
+/* Exported interface, documented in hotlist.h */
+int hotlist_get_height(void)
+{
+	return treeview_get_height(hl_ctx.tree);
+}
+

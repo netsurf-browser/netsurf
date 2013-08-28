@@ -133,7 +133,6 @@ void hotlist_redraw(int x, int y, struct rect *clip,
  */
 void hotlist_mouse_action(browser_mouse_state mouse, int x, int y);
 
-
 /**
  * Key press handling.
  *
@@ -141,5 +140,24 @@ void hotlist_mouse_action(browser_mouse_state mouse, int x, int y);
  * \return true if the keypress is dealt with, false otherwise.
  */
 void hotlist_keypress(uint32_t key);
+
+/**
+ * Determine whether there is a selection
+ *
+ * \return true iff there is a selection
+ */
+bool hotlist_has_selection(void);
+
+/**
+ * Edit the first selected node
+ */
+void hotlist_edit_selection(void);
+
+/**
+ * Find current height
+ *
+ * \return height in px
+ */
+int hotlist_get_height(void);
 
 #endif
