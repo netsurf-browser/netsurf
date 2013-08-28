@@ -3145,6 +3145,16 @@ void treeview_mouse_action(treeview *tree,
 }
 
 
+/* Exported interface, documented in treeview.h */
+int treeview_get_height(treeview *tree)
+{
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	return tree->root->height;
+}
+
+
 /**
  * Initialise the plot styles from CSS system colour values.
  */
