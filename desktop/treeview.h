@@ -372,6 +372,13 @@ bool treeview_clear_selection(treeview *tree, struct rect *rect);
 bool treeview_select_all(treeview *tree, struct rect *rect);
 
 /**
+ * Edit the first selected node
+ *
+ * \param tree		Treeview object to edit selected node in
+ */
+void treeview_edit_selection(treeview *tree);
+
+/**
  * Find current height of a treeview
  *
  * \param tree		Treeview object to find height of

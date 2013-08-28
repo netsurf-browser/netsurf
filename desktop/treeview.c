@@ -2687,6 +2687,42 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 }
 
 
+/* Exported interface, documented in treeview.h */
+void treeview_edit_selection(treeview *tree)
+{
+	struct rect rect;
+	treeview_node *n;
+	bool redraw;
+	int y;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	/* Get first selected node */
+	n = treeview_get_first_selected(tree);
+
+	if (n == NULL)
+		return;
+
+	/* Get node's y-position */
+	y = treeview_node_y(tree, n);
+
+	/* Edit node at y */
+	redraw = treeview_edit_node_at_point(tree, n, y,
+			0, y + tree_g.line_height / 2, &rect);
+
+	if (redraw == false)
+		return;
+
+	/* Redraw */
+	rect.x0 = 0;
+	rect.y0 = y;
+	rect.x1 = REDRAW_MAX;
+	rect.y1 = y + tree_g.line_height;
+	tree->cw_t->redraw_request(tree->cw_h, rect);
+}
+
+
 struct treeview_mouse_action {
 	treeview *tree;
 	browser_mouse_state mouse;
