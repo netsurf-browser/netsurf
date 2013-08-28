@@ -61,6 +61,15 @@ nserror global_history_fini(void);
  */
 nserror global_history_add(nsurl *url);
 
+/*
+ * Save global history to file (html)
+ *
+ * \param path		The path to save history to
+ * \param title		The title to give the document, or NULL for default
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+nserror global_history_export(const char *path, const char *title);
+
 /**
  * Redraw the global history.
  *

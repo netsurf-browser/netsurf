@@ -25,6 +25,8 @@
 #include "desktop/treeview.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/utf8.h"
+#include "utils/libdom.h"
 #include "utils/log.h"
 
 #define N_DAYS 28
@@ -820,6 +822,107 @@ nserror global_history_add(nsurl *url)
 	}
 
 	global_history_add_entry(url, data);
+
+	return NSERROR_OK;
+}
+
+
+struct treeview_export_walk_ctx {
+	FILE *fp;
+};
+/** Callback for treeview_walk node entering */
+static nserror global_history_export_enter_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct treeview_export_walk_ctx *tw = ctx;
+
+	if (type == TREE_NODE_ENTRY) {
+		struct global_history_entry *e = node_data;
+		utf8_convert_ret ret;
+		char *t_text;
+		char *u_text;
+
+		ret = utf8_to_html(e->data[GH_TITLE].value, "iso-8859-1",
+				e->data[GH_TITLE].value_len, &t_text);
+		if (ret != UTF8_CONVERT_OK)
+			return NSERROR_SAVE_FAILED;
+
+		ret = utf8_to_html(e->data[GH_URL].value, "iso-8859-1",
+				e->data[GH_URL].value_len, &u_text);
+		if (ret != UTF8_CONVERT_OK) {
+			free(t_text);
+			return NSERROR_SAVE_FAILED;
+		}
+
+		fprintf(tw->fp, "<li><a href=\"%s\">%s</a></li>\n",
+			u_text, t_text);
+
+		free(t_text);
+		free(u_text);
+
+	} else if (type == TREE_NODE_FOLDER) {
+		struct global_history_folder *f = node_data;
+		utf8_convert_ret ret;
+		char *f_text;
+
+		ret = utf8_to_html(f->data.value, "iso-8859-1",
+				f->data.value_len, &f_text);
+		if (ret != UTF8_CONVERT_OK)
+			return NSERROR_SAVE_FAILED;
+
+		fprintf(tw->fp, "<li><h4>%s</h4>\n<ul>\n", f_text);
+
+		free(f_text);
+	}
+
+	return NSERROR_OK;
+}
+/** Callback for treeview_walk node leaving */
+static nserror global_history_export_leave_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct treeview_export_walk_ctx *tw = ctx;
+
+	if (type == TREE_NODE_FOLDER) {
+		fputs("</ul></li>\n", tw->fp);
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in global_history.h */
+nserror global_history_export(const char *path, const char *title)
+{
+	struct treeview_export_walk_ctx tw;
+	nserror err;
+	FILE *fp;
+
+	fp = fopen(path, "w");
+	if (fp == NULL)
+		return NSERROR_SAVE_FAILED;
+
+	if (title == NULL)
+		title = "NetSurf Browsing History";
+
+	fputs("<!DOCTYPE html "
+		"PUBLIC \"//W3C/DTD HTML 4.01//EN\" "
+		"\"http://www.w3.org/TR/html4/strict.dtd\">\n", fp);
+	fputs("<html>\n<head>\n", fp);
+	fputs("<meta http-equiv=\"Content-Type\" "
+		"content=\"text/html; charset=iso-8859-1\">\n", fp);
+	fprintf(fp, "<title>%s</title>\n", title);
+	fputs("</head>\n<body>\n<ul>\n", fp);
+
+	tw.fp = fp;
+	err = treeview_walk(gh_ctx.tree, NULL,
+			global_history_export_enter_cb,
+			global_history_export_leave_cb,
+			&tw, TREE_NODE_ENTRY | TREE_NODE_FOLDER);
+	if (err != NSERROR_OK)
+		return err;
+
+	fputs("</ul>\n</body>\n</html>\n", fp);
+
+	fclose(fp);
 
 	return NSERROR_OK;
 }
