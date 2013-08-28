@@ -916,6 +916,9 @@ nserror hotlist_export(const char *path, const char *title)
 	if (fp == NULL)
 		return NSERROR_SAVE_FAILED;
 
+	if (title == NULL)
+		title = "NetSurf hotlist";
+
 	/* The Acorn Browse Hotlist format, which we mimic[*], is invalid HTML
 	 * claming to be valid.
 	 * [*] Why? */
@@ -1100,7 +1103,7 @@ nserror hotlist_fini(const char *path)
 	LOG(("Finalising hotlist"));
 
 	/* Save the hotlist */
-	err = hotlist_export(path, "NetSurf hotlist");
+	err = hotlist_export(path, NULL);
 	if (err != NSERROR_OK) {
 		warn_user("Couldn't save the hotlist.", 0);
 	}
