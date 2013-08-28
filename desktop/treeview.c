@@ -1478,7 +1478,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 
 		style = (count & 0x1) ? &plot_style_odd : &plot_style_even;
 		if (tree->drag.type == TV_DRAG_SELECTION &&
-				(render_y + height > sel_min &&
+				(render_y + height >= sel_min &&
 				render_y < sel_max)) {
 			invert_selection = true;
 		} else {
@@ -1719,7 +1719,7 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 		break;
 
 	case TREEVIEW_WALK_COMMIT_SELECT_DRAG:
-		if (sw->current_y > sw->data.drag.sel_min &&
+		if (sw->current_y >= sw->data.drag.sel_min &&
 				sw->current_y - height <
 						sw->data.drag.sel_max) {
 			n->flags ^= TREE_NODE_SELECTED;
