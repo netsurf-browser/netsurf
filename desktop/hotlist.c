@@ -905,12 +905,8 @@ static nserror hotlist_export_leave_cb(void *ctx, void *node_data,
 
 	return NSERROR_OK;
 }
-/*
- * Save hotlist to file
- *
- * \return NSERROR_OK on success, or appropriate error otherwise
- */
-static nserror hotlist_export(const char *path, const char *title)
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_export(const char *path, const char *title)
 {
 	struct treeview_walk_ctx tw;
 	nserror err;

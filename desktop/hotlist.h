@@ -104,6 +104,15 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y);
  */
 nserror hotlist_add_folder(const char *title, bool at_y, int y);
 
+/*
+ * Save hotlist to file
+ *
+ * \param path		The path to save hotlist to
+ * \param title		The title to give the hotlist, or NULL for default
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+nserror hotlist_export(const char *path, const char *title);
+
 /**
  * Redraw the hotlist.
  *
