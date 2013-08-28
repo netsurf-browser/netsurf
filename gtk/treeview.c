@@ -296,12 +296,19 @@ gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 					BROWSER_MOUSE_CLICK_2 |
 					BROWSER_MOUSE_DOUBLE_CLICK);
 		
-	} else if (tw->mouse_state & BROWSER_MOUSE_PRESS_1)
-		tw->mouse_state ^=
-				(BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
-	else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2)
+	} else if (tw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_1 |
+				    BROWSER_MOUSE_CLICK_1);
+	} else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2) {
 		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
-				BROWSER_MOUSE_CLICK_2);
+				    BROWSER_MOUSE_CLICK_2);
+	} else if (tw->mouse_state & BROWSER_MOUSE_HOLDING_1) {
+		tw->mouse_state ^= (BROWSER_MOUSE_HOLDING_1 |
+				    BROWSER_MOUSE_DRAG_ON);
+	} else if (tw->mouse_state & BROWSER_MOUSE_HOLDING_2) {
+		tw->mouse_state ^= (BROWSER_MOUSE_HOLDING_2 |
+				    BROWSER_MOUSE_DRAG_ON);
+	}
 	
 	/* Handle modifiers being removed */
 	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
@@ -311,19 +318,20 @@ gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
 		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
 
-	
+
 	if (tw->mouse_state &
-			  (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2
-			  | BROWSER_MOUSE_DOUBLE_CLICK))
+			~(BROWSER_MOUSE_MOD_1 |
+			  BROWSER_MOUSE_MOD_2 |
+			  BROWSER_MOUSE_MOD_3)) {
 		tree_mouse_action(tree, tw->mouse_state,
 				event->x, event->y);
-	else
+	} else {
 		tree_drag_end(tree, tw->mouse_state,
 				tw->mouse_pressed_x,
 				tw->mouse_pressed_y,
 				event->x, event->y);
-	
-		
+	}
+
 	tw->mouse_state = 0;
 	tw->mouse_pressed = false;
 				
@@ -353,14 +361,6 @@ gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 		tw->last_x = INT_MIN;
 		tw->last_y = INT_MIN;
 	}
-
-	/* Handle modifiers being removed */
-	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
-		tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
-	if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
-		tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
-	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
-		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
 	
 	if (tw->mouse_state & BROWSER_MOUSE_PRESS_1) {
 		/* Start button 1 drag */
@@ -382,6 +382,14 @@ gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 		tw->mouse_state |= BROWSER_MOUSE_DRAG_ON;
 		return TRUE;
 	}
+
+	/* Handle modifiers being removed */
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
 	
 	if (tw->mouse_state & (BROWSER_MOUSE_HOLDING_1 |
 			BROWSER_MOUSE_HOLDING_2))
