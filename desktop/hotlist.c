@@ -838,14 +838,14 @@ static nserror hotlist_generate(void)
 }
 
 
-struct treeview_walk_ctx {
+struct treeview_export_walk_ctx {
 	FILE *fp;
 };
 /** Callback for treeview_walk node entering */
 static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort)
 {
-	struct treeview_walk_ctx *tw = ctx;
+	struct treeview_export_walk_ctx *tw = ctx;
 
 	if (type == TREE_NODE_ENTRY) {
 		struct hotlist_entry *e = node_data;
@@ -897,7 +897,7 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 static nserror hotlist_export_leave_cb(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort)
 {
-	struct treeview_walk_ctx *tw = ctx;
+	struct treeview_export_walk_ctx *tw = ctx;
 
 	if (type == TREE_NODE_FOLDER) {
 		fputs("</ul>\n", tw->fp);
@@ -908,7 +908,7 @@ static nserror hotlist_export_leave_cb(void *ctx, void *node_data,
 /* Exported interface, documented in hotlist.h */
 nserror hotlist_export(const char *path, const char *title)
 {
-	struct treeview_walk_ctx tw;
+	struct treeview_export_walk_ctx tw;
 	nserror err;
 	FILE *fp;
 
