@@ -3108,11 +3108,8 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 	struct node *node;
 	int x, y;
 
-	if (tree->flags & TREE_MOVABLE) {
-		if (treeview_test_mouse_action(tree, BROWSER_MOUSE_HOVER,
-				x1, y1)) {
-			return;
-		}
+	if (treeview_test_mouse_action(tree, BROWSER_MOUSE_HOVER, x1, y1)) {
+		return;
 	}
 
 	switch (tree->drag) {
