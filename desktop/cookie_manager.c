@@ -332,7 +332,8 @@ static nserror cookie_manager_create_cookie_node(
 			parent->folder, TREE_REL_FIRST_CHILD,
 			cookie->data, cookie,
 			cm_ctx.built ? TREE_CREATE_NONE :
-					TREE_CREATE_SUPPRESS_RESIZE);
+					TREE_CREATE_SUPPRESS_RESIZE |
+					TREE_CREATE_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
 		cookie_manager_free_treeview_field_data(cookie);
 		free(cookie);
@@ -412,7 +413,8 @@ static nserror cookie_manager_create_domain_folder(
 	err = treeview_create_node_folder(cm_ctx.tree, &(f->folder),
 			NULL, TREE_REL_FIRST_CHILD, &f->data, f,
 			cm_ctx.built ? TREE_CREATE_NONE :
-					TREE_CREATE_SUPPRESS_RESIZE);
+					TREE_CREATE_SUPPRESS_RESIZE |
+					TREE_CREATE_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
 		free((void *)f->data.value);
 		free(f);

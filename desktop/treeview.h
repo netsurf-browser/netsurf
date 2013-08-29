@@ -46,8 +46,9 @@ enum treeview_relationship {
 
 typedef enum {
 	TREE_CREATE_NONE		= (0),		/* No flags set */
-	TREE_CREATE_SUPPRESS_RESIZE	= (1 << 0)	/* Suppress callback */
-} treeview_node_create_flags;					/**< Relationship between nodes */
+	TREE_CREATE_SUPPRESS_RESIZE	= (1 << 0),	/* Suppress callback */
+	TREE_CREATE_SUPPRESS_REDRAW	= (1 << 1)	/* Suppress callback */
+} treeview_node_create_flags;		/**< Node creation settings */
 
 typedef enum {
 	TREEVIEW_NO_FLAGS	= (0),		/**< No flags set */

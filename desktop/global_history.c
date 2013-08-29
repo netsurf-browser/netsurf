@@ -198,7 +198,8 @@ static nserror global_history_create_dir(enum global_history_folders f)
 			&gh_ctx.folders[f].data,
 			&gh_ctx.folders[f],
 			gh_ctx.built ? TREE_CREATE_NONE :
-					TREE_CREATE_SUPPRESS_RESIZE);
+					TREE_CREATE_SUPPRESS_RESIZE |
+					TREE_CREATE_SUPPRESS_REDRAW);
 
 	return err;
 }
@@ -326,7 +327,8 @@ static nserror global_history_entry_insert(struct global_history_entry *e,
 	err = treeview_create_node_entry(gh_ctx.tree, &(e->entry),
 			parent, TREE_REL_FIRST_CHILD, e->data, e,
 			gh_ctx.built ? TREE_CREATE_NONE :
-					TREE_CREATE_SUPPRESS_RESIZE);
+					TREE_CREATE_SUPPRESS_RESIZE |
+					TREE_CREATE_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
 		return err;
 	}
