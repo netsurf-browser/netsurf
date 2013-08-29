@@ -28,6 +28,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/hotlist_old.h"
 #include "desktop/plotters.h"
+#include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 
@@ -266,6 +267,11 @@ void hotlist_old_visited(hlcache_handle *content)
  */
 bool hotlist_old_export(const char *path)
 {
+	if (nsoption_bool(temp_treeview_test) != false) {
+		nserror err;
+		err = hotlist_export(path, NULL);
+		return (err == NSERROR_OK);
+	}
 	return tree_urlfile_save(hotlist_old_tree, path, "NetSurf hotlist");
 }
 
@@ -277,6 +283,12 @@ void hotlist_old_edit_selected(void)
 {
 	struct node *node;
 	struct node_element *element;
+
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_edit_selection();
+		return;
+	}
 
 	node = tree_get_selected_node(hotlist_old_tree_root);
 
@@ -292,6 +304,10 @@ void hotlist_old_edit_selected(void)
  */
 void hotlist_old_delete_selected(void)
 {
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_keypress(KEY_DELETE_LEFT);
+		return;
+	}
 	tree_delete_selected_nodes(hotlist_old_tree, hotlist_old_tree_root);
 }
 
@@ -300,6 +316,10 @@ void hotlist_old_delete_selected(void)
  */
 void hotlist_old_select_all(void)
 {
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_keypress(KEY_SELECT_ALL);
+		return;
+	}
 	tree_set_node_selected(hotlist_old_tree, hotlist_old_tree_root,
 			       true, true);
 }
@@ -309,6 +329,10 @@ void hotlist_old_select_all(void)
  */
 void hotlist_old_clear_selection(void)
 {
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_keypress(KEY_CLEAR_SELECTION);
+		return;
+	}
 	tree_set_node_selected(hotlist_old_tree, hotlist_old_tree_root,
 			       true, false);
 }
@@ -376,6 +400,11 @@ void hotlist_old_add_folder(bool selected)
 {
 	struct node *node, *parent = NULL;
 
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_add_folder(NULL, false, 0);
+	}
+
 	creating_node = true;
 
 	if (selected == true) {
@@ -433,6 +462,11 @@ void hotlist_old_add_entry(bool selected)
 		return;
 	node = tree_create_URL_node(hotlist_old_tree, parent, url, "Untitled",
 			hotlist_old_node_callback, NULL);
+
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_add_entry(url, "New untitled entry", false, 0);
+	}
 
 	nsurl_unref(url);
 
@@ -492,6 +526,11 @@ void hotlist_old_add_page_xy(const char *url, int x, int y)
 	if (nsurl_create(url, &nsurl) != NSERROR_OK)
 		return;
 
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_add_entry(nsurl, NULL, true, y);
+	}
+
 	data = urldb_get_url_data(nsurl);
 	if (data == NULL) {
 		urldb_add_url(nsurl);
@@ -514,6 +553,10 @@ void hotlist_old_add_page_xy(const char *url, int x, int y)
  */
 void hotlist_old_launch_selected(bool tabs)
 {
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_keypress(KEY_CR);
+		return;
+	}
 	tree_launch_selected(hotlist_old_tree, tabs);
 }
 
