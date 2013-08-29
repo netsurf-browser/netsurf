@@ -296,9 +296,9 @@ static nserror hotlist_add_folder_internal(
 	if (title == NULL) {
 		/* TODO: use messages */
 		title = strdup("New folder");
-	}
-	if (title == NULL) {
-		return NSERROR_NOMEM;
+		if (title == NULL) {
+			return NSERROR_NOMEM;
+		}
 	}
 
 	/* Create the title field */
@@ -1330,13 +1330,21 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
 		nsurl_ref(url);
 	}
 
+	if (title != NULL) {
+		title = strdup(title);
+		if (title == NULL) {
+			nsurl_ref(url);
+			return NSERROR_NOMEM;
+		}
+	}
+
 	err = treeview_get_relation(hl_ctx.tree, &relation, &rel, at_y, y);
 	if (err != NSERROR_OK) {
 		nsurl_unref(url);
 		return err;
 	}
 
-	err = hotlist_add_entry_internal(url, NULL, NULL,
+	err = hotlist_add_entry_internal(url, title, NULL,
 			relation, rel, &entry);
 	if (err != NSERROR_OK) {
 		nsurl_unref(url);
