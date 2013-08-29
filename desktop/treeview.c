@@ -2929,6 +2929,8 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	if (((node->type == TREE_NODE_FOLDER) &&
 			(ma->mouse & BROWSER_MOUSE_DOUBLE_CLICK) && click) ||
 			(part == TV_NODE_PART_TOGGLE && click)) {
+		int h = ma->tree->root->height;
+
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
@@ -2945,7 +2947,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		/* Set up redraw */
 		if (!redraw || r.y0 > ma->current_y)
 			r.y0 = ma->current_y;
-		r.y1 = REDRAW_MAX;
+		r.y1 = h > ma->tree->root->height ? h : ma->tree->root->height;
 		redraw = true;
 
 	} else if ((node->type == TREE_NODE_ENTRY) &&
