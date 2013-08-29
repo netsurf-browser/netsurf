@@ -287,8 +287,8 @@ static int treeview_node_y(treeview *tree, treeview_node *node)
 	n = treeview_node_next(tree->root, false);
 
 	while (n != NULL && n != node) {
-		y += (node->type == TREE_NODE_ENTRY) ?
-				node->height : tree_g.line_height;
+		y += (n->type == TREE_NODE_ENTRY) ?
+				n->height : tree_g.line_height;
 
 		n = treeview_node_next(n, false);
 	}
@@ -560,21 +560,24 @@ nserror treeview_create_node_folder(treeview *tree,
 
 	treeview_insert_node(n, relation, rel);
 
-	*folder = n;
+	if (n->parent->flags & TREE_NODE_EXPANDED) {
+		/* Inform front end of change in dimensions */
+		if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
+			tree->cw_t->update_size(tree->cw_h, -1,
+					tree->root->height);
 
-	/* Inform front end of change in dimensions */
-	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
-
-	/* Inform front end of change in dimensions */
-	if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
-		struct rect r;
-		r.x0 = 0;
-		r.y0 = treeview_node_y(tree, n);
-		r.x1 = REDRAW_MAX;
-		r.y1 = tree->root->height;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		/* Redraw */
+		if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+			struct rect r;
+			r.x0 = 0;
+			r.y0 = treeview_node_y(tree, n);
+			r.x1 = REDRAW_MAX;
+			r.y1 = tree->root->height;
+			tree->cw_t->redraw_request(tree->cw_h, r);
+		}
 	}
+
+	*folder = n;
 
 	return NSERROR_OK;
 }
@@ -611,6 +614,16 @@ nserror treeview_update_node_folder(treeview *tree,
 	} else {
 		/* Just invalidate the width, since it's not needed now */
 		folder->text.width = 0;
+	}
+
+	/* Redraw */
+	if (folder->parent->flags & TREE_NODE_EXPANDED) {
+		struct rect r;
+		r.x0 = 0;
+		r.y0 = treeview_node_y(tree, folder);
+		r.x1 = REDRAW_MAX;
+		r.y1 = r.y0 + tree_g.line_height;
+		tree->cw_t->redraw_request(tree->cw_h, r);
 	}
 
 	return NSERROR_OK;
@@ -672,6 +685,16 @@ nserror treeview_update_node_entry(treeview *tree,
 			/* Invalidate the width, since it's not needed yet */
 			e->fields[i - 1].value.width = 0;
 		}
+	}
+
+	/* Redraw */
+	if (entry->parent->flags & TREE_NODE_EXPANDED) {
+		struct rect r;
+		r.x0 = 0;
+		r.y0 = treeview_node_y(tree, entry);
+		r.x1 = REDRAW_MAX;
+		r.y1 = r.y0 + entry->height;
+		tree->cw_t->redraw_request(tree->cw_h, r);
 	}
 
 	return NSERROR_OK;
@@ -743,21 +766,24 @@ nserror treeview_create_node_entry(treeview *tree,
 
 	treeview_insert_node(n, relation, rel);
 
-	*entry = n;
+	if (n->parent->flags & TREE_NODE_EXPANDED) {
+		/* Inform front end of change in dimensions */
+		if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
+			tree->cw_t->update_size(tree->cw_h, -1,
+					tree->root->height);
 
-	/* Inform front end of change in dimensions */
-	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
-
-	/* Inform front end of change in dimensions */
-	if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
-		struct rect r;
-		r.x0 = 0;
-		r.y0 = treeview_node_y(tree, n);
-		r.x1 = REDRAW_MAX;
-		r.y1 = tree->root->height;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		/* Redraw */
+		if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+			struct rect r;
+			r.x0 = 0;
+			r.y0 = treeview_node_y(tree, n);
+			r.x1 = REDRAW_MAX;
+			r.y1 = tree->root->height;
+			tree->cw_t->redraw_request(tree->cw_h, r);
+		}
 	}
+
+	*entry = n;
 
 	return NSERROR_OK;
 }
@@ -1131,6 +1157,13 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 {
 	nserror err;
 	struct rect r;
+	treeview_node *p;
+
+	assert(tree != NULL);
+	assert(n != NULL);
+	assert(n->parent != NULL);
+
+	p = n->parent;
 	r.y0 = treeview_node_y(tree, n);
 	r.y1 = tree->root->height;
 
@@ -1146,9 +1179,11 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 	}
 
 	/* Inform front end of change in dimensions */
-	r.x0 = 0;
-	r.x1 = REDRAW_MAX;
-	tree->cw_t->redraw_request(tree->cw_h, r);
+	if (p->flags & TREE_NODE_EXPANDED) {
+		r.x0 = 0;
+		r.x1 = REDRAW_MAX;
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
 
 	return NSERROR_OK;
 }
