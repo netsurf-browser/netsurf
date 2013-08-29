@@ -107,12 +107,12 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
 
         error = FT_New_Face(library, fb_face->fontfile, fb_face->index, face); 
         if (error) {
-                LOG(("Could not find font (code %d)\n", error));
+                LOG(("Could not find font (code %d)", error));
         } else {
 
                 error = FT_Select_Charmap(*face, FT_ENCODING_UNICODE);
                 if (error) {
-                        LOG(("Could not select charmap (code %d)\n", error));
+                        LOG(("Could not select charmap (code %d)", error));
                 } else {
                         for (cidx = 0; cidx < (*face)->num_charmaps; cidx++) {
                                 if ((*face)->charmap == (*face)->charmaps[cidx]) {
@@ -122,7 +122,7 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
                         }
                 }
         }
-        LOG(("Loaded face from %s\n", fb_face->fontfile));
+        LOG(("Loaded face from %s", fb_face->fontfile));
 
         return error;
 }
@@ -147,7 +147,7 @@ fb_new_face(const char *option, const char *resname, const char *fontname)
 
         error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)newf, &aface);
         if (error) {
-                LOG(("Could not find font face %s (code %d)\n", fontname, error));
+                LOG(("Could not find font face %s (code %d)", fontname, error));
                 free(newf);
                 newf = NULL;
         }
@@ -166,7 +166,7 @@ bool fb_font_init(void)
         /* freetype library initialise */
         error = FT_Init_FreeType( &library ); 
         if (error) {
-                LOG(("Freetype could not initialised (code %d)\n", error));
+                LOG(("Freetype could not initialised (code %d)", error));
                 return false;
         }
 
@@ -186,7 +186,7 @@ bool fb_font_init(void)
                                 NULL, 
                                 &ft_cmanager);
         if (error) {
-                LOG(("Freetype could not initialise cache manager (code %d)\n", error));
+                LOG(("Freetype could not initialise cache manager (code %d)", error));
                 FT_Done_FreeType(library);
                 return false;
         }
@@ -203,7 +203,7 @@ bool fb_font_init(void)
 			      NETSURF_FB_FONT_SANS_SERIF);
 	if (fb_face == NULL) {
 		/* The sans serif font is the default and must be found. */
-                LOG(("Could not find the default font\n"));
+                LOG(("Could not find the default font"));
                 FTC_Manager_Done(ft_cmanager);
                 FT_Done_FreeType(library);
                 return false;
