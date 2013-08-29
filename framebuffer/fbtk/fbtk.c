@@ -100,12 +100,14 @@ fbtk_request_redraw(fbtk_widget_t *widget)
 	widget->redraw.width = widget->width;
 	widget->redraw.height = widget->height;
 
+#ifdef FBTK_LOGGING
 	LOG(("redrawing %p %d,%d %d,%d",
 	     widget,
 	     widget->redraw.x,
 	     widget->redraw.y,
 	     widget->redraw.width,
 	     widget->redraw.height));
+#endif
 
 	cwidget = widget->last_child;
 	while (cwidget != NULL) {
@@ -534,7 +536,9 @@ fbtk_widget_new(fbtk_widget_t *parent,
 	if (neww == NULL)
 		return NULL;
 
+#ifdef FBTK_LOGGING
 	LOG(("creating %p %d,%d %d,%d", neww, x, y, width, height));
+#endif
 
 	/* make new window fit inside parent */
 	if (width == 0) {
@@ -555,8 +559,9 @@ fbtk_widget_new(fbtk_widget_t *parent,
 		height = parent->height - y;
 	}
 
-
+#ifdef FBTK_LOGGING
 	LOG(("using %p %d,%d %d,%d", neww, x, y, width, height));
+#endif
 	/* set values */
 	neww->type = type;
 	neww->x = x;
@@ -614,9 +619,11 @@ do_redraw(nsfb_t *nsfb, fbtk_widget_t *widget)
 		plot_ctx.x1 = plot_ctx.x0 + widget->redraw.width;
 		plot_ctx.y1 = plot_ctx.y0 + widget->redraw.height;
 
+#ifdef FBTK_LOGGING
 		LOG(("clipping %p %d,%d %d,%d",
 		     widget, plot_ctx.x0, plot_ctx.y0,
 		     plot_ctx.x1, plot_ctx.y1));
+#endif
 		if (nsfb_plot_set_clip(nsfb, &plot_ctx) == true) {
 			fbtk_post_callback(widget, FBTK_CBT_REDRAW);
 		}
