@@ -403,6 +403,7 @@ void hotlist_old_add_folder(bool selected)
 	/* Update new hotlist */
 	if (nsoption_bool(temp_treeview_test) != false) {
 		hotlist_add_folder(NULL, false, 0);
+		return;
 	}
 
 	creating_node = true;
@@ -460,13 +461,15 @@ void hotlist_old_add_entry(bool selected)
 
 	if (nsurl_create("http://netsurf-browser.org/", &url) != NSERROR_OK)
 		return;
-	node = tree_create_URL_node(hotlist_old_tree, parent, url, "Untitled",
-			hotlist_old_node_callback, NULL);
 
 	/* Update new hotlist */
 	if (nsoption_bool(temp_treeview_test) != false) {
 		hotlist_add_entry(url, "New untitled entry", false, 0);
+		nsurl_unref(url);
+		return;
 	}
+	node = tree_create_URL_node(hotlist_old_tree, parent, url, "Untitled",
+			hotlist_old_node_callback, NULL);
 
 	nsurl_unref(url);
 
@@ -491,6 +494,13 @@ void hotlist_old_add_page(const char *url)
 	if (nsurl_create(url, &nsurl) != NSERROR_OK)
 		return;
 
+	/* Update new hotlist */
+	if (nsoption_bool(temp_treeview_test) != false) {
+		hotlist_add_url(nsurl);
+		nsurl_unref(nsurl);
+		return;
+	}
+
 	data = urldb_get_url_data(nsurl);
 	if (data == NULL)
 		return;
@@ -499,10 +509,6 @@ void hotlist_old_add_page(const char *url)
 	node = tree_create_URL_node(hotlist_old_tree, parent, nsurl, NULL,
 			hotlist_old_node_callback, NULL);
 	tree_update_URL_node(hotlist_old_tree, node, nsurl, data);
-
-	/* Update new hotlist */
-	if (nsoption_bool(temp_treeview_test) != false)
-		hotlist_add_url(nsurl);
 
 	nsurl_unref(nsurl);
 }
@@ -529,6 +535,8 @@ void hotlist_old_add_page_xy(const char *url, int x, int y)
 	/* Update new hotlist */
 	if (nsoption_bool(temp_treeview_test) != false) {
 		hotlist_add_entry(nsurl, NULL, true, y);
+		nsurl_unref(nsurl);
+		return;
 	}
 
 	data = urldb_get_url_data(nsurl);
