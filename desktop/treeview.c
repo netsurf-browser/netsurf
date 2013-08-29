@@ -1130,6 +1130,9 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 nserror treeview_delete_node(treeview *tree, treeview_node *n)
 {
 	nserror err;
+	struct rect r;
+	r.y0 = treeview_node_y(tree, n);
+	r.y1 = tree->root->height;
 
 	err = treeview_delete_node_internal(tree, n, false);
 	if (err != NSERROR_OK)
@@ -1141,6 +1144,11 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 		if (err != NSERROR_OK)
 			return err;
 	}
+
+	/* Inform front end of change in dimensions */
+	r.x0 = 0;
+	r.x1 = REDRAW_MAX;
+	tree->cw_t->redraw_request(tree->cw_h, r);
 
 	return NSERROR_OK;
 }
