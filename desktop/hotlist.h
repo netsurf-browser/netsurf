@@ -87,7 +87,7 @@ void hotlist_update_url(nsurl *url);
  * Add an entry to the hotlist for given Title/URL.
  *
  * \param url		URL for entry to be added, or NULL
- * \param title		Title for entry being added, or NULL
+ * \param title		Title for entry being added (copied), or NULL
  * \param at_y		Iff true, insert at y-offest
  * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
  * \return NSERROR_OK on success, appropriate error otherwise
