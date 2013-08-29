@@ -202,6 +202,101 @@ static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
 };
 
 
+/* Find the next node in depth first tree order
+ *
+ * \param node		Start node
+ * \param full		Iff true, visit children of collapsed nodes
+ * \param next		Updated to next node, or NULL if 'node' is last node
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
+{
+	assert(node != NULL);
+
+	if ((full || (node->flags & TREE_NODE_EXPANDED)) &&
+			node->children != NULL) {
+		/* Next node is child */
+		node = node->children;
+	} else {
+		/* No children.  As long as we're not at the root,
+		 * go to next sibling if present, or nearest ancestor
+		 * with a next sibling. */
+
+		while (node != NULL && node->type != TREE_NODE_ROOT &&
+				node->next_sib == NULL) {
+			node = node->parent;
+		}
+
+		if (node->type == TREE_NODE_ROOT) {
+			node = NULL;
+
+		} else if (node != NULL) {
+			node = node->next_sib;
+		}
+	}
+
+	return node;
+}
+
+
+/* Find node at given y-position
+ *
+ * \param tree		Treeview object to delete node from
+ * \param target_y	Target y-position
+ * \return node at y_target
+ */
+static treeview_node * treeview_y_node(treeview *tree, int target_y)
+{
+	treeview_node *n;
+	int y = 0;
+	int h;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	n = treeview_node_next(tree->root, false);
+
+	while (n != NULL) {
+		h = (n->type == TREE_NODE_ENTRY) ?
+				n->height : tree_g.line_height;
+		if (target_y >= y && target_y < y + h)
+			return n;
+		y += h;
+
+		n = treeview_node_next(n, false);
+	}
+
+	return NULL;
+}
+
+
+/* Find y position of the top of a node
+ *
+ * \param tree		Treeview object to delete node from
+ * \param node		Node to get position of
+ * \return node's y position
+ */
+static int treeview_node_y(treeview *tree, treeview_node *node)
+{
+	treeview_node *n;
+	int y = 0;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	n = treeview_node_next(tree->root, false);
+
+	while (n != NULL && n != node) {
+		y += (node->type == TREE_NODE_ENTRY) ?
+				node->height : tree_g.line_height;
+
+		n = treeview_node_next(n, false);
+	}
+
+	return y;
+}
+
+
 /* Walk a treeview subtree, calling a callback at each node (depth first)
  *
  * \param root		Root to walk tree from (doesn't get a callback call)
@@ -471,6 +566,16 @@ nserror treeview_create_node_folder(treeview *tree,
 	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
 		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
+	/* Inform front end of change in dimensions */
+	if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+		struct rect r;
+		r.x0 = 0;
+		r.y0 = treeview_node_y(tree, n);
+		r.x1 = REDRAW_MAX;
+		r.y1 = tree->root->height;
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
+
 	return NSERROR_OK;
 }
 
@@ -644,102 +749,17 @@ nserror treeview_create_node_entry(treeview *tree,
 	if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
 		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
+	/* Inform front end of change in dimensions */
+	if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+		struct rect r;
+		r.x0 = 0;
+		r.y0 = treeview_node_y(tree, n);
+		r.x1 = REDRAW_MAX;
+		r.y1 = tree->root->height;
+		tree->cw_t->redraw_request(tree->cw_h, r);
+	}
+
 	return NSERROR_OK;
-}
-
-
-/* Find the next node in depth first tree order
- *
- * \param node		Start node
- * \param full		Iff true, visit children of collapsed nodes
- * \param next		Updated to next node, or NULL if 'node' is last node
- * \return NSERROR_OK on success, or appropriate error otherwise
- */
-static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
-{
-	assert(node != NULL);
-
-	if ((full || (node->flags & TREE_NODE_EXPANDED)) &&
-			node->children != NULL) {
-		/* Next node is child */
-		node = node->children;
-	} else {
-		/* No children.  As long as we're not at the root,
-		 * go to next sibling if present, or nearest ancestor
-		 * with a next sibling. */
-
-		while (node != NULL && node->type != TREE_NODE_ROOT &&
-				node->next_sib == NULL) {
-			node = node->parent;
-		}
-
-		if (node->type == TREE_NODE_ROOT) {
-			node = NULL;
-
-		} else if (node != NULL) {
-			node = node->next_sib;
-		}
-	}
-
-	return node;
-}
-
-
-/* Find node at given y-position
- *
- * \param tree		Treeview object to delete node from
- * \param target_y	Target y-position
- * \return node at y_target
- */
-static treeview_node * treeview_y_node(treeview *tree, int target_y)
-{
-	treeview_node *n;
-	int y = 0;
-	int h;
-
-	assert(tree != NULL);
-	assert(tree->root != NULL);
-
-	n = treeview_node_next(tree->root, false);
-
-	while (n != NULL) {
-		h = (n->type == TREE_NODE_ENTRY) ?
-				n->height : tree_g.line_height;
-		if (target_y >= y && target_y < y + h)
-			return n;
-		y += h;
-
-		n = treeview_node_next(n, false);
-	}
-
-	return NULL;
-}
-
-
-/* Find y position of the top of a node
- *
- * \param tree		Treeview object to delete node from
- * \param node		Node to get position of
- * \return node's y position
- */
-static int treeview_node_y(treeview *tree, treeview_node *node)
-{
-	treeview_node *n;
-	int y = 0;
-
-	assert(tree != NULL);
-	assert(tree->root != NULL);
-
-	n = treeview_node_next(tree->root, false);
-
-	while (n != NULL && n != node) {
-		y += (node->type == TREE_NODE_ENTRY) ?
-				node->height : tree_g.line_height;
-
-		n = treeview_node_next(n, false);
-	}
-
-	return y;
 }
 
 
