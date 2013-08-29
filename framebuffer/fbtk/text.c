@@ -71,7 +71,7 @@ fb_text_font_style(fbtk_widget_t *widget, int *font_height, int *padding,
 #endif
 
 	font_style->family = PLOT_FONT_FAMILY_SANS_SERIF;
-	font_style->size = px_to_pt(*font_height) * FONT_SIZE_SCALE;
+	font_style->size = px_to_pt(*font_height * FONT_SIZE_SCALE);
 	font_style->weight = 400;
 	font_style->flags = FONTF_NONE;
 	font_style->background = widget->bg;
