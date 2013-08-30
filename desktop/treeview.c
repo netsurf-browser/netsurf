@@ -1066,6 +1066,7 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 
 	/* Inform front end of change in dimensions */
 	if (tree->root != NULL && p != NULL && p->flags & TREE_NODE_EXPANDED &&
+			nd.h_reduction > 0 &&
 			!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
 		tree->cw_t->update_size(tree->cw_h, -1,
 				tree->root->height);
@@ -1183,7 +1184,6 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 	nserror err;
 	struct rect r;
 	treeview_node *p;
-	int h;
 
 	assert(tree != NULL);
 	assert(n != NULL);
@@ -1197,16 +1197,21 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 	if (err != NSERROR_OK)
 		return err;
 
-	h = tree->root->height;
 	if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
+		int h = tree->root->height;
 		/* Delete any empty nodes */
 		err = treeview_delete_empty_nodes(tree, false);
 		if (err != NSERROR_OK)
 			return err;
-	}
-	/* Inform front end of change in dimensions */
-	if (tree->root->height != h && !(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
+		/* Inform front end of change in dimensions */
+		if (tree->root->height != h) {
+			r.y0 = 0;
+			if (!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
+				tree->cw_t->update_size(tree->cw_h, -1,
+						tree->root->height);
+			}
+		}
 	}
 
 	/* Redraw */
@@ -2461,9 +2466,16 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 		redraw = treeview_delete_selection(tree, &r);
 
 		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
+			int h = tree->root->height;
 			/* Delete any empty nodes */
-			err = treeview_delete_empty_nodes(tree, true);
-			r.y0 = 0;
+			err = treeview_delete_empty_nodes(tree, false);
+
+			/* Inform front end of change in dimensions */
+			if (tree->root->height != h) {
+				r.y0 = 0;
+				tree->cw_t->update_size(tree->cw_h, -1,
+						tree->root->height);
+			}
 		}
 		break;
 	case KEY_CR:

@@ -48,7 +48,7 @@ typedef enum {
 	TREE_OPTION_NONE		= (0),		/* No flags set */
 	TREE_OPTION_SUPPRESS_RESIZE	= (1 << 0),	/* Suppress callback */
 	TREE_OPTION_SUPPRESS_REDRAW	= (1 << 1)	/* Suppress callback */
-} treeview_node_options_flags;		/**< Node creation settings */
+} treeview_node_options_flags;		/**< Node change handling options */
 
 typedef enum {
 	TREEVIEW_NO_FLAGS	= (0),		/**< No flags set */
