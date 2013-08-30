@@ -42,7 +42,7 @@ struct core_window_callback_table {
 	 * \param cw		the core window object
 	 * \param r		rectangle to redraw
 	 */
-	void (*redraw_request)(struct core_window *cw, struct rect r);
+	void (*redraw_request)(struct core_window *cw, const struct rect *r);
 
 	/**
 	 * Update the limits of the window
@@ -59,7 +59,7 @@ struct core_window_callback_table {
 	 * \param cw		the core window object
 	 * \param r		rectangle to make visible
 	 */
-	void (*scroll_visible)(struct core_window *cw, struct rect r);
+	void (*scroll_visible)(struct core_window *cw, const struct rect *r);
 
 	/**
 	 * Get window viewport dimensions

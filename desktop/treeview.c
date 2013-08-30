@@ -573,7 +573,7 @@ nserror treeview_create_node_folder(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			tree->cw_t->redraw_request(tree->cw_h, r);
+			tree->cw_t->redraw_request(tree->cw_h, &r);
 		}
 	}
 
@@ -623,7 +623,7 @@ nserror treeview_update_node_folder(treeview *tree,
 		r.y0 = treeview_node_y(tree, folder);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + tree_g.line_height;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		tree->cw_t->redraw_request(tree->cw_h, &r);
 	}
 
 	return NSERROR_OK;
@@ -694,7 +694,7 @@ nserror treeview_update_node_entry(treeview *tree,
 		r.y0 = treeview_node_y(tree, entry);
 		r.x1 = REDRAW_MAX;
 		r.y1 = r.y0 + entry->height;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		tree->cw_t->redraw_request(tree->cw_h, &r);
 	}
 
 	return NSERROR_OK;
@@ -779,7 +779,7 @@ nserror treeview_create_node_entry(treeview *tree,
 			r.y0 = treeview_node_y(tree, n);
 			r.x1 = REDRAW_MAX;
 			r.y1 = tree->root->height;
-			tree->cw_t->redraw_request(tree->cw_h, r);
+			tree->cw_t->redraw_request(tree->cw_h, &r);
 		}
 	}
 
@@ -900,7 +900,7 @@ static void treeview_edit_cancel(treeview *tree, bool redraw)
 		r.y0 = tree->edit.y;
 		r.x1 = tree->edit.x + tree->edit.w;
 		r.y1 = tree->edit.y + tree->edit.h;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		tree->cw_t->redraw_request(tree->cw_h, &r);
 	}
 }
 
@@ -1182,7 +1182,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 	if (p->flags & TREE_NODE_EXPANDED) {
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		tree->cw_t->redraw_request(tree->cw_h, &r);
 	}
 
 	return NSERROR_OK;
@@ -2450,7 +2450,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	}
 
 	if (redraw) {
-		tree->cw_t->redraw_request(tree->cw_h, r);
+		tree->cw_t->redraw_request(tree->cw_h, &r);
 	}
 
 	return true;
@@ -2621,7 +2621,7 @@ static void treeview_textarea_callback(void *data, struct textarea_msg *msg)
 		r->y1 += tree->edit.y;
 
 		/* Redraw the textarea */
-		tree->cw_t->redraw_request(tree->cw_h, *r);
+		tree->cw_t->redraw_request(tree->cw_h, r);
 		break;
 
 	default:
@@ -2794,7 +2794,7 @@ void treeview_edit_selection(treeview *tree)
 	rect.y0 = y;
 	rect.x1 = REDRAW_MAX;
 	rect.y1 = y + tree_g.line_height;
-	tree->cw_t->redraw_request(tree->cw_h, rect);
+	tree->cw_t->redraw_request(tree->cw_h, &rect);
 }
 
 
@@ -3054,7 +3054,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	}
 
 	if (redraw) {
-		ma->tree->cw_t->redraw_request(ma->tree->cw_h, r);
+		ma->tree->cw_t->redraw_request(ma->tree->cw_h, &r);
 	}
 
 	*end = true; /* Reached line with click; stop walking tree */
@@ -3116,7 +3116,7 @@ void treeview_mouse_action(treeview *tree,
 
 			tree->cw_t->drag_status(tree->cw_h,
 					CORE_WINDOW_DRAG_NONE);
-			tree->cw_t->redraw_request(tree->cw_h, r);
+			tree->cw_t->redraw_request(tree->cw_h, &r);
 			return;
 		default:
 			/* No drag to end */
@@ -3191,7 +3191,7 @@ void treeview_mouse_action(treeview *tree,
 		}
 
 		if (redraw) {
-			tree->cw_t->redraw_request(tree->cw_h, r);
+			tree->cw_t->redraw_request(tree->cw_h, &r);
 		}
 
 	} else {

@@ -187,12 +187,13 @@ const char *tree_hotlist_path = NULL;
 
 int treeview_inits;
 
-static void treeview_test_redraw_request(struct core_window *cw, struct rect r)
+static void treeview_test_redraw_request(struct core_window *cw,
+		const struct rect *r)
 {
 	struct tree *tree = (struct tree *)cw;
 
-	tree->callbacks->redraw_request(r.x0, r.y0,
-			r.x1 - r.x0, r.y1 - r.y0,
+	tree->callbacks->redraw_request(r->x0, r->y0,
+			r->x1 - r->x0, r->y1 - r->y0,
 			tree->client_data);
 }
 
@@ -204,7 +205,8 @@ static void treeview_test_update_size(struct core_window *cw,
 	tree->callbacks->resized(tree, width, height, tree->client_data);
 }
 
-static void treeview_test_scroll_visible(struct core_window *cw, struct rect r)
+static void treeview_test_scroll_visible(struct core_window *cw,
+		const struct rect *r)
 {
 }
 
