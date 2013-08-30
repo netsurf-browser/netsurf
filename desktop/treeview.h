@@ -45,10 +45,10 @@ enum treeview_relationship {
 };					/**< Relationship between nodes */
 
 typedef enum {
-	TREE_CREATE_NONE		= (0),		/* No flags set */
-	TREE_CREATE_SUPPRESS_RESIZE	= (1 << 0),	/* Suppress callback */
-	TREE_CREATE_SUPPRESS_REDRAW	= (1 << 1)	/* Suppress callback */
-} treeview_node_create_flags;		/**< Node creation settings */
+	TREE_OPTION_NONE		= (0),		/* No flags set */
+	TREE_OPTION_SUPPRESS_RESIZE	= (1 << 0),	/* Suppress callback */
+	TREE_OPTION_SUPPRESS_REDRAW	= (1 << 1)	/* Suppress callback */
+} treeview_node_options_flags;		/**< Node creation settings */
 
 typedef enum {
 	TREEVIEW_NO_FLAGS	= (0),		/**< No flags set */
@@ -181,7 +181,7 @@ nserror treeview_get_relation(treeview *tree, treeview_node **relation,
  * \param rel		Folder's relationship to relation
  * \param field		Field data
  * \param data		Client data for node event callbacks
- * \param flags		Node creation flags
+ * \param flags		Treeview node options flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Field name must match name past in treeview_create fields[N-1].
@@ -193,7 +193,7 @@ nserror treeview_create_node_folder(treeview *tree,
 		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
-		void *data, treeview_node_create_flags flags);
+		void *data, treeview_node_options_flags flags);
 
 /**
  * Create an entry node in given treeview
@@ -204,7 +204,7 @@ nserror treeview_create_node_folder(treeview *tree,
  * \param rel		Folder's relationship to relation
  * \param fields	Array of field data
  * \param data		Client data for node event callbacks
- * \param flags		Node creation flags
+ * \param flags		Treeview node options flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Fields array names must match names past in treeview_create fields[0...N-2].
@@ -216,7 +216,7 @@ nserror treeview_create_node_entry(treeview *tree,
 		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
-		void *data, treeview_node_create_flags flags);
+		void *data, treeview_node_options_flags flags);
 
 /**
  * Update an folder node in given treeview
@@ -290,11 +290,13 @@ nserror treeview_walk(treeview *tree, treeview_node *root,
  *
  * \param tree		Treeview object to delete node from
  * \param n		Node to delete
+ * \param flags		Treeview node options flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Will emit folder or entry deletion msg callback.
  */
-nserror treeview_delete_node(treeview *tree, treeview_node *n);
+nserror treeview_delete_node(treeview *tree, treeview_node *n,
+		treeview_node_options_flags flags);
 
 /**
  * Expand a treeview node

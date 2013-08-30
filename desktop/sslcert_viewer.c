@@ -189,7 +189,7 @@ static nserror sslcert_viewer_create_node(
 	/* Create the new treeview node */
 	err = treeview_create_node_entry(ssl_d->tree, &(e->entry),
 			NULL, TREE_REL_FIRST_CHILD,
-			e->data, e, TREE_CREATE_NONE);
+			e->data, e, TREE_OPTION_NONE);
 	if (err != NSERROR_OK) {
 		sslcert_viewer_free_treeview_field_data(e);
 		free(e);

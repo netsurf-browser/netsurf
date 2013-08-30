@@ -141,8 +141,8 @@ static nserror hotlist_entry_insert(struct hotlist_entry *e,
 
 	err = treeview_create_node_entry(hl_ctx.tree, &(e->entry),
 			relation, rel, e->data, e, hl_ctx.built ?
-			TREE_CREATE_NONE : TREE_CREATE_SUPPRESS_RESIZE |
-					TREE_CREATE_SUPPRESS_REDRAW);
+			TREE_OPTION_NONE : TREE_OPTION_SUPPRESS_RESIZE |
+					TREE_OPTION_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
 		return err;
 	}
@@ -314,8 +314,8 @@ static nserror hotlist_add_folder_internal(
 
 	err = treeview_create_node_folder(hl_ctx.tree,
 			&n, relation, rel, &f->data, f, hl_ctx.built ?
-			TREE_CREATE_NONE : TREE_CREATE_SUPPRESS_RESIZE |
-					TREE_CREATE_SUPPRESS_REDRAW);
+			TREE_OPTION_NONE : TREE_OPTION_SUPPRESS_RESIZE |
+					TREE_OPTION_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
 		free((void *)title); /* Eww */
 		free(f);
@@ -1219,7 +1219,8 @@ static nserror hotlist_remove_url_walk_cb(void *ctx, void *node_data,
 
 		if (nsurl_compare(e->url, tw->url, NSURL_COMPLETE) == true) {
 			/* Found what we're looking for: delete it */
-			treeview_delete_node(hl_ctx.tree, e->entry);
+			treeview_delete_node(hl_ctx.tree, e->entry,
+					TREE_OPTION_NONE);
 		}
 	}
 

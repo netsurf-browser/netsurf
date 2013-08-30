@@ -524,7 +524,7 @@ nserror treeview_create_node_folder(treeview *tree,
 		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data *field,
-		void *data, treeview_node_create_flags flags)
+		void *data, treeview_node_options_flags flags)
 {
 	treeview_node *n;
 
@@ -562,12 +562,12 @@ nserror treeview_create_node_folder(treeview *tree,
 
 	if (n->parent->flags & TREE_NODE_EXPANDED) {
 		/* Inform front end of change in dimensions */
-		if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
+		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
 			tree->cw_t->update_size(tree->cw_h, -1,
 					tree->root->height);
 
 		/* Redraw */
-		if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+		if (!(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 			struct rect r;
 			r.x0 = 0;
 			r.y0 = treeview_node_y(tree, n);
@@ -707,7 +707,7 @@ nserror treeview_create_node_entry(treeview *tree,
 		treeview_node *relation,
 		enum treeview_relationship rel,
 		const struct treeview_field_data fields[],
-		void *data, treeview_node_create_flags flags)
+		void *data, treeview_node_options_flags flags)
 {
 	bool match;
 	struct treeview_node_entry *e;
@@ -768,12 +768,12 @@ nserror treeview_create_node_entry(treeview *tree,
 
 	if (n->parent->flags & TREE_NODE_EXPANDED) {
 		/* Inform front end of change in dimensions */
-		if (!(flags & TREE_CREATE_SUPPRESS_RESIZE))
+		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
 			tree->cw_t->update_size(tree->cw_h, -1,
 					tree->root->height);
 
 		/* Redraw */
-		if (!(flags & TREE_CREATE_SUPPRESS_REDRAW)) {
+		if (!(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 			struct rect r;
 			r.x0 = 0;
 			r.y0 = treeview_node_y(tree, n);
@@ -968,7 +968,7 @@ static void treeview_edit_done(treeview *tree)
 
 struct treeview_node_delete {
 	treeview *tree;
-	int height_reduction;
+	int h_reduction;
 	bool user_interaction;
 };
 /** Treewalk node callback deleting nodes. */
@@ -983,7 +983,7 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
 	assert(n->children == NULL);
 
 	if (treeview_unlink_node(n))
-		nd->height_reduction += (n->type == TREE_NODE_ENTRY) ?
+		nd->h_reduction += (n->type == TREE_NODE_ENTRY) ?
 				n->height : tree_g.line_height;
 
 	/* Handle any special treatment */
@@ -1016,6 +1016,7 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
  * \param tree		Treeview object to delete node from
  * \param n		Node to delete
  * \param interaction	Delete is result of user interaction with treeview
+ * \param flags		Treeview node options flags
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Will emit folder or entry deletion msg callback.
@@ -1027,13 +1028,13 @@ static nserror treeview_delete_node_walk_cb(treeview_node *n,
  * set, caller must also call treeview_delete_empty.
  */
 static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
-		bool interaction)
+		bool interaction, treeview_node_options_flags flags)
 {
 	nserror err;
 	treeview_node *p = n->parent;
 	struct treeview_node_delete nd = {
 		.tree = tree,
-		.height_reduction = 0,
+		.h_reduction = 0,
 		.user_interaction = interaction
 	};
 
@@ -1056,22 +1057,26 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 		return err;
 	}
 
+	n = p;
 	/* Reduce ancestor heights */
-	while (p != NULL && p->flags & TREE_NODE_EXPANDED) {
-		p->height -= nd.height_reduction;
-		p = p->parent;
+	while (n != NULL && n->flags & TREE_NODE_EXPANDED) {
+		n->height -= nd.h_reduction;
+		n = n->parent;
 	}
 
 	/* Inform front end of change in dimensions */
-	if (tree->root != NULL)
-		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	if (tree->root != NULL && p != NULL && p->flags & TREE_NODE_EXPANDED &&
+			!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
+		tree->cw_t->update_size(tree->cw_h, -1,
+				tree->root->height);
+	}
 
 	return NSERROR_OK;
 }
 
 
 /**
- * Delete a treeview node
+ * Delete any empty treeview folder nodes
  *
  * \param tree		Treeview object to delete empty nodes from
  * \param interaction	Delete is result of user interaction with treeview
@@ -1083,13 +1088,13 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
  */
 static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 {
-	treeview_node *node, *child, *parent, *next_sibling;
+	treeview_node *node, *child, *parent, *next_sibling, *p;
 	treeview_node *root = tree->root;
 	bool abort = false;
 	nserror err;
 	struct treeview_node_delete nd = {
 		.tree = tree,
-		.height_reduction = 0,
+		.h_reduction = 0,
 		.user_interaction = interaction
 	};
 
@@ -1113,11 +1118,21 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 				if (node->type == TREE_NODE_FOLDER &&
 						node->children == NULL) {
 					/* Delete node */
+					p = node->parent;
 					err = treeview_delete_node_walk_cb(
 							node, &nd, &abort);
 					if (err != NSERROR_OK) {
 						return err;
 					}
+
+					/* Reduce ancestor heights */
+					while (p != NULL &&
+							p->flags &
+							TREE_NODE_EXPANDED) {
+						p->height -= nd.h_reduction;
+						p = p->parent;
+					}
+					nd.h_reduction = 0;
 				}
 				node = parent;
 				parent = node->parent;
@@ -1130,11 +1145,20 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 			if (node->type == TREE_NODE_FOLDER &&
 					node->children == NULL) {
 				/* Delete node */
+				p = node->parent;
 				err = treeview_delete_node_walk_cb(
 						node, &nd, &abort);
 				if (err != NSERROR_OK) {
 					return err;
 				}
+
+				/* Reduce ancestor heights */
+				while (p != NULL &&
+						p->flags & TREE_NODE_EXPANDED) {
+					p->height -= nd.h_reduction;
+					p = p->parent;
+				}
+				nd.h_reduction = 0;
 			}
 			node = next_sibling;
 		}
@@ -1153,11 +1177,13 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_delete_node(treeview *tree, treeview_node *n)
+nserror treeview_delete_node(treeview *tree, treeview_node *n,
+		treeview_node_options_flags flags)
 {
 	nserror err;
 	struct rect r;
 	treeview_node *p;
+	int h;
 
 	assert(tree != NULL);
 	assert(n != NULL);
@@ -1167,19 +1193,25 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n)
 	r.y0 = treeview_node_y(tree, n);
 	r.y1 = tree->root->height;
 
-	err = treeview_delete_node_internal(tree, n, false);
+	err = treeview_delete_node_internal(tree, n, false, flags);
 	if (err != NSERROR_OK)
 		return err;
 
+	h = tree->root->height;
 	if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
 		/* Delete any empty nodes */
 		err = treeview_delete_empty_nodes(tree, false);
 		if (err != NSERROR_OK)
 			return err;
 	}
-
 	/* Inform front end of change in dimensions */
-	if (p->flags & TREE_NODE_EXPANDED) {
+	if (tree->root->height != h && !(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
+		tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+	}
+
+	/* Redraw */
+	if (p->flags & TREE_NODE_EXPANDED &&
+			!(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
 		tree->cw_t->redraw_request(tree->cw_h, &r);
@@ -1283,7 +1315,9 @@ nserror treeview_destroy(treeview *tree)
 	assert(tree != NULL);
 
 	/* Destroy nodes */
-	treeview_delete_node_internal(tree, tree->root, false);
+	treeview_delete_node_internal(tree, tree->root, false,
+			TREE_OPTION_SUPPRESS_RESIZE |
+			TREE_OPTION_SUPPRESS_REDRAW);
 
 	/* Destroy feilds */
 	for (f = 0; f <= tree->n_fields; f++) {
@@ -1388,7 +1422,7 @@ nserror treeview_node_expand(treeview *tree,
 static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
 		bool *skip_children, bool *end)
 {
-	int height_reduction;
+	int h_reduction;
 
 	assert(n != NULL);
 	assert(n->type != TREE_NODE_ROOT);
@@ -1401,12 +1435,12 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
 	}
 
 	n->flags ^= TREE_NODE_EXPANDED;
-	height_reduction = n->height - tree_g.line_height;
+	h_reduction = n->height - tree_g.line_height;
 
-	assert(height_reduction >= 0);
+	assert(h_reduction >= 0);
 
 	do {
-		n->height -= height_reduction;
+		n->height -= h_reduction;
 		n = n->parent;
 	} while (n != NULL);
 
@@ -1749,7 +1783,8 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 
 	case TREEVIEW_WALK_DELETE_SELECTION:
 		if (n->flags & TREE_NODE_SELECTED) {
-			err = treeview_delete_node_internal(sw->tree, n, true);
+			err = treeview_delete_node_internal(sw->tree, n, true,
+					TREE_OPTION_NONE);
 			if (err != NSERROR_OK) {
 				return err;
 			}
