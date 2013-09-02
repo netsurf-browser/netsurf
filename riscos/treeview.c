@@ -60,10 +60,6 @@
 #define wimp_KEY_END wimp_KEY_COPY
 #endif
 
-/** \todo Ugh! */
-const char tree_directory_icon_name[] = "directory.png";
-const char tree_content_icon_name[] = "content.png";
-
 struct ro_treeview
 {
 	struct tree *tree;	/*< Pointer to treeview tree block.        */

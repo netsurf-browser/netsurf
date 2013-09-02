@@ -31,10 +31,6 @@
 #include "desktop/tree.h"
 #include "riscos/toolbar.h"
 
-/* defined in front end code */
-extern const char tree_directory_icon_name[];
-extern const char tree_content_icon_name[];
-
 typedef struct ro_treeview ro_treeview;
 
 struct ro_treeview_callbacks {

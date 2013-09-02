@@ -26,10 +26,6 @@
 
 #include "desktop/browser.h"
 
-/* defined in front end code */
-extern const char tree_directory_icon_name[];
-extern const char tree_content_icon_name[];
-
 struct nsgtk_treeview;
 
 struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,

@@ -66,8 +66,7 @@ S_RESOURCES := windows_resource.o
 # S_WINDOWS are sources purely for the windows build
 S_WINDOWS := main.c window.c gui.c drawable.c misc.c plot.c findfile.c	\
 	  font.c bitmap.c about.c prefs.c download.c filetype.c		\
-	  localhistory.c login.c schedule.c thumbnail.c tree.c		\
-	  windbg.c
+	  localhistory.c login.c schedule.c thumbnail.c windbg.c
 S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
 
 # This is the final source build list

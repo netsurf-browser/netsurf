@@ -41,7 +41,6 @@
 //TODO: remove/add guiwin handle on close / open - so that the list
 // is kept tiny.
 
-extern char * tree_directory_icon_name;
 extern GRECT desk_area;
 
 struct s_atari_global_history gl_history;

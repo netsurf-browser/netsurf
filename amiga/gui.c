@@ -162,8 +162,6 @@ struct Hook newprefs_hook;
 static char *current_user;
 static char *current_user_dir;
 
-const char tree_directory_icon_name[] = "def_drawer.info";
-const char tree_content_icon_name[] = "def_project.info";
 static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
 
 const char * const versvn;

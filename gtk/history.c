@@ -127,8 +127,7 @@ bool nsgtk_history_init(const char *glade_file_location)
 	CONNECT(window, "hide", nsgtk_tree_window_hide, global_history_window);
 	
 	history_global_initialise(
-		nsgtk_treeview_get_tree(global_history_window),
-		tree_directory_icon_name);
+		nsgtk_treeview_get_tree(global_history_window), NULL);
 	
 	nsgtk_history_init_menu();
 

@@ -144,8 +144,7 @@ void ro_gui_hotlist_postinitialise(void)
 	/* Initialise the hotlist into the tree. */
 
 	hotlist_old_initialise(ro_treeview_get_tree(hotlist_window.tv),
-			   nsoption_charp(hotlist_path),
-			   tree_directory_icon_name);
+			   nsoption_charp(hotlist_path), NULL);
 
 
 	/* Build the hotlist window menu. */

@@ -135,8 +135,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
 
 	hotlist_old_initialise(nsgtk_treeview_get_tree(hotlist_window),
-			   nsoption_charp(hotlist_path), 
-			   tree_directory_icon_name);
+			   nsoption_charp(hotlist_path), NULL);
 		
 	nsgtk_hotlist_init_menu();
 

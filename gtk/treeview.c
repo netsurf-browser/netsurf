@@ -49,9 +49,6 @@ struct nsgtk_treeview {
 	struct tree *tree;
 };
 
-const char tree_directory_icon_name[] = "directory.png";
-const char tree_content_icon_name[] = "content.png";
-
 void nsgtk_treeview_destroy(struct nsgtk_treeview *tv)
 {
 	tree_delete(tv->tree);

@@ -125,8 +125,7 @@ bool nsgtk_cookies_init(const char *glade_file_location)
 	CONNECT(window, "hide", nsgtk_tree_window_hide, cookies_window);
 	
 	cookies_initialise(nsgtk_treeview_get_tree(cookies_window),
-			   tree_directory_icon_name,
-			   tree_content_icon_name);
+			   NULL, NULL);
 		
 	nsgtk_cookies_init_menu();
 
