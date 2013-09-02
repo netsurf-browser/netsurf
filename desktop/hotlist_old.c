@@ -36,150 +36,14 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
-#define URL_CHUNK_LENGTH 512
 
-static struct tree *hotlist_old_tree;
-static struct node *hotlist_old_tree_root;
-
-static bool creating_node;
-static hlcache_handle *folder_icon;
-
-static const struct {
-	const char *url;
-	const char *msg_key;
-} hotlist_old_default_entries[] = {
-	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
-	{ "http://www.netsurf-browser.org/downloads/riscos/testbuilds",
-	  "HotlistTestBuild" },
-	{ "http://www.netsurf-browser.org/documentation",
-	  "HotlistDocumentation" },
-	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
-	  "HotlistBugTracker" },
-	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
-	  "HotlistFeatureRequest" }
-};
-#define hotlist_old_ENTRIES_COUNT (sizeof(hotlist_old_default_entries) / sizeof(hotlist_old_default_entries[0]))
-
-static node_callback_resp hotlist_old_node_callback(void *user_data,
-		struct node_msg_data *msg_data)
-{
-	struct node *node = msg_data->node;
-	const char *text;
-	char *norm_text;
-	bool is_folder = tree_node_is_folder(node);
-	bool cancelled = false;
-
-	switch (msg_data->msg) {
-	case NODE_ELEMENT_EDIT_CANCELLED:
-		cancelled = true;
-		/* fall through */
-	case NODE_ELEMENT_EDIT_FINISHED:
-		if (creating_node && !cancelled &&
-		    (is_folder == false) &&
-		    (msg_data->flag == TREE_ELEMENT_TITLE)) {
-			tree_url_node_edit_url(hotlist_old_tree, node);
-		} else {
-			creating_node = false;
-		}
-		return NODE_CALLBACK_HANDLED;
-
-	case NODE_ELEMENT_EDIT_FINISHING:
-		if (creating_node && (is_folder == false))
-			return tree_url_node_callback(hotlist_old_tree, msg_data);
-
-		if (is_folder == true) {
-			text = msg_data->data.text;
-			while (isspace(*text))
-				text++;
-			norm_text = strdup(text);
-			if (norm_text == NULL) {
-				LOG(("malloc failed"));
-				warn_user("NoMemory", 0);
-				return NODE_CALLBACK_REJECT;
-			}
-			/* don't allow zero length entry text, return false */
-			if (norm_text[0] == '\0') {
-				warn_user("NoNameError", 0);
-				msg_data->data.text = NULL;
-				return NODE_CALLBACK_CONTINUE;
-			}
-			msg_data->data.text = norm_text;
-		}
-		break;
-
-	case NODE_DELETE_ELEMENT_IMG:
-		return NODE_CALLBACK_HANDLED;
-
-	default:
-		if (is_folder == false)
-			return tree_url_node_callback(hotlist_old_tree, msg_data);
-	}
-
-	return NODE_CALLBACK_NOT_HANDLED;
-}
 
 /* exported interface documented in hotlist.h */
 bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path,
 		const char* folder_icon_name)
 {
-	struct node *node;
-	const struct url_data *url_data;
-	int hlst_loop;
-
-	/* Either load or create a hotlist */
-
-	creating_node = false;
-
-	folder_icon = tree_load_icon(folder_icon_name);
-
-	tree_url_node_init(folder_icon_name);
-
 	if (tree == NULL)
 		return false;
-
-	hotlist_old_tree = tree;
-	hotlist_old_tree_root = tree_get_root(hotlist_old_tree);
-
-	if (tree_urlfile_load(hotlist_path, hotlist_old_tree,
-			hotlist_old_node_callback, NULL)) {
-		return true;
-	}
-
-	/* failed to load hotlist file, use default list */
-	node = tree_create_folder_node(hotlist_old_tree,
-				       hotlist_old_tree_root,
-				       messages_get("NetSurf"),
-				       true,
-				       false,
-				       false);
-	if (node == NULL) {
-		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
-		return false;
-	}
-
-	tree_set_node_user_callback(node, hotlist_old_node_callback, NULL);
-	tree_set_node_icon(hotlist_old_tree, node, folder_icon);
-
-	for (hlst_loop = 0; hlst_loop != hotlist_old_ENTRIES_COUNT; hlst_loop++) {
-		nsurl *url;
-		if (nsurl_create(hotlist_old_default_entries[hlst_loop].url,
-				&url) != NSERROR_OK) {
-			return false;
-		}
-		url_data = urldb_get_url_data(url);
-		if (url_data == NULL) {
-			urldb_add_url(url);
-			urldb_set_url_persistence(url, true);
-			url_data = urldb_get_url_data(url);
-		}
-		if (url_data != NULL) {
-			tree_create_URL_node(hotlist_old_tree, node, url,
-					messages_get(hotlist_old_default_entries[hlst_loop].msg_key),
-					hotlist_old_node_callback, NULL);
-			tree_update_URL_node(hotlist_old_tree, node, url, url_data);
-		}
-		nsurl_unref(url);
-	}
 
 	return true;
 }
@@ -192,7 +56,7 @@ bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path,
  */
 unsigned int hotlist_old_get_tree_flags(void)
 {
-	return TREE_MOVABLE | TREE_HOTLIST;
+	return TREE_HOTLIST;
 }
 
 
@@ -202,13 +66,6 @@ unsigned int hotlist_old_get_tree_flags(void)
  */
 void hotlist_old_cleanup(const char *hotlist_path)
 {
-	LOG(("Exporting hotlist..."));
-	hotlist_old_export(hotlist_path);
-	LOG(("Releasing handles..."));
-	hlcache_handle_release(folder_icon);
-	LOG(("Clearing hotlist tree nodes..."));
-	tree_url_node_cleanup();
-	LOG(("Hotlist cleaned up."));
 }
 
 /**
@@ -262,8 +119,6 @@ void hotlist_old_clear_selection(void)
  */
 void hotlist_old_expand_all(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
-			       true, true, true);
 }
 
 /**
@@ -271,8 +126,6 @@ void hotlist_old_expand_all(void)
  */
 void hotlist_old_expand_directories(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
-			       true, true, false);
 }
 
 /**
@@ -280,8 +133,6 @@ void hotlist_old_expand_directories(void)
  */
 void hotlist_old_expand_addresses(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
-			       true, false, true);
 }
 
 /**
@@ -289,8 +140,6 @@ void hotlist_old_expand_addresses(void)
  */
 void hotlist_old_collapse_all(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
-			       false, true, true);
 }
 
 /**
@@ -298,8 +147,6 @@ void hotlist_old_collapse_all(void)
  */
 void hotlist_old_collapse_directories(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, hotlist_old_tree_root,
-			       false, true, false);
 }
 
 /**
@@ -307,8 +154,6 @@ void hotlist_old_collapse_directories(void)
  */
 void hotlist_old_collapse_addresses(void)
 {
-	tree_set_node_expanded(hotlist_old_tree, 
-			       hotlist_old_tree_root, false, false, true);
 }
 
 /**
@@ -393,10 +238,5 @@ void hotlist_old_launch_selected(bool tabs)
  */
 bool hotlist_old_set_default_folder(bool clear)
 {
-	if (clear == true) {
-		tree_clear_default_folder_node(hotlist_old_tree);
-		return true;
-	} else {
-		return tree_set_default_folder_node(hotlist_old_tree, NULL);
-	}
+	return false;
 }
