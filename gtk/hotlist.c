@@ -122,7 +122,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 
 	
 	tree_hotlist_path = nsoption_charp(hotlist_path);
-	hotlist_window = nsgtk_treeview_create(hotlist_old_get_tree_flags(), window,
+	hotlist_window = nsgtk_treeview_create(TREE_HOTLIST, window,
 			scrolled, drawing_area);
 	
 	if (hotlist_window == NULL)

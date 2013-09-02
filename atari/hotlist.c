@@ -129,7 +129,7 @@ void atari_hotlist_init(void)
 			gemtk_wm_unlink(hl.window);
 			tree_hotlist_path = (const char*)&hl.path;
 			hl.tv = atari_treeview_create(
-				hotlist_old_get_tree_flags(),
+				TREE_HOTLIST,
 				hl.window,
 				handle_event
 			);

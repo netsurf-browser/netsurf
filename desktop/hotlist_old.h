@@ -39,7 +39,6 @@
  */
 bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path, const char* folder_icon_name);
 
-unsigned int hotlist_old_get_tree_flags(void);
 void hotlist_old_cleanup(const char *hotlist_path);
 
 

@@ -131,7 +131,7 @@ void ro_gui_hotlist_postinitialise(void)
 	tree_hotlist_path = nsoption_charp(hotlist_path);
 	hotlist_window.tv = ro_treeview_create(hotlist_window.window,
 			hotlist_window.toolbar, &ro_hotlist_treeview_callbacks,
-			hotlist_old_get_tree_flags());
+			TREE_HOTLIST);
 	if (hotlist_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;

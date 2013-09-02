@@ -57,7 +57,7 @@ void ami_hotlist_add_default_dirs(struct tree *tree)
 void ami_hotlist_initialise(const char *hotlist_file)
 {
 	tree_hotlist_path = hotlist_file;
-	hotlist_window = ami_tree_create(hotlist_old_get_tree_flags(), NULL);
+	hotlist_window = ami_tree_create(TREE_HOTLIST, NULL);
 
 	if(!hotlist_window) return;
 

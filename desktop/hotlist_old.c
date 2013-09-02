@@ -49,17 +49,6 @@ bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path,
 
 
 /**
- * Get flags with which the hotlist tree should be created;
- *
- * \return the flags
- */
-unsigned int hotlist_old_get_tree_flags(void)
-{
-	return TREE_HOTLIST;
-}
-
-
-/**
  * Deletes the global history tree and saves the hotlist.
  * \param hotlist_path the path where the hotlist should be saved
  */
