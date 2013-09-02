@@ -211,55 +211,6 @@ void hotlist_old_cleanup(const char *hotlist_path)
 	LOG(("Hotlist cleaned up."));
 }
 
-
-/**
- * Informs the hotlist that some content has been visited. Internal procedure.
- *
- * \param content  the content visited
- * \param node	   the node to update siblings and children of
- */
-static void hotlist_old_visited_internal(hlcache_handle *content, struct node *node)
-{
-	struct node *child;
-	const char *text;
-	const char *url;
-	nsurl *nsurl;
-
-	if (content == NULL || 
-	    hlcache_handle_get_url(content) == NULL ||
-	    hotlist_old_tree == NULL)
-		return;
-
-	nsurl = hlcache_handle_get_url(content);
-	url = nsurl_access(nsurl);
-
-	for (; node; node = tree_node_get_next(node)) {
-		if (!tree_node_is_folder(node)) {
-			text = tree_url_node_get_url(node);
-			if (strcmp(text, url) == 0) {
-				tree_update_URL_node(hotlist_old_tree, node,
-						nsurl, NULL);
-			}
-		}
-		child = tree_node_get_child(node);
-		if (child != NULL) {
-			hotlist_old_visited_internal(content, child);
-		}
-	}
-}
-
-/**
- * Informs the hotlist that some content has been visited
- *
- * \param content  the content visited
- */
-void hotlist_old_visited(hlcache_handle *content)
-{
-	if (hotlist_old_tree != NULL) {
-		hotlist_old_visited_internal(content, tree_get_root(hotlist_old_tree));
-	}
-}
-
 /**
  * Save the hotlist in a human-readable form under the given location.
  *
