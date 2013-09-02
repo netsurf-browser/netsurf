@@ -24,7 +24,7 @@
 
 void ami_global_history_initialise(void)
 {
-	global_history_window = ami_tree_create(history_global_get_tree_flags(), NULL);
+	global_history_window = ami_tree_create(TREE_HISTORY, NULL);
 
 	if(!global_history_window) return;
 

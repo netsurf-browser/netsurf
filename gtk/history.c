@@ -115,8 +115,7 @@ bool nsgtk_history_init(const char *glade_file_location)
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile, "globalHistoryDrawingArea"));
 
 	global_history_window = nsgtk_treeview_create(
-		history_global_get_tree_flags(), window, scrolled,
-		drawing_area);
+		TREE_HISTORY, window, scrolled, drawing_area);
 	
 	if (global_history_window == NULL)
 		return false;

@@ -52,17 +52,6 @@ bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
 
 
 /**
- * Get flags with which the global history tree should be created;
- *
- * \return the flags
- */
-unsigned int history_global_get_tree_flags(void)
-{
-	return TREE_HISTORY;
-}
-
-
-/**
  * Deletes the global history tree.
  */
 void history_global_cleanup(void)

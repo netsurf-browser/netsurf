@@ -112,7 +112,7 @@ void ro_gui_global_history_postinitialise(void)
 			ro_treeview_create(global_history_window.window,
 			global_history_window.toolbar,
 			&ro_global_history_treeview_callbacks,
-			history_global_get_tree_flags());
+			TREE_HISTORY);
 	if (global_history_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;

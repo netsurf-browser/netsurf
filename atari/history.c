@@ -117,7 +117,7 @@ bool atari_global_history_init( void )
 		}
 		wind_set_str(handle, WF_NAME, (char*)messages_get("GlobalHistory"));
 
-		gl_history.tv = atari_treeview_create(history_global_get_tree_flags(),
+		gl_history.tv = atari_treeview_create(TREE_HISTORY,
                                         gl_history.window, handle_event);
 
 		gemtk_wm_unlink(gl_history.window);
