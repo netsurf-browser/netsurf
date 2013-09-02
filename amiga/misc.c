@@ -32,7 +32,7 @@
 
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
-#include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"

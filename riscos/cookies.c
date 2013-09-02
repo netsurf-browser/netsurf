@@ -31,8 +31,8 @@
 #include "oslib/wimpspriteop.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
-#include "desktop/cookies_old.h"
 #include "desktop/tree.h"
+#include "desktop/textinput.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
@@ -179,7 +179,7 @@ void ro_gui_cookies_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		cookies_delete_selected();
+		cookie_manager_keypress(KEY_DELETE_LEFT);
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -318,13 +318,13 @@ bool ro_gui_cookies_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		cookies_collapse_cookies();
 		return true;
 	case TREE_SELECTION_DELETE:
-		cookies_delete_selected();
+		cookie_manager_keypress(KEY_DELETE_LEFT);
 		return true;
 	case TREE_SELECT_ALL:
-		cookies_select_all();
+		cookie_manager_keypress(KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		cookies_clear_selection();
+		cookie_manager_keypress(KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(cookies_window.toolbar,

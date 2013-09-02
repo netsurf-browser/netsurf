@@ -17,7 +17,7 @@
  */
 
 
-#include "desktop/hotlist_old.h"
+#include "desktop/hotlist.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
@@ -190,7 +190,7 @@ MENUHANDLER(export)
 		gchar *filename = gtk_file_chooser_get_filename(
 				GTK_FILE_CHOOSER(save_dialog));
 		
-		hotlist_old_export(filename);		
+		hotlist_export(filename, NULL);		
 		g_free(filename);
 	}
 	
@@ -201,38 +201,38 @@ MENUHANDLER(export)
 
 MENUHANDLER(new_folder)
 {
-	hotlist_old_add_folder(true);
+	hotlist_add_folder(NULL, false, 0);
 	return TRUE;
 }
 
 MENUHANDLER(new_entry)
 {
-	hotlist_old_add_entry(true);
+	hotlist_add_entry(NULL, NULL, false, 0);
 	return TRUE;
 }
 
 /* edit menu */
 MENUHANDLER(edit_selected)
 {
-	hotlist_old_edit_selected();
+	hotlist_edit_selection();
 	return TRUE;
 }
 
 MENUHANDLER(delete_selected)
 {
-	hotlist_old_delete_selected();
+	hotlist_keypress(KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	hotlist_old_select_all();
+	hotlist_keypress(KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	hotlist_old_clear_selection();
+	hotlist_keypress(KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 
@@ -275,6 +275,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	hotlist_old_launch_selected(true);
+	hotlist_keypress(KEY_CR);
 	return TRUE;
 }

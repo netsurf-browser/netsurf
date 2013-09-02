@@ -24,7 +24,6 @@
 #include <stdlib.h>
 
 #include "content/urldb.h"
-#include "desktop/browser.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/treeview.h"
 #include "utils/messages.h"

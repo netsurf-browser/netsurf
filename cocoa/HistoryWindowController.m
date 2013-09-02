@@ -20,7 +20,7 @@
 #import "cocoa/Tree.h"
 #import "cocoa/TreeView.h"
 
-#import "desktop/history_global_core.h"
+#import "desktop/global_history.h"
 
 @implementation HistoryWindowController
 

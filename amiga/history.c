@@ -18,7 +18,6 @@
 
 #include "amiga/history.h"
 #include "amiga/tree.h"
-#include "desktop/history_global_core.h"
 #include <proto/exec.h>
 #include "amiga/tree.h"
 

@@ -55,9 +55,9 @@
 #include "amiga/filetype.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
-#include "desktop/cookies_old.h"
-#include "desktop/history_global_core.h"
-#include "desktop/hotlist_old.h"
+#include "desktop/cookie_manager.h"
+#include "desktop/global_history.h"
+#include "desktop/hotlist.h"
 #include "desktop/sslcert_viewer.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -324,11 +324,13 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 				}
 
 			}
+#if 0
 			else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
 				(tw != twin) && (tw->type == AMI_TREE_HOTLIST))
 			{
-				hotlist_old_add_page_xy(tree_url_node_get_url(selected_node), x, y);
+				hotlist_add_entry(tree_url_node_get_url(selected_node), NULL, true, y);
 			}
+#endif
 		}
 		tree_drag_end(twin->tree, twin->mouse_state,
 			twin->drag_x, twin->drag_y,
@@ -997,9 +999,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 										AddPart(fname,savereq->fr_File,1024);
 										ami_update_pointer(twin->win, GUI_POINTER_WAIT);
 										if(twin->type == AMI_TREE_HISTORY)
-											history_global_export(fname);
+											global_history_export(fname, NULL);
 										else if(twin->type == AMI_TREE_HOTLIST)
-											hotlist_old_export(fname);
+											hotlist_export(fname, NULL);
 										ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 									}
 								break;
@@ -1142,13 +1144,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											history_global_delete_selected();
+											global_history_keypress(KEY_DELETE_LEFT);
 										break;
 										case AMI_TREE_COOKIES:
-											cookies_delete_selected();
+											cookie_manager_keypress(KEY_DELETE_LEFT);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_old_delete_selected();
+											hotlist_keypress(KEY_DELETE_LEFT);
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1158,13 +1160,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											history_global_select_all();
+											global_history_keypress(KEY_SELECT_ALL);
 										break;
 										case AMI_TREE_COOKIES:
-											cookies_select_all();
+											cookie_manager_keypress(KEY_SELECT_ALL);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_old_select_all();
+											hotlist_keypress(KEY_SELECT_ALL);
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1174,13 +1176,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											history_global_clear_selection();
+											global_history_keypress(KEY_CLEAR_SELECTION);
 										break;
 										case AMI_TREE_COOKIES:
-											cookies_clear_selection();
+											cookie_manager_keypress(KEY_CLEAR_SELECTION);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_old_clear_selection();
+											hotlist_keypress(KEY_CLEAR_SELECTION);
 										break;
 									}
 									ami_tree_update_buttons(twin);

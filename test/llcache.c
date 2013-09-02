@@ -105,24 +105,24 @@ char *url_to_path(const char *url)
  * Things that are absolutely not reasonable, and should disappear            *
  ******************************************************************************/
 
-#include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/gui.h"
 #include "desktop/tree.h"
 
-/* desktop/cookies_old.h -- used by urldb 
+/* desktop/cookie_manager.h -- used by urldb 
  *
  * URLdb should have a cookies update event + handler registration
  */
-bool cookies_schedule_update(const struct cookie_data *data)
+bool cookie_manager_add(const struct cookie_data *data)
 {
 	return true;
 }
 
-/* desktop/cookies_old.h -- used by urldb 
+/* desktop/cookie_manager.h -- used by urldb 
  *
  * URLdb should have a cookies removal handler registration
  */
-void cookies_remove(const struct cookie_data *data)
+void cookie_manager_remove(const struct cookie_data *data)
 {
 }
 

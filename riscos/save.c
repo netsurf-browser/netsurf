@@ -37,8 +37,8 @@
 #include "oslib/wimpspriteop.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/hotlist_old.h"
-#include "desktop/history_global_core.h"
+#include "desktop/hotlist.h"
+#include "desktop/global_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
@@ -882,7 +882,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 					LINK_TEXT, path);
 
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
-			if (!hotlist_old_export(path))
+			if (hotlist_export(path, NULL) != NSERROR_OK)
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
@@ -890,7 +890,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 						error->errnum, error->errmess));
 			break;
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
-			if (!history_global_export(path))
+			if (global_history_export(path, NULL) != NSERROR_OK)
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)

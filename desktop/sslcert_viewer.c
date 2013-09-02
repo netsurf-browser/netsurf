@@ -27,7 +27,6 @@
 
 #include "content/fetch.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/treeview.h"
 #include "utils/messages.h"

@@ -18,9 +18,10 @@
  */
 
 
-#include "desktop/history_global_core.h"
+#include "desktop/global_history.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "desktop/textinput.h"
 #include "gtk/gui.h"
 #include "gtk/history.h"
 #include "gtk/plotters.h"
@@ -184,7 +185,7 @@ MENUHANDLER(export)
 		gchar *filename = gtk_file_chooser_get_filename(
 				GTK_FILE_CHOOSER(save_dialog));
 		
-		history_global_export(filename);		
+		global_history_export(filename, NULL);		
 		g_free(filename);
 	}
 	
@@ -196,25 +197,26 @@ MENUHANDLER(export)
 /* edit menu */
 MENUHANDLER(delete_selected)
 {
-	history_global_delete_selected();
+	global_history_keypress(KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(delete_all)
 {
-	history_global_delete_all();
+	global_history_keypress(KEY_SELECT_ALL);
+	global_history_keypress(KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	history_global_select_all();
+	global_history_keypress(KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	history_global_clear_selection();
+	global_history_keypress(KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 
@@ -257,6 +259,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	history_global_launch_selected(true);
+	global_history_keypress(KEY_CR);
 	return TRUE;
 }

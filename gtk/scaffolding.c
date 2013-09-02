@@ -34,7 +34,7 @@
 #include "css/utils.h"
 #include "desktop/browser_private.h"
 #include "desktop/local_history.h"
-#include "desktop/hotlist_old.h"
+#include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -1540,7 +1540,7 @@ MULTIHANDLER(addbookmarks)
 	if (bw == NULL || bw->current_content == NULL ||
 			hlcache_handle_get_url(bw->current_content) == NULL)
 		return TRUE;
-	hotlist_old_add_page(nsurl_access(hlcache_handle_get_url(bw->current_content)));
+	hotlist_add_url(hlcache_handle_get_url(bw->current_content));
 	return TRUE;
 }
 

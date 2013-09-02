@@ -21,9 +21,10 @@
  */
 
 
-#include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "desktop/textinput.h"
 #include "utils/log.h"
 #include "gtk/gui.h"
 #include "gtk/cookies.h"
@@ -160,25 +161,26 @@ void nsgtk_cookies_destroy(void)
 /* edit menu */
 MENUHANDLER(delete_selected)
 {
-	cookies_delete_selected();
+	cookie_manager_keypress(KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(delete_all)
 {
-	cookies_delete_all();
+	cookie_manager_keypress(KEY_SELECT_ALL);
+	cookie_manager_keypress(KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	cookies_select_all();
+	cookie_manager_keypress(KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	cookies_clear_selection();
+	cookie_manager_keypress(KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 

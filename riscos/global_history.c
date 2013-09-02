@@ -30,7 +30,6 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "content/urldb.h"
-#include "desktop/history_global_core.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
@@ -186,7 +185,7 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		history_global_delete_selected();
+		global_history_keypress(KEY_DELETE_LEFT);
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -206,7 +205,7 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		history_global_launch_selected(false);
+		global_history_keypress(KEY_CR);
 		break;
 
 	default:
@@ -343,16 +342,16 @@ bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		history_global_collapse_addresses();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		history_global_launch_selected(false);
+		global_history_keypress(KEY_CR);
 		return true;
 	case TREE_SELECTION_DELETE:
-		history_global_delete_selected();
+		global_history_keypress(KEY_DELETE_LEFT);
 		return true;
 	case TREE_SELECT_ALL:
-		history_global_select_all();
+		global_history_keypress(KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		history_global_clear_selection();
+		global_history_keypress(KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(global_history_window.toolbar,

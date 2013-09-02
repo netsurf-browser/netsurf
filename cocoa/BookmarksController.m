@@ -24,7 +24,7 @@
 #import "cocoa/gui.h"
 
 #import "desktop/browser_private.h"
-#import "desktop/hotlist_old.h"
+#import "desktop/hotlist.h"
 #import "desktop/tree.h"
 #import "utils/messages.h"
 
@@ -66,7 +66,7 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) save;
 {
-	hotlist_old_export( cocoa_hotlist_path() );
+	hotlist_export( cocoa_hotlist_path(), NULL );
 }
 
 - (void) dealloc;
@@ -164,8 +164,7 @@ static const char *cocoa_hotlist_path( void )
 {
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
 	if (bw && bw->current_content) {
-		const char *url = nsurl_access(hlcache_handle_get_url( bw->current_content ));
-		hotlist_old_add_page( url );
+		hotlist_add_url( nsurl_access(hlcache_handle_get_url( bw->current_content )) );
 	}
 }
 
@@ -198,17 +197,17 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) editSelected: (id) sender;
 {
-	hotlist_old_edit_selected();
+	hotlist_edit_selection();
 }
 
 - (IBAction) deleteSelected: (id) sender;
 {
-	hotlist_old_delete_selected();
+	hotlist_keypress(KEY_DELETE_LEFT);
 }
 
 - (IBAction) addFolder: (id) sender;
 {
-	hotlist_old_add_folder(true);
+	hotlist_add_folder(NULL, false, 0);
 }
 
 @end

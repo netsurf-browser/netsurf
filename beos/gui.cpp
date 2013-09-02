@@ -50,7 +50,6 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/401login.h"
 #include "desktop/browser_private.h"
-#include "desktop/cookies_old.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -1076,11 +1075,6 @@ char *url_to_path(const char *url)
 	curl_free(url_path);
 
 	return path;
-}
-
-bool cookies_update(const char *domain, const struct cookie_data *data)
-{
-	return true;
 }
 
 static void *myrealloc(void *ptr, size_t len, void *pw)

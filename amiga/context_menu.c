@@ -41,7 +41,7 @@
 #include "amiga/utf8.h"
 #include "desktop/browser_private.h"
 #include "desktop/local_history.h"
-#include "desktop/hotlist_old.h"
+#include "desktop/hotlist.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "render/form.h"
@@ -767,7 +767,14 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_URLHOTLIST:
 			case CMID_PAGEHOTLIST:
-				hotlist_old_add_page(userdata);
+			{
+				nsurl *nsurl;
+				if (nsurl_create(url, &nsurl) != NSERROR_OK)
+					break;
+
+				hotlist_add_url(nsurl);
+				nsurl_unref(nsurl);
+			}
 			break;
 
 			case CMID_FRAMECOPYURL:
@@ -1215,7 +1222,7 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_EDITFOLDER:
-				hotlist_old_edit_selected();
+				hotlist_edit_selection();
 			break;
 
 			case CMID_TREE_EDITTITLE:
@@ -1227,11 +1234,11 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_NEWFOLDER:
-				hotlist_old_add_folder(true);
+				hotlist_add_folder(NULL, false, 0);
 			break;
 
 			case CMID_TREE_NEWITEM:
-				hotlist_old_add_entry(true);
+				hotlist_add_entry(NULL, NULL, false, 0);
 			break;
 
 			case CMID_TREE_SETDEFAULT:

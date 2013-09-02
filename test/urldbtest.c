@@ -32,7 +32,7 @@
 #include "image/bitmap.h"
 #include "content/content.h"
 #include "content/urldb.h"
-#include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "utils/nsoption.h"
 #ifdef riscos
 /** \todo lose this */
@@ -52,12 +52,12 @@ static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str), lwc_string_data(str)));
 }
 
-bool cookies_schedule_update(const struct cookie_data *data)
+bool cookie_manager_add(const struct cookie_data *data)
 {
 	return true;
 }
 
-void cookies_remove(const struct cookie_data *data)
+void cookie_manager_remove(const struct cookie_data *data)
 {
 }
 

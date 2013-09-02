@@ -100,7 +100,6 @@
 #include "image/bitmap.h"
 #include "content/content.h"
 #include "content/urldb.h"
-#include "desktop/cookies_old.h"
 #include "desktop/cookie_manager.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"

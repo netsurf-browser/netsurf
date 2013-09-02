@@ -46,7 +46,7 @@
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/browser_private.h"
-#include "desktop/cookies_old.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"
 #include "desktop/local_history.h"
@@ -2763,7 +2763,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case COOKIES_DELETE:
-		cookies_delete_all();
+		cookie_manager_keypress(KEY_SELECT_ALL);
+		cookie_manager_keypress(KEY_DELETE_LEFT);
 		break;
 
 		/* page actions */

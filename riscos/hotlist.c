@@ -33,7 +33,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/hotlist_old.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
@@ -228,7 +227,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		hotlist_old_delete_selected();
+		hotlist_keypress(KEY_DELETE_LEFT);
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -248,11 +247,11 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		hotlist_old_launch_selected(false);
+		hotlist_keypress(KEY_CR);
 		break;
 
 	case TOOLBAR_BUTTON_CREATE:
-		hotlist_old_add_folder(true);
+		hotlist_add_folder(NULL, false, 0);
 		break;
 
 	default:
@@ -367,10 +366,10 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_NEW_FOLDER:
-		hotlist_old_add_folder(true);
+		hotlist_add_folder(NULL, false, 0);
 		return true;
 	case TREE_NEW_LINK:
-		hotlist_old_add_entry(true);
+		hotlist_add_entry(NULL, NULL, false, 0);
 		return true;
 	case TREE_EXPAND_ALL:
 		hotlist_old_expand_all();
@@ -391,19 +390,19 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		hotlist_old_collapse_addresses();
 		return true;
 	case TREE_SELECTION_EDIT:
-		hotlist_old_edit_selected();
+		hotlist_edit_selection();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		hotlist_old_launch_selected(false);
+		hotlist_keypress(KEY_CR);
 		return true;
 	case TREE_SELECTION_DELETE:
-		hotlist_old_delete_selected();
+		hotlist_keypress(KEY_DELETE_LEFT);
 		return true;
 	case TREE_SELECT_ALL:
-		hotlist_old_select_all();
+		hotlist_keypress(KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		hotlist_old_clear_selection();
+		hotlist_keypress(KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(hotlist_window.toolbar,
@@ -469,12 +468,16 @@ void ro_gui_hotlist_add_page(const char *url)
 	if (url == NULL)
 		return;
 
+	if (nsurl_create(url, &nsurl) != NSERROR_OK)
+		return;
+
 	/* If we're not using external hotlists, add the page to NetSurf's
 	 * own hotlist and return...
 	 */
 
 	if (!nsoption_bool(external_hotlists)) {
-		hotlist_old_add_page(url);
+		hotlist_add_url(nsurl);
+		nsurl_unref(nsurl);
 		return;
 	}
 
@@ -487,8 +490,6 @@ void ro_gui_hotlist_add_page(const char *url)
 
 	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
 
-	if (nsurl_create(url, &nsurl) != NSERROR_OK)
-		return;
 	data = urldb_get_url_data(nsurl);
 	if (data == NULL)
 		return;
@@ -534,8 +535,15 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 {
 	LOG(("Hotlist AddURL Bounced"));
 
-	if (hotlist_url != NULL)
-		hotlist_old_add_page(hotlist_url);
+	if (hotlist_url != NULL) {
+		nsurl *nsurl;
+
+		if (nsurl_create(hotlist_url, &nsurl) != NSERROR_OK)
+			return;
+
+		hotlist_add_page(nsurl);
+		nsurl_unref(nsurl);
+	}
 
 	ro_gui_hotlist_add_cleanup();
 
@@ -591,14 +599,24 @@ void ro_gui_hotlist_add_cleanup(void)
 void ro_gui_hotlist_url_drop(wimp_message *message, const char *url)
 {
 	int x, y;
+	nsurl *nsurl;
+
 	if (hotlist_window.window != message->data.data_xfer.w)
+		return;
+
+	if (url == NULL)
+		return;
+
+	if (nsurl_create(url, &nsurl) != NSERROR_OK)
 		return;
 
 	ro_gui_tree_get_tree_coordinates(hotlist_window.tree,
 				message->data.data_xfer.pos.x,
 				message->data.data_xfer.pos.y,
 				&x, &y);
-	hotlist_old_add_page_xy(url, x, y);
+
+	hotlist_add_entry(nsurl, NULL, true, y);
+	nsurl_unref(nsurl);
 }
 #endif
 

@@ -25,7 +25,7 @@
 #include "utils/nsoption.h"
 #include "desktop/tree.h"
 #include "desktop/gui.h"
-#include "desktop/history_global_core.h"
+#include "desktop/global_history.h"
 #include "desktop/browser.h"
 #include "utils/messages.h"
 #include "content/content.h"

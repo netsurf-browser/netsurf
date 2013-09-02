@@ -20,7 +20,6 @@
 #include <stdlib.h>
 
 #include "content/urldb.h"
-#include "desktop/browser.h"
 #include "desktop/global_history.h"
 #include "desktop/treeview.h"
 #include "utils/messages.h"

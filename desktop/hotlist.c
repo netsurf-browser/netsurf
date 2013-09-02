@@ -24,7 +24,6 @@
 #include <dom/bindings/hubbub/parser.h>
 
 #include "content/urldb.h"
-#include "desktop/browser.h"
 #include "desktop/hotlist.h"
 #include "desktop/treeview.h"
 #include "utils/corestrings.h"
@@ -1336,7 +1335,7 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
 	if (title != NULL) {
 		title = strdup(title);
 		if (title == NULL) {
-			nsurl_ref(url);
+			nsurl_unref(url);
 			return NSERROR_NOMEM;
 		}
 	}

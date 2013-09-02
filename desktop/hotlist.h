@@ -20,8 +20,12 @@
 #define _NETSURF_DESKTOP_HOTLIST_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
+#include "desktop/browser.h"
 #include "desktop/core_window.h"
+#include "desktop/textinput.h"
+#include "utils/errors.h"
 #include "utils/nsurl.h"
 
 

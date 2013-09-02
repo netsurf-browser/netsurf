@@ -28,7 +28,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "utils/nsoption.h"
-#include "desktop/hotlist_old.h"
+#include "desktop/hotlist.h"
 #include "desktop/tree.h"
 #include "desktop/gui.h"
 #include "utils/log.h"
@@ -61,20 +61,20 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 				switch	(msg[4]) {
 					case TOOLBAR_HOTLIST_CREATE_FOLDER:
-						hotlist_old_add_folder(true);
+						hotlist_add_folder(NULL, false, 0);
 						break;
 
 					case TOOLBAR_HOTLIST_ADD:
-						atari_hotlist_add_page("http://www.de", "");
+						atari_hotlist_add_page(NULL, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_DELETE:
-						hotlist_old_delete_selected();
+						hotlist_keypress(KEY_DELETE_LEFT);
 						gemtk_wm_exec_redraw(tv->window, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
-						hotlist_old_edit_selected();
+						hotlist_edit_selection();
 						break;
 				}
 
@@ -207,15 +207,20 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	struct node * root;
 	struct node * selected = NULL;
 	struct node * folder = NULL;
+	nsurl *nsurl;
 	NSTREEVIEW tv = hl.tv;
 	if(hl.tv == NULL )
 		return;
 
 	atari_hotlist_open();
 
+	if (nsurl_create(url, &nsurl) != NSERROR_OK)
+		return;
+
 	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
-		hotlist_old_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
+		hotlist_add_entry( nsurl, title, true, hl.tv->click.y );
 	} else {
-		hotlist_old_add_page( url );
+		hotlist_add_url( nsurl );
 	}
+	nsurl_unref(nsurl);
 }
