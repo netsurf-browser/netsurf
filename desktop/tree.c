@@ -272,10 +272,6 @@ static bool treeview_test_init(struct tree *tree)
 		return true;
 	}
 
-	/* Check if we're testing the new treeview */
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
-
 	treeview_inits++;
 
 	if (treeview_inits == 1)
@@ -321,10 +317,6 @@ static bool treeview_test_fini(struct tree *tree)
 		return true;
 	}
 
-	/* Check if we're testing the new treeview */
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
-
 	if (tree->flags & TREE_COOKIES) {
 		err = cookie_manager_fini();
 		if (err != NSERROR_OK) {
@@ -367,10 +359,6 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 		return true;
 	}
 
-	/* Check if we're testing the new treeview */
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
-
 	if (tree->flags & TREE_COOKIES) {
 		cookie_manager_redraw(x, y, &clip, ctx);
 		return true;
@@ -395,10 +383,6 @@ static bool treeview_test_mouse_action(struct tree *tree,
 		return true;
 	}
 
-	/* Check if we're testing the new treeview */
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
-
 	if (tree->flags & TREE_COOKIES) {
 		cookie_manager_mouse_action(mouse, x, y);
 		return true;
@@ -421,10 +405,6 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 		sslcert_viewer_keypress(ssl_current_session, key);
 		return true;
 	}
-
-	/* Check if we're testing the new treeview */
-	if (nsoption_bool(temp_treeview_test) == false)
-		return false;
 
 	if (tree->flags & TREE_COOKIES) {
 		cookie_manager_keypress(key);
