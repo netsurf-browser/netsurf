@@ -50,7 +50,6 @@ const struct toolbar_callbacks *ro_treeview_get_toolbar_callbacks(void);
 
 struct tree *ro_treeview_get_tree(ro_treeview *tv);
 wimp_w ro_treeview_get_window(ro_treeview *tv);
-bool ro_treeview_has_selection(ro_treeview *tv);
 
 void ro_treeview_set_origin(ro_treeview *tv, int x, int y);
 void ro_treeview_mouse_at(wimp_pointer *pointer);

@@ -579,8 +579,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 		}
 	}
 
-	tree_set_icon_dir(strdup("ENV:Sys"));
-
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
 	nsoption_set_bool(context_menu, false);

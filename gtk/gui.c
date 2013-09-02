@@ -316,10 +316,6 @@ static void check_options(char **respath)
 	/* user options should be stored in the users home directory */
 	snprintf(buf, PATH_MAX, "%s/.netsurf/Choices", hdir);
 	options_file_location = strdup(buf);
-	
-	filepath_sfinddef(respath, buf, "icons/", "~/.netsurf/");
-	LOG(("Using '%s' as Tree icons dir", buf));
-	tree_set_icon_dir(strdup(buf));
 
 	filepath_sfinddef(respath, buf, "Print", "~/.netsurf/");
 	LOG(("Using '%s' as Print Settings file", buf));

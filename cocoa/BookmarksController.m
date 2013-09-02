@@ -97,7 +97,6 @@ static const char *cocoa_hotlist_path( void )
 			[menu addItem: [[item copy] autorelease]];
 		}
 		hasSeparator = false;
-		node = [tree rootNode];
 	}
 	
 	for (struct node *child = tree_node_get_child( node ); 

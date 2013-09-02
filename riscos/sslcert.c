@@ -158,8 +158,6 @@ void gui_cert_verify(nsurl *url,
 		return;
 	}
 
-	tree_set_redraw(ro_treeview_get_tree(sslcert_window->tv), true);
-
 	/* Set up the certificate window event handling.
 	 *
 	 * (The action buttons are registered as button events, not OK and

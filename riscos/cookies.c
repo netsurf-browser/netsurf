@@ -30,6 +30,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "content/urldb.h"
+#include "desktop/cookie_manager.h"
 #include "desktop/cookies_old.h"
 #include "desktop/tree.h"
 #include "riscos/cookies.h"
@@ -165,8 +166,6 @@ void ro_gui_cookies_postinitialise(void)
 
 void ro_gui_cookies_open(void)
 {
-	tree_set_redraw(ro_treeview_get_tree(cookies_window.tv), true);
-
 	ro_gui_cookies_toolbar_update_buttons();
 
 	if (!ro_gui_dialog_open_top(cookies_window.window,
@@ -220,7 +219,7 @@ void ro_gui_cookies_toolbar_update_buttons(void)
 {
 	ro_toolbar_set_button_shaded_state(cookies_window.toolbar,
 			TOOLBAR_BUTTON_DELETE,
-			!ro_treeview_has_selection(cookies_window.tv));
+			!cookie_manager_has_selection());
 }
 
 
@@ -256,7 +255,7 @@ bool ro_gui_cookies_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (menu != cookies_window.menu)
 		return false;
 
-	selection = ro_treeview_has_selection(cookies_window.tv);
+	selection = cookie_manager_has_selection();
 
 	ro_gui_menu_set_entry_shaded(cookies_window.menu,
 			TREE_SELECTION, !selection);

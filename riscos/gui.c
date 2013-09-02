@@ -429,7 +429,6 @@ static void gui_init(int argc, char** argv)
 	int length;
 	char *nsdir_temp;
 	byte *base;
-	char *tree_icons_dir;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
 	 * which we're not interested in, and underflow which is incorrectly
@@ -457,12 +456,6 @@ static void gui_init(int argc, char** argv)
 #endif
 			ro_plot_patterned_lines = false;
 	}
-
-	tree_icons_dir = strdup("NetSurf:Resources.Icons");
-	if (tree_icons_dir == NULL)
-		die("Failed initialising string options");
-	tree_set_icon_dir(tree_icons_dir);
-
 
 	/* Create our choices directories */
 	ro_gui_create_dirs();

@@ -59,11 +59,6 @@ static const struct treeview_table cocoa_tree_callbacks = {
 	[super dealloc];
 }
 
-- (struct node *) rootNode;
-{
-	return tree_get_root( tree );
-}
-
 - (struct tree *) tree;
 {
 	return tree;
@@ -76,15 +71,11 @@ static const struct treeview_table cocoa_tree_callbacks = {
 
 - (void) setRedrawing: (BOOL) newRedrawing;
 {
-	tree_set_redraw( tree, newRedrawing );
 }
 
 
 + (void) initialize;
 {
-	if (self == [Tree class]) {
-		tree_set_icon_dir( strdup( [[[NSBundle mainBundle] pathForResource: @"Icons" ofType: @""] UTF8String] ) );
-	}
 }
 
 //MARK: -

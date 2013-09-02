@@ -665,7 +665,6 @@ void ami_tree_open(struct treeview_window *twin,int type)
 
 	ami_tree_update_buttons(twin);
 	ami_tree_resized(twin->tree, twin->max_width, twin->max_height, twin);
-	tree_set_redraw(twin->tree, true);
 	ami_tree_draw(twin);
 }
 
@@ -673,7 +672,6 @@ void ami_tree_close(struct treeview_window *twin)
 {
 	int i;
 
-	tree_set_redraw(twin->tree, false);
 	twin->win = NULL;
 	DisposeObject(twin->objects[OID_MAIN]);
 	DelObjectNoFree(twin->node);

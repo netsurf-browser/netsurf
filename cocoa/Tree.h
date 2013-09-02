@@ -42,7 +42,6 @@
 
 - initWithFlags: (unsigned int) flags;
 
-- (struct node *) rootNode;
 - (struct tree *) tree;
 
 @end

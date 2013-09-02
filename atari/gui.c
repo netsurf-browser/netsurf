@@ -1004,8 +1004,6 @@ static void gui_init(int argc, char** argv)
     LOG(("Initializing plotters..."));
     plot_init(nsoption_charp(atari_font_driver));
 
-    tree_set_icon_dir(nsoption_charp(tree_icons_path));
-
     aes_event_in.emi_m1leave = MO_LEAVE;
     aes_event_in.emi_m1.g_w = 1;
     aes_event_in.emi_m1.g_h = 1;

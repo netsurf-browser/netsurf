@@ -223,11 +223,7 @@ static void __CDECL on_mbutton_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
 			cur_rel_x = origin_rel_x;
 			cur_rel_y = origin_rel_y;
 
-			if( tree_is_edited(tv->tree) ){
-				gem_set_cursor(&gem_cursors.ibeam);
-			} else {
-				gem_set_cursor(&gem_cursors.hand);
-			}
+			gem_set_cursor(&gem_cursors.hand);
 
 			tv->startdrag.x = origin_rel_x;
 			tv->startdrag.y = origin_rel_y;
@@ -292,7 +288,6 @@ void atari_treeview_open( NSTREEVIEW tv )
 {
 	if( tv->window != NULL ) {
 		gemtk_wm_link(tv->window);
-		tree_set_redraw(tv->tree, true);
 
 	}
 }
@@ -300,7 +295,6 @@ void atari_treeview_open( NSTREEVIEW tv )
 void atari_treeview_close(NSTREEVIEW tv)
 {
 	if(tv->window != NULL) {
-		tree_set_redraw(tv->tree, false);
 		gemtk_wm_unlink(tv->window);
 	}
 }

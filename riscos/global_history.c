@@ -31,6 +31,7 @@
 #include "oslib/wimpspriteop.h"
 #include "content/urldb.h"
 #include "desktop/history_global_core.h"
+#include "desktop/global_history.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
@@ -171,8 +172,6 @@ void ro_gui_global_history_postinitialise(void)
 
 void ro_gui_global_history_open(void)
 {
-	tree_set_redraw(ro_treeview_get_tree(global_history_window.tv), true);
-
 	ro_gui_global_history_toolbar_update_buttons();
 
 	if (!ro_gui_dialog_open_top(global_history_window.window,
@@ -230,11 +229,11 @@ void ro_gui_global_history_toolbar_update_buttons(void)
 {
 	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
 			TOOLBAR_BUTTON_DELETE,
-			!ro_treeview_has_selection(global_history_window.tv));
+			!global_history_has_selection());
 
 	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
 			TOOLBAR_BUTTON_LAUNCH,
-			!ro_treeview_has_selection(global_history_window.tv));
+			!global_history_has_selection());
 }
 
 
@@ -270,7 +269,7 @@ bool ro_gui_global_history_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (menu != global_history_window.menu)
 		return false;
 
-	selection = ro_treeview_has_selection(global_history_window.tv);
+	selection = global_history_has_selection();
 
 	ro_gui_menu_set_entry_shaded(global_history_window.menu,
 			TREE_SELECTION, !selection);

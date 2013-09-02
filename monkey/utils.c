@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/config.h"
 #include "utils/utils.h"
 #include "utils/url.h"
 #include "utils/utf8.h"

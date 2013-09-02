@@ -284,22 +284,6 @@ wimp_w ro_treeview_get_window(ro_treeview *tv)
 }
 
 /**
- * Return an indication of whether the supplied treeview object contains a
- * selection.
- *
- * \param  *tv		The ro_treeview object of interest.
- * \return		true if there is a selection in the tree; else false.
- */
-
-bool ro_treeview_has_selection(ro_treeview *tv)
-{
-	if (tv != NULL)
-		return tree_node_has_selection(tree_get_root(tv->tree));
-	else
-		return false;
-}
-
-/**
  * Callback to force a redraw of part of the treeview window.
  *
  * \param  x		Min X Coordinate of area to be redrawn.
@@ -853,8 +837,8 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 	mouse = 0;
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		if (!tree_node_has_selection(tree_get_root(tv->tree)))
-			mouse |= BROWSER_MOUSE_CLICK_1;
+		/* TODO: test for no selection, and pass click to select node */
+		/* mouse |= BROWSER_MOUSE_CLICK_1; */
 	} else {
 		mouse = ro_gui_mouse_click_state(pointer->buttons,
 				wimp_BUTTON_DOUBLE_CLICK_DRAG);

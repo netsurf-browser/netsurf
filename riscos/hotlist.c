@@ -34,6 +34,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/hotlist_old.h"
+#include "desktop/hotlist.h"
 #include "desktop/tree.h"
 #include "riscos/dialog.h"
 #include "riscos/hotlist.h"
@@ -215,8 +216,6 @@ void ro_gui_hotlist_open(void)
 				error->errmess);
 	}
 
-	tree_set_redraw(ro_treeview_get_tree(hotlist_window.tv), true);
-
 	ro_gui_hotlist_toolbar_update_buttons();
 
 	if (!ro_gui_dialog_open_top(hotlist_window.window,
@@ -277,11 +276,11 @@ void ro_gui_hotlist_toolbar_update_buttons(void)
 {
 	ro_toolbar_set_button_shaded_state(hotlist_window.toolbar,
 			TOOLBAR_BUTTON_DELETE,
-			!ro_treeview_has_selection(hotlist_window.tv));
+			!hotlist_has_selection());
 
 	ro_toolbar_set_button_shaded_state(hotlist_window.toolbar,
 			TOOLBAR_BUTTON_LAUNCH,
-			!ro_treeview_has_selection(hotlist_window.tv));
+			!hotlist_has_selection());
 }
 
 
@@ -316,7 +315,7 @@ bool ro_gui_hotlist_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (menu != hotlist_window.menu)
 		return false;
 
-	selection = ro_treeview_has_selection(hotlist_window.tv);
+	selection = hotlist_has_selection();
 
 	ro_gui_menu_set_entry_shaded(hotlist_window.menu,
 			TREE_SELECTION, !selection);
