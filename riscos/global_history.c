@@ -122,11 +122,6 @@ void ro_gui_global_history_postinitialise(void)
 	ro_toolbar_update_client_data(global_history_window.toolbar,
 			global_history_window.tv);
 
-	/* Initialise the global history into the tree. */
-
-	history_global_initialise(
-		ro_treeview_get_tree(global_history_window.tv), NULL);
-
 	/* Build the global history window menu. */
 
 	static const struct ns_menu global_history_definition = {

@@ -31,14 +31,12 @@
 	if ((self = [super initWithWindowNibName: @"HistoryWindow"]) == nil) return nil;
 	
 	tree = [[Tree alloc] initWithFlags: TREE_HISTORY];
-	history_global_initialise( [tree tree], "directory.png" );
 	
 	return self;
 }
 
 - (void) dealloc;
 {
-	history_global_cleanup();
 	[tree release];
 	[self setView: nil];
 	

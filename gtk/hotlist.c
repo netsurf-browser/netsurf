@@ -133,9 +133,6 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 	
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
-
-	hotlist_old_initialise(nsgtk_treeview_get_tree(hotlist_window),
-			   nsoption_charp(hotlist_path), NULL);
 		
 	nsgtk_hotlist_init_menu();
 
@@ -168,7 +165,6 @@ void nsgtk_hotlist_init_menu(void)
 void nsgtk_hotlist_destroy(void)
 {
 	/* TODO: what about gladeFile? */
-	hotlist_old_cleanup(nsoption_charp(hotlist_path));
 	nsgtk_treeview_destroy(hotlist_window);
 }
 

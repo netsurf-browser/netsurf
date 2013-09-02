@@ -117,12 +117,6 @@ void ro_gui_cookies_postinitialise(void)
 	ro_toolbar_update_client_data(cookies_window.toolbar,
 			cookies_window.tv);
 
-	/* Initialise the cookies into the tree. */
-
-	cookies_initialise(ro_treeview_get_tree(cookies_window.tv),
-			   NULL, NULL);
-
-
 	/* Build the cookies window menu. */
 
 	static const struct ns_menu cookies_definition = {

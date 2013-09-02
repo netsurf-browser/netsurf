@@ -123,9 +123,6 @@ bool nsgtk_cookies_init(const char *glade_file_location)
 	
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, cookies_window);
-	
-	cookies_initialise(nsgtk_treeview_get_tree(cookies_window),
-			   NULL, NULL);
 		
 	nsgtk_cookies_init_menu();
 
@@ -156,7 +153,6 @@ void nsgtk_cookies_init_menu()
 void nsgtk_cookies_destroy(void)
 {
 	/* TODO: what about gladeFile? */
-	cookies_cleanup();
 	nsgtk_treeview_destroy(cookies_window);
 }
 

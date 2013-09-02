@@ -126,9 +126,6 @@ bool nsgtk_history_init(const char *glade_file_location)
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, global_history_window);
 	
-	history_global_initialise(
-		nsgtk_treeview_get_tree(global_history_window), NULL);
-	
 	nsgtk_history_init_menu();
 
 	return true;
@@ -162,7 +159,6 @@ void nsgtk_history_init_menu(void)
 void nsgtk_history_destroy(void)
 {
 	/* TODO: what about gladeFile? */
-	history_global_cleanup();
 	nsgtk_treeview_destroy(global_history_window);
 }
 

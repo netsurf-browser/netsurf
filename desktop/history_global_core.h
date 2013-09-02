@@ -24,9 +24,6 @@
 
 #include "desktop/tree.h"
 
-bool history_global_initialise(struct tree *tree, const char* folder_icon_name);
-void history_global_cleanup(void);
-
 bool history_global_export(const char *path);
 void history_global_delete_selected(void);
 void history_global_delete_all(void);

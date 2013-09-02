@@ -33,32 +33,6 @@
 #include "utils/log.h"
 
 
-
-/**
- * Initialises the global history tree.
- *
- * \param data		user data for the callbacks
- * \param start_redraw  callback function called before every redraw
- * \param end_redraw	callback function called after every redraw
- * \return true on success, false on memory exhaustion
- */
-bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
-{
-	if (tree == NULL)
-		return false;
-
-	return true;
-}
-
-
-/**
- * Deletes the global history tree.
- */
-void history_global_cleanup(void)
-{
-}
-
-
 /* Actions to be connected to front end specific toolbars */
 
 /**

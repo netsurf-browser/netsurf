@@ -39,31 +39,6 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-/**
- * Initialises cookies tree.
- *
- * \param data		user data for the callbacks
- * \param start_redraw  callback function called before every redraw
- * \param end_redraw	callback function called after every redraw
- * \return true on success, false on memory exhaustion
- */
-bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const char* cookie_icon_name)
-{
-
-	if (tree == NULL)
-		return false;
-
-	return true;
-}
-
-
-/**
- * Free memory and release all other resources.
- */
-void cookies_cleanup(void)
-{
-}
-
 /* Actions to be connected to front end specific toolbars */
 
 /**

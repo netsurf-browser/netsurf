@@ -27,10 +27,6 @@
 
 #include "desktop/tree.h"
 
-bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const char* cookie_icon_name);
-
-void cookies_cleanup(void);
-
 void cookies_delete_selected(void);
 void cookies_delete_all(void);
 void cookies_select_all(void);

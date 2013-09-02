@@ -35,27 +35,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
-
-
-/* exported interface documented in hotlist.h */
-bool hotlist_old_initialise(struct tree *tree, const char *hotlist_path,
-		const char* folder_icon_name)
-{
-	if (tree == NULL)
-		return false;
-
-	return true;
-}
-
-
-/**
- * Deletes the global history tree and saves the hotlist.
- * \param hotlist_path the path where the hotlist should be saved
- */
-void hotlist_old_cleanup(const char *hotlist_path)
-{
-}
-
 /**
  * Save the hotlist in a human-readable form under the given location.
  *

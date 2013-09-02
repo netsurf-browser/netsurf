@@ -139,12 +139,6 @@ void atari_hotlist_init(void)
 				return;
 			}
 
-			hotlist_old_initialise(
-				hl.tv->tree,
-				(char*)&hl.path,
-				"dir.png"
-			);
-
 		} else {
 
 		}
@@ -189,7 +183,6 @@ void atari_hotlist_destroy(void)
 		return;
 	}
 	if( hl.window != NULL ) {
-		hotlist_old_cleanup( (char*)&hl.path );
 		if (hl.open)
 			atari_hotlist_close();
 		wind_delete(gemtk_wm_get_handle(hl.window));

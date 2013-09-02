@@ -127,7 +127,6 @@ bool atari_global_history_init( void )
             return( false );
         }
 
-        history_global_initialise(gl_history.tv->tree, "dir.png");
         gl_history.init = true;
     }
 	return( true );
@@ -141,7 +140,6 @@ void atari_global_history_destroy( void )
 		return;
 	}
 	if( gl_history.window != NULL ) {
-		history_global_cleanup();
 		if( gl_history.open )
 			atari_global_history_close();
 		wind_delete(gemtk_wm_get_handle(gl_history.window));

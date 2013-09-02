@@ -60,16 +60,12 @@ void ami_hotlist_initialise(const char *hotlist_file)
 	hotlist_window = ami_tree_create(TREE_HOTLIST, NULL);
 
 	if(!hotlist_window) return;
-
-	hotlist_old_initialise(ami_tree_get_tree(hotlist_window),
-			   hotlist_file, NULL);
 			   
    ami_hotlist_add_default_dirs(ami_tree_get_tree(hotlist_window));
 }
 
 void ami_hotlist_free(const char *hotlist_file)
 {
-	hotlist_old_cleanup(hotlist_file);
 	ami_tree_destroy(hotlist_window);
 	hotlist_window = NULL;
 }

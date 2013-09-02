@@ -26,14 +26,10 @@ void ami_cookies_initialise(void)
 	cookies_window = ami_tree_create(TREE_COOKIES, NULL);
 
 	if(!cookies_window) return;
-
-	cookies_initialise(ami_tree_get_tree(cookies_window),
-			   NULL, NULL);
 }
 
 void ami_cookies_free()
 {
-	cookies_cleanup();
 	ami_tree_destroy(cookies_window);
 	cookies_window = NULL;
 }

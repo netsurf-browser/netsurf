@@ -27,14 +27,10 @@ void ami_global_history_initialise(void)
 	global_history_window = ami_tree_create(TREE_HISTORY, NULL);
 
 	if(!global_history_window) return;
-
-	history_global_initialise(ami_tree_get_tree(global_history_window),
-				  NULL);
 }
 
 void ami_global_history_free()
 {
-	history_global_cleanup();
 	ami_tree_destroy(global_history_window);
 	global_history_window = NULL;
 }
