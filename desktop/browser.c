@@ -1252,10 +1252,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 						content_get_type(c));
 
 				/* This is safe as we've just added the URL */
-				if (nsoption_bool(temp_treeview_test) == false)
-					history_global_add(urldb_get_url(url));
-				else
-					global_history_add(urldb_get_url(url));
+				global_history_add(urldb_get_url(url));
 			}
 		}
 
@@ -1287,10 +1284,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_update_favicon(c, bw, NULL);
 
 		history_update(bw->history, c);
-		if (nsoption_bool(temp_treeview_test) == false)
-			hotlist_old_visited(c);
-		else
-			hotlist_update_url(hlcache_handle_get_url(c));
+		hotlist_update_url(hlcache_handle_get_url(c));
 
 		if (bw->refresh_interval != -1)
 			schedule(bw->refresh_interval,
