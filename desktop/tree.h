@@ -18,7 +18,7 @@
  */
 
 /** \file
- * Generic tree handling (interface).
+ * deprecated compatibility layer for new treeview modules.  Do not use.
  */
 
 #ifndef _NETSURF_DESKTOP_TREE_H_
@@ -67,6 +67,7 @@ struct tree *tree_create(unsigned int flags,
 		const struct treeview_table *callbacks,
   		void *client_data);
 
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 void tree_delete(struct tree *tree);
 tree_drag_type tree_drag_status(struct tree *tree);
 void tree_draw(struct tree *tree, int x, int y,

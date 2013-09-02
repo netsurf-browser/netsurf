@@ -18,7 +18,7 @@
  */
 
 /** \file
- * Generic tree handling (implementation).
+ * deprecated compatibility layer for new treeview modules.  Do not use.
  */
 
 #include <assert.h>
@@ -292,16 +292,7 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 
 /* -------------------------------------------------------------------------- */
 
-
-
-/**
- * Creates and initialises a new tree.
- *
- * \param flags		Flag word for flags to create the new tree with
- * \param callbacks	Callback functions to support the tree in the frontend.
- * \param client_data	Data to be passed to start_redraw and end_redraw
- * \return		The newly created tree, or NULL on memory exhaustion
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 struct tree *tree_create(unsigned int flags,
 		const struct treeview_table *callbacks, void *client_data)
 {
@@ -324,31 +315,14 @@ struct tree *tree_create(unsigned int flags,
 	return tree;
 }
 
-
-/**
- * Deletes all nodes of a tree and the tree itself.
- *
- * \param tree the tree to be deleted
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 void tree_delete(struct tree *tree)
 {
 	treeview_test_fini(tree);
 	free(tree);
 }
 
-
-/**
- * Redraws a tree.
- *
- * \param tree		the tree to draw
- * \param x		X coordinate to draw the tree at (wrt plot origin)
- * \param y		Y coordinate to draw the tree at (wrt plot origin)
- * \param clip_x	minimum x of the clipping rectangle (wrt tree origin)
- * \param clip_y	minimum y of the clipping rectangle (wrt tree origin)
- * \param clip_width	width of the clipping rectangle
- * \param clip_height	height of the clipping rectangle
- * \param ctx		current redraw context
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 void tree_draw(struct tree *tree, int x, int y,
 		int clip_x, int clip_y, int clip_width, int clip_height,
 		const struct redraw_context *ctx)
@@ -359,16 +333,7 @@ void tree_draw(struct tree *tree, int x, int y,
 			clip_width, clip_height, ctx);
 }
 
-
-/**
- * Handles a mouse action for a tree
- *
- * \param tree	 the tree to handle a click for
- * \param mouse	 the mouse state
- * \param x	 X coordinate of mouse action
- * \param y	 Y coordinate of mouse action
- * \return	 whether the click was handled
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 		int y)
 {
@@ -381,17 +346,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	return false;
 }
 
-
-/**
- * Handle the end of a drag operation
- *
- * \param tree	the tree on which the drag was performed
- * \param mouse	mouse state during drag end
- * \param x0	x coordinate of drag start
- * \param y0	y coordinate of drag start
- * \param x1	x coordinate of drag end
- * \param y1	y coordinate of drag end
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 		int x1, int y1)
 {
@@ -400,14 +355,7 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 	treeview_test_mouse_action(tree, BROWSER_MOUSE_HOVER, x1, y1);
 }
 
-
-/**
- * Key press handling for a tree.
- *
- * \param tree	The tree which got the keypress
- * \param key	The ucs4 character codepoint
- * \return	true if the keypress is dealt with, false otherwise.
- */
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
 	if (treeview_test_keypress(tree, key)) {
@@ -417,6 +365,7 @@ bool tree_keypress(struct tree *tree, uint32_t key)
 	return false;
 }
 
+/** deprecated compatibility layer for new treeview modules.  Do not use. */
 tree_drag_type tree_drag_status(struct tree *tree)
 {
 	assert(tree != NULL);
