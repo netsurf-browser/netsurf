@@ -23,7 +23,7 @@
 
 void ami_cookies_initialise(void)
 {
-	cookies_window = ami_tree_create(cookies_get_tree_flags(), NULL);
+	cookies_window = ami_tree_create(TREE_COOKIES, NULL);
 
 	if(!cookies_window) return;
 

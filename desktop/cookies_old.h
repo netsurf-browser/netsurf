@@ -28,7 +28,6 @@
 #include "desktop/tree.h"
 
 bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const char* cookie_icon_name);
-unsigned int cookies_get_tree_flags(void);
 
 void cookies_cleanup(void);
 

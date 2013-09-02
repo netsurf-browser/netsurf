@@ -112,7 +112,7 @@ bool nsgtk_cookies_init(const char *glade_file_location)
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile,
 			"cookiesDrawingArea"));
 	
-	cookies_window = nsgtk_treeview_create(cookies_get_tree_flags(), window,
+	cookies_window = nsgtk_treeview_create(TREE_COOKIES, window,
 			scrolled, drawing_area);
 	
 	if (cookies_window == NULL)

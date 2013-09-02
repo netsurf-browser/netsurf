@@ -58,17 +58,6 @@ bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const c
 
 
 /**
- * Get flags with which the cookies tree should be created;
- *
- * \return the flags
- */
-unsigned int cookies_get_tree_flags(void)
-{
-	return TREE_COOKIES;
-}
-
-
-/**
  * Free memory and release all other resources.
  */
 void cookies_cleanup(void)
