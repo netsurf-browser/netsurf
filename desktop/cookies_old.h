@@ -32,24 +32,6 @@ struct cookie_data;
 bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const char* cookie_icon_name);
 unsigned int cookies_get_tree_flags(void);
 
-/**
- * Perform cookie updates and addition. The update is only scheduled here.
- * The actual update is performed in the callback function.
- *
- * \param data Data of cookie being updated.
- * \return true (for urldb_iterate_entries)
- */
-bool cookies_schedule_update(const struct cookie_data *data);
-
-/**
- * Remove a cookie from the active set.
- * The cookie is to be removed from the active set and no futher
- * references made to the cookie data.
- *
- * \param data Data of cookie being removed.
- */
-void cookies_remove(const struct cookie_data *data);
-
 void cookies_cleanup(void);
 
 void cookies_delete_selected(void);
