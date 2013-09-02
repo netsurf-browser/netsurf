@@ -29,7 +29,6 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "desktop/plotters.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
@@ -86,26 +85,6 @@ static void nsgtk_tree_resized(struct tree *tree, int width, int height, void *d
 	gtk_widget_set_size_request(GTK_WIDGET(tw->drawing_area),
 			width, height);
 	return;	
-}
-
-/**
- * Translates a content_type to the name of a respective icon
- *
- * \param content_type	content type
- * \param buffer	buffer for the icon name
- */
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	// TODO: design/acquire icons
-	switch (type) {
-		case CONTENT_HTML:
-		case CONTENT_TEXTPLAIN:
-		case CONTENT_CSS:
-		case CONTENT_IMAGE:
-		default:
-			sprintf(buffer, tree_content_icon_name);
-			break;
-	}
 }
 
 /**

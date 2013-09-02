@@ -58,7 +58,6 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
-#include "desktop/tree_url_node.h"
 #include "desktop/hotlist_old.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
@@ -540,6 +539,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 
 ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 {
+#if 0
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
@@ -560,11 +560,15 @@ ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 	}
 
 	return(item - AMI_MENU_HOTLIST);
+#else
+	return 0;
+#endif
 }
 
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin)
 {
+#if 0
 	struct node *tempnode;
 	struct node_element *element=NULL;
 	struct node *node;
@@ -602,6 +606,7 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	}
 
 	*gen = *gen - 1;
+#endif
 }
 
 void ami_menu_update_checked(struct gui_window_2 *gwin)

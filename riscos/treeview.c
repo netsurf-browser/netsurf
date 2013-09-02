@@ -40,7 +40,6 @@
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "riscos/bitmap.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -1292,27 +1291,5 @@ void ro_treeview_button_click(void *data,
 int ro_treeview_get_help(help_full_message_request *message_data)
 {
 	return -1;
-}
-
-/**
- * Convert a content type into an icon name.
- *
- * \todo -- Currently we don't have any icons apart from the default.
- *
- * \param  *buffer		A buffer to return the icon name
- * \param  type			The content type to return an icon name for.
- */
-
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	switch (type) {
-	case CONTENT_HTML:
-	case CONTENT_TEXTPLAIN:
-	case CONTENT_CSS:
-	case CONTENT_IMAGE:
-	default:
-		sprintf(buffer, tree_content_icon_name);
-		break;
-	}
 }
 

@@ -30,7 +30,6 @@
 #include "utils/nsoption.h"
 #include "desktop/hotlist_old.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "desktop/gui.h"
 #include "utils/log.h"
 #include "utils/messages.h"

@@ -26,7 +26,6 @@
 #import "desktop/browser_private.h"
 #import "desktop/hotlist_old.h"
 #import "desktop/tree.h"
-#import "desktop/tree_url_node.h"
 #import "utils/messages.h"
 
 @interface BookmarksController ()
@@ -85,6 +84,7 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) menuNeedsUpdate: (NSMenu *)menu
 {
+#if 0
 	for (NSMenuItem *item in [menu itemArray]) {
 		if ([item hasSubmenu]) NSMapRemove( nodeForMenu, [item submenu] );
 		[menu removeItem: item];
@@ -125,6 +125,7 @@ static const char *cocoa_hotlist_path( void )
 			[item setAction: @selector( openBookmarkURL: )];
 		}
 	}
+#endif
 }
 
 - (IBAction) openBookmarkURL: (id) sender;

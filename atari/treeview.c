@@ -27,7 +27,6 @@
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "desktop/textinput.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -525,25 +524,5 @@ void atari_treeview_get_dimensions(int *width, int *height,
 		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
 		*width = work.g_w;
 		*height = work.g_h;
-	}
-}
-
-
-/**
- * Translates a content_type to the name of a respective icon
- *
- * \param content_type	content type
- * \param buffer	buffer for the icon name
- */
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	switch (type) {
-		case CONTENT_HTML:
-		case CONTENT_TEXTPLAIN:
-		case CONTENT_CSS:
-		case CONTENT_IMAGE:
-		default:
-			strcpy( buffer, "content.png" );
-			break;
 	}
 }

@@ -26,7 +26,6 @@
 extern "C" {
 #include "utils/config.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 }
 
 const char tree_directory_icon_name[] = "directory.png";
@@ -34,23 +33,3 @@ const char tree_content_icon_name[] = "content.png";
 
 
 
-
-/**
- * Translates a content_type to the name of a respective icon
- *
- * \param content_type	content type
- * \param buffer	buffer for the icon name
- */
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	// TODO: design/acquire icons
-	switch (type) {
-		case CONTENT_HTML:
-		case CONTENT_TEXTPLAIN:
-		case CONTENT_CSS:
-		case CONTENT_IMAGE:
-		default:
-			sprintf(buffer, tree_content_icon_name);
-			break;
-	}
-}

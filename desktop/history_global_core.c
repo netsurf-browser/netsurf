@@ -28,7 +28,6 @@
 #include "desktop/global_history.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"

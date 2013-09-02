@@ -63,7 +63,6 @@
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "render/font.h"
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/bitmap.h"

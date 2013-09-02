@@ -29,7 +29,6 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "desktop/tree_url_node.h"
 #include "image/ico.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -2857,6 +2856,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, int *item,
 			struct List *speed_button_list, struct gui_window_2 *gwin)
 {
+#if 0
 	struct node *tempnode;
 	struct node_element *element=NULL;
 	struct node *node;
@@ -2889,10 +2889,12 @@ void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, int
 	}
 
 	*gen = *gen - 1;
+#endif
 }
 
 int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
 {
+#if 0
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
@@ -2910,6 +2912,9 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	}
 
 	return item;
+#else
+	return 0;
+#endif
 }
 
 void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)

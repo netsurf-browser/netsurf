@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "desktop/tree_url_node.h"
-
 #include "utils/utils.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
@@ -137,9 +135,4 @@ utf8_from_local_encoding(const char *string, size_t len,
   return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
 }
 
-void
-tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-  sprintf(buffer, "%s", "content.png");
-}
 

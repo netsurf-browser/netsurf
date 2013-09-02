@@ -19,7 +19,6 @@
 #import <Cocoa/Cocoa.h>
 
 #import "utils/utils.h"
-#import "desktop/tree_url_node.h"
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
@@ -54,13 +53,4 @@ bool path_add_part(char *path, int length, const char *newpart)
 	strncpy( path, [newPath UTF8String], length );
 	
 	return true;
-}
-
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	switch (type) {
-		default:
-			strcpy( buffer, "content.png" );
-			break;
-	}
 }

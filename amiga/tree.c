@@ -59,7 +59,6 @@
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist_old.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/tree_url_node.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 
@@ -191,18 +190,6 @@ void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 
 	if(width) *width = bbox->Width;
 	if(height) *height = bbox->Height;
-}
-
-/**
- * Translates a content_type to the name of a respective icon
- *
- * \param content_type	content type
- * \param buffer	buffer for the icon name
- */
-void tree_icon_name_from_content_type(char *buffer, content_type type)
-{
-	const char *ftype = ami_content_type_to_file_type(type);
-	sprintf(buffer, "def_%s.info", ftype);
 }
 
 /**

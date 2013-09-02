@@ -44,7 +44,6 @@
 #include "desktop/hotlist_old.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/tree_url_node.h"
 #include "render/form.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
@@ -1220,11 +1219,11 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_EDITTITLE:
-				tree_url_node_edit_title(tree, userdata);
+				warn_user("TODO.", 0);
 			break;
 
 			case CMID_TREE_EDITLINK:
-				tree_url_node_edit_url(tree, userdata);
+				warn_user("TODO.", 0);
 			break;
 
 			case CMID_TREE_NEWFOLDER:
@@ -1236,15 +1235,15 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_SETDEFAULT:
-				hotlist_old_set_default_folder(false);
+				warn_user("TODO.", 0);
 			break;
 
 			case CMID_TREE_CLEARDEFAULT:
-				hotlist_old_set_default_folder(true);
+				warn_user("TODO.", 0);
 			break;
 
 			case CMID_TREE_ADDHOTLIST:
-				hotlist_old_add_page(tree_url_node_get_url(userdata));
+				warn_user("TODO.", 0);
 			break;
 
 			case CMID_TREE_DELETE:
