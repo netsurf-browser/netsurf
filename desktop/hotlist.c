@@ -1421,13 +1421,6 @@ void hotlist_edit_selection(void)
 
 
 /* Exported interface, documented in hotlist.h */
-int hotlist_get_height(void)
-{
-	return treeview_get_height(hl_ctx.tree);
-}
-
-
-/* Exported interface, documented in hotlist.h */
 nserror hotlist_expand(bool only_folders)
 {
 	return treeview_expand(hl_ctx.tree, only_folders);

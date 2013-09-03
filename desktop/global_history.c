@@ -964,13 +964,6 @@ bool global_history_has_selection(void)
 
 
 /* Exported interface, documented in global_history.h */
-int global_history_get_height(void)
-{
-	return treeview_get_height(gh_ctx.tree);
-}
-
-
-/* Exported interface, documented in global_history.h */
 nserror global_history_expand(bool only_folders)
 {
 	return treeview_expand(gh_ctx.tree, only_folders);

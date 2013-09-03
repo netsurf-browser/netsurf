@@ -158,13 +158,6 @@ bool hotlist_has_selection(void);
 void hotlist_edit_selection(void);
 
 /**
- * Find current height
- *
- * \return height in px
- */
-int hotlist_get_height(void);
-
-/**
  * Expand the treeview's nodes
  *
  * \param only_folders	Iff true, only folders are expanded.

@@ -110,13 +110,6 @@ void cookie_manager_keypress(uint32_t key);
 bool cookie_manager_has_selection(void);
 
 /**
- * Find current height
- *
- * \return height in px
- */
-int cookie_manager_get_height(void);
-
-/**
  * Expand the treeview's nodes
  *
  * \param only_folders	Iff true, only folders are expanded.

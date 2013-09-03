@@ -857,13 +857,6 @@ bool cookie_manager_has_selection(void)
 
 
 /* Exported interface, documented in cookie_manager.h */
-int cookie_manager_get_height(void)
-{
-	return treeview_get_height(cm_ctx.tree);
-}
-
-
-/* Exported interface, documented in cookie_manager.h */
 nserror cookie_manager_expand(bool only_folders)
 {
 	return treeview_expand(cm_ctx.tree, only_folders);

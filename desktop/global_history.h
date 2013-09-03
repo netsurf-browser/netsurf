@@ -110,13 +110,6 @@ void global_history_keypress(uint32_t key);
 bool global_history_has_selection(void);
 
 /**
- * Find current height
- *
- * \return height in px
- */
-int global_history_get_height(void);
-
-/**
  * Expand the treeview's nodes
  *
  * \param only_folders	Iff true, only folders are expanded.
