@@ -116,4 +116,20 @@ bool global_history_has_selection(void);
  */
 int global_history_get_height(void);
 
+/**
+ * Expand the treeview's nodes
+ *
+ * \param only_folders	Iff true, only folders are expanded.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror global_history_expand(bool only_folders);
+
+/**
+ * Contract the treeview's nodes
+ *
+ * \param all		Iff false, only entries are contracted.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror global_history_contract(bool all);
+
 #endif

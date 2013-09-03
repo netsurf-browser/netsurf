@@ -116,4 +116,20 @@ bool cookie_manager_has_selection(void);
  */
 int cookie_manager_get_height(void);
 
+/**
+ * Expand the treeview's nodes
+ *
+ * \param only_folders	Iff true, only folders are expanded.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror cookie_manager_expand(bool only_folders);
+
+/**
+ * Contract the treeview's nodes
+ *
+ * \param all		Iff false, only entries are contracted.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror cookie_manager_contract(bool all);
+
 #endif
