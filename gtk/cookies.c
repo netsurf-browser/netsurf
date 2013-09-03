@@ -187,36 +187,36 @@ MENUHANDLER(clear_selection)
 /* view menu*/
 MENUHANDLER(expand_all)
 {
-	cookies_expand_all();
+	cookie_manager_expand(false);
 	return TRUE;
 }
 
 MENUHANDLER(expand_domains)
 {
-	cookies_expand_domains();
+	cookie_manager_expand(true);
 	return TRUE;
 }
 
 MENUHANDLER(expand_cookies)
 {
-	cookies_expand_cookies();
+	cookie_manager_expand(false);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_all)
 {
-	cookies_collapse_all();
+	cookie_manager_contract(true);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_domains)
 {
-	cookies_collapse_domains();
+	cookie_manager_contract(true);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_cookies)
 {
-	cookies_collapse_cookies();
+	cookie_manager_contract(false);
 	return TRUE;
 }

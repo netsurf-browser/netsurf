@@ -189,19 +189,19 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
-		history_global_expand_addresses();
+		global_history_expand(false);
 		break;
 
 	case TOOLBAR_BUTTON_COLLAPSE:
-		history_global_collapse_addresses();
+		global_history_contract(false);
 		break;
 
 	case TOOLBAR_BUTTON_OPEN:
-		history_global_expand_directories();
+		global_history_expand(true);
 		break;
 
 	case TOOLBAR_BUTTON_CLOSE:
-		history_global_collapse_directories();
+		global_history_contract(true);
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
@@ -324,22 +324,22 @@ bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_EXPAND_ALL:
-		history_global_expand_all();
+		global_history_expand(false);
 		return true;
 	case TREE_EXPAND_FOLDERS:
-		history_global_expand_directories();
+		global_history_expand(true);
 		return true;
 	case TREE_EXPAND_LINKS:
-		history_global_expand_addresses();
+		global_history_expand(false);
 		return true;
 	case TREE_COLLAPSE_ALL:
-		history_global_collapse_all();
+		global_history_contract(true);
 		return true;
 	case TREE_COLLAPSE_FOLDERS:
-		history_global_collapse_directories();
+		global_history_contract(true);
 		return true;
 	case TREE_COLLAPSE_LINKS:
-		history_global_collapse_addresses();
+		global_history_contract(false);
 		return true;
 	case TREE_SELECTION_LAUNCH:
 		global_history_keypress(KEY_CR);

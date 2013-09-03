@@ -1013,13 +1013,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_expand_all();
+													global_history_expand(false);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_expand_all();
+													cookie_manager_expand(false);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_expand_all();
+													hotlist_expand(false);
 												break;
 											}
 										break;
@@ -1028,13 +1028,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_expand_directories();
+													global_history_expand(true);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_expand_domains();
+													cookie_manager_expand(true);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_expand_directories();
+													hotlist_expand(true);
 												break;
 											}
 										break;
@@ -1043,13 +1043,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_expand_addresses();
+													global_history_expand(false);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_expand_cookies();
+													cookie_manager_expand(false);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_expand_addresses();
+													hotlist_expand(false);
 												break;
 											}
 										break;
@@ -1063,13 +1063,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_collapse_all();
+													global_history_contract(true);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_collapse_all();
+													cookie_manager_contract(true);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_collapse_all();
+													hotlist_contract(true);
 												break;
 											}
 										break;
@@ -1078,13 +1078,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_collapse_directories();
+													global_history_contract(true);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_collapse_domains();
+													cookie_manager_contract(true);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_collapse_directories();
+													hotlist_contract(true);
 												break;
 											}
 										break;
@@ -1093,13 +1093,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											switch(twin->type)
 											{
 												case AMI_TREE_HISTORY:
-													history_global_collapse_addresses();
+													global_history_contract(false);
 												break;
 												case AMI_TREE_COOKIES:
-													cookies_collapse_cookies();
+													cookie_manager_contract(false);
 												break;
 												case AMI_TREE_HOTLIST:
-													hotlist_old_collapse_addresses();
+													hotlist_contract(false);
 												break;
 											}
 										break;

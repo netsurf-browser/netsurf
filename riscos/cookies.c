@@ -183,19 +183,19 @@ void ro_gui_cookies_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
-		cookies_expand_cookies();
+		cookie_manager_expand(false);
 		break;
 
 	case TOOLBAR_BUTTON_COLLAPSE:
-		cookies_collapse_cookies();
+		cookie_manager_contract(false);
 		break;
 
 	case TOOLBAR_BUTTON_OPEN:
-		cookies_expand_domains();
+		cookie_manager_expand(true);
 		break;
 
 	case TOOLBAR_BUTTON_CLOSE:
-		cookies_collapse_domains();
+		cookie_manager_contract(true);
 		break;
 
 	default:
@@ -300,22 +300,22 @@ bool ro_gui_cookies_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 {
 	switch (action) {
 	case TREE_EXPAND_ALL:
-		cookies_expand_all();
+		cookie_manager_expand(false);
 		return true;
 	case TREE_EXPAND_FOLDERS:
-		cookies_expand_domains();
+		cookie_manager_expand(true);
 		return true;
 	case TREE_EXPAND_LINKS:
-		cookies_expand_cookies();
+		cookie_manager_expand(false);
 		return true;
 	case TREE_COLLAPSE_ALL:
-		cookies_collapse_all();
+		cookie_manager_contract(true);
 		return true;
 	case TREE_COLLAPSE_FOLDERS:
-		cookies_collapse_domains();
+		cookie_manager_contract(true);
 		return true;
 	case TREE_COLLAPSE_LINKS:
-		cookies_collapse_cookies();
+		cookie_manager_contract(false);
 		return true;
 	case TREE_SELECTION_DELETE:
 		cookie_manager_keypress(KEY_DELETE_LEFT);

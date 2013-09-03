@@ -223,37 +223,37 @@ MENUHANDLER(clear_selection)
 /* view menu*/
 MENUHANDLER(expand_all)
 {
-	history_global_expand_all();
+	global_history_expand(false);
 	return TRUE;
 }
 
 MENUHANDLER(expand_directories)
 {
-	history_global_expand_directories();
+	global_history_expand(true);
 	return TRUE;
 }
 
 MENUHANDLER(expand_addresses)
 {
-	history_global_expand_addresses();
+	global_history_expand(false);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_all)
 {
-	history_global_collapse_all();
+	global_history_contract(true);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_directories)
 {
-	history_global_collapse_directories();
+	global_history_contract(true);
 	return TRUE;
 }
 
 MENUHANDLER(collapse_addresses)
 {
-	history_global_collapse_addresses();
+	global_history_contract(false);
 	return TRUE;
 }
 

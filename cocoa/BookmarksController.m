@@ -181,8 +181,8 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) windowDidLoad;
 {
-	hotlist_old_expand_all();
-	hotlist_old_collapse_all();
+	hotlist_expand(false);
+	hotlist_contract(true);
 	
 	[view setTree: tree];
 }

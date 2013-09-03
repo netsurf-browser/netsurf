@@ -231,19 +231,19 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
-		hotlist_old_expand_addresses();
+		hotlist_expand(false);
 		break;
 
 	case TOOLBAR_BUTTON_COLLAPSE:
-		hotlist_old_collapse_addresses();
+		hotlist_contract(false);
 		break;
 
 	case TOOLBAR_BUTTON_OPEN:
-		hotlist_old_expand_directories();
+		hotlist_expand(true);
 		break;
 
 	case TOOLBAR_BUTTON_CLOSE:
-		hotlist_old_collapse_directories();
+		hotlist_contract(true);
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
@@ -372,22 +372,22 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		hotlist_add_entry(NULL, NULL, false, 0);
 		return true;
 	case TREE_EXPAND_ALL:
-		hotlist_old_expand_all();
+		hotlist_expand(false);
 		return true;
 	case TREE_EXPAND_FOLDERS:
-		hotlist_old_expand_directories();
+		hotlist_expand(true);
 		return true;
 	case TREE_EXPAND_LINKS:
-		hotlist_old_expand_addresses();
+		hotlist_expand(false);
 		return true;
 	case TREE_COLLAPSE_ALL:
-		hotlist_old_collapse_all();
+		hotlist_contract(true);
 		return true;
 	case TREE_COLLAPSE_FOLDERS:
-		hotlist_old_collapse_directories();
+		hotlist_contract(true);
 		return true;
 	case TREE_COLLAPSE_LINKS:
-		hotlist_old_collapse_addresses();
+		hotlist_contract(false);
 		return true;
 	case TREE_SELECTION_EDIT:
 		hotlist_edit_selection();
@@ -541,7 +541,7 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 		if (nsurl_create(hotlist_url, &nsurl) != NSERROR_OK)
 			return;
 
-		hotlist_add_page(nsurl);
+		hotlist_add_url(nsurl);
 		nsurl_unref(nsurl);
 	}
 
