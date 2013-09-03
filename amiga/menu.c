@@ -81,8 +81,10 @@ int menu_glyph_width[NSA_GLYPH_MAX];
 bool menu_glyphs_loaded = false;
 
 ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
+#if 0
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin);
+#endif
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
 
 /* Functions for menu selections */
@@ -565,10 +567,10 @@ ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 #endif
 }
 
+#if 0
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin)
 {
-#if 0
 	struct node *tempnode;
 	struct node_element *element=NULL;
 	struct node *node;
@@ -606,8 +608,8 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	}
 
 	*gen = *gen - 1;
-#endif
 }
+#endif
 
 void ami_menu_update_checked(struct gui_window_2 *gwin)
 {
