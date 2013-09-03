@@ -1424,8 +1424,7 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node)
 
 
 /** Treewalk node callback for handling node contraction. */
-static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
-		bool *skip_children, bool *end)
+static nserror treeview_node_contract_cb(treeview_node *n, void *ctx, bool *end)
 {
 	int h_reduction;
 
@@ -1466,11 +1465,11 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 	selected = node->flags & TREE_NODE_SELECTED;
 
 	/* Contract children. */
-	treeview_walk_internal(node, false, NULL,
-			treeview_node_contract_cb, NULL);
+	treeview_walk_internal(node, false, treeview_node_contract_cb,
+			NULL, NULL);
 
 	/* Contract node */
-	treeview_node_contract_cb(node, NULL, false, false);
+	treeview_node_contract_cb(node, NULL, false);
 
 	if (selected)
 		node->flags |= TREE_NODE_SELECTED;
@@ -1500,11 +1499,11 @@ nserror treeview_contract(treeview *tree, bool all)
 			selected = n->flags & TREE_NODE_SELECTED;
 
 			/* Contract children. */
-			treeview_walk_internal(n, false, NULL,
-					treeview_node_contract_cb, NULL);
+			treeview_walk_internal(n, false,
+					treeview_node_contract_cb, NULL, NULL);
 
 			/* Contract node */
-			treeview_node_contract_cb(n, NULL, false, false);
+			treeview_node_contract_cb(n, NULL, false);
 
 			if (selected)
 				n->flags |= TREE_NODE_SELECTED;
