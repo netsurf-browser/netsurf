@@ -1338,8 +1338,7 @@ nserror treeview_destroy(treeview *tree)
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_node_expand(treeview *tree,
-		treeview_node *node)
+nserror treeview_node_expand(treeview *tree, treeview_node *node)
 {
 	treeview_node *child;
 	struct treeview_node_entry *e;
@@ -1423,6 +1422,7 @@ nserror treeview_node_expand(treeview *tree,
 }
 
 
+
 /** Treewalk node callback for handling node contraction. */
 static nserror treeview_node_contract_cb(treeview_node *n, void *ctx,
 		bool *skip_children, bool *end)
@@ -1479,6 +1479,82 @@ nserror treeview_node_contract(treeview *tree, treeview_node *node)
 	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
 
 	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in treeview.h */
+nserror treeview_contract(treeview *tree, bool all)
+{
+	bool selected;
+	treeview_node *n;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	for (n = tree->root->children; n != NULL; n = n->next_sib) {
+		if ((n->flags & TREE_NODE_EXPANDED) == false) {
+			continue;
+		}
+
+		if (n->type == TREE_NODE_FOLDER || all) {
+			selected = n->flags & TREE_NODE_SELECTED;
+
+			/* Contract children. */
+			treeview_walk_internal(n, false, NULL,
+					treeview_node_contract_cb, NULL);
+
+			/* Contract node */
+			treeview_node_contract_cb(n, NULL, false, false);
+
+			if (selected)
+				n->flags |= TREE_NODE_SELECTED;
+		}
+	}
+
+	/* Inform front end of change in dimensions */
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
+	return NSERROR_OK;
+}
+
+
+struct treeview_contract_data {
+	treeview *tree;
+	bool only_folders;
+};
+/** Treewalk node callback for handling recursive node expansion. */
+static nserror treeview_expand_cb(treeview_node *n, void *ctx,
+		bool *skip_children, bool *end)
+{
+	struct treeview_contract_data *data = ctx;
+	nserror err;
+
+	assert(n != NULL);
+	assert(n->type != TREE_NODE_ROOT);
+
+	if (n->flags & TREE_NODE_EXPANDED ||
+			(data->only_folders && n->type != TREE_NODE_FOLDER)) {
+		/* Nothing to do. */
+		return NSERROR_OK;
+	}
+
+	err = treeview_node_expand(data->tree, n);
+
+	return err;
+}
+/* Exported interface, documented in treeview.h */
+nserror treeview_expand(treeview *tree, bool only_folders)
+{
+	struct treeview_contract_data data;
+
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
+	data.tree = tree;
+	data.only_folders = only_folders;
+
+	return treeview_walk_internal(tree->root, true, NULL,
+			treeview_expand_cb, &data);
 }
 
 

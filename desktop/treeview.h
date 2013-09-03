@@ -301,7 +301,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 /**
  * Expand a treeview node
  *
- * \param tree		Treeview object to expande node in
+ * \param tree		Treeview object to expand node in
  * \param node		Node to expand
  * \return NSERROR_OK on success, appropriate error otherwise
  */
@@ -315,6 +315,24 @@ nserror treeview_node_expand(treeview *tree, treeview_node *node);
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror treeview_node_contract(treeview *tree, treeview_node *node);
+
+/**
+ * Expand a treeview's nodes
+ *
+ * \param tree		Treeview object to expand nodes in
+ * \param only_folders	Iff true, only folders are expanded.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror treeview_expand(treeview *tree, bool only_folders);
+
+/**
+ * Contract a treeview's nodes
+ *
+ * \param tree		Treeview object to contract nodes in
+ * \param all		Iff false, only entries are contracted.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror treeview_contract(treeview *tree, bool all);
 
 /**
  * Redraw a treeview object
