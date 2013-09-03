@@ -123,60 +123,46 @@ static struct global_history_entry *global_history_find(nsurl *url)
 static nserror global_history_create_dir(enum global_history_folders f)
 {
 	nserror err;
-	time_t t = gh_ctx.today;
 	treeview_node *relation = NULL;
 	enum treeview_relationship rel = TREE_REL_FIRST_CHILD;
 	const char *label;
-	int age;
 	int i;
 
 	switch (f) {
 	case GH_TODAY:
 		label = "DateToday";
-		age = 0;
 		break;
 	case GH_YESTERDAY:
 		label = "DateYesterday";
-		age = 1;
 		break;
 	case GH_2_DAYS_AGO:
 		label = "Date2Days";
-		age = 2;
 		break;
 	case GH_3_DAYS_AGO:
 		label = "Date3Days";
-		age = 3;
 		break;
 	case GH_4_DAYS_AGO:
 		label = "Date4Days";
-		age = 4;
 		break;
 	case GH_5_DAYS_AGO:
 		label = "Date5Days";
-		age = 5;
 		break;
 	case GH_6_DAYS_AGO:
 		label = "Date6Days";
-		age = 6;
 		break;
 	case GH_LAST_WEEK:
 		label = "Date1Week";
-		age = 7;
 		break;
 	case GH_2_WEEKS_AGO:
 		label = "Date2Week";
-		age = 14;
 		break;
 	case GH_3_WEEKS_AGO:
 		label = "Date3Week";
-		age = 21;
 		break;
 	default:
 		assert(0);
 		break;
 	}
-
-	t -= age * N_SEC_PER_DAY;
 
 	label = messages_get(label);
 
