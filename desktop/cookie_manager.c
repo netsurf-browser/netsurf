@@ -789,6 +789,9 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 	 * the treeview is built. */
 	cm_ctx.built = true;
 
+	/* Inform client of window height */
+	treeview_get_height(cm_ctx.tree);
+
 	LOG(("Generated cookie manager data"));
 
 	return NSERROR_OK;

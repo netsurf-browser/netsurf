@@ -767,17 +767,20 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 		return err;
 	}
 
-	/* History tree is built
-	 * We suppress the treeview height callback on entry insertion before
-	 * the treeview is built. */
-	gh_ctx.built = true;
-
 	/* Expand the "Today" folder node */
 	err = treeview_node_expand(gh_ctx.tree,
 			gh_ctx.folders[GH_TODAY].folder);
 	if (err != NSERROR_OK) {
 		return err;
 	}
+
+	/* History tree is built
+	 * We suppress the treeview height callback on entry insertion before
+	 * the treeview is built. */
+	gh_ctx.built = true;
+
+	/* Inform client of window height */
+	treeview_get_height(gh_ctx.tree);
 
 	LOG(("Loaded global history"));
 

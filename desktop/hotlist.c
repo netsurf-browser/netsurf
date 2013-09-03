@@ -1089,6 +1089,9 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 	 * the treeview is built. */
 	hl_ctx.built = true;
 
+	/* Inform client of window height */
+	treeview_get_height(hl_ctx.tree);
+
 	LOG(("Loaded hotlist"));
 
 	return NSERROR_OK;

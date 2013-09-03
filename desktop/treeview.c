@@ -3428,6 +3428,8 @@ int treeview_get_height(treeview *tree)
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
+	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
+
 	return tree->root->height;
 }
 
