@@ -302,8 +302,18 @@ fi
 
 # convert javascript parameters
 if [ "${BUILD_JS}" = "json" ];then
-    BUILD_MOZJS=NO
-    BUILD_JS=YES
+    case ${TARGET} in
+	"riscos")
+	    BUILD_MOZJS=NO
+	    BUILD_JS=YES
+	    ;;
+	*)
+	    BUILD_MOZJS=YES
+	    BUILD_JS=NO
+	;;
+
+    esac
+
 else
     BUILD_JS=NO
     BUILD_MOZJS=NO
