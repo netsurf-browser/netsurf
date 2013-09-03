@@ -831,6 +831,7 @@ static nserror hotlist_generate(void)
 		nsurl_unref(url);
 
 		if (err != NSERROR_OK) {
+			free(title);
 			return NSERROR_NOMEM;
 		}
 	}
