@@ -948,6 +948,67 @@ nserror hotlist_export(const char *path, const char *title)
 }
 
 
+struct hotlist_iterate_ctx {
+	hotlist_folder_enter_cb enter_cb;
+	hotlist_address_cb address_cb;
+	hotlist_folder_leave_cb leave_cb;
+	void *ctx;
+};
+/** Callback for hotlist_iterate node entering */
+static nserror hotlist_iterate_enter_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct hotlist_iterate_ctx *data = ctx;
+
+	if (type == TREE_NODE_ENTRY && data->address_cb != NULL) {
+		struct hotlist_entry *e = node_data;
+		data->address_cb(data->ctx, e->url,
+				e->data[HL_TITLE].value);
+
+	} else if (type == TREE_NODE_FOLDER && data->enter_cb != NULL) {
+		struct hotlist_folder *f = node_data;
+		data->enter_cb(data->ctx, f->data.value);
+	}
+
+	return NSERROR_OK;
+}
+/** Callback for hotlist_iterate node leaving */
+static nserror hotlist_iterate_leave_cb(void *ctx, void *node_data,
+		enum treeview_node_type type, bool *abort)
+{
+	struct hotlist_iterate_ctx *data = ctx;
+
+	if (type == TREE_NODE_FOLDER && data->leave_cb != NULL) {
+		data->leave_cb(data->ctx);
+	}
+
+	return NSERROR_OK;
+}
+/* Exported interface, documented in hotlist.h */
+nserror hotlist_iterate(void *ctx,
+		hotlist_folder_enter_cb enter_cb,
+		hotlist_address_cb address_cb,
+		hotlist_folder_leave_cb leave_cb)
+{
+	struct hotlist_iterate_ctx data;
+	nserror err;
+
+	data.enter_cb = enter_cb;
+	data.address_cb = address_cb;
+	data.leave_cb = leave_cb;
+	data.ctx = ctx;
+
+	err = treeview_walk(hl_ctx.tree, NULL,
+			hotlist_iterate_enter_cb,
+			hotlist_iterate_leave_cb,
+			&data, TREE_NODE_ENTRY | TREE_NODE_FOLDER);
+	if (err != NSERROR_OK)
+		return err;
+
+	return NSERROR_OK;
+}
+
+
 /**
  * Initialise the treeview entry feilds
  *

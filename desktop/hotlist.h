@@ -118,6 +118,54 @@ nserror hotlist_add_folder(const char *title, bool at_y, int y);
 nserror hotlist_export(const char *path, const char *title);
 
 /**
+ * Client callback for hotlist_iterate, reporting entry into folder
+ *
+ * \param ctx		Client context
+ * \param title		The entered folder's title
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+typedef nserror (*hotlist_folder_enter_cb)(void *ctx, const char *title);
+
+/**
+ * Client callback for hotlist_iterate, reporting a hotlist address
+ *
+ * \param ctx		Client context
+ * \param url		The entry's address
+ * \param title		The entry's title
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+typedef nserror (*hotlist_address_cb)(void *ctx, nsurl *url, const char *title);
+
+/**
+ * Client callback for hotlist_iterate, reporting a hotlist folder departure
+ *
+ * \param ctx		Client context
+ * \param title		The departed folder's title
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+typedef nserror (*hotlist_folder_leave_cb)(void *ctx);
+
+
+/**
+ * Walk (depth first) the hotlist, calling callbacks on entering folders,
+ * address nodes, and on leaving folders.
+ *
+ * \param ctx		Client context, passed back to callback function
+ * \param enter_cb	Function to call on entering nodes, or NULL
+ * \param address_cb	Function to call on address nodes, or NULL
+ * \param leave_cb	Function to call on leaving nodes, or NULL
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ *
+ * Example usage: Generate a menu containing hotlist entries.  For flat list
+ *                set enter_cb and leave_cb to NULL, or for hierarchical menu
+ *                provide the folder callbacks.
+ */
+nserror hotlist_iterate(void *ctx,
+		hotlist_folder_enter_cb enter_cb,
+		hotlist_address_cb address_cb,
+		hotlist_folder_leave_cb leave_cb);
+
+/**
  * Redraw the hotlist.
  *
  * \param x		X coordinate to render treeview at
