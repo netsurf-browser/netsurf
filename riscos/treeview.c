@@ -155,12 +155,6 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 	tv->w = window;
 	tv->tb = toolbar;
 
-	tv->tree = tree_create(flags, &ro_tree_callbacks, tv);
-	if (tv->tree == NULL) {
-		free(tv);
-		return NULL;
-	}
-
 	/* Set the tree redraw origin at a default 0,0 RO units. */
 
 	tv->origin.x = 0;
@@ -180,6 +174,12 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 	/* Set that there is no drag opperation at the moment */
 
 	tv->drag = TREE_NO_DRAG;
+
+	tv->tree = tree_create(flags, &ro_tree_callbacks, tv);
+	if (tv->tree == NULL) {
+		free(tv);
+		return NULL;
+	}
 
 	/* Record the callback info. */
 
