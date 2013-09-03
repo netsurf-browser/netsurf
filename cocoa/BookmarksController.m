@@ -164,7 +164,7 @@ static const char *cocoa_hotlist_path( void )
 {
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
 	if (bw && bw->current_content) {
-		hotlist_add_url( nsurl_access(hlcache_handle_get_url( bw->current_content )) );
+		hotlist_add_url( hlcache_handle_get_url( bw->current_content ) );
 	}
 }
 

@@ -64,11 +64,6 @@ static const struct treeview_table cocoa_tree_callbacks = {
 	return tree;
 }
 
-- (BOOL) isRedrawing;
-{
-	return tree_get_redraw( tree );
-}
-
 - (void) setRedrawing: (BOOL) newRedrawing;
 {
 }

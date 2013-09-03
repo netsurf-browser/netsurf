@@ -38,7 +38,6 @@
 }
 
 @property (readwrite, assign, nonatomic) id <TreeDelegate> delegate;
-@property (readwrite, assign, nonatomic, getter=isRedrawing) BOOL redrawing;
 
 - initWithFlags: (unsigned int) flags;
 
