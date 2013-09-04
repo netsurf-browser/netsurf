@@ -103,6 +103,7 @@ static void treeview_test_drag_status(struct core_window *cw,
 
 	case CORE_WINDOW_DRAG_MOVE:
 		tree->drag = TREE_MOVE_DRAG;
+		break;
 
 	case CORE_WINDOW_DRAG_TEXT_SELECTION:
 		tree->drag = TREE_TEXTAREA_DRAG;
@@ -125,44 +126,34 @@ static bool treeview_test_init(struct tree *tree)
 {
 	nserror err;
 
-	if (tree->flags == TREE_SSLCERT) {
-
-		treeview_inits++;
-
-		if (treeview_inits == 1)
-			treeview_init();
-
-		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
-				ssl_current_session);
-		if (err != NSERROR_OK) {
-			warn_user("Couldn't init new sslcert viewer.", 0);
-		}
-		return true;
-	}
-
 	treeview_inits++;
 
 	if (treeview_inits == 1)
 		treeview_init();
 
-	if (tree->flags == TREE_COOKIES) {
+	switch (tree->flags) {
+	case TREE_COOKIES:
 		err = cookie_manager_init(&cw_t, (struct core_window *)tree);
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't init new cookie manager.", 0);
-		}
-	}
-	if (tree->flags == TREE_HISTORY) {
+		break;
+	case TREE_HISTORY:
 		err = global_history_init(&cw_t, (struct core_window *)tree);
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't init new global history.", 0);
-		}
-	}
-	if (tree->flags == TREE_HOTLIST) {
+		break;
+	case TREE_HOTLIST:
 		err = hotlist_init(&cw_t, (struct core_window *)tree,
 				tree_hotlist_path);
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't init new hotlist.", 0);
-		}
+		break;
+	case TREE_SSLCERT:
+		err = sslcert_viewer_init(&cw_t, (struct core_window *)tree,
+				ssl_current_session);
+		if (err != NSERROR_OK)
+			warn_user("Couldn't init new sslcert viewer.", 0);
+		break;
 	}
 
 	return true;
@@ -172,36 +163,27 @@ static bool treeview_test_fini(struct tree *tree)
 {
 	nserror err;
 
-	if (tree->flags == TREE_SSLCERT) {
-		err = sslcert_viewer_fini(ssl_current_session);
-		if (err != NSERROR_OK) {
-			warn_user("Couldn't finalise sslcert viewer.", 0);
-		}
-
-		if (treeview_inits == 1)
-			treeview_fini();
-		treeview_inits--;
-
-		return true;
-	}
-
-	if (tree->flags == TREE_COOKIES) {
+	switch (tree->flags) {
+	case TREE_COOKIES:
 		err = cookie_manager_fini();
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't finalise cookie manager.", 0);
-		}
-	}
-	if (tree->flags == TREE_HISTORY) {
+		break;
+	case TREE_HISTORY:
 		err = global_history_fini();
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't finalise cookie manager.", 0);
-		}
-	}
-	if (tree->flags == TREE_HOTLIST) {
+		break;
+	case TREE_HOTLIST:
 		err = hotlist_fini(tree_hotlist_path);
-		if (err != NSERROR_OK) {
+		if (err != NSERROR_OK)
 			warn_user("Couldn't finalise hotlist.", 0);
-		}
+		break;
+	case TREE_SSLCERT:
+		err = sslcert_viewer_fini(ssl_current_session);
+		if (err != NSERROR_OK)
+			warn_user("Couldn't finalise sslcert viewer.", 0);
+		break;
 	}
 
 	if (treeview_inits == 1)
@@ -222,20 +204,17 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 	clip.x1 = clip_x + clip_width;
 	clip.y1 = clip_y + clip_height;
 
-	if (tree->flags == TREE_SSLCERT) {
+	switch (tree->flags) {
+	case TREE_SSLCERT:
 		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
 		return true;
-	}
-
-	if (tree->flags == TREE_COOKIES) {
+	case TREE_COOKIES:
 		cookie_manager_redraw(x, y, &clip, ctx);
 		return true;
-	}
-	if (tree->flags == TREE_HISTORY) {
+	case TREE_HISTORY:
 		global_history_redraw(x, y, &clip, ctx);
 		return true;
-	}
-	if (tree->flags == TREE_HOTLIST) {
+	case TREE_HOTLIST:
 		hotlist_redraw(x, y, &clip, ctx);
 		return true;
 	}
@@ -246,20 +225,17 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 static bool treeview_test_mouse_action(struct tree *tree,
 		browser_mouse_state mouse, int x, int y)
 {
-	if (tree->flags == TREE_SSLCERT) {
+	switch (tree->flags) {
+	case TREE_SSLCERT:
 		sslcert_viewer_mouse_action(ssl_current_session, mouse, x, y);
 		return true;
-	}
-
-	if (tree->flags == TREE_COOKIES) {
+	case TREE_COOKIES:
 		cookie_manager_mouse_action(mouse, x, y);
 		return true;
-	}
-	if (tree->flags == TREE_HISTORY) {
+	case TREE_HISTORY:
 		global_history_mouse_action(mouse, x, y);
 		return true;
-	}
-	if (tree->flags == TREE_HOTLIST) {
+	case TREE_HOTLIST:
 		hotlist_mouse_action(mouse, x, y);
 		return true;
 	}
@@ -269,20 +245,17 @@ static bool treeview_test_mouse_action(struct tree *tree,
 
 static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 {
-	if (tree->flags == TREE_SSLCERT) {
+	switch (tree->flags) {
+	case TREE_SSLCERT:
 		sslcert_viewer_keypress(ssl_current_session, key);
 		return true;
-	}
-
-	if (tree->flags == TREE_COOKIES) {
+	case TREE_COOKIES:
 		cookie_manager_keypress(key);
 		return true;
-	}
-	if (tree->flags == TREE_HISTORY) {
+	case TREE_HISTORY:
 		global_history_keypress(key);
 		return true;
-	}
-	if (tree->flags == TREE_HOTLIST) {
+	case TREE_HOTLIST:
 		hotlist_keypress(key);
 		return true;
 	}
