@@ -162,15 +162,27 @@ void ami_tree_resized(struct tree *tree, int width, int height, void *data)
 	{
 		GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 
-		RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
-			SCROLLER_Total, height,
-			SCROLLER_Visible, bbox->Height,
-			TAG_DONE);
+		if(height == -1) {
+			SetAttrs((APTR)twin->objects[OID_MAIN],
+				WINDOW_VertProp, -1,
+				TAG_DONE);
+		} else {
+			RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
+				SCROLLER_Total, height,
+				SCROLLER_Visible, bbox->Height,
+				TAG_DONE);
+		}
 
-		RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
-			SCROLLER_Total, width,
-			SCROLLER_Visible, bbox->Width,
-			TAG_DONE);
+		if(width == -1) {
+			SetAttrs((APTR)twin->objects[OID_MAIN],
+				WINDOW_HorizProp, -1,
+				TAG_DONE);
+		} else {
+			RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
+				SCROLLER_Total, width,
+				SCROLLER_Visible, bbox->Width,
+				TAG_DONE);
+		}
 	}
 }
 
