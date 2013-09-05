@@ -1095,11 +1095,8 @@ static nserror hotlist_populate(const char *path)
 	/* Load hotlist file */
 	err = hotlist_load(path, &loaded);
 
-	/* Ignoring errors, since if there was an error, we want to generate
-	 * the default hotlist anyway. */
-
-	if (loaded)
-		return NSERROR_OK;
+	if (loaded && err == NSERROR_OK)
+		return err;
 
 	/* Couldn't load hotlist, generate a default one */
 	err = hotlist_generate();
