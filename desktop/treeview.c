@@ -2941,7 +2941,7 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 	}
 
 	tree->edit.node = n;
-	tree->edit.field = ef->field;
+	tree->edit.field = field_desc->field;
 
 	/* Position the caret */
 	mouse_x -= field_x;
