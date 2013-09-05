@@ -564,14 +564,13 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 				if (xcoords == NULL) {
 					goto bad_out;
 				}
+				new_map->bounds.poly.xcoords = xcoords;
 
 				ycoords = realloc(new_map->bounds.poly.ycoords,
 					num * sizeof(float));
 				if (ycoords == NULL) {
 					goto bad_out;
 				}
-
-				new_map->bounds.poly.xcoords = xcoords;
 				new_map->bounds.poly.ycoords = ycoords;
 
 				new_map->bounds.poly.xcoords[num - 1] = x;
