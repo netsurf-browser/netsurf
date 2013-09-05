@@ -1809,7 +1809,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 	const struct plotter_table *plot = ctx->plot;
 	int line0, line1, line, left, right, line_y;
 	int text_y_offset, text_y_offset_baseline;
-	unsigned int b_pos, b_len, b_len_part, b_start, b_end, line_len;
+	unsigned int b_pos, b_len, b_len_part, b_start, b_end;
 	unsigned int sel_start, sel_end;
 	char *line_text;
 	struct rect r, s;
@@ -2002,7 +2002,6 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 			fstyle.size = fsize;
 
 			line_text = &(ta->show->data[ta->lines[line].b_start]);
-			line_len = ta->lines[line].b_length;
 
 			/* find b_start and b_end for this part of the line */
 			b_start = b_end;
