@@ -89,10 +89,6 @@ int menu_glyph_width[NSA_GLYPH_MAX];
 bool menu_glyphs_loaded = false;
 
 static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
-#if 0
-void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
-		int *item, struct gui_window_2 *gwin);
-#endif
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
 
 /* Functions for menu selections */
@@ -634,76 +630,7 @@ static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 		ami_menu_hotlist_folder_enter_cb,
 		ami_menu_hotlist_address_cb,
 		ami_menu_hotlist_folder_leave_cb);
-
-#if 0
-	struct node *root = tree_node_get_child(tree_get_root(tree));
-	struct node *node;
-	struct node_element *element;
-	WORD gen = 0;
-	int item;
-
-	item = AMI_MENU_HOTLIST;
-
-	for (node = root; node; node = tree_node_get_next(node))
-	{
-		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistMenu")) == 0))
-		{
-			// found menu
-			ami_menu_scan_2(tree, tree_node_get_child(node), &gen, &item, gwin);
-		}
-	}
-
-	return(item - AMI_MENU_HOTLIST);
-#else
-	return 0;
-#endif
 }
-
-#if 0
-void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
-		int *item, struct gui_window_2 *gwin)
-{
-	struct node *tempnode;
-	struct node_element *element=NULL;
-	struct node *node;
-	UBYTE menu_type;
-	char *icon;
-	char key;
-
-	*gen = *gen + 1;
-
-	for (node = root; node; node = tree_node_get_next(node))
-	{
-		if((*gen > 0) && (*gen < 3))
-		{
-			if(*item >= AMI_MENU_HOTLIST_MAX) return;
-
-			if(*gen == 1) menu_type = NM_ITEM;
-			if(*gen == 2) menu_type = NM_SUB;
-
-			if(tree_node_is_folder(node) == true) {
-				icon = "icons/directory.png";
-			} else {
-				icon = "icons/content.png";
-			}
-
-			ami_menu_alloc_item(gwin, *item, menu_type, tree_url_node_get_title(node),
-				0, icon, ami_menu_item_hotlist_entries, (void *)tree_url_node_get_url(node));
-			if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
-					gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
-
-			*item = *item + 1;
-		}
-
-		if (tree_node_get_child(node))
-			ami_menu_scan_2(tree, tree_node_get_child(node), gen, item, gwin);
-	}
-
-	*gen = *gen - 1;
-}
-#endif
 
 void ami_menu_update_checked(struct gui_window_2 *gwin)
 {
