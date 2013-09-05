@@ -2599,7 +2599,6 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 {
 	struct rect r;	/**< Redraw rectangle */
 	bool redraw = false;
-	nserror err;
 
 	assert(tree != NULL);
 
@@ -2633,7 +2632,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
 			int h = tree->root->height;
 			/* Delete any empty nodes */
-			err = treeview_delete_empty_nodes(tree, false);
+			treeview_delete_empty_nodes(tree, false);
 
 			/* Inform front end of change in dimensions */
 			if (tree->root->height != h) {
@@ -2645,7 +2644,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 		break;
 	case KEY_CR:
 	case KEY_NL:
-		err = treeview_launch_selection(tree);
+		treeview_launch_selection(tree);
 		break;
 	case KEY_ESCAPE:
 	case KEY_CLEAR_SELECTION:
