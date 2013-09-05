@@ -73,6 +73,14 @@ enum {
 	NSA_GLYPH_MAX
 };
 
+struct ami_hotlist_ctx {
+	struct gui_window_2 *gw;
+	int level;
+	int item;
+	bool in_menu;
+};
+
+
 BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const verdate;
@@ -80,7 +88,7 @@ Object *menu_glyph[NSA_GLYPH_MAX];
 int menu_glyph_width[NSA_GLYPH_MAX];
 bool menu_glyphs_loaded = false;
 
-ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
+static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 #if 0
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		int *item, struct gui_window_2 *gwin);
@@ -539,8 +547,94 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	gwin->menu[item].nm_Label = NULL;
 }
 
-ULONG ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
+static nserror ami_menu_hotlist_add(void *ctx, const char *title, struct nsurl *url, bool is_folder)
 {
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+	UBYTE type;
+	char *icon;
+	
+	if(menu_ctx->item >= AMI_MENU_HOTLIST_MAX) return NSERROR_OK;
+	
+	switch(menu_ctx->level) {
+		case 1:
+			type = NM_ITEM;
+		break;
+		case 2:
+			type = NM_SUB;
+		break;
+		default:
+			/* entries not at level 1 or 2 are not able to be added */
+			return NSERROR_OK;
+		break;
+	}
+
+	if(is_folder == true) {
+		icon = "icons/directory.png";
+	} else {
+		icon = "icons/content.png";
+	}
+
+	ami_menu_alloc_item(menu_ctx->gw, menu_ctx->item, type, title,
+		0, icon, ami_menu_item_hotlist_entries, (void *)url);
+	if((is_folder == true) && (type == NM_SUB))
+		menu_ctx->gw->menu[menu_ctx->item].nm_Flags = NM_ITEMDISABLED;
+
+	menu_ctx->item++;
+
+	return NSERROR_OK;
+}
+
+static nserror ami_menu_hotlist_folder_enter_cb(void *ctx, const char *title)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+
+	if(menu_ctx->in_menu == true) {
+		ami_menu_hotlist_add(menu_ctx, title, NULL, true);
+	} else {
+		if((menu_ctx->level == 0) && (strcmp(title, messages_get("HotlistMenu")) == 0))
+			menu_ctx->in_menu = true;
+	}
+	
+	menu_ctx->level++;
+	return NSERROR_OK;
+}
+
+static nserror ami_menu_hotlist_address_cb(void *ctx, nsurl *url, const char *title)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+	
+	if(menu_ctx->in_menu == true)
+		ami_menu_hotlist_add(menu_ctx, title, url, false);
+	
+	return NSERROR_OK;
+}
+
+static nserror ami_menu_hotlist_folder_leave_cb(void *ctx)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+
+	menu_ctx->level--;
+
+	if((menu_ctx->in_menu == true) && (menu_ctx->level == 0))
+		menu_ctx->in_menu = false;
+
+	return NSERROR_OK;
+}
+
+static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
+{
+	struct ami_hotlist_ctx ctx;
+	
+	ctx.level = 0;
+	ctx.item = 0;
+	ctx.in_menu = false;
+	ctx.gw = gwin;
+	
+	return hotlist_iterate(&ctx,
+		ami_menu_hotlist_folder_enter_cb,
+		ami_menu_hotlist_address_cb,
+		ami_menu_hotlist_folder_leave_cb);
+
 #if 0
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
