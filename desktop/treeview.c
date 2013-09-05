@@ -1090,7 +1090,6 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 {
 	treeview_node *node, *child, *parent, *next_sibling, *p;
-	treeview_node *root = tree->root;
 	bool abort = false;
 	nserror err;
 	struct treeview_node_delete nd = {
@@ -1099,7 +1098,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 		.user_interaction = interaction
 	};
 
-	node = root;
+	node = tree->root;
 	parent = node->parent;
 	next_sibling = node->next_sib;
 	child = (node->flags & TREE_NODE_EXPANDED) ? node->children : NULL;
@@ -1114,7 +1113,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 			 * go to next sibling if present, or nearest ancestor
 			 * with a next sibling. */
 
-			while (node != root &&
+			while (node->parent != NULL &&
 					next_sibling == NULL) {
 				if (node->type == TREE_NODE_FOLDER &&
 						node->children == NULL) {
@@ -1140,7 +1139,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 				next_sibling = node->next_sib;
 			}
 
-			if (node == root)
+			if (node->parent == NULL)
 				break;
 
 			if (node->type == TREE_NODE_FOLDER &&
@@ -1165,7 +1164,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 		}
 
 		assert(node != NULL);
-		assert(node != root);
+		assert(node->parent != NULL);
 
 		parent = node->parent;
 		next_sibling = node->next_sib;
