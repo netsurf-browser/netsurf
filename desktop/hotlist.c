@@ -70,37 +70,23 @@ struct hotlist_entry {
  * Set a hotlist entry's data from the url_data.
  *
  * \param e		hotlist entry to set up
- * \param title		Title for entry, or NULL if using title from data
  * \param url_data	Data associated with entry's URL
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror hotlist_create_treeview_field_data(
-		struct hotlist_entry *e, const char *title,
-		const struct url_data *data)
+static nserror hotlist_create_treeview_field_visits_data(
+		struct hotlist_entry *e, const struct url_data *data)
 {
 	char buffer[16];
 	const char *last_visited;
 	char *last_visited2;
 	int len;
 
-	if (title == NULL) {
-		title = (data->title != NULL) ?
-				strdup(data->title) :
-				strdup("<No title>");
-	}
-
-	e->data[HL_TITLE].field = hl_ctx.fields[HL_TITLE].field;
-	e->data[HL_TITLE].value = title;
-	e->data[HL_TITLE].value_len = (e->data[HL_TITLE].value != NULL) ?
-			strlen(title) : 0;
-
-	e->data[HL_URL].field = hl_ctx.fields[HL_URL].field;
-	e->data[HL_URL].value = nsurl_access(e->url);
-	e->data[HL_URL].value_len = nsurl_length(e->url);
-
+	/* Last visited */
 	last_visited = ctime(&data->last_visit);
 	last_visited2 = strdup(last_visited);
-	if (last_visited2 != NULL) {
+	if (last_visited2 == NULL) {
+		return NSERROR_NOMEM;
+	} else {
 		assert(last_visited2[24] == '\n');
 		last_visited2[24] = '\0';
 	}
@@ -109,6 +95,7 @@ static nserror hotlist_create_treeview_field_data(
 	e->data[HL_LAST_VISIT].value = last_visited2;
 	e->data[HL_LAST_VISIT].value_len = (last_visited2 != NULL) ? 24 : 0;
 
+	/* Visits */
 	len = snprintf(buffer, 16, "%u", data->visits);
 	if (len == 16) {
 		len--;
@@ -117,10 +104,60 @@ static nserror hotlist_create_treeview_field_data(
 
 	e->data[HL_VISITS].field = hl_ctx.fields[HL_VISITS].field;
 	e->data[HL_VISITS].value = strdup(buffer);
+	if (e->data[HL_VISITS].value == NULL) {
+		free((void*)e->data[HL_LAST_VISIT].value);
+		return NSERROR_NOMEM;
+	}
 	e->data[HL_VISITS].value_len = len;
 
 	return NSERROR_OK;
 }
+
+
+/**
+ * Set a hotlist entry's data from the url_data.
+ *
+ * \param e		hotlist entry to set up
+ * \param title		Title for entry, or NULL if using title from data
+ * \param url_data	Data associated with entry's URL
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static nserror hotlist_create_treeview_field_data(
+		struct hotlist_entry *e, const char *title,
+		const struct url_data *data)
+{
+	nserror err;
+
+	/* "URL" field */
+	e->data[HL_URL].field = hl_ctx.fields[HL_URL].field;
+	e->data[HL_URL].value = nsurl_access(e->url);
+	e->data[HL_URL].value_len = nsurl_length(e->url);
+
+	/* "Title" field */
+	if (title == NULL) {
+		/* Title not provided; use one from URL data */
+		title = (data->title != NULL) ?
+				data->title : nsurl_access(e->url);
+	}
+
+	e->data[HL_TITLE].field = hl_ctx.fields[HL_TITLE].field;
+	e->data[HL_TITLE].value = strdup(title);
+	if (e->data[HL_TITLE].value == NULL) {
+		return NSERROR_NOMEM;
+	}
+	e->data[HL_TITLE].value_len = (e->data[HL_TITLE].value != NULL) ?
+			strlen(title) : 0;
+
+	/* "Last visited" and "Visits" fields */
+	err = hotlist_create_treeview_field_visits_data(e, data);
+	if (err != NSERROR_OK) {
+		free((void*)e->data[HL_TITLE].value);
+		return NSERROR_OK;
+	}
+
+	return NSERROR_OK;
+}
+
 
 /**
  * Add a hotlist entry to the treeview
@@ -177,9 +214,6 @@ static void hotlist_delete_entry_internal(struct hotlist_entry *e)
 /**
  * Create hotlist entry data for URL.
  *
- * If set, 'title' must be allocated on the heap, ownership is yeilded to
- * this function.
- *
  * \param url		URL for entry to add to hotlist.
  * \param title		Title for entry, or NULL if using title from data
  * \param data		URL data for the entry, or NULL
@@ -235,9 +269,6 @@ static nserror hotlist_create_entry(nsurl *url, const char *title,
 /**
  * Add an entry to the hotlist (creates the entry).
  *
- * If set, 'title' must be allocated on the heap, ownership is yeilded to
- * this function.
- *
  * \param url		URL for entry to add to hotlist.
  * \param title		Title for entry, or NULL if using title from data
  * \param data		URL data for the entry, or NULL
@@ -276,9 +307,6 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
 /**
  * Add folder to the hotlist (creates the folder).
  *
- * If set, 'title' must be allocated on the heap, ownership is yeilded to
- * this function.
- *
  * \param title		Title for folder, or NULL if using title from data
  * \param relation	Existing node to insert as relation of, or NULL
  * \param rel		Folder's relationship to relation
@@ -295,20 +323,20 @@ static nserror hotlist_add_folder_internal(
 
 	if (title == NULL) {
 		/* TODO: use messages */
-		title = strdup("New folder");
-		if (title == NULL) {
-			return NSERROR_NOMEM;
-		}
+		title = "New folder";
 	}
 
 	/* Create the title field */
 	f = malloc(sizeof(struct hotlist_folder));
 	if (f == NULL) {
-		free((void *)title); /* Eww */
 		return NSERROR_NOMEM;
 	}
 	f->data.field = hl_ctx.fields[HL_FOLDER].field;
-	f->data.value = title;
+	f->data.value = strdup(title);
+	if (f->data.value == NULL) {
+		free(f);
+		return NSERROR_NOMEM;
+	}
 	f->data.value_len = strlen(title);
 
 	err = treeview_create_node_folder(hl_ctx.tree,
@@ -316,7 +344,7 @@ static nserror hotlist_add_folder_internal(
 			TREE_OPTION_NONE : TREE_OPTION_SUPPRESS_RESIZE |
 					TREE_OPTION_SUPPRESS_REDRAW);
 	if (err != NSERROR_OK) {
-		free((void *)title); /* Eww */
+		free((void*)f->data.value); /* Eww */
 		free(f);
 		return err;
 	}
@@ -484,7 +512,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 {
 	dom_node *a;
 	dom_string *title1, *url1;
-	char *title;
+	const char *title;
 	nsurl *url;
 	dom_exception derror;
 	nserror err;
@@ -513,16 +541,10 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	dom_node_unref(a);
 
 	if (title1 != NULL) {
-		title = strndup(dom_string_data(title1),
-				dom_string_byte_length(title1));
+		title = dom_string_data(title1);
 		dom_string_unref(title1);
 	} else {
-		title = strdup("<No title>");
-	}
-	if (title == NULL) {
-		warn_user("NoMemory", NULL);
-		dom_string_unref(url1);
-		return NSERROR_NOMEM;
+		title = "<No title>";
 	}
 
 	/* Need to get URL as a nsurl object */
@@ -534,8 +556,6 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 
 		warn_user(messages_get_errorcode(err), NULL);
 
-		free(title);
-
 		return err;
 	}
 
@@ -546,8 +566,6 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	ctx->relshp = TREE_REL_NEXT_SIBLING;
 
 	if (err != NSERROR_OK) {
-		free(title);
-
 		return err;
 	}
 
@@ -624,18 +642,13 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 			dom_string_caseless_lwc_isequal(name, 
 					corestring_lwc_ul)) {
 		/* Directory handling, part 2: Make node, and handle children */
-		char *title;
+		const char *title;
 		dom_string *id;
 		struct hotlist_folder *f;
 		hotlist_load_ctx new_ctx;
 		treeview_node *rel;
 
-		title = strndup(dom_string_data(current_ctx->title),
-				dom_string_byte_length(current_ctx->title));
-		if (title == NULL) {
-			dom_string_unref(name);
-			return NSERROR_NOMEM;
-		}
+		title = dom_string_data(current_ctx->title);
 
 		/* Add folder node */
 		err = hotlist_add_folder_internal(title, current_ctx->rel,
@@ -788,7 +801,7 @@ static nserror hotlist_generate(void)
 	int i;
 	struct hotlist_folder *f;
 	treeview_node *e;
-	char *title;
+	const char *title;
 	nserror err;
 	nsurl *url;
 	static const struct {
@@ -808,7 +821,7 @@ static nserror hotlist_generate(void)
 			sizeof(default_entries[0]);
 
 	/* First make "NetSurf" folder for defualt entries */
-	title = strdup("NetSurf");
+	title = "NetSurf";
 	err = hotlist_add_folder_internal(title, NULL,
 			TREE_REL_FIRST_CHILD, &f);
 	if (err != NSERROR_OK) {
@@ -823,7 +836,7 @@ static nserror hotlist_generate(void)
 			return NSERROR_NOMEM;
 		}
 
-		title = strdup(messages_get(default_entries[i].msg_key));
+		title = messages_get(default_entries[i].msg_key);
 
 		/* Build the node */
 		err = hotlist_add_entry_internal(url, title,
@@ -831,7 +844,6 @@ static nserror hotlist_generate(void)
 		nsurl_unref(url);
 
 		if (err != NSERROR_OK) {
-			free(title);
 			return NSERROR_NOMEM;
 		}
 	}
@@ -1200,8 +1212,8 @@ nserror hotlist_add_url(nsurl *url)
 	if (hl_ctx.default_folder == NULL) {
 		const char *temp = messages_get("HotlistDefaultFolderName");
 		struct hotlist_folder *f;
-		err = hotlist_add_folder_internal(strdup(temp),
-				NULL, TREE_REL_FIRST_CHILD, &f);
+		err = hotlist_add_folder_internal(temp, NULL,
+				TREE_REL_FIRST_CHILD, &f);
 		if (err != NSERROR_OK)
 			return err;
 
@@ -1346,8 +1358,7 @@ static nserror hotlist_update_url_walk_cb(void *ctx, void *node_data,
 			}
 		}
 
-		err = hotlist_create_treeview_field_data(e,
-				e->data[HL_TITLE].value, tw->data);
+		err = hotlist_create_treeview_field_visits_data(e, tw->data);
 		if (err != NSERROR_OK)
 			return err;
 
@@ -1396,14 +1407,6 @@ nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y)
 		assert(url != NULL);
 	} else {
 		nsurl_ref(url);
-	}
-
-	if (title != NULL) {
-		title = strdup(title);
-		if (title == NULL) {
-			nsurl_unref(url);
-			return NSERROR_NOMEM;
-		}
 	}
 
 	err = treeview_get_relation(hl_ctx.tree, &relation, &rel, at_y, y);
