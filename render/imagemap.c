@@ -141,7 +141,7 @@ bool imagemap_create(html_content *c)
 	assert(c != NULL);
 
 	if (c->imagemaps == NULL) {
-		c->imagemaps = calloc(HASH_SIZE, sizeof(struct imagemap));
+		c->imagemaps = calloc(HASH_SIZE, sizeof(struct imagemap *));
 		if (c->imagemaps == NULL) {
 			return false;
 		}
