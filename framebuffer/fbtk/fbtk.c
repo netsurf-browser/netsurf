@@ -144,11 +144,12 @@ fbtk_set_mapping(fbtk_widget_t *widget, bool map)
 static void
 swap_siblings(fbtk_widget_t *lw)
 {
-	fbtk_widget_t *rw; /* the widget to swap lw with */
+	fbtk_widget_t *rw = lw->next; /* the widget to swap lw with */
 	fbtk_widget_t *before;
 	fbtk_widget_t *after;
 
-	rw = lw->next;
+	assert(rw != NULL);
+
 	LOG(("Swapping %p with %p", lw, rw));
 	before = lw->prev;
 	after = rw->next;
