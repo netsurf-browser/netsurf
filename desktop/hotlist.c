@@ -653,6 +653,10 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 		/* Add folder node */
 		err = hotlist_add_folder_internal(title, current_ctx->rel,
 				current_ctx->relshp, &f);
+		if (err != NSERROR_OK) {
+			dom_string_unref(name);
+			return NSERROR_NOMEM;
+		}
 
 		/* Check if folder should be default folder */
 		error = dom_element_get_attribute(node, corestring_dom_id, &id);
@@ -670,11 +674,6 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 		rel = f->folder;
 		current_ctx->rel = rel;
 		current_ctx->relshp = TREE_REL_NEXT_SIBLING;
-
-		if (err != NSERROR_OK) {
-			dom_string_unref(name);
-			return NSERROR_NOMEM;
-		}
 
 		new_ctx.tree = current_ctx->tree;
 		new_ctx.rel = rel;
