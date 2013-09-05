@@ -1215,9 +1215,13 @@ nserror hotlist_add_url(nsurl *url)
 	err = hotlist_add_entry_internal(url, NULL, NULL,
 			hl_ctx.default_folder->folder,
 			TREE_REL_FIRST_CHILD, &entry);
+	if (err != NSERROR_OK)
+		return err;
 
 	/* Ensure default folder is expanded */
 	err = treeview_node_expand(hl_ctx.tree, hl_ctx.default_folder->folder);
+	if (err != NSERROR_OK)
+		return err;
 
 	return NSERROR_OK;
 }
