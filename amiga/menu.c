@@ -547,7 +547,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	gwin->menu[item].nm_Label = NULL;
 }
 
-static nserror ami_menu_hotlist_add(void *ctx, const char *title, struct nsurl *url, bool is_folder)
+static nserror ami_menu_hotlist_add(void *ctx, const char *title, nsurl *url, bool is_folder)
 {
 	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
 	UBYTE type;
@@ -1143,19 +1143,14 @@ static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct In
 
 static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	nsurl *url;
+	nsurl *url = hook->h_Data;
 	nserror error;
-	char *urltxt = hook->h_Data;
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(urltxt == NULL) return;
+	if(url == NULL) return;
 
-	error = nsurl_create(urltxt, &url);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		browser_window_navigate(gwin->bw,
+	browser_window_navigate(gwin->bw,
 					url,
 					NULL,
 					BROWSER_WINDOW_HISTORY |
@@ -1163,8 +1158,6 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 					NULL,
 					NULL,
 					NULL);
-		nsurl_unref(url);
-	}
 }
 
 static void ami_menu_item_settings_edit(struct Hook *hook, APTR window, struct IntuiMessage *msg)
