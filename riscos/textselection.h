@@ -35,7 +35,6 @@ bool ro_gui_selection_prepare_paste_datasave(
 bool ro_gui_selection_prepare_paste_dataload(
 		wimp_full_message_data_xfer *dataxfer);
 
-void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim);
 void ro_gui_selection_data_request(wimp_full_message_data_request *req);
 bool ro_gui_save_clipboard(const char *path);

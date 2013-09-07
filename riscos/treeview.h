@@ -48,8 +48,7 @@ struct tree *ro_treeview_get_tree(ro_treeview *tv);
 wimp_w ro_treeview_get_window(ro_treeview *tv);
 
 void ro_treeview_set_origin(ro_treeview *tv, int x, int y);
-void ro_treeview_mouse_at(wimp_pointer *pointer);
-void ro_treeview_drag_end(wimp_dragged *drag);
+void ro_treeview_mouse_at(wimp_pointer *pointer, void *data);
 int ro_treeview_get_help(help_full_message_request *message_data);
 
 #endif

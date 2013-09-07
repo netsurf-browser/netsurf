@@ -124,7 +124,6 @@ const char *ro_gui_default_language(void);
 
 /* in download.c */
 void ro_gui_download_init(void);
-void ro_gui_download_drag_end(wimp_dragged *drag);
 void ro_gui_download_datasave_ack(wimp_message *message);
 bool ro_gui_download_prequit(void);
 
@@ -133,11 +132,9 @@ void ro_gui_401login_init(void);
 
 /* in window.c */
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
-void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
+void ro_gui_window_mouse_at(wimp_pointer *pointer, void *data);
 void ro_gui_window_iconise(struct gui_window *g,
 		wimp_full_message_window_info *wi);
-void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
-void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag);
 bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_redraw_all(void);
 void ro_gui_window_update_boxes(void);

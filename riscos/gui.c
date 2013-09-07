@@ -74,6 +74,7 @@
 #include "riscos/iconbar.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
+#include "riscos/mouse.h"
 #include "riscos/print.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
@@ -243,7 +244,6 @@ static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
 static void ro_gui_pointer_entering_window(wimp_entering *entering);
 static void ro_gui_check_resolvers(void);
-static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key *key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
 static void ro_msg_dataload(wimp_message *block);
@@ -1123,7 +1123,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_USER_DRAG_BOX:
-			ro_gui_drag_end(&(block->dragged));
+			ro_mouse_drag_end(&block->dragged);
 			break;
 
 		case wimp_KEY_PRESSED:
@@ -1162,6 +1162,8 @@ void ro_gui_null_reason_code(void)
 	os_error *error;
 
 	ro_gui_throb();
+	
+	ro_mouse_poll();
 
 	if (!gui_track)
 		return;
@@ -1179,11 +1181,11 @@ void ro_gui_null_reason_code(void)
 		/* pointer is allowed to wander outside the initiating window
 			for certain drag types */
 
-		case GUI_DRAG_SELECTION:
+		//case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
-		case GUI_DRAG_FRAME:
+		//case GUI_DRAG_FRAME:
 			assert(gui_track_gui_window);
-			ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
+			ro_gui_window_mouse_at(&pointer, gui_track_gui_window);
 			break;
 
 //		case GUI_DRAG_SAVE:
@@ -1194,14 +1196,14 @@ void ro_gui_null_reason_code(void)
 			if (ro_gui_global_history_check_window(gui_track_wimp_w) ||
 					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
 					ro_gui_cookies_check_window(gui_track_wimp_w))
-				ro_treeview_mouse_at(&pointer);
+				ro_treeview_mouse_at(&pointer, NULL);
 			if (gui_track_wimp_w == history_window)
 				ro_gui_history_mouse_at(&pointer);
 			if (gui_track_wimp_w == dialog_url_complete)
 				ro_gui_url_complete_mouse_at(&pointer);
 			else if (gui_track_gui_window)
-				ro_gui_window_mouse_at(gui_track_gui_window,
-						&pointer);
+				ro_gui_window_mouse_at(&pointer,
+						gui_track_gui_window);
 			break;
 	}
 }
@@ -1252,13 +1254,15 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 {
 	if (gui_track_wimp_w == history_window)
 		ro_gui_dialog_close(dialog_tooltip);
+		
+	LOG(("Leaving window 0x%x", leaving->w));
 
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
 		case GUI_DRAG_SAVE:
 		case GUI_DRAG_FRAME:
-		case GUI_DRAG_TREEVIEW:
+		//case GUI_DRAG_TREEVIEW:
 			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
 				issues when a Wimp_DragBox drag operation is started */
 			break;
@@ -1280,12 +1284,14 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 
 void ro_gui_pointer_entering_window(wimp_entering *entering)
 {
+	LOG(("Entering window 0x%x", entering->w));
+
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
 		case GUI_DRAG_SAVE:
 		case GUI_DRAG_FRAME:
-		case GUI_DRAG_TREEVIEW:
+		//case GUI_DRAG_TREEVIEW:
 			/* ignore entering new windows/frames */
 			break;
 		default:
@@ -1297,54 +1303,6 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
 					ro_gui_global_history_check_window(gui_track_wimp_w) ||
 					ro_gui_cookies_check_window(gui_track_wimp_w);
-			break;
-	}
-}
-
-
-/**
- * Handle User_Drag_Box events.
- */
-
-void ro_gui_drag_end(wimp_dragged *drag)
-{
-	switch (gui_current_drag_type) {
-		case GUI_DRAG_SELECTION:
-			assert(gui_track_gui_window);
-			ro_gui_selection_drag_end(gui_track_gui_window, drag);
-			break;
-
-		case GUI_DRAG_SCROLL:
-			assert(gui_track_gui_window);
-			ro_gui_window_scroll_end(gui_track_gui_window, drag);
-			break;
-
-		case GUI_DRAG_DOWNLOAD_SAVE:
-			ro_gui_download_drag_end(drag);
-			break;
-
-		case GUI_DRAG_SAVE:
-			ro_gui_save_drag_end(drag);
-			break;
-
-		case GUI_DRAG_STATUS_RESIZE:
-			break;
-
-		case GUI_DRAG_TREEVIEW:
-			ro_treeview_drag_end(drag);
-			break;
-
-		case GUI_DRAG_BUTTONBAR:
-			ro_gui_button_bar_drag_end(drag);
-			break;
-
-		case GUI_DRAG_FRAME:
-			assert(gui_track_gui_window);
-			ro_gui_window_frame_resize_end(gui_track_gui_window, drag);
-			break;
-
-		default:
-			assert(gui_current_drag_type == GUI_DRAG_NONE);
 			break;
 	}
 }

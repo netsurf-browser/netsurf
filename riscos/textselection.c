@@ -31,6 +31,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
+#include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
 #include "utils/log.h"
@@ -66,6 +67,7 @@ static ro_gui_selection_prepare_paste_cb paste_cb = NULL;
 static void *paste_cb_pw = NULL;
 static int paste_prev_message = 0;
 
+static void ro_gui_selection_drag_end(wimp_dragged *drag, void *g);
 static void ro_gui_discard_clipboard_contents(void);
 static void ro_gui_dragging_bounced(wimp_message *message);
 
@@ -125,7 +127,9 @@ void gui_start_selection(struct gui_window *g)
 				error->errnum, error->errmess));
 
 	gui_current_drag_type = GUI_DRAG_SELECTION;
-	gui_track_gui_window = g;
+	gui_track_gui_window = g; // \TODO -- Remove?
+	ro_mouse_drag_start(ro_gui_selection_drag_end, ro_gui_window_mouse_at,
+			NULL, g);
 
 	drag.type = wimp_DRAG_USER_POINT;
 	/* Don't constrain mouse pointer during drags */
@@ -147,16 +151,17 @@ void gui_start_selection(struct gui_window *g)
 /**
  * End of text selection drag operation
  *
- * \param g        gui window
- * \param dragged  position of pointer at conclusion of drag
+ * \param *drag		position of pointer at conclusion of drag
+ * \param *data		gui window pointer.
  */
 
-void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
+static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 {
 	wimp_auto_scroll_info scroll;
 	wimp_pointer pointer;
 	os_error *error;
 	os_coord pos;
+	struct gui_window *g = (struct gui_window *) data;
 
 	LOG(("ending text selection drag"));
 

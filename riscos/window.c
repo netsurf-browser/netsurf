@@ -68,6 +68,7 @@
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
+#include "riscos/mouse.h"
 #include "utils/nsoption.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
@@ -107,6 +108,8 @@ static void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 static bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action);
 static void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu);
+
+static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data);
 
 static void ro_gui_window_scroll_action(struct gui_window *g,
 		int scroll_x, int scroll_y);
@@ -1239,8 +1242,10 @@ bool gui_window_scroll_start(struct gui_window *g)
 		return false;
 	}
 
-	gui_track_gui_window = g;
+	gui_track_gui_window = g; // \TODO -- Remove?
 	gui_current_drag_type = GUI_DRAG_SCROLL;
+	ro_mouse_drag_start(ro_gui_window_scroll_end, ro_gui_window_mouse_at,
+			NULL, g);
 	return true;
 }
 
@@ -1295,6 +1300,8 @@ bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 	case GDRAGGING_SCROLLBAR:
 		/* Dragging a core scrollbar */
 		gui_current_drag_type = GUI_DRAG_SCROLL;
+		ro_mouse_drag_start(ro_gui_window_scroll_end, ro_gui_window_mouse_at,
+				NULL, g);
 		break;
 
 	default:
@@ -3350,13 +3357,14 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 /**
  * Handle pointer movements in a browser window.
  *
- * \param  g	    browser window that the pointer is in
- * \param  pointer  new mouse position
+ * \param *pointer	new mouse position
+ * \param *data		browser window that the pointer is in
  */
 
-void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
+void ro_gui_window_mouse_at(wimp_pointer *pointer, void *data)
 {
 	os_coord pos;
+	struct gui_window *g = (struct gui_window *) data;
 
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 		browser_window_mouse_track(g->bw,
@@ -3500,14 +3508,16 @@ void ro_gui_window_iconise(struct gui_window *g,
 /**
  * Completes scrolling of a browser window
  *
- * \param g  gui window
+ * \param *drag		The DragEnd event data block.
+ * \param *data		gui window block pointer.
  */
 
-void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
+static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data)
 {
 	wimp_pointer pointer;
 	os_error *error;
 	os_coord pos;
+	struct gui_window *g = (struct gui_window *) data;
 
 	gui_current_drag_type = GUI_DRAG_NONE;
 	if (!g)
@@ -3537,19 +3547,6 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 
 	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
 		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
-}
-
-
-/**
- * Completes resizing of a browser frame
- *
- * \param g  gui window
- */
-
-void ro_gui_window_frame_resize_end(struct gui_window *g, wimp_dragged *drag)
-{
-	/* our clean-up is the same as for page scrolling */
-	ro_gui_window_scroll_end(g, drag);
 }
 
 

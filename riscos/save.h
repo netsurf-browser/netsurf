@@ -37,7 +37,6 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 			const char *title, struct gui_window *g);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_drag_box_cancel(void);
-void ro_gui_save_drag_end(wimp_dragged *drag);
 void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
 bool ro_gui_save_ok(wimp_w w);

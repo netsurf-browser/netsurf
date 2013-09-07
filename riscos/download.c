@@ -45,6 +45,7 @@
 #include "desktop/netsurf.h"
 #include "riscos/dialog.h"
 #include "utils/nsoption.h"
+#include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
@@ -133,7 +134,7 @@ static int download_progress_y1;
 static char *download_dir = NULL;
 static size_t download_dir_len;
 
-
+static void ro_gui_download_drag_end(wimp_dragged *drag, void *data);
 static const char *ro_gui_download_temp_name(struct gui_download_window *dw);
 static void ro_gui_download_update_status(struct gui_download_window *dw);
 static void ro_gui_download_update_status_wrapper(void *p);
@@ -814,8 +815,9 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 	os_error *error;
 
 	dw = (struct gui_download_window *)ro_gui_wimp_event_get_user_data(pointer->w);
-	if (pointer->i == ICON_DOWNLOAD_ICON && !dw->error &&
-			!dw->saved) {
+	if ((pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) &&
+			pointer->i == ICON_DOWNLOAD_ICON && 
+			!dw->error && !dw->saved) {
 		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
 		int x = pointer->pos.x, y = pointer->pos.y;
 		wimp_window_state wstate;
@@ -830,6 +832,7 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 					wstate.visible.y1 - wstate.yscroll;
 		}
 		gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
+		ro_mouse_drag_start(ro_gui_download_drag_end, NULL, NULL, NULL);
 		download_window_current = dw;
 		ro_gui_drag_icon(x, y, sprite);
 
@@ -899,10 +902,11 @@ bool ro_gui_download_keypress(wimp_key *key)
 /**
  * Handle User_Drag_Box event for a drag from a download window.
  *
- * \param  drag  block returned by Wimp_Poll
+ * \param *drag		block returned by Wimp_Poll
+ * \param *data		NULL data to allow use as callback from ro_mouse.
  */
 
-void ro_gui_download_drag_end(wimp_dragged *drag)
+static void ro_gui_download_drag_end(wimp_dragged *drag, void *data)
 {
 	wimp_pointer pointer;
 	wimp_message message;

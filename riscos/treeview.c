@@ -45,6 +45,7 @@
 #include "riscos/gui.h"
 #include "riscos/image.h"
 #include "riscos/menus.h"
+#include "riscos/mouse.h"
 #include "riscos/toolbar.h"
 #include "riscos/tinct.h"
 #include "riscos/textarea.h"
@@ -101,6 +102,7 @@ static void ro_treeview_open(wimp_open *open);
 static bool ro_treeview_mouse_click(wimp_pointer *pointer);
 static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 		wimp_window_state *state);
+static void ro_treeview_drag_end(wimp_dragged *drag, void *data);
 static bool ro_treeview_keypress(wimp_key *key);
 
 static void ro_treeview_set_window_extent(ro_treeview *tv,
@@ -899,10 +901,11 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 /**
  * Track the mouse under Null Polls from the wimp, to support dragging.
  *
- * \param  *pointer		Pointer to a Wimp Pointer block.
+ * \param *pointer		Pointer to a Wimp Pointer block.
+ * \param *data			NULL to allow use as a ro_mouse callback.
  */
 
-void ro_treeview_mouse_at(wimp_pointer *pointer)
+void ro_treeview_mouse_at(wimp_pointer *pointer, void *data)
 {
 	os_error		*error;
 	ro_treeview		*tv;
@@ -1011,6 +1014,8 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 		break;
 	}
 
+	LOG(("Drag start..."));
+
 	error = xwimp_drag_box_with_flags(&drag,
 			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
 	if (error) {
@@ -1034,8 +1039,9 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 		}
-
-		gui_current_drag_type = GUI_DRAG_TREEVIEW;
+		
+		ro_mouse_drag_start(ro_treeview_drag_end, ro_treeview_mouse_at,
+				NULL, NULL);
 	}
 }
 
@@ -1045,9 +1051,10 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
  * started by ro_treeview_drag_start().
  *
  * \param *drag			Pointer to the User Drag Box Event block.
+ * \param *data			NULL to allow use as a ro_mouse callback.
  */
 
-void ro_treeview_drag_end(wimp_dragged *drag)
+static void ro_treeview_drag_end(wimp_dragged *drag, void *data)
 {
 	os_error		*error;
 

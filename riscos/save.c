@@ -49,6 +49,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
+#include "riscos/mouse.h"
 #include "utils/nsoption.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
@@ -110,6 +111,7 @@ static bool ro_gui_save_link(const char *url, const char *title, link_format for
 static void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 		const char *url, char *leaf_buf, size_t leaf_len,
 		char *icon_buf, size_t icon_len);
+static void ro_gui_save_drag_end(wimp_dragged *drag, void *data);
 static bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name);
 static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
@@ -305,6 +307,7 @@ void ro_gui_save_start_drag(wimp_pointer *pointer)
 					wstate.visible.y1 - wstate.yscroll;
 		}
 		gui_current_drag_type = GUI_DRAG_SAVE;
+		ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 		gui_save_sourcew = pointer->w;
 		saving_from_dialog = true;
 		gui_save_close_after = !(pointer->buttons & wimp_DRAG_ADJUST);
@@ -382,6 +385,7 @@ void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
 			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
+	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
 }
@@ -430,6 +434,7 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
+	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
 }
@@ -474,6 +479,7 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
+	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
 }
@@ -598,9 +604,12 @@ void ro_gui_drag_box_cancel(void)
 
 /**
  * Handle User_Drag_Box event for a drag from the save dialog or browser window.
+ *
+ * \param *drag		The Wimp_DragEnd data block.
+ * \param *data		NULL, as function is used as a callback from ro_mouse.
  */
 
-void ro_gui_save_drag_end(wimp_dragged *drag)
+static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 {
 	const char *name;
 	wimp_pointer pointer;
@@ -714,6 +723,7 @@ void ro_gui_send_datasave(gui_save_type save_type,
 		gui_save_current_type = save_type;
 		gui_save_sourcew = (wimp_w)-1;
 		saving_from_dialog = false;
+		
 		gui_current_drag_type = GUI_DRAG_SAVE;
 	}
 }
