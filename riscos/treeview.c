@@ -1008,8 +1008,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 	drag.bbox.x0 = state->visible.x0;
 	drag.bbox.y0 = state->visible.y0;
 	drag.bbox.x1 = state->visible.x1;
-	drag.bbox.y1 = state->visible.y1 -
-	ro_toolbar_height(tv->tb);
+	drag.bbox.y1 = state->visible.y1 - ro_toolbar_height(tv->tb) - 2;
 
 	switch (tv->drag) {
 	case TREE_SELECT_DRAG:
