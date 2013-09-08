@@ -1092,8 +1092,6 @@ static void ro_treeview_drag_end(wimp_dragged *drag, void *data)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-
-	gui_current_drag_type = GUI_DRAG_NONE;
 }
 
 

@@ -201,3 +201,44 @@ void ro_mouse_pointer_leaving_window(wimp_leaving *leaving)
 	ro_mouse_poll_data = NULL;
 }
 
+
+/**
+ * Kill any tracking events if the data pointers match the supplied pointer.
+ *
+ * \param *data		The data of the client to be killed.
+ */
+
+void ro_mouse_kill(void *data)
+{
+	if (data == ro_mouse_drag_data) {
+		ro_mouse_drag_end_callback = NULL;
+		ro_mouse_drag_track_callback = NULL;
+		ro_mouse_drag_cancel_callback = NULL;
+		ro_mouse_drag_data = NULL;
+	}
+
+	if (data == ro_mouse_poll_data) {
+		ro_mouse_poll_end_callback = NULL;
+		ro_mouse_poll_track_callback = NULL;
+		ro_mouse_poll_data = NULL;
+	}
+}
+
+
+/**
+ * Return the desired polling interval to allow the mouse tracking to be
+ * carried out.
+ *
+ * \return		Desired poll interval (0 for none required).
+ */
+
+os_t ro_mouse_poll_interval(void)
+{
+	if (ro_mouse_drag_track_callback == NULL &&
+			ro_mouse_poll_track_callback == NULL)
+		return 0;
+
+	return 10; // \TODO Return 4 for DRAG_SELECTION && DRAG_SCROLL
+
+}
+

@@ -126,8 +126,6 @@ void gui_start_selection(struct gui_window *g)
 		LOG(("xwimp_auto_scroll: 0x%x: %s",
 				error->errnum, error->errmess));
 
-	gui_current_drag_type = GUI_DRAG_SELECTION;
-	gui_track_gui_window = g; // \TODO -- Remove?
 	ro_mouse_drag_start(ro_gui_selection_drag_end, ro_gui_window_mouse_at,
 			NULL, g);
 
@@ -162,10 +160,6 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 	os_error *error;
 	os_coord pos;
 	struct gui_window *g = (struct gui_window *) data;
-
-	LOG(("ending text selection drag"));
-
-	gui_current_drag_type = GUI_DRAG_NONE;
 
 	scroll.w = g->window;
 	error = xwimp_auto_scroll(0, &scroll, 0);

@@ -605,10 +605,7 @@ void gui_window_destroy(struct gui_window *g)
 	assert(g);
 
 	/* stop any tracking */
-	if (gui_track_gui_window == g) {
-		gui_track_gui_window = NULL;
-		gui_current_drag_type = GUI_DRAG_NONE;
-	}
+	ro_mouse_kill(g);
 
 	/* remove from list */
 	if (g->prev)
@@ -1245,8 +1242,6 @@ bool gui_window_scroll_start(struct gui_window *g)
 		return false;
 	}
 
-	gui_track_gui_window = g; // \TODO -- Remove?
-	gui_current_drag_type = GUI_DRAG_SCROLL;
 	ro_mouse_drag_start(ro_gui_window_scroll_end, ro_gui_window_mouse_at,
 			NULL, g);
 	return true;
@@ -1302,7 +1297,6 @@ bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 	switch (type) {
 	case GDRAGGING_SCROLLBAR:
 		/* Dragging a core scrollbar */
-		gui_current_drag_type = GUI_DRAG_SCROLL;
 		ro_mouse_drag_start(ro_gui_window_scroll_end, ro_gui_window_mouse_at,
 				NULL, g);
 		break;
@@ -3553,7 +3547,6 @@ static void ro_gui_window_scroll_end(wimp_dragged *drag, void *data)
 	os_coord pos;
 	struct gui_window *g = (struct gui_window *) data;
 
-	gui_current_drag_type = GUI_DRAG_NONE;
 	if (!g)
 		return;
 

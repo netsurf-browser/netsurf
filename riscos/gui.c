@@ -161,11 +161,6 @@ const char * NETSURF_DIR;
 static const char *task_name = "NetSurf";
 #define CHOICES_PREFIX "<Choices$Write>.WWW.NetSurf."
 
-/** The pointer is over a window which is tracking mouse movement. */
-static bool gui_track = false;
-/** Browser window which the pointer is over, or 0 if none. */
-struct gui_window *gui_track_gui_window;
-
 ro_gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
@@ -1026,26 +1021,19 @@ void gui_poll(bool active)
 	wimp_block block;
 	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
 			wimp_SAVE_FP;
+	os_t track_poll_offset;
 
 	/* Poll wimp. */
 	xhourglass_off();
+	track_poll_offset = ro_mouse_poll_interval();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || gui_track || TRUE || browser_reformat_pending ||
+	} else if (sched_active || (track_poll_offset > 0) || browser_reformat_pending ||
 			bitmap_maintenance) {
 		os_t t = os_read_monotonic_time();
 
-		if (gui_track)
-			switch (gui_current_drag_type) {
-				case GUI_DRAG_SELECTION:
-				case GUI_DRAG_SCROLL:
-					t += 4;	/* for smoother update */
-					break;
-
-				default:
-					t += 10;
-					break;
-			}
+		if (track_poll_offset > 0)
+			t += track_poll_offset;
 		else
 			t += 10;
 
