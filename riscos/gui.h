@@ -65,10 +65,8 @@ extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
 extern bool no_font_blending;
 
-typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
-		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,
-		GUI_DRAG_TREEVIEW, GUI_DRAG_BUTTONBAR,
-		GUI_DRAG_FRAME } ro_gui_drag_type;
+typedef enum { GUI_DRAG_NONE, GUI_DRAG_DOWNLOAD_SAVE, GUI_DRAG_SAVE }
+		ro_gui_drag_type;
 
 extern ro_gui_drag_type gui_current_drag_type;
 

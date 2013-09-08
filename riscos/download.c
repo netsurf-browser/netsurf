@@ -831,7 +831,6 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 			y = (istate.icon.extent.y1 + istate.icon.extent.y0)/2 +
 					wstate.visible.y1 - wstate.yscroll;
 		}
-		gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
 		ro_mouse_drag_start(ro_gui_download_drag_end, NULL, NULL, NULL);
 		download_window_current = dw;
 		ro_gui_drag_icon(x, y, sprite);
@@ -954,6 +953,8 @@ static void ro_gui_download_drag_end(wimp_dragged *drag, void *data)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	
+	gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
 }
 
 

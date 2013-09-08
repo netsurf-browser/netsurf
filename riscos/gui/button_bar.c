@@ -33,6 +33,7 @@
 #include "oslib/wimpspriteop.h"
 #include "riscos/gui/button_bar.h"
 #include "riscos/gui.h"
+#include "riscos/mouse.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
 #include "utils/log.h"
@@ -110,6 +111,7 @@ static bool			drag_separator = false;
 static bool ro_gui_button_bar_place_buttons(struct button_bar *button_bar);
 static bool ro_gui_button_bar_icon_update(struct button_bar *button_bar);
 static bool ro_gui_button_bar_icon_resize(struct button_bar *button_bar);
+static void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data);
 static void ro_gui_button_bar_sync_editors(struct button_bar *target,
 		struct button_bar *source);
 static struct button_bar_button *ro_gui_button_bar_find_icon(
@@ -749,7 +751,6 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 
 		if (button != NULL && (!button->shaded || drag_separator ||
 				button_bar->edit_source != NULL)) {
-			gui_current_drag_type = GUI_DRAG_BUTTONBAR;
 
 			drag_start = button_bar;
 			drag_opt = button->opt_key;
@@ -778,6 +779,10 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 			if (error)
 				LOG(("xdragasprite_start: 0x%x: %s",
 						error->errnum, error->errmess));
+
+			ro_mouse_drag_start(ro_gui_button_bar_drag_end,
+					NULL, NULL, NULL);
+
 
 			return true;
 		}
@@ -847,9 +852,14 @@ bool ro_gui_button_bar_help_suffix(struct button_bar *button_bar, wimp_i i,
 }
 
 
-/* This is an exported interface documented in button_bar.h */
+/**
+ * Terminate a drag event that was initiated by a button bar.
+ *
+ * \param *drag			The drag event data.
+ * \param *data			NULL data to satisfy callback syntax.
+ */
 
-void ro_gui_button_bar_drag_end(wimp_dragged *drag)
+void ro_gui_button_bar_drag_end(wimp_dragged *drag, void *data)
 {
 	struct button_bar		*drag_end = NULL;
 	struct button_bar		*source = NULL, *target = NULL;
@@ -861,7 +871,6 @@ void ro_gui_button_bar_drag_end(wimp_dragged *drag)
 	os_error			*error;
 
 	xdragasprite_stop();
-	gui_current_drag_type = GUI_DRAG_NONE;
 
 	if (drag_start == NULL)
 		return;

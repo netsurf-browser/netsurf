@@ -1784,6 +1784,8 @@ void ro_msg_datasave_ack(wimp_message *message)
 		default:
 			break;
 	}
+	
+	gui_current_drag_type = GUI_DRAG_NONE;
 }
 
 

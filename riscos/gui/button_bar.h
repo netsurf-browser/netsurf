@@ -291,15 +291,6 @@ bool ro_gui_button_bar_help_suffix(struct button_bar *button_bar, wimp_i i,
 
 
 /**
- * Terminate a drag event that was initiated by a button bar.
- *
- * \param *drag			The drag event data.
- */
-
-void ro_gui_button_bar_drag_end(wimp_dragged *drag);
-
-
-/**
  * Return a config string reflecting the configured order of buttons
  * and spacers.  The string is allocated with malloc(), and should be
  * free()d after use.

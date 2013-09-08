@@ -306,7 +306,6 @@ void ro_gui_save_start_drag(wimp_pointer *pointer)
 			y = (istate.icon.extent.y1 + istate.icon.extent.y0)/2 +
 					wstate.visible.y1 - wstate.yscroll;
 		}
-		gui_current_drag_type = GUI_DRAG_SAVE;
 		ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 		gui_save_sourcew = pointer->w;
 		saving_from_dialog = true;
@@ -384,7 +383,6 @@ void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
 			save_leafname, LEAFNAME_MAX,
 			icon_buf, sizeof(icon_buf));
 
-	gui_current_drag_type = GUI_DRAG_SAVE;
 	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
@@ -433,7 +431,6 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 			save_leafname, LEAFNAME_MAX,
 			icon_buf, sizeof(icon_buf));
 
-	gui_current_drag_type = GUI_DRAG_SAVE;
 	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
@@ -478,7 +475,6 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 	ro_gui_save_set_state(NULL, save_type, url, save_leafname, LEAFNAME_MAX,
 			icon_buf, sizeof(icon_buf));
 
-	gui_current_drag_type = GUI_DRAG_SAVE;
 	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
 	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
@@ -646,11 +642,8 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 			dest_ok = browser_window_drop_file_at_point(g->bw,
 					pos.x, pos.y, NULL);
 		}
-		if (!dest_ok) {
-			/* cancel the drag operation */
-			gui_current_drag_type = GUI_DRAG_NONE;
+		if (!dest_ok)
 			return;
-		}
 	}
 
 	if (!saving_from_dialog) {
@@ -699,6 +692,8 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 
 	ro_message_send_message_to_window(wimp_USER_MESSAGE_RECORDED, &message,
 			pointer.w, pointer.i, ro_gui_save_bounced, NULL);
+
+	gui_current_drag_type = GUI_DRAG_SAVE;
 
 	free(local_name);
 }

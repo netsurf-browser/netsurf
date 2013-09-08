@@ -526,7 +526,6 @@ bool ro_gui_status_bar_click(wimp_pointer *pointer)
 
 	switch (pointer->i) {
 		case ICON_WIDGET:
-			gui_current_drag_type = GUI_DRAG_STATUS_RESIZE;
 			drag.w = pointer->w;
 			drag.type = wimp_DRAG_SYSTEM_SIZE;
 			drag.initial.x0 = pointer->pos.x;
