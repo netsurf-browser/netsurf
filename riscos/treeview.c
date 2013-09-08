@@ -1021,7 +1021,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 		break;
 
 	case TREE_MOVE_DRAG:
-		drag.type = wimp_DRAG_USER_FIXED;
+		drag.type = wimp_DRAG_USER_POINT;
 
 		drag.initial.x0 = pointer->pos.x - 4;
 		drag.initial.y0 = pointer->pos.y - 48;
