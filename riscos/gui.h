@@ -162,7 +162,6 @@ bool ro_gui_alt_pressed(void);
 void ro_gui_history_init(void);
 void ro_gui_history_open(struct browser_window *bw, struct history *history,
 		bool pointer);
-void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in filetype.c */
 int ro_content_filetype(struct hlcache_handle *c);

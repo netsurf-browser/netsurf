@@ -100,6 +100,7 @@ static void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv,
 		osbool more);
 static void ro_treeview_open(wimp_open *open);
 static bool ro_treeview_mouse_click(wimp_pointer *pointer);
+static void ro_treeview_pointer_entering(wimp_entering *entering);
 static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 		wimp_window_state *state);
 static void ro_treeview_drag_end(wimp_dragged *drag, void *data);
@@ -191,6 +192,8 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 
 	ro_gui_wimp_event_register_redraw_window(tv->w, ro_treeview_redraw);
 	ro_gui_wimp_event_register_scroll_window(tv->w, ro_treeview_scroll);
+	ro_gui_wimp_event_register_pointer_entering_window(tv->w,
+			ro_treeview_pointer_entering);
 	ro_gui_wimp_event_register_open_window(tv->w, ro_treeview_open);
 	ro_gui_wimp_event_register_mouse_click(tv->w, ro_treeview_mouse_click);
 	ro_gui_wimp_event_register_keypress(tv->w, ro_treeview_keypress);
@@ -412,6 +415,7 @@ void ro_treeview_scroll(wimp_scroll *scroll)
 				error->errnum, error->errmess));
 	}
 }
+
 
 /**
  * Redraw a treeview window, once the initial readraw block has been collected.
@@ -897,6 +901,23 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 	return true;
 }
 
+
+/**
+ * Handle Pointer Entering Window events for treeview windows.
+ *
+ * \param *entering		The Wimp_PointerEnteringWindow block.
+ */
+
+void ro_treeview_pointer_entering(wimp_entering *entering)
+{
+	ro_treeview		*tv;
+
+	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(entering->w);
+	if (tv == NULL)
+		return;
+
+	ro_mouse_track_start(NULL, ro_treeview_mouse_at, NULL);
+} 
 
 /**
  * Track the mouse under Null Polls from the wimp, to support dragging.

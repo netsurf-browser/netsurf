@@ -158,6 +158,8 @@ void ro_gui_dialog_init(void)
 	dialog_url_complete = ro_gui_dialog_create("url_suggest");
 	ro_gui_wimp_event_register_mouse_click(dialog_url_complete,
 			ro_gui_url_complete_click);
+	ro_gui_wimp_event_register_pointer_entering_window(dialog_url_complete,
+			ro_gui_url_complete_entering);
 	ro_gui_wimp_event_register_redraw_window(dialog_url_complete,
 			ro_gui_url_complete_redraw);
 	ro_gui_wimp_event_set_help_prefix(dialog_url_complete, "HelpAutoURL");

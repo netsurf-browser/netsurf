@@ -94,6 +94,8 @@ static void gui_window_set_extent(struct gui_window *g, int width, int height);
 
 static void ro_gui_window_redraw(wimp_draw *redraw);
 static void ro_gui_window_scroll(wimp_scroll *scroll);
+static void ro_gui_window_pointer_entering(wimp_entering *entering);
+static void ro_gui_window_track_end(wimp_leaving *leaving, void *data);
 static void ro_gui_window_open(wimp_open *open);
 static void ro_gui_window_close(wimp_w w);
 static bool ro_gui_window_click(wimp_pointer *mouse);
@@ -546,6 +548,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	ro_gui_wimp_event_register_close_window(g->window, ro_gui_window_close);
 	ro_gui_wimp_event_register_redraw_window(g->window, ro_gui_window_redraw);
 	ro_gui_wimp_event_register_scroll_window(g->window, ro_gui_window_scroll);
+	ro_gui_wimp_event_register_pointer_entering_window(g->window, ro_gui_window_pointer_entering);
 	ro_gui_wimp_event_register_keypress(g->window, ro_gui_window_keypress);
 	ro_gui_wimp_event_register_mouse_click(g->window, ro_gui_window_click);
 	ro_gui_wimp_event_register_menu(g->window, ro_gui_browser_window_menu,
@@ -3132,6 +3135,37 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 	} else if (g != NULL) {
 		ro_gui_window_scroll_action(g, scroll->xmin, scroll->ymin);
 	}
+}
+
+/**
+ * Process Pointer Entering Window events in a browser window.
+ *
+ * \param *entering		The wimp pointer entering event data block.
+ */
+
+static void ro_gui_window_pointer_entering(wimp_entering *entering)
+{
+	struct gui_window	*g = ro_gui_window_lookup(entering->w);
+
+	if (g != NULL)
+		ro_mouse_track_start(ro_gui_window_track_end,
+				ro_gui_window_mouse_at, g);
+}
+
+/**
+ * Process Pointer Leaving Window events in a browser window. These arrive via
+ * the termination callback handler from ro_mouse's mouse tracking.
+ *
+ * \param *leaving		The wimp pointer leaving event data block.
+ * \param *data			The GUI window that the pointer is leaving.
+ */
+
+static void ro_gui_window_track_end(wimp_leaving *leaving, void *data)
+{
+	struct gui_window	*g = (struct gui_window *) data;
+
+	if (g != NULL)
+		gui_window_set_pointer(g, GUI_POINTER_DEFAULT);
 }
 
 

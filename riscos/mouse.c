@@ -27,6 +27,12 @@
  *    - on Null Polls while the drag is active,
  *    - when the drag terminates with Event_DragEnd, and
  *    - when the drag terminates with Escape being pressed.
+ *
+ * 2. Mouse tracking support, allowing clients to track the mouse while it
+ *    remains in the current window and specify callbacks to be used
+ *
+ *    - on Null Polls while the pointer is in the window, and
+ *    - when the pointer leaves the window.
  */
 
 #include "oslib/wimp.h"
@@ -44,6 +50,15 @@ static void (*ro_mouse_drag_track_callback)(wimp_pointer *pointer, void *data)
 static void (*ro_mouse_drag_cancel_callback)(void *data) = NULL;
 static void *ro_mouse_drag_data = NULL;
 
+/* Data for the wimp poll handler. */
+
+static void (*ro_mouse_poll_end_callback)(wimp_leaving *leaving, void *data)
+		= NULL;
+static void (*ro_mouse_poll_track_callback)(wimp_pointer *pointer, void *data)
+		= NULL;
+static void *ro_mouse_poll_data = NULL;
+
+
 /**
  * Process Null polls for any drags and mouse trackers that are currently
  * active.
@@ -56,7 +71,8 @@ void ro_mouse_poll(void)
 
 	/* If no trackers are active, just exit. */
 
-	if (ro_mouse_drag_track_callback == NULL /* && no trackers */)
+	if (ro_mouse_drag_track_callback == NULL &&
+			ro_mouse_poll_track_callback == NULL)
 		return;
 
 	error = xwimp_get_pointer_info(&pointer);
@@ -71,6 +87,11 @@ void ro_mouse_poll(void)
 
 	if (ro_mouse_drag_track_callback != NULL)
 		ro_mouse_drag_track_callback(&pointer, ro_mouse_drag_data);
+
+	/* Process the window tracker, if one is active. */
+
+	if (ro_mouse_poll_track_callback != NULL)
+		ro_mouse_poll_track_callback(&pointer, ro_mouse_poll_data);
 }
 
 
@@ -106,8 +127,8 @@ void ro_mouse_drag_start(void (*drag_end)(wimp_dragged *dragged, void *data),
 
 
 /**
- * Process Wimp_DragEnd events by passing the details on to any registered
- * event handler.
+ * Process Wimp_DragEnd events by terminating an active drag track and passing
+ * the details on to any registered event handler.
  *
  * \param *dragged	The Wimp_DragEnd data block.
  */
@@ -127,5 +148,56 @@ void ro_mouse_drag_end(wimp_dragged *dragged)
 	ro_mouse_drag_track_callback = NULL;
 	ro_mouse_drag_cancel_callback = NULL;
 	ro_mouse_drag_data = NULL;
+}
+
+
+/**
+ * Start tracking the mouse in a window, providing a function to be called on
+ * null polls and optionally one to be called when it leaves the window.
+ *
+ * \param *drag_end	Callback for when the pointer leaves the window, or
+ *			NULL for none.
+ * \param *drag_track	Callback for mouse tracking while the pointer remains
+ *			in the window, or NULL for none.
+ * \param *data		Data to be passed to the callback functions, or NULL.
+ */
+
+void ro_mouse_track_start(void (*poll_end)(wimp_leaving *leaving, void *data),
+		void (*poll_track)(wimp_pointer *pointer, void *data),
+		void *data)
+{
+	/* It should never be possible for the mouse to be in two windows
+	 * at the same time!
+	 */
+
+	assert(ro_mouse_poll_end_callback == NULL &&
+			ro_mouse_poll_track_callback == NULL &&
+			ro_mouse_poll_data == NULL);
+
+	ro_mouse_poll_end_callback = poll_end;
+	ro_mouse_poll_track_callback = poll_track;
+	ro_mouse_poll_data = data;
+}
+
+
+/**
+ * Process Wimp_PointerLeaving events by terminating an active mouse track and
+ * passing the details on to any registered event handler.
+ *
+ * \param *leaving	The Wimp_PointerLeaving data block.
+ */
+
+void ro_mouse_pointer_leaving_window(wimp_leaving *leaving)
+{
+	if (ro_mouse_poll_end_callback != NULL)
+		ro_mouse_poll_end_callback(leaving, ro_mouse_poll_data);
+
+	/* Poll tracking is a one-shot event, so clear the data ready for
+	 * another claimant.
+	 */
+
+	ro_mouse_poll_end_callback = NULL;
+	ro_mouse_poll_track_callback = NULL;
+	ro_mouse_poll_data = NULL;
 }
 

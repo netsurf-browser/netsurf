@@ -163,8 +163,6 @@ static const char *task_name = "NetSurf";
 
 /** The pointer is over a window which is tracking mouse movement. */
 static bool gui_track = false;
-/** Handle of window which the pointer is over. */
-static wimp_w gui_track_wimp_w;
 /** Browser window which the pointer is over, or 0 if none. */
 struct gui_window *gui_track_gui_window;
 
@@ -239,10 +237,7 @@ static void ro_gui_choose_language(void);
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
-static void ro_gui_null_reason_code(void);
 static void ro_gui_close_window_request(wimp_close *close);
-static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
-static void ro_gui_pointer_entering_window(wimp_entering *entering);
 static void ro_gui_check_resolvers(void);
 static void ro_gui_keypress(wimp_key *key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
@@ -1036,7 +1031,7 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || gui_track || browser_reformat_pending ||
+	} else if (sched_active || gui_track || TRUE || browser_reformat_pending ||
 			bitmap_maintenance) {
 		os_t t = os_read_monotonic_time();
 
@@ -1095,7 +1090,8 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 {
 	switch (event) {
 		case wimp_NULL_REASON_CODE:
-			ro_gui_null_reason_code();
+			ro_gui_throb();
+			ro_mouse_poll();
 			break;
 
 		case wimp_REDRAW_WINDOW_REQUEST:
@@ -1111,11 +1107,11 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_POINTER_LEAVING_WINDOW:
-			ro_gui_pointer_leaving_window(&block->leaving);
+			ro_mouse_pointer_leaving_window(&block->leaving);
 			break;
 
 		case wimp_POINTER_ENTERING_WINDOW:
-			ro_gui_pointer_entering_window(&block->entering);
+			ro_gui_wimp_event_pointer_entering_window(&block->entering);
 			break;
 
 		case wimp_MOUSE_CLICK:
@@ -1147,63 +1143,6 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 		case wimp_USER_MESSAGE_RECORDED:
 		case wimp_USER_MESSAGE_ACKNOWLEDGE:
 			ro_gui_user_message(event, &(block->message));
-			break;
-	}
-}
-
-
-/**
- * Handle Null_Reason_Code events.
- */
-
-void ro_gui_null_reason_code(void)
-{
-	wimp_pointer pointer;
-	os_error *error;
-
-	ro_gui_throb();
-	
-	ro_mouse_poll();
-
-	if (!gui_track)
-		return;
-
-	error = xwimp_get_pointer_info(&pointer);
-	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s",
-			error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	switch (gui_current_drag_type) {
-
-		/* pointer is allowed to wander outside the initiating window
-			for certain drag types */
-
-		//case GUI_DRAG_SELECTION:
-		case GUI_DRAG_SCROLL:
-		//case GUI_DRAG_FRAME:
-			assert(gui_track_gui_window);
-			ro_gui_window_mouse_at(&pointer, gui_track_gui_window);
-			break;
-
-//		case GUI_DRAG_SAVE:
-//			ro_gui_selection_send_dragging(&pointer);
-//			break;
-
-		default:
-			if (ro_gui_global_history_check_window(gui_track_wimp_w) ||
-					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
-					ro_gui_cookies_check_window(gui_track_wimp_w))
-				ro_treeview_mouse_at(&pointer, NULL);
-			if (gui_track_wimp_w == history_window)
-				ro_gui_history_mouse_at(&pointer);
-			if (gui_track_wimp_w == dialog_url_complete)
-				ro_gui_url_complete_mouse_at(&pointer);
-			else if (gui_track_gui_window)
-				ro_gui_window_mouse_at(&pointer,
-						gui_track_gui_window);
 			break;
 	}
 }
@@ -1242,68 +1181,6 @@ void ro_gui_close_window_request(wimp_close *close)
 		if (ro_gui_wimp_event_close_window(close->w))
 			return;
 		ro_gui_dialog_close(close->w);
-	}
-}
-
-
-/**
- * Handle Pointer_Leaving_Window events.
- */
-
-void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
-{
-	if (gui_track_wimp_w == history_window)
-		ro_gui_dialog_close(dialog_tooltip);
-		
-	LOG(("Leaving window 0x%x", leaving->w));
-
-	switch (gui_current_drag_type) {
-		case GUI_DRAG_SELECTION:
-		case GUI_DRAG_SCROLL:
-		case GUI_DRAG_SAVE:
-		case GUI_DRAG_FRAME:
-		//case GUI_DRAG_TREEVIEW:
-			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
-				issues when a Wimp_DragBox drag operation is started */
-			break;
-
-		default:
-			if (gui_track_gui_window)
-				gui_window_set_pointer(gui_track_gui_window, GUI_POINTER_DEFAULT);
-			gui_track_wimp_w = 0;
-			gui_track_gui_window = NULL;
-			gui_track = false;
-			break;
-	}
-}
-
-
-/**
- * Handle Pointer_Entering_Window events.
- */
-
-void ro_gui_pointer_entering_window(wimp_entering *entering)
-{
-	LOG(("Entering window 0x%x", entering->w));
-
-	switch (gui_current_drag_type) {
-		case GUI_DRAG_SELECTION:
-		case GUI_DRAG_SCROLL:
-		case GUI_DRAG_SAVE:
-		case GUI_DRAG_FRAME:
-		//case GUI_DRAG_TREEVIEW:
-			/* ignore entering new windows/frames */
-			break;
-		default:
-			gui_track_wimp_w = entering->w;
-			gui_track_gui_window = ro_gui_window_lookup(entering->w);
-			gui_track = gui_track_gui_window ||
-					gui_track_wimp_w == history_window ||
-					gui_track_wimp_w == dialog_url_complete ||
-					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
-					ro_gui_global_history_check_window(gui_track_wimp_w) ||
-					ro_gui_cookies_check_window(gui_track_wimp_w);
-			break;
 	}
 }
 

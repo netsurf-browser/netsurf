@@ -79,12 +79,12 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw);
 
 
 /**
- * Handle mouse movement over the URL completion window.
+ * Handle the pointer entering the URL completion window.
  *
- * \param pointer  the pointer state
- */
+ * \param *entering	The pointer entering data block.
+ */ 
 
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer);
+void ro_gui_url_complete_entering(wimp_entering *entering);
 
 
 /**

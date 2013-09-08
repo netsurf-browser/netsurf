@@ -33,6 +33,7 @@
 #include "desktop/browser_private.h"
 #include "utils/nsoption.h"
 #include "riscos/gui.h"
+#include "riscos/mouse.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
@@ -51,7 +52,9 @@ wimp_w history_window;
 
 static void ro_gui_history_redraw(wimp_draw *redraw);
 static bool ro_gui_history_click(wimp_pointer *pointer);
-
+static void ro_gui_history_pointer_entering(wimp_entering *entering);
+static void ro_gui_history_track_end(wimp_leaving *leaving, void *data);
+static void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data);
 
 
 /**
@@ -65,6 +68,8 @@ void ro_gui_history_init(void)
 			ro_gui_history_redraw);
 	ro_gui_wimp_event_register_mouse_click(history_window,
 			ro_gui_history_click);
+	ro_gui_wimp_event_register_pointer_entering_window(history_window,
+			ro_gui_history_pointer_entering);
 	ro_gui_wimp_event_set_help_prefix(history_window, "HelpHistory");
 }
 
@@ -169,10 +174,37 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 
 
 /**
+ * Handle Pointer Entering Window events the history window.
+ *
+ * \param *entering		The Wimp_PointerEnteringWindow block.
+ */
+
+void ro_gui_history_pointer_entering(wimp_entering *entering)
+{
+	ro_mouse_track_start(ro_gui_history_track_end,
+			ro_gui_history_mouse_at, NULL);
+} 
+
+
+/**
+ * Handle Pointer Leaving Window events the history window. These arrive as the
+ * termination callback handler from ro_mouse's mouse tracking.
+ *
+ * \param *leaving		The Wimp_PointerLeavingWindow block.
+ * \param *data			NULL data pointer.
+ */
+
+void ro_gui_history_track_end(wimp_leaving *leaving, void *data)
+{
+	ro_gui_dialog_close(dialog_tooltip);
+} 
+
+
+/**
  * Handle mouse movements over the history window.
  */
 
-void ro_gui_history_mouse_at(wimp_pointer *pointer)
+void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 {
 	int x, y;
 	int width;
@@ -181,6 +213,8 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	wimp_icon_state ic;
 	os_box box = {0, 0, 0, 0};
 	os_error *error;
+	
+	LOG(("Mouse at..."));
 
 	/* If the mouse hasn't moved, or if we don't want tooltips, exit */
 	if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||

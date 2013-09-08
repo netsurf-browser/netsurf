@@ -65,5 +65,30 @@ void ro_mouse_drag_start(void (*drag_end)(wimp_dragged *dragged, void *data),
 
 void ro_mouse_drag_end(wimp_dragged *dragged);
 
+
+/**
+ * Start tracking the mouse in a window, providing a function to be called on
+ * null polls and optionally one to be called when it leaves the window.
+ *
+ * \param *drag_end	Callback for when the pointer leaves the window, or
+ *			NULL for none.
+ * \param *drag_track	Callback for mouse tracking while the pointer remains
+ *			in the window, or NULL for none.
+ * \param *data		Data to be passed to the callback functions, or NULL.
+ */
+
+void ro_mouse_track_start(void (*poll_end)(wimp_leaving *leaving, void *data),
+		void (*poll_track)(wimp_pointer *pointer, void *data),
+		void *data);
+
+/**
+ * Process Wimp_PointerLeaving events by terminating an active mouse track and
+ * passing the details on to any registered event handler.
+ *
+ * \param *leaving	The Wimp_PointerLeaving data block.
+ */
+
+void ro_mouse_pointer_leaving_window(wimp_leaving *leaving);
+
 #endif
 

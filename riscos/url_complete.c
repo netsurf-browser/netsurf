@@ -30,6 +30,7 @@
 #include "utils/log.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/mouse.h"
 #include "utils/nsoption.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
@@ -61,6 +62,7 @@ static int mouse_y;
 
 static bool url_complete_callback(nsurl *url,
 		const struct url_data *data);
+static void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, void *data);
 
 
 /* This is an exported interface documented in url_complete.h */
@@ -624,7 +626,20 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 
 /* This is an exported interface documented in url_complete.h */
 
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer)
+void ro_gui_url_complete_entering(wimp_entering *entering)
+{
+	ro_mouse_track_start(NULL, ro_gui_url_complete_mouse_at, NULL);
+}
+
+
+/**
+ * Handle mouse movement over the URL completion window.
+ *
+ * \param *pointer	The pointer state
+ * \param *data		NULL data pointer expected by mouse tracker
+ */
+
+void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, void *data)
 {
 	wimp_mouse_state current;
 
