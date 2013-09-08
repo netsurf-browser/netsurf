@@ -542,7 +542,6 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 
 	if (title1 != NULL) {
 		title = dom_string_data(title1);
-		dom_string_unref(title1);
 	} else {
 		title = "<No title>";
 	}
@@ -556,6 +555,9 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 
 		warn_user(messages_get_errorcode(err), NULL);
 
+		if (title1 != NULL)
+			dom_string_unref(title1);
+
 		return err;
 	}
 
@@ -563,6 +565,8 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	err = hotlist_add_entry_internal(url, title, NULL, ctx->rel,
 			ctx->relshp, &ctx->rel);
 	nsurl_unref(url);
+	if (title1 != NULL)
+		dom_string_unref(title1);
 	ctx->relshp = TREE_REL_NEXT_SIBLING;
 
 	if (err != NSERROR_OK) {
