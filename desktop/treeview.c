@@ -2855,7 +2855,7 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 		int node_y, int mouse_x, int mouse_y, struct rect *rect)
 {
 	struct treeview_text *field_data = NULL;
-	struct treeview_field *ef, *field_desc;
+	struct treeview_field *ef, *field_desc = NULL;
 	int pos = node_y + tree_g.line_height;
 	int field_y = node_y;
 	int field_x;
@@ -2895,7 +2895,7 @@ static bool treeview_edit_node_at_point(treeview *tree, treeview_node *n,
 		}
 	}
 
-	if (field_data == NULL) {
+	if (field_data == NULL || field_desc == NULL) {
 		/* No editable field */
 		return false;
 	}
