@@ -28,6 +28,7 @@
 
 void ro_gui_global_history_preinitialise(void);
 void ro_gui_global_history_postinitialise(void);
+void ro_gui_global_history_destroy(void);
 void ro_gui_global_history_open(void);
 void ro_gui_global_history_save(void);
 bool ro_gui_global_history_check_window(wimp_w window);

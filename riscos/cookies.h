@@ -28,6 +28,7 @@
 
 void ro_gui_cookies_preinitialise(void);
 void ro_gui_cookies_postinitialise(void);
+void ro_gui_cookies_destroy(void);
 bool ro_gui_cookies_check_window(wimp_w window);
 bool ro_gui_cookies_check_menu(wimp_menu *menu);
 

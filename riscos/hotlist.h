@@ -38,6 +38,7 @@
 
 void ro_gui_hotlist_preinitialise(void);
 void ro_gui_hotlist_postinitialise(void);
+void ro_gui_hotlist_destroy(void);
 void ro_gui_hotlist_open(void);
 void ro_gui_hotlist_save(void);
 bool ro_gui_hotlist_check_window(wimp_w window);

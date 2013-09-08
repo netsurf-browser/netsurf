@@ -919,6 +919,9 @@ void gui_quit(void)
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
+	ro_gui_global_history_destroy();
+	ro_gui_hotlist_destroy();
+	ro_gui_cookies_destroy();
 	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);

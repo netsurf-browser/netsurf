@@ -160,6 +160,18 @@ void ro_gui_global_history_postinitialise(void)
 }
 
 /**
+ * Destroy the global history window.
+ */
+
+void ro_gui_global_history_destroy(void)
+{
+	if (global_history_window.tv == NULL)
+		return;
+
+	ro_treeview_destroy(global_history_window.tv);
+}
+
+/**
  * Open the global history window.
  */
 

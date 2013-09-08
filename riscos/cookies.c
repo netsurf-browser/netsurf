@@ -153,6 +153,18 @@ void ro_gui_cookies_postinitialise(void)
 }
 
 /**
+ * Destroy the cookies window.
+ */
+
+void ro_gui_cookies_destroy(void)
+{
+	if (cookies_window.tv == NULL)
+		return;
+
+	ro_treeview_destroy(cookies_window.tv);
+}
+
+/**
  * Open the cookies window.
  *
  */

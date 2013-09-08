@@ -182,6 +182,19 @@ void ro_gui_hotlist_postinitialise(void)
 			ro_gui_hotlist_menu_warning);
 }
 
+/**
+ * Destroy the hotlist window.
+ */
+
+void ro_gui_hotlist_destroy(void)
+{
+	if (hotlist_window.tv == NULL)
+		return;
+
+	tree_hotlist_path = nsoption_charp(hotlist_save);
+	ro_treeview_destroy(hotlist_window.tv);
+}
+
 
 /**
  * Open the hotlist window.
