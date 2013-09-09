@@ -129,7 +129,7 @@ static bool treeview_test_init(struct tree *tree)
 	treeview_inits++;
 
 	if (treeview_inits == 1)
-		treeview_init();
+		treeview_init(0);
 
 	switch (tree->flags) {
 	case TREE_COOKIES:

@@ -106,9 +106,10 @@ struct treeview_callback_table {
 /**
  * Prepare treeview module for treeview usage
  *
+ * \param font_pt_size	Treeview text size in pt.  Set to <= 0 for default.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror treeview_init(void);
+nserror treeview_init(int font_pt_size);
 
 /**
  * Finalise the treeview module (all treeviews must have been destroyed first)

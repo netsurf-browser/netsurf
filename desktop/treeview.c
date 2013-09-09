@@ -3560,13 +3560,15 @@ static void treeview_init_furniture(void)
 
 
 /* Exported interface, documented in treeview.h */
-nserror treeview_init(void)
+nserror treeview_init(int font_pt_size)
 {
 	int font_px_size;
-	int font_pt_size = 11;
 
 	if (tree_g.initialised == true)
 		return NSERROR_OK;
+
+	if (font_pt_size <= 0)
+		font_pt_size = 11;
 
 	treeview_init_plot_styles(font_pt_size);
 	treeview_init_resources();
