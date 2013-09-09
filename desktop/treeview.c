@@ -33,6 +33,7 @@
 #define REDRAW_MAX 8000
 
 struct treeview_globals {
+	bool initialised;
 	int line_height;
 	int furniture_width;
 	int step_width;
@@ -3564,6 +3565,9 @@ nserror treeview_init(void)
 	int font_px_size;
 	int font_pt_size = 11;
 
+	if (tree_g.initialised == true)
+		return NSERROR_OK;
+
 	treeview_init_plot_styles(font_pt_size);
 	treeview_init_resources();
 	treeview_init_furniture();
@@ -3577,6 +3581,8 @@ nserror treeview_init(void)
 	tree_g.icon_step = 23;
 	tree_g.move_offset = 18;
 
+	tree_g.initialised = true;
+
 	return NSERROR_OK;
 }
 
@@ -3589,6 +3595,8 @@ nserror treeview_fini(void)
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		hlcache_handle_release(treeview_res[i].c);
 	}
+
+	tree_g.initialised = false;
 
 	return NSERROR_OK;
 }
