@@ -59,7 +59,7 @@
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
-#include "desktop/tree.h"
+#include "desktop/treeview.h"
 #include "render/font.h"
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/bitmap.h"
@@ -416,6 +416,7 @@ static void gui_init(int argc, char** argv)
 	int length;
 	char *nsdir_temp;
 	byte *base;
+	nserror err;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
 	 * which we're not interested in, and underflow which is incorrectly
@@ -539,6 +540,11 @@ static void gui_init(int argc, char** argv)
 		LOG(("xwimp_open_template failed: 0x%x: %s",
 				error->errnum, error->errmess));
 		die(error->errmess);
+	}
+
+	err = treeview_init(12);
+	if (err != NSERROR_OK) {
+		die("Failed to initialise treeview");
 	}
 
 	/* Initialise themes before dialogs */
