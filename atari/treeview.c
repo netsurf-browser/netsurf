@@ -259,25 +259,38 @@ NSTREEVIEW atari_treeview_create(uint32_t flags, GUIWIN *win,
 								gemtk_wm_event_handler_f user_func)
 {
 	struct gemtk_wm_scroll_info_s *slid;
+	NSTREEVIEW new;
 
 	if( win == NULL )
 		return( NULL );
-	NSTREEVIEW new = malloc(sizeof(struct atari_treeview));
+
+	new = malloc(sizeof(struct atari_treeview));
 	if (new == NULL)
 		return NULL;
-	memset( new, 0, sizeof(struct atari_treeview));
+
+	memset(new, 0, sizeof(struct atari_treeview));
+
+	/* Store the window ref inside the new treeview: */
+	new->window = win;
+	new->user_func = user_func;
+
+	// Setup gemtk event handler function and set the userdata
+	// to be the new treeview:
+	gemtk_wm_set_event_handler(win, handle_event);
+	gemtk_wm_set_user_data(win, (void*)new);
+
+	// now create a new netsurf tree:
 	new->tree = tree_create(flags, &atari_tree_callbacks, new);
 	if (new->tree == NULL) {
 		free(new);
 		return NULL;
 	}
-	new->window = win;
-	new->user_func = user_func;
 
-	gemtk_wm_set_event_handler(win, handle_event);
-	gemtk_wm_set_user_data(win, (void*)new);
-
+	// Get acces to the gemtk scroll info struct:
 	slid = gemtk_wm_get_scroll_info(new->window);
+
+	// Setup line and column height/width of the window,
+	// each scroll takes the configured steps:
 	slid->y_unit_px = 16;
 	slid->x_unit_px = 16;
 
@@ -462,6 +475,7 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 		NSTREEVIEW tv = (NSTREEVIEW) pw;
 		if( tv->disposing )
 			return;
+
 		tv->extent.x = width;
 		tv->extent.y = height;
 		struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(tv->window);
