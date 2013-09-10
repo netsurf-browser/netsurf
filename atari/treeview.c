@@ -279,13 +279,6 @@ NSTREEVIEW atari_treeview_create(uint32_t flags, GUIWIN *win,
 	gemtk_wm_set_event_handler(win, handle_event);
 	gemtk_wm_set_user_data(win, (void*)new);
 
-	// now create a new netsurf tree:
-	new->tree = tree_create(flags, &atari_tree_callbacks, new);
-	if (new->tree == NULL) {
-		free(new);
-		return NULL;
-	}
-
 	// Get acces to the gemtk scroll info struct:
 	slid = gemtk_wm_get_scroll_info(new->window);
 
@@ -294,6 +287,13 @@ NSTREEVIEW atari_treeview_create(uint32_t flags, GUIWIN *win,
 	slid->y_unit_px = 16;
 	slid->x_unit_px = 16;
 
+	// now create a new netsurf tree:
+	new->tree = tree_create(flags, &atari_tree_callbacks, new);
+	if (new->tree == NULL) {
+		free(new);
+		return NULL;
+	}
+
 	return(new);
 }
 
@@ -301,7 +301,6 @@ void atari_treeview_open( NSTREEVIEW tv )
 {
 	if( tv->window != NULL ) {
 		gemtk_wm_link(tv->window);
-
 	}
 }
 
@@ -478,13 +477,23 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 
 		tv->extent.x = width;
 		tv->extent.y = height;
+
 		struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(tv->window);
 		gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &area);
-		slid->x_units = (width/slid->x_unit_px);
-		slid->y_units = (height/slid->y_unit_px);
+
+		if(width > -1) {
+			slid->x_units = (width/slid->x_unit_px);
+			gemtk_wm_update_slider(tv->window, GEMTK_WM_HSLIDER);
+		}
+
+		if(height > -1){
+			slid->y_units = (height/slid->y_unit_px);
+			gemtk_wm_update_slider(tv->window, GEMTK_WM_VSLIDER);
+		}
+
 		/*printf("units content: %d, units viewport: %d\n", (height/slid->y_unit_px),
 					(area.g_h/slid->y_unit_px));*/
-		gemtk_wm_update_slider(tv->window, GEMTK_WM_VH_SLIDER);
+		//gemtk_wm_update_slider(tv->window, GEMTK_WM_VH_SLIDER);
 	}
 }
 
