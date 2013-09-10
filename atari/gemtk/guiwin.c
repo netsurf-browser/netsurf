@@ -1185,7 +1185,10 @@ void gemtk_wm_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     appl_write(gl_apid, 16, &msg);
 }
 
-/** Directly execute an Message to a GUIWIN using internal dispatcher
+/** Directly execute an Message to a GUIWIN using the internal dispatcher function.
+*   This only works for managed windows which have the,
+	GEMTK_WM_FLAG_PREPROC_WM flag set.
+	This call does not send any AES messages.
 * \param win the GUIWIN which shall receive the message
 * \param msg_type the WM_ message definition
 * \param a the 4th parameter to appl_write

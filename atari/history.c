@@ -107,15 +107,24 @@ bool atari_global_history_init( void )
         GRECT desk;
         int flags = ATARI_TREEVIEW_WIDGETS;
 
+		// initialize state options:
         gl_history.open = false;
+
+        // Create an AES window:
         handle = wind_create(flags, 40, 40, desk_area.g_w, desk_area.g_h);
+
+        // add the AES window to the gemtk window manager:
         gl_history.window = gemtk_wm_add(handle, GEMTK_WM_FLAG_DEFAULTS, NULL);
+
         if( gl_history.window == NULL ) {
 			LOG(("Failed to allocate history window"));
 			return( false );
 		}
+
+		// Set window title:
 		wind_set_str(handle, WF_NAME, (char*)messages_get("GlobalHistory"));
 
+		// Make the window part of the netsurf treeview framework:
 		gl_history.tv = atari_treeview_create(TREE_HISTORY,
                                         gl_history.window, handle_event);
 
