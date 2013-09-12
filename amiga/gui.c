@@ -142,6 +142,12 @@
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
+struct ami_gui_tb_userdata {
+	struct List *sblist;
+	struct gui_window_2 *gw;
+	int items;
+};
+
 struct MsgPort *appport;
 struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
@@ -2849,68 +2855,37 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, int *item,
-			struct List *speed_button_list, struct gui_window_2 *gwin)
+static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
 {
-#if 0
-	struct node *tempnode;
-	struct node_element *element=NULL;
-	struct node *node;
+	struct ami_gui_tb_userdata *tb_userdata = (struct ami_gui_tb_userdata *)userdata;
 	struct Node *speed_button_node;
 
-	*gen = *gen + 1;
+	if(level != 1) return false;
+	if(item > AMI_GUI_TOOLBAR_MAX) return false;
+	if(is_folder == true) return false;
+	
+	tb_userdata->gw->hotlist_toolbar_lab[item] = ami_utf8_easy(title);
 
-	for (node = root; node; node = tree_node_get_next(node))
-	{
-		if((*gen == 1) && (*item < AMI_GUI_TOOLBAR_MAX)) /* Don't cascade into sub-dirs */
-		{
-			gwin->hotlist_toolbar_lab[*item] = ami_utf8_easy((char *)tree_url_node_get_title(node));
-
-			speed_button_node = AllocSpeedButtonNode(*item,
-					SBNA_Text, gwin->hotlist_toolbar_lab[*item],
-					SBNA_UserData, (void *)tree_url_node_get_url(node),
+	speed_button_node = AllocSpeedButtonNode(item,
+					SBNA_Text, tb_userdata->gw->hotlist_toolbar_lab[item],
+					SBNA_UserData, (void *)url,
 					TAG_DONE);
 			
-			AddTail(speed_button_list, speed_button_node);
+	AddTail(tb_userdata->sblist, speed_button_node);
 
-			*item = *item + 1;
-		}
-
-		/* Don't need this atm as it cascades into sub-dirs
-		if (tree_node_get_child(node))
-		{
-			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), gen);
-		}
-		*/
-	}
-
-	*gen = *gen - 1;
-#endif
+	tb_userdata->items++;
+	return true;
 }
 
 int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
 {
-#if 0
-	struct node *root = tree_node_get_child(tree_get_root(tree));
-	struct node *node;
-	struct node_element *element;
-	WORD gen = 0;
-	int item = 0;
+	struct ami_gui_tb_userdata userdata;
+	userdata.gw = gwin;
+	userdata.sblist = speed_button_list;
+	userdata.items = 0;
 
-	for (node = root; node; node = tree_node_get_next(node))
-	{
-		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistToolbar")) == 0))
-		{
-			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), &gen, &item, speed_button_list, gwin);
-		}
-	}
-
-	return item;
-#else
-	return 0;
-#endif
+	ami_hotlist_scan((void *)&userdata, 0, messages_get("HotlistToolbar"), ami_gui_hotlist_add);
+	return userdata.items;
 }
 
 void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
