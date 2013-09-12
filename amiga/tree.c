@@ -882,12 +882,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							if(twin->drag_y == 0) twin->drag_y = y;
 						break;
 						case MENUDOWN:
+#if 0
 							if(tree_node_has_selection(tree_get_root(twin->tree)) == false)
 							{
 								tree_set_node_selected_at(twin->tree, x, y, true);
 							}
 							ami_context_menu_show_tree(twin->tree, twin->win, twin->type);
-
+#endif
 						break;
 					}
 				}
