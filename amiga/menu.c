@@ -590,7 +590,6 @@ static nserror ami_menu_hotlist_folder_enter_cb(void *ctx, const char *title)
 		if((menu_ctx->level == 0) && (strcmp(title, messages_get("HotlistMenu")) == 0))
 			menu_ctx->in_menu = true;
 	}
-	
 	menu_ctx->level++;
 	return NSERROR_OK;
 }
@@ -598,7 +597,7 @@ static nserror ami_menu_hotlist_folder_enter_cb(void *ctx, const char *title)
 static nserror ami_menu_hotlist_address_cb(void *ctx, nsurl *url, const char *title)
 {
 	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
-	
+
 	if(menu_ctx->in_menu == true)
 		ami_menu_hotlist_add(menu_ctx, title, url, false);
 	
@@ -622,7 +621,7 @@ static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 	struct ami_hotlist_ctx ctx;
 	
 	ctx.level = 0;
-	ctx.item = 0;
+	ctx.item = AMI_MENU_HOTLIST;
 	ctx.in_menu = false;
 	ctx.gw = gwin;
 	
