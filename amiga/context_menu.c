@@ -1220,7 +1220,12 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 		switch(itemid)
 		{
 			case CMID_TREE_LAUNCH:
-				tree_launch_selected(tree, true);
+				tree_mouse_action(tree, BROWSER_MOUSE_DOUBLE_CLICK, 0, 0);
+				/**TODO: this needs fixing.                         ^^^^
+				(a) the mouse co-ordinates where the context menu was opened are not propagated and
+				(b) does a double-click here open ALL selected entries?
+				(c) what happens if the user right-clicked over a non-selected entry with others selected?
+				**/
 			break;
 
 			case CMID_TREE_EDITFOLDER:
@@ -1256,7 +1261,7 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_DELETE:
-				tree_delete_selected_nodes(tree, userdata);
+				tree_keypress(tree, KEY_DELETE_RIGHT);
 			break;
 		}
 	}
