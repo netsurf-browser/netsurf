@@ -1029,6 +1029,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 {
+#if 0
 	struct node *root = tree_get_root(tree);
 	struct node *sel_node = tree_get_selected_node(root);
 	bool has_selection = tree_node_has_selection(root);
@@ -1203,6 +1204,7 @@ void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 
 	if(menu_content == true)
 		IDoMethod(ctxmenuobj, PM_OPEN, win);
+#endif
 }
 
 static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved)
