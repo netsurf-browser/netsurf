@@ -272,7 +272,7 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 
 	if((twin->type == AMI_TREE_COOKIES) ||
 		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
-
+#if 0
 	node = tree_get_selected_node(tree_get_root(twin->tree));
 
 	if(node && tree_node_is_folder(node))
@@ -294,6 +294,7 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 		}
 		ami_drag_icon_show(twin->win, type);
 	}
+#endif
 }
 
 void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
@@ -304,7 +305,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	BOOL drag;
 
 	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
-
+#if 0
 	if(drag && (twin != ami_window_at_pointer(AMINS_TVWINDOW)))
 	{
 		selected_node = tree_get_selected_node(tree_get_root(twin->tree));
@@ -349,6 +350,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 			twin->drag_x, twin->drag_y); /* Keep the tree happy */
 	}
 	else
+#endif
 	{
 		if(tree_drag_status(twin->tree) == TREE_UNKNOWN_DRAG)
 			DisplayBeep(scrn);
