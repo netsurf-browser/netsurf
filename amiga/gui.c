@@ -4888,20 +4888,17 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				
 				case GID_HOTLIST:
 					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
-						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&urltxt, TAG_DONE);
+						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
 
-						if (nsurl_create(urltxt, &url) != NSERROR_OK) {
-							warn_user("NoMemory", 0);
-						} else {
-							if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
-								browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
+							browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 										      BROWSER_WINDOW_TAB,
 										      url,
 										      NULL,
 										      gwin->bw,
 										      NULL);
-							} else {
-								browser_window_navigate(gwin->bw,
+						} else {
+							browser_window_navigate(gwin->bw,
 									url,
 									NULL,
 									BROWSER_WINDOW_HISTORY |
@@ -4910,8 +4907,6 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 									NULL,
 									NULL);
 
-							}
-							nsurl_unref(url);
 						}
 					}
 				break;
