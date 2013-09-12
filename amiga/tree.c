@@ -496,13 +496,12 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 {
 	if(twin->type == AMI_TREE_SSLCERT) return;
 
-	if(tree_node_has_selection(tree_get_root(twin->tree)))
-	{
+	if(((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) ||
+		((twin->type == AMI_TREE_COOKIES) && (cookie_manager_has_selection())) ||
+		((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection()))) {
 		OnMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OnMenu(twin->win, AMI_TREE_MENU_CLEAR);
-	}
-	else
-	{
+	} else {
 		OffMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OffMenu(twin->win, AMI_TREE_MENU_CLEAR);
 	}
