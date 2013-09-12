@@ -19,6 +19,17 @@
 #include <proto/exec.h>
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
+#include "desktop/hotlist.h"
+
+struct ami_hotlist_ctx {
+	struct gui_window_2 *gw;
+	int level;
+	int item;
+	const char *folder; /* folder we're interested in */
+	bool in_menu; /* set if we are in that folder */
+	bool (*cb)(struct gui_window_2 *gw, int level, int item, const char *title, nsurl *url, bool folder);
+};
+
 
 void ami_hotlist_initialise(const char *hotlist_file)
 {
@@ -32,4 +43,62 @@ void ami_hotlist_free(const char *hotlist_file)
 {
 	ami_tree_destroy(hotlist_window);
 	hotlist_window = NULL;
+}
+
+
+static nserror ami_hotlist_folder_enter_cb(void *ctx, const char *title)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+
+	if(menu_ctx->in_menu == true) {
+		if(menu_ctx->cb(menu_ctx->gw, menu_ctx->level, menu_ctx->item, title, NULL, true) == true)
+			menu_ctx->item++;
+	} else {
+		if((menu_ctx->level == 0) && (strcmp(title, menu_ctx->folder) == 0))
+			menu_ctx->in_menu = true;
+	}
+	menu_ctx->level++;
+	return NSERROR_OK;
+}
+
+static nserror ami_hotlist_address_cb(void *ctx, nsurl *url, const char *title)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+
+	if(menu_ctx->in_menu == true) {
+		if(menu_ctx->cb(menu_ctx->gw, menu_ctx->level, menu_ctx->item, title, url, false) == true)
+			menu_ctx->item++;
+	}
+	
+	return NSERROR_OK;
+}
+
+static nserror ami_hotlist_folder_leave_cb(void *ctx)
+{
+	struct ami_hotlist_ctx *menu_ctx = (struct ami_hotlist_ctx *)ctx;
+
+	menu_ctx->level--;
+
+	if((menu_ctx->in_menu == true) && (menu_ctx->level == 0))
+		menu_ctx->in_menu = false;
+
+	return NSERROR_OK;
+}
+
+nserror ami_hotlist_scan(struct gui_window_2 *gwin, int first_item, const char *folder,
+	bool (*cb_add_item)(struct gui_window_2 *gw, int level, int item, const char *title, nsurl *url, bool folder))
+{
+	struct ami_hotlist_ctx ctx;
+	
+	ctx.level = 0;
+	ctx.item = first_item;
+	ctx.folder = folder;
+	ctx.in_menu = false;
+	ctx.gw = gwin;
+	ctx.cb = cb_add_item;
+	
+	return hotlist_iterate(&ctx,
+		ami_hotlist_folder_enter_cb,
+		ami_hotlist_address_cb,
+		ami_hotlist_folder_leave_cb);
 }
