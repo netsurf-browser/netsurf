@@ -535,10 +535,11 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	gwin->menu[item].nm_Label = NULL;
 }
 
-static bool ami_menu_hotlist_add(struct gui_window_2 *gw, int level, int item, const char *title, nsurl *url, bool is_folder)
+static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
 {
 	UBYTE type;
 	char *icon;
+	struct gui_window_2 *gw = (struct gui_window_2 *)userdata;
 	
 	if(item >= AMI_MENU_HOTLIST_MAX) return false;
 	
@@ -571,7 +572,7 @@ static bool ami_menu_hotlist_add(struct gui_window_2 *gw, int level, int item, c
 
 static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin)
 {
-	return ami_hotlist_scan(gwin, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
+	return ami_hotlist_scan((void *)gwin, AMI_MENU_HOTLIST, messages_get("HotlistMenu"), ami_menu_hotlist_add);
 }
 
 void ami_menu_update_checked(struct gui_window_2 *gwin)
