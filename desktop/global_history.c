@@ -950,6 +950,27 @@ bool global_history_has_selection(void)
 
 
 /* Exported interface, documented in global_history.h */
+bool global_history_get_selection(nsurl **url, const char **title)
+{
+	struct global_history_entry *e;
+	void *v;
+
+	treeview_get_selection(gh_ctx.tree, &v);
+	if (v == NULL) {
+		*url = NULL;
+		*title = NULL;
+		return false;
+	}
+
+	e = (struct global_history_entry *)v;
+
+	*url = e->url;
+	*title = e->data[GH_TITLE].value;
+	return true;
+}
+
+
+/* Exported interface, documented in global_history.h */
 nserror global_history_expand(bool only_folders)
 {
 	return treeview_expand(gh_ctx.tree, only_folders);

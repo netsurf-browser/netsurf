@@ -2075,6 +2075,15 @@ static treeview_node * treeview_get_first_selected(treeview *tree)
 }
 
 
+/* Exported interface, documented in treeview.h */
+void treeview_get_selection(treeview *tree, void **node_data)
+{
+	assert(tree != NULL);
+
+	*node_data = treeview_get_first_selected(tree);
+}
+
+
 /**
  * Clear any selection in a treeview
  *

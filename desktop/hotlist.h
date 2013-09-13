@@ -201,6 +201,15 @@ void hotlist_keypress(uint32_t key);
 bool hotlist_has_selection(void);
 
 /**
+ * Get the first selected node
+ *
+ * \param url		Updated to the selected entry's address, or NULL
+ * \param title		Updated to the selected entry's title, or NULL
+ * \return true iff hotlist has a selection
+ */
+bool hotlist_get_selection(nsurl **url, const char **title);
+
+/**
  * Edit the first selected node
  */
 void hotlist_edit_selection(void);

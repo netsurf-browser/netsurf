@@ -1483,6 +1483,27 @@ bool hotlist_has_selection(void)
 
 
 /* Exported interface, documented in hotlist.h */
+bool hotlist_get_selection(nsurl **url, const char **title)
+{
+	struct hotlist_entry *e;
+	void *v;
+
+	treeview_get_selection(hl_ctx.tree, &v);
+	if (v == NULL) {
+		*url = NULL;
+		*title = NULL;
+		return false;
+	}
+
+	e = (struct hotlist_entry *)v;
+
+	*url = e->url;
+	*title = e->data[HL_TITLE].value;
+	return true;
+}
+
+
+/* Exported interface, documented in hotlist.h */
 void hotlist_edit_selection(void)
 {
 	treeview_edit_selection(hl_ctx.tree);

@@ -110,6 +110,15 @@ void global_history_keypress(uint32_t key);
 bool global_history_has_selection(void);
 
 /**
+ * Get the first selected node
+ *
+ * \param url		Updated to the selected entry's address, or NULL
+ * \param title		Updated to the selected entry's title, or NULL
+ * \return true iff global history has a selection
+ */
+bool global_history_get_selection(nsurl **url, const char **title);
+
+/**
  * Expand the treeview's nodes
  *
  * \param only_folders	Iff true, only folders are expanded.

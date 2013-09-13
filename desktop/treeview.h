@@ -376,6 +376,14 @@ void treeview_mouse_action(treeview *tree,
 bool treeview_has_selection(treeview *tree);
 
 /**
+ * Get the first selected node
+ *
+ * \param tree		Treeview object to get selected node in
+ * \param node_data	Client data for the selected treeview node, or NULL
+ */
+void treeview_get_selection(treeview *tree, void **node_data);
+
+/**
  * Edit the first selected node
  *
  * \param tree		Treeview object to edit selected node in
