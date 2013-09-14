@@ -63,6 +63,9 @@ enum input_key {
 	KEY_PAGE_DOWN,
 	KEY_DELETE_LINE_END,
 	KEY_DELETE_LINE_START,
+
+	KEY_UNDO,
+	KEY_REDO
 };
 
 

@@ -2078,9 +2078,13 @@ static treeview_node * treeview_get_first_selected(treeview *tree)
 /* Exported interface, documented in treeview.h */
 void treeview_get_selection(treeview *tree, void **node_data)
 {
+	treeview_node *n;
+
 	assert(tree != NULL);
 
-	*node_data = treeview_get_first_selected(tree);
+	n = treeview_get_first_selected(tree);
+
+	*node_data = n->client_data;
 }
 
 

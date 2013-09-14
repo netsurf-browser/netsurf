@@ -63,6 +63,18 @@ struct textarea_utf8 {
 				 *   trailing NULL */
 };
 
+struct textarea_undo_detail {
+	unsigned int offset;	/**< Offset to detail's text in undo.text */
+	unsigned int len;	/**< Length of detail's text */
+};
+
+struct textarea_undo {
+	unsigned int next_detail;
+	struct textarea_undo_detail *details;
+
+	struct textarea_utf8 text;
+};
+
 struct textarea {
 
 	int scroll_x, scroll_y;		/**< scroll offsets for the textarea */
@@ -1337,7 +1349,7 @@ static inline void textarea_char_to_byte_offset(struct textarea_utf8 *text,
 
 
 /**
- * Replace text in a textarea
+ * Perform actual text replacment in a textarea
  *
  * \param ta		Textarea widget
  * \param b_start	Start byte index of replaced section (inclusive)
@@ -1352,7 +1364,7 @@ static inline void textarea_char_to_byte_offset(struct textarea_utf8 *text,
  * Note, b_start and b_end must be the byte offsets in ta->show, so in the
  * password textarea case, they are for ta->password.
  */
-static bool textarea_replace_text(struct textarea *ta, size_t b_start,
+static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
 		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
@@ -1456,6 +1468,47 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		if (!textarea_reflow_singleline(ta, show_b_off, r))
 			return false;
 	}
+
+	return true;
+}
+
+
+/**
+ * Replace text in a textarea, updating undo buffer.
+ *
+ * \param ta		Textarea widget
+ * \param b_start	Start byte index of replaced section (inclusive)
+ * \param b_end		End byte index of replaced section (exclusive)
+ * \param rep		Replacement UTF-8 text to insert
+ * \param rep_len	Byte length of replacement UTF-8 text
+ * \param add_to_clipboard	True iff replaced text to be added to clipboard
+ * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param r		Updated to area where redraw is required
+ * \return false on memory exhaustion, true otherwise
+ *
+ * Note, b_start and b_end must be the byte offsets in ta->show, so in the
+ * password textarea case, they are for ta->password.
+ */
+static bool textarea_replace_text(struct textarea *ta, size_t b_start,
+		size_t b_end, const char *rep, size_t rep_len,
+		bool add_to_clipboard, int *byte_delta, struct rect *r)
+{
+	/* TODO: Make copy of any replaced text */
+	if (b_start != b_end) {
+	}
+
+	/* Replace the text in the textarea, and reflow it */
+	if (textarea_replace_text_internal(ta, b_start, b_end, rep, rep_len,
+			add_to_clipboard, byte_delta, r) == false) {
+		return false;
+	}
+
+	if (b_start == b_end && rep_len == 0) {
+		/* Nothing changed at all */
+		return true;
+	}
+
+	/* TODO: Update UNDO buffer */
 
 	return true;
 }
