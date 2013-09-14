@@ -264,11 +264,6 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	nsurl *url = NULL;
 	const char *title = NULL;
 
-	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
-		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG) ||
-		(tree_drag_status(twin->tree) == TREE_TEXTAREA_DRAG))
-		return;
-
 	if((twin->type == AMI_TREE_COOKIES) ||
 		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
 
@@ -308,7 +303,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 
 		if((title == NULL) || (title && (url == NULL))) {
 			DisplayBeep(scrn);
-		} else {
+		} else if(url) {
 			if(gwin = ami_window_at_pointer(AMINS_WINDOW)) {
 				browser_window_navigate(gwin->bw,
 						url,
