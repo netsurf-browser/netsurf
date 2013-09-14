@@ -60,10 +60,15 @@ struct s_font_plotter
 };
 
 
+FONT_PLOTTER plot_get_text_plotter(void);
+/* Set the font plotting engine. 
+*/
+void plot_set_text_plotter(FONT_PLOTTER font_plotter);
 void dump_font_drivers(void);
 FONT_PLOTTER new_font_plotter( int vdihandle, char * name, unsigned long flags,
 		int * error);
 int delete_font_plotter( FONT_PLOTTER p );
+
 #ifdef WITH_VDI_FONT_DRIVER
  #include "atari/plot/font_vdi.h"
 #endif

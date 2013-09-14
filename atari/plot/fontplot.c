@@ -46,23 +46,38 @@ void dump_font_drivers(void)
 
 
 /*
-	Create an new text plotter object
+ *	Create an new text plotter object
+ *	Available: "vdi", "freetype"
+ *	@param vdihandle the vdi handle to act upon,
+ *	@param name selector ID (string) of the font plotter.
+ *	@flags flags configration flags of the plotter,
+ *	             available flags:
+ *	             FONTPLOT_FLAG_MONOGLYPH - Enable 1 bit font plotting
+ *	@param error set to != 0 when errors occur
 */
 FONT_PLOTTER new_font_plotter( int vdihandle, char * name, unsigned long flags,
 		int * error)
 {
 	int i=0;
 	int res = 0-ERR_PLOTTER_NOT_AVAILABLE;
-	FONT_PLOTTER fplotter = (FONT_PLOTTER)malloc( sizeof(struct s_font_plotter) );
+	FONT_PLOTTER fplotter;
+
+	/* allocate the font plotter instance: */
+	fplotter = (FONT_PLOTTER)malloc( sizeof(struct s_font_plotter) );
 	if( fplotter == NULL ) {
 		*error = 0-ERR_NO_MEM;
 		return( NULL );
 	}
+
+	/* Initialize the font plotter with the requested settings: */
 	memset( fplotter, 0, sizeof(FONT_PLOTTER));
 	fplotter->vdi_handle = vdihandle;
 	fplotter->name = name;
 	fplotter->flags = 0;
 	fplotter->flags |= flags;
+
+	/* Find the selector string in the font plotter table:  */
+	/* And bail out when the font plotter is not available: */
 	for( i = 0; ; i++) {
 		if( font_driver_table[i].name == NULL ) {
 			res = 0-ERR_PLOTTER_NOT_AVAILABLE;

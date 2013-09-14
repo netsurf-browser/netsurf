@@ -1974,6 +1974,16 @@ void plot_get_clip_grect(GRECT * out)
     out->g_h = clip.y1 - clip.y0;
 }
 
+FONT_PLOTTER plot_get_text_plotter()
+{
+	return(fplotter);
+}
+
+void plot_set_text_plotter(FONT_PLOTTER font_plotter)
+{
+	fplotter = font_plotter;
+}
+
 static bool plot_text(int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle )
 {
     fplotter->text(fplotter, x, y, text, length, fstyle);
