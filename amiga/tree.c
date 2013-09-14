@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -276,6 +276,10 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	if((twin->type == AMI_TREE_COOKIES) ||
 		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
 
+	if((tree_drag_status(twin->tree) == TREE_SELECT_DRAG) ||
+		(tree_drag_status(twin->tree) == TREE_TEXTAREA_DRAG))
+		return;
+		
 	if((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) {
 		hotlist_get_selection(&url, &title);
 	} else if((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection())) {
