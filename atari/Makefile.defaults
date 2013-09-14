@@ -24,6 +24,10 @@
 
   NETSURF_USE_MNG := NO
 
+  # Enable Spidermonkey JavaScript engine
+  # Valid options: YES, NO
+  NETSURF_USE_MOZJS := NO
+
   # enable true type fonts via freetype2
   # Valid options: YES, NO
   NETSURF_USE_ATARI_FREETYPE_FONT := YES
