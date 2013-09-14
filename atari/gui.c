@@ -43,6 +43,7 @@
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
+#include "desktop/treeview.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
@@ -804,16 +805,24 @@ void gui_quit(void)
     struct gui_window * gw = window_list;
     struct gui_window * tmp = window_list;
 
+	/* Destroy all remaining browser windows: */
     while( gw ) {
         tmp = gw->next;
         browser_window_destroy(gw->browser->bw);
         gw = tmp;
     }
 
+	/* destroy the treeview windows: */
     atari_global_history_destroy();
     atari_hotlist_destroy();
+
+	/* shutdown netsurf treeview framework: */
+    treeview_fini();
+
+	/* shutdown the toolbar framework: */
     toolbar_exit();
 
+	/* save persistent informations: */
     urldb_save_cookies(nsoption_charp(cookie_file));
     urldb_save(nsoption_charp(url_file));
 
@@ -1019,8 +1028,15 @@ static void gui_init2(int argc, char** argv)
         menu_register( _AESapid, (char*)"  NetSurf ");
     }
     gemtk_wm_init();
+
+    /* Initialize the netsurf treeview framework with default font size: */
+    treeview_init(0);
+
+	/* Initialize the specific treeview windows: */
     atari_global_history_init();
     atari_hotlist_init();
+
+    /* Initialize the toolbar framework: */
     toolbar_init();
 }
 
