@@ -53,6 +53,7 @@
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
+#include "amiga/schedule.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
@@ -99,6 +100,14 @@ struct treeview_window {
 	char *sslaccept;
 	char *sslreject;
 	struct MinList shared_pens;
+};
+
+struct ami_tree_redraw_req {
+	int x;
+	int y;
+	int width;
+	int height;
+	struct treeview_window *twin;
 };
 
 void ami_tree_draw(struct treeview_window *twin);
@@ -1214,9 +1223,14 @@ void ami_tree_draw(struct treeview_window *twin)
 	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
 }
 
-void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
+static void ami_tree_redraw_req(void *p)
 {
-	struct treeview_window *twin = data;
+	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
+	int x = atrr_data->x;
+	int y = atrr_data->y;
+	int width = atrr_data->width;
+	int height = atrr_data->height;
+	struct treeview_window *twin = atrr_data->twin;
 	struct IBox *bbox;
 	int pos_x, pos_y;
 	int tile_x, tile_y, tile_w, tile_h;
@@ -1276,6 +1290,21 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 		}
 	}
 
+	FreeVec(atrr_data);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	glob = &browserglob;
 }
+
+void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
+{
+	struct ami_tree_redraw_req *atrr_data = AllocVec(sizeof(struct ami_tree_redraw_req), MEMF_CLEAR | MEMF_PRIVATE);
+	
+	atrr_data->x = x;
+	atrr_data->y = y;
+	atrr_data->width = width;
+	atrr_data->height = height;
+	atrr_data->twin = (struct treeview_window *)data;
+	
+	schedule(0, ami_tree_redraw_req, atrr_data);
+}
+
