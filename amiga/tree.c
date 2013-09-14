@@ -261,9 +261,8 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 void ami_tree_drag_icon_show(struct treeview_window *twin)
 {
 	const char *type = "project";
-	const char *url;
-	const struct url_data *data;
-	struct node *node = NULL;
+	nsurl *url = NULL;
+	const char *title = NULL;
 
 	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
 		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG) ||
@@ -272,60 +271,46 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 
 	if((twin->type == AMI_TREE_COOKIES) ||
 		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
-#if 0
-	node = tree_get_selected_node(tree_get_root(twin->tree));
 
-	if(node && tree_node_is_folder(node))
+	if((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) {
+		hotlist_get_selection(&url, &title);
+	} else if((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection())) {
+		global_history_get_selection(&url, &title);
+	}
+
+	if(title && (url == NULL))
 	{
 		ami_drag_icon_show(twin->win, "drawer");
 	}
 	else
 	{
-		if(node && (url = tree_url_node_get_url(node)))
-		{
-			nsurl *nsurl;
-			if (nsurl_create(url, &nsurl) != NSERROR_OK)
-				return;
-			if(data = urldb_get_url_data(nsurl))
-			{
-				type = ami_content_type_to_file_type(data->type);
-			}
-			nsurl_unref(nsurl);
-		}
 		ami_drag_icon_show(twin->win, type);
 	}
-#endif
 }
 
 void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 {
 	struct gui_window_2 *gwin;
 	struct treeview_window *tw;
-	struct node *selected_node;
 	BOOL drag;
+	nsurl *url = NULL;
+	const char *title = NULL;
 
 	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
-#if 0
+
 	if(drag && (twin != ami_window_at_pointer(AMINS_TVWINDOW)))
 	{
-		selected_node = tree_get_selected_node(tree_get_root(twin->tree));
-
-		if((selected_node == NULL) || (tree_node_is_folder(selected_node)))
-		{
-			DisplayBeep(scrn);
+		if((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) {
+			hotlist_get_selection(&url, &title);
+		} else if((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection())) {
+			global_history_get_selection(&url, &title);
 		}
-		else
-		{
-			if(gwin = ami_window_at_pointer(AMINS_WINDOW))
-			{
-				nsurl *url;
-				nserror error;
 
-				error = nsurl_create(tree_url_node_get_url(selected_node), &url);
-				if (error != NSERROR_OK) {
-					warn_user(messages_get_errorcode(error), 0);
-				} else {
-					browser_window_navigate(gwin->bw,
+		if((title == NULL) || (title && (url == NULL))) {
+			DisplayBeep(scrn);
+		} else {
+			if(gwin = ami_window_at_pointer(AMINS_WINDOW)) {
+				browser_window_navigate(gwin->bw,
 						url,
 						NULL,
 						BROWSER_WINDOW_HISTORY |
@@ -333,25 +318,15 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 						NULL,
 						NULL,
 						NULL);
-					nsurl_unref(url);
-				}
-
+			} else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
+				(tw != twin) && (tw->type == AMI_TREE_HOTLIST)) {
+					hotlist_add_entry(url, title, true, y);
 			}
-#if 0
-			else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
-				(tw != twin) && (tw->type == AMI_TREE_HOTLIST))
-			{
-				hotlist_add_entry(tree_url_node_get_url(selected_node), NULL, true, y);
-			}
-#endif
 		}
 		tree_drag_end(twin->tree, twin->mouse_state,
 			twin->drag_x, twin->drag_y,
 			twin->drag_x, twin->drag_y); /* Keep the tree happy */
-	}
-	else
-#endif
-	{
+	} else {
 		if(tree_drag_status(twin->tree) == TREE_UNKNOWN_DRAG)
 			DisplayBeep(scrn);
 
