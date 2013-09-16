@@ -121,8 +121,8 @@ struct gui_window * find_guiwin_by_aes_handle(short handle){
 	}
 
 	while(gw != NULL) {
-		if( gw->root->win != NULL
-			&& gemtk_wm_get_handle(gw->root->win) == handle ) {
+		if(gw->root->win != NULL
+			&& gemtk_wm_get_handle(gw->root->win) == handle) {
 				return(gw);
 		}
 		else
