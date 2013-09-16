@@ -35,6 +35,13 @@
 	lbuf[6] = (long)sbuf[6];\
 	lbuf[7] = (long)sbuf[7];
 
+#define RECT_TO_GRECT(r,g) \
+	g->g_x = (r->x0 < r->x1) ? r->x0 : r->x1 ; \
+	g->g_y = (r->y0 < r->y1) ? r->y0 : r->y1 ; \
+	g->g_w = (r->x0 < r->x1) ? r->x1 - r->x0 : r->x0 - r->x1 ; \
+	g->g_h = (r->y0 < r->y1) ? r->y1 - r->y0 : r->y0 - r->y1 ;
+
+
 
 /* Modes for find_gui_window: */
 #define BY_WINDOM_HANDLE 0x0
