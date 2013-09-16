@@ -36,10 +36,8 @@ void dump_font_drivers(void)
 {
 	int i = 0;
 	while( font_driver_table[i].name != NULL ) {
-		printf("%s -> flags: %d\n",
-			font_driver_table[i].name,
-			font_driver_table[i].flags
-		);
+		printf("%s -> flags: %d\n", font_driver_table[i].name,
+				font_driver_table[i].flags);
 		i++;
 	}
 }

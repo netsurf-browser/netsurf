@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Ole Loots <ole@monochrom.net>
+ * Copyright 2013 Ole Loots <ole@monochrom.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,40 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NS_ATARI_TREEVIEW_H
-#define NS_ATARI_TREEVIEW_H
+#ifndef NSATARI_TREEVIEW_H
+#define NSATARI_TREEVIEW_H
 
-#include <stdbool.h>
-#include "desktop/tree.h"
-#include "atari/gui.h"
-#include "atari/gemtk/gemtk.h"
-
-#define ATARI_TREEVIEW_WIDGETS (CLOSER | MOVER | SIZER| NAME | FULLER | SMALLER | VSLIDE | HSLIDE | UPARROW | DNARROW | LFARROW | RTARROW)
-
-struct atari_treeview
-{
-	struct tree * tree;
-	GUIWIN * window;
-	bool disposing;
-	bool redraw;
-	GRECT rdw_area;
-	POINT extent;
-	POINT click;
-	POINT startdrag;
-	gemtk_wm_event_handler_f user_func;
+struct atari_treeview_callbacks {
+	nserror (*init)(struct core_window *cw,
+				struct core_window_callback_table * default_callbacks);
+	void (*fini)(struct core_window *cw);
+	void (*draw)(struct core_window *cw);
+	void (*keypress)(struct core_window *cw);
+	void (*mouse)(struct core_window *cw);
+	gemtk_wm_event_handler_f gemtk_user_func;
 };
 
-typedef struct atari_treeview * NSTREEVIEW;
+struct atari_treeview_callbacks;
+struct atari_treeview_window;
 
-NSTREEVIEW atari_treeview_create( uint32_t flags, GUIWIN *win,
-								gemtk_wm_event_handler_f user_func);
-void atari_treeview_destroy( NSTREEVIEW tv );
-void atari_treeview_open( NSTREEVIEW tv );
-void atari_treeview_close( NSTREEVIEW tv );
-void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw);
-void atari_treeview_redraw( NSTREEVIEW tv );
-bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y);
+struct atari_treeview_window *
+atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
+					uint32_t flags);
+void atari_treeview_delete(struct atari_treeview_window * cw);
 
+#endif //NSATARI_TREEVIEW_H
 
-
-#endif
