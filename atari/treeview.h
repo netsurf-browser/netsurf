@@ -19,6 +19,7 @@
 #ifndef NSATARI_TREEVIEW_H
 #define NSATARI_TREEVIEW_H
 
+#include "desktop/core_window.h"
 #include "atari/gui.h"
 #include "atari/gemtk/gemtk.h"
 
