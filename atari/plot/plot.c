@@ -1953,6 +1953,12 @@ VdiHdl plot_get_vdi_handle(void)
 	return(atari_plot_vdi_handle);
 }
 
+long plot_get_flags(void)
+{
+	return(atari_plot_flags);
+}
+
+
 bool plot_get_clip(struct rect * out)
 {
 	out->x0 = view.clipping.x0;

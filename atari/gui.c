@@ -171,6 +171,8 @@ void gui_poll(bool active)
 		tmp = tmp->next;
     }
 
+	// TODO: reenable treeview redraws
+/*
     if(hl.tv->redraw){
 		atari_treeview_redraw(hl.tv);
     }
@@ -178,6 +180,7 @@ void gui_poll(bool active)
     if(gl_history.tv->redraw){
 		atari_treeview_redraw(gl_history.tv);
     }
+*/
 }
 
 
