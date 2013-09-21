@@ -174,16 +174,11 @@ void gui_poll(bool active)
 
 	// TODO: implement generic treeview redraw function
 	// TODO: rename hl to atari_hotlist or create getter for it...
-	//atari_treeview_redraw(hl.tv);
+
 	atari_hotlist_redraw();
 	atari_cookie_manager_redraw();
 	atari_global_history_redraw();
 
-/*	// TODO: reenable history redraws
-    if(gl_history.tv->redraw){
-		atari_treeview_redraw(gl_history.tv);
-    }
-*/
 }
 
 
@@ -840,7 +835,7 @@ void gui_quit(void)
     }
 
 	/* destroy the treeview windows: */
-    //atari_global_history_destroy();
+    atari_global_history_destroy();
     atari_hotlist_destroy();
     atari_cookie_manager_destroy();
 
@@ -1061,7 +1056,7 @@ static void gui_init2(int argc, char** argv)
     treeview_init(0);
 
 	/* Initialize the specific treeview windows: */
-    //atari_global_history_init();
+    atari_global_history_init();
     atari_hotlist_init();
     atari_cookie_manager_init();
 
