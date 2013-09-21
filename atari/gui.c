@@ -64,6 +64,7 @@
 #include "atari/toolbar.h"
 #include "atari/hotlist.h"
 #include "atari/cookies.h"
+#include "atari/certview.h"
 #include "atari/history.h"
 #include "atari/login.h"
 #include "atari/encoding.h"
@@ -123,8 +124,9 @@ void gui_poll(bool active)
 
     aes_event_in.emi_tlow = schedule_run();
 
-    if(active || rendering)
-        aes_event_in.emi_tlow = 0;
+    if(active || rendering){
+        aes_event_in.emi_tlow = 10;
+	}
 
     if(aes_event_in.emi_tlow < 0) {
         aes_event_in.emi_tlow = 10000;
@@ -175,9 +177,7 @@ void gui_poll(bool active)
 	// TODO: implement generic treeview redraw function
 	// TODO: rename hl to atari_hotlist or create getter for it...
 
-	atari_hotlist_redraw();
-	atari_cookie_manager_redraw();
-	atari_global_history_redraw();
+	atari_treeview_flush_redraws();
 
 }
 
@@ -191,7 +191,7 @@ gui_create_browser_window(struct browser_window *bw,
           (int)new_tab
         ));
 
-    gw = calloc( sizeof(struct gui_window), 1);
+    gw = calloc(1, sizeof(struct gui_window));
     if (gw == NULL)
         return NULL;
 
@@ -539,11 +539,6 @@ void gui_window_set_url(struct gui_window *w, const char *url)
     }
 }
 
-struct gui_window * gui_window_get_input_window(void)
-{
-	return(input_window);
-}
-
 char * gui_window_get_url(struct gui_window *gw)
 {
 	if (gw == NULL) {
@@ -799,25 +794,42 @@ void gui_401login_open(nsurl *url, const char *realm,
 }
 
 void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-                     unsigned long num,
-                     nserror (*cb)(bool proceed, void *pw), void *cbpw)
+                    unsigned long num, nserror (*cb)(bool proceed, void *pw),
+					void *cbpw)
 {
+	struct sslcert_session_data *data;
     LOG((""));
 
     bool bres;
 
     // TODO: localize string
-    int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort]");
-    bres = (b==1)? true : false;
-    LOG(("Trust: %d", bres ));
-    urldb_set_cert_permissions(url, bres);
-    cb(bres, cbpw);
+    int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
+    if(b == 1){
+		// Accept
+		urldb_set_cert_permissions(url, true);
+		cb(true, cbpw);
+    } else if(b == 2) {
+    	// Reject
+		urldb_set_cert_permissions(url, false);
+		cb(false, cbpw);
+    } else if(b == 3) {
+    	// Inspect
+    	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
+			&data);
+		atari_sslcert_viewer_open(data);
+    }
+
 }
 
 void gui_set_input_gui_window(struct gui_window *gw)
 {
     LOG(("Setting input window from: %p to %p\n", input_window, gw));
     input_window = gw;
+}
+
+struct gui_window * gui_get_input_window(void)
+{
+	return(input_window);
 }
 
 void gui_quit(void)

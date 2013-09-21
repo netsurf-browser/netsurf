@@ -281,7 +281,7 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 
 	assert(init == true);
 
-	t = calloc(sizeof(struct s_toolbar), 1);
+	t = calloc(1, sizeof(struct s_toolbar));
 
 	assert(t);
 

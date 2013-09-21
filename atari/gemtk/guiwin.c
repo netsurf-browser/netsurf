@@ -686,7 +686,7 @@ void gemtk_wm_exit(void)
 GUIWIN * gemtk_wm_add(short handle, uint32_t flags, gemtk_wm_event_handler_f cb)
 {
 
-    GUIWIN *win = calloc(sizeof(GUIWIN),1);
+    GUIWIN *win = calloc(1, sizeof(GUIWIN));
 
     assert(win!=NULL);
     DEBUG_PRINT(("gemtk_wm_add: %d, %p, cb: %p\n", handle, win, cb));

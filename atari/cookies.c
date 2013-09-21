@@ -186,7 +186,7 @@ void atari_cookie_manager_init(void)
 			atari_cookie_manager.tv = atari_treeview_create(
 										atari_cookie_manager.window,
 										&atari_cookie_manager_treeview_callbacks,
-										flags);
+										NULL, flags);
 
 			if (atari_cookie_manager.tv == NULL) {
 				/* handle it properly, clean up previous allocs */

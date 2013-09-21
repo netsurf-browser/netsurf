@@ -137,14 +137,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 						break;
 
 					case TOOLBAR_HOTLIST_ADD:
-						gw = gui_window_get_input_window();
+						gw = gui_get_input_window();
 						if(gw && gw->browser){
 							cur_url = gui_window_get_url(gw);
 							cur_title = gui_window_get_title(gw);
 							// TODO: read language string.
-							cur_title = (cur_title ? cur_title : "New bookmark");
+							cur_title = (cur_title ? cur_title : (char*)"New bookmark");
 						} else {
-							cur_url = "http://www";
+							cur_url = (char*)"http://www";
 						}
 						atari_hotlist_add_page(cur_url, cur_title);
 						break;
@@ -214,7 +214,7 @@ void atari_hotlist_init(void)
 			tree_hotlist_path = (const char*)&hl.path;
 
 			hl.tv = atari_treeview_create(hl.window, &atari_hotlist_treeview_callbacks,
-									flags);
+									NULL, flags);
 
 			if (hl.tv == NULL) {
 				/* handle it properly, clean up previous allocs */

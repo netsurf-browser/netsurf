@@ -79,6 +79,7 @@ S_ATARI := \
 	clipboard.c \
 	ctxmenu.c \
 	cookies.c \
+	certview.c \
 	deskmenu.c \
 	download.c \
 	encoding.c \

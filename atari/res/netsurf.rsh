@@ -214,3 +214,6 @@
 #define TOOLBAR_COOKIES 16  /* form/dial */
 
 #define TOOLBAR_HISTORY 17  /* form/dial */
+
+#define TOOLBAR_SSL_CERT 18  /* form/dial */
+#define TOOLBAR_SSL_CERT_TRUSTED 1  /* BUTTON in tree TOOLBAR_SSL_CERT */

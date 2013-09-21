@@ -160,6 +160,7 @@ extern struct gui_window *window_list;
 /* Public - non core gui window functions     		                          */
 /* -------------------------------------------------------------------------- */
 void gui_set_input_gui_window(struct gui_window *gw);
+struct gui_window *gui_get_input_window(void);
 char *gui_window_get_url(struct gui_window *gw);
 char * gui_window_get_title(struct gui_window *gw);
 

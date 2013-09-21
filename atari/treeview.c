@@ -51,9 +51,9 @@ void atari_treeview_scroll_visible(struct core_window *cw,
 								const struct rect *r);
 void atari_treeview_get_window_dimensions(struct core_window *cw,
 		int *width, int *height);
+		// TODO: implement drag status!
 void atari_treeview_drag_status(struct core_window *cw,
 		core_window_drag_status ds);
-
 
 static struct core_window_callback_table cw_t = {
 	.redraw_request = atari_treeview_redraw_request,
@@ -65,6 +65,8 @@ static struct core_window_callback_table cw_t = {
 
 
 struct atari_treeview_window {
+	struct atari_treeview_window * prev_open;
+	struct atari_treeview_window * next_open;
 	GUIWIN * window;
 	bool disposing;
 	bool redraw;
@@ -74,7 +76,10 @@ struct atari_treeview_window {
 	POINT click;
 	POINT startdrag;
 	struct atari_treeview_callbacks *io;
+	void * user_data;
 };
+
+static struct atari_treeview_window * treeviews_open;
 
 /* native GUI event handlers: */
 static void on_mbutton_event(struct atari_treeview_window *tvw,
@@ -509,8 +514,7 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 	bool ignore=false;
 	short cur_rel_x, cur_rel_y, dummy, mbut;
 
-	if(tv == NULL)
-		return;
+	assert(tv);
 
 	gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
 	slid = gemtk_wm_get_scroll_info(tv->window);
@@ -593,14 +597,14 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 
 struct atari_treeview_window *
 atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
-					uint32_t flags)
+					void * user_data, uint32_t flags)
 {
 
 	/* allocate the core_window struct: */
 	struct atari_treeview_window * cw;
 	struct gemtk_wm_scroll_info_s *slid;
 
-	cw = calloc(sizeof(struct atari_treeview_window), 1);
+	cw = calloc(1, sizeof(struct atari_treeview_window));
 	if (cw == NULL) {
 		LOG(("calloc failed"));
 		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
@@ -610,6 +614,7 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 	/* Store the window ref inside the new treeview: */
 	cw->window = win;
 	cw->io = callbacks;
+	cw->user_data = user_data;
 
 	// Setup gemtk event handler function:
 	gemtk_wm_set_event_handler(win, handle_event);
@@ -656,10 +661,24 @@ void atari_treeview_delete(struct atari_treeview_window * cw)
 
 void atari_treeview_open(struct atari_treeview_window *cw, GRECT *pos)
 {
-	if (cw->window != NULL) {
+	if (cw->window != NULL && cw->is_open == false) {
 		cw->is_open = true;
 		wind_open_grect(gemtk_wm_get_handle(cw->window), pos);
 		gemtk_wm_link(cw->window);
+		if (treeviews_open == NULL) {
+			treeviews_open = cw;
+			treeviews_open->next_open = NULL;
+			treeviews_open->prev_open = NULL;
+		} else {
+			struct atari_treeview_window * tmp;
+			tmp = treeviews_open;
+			while(tmp->next_open != NULL){
+				tmp = tmp->next_open;
+			}
+			tmp->next_open = cw;
+			cw->prev_open = tmp;
+			cw->next_open = NULL;
+		}
 	}
 }
 
@@ -668,12 +687,33 @@ bool atari_treeview_is_open(struct atari_treeview_window *cw)
 	return(cw->is_open);
 }
 
+void atari_treeview_set_user_data(struct atari_treeview_window * tv,
+								void *user_data_ptr)
+{
+	tv->user_data = user_data_ptr;
+}
+
+void * atari_treeview_get_user_data(struct atari_treeview_window * tv)
+{
+	return(tv->user_data);
+}
+
 void atari_treeview_close(struct atari_treeview_window *cw)
 {
 	if (cw->window != NULL) {
 		cw->is_open = false;
 		wind_close(gemtk_wm_get_handle(cw->window));
 		gemtk_wm_unlink(cw->window);
+		/* unlink the window: */
+		struct atari_treeview_window *tmp = treeviews_open;
+		if (cw->prev_open != NULL) {
+			cw->prev_open->next_open = cw->next_open;
+		} else {
+			treeviews_open = cw->next_open;
+		}
+		if (cw->next_open != NULL) {
+			cw->next_open->prev_open = cw->prev_open;
+		}
 	}
 }
 
@@ -798,5 +838,22 @@ void atari_treeview_drag_status(struct core_window *cw,
 		core_window_drag_status ds)
 {
 
+}
+
+void atari_treeview_flush_redraws(void)
+{
+	struct atari_treeview_window *tmp;
+
+	tmp = treeviews_open;
+
+	if(tmp){
+		while(tmp){
+			assert(tmp->is_open);
+			if(tmp->redraw){
+				atari_treeview_redraw(tmp);
+			}
+			tmp = tmp->next_open;
+		}
+	}
 }
 

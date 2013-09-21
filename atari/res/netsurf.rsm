@@ -1,9 +1,9 @@
 ResourceMaster v3.65   
-#C 18@0@0@0@
+#C 19@0@0@0@
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@2@1@
-#M 20010100@0@7728@643@
+#M 20010100@0@7728@646@
 #T 0@1@MAINMENU@@64@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -199,4 +199,6 @@ ResourceMaster v3.65
 #O 2@28@FREETYPE@@
 #T 16@2@TOOLBAR_COOKIES@@1@@
 #T 17@2@TOOLBAR_HISTORY@@1@@
-#c 24594@
+#T 18@2@TOOLBAR_SSL_CERT@@2@@
+#O 1@26@TRUSTED@@
+#c 26341@

@@ -211,7 +211,7 @@ void atari_global_history_init(void)
 			atari_global_history.tv = atari_treeview_create(
 									atari_global_history.window,
 									&atari_global_history_treeview_callbacks,
-									flags);
+									NULL, flags);
 
 			if (atari_global_history.tv == NULL) {
 				/* handle it properly, clean up previous allocs */
