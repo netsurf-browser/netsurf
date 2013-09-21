@@ -462,7 +462,7 @@ static void __CDECL menu_lhistory(short item, short title, void *data)
 static void __CDECL menu_ghistory(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
-	//atari_global_history_open();
+	atari_global_history_open();
 }
 
 static void __CDECL menu_add_bookmark(short item, short title, void *data)
