@@ -12,6 +12,7 @@
 #include "atari/deskmenu.h"
 #include "atari/hotlist.h"
 #include "atari/history.h"
+#include "atari/cookies.h"
 #include "atari/toolbar.h"
 #include "atari/settings.h"
 #include "atari/search.h"
@@ -92,6 +93,7 @@ static void __CDECL menu_lhistory(short item, short title, void *data);
 static void __CDECL menu_ghistory(short item, short title, void *data);
 static void __CDECL menu_add_bookmark(short item, short title, void *data);
 static void __CDECL menu_bookmarks(short item, short title, void *data);
+static void __CDECL menu_cookies(short item, short title, void *data);
 static void __CDECL menu_vlog(short item, short title, void *data);
 static void __CDECL menu_help_content(short item, short title, void *data);
 
@@ -122,6 +124,7 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_UTIL, MAINMENU_M_GHISTORY, menu_ghistory, {0,NK_F7,K_CTRL}, NULL},
 	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, menu_add_bookmark, {'D',0,K_CTRL}, NULL},
 	{T_UTIL, MAINMENU_M_BOOKMARKS, menu_bookmarks, {0,NK_F6,0}, NULL},
+	{T_UTIL, MAINMENU_M_COOKIES, menu_cookies, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_CHOICES, menu_choices, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_VLOG, menu_vlog, {'V',0,K_ALT}, NULL},
 	{T_HELP, MAINMENU_M_HELP_CONTENT, menu_help_content, {0,NK_F1,0}, NULL},
@@ -459,7 +462,7 @@ static void __CDECL menu_lhistory(short item, short title, void *data)
 static void __CDECL menu_ghistory(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
-	atari_global_history_open();
+	//atari_global_history_open();
 }
 
 static void __CDECL menu_add_bookmark(short item, short title, void *data)
@@ -479,6 +482,12 @@ static void __CDECL menu_bookmarks(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
 	atari_hotlist_open();
+}
+
+static void __CDECL menu_cookies(short item, short title, void *data)
+{
+	LOG(("%s", __FUNCTION__));
+	atari_cookie_manager_open();
 }
 
 static void __CDECL menu_vlog(short item, short title, void *data)

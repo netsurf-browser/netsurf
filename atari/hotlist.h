@@ -26,8 +26,7 @@
 
 struct atari_hotlist {
 	GUIWIN * window;
-	NSTREEVIEW tv;		/*< The hotlist treeview handle.  */
-	bool open;
+	ATARI_TREEVIEW_PTR tv;/*< The hotlist treeview handle.  */
 	bool init;
 	char path[PATH_MAX];
 };
@@ -39,7 +38,6 @@ void atari_hotlist_open( void );
 void atari_hotlist_close( void );
 void atari_hotlist_destroy( void );
 void atari_hotlist_add_page( const char * url, const char * title );
-
 void atari_hotlist_redraw( void );
 
 

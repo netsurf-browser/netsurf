@@ -68,6 +68,7 @@ struct atari_treeview_window {
 	GUIWIN * window;
 	bool disposing;
 	bool redraw;
+	bool is_open;
 	GRECT rdw_area;
 	POINT extent;
 	POINT click;
@@ -75,20 +76,16 @@ struct atari_treeview_window {
 	struct atari_treeview_callbacks *io;
 };
 
-enum treeview_area_e {
-	TREEVIEW_AREA_WORK = 0,
-	TREEVIEW_AREA_TOOLBAR,
-	TREEVIEW_AREA_CONTENT
-};
-
 /* native GUI event handlers: */
-static void __CDECL on_mbutton_event(struct atari_treeview_window *tvw,
+static void on_mbutton_event(struct atari_treeview_window *tvw,
 									EVMULT_OUT *ev_out, short msg[8]);
-static void __CDECL on_keybd_event(struct atari_treeview_window *tvw,
+static void on_keybd_event(struct atari_treeview_window *tvw,
 									EVMULT_OUT *ev_out, short msg[8]);
-static void __CDECL on_redraw_event(struct atari_treeview_window *tvw,
+static void on_redraw_event(struct atari_treeview_window *tvw,
 									EVMULT_OUT *ev_out, short msg[8]);
 
+/* static utils: */
+static void atari_treeview_dump_info(struct atari_treeview_window *tv, char *s);
 
 /**
  * Schedule a redraw of the treeview content
@@ -116,12 +113,12 @@ static void atari_treeview_redraw_grect_request(struct core_window *cw,
 			tv->rdw_area.g_w = ( oldx1 > newx1 ) ? oldx1 - tv->rdw_area.g_x : newx1 - tv->rdw_area.g_x;
 			tv->rdw_area.g_h = ( oldy1 > newy1 ) ? oldy1 - tv->rdw_area.g_y : newy1 - tv->rdw_area.g_y;
 		}
-		// dbg_grect("atari_treeview_request_redraw", &tv->rdw_area);
+		//dbg_grect("atari_treeview_request_redraw_grect", &tv->rdw_area);
 	}
 }
 
 
-static void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode,
+void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode,
 									GRECT *dest)
 {
 
@@ -135,40 +132,33 @@ static void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area
 	}
 }
 
+GUIWIN * atari_treeview_get_gemtk_window(struct atari_treeview_window *tv)
+{
+	return(tv->window);
+}
+
+static void atari_treeview_dump_info(struct atari_treeview_window *tv,
+									char * title)
+{
+	printf("Treeview Dump (%s)\n", title);
+	printf("=================================\n");
+	gemtk_wm_dump_window_info(atari_treeview_get_gemtk_window(tv));
+	GEMTK_DBG_GRECT("Redraw Area: \n", &tv->rdw_area)
+	dbg_grect("Redraw Area2:      \n", &tv->rdw_area);
+	printf("Extent: x: %d, y: %d\n", tv->extent, tv->extent);
+}
+
 
 void atari_treeview_redraw(struct atari_treeview_window *tv)
 {
-	static FONT_PLOTTER vdi_txt_plotter = NULL;
-	FONT_PLOTTER old_txt_plotter;
+	if (tv != NULL && tv->is_open) {
+		if( tv->redraw && ((plot_get_flags() & PLOT_FLAG_OFFSCREEN) == 0) ) {
 
-	VdiHdl plot_vdi_handle = 0;
-	long atari_plot_flags = 0;
-
-	/* TODO: do not use the global vdi handle for plot actions! */
-	/* TODO: implement getter/setter for the vdi handle */
-
-	if (tv != NULL) {
-		if( tv->redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
-
-			plot_vdi_handle = plot_get_vdi_handle();
-			long atari_plot_flags = plot_get_flags();
 			short todo[4];
 			GRECT work;
 			short handle = gemtk_wm_get_handle(tv->window);
 			struct gemtk_wm_scroll_info_s *slid;
 
-/*
-			if (vdi_txt_plotter == NULL) {
-				int err = 0;
-				VdiHdl vdih = plot_get_vdi_handle();
-				vdi_txt_plotter = new_font_plotter(vdih, (char*)"vdi", PLOT_FLAG_TRANS,
-													&err);
-				if(err) {
-					const char * desc = plot_err_str(err);
-					die(("Unable to load vdi font plotter %s -> %s", "vdi", desc ));
-				}
-			}
-*/
 			gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
 			slid = gemtk_wm_get_scroll_info(tv->window);
 
@@ -180,26 +170,37 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 			plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
 			if (plot_lock() == false)
 				return;
-/*
-			if(vdi_txt_plotter != NULL){
-				old_txt_plotter = plot_get_text_plotter();
-				plot_set_text_plotter(vdi_txt_plotter);
-			}
-*/
+
 			if( wind_get(handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 				while (todo[2] && todo[3]) {
 
 					short pxy[4];
+
+					if(!rc_intersect(&work, (GRECT*)&todo)){
+						if (wind_get(handle, WF_NEXTXYWH,
+							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
+							break;
+						}
+						continue;
+					}
 					pxy[0] = todo[0];
 					pxy[1] = todo[1];
 					pxy[2] = todo[0] + todo[2]-1;
 					pxy[3] = todo[1] + todo[3]-1;
-					vs_clip(plot_vdi_handle, 1, (short*)&pxy);
+					vs_clip(plot_get_vdi_handle(), 1, (short*)&pxy);
+
+					// Debug code: this 3 lines help to inspect the redraw
+					// areas...
+					/*
+					vsf_color(plot_get_vdi_handle(), 3);
+					v_bar(plot_get_vdi_handle(), (short*)&pxy);
+					evnt_timer(500);
+					*/
 
 					/* convert screen to treeview coords: */
-					todo[0] = todo[0] - work.g_x + slid->x_pos*slid->x_unit_px;
-					todo[1] = todo[1] - work.g_y + slid->y_pos*slid->y_unit_px;
+					todo[0] = todo[0] - work.g_x ;//+ slid->x_pos*slid->x_unit_px;
+					todo[1] = todo[1] - work.g_y ;//+ slid->y_pos*slid->y_unit_px;
 					if( todo[0] < 0 ){
 						todo[2] = todo[2] + todo[0];
 						todo[0] = 0;
@@ -209,27 +210,29 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 						todo[1] = 0;
 					}
 
+					// TODO: get slider values
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
-						tv->io->draw(tv, -(slid->x_pos*slid->x_unit_px),
+							struct rect clip;
+
+							clip.x0 = todo[0]+(slid->x_pos*slid->x_unit_px);
+							clip.y0 = todo[1]+(slid->y_pos*slid->y_unit_px);
+							clip.x1 = clip.x0 + todo[2]+(slid->x_pos*slid->x_unit_px);
+							clip.y1 = clip.y0 + todo[3]+(slid->y_pos*slid->y_unit_px);
+
+							tv->io->draw(tv, -(slid->x_pos*slid->x_unit_px),
 										-(slid->y_pos*slid->y_unit_px),
-							todo[0], todo[1], todo[2], todo[3], &ctx);
+												&clip, &ctx);
 					}
-					vs_clip(plot_vdi_handle, 0, (short*)&pxy);
+					vs_clip(plot_get_vdi_handle(), 0, (short*)&pxy);
 					if (wind_get(handle, WF_NEXTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
 						break;
 					}
 				}
 			} else {
-				/*
-				plot_set_text_plotter(old_txt_plotter);
-				*/
 				plot_unlock();
 				return;
 			}
-			/*
-			plot_set_text_plotter(old_txt_plotter);
-			*/
 			plot_unlock();
 			tv->redraw = false;
 			tv->rdw_area.g_x = 65000;
@@ -241,6 +244,137 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 		}
 	}
 }
+
+//
+//// TODO: rename to atari_treeview_draw_content
+//void atari_treeview_redraw(struct atari_treeview_window *tv)
+//{
+//	static FONT_PLOTTER vdi_txt_plotter = NULL;
+//	FONT_PLOTTER old_txt_plotter;
+//
+//	VdiHdl plot_vdi_handle = 0;
+//	long atari_plot_flags = 0;
+//	short pxy[4];
+//	struct rect clip;
+//
+//	/* TODO: do not use the global vdi handle for plot actions! */
+//	/* TODO: implement getter/setter for the vdi handle */
+//
+//	if (tv != NULL && tv->is_open) {
+//		if( tv->redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
+//
+//			atari_treeview_dump_info(tv, "atari_treeview_redraw");
+//
+//			plot_vdi_handle = plot_get_vdi_handle();
+//			long atari_plot_flags = plot_get_flags();
+//			short todo[4];
+//			GRECT work;
+//			short handle = gemtk_wm_get_handle(tv->window);
+//			struct gemtk_wm_scroll_info_s *slid;
+//
+///*
+//			if (vdi_txt_plotter == NULL) {
+//				int err = 0;
+//				VdiHdl vdih = plot_get_vdi_handle();
+//				vdi_txt_plotter = new_font_plotter(vdih, (char*)"vdi", PLOT_FLAG_TRANS,
+//													&err);
+//				if(err) {
+//					const char * desc = plot_err_str(err);
+//					die(("Unable to load vdi font plotter %s -> %s", "vdi", desc ));
+//				}
+//			}
+//*/
+//			gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
+//			slid = gemtk_wm_get_scroll_info(tv->window);
+//
+//			struct redraw_context ctx = {
+//				.interactive = true,
+//				.background_images = true,
+//				.plot = &atari_plotters
+//			};
+//			plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
+//			if (plot_lock() == false)
+//				return;
+///*
+//			if(vdi_txt_plotter != NULL){
+//				old_txt_plotter = plot_get_text_plotter();
+//				plot_set_text_plotter(vdi_txt_plotter);
+//			}
+//*/
+//			if( wind_get(handle, WF_FIRSTXYWH,
+//							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
+//				while (todo[2] && todo[3]) {
+//
+//					pxy[0] = todo[0];
+//					pxy[1] = todo[1];
+//					pxy[2] = todo[0] + todo[2]-1;
+//					pxy[3] = todo[1] + todo[3]-1;
+//					//vs_clip(plot_vdi_handle, 1, (short*)&pxy);
+//
+//					/* convert screen to treeview coords: */
+//					todo[0] = todo[0] - work.g_x + slid->x_pos*slid->x_unit_px;
+//					todo[1] = todo[1] - work.g_y + slid->y_pos*slid->y_unit_px;
+//					if( todo[0] < 0 ){
+//						todo[2] = todo[2] + todo[0];
+//						todo[0] = 0;
+//					}
+//					if( todo[1] < 0 ){
+//						todo[3] = todo[3] + todo[1];
+//						todo[1] = 0;
+//					}
+//
+//					clip.x0 = todo[0];
+//					clip.y0 = todo[1];
+//					clip.x1 = clip.x0 + todo[2];
+//					clip.y1 = clip.y0 + todo[3];
+//
+//					clip.x0 = todo[0];
+//					clip.y0 = todo[1];
+//					clip.x1 = clip.x0 + todo[2] ;
+//					clip.y1 = clip.y0 + todo[3] ;
+///*
+//					clip.x0 = 0;
+//					clip.y0 = 0;
+//					clip.x1 = work.g_w;//MAX(tv->extent.x, work.g_w);
+//					clip.y1 = MAX(tv->extent.y, work.g_h)+200;
+//*/
+//					dbg_rect("treeview redraw clip", &clip);
+//
+//					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
+//						tv->io->draw(tv, -(slid->x_pos*slid->x_unit_px),
+//										-(slid->y_pos*slid->y_unit_px), &clip,
+//										&ctx);
+//
+//						/*tv->io->draw(tv, 0,0, &clip,
+//										&ctx);*/
+//					}
+//					//vs_clip(plot_vdi_handle, 0, (short*)&pxy);
+//					if (wind_get(handle, WF_NEXTXYWH,
+//							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
+//						break;
+//					}
+//				}
+//			} else {
+//				/*
+//				plot_set_text_plotter(old_txt_plotter);
+//				*/
+//				plot_unlock();
+//				return;
+//			}
+//			/*
+//			plot_set_text_plotter(old_txt_plotter);
+//			*/
+//			plot_unlock();
+//			tv->redraw = false;
+//			tv->rdw_area.g_x = 65000;
+//			tv->rdw_area.g_y = 65000;
+//			tv->rdw_area.g_w = -1;
+//			tv->rdw_area.g_h = -1;
+//		} else {
+//			/* just copy stuff from the offscreen buffer */
+//		}
+//	}
+//}
 
 
 /**
@@ -272,14 +406,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         on_mbutton_event(tv, ev_out, msg);
     }
 
-	if (tv) {
-
-	}
-/*
-    if(tv != NULL && tv->user_func != NULL){
-		tv->user_func(win, ev_out, msg);
+    if(tv != NULL && tv->io->gemtk_user_func != NULL){
+		tv->io->gemtk_user_func(win, ev_out, msg);
     }
-*/
+
     return(0);
 }
 
@@ -325,12 +455,24 @@ static void __CDECL on_redraw_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 		return;
 
 	gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
+	//dbg_grect("treeview work: ", &work);
+
+	atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
+	//dbg_grect("treeview work: ", &work);
 	slid = gemtk_wm_get_scroll_info(tv->window);
 
 	clip = work;
-	if ( !rc_intersect( (GRECT*)&msg[4], &clip ) ) return;
+
+	/* check if the redraw area intersects with the content area: */
+	if ( !rc_intersect( (GRECT*)&msg[4], &clip)) {
+		return;
+	}
+
+	/* make redraw coords relative to content viewport */
 	clip.g_x -= work.g_x;
 	clip.g_y -= work.g_y;
+
+	/* normalize the redraw coords: */
 	if( clip.g_x < 0 ) {
 		clip.g_w = work.g_w + clip.g_x;
 		clip.g_x = 0;
@@ -339,14 +481,18 @@ static void __CDECL on_redraw_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 		clip.g_h = work.g_h + clip.g_y;
 		clip.g_y = 0;
 	}
+
+	/* Merge redraw coords: */
 	if( clip.g_h > 0 && clip.g_w > 0 ) {
 
 		GRECT rdrw_area;
 
-		rdrw_area.g_x = (slid->x_pos*slid->x_unit_px) + clip.g_x;
-		rdrw_area.g_y =(slid->y_pos*slid->y_unit_px) + clip.g_y;
+		rdrw_area.g_x = clip.g_x;
+		rdrw_area.g_y = clip.g_y;
 		rdrw_area.g_w = clip.g_w;
 		rdrw_area.g_h = clip.g_h;
+
+		//dbg_grect("treeview on_redraw_event ", &rdrw_area);
 
 		atari_treeview_redraw_grect_request(tptr, &rdrw_area);
 	}
@@ -410,7 +556,10 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 
 			tv->startdrag.x = origin_rel_x;
 			tv->startdrag.y = origin_rel_y;
-
+			/* First, report mouse press, to trigger entry selection */
+			tv->io->mouse_action(tv, BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1, cur_rel_x,
+									cur_rel_y);
+			atari_treeview_redraw(tv);
 			tv->io->mouse_action(tv, BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON,
 								cur_rel_x, cur_rel_y);
 			do{
@@ -477,9 +626,15 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 	slid->x_unit_px = 16;
 
 	assert(cw->io);
-	assert(cw->io->init);
+	assert(cw->io->init_phase2);
 
-	nserror err = cw->io->init(cw, &cw_t);
+	/* Now that the window is configured for treeview content,			*/
+	/* call init_phase2 which must create the treeview 					*/
+	/* descriptor, and at least setup the the default					*/
+	/* event handlers of the treeview:			 						*/
+	/* It would be more simple to not pass around the callbacks			*/
+	/* but the treeview constructor requires them for initialization...	*/
+	nserror err = cw->io->init_phase2(cw, &cw_t);
 	if (err != NSERROR_OK) {
 		free(cw);
 		cw = NULL;
@@ -491,13 +646,36 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 void atari_treeview_delete(struct atari_treeview_window * cw)
 {
 	assert(cw);
-	assert(cw->io->fini);
+	assert(cw->io->finish);
 
-	cw->io->fini(cw);
+	cw->io->finish(cw);
 
 	free(cw);
 }
 
+
+void atari_treeview_open(struct atari_treeview_window *cw, GRECT *pos)
+{
+	if (cw->window != NULL) {
+		cw->is_open = true;
+		wind_open_grect(gemtk_wm_get_handle(cw->window), pos);
+		gemtk_wm_link(cw->window);
+	}
+}
+
+bool atari_treeview_is_open(struct atari_treeview_window *cw)
+{
+	return(cw->is_open);
+}
+
+void atari_treeview_close(struct atari_treeview_window *cw)
+{
+	if (cw->window != NULL) {
+		cw->is_open = false;
+		wind_close(gemtk_wm_get_handle(cw->window));
+		gemtk_wm_unlink(cw->window);
+	}
+}
 
 
 /**
@@ -513,9 +691,21 @@ void atari_treeview_delete(struct atari_treeview_window * cw)
 void atari_treeview_redraw_request(struct core_window *cw, const struct rect *r)
 {
 	GRECT area;
+	struct gemtk_wm_scroll_info_s * slid;
+	struct atari_treeview_window * tv = (cw);
 
 	RECT_TO_GRECT(r, &area)
 
+	slid = gemtk_wm_get_scroll_info(tv->window);
+
+	//dbg_rect("redraw rect request", r);
+
+	// treeview redraw is always full window width:
+	area.g_x = 0;
+	area.g_w = area.g_w;
+	// but vertical redraw region is clipped:
+	area.g_y = r->y0 - (slid->y_pos*slid->y_unit_px);
+	area.g_h = r->y1 - r->y0;
 	atari_treeview_redraw_grect_request(cw, &area);
 }
 
@@ -528,7 +718,40 @@ void atari_treeview_redraw_request(struct core_window *cw, const struct rect *r)
  */
 void atari_treeview_update_size(struct core_window *cw, int width, int height)
 {
+	GRECT area;
+	struct gemtk_wm_scroll_info_s *slid;
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
+	if (tv != NULL) {
+
+		if (tv->disposing)
+			return;
+
+		/* Get acces to the gemtk window slider settings: */
+		slid = gemtk_wm_get_scroll_info(tv->window);
+
+		/* recalculate and refresh sliders: */
+		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &area);
+		if (width > -1) {
+			slid->x_units = (width/slid->x_unit_px);
+		} else {
+			slid->x_units = 1;
+		}
+
+		if (height > -1) {
+			slid->y_units = (height/slid->y_unit_px);
+		} else {
+			slid->y_units = 1;
+		}
+
+		tv->extent.x = width;
+		tv->extent.y = height;
+
+
+		/*printf("units content: %d, units viewport: %d\n", (height/slid->y_unit_px),
+					(area.g_h/slid->y_unit_px));*/
+		gemtk_wm_update_slider(tv->window, GEMTK_WM_VH_SLIDER);
+	}
 }
 
 
@@ -540,7 +763,8 @@ void atari_treeview_update_size(struct core_window *cw, int width, int height)
  */
 void atari_treeview_scroll_visible(struct core_window *cw, const struct rect *r)
 {
-
+	/* atari frontend doesn't support dragging outside the treeview */
+	/* so there is no need to implement this? 						*/
 }
 
 
@@ -554,7 +778,13 @@ void atari_treeview_scroll_visible(struct core_window *cw, const struct rect *r)
 void atari_treeview_get_window_dimensions(struct core_window *cw,
 		int *width, int *height)
 {
-
+	if (cw != NULL && (width != NULL || height != NULL)) {
+		GRECT work;
+		struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
+		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
+		*width = work.g_w;
+		*height = work.g_h;
+	}
 }
 
 

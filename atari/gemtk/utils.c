@@ -95,4 +95,23 @@ void gemtk_clip_grect(VdiHdl vh, GRECT *rect)
 	vs_clip_pxy(vh, pxy);
 }
 
+void gemtk_wind_get_str(short aes_handle, short mode, char *str, int len)
+{
+	char tmp_str[255];
+
+	if(len>255) {
+		len = 255;
+	}
+
+	memset(str, 0, len);
+	return;
+	/*
+
+	wind_get(aes_handle, mode, (short)(((unsigned long)tmp_str)>>16),
+			(short)(((unsigned long)tmp_str) & 0xffff), 0, 0);
+
+	strncpy(str, tmp_str, len);
+	*/
+}
+
 

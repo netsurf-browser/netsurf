@@ -27,25 +27,33 @@
 								SMALLER | VSLIDE | HSLIDE | UPARROW | DNARROW \
 								| LFARROW | RTARROW)
 
+enum treeview_area_e {
+	TREEVIEW_AREA_WORK = 0,
+	TREEVIEW_AREA_TOOLBAR,
+	TREEVIEW_AREA_CONTENT
+};
 
 struct core_window;
 struct atari_treeview_window;
+
 typedef struct atari_treeview_window *ATARI_TREEVIEW_PTR;
 
+// TODO: add drag_status callback!!
+typedef nserror (*atari_treeview_init2_callback)(struct core_window *cw,
+				struct core_window_callback_table * default_callbacks);
+typedef void (*atari_treeview_finish_callback)(struct core_window *cw);
 typedef void (*atari_treeview_keypress_callback)(struct core_window *cw,
-												long ucs4);
+												uint32_t ucs4);
 typedef void (*atari_treeview_mouse_action_callback)(struct core_window *cw,
 												browser_mouse_state mouse,
 												int x, int y);
 typedef void (*atari_treeview_draw_callback)(struct core_window *cw, int x,
-											int y, int clip_x, int clip_y,
-											int clip_width, int clip_height,
+											int y, struct rect *clip,
 											const struct redraw_context *ctx);
 
 struct atari_treeview_callbacks {
-	nserror (*init)(struct core_window *cw,
-				struct core_window_callback_table * default_callbacks);
-	void (*fini)(struct core_window *cw);
+	atari_treeview_init2_callback init_phase2;
+	atari_treeview_finish_callback finish;
 	atari_treeview_draw_callback draw;
 	atari_treeview_keypress_callback keypress;
 	atari_treeview_mouse_action_callback mouse_action;
@@ -56,6 +64,12 @@ struct atari_treeview_window *
 atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 					uint32_t flags);
 void atari_treeview_delete(struct atari_treeview_window * cw);
-
+void atari_treeview_open(struct atari_treeview_window * cw, GRECT *pos);
+bool atari_treeview_is_open(struct atari_treeview_window *cw);
+void atari_treeview_close(struct atari_treeview_window * cw);
+GUIWIN * atari_treeview_get_gemtk_window(struct atari_treeview_window *tv);
+void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode,
+									GRECT *dest);
+void atari_treeview_redraw(struct atari_treeview_window *tv);
 #endif //NSATARI_TREEVIEW_H
 

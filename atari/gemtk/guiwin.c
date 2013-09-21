@@ -701,13 +701,13 @@ GUIWIN * gemtk_wm_add(short handle, uint32_t flags, gemtk_wm_event_handler_f cb)
 }
 
 /**
-* Returns an GUIWIN* for AES handle, when that AES window is managed by guiwin
+* Returns an GUIWIN* for AES handle, when that AES window is managed by gemtk_wm
 */
 GUIWIN *gemtk_wm_find(short handle)
 {
     GUIWIN *g;
     DEBUG_PRINT(("guiwin search handle: %d\n", handle));
-    for( g = winlist; g != NULL; g=g->next ) {
+    for (g = winlist; g != NULL; g=g->next) {
         if(g->handle == handle) {
             DEBUG_PRINT(("guiwin found handle: %p\n", g));
             return(g);
@@ -715,6 +715,48 @@ GUIWIN *gemtk_wm_find(short handle)
     }
     return(NULL);
 }
+
+void gemtk_wm_dump_window_info(GUIWIN *win)
+{
+
+
+
+	char title[255];
+	GRECT work_area;
+	GRECT curr_area;
+	GRECT gemtk_work_area;
+	GRECT gemtk_toolbar_area;
+	GRECT gemtk_free_area;
+	short handle;
+	struct gemtk_wm_scroll_info_s *slid;
+
+	handle = gemtk_wm_get_handle(win);
+
+	assert(handle);
+
+	gemtk_wind_get_str(handle, WF_NAME, title, 255);
+	wind_get_grect(handle, WF_WORKXYWH, &work_area);
+	wind_get_grect(handle, WF_CURRXYWH, &curr_area);
+	gemtk_wm_get_grect(win, GEMTK_WM_AREA_CONTENT, &gemtk_free_area);
+	gemtk_wm_get_grect(win, GEMTK_WM_AREA_WORK, &gemtk_work_area);
+	gemtk_wm_get_grect(win, GEMTK_WM_AREA_TOOLBAR, &gemtk_toolbar_area);
+	slid = gemtk_wm_get_scroll_info(win);
+
+	printf ("GEMTK Window:       %p (AES handle: %d)\n", win, win->handle);
+	printf ("Title:              %s\n", title);
+    GEMTK_DBG_GRECT ("WF_WORKXYWH:          \n", &work_area)
+    GEMTK_DBG_GRECT ("WF_CURRXYWH:          \n", &curr_area)
+    GEMTK_DBG_GRECT ("GEMTK_WM_AREA_CONTENT:\n", &gemtk_free_area)
+    GEMTK_DBG_GRECT ("GEMTK_WM_AREA_WORK:\n",    &gemtk_work_area)
+    GEMTK_DBG_GRECT ("GEMTK_WM_AREA_TOOLBAR:\n", &gemtk_toolbar_area)
+    printf ("Slider X pos:       %d\n", slid->x_pos);
+    printf ("Slider Y pos:       %d\n", slid->y_pos);
+    printf ("Slider X units:     %d\n", slid->x_unit_px);
+    printf ("Slider Y units:     %d\n", slid->y_unit_px);
+
+
+#undef DBG_GRECT
+};
 
 /**
 * Check's if the pointer is managed by the guiwin API.
@@ -1024,7 +1066,6 @@ uint32_t gemtk_wm_get_state(GUIWIN *win)
     return(win->state);
 }
 
-
 /**
 * Set and new event handler function.
 */
@@ -1066,7 +1107,7 @@ void gemtk_wm_set_toolbar_size(GUIWIN *win, uint16_t s)
 	win->toolbar_size = s;
 }
 
-short getm_wm_get_toolbar_edit_obj(GUIWIN *win)
+short gemtk_wm_get_toolbar_edit_obj(GUIWIN *win)
 {
 	return(win->toolbar_edit_obj);
 }

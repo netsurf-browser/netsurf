@@ -36,9 +36,10 @@
 #define MAINMENU_M_GHISTORY 53  /* STRING in tree MAINMENU */
 #define MAINMENU_M_ADD_BOOKMARK 55  /* STRING in tree MAINMENU */
 #define MAINMENU_M_BOOKMARKS 56  /* STRING in tree MAINMENU */
-#define MAINMENU_M_CHOICES 58  /* STRING in tree MAINMENU */
-#define MAINMENU_M_VLOG 59  /* STRING in tree MAINMENU */
-#define MAINMENU_M_HELP_CONTENT 61  /* STRING in tree MAINMENU */
+#define MAINMENU_M_COOKIES 58  /* STRING in tree MAINMENU */
+#define MAINMENU_M_CHOICES 60  /* STRING in tree MAINMENU */
+#define MAINMENU_M_VLOG 61  /* STRING in tree MAINMENU */
+#define MAINMENU_M_HELP_CONTENT 63  /* STRING in tree MAINMENU */
 
 #define TOOLBAR 1  /* form/dial */
 #define TOOLBAR_AREA_SEARCH 1  /* BOX in tree TOOLBAR */
@@ -209,3 +210,7 @@
 #define POP_FONT_RENDERER 15  /* form/dial */
 #define POP_FONT_RENDERER_INTERNAL 1  /* STRING in tree POP_FONT_RENDERER */
 #define POP_FONT_RENDERER_FREETYPE 2  /* STRING in tree POP_FONT_RENDERER */
+
+#define TOOLBAR_COOKIES 16  /* form/dial */
+
+#define TOOLBAR_HISTORY 17  /* form/dial */

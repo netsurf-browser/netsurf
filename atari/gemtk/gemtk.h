@@ -33,6 +33,17 @@
 extern unsigned short _systype_v;
 unsigned short _systype (void);
 
+/* GEMTK Utils API: */
+
+#define GEMTK_DBG_GRECT(s,g) 				\
+	printf("%s", s);							\
+	printf("\tx0: %d, \n", (g)->g_x); 			\
+	printf("\ty0: %d, \n", (g)->g_y);			\
+	printf("\tx1: %d, \n", (g)->g_x+(g)->g_w); 	\
+	printf("\ty1: %d, \n", (g)->g_y+(g)->g_h);		\
+	printf("\tw:  %d, \n", (g)->g_w);			\
+	printf("\th:  %d  \n", (g)->g_h);			\
+
 /*
 * Chech for GRECT intersection without modifiend the src rectangles
 * return true when the  GRECT's intersect, fals otherwise.
@@ -46,6 +57,9 @@ int gemtk_keybd2ascii( int keybd, int shift);
 
 /** set VDI clip area by passing an GRECT */
 void gemtk_clip_grect(VdiHdl vh, GRECT *rect);
+
+void gemtk_wind_get_str(short aes_handle, short mode, char *str, int len);
+
 
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
@@ -180,6 +194,8 @@ GUIWIN * gemtk_wm_add(short handle, uint32_t flags,
 
 GUIWIN * gemtk_wm_find(short handle);
 
+void gemtk_wm_dump_window_info(GUIWIN *win);
+
 short gemtk_wm_remove(GUIWIN *win);
 
 GUIWIN * gemtk_wm_validate_ptr(GUIWIN *win);
@@ -191,6 +207,8 @@ GUIWIN *gemtk_wm_unlink(GUIWIN *win);
 short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]);
 
 void gemtk_wm_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
+
+short gemtk_wm_get_toolbar_edit_obj(GUIWIN *win);
 
 short gemtk_wm_get_handle(GUIWIN *win);
 

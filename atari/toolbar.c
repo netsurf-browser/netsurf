@@ -444,6 +444,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 
 	//dbg_grect("toolbar redraw clip", clip);
 
+	/* Redraw the AES objects: */
     objc_draw_grect(tb->form,0,8,clip);
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
 
@@ -461,6 +462,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 		};
 		//dbg_rect("tb textarea clip: ", &r);
 		// TODO: let this be handled by an userdef object redraw function:
+		/* Redraw the url input: */
         textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, 1.0, &r, &toolbar_rdrw_ctx);
     }
 }
@@ -594,7 +596,7 @@ void toolbar_set_url(struct s_toolbar *tb, const char * text)
     LOG((""));
     textarea_set_text(tb->url.textarea, text);
 
-    if (tb->attached) {
+    if (tb->attached && tb->visible) {
         GRECT area;
         toolbar_get_grect(tb, TOOLBAR_AREA_URL, &area);
         window_schedule_redraw_grect(tb->owner, &area);

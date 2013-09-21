@@ -78,6 +78,7 @@ S_ATARI := \
 	bitmap.c \
 	clipboard.c \
 	ctxmenu.c \
+	cookies.c \
 	deskmenu.c \
 	download.c \
 	encoding.c \
@@ -85,18 +86,20 @@ S_ATARI := \
 	filetype.c \
 	font.c \
 	gui.c \
+	hotlist.c \
+	history.c \
 	login.c \
 	misc.c \
 	osspec.c \
+	redrawslots.c \
+	rootwin.c \
 	schedule.c \
 	search.c \
 	statusbar.c \
+	settings.c \
+	toolbar.c \
 	thumbnail.c \
 	treeview.c \
-	redrawslots.c \
-	rootwin.c \
-	toolbar.c \
-	settings.c \
 	plot/plot.c \
 	plot/fontplot.c \
 	plot/eddi.s \
@@ -110,9 +113,6 @@ S_ATARI := \
 	gemtk/utils.c \
 	gemtk/objc.c
 
-#	cookies.c \
-#	hotlist.c \
-#	history.c\
 
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 

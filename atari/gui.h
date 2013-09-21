@@ -142,7 +142,7 @@ struct s_browser
 */
 struct gui_window {
 	struct s_gui_win_root * root;
-	CMP_BROWSER browser;
+	struct s_browser * browser;
 	MFORM_EX *cursor;
     /* icon to be drawn when iconified, or NULL for default resource. */
     char * status;
@@ -157,8 +157,10 @@ struct gui_window {
 extern struct gui_window *window_list;
 
 /* -------------------------------------------------------------------------- */
-/* Public - non standard gui window functions                                 */
+/* Public - non core gui window functions     		                          */
 /* -------------------------------------------------------------------------- */
 void gui_set_input_gui_window(struct gui_window *gw);
+char *gui_window_get_url(struct gui_window *gw);
+char * gui_window_get_title(struct gui_window *gw);
 
 #endif

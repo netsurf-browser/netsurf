@@ -63,6 +63,7 @@
 #include "atari/statusbar.h"
 #include "atari/toolbar.h"
 #include "atari/hotlist.h"
+#include "atari/cookies.h"
 #include "atari/history.h"
 #include "atari/login.h"
 #include "atari/encoding.h"
@@ -171,12 +172,14 @@ void gui_poll(bool active)
 		tmp = tmp->next;
     }
 
-	// TODO: reenable treeview redraws
-/*
-    if(hl.tv->redraw){
-		atari_treeview_redraw(hl.tv);
-    }
+	// TODO: implement generic treeview redraw function
+	// TODO: rename hl to atari_hotlist or create getter for it...
+	//atari_treeview_redraw(hl.tv);
+	atari_hotlist_redraw();
+	atari_cookie_manager_redraw();
+	atari_global_history_redraw();
 
+/*	// TODO: reenable history redraws
     if(gl_history.tv->redraw){
 		atari_treeview_redraw(gl_history.tv);
     }
@@ -541,6 +544,27 @@ void gui_window_set_url(struct gui_window *w, const char *url)
     }
 }
 
+struct gui_window * gui_window_get_input_window(void)
+{
+	return(input_window);
+}
+
+char * gui_window_get_url(struct gui_window *gw)
+{
+	if (gw == NULL) {
+		return(NULL);
+	}
+	return(gw->url);
+}
+
+char * gui_window_get_title(struct gui_window *gw)
+{
+	if (gw == NULL) {
+		return(NULL);
+	}
+	return(gw->title);
+}
+
 static void throbber_advance( void * data )
 {
 
@@ -809,15 +833,16 @@ void gui_quit(void)
     struct gui_window * tmp = window_list;
 
 	/* Destroy all remaining browser windows: */
-    while( gw ) {
+    while (gw) {
         tmp = gw->next;
         browser_window_destroy(gw->browser->bw);
         gw = tmp;
     }
 
 	/* destroy the treeview windows: */
-    atari_global_history_destroy();
+    //atari_global_history_destroy();
     atari_hotlist_destroy();
+    atari_cookie_manager_destroy();
 
 	/* shutdown netsurf treeview framework: */
     treeview_fini();
@@ -1036,8 +1061,9 @@ static void gui_init2(int argc, char** argv)
     treeview_init(0);
 
 	/* Initialize the specific treeview windows: */
-    atari_global_history_init();
+    //atari_global_history_init();
     atari_hotlist_init();
+    atari_cookie_manager_init();
 
     /* Initialize the toolbar framework: */
     toolbar_init();
@@ -1084,7 +1110,7 @@ int main(int argc, char** argv)
     /* user options setup */
     ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
     if (ret != NSERROR_OK) {
-	die("Options failed to initialise");
+		die("Options failed to initialise");
     }
     nsoption_read(options, NULL);
     nsoption_commandline(&argc, argv, NULL);
