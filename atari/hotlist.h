@@ -26,7 +26,8 @@
 
 struct atari_hotlist {
 	GUIWIN * window;
-	ATARI_TREEVIEW_PTR tv;/*< The hotlist treeview handle.  */
+	//ATARI_TREEVIEW_PTR tv;/*< The hotlist treeview handle.  */
+	struct core_window *tv;
 	bool init;
 	char path[PATH_MAX];
 };

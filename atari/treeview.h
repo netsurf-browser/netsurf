@@ -60,20 +60,20 @@ struct atari_treeview_callbacks {
 	gemtk_wm_event_handler_f gemtk_user_func;
 };
 
-struct atari_treeview_window * atari_treeview_create(GUIWIN *win,
+struct core_window *atari_treeview_create(GUIWIN *win,
 									struct atari_treeview_callbacks * callbacks,
 									void * user_data, uint32_t flags);
-void atari_treeview_delete(struct atari_treeview_window * cw);
-void atari_treeview_open(struct atari_treeview_window * cw, GRECT *pos);
-bool atari_treeview_is_open(struct atari_treeview_window *cw);
-void atari_treeview_close(struct atari_treeview_window * cw);
-GUIWIN * atari_treeview_get_gemtk_window(struct atari_treeview_window *tv);
-void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode,
+void atari_treeview_delete(struct core_window *cw);
+void atari_treeview_open(struct core_window *cw, GRECT *pos);
+bool atari_treeview_is_open(struct core_window *cw);
+void atari_treeview_close(struct core_window *cw);
+GUIWIN * atari_treeview_get_gemtk_window(struct core_window *cw);
+void atari_treeview_get_grect(struct core_window *cw, enum treeview_area_e mode,
 									GRECT *dest);
-void atari_treeview_redraw(struct atari_treeview_window *tv);
-void atari_treeview_set_user_data(struct atari_treeview_window * tv,
+void atari_treeview_redraw(struct core_window *cw);
+void atari_treeview_set_user_data(struct core_window *cw,
 								void *user_data_ptr);
-void *atari_treeview_get_user_data(struct atari_treeview_window * tv);
+void *atari_treeview_get_user_data(struct core_window *cw);
 void atari_treeview_flush_redraws(void);
 #endif //NSATARI_TREEVIEW_H
 

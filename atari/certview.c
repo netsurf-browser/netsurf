@@ -74,14 +74,10 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin);
 static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
 								struct core_window_callback_table *cb_t)
 {
-	LOG((""));
-
-	struct atari_treeview_window *tv;
 	struct atari_sslcert_viewer_s *cvwin;
 	struct sslcert_session_data *ssl_d;
 
-	tv = (struct atari_treeview_window *)cw;
-	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(tv);
+	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
 	assert(cvwin);
 
@@ -89,18 +85,18 @@ static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
 
 	assert(ssl_d);
 
+	LOG((""));
+
 	return(sslcert_viewer_init(cb_t, cw, ssl_d));
 }
 
 static void atari_sslcert_viewer_finish(struct core_window *cw)
 {
-	struct atari_treeview_window *tv;
 	struct atari_sslcert_viewer_s *cvwin;
 
 	assert(cw);
 
-	tv = (struct atari_treeview_window *)cw;
-	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(tv);
+	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
 	/* This will also free the session data: */
 	sslcert_viewer_fini(cvwin->ssl_session_data);
@@ -112,13 +108,11 @@ static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
 											int y, struct rect *clip,
 											const struct redraw_context *ctx)
 {
-	struct atari_treeview_window *tv;
 	struct atari_sslcert_viewer_s *cvwin;
 
 	assert(cw);
 
-	tv = (struct atari_treeview_window *)cw;
-	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(tv);
+	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
 	assert(cvwin);
 
@@ -127,13 +121,11 @@ static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
 
 static void atari_sslcert_viewer_keypress(struct core_window *cw, uint32_t ucs4)
 {
-	struct atari_treeview_window *tv;
 	struct atari_sslcert_viewer_s *cvwin;
 
 	assert(cw);
 
-	tv = (struct atari_treeview_window *)cw;
-	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(tv);
+	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
 	LOG(("ucs4: %lu\n", ucs4));
 	sslcert_viewer_keypress(cvwin->ssl_session_data, ucs4);
@@ -143,15 +135,13 @@ static void atari_sslcert_viewer_mouse_action(struct core_window *cw,
 												browser_mouse_state mouse,
 												int x, int y)
 {
-	struct atari_treeview_window *tv;
 	struct atari_sslcert_viewer_s *cvwin;
 
 	assert(cw);
 
-	tv = (struct atari_treeview_window *)cw;
-	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(tv);
+	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
-	if((mouse & BROWSER_MOUSE_HOVER)){
+	if ((mouse & BROWSER_MOUSE_HOVER)) {
 		sslcert_viewer_mouse_action(cvwin->ssl_session_data, mouse, x, y);
 	} else {
 		sslcert_viewer_mouse_action(cvwin->ssl_session_data, mouse, x, y);
@@ -161,7 +151,7 @@ static void atari_sslcert_viewer_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct atari_treeview_window *tv=NULL;
+	struct core_window *tv=NULL;
 	GRECT tb_area;
 	GUIWIN * gemtk_win;
 	struct gui_window * gw;
@@ -178,7 +168,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			case WM_TOOLBAR:
 				toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
 				LOG(("CERTVIEWER WM_TOOLBAR"));
-				tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
+				tv = (struct core_window*) gemtk_wm_get_user_data(win);
 				assert(tv);
 				cvwin = (struct atari_sslcert_viewer_s *)
 							atari_treeview_get_user_data(tv);
@@ -207,7 +197,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			case WM_CLOSED:
 			// TODO set perrmissions
 				toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
-				tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
+				tv = (struct core_window*) gemtk_wm_get_user_data(win);
 				assert(tv);
 				cvwin = (struct atari_sslcert_viewer_s *)
 							atari_treeview_get_user_data(tv);

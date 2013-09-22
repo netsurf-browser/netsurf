@@ -116,21 +116,30 @@ static void atari_hotlist_mouse_action(struct core_window *cw,
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	struct atari_treeview_window *tv=NULL;
+	struct core_window *cw;
 	GRECT tb_area;
 	GUIWIN * gemtk_win;
 	struct gui_window * gw;
 	char *cur_url = NULL;
 	char *cur_title = NULL;
+	OBJECT *toolbar;
 
 	LOG((""));
+
+	tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
+	cw = (struct core_window *)tv;
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
 
 			case WM_TOOLBAR:
 				LOG(("WM_TOOLBAR"));
-				tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
+
+				toolbar = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
+
+				assert(toolbar);
 				assert(tv);
+
 				switch	(msg[4]) {
 					case TOOLBAR_HOTLIST_CREATE_FOLDER:
 						hotlist_add_folder(NULL, 0, 0);
@@ -161,10 +170,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 						break;
 				}
 
-				gemtk_win = atari_treeview_get_gemtk_window(tv);
+				gemtk_win = atari_treeview_get_gemtk_window(cw);
 				assert(gemtk_win);
-				gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
-				atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_area);
+				toolbar[msg[4]].ob_state &= ~OS_SELECTED;
+				atari_treeview_get_grect(cw, TREEVIEW_AREA_TOOLBAR, &tb_area);
 				evnt_timer(150);
 				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
 			break;
@@ -286,8 +295,8 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	struct node * selected = NULL;
 	struct node * folder = NULL;
 	nsurl *nsurl;
-	ATARI_TREEVIEW_PTR tv = hl.tv;
-	if(hl.tv == NULL )
+
+	if(hl.tv == NULL)
 		return;
 
 	atari_hotlist_open();

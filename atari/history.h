@@ -23,7 +23,8 @@ struct core_window;
 
 struct atari_global_history_s {
 	GUIWIN * window;
-	struct atari_treeview_window * tv;/*< The hotlist treeview handle.  */
+	//struct atari_treeview_window * tv;/*< The hotlist treeview handle.  */
+	struct core_window *tv;
 	bool init;
 };
 

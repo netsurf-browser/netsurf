@@ -204,11 +204,6 @@ void atari_cookie_manager_open(void)
 {
 	assert(atari_cookie_manager.init);
 
-	if (atari_cookie_manager.init == false) {
-		// TODO
-		return;
-	}
-
 	if (atari_treeview_is_open(atari_cookie_manager.tv) == false) {
 
 	    GRECT pos;

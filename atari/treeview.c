@@ -82,12 +82,12 @@ struct atari_treeview_window {
 static struct atari_treeview_window * treeviews_open;
 
 /* native GUI event handlers: */
-static void on_mbutton_event(struct atari_treeview_window *tvw,
-									EVMULT_OUT *ev_out, short msg[8]);
-static void on_keybd_event(struct atari_treeview_window *tvw,
-									EVMULT_OUT *ev_out, short msg[8]);
-static void on_redraw_event(struct atari_treeview_window *tvw,
-									EVMULT_OUT *ev_out, short msg[8]);
+static void on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
+									short msg[8]);
+static void on_keybd_event(struct core_window *cw, EVMULT_OUT *ev_out,
+									short msg[8]);
+static void on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
+									short msg[8]);
 
 /* static utils: */
 static void atari_treeview_dump_info(struct atari_treeview_window *tv, char *s);
@@ -99,8 +99,8 @@ static void atari_treeview_dump_info(struct atari_treeview_window *tv, char *s);
 static void atari_treeview_redraw_grect_request(struct core_window *cw,
 												GRECT *area)
 {
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 	if (cw != NULL) {
-		ATARI_TREEVIEW_PTR tv = (ATARI_TREEVIEW_PTR) cw;
 		if( tv->redraw == false ){
 			tv->redraw = true;
 			tv->rdw_area.g_x = area->g_x;
@@ -123,11 +123,11 @@ static void atari_treeview_redraw_grect_request(struct core_window *cw,
 }
 
 
-void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode,
+void atari_treeview_get_grect(struct core_window *cw, enum treeview_area_e mode,
 									GRECT *dest)
 {
 
-	struct atari_treeview_window * tv = tptr;
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
 	if (mode == TREEVIEW_AREA_CONTENT) {
 		gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, dest);
@@ -137,8 +137,9 @@ void atari_treeview_get_grect(ATARI_TREEVIEW_PTR tptr, enum treeview_area_e mode
 	}
 }
 
-GUIWIN * atari_treeview_get_gemtk_window(struct atari_treeview_window *tv)
+GUIWIN * atari_treeview_get_gemtk_window(struct core_window *cw)
 {
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 	return(tv->window);
 }
 
@@ -147,15 +148,17 @@ static void atari_treeview_dump_info(struct atari_treeview_window *tv,
 {
 	printf("Treeview Dump (%s)\n", title);
 	printf("=================================\n");
-	gemtk_wm_dump_window_info(atari_treeview_get_gemtk_window(tv));
+	gemtk_wm_dump_window_info(atari_treeview_get_gemtk_window((struct core_window *)tv));
 	GEMTK_DBG_GRECT("Redraw Area: \n", &tv->rdw_area)
 	dbg_grect("Redraw Area2:      \n", &tv->rdw_area);
 	printf("Extent: x: %d, y: %d\n", tv->extent, tv->extent);
 }
 
 
-void atari_treeview_redraw(struct atari_treeview_window *tv)
+void atari_treeview_redraw(struct core_window *cw)
 {
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
+
 	if (tv != NULL && tv->is_open) {
 		if( tv->redraw && ((plot_get_flags() & PLOT_FLAG_OFFSCREEN) == 0) ) {
 
@@ -215,7 +218,6 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 						todo[1] = 0;
 					}
 
-					// TODO: get slider values
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
 							struct rect clip;
 
@@ -224,7 +226,7 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 							clip.x1 = clip.x0 + todo[2]+(slid->x_pos*slid->x_unit_px);
 							clip.y1 = clip.y0 + todo[3]+(slid->y_pos*slid->y_unit_px);
 
-							tv->io->draw(tv, -(slid->x_pos*slid->x_unit_px),
+							tv->io->draw(cw, -(slid->x_pos*slid->x_unit_px),
 										-(slid->y_pos*slid->y_unit_px),
 												&clip, &ctx);
 					}
@@ -388,14 +390,16 @@ void atari_treeview_redraw(struct atari_treeview_window *tv)
 */
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	ATARI_TREEVIEW_PTR tv = (ATARI_TREEVIEW_PTR) gemtk_wm_get_user_data(win);
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)
+											gemtk_wm_get_user_data(win);
+	struct core_window *cw = (struct core_window *)tv;
 
     if( (ev_out->emo_events & MU_MESAG) != 0 ) {
         // handle message
         switch (msg[0]) {
 
         case WM_REDRAW:
-			on_redraw_event(tv, ev_out, msg);
+			on_redraw_event(cw, ev_out, msg);
             break;
 
         default:
@@ -403,12 +407,12 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         }
     }
     if( (ev_out->emo_events & MU_KEYBD) != 0 ) {
-        on_keybd_event(tv, ev_out, msg);
+        on_keybd_event(cw, ev_out, msg);
     }
     if( (ev_out->emo_events & MU_BUTTON) != 0 ) {
         LOG(("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
              ev_out->emo_mouse.p_y));
-        on_mbutton_event(tv, ev_out, msg);
+        on_mbutton_event(cw, ev_out, msg);
     }
 
     if(tv != NULL && tv->io->gemtk_user_func != NULL){
@@ -419,7 +423,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 }
 
 
-static void __CDECL on_keybd_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
+static void __CDECL on_keybd_event(struct core_window *cw, EVMULT_OUT *ev_out,
 									short msg[8])
 {
 	bool r=false;
@@ -430,7 +434,7 @@ static void __CDECL on_keybd_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 	unsigned short nkc = 0;
 	unsigned short nks = 0;
 	unsigned char ascii;
-	struct atari_treeview_window * tv = tptr;
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
 	kstate = ev_out->emo_kmeta;
 	kcode = ev_out->emo_kreturn;
@@ -440,21 +444,20 @@ static void __CDECL on_keybd_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 
 	if (ik == 0) {
 		if (ascii >= 9) {
-			tv->io->keypress(tv, ucs4);
-            //r = tree_keypress(tv->tree, ucs4);
+			tv->io->keypress(cw, ucs4);
 		}
 	} else {
-		tv->io->keypress(tv, ik);
+		tv->io->keypress(cw, ik);
 	}
 }
 
 
-static void __CDECL on_redraw_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
+static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 									short msg[8])
 {
 	GRECT work, clip;
 	struct gemtk_wm_scroll_info_s *slid;
-	struct atari_treeview_window * tv = tptr;
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
 	if (tv == NULL)
 		return;
@@ -462,7 +465,7 @@ static void __CDECL on_redraw_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 	gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
 	//dbg_grect("treeview work: ", &work);
 
-	atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
+	atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &work);
 	//dbg_grect("treeview work: ", &work);
 	slid = gemtk_wm_get_scroll_info(tv->window);
 
@@ -499,14 +502,14 @@ static void __CDECL on_redraw_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
 
 		//dbg_grect("treeview on_redraw_event ", &rdrw_area);
 
-		atari_treeview_redraw_grect_request(tptr, &rdrw_area);
+		atari_treeview_redraw_grect_request(cw, &rdrw_area);
 	}
 }
 
-static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out,
+static void __CDECL on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
 									short msg[8])
 {
-	struct atari_treeview_window * tv = tptr;
+	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 	struct gemtk_wm_scroll_info_s *slid;
 	GRECT work;
 	short mx, my;
@@ -534,7 +537,7 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 		&& my < work.g_y + work.g_h )
 	{
 		if (ev_out->emo_mclicks == 2) {
-			tv->io->mouse_action(tv,
+			tv->io->mouse_action(cw,
 								BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_DOUBLE_CLICK,
 								origin_rel_x, origin_rel_y);
 			return;
@@ -547,7 +550,7 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 			if(ev_out->emo_mclicks == 2 ) {
 				bms = BROWSER_MOUSE_DOUBLE_CLICK;
 			}
-			tv->io->mouse_action(tv, bms, origin_rel_x, origin_rel_y);
+			tv->io->mouse_action(cw, bms, origin_rel_x, origin_rel_y);
 		} else {
 			/* button still pressed */
 			short prev_x = origin_rel_x;
@@ -561,14 +564,14 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 			tv->startdrag.x = origin_rel_x;
 			tv->startdrag.y = origin_rel_y;
 			/* First, report mouse press, to trigger entry selection */
-			tv->io->mouse_action(tv, BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1, cur_rel_x,
+			tv->io->mouse_action(cw, BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1, cur_rel_x,
 									cur_rel_y);
-			atari_treeview_redraw(tv);
-			tv->io->mouse_action(tv, BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON,
+			atari_treeview_redraw(cw);
+			tv->io->mouse_action(cw, BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON,
 								cur_rel_x, cur_rel_y);
 			do{
 				if (abs(prev_x-cur_rel_x) > 5 || abs(prev_y-cur_rel_y) > 5) {
-					tv->io->mouse_action(tv,
+					tv->io->mouse_action(cw,
 								BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON,
 								cur_rel_x, cur_rel_y);
 					prev_x = cur_rel_x;
@@ -578,7 +581,7 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 				if (tv->redraw) {
 					// TODO: maybe GUI poll would fit better here?
 					// 		 ... is gui_poll re-entrance save?
-					atari_treeview_redraw(tv);
+					atari_treeview_redraw(cw);
 				}
 
 				/* sample mouse button state: */
@@ -588,50 +591,50 @@ static void __CDECL on_mbutton_event(ATARI_TREEVIEW_PTR tptr, EVMULT_OUT *ev_out
 			} while( mbut & 1 );
 
 			/* End drag: */
-			tv->io->mouse_action(tv, BROWSER_MOUSE_HOVER, cur_rel_x, cur_rel_y);
+			tv->io->mouse_action(cw, BROWSER_MOUSE_HOVER, cur_rel_x, cur_rel_y);
 			gem_set_cursor(&gem_cursors.arrow);
 		}
 	}
 }
 
 
-struct atari_treeview_window *
+struct core_window *
 atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 					void * user_data, uint32_t flags)
 {
 
 	/* allocate the core_window struct: */
-	struct atari_treeview_window * cw;
+	struct atari_treeview_window * tv;
 	struct gemtk_wm_scroll_info_s *slid;
 
-	cw = calloc(1, sizeof(struct atari_treeview_window));
-	if (cw == NULL) {
+	tv = calloc(1, sizeof(struct atari_treeview_window));
+	if (tv == NULL) {
 		LOG(("calloc failed"));
 		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return NULL;
 	}
 
 	/* Store the window ref inside the new treeview: */
-	cw->window = win;
-	cw->io = callbacks;
-	cw->user_data = user_data;
+	tv->window = win;
+	tv->io = callbacks;
+	tv->user_data = user_data;
 
 	// Setup gemtk event handler function:
 	gemtk_wm_set_event_handler(win, handle_event);
 
 	// bind window user data to treeview ref:
-	gemtk_wm_set_user_data(win, (void*)cw);
+	gemtk_wm_set_user_data(win, (void*)tv);
 
 	// Get acces to the gemtk scroll info struct:
-	slid = gemtk_wm_get_scroll_info(cw->window);
+	slid = gemtk_wm_get_scroll_info(tv->window);
 
 	// Setup line and column height/width of the window,
 	// each scroll takes the configured steps:
 	slid->y_unit_px = 16;
 	slid->x_unit_px = 16;
 
-	assert(cw->io);
-	assert(cw->io->init_phase2);
+	assert(tv->io);
+	assert(tv->io->init_phase2);
 
 	/* Now that the window is configured for treeview content,			*/
 	/* call init_phase2 which must create the treeview 					*/
@@ -639,34 +642,37 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 	/* event handlers of the treeview:			 						*/
 	/* It would be more simple to not pass around the callbacks			*/
 	/* but the treeview constructor requires them for initialization...	*/
-	nserror err = cw->io->init_phase2(cw, &cw_t);
+	nserror err = tv->io->init_phase2((struct core_window *)tv, &cw_t);
 	if (err != NSERROR_OK) {
-		free(cw);
-		cw = NULL;
+		free(tv);
+		tv = NULL;
 	}
 
-	return(cw);
+	return((struct core_window *)tv);
 }
 
-void atari_treeview_delete(struct atari_treeview_window * cw)
+void atari_treeview_delete(struct core_window * cw)
 {
-	assert(cw);
-	assert(cw->io->finish);
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
 
-	cw->io->finish(cw);
+	assert(tv);
+	assert(tv->io->finish);
 
-	free(cw);
+	tv->io->finish(cw);
+
+	free(tv);
 }
 
 
-void atari_treeview_open(struct atari_treeview_window *cw, GRECT *pos)
+void atari_treeview_open(struct core_window *cw, GRECT *pos)
 {
-	if (cw->window != NULL && cw->is_open == false) {
-		cw->is_open = true;
-		wind_open_grect(gemtk_wm_get_handle(cw->window), pos);
-		gemtk_wm_link(cw->window);
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
+	if (tv->window != NULL && tv->is_open == false) {
+		tv->is_open = true;
+		wind_open_grect(gemtk_wm_get_handle(tv->window), pos);
+		gemtk_wm_link(tv->window);
 		if (treeviews_open == NULL) {
-			treeviews_open = cw;
+			treeviews_open = tv;
 			treeviews_open->next_open = NULL;
 			treeviews_open->prev_open = NULL;
 		} else {
@@ -675,44 +681,48 @@ void atari_treeview_open(struct atari_treeview_window *cw, GRECT *pos)
 			while(tmp->next_open != NULL){
 				tmp = tmp->next_open;
 			}
-			tmp->next_open = cw;
-			cw->prev_open = tmp;
-			cw->next_open = NULL;
+			tmp->next_open = tv;
+			tv->prev_open = tmp;
+			tv->next_open = NULL;
 		}
 	}
 }
 
-bool atari_treeview_is_open(struct atari_treeview_window *cw)
+bool atari_treeview_is_open(struct core_window *cw)
 {
-	return(cw->is_open);
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
+	return(tv->is_open);
 }
 
-void atari_treeview_set_user_data(struct atari_treeview_window * tv,
+void atari_treeview_set_user_data(struct core_window * cw,
 								void *user_data_ptr)
 {
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
 	tv->user_data = user_data_ptr;
 }
 
-void * atari_treeview_get_user_data(struct atari_treeview_window * tv)
+void * atari_treeview_get_user_data(struct core_window * cw)
 {
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
 	return(tv->user_data);
 }
 
-void atari_treeview_close(struct atari_treeview_window *cw)
+void atari_treeview_close(struct core_window *cw)
 {
-	if (cw->window != NULL) {
-		cw->is_open = false;
-		wind_close(gemtk_wm_get_handle(cw->window));
-		gemtk_wm_unlink(cw->window);
+	struct atari_treeview_window *tv = (struct atari_treeview_window*)cw;
+	if (tv->window != NULL) {
+		tv->is_open = false;
+		wind_close(gemtk_wm_get_handle(tv->window));
+		gemtk_wm_unlink(tv->window);
 		/* unlink the window: */
 		struct atari_treeview_window *tmp = treeviews_open;
-		if (cw->prev_open != NULL) {
-			cw->prev_open->next_open = cw->next_open;
+		if (tv->prev_open != NULL) {
+			tv->prev_open->next_open = tv->next_open;
 		} else {
-			treeviews_open = cw->next_open;
+			treeviews_open = tv->next_open;
 		}
-		if (cw->next_open != NULL) {
-			cw->next_open->prev_open = cw->prev_open;
+		if (tv->next_open != NULL) {
+			tv->next_open->prev_open = tv->prev_open;
 		}
 	}
 }
@@ -732,7 +742,7 @@ void atari_treeview_redraw_request(struct core_window *cw, const struct rect *r)
 {
 	GRECT area;
 	struct gemtk_wm_scroll_info_s * slid;
-	struct atari_treeview_window * tv = (cw);
+	struct atari_treeview_window * tv = (struct atari_treeview_window *)cw;
 
 	RECT_TO_GRECT(r, &area)
 
@@ -771,7 +781,7 @@ void atari_treeview_update_size(struct core_window *cw, int width, int height)
 		slid = gemtk_wm_get_scroll_info(tv->window);
 
 		/* recalculate and refresh sliders: */
-		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &area);
+		atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &area);
 		if (width > -1) {
 			slid->x_units = (width/slid->x_unit_px);
 		} else {
@@ -821,7 +831,7 @@ void atari_treeview_get_window_dimensions(struct core_window *cw,
 	if (cw != NULL && (width != NULL || height != NULL)) {
 		GRECT work;
 		struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
-		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
+		atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &work);
 		*width = work.g_w;
 		*height = work.g_h;
 	}
@@ -850,7 +860,7 @@ void atari_treeview_flush_redraws(void)
 		while(tmp){
 			assert(tmp->is_open);
 			if(tmp->redraw){
-				atari_treeview_redraw(tmp);
+				atari_treeview_redraw((struct core_window *)tmp);
 			}
 			tmp = tmp->next_open;
 		}

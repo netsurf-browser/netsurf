@@ -33,7 +33,8 @@ struct core_window;
 
 struct atari_sslcert_viewer_s {
 	GUIWIN * window;
-	struct atari_treeview_window *tv;/*< The hotlist treeview handle.  */
+	//struct atari_treeview_window *tv;/*< The hotlist treeview handle.  */
+	struct core_window *tv;
 	struct sslcert_session_data *ssl_session_data;
 	bool init;
 };
@@ -45,10 +46,6 @@ struct atari_sslcert_viewer_s {
  * The window takes ownership of the session data and free's the memory on exit.
  */
 void atari_sslcert_viewer_open(struct sslcert_session_data *ssl_d);
-/*
-void atari_sslcert_viewer_close(void);
-void atari_sslcert_viewer_destroy(void);
-void atari_sslcert_viewer_redraw(void);
-*/
+
 
 #endif // CERTVIEW_H_INCLUDED
