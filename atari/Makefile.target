@@ -75,6 +75,7 @@ LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 # S_ATARI are sources purely for the Atari FreeMiNT build
 S_ATARI := \
+	about.c \
 	bitmap.c \
 	clipboard.c \
 	ctxmenu.c \

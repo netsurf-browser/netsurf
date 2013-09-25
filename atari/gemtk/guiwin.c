@@ -597,7 +597,9 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
         case AP_TFAIL:
             dest = gemtk_wm_find(msg[3]);
             if (dest) {
-                DEBUG_PRINT(("Found WM_ dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
+                DEBUG_PRINT(("Found WM_ dest: %p (%d), flags: %d, cb: %p\n",
+							dest, dest->handle, dest->flags,
+							dest->handler_func));
                 if (dest->flags&GEMTK_WM_FLAG_PREPROC_WM) {
                     retval = preproc_wm(dest, ev_out, msg);
                     if(((retval == 0)||(dest->flags&GEMTK_WM_FLAG_RECV_PREPROC_WM))) {

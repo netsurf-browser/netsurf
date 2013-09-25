@@ -158,6 +158,7 @@ static void atari_treeview_dump_info(struct atari_treeview_window *tv,
 void atari_treeview_redraw(struct core_window *cw)
 {
 	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
+	short pxy[4];
 
 	if (tv != NULL && tv->is_open) {
 		if( tv->redraw && ((plot_get_flags() & PLOT_FLAG_OFFSCREEN) == 0) ) {
@@ -169,6 +170,17 @@ void atari_treeview_redraw(struct core_window *cw)
 
 			gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_CONTENT, &work);
 			slid = gemtk_wm_get_scroll_info(tv->window);
+
+//			// Debug code: this 3 lines help to inspect the redraw
+//			// areas...
+//			pxy[0] = work.g_x;
+//			pxy[1] = work.g_y;
+//			pxy[2] = pxy[0] + work.g_w-1;
+//			pxy[3] = pxy[1] + work.g_h-1;
+//
+//			vsf_color(plot_get_vdi_handle(), 0);
+//			v_bar(plot_get_vdi_handle(), (short*)&pxy);
+//			evnt_timer(500);
 
 			struct redraw_context ctx = {
 				.interactive = true,
@@ -182,8 +194,6 @@ void atari_treeview_redraw(struct core_window *cw)
 			if( wind_get(handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 				while (todo[2] && todo[3]) {
-
-					short pxy[4];
 
 					if(!rc_intersect(&work, (GRECT*)&todo)){
 						if (wind_get(handle, WF_NEXTXYWH,
@@ -200,11 +210,11 @@ void atari_treeview_redraw(struct core_window *cw)
 
 					// Debug code: this 3 lines help to inspect the redraw
 					// areas...
-					/*
-					vsf_color(plot_get_vdi_handle(), 3);
-					v_bar(plot_get_vdi_handle(), (short*)&pxy);
-					evnt_timer(500);
-					*/
+
+//					vsf_color(plot_get_vdi_handle(), 3);
+//					v_bar(plot_get_vdi_handle(), (short*)&pxy);
+//					evnt_timer(500);
+
 
 					/* convert screen to treeview coords: */
 					todo[0] = todo[0] - work.g_x ;//+ slid->x_pos*slid->x_unit_px;
@@ -390,6 +400,7 @@ void atari_treeview_redraw(struct core_window *cw)
 */
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
+	short retval = 0;
 	struct atari_treeview_window *tv = (struct atari_treeview_window *)
 											gemtk_wm_get_user_data(win);
 	struct core_window *cw = (struct core_window *)tv;
@@ -419,7 +430,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		tv->io->gemtk_user_func(win, ev_out, msg);
     }
 
-    return(0);
+	// TODO: evaluate return values of event handler functions and pass them on:
+    return(retval);
 }
 
 
@@ -746,13 +758,15 @@ void atari_treeview_redraw_request(struct core_window *cw, const struct rect *r)
 
 	RECT_TO_GRECT(r, &area)
 
+	assert(tv);
+
 	slid = gemtk_wm_get_scroll_info(tv->window);
 
 	//dbg_rect("redraw rect request", r);
 
 	// treeview redraw is always full window width:
 	area.g_x = 0;
-	area.g_w = area.g_w;
+	area.g_w = 8000;
 	// but vertical redraw region is clipped:
 	area.g_y = r->y0 - (slid->y_pos*slid->y_unit_px);
 	area.g_h = r->y1 - r->y0;

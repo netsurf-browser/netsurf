@@ -121,6 +121,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	struct gui_window * gw;
 	char *cur_url = NULL;
 	char *cur_title = NULL;
+	short retval = 0;
 
 	LOG((""));
 
@@ -150,14 +151,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 			case WM_CLOSED:
 				atari_cookie_manager_close();
+				retval = 1;
 			break;
 
 			default: break;
 		}
 	}
 
-	// TODO: implement selectable objects in toolbar API:
-	// ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
+	return(retval);
 }
 
 void atari_cookie_manager_init(void)

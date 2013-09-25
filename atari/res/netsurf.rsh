@@ -111,6 +111,11 @@
 #define DOWNLOAD_CB_CLOSE_RDY 9  /* BOXCHAR in tree DOWNLOAD */
 
 #define ABOUT 10  /* form/dial */
+#define ABOUT_LBL_VERSION 1  /* TEXT in tree ABOUT */
+#define ABOUT_OK 4  /* BUTTON in tree ABOUT */
+#define ABOUT_CONTENT 6  /* USERDEF in tree ABOUT */
+#define ABOUT_CREDITS 7  /* BUTTON in tree ABOUT */
+#define ABOUT_LICENSE 8  /* BUTTON in tree ABOUT */
 
 #define POP_CTX 11  /* form/dial */
 #define POP_CTX_CUT_SEL 1  /* TEXT in tree POP_CTX */

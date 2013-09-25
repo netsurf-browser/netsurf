@@ -94,8 +94,13 @@ static void atari_hotlist_draw(struct core_window *cw, int x,
 
 static void atari_hotlist_keypress(struct core_window *cw, uint32_t ucs4)
 {
+	GUIWIN *gemtk_win;
+	GRECT area;
 	LOG(("ucs4: %lu\n", ucs4));
 	hotlist_keypress(ucs4);
+	gemtk_win = atari_treeview_get_gemtk_window(cw);
+	atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &area);
+	//gemtk_wm_exec_redraw(gemtk_win, &area);
 }
 
 static void atari_hotlist_mouse_action(struct core_window *cw,
@@ -115,14 +120,15 @@ static void atari_hotlist_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct atari_treeview_window *tv=NULL;
-	struct core_window *cw;
-	GRECT tb_area;
-	GUIWIN * gemtk_win;
-	struct gui_window * gw;
 	char *cur_url = NULL;
 	char *cur_title = NULL;
+	short retval = 0;
+	struct atari_treeview_window *tv = NULL;
+	struct core_window *cw;
+	struct gui_window * gw;
 	OBJECT *toolbar;
+	GRECT tb_area;
+	GUIWIN * gemtk_win;
 
 	LOG((""));
 
@@ -160,9 +166,6 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 					case TOOLBAR_HOTLIST_DELETE:
 						hotlist_keypress(KEY_DELETE_LEFT);
-						// TODO: check if redraw is really required,
-						// 		  - implement treeview getter for the gemtk
-						//          handle.
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
@@ -176,18 +179,19 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 				atari_treeview_get_grect(cw, TREEVIEW_AREA_TOOLBAR, &tb_area);
 				evnt_timer(150);
 				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
+				retval = 1;
 			break;
 
 			case WM_CLOSED:
 				atari_hotlist_close();
+				retval = 1;
 			break;
 
 			default: break;
 		}
 	}
 
-	// TODO: implement selectable objects in toolbar API:
-	// ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
+	return(retval);
 }
 
 

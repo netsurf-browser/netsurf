@@ -19,6 +19,7 @@
 #include "atari/misc.h"
 #include "atari/gui.h"
 #include "atari/findfile.h"
+#include "atari/about.h"
 
 #include "atari/rootwin.h"
 
@@ -151,6 +152,7 @@ static void __CDECL evnt_menu(WINDOW * win, short buff[8])
 
 static void __CDECL menu_about(short item, short title, void *data)
 {
+	/*
 	nsurl *url;
 	nserror error;
 	char buf[PATH_MAX];
@@ -173,6 +175,8 @@ static void __CDECL menu_about(short item, short title, void *data)
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	}
+	*/
+	atari_about_show();
 }
 
 static void __CDECL menu_new_win(short item, short title, void *data)
