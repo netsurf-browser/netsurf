@@ -2761,14 +2761,20 @@ void gui_quit(void)
 	ami_free_layers(&browserglob);
 
 	ami_close_fonts();
+	
+	LOG(("Closing screen"));
 	ami_gui_close_screen(scrn, locked_screen);
 	FreeVec(nsscreentitle);
 
+	LOG(("Freeing menu items"));
 	ami_context_menu_free();
 	ami_menu_free_glyphs();
 
+	LOG(("Freeing mouse pointers"));
 	ami_mouse_pointers_free();
+	LOG(("Freeing clipboard"));
 	ami_clipboard_free();
+
 	ami_print_free();
 
 	FreeSysObject(ASOT_PORT,appport);
@@ -2786,6 +2792,7 @@ void gui_quit(void)
 	if(IKeymap) DropInterface((struct Interface *)IKeymap);
 	if(KeymapBase) CloseLibrary(KeymapBase);
 
+	LOG(("Freeing scheduler"));
 	ami_schedule_free();
 	ami_schedule_close_timer();
 
