@@ -318,6 +318,8 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 
 static void ami_menu_load_glyphs(struct DrawInfo *dri)
 {
+	while(i < NSA_GLYPH_MAX) menu_glyph[i] = NULL;
+
 	menu_glyph[NSA_GLYPH_SUBMENU] = NewObject(NULL, "sysiclass",
 										SYSIA_Which, MENUSUB,
 										SYSIA_DrawInfo, dri,
@@ -340,7 +342,7 @@ void ami_menu_free_glyphs(void)
 	if(menu_glyphs_loaded == false) return;
 	
 	while(i < NSA_GLYPH_MAX) {
-		DisposeObject(menu_glyph[i]);
+		if(menu_glyph[i]) DisposeObject(menu_glyph[i]);
 		menu_glyph[i] = NULL;
 	};
 	
