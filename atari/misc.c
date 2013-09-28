@@ -521,18 +521,3 @@ void dbg_rect(const char * str, int * pxy)
 		pxy[3] - pxy[1] );
 }
 
-/* some LDG functions here to reduce dependencies */
-void * ldg_open( char * name, short * global )
-{
-	return( NULL );
-}
-
-void * ldg_find( char * name, short * ldg )
-{
-	return( NULL );
-}
-
-int ldg_close( void * ldg, short * global )
-{
-	return( 0 );
-}
