@@ -57,10 +57,7 @@ hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
 void dbg_grect(const char * str, GRECT * r);
 void dbg_pxy(const char * str, short * pxy);
 void dbg_rect(const char * str, int * pxy);
-void * ldg_open( char * name, short * global );
-void * ldg_find( char * name, short * ldg );
 const char * file_select( const char * title, const char * name );
-int ldg_close( void * ldg, short * global );
 long nkc_to_input_key(short nkc, long * ucs4_out);
 
 #endif
