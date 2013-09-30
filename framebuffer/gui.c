@@ -971,6 +971,34 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			modifier |= FBTK_MOD_LCTRL;
 			break;
 
+		case NSFB_KEY_y:
+		case NSFB_KEY_z:
+			if (cbi->event->value.keycode == NSFB_KEY_z &&
+					(modifier & FBTK_MOD_RCTRL ||
+					 modifier & FBTK_MOD_LCTRL) &&
+					(modifier & FBTK_MOD_RSHIFT ||
+					 modifier & FBTK_MOD_LSHIFT)) {
+				/* Z pressed with CTRL and SHIFT held */
+				browser_window_key_press(gw->bw, KEY_REDO);
+				break;
+
+			} else if (cbi->event->value.keycode == NSFB_KEY_z &&
+					(modifier & FBTK_MOD_RCTRL ||
+					 modifier & FBTK_MOD_LCTRL)) {
+				/* Z pressed with CTRL held */
+				browser_window_key_press(gw->bw, KEY_UNDO);
+				break;
+
+			} else if (cbi->event->value.keycode == NSFB_KEY_y &&
+					(modifier & FBTK_MOD_RCTRL ||
+					 modifier & FBTK_MOD_LCTRL)) {
+				/* Y pressed with CTRL held */
+				browser_window_key_press(gw->bw, KEY_REDO);
+				break;
+			}
+			/* Z or Y pressed but not undo or redo;
+			 * Fall through to default handling */
+
 		default:
 			ucs4 = fbtk_keycode_to_ucs4(cbi->event->value.keycode,
 						    modifier);
