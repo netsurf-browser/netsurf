@@ -64,13 +64,19 @@ struct textarea_utf8 {
 };
 
 struct textarea_undo_detail {
-	unsigned int offset;	/**< Offset to detail's text in undo.text */
-	unsigned int len;	/**< Length of detail's text */
+	unsigned int b_start;	/**< Offset to detail's text in undo buffer */
+	unsigned int b_end;	/**< End of text (exclusive) */
+	unsigned int b_limit;	/**< End of detail space (exclusive) */
+
+	unsigned int b_text_start;	/**< Start of textarea text. */
+	unsigned int b_text_end;	/**< End of textarea text (exclusive) */
 };
 
 struct textarea_undo {
-	unsigned int next_detail;
-	struct textarea_undo_detail *details;
+	unsigned int details_alloc;		/**< Details allocated for */
+	unsigned int next_detail;		/**< Next detail pos */
+	unsigned int last_detail;		/**< Last detail used */
+	struct textarea_undo_detail *details;	/**< Array of undo details */
 
 	struct textarea_utf8 text;
 };
@@ -135,6 +141,8 @@ struct textarea {
 
 	int drag_start;		/**< Byte offset of drag start (in ta->show) */
 	struct textarea_drag drag_info;	/**< Drag information */
+
+	struct textarea_undo undo; /**< Undo/redo information */
 };
 
 
@@ -1425,7 +1433,7 @@ static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 	/* Ensure textarea's text buffer is large enough */
 	if (rep_len + ta->text.len - (b_end - b_start) >= ta->text.alloc) {
 		char *temp = realloc(ta->text.data,
-			rep_len + ta->text.len - (b_end - b_start) +
+				rep_len + ta->text.len - (b_end - b_start) +
 					TA_ALLOC_STEP);
 		if (temp == NULL) {
 			LOG(("realloc failed"));
@@ -1474,6 +1482,74 @@ static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 
 
 /**
+ * Update undo buffer by adding any text to be replaced, and allocating
+ * space as appropriate.
+ *
+ * \param ta		Textarea widget
+ * \param b_start	Start byte index of replaced section (inclusive)
+ * \param b_end		End byte index of replaced section (exclusive)
+ * \param rep_len	Byte length of replacement UTF-8 text
+ * \return false on memory exhaustion, true otherwise
+ */
+static bool textarea_copy_to_undo_buffer(struct textarea *ta,
+		size_t b_start, size_t b_end, size_t rep_len)
+{
+	struct textarea_undo *undo;
+	size_t b_offset;
+	unsigned int len = b_end - b_start;
+
+	undo = &ta->undo;
+
+	if (undo->next_detail == 0)
+		b_offset = 0;
+	else
+		b_offset = undo->details[undo->next_detail - 1].b_limit;
+
+	len = len > rep_len ? len : rep_len;
+
+	if (b_offset + len >= undo->text.alloc) {
+		/* Need more memory for undo buffer */
+		char *temp = realloc(undo->text.data,
+				b_offset + len + TA_ALLOC_STEP);
+		if (temp == NULL) {
+			LOG(("realloc failed"));
+			return false;
+		}
+
+		undo->text.data = temp;
+		undo->text.alloc = b_offset + len + TA_ALLOC_STEP;
+	}
+
+	if (undo->next_detail >= undo->details_alloc) {
+		/* Need more memory for undo details */
+		struct textarea_undo_detail *temp = realloc(undo->details,
+				(undo->next_detail + 128) *
+				sizeof(struct textarea_undo_detail));
+		if (temp == NULL) {
+			LOG(("realloc failed"));
+			return false;
+		}
+
+		undo->details = temp;
+		undo->details_alloc = undo->next_detail + 128;
+	}
+
+	/* Put text into buffer */
+	memcpy(undo->text.data + b_offset, ta->text.data + b_start,
+			b_end - b_start);
+
+	/* Update next_detail */
+	undo->details[undo->next_detail].b_start = b_offset;
+	undo->details[undo->next_detail].b_end = b_offset + b_end - b_start;
+	undo->details[undo->next_detail].b_limit = len;
+
+	undo->details[undo->next_detail].b_text_start = b_start;
+
+	return true;
+}
+
+
+/**
  * Replace text in a textarea, updating undo buffer.
  *
  * \param ta		Textarea widget
@@ -1493,8 +1569,13 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
 		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
-	/* TODO: Make copy of any replaced text */
-	if (b_start != b_end) {
+	if (!(b_start != b_end && rep_len == 0 && add_to_clipboard) &&
+			!(ta->flags & TEXTAREA_PASSWORD)) {
+		/* Not just copying to clipboard, and not a password field;
+		 * Sort out undo buffer. */
+		if (textarea_copy_to_undo_buffer(ta, b_start, b_end,
+				rep_len) == false)
+			return false;
 	}
 
 	/* Replace the text in the textarea, and reflow it */
@@ -1503,12 +1584,63 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		return false;
 	}
 
-	if (b_start == b_end && rep_len == 0) {
-		/* Nothing changed at all */
-		return true;
+	if (!(b_start != b_end && rep_len == 0 && add_to_clipboard) &&
+			!(ta->flags & TEXTAREA_PASSWORD)) {
+		/* Not just copying to clipboard, and not a password field;
+		 * Update UNDO buffer */
+		ta->undo.details[ta->undo.next_detail].b_text_end =
+				b_end + *byte_delta;
+		ta->undo.last_detail = ta->undo.next_detail;
+		ta->undo.next_detail++;
 	}
 
-	/* TODO: Update UNDO buffer */
+	return true;
+}
+
+
+/**
+ * Undo previous change.
+ *
+ * \param ta		Textarea widget
+ * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param r		Updated to area where redraw is required
+ * \return false if nothing to undo, true otherwise
+ */
+static bool textarea_undo(struct textarea *ta, int *byte_delta, struct rect *r)
+{
+	if (ta->flags & TEXTAREA_PASSWORD)
+		/* No undo for password fields */
+		return false;
+
+	if (ta->undo.next_detail == 0)
+		/* Nothing to undo */
+		return false;
+
+	/* TODO */
+
+	return true;
+}
+
+
+/**
+ * Redo previous undo.
+ *
+ * \param ta		Textarea widget
+ * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param r		Updated to area where redraw is required
+ * \return false if nothing to redo, true otherwise
+ */
+static bool textarea_redo(struct textarea *ta, int *byte_delta, struct rect *r)
+{
+	if (ta->flags & TEXTAREA_PASSWORD)
+		/* No REDO for password fields */
+		return false;
+
+	if (ta->undo.next_detail > ta->undo.last_detail)
+		/* Nothing to redo */
+		return false;
+
+	/* TODO */
 
 	return true;
 }
@@ -1652,8 +1784,20 @@ struct textarea *textarea_create(const textarea_flags flags,
 	ret->scroll_y = 0;
 	ret->bar_x = NULL;
 	ret->bar_y = NULL;
+	ret->h_extent = setup->width;
+	ret->v_extent = setup->height;
 	ret->drag_start = 0;
 	ret->drag_info.type = TEXTAREA_DRAG_NONE;
+
+	ret->undo.details_alloc = 0;
+	ret->undo.next_detail = 0;
+	ret->undo.last_detail = 0;
+	ret->undo.details = NULL;
+
+	ret->undo.text.data = NULL;
+	ret->undo.text.alloc = 0;
+	ret->undo.text.len = 0;
+	ret->undo.text.utf8_len = 0;
 
 
 	ret->text.data = malloc(TA_ALLOC_STEP);
@@ -1726,6 +1870,9 @@ void textarea_destroy(struct textarea *ta)
 
 	if (ta->flags & TEXTAREA_PASSWORD)
 		free(ta->password.data);
+
+	free(ta->undo.text.data);
+	free(ta->undo.details);
 
 	free(ta->text.data);
 	free(ta->lines);
@@ -2561,6 +2708,30 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				redraw = true;
 			}
 			caret += byte_delta;
+			break;
+		case KEY_UNDO:
+			if (!textarea_undo(ta, &byte_delta, &r)) {
+				/* We consume the UNDO, even if we can't act
+				 * on it. */
+				return true;
+			}
+			caret += byte_delta;
+			if (ta->sel_start != -1) {
+				textarea_clear_selection(ta);
+			}
+			redraw = true;
+			break;
+		case KEY_REDO:
+			if (!textarea_redo(ta, &byte_delta, &r)) {
+				/* We consume the REDO, even if we can't act
+				 * on it. */
+				return true;
+			}
+			caret += byte_delta;
+			if (ta->sel_start != -1) {
+				textarea_clear_selection(ta);
+			}
+			redraw = true;
 			break;
 		default:
 			return false;
