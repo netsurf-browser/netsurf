@@ -1570,7 +1570,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		size_t b_end, const char *rep, size_t rep_len,
 		bool add_to_clipboard, int *byte_delta, struct rect *r)
 {
-	if (!(b_start != b_end && rep_len == 0 && add_to_clipboard) &&
+	if (!(b_start != b_end && rep == NULL && add_to_clipboard) &&
 			!(ta->flags & TEXTAREA_PASSWORD)) {
 		/* Not just copying to clipboard, and not a password field;
 		 * Sort out undo buffer. */
@@ -1585,7 +1585,7 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
 		return false;
 	}
 
-	if (!(b_start != b_end && rep_len == 0 && add_to_clipboard) &&
+	if (!(b_start != b_end && rep == NULL && add_to_clipboard) &&
 			!(ta->flags & TEXTAREA_PASSWORD)) {
 		/* Not just copying to clipboard, and not a password field;
 		 * Update UNDO buffer */
