@@ -1859,6 +1859,13 @@ bool ro_gui_window_keypress(wimp_key *key)
 				c = KEY_DELETE_LEFT;
 			break;
 
+		case wimp_KEY_F8:
+			c = KEY_UNDO;
+			break;
+		case wimp_KEY_F9:
+			c = KEY_REDO;
+			break;
+
 		default:
 			break;
 		}
