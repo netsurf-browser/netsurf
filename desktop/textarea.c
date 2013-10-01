@@ -1503,7 +1503,8 @@ static bool textarea_copy_to_undo_buffer(struct textarea *ta,
 	if (undo->next_detail == 0)
 		b_offset = 0;
 	else
-		b_offset = undo->details[undo->next_detail - 1].b_limit;
+		b_offset = undo->details[undo->next_detail - 1].b_start +
+			   undo->details[undo->next_detail - 1].b_limit;
 
 	len = len > rep_len ? len : rep_len;
 
@@ -1602,12 +1603,20 @@ static bool textarea_replace_text(struct textarea *ta, size_t b_start,
  * Undo previous change.
  *
  * \param ta		Textarea widget
- * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param caret		Updated to new caret pos in textarea (ta->show)
  * \param r		Updated to area where redraw is required
  * \return false if nothing to undo, true otherwise
  */
-static bool textarea_undo(struct textarea *ta, int *byte_delta, struct rect *r)
+static bool textarea_undo(struct textarea *ta,
+		unsigned int *caret, struct rect *r)
 {
+	unsigned int detail_n;
+	struct textarea_undo_detail *detail;
+	char *temp = NULL;
+	unsigned int b_len;
+	unsigned int b_text_len;
+	int byte_delta;
+
 	if (ta->flags & TEXTAREA_PASSWORD)
 		/* No undo for password fields */
 		return false;
@@ -1616,7 +1625,38 @@ static bool textarea_undo(struct textarea *ta, int *byte_delta, struct rect *r)
 		/* Nothing to undo */
 		return false;
 
-	/* TODO */
+	detail_n = ta->undo.next_detail - 1;
+	detail = &(ta->undo.details[detail_n]);
+
+	b_len = detail->b_end - detail->b_start;
+	b_text_len = detail->b_text_end - detail->b_text_start;
+
+	/* Take copy of any current textarea text that undo will remove */
+	if (detail->b_text_end > detail->b_text_start) {
+		temp = malloc(b_text_len);
+		if (temp == NULL) {
+			/* TODO */
+			return false;
+		}
+
+		memcpy(temp, ta->text.data + detail->b_text_start, b_text_len);
+	}
+
+	/* Replace textarea text with undo buffer text */
+	textarea_replace_text_internal(ta,
+			detail->b_text_start, detail->b_text_end,
+			ta->undo.text.data + detail->b_start, b_len,
+			false, &byte_delta, r);
+
+	/* Update undo buffer for redo */
+	memcpy(ta->undo.text.data + detail->b_start, temp, b_text_len);
+	detail->b_text_end = detail->b_text_start + b_len;
+	detail->b_end = detail->b_start + b_text_len;
+
+	*caret = detail->b_text_end;
+	ta->undo.next_detail--;
+
+	free(temp);
 
 	return true;
 }
@@ -1626,21 +1666,60 @@ static bool textarea_undo(struct textarea *ta, int *byte_delta, struct rect *r)
  * Redo previous undo.
  *
  * \param ta		Textarea widget
- * \param byte_delta	Updated to change in byte count in textarea (ta->show)
+ * \param caret		Updated to new caret pos in textarea (ta->show)
  * \param r		Updated to area where redraw is required
  * \return false if nothing to redo, true otherwise
  */
-static bool textarea_redo(struct textarea *ta, int *byte_delta, struct rect *r)
+static bool textarea_redo(struct textarea *ta,
+		unsigned int *caret, struct rect *r)
 {
+	unsigned int detail_n;
+	struct textarea_undo_detail *detail;
+	char *temp = NULL;
+	unsigned int b_len;
+	unsigned int b_text_len;
+	int byte_delta;
+
 	if (ta->flags & TEXTAREA_PASSWORD)
-		/* No REDO for password fields */
+		/* No redo for password fields */
 		return false;
 
 	if (ta->undo.next_detail > ta->undo.last_detail)
 		/* Nothing to redo */
 		return false;
 
-	/* TODO */
+	detail_n = ta->undo.next_detail;
+	detail = &(ta->undo.details[detail_n]);
+
+	b_len = detail->b_end - detail->b_start;
+	b_text_len = detail->b_text_end - detail->b_text_start;
+
+	/* Take copy of any current textarea text that redo will remove */
+	if (detail->b_text_end > detail->b_text_start) {
+		temp = malloc(b_text_len);
+		if (temp == NULL) {
+			/* TODO */
+			return false;
+		}
+
+		memcpy(temp, ta->text.data + detail->b_text_start, b_text_len);
+	}
+
+	/* Replace textarea text with undo buffer text */
+	textarea_replace_text_internal(ta,
+			detail->b_text_start, detail->b_text_end,
+			ta->undo.text.data + detail->b_start, b_len,
+			false, &byte_delta, r);
+
+	/* Update undo buffer for redo */
+	memcpy(ta->undo.text.data + detail->b_start, temp, b_text_len);
+	detail->b_text_end = detail->b_text_start + b_len;
+	detail->b_end = detail->b_start + b_text_len;
+
+	*caret = detail->b_text_end;
+	ta->undo.next_detail++;
+
+	free(temp);
 
 	return true;
 }
@@ -2710,24 +2789,22 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			caret += byte_delta;
 			break;
 		case KEY_UNDO:
-			if (!textarea_undo(ta, &byte_delta, &r)) {
+			if (!textarea_undo(ta, &caret, &r)) {
 				/* We consume the UNDO, even if we can't act
 				 * on it. */
 				return true;
 			}
-			caret += byte_delta;
 			if (ta->sel_start != -1) {
 				textarea_clear_selection(ta);
 			}
 			redraw = true;
 			break;
 		case KEY_REDO:
-			if (!textarea_redo(ta, &byte_delta, &r)) {
+			if (!textarea_redo(ta, &caret, &r)) {
 				/* We consume the REDO, even if we can't act
 				 * on it. */
 				return true;
 			}
-			caret += byte_delta;
 			if (ta->sel_start != -1) {
 				textarea_clear_selection(ta);
 			}
