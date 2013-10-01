@@ -2023,7 +2023,11 @@ void ami_handle_msg(void)
 							break;
 
 							case 'z':
-								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+								browser_window_key_press(gwin->bw, KEY_UNDO);
+							break;
+
+							case 'y':
+								browser_window_key_press(gwin->bw, KEY_REDO);
 							break;
 
 							case 'f':

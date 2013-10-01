@@ -817,6 +817,16 @@ de.all.ClearNS:Auswahl rückgängig
 fr.all.ClearNS:Clear selection
 it.all.ClearNS:Annulla selezione
 nl.all.ClearNS:Clear selection
+en.ami.Undo:Undo
+de.ami.Undo:Undo
+fr.ami.Undo:Undo
+it.ami.Undo:Undo
+nl.ami.Undo:Undo
+en.ami.Redo:Redo
+de.ami.Redo:Redo
+fr.ami.Redo:Redo
+it.ami.Redo:Redo
+nl.ami.Redo:Redo
 
 # Browser menu
 #

@@ -508,7 +508,6 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCLEAR],
 							PMIA_ID,CMID_SELCLEAR,
 							PMIA_Disabled, disabled_noselection,
-							PMIA_CommKey, "Z",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, ~0,

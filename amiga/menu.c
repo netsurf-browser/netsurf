@@ -98,6 +98,8 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 static void ami_menu_item_edit_paste(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
@@ -241,8 +243,13 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	ami_menu_alloc_item(gwin, M_BAR_E1,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_SELALL,   NM_ITEM, "SelectAllNS", 'A', NULL,
 			ami_menu_item_edit_selectall, NULL);
-	ami_menu_alloc_item(gwin, M_CLEAR,    NM_ITEM, "ClearNS",     'Z', NULL,
+	ami_menu_alloc_item(gwin, M_CLEAR,    NM_ITEM, "ClearNS",       0, NULL,
 			ami_menu_item_edit_clearsel, NULL);
+	ami_menu_alloc_item(gwin, M_BAR_E2,   NM_ITEM, NM_BARLABEL,     0, NULL, NULL, NULL);
+	ami_menu_alloc_item(gwin, M_UNDO,     NM_ITEM, "Undo",        'Z', NULL,
+			ami_menu_item_edit_undo, NULL);
+	ami_menu_alloc_item(gwin, M_REDO,     NM_ITEM, "Redo",        'Y', NULL,
+			ami_menu_item_edit_redo, NULL);
 
 	ami_menu_alloc_item(gwin, M_BROWSER, NM_TITLE, "Browser",       0, NULL, NULL, NULL);
 	ami_menu_alloc_item(gwin, M_FIND,     NM_ITEM, "FindTextNS",   'F', NULL,
@@ -895,6 +902,22 @@ static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct I
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+}
+
+static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->bw, KEY_UNDO);
+}
+
+static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->bw, KEY_REDO);
 }
 
 static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct IntuiMessage *msg)
