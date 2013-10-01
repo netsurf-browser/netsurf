@@ -1979,6 +1979,9 @@ bool textarea_set_text(struct textarea *ta, const char *text)
 	ta->text.len = len;
 	ta->text.utf8_len = utf8_length(ta->text.data);
 
+	ta->undo.next_detail = 0;
+	ta->undo.last_detail = 0;
+
 	textarea_normalise_text(ta, 0, len);
 
 	if (ta->flags & TEXTAREA_MULTILINE) {
