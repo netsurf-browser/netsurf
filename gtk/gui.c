@@ -1089,14 +1089,12 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_CUT_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
+	case 'Z':
 	case 'y':
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_REDO;
 		return gdk_keyval_to_unicode(key->keyval);
 	case 'z':
-		if (key->state & GDK_CONTROL_MASK &&
-				key->state & GDK_SHIFT_MASK)
-			return KEY_REDO;
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_UNDO;
 		return gdk_keyval_to_unicode(key->keyval);
