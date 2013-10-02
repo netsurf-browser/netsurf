@@ -26,6 +26,7 @@
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
+#include "image/bitmap.h"
 #include "render/font.h"
 #include "utils/log.h"
 
@@ -157,16 +158,27 @@ struct treeview {
 };
 
 
+enum treeview_furniture_id {
+	TREE_FURN_EXPAND = 0,
+	TREE_FURN_CONTRACT,
+	TREE_FURN_LAST
+};
+struct treeview_furniture {
+	int size;
+	struct bitmap *bmp;
+	struct bitmap *sel;
+};
+
 struct treeview_node_style {
 	plot_style_t bg;		/**< Background */
 	plot_font_style_t text;		/**< Text */
 	plot_font_style_t itext;	/**< Entry field text */
-	plot_style_t furn;		/**< Furniture */
 
 	plot_style_t sbg;		/**< Selected background */
 	plot_font_style_t stext;	/**< Selected text */
 	plot_font_style_t sitext;	/**< Selected entry field text */
-	plot_style_t sfurn;		/**< Selected furniture */
+
+	struct treeview_furniture furn[TREE_FURN_LAST];
 };
 
 struct treeview_node_style plot_style_odd;	/**< Plot style for odd rows */
@@ -191,19 +203,6 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 	{ "resource:icons/directory.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }
 }; /**< Treeview content resources */
-
-
-
-enum treeview_furniture_id {
-	TREE_FURN_EXPAND = 0,
-	TREE_FURN_CONTRACT,
-	TREE_FURN_LAST
-};
-struct treeview_furniture {
-	int pts;	/* Number of points (max = 8) */
-	int c[8];  	/* Coordinate array. x-coord, y-coord... */
-};
-static struct treeview_furniture tree_furn[TREE_FURN_LAST];
 
 
 /* Find the next node in depth first tree order
@@ -1669,12 +1668,10 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	plot_style_t *bg_style;
 	plot_font_style_t *text_style;
 	plot_font_style_t *infotext_style;
-	plot_style_t *furn_style;
+	struct bitmap *furniture;
 	int height;
 	int sel_min, sel_max;
 	bool invert_selection;
-	enum treeview_furniture_id furn_id;
-	int coords[8];
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -1763,12 +1760,16 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 			bg_style = &style->sbg;
 			text_style = &style->stext;
 			infotext_style = &style->sitext;
-			furn_style = &style->sfurn;
+			furniture = (node->flags & TREE_NODE_EXPANDED) ?
+					style->furn[TREE_FURN_CONTRACT].sel :
+					style->furn[TREE_FURN_EXPAND].sel;
 		} else {
 			bg_style = &style->bg;
 			text_style = &style->text;
 			infotext_style = &style->itext;
-			furn_style = &style->furn;
+			furniture = (node->flags & TREE_NODE_EXPANDED) ?
+					style->furn[TREE_FURN_CONTRACT].bmp :
+					style->furn[TREE_FURN_EXPAND].bmp;
 		}
 
 		/* Render background */
@@ -1777,18 +1778,11 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 		new_ctx.plot->rectangle(r.x0, y0, r.x1, y1, bg_style);
 
 		/* Render toggle */
-		if (node->flags & TREE_NODE_EXPANDED) {
-			furn_id = TREE_FURN_CONTRACT;
-		} else {
-			furn_id = TREE_FURN_EXPAND;
-		}
-
-		for (i = 0; i < tree_furn[furn_id].pts; i += 2) {
-			coords[i    ] = tree_furn[furn_id].c[i    ] + inset;
-			coords[i + 1] = tree_furn[furn_id].c[i + 1] + render_y;
-		}
-		new_ctx.plot->polygon(coords, tree_furn[furn_id].pts / 2,
-				furn_style);
+		new_ctx.plot->bitmap(inset, render_y + tree_g.line_height / 4,
+				style->furn[TREE_FURN_EXPAND].size,
+				style->furn[TREE_FURN_EXPAND].size,
+				furniture,
+				bg_style->fill_colour, BITMAPF_NONE);
 
 		/* Render icon */
 		if (node->type == TREE_NODE_ENTRY)
@@ -3481,10 +3475,6 @@ static void treeview_init_plot_styles(int font_pt_size)
 			plot_style_even.text.foreground,
 			plot_style_even.text.background, 255 * 10 / 16);
 
-	/* Furniture colour */
-	plot_style_even.furn = plot_style_even.bg;
-	plot_style_even.furn.fill_colour = plot_style_even.itext.foreground;
-
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
 	plot_style_even.sbg.fill_colour = gui_system_colour_char("Highlight");
@@ -3501,10 +3491,6 @@ static void treeview_init_plot_styles(int font_pt_size)
 			plot_style_even.stext.foreground,
 			plot_style_even.stext.background, 255 * 25 / 32);
 
-	/* Selected furniture colour */
-	plot_style_even.sfurn = plot_style_even.bg;
-	plot_style_even.sfurn.fill_colour = plot_style_even.sitext.foreground;
-
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
@@ -3517,13 +3503,10 @@ static void treeview_init_plot_styles(int font_pt_size)
 	plot_style_odd.itext.foreground = mix_colour(
 			plot_style_odd.text.foreground,
 			plot_style_odd.text.background, 255 * 10 / 16);
-	plot_style_odd.furn = plot_style_odd.bg;
-	plot_style_odd.furn.fill_colour = plot_style_odd.itext.foreground;
 
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
 	plot_style_odd.sitext = plot_style_even.sitext;
-	plot_style_odd.sfurn = plot_style_even.sfurn;
 }
 
 
@@ -3571,91 +3554,258 @@ static void treeview_init_resources(void)
 
 
 /**
+ * Create a right-pointing anti-aliased triangle bitmap
+ *
+ * bg		background colour
+ * fg		foreground colour
+ * size		required bitmap size
+ */
+static struct bitmap * treeview_generate_triangle_bitmap(
+		colour bg, colour fg, int size)
+{
+	struct bitmap *b = NULL;
+	int x, y;
+	unsigned char *rpos;
+	unsigned char *pos;
+	size_t stride;
+
+	/* Set up required colour graduations.  Ignores screen gamma. */
+	colour colour0 = bg;
+	colour colour1 = mix_colour(bg, fg, 255 * 3 / 4);
+	colour colour2 = blend_colour(bg, fg);
+	colour colour3 = mix_colour(bg, fg, 255 * 1 / 4);
+	colour colour4 = fg;
+
+	/* Create the bitmap */
+	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	if (b == NULL)
+		return NULL;
+
+	rpos = bitmap_get_buffer(b);
+	stride = bitmap_get_rowstride(b);
+
+	/* Draw the triangle */
+	for (y = 0; y < size; y++) {
+		pos = rpos;
+
+		if (y < size / 2) {
+			/* Top half */
+			for (x = 0; x < y * 2; x++) {
+				*(pos++) = red_from_colour(colour4);
+				*(pos++) = green_from_colour(colour4);
+				*(pos++) = blue_from_colour(colour4);
+				pos++;
+			}
+			*(pos++) = red_from_colour(colour3);
+			*(pos++) = green_from_colour(colour3);
+			*(pos++) = blue_from_colour(colour3);
+			pos++;
+			*(pos++) = red_from_colour(colour1);
+			*(pos++) = green_from_colour(colour1);
+			*(pos++) = blue_from_colour(colour1);
+			pos++;
+			for (x = y * 2 + 2; x < size ; x++) {
+				*(pos++) = red_from_colour(colour0);
+				*(pos++) = green_from_colour(colour0);
+				*(pos++) = blue_from_colour(colour0);
+				pos++;
+			}
+		} else if ((y == size / 2) && (size & 0x1)) {
+			/* Middle row */
+			for (x = 0; x < size - 1; x++) {
+				*(pos++) = red_from_colour(colour4);
+				*(pos++) = green_from_colour(colour4);
+				*(pos++) = blue_from_colour(colour4);
+				pos++;
+			}
+			*(pos++) = red_from_colour(colour2);
+			*(pos++) = green_from_colour(colour2);
+			*(pos++) = blue_from_colour(colour2);
+			pos++;
+		} else {
+			/* Bottom half */
+			for (x = 0; x < (size - y - 1) * 2; x++) {
+				*(pos++) = red_from_colour(colour4);
+				*(pos++) = green_from_colour(colour4);
+				*(pos++) = blue_from_colour(colour4);
+				pos++;
+			}
+			*(pos++) = red_from_colour(colour3);
+			*(pos++) = green_from_colour(colour3);
+			*(pos++) = blue_from_colour(colour3);
+			pos++;
+			*(pos++) = red_from_colour(colour1);
+			*(pos++) = green_from_colour(colour1);
+			*(pos++) = blue_from_colour(colour1);
+			pos++;
+			for (x = (size - y) * 2; x < size ; x++) {
+				*(pos++) = red_from_colour(colour0);
+				*(pos++) = green_from_colour(colour0);
+				*(pos++) = blue_from_colour(colour0);
+				pos++;
+			}
+		}
+
+		rpos += stride;
+	}
+
+	bitmap_modified(b);
+
+	return b;
+}
+
+
+/**
+ * Create bitmap copy of another bitmap
+ *
+ * orig		bitmap to copy
+ * size		required bitmap size
+ */
+static struct bitmap * treeview_generate_copy_bitmap(
+		struct bitmap *orig, int size)
+{
+	struct bitmap *b = NULL;
+	unsigned char *data;
+	unsigned char *orig_data;
+	size_t stride;
+
+	if (orig == NULL)
+		return NULL;
+
+	assert(size == bitmap_get_width(orig));
+	assert(size == bitmap_get_height(orig));
+
+	/* Create the bitmap */
+	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	if (b == NULL)
+		return NULL;
+
+	stride = bitmap_get_rowstride(b);
+	assert(stride == bitmap_get_rowstride(orig));
+
+	data = bitmap_get_buffer(b);
+	orig_data = bitmap_get_buffer(orig);
+
+	/* Copy the bitmap */
+	memcpy(data, orig_data, stride * size);
+
+	bitmap_modified(b);
+
+	return b;
+}
+
+
+/**
+ * Create bitmap from rotation of another bitmap
+ *
+ * orig		bitmap to create rotation of
+ * size		required bitmap size
+ */
+static struct bitmap * treeview_generate_rotate_bitmap(
+		struct bitmap *orig, int size)
+{
+	struct bitmap *b = NULL;
+	int x, y;
+	unsigned char *rpos;
+	unsigned char *pos;
+	unsigned char *orig_data;
+	unsigned char *orig_pos;
+	size_t stride;
+
+	if (orig == NULL)
+		return NULL;
+
+	assert(size == bitmap_get_width(orig));
+	assert(size == bitmap_get_height(orig));
+
+	/* Create the bitmap */
+	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	if (b == NULL)
+		return NULL;
+
+	stride = bitmap_get_rowstride(b);
+	assert(stride == bitmap_get_rowstride(orig));
+
+	rpos = bitmap_get_buffer(b);
+	orig_data = bitmap_get_buffer(orig);
+
+	/* Copy the rotated bitmap */
+	for (y = 0; y < size; y++) {
+		pos = rpos;
+
+		for (x = 0; x < size; x++) {
+			orig_pos = orig_data + x * stride + y * 4;
+			*(pos++) = *(orig_pos++);
+			*(pos++) = *(orig_pos++);
+			*(pos++) = *(orig_pos);
+			pos++;
+			
+		}
+
+		rpos += stride;
+	}
+
+	bitmap_modified(b);
+
+	return b;
+}
+
+
+/**
  * Measures width of characters used to represent treeview furniture.
  */
-static void treeview_init_furniture(void)
+static nserror treeview_init_furniture(void)
 {
-	struct treeview_furniture *f;
 	int size = tree_g.line_height / 2;
-	int smax = size - 1;
-	int i, y;
 
-	/* Make TREE_FURN_EXPAND */
-	f = &(tree_furn[TREE_FURN_EXPAND]);
+	plot_style_odd.furn[TREE_FURN_EXPAND].size = size;
+	plot_style_odd.furn[TREE_FURN_EXPAND].bmp =
+			treeview_generate_triangle_bitmap(
+			plot_style_odd.bg.fill_colour,
+			plot_style_odd.itext.foreground, size);
+	plot_style_odd.furn[TREE_FURN_EXPAND].sel =
+			treeview_generate_triangle_bitmap(
+			plot_style_odd.sbg.fill_colour,
+			plot_style_odd.sitext.foreground, size);
 
-	if (size & 0x1) {
-		/* Size is odd; triangle */
-		f->pts = 6;
+	plot_style_even.furn[TREE_FURN_EXPAND].size = size;
+	plot_style_even.furn[TREE_FURN_EXPAND].bmp =
+			treeview_generate_triangle_bitmap(
+			plot_style_even.bg.fill_colour,
+			plot_style_even.itext.foreground, size);
+	plot_style_even.furn[TREE_FURN_EXPAND].sel =
+			treeview_generate_copy_bitmap(
+			plot_style_odd.furn[TREE_FURN_EXPAND].sel, size);
 
-		f->c[0] = 0;
-		f->c[1] = 0;
+	plot_style_odd.furn[TREE_FURN_CONTRACT].size = size;
+	plot_style_odd.furn[TREE_FURN_CONTRACT].bmp =
+			treeview_generate_rotate_bitmap(
+			plot_style_odd.furn[TREE_FURN_EXPAND].bmp, size);
+	plot_style_odd.furn[TREE_FURN_CONTRACT].sel =
+			treeview_generate_rotate_bitmap(
+			plot_style_odd.furn[TREE_FURN_EXPAND].sel, size);
 
-		f->c[2] = smax;
-		f->c[3] = size / 2;
+	plot_style_even.furn[TREE_FURN_CONTRACT].size = size;
+	plot_style_even.furn[TREE_FURN_CONTRACT].bmp =
+			treeview_generate_rotate_bitmap(
+			plot_style_even.furn[TREE_FURN_EXPAND].bmp, size);
+	plot_style_even.furn[TREE_FURN_CONTRACT].sel =
+			treeview_generate_rotate_bitmap(
+			plot_style_even.furn[TREE_FURN_EXPAND].sel, size);
 
-		f->c[4] = 0;
-		f->c[5] = smax;
-
-	} else {
-		/* Size is even; trapezium */
-		f->pts = 8;
-
-		f->c[0] = 0;
-		f->c[1] = 0;
-
-		f->c[2] = smax;
-		f->c[3] = size / 2 - 1;
-
-		f->c[4] = smax;
-		f->c[5] = size / 2;
-
-		f->c[6] = 0;
-		f->c[7] = smax;
-	}
-
-	/* Make TREE_FURN_CONTRACT */
-	f = &(tree_furn[TREE_FURN_CONTRACT]);
-
-	if (size & 0x1) {
-		/* Size is odd; triangle */
-		f->pts = 6;
-
-		f->c[0] = 0;
-		f->c[1] = 0;
-
-		f->c[2] = smax;
-		f->c[3] = 0;
-
-		f->c[4] = size / 2;
-		f->c[5] = smax;
-
-	} else {
-		/* Size is even; trapezium */
-		f->pts = 8;
-
-		f->c[0] = 0;
-		f->c[1] = 0;
-
-		f->c[2] = smax;
-		f->c[3] = 0;
-
-		f->c[4] = size / 2;
-		f->c[5] = smax;
-
-		f->c[6] = size / 2 - 1;
-		f->c[7] = smax;
-	}
-
-	/* Vertically offset for line height */
-	for (i = 0; i < TREE_FURN_LAST; i++) {
-		f = &(tree_furn[i]);
-
-		for (y = 1; y < f->pts; y += 2) {
-			f->c[y] += tree_g.line_height / 4;
-		}
-	}
+	if (plot_style_odd.furn[TREE_FURN_EXPAND].bmp == NULL ||
+			plot_style_odd.furn[TREE_FURN_EXPAND].sel == NULL ||
+			plot_style_even.furn[TREE_FURN_EXPAND].bmp == NULL ||
+			plot_style_even.furn[TREE_FURN_EXPAND].sel == NULL ||
+			plot_style_odd.furn[TREE_FURN_CONTRACT].bmp == NULL ||
+			plot_style_odd.furn[TREE_FURN_CONTRACT].sel == NULL ||
+			plot_style_even.furn[TREE_FURN_CONTRACT].bmp == NULL ||
+			plot_style_even.furn[TREE_FURN_CONTRACT].sel == NULL)
+		return NSERROR_NOMEM;
 
 	tree_g.furniture_width = size + tree_g.line_height / 4;
+
+	return NSERROR_OK;
 }
 
 
@@ -3663,6 +3813,7 @@ static void treeview_init_furniture(void)
 nserror treeview_init(int font_pt_size)
 {
 	int font_px_size;
+	nserror err;
 
 	if (tree_g.initialised == true)
 		return NSERROR_OK;
@@ -3675,7 +3826,9 @@ nserror treeview_init(int font_pt_size)
 
 	treeview_init_plot_styles(font_pt_size);
 	treeview_init_resources();
-	treeview_init_furniture();
+	err = treeview_init_furniture();
+	if (err != NSERROR_OK)
+		return err;
 
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;
@@ -3698,6 +3851,15 @@ nserror treeview_fini(void)
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		hlcache_handle_release(treeview_res[i].c);
 	}
+
+	bitmap_destroy(plot_style_odd.furn[TREE_FURN_EXPAND].bmp);
+	bitmap_destroy(plot_style_odd.furn[TREE_FURN_EXPAND].sel);
+	bitmap_destroy(plot_style_even.furn[TREE_FURN_EXPAND].bmp);
+	bitmap_destroy(plot_style_even.furn[TREE_FURN_EXPAND].sel);
+	bitmap_destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].bmp);
+	bitmap_destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].sel);
+	bitmap_destroy(plot_style_even.furn[TREE_FURN_CONTRACT].bmp);
+	bitmap_destroy(plot_style_even.furn[TREE_FURN_CONTRACT].sel);
 
 	tree_g.initialised = false;
 
