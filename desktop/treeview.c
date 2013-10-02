@@ -161,10 +161,12 @@ struct treeview_node_style {
 	plot_style_t bg;		/**< Background */
 	plot_font_style_t text;		/**< Text */
 	plot_font_style_t itext;	/**< Entry field text */
+	plot_style_t furn;		/**< Furniture */
 
 	plot_style_t sbg;		/**< Selected background */
 	plot_font_style_t stext;	/**< Selected text */
 	plot_font_style_t sitext;	/**< Selected entry field text */
+	plot_style_t sfurn;		/**< Selected furniture */
 };
 
 struct treeview_node_style plot_style_odd;	/**< Plot style for odd rows */
@@ -197,10 +199,11 @@ enum treeview_furniture_id {
 	TREE_FURN_CONTRACT,
 	TREE_FURN_LAST
 };
-static struct treeview_text treeview_furn[TREE_FURN_LAST] = {
-	{ "\xe2\x96\xb8", 3, 0 }, /* U+25B8: Right-pointing small triangle */
-	{ "\xe2\x96\xbe", 3, 0 }  /* U+25BE: Down-pointing small triangle */
+struct treeview_furniture {
+	int pts;	/* Number of points (max = 8) */
+	int c[8];  	/* Coordinate array. x-coord, y-coord... */
 };
+static struct treeview_furniture tree_furn[TREE_FURN_LAST];
 
 
 /* Find the next node in depth first tree order
@@ -1666,9 +1669,12 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	plot_style_t *bg_style;
 	plot_font_style_t *text_style;
 	plot_font_style_t *infotext_style;
+	plot_style_t *furn_style;
 	int height;
 	int sel_min, sel_max;
 	bool invert_selection;
+	enum treeview_furniture_id furn_id;
+	int coords[8];
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
@@ -1757,10 +1763,12 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 			bg_style = &style->sbg;
 			text_style = &style->stext;
 			infotext_style = &style->sitext;
+			furn_style = &style->sfurn;
 		} else {
 			bg_style = &style->bg;
 			text_style = &style->text;
 			infotext_style = &style->itext;
+			furn_style = &style->furn;
 		}
 
 		/* Render background */
@@ -1770,16 +1778,17 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 
 		/* Render toggle */
 		if (node->flags & TREE_NODE_EXPANDED) {
-			new_ctx.plot->text(inset, render_y + baseline,
-					treeview_furn[TREE_FURN_CONTRACT].data,
-					treeview_furn[TREE_FURN_CONTRACT].len,
-					text_style);
+			furn_id = TREE_FURN_CONTRACT;
 		} else {
-			new_ctx.plot->text(inset, render_y + baseline,
-					treeview_furn[TREE_FURN_EXPAND].data,
-					treeview_furn[TREE_FURN_EXPAND].len,
-					text_style);
+			furn_id = TREE_FURN_EXPAND;
 		}
+
+		for (i = 0; i < tree_furn[furn_id].pts; i += 2) {
+			coords[i    ] = tree_furn[furn_id].c[i    ] + inset;
+			coords[i + 1] = tree_furn[furn_id].c[i + 1] + render_y;
+		}
+		new_ctx.plot->polygon(coords, tree_furn[furn_id].pts / 2,
+				furn_style);
 
 		/* Render icon */
 		if (node->type == TREE_NODE_ENTRY)
@@ -3472,6 +3481,10 @@ static void treeview_init_plot_styles(int font_pt_size)
 			plot_style_even.text.foreground,
 			plot_style_even.text.background, 255 * 10 / 16);
 
+	/* Furniture colour */
+	plot_style_even.furn = plot_style_even.bg;
+	plot_style_even.furn.fill_colour = plot_style_even.itext.foreground;
+
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
 	plot_style_even.sbg.fill_colour = gui_system_colour_char("Highlight");
@@ -3488,6 +3501,10 @@ static void treeview_init_plot_styles(int font_pt_size)
 			plot_style_even.stext.foreground,
 			plot_style_even.stext.background, 255 * 25 / 32);
 
+	/* Selected furniture colour */
+	plot_style_even.sfurn = plot_style_even.bg;
+	plot_style_even.sfurn.fill_colour = plot_style_even.sitext.foreground;
+
 
 	/* Odd numbered node styles */
 	plot_style_odd.bg = plot_style_even.bg;
@@ -3500,10 +3517,13 @@ static void treeview_init_plot_styles(int font_pt_size)
 	plot_style_odd.itext.foreground = mix_colour(
 			plot_style_odd.text.foreground,
 			plot_style_odd.text.background, 255 * 10 / 16);
+	plot_style_odd.furn = plot_style_odd.bg;
+	plot_style_odd.furn.fill_colour = plot_style_odd.itext.foreground;
 
 	plot_style_odd.sbg = plot_style_even.sbg;
 	plot_style_odd.stext = plot_style_even.stext;
 	plot_style_odd.sitext = plot_style_even.sitext;
+	plot_style_odd.sfurn = plot_style_even.sfurn;
 }
 
 
@@ -3555,20 +3575,87 @@ static void treeview_init_resources(void)
  */
 static void treeview_init_furniture(void)
 {
-	int i;
-	tree_g.furniture_width = 0;
+	struct treeview_furniture *f;
+	int size = tree_g.line_height / 2;
+	int smax = size - 1;
+	int i, y;
 
-	for (i = 0; i < TREE_FURN_LAST; i++) {
-		nsfont.font_width(&plot_style_odd.text,
-				treeview_furn[i].data,
-				treeview_furn[i].len,
-				&(treeview_furn[i].width));
+	/* Make TREE_FURN_EXPAND */
+	f = &(tree_furn[TREE_FURN_EXPAND]);
 
-		if (treeview_furn[i].width > tree_g.furniture_width)
-			tree_g.furniture_width = treeview_furn[i].width;
+	if (size & 0x1) {
+		/* Size is odd; triangle */
+		f->pts = 6;
+
+		f->c[0] = 0;
+		f->c[1] = 0;
+
+		f->c[2] = smax;
+		f->c[3] = size / 2;
+
+		f->c[4] = 0;
+		f->c[5] = smax;
+
+	} else {
+		/* Size is even; trapezium */
+		f->pts = 8;
+
+		f->c[0] = 0;
+		f->c[1] = 0;
+
+		f->c[2] = smax;
+		f->c[3] = size / 2 - 1;
+
+		f->c[4] = smax;
+		f->c[5] = size / 2;
+
+		f->c[6] = 0;
+		f->c[7] = smax;
 	}
 
-	tree_g.furniture_width += 5;
+	/* Make TREE_FURN_CONTRACT */
+	f = &(tree_furn[TREE_FURN_CONTRACT]);
+
+	if (size & 0x1) {
+		/* Size is odd; triangle */
+		f->pts = 6;
+
+		f->c[0] = 0;
+		f->c[1] = 0;
+
+		f->c[2] = smax;
+		f->c[3] = 0;
+
+		f->c[4] = size / 2;
+		f->c[5] = smax;
+
+	} else {
+		/* Size is even; trapezium */
+		f->pts = 8;
+
+		f->c[0] = 0;
+		f->c[1] = 0;
+
+		f->c[2] = smax;
+		f->c[3] = 0;
+
+		f->c[4] = size / 2;
+		f->c[5] = smax;
+
+		f->c[6] = size / 2 - 1;
+		f->c[7] = smax;
+	}
+
+	/* Vertically offset for line height */
+	for (i = 0; i < TREE_FURN_LAST; i++) {
+		f = &(tree_furn[i]);
+
+		for (y = 1; y < f->pts; y += 2) {
+			f->c[y] += tree_g.line_height / 4;
+		}
+	}
+
+	tree_g.furniture_width = size + tree_g.line_height / 4;
 }
 
 
@@ -3583,18 +3670,19 @@ nserror treeview_init(int font_pt_size)
 	if (font_pt_size <= 0)
 		font_pt_size = 11;
 
+	font_px_size = (font_pt_size * FIXTOINT(nscss_screen_dpi) + 36) / 72;
+	tree_g.line_height = (font_px_size * 8 + 3) / 6;
+
 	treeview_init_plot_styles(font_pt_size);
 	treeview_init_resources();
 	treeview_init_furniture();
 
-	font_px_size = (font_pt_size * FIXTOINT(nscss_screen_dpi) + 36) / 72;
-
-	tree_g.line_height = (font_px_size * 8 + 3) / 6;
 	tree_g.step_width = tree_g.furniture_width;
 	tree_g.window_padding = 6;
 	tree_g.icon_size = 17;
 	tree_g.icon_step = 23;
 	tree_g.move_offset = 18;
+
 
 	tree_g.initialised = true;
 
