@@ -75,8 +75,20 @@
 	    ((c0 & 0x00ff00) * (      p))   ) >> 8) & 0x00ff00))
 
 /* get a bitmap pixel (image/bitmap.h) into a plot colour */
-#define pixel_to_colour(b)					\
+#define pixel_to_colour(b)						\
 	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)
+
+/* Get the red channel from a colour */
+#define red_from_colour(c)						\
+	((c      ) & 0xff)
+
+/* Get the green channel from a colour */
+#define green_from_colour(c)						\
+	((c >>  8) & 0xff)
+
+/* Get the blue channel from a colour */
+#define blue_from_colour(c)						\
+	((c >> 16) & 0xff)
 
 /**
  * Colour type: XBGR
