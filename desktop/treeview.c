@@ -1185,13 +1185,14 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 {
 	nserror err;
 	struct rect r;
-	treeview_node *p;
+	bool visible;
 
 	assert(tree != NULL);
 	assert(n != NULL);
 	assert(n->parent != NULL);
 
-	p = n->parent;
+	visible = n->parent->flags & TREE_NODE_EXPANDED;
+
 	r.y0 = treeview_node_y(tree, n);
 	r.y1 = tree->root->height;
 
@@ -1217,8 +1218,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 	}
 
 	/* Redraw */
-	if (p->flags & TREE_NODE_EXPANDED &&
-			!(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
+	if (visible && !(flags & TREE_OPTION_SUPPRESS_REDRAW)) {
 		r.x0 = 0;
 		r.x1 = REDRAW_MAX;
 		tree->cw_t->redraw_request(tree->cw_h, &r);
