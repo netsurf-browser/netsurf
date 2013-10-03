@@ -3594,21 +3594,21 @@ static struct bitmap * treeview_generate_triangle_bitmap(
 				*(pos++) = red_from_colour(colour4);
 				*(pos++) = green_from_colour(colour4);
 				*(pos++) = blue_from_colour(colour4);
-				pos++;
+				*(pos++) = 0;
 			}
 			*(pos++) = red_from_colour(colour3);
 			*(pos++) = green_from_colour(colour3);
 			*(pos++) = blue_from_colour(colour3);
-			pos++;
+			*(pos++) = 0;
 			*(pos++) = red_from_colour(colour1);
 			*(pos++) = green_from_colour(colour1);
 			*(pos++) = blue_from_colour(colour1);
-			pos++;
+			*(pos++) = 0;
 			for (x = y * 2 + 2; x < size ; x++) {
 				*(pos++) = red_from_colour(colour0);
 				*(pos++) = green_from_colour(colour0);
 				*(pos++) = blue_from_colour(colour0);
-				pos++;
+				*(pos++) = 0;
 			}
 		} else if ((y == size / 2) && (size & 0x1)) {
 			/* Middle row */
@@ -3616,33 +3616,33 @@ static struct bitmap * treeview_generate_triangle_bitmap(
 				*(pos++) = red_from_colour(colour4);
 				*(pos++) = green_from_colour(colour4);
 				*(pos++) = blue_from_colour(colour4);
-				pos++;
+				*(pos++) = 0;
 			}
 			*(pos++) = red_from_colour(colour2);
 			*(pos++) = green_from_colour(colour2);
 			*(pos++) = blue_from_colour(colour2);
-			pos++;
+			*(pos++) = 0;
 		} else {
 			/* Bottom half */
 			for (x = 0; x < (size - y - 1) * 2; x++) {
 				*(pos++) = red_from_colour(colour4);
 				*(pos++) = green_from_colour(colour4);
 				*(pos++) = blue_from_colour(colour4);
-				pos++;
+				*(pos++) = 0;
 			}
 			*(pos++) = red_from_colour(colour3);
 			*(pos++) = green_from_colour(colour3);
 			*(pos++) = blue_from_colour(colour3);
-			pos++;
+			*(pos++) = 0;
 			*(pos++) = red_from_colour(colour1);
 			*(pos++) = green_from_colour(colour1);
 			*(pos++) = blue_from_colour(colour1);
-			pos++;
+			*(pos++) = 0;
 			for (x = (size - y) * 2; x < size ; x++) {
 				*(pos++) = red_from_colour(colour0);
 				*(pos++) = green_from_colour(colour0);
 				*(pos++) = blue_from_colour(colour0);
-				pos++;
+				*(pos++) = 0;
 			}
 		}
 
@@ -3738,7 +3738,7 @@ static struct bitmap * treeview_generate_rotate_bitmap(
 			*(pos++) = *(orig_pos++);
 			*(pos++) = *(orig_pos++);
 			*(pos++) = *(orig_pos);
-			pos++;
+			*(pos++) = 0;
 			
 		}
 
