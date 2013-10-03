@@ -3691,6 +3691,11 @@ static struct bitmap * treeview_generate_copy_bitmap(
 
 	bitmap_modified(b);
 
+	/* We've not modified the original image, but we called
+	 * bitmap_get_buffer(), so we need to pair that with a
+	 * bitmap_modified() call to appease certain front ends. */
+	bitmap_modified(orig);
+
 	return b;
 }
 
@@ -3746,6 +3751,11 @@ static struct bitmap * treeview_generate_rotate_bitmap(
 	}
 
 	bitmap_modified(b);
+
+	/* We've not modified the original image, but we called
+	 * bitmap_get_buffer(), so we need to pair that with a
+	 * bitmap_modified() call to appease certain front ends. */
+	bitmap_modified(orig);
 
 	return b;
 }
