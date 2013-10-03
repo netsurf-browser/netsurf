@@ -2666,7 +2666,7 @@ wimp_window {
   title_fg:wimp_COLOUR_BLACK
   title_bg:wimp_COLOUR_LIGHT_GREY
   work_fg:wimp_COLOUR_BLACK
-  work_bg:wimp_COLOUR_WHITE
+  work_bg:wimp_COLOUR_TRANSPARENT
   scroll_outer:wimp_COLOUR_MID_LIGHT_GREY
   scroll_inner:wimp_COLOUR_VERY_LIGHT_GREY
   highlight_bg:wimp_COLOUR_CREAM
