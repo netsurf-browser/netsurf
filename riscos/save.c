@@ -45,6 +45,7 @@
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/form.h"
+#include "riscos/bitmap.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"

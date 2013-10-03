@@ -23,6 +23,8 @@
 #include "oslib/osspriteop.h"
 #include "image/bitmap.h"
 
+#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
+
 struct osspriteop_area;
 
 struct bitmap {

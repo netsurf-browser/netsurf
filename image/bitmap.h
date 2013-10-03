@@ -61,8 +61,6 @@
 #define BITMAP_MODIFIED		(1 << 1)	/** buffer has been modified */
 #define BITMAP_CLEAR_MEMORY	(1 << 2)	/** memory should be wiped */
 
-#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
-
 struct content;
 
 /** An opaque image. */
