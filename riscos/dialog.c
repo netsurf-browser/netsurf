@@ -70,7 +70,7 @@
 wimp_w dialog_info, dialog_saveas,
 	dialog_401li,
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
-	dialog_warning, dialog_debug,
+	dialog_warning,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
 	dialog_url_complete, dialog_openurl;
 
@@ -120,10 +120,6 @@ void ro_gui_dialog_init(void)
 			ICON_THEME_INSTALL_INSTALL,
 			ro_gui_theme_install_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_theme_install, "HelpThemeInst");
-
-	/* debug window */
-	dialog_debug = ro_gui_dialog_create("debug");
-	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpDebug");
 
 	/* search */
 	ro_gui_search_init();

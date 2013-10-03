@@ -94,8 +94,6 @@ void ro_gui_wimp_cache_furniture_sizes(wimp_w w)
 {
 	os_error *error;
 
-	if (!w)
-		w = dialog_debug;
 	if (furniture_window == w)
 		return;
 	furniture_window = w;

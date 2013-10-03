@@ -52,7 +52,7 @@ extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 
 extern wimp_w dialog_info, dialog_saveas, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_openurl,
-	dialog_debug, dialog_folder, dialog_entry, dialog_url_complete,
+	dialog_folder, dialog_entry, dialog_url_complete,
 	dialog_search, dialog_print, dialog_theme_install;
 extern wimp_w current_menu_window;
 extern bool current_menu_open;

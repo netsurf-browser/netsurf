@@ -1250,30 +1250,6 @@ wimp_window {
 }
 
 wimp_window {
-  template_name:"debug"
-  visible:248,508,1052,972
-  xscroll:0
-  yscroll:0
-  next:wimp_TOP
-  window_flags:wimp_WINDOW_MOVEABLE | wimp_WINDOW_BACK_ICON | wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_VSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_HSCROLL | wimp_WINDOW_NEW_FORMAT
-  title_fg:wimp_COLOUR_BLACK
-  title_bg:wimp_COLOUR_LIGHT_GREY
-  work_fg:wimp_COLOUR_BLACK
-  work_bg:wimp_COLOUR_WHITE
-  scroll_outer:wimp_COLOUR_MID_LIGHT_GREY
-  scroll_inner:wimp_COLOUR_VERY_LIGHT_GREY
-  highlight_bg:wimp_COLOUR_CREAM
-  extra_flags:
-  extent:0,-880,1236,0
-  title_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | 0x27000000
-  work_flags:
-  sprite_area:&1
-  xmin:0
-  ymin:0
-  text_only:"NetSurf"
-}
-
-wimp_window {
   template_name:"download"
   visible:486,610,1282,890
   xscroll:0
