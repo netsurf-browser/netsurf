@@ -5237,67 +5237,6 @@ fr.ro.HelpLanguageConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauv
 it.ro.HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 nl.ro.HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-en.ro.HelpMemoryConfig:\Tmemory configuration \w
-de.ro.HelpMemoryConfig:Fenster zur Konfiguration des nutzbaren Arbeitsspeichers
-fr.ro.HelpMemoryConfig:\Tla fenêtre de configuration de mémoire
-it.ro.HelpMemoryConfig:\Tmemory configuration \w
-nl.ro.HelpMemoryConfig:\Tmemory configuration \w
-en.ro.HelpMemoryConfig3:You can enter the maximum amount of memory NetSurf will use for storing uncompressed images here.
-de.ro.HelpMemoryConfig3:Hier kann die Maximalgröße des von NetSurf für nichtkomprimierte Bilder genutzten Speichers angegeben werden.
-fr.ro.HelpMemoryConfig3:Vous pouvez entrer ici la quantité maximum de mémoire que Netsurf utilisera pour stocker les images non-compressées.
-it.ro.HelpMemoryConfig3:You can enter the maximum amount of memory NetSurf will use for storing uncompressed images here.
-nl.ro.HelpMemoryConfig3:You can enter the maximum amount of memory NetSurf will use for storing uncompressed images here.
-en.ro.HelpMemoryConfig4:\Sreduce the amount of memory used for storing uncompressed images.
-de.ro.HelpMemoryConfig4:Klicken mit AUSWAHL verkleinert den Arbeitsspeicher zum Ablegen nichtkomprimierter Bilder.
-fr.ro.HelpMemoryConfig4:\Sréduire la quantité de mémoire utilisée pour stocker les images non-compressées.
-it.ro.HelpMemoryConfig4:\Sreduce the amount of memory used for storing uncompressed images.
-nl.ro.HelpMemoryConfig4:\Sreduce the amount of memory used for storing uncompressed images.
-en.ro.HelpMemoryConfig5:\Sincrease the amount of memory used for storing uncompressed images.
-de.ro.HelpMemoryConfig5:Klicken mit AUSWAHL vergrößert den Arbeitsspeicher zum Ablegen nichtkomprimierter Bilder.
-fr.ro.HelpMemoryConfig5:\Saugmenter la quantité de mémoire utilisée pour stocker les images non-compressées.
-it.ro.HelpMemoryConfig5:\Sincrease the amount of memory used for storing uncompressed images.
-nl.ro.HelpMemoryConfig5:\Sincrease the amount of memory used for storing uncompressed images.
-en.ro.HelpMemoryConfig7:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-de.ro.HelpMemoryConfig7:NetSurf nimmt eine automatische intelligente Abschätzung der notwendigen Größe des Arbeitsspeichers zum Ablegen nichtkomprimierter Bilddaten vor.
-fr.ro.HelpMemoryConfig7:Ceci indiquera si Netsurf doit essayer de deviner intelligemment la quantité de mémoire la plus appropriée à utiliser pour le stockage d'images non-compressées.
-it.ro.HelpMemoryConfig7:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-nl.ro.HelpMemoryConfig7:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-en.ro.HelpMemoryConfig9:You can enter the maximum amount of memory NetSurf will use for storing compressed images here.
-de.ro.HelpMemoryConfig9:Hier kann die Maximalgröße des von NetSurf für komprimierte Bilder genutzten Speichers angegeben werden.
-fr.ro.HelpMemoryConfig9:Vous pouvez entrer ici la quantité de mémoire maximum que Netsurf utilisera pour le stockage d'images compressées.
-it.ro.HelpMemoryConfig9:You can enter the maximum amount of memory NetSurf will use for storing compressed images here.
-nl.ro.HelpMemoryConfig9:You can enter the maximum amount of memory NetSurf will use for storing compressed images here.
-en.ro.HelpMemoryConfig10:\Sreduce the amount of memory used for storing compressed images.
-de.ro.HelpMemoryConfig10:Klicken mit AUSWAHL verkleinert den Arbeitsspeicher zum Ablegen komprimierter Bilder.
-fr.ro.HelpMemoryConfig10:\Sréduire la quantité de mémoire utilisée pour le stockage d'images compressées.
-it.ro.HelpMemoryConfig10:\Sreduce the amount of memory used for storing compressed images.
-nl.ro.HelpMemoryConfig10:\Sreduce the amount of memory used for storing compressed images.
-en.ro.HelpMemoryConfig11:\Sincrease the amount of memory used for storing compressed images.
-de.ro.HelpMemoryConfig11:Klicken mit AUSWAHL vergrößert den Arbeitsspeicher zum Ablegen komprimierter Bilder.
-fr.ro.HelpMemoryConfig11:\Saugmenter la quantité de mémoire utilisée pour le stockage d'images compressées.
-it.ro.HelpMemoryConfig11:\Sincrease the amount of memory used for storing compressed images.
-nl.ro.HelpMemoryConfig11:\Sincrease the amount of memory used for storing compressed images.
-en.ro.HelpMemoryConfig13:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-de.ro.HelpMemoryConfig13:NetSurf nimmt eine automatische intelligente Abschätzung der notwendigen Größe des Arbeitsspeichers zum Ablegen komprimierter Bilddaten vor.
-fr.ro.HelpMemoryConfig13:Ceci indiquera si Netsurf doit essayer de deviner intelligemment la quantité de mémoire la plus appropriée à utiliser pour le stockage d'images compressées.
-it.ro.HelpMemoryConfig13:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-nl.ro.HelpMemoryConfig13:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
-en.ro.HelpMemoryConfig14:\Sreset the Memory options back to their default values.
-de.ro.HelpMemoryConfig14:Stellt die Standardeinstellungen wieder her.
-fr.ro.HelpMemoryConfig14:\Srevenir aux valeurs par défaut des options de Mémoire.
-it.ro.HelpMemoryConfig14:\Sreset the Memory options back to their default values.
-nl.ro.HelpMemoryConfig14:\Sreset the Memory options back to their default values.
-en.ro.HelpMemoryConfig15:\Sclose this \w without saving changes.|M\Areturn the memory options to the last saved configuration.
-de.ro.HelpMemoryConfig15:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.                
-fr.ro.HelpMemoryConfig15:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options de Mémoire précédemment sauvegardées.
-it.ro.HelpMemoryConfig15:\Sclose this \w without saving changes.|M\Areturn the memory options to the last saved configuration.
-nl.ro.HelpMemoryConfig15:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-en.ro.HelpMemoryConfig16:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-de.ro.HelpMemoryConfig16:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
-fr.ro.HelpMemoryConfig16:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpMemoryConfig16:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-nl.ro.HelpMemoryConfig16:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-
 en.ro.HelpSecurityConfig:\Tsecurity configuration \w
 de.ro.HelpSecurityConfig:Fenster zur Konfiguration der Sicherheitseinstellungen
 fr.ro.HelpSecurityConfig:\Tla fenêtre de configuration de sécurité
