@@ -42,7 +42,6 @@ struct bitmap {
 
 };
 
-struct bitmap *bitmap_create_file(char *file);
 void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
 void bitmap_initialise_memory(void);
 void bitmap_quit(void);

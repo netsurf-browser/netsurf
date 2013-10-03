@@ -208,54 +208,6 @@ void *bitmap_create(int width, int height, unsigned int state)
 
 
 /**
- * Create a persistent, opaque bitmap from a file reference.
- *
- * \param  file	   the file containing the image data
- * \return an opaque struct bitmap, or NULL on memory exhaustion
- */
-
-struct bitmap *bitmap_create_file(char *file)
-{
-	struct bitmap *bitmap;
-	char *r;
-	fileswitch_object_type obj_type;
-	os_error *error;
-
-	if (file[0] == '\0')
-		return NULL;
-
-	/* check the file exists */
-	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX, file);
-	r = __riscosify(bitmap_unixname, 0, __RISCOSIFY_NO_SUFFIX,
-			bitmap_filename, 256, 0);
-	if (r == 0) {
-		LOG(("__riscosify failed"));
-		return NULL;
-	}
-	error = xosfile_read_stamped_no_path(bitmap_filename,
-			&obj_type, 0, 0, 0, 0, 0);
-	if ((error) || (obj_type != fileswitch_IS_FILE))
-		return NULL;
-
-	if (!filename_claim(file))
-		return NULL;
-	bitmap = calloc(1, sizeof(struct bitmap));
-	if (!bitmap)
-		return NULL;
-	bitmap->state = BITMAP_OPAQUE | BITMAP_PERSISTENT | BITMAP_READY;
-	strcpy(bitmap->filename, file);
-
-	/* link in at the head */
-	if (bitmap_head) {
-		bitmap->next = bitmap_head;
-		bitmap_head->previous = bitmap;
-	}
-	bitmap_head = bitmap;
-	return bitmap;
-}
-
-
-/**
  * Overlay a sprite onto the given bitmap
  *
  * \param  bitmap  bitmap object
