@@ -31,10 +31,7 @@ struct bitmap {
 
 	unsigned int state;
 
-	void *private_word;
-
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
-
 };
 
 void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
