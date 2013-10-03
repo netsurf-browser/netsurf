@@ -483,9 +483,6 @@ static void gui_init(int argc, char** argv)
 	/* Initialise save complete functionality */
 	save_complete_init();
 
-	/* Initialise bitmap memory pool */
-	bitmap_initialise_memory();
-
 	/* Load in visited URLs and Cookies */
 	urldb_load(nsoption_charp(url_path));
 	urldb_load_cookies(nsoption_charp(cookie_file));
@@ -921,7 +918,6 @@ int main(int argc, char** argv)
 
 void gui_quit(void)
 {
-	bitmap_quit();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
@@ -1037,8 +1033,8 @@ void gui_poll(bool active)
 	track_poll_offset = ro_mouse_poll_interval();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || (track_poll_offset > 0) || browser_reformat_pending ||
-			bitmap_maintenance) {
+	} else if (sched_active || (track_poll_offset > 0) ||
+			browser_reformat_pending) {
 		os_t t = os_read_monotonic_time();
 
 		if (track_poll_offset > 0)
@@ -1070,9 +1066,6 @@ void gui_poll(bool active)
 
 	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
-	else if (bitmap_maintenance_priority ||
-			(bitmap_maintenance && event == wimp_NULL_REASON_CODE))
-		bitmap_maintain();
 }
 
 

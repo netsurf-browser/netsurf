@@ -34,33 +34,9 @@ struct bitmap {
 	void *private_word;
 
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
-	char *compressed;		/** Compressed data, or NULL */
-	char filename[12];		/** Data filename, or '/0' */
-
-	struct bitmap *previous;	/** Previous bitmap */
-	struct bitmap *next;		/** Next bitmap */
 
 };
 
 void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
-void bitmap_initialise_memory(void);
-void bitmap_quit(void);
-void bitmap_maintain(void);
-
-/** Whether maintenance of the pool states is needed
-*/
-extern bool bitmap_maintenance;
-
-/** Whether maintenance of the pool is high priority
-*/
-extern bool bitmap_maintenance_priority;
-
-/** Maximum amount of memory for direct images
-*/
-extern unsigned int bitmap_direct_size;
-
-/** Total size of compressed area
-*/
-extern unsigned int bitmap_compressed_size;
 
 #endif

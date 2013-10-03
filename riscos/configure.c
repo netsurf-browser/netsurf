@@ -108,9 +108,6 @@ void ro_gui_configure_initialise(void)
 	ro_gui_configure_register("con_lang",
 			ro_gui_options_language_initialise,
 			ro_gui_wimp_event_finalise);
-	ro_gui_configure_register("con_memory",
-			ro_gui_options_memory_initialise,
-			ro_gui_wimp_event_finalise);
 	ro_gui_configure_register("con_theme",
 			ro_gui_options_theme_initialise,
 			ro_gui_options_theme_finalise);

@@ -4743,21 +4743,16 @@ de.ro.HelpConfigure7:Sprachen einstellen
 fr.ro.HelpConfigure7:Outil de configuration de langue
 it.ro.HelpConfigure7:Language configuration tool
 nl.ro.HelpConfigure7:Language configuration tool
-en.ro.HelpConfigure8:Memory configuration tool
-de.ro.HelpConfigure8:Arbeitsspeicher konfigurieren
-fr.ro.HelpConfigure8:Outil de configuration de la mémoire
-it.ro.HelpConfigure8:Memory configuration tool
-nl.ro.HelpConfigure8:Memory configuration tool
-en.ro.HelpConfigure9:Theme configuration tool
-de.ro.HelpConfigure9:Themenauswahl
-fr.ro.HelpConfigure9:Outil de configuration de thème
-it.ro.HelpConfigure9:Theme configuration tool
-nl.ro.HelpConfigure9:Theme configuration tool
-en.ro.HelpConfigure10:Security and Privacy configuration tool
-de.ro.HelpConfigure10:Sicherheitseinstellungen und Privatsphäre
-fr.ro.HelpConfigure10:Outil de configuration de la sécurité et de la confidentialité
-it.ro.HelpConfigure10:Security and Privacy configuration tool
-nl.ro.HelpConfigure10:Security and Privacy configuration tool
+en.ro.HelpConfigure8:Theme configuration tool
+de.ro.HelpConfigure8:Themenauswahl
+fr.ro.HelpConfigure8:Outil de configuration de thème
+it.ro.HelpConfigure8:Theme configuration tool
+nl.ro.HelpConfigure8:Theme configuration tool
+en.ro.HelpConfigure9:Security and Privacy configuration tool
+de.ro.HelpConfigure9:Sicherheitseinstellungen und Privatsphäre
+fr.ro.HelpConfigure9:Outil de configuration de la sécurité et de la confidentialité
+it.ro.HelpConfigure9:Security and Privacy configuration tool
+nl.ro.HelpConfigure9:Security and Privacy configuration tool
 
 en.ro.HelpCacheConfig:\Tcache configuration \w.
 de.ro.HelpCacheConfig:Das ist das Fenster der Cache-Konfiguration.

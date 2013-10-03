@@ -50,221 +50,8 @@
 /** Colour in the overlay sprite that allows the bitmap to show through */
 #define OVERLAY_INDEX 0xfe
 
-#define MAINTENANCE_THRESHOLD 32
-
 /** Size of buffer used when constructing mask data to be saved */
 #define SAVE_CHUNK_SIZE 4096
-
-/** The head of the bitmap list
-*/
-struct bitmap *bitmap_head = NULL;
-
-/** Whether maintenance of the pool states is needed
-*/
-bool bitmap_maintenance = false;
-
-/** Whether maintenance of the pool is high priority
-*/
-bool bitmap_maintenance_priority = false;
-
-/** Maximum amount of memory for direct images
-*/
-unsigned int bitmap_direct_size;
-
-/** Current amount of memory for direct images
-*/
-unsigned int bitmap_direct_used = 0;
-
-/** Total size of compressed area
-*/
-unsigned int bitmap_compressed_size;
-
-/** Total size of compressed area
-*/
-unsigned int bitmap_compressed_used = 0;
-
-/** Compressed data header
-*/
-struct bitmap_compressed_header {
-	int width;
-	int height;
-	char name[12];
-	unsigned int flags;
-	unsigned int input_size;
-};
-
-char bitmap_unixname[256];
-char bitmap_filename[256];
-
-
-
-static void bitmap_delete_file(struct bitmap *bitmap)
-{
-	assert(bitmap->filename[0]);
-	filename_release(bitmap->filename);
-	bitmap->filename[0] = 0;
-}
-
-
-static void bitmap_load_file(struct bitmap *bitmap)
-{
-	int len;
-	fileswitch_object_type obj_type;
-	os_error *error;
-	char *r;
-	struct bitmap_compressed_header *bitmap_compressed;
-	osspriteop_header *bitmap_direct;
-	int *data;
-
-	assert(bitmap->filename);
-
-	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX,
-			bitmap->filename);
-	r = __riscosify(bitmap_unixname, 0, __RISCOSIFY_NO_SUFFIX,
-			bitmap_filename, 256, 0);
-	if (r == 0) {
-		LOG(("__riscosify failed"));
-		return;
-	}
-	error = xosfile_read_stamped_no_path(bitmap_filename,
-			&obj_type, 0, 0, &len, 0, 0);
-	if ((error) || (obj_type != fileswitch_IS_FILE))
-		return;
-
-	bitmap->compressed = malloc(len);
-	if (!bitmap->compressed)
-		return;
-
-	error = xosfile_load_stamped_no_path(bitmap_filename,
-			(byte *) bitmap->compressed, 0, 0, 0, 0, 0);
-	if (error) {
-		free(bitmap->compressed);
-		bitmap->compressed = NULL;
-		return;
-	}
-
-	data = (void *) bitmap->compressed;
-
-	LOG(("Loaded file from disk"));
-	/* Sanity check the file we've just loaded:
-	 * If it's an uncompressed buffer, then it's a raw sprite area,
-	 * including the total size word at the start. Therefore, we check
-	 * that:
-	 *   a) The declared total area size == file length
-	 *   b) The offset to the first free word == file length
-	 *   c) There is only 1 sprite in the area
-	 *   d) The name of the sprite in the area is "bitmap"
-	 *
-	 * If it's a compressed buffer, then we check that:
-	 *   a) The declared input size + header size == file length
-	 *   b) The name of the buffer is "bitmap"
-	 *
-	 * If it's neither of these, we fail.
-	 */
-	if (*data == len && *(data + 3) == len && *(data + 1) == 1 &&
-			strncmp(bitmap->compressed + 20, "bitmap", 6) == 0) {
-		bitmap->sprite_area = (void *) bitmap->compressed;
-		bitmap->compressed = NULL;
-		bitmap_direct = (osspriteop_header *)(bitmap->sprite_area + 1);
-		bitmap->width = bitmap_direct->width + 1;
-		bitmap->height = bitmap_direct->height + 1;
-		bitmap_direct_used += 16 + 44 +
-				bitmap->width * bitmap->height * 4;
-	} else if ((int) (*(data + 6) + 
-			sizeof(struct bitmap_compressed_header)) == len &&
-			strncmp(bitmap->compressed + 8, "bitmap", 6) == 0) {
-		bitmap_compressed = (void *) bitmap->compressed;
-		bitmap_compressed_used -= bitmap_compressed->input_size +
-				sizeof(struct bitmap_compressed_header);
-		bitmap->width = bitmap_compressed->width;
-		bitmap->height = bitmap_compressed->height;
-	} else {
-		free(bitmap->compressed);
-		bitmap->compressed = NULL;
-		return;
-	}
-	if (bitmap->state & BITMAP_MODIFIED)
-		bitmap_delete_file(bitmap);
-}
-
-
-static void bitmap_save_file(struct bitmap *bitmap)
-{
-	unsigned int area_size;
-	const char *filename;
-	char *r;
-	os_error *error;
-	struct bitmap_compressed_header *header;
-
-	assert(bitmap);
-
-	if (!bitmap->compressed && !bitmap->sprite_area) {
-		LOG(("bitmap has no data"));
-		return;
-	}
-
-	/* unmodified bitmaps will still have their file available */
-	if ((!(bitmap->state & BITMAP_MODIFIED)) && bitmap->filename[0]) {
-		if (bitmap->sprite_area)
-			free(bitmap->sprite_area);
-		bitmap->sprite_area = NULL;
-		if (bitmap->compressed)
-			free(bitmap->compressed);
-		bitmap->compressed = NULL;
-		return;
-	}
-
-	/* dump the data (compressed or otherwise) to disk */
-	filename = filename_request();
-	if (!filename) {
-		LOG(("filename_request failed"));
-		return;
-	}
-
-	strcpy(bitmap->filename, filename);
-	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX,
-			bitmap->filename);
-	r = __riscosify(bitmap_unixname, 0, __RISCOSIFY_NO_SUFFIX,
-			bitmap_filename, 256, 0);
-	if (r == 0) {
-		LOG(("__riscosify failed"));
-		return;
-	}
-	if (bitmap->compressed) {
-		header = (void *) bitmap->compressed;
-		area_size = header->input_size +
-				sizeof(struct bitmap_compressed_header);
-		error = xosfile_save_stamped(bitmap_filename, 0xffd,
-				(byte *) bitmap->compressed,
-				(byte *) bitmap->compressed + area_size);
-	} else {
-		area_size = bitmap->width * bitmap->height * 4 +
-			sizeof(osspriteop_header) +
-			sizeof(osspriteop_area);
-		error = xosfile_save_stamped(bitmap_filename, 0xffd,
-				(byte *) bitmap->sprite_area,
-				((byte *) bitmap->sprite_area) + area_size);
-	}
-
-	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s",
-				error->errnum, error->errmess));
-		bitmap->filename[0] = 0;
-	} else {
-		if (bitmap->sprite_area) {
-			bitmap_direct_used -= area_size;
-			free(bitmap->sprite_area);
-		}
-		bitmap->sprite_area = NULL;
-		if (bitmap->compressed) {
-			bitmap_compressed_used -= area_size;
-			free(bitmap->compressed);
-		}
-		bitmap->compressed = NULL;
-		bitmap->state &= ~BITMAP_MODIFIED;
-		LOG(("Saved file to disk"));
-	}
-}
 
 
 /**
@@ -291,7 +78,6 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 	if (!bitmap->sprite_area)
 		return false;
 	bitmap->state |= BITMAP_READY;
-	bitmap_direct_used += area_size;
 
 	/* area control block */
 	sprite_area = bitmap->sprite_area;
@@ -312,174 +98,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 	sprite->image = sprite->mask = 44;
 	sprite->mode = tinct_SPRITE_MODE;
 
-	bitmap_maintenance = true;
-	bitmap_maintenance_priority |=
-			(bitmap_direct_used > bitmap_direct_size * 0.9);
 	return true;
-}
-
-
-static void bitmap_decompress(struct bitmap *bitmap)
-{
-	unsigned int area_size;
-	_kernel_oserror *error;
-	int output_size;
-	struct bitmap_compressed_header *header;
-
-	assert(bitmap->compressed);
-
-	/* ensure the width/height is correct */
-	header = (void *)bitmap->compressed;
-	if ((header->width != bitmap->width) ||
-			(header->height != bitmap->height)) {
-		LOG(("Warning: Mismatch between bitmap and compressed sizes"));
-		return;
-	}
-
-	/* create the image memory/header to decompress to */
-	if (!bitmap_initialise(bitmap))
-		return;
-
-	/* decompress the data */
-	output_size = bitmap->width * bitmap->height * 4 +
-		sizeof(struct osspriteop_header);
-	error = _swix(Tinct_Decompress, _IN(0) | _IN(2) | _IN(3) | _IN(7),
-			bitmap->compressed,
-			(char *)(bitmap->sprite_area + 1),
-			output_size,
-			0);
-	if (error) {
-		LOG(("Decompression error"));
-		free(bitmap->sprite_area);
-		bitmap->sprite_area = NULL;
-	} else {
-		LOG(("Decompressed"));
-		area_size = header->input_size +
-				sizeof(struct bitmap_compressed_header);
-		bitmap_compressed_used -= area_size;
-		free(bitmap->compressed);
-		bitmap->compressed = NULL;
-		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-		bitmap_direct_used += area_size;
-	}
-}
-
-
-static void bitmap_compress(struct bitmap *bitmap)
-{
-	unsigned int area_size;
-	_kernel_oserror *error;
-	char *output;
-	unsigned int output_size, new_size;
-	unsigned int flags = 0;
-	float calc;
-
-	/* get the maximum output size (33/32 * size) */
-	output_size = ((bitmap->width * bitmap->height * 4 * 33) >> 5) +
-			sizeof(struct bitmap_compressed_header);
-	output = malloc(output_size);
-	if (!output)
-		return;
-
-	/* compress the data */
-	if (bitmap->state & BITMAP_OPAQUE)
-		flags |= tinct_OPAQUE_IMAGE;
-	error = _swix(Tinct_Compress, _IN(0) | _IN(2) | _IN(7) | _OUT(0),
-			(char *)(bitmap->sprite_area + 1),
-			output,
-			flags,
-			&new_size);
-	if (error) {
-		LOG(("Compression error"));
-		free(output);
-	} else {
-		bitmap->compressed = realloc(output, new_size);
-		if (!bitmap->compressed) {
-			free(output);
-		} else {
-			bitmap_compressed_used += new_size;
-			if (bitmap->sprite_area) {
-				area_size = 16 + 44 + bitmap->width *
-						bitmap->height * 4;
-				bitmap_direct_used -= area_size;
-				free(bitmap->sprite_area);
-			}
-			bitmap->sprite_area = NULL;
-			calc = (100 / (float)output_size) * new_size;
-			LOG(("Compression: %i->%i, %.3f%%",
-					output_size, new_size, calc));
-		}
-	}
-}
-
-
-/**
- * Initialise the bitmap memory pool.
- */
-
-void bitmap_initialise_memory(void)
-{
-	int available_memory, direct_size, compressed_size;
-	int free_slot;
-	os_error *error;
-
-	/* calculate how much memory is currently free
-		(Note that the free_slot returned by wimp_slot_size
-		 includes the next_slot; the value displayed by the
-		 TaskManager has been adjusted to make it more logical
-		 for the user).
-	*/
-	error = xwimp_slot_size(-1, -1, NULL, NULL, &free_slot);
-	if (error) {
-		LOG(("xwimp_slot_size: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	available_memory = free_slot;
-
-	/* calculate our memory block sizes */
-	if (nsoption_int(image_memory_direct) == -1) {
-		/* claim 25% of free memory - min 256KB, max 32768KB */
-		direct_size = available_memory / 4;
-		if (direct_size < (256 << 10))
-			direct_size = (256 << 10);
-		if (direct_size > (32768 << 10))
-			direct_size = (32768 << 10);
-	} else {
-		direct_size = (nsoption_int(image_memory_direct) << 10);
-	}
-	if (nsoption_int(image_memory_compressed) == -1) {
-		/* claim 10% of free memory - min 256KB, max 4192KB */
-		compressed_size = available_memory / 10;
-		if (compressed_size < (256 << 10))
-			compressed_size = 0;
-		if (compressed_size > (4192 << 10))
-			compressed_size = (4192 << 10);
-	} else {
-		compressed_size = (nsoption_int(image_memory_compressed) << 10);
-	}
-
-	/* set our values. No fixed buffers here, ho hum. */
-	bitmap_direct_size = direct_size;
-	bitmap_compressed_size = compressed_size;
-	bitmap_maintenance = bitmap_maintenance_priority = true;
-}
-
-
-/**
- * Prepare for the end of a session.
- */
-
-void bitmap_quit(void)
-{
-	struct bitmap *bitmap;
-
-	for (bitmap = bitmap_head; bitmap; bitmap = bitmap->next)
-		if ((bitmap->state & BITMAP_PERSISTENT) &&
-				((bitmap->state & BITMAP_MODIFIED) ||
-				(bitmap->filename[0] == '\0')))
-			bitmap_save_file(bitmap);
 }
 
 
@@ -506,12 +125,6 @@ void *bitmap_create(int width, int height, unsigned int state)
 	bitmap->height = height;
 	bitmap->state = state;
 
-	/* link into our list of bitmaps at the head */
-	if (bitmap_head) {
-		bitmap->next = bitmap_head;
-		bitmap_head->previous = bitmap;
-	}
-	bitmap_head = bitmap;
 	return bitmap;
 }
 
@@ -700,38 +313,13 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
 
-	/* move to the head of the list */
-	if (bitmap_head != bitmap) {
-		if (bitmap->previous)
-			bitmap->previous->next = bitmap->next;
-		if (bitmap->next)
-			bitmap->next->previous = bitmap->previous;
-		bitmap->next = bitmap_head;
-		bitmap_head->previous = bitmap;
-		bitmap->previous = NULL;
-		bitmap_head = bitmap;
-	}
-
 	/* dynamically create the buffer */
 	if (!(bitmap->state & BITMAP_READY)) {
 		if (!bitmap_initialise(bitmap))
 			return NULL;
 	}
 
-	/* image is already decompressed, no change to image states */
-	if (bitmap->sprite_area)
-		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
-
-	/* load and/or decompress the image */
-	if (bitmap->filename[0])
-		bitmap_load_file(bitmap);
-	if (bitmap->compressed)
-		bitmap_decompress(bitmap);
-
-	bitmap_maintenance = true;
-	bitmap_maintenance_priority |=
-			(bitmap_direct_used > bitmap_direct_size * 0.9);
-
+	/* image data area should exist */
 	if (bitmap->sprite_area)
 		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
 
@@ -762,34 +350,14 @@ size_t bitmap_get_rowstride(void *vbitmap)
 void bitmap_destroy(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-	struct bitmap_compressed_header *header;
-	unsigned int area_size;
 
 	assert(bitmap);
 
-	/* delink from list */
-	bitmap_maintenance = true;
-	if (bitmap_head == bitmap)
-		bitmap_head = bitmap->next;
-	if (bitmap->previous)
-		bitmap->previous->next = bitmap->next;
-	if (bitmap->next)
-		bitmap->next->previous = bitmap->previous;
-
 	/* destroy bitmap */
 	if (bitmap->sprite_area) {
-		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-		bitmap_direct_used -= area_size;
 		free(bitmap->sprite_area);
 	}
-	if (bitmap->compressed) {
-		header = (void *) bitmap->compressed;
-		bitmap_compressed_used -= header->input_size +
-			sizeof(struct bitmap_compressed_header);
-		free(bitmap->compressed);
-	}
-	if (bitmap->filename[0])
-		bitmap_delete_file(bitmap);
+
 	free(bitmap);
 }
 
@@ -975,97 +543,6 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 void bitmap_modified(void *vbitmap) {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	bitmap->state |= BITMAP_MODIFIED;
-}
-
-
-/**
- * Performs routine maintenance.
- */
-void bitmap_maintain(void)
-{
-	unsigned int memory = 0;
-	unsigned int compressed_memory = 0;
-	struct bitmap *bitmap = bitmap_head;
-	struct bitmap_compressed_header *header;
-	unsigned int maintain_direct_size;
-
-	LOG(("Performing maintenance."));
-
-	/* under heavy loads allow an extra 30% to work with */
-	maintain_direct_size = bitmap_direct_size;
-	if (!bitmap_maintenance_priority)
-		maintain_direct_size = maintain_direct_size * 0.7;
-
-	if ((!bitmap) || ((bitmap_direct_used < maintain_direct_size) &&
-			(bitmap_compressed_used < bitmap_compressed_size))) {
-		bitmap_maintenance = bitmap_maintenance_priority;
-		bitmap_maintenance_priority = false;
-		return;
-	}
-
-	/* we don't change the first bitmap_MEMORY entries as they
-	 * will automatically be loaded/decompressed from whatever state
-	 * they are in when neeeded. */
-	for (; bitmap && (memory < maintain_direct_size);
-			bitmap = bitmap->next) {
-		if (bitmap->sprite_area)
-			memory += bitmap->width * bitmap->height * 4;
-		else if ((bitmap->compressed) &&
-				(!bitmap_maintenance_priority)) {
-			header = (void *) bitmap->compressed;
-			compressed_memory += header->input_size +
-				sizeof(struct bitmap_compressed_header);
-		}
-	}
-
-	if (!bitmap) {
-		bitmap_maintenance = bitmap_maintenance_priority;
-		bitmap_maintenance_priority = false;
-		return;
-	}
-
-	/* under heavy loads, we ignore compression */
-	if (!bitmap_maintenance_priority) {
-		/* for the next section, up until bitmap_COMPRESSED we
-		 * forcibly compress the data if it's currently held directly
-		 * in memory */
-		for (; bitmap && (compressed_memory < bitmap_compressed_size);
-				bitmap = bitmap->next) {
-			if (bitmap->sprite_area) {
-				if ((bitmap->width * bitmap->height) <=
-						(512 * 512))
-					bitmap_compress(bitmap);
-				else
-					bitmap_save_file(bitmap);
-				return;
-			}
-			if (bitmap->compressed) {
-				header = (void *) bitmap->compressed;
-				compressed_memory += header->input_size +
-					sizeof(struct bitmap_compressed_header);
-			}
-		}
-		if (!bitmap) {
-			bitmap_maintenance = false;
-			return;
-		}
-	}
-
-	/* for the remaining entries we dump to disk */
-	for (; bitmap; bitmap = bitmap->next) {
-		if ((bitmap->sprite_area) || (bitmap->compressed)) {
-			if (bitmap_maintenance_priority) {
-				if (bitmap->sprite_area)
-					bitmap_save_file(bitmap);
-
-			} else {
-				bitmap_save_file(bitmap);
-				return;
-			}
-		}
-	}
-	bitmap_maintenance = bitmap_maintenance_priority;
-	bitmap_maintenance_priority = false;
 }
 
 
