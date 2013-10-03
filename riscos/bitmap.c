@@ -77,7 +77,6 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 
 	if (!bitmap->sprite_area)
 		return false;
-	bitmap->state |= BITMAP_READY;
 
 	/* area control block */
 	sprite_area = bitmap->sprite_area;
@@ -314,7 +313,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 	assert(bitmap);
 
 	/* dynamically create the buffer */
-	if (!(bitmap->state & BITMAP_READY)) {
+	if (bitmap->sprite_area == NULL) {
 		if (!bitmap_initialise(bitmap))
 			return NULL;
 	}
