@@ -863,11 +863,8 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 			if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 			{
 #ifdef __amigaos4__
-				uint32 comptype = COMPOSITE_Src_Over_Dest;
-				uint32 compflags = COMPFLAG_IgnoreDestAlpha;
-				
-				CompositeTags(comptype, bfbm->bm, rp->BitMap,
-					COMPTAG_Flags, compflags,
+				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
+					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX,bfmsg->Bounds.MinX,
 					COMPTAG_DestY,bfmsg->Bounds.MinY,
 					COMPTAG_DestWidth,bfmsg->Bounds.MaxX - bfmsg->Bounds.MinX + 1,

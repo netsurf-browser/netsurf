@@ -438,7 +438,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		{
 #ifdef __amigaos4__
 			uint32 comptype = COMPOSITE_Src;
-			uint32 flags = 0; //COMPFLAG_IgnoreDestAlpha;
+			uint32 flags = 0;
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 			
 			CompositeTags(comptype,tbm,scaledbm,
