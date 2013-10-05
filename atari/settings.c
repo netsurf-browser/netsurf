@@ -611,7 +611,7 @@ static void apply_settings(void)
     /* "Rendering" tab: */
     nsoption_set_charp(atari_font_driver,
                        gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER));
-    nsoption_set_bool(atari_transparency,
+    nsoption_set_int(atari_transparency,
                       OBJ_SELECTED(SETTINGS_CB_TRANSPARENCY));
     nsoption_set_bool(animate_images,
                       OBJ_SELECTED(SETTINGS_CB_ENABLE_ANIMATION));
