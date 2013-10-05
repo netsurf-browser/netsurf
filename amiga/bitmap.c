@@ -293,7 +293,9 @@ void bitmap_dump(struct bitmap *bitmap)
 	int x,y;
 	ULONG *bm = (ULONG *)bitmap->pixdata;
 
-	printf("Width=%ld, Height=%ld, Opaque=%s\nnativebm=%lx, width=%ld, height=%ld\n", bitmap->width, bitmap->height, bitmap->opaque ? "true" : "false", bitmap->nativebm, bitmap->nativebmwidth, bitmap->nativebmheight);
+	printf("Width=%ld, Height=%ld, Opaque=%s\nnativebm=%lx, width=%ld, height=%ld\n",
+		bitmap->width, bitmap->height, bitmap->opaque ? "true" : "false",
+		bitmap->nativebm, bitmap->nativebmwidth, bitmap->nativebmheight);
 	
 	for(y = 0; y < bitmap->height; y++) {
 		for(x = 0; x < bitmap->width; x++) {
@@ -437,11 +439,10 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
 #ifdef __amigaos4__
-			uint32 comptype = COMPOSITE_Src;
 			uint32 flags = 0;
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 			
-			CompositeTags(comptype,tbm,scaledbm,
+			CompositeTags(COMPOSITE_Src, tbm, scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
 						COMPTAG_Flags, flags,
@@ -463,8 +464,6 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 			bsa.bsa_SrcHeight = bitmap->height;
 			bsa.bsa_DestX = 0;
 			bsa.bsa_DestY = 0;
-//			bsa.bsa_DestWidth = width;
-//			bsa.bsa_DestHeight = height;
 			bsa.bsa_XSrcFactor = bitmap->width;
 			bsa.bsa_XDestFactor = width;
 			bsa.bsa_YSrcFactor = bitmap->height;
