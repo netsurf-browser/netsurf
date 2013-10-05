@@ -57,7 +57,13 @@ hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
 void dbg_grect(const char * str, GRECT * r);
 void dbg_pxy(const char * str, short * pxy);
 void dbg_rect(const char * str, int * pxy);
+
 const char * file_select( const char * title, const char * name );
+
+/**
+ * Convert NKC (atari normalized key code) to netsurf
+ * Input key code and/or to ucs4 (depends on keycode).
+*/
 long nkc_to_input_key(short nkc, long * ucs4_out);
 
 #endif

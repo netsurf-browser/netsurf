@@ -330,6 +330,13 @@ void gem_set_cursor( MFORM_EX * cursor )
 	flags = cursor->flags;
 }
 
+/**
+ * Convert NKC (atari normalized key code) to netsurf
+ * Input key code and/or to ucs4 (depends on keycode).
+ * When the input key can not be found for the NKC,
+ * the function will return 0 and fill ucs4_out with
+ * the NKC converted to UC4 encoding.
+*/
 long nkc_to_input_key(short nkc, long * ucs4_out)
 {
 	unsigned char ascii = (nkc & 0xFF);
