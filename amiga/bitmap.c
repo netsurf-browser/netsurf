@@ -288,6 +288,21 @@ void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 }
 #endif
 
+void bitmap_dump(struct bitmap *bitmap)
+{
+	int x,y;
+	ULONG *bm = (ULONG *)bitmap->pixdata;
+
+	printf("Width=%ld, Height=%ld, Opaque=%s\nnativebm=%lx, width=%ld, height=%ld\n", bitmap->width, bitmap->height, bitmap->opaque ? "true" : "false", bitmap->nativebm, bitmap->nativebmwidth, bitmap->nativebmheight);
+	
+	for(y = 0; y < bitmap->height; y++) {
+		for(x = 0; x < bitmap->width; x++) {
+			printf("%lx ", bm[(y*bitmap->width) + x]);
+		}
+		printf("\n");
+	}
+}
+
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 {
 	Object *dto;
@@ -423,11 +438,9 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		{
 #ifdef __amigaos4__
 			uint32 comptype = COMPOSITE_Src;
-			uint32 flags = 0;
-
-			if(bitmap->opaque) flags |= COMPFLAG_IgnoreDestAlpha;
+			uint32 flags = 0; //COMPFLAG_IgnoreDestAlpha;
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
-
+			
 			CompositeTags(comptype,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
 						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),

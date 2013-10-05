@@ -344,7 +344,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         glob->rp->LinePtrn = PATT_LINE;
                         break;
 
-                case PLOT_OP_TYPE_DOT: /**< Doted plot */
+                case PLOT_OP_TYPE_DOT: /**< Dotted plot */
                         glob->rp->LinePtrn = PATT_DOT;
                         break;
 
@@ -694,12 +694,15 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 	{
 #ifdef __amigaos4__
-		uint32 comptype = COMPOSITE_Src;
-		if(!bitmap->opaque) 
-			comptype = COMPOSITE_Src_Over_Dest;
+		uint32 comptype = COMPOSITE_Src_Over_Dest;
+		uint32 compflags = COMPFLAG_IgnoreDestAlpha;
+		if(bitmap_get_opaque(bitmap)) {
+			compflags |= COMPFLAG_SrcAlphaOverride;
+			comptype = COMPOSITE_Src;
+		}
 
 		CompositeTags(comptype,tbm,glob->rp->BitMap,
-					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+					COMPTAG_Flags, compflags,
 					COMPTAG_DestX,glob->rect.MinX,
 					COMPTAG_DestY,glob->rect.MinY,
 					COMPTAG_DestWidth,glob->rect.MaxX - glob->rect.MinX + 1,
@@ -860,8 +863,11 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 			if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 			{
 #ifdef __amigaos4__
-				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm, rp->BitMap,
-					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
+				uint32 comptype = COMPOSITE_Src_Over_Dest;
+				uint32 compflags = COMPFLAG_IgnoreDestAlpha;
+				
+				CompositeTags(comptype, bfbm->bm, rp->BitMap,
+					COMPTAG_Flags, compflags,
 					COMPTAG_DestX,bfmsg->Bounds.MinX,
 					COMPTAG_DestY,bfmsg->Bounds.MinY,
 					COMPTAG_DestWidth,bfmsg->Bounds.MaxX - bfmsg->Bounds.MinX + 1,
