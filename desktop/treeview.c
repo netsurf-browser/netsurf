@@ -3828,6 +3828,8 @@ nserror treeview_init(int font_pt_size)
 	if (tree_g.initialised == true)
 		return NSERROR_OK;
 
+	LOG(("Initialising treeview module"));
+
 	if (font_pt_size <= 0)
 		font_pt_size = 11;
 
@@ -3846,8 +3848,9 @@ nserror treeview_init(int font_pt_size)
 	tree_g.icon_step = 23;
 	tree_g.move_offset = 18;
 
-
 	tree_g.initialised = true;
+
+	LOG(("Initialised treeview module"));
 
 	return NSERROR_OK;
 }
@@ -3857,6 +3860,8 @@ nserror treeview_init(int font_pt_size)
 nserror treeview_fini(void)
 {
 	int i;
+
+	LOG(("Finalising treeview module"));
 
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		hlcache_handle_release(treeview_res[i].c);
@@ -3872,6 +3877,8 @@ nserror treeview_fini(void)
 	bitmap_destroy(plot_style_even.furn[TREE_FURN_CONTRACT].sel);
 
 	tree_g.initialised = false;
+
+	LOG(("Finalised treeview module"));
 
 	return NSERROR_OK;
 }
