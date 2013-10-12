@@ -356,6 +356,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	if(dto = NewDTObject(filename,
 					DTA_GroupID, GID_PICTURE,
 					PDTA_DestMode, PMODE_V43,
+					PDTA_PromoteMask, TRUE,
 					TAG_DONE))
 	{
 		struct BitMapHeader *bmh;

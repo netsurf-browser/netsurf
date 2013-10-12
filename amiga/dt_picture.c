@@ -138,6 +138,7 @@ Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
 					DTA_SourceSize, size,
 					DTA_GroupID, GID_PICTURE,
 					PDTA_DestMode, PMODE_V43,
+					PDTA_PromoteMask, TRUE,
 					TAG_DONE);
 	}
 
