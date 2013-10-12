@@ -3268,7 +3268,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->tabs=1;
 		g->shared->next_tab=1;
 
-		g->shared->svbuffer = AllocVecTagList(2000, NULL);
+		g->shared->svbuffer = AllocVecTags(2000, AVT_ClearWithValue, 0, TAG_DONE);
 
 		g->shared->helphints[GID_BACK] =
 			translate_escape_chars(messages_get("HelpToolbarBack"));

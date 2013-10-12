@@ -41,7 +41,7 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
-	dtzo = (struct nsObject *)AllocVecTagList(sizeof(struct nsObject), NULL);
+	dtzo = (struct nsObject *)AllocVecTags(sizeof(struct nsObject), AVT_ClearWithValue, 0, TAG_DONE);
 
 	AddTail((struct List *)objlist,(struct Node *)dtzo);
 

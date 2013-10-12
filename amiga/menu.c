@@ -188,7 +188,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menutype = AllocVecTagList(AMI_MENU_AREXX_MAX + 1, NULL);
+	gwin->menutype = AllocVecTags(AMI_MENU_AREXX_MAX + 1, AVT_ClearWithValue, 0, TAG_DONE);
 
 	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
 	{
@@ -458,7 +458,8 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menu = AllocVecTagList(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), NULL); /* NB: Was not MEMF_PRIVATE */
+	gwin->menu = AllocVecTags(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1),
+					AVT_ClearWithValue, 0, TAG_DONE);
 	ami_init_menulabs(gwin);
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
 	ami_menu_arexx_scan(gwin);
