@@ -217,6 +217,10 @@ void ami_reset_pointer(struct gui_window_2 *gwin)
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(drag_save_data) return;
+	if(IntuitionBase->LibNode.lib_Version >= 53) {
+		SetWindowPointer(win, WA_PointerType, osmouseptr[shape], TAG_DONE);					
+		return;
+	}
 
 	if(nsoption_bool(os_mouse_pointers))
 	{
@@ -234,9 +238,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 			break;
 
 			default:
-				if((IntuitionBase->LibNode.lib_Version >= 53) && (osmouseptr[shape] != -1)) {
-					SetWindowPointer(win, WA_PointerType, osmouseptr[shape], TAG_DONE);					
-				} else if(mouseptrobj[shape]) {
+				if(mouseptrobj[shape]) {
 					SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
 				} else {
 					SetWindowPointer(win, TAG_DONE);
@@ -274,6 +276,8 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void ami_init_mouse_pointers(void)
 {
+	if(IntuitionBase->LibNode.lib_Version >= 53) return;
+
 	int i;
 	struct RastPort mouseptr;
 	struct DiskObject *dobj;
@@ -390,6 +394,8 @@ void ami_init_mouse_pointers(void)
 
 void ami_mouse_pointers_free(void)
 {
+	if(IntuitionBase->LibNode.lib_Version >= 53) return;
+
 	int i;
 
 	for(i=0;i<=AMI_LASTPOINTER;i++)

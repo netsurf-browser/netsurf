@@ -407,6 +407,7 @@ void ami_gui_opts_open(void)
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
+	BOOL ptr_disable = FALSE;
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
@@ -417,6 +418,12 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
+	if(IntuitionBase->LibNode.lib_Version >= 53) {
+		nsoption_set_bool(os_mouse_pointers, true);
+		nsoption_set_bool(truecolour_mouse_pointers, true);
+		ptr_disable = TRUE;
+	}
+	
 	if(nsoption_charp(pubscreen_name))
 	{
 		if(strcmp(nsoption_charp(pubscreen_name),"Workbench") == 0)
@@ -742,6 +749,7 @@ void ami_gui_opts_open(void)
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTRTRUE],
          	           					GA_Selected, nsoption_bool(truecolour_mouse_pointers),
+										GA_Disabled, ptr_disable,
             	    				CheckBoxEnd,
 #endif
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTROS] = CheckBoxObject,
@@ -749,6 +757,7 @@ void ami_gui_opts_open(void)
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
          	           					GA_Selected, nsoption_bool(os_mouse_pointers),
+										GA_Disabled, ptr_disable,
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
