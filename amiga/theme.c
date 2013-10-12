@@ -95,6 +95,31 @@ char *ptrs32[AMI_LASTPOINTER+1] = {
 	"ptr32_blank",
 	"ptr32_drag"};
 
+/* Mapping from NetSurf to AmigaOS mouse pointers */
+int osmouseptr[AMI_LASTPOINTER+1] = {
+	POINTERTYPE_NORMAL, 
+	POINTERTYPE_LINK,
+	POINTERTYPE_TEXT,
+	POINTERTYPE_CONTEXTMENU,
+	POINTERTYPE_NORTHRESIZE,
+	POINTERTYPE_SOUTHRESIZE,
+	POINTERTYPE_WESTRESIZE,
+	POINTERTYPE_EASTRESIZE,
+	POINTERTYPE_NORTHEASTRESIZE,
+	POINTERTYPE_SOUTHWESTRESIZE,
+	POINTERTYPE_NORTHWESTRESIZE,
+	POINTERTYPE_SOUTHEASTRESIZE,
+	POINTERTYPE_CROSS,
+	POINTERTYPE_HAND,
+	POINTERTYPE_BUSY,
+	POINTERTYPE_HELP,
+	POINTERTYPE_NODROP,
+	POINTERTYPE_NOTALLOWED,
+	POINTERTYPE_PROGRESS,
+	POINTERTYPE_NONE,
+	POINTERTYPE_DRAGANDDROP};
+
+
 void ami_theme_init(void)
 {
 	char themefile[1024];
@@ -209,12 +234,11 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 			break;
 
 			default:
-				if(mouseptrobj[shape])
-				{
+				if((IntuitionBase->LibNode.lib_Version >= 53) && (osmouseptr[shape] != -1)) {
+					SetWindowPointer(win, WA_PointerType, osmouseptr[shape], TAG_DONE);					
+				} else if(mouseptrobj[shape]) {
 					SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
-				}
-				else
-				{
+				} else {
 					SetWindowPointer(win, TAG_DONE);
 				}
 			break;
