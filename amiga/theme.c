@@ -217,53 +217,59 @@ void ami_reset_pointer(struct gui_window_2 *gwin)
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 {
 	if(drag_save_data) return;
+
 	if(IntuitionBase->LibNode.lib_Version >= 53) {
-		SetWindowPointer(win, WA_PointerType, osmouseptr[shape], TAG_DONE);					
-		return;
-	}
+		BOOL ptr_delay = FALSE;
+		if(shape == GUI_POINTER_WAIT) ptr_delay = TRUE;
 
-	if(nsoption_bool(os_mouse_pointers))
-	{
-		switch(shape)
+		SetWindowPointer(win,
+					WA_PointerType, osmouseptr[shape],
+					WA_PointerDelay, ptr_delay,
+					TAG_DONE);					
+	} else {
+		if(nsoption_bool(os_mouse_pointers))
 		{
-			case GUI_POINTER_DEFAULT:
-				SetWindowPointer(win, TAG_DONE);
-			break;
-
-			case GUI_POINTER_WAIT:
-				SetWindowPointer(win,
-					WA_BusyPointer, TRUE,
-					WA_PointerDelay, TRUE,
-					TAG_DONE);
-			break;
-
-			default:
-				if(mouseptrobj[shape]) {
-					SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
-				} else {
+			switch(shape)
+			{
+				case GUI_POINTER_DEFAULT:
 					SetWindowPointer(win, TAG_DONE);
-				}
-			break;
-		}
-	}
-	else
-	{
-		if(mouseptrobj[shape])
-		{
-			SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
+				break;
+
+				case GUI_POINTER_WAIT:
+					SetWindowPointer(win,
+						WA_BusyPointer, TRUE,
+						WA_PointerDelay, TRUE,
+						TAG_DONE);
+				break;
+
+				default:
+					if(mouseptrobj[shape]) {
+						SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
+					} else {
+						SetWindowPointer(win, TAG_DONE);
+					}
+				break;
+			}
 		}
 		else
 		{
-			if(shape ==	GUI_POINTER_WAIT)
+			if(mouseptrobj[shape])
 			{
-				SetWindowPointer(win,
-					WA_BusyPointer, TRUE,
-					WA_PointerDelay, TRUE,
-					TAG_DONE);
+				SetWindowPointer(win, WA_Pointer, mouseptrobj[shape], TAG_DONE);
 			}
 			else
 			{
-				SetWindowPointer(win, TAG_DONE);
+				if(shape ==	GUI_POINTER_WAIT)
+				{
+					SetWindowPointer(win,
+						WA_BusyPointer, TRUE,
+						WA_PointerDelay, TRUE,
+						TAG_DONE);
+				}
+				else
+				{
+					SetWindowPointer(win, TAG_DONE);
+				}
 			}
 		}
 	}
