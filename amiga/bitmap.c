@@ -443,8 +443,8 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 			
 			CompositeTags(COMPOSITE_Src, tbm, scaledbm,
-						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
-						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(height/bitmap->height),
+						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX((float)width/bitmap->width),
+						COMPTAG_ScaleY,COMP_FLOAT_TO_FIX((float)height/bitmap->height),
 						COMPTAG_Flags, flags,
 						COMPTAG_DestX,0,
 						COMPTAG_DestY,0,
