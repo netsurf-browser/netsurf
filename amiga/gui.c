@@ -383,9 +383,8 @@ void ami_open_resources(void)
 		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
 	}
 
-	if(ApplicationBase = OpenLibrary("application.library",50))
-	{
-		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase,"application",1,NULL);
+	if(ApplicationBase = OpenLibrary("application.library", 53)) {
+		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase, "application", 2, NULL);
 	}
 
 	urlStringClass = MakeStringClass();
@@ -938,9 +937,6 @@ static void gui_init2(int argc, char** argv)
 
 	if(IApplication)
 	{
-		ULONG desc = REGAPP_Description;
-		if(ApplicationBase->lib_Version < 53) desc = TAG_IGNORE;
-
 		if(argc == 0)
 		{
 			ULONG noicon = TAG_IGNORE;
@@ -955,7 +951,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, messages_get("NetSurfDesc"),
+				REGAPP_Description, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 		else
@@ -968,7 +964,7 @@ static void gui_init2(int argc, char** argv)
 				REGAPP_HasPrefsWindow, TRUE,
 				REGAPP_CanCreateNewDocs, TRUE,
 				REGAPP_UniqueApplication, TRUE,
-				desc, messages_get("NetSurfDesc"),
+				REGAPP_Description, messages_get("NetSurfDesc"),
 				TAG_DONE);
 		}
 
