@@ -418,11 +418,7 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
-	if(IntuitionBase->LibNode.lib_Version >= 53) {
-		nsoption_set_bool(os_mouse_pointers, true);
-		nsoption_set_bool(truecolour_mouse_pointers, true);
-		ptr_disable = TRUE;
-	}
+	if(IntuitionBase->LibNode.lib_Version >= 53) ptr_disable = TRUE;
 	
 	if(nsoption_charp(pubscreen_name))
 	{
