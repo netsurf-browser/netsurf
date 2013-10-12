@@ -212,19 +212,18 @@ void ami_print_ui(struct hlcache_handle *c)
 	char filename[30];
 	int i;
 
-	struct ami_print_window *pw = AllocVec(sizeof(struct ami_print_window),
-		MEMF_PRIVATE | MEMF_CLEAR);
+	struct ami_print_window *pw = AllocVecTags(sizeof(struct ami_print_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	pw->c = c;
 
-	printers[0] = AllocVec(50, MEMF_PRIVATE | MEMF_CLEAR);
+	printers[0] = AllocVecTags(50, AVT_ClearWithValue, 0, TAG_DONE);
 	ami_print_readunit("ENV:Sys/printer.prefs", printers[0], 50, 0);
 
 	strcpy(filename,"ENV:Sys/printerN.prefs");
 	for (i = 1; i < 10; i++)
 	{
 		filename[15] = '0' + i;
-		printers[i] = AllocVec(50, MEMF_PRIVATE | MEMF_CLEAR);
+		printers[i] = AllocVecTagList(50, NULL);
 		if(!ami_print_readunit(filename, printers[i], 50, i))
 		{
 			FreeVec(printers[i]);
@@ -461,8 +460,7 @@ struct MsgPort *ami_print_get_msgport(void)
 
 bool ami_print_begin(struct print_settings *ps)
 {
-	ami_print_info.gg = AllocVec(sizeof(struct gui_globals),
-						MEMF_PRIVATE | MEMF_CLEAR);
+	ami_print_info.gg = AllocVecTags(sizeof(struct gui_globals), AVT_ClearWithValue, 0, TAG_DONE);
 	if(!ami_print_info.gg) return false;
 
 	ami_init_layers(ami_print_info.gg,

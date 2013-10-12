@@ -130,8 +130,7 @@ struct treeview_window *ami_tree_create(int flags,
 {
 	struct treeview_window *twin;
 
-	twin = AllocVec(sizeof(struct treeview_window),
-					MEMF_PRIVATE | MEMF_CLEAR);
+	twin = AllocVecTags(sizeof(struct treeview_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	if(!twin)
 	{
@@ -378,7 +377,7 @@ void ami_tree_menu(struct treeview_window *twin)
 {
 	if(twin->menu) return;
 
-	if(twin->menu = AllocVec(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS, MEMF_CLEAR))
+	if(twin->menu = AllocVecTagList(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS, NULL)) /* NB: Was not MEMF_PRIVATE */
 	{
 		twin->menu[0].nm_Type = NM_TITLE;
 		twin->menu_name[0] = ami_utf8_easy((char *)messages_get("Tree"));
@@ -1301,7 +1300,7 @@ static void ami_tree_redraw_req(void *p)
 
 void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 {
-	struct ami_tree_redraw_req *atrr_data = AllocVec(sizeof(struct ami_tree_redraw_req), MEMF_CLEAR | MEMF_PRIVATE);
+	struct ami_tree_redraw_req *atrr_data = AllocVecTagList(sizeof(struct ami_tree_redraw_req), NULL);
 	
 	atrr_data->x = x;
 	atrr_data->y = y;

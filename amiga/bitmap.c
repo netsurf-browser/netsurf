@@ -49,7 +49,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	
-	bitmap = AllocVec(sizeof(struct bitmap),MEMF_PRIVATE | MEMF_CLEAR);
+	bitmap = AllocVecTags(sizeof(struct bitmap), AVT_ClearWithValue, 0, TAG_DONE);
 	if(bitmap)
 	{
 		bitmap->pixdata = AllocVecTags(width*height*4,

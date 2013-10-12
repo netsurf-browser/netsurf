@@ -353,10 +353,10 @@ void ami_init_mouse_pointers(void)
 			if(ptrfile = Open(ptrfname,MODE_OLDFILE))
 			{
 				int mx,my;
-				UBYTE *pprefsbuf = AllocVec(1061,MEMF_PRIVATE | MEMF_CLEAR);
+				UBYTE *pprefsbuf = AllocVecTagList(1061, NULL);
 				Read(ptrfile,pprefsbuf,1061);
 
-				mouseptrbm[i]=AllocVec(sizeof(struct BitMap),MEMF_PRIVATE | MEMF_CLEAR);
+				mouseptrbm[i]=AllocVecTagList(sizeof(struct BitMap), NULL);
 				InitBitMap(mouseptrbm[i],2,32,32);
 				mouseptrbm[i]->Planes[0] = AllocRaster(32,32);
 				mouseptrbm[i]->Planes[1] = AllocRaster(32,32);

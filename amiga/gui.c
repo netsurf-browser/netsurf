@@ -1323,7 +1323,7 @@ struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *r
 {
 	struct IBox *bbox, *ibox;
 
-	ibox = AllocVec(sizeof(struct IBox), MEMF_CLEAR | MEMF_PRIVATE);
+	ibox = AllocVecTagList(sizeof(struct IBox), NULL);
 	if(ibox == NULL) return NULL;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
@@ -2312,7 +2312,7 @@ void ami_handle_appmsg(void)
 			{
 				if(appwinargs = &appmsg->am_ArgList[i])
 				{
-					if(filename = AllocVec(1024, MEMF_PRIVATE | MEMF_CLEAR))
+					if(filename = AllocVecTagList(1024, NULL))
 					{
 						if(appwinargs->wa_Lock)
 						{
@@ -3146,7 +3146,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		}
 	}
 
-	g = AllocVec(sizeof(struct gui_window),MEMF_PRIVATE | MEMF_CLEAR);
+	g = AllocVecTags(sizeof(struct gui_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	if(!g)
 	{
@@ -3215,7 +3215,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return g;
 	}
 
-	g->shared = AllocVec(sizeof(struct gui_window_2),MEMF_PRIVATE | MEMF_CLEAR);
+	g->shared = AllocVecTags(sizeof(struct gui_window_2), AVT_ClearWithValue, 0, TAG_DONE);
 
 	if(!g->shared)
 	{
@@ -3268,7 +3268,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->tabs=1;
 		g->shared->next_tab=1;
 
-		g->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
+		g->shared->svbuffer = AllocVecTagList(2000, NULL);
 
 		g->shared->helphints[GID_BACK] =
 			translate_escape_chars(messages_get("HelpToolbarBack"));
@@ -4204,7 +4204,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	if(!g) return;
 	
 	if(ami_gui_window_update_box_deferred_check(g->deferred_rects, rect)) {
-		deferred_rect = AllocVec(sizeof(struct rect), MEMF_PRIVATE);
+		deferred_rect = AllocVecTagList(sizeof(struct rect), NULL);
 		CopyMem(rect, deferred_rect, sizeof(struct rect));
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;

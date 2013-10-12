@@ -218,7 +218,7 @@ nserror ami_mime_init(const char *mimefile)
 			if(ReadArgs(template, rarray, rargs))
 			{
 				node = AddObject(ami_mime_list, AMINS_MIME);
-				mimeentry = AllocVec(sizeof(struct ami_mime_entry), MEMF_PRIVATE | MEMF_CLEAR);
+				mimeentry = AllocVecTags(sizeof(struct ami_mime_entry), AVT_ClearWithValue, 0, TAG_DONE);
 				node->objstruct = mimeentry;
 
 				if(rarray[AMI_MIME_MIMETYPE])
@@ -366,7 +366,7 @@ APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
 	char *p;
 
 	node = AddObject(ami_mime_list, AMINS_MIME);
-	mimeentry = AllocVec(sizeof(struct ami_mime_entry), MEMF_PRIVATE | MEMF_CLEAR);
+	mimeentry = AllocVecTags(sizeof(struct ami_mime_entry), AVT_ClearWithValue, 0, TAG_DONE);
 	node->objstruct = mimeentry;
 
 	lerror = lwc_intern_string(dth->dth_Name, strlen(dth->dth_Name), &mimeentry->datatype);

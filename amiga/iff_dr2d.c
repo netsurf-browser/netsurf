@@ -165,7 +165,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 		}
 
 	for (i = 0; i != diagram->shape_count; i++) {
-		attr = AllocVec(sizeof(struct attr_struct),MEMF_CLEAR | MEMF_PRIVATE);
+		attr = AllocVecTagList(sizeof(struct attr_struct), NULL);
 		if (diagram->shape[i].fill == svgtiny_TRANSPARENT)
 			attr->FillType = FT_NONE;
 		else
@@ -266,13 +266,13 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					PopChunk(iffh);
 				}
 			} else if (diagram->shape[i].text) {
-				stxt  = AllocVec(sizeof(struct stxt_struct),MEMF_CLEAR);
+				stxt = AllocVecTagList(sizeof(struct stxt_struct), NULL);
 				stxt->BaseX = diagram->shape[i].text_x;
 				stxt->BaseY = diagram->shape[i].text_y;
 				stxt->NumChars = strlen(diagram->shape[i].text);
 				if(!fons_written)
 				{
-					fons = AllocVec(sizeof(struct fons_struct),MEMF_CLEAR);
+					fons = AllocVecTagList(sizeof(struct fons_struct), NULL);
 					if(!(PushChunk(iffh,0,ID_FONS,IFFSIZE_UNKNOWN)))
 					{
 						WriteChunkBytes(iffh,fons,sizeof(struct fons_struct));
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 	{
 		size = GetFileSize(fh);	
 
-		buffer = AllocVec((uint32)size,MEMF_PRIVATE);
+		buffer = AllocVecTagList((uint32)size, NULL);
 
 		Read(fh,buffer,(uint32)size);
 		Close(fh);

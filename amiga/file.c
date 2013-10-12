@@ -91,7 +91,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 			ASLFR_FilterFunc, &aslhookfunc,
 			TAG_DONE))
 	{
-		if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+		if(temp = AllocVecTagList(1024, NULL))
 		{
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
@@ -228,7 +228,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		struct hlcache_handle *object)
 {
-	char *fname = AllocVec(1024, MEMF_CLEAR | MEMF_PRIVATE);
+	char *fname = AllocVecTags(1024, NULL);
 
 	if(AslRequestTags(savereq,
 			ASLFR_Window, gwin->win,

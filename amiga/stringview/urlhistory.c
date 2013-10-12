@@ -73,17 +73,24 @@ static bool URLHistoryFound(nsurl *url, const struct url_data *data)
 {
 	struct Node *node;
 
-	/* skip non-visted pages */
+	/* skip non-visited pages */
 	if(data->visits <= 0) return true;
 
 	/* skip this URL if it is already in the list */
 	if(URLHistory_FindPage(nsurl_access(url))) return true;
 
-	node = AllocVec( sizeof( struct Node ), MEMF_SHARED|MEMF_CLEAR );
+	node = AllocVecTags(sizeof(struct Node),
+				AVT_Type, MEMF_SHARED,
+				//AVT_ClearWithValue, 0,
+				TAG_DONE);
 
 	if ( node )
 	{
-		STRPTR urladd = (STRPTR) AllocVec( strlen ( nsurl_access(url) ) + 1, MEMF_SHARED|MEMF_CLEAR );
+		STRPTR urladd = (STRPTR) AllocVecTags( strlen ( nsurl_access(url) ) + 1,
+				AVT_Type, MEMF_SHARED,
+				//AVT_ClearWithValue, 0,
+				TAG_DONE);
+
 		if ( urladd )
 		{
 			strcpy(urladd, nsurl_access(url));

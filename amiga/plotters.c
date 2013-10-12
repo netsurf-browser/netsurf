@@ -158,8 +158,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
 	gg->layerinfo = NewLayerInfo();
-	gg->areabuf = AllocVec(AREA_SIZE, MEMF_PRIVATE | MEMF_CLEAR);
-	gg->tmprasbuf = AllocVec(width * height, MEMF_PRIVATE | MEMF_CLEAR);
+	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
+	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
 
 	if(palette_mapped == true) { 
 		gg->bm = AllocBitMap(width, height, depth,
@@ -171,7 +171,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	
 	if(!gg->bm) warn_user("NoMemory","");
 
-	gg->rp = AllocVec(sizeof(struct RastPort), MEMF_PRIVATE | MEMF_CLEAR);
+	gg->rp = AllocVecTagList(sizeof(struct RastPort), NULL);
 	if(!gg->rp) warn_user("NoMemory","");
 
 	InitRastPort(gg->rp);
@@ -185,12 +185,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 	InstallLayerHook(gg->rp->Layer,LAYERS_NOBACKFILL);
 
-	gg->rp->AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+	gg->rp->AreaInfo = AllocVecTagList(sizeof(struct AreaInfo), NULL);
 
 	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
 
 	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
-	gg->rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+	gg->rp->TmpRas = AllocVecTagList(sizeof(struct TmpRas), NULL);
 
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
 
@@ -251,8 +251,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
 	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
 
 	if(shared_pens != NULL) {
-		if(node = (struct ami_plot_pen *)AllocVec(sizeof(struct ami_plot_pen),
-					MEMF_PRIVATE | MEMF_CLEAR)) {
+		if(node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL)) {
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
 	} else {
@@ -829,7 +828,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
 		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
-		bfh = AllocVec(sizeof(struct Hook),MEMF_CLEAR);
+		bfh = AllocVecTags(sizeof(struct Hook), AVT_ClearWithValue, 0, TAG_DONE); /* NB: Was not MEMF_PRIVATE */
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
 		bfh->h_Data = &bfbm;

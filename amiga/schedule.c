@@ -58,7 +58,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	if(schedule_list == NULL) return;
 
-	nscb = AllocVec(sizeof(struct nscallback), MEMF_PRIVATE | MEMF_CLEAR);
+	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
 	if(!nscb) return;
 
 	time_us = t*10000; /* t converted to µs */
@@ -69,7 +69,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
 
-	if(nscb->treq = AllocVec(sizeof(struct TimeRequest),MEMF_PRIVATE | MEMF_CLEAR))
+	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
 	{
 		*nscb->treq = *tioreq;
     	nscb->treq->Request.io_Command=TR_ADDREQUEST;

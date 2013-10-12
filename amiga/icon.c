@@ -326,7 +326,7 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 
 	if (alpha==0) alpha=0xff;
 
-	argbicon = (ULONG *)AllocVec(width*height*4,MEMF_CLEAR);
+	argbicon = (ULONG *)AllocVecTagList(width*height*4, NULL);
 	if (!argbicon) return(NULL);
 
 	cmap=GetColorMap(pals1);
@@ -504,8 +504,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 	{
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
 									THUMBNAIL_HEIGHT, NULL);
-		bm->icondata = AllocVec(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT,
-									MEMF_CLEAR);
+		bm->icondata = AllocVecTagList(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT, NULL);
 
 		BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
 					BLITA_Height, THUMBNAIL_HEIGHT,

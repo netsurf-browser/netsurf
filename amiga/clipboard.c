@@ -135,10 +135,10 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 			
 			case 0:
 				if(ci_new) {
-					ci_next->ci_Next = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next->ci_Next = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
 					ci_next = ci_next->ci_Next;
 				} else {
-					ci_new = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_new = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
 					ci_next = ci_new;
 				}
 				
@@ -149,10 +149,10 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 
 			default:
 				if(ci_new) {
-					ci_next->ci_Next = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_next->ci_Next = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
 					ci_next = ci_next->ci_Next;
 				} else {
-					ci_new = AllocVec(sizeof(struct CollectionItem), MEMF_PRIVATE | MEMF_CLEAR);
+					ci_new = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
 					ci_next = ci_new;
 				}
 				

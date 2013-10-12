@@ -94,7 +94,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	struct gui_download_window *dw;
 	APTR va[3];
 
-	dw = AllocVec(sizeof(struct gui_download_window),MEMF_PRIVATE | MEMF_CLEAR);
+	dw = AllocVecTags(sizeof(struct gui_download_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	if(gui && (!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{

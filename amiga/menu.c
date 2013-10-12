@@ -188,7 +188,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menutype = AllocVec(AMI_MENU_AREXX_MAX + 1, MEMF_PRIVATE | MEMF_CLEAR);
+	gwin->menutype = AllocVecTagList(AMI_MENU_AREXX_MAX + 1, NULL);
 
 	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
 	{
@@ -458,7 +458,7 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
+	gwin->menu = AllocVecTagList(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), NULL); /* NB: Was not MEMF_PRIVATE */
 	ami_init_menulabs(gwin);
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
 	ami_menu_arexx_scan(gwin);
@@ -499,7 +499,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 
 	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
 	{
-		if(buffer = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+		if(buffer = AllocVecTagList(1024, NULL))
 		{
 			if(ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))
 			{
@@ -1093,7 +1093,7 @@ static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct I
 						ASLFR_InitialPattern, "#?.nsrx",
 						TAG_DONE))
 	{
-		if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+		if(temp = AllocVecTagList(1024, NULL))
 		{
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
@@ -1112,7 +1112,7 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 
 	if(script)
 	{
-		if(temp = AllocVec(1024, MEMF_PRIVATE | MEMF_CLEAR))
+		if(temp = AllocVecTagList(1024, NULL))
 		{
 			strcpy(temp, nsoption_charp(arexx_dir));
 			AddPart(temp, script, 1024);

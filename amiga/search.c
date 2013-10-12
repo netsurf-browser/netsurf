@@ -100,7 +100,7 @@ void ami_search_open(struct gui_window *gwin)
 		return;
 	}
 
-	fwin = AllocVec(sizeof(struct find_window),MEMF_PRIVATE | MEMF_CLEAR);
+	fwin = AllocVecTags(sizeof(struct find_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	fwin->objects[OID_MAIN] = WindowObject,
       	WA_ScreenTitle,nsscreentitle,

@@ -383,7 +383,7 @@ struct ami_font_node *ami_font_open(const char *font)
 
 	LOG(("Font cache miss: %s", font));
 
-	nodedata = AllocVec(sizeof(struct ami_font_node), MEMF_PRIVATE | MEMF_CLEAR);
+	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
 	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
 
 	if(!nodedata->font)

@@ -59,7 +59,8 @@ void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	const char *auth;
-	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_PRIVATE | MEMF_CLEAR);
+	struct gui_login_window *lw = AllocVecTags(sizeof(struct gui_login_window),
+									AVT_ClearWithValue, 0, TAG_DONE);
 	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
 
 	assert(host != NULL);

@@ -520,7 +520,7 @@ void ami_gui_opts_open(void)
 	{
 		ami_gui_opts_setup();
 
-		gow = AllocVec(sizeof(struct ami_gui_opts_window),MEMF_CLEAR | MEMF_PRIVATE);
+		gow = AllocVecTags(sizeof(struct ami_gui_opts_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 		gow->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle,nsscreentitle,
@@ -2116,7 +2116,7 @@ STRPTR *ami_gui_opts_websearch(void)
 	ULONG ref = 0;
 	STRPTR *websearchlist;
 
-	websearchlist = AllocVec(200, MEMF_CLEAR);
+	websearchlist = AllocVecTagList(200, NULL); /* NB: Was not MEMF_PRIVATE */
 
 	if (nsoption_charp(search_engines_file) == NULL) return websearchlist;
 

@@ -91,7 +91,7 @@ const char *ami_font_scan_lookup(uint16 *code, lwc_string **glypharray)
 struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 {
 	struct ami_font_scan_window *fsw =
-		AllocVec(sizeof(struct ami_font_scan_window), MEMF_PRIVATE);
+		AllocVecTagList(sizeof(struct ami_font_scan_window), NULL);
 
 	if(fsw == NULL) return NULL;
 
@@ -301,7 +301,7 @@ ULONG ami_font_scan_list(struct MinList *list)
 	struct nsObject *node;
 
 	do {
-		if(afh = (struct AvailFontsHeader *)AllocVec(afSize, MEMF_PRIVATE)) {
+		if(afh = (struct AvailFontsHeader *)AllocVecTagList(afSize, NULL)) {
 			if(afShortage = AvailFonts(afh, afSize, AFF_DISK | AFF_OTAG | AFF_SCALED)) {
 				FreeVec(afh);
 				afSize += afShortage;
