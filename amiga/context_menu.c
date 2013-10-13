@@ -767,12 +767,11 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_URLHOTLIST:
 			case CMID_PAGEHOTLIST:
 			{
-				nsurl *nsurl;
-				if (nsurl_create(url, &nsurl) != NSERROR_OK)
+				if (nsurl_create(userdata, &url) != NSERROR_OK)
 					break;
 
-				hotlist_add_url(nsurl);
-				nsurl_unref(nsurl);
+				hotlist_add_url(url);
+				nsurl_unref(url);
 			}
 			break;
 
