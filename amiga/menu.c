@@ -393,8 +393,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 			} while((gwin->menutype[j] != NM_TITLE) && (gwin->menutype[j] != 0));
 		}
 
-		if((GadToolsBase->lib_Version > 53) ||
-		((GadToolsBase->lib_Version == 53) && (GadToolsBase->lib_Revision >= 6))) {
+		if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 6)) {
 			/* GadTools 53.6+ only. For now we will only create the menu
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {

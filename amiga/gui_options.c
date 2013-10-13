@@ -418,7 +418,7 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
-	if(IntuitionBase->LibNode.lib_Version >= 53) ptr_disable = TRUE;
+	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) ptr_disable = TRUE;
 	
 	if(nsoption_charp(pubscreen_name))
 	{
