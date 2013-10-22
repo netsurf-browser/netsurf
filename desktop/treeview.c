@@ -2708,6 +2708,7 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 	assert(tree->root->children != NULL);
+	assert(target != NULL);
 
 	if (target->flags & TREE_NODE_SELECTED) {
 		/* Find top selected ancestor */
