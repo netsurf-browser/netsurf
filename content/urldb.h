@@ -75,10 +75,7 @@ void urldb_set_url_persistence(nsurl *url, bool persist);
 
 /* URL insertion */
 bool urldb_add_url(nsurl *url);
-struct host_part *urldb_add_host(const char *host);
-struct path_data *urldb_add_path(lwc_string *scheme, unsigned int port,
-		const struct host_part *host, char *path_query,
-		lwc_string *fragment, nsurl *url);
+
 
 /* URL data modification / lookup */
 void urldb_set_url_title(nsurl *url, const char *title);
@@ -120,5 +117,12 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only);
 void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);
+
+
+/* test harness only */
+struct host_part *urldb_add_host(const char *host);
+struct path_data *urldb_add_path(lwc_string *scheme, unsigned int port,
+		const struct host_part *host, char *path_query,
+		lwc_string *fragment, nsurl *url);
 
 #endif
