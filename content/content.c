@@ -222,7 +222,8 @@ static void content_update_status(struct content *c)
 		/* Not done yet */
 		snprintf(c->status_message, sizeof (c->status_message),
 				"%s%s%s", messages_get("Fetching"),
-				c->sub_status ? ", " : " ", c->sub_status);
+				c->sub_status[0] != '\0' ? ", " : " ",
+				c->sub_status);
 	} else {
 		unsigned int time = c->time;
 		snprintf(c->status_message, sizeof (c->status_message),
