@@ -82,18 +82,25 @@ static nserror hotlist_create_treeview_field_visits_data(
 	int len;
 
 	/* Last visited */
-	last_visited = ctime(&data->last_visit);
-	last_visited2 = strdup(last_visited);
+	if (data->visits != 0) {
+		last_visited = ctime(&data->last_visit);
+		last_visited2 = strdup(last_visited);
+		len = 24;
+	} else {
+		last_visited2 = strdup("-");
+		len = 1;
+	}
 	if (last_visited2 == NULL) {
 		return NSERROR_NOMEM;
-	} else {
+
+	} else if (len == 24) {
 		assert(last_visited2[24] == '\n');
 		last_visited2[24] = '\0';
 	}
 
 	e->data[HL_LAST_VISIT].field = hl_ctx.fields[HL_LAST_VISIT].field;
 	e->data[HL_LAST_VISIT].value = last_visited2;
-	e->data[HL_LAST_VISIT].value_len = 24;
+	e->data[HL_LAST_VISIT].value_len = len;
 
 	/* Visits */
 	len = snprintf(buffer, 16, "%u", data->visits);
