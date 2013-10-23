@@ -31,7 +31,12 @@
 
 bool fb_font_init(void)
 {
-        return true;
+	return true;
+}
+
+bool fb_font_finalise(void)
+{
+	return true;
 }
 
 const struct fb_font_desc*
