@@ -863,6 +863,7 @@ html_process_encoding_change(struct content *c,
 
 	if (html->encoding != NULL) {
 		free(html->encoding);
+		html->encoding = NULL;
 	}
 
 	html->encoding = strdup(encoding);
@@ -1365,6 +1366,12 @@ static void html_destroy(struct content *c)
 	if (html->title != NULL) {
 		dom_node_unref(html->title);
 		html->title = NULL;
+	}
+
+	/* Free encoding */
+	if (html->encoding != NULL) {
+		free(html->encoding);
+		html->encoding = NULL;
 	}
 
 	/* Free base target */
