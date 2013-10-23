@@ -611,6 +611,7 @@ bool form_successful_controls(struct form *form,
 		success_new = malloc(sizeof(*success_new));
 		if (!success_new) {
 			LOG(("malloc failed"));
+			free(value);
 			goto no_memory;
 		}
 		success_new->file = false;
@@ -626,11 +627,14 @@ bool form_successful_controls(struct form *form,
 		}
 	}
 
+	free(charset);
+
 	*successful_controls = sentinel.next;
 	return true;
 
 no_memory:
 	warn_user("NoMemory", 0);
+	free(charset);
 	fetch_multipart_data_destroy(sentinel.next);
 	return false;
 
