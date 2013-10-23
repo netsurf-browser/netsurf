@@ -93,7 +93,7 @@ static nserror hotlist_create_treeview_field_visits_data(
 
 	e->data[HL_LAST_VISIT].field = hl_ctx.fields[HL_LAST_VISIT].field;
 	e->data[HL_LAST_VISIT].value = last_visited2;
-	e->data[HL_LAST_VISIT].value_len = (last_visited2 != NULL) ? 24 : 0;
+	e->data[HL_LAST_VISIT].value_len = 24;
 
 	/* Visits */
 	len = snprintf(buffer, 16, "%u", data->visits);
