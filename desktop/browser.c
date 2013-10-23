@@ -1226,12 +1226,13 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 		browser_window_remove_caret(bw, false);
 
-		if (bw->window)
+		if (bw->window != NULL) {
 			gui_window_new_content(bw->window);
 
-		browser_window_refresh_url_bar(bw,
+			browser_window_refresh_url_bar(bw,
 				hlcache_handle_get_url(bw->current_content),
 				bw->frag_id);
+		}
 
 		/* new content; set scroll_to_top */
 		browser_window_update(bw, true);
