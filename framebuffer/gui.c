@@ -410,6 +410,22 @@ fb_browser_window_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	return 0;
 }
 
+static int fb_browser_window_destroy(fbtk_widget_t *widget,
+		fbtk_callback_info *cbi)
+{
+	struct browser_widget_s *browser_widget;
+
+	if (widget == NULL) {
+		return 0;
+	}
+
+	/* Free private data */
+	browser_widget = fbtk_get_userpw(widget);
+	free(browser_widget);
+
+	return 0;
+}
+
 
 static const char *fename;
 static int febpp;
@@ -1473,6 +1489,7 @@ create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_w
 				       browser_widget);
 
 	fbtk_set_handler(gw->browser, FBTK_CBT_REDRAW, fb_browser_window_redraw, gw);
+	fbtk_set_handler(gw->browser, FBTK_CBT_DESTROY, fb_browser_window_destroy, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_INPUT, fb_browser_window_input, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_CLICK, fb_browser_window_click, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_STRIP_FOCUS, fb_browser_window_strip_focus, gw);
@@ -1612,8 +1629,6 @@ gui_window_destroy(struct gui_window *gw)
 	fbtk_destroy_widget(gw->window);
 
 	free(gw);
-
-
 }
 
 void
