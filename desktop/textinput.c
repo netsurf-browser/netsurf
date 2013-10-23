@@ -103,13 +103,14 @@ void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 	struct browser_window *root_bw;
 
 	root_bw = browser_window_get_root(bw);
+	assert(root_bw != NULL);
 
 	if (only_hide)
 		root_bw->can_edit = true;
 	else
 		root_bw->can_edit = false;
 
-	if (root_bw && root_bw->window)
+	if (root_bw->window)
 		gui_window_remove_caret(root_bw->window);
 }
 
