@@ -195,8 +195,9 @@ void fetch_curl_register(void)
 	    SETOPT(CURLOPT_VERBOSE, 0);
 	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
-	if (nsoption_bool(suppress_curl_debug))
+	if (nsoption_bool(suppress_curl_debug)) {
 		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
+	}
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
