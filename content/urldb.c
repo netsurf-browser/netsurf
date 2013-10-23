@@ -796,7 +796,7 @@ bool urldb_add_url(nsurl *url)
 	lwc_string *host;
 	lwc_string *fragment;
 	const char *host_str;
-	char *path_query;
+	char *path_query = NULL;
 	size_t len;
 	bool match;
 	unsigned int port_int;
@@ -816,10 +816,13 @@ bool urldb_add_url(nsurl *url)
 			NSERROR_OK) {
 		return false;
 	}
+	assert(path_query != NULL);
 
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	if (scheme == NULL)
+	if (scheme == NULL) {
+		free(path_query);
 		return false;
+	}
 
 	host = nsurl_get_component(url, NSURL_HOST);
 	if (host != NULL) {
@@ -832,6 +835,7 @@ bool urldb_add_url(nsurl *url)
 
 	} else {
 		lwc_string_unref(scheme);
+		free(path_query);
 		return false;
 	}
 
