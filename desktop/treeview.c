@@ -1101,6 +1101,9 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 		.user_interaction = interaction
 	};
 
+	assert(tree != NULL);
+	assert(tree->root != NULL);
+
 	node = tree->root;
 	parent = node->parent;
 	next_sibling = node->next_sib;
