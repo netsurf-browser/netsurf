@@ -321,6 +321,8 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 	bool skip_children = false;
 	nserror err;
 
+	assert(root != NULL);
+
 	node = root;
 	parent = node->parent;
 	next_sibling = node->next_sib;
