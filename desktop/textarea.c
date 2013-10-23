@@ -1661,7 +1661,9 @@ static bool textarea_undo(struct textarea *ta, bool forward,
 			false, &byte_delta, r);
 
 	/* Update undo buffer for redo */
-	memcpy(ta->undo.text.data + detail->b_start, temp, b_text_len);
+	if (temp != NULL)
+		memcpy(ta->undo.text.data + detail->b_start, temp, b_text_len);
+
 	detail->b_text_end = detail->b_text_start + b_len;
 	detail->b_end = detail->b_start + b_text_len;
 
