@@ -291,13 +291,16 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 			 */
 			bool match1;
 			bool match2;
-			if (lwc_string_isequal(scheme, ref_scheme, &match) != lwc_error_ok) {
+			if (lwc_string_isequal(scheme, ref_scheme,
+					&match) != lwc_error_ok) {
 				match = false;
 			}
-			if (lwc_string_isequal(scheme, fetch_https_lwc, &match1) != lwc_error_ok) {
+			if (lwc_string_isequal(scheme, fetch_https_lwc,
+					&match1) != lwc_error_ok) {
 				match1 = false;
 			}
-			if (lwc_string_isequal(ref_scheme, fetch_http_lwc, &match2) != lwc_error_ok) {
+			if (lwc_string_isequal(ref_scheme, fetch_http_lwc,
+					&match2) != lwc_error_ok) {
 				match2= false;
 			}
 			if (match == true || (match1 == true && match2 == true))
