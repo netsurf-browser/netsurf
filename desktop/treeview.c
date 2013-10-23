@@ -2790,11 +2790,7 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	node_y += (tree_g.line_height -
 			treeview_res[TREE_RES_ARROW].height + 1) / 2;
 
-	if (target != NULL) {
-		x = target->inset + tree_g.move_offset;
-	} else {
-		x = tree->root->children->inset;
-	}
+	x = target->inset + tree_g.move_offset;
 
 	/* Update target details */
 	tree->move.target = target;
