@@ -430,7 +430,7 @@ png_cache_convert(struct content *c)
 {
 	png_structp png_ptr;
 	png_infop info_ptr;
-	png_infop end_info;
+	png_infop end_info_ptr;
 	volatile struct bitmap *bitmap = NULL;
 	struct png_cache_read_data_s png_cache_read_data;
 	png_uint_32 width, height;
@@ -444,22 +444,20 @@ png_cache_convert(struct content *c)
 		return NULL;
 	}
 
-	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 
-					 NULL, 
-					 nspng_error, 
-					 nspng_warning);
+	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
+			nspng_error, nspng_warning);
 	if (png_ptr == NULL) {
 		return NULL;
 	}
 
 	info_ptr = png_create_info_struct(png_ptr);
-	if (png_ptr == NULL) {
+	if (info_ptr == NULL) {
 		png_destroy_read_struct(&png_ptr, NULL, NULL);
 		return NULL;
 	}
 
-	end_info = png_create_info_struct(png_ptr);
-	if (png_ptr == NULL) {
+	end_info_ptr = png_create_info_struct(png_ptr);
+	if (end_info_ptr == NULL) {
 		png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 		return NULL;
 	}
@@ -480,7 +478,7 @@ png_cache_convert(struct content *c)
 	nspng_setup_transforms(png_ptr, info_ptr);
 
 	width = png_get_image_width(png_ptr, info_ptr);
-	height = png_get_image_height(png_ptr,info_ptr);
+	height = png_get_image_height(png_ptr, info_ptr);
 
 	/* Claim the required memory for the converted PNG */
 	bitmap = bitmap_create(width, height, BITMAP_NEW);
@@ -498,7 +496,7 @@ png_cache_convert(struct content *c)
 png_cache_convert_error:
 
 	/* cleanup png read */
-	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
 	free((png_bytep *) row_pointers);
 
