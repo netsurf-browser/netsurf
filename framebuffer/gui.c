@@ -625,6 +625,9 @@ main(int argc, char** argv)
 
 	netsurf_exit();
 
+	if (fb_font_finalise() == false)
+		LOG(("Font finalisation failed."));
+
 	/* finalise options */
 	nsoption_finalise(nsoptions, nsoptions_default);
 
