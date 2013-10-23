@@ -232,7 +232,7 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 		if (node->type == TREE_NODE_ROOT) {
 			node = NULL;
 
-		} else if (node != NULL) {
+		} else {
 			node = node->next_sib;
 		}
 	}
