@@ -349,7 +349,7 @@ bool form_successful_controls(struct form *form,
 	sentinel.next = NULL;
 
 	charset = form_acceptable_charset(form);
-	if (!charset)
+	if (charset == NULL)
 		return false;
 
 #define ENCODE_ITEM(i) form_encode_item((i), charset, form->document_charset)
