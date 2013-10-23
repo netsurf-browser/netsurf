@@ -225,8 +225,7 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 		 * go to next sibling if present, or nearest ancestor
 		 * with a next sibling. */
 
-		while (node != NULL && node->parent != NULL &&
-				node->next_sib == NULL) {
+		while (node->parent != NULL && node->next_sib == NULL) {
 			node = node->parent;
 		}
 
