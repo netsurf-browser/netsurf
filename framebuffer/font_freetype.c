@@ -57,20 +57,20 @@ typedef struct fb_faceid_s {
 
 enum fb_face_e {
 	FB_FACE_SANS_SERIF = 0,
-	FB_FACE_SANS_SERIF_BOLD = 1,
-	FB_FACE_SANS_SERIF_ITALIC = 2,
-	FB_FACE_SANS_SERIF_ITALIC_BOLD = 3,
-	FB_FACE_SERIF = 4,
-	FB_FACE_SERIF_BOLD = 5,
-	FB_FACE_MONOSPACE = 6,
-	FB_FACE_MONOSPACE_BOLD = 7,
-	FB_FACE_CURSIVE = 8,
-	FB_FACE_FANTASY = 9,
+	FB_FACE_SANS_SERIF_BOLD,
+	FB_FACE_SANS_SERIF_ITALIC,
+	FB_FACE_SANS_SERIF_ITALIC_BOLD,
+	FB_FACE_SERIF,
+	FB_FACE_SERIF_BOLD,
+	FB_FACE_MONOSPACE,
+	FB_FACE_MONOSPACE_BOLD,
+	FB_FACE_CURSIVE,
+	FB_FACE_FANTASY,
+	FB_FACE_COUNT
 };
 
 /* defines for accesing the faces */
 #define FB_FACE_DEFAULT 0
-#define FB_FACE_COUNT 10
 
 static fb_faceid_t *fb_faces[FB_FACE_COUNT];
 
@@ -148,6 +148,7 @@ fb_new_face(const char *option, const char *resname, const char *fontname)
         error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)newf, &aface);
         if (error) {
                 LOG(("Could not find font face %s (code %d)", fontname, error));
+                free(newf->fontfile);
                 free(newf);
                 newf = NULL;
         }
@@ -323,8 +324,27 @@ bool fb_font_init(void)
 
 bool fb_font_finalise(void)
 {
-        FTC_Manager_Done(ft_cmanager );
+	int i, j;
+
+        FTC_Manager_Done(ft_cmanager);
         FT_Done_FreeType(library);
+
+	for (i = 0; i < FB_FACE_COUNT; i++) {
+		if (fb_faces[i] == NULL)
+			continue;
+
+		/* Unset any faces that duplicate this one */
+		for (j = i + 1; j < FB_FACE_COUNT; j++) {
+			if (fb_faces[i] == fb_faces[j])
+				fb_faces[j] = NULL;
+		}
+
+		free(fb_faces[i]->fontfile);
+		free(fb_faces[i]);
+
+		fb_faces[i] = NULL;
+	}
+
         return true;
 }
 
