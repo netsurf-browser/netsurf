@@ -2184,18 +2184,7 @@ static bool layout_text_box_split(html_content *content,
 	c2->flags |= CLONE;
 
 	/* Set remaining text in c2 */
-	if (split_box->parent->parent->gadget != NULL) {
-		/* Inside a form text input / textarea, special case */
-		/* TODO: Move text inputs to core textarea widget and remove
-		 *       this */
-		c2->text = talloc_strndup(content->bctx,
-				split_box->text + used_length,
-				split_box->length - used_length);
-		if (!c2->text)
-			return false;
-	} else {
-		c2->text += used_length;
-	}
+	c2->text += used_length;
 
 	/* Set c2 according to the remaining text */
 	c2->width -= new_width + space_width;
