@@ -657,7 +657,9 @@ uint32_t content_count_users(struct content *c)
 	
 	for (user = c->user_list; user != NULL; user = user->next)
 		counter += 1;
-	
+
+	assert(counter > 0);
+
 	return counter - 1; /* Subtract 1 for the sentinel */
 }
 
