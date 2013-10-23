@@ -169,6 +169,27 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	return 0;
 }
 
+/** Text destroy callback.
+ *
+ * Called when a text widget is destroyed.
+ *
+ * @param widget The widget being destroyed.
+ * @param cbi The callback parameters.
+ * @return The callback result.
+ */
+static int fb_destroy_text(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_TEXT)) {
+		return 0;
+	}
+
+	if (widget->u.text.text != NULL) {
+		free(widget->u.text.text);
+	}
+
+	return 0;
+}
+
 /** Text button redraw callback.
  *
  * Called when a text widget requires redrawing.
@@ -545,6 +566,7 @@ fbtk_create_text(fbtk_widget_t *parent,
 	neww->u.text.outline = outline;
 
 	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_text, NULL);
+	fbtk_set_handler(neww, FBTK_CBT_DESTROY, fb_destroy_text, NULL);
 
 	return neww;
 }
@@ -574,6 +596,7 @@ fbtk_create_writable_text(fbtk_widget_t *parent,
 	neww->u.text.pw = pw;
 
 	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_text, NULL);
+	fbtk_set_handler(neww, FBTK_CBT_DESTROY, fb_destroy_text, NULL);
 	fbtk_set_handler(neww, FBTK_CBT_CLICK, text_input_click, pw);
 	fbtk_set_handler(neww, FBTK_CBT_STRIP_FOCUS, text_input_strip_focus, NULL);
 	fbtk_set_handler(neww, FBTK_CBT_INPUT, text_input, neww);
@@ -603,6 +626,7 @@ fbtk_create_text_button(fbtk_widget_t *parent,
 	neww->u.text.outline = true;
 
 	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_text_button, NULL);
+	fbtk_set_handler(neww, FBTK_CBT_DESTROY, fb_destroy_text, NULL);
 	fbtk_set_handler(neww, FBTK_CBT_CLICK, click, pw);
 	fbtk_set_handler(neww, FBTK_CBT_POINTERENTER, fbtk_set_ptr, &hand_image);
 
