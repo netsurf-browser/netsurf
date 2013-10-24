@@ -1243,7 +1243,6 @@ static nserror browser_window_callback(hlcache_handle *c,
 		if (bw->history_add && bw->history) {
 			nsurl *url = hlcache_handle_get_url(c);
 
-			history_add(bw->history, c, bw->frag_id);
 			if (urldb_add_url(url)) {
 				urldb_set_url_title(url, content_get_title(c));
 				urldb_update_url_visit_data(url);
@@ -1253,6 +1252,27 @@ static nserror browser_window_callback(hlcache_handle *c,
 				/* This is safe as we've just added the URL */
 				global_history_add(urldb_get_url(url));
 			}
+			/* TODO: Urldb / Thumbnails / Local history brokenness
+			 *
+			 * We add to local history after calling urldb_add_url
+			 * rather than in the block above.  If urldb_add_url
+			 * fails (as it will for urls like "about:about",
+			 * "about:config" etc), there would be no local history
+			 * node, and later calls to history_update will either
+			 * explode or overwrite the node for the previous URL.
+			 *
+			 * We call it after, rather than before urldb_add_url
+			 * because history_add calls thumbnail_create, which
+			 * tries to register the thumbnail with urldb.  That
+			 * thumbnail registration fails if the url doesn't
+			 * exist in urldb already, and only urldb-registered
+			 * thumbnails get freed.  So if we called history_add
+			 * before urldb_add_url we would leak thumbnails for
+			 * all newly visited URLs.  With the history_add call
+			 * after, we only leak the thumbnails when urldb does
+			 * not add the URL.
+			 */
+			history_add(bw->history, c, bw->frag_id);
 		}
 
 		/* frames */
