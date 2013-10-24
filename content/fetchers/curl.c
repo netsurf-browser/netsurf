@@ -319,6 +319,8 @@ void fetch_curl_finalise(lwc_string *scheme)
 		h = curl_handle_ring;
 		RING_REMOVE(curl_handle_ring, h);
 		lwc_string_unref(h->host);
+		curl_easy_cleanup(h->handle);
+		free(h);
 	}
 }
 
