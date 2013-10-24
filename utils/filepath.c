@@ -310,6 +310,10 @@ filepath_path_to_strvec(const char *path)
 /* exported interface documented in filepath.h */
 void filepath_free_strvec(char **pathv)
 {
-	free(pathv[0]);
+	int p = 0;
+
+	while (pathv[p] != NULL) {
+		free(pathv[p++]);
+	}
 	free(pathv);
 }
