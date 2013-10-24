@@ -273,6 +273,7 @@ void history_add(struct history *history, hlcache_handle *content,
 	 * loading */
 	bitmap = urldb_get_thumbnail(nsurl);
 	if (!bitmap) {
+		LOG(("Creating thumbnail for %s", nsurl_access(nsurl)));
 		bitmap = bitmap_create(WIDTH, HEIGHT,
 				BITMAP_NEW | BITMAP_CLEAR_MEMORY |
 				BITMAP_OPAQUE);
