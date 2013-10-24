@@ -221,7 +221,7 @@ expand_path(const char *path, int pathlen)
 	memcpy(exp, path, pathlen);
 	exp[pathlen] = 0;
 
-	explen = strlen(exp);
+	explen = pathlen;
 
 	while (exp[cloop] != 0) {
 		if ((exp[cloop] == '$') && 
