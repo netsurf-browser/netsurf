@@ -2223,14 +2223,17 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 					err = dom_node_get_next_sibling(c, 
 							&next);
 					if (err != DOM_NO_ERR) {
+						dom_string_unref(name);
 						dom_node_unref(c);
 						return false;
 					}
 
+					dom_string_unref(name);
 					dom_node_unref(c);
 					c = next;
 				} else {
 					/* Got a FRAME or FRAMESET element */
+					dom_string_unref(name);
 					break;
 				}
 			}
