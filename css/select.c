@@ -2014,6 +2014,7 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 	dom_string *name;
 	dom_exception exc;
 	dom_string *cellpadding = NULL;
+	css_error result = CSS_PROPERTY_NOT_SET;
 	
 	exc = dom_node_get_node_name(node, &name);
 	if (exc != DOM_NO_ERR)
@@ -2049,20 +2050,18 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 	}
 	
 	dom_string_unref(name);
-	
-	if (cellpadding == NULL)
-		return CSS_PROPERTY_NOT_SET;
 
-	if (parse_dimension(dom_string_data(cellpadding), false,
-			    &hint->data.length.value,
-			    &hint->data.length.unit)) {
-		hint->status = CSS_PADDING_SET;
-	} else {
+	if (cellpadding != NULL) {
+		if (parse_dimension(dom_string_data(cellpadding), false,
+				    &hint->data.length.value,
+				    &hint->data.length.unit)) {
+			hint->status = CSS_PADDING_SET;
+			result = CSS_OK;
+		}
 		dom_string_unref(cellpadding);
-		return CSS_PROPERTY_NOT_SET;
 	}
 	
-	return CSS_OK;
+	return result;
 }
 
 static css_error 
