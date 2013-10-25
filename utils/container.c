@@ -80,11 +80,18 @@ struct container_ctx {
 
 inline static size_t container_filelen(FILE *fd)
 {
-	long o = ftell(fd);
+	long o;
 	long a;
+
+	o = ftell(fd);
+	if (o == -1) {
+		LOG(("Could not get current stream position"));
+		return 0;
+	}
 
 	fseek(fd, 0, SEEK_END);
 	a = ftell(fd);
+
 	fseek(fd, o, SEEK_SET);
 	if (a == -1) {
 		LOG(("could not ascertain size of file in theme container; omitting"));
