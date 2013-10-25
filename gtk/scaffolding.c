@@ -612,7 +612,7 @@ MULTIHANDLER(newwindow)
 nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
-	nsurl *url;
+	nsurl *url = NULL;
 	nserror error;
 
 	if (!nsoption_bool(new_blank)) {
