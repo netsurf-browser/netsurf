@@ -293,10 +293,12 @@ html_object_callback(hlcache_handle *object,
 
 			} else {
 				/* Non-background case */
-				int w = content_get_width(object);
-				int h = content_get_height(object);
 				if (hlcache_handle_get_content(object) ==
 						event->data.redraw.object) {
+
+					int w = content_get_width(object);
+					int h = content_get_height(object);
+
 					data.redraw.x = data.redraw.x *
 							box->width / w;
 					data.redraw.y = data.redraw.y *
