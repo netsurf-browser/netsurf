@@ -23,6 +23,15 @@ struct gui_window;
 
 void nsgtk_tab_init(struct gtk_scaffolding *gs);
 void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background);
+
+/** set the tab title
+ *
+ * The tab title will be set to the parameter
+ *
+ * @note currently only called from gui_window_set_title()
+ * @param g the gui window to set tab title for.
+ * @param title The title text which may not be NULL.
+ */
 void nsgtk_tab_set_title(struct gui_window *g, const char *title);
 void nsgtk_tab_options_changed(GtkNotebook *notebook);
 nserror nsgtk_tab_close_current(GtkNotebook *notebook);
