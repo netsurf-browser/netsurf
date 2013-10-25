@@ -206,6 +206,7 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 		g_error_free (error);
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
+		free(theme);
 		return;
 	}
 
