@@ -79,6 +79,8 @@ void *box_style_alloc(void *ptr, size_t len, void *pw)
  */
 static int box_talloc_destructor(struct box *b)
 {
+	struct html_scrollbar_data *data;
+
 	if ((b->flags & STYLE_OWNED) && b->style != NULL) {
 		css_computed_style_destroy(b->style);
 		b->style = NULL;
@@ -98,6 +100,18 @@ static int box_talloc_destructor(struct box *b)
 
 	if (b->node != NULL) {
 		dom_node_unref(b->node);
+	}
+
+	if (b->scroll_x != NULL) {
+		data = scrollbar_get_data(b->scroll_x);
+		scrollbar_destroy(b->scroll_x);
+		free(data);
+	}
+
+	if (b->scroll_y != NULL) {
+		data = scrollbar_get_data(b->scroll_y);
+		scrollbar_destroy(b->scroll_y);
+		free(data);
 	}
 
 	return 0;
