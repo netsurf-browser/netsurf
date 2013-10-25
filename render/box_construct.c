@@ -2118,12 +2118,16 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	if (err == DOM_NO_ERR && s != NULL) {
 		col_width = box_parse_multi_lengths(dom_string_data(s), &cols);
 		dom_string_unref(s);
-		if (col_width == NULL)
+		if (col_width == NULL) {
+			free(row_height);
 			return false;
+		}
 	} else {
 		col_width = calloc(1, sizeof(struct frame_dimension));
-		if (col_width == NULL)
+		if (col_width == NULL) {
+			free(row_height);
 			return false;
+		}
 		col_width->value = 100;
 		col_width->unit = FRAME_DIMENSION_PERCENT;
 	}
