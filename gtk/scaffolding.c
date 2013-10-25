@@ -2162,24 +2162,44 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	return g;
 }
 
+/** set the title in the window
+ *
+ * @param gw The gui window to set title on
+ * @param title The title to set (may be NULL)
+ */
 void gui_window_set_title(struct gui_window *gw, const char *title)
 {
-	static char suffix[] = " - NetSurf";
-  	char nt[strlen(title) + strlen(suffix) + 1];
 	struct gtk_scaffolding *gs = nsgtk_get_scaffold(gw);
+	int title_len;
+	char *newtitle;
+
+	if ((title == NULL) || (title[0] == '\0')) {
+		if (gs->top_level != gw) {
+			gtk_window_set_title(gs->window, "NetSurf");
+		}
+		return;
+	}
 
 	nsgtk_tab_set_title(gw, title);
 
-	if (gs->top_level == gw) {
-		if (title == NULL || title[0] == '\0') {
-			gtk_window_set_title(gs->window, "NetSurf");
-		} else {
-			strcpy(nt, title);
-			strcat(nt, suffix);
-			gtk_window_set_title(gs->window, nt);
-		}
+	if (gs->top_level != gw) {
+		/* not top level window so do not set window title */
+		return;
 	}
+
+	title_len = strlen(title) + SLEN(" - NetSurf") + 1;
+	newtitle = malloc(title_len);
+	if (newtitle == NULL) {
+		return;
+	}
+
+	snprintf(newtitle, title_len, "%s - NetSurf", title);
+
+	gtk_window_set_title(gs->window, newtitle);
+
+	free(newtitle);
 }
+
 
 void gui_window_set_url(struct gui_window *_g, const char *url)
 {
