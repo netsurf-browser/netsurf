@@ -2776,12 +2776,14 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 
 	if (!nscss_parse_colour((const char *)dom_string_data(color), 
 				&hint->data.color)) {
+		dom_string_unref(color);
 		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
 	hint->status = CSS_COLOR_COLOR;
 
+	dom_string_unref(color);
 	dom_string_unref(node_name);
 
 	return CSS_OK;
