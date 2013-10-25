@@ -618,7 +618,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 			/* 0 length has a special meaning to utf8_from_enc */
 			if (off - prev_off > 0) {
 				err = utf8_from_enc(string + prev_off, enc,
-						off - prev_off, &temp);
+						    off - prev_off, &temp, NULL);
 				if (err != UTF8_CONVERT_OK) {
 					assert(err != UTF8_CONVERT_BADENC);
 					LOG(("utf8_from_enc failed"));
@@ -660,7 +660,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	 * NB. 0 length has a special meaning to utf8_from_enc */
 	if (prev_off < len) {
 		err = utf8_from_enc(string + prev_off, enc, len - prev_off,
-				&temp);
+				    &temp, NULL);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
 			LOG(("utf8_from_enc failed"));

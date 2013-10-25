@@ -159,7 +159,7 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 				utf8_from_enc(ci_curr->ci_Data,
 						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
 										codeset, DFCS_MIMENAME),
-						ci_curr->ci_Size, (char **)&ci_next->ci_Data);
+					      ci_curr->ci_Size, (char **)&ci_next->ci_Data, NULL);
 				ci_next->ci_Size = strlen(ci_next->ci_Data);
 				len += ci_next->ci_Size;
 			break;

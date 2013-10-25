@@ -48,6 +48,7 @@
 struct nsgtk_source_window {
 	gchar *url;
 	char *data;
+	size_t data_len;
 	GtkWindow *sourcewindow;
 	GtkTextView *gv;
 	struct browser_window *bw;
@@ -113,7 +114,7 @@ static void nsgtk_attach_source_menu_handlers(GtkBuilder *xml, gpointer g)
 
 static gboolean nsgtk_source_destroy_event(GtkBuilder *window, gpointer g)
 {
-	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;	
+	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
 
 	if (nsg->next != NULL)
 		nsg->next->prev = nsg->prev;
@@ -136,17 +137,17 @@ static gboolean nsgtk_source_delete_event(GtkWindow * window, gpointer g)
 }
 
 void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
-{	
+{
 	char glade_Location[strlen(res_dir_location) + SLEN("source.gtk2.ui")
 			+ 1];
 	if (content_get_type(bw->current_content) != CONTENT_HTML)
 		return;
-	
+
 	if (nsoption_bool(source_tab)) {
 		nsgtk_source_tab_init(parent, bw);
 		return;
 	}
-	
+
 	sprintf(glade_Location, "%ssource.gtk2.ui", res_dir_location);
 
 	GError* error = NULL;
@@ -162,15 +163,17 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	const char *source_data;
 	unsigned long source_size;
 	char *data = NULL;
+	size_t data_len;
 
-	source_data = content_get_source_data(bw->current_content, 
+	source_data = content_get_source_data(bw->current_content,
 			&source_size);
 
 	utf8_convert_ret r = utf8_from_enc(
 			source_data,
 			html_get_encoding(bw->current_content),
 			source_size,
-			&data);
+			&data,
+			&data_len);
 	if (r == UTF8_CONVERT_NOMEM) {
 		warn_user("NoMemory",0);
 		return;
@@ -194,8 +197,8 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	gtk_widget_set_sensitive(deletebutton, FALSE);
 	/* for now */
 	gtk_widget_set_sensitive(printbutton, FALSE);
-						
-	struct nsgtk_source_window *thiswindow = 
+
+	struct nsgtk_source_window *thiswindow =
 			malloc(sizeof(struct nsgtk_source_window));
 	if (thiswindow == NULL) {
 		free(data);
@@ -213,7 +216,8 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	}
 
 	thiswindow->data = data;
-	
+	thiswindow->data_len = data_len;
+
 	thiswindow->sourcewindow = wndSource;
 	thiswindow->bw = bw;
 
@@ -225,20 +229,20 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	if (nsgtk_source_list != NULL)
 		nsgtk_source_list->prev = thiswindow;
 	nsgtk_source_list = thiswindow;
-				
+
 	nsgtk_attach_source_menu_handlers(glade_File, thiswindow);
-			
+
 	gtk_window_set_title(wndSource, title);
-		
+
 	g_signal_connect(G_OBJECT(wndSource), "destroy",
 			G_CALLBACK(nsgtk_source_destroy_event),
 			thiswindow);
-	g_signal_connect(G_OBJECT(wndSource), "delete-event", 
+	g_signal_connect(G_OBJECT(wndSource), "delete-event",
 			G_CALLBACK(nsgtk_source_delete_event),
 			thiswindow);
-		
+
 	GtkTextView *sourceview = GTK_TEXT_VIEW(
-			gtk_builder_get_object(glade_File, 
+			gtk_builder_get_object(glade_File,
 			"source_view"));
 
 	PangoFontDescription *fontdesc =
@@ -249,7 +253,7 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 
 	GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
 	gtk_text_buffer_set_text(tb, thiswindow->data, -1);
-			
+
 	gtk_widget_show(GTK_WIDGET(wndSource));
 
 }
@@ -262,6 +266,7 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	const char *source_data;
 	unsigned long source_size;
 	char *ndata = 0;
+	size_t ndata_len;
 	nsurl *url;
 	nserror error;
 	utf8_convert_ret r;
@@ -269,13 +274,14 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	char *fileurl;
 	gint handle;
 
-	source_data = content_get_source_data(bw->current_content, 
+	source_data = content_get_source_data(bw->current_content,
 					      &source_size);
 
 	r = utf8_from_enc(source_data,
 			  html_get_encoding(bw->current_content),
 			  source_size,
-			  &ndata);
+			  &ndata,
+			  &ndata_len);
 	if (r == UTF8_CONVERT_NOMEM) {
 		warn_user("NoMemory",0);
 		return;
@@ -328,66 +334,33 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	free(fileurl);
 }
 
-static void nsgtk_source_file_save(GtkWindow *parent, const char *filename, 
-		const char *data)
+static void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
+				   const char *data, size_t data_size)
 {
 	FILE *f;
-	bool auth = true;
-	char temp[255];
-	GtkWidget *notif, *label;
+	GtkWidget *notif;
+	GtkWidget *label;
 
-	if (!(access(filename, F_OK))) {
-		GtkWidget *confd = gtk_dialog_new_with_buttons(
-				messages_get("gtkOverwriteTitle"), 
-				parent,
-				GTK_DIALOG_DESTROY_WITH_PARENT,
-				GTK_STOCK_OK, 
-				GTK_RESPONSE_ACCEPT,
-				GTK_STOCK_CANCEL,
-				GTK_RESPONSE_REJECT,
-				NULL);
-		const char *format = messages_get("gtkOverwrite");
-		int len = strlen(filename) + strlen(format) + SLEN("\n\n") + 1;
-		char warn[len];
-		auth = false;
-
-		warn[0] = '\n';
-		snprintf(warn + 1, len - 2, format, filename);
-		len = strlen(warn);
-		warn[len - 1] = '\n';
-		warn[len] = '\0';
-
-		label = gtk_label_new(warn);
-		gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_content_area(GTK_DIALOG(confd))), 
-				label);
-		gtk_widget_show(label);
-		if (gtk_dialog_run(GTK_DIALOG(confd)) == GTK_RESPONSE_ACCEPT) {
-			auth = true;
-		}
-		gtk_widget_destroy(confd);
-	}
-
-	if (auth) {
-		f = fopen(filename, "w+");
-		fprintf(f, "%s", data);
+	f = fopen(filename, "w+");
+	if (f != NULL) {
+		fwrite(data, data_size, 1, f);
 		fclose(f);
-		snprintf(temp, sizeof(temp), "\n                    %s"
-				"                    \n",
-				messages_get("gtkSaveConfirm"));
-	} else {
-		snprintf(temp, sizeof(temp), "\n                    %s"
-				"                    \n",
-				messages_get("gtkSaveCancelled"));
+		return;
 	}
-	
-	notif = gtk_dialog_new_with_buttons(temp, 
-			parent, GTK_DIALOG_MODAL, GTK_STOCK_OK,
-			GTK_RESPONSE_NONE, NULL);
+
+	/* inform user of faliure */
+	notif = gtk_dialog_new_with_buttons(messages_get("gtkSaveFailedTitle"),
+					    parent,
+					    GTK_DIALOG_MODAL, GTK_STOCK_OK,
+					    GTK_RESPONSE_NONE, NULL);
+
 	g_signal_connect_swapped(notif, "response",
-			G_CALLBACK(gtk_widget_destroy), notif);
-	label = gtk_label_new(temp);
+				 G_CALLBACK(gtk_widget_destroy), notif);
+
+	label = gtk_label_new(messages_get("gtkSaveFailed"));
 	gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_content_area(GTK_DIALOG(notif))), label);
 	gtk_widget_show_all(notif);
+
 }
 
 
@@ -395,12 +368,12 @@ gboolean nsgtk_on_source_save_as_activate(GtkMenuItem *widget, gpointer g)
 {
 	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
-			messages_get("gtkSourceSave"), 
+			messages_get("gtkSourceSave"),
 			nsg->sourcewindow,
-			GTK_FILE_CHOOSER_ACTION_SAVE, 
+			GTK_FILE_CHOOSER_ACTION_SAVE,
 			GTK_STOCK_CANCEL,
 			GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, 
+			GTK_STOCK_SAVE,
 			GTK_RESPONSE_ACCEPT,
 			NULL);
 	char *filename;
@@ -419,9 +392,12 @@ gboolean nsgtk_on_source_save_as_activate(GtkMenuItem *widget, gpointer g)
 
 	free(filename);
 
+	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
+						       TRUE);
+
 	if (gtk_dialog_run(GTK_DIALOG(fc)) == GTK_RESPONSE_ACCEPT) {
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-		nsgtk_source_file_save(nsg->sourcewindow, filename, nsg->data);
+		nsgtk_source_file_save(nsg->sourcewindow, filename, nsg->data, nsg->data_len);
 		g_free(filename);
 	}
 
@@ -443,7 +419,7 @@ gboolean nsgtk_on_source_close_activate( GtkMenuItem *widget, gpointer g)
 	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
 
 	gtk_widget_destroy(GTK_WIDGET(nsg->sourcewindow));
-	
+
 	return TRUE;
 }
 
@@ -472,7 +448,7 @@ gboolean nsgtk_on_source_copy_activate(GtkMenuItem *widget, gpointer g)
 	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
 	GtkTextBuffer *buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(nsg->gv));
 
-	gtk_text_buffer_copy_clipboard(buf, 
+	gtk_text_buffer_copy_clipboard(buf,
 			gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
 
 	return TRUE;
@@ -515,11 +491,11 @@ static void nsgtk_source_update_zoomlevel(gpointer g)
 
 			GtkTextIter start, end;
 
-			gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(buf), 
+			gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(buf),
 					&start, &end);
-			gtk_text_buffer_remove_all_tags(GTK_TEXT_BUFFER(buf), 
+			gtk_text_buffer_remove_all_tags(GTK_TEXT_BUFFER(buf),
 					&start,	&end);
-			gtk_text_buffer_apply_tag(GTK_TEXT_BUFFER(buf), 
+			gtk_text_buffer_apply_tag(GTK_TEXT_BUFFER(buf),
 					GTK_TEXT_TAG(tag), &start, &end);
 		}
 		nsg = nsg->next;
@@ -561,4 +537,3 @@ gboolean nsgtk_on_source_about_activate(GtkMenuItem *widget, gpointer g)
 
 	return TRUE;
 }
-

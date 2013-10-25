@@ -47,7 +47,7 @@ size_t utf8_next(const char *s, size_t l, size_t o);
 utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
 		size_t len, char **result);
 utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
-		size_t len, char **result);
+		size_t len, char **result, size_t *result_len);
 
 utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		size_t len, char **result);

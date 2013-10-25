@@ -33,9 +33,6 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 
-static utf8_convert_ret utf8_convert(const char *string, size_t len,
-		const char *from, const char *to, char **result);
-
 /**
  * Convert a UTF-8 multibyte sequence into a single UCS4 character
  *
@@ -217,35 +214,6 @@ void utf8_finalise(void)
 	utf8_clear_cd_cache();
 }
 
-/**
- * Convert a UTF8 string into the named encoding
- *
- * \param string  The NULL-terminated string to convert
- * \param encname The encoding name (suitable for passing to iconv)
- * \param len     Length of input string to consider (in bytes), or 0
- * \param result  Pointer to location to store result (allocated on heap)
- * \return Appropriate utf8_convert_ret value
- */
-utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
-		size_t len, char **result)
-{
-	return utf8_convert(string, len, "UTF-8", encname, result);
-}
-
-/**
- * Convert a string in the named encoding into a UTF-8 string
- *
- * \param string  The NULL-terminated string to convert
- * \param encname The encoding name (suitable for passing to iconv)
- * \param len     Length of input string to consider (in bytes), or 0
- * \param result  Pointer to location to store result (allocated on heap)
- * \return Appropriate utf8_convert_ret value
- */
-utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
-		size_t len, char **result)
-{
-	return utf8_convert(string, len, encname, "UTF-8", result);
-}
 
 /**
  * Convert a string from one encoding to another
@@ -254,11 +222,13 @@ utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
  * \param len     Length of input string to consider (in bytes), or 0
  * \param from    The encoding name to convert from
  * \param to      The encoding name to convert to
- * \param result  Pointer to location in which to store result
+ * \param result  Pointer to location in which to store result.
+ * \param result_len Pointer to location in which to store result length.
  * \return Appropriate utf8_convert_ret value
  */
-utf8_convert_ret utf8_convert(const char *string, size_t len,
-		const char *from, const char *to, char **result)
+static utf8_convert_ret utf8_convert(const char *string, size_t len,
+				     const char *from, const char *to,
+				     char **result, size_t *result_len)
 {
 	iconv_t cd;
 	char *temp, *out, *in;
@@ -356,7 +326,41 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	 * converted to UTF-32 */
 	memset((*result) + (out - temp), 0, 4);
 
+	if (result_len != NULL) {
+		*result_len = (out - temp);
+	}
+
 	return UTF8_CONVERT_OK;
+}
+
+/**
+ * Convert a UTF8 string into the named encoding
+ *
+ * \param string  The NULL-terminated string to convert
+ * \param encname The encoding name (suitable for passing to iconv)
+ * \param len     Length of input string to consider (in bytes), or 0
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return Appropriate utf8_convert_ret value
+ */
+utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
+		size_t len, char **result)
+{
+	return utf8_convert(string, len, "UTF-8", encname, result, NULL);
+}
+
+/**
+ * Convert a string in the named encoding into a UTF-8 string
+ *
+ * \param string  The NULL-terminated string to convert
+ * \param encname The encoding name (suitable for passing to iconv)
+ * \param len     Length of input string to consider (in bytes), or 0
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return Appropriate utf8_convert_ret value
+ */
+utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
+		size_t len, char **result, size_t *result_len)
+{
+	return utf8_convert(string, len, encname, "UTF-8", result, result_len);
 }
 
 static utf8_convert_ret utf8_convert_html_chunk(iconv_t cd,

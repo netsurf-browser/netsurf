@@ -39,7 +39,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
-	return utf8_from_enc(string, "ATARIST", len, result);
+	return utf8_from_enc(string, "ATARIST", len, result, NULL);
 }
 
 
