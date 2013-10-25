@@ -254,6 +254,9 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 
 }
 
+/**
+ * create a new tab with page source
+ */
 void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 {
 	const char *source_data;
@@ -261,15 +264,18 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	char *ndata = 0;
 	nsurl *url;
 	nserror error;
+	utf8_convert_ret r;
+	gchar *filename;
+	char *fileurl;
+	gint handle;
 
 	source_data = content_get_source_data(bw->current_content, 
-			&source_size);
+					      &source_size);
 
-	utf8_convert_ret r = utf8_from_enc(
-			source_data,
-			html_get_encoding(bw->current_content),
-			source_size,
-			&ndata);
+	r = utf8_from_enc(source_data,
+			  html_get_encoding(bw->current_content),
+			  source_size,
+			  &ndata);
 	if (r == UTF8_CONVERT_NOMEM) {
 		warn_user("NoMemory",0);
 		return;
@@ -277,20 +283,22 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 		warn_user("EncNotRec",0);
 		return;
 	}
-	gchar *filename;
-	char *fileurl;
-	gint handle = g_file_open_tmp("nsgtksourceXXXXXX", &filename, NULL);
+
+	handle = g_file_open_tmp("nsgtksourceXXXXXX", &filename, NULL);
 	if ((handle == -1) || (filename == NULL)) {
 		warn_user(messages_get("gtkSourceTabError"), 0);
+		free(ndata);
 		return;
 	}
 	close (handle); /* in case it was binary mode */
+
 	FILE *f = fopen(filename, "w");
 	if (f == NULL) {
 		warn_user(messages_get("gtkSourceTabError"), 0);
 		g_free(filename);
 		return;
 	}
+
 	fprintf(f, "%s", ndata);
 	fclose(f);
 	free(ndata);
