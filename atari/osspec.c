@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <support.h>
 #include <mint/osbind.h>
 #include <mint/cookie.h>
 
@@ -96,86 +97,38 @@ int tos_getcookie(long tag, long * value)
 }
 
 /*
+
  a fixed version of realpath() which returns valid
- paths for TOS which have no root fs. (/ , U: )
+ paths for TOS which have no U: drive
+
 */
 
 char * gemdos_realpath(const char * path, char * rpath)
 {
 	char work[PATH_MAX+1];
-	char * work_ptr;
-	size_t l;
+	char * r;
 
-	if( rpath == NULL ){
-		return( NULL );
-	}
-	if( sys_type() & SYS_MINT ){
-		return( realpath(path, rpath) );
+
+	if (rpath == NULL) {
+		return (NULL);
 	}
 
-	LOG(("gdos rpath in: %s\n", path));
-	memset( rpath, 0, PATH_MAX );
-
-	/* first, absolutize relative path: */
-	if( *path == '.' ){
-		char cwd[PATH_MAX+1];
-		getcwd((char*)&cwd, PATH_MAX);
-		l = strlen( cwd );
-		if( cwd[l-1] != 0x5C && cwd[l-1] != '/' ){
-			cwd[l] = 0x5C;
-			cwd[l+1] = 0;
-			l++;
-		}
-
-		strncpy( (char*)&work, cwd, PATH_MAX );
-
-		/* check for path, or maybe just a file name? */
-		if( strlen(path) > 2 ) {
-			int off = 0;
-			if( path[1] == '/' || path[1] == 0x5C ){
-				off = 2;
-			}
-			strncat( (char*)&work, (char*)(path+off), PATH_MAX-l );
-		}
-		work_ptr = (char*)&work;
-	} else {
-		work_ptr = (char*)path;
+	// Check if the path is already absolute:
+	if(path[1] == ':'){
+		strcpy(rpath, path);
+		return(rpath);
 	}
 
-	/* handle invalid cwd path */
-	/* mintlib produces these on plain TOS systems: */
-	if( strncmp( (char*)work_ptr, "/dev/", 5) == 0 ){
-		work_ptr += 4;
+	LOG(("realpath in: %s\n", path));
+	r = realpath(path, work);
+	if (r != NULL) {
+		int e = unx2dos((const char *)r, rpath);
+		LOG(("realpath out: %s\n", rpath));
+		return(rpath);
 	}
-
-	/* make TOS compatible path, step 1: */
-	l = strlen( work_ptr);
-	if( l > 1 ){
-		if( *work_ptr == '/' || *work_ptr == 0x5C ){
-			rpath[0] = work_ptr[1];
-			rpath[1] = ':';
-			strncat( rpath, &work_ptr[2], PATH_MAX-2 );
-		} else {
-			strncpy( rpath, work_ptr, PATH_MAX );
-		}
-
-		/* step 2, perform seperator conversion: */
-		l = strlen( rpath );
-		rpath[PATH_MAX-1]=0;
-		work_ptr = rpath;
-		do{
-			if( *work_ptr == '/' )
-				*work_ptr = 0x5C;
-			work_ptr++;
-		} while( *work_ptr != 0 );
-
-		if( rpath[l-1] == 0x5C || rpath[l-1] == '/' )
-			rpath[l-1] = 0;
-	} else {
-		strncpy( rpath, work_ptr, PATH_MAX );
+	else {
+		LOG(("realpath out: NULL!\n"));
 	}
-	l = strlen( rpath );
-	LOG(("gdos rpath out: %s\n", rpath));
-	return( rpath );
+	return (NULL);
 }
 
