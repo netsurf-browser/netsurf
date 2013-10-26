@@ -1272,7 +1272,7 @@ static void ami_tree_redraw_req_dr(void *p)
 		y = pos_y;
 	}
 	
-	tree_draw(twin->tree, 0 - pos_x, 0 - pos_y,
+	tree_draw(twin->tree, bbox->Left - pos_x, bbox->Top - pos_y,
 				atrr_data->x, atrr_data->y,
                 atrr_data->width, atrr_data->height, &ctx);
 
