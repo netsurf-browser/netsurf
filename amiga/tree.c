@@ -1272,8 +1272,9 @@ static void ami_tree_redraw_req_dr(void *p)
 		y = pos_y;
 	}
 	
-	tree_draw(twin->tree, - x, - y,
-				bbox->Left, bbox->Top, width, height, &ctx);
+	tree_draw(twin->tree, 0 - pos_x, 0 - pos_y,
+				atrr_data->x, atrr_data->y,
+                atrr_data->width, atrr_data->height, &ctx);
 
 	FreeVec(atrr_data);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);

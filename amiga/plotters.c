@@ -690,7 +690,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
 	#endif
 
-	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
+	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false) &&
+		(nsoption_bool(direct_render) == false))
 	{
 #ifdef __amigaos4__
 		uint32 comptype = COMPOSITE_Src_Over_Dest;
