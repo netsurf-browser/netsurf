@@ -27,6 +27,7 @@ struct ami_hotlist_ctx {
 	int item;
 	const char *folder; /* folder we're interested in */
 	bool in_menu; /* set if we are in that folder */
+	bool found; /* set if the folder is found */
 	bool (*cb)(void *userdata, int level, int item, const char *title, nsurl *url, bool folder);
 };
 
@@ -54,8 +55,10 @@ static nserror ami_hotlist_folder_enter_cb(void *ctx, const char *title)
 		if(menu_ctx->cb(menu_ctx->userdata, menu_ctx->level, menu_ctx->item, title, NULL, true) == true)
 			menu_ctx->item++;
 	} else {
-		if((menu_ctx->level == 0) && (strcmp(title, menu_ctx->folder) == 0))
+		if((menu_ctx->level == 0) && (strcmp(title, menu_ctx->folder) == 0)) {
 			menu_ctx->in_menu = true;
+			menu_ctx->found = true;
+		}
 	}
 	menu_ctx->level++;
 	return NSERROR_OK;
@@ -88,17 +91,24 @@ static nserror ami_hotlist_folder_leave_cb(void *ctx)
 nserror ami_hotlist_scan(void *userdata, int first_item, const char *folder,
 	bool (*cb_add_item)(void *userdata, int level, int item, const char *title, nsurl *url, bool folder))
 {
+	nserror error;
 	struct ami_hotlist_ctx ctx;
-	
+
 	ctx.level = 0;
 	ctx.item = first_item;
 	ctx.folder = folder;
 	ctx.in_menu = false;
 	ctx.userdata = userdata;
 	ctx.cb = cb_add_item;
-	
-	return hotlist_iterate(&ctx,
+	ctx.found = false;
+
+	error = hotlist_iterate(&ctx,
 		ami_hotlist_folder_enter_cb,
 		ami_hotlist_address_cb,
 		ami_hotlist_folder_leave_cb);
+
+	if((error == NSERROR_OK) && (ctx.found == false))
+		hotlist_add_folder(folder, false, 0);
+
+	return error;
 }
