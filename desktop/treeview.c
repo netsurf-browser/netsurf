@@ -1654,8 +1654,8 @@ nserror treeview_expand(treeview *tree, bool only_folders)
 
 
 /* Exported interface, documented in treeview.h */
-void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
-		const struct redraw_context *ctx)
+void treeview_redraw(treeview *tree, const int x, const int y,
+		struct rect *clip, const struct redraw_context *ctx)
 {
 	struct redraw_context new_ctx = *ctx;
 	treeview_node *node, *root, *next;
@@ -1740,7 +1740,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 				node->type == TREE_NODE_ENTRY);
 
 		count++;
-		inset = node->inset;
+		inset = x + node->inset;
 		height = (node->type == TREE_NODE_ENTRY) ? node->height :
 				tree_g.line_height;
 
@@ -1878,8 +1878,8 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	if (tree->move.target_pos != TV_TARGET_NONE &&
 			treeview_res[TREE_RES_ARROW].ready) {
 		/* Got a MOVE drag; render move indicator arrow */
-		data.x = tree->move.target_area.x0;
-		data.y = tree->move.target_area.y0;
+		data.x = tree->move.target_area.x0 + x;
+		data.y = tree->move.target_area.y0 + y;
 		data.background_colour = plot_style_even.bg.fill_colour;
 
 		content_redraw(treeview_res[TREE_RES_ARROW].c,
@@ -1888,7 +1888,7 @@ void treeview_redraw(treeview *tree, int x, int y, struct rect *clip,
 	} else if (tree->edit.textarea != NULL) {
 		/* Edit in progress; render textarea */
 		textarea_redraw(tree->edit.textarea,
-				tree->edit.x, tree->edit.y,
+				tree->edit.x + x, tree->edit.y + y,
 				plot_style_even.bg.fill_colour, 1.0,
 				&r, &new_ctx);
 	}
