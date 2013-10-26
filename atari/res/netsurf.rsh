@@ -58,7 +58,7 @@
 #define TOOLBAR_BT_STOP 15  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_RELOAD 16  /* CICON in tree TOOLBAR */
 #define TOOLBAR_AREA_URL 17  /* USERDEF in tree TOOLBAR */
-#define TOOLBAR_THROBBER_AREA 18  /* BOX in tree TOOLBAR */
+#define TOOLBAR_THROBBER_AREA 18  /* IBOX in tree TOOLBAR */
 
 #define ICONIFY 2  /* form/dial */
 #define ICONIFY_GLOBE 1  /* CICON in tree ICONIFY */

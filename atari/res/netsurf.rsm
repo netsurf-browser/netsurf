@@ -3,7 +3,7 @@ ResourceMaster v3.65
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@2@1@
-#M 20010100@0@7728@652@
+#M 20010100@0@7728@653@
 #T 0@1@MAINMENU@@64@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -61,7 +61,7 @@ ResourceMaster v3.65
 #O 15@33@BT_STOP@@
 #O 16@33@BT_RELOAD@@
 #O 17@24@AREA_URL@@
-#O 18@20@THROBBER_AREA@@
+#O 18@25@THROBBER_AREA@@
 #T 2@2@ICONIFY@@3@@
 #O 1@33@GLOBE@@
 #T 3@2@FAVICON@@2@@
@@ -206,4 +206,4 @@ ResourceMaster v3.65
 #T 17@2@TOOLBAR_HISTORY@@1@@
 #T 18@2@TOOLBAR_SSL_CERT@@2@@
 #O 1@26@TRUSTED@@
-#c 28820@
+#c 28824@
