@@ -1227,6 +1227,61 @@ void ami_tree_draw(struct treeview_window *twin)
 	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
 }
 
+static void ami_tree_redraw_req_dr(void *p)
+{
+	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
+	int x = atrr_data->x;
+	int y = atrr_data->y;
+	int width = atrr_data->width;
+	int height = atrr_data->height;
+	struct treeview_window *twin = atrr_data->twin;
+	struct IBox *bbox;
+	int pos_x, pos_y;
+	struct RastPort *temprp;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(!twin->win) return;
+
+	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+
+	glob = &twin->globals;
+	temprp = glob->rp;
+ 	glob->rp = twin->win->RPort;
+			
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER], (ULONG *)&bbox);
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
+
+	x += bbox->Left;
+	y += bbox->Top;
+	
+	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+
+	if(x < pos_x) {
+		width -= pos_x - x;
+		x = pos_x;
+	}
+
+	if(y < pos_y) {
+		height -= pos_y - y;
+		y = pos_y;
+	}
+	
+	tree_draw(twin->tree, - x, - y,
+				bbox->Left, bbox->Top, width, height, &ctx);
+
+	FreeVec(atrr_data);
+	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	ami_clearclipreg(glob);
+	glob->rp = temprp;
+	glob = &browserglob;
+}
+
 static void ami_tree_redraw_req(void *p)
 {
 	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
@@ -1296,6 +1351,7 @@ static void ami_tree_redraw_req(void *p)
 
 	FreeVec(atrr_data);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	ami_clearclipreg(glob);
 	glob = &browserglob;
 }
 
@@ -1311,7 +1367,9 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	
 	/**TODO: Queue these requests properly like the main browser code does
 	 **/
-	
-	schedule(0, ami_tree_redraw_req, atrr_data);
-}
 
+	if(nsoption_bool(direct_render) == false)
+		schedule(0, ami_tree_redraw_req, atrr_data);
+	else
+		schedule(0, ami_tree_redraw_req_dr, atrr_data);
+}
