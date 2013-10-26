@@ -451,6 +451,10 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 				ik = KEY_UP;
 			break;
 
+			case NK_UNDO:
+				ik = KEY_UNDO;
+			break;
+
 			case NK_DOWN:
 				ik = KEY_DOWN;
 			break;
