@@ -234,11 +234,13 @@ void ro_mouse_kill(void *data)
 
 os_t ro_mouse_poll_interval(void)
 {
-	if (ro_mouse_drag_track_callback == NULL &&
-			ro_mouse_poll_track_callback == NULL)
-		return 0;
+	if (ro_mouse_drag_track_callback != NULL)
+		return 4;
 
-	return 10; // \TODO Return 4 for DRAG_SELECTION && DRAG_SCROLL
+	if (ro_mouse_poll_track_callback != NULL)
+		return 10;
+
+	return 0;
 
 }
 

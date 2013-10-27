@@ -24,11 +24,6 @@
 #ifndef _NETSURF_RISCOS_MOUSE_H_
 #define _NETSURF_RISCOS_MOUSE_H_
 
-enum ro_mouse_track_response {
-	RO_MOUSE_RESPONSE_LOW,
-	RO_MOUSE_RESPONSE_HIGH
-};
-
 
 /**
  * Process Null polls for any drags and mouse trackers that are currently
