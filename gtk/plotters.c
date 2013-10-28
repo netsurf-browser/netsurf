@@ -281,10 +281,6 @@ static bool nsgtk_plot_text(int x, int y, const char *text, size_t length,
 static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 			      struct bitmap *bitmap, colour bg)
 {
-	/* XXX: This currently ignores the background colour supplied.
-	 * Does this matter?
-	 */
-
 	int x0, y0, x1, y1;
 	int dsrcx, dsrcy, dwidth, dheight;
 	int bmwidth, bmheight;
