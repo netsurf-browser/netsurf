@@ -2491,12 +2491,8 @@ void ami_handle_applib(void)
 			{
 				struct ApplicationCustomMsg *applibcustmsg =
 					(struct ApplicationCustomMsg *)applibmsg;
-		//		STRPTR tempmsg;
-		//		if(tempmsg = ASPrintf("\"%s\"",applibcustmsg->customMsg))
-		//		{
-					OpenWorkbenchObjectA(applibcustmsg->customMsg, NULL);
-		//			FreeVec(tempmsg);
-		//		}
+				LOG(("Ringhio BackMsg received: %s", applibcustmsg->customMsg));
+				OpenWorkbenchObjectA(applibcustmsg->customMsg, NULL);
 			}
 			break;
 		}
