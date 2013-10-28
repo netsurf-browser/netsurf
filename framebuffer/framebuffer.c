@@ -172,13 +172,14 @@ framebuffer_plot_bitmap(int x, int y,
                         struct bitmap *bitmap, colour bg,
                         bitmap_flags_t flags)
 {
-	int xf,yf;
         nsfb_bbox_t loc;
         nsfb_bbox_t clipbox;
         bool repeat_x = (flags & BITMAPF_REPEAT_X);
         bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 	int bmwidth;
 	int bmheight;
+	int bmstride;
+	enum nsfb_format_e bmformat;
 	unsigned char *bmptr;
 	nsfb_t *bm = (nsfb_t *)bitmap;
 
@@ -199,8 +200,8 @@ framebuffer_plot_bitmap(int x, int y,
 	}
 
         nsfb_plot_get_clip(nsfb, &clipbox);
-	nsfb_get_geometry(bm, &bmwidth, &bmheight, NULL);
-	nsfb_get_buffer(bm, &bmptr, NULL);
+	nsfb_get_geometry(bm, &bmwidth, &bmheight, &bmformat);
+	nsfb_get_buffer(bm, &bmptr, &bmstride);
 
 	/* Optimise tiled plots of 1x1 bitmaps by replacing with a flat fill
 	 * of the area.  Can only be done when image is fully opaque. */
@@ -231,23 +232,19 @@ framebuffer_plot_bitmap(int x, int y,
 	if (repeat_y)
 		for (; y > clipbox.y0; y -= height);
 
-	/* tile down and across to extents */
-	for (xf = x; xf < clipbox.x1; xf += width) {
-		for (yf = y; yf < clipbox.y1; yf += height) {
+	/* set up top left tile location */
+        loc.x0 = x;
+        loc.y0 = y;
+        loc.x1 = loc.x0 + width;
+        loc.y1 = loc.y0 + height;
 
-                        loc.x0 = xf;
-                        loc.y0 = yf;
-                        loc.x1 = loc.x0 + width;
-                        loc.y1 = loc.y0 + height;
+	/* plot tiling across and down to extents */
+	nsfb_plot_bitmap_tiles(nsfb, &loc,
+			repeat_x ? ((clipbox.x1 - x) + width  - 1) / width  : 1,
+			repeat_y ? ((clipbox.y1 - y) + height - 1) / height : 1,
+			(nsfb_colour_t *)bmptr, bmwidth, bmheight,
+			bmstride * 8 / 32, bmformat == NSFB_FMT_ABGR8888);
 
-			nsfb_plot_copy(bm, NULL, nsfb, &loc);		
-
-			if (!repeat_y)
-				break;
-		}
-		if (!repeat_x)
-	   		break;
-	}
 	return true;
 }
 
