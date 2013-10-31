@@ -764,7 +764,7 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	static struct nsgtk_treeview *ssl_window;	
 	struct sslcert_session_data *data;
 	GtkButton *accept, *reject;
-	void **session = calloc(sizeof(void *), 3);
+	void **session;
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
@@ -778,19 +778,26 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		return;
 	}
 
-	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs,
-			&data);
+	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs, &data);
 	ssl_current_session = data;
 
 	window = GTK_WINDOW(gtk_builder_get_object(builder, "wndSSLProblem"));
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
+	session = calloc(sizeof(void *), 3);
+
+	if (session == NULL) {
+		return;
+	}
+
 	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, window, scrolled,
 			drawing_area);
 	
-	if (ssl_window == NULL)
+	if (ssl_window == NULL) {
+		free(session);
 		return;
+	}
 	
 	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
 	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));	
