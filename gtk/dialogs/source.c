@@ -302,6 +302,7 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	if (f == NULL) {
 		warn_user(messages_get("gtkSourceTabError"), 0);
 		g_free(filename);
+		free(ndata);
 		return;
 	}
 
