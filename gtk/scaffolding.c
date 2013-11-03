@@ -1854,7 +1854,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	g = malloc(sizeof(*g));
 	if (g == NULL) {
-		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
@@ -1883,7 +1882,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	g->search = malloc(sizeof(struct gtk_search));
 	if (g->search == NULL) {
-		warn_user("NoMemory", 0);
 		free(g);
 		return NULL;
 	}
@@ -1901,23 +1899,20 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 #undef GET_WIDGET
 
+	/* allocate buttons */
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		g->buttons[i] = malloc(sizeof(struct nsgtk_button_connect));
+		g->buttons[i] = calloc(1, sizeof(struct nsgtk_button_connect));
 		if (g->buttons[i] == NULL) {
-			warn_user("NoMemory", 0);
+			for (i-- ; i >= BACK_BUTTON; i--) {
+				free(g->buttons[i]);
+			}
+			free(g);
 			return NULL;
 		}
-		g->buttons[i]->button = NULL;
 		g->buttons[i]->location = -1;
 		g->buttons[i]->sensitivity = true;
-		g->buttons[i]->main = NULL;
-		g->buttons[i]->rclick = NULL;
-		g->buttons[i]->popup = NULL;
-		g->buttons[i]->mhandler = NULL;
-		g->buttons[i]->bhandler = NULL;
-		g->buttons[i]->dataplus = NULL;
-		g->buttons[i]->dataminus = NULL;
 	}
+
 	/* here custom toolbutton adding code */
 	g->offset = 0;
 	g->toolbarmem = 0;
