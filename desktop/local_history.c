@@ -173,11 +173,13 @@ struct history_entry *history_clone_entry(struct history *history,
 	/* clone the entry */
 	new_entry = malloc(sizeof *entry);
 	if (!new_entry)
-		return 0;
+		return NULL;
+
 	memcpy(new_entry, entry, sizeof *entry);
 	new_entry->page.url = nsurl_ref(entry->page.url);
 	if (entry->page.frag_id)
 		new_entry->page.frag_id = lwc_string_ref(entry->page.frag_id);
+
 	new_entry->page.title = strdup(entry->page.title);
 	if (!new_entry->page.url || !new_entry->page.title ||
 			((entry->page.frag_id) && (!new_entry->page.frag_id))) {
@@ -186,7 +188,7 @@ struct history_entry *history_clone_entry(struct history *history,
 			lwc_string_unref(new_entry->page.frag_id);
 		free(new_entry->page.title);
 		free(new_entry);
-		return 0;
+		return NULL;
 	}
 
 	/* update references */
@@ -196,8 +198,16 @@ struct history_entry *history_clone_entry(struct history *history,
 	/* recurse for all children */
 	for (child = new_entry->forward; child; child = child->next) {
 		new_child = history_clone_entry(history, child);
-		if (new_child)
+		if (new_child) {
 			new_child->back = new_entry;
+		} else {
+			nsurl_unref(new_entry->page.url);
+			if (new_entry->page.frag_id)
+				lwc_string_unref(new_entry->page.frag_id);
+			free(new_entry->page.title);
+			free(new_entry);
+			return NULL;
+		}
 		if (prev)
 			prev->next = new_child;
 		if (new_entry->forward == child)
@@ -206,8 +216,6 @@ struct history_entry *history_clone_entry(struct history *history,
 			new_entry->forward_pref = new_child;
 		if (new_entry->forward_last == child)
 			new_entry->forward_last = new_child;
-		if (!new_child)
-			return 0;
 		prev = new_child;
 	}
 	return new_entry;
