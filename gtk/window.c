@@ -663,11 +663,23 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *g; /**< what we're creating to return */
 	GError* error = NULL;
 	bool tempback;
+	GtkBuilder* xml;
+
+	/* open builder file first to ease error handling on faliure */
+	xml = gtk_builder_new();
+	if (!gtk_builder_add_from_file(xml,
+				       glade_file_location->tabcontents,
+				       &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free(error);
+		return NULL;
+	}
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
 		warn_user("NoMemory", 0);
-		return 0;
+		g_object_unref(xml);
+		return NULL;
 	}
 
 	LOG(("Creating gui window %p for browser window %p", g, bw));
@@ -692,21 +704,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (g->scaffold == NULL) {
 		warn_user("NoMemory", 0);
 		free(g);
+		g_object_unref(xml);
 		return NULL;
 	}
 
 	/* Construct our primary elements */
-
-	/* top-level document create a new tab */
-	GtkBuilder* xml = gtk_builder_new();
-	if (!gtk_builder_add_from_file(xml,
-				       glade_file_location->tabcontents,
-				       &error)) {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
-		return 0;
-	}
-
 	g->container = GTK_WIDGET(gtk_builder_get_object(xml, "tabContents"));
 	g->layout = GTK_LAYOUT(gtk_builder_get_object(xml, "layout"));
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
