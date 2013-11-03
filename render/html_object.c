@@ -299,15 +299,24 @@ html_object_callback(hlcache_handle *object,
 					int w = content_get_width(object);
 					int h = content_get_height(object);
 
-					data.redraw.x = data.redraw.x *
+					if (w != 0) {
+						data.redraw.x =
+							data.redraw.x *
 							box->width / w;
-					data.redraw.y = data.redraw.y *
+						data.redraw.width =
+							data.redraw.width *
+							box->width / w;
+					}
+
+					if (h != 0) {
+						data.redraw.y =
+							data.redraw.y *
 							box->height / h;
-					data.redraw.width = data.redraw.width *
-							box->width / w;
-					data.redraw.height =
+						data.redraw.height =
 							data.redraw.height *
 							box->height / h;
+					}
+
 					data.redraw.object_width = box->width;
 					data.redraw.object_height = box->height;
 				}
