@@ -1059,9 +1059,10 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 			scaled = true;
 		}
 
-		if (scaled)
+		if (scaled && (intrinsic_width != 0)) {
 			*height = (*width * intrinsic_height) /
 					intrinsic_width;
+		}
 
 	} else if (*width == AUTO) {
 		/* Have given height; width is calculated from the given height
