@@ -24,7 +24,12 @@
  * desktop/version.c.
  */
 #define NETSURF_VERSION_MAJOR "3"
+#if defined(CI_BUILD)
+#define NETSURF_VERSION_MINOR CI_BUILD
+#else
 #define NETSURF_VERSION_MINOR "2"
+#endif
+
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
 const char * const verdate = WT_COMPILEDATE;
