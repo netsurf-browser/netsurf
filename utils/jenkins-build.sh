@@ -29,6 +29,9 @@
 
 # TARGET is set to the frontend target to build
 # label is set to the identifier of the toolchain doing the building
+# CC is the compiler (gcc or clang)
+# BUILD_JS is the javascript type (json or jsoff)
+# BUILD_NUMBER is the CI build number
 
 ################# Parameter and environment setup #####################
 
@@ -336,9 +339,6 @@ make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${B
 
 ############ Package artifact construction ################
 
-#destination for package artifacts
-DESTDIR=/srv/ci.netsurf-browser.org/html/builds/${TARGET}/
-
 # build the package file
 make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
 
@@ -351,11 +351,25 @@ fi
 
 ############ Package artifact deployment ################
 
-# copy the file into the output - always use scp as it works local or remote
-scp "${PKG_SRC}${PKG_SFX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/NetSurf-${IDENTIFIER}${PKG_SFX}
+#destination for package artifacts
+DESTDIR=/srv/ci.netsurf-browser.org/html/builds/${TARGET}/
 
-# remove the package file
+NEW_ARTIFACT_TARGET="NetSurf-${IDENTIFIER}${PKG_SFX}"
+
+# copy the file into the output - always use scp as it works local or remote
+scp "${PKG_SRC}${PKG_SFX}" netsurf@ci.netsurf-browser.org:${DESTDIR}/${NEW_ARTIFACT_TARGET}
+
+# remove the local package file artifact
 rm -f "${PKG_SRC}${PKG_SFX}"
 
 # setup latest link
-ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "NetSurf-${IDENTIFIER}${PKG_SFX}" > ${DESTDIR}/LATEST"
+ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIFACT_TARGET}" > ${DESTDIR}/LATEST"
+
+
+
+############ Package artifact cleanup ################
+
+OLD_ARTIFACT_COUNT=25
+OLD_ARTIFACT_TARGET="NetSurf-$CC-${BUILD_JS}-$((BUILD_NUMBER - ${OLD_ARTIFACT_COUNT}))"
+
+ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/${OLD_ARTIFACT_TARGET}"
