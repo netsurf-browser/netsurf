@@ -33,10 +33,18 @@
 # BUILD_JS is the javascript type (json or jsoff)
 # BUILD_NUMBER is the CI build number
 
+#####
+
+# set defaults - this is not retrivable from the jenkins environment
+OLD_ARTIFACT_COUNT=25
+
 ################# Parameter and environment setup #####################
 
 #identifier for this specific build
 IDENTIFIER="$CC-${BUILD_JS}-${BUILD_NUMBER}"
+
+# Identifier for build which will be cleaned
+OLD_IDENTIFIER="$CC-${BUILD_JS}-$((BUILD_NUMBER - ${OLD_ARTIFACT_COUNT}))"
 
 # default atari architecture - bletch
 ATARIARCH=68020-60
@@ -369,7 +377,6 @@ ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/LATEST && echo "${NEW_ARTIF
 
 ############ Package artifact cleanup ################
 
-OLD_ARTIFACT_COUNT=25
-OLD_ARTIFACT_TARGET="NetSurf-$CC-${BUILD_JS}-$((BUILD_NUMBER - ${OLD_ARTIFACT_COUNT}))"
+OLD_ARTIFACT_TARGET="NetSurf-${OLD_IDENTIFIER}${PKG_SFX}"
 
 ssh netsurf@ci.netsurf-browser.org "rm -f ${DESTDIR}/${OLD_ARTIFACT_TARGET}"
