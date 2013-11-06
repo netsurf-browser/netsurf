@@ -1867,7 +1867,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->xml = gtk_builder_new();
 	if (!gtk_builder_add_from_file(g->xml, glade_file_location->netsurf, &error)) {
 		g_warning("Couldn't load builder file: \"%s\"", error->message);
-		g_error_free (error);
+		g_error_free(error);
+		free(g);
 		return NULL;
 	}
 
