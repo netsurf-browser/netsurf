@@ -95,22 +95,25 @@ getter language %{
 %}
 
 getter platform %{
-  struct utsname *cutsname;
+	struct utsname *cutsname;
 
-  cutsname = malloc(sizeof(struct utsname));
+	cutsname = malloc(sizeof(struct utsname));
 
-  if ((cutsname != NULL) && (uname(cutsname) >= 0)) {
-    char *platstr;
-    int platstrlen;
+	if (cutsname != NULL) {
+		if (uname(cutsname) >= 0) {
+			char *platstr;
+			int platstrlen;
 
-    platstrlen = strlen(cutsname->sysname) + strlen(cutsname->machine) + 2;
-    platstr = malloc(platstrlen);
-    if (platstr != NULL) {
-      snprintf(platstr, platstrlen, "%s %s", cutsname->sysname, cutsname->machine);
-      jsret = JS_NewStringCopyN(cx, platstr, platstrlen - 1);
-      free(platstr);
-    } 
-  }
+			platstrlen = strlen(cutsname->sysname) + strlen(cutsname->machine) + 2;
+			platstr = malloc(platstrlen);
+			if (platstr != NULL) {
+				snprintf(platstr, platstrlen, "%s %s", cutsname->sysname, cutsname->machine);
+				jsret = JS_NewStringCopyN(cx, platstr, platstrlen - 1);
+				free(platstr);
+			} 
+		}
+		free(cutsname);
+	}
 %}
 
 getter userAgent %{
