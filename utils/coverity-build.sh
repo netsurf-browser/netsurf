@@ -29,20 +29,24 @@
 #
 # COVERITY_TOKEN
 # COVERITY_USER
-# JENKINS_HOME
+# COVERITY_PREFIX path to tools else default is used
+#
+# either PREFIX or JENKINS_HOME
 
-# We build for the Linux targets
-ARTIFACT_TARGET=Linux
+# build gtk, framebuffer and monkey frontend by default
 TARGETS="gtk framebuffer monkey"
 
+# We build for the Linux platform by default
+ARTIFACT_TARGET=${TARGET:-Linux}
+
 # setup build environment
-export PREFIX=${JENKINS_HOME}/artifacts-${ARTIFACT_TARGET}
+export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${ARTIFACT_TARGET}}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
 
 # Coverity tools location 
-COVERITY_PREFIX=/opt/coverity/cov-analysis-linux64-6.6.1
+COVERITY_PREFIX=${COVERITY_PREFIX:-/opt/coverity/cov-analysis-linux64-6.6.1}
 COVERITY_VERSION=$(git rev-parse HEAD)
 
 export PATH=${PATH}:${COVERITY_PREFIX}/bin
