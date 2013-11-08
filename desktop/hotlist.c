@@ -322,9 +322,11 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  */
 static nserror hotlist_add_folder_internal(
 		const char *title, treeview_node *relation,
-		enum treeview_relationship rel, struct hotlist_folder **folder)
+		enum treeview_relationship rel, struct hotlist_folder **folder,
+		bool default_folder)
 {
 	struct hotlist_folder *f;
+	treeview_node_options_flags flags = TREE_OPTION_NONE;
 	treeview_node *n;
 	nserror err;
 
@@ -346,10 +348,14 @@ static nserror hotlist_add_folder_internal(
 	}
 	f->data.value_len = strlen(title);
 
+	if (hl_ctx.built)
+		flags |= TREE_OPTION_SUPPRESS_RESIZE |
+				TREE_OPTION_SUPPRESS_REDRAW;
+	if (default_folder)
+		flags |= TREE_OPTION_SPECIAL_DIR;
+
 	err = treeview_create_node_folder(hl_ctx.tree,
-			&n, relation, rel, &f->data, f, hl_ctx.built ?
-			TREE_OPTION_NONE : TREE_OPTION_SUPPRESS_RESIZE |
-					TREE_OPTION_SUPPRESS_REDRAW);
+			&n, relation, rel, &f->data, f, flags);
 	if (err != NSERROR_OK) {
 		free((void*)f->data.value); /* Eww */
 		free(f);
@@ -658,16 +664,7 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 		struct hotlist_folder *f;
 		hotlist_load_ctx new_ctx;
 		treeview_node *rel;
-
-		title = dom_string_data(current_ctx->title);
-
-		/* Add folder node */
-		err = hotlist_add_folder_internal(title, current_ctx->rel,
-				current_ctx->relshp, &f);
-		if (err != NSERROR_OK) {
-			dom_string_unref(name);
-			return NSERROR_NOMEM;
-		}
+		bool default_folder = false;
 
 		/* Check if folder should be default folder */
 		error = dom_element_get_attribute(node, corestring_dom_id, &id);
@@ -677,10 +674,23 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 		}
 		if (id != NULL) {
 			if (dom_string_lwc_isequal(id, corestring_lwc_default))
-				hl_ctx.default_folder = f;
+				default_folder = true;
 
 			dom_string_unref(id);
 		}
+
+		title = dom_string_data(current_ctx->title);
+
+		/* Add folder node */
+		err = hotlist_add_folder_internal(title, current_ctx->rel,
+				current_ctx->relshp, &f, default_folder);
+		if (err != NSERROR_OK) {
+			dom_string_unref(name);
+			return NSERROR_NOMEM;
+		}
+
+		if (default_folder)
+			hl_ctx.default_folder = f;
 
 		rel = f->folder;
 		current_ctx->rel = rel;
@@ -833,7 +843,7 @@ static nserror hotlist_generate(void)
 	/* First make "NetSurf" folder for defualt entries */
 	title = "NetSurf";
 	err = hotlist_add_folder_internal(title, NULL,
-			TREE_REL_FIRST_CHILD, &f);
+			TREE_REL_FIRST_CHILD, &f, false);
 	if (err != NSERROR_OK) {
 		return err;
 	}
@@ -1223,7 +1233,7 @@ nserror hotlist_add_url(nsurl *url)
 		const char *temp = messages_get("HotlistDefaultFolderName");
 		struct hotlist_folder *f;
 		err = hotlist_add_folder_internal(temp, NULL,
-				TREE_REL_FIRST_CHILD, &f);
+				TREE_REL_FIRST_CHILD, &f, true);
 		if (err != NSERROR_OK)
 			return err;
 
@@ -1451,7 +1461,7 @@ nserror hotlist_add_folder(const char *title, bool at_y, int y)
 		return err;
 	}
 
-	err = hotlist_add_folder_internal(title, relation, rel, &f);
+	err = hotlist_add_folder_internal(title, relation, rel, &f, false);
 	if (err != NSERROR_OK) {
 		return err;
 	}

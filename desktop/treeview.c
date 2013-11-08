@@ -66,7 +66,8 @@ struct treeview_field {
 enum treeview_node_flags {
 	TREE_NODE_NONE		= 0,		/**< No node flags set */
 	TREE_NODE_EXPANDED	= (1 << 0),	/**< Whether node is expanded */
-	TREE_NODE_SELECTED	= (1 << 1)	/**< Whether node is selected */
+	TREE_NODE_SELECTED	= (1 << 1),	/**< Whether node is selected */
+	TREE_NODE_SPECIAL	= (1 << 2)	/**< Render as special node */
 };
 
 enum treeview_target_pos {
@@ -194,6 +195,7 @@ enum treeview_resource_id {
 	TREE_RES_ARROW = 0,
 	TREE_RES_CONTENT,
 	TREE_RES_FOLDER,
+	TREE_RES_FOLDER_SPECIAL,
 	TREE_RES_SEARCH,
 	TREE_RES_LAST
 };
@@ -201,6 +203,7 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 	{ "resource:icons/arrow-l.png", NULL, 0, false },
 	{ "resource:icons/content.png", NULL, 0, false },
 	{ "resource:icons/directory.png", NULL, 0, false },
+	{ "resource:icons/directory2.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }
 }; /**< Treeview content resources */
 
@@ -546,7 +549,8 @@ nserror treeview_create_node_folder(treeview *tree,
 		return NSERROR_NOMEM;
 	}
 
-	n->flags = TREE_NODE_NONE;
+	n->flags = (flags & TREE_OPTION_SPECIAL_DIR) ?
+			TREE_NODE_SPECIAL : TREE_NODE_NONE;
 	n->type = TREE_NODE_FOLDER;
 
 	n->height = tree_g.line_height;
@@ -1791,7 +1795,9 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 		/* Render icon */
 		if (node->type == TREE_NODE_ENTRY)
 			res = TREE_RES_CONTENT;
-		else if (node->type == TREE_NODE_FOLDER)
+		else if (node->flags & TREE_NODE_SPECIAL)
+			res = TREE_RES_FOLDER_SPECIAL;
+		else
 			res = TREE_RES_FOLDER;
 
 		if (treeview_res[res].ready) {
