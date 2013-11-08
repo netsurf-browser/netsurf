@@ -93,11 +93,13 @@ case ${TARGET} in
 	    "i686-apple-darwin10")
 		ARTIFACT_TARGET=Darwin
 		IDENTIFIER="${label}-${IDENTIFIER}"
+		OLD_IDENTIFIER="${label}-${OLD_IDENTIFIER}"
 		;;
 
 	    "powerpc-apple-darwin9")
 		ARTIFACT_TARGET=powerpc-apple-darwin9
 		IDENTIFIER="${ARTIFACT_TARGET}-${IDENTIFIER}"
+		OLD_IDENTIFIER="${ARTIFACT_TARGET}-${OLD_IDENTIFIER}"
 		;;
 
 	    *)
@@ -155,6 +157,7 @@ case ${TARGET} in
 	esac
 
 	IDENTIFIER="${ARTIFACT_TARGET}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${ARTIFACT_TARGET}-${OLD_IDENTIFIER}"
 	;;
 
 
@@ -287,6 +290,7 @@ case ${TARGET} in
 	esac
 
 	IDENTIFIER="${label}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${label}-${OLD_IDENTIFIER}"
 	PKG_SRC=nsmonkey
 	PKG_SFX=
 	;;
