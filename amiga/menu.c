@@ -496,8 +496,12 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	LONG cont;
 	struct ExAllData *ead;
 	char *menu_lab;
-
-	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
+	char lock_dir[1024];
+	
+	strlcpy(lock_dir, "PROGDIR:", 1024);
+	AddPart(lock_dir, nsoption_charp(arexx_dir), 1024);
+	
+	if(lock = Lock(lock_dir, SHARED_LOCK))
 	{
 		if(buffer = AllocVecTagList(1024, NULL))
 		{
