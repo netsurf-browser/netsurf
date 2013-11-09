@@ -102,7 +102,7 @@ nl.all.Page:Pagina
 en.all.Object:Object
 de.all.Object:Objekt
 fr.all.Object:Objet
-it.all.Object:Immagine
+it.all.Object:Oggetto
 nl.all.Object:Object
 en.all.Navigate:Navigate
 de.all.Navigate:Navigieren
@@ -294,7 +294,7 @@ nl.ro.Reload:Pagina opnieuw laden  ^F5
 en.all.Stop:Stop loading this page
 de.all.Stop:Ladevorgang abbrechen
 fr.all.Stop:Arrêter le chargement de la page
-it.all.Stop:Stop
+it.all.Stop:Interrompi
 nl.all.Stop:Pagina ophalen afbreken
 
 # Main -> Display menu
@@ -762,7 +762,7 @@ nl.all.TextNS:Text...
 en.all.SaveCompNS:Complete...
 de.all.SaveCompNS:Komplett...
 fr.all.SaveCompNS:Complete...
-it.all.SaveCompNS:Complete...
+it.all.SaveCompNS:Cartella...
 nl.all.SaveCompNS:Complete...
 en.all.PDFNS:PDF...
 de.all.PDFNS:PDF...
@@ -820,12 +820,12 @@ nl.all.ClearNS:Clear selection
 en.ami.Undo:Undo
 de.ami.Undo:Undo
 fr.ami.Undo:Undo
-it.ami.Undo:Undo
+it.ami.Undo:Annulla
 nl.ami.Undo:Undo
 en.ami.Redo:Redo
 de.ami.Redo:Redo
 fr.ami.Redo:Redo
-it.ami.Redo:Redo
+it.ami.Redo:Ripristina
 nl.ami.Redo:Redo
 
 # Browser menu
@@ -868,12 +868,12 @@ nl.all.ScaleNS:Scale
 en.all.ScaleInc:Increase
 de.all.ScaleInc:Vergrößern
 fr.all.ScaleInc:Increase
-it.all.ScaleInc:Incrementa
+it.all.ScaleInc:Aumenta
 nl.all.ScaleInc:Increase
 en.all.ScaleDec:Decrease
 de.all.ScaleDec:Verkleinern
 fr.all.ScaleDec:Decrease
-it.all.ScaleDec:Decrementa
+it.all.ScaleDec:Diminuisci
 nl.all.ScaleDec:Decrease
 en.all.ScaleNorm:Normal
 de.all.ScaleNorm:Normal
@@ -1169,100 +1169,100 @@ nl.all.TreeviewLabelURL:URL
 en.all.TreeviewLabelLastVisit:Last visit
 de.all.TreeviewLabelLastVisit:Last visit
 fr.all.TreeviewLabelLastVisit:Last visit
-it.all.TreeviewLabelLastVisit:Last visit
+it.all.TreeviewLabelLastVisit:Ultima visita
 nl.all.TreeviewLabelLastVisit:Last visit
 en.all.TreeviewLabelVisits:Visits
 de.all.TreeviewLabelVisits:Visits
 fr.all.TreeviewLabelVisits:Visits
-it.all.TreeviewLabelVisits:Visits
+it.all.TreeviewLabelVisits:Visite
 nl.all.TreeviewLabelVisits:Visits
 en.all.TreeviewLabelPeriod:Period
 de.all.TreeviewLabelPeriod:Period
 fr.all.TreeviewLabelPeriod:Period
-it.all.TreeviewLabelPeriod:Period
+it.all.TreeviewLabelPeriod:Periodo
 nl.all.TreeviewLabelPeriod:Period
 
 en.all.TreeviewLabelName:Name
 de.all.TreeviewLabelName:Name
 fr.all.TreeviewLabelName:Name
-it.all.TreeviewLabelName:Name
+it.all.TreeviewLabelName:Nome
 nl.all.TreeviewLabelName:Name
 en.all.TreeviewLabelContent:Content
 de.all.TreeviewLabelContent:Content
 fr.all.TreeviewLabelContent:Content
-it.all.TreeviewLabelContent:Content
+it.all.TreeviewLabelContent:Contenuto
 nl.all.TreeviewLabelContent:Content
 en.all.TreeviewLabelDomain:Domain
 de.all.TreeviewLabelDomain:Domain
 fr.all.TreeviewLabelDomain:Domain
-it.all.TreeviewLabelDomain:Domain
+it.all.TreeviewLabelDomain:Dominio
 nl.all.TreeviewLabelDomain:Domain
 en.all.TreeviewLabelPath:Path
 de.all.TreeviewLabelPath:Path
 fr.all.TreeviewLabelPath:Path
-it.all.TreeviewLabelPath:Path
+it.all.TreeviewLabelPath:Percorso
 nl.all.TreeviewLabelPath:Path
 en.all.TreeviewLabelExpires:Expires
 de.all.TreeviewLabelExpires:Expires
 fr.all.TreeviewLabelExpires:Expires
-it.all.TreeviewLabelExpires:Expires
+it.all.TreeviewLabelExpires:Scadenza
 nl.all.TreeviewLabelExpires:Expires
 en.all.TreeviewLabelLastUsed:Last used
 de.all.TreeviewLabelLastUsed:Last used
 fr.all.TreeviewLabelLastUsed:Last used
-it.all.TreeviewLabelLastUsed:Last used
+it.all.TreeviewLabelLastUsed:Ultimo utilizzo
 nl.all.TreeviewLabelLastUsed:Last used
 en.all.TreeviewLabelRestrictions:Restrictions
 de.all.TreeviewLabelRestrictions:Restrictions
 fr.all.TreeviewLabelRestrictions:Restrictions
-it.all.TreeviewLabelRestrictions:Restrictions
+it.all.TreeviewLabelRestrictions:Restrizioni
 nl.all.TreeviewLabelRestrictions:Restrictions
 en.all.TreeviewLabelVersion:Version
 de.all.TreeviewLabelVersion:Version
 fr.all.TreeviewLabelVersion:Version
-it.all.TreeviewLabelVersion:Version
+it.all.TreeviewLabelVersion:Versione
 nl.all.TreeviewLabelVersion:Version
 en.all.TreeviewLabelPersistent:Persistent
 de.all.TreeviewLabelPersistent:Persistent
 fr.all.TreeviewLabelPersistent:Persistent
-it.all.TreeviewLabelPersistent:Persistent
+it.all.TreeviewLabelPersistent:Persistenza
 nl.all.TreeviewLabelPersistent:Persistent
 en.all.TreeviewLabelDomainFolder:Domain folder
 de.all.TreeviewLabelDomainFolder:Domain folder
 fr.all.TreeviewLabelDomainFolder:Domain folder
-it.all.TreeviewLabelDomainFolder:Domain folder
+it.all.TreeviewLabelDomainFolder:Cartella dominio
 nl.all.TreeviewLabelDomainFolder:Domain folder
 
 en.all.TreeviewLabelSerial:Serial
 de.all.TreeviewLabelSerial:Serial
 fr.all.TreeviewLabelSerial:Serial
-it.all.TreeviewLabelSerial:Serial
+it.all.TreeviewLabelSerial:Seriale
 nl.all.TreeviewLabelSerial:Serial
 en.all.TreeviewLabelType:Type
 de.all.TreeviewLabelType:Type
 fr.all.TreeviewLabelType:Type
-it.all.TreeviewLabelType:Type
+it.all.TreeviewLabelType:Tipo
 nl.all.TreeviewLabelType:Type
 en.all.TreeviewLabelValidUntil:Valid until
 de.all.TreeviewLabelValidUntil:Valid until
 fr.all.TreeviewLabelValidUntil:Valid until
-it.all.TreeviewLabelValidUntil:Valid until
+it.all.TreeviewLabelValidUntil:Valido fino a
 nl.all.TreeviewLabelValidUntil:Valid until
 en.all.TreeviewLabelValidFrom:Valid from
 de.all.TreeviewLabelValidFrom:Valid from
 fr.all.TreeviewLabelValidFrom:Valid from
-it.all.TreeviewLabelValidFrom:Valid from
+it.all.TreeviewLabelValidFrom:Valido da
 nl.all.TreeviewLabelValidFrom:Valid from
 en.all.TreeviewLabelIssuer:Issuer
 de.all.TreeviewLabelIssuer:Issuer
 fr.all.TreeviewLabelIssuer:Issuer
-it.all.TreeviewLabelIssuer:Issuer
+it.all.TreeviewLabelIssuer:Emittente
 nl.all.TreeviewLabelIssuer:Issuer
 
 en.all.TreeviewLabelFolder:Folder
 de.all.TreeviewLabelFolder:Folder
 fr.all.TreeviewLabelFolder:Folder
-it.all.TreeviewLabelFolder:Folder
+it.all.TreeviewLabelFolder:Cartella
 nl.all.TreeviewLabelFolder:Folder
 
 
@@ -1271,17 +1271,17 @@ nl.all.TreeviewLabelFolder:Folder
 en.all.CookieManagerHTTPS:Secure hosts via https only
 de.all.CookieManagerHTTPS:Secure hosts via https only
 fr.all.CookieManagerHTTPS:Secure hosts via https only
-it.all.CookieManagerHTTPS:Secure hosts via https only
+it.all.CookieManagerHTTPS:Solo host sicuri via https
 nl.all.CookieManagerHTTPS:Secure hosts via https only
 en.all.CookieManagerSecure:Secure hosts only
 de.all.CookieManagerSecure:Secure hosts only
 fr.all.CookieManagerSecure:Secure hosts only
-it.all.CookieManagerSecure:Secure hosts only
+it.all.CookieManagerSecure:Solo host sicuri
 nl.all.CookieManagerSecure:Secure hosts only
 en.all.CookieManagerHTTP:HTTP connections only
 de.all.CookieManagerHTTP:HTTP connections only
 fr.all.CookieManagerHTTP:HTTP connections only
-it.all.CookieManagerHTTP:HTTP connections only
+it.all.CookieManagerHTTP:Solo connessioni HTTP
 nl.all.CookieManagerHTTP:HTTP connections only
 
 
@@ -1290,7 +1290,7 @@ nl.all.CookieManagerHTTP:HTTP connections only
 en.all.HotlistDefaultFolderName:Unsorted entries
 de.all.HotlistDefaultFolderName:Unsorted entries
 fr.all.HotlistDefaultFolderName:Unsorted entries
-it.all.HotlistDefaultFolderName:Unsorted entries
+it.all.HotlistDefaultFolderName:Voci non ordinate
 nl.all.HotlistDefaultFolderName:Unsorted entries
 
 
@@ -1354,12 +1354,12 @@ nl.all.HotlistDocumentation:Documentatie
 en.all.HotlistContact:Contact the NetSurf developers
 de.all.HotlistContact:Contact the NetSurf developers
 fr.all.HotlistContact:Contact the NetSurf developers
-it.all.HotlistContact:Contact the NetSurf developers
+it.all.HotlistContact:Contatta gli sviluppatori di NetSurf
 nl.all.HotlistContact:Contact the NetSurf developers
 en.all.HotlistDownloads:Download the latest version
 de.all.HotlistDownloads:Download the latest version
 fr.all.HotlistDownloads:Download the latest version
-it.all.HotlistDownloads:Download the latest version
+it.all.HotlistDownloads:Scarica l'ultima versione
 nl.all.HotlistDownloads:Download the latest version
 
 # Default (Amiga) hotlist folder names
@@ -1406,32 +1406,32 @@ nl.all.DateYesterday:gisteren
 en.all.Date2Days:Two days ago
 de.all.Date2Days:2 days ago
 fr.all.Date2Days:2 days ago
-it.all.Date2Days:2 days ago
+it.all.Date2Days:2 giorni fa
 nl.all.Date2Days:2 days ago
 en.all.Date3Days:Three days ago
 de.all.Date3Days:3 days ago
 fr.all.Date3Days:3 days ago
-it.all.Date3Days:3 days ago
+it.all.Date3Days:3 giorni fa
 nl.all.Date3Days:3 days ago
 en.all.Date4Days:Four days ago
 de.all.Date4Days:4 days ago
 fr.all.Date4Days:4 days ago
-it.all.Date4Days:4 days ago
+it.all.Date4Days:4 giorni fa
 nl.all.Date4Days:4 days ago
 en.all.Date5Days:Five days ago
 de.all.Date5Days:5 days ago
 fr.all.Date5Days:5 days ago
-it.all.Date5Days:5 days ago
+it.all.Date5Days:5 giorni fa
 nl.all.Date5Days:5 days ago
 en.all.Date6Days:Six days ago
 de.all.Date6Days:6 days ago
 fr.all.Date6Days:6 days ago
-it.all.Date6Days:6 days ago
+it.all.Date6Days:6 giorni fa
 nl.all.Date6Days:6 days ago
 en.all.Date1Week:A week ago
 de.all.Date1Week:A week ago
 fr.all.Date1Week:A week ago
-it.all.Date1Week:A week ago
+it.all.Date1Week:1 settimana fa
 nl.all.Date1Week:A week ago
 en.all.Date2Week:Two weeks ago
 de.all.Date2Week:vor 2 Wochen
@@ -1923,7 +1923,7 @@ nl.gtk.gtkPreferences:P_references
 en.gtk.gtkStop:_Stop
 de.gtk.gtkStop:_Stop
 fr.gtk.gtkStop:_Stop
-it.gtk.gtkStop:_Stop
+it.gtk.gtkStop:_Stoppa
 nl.gtk.gtkStop:_Stop
 en.gtk.gtkStopAccel:Escape
 de.gtk.gtkStopAccel:Escape
@@ -1958,7 +1958,7 @@ nl.gtk.gtkZoomPlusAccel:<ctrl>plus
 en.gtk.gtkZoomMinus:Zoom _out
 de.gtk.gtkZoomMinus:Herausz_oomen
 fr.gtk.gtkZoomMinus:Zoom _-
-it.gtk.gtkZoomMinus:_Decrementa zoom
+it.gtk.gtkZoomMinus:_Diminuisci zoom
 nl.gtk.gtkZoomMinus:Zoom _out
 en.gtk.gtkZoomMinusAccel:<ctrl>minus
 de.gtk.gtkZoomMinusAccel:<ctrl>minus
@@ -4282,27 +4282,27 @@ nl.ro.HelpHotEntry:Use this \w to set the entry details.
 en.ro.HelpHotlist:\Thotlist management window.
 de.ro.HelpHotlist:Das ist das Hotlist Fenster.
 fr.ro.HelpHotlist:\Tla fenêtre de gestion des favoris.
-it.ro.HelpHotlist:\Thotlist management window.
+it.ro.HelpHotlist:\Tfinestra di gestione dei segnalibri.
 nl.ro.HelpHotlist:\Thotlist management window.
 en.ro.HelpHotlist0:\Sopen this directory.
 de.ro.HelpHotlist0:Klicken mit AUSWAHL öffnet das Verzeichnis.
 fr.ro.HelpHotlist0:\Souvrir ce répertoire.
-it.ro.HelpHotlist0:\Sopen this directory.
+it.ro.HelpHotlist0:\Sapri questa directory.
 nl.ro.HelpHotlist0:\Sopen this directory.
 en.ro.HelpHotlist1:\Sclose this directory.
 de.ro.HelpHotlist1:Klicken mit AUSWAHL schließt das Verzeichnis.
 fr.ro.HelpHotlist1:\Sfermer ce répertoire.
-it.ro.HelpHotlist1:\Sclose this directory.
+it.ro.HelpHotlist1:\Schiudi questa directory.
 nl.ro.HelpHotlist1:\Sclose this directory.
 en.ro.HelpHotlist2:\Sshow the entry details.
 de.ro.HelpHotlist2:Klicken mit AUSWAHL zeigt die Zusatzinformationen zu diesem Eintrag.
 fr.ro.HelpHotlist2:\Smontrer les détails de cette entrée.
-it.ro.HelpHotlist2:\Sshow the entry details.
+it.ro.HelpHotlist2:\Smostra dettagli di questo elemento.
 nl.ro.HelpHotlist2:\Sshow the entry details.
 en.ro.HelpHotlist3:\Shide the entry details.
 de.ro.HelpHotlist3:Klicken mit AUSWAHL schließt die Zusatzanzeige.
 fr.ro.HelpHotlist3:\Scacher les détails de cette entrée.
-it.ro.HelpHotlist3:\Shide the entry details.
+it.ro.HelpHotlist3:\Snascondi dettagli di questo elemento.
 nl.ro.HelpHotlist3:\Shide the entry details.
 en.ro.HelpHotlist4:\Sselect this directory.|MDouble-click \s to open this directory.
 de.ro.HelpHotlist4:Klicken mit AUSWAHL markiert dieses Verzeichnis.|MDoppelklicken um das Verzeichnis zu öffnen.
@@ -4359,7 +4359,7 @@ nl.ro.HelpHotlistMenu0:\Rperform an operation on the hotlist.
 en.ro.HelpHotlistMenu0-0:\Rcreate a new item.
 de.ro.HelpHotlistMenu0-0:Neues Element in die Hotlist einfügen.
 fr.ro.HelpHotlistMenu0-0:\Rcréer un nouvel item.
-it.ro.HelpHotlistMenu0-0:\Rcreate a new item.
+it.ro.HelpHotlistMenu0-0:\Rcrea un nuovo oggetto.
 nl.ro.HelpHotlistMenu0-0:\Rcreate a new item.
 en.ro.HelpHotlistMenu0-0-0:\Rcreate a new directory.
 de.ro.HelpHotlistMenu0-0-0:Neues Verzeichnis anlegen.
@@ -4394,7 +4394,7 @@ nl.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 en.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
 de.ro.HelpHotlistMenu0-2-2:Zeigt die Zusatzinformationen zu den Einträgen an.
 fr.ro.HelpHotlistMenu0-2-2:\Smontrer tous les détails sur les entrées.
-it.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
+it.ro.HelpHotlistMenu0-2-2:\Smostra tutti i dettagli dell'elemento.
 nl.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
 en.ro.HelpHotlistMenu0-3:\Rcollapse items within the hotlist.
 de.ro.HelpHotlistMenu0-3:Schließen von Verzeichnissen und Ausblenden der Zusatzinformationen.
@@ -4414,7 +4414,7 @@ nl.ro.HelpHotlistMenu0-3-1:\Sclose all directories.
 en.ro.HelpHotlistMenu0-3-2:\Shide all entry details.
 de.ro.HelpHotlistMenu0-3-2:Versteckt die Zusatzinformationen der Einträge.
 fr.ro.HelpHotlistMenu0-3-2:\Scacher tous les détails sur les entrées.
-it.ro.HelpHotlistMenu0-3-2:\Shide all entry details.
+it.ro.HelpHotlistMenu0-3-2:\Snascondi tutti i dettagli dell'elemento.
 nl.ro.HelpHotlistMenu0-3-2:\Shide all entry details.
 en.ro.HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpHotlistMenu0-4:Knopfleisteneinstellungen vornehmen.
@@ -4706,17 +4706,17 @@ nl.ro.HelpConfigure:\Tconfiguration \w for NetSurf
 en.ro.HelpConfigure0:Cache configuration tool
 de.ro.HelpConfigure0:Cachespeicher konfigurieren
 fr.ro.HelpConfigure0:Outil de configuration de cache
-it.ro.HelpConfigure0:Cache configuration tool
+it.ro.HelpConfigure0:Strumento di configurazione della cache
 nl.ro.HelpConfigure0:Cache configuration tool
 en.ro.HelpConfigure1:Connection configuration tool
 de.ro.HelpConfigure1:Verbindungen konfigurieren
 fr.ro.HelpConfigure1:Outil de configuration de connexion
-it.ro.HelpConfigure1:Connection configuration tool
+it.ro.HelpConfigure1:Strumento di configurazione della connessione
 nl.ro.HelpConfigure1:Connection configuration tool
 en.ro.HelpConfigure2:Content configuration tool
 de.ro.HelpConfigure2:Bestimmte Seiteninhalte zulassen oder abschalten
 fr.ro.HelpConfigure2:Outil de configuration de contenu
-it.ro.HelpConfigure2:Content configuration tool
+it.ro.HelpConfigure2:Strumento di configurazione dei contenuti
 nl.ro.HelpConfigure2:Content configuration tool
 en.ro.HelpConfigure3:Font configuration tool
 de.ro.HelpConfigure3:Zeichensätze konfigurieren
@@ -4726,32 +4726,32 @@ nl.ro.HelpConfigure3:Font configuration tool
 en.ro.HelpConfigure4:Home page configuration tool
 de.ro.HelpConfigure4:Homepage einstellen
 fr.ro.HelpConfigure4:Outil de configuration de la page d'accueil
-it.ro.HelpConfigure4:Home page configuration tool
+it.ro.HelpConfigure4:Strumento di configurazione della pagina iniziale
 nl.ro.HelpConfigure4:Home page configuration tool
 en.ro.HelpConfigure5:Image configuration tool
 de.ro.HelpConfigure5:Bilderdarstellung konfigurieren
 fr.ro.HelpConfigure5:Outil de configuration d'image
-it.ro.HelpConfigure5:Image configuration tool
+it.ro.HelpConfigure5:Strumento di configurazione delle immagini
 nl.ro.HelpConfigure5:Image configuration tool
 en.ro.HelpConfigure6:Interface configuration tool
 de.ro.HelpConfigure6:Programmverhalten für besondere Situationen einstellen
 fr.ro.HelpConfigure6:Outil de configuration d'interface
-it.ro.HelpConfigure6:Interface configuration tool
+it.ro.HelpConfigure6:Strumento di configurazione dell'interfaccia
 nl.ro.HelpConfigure6:Interface configuration tool
 en.ro.HelpConfigure7:Language configuration tool
 de.ro.HelpConfigure7:Sprachen einstellen
 fr.ro.HelpConfigure7:Outil de configuration de langue
-it.ro.HelpConfigure7:Language configuration tool
+it.ro.HelpConfigure7:Strumento di configurazione della lingua
 nl.ro.HelpConfigure7:Language configuration tool
 en.ro.HelpConfigure8:Theme configuration tool
 de.ro.HelpConfigure8:Themenauswahl
 fr.ro.HelpConfigure8:Outil de configuration de thème
-it.ro.HelpConfigure8:Theme configuration tool
+it.ro.HelpConfigure8:Strumento di configurazione dei temi
 nl.ro.HelpConfigure8:Theme configuration tool
 en.ro.HelpConfigure9:Security and Privacy configuration tool
 de.ro.HelpConfigure9:Sicherheitseinstellungen und Privatsphäre
 fr.ro.HelpConfigure9:Outil de configuration de la sécurité et de la confidentialité
-it.ro.HelpConfigure9:Security and Privacy configuration tool
+it.ro.HelpConfigure9:Strumento di configurazione della Sicurezza e Privacy
 nl.ro.HelpConfigure9:Security and Privacy configuration tool
 
 en.ro.HelpCacheConfig:\Tcache configuration \w.
@@ -5321,7 +5321,7 @@ nl.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 en.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 de.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 fr.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
-it.ami.HelpToolbarStop:Stop
+it.ami.HelpToolbarStop:Stoppa
 nl.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 en.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 de.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
@@ -5592,7 +5592,7 @@ nl.all.Proxy:HTTP Proxy
 en.ami.ProxyBypass:Bypass proxy for
 de.ami.ProxyBypass:Bypass proxy for
 fr.ami.ProxyBypass:Bypass proxy for
-it.ami.ProxyBypass:Bypass proxy for
+it.ami.ProxyBypass:Bypassa proxy per
 nl.ami.ProxyBypass:Bypass proxy for
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
