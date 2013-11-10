@@ -496,12 +496,8 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	LONG cont;
 	struct ExAllData *ead;
 	char *menu_lab;
-	char lock_dir[1024];
-	
-	strlcpy(lock_dir, "PROGDIR:", 1024);
-	AddPart(lock_dir, nsoption_charp(arexx_dir), 1024);
-	
-	if(lock = Lock(lock_dir, SHARED_LOCK))
+
+	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
 	{
 		if(buffer = AllocVecTagList(1024, NULL))
 		{
@@ -1112,16 +1108,20 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 	char *script = hook->h_Data;
 	char *temp;
 	struct gui_window_2 *gwin;
+	BPTR lock = 0;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(script)
 	{
 		if(temp = AllocVecTagList(1024, NULL))
 		{
-			strcpy(temp, nsoption_charp(arexx_dir));
-			AddPart(temp, script, 1024);
-			ami_arexx_execute(temp);
-			FreeVec(temp);
+			if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK)) {
+				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
+				AddPart(temp, script, 1024);
+				ami_arexx_execute(temp);
+				FreeVec(temp);
+				UnLock(lock);
+			}
 		}
 	}
 }
