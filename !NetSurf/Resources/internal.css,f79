@@ -133,7 +133,8 @@ body#dirlist a.even {
 	background-color: #b2c3ff; }
 
 body#dirlist span {
-	display: table-cell; }
+	display: table-cell;
+	vertical-align: middle; }
 
 body#dirlist em > span {
 	padding-bottom: 1px; }
@@ -141,9 +142,20 @@ body#dirlist em > span {
 body#dirlist a + a>span {
 	border-top: 1px solid #9af; }
 
+body#dirlist a {
+	background-position: 4px 50%;
+	background-repeat: no-repeat;
+}
+
+body#dirlist a.dir {
+	background-image: url("resource:icons/directory.png"); }
+
+body#dirlist a.file {
+	background-image: url("resource:icons/content.png"); }
+
 body#dirlist span.name {
-	padding-left: 22px;
-	min-height: 19px;}
+	padding-left: 27px;
+	min-height: 20px;}
 
 body#dirlist a.dir > span.name {
 	font-weight: bold; }
