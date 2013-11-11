@@ -499,17 +499,27 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	nsurl *up; /* url of parent */
 	char *path; /* url for list entries */
 
-	struct dirent **listing = NULL; /* directory entry listing */
-	struct dirent *ent; /* current directroy entry */
 	struct stat ent_stat; /* stat result of leaf entry */
 	char datebuf[64]; /* buffer for date text */
 	char timebuf[64]; /* buffer for time text */
 	char urlpath[PATH_MAX]; /* buffer for leaf entry path */
+	struct dirent *ent; /* current directroy entry */
+
+#if defined(_WIN32)
+	/* Mingw lacks scandir and alphasort functions, so use opendir */
+	DIR *scandir; /* handle for enumerating the directory */
+
+	scandir = opendir(ctx->path);
+	if (scandir == NULL) {
+#else
+	/* Use scandir everywhere else */
+	struct dirent **listing = NULL; /* directory entry listing */
 	int i; /* directory entry index */
 	int n; /* number of directory entries */
 
 	n = scandir(ctx->path, &listing, 0, alphasort);
 	if (n < 0) {
+#endif
 		fetch_file_process_error(ctx,
 			fetch_file_errno_to_http_code(errno));
 		return;
@@ -567,8 +577,12 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
+#if defined(_WIN32)
+	while ((ent = readdir(scandir)) != NULL) {
+#else
 	for (i = 0; i < n; i++) {
 		ent = listing[i];
+#endif
 
 		if (ent->d_name[0] == '.')
 			continue;
@@ -653,12 +667,16 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 fetch_file_process_dir_aborted:
 
+#if defined(_WIN32)
+	closedir(scandir);
+#else
 	if (listing != NULL) {
 		for (i = 0; i < n; i++) {
 			free(listing[i]);
 		}
 		free(listing);
 	}
+#endif
 }
 
 
