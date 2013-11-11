@@ -1294,6 +1294,24 @@ it.all.HotlistDefaultFolderName:Voci non ordinate
 nl.all.HotlistDefaultFolderName:Unsorted entries
 
 
+# Default name for new folders
+#
+en.all.NewFolder:New folder
+de.all.NewFolder:New folder
+fr.all.NewFolder:New folder
+it.all.NewFolder:New folder
+nl.all.NewFolder:New folder
+
+
+# Default title
+#
+en.all.NoTitle:<No title>
+de.all.NoTitle:<No title>
+fr.all.NoTitle:<No title>
+it.all.NoTitle:<No title>
+nl.all.NoTitle:<No title>
+
+
 
 # Tree export
 #

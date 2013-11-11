@@ -249,7 +249,8 @@ static nserror global_history_create_treeview_field_data(
 		struct global_history_entry *e,
 		const struct url_data *data)
 {
-	const char *title = (data->title != NULL) ? data->title : "<No title>";
+	const char *title = (data->title != NULL) ?
+			data->title : messages_get("NoTitle");
 	char buffer[16];
 	const char *last_visited;
 	char *last_visited2;

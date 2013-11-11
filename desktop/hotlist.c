@@ -331,8 +331,7 @@ static nserror hotlist_add_folder_internal(
 	nserror err;
 
 	if (title == NULL) {
-		/* TODO: use messages */
-		title = "New folder";
+		title = messages_get("NewFolder");
 	}
 
 	/* Create the title field */
@@ -348,7 +347,7 @@ static nserror hotlist_add_folder_internal(
 	}
 	f->data.value_len = strlen(title);
 
-	if (hl_ctx.built)
+	if (!hl_ctx.built)
 		flags |= TREE_OPTION_SUPPRESS_RESIZE |
 				TREE_OPTION_SUPPRESS_REDRAW;
 	if (default_folder)
@@ -556,7 +555,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	if (title1 != NULL) {
 		title = dom_string_data(title1);
 	} else {
-		title = "<No title>";
+		title = messages_get("NoTitle");
 	}
 
 	/* Need to get URL as a nsurl object */
