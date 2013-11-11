@@ -95,6 +95,11 @@ char *realpath(const char *path, char *resolved_path);
 #undef HAVE_MMAP
 #endif
 
+#define HAVE_SCANDIR
+#if (defined(_WIN32))
+#undef HAVE_SCANDIR
+#endif
+
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
  *
