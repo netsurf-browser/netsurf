@@ -339,6 +339,90 @@ char *strndup(const char *s, size_t n)
 
 #endif
 
+
+#ifndef HAVE_SCANDIR
+int alphasort(const struct dirent **d1, const struct dirent **d2)
+{
+	return strcasecmp((*d1)->d_name, (*d2)->d_name);
+}
+
+int scandir(const char *dir, struct dirent ***namelist,
+		int (*sel)(const struct dirent *),
+		int (*compar)(const struct dirent **, const struct dirent **))
+{
+	struct dirent **entlist = NULL;
+	struct dirent **entlist_temp = NULL;
+	struct dirent *ent = NULL, *new_ent;
+	int alloc_n = 0;
+	int n = 0;
+	DIR *d;
+
+	d = opendir(dir);
+	if (d == NULL) {
+		goto error;
+	}
+
+	while ((ent = readdir(d)) != NULL) {
+		/* Avoid entries that caller doesn't want */
+		if (sel && (*sel)(ent) == 0)
+			continue;
+
+		/* Ensure buffer is big enough to list this entry */
+		if (n == alloc_n) {
+			alloc_n *= 4;
+			if (alloc_n == 0) {
+				alloc_n = 32;
+			}
+			entlist_temp = realloc(entlist,
+					sizeof(*entlist) * alloc_n);
+			if (entlist_temp == NULL) {
+				goto error;
+			}
+			entlist = entlist_temp;
+		}
+
+		/* Make copy of ent */
+		new_ent = malloc(sizeof(*new_ent));
+		if (new_ent == NULL) {
+			goto error;
+		}
+		memcpy(new_ent, ent, sizeof(struct dirent));
+
+		/* Make list entry point to this copy of ent */
+		entlist[n] = new_ent;
+
+		n++;
+	}
+
+	closedir(d);
+
+	/* Sort */
+	if (compar != NULL && n > 1)
+		qsort(entlist, n, sizeof(*entlist),
+				(int (*)(const void *, const void *))compar);
+	*namelist = entlist;
+	return n;
+
+error:
+
+	if (entlist != NULL) {
+		int i;
+		for (i = 0; i < n; i++) {
+			free(entlist[i]);
+		}
+		free(entlist);
+	}
+
+	if (d != NULL) {
+		closedir(d);
+	}
+
+	return -1;
+}
+
+#endif
+
+
 #ifndef HAVE_STRCHRNUL
 
 /**

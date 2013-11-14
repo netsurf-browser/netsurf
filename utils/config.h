@@ -98,6 +98,10 @@ char *realpath(const char *path, char *resolved_path);
 #define HAVE_SCANDIR
 #if (defined(_WIN32))
 #undef HAVE_SCANDIR
+int alphasort(const struct dirent **d1, const struct dirent **d2);
+int scandir(const char *dir, struct dirent ***namelist,
+		int (*sel)(const struct dirent *),
+		int (*compar)(const struct dirent **, const struct dirent **));
 #endif
 
 /* This section toggles build options on and off.
