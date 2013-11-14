@@ -508,7 +508,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	int i; /* directory entry index */
 	int n; /* number of directory entries */
 
-	n = scandir(ctx->path, &listing, 0, alphasort);
+	n = scandir(ctx->path, &listing, 0, dir_sort_alpha);
 	if (n < 0) {
 		fetch_file_process_error(ctx,
 			fetch_file_errno_to_http_code(errno));

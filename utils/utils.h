@@ -29,6 +29,8 @@
 #include <regex.h>
 #include <assert.h>
 
+struct dirent;
+
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
@@ -156,6 +158,18 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
 unsigned int wallclock(void);
+
+
+/**
+ * Comparison function for sorting directories.
+ *
+ * Correctly orders non zero-padded numerical parts.
+ * ie. produces "file1, file2, file10" rather than "file1, file10, file2".
+ *
+ * d1	first directory entry
+ * d2	second directory entry
+ */
+int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2);
 
 /**
  * Return a hex digit for the given numerical value.
