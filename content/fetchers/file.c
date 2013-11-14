@@ -503,21 +503,13 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	char datebuf[64]; /* buffer for date text */
 	char timebuf[64]; /* buffer for time text */
 	char urlpath[PATH_MAX]; /* buffer for leaf entry path */
-	struct dirent *ent; /* current directroy entry */
-
-#ifdef HAVE_SCANDIR
+	struct dirent *ent; /* current directory entry */
 	struct dirent **listing = NULL; /* directory entry listing */
 	int i; /* directory entry index */
 	int n; /* number of directory entries */
 
 	n = scandir(ctx->path, &listing, 0, alphasort);
 	if (n < 0) {
-#else
-	DIR *scandir; /* handle for enumerating the directory */
-
-	scandir = opendir(ctx->path);
-	if (scandir == NULL) {
-#endif
 		fetch_file_process_error(ctx,
 			fetch_file_errno_to_http_code(errno));
 		return;
@@ -575,12 +567,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
-#ifdef HAVE_SCANDIR
 	for (i = 0; i < n; i++) {
 		ent = listing[i];
-#else
-	while ((ent = readdir(scandir)) != NULL) {
-#endif
 
 		if (ent->d_name[0] == '.')
 			continue;
@@ -665,16 +653,12 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 fetch_file_process_dir_aborted:
 
-#ifdef HAVE_SCANDIR
 	if (listing != NULL) {
 		for (i = 0; i < n; i++) {
 			free(listing[i]);
 		}
 		free(listing);
 	}
-#else
-	closedir(scandir);
-#endif
 }
 
 
