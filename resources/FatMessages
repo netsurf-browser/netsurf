@@ -1296,11 +1296,11 @@ nl.all.HotlistDefaultFolderName:Unsorted entries
 
 # Default name for new folders
 #
-en.all.NewFolder:New folder
-de.all.NewFolder:New folder
-fr.all.NewFolder:New folder
-it.all.NewFolder:New folder
-nl.all.NewFolder:New folder
+en.all.NewFolderName:New folder
+de.all.NewFolderName:New folder
+fr.all.NewFolderName:New folder
+it.all.NewFolderName:New folder
+nl.all.NewFolderName:New folder
 
 
 # Default title

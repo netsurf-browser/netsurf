@@ -331,7 +331,7 @@ static nserror hotlist_add_folder_internal(
 	nserror err;
 
 	if (title == NULL) {
-		title = messages_get("NewFolder");
+		title = messages_get("NewFolderName");
 	}
 
 	/* Create the title field */
