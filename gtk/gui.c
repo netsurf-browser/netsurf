@@ -353,7 +353,7 @@ static void gui_init(int argc, char** argv, char **respath)
 {
 	char buf[PATH_MAX];
 	char *resource_filename;
-	const char *addr;
+	char *addr = NULL;
 	nsurl *url;
 	nserror error;
 
@@ -457,11 +457,26 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {
-		addr = argv[1];
+		struct stat fs;
+		if (stat(argv[1], &fs) == 0) {
+			char *rp = realpath(argv[1], NULL);
+			assert(rp != NULL);
+			addr = malloc(SLEN("file://") + strlen(rp) + /*\0 */ 1);
+			assert(addr != NULL);
+			/* These are safe thanks to the above sum */
+			strcpy(addr, "file://");
+			strcat(addr, rp);
+			free(rp);
+		} else {
+			addr = strdup(argv[1]);
+		}
+	}
+	if (addr != NULL) {
+		/* managed to set up based on local launch */
 	} else if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
+		addr = strdup(nsoption_charp(homepage_url));
 	} else {
-		addr = NETSURF_HOMEPAGE;
+		addr = strdup(NETSURF_HOMEPAGE);
 	}
 
 	/* create an initial browser window */
@@ -474,6 +489,7 @@ static void gui_init(int argc, char** argv, char **respath)
 					      NULL,
 					      NULL);
 		nsurl_unref(url);
+		free(addr);
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
