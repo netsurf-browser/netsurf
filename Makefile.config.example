@@ -9,32 +9,29 @@
 # alterations in your Makefile.config
 
 
-# To enable/disable MNG support, uncomment the appropriate line below.
+### To enable/disable MNG support, uncomment the appropriate line below.
+# override NETSURF_USE_MNG := YES
+# override NETSURF_USE_MNG := NO
 
-### NETSURF_USE_MNG := YES
-### NETSURF_USE_MNG := NO
+### To enable/disable SVGTiny support, uncomment the appropriate line below.
+# override NETSURF_USE_NSSVG := YES
+# override NETSURF_USE_NSSVG := NO
 
+### To enable/disable RSVG support, uncomment the appropriate line below.
+# override NETSURF_USE_RSVG := YES
+# override NETSURF_USE_RSVG := NO
 
-# To enable/disable SVGTiny support, uncomment the appropriate line below.
+### To enable/disable BMP support, uncomment the appropriate line below.
+# override NETSURF_USE_BMP := YES
+# override NETSURF_USE_BMP := NO
 
-### override NETSURF_USE_NSSVG := YES
-### override NETSURF_USE_NSSVG := NO
+### To make the framebuffer front end use freetype for text, uncomment the
+### following line
+# override NETSURF_FB_FONTLIB := freetype
 
-
-# To enable/disable RSVG support, uncomment the appropriate line below.
-
-### override NETSURF_USE_RSVG := YES
-### override NETSURF_USE_RSVG := NO
-
-
-# To enable/disable BMP support, uncomment the appropriate line below.
-
-### override NETSURF_USE_BMP := YES
-### override NETSURF_USE_BMP := NO
-
-
-# To make the framebuffer front end use freetype for text, uncomment the
-# following line
-
-### override NETSURF_FB_FONTLIB := freetype
+### To enable/disable JavaScript support, uncomment the appropriate line below.
+# override NETSURF_USE_JS := NO
+# override NETSURF_USE_JS := YES
+# override NETSURF_USE_MOZJS := NO
+# override NETSURF_USE_MOZJS := YES
 
