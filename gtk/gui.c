@@ -489,14 +489,15 @@ static void gui_init(int argc, char** argv, char **respath)
 					      NULL,
 					      NULL);
 		nsurl_unref(url);
-		free(addr);
 	}
+
+	free(addr);
+
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
 		netsurf_main_loop();
 	}
-
 }
 
 
