@@ -2761,7 +2761,7 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 
 		/* Ensure that url's host name domain matches
 		 * referer's (4.3.5) */
-		rhost = nsurl_get_component(url, NSURL_HOST);
+		rhost = nsurl_get_component(referer, NSURL_HOST);
 		if (rhost == NULL) {
 			goto error;
 		}
