@@ -86,6 +86,8 @@ static const char *fetch_resource_paths[] = {
 	"icons/content.png",
 	"icons/directory.png",
 	"icons/directory2.png",
+	"icons/hotlist-add.png",
+	"icons/hotlist-rmv.png",
 	"icons/search.png"
 };
 static struct fetch_resource_map_entry {
