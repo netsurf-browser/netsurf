@@ -749,7 +749,7 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 		wimp_pointer *pointer, wimp_window_state *state,
 		url_bar_action *action)
 {
-	os_coord			pos;
+	os_coord pos;
 
 	if (url_bar == NULL || url_bar->hidden ||
 			url_bar->display || url_bar->shaded)
@@ -1065,11 +1065,43 @@ bool ro_gui_url_bar_test_for_text_field_click(struct url_bar *url_bar,
 bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 		wimp_key *key)
 {
+	const char *url;
+	nsurl *n;
+	bool changed = false;
+
 	if (url_bar == NULL || url_bar->hidden || key == NULL)
 		return false;
 
-	return (key->w == url_bar->window &&
-			key->i == url_bar->text_icon) ? true : false;
+	if (key->w != url_bar->window || key->i != url_bar->text_icon)
+		return false;
+
+	if (url_bar->hidden)
+		return true;
+
+	/* Update hotlist indicator */
+	url = (const char *) url_bar->text_buffer;
+	if (url != NULL && nsurl_create(url, &n) == NSERROR_OK) {
+		bool prev = url_bar->hotlist.add;
+		url_bar->hotlist.add = !hotlist_has_url(n);
+		nsurl_unref(n);
+
+		if (prev != url_bar->hotlist.add) {
+			changed = true;
+		}
+	} else if (!url_bar->hotlist.add) {
+		url_bar->hotlist.add = true;
+		changed = true;
+	}
+
+	if (changed) {
+		xwimp_force_redraw(url_bar->window,
+				url_bar->hotlist.extent.x0,
+				url_bar->hotlist.extent.y0,
+				url_bar->hotlist.extent.x1,
+				url_bar->hotlist.extent.y1);
+	}
+
+	return true;
 }
 
 
