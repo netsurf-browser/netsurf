@@ -781,6 +781,9 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 						url_bar->hotlist.add = false;
 					}
 				} else {
+					/* TODO: Open "Remove page from
+					 *       Hotlist?" query dialogue box,
+					 *       rather than silent removal. */
 					hotlist_remove_url(n);
 					redraw = true;
 					url_bar->hotlist.add = true;
