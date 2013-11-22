@@ -83,7 +83,6 @@ struct url_bar {
 	bool			shaded;
 
 	struct {
-		bool			show;
 		bool			add;
 		os_box			extent;
 		os_coord		offset;
@@ -165,7 +164,6 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	strncpy(url_bar->favicon_sprite, "Ssmall_xxx",
 			URLBAR_FAVICON_NAME_LENGTH);
 
-	url_bar->hotlist.show = false; /* TODO: find way to set false when typing, or showing non-url */
 	url_bar->hotlist.add = true;
 	url_bar->hotlist.extent.x0 = 0;
 	url_bar->hotlist.extent.y0 = 0;
@@ -717,8 +715,7 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 				(redraw->box.y1 - redraw->yscroll) +
 					url_bar->hotlist.extent.y1);
 
-		if (url_bar->hotlist.show &&
-				hotlist_icon->ready == false) {
+		if (hotlist_icon->ready == false) {
 			return;
 		}
 
@@ -768,8 +765,7 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 	/* If we have a click over the hotlist icon, hotlist add/remove. */
 	/* TODO: this doesn't work
 	 *       neither does the TOOLBAR_URL_DRAG_FAVICON below */
-	if (url_bar->hotlist.show && pointer->buttons &
-				(wimp_CLICK_SELECT | wimp_SINGLE_SELECT) &&
+	if (pointer->buttons & (wimp_CLICK_SELECT | wimp_SINGLE_SELECT) &&
 			url_bar->text_buffer != NULL) {
 		if (pos.x >= url_bar->hotlist.extent.x0 &&
 				pos.x <= url_bar->hotlist.extent.x1 &&
@@ -958,7 +954,6 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	if (url_bar == NULL || url_bar->text_buffer == NULL)
 		return;
 
-	url_bar->hotlist.show = true;
 	if (nsurl_create(url, &n) == NSERROR_OK) {
 		bool prev = url_bar->hotlist.add;
 		url_bar->hotlist.add = !hotlist_has_url(n);
