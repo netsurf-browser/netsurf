@@ -111,12 +111,7 @@ static struct url_bar_resource url_bar_res[URLBAR_RES_LAST] = {
 }; /**< Treeview content resources */
 
 
-/*
- * Private function prototypes.
- */
 
-static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar);
-static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full);
 
 /* This is an exported interface documented in url_bar.h */
 
@@ -180,117 +175,136 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 }
 
 
-/* This is an exported interface documented in url_bar.h */
+/**
+ * Position the icons in the URL bar to take account of the currently
+ * configured extent.
+ *
+ * \param *url_bar		The URL bar to update.
+ * \param full			true to resize everything; false to move only
+ *				the right-hand end of the bar.
+ * \return			true if successful; else false.
+ */
 
-bool ro_gui_url_bar_rebuild(struct url_bar *url_bar,
-		struct theme_descriptor *theme, theme_style style,
-		wimp_w window, bool display, bool shaded)
+static bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 {
-	if (url_bar == NULL)
+	int		x0, y0, x1, y1;
+	int		centre;
+	os_error	*error;
+	os_coord	eig = {1, 1};
+	wimp_caret	caret;
+
+	if (url_bar == NULL || url_bar->window == NULL)
 		return false;
 
-	url_bar->theme = theme;
-	url_bar->window = window;
+	/* calculate 1px in OS units */
+	ro_convert_pixels_to_os_units(&eig, (os_mode) -1);
 
-	url_bar->display = display;
-	url_bar->shaded = shaded;
+	/* The vertical centre line of the widget's extent. */
 
-	url_bar->container_icon = -1;
-	url_bar->text_icon = -1;
-	url_bar->suggest_icon = -1;
+	centre = url_bar->extent.y0 +
+			(url_bar->extent.y1 - url_bar->extent.y0) / 2;
 
-	ro_gui_wimp_get_sprite_dimensions((osspriteop_area *) -1,
-		suggest_icon, &url_bar->suggest_x, &url_bar->suggest_y);
+	/* Position the container icon. */
 
-	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
-			URLBAR_HOTLIST_WIDTH + URLBAR_GRIGHT_GUTTER +
-			url_bar->suggest_x;
-	url_bar->y_min = (url_bar->suggest_y > URLBAR_HEIGHT) ?
-			url_bar->suggest_y : URLBAR_HEIGHT;
+	if (url_bar->container_icon != -1) {
+		x0 = url_bar->extent.x0;
+		x1 = url_bar->extent.x1 -
+				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
 
-	return ro_gui_url_bar_icon_update(url_bar);
-}
+		y0 = centre - (URLBAR_HEIGHT / 2);
+		y1 = y0 + URLBAR_HEIGHT;
 
-
-/* This is an exported interface documented in url_bar.h */
-
-void ro_gui_url_bar_destroy(struct url_bar *url_bar)
-{
-	if (url_bar == NULL)
-		return;
-
-	free(url_bar);
-}
-
-
-/* This is an exported interface documented in url_bar.h */
-
-bool ro_gui_url_bar_get_dims(struct url_bar *url_bar,
-		int *width, int *height)
-{
-	if (url_bar == NULL)
-		return false;
-
-	if (url_bar->x_min != -1 && url_bar->y_min != -1) {
-		if (width != NULL)
-			*width = url_bar->x_min;
-		if (height != NULL)
-			*height = url_bar->y_min;
-
-		return true;
-	}
-
-	return false;
-}
-
-
-/* This is an exported interface documented in url_bar.h */
-
-bool ro_gui_url_bar_set_extent(struct url_bar *url_bar,
-		int x0, int y0, int x1, int y1)
-{
-	bool		stretch;
-
-	if (url_bar == NULL)
-		return false;
-
-	if ((x1 - x0) < url_bar->x_min || (y1 - y0) < url_bar->y_min)
-		return false;
-
-	if (url_bar->extent.x0 == x0 && url_bar->extent.y0 == y0 &&
-			url_bar->extent.x1 == x1 &&
-			url_bar->extent.y1 == y1)
-		return true;
-
-	/* If it's only the length that changes, less needs to be updated. */
-
-	stretch = (url_bar->extent.x0 == x0 && url_bar->extent.y0 == y0 &&
-			url_bar->extent.y1 == y1) ? true : false;
-
-	/* Redraw the relevant bits of the toolbar. */
-
-	if (url_bar->window != NULL && !url_bar->hidden) {
-		if (stretch) {
-			xwimp_force_redraw(url_bar->window,
-					x0 + URLBAR_FAVICON_WIDTH, y0,
-					(x1 > url_bar->extent.x1) ?
-					x1 : url_bar->extent.x1, y1);
-		} else {
-			xwimp_force_redraw(url_bar->window,
-				url_bar->extent.x0, url_bar->extent.y0,
-				url_bar->extent.x1, url_bar->extent.y1);
-			xwimp_force_redraw(url_bar->window, x0, y0, x1, y1);
+		error = xwimp_resize_icon(url_bar->window,
+				url_bar->container_icon,
+				x0, y0, x1, y1);
+		if (error != NULL) {
+			LOG(("xwimp_resize_icon: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			url_bar->container_icon = -1;
+			return false;
 		}
 	}
 
-	/* Reposition the URL bar icons. */
+	/* Position the URL Suggest icon. */
 
-	url_bar->extent.x0 = x0;
-	url_bar->extent.y0 = y0;
-	url_bar->extent.x1 = x1;
-	url_bar->extent.y1 = y1;
+	if (url_bar->suggest_icon != -1) {
+		x0 = url_bar->extent.x1 - url_bar->suggest_x;
+		x1 = url_bar->extent.x1;
 
-	return ro_gui_url_bar_icon_resize(url_bar, !stretch);
+		y0 = centre - (url_bar->suggest_y / 2);
+		y1 = y0 + url_bar->suggest_y;
+
+		error = xwimp_resize_icon(url_bar->window,
+				url_bar->suggest_icon,
+				x0, y0, x1, y1);
+		if (error != NULL) {
+			LOG(("xwimp_resize_icon: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			url_bar->suggest_icon = -1;
+			return false;
+		}
+	}
+
+	/* Position the Text icon. */
+
+	if (url_bar->text_icon != -1) {
+		x0 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
+		x1 = url_bar->extent.x1 - eig.x - URLBAR_HOTLIST_WIDTH -
+				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
+
+		y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
+		y1 = y0 + URLBAR_HEIGHT - 2 * eig.y;
+
+		error = xwimp_resize_icon(url_bar->window,
+				url_bar->text_icon,
+				x0, y0, x1, y1);
+		if (error != NULL) {
+			LOG(("xwimp_resize_icon: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			url_bar->text_icon = -1;
+			return false;
+		}
+
+		if (xwimp_get_caret_position(&caret) == NULL) {
+			if ((caret.w == url_bar->window) &&
+					(caret.i == url_bar->text_icon)) {
+				xwimp_set_caret_position(url_bar->window,
+						url_bar->text_icon, caret.pos.x,
+						caret.pos.y, -1, caret.index);
+			}
+		}
+	}
+
+	/* Position the Favicon icon. */
+
+	url_bar->favicon_extent.x0 = url_bar->extent.x0 + eig.x;
+	url_bar->favicon_extent.x1 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
+	url_bar->favicon_extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
+	url_bar->favicon_extent.y1 = url_bar->favicon_extent.y0 + URLBAR_HEIGHT
+			- 2 * eig.y;
+
+	/* Position the Hotlist icon. */
+
+	url_bar->hotlist.extent.x0 = url_bar->extent.x1 - eig.x -
+			URLBAR_HOTLIST_WIDTH - url_bar->suggest_x -
+			URLBAR_GRIGHT_GUTTER;
+	url_bar->hotlist.extent.x1 = url_bar->hotlist.extent.x0 +
+			URLBAR_HOTLIST_WIDTH;
+	url_bar->hotlist.extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
+	url_bar->hotlist.extent.y1 = url_bar->hotlist.extent.y0 + URLBAR_HEIGHT
+			- 2 * eig.y;
+
+	url_bar->hotlist.offset.x = ((url_bar->hotlist.extent.x1 -
+			url_bar->hotlist.extent.x0) -
+			(URLBAR_HOTLIST_SIZE * 2)) / 2;
+	url_bar->hotlist.offset.y = ((url_bar->hotlist.extent.y1 -
+			url_bar->hotlist.extent.y0) -
+			(URLBAR_HOTLIST_SIZE * 2)) / 2 - 1;
+
+	return true;
 }
 
 
@@ -302,7 +316,7 @@ bool ro_gui_url_bar_set_extent(struct url_bar *url_bar,
  * \return			true if successful; else false.
  */
 
-bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
+static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 {
 	wimp_icon_create	icon;
 	os_error		*error;
@@ -451,136 +465,117 @@ bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 }
 
 
-/**
- * Position the icons in the URL bar to take account of the currently
- * configured extent.
- *
- * \param *url_bar		The URL bar to update.
- * \param full			true to resize everything; false to move only
- *				the right-hand end of the bar.
- * \return			true if successful; else false.
- */
+/* This is an exported interface documented in url_bar.h */
 
-bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
+bool ro_gui_url_bar_rebuild(struct url_bar *url_bar,
+		struct theme_descriptor *theme, theme_style style,
+		wimp_w window, bool display, bool shaded)
 {
-	int		x0, y0, x1, y1;
-	int		centre;
-	os_error	*error;
-	os_coord	eig = {1, 1};
-	wimp_caret	caret;
-
-	if (url_bar == NULL || url_bar->window == NULL)
+	if (url_bar == NULL)
 		return false;
 
-	/* calculate 1px in OS units */
-	ro_convert_pixels_to_os_units(&eig, (os_mode) -1);
+	url_bar->theme = theme;
+	url_bar->window = window;
 
-	/* The vertical centre line of the widget's extent. */
+	url_bar->display = display;
+	url_bar->shaded = shaded;
 
-	centre = url_bar->extent.y0 +
-			(url_bar->extent.y1 - url_bar->extent.y0) / 2;
+	url_bar->container_icon = -1;
+	url_bar->text_icon = -1;
+	url_bar->suggest_icon = -1;
 
-	/* Position the container icon. */
+	ro_gui_wimp_get_sprite_dimensions((osspriteop_area *) -1,
+		suggest_icon, &url_bar->suggest_x, &url_bar->suggest_y);
 
-	if (url_bar->container_icon != -1) {
-		x0 = url_bar->extent.x0;
-		x1 = url_bar->extent.x1 -
-				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
+	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
+			URLBAR_HOTLIST_WIDTH + URLBAR_GRIGHT_GUTTER +
+			url_bar->suggest_x;
+	url_bar->y_min = (url_bar->suggest_y > URLBAR_HEIGHT) ?
+			url_bar->suggest_y : URLBAR_HEIGHT;
 
-		y0 = centre - (URLBAR_HEIGHT / 2);
-		y1 = y0 + URLBAR_HEIGHT;
+	return ro_gui_url_bar_icon_update(url_bar);
+}
 
-		error = xwimp_resize_icon(url_bar->window,
-				url_bar->container_icon,
-				x0, y0, x1, y1);
-		if (error != NULL) {
-			LOG(("xwimp_resize_icon: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			url_bar->container_icon = -1;
-			return false;
+
+/* This is an exported interface documented in url_bar.h */
+
+void ro_gui_url_bar_destroy(struct url_bar *url_bar)
+{
+	if (url_bar == NULL)
+		return;
+
+	free(url_bar);
+}
+
+
+/* This is an exported interface documented in url_bar.h */
+
+bool ro_gui_url_bar_get_dims(struct url_bar *url_bar,
+		int *width, int *height)
+{
+	if (url_bar == NULL)
+		return false;
+
+	if (url_bar->x_min != -1 && url_bar->y_min != -1) {
+		if (width != NULL)
+			*width = url_bar->x_min;
+		if (height != NULL)
+			*height = url_bar->y_min;
+
+		return true;
+	}
+
+	return false;
+}
+
+
+/* This is an exported interface documented in url_bar.h */
+
+bool ro_gui_url_bar_set_extent(struct url_bar *url_bar,
+		int x0, int y0, int x1, int y1)
+{
+	bool		stretch;
+
+	if (url_bar == NULL)
+		return false;
+
+	if ((x1 - x0) < url_bar->x_min || (y1 - y0) < url_bar->y_min)
+		return false;
+
+	if (url_bar->extent.x0 == x0 && url_bar->extent.y0 == y0 &&
+			url_bar->extent.x1 == x1 &&
+			url_bar->extent.y1 == y1)
+		return true;
+
+	/* If it's only the length that changes, less needs to be updated. */
+
+	stretch = (url_bar->extent.x0 == x0 && url_bar->extent.y0 == y0 &&
+			url_bar->extent.y1 == y1) ? true : false;
+
+	/* Redraw the relevant bits of the toolbar. */
+
+	if (url_bar->window != NULL && !url_bar->hidden) {
+		if (stretch) {
+			xwimp_force_redraw(url_bar->window,
+					x0 + URLBAR_FAVICON_WIDTH, y0,
+					(x1 > url_bar->extent.x1) ?
+					x1 : url_bar->extent.x1, y1);
+		} else {
+			xwimp_force_redraw(url_bar->window,
+				url_bar->extent.x0, url_bar->extent.y0,
+				url_bar->extent.x1, url_bar->extent.y1);
+			xwimp_force_redraw(url_bar->window, x0, y0, x1, y1);
 		}
 	}
 
-	/* Position the URL Suggest icon. */
+	/* Reposition the URL bar icons. */
 
-	if (url_bar->suggest_icon != -1) {
-		x0 = url_bar->extent.x1 - url_bar->suggest_x;
-		x1 = url_bar->extent.x1;
+	url_bar->extent.x0 = x0;
+	url_bar->extent.y0 = y0;
+	url_bar->extent.x1 = x1;
+	url_bar->extent.y1 = y1;
 
-		y0 = centre - (url_bar->suggest_y / 2);
-		y1 = y0 + url_bar->suggest_y;
-
-		error = xwimp_resize_icon(url_bar->window,
-				url_bar->suggest_icon,
-				x0, y0, x1, y1);
-		if (error != NULL) {
-			LOG(("xwimp_resize_icon: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			url_bar->suggest_icon = -1;
-			return false;
-		}
-	}
-
-	/* Position the Text icon. */
-
-	if (url_bar->text_icon != -1) {
-		x0 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
-		x1 = url_bar->extent.x1 - eig.x - URLBAR_HOTLIST_WIDTH -
-				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
-
-		y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
-		y1 = y0 + URLBAR_HEIGHT - 2 * eig.y;
-
-		error = xwimp_resize_icon(url_bar->window,
-				url_bar->text_icon,
-				x0, y0, x1, y1);
-		if (error != NULL) {
-			LOG(("xwimp_resize_icon: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			url_bar->text_icon = -1;
-			return false;
-		}
-
-		if (xwimp_get_caret_position(&caret) == NULL) {
-			if ((caret.w == url_bar->window) &&
-					(caret.i == url_bar->text_icon)) {
-				xwimp_set_caret_position(url_bar->window,
-						url_bar->text_icon, caret.pos.x,
-						caret.pos.y, -1, caret.index);
-			}
-		}
-	}
-
-	/* Position the Favicon icon. */
-
-	url_bar->favicon_extent.x0 = url_bar->extent.x0 + eig.x;
-	url_bar->favicon_extent.x1 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
-	url_bar->favicon_extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
-	url_bar->favicon_extent.y1 = url_bar->favicon_extent.y0 + URLBAR_HEIGHT
-			- 2 * eig.y;
-
-	/* Position the Hotlist icon. */
-
-	url_bar->hotlist.extent.x0 = url_bar->extent.x1 - eig.x -
-			URLBAR_HOTLIST_WIDTH - url_bar->suggest_x -
-			URLBAR_GRIGHT_GUTTER;
-	url_bar->hotlist.extent.x1 = url_bar->hotlist.extent.x0 +
-			URLBAR_HOTLIST_WIDTH;
-	url_bar->hotlist.extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
-	url_bar->hotlist.extent.y1 = url_bar->hotlist.extent.y0 + URLBAR_HEIGHT
-			- 2 * eig.y;
-
-	url_bar->hotlist.offset.x = ((url_bar->hotlist.extent.x1 -
-			url_bar->hotlist.extent.x0) -
-			(URLBAR_HOTLIST_SIZE * 2)) / 2;
-	url_bar->hotlist.offset.y = ((url_bar->hotlist.extent.y1 -
-			url_bar->hotlist.extent.y0) -
-			(URLBAR_HOTLIST_SIZE * 2)) / 2 - 1;
-
-	return true;
+	return ro_gui_url_bar_icon_resize(url_bar, !stretch);
 }
 
 
