@@ -39,6 +39,20 @@ typedef enum {
 struct url_bar;
 
 /**
+ * Initialise the url bar module.
+ *
+ * \return			True iff success, else false.
+ */
+
+bool ro_gui_url_bar_init(void);
+
+/**
+ * Finalise the url bar module
+ */
+
+void ro_gui_url_bar_fini(void);
+
+/**
  * Create a new url bar widget.
  *
  * \param *theme		The theme to apply (or NULL for the default).
@@ -120,7 +134,7 @@ bool ro_gui_url_bar_hide(struct url_bar *url_bar, bool hide);
 
 
 /**
- * Handle redraw event rectangles in a URL bat.
+ * Handle redraw event rectangles in a URL bar.
  *
  * \param *url_bar		The URL bar to use.
  * \param *redraw		The Wimp redraw rectangle to process.

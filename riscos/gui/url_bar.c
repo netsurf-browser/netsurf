@@ -30,6 +30,7 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "desktop/hotlist.h"
 #include "riscos/gui/url_bar.h"
 #include "riscos/theme.h"
 #include "riscos/url_suggest.h"
@@ -40,13 +41,15 @@
 #include "utils/utils.h"
 
 #define URLBAR_HEIGHT 52
-#define URLBAR_FAVICON_WIDTH 52
+#define URLBAR_FAVICON_SIZE 16
+#define URLBAR_HOTLIST_SIZE 17
+#define URLBAR_FAVICON_WIDTH ((5 + URLBAR_FAVICON_SIZE + 5) * 2)
+#define URLBAR_HOTLIST_WIDTH ((5 + URLBAR_HOTLIST_SIZE + 5) * 2)
 #define URLBAR_MIN_WIDTH 52
 #define URLBAR_GRIGHT_GUTTER 8
 #define URLBAR_FAVICON_NAME_LENGTH 12
 #define URLBAR_INITIAL_LENGTH 256
 #define URLBAR_EXTEND_LENGTH 128
-#define URLBAR_FAVICON_SIZE 16
 
 struct url_bar {
 	/** The applied theme (or NULL to use the default) */
@@ -78,12 +81,35 @@ struct url_bar {
 	bool			hidden;
 	bool			display;
 	bool			shaded;
+
+	struct {
+		bool			show;
+		bool			add;
+		os_box			extent;
+		os_coord		offset;
+	} hotlist;
 };
 
 static char text_validation[] = "Pptr_write;KN";
 static char suggest_icon[] = "gright";
 static char suggest_validation[] = "R5;Sgright,pgright";
 static char null_text_string[] = "";
+
+struct url_bar_resource {
+	const char *url;
+	struct hlcache_handle *c;
+	int height;
+	bool ready;
+}; /**< Treeview content resource data */
+enum url_bar_resource_id {
+	URLBAR_RES_HOTLIST_ADD = 0,
+	URLBAR_RES_HOTLIST_REMOVE,
+	URLBAR_RES_LAST
+};
+static struct url_bar_resource url_bar_res[URLBAR_RES_LAST] = {
+	{ "resource:icons/hotlist-add.png", NULL, 0, false },
+	{ "resource:icons/hotlist-rmv.png", NULL, 0, false }
+}; /**< Treeview content resources */
 
 
 /*
@@ -114,7 +140,8 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->display = false;
 	url_bar->shaded = false;
 
-	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH;
+	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
+			URLBAR_HOTLIST_WIDTH;
 	url_bar->y_min = URLBAR_HEIGHT;
 
 	url_bar->extent.x0 = 0;
@@ -137,6 +164,13 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->favicon_type = 0;
 	strncpy(url_bar->favicon_sprite, "Ssmall_xxx",
 			URLBAR_FAVICON_NAME_LENGTH);
+
+	url_bar->hotlist.show = false; /* TODO: find way to set false when typing, or showing non-url */
+	url_bar->hotlist.add = true;
+	url_bar->hotlist.extent.x0 = 0;
+	url_bar->hotlist.extent.y0 = 0;
+	url_bar->hotlist.extent.x1 = 0;
+	url_bar->hotlist.extent.y1 = 0;
 
 	url_bar->text_size = URLBAR_INITIAL_LENGTH;
 	url_bar->text_buffer = malloc(url_bar->text_size);
@@ -171,7 +205,8 @@ bool ro_gui_url_bar_rebuild(struct url_bar *url_bar,
 		suggest_icon, &url_bar->suggest_x, &url_bar->suggest_y);
 
 	url_bar->x_min = URLBAR_FAVICON_WIDTH + URLBAR_MIN_WIDTH +
-			URLBAR_GRIGHT_GUTTER + url_bar->suggest_x;
+			URLBAR_HOTLIST_WIDTH + URLBAR_GRIGHT_GUTTER +
+			url_bar->suggest_x;
 	url_bar->y_min = (url_bar->suggest_y > URLBAR_HEIGHT) ?
 			url_bar->suggest_y : URLBAR_HEIGHT;
 
@@ -494,7 +529,7 @@ bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 
 	if (url_bar->text_icon != -1) {
 		x0 = url_bar->extent.x0 + URLBAR_FAVICON_WIDTH;
-		x1 = url_bar->extent.x1 - eig.x -
+		x1 = url_bar->extent.x1 - eig.x - URLBAR_HOTLIST_WIDTH -
 				url_bar->suggest_x - URLBAR_GRIGHT_GUTTER;
 
 		y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
@@ -529,6 +564,24 @@ bool ro_gui_url_bar_icon_resize(struct url_bar *url_bar, bool full)
 	url_bar->favicon_extent.y1 = url_bar->favicon_extent.y0 + URLBAR_HEIGHT
 			- 2 * eig.y;
 
+	/* Position the Hotlist icon. */
+
+	url_bar->hotlist.extent.x0 = url_bar->extent.x1 - eig.x -
+			URLBAR_HOTLIST_WIDTH - url_bar->suggest_x -
+			URLBAR_GRIGHT_GUTTER;
+	url_bar->hotlist.extent.x1 = url_bar->hotlist.extent.x0 +
+			URLBAR_HOTLIST_WIDTH;
+	url_bar->hotlist.extent.y0 = centre - (URLBAR_HEIGHT / 2) + eig.y;
+	url_bar->hotlist.extent.y1 = url_bar->hotlist.extent.y0 + URLBAR_HEIGHT
+			- 2 * eig.y;
+
+	url_bar->hotlist.offset.x = ((url_bar->hotlist.extent.x1 -
+			url_bar->hotlist.extent.x0) -
+			(URLBAR_HOTLIST_SIZE * 2)) / 2;
+	url_bar->hotlist.offset.y = ((url_bar->hotlist.extent.y1 -
+			url_bar->hotlist.extent.y0) -
+			(URLBAR_HOTLIST_SIZE * 2)) / 2 - 1;
+
 	return true;
 }
 
@@ -550,74 +603,142 @@ bool ro_gui_url_bar_hide(struct url_bar *url_bar, bool hide)
 
 void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 {
-	wimp_icon	icon;
-	struct rect	clip;
+	wimp_icon icon;
+	struct rect clip;
+	bool draw_favicon = true;
+	bool draw_hotlist = true;
 
-	/* Test for a valid URL bar, and then check that the redraw box
-	 * coincides with the bar's favicon extent.
-	 */
-
-	if (url_bar == NULL || url_bar->hidden ||
-			(redraw->clip.x0 - (redraw->box.x0 - redraw->xscroll))
-					> (url_bar->favicon_extent.x1) ||
-			(redraw->clip.y0 - (redraw->box.y1 - redraw->yscroll))
-					> url_bar->favicon_extent.y1 ||
-			(redraw->clip.x1 - (redraw->box.x0 - redraw->xscroll))
-					< url_bar->favicon_extent.x0 ||
-			(redraw->clip.y1 - (redraw->box.y1 - redraw->yscroll))
-					< url_bar->favicon_extent.y0)
+	/* Test for a valid URL bar */
+	if (url_bar == NULL || url_bar->hidden)
 		return;
 
-	if (url_bar->favicon_content == NULL) {
-		icon.data.indirected_text.text = null_text_string;
-		icon.data.indirected_text.validation = url_bar->favicon_sprite;
-		icon.data.indirected_text.size = 1;
-		icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
-				wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
-				wimp_ICON_HCENTRED | wimp_ICON_VCENTRED;
-		icon.extent.x0 = url_bar->favicon_extent.x0;
-		icon.extent.x1 = url_bar->favicon_extent.x1;
-		icon.extent.y0 = url_bar->favicon_extent.y0;
-		icon.extent.y1 = url_bar->favicon_extent.y1;
+	if ((redraw->clip.x0 - (redraw->box.x0 - redraw->xscroll)) >
+				(url_bar->favicon_extent.x1) ||
+			(redraw->clip.y0 - (redraw->box.y1 - redraw->yscroll)) >
+				(url_bar->favicon_extent.y1) ||
+			(redraw->clip.x1 - (redraw->box.x0 - redraw->xscroll)) <
+				(url_bar->favicon_extent.x0) ||
+			(redraw->clip.y1 - (redraw->box.y1 - redraw->yscroll)) <
+				(url_bar->favicon_extent.y0)) {
+		/* Favicon not in redraw area */
+		draw_favicon = false;
+	}
 
-		xwimp_plot_icon(&icon);
-	} else {
+	if ((redraw->clip.x0 - (redraw->box.x0 - redraw->xscroll)) >
+				(url_bar->hotlist.extent.x1) ||
+			(redraw->clip.y0 - (redraw->box.y1 - redraw->yscroll)) >
+				(url_bar->hotlist.extent.y1) ||
+			(redraw->clip.x1 - (redraw->box.x0 - redraw->xscroll)) <
+				(url_bar->hotlist.extent.x0) ||
+			(redraw->clip.y1 - (redraw->box.y1 - redraw->yscroll)) <
+				(url_bar->hotlist.extent.y0)) {
+		/* Hotlist icon not in redraw area */
+		draw_hotlist = false;
+	}
+
+	if (draw_favicon) {
+		if (url_bar->favicon_content == NULL) {
+			icon.data.indirected_text.text = null_text_string;
+			icon.data.indirected_text.validation =
+					url_bar->favicon_sprite;
+			icon.data.indirected_text.size = 1;
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
+					wimp_ICON_INDIRECTED |
+					wimp_ICON_FILLED |
+					wimp_ICON_HCENTRED |
+					wimp_ICON_VCENTRED;
+			icon.extent.x0 = url_bar->favicon_extent.x0;
+			icon.extent.x1 = url_bar->favicon_extent.x1;
+			icon.extent.y0 = url_bar->favicon_extent.y0;
+			icon.extent.y1 = url_bar->favicon_extent.y1;
+
+			xwimp_plot_icon(&icon);
+		} else {
+			struct content_redraw_data data;
+			struct redraw_context ctx = {
+				.interactive = true,
+				.background_images = true,
+				.plot = &ro_plotters
+			};
+
+			xwimp_set_colour(wimp_COLOUR_WHITE);
+			xos_plot(os_MOVE_TO,
+					(redraw->box.x0 - redraw->xscroll) +
+						url_bar->favicon_extent.x0,
+					(redraw->box.y1 - redraw->yscroll) +
+						url_bar->favicon_extent.y0);
+			xos_plot(os_PLOT_TO | os_PLOT_RECTANGLE,
+					(redraw->box.x0 - redraw->xscroll) +
+						url_bar->favicon_extent.x1,
+					(redraw->box.y1 - redraw->yscroll) +
+						url_bar->favicon_extent.y1);
+
+			clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
+			clip.y0 = (ro_plot_origin_y - redraw->clip.y0) / 2;
+			clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
+			clip.y1 = (ro_plot_origin_y - redraw->clip.y1) / 2;
+
+			data.x = (url_bar->favicon_extent.x0 +
+					url_bar->favicon_offset.x) / 2;
+			data.y = (url_bar->favicon_offset.y -
+					url_bar->favicon_extent.y1) / 2;
+			data.width = url_bar->favicon_width;
+			data.height = url_bar->favicon_height;
+			data.background_colour = 0xFFFFFF;
+			data.scale = 1;
+			data.repeat_x = false;
+			data.repeat_y = false;
+
+			content_redraw(url_bar->favicon_content,
+					&data, &clip, &ctx);
+		}
+	}
+
+	if (draw_hotlist) {
 		struct content_redraw_data data;
 		struct redraw_context ctx = {
 			.interactive = true,
 			.background_images = true,
 			.plot = &ro_plotters
 		};
+		struct url_bar_resource *hotlist_icon = url_bar->hotlist.add ?
+				&(url_bar_res[URLBAR_RES_HOTLIST_ADD]) :
+				&(url_bar_res[URLBAR_RES_HOTLIST_REMOVE]);
 
 		xwimp_set_colour(wimp_COLOUR_WHITE);
 		xos_plot(os_MOVE_TO,
 				(redraw->box.x0 - redraw->xscroll) +
-					url_bar->favicon_extent.x0,
+					url_bar->hotlist.extent.x0,
 				(redraw->box.y1 - redraw->yscroll) +
-					url_bar->favicon_extent.y0);
+					url_bar->hotlist.extent.y0);
 		xos_plot(os_PLOT_TO | os_PLOT_RECTANGLE,
 				(redraw->box.x0 - redraw->xscroll) +
-					url_bar->favicon_extent.x1,
+					url_bar->hotlist.extent.x1,
 				(redraw->box.y1 - redraw->yscroll) +
-					url_bar->favicon_extent.y1);
+					url_bar->hotlist.extent.y1);
+
+		if (url_bar->hotlist.show &&
+				hotlist_icon->ready == false) {
+			return;
+		}
 
 		clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
 		clip.y0 = (ro_plot_origin_y - redraw->clip.y0) / 2;
 		clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 		clip.y1 = (ro_plot_origin_y - redraw->clip.y1) / 2;
 
-		data.x = (url_bar->favicon_extent.x0 +
-				url_bar->favicon_offset.x) / 2;
-		data.y = (url_bar->favicon_offset.y -
-					url_bar->favicon_extent.y1) / 2;
-		data.width = url_bar->favicon_width;
-		data.height = url_bar->favicon_height;
+		data.x = (url_bar->hotlist.extent.x0 +
+				url_bar->hotlist.offset.x) / 2;
+		data.y = (url_bar->hotlist.offset.y -
+				url_bar->hotlist.extent.y1) / 2;
+		data.width = URLBAR_HOTLIST_SIZE;
+		data.height = URLBAR_HOTLIST_SIZE;
 		data.background_colour = 0xFFFFFF;
 		data.scale = 1;
 		data.repeat_x = false;
 		data.repeat_y = false;
 
-		content_redraw(url_bar->favicon_content, &data, &clip, &ctx);
+		content_redraw(hotlist_icon->c, &data, &clip, &ctx);
 	}
 }
 
@@ -644,6 +765,43 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 			pos.y > url_bar->extent.y1)
 		return false;
 
+	/* If we have a click over the hotlist icon, hotlist add/remove. */
+	/* TODO: this doesn't work
+	 *       neither does the TOOLBAR_URL_DRAG_FAVICON below */
+	if (url_bar->hotlist.show && pointer->buttons &
+				(wimp_CLICK_SELECT | wimp_SINGLE_SELECT) &&
+			url_bar->text_buffer != NULL) {
+		if (pos.x >= url_bar->hotlist.extent.x0 &&
+				pos.x <= url_bar->hotlist.extent.x1 &&
+				pos.y >= url_bar->hotlist.extent.y0 &&
+				pos.y <= url_bar->hotlist.extent.y1) {
+			nsurl *n;
+			bool redraw = false;
+			if (nsurl_create((const char *)url_bar->text_buffer,
+					&n) == NSERROR_OK) {
+				if (url_bar->hotlist.add) {
+					if (hotlist_add_url(n)) {
+						redraw = true;
+						url_bar->hotlist.add = false;
+					}
+				} else {
+					hotlist_remove_url(n);
+					redraw = true;
+					url_bar->hotlist.add = true;
+				}
+				nsurl_unref(n);
+
+				if (redraw && !url_bar->hidden)
+					xwimp_force_redraw(url_bar->window,
+						url_bar->hotlist.extent.x0,
+						url_bar->hotlist.extent.y0,
+						url_bar->hotlist.extent.x1,
+						url_bar->hotlist.extent.y1);
+			}
+			return true;
+		}
+	}
+
 	/* If we find a Select or Adjust drag, check if it originated on the
 	 * URL bar or over the favicon.  If either, then return an event.
 	 */
@@ -659,7 +817,7 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 		if (pos.x >= url_bar->favicon_extent.x0 &&
 				pos.x <= url_bar->favicon_extent.x1 &&
 				pos.y >= url_bar->favicon_extent.y0 &&
-				pos.y <=url_bar->favicon_extent.y1) {
+				pos.y <= url_bar->favicon_extent.y1) {
 			if (action != NULL)
 				*action = TOOLBAR_URL_DRAG_FAVICON;
 			return true;
@@ -795,9 +953,24 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	wimp_caret	caret;
 	os_error	*error;
 	const char	*set_url;
+	nsurl *n;
 
 	if (url_bar == NULL || url_bar->text_buffer == NULL)
 		return;
+
+	url_bar->hotlist.show = true;
+	if (nsurl_create(url, &n) == NSERROR_OK) {
+		bool prev = url_bar->hotlist.add;
+		url_bar->hotlist.add = !hotlist_has_url(n);
+		nsurl_unref(n);
+
+		if (prev != url_bar->hotlist.add && !url_bar->hidden)
+			xwimp_force_redraw(url_bar->window,
+				url_bar->hotlist.extent.x0,
+				url_bar->hotlist.extent.y0,
+				url_bar->hotlist.extent.x1,
+				url_bar->hotlist.extent.y1);
+	}
 
 	if (url_bar->text_icon == -1) {
 		strncpy(url_bar->text_buffer, url, url_bar->text_size);
@@ -1013,5 +1186,59 @@ bool ro_gui_url_bar_update_urlsuggest(struct url_bar *url_bar)
 				!ro_gui_url_suggest_get_menu_available());
 
 	return true;
+}
+
+
+/**
+ * Callback for hlcache.
+ */
+static nserror ro_gui_url_bar_res_cb(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
+{
+	struct url_bar_resource *r = pw;
+
+	switch (event->type) {
+	case CONTENT_MSG_READY:
+	case CONTENT_MSG_DONE:
+		r->ready = true;
+		r->height = content_get_height(handle);
+		break;
+
+	default:
+		break;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* Exported interface, documented in url_bar.h */
+bool ro_gui_url_bar_init(void)
+{
+	int i;
+
+	for (i = 0; i < URLBAR_RES_LAST; i++) {
+		nsurl *url;
+		if (nsurl_create(url_bar_res[i].url, &url) == NSERROR_OK) {
+			hlcache_handle_retrieve(url, 0, NULL, NULL,
+					ro_gui_url_bar_res_cb,
+					&(url_bar_res[i]), NULL,
+					CONTENT_IMAGE, &(url_bar_res[i].c));
+			nsurl_unref(url);
+		}
+	}
+
+	return true;
+}
+
+
+/* Exported interface, documented in url_bar.h */
+void ro_gui_url_bar_fini(void)
+{
+	int i;
+
+	for (i = 0; i < URLBAR_RES_LAST; i++) {
+		hlcache_handle_release(url_bar_res[i].c);
+	}
 }
 

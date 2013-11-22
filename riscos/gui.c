@@ -69,6 +69,7 @@
 #include "riscos/content-handlers/draw.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/gui/url_bar.h"
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
@@ -558,6 +559,8 @@ static void gui_init(int argc, char** argv)
 	ro_gui_history_init();
 	/* Initialise toolbars */
 	ro_toolbar_init();
+	/* Initialise url bar module */
+	ro_gui_url_bar_init();
 	/* Initialise browser windows */
 	ro_gui_window_initialise();
 
@@ -925,6 +928,7 @@ void gui_quit(void)
 	ro_gui_hotlist_destroy();
 	ro_gui_cookies_destroy();
 	ro_gui_saveas_quit();
+	ro_gui_url_bar_fini();
 	rufl_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
