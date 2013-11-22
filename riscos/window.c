@@ -4249,7 +4249,7 @@ void ro_gui_window_action_add_bookmark(struct gui_window *g)
 			hlcache_handle_get_url(g->bw->current_content) == NULL)
 		return;
 
-	ro_gui_hotlist_add_page(nsurl_access(hlcache_handle_get_url(g->bw->current_content)));
+	ro_gui_hotlist_add_page(hlcache_handle_get_url(g->bw->current_content));
 }
 
 

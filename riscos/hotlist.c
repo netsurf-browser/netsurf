@@ -467,12 +467,11 @@ bool ro_gui_hotlist_check_menu(wimp_menu *menu)
  * Message_HotlistAddURL will broadcast to any bookmark applications via the
  * Hotlist Protocol.
  *
- * \param *url			The URL to be added.
+ * \param *url	The URL to be added.
  */
 
-void ro_gui_hotlist_add_page(const char *url)
+void ro_gui_hotlist_add_page(nsurl *url)
 {
-	nsurl *nsurl;
 	const struct url_data				*data;
 	wimp_message					message;
 	struct ro_hotlist_message_hotlist_addurl	*add_url =
@@ -481,16 +480,12 @@ void ro_gui_hotlist_add_page(const char *url)
 	if (url == NULL)
 		return;
 
-	if (nsurl_create(url, &nsurl) != NSERROR_OK)
-		return;
-
 	/* If we're not using external hotlists, add the page to NetSurf's
 	 * own hotlist and return...
 	 */
 
 	if (!nsoption_bool(external_hotlists)) {
-		hotlist_add_url(nsurl);
-		nsurl_unref(nsurl);
+		hotlist_add_url(url);
 		return;
 	}
 
@@ -503,12 +498,11 @@ void ro_gui_hotlist_add_page(const char *url)
 
 	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
 
-	data = urldb_get_url_data(nsurl);
+	data = urldb_get_url_data(url);
 	if (data == NULL)
 		return;
-	nsurl_unref(nsurl);
 
-	hotlist_url = osmodule_alloc(strlen(url) + 1);
+	hotlist_url = osmodule_alloc(nsurl_length(url) + 1);
 	hotlist_title = osmodule_alloc(strlen(data->title) + 1);
 
 	if (hotlist_url == NULL || hotlist_title == NULL) {
@@ -516,7 +510,7 @@ void ro_gui_hotlist_add_page(const char *url)
 		return;
 	}
 
-	strcpy(hotlist_url, url);
+	strcpy(hotlist_url, nsurl_access(url));
 	strcpy(hotlist_title, data->title);
 
 	add_url->size = 60;
