@@ -2809,7 +2809,6 @@ void gui_quit(void)
 
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 {
-	char image[100];
 	char *url;
 	nsurl *nsurl;
 
@@ -2819,18 +2818,16 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 
 	if(nsurl_create(url, &nsurl) == NSERROR_OK) {
 		if(hotlist_has_url(nsurl)) {
-			ami_get_theme_filename(image, "theme_unfave", false);
+			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
+				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV], TAG_DONE);
 		} else {
-			ami_get_theme_filename(image, "theme_fave", false);
+			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
+				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD], TAG_DONE);
 		}
-		
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVEIMG],
-			gwin->win, NULL, BITMAP_SourceFile, image, TAG_DONE);
 		
 		nsurl_unref(nsurl);
 	}
 }
-
 
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
@@ -3154,7 +3151,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char home[100],home_s[100],home_g[100];
 	char closetab[100],closetab_s[100],closetab_g[100];
 	char addtab[100],addtab_s[100],addtab_g[100];
-	char fave[100];
+	char fave[100], unfave[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
 	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
@@ -3340,6 +3337,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		ami_get_theme_filename(addtab_g, "theme_addtab_g", false);
 		ami_get_theme_filename(tabthrobber, "theme_tab_loading", false);
 		ami_get_theme_filename(fave, "theme_fave", false);
+		ami_get_theme_filename(unfave, "theme_unfave", false);
+
+		g->shared->objects[GID_FAVE_ADD] = BitMapObject,
+					BITMAP_SourceFile, fave,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
+
+		g->shared->objects[GID_FAVE_RMV] = BitMapObject,
+					BITMAP_SourceFile, unfave,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
 
 		g->shared->objects[GID_ADDTAB_BM] = BitMapObject,
 					BITMAP_SourceFile, addtab,
@@ -3523,12 +3533,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_ID, GID_FAVE,
 						GA_RelVerify, TRUE,
 					//	GA_HintInfo, g->shared->helphints[GID_FAVE],
-						BUTTON_RenderImage, g->shared->objects[GID_FAVEIMG] = BitMapObject,
-							BITMAP_SourceFile, fave,
-					//		BITMAP_SelectSourceFile, fave_s,
-							BITMAP_Screen, scrn,
-							BITMAP_Masking, TRUE,
-						BitMapEnd,
+						BUTTON_RenderImage, g->shared->objects[GID_FAVE_ADD],
 					ButtonEnd,
 					CHILD_WeightedWidth,0,
 					CHILD_WeightedHeight,0,
@@ -3913,6 +3918,8 @@ void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[GID_ADDTAB_BM]);
 	DisposeObject(g->shared->objects[GID_CLOSETAB_BM]);
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
+	DisposeObject(g->shared->objects[GID_FAVE_ADD]);
+	DisposeObject(g->shared->objects[GID_FAVE_RMV]);
 
 	ami_free_menulabs(g->shared);
 	free(g->shared->wintitle);
