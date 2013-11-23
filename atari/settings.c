@@ -35,6 +35,8 @@ static unsigned int tmp_option_max_fetchers_per_host;
 static unsigned int tmp_option_max_cached_fetch_handles;
 static colour tmp_option_atari_toolbar_bg;
 
+static int num_locales = 0;
+static char **locales = NULL;
 static short h_aes_win = 0;
 static short edit_obj = -1;
 static short any_obj = -1;
@@ -124,6 +126,50 @@ static void toggle_objects(void)
     FORMEVENT(SETTINGS_CB_USE_PROXY);
     FORMEVENT(SETTINGS_CB_PROXY_AUTH);
     FORMEVENT(SETTINGS_BT_SEL_FONT_RENDERER);
+}
+
+static char **read_locales()
+{
+    char buf[PATH_MAX];
+    char tmp_locale[16];
+    char **locales = NULL;
+
+    FILE * fp_locales = NULL;
+
+    atari_find_resource(buf, "languages", "./res/languages");
+
+    fp_locales = fopen(buf, "r");
+
+    if (fp_locales == NULL) {
+        warn_user("Failed to load locales: %s",buf);
+        return(NULL);
+    } else {
+        LOG(("Reading locales from: %s...", buf));
+    }
+
+    /* Count items: */
+    num_locales = 0;
+    while (fgets(tmp_locale, 16, fp_locales) != NULL) {
+            num_locales++;
+    }
+
+    locales = malloc(sizeof(char*)*num_locales);
+
+    rewind(fp_locales);
+    int i = 0;
+    while (fgets(tmp_locale, 16, fp_locales) != NULL) {
+        int len = strlen(tmp_locale);
+        tmp_locale[len-1] = 0;
+        len--;
+        locales[i] = malloc(len+1);
+        // do not copy the last \n
+        snprintf(locales[i], 16, "%s", tmp_locale);
+        i++;
+    }
+
+    fclose(fp_locales);
+
+    return(locales);
 }
 
 
@@ -276,11 +322,6 @@ static void form_event(int index, int external)
     char * tmp;
     MENU pop_menu, me_data;
 
-    /*
-    	Just a small collection of locales, each country has at least one
-    	ATARI-clone user! :)
-    */
-    int num_locales = 15;
     short x, y;
     int choice, i;
 
@@ -333,35 +374,18 @@ static void form_event(int index, int external)
     case SETTINGS_BT_SEL_FONT_RENDERER:
         if( external ) {
             objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
+            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
             // point mn_tree tree to font renderer popup:
             pop_menu.mn_tree = gemtk_obj_create_popup_tree(font_engines,
-                                    NOF_ELEMENTS(font_engines), NULL, false,-1);
+                                    NOF_ELEMENTS(font_engines), tmp, false,
+                                    -1, -1);
 
             assert(pop_menu.mn_tree != NULL);
 
             pop_menu.mn_menu = 0;
-            pop_menu.mn_item = 1; // POP_FONT_RENDERER_INTERNAL;
+            pop_menu.mn_item = 1;
             pop_menu.mn_scroll = SCROLL_NO;
             pop_menu.mn_keystate = 0;
-
-
-            /* Get font renderer value currently displayed in the dialog: */
-            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
-
-			// find the selected menu item and uncheck others:
-            for(i=pop_menu.mn_item; i<=(short)NOF_ELEMENTS(font_engines); i++) {
-                /* Get string of menu item: */
-                get_string(pop_menu.mn_tree, i, spare);
-
-                 /* Compare menu item text with the text currently displayed in GUI: */
-                if (strcasecmp(&spare[2], tmp)) {
-                    menu_icheck(pop_menu.mn_tree, i, 0);
-                } else {
-                    /* set menu item selected: */
-                    menu_icheck(pop_menu.mn_tree, i, 1);
-                }
-                set_string(pop_menu.mn_tree, i, spare);
-            }
 
             /* Show the popup: */
             menu_popup(&pop_menu, x, y, &me_data);
@@ -389,33 +413,33 @@ static void form_event(int index, int external)
     case SETTINGS_BT_SEL_LOCALE:
         objc_offset(dlgtree, SETTINGS_BT_SEL_LOCALE, &x, &y);
 
-        // point mn_tree tree to states popup:
-        pop_menu.mn_tree = gemtk_obj_get_tree(POP_LANGUAGE);
-        pop_menu.mn_menu = 0;
-        pop_menu.mn_item = POP_LANGUAGE_CS;
-        pop_menu.mn_scroll = SCROLL_NO;
-        pop_menu.mn_keystate = 0;
-
-		// find the selected menu item and uncheck others:
-        for(i=pop_menu.mn_item; i<=num_locales; i++) {
-            get_string(pop_menu.mn_tree, i, spare);
-            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE);
-            if (strcasecmp(&spare[2], tmp)) {
-                menu_icheck(pop_menu.mn_tree, i, 0);
-            } else {
-                menu_icheck(pop_menu.mn_tree, i, 1);
-            }
-            set_string(pop_menu.mn_tree, i, spare);
+        if(num_locales < 1 || locales == NULL){
+            locales = read_locales();
         }
 
+        if (num_locales < 1 || locales == NULL) {
+            // point mn_tree tree to states popup:
+            num_locales = 15;
+            pop_menu.mn_tree = gemtk_obj_get_tree(POP_LANGUAGE);
+            pop_menu.mn_item = POP_LANGUAGE_CS;
+        } else {
+            // point mn_tree tree to dynamic list:
+            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE);
+            pop_menu.mn_tree = gemtk_obj_create_popup_tree((const char**)locales,
+                                    num_locales, tmp, false,
+                                    -1, 100);
+
+            pop_menu.mn_item = 0;
+        }
+
+        pop_menu.mn_menu = 0;
+        pop_menu.mn_scroll = SCROLL_YES;
+        pop_menu.mn_keystate = 0;
 
         menu_popup(&pop_menu, x, y, &me_data);
         choice = me_data.mn_item;
         if( choice > 0 && choice <= num_locales ) {
             get_string(pop_menu.mn_tree, choice, spare);
-            for(i=2; i<(int)strlen(spare); i++) {
-                spare[i]= (char)tolower(spare[i]);
-            }
             set_text(SETTINGS_BT_SEL_LOCALE, (char*)&spare[2], 5);
         }
 

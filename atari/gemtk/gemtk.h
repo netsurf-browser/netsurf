@@ -281,6 +281,6 @@ void gemtk_obj_mouse_sprite(OBJECT *tree, int index);
 OBJECT *gemtk_obj_tree_copy(OBJECT *tree);
 OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
                                      char * selected, bool horizontal,
-                                     int max_width);
+                                     int max_width, int max_height);
 void gemtk_obj_destroy_popup_tree(OBJECT * popup);
 #endif // GEMTK_H_INCLUDED

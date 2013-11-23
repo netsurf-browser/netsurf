@@ -372,7 +372,7 @@ OBJECT *gemtk_obj_tree_copy(OBJECT *tree)
 
 OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
                                      char * selected, bool horizontal,
-                                     int max_width)
+                                     int max_width, int max_height)
 {
     OBJECT * popup = NULL;
     int box_width = 0;
@@ -394,14 +394,16 @@ OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
         int len = strlen(items[i]);
 
         if (horizontal && (max_width<1)) {
-            box_width += len * char_width;
+            box_width += (len * char_width)+4;
         }
         else if (!horizontal){
             /* Detect max width, used for vertical rendering: */
             if(len*char_width > box_width){
                 box_width = (len+2) * char_width;
             }
-            box_height += item_height;
+            //if (max_height < 1) {
+                box_height += item_height;
+            //}
         }
     }
 
@@ -411,6 +413,10 @@ OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
 
     if (horizontal) {
         box_height = item_height;
+    }
+    else if(max_height > 0){
+        // TODO: validate max_height, shrink values larger than screen height
+        //box_height = max_height;
     }
 
 /*
@@ -453,8 +459,7 @@ OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
             flags |= OF_LASTOB;
         }
 
-        item_width = (horizontal) ? ((int)strlen(items[i])*char_width) : box_width;
-
+        item_width = (horizontal) ? ((int)strlen(items[i])*char_width)+2 : box_width;
 /*
         printf("addin popup item \"%s\" (w: %d, h: %d, flags: %x) at %d/%d\n", items[i],
                item_width, item_height, flags,
