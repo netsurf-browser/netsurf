@@ -368,3 +368,136 @@ OBJECT *gemtk_obj_tree_copy(OBJECT *tree)
 
     return(new_tree);
 }
+
+
+OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
+                                     char * selected, bool horizontal,
+                                     int max_width)
+{
+    OBJECT * popup = NULL;
+    int box_width = 0;
+    int box_height = 0;
+    int char_width = 10;
+    int char_height = 16;
+    int item_height;   // height of each item
+
+    assert(items != NULL);
+
+    item_height = char_height;
+
+    /* Allocate room for n items and the root G_BOX: */
+    popup = calloc(nitems+1, sizeof(OBJECT));
+    assert(popup != null);
+
+    for (int i=0; i<nitems; i++) {
+
+        int len = strlen(items[i]);
+
+        if (horizontal && (max_width<1)) {
+            box_width += len * char_width;
+        }
+        else if (!horizontal){
+            /* Detect max width, used for vertical rendering: */
+            if(len*char_width > box_width){
+                box_width = (len+2) * char_width;
+            }
+            box_height += item_height;
+        }
+    }
+
+    if (max_width>0){
+        box_width = max_width;
+    }
+
+    if (horizontal) {
+        box_height = item_height;
+    }
+
+/*
+    printf("popup height: %d, popup width: %d\n", box_height, box_width);
+*/
+
+    popup[0].ob_next = -1;	/**< object's next sibling */
+    popup[0].ob_head = 1; 	/**< head of object's children */
+    popup[0].ob_tail = nitems; 	/**< tail of object's children */
+    popup[0].ob_type = G_BOX; 	/**< type of object */
+    popup[0].ob_flags = OF_FL3DBAK;	/**< flags */
+    popup[0].ob_state = OS_NORMAL;	/**< state */
+    popup[0].ob_spec.index = (long) 16650496L; 	/**< object-specific data */
+    popup[0].ob_x = 0; 		/**< upper left corner of object */
+    popup[0].ob_y = 0; 		/**< upper left corner of object */
+    popup[0].ob_width = box_width;	/**< width of obj */
+    popup[0].ob_height = box_height;
+
+
+
+    /* Add items to popup: */
+    int xpos = 0, ypos = 0;
+
+    for (int i=0; i<nitems; i++) {
+
+        int state = OS_NORMAL;
+        int flags = OF_NONE;
+        int item_width;
+        char * string = calloc(1, strlen(items[i])+3);
+
+        snprintf(string, strlen(items[i])+3, "  %s", items[i]);
+
+        if (selected != NULL) {
+            if (strcmp(selected, items[i]) == 0) {
+                state |= OS_CHECKED;
+            }
+        }
+
+        if (i == nitems-1) {
+            flags |= OF_LASTOB;
+        }
+
+        item_width = (horizontal) ? ((int)strlen(items[i])*char_width) : box_width;
+
+/*
+        printf("addin popup item \"%s\" (w: %d, h: %d, flags: %x) at %d/%d\n", items[i],
+               item_width, item_height, flags,
+               xpos, ypos);
+*/
+
+        popup[i+1].ob_next = ((flags&OF_LASTOB) != 0) ? 0 : i+2;	/**< object's next sibling */
+        popup[i+1].ob_head = -1; 	/**< head of object's children */
+        popup[i+1].ob_tail = -1; 	/**< tail of object's children */
+        popup[i+1].ob_type = G_STRING; 	/**< type of object */
+        popup[i+1].ob_flags = flags;	/**< flags */
+        popup[i+1].ob_state = state;	/**< state */
+        popup[i+1].ob_spec.free_string = string; 	/**< object-specific data  */
+        popup[i+1].ob_x = xpos; 		/**< upper left corner of object */
+        popup[i+1].ob_y = ypos; 		/**< upper left corner of object */
+        popup[i+1].ob_width = item_width;	/**< width of obj */
+        popup[i+1].ob_height = item_height;
+
+        if (horizontal) {
+            xpos += item_width;
+        }
+        else {
+            ypos += item_height;
+        }
+
+    }
+
+    return(popup);
+}
+
+void gemtk_obj_destroy_popup_tree(OBJECT * popup)
+{
+    int i=0;
+
+    while (1) {
+        if (popup[i].ob_type == G_STRING) {
+            free(popup[i+1].ob_spec.free_string);
+        }
+        if((popup[i].ob_flags & OF_LASTOB) != OF_LASTOB){
+            break;
+        }
+        i++;
+    }
+
+    free(popup);
+}
