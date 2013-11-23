@@ -212,13 +212,9 @@
 #define POP_LANGUAGE_SK 14  /* STRING in tree POP_LANGUAGE */
 #define POP_LANGUAGE_SV 15  /* STRING in tree POP_LANGUAGE */
 
-#define POP_FONT_RENDERER 15  /* form/dial */
-#define POP_FONT_RENDERER_INTERNAL 1  /* STRING in tree POP_FONT_RENDERER */
-#define POP_FONT_RENDERER_FREETYPE 2  /* STRING in tree POP_FONT_RENDERER */
+#define TOOLBAR_COOKIES 15  /* form/dial */
 
-#define TOOLBAR_COOKIES 16  /* form/dial */
+#define TOOLBAR_HISTORY 16  /* form/dial */
 
-#define TOOLBAR_HISTORY 17  /* form/dial */
-
-#define TOOLBAR_SSL_CERT 18  /* form/dial */
+#define TOOLBAR_SSL_CERT 17  /* form/dial */
 #define TOOLBAR_SSL_CERT_TRUSTED 1  /* BUTTON in tree TOOLBAR_SSL_CERT */
