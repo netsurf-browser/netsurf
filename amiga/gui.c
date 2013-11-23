@@ -20,6 +20,7 @@
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
+#include "desktop/hotlist.h"
 #include "desktop/local_history.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
@@ -543,9 +544,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	sprintf(temp, "%s/URLdb", current_user_dir);
 	nsoption_setnull_charp(url_file,
 			       (char *)strdup(temp));
-
-/* devs:curl-ca-bundle.crt is the default place for the ca bundle on OS4,
- * but we can't rely on it existing, so default to our local one in resources */
 
 	nsoption_setnull_charp(ca_bundle,
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
@@ -2799,6 +2797,31 @@ void gui_quit(void)
 	FreeVec(current_user);
 }
 
+void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
+{
+	char image[100];
+	char *url;
+	nsurl *nsurl;
+
+	GetAttr(STRINGA_TextVal,
+		(Object *)gwin->objects[GID_URL],
+		(ULONG *)&url);
+
+	if(nsurl_create(url, &nsurl) == NSERROR_OK) {
+		if(hotlist_has_url(nsurl)) {
+			ami_get_theme_filename(image, "theme_unfave", false);
+		} else {
+			ami_get_theme_filename(image, "theme_fave", false);
+		}
+		
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVEIMG],
+			gwin->win, NULL, BITMAP_SourceFile, image, TAG_DONE);
+		
+		nsurl_unref(nsurl);
+	}
+}
+
+
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
 	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
@@ -3121,6 +3144,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char home[100],home_s[100],home_g[100];
 	char closetab[100],closetab_s[100],closetab_g[100];
 	char addtab[100],addtab_s[100],addtab_g[100];
+	char fave[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
 	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
@@ -3283,28 +3307,29 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->helphints[GID_ADDTAB] =
 			translate_escape_chars(messages_get("HelpToolbarAddTab"));
 
-		ami_get_theme_filename(nav_west,"theme_nav_west",false);
-		ami_get_theme_filename(nav_west_s,"theme_nav_west_s",false);
-		ami_get_theme_filename(nav_west_g,"theme_nav_west_g",false);
-		ami_get_theme_filename(nav_east,"theme_nav_east",false);
-		ami_get_theme_filename(nav_east_s,"theme_nav_east_s",false);
-		ami_get_theme_filename(nav_east_g,"theme_nav_east_g",false);
-		ami_get_theme_filename(stop,"theme_stop",false);
-		ami_get_theme_filename(stop_s,"theme_stop_s",false);
-		ami_get_theme_filename(stop_g,"theme_stop_g",false);
-		ami_get_theme_filename(reload,"theme_reload",false);
-		ami_get_theme_filename(reload_s,"theme_reload_s",false);
-		ami_get_theme_filename(reload_g,"theme_reload_g",false);
-		ami_get_theme_filename(home,"theme_home",false);
-		ami_get_theme_filename(home_s,"theme_home_s",false);
-		ami_get_theme_filename(home_g,"theme_home_g",false);
-		ami_get_theme_filename(closetab,"theme_closetab",false);
-		ami_get_theme_filename(closetab_s,"theme_closetab_s",false);
-		ami_get_theme_filename(closetab_g,"theme_closetab_g",false);
-		ami_get_theme_filename(addtab,"theme_addtab",false);
-		ami_get_theme_filename(addtab_s,"theme_addtab_s",false);
-		ami_get_theme_filename(addtab_g,"theme_addtab_g",false);
-		ami_get_theme_filename(tabthrobber,"theme_tab_loading",false);
+		ami_get_theme_filename(nav_west, "theme_nav_west", false);
+		ami_get_theme_filename(nav_west_s, "theme_nav_west_s", false);
+		ami_get_theme_filename(nav_west_g, "theme_nav_west_g", false);
+		ami_get_theme_filename(nav_east, "theme_nav_east", false);
+		ami_get_theme_filename(nav_east_s, "theme_nav_east_s", false);
+		ami_get_theme_filename(nav_east_g, "theme_nav_east_g", false);
+		ami_get_theme_filename(stop, "theme_stop", false);
+		ami_get_theme_filename(stop_s, "theme_stop_s", false);
+		ami_get_theme_filename(stop_g, "theme_stop_g", false);
+		ami_get_theme_filename(reload, "theme_reload", false);
+		ami_get_theme_filename(reload_s, "theme_reload_s", false);
+		ami_get_theme_filename(reload_g, "theme_reload_g", false);
+		ami_get_theme_filename(home, "theme_home", false);
+		ami_get_theme_filename(home_s, "theme_home_s", false);
+		ami_get_theme_filename(home_g, "theme_home_g", false);
+		ami_get_theme_filename(closetab, "theme_closetab", false);
+		ami_get_theme_filename(closetab_s, "theme_closetab_s", false);
+		ami_get_theme_filename(closetab_g, "theme_closetab_g", false);
+		ami_get_theme_filename(addtab, "theme_addtab", false);
+		ami_get_theme_filename(addtab_s, "theme_addtab_s", false);
+		ami_get_theme_filename(addtab_g, "theme_addtab_g", false);
+		ami_get_theme_filename(tabthrobber, "theme_tab_loading", false);
+		ami_get_theme_filename(fave, "theme_fave", false);
 
 		g->shared->objects[GID_ADDTAB_BM] = BitMapObject,
 					BITMAP_SourceFile, addtab,
@@ -3484,6 +3509,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								STRINGVIEW_Header, URLHistory_GetList(),
               			StringEnd,
 
+					LAYOUT_AddChild, g->shared->objects[GID_FAVE] = ButtonObject,
+						GA_ID, GID_FAVE,
+						GA_RelVerify, TRUE,
+					//	GA_HintInfo, g->shared->helphints[GID_FAVE],
+						BUTTON_RenderImage, g->shared->objects[GID_FAVEIMG] = BitMapObject,
+							BITMAP_SourceFile, fave,
+					//		BITMAP_SelectSourceFile, fave_s,
+							BITMAP_Screen, scrn,
+							BITMAP_Masking, TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+						
 				//	GA_ID, GID_TOOLBARLAYOUT,
 				//	GA_RelVerify, TRUE,
 				//	LAYOUT_RelVerify, TRUE,
@@ -4835,6 +4874,7 @@ void gui_window_new_content(struct gui_window *g)
 	g->favicon = NULL;
 	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
+	ami_gui_update_hotlist_button(g->shared);
 }
 
 bool gui_window_scroll_start(struct gui_window *g)

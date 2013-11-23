@@ -772,6 +772,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 				hotlist_add_url(url);
 				nsurl_unref(url);
+				ami_gui_update_hotlist_button(gwin);
 			}
 			break;
 

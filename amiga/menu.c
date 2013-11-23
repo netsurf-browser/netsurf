@@ -1030,6 +1030,7 @@ static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct Int
 		return;
 
 	hotlist_add_url(hlcache_handle_get_url(bw->current_content));
+	ami_gui_update_hotlist_button(gwin);
 }
 
 static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct IntuiMessage *msg)

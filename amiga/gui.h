@@ -48,6 +48,8 @@ enum
 	GID_FORWARD,
 	GID_THROBBER,
 	GID_SEARCH_ICON,
+	GID_FAVE,
+	GID_FAVEIMG,
 	GID_CLOSETAB,
 	GID_CLOSETAB_BM,
 	GID_ADDTAB,
@@ -160,6 +162,7 @@ void ami_gui_history(struct gui_window_2 *gwin, bool back);
 void ami_gui_hotlist_toolbar_update_all(void);
 void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
+void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;
