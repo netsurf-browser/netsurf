@@ -2650,6 +2650,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		browser_window_refresh_url_bar(gwin->bw,
 			hlcache_handle_get_url(gwin->bw->current_content), gwin->bw->frag_id);
+			
+		ami_gui_update_hotlist_button(gwin);
 	}
 }
 
