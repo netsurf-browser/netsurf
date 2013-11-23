@@ -1402,7 +1402,7 @@ void ami_handle_msg(void)
 	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
-	char *url;
+	nsurl *url;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1781,19 +1781,18 @@ void ami_handle_msg(void)
 
 						case GID_ADDTAB:
 						{
-							nsurl *urlns;
 							nserror error;
 
-							error = nsurl_create(nsoption_charp(homepage_url), &urlns);
+							error = nsurl_create(nsoption_charp(homepage_url), &url);
 							if (error == NSERROR_OK) {
 								error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
 											      BROWSER_WINDOW_HISTORY |
 											      BROWSER_WINDOW_TAB,
-											      urlns,
+											      url,
 											      NULL,
 											      gwin->bw,
 											      NULL);
-								nsurl_unref(urlns);
+								nsurl_unref(url);
 							}
 							if (error != NSERROR_OK) {
 								warn_user(messages_get_errorcode(error), 0);
@@ -1810,8 +1809,6 @@ void ami_handle_msg(void)
 								storage = (ULONG)search_web_from_term((char *)storage);
 							}
 							{
-								nsurl *url;
-
 								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
@@ -1839,8 +1836,6 @@ void ami_handle_msg(void)
 								(ULONG *)&storage);
 							storage = (ULONG)search_web_from_term((char *)storage);
 							{
-								nsurl *url;
-
 								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
@@ -1859,8 +1854,6 @@ void ami_handle_msg(void)
 
 						case GID_HOME:
 							{
-								nsurl *url;
-
 								if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
@@ -1904,6 +1897,23 @@ void ami_handle_msg(void)
 
 						case GID_FORWARD:
 							ami_gui_history(gwin, false);
+						break;
+
+						case GID_FAVE:
+							GetAttr(STRINGA_TextVal,
+								(Object *)gwin->objects[GID_URL],
+								(ULONG *)&storage);
+								
+							if(nsurl_create((const char *)storage, &url) == NSERROR_OK) {
+								if(hotlist_has_url(url)) {
+									hotlist_remove_url(url);
+								} else {
+									hotlist_add_url(url);
+								}
+								nsurl_unref(url);
+							}
+							
+							ami_gui_update_hotlist_button(gwin);
 						break;
 
 						case GID_HOTLIST:
