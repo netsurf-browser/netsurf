@@ -194,6 +194,7 @@
 #define SETTINGS_DEC_HISTORY_AGE 89  /* BOXCHAR in tree SETTINGS */
 #define SETTINGS_EDIT_HISTORY_AGE 90  /* FTEXT in tree SETTINGS */
 #define SETTINGS_INC_HISTORY_AGE 91  /* BOXCHAR in tree SETTINGS */
+#define SETTINGS_BT_GUI_TOUT 94  /* BUTTON in tree SETTINGS */
 
 #define POP_LANGUAGE 14  /* form/dial */
 #define POP_LANGUAGE_CS 1  /* STRING in tree POP_LANGUAGE */

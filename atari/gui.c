@@ -125,7 +125,7 @@ void gui_poll(bool active)
     aes_event_in.emi_tlow = schedule_run();
 
     if(active || rendering){
-        aes_event_in.emi_tlow = 10;
+        aes_event_in.emi_tlow = nsoption_int(atari_gui_poll_timeout);
 	}
 
     if(aes_event_in.emi_tlow < 0) {

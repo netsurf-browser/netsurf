@@ -59,6 +59,11 @@ static const char *font_engines[]  = {
 #endif
 };
 
+/* Available GUI timeouts for the timeout selection popup: */
+static const char *gui_timeouts[]  = {
+    "0", "5", "10"
+};
+
 #define OBJ_SELECTED(idx) ((bool)((dlgtree[idx].ob_state & OS_SELECTED)!=0))
 
 #define OBJ_CHECK(idx) (dlgtree[idx].ob_state |= (OS_SELECTED));
@@ -219,6 +224,9 @@ static void display_settings(void)
     set_text( SETTINGS_BT_SEL_LOCALE,
               nsoption_charp(accept_language) ? nsoption_charp(accept_language) : (char*)"en",
               INPUT_LOCALE_MAX_LEN );
+
+    sprintf(spare, "%d", nsoption_int(atari_gui_poll_timeout));
+    set_text(SETTINGS_BT_GUI_TOUT, spare, 2);
 
     tmp_option_expire_url = nsoption_int(expire_url);
     snprintf( spare, 255, "%02d", nsoption_int(expire_url) );
@@ -444,6 +452,28 @@ static void form_event(int index, int external)
         }
 
         OBJ_REDRAW(SETTINGS_BT_SEL_LOCALE);
+        break;
+
+    case SETTINGS_BT_GUI_TOUT:
+        objc_offset(dlgtree, SETTINGS_BT_GUI_TOUT, &x, &y);
+        tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_GUI_TOUT);
+        pop_menu.mn_tree = gemtk_obj_create_popup_tree(gui_timeouts,
+                                NOF_ELEMENTS(gui_timeouts), tmp, false, -1,
+                                100);
+
+        pop_menu.mn_item = 0;
+        pop_menu.mn_menu = 0;
+        pop_menu.mn_scroll = SCROLL_NO;
+        pop_menu.mn_keystate = 0;
+
+        menu_popup(&pop_menu, x, y, &me_data);
+        choice = me_data.mn_item;
+        if( choice > 0 && choice <= NOF_ELEMENTS(gui_timeouts) ) {
+            get_string(pop_menu.mn_tree, choice, spare);
+            set_text(SETTINGS_BT_GUI_TOUT, (char*)&spare[2], 5);
+        }
+
+        OBJ_REDRAW(SETTINGS_BT_GUI_TOUT);
         break;
 
         /*
@@ -701,6 +731,8 @@ static void apply_settings(void)
                        gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));
     nsoption_set_int(expire_url,
                      atoi(gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_HISTORY_AGE)));
+    nsoption_set_int(atari_gui_poll_timeout,
+                     atoi(gemtk_obj_get_text(dlgtree, SETTINGS_BT_GUI_TOUT)));
     nsoption_set_bool(send_referer,
                       OBJ_SELECTED(SETTINGS_CB_SEND_HTTP_REFERRER));
     nsoption_set_bool(do_not_track,
