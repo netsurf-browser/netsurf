@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <cflib.h>
+#include <gem.h>
 
 #include "utils/nsoption.h"
 #include "desktop/plot_style.h"
@@ -39,6 +40,22 @@ static short edit_obj = -1;
 static short any_obj = -1;
 static GUIWIN * settings_guiwin = NULL;
 static OBJECT * dlgtree;
+
+/* Available font engines for the font engine selection popup: */
+static const char *font_engines[]  = {
+
+#ifdef WITH_FREETYPE_FONT_DRIVER
+    "freetype",
+#endif
+
+#ifdef WITH_INTERNAL_FONT_DRIVER
+    "internal",
+#endif
+
+#ifdef WITH_VDI_FONT_DRIVER
+    "vdi",
+#endif
+};
 
 #define OBJ_SELECTED(idx) ((bool)((dlgtree[idx].ob_state & OS_SELECTED)!=0))
 
@@ -103,6 +120,7 @@ static void set_text( short idx, char * text, int len )
 static void toggle_objects(void)
 {
     /* enable / disable (refresh) objects depending on radio button values: */
+    /* Simulate GUI events which trigger refresh of bound elements: */
     FORMEVENT(SETTINGS_CB_USE_PROXY);
     FORMEVENT(SETTINGS_CB_PROXY_AUTH);
     FORMEVENT(SETTINGS_BT_SEL_FONT_RENDERER);
@@ -250,7 +268,6 @@ static void display_settings(void)
     toggle_objects();
 }
 
-
 static void form_event(int index, int external)
 {
     char spare[255];
@@ -258,9 +275,6 @@ static void form_event(int index, int external)
     bool checked = OBJ_SELECTED(index);
     char * tmp;
     MENU pop_menu, me_data;
-
-    /* For font driver popup: */
-    int num_font_drivers = 2;
 
     /*
     	Just a small collection of locales, each country has at least one
@@ -319,37 +333,50 @@ static void form_event(int index, int external)
     case SETTINGS_BT_SEL_FONT_RENDERER:
         if( external ) {
             objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
-            // point mn_tree tree to states popup:
-            pop_menu.mn_tree = gemtk_obj_get_tree(POP_FONT_RENDERER);
+            // point mn_tree tree to font renderer popup:
+            pop_menu.mn_tree = gemtk_obj_create_popup_tree(font_engines,
+                                    NOF_ELEMENTS(font_engines), NULL, false,-1);
+
+            assert(pop_menu.mn_tree != NULL);
+
             pop_menu.mn_menu = 0;
-            pop_menu.mn_item = POP_FONT_RENDERER_INTERNAL;
+            pop_menu.mn_item = 1; // POP_FONT_RENDERER_INTERNAL;
             pop_menu.mn_scroll = SCROLL_NO;
             pop_menu.mn_keystate = 0;
 
+
+            /* Get font renderer value currently displayed in the dialog: */
+            tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
+
 			// find the selected menu item and uncheck others:
-            for(i=pop_menu.mn_item; i<=num_font_drivers; i++) {
+            for(i=pop_menu.mn_item; i<=(short)NOF_ELEMENTS(font_engines); i++) {
+                /* Get string of menu item: */
                 get_string(pop_menu.mn_tree, i, spare);
-                tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
+
+                 /* Compare menu item text with the text currently displayed in GUI: */
                 if (strcasecmp(&spare[2], tmp)) {
                     menu_icheck(pop_menu.mn_tree, i, 0);
                 } else {
+                    /* set menu item selected: */
                     menu_icheck(pop_menu.mn_tree, i, 1);
                 }
                 set_string(pop_menu.mn_tree, i, spare);
             }
 
+            /* Show the popup: */
             menu_popup(&pop_menu, x, y, &me_data);
             choice = me_data.mn_item;
-            if( choice > 0 && choice <= num_font_drivers ) {
+
+             /* Process selection: */
+            if (choice > 0 && choice <= (short)NOF_ELEMENTS(font_engines)) {
                 get_string(pop_menu.mn_tree, choice, spare);
-                for(i=2; i<(int)strlen(spare); i++) {
-                    spare[i]= (char)tolower(spare[i]);
-                }
                 set_text(SETTINGS_BT_SEL_FONT_RENDERER,
                          (char*)&spare[2],
                          LABEL_FONT_RENDERER_MAX_LEN);
                 OBJ_REDRAW(SETTINGS_BT_SEL_FONT_RENDERER);
             }
+
+            gemtk_obj_destroy_popup_tree(pop_menu.mn_tree);
         }
         tmp = gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
         if (strcasecmp(tmp, "freetype") == 0) {
