@@ -386,6 +386,16 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar);
 
 
 /**
+ * Update toolbar's urlbar hotlist icon, if necessary.
+ *
+ * \param *toolbar	The toolbar to update.
+ * \param *url		URL with updated hotlist presence, or NULL if unknown.
+ */
+
+void ro_toolbar_hotlist_modifed(struct toolbar *toolbar, nsurl *url);
+
+
+/**
  * Return the current work area coordinates of the URL and favicon field's
  * bounding box.
  *

@@ -1620,6 +1620,15 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar)
 
 /* This is an exported interface documented in toolbar.h */
 
+void ro_toolbar_hotlist_modifed(struct toolbar *toolbar, nsurl *url)
+{
+	if (toolbar != NULL && toolbar->url != NULL)
+		ro_gui_url_bar_hotlist_modifed(toolbar->url, url);
+}
+
+
+/* This is an exported interface documented in toolbar.h */
+
 bool ro_toolbar_get_url_field_extent(struct toolbar *toolbar, os_box *extent)
 {
 	if (toolbar == NULL || toolbar->url == NULL)

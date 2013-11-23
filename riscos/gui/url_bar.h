@@ -232,6 +232,16 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 
 /**
+ * Update urlbar's hotlist icon, if necessary.
+ *
+ * \param *url_bar	The URL Bar to update.
+ * \param *url		URL with updated hotlist presence, or NULL if unknown.
+ */
+
+void ro_gui_url_bar_hotlist_modifed(struct url_bar *url_bar, nsurl *url);
+
+
+/**
  * Return a pointer to the URL contained in a URL bar.
  *
  * \param *url_bar		The URL Bar to look up the URL from.

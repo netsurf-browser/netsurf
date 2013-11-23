@@ -999,6 +999,29 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 /* This is an exported interface documented in url_bar.h */
 
+void ro_gui_url_bar_hotlist_modifed(struct url_bar *url_bar, nsurl *url)
+{
+	nsurl *n;
+
+	if (nsurl_create((const char *)url_bar->text_buffer,
+			&n) == NSERROR_OK) {
+		bool prev = url_bar->hotlist.add;
+		url_bar->hotlist.add = !hotlist_has_url(n);
+		nsurl_unref(n);
+
+		if (prev != url_bar->hotlist.add && !url_bar->hidden) {
+			xwimp_force_redraw(url_bar->window,
+					url_bar->hotlist.extent.x0,
+					url_bar->hotlist.extent.y0,
+					url_bar->hotlist.extent.x1,
+					url_bar->hotlist.extent.y1);
+		}
+	}
+}
+
+
+/* This is an exported interface documented in url_bar.h */
+
 const char *ro_gui_url_bar_get_url(struct url_bar *url_bar)
 {
 	if (url_bar == NULL)

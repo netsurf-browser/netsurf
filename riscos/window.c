@@ -4245,11 +4245,17 @@ void ro_gui_window_action_zoom(struct gui_window *g)
 
 void ro_gui_window_action_add_bookmark(struct gui_window *g)
 {
-	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL ||
+	nsurl *url;
+
+	if (g == NULL || g->bw == NULL || g->toolbar == NULL ||
+			g->bw->current_content == NULL ||
 			hlcache_handle_get_url(g->bw->current_content) == NULL)
 		return;
 
-	ro_gui_hotlist_add_page(hlcache_handle_get_url(g->bw->current_content));
+	url = hlcache_handle_get_url(g->bw->current_content);
+
+	ro_gui_hotlist_add_page(url);
+	ro_toolbar_hotlist_modifed(g->toolbar, url);
 }
 
 
