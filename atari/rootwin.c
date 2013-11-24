@@ -64,7 +64,7 @@
 #include "atari/encoding.h"
 #include "atari/redrawslots.h"
 #include "atari/toolbar.h"
-#include "atari/gemtk/gemtk.h"
+#include "atari/findfile.h"
 
 extern struct gui_window *input_window;
 extern EVMULT_OUT aes_event_out;
@@ -1477,44 +1477,71 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
         gemtk_dd_reply(dd_hdl, DD_OK);
         buff = (char*)malloc(sizeof(char)*(size+1));
         if (buff != NULL) {
-            if (Fread(dd_hdl, size, buff ) == size)
+            if (Fread(dd_hdl, size, buff ) == size) {
+
+                int sx, sy;
+                bool processed = false;
+                GRECT content_area;
+                struct browser_window * bw = gw->browser->bw;
+
                 buff[size] = 0;
-            LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n",
+
+                LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n",
                  (char*)buff, (char*)&ext,
                  size, mx, my
                 ));
-            {
-                GRECT content_area;
-                struct browser_window * bw = gw->browser->bw;
+
                 window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
                 mx = mx - content_area.g_x;
                 my = my - content_area.g_y;
-                if( (mx < 0 || mx > content_area.g_w)
-                        || (my < 0 || my > content_area.g_h) )
+                if((mx < 0 || mx > content_area.g_w)
+                        || (my < 0 || my > content_area.g_h))
                     return;
 
-                utf8_convert_ret ret;
-                char *utf8_fn;
-                int sx, sy;
+                processed = browser_window_drop_file_at_point(gw->browser->bw,
+                                                              mx+sx, my+sy,
+                                                              NULL);
+                if(processed == true) {
+                    utf8_convert_ret ret;
+                    char *utf8_fn;
 
-                ret = utf8_from_local_encoding(buff, 0, &utf8_fn);
-                if (ret != UTF8_CONVERT_OK) {
-                    free(buff);
-                    /* A bad encoding should never happen */
-                    LOG(("utf8_from_local_encoding failed"));
-                    assert(ret != UTF8_CONVERT_BADENC);
-                    /* no memory */
-                    return;
+                    ret = utf8_from_local_encoding(buff, 0, &utf8_fn);
+                    if (ret != UTF8_CONVERT_OK) {
+                        free(buff);
+                        /* A bad encoding should never happen */
+                        LOG(("utf8_from_local_encoding failed"));
+                        assert(ret != UTF8_CONVERT_BADENC);
+                        /* no memory */
+                        goto error;
+                    }
+                    gui_window_get_scroll(gw, &sx, &sy);
+                    processed = browser_window_drop_file_at_point(gw->browser->bw,
+                                                                  mx+sx, my+sy,
+                                                                  utf8_fn);
+                    free(utf8_fn);
                 }
-                gui_window_get_scroll(gw, &sx, &sy);
-                browser_window_drop_file_at_point( gw->browser->bw, mx+sx,
-                                                   my+sy, utf8_fn );
-                free(utf8_fn);
-                free(buff);
+
+                if(processed == false) {
+                    // TODO: use localized string:
+                    if(gemtk_msg_box_show(GEMTK_MSG_BOX_CONFIRM, "Open File?") > 0) {
+                        nsurl * ns_url = NULL;
+                        char * tmp_url = local_file_to_url(buff);
+                        if ((tmp_url  != NULL)
+                            && nsurl_create(tmp_url, &ns_url) == NSERROR_OK) {
+                            browser_window_navigate(gw->browser->bw, ns_url, NULL,
+                                BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE,
+                                NULL, NULL, NULL);
+                            nsurl_unref(ns_url);
+                        }
+                    }
+                }
             }
         }
     }
 error:
+    if (buff) {
+        free(buff);
+    }
     gemtk_dd_close( dd_hdl);
 }
 
