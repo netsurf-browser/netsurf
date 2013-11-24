@@ -75,6 +75,8 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *g);
 OBJECT *toolbar_get_form(struct s_toolbar *tb);
 struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
+char *toolbar_get_url(struct s_toolbar *tb);
+nsurl * toolbar_get_nsurl(struct s_toolbar * tb);
 void toolbar_set_throbber_state(struct s_toolbar *tb, bool active);
 void toolbar_set_attached(struct s_toolbar *tb, bool attached);
 void toolbar_set_visible(struct s_toolbar *tb, short area, bool visible);
@@ -91,6 +93,8 @@ void toolbar_reload_click(struct s_toolbar *tb);
 void toolbar_forward_click(struct s_toolbar *tb);
 void toolbar_home_click(struct s_toolbar *tb);
 void toolbar_stop_click(struct s_toolbar *tb);
+void toolbar_favorite_click(struct s_toolbar *tb);
+void toolbar_crypto_click(struct s_toolbar *tb);
 
 
 #endif
