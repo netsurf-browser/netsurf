@@ -154,6 +154,10 @@ void gui_poll(bool active)
                 LOG(("Menu Item: %d\n",aes_msg_out[4]));
                 deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
                 break;
+
+            case AP_TERM:
+                netsurf_quit = true;
+                break;
             default:
                 break;
             }
