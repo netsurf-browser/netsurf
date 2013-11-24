@@ -122,10 +122,10 @@ void context_popup(struct gui_window * gw, short x, short y)
 	unsigned long size;
 	const char * data;
 	FILE * fp_tmpfile;
-	char * tempfile;
+	char cmdline[128];
+	char * tempfile = &cmdline[1];
 	int err = 0;
 	char * editor, *lastslash;
-	char cmdline[PATH_MAX];
 	MENU pop_menu, me_data;
 
 	pop = gemtk_obj_get_tree( POP_CTX );
@@ -274,38 +274,17 @@ void context_popup(struct gui_window * gw, short x, short y)
 				data = content_get_source_data(gw->browser->bw->current_content,
 												&size);
 				if (size > 0 && data != NULL){
-					tempfile = tmpnam( NULL );
-					fp_tmpfile = fopen( tempfile, "w" );
+				    snprintf(tempfile, 127, "%s%s.htm", "u:", tmpnam(NULL));
+				    cmdline[0] = (unsigned char)strlen(tempfile);
+					LOG(("Creating temporay source file: %s\n", tempfile));
+					fp_tmpfile = fopen(tempfile, "w");
 					if (fp_tmpfile != NULL){
 						fwrite(data, size, 1, fp_tmpfile);
-						fclose(fp_tmpfile );
-						/*
-						lastslash = strrchr(editor, '/');
-						if (lastslash == NULL)
-							lastslash = strrchr(editor, '\\');
-						if (lastslash == NULL)
-							lastslash = editor;
-						else
-							lastslash++;
-						*/
+						fclose(fp_tmpfile);
 
 						if(strlen(tempfile)<=125){
-							shel_write(1,1,0,editor,tempfile);
+							shel_write(1, 1, 1, editor, cmdline);
 						}
-
-						/*if(is_process_running(lastslash)){
-							if(strlen(tempfile)<=125){
-								shel_write(1,1,0,editor,tempfile);
-							}
-						} else {
-							// check for max length of simple commandline param:
-							if(strlen(tempfile)<=125){
-								sprintf(cmdline, "%c%s", (char)strlen(tempfile),
-												tempfile);
-								Pexec(100, editor, cmdline, NULL);
-							}
-						}
-						*/
 					} else {
 						printf("Could not open temp file: %s!\n", tempfile );
 					}
@@ -314,7 +293,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					LOG(("Invalid content!"));
 				}
 			} else {
-				form_alert(0, "[1][Set option \"option_atari_editor\".][OK]");
+				form_alert(0, "[1][Set option \"atari_editor\".][OK]");
 			}
 		break;
 
