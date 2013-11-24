@@ -26,6 +26,14 @@
 # define min(x,y) ((x<y) ? x : y )
 #endif
 
+/***
+ * Display an message box
+ *
+ * \param type Valid values: GEMTK_MSG_BOX_CONFIRM, GEMTK_MSG_BOX_ALERT
+ * \param msg The message / query to display
+ * \return 0 on "No"
+ *
+ */
 short gemtk_msg_box_show(short type, const char * msg)
 {
 	#define GEMTK_MSG_BOX_STR_SIZE 256

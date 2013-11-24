@@ -123,6 +123,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	const char * data;
 	FILE * fp_tmpfile;
 	char cmdline[128];
+	/* skip first byte, which must hold length of commandline: */
 	char * tempfile = &cmdline[1];
 	int err = 0;
 	char * editor, *lastslash;
