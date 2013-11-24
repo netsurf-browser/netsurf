@@ -133,7 +133,7 @@ static void toggle_objects(void)
     FORMEVENT(SETTINGS_BT_SEL_FONT_RENDERER);
 }
 
-static char **read_locales()
+static char **read_locales(void)
 {
     char buf[PATH_MAX];
     char tmp_locale[16];
@@ -476,7 +476,7 @@ static void form_event(int index, int external)
 
         /* Process user selection: */
         choice = me_data.mn_item;
-        if( choice > 0 && choice <= NOF_ELEMENTS(gui_timeouts) ) {
+        if( choice > 0 && choice <= (int)NOF_ELEMENTS(gui_timeouts)) {
             get_string(pop_menu.mn_tree, choice, spare);
             set_text(SETTINGS_BT_GUI_TOUT, (char*)&spare[2], 5);
         }
