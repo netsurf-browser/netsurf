@@ -37,7 +37,9 @@
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "desktop/hotlist.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"
@@ -137,6 +139,18 @@ static struct s_tb_button tb_buttons[] =
 	{
         TOOLBAR_BT_RELOAD,
         toolbar_reload_click,
+        {0,0},
+        0, 0, 0, {0,0,0,0}
+    },
+	{
+        TOOLBAR_BT_FAVORITE,
+        toolbar_favorite_click,
+        {0,0},
+        0, 0, 0, {0,0,0,0}
+    },
+	{
+        TOOLBAR_BT_CRYPTO,
+        toolbar_crypto_click,
         {0,0},
         0, 0, 0, {0,0,0,0}
     },
@@ -371,6 +385,7 @@ static int toolbar_calculate_height(struct s_toolbar *tb)
 static void toolbar_reflow(struct s_toolbar *tb)
 {
     int i;
+    short offx, offy;
 
     // position toolbar areas:
     tb->form->ob_x = tb->area.g_x;
@@ -389,32 +404,39 @@ static void toolbar_reflow(struct s_toolbar *tb)
 
     }
 
-	// align the throbber area at right edge:
-    tb->form[TOOLBAR_THROBBER_AREA].ob_x = tb->area.g_w
-        - tb->form[TOOLBAR_THROBBER_AREA].ob_width;
+	// align TOOLBAR_AREA_RIGHT IBOX at right edge:
+    tb->form[TOOLBAR_AREA_RIGHT].ob_x = tb->area.g_w
+        - tb->form[TOOLBAR_AREA_RIGHT].ob_width;
+
+	// center the URL area:
+    tb->form[TOOLBAR_AREA_URL].ob_width = tb->area.g_w
+       - (tb->form[TOOLBAR_AREA_LEFT].ob_width
+       + tb->form[TOOLBAR_AREA_RIGHT].ob_width);
+
+    // position throbber image above IBOX:
+    objc_offset(tb->form, TOOLBAR_THROBBER_AREA, &offx, &offy);
+    throbber_form[tb->throbber.index].ob_x = offx;
+    throbber_form[tb->throbber.index].ob_y = offy;
+
+    /*throbber_form[tb->throbber.index].ob_x = tb->area.g_x
+        + tb->form[TOOLBAR_AREA_RIGHT].ob_x
+        + tb->form[TOOLBAR_THROBBER_AREA].ob_x;*/
+
+/*
+    throbber_form[tb->throbber.index].ob_x = tb->area.g_x
+        + tb->form[TOOLBAR_AREA_RIGHT].ob_x
+        + tb->form[TOOLBAR_THROBBER_AREA].ob_x
+        + ((tb->form[TOOLBAR_THROBBER_AREA].ob_width
+        - throbber_form[tb->throbber.index].ob_width) >> 1);
+
+    throbber_form[tb->throbber.index].ob_y = tb->area.g_y
+        + ((tb->form[TOOLBAR_THROBBER_AREA].ob_height
+        - throbber_form[tb->throbber.index].ob_height) >> 1);
+        */
 
 	// align the search button:
 	tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_x = tb->area.g_w
         - tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_width;
-
-	// center the URL area:
-    tb->form[TOOLBAR_AREA_URL].ob_width = tb->area.g_w
-       - (tb->form[TOOLBAR_AREA_BUTTONS].ob_width
-       + tb->form[TOOLBAR_THROBBER_AREA].ob_width + 1);
-
-
-    // position throbber image:
-    throbber_form[tb->throbber.index].ob_x = tb->area.g_x +
-        tb->form[TOOLBAR_THROBBER_AREA].ob_x;
-
-    throbber_form[tb->throbber.index].ob_x = tb->area.g_x
-        + tb->form[TOOLBAR_THROBBER_AREA].ob_x +
-        ((tb->form[TOOLBAR_THROBBER_AREA].ob_width
-        - throbber_form[tb->throbber.index].ob_width) >> 1);
-
-    throbber_form[tb->throbber.index].ob_y = tb->area.g_y +
-        ((tb->form[TOOLBAR_THROBBER_AREA].ob_height
-        - throbber_form[tb->throbber.index].ob_height) >> 1);
 
     // set button states:
     for (i=0; i < tb->btcnt; i++ ) {
@@ -439,8 +461,6 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 
     if(tb->reflow == true)
         toolbar_reflow(tb);
-
-	//TODO: fix redraw under popup menu ... that not handled correctly somehow.
 
 	//dbg_grect("toolbar redraw clip", clip);
 
@@ -476,6 +496,9 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 	struct s_tb_button * bt;
 	bool enable = false;
 	GRECT area;
+	nsurl * ns_url;
+	char * c_url;
+	size_t c_url_len;
 
 	assert(bw != NULL);
 
@@ -523,13 +546,56 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
         }
 	}
 
+	if (button == TOOLBAR_BT_FAVORITE || button <= 0) {
+	    bt = find_button(tb, TOOLBAR_BT_FAVORITE);
+	    ns_url = toolbar_get_nsurl(tb);
+	    if (ns_url != NULL) {
+            if (hotlist_has_url(ns_url)) {
+                bt->state = button_on;
+                tb->form[TOOLBAR_BT_FAVORITE].ob_state |= OS_SELECTED;
+            }
+            else {
+                bt->state = button_on;
+                tb->form[TOOLBAR_BT_FAVORITE].ob_state &= ~OS_SELECTED;
+            }
+	    }
+	    nsurl_unref(ns_url);
+	}
+
+	if (button == TOOLBAR_BT_CRYPTO|| button <= 0) {
+	    bt = find_button(tb, TOOLBAR_BT_CRYPTO);
+	    ns_url = toolbar_get_nsurl(tb);
+	    if (ns_url != NULL &&
+            nsurl_get(ns_url, NSURL_SCHEME, &c_url, &c_url_len) == NSERROR_OK) {
+	        if (strncasecmp("https", c_url, 5) == 0) {
+                bt->state = button_on;
+                // TODO: this check actually doesn't work - why?
+                if (urldb_get_cert_permissions(ns_url) == true) {
+                    tb->form[TOOLBAR_BT_CRYPTO].ob_state &= ~OS_SELECTED;
+                }
+                else {
+                    tb->form[TOOLBAR_BT_CRYPTO].ob_state |= OS_SELECTED;
+                }
+            }
+            else {
+                bt->state = button_off;
+                tb->form[TOOLBAR_BT_CRYPTO].ob_state &= ~OS_SELECTED;
+            }
+            nsurl_unref(ns_url);
+            free(c_url);
+        }
+    }
+
     if (tb->attached) {
         if (button > 0) {
             toolbar_get_grect(tb, button, &area);
             window_schedule_redraw_grect(tb->owner, &area);
         }
         else {
-            toolbar_get_grect(tb, TOOLBAR_AREA_BUTTONS, &area);
+            toolbar_get_grect(tb, TOOLBAR_AREA_LEFT, &area);
+            window_schedule_redraw_grect(tb->owner, &area);
+
+            toolbar_get_grect(tb, TOOLBAR_AREA_RIGHT, &area);
             window_schedule_redraw_grect(tb->owner, &area);
         }
     }
@@ -707,18 +773,12 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 		char tmp_url[PATH_MAX];
 		if ( textarea_get_text( tb->url.textarea, tmp_url, PATH_MAX) > 0 ) {
 			window_set_focus(tb->owner, BROWSER, gw->browser);
-
 			if (nsurl_create((const char*)&tmp_url, &url) != NSERROR_OK) {
 				warn_user("NoMemory", 0);
 			} else {
-				browser_window_navigate(gw->browser->bw,
-					url,
-					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
+				browser_window_navigate(gw->browser->bw, url, NULL,
+					BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE,
+					NULL, NULL, NULL);
 				nsurl_unref(url);
 			}
 
@@ -902,6 +962,36 @@ struct textarea *toolbar_get_textarea(struct s_toolbar *tb,
     return(tb->url.textarea);
 }
 
+char *toolbar_get_url(struct s_toolbar *tb)
+{
+    char * c_url = NULL;
+    int c_url_len = 0;
+
+    c_url_len = textarea_get_text(tb->url.textarea, NULL, 0);
+
+    if (c_url_len > -1) {
+        c_url = malloc(c_url_len+1);
+        textarea_get_text(tb->url.textarea, c_url, c_url_len+1);
+    }
+
+    return(c_url);
+}
+
+nsurl * toolbar_get_nsurl(struct s_toolbar * tb)
+{
+
+    nsurl * ns_url = NULL;
+    char * c_url;
+
+    c_url = toolbar_get_url(tb);
+    if (c_url) {
+        nsurl_create(c_url, &ns_url);
+    }
+
+    return(ns_url);
+}
+
+
 OBJECT *toolbar_get_form(struct s_toolbar *tb)
 {
 	return(tb->form);
@@ -995,5 +1085,37 @@ void toolbar_stop_click(struct s_toolbar *tb)
     assert(bw != NULL);
 
 	browser_window_stop(bw);
+}
+
+void toolbar_favorite_click(struct s_toolbar *tb)
+{
+    nsurl * ns_url = NULL;
+    char * c_url;
+    int c_url_len = 0;
+
+    c_url = toolbar_get_url(tb);
+    c_url_len = strlen(c_url);
+
+    nsurl_create(c_url, &ns_url);
+
+    if (hotlist_has_url(ns_url)) {
+        char msg[c_url_len+100];
+        snprintf(msg, c_url_len+100, "Really delete from favorites: \"%s\"",
+                c_url);
+        if(gemtk_msg_box_show(GEMTK_MSG_BOX_CONFIRM, msg)) {
+            hotlist_remove_url(ns_url);
+        }
+    }
+    else {
+        hotlist_add_url(ns_url);
+    }
+
+    nsurl_unref(ns_url);
+    free(c_url);
+}
+
+void toolbar_crypto_click(struct s_toolbar *tb)
+{
+
 }
 
