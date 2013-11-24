@@ -444,12 +444,17 @@ static void form_event(int index, int external)
         pop_menu.mn_scroll = SCROLL_YES;
         pop_menu.mn_keystate = 0;
 
+        /* display popup: */
         menu_popup(&pop_menu, x, y, &me_data);
+
+        /* Process user selection: */
         choice = me_data.mn_item;
         if( choice > 0 && choice <= num_locales ) {
             get_string(pop_menu.mn_tree, choice, spare);
             set_text(SETTINGS_BT_SEL_LOCALE, (char*)&spare[2], 5);
         }
+
+        gemtk_obj_destroy_popup_tree(pop_menu.mn_tree);
 
         OBJ_REDRAW(SETTINGS_BT_SEL_LOCALE);
         break;
@@ -466,12 +471,17 @@ static void form_event(int index, int external)
         pop_menu.mn_scroll = SCROLL_NO;
         pop_menu.mn_keystate = 0;
 
+        /* Display popup: */
         menu_popup(&pop_menu, x, y, &me_data);
+
+        /* Process user selection: */
         choice = me_data.mn_item;
         if( choice > 0 && choice <= NOF_ELEMENTS(gui_timeouts) ) {
             get_string(pop_menu.mn_tree, choice, spare);
             set_text(SETTINGS_BT_GUI_TOUT, (char*)&spare[2], 5);
         }
+
+        gemtk_obj_destroy_popup_tree(pop_menu.mn_tree);
 
         OBJ_REDRAW(SETTINGS_BT_GUI_TOUT);
         break;
