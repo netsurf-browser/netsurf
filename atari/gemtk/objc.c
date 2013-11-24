@@ -369,7 +369,19 @@ OBJECT *gemtk_obj_tree_copy(OBJECT *tree)
     return(new_tree);
 }
 
-
+/***
+ * Create a simple OBJECT tree from a list of strings, to be used with menu_popup
+ * OBJECT ownership is passed to caller.
+ * Call gemtk_obj_destroy_popup_tree once the popup isn't needed anymore.
+ *
+ * \param items A list of string to be used as items
+ * \param nitems The number of items in the list
+ * \param selected The text of the selected item
+ * \param horizontal Set to true to render the tree horizontally
+ * \param max_width -1: autodetect width
+ * \param max_heigth -1: autodetect height (set to postive value when using a vertical scrolling popup)
+ * \return a pointer to the new OBJECT tree
+ */
 OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
                                      char * selected, bool horizontal,
                                      int max_width, int max_height)
@@ -490,6 +502,11 @@ OBJECT * gemtk_obj_create_popup_tree(const char **items, int nitems,
     return(popup);
 }
 
+/***
+ * Free memory of an OBJECT tree created with gemtk_obj_create_popup_tree.
+ *
+ * \param popup The tree to destroy
+ */
 void gemtk_obj_destroy_popup_tree(OBJECT * popup)
 {
     int i=0;
