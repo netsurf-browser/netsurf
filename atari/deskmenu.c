@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <cflib.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -537,31 +538,58 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 	struct s_accelerator * accel = &mi->accel;
 	int i, l=0, x=-1;
 	char str[255];
+	bool is_std_shortcut = false;
 
 	get_string(h_gem_menu, mi->rid, str);
 
 	i = l = strlen(str);
 	while (i > 2) {
+
+	    if ((strncmp("  ", &str[i], 2) == 0) && (strlen(&str[i]) > 2)) {
+            // "Standard" Keyboard Shortcut Element found:
+            x = i+2;
+            is_std_shortcut = true;
+            break;
+	    }
+
 		if( str[i] == '['){
+		    // "Custom" Keyboard Shortcut Element found (identified by [):
 			x = i;
 			break;
 		}
 		i--;
 	}
+
+	// Parse keyboard shortcut value:
 	if( x > -1 ){
-		mi->menustr = malloc( l+1 );
-		strcpy(mi->menustr, str );
-		mi->menustr[x]=' ';
-		x++;
-		if( str[x] == '@' ){
+
+	    if (is_std_shortcut == false) {
+	        // create a new menu string to hide the "[" mark:
+            mi->menustr = malloc( l+1 );
+            strcpy(mi->menustr, str);
+            mi->menustr[x]=' ';
+            x++;
+	    }
+
+        // find & register modifiers:
+		if (str[x] == '@') {
 			accel->mod = K_ALT;
-			mi->menustr[x] = 0x07;
+			if (is_std_shortcut == false) {
+			    // only modify menu items when it is malloc'd:
+                mi->menustr[x] = 0x07;
+			}
 			x++;
 		}
-		else if( str[x] == '^' ) {
+		else if (str[x] == '^') {
 			accel->mod = K_CTRL;
 			x++;
 		}
+		else if (str[x] == 0x01) { // the arrow up chracter (atari-st encoding)
+            accel->mod = K_LSHIFT;
+            x++;
+		}
+
+        // find keycodes / chracters:
 		if( str[x] <= 28 ){
 			// parse symbol
 			unsigned short keycode=0;
@@ -585,10 +613,24 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 				if( (fkey >= 0) && (fkey <= 10) ){
 					accel->keycode = NK_F1 - 1 + fkey;
 				}
-			} else {
+			}
+			else if (strncmp(&str[x], "Home", 4) == 0) {
+                accel->keycode = NK_CLRHOME;
+			}
+			else if (strncmp(&str[x], "Undo", 4) == 0) {
+                accel->keycode = NK_UNDO;
+			}
+			else if (strncmp(&str[x], "Help", 4) == 0) {
+                accel->keycode = NK_HELP;
+			}
+			else {
 				accel->ascii = str[x];
 			}
 		}
+
+		LOG(("Registered keyboard shortcut for \"%s\" => mod: %d, "
+                "keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode,
+                                                accel->ascii));
 	}
 }
 
