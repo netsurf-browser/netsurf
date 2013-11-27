@@ -524,7 +524,9 @@ static void nsgtk_check_homedir(void)
 			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
 		}
 	} else {
-		chmod(buf, S_IRWXU);
+		if (chmod(buf, S_IRWXU) != 0) {
+			LOG(("Unable to set permissions on %s", buf));
+		}
 	}
 }
 
