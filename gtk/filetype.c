@@ -157,7 +157,11 @@ const char *fetch_filetype(const char *unix_path)
 	const char *type;
 	int l;
 
-	stat(unix_path, &statbuf);
+	if (stat(unix_path, &statbuf) != 0) {
+		/* stat failed */
+		return "text/plain";
+	}
+
 	if (S_ISDIR(statbuf.st_mode))
 		return "application/x-netsurf-directory";
 
