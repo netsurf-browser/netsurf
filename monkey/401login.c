@@ -37,8 +37,10 @@ void gui_401login_open(nsurl *url, const char *realm,
                        nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
   monkey401_t *m4t = calloc(sizeof(*m4t), 1);
-  if (m4t == NULL)
+  if (m4t == NULL) {
     cb(false, cbpw);
+    return;
+  }
   m4t->cb = cb;
   m4t->pw = cbpw;
   m4t->num = m4_ctr++;
