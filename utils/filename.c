@@ -174,6 +174,7 @@ void filename_release(const char *filename)
 bool filename_initialise(void)
 {
 	char *directory, *start;
+	int ret;
 
 	directory = strdup(TEMP_FILENAME_PREFIX);
 	if (directory == NULL)
@@ -188,10 +189,13 @@ bool filename_initialise(void)
 	}
 
 	LOG(("Temporary directory location: %s", directory));
-	nsmkdir(directory, S_IRWXU);
+	ret = nsmkdir(directory, S_IRWXU);
 
 	free(directory);
 
+	if (ret != 0) {
+		return false;
+	}
 	return true;
 }
 
