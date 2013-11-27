@@ -39,8 +39,10 @@ gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                 void *cbpw)
 {
   monkey_cert_t *m4t = calloc(sizeof(*m4t), 1);
-  if (m4t == NULL)
+  if (m4t == NULL) {
     cb(false, cbpw);
+    return;
+  }
   m4t->cb = cb;
   m4t->pw = cbpw;
   m4t->num = cert_ctr++;
