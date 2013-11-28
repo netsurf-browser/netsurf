@@ -801,7 +801,8 @@ css_error node_has_name(void *pw, void *node,
 	nscss_select_ctx *ctx = pw;
 	dom_node *n = node;
 
-	if (lwc_string_isequal(qname->name, ctx->universal, match) == lwc_error_ok && *match == false) {
+	if (lwc_string_isequal(qname->name, ctx->universal, match) ==
+			lwc_error_ok && *match == false) {
 		dom_string *name;
 		dom_exception err;
 
