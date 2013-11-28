@@ -183,7 +183,13 @@ bool filename_initialise(void)
 	for (start = directory; *start != '\0'; start++) {
 		if (*start == '/') {
 			*start = '\0';
-			nsmkdir(directory, S_IRWXU);
+			ret = nsmkdir(directory, S_IRWXU);
+			if (ret != 0) {
+				free(directory);
+
+				return false;
+			}
+
 			*start = '/';
 		}
 	}
