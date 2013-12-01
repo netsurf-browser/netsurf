@@ -174,6 +174,7 @@ dom_string *corestring_dom_invalid;
 dom_string *corestring_dom_keydown;
 dom_string *corestring_dom_keypress;
 dom_string *corestring_dom_keyup;
+dom_string *corestring_dom_key_css_bloom;
 dom_string *corestring_dom_link;
 dom_string *corestring_dom_load;
 dom_string *corestring_dom_loadeddata;
@@ -404,6 +405,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(keydown);
 	CSS_DOM_STRING_UNREF(keypress);
 	CSS_DOM_STRING_UNREF(keyup);
+	CSS_DOM_STRING_UNREF(key_css_bloom);
 	CSS_DOM_STRING_UNREF(link);
 	CSS_DOM_STRING_UNREF(load);
 	CSS_DOM_STRING_UNREF(loadeddata);
