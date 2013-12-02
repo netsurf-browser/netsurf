@@ -544,15 +544,16 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 
 	i = l = strlen(str);
 	while (i > 2) {
-
 	    if ((strncmp("  ", &str[i], 2) == 0) && (strlen(&str[i]) > 2)) {
             // "Standard" Keyboard Shortcut Element found:
+            LOG(("Standard Keyboard Shortcut: \"%s\"\n", &str[i]));
             x = i+2;
             is_std_shortcut = true;
             break;
 	    }
 
 		if( str[i] == '['){
+		    LOG(("Keyboard Shortcut: \"%s\"\n", &str[i]));
 		    // "Custom" Keyboard Shortcut Element found (identified by [):
 			x = i;
 			break;
