@@ -70,7 +70,7 @@ LDFLAGS += -lcflib -lcurl
 LDFLAGS += -lcss -lparserutils -ldom -lwapcaplet -lhubbub
 LDFLAGS += -lssl -lcrypto
 LDFLAGS += -lz -liconv -lcares -lHermes -lgem -lm
-LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
+LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/env/lib
 
 
 # S_ATARI are sources purely for the Atari FreeMiNT build
