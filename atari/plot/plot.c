@@ -49,6 +49,7 @@ struct s_view {
     short vis_w;            /* clipped to screen dimensions					*/
     short vis_h;            /* visible width								*/
     struct rect clipping;	/* clipping rectangle							*/
+    float scale;
 };
 
 /*
@@ -1897,6 +1898,16 @@ bool plot_get_dimensions(GRECT *dst)
 	dst->g_w = view.w;
 	dst->g_h = view.h;
 	return(true);
+}
+
+bool plot_set_scale(float scale)
+{
+    view.scale = scale;
+}
+
+float plot_get_scale()
+{
+    return(view.scale);
 }
 
 bool plot_clip(const struct rect *clip)
