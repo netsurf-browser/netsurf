@@ -2004,7 +2004,14 @@ void plot_set_text_plotter(FONT_PLOTTER font_plotter)
 
 static bool plot_text(int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle )
 {
-    fplotter->text(fplotter, x, y, text, length, fstyle);
+    if (view.scale != 1.0) {
+        plot_font_style_t newstyle = *fstyle;
+        newstyle.size = (int)((float)fstyle->size*view.scale);
+        fplotter->text(fplotter, x, y, text, length, &newstyle);
+    } else {
+        fplotter->text(fplotter, x, y, text, length, fstyle);
+    }
+
     return ( true );
 }
 

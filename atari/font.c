@@ -58,21 +58,52 @@ extern FONT_PLOTTER fplotter;
 static bool atari_font_position_in_string(const plot_font_style_t * fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x )
 {
-	fplotter->pixel_pos(fplotter, fstyle, string, length, x, char_offset, actual_x );
+    float scale = plot_get_scale();
+
+    if (scale != 1.0) {
+        plot_font_style_t newstyle = *fstyle;
+        newstyle.size = (int)((float)fstyle->size*scale);
+        fplotter->pixel_pos(fplotter, &newstyle, string, length, x, char_offset, actual_x);
+    } else {
+        fplotter->pixel_pos(fplotter, fstyle, string, length, x, char_offset, actual_x);
+    }
+
 	return( true );
 }
 
 static bool atari_font_split( const plot_font_style_t * fstyle, const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x )
 {
-	fplotter->str_split( fplotter, fstyle, string, length, x, char_offset, actual_x );
+    float scale = plot_get_scale();
+
+    if (scale != 1.0) {
+        plot_font_style_t newstyle = *fstyle;
+        newstyle.size = (int)((float)fstyle->size*scale);
+        fplotter->str_split(fplotter, &newstyle, string, length, x, char_offset,
+                            actual_x);
+    } else {
+        fplotter->str_split(fplotter, fstyle, string, length, x, char_offset,
+                            actual_x);
+    }
+
+
 	return( true );
 }
 
 static bool atari_font_width( const plot_font_style_t *fstyle, const char * str,
 					  size_t length, int * width  )
 {
-	fplotter->str_width( fplotter, fstyle, str, length, width );
+    float scale = plot_get_scale();
+
+    if (scale != 1.0) {
+        plot_font_style_t newstyle = *fstyle;
+        newstyle.size = (int)((float)fstyle->size*scale);
+        fplotter->str_width(fplotter, &newstyle, str, length, width);
+    } else {
+        fplotter->str_width(fplotter, fstyle, str, length, width);
+    }
+
+
 	return( true );
 }
 
