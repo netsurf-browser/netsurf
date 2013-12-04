@@ -384,6 +384,7 @@ static void __CDECL menu_inc_scale(short item, short title, void *data)
     float now = plot_get_scale();
     plot_set_scale(now+0.25);
 	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
+	gui_window_redraw_window(input_window);
 }
 
 
@@ -396,6 +397,7 @@ static void __CDECL menu_dec_scale(short item, short title, void *data)
         plot_set_scale(now-0.25);
     }
  	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
+ 	gui_window_redraw_window(input_window);
 }
 
 
