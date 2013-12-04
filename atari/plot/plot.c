@@ -1559,6 +1559,7 @@ int plot_init(char * fdrvrname)
 		atari_plot_bpp_virt = 8;
 	}
 
+    plot_set_scale(1.0);
 	update_visible_rect();
 
 	struct rect clip;
@@ -2058,6 +2059,12 @@ static bool plot_bitmap(int x, int y, int width, int height,
 
     bmpw = bitmap_get_width(bitmap);
     bmph = bitmap_get_height(bitmap);
+
+    if(view.scale != 1.0){
+        width = (int)(((float)width)*view.scale);
+        height = (int)(((float)height)*view.scale);
+        printf("bitmap scale: %d/%d (%f)\n", width, height, view.scale);
+    }
 
     if ( repeat_x || repeat_y ) {
         plot_get_clip(&clip);
