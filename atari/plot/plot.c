@@ -2063,7 +2063,6 @@ static bool plot_bitmap(int x, int y, int width, int height,
     if(view.scale != 1.0){
         width = (int)(((float)width)*view.scale);
         height = (int)(((float)height)*view.scale);
-        printf("bitmap scale: %d/%d (%f)\n", width, height, view.scale);
     }
 
     if ( repeat_x || repeat_y ) {
