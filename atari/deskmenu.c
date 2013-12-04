@@ -21,6 +21,7 @@
 #include "atari/gui.h"
 #include "atari/findfile.h"
 #include "atari/about.h"
+#include "atari/plot/plot.h"
 
 #include "atari/rootwin.h"
 
@@ -83,6 +84,8 @@ static void __CDECL menu_find(short item, short title, void *data);
 static void __CDECL menu_choices(short item, short title, void *data);
 static void __CDECL menu_stop(short item, short title, void *data);
 static void __CDECL menu_reload(short item, short title, void *data);
+static void __CDECL menu_dec_scale(short item, short title, void *data);
+static void __CDECL menu_inc_scale(short item, short title, void *data);
 static void __CDECL menu_toolbars(short item, short title, void *data);
 static void __CDECL menu_savewin(short item, short title, void *data);
 static void __CDECL menu_debug_render(short item, short title, void *data);
@@ -113,6 +116,8 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_EDIT, MAINMENU_M_PASTE, menu_paste, {'V',0,K_CTRL}, NULL},
 	{T_EDIT, MAINMENU_M_FIND, menu_find, {0,NK_F4,0}, NULL},
 	{T_VIEW, MAINMENU_M_RELOAD, menu_reload, {0,NK_F5,0}, NULL},
+	{0, 0, menu_inc_scale, {'+',0,K_CTRL}, NULL},
+    {0, 0, menu_dec_scale, {'-',0,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_TOOLBARS, menu_toolbars, {0,NK_F1,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_SAVEWIN, menu_savewin, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_DEBUG_RENDER, menu_debug_render, {0,0,0}, NULL},
@@ -370,6 +375,30 @@ static void __CDECL menu_reload(short item, short title, void *data)
 	toolbar_reload_click(input_window->root->toolbar);
 	LOG(("%s", __FUNCTION__));
 }
+
+
+static void __CDECL menu_inc_scale(short item, short title, void *data)
+{
+	if(input_window == NULL)
+		return;
+    float now = plot_get_scale();
+    plot_set_scale(now+0.25);
+	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
+}
+
+
+static void __CDECL menu_dec_scale(short item, short title, void *data)
+{
+	if(input_window == NULL)
+		return;
+	float now = plot_get_scale();
+    if (now > 0.5) {
+        plot_set_scale(now-0.25);
+    }
+ 	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
+}
+
+
 
 static void __CDECL menu_toolbars(short item, short title, void *data)
 {
@@ -651,14 +680,16 @@ void deskmenu_init(void)
 
 	/* parse and update menu items:  */
 	i = 0;
-	while( menu_evnt_tbl[i].rid != -1 ) {
-		register_menu_str( &menu_evnt_tbl[i] );
-		/* Update menu string if not null: */
-		if( menu_evnt_tbl[i].menustr != NULL ){
-			menu_text(h_gem_menu, menu_evnt_tbl[i].rid,
-						menu_evnt_tbl[i].menustr);
-		}
-		i++;
+	while (menu_evnt_tbl[i].rid != -1) {
+	    if(menu_evnt_tbl[i].rid > 0 && menu_evnt_tbl[i].title > 0){
+            register_menu_str( &menu_evnt_tbl[i] );
+            /* Update menu string if not null: */
+            if( menu_evnt_tbl[i].menustr != NULL ){
+                menu_text(h_gem_menu, menu_evnt_tbl[i].rid,
+                            menu_evnt_tbl[i].menustr);
+            }
+	    }
+        i++;
 	}
 	deskmenu_update();
 	/* Redraw menu: */
@@ -737,15 +768,24 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 	bool done = 0;
 	int i = 0;
 
-	sascii = gemtk_keybd2ascii(kcode, K_LSHIFT);
+    sascii = gemtk_keybd2ascii(kcode, 0);
+    if(sascii >= 'a' && sascii <= 'z'){
+        sascii = gemtk_keybd2ascii(kcode, K_LSHIFT);
+    }
 
 	/* Iterate through the menu function table: */
 	while( menu_evnt_tbl[i].rid != -1 && done == false) {
 		if( kstate == menu_evnt_tbl[i].accel.mod
 			&& menu_evnt_tbl[i].accel.ascii != 0) {
 			if( menu_evnt_tbl[i].accel.ascii == sascii) {
-				deskmenu_dispatch_item(menu_evnt_tbl[i].title,
+			    if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
+                    deskmenu_dispatch_item(menu_evnt_tbl[i].title,
 									menu_evnt_tbl[i].rid);
+			    }
+			    else {
+			        /* Keyboard shortcut not displayed within menu: */
+                    menu_evnt_tbl[i].menu_func(0, 0, NULL);
+			    }
 				done = true;
 				break;
 			}
@@ -754,8 +794,14 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 			if( menu_evnt_tbl[i].accel.keycode != 0) {
 				if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) &&
 					kstate == menu_evnt_tbl[i].accel.mod) {
-						deskmenu_dispatch_item(menu_evnt_tbl[i].title,
-									menu_evnt_tbl[i].rid);
+						if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
+                            deskmenu_dispatch_item(menu_evnt_tbl[i].title,
+                                            menu_evnt_tbl[i].rid);
+                        }
+                        else {
+                            /* Keyboard shortcut not displayed within menu: */
+                            menu_evnt_tbl[i].menu_func(0, 0, NULL);
+                        }
 						done = true;
 						break;
 				}
