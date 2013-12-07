@@ -1711,8 +1711,6 @@ css_error node_is_link(void *pw, void *n, bool *match)
  */
 css_error node_is_visited(void *pw, void *node, bool *match)
 {
-	*match = false;
-
 	nscss_select_ctx *ctx = pw;
 	nsurl *url;
 	nserror error;
@@ -1721,6 +1719,8 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 	dom_exception exc;
 	dom_node *n = node;
 	dom_string *s = NULL;
+
+	*match = false;
 
 	exc = dom_node_get_node_name(n, &s);
 	if ((exc != DOM_NO_ERR) || (s == NULL)) {
