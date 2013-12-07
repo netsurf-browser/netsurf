@@ -96,7 +96,7 @@ struct treeview_node {
 
 struct treeview_node_entry {
 	treeview_node base;
-	struct treeview_field fields[];
+	struct treeview_field fields[FLEX_ARRAY_LEN_DECL];
 }; /**< Entry class inherits node base class */
 
 struct treeview_pos {
