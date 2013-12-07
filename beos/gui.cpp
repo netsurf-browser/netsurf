@@ -441,19 +441,19 @@ set_colour_from_ui(struct nsoption_s *opts,
                    enum nsoption_e option,
                    colour def_colour)
 {
-        if (ui != NOCOL) {
-                rgb_color c;
-                if (ui == B_DESKTOP_COLOR) {
+	if (ui != NOCOL) {
+		rgb_color c;
+		if (ui == B_DESKTOP_COLOR) {
 			BScreen s;
 			c = s.DesktopColor();
-                } else {
-                        c = ui_color(ui);
-                }
+		} else {
+			c = ui_color(ui);
+		}
 
-                def_colour = ((((uint32_t)c.blue << 16) & 0xff0000) |
-                              ((c.green << 8) & 0x00ff00) |
-                              ((c.red) & 0x0000ff));
-        }
+		def_colour = ((((uint32_t)c.blue << 16) & 0xff0000) |
+					  ((c.green << 8) & 0x00ff00) |
+					  ((c.red) & 0x0000ff));
+	}
 
 	opts[option].value.c = def_colour;
 
