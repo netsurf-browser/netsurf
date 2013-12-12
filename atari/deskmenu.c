@@ -116,8 +116,8 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_EDIT, MAINMENU_M_PASTE, menu_paste, {'V',0,K_CTRL}, NULL},
 	{T_EDIT, MAINMENU_M_FIND, menu_find, {0,NK_F4,0}, NULL},
 	{T_VIEW, MAINMENU_M_RELOAD, menu_reload, {0,NK_F5,0}, NULL},
-	{0, 0, menu_inc_scale, {'+',0,K_CTRL}, NULL},
-    {0, 0, menu_dec_scale, {'-',0,K_CTRL}, NULL},
+	{T_VIEW, MAINMENU_INC_SCALE, menu_inc_scale, {'+',0,K_CTRL}, NULL},
+    {T_VIEW, MAINMENU_DEC_SCALE, menu_dec_scale, {'-',0,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_TOOLBARS, menu_toolbars, {0,NK_F1,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_SAVEWIN, menu_savewin, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_DEBUG_RENDER, menu_debug_render, {0,0,0}, NULL},
@@ -379,17 +379,24 @@ static void __CDECL menu_reload(short item, short title, void *data)
 
 static void __CDECL menu_inc_scale(short item, short title, void *data)
 {
+    int width = 0, heigth = 0;
+
 	if(input_window == NULL)
 		return;
     float now = plot_get_scale();
     plot_set_scale(now+0.25);
 	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
-	gui_window_redraw_window(input_window);
+
+	browser_window_reload(input_window->browser->bw, false);
+ 	gui_window_get_dimensions(input_window, &width, &heigth, true);
+ 	browser_window_reformat(input_window->browser->bw, false, width, heigth);
 }
 
 
 static void __CDECL menu_dec_scale(short item, short title, void *data)
 {
+    int width = 0, heigth = 0;
+
 	if(input_window == NULL)
 		return;
 	float now = plot_get_scale();
@@ -397,7 +404,10 @@ static void __CDECL menu_dec_scale(short item, short title, void *data)
         plot_set_scale(now-0.25);
     }
  	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
- 	gui_window_redraw_window(input_window);
+
+ 	browser_window_reload(input_window->browser->bw, false);
+ 	gui_window_get_dimensions(input_window, &width, &heigth, true);
+ 	browser_window_reformat(input_window->browser->bw, false, width, heigth);
 }
 
 

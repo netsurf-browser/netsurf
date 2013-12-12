@@ -142,18 +142,6 @@ static struct s_tb_button tb_buttons[] =
         {0,0},
         0, 0, 0, {0,0,0,0}
     },
-	{
-        TOOLBAR_BT_FAVORITE,
-        toolbar_favorite_click,
-        {0,0},
-        0, 0, 0, {0,0,0,0}
-    },
-	{
-        TOOLBAR_BT_CRYPTO,
-        toolbar_crypto_click,
-        {0,0},
-        0, 0, 0, {0,0,0,0}
-    },
 	{ 0, 0, {0,0}, 0, -1, 0, {0,0,0,0}}
 };
 
@@ -545,46 +533,6 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
             bt->state = button_off;
         }
 	}
-
-	if (button == TOOLBAR_BT_FAVORITE || button <= 0) {
-	    bt = find_button(tb, TOOLBAR_BT_FAVORITE);
-	    ns_url = toolbar_get_nsurl(tb);
-	    if (ns_url != NULL) {
-            if (hotlist_has_url(ns_url)) {
-                bt->state = button_on;
-                tb->form[TOOLBAR_BT_FAVORITE].ob_state |= OS_SELECTED;
-            }
-            else {
-                bt->state = button_on;
-                tb->form[TOOLBAR_BT_FAVORITE].ob_state &= ~OS_SELECTED;
-            }
-	    }
-	    nsurl_unref(ns_url);
-	}
-
-	if (button == TOOLBAR_BT_CRYPTO|| button <= 0) {
-	    bt = find_button(tb, TOOLBAR_BT_CRYPTO);
-	    ns_url = toolbar_get_nsurl(tb);
-	    if (ns_url != NULL &&
-            nsurl_get(ns_url, NSURL_SCHEME, &c_url, &c_url_len) == NSERROR_OK) {
-	        if (strncasecmp("https", c_url, 5) == 0) {
-                bt->state = button_on;
-                // TODO: this check actually doesn't work - why?
-                if (urldb_get_cert_permissions(ns_url) == true) {
-                    tb->form[TOOLBAR_BT_CRYPTO].ob_state &= ~OS_SELECTED;
-                }
-                else {
-                    tb->form[TOOLBAR_BT_CRYPTO].ob_state |= OS_SELECTED;
-                }
-            }
-            else {
-                bt->state = button_off;
-                tb->form[TOOLBAR_BT_CRYPTO].ob_state &= ~OS_SELECTED;
-            }
-            nsurl_unref(ns_url);
-            free(c_url);
-        }
-    }
 
     if (tb->attached) {
         if (button > 0) {
