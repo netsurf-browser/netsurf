@@ -308,6 +308,12 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	if (nsurl_create(url, &nsurl) != NSERROR_OK)
 		return;
 
+    if (hotlist_has_url(nsurl)) {
+        LOG(("URL already added as Bookmark"));
+        nsurl_unref(nsurl);
+        return;
+    }
+
 	/* doesn't look nice:
 	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
 		hotlist_add_entry( nsurl, title, true, hl.tv->click.y );
