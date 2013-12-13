@@ -407,22 +407,6 @@ static void toolbar_reflow(struct s_toolbar *tb)
     throbber_form[tb->throbber.index].ob_x = offx;
     throbber_form[tb->throbber.index].ob_y = offy;
 
-    /*throbber_form[tb->throbber.index].ob_x = tb->area.g_x
-        + tb->form[TOOLBAR_AREA_RIGHT].ob_x
-        + tb->form[TOOLBAR_THROBBER_AREA].ob_x;*/
-
-/*
-    throbber_form[tb->throbber.index].ob_x = tb->area.g_x
-        + tb->form[TOOLBAR_AREA_RIGHT].ob_x
-        + tb->form[TOOLBAR_THROBBER_AREA].ob_x
-        + ((tb->form[TOOLBAR_THROBBER_AREA].ob_width
-        - throbber_form[tb->throbber.index].ob_width) >> 1);
-
-    throbber_form[tb->throbber.index].ob_y = tb->area.g_y
-        + ((tb->form[TOOLBAR_THROBBER_AREA].ob_height
-        - throbber_form[tb->throbber.index].ob_height) >> 1);
-        */
-
 	// align the search button:
 	tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_x = tb->area.g_w
         - tb->form[TOOLBAR_SEARCH_ALIGN_RIGHT].ob_width;
