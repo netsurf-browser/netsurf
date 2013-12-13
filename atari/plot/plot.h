@@ -108,7 +108,7 @@ bool plot_unlock(void);
 bool plot_set_dimensions( int x, int y, int w, int h );
 bool plot_get_dimensions(GRECT *dst);
 float plot_get_scale(void);
-bool plot_set_scale(float);
+float plot_set_scale(float);
 bool plot_get_clip(struct rect * out);
 /* Get clipping for current framebuffer as GRECT */
 void plot_get_clip_grect(GRECT * out);

@@ -865,6 +865,7 @@ static void snapshot_suspend(void)
 		}
 	}
 
+#ifdef WITH_8BPP_SUPPORT
 	if(size_buf_std > CONV_KEEP_LIMIT  ) {
 		buf_std.fd_addr = realloc(
 			buf_std.fd_addr, CONV_KEEP_LIMIT
@@ -875,6 +876,7 @@ static void snapshot_suspend(void)
 			size_buf_std = 0;
 		}
 	}
+#endif
 
 	if(buf_scr_compat != NULL ) {
 		size_t bs = bitmap_buffer_size(buf_scr_compat );
@@ -1901,9 +1903,19 @@ bool plot_get_dimensions(GRECT *dst)
 	return(true);
 }
 
-bool plot_set_scale(float scale)
+/**
+ * set scale of plotter.
+ * \param scale the new scale value
+ * \return the old scale value
+ */
+
+float plot_set_scale(float scale)
 {
+    float ret = view.scale;
+
     view.scale = scale;
+
+    return(ret);
 }
 
 float plot_get_scale()
