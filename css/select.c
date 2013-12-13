@@ -223,8 +223,9 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 	css_error error;
 	bool match;
 
-	if (lwc_string_isequal(corestring_dom_key_css_bloom, key, &match) !=
-			lwc_error_ok || match == false || data == NULL) {
+	if (lwc_string_isequal(corestring_dom___ns_key_libcss_node_data,
+			key, &match) != lwc_error_ok || match == false ||
+			data == NULL) {
 		return;
 	}
 
@@ -3079,7 +3080,8 @@ css_error set_libcss_node_data(void *pw, void *node, void *libcss_node_data)
 	void *old_node_data;
 
 	/* Set this node's node data */
-	err = dom_node_set_user_data(n, corestring_dom_key_css_bloom,
+	err = dom_node_set_user_data(n,
+			corestring_dom___ns_key_libcss_node_data,
 			libcss_node_data, nscss_dom_user_data_handler,
 			(void *) &old_node_data);
 	if (err != DOM_NO_ERR) {
@@ -3097,7 +3099,8 @@ css_error get_libcss_node_data(void *pw, void *node, void **libcss_node_data)
 	dom_exception err;
 
 	/* Get this node's node data */
-	err = dom_node_get_user_data(n, corestring_dom_key_css_bloom,
+	err = dom_node_get_user_data(n,
+			corestring_dom___ns_key_libcss_node_data,
 			libcss_node_data);
 	if (err != DOM_NO_ERR) {
 		return CSS_NOMEM;

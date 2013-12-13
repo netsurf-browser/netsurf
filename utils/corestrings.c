@@ -174,7 +174,6 @@ dom_string *corestring_dom_invalid;
 dom_string *corestring_dom_keydown;
 dom_string *corestring_dom_keypress;
 dom_string *corestring_dom_keyup;
-dom_string *corestring_dom_key_css_bloom;
 dom_string *corestring_dom_link;
 dom_string *corestring_dom_load;
 dom_string *corestring_dom_loadeddata;
@@ -233,6 +232,7 @@ dom_string *corestring_dom_volumechange;
 dom_string *corestring_dom_vspace;
 dom_string *corestring_dom_waiting;
 dom_string *corestring_dom_width;
+dom_string *corestring_dom___ns_key_libcss_node_data;
 
 
 /*
@@ -405,7 +405,6 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(keydown);
 	CSS_DOM_STRING_UNREF(keypress);
 	CSS_DOM_STRING_UNREF(keyup);
-	CSS_DOM_STRING_UNREF(key_css_bloom);
 	CSS_DOM_STRING_UNREF(link);
 	CSS_DOM_STRING_UNREF(load);
 	CSS_DOM_STRING_UNREF(loadeddata);
@@ -464,6 +463,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(vspace);
 	CSS_DOM_STRING_UNREF(waiting);
 	CSS_DOM_STRING_UNREF(width);
+	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
 #undef CSS_DOM_STRING_UNREF
 }
 
@@ -724,6 +724,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(vspace);
 	CSS_DOM_STRING_INTERN(waiting);
 	CSS_DOM_STRING_INTERN(width);
+	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
 #undef CSS_DOM_STRING_INTERN
 
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",

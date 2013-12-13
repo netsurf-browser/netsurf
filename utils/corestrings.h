@@ -180,7 +180,6 @@ extern struct dom_string *corestring_dom_invalid;
 extern struct dom_string *corestring_dom_keydown;
 extern struct dom_string *corestring_dom_keypress;
 extern struct dom_string *corestring_dom_keyup;
-extern struct dom_string *corestring_dom_key_css_bloom;
 extern struct dom_string *corestring_dom_link;
 extern struct dom_string *corestring_dom_load;
 extern struct dom_string *corestring_dom_loadeddata;
@@ -239,6 +238,7 @@ extern struct dom_string *corestring_dom_volumechange;
 extern struct dom_string *corestring_dom_vspace;
 extern struct dom_string *corestring_dom_waiting;
 extern struct dom_string *corestring_dom_width;
+extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
 
 
 #endif
