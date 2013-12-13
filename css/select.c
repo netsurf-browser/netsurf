@@ -94,6 +94,10 @@ static css_error node_presentational_hint(void *pw, void *node,
 		uint32_t property, css_hint *hint);
 static css_error ua_default_for_property(void *pw, uint32_t property,
 		css_hint *hint);
+static css_error set_libcss_node_data(void *pw, void *node,
+		void *libcss_node_data);
+static css_error get_libcss_node_data(void *pw, void *node,
+		void **libcss_node_data);
 
 static int cmp_colour_name(const void *a, const void *b);
 static bool parse_named_colour(const char *data, css_color *result);
@@ -104,8 +108,7 @@ static bool parse_number(const char *data, bool non_negative, bool real,
 static bool parse_font_size(const char *size, uint8_t *val, 
 		css_fixed *len, css_unit *unit);
 
-static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
-		css_allocator_fn, void *pw);
+static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx);
 
 static bool isWhitespace(char c);
 static bool isHex(char c);
@@ -151,7 +154,9 @@ static css_select_handler selection_handler = {
 	node_is_lang,
 	node_presentational_hint,
 	ua_default_for_property,
-	nscss_compute_font_size
+	nscss_compute_font_size,
+	set_libcss_node_data,
+	get_libcss_node_data
 };
 
 /**
@@ -162,13 +167,10 @@ static css_select_handler selection_handler = {
  * \param charset       Charset of data, or NULL if unknown
  * \param url           URL of document containing data
  * \param allow_quirks  True to permit CSS parsing quirks
- * \param alloc         Memory allocation function
- * \param pw            Private word for allocator
  * \return Pointer to stylesheet, or NULL on failure.
  */
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
-		const char *charset, const char *url, bool allow_quirks,
-		css_allocator_fn alloc, void *pw)
+		const char *charset, const char *url, bool allow_quirks)
 {
 	css_stylesheet_params params;
 	css_stylesheet *sheet;
@@ -190,7 +192,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	params.font = NULL;
 	params.font_pw = NULL;
 
-	error = css_stylesheet_create(&params, alloc, pw, &sheet);
+	error = css_stylesheet_create(&params, &sheet);
 	if (error != CSS_OK) {
 		LOG(("Failed creating sheet: %d", error));
 		return NULL;
@@ -213,43 +215,12 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	return sheet;
 }
 
-#ifdef PRINT_NODE_BLOOM_DETAILS
-/* Count bits set in uint32_t */
-static int bits_set(uint32_t n) {
-	n = n - ((n >> 1) & 0x55555555);
-	n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
-	n = (n + (n >> 4)) & 0x0f0f0f0f;
-	n = n + (n >> 8);
-	n = n + (n >> 16);
-	return n & 0x0000003f;
-}
-
-/* Node bloom instrumentation ouput display. */
-static void print_node_bloom_details(css_bloom bloom[CSS_BLOOM_SIZE])
-{
-	printf("Node bloom:\t");
-	int total = 0, i;
-	int set[CSS_BLOOM_SIZE];
-	for (i = 0; i < CSS_BLOOM_SIZE; i++) {
-		set[i] = bits_set(bloom[i]);
-		total += set[i];
-	}
-	printf("bits set:");
-	for (i = 0; i < CSS_BLOOM_SIZE; i++) {
-		printf(" %2i", set[i]);
-	}
-	printf(" (total:%4i of %i)   saturation: %3i%%\n", total,
-			(32 * CSS_BLOOM_SIZE),
-			(100 * total) / (32 * CSS_BLOOM_SIZE));
-}
-#endif
-
-/* Handler for libdom node user data
- * We store our libcss selection bloom filter on the DOM node. */
+/* Handler for libcss_node_data, stored as libdom node user data */
 static void nscss_dom_user_data_handler(dom_node_operation operation,
 		dom_string *key, void *data, struct dom_node *src,
 		struct dom_node *dst)
 {
+	css_error error;
 	bool match;
 
 	if (lwc_string_isequal(corestring_dom_key_css_bloom, key, &match) !=
@@ -259,15 +230,31 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 
 	switch (operation) {
 	case DOM_NODE_CLONED:
-	case DOM_NODE_IMPORTED:
-	case DOM_NODE_RENAMED:
-	case DOM_NODE_ADOPTED:
-		/* TODO: Do something about these.
-		 *       For now, just cautiously fall through to delete.
-		 */
-	case DOM_NODE_DELETED:
-		free(data);
+		error = css_libcss_node_data_handler(&selection_handler,
+				CSS_NODE_CLONED,
+				NULL, src, dst, data);
+		if (error != CSS_OK)
+			LOG(("Failed to clone libcss_node_data."));
 		break;
+
+	case DOM_NODE_RENAMED:
+		error = css_libcss_node_data_handler(&selection_handler,
+				CSS_NODE_MODIFIED,
+				NULL, src, NULL, data);
+		if (error != CSS_OK)
+			LOG(("Failed to update libcss_node_data."));
+		break;
+
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+	case DOM_NODE_DELETED:
+		error = css_libcss_node_data_handler(&selection_handler,
+				CSS_NODE_DELETED,
+				NULL, src, NULL, data);
+		if (error != CSS_OK)
+			LOG(("Failed to delete libcss_node_data."));
+		break;
+
 	default:
 		LOG(("User data operation not handled."));
 		assert(0);
@@ -281,64 +268,21 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
  * \param n               Element to select for
  * \param media           Permitted media types
  * \param inline_style    Inline style associated with element, or NULL
- * \param alloc           Memory allocation function
- * \param pw              Private word for allocator
  * \return Pointer to selection results (containing partial computed styles),
  *         or NULL on failure
  */
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
-		uint64_t media, const css_stylesheet *inline_style,
-		css_allocator_fn alloc, void *pw)
+		uint64_t media, const css_stylesheet *inline_style)
 {
 	css_select_results *styles;
-	css_bloom *bloom = NULL;
-	dom_exception err;
 	css_error error;
 
-	/* Create the node's bloom */
-	ctx->bloom = calloc(sizeof(css_bloom), CSS_BLOOM_SIZE);
-	if (ctx->bloom == NULL) {
-		return NULL;
-	}
-
-	/* Get parent node */
-	ctx->parent = NULL;
-	dom_element_parent_node((struct dom_element *) n, &(ctx->parent));
-
-	/* Get parent node's bloom */
-	if (ctx->parent != NULL) {
-		err = dom_node_get_user_data(ctx->parent,
-				corestring_dom_key_css_bloom, (void *) &bloom);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(ctx->parent);
-			return NULL;
-		}
-		/* TODO: no bloom; walk up the tree to generate it. */
-		assert(bloom != NULL);
-	} else {
-		/* No parents means empty bloom.  Just use node bloom. */
-		bloom = ctx->bloom;
-	}
-
 	/* Select style for node */
-	ctx->current = n;
-	error = css_select_style(ctx->ctx, n, bloom, media, inline_style,
+	error = css_select_style(ctx->ctx, n, media, inline_style,
 			&selection_handler, ctx, &styles);
 	if (error != CSS_OK) {
 		return NULL;
 	}
-
-	/* Merge parent bloom into node bloom */
-	css_bloom_merge(bloom, ctx->bloom);
-
-#ifdef PRINT_NODE_BLOOM_DETAILS
-	print_node_bloom_details(ctx->bloom);
-#endif
-
-	/* Set this node's bloom */
-	/* TODO: For now, this is LEAKED.  Move it into libdom? */
-	dom_node_set_user_data(n, corestring_dom_key_css_bloom, ctx->bloom,
-			nscss_dom_user_data_handler, (void *) &bloom);
 
 	return styles;
 }
@@ -347,17 +291,14 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
  * Get an initial style
  *
  * \param ctx    CSS selection context
- * \param alloc  Memory allocation function
- * \param pw     Private word for allocator
  * \return Pointer to partial computed style, or NULL on failure
  */
-css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
-		css_allocator_fn alloc, void *pw)
+css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx)
 {
 	css_computed_style *style;
 	css_error error;
 
-	error = css_computed_style_create(alloc, pw, &style);
+	error = css_computed_style_create(&style);
 	if (error != CSS_OK)
 		return NULL;
 
@@ -375,18 +316,15 @@ css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
  *
  * \param ctx     CSS selection context
  * \param parent  Parent style to cascade inherited properties from
- * \param alloc   Memory allocation function
- * \param pw      Private word for allocator
  * \return Pointer to blank style, or NULL on failure
  */
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
-		const css_computed_style *parent,
-		css_allocator_fn alloc, void *pw)
+		const css_computed_style *parent)
 {
 	css_computed_style *partial;
 	css_error error;
 
-	partial = nscss_get_initial_style(ctx, alloc, pw);
+	partial = nscss_get_initial_style(ctx);
 	if (partial == NULL)
 		return NULL;
 
@@ -558,7 +496,6 @@ bool nscss_parse_colour(const char *data, css_color *result)
  */
 css_error node_name(void *pw, void *node, css_qname *qname)
 {
-	nscss_select_ctx *ctx = (nscss_select_ctx *) pw;
 	dom_node *n = node;
 	dom_string *name;
 	dom_exception err;
@@ -573,21 +510,6 @@ css_error node_name(void *pw, void *node, css_qname *qname)
 	if (err != DOM_NO_ERR) {
 		dom_string_unref(name);
 		return CSS_NOMEM;
-	}
-
-	/* If 'n' is the element we are currently selecting for,
-	 * add element name to the node's bloom. */
-	if (n == ctx->current) {
-		/* Element names are case insensitive in HTML */
-		if (qname->name->insensitive == NULL) {
-			if (lwc__intern_caseless_string(qname->name) !=
-					lwc_error_ok) {
-				dom_string_unref(name);
-				return CSS_NOMEM;
-			}
-		}
-		css_bloom_add_hash(ctx->bloom, lwc_string_hash_value(
-				qname->name->insensitive));
 	}
 
 	dom_string_unref(name);
@@ -612,10 +534,8 @@ css_error node_name(void *pw, void *node, css_qname *qname)
 css_error node_classes(void *pw, void *node, 
 		lwc_string ***classes, uint32_t *n_classes)
 {
-	nscss_select_ctx *ctx = (nscss_select_ctx *) pw;
 	dom_node *n = node;
 	dom_exception err;
-	unsigned int i;
 
 	*classes = NULL;
 	*n_classes = 0;
@@ -624,34 +544,7 @@ css_error node_classes(void *pw, void *node,
 	if (err != DOM_NO_ERR)
 		return CSS_NOMEM;
 
-	/* If 'n' is the element we are currently selecting for,
-	 * add class names to the node's bloom. */
-	if (n == ctx->current) {
-		lwc_string *s;
-		for (i = 0; i < (*n_classes); i++) {
-			s = (*classes)[i];
-			/* TODO: remain case sensitive in standards mode */
-			if (s->insensitive == NULL) {
-				if (lwc__intern_caseless_string(s) !=
-						lwc_error_ok) {
-					goto error;
-				}
-			}
-			css_bloom_add_hash(ctx->bloom,
-					lwc_string_hash_value(s->insensitive));
-		}
-	}
-
 	return CSS_OK;
-
-error:
-
-	for (i = 0; i < (*n_classes); i++)
-		lwc_string_unref((*classes)[i]);
-
-	free(*classes);
-
-	return CSS_NOMEM;
 }
 
 /**
@@ -665,7 +558,6 @@ error:
  */
 css_error node_id(void *pw, void *node, lwc_string **id)
 {
-	nscss_select_ctx *ctx = (nscss_select_ctx *) pw;
 	dom_node *n = node;
 	dom_string *attr;
 	dom_exception err;
@@ -682,18 +574,6 @@ css_error node_id(void *pw, void *node, lwc_string **id)
 		if (err != DOM_NO_ERR) {
 			dom_string_unref(attr);
 			return CSS_NOMEM;
-		}
-		if (n == ctx->current) {
-			/* TODO: remain case sensitive in standards mode */
-			if ((*id)->insensitive == NULL) {
-				if (lwc__intern_caseless_string(*id) !=
-						lwc_error_ok) {
-					dom_string_unref(attr);
-					return CSS_NOMEM;
-				}
-			}
-			css_bloom_add_hash(ctx->bloom, lwc_string_hash_value(
-					(*id)->insensitive));
 		}
 		dom_string_unref(attr);
 	}
@@ -3187,6 +3067,40 @@ css_error ua_default_for_property(void *pw, uint32_t property, css_hint *hint)
 		hint->status = 0;
 	} else {
 		return CSS_INVALID;
+	}
+
+	return CSS_OK;
+}
+
+css_error set_libcss_node_data(void *pw, void *node, void *libcss_node_data)
+{
+	dom_node *n = node;
+	dom_exception err;
+	void *old_node_data;
+
+	/* Set this node's node data */
+	err = dom_node_set_user_data(n, corestring_dom_key_css_bloom,
+			libcss_node_data, nscss_dom_user_data_handler,
+			(void *) &old_node_data);
+	if (err != DOM_NO_ERR) {
+		return CSS_NOMEM;
+	}
+
+	assert(old_node_data == NULL);
+
+	return CSS_OK;
+}
+
+css_error get_libcss_node_data(void *pw, void *node, void **libcss_node_data)
+{
+	dom_node *n = node;
+	dom_exception err;
+
+	/* Get this node's node data */
+	err = dom_node_get_user_data(n, corestring_dom_key_css_bloom,
+			libcss_node_data);
+	if (err != DOM_NO_ERR) {
+		return CSS_NOMEM;
 	}
 
 	return CSS_OK;

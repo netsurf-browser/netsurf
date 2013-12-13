@@ -226,7 +226,7 @@ static nserror nscss_create_css_data(struct content_css_data *c,
 	params.font = NULL;
 	params.font_pw = NULL;
 
-	error = css_stylesheet_create(&params, ns_realloc, NULL, &c->sheet);
+	error = css_stylesheet_create(&params, &c->sheet);
 	if (error != CSS_OK) {
 		return NSERROR_NOMEM;
 	}
@@ -783,9 +783,7 @@ css_error nscss_register_import(struct content_css_data *c,
 			params.font = NULL;
 			params.font_pw = NULL;
 
-			error = css_stylesheet_create(&params,
-					ns_realloc, NULL, 
-					&blank_import);
+			error = css_stylesheet_create(&params, &blank_import);
 			if (error != CSS_OK) {
 				return error;
 			}

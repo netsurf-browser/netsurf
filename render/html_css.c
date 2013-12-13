@@ -596,7 +596,7 @@ html_css_new_selection_context(html_content *c, css_select_ctx **ret_select_ctx)
 	}
 
 	/* Create selection context */
-	css_ret = css_select_ctx_create(ns_realloc, c, &select_ctx);
+	css_ret = css_select_ctx_create(&select_ctx);
 	if (css_ret != CSS_OK) {
 		return css_error_to_nserror(css_ret);
 	}

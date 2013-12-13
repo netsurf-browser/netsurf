@@ -156,8 +156,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, block->style,
-					box_style_alloc, NULL);
+			style = nscss_get_blank_style(&ctx, block->style);
 			if (style == NULL)
 				return false;
 
@@ -258,8 +257,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, table->style,
-					box_style_alloc, NULL);
+			style = nscss_get_blank_style(&ctx, table->style);
 			if (style == NULL) {
 				free(col_info.spans);
 				return false;
@@ -345,8 +343,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
-		style = nscss_get_blank_style(&ctx, table->style, 
-				box_style_alloc, NULL);
+		style = nscss_get_blank_style(&ctx, table->style);
 		if (style == NULL) {
 			free(col_info.spans);
 			return false;
@@ -361,8 +358,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		}
 		row_group->type = BOX_TABLE_ROW_GROUP;
 
-		style = nscss_get_blank_style(&ctx, row_group->style, 
-				box_style_alloc, NULL);
+		style = nscss_get_blank_style(&ctx, row_group->style);
 		if (style == NULL) {
 			box_free(row_group);
 			free(col_info.spans);
@@ -482,8 +478,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 					ctx.universal = c->universal;
 
 					style = nscss_get_blank_style(&ctx, 
-							table_row->style,
-							box_style_alloc, NULL);
+							table_row->style);
 					if (style == NULL)
 						return false;
 
@@ -591,8 +586,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, row_group->style,
-					box_style_alloc, NULL);
+			style = nscss_get_blank_style(&ctx, row_group->style);
 			if (style == NULL)
 				return false;
 
@@ -666,8 +660,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
-		style = nscss_get_blank_style(&ctx, row_group->style, 
-				box_style_alloc, NULL);
+		style = nscss_get_blank_style(&ctx, row_group->style);
 		if (style == NULL) {
 			return false;
 		}
@@ -736,8 +729,7 @@ bool box_normalise_table_row(struct box *row,
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
-			style = nscss_get_blank_style(&ctx, row->style, 
-					box_style_alloc, NULL);
+			style = nscss_get_blank_style(&ctx, row->style);
 			if (style == NULL)
 				return false;
 

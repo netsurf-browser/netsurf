@@ -37,23 +37,16 @@ typedef struct nscss_select_ctx
 	bool quirks;
 	nsurl *base_url;
 	lwc_string *universal;
-
-	dom_node *current;
-	dom_element *parent;
-	css_bloom *bloom;
 } nscss_select_ctx;
 
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
-		const char *charset, const char *url, bool allow_quirks, 
-		css_allocator_fn alloc, void *pw);
+		const char *charset, const char *url, bool allow_quirks);
 
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
-		uint64_t media, const css_stylesheet *inline_style,
-		css_allocator_fn alloc, void *pw);
+		uint64_t media, const css_stylesheet *inline_style);
 
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
-		const css_computed_style *parent,
-		css_allocator_fn alloc, void *pw);
+		const css_computed_style *parent);
 
 css_error nscss_compute_font_size(void *pw, const css_hint *parent, 
 		css_hint *size);

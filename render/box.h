@@ -315,7 +315,6 @@ extern const char *TARGET_BLANK;
 
 
 
-void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_select_results *styles, css_computed_style *style,
 		bool style_owned, nsurl *href, const char *target, 
 		const char *title, lwc_string *id, void *context);

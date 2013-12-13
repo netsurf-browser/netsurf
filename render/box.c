@@ -54,24 +54,6 @@ static bool box_nearest_text_box(struct box *box, int bx, int by,
 		box->type == BOX_FLOAT_RIGHT)
 
 /**
- * Allocator
- *
- * \param ptr   Pointer to reallocate, or NULL for new allocation
- * \param size  Number of bytes requires
- * \param pw    Allocation context
- * \return Pointer to allocated block, or NULL on failure
- */
-void *box_style_alloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
-/**
  * Destructor for box nodes which own styles
  *
  * \param b The box being destroyed.
