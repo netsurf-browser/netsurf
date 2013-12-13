@@ -96,6 +96,7 @@ static bool init = false;
 static int area_navigation_height = 0;
 static int area_search_height = 0;
 static int area_full_height = 0;
+static float toolbar_url_scale = 1.0;
 
 static plot_font_style_t font_style_url = {
     .family = PLOT_FONT_FAMILY_SANS_SERIF,
@@ -442,6 +443,7 @@ static void toolbar_reflow(struct s_toolbar *tb)
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 {
     GRECT area, area_ro;
+    float old_scale;
 
     if (tb->attached == false) {
         return;
@@ -471,7 +473,10 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 		//dbg_rect("tb textarea clip: ", &r);
 		// TODO: let this be handled by an userdef object redraw function:
 		/* Redraw the url input: */
-        textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, 1.0, &r, &toolbar_rdrw_ctx);
+		old_scale = plot_set_scale(toolbar_url_scale);
+        textarea_redraw(tb->url.textarea, 0, 0, 0xffffff, 1.0, &r,
+                        &toolbar_rdrw_ctx);
+        plot_set_scale(old_scale);
     }
 }
 
