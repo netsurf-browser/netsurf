@@ -37,20 +37,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-void *
-ns_realloc(void *ptr, size_t size, void *pw)
-{
-	(void)pw;
-	
-	if (ptr == NULL)
-		return size > 0 ? malloc(size) : NULL;
-	if (size == 0) {
-		free(ptr);
-		return NULL;
-	}
-	return realloc(ptr, size);
-}
-
 char * strip(char * const s)
 {
 	size_t i;

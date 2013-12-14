@@ -283,12 +283,11 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 		goto no_memory;
 
 	error = parserutils_inputstream_create(lwc_string_data(encoding), 0, 
-			textplain_charset_hack, ns_realloc, NULL, &stream);
+			textplain_charset_hack, &stream);
 	if (error == PARSERUTILS_BADENCODING) {
 		/* Fall back to Windows-1252 */
 		error = parserutils_inputstream_create("Windows-1252", 0,
-				textplain_charset_hack, ns_realloc, NULL,
-				&stream);
+				textplain_charset_hack, &stream);
 	}
 	if (error != PARSERUTILS_OK) {
 		free(utf8_data);
