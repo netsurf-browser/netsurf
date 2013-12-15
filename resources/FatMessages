@@ -39,15 +39,15 @@ de.all.NetSurf:NetSurf
 fr.all.NetSurf:NetSurf
 it.all.NetSurf:NetSurf
 nl.all.NetSurf:NetSurf
-en.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
-de.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
-fr.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
-it.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
-nl.all.NetSurfCopyright:Copyright © 2003 - 2013 The NetSurf Developers
+en.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
+de.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
+fr.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
+it.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
+nl.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
 en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 de.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 fr.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
-it.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
 nl.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 
 # Menus
@@ -1159,7 +1159,7 @@ nl.all.TreeClear:Clear default
 en.all.TreeviewLabelTitle:Title
 de.all.TreeviewLabelTitle:Title
 fr.all.TreeviewLabelTitle:Title
-it.all.TreeviewLabelTitle:Title
+it.all.TreeviewLabelTitle:Titolo
 nl.all.TreeviewLabelTitle:Title
 en.all.TreeviewLabelURL:URL
 de.all.TreeviewLabelURL:URL
@@ -1299,7 +1299,7 @@ nl.all.HotlistDefaultFolderName:Unsorted entries
 en.all.NewFolderName:New folder
 de.all.NewFolderName:New folder
 fr.all.NewFolderName:New folder
-it.all.NewFolderName:New folder
+it.all.NewFolderName:Nuova cartella
 nl.all.NewFolderName:New folder
 
 
@@ -1308,7 +1308,7 @@ nl.all.NewFolderName:New folder
 en.all.NoTitle:<No title>
 de.all.NoTitle:<No title>
 fr.all.NoTitle:<No title>
-it.all.NoTitle:<No title>
+it.all.NoTitle:<Nessun titolo>
 nl.all.NoTitle:<No title>
 
 
@@ -2944,7 +2944,7 @@ nl.all.HotlistSaveError:The hotlist was unable to be correctly saved.
 en.all.TreeLoadError:The tree was unable to be correctly loaded.
 de.all.TreeLoadError:The tree was unable to be correctly loaded.
 fr.all.TreeLoadError:The tree was unable to be correctly loaded.
-it.all.TreeLoadError:L'albero non è stato caricato correttamente.
+it.all.TreeLoadError:L'albero della directory non è stato caricato correttamente.
 nl.all.TreeLoadError:The tree was unable to be correctly loaded.
 en.all.NoDirError:%s is not a directory
 de.all.NoDirError:%s ist kein Verzeichnis.
@@ -3247,7 +3247,7 @@ nl.all.HTTP302:Found
 en.all.HTTP303:See other
 de.all.HTTP303:See other
 fr.all.HTTP303:Voir autre
-it.all.HTTP303:Vedi altro
+it.all.HTTP303:Mostra altro
 nl.all.HTTP303:See other
 en.all.HTTP304:Not modified
 de.all.HTTP304:Not modified
@@ -4063,27 +4063,27 @@ nl.ro.HelpBrowserMenu4-5:\Rcontrol the default \w positioning.
 en.ro.HelpBrowserMenu4-5-0:\S make the current \w position the default.
 de.ro.HelpBrowserMenu4-5-0:Die Position des aktuellen Fensters wird als globaler Standardwert übernommen. Alle nachfolgend neu geöffneten Fenster werden an dieser Position plaziert.
 fr.ro.HelpBrowserMenu4-5-0:\Spromouvoir la position de fenêtre courante en celle par défault.
-it.ro.HelpBrowserMenu4-5-0:\S imposta come predefinita la posizione corrente della finestra.
+it.ro.HelpBrowserMenu4-5-0:\Simposta come predefinita la posizione corrente della finestra.
 nl.ro.HelpBrowserMenu4-5-0:\Sto make the current \w position the default.
 en.ro.HelpBrowserMenu4-5-1:\S toggle whether subsequent windows are staggered down the screen.
 de.ro.HelpBrowserMenu4-5-1:Neu geöffnete Fenster werden nicht alle an der Standardposition sondern zueinander leicht versetzt plaziert.
 fr.ro.HelpBrowserMenu4-5-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
-it.ro.HelpBrowserMenu4-5-1:\S imposta nel caso le finestre successive siano sfalsate rispetto alla parte bassa dello schermo.
+it.ro.HelpBrowserMenu4-5-1:\Simposta nel caso le finestre successive siano sfalsate rispetto alla parte bassa dello schermo.
 nl.ro.HelpBrowserMenu4-5-1:\Sto toggle whether subsequent windows are staggered down the screen.
 en.ro.HelpBrowserMenu4-5-2:\S toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
 de.ro.HelpBrowserMenu4-5-2:Neue Fenster behalten die Größe des Fensters, aus dem heraus sie geöffnet werden, bei.
 fr.ro.HelpBrowserMenu4-5-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
-it.ro.HelpBrowserMenu4-5-2:\S alterna nel caso le finestre figlie seguano la dimensione ed il posizionamento di quelle genitrici.|MSe disattivato tutte le finestre verranno aperte nel posizionamento predefinito.
+it.ro.HelpBrowserMenu4-5-2:\Salterna nel caso le finestre figlie seguano la dimensione ed il posizionamento di quelle genitrici.|MSe disattivato tutte le finestre verranno aperte nel posizionamento predefinito.
 nl.ro.HelpBrowserMenu4-5-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
 en.ro.HelpBrowserMenu4-5-3:\S return to the default \w positioning.
 de.ro.HelpBrowserMenu4-5-3:Setzt die festgelegte Standardposition für Fenster auf einen in NetSurf voreingestellten Wert zurück.
 fr.ro.HelpBrowserMenu4-5-3:\Srevenir au positionnement de fenêtre par défaut.
-it.ro.HelpBrowserMenu4-5-3:\S ritorna al posizionamento della finestra predefinito.
+it.ro.HelpBrowserMenu4-5-3:\Sritorna al posizionamento della finestra predefinito.
 nl.ro.HelpBrowserMenu4-5-3:\Sto return to the default \w positioning.
 en.ro.HelpBrowserMenu5:\Raccess NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
 de.ro.HelpBrowserMenu5:Untermenü Werkzeuge.|MEnthält verschiedene nützliche Zusatz- und Sonderfunktionen.
 fr.ro.HelpBrowserMenu5:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires sont des outils comme les favoris, l'historique arborescent et diverses options de configuration.
-it.ro.HelpBrowserMenu5:\Raccesso a NetSurf attraverso le utilità.|MLe utilità sono strumenti simili ai segnalibri, gli alberi della cronologia e le altre opzioni di configurazione.
+it.ro.HelpBrowserMenu5:\Raccedi a NetSurf attraverso le utilità.|MLe utilità sono strumenti simili ai segnalibri, gli alberi della cronologia e le altre opzioni di configurazione.
 nl.ro.HelpBrowserMenu5:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
 en.ro.HelpBrowserMenu5-0:\Rmanage the hotlist.
 de.ro.HelpBrowserMenu5-0:Verwaltung der Hotlist.
@@ -4123,7 +4123,7 @@ nl.ro.HelpBrowserMenu5-2:\Rmanage your cookies.
 en.ro.HelpBrowserMenu5-2-0:\Sopen the cookie management \w.
 de.ro.HelpBrowserMenu5-2-0:Anklicken um die gespeicherten Cookies anzusehen und zu bearbeiten.
 fr.ro.HelpBrowserMenu5-2-0:\Souvrir la fenêtre de gestion des cookies.
-it.ro.HelpBrowserMenu5-2-0:\Sapri ila finestra del gestore dei cookie
+it.ro.HelpBrowserMenu5-2-0:\Sapri la finestra del gestore dei cookie
 nl.ro.HelpBrowserMenu5-2-0:\Sopen the cookie management \w.
 en.ro.HelpBrowserMenu6:\Rsee the help resources available.
 de.ro.HelpBrowserMenu6:Untermenü Hilfe.|MZeigt Informationen zu und über NetSurf.
@@ -4259,7 +4259,7 @@ nl.ro.HelpScaleView10:\Schange the view to the scale you have chosen.
 en.ro.HelpSearch:Use this \w to search for text within the page.
 de.ro.HelpSearch:Dialogfenster zum Suchen von Text innerhalb der dargestellten Seite.
 fr.ro.HelpSearch:Utiliser cette fenêtre pour faire une recherche textuelle sur cette page.
-it.ro.HelpSearch:Use this \w to search for text within the page.
+it.ro.HelpSearch:Usa questa finestra per cercare un testo nella pagina.
 nl.ro.HelpSearch:Use this \w to search for text within the page.
 en.ro.HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
 de.ro.HelpSearch0:Suchtext hier eingeben. # steht für exakt ein beliebiges Zeichen. * steht für 0 oder mehrere Zeichen.
@@ -4392,7 +4392,7 @@ nl.ro.HelpHotlistMenu0-0-1:\Rcreate a new address.
 en.ro.HelpHotlistMenu0-1:\Rexport the hotlist as an HTML file.
 de.ro.HelpHotlistMenu0-1:Die gesamte Hotlist als HTML Datei speichern.
 fr.ro.HelpHotlistMenu0-1:\Rexporter les favoris en fichier HTML.
-it.ro.HelpHotlistMenu0-1:\Rexport the hotlist as an HTML file.
+it.ro.HelpHotlistMenu0-1:\Resporta i segnalibri come file HTML.
 nl.ro.HelpHotlistMenu0-1:\Rexport the hotlist as an HTML file.
 en.ro.HelpHotlistMenu0-2:\Rexpand items within the hotlist.
 de.ro.HelpHotlistMenu0-2:Öffnen von Verzeichnissen und Anzeigen von Zusatzinformationen.
@@ -4402,7 +4402,7 @@ nl.ro.HelpHotlistMenu0-2:\Rexpand items within the hotlist.
 en.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
 de.ro.HelpHotlistMenu0-2-0:Öffnet alle Verzeichnisse und zeigt zu Einträgen die Zusatzinformationen an.
 fr.ro.HelpHotlistMenu0-2-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
-it.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
+it.ro.HelpHotlistMenu0-2-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni.
 nl.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
 en.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 de.ro.HelpHotlistMenu0-2-1:Öffnet alle Verzeichnisse.
@@ -4462,12 +4462,12 @@ nl.ro.HelpHotlistMenu1-0:\Redit the current item.
 en.ro.HelpHotlistMenu1-1:\Slaunch the current selection.
 de.ro.HelpHotlistMenu1-1:Öffnet markierte Einträge in je einem neuen Browserfenster.
 fr.ro.HelpHotlistMenu1-1:\Slancer la sélection courante.
-it.ro.HelpHotlistMenu1-1:\Slaunch the current selection.
+it.ro.HelpHotlistMenu1-1:\Savvia la selezione corrente.
 nl.ro.HelpHotlistMenu1-1:\Slaunch the current selection.
 en.ro.HelpHotlistMenu1-2:\Sdelete the current selection from the hotlist.
 de.ro.HelpHotlistMenu1-2:Löscht markierte Elemente aus der Hotlist.|MAchtung: Verzeichnisse werden mit allen in ihnen enthaltenen Einträgen gelöscht.
 fr.ro.HelpHotlistMenu1-2:\Ssupprimer la sélection courante de la liste des favoris.
-it.ro.HelpHotlistMenu1-2:\Sdelete the current selection from the hotlist.
+it.ro.HelpHotlistMenu1-2:\Scancella dai segnalibri la selezione corrente.
 nl.ro.HelpHotlistMenu1-2:\Sdelete the current selection from the hotlist.
 en.ro.HelpHotlistMenu1-3:\Sreset statistics, such as visit count, for selected items.
 de.ro.HelpHotlistMenu1-3:Setzt für die markierten Einträge die Statistik, z.B. Anzahl der Seitenbesuche, zurück.
@@ -4477,18 +4477,18 @@ nl.ro.HelpHotlistMenu1-3:\Sreset statistics, such as visit count, for selected i
 en.ro.HelpHotlistMenu2:\Sselect all the items in the hotlist.
 de.ro.HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
 fr.ro.HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
-it.ro.HelpHotlistMenu2:\Sselect all the items in the hotlist.
+it.ro.HelpHotlistMenu2:\Sseleziona tutti gli elementi dei segnalibri.
 nl.ro.HelpHotlistMenu2:\Sselect all the items in the hotlist.
 en.ro.HelpHotlistMenu3:\Sdeselect all selected items.
 de.ro.HelpHotlistMenu3:Deselektiert alle markierten Elemente.
 fr.ro.HelpHotlistMenu3:\Sdésélectionner la sélection courante.
-it.ro.HelpHotlistMenu3:\Sdeselect all selected items.
+it.ro.HelpHotlistMenu3:\Sdeseleziona tutti gli oggetti selezionati.
 nl.ro.HelpHotlistMenu3:\Sdeselect all selected items.
 
 en.ro.HelpGHistory:\Tglobal history window.
 de.ro.HelpGHistory:Das ist das Fenster der globalen History.
 fr.ro.HelpGHistory:\Tla fenêtre d'historique global.
-it.ro.HelpGHistory:\Tglobal history window.
+it.ro.HelpGHistory:\Tfinestra cronologia globale.
 nl.ro.HelpGHistory:\Tglobal history window.
 en.ro.HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
 de.ro.HelpGHistoryToolbar0:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL löscht die vorher markierten Bereiche aus der History.
@@ -4529,17 +4529,17 @@ nl.ro.HelpGHistoryMenu0-1:\Rexpand items within global history.
 en.ro.HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
 de.ro.HelpGHistoryMenu0-1-0:Öffnet alle Verzeichnisse und zeigt die Details der Einträge an.
 fr.ro.HelpGHistoryMenu0-1-0:\Souvrir tous les répertoires et donner le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
+it.ro.HelpGHistoryMenu0-1-0:\Sapri tutte le directory e mostra in dettaglio tutte le immissioni.
 nl.ro.HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
 en.ro.HelpGHistoryMenu0-1-1:\Sopen all directories.
 de.ro.HelpGHistoryMenu0-1-1:Öffnet alle Verzeichnisse.
 fr.ro.HelpGHistoryMenu0-1-1:\Souvrir tous les répertoires.
-it.ro.HelpGHistoryMenu0-1-1:\Sopen all directories.
+it.ro.HelpGHistoryMenu0-1-1:\Sapri tutte le directory.
 nl.ro.HelpGHistoryMenu0-1-1:\Sopen all directories.
 en.ro.HelpGHistoryMenu0-1-2:\Sshow all entry details.
 de.ro.HelpGHistoryMenu0-1-2:Zeigt die Details der sichtbaren Einträge an.
 fr.ro.HelpGHistoryMenu0-1-2:\Smontrer le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-1-2:\Sshow all entry details.
+it.ro.HelpGHistoryMenu0-1-2:\Smostra tutte le immissioni in dettaglio.
 nl.ro.HelpGHistoryMenu0-1-2:\Sshow all entry details.
 en.ro.HelpGHistoryMenu0-2:\Rcollapse items within global history.
 de.ro.HelpGHistoryMenu0-2:Weniger Information anzeigen
@@ -4549,17 +4549,17 @@ nl.ro.HelpGHistoryMenu0-2:\Rcollapse items within global history.
 en.ro.HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
 de.ro.HelpGHistoryMenu0-2-0:Schließt alle Verzeichnisse und versteckt die Details der Einträge.
 fr.ro.HelpGHistoryMenu0-2-0:\Sfermer tous les répertoires et cacher le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
+it.ro.HelpGHistoryMenu0-2-0:\Schiudi tutte le directory e nascondi i dettagli delle immissioni.
 nl.ro.HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
 en.ro.HelpGHistoryMenu0-2-1:\Sclose all directories.
 de.ro.HelpGHistoryMenu0-2-1:Schließt alle Verzeichnisse.
 fr.ro.HelpGHistoryMenu0-2-1:\Sfermer tous les répertoires.
-it.ro.HelpGHistoryMenu0-2-1:\Sclose all directories.
+it.ro.HelpGHistoryMenu0-2-1:\Schiudi tutte le directory.
 nl.ro.HelpGHistoryMenu0-2-1:\Sclose all directories.
 en.ro.HelpGHistoryMenu0-2-2:\Shide all entry details.
 de.ro.HelpGHistoryMenu0-2-2:Versteckt die Detailanzeige der Einträge.
 fr.ro.HelpGHistoryMenu0-2-2:\Scacher le détail de toutes les entrées.
-it.ro.HelpGHistoryMenu0-2-2:\Shide all entry details.
+it.ro.HelpGHistoryMenu0-2-2:\Snascondi tutti i dettagli dell'immissione.
 nl.ro.HelpGHistoryMenu0-2-2:\Shide all entry details.
 en.ro.HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpGHistoryMenu0-3:Die Iconleiste der globalen History verändern.
@@ -4579,17 +4579,17 @@ nl.ro.HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
 en.ro.HelpGHistoryMenu1:\Roperate on the current selection.
 de.ro.HelpGHistoryMenu1:Die aktuelle Auswahl bearbeiten.
 fr.ro.HelpGHistoryMenu1:\Reffectuer une opération sur la sélection courante.
-it.ro.HelpGHistoryMenu1:\Roperate on the current selection.
+it.ro.HelpGHistoryMenu1:\Ropera nella selezione corrente.
 nl.ro.HelpGHistoryMenu1:\Roperate on the current selection.
 en.ro.HelpGHistoryMenu1-0:\Slaunch the current selection.
 de.ro.HelpGHistoryMenu1-0:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markierten Webseiten in je einem neuen Browserfenster.
 fr.ro.HelpGHistoryMenu1-0:\Slancer la sélection courante.
-it.ro.HelpGHistoryMenu1-0:\Slaunch the current selection.
+it.ro.HelpGHistoryMenu1-0:\Savvia la selezione corrente.
 nl.ro.HelpGHistoryMenu1-0:\Slaunch the current selection.
 en.ro.HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
 de.ro.HelpGHistoryMenu1-1:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL löscht die vorher markierten Bereiche aus der History.
 fr.ro.HelpGHistoryMenu1-1:\Ssupprimer la sélection courante de l'historique global.
-it.ro.HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
+it.ro.HelpGHistoryMenu1-1:\Scancella la selezione corrente dalla cronologia globale.
 nl.ro.HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
 en.ro.HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
 de.ro.HelpGHistoryMenu1-2:Setzt die Besuchsstatistik der markierten Einträge zurück.
@@ -4599,18 +4599,18 @@ nl.ro.HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected 
 en.ro.HelpGHistoryMenu2:\Sselect all the items in the history.
 de.ro.HelpGHistoryMenu2:Markiert alle Elemente der globalen History.
 fr.ro.HelpGHistoryMenu2:\Ssélectionner tous les items des favoris.
-it.ro.HelpGHistoryMenu2:\Sselect all the items in the history.
+it.ro.HelpGHistoryMenu2:\Sseleziona tutti gli oggetti della cronologia.
 nl.ro.HelpGHistoryMenu2:\Sselect all the items in the hotlist.
 en.ro.HelpGHistoryMenu3:\Sdeselect all selected items.
 de.ro.HelpGHistoryMenu3:Deselektiert alle markierten Elemente.
 fr.ro.HelpGHistoryMenu3:\Sdéselectionner tous les items sélectionnés.
-it.ro.HelpGHistoryMenu3:\Sdeselect all selected items.
+it.ro.HelpGHistoryMenu3:\Sdeseleziona tutti gli oggetti selezionati.
 nl.ro.HelpGHistoryMenu3:\Sdeselect all selected items.
 
 en.ro.HelpCookies:\TCookie management window.
 de.ro.HelpCookies:Das ist das Fenster zur Cookie-Verwaltung.
 fr.ro.HelpCookies:\TFenêtre de gestion des cookies.
-it.ro.HelpCookies:\TCookie management window.
+it.ro.HelpCookies:\TFinestra di gestione Cookie.
 nl.ro.HelpCookies:\TCookie management window.
 en.ro.HelpCookiesToolbar0:\Tdelete button.|M\Sdelete the current selection.
 de.ro.HelpCookiesToolbar0:Dies ist der Löschschalter.|MAnklicken löscht alle markierten Einträge.
@@ -4641,7 +4641,7 @@ nl.ro.HelpCookiesMenu0-0:\Rexpand items within the cookie list.
 en.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
 de.ro.HelpCookiesMenu0-0-0:Klicken mit AUSWAHL öffnet alle Verzeichnisse und zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-0:\Souvrir tous les répertoires et montrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
+it.ro.HelpCookiesMenu0-0-0:\Sapri tutte le directory e mostra i dettagli di tutti i cookie.
 nl.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
 en.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
 de.ro.HelpCookiesMenu0-0-1:Klicken mit AUSWAHL öffnet alle Verzeichnisse.
@@ -4661,7 +4661,7 @@ nl.ro.HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
 en.ro.HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
 de.ro.HelpCookiesMenu0-1-0:Klicken mit AUSWAHL schließt alle Verzeichnisse und versteckt die Cookiedetails.
 fr.ro.HelpCookiesMenu0-1-0:\Sfermer tous les répertoires et cacher le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
+it.ro.HelpCookiesMenu0-1-0:\Schiudi tutte le directory e nascondi i dettagli di tutti i cookie.
 nl.ro.HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
 en.ro.HelpCookiesMenu0-1-1:\Sclose all directories.
 de.ro.HelpCookiesMenu0-1-1:Klicken mit AUSWAHL schließt alle Verzeichnisse.
@@ -4671,7 +4671,7 @@ nl.ro.HelpCookiesMenu0-1-1:\Sclose all directories.
 en.ro.HelpCookiesMenu0-1-2:\Shide all cookie details.
 de.ro.HelpCookiesMenu0-1-2:Klicken mit AUSWAHL versteckt alle Cookiedetails.
 fr.ro.HelpCookiesMenu0-1-2:\Scacher le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-1-2:\Shide all cookie details.
+it.ro.HelpCookiesMenu0-1-2:\Snascondi i dettagli dei cookie.
 nl.ro.HelpCookiesMenu0-1-2:\Shide all cookie details.
 en.ro.HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpCookiesMenu0-2:Die Iconleiste verändern.
@@ -4691,7 +4691,7 @@ nl.ro.HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
 en.ro.HelpCookiesMenu1:\Roperate on the current selection.
 de.ro.HelpCookiesMenu1:Die ausgewählten Einträge bearbeiten.
 fr.ro.HelpCookiesMenu1:\Rfaire une opération sur la sélection courante.
-it.ro.HelpCookiesMenu1:\Roperate on the current selection.
+it.ro.HelpCookiesMenu1:\Ropera nella selezione corrente.
 nl.ro.HelpCookiesMenu1:\Roperate on the current selection.
 en.ro.HelpCookiesMenu1-0:\Sdelete any selected cookies.
 de.ro.HelpCookiesMenu1-0:Klicken mit AUSWAHL löscht alle markierten Cookies.
@@ -4785,12 +4785,12 @@ nl.ro.HelpCacheConfig3:\Tamount of memory to be used for caching content.
 en.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig4:\Sréduire la quantité de mémoire.
-it.ro.HelpCacheConfig4:\Sreduce the amount of memory.
+it.ro.HelpCacheConfig4:\Sriduce la quantit� di memoria.
 nl.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 en.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 de.ro.HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig5:\Saugmenter la quantité de mémoire.
-it.ro.HelpCacheConfig5:\Sincrease the amount of memory.
+it.ro.HelpCacheConfig5:\Saumenta la quantit� di memoria.
 nl.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 en.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
 de.ro.HelpCacheConfig7:Stellt die Standardeinstellungen wieder her.
@@ -4821,27 +4821,27 @@ nl.ro.HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to selec
 en.ro.HelpConnectConfig4:\Sselect a proxy type.
 de.ro.HelpConnectConfig4:Klicken mit AUSWAHL um einen anderen Proxytyp auszuwählen.
 fr.ro.HelpConnectConfig4:\Schoisir un type de proxy.
-it.ro.HelpConnectConfig4:\Sselect a proxy type.
+it.ro.HelpConnectConfig4:\Sseleziona un tipo di proxy.
 nl.ro.HelpConnectConfig4:\Sselect a proxy type.
 en.ro.HelpConnectConfig6:You can enter the proxy's host name here.
 de.ro.HelpConnectConfig6:Hier kann der Hostname des Proxys eingegeben werden.
 fr.ro.HelpConnectConfig6:Vous pouvez entrer ici le nom d'hôte du proxy.
-it.ro.HelpConnectConfig6:You can enter the proxy's host name here.
+it.ro.HelpConnectConfig6:Inserisci qui il nome host del proxy.
 nl.ro.HelpConnectConfig6:You can enter the proxy's host name here.
 en.ro.HelpConnectConfig8:You can enter the proxy's port number here.
 de.ro.HelpConnectConfig8:Hier kann die zugehörige Portnummer eingestellt werden.
 fr.ro.HelpConnectConfig8:Vous pouvez entrer ici le numéro de port du proxy.
-it.ro.HelpConnectConfig8:You can enter the proxy's port number here.
+it.ro.HelpConnectConfig8:Inserisci qui il numero di porta del proxy.
 nl.ro.HelpConnectConfig8:You can enter the proxy's port number here.
 en.ro.HelpConnectConfig10:You can enter a username for proxies that require authentication here.
 de.ro.HelpConnectConfig10:Hier kann ein Username eingegeben werden, wenn der Proxy das erfordert.
 fr.ro.HelpConnectConfig10:Vous pouvez entrer ici un nom d'utilisateur pour les proxies nécessitant une authentification.
-it.ro.HelpConnectConfig10:You can enter a username for proxies that require authentication here.
+it.ro.HelpConnectConfig10:Inserisci un nome utente per i proxy che richiedano un'autentificazione.
 nl.ro.HelpConnectConfig10:You can enter a username for proxies that require authentication here.
 en.ro.HelpConnectConfig12:You can enter a password for proxies that require authentication here.
 de.ro.HelpConnectConfig12:Hier kann das zum Usernamen gehörige Passwort eingegeben werden.
 fr.ro.HelpConnectConfig12:Vous pouvez entrer ici un mot de passe pour les proxies nécessitant une authentification.
-it.ro.HelpConnectConfig12:You can enter a password for proxies that require authentication here.
+it.ro.HelpConnectConfig12:Inserisci una password per i proxy che richiedano un'autentificazione.
 nl.ro.HelpConnectConfig12:You can enter a password for proxies that require authentication here.
 en.ro.HelpConnectConfig16:\Tmaximum number of simultaneous fetches that NetSurf will perform.
 de.ro.HelpConnectConfig16:Das ist die Maximalzahl simultaner Fetches, die NetSurf verwenden soll.
