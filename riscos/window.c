@@ -188,6 +188,8 @@ static wimp_menu		*ro_gui_browser_window_menu = NULL;
 static wimp_menu		*gui_form_select_menu = NULL;
 /** Browser window associated with open select menu. */
 static struct browser_window	*ro_gui_select_menu_bw = NULL;
+/** Main content object under menu, or 0 if none. */
+static hlcache_handle		*current_menu_main = 0;
 /** Object under menu, or 0 if no object. */
 static hlcache_handle		*current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
@@ -2206,6 +2208,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (pointer != NULL && g->window == w) {
 		ro_gui_url_complete_close();
 
+		current_menu_main = NULL;
 		current_menu_object = NULL;
 		current_menu_url = NULL;
 
@@ -2214,6 +2217,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			browser_window_get_contextual_content(bw,
 					pos.x, pos.y, &cont);
 
+			current_menu_main = cont.main;
 			current_menu_object = cont.object;
 			current_menu_url = cont.link_url;
 		}
@@ -2789,8 +2793,11 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_action_new_window(g);
 		break;
 	case BROWSER_VIEW_SOURCE:
-		if (h != NULL)
+		if (current_menu_main != NULL) {
+			ro_gui_view_source(current_menu_main);
+		} else if (h != NULL) {
 			ro_gui_view_source(h);
+		}
 		break;
 
 		/* object actions */
