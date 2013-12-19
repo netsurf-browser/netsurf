@@ -1425,8 +1425,6 @@ css_select_results *box_get_style(html_content *c,
 {
 	dom_string *s;
 	dom_exception err;
-	int pseudo_element;
-	css_error error;
 	css_stylesheet *inline_style = NULL;
 	css_select_results *styles;
 	nscss_select_ctx ctx;
@@ -1455,61 +1453,14 @@ css_select_results *box_get_style(html_content *c,
 	ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 	ctx.base_url = c->base_url;
 	ctx.universal = c->universal;
+	ctx.parent_style = parent_style;
 
-	/* Select partial style for element */
+	/* Select style for element */
 	styles = nscss_get_style(&ctx, n, CSS_MEDIA_SCREEN, inline_style);
 
 	/* No longer need inline style */
 	if (inline_style != NULL)
 		css_stylesheet_destroy(inline_style);
-
-	/* Failed selecting partial style -- bail out */
-	if (styles == NULL)
-		return NULL;
-
-	/* If there's a parent style, compose with partial to obtain 
-	 * complete computed style for element */
-	if (parent_style != NULL) {
-		/* Complete the computed style, by composing with the parent
-		 * element's style */
-		error = css_computed_style_compose(parent_style,
-				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
-				nscss_compute_font_size, NULL,
-				styles->styles[CSS_PSEUDO_ELEMENT_NONE]);
-		if (error != CSS_OK) {
-			css_select_results_destroy(styles);
-			return NULL;
-		}
-	}
-
-	for (pseudo_element = CSS_PSEUDO_ELEMENT_NONE + 1;
-			pseudo_element < CSS_PSEUDO_ELEMENT_COUNT;
-			pseudo_element++) {
-
-		if (pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LETTER ||
-				pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LINE)
-			/* TODO: Handle first-line and first-letter pseudo
-			 *       element computed style completion */
-			continue;
-
-		if (styles->styles[pseudo_element] == NULL)
-			/* There were no rules concerning this pseudo element */
-			continue;
-
-		/* Complete the pseudo element's computed style, by composing
-		 * with the base element's style */
-		error = css_computed_style_compose(
-				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
-				styles->styles[pseudo_element],
-				nscss_compute_font_size, NULL,
-				styles->styles[pseudo_element]);
-		if (error != CSS_OK) {
-			/* TODO: perhaps this shouldn't be quite so
-			 * catastrophic? */
-			css_select_results_destroy(styles);
-			return NULL;
-		}
-	}
 
 	return styles;
 }

@@ -108,8 +108,6 @@ static bool parse_number(const char *data, bool non_negative, bool real,
 static bool parse_font_size(const char *size, uint8_t *val, 
 		css_fixed *len, css_unit *unit);
 
-static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx);
-
 static bool isWhitespace(char c);
 static bool isHex(char c);
 static uint8_t charToHex(char c);
@@ -263,26 +261,73 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 }
 
 /**
- * Get a style selection results (partial computed styles) for an element
+ * Get style selection results for an element
  *
  * \param ctx             CSS selection context
  * \param n               Element to select for
  * \param media           Permitted media types
  * \param inline_style    Inline style associated with element, or NULL
- * \return Pointer to selection results (containing partial computed styles),
+ * \return Pointer to selection results (containing computed styles),
  *         or NULL on failure
  */
 css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		uint64_t media, const css_stylesheet *inline_style)
 {
 	css_select_results *styles;
+	int pseudo_element;
 	css_error error;
 
 	/* Select style for node */
 	error = css_select_style(ctx->ctx, n, media, inline_style,
 			&selection_handler, ctx, &styles);
-	if (error != CSS_OK) {
+
+	if (error != CSS_OK || styles == NULL) {
+		/* Failed selecting partial style -- bail out */
 		return NULL;
+	}
+
+	/* If there's a parent style, compose with partial to obtain 
+	 * complete computed style for element */
+	if (ctx->parent_style != NULL) {
+		/* Complete the computed style, by composing with the parent
+		 * element's style */
+		error = css_computed_style_compose(ctx->parent_style,
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
+				nscss_compute_font_size, NULL,
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE]);
+		if (error != CSS_OK) {
+			css_select_results_destroy(styles);
+			return NULL;
+		}
+	}
+
+	for (pseudo_element = CSS_PSEUDO_ELEMENT_NONE + 1;
+			pseudo_element < CSS_PSEUDO_ELEMENT_COUNT;
+			pseudo_element++) {
+
+		if (pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LETTER ||
+				pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LINE)
+			/* TODO: Handle first-line and first-letter pseudo
+			 *       element computed style completion */
+			continue;
+
+		if (styles->styles[pseudo_element] == NULL)
+			/* There were no rules concerning this pseudo element */
+			continue;
+
+		/* Complete the pseudo element's computed style, by composing
+		 * with the base element's style */
+		error = css_computed_style_compose(
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
+				styles->styles[pseudo_element],
+				nscss_compute_font_size, NULL,
+				styles->styles[pseudo_element]);
+		if (error != CSS_OK) {
+			/* TODO: perhaps this shouldn't be quite so
+			 * catastrophic? */
+			css_select_results_destroy(styles);
+			return NULL;
+		}
 	}
 
 	return styles;
@@ -294,7 +339,7 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
  * \param ctx    CSS selection context
  * \return Pointer to partial computed style, or NULL on failure
  */
-css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx)
+static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx)
 {
 	css_computed_style *style;
 	css_error error;
