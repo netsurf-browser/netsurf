@@ -996,6 +996,17 @@ inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
 
 
 #ifdef WITH_8BPP_SUPPORT
+/**
+ * Convert an bitmap to an 8 bit device dependant MFDB
+ * \param img the bitmap (only tested with 32bit bitmaps)
+ * \param x screen coord of the background
+ * \param y screen coord of the background
+ * \param clip the region of the image that get's converted
+ * \param bg the background used for cheap transparency
+ * \param flags
+ * \param out receives the converted bitmap (still owned by the plot API)
+ *
+ */
 static bool bitmap_convert_8(struct bitmap * img, int x,
 							int y, GRECT * clip, uint32_t bg, uint32_t flags,
 							MFDB *out )
@@ -1112,7 +1123,7 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
 
 	int img_stride = bitmap_get_rowstride(img);
-	uint32_t prev_pixel = 0x12345678;
+	uint32_t prev_pixel = 0x12345678; //TODO: check for collision in first pixel
 	unsigned long col = 0;
 	unsigned char val = 0;
 	uint32_t * row;
@@ -1868,6 +1879,13 @@ static bool plot_polygon(const int *p, unsigned int n,
     return ( true );
 }
 
+/***
+ * Set plot origin and canvas size
+ * \param x the x origin
+ * \param y the y origin
+ * \param w the width of the plot area
+ * \param h the height of the plot area
+ */
 bool plot_set_dimensions(int x, int y, int w, int h)
 {
 	bool doupdate = false;
@@ -1893,9 +1911,13 @@ bool plot_set_dimensions(int x, int y, int w, int h)
     return(true);
 }
 
+/***
+ * Get current canvas size
+ * \param dst the GRECT * which receives the canvas size
+ *
+ */
 bool plot_get_dimensions(GRECT *dst)
 {
-
 	dst->g_x = view.x;
 	dst->g_y = view.y;
 	dst->g_w = view.w;
