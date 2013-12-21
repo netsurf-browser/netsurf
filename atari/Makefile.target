@@ -188,7 +188,7 @@ endif
 	$(Q)cp \!NetSurf/Resources/Icons/content.png -R $(ATARI_TARGET_DIR)res/icons/
 	$(Q)cp \!NetSurf/Resources/Icons/directory.png -R $(ATARI_TARGET_DIR)res/icons/dir.png
 
-	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(ATARI_TARGET_DIR)netsurf.png
+	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(ATARI_TARGET_DIR)res/netsurf.png
 	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(ATARI_TARGET_DIR)res/adblock.css
 	$(Q)cp \!NetSurf/Resources/CSS,f79 $(ATARI_TARGET_DIR)res/default.css
 	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(ATARI_TARGET_DIR)res/quirks.css
