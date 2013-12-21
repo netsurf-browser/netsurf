@@ -487,7 +487,7 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
  * \param name	 Default file name
  * \return a static char pointer or null if the user aborted the selection.
  */
-const char * file_select(const char * title, const char * name ) {
+const char * file_select(const char * title, const char * name) {
 
 	static char path[PATH_MAX]=""; // First usage : current directory
 	static char fullname[PATH_MAX]="";

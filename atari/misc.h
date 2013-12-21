@@ -58,7 +58,7 @@ void dbg_grect(const char * str, GRECT * r);
 void dbg_pxy(const char * str, short * pxy);
 void dbg_rect(const char * str, int * pxy);
 
-const char * file_select( const char * title, const char * name );
+const char * file_select(const char * title, const char * name);
 
 /**
  * Convert NKC (atari normalized key code) to netsurf
