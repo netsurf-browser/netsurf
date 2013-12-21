@@ -369,7 +369,9 @@ static bool handle_filesystem_select_button(short rsc_bt)
 
     if (require_path == false) {
         path = file_select(title, "");
-        gemtk_obj_set_str_safe(dlgtree, rsc_te, path);
+        if (path != NULL) {
+            gemtk_obj_set_str_safe(dlgtree, rsc_te, path);
+        }
     }
     else {
         do {
@@ -388,6 +390,7 @@ static bool handle_filesystem_select_button(short rsc_bt)
         }
     }
 
+    OBJ_UNCHECK(rsc_bt);
     OBJ_REDRAW(rsc_bt);
     OBJ_REDRAW(rsc_te);
 }
