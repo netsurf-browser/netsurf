@@ -91,7 +91,7 @@ static const char *gui_timeouts[]  = {
 #define INPUT_PROXY_PORT_MAX_LEN 5
 #define INPUT_MIN_REFLOW_PERIOD_MAX_LEN 4
 #define LABEL_FONT_RENDERER_MAX_LEN 8
-#define LABEL_PATH_MAX_LEN 43
+#define LABEL_PATH_MAX_LEN 40
 #define LABEL_ICONSET_MAX_LEN 8
 #define INPUT_TOOLBAR_COLOR_MAX_LEN 6
 
@@ -322,6 +322,76 @@ static void display_settings(void)
     toggle_objects();
 }
 
+static bool handle_filesystem_select_button(short rsc_bt)
+{
+    bool require_path = false;
+    bool is_folder = false;
+    short rsc_te = 0;            // The textarea that is bound to the button
+    const char * title = "";
+    const char * path = NULL;
+
+    // TODO: localize String:
+    switch (rsc_bt) {
+
+
+        case SETTINGS_BT_SEL_DOWNLOAD_DIR:
+            title = "Select Download Directory:";
+            rsc_te = SETTINGS_EDIT_DOWNLOAD_PATH;
+            require_path = true;
+        break;
+
+        case SETTINGS_BT_SEL_HOTLIST:
+            title = "Select Hotlist File:";
+            rsc_te = SETTINGS_EDIT_HOTLIST_FILE;
+        break;
+
+        case SETTINGS_BT_SEL_CA_BUNDLE:
+            title = "Select CA Bundle File:";
+            rsc_te = SETTINGS_EDIT_CA_BUNDLE;
+        break;
+
+        case SETTINGS_BT_SEL_CA_CERTS:
+            title = "Select Certs Directory:";
+            rsc_te = SETTINGS_EDIT_CA_CERTS_PATH;
+            require_path = true;
+        break;
+
+        case SETTINGS_BT_SEL_EDITOR:
+            title = "Select Editor Application:";
+            rsc_te = SETTINGS_EDIT_EDITOR;
+        break;
+
+        default:
+            break;
+    };
+
+    assert(rsc_te != 0);
+
+    if (require_path == false) {
+        path = file_select(title, "");
+        gemtk_obj_set_str_safe(dlgtree, rsc_te, path);
+    }
+    else {
+        do {
+            /* display file selector: */
+            path = file_select(title, "");
+            if (path) {
+                is_folder = is_dir(path);
+            }
+            if ((is_folder == false) && (path != NULL)) {
+                gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT, "Folder Required!");
+            }
+        } while ((is_folder == false) && (path != NULL));
+
+        if ((is_folder == true) && (path != NULL)) {
+            gemtk_obj_set_str_safe(dlgtree, rsc_te, path);
+        }
+    }
+
+    OBJ_REDRAW(rsc_bt);
+    OBJ_REDRAW(rsc_te);
+}
+
 static void form_event(int index, int external)
 {
     char spare[255];
@@ -486,28 +556,14 @@ static void form_event(int index, int external)
         OBJ_REDRAW(SETTINGS_BT_GUI_TOUT);
         break;
 
-        /*
-        		case SETTINGS_INPUT_TOOLBAR_BGCOLOR:
-        			objc_offset( FORM(win), SETTINGS_INPUT_TOOLBAR_BGCOLOR, &x, &y );
-        			choice = color_popup(x, y, tmp_option_atari_toolbar_bg);
-        			snprintf( spare, 255, "%06x", choice );
-        			tmp_option_atari_toolbar_bg = choice;
-        			ObjcStrCpy( dlgtree, SETTINGS_INPUT_TOOLBAR_BGCOLOR,
-        							spare );
-        			is_button = true;
-        			OBJ_REDRAW(SETTINGS_INPUT_TOOLBAR_BGCOLOR);
-        			break;
-        */
-        /*
-        		case SETTINGS_BT_TOOLBAR_ICONSET:
-        			objc_offset( FORM(win), SETTINGS_BT_TOOLBAR_ICONSET, &x, &y );
-        			tmp = toolbar_iconset_popup(x,y);
-        			if( tmp != NULL ){
-        				ObjcStrCpy( dlgtree, SETTINGS_BT_TOOLBAR_ICONSET, tmp );
-        			}
-        			is_button = true;
-        			break;
-        */
+    case SETTINGS_BT_SEL_DOWNLOAD_DIR:
+    case SETTINGS_BT_SEL_HOTLIST:
+    case SETTINGS_BT_SEL_CA_BUNDLE:
+    case SETTINGS_BT_SEL_CA_CERTS:
+    case SETTINGS_BT_SEL_EDITOR:
+        handle_filesystem_select_button(index);
+        break;
+
     case SETTINGS_INC_MEM_CACHE:
     case SETTINGS_DEC_MEM_CACHE:
         if( index == SETTINGS_DEC_MEM_CACHE )

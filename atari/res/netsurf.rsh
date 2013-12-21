@@ -134,6 +134,11 @@
 #define SETTINGS_EDIT_CA_BUNDLE 7  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_CA_CERTS_PATH 8  /* FTEXT in tree SETTINGS */
 #define SETTINGS_EDIT_EDITOR 9  /* FTEXT in tree SETTINGS */
+#define SETTINGS_BT_SEL_DOWNLOAD_DIR 96  /* BUTTON in tree SETTINGS */
+#define SETTINGS_BT_SEL_HOTLIST 97  /* BUTTON in tree SETTINGS */
+#define SETTINGS_BT_SEL_CA_BUNDLE 98  /* BUTTON in tree SETTINGS */
+#define SETTINGS_BT_SEL_CA_CERTS 99  /* BUTTON in tree SETTINGS */
+#define SETTINGS_BT_SEL_EDITOR 100  /* BUTTON in tree SETTINGS */
 /* Make sure that initial value is large enough! */
 #define SETTINGS_BT_SEL_FONT_RENDERER 16  /* BUTTON in tree SETTINGS */
 #define SETTINGS_CB_ANTI_ALIASING 17  /* BUTTON in tree SETTINGS */
