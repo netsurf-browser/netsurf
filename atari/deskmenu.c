@@ -301,10 +301,10 @@ static void __CDECL menu_save_page(short item, short title, void *data)
 		path = file_select("Select folder", "");
 		if (path)
 			is_folder = is_dir(path);
-	} while( !is_folder && path != NULL );
+	} while ((is_folder == false) && (path != NULL));
 
 	if( path != NULL ){
-		save_complete( input_window->browser->bw->current_content, path, NULL );
+		save_complete(input_window->browser->bw->current_content, path, NULL);
 	}
 
 }
@@ -314,7 +314,7 @@ static void __CDECL menu_quit(short item, short title, void *data)
 	short buff[8];
 	memset( &buff, 0, sizeof(short)*8 );
 	LOG(("%s", __FUNCTION__));
-	netsurf_quit = true;
+	gemtk_wm_send_msg(NULL, AP_TERM, 0, 0, 0, 0);
 }
 
 static void __CDECL menu_cut(short item, short title, void *data)
