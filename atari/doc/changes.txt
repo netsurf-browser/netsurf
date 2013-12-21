@@ -15,13 +15,13 @@ NetSurf 2.9-PL1 Release (Sunday, April 15 2012) to Netsurf 3.1 Release.
 
  - Removed WinDom dependency (heavy GUI code change)
  - Implemented "paste clipboard" for toolbar URL textbox.
- - Implemented global history window.
  - Implemented file drop on browser window handling when netsurf core
    ignores the file drop event.
  - Implemented basic browser window scaling
  - Integrated "search page" dialog into browser window
  - New settings dialog
  - New treeview implementation
+ - Added global history window.
  - Added SSL information treeview
  - Added about dialog
  - Improved keyboard-shortcut handling
