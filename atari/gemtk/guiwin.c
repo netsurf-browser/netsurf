@@ -1219,7 +1219,7 @@ void gemtk_wm_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     msg[0] = msg_type;
     msg[1] = gl_apid;
     msg[2] = 0;
-    msg[3] = win->handle;
+    msg[3] = (win != NULL) ? win->handle : NULL;
     msg[4] = a;
     msg[5] = b;
     msg[6] = c;

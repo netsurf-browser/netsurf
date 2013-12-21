@@ -66,7 +66,7 @@ static void set_text(OBJECT *obj, short idx, char * text, int len)
     set_string(obj, idx, spare);
 }
 
-char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt)
+char gemtk_obj_set_str_safe(OBJECT * tree, short idx, const char *txt)
 {
     char spare[204];
     short type = 0;
@@ -77,7 +77,7 @@ char gemtk_obj_set_str_safe(OBJECT * tree, short idx, char *txt)
     type = (tree[idx].ob_type & 0xFF);
     if (type == G_FTEXT || type == G_FBOXTEXT) {
         TEDINFO *ted = ((TEDINFO *)get_obspec(tree, idx));
-        maxlen = ted->te_txtlen+1;
+        maxlen = ted->te_tmplen+1;
         if (maxlen > 200) {
             maxlen = 200;
         } else if (maxlen < 0) {
