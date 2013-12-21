@@ -1,31 +1,18 @@
-TODO's (no priority order)
+TODO's (no priority order) for NetSurf 3.1 - 4.0
 
- - Optimize remove / redraw of caret, use pixbuffer instead?
  - Optimize drawing of bitmaps on Low-Memory machines
  - Restore the Palette when Windows get's the Focus
    -> only needed for <= 256 colors
  - Make drawing of tiled bitmaps optional ( they are slooow )
    -> already optimized, still needed?
- - only copy visible rects when copying screen rects ( during scroll ).
- - Make context menu more stable, Bug lurking within core?
- - Implement TreeView History
- - Implement TreeView SSL Dialog
- - Implement Native Select Menu
- - Implement offscreen plotter
- - Implement Options Dialog
- - Implement SystemColors
- - Replace RSC strings with string from messages file.
- - Optimize Offscreen Plotter: Save inactive framebuffers to disk?
- - Ensure that a font-face is set to the default font when it couldn't be loaded.
- - Loose focus for browser / url widget etc. when changing focus
-   ( at best, implement callback for this...)
+ - Make context menu more stable (grab all available context data at popup display)
+ - Implement SystemColor Choices dialog
+ - Add at least one offscreen plotter implementation
+ - Fix utf8 to atari character conversion (legacy VDI text plotter
+   must be able to handle the text argument characters correctly)
+ - Add URL history when typing URL's into url textarea
  - Have browser_window specific cursor, window specifc cursor
  - When minimized (not iconyfied) NetSurf doesn't recognize that.
- - Tabs? ( several tab-favicons when iconyfied?)
- - improve mouse tracking
- - fix this:
-path2url in: ./res/icons/dir.png
-path2url out: file:///./res/icons/dir.png
-url2path in: file:///./res/icons/dir.png
- - loesung fuer kompletten tree icons path finden
+ - Implement Tabs (up to 4 tab favicons when iconyfied)
+ - merge treeview and gui_window handling
 
