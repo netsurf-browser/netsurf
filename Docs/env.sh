@@ -53,7 +53,7 @@ NS_BROWSER="netsurf"
 # deb packages
 NS_DEV_DEB="build-essential pkg-config git gperf"
 NS_TOOL_DEB="flex bison"
-NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libmng-dev librsvg2-dev liblcms1-dev libjpeg-dev libmozjs-dev"
+NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libmng-dev librsvg2-dev libjpeg-dev libmozjs-dev"
 
 #add target specific libraries
 if [ "x${TARGET_ABI}" = "xriscos" ]; then

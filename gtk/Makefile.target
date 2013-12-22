@@ -62,7 +62,6 @@ $(eval $(call pkg_config_find_and_add,libcurl,Curl ))
 $(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_GTK_MAJOR)))
 $(eval $(call pkg_config_find_and_add,gthread-2.0,GThread2))
 $(eval $(call pkg_config_find_and_add,gmodule-2.0,GModule2))
-$(eval $(call pkg_config_find_and_add,lcms,lcms))
 
 
 CFLAGS += $(GTKCFLAGS)

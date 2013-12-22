@@ -67,7 +67,7 @@
   Debian-like OS:
 
       $ apt-get install libgtk2.0-dev libcurl3-dev libmng-dev 
-      $ apt-get install librsvg2-dev liblcms1-dev libjpeg-dev
+      $ apt-get install librsvg2-dev libjpeg-dev
 
   If you want to build with gtk 3 replace libgtk2.0-dev with libgtk-3-dev 
 
@@ -85,7 +85,7 @@
   Fedora:
 
       $ yum install curl-devel libmng-devel
-      $ yum install librsvg2-devel lcms-devel expat-devel
+      $ yum install librsvg2-devel expat-devel
 
   Other:
 
