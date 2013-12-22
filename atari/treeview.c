@@ -38,6 +38,7 @@
 #include "atari/misc.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"
+#include "atari/res/netsurf.rsh"
 
 
 /**
@@ -154,6 +155,40 @@ static void atari_treeview_dump_info(struct atari_treeview_window *tv,
 	printf("Extent: x: %d, y: %d\n", tv->extent, tv->extent);
 }
 
+static bool atari_treeview_is_iconified(struct core_window *cw){
+
+    struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
+
+    return((gemtk_wm_get_state(tv->window)&GEMTK_WM_STATUS_ICONIFIED) != 0);
+}
+
+static void atari_treeview_redraw_icon(struct core_window *cw, GRECT *clip)
+{
+    struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
+    GRECT visible, work;
+    OBJECT * tree = gemtk_obj_get_tree(ICONIFY);
+    short aesh = gemtk_wm_get_handle(tv->window);
+
+    gemtk_wm_get_grect(tv->window, GEMTK_WM_AREA_WORK, &work);
+
+    tree->ob_x = work.g_x;
+    tree->ob_y = work.g_y;
+    tree->ob_width = work.g_w;
+    tree->ob_height = work.g_h;
+
+    wind_get_grect(aesh, WF_FIRSTXYWH, &visible);
+    while (visible.g_h > 0 && visible.g_w > 0) {
+
+        if (rc_intersect(&work, &visible)) {
+            objc_draw(tree, 0, 8, visible.g_x, visible.g_y, visible.g_w,
+                        visible.g_h);
+        } else {
+            //dbg_grect("redraw vis area outside", &visible);
+        }
+
+        wind_get_grect(aesh, WF_NEXTXYWH, &visible);
+    }
+}
 
 void atari_treeview_redraw(struct core_window *cw)
 {
@@ -236,7 +271,7 @@ void atari_treeview_redraw(struct core_window *cw)
 							clip.x1 = clip.x0 + todo[2]+(slid->x_pos*slid->x_unit_px);
 							clip.y1 = clip.y0 + todo[3]+(slid->y_pos*slid->y_unit_px);
 
-							tv->io->draw(cw, -(slid->x_pos*slid->x_unit_px),
+                            tv->io->draw(cw, -(slid->x_pos*slid->x_unit_px),
 										-(slid->y_pos*slid->y_unit_px),
 												&clip, &ctx);
 					}
@@ -487,6 +522,11 @@ static void __CDECL on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 	if ( !rc_intersect( (GRECT*)&msg[4], &clip)) {
 		return;
 	}
+
+    if (atari_treeview_is_iconified(cw) == true) {
+        atari_treeview_redraw_icon(cw, &clip);
+        return;
+    }
 
 	/* make redraw coords relative to content viewport */
 	clip.g_x -= work.g_x;
@@ -874,7 +914,14 @@ void atari_treeview_flush_redraws(void)
 		while(tmp){
 			assert(tmp->is_open);
 			if(tmp->redraw){
-				atari_treeview_redraw((struct core_window *)tmp);
+			    if (atari_treeview_is_iconified((struct core_window *)tmp)) {
+                    /* No content redraw for iconified windows */
+                    /* because otherwise the icon draw function would */
+                    /* have to deal with plot canvas coords */
+                    continue;
+			    }
+
+                atari_treeview_redraw((struct core_window *)tmp);
 			}
 			tmp = tmp->next_open;
 		}
