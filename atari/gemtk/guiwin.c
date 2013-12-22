@@ -303,7 +303,9 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             g.g_y = msg[5];
             g.g_w = msg[6];
             g.g_h = msg[7];
-            gemtk_wm_toolbar_redraw(gw, WM_REDRAW, &g);
+            if((gw->state & GEMTK_WM_STATUS_ICONIFIED) == 0){
+                gemtk_wm_toolbar_redraw(gw, WM_REDRAW, &g);
+            }
         }
         if (gw->form != NULL) {
 			g.g_x = msg[4];
