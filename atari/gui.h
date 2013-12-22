@@ -149,6 +149,7 @@ struct gui_window {
     char * title;
     char * url;
 	struct bitmap * icon;
+	float scale;
 	struct s_caret caret;
 	struct s_search_form_session *search;
 	struct gui_window *next, *prev;

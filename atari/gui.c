@@ -207,6 +207,7 @@ gui_create_browser_window(struct browser_window *bw,
             option_window_x, option_window_y,
             option_window_width, option_window_height
         };
+        gui_window_set_scale(gw, 1.0);
         gui_window_set_url(gw, "");
         gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
         gui_set_input_gui_window(gw);
@@ -343,6 +344,24 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 
     if(input_window == w)
         window_set_stauts(w->root, (char*)text);
+}
+
+float gui_window_get_scale(struct gui_window *gw)
+{
+    return(gw->scale);
+}
+
+void gui_window_set_scale(struct gui_window *gw, float scale)
+{
+    int width = 0, heigth = 0;
+
+	LOG(("scale: %f", scale));
+
+    gw->scale = MAX(scale, 0.25);
+
+	browser_window_reload(gw->browser->bw, false);
+ 	gui_window_get_dimensions(gw, &width, &heigth, true);
+ 	browser_window_reformat(gw->browser->bw, false, width, heigth);
 }
 
 void gui_window_redraw_window(struct gui_window *gw)

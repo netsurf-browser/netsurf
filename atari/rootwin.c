@@ -835,13 +835,14 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
 
     struct rect redraw_area;
     GRECT content_area_rel;
+    float oldscale = 1.0;
 
     //dbg_grect("browser redraw, content area", content_area);
     //dbg_grect("browser redraw, content clip", clip);
 
     plot_set_dimensions(content_area->g_x, content_area->g_y,
                         content_area->g_w, content_area->g_h);
-
+    oldscale = plot_set_scale(gui_window_get_scale(rootwin->active_gui_window));
 
     /* first, we make the coords relative to the content area: */
     content_area_rel.g_x = clip->g_x - content_area->g_x;
@@ -872,6 +873,8 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
 
     browser_window_redraw( bw, -(slid->x_pos*slid->x_unit_px),
                            -(slid->y_pos*slid->y_unit_px), &redraw_area, &rootwin_rdrw_ctx);
+
+    plot_set_scale(oldscale);
 }
 
 
@@ -1398,6 +1401,7 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
     //dbg_grect("on_redraw", &clip);
 
     if(gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
+        // TODO: remove asignment:
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(rootwin, NULL);
     } else {

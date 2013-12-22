@@ -379,35 +379,19 @@ static void __CDECL menu_reload(short item, short title, void *data)
 
 static void __CDECL menu_inc_scale(short item, short title, void *data)
 {
-    int width = 0, heigth = 0;
-
 	if(input_window == NULL)
 		return;
-    float now = plot_get_scale();
-    plot_set_scale(now+0.25);
-	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
 
-	browser_window_reload(input_window->browser->bw, false);
- 	gui_window_get_dimensions(input_window, &width, &heigth, true);
- 	browser_window_reformat(input_window->browser->bw, false, width, heigth);
+    gui_window_set_scale(input_window, gui_window_get_scale(input_window)+0.25);
 }
 
 
 static void __CDECL menu_dec_scale(short item, short title, void *data)
 {
-    int width = 0, heigth = 0;
-
 	if(input_window == NULL)
 		return;
-	float now = plot_get_scale();
-    if (now > 0.5) {
-        plot_set_scale(now-0.25);
-    }
- 	LOG(("%s, scale: %f", __FUNCTION__, plot_get_scale()));
 
- 	browser_window_reload(input_window->browser->bw, false);
- 	gui_window_get_dimensions(input_window, &width, &heigth, true);
- 	browser_window_reformat(input_window->browser->bw, false, width, heigth);
+    gui_window_set_scale(input_window, gui_window_get_scale(input_window)-0.25);
 }
 
 
