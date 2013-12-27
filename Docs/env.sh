@@ -22,7 +22,7 @@ if [ "x${TARGET_WORKSPACE}" = "x" ]; then
 fi
 
 if [ "x${USE_CPUS}" = "x" ]; then
-    NCPUS=$(grep -c "^processor" /proc/cpuinfo 2>/dev/null)
+    NCPUS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || getconf NPROCESSORS_ONLN 2>/dev/null)
     NCPUS="${NCPUS:-1}"
     NCPUS=$((NCPUS * 2))
     USE_CPUS="-j${NCPUS}"
