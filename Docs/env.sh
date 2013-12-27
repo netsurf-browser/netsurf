@@ -55,6 +55,13 @@ NS_DEV_DEB="build-essential pkg-config git gperf"
 NS_TOOL_DEB="flex bison libhtml-parser-perl"
 NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libpng-dev librsvg2-dev libjpeg-dev libmozjs185-dev"
 
+# Haiku secondary arch suffix:
+# empty for primary (gcc2 on x86),
+# "_x86" for gcc4 secondary.
+HA=
+# Haiku packages
+NS_DEV_HPKG="curl${HA}_devel libpng${HA}_devel jpeg${HA}_devel openssl${HA}_devel libiconv${HA}_devel expat${HA}_devel pkgconfig${HA} html_parser cmd:getconf"
+
 #add target specific libraries
 if [ "x${TARGET_ABI}" = "xriscos" ]; then
      NS_FRONTEND_LIBS="${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS}"
@@ -64,6 +71,12 @@ fi
 ns-apt-get-install()
 {
     sudo apt-get install $(echo ${NS_DEV_DEB} ${NS_TOOL_DEB} ${NS_GTK_DEB})
+}
+
+# pkgman commandline to install necessary dev packages
+ns-pkgman-install()
+{
+    pkgman install $(echo ${NS_DEV_HPKG})
 }
 
 # git pull in all repos parameters are passed to git pull
