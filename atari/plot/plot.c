@@ -48,7 +48,8 @@ struct s_view {
     short vis_y;            /* coords are relative to plot location			*/
     short vis_w;            /* clipped to screen dimensions					*/
     short vis_h;            /* visible width								*/
-    struct rect clipping;	/* clipping rectangle							*/
+    struct rect abs_clipping;   /* The toplevel clipping rectangle          */
+    struct rect clipping;	/* actual clipping rectangle					*/
     float scale;
 };
 
@@ -1890,6 +1891,7 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 {
 	bool doupdate = false;
 	struct rect newclip = {0, 0, w, h};
+	GRECT absclip = {x, y, w, h};
 
 	if (!(w == view.w && h == view.h)) {
 		struct rect newclip = { 0, 0, w-1, h-1 };
@@ -1907,6 +1909,7 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 
 	//dbg_rect("plot_set_dimensions", &newclip);
 
+    plot_set_abs_clipping(&absclip);
 	plot_clip(&newclip);
     return(true);
 }
@@ -1940,14 +1943,64 @@ float plot_set_scale(float scale)
     return(ret);
 }
 
-float plot_get_scale()
+float plot_get_scale(void)
 {
     return(view.scale);
 }
 
+
+/**
+ *
+ * Subsequent calls to plot_clip will be clipped by the absolute clip.
+ * \param area the maximum clipping rectangle (absolute screen coords)
+ *
+*/
+void plot_set_abs_clipping(const GRECT *area)
+{
+    GRECT canvas;
+
+    plot_get_dimensions(&canvas);
+
+    if(!rc_intersect(area, &canvas)){
+        view.abs_clipping.x0 = 0;
+        view.abs_clipping.x1 = 0;
+        view.abs_clipping.y0 = 0;
+        view.abs_clipping.y1 = 0;
+    }
+    else {
+        view.abs_clipping.x0 = area->g_x;
+        view.abs_clipping.x1 = area->g_x + area->g_w;
+        view.abs_clipping.y0 = area->g_y;
+        view.abs_clipping.y1 = area->g_y + area->g_h;
+    }
+}
+
+
+/***
+ * Get the maximum clip extent, in absolute screen coords
+ * \param dst the structure that receives the absolute clipping
+ */
+void plot_get_abs_clipping(struct rect *dst)
+{
+    *dst = view.abs_clipping;
+}
+
+
+/***
+ * Get the maximum clip extent, in absolute screen coords
+ * \param dst the structure that receives the absolute clipping
+ */
+void plot_get_abs_clipping_grect(GRECT *dst)
+{
+    dst->g_x = view.abs_clipping.x0;
+    dst->g_w = view.abs_clipping.x1 - view.abs_clipping.x0;
+    dst->g_y = view.abs_clipping.y0;
+    dst->g_h = view.abs_clipping.y1 - view.abs_clipping.y0;
+}
+
 bool plot_clip(const struct rect *clip)
 {
-	GRECT canvas, screen, gclip, isection;
+	GRECT canvas, screen, gclip, maxclip;
 	short pxy[4];
 
 	screen.g_x = 0;
@@ -1980,7 +2033,9 @@ bool plot_clip(const struct rect *clip)
 		//assert(1 == 0);
 	}
 
-	//assert(rc_intersect(&screen, &gclip));
+    // When setting VDI clipping, obey to maximum cliping rectangle:
+	plot_get_abs_clipping_grect(&maxclip);
+	rc_intersect(&maxclip, &gclip);
 
 	//dbg_grect("canvas clipped to screen", &gclip);
 
