@@ -1054,8 +1054,8 @@ void window_process_redraws(ROOTWIN * rootwin)
 	//gemtk_wm_clear(rootwin->win);
 */
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
-    plot_set_abs_clipping(&visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
+        plot_set_abs_clipping(&visible_ro);
 
     	//dbg_grect("visible ", &visible_ro);
 
