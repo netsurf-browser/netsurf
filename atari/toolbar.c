@@ -982,6 +982,7 @@ void toolbar_home_click(struct s_toolbar *tb)
 	struct browser_window * bw;
 	struct gui_window * gw;
 	nsurl *url;
+	char * use_url = NULL;
 
 	gw = window_get_active_gui_window(tb->owner);
 	assert(gw != NULL);
@@ -989,10 +990,13 @@ void toolbar_home_click(struct s_toolbar *tb)
 	assert(bw != NULL);
 
 	if(nsoption_charp(homepage_url) == NULL){
-		return;
+		use_url = "about:welcome";
+	}
+	else {
+        use_url = nsoption_charp(homepage_url);
 	}
 
-	if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
+	if (nsurl_create(use_url, &url) != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 	} else {
 		browser_window_navigate(bw,
