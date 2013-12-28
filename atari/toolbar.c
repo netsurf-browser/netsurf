@@ -989,11 +989,9 @@ void toolbar_home_click(struct s_toolbar *tb)
 	bw = gw->browser->bw;
 	assert(bw != NULL);
 
-	if(nsoption_charp(homepage_url) == NULL){
-		use_url = "about:welcome";
-	}
-	else {
-        use_url = nsoption_charp(homepage_url);
+	use_url = nsoption_charp(homepage_url);
+	if(use_url == NULL || strlen(use_url) == 0){
+        use_url = (char*)"about:welcome";
 	}
 
 	if (nsurl_create(use_url, &url) != NSERROR_OK) {
