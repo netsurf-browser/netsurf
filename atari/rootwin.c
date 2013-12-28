@@ -1004,6 +1004,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
 
         //dbg_pxy("caret screen coords (md_repl)", &pxy[4]);
 
+        // TODO: walk rectangle list (use MD_REPLACE then)
         // draw caret to screen coords:
         vrt_cpyfm(vh, /*MD_REPLACE*/ MD_XOR, pxy, &caret->symbol, &screen, colors);
 
@@ -1053,6 +1054,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 	//gemtk_wm_clear(rootwin->win);
 */
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
+    plot_set_abs_clipping(&visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
 
     	//dbg_grect("visible ", &visible_ro);
