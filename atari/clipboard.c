@@ -28,6 +28,7 @@
 #include <mint/osbind.h>
 #include <cflib.h>
 #include "atari/clipboard.h"
+#include "atari/gemtk/gemtk.h"
 
 
 static int filesize(char * path)
@@ -49,6 +50,13 @@ static int filesize(char * path)
 int scrap_txt_write(char *str)
 {
 	scrap_wtxt(str);
+
+
+    // Send SC_CHANGED message:
+    gemtk_send_msg(SC_CHANGED, 0, 2, 0, 0, 0, 0);
+
+    return(0);
+
 }
 
 char *scrap_txt_read(void)

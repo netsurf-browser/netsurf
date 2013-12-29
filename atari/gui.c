@@ -767,8 +767,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 
         // convert utf8 input to atari encoding:
 
-        // TODO: send SC_CHANGED message
-
         utf8_convert_ret ret;
         char *clip = NULL;
 
