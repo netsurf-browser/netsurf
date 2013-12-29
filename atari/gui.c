@@ -359,8 +359,7 @@ void gui_window_set_scale(struct gui_window *gw, float scale)
 
     gw->scale = MAX(scale, 0.25);
 
-	browser_window_reload(gw->browser->bw, false);
- 	gui_window_get_dimensions(gw, &width, &heigth, true);
+	gui_window_get_dimensions(gw, &width, &heigth, true);
  	browser_window_reformat(gw->browser->bw, false, width, heigth);
 }
 
@@ -767,6 +766,8 @@ void gui_set_clipboard(const char *buffer, size_t length,
     if (length > 0 && buffer != NULL) {
 
         // convert utf8 input to atari encoding:
+
+        // TODO: send SC_CHANGED message
 
         utf8_convert_ret ret;
         char *clip = NULL;
