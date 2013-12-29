@@ -23,7 +23,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <mint/osbind.h>
+#include <cflib.h>
 
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -37,6 +40,7 @@
 #include "css/css.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/utils.h"
 
 #include "atari/gui.h"
 #include "atari/rootwin.h"
@@ -107,6 +111,39 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	return(&ctxinfo);
 
 
+}
+
+/***
+ *
+ * \param prefix
+ * \param sufffix
+ * \return pointer to static buffer owned by get_tmpfilename()
+ */
+static char * get_tmpfilename(const char * prefix, const char * suffix)
+{
+    int i=0;
+    static char tmpfilename[PATH_MAX];
+    char * tmpdir;
+    const char * tmp_path_suffix = "";
+
+    // TODO: make function public?
+    tmpdir = getenv("TMPDIR");
+    if(tmpdir == NULL){
+        tmpdir = (char*)"u:\\tmp\\";
+    }
+
+    if(tmpdir[strlen(tmpdir)-1] != '\\'){
+        tmp_path_suffix = "\\";
+    }
+
+    do{
+        /* generate a new filename: */
+        snprintf(tmpfilename, PATH_MAX, "%s%s%s%d%s", tmpdir,
+                 tmp_path_suffix, prefix, i++, suffix);
+        /* check with cflib: */
+    } while(file_exists(tmpfilename));
+
+    return(tmpfilename);
 }
 
 //TODO: do not open popup for gui_window, but for a rootwin?
@@ -275,7 +312,9 @@ void context_popup(struct gui_window * gw, short x, short y)
 				data = content_get_source_data(gw->browser->bw->current_content,
 												&size);
 				if (size > 0 && data != NULL){
-				    snprintf(tempfile, 127, "%s%s.htm", "u:", tmpnam(NULL));
+				    snprintf(tempfile, 127, "%s", get_tmpfilename("ns-", ".html"));
+				    /* the GEMDOS cmdline contains the length of the commandline
+				       in the first byte: */
 				    cmdline[0] = (unsigned char)strlen(tempfile);
 					LOG(("Creating temporay source file: %s\n", tempfile));
 					fp_tmpfile = fopen(tempfile, "w");
@@ -283,6 +322,10 @@ void context_popup(struct gui_window * gw, short x, short y)
 						fwrite(data, size, 1, fp_tmpfile);
 						fclose(fp_tmpfile);
 
+						// Send SH_WDRAW to notify files changed:
+						gemtk_send_msg(SH_WDRAW, 0, -1, 0, 0, 0, 0);
+
+                        // start application:
 						if(strlen(tempfile)<=125){
 							shel_write(1, 1, 1, editor, cmdline);
 						}
