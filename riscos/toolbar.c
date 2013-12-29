@@ -162,7 +162,7 @@ static wimp_window ro_toolbar_window = {
 	wimp_WINDOW_NEVER3D | 0x16u /* RISC OS 5.03+ */,
 	{0, 0, TOOLBAR_DEFAULT_WIDTH, 16384},
 	0,
-	wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
+	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
 	1,
 	1,

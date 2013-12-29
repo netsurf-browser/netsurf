@@ -337,7 +337,10 @@ static bool ro_gui_url_bar_icon_update(struct url_bar *url_bar)
 
 	if (!url_bar->hidden && url_bar->container_icon == -1) {
 		icon.icon.flags = wimp_ICON_BORDER |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT);
+				(wimp_COLOUR_BLACK <<
+						wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_BUTTON_DOUBLE_CLICK_DRAG <<
+						wimp_ICON_BUTTON_TYPE_SHIFT);
 		error = xwimp_create_icon(&icon, &url_bar->container_icon);
 		if (error != NULL) {
 			LOG(("xwimp_create_icon: 0x%x: %s",
@@ -758,9 +761,8 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 		return false;
 
 	/* If we have a click over the hotlist icon, hotlist add/remove. */
-	/* TODO: this doesn't work
-	 *       neither does the TOOLBAR_URL_DRAG_FAVICON below */
-	if (pointer->buttons & (wimp_CLICK_SELECT | wimp_SINGLE_SELECT) &&
+
+	if (pointer->buttons == wimp_SINGLE_SELECT &&
 			url_bar->text_buffer != NULL) {
 		if (pos.x >= url_bar->hotlist.extent.x0 &&
 				pos.x <= url_bar->hotlist.extent.x1 &&
@@ -771,7 +773,7 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 			if (nsurl_create((const char *)url_bar->text_buffer,
 					&n) == NSERROR_OK) {
 				if (url_bar->hotlist.add) {
-					if (hotlist_add_url(n)) {
+					if (hotlist_add_url(n) == NSERROR_OK) {
 						redraw = true;
 						url_bar->hotlist.add = false;
 					}
