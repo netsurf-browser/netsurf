@@ -1620,6 +1620,21 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar)
 
 /* This is an exported interface documented in toolbar.h */
 
+void ro_toolbar_update_all_hotlists(void)
+{
+	struct toolbar *bar;
+
+	bar = ro_toolbar_bars;
+	while (bar != NULL) {
+		ro_toolbar_update_hotlist(bar);
+
+		bar = bar->next;
+	}
+}
+
+
+/* This is an exported interface documented in toolbar.h */
+
 void ro_toolbar_update_hotlist(struct toolbar *toolbar)
 {
 	if (toolbar == NULL || toolbar->url == NULL)

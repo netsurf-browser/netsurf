@@ -241,6 +241,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
 		hotlist_keypress(KEY_DELETE_LEFT);
+		ro_toolbar_update_all_hotlists();
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -410,6 +411,7 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		return true;
 	case TREE_SELECTION_DELETE:
 		hotlist_keypress(KEY_DELETE_LEFT);
+		ro_toolbar_update_all_hotlists();
 		return true;
 	case TREE_SELECT_ALL:
 		hotlist_keypress(KEY_SELECT_ALL);
