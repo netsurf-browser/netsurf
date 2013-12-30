@@ -918,10 +918,11 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 			return;
 		}
 		lwc_string *mime = content_get_mime_type(content);
-		const char *mime_string = lwc_string_data(mime);
-		if (mime)
+		if (mime) {
 			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
-				mime_string, lwc_string_length(mime) + 1);
+				lwc_string_data(mime), lwc_string_length(mime) + 1);
+			lwc_string_unref(mime);
+		}
 		
 	}
 
