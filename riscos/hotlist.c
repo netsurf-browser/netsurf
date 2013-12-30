@@ -498,8 +498,6 @@ void ro_gui_hotlist_add_page(nsurl *url)
 
 	ro_gui_hotlist_add_cleanup();
 
-	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
-
 	data = urldb_get_url_data(url);
 	if (data == NULL)
 		return;
@@ -542,8 +540,6 @@ void ro_gui_hotlist_add_page(nsurl *url)
 
 static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 {
-	LOG(("Hotlist AddURL Bounced"));
-
 	if (hotlist_url != NULL) {
 		nsurl *nsurl;
 
@@ -572,8 +568,6 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 
 static void ro_gui_hotlist_scheduled_callback(void *p)
 {
-	LOG(("Hotlist AddURL was claimed by something."));
-
 	ro_gui_hotlist_add_cleanup();
 }
 
@@ -584,8 +578,6 @@ static void ro_gui_hotlist_scheduled_callback(void *p)
 
 void ro_gui_hotlist_add_cleanup(void)
 {
-	LOG(("Clean up RMA"));
-
 	if (hotlist_url != NULL) {
 		osmodule_free(hotlist_url);
 		hotlist_url = NULL;
