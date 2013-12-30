@@ -50,6 +50,8 @@ static void (*ro_mouse_drag_track_callback)(wimp_pointer *pointer, void *data)
 static void (*ro_mouse_drag_cancel_callback)(void *data) = NULL;
 static void *ro_mouse_drag_data = NULL;
 
+static bool ro_mouse_ignore_leaving_event = false;
+
 /* Data for the wimp poll handler. */
 
 static void (*ro_mouse_poll_end_callback)(wimp_leaving *leaving, void *data)
@@ -123,6 +125,12 @@ void ro_mouse_drag_start(void (*drag_end)(wimp_dragged *dragged, void *data),
 	ro_mouse_drag_track_callback = drag_track;
 	ro_mouse_drag_cancel_callback = drag_cancel;
 	ro_mouse_drag_data = data;
+
+	/* The Wimp sends a PointerLeaving event when Wimp_DragBox is called,
+	 * so we mask out the next event that will come our way.
+	 */
+
+	ro_mouse_ignore_leaving_event = true;
 }
 
 
@@ -184,13 +192,19 @@ void ro_mouse_track_start(void (*poll_end)(wimp_leaving *leaving, void *data),
  * Process Wimp_PointerLeaving events by terminating an active mouse track and
  * passing the details on to any registered event handler.
  *
+ * If the ignore mask is set, we don't pass the event on to the client as it
+ * is assumed that it's a result of starting a Wimp_DragBox operation.
+ *
  * \param *leaving	The Wimp_PointerLeaving data block.
  */
 
 void ro_mouse_pointer_leaving_window(wimp_leaving *leaving)
 {
-	if (ro_mouse_poll_end_callback != NULL)
+	if (ro_mouse_poll_end_callback != NULL &&
+			ro_mouse_ignore_leaving_event == false)
 		ro_mouse_poll_end_callback(leaving, ro_mouse_poll_data);
+
+	ro_mouse_ignore_leaving_event = false;
 
 	/* Poll tracking is a one-shot event, so clear the data ready for
 	 * another claimant.
