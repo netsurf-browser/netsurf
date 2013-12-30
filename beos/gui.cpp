@@ -620,7 +620,7 @@ void gui_init(int argc, char** argv)
 	check_homedir();
 
 	// make sure the cache dir exists
-	create_directory(TEMP_FILENAME_PREFIX, 0600);
+	create_directory(TEMP_FILENAME_PREFIX, 0700);
 
 	//nsbeos_completion_init();
 
