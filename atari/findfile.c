@@ -124,14 +124,14 @@ char *url_to_path(const char *url)
 
 /**
  * Locate a shared resource file by searching known places in order.
+ * Search order is: ./, NETSURF_GEM_RESPATH, ./$HOME/.netsurf/, $NETSURFRES/
+ * (where NETSURFRES is an environment variable)
  *
  * \param  buf      buffer to write to.  must be at least PATH_MAX chars
  * \param  filename file to look for
  * \param  def      default to return if file not found
  * \return buf
  *
- * Search order is: ./, NETSURF_GEM_RESPATH, ./$HOME/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable),
  */
 #ifndef NETSURF_GEM_RESPATH
 	#define NETSURF_GEM_RESPATH "./res/"

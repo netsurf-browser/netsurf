@@ -95,9 +95,37 @@ void gemtk_clip_grect(VdiHdl vh, GRECT *rect)
 	vs_clip_pxy(vh, pxy);
 }
 
+/** Send an Message to a GUIWIN using AES message pipe
+* \param win the GUIWIN which shall receive the message
+* \param msg_type the WM_ message definition
+* \param a the 4th parameter to appl_write
+* \param b the 5th parameter to appl_write
+* \param c the 6th parameter to appl_write
+* \param d the 7th parameter to appl_write
+*/
+void gemtk_send_msg(short msg_type, short data2, short data3, short data4,
+                     short data5, short data6, short data7)
+{
+    short msg[8];
+
+    msg[0] = msg_type;
+    msg[1] = gl_apid;
+    msg[2] = data2;
+    msg[3] = data3;
+    msg[4] = data4;
+    msg[5] = data5;
+    msg[6] = data6;
+    msg[7] = data7;
+
+    appl_write(gl_apid, 16, &msg);
+}
+
+
 void gemtk_wind_get_str(short aes_handle, short mode, char *str, int len)
 {
 	char tmp_str[255];
+
+    // TODO: remove or implement function
 
 	if(len>255) {
 		len = 255;

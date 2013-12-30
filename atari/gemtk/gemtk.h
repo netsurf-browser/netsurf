@@ -60,6 +60,10 @@ void gemtk_clip_grect(VdiHdl vh, GRECT *rect);
 
 void gemtk_wind_get_str(short aes_handle, short mode, char *str, int len);
 
+/* send application message */
+void gemtk_send_msg(short msg_type, short data2, short data3, short data4,
+                     short data5, short data6, short data7);
+
 
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
