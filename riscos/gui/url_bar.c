@@ -30,7 +30,7 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
-#include "desktop/hotlist.h"
+#include "riscos/hotlist.h"
 #include "riscos/gui/url_bar.h"
 #include "riscos/theme.h"
 #include "riscos/url_suggest.h"
@@ -83,7 +83,7 @@ struct url_bar {
 	bool			shaded;
 
 	struct {
-		bool			add;
+		bool			set;
 		os_box			extent;
 		os_coord		offset;
 	} hotlist;
@@ -111,6 +111,7 @@ static struct url_bar_resource url_bar_res[URLBAR_RES_LAST] = {
 }; /**< Treeview content resources */
 
 
+static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set);
 
 
 /* This is an exported interface documented in url_bar.h */
@@ -159,7 +160,7 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	strncpy(url_bar->favicon_sprite, "Ssmall_xxx",
 			URLBAR_FAVICON_NAME_LENGTH);
 
-	url_bar->hotlist.add = true;
+	url_bar->hotlist.set = false;
 	url_bar->hotlist.extent.x0 = 0;
 	url_bar->hotlist.extent.y0 = 0;
 	url_bar->hotlist.extent.x1 = 0;
@@ -697,9 +698,9 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 			.background_images = true,
 			.plot = &ro_plotters
 		};
-		struct url_bar_resource *hotlist_icon = url_bar->hotlist.add ?
-				&(url_bar_res[URLBAR_RES_HOTLIST_ADD]) :
-				&(url_bar_res[URLBAR_RES_HOTLIST_REMOVE]);
+		struct url_bar_resource *hotlist_icon = url_bar->hotlist.set ?
+				&(url_bar_res[URLBAR_RES_HOTLIST_REMOVE]) :
+				&(url_bar_res[URLBAR_RES_HOTLIST_ADD]);
 
 		xwimp_set_colour(wimp_COLOUR_WHITE);
 		xos_plot(os_MOVE_TO,
@@ -937,16 +938,8 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 		return;
 
 	if (nsurl_create(url, &n) == NSERROR_OK) {
-		bool prev = url_bar->hotlist.add;
-		url_bar->hotlist.add = !hotlist_has_url(n);
+		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
 		nsurl_unref(n);
-
-		if (prev != url_bar->hotlist.add && !url_bar->hidden)
-			xwimp_force_redraw(url_bar->window,
-				url_bar->hotlist.extent.x0,
-				url_bar->hotlist.extent.y0,
-				url_bar->hotlist.extent.x1,
-				url_bar->hotlist.extent.y1);
 	}
 
 	if (url_bar->text_icon == -1) {
@@ -983,23 +976,42 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 /* This is an exported interface documented in url_bar.h */
 
-void ro_gui_url_bar_hotlist_modifed(struct url_bar *url_bar, nsurl *url)
+void ro_gui_url_bar_update_hotlist(struct url_bar *url_bar)
 {
+	const char *url;
 	nsurl *n;
 
-	if (nsurl_create((const char *)url_bar->text_buffer,
-			&n) == NSERROR_OK) {
-		bool prev = url_bar->hotlist.add;
-		url_bar->hotlist.add = !hotlist_has_url(n);
-		nsurl_unref(n);
+	if (url_bar == NULL)
+		return;
 
-		if (prev != url_bar->hotlist.add && !url_bar->hidden) {
+	url = (const char *) url_bar->text_buffer;
+	if (url != NULL && nsurl_create(url, &n) == NSERROR_OK) {
+		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
+		nsurl_unref(n);
+	}
+}
+
+
+/**
+ * Set the state of a URL Bar's hotlist icon.
+ *
+ * \param *url_bar	The URL Bar to update.
+ * \param set		TRUE to set the hotlist icon; FALSE to clear it.
+ */
+
+static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set)
+{
+	if (url_bar == NULL || set == url_bar->hotlist.set)
+		return;
+	
+	url_bar->hotlist.set = set;
+	
+	if (!url_bar->hidden) {
 			xwimp_force_redraw(url_bar->window,
 					url_bar->hotlist.extent.x0,
 					url_bar->hotlist.extent.y0,
 					url_bar->hotlist.extent.x1,
 					url_bar->hotlist.extent.y1);
-		}
 	}
 }
 
@@ -1067,7 +1079,6 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 {
 	const char *url;
 	nsurl *n;
-	bool changed = false;
 
 	if (url_bar == NULL || url_bar->hidden || key == NULL)
 		return false;
@@ -1075,30 +1086,14 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 	if (key->w != url_bar->window || key->i != url_bar->text_icon)
 		return false;
 
-	if (url_bar->hidden)
-		return true;
-
 	/* Update hotlist indicator */
+	
 	url = (const char *) url_bar->text_buffer;
 	if (url != NULL && nsurl_create(url, &n) == NSERROR_OK) {
-		bool prev = url_bar->hotlist.add;
-		url_bar->hotlist.add = !hotlist_has_url(n);
+		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
 		nsurl_unref(n);
-
-		if (prev != url_bar->hotlist.add) {
-			changed = true;
-		}
-	} else if (!url_bar->hotlist.add) {
-		url_bar->hotlist.add = true;
-		changed = true;
-	}
-
-	if (changed) {
-		xwimp_force_redraw(url_bar->window,
-				url_bar->hotlist.extent.x0,
-				url_bar->hotlist.extent.y0,
-				url_bar->hotlist.extent.x1,
-				url_bar->hotlist.extent.y1);
+	} else if (url_bar->hotlist.set) {
+		ro_gui_url_bar_set_hotlist(url_bar, false);
 	}
 
 	return true;

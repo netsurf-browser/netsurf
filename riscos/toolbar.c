@@ -1620,10 +1620,12 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar)
 
 /* This is an exported interface documented in toolbar.h */
 
-void ro_toolbar_hotlist_modifed(struct toolbar *toolbar, nsurl *url)
+void ro_toolbar_update_hotlist(struct toolbar *toolbar)
 {
-	if (toolbar != NULL && toolbar->url != NULL)
-		ro_gui_url_bar_hotlist_modifed(toolbar->url, url);
+	if (toolbar == NULL || toolbar->url == NULL)
+		return;
+	
+	ro_gui_url_bar_update_hotlist(toolbar->url);
 }
 
 

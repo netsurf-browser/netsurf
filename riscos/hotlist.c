@@ -612,6 +612,24 @@ void ro_gui_hotlist_remove_page(nsurl *url)
 }
 
 
+/**
+ * Report whether the hotlist contains a given URL. This will be passed on to
+ * the core hotlist, unless we're configured to use an external hotlist in which
+ * case we always report false.
+ *
+ * \param *url	The URL to be tested.
+ * \return	true if the hotlist contains the URL; else false.
+ */
+
+bool ro_gui_hotlist_has_page(nsurl *url)
+{
+	if (url == NULL || nsoption_bool(external_hotlists))
+		return false;
+
+	return hotlist_has_url(url);
+}
+
+
 #if 0
 /**
  * Handle URL dropped on hotlist
