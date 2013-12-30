@@ -1150,12 +1150,12 @@ bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 					"Ssmall_xxx");
 	}
 
-		if (!url_bar->hidden)
-			xwimp_force_redraw(url_bar->window,
-				url_bar->favicon_extent.x0,
-				url_bar->favicon_extent.y0,
-				url_bar->favicon_extent.x1,
-				url_bar->favicon_extent.y1);
+	if (!url_bar->hidden)
+		xwimp_force_redraw(url_bar->window,
+			url_bar->favicon_extent.x0,
+			url_bar->favicon_extent.y0,
+			url_bar->favicon_extent.x1,
+			url_bar->favicon_extent.y1);
 
 	return true;
 }
