@@ -512,6 +512,20 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
+static BPath get_messages_path()
+{
+	BPath p("/boot/apps/netsurf/res");
+	// TODO: use Haiku's BLocale stuff
+	BString lang(getenv("LC_MESSAGES"));
+	lang.Truncate(2);
+	BDirectory d(p.Path());
+	if (!d.Contains(lang.String(), B_DIRECTORY_NODE))
+		lang = "en";
+	p.Append(lang.String());
+	p.Append("Messages");
+	return p;
+}
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
@@ -527,8 +541,6 @@ int main(int argc, char** argv)
 		new NSBrowserApplication;
 	}
 
-	const char* messages = "/boot/apps/netsurf/res/en/Messages";
-
 	/* initialise logging. Not fatal if it fails but not much we
 	 * can do about it either.
 	 */
@@ -543,7 +555,8 @@ int main(int argc, char** argv)
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	ret = netsurf_init(messages);
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path());
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
@@ -567,8 +580,6 @@ int gui_init_replicant(int argc, char** argv)
 		options.Append("x-vnd.NetSurf");
 	}
 
-	const char* messages = "/boot/apps/netsurf/res/en/Messages";
-
 	/* initialise logging. Not fatal if it fails but not much we
 	 * can do about it either.
 	 */
@@ -585,7 +596,8 @@ int gui_init_replicant(int argc, char** argv)
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	ret = netsurf_init(messages);
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path());
 	if (ret != NSERROR_OK) {
 		// FIXME: must not die when in replicant!
 		die("NetSurf failed to initialise");
