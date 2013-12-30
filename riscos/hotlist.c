@@ -596,6 +596,22 @@ void ro_gui_hotlist_add_cleanup(void)
 }
 
 
+/**
+ * Remove a URL from the hotlist.  This will be passed on to the core hotlist,
+ * unless we're configured to use external hotlists in which case we ignore it.
+ *
+ * \param *url	The URL to be removed.
+ */
+
+void ro_gui_hotlist_remove_page(nsurl *url)
+{
+	if (url == NULL || nsoption_bool(external_hotlists))
+		return;
+
+	hotlist_remove_url(url);
+}
+
+
 #if 0
 /**
  * Handle URL dropped on hotlist

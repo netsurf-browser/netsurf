@@ -47,6 +47,7 @@ bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
 void ro_gui_hotlist_add_page(nsurl *url);
 void ro_gui_hotlist_add_cleanup(void);
+void ro_gui_hotlist_remove_page(nsurl *url);
 
 #endif
 

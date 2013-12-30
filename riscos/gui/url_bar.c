@@ -760,40 +760,22 @@ bool ro_gui_url_bar_click(struct url_bar *url_bar,
 			pos.y > url_bar->extent.y1)
 		return false;
 
-	/* If we have a click over the hotlist icon, hotlist add/remove. */
+	/* If we have a Select or Adjust click, check if it originated on the
+	 * hotlist icon; if it did, return an event.
+	 */
 
-	if (pointer->buttons == wimp_SINGLE_SELECT &&
-			url_bar->text_buffer != NULL) {
+	if (pointer->buttons == wimp_SINGLE_SELECT ||
+			pointer->buttons == wimp_SINGLE_ADJUST) {
 		if (pos.x >= url_bar->hotlist.extent.x0 &&
 				pos.x <= url_bar->hotlist.extent.x1 &&
 				pos.y >= url_bar->hotlist.extent.y0 &&
 				pos.y <= url_bar->hotlist.extent.y1) {
-			nsurl *n;
-			bool redraw = false;
-			if (nsurl_create((const char *)url_bar->text_buffer,
-					&n) == NSERROR_OK) {
-				if (url_bar->hotlist.add) {
-					if (hotlist_add_url(n) == NSERROR_OK) {
-						redraw = true;
-						url_bar->hotlist.add = false;
-					}
-				} else {
-					/* TODO: Open "Remove page from
-					 *       Hotlist?" query dialogue box,
-					 *       rather than silent removal. */
-					hotlist_remove_url(n);
-					redraw = true;
-					url_bar->hotlist.add = true;
-				}
-				nsurl_unref(n);
-
-				if (redraw && !url_bar->hidden)
-					xwimp_force_redraw(url_bar->window,
-						url_bar->hotlist.extent.x0,
-						url_bar->hotlist.extent.y0,
-						url_bar->hotlist.extent.x1,
-						url_bar->hotlist.extent.y1);
-			}
+			if (pointer->buttons == wimp_SINGLE_SELECT &&
+					action != NULL)
+				*action = TOOLBAR_URL_SELECT_HOTLIST;
+			else if (pointer->buttons == wimp_SINGLE_ADJUST &&
+					action != NULL)
+				*action = TOOLBAR_URL_ADJUST_HOTLIST;
 			return true;
 		}
 	}

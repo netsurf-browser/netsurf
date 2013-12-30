@@ -34,6 +34,8 @@ typedef enum {
 	TOOLBAR_URL_NONE = 0,		/* Special case: no action */
 	TOOLBAR_URL_DRAG_URL,
 	TOOLBAR_URL_DRAG_FAVICON,
+	TOOLBAR_URL_SELECT_HOTLIST,
+	TOOLBAR_URL_ADJUST_HOTLIST
 } url_bar_action;
 
 struct url_bar;
