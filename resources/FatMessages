@@ -3696,6 +3696,16 @@ de.ro.HelpToolbar16:Das ist die Ladeaktivitätsanzeige.|MSie wird animiert, wenn
 fr.ro.HelpToolbar16:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
 it.ro.HelpToolbar16:\Tthrobber animato durante le attività di rete
 nl.ro.HelpToolbar16:\Tthrobber.|MIt animates while this \w is active.
+en.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+de.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+fr.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+it.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+nl.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+en.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+de.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+fr.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+it.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+nl.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
 
 en.ro.HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
 de.ro.HelpStatus0:Das ist die Begrenzung der Statusanzeige.|MKlicken und Ziehen verändert die Länge der Statusanzeige.

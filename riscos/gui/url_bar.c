@@ -894,6 +894,16 @@ bool ro_gui_url_bar_help_suffix(struct url_bar *url_bar, wimp_i i,
 		*suffix = "14";
 	else if (i == url_bar->suggest_icon)
 		*suffix = "15";
+	else if (pos.x >= url_bar->hotlist.extent.x0 &&
+			pos.x <= url_bar->hotlist.extent.x1 &&
+			pos.y >= url_bar->hotlist.extent.y0 &&
+			pos.y <= url_bar->hotlist.extent.y1)
+		*suffix = "Hot";
+	else if (pos.x >= url_bar->favicon_extent.x0 &&
+			pos.x <= url_bar->favicon_extent.x1 &&
+			pos.y >= url_bar->favicon_extent.y0 &&
+			pos.y <= url_bar->favicon_extent.y1)
+		*suffix = "Fav";
 	else
 		*suffix = "";
 
