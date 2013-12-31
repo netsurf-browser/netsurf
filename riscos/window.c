@@ -4300,7 +4300,6 @@ static void ro_gui_window_action_remove_bookmark(struct gui_window *g)
 	url = hlcache_handle_get_url(g->bw->current_content);
 
 	ro_gui_hotlist_remove_page(url);
-	ro_toolbar_update_hotlist(g->toolbar);
 }
 
 

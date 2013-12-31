@@ -3051,6 +3051,11 @@ de.all.OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde ü
 fr.all.OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
 it.all.OverwriteFile:Un file con questo nome è già esistente, continuare comporterà la sovrascrittura del file originale.
 nl.all.OverwriteFile:Een bestand met deze naam bestaat al en zal verloren gaan.
+en.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+de.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+fr.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+it.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+nl.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
 
 # Page fetching
 # =============
@@ -3590,6 +3595,16 @@ de.all.DontReplace:Abbrechen
 fr.all.DontReplace:Ne pas remplacer le fichier
 it.all.DontReplace:Non sostituire
 nl.all.DontReplace:Bestand niet vervangen
+en.all.Remove:Remove address
+de.all.Remove:Remove address
+rf.all.Remove:Remove address
+it.all.Remove:Remove address
+nl.all.Remove:Remove address
+en.all.DontRemove:Don't remove
+de.all.DontRemove:Don't remove
+rf.all.DontRemove:Don't remove
+it.all.DontRemove:Don't remove
+nl.all.DontRemove:Don't remove
 en.all.obj:object
 de.all.obj:Objekt
 fr.all.obj:objet
