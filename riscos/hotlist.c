@@ -629,12 +629,21 @@ void ro_gui_hotlist_remove_page(nsurl *url)
 		hotlist_delete_url = NULL;
 	}
 
-	hotlist_query = query_user("RemoveHotlist", NULL, &remove_funcs, NULL,
-			messages_get("Remove"), messages_get("DontRemove"));
+	/* Check with the user before removing the URL, unless they don't
+	 * want us to be careful in which case just do it.
+	 */
 
-	hotlist_delete_url = nsurl_ref(url);
+	if (nsoption_bool(confirm_hotlist_remove)) {
+		hotlist_query = query_user("RemoveHotlist", NULL,
+				&remove_funcs, NULL,
+				messages_get("Remove"),
+				messages_get("DontRemove"));
 
-	// hotlist_remove_url(url);
+		hotlist_delete_url = nsurl_ref(url);
+	} else {
+		hotlist_remove_url(url);
+		ro_toolbar_update_all_hotlists();
+	}
 }
 
 
