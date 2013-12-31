@@ -29,16 +29,18 @@ resource(406, "throbber6.png") #'data' import "res/throbber/throbber6.png";
 resource(407, "throbber7.png") #'data' import "res/throbber/throbber7.png";
 resource(408, "throbber8.png") #'data' import "res/throbber/throbber8.png";
 
-/*  */
+/* files exported as resource:// via rsrc:// mapping  */
 resource(500, "credits.html") #'data' import "res/en/credits.html,faf";
 resource(501, "licence.html") #'data' import "res/en/licence.html,faf";
 resource(502, "welcome.html") #'data' import "res/en/welcome.html,faf";
 
-
+/* application flags (multiple launch) */
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
 
+/* application MIME signature */
 resource(1, "BEOS:APP_SIG") (#'MIMS') "application/x-vnd.NetSurf";
 
+/* list of supported MIME types */
 resource(1, "BEOS:FILE_TYPES") message {
 	"types" = "text/html",
 	"types" = "image/gif",
@@ -52,6 +54,7 @@ resource(1, "BEOS:FILE_TYPES") message {
 	"types" = "application/x-vnd.Be.URL.https"
 };
 
+/* BeOS large (32x32) icon */
 resource(101, "BEOS:L:STD_ICON") #'ICON' array {
 	$"FFFFFFFFFFFFFFFFFFFFFF0E0A00D600D6000AAF0EFFFFFFFFFFFFFFFFFFFFFF"
 	$"FFFFFFFFFFFFFFFF0E0A000001DED5D5D5DE020000090EFFFFFFFFFFFFFFFFFF"
@@ -87,6 +90,7 @@ resource(101, "BEOS:L:STD_ICON") #'ICON' array {
 	$"FFFFFFFFFFFFFFFFFFFFFFFF0E0B000A0A0A0D0EFFFFFFFFFFFFFFFFFFFFFFFF"
 };
 
+/* BeOS small (16x16) icon */
 resource(101, "BEOS:M:STD_ICON") #'MICN' array {
 	$"FFFFFFFF0E0900020205000DFFFFFFFF"
 	$"FFFFFF09038E66666C6C93DD000EFFFF"
@@ -106,6 +110,7 @@ resource(101, "BEOS:M:STD_ICON") #'MICN' array {
 	$"FFFFFFFF0E0B000500000A0EFFFFFFFF"
 };
 
+/* Haiku vector icon */
 resource(101, "BEOS:ICON") #'VICN' array {
 	$"6E6369660A02010203AE259A400198BFFA65AE20E548AF9547F2037F30A0FFFF"
 	$"00E8F1FDFFF131A0FFFB02000602B83B85BC57333C5733B83B8549EAE1481199"
@@ -167,8 +172,10 @@ resource(101, "BEOS:ICON") #'VICN' array {
 	$"00000000000040012FBD3E023BCFC400190117850004"
 };
 
+/* ZETA SVG icon descriptor */
 resource(101, "BEOS:D:STD_ICON") (#'iICO') $"4944585A055300";
 
+/* ZETA SVG compressed icon */
 resource(101, "BEOS:V:STD_ICON") #'zICO' array {
 	$"7A10000078DAED57DD6EDB3618BDEF5310CA4D03C40C7F3E8A6466B7C002AC37"
 	$"2C066CCD03B8B1EC6853A44052B3644FBFF351769C7601D68B41BB5814C03AA2"
