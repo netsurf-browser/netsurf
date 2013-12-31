@@ -154,6 +154,86 @@ extern int main(int argc, char** argv);
 // in fetch_rsrc.cpp
 extern BResources *gAppResources;
 
+// #pragma mark - class NSResizeKnob
+
+class NSResizeKnob : public BView {
+public:
+		NSResizeKnob(BRect frame, BView *target);
+virtual	~NSResizeKnob();
+
+virtual	void	MouseDown(BPoint where);
+virtual	void	MouseUp(BPoint where);
+virtual	void	MouseMoved(BPoint where, uint32 code,
+							const BMessage* dragMessage);
+
+virtual void	Draw(BRect updateRect);
+
+void			SetBitmap(const BBitmap *bitmap);
+
+private:
+	const BBitmap *fBitmap;
+	BView *fTarget;
+	BPoint fOffset;
+};
+
+NSResizeKnob::NSResizeKnob(BRect frame, BView *target)
+	: BView(frame, "NSResizeKnob", B_FOLLOW_BOTTOM | B_FOLLOW_RIGHT, B_WILL_DRAW),
+	fBitmap(NULL),
+	fTarget(target),
+	fOffset(-1, -1)
+{
+	SetViewColor(0, 255, 0);
+}
+
+
+NSResizeKnob::~NSResizeKnob()
+{
+}
+
+
+void
+NSResizeKnob::MouseDown(BPoint where)
+{
+	SetMouseEventMask(B_POINTER_EVENTS,
+		B_NO_POINTER_HISTORY | B_LOCK_WINDOW_FOCUS);
+	fOffset = where;
+}
+
+
+void
+NSResizeKnob::MouseUp(BPoint where)
+{
+	fOffset.Set(-1, -1);
+}
+
+
+void
+NSResizeKnob::MouseMoved(BPoint where, uint32 code,
+						const BMessage* dragMessage)
+{
+	if (fOffset.x >= 0) {
+		fTarget->ResizeBy(where.x - fOffset.x, where.y - fOffset.y);
+	}
+}
+
+
+void
+NSResizeKnob::Draw(BRect updateRect)
+{
+	if (!fBitmap)
+		return;
+	DrawBitmap(fBitmap);
+}
+
+
+void
+NSResizeKnob::SetBitmap(const BBitmap *bitmap)
+{
+	fBitmap = bitmap;
+	Invalidate();
+}
+
+
 // #pragma mark - class NSThrobber
 
 class NSThrobber : public BView {
@@ -1127,6 +1207,16 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 		B_FOLLOW_ALL, 0, true, true, B_NO_BORDER);
 
 	g->top_view->AddChild(g->scroll_view);
+
+	// for replicants, add a NSResizeKnob to allow resizing
+	if (!g->window) {
+		BRect frame = g->scroll_view->Bounds();
+		frame.left = frame.right - B_V_SCROLL_BAR_WIDTH;
+		frame.top = frame.bottom - B_H_SCROLL_BAR_HEIGHT;
+		NSResizeKnob *knob = new NSResizeKnob(frame, g->top_view);
+		//TODO: set bitmap
+		g->scroll_view->AddChild(knob);
+	}
 
 	view->MakeFocus();
 
