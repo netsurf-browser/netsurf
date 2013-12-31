@@ -18,10 +18,7 @@
 
 #include "res.h"
 
-/* files exported as resource:// via rsrc:// mapping  */
-resource(500, "credits.html") #'data' import "res/en/credits.html,faf";
-resource(501, "licence.html") #'data' import "res/en/licence.html,faf";
-resource(502, "welcome.html") #'data' import "res/en/welcome.html,faf";
+/* files exported as resource: via rsrc:// mapping are added by the makefile */
 
 /* application flags (multiple launch) */
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
