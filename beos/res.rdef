@@ -37,6 +37,21 @@ resource(502, "welcome.html") #'data' import "res/en/welcome.html,faf";
 
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
 
+resource(1, "BEOS:APP_SIG") (#'MIMS') "application/x-vnd.NetSurf";
+
+resource(1, "BEOS:FILE_TYPES") message {
+	"types" = "text/html",
+	"types" = "image/gif",
+	"types" = "image/jpeg",
+	"types" = "application/x-vnd.Be-bookmark",
+	"types" = "text",
+	"types" = "application/x-vnd.Be-doc_bookmark",
+	"types" = "application/x-vnd.Be.URL.file",
+	"types" = "application/x-vnd.Be.URL.ftp",
+	"types" = "application/x-vnd.Be.URL.http",
+	"types" = "application/x-vnd.Be.URL.https"
+};
+
 resource(101, "BEOS:L:STD_ICON") #'ICON' array {
 	$"FFFFFFFFFFFFFFFFFFFFFF0E0A00D600D6000AAF0EFFFFFFFFFFFFFFFFFFFFFF"
 	$"FFFFFFFFFFFFFFFF0E0A000001DED5D5D5DE020000090EFFFFFFFFFFFFFFFFFF"
@@ -89,21 +104,6 @@ resource(101, "BEOS:M:STD_ICON") #'MICN' array {
 	$"FFFF08DD92929292929292927E00FFFF"
 	$"FFFFFF0B017E93DD92927EDE09FFFFFF"
 	$"FFFFFFFF0E0B000500000A0EFFFFFFFF"
-};
-
-resource(1, "BEOS:APP_SIG") (#'MIMS') "application/x-vnd.NetSurf";
-
-resource(1, "BEOS:FILE_TYPES") message {
-	"types" = "text/html",
-	"types" = "image/gif",
-	"types" = "image/jpeg",
-	"types" = "application/x-vnd.Be-bookmark",
-	"types" = "text",
-	"types" = "application/x-vnd.Be-doc_bookmark",
-	"types" = "application/x-vnd.Be.URL.file",
-	"types" = "application/x-vnd.Be.URL.ftp",
-	"types" = "application/x-vnd.Be.URL.http",
-	"types" = "application/x-vnd.Be.URL.https"
 };
 
 resource(101, "BEOS:ICON") #'VICN' array {
