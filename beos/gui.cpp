@@ -352,10 +352,16 @@ nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
 	BString u("rsrc:///");
+
+	/* default.css -> beosdefault.css */
 	if (strcmp(path, "default.css") == 0)
-		u << "beosdefault.css";
-	else
-		u << path;
+		path = "beosdefault.css";
+
+	/* favicon.ico -> favicon.png */
+	if (strcmp(path, "favicon.ico") == 0)
+		path = "favicon.png";
+
+	u << path;
 	LOG(("(%s) -> '%s'\n", path, u.String()));
 	nsurl_create(u.String(), &url);
 	return url;
