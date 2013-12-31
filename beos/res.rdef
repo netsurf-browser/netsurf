@@ -18,17 +18,6 @@
 
 #include "res.h"
 
-/* throbber */
-resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
-resource(401, "throbber1.png") #'data' import "res/throbber/throbber1.png";
-resource(402, "throbber2.png") #'data' import "res/throbber/throbber2.png";
-resource(403, "throbber3.png") #'data' import "res/throbber/throbber3.png";
-resource(404, "throbber4.png") #'data' import "res/throbber/throbber4.png";
-resource(405, "throbber5.png") #'data' import "res/throbber/throbber5.png";
-resource(406, "throbber6.png") #'data' import "res/throbber/throbber6.png";
-resource(407, "throbber7.png") #'data' import "res/throbber/throbber7.png";
-resource(408, "throbber8.png") #'data' import "res/throbber/throbber8.png";
-
 /* files exported as resource:// via rsrc:// mapping  */
 resource(500, "credits.html") #'data' import "res/en/credits.html,faf";
 resource(501, "licence.html") #'data' import "res/en/licence.html,faf";

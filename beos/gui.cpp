@@ -643,7 +643,7 @@ void gui_init(int argc, char** argv)
 	{
 #define STROF(n) #n
 #define FIND_THROB(n) filenames[(n)] = \
-				"throbber" STROF(n) ".png";
+				"throbber/throbber" STROF(n) ".png";
 		char *filenames[9];
 		FIND_THROB(0);
 		FIND_THROB(1);
