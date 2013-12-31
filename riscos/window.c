@@ -3637,6 +3637,9 @@ void ro_gui_window_toolbar_click(void *data,
 		case TOOLBAR_URL_ADJUST_HOTLIST:
 			ro_gui_window_action_remove_bookmark(g);
 			break;
+			
+		default:
+			break;
 		}
 
 		return;
