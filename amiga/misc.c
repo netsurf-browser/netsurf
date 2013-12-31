@@ -181,7 +181,7 @@ char *path_to_url(const char *path)
 
 char *filename_from_path(char *path)
 {
-	return strdup(FilePart(path));
+	return ami_utf8_easy(FilePart(path));
 }
 
 /**
