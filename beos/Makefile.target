@@ -101,7 +101,7 @@ RDEP_BEOS := \
 	adblock.css beosdefault.css default.css internal.css quirks.css	\
 	netsurf.png ca-bundle.txt
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
-	$(wildcard beos/res/Icons/*.png)				\
+	$(wildcard beos/res/icons/*.png)				\
 	$(wildcard beos/res/throbber/throbber*.png)
 
 
