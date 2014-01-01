@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include "utils/bloom.h"
+#include "utils/utils.h"
 
 /**
  * Hash a string, returning a 32bit value.  The hash algorithm used is
@@ -50,7 +51,7 @@ static inline uint32_t fnv(const char *datum, size_t len)
 struct bloom_filter {
 	size_t size;
 	uint32_t items;
-	uint8_t filter[];
+	uint8_t filter[FLEX_ARRAY_LEN_DECL];
 };
 
 struct bloom_filter *bloom_create(size_t size)

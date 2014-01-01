@@ -38,6 +38,7 @@
 #include <Mime.h>
 #include <Path.h>
 #include <Roster.h>
+#include <Screen.h>
 #include <String.h>
 
 extern "C" {
@@ -440,20 +441,23 @@ set_colour_from_ui(struct nsoption_s *opts,
                    enum nsoption_e option,
                    colour def_colour)
 {
-        if (ui != NOCOL) {
-                rgb_color c;
-                if (ui == B_DESKTOP_COLOR) {
+	if (ui != NOCOL) {
+		rgb_color c;
+		if (ui == B_DESKTOP_COLOR) {
 			BScreen s;
 			c = s.DesktopColor();
-                } else {
-                        c = ui_color(ui);
-                }
+		} else {
+			c = ui_color(ui);
+		}
 
-                def_colour = ((((uint32_t)c.blue << 16) & 0xff0000) |
-                              ((c.green << 8) & 0x00ff00) |
-                              ((c.red) & 0x0000ff));
-        }
-        return def_colour;
+		def_colour = ((((uint32_t)c.blue << 16) & 0xff0000) |
+					  ((c.green << 8) & 0x00ff00) |
+					  ((c.red) & 0x0000ff));
+	}
+
+	opts[option].value.c = def_colour;
+
+	return NSERROR_OK;
 }
 
 /**
@@ -544,8 +548,8 @@ int main(int argc, char** argv)
 		die("NetSurf failed to initialise");
 	}
 
-        gui_init(argc, argv);
-        gui_init2(argc, argv);
+	gui_init(argc, argv);
+	gui_init2(argc, argv);
 
 	netsurf_main_loop();
 
@@ -557,6 +561,7 @@ int main(int argc, char** argv)
 /** called when replicated from NSBaseView::Instantiate() */
 int gui_init_replicant(int argc, char** argv)
 {
+	nserror ret;
 	BPath options;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
 		options.Append("x-vnd.NetSurf");
@@ -569,8 +574,22 @@ int gui_init_replicant(int argc, char** argv)
 	 */
 	nslog_init(nslog_stream_configure, &argc, argv);
 
-	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options.Path(), messages);
+	// FIXME: use options as readonly for replicants
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	ret = netsurf_init(messages);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("NetSurf failed to initialise");
+	}
 
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
@@ -593,7 +612,8 @@ void gui_init(int argc, char** argv)
 	}
 
 	// ui_color() gives hardcoded values before BApplication is created.
-	nsbeos_update_system_ui_colors();
+	//FIXME:
+	//nsbeos_update_system_ui_colors();
 
 	fetch_rsrc_register();
 
