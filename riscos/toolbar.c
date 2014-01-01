@@ -162,7 +162,7 @@ static wimp_window ro_toolbar_window = {
 	wimp_WINDOW_NEVER3D | 0x16u /* RISC OS 5.03+ */,
 	{0, 0, TOOLBAR_DEFAULT_WIDTH, 16384},
 	0,
-	wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
+	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
 	1,
 	1,
@@ -1620,10 +1620,27 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar)
 
 /* This is an exported interface documented in toolbar.h */
 
-void ro_toolbar_hotlist_modifed(struct toolbar *toolbar, nsurl *url)
+void ro_toolbar_update_all_hotlists(void)
 {
-	if (toolbar != NULL && toolbar->url != NULL)
-		ro_gui_url_bar_hotlist_modifed(toolbar->url, url);
+	struct toolbar *bar;
+
+	bar = ro_toolbar_bars;
+	while (bar != NULL) {
+		ro_toolbar_update_hotlist(bar);
+
+		bar = bar->next;
+	}
+}
+
+
+/* This is an exported interface documented in toolbar.h */
+
+void ro_toolbar_update_hotlist(struct toolbar *toolbar)
+{
+	if (toolbar == NULL || toolbar->url == NULL)
+		return;
+	
+	ro_gui_url_bar_update_hotlist(toolbar->url);
 }
 
 

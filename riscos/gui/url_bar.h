@@ -34,6 +34,8 @@ typedef enum {
 	TOOLBAR_URL_NONE = 0,		/* Special case: no action */
 	TOOLBAR_URL_DRAG_URL,
 	TOOLBAR_URL_DRAG_FAVICON,
+	TOOLBAR_URL_SELECT_HOTLIST,
+	TOOLBAR_URL_ADJUST_HOTLIST
 } url_bar_action;
 
 struct url_bar;
@@ -232,13 +234,13 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 
 /**
- * Update urlbar's hotlist icon, if necessary.
+ * Update the state of a URL Bar's hotlist icon to reflect any changes to the
+ * URL or the contents of the hotlist.
  *
  * \param *url_bar	The URL Bar to update.
- * \param *url		URL with updated hotlist presence, or NULL if unknown.
  */
 
-void ro_gui_url_bar_hotlist_modifed(struct url_bar *url_bar, nsurl *url);
+void ro_gui_url_bar_update_hotlist(struct url_bar *url_bar);
 
 
 /**

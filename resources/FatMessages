@@ -3051,6 +3051,11 @@ de.all.OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde ü
 fr.all.OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
 it.all.OverwriteFile:Un file con questo nome è già esistente, continuare comporterà la sovrascrittura del file originale.
 nl.all.OverwriteFile:Een bestand met deze naam bestaat al en zal verloren gaan.
+en.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+de.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+fr.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+it.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+nl.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
 
 # Page fetching
 # =============
@@ -3590,6 +3595,16 @@ de.all.DontReplace:Abbrechen
 fr.all.DontReplace:Ne pas remplacer le fichier
 it.all.DontReplace:Non sostituire
 nl.all.DontReplace:Bestand niet vervangen
+en.all.Remove:Remove address
+de.all.Remove:Remove address
+rf.all.Remove:Remove address
+it.all.Remove:Remove address
+nl.all.Remove:Remove address
+en.all.DontRemove:Don't remove
+de.all.DontRemove:Don't remove
+rf.all.DontRemove:Don't remove
+it.all.DontRemove:Don't remove
+nl.all.DontRemove:Don't remove
 en.all.obj:object
 de.all.obj:Objekt
 fr.all.obj:objet
@@ -3696,6 +3711,16 @@ de.ro.HelpToolbar16:Das ist die Ladeaktivitätsanzeige.|MSie wird animiert, wenn
 fr.ro.HelpToolbar16:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
 it.ro.HelpToolbar16:\Tthrobber animato durante le attività di rete
 nl.ro.HelpToolbar16:\Tthrobber.|MIt animates while this \w is active.
+en.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+de.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+fr.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+it.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+nl.ro.HelpToolbarFav:\TFavicon: a small logo supplied by the current site, if available.
+en.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+de.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+fr.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+it.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
+nl.ro.HelpToolbarHot:\Thotlist indicator: if lit, the current address is in the hotlist.|M\Sto add the current address to the hotlist.|M\Ato remove the current address from the hotlist.
 
 en.ro.HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
 de.ro.HelpStatus0:Das ist die Begrenzung der Statusanzeige.|MKlicken und Ziehen verändert die Länge der Statusanzeige.

@@ -138,6 +138,7 @@ static void ro_gui_window_action_save(struct gui_window *g,
 static void ro_gui_window_action_search(struct gui_window *g);
 static void ro_gui_window_action_zoom(struct gui_window *g);
 static void ro_gui_window_action_add_bookmark(struct gui_window *g);
+static void ro_gui_window_action_remove_bookmark(struct gui_window *g);
 static void ro_gui_window_action_print(struct gui_window *g);
 static void ro_gui_window_action_page_info(struct gui_window *g);
 
@@ -3611,9 +3612,12 @@ void ro_gui_window_toolbar_click(void *data,
 		return;
 
 
-	if (action_type == TOOLBAR_ACTION_URL &&
-			action.url == TOOLBAR_URL_DRAG_URL) {
-		if (g->bw->current_content) {
+	if (action_type == TOOLBAR_ACTION_URL) {
+		switch (action.url) {
+		case TOOLBAR_URL_DRAG_URL:
+			if (g->bw->current_content == NULL)
+				break;
+
 			hlcache_handle *h = g->bw->current_content;
 
 			if (ro_gui_shift_pressed())
@@ -3624,6 +3628,18 @@ void ro_gui_window_toolbar_click(void *data,
 			ro_gui_drag_save_link(save_type,
 					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h), g);
+			break;
+
+		case TOOLBAR_URL_SELECT_HOTLIST:
+			ro_gui_window_action_add_bookmark(g);
+			break;
+
+		case TOOLBAR_URL_ADJUST_HOTLIST:
+			ro_gui_window_action_remove_bookmark(g);
+			break;
+			
+		default:
+			break;
 		}
 
 		return;
@@ -4250,7 +4266,7 @@ void ro_gui_window_action_zoom(struct gui_window *g)
  * \param *g			The browser window to act on.
  */
 
-void ro_gui_window_action_add_bookmark(struct gui_window *g)
+static void ro_gui_window_action_add_bookmark(struct gui_window *g)
 {
 	nsurl *url;
 
@@ -4262,7 +4278,28 @@ void ro_gui_window_action_add_bookmark(struct gui_window *g)
 	url = hlcache_handle_get_url(g->bw->current_content);
 
 	ro_gui_hotlist_add_page(url);
-	ro_toolbar_hotlist_modifed(g->toolbar, url);
+	ro_toolbar_update_hotlist(g->toolbar);
+}
+
+
+/**
+ * Remove a hotlist entry for a browser window.
+ *
+ * \param *g			The browser window to act on.
+ */
+
+static void ro_gui_window_action_remove_bookmark(struct gui_window *g)
+{
+	nsurl *url;
+
+	if (g == NULL || g->bw == NULL || g->toolbar == NULL ||
+			g->bw->current_content == NULL ||
+			hlcache_handle_get_url(g->bw->current_content) == NULL)
+		return;
+
+	url = hlcache_handle_get_url(g->bw->current_content);
+
+	ro_gui_hotlist_remove_page(url);
 }
 
 

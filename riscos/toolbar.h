@@ -386,13 +386,20 @@ const char *ro_toolbar_get_url(struct toolbar *toolbar);
 
 
 /**
- * Update toolbar's urlbar hotlist icon, if necessary.
- *
- * \param *toolbar	The toolbar to update.
- * \param *url		URL with updated hotlist presence, or NULL if unknown.
+ * Update the state of the URL Bar hotlist icons in all open toolbars.
  */
 
-void ro_toolbar_hotlist_modifed(struct toolbar *toolbar, nsurl *url);
+void ro_toolbar_update_all_hotlists(void);
+
+
+/**
+ * Update the state of a toolbar's URL Bar hotlist icon to reflect any changes
+ * to the URL or the hotlist contents.
+ *
+ * \param *toolbar	The toolbar to update.
+ */
+
+void ro_toolbar_update_hotlist(struct toolbar *toolbar);
 
 
 /**

@@ -62,6 +62,15 @@ static bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 static void ro_gui_hotlist_toolbar_click(button_bar_action action);
 static void ro_gui_hotlist_addurl_bounce(wimp_message *message);
 static void ro_gui_hotlist_scheduled_callback(void *p);
+static void ro_gui_hotlist_remove_confirmed(query_id id,
+		enum query_response res, void *p);
+static void ro_gui_hotlist_remove_cancelled(query_id id,
+		enum query_response res, void *p);
+
+static const query_callback remove_funcs = {
+	ro_gui_hotlist_remove_confirmed,
+	ro_gui_hotlist_remove_cancelled
+};
 
 struct ro_treeview_callbacks ro_hotlist_treeview_callbacks = {
 	ro_gui_hotlist_toolbar_click,
@@ -84,6 +93,11 @@ struct ro_hotlist_message_hotlist_changed {
 
 static char	*hotlist_url = NULL;    /**< URL area claimed from RMA.   */
 static char	*hotlist_title = NULL;	/**< Title area claimed from RMA. */
+
+/** Hotlist Query Handler. */
+
+static query_id	hotlist_query = QUERY_INVALID;
+static nsurl	*hotlist_delete_url = NULL;
 
 /* The RISC OS hotlist window, toolbar and treeview data. */
 
@@ -241,6 +255,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
 		hotlist_keypress(KEY_DELETE_LEFT);
+		ro_toolbar_update_all_hotlists();
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -410,6 +425,7 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		return true;
 	case TREE_SELECTION_DELETE:
 		hotlist_keypress(KEY_DELETE_LEFT);
+		ro_toolbar_update_all_hotlists();
 		return true;
 	case TREE_SELECT_ALL:
 		hotlist_keypress(KEY_SELECT_ALL);
@@ -496,8 +512,6 @@ void ro_gui_hotlist_add_page(nsurl *url)
 
 	ro_gui_hotlist_add_cleanup();
 
-	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
-
 	data = urldb_get_url_data(url);
 	if (data == NULL)
 		return;
@@ -540,8 +554,6 @@ void ro_gui_hotlist_add_page(nsurl *url)
 
 static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 {
-	LOG(("Hotlist AddURL Bounced"));
-
 	if (hotlist_url != NULL) {
 		nsurl *nsurl;
 
@@ -570,8 +582,6 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 
 static void ro_gui_hotlist_scheduled_callback(void *p)
 {
-	LOG(("Hotlist AddURL was claimed by something."));
-
 	ro_gui_hotlist_add_cleanup();
 }
 
@@ -582,8 +592,6 @@ static void ro_gui_hotlist_scheduled_callback(void *p)
 
 void ro_gui_hotlist_add_cleanup(void)
 {
-	LOG(("Clean up RMA"));
-
 	if (hotlist_url != NULL) {
 		osmodule_free(hotlist_url);
 		hotlist_url = NULL;
@@ -593,6 +601,104 @@ void ro_gui_hotlist_add_cleanup(void)
 		osmodule_free(hotlist_title);
 		hotlist_title = NULL;
 	}
+}
+
+
+/**
+ * Remove a URL from the hotlist.  This will be passed on to the core hotlist,
+ * unless we're configured to use external hotlists in which case we ignore it.
+ *
+ * \param *url	The URL to be removed.
+ */
+
+void ro_gui_hotlist_remove_page(nsurl *url)
+{
+	if (url == NULL || nsoption_bool(external_hotlists) ||
+			!hotlist_has_url(url))
+		return;
+
+	/* Clean up any existing delete attempts before continuing. */
+
+	if (hotlist_query != QUERY_INVALID) {
+		query_close(hotlist_query);
+		hotlist_query = QUERY_INVALID;
+	}
+
+	if (hotlist_delete_url != NULL) {
+		nsurl_unref(hotlist_delete_url);
+		hotlist_delete_url = NULL;
+	}
+
+	/* Check with the user before removing the URL, unless they don't
+	 * want us to be careful in which case just do it.
+	 */
+
+	if (nsoption_bool(confirm_hotlist_remove)) {
+		hotlist_query = query_user("RemoveHotlist", NULL,
+				&remove_funcs, NULL,
+				messages_get("Remove"),
+				messages_get("DontRemove"));
+
+		hotlist_delete_url = nsurl_ref(url);
+	} else {
+		hotlist_remove_url(url);
+		ro_toolbar_update_all_hotlists();
+	}
+}
+
+
+/**
+ * Callback confirming a URL delete query.
+ *
+ * \param id		The ID of the query calling us.
+ * \param res		The user's response to the query.
+ * \param *p		Callback data (always NULL).
+ */
+
+static void ro_gui_hotlist_remove_confirmed(query_id id,
+		enum query_response res, void *p)
+{
+	hotlist_remove_url(hotlist_delete_url);
+	ro_toolbar_update_all_hotlists();
+
+	nsurl_unref(hotlist_delete_url);
+	hotlist_delete_url = NULL;
+	hotlist_query = QUERY_INVALID;
+}
+
+
+/**
+ * Callback cancelling a URL delete query.
+ *
+ * \param id		The ID of the query calling us.
+ * \param res		The user's response to the query.
+ * \param *p		Callback data (always NULL).
+ */
+
+static void ro_gui_hotlist_remove_cancelled(query_id id,
+		enum query_response res, void *p)
+{
+	nsurl_unref(hotlist_delete_url);
+	hotlist_delete_url = NULL;
+	hotlist_query = QUERY_INVALID;
+}
+
+
+/**
+ * Report whether the hotlist contains a given URL. This will be passed on to
+ * the core hotlist, unless we're configured to use an external hotlist in which
+ * case we always report false.
+ *
+ * \param *url	The URL to be tested.
+ * \return	true if the hotlist contains the URL; else false.
+ */
+
+bool ro_gui_hotlist_has_page(nsurl *url)
+{
+	if (url == NULL || nsoption_bool(external_hotlists))
+		return false;
+
+	return hotlist_has_url(url);
 }
 
 
