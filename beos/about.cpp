@@ -114,7 +114,14 @@ void nsbeos_about(struct gui_window *gui)
 				alert->AddToSubset(w);
 		}
 	}
+
+	// make space for controls
+	alert->ResizeBy(200, 640);
+	alert->MoveTo(alert->AlertPosition(alert->Frame().Width() + 1, 
+		alert->Frame().Height() + 1));
+
 	tv->SetStylable(true);
+	tv->ResizeBy(200, 640);
 	add_section(tv, name, description);
 	add_section(tv, NULL, copyright);
 	add_section(tv, "authors", authors);
@@ -122,11 +129,6 @@ void nsbeos_about(struct gui_window *gui)
 	add_section(tv, "artists", artists);
 	add_section(tv, "documenters", documenters);
 	add_section(tv, url_label, url);
-
-	// make space for controls
-	alert->ResizeBy(200, 500);
-	alert->MoveTo(alert->AlertPosition(alert->Frame().Width() + 1, 
-		alert->Frame().Height() + 1));
 
 	alert->Go(NULL);
 }
