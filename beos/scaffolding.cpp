@@ -614,10 +614,15 @@ NSBaseView::AllAttached()
 
 	g->tool_bar->SetViewColor(c);
 	g->back_button->SetViewColor(c);
+	g->back_button->SetLowColor(c);
 	g->forward_button->SetViewColor(c);
+	g->forward_button->SetLowColor(c);
 	g->stop_button->SetViewColor(c);
+	g->stop_button->SetLowColor(c);
 	g->reload_button->SetViewColor(c);
+	g->reload_button->SetLowColor(c);
 	g->home_button->SetViewColor(c);
+	g->home_button->SetLowColor(c);
 	g->url_bar->SetViewColor(c);
 	g->throbber->SetViewColor(c);
 	g->scroll_view->SetViewColor(c);
