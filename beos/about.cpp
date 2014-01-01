@@ -28,6 +28,8 @@ extern "C" {
 #include "beos/window.h"
 
 #include <Alert.h>
+#include <Application.h>
+#include <Invoker.h>
 #include <ScrollView.h>
 #include <String.h>
 #include <TextView.h>
@@ -102,18 +104,29 @@ static void add_section(BTextView *textview, const char *header,
 void nsbeos_about(struct gui_window *gui)
 {
 	BAlert *alert;
-	alert = new BAlert("about", "", /*"HomePage",*/ "Ok");
+	alert = new BAlert("about", "", "Credits", "Licence", "Ok");
 	//XXX: i18n-ize
 	BTextView *tv = alert->TextView();
+	BHandler *target = be_app;
+	BMessage *message = new BMessage(ABOUT_BUTTON);
+	BInvoker *invoker = NULL;
 	if (gui) {
-		alert->SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
 		nsbeos_scaffolding *s = nsbeos_get_scaffold(gui);
 		if (s) {
 			NSBrowserWindow *w = nsbeos_get_bwindow_for_scaffolding(s);
-			if (w)
+			if (w) {
+				alert->SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
 				alert->AddToSubset(w);
+			}
+			NSBaseView *v = nsbeos_get_baseview_for_scaffolding(s);
+			if (v) {
+				if (w)
+					message->AddPointer("Window", w);
+				target = v;
+			}
 		}
 	}
+	invoker = new BInvoker(message, target);
 
 	// make space for controls
 	alert->ResizeBy(200, 640);
@@ -130,5 +143,5 @@ void nsbeos_about(struct gui_window *gui)
 	add_section(tv, "documenters", documenters);
 	add_section(tv, url_label, url);
 
-	alert->Go(NULL);
+	alert->Go(invoker);
 }

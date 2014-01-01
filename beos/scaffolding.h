@@ -173,6 +173,7 @@ typedef enum {
 
 	/* misc actions */
 	CHOICES_SHOW,
+	ABOUT_BUTTON,
 	APPLICATION_QUIT,
 } menu_action;
 
@@ -180,6 +181,8 @@ typedef enum {
 NSBrowserWindow *nsbeos_find_last_window(void);
 
 NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold);
+
+NSBaseView *nsbeos_get_baseview_for_scaffolding(nsbeos_scaffolding *scaffold);
 
 nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel);
 

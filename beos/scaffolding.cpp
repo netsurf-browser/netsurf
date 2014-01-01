@@ -502,6 +502,7 @@ NSBaseView::MessageReceived(BMessage *message)
 		case TOOLBAR_THROBBER:
 		case TOOLBAR_EDIT:
 		case CHOICES_SHOW:
+		case ABOUT_BUTTON:
 		case APPLICATION_QUIT:
 			if (Window())
 				Window()->DetachCurrentMessage();
@@ -781,11 +782,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case B_ABOUT_REQUESTED:
 		{
-			nsbeos_about(NULL);
-			/* XXX: doesn't work yet! bug in rsrc:/
-			BString url("rsrc:/about.en.html,text/html");
-			browser_window_create(url.String(), NULL, NULL, true, false);
-			*/
+			nsbeos_about(scaffold->top_level);
 			break;
 		}
 		case B_NETPOSITIVE_DOWN:
@@ -1198,6 +1195,43 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case CHOICES_SHOW:
 			break;
+		case ABOUT_BUTTON:
+						/* XXX: doesn't work yet! bug in rsrc:/
+			BString url("rsrc:/about.en.html,text/html");
+			browser_window_create(url.String(), NULL, NULL, true, false);
+			*/
+		{
+			int32 button;
+			if (message->FindInt32("which", &button) == B_OK) {
+				const char *goto_url = NULL;
+				nserror nserr;
+				nsurl *url;
+				switch (button) {
+					case 0:
+						goto_url = "about:credits";
+						break;
+					case 1:
+						goto_url = "about:licence";
+						break;
+					default:
+						break;
+				}
+				if (goto_url == NULL)
+					break;
+				nserr = nsurl_create(goto_url, &url);
+				if (nserr == NSERROR_OK) {
+					nserr = browser_window_navigate(bw,
+			    			url, NULL,
+							(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE),
+						    NULL, NULL, NULL);
+					nsurl_unref(url);
+				}
+				if (nserr != NSERROR_OK) {
+					warn_user(messages_get_errorcode(nserr), 0);
+				}
+			}
+		}
+			break;
 		case APPLICATION_QUIT:
 			netsurf_quit = true;
 			break;
@@ -1274,6 +1308,11 @@ NSBrowserWindow *nsbeos_find_last_window(void)
 NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold)
 {
 	 return scaffold->window;
+}
+
+NSBaseView *nsbeos_get_baseview_for_scaffolding(nsbeos_scaffolding *scaffold)
+{
+	 return scaffold->top_view;
 }
 
 static void recursively_set_menu_items_target(BMenu *menu, BHandler *handler)
