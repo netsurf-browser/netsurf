@@ -463,11 +463,9 @@ void nsbeos_dispatch_event(BMessage *message)
 			break;
 		case B_ABOUT_REQUESTED:
 		{
+			if (gui == NULL)
+				gui = window_list;
 			nsbeos_about(gui);
-			/* XXX: doesn't work yet! bug in rsrc:/
-			BString url("rsrc:/about.en.html,text/html");
-			browser_window_create(url.String(), NULL, NULL, true, false);
-			*/
 			break;
 		}
 		case _UPDATE_:
