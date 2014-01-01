@@ -66,6 +66,7 @@ extern "C" {
 #include "utils/utils.h"
 #include "utils/log.h"
 }
+#include "beos/about.h"
 #include "beos/bitmap.h"
 #include "beos/gui.h"
 #include "beos/plotters.h"
@@ -402,6 +403,7 @@ NSBaseView::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case B_SIMPLE_DATA:
+		case B_ABOUT_REQUESTED:
 		case B_ARGV_RECEIVED:
 		case B_REFS_RECEIVED:
 		case B_COPY:
@@ -777,6 +779,15 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case B_QUIT_REQUESTED:
 			nsbeos_scaffolding_destroy(scaffold);
 			break;
+		case B_ABOUT_REQUESTED:
+		{
+			nsbeos_about(NULL);
+			/* XXX: doesn't work yet! bug in rsrc:/
+			BString url("rsrc:/about.en.html,text/html");
+			browser_window_create(url.String(), NULL, NULL, true, false);
+			*/
+			break;
+		}
 		case B_NETPOSITIVE_DOWN:
 			//XXX WRITEME
 			break;
