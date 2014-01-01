@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <BeBuild.h>
+#include <Bitmap.h>
 #include <Box.h>
 #include <Button.h>
 #include <Dragger.h>
@@ -65,6 +66,7 @@ extern "C" {
 #include "utils/utils.h"
 #include "utils/log.h"
 }
+#include "beos/bitmap.h"
 #include "beos/gui.h"
 #include "beos/plotters.h"
 #include "beos/scaffolding.h"
@@ -153,6 +155,85 @@ extern int main(int argc, char** argv);
 
 // in fetch_rsrc.cpp
 extern BResources *gAppResources;
+
+// #pragma mark - class NSIconTextControl
+
+class NSIconTextControl : public BTextControl {
+public:
+		NSIconTextControl(BRect frame, const char* name,
+						const char* label, const char* initialText,
+						BMessage* message,
+						uint32 resizeMode
+							= B_FOLLOW_LEFT | B_FOLLOW_TOP,
+						uint32 flags = B_WILL_DRAW | B_NAVIGABLE);
+virtual	~NSIconTextControl();
+
+virtual	void	FrameResized(float newWidth, float newHeight);
+
+void	SetBitmap(const BBitmap *bitmap);
+void	FixupTextRect();
+
+private:
+	const BBitmap *fBitmap;
+	BView *fBitmapView;
+};
+
+NSIconTextControl::NSIconTextControl(BRect frame, const char* name,
+						const char* label, const char* initialText,
+						BMessage* message,
+						uint32 resizeMode,
+						uint32 flags)
+	: BTextControl(frame, name, label, initialText, message, resizeMode, flags),
+	fBitmap(NULL),
+	fBitmapView(NULL)
+{
+	BRect r(TextView()->TextRect());
+	BRect frame = r;
+	frame.right = frame.left + 15;
+	frame.bottom = frame.top + 15;
+	frame.OffsetBy(-2, (r.IntegerHeight() - 16) / 2);
+	fBitmapView = new BView(frame, "iconview", B_FOLLOW_NONE, 0);
+	FixupTextRect();
+
+	TextView()->AddChild(fBitmapView);
+}
+
+
+NSIconTextControl::~NSIconTextControl()
+{
+}
+
+
+void
+NSIconTextControl::FrameResized(float newWidth, float newHeight)
+{
+	BTextControl::FrameResized(newWidth, newHeight);
+	FixupTextRect();
+	Invalidate();
+}
+
+
+void
+NSIconTextControl::SetBitmap(const BBitmap *bitmap)
+{
+	fBitmapView->SetViewBitmap(bitmap);
+	fBitmapView->Invalidate();
+}
+
+
+void
+NSIconTextControl::FixupTextRect()
+{
+	// FIXME: this flickers on resize, quite ugly
+	BRect r(TextView()->TextRect());
+
+	// in case this ever gets fixed...
+	if (r.left > 10)
+		return;
+	r.left += r.bottom - r.top;
+	TextView()->SetTextRect(r);
+}
+
 
 // #pragma mark - class NSResizeKnob
 
@@ -1890,9 +1971,12 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	rect.InsetBySelf(5, 5);
 	message = new BMessage('urle');
 	message->AddPointer("scaffolding", g);
-	g->url_bar = new BTextControl(rect, "url_bar", "url", "", message, 
+	g->url_bar = new NSIconTextControl(rect, "url_bar", "", "", message, 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP);
-	g->url_bar->SetDivider(g->url_bar->StringWidth("url "));
+	g->url_bar->SetDivider(0);
+	rect = g->url_bar->TextView()->TextRect();
+	rect.left += 16;
+	g->url_bar->TextView()->SetTextRect(rect);
 	g->tool_bar->AddChild(g->url_bar);
 
 
@@ -2026,8 +2110,25 @@ void gui_window_stop_throbber(struct gui_window* _g)
 /**
  * add retrieved favicon to the gui
  */
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 {
+	BBitmap *bitmap = NULL;
+    struct bitmap *bmp_icon;
+
+    bmp_icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+
+	if (bmp_icon) {
+		bitmap = nsbeos_bitmap_get_primary(bmp_icon);
+	}
+
+	struct beos_scaffolding *g = nsbeos_get_scaffold(_g);
+
+	if (!g->top_view->LockLooper())
+		return;
+
+	dynamic_cast<NSIconTextControl *>(g->url_bar)->SetBitmap(bitmap);
+
+	g->top_view->UnlockLooper();
 }
 
 /**
