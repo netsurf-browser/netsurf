@@ -606,13 +606,23 @@ NSBaseView::AllAttached()
 
 	g->url_bar->SetTarget(this);
 
-	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	rgb_color c = ui_color(B_PANEL_BACKGROUND_COLOR);
+	SetViewColor(c);
 
-	g->tool_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
-	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	g->tool_bar->SetViewColor(c);
+	g->back_button->SetViewColor(c);
+	g->forward_button->SetViewColor(c);
+	g->stop_button->SetViewColor(c);
+	g->reload_button->SetViewColor(c);
+	g->home_button->SetViewColor(c);
+	g->url_bar->SetViewColor(c);
+	g->throbber->SetViewColor(c);
+	g->scroll_view->SetViewColor(c);
 
-	g->status_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
-	g->status_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
+	g->dragger->SetViewColor(c);
+
+	g->status_bar->SetViewColor(c);
+	g->status_bar->SetLowColor(c);
 #if defined(__HAIKU__) || defined(B_DANO_VERSION)
 	g->status_bar->SetHighColor(ui_color(B_PANEL_TEXT_COLOR));
 #endif
@@ -1343,6 +1353,8 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 	g->home_button->SetTarget(view);
 
 	g->url_bar->SetTarget(view);
+
+	nsbeos_scaffolding_update_colors(g);
 
 	if (g->window) {
 		recursively_set_menu_items_target(g->menu_bar, view);
