@@ -818,5 +818,6 @@ void deskmenu_update(void)
 				(nsoption_bool(foreground_images)) ? 1 : 0);
 	menu_icheck(h_gem_menu, MAINMENU_M_BG_IMAGES,
 				(nsoption_bool(background_images)) ? 1 : 0);
+    menu_icheck(h_gem_menu, MAINMENU_M_VLOG, ((verbose_log == true) ? 1 : 0));
 }
 
