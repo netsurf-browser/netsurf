@@ -106,6 +106,14 @@ short gemtk_dd_rtry(short fd, char *name, char *file, char *whichext, long *size
 short gemtk_dd_reply(short fd, char ack);
 
 /* -------------------------------------------------------------------------- */
+/* AV/VA Protocol Module                                                      */
+/* -------------------------------------------------------------------------- */
+int gemtk_av_init(const char *appname);
+void gemtk_av_exit(void);
+bool gemtk_av_send (short message, const char * data1, const char * data2);
+bool gemtk_av_dispatch (short msg[8]);
+
+/* -------------------------------------------------------------------------- */
 /* Message Box module                                                         */
 /* -------------------------------------------------------------------------- */
 #define GEMTK_MSG_BOX_ALERT	1

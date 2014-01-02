@@ -25,6 +25,7 @@
 #include <cflib.h>
 
 #include "gemtk.h"
+#include "vaproto.h"
 
 //#define DEBUG_PRINT(x)		printf x
 #define DEBUG_PRINT(x)
@@ -616,6 +617,11 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
                 }
 
             }
+            break;
+        case VA_PROTOSTATUS:
+        case VA_VIEWED:
+        case AV_STARTED:
+            gemtk_av_dispatch(msg);
             break;
         }
     } else {
