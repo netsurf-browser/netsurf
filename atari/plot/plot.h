@@ -111,6 +111,7 @@ float plot_get_scale(void);
 float plot_set_scale(float);
 void plot_set_abs_clipping(const GRECT *area);
 void plot_get_abs_clipping(struct rect *dst);
+void plot_get_abs_clipping_grect(GRECT *dst);
 bool plot_get_clip(struct rect * out);
 /* Get clipping for current framebuffer as GRECT */
 void plot_get_clip_grect(GRECT * out);
