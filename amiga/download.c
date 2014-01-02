@@ -92,6 +92,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	const char *mime_type = download_context_get_mime_type(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
 	struct gui_download_window *dw;
+	char *dl_filename = ami_utf8_easy(download_context_get_filename(ctx));
 	APTR va[3];
 
 	dw = AllocVecTags(sizeof(struct gui_download_window), AVT_ClearWithValue, 0, TAG_DONE);
@@ -107,9 +108,9 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		if(AslRequestTags(savereq,
 			ASLFR_Window, gui->shared->win,
 			ASLFR_SleepWindow, TRUE,
-			ASLFR_TitleText,messages_get("NetSurf"),
-			ASLFR_Screen,scrn,
-			ASLFR_InitialFile, download_context_get_filename(ctx),
+			ASLFR_TitleText, messages_get("NetSurf"),
+			ASLFR_Screen, scrn,
+			ASLFR_InitialFile, dl_filename,
 			TAG_DONE))
 		{
 			strlcpy(dw->fname, savereq->fr_Drawer, 1024);
@@ -127,6 +128,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		}
 	}
 
+	if(dl_filename) ami_utf8_free(dl_filename);
 	dw->size = total_size;
 	dw->downloaded = 0;
 	if(gui) dw->bw = gui->shared->bw;

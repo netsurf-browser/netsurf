@@ -109,7 +109,7 @@ AMIGA_LIBRARIES := parserutils.library nsgif.library nsbmp.library iconv.library
 AMIGA_LIBS := $(addprefix /Libs/,$(AMIGA_LIBRARIES))
 AMIGA_SHARED_OBJS := libjpeg.so.12 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0	\
 	libssl.so.1.0.0 libcrypto.so.1.0.0 libcss.so.0 libwapcaplet.so.0 libpng12.so 	\
-	libdom.so.0 libhubbub.so.0 libtre.so.5 libintl.so
+	libdom.so.0 libhubbub.so.0 libtre.so.5 libintl.so libparserutils.so.0
 AMIGA_SOBJS := $(addprefix /SObjs/,$(AMIGA_SHARED_OBJS))
 AMIGA_DISTRIBUTION_FILES := amiga/dist/*
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
