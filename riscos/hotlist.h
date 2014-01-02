@@ -1,6 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2013 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -51,4 +51,3 @@ void ro_gui_hotlist_remove_page(nsurl *url);
 bool ro_gui_hotlist_has_page(nsurl *url);
 
 #endif
-

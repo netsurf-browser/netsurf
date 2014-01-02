@@ -5,7 +5,7 @@
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
- * Copyright 2010, 2011 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010-2014 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *

@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2013 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -220,7 +220,7 @@ void ro_gui_hotlist_open(void)
 	os_error	*error;
 	char		command[2048];
 
-	if (nsoption_bool(external_hotlists) && 
+	if (nsoption_bool(external_hotlists) &&
 	    nsoption_charp(external_hotlist_app) != NULL &&
 	    *nsoption_charp(external_hotlist_app) != '\0') {
 		snprintf(command, sizeof(command), "Filer_Run %s",
@@ -732,4 +732,3 @@ void ro_gui_hotlist_url_drop(wimp_message *message, const char *url)
 	nsurl_unref(nsurl);
 }
 #endif
-
