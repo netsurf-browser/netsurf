@@ -618,11 +618,19 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
 
             }
             break;
+// TODO: check code with Thing! Desktop
+/*
+    We receive VA_PROTOSTATUS but AV_START doesn't seem to cause
+    an TeraDesk response. Check if something happens with Thing!
+    Desktop.
+/*
+/*
         case VA_PROTOSTATUS:
         case VA_VIEWED:
         case AV_STARTED:
             gemtk_av_dispatch(msg);
             break;
+*/
         }
     } else {
 
