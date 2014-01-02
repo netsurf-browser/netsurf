@@ -168,7 +168,7 @@ endif
 	$(Q)rm -rf $(PKGNAME)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
 	$(Q)mkdir $(ATARI_TARGET_DIR)doc
-	$(Q)mkdir $(ATARI_TARGET_DIR)download
+	$(Q)mkdir $(ATARI_TARGET_DIR)downloads
 	$(Q)mkdir $(ATARI_TARGET_DIR)res
 	$(Q)mkdir $(ATARI_TARGET_DIR)res/fonts
 	$(Q)mkdir $(ATARI_TARGET_DIR)res/icons
