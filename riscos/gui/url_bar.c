@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2011 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2011-2013 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1013,9 +1013,9 @@ static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set)
 {
 	if (url_bar == NULL || set == url_bar->hotlist.set)
 		return;
-	
+
 	url_bar->hotlist.set = set;
-	
+
 	if (!url_bar->hidden) {
 			xwimp_force_redraw(url_bar->window,
 					url_bar->hotlist.extent.x0,
@@ -1097,7 +1097,7 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 		return false;
 
 	/* Update hotlist indicator */
-	
+
 	url = (const char *) url_bar->text_buffer;
 	if (url != NULL && nsurl_create(url, &n) == NSERROR_OK) {
 		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
@@ -1278,4 +1278,3 @@ void ro_gui_url_bar_fini(void)
 		hlcache_handle_release(url_bar_res[i].c);
 	}
 }
-

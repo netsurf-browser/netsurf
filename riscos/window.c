@@ -5,7 +5,7 @@
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
- * Copyright 2010, 2011 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010-2014 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1800,7 +1800,6 @@ bool ro_gui_window_keypress(wimp_key *key)
 	struct gui_window	*g;
 	hlcache_handle		*h;
 	os_error		*error;
-	wimp_pointer		pointer;
 	uint32_t		c = (uint32_t) key->c;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(key->w);
@@ -1808,14 +1807,6 @@ bool ro_gui_window_keypress(wimp_key *key)
 		return false;
 
 	h = g->bw->current_content;
-
-	error = xwimp_get_pointer_info(&pointer);
-	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return false;
-	}
 
 	/* First send the key to the browser window, eg. form fields. */
 
@@ -1893,7 +1884,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 
 bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
 {
-	struct gui_window *g = (struct gui_window *) data;
+	struct gui_window	*g = (struct gui_window *) data;
 
 	if (g != NULL)
 		return ro_gui_window_handle_local_keypress(g, key, true);
@@ -1917,19 +1908,37 @@ bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
 bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		bool is_toolbar)
 {
-	hlcache_handle		*h;
-	const char		*toolbar_url;
-	float			scale;
-	uint32_t		c = (uint32_t) key->c;
-	wimp_scroll_direction	xscroll = wimp_SCROLL_NONE;
-	wimp_scroll_direction	yscroll = wimp_SCROLL_NONE;
-	nsurl *url;
-	nserror error;
+	hlcache_handle			*h;
+	struct contextual_content	cont;
+	os_error			*ro_error;
+	wimp_pointer			pointer;
+	os_coord			pos;
+	const char			*toolbar_url;
+	float				scale;
+	uint32_t			c = (uint32_t) key->c;
+	wimp_scroll_direction		xscroll = wimp_SCROLL_NONE;
+	wimp_scroll_direction		yscroll = wimp_SCROLL_NONE;
+	nsurl				*url;
+	nserror				error;
 
 	if (g == NULL)
 		return false;
 
+	ro_error = xwimp_get_pointer_info(&pointer);
+	if (ro_error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
+				ro_error->errnum, ro_error->errmess));
+		warn_user("WimpError", ro_error->errmess);
+		return false;
+	}
+
+	if (!ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
+		return false;
+
+
 	h = g->bw->current_content;
+
+	browser_window_get_contextual_content(g->bw, pos.x, pos.y, &cont);
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
@@ -2015,7 +2024,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
-		ro_gui_view_source(h);
+		ro_gui_view_source((cont.main != NULL) ? cont.main : h);
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F9:
@@ -2848,10 +2857,10 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 			error = nsurl_create(current_menu_url, &url);
 			if (error == NSERROR_OK) {
 				error = browser_window_navigate(bw,
-						url, 
-						hlcache_handle_get_url(h), 
-						BROWSER_WINDOW_DOWNLOAD | 
-						BROWSER_WINDOW_VERIFIABLE, 
+						url,
+						hlcache_handle_get_url(h),
+						BROWSER_WINDOW_DOWNLOAD |
+						BROWSER_WINDOW_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -3035,12 +3044,12 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		}
 		break;
 	case BROWSER_WINDOW_STAGGER:
-		nsoption_set_bool(window_stagger, 
+		nsoption_set_bool(window_stagger,
 				  !nsoption_bool(window_stagger));
 		ro_gui_save_options();
 		break;
 	case BROWSER_WINDOW_COPY:
-		nsoption_set_bool(window_size_clone, 
+		nsoption_set_bool(window_size_clone,
 				  !nsoption_bool(window_size_clone));
 		ro_gui_save_options();
 		break;
@@ -3637,7 +3646,7 @@ void ro_gui_window_toolbar_click(void *data,
 		case TOOLBAR_URL_ADJUST_HOTLIST:
 			ro_gui_window_action_remove_bookmark(g);
 			break;
-			
+
 		default:
 			break;
 		}
@@ -3749,7 +3758,7 @@ void ro_gui_window_toolbar_click(void *data,
 				warn_user(messages_get_errorcode(error), 0);
 			} else {
 				/* do it without loading the content
-				 * into the new window 
+				 * into the new window
 				 */
 				ro_gui_window_navigate_up(new_bw->window,
 					nsurl_access(hlcache_handle_get_url(h)));
@@ -5255,4 +5264,3 @@ bool ro_gui_alt_pressed(void)
 	xosbyte1(osbyte_SCAN_KEYBOARD, 2 ^ 0x80, 0, &alt);
 	return (alt == 0xff);
 }
-
