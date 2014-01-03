@@ -61,6 +61,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
+#include "desktop/local_history.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
@@ -715,6 +716,7 @@ static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct 
 	struct gui_window_2 *gwin;
 	nsurl *url;
 	nserror error;
+	struct browser_window *bw = NULL;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 
@@ -726,12 +728,16 @@ static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct 
 					      url,
 					      NULL,
 					      gwin->bw,
-					      NULL);
+					      &bw);
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
+		return;
 	}
+	
+	history_destroy(bw->history);
+	bw->history = history_create();
 }
 
 static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg)
