@@ -1780,24 +1780,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_ADDTAB:
-						{
-							nserror error;
-
-							error = nsurl_create(nsoption_charp(homepage_url), &url);
-							if (error == NSERROR_OK) {
-								error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-											      BROWSER_WINDOW_HISTORY |
-											      BROWSER_WINDOW_TAB,
-											      url,
-											      NULL,
-											      gwin->bw,
-											      NULL);
-								nsurl_unref(url);
-							}
-							if (error != NSERROR_OK) {
-								warn_user(messages_get_errorcode(error), 0);
-							}
-						}
+							ami_gui_new_blank_tab(gwin);
 						break;
 
 						case GID_URL:
