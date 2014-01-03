@@ -714,30 +714,10 @@ static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct 
 static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
 	struct gui_window_2 *gwin;
-	nsurl *url;
 	nserror error;
-	struct browser_window *bw = NULL;
+
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-
-	error = nsurl_create(nsoption_charp(homepage_url), &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-					      BROWSER_WINDOW_TAB,
-					      url,
-					      NULL,
-					      gwin->bw,
-					      &bw);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-		return;
-	}
-	
-	history_destroy(bw->history);
-	bw->history = history_create();
+	error = ami_gui_new_blank_tab(gwin);
 }
 
 static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg)

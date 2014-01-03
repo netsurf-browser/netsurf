@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -164,6 +164,7 @@ void ami_gui_hotlist_toolbar_update_all(void);
 void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
+nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -3137,6 +3137,34 @@ void ami_gui_tabs_toggle_all(void)
 			}
 		}
 	} while(node = nnode);
+}
+
+nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
+{
+	nsurl *url;
+	nserror error;
+	struct browser_window *bw = NULL;
+
+	error = nsurl_create(nsoption_charp(homepage_url), &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY |
+					      BROWSER_WINDOW_TAB,
+					      url,
+					      NULL,
+					      gwin->bw,
+					      &bw);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+		return error;
+	}
+	
+	history_destroy(bw->history);
+	bw->history = history_create();
+
+	return NSERROR_OK;
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
