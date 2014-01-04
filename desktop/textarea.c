@@ -160,6 +160,7 @@ static void textarea_normalise_text(struct textarea *ta,
 		unsigned int b_start, unsigned int b_len)
 {
 	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true : false;
+	struct textarea_msg msg;
 	unsigned int index;
 
 	/* Remove CR characters. If it's a CRLF pair delete the CR, or replace
@@ -187,6 +188,14 @@ static void textarea_normalise_text(struct textarea *ta,
 			ta->text.data[b_start + index] = ' ';
 	}
 
+	/* Build text modified message */
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_TEXT_MODIFIED;
+	msg.data.modified.text = ta->text.data;
+	msg.data.modified.len = ta->text.len;
+
+	/* Pass message to client */
+	ta->callback(ta->data, &msg);
 }
 
 

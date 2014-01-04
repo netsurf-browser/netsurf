@@ -204,6 +204,10 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 					msg->data.caret.pos.clip);
 		}
 		break;
+
+	case TEXTAREA_MSG_TEXT_MODIFIED:
+		/* TODO */
+		break;
 	}
 }
 
