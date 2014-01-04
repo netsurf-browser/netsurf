@@ -14,9 +14,6 @@
   # Valid options: YES, NO
   NETSURF_USE_LIBICONV_PLUG := NO
 
-  # mng support does not currently build on windows
-  NETSURF_USE_MNG := NO
-
   # no pdf support
   NETSURF_USE_HARU_PDF := NO
 

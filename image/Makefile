@@ -6,7 +6,6 @@ S_IMAGE_NO :=
 S_IMAGE_$(NETSURF_USE_BMP) += bmp.c ico.c
 S_IMAGE_$(NETSURF_USE_GIF) += gif.c
 S_IMAGE_$(NETSURF_USE_JPEG) += jpeg.c
-S_IMAGE_$(NETSURF_USE_MNG) += mng.c
 S_IMAGE_$(NETSURF_USE_ROSPRITE) += nssprite.c
 S_IMAGE_$(NETSURF_USE_PNG) += png.c
 S_IMAGE_$(NETSURF_USE_NSSVG) += svg.c
