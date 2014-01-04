@@ -241,7 +241,7 @@ bool box_textarea_create_textarea(html_content *html,
 			return false;
 
 		/* Get the textarea's initial content */
-		err = dom_node_get_text_content(node, &dom_text);
+		err = dom_html_text_area_element_get_value(textarea, &dom_text);
 		if (err != DOM_NO_ERR)
 			return false;
 
