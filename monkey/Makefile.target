@@ -47,7 +47,7 @@ MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
-MONKEYLDFLAGS := -lm
+MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
 
 
 CFLAGS += $(MONKEYCFLAGS)
