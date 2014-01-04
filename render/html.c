@@ -1685,6 +1685,47 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 	return false;
 }
 
+/** Helper for file gadgets to store their filename unencoded on the
+ * dom node associated with the gadget.
+ *
+ * \todo Get rid of this crap eventually
+ */
+static void html__dom_user_data_handler(dom_node_operation operation,
+		dom_string *key, void *_data, struct dom_node *src,
+		struct dom_node *dst)
+{
+	char *oldfile;
+	char *data = (char *)_data;
+
+	if (!dom_string_isequal(corestring_dom___ns_key_libcss_node_data,
+				key) || data == NULL) {
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		if (dom_node_set_user_data(dst,
+					   corestring_dom___ns_key_file_name_node_data,
+					   strdup(data), html__dom_user_data_handler,
+					   &oldfile) == DOM_NO_ERR) {
+			if (oldfile != NULL)
+				free(oldfile);
+		}
+		break;
+
+	case DOM_NODE_RENAMED:
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+		break;
+
+	case DOM_NODE_DELETED:
+		free(data);
+		break;
+	default:
+		LOG(("User data operation not handled."));
+		assert(0);
+	}
+}
 
 /**
  * Drop a file onto a content at a particular point, or determine if a file
@@ -1752,7 +1793,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	if (file_box) {
 		/* File dropped on file input */
 		utf8_convert_ret ret;
-		char *utf8_fn;
+		char *utf8_fn, *oldfile = NULL;
 
 		ret = utf8_from_local_encoding(file, 0,
 				&utf8_fn);
@@ -1765,8 +1806,16 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		}
 
 		/* Found: update form input */
-		free(file_box->gadget->value);
-		file_box->gadget->value = utf8_fn;
+		form_gadget_update_value(html, file_box->gadget, utf8_fn);
+
+		/* corestring_dom___ns_key_file_name_node_data */
+		if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
+					   corestring_dom___ns_key_file_name_node_data,
+					   strdup(file), html__dom_user_data_handler,
+					   &oldfile) == DOM_NO_ERR) {
+			if (oldfile != NULL)
+				free(oldfile);
+		}
 
 		/* Redraw box. */
 		html__redraw_a_box(html, file_box);

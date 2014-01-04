@@ -233,7 +233,7 @@ dom_string *corestring_dom_vspace;
 dom_string *corestring_dom_waiting;
 dom_string *corestring_dom_width;
 dom_string *corestring_dom___ns_key_libcss_node_data;
-
+dom_string *corestring_dom___ns_key_file_name_node_data;
 
 /*
  * Free the core strings
@@ -464,6 +464,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(waiting);
 	CSS_DOM_STRING_UNREF(width);
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
+	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
 #undef CSS_DOM_STRING_UNREF
 }
 
@@ -725,6 +726,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(waiting);
 	CSS_DOM_STRING_INTERN(width);
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
+	CSS_DOM_STRING_INTERN(__ns_key_file_name_node_data);
 #undef CSS_DOM_STRING_INTERN
 
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",

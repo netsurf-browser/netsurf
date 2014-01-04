@@ -239,6 +239,7 @@ extern struct dom_string *corestring_dom_vspace;
 extern struct dom_string *corestring_dom_waiting;
 extern struct dom_string *corestring_dom_width;
 extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
+extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 
 
 #endif
