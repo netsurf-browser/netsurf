@@ -592,14 +592,15 @@ bool form_successful_controls(struct form *form,
 						control->value : "");
 				success_new->rawfile = NULL;
 				/* Retrieve the filename from the DOM annotation */
+				LOG(("XYZZY: Attempting to retrieve data"));
 				if (dom_node_get_user_data(
 					    control->node,
 					    corestring_dom___ns_key_file_name_node_data,
 					    &rawfile_temp) != DOM_NO_ERR) {
-					LOG(("unable to get rawfile"));
+					LOG(("XYZZY: unable to get rawfile"));
 					goto no_memory;
 				}
-
+				LOG(("XYZZY: Got raw filename: %s", rawfile_temp));
 				if (rawfile_temp == NULL) {
 					/* No annotation means the file was not
 					 */
