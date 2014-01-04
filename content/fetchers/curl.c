@@ -1299,7 +1299,6 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 						code, control->name));
 			} else {
 				char *mimetype = fetch_mimetype(control->value);
-				LOG(("XYZZY: Using rawfile of %s", control->rawfile));
 				code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_FILE, control->rawfile,

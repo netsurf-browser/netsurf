@@ -1704,7 +1704,6 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 
 	switch (operation) {
 	case DOM_NODE_CLONED:
-		LOG(("XYZZY: Cloned, so copying to the new location"));
 		if (dom_node_set_user_data(dst,
 					   corestring_dom___ns_key_file_name_node_data,
 					   strdup(data), html__dom_user_data_handler,
@@ -1720,7 +1719,6 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 		break;
 
 	case DOM_NODE_DELETED:
-		LOG(("XYZZY: Freeing data due to node deletion"));
 		free(data);
 		break;
 	default:
@@ -1811,12 +1809,10 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		form_gadget_update_value(html, file_box->gadget, utf8_fn);
 
 		/* corestring_dom___ns_key_file_name_node_data */
-		LOG(("XYZZY: Setting userdata to %s", file));
 		if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
 					   corestring_dom___ns_key_file_name_node_data,
 					   strdup(file), html__dom_user_data_handler,
 					   &oldfile) == DOM_NO_ERR) {
-			LOG(("XYZZY: Userdata used to be %s", oldfile));
 			if (oldfile != NULL)
 				free(oldfile);
 		}
