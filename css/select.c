@@ -219,11 +219,9 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 		struct dom_node *dst)
 {
 	css_error error;
-	bool match;
 
-	if (lwc_string_isequal(corestring_dom___ns_key_libcss_node_data,
-			key, &match) != lwc_error_ok || match == false ||
-			data == NULL) {
+	if (dom_string_isequal(corestring_dom___ns_key_libcss_node_data,
+			key) == false || data == NULL) {
 		return;
 	}
 
