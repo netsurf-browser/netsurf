@@ -639,6 +639,21 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 			return NULL;
 		}
 
+		if (clone->file) {
+			clone->rawfile = strdup(list->rawfile);
+			if (clone->rawfile == NULL) {
+				free(clone->value);
+				free(clone->name);
+				free(clone);
+				if (result != NULL)
+					fetch_multipart_data_destroy(result);
+
+				return NULL;
+			}
+		} else {
+			clone->rawfile = NULL;
+		}
+
 		clone->next = NULL;
 
 		if (result == NULL)
