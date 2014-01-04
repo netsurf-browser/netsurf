@@ -1013,12 +1013,13 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 			 box->type == BOX_BR ||
 			 box->type == BOX_INLINE_BLOCK ||
 			 css_computed_float(box->style) == CSS_FLOAT_LEFT ||
-			 css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
+			 css_computed_float(box->style) == CSS_FLOAT_RIGHT) &&
+			props.node_is_root == false) {
 		/* Found an inline child of a block without a current container
 		 * (i.e. this box is the first child of its parent, or was
 		 * preceded by block-level siblings) */
 		assert(props.containing_block != NULL && 
-				"Root box must not be inline or floated");
+				"Box must have containing block.");
 
 		props.inline_container = box_create(NULL, NULL, false, NULL, 
 				NULL, NULL, NULL, ctx->bctx);
@@ -1073,9 +1074,11 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 				return false;
 		}
 
-		if (css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+		if (props.node_is_root == false &&
+				(css_computed_float(box->style) ==
+				CSS_FLOAT_LEFT ||
 				css_computed_float(box->style) == 
-				CSS_FLOAT_RIGHT) {
+				CSS_FLOAT_RIGHT)) {
 			/* Float: insert a float between the parent and box. */
 			struct box *flt = box_create(NULL, NULL, false,
 					props.href, props.target, props.title, 
