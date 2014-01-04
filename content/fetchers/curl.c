@@ -1301,7 +1301,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 				char *mimetype = fetch_mimetype(control->value);
 				code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
-					CURLFORM_FILE, control->value,
+					CURLFORM_FILE, control->rawfile,
 					CURLFORM_FILENAME, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),

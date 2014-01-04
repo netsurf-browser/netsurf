@@ -79,6 +79,7 @@ struct fetch_multipart_data {
 	bool file;			/**< Item is a file */
 	char *name;			/**< Name of item */
 	char *value;			/**< Item value */
+	char *rawfile;			/**< Raw filename if file is true */
 
 	struct fetch_multipart_data *next;	/**< Next in linked list */
 };

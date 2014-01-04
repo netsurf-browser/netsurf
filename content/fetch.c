@@ -665,6 +665,8 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 		next = list->next;
 		free(list->name);
 		free(list->value);
+		if (list->file)
+			free(list->rawfile);
 		free(list);
 	}
 }

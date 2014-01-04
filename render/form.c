@@ -50,6 +50,7 @@
 #include "render/html.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -346,7 +347,7 @@ bool form_successful_controls(struct form *form,
 	struct fetch_multipart_data sentinel, *last_success, *success_new;
 	char *value = NULL;
 	bool had_submit = false;
-	char *charset;
+	char *charset, *rawfile_temp;
 
 	last_success = &sentinel;
 	sentinel.next = NULL;
@@ -594,6 +595,28 @@ bool form_successful_controls(struct form *form,
 				last_success = success_new;
 				if (!success_new->name ||
 						!success_new->value) {
+					LOG(("strdup failed"));
+					goto no_memory;
+				}
+
+				/* Retrieve the filename from the DOM annotation */
+				if (dom_node_get_user_data(
+					    control->node,
+					    corestring_dom___ns_key_file_name_node_data,
+					    &rawfile_temp) != DOM_NO_ERR) {
+					LOG(("unable to get rawfile"));
+					goto no_memory;
+				}
+
+				if (rawfile_temp == NULL) {
+					/* No annotation means the file was not
+					 */
+					success_new->rawfile = strdup("");
+				} else {
+					success_new->rawfile = strdup(rawfile_temp);
+				}
+
+				if (success_new->rawfile == NULL) {
 					LOG(("strdup failed"));
 					goto no_memory;
 				}
