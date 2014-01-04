@@ -126,6 +126,7 @@ struct form_control {
 
 /** Option in a select. */
 struct form_option {
+	void *node;			/**< Corresponding DOM node */
 	bool selected;
 	bool initial_selected;
 	char *value;
@@ -154,7 +155,7 @@ struct form_control *form_new_control(void *node, form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
 bool form_add_option(struct form_control *control, char *value, char *text,
-		bool selected);
+		     bool selected, void *node);
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
 		struct fetch_multipart_data **successful_controls);

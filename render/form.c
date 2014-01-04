@@ -278,10 +278,11 @@ void form_free_control(struct form_control *control)
  * \param  value     value of option, used directly (not copied)
  * \param  text      text for option, used directly (not copied)
  * \param  selected  this option is selected
+ * \param  node      the DOM node this option is associated with
  * \return  true on success, false on memory exhaustion
  */
 bool form_add_option(struct form_control *control, char *value, char *text,
-		bool selected)
+		     bool selected, void *node)
 {
 	struct form_option *option;
 
@@ -311,6 +312,8 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 	}
 
 	control->data.select.num_items++;
+
+	option->node = node;
 
 	return true;
 }
@@ -1140,12 +1143,15 @@ static void form__select_process_selection(html_content *html,
 			if (control->data.select.multiple) {
 				if (o->selected) {
 					o->selected = false;
+					dom_html_option_element_set_selected(o->node, false);
 					control->data.select.num_selected--;
 				} else {
 					o->selected = true;
+					dom_html_option_element_set_selected(o->node, true);
 					control->data.select.num_selected++;
 				}
 			} else {
+				dom_html_option_element_set_selected(o->node, true);
 				o->selected = true;
 			}
 		}
@@ -1434,11 +1440,13 @@ void form_radio_set(html_content *html,
 
 		if (control->selected) {
 			control->selected = false;
+			dom_html_input_element_set_checked(control->node, false);
 			html__redraw_a_box(html, control->box);
 		}
 	}
 
 	radio->selected = true;
+	dom_html_input_element_set_checked(radio->node, true);
 	html__redraw_a_box(html, radio->box);
 }
 

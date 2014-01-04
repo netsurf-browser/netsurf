@@ -2853,7 +2853,7 @@ bool box_select_add_option(struct form_control *control, dom_node *n)
 	if (text_nowrap == NULL)
 		goto no_memory;
 
-	if (form_add_option(control, value, text_nowrap, selected) == false)
+	if (form_add_option(control, value, text_nowrap, selected, n) == false)
 		goto no_memory;
 
 	free(text);
