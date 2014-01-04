@@ -590,15 +590,7 @@ bool form_successful_controls(struct form *form,
 				success_new->value = 
 						ENCODE_ITEM(control->value ?
 						control->value : "");
-				success_new->next = 0;
-				last_success->next = success_new;
-				last_success = success_new;
-				if (!success_new->name ||
-						!success_new->value) {
-					LOG(("strdup failed"));
-					goto no_memory;
-				}
-
+				success_new->rawfile = NULL;
 				/* Retrieve the filename from the DOM annotation */
 				if (dom_node_get_user_data(
 					    control->node,
@@ -617,6 +609,15 @@ bool form_successful_controls(struct form *form,
 				}
 
 				if (success_new->rawfile == NULL) {
+					LOG(("strdup failed"));
+					goto no_memory;
+				}
+
+				success_new->next = 0;
+				last_success->next = success_new;
+				last_success = success_new;
+				if (!success_new->name ||
+						!success_new->value) {
 					LOG(("strdup failed"));
 					goto no_memory;
 				}
