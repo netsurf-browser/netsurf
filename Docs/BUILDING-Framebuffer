@@ -218,7 +218,7 @@ Index: framebuffer/font_freetype.c
 
   Debian-like OS:
 
-      $ apt-get install libcurl3-dev libmng-dev 
+      $ apt-get install libcurl3-dev libpng-dev 
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not
@@ -228,15 +228,11 @@ Index: framebuffer/font_freetype.c
 
   Fedora:
 
-      $ yum install curl-devel libmng-devel lcms-devel
+      $ yum install curl-devel libpng-devel lcms-devel
 
   Other:
 
-  You'll need to install the development resources for libcurl3 and libmng.
-
-  Note that if you don't require MNG or JNG image support, NetSurf can be
-  configured to use libpng instead of libmng. If you wish to do this, install
-  the libpng development package instead.
+  You'll need to install the development resources for libcurl3 and libpng.
 
   The NetSurf project's libraries
 ---------------------------------

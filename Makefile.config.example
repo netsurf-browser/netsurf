@@ -8,10 +8,9 @@
 # To see the available config options, look at Makefile.defaults, but make any
 # alterations in your Makefile.config
 
-
-### To enable/disable MNG support, uncomment the appropriate line below.
-# override NETSURF_USE_MNG := YES
-# override NETSURF_USE_MNG := NO
+### To enable/disable PNG support, uncomment the appropriate line below.
+# override NETSURF_USE_PNG := YES
+# override NETSURF_USE_PNG := NO
 
 ### To enable/disable SVGTiny support, uncomment the appropriate line below.
 # override NETSURF_USE_NSSVG := YES

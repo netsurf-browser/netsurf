@@ -22,8 +22,6 @@
   # Valid options: YES, NO, AUTO
   NETSURF_USE_NSSVG := AUTO
 
-  NETSURF_USE_MNG := NO
-
   # Enable Spidermonkey JavaScript engine
   # Valid options: YES, NO
   NETSURF_USE_MOZJS := NO

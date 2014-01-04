@@ -91,13 +91,13 @@
       1> makelink sdk:local/newlib/lib/libcurl.so sobjs:libcurl-7.16.so soft
 
 
-  libmng
+  libpng
 --------
 
-  NetSurf uses libMNG to display MNG and PNG files.
+  NetSurf uses libPNG to display PNG files.
   It builds without any problems on OS4, or available from Aminet:
 
-      http://www.aminet.net/package/dev/lib/libmng_so
+      http://www.aminet.net/package/dev/lib/libpng_so
 
 
   OpenSSL

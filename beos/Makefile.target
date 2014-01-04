@@ -32,7 +32,6 @@ RSRC_BEOS = $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.rdef,%.rsrc,$(RDEF_
 RESOURCES = $(RSRC_BEOS)
 ifeq ($(HOST),beos)
     CFLAGS += -I/boot/home/config/include		\
-		-I/boot/home/config/include/libmng	\
 		-I/boot/home/config/include/hubbub	\
 		-I/boot/home/config/include/libcss	\
 		-I/boot/home/config/include/parserutils
@@ -42,7 +41,6 @@ ifeq ($(HOST),beos)
     ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
       # Haiku
       CFLAGS += -I/boot/common/include		\
-		-I/boot/common/include/libmng	\
 		-I/boot/common/include/hubbub	\
 		-I/boot/common/include/libcss	\
 		-I/boot/common/include/parserutils

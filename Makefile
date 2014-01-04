@@ -432,7 +432,6 @@ endif
 include Makefile.defaults
 
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG (libjpeg)))
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG (libmng)))
 
 $(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export (haru)))
 $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))

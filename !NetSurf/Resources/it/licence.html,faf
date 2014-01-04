@@ -150,13 +150,7 @@ dl.components > dd > span + span {
 <span><a href="#mit">MIT</a></span>
 </dd>
 
-<dt><a href="http://www.libmng.com">libmng</a></dt>
-<dd>
-<span>&copy; 2000&ndash;2007 Gerard Juyn, Glenn Randers-Pehrson</span>
-<span><a href="#mng">MNG</a></span>
-</dd>
-
-<dt><a href="http://ro-oslib.sourceforge.net/">OSLib</a></dt>
+q<dt><a href="http://ro-oslib.sourceforge.net/">OSLib</a></dt>
 <dd>
 <span>&copy; 1994&ndash;1998 Jonathan Coxhead and contributors</span>
 <span><a href="#oslib">OSLib</a></span>
@@ -629,35 +623,6 @@ It is copyright by the Free Software Foundation but is freely distributable.
 The same holds for its supporting scripts (config.guess, config.sub,
 ltmain.sh).  Another support script, install-sh, is copyright by X Consortium
 but is also freely distributable.
-</div>
-
-<a name="mng" />
-<h3>Licenza MNG</h3>
-<div class="licence">The MNG Library is supplied "AS IS".  The Contributing Authors
-disclaim all warranties, expressed or implied, including, without      
-limitation, the warranties of merchantability and of fitness for any   
-purpose.  The Contributing Authors assume no liability for direct,     
-indirect, incidental, special, exemplary, or consequential damages,    
-which may result from the use of the MNG Library, even if advised of   
-the possibility of such damage.                                        
-
-Permission is hereby granted to use, copy, modify, and distribute this 
-source code, or portions hereof, for any purpose, without fee, subject 
-to the following restrictions:                                         
-
-1. The origin of this source code must not be misrepresented;          
-   you must not claim that you wrote the original software.            
-
-2. Altered versions must be plainly marked as such and must not be     
-   misrepresented as being the original source.                        
-
-3. This Copyright notice may not be removed or altered from any source 
-   or altered source distribution.                                     
-
-The Contributing Authors specifically permit, without fee, and         
-encourage the use of this source code as a component to supporting     
-the MNG and JNG file format in commercial products.  If you use this   
-source code in a product, acknowledgment would be highly appreciated. 
 </div>
 
 <a name="oslib" />
