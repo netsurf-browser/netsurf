@@ -617,6 +617,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			status = messages_get("FormCheckbox");
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
 				gadget->selected = !gadget->selected;
+				dom_html_input_element_set_checked(
+					(dom_html_input_element *)(gadget->node),
+					gadget->selected);
 				html__redraw_a_box(html, gadget_box);
 			}
 			break;
