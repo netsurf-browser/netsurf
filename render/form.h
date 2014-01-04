@@ -183,4 +183,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
 void form_radio_set(struct html_content *html, struct form_control *radio);
 
+void form_gadget_update_value(struct html_content *html,
+			      struct form_control *control, char *value);
+
 #endif

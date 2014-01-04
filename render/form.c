@@ -1539,3 +1539,40 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 	fetch_multipart_data_destroy(success);
 	free(data);
 }
+
+void form_gadget_update_value(struct html_content *html,
+			      struct form_control *control, char *value)
+{
+	switch (control->type) {
+	case GADGET_HIDDEN:
+	case GADGET_TEXTBOX:
+	case GADGET_TEXTAREA:
+	case GADGET_PASSWORD:
+	case GADGET_FILE:
+		if (control->value != NULL) {
+			free(control->value);
+		}
+		control->value = value;
+		if (control->node != NULL) {
+			dom_exception err;
+			dom_string *str;
+			err = dom_string_create((uint8_t *)value,
+						strlen(value), &str);
+			if (err == DOM_NO_ERR) {
+				if (control->type == GADGET_TEXTAREA)
+					err = dom_html_text_area_element_set_value(
+						(dom_html_text_area_element *)(control->node),
+						str);
+				else
+					err = dom_html_input_element_set_value(
+						(dom_html_input_element *)(control->node),
+						str);
+				dom_string_unref(str);
+			}
+		}
+		break;
+	default:
+		/* Do nothing */
+		break;
+	}
+}
