@@ -45,8 +45,10 @@
 #include "render/imagemap.h"
 #include "render/search.h"
 #include "javascript/js.h"
+#include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/log.h"
 
 
 /**
@@ -228,6 +230,47 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 	html_mouse_action(c, bw, mouse, x, y);
 }
 
+/** Helper for file gadgets to store their filename unencoded on the
+ * dom node associated with the gadget.
+ *
+ * \todo Get rid of this crap eventually
+ */
+static void html__image_coords_dom_user_data_handler(dom_node_operation operation,
+		dom_string *key, void *_data, struct dom_node *src,
+		struct dom_node *dst)
+{
+	struct image_input_coords *oldcoords, *coords = _data, *newcoords;
+
+	if (!dom_string_isequal(corestring_dom___ns_key_image_coords_node_data,
+				key) || coords == NULL) {
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		newcoords = calloc(1, sizeof(*newcoords));
+		*newcoords = *coords;
+		if (dom_node_set_user_data(dst,
+					   corestring_dom___ns_key_image_coords_node_data,
+					   newcoords, html__image_coords_dom_user_data_handler,
+					   &oldcoords) == DOM_NO_ERR) {
+			free(oldcoords);
+		}
+		break;
+
+	case DOM_NODE_RENAMED:
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+		break;
+
+	case DOM_NODE_DELETED:
+		free(coords);
+		break;
+	default:
+		LOG(("User data operation not handled."));
+		assert(0);
+	}
+}
 
 /**
  * Handle mouse clicks and movements in an HTML content window.
@@ -630,8 +673,21 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			break;
 		case GADGET_IMAGE:
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
-				gadget->data.image.mx = x - gadget_box_x;
-				gadget->data.image.my = y - gadget_box_y;
+				struct image_input_coords *coords, *oldcoords;
+				/** \todo Find a way to not ignore errors */
+				coords = calloc(1, sizeof(*coords));
+				if (coords == NULL) {
+					return;
+				}
+				coords->x = x - gadget_box_x;
+				coords->y = y - gadget_box_y;
+				if (dom_node_set_user_data(
+					    gadget->node,
+					    corestring_dom___ns_key_image_coords_node_data,
+					    coords, html__image_coords_dom_user_data_handler,
+					    &oldcoords) != DOM_NO_ERR)
+					return;
+				free(oldcoords);
 			}
 			/* drop through */
 		case GADGET_SUBMIT:

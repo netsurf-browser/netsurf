@@ -134,6 +134,11 @@ struct form_option {
 	struct form_option* next;
 };
 
+struct image_input_coords {
+	int x;
+	int y;
+};
+
 /**
  * Called by the select menu when it wants an area to be redrawn. The
  * coordinates are menu origin relative.

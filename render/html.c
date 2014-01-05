@@ -1732,7 +1732,7 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 	char *oldfile;
 	char *data = (char *)_data;
 
-	if (!dom_string_isequal(corestring_dom___ns_key_libcss_node_data,
+	if (!dom_string_isequal(corestring_dom___ns_key_file_name_node_data,
 				key) || data == NULL) {
 		return;
 	}

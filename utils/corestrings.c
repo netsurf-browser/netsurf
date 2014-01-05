@@ -244,6 +244,7 @@ dom_string *corestring_dom_file;
 dom_string *corestring_dom_on;
 dom_string *corestring_dom___ns_key_libcss_node_data;
 dom_string *corestring_dom___ns_key_file_name_node_data;
+dom_string *corestring_dom___ns_key_image_coords_node_data;
 
 /*
  * Free the core strings
@@ -488,6 +489,7 @@ void corestrings_fini(void)
 	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
+	CSS_DOM_STRING_UNREF(__ns_key_image_coords_node_data);
 #undef CSS_DOM_STRING_UNREF
 }
 
@@ -763,6 +765,7 @@ nserror corestrings_init(void)
 	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_file_name_node_data);
+	CSS_DOM_STRING_INTERN(__ns_key_image_coords_node_data);
 #undef CSS_DOM_STRING_INTERN
 
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",

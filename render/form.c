@@ -353,6 +353,7 @@ bool form_successful_controls_dom(struct form *_form,
 	bool had_submit = false, element_disabled;
 	char *charset, *rawfile_temp = NULL, *basename;
 	uint32_t index, element_count;
+	struct image_input_coords *coords;
 
 	last_success = &sentinel;
 	sentinel.next = NULL;
@@ -615,6 +616,19 @@ bool form_successful_controls_dom(struct form *_form,
 				     (dom_node *)form_element)
 					 continue;
 				 
+				 err = dom_node_get_user_data(
+					 form_element,
+					 corestring_dom___ns_key_image_coords_node_data,
+					 &coords);
+				 if (err != DOM_NO_ERR) {
+					 LOG(("Could not get image XY data"));
+					 goto dom_no_memory;
+				 }
+				 if (coords == NULL) {
+					 LOG(("No XY data on the image input"));
+					 goto dom_no_memory;
+				 }
+				 
 				 basename = ENCODE_ITEM(inputname);
 				 
 				 success_new = calloc(1, sizeof(*success_new));
@@ -640,10 +654,7 @@ bool form_successful_controls_dom(struct form *_form,
 					 goto dom_no_memory;
 				 }
 				 sprintf(success_new->name, "%s.x", basename);
-				 /** \todo Store this on the node and
-				  * retrieve it here
-				  */
-				 sprintf(success_new->value, "%d", 0);
+				 sprintf(success_new->value, "%d", coords->x);
 				 
 				 success_new = calloc(1, sizeof(*success_new));
 				 if (success_new == NULL) {
@@ -668,10 +679,7 @@ bool form_successful_controls_dom(struct form *_form,
 					 goto dom_no_memory;
 				 }
 				 sprintf(success_new->name, "%s.y", basename);
-				 /** \todo Store this on the node and
-				  * retrieve it here
-				  */
-				 sprintf(success_new->value, "%d", 0);
+				 sprintf(success_new->value, "%d", coords->y);
 				 free(basename);
 				 continue;
 			} else if (dom_string_caseless_isequal(
