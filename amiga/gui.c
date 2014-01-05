@@ -4232,8 +4232,8 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 static bool ami_gui_window_update_box_deferred_check(struct MinList *deferred_rects,
 				const struct rect *new_rect)
 {
-	struct nsObject *node;
-	struct nsObject *nnode;
+struct nsObject *node;
+struct nsObject *nnode;
 	struct rect *rect;
 	
 	if(IsMinListEmpty(deferred_rects)) return true;
@@ -5137,3 +5137,11 @@ void ami_gui_splash_close(Object *win_obj)
 {
 	if(win_obj) DisposeObject(win_obj);
 }
+
+void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl, 
+	struct form_control *gadget)
+{
+	LOG(("File open dialog rquest for %p/%p", bw, gadget));
+	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
+}
+
