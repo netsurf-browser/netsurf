@@ -173,6 +173,9 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 bool browser_window_drop_file_at_point(struct browser_window *bw,
 		int x, int y, char *file);
 
+void browser_window_set_gadget_filename(struct browser_window *bw,
+		struct form_control *gadget, const char *fn);
+    
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		lwc_string *frag);
 

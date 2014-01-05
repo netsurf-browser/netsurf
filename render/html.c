@@ -1762,6 +1762,44 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 	}
 }
 
+static void html__set_file_gadget_filename(struct content *c,
+	struct form_control *gadget, const char *fn)
+{
+	utf8_convert_ret ret;
+	char *utf8_fn, *oldfile = NULL;
+	html_content *html = (html_content *)c;
+	struct box *file_box = gadget->box;
+	
+	ret = utf8_from_local_encoding(fn,0, &utf8_fn);
+	if (ret != UTF8_CONVERT_OK) {
+		assert(ret != UTF8_CONVERT_BADENC);
+		LOG(("utf8_from_local_encoding failed"));
+		/* Load was for us - just no memory */
+		return;		
+	}
+	
+	form_gadget_update_value(html, gadget, utf8_fn);
+
+	/* corestring_dom___ns_key_file_name_node_data */
+	if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
+				   corestring_dom___ns_key_file_name_node_data,
+				   strdup(fn), html__dom_user_data_handler,
+				   &oldfile) == DOM_NO_ERR) {
+		if (oldfile != NULL)
+			free(oldfile);
+	}
+
+	/* Redraw box. */
+	html__redraw_a_box(html, file_box);		
+}
+
+void html_set_file_gadget_filename(struct hlcache_handle *hl,
+	struct form_control *gadget, const char *fn)
+{
+	return html__set_file_gadget_filename(hlcache_handle_get_content(hl),
+		gadget, fn);
+}
+
 /**
  * Drop a file onto a content at a particular point, or determine if a file
  * may be dropped onto the content at given point.
@@ -1827,33 +1865,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	/* Handle the drop */
 	if (file_box) {
 		/* File dropped on file input */
-		utf8_convert_ret ret;
-		char *utf8_fn, *oldfile = NULL;
-
-		ret = utf8_from_local_encoding(file, 0,
-				&utf8_fn);
-		if (ret != UTF8_CONVERT_OK) {
-			/* A bad encoding should never happen */
-			assert(ret != UTF8_CONVERT_BADENC);
-			LOG(("utf8_from_local_encoding failed"));
-			/* Load was for us - just no memory */
-			return true;
-		}
-
-		/* Found: update form input */
-		form_gadget_update_value(html, file_box->gadget, utf8_fn);
-
-		/* corestring_dom___ns_key_file_name_node_data */
-		if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
-					   corestring_dom___ns_key_file_name_node_data,
-					   strdup(file), html__dom_user_data_handler,
-					   &oldfile) == DOM_NO_ERR) {
-			if (oldfile != NULL)
-				free(oldfile);
-		}
-
-		/* Redraw box. */
-		html__redraw_a_box(html, file_box);
+		html__set_file_gadget_filename(c, box->gadget, file);
 
 	} else {
 		/* File dropped on text input */

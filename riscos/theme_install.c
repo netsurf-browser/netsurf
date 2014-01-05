@@ -89,8 +89,6 @@ nserror theme_install_callback(hlcache_handle *handle,
 	int author_indent = 0;
 
 	switch (event->type) {
-	case CONTENT_MSG_READY:
-		break;
 
 	case CONTENT_MSG_DONE:
 	{
@@ -129,11 +127,7 @@ nserror theme_install_callback(hlcache_handle *handle,
 		warn_user(event->data.error, 0);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
 	default:
-		assert(0);
 		break;
 	}
 

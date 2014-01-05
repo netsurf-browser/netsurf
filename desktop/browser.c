@@ -661,6 +661,13 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 	return false;
 }
 
+void browser_window_set_gadget_filename(struct browser_window *bw,
+		struct form_control *gadget, const char *fn)
+{
+	html_set_file_gadget_filename(bw->current_content,
+		gadget, fn);
+}
+
 /* exported interface, documented in browser.h */
 void browser_window_debug_dump(struct browser_window *bw, FILE *f)
 {
@@ -1162,7 +1169,7 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 
 
 /**
- * Callback for fetchcache() for browser window fetches.
+ * Callback handler for content event messages.
  */
 
 static nserror browser_window_callback(hlcache_handle *c,
@@ -1555,8 +1562,16 @@ static nserror browser_window_callback(hlcache_handle *c,
 				event->data.selection.read_only);
 		break;
 
+	case CONTENT_MSG_GADGETCLICK:
+		if (event->data.gadget_click.gadget->type == GADGET_FILE) {
+			gui_file_gadget_open(bw->window, c,
+				event->data.gadget_click.gadget);
+		}
+		
+		break;
+		
 	default:
-		assert(0);
+		break;
 	}
 
 	return NSERROR_OK;

@@ -681,10 +681,6 @@ void gui_quit(void)
 	gtk_fetch_filetype_fin();
 }
 
-
-
-
-
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {

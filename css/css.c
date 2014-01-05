@@ -655,19 +655,8 @@ nserror nscss_import(hlcache_handle *handle,
 		/* Already released handle */
 		break;
 
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_READY:
-	case CONTENT_MSG_STATUS:
-	case CONTENT_MSG_REDIRECT:
-		/* messages content handler will legitamately recive
-		 * but does not need to handle
-		 */
-		break;
-
 	default:
-		/* all other messages are unexpected and fatal */
-		LOG(("Unhandled message type %d", event->type));
-		assert(0);
+		break;
 	}
 
 	/* Preserve out-of-memory. Anything else is OK */

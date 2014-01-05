@@ -741,6 +741,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			break;
 		case GADGET_FILE:
 			status = messages_get("FormFile");
+			if (mouse & BROWSER_MOUSE_CLICK_1) {
+				msg_data.gadget_click.gadget = gadget;
+				content_broadcast(c, CONTENT_MSG_GADGETCLICK, msg_data);
+			}
 			break;
 		case GADGET_BUTTON:
 			/* This gadget cannot be activated */

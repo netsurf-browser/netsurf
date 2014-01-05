@@ -208,10 +208,6 @@ html_object_callback(hlcache_handle *object,
 		}
 		break;
 
-	case CONTENT_MSG_REFORMAT:
-	case CONTENT_MSG_REDIRECT:
-		break;
-
 	case CONTENT_MSG_REDRAW:
 		if (c->base.status != CONTENT_STATUS_LOADING) {
 			union content_msg_data data = event->data;
@@ -377,6 +373,7 @@ html_object_callback(hlcache_handle *object,
 
 	case CONTENT_MSG_SAVELINK:
 	case CONTENT_MSG_POINTER:
+	case CONTENT_MSG_GADGETCLICK:
 		/* These messages are for browser window layer.
 		 * we're not interested, so pass them on. */
 		content_broadcast(&c->base, event->type, event->data);
@@ -445,7 +442,7 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	if (c->base.status == CONTENT_STATUS_READY && c->base.active == 0 &&
