@@ -83,7 +83,8 @@ typedef enum {
 	CONTENT_MSG_POINTER,   /**< Wants a specific mouse pointer set */
 	CONTENT_MSG_SELECTION, /**< A selection made or cleared */
 	CONTENT_MSG_CARET,     /**< Caret movement / hiding */
-	CONTENT_MSG_DRAG       /**< A drag started or ended */
+	CONTENT_MSG_DRAG,      /**< A drag started or ended */
+	CONTENT_MSG_GADGETCLICK/**< A gadget has been clicked on (mainly for file) */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -190,6 +191,10 @@ union content_msg_data {
 		} type;
 		const struct rect *rect;
 	} drag;
+	/** CONTENT_MSG_GADGETCLICK - User clicked on a form gadget */
+	struct {
+		struct form_control *gadget;
+	} gadget_click;
 };
 
 /** parameters to content redraw */

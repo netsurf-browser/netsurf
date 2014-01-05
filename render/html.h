@@ -178,6 +178,8 @@ struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 nsurl *html_get_base_url(struct hlcache_handle *h);
 const char *html_get_base_target(struct hlcache_handle *h);
+void html_set_file_gadget_filename(struct hlcache_handle *hl,
+	struct form_control *gadget, const char *fn);
 
 /**
  * Retrieve stylesheets used by HTML document
