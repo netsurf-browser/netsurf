@@ -32,6 +32,7 @@
 #import "desktop/textinput.h"
 #import "desktop/401login.h"
 #import "utils/utils.h"
+#import "utils/log.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
 

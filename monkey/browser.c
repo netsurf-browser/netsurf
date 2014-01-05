@@ -390,7 +390,7 @@ gui_window_save_link(struct gui_window *g, const char *url,
           g->win_num, url, title);
 }
 
-void gui_file_gadget_open(struct gui_browser *g, hlcache_handle *hl, 
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", g, gadget));

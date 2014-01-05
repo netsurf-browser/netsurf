@@ -73,6 +73,13 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 static struct nsws_pointers nsws_pointer;
 
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
+	struct form_control *gadget)
+{
+	LOG(("File open dialog rquest for %p/%p", g, gadget));
+	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
+}
+
 void gui_poll(bool active)
 {
 	MSG Msg; /* message from system */
