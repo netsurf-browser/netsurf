@@ -2613,7 +2613,7 @@ it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
 en.gtk.Form_Drop:Click to select file
 en.ro.Form_Drop:Drop file here
-en.ami.Form_Drop:Drop file here
+en.ami.Form_Drop:Click or drop file here
 en.beos.Form_Drop:Drop file here
 en.fb.Form_Drop:Click to select file
 en.osx.Form_Drop:Click to select file
@@ -4815,12 +4815,12 @@ nl.ro.HelpCacheConfig3:\Tamount of memory to be used for caching content.
 en.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig4:\Sréduire la quantité de mémoire.
-it.ro.HelpCacheConfig4:\Sriduce la quantit� di memoria.
+it.ro.HelpCacheConfig4:\Sriduce la quantità di memoria.
 nl.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 en.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 de.ro.HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig5:\Saugmenter la quantité de mémoire.
-it.ro.HelpCacheConfig5:\Saumenta la quantit� di memoria.
+it.ro.HelpCacheConfig5:\Saumenta la quantità di memoria.
 nl.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 en.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
 de.ro.HelpCacheConfig7:Stellt die Standardeinstellungen wieder her.
