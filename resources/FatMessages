@@ -2611,7 +2611,12 @@ de.all.Form_Many:(Viele)
 fr.all.Form_Many:(Plusieurs)
 it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
-en.all.Form_Drop:Drop file here
+en.gtk.Form_Drop:Click to select file
+en.ro.Form_Drop:Drop file here
+en.ami.Form_Drop:Drop file here
+en.beos.Form_Drop:Drop file here
+en.fb.Form_Drop:Click to select file
+en.osx.Form_Drop:Click to select file
 de.all.Form_Drop:Datei hier hinziehen
 fr.all.Form_Drop:Déposer les fichiers ici
 it.all.Form_Drop:Inserisci un file qui
