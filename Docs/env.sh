@@ -52,7 +52,7 @@ NS_BROWSER="netsurf"
 
 # deb packages
 NS_DEV_DEB="build-essential pkg-config git gperf"
-NS_TOOL_DEB="flex bison"
+NS_TOOL_DEB="flex bison libhtml-parser-perl"
 NS_GTK_DEB="libgtk2.0-dev libcurl3-dev libpng-dev librsvg2-dev libjpeg-dev libmozjs185-dev"
 
 #add target specific libraries
