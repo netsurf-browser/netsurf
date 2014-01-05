@@ -304,9 +304,6 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 		const hlcache_event *event, void *pw)
 {
 	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_READY:
-		break;
 
 	case CONTENT_MSG_DONE:
 		LOG(("got favicon '%s'", nsurl_access(hlcache_handle_get_url(ico))));
@@ -322,11 +319,8 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 		search_web_retrieve_ico(true);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
 	default:
-		assert(0);
+		break;
 	}
 
 	return NSERROR_OK;

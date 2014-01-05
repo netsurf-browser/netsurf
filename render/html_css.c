@@ -97,14 +97,6 @@ html_convert_css_callback(hlcache_handle *css,
 	assert(i != parent->stylesheet_count);
 
 	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
-
-	case CONTENT_MSG_REDIRECT:
-		break;
 
 	case CONTENT_MSG_DONE:
 		LOG(("done stylesheet slot %d '%s'", i,
@@ -143,7 +135,7 @@ html_convert_css_callback(hlcache_handle *css,
 		return NSERROR_OK;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	if (html_can_begin_conversion(parent)) {

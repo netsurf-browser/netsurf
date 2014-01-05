@@ -1556,7 +1556,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		break;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	return NSERROR_OK;

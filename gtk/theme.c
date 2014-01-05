@@ -793,11 +793,8 @@ theme_install_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
 	switch (event->type) {
-	case CONTENT_MSG_READY:
-		break;
 
-	case CONTENT_MSG_DONE:
-	{
+	case CONTENT_MSG_DONE: {
 		const char *source_data;
 		unsigned long source_size;
 
@@ -807,21 +804,14 @@ theme_install_callback(hlcache_handle *c,
 			warn_user("ThemeInvalid", 0);
 
 		hlcache_handle_release(c);
+		break;
 	}
-	break;
 
 	case CONTENT_MSG_ERROR:
 		warn_user(event->data.error, 0);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_REFORMAT:
-	case CONTENT_MSG_REDRAW:
 	default:
-		assert(0);
 		break;
 	}
 

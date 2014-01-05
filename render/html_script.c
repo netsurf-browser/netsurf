@@ -172,8 +172,6 @@ convert_script_async_cb(hlcache_handle *script,
 		parent->base.active--;
 		LOG(("%d fetches active", parent->base.active));
 
-
-
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -188,11 +186,8 @@ convert_script_async_cb(hlcache_handle *script,
 
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
 	default:
-		assert(0);
+		break;
 	}
 
 	return NSERROR_OK;
@@ -219,11 +214,6 @@ convert_script_defer_cb(hlcache_handle *script,
 	assert(i != parent->scripts_count);
 
 	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
 
 	case CONTENT_MSG_DONE:
 		LOG(("script %d done '%s'", i,
@@ -245,11 +235,8 @@ convert_script_defer_cb(hlcache_handle *script,
 
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
 	default:
-		assert(0);
+		break;
 	}
 
 	/* if there are no active fetches remaining begin post parse
@@ -333,19 +320,8 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		break;
 
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_READY:
-	case CONTENT_MSG_STATUS:
-	case CONTENT_MSG_REDIRECT:
-		/* messages content handler will legitamately recive
-		 * but does not need to handle
-		 */
-		break;
-
 	default:
-		/* all other messages are unexpected and fatal */
-		LOG(("Unhandled message type %d", event->type));
-		assert(0);
+		break;
 	}
 
 	/* if there are no active fetches remaining begin post parse
