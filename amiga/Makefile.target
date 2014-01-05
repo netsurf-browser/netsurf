@@ -46,6 +46,7 @@ else
   $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
   $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,NSSVG))
   $(eval $(call pkg_config_find_and_add_enabled,AMIGA_CAIRO,cairo,Cairo))
+  $(eval $(call feature_enabled,MOZJS,-DXP_AMIGA -DWITH_MOZJS -DJS_VERSION=170 -DJSVERSION_LATEST=170 -DJSOPTION_JIT=0 -DJSCLASS_GLOBAL_FLAGS=0,-ljs,JavaScript))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
