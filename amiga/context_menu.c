@@ -742,17 +742,11 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					strlcpy(fname,filereq->fr_Drawer,1024);
 					AddPart(fname,filereq->fr_File,1024);
 
-					if(utf8_from_local_encoding(fname,0,&utf8_fn) != UTF8_CONVERT_OK)
-					{
-						warn_user("NoMemory","");
-						break;
-					}
-
 					browser_window_drop_file_at_point(
 							file_input->bw,
 							file_input->x,
 							file_input->y,
-							utf8_fn);
+							fname);
 				}
 			break;
 
