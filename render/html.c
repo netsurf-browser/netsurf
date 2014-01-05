@@ -507,6 +507,37 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	return error;
 }
 
+static bool html_process_img(html_content *c, dom_node *node)
+{
+	dom_string *src;
+	nsurl *url;
+	nserror err;
+	dom_exception exc;
+	bool success;
+
+	/* Do nothing if foreground images are disabled */
+	if (nsoption_bool(foreground_images) == false) {
+		return true;
+	}
+
+	exc = dom_element_get_attribute(node, corestring_dom_src, &src);
+	if (exc != DOM_NO_ERR || src == NULL) {
+		return true;
+	}
+
+	err = nsurl_join(c->base_url, dom_string_data(src), &url);
+	if (err != NSERROR_OK) {
+		dom_string_unref(src);
+		return false;
+	}
+	dom_string_unref(src);
+
+	/* Speculatively fetch the image */
+	success = html_fetch_object(c, url, NULL, CONTENT_IMAGE, 0, 0, false);
+	nsurl_unref(url);
+
+	return success;
+}
 
 /**
  * Complete conversion of an HTML document
@@ -608,6 +639,10 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 						name, corestring_lwc_title) &&
 						htmlc->title == NULL) {
 					htmlc->title = dom_node_ref(node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_img)) {
+					html_process_img(htmlc,
+							(dom_node *) node);
 				}
 
 				dom_string_unref(name);

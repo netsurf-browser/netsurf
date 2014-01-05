@@ -123,6 +123,9 @@ html_object_callback(hlcache_handle *object,
 	assert(c->base.status != CONTENT_STATUS_ERROR);
 
 	box = o->box;
+	if (box == NULL && event->type != CONTENT_MSG_ERROR) {
+		return NSERROR_OK;
+	}
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -181,11 +184,13 @@ html_object_callback(hlcache_handle *object,
 
 		o->content = NULL;
 
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
+		if (box != NULL) {
+			c->base.active--;
+			LOG(("%d fetches active", c->base.active));
 
-		content_add_error(&c->base, "?", 0);
-		html_object_failed(box, c, o->background);
+			content_add_error(&c->base, "?", 0);
+			html_object_failed(box, c, o->background);
+		}
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -464,7 +469,7 @@ html_object_callback(hlcache_handle *object,
 	 * then reformat the page to display newly fetched objects */
 	else if (nsoption_bool(incremental_reflow) &&
 			event->type == CONTENT_MSG_DONE &&
-			!(box->flags & REPLACE_DIM) &&
+			box != NULL && !(box->flags & REPLACE_DIM) &&
 			(c->base.status == CONTENT_STATUS_READY ||
 			 c->base.status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->base.reformat_time)) {
@@ -491,6 +496,7 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 	nserror error;
 
 	assert(object != NULL);
+	assert(object->box != NULL);
 
 	c = (html_content *) object->parent;
 
@@ -562,7 +568,7 @@ nserror html_object_open_objects(html_content *html, struct browser_window *bw)
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
 
-		if (object->content == NULL)
+		if (object->content == NULL || object->box == NULL)
 			continue;
 
 		if (content_get_type(object->content) == CONTENT_NONE)
@@ -621,7 +627,7 @@ nserror html_object_close_objects(html_content *html)
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
 
-		if (object->content == NULL)
+		if (object->content == NULL || object->box == NULL)
 			continue;
 
 		if (content_get_type(object->content) == CONTENT_NONE)
@@ -701,8 +707,10 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	c->object_list = object;
 
 	c->num_objects++;
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
+	if (box != NULL) {
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+	}
 
 	return true;
 }
