@@ -1564,7 +1564,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 	case CONTENT_MSG_GADGETCLICK:
 		if (event->data.gadget_click.gadget->type == GADGET_FILE) {
-			gui_file_gadget_open(bw, c,
+			gui_file_gadget_open(bw->window, c,
 				event->data.gadget_click.gadget);
 		}
 		

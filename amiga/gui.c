@@ -5138,7 +5138,7 @@ void ami_gui_splash_close(Object *win_obj)
 	if(win_obj) DisposeObject(win_obj);
 }
 
-void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl, 
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", bw, gadget));

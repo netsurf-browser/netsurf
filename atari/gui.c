@@ -1098,7 +1098,7 @@ static void gui_init2(int argc, char** argv)
     toolbar_init();
 }
 
-void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl,
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
         struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", bw, gadget));

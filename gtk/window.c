@@ -1162,3 +1162,35 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	LOG(("width: %i", *width));
 	LOG(("height: %i", *height));
 }
+
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
+	struct form_control *gadget)
+{
+	GtkWidget *dialog;
+
+	LOG(("Awooga."));
+	
+	dialog = gtk_file_chooser_dialog_new("Select File",
+			nsgtk_scaffolding_window(g->scaffold),
+			GTK_FILE_CHOOSER_ACTION_OPEN,
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+			NULL);
+
+	LOG(("*** open dialog: %p", dialog));
+			
+	int ret = gtk_dialog_run(GTK_DIALOG(dialog));
+	LOG(("*** return value: %d", ret));
+	if (ret == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(
+			GTK_FILE_CHOOSER(dialog));
+		
+		browser_window_set_gadget_filename(g->bw, gadget, filename);
+		
+		g_free(filename);
+	}
+
+	gtk_widget_destroy(dialog);
+}

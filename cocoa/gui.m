@@ -324,7 +324,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 	cb( false, cbpw );
 }
 
-void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl, 
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", bw, gadget));

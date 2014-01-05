@@ -681,13 +681,6 @@ void gui_quit(void)
 	gtk_fetch_filetype_fin();
 }
 
-void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", bw, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "plinth"); */
-}
-
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {

@@ -2424,7 +2424,7 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-void gui_file_gadget_open(struct browser_window *bw, hlcache_handle *hl, 
+void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", bw, gadget));
