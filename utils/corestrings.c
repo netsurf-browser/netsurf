@@ -232,6 +232,16 @@ dom_string *corestring_dom_volumechange;
 dom_string *corestring_dom_vspace;
 dom_string *corestring_dom_waiting;
 dom_string *corestring_dom_width;
+dom_string *corestring_dom_BUTTON;
+dom_string *corestring_dom_INPUT;
+dom_string *corestring_dom_SELECT;
+dom_string *corestring_dom_TEXTAREA;
+dom_string *corestring_dom_button;
+dom_string *corestring_dom_image;
+dom_string *corestring_dom_radio;
+dom_string *corestring_dom_checkbox;
+dom_string *corestring_dom_file;
+dom_string *corestring_dom_on;
 dom_string *corestring_dom___ns_key_libcss_node_data;
 dom_string *corestring_dom___ns_key_file_name_node_data;
 
@@ -463,6 +473,19 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(vspace);
 	CSS_DOM_STRING_UNREF(waiting);
 	CSS_DOM_STRING_UNREF(width);
+	/* DOM node names, not really CSS */
+	CSS_DOM_STRING_UNREF(BUTTON);
+	CSS_DOM_STRING_UNREF(INPUT);
+	CSS_DOM_STRING_UNREF(SELECT);
+	CSS_DOM_STRING_UNREF(TEXTAREA);
+	/* DOM input types, not really CSS */
+	CSS_DOM_STRING_UNREF(button);
+	CSS_DOM_STRING_UNREF(image);
+	CSS_DOM_STRING_UNREF(radio);
+	CSS_DOM_STRING_UNREF(checkbox);
+	CSS_DOM_STRING_UNREF(file);
+	CSS_DOM_STRING_UNREF(on);
+	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
 #undef CSS_DOM_STRING_UNREF
@@ -725,6 +748,19 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(vspace);
 	CSS_DOM_STRING_INTERN(waiting);
 	CSS_DOM_STRING_INTERN(width);
+	/* DOM node names, not really CSS */
+	CSS_DOM_STRING_INTERN(BUTTON);
+	CSS_DOM_STRING_INTERN(INPUT);
+	CSS_DOM_STRING_INTERN(SELECT);
+	CSS_DOM_STRING_INTERN(TEXTAREA);
+	/* DOM input types, not really CSS */
+	CSS_DOM_STRING_INTERN(button);
+	CSS_DOM_STRING_INTERN(image);
+	CSS_DOM_STRING_INTERN(radio);
+	CSS_DOM_STRING_INTERN(checkbox);
+	CSS_DOM_STRING_INTERN(file);
+	CSS_DOM_STRING_INTERN(on);
+	/* DOM userdata keys, not really CSS */
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_file_name_node_data);
 #undef CSS_DOM_STRING_INTERN

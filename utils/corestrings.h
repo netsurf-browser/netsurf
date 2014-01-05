@@ -238,6 +238,21 @@ extern struct dom_string *corestring_dom_volumechange;
 extern struct dom_string *corestring_dom_vspace;
 extern struct dom_string *corestring_dom_waiting;
 extern struct dom_string *corestring_dom_width;
+/* DOM node types */
+extern struct dom_string *corestring_dom_BUTTON;
+extern struct dom_string *corestring_dom_INPUT;
+extern struct dom_string *corestring_dom_SELECT;
+extern struct dom_string *corestring_dom_TEXTAREA;
+/* DOM input node types */
+extern struct dom_string *corestring_dom_button;
+/* extern struct dom_string *corestring_dom_submit; */
+/* extern struct dom_string *corestring_dom_reset; */
+extern struct dom_string *corestring_dom_image;
+extern struct dom_string *corestring_dom_radio;
+extern struct dom_string *corestring_dom_checkbox;
+extern struct dom_string *corestring_dom_file;
+extern struct dom_string *corestring_dom_on;
+/* DOM userdata keys */
 extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
 extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 
