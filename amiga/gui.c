@@ -5142,6 +5142,18 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
+
+	if(AslRequestTags(filereq,
+			ASLFR_Window, g->shared->win,
+			ASLFR_SleepWindow, TRUE,
+			ASLFR_TitleText, messages_get("NetSurf"),
+			ASLFR_Screen, scrn,
+			ASLFR_DoSaveMode, FALSE,
+			TAG_DONE)) {
+		char fname[1024];
+		strlcpy(fname, filereq->fr_Drawer, 1024);
+		AddPart(fname, filereq->fr_File, 1024);
+		browser_window_set_gadget_filename(g->shared->bw, gadget, fname);
+	}
 }
 
