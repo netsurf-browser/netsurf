@@ -69,7 +69,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
 		float resample_scale = bitmap->width / (float)plot_width;
-		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
+		uint32 flags = COMPFLAG_IgnoreDestAlpha;
 		if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 
 		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
