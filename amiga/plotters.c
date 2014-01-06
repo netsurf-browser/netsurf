@@ -711,6 +711,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_SrcHeight,height,
 					COMPTAG_OffsetX,x,
 					COMPTAG_OffsetY,y,
+					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
 #endif
 	}
@@ -873,6 +874,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					COMPTAG_SrcHeight,bfbm->height,
 					COMPTAG_OffsetX,xf,
 					COMPTAG_OffsetY,yf,
+					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
 #endif
 			}

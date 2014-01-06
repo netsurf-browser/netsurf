@@ -84,6 +84,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 					COMPTAG_DestHeight,bitmap->height,
 					COMPTAG_OffsetX,0,
 					COMPTAG_OffsetY,0,
+					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
 	}
 	else
