@@ -350,7 +350,7 @@ bool form_successful_controls_dom(struct form *_form,
 	dom_exception err;
 	dom_string *nodename = NULL, *inputname = NULL, *inputvalue = NULL, *inputtype = NULL;
 	struct fetch_multipart_data sentinel, *last_success, *success_new;
-	bool had_submit = false, element_disabled;
+	bool had_submit = false, element_disabled, checked;
 	char *charset, *rawfile_temp = NULL, *basename;
 	uint32_t index, element_count;
 	struct image_input_coords *coords;
@@ -687,6 +687,15 @@ bool form_successful_controls_dom(struct form *_form,
 				   dom_string_caseless_isequal(
 					   inputtype, corestring_dom_checkbox)) {
 				LOG(("Examining radio or checkbox"));
+				err = dom_html_input_element_get_checked(
+					(dom_html_input_element *)form_element,
+					&checked);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get input element checked"));
+					goto dom_no_memory;
+				}
+				if (!checked)
+					continue;
 				err = dom_html_input_element_get_value(
 					(dom_html_input_element *)form_element,
 					&inputvalue);
