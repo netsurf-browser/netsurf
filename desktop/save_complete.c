@@ -435,7 +435,7 @@ static bool save_complete_save_html_objects(save_complete_ctx *ctx,
 	object = html_get_objects(c, &count);
 
 	for (; object != NULL; object = object->next) {
-		if (object->content != NULL || object->box != NULL) {
+		if ((object->content != NULL) && (object->box != NULL)) {
 			if (save_complete_save_html_object(ctx,
 					object->content) == false)
 				return false;
