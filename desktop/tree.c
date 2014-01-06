@@ -133,6 +133,10 @@ static bool treeview_test_init(struct tree *tree)
 
 	switch (tree->flags) {
 	case TREE_COOKIES:
+		assert(ssl_current_session == NULL &&
+			"Call sslcert_viewer_init directly, "
+			"this compat. layer can't cope with simultanious "
+			"sslcert viewers");
 		err = cookie_manager_init(&cw_t, (struct core_window *)tree);
 		if (err != NSERROR_OK)
 			warn_user("Couldn't init new cookie manager.", 0);
@@ -180,7 +184,10 @@ static bool treeview_test_fini(struct tree *tree)
 			warn_user("Couldn't finalise hotlist.", 0);
 		break;
 	case TREE_SSLCERT:
+		assert(ssl_current_session != NULL &&
+			"Can't use sslcert window after sslcert_viewer_fini()");
 		err = sslcert_viewer_fini(ssl_current_session);
+		ssl_current_session = NULL;
 		if (err != NSERROR_OK)
 			warn_user("Couldn't finalise sslcert viewer.", 0);
 		break;
@@ -206,6 +213,8 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 
 	switch (tree->flags) {
 	case TREE_SSLCERT:
+		assert(ssl_current_session != NULL &&
+			"Can't use sslcert window after sslcert_viewer_fini()");
 		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
 		return true;
 	case TREE_COOKIES:
@@ -227,6 +236,8 @@ static bool treeview_test_mouse_action(struct tree *tree,
 {
 	switch (tree->flags) {
 	case TREE_SSLCERT:
+		assert(ssl_current_session != NULL &&
+			"Can't use sslcert window after sslcert_viewer_fini()");
 		sslcert_viewer_mouse_action(ssl_current_session, mouse, x, y);
 		return true;
 	case TREE_COOKIES:
@@ -247,6 +258,8 @@ static bool treeview_test_keypress(struct tree *tree, uint32_t key)
 {
 	switch (tree->flags) {
 	case TREE_SSLCERT:
+		assert(ssl_current_session != NULL &&
+			"Can't use sslcert window after sslcert_viewer_fini()");
 		sslcert_viewer_keypress(ssl_current_session, key);
 		return true;
 	case TREE_COOKIES:
