@@ -1328,6 +1328,7 @@ void ami_gui_opts_open(void)
        	 	           					GA_RelVerify, TRUE,
    	     	           					GA_Text, gadlab[GID_OPTS_CONTEXTMENU],
    	     	           					GA_Selected, nsoption_bool(context_menu),
+								GA_Disabled, !popupmenu_lib_ok,
            	    					CheckBoxEnd,
 #endif
 			               			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,

@@ -176,4 +176,6 @@ struct browser_window *curbw;
 struct gui_globals browserglob;
 uint32 ami_appid;
 BOOL ami_autoscroll;
+BOOL popupmenu_lib_ok;
 #endif
+

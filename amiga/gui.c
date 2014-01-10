@@ -87,6 +87,7 @@
 #include <proto/keymap.h>
 #include <proto/locale.h>
 #include <proto/Picasso96API.h>
+#include <proto/popupmenu.h>
 #include <proto/utility.h>
 #include <proto/wb.h>
 
@@ -580,9 +581,11 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 		}
 	}
 
+	if(popupmenu_lib_ok == FALSE)
+		nsoption_set_bool(context_menu, false);
+
 #ifndef __amigaos4__
 	nsoption_set_bool(download_notify, false);
-	nsoption_set_bool(context_menu, false);
 	nsoption_set_bool(font_antialiasing, false);
 	nsoption_set_bool(truecolour_mouse_pointers, false);
 #endif
@@ -998,6 +1001,19 @@ int main(int argc, char** argv)
 	int32 user = 0;
 	nserror ret;
 	Object *splash_window = ami_gui_splash_open();
+
+	/* Open popupmenu.library just to check the version.
+	 * Versions older than 53.11 are dangerous, so we
+	 * forcibly disable context menus if these are in use.
+	 */
+	popupmenu_lib_ok = FALSE;
+	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
+		LOG(("popupmenu.library v%d.%d",
+			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
+		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
+			popupmenu_lib_ok = TRUE;
+		CloseLibrary(PopupMenuBase);
+	}
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
