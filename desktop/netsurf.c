@@ -39,6 +39,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
+#include "desktop/system_colour.h"
 #include "desktop/gui.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
@@ -211,7 +212,9 @@ nserror netsurf_init(const char *messages)
 	hlcache_initialise(&hlcache_parameters);
 
 	/* Initialize system colours */
-	gui_system_colour_init();
+	error = ns_system_colour_init();
+	if (error != NSERROR_OK)
+		return error;
 
 	js_initialise();
 
@@ -270,7 +273,7 @@ void netsurf_exit(void)
 	urldb_destroy();
 
 	LOG(("Destroying System colours"));
-	gui_system_colour_finalize();
+	ns_system_colour_finalize();
 
 	corestrings_fini();
 	LOG(("Remaining lwc strings:"));

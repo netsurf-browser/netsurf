@@ -21,7 +21,7 @@
  */
 
 #include "css/utils.h"
-#include "desktop/gui.h"
+#include "desktop/system_colour.h"
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
@@ -3466,15 +3466,15 @@ static void treeview_init_plot_styles(int font_pt_size)
 	plot_style_even.bg.stroke_width = 0;
 	plot_style_even.bg.stroke_colour = 0;
 	plot_style_even.bg.fill_type = PLOT_OP_TYPE_SOLID;
-	plot_style_even.bg.fill_colour = gui_system_colour_char("Window");
+	plot_style_even.bg.fill_colour = ns_system_colour_char("Window");
 
 	/* Text colour */
 	plot_style_even.text.family = PLOT_FONT_FAMILY_SANS_SERIF;
 	plot_style_even.text.size = font_pt_size * FONT_SIZE_SCALE;
 	plot_style_even.text.weight = 400;
 	plot_style_even.text.flags = FONTF_NONE;
-	plot_style_even.text.foreground = gui_system_colour_char("WindowText");
-	plot_style_even.text.background = gui_system_colour_char("Window");
+	plot_style_even.text.foreground = ns_system_colour_char("WindowText");
+	plot_style_even.text.background = ns_system_colour_char("Window");
 
 	/* Entry field text colour */
 	plot_style_even.itext = plot_style_even.text;
@@ -3484,13 +3484,13 @@ static void treeview_init_plot_styles(int font_pt_size)
 
 	/* Selected background colour */
 	plot_style_even.sbg = plot_style_even.bg;
-	plot_style_even.sbg.fill_colour = gui_system_colour_char("Highlight");
+	plot_style_even.sbg.fill_colour = ns_system_colour_char("Highlight");
 
 	/* Selected text colour */
 	plot_style_even.stext = plot_style_even.text;
 	plot_style_even.stext.foreground =
-			gui_system_colour_char("HighlightText");
-	plot_style_even.stext.background = gui_system_colour_char("Highlight");
+			ns_system_colour_char("HighlightText");
+	plot_style_even.stext.background = ns_system_colour_char("Highlight");
 
 	/* Selected entry field text colour */
 	plot_style_even.sitext = plot_style_even.stext;

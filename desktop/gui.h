@@ -169,13 +169,4 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
  */
 nsurl* gui_get_resource_url(const char *path);
 
-/** css callback to obtain named system colours from a frontend. */
-css_error gui_system_colour(void *pw, lwc_string *name, css_color *color);
-
-/** Obtain a named system colour from a frontend. */
-colour gui_system_colour_char(const char *name);
-
-bool gui_system_colour_init(void);
-void gui_system_colour_finalize(void);
-
 #endif

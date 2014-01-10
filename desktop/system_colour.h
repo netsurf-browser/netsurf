@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,26 +16,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_DESKTOP_NETSURF_H_
-#define _NETSURF_DESKTOP_NETSURF_H_
+/** \file
+ * Interface to system colour values.
+ */
 
-#include <stdbool.h>
+#ifndef _NETSURF_DESKTOP_SYSTEM_COLOUR_H_
+#define _NETSURF_DESKTOP_SYSTEM_COLOUR_H_
+
+#include <libcss/libcss.h>
+
 #include "utils/errors.h"
+#include "desktop/plot_style.h"
 
-extern bool netsurf_quit;
-extern bool verbose_log;
-extern const char * const netsurf_version;
-extern const int netsurf_version_major;
-extern const int netsurf_version_minor;
+/** css callback to obtain named system colours. */
+css_error ns_system_colour(void *pw, lwc_string *name, css_color *color);
 
-/** Initialise netsurf core */
-nserror netsurf_init(const char *messages);
+/** Obtain a named system colour from a frontend. */
+colour ns_system_colour_char(const char *name);
 
-/** Run primary event loop */
-extern int netsurf_main_loop(void);
-
-/** finalise NetSurf core */
-extern void netsurf_exit(void);
-
+nserror ns_system_colour_init(void);
+void ns_system_colour_finalize(void);
 
 #endif

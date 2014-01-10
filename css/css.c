@@ -26,7 +26,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/internal.h"
-#include "desktop/gui.h"
+#include "desktop/system_colour.h"
 #include "render/html.h"
 #include "utils/utils.h"
 #include "utils/http.h"
@@ -221,7 +221,7 @@ static nserror nscss_create_css_data(struct content_css_data *c,
 	params.resolve_pw = NULL;
 	params.import = nscss_handle_import;
 	params.import_pw = c;
-	params.color = gui_system_colour;
+	params.color = ns_system_colour;
 	params.color_pw = NULL;
 	params.font = NULL;
 	params.font_pw = NULL;
@@ -767,7 +767,7 @@ css_error nscss_register_import(struct content_css_data *c,
 			params.resolve_pw = NULL;
 			params.import = NULL;
 			params.import_pw = NULL;
-			params.color = gui_system_colour;
+			params.color = ns_system_colour;
 			params.color_pw = NULL;
 			params.font = NULL;
 			params.font_pw = NULL;

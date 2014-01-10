@@ -26,7 +26,7 @@
 #include "css/internal.h"
 #include "css/select.h"
 #include "css/utils.h"
-#include "desktop/gui.h"
+#include "desktop/system_colour.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
@@ -185,7 +185,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	params.resolve_pw = NULL;
 	params.import = NULL;
 	params.import_pw = NULL;
-	params.color = gui_system_colour;
+	params.color = ns_system_colour;
 	params.color_pw = NULL;
 	params.font = NULL;
 	params.font_pw = NULL;
