@@ -2063,13 +2063,12 @@ void ami_handle_msg(void)
 								if(browser_window_reload_available(gwin->bw))
 									browser_window_reload(gwin->bw,false);
 							break;
-/*
+
 							case 'u': // open url
 								if((nsoption_bool(kiosk_mode) == false))
 									ActivateLayoutGadget((struct Gadget *)gwin->objects[GID_MAIN],
 										gwin->win, NULL, (uint32)gwin->objects[GID_URL]);
 							break;
-*/
 						}
 					}
 					else
