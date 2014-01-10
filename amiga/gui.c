@@ -399,7 +399,7 @@ void ami_open_resources(void)
 							TAG_DONE))) die(messages_get("NoMemory"));
 
 	ami_file_req_init();
-	//ami_help_init(NULL);
+	ami_help_init(NULL);
 }
 
 static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
@@ -760,7 +760,7 @@ void ami_openscreen(void)
 
 	ami_font_setdevicedpi(id);
 	ami_set_screen_defaults(scrn);
-	//ami_help_new_screen(scrn);
+	ami_help_new_screen(scrn);
 }
 
 void ami_openscreenfirst(void)
@@ -2120,7 +2120,7 @@ void ami_handle_msg(void)
 								break;
 								
 								case RAWKEY_HELP: // help
-									//ami_help_open(AMI_HELP_GUI);
+									ami_help_open(AMI_HELP_GUI);
 								break;
 							}
 						}
@@ -2769,7 +2769,7 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
-	//ami_help_free();
+	ami_help_free();
 	ami_file_req_free();
 
 	ami_openurl_close();
