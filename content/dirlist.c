@@ -27,8 +27,6 @@
 #include "content/dirlist.h"
 #include "utils/messages.h"
 
-static const char footer[] = "</div>\n</body>\n</html>\n";
-
 static int dirlist_filesize_calculate(unsigned long *bytesize);
 static int dirlist_filesize_value(unsigned long bytesize);
 static char* dirlist_filesize_unit(unsigned long bytesize);

@@ -524,7 +524,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 				}
 
 				num++;
-				val = strtok('\0', ",");
+				val = strtok(NULL, ",");
 			}
 			break;
 		case IMAGEMAP_CIRCLE:
@@ -543,7 +543,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 				}
 
 				num++;
-				val = strtok('\0', ",");
+				val = strtok(NULL, ",");
 			}
 			break;
 		case IMAGEMAP_POLY:
@@ -553,7 +553,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 			while (val != NULL) {
 				x = atoi(val);
 
-				val = strtok('\0', ",");
+				val = strtok(NULL, ",");
 				if (val == NULL)
 					break;
 
@@ -577,7 +577,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 				new_map->bounds.poly.ycoords[num - 1] = y;
 
 				num++;
-				val = strtok('\0', ",");
+				val = strtok(NULL, ",");
 			}
 
 			new_map->bounds.poly.num = num - 1;
