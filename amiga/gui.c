@@ -160,6 +160,7 @@ Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
+ULONG screen_signal = -1;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 BOOL refresh_search_ico = FALSE;
@@ -401,6 +402,7 @@ void ami_open_resources(void)
 
 	ami_file_req_init();
 	ami_help_init(NULL);
+	screen_signal = AllocSignal(-1); /* for screen closure notification */
 }
 
 static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
@@ -730,6 +732,7 @@ void ami_openscreen(void)
 					SA_PubName, "NetSurf",
 					SA_LikeWorkbench, TRUE,
 					SA_Compositing, compositing,
+					SA_PubSig, screen_signal,
 					TAG_DONE);
 
 		if(scrn)
@@ -2734,15 +2737,16 @@ void ami_quit_netsurf_delayed(void)
 
 void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 {
+	ULONG scrnsig = 1 << screen_signal;
+
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn)) return;
 	if(locked_screen == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
 	LOG(("Waiting for visitor windows to close..."));
-	do {
-		Delay(50);
-	} while (CloseScreen(scrn) == FALSE);
+	Wait(scrnsig);
+	CloseScreen(scrn);
 }
 
 void gui_quit(void)
@@ -2769,6 +2773,7 @@ void gui_quit(void)
 	LOG(("Closing screen"));
 	ami_gui_close_screen(scrn, locked_screen);
 	FreeVec(nsscreentitle);
+	FreeSignal(screen_signal);
 
 	LOG(("Freeing menu items"));
 	ami_context_menu_free();
