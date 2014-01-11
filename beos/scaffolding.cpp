@@ -558,10 +558,6 @@ NSBaseView::Instantiate(BMessage *archive)
 	replicated = true;
 
 	//TODO:FIXME: fix replicants
-	// netsurf_init() needs different args now...
-	//netsurf_init(2, info->args);
-	//return NULL;
-
 	// do as much as possible in this thread to avoid deadlocks
 	
 	gui_init_replicant(2, info->args);

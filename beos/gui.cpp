@@ -78,8 +78,6 @@ extern "C" {
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
-void gui_init(int argc, char** argv);
-
 
 /* Where to search for shared resources.  Must have trailing / */
 #define RESPATH "/boot/apps/netsurf/res/"
@@ -367,42 +365,6 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-static void gui_init2(int argc, char** argv)
-{
-	const char *addr;
-	nsurl *url;
-	nserror error;
-
-	if (argc > 1) {
-		addr = argv[1];
-	} else if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
-
-	/* create an initial browser window */
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create((browser_window_nav_flags)
-			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
-			url,
-			NULL,
-			NULL,
-			NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
-
-	if (gFirstRefsReceived) {
-		// resend the refs we got before having a window to send them to
-		be_app_messenger.SendMessage(gFirstRefsReceived);
-		delete gFirstRefsReceived;
-		gFirstRefsReceived = NULL;
-	}
-}
 
 
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
@@ -532,91 +494,12 @@ static BPath get_messages_path()
 	return p;
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
+
+static void gui_init(int argc, char** argv)
 {
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
-
-	if (!replicated) {
-		// create the Application object before trying to use messages
-		// so we can open an alert in case of error.
-		new NSBrowserApplication;
-	}
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
-
-/** called when replicated from NSBaseView::Instantiate() */
-int gui_init_replicant(int argc, char** argv)
-{
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	// FIXME: use options as readonly for replicants
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	return 0;
-}
-
-void gui_init(int argc, char** argv)
-{
+	const char *addr;
+	nsurl *url;
+	nserror error;
 	char buf[PATH_MAX];
 
 	if (pipe(sEventPipe) < 0)
@@ -746,6 +629,36 @@ void gui_init(int argc, char** argv)
 	if (!replicated)
 		be_app->Unlock();
 
+	if (argc > 1) {
+		addr = argv[1];
+	} else if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create((browser_window_nav_flags)
+			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
+			url,
+			NULL,
+			NULL,
+			NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+	if (gFirstRefsReceived) {
+		// resend the refs we got before having a window to send them to
+		be_app_messenger.SendMessage(gFirstRefsReceived);
+		delete gFirstRefsReceived;
+		gFirstRefsReceived = NULL;
+	}
+
 }
 
 
@@ -783,7 +696,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 }
 
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
@@ -858,7 +771,7 @@ void gui_poll(bool active)
 }
 
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -1172,3 +1085,90 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
+
+static struct gui_table beos_gui_table = {
+	.poll = &gui_poll,
+	.quit = &gui_quit,
+};
+
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	nserror ret;
+	BPath options;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	if (!replicated) {
+		// create the Application object before trying to use messages
+		// so we can open an alert in case of error.
+		new NSBrowserApplication;
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path(), &beos_gui_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
+}
+
+/** called when replicated from NSBaseView::Instantiate() */
+int gui_init_replicant(int argc, char** argv)
+{
+	nserror ret;
+	BPath options;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	// FIXME: use options as readonly for replicants
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path(), &beos_gui_table);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	return 0;
+}

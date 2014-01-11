@@ -28,8 +28,10 @@ extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
+struct gui_table;
+
 /** Initialise netsurf core */
-nserror netsurf_init(const char *messages);
+nserror netsurf_init(const char *messages, struct gui_table *gt);
 
 /** Run primary event loop */
 extern int netsurf_main_loop(void);

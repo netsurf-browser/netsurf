@@ -55,7 +55,7 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	cocoa_autorelease();
 	
@@ -66,11 +66,6 @@ void gui_poll(bool active)
 		[NSApp sendEvent: event];
 		[NSApp updateWindows];	
 	}
-}
-
-void gui_quit(void)
-{
-	// nothing to do
 }
 
 struct browser_window;
@@ -331,4 +326,10 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	LOG(("File open dialog rquest for %p/%p", g, gadget));
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
+
+static struct gui_table gui_table = {
+	.poll = &gui_poll,
+};
+
+struct gui_table *cocoa_gui_table = &gui_table;
 

@@ -27,3 +27,5 @@ extern NSString * const kAlwaysCancelDownload;
 extern NSString * const kAlwaysCloseMultipleTabs;
 
 void cocoa_autorelease( void );
+
+extern struct gui_table *cocoa_gui_table;

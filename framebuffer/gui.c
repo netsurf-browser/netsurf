@@ -555,104 +555,9 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-/** Entry point from OS.
- *
- * /param argc The number of arguments in the string vector.
- * /param argv The argument string vector.
- * /return The return code to the OS
- */
-int
-main(int argc, char** argv)
-{
-	struct browser_window *bw;
-	char *options;
-	char *messages;
-	nsurl *url;
-	nserror ret;
-	nsfb_t *nsfb;
-
-	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, nsoptions);
-	free(options);
-	nsoption_commandline(&argc, argv, nsoptions);
-
-	/* common initialisation */
-	messages = filepath_find(respaths, "Messages");
-	ret = netsurf_init(messages);
-	free(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	/* Override, since we have no support for non-core SELECT menu */
-	nsoption_set_bool(core_select_menu, true);
-
-	if (process_cmdline(argc,argv) != true)
-		die("unable to process command line.\n");
-
-	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
-	if (nsfb == NULL)
-		die("Unable to initialise framebuffer");
-
-	framebuffer_set_cursor(&pointer_image);
-
-	if (fb_font_init() == false)
-		die("Unable to initialise the font system");
-
-	fbtk = fbtk_init(nsfb);
-
-	fbtk_enable_oskb(fbtk);
-
-	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	/* create an initial browser window */
-
-	LOG(("calling browser_window_create"));
-
-	ret = nsurl_create(feurl, &url);
-	if (ret == NSERROR_OK) {
-		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      &bw);
-		nsurl_unref(url);
-	}
-	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
-	} else {
-		netsurf_main_loop();
-
-		browser_window_destroy(bw);
-	}
-
-	netsurf_exit();
-
-	if (fb_font_finalise() == false)
-		LOG(("Font finalisation failed."));
-
-	/* finalise options */
-	nsoption_finalise(nsoptions, nsoptions_default);
-
-	return 0;
-}
 
 
-void
-gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	nsfb_event_t event;
 	int timeout; /* timeout in miliseconds */
@@ -678,8 +583,7 @@ gui_poll(bool active)
 
 }
 
-void
-gui_quit(void)
+static void gui_quit(void)
 {
 	LOG(("gui_quit"));
 
@@ -1994,6 +1898,108 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	LOG(("File open dialog rquest for %p/%p", g, gadget));
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
+
+
+static struct gui_table framebuffer_gui_table = {
+	.poll = &gui_poll,
+	.quit = &gui_quit,
+};
+
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector.
+ * /param argv The argument string vector.
+ * /return The return code to the OS
+ */
+int
+main(int argc, char** argv)
+{
+	struct browser_window *bw;
+	char *options;
+	char *messages;
+	nsurl *url;
+	nserror ret;
+	nsfb_t *nsfb;
+
+	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	options = filepath_find(respaths, "Choices");
+	nsoption_read(options, nsoptions);
+	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages, &framebuffer_gui_table);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	/* Override, since we have no support for non-core SELECT menu */
+	nsoption_set_bool(core_select_menu, true);
+
+	if (process_cmdline(argc,argv) != true)
+		die("unable to process command line.\n");
+
+	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
+	if (nsfb == NULL)
+		die("Unable to initialise framebuffer");
+
+	framebuffer_set_cursor(&pointer_image);
+
+	if (fb_font_init() == false)
+		die("Unable to initialise the font system");
+
+	fbtk = fbtk_init(nsfb);
+
+	fbtk_enable_oskb(fbtk);
+
+	urldb_load_cookies(nsoption_charp(cookie_file));
+
+	/* create an initial browser window */
+
+	LOG(("calling browser_window_create"));
+
+	ret = nsurl_create(feurl, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      &bw);
+		nsurl_unref(url);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	} else {
+		netsurf_main_loop();
+
+		browser_window_destroy(bw);
+	}
+
+	netsurf_exit();
+
+	if (fb_font_finalise() == false)
+		LOG(("Font finalisation failed."));
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
+
+	return 0;
+}
+
 
 /*
  * Local Variables:

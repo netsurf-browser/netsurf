@@ -993,93 +993,6 @@ static void gui_init2(int argc, char** argv)
 	}
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-	char messages[100];
-	char script[1024];
-	char temp[1024];
-	BPTR lock = 0;
-	int32 user = 0;
-	nserror ret;
-	Object *splash_window = ami_gui_splash_open();
-
-	/* Open popupmenu.library just to check the version.
-	 * Versions older than 53.11 are dangerous, so we
-	 * forcibly disable context menus if these are in use.
-	 */
-	popupmenu_lib_ok = FALSE;
-	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
-		LOG(("popupmenu.library v%d.%d",
-			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
-		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
-			popupmenu_lib_ok = TRUE;
-		CloseLibrary(PopupMenuBase);
-	}
-
-	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
-	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
-	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
-
-	if(lock = CreateDirTree(current_user_dir))
-		UnLock(lock);
-
-	current_user_options = ASPrintf("%s/Choices", current_user_dir);
-
-	ami_mime_init("PROGDIR:Resources/mimetypes");
-	sprintf(temp, "%s/mimetypes.user", current_user_dir);
-	ami_mime_init(temp);
-	ami_schedule_open_timer();
-	ami_schedule_create();
-
-	amiga_plugin_hack_init();
-	amiga_datatypes_init();
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(NULL, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(current_user_options, NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	if(ami_locate_resource(messages, "Messages") == false)
-		die("Cannot open Messages file");
-	
-	ret = netsurf_init(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	amiga_icon_init();
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	ami_gui_splash_close(splash_window);
-
-	strlcpy(script, nsoption_charp(arexx_dir), 1024);
-	AddPart(script, nsoption_charp(arexx_startup), 1024);
-	ami_arexx_execute(script);
-
-	netsurf_main_loop();
-
-	strlcpy(script, nsoption_charp(arexx_dir), 1024);
-	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
-	ami_arexx_execute(script);
-
-	netsurf_exit();
-
-	ami_mime_free();
-
-	return 0;
-}
 
 void ami_gui_history(struct gui_window_2 *gwin, bool back)
 {
@@ -2567,7 +2480,7 @@ static void ami_gui_fetch_callback(void *p)
 	 */
 }
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	if(active) schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
@@ -2749,7 +2662,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	CloseScreen(scrn);
 }
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	int i;
 
@@ -5177,3 +5090,95 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	}
 }
 
+static struct gui_table ami_gui_table = {
+	.poll = &gui_poll,
+	.quit = &gui_quit,
+};
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	char messages[100];
+	char script[1024];
+	char temp[1024];
+	BPTR lock = 0;
+	int32 user = 0;
+	nserror ret;
+	Object *splash_window = ami_gui_splash_open();
+
+	/* Open popupmenu.library just to check the version.
+	 * Versions older than 53.11 are dangerous, so we
+	 * forcibly disable context menus if these are in use.
+	 */
+	popupmenu_lib_ok = FALSE;
+	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
+		LOG(("popupmenu.library v%d.%d",
+			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
+		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
+			popupmenu_lib_ok = TRUE;
+		CloseLibrary(PopupMenuBase);
+	}
+
+	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
+	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
+
+	if(lock = CreateDirTree(current_user_dir))
+		UnLock(lock);
+
+	current_user_options = ASPrintf("%s/Choices", current_user_dir);
+
+	ami_mime_init("PROGDIR:Resources/mimetypes");
+	sprintf(temp, "%s/mimetypes.user", current_user_dir);
+	ami_mime_init(temp);
+	ami_schedule_open_timer();
+	ami_schedule_create();
+
+	amiga_plugin_hack_init();
+	amiga_datatypes_init();
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(current_user_options, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	if (ami_locate_resource(messages, "Messages") == false)
+		die("Cannot open Messages file");
+
+	ret = netsurf_init(messages, &ami_gui_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	amiga_icon_init();
+
+	gui_init(argc, argv);
+	gui_init2(argc, argv);
+
+	ami_gui_splash_close(splash_window);
+
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_startup), 1024);
+	ami_arexx_execute(script);
+
+	netsurf_main_loop();
+
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
+	ami_arexx_execute(script);
+
+	netsurf_exit();
+
+	ami_mime_free();
+
+	return 0;
+}

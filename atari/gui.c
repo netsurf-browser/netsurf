@@ -115,7 +115,7 @@ short aes_msg_out[8];
 
 
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 
 	struct gui_window *tmp;
@@ -854,7 +854,7 @@ struct gui_window * gui_get_input_window(void)
 	return(input_window);
 }
 
-void gui_quit(void)
+static void gui_quit(void)
 {
     LOG((""));
 
@@ -1105,6 +1105,11 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
+static struct gui_table atari_gui_table = {
+	.poll = &gui_poll,
+	.quit = &gui_quit,
+};
+
 /* #define WITH_DBG_LOGFILE 1 */
 /** Entry point from OS.
  *
@@ -1153,7 +1158,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-    ret = netsurf_init(messages);
+    ret = netsurf_init(messages, atari_gui_table);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }

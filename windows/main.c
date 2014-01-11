@@ -60,11 +60,6 @@ void gui_launch_url(const char *url)
 {
 }
 
-void gui_quit(void)
-{
-	LOG(("gui_quit"));
-}
-
 /** 
  * Ensures output logging stream is available
  */
@@ -95,6 +90,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 
 	return NSERROR_OK;
 }
+
+static struct gui_table win32_gui_table = {
+	.poll = &gui_poll,
+};
+
 
 /**
  * Entry point from operating system
@@ -157,7 +157,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, &win32_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);

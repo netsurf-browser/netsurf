@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,11 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_MONKEY_POLL_H
-#define NETSURF_MONKEY_POLL_H 1
+/** \file
+ * Interface to gui interface factory
+ */
 
-void monkey_prepare_input(void);
+#ifndef _NETSURF_DESKTOP_GUI_FACTORY_H_
+#define _NETSURF_DESKTOP_GUI_FACTORY_H_
 
-void monkey_poll(bool active);
+struct gui_table;
 
-#endif /* NETSURF_MONKEY_POLL_H */
+nserror gui_factory_register(struct gui_table *gt);
+
+#endif

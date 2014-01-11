@@ -55,7 +55,7 @@ nsmonkey_init_resource(const char *resource_path)
 	return respath;
 }
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -113,6 +113,11 @@ static bool nslog_stream_configure(FILE *fptr)
   return true;
 }
 
+static struct gui_table monkey_gui_table = {
+  .poll = &monkey_poll,
+  .quit = &gui_quit,
+};
+
 int
 main(int argc, char **argv)
 {
@@ -146,7 +151,7 @@ main(int argc, char **argv)
 
   /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-  ret = netsurf_init(messages);
+  ret = netsurf_init(messages, &monkey_gui_table);
   free(messages);
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");

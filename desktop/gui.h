@@ -24,6 +24,18 @@
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
 
+#include <stdbool.h>
+
+#include <libwapcaplet/libwapcaplet.h>
+#include <libcss/libcss.h>
+
+#include "utils/config.h"
+#include "content/hlcache.h"
+#include "desktop/download.h"
+#include "desktop/mouse.h"
+#include "desktop/search.h"
+#include "utils/errors.h"
+
 typedef enum {
 	GUI_SAVE_SOURCE,
 	GUI_SAVE_DRAW,
@@ -53,20 +65,22 @@ struct gui_download_window;
 struct browser_window;
 struct form_control;
 
-#include <stdbool.h>
+/** Graphical user interface function table
+ *
+ * function table implementing GUI interface to browser core
+ */
+struct gui_table {
+	/** called to let the frontend update its state and run any
+	 * I/O operations.
+	 */
+	void (*poll)(bool active); /* Mandantory */
 
-#include <libwapcaplet/libwapcaplet.h>
-#include <libcss/libcss.h>
+	/** called to allow the gui to cleanup */
+	void (*quit)(void); /* optional */
 
-#include "utils/config.h"
-#include "content/hlcache.h"
-#include "desktop/download.h"
-#include "desktop/mouse.h"
-#include "desktop/search.h"
-#include "utils/errors.h"
+};
 
-void gui_poll(bool active);
-void gui_quit(void);
+extern struct gui_table *guit; /* the gui vtable */
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab);

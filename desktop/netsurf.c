@@ -41,6 +41,7 @@
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 
@@ -116,7 +117,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
  * Initialise components used by gui NetSurf.
  */
 
-nserror netsurf_init(const char *messages)
+nserror netsurf_init(const char *messages, struct gui_table *gt)
 {
 	nserror error;
 	struct utsname utsname;
@@ -149,6 +150,11 @@ nserror netsurf_init(const char *messages)
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
+
+	/* register the gui handlers */
+	error = gui_factory_register(gt);
+	if (error != NSERROR_OK)
+		return error;
 
 	messages_load(messages);
 
@@ -228,7 +234,7 @@ nserror netsurf_init(const char *messages)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		gui_poll(fetch_active);
+		guit->poll(fetch_active);
 		hlcache_poll();
 	}
 
@@ -244,7 +250,7 @@ void netsurf_exit(void)
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));
-	gui_quit();
+	guit->quit();
 	
 	LOG(("Finalising JavaScript"));
 	js_finalise();

@@ -837,6 +837,12 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
+static struct gui_table riscos_gui_table = {
+	.poll = &gui_poll,
+	.quit = &gui_quit,
+};
+
+
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
@@ -891,7 +897,7 @@ int main(int argc, char** argv)
 	}
 
 	/* common initialisation */
-	ret = netsurf_init(path);
+	ret = netsurf_init(path, &riscos_gui_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
@@ -919,7 +925,7 @@ int main(int argc, char** argv)
  * Close down the gui (RISC OS).
  */
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_save));
@@ -1024,7 +1030,7 @@ void ro_gui_cleanup(void)
  * \param active return as soon as possible
  */
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
