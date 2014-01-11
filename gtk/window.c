@@ -655,10 +655,11 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 	browser_window_destroy(gw->bw);
 }
 
-/* Core interface docuemnted in desktop/gui.h to create a gui_window */
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-					     struct browser_window *clone,
-					     bool new_tab)
+/* Core interface documented in desktop/gui.h to create a gui_window */
+struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *g; /**< what we're creating to return */
 	GError* error = NULL;

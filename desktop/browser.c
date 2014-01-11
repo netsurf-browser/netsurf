@@ -732,9 +732,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 	 * so find that. */
 	top = browser_window_get_root(clone);
 
-	bw->window = gui_create_browser_window(bw,
-				top,
-				((flags & BROWSER_WINDOW_TAB) != 0));
+	bw->window = guit->window_create(bw, top, ((flags & BROWSER_WINDOW_TAB) != 0));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
@@ -1644,7 +1642,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	if (bw->window) {
 		/* Only the root window has a GUI window */
-		gui_window_destroy(bw->window);
+		guit->window_destroy(bw->window);
 	}
 
 	if (bw->loading_content != NULL) {

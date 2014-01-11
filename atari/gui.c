@@ -186,10 +186,10 @@ static void gui_poll(bool active)
 }
 
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-                          struct browser_window *clone,
-                          bool new_tab) {
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab) {
     struct gui_window *gw=NULL;
     LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone,
           (int)new_tab
@@ -233,7 +233,7 @@ gui_create_browser_window(struct browser_window *bw,
 
 }
 
-void gui_window_destroy(struct gui_window *w)
+static void gui_window_destroy(struct gui_window *w)
 {
     if (w == NULL)
         return;
@@ -1101,13 +1101,15 @@ static void gui_init2(int argc, char** argv)
 void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
         struct form_control *gadget)
 {
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
+    LOG(("File open dialog rquest for %p/%p", g, gadget));
+    /* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
 static struct gui_table atari_gui_table = {
-	.poll = &gui_poll,
-	.quit = &gui_quit,
+    .poll = gui_poll,
+    .quit = gui_quit,
+    .window_create = gui_window_create,
+    .window_destroy = gui_window_destroy,
 };
 
 /* #define WITH_DBG_LOGFILE 1 */

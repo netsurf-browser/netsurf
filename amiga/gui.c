@@ -3083,8 +3083,10 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 	return NSERROR_OK;
 }
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-		struct browser_window *clone, bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *g = NULL;
 	bool closegadg=TRUE;
@@ -3788,7 +3790,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 	}
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	struct Node *ptab;
 	ULONG ptabnum = 0;
@@ -5091,8 +5093,10 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 }
 
 static struct gui_table ami_gui_table = {
-	.poll = &gui_poll,
-	.quit = &gui_quit,
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
 };
 
 /** Normal entry point from OS */

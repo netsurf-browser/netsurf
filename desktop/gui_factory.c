@@ -16,11 +16,18 @@ nserror gui_factory_register(struct gui_table *gt)
 		return NSERROR_INIT_FAILED;
 	}
 
-	/* check the mandantory fields are set */
 
+	/* check the mandantory fields are set */
 	if (gt->poll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gt->window_create == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gt->window_destroy == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
 
 	/* fill in the optional entries with defaults */
 	if (gt->quit == NULL) {

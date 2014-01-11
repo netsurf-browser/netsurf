@@ -24,6 +24,8 @@
 #include "desktop/gui.h"
 #include "windows/localhistory.h"
 
+extern struct gui_table *win32_gui_table;
+
 extern HINSTANCE hInstance;
 
 /* bounding box */

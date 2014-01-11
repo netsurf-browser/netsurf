@@ -88,8 +88,9 @@ monkey_kill_browser_windows(void)
 }
 
 struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-                          struct browser_window *clone, bool new_tab)
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
   struct gui_window *ret = calloc(sizeof(*ret), 1);
   if (ret == NULL)

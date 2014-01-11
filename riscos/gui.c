@@ -838,8 +838,10 @@ static bool nslog_stream_configure(FILE *fptr)
 }
 
 static struct gui_table riscos_gui_table = {
-	.poll = &gui_poll,
-	.quit = &gui_quit,
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
 };
 
 

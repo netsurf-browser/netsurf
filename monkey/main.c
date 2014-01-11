@@ -55,7 +55,7 @@ nsmonkey_init_resource(const char *resource_path)
 	return respath;
 }
 
-static void gui_quit(void)
+static void monkey_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -114,8 +114,10 @@ static bool nslog_stream_configure(FILE *fptr)
 }
 
 static struct gui_table monkey_gui_table = {
-  .poll = &monkey_poll,
-  .quit = &gui_quit,
+  .poll = monkey_poll,
+  .quit = monkey_quit,
+  .window_create = gui_window_create,
+  .window_destroy = gui_window_destroy,
 };
 
 int

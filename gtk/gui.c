@@ -1133,8 +1133,10 @@ bool path_add_part(char *path, int length, const char *newpart)
 
 
 static struct gui_table nsgtk_gui_table = {
-	.poll = &gui_poll,
-	.quit = &gui_quit,
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
 };
 
 /**

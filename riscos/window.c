@@ -379,7 +379,7 @@ void ro_gui_window_initialise(void)
  * \return  gui_window, or 0 on error and error reported
  */
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
+struct gui_window *gui_window_create(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;

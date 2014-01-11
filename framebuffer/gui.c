@@ -1501,10 +1501,10 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 }
 
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *gw;
 
@@ -1527,7 +1527,7 @@ gui_create_browser_window(struct browser_window *bw,
 	return gw;
 }
 
-void
+static void
 gui_window_destroy(struct gui_window *gw)
 {
 	fbtk_destroy_widget(gw->window);
@@ -1901,8 +1901,10 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 
 
 static struct gui_table framebuffer_gui_table = {
-	.poll = &gui_poll,
-	.quit = &gui_quit,
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
 };
 
 /** Entry point from OS.

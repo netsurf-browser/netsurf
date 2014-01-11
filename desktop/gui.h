@@ -75,16 +75,22 @@ struct gui_table {
 	 */
 	void (*poll)(bool active); /* Mandantory */
 
+	/** create a gui window for a browser window */
+	struct gui_window *(*window_create)(struct browser_window *bw,
+					   struct browser_window *clone,
+					   bool new_tab); /* Mandantory */
+
+	/** destroy previously created gui window */
+	void (*window_destroy)(struct gui_window *g); /* Mandantory */
+
+
 	/** called to allow the gui to cleanup */
-	void (*quit)(void); /* optional */
+	void (*quit)(void); /* Optional */
 
 };
 
 extern struct gui_table *guit; /* the gui vtable */
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-		struct browser_window *clone, bool new_tab);
-void gui_window_destroy(struct gui_window *g);
 void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_redraw_window(struct gui_window *g);
 void gui_window_update_box(struct gui_window *g,

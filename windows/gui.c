@@ -80,7 +80,7 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	MSG Msg; /* message from system */
 	BOOL bRet; /* message fetch result */
@@ -1220,10 +1220,10 @@ static HWND nsws_window_create(struct gui_window *gw)
  * create a new gui_window to contain a browser_window
  * \param bw the browser_window to connect to the new gui_window
  */
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *gw;
 
@@ -1399,7 +1399,7 @@ struct browser_window *gui_window_browser_window(struct gui_window *w)
 /**
  * window cleanup code
  */
-void gui_window_destroy(struct gui_window *w)
+static void gui_window_destroy(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1883,3 +1883,11 @@ nsws_create_main_class(HINSTANCE hinstance) {
 
 	return ret;
 }
+
+static struct gui_table gui_table = {
+	.poll = gui_poll,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
+};
+
+struct gui_table *win32_gui_table = &gui_table;

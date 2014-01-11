@@ -42,4 +42,9 @@ void monkey_window_process_reformats(void);
 
 void monkey_window_handle_command(int argc, char **argv);
 void monkey_kill_browser_windows(void);
+
+
+struct gui_window *gui_window_create(struct browser_window *bw, struct browser_window *clone, bool new_tab);
+void gui_window_destroy(struct gui_window *g);
+
 #endif /* NETSURF_MONKEY_BROWSER_H */

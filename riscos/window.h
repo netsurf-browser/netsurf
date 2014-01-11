@@ -29,5 +29,9 @@ void ro_gui_window_initialise(void);
 
 bool ro_gui_window_check_menu(wimp_menu *menu);
 
+struct gui_window *gui_window_create(struct browser_window *bw, struct browser_window *clone, bool new_tab);
+void gui_window_destroy(struct gui_window *g);
+
+
 #endif
 

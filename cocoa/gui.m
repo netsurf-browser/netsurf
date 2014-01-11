@@ -70,8 +70,9 @@ static void gui_poll(bool active)
 
 struct browser_window;
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-											 struct browser_window *clone, bool new_tab)
+static struct gui_window *gui_window_create(struct browser_window *bw,
+                                            struct browser_window *clone,
+                                            bool new_tab)
 {
 	BrowserWindowController *window = nil;
 
@@ -93,7 +94,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return (struct gui_window *)result;
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	BrowserViewController *vc = (BrowserViewController *)g;
 
@@ -329,6 +330,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 
 static struct gui_table gui_table = {
 	.poll = &gui_poll,
+	.window_create = gui_window_create,
+	.window_destroy = gui_window_destroy,
 };
 
 struct gui_table *cocoa_gui_table = &gui_table;
