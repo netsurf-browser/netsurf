@@ -2194,15 +2194,6 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	g->top_view->UnlockLooper();
 }
 
-/**
-* set gui display of a retrieved favicon representing the search provider
-* \param ico may be NULL for local calls; then access current cache from
-* search_web_ico()
-*/
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
-
 
 void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where)
 {

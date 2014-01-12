@@ -656,7 +656,7 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 }
 
 /* Core interface documented in desktop/gui.h to create a gui_window */
-struct gui_window *
+static struct gui_window *
 gui_window_create(struct browser_window *bw,
 		  struct browser_window *clone,
 		  bool new_tab)
@@ -838,7 +838,7 @@ void nsgtk_window_destroy_browser(struct gui_window *gw)
 	gtk_widget_destroy(gw->container);
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	LOG(("gui_window: %p", g));
 	assert(g != NULL);
@@ -861,7 +861,7 @@ void gui_window_destroy(struct gui_window *g)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 {
 	struct bitmap *icon_bitmap = NULL;
 
@@ -1128,11 +1128,6 @@ bool gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *g)
@@ -1195,3 +1190,18 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 
 	gtk_widget_destroy(dialog);
 }
+
+static struct gui_window_table gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_icon = gui_window_set_icon,
+
+	/* from scaffold */
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *nsgtk_gui_window_table = &gui_window_table;

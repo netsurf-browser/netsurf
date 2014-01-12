@@ -676,11 +676,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-void gui_window_save_link(struct gui_window *g, const char *url,
-		const char *title)
-{
-}
-
 void gui_launch_url(const char *url)
 {
 	gboolean ok;
@@ -1132,17 +1127,11 @@ bool path_add_part(char *path, int length, const char *newpart)
 }
 
 
+
 static struct gui_table nsgtk_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
-
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_title = gui_window_set_title,
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
+	.set_search_ico = gui_set_search_ico,
 };
 
 /**
@@ -1181,6 +1170,9 @@ int main(int argc, char** argv)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "Messages");
+
+	nsgtk_gui_table.window = nsgtk_gui_window_table;
+
 	ret = netsurf_init(messages, &nsgtk_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {

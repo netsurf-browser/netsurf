@@ -1318,6 +1318,69 @@ void ami_gui_menu_update_all(void)
 	} while(node = nnode);
 }
 
+/**
+ * function to add retrieved favicon to gui
+ */
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+{
+	struct BitMap *bm = NULL;
+	struct IBox *bbox;
+	ULONG cur_tab = 0;
+	struct bitmap *icon_bitmap;
+
+	if(nsoption_bool(kiosk_mode) == true) return;
+	if(!g) return;
+
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
+						g->shared->objects[GID_TABS],
+						(ULONG *)&cur_tab);
+
+	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
+	{
+		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
+					g->shared->win->RPort->BitMap);
+	}
+
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
+	{
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
+
+		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
+					g->shared->win, NULL, 1);
+
+		if(bm)
+		{
+			ULONG tag, tag_data, minterm;
+
+			if(ami_plot_screen_is_palettemapped() == false) {
+				tag = BLITA_UseSrcAlpha;
+				tag_data = !icon_bitmap->opaque;
+				minterm = 0xc0;
+			} else {
+				tag = BLITA_MaskPlane;
+				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
+				minterm = (ABC|ABNC|ANBC);
+			}
+
+			BltBitMapTags(BLITA_SrcX, 0,
+						BLITA_SrcY, 0,
+						BLITA_DestX, bbox->Left,
+						BLITA_DestY, bbox->Top,
+						BLITA_Width, 16,
+						BLITA_Height, 16,
+						BLITA_Source, bm,
+						BLITA_Dest, g->shared->win->RPort,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_RASTPORT,
+						BLITA_Minterm, minterm,
+						tag, tag_data,
+						TAG_DONE);
+		}
+	}
+
+	g->favicon = icon;
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -2166,7 +2229,7 @@ void ami_handle_msg(void)
 
 	if(refresh_search_ico)
 	{
-		gui_window_set_search_ico(NULL);
+		gui_set_search_ico(NULL);
 		refresh_search_ico = FALSE;
 	}
 
@@ -4611,68 +4674,6 @@ static void gui_window_set_url(struct gui_window *g, const char *url)
 	ami_update_buttons(g->shared);
 }
 
-/**
- * function to add retrieved favicon to gui
- */
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-	struct BitMap *bm = NULL;
-	struct IBox *bbox;
-	ULONG cur_tab = 0;
-	struct bitmap *icon_bitmap;
-
-	if(nsoption_bool(kiosk_mode) == true) return;
-	if(!g) return;
-
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-						g->shared->objects[GID_TABS],
-						(ULONG *)&cur_tab);
-
-	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
-	{
-		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
-					g->shared->win->RPort->BitMap);
-	}
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
-
-		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
-					g->shared->win, NULL, 1);
-
-		if(bm)
-		{
-			ULONG tag, tag_data, minterm;
-			
-			if(ami_plot_screen_is_palettemapped() == false) {
-				tag = BLITA_UseSrcAlpha;
-				tag_data = !icon_bitmap->opaque;
-				minterm = 0xc0;
-			} else {
-				tag = BLITA_MaskPlane;
-				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
-				minterm = (ABC|ABNC|ANBC);
-			}
-		
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, bbox->Left,
-						BLITA_DestY, bbox->Top,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, g->shared->win->RPort,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_RASTPORT,
-						BLITA_Minterm, minterm,
-						tag, tag_data,
-						TAG_DONE);
-		}
-	}
-
-	g->favicon = icon;
-}
 
 static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
@@ -4687,7 +4688,7 @@ static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
  * \param ico may be NULL for local calls; then access current cache from
  * search_web_ico()
  */
-void gui_window_set_search_ico(hlcache_handle *ico)
+static void gui_set_search_ico(hlcache_handle *ico)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -4849,7 +4850,7 @@ bool gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
 	g->shared->drag_op = type;
@@ -5092,17 +5093,29 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	}
 }
 
+static struct gui_window_table ami_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+
+	.drag_start = gui_window_drag_start,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+
+	/* from download */
+	.save_link = gui_window_save_link,
+};
+
+
 static struct gui_table ami_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+	.set_search_ico = gui_set_search_ico,
 
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_title = gui_window_set_title,
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
+	.window = &ami_window_table,
 };
 
 /** Normal entry point from OS */

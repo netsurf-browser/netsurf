@@ -944,9 +944,7 @@ nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 	search_web_retrieve_ico(false);
 
 	/* callback may handle changing gui */
-	if (search_web_ico() != NULL) {
-		gui_window_set_search_ico(search_web_ico());
-	}
+	gui_set_search_ico(search_web_ico());
 
 	/* set entry */
 	name = search_web_provider_name();

@@ -646,7 +646,7 @@ gui_window_remove_caret(struct gui_window *w)
     return;
 }
 
-void
+static void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
     struct bitmap *bmp_icon;
@@ -656,12 +656,6 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
     if(input_window == g) {
         window_set_icon(g->root, bmp_icon);
     }
-}
-
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-    TODO();
 }
 
 void gui_window_new_content(struct gui_window *w)
@@ -679,19 +673,6 @@ bool gui_window_scroll_start(struct gui_window *w)
     return true;
 }
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                           const struct rect *rect)
-{
-    TODO();
-    return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-                          const char *title)
-{
-    LOG(("%s -> %s", title, url ));
-    TODO();
-}
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
                           struct gui_window *w)
@@ -1105,17 +1086,23 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
     /* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
+static struct gui_window_table atari_window_table = {
+    .create = gui_window_create,
+    .destroy = gui_window_destroy,
+
+    .set_title = gui_window_set_title,
+    .set_url = gui_window_set_url,
+    .set_icon = gui_window_set_icon,
+
+    .start_throbber = gui_window_start_throbber,
+    .stop_throbber = gui_window_stop_throbber,
+};
+
 static struct gui_table atari_gui_table = {
     .poll = gui_poll,
     .quit = gui_quit,
 
-    .window_create = gui_window_create,
-    .window_destroy = gui_window_destroy,
-
-    .window_set_title = gui_window_set_title,
-    .window_set_url = gui_window_set_url,
-    .window_start_throbber = gui_window_start_throbber,
-    .window_stop_throbber = gui_window_stop_throbber,
+    .window = &atari_window_table;
 };
 
 /* #define WITH_DBG_LOGFILE 1 */

@@ -449,8 +449,8 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 			TRUE);
 	/* update favicon etc */
 	nsgtk_scaffolding_set_top_level(nsgtk_scaffolding_top_level(g));
-	if (search_web_ico())
-		gui_window_set_search_ico(search_web_ico());
+
+	gui_set_search_ico(search_web_ico());
 }
 
 /**

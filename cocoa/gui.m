@@ -226,7 +226,7 @@ static void gui_window_stop_throbber(struct gui_window *g)
 	[(BrowserViewController *)g updateBackForward];
 }
 
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	NSBitmapImageRep *bmp = icon != NULL ? (NSBitmapImageRep *)content_get_bitmap( icon ) : NULL;
 
@@ -241,11 +241,6 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 	[(BrowserViewController *)g setFavicon: image];
 	[image release];
-}
-
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
-	UNIMPL();
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
@@ -268,18 +263,6 @@ void gui_window_new_content(struct gui_window *g)
 bool gui_window_scroll_start(struct gui_window *g)
 {
 	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url, 
-						  const char *title)
-{
-	UNIMPL();
 }
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
@@ -328,16 +311,22 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
+static struct gui_window_table cocoa_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
 static struct gui_table gui_table = {
 	.poll = &gui_poll,
 
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_title = gui_window_set_title,
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
+        .window = &cocoa_window_table,
 };
 
 struct gui_table *cocoa_gui_table = &gui_table;

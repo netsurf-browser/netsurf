@@ -36,19 +36,13 @@ struct gui_window {
   
 };
 
+extern struct gui_window_table *monkey_gui_window_table;
+
 struct gui_window *monkey_find_window_by_num(uint32_t win_num);
 struct gui_window *monkey_find_window_by_content(hlcache_handle *content);
 void monkey_window_process_reformats(void);
 
 void monkey_window_handle_command(int argc, char **argv);
 void monkey_kill_browser_windows(void);
-
-
-struct gui_window *gui_window_create(struct browser_window *bw, struct browser_window *clone, bool new_tab);
-void gui_window_destroy(struct gui_window *g);
-void gui_window_set_title(struct gui_window *g, const char *title);
-void gui_window_set_url(struct gui_window *g, const char *url);
-void gui_window_start_throbber(struct gui_window *g);
-void gui_window_stop_throbber(struct gui_window *g);
 
 #endif /* NETSURF_MONKEY_BROWSER_H */

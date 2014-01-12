@@ -87,7 +87,7 @@ monkey_kill_browser_windows(void)
   }
 }
 
-struct gui_window *
+static struct gui_window *
 gui_window_create(struct browser_window *bw,
 		  struct browser_window *clone,
 		  bool new_tab)
@@ -112,7 +112,7 @@ gui_window_create(struct browser_window *bw,
   return ret;
 }
 
-void
+static void
 gui_window_destroy(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW DESTROY WIN %u\n", g->win_num);
@@ -120,7 +120,7 @@ gui_window_destroy(struct gui_window *g)
   free(g);
 }
 
-void
+static void
 gui_window_set_title(struct gui_window *g, const char *title)
 {
   fprintf(stdout, "WINDOW TITLE WIN %u STR %s\n", g->win_num, title);
@@ -148,19 +148,19 @@ gui_window_new_content(struct gui_window *g)
   fprintf(stdout, "WINDOW NEW_CONTENT WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
   fprintf(stdout, "WINDOW NEW_ICON WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_start_throbber(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW START_THROBBER WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_stop_throbber(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW STOP_THROBBER WIN %u\n", g->win_num);
@@ -270,7 +270,7 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
   fprintf(stdout, "WINDOW SET_POINTER WIN %u POINTER %s\n", g->win_num, ptr_name);
 }
 
-void
+static void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
   fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
@@ -299,11 +299,6 @@ gui_window_scroll_start(struct gui_window *g)
   fprintf(stdout, "WINDOW SCROLL_START WIN %u\n", g->win_num);
   g->scrollx = g->scrolly = 0;
   return true;
-}
-
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
 }
 
 void
@@ -367,7 +362,7 @@ gui_window_remove_caret(struct gui_window *g)
   fprintf(stdout, "WINDOW REMOVE_CARET WIN %u\n", g->win_num);
 }
 
-bool
+static bool
 gui_window_drag_start(struct gui_window *g, gui_drag_type type,
                       const struct rect *rect)
 {
@@ -383,7 +378,7 @@ gui_create_form_select_menu(struct browser_window *bw,
           bw->window->win_num);
 }
 
-void
+static void
 gui_window_save_link(struct gui_window *g, const char *url, 
                      const char *title)
 {
@@ -567,3 +562,19 @@ monkey_window_handle_command(int argc, char **argv)
   }
   
 }
+
+static struct gui_window_table gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+
+	.drag_start = gui_window_drag_start,
+	.save_link = gui_window_save_link,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *monkey_gui_window_table = &gui_window_table;

@@ -25,41 +25,104 @@ static void gui_default_window_stop_throbber(struct gui_window *g)
 {
 }
 
+static bool
+gui_default_window_drag_start(struct gui_window *g,
+			      gui_drag_type type,
+			      const struct rect *rect)
+{
+	return true;
+}
+
+static void
+gui_default_window_save_link(struct gui_window *g,
+			     const char *url,
+			     const char *title)
+{
+}
+
+static void
+gui_default_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+{
+}
+
+static void
+gui_default_set_search_ico(hlcache_handle *ico)
+{
+}
+
+/** verify window table is valid */
+static nserror verify_window_register(struct gui_window_table *gwt)
+{
+	/* check table is present */
+	if (gwt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (gwt->create == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gwt->destroy == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* fill in the optional entries with defaults */
+	if (gwt->set_title == NULL) {
+		gwt->set_title = gui_default_window_set_title;
+	}
+	if (gwt->set_url == NULL) {
+		gwt->set_url = gui_default_window_set_url;
+	}
+	if (gwt->start_throbber == NULL) {
+		gwt->start_throbber = gui_default_window_start_throbber;
+	}
+	if (gwt->stop_throbber == NULL) {
+		gwt->stop_throbber = gui_default_window_stop_throbber;
+	}
+	if (gwt->drag_start == NULL) {
+		gwt->drag_start = gui_default_window_drag_start;
+	}
+	if (gwt->save_link == NULL) {
+		gwt->save_link = gui_default_window_save_link;
+	}
+	if (gwt->set_icon == NULL) {
+		gwt->set_icon = gui_default_window_set_icon;
+	}
+
+	return NSERROR_OK;
+}
+
 nserror gui_factory_register(struct gui_table *gt)
 {
+	nserror err;
+
 	/* ensure not already initialised */
 	if (guit != NULL) {
 		return NSERROR_INIT_FAILED;
 	}
 
+	/* check table is present */
+	if (gt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check subtables */
+	err = verify_window_register(gt->window);
+	if (err != NSERROR_OK) {
+		return err;
+	}
 
 	/* check the mandantory fields are set */
 	if (gt->poll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if (gt->window_create == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-	if (gt->window_destroy == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 
 	/* fill in the optional entries with defaults */
 	if (gt->quit == NULL) {
 		gt->quit = gui_default_quit;
 	}
-	if (gt->window_set_title == NULL) {
-		gt->window_set_title = gui_default_window_set_title;
-	}
-	if (gt->window_set_url == NULL) {
-		gt->window_set_url = gui_default_window_set_url;
-	}
-	if (gt->window_start_throbber == NULL) {
-		gt->window_start_throbber = gui_default_window_start_throbber;
-	}
-	if (gt->window_stop_throbber == NULL) {
-		gt->window_stop_throbber = gui_default_window_stop_throbber;
+	if (gt->set_search_ico == NULL) {
+		gt->set_search_ico = gui_default_set_search_ico;
 	}
 
 	guit = gt;

@@ -335,7 +335,7 @@ float nsbeos_get_scale_for_gui(struct gui_window *g)
 }
 
 /* Create a gui_window */
-struct gui_window *gui_window_create(struct browser_window *bw,
+static struct gui_window *gui_window_create(struct browser_window *bw,
                                      struct browser_window *clone,
                                      bool new_tab)
 {
@@ -957,7 +957,7 @@ void nsbeos_window_destroy_browser(struct gui_window *g)
 	browser_window_destroy(g->bw);
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	if (!g)
 		return;
@@ -1284,11 +1284,6 @@ bool gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *g)
@@ -1384,3 +1379,16 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
+static struct gui_window_table gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	/* from scaffold */
+	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *beos_gui_window_table = &gui_window_table;

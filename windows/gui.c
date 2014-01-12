@@ -1737,15 +1737,6 @@ gui_window_remove_caret(struct gui_window *w)
 	HideCaret(w->drawingarea);
 }
 
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-}
-
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
 
 void gui_window_new_content(struct gui_window *w)
 {
@@ -1756,16 +1747,6 @@ bool gui_window_scroll_start(struct gui_window *w)
 	return true;
 }
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-			  const char *title)
-{
-}
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *w)
@@ -1884,16 +1865,21 @@ nsws_create_main_class(HINSTANCE hinstance) {
 	return ret;
 }
 
+static struct gui_window_table win32_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
 static struct gui_table gui_table = {
 	.poll = gui_poll,
 
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_title = gui_window_set_title,
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
+	.window = &win32_window_table,
 };
 
 struct gui_table *win32_gui_table = &gui_table;

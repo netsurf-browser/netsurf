@@ -25,6 +25,8 @@ extern "C" {
 }
 #include "beos/scaffolding.h"
 
+extern struct gui_window_table *beos_gui_window_table;
+
 class NSBrowserFrameView : public BView {
 public:
 		NSBrowserFrameView(BRect frame, struct gui_window *gui);
@@ -48,7 +50,6 @@ private:
 void nsbeos_dispatch_event(BMessage *message);
 
 
-
 void nsbeos_reflow_all_windows(void);
 void nsbeos_window_process_reformats(void);
 
@@ -60,11 +61,5 @@ int nsbeos_gui_window_update_targets(struct gui_window *g);
 void nsbeos_window_destroy_browser(struct gui_window *g);
 
 struct browser_window *nsbeos_get_browser_window(struct gui_window *g);
-
-
-struct gui_window *gui_window_create(struct browser_window *bw,
-                                     struct browser_window *clone,
-                                     bool new_tab);
-void gui_window_destroy(struct gui_window *g);
 
 #endif /* NETSURF_BEOS_WINDOW_H */

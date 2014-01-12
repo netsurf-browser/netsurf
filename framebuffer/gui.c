@@ -1788,35 +1788,6 @@ gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
-bool
-gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                      const struct rect *rect)
-{
-	return true;
-}
-
-void
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
-}
-
-/**
- * set favicon
- */
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-}
-
-/**
- * set gui display of a retrieved favicon representing the search provider
- * \param ico may be NULL for local calls; then access current cache from
- * search_web_ico()
- */
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
 
 struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *parent)
@@ -1893,17 +1864,20 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
+static struct gui_window_table framebuffer_gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_url = gui_window_set_url,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
 
 static struct gui_table framebuffer_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
+	.window = &framebuffer_gui_window_table,
 };
 
 /** Entry point from OS.

@@ -791,11 +791,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	CALLED();
 }
 
-void 
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
-}
-
 /**
  * Send the source of a content to a text editor.
  */
@@ -1089,15 +1084,6 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_table beos_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
-
-	.window_create = gui_window_create,
-	.window_destroy = gui_window_destroy,
-
-	.window_set_title = gui_window_set_title,
-	.window_set_url = gui_window_set_url,
-	.window_start_throbber = gui_window_start_throbber,
-	.window_stop_throbber = gui_window_stop_throbber,
-
 };
 
 
@@ -1131,6 +1117,9 @@ int main(int argc, char** argv)
 
 	/* common initialisation */
 	BPath messages = get_messages_path();
+
+        beos_gui_table.window = beos_gui_window_table;
+
 	ret = netsurf_init(messages.Path(), &beos_gui_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");

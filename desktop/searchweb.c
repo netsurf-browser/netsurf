@@ -307,7 +307,7 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 
 	case CONTENT_MSG_DONE:
 		LOG(("got favicon '%s'", nsurl_access(hlcache_handle_get_url(ico))));
-		gui_window_set_search_ico(search_ico);
+		guit->set_search_ico(search_ico);
 		break;
 
 	case CONTENT_MSG_ERROR:

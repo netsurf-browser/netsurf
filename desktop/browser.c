@@ -391,7 +391,7 @@ void browser_window_set_drag_type(struct browser_window *bw,
 			break;
 		}
 
-		gui_window_drag_start(top_bw->window, gtype, rect);
+		guit->window->drag_start(top_bw->window, gtype, rect);
 	}
 }
 
@@ -732,7 +732,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 	 * so find that. */
 	top = browser_window_get_root(clone);
 
-	bw->window = guit->window_create(bw, top, ((flags & BROWSER_WINDOW_TAB) != 0));
+	bw->window = guit->window->create(bw, top, ((flags & BROWSER_WINDOW_TAB) != 0));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
@@ -866,7 +866,7 @@ static void browser_window_start_throbber(struct browser_window *bw)
 	while (bw->parent)
 		bw = bw->parent;
 
-	guit->window_start_throbber(bw->window);
+	guit->window->start_throbber(bw->window);
 }
 
 
@@ -884,7 +884,7 @@ static void browser_window_stop_throbber(struct browser_window *bw)
 		bw = bw->parent;
 
 	if (!browser_window_check_throbber(bw)) {
-		guit->window_stop_throbber(bw->window);
+		guit->window->stop_throbber(bw->window);
 	}
 }
 
@@ -918,7 +918,7 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		/* content_get_bitmap on the hlcache_handle should give 
 		 *   us the favicon bitmap at this point
 		 */
-		gui_window_set_icon(bw->window, c);
+		guit->window->set_icon(bw->window, c);
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -1507,7 +1507,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 	{
 		/* Content wants a link to be saved */
 		struct browser_window *root = browser_window_get_root(bw);
-		gui_window_save_link(root->window,
+		guit->window->save_link(root->window,
 				event->data.savelink.url,
 				event->data.savelink.title);
 	}
@@ -1643,7 +1643,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	if (bw->window) {
 		/* Only the root window has a GUI window */
-		guit->window_destroy(bw->window);
+		guit->window->destroy(bw->window);
 	}
 
 	if (bw->loading_content != NULL) {
@@ -1959,7 +1959,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 	case BROWSER_WINDOW_NORMAL:
 		/* Root browser window, constituting a front end window/tab */
-		guit->window_set_title(bw->window,
+		guit->window->set_title(bw->window,
 				content_get_title(bw->current_content));
 
 		browser_window_update_extent(bw);
@@ -2359,7 +2359,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		/* With no fragment, we may as well pass url straight through
 		 * saving a malloc, copy, free cycle.
 		 */
-		guit->window_set_url(bw->window, nsurl_access(url));
+		guit->window->set_url(bw->window, nsurl_access(url));
 	} else {
 		nsurl *display_url;
 		nserror error;
@@ -2370,7 +2370,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 			return;
 		}
 
-		guit->window_set_url(bw->window, nsurl_access(display_url));
+		guit->window->set_url(bw->window, nsurl_access(display_url));
 		nsurl_unref(display_url);
 	}
 }

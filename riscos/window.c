@@ -379,7 +379,7 @@ void ro_gui_window_initialise(void)
  * \return  gui_window, or 0 on error and error reported
  */
 
-struct gui_window *gui_window_create(struct browser_window *bw,
+static struct gui_window *gui_window_create(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;
@@ -600,7 +600,7 @@ struct gui_window *gui_window_create(struct browser_window *bw,
  * \param  g  gui_window to destroy
  */
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	os_error *error;
 	wimp_w w;
@@ -651,7 +651,7 @@ void gui_window_destroy(struct gui_window *g)
  * \param  title  new window title, copied
  */
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	int scale_disp;
 
@@ -1061,7 +1061,7 @@ void gui_window_hide_pointer(struct gui_window *g)
  * \param  url  new url for address bar
  */
 
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	if (!g->toolbar)
 		return;
@@ -1077,7 +1077,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
  * \param  g  window with start of load
  */
 
-void gui_window_start_throbber(struct gui_window *g)
+static void gui_window_start_throbber(struct gui_window *g)
 {
 	ro_gui_window_update_toolbar_buttons(g);
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
@@ -1093,7 +1093,7 @@ void gui_window_start_throbber(struct gui_window *g)
  * \param  g  window with start of load
  */
 
-void gui_window_stop_throbber(struct gui_window *g)
+static void gui_window_stop_throbber(struct gui_window *g)
 {
 	ro_gui_window_update_toolbar_buttons(g);
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
@@ -1105,21 +1105,12 @@ void gui_window_stop_throbber(struct gui_window *g)
  * set favicon
  */
 
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	if (g == NULL || g->toolbar == NULL)
 		return;
 
 	ro_toolbar_set_site_favicon(g->toolbar, icon);
-}
-
-/**
-* set gui display of a retrieved favicon representing the search provider
-* \param ico may be NULL for local calls; then access current cache from
-* search_web_ico()
-*/
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
 }
 
 /**
@@ -1260,7 +1251,7 @@ bool gui_window_scroll_start(struct gui_window *g)
  * \return true iff succesful
  */
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
 	wimp_pointer pointer;
@@ -1319,7 +1310,7 @@ bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
  * \param  g  gui_window containing the content
  * \param  c  the content to save
  */
-void gui_window_save_link(struct gui_window *g, const char *url,
+static void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
 {
 	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
@@ -5264,3 +5255,19 @@ bool ro_gui_alt_pressed(void)
 	xosbyte1(osbyte_SCAN_KEYBOARD, 2 ^ 0x80, 0, &alt);
 	return (alt == 0xff);
 }
+
+static struct gui_window_table gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+
+	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+
+	.save_link = gui_window_save_link,
+	.drag_start = gui_window_drag_start,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *riscos_gui_window_table = &gui_window_table;

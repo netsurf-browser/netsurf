@@ -65,6 +65,45 @@ struct gui_download_window;
 struct browser_window;
 struct form_control;
 
+/** Graphical user interface window function table
+ *
+ * function table implementing window operations
+ */
+struct gui_window_table {
+
+	/* Mandantory entries */
+
+	/** create a gui window for a browsing context */
+	struct gui_window *(*create)(struct browser_window *bw, struct browser_window *clone, bool new_tab);
+
+	/** destroy previously created gui window */
+	void (*destroy)(struct gui_window *g);
+
+
+	/* Optional entries */
+
+	/** set the window title. */
+	void (*set_title)(struct gui_window *g, const char *title);
+
+	/** set the navigation url. */
+	void (*set_url)(struct gui_window *g, const char *url);
+
+	/** start the navigation throbber. */
+	void (*start_throbber)(struct gui_window *g);
+
+	/** stop the navigation throbber. */
+	void (*stop_throbber)(struct gui_window *g);
+
+	/** start a drag operation within a window */
+	bool (*drag_start)(struct gui_window *g, gui_drag_type type, const struct rect *rect);
+
+	/** save link operation */
+	void (*save_link)(struct gui_window *g, const char *url, const char *title);
+
+	/** set favicon */
+	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
+};
+
 /** Graphical user interface function table
  *
  * function table implementing GUI interface to browser core
@@ -73,16 +112,13 @@ struct gui_table {
 
 	/* Mandantory entries */
 
+	/* sub tables */
+	struct gui_window_table *window; /* window sub table */
+
 	/** called to let the frontend update its state and run any
 	 * I/O operations.
 	 */
 	void (*poll)(bool active);
-
-	/** create a gui window for a browsing context */
-	struct gui_window *(*window_create)(struct browser_window *bw, struct browser_window *clone, bool new_tab);
-
-	/** destroy previously created gui window */
-	void (*window_destroy)(struct gui_window *g);
 
 
 	/* Optional entries */
@@ -90,18 +126,14 @@ struct gui_table {
 	/** called to allow the gui to cleanup */
 	void (*quit)(void);
 
-	/** set the window title. */
-	void (*window_set_title)(struct gui_window *g, const char *title);
-
-	/** set the navigation url. */
-	void (*window_set_url)(struct gui_window *g, const char *url);
-
-	/** start the navigation throbber. */
-	void (*window_start_throbber)(struct gui_window *g);
-
-	/** stop the navigation throbber. */
-	void (*window_stop_throbber)(struct gui_window *g);
-
+	/**
+	 * set gui display of a retrieved favicon representing the
+	 * search provider
+	 *
+	 * \param ico may be NULL for local calls; then access current
+	 * cache from search_web_ico()
+	 */
+	void (*set_search_ico)(hlcache_handle *ico);
 };
 
 extern struct gui_table *guit; /* the gui vtable */
@@ -119,19 +151,12 @@ void gui_window_update_extent(struct gui_window *g);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 void gui_window_hide_pointer(struct gui_window *g);
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon);
-void gui_window_set_search_ico(hlcache_handle *ico);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect);
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-		const char *title);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *parent);
@@ -149,6 +174,8 @@ void gui_clear_selection(struct gui_window *g);
 
 void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	struct form_control *gadget);
+
+void gui_launch_url(const char *url);
 
 /**
  * Core asks front end for clipboard contents.
@@ -179,7 +206,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control);
 
-void gui_launch_url(const char *url);
 
 struct ssl_cert_info;
 
