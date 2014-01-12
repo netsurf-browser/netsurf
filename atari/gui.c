@@ -418,13 +418,6 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int y1)
-{
-    LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
-    gui_window_set_scroll(w,x0,y0);
-}
-
-
 /* It seems this method is called when content size got adjusted,
 	so that we can adjust scroll info. We also have to call it when tab
 	change occurs.
@@ -532,11 +525,6 @@ void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape)
     if (input_window == gw) {
         gem_set_cursor(gw->cursor);
     }
-}
-
-void gui_window_hide_pointer(struct gui_window *w)
-{
-    TODO();
 }
 
 
@@ -658,7 +646,7 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
     }
 }
 
-void gui_window_new_content(struct gui_window *w)
+static void gui_window_new_content(struct gui_window *w)
 {
     struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w->root->win);
     slid->x_pos = 0;
@@ -666,13 +654,6 @@ void gui_window_new_content(struct gui_window *w)
     gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
     gui_window_redraw_window(w);
 }
-
-bool gui_window_scroll_start(struct gui_window *w)
-{
-    TODO();
-    return true;
-}
-
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
                           struct gui_window *w)
@@ -1094,6 +1075,7 @@ static struct gui_window_table atari_window_table = {
     .set_url = gui_window_set_url,
     .set_icon = gui_window_set_icon,
 
+    .new_content = gui_window_new_content,
     .start_throbber = gui_window_start_throbber,
     .stop_throbber = gui_window_stop_throbber,
 };

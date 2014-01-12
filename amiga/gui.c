@@ -4545,12 +4545,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 //	g->shared->new_content = false;
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g, x0, y0);
-}
-
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
@@ -4825,7 +4819,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	g->c_h = 0;
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	hlcache_handle *c;
 
@@ -4843,11 +4837,6 @@ void gui_window_new_content(struct gui_window *g)
 	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
-}
-
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
 }
 
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
@@ -5102,6 +5091,7 @@ static struct gui_window_table ami_window_table = {
 	.set_url = gui_window_set_url,
 
 	.drag_start = gui_window_drag_start,
+	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 

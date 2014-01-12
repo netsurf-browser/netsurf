@@ -9,6 +9,11 @@ static void gui_default_quit(void)
 {
 }
 
+static void gui_default_set_search_ico(hlcache_handle *ico)
+{
+}
+
+
 static void gui_default_window_set_title(struct gui_window *g, const char *title)
 {
 }
@@ -25,30 +30,40 @@ static void gui_default_window_stop_throbber(struct gui_window *g)
 {
 }
 
-static bool
-gui_default_window_drag_start(struct gui_window *g,
-			      gui_drag_type type,
-			      const struct rect *rect)
+static bool gui_default_window_drag_start(struct gui_window *g,
+					  gui_drag_type type,
+					  const struct rect *rect)
 {
 	return true;
 }
 
-static void
-gui_default_window_save_link(struct gui_window *g,
-			     const char *url,
-			     const char *title)
+static void gui_default_window_save_link(struct gui_window *g,
+					 const char *url,
+					 const char *title)
 {
 }
 
-static void
-gui_default_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_default_window_set_icon(struct gui_window *g,
+					hlcache_handle *icon)
 {
 }
 
-static void
-gui_default_set_search_ico(hlcache_handle *ico)
+static void gui_default_window_scroll_visible(struct gui_window *g,
+				       int x0, int y0,
+				       int x1, int y1)
+{
+	gui_window_set_scroll(g, x0, y0);
+}
+
+static void gui_default_window_new_content(struct gui_window *g)
 {
 }
+
+static bool gui_default_window_scroll_start(struct gui_window *g)
+{
+	return true;
+}
+
 
 /** verify window table is valid */
 static nserror verify_window_register(struct gui_window_table *gwt)
@@ -87,6 +102,15 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->set_icon == NULL) {
 		gwt->set_icon = gui_default_window_set_icon;
+	}
+	if (gwt->scroll_visible == NULL) {
+		gwt->scroll_visible = gui_default_window_scroll_visible;
+	}
+	if (gwt->new_content == NULL) {
+		gwt->new_content = gui_default_window_new_content;
+	}
+	if (gwt->scroll_start == NULL) {
+		gwt->scroll_start = gui_default_window_scroll_start;
 	}
 
 	return NSERROR_OK;

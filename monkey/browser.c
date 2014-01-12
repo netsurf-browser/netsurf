@@ -142,7 +142,7 @@ gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
   *height = g->height;
 }
 
-void
+static void
 gui_window_new_content(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW NEW_CONTENT WIN %u\n", g->win_num);
@@ -293,7 +293,7 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
   return true;
 }
 
-bool
+static bool
 gui_window_scroll_start(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW SCROLL_START WIN %u\n", g->win_num);
@@ -301,7 +301,7 @@ gui_window_scroll_start(struct gui_window *g)
   return true;
 }
 
-void
+static void
 gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
                           int x1, int y1)
 {
@@ -573,6 +573,9 @@ static struct gui_window_table gui_window_table = {
 
 	.drag_start = gui_window_drag_start,
 	.save_link = gui_window_save_link,
+	.scroll_visible = gui_window_scroll_visible,
+	.scroll_start = gui_window_scroll_start,
+	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };

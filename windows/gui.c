@@ -1543,12 +1543,6 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
-			       int x1, int y1)
-{
-	LOG(("scroll visible (%p, %d, %d, %d, %d)", w, x0, y0, x1, y1));
-}
-
 void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 			       bool scaled)
 {
@@ -1650,10 +1644,6 @@ struct nsws_pointers *nsws_get_pointers(void)
 	return &nsws_pointer;
 }
 
-void gui_window_hide_pointer(struct gui_window *w)
-{
-}
-
 static void gui_window_set_url(struct gui_window *w, const char *url)
 {
 	if (w == NULL)
@@ -1736,17 +1726,6 @@ gui_window_remove_caret(struct gui_window *w)
 		return;
 	HideCaret(w->drawingarea);
 }
-
-
-void gui_window_new_content(struct gui_window *w)
-{
-}
-
-bool gui_window_scroll_start(struct gui_window *w)
-{
-	return true;
-}
-
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *w)

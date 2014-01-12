@@ -102,6 +102,32 @@ struct gui_window_table {
 
 	/** set favicon */
 	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
+
+	/**
+	 * Scrolls the specified area of a browser window into view.
+	 *
+	 * \param  g   gui_window to scroll
+	 * \param  x0  left point to ensure visible
+	 * \param  y0  bottom point to ensure visible
+	 * \param  x1  right point to ensure visible
+	 * \param  y1  top point to ensure visible
+	 */
+	void (*scroll_visible)(struct gui_window *g, int x0, int y0, int x1, int y1);
+
+	/**
+	 * Starts drag scrolling of a browser window
+	 *
+	 * \param g the window to scroll
+	 */
+	bool (*scroll_start)(struct gui_window *g);
+
+	/**
+	 * Called when the gui_window has new content.
+	 *
+	 * \param  g  the gui_window that has new content
+	 */
+	void (*new_content)(struct gui_window *g);
+
 };
 
 /** Graphical user interface function table
@@ -143,19 +169,14 @@ void gui_window_update_box(struct gui_window *g,
 		const struct rect *rect);
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1);
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled);
 void gui_window_update_extent(struct gui_window *g);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
-void gui_window_hide_pointer(struct gui_window *g);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip);
 void gui_window_remove_caret(struct gui_window *g);
-void gui_window_new_content(struct gui_window *g);
-bool gui_window_scroll_start(struct gui_window *g);
 
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,

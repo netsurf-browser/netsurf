@@ -135,12 +135,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-							   int x1, int y1)
-{
-	gui_window_set_scroll( g, x0, y0 );
-}
-
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 							   bool scaled)
 {
@@ -205,10 +199,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	}
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-}
-
 static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
@@ -255,14 +245,9 @@ void gui_window_remove_caret(struct gui_window *g)
 	[[(BrowserViewController *)g browserView] removeCaret];
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	[(BrowserViewController *)g contentUpdated];
-}
-
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
 }
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
@@ -319,6 +304,7 @@ static struct gui_window_table cocoa_window_table = {
 	.set_url = gui_window_set_url,
 	.set_icon = gui_window_set_icon,
 
+        .new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };

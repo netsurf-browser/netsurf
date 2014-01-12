@@ -484,7 +484,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		gui_window_scroll_visible(bw->window,
+		guit->window->scroll_visible(bw->window,
 				rect->x0, rect->y0, rect->x1, rect->y1);
 	} else {
 		/* Core managed browser window */
@@ -1233,7 +1233,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_remove_caret(bw, false);
 
 		if (bw->window != NULL) {
-			gui_window_new_content(bw->window);
+			guit->window->new_content(bw->window);
 
 			browser_window_refresh_url_bar(bw,
 				hlcache_handle_get_url(bw->current_content),
@@ -2949,7 +2949,7 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 		gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
 				&bw->drag_start_scroll_y);
 
-		gui_window_scroll_start(bw->window);
+		guit->window->scroll_start(bw->window);
 	} else {
 		/* Core managed browser window */
 		bw->drag_start_scroll_x = scrollbar_get_offset(bw->scroll_x);

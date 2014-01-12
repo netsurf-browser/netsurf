@@ -406,12 +406,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 }
 
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g, x0, y0);
-}
-
 void nsbeos_dispatch_event(BMessage *message)
 {
 	struct gui_window *gui = NULL;
@@ -1215,11 +1209,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		delete cursor;
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	//XXX no BView::HideCursor... use empty one
-}
-
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -1263,7 +1252,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	if (!g->toplevel)
 		return;
@@ -1278,12 +1267,6 @@ void gui_window_new_content(struct gui_window *g)
 
 	g->view->UnlockLooper();
 }
-
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *g)
@@ -1382,6 +1365,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 static struct gui_window_table gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+
+        .new_content = gui_window_new_content,
 
 	/* from scaffold */
 	.set_icon = gui_window_set_icon,

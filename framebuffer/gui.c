@@ -1574,12 +1574,6 @@ gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 	widget_scroll_y(gw, sy * gw->bw->scale, true);
 }
 
-void
-gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-			  int x1, int y1)
-{
-	LOG(("%s:(%p, %d, %d, %d, %d)", __func__, g, x0, y0, x1, y1));
-}
 
 void
 gui_window_get_dimensions(struct gui_window *g,
@@ -1644,11 +1638,6 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		framebuffer_set_cursor(&pointer_image);
 		break;
 	}
-}
-
-void
-gui_window_hide_pointer(struct gui_window *g)
-{
 }
 
 static void
@@ -1776,18 +1765,6 @@ gui_window_remove_caret(struct gui_window *g)
 		fbtk_set_caret(g->browser, false, 0, 0, 0, NULL);
 	}
 }
-
-void
-gui_window_new_content(struct gui_window *g)
-{
-}
-
-bool
-gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
 
 struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *parent)

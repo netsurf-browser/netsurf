@@ -987,13 +987,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	gtk_adjustment_set_value(hadj, x);
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g,x0,y0);
-}
-
-
 void gui_window_update_extent(struct gui_window *g)
 {
 	if (!g->bw->current_content)
@@ -1099,10 +1092,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		nsgdk_cursor_unref(cursor);
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-
-}
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
@@ -1118,15 +1107,6 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 }
 
-void gui_window_new_content(struct gui_window *g)
-{
-
-}
-
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
 
 
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,

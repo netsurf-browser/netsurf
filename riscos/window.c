@@ -831,7 +831,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
  * \param  x1  right point to ensure visible
  * \param  y1  top point to ensure visible
  */
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
+static void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -1038,23 +1038,6 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 
 /**
- * Remove the mouse pointer from the screen
- */
-
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	os_error *error;
-
-	error = xwimpspriteop_set_pointer_shape(NULL, 0x30, 0, 0, 0, 0);
-	if (error) {
-		LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
  * Set the contents of a window's address bar.
  *
  * \param  g	gui_window to update
@@ -1172,7 +1155,7 @@ void gui_window_remove_caret(struct gui_window *g)
  * \param  g  the gui_window that has new content
  */
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
 	ro_gui_window_update_toolbar_buttons(g);
@@ -1184,10 +1167,10 @@ void gui_window_new_content(struct gui_window *g)
 /**
  * Starts drag scrolling of a browser window
  *
- * \param gw  gui window
+ * \param g the window to scroll
  */
 
-bool gui_window_scroll_start(struct gui_window *g)
+static bool gui_window_scroll_start(struct gui_window *g)
 {
 	wimp_window_info_base info;
 	wimp_pointer pointer;
@@ -5266,6 +5249,9 @@ static struct gui_window_table gui_window_table = {
 
 	.save_link = gui_window_save_link,
 	.drag_start = gui_window_drag_start,
+	.scroll_visible = gui_window_scroll_visible,
+	.scroll_start = gui_window_scroll_start,
+	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };
