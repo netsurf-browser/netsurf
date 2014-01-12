@@ -919,12 +919,12 @@ void gui_window_remove_caret(struct gui_window *g)
 
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	gtk_widget_queue_draw(GTK_WIDGET(g->layout));
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
 	hlcache_handle *c = g->bw->current_content;
@@ -1174,6 +1174,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_window_table gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_icon = gui_window_set_icon,
 

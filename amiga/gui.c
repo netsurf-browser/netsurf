@@ -4184,7 +4184,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	return;
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	ULONG cur_tab = 0;
 
@@ -4262,7 +4262,7 @@ struct nsObject *nnode;
 	return true;
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct nsObject *nsobj;
 	struct rect *deferred_rect;
@@ -5085,6 +5085,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_window_table ami_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,

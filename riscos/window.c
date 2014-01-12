@@ -89,6 +89,7 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 
+void gui_window_redraw_window(struct gui_window *g);
 
 static void gui_window_set_extent(struct gui_window *g, int width, int height);
 
@@ -710,7 +711,7 @@ void gui_window_redraw_window(struct gui_window *g)
  * \param  data  content_msg_data union with filled in redraw data
  */
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	bool use_buffer;
 	int x0, y0, x1, y1;
@@ -5242,6 +5243,8 @@ bool ro_gui_alt_pressed(void)
 static struct gui_window_table gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,

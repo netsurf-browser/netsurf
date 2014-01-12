@@ -107,12 +107,12 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 	[(BrowserViewController *)g setTitle: [NSString stringWithUTF8String: title]];
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	[[(BrowserViewController *)g browserView] setNeedsDisplay: YES];
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	const NSRect nsrect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
 											 rect->x0, rect->y0, 
@@ -299,6 +299,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_window_table cocoa_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

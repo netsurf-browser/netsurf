@@ -1014,7 +1014,7 @@ void nsbeos_redraw_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	if (g->view == NULL)
 		return;
@@ -1029,7 +1029,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	hlcache_handle *c = g->bw->current_content;
 
@@ -1365,6 +1365,8 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 static struct gui_window_table gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
         .new_content = gui_window_new_content,
 

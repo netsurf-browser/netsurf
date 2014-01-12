@@ -90,6 +90,7 @@ static unsigned int print_fonts_count;
 /** Error in print_fonts_plot_text() or print_fonts_callback(). */
 static const char *print_fonts_error;
 
+void gui_window_redraw_window(struct gui_window *g);
 
 static bool ro_gui_print_click(wimp_pointer *pointer);
 static bool ro_gui_print_apply(wimp_w w);

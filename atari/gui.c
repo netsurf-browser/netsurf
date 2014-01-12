@@ -363,7 +363,7 @@ void gui_window_set_scale(struct gui_window *gw, float scale)
  	browser_window_reformat(gw->browser->bw, false, width, heigth);
 }
 
-void gui_window_redraw_window(struct gui_window *gw)
+static void gui_window_redraw_window(struct gui_window *gw)
 {
     CMP_BROWSER b;
     GRECT rect;
@@ -374,7 +374,7 @@ void gui_window_redraw_window(struct gui_window *gw)
     window_schedule_redraw_grect(gw->root, &rect);
 }
 
-void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
     GRECT area;
     struct gemtk_wm_scroll_info_s *slid;
@@ -1070,6 +1070,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_window_table atari_window_table = {
     .create = gui_window_create,
     .destroy = gui_window_destroy,
+    .redraw = gui_window_redraw_window,
+    .update = gui_window_update_box,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,

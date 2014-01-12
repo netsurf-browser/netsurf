@@ -80,6 +80,12 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->destroy == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gwt->redraw == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gwt->update == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	/* fill in the optional entries with defaults */
 	if (gwt->set_title == NULL) {

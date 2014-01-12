@@ -79,6 +79,21 @@ struct gui_window_table {
 	/** destroy previously created gui window */
 	void (*destroy)(struct gui_window *g);
 
+	/**
+	 * Force a redraw of the entire contents of a window.
+	 *
+	 * \param g gui_window to redraw
+	 */
+	void (*redraw)(struct gui_window *g);
+
+	/**
+	 * Redraw an area of a window.
+	 *
+	 * \param g gui_window
+	 * \param rect area to redraw
+	 */
+	void (*update)(struct gui_window *g, const struct rect *rect);
+
 
 	/* Optional entries */
 
@@ -164,9 +179,6 @@ struct gui_table {
 
 extern struct gui_table *guit; /* the gui vtable */
 
-void gui_window_redraw_window(struct gui_window *g);
-void gui_window_update_box(struct gui_window *g,
-		const struct rect *rect);
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,

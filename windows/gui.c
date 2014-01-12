@@ -723,6 +723,18 @@ nsws_window_resize(struct gui_window *gw,
 	return 0;
 }
 
+/**
+ * redraw the whole window
+ */
+static void gui_window_redraw_window(struct gui_window *gw)
+{
+	/* LOG(("gw:%p", gw)); */
+	if (gw == NULL)
+		return;
+
+	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
+}
+
 
 static LRESULT
 nsws_window_command(HWND hwnd,
@@ -1439,19 +1451,7 @@ static void gui_window_set_title(struct gui_window *w, const char *title)
 	free(fulltitle);
 }
 
-/**
- * redraw the whole window
- */
-void gui_window_redraw_window(struct gui_window *gw)
-{
-	/* LOG(("gw:%p", gw)); */
-	if (gw == NULL)
-		return;
-
-	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
-}
-
-void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
 
@@ -1847,6 +1847,8 @@ nsws_create_main_class(HINSTANCE hinstance) {
 static struct gui_window_table win32_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

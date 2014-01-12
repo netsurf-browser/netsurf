@@ -1535,13 +1535,13 @@ gui_window_destroy(struct gui_window *gw)
 	free(gw);
 }
 
-void
+static void
 gui_window_redraw_window(struct gui_window *g)
 {
 	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );
 }
 
-void
+static void
 gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
@@ -1844,6 +1844,8 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_window_table framebuffer_gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
 
 	.set_url = gui_window_set_url,
 	.start_throbber = gui_window_start_throbber,
