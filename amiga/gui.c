@@ -3896,7 +3896,7 @@ static void gui_window_destroy(struct gui_window *g)
 	win_destroyed = true;
 }
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
 	ULONG cur_tab = 0;
@@ -4592,7 +4592,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	}
 }
 
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	ULONG cur_tab = 0;
 
@@ -5095,8 +5095,14 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_table ami_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+
 	.window_create = gui_window_create,
 	.window_destroy = gui_window_destroy,
+
+	.window_set_title = gui_window_set_title,
+	.window_set_url = gui_window_set_url,
+	.window_start_throbber = gui_window_start_throbber,
+	.window_stop_throbber = gui_window_stop_throbber,
 };
 
 /** Normal entry point from OS */

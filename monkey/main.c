@@ -116,8 +116,14 @@ static bool nslog_stream_configure(FILE *fptr)
 static struct gui_table monkey_gui_table = {
   .poll = monkey_poll,
   .quit = monkey_quit,
+
   .window_create = gui_window_create,
   .window_destroy = gui_window_destroy,
+
+  .window_set_title = gui_window_set_title,
+  .window_set_url = gui_window_set_url,
+  .window_start_throbber = gui_window_start_throbber,
+  .window_stop_throbber = gui_window_stop_throbber,
 };
 
 int

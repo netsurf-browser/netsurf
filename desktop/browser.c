@@ -866,7 +866,7 @@ static void browser_window_start_throbber(struct browser_window *bw)
 	while (bw->parent)
 		bw = bw->parent;
 
-	gui_window_start_throbber(bw->window);
+	guit->window_start_throbber(bw->window);
 }
 
 
@@ -883,8 +883,9 @@ static void browser_window_stop_throbber(struct browser_window *bw)
 	while (bw->parent)
 		bw = bw->parent;
 
-	if (!browser_window_check_throbber(bw))
-		gui_window_stop_throbber(bw->window);
+	if (!browser_window_check_throbber(bw)) {
+		guit->window_stop_throbber(bw->window);
+	}
 }
 
 
@@ -1958,7 +1959,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 	case BROWSER_WINDOW_NORMAL:
 		/* Root browser window, constituting a front end window/tab */
-		gui_window_set_title(bw->window, 
+		guit->window_set_title(bw->window,
 				content_get_title(bw->current_content));
 
 		browser_window_update_extent(bw);
@@ -2358,7 +2359,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		/* With no fragment, we may as well pass url straight through
 		 * saving a malloc, copy, free cycle.
 		 */
-		gui_window_set_url(bw->window, nsurl_access(url));
+		guit->window_set_url(bw->window, nsurl_access(url));
 	} else {
 		nsurl *display_url;
 		nserror error;
@@ -2369,7 +2370,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 			return;
 		}
 
-		gui_window_set_url(bw->window, nsurl_access(display_url));
+		guit->window_set_url(bw->window, nsurl_access(display_url));
 		nsurl_unref(display_url);
 	}
 }

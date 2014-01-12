@@ -1422,7 +1422,7 @@ static void gui_window_destroy(struct gui_window *w)
  * set window title
  * \param title the [url]
  */
-void gui_window_set_title(struct gui_window *w, const char *title)
+static void gui_window_set_title(struct gui_window *w, const char *title)
 {
 	if (w == NULL)
 		return;
@@ -1654,7 +1654,7 @@ void gui_window_hide_pointer(struct gui_window *w)
 {
 }
 
-void gui_window_set_url(struct gui_window *w, const char *url)
+static void gui_window_set_url(struct gui_window *w, const char *url)
 {
 	if (w == NULL)
 		return;
@@ -1662,7 +1662,7 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 }
 
 
-void gui_window_start_throbber(struct gui_window *w)
+static void gui_window_start_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1687,7 +1687,7 @@ void gui_window_start_throbber(struct gui_window *w)
 	Animate_Play(w->throbber, 0, -1, -1);
 }
 
-void gui_window_stop_throbber(struct gui_window *w)
+static void gui_window_stop_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1886,8 +1886,14 @@ nsws_create_main_class(HINSTANCE hinstance) {
 
 static struct gui_table gui_table = {
 	.poll = gui_poll,
+
 	.window_create = gui_window_create,
 	.window_destroy = gui_window_destroy,
+
+	.window_set_title = gui_window_set_title,
+	.window_set_url = gui_window_set_url,
+	.window_start_throbber = gui_window_start_throbber,
+	.window_stop_throbber = gui_window_stop_throbber,
 };
 
 struct gui_table *win32_gui_table = &gui_table;

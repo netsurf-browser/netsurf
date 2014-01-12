@@ -70,28 +70,42 @@ struct form_control;
  * function table implementing GUI interface to browser core
  */
 struct gui_table {
+
+	/* Mandantory entries */
+
 	/** called to let the frontend update its state and run any
 	 * I/O operations.
 	 */
-	void (*poll)(bool active); /* Mandantory */
+	void (*poll)(bool active);
 
-	/** create a gui window for a browser window */
-	struct gui_window *(*window_create)(struct browser_window *bw,
-					   struct browser_window *clone,
-					   bool new_tab); /* Mandantory */
+	/** create a gui window for a browsing context */
+	struct gui_window *(*window_create)(struct browser_window *bw, struct browser_window *clone, bool new_tab);
 
 	/** destroy previously created gui window */
-	void (*window_destroy)(struct gui_window *g); /* Mandantory */
+	void (*window_destroy)(struct gui_window *g);
 
+
+	/* Optional entries */
 
 	/** called to allow the gui to cleanup */
-	void (*quit)(void); /* Optional */
+	void (*quit)(void);
+
+	/** set the window title. */
+	void (*window_set_title)(struct gui_window *g, const char *title);
+
+	/** set the navigation url. */
+	void (*window_set_url)(struct gui_window *g, const char *url);
+
+	/** start the navigation throbber. */
+	void (*window_start_throbber)(struct gui_window *g);
+
+	/** stop the navigation throbber. */
+	void (*window_stop_throbber)(struct gui_window *g);
 
 };
 
 extern struct gui_table *guit; /* the gui vtable */
 
-void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_redraw_window(struct gui_window *g);
 void gui_window_update_box(struct gui_window *g,
 		const struct rect *rect);
@@ -105,9 +119,6 @@ void gui_window_update_extent(struct gui_window *g);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 void gui_window_hide_pointer(struct gui_window *g);
-void gui_window_set_url(struct gui_window *g, const char *url);
-void gui_window_start_throbber(struct gui_window *g);
-void gui_window_stop_throbber(struct gui_window *g);
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon);
 void gui_window_set_search_ico(hlcache_handle *ico);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
@@ -119,12 +130,12 @@ bool gui_window_scroll_start(struct gui_window *g);
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect);
 
-void gui_window_save_link(struct gui_window *g, const char *url, 
+void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *parent);
-nserror gui_download_window_data(struct gui_download_window *dw, 
+nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size);
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
@@ -172,7 +183,7 @@ void gui_launch_url(const char *url);
 
 struct ssl_cert_info;
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
+void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw);
 

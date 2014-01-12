@@ -1089,8 +1089,15 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_table beos_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+
 	.window_create = gui_window_create,
 	.window_destroy = gui_window_destroy,
+
+	.window_set_title = gui_window_set_title,
+	.window_set_url = gui_window_set_url,
+	.window_start_throbber = gui_window_start_throbber,
+	.window_stop_throbber = gui_window_stop_throbber,
+
 };
 
 

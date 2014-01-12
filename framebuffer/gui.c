@@ -1536,12 +1536,6 @@ gui_window_destroy(struct gui_window *gw)
 }
 
 void
-gui_window_set_title(struct gui_window *g, const char *title)
-{
-	LOG(("%p, %s", g, title));
-}
-
-void
 gui_window_redraw_window(struct gui_window *g)
 {
 	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );
@@ -1657,7 +1651,7 @@ gui_window_hide_pointer(struct gui_window *g)
 {
 }
 
-void
+static void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
 	fbtk_set_text(g->url, url);
@@ -1720,14 +1714,14 @@ throbber_advance(void *pw)
 	}
 }
 
-void
+static void
 gui_window_start_throbber(struct gui_window *g)
 {
 	g->throbber_index = 0;
 	schedule(10, throbber_advance, g);
 }
 
-void
+static void
 gui_window_stop_throbber(struct gui_window *gw)
 {
 	gw->throbber_index = -1;
@@ -1903,8 +1897,13 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_table framebuffer_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+
 	.window_create = gui_window_create,
 	.window_destroy = gui_window_destroy,
+
+	.window_set_url = gui_window_set_url,
+	.window_start_throbber = gui_window_start_throbber,
+	.window_stop_throbber = gui_window_stop_throbber,
 };
 
 /** Entry point from OS.

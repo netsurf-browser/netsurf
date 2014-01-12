@@ -200,5 +200,10 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold);
 
 void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where);
 
+void gui_window_set_title(struct gui_window *_g, const char *title);
+void gui_window_set_url(struct gui_window *_g, const char *url);
+void gui_window_start_throbber(struct gui_window* _g);
+void gui_window_stop_throbber(struct gui_window* _g);
+
 
 #endif /* NETSURF_BEOS_SCAFFOLDING_H */

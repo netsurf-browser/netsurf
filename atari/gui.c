@@ -288,7 +288,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
     *height = rect.g_h;
 }
 
-void gui_window_set_title(struct gui_window *gw, const char *title)
+static void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 
     if (gw == NULL)
@@ -540,7 +540,7 @@ void gui_window_hide_pointer(struct gui_window *w)
 }
 
 
-void gui_window_set_url(struct gui_window *w, const char *url)
+static void gui_window_set_url(struct gui_window *w, const char *url)
 {
     int l;
 
@@ -594,7 +594,7 @@ static void throbber_advance( void * data )
     schedule(100, throbber_advance, gw );
 }
 
-void gui_window_start_throbber(struct gui_window *w)
+static void gui_window_start_throbber(struct gui_window *w)
 {
     GRECT work;
     if (w == NULL)
@@ -605,7 +605,7 @@ void gui_window_start_throbber(struct gui_window *w)
     rendering = true;
 }
 
-void gui_window_stop_throbber(struct gui_window *w)
+static void gui_window_stop_throbber(struct gui_window *w)
 {
     if (w == NULL)
         return;
@@ -1108,8 +1108,14 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 static struct gui_table atari_gui_table = {
     .poll = gui_poll,
     .quit = gui_quit,
+
     .window_create = gui_window_create,
     .window_destroy = gui_window_destroy,
+
+    .window_set_title = gui_window_set_title,
+    .window_set_url = gui_window_set_url,
+    .window_start_throbber = gui_window_start_throbber,
+    .window_stop_throbber = gui_window_stop_throbber,
 };
 
 /* #define WITH_DBG_LOGFILE 1 */

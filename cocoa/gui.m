@@ -102,7 +102,7 @@ static void gui_window_destroy(struct gui_window *g)
 	[vc release];
 }
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	[(BrowserViewController *)g setTitle: [NSString stringWithUTF8String: title]];
 }
@@ -209,18 +209,18 @@ void gui_window_hide_pointer(struct gui_window *g)
 {
 }
 
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
 }
 
-void gui_window_start_throbber(struct gui_window *g)
+static void gui_window_start_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: YES];
 	[(BrowserViewController *)g updateBackForward];
 }
 
-void gui_window_stop_throbber(struct gui_window *g)
+static void gui_window_stop_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: NO];
 	[(BrowserViewController *)g updateBackForward];
@@ -330,8 +330,14 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 
 static struct gui_table gui_table = {
 	.poll = &gui_poll,
+
 	.window_create = gui_window_create,
 	.window_destroy = gui_window_destroy,
+
+	.window_set_title = gui_window_set_title,
+	.window_set_url = gui_window_set_url,
+	.window_start_throbber = gui_window_start_throbber,
+	.window_stop_throbber = gui_window_stop_throbber,
 };
 
 struct gui_table *cocoa_gui_table = &gui_table;
