@@ -373,6 +373,30 @@ void ro_gui_window_initialise(void)
  */
 
 /**
+ * Place the caret in a browser window.
+ *
+ * \param  g	   window with caret
+ * \param  x	   coordinates of caret
+ * \param  y	   coordinates of caret
+ * \param  height  height of caret
+ * \param  clip	   clip rectangle, or NULL if none
+ */
+
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
+{
+	os_error *error;
+
+	error = xwimp_set_caret_position(g->window, -1,
+			x * 2, -(y + height) * 2, height * 2, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+/**
  * Create and open a new browser window.
  *
  * \param  bw	  browser_window structure to update
@@ -987,7 +1011,7 @@ static void gui_window_update_extent(struct gui_window *g)
  * \param  text  new status text
  */
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	if (g->status_bar)
 		ro_gui_status_bar_set_text(g->status_bar, text);
@@ -1097,29 +1121,6 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	ro_toolbar_set_site_favicon(g->toolbar, icon);
 }
 
-/**
- * Place the caret in a browser window.
- *
- * \param  g	   window with caret
- * \param  x	   coordinates of caret
- * \param  y	   coordinates of caret
- * \param  height  height of caret
- * \param  clip	   clip rectangle, or NULL if none
- */
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
-		const struct rect *clip)
-{
-	os_error *error;
-
-	error = xwimp_set_caret_position(g->window, -1,
-			x * 2, -(y + height) * 2, height * 2, -1);
-	if (error) {
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
 
 
 /**
@@ -1128,7 +1129,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
  * \param  g	   window with caret
  */
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	wimp_caret caret;
 	os_error *error;
@@ -5250,9 +5251,13 @@ static struct gui_window_table gui_window_table = {
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
 
-	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 	.save_link = gui_window_save_link,
 	.drag_start = gui_window_drag_start,
 	.scroll_visible = gui_window_scroll_visible,

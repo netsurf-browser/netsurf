@@ -154,6 +154,7 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
+void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 
 /* in history.c */
 void ro_gui_history_init(void);

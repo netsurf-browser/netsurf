@@ -1604,13 +1604,13 @@ gui_window_update_extent(struct gui_window *gw)
 			fbtk_get_height(gw->browser), 100);
 }
 
-void
+static void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
 	fbtk_set_text(g->status, text);
 }
 
-void
+static void
 gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch (shape) {
@@ -1737,7 +1737,7 @@ gui_window_remove_caret_cb(fbtk_widget_t *widget)
 	}
 }
 
-void
+static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -1755,7 +1755,7 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 			y + height - bwidget->scrolly);
 }
 
-void
+static void
 gui_window_remove_caret(struct gui_window *g)
 {
 	int c_x, c_y, c_h;
@@ -1852,6 +1852,10 @@ static struct gui_window_table framebuffer_gui_window_table = {
 	.update_extent = gui_window_update_extent,
 
 	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };

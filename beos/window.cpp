@@ -1169,7 +1169,7 @@ const uint8 kWatch2CursorBits[] = {
 };
 
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	BCursor *cursor = NULL;
 	bool allocated = false;
@@ -1209,7 +1209,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		delete cursor;
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	//CALLED();
@@ -1230,7 +1230,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 	g->view->UnlockLooper();
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	int oh = g->careth;
 
@@ -1373,11 +1373,15 @@ static struct gui_window_table gui_window_table = {
 	.update_extent = gui_window_update_extent,
 
         .new_content = gui_window_new_content,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 
 	/* from scaffold */
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };

@@ -612,7 +612,7 @@ static void gui_window_stop_throbber(struct gui_window *w)
 }
 
 /* Place caret in window */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 		const struct rect *clip)
 {
     window_place_caret(w->root, 1, x, y, height, NULL);
@@ -624,7 +624,7 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 /**
  * clear window caret
  */
-void
+static void
 gui_window_remove_caret(struct gui_window *w)
 {
     if (w == NULL)
@@ -1084,7 +1084,10 @@ static struct gui_window_table atari_window_table = {
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,
     .set_icon = gui_window_set_icon,
-
+    .set_status = gui_window_set_status,
+    .set_pointer = gui_window_set_pointer,
+    .place_caret = gui_window_place_caret,
+    .remove_caret = gui_window_remove_caret,
     .new_content = gui_window_new_content,
     .start_throbber = gui_window_start_throbber,
     .stop_throbber = gui_window_stop_throbber,

@@ -1566,7 +1566,7 @@ static void gui_window_update_extent(struct gui_window *w)
 /**
  * set the status bar message
  */
-void gui_window_set_status(struct gui_window *w, const char *text)
+static void gui_window_set_status(struct gui_window *w, const char *text)
 {
 	if (w == NULL)
 		return;
@@ -1576,7 +1576,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 /**
  * set the pointer shape
  */
-void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
 {
 	if (w == NULL)
 		return;
@@ -1708,8 +1708,8 @@ static void gui_window_stop_throbber(struct gui_window *w)
 /**
  * place caret in window
  */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
-		const struct rect *clip)
+static void gui_window_place_caret(struct gui_window *w, int x, int y,
+				   int height, const struct rect *clip)
 {
 	if (w == NULL)
 		return;
@@ -1722,8 +1722,7 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 /**
  * clear window caret
  */
-void
-gui_window_remove_caret(struct gui_window *w)
+static void gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1859,7 +1858,10 @@ static struct gui_window_table win32_window_table = {
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
-
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };

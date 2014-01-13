@@ -195,13 +195,13 @@ gui_window_update_extent(struct gui_window *g)
           content_get_height(g->bw->current_content));
 }
 
-void
+static void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
   fprintf(stdout, "WINDOW SET_STATUS WIN %u STR %s\n", g->win_num, text);
 }
 
-void
+static void
 gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
   const char *ptr_name = "UNKNOWN";
@@ -348,7 +348,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 {
 }
 
-void
+static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -356,7 +356,7 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height,
           g->win_num, x, y, height);
 }
 
-void
+static void
 gui_window_remove_caret(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW REMOVE_CARET WIN %u\n", g->win_num);
@@ -576,6 +576,10 @@ static struct gui_window_table gui_window_table = {
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
 	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 	.drag_start = gui_window_drag_start,
 	.save_link = gui_window_save_link,
 	.scroll_visible = gui_window_scroll_visible,

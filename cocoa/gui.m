@@ -161,12 +161,12 @@ static void gui_window_update_extent(struct gui_window *g)
 	[[window browserView] setMinimumSize: cocoa_scaled_size( browser->scale, width, height )];
 }
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	[(BrowserViewController *)g setStatus: [NSString stringWithUTF8String: text]];
 }
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch (shape) {
 		case GUI_POINTER_DEFAULT:
@@ -233,14 +233,14 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	[image release];
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	[[(BrowserViewController *)g browserView] addCaretAt: cocoa_point( x, y ) 
 												  height: cocoa_px_to_pt( height )];
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	[[(BrowserViewController *)g browserView] removeCaret];
 }
@@ -309,7 +309,10 @@ static struct gui_window_table cocoa_window_table = {
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
 	.set_icon = gui_window_set_icon,
-
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
         .new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,

@@ -85,7 +85,7 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
 
 	/* TODO: intersect with bw viewport */
 
-	gui_window_place_caret(root_bw->window, x, y, height * bw->scale, crp);
+	guit->window->place_caret(root_bw->window, x, y, height * bw->scale, crp);
 
 	/* Set focus browser window */
 	root_bw->focus = bw;
@@ -110,8 +110,9 @@ void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 	else
 		root_bw->can_edit = false;
 
-	if (root_bw->window)
-		gui_window_remove_caret(root_bw->window);
+	if (root_bw->window) {
+		guit->window->remove_caret(root_bw->window);
+	}
 }
 
 

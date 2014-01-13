@@ -143,11 +143,54 @@ struct gui_window_table {
 
 	/* Optional entries */
 
-	/** set the window title. */
+	/**
+	 * Set the title of a window.
+	 *
+	 * \param  g	  window to update
+	 * \param  title  new window title
+	 */
 	void (*set_title)(struct gui_window *g, const char *title);
 
 	/** set the navigation url. */
 	void (*set_url)(struct gui_window *g, const char *url);
+
+	/** set favicon */
+	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
+
+
+
+	/**
+	 * Set the status bar of a browser window.
+	 *
+	 * \param  g	 gui_window to update
+	 * \param  text  new status text
+	 */
+	void (*set_status)(struct gui_window *g, const char *text);
+
+	/**
+	 * Change mouse pointer shape
+	 */
+	void (*set_pointer)(struct gui_window *g, gui_pointer_shape shape);
+
+	/**
+	 * Place the caret in a browser window.
+	 *
+	 * \param  g	   window with caret
+	 * \param  x	   coordinates of caret
+	 * \param  y	   coordinates of caret
+	 * \param  height  height of caret
+	 * \param  clip	   clip rectangle, or NULL if none
+	 */
+	void (*place_caret)(struct gui_window *g, int x, int y, int height, const struct rect *clip);
+
+	/**
+	 * Remove the caret, if present.
+	 *
+	 * \param  g	   window with caret
+	 */
+	void (*remove_caret)(struct gui_window *g);
+
+
 
 	/** start the navigation throbber. */
 	void (*start_throbber)(struct gui_window *g);
@@ -161,11 +204,12 @@ struct gui_window_table {
 	/** save link operation */
 	void (*save_link)(struct gui_window *g, const char *url, const char *title);
 
-	/** set favicon */
-	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
-
 	/**
 	 * Scrolls the specified area of a browser window into view.
+	 *
+	 * @todo investigate if this can be merged with set_scroll
+	 * which is what the default implementation used by most
+	 * toolkits uses.
 	 *
 	 * \param  g   gui_window to scroll
 	 * \param  x0  left point to ensure visible
@@ -226,11 +270,6 @@ struct gui_table {
 extern struct gui_table *guit; /* the gui vtable */
 
 
-void gui_window_set_status(struct gui_window *g, const char *text);
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
-		const struct rect *clip);
-void gui_window_remove_caret(struct gui_window *g);
 
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,

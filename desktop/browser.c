@@ -2193,7 +2193,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	}
 
 	bw->status_miss++;
-	gui_window_set_status(bw->window, bw->status_text);
+	guit->window->set_status(bw->window, bw->status_text);
 }
 
 
@@ -2235,7 +2235,7 @@ void browser_window_set_pointer(struct browser_window *bw,
 		gui_shape = (gui_pointer_shape)shape;
 	}
 
-	gui_window_set_pointer(root->window, gui_shape);
+	guit->window->set_pointer(root->window, gui_shape);
 }
 
 

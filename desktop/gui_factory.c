@@ -59,11 +59,31 @@ static void gui_default_window_new_content(struct gui_window *g)
 {
 }
 
+
 static bool gui_default_window_scroll_start(struct gui_window *g)
 {
 	return true;
 }
 
+static void gui_default_window_set_pointer(struct gui_window *g,
+					   gui_pointer_shape shape)
+{
+}
+
+static void gui_default_window_set_status(struct gui_window *g,
+					  const char *text)
+{
+}
+
+static void gui_default_window_place_caret(struct gui_window *g,
+					   int x, int y, int height,
+					   const struct rect *clip)
+{
+}
+
+static void gui_default_window_remove_caret(struct gui_window *g)
+{
+}
 
 /** verify window table is valid */
 static nserror verify_window_register(struct gui_window_table *gwt)
@@ -107,6 +127,21 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->set_url == NULL) {
 		gwt->set_url = gui_default_window_set_url;
 	}
+	if (gwt->set_icon == NULL) {
+		gwt->set_icon = gui_default_window_set_icon;
+	}
+	if (gwt->set_status == NULL) {
+		gwt->set_status = gui_default_window_set_status;
+	}
+	if (gwt->set_pointer == NULL) {
+		gwt->set_pointer = gui_default_window_set_pointer;
+	}
+	if (gwt->place_caret == NULL) {
+		gwt->place_caret = gui_default_window_place_caret;
+	}
+	if (gwt->remove_caret == NULL) {
+		gwt->remove_caret = gui_default_window_remove_caret;
+	}
 	if (gwt->start_throbber == NULL) {
 		gwt->start_throbber = gui_default_window_start_throbber;
 	}
@@ -118,9 +153,6 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->save_link == NULL) {
 		gwt->save_link = gui_default_window_save_link;
-	}
-	if (gwt->set_icon == NULL) {
-		gwt->set_icon = gui_default_window_set_icon;
 	}
 	if (gwt->scroll_visible == NULL) {
 		gwt->scroll_visible = gui_default_window_scroll_visible;

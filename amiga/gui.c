@@ -4613,7 +4613,7 @@ static void gui_window_update_extent(struct gui_window *g)
 	g->shared->new_content = true;
 }
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	ULONG cur_tab = 0;
 	char *utf8text;
@@ -4768,7 +4768,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	return 0;
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	struct IBox *bbox;
@@ -4805,7 +4805,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	struct IBox *bbox;
 	int xs,ys;
@@ -5098,8 +5098,14 @@ static struct gui_window_table ami_window_table = {
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
 	.drag_start = gui_window_drag_start,
 	.new_content = gui_window_new_content,
+
+	/* from theme */
+	.set_pointer = gui_window_set_pointer,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 
