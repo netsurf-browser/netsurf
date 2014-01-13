@@ -250,15 +250,6 @@ static void gui_window_new_content(struct gui_window *g)
 	[(BrowserViewController *)g contentUpdated];
 }
 
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-						  struct gui_window *g)
-{
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
 
 void gui_create_form_select_menu(struct browser_window *bw,
 								 struct form_control *control)
@@ -289,12 +280,6 @@ void gui_401login_open(nsurl *url, const char *realm,
 	cb( false, cbpw );
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
 
 static struct gui_window_table cocoa_window_table = {
 	.create = gui_window_create,

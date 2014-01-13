@@ -1484,20 +1484,23 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 		switch(event->data.dragsave.type) {
 		case CONTENT_SAVE_ORIG:
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_OBJECT_ORIG);
 			break;
+
 		case CONTENT_SAVE_NATIVE:
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_OBJECT_NATIVE);
 			break;
+
 		case CONTENT_SAVE_COMPLETE:
-			gui_drag_save_object(GUI_SAVE_COMPLETE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_COMPLETE);
 			break;
+
 		case CONTENT_SAVE_SOURCE:
-			gui_drag_save_object(GUI_SAVE_SOURCE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_SOURCE);
 			break;
 		}
 	}
@@ -1563,7 +1566,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 	case CONTENT_MSG_GADGETCLICK:
 		if (event->data.gadget_click.gadget->type == GADGET_FILE) {
-			gui_file_gadget_open(bw->window, c,
+			guit->window->file_gadget_open(bw->window, c,
 				event->data.gadget_click.gadget);
 		}
 		
@@ -2893,14 +2896,14 @@ void browser_window_mouse_click(struct browser_window *bw,
 		break;
 	default:
 		if (mouse & BROWSER_MOUSE_MOD_2) {
-			if (mouse & BROWSER_MOUSE_DRAG_2)
-				gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c,
-						bw->window);
-			else if (mouse & BROWSER_MOUSE_DRAG_1)
-				gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c,
-						bw->window);
-		}
-		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
+			if (mouse & BROWSER_MOUSE_DRAG_2) {
+				guit->window->drag_save_object(bw->window, c,
+						GUI_SAVE_OBJECT_NATIVE);
+			} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+				guit->window->drag_save_object(bw->window, c,
+						GUI_SAVE_OBJECT_ORIG);
+			}
+		} else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
 			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);

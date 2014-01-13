@@ -28,6 +28,7 @@
 
 #include "content/hlcache.h"
 #include "gtk/window.h"
+#include "gtk/selection.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
@@ -1110,18 +1111,6 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 }
 
 
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *g)
-{
-
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-
-}
-
 static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
@@ -1141,13 +1130,18 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	LOG(("height: %i", *height));
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
+static void gui_window_start_selection(struct gui_window *g)
+{
+	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
+}
+
+static void
+gui_window_file_gadget_open(struct gui_window *g,
+			    hlcache_handle *hl,
+			    struct form_control *gadget)
 {
 	GtkWidget *dialog;
 
-	LOG(("Awooga."));
-	
 	dialog = gtk_file_chooser_dialog_new("Select File",
 			nsgtk_scaffolding_window(g->scaffold),
 			GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -1188,6 +1182,8 @@ static struct gui_window_table gui_window_table = {
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
 	.remove_caret = gui_window_remove_caret,
+	.file_gadget_open = gui_window_file_gadget_open,
+	.start_selection = gui_window_start_selection,
 
 	/* from scaffold */
 	.set_title = gui_window_set_title,

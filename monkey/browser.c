@@ -276,13 +276,6 @@ gui_window_set_url(struct gui_window *g, const char *url)
   fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
 }
 
-void
-gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-                     struct gui_window *g)
-{
-  /* Ignore? */
-}
-
 static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
@@ -307,21 +300,6 @@ gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 {
   fprintf(stdout, "WINDOW SCROLL_VISIBLE WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
           g->win_num, x0, y0, x1, y1);
-}
-
-void
-gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void
-gui_start_selection(struct gui_window *g)
-{
-}
-
-void
-gui_clear_selection(struct gui_window *g)
-{
 }
 
 /**
@@ -386,12 +364,6 @@ gui_window_save_link(struct gui_window *g, const char *url,
           g->win_num, url, title);
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
 
 
 /**** Handlers ****/

@@ -1073,14 +1073,6 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
-
-
 static struct gui_table beos_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,

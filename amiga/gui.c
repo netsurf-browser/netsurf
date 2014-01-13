@@ -5066,7 +5066,7 @@ void ami_gui_splash_close(Object *win_obj)
 	if(win_obj) DisposeObject(win_obj);
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
+static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", g, gadget));
@@ -5103,6 +5103,10 @@ static struct gui_window_table ami_window_table = {
 	.remove_caret = gui_window_remove_caret,
 	.drag_start = gui_window_drag_start,
 	.new_content = gui_window_new_content,
+	.file_gadget_open = gui_file_gadget_open,
+	.drag_save_object = gui_drag_save_object,
+	.drag_save_selection =gui_drag_save_selection,
+	.start_selection = gui_start_selection,
 
 	/* from theme */
 	.set_pointer = gui_window_set_pointer,

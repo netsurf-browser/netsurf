@@ -76,12 +76,6 @@ static struct nsws_pointers nsws_pointer;
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
 static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
 
 static void gui_poll(bool active)
 {
@@ -1727,24 +1721,6 @@ static void gui_window_remove_caret(struct gui_window *w)
 	if (w == NULL)
 		return;
 	HideCaret(w->drawingarea);
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *w)
-{
-}
-
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void gui_start_selection(struct gui_window *w)
-{
-}
-
-void gui_clear_selection(struct gui_window *w)
-{
 }
 
 /**

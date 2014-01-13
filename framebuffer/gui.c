@@ -1792,28 +1792,6 @@ gui_download_window_done(struct gui_download_window *dw)
 }
 
 void
-gui_drag_save_object(gui_save_type type,
-		     hlcache_handle *c,
-		     struct gui_window *w)
-{
-}
-
-void
-gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void
-gui_start_selection(struct gui_window *g)
-{
-}
-
-void
-gui_clear_selection(struct gui_window *g)
-{
-}
-
-void
 gui_create_form_select_menu(struct browser_window *bw,
 			    struct form_control *control)
 {
@@ -1832,13 +1810,6 @@ gui_cert_verify(nsurl *url,
 		void *cbpw)
 {
 	cb(false, cbpw);
-}
-
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
 static struct gui_window_table framebuffer_gui_window_table = {

@@ -107,17 +107,6 @@ void gui_start_selection(struct gui_window *g)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
 }
 
-void gui_clear_selection(struct gui_window *g)
-{
-	if(!g) return;
-	if(!g->shared->win) return;
-	if(nsoption_bool(kiosk_mode) == true) return;
-
-	OffMenu(g->shared->win, AMI_MENU_CLEAR);
-	OffMenu(g->shared->win, AMI_MENU_CUT);
-	OffMenu(g->shared->win, AMI_MENU_COPY);
-}
-
 char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
 {
 	struct CollectionItem *ci_new = NULL, *ci_next, *ci_curr = ci;

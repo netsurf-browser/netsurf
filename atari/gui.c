@@ -445,13 +445,6 @@ static void gui_window_update_extent(struct gui_window *gw)
 }
 
 
-void gui_clear_selection(struct gui_window *g)
-{
-
-}
-
-
-
 /**
  * set the pointer shape
  */
@@ -657,24 +650,6 @@ static void gui_window_new_content(struct gui_window *w)
     slid->y_pos = 0;
     gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
     gui_window_redraw_window(w);
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-                          struct gui_window *w)
-{
-    LOG((""));
-    TODO();
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-    LOG((""));
-    TODO();
-}
-
-void gui_start_selection(struct gui_window *w)
-{
-
 }
 
 
@@ -1062,13 +1037,6 @@ static void gui_init2(int argc, char** argv)
 
     /* Initialize the toolbar framework: */
     toolbar_init();
-}
-
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
-        struct form_control *gadget)
-{
-    LOG(("File open dialog rquest for %p/%p", g, gadget));
-    /* browser_window_set_gadget_filename(bw, gadget, "filename"); */
 }
 
 static struct gui_window_table atari_window_table = {

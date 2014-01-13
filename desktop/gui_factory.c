@@ -85,6 +85,28 @@ static void gui_default_window_remove_caret(struct gui_window *g)
 {
 }
 
+static void gui_default_window_file_gadget_open(struct gui_window *g,
+						hlcache_handle *hl,
+						struct form_control *gadget)
+{
+}
+
+static void gui_default_window_drag_save_object(struct gui_window *g,
+						hlcache_handle *c,
+						gui_save_type type)
+{
+}
+
+static void gui_default_window_drag_save_selection(struct gui_window *g,
+						   const char *selection)
+{
+}
+
+static void gui_default_window_start_selection(struct gui_window *g)
+{
+}
+
+
 /** verify window table is valid */
 static nserror verify_window_register(struct gui_window_table *gwt)
 {
@@ -162,6 +184,18 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->scroll_start == NULL) {
 		gwt->scroll_start = gui_default_window_scroll_start;
+	}
+	if (gwt->file_gadget_open == NULL) {
+		gwt->file_gadget_open = gui_default_window_file_gadget_open;
+	}
+	if (gwt->drag_save_object == NULL) {
+		gwt->drag_save_object = gui_default_window_drag_save_object;
+	}
+	if (gwt->drag_save_selection == NULL) {
+		gwt->drag_save_selection = gui_default_window_drag_save_selection;
+	}
+	if (gwt->start_selection == NULL) {
+		gwt->start_selection = gui_default_window_start_selection;
 	}
 
 	return NSERROR_OK;

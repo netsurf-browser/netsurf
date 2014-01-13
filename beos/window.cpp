@@ -1268,18 +1268,7 @@ static void gui_window_new_content(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *g)
-{
-
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-
-}
-
-void gui_start_selection(struct gui_window *g)
+static void gui_start_selection(struct gui_window *g)
 {
 	if (!g->view->LockLooper())
 		return;
@@ -1287,10 +1276,6 @@ void gui_start_selection(struct gui_window *g)
 	g->view->MakeFocus();
 
 	g->view->UnlockLooper();
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
 }
 
 void gui_get_clipboard(char **buffer, size_t *length)
@@ -1376,6 +1361,7 @@ static struct gui_window_table gui_window_table = {
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
 	.remove_caret = gui_window_remove_caret,
+        .start_selection = gui_start_selection,
 
 	/* from scaffold */
 	.set_icon = gui_window_set_icon,

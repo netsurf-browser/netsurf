@@ -157,8 +157,6 @@ struct gui_window_table {
 	/** set favicon */
 	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
 
-
-
 	/**
 	 * Set the status bar of a browser window.
 	 *
@@ -189,8 +187,6 @@ struct gui_window_table {
 	 * \param  g	   window with caret
 	 */
 	void (*remove_caret)(struct gui_window *g);
-
-
 
 	/** start the navigation throbber. */
 	void (*start_throbber)(struct gui_window *g);
@@ -233,6 +229,19 @@ struct gui_window_table {
 	 */
 	void (*new_content)(struct gui_window *g);
 
+	/**
+	 * Called when file chooser gadget is activated
+	 */
+	void (*file_gadget_open)(struct gui_window *g, hlcache_handle *hl, struct form_control *gadget);
+
+	/** object dragged to window*/
+	void (*drag_save_object)(struct gui_window *g, hlcache_handle *c, gui_save_type type);
+
+	/** drag selection save */
+	void (*drag_save_selection)(struct gui_window *g, const char *selection);
+
+	/** selection started */
+	void (*start_selection)(struct gui_window *g);
 };
 
 /** Graphical user interface function table
@@ -280,16 +289,26 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);
 
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-		struct gui_window *g);
-void gui_drag_save_selection(struct gui_window *g, const char *selection);
-void gui_start_selection(struct gui_window *g);
-void gui_clear_selection(struct gui_window *g);
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
-	struct form_control *gadget);
+
+/**
+ * Callback to translate resource to full url.
+ *
+ * Transforms a resource: path into a full URL. The returned URL
+ * is used as the target for a redirect. The caller takes ownership of
+ * the returned nsurl including unrefing it when finished with it.
+ *
+ * \param path The path of the resource to locate.
+ * \return A string containing the full URL of the target object or
+ *         NULL if no suitable resource can be found.
+ */
+nsurl* gui_get_resource_url(const char *path);
+
 
 void gui_launch_url(const char *url);
+
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control);
 
 /**
  * Core asks front end for clipboard contents.
@@ -304,6 +323,7 @@ typedef struct nsnsclipboard_styles {
 
 	plot_font_style_t style;	/**< Style to give text run */
 } nsclipboard_styles;
+
 /**
  * Core tells front end to put given text in clipboard
  *
@@ -317,27 +337,11 @@ void gui_set_clipboard(const char *buffer, size_t length,
 
 
 
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control);
-
-
 struct ssl_cert_info;
 
 void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw);
 
-/**
- * Callback to translate resource to full url.
- *
- * Transforms a resource: path into a full URL. The returned URL
- * is used as the target for a redirect. The caller takes ownership of
- * the returned nsurl including unrefing it when finished with it.
- *
- * \param path The path of the resource to locate.
- * \return A string containing the full URL of the target object or
- *         NULL if no suitable resource can be found.
- */
-nsurl* gui_get_resource_url(const char *path);
 
 #endif

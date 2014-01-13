@@ -274,7 +274,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
 		char *sel = selection_get_copy(s);
-		gui_drag_save_selection(top->window, sel);
+		guit->window->drag_save_selection(top->window, sel);
 		free(sel);
 	}
 	else if (!modkeys) {
@@ -293,7 +293,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			s->drag_state = DRAG_END;
 
-			gui_start_selection(top->window);
+			guit->window->start_selection(top->window);
 		}
 		else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
@@ -312,7 +312,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				s->drag_state = DRAG_START;
 			}
 
-			gui_start_selection(top->window);
+			guit->window->start_selection(top->window);
 		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 

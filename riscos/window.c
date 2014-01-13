@@ -5265,6 +5265,13 @@ static struct gui_window_table gui_window_table = {
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
+
+	/* from save */
+	.drag_save_object = gui_drag_save_object,
+	.drag_save_selection =gui_drag_save_selection,
+
+	/* from textselection */
+	.start_selection = gui_start_selection,
 };
 
 struct gui_window_table *riscos_gui_window_table = &gui_window_table;
