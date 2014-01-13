@@ -82,6 +82,8 @@ struct gui_window_table {
 	/**
 	 * Force a redraw of the entire contents of a window.
 	 *
+	 * @todo this API should be merged with update.
+	 *
 	 * \param g gui_window to redraw
 	 */
 	void (*redraw)(struct gui_window *g);
@@ -112,6 +114,31 @@ struct gui_window_table {
 	 * \param  sy  point to place at top-left of window
 	 */
 	void (*set_scroll)(struct gui_window *g, int sx, int sy);
+
+	/**
+	 * Find the current dimensions of a browser window's content area.
+	 *
+	 * @todo The implementations of this are buggy and its only
+	 * used from frames code.
+	 *
+	 * \param g	 gui_window to measure
+	 * \param width	 receives width of window
+	 * \param height receives height of window
+	 * \param scaled whether to return scaled values
+	 */
+	void (*get_dimensions)(struct gui_window *g, int *width, int *height, bool scaled);
+
+	/**
+	 * Update the extent of the inside of a browser window to that of the
+	 * current content.
+	 *
+	 * @todo this is used to update scroll bars does it need
+	 * renaming? some frontends (windows) do not even implement it.
+	 *
+	 * \param  g gui_window to update the extent of
+	 */
+	void (*update_extent)(struct gui_window *g);
+
 
 
 	/* Optional entries */
@@ -198,9 +225,7 @@ struct gui_table {
 
 extern struct gui_table *guit; /* the gui vtable */
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-		bool scaled);
-void gui_window_update_extent(struct gui_window *g);
+
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height,

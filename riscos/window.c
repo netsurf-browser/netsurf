@@ -916,7 +916,7 @@ static void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int 
  * \param scaled whether to return scaled values
  */
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled)
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled)
 {
   	/* use the cached window sizes */
 	*width = g->old_width / 2;
@@ -935,7 +935,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bo
  * \param  g		gui_window to update the extent of
  */
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	os_error		*error;
 	wimp_window_info	info;
@@ -5247,11 +5247,12 @@ static struct gui_window_table gui_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
-
 	.save_link = gui_window_save_link,
 	.drag_start = gui_window_drag_start,
 	.scroll_visible = gui_window_scroll_visible,

@@ -1575,7 +1575,7 @@ gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 }
 
 
-void
+static void
 gui_window_get_dimensions(struct gui_window *g,
 			  int *width,
 			  int *height,
@@ -1590,7 +1590,7 @@ gui_window_get_dimensions(struct gui_window *g,
 	}
 }
 
-void
+static void
 gui_window_update_extent(struct gui_window *gw)
 {
 	float scale = gw->bw->scale;
@@ -1848,6 +1848,8 @@ static struct gui_window_table framebuffer_gui_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_url = gui_window_set_url,
 	.start_throbber = gui_window_start_throbber,

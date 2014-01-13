@@ -300,7 +300,7 @@ void browser_window_update_extent(struct browser_window *bw)
 {
 	if (bw->window != NULL)
 		/* Front end window */
-		gui_window_update_extent(bw->window);
+		guit->window->update_extent(bw->window);
 	else
 		/* Core-managed browser window */
 		browser_window_handle_scrollbars(bw);
@@ -1912,7 +1912,7 @@ void browser_window_get_dimensions(struct browser_window *bw,
 		*height = bw->height;
 	} else {
 		/* Front end window */
-		gui_window_get_dimensions(bw->window, width, height, scaled);
+		guit->window->get_dimensions(bw->window, width, height, scaled);
 	}
 }
 

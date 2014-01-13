@@ -135,7 +135,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 							   bool scaled)
 {
 	NSCParameterAssert( width != NULL && height != NULL );
@@ -150,7 +150,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	*height = cocoa_pt_to_px( NSHeight( frame ) );
 }
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	BrowserViewController * const window = (BrowserViewController *)g;
 
@@ -303,6 +303,8 @@ static struct gui_window_table cocoa_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

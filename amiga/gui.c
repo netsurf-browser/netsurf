@@ -4548,7 +4548,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 //	g->shared->new_content = false;
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
 	struct IBox *bbox;
@@ -4566,7 +4566,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox, zbox;
 	ULONG cur_tab = 0;
@@ -5092,11 +5092,12 @@ static struct gui_window_table ami_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
-
 	.drag_start = gui_window_drag_start,
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,

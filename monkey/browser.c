@@ -132,7 +132,7 @@ gui_window_redraw_window(struct gui_window *g)
   fprintf(stdout, "WINDOW REDRAW WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                           bool scaled)
 {
@@ -183,7 +183,7 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
   
 }
 
-void
+static void
 gui_window_update_extent(struct gui_window *g)
 {
   if (!g->bw->current_content)
@@ -570,11 +570,12 @@ static struct gui_window_table gui_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
 	.set_icon = gui_window_set_icon,
-
 	.drag_start = gui_window_drag_start,
 	.save_link = gui_window_save_link,
 	.scroll_visible = gui_window_scroll_visible,

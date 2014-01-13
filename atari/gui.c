@@ -278,8 +278,11 @@ static void gui_window_destroy(struct gui_window *w)
     }
 }
 
-void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
-                               bool scaled)
+static void
+gui_window_get_dimensions(struct gui_window *w,
+			  int *width,
+			  int *height,
+			  bool scaled)
 {
     if (w == NULL)
         return;
@@ -423,7 +426,7 @@ static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	so that we can adjust scroll info. We also have to call it when tab
 	change occurs.
 */
-void gui_window_update_extent(struct gui_window *gw)
+static void gui_window_update_extent(struct gui_window *gw)
 {
 
     if( gw->browser->bw->current_content != NULL ) {
@@ -1075,6 +1078,8 @@ static struct gui_window_table atari_window_table = {
     .update = gui_window_update_box,
     .get_scroll = gui_window_get_scroll,
     .set_scroll = gui_window_set_scroll,
+    .get_dimensions = gui_window_get_dimensions,
+    .update_extent = gui_window_update_extent,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,

@@ -92,6 +92,13 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	if (gwt->set_scroll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gwt->get_dimensions == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gwt->update_extent == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
 
 	/* fill in the optional entries with defaults */
 	if (gwt->set_title == NULL) {

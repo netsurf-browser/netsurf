@@ -1546,7 +1546,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 			       bool scaled)
 {
 	if (w == NULL)
@@ -1558,7 +1558,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 	*height = w->height;
 }
 
-void gui_window_update_extent(struct gui_window *w)
+static void gui_window_update_extent(struct gui_window *w)
 {
 
 }
@@ -1854,6 +1854,8 @@ static struct gui_window_table win32_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

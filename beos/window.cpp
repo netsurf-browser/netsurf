@@ -1087,7 +1087,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 }
 
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	//CALLED();
 	if (!g->bw->current_content)
@@ -1347,7 +1347,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
 	if (g->view && g->view->LockLooper()) {
@@ -1369,6 +1369,8 @@ static struct gui_window_table gui_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
         .new_content = gui_window_new_content,
 

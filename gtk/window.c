@@ -988,7 +988,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	gtk_adjustment_set_value(hadj, x);
 }
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	if (!g->bw->current_content)
 		return;
@@ -1121,7 +1121,7 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
 	GtkAllocation alloc;
@@ -1179,6 +1179,8 @@ static struct gui_window_table gui_window_table = {
 	.update = gui_window_update_box,
 	.get_scroll = gui_window_get_scroll,
 	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
 
 	.set_icon = gui_window_set_icon,
 
