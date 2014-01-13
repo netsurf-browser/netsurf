@@ -166,7 +166,7 @@ gui_window_stop_throbber(struct gui_window *g)
   fprintf(stdout, "WINDOW STOP_THROBBER WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
   g->scrollx = sx;
@@ -283,7 +283,7 @@ gui_drag_save_object(gui_save_type type, hlcache_handle *c,
   /* Ignore? */
 }
 
-bool
+static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
   fprintf(stdout, "WINDOW GET_SCROLL WIN %u X %d Y %d\n",
@@ -568,6 +568,8 @@ static struct gui_window_table gui_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

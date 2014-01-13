@@ -499,7 +499,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
 void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 {
 	if (bw->window != NULL) {
-		gui_window_set_scroll(bw->window, x, y);
+		guit->window->set_scroll(bw->window, x, y);
 	} else {
 		if (bw->scroll_x != NULL)
 			scrollbar_set(bw->scroll_x, x, false);
@@ -2946,7 +2946,7 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
+		guit->window->get_scroll(bw->window, &bw->drag_start_scroll_x,
 				&bw->drag_start_scroll_y);
 
 		guit->window->scroll_start(bw->window);

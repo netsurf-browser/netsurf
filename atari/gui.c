@@ -113,6 +113,7 @@ EVMULT_IN aes_event_in = {
 EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
+bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
 
 static void gui_poll(bool active)
@@ -404,7 +405,7 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
     return( true );
 }
 
-void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
     int units = 0;
     if ((w == NULL)
@@ -1072,6 +1073,8 @@ static struct gui_window_table atari_window_table = {
     .destroy = gui_window_destroy,
     .redraw = gui_window_redraw_window,
     .update = gui_window_update_box,
+    .get_scroll = gui_window_get_scroll,
+    .set_scroll = gui_window_set_scroll,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,

@@ -52,7 +52,7 @@ static void gui_default_window_scroll_visible(struct gui_window *g,
 				       int x0, int y0,
 				       int x1, int y1)
 {
-	gui_window_set_scroll(g, x0, y0);
+	guit->window->set_scroll(g, x0, y0);
 }
 
 static void gui_default_window_new_content(struct gui_window *g)
@@ -84,6 +84,12 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 		return NSERROR_BAD_PARAMETER;
 	}
 	if (gwt->update == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gwt->get_scroll == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gwt->set_scroll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
 

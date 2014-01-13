@@ -120,7 +120,7 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: nsrect];
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	NSCParameterAssert( g != NULL && sx != NULL && sy != NULL );
 	
@@ -130,7 +130,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
@@ -301,6 +301,8 @@ static struct gui_window_table cocoa_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

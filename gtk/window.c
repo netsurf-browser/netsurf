@@ -888,6 +888,20 @@ static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 	nsgtk_scaffolding_set_icon(gw);
 }
 
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+{
+	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
+
+	assert(vadj);
+	assert(hadj);
+
+	*sy = (int)(gtk_adjustment_get_value(vadj));
+	*sx = (int)(gtk_adjustment_get_value(hadj));
+
+	return true;
+}
+
 static void nsgtk_redraw_caret(struct gui_window *g)
 {
 	int sx, sy;
@@ -948,21 +962,8 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	gtk_label_set_text(g->status_bar, text);
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
-{
-	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
 
-	assert(vadj);
-	assert(hadj);
-
-	*sy = (int)(gtk_adjustment_get_value(vadj));
-	*sx = (int)(gtk_adjustment_get_value(hadj));
-
-	return true;
-}
-
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
 	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
@@ -1176,6 +1177,8 @@ static struct gui_window_table gui_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_icon = gui_window_set_icon,
 

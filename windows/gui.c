@@ -73,6 +73,9 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 static struct nsws_pointers nsws_pointer;
 
+void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
+
 void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
@@ -1469,7 +1472,7 @@ static void gui_window_update_box(struct gui_window *gw, const struct rect *rect
 
 }
 
-bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
 	LOG(("get scroll"));
 	if (w == NULL)
@@ -1849,6 +1852,8 @@ static struct gui_window_table win32_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

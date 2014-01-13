@@ -200,6 +200,9 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+
 /* accessors for default options - user option is updated if it is set as per default */
 #define nsoption_default_set_int(OPTION, VALUE)				\
 	if (nsoptions_default[NSOPTION_##OPTION].value.i == nsoptions[NSOPTION_##OPTION].value.i)	\
@@ -4480,13 +4483,13 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 	*ys /= gwin->bw->scale;
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	ami_get_hscroll_pos(g->shared, (ULONG *)sx);
 	ami_get_vscroll_pos(g->shared, (ULONG *)sy);
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
@@ -5087,6 +5090,8 @@ static struct gui_window_table ami_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,

@@ -37,6 +37,8 @@
 
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
 
+void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
+
 /**
  * Handle wheel scroll messages.
  */

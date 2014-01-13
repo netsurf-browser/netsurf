@@ -766,7 +766,7 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
  * \return true iff successful
  */
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -799,7 +799,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
  * \param  sy  point to place at top-left of window
  */
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -5245,6 +5245,8 @@ static struct gui_window_table gui_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,

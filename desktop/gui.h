@@ -94,6 +94,25 @@ struct gui_window_table {
 	 */
 	void (*update)(struct gui_window *g, const struct rect *rect);
 
+	/**
+	 * Get the scroll position of a browser window.
+	 *
+	 * \param  g   gui_window
+	 * \param  sx  receives x ordinate of point at top-left of window
+	 * \param  sy  receives y ordinate of point at top-left of window
+	 * \return true iff successful
+	 */
+	bool (*get_scroll)(struct gui_window *g, int *sx, int *sy);
+
+	/**
+	 * Set the scroll position of a browser window.
+	 *
+	 * \param  g   gui_window to scroll
+	 * \param  sx  point to place at top-left of window
+	 * \param  sy  point to place at top-left of window
+	 */
+	void (*set_scroll)(struct gui_window *g, int sx, int sy);
+
 
 	/* Optional entries */
 
@@ -179,8 +198,6 @@ struct gui_table {
 
 extern struct gui_table *guit; /* the gui vtable */
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled);
 void gui_window_update_extent(struct gui_window *g);

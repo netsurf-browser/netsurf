@@ -1051,7 +1051,7 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	g->view->UnlockLooper();
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1069,7 +1069,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1367,6 +1367,8 @@ static struct gui_window_table gui_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
         .new_content = gui_window_new_content,
 

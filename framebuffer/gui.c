@@ -1552,7 +1552,7 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
 			rect->y1 - bwidget->scrolly);
 }
 
-bool
+static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
@@ -1563,7 +1563,7 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void
+static void
 gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
@@ -1846,6 +1846,8 @@ static struct gui_window_table framebuffer_gui_window_table = {
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
 	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
 
 	.set_url = gui_window_set_url,
 	.start_throbber = gui_window_start_throbber,
