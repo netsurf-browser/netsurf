@@ -203,6 +203,8 @@ int main( int argc, char **argv )
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
+        cocoa_gui_table->download = cocoa_gui_download_table;
+
 	error = netsurf_init(messages, cocoa_gui_table);
 	if (error != NSERROR_OK) {
 		die("NetSurf failed to initialise");

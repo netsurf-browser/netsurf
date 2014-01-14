@@ -246,8 +246,8 @@ static char * select_filepath( const char * path, const char * filename )
 	return(ret);
 }
 
-struct gui_download_window * gui_download_window_create(download_context *ctx,
-		struct gui_window *parent)
+static struct gui_download_window * 
+gui_download_window_create(download_context *ctx, struct gui_window *parent)
 {
 	const char *filename;
 	char *destination;
@@ -359,7 +359,7 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *dw,
+static nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 
@@ -415,7 +415,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
                                const char *error_msg)
 {
 	LOG(("%s", error_msg));
@@ -426,7 +426,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 	// TODO: change abort to close
 }
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	OBJECT * tree;
 	LOG((""));
@@ -454,3 +454,13 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 	gui_window_set_status(input_window, messages_get("Done") );
 }
+
+static struct gui_download_table gui_download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *atari_gui_download_table = &gui_download_table;
+

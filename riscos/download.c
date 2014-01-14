@@ -215,7 +215,7 @@ const char *ro_gui_download_temp_name(struct gui_download_window *dw)
  *          reported
  */
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
+static struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
 {
 	const char *url = download_context_get_url(ctx);
@@ -445,7 +445,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 
-nserror gui_download_window_data(struct gui_download_window *dw,
+static nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 	while (true) {
@@ -714,7 +714,7 @@ void ro_gui_download_window_hide_caret(struct gui_download_window *dw)
  * \param  error_msg  error message
  */
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
 	os_error *error;
@@ -766,7 +766,7 @@ void gui_download_window_error(struct gui_download_window *dw,
  * \param  dw  download window
  */
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	os_error *error;
 
@@ -1631,3 +1631,12 @@ bool ro_gui_download_prequit(void)
 	}
 	return true;
 }
+
+static struct gui_download_table gui_download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *riscos_gui_download_table = &gui_download_table;

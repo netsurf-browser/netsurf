@@ -23,6 +23,8 @@
 
 #include "amiga/gui.h"
 
+extern struct gui_download_table *amiga_gui_download_table;
+
 struct download_context;
 struct gui_download_window;
 

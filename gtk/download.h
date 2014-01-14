@@ -27,4 +27,6 @@ bool nsgtk_check_for_downloads(GtkWindow *parent);
 void nsgtk_download_show(GtkWindow *parent);
 void nsgtk_download_add(gchar *url, gchar *destination);
 
+struct gui_download_table *nsgtk_gui_download_table;
+
 #endif

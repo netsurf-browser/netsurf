@@ -244,16 +244,34 @@ struct gui_window_table {
 	void (*start_selection)(struct gui_window *g);
 };
 
+/**
+ * function table for download windows
+ */
+struct gui_download_table {
+	struct gui_download_window *(*create)(download_context *ctx, struct gui_window *parent);
+
+	nserror (*data)(struct gui_download_window *dw,	const char *data, unsigned int size);
+
+	void (*error)(struct gui_download_window *dw, const char *error_msg);
+
+	void (*done)(struct gui_download_window *dw);
+};
+
 /** Graphical user interface function table
  *
  * function table implementing GUI interface to browser core
  */
 struct gui_table {
 
-	/* Mandantory entries */
-
 	/* sub tables */
-	struct gui_window_table *window; /* window sub table */
+
+	/** Window sub table */
+	struct gui_window_table *window;
+
+	/** Downlaod sub table */
+	struct gui_download_table *download;
+
+	/* Mandantory entries */
 
 	/** called to let the frontend update its state and run any
 	 * I/O operations.
@@ -277,17 +295,6 @@ struct gui_table {
 };
 
 extern struct gui_table *guit; /* the gui vtable */
-
-
-
-
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-		struct gui_window *parent);
-nserror gui_download_window_data(struct gui_download_window *dw,
-		const char *data, unsigned int size);
-void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg);
-void gui_download_window_done(struct gui_download_window *dw);
 
 
 

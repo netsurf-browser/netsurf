@@ -85,7 +85,7 @@ enum {
 
 int downloads_in_progress = 0;
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
+static struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
 {
 	const char *url = download_context_get_url(ctx);
@@ -193,7 +193,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	return dw;
 }
 
-nserror gui_download_window_data(struct gui_download_window *dw, 
+static nserror gui_download_window_data(struct gui_download_window *dw, 
 		const char *data, unsigned int size)
 {
 	APTR va[3];
@@ -227,7 +227,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
 	warn_user("Unwritten","");
@@ -242,7 +242,7 @@ void ami_download_window_abort(struct gui_download_window *dw)
 	gui_download_window_done(dw);
 }
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	struct dlnode *dln,*dln2 = NULL;
 	struct browser_window *bw = dw->bw;
@@ -432,3 +432,12 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 	if(res == 1) return TRUE;
 		else return FALSE;
 }
+
+static struct gui_download_table gui_download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *amiga_gui_download_table = &gui_download_table;

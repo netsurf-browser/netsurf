@@ -5185,6 +5185,8 @@ int main(int argc, char** argv)
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
 
+	ami_gui_table.download = amiga_gui_download_table;
+
 	ret = netsurf_init(messages, &ami_gui_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");

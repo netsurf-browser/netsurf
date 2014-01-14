@@ -5,13 +5,6 @@
 struct gui_table *guit = NULL;
 
 
-static void gui_default_quit(void)
-{
-}
-
-static void gui_default_set_search_ico(hlcache_handle *ico)
-{
-}
 
 
 static void gui_default_window_set_title(struct gui_window *g, const char *title)
@@ -201,6 +194,68 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	return NSERROR_OK;
 }
 
+
+static struct gui_download_window *
+gui_default_download_create(download_context *ctx, struct gui_window *parent)
+{
+	return NULL;
+}
+
+static nserror gui_default_download_data(struct gui_download_window *dw,
+				  const char *data, unsigned int size)
+{
+	return NSERROR_OK;
+}
+
+static void gui_default_download_error(struct gui_download_window *dw,
+				const char *error_msg)
+{
+}
+
+static void gui_default_download_done(struct gui_download_window *dw)
+{
+}
+
+static struct gui_download_table default_download_table = {
+	.create = gui_default_download_create,
+	.data = gui_default_download_data,
+	.error = gui_default_download_error,
+	.done = gui_default_download_done,
+};
+
+/** verify download window table is valid */
+static nserror verify_download_register(struct gui_download_table *gdt)
+{
+	/* check table is present */
+	if (gdt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* all enties are mandantory */
+	if (gdt->create == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gdt->data == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gdt->error == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gdt->done == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	return NSERROR_OK;
+}
+
+static void gui_default_quit(void)
+{
+}
+
+static void gui_default_set_search_ico(hlcache_handle *ico)
+{
+}
+
 nserror gui_factory_register(struct gui_table *gt)
 {
 	nserror err;
@@ -217,6 +272,14 @@ nserror gui_factory_register(struct gui_table *gt)
 
 	/* check subtables */
 	err = verify_window_register(gt->window);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+	if (gt->download == NULL) {
+		/* set default download table */
+		gt->download = &default_download_table;
+	}
+	err = verify_download_register(gt->download);
 	if (err != NSERROR_OK) {
 		return err;
 	}

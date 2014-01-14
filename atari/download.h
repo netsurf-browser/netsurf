@@ -58,4 +58,6 @@ struct gui_download_window {
 	bool close_on_finish;
 };
 
+struct gui_download_table *atari_gui_download_table;
+
 #endif

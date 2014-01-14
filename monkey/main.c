@@ -153,6 +153,7 @@ main(int argc, char **argv)
   messages = filepath_find(respaths, "Messages");
 
   monkey_gui_table.window = monkey_gui_window_table;
+  monkey_gui_table.download = monkey_gui_download_table;
 
   ret = netsurf_init(messages, &monkey_gui_table);
   free(messages);

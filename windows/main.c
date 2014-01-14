@@ -154,6 +154,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
+
+	win32_gui_table->download = nsgtk_gui_download_table;
+
 	ret = netsurf_init(messages, win32_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {

@@ -1116,6 +1116,9 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
+
+    atari_gui_table.download = nsgtk_gui_download_table;
+
     ret = netsurf_init(messages, atari_gui_table);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");

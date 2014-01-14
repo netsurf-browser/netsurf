@@ -898,6 +898,7 @@ int main(int argc, char** argv)
 
 	/* common initialisation */
 	riscos_gui_table.window = riscos_gui_window_table;
+	riscos_gui_table.download = riscos_gui_download_table;
 
 	ret = netsurf_init(path, &riscos_gui_table);
 	if (ret != NSERROR_OK) {

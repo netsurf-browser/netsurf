@@ -37,6 +37,7 @@ struct gui_window {
 };
 
 extern struct gui_window_table *monkey_gui_window_table;
+extern struct gui_download_table *monkey_gui_download_table;
 
 struct gui_window *monkey_find_window_by_num(uint32_t win_num);
 struct gui_window *monkey_find_window_by_content(hlcache_handle *content);

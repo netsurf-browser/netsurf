@@ -1111,6 +1111,7 @@ int main(int argc, char** argv)
 	BPath messages = get_messages_path();
 
         beos_gui_table.window = beos_gui_window_table;
+        beos_gui_table.download = beos_gui_download_table;
 
 	ret = netsurf_init(messages.Path(), &beos_gui_table);
 	if (ret != NSERROR_OK) {
@@ -1152,6 +1153,10 @@ int gui_init_replicant(int argc, char** argv)
 
 	/* common initialisation */
 	BPath messages = get_messages_path();
+
+        beos_gui_table.window = beos_gui_window_table;
+        beos_gui_table.download = beos_gui_download_table;
+
 	ret = netsurf_init(messages.Path(), &beos_gui_table);
 	if (ret != NSERROR_OK) {
 		// FIXME: must not die when in replicant!

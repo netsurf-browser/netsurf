@@ -1172,6 +1172,7 @@ int main(int argc, char** argv)
 	messages = filepath_find(respaths, "Messages");
 
 	nsgtk_gui_table.window = nsgtk_gui_window_table;
+	nsgtk_gui_table.download = nsgtk_gui_download_table;
 
 	ret = netsurf_init(messages, &nsgtk_gui_table);
 	free(messages);

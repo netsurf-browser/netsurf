@@ -123,6 +123,7 @@ const char *ro_gui_default_language(void);
 void ro_gui_download_init(void);
 void ro_gui_download_datasave_ack(wimp_message *message);
 bool ro_gui_download_prequit(void);
+extern struct gui_download_table *riscos_gui_download_table;
 
 /* in 401login.c */
 void ro_gui_401login_init(void);
