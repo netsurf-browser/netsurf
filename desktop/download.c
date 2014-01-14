@@ -27,6 +27,7 @@
 #include "content/llcache.h"
 #include "desktop/download.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "utils/http.h"
 #include "utils/url.h"
 #include "utils/utils.h"

@@ -25,6 +25,8 @@
 
 struct gui_table;
 
+extern struct gui_table *guit; /* the gui vtable */
+
 nserror gui_factory_register(struct gui_table *gt);
 
 #endif

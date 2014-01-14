@@ -47,6 +47,7 @@
 #include "desktop/frames.h"
 #include "desktop/global_history.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "desktop/hotlist.h"
 #include "desktop/knockout.h"
 #include "desktop/local_history.h"

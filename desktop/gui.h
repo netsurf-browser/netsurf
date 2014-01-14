@@ -64,6 +64,13 @@ struct gui_window;
 struct gui_download_window;
 struct browser_window;
 struct form_control;
+struct ssl_cert_info;
+
+typedef struct nsnsclipboard_styles {
+	size_t start;			/**< Start of run */
+
+	plot_font_style_t style;	/**< Style to give text run */
+} nsclipboard_styles;
 
 /** Graphical user interface window function table
  *
@@ -294,7 +301,6 @@ struct gui_table {
 	void (*set_search_ico)(hlcache_handle *ico);
 };
 
-extern struct gui_table *guit; /* the gui vtable */
 
 
 
@@ -325,11 +331,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
  */
 void gui_get_clipboard(char **buffer, size_t *length);
 
-typedef struct nsnsclipboard_styles {
-	size_t start;			/**< Start of run */
-
-	plot_font_style_t style;	/**< Style to give text run */
-} nsclipboard_styles;
 
 /**
  * Core tells front end to put given text in clipboard
@@ -344,7 +345,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 
 
 
-struct ssl_cert_info;
 
 void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),

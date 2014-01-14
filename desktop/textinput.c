@@ -31,6 +31,7 @@
 
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "desktop/mouse.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
