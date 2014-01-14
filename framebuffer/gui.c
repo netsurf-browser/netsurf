@@ -54,6 +54,7 @@
 #include "framebuffer/findfile.h"
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
+#include "framebuffer/clipboard.h"
 
 #include "content/urldb.h"
 #include "desktop/local_history.h"
@@ -1767,27 +1768,6 @@ gui_window_remove_caret(struct gui_window *g)
 }
 
 
-void
-gui_create_form_select_menu(struct browser_window *bw,
-			    struct form_control *control)
-{
-}
-
-void
-gui_launch_url(const char *url)
-{
-}
-
-void
-gui_cert_verify(nsurl *url,
-		const struct ssl_cert_info *certs,
-		unsigned long num,
-		nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	cb(false, cbpw);
-}
-
 static struct gui_window_table framebuffer_gui_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
@@ -1810,6 +1790,9 @@ static struct gui_window_table framebuffer_gui_window_table = {
 static struct gui_table framebuffer_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+	.get_resource_url = gui_get_resource_url,
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
 
 	.window = &framebuffer_gui_window_table,
 };

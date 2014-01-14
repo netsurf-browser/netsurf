@@ -1729,7 +1729,7 @@ static void gui_window_remove_caret(struct gui_window *w)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	/* TODO: Implement this */
 	HANDLE clipboard_handle;
@@ -1751,7 +1751,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	/* TODO: Implement this */
@@ -1776,19 +1776,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	SetClipboardData(CF_TEXT, hnew);
 }
 
-
-void gui_create_form_select_menu(struct browser_window *bw,
-				 struct form_control *control)
-{
-}
-
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		     unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw)
-{
-	cb(false, cbpw);
-}
 
 /**
  * Create the main window class.
@@ -1844,6 +1831,8 @@ static struct gui_window_table win32_window_table = {
 
 static struct gui_table gui_table = {
 	.poll = gui_poll,
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
 
 	.window = &win32_window_table,
 };

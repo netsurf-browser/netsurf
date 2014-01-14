@@ -659,7 +659,7 @@ static void gui_window_new_content(struct gui_window *w)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
     char *clip;
     size_t clip_len;
@@ -701,7 +701,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
                        nsclipboard_styles styles[], int n_styles)
 {
     if (length > 0 && buffer != NULL) {
@@ -719,22 +719,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
         }
         free(clip);
     }
-}
-
-
-void gui_create_form_select_menu(struct browser_window *bw,
-                                 struct form_control *control)
-{
-    TODO();
-}
-
-/**
- * Broadcast an URL that we can't handle.
- */
-void gui_launch_url(const char *url)
-{
-    TODO();
-    LOG(("launch file: %s\n", url));
 }
 
 void gui_401login_open(nsurl *url, const char *realm,
@@ -756,7 +740,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 }
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                     unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					void *cbpw)
 {
@@ -913,7 +897,7 @@ static inline void create_cursor(int flags, short mode, void * form,
     }
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
     char buf[PATH_MAX];
     char *raw;
@@ -1064,6 +1048,10 @@ static struct gui_window_table atari_window_table = {
 static struct gui_table atari_gui_table = {
     .poll = gui_poll,
     .quit = gui_quit,
+    .get_resource_url = gui_get_resource_url,
+    .get_clipboard = gui_get_clipboard,
+    .set_clipboard = gui_set_clipboard,
+    .cert_verify = gui_cert_verify,
 
     .window = &atari_window_table;
 };

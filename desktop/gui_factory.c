@@ -256,6 +256,40 @@ static void gui_default_set_search_ico(hlcache_handle *ico)
 {
 }
 
+static nsurl *gui_default_get_resource_url(const char *path)
+{
+	return NULL;
+}
+
+static void gui_default_launch_url(const char *url)
+{
+}
+
+static void gui_default_create_form_select_menu(struct browser_window *bw,
+						struct form_control *control)
+{
+}
+
+static void gui_default_get_clipboard(char **buffer, size_t *length)
+{
+	*buffer = NULL;
+	*length = 0;
+}
+
+static void gui_default_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
+{
+}
+
+static void gui_default_cert_verify(nsurl *url,
+				    const struct ssl_cert_info *certs,
+				    unsigned long num,
+				    nserror (*cb)(bool proceed, void *pw),
+				    void *cbpw)
+{
+	cb(false, cbpw);
+}
+
 nserror gui_factory_register(struct gui_table *gt)
 {
 	nserror err;
@@ -295,6 +329,24 @@ nserror gui_factory_register(struct gui_table *gt)
 	}
 	if (gt->set_search_ico == NULL) {
 		gt->set_search_ico = gui_default_set_search_ico;
+	}
+	if (gt->get_resource_url == NULL) {
+		gt->get_resource_url = gui_default_get_resource_url;
+	}
+	if (gt->launch_url == NULL) {
+		gt->launch_url = gui_default_launch_url;
+	}
+	if (gt->create_form_select_menu == NULL) {
+		gt->create_form_select_menu = gui_default_create_form_select_menu;
+	}
+	if (gt->get_clipboard == NULL) {
+		gt->get_clipboard = gui_default_get_clipboard;
+	}
+	if (gt->set_clipboard == NULL) {
+		gt->set_clipboard = gui_default_set_clipboard;
+	}
+	if (gt->cert_verify == NULL) {
+		gt->cert_verify = gui_default_cert_verify;
 	}
 
 	guit = gt;

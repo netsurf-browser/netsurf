@@ -30,6 +30,7 @@
 
 #include "content/content.h"
 #include "desktop/browser.h"
+#include "desktop/gui_factory.h"
 #include "desktop/frames.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
@@ -654,7 +655,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						c);
 				pointer = BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
-				gui_create_form_select_menu(bw, gadget);
+				guit->create_form_select_menu(bw, gadget);
 			break;
 		case GADGET_CHECKBOX:
 			status = messages_get("FormCheckbox");

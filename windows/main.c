@@ -41,7 +41,7 @@ static char **respaths; /** resource search path vector. */
 
 char *options_file_location;
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -54,10 +54,6 @@ nsurl *gui_get_resource_url(const char *path)
 	}
 
 	return url;
-}
-
-void gui_launch_url(const char *url)
-{
 }
 
 /** 
@@ -156,6 +152,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	messages = filepath_find(respaths, "messages");
 
 	win32_gui_table->download = nsgtk_gui_download_table;
+	win32_gui_table->get_resource_url = get_resource_url;
 
 	ret = netsurf_init(messages, win32_gui_table);
 	free(messages);

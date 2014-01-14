@@ -624,7 +624,7 @@ void ami_amiupdate(void)
 	}
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[1024];
 	char path2[1024];
@@ -5122,6 +5122,12 @@ static struct gui_table ami_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
+	.cert_verify = gui_cert_verify,
 
 	.window = &ami_window_table,
 };

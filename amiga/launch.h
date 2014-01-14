@@ -25,4 +25,7 @@
 
 void ami_openurl_open(void);
 void ami_openurl_close(void);
+
+void gui_launch_url(const char *url);
+
 #endif

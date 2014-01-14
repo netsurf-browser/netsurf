@@ -252,7 +252,7 @@ static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	static const char base_url[] = "file:///NetSurf:/Resources/";
 	size_t path_len, length;
@@ -837,91 +837,6 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-static struct gui_table riscos_gui_table = {
-	.poll = gui_poll,
-	.quit = gui_quit,
-};
-
-
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	char path[40];
-	int length;
-	char logging_env[2];
-	os_var_type type;
-	int used = -1;  /* slightly better with older OSLib versions */
-	os_error *error;
-	nserror ret;
-
-	/* Consult NetSurf$Logging environment variable to decide if logging
-	 * is required. */
-	error = xos_read_var_val_size("NetSurf$Logging", 0, os_VARTYPE_STRING,
-			&used, NULL, &type);
-	if (error != NULL || type != os_VARTYPE_STRING || used != -2) {
-		verbose_log = true;
-	} else {
-		error = xos_read_var_val("NetSurf$Logging", logging_env,
-				sizeof(logging_env), 0, os_VARTYPE_STRING,
-				&used, NULL, &type);
-		if (error != NULL || logging_env[0] != '0') {
-			verbose_log = true;
-		} else {
-			verbose_log = false;
-		}
-	}
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read("NetSurf:Choices", NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* Choose the interface language to use */
-	ro_gui_choose_language();
-
-	/* select language-specific Messages */
-	if (((length = snprintf(path,
-				sizeof(path),
-			       "NetSurf:Resources.%s.Messages",
-				nsoption_charp(language))) < 0) || 
-	    (length >= (int)sizeof(path))) {
-		die("Failed to locate Messages resource.");
-	}
-
-	/* common initialisation */
-	riscos_gui_table.window = riscos_gui_window_table;
-	riscos_gui_table.download = riscos_gui_download_table;
-
-	ret = netsurf_init(path, &riscos_gui_table);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	artworks_init();
-	draw_init();
-	sprite_init();
-
-	/* Load some extra RISC OS specific Messages */
-	messages_load("NetSurf:Resources.LangNames");
-
-	gui_init(argc, argv);
-
-	gui_init2(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
 
 
 /**
@@ -2272,7 +2187,7 @@ void ro_gui_dump_browser_window(struct browser_window *bw)
  * Broadcast an URL that we can't handle.
  */
 
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	/* Try ant broadcast first */
 	ro_url_broadcast(url);
@@ -2433,3 +2348,94 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
+static struct gui_table riscos_gui_table = {
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
+	.cert_verify = gui_cert_verify,
+};
+
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	char path[40];
+	int length;
+	char logging_env[2];
+	os_var_type type;
+	int used = -1;  /* slightly better with older OSLib versions */
+	os_error *error;
+	nserror ret;
+
+	/* Consult NetSurf$Logging environment variable to decide if logging
+	 * is required. */
+	error = xos_read_var_val_size("NetSurf$Logging", 0, os_VARTYPE_STRING,
+			&used, NULL, &type);
+	if (error != NULL || type != os_VARTYPE_STRING || used != -2) {
+		verbose_log = true;
+	} else {
+		error = xos_read_var_val("NetSurf$Logging", logging_env,
+				sizeof(logging_env), 0, os_VARTYPE_STRING,
+				&used, NULL, &type);
+		if (error != NULL || logging_env[0] != '0') {
+			verbose_log = true;
+		} else {
+			verbose_log = false;
+		}
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read("NetSurf:Choices", NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* Choose the interface language to use */
+	ro_gui_choose_language();
+
+	/* select language-specific Messages */
+	if (((length = snprintf(path,
+				sizeof(path),
+			       "NetSurf:Resources.%s.Messages",
+				nsoption_charp(language))) < 0) || 
+	    (length >= (int)sizeof(path))) {
+		die("Failed to locate Messages resource.");
+	}
+
+	/* common initialisation */
+	riscos_gui_table.window = riscos_gui_window_table;
+	riscos_gui_table.download = riscos_gui_download_table;
+
+	ret = netsurf_init(path, &riscos_gui_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	artworks_init();
+	draw_init();
+	sprite_init();
+
+	/* Load some extra RISC OS specific Messages */
+	messages_load("NetSurf:Resources.LangNames");
+
+	gui_init(argc, argv);
+
+	gui_init2(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
+}

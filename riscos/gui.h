@@ -156,6 +156,7 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
+void gui_create_form_select_menu(struct browser_window *bw, struct form_control *control);
 
 /* in history.c */
 void ro_gui_history_init(void);
@@ -200,6 +201,15 @@ extern int ro_plot_origin_y;
 
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
+
+/* in textselection.c */
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+
+/* in sslcert.c */
+void gui_cert_verify(nsurl *url,
+		const struct ssl_cert_info *certs, unsigned long num,
+		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* icon numbers */
 #define ICON_STATUS_RESIZE 0

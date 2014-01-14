@@ -26,6 +26,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "framebuffer/gui.h"
+#include "framebuffer/clipboard.h"
 #include "utils/log.h"
 
 
@@ -34,8 +35,6 @@ static struct gui_clipboard {
 	size_t buffer_len;
 	size_t length;
 } gui_clipboard;
-
-
 
 
 /**

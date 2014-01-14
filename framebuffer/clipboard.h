@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_FB_FINDFILE_H
-#define NETSURF_FB_FINDFILE_H
+#ifndef NETSURF_FB_CLIPBOARD_H
+#define NETSURF_FB_CLIPBOARD_H
 
-extern char **respaths;
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length,
+		       nsclipboard_styles styles[], int n_styles);
 
-/** Create an array of valid paths to search for resources.
- *
- * The idea is that all the complex path computation to find resources
- * is performed here, once, rather than every time a resource is
- * searched for.
- */
-char **fb_init_resource(const char *resource_path);
-
-nsurl *gui_get_resource_url(const char *path);
-
-#endif /* NETSURF_FB_FINDFILE_H */
+#endif

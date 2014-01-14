@@ -103,7 +103,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
 	case LLCACHE_QUERY_SSL:
-		gui_cert_verify(query->url, query->data.ssl.certs, 
+		guit->cert_verify(query->url, query->data.ssl.certs, 
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}

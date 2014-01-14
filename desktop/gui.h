@@ -280,7 +280,8 @@ struct gui_table {
 
 	/* Mandantory entries */
 
-	/** called to let the frontend update its state and run any
+	/**
+	 * called to let the frontend update its state and run any
 	 * I/O operations.
 	 */
 	void (*poll)(bool active);
@@ -299,56 +300,58 @@ struct gui_table {
 	 * cache from search_web_ico()
 	 */
 	void (*set_search_ico)(hlcache_handle *ico);
+
+	/**
+	 * Callback to translate resource to full url.
+	 *
+	 * Transforms a resource: path into a full URL. The returned URL
+	 * is used as the target for a redirect. The caller takes ownership of
+	 * the returned nsurl including unrefing it when finished with it.
+	 *
+	 * \param path The path of the resource to locate.
+	 * \return A string containing the full URL of the target object or
+	 *         NULL if no suitable resource can be found.
+	 */
+	nsurl* (*get_resource_url)(const char *path);
+
+	/**
+	 * core has no fetcher for url
+	 */
+	void (*launch_url)(const char *url);
+ 
+	/**
+	 * create a form select menu
+	 */
+	void (*create_form_select_menu)(struct browser_window *bw, struct form_control *control);
+
+	/**
+	 * Core asks front end for clipboard contents.
+	 *
+	 * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+	 * \param  length  Byte length of UTF-8 text in buffer
+	 */
+	void (*get_clipboard)(char **buffer, size_t *length);
+
+	/**
+	 * Core tells front end to put given text in clipboard
+	 *
+	 * \param  buffer    UTF-8 text, owned by core
+	 * \param  length    Byte length of UTF-8 text in buffer
+	 * \param  styles    Array of styles given to text runs, owned by core, or NULL
+	 * \param  n_styles  Number of text run styles in array
+	 */
+	void (*set_clipboard)(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+
+	/**
+	 * verify certificate
+	 */
+	void (*cert_verify)(nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+
 };
 
 
 
 
-/**
- * Callback to translate resource to full url.
- *
- * Transforms a resource: path into a full URL. The returned URL
- * is used as the target for a redirect. The caller takes ownership of
- * the returned nsurl including unrefing it when finished with it.
- *
- * \param path The path of the resource to locate.
- * \return A string containing the full URL of the target object or
- *         NULL if no suitable resource can be found.
- */
-nsurl* gui_get_resource_url(const char *path);
-
-
-void gui_launch_url(const char *url);
-
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control);
-
-/**
- * Core asks front end for clipboard contents.
- *
- * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
- * \param  length  Byte length of UTF-8 text in buffer
- */
-void gui_get_clipboard(char **buffer, size_t *length);
-
-
-/**
- * Core tells front end to put given text in clipboard
- *
- * \param  buffer    UTF-8 text, owned by core
- * \param  length    Byte length of UTF-8 text in buffer
- * \param  styles    Array of styles given to text runs, owned by core, or NULL
- * \param  n_styles  Number of text run styles in array
- */
-void gui_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles);
-
-
-
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw);
 
 
 #endif
