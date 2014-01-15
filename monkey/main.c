@@ -114,7 +114,7 @@ static bool nslog_stream_configure(FILE *fptr)
   return true;
 }
 
-static struct gui_table monkey_gui_table = {
+static struct gui_browser_table monkey_browser_table = {
   .poll = monkey_poll,
   .quit = monkey_quit,
   .get_resource_url = gui_get_resource_url,
@@ -129,6 +129,11 @@ main(int argc, char **argv)
   char *options;
   char buf[PATH_MAX];
   nserror ret;
+  struct gui_table monkey_gui_table = {
+    .browser = &monkey_browser_table,
+    .window = monkey_window_table,
+    .download = monkey_download_table,
+  };
 
   /* Unbuffer stdin/out/err */
   setbuf(stdin, NULL);
@@ -155,10 +160,6 @@ main(int argc, char **argv)
 
   /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-
-  monkey_gui_table.window = monkey_gui_window_table;
-  monkey_gui_table.download = monkey_gui_download_table;
-
   ret = netsurf_init(messages, &monkey_gui_table);
   free(messages);
   if (ret != NSERROR_OK) {

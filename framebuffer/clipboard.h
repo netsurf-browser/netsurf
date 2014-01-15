@@ -19,8 +19,6 @@
 #ifndef NETSURF_FB_CLIPBOARD_H
 #define NETSURF_FB_CLIPBOARD_H
 
-void gui_get_clipboard(char **buffer, size_t *length);
-void gui_set_clipboard(const char *buffer, size_t length,
-		       nsclipboard_styles styles[], int n_styles);
+extern struct gui_clipboard_table *framebuffer_clipboard_table;
 
 #endif

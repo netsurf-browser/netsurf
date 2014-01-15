@@ -503,7 +503,7 @@ monkey_window_handle_command(int argc, char **argv)
   
 }
 
-static struct gui_window_table gui_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -529,4 +529,4 @@ static struct gui_window_table gui_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-struct gui_window_table *monkey_gui_window_table = &gui_window_table;
+struct gui_window_table *monkey_window_table = &window_table;

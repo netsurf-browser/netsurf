@@ -1419,7 +1419,7 @@ static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 
 	/* Place CUTs on clipboard */
 	if (add_to_clipboard) {
-		guit->set_clipboard(ta->show->data + b_start, b_end - b_start,
+		guit->clipboard->set(ta->show->data + b_start, b_end - b_start,
 				NULL, 0);
 	}
 
@@ -2486,7 +2486,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 
-			guit->get_clipboard(&clipboard, &clipboard_length);
+			guit->clipboard->get(&clipboard, &clipboard_length);
 			if (clipboard == NULL)
 				return false;
 

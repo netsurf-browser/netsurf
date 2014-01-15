@@ -455,12 +455,11 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	gui_window_set_status(input_window, messages_get("Done") );
 }
 
-static struct gui_download_table gui_download_table = {
+static struct gui_download_table download_table = {
 	.create = gui_download_window_create,
 	.data = gui_download_window_data,
 	.error = gui_download_window_error,
 	.done = gui_download_window_done,
 };
 
-struct gui_download_table *atari_gui_download_table = &gui_download_table;
-
+struct gui_download_table *atari_download_table = &download_table;

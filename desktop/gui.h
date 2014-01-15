@@ -264,20 +264,35 @@ struct gui_download_table {
 	void (*done)(struct gui_download_window *dw);
 };
 
-/** Graphical user interface function table
- *
- * function table implementing GUI interface to browser core
+/**
+ * function table for clipboard operations
  */
-struct gui_table {
+struct gui_clipboard_table {
+	/**
+	 * Core asks front end for clipboard contents.
+	 *
+	 * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
+	 * \param  length  Byte length of UTF-8 text in buffer
+	 */
+	void (*get)(char **buffer, size_t *length);
 
-	/* sub tables */
+	/**
+	 * Core tells front end to put given text in clipboard
+	 *
+	 * \param  buffer    UTF-8 text, owned by core
+	 * \param  length    Byte length of UTF-8 text in buffer
+	 * \param  styles    Array of styles given to text runs, owned by core, or NULL
+	 * \param  n_styles  Number of text run styles in array
+	 */
+	void (*set)(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+};
 
-	/** Window sub table */
-	struct gui_window_table *window;
-
-	/** Downlaod sub table */
-	struct gui_download_table *download;
-
+/** Graphical user interface browser misc function table
+ *
+ * function table implementing GUI interface to miscelaneous browser
+ * functionality
+ */
+struct gui_browser_table {
 	/* Mandantory entries */
 
 	/**
@@ -318,29 +333,11 @@ struct gui_table {
 	 * core has no fetcher for url
 	 */
 	void (*launch_url)(const char *url);
- 
+
 	/**
 	 * create a form select menu
 	 */
 	void (*create_form_select_menu)(struct browser_window *bw, struct form_control *control);
-
-	/**
-	 * Core asks front end for clipboard contents.
-	 *
-	 * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
-	 * \param  length  Byte length of UTF-8 text in buffer
-	 */
-	void (*get_clipboard)(char **buffer, size_t *length);
-
-	/**
-	 * Core tells front end to put given text in clipboard
-	 *
-	 * \param  buffer    UTF-8 text, owned by core
-	 * \param  length    Byte length of UTF-8 text in buffer
-	 * \param  styles    Array of styles given to text runs, owned by core, or NULL
-	 * \param  n_styles  Number of text run styles in array
-	 */
-	void (*set_clipboard)(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
 
 	/**
 	 * verify certificate
@@ -350,8 +347,24 @@ struct gui_table {
 };
 
 
+/** Graphical user interface function table
+ *
+ * function table implementing GUI interface to browser core
+ */
+struct gui_table {
 
+	/** Browser table */
+	struct gui_browser_table *browser;
 
+	/** Window table */
+	struct gui_window_table *window;
+
+	/** Download table */
+	struct gui_download_table *download;
+
+	/** Clipboard table */
+	struct gui_clipboard_table *clipboard;
+};
 
 
 #endif

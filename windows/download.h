@@ -23,6 +23,8 @@
 #include <windows.h>
 #include "desktop/gui.h"
 
+struct gui_download_table *win32_download_table;
+
 typedef enum {
        DOWNLOAD_NONE,
        DOWNLOAD_WORKING,
@@ -59,7 +61,5 @@ struct gui_download_window {
 };
 
 void nsws_download_window_init(struct gui_window *);
-
-struct gui_download_table *win32_gui_download_table;
 
 #endif

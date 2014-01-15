@@ -1167,7 +1167,7 @@ gui_window_file_gadget_open(struct gui_window *g,
 	gtk_widget_destroy(dialog);
 }
 
-static struct gui_window_table gui_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -1192,4 +1192,4 @@ static struct gui_window_table gui_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-struct gui_window_table *nsgtk_gui_window_table = &gui_window_table;
+struct gui_window_table *nsgtk_window_table = &window_table;

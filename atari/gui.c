@@ -1045,15 +1045,16 @@ static struct gui_window_table atari_window_table = {
     .stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_table atari_gui_table = {
+static struct gui_clipboard_table atari_clipboard_table = {
+    .get = gui_get_clipboard,
+    .set = gui_set_clipboard,
+};
+
+static struct gui_browser_table atari_browser_table = {
     .poll = gui_poll,
     .quit = gui_quit,
     .get_resource_url = gui_get_resource_url,
-    .get_clipboard = gui_get_clipboard,
-    .set_clipboard = gui_set_clipboard,
     .cert_verify = gui_cert_verify,
-
-    .window = &atari_window_table;
 };
 
 /* #define WITH_DBG_LOGFILE 1 */
@@ -1071,6 +1072,12 @@ int main(int argc, char** argv)
     struct stat stat_buf;
     nsurl *url;
     nserror ret;
+    struct gui_table atari_gui_table = {
+        .browser = &atari_browser_table,
+	.window = &atari_window_table,
+	.clipboard = &atari_clipboard_table,
+	.download = atari_download_table,
+    };
 
     /* @todo logging file descriptor update belongs in a nslog_init callback */
     setbuf(stderr, NULL);
@@ -1104,10 +1111,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-
-    atari_gui_table.download = nsgtk_gui_download_table;
-
-    ret = netsurf_init(messages, atari_gui_table);
+    ret = netsurf_init(messages, &atari_gui_table);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }

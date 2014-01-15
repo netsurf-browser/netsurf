@@ -103,7 +103,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
 	case LLCACHE_QUERY_SSL:
-		guit->cert_verify(query->url, query->data.ssl.certs, 
+		guit->browser->cert_verify(query->url, query->data.ssl.certs,
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}
@@ -234,7 +234,7 @@ nserror netsurf_init(const char *messages, struct gui_table *gt)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		guit->poll(fetch_active);
+		guit->browser->poll(fetch_active);
 		hlcache_poll();
 	}
 
@@ -250,7 +250,7 @@ void netsurf_exit(void)
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));
-	guit->quit();
+	guit->browser->quit();
 	
 	LOG(("Finalising JavaScript"));
 	js_finalise();

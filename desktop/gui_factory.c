@@ -195,6 +195,7 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 }
 
 
+
 static struct gui_download_window *
 gui_default_download_create(download_context *ctx, struct gui_window *parent)
 {
@@ -216,12 +217,6 @@ static void gui_default_download_done(struct gui_download_window *dw)
 {
 }
 
-static struct gui_download_table default_download_table = {
-	.create = gui_default_download_create,
-	.data = gui_default_download_data,
-	.error = gui_default_download_error,
-	.done = gui_default_download_done,
-};
 
 /** verify download window table is valid */
 static nserror verify_download_register(struct gui_download_table *gdt)
@@ -248,6 +243,35 @@ static nserror verify_download_register(struct gui_download_table *gdt)
 	return NSERROR_OK;
 }
 
+static void gui_default_get_clipboard(char **buffer, size_t *length)
+{
+	*buffer = NULL;
+	*length = 0;
+}
+
+static void gui_default_set_clipboard(const char *buffer, size_t length,
+		nsclipboard_styles styles[], int n_styles)
+{
+}
+
+static nserror verify_clipboard_register(struct gui_clipboard_table *gct)
+{
+	/* check table is present */
+	if (gct == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* optional operations */
+	if (gct->get == NULL) {
+		gct->get = gui_default_get_clipboard;
+	}
+	if (gct->set == NULL) {
+		gct->set = gui_default_set_clipboard;
+	}
+	return NSERROR_OK;
+}
+
+
 static void gui_default_quit(void)
 {
 }
@@ -270,16 +294,6 @@ static void gui_default_create_form_select_menu(struct browser_window *bw,
 {
 }
 
-static void gui_default_get_clipboard(char **buffer, size_t *length)
-{
-	*buffer = NULL;
-	*length = 0;
-}
-
-static void gui_default_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles)
-{
-}
 
 static void gui_default_cert_verify(nsurl *url,
 				    const struct ssl_cert_info *certs,
@@ -289,6 +303,55 @@ static void gui_default_cert_verify(nsurl *url,
 {
 	cb(false, cbpw);
 }
+
+
+static nserror verify_browser_register(struct gui_browser_table *gbt)
+{
+	/* check table is present */
+	if (gbt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (gbt->poll == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* fill in the optional entries with defaults */
+	if (gbt->quit == NULL) {
+		gbt->quit = gui_default_quit;
+	}
+	if (gbt->set_search_ico == NULL) {
+		gbt->set_search_ico = gui_default_set_search_ico;
+	}
+	if (gbt->get_resource_url == NULL) {
+		gbt->get_resource_url = gui_default_get_resource_url;
+	}
+	if (gbt->launch_url == NULL) {
+		gbt->launch_url = gui_default_launch_url;
+	}
+	if (gbt->create_form_select_menu == NULL) {
+		gbt->create_form_select_menu = gui_default_create_form_select_menu;
+	}
+	if (gbt->cert_verify == NULL) {
+		gbt->cert_verify = gui_default_cert_verify;
+	}
+	return NSERROR_OK;
+}
+
+
+
+static struct gui_download_table default_download_table = {
+	.create = gui_default_download_create,
+	.data = gui_default_download_data,
+	.error = gui_default_download_error,
+	.done = gui_default_download_done,
+};
+
+static struct gui_clipboard_table default_clipboard_table = {
+	.get = gui_default_get_clipboard,
+	.set = gui_default_set_clipboard,
+};
 
 nserror gui_factory_register(struct gui_table *gt)
 {
@@ -304,11 +367,19 @@ nserror gui_factory_register(struct gui_table *gt)
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	/* check subtables */
+	/* browser table */
+	err = verify_browser_register(gt->browser);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* window table */
 	err = verify_window_register(gt->window);
 	if (err != NSERROR_OK) {
 		return err;
 	}
+
+	/* download table */
 	if (gt->download == NULL) {
 		/* set default download table */
 		gt->download = &default_download_table;
@@ -318,35 +389,14 @@ nserror gui_factory_register(struct gui_table *gt)
 		return err;
 	}
 
-	/* check the mandantory fields are set */
-	if (gt->poll == NULL) {
-		return NSERROR_BAD_PARAMETER;
+	/* clipboard table */
+	if (gt->clipboard == NULL) {
+		/* set default clipboard table */
+		gt->clipboard = &default_clipboard_table;
 	}
-
-	/* fill in the optional entries with defaults */
-	if (gt->quit == NULL) {
-		gt->quit = gui_default_quit;
-	}
-	if (gt->set_search_ico == NULL) {
-		gt->set_search_ico = gui_default_set_search_ico;
-	}
-	if (gt->get_resource_url == NULL) {
-		gt->get_resource_url = gui_default_get_resource_url;
-	}
-	if (gt->launch_url == NULL) {
-		gt->launch_url = gui_default_launch_url;
-	}
-	if (gt->create_form_select_menu == NULL) {
-		gt->create_form_select_menu = gui_default_create_form_select_menu;
-	}
-	if (gt->get_clipboard == NULL) {
-		gt->get_clipboard = gui_default_get_clipboard;
-	}
-	if (gt->set_clipboard == NULL) {
-		gt->set_clipboard = gui_default_set_clipboard;
-	}
-	if (gt->cert_verify == NULL) {
-		gt->cert_verify = gui_default_cert_verify;
+	err = verify_clipboard_register(gt->clipboard);
+	if (err != NSERROR_OK) {
+		return err;
 	}
 
 	guit = gt;

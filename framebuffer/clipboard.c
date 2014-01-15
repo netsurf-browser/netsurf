@@ -43,7 +43,7 @@ static struct gui_clipboard {
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	*buffer = NULL;
 	*length = 0;
@@ -72,7 +72,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	if (gui_clipboard.buffer_len < length + 1) {
@@ -94,3 +94,9 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	gui_clipboard.buffer[gui_clipboard.length] = '\0';
 }
 
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *framebuffer_clipboard_table = &clipboard_table;

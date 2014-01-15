@@ -104,6 +104,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	const char *addr;
 	nsurl *url;
 	nserror error;
+	struct gui_table win32_gui_table = {
+		.browser = win32_browser_table,
+		.window = win32_window_table,
+		.clipboard = win32_clipboard_table,
+		.download = win32_download_table,
+	};
+	win32_gui_table->browser->get_resource_url = get_resource_url;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -150,11 +157,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-
-	win32_gui_table->download = nsgtk_gui_download_table;
-	win32_gui_table->get_resource_url = get_resource_url;
-
-	ret = netsurf_init(messages, win32_gui_table);
+	ret = netsurf_init(messages, &win32_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);

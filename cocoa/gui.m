@@ -282,7 +282,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 }
 
 
-static struct gui_window_table cocoa_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -304,18 +304,25 @@ static struct gui_window_table cocoa_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_table gui_table = {
+struct gui_window_table *cocoa_window_table = &window_table;
+
+
+static struct gui_clipboard_table clipboard_table = {
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *cocoa_clipboard_table = &clipboard_table;
+
+
+static struct gui_browser_table browser_table = {
 	.poll = gui_poll,
 	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
-
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
-
-        .window = &cocoa_window_table,
 };
 
-struct gui_table *cocoa_gui_table = &gui_table;
+struct gui_browser_table *cocoa_browser_table = &browser_table;
+
 

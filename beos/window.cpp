@@ -1347,7 +1347,7 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	}
 }
 
-static struct gui_window_table gui_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -1372,4 +1372,4 @@ static struct gui_window_table gui_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-struct gui_window_table *beos_gui_window_table = &gui_window_table;
+struct gui_window_table *beos_window_table = &window_table;

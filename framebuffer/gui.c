@@ -1768,7 +1768,7 @@ gui_window_remove_caret(struct gui_window *g)
 }
 
 
-static struct gui_window_table framebuffer_gui_window_table = {
+static struct gui_window_table framebuffer_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -1787,14 +1787,10 @@ static struct gui_window_table framebuffer_gui_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_table framebuffer_gui_table = {
+static struct gui_browser_table framebuffer_browser_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.get_resource_url = gui_get_resource_url,
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
-
-	.window = &framebuffer_gui_window_table,
 };
 
 /** Entry point from OS.
@@ -1812,6 +1808,11 @@ main(int argc, char** argv)
 	nsurl *url;
 	nserror ret;
 	nsfb_t *nsfb;
+	struct gui_table framebuffer_gui_table = {
+		.browser = &framebuffer_browser_table,
+		.window = &framebuffer_window_table,
+		.clipboard = framebuffer_clipboard_table,
+	};
 
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
 

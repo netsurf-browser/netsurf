@@ -16,4 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-struct gui_download_table *beos_gui_download_table;
+struct gui_download_table *beos_download_table;

@@ -2348,14 +2348,17 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-static struct gui_table riscos_gui_table = {
+static struct gui_clipboard_table riscos_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+static struct gui_browser_table riscos_browser_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
 	.cert_verify = gui_cert_verify,
 };
 
@@ -2370,6 +2373,12 @@ int main(int argc, char** argv)
 	int used = -1;  /* slightly better with older OSLib versions */
 	os_error *error;
 	nserror ret;
+	struct gui_table riscos_gui_table = {
+		.browser = &riscos_browser_table,
+		.window = riscos_window_table,
+		.clipboard = &riscos_clipboard_table,
+		.download = riscos_download_table,
+	};
 
 	/* Consult NetSurf$Logging environment variable to decide if logging
 	 * is required. */
@@ -2414,9 +2423,6 @@ int main(int argc, char** argv)
 	}
 
 	/* common initialisation */
-	riscos_gui_table.window = riscos_gui_window_table;
-	riscos_gui_table.download = riscos_gui_download_table;
-
 	ret = netsurf_init(path, &riscos_gui_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");

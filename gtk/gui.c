@@ -1128,17 +1128,18 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
+static struct gui_clipboard_table nsgtk_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
 
-
-static struct gui_table nsgtk_gui_table = {
+static struct gui_browser_table nsgtk_browser_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
 	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
 	.cert_verify = gui_cert_verify,
 };
 
@@ -1150,6 +1151,12 @@ int main(int argc, char** argv)
 	char *messages;
 	char *options;
 	nserror ret;
+	struct gui_table nsgtk_gui_table = {
+		.browser = &nsgtk_browser_table,
+		.window = nsgtk_window_table,
+		.clipboard = &nsgtk_clipboard_table,
+		.download = nsgtk_download_table,
+	};
 
 	/* check home directory is available */
 	nsgtk_check_homedir();
@@ -1178,10 +1185,6 @@ int main(int argc, char** argv)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "Messages");
-
-	nsgtk_gui_table.window = nsgtk_gui_window_table;
-	nsgtk_gui_table.download = nsgtk_gui_download_table;
-
 	ret = netsurf_init(messages, &nsgtk_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {

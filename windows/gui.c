@@ -1809,7 +1809,7 @@ nsws_create_main_class(HINSTANCE hinstance) {
 	return ret;
 }
 
-static struct gui_window_table win32_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -1829,12 +1829,17 @@ static struct gui_window_table win32_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_table gui_table = {
-	.poll = gui_poll,
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
+struct gui_window_table *win32_window_table = &window_table;
 
-	.window = &win32_window_table,
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
 };
 
-struct gui_table *win32_gui_table = &gui_table;
+struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
+
+static struct gui_table browser_table = {
+	.poll = gui_poll,
+};
+
+struct gui_browser_table *win32_browser_table = &browser_table;

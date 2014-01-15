@@ -5085,7 +5085,7 @@ static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	}
 }
 
-static struct gui_window_table ami_window_table = {
+static struct gui_window_table amiga_window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -5117,19 +5117,19 @@ static struct gui_window_table ami_window_table = {
 	.save_link = gui_window_save_link,
 };
 
+static struct gui_clipboard_table amiga_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
 
-static struct gui_table ami_gui_table = {
+static struct gui_browser_table amiga_browser_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
 	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
 	.cert_verify = gui_cert_verify,
-
-	.window = &ami_window_table,
 };
 
 /** Normal entry point from OS */
@@ -5143,6 +5143,12 @@ int main(int argc, char** argv)
 	int32 user = 0;
 	nserror ret;
 	Object *splash_window = ami_gui_splash_open();
+	struct gui_table amiga_gui_table = {
+		.browser = &amiga_browser_table,
+		.window = &amiga_window_table,
+		.clipboard = &amiga_clipboard_table,
+		.download = amiga_download_table,
+	};
 
 	/* Open popupmenu.library just to check the version.
 	 * Versions older than 53.11 are dangerous, so we
@@ -5190,10 +5196,7 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
-
-	ami_gui_table.download = amiga_gui_download_table;
-
-	ret = netsurf_init(messages, &ami_gui_table);
+	ret = netsurf_init(messages, &amiga_gui_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

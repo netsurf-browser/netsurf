@@ -433,11 +433,11 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 		else return FALSE;
 }
 
-static struct gui_download_table gui_download_table = {
+static struct gui_download_table download_table = {
 	.create = gui_download_window_create,
 	.data = gui_download_window_data,
 	.error = gui_download_window_error,
 	.done = gui_download_window_done,
 };
 
-struct gui_download_table *amiga_gui_download_table = &gui_download_table;
+struct gui_download_table *amiga_download_table = &download_table;

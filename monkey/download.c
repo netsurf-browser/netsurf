@@ -78,11 +78,11 @@ gui_download_window_done(struct gui_download_window *dw)
   free(dw);
 }
 
-static struct gui_download_table gui_download_table = {
+static struct gui_download_table download_table = {
 	.create = gui_download_window_create,
 	.data = gui_download_window_data,
 	.error = gui_download_window_error,
 	.done = gui_download_window_done,
 };
 
-struct gui_download_table *monkey_gui_download_table = &gui_download_table;
+struct gui_download_table *monkey_download_table = &download_table;

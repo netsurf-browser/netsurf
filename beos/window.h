@@ -25,7 +25,7 @@ extern "C" {
 }
 #include "beos/scaffolding.h"
 
-extern struct gui_window_table *beos_gui_window_table;
+extern struct gui_window_table *beos_window_table;
 
 class NSBrowserFrameView : public BView {
 public:

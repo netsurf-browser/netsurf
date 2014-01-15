@@ -23,6 +23,7 @@
 #include "desktop/browser.h"
 #include "gtk/scaffolding.h"
 
+extern struct gui_window_table *nsgtk_window_table;
 
 typedef enum nsgtk_window_signals {
 	NSGTK_WINDOW_SIGNAL_CLICK,
@@ -32,7 +33,6 @@ typedef enum nsgtk_window_signals {
 
 extern struct gui_window *window_list;
 extern int temp_open_background;
-extern struct gui_window_table *nsgtk_gui_window_table;
 
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
