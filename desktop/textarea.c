@@ -24,11 +24,13 @@
 #include <stdint.h>
 #include <string.h>
 #include "css/utils.h"
+
 #include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
+#include "desktop/gui_factory.h"
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"

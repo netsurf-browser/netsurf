@@ -25,6 +25,7 @@
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
+#include "monkey/cert.h"
 
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
@@ -64,7 +65,7 @@ static void monkey_quit(void)
 	gtk_fetch_filetype_fin();
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -79,7 +80,7 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-void
+static void
 gui_launch_url(const char *url)
 {
   fprintf(stdout, "GENERIC LAUNCH URL %s\n", url);
@@ -116,6 +117,9 @@ static bool nslog_stream_configure(FILE *fptr)
 static struct gui_table monkey_gui_table = {
   .poll = monkey_poll,
   .quit = monkey_quit,
+  .get_resource_url = gui_get_resource_url,
+  .launch_url = gui_launch_url,
+  .cert_verify = gui_cert_verify,
 };
 
 int

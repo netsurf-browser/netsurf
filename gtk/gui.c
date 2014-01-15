@@ -55,6 +55,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "css/utils.h"
+
 #include "gtk/compat.h"
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
@@ -67,6 +68,7 @@
 #include "gtk/treeview.h"
 #include "gtk/window.h"
 #include "gtk/schedule.h"
+#include "gtk/selection.h"
 
 #include "render/form.h"
 #include "utils/filepath.h"
@@ -322,7 +324,7 @@ static void check_options(char **respath)
 
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -635,7 +637,7 @@ static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 			select_menu_control, (intptr_t)user_data);
 }
 
-void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 
@@ -676,7 +678,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	gboolean ok;
 	GError *error = NULL;
@@ -714,7 +716,7 @@ void die(const char * const error)
 }
 
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
 {
@@ -1132,6 +1134,12 @@ static struct gui_table nsgtk_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
+	.cert_verify = gui_cert_verify,
 };
 
 /**

@@ -346,7 +346,7 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
 	BString u("rsrc:///");
@@ -784,13 +784,6 @@ static void gui_quit(void)
 }
 
 
-
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control)
-{
-	CALLED();
-}
-
 /**
  * Send the source of a content to a text editor.
  */
@@ -888,7 +881,7 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
  * Broadcast an URL that we can't handle.
  */
 
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	status_t status;
 	// try to open it as an URI
@@ -947,13 +940,6 @@ void die(const char * const error)
 		debugger("die");
 
 	exit(EXIT_FAILURE);
-}
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	CALLED();
 }
 
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
@@ -1076,6 +1062,12 @@ bool path_add_part(char *path, int length, const char *newpart)
 static struct gui_table beos_gui_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
+
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
 };
 
 

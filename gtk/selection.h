@@ -22,4 +22,8 @@
 #include <gtk/gtk.h>
 #include "desktop/gui.h"
 
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+
+
 #endif

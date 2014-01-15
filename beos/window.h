@@ -62,4 +62,7 @@ void nsbeos_window_destroy_browser(struct gui_window *g);
 
 struct browser_window *nsbeos_get_browser_window(struct gui_window *g);
 
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+
 #endif /* NETSURF_BEOS_WINDOW_H */

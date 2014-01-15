@@ -24,6 +24,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/FormSelectMenu.h"
+#import "cocoa/selection.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -46,7 +47,7 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
 	NSString *nspath = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: path] ofType: @""];
@@ -251,7 +252,7 @@ static void gui_window_new_content(struct gui_window *g)
 }
 
 
-void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct browser_window *bw,
 								 struct form_control *control)
 {
 	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: bw];
@@ -259,14 +260,14 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	[menu release];
 }
 
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: url]]];
 }
 
 struct ssl_cert_info;
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
 					 unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					 void *cbpw)
 {
@@ -304,7 +305,14 @@ static struct gui_window_table cocoa_window_table = {
 };
 
 static struct gui_table gui_table = {
-	.poll = &gui_poll,
+	.poll = gui_poll,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.cert_verify = gui_cert_verify,
+
+	.get_clipboard = gui_get_clipboard,
+	.set_clipboard = gui_set_clipboard,
 
         .window = &cocoa_window_table,
 };

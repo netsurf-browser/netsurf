@@ -19,6 +19,8 @@
 #ifndef NETSURF_FB_FINDFILE_H
 #define NETSURF_FB_FINDFILE_H
 
+#include "utils/nsurl.h"
+
 extern char **respaths;
 
 /** Create an array of valid paths to search for resources.

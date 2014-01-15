@@ -19,6 +19,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/BrowserViewController.h"
+#import "cocoa/selection.h"
 
 #import "desktop/browser_private.h"
 

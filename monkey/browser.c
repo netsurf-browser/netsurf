@@ -302,30 +302,6 @@ gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
           g->win_num, x0, y0, x1, y1);
 }
 
-/**
- * Core asks front end for clipboard contents.
- *
- * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
- * \param  length  Byte length of UTF-8 text in buffer
- */
-void gui_get_clipboard(char **buffer, size_t *length)
-{
-}
-
-
-/**
- * Core tells front end to put given text in clipboard
- *
- * \param  buffer    UTF-8 text, owned by core
- * \param  length    Byte length of UTF-8 text in buffer
- * \param  styles    Array of styles given to text runs, owned by core, or NULL
- * \param  n_styles  Number of text run styles in array
- */
-void gui_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles)
-{
-}
-
 static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
@@ -346,14 +322,6 @@ gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 {
   fprintf(stdout, "WINDOW SCROLL_START WIN %u TYPE %i\n", g->win_num, type);
   return false;
-}
-
-void
-gui_create_form_select_menu(struct browser_window *bw,
-                            struct form_control *control)
-{
-  fprintf(stdout, "WINDOW SELECT_MENU WIN %u\n",
-          bw->window->win_num);
 }
 
 static void
