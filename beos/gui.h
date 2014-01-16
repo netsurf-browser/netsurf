@@ -22,7 +22,7 @@
 #include <FilePanel.h>
 #include <Window.h>
 #include <BeBuild.h>
- 
+
 #ifndef B_BEOS_VERSION_DANO
 #define B_UI_SETTINGS_CHANGED '_UIC'
 #endif
