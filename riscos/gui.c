@@ -2288,7 +2288,7 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
  * \return filename (will be freed with free())
  */
 
-char *filename_from_path(char *path)
+static char *filename_from_path(char *path)
 {
 	char *leafname;
 	char *temp;
@@ -2326,7 +2326,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, const char *newpart)
+static bool path_add_part(char *path, int length, const char *newpart)
 {
 	size_t path_len = strlen(path);
 
@@ -2360,6 +2360,8 @@ static struct gui_browser_table riscos_browser_table = {
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 

@@ -41,16 +41,3 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
 	UNIMPL();
 }
 
-char *filename_from_path(char *path)
-{
-	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
-}
-
-bool path_add_part(char *path, int length, const char *newpart)
-{
-	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
-
-	strncpy( path, [newPath UTF8String], length );
-	
-	return true;
-}

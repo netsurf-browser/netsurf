@@ -173,33 +173,6 @@ char *path_to_url(const char *path)
 }
 
 /**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-
-char *filename_from_path(char *path)
-{
-	return strdup(FilePart(path));
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(AddPart(path, newpart, length)) return true;
-		else return false;
-}
-
-/**
  * returns a string with escape chars translated.
  * (based on remove_underscores from utils.c)
  */

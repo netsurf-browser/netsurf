@@ -281,6 +281,20 @@ void gui_401login_open(nsurl *url, const char *realm,
 	cb( false, cbpw );
 }
 
+static char *filename_from_path(char *path)
+{
+	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
+}
+
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
+
+	strncpy( path, [newPath UTF8String], length );
+	
+	return true;
+}
+
 
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
@@ -321,6 +335,8 @@ static struct gui_browser_table browser_table = {
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 struct gui_browser_table *cocoa_browser_table = &browser_table;

@@ -1809,6 +1809,43 @@ nsws_create_main_class(HINSTANCE hinstance) {
 	return ret;
 }
 
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+static char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '\\');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if(path[strlen(path) - 1] != '\\')
+		strncat(path, "\\", length);
+
+	strncat(path, newpart, length);
+
+	return true;
+}
+
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
@@ -1840,6 +1877,8 @@ struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
 static struct gui_table browser_table = {
 	.poll = gui_poll,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 struct gui_browser_table *win32_browser_table = &browser_table;

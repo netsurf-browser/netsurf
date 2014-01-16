@@ -1027,7 +1027,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
  * \return filename (will be freed with free())
  */
 
-char *filename_from_path(char *path)
+static char *filename_from_path(char *path)
 {
 	char *leafname;
 
@@ -1049,7 +1049,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, const char *newpart)
+static bool path_add_part(char *path, int length, const char *newpart)
 {
 	if(path[strlen(path) - 1] != '/')
 		strncat(path, "/", length);
@@ -1067,9 +1067,10 @@ static struct gui_clipboard_table beos_clipboard_table = {
 static struct gui_browser_table beos_browser_table = {
 	.poll = gui_poll,
 	.quit = gui_quit,
-
 	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 

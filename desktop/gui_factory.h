@@ -23,7 +23,7 @@
 #ifndef _NETSURF_DESKTOP_GUI_FACTORY_H_
 #define _NETSURF_DESKTOP_GUI_FACTORY_H_
 
-struct gui_table;
+#include "desktop/gui.h"
 
 extern struct gui_table *guit; /* the gui vtable */
 

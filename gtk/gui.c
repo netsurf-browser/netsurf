@@ -1096,7 +1096,7 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
  * \return filename (will be freed with free())
  */
 
-char *filename_from_path(char *path)
+static char *filename_from_path(char *path)
 {
 	char *leafname;
 
@@ -1118,7 +1118,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, const char *newpart)
+static bool path_add_part(char *path, int length, const char *newpart)
 {
 	if(path[strlen(path) - 1] != '/')
 		strncat(path, "/", length);
@@ -1141,6 +1141,8 @@ static struct gui_browser_table nsgtk_browser_table = {
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 /**

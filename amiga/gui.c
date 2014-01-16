@@ -209,6 +209,33 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+static char *filename_from_path(char *path)
+{
+	return strdup(FilePart(path));
+}
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if(AddPart(path, newpart, length)) return true;
+		else return false;
+}
+
 STRPTR ami_locale_langs(void)
 {
 	struct Locale *locale;
@@ -5130,6 +5157,8 @@ static struct gui_browser_table amiga_browser_table = {
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
 };
 
 /** Normal entry point from OS */

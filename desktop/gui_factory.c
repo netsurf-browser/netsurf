@@ -316,6 +316,13 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	if (gbt->poll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gbt->filename_from_path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gbt->path_add_part == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
 
 	/* fill in the optional entries with defaults */
 	if (gbt->quit == NULL) {

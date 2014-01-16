@@ -115,6 +115,27 @@ short aes_msg_out[8];
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+static char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '\\');
+	if( !leafname )
+		leafname = strrchr(path, '/');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}
+
 
 static void gui_poll(bool active)
 {
@@ -1055,6 +1076,8 @@ static struct gui_browser_table atari_browser_table = {
     .quit = gui_quit,
     .get_resource_url = gui_get_resource_url,
     .cert_verify = gui_cert_verify,
+    .filename_from_path = filename_from_path,
+    .path_add_part = path_add_part,
 };
 
 /* #define WITH_DBG_LOGFILE 1 */
