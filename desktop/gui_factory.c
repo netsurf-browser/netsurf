@@ -1,9 +1,26 @@
+/*
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "desktop/gui.h"
 #include "desktop/gui_factory.h"
 
+/** The global GUI interface table */
 struct gui_table *guit = NULL;
-
 
 
 
@@ -254,6 +271,7 @@ static void gui_default_set_clipboard(const char *buffer, size_t length,
 {
 }
 
+/** verify clipboard table is valid */
 static nserror verify_clipboard_register(struct gui_clipboard_table *gct)
 {
 	/* check table is present */
@@ -310,7 +328,7 @@ static void gui_default_401login_open(nsurl *url, const char *realm,
 	cb(false, cbpw);
 }
 
-
+/** verify browser table is valid */
 static nserror verify_browser_register(struct gui_browser_table *gbt)
 {
 	/* check table is present */
@@ -369,6 +387,7 @@ static struct gui_clipboard_table default_clipboard_table = {
 	.set = gui_default_set_clipboard,
 };
 
+/* exported interface documented in desktop/gui_factory.h */
 nserror gui_factory_register(struct gui_table *gt)
 {
 	nserror err;

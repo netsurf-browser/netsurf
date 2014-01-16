@@ -29,4 +29,8 @@ query_id query_user_xy(const char *query, const char *detail,
 void ro_gui_query_init(void);
 void ro_gui_query_window_bring_to_front(query_id id);
 
+query_id query_user(const char *query, const char *detail,
+	const query_callback *cb, void *pw, const char *yes, const char *no);
+void query_close(query_id);
+
 #endif

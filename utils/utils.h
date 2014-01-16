@@ -186,9 +186,4 @@ void die(const char * const error);
 void warn_user(const char *warning, const char *detail);
 void PDF_Password(char **owner_pass, char **user_pass, char *path);
 
-/* only riscos */
-query_id query_user(const char *query, const char *detail,
-	const query_callback *cb, void *pw, const char *yes, const char *no);
-void query_close(query_id);
-
 #endif

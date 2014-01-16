@@ -1,6 +1,5 @@
 /*
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -26,14 +25,8 @@
 
 #include <stdbool.h>
 
-#include <libwapcaplet/libwapcaplet.h>
-#include <libcss/libcss.h>
-
-#include "utils/config.h"
 #include "content/hlcache.h"
 #include "desktop/download.h"
-#include "desktop/mouse.h"
-#include "desktop/search.h"
 #include "utils/errors.h"
 
 typedef enum {

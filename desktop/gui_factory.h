@@ -25,8 +25,15 @@
 
 #include "desktop/gui.h"
 
-extern struct gui_table *guit; /* the gui vtable */
+/** The global operation table */
+extern struct gui_table *guit;
 
+/** register and verify global operation table
+ *
+ * @param gt The global table to register
+ * @return NSERROR_OK on success or error code on faliure. On faliure
+ * global table will not be initialised
+ */
 nserror gui_factory_register(struct gui_table *gt);
 
 #endif

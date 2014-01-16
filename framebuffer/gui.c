@@ -1826,10 +1826,11 @@ static struct gui_window_table framebuffer_window_table = {
 
 static struct gui_browser_table framebuffer_browser_table = {
 	.poll = gui_poll,
-	.quit = gui_quit,
-	.get_resource_url = gui_get_resource_url,
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
+
+	.quit = gui_quit,
+	.get_resource_url = gui_get_resource_url,
 };
 
 /** Entry point from OS.
