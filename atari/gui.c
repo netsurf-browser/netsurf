@@ -73,6 +73,7 @@
 #include "atari/osspec.h"
 #include "atari/search.h"
 #include "atari/deskmenu.h"
+#include "atari/download.h"
 #include "cflib.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
@@ -254,7 +255,7 @@ gui_window_create(struct browser_window *bw,
 
 }
 
-static void gui_window_destroy(struct gui_window *w)
+void gui_window_destroy(struct gui_window *w)
 {
     if (w == NULL)
         return;

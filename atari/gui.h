@@ -167,5 +167,8 @@ char *gui_window_get_title(struct gui_window *gw);
 
 void gui_window_set_status(struct gui_window *w, const char *text);
 void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape);
+void gui_window_destroy(struct gui_window *w);
+void gui_window_set_scale(struct gui_window *gw, float scale);
+float gui_window_get_scale(struct gui_window *gw);
 
 #endif
