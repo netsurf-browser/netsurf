@@ -24,7 +24,6 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/FormSelectMenu.h"
-#import "cocoa/selection.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -311,15 +310,6 @@ static struct gui_window_table window_table = {
 };
 
 struct gui_window_table *cocoa_window_table = &window_table;
-
-
-static struct gui_clipboard_table clipboard_table = {
-	.get_clipboard = gui_get_clipboard,
-	.set_clipboard = gui_set_clipboard,
-};
-
-struct gui_clipboard_table *cocoa_clipboard_table = &clipboard_table;
-
 
 static struct gui_browser_table browser_table = {
 	.poll = gui_poll,

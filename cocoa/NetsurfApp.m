@@ -20,6 +20,8 @@
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
+#inport "cocoa/DownloadWindowController.h"
+#import "cocoa/selection.h"
 
 #import "desktop/gui.h"
 #import "content/urldb.h"

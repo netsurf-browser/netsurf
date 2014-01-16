@@ -21,6 +21,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/selection.h"
 
+#import "desktop/gui.h"
 #import "desktop/browser_private.h"
 
 
@@ -96,3 +97,9 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *cocoa_clipboard_table = &clipboard_table;
