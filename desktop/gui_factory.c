@@ -304,6 +304,12 @@ static void gui_default_cert_verify(nsurl *url,
 	cb(false, cbpw);
 }
 
+static void gui_default_401login_open(nsurl *url, const char *realm,
+		nserror (*cb)(bool proceed, void *pw), void *cbpw)
+{
+	cb(false, cbpw);
+}
+
 
 static nserror verify_browser_register(struct gui_browser_table *gbt)
 {
@@ -342,6 +348,9 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	}
 	if (gbt->cert_verify == NULL) {
 		gbt->cert_verify = gui_default_cert_verify;
+	}
+	if (gbt->login == NULL) {
+		gbt->login = gui_default_401login_open;
 	}
 	return NSERROR_OK;
 }

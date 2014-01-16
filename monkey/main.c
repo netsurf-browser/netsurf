@@ -26,6 +26,7 @@
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
 #include "monkey/cert.h"
+#include "monkey/401login.h"
 
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
@@ -161,6 +162,7 @@ static struct gui_browser_table monkey_browser_table = {
   .cert_verify = gui_cert_verify,
   .filename_from_path = filename_from_path,
   .path_add_part = path_add_part,
+  .login = gui_401login_open,
 };
 
 int

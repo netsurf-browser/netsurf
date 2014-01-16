@@ -49,7 +49,6 @@ extern "C" {
 #include "content/fetchers/curl.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
-#include "desktop/401login.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -1071,6 +1070,7 @@ static struct gui_browser_table beos_browser_table = {
 	.launch_url = gui_launch_url,
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
+        .login = gui_401login_open,
 };
 
 

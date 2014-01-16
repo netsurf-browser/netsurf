@@ -301,6 +301,23 @@ struct gui_browser_table {
 	 */
 	void (*poll)(bool active);
 
+	/**
+	 * Return the filename part of a full path
+	 *
+	 * \param path full path and filename
+	 * \return filename (will be freed with free())
+	 */
+	char *(*filename_from_path)(char *path);
+
+	/**
+	 * Add a path component/filename to an existing path
+	 *
+	 * \param path buffer containing path + free space
+	 * \param length length of buffer "path"
+	 * \param newpart string containing path component to add to path
+	 * \return true on success
+	 */
+	bool (*path_add_part)(char *path, int length, const char *newpart);
 
 	/* Optional entries */
 
@@ -345,22 +362,10 @@ struct gui_browser_table {
 	void (*cert_verify)(nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 	/**
-	 * Return the filename part of a full path
-	 *
-	 * \param path full path and filename
-	 * \return filename (will be freed with free())
+	 * Prompt user for login
 	 */
-	char *(*filename_from_path)(char *path);
-
-	/**
-	 * Add a path component/filename to an existing path
-	 *
-	 * \param path buffer containing path + free space
-	 * \param length length of buffer "path"
-	 * \param newpart string containing path component to add to path
-	 * \return true on success
-	 */
-	bool (*path_add_part)(char *path, int length, const char *newpart);
+	void (*login)(nsurl *url, const char *realm,
+			nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 };
 

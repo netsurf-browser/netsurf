@@ -37,10 +37,8 @@
 #include "image/image.h"
 #include "image/image_cache.h"
 #include "desktop/netsurf.h"
-#include "desktop/401login.h"
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
-#include "desktop/gui.h"
 #include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
@@ -96,7 +94,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 {
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
-		gui_401login_open(query->url, query->data.auth.realm, cb, cbpw);
+		guit->browser->login(query->url, query->data.auth.realm, cb, cbpw);
 		break;
 	case LLCACHE_QUERY_REDIRECT:
 		/** \todo Need redirect query dialog */

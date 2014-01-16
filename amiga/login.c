@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/401login.h"
 #include "amiga/os3support.h"
 #include "amiga/gui.h"
 #include "amiga/object.h"

@@ -38,7 +38,6 @@
 #include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-#include "desktop/401login.h"
 
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
@@ -742,7 +741,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
     }
 }
 
-void gui_401login_open(nsurl *url, const char *realm,
+static void gui_401login_open(nsurl *url, const char *realm,
                        nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
     bool bres;
@@ -1078,6 +1077,7 @@ static struct gui_browser_table atari_browser_table = {
     .cert_verify = gui_cert_verify,
     .filename_from_path = filename_from_path,
     .path_add_part = path_add_part,
+    .login = gui_401login_open,
 };
 
 /* #define WITH_DBG_LOGFILE 1 */

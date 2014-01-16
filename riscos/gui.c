@@ -2362,6 +2362,7 @@ static struct gui_browser_table riscos_browser_table = {
 	.cert_verify = gui_cert_verify,
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
+	.login = gui_401login_open,
 };
 
 

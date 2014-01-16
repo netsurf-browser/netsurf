@@ -135,7 +135,7 @@ $(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V
 
 # S_FRAMEBUFFER are sources purely for the framebuffer build
 S_FRAMEBUFFER := gui.c framebuffer.c schedule.c				\
-	thumbnail.c misc.c bitmap.c filetype.c login.c findfile.c	\
+	thumbnail.c misc.c bitmap.c filetype.c findfile.c	\
 	localhistory.c clipboard.c
 
 S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\

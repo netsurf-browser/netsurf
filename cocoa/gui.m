@@ -31,7 +31,6 @@
 #import "desktop/browser_private.h"
 #import "utils/nsoption.h"
 #import "desktop/textinput.h"
-#import "desktop/401login.h"
 #import "utils/utils.h"
 #import "utils/log.h"
 #import "image/ico.h"
@@ -270,13 +269,6 @@ struct ssl_cert_info;
 static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
 					 unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					 void *cbpw)
-{
-	cb( false, cbpw );
-}
-
-
-void gui_401login_open(nsurl *url, const char *realm,
-					   nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	cb( false, cbpw );
 }

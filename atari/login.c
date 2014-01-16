@@ -16,18 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/401login.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <cflib.h>
+
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/401login.h"
 #include "desktop/gui.h"
 #include "utils/errors.h"
 #include "utils/utils.h"

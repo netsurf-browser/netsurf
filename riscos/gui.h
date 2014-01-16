@@ -127,6 +127,8 @@ extern struct gui_download_table *riscos_download_table;
 
 /* in 401login.c */
 void ro_gui_401login_init(void);
+void gui_401login_open(nsurl *url, const char *realm,
+		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* in window.c */
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
