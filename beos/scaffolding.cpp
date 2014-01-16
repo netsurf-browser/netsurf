@@ -929,8 +929,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		}
 		case B_UI_SETTINGS_CHANGED:
-			//FIXME:
-			//nsbeos_update_system_ui_colors();
+			nsbeos_update_system_ui_colors();
 			nsbeos_scaffolding_update_colors(scaffold);
 			break;
 		case B_NETPOSITIVE_OPEN_URL:

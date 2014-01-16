@@ -643,8 +643,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		case B_MOUSE_WHEEL_CHANGED:
 			break;
 		case B_UI_SETTINGS_CHANGED:
-			//FIXME:
-			//nsbeos_update_system_ui_colors();
+			nsbeos_update_system_ui_colors();
 			break;
 		case 'nsLO': // login
 		{

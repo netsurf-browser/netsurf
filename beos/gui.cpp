@@ -128,6 +128,7 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case B_REFS_RECEIVED:
+		case B_UI_SETTINGS_CHANGED:
 		// messages for top-level
 		// we'll just send them to the first window
 		case 'back':
@@ -468,6 +469,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
+void nsbeos_update_system_ui_colors(void)
+{
+	set_defaults(nsoptions);
+}
+
 /**
  * Ensures output logging stream is correctly configured
  */
@@ -511,9 +517,7 @@ static void gui_init(int argc, char** argv)
 			return;
 	}
 
-	// ui_color() gives hardcoded values before BApplication is created.
-	//FIXME:
-	//nsbeos_update_system_ui_colors();
+	nsbeos_update_system_ui_colors();
 
 	fetch_rsrc_register();
 
