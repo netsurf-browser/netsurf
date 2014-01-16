@@ -111,7 +111,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,
 	};
-	win32_gui_table->browser->get_resource_url = gui_get_resource_url;
+	win32_browser_table->get_resource_url = gui_get_resource_url;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);

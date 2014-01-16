@@ -114,6 +114,7 @@ EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
+static void gui_window_set_url(struct gui_window *w, const char *url);
 
 /**
  * Return the filename part of a full path
