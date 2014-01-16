@@ -24,6 +24,7 @@
 extern "C" {
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 }
 #include "beos/gui.h"
 #include "beos/scaffolding.h"

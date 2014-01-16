@@ -1348,28 +1348,34 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 }
 
 static struct gui_window_table window_table = {
-	.create = gui_window_create,
-	.destroy = gui_window_destroy,
-	.redraw = gui_window_redraw_window,
-	.update = gui_window_update_box,
-	.get_scroll = gui_window_get_scroll,
-	.set_scroll = gui_window_set_scroll,
-	.get_dimensions = gui_window_get_dimensions,
-	.update_extent = gui_window_update_extent,
-
-        .new_content = gui_window_new_content,
-	.set_pointer = gui_window_set_pointer,
-	.place_caret = gui_window_place_caret,
-	.remove_caret = gui_window_remove_caret,
-        .start_selection = gui_start_selection,
+	gui_window_create,
+	gui_window_destroy,
+	gui_window_redraw_window,
+	gui_window_update_box,
+	gui_window_get_scroll,
+	gui_window_set_scroll,
+	gui_window_get_dimensions,
+	gui_window_update_extent,
 
 	/* from scaffold */
-	.set_icon = gui_window_set_icon,
-	.set_title = gui_window_set_title,
-	.set_url = gui_window_set_url,
-	.set_status = gui_window_set_status,
-	.start_throbber = gui_window_start_throbber,
-	.stop_throbber = gui_window_stop_throbber,
+	gui_window_set_title,
+	gui_window_set_url,
+	gui_window_set_icon,
+	gui_window_set_status,
+	gui_window_set_pointer,
+	gui_window_place_caret,
+	gui_window_remove_caret,
+	gui_window_start_throbber,
+	gui_window_stop_throbber,
+	NULL, //drag_start
+	NULL, //save_link
+	NULL, //scroll_visible
+	NULL, //scroll_start
+	gui_window_new_content,
+	NULL, //file_gadget_open
+	NULL, //drag_save_object
+	NULL, //drag_save_selection
+	gui_start_selection
 };
 
 struct gui_window_table *beos_window_table = &window_table;

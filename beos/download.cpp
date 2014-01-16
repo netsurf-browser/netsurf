@@ -249,10 +249,10 @@ static void gui_download_window_done(struct gui_download_window *dw)
 }
 
 static struct gui_download_table download_table = {
-	.create = gui_download_window_create,
-	.data = gui_download_window_data,
-	.error = gui_download_window_error,
-	.done = gui_download_window_done,
+	gui_download_window_create,
+	gui_download_window_data,
+	gui_download_window_error,
+	gui_download_window_done,
 };
 
 struct gui_download_table *beos_download_table = &download_table;

@@ -70,7 +70,7 @@ extern "C" {
 #include "beos/window.h"
 #include "beos/throbber.h"
 #include "beos/filetype.h"
-//#include "beos/download.h"
+#include "beos/download.h"
 #include "beos/schedule.h"
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
@@ -1059,18 +1059,21 @@ static bool path_add_part(char *path, int length, const char *newpart)
 }
 
 static struct gui_clipboard_table beos_clipboard_table = {
-	.get = gui_get_clipboard,
-	.set = gui_set_clipboard,
+	gui_get_clipboard,
+	gui_set_clipboard,
 };
 
 static struct gui_browser_table beos_browser_table = {
-	.poll = gui_poll,
-	.quit = gui_quit,
-	.get_resource_url = gui_get_resource_url,
-	.launch_url = gui_launch_url,
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
-        .login = gui_401login_open,
+	gui_poll,
+	filename_from_path,
+	path_add_part,
+	gui_quit,
+	NULL, //set_search_ico
+	gui_get_resource_url,
+	gui_launch_url,
+	NULL, //create_form_select_menu
+	NULL, //cert_verify
+	gui_401login_open
 };
 
 
@@ -1080,10 +1083,10 @@ int main(int argc, char** argv)
 	nserror ret;
 	BPath options;
 	struct gui_table beos_gui_table = {
-		.browser = &beos_browser_table,
-		.window = beos_window_table,
-		.clipboard = &beos_clipboard_table,
-		.download = beos_download_table,
+		&beos_browser_table,
+		beos_window_table,
+		beos_download_table,
+		&beos_clipboard_table
 	};
 
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
@@ -1131,10 +1134,10 @@ int gui_init_replicant(int argc, char** argv)
 	nserror ret;
 	BPath options;
 	struct gui_table beos_gui_table = {
-		.browser = &beos_browser_table,
-		.window = beos_window_table,
-		.clipboard = &beos_clipboard_table,
-		.download = beos_download_table,
+		&beos_browser_table,
+		beos_window_table,
+		beos_download_table,
+		&beos_clipboard_table
 	};
 
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
