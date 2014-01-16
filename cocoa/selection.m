@@ -33,7 +33,7 @@ static NSMutableString *cocoa_clipboard_string;
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
 	NSString *string = [pb stringForType: NSStringPboardType];
@@ -63,7 +63,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	/* Empty clipboard string */
