@@ -1069,7 +1069,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
  * \param  url  new url for address bar
  */
 
-static void gui_window_set_url(struct gui_window *g, const char *url)
+void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	if (!g->toolbar)
 		return;
@@ -5240,7 +5240,7 @@ bool ro_gui_alt_pressed(void)
 	return (alt == 0xff);
 }
 
-static struct gui_window_table gui_window_table = {
+static struct gui_window_table window_table = {
 	.create = gui_window_create,
 	.destroy = gui_window_destroy,
 	.redraw = gui_window_redraw_window,
@@ -5273,4 +5273,4 @@ static struct gui_window_table gui_window_table = {
 	.start_selection = gui_start_selection,
 };
 
-struct gui_window_table *riscos_gui_window_table = &gui_window_table;
+struct gui_window_table *riscos_window_table = &window_table;

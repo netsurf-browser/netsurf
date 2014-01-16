@@ -45,6 +45,7 @@
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/query.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"

@@ -36,6 +36,7 @@
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/window.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

@@ -32,6 +32,7 @@
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/ucstables.h"

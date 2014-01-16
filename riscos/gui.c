@@ -948,7 +948,7 @@ void ro_gui_cleanup(void)
  * \param active return as soon as possible
  */
 
-static void gui_poll(bool active)
+void gui_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;

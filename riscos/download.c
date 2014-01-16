@@ -435,6 +435,57 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	return dw;
 }
 
+/**
+ * Handle failed downloads.
+ *
+ * \param  dw         download window
+ * \param  error_msg  error message
+ */
+
+static void gui_download_window_error(struct gui_download_window *dw,
+		const char *error_msg)
+{
+	os_error *error;
+
+	if (dw->ctx != NULL)
+		download_context_destroy(dw->ctx);
+	dw->ctx = NULL;
+	dw->error = true;
+
+	schedule_remove(ro_gui_download_update_status_wrapper, dw);
+
+	/* place error message in status icon in red */
+	strncpy(dw->status, error_msg, sizeof dw->status);
+	error = xwimp_set_icon_state(dw->window,
+			ICON_DOWNLOAD_STATUS,
+			wimp_COLOUR_RED << wimp_ICON_FG_COLOUR_SHIFT,
+			wimp_ICON_FG_COLOUR);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	/* grey out pathname icon */
+	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_PATH,
+			wimp_ICON_SHADED, 0);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	/* grey out file icon */
+	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
+			wimp_ICON_SHADED, wimp_ICON_SHADED);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	ro_gui_download_window_hide_caret(dw);
+}
 
 /**
  * Handle received download data.
@@ -707,57 +758,6 @@ void ro_gui_download_window_hide_caret(struct gui_download_window *dw)
 }
 
 
-/**
- * Handle failed downloads.
- *
- * \param  dw         download window
- * \param  error_msg  error message
- */
-
-static void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-	os_error *error;
-
-	if (dw->ctx != NULL)
-		download_context_destroy(dw->ctx);
-	dw->ctx = NULL;
-	dw->error = true;
-
-	schedule_remove(ro_gui_download_update_status_wrapper, dw);
-
-	/* place error message in status icon in red */
-	strncpy(dw->status, error_msg, sizeof dw->status);
-	error = xwimp_set_icon_state(dw->window,
-			ICON_DOWNLOAD_STATUS,
-			wimp_COLOUR_RED << wimp_ICON_FG_COLOUR_SHIFT,
-			wimp_ICON_FG_COLOUR);
-	if (error) {
-		LOG(("xwimp_set_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-
-	/* grey out pathname icon */
-	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_PATH,
-			wimp_ICON_SHADED, 0);
-	if (error) {
-		LOG(("xwimp_set_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-
-	/* grey out file icon */
-	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
-			wimp_ICON_SHADED, wimp_ICON_SHADED);
-	if (error) {
-		LOG(("xwimp_set_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-
-	ro_gui_download_window_hide_caret(dw);
-}
 
 
 /**
