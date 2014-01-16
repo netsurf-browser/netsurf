@@ -83,6 +83,7 @@ extern "C" {
 
 struct beos_history_window;
 
+class NSIconTextControl;
 class NSBrowserWindow;
 class NSThrobber;
 
@@ -106,7 +107,7 @@ struct beos_scaffolding {
 	BControl		*reload_button;
 	BControl		*home_button;
 
-	BTextControl	*url_bar;
+	NSIconTextControl	*url_bar;
 	//BMenuField	*url_bar_completion;
 
 	NSThrobber		*throbber;
@@ -159,6 +160,8 @@ extern BResources *gAppResources;
 
 // #pragma mark - class NSIconTextControl
 
+#define ICON_WIDTH 16
+
 class NSIconTextControl : public BTextControl {
 public:
 		NSIconTextControl(BRect frame, const char* name,
@@ -166,17 +169,22 @@ public:
 						BMessage* message,
 						uint32 resizeMode
 							= B_FOLLOW_LEFT | B_FOLLOW_TOP,
-						uint32 flags = B_WILL_DRAW | B_NAVIGABLE);
+						uint32 flags
+							= B_WILL_DRAW | B_NAVIGABLE | B_DRAW_ON_CHILDREN);
 virtual	~NSIconTextControl();
 
 virtual	void	FrameResized(float newWidth, float newHeight);
+virtual void	Draw(BRect updateRect);
+virtual void	DrawAfterChildren(BRect updateRect);
+virtual void	AttachedToWindow();
 
 void	SetBitmap(const BBitmap *bitmap);
 void	FixupTextRect();
 
 private:
-	const BBitmap *fBitmap;
-	BView *fBitmapView;
+	BPoint fIconOffset;
+	BRect fIconFrame;
+	const BBitmap *fIconBitmap;
 };
 
 NSIconTextControl::NSIconTextControl(BRect frame, const char* name,
@@ -185,23 +193,23 @@ NSIconTextControl::NSIconTextControl(BRect frame, const char* name,
 						uint32 resizeMode,
 						uint32 flags)
 	: BTextControl(frame, name, label, initialText, message, resizeMode, flags),
-	fBitmap(NULL),
-	fBitmapView(NULL)
+	fIconOffset(0,0),
+	fIconBitmap(NULL)
 {
-	BRect r(TextView()->TextRect());
+	BRect r(Bounds());
 	BRect frame = r;
-	frame.right = frame.left + 15;
-	frame.bottom = frame.top + 15;
-	frame.OffsetBy(-2, (r.IntegerHeight() - 16) / 2);
-	fBitmapView = new BView(frame, "iconview", B_FOLLOW_NONE, 0);
+	frame.right = frame.left + ICON_WIDTH - 1;
+	frame.bottom = frame.top + ICON_WIDTH - 1;
+	frame.OffsetBy((int32)((r.IntegerHeight() - ICON_WIDTH + 3) / 2),
+		(int32)((r.IntegerHeight() - ICON_WIDTH + 1) / 2));
+	fIconFrame = frame;
 	FixupTextRect();
-
-	TextView()->AddChild(fBitmapView);
 }
 
 
 NSIconTextControl::~NSIconTextControl()
 {
+	delete fIconBitmap;
 }
 
 
@@ -210,15 +218,51 @@ NSIconTextControl::FrameResized(float newWidth, float newHeight)
 {
 	BTextControl::FrameResized(newWidth, newHeight);
 	FixupTextRect();
-	Invalidate();
+}
+
+
+void
+NSIconTextControl::Draw(BRect updateRect)
+{
+	FixupTextRect();
+	BTextControl::Draw(updateRect);
+}
+
+
+void
+NSIconTextControl::DrawAfterChildren(BRect updateRect)
+{
+	BTextControl::DrawAfterChildren(updateRect);
+
+	PushState();
+
+	SetDrawingMode(B_OP_ALPHA);
+	DrawBitmap(fIconBitmap, fIconFrame);
+
+	//XXX: is this needed?
+	PopState();
+}
+
+
+void
+NSIconTextControl::AttachedToWindow()
+{
+	BTextControl::AttachedToWindow();
+	FixupTextRect();
 }
 
 
 void
 NSIconTextControl::SetBitmap(const BBitmap *bitmap)
 {
-	fBitmapView->SetViewBitmap(bitmap);
-	fBitmapView->Invalidate();
+	delete fIconBitmap;
+	fIconBitmap = NULL;
+
+	// keep a copy
+	if (bitmap)
+		fIconBitmap = new BBitmap(bitmap);
+	// invalidate just the icon area
+	Invalidate(fIconFrame);
 }
 
 
@@ -228,13 +272,16 @@ NSIconTextControl::FixupTextRect()
 	// FIXME: this flickers on resize, quite ugly
 	BRect r(TextView()->TextRect());
 
-	// in case this ever gets fixed...
-	if (r.left > 10)
+	// don't fix the fix
+	if (r.left > ICON_WIDTH)
 		return;
+
 	r.left += r.bottom - r.top;
 	TextView()->SetTextRect(r);
 }
 
+
+#undef ICON_WIDTH
 
 // #pragma mark - class NSResizeKnob
 
@@ -2189,7 +2236,7 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	if (!g->top_view->LockLooper())
 		return;
 
-	dynamic_cast<NSIconTextControl *>(g->url_bar)->SetBitmap(bitmap);
+	g->url_bar->SetBitmap(bitmap);
 
 	g->top_view->UnlockLooper();
 }
