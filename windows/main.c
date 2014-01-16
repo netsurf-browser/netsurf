@@ -36,6 +36,7 @@
 #include "windows/findfile.h"
 #include "windows/drawable.h"
 #include "windows/gui.h"
+#include "windows/download.h"
 
 static char **respaths; /** resource search path vector. */
 
@@ -110,7 +111,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,
 	};
-	win32_gui_table->browser->get_resource_url = get_resource_url;
+	win32_gui_table->browser->get_resource_url = gui_get_resource_url;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);

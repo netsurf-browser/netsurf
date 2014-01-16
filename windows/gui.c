@@ -1875,7 +1875,7 @@ static struct gui_clipboard_table clipboard_table = {
 
 struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
-static struct gui_table browser_table = {
+static struct gui_browser_table browser_table = {
 	.poll = gui_poll,
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
