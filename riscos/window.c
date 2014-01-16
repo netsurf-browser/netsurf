@@ -1799,7 +1799,6 @@ bool ro_gui_window_keypress(wimp_key *key)
 {
 	struct gui_window	*g;
 	hlcache_handle		*h;
-	os_error		*error;
 	uint32_t		c = (uint32_t) key->c;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(key->w);
