@@ -215,7 +215,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	CloseIFF(iffh);
 }
 
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 	nsclipboard_styles styles[], int n_styles)
 {
 	char *text;
@@ -376,3 +376,10 @@ bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 	return true;
 }
 #endif
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *amiga_clipboard_table = &clipboard_table;

@@ -69,6 +69,7 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "amiga/sslcert.h"
 
 /* Custom StringView class */
 #include "amiga/stringview/stringview.h"
@@ -202,6 +203,11 @@ static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+static void gui_window_remove_caret(struct gui_window *g);
+static void gui_set_search_ico(hlcache_handle *ico);
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
+
+
 
 /* accessors for default options - user option is updated if it is set as per default */
 #define nsoption_default_set_int(OPTION, VALUE)				\
@@ -5144,10 +5150,6 @@ static struct gui_window_table amiga_window_table = {
 	.save_link = gui_window_save_link,
 };
 
-static struct gui_clipboard_table amiga_clipboard_table = {
-	.get = gui_get_clipboard,
-	.set = gui_set_clipboard,
-};
 
 static struct gui_browser_table amiga_browser_table = {
 	.poll = gui_poll,
@@ -5176,7 +5178,7 @@ int main(int argc, char** argv)
 	struct gui_table amiga_gui_table = {
 		.browser = &amiga_browser_table,
 		.window = &amiga_window_table,
-		.clipboard = &amiga_clipboard_table,
+		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
 	};
 

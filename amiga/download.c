@@ -227,21 +227,6 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	return NSERROR_OK;
 }
 
-static void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-	warn_user("Unwritten","");
-	dw->result = AMINS_DLOAD_ERROR;
-	gui_download_window_done(dw);
-}
-
-void ami_download_window_abort(struct gui_download_window *dw)
-{
-	download_context_abort(dw->ctx);
-	dw->result = AMINS_DLOAD_ABORT;
-	gui_download_window_done(dw);
-}
-
 static void gui_download_window_done(struct gui_download_window *dw)
 {
 	struct dlnode *dln,*dln2 = NULL;
@@ -297,6 +282,21 @@ static void gui_download_window_done(struct gui_download_window *dw)
 			nsurl_unref(url);
 		}
 	}
+}
+
+static void gui_download_window_error(struct gui_download_window *dw,
+		const char *error_msg)
+{
+	warn_user("Unwritten","");
+	dw->result = AMINS_DLOAD_ERROR;
+	gui_download_window_done(dw);
+}
+
+void ami_download_window_abort(struct gui_download_window *dw)
+{
+	download_context_abort(dw->ctx);
+	dw->result = AMINS_DLOAD_ABORT;
+	gui_download_window_done(dw);
 }
 
 BOOL ami_download_window_event(struct gui_download_window *dw)

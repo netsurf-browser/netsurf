@@ -24,4 +24,5 @@ void gui_cert_verify(nsurl *url,
 		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 void ami_ssl_free(struct treeview_window *twin);
+
 #endif
