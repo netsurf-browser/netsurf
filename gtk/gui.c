@@ -55,6 +55,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "css/utils.h"
+
 #include "gtk/compat.h"
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
@@ -67,6 +68,7 @@
 #include "gtk/treeview.h"
 #include "gtk/window.h"
 #include "gtk/schedule.h"
+#include "gtk/selection.h"
 
 #include "render/form.h"
 #include "utils/filepath.h"
@@ -183,7 +185,7 @@ nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 
 	filepath = filepath_find(respath, resname);
 	if (filepath == NULL) {
-		snprintf(errorstr, NEW_GLADE_ERROR_SIZE, 
+		snprintf(errorstr, NEW_GLADE_ERROR_SIZE,
 			 "Unable to locate %s glade template file.\n", name);
 		die(errorstr);
 	}
@@ -192,7 +194,7 @@ nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 	if (!gtk_builder_add_from_file(builder, filepath, &error))  {
 		g_warning ("Couldn't load builder file: %s", error->message);
 		g_error_free (error);
-		snprintf(errorstr, NEW_GLADE_ERROR_SIZE, 
+		snprintf(errorstr, NEW_GLADE_ERROR_SIZE,
 			 "Unable to load glade %s window definitions.\n", name);
 
 		die(errorstr);
@@ -212,7 +214,7 @@ nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 /**
  * Load definitions from glade files.
  */
-static void 
+static void
 nsgtk_init_glade(char **respath)
 {
 	GtkBuilder *gladeWarning;
@@ -322,7 +324,7 @@ static void check_options(char **respath)
 
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -334,7 +336,7 @@ nsurl *gui_get_resource_url(const char *path)
 
 	/* favicon.ico -> favicon.png */
 	if (strcmp(path, "favicon.ico") == 0)
-		path = "favicon.png";	
+		path = "favicon.png";
 
 	raw = path_to_url(filepath_sfind(respaths, buf, path));
 	if (raw != NULL) {
@@ -357,32 +359,32 @@ static void gui_init(int argc, char** argv, char **respath)
 	nsurl *url;
 	nserror error;
 
-	/* find the languages file */	
+	/* find the languages file */
 	languages_file_location = filepath_find(respath, "languages");
-	if ((languages_file_location == NULL) || 
+	if ((languages_file_location == NULL) ||
 	    (strlen(languages_file_location) < 10)) {
-		die("Unable to find resources.\n");		
+		die("Unable to find resources.\n");
 	}
 
-	/* find the theme list file */	
+	/* find the theme list file */
 	themelist_file_location = filepath_find(respath, "themelist");
 	if ((themelist_file_location != NULL) &&
 		(strlen(themelist_file_location) < 10)) {
 		free(themelist_file_location);
 		themelist_file_location = NULL;
 	}
-	if (themelist_file_location == NULL) { 
+	if (themelist_file_location == NULL) {
 		LOG(("Unable to find themelist - disabling"));
 	}
 
-	/* Obtain resources path location. 
+	/* Obtain resources path location.
 	 *
 	 * Uses the directory the languages file was found in,
 	 * @todo find and slaughter all references to this!
 	 */
 	res_dir_location = calloc(1, strlen(languages_file_location) - 8);
-	memcpy(res_dir_location, 
-	       languages_file_location, 
+	memcpy(res_dir_location,
+	       languages_file_location,
 	       strlen(languages_file_location) - 9);
 	LOG(("Using '%s' for resource path", res_dir_location));
 
@@ -411,7 +413,7 @@ static void gui_init(int argc, char** argv, char **respath)
 		free(resource_filename);
 		if (favicon_pixbuf == NULL) {
 			favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 16,16);
-			
+
 		}
 	}
 
@@ -419,7 +421,7 @@ static void gui_init(int argc, char** argv, char **respath)
 	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");
 	LOG(("Using '%s' as custom toolbar settings file", toolbar_indices_file_location));
 
-        /* load throbber images */
+	/* load throbber images */
 	if (nsgtk_throbber_init(respath, THROBBER_FRAMES) == false)
 		die("Unable to load throbber image.\n");
 
@@ -535,75 +537,15 @@ static void nsgtk_check_homedir(void)
  */
 static bool nslog_stream_configure(FILE *fptr)
 {
-        /* set log stream to be non-buffering */
+	/* set log stream to be non-buffering */
 	setbuf(fptr, NULL);
 
 	return true;
 }
 
-/**
- * Main entry point from OS.
- */
-int main(int argc, char** argv)
-{
-	char *messages;
-	char *options;
-	nserror ret;
-
-	/* check home directory is available */
-	nsgtk_check_homedir();
-
-	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
-
-	gtk_init(&argc, &argv);
-	
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "Options failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
-		return 1;
-	}
-	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, nsoptions);
-	free(options);
-	nsoption_commandline(&argc, argv, nsoptions);
-	check_options(respaths); /* check user options */
-
-	/* common initialisation */
-	messages = filepath_find(respaths, "Messages");
-	ret = netsurf_init(messages);
-	free(messages);
-	if (ret != NSERROR_OK) {
-		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
-			messages_get_errorcode(ret));
-		return 1;
-	}
-
-	/* run the browser */
-	gui_init(argc, argv, respaths);
-
-	/* Ensure all scaffoldings are destroyed before we go into exit */
-	while (scaf_list != NULL) {
-		nsgtk_scaffolding_destroy(scaf_list);
-	}
-	
-	/* common finalisation */
-	netsurf_exit();
-
-	/* finalise options */
-	nsoption_finalise(nsoptions, nsoptions_default);
-
-	return 0;
-}
 
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
@@ -613,7 +555,7 @@ void gui_poll(bool active)
 	bool block = true;
 
 	schedule_run();
-	
+
 	if (browser_reformat_pending)
 		block = false;
 
@@ -666,8 +608,15 @@ void gui_poll(bool active)
 }
 
 
-void gui_quit(void)
+static void gui_quit(void)
 {
+	LOG(("Quitting GUI"));
+
+	/* Ensure all scaffoldings are destroyed before we go into exit */
+	while (scaf_list != NULL) {
+		nsgtk_scaffolding_destroy(scaf_list);
+	}
+
 	nsgtk_download_destroy();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -688,7 +637,7 @@ static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 			select_menu_control, (intptr_t)user_data);
 }
 
-void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 
@@ -729,12 +678,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-void gui_window_save_link(struct gui_window *g, const char *url, 
-		const char *title)
-{
-}
-
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	gboolean ok;
 	GError *error = NULL;
@@ -772,11 +716,11 @@ void die(const char * const error)
 }
 
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
-{	
-	static struct nsgtk_treeview *ssl_window;	
+{
+	static struct nsgtk_treeview *ssl_window;
 	struct sslcert_session_data *data;
 	GtkButton *accept, *reject;
 	void **session;
@@ -784,7 +728,7 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
 	GError* error = NULL;
-	GtkBuilder* builder; 
+	GtkBuilder* builder;
 
 	builder = gtk_builder_new ();
 	if (!gtk_builder_add_from_file(builder, glade_file_location->ssl, &error)) {
@@ -808,28 +752,28 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 
 	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, window, scrolled,
 			drawing_area);
-	
+
 	if (ssl_window == NULL) {
 		free(session);
 		return;
 	}
-	
+
 	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
-	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));	
+	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));
 
 	session[0] = builder;
 	session[1] = ssl_window;
 	session[2] = data;
-	
+
 #define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
-	
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+
 	CONNECT(accept, "clicked", nsgtk_ssl_accept, session);
 	CONNECT(reject, "clicked", nsgtk_ssl_reject, session);
  	CONNECT(window, "delete_event", G_CALLBACK(nsgtk_ssl_delete_event),
 			(gpointer)session);
-	
-	gtk_widget_show(GTK_WIDGET(window));	
+
+	gtk_widget_show(GTK_WIDGET(window));
 }
 
 void nsgtk_ssl_accept(GtkButton *w, gpointer data)
@@ -840,7 +784,7 @@ void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 	struct sslcert_session_data *ssl_data = session[2];
 
 	sslcert_viewer_accept(ssl_data);
-  		
+
 	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
 	free(session);
@@ -854,7 +798,7 @@ void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
 	struct sslcert_session_data *ssl_data = session[2];
 
 	sslcert_viewer_reject(ssl_data);
-	
+
 	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
 	free(session);
@@ -906,7 +850,7 @@ char *path_to_url(const char *path)
 	if (path == NULL) {
 		return NULL;
 	}
-		
+
 	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
 
 	url = malloc(urllen);
@@ -916,7 +860,7 @@ char *path_to_url(const char *path)
 
 	if (*path == '/') {
 		path++; /* file: paths are already absolute */
-	} 
+	}
 
 	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
 
@@ -1057,7 +1001,7 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	 * now.  I hope.
 	 */
 	switch (key->keyval) {
-	
+
 	case GDK_KEY(Tab):
 		return KEY_TAB;
 
@@ -1137,12 +1081,12 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	case GDK_KEY(Super_L):
 	case GDK_KEY(Super_R):
 	case GDK_KEY(Hyper_L):
-	case GDK_KEY(Hyper_R):	
+	case GDK_KEY(Hyper_R):
 		return 0;
 
-	default:		
+	default:
 		return gdk_keyval_to_unicode(key->keyval);
-        }
+	}
 }
 
 /**
@@ -1152,7 +1096,7 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
  * \return filename (will be freed with free())
  */
 
-char *filename_from_path(char *path)
+static char *filename_from_path(char *path)
 {
 	char *leafname;
 
@@ -1174,7 +1118,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, const char *newpart)
+static bool path_add_part(char *path, int length, const char *newpart)
 {
 	if(path[strlen(path) - 1] != '/')
 		strncat(path, "/", length);
@@ -1182,4 +1126,84 @@ bool path_add_part(char *path, int length, const char *newpart)
 	strncat(path, newpart, length);
 
 	return true;
+}
+
+static struct gui_clipboard_table nsgtk_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+static struct gui_browser_table nsgtk_browser_table = {
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.set_search_ico = gui_set_search_ico,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+        .login = gui_401login_open,
+};
+
+/**
+ * Main entry point from OS.
+ */
+int main(int argc, char** argv)
+{
+	char *messages;
+	char *options;
+	nserror ret;
+	struct gui_table nsgtk_gui_table = {
+		.browser = &nsgtk_browser_table,
+		.window = nsgtk_window_table,
+		.clipboard = &nsgtk_clipboard_table,
+		.download = nsgtk_download_table,
+	};
+
+	/* check home directory is available */
+	nsgtk_check_homedir();
+
+	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
+
+	gtk_init(&argc, &argv);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Options failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
+	options = filepath_find(respaths, "Choices");
+	nsoption_read(options, nsoptions);
+	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+	check_options(respaths); /* check user options */
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages, &nsgtk_gui_table);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
+
+	/* run the browser */
+	gui_init(argc, argv, respaths);
+
+	/* common finalisation */
+	netsurf_exit();
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
+
+	return 0;
 }

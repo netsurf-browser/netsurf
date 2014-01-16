@@ -32,6 +32,9 @@
 extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
 
+extern "C" void gui_401login_open(nsurl *url, const char *realm,
+				  nserror (*cb)(bool proceed, void *pw), void *cbpw);
+
 
 extern char *options_file_location;
 

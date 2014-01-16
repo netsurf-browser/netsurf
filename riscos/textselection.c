@@ -186,20 +186,6 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
 }
 
-
-/**
- * Perform tasks after a selection has been cleared.
- *
- * \param g  gui window
- */
-
-void gui_clear_selection(struct gui_window *g)
-{
-	/* Refresh any open menu, in case it's the browser window menu.  */
-	ro_gui_menu_refresh(0);
-}
-
-
 /**
  * Core tells front end to put given text in clipboard
  *

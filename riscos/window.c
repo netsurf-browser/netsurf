@@ -89,6 +89,7 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 
+void gui_window_redraw_window(struct gui_window *g);
 
 static void gui_window_set_extent(struct gui_window *g, int width, int height);
 
@@ -372,6 +373,30 @@ void ro_gui_window_initialise(void)
  */
 
 /**
+ * Place the caret in a browser window.
+ *
+ * \param  g	   window with caret
+ * \param  x	   coordinates of caret
+ * \param  y	   coordinates of caret
+ * \param  height  height of caret
+ * \param  clip	   clip rectangle, or NULL if none
+ */
+
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+		const struct rect *clip)
+{
+	os_error *error;
+
+	error = xwimp_set_caret_position(g->window, -1,
+			x * 2, -(y + height) * 2, height * 2, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+/**
  * Create and open a new browser window.
  *
  * \param  bw	  browser_window structure to update
@@ -379,7 +404,7 @@ void ro_gui_window_initialise(void)
  * \return  gui_window, or 0 on error and error reported
  */
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
+static struct gui_window *gui_window_create(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;
@@ -600,7 +625,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
  * \param  g  gui_window to destroy
  */
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	os_error *error;
 	wimp_w w;
@@ -651,7 +676,7 @@ void gui_window_destroy(struct gui_window *g)
  * \param  title  new window title, copied
  */
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	int scale_disp;
 
@@ -710,7 +735,7 @@ void gui_window_redraw_window(struct gui_window *g)
  * \param  data  content_msg_data union with filled in redraw data
  */
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	bool use_buffer;
 	int x0, y0, x1, y1;
@@ -765,7 +790,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
  * \return true iff successful
  */
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -798,7 +823,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
  * \param  sy  point to place at top-left of window
  */
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -831,7 +856,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
  * \param  x1  right point to ensure visible
  * \param  y1  top point to ensure visible
  */
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
+static void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	wimp_window_state state;
 	os_error *error;
@@ -915,7 +940,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int
  * \param scaled whether to return scaled values
  */
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled)
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bool scaled)
 {
   	/* use the cached window sizes */
 	*width = g->old_width / 2;
@@ -934,7 +959,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height, bo
  * \param  g		gui_window to update the extent of
  */
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	os_error		*error;
 	wimp_window_info	info;
@@ -986,7 +1011,7 @@ void gui_window_update_extent(struct gui_window *g)
  * \param  text  new status text
  */
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	if (g->status_bar)
 		ro_gui_status_bar_set_text(g->status_bar, text);
@@ -1038,30 +1063,13 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 
 /**
- * Remove the mouse pointer from the screen
- */
-
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	os_error *error;
-
-	error = xwimpspriteop_set_pointer_shape(NULL, 0x30, 0, 0, 0, 0);
-	if (error) {
-		LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
  * Set the contents of a window's address bar.
  *
  * \param  g	gui_window to update
  * \param  url  new url for address bar
  */
 
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	if (!g->toolbar)
 		return;
@@ -1077,7 +1085,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
  * \param  g  window with start of load
  */
 
-void gui_window_start_throbber(struct gui_window *g)
+static void gui_window_start_throbber(struct gui_window *g)
 {
 	ro_gui_window_update_toolbar_buttons(g);
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
@@ -1093,7 +1101,7 @@ void gui_window_start_throbber(struct gui_window *g)
  * \param  g  window with start of load
  */
 
-void gui_window_stop_throbber(struct gui_window *g)
+static void gui_window_stop_throbber(struct gui_window *g)
 {
 	ro_gui_window_update_toolbar_buttons(g);
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
@@ -1105,7 +1113,7 @@ void gui_window_stop_throbber(struct gui_window *g)
  * set favicon
  */
 
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	if (g == NULL || g->toolbar == NULL)
 		return;
@@ -1113,38 +1121,6 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	ro_toolbar_set_site_favicon(g->toolbar, icon);
 }
 
-/**
-* set gui display of a retrieved favicon representing the search provider
-* \param ico may be NULL for local calls; then access current cache from
-* search_web_ico()
-*/
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
-
-/**
- * Place the caret in a browser window.
- *
- * \param  g	   window with caret
- * \param  x	   coordinates of caret
- * \param  y	   coordinates of caret
- * \param  height  height of caret
- * \param  clip	   clip rectangle, or NULL if none
- */
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
-		const struct rect *clip)
-{
-	os_error *error;
-
-	error = xwimp_set_caret_position(g->window, -1,
-			x * 2, -(y + height) * 2, height * 2, -1);
-	if (error) {
-		LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
 
 
 /**
@@ -1153,7 +1129,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
  * \param  g	   window with caret
  */
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	wimp_caret caret;
 	os_error *error;
@@ -1181,7 +1157,7 @@ void gui_window_remove_caret(struct gui_window *g)
  * \param  g  the gui_window that has new content
  */
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
 	ro_gui_window_update_toolbar_buttons(g);
@@ -1193,10 +1169,10 @@ void gui_window_new_content(struct gui_window *g)
 /**
  * Starts drag scrolling of a browser window
  *
- * \param gw  gui window
+ * \param g the window to scroll
  */
 
-bool gui_window_scroll_start(struct gui_window *g)
+static bool gui_window_scroll_start(struct gui_window *g)
 {
 	wimp_window_info_base info;
 	wimp_pointer pointer;
@@ -1260,7 +1236,7 @@ bool gui_window_scroll_start(struct gui_window *g)
  * \return true iff succesful
  */
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
 	wimp_pointer pointer;
@@ -1319,7 +1295,7 @@ bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
  * \param  g  gui_window containing the content
  * \param  c  the content to save
  */
-void gui_window_save_link(struct gui_window *g, const char *url,
+static void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
 {
 	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
@@ -5263,3 +5239,38 @@ bool ro_gui_alt_pressed(void)
 	xosbyte1(osbyte_SCAN_KEYBOARD, 2 ^ 0x80, 0, &alt);
 	return (alt == 0xff);
 }
+
+static struct gui_window_table gui_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.save_link = gui_window_save_link,
+	.drag_start = gui_window_drag_start,
+	.scroll_visible = gui_window_scroll_visible,
+	.scroll_start = gui_window_scroll_start,
+	.new_content = gui_window_new_content,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+
+	/* from save */
+	.drag_save_object = gui_drag_save_object,
+	.drag_save_selection =gui_drag_save_selection,
+
+	/* from textselection */
+	.start_selection = gui_start_selection,
+};
+
+struct gui_window_table *riscos_gui_window_table = &gui_window_table;

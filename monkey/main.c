@@ -25,6 +25,8 @@
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
+#include "monkey/cert.h"
+#include "monkey/401login.h"
 
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
@@ -55,7 +57,7 @@ nsmonkey_init_resource(const char *resource_path)
 	return respath;
 }
 
-void gui_quit(void)
+static void monkey_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -64,7 +66,7 @@ void gui_quit(void)
 	gtk_fetch_filetype_fin();
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -79,7 +81,7 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-void
+static void
 gui_launch_url(const char *url)
 {
   fprintf(stdout, "GENERIC LAUNCH URL %s\n", url);
@@ -113,6 +115,56 @@ static bool nslog_stream_configure(FILE *fptr)
   return true;
 }
 
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+static char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '/');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if(path[strlen(path) - 1] != '/')
+		strncat(path, "/", length);
+
+	strncat(path, newpart, length);
+
+	return true;
+}
+
+static struct gui_browser_table monkey_browser_table = {
+  .poll = monkey_poll,
+  .quit = monkey_quit,
+  .get_resource_url = gui_get_resource_url,
+  .launch_url = gui_launch_url,
+  .cert_verify = gui_cert_verify,
+  .filename_from_path = filename_from_path,
+  .path_add_part = path_add_part,
+  .login = gui_401login_open,
+};
+
 int
 main(int argc, char **argv)
 {
@@ -120,6 +172,11 @@ main(int argc, char **argv)
   char *options;
   char buf[PATH_MAX];
   nserror ret;
+  struct gui_table monkey_gui_table = {
+    .browser = &monkey_browser_table,
+    .window = monkey_window_table,
+    .download = monkey_download_table,
+  };
 
   /* Unbuffer stdin/out/err */
   setbuf(stdin, NULL);
@@ -146,7 +203,7 @@ main(int argc, char **argv)
 
   /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-  ret = netsurf_init(messages);
+  ret = netsurf_init(messages, &monkey_gui_table);
   free(messages);
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");

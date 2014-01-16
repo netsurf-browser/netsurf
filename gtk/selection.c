@@ -30,17 +30,6 @@ static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
 
 
-
-
-void gui_start_selection(struct gui_window *g)
-{
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_layout(g)));
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-}
-
 /**
  * Core asks front end for clipboard contents.
  *

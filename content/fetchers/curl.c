@@ -45,6 +45,7 @@
 #include "content/fetchers/curl.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -1268,7 +1269,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 		if (control->file) {
 			char *leafname = 0;
 
-			leafname = filename_from_path(control->value);
+			leafname = guit->browser->filename_from_path(control->value);
 
 			if (leafname == NULL)
 				continue;

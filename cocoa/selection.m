@@ -19,20 +19,12 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/BrowserViewController.h"
+#import "cocoa/selection.h"
 
 #import "desktop/browser_private.h"
 
 
 static NSMutableString *cocoa_clipboard_string;
-
-void gui_start_selection(struct gui_window *g)
-{
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-}
-
 
 /**
  * Core asks front end for clipboard contents.

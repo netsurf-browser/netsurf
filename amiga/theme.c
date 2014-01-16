@@ -275,11 +275,6 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 	}
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	ami_set_pointer(g->shared, AMI_GUI_POINTER_BLANK, true);
-}
-
 void ami_init_mouse_pointers(void)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) return;

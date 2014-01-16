@@ -34,7 +34,7 @@ struct gui_download_window {
 
 static struct gui_download_window *dw_ring = NULL;
 
-struct gui_download_window *
+static struct gui_download_window *
 gui_download_window_create(download_context *ctx,
                            struct gui_window *parent)
 {
@@ -52,7 +52,7 @@ gui_download_window_create(download_context *ctx,
   return ret;
 }
 
-nserror 
+static nserror 
 gui_download_window_data(struct gui_download_window *dw, 
                          const char *data, unsigned int size)
 {
@@ -61,7 +61,7 @@ gui_download_window_data(struct gui_download_window *dw,
   return NSERROR_OK;
 }
 
-void
+static void
 gui_download_window_error(struct gui_download_window *dw,
                           const char *error_msg)
 {
@@ -69,7 +69,7 @@ gui_download_window_error(struct gui_download_window *dw,
           dw->dwin_num, error_msg);
 }
 
-void
+static void
 gui_download_window_done(struct gui_download_window *dw)
 {
   fprintf(stdout, "DOWNLOAD_WINDOW DONE DWIN %u\n",
@@ -77,3 +77,12 @@ gui_download_window_done(struct gui_download_window *dw)
   RING_REMOVE(dw_ring, dw);
   free(dw);
 }
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *monkey_download_table = &download_table;

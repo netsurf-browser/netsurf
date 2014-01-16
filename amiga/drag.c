@@ -50,8 +50,8 @@ ULONG drag_icon_width;
 ULONG drag_icon_height;
 BOOL drag_in_progress = FALSE;
 
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-		struct gui_window *g)
+void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
+		gui_save_type type)
 {
 	const char *filetype = NULL;
 

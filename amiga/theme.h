@@ -41,4 +41,9 @@ void ami_reset_pointer(struct gui_window_2 *gwin);
  * and ALWAYS in preference to SetWindowPointer(), as it features more pointers and uses
  * the correct ones specified in user preferences. */
 void ami_update_pointer(struct Window *win, gui_pointer_shape shape); 
+
+void gui_window_start_throbber(struct gui_window *g);
+void gui_window_stop_throbber(struct gui_window *g);
+void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
+
 #endif

@@ -37,6 +37,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "desktop/save_complete.h"
+#include "desktop/gui_factory.h"
 #include "render/box.h"
 #include "render/html.h"
 #include "utils/corestrings.h"
@@ -147,7 +148,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 	char fullpath[PATH_MAX];
 
 	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, leafname);
+	error = guit->browser->path_add_part(fullpath, sizeof fullpath, leafname);
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;
@@ -1048,7 +1049,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	else 
 		snprintf(filename, sizeof filename, "%p", c);
 
-	error = path_add_part(fullpath, sizeof fullpath, filename);
+	error = guit->browser->path_add_part(fullpath, sizeof fullpath, filename);
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;
@@ -1125,7 +1126,7 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	char fullpath[PATH_MAX];
 
 	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, "Inventory");
+	error = guit->browser->path_add_part(fullpath, sizeof fullpath, "Inventory");
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;

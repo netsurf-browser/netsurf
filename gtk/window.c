@@ -28,6 +28,7 @@
 
 #include "content/hlcache.h"
 #include "gtk/window.h"
+#include "gtk/selection.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
@@ -655,10 +656,11 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 	browser_window_destroy(gw->bw);
 }
 
-/* Core interface docuemnted in desktop/gui.h to create a gui_window */
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-					     struct browser_window *clone,
-					     bool new_tab)
+/* Core interface documented in desktop/gui.h to create a gui_window */
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *g; /**< what we're creating to return */
 	GError* error = NULL;
@@ -837,7 +839,7 @@ void nsgtk_window_destroy_browser(struct gui_window *gw)
 	gtk_widget_destroy(gw->container);
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	LOG(("gui_window: %p", g));
 	assert(g != NULL);
@@ -860,7 +862,7 @@ void gui_window_destroy(struct gui_window *g)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 {
 	struct bitmap *icon_bitmap = NULL;
 
@@ -887,6 +889,20 @@ void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 	nsgtk_scaffolding_set_icon(gw);
 }
 
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+{
+	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
+
+	assert(vadj);
+	assert(hadj);
+
+	*sy = (int)(gtk_adjustment_get_value(vadj));
+	*sx = (int)(gtk_adjustment_get_value(hadj));
+
+	return true;
+}
+
 static void nsgtk_redraw_caret(struct gui_window *g)
 {
 	int sx, sy;
@@ -901,7 +917,7 @@ static void nsgtk_redraw_caret(struct gui_window *g)
 
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	int sx, sy;
 	int oh = g->careth;
@@ -918,12 +934,12 @@ void gui_window_remove_caret(struct gui_window *g)
 
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	gtk_widget_queue_draw(GTK_WIDGET(g->layout));
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
 	hlcache_handle *c = g->bw->current_content;
@@ -940,28 +956,15 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 				   (rect->y1 - rect->y0) * g->bw->scale);
 }
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	assert(g);
 	assert(g->status_bar);
 	gtk_label_set_text(g->status_bar, text);
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
-{
-	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
 
-	assert(vadj);
-	assert(hadj);
-
-	*sy = (int)(gtk_adjustment_get_value(vadj));
-	*sx = (int)(gtk_adjustment_get_value(hadj));
-
-	return true;
-}
-
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
 	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
@@ -986,14 +989,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	gtk_adjustment_set_value(hadj, x);
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g,x0,y0);
-}
-
-
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	if (!g->bw->current_content)
 		return;
@@ -1014,7 +1010,8 @@ static GdkCursor *nsgtk_create_menu_cursor(void)
 	return cursor;
 }
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g,
+				   gui_pointer_shape shape)
 {
 	GdkCursor *cursor = NULL;
 	GdkCursorType cursortype;
@@ -1098,12 +1095,8 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		nsgdk_cursor_unref(cursor);
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
 
-}
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	nsgtk_redraw_caret(g);
@@ -1117,34 +1110,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 }
 
-void gui_window_new_content(struct gui_window *g)
-{
 
-}
-
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *g)
-{
-
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-
-}
-
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
 	GtkAllocation alloc;
@@ -1163,13 +1130,18 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	LOG(("height: %i", *height));
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
+static void gui_window_start_selection(struct gui_window *g)
+{
+	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
+}
+
+static void
+gui_window_file_gadget_open(struct gui_window *g,
+			    hlcache_handle *hl,
+			    struct form_control *gadget)
 {
 	GtkWidget *dialog;
 
-	LOG(("Awooga."));
-	
 	dialog = gtk_file_chooser_dialog_new("Select File",
 			nsgtk_scaffolding_window(g->scaffold),
 			GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -1194,3 +1166,30 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 
 	gtk_widget_destroy(dialog);
 }
+
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.file_gadget_open = gui_window_file_gadget_open,
+	.start_selection = gui_window_start_selection,
+
+	/* from scaffold */
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *nsgtk_window_table = &window_table;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,16 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_DESKTOP_401LOGIN_H
-#define NETSURF_DESKTOP_401LOGIN_H
+#ifndef NETSURF_FB_CLIPBOARD_H
+#define NETSURF_FB_CLIPBOARD_H
 
-#include <stdbool.h>
-
-#include "utils/config.h"
-#include "utils/nsurl.h"
-#include "utils/errors.h"
-
-void gui_401login_open(nsurl *url, const char *realm,
-			nserror (*cb)(bool proceed, void *pw), void *cbpw);
+extern struct gui_clipboard_table *framebuffer_clipboard_table;
 
 #endif

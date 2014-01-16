@@ -27,6 +27,9 @@
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
 
+void gui_drag_save_object(struct gui_window *g, hlcache_handle *c, gui_save_type save_type);
+void gui_drag_save_selection(struct gui_window *g, const char *selection);
+
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);
 void ro_gui_save_prepare(gui_save_type save_type, struct hlcache_handle *h,

@@ -41,12 +41,12 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/401login.h"
 #include "desktop/browser_private.h"
 #include "desktop/download.h"
 #include "desktop/frames.h"
 #include "desktop/global_history.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "desktop/hotlist.h"
 #include "desktop/knockout.h"
 #include "desktop/local_history.h"
@@ -300,7 +300,7 @@ void browser_window_update_extent(struct browser_window *bw)
 {
 	if (bw->window != NULL)
 		/* Front end window */
-		gui_window_update_extent(bw->window);
+		guit->window->update_extent(bw->window);
 	else
 		/* Core-managed browser window */
 		browser_window_handle_scrollbars(bw);
@@ -391,7 +391,7 @@ void browser_window_set_drag_type(struct browser_window *bw,
 			break;
 		}
 
-		gui_window_drag_start(top_bw->window, gtype, rect);
+		guit->window->drag_start(top_bw->window, gtype, rect);
 	}
 }
 
@@ -484,7 +484,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		gui_window_scroll_visible(bw->window,
+		guit->window->scroll_visible(bw->window,
 				rect->x0, rect->y0, rect->x1, rect->y1);
 	} else {
 		/* Core managed browser window */
@@ -499,7 +499,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
 void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 {
 	if (bw->window != NULL) {
-		gui_window_set_scroll(bw->window, x, y);
+		guit->window->set_scroll(bw->window, x, y);
 	} else {
 		if (bw->scroll_x != NULL)
 			scrollbar_set(bw->scroll_x, x, false);
@@ -732,9 +732,7 @@ browser_window_create(enum browser_window_nav_flags flags,
 	 * so find that. */
 	top = browser_window_get_root(clone);
 
-	bw->window = gui_create_browser_window(bw,
-				top,
-				((flags & BROWSER_WINDOW_TAB) != 0));
+	bw->window = guit->window->create(bw, top, ((flags & BROWSER_WINDOW_TAB) != 0));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
@@ -815,7 +813,7 @@ browser_window_download(struct browser_window *bw,
 					NULL, NULL, &l);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
 		/* no internal handler for this type, call out to frontend */
-		gui_launch_url(nsurl_access(url));
+		guit->browser->launch_url(nsurl_access(url));
 	} else if (error != NSERROR_OK) {
 		LOG(("Failed to fetch download: %d", error));
 	} else {
@@ -868,7 +866,7 @@ static void browser_window_start_throbber(struct browser_window *bw)
 	while (bw->parent)
 		bw = bw->parent;
 
-	gui_window_start_throbber(bw->window);
+	guit->window->start_throbber(bw->window);
 }
 
 
@@ -885,8 +883,9 @@ static void browser_window_stop_throbber(struct browser_window *bw)
 	while (bw->parent)
 		bw = bw->parent;
 
-	if (!browser_window_check_throbber(bw))
-		gui_window_stop_throbber(bw->window);
+	if (!browser_window_check_throbber(bw)) {
+		guit->window->stop_throbber(bw->window);
+	}
 }
 
 
@@ -919,7 +918,7 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		/* content_get_bitmap on the hlcache_handle should give 
 		 *   us the favicon bitmap at this point
 		 */
-		gui_window_set_icon(bw->window, c);
+		guit->window->set_icon(bw->window, c);
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -1234,7 +1233,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_remove_caret(bw, false);
 
 		if (bw->window != NULL) {
-			gui_window_new_content(bw->window);
+			guit->window->new_content(bw->window);
 
 			browser_window_refresh_url_bar(bw,
 				hlcache_handle_get_url(bw->current_content),
@@ -1485,20 +1484,23 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 		switch(event->data.dragsave.type) {
 		case CONTENT_SAVE_ORIG:
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_OBJECT_ORIG);
 			break;
+
 		case CONTENT_SAVE_NATIVE:
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_OBJECT_NATIVE);
 			break;
+
 		case CONTENT_SAVE_COMPLETE:
-			gui_drag_save_object(GUI_SAVE_COMPLETE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_COMPLETE);
 			break;
+
 		case CONTENT_SAVE_SOURCE:
-			gui_drag_save_object(GUI_SAVE_SOURCE, save,
-					root->window);
+			guit->window->drag_save_object(root->window, save,
+						       GUI_SAVE_SOURCE);
 			break;
 		}
 	}
@@ -1508,7 +1510,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 	{
 		/* Content wants a link to be saved */
 		struct browser_window *root = browser_window_get_root(bw);
-		gui_window_save_link(root->window,
+		guit->window->save_link(root->window,
 				event->data.savelink.url,
 				event->data.savelink.title);
 	}
@@ -1564,7 +1566,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 
 	case CONTENT_MSG_GADGETCLICK:
 		if (event->data.gadget_click.gadget->type == GADGET_FILE) {
-			gui_file_gadget_open(bw->window, c,
+			guit->window->file_gadget_open(bw->window, c,
 				event->data.gadget_click.gadget);
 		}
 		
@@ -1644,7 +1646,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	if (bw->window) {
 		/* Only the root window has a GUI window */
-		gui_window_destroy(bw->window);
+		guit->window->destroy(bw->window);
 	}
 
 	if (bw->loading_content != NULL) {
@@ -1870,7 +1872,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
 		/** @todo does this always try and download even unverifiable content? */
-		gui_launch_url(nsurl_access(url));
+		guit->browser->launch_url(nsurl_access(url));
 		break;
 
 	default: /* report error to user */
@@ -1913,7 +1915,7 @@ void browser_window_get_dimensions(struct browser_window *bw,
 		*height = bw->height;
 	} else {
 		/* Front end window */
-		gui_window_get_dimensions(bw->window, width, height, scaled);
+		guit->window->get_dimensions(bw->window, width, height, scaled);
 	}
 }
 
@@ -1960,7 +1962,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 	case BROWSER_WINDOW_NORMAL:
 		/* Root browser window, constituting a front end window/tab */
-		gui_window_set_title(bw->window, 
+		guit->window->set_title(bw->window,
 				content_get_title(bw->current_content));
 
 		browser_window_update_extent(bw);
@@ -1975,7 +1977,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			browser_window_set_scroll(bw, x, y);
 		}
 
-		gui_window_redraw_window(bw->window);
+		guit->window->redraw(bw->window);
 
 		break;
 
@@ -2041,7 +2043,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		gui_window_update_box(bw->window, rect);
+		guit->window->update(bw->window, rect);
 	} else {
 		/* Core managed browser window */
 		browser_window_get_position(bw, true, &pos_x, &pos_y);
@@ -2053,7 +2055,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 		rect->x1 += pos_x / bw->scale;
 		rect->y1 += pos_y / bw->scale;
 
-		gui_window_update_box(top->window, rect);
+		guit->window->update(top->window, rect);
 	}
 }
 
@@ -2194,7 +2196,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	}
 
 	bw->status_miss++;
-	gui_window_set_status(bw->window, bw->status_text);
+	guit->window->set_status(bw->window, bw->status_text);
 }
 
 
@@ -2236,7 +2238,7 @@ void browser_window_set_pointer(struct browser_window *bw,
 		gui_shape = (gui_pointer_shape)shape;
 	}
 
-	gui_window_set_pointer(root->window, gui_shape);
+	guit->window->set_pointer(root->window, gui_shape);
 }
 
 
@@ -2360,7 +2362,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		/* With no fragment, we may as well pass url straight through
 		 * saving a malloc, copy, free cycle.
 		 */
-		gui_window_set_url(bw->window, nsurl_access(url));
+		guit->window->set_url(bw->window, nsurl_access(url));
 	} else {
 		nsurl *display_url;
 		nserror error;
@@ -2371,7 +2373,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 			return;
 		}
 
-		gui_window_set_url(bw->window, nsurl_access(display_url));
+		guit->window->set_url(bw->window, nsurl_access(display_url));
 		nsurl_unref(display_url);
 	}
 }
@@ -2894,14 +2896,14 @@ void browser_window_mouse_click(struct browser_window *bw,
 		break;
 	default:
 		if (mouse & BROWSER_MOUSE_MOD_2) {
-			if (mouse & BROWSER_MOUSE_DRAG_2)
-				gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c,
-						bw->window);
-			else if (mouse & BROWSER_MOUSE_DRAG_1)
-				gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c,
-						bw->window);
-		}
-		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
+			if (mouse & BROWSER_MOUSE_DRAG_2) {
+				guit->window->drag_save_object(bw->window, c,
+						GUI_SAVE_OBJECT_NATIVE);
+			} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+				guit->window->drag_save_object(bw->window, c,
+						GUI_SAVE_OBJECT_ORIG);
+			}
+		} else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
 			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
@@ -2947,10 +2949,10 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 
 	if (bw->window != NULL) {
 		/* Front end window */
-		gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
+		guit->window->get_scroll(bw->window, &bw->drag_start_scroll_x,
 				&bw->drag_start_scroll_y);
 
-		gui_window_scroll_start(bw->window);
+		guit->window->scroll_start(bw->window);
 	} else {
 		/* Core managed browser window */
 		bw->drag_start_scroll_x = scrollbar_get_offset(bw->scroll_x);

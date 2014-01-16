@@ -27,6 +27,7 @@
 #include "content/llcache.h"
 #include "desktop/download.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "utils/http.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -160,7 +161,7 @@ static nserror download_context_process_headers(download_context *ctx)
 	}
 
 	/* Create the frontend window */
-	ctx->window = gui_download_window_create(ctx, ctx->parent);
+	ctx->window = guit->download->create(ctx, ctx->parent);
 	if (ctx->window == NULL) {
 		free(ctx->filename);
 		ctx->filename = NULL;
@@ -210,7 +211,7 @@ static nserror download_callback(llcache_handle *handle,
 
 		if (error == NSERROR_OK) {
 			/** \todo Lose ugly cast */
-			error = gui_download_window_data(ctx->window,
+			error = guit->download->data(ctx->window,
 					(char *) event->data.data.buf,
 					event->data.data.len);
 			if (error != NSERROR_OK)
@@ -222,7 +223,7 @@ static nserror download_callback(llcache_handle *handle,
 	case LLCACHE_EVENT_DONE:
 		/* There may be no associated window if there was no data or headers */
 		if (ctx->window != NULL)
-			gui_download_window_done(ctx->window);
+			guit->download->done(ctx->window);
 		else
 			download_context_destroy(ctx);
 
@@ -230,7 +231,7 @@ static nserror download_callback(llcache_handle *handle,
 
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->window != NULL)
-			gui_download_window_error(ctx->window, event->data.msg);
+			guit->download->error(ctx->window, event->data.msg);
 		else
 			download_context_destroy(ctx);
 

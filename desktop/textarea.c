@@ -24,11 +24,13 @@
 #include <stdint.h>
 #include <string.h>
 #include "css/utils.h"
+
 #include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
+#include "desktop/gui_factory.h"
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -1417,7 +1419,7 @@ static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 
 	/* Place CUTs on clipboard */
 	if (add_to_clipboard) {
-		gui_set_clipboard(ta->show->data + b_start, b_end - b_start,
+		guit->clipboard->set(ta->show->data + b_start, b_end - b_start,
 				NULL, 0);
 	}
 
@@ -2484,7 +2486,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 
-			gui_get_clipboard(&clipboard, &clipboard_length);
+			guit->clipboard->get(&clipboard, &clipboard_length);
 			if (clipboard == NULL)
 				return false;
 

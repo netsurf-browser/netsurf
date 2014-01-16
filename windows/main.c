@@ -41,7 +41,7 @@ static char **respaths; /** resource search path vector. */
 
 char *options_file_location;
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	char *raw;
@@ -54,15 +54,6 @@ nsurl *gui_get_resource_url(const char *path)
 	}
 
 	return url;
-}
-
-void gui_launch_url(const char *url)
-{
-}
-
-void gui_quit(void)
-{
-	LOG(("gui_quit"));
 }
 
 /** 
@@ -96,6 +87,8 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
+
+
 /**
  * Entry point from operating system
  **/
@@ -111,6 +104,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	const char *addr;
 	nsurl *url;
 	nserror error;
+	struct gui_table win32_gui_table = {
+		.browser = win32_browser_table,
+		.window = win32_window_table,
+		.clipboard = win32_clipboard_table,
+		.download = win32_download_table,
+	};
+	win32_gui_table->browser->get_resource_url = get_resource_url;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -157,7 +157,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, &win32_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);

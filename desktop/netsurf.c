@@ -37,10 +37,9 @@
 #include "image/image.h"
 #include "image/image_cache.h"
 #include "desktop/netsurf.h"
-#include "desktop/401login.h"
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
-#include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 
@@ -95,14 +94,14 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 {
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
-		gui_401login_open(query->url, query->data.auth.realm, cb, cbpw);
+		guit->browser->login(query->url, query->data.auth.realm, cb, cbpw);
 		break;
 	case LLCACHE_QUERY_REDIRECT:
 		/** \todo Need redirect query dialog */
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
 	case LLCACHE_QUERY_SSL:
-		gui_cert_verify(query->url, query->data.ssl.certs, 
+		guit->browser->cert_verify(query->url, query->data.ssl.certs,
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}
@@ -116,7 +115,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
  * Initialise components used by gui NetSurf.
  */
 
-nserror netsurf_init(const char *messages)
+nserror netsurf_init(const char *messages, struct gui_table *gt)
 {
 	nserror error;
 	struct utsname utsname;
@@ -149,6 +148,11 @@ nserror netsurf_init(const char *messages)
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
+
+	/* register the gui handlers */
+	error = gui_factory_register(gt);
+	if (error != NSERROR_OK)
+		return error;
 
 	messages_load(messages);
 
@@ -228,7 +232,7 @@ nserror netsurf_init(const char *messages)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		gui_poll(fetch_active);
+		guit->browser->poll(fetch_active);
 		hlcache_poll();
 	}
 
@@ -244,7 +248,7 @@ void netsurf_exit(void)
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));
-	gui_quit();
+	guit->browser->quit();
 	
 	LOG(("Finalising JavaScript"));
 	js_finalise();

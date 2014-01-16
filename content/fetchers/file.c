@@ -47,6 +47,7 @@
 #include "content/fetchers/file.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -574,7 +575,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			continue;
 
 		strncpy(urlpath, ctx->path, sizeof urlpath);
-		if (path_add_part(urlpath, sizeof urlpath, 
+		if (guit->browser->path_add_part(urlpath, sizeof urlpath, 
 				ent->d_name) == false)
 			continue;
 

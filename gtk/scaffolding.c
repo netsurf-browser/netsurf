@@ -2147,8 +2147,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_theme_implement(g);
 
 	/* set web search ico */
-	if (search_web_ico() != NULL)
-		gui_window_set_search_ico(search_web_ico());
+	gui_set_search_ico(search_web_ico());
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
@@ -2261,7 +2260,7 @@ nsgtk_scaffolding_set_icon(struct gui_window *gw)
 	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
 }
 
-void gui_window_set_search_ico(hlcache_handle *ico)
+void gui_set_search_ico(hlcache_handle *ico)
 {
 	struct bitmap *srch_bitmap;
 	nsgtk_scaffolding *current;

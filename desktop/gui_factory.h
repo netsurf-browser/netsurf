@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,10 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/401login.h"
+/** \file
+ * Interface to gui interface factory
+ */
 
-void gui_401login_open(nsurl *url, const char *realm,
-		nserror (*cb)(bool proceed, void *pw), void *cbpw)
-{
-	cb(false, cbpw);
-}
+#ifndef _NETSURF_DESKTOP_GUI_FACTORY_H_
+#define _NETSURF_DESKTOP_GUI_FACTORY_H_
+
+#include "desktop/gui.h"
+
+/** The global operation table */
+extern struct gui_table *guit;
+
+/** register and verify global operation table
+ *
+ * @param gt The global table to register
+ * @return NSERROR_OK on success or error code on faliure. On faliure
+ * global table will not be initialised
+ */
+nserror gui_factory_register(struct gui_table *gt);
+
+#endif

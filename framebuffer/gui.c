@@ -54,6 +54,7 @@
 #include "framebuffer/findfile.h"
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
+#include "framebuffer/clipboard.h"
 
 #include "content/urldb.h"
 #include "desktop/local_history.h"
@@ -555,104 +556,9 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-/** Entry point from OS.
- *
- * /param argc The number of arguments in the string vector.
- * /param argv The argument string vector.
- * /return The return code to the OS
- */
-int
-main(int argc, char** argv)
-{
-	struct browser_window *bw;
-	char *options;
-	char *messages;
-	nsurl *url;
-	nserror ret;
-	nsfb_t *nsfb;
-
-	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, nsoptions);
-	free(options);
-	nsoption_commandline(&argc, argv, nsoptions);
-
-	/* common initialisation */
-	messages = filepath_find(respaths, "Messages");
-	ret = netsurf_init(messages);
-	free(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	/* Override, since we have no support for non-core SELECT menu */
-	nsoption_set_bool(core_select_menu, true);
-
-	if (process_cmdline(argc,argv) != true)
-		die("unable to process command line.\n");
-
-	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
-	if (nsfb == NULL)
-		die("Unable to initialise framebuffer");
-
-	framebuffer_set_cursor(&pointer_image);
-
-	if (fb_font_init() == false)
-		die("Unable to initialise the font system");
-
-	fbtk = fbtk_init(nsfb);
-
-	fbtk_enable_oskb(fbtk);
-
-	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	/* create an initial browser window */
-
-	LOG(("calling browser_window_create"));
-
-	ret = nsurl_create(feurl, &url);
-	if (ret == NSERROR_OK) {
-		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      &bw);
-		nsurl_unref(url);
-	}
-	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
-	} else {
-		netsurf_main_loop();
-
-		browser_window_destroy(bw);
-	}
-
-	netsurf_exit();
-
-	if (fb_font_finalise() == false)
-		LOG(("Font finalisation failed."));
-
-	/* finalise options */
-	nsoption_finalise(nsoptions, nsoptions_default);
-
-	return 0;
-}
 
 
-void
-gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	nsfb_event_t event;
 	int timeout; /* timeout in miliseconds */
@@ -678,8 +584,7 @@ gui_poll(bool active)
 
 }
 
-void
-gui_quit(void)
+static void gui_quit(void)
 {
 	LOG(("gui_quit"));
 
@@ -1597,10 +1502,10 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 }
 
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *gw;
 
@@ -1623,7 +1528,7 @@ gui_create_browser_window(struct browser_window *bw,
 	return gw;
 }
 
-void
+static void
 gui_window_destroy(struct gui_window *gw)
 {
 	fbtk_destroy_widget(gw->window);
@@ -1631,19 +1536,13 @@ gui_window_destroy(struct gui_window *gw)
 	free(gw);
 }
 
-void
-gui_window_set_title(struct gui_window *g, const char *title)
-{
-	LOG(("%p, %s", g, title));
-}
-
-void
+static void
 gui_window_redraw_window(struct gui_window *g)
 {
 	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );
 }
 
-void
+static void
 gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
@@ -1654,7 +1553,7 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
 			rect->y1 - bwidget->scrolly);
 }
 
-bool
+static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
@@ -1665,7 +1564,7 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void
+static void
 gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
@@ -1676,14 +1575,8 @@ gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 	widget_scroll_y(gw, sy * gw->bw->scale, true);
 }
 
-void
-gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-			  int x1, int y1)
-{
-	LOG(("%s:(%p, %d, %d, %d, %d)", __func__, g, x0, y0, x1, y1));
-}
 
-void
+static void
 gui_window_get_dimensions(struct gui_window *g,
 			  int *width,
 			  int *height,
@@ -1698,7 +1591,7 @@ gui_window_get_dimensions(struct gui_window *g,
 	}
 }
 
-void
+static void
 gui_window_update_extent(struct gui_window *gw)
 {
 	float scale = gw->bw->scale;
@@ -1712,13 +1605,13 @@ gui_window_update_extent(struct gui_window *gw)
 			fbtk_get_height(gw->browser), 100);
 }
 
-void
+static void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
 	fbtk_set_text(g->status, text);
 }
 
-void
+static void
 gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch (shape) {
@@ -1748,12 +1641,7 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	}
 }
 
-void
-gui_window_hide_pointer(struct gui_window *g)
-{
-}
-
-void
+static void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
 	fbtk_set_text(g->url, url);
@@ -1816,14 +1704,14 @@ throbber_advance(void *pw)
 	}
 }
 
-void
+static void
 gui_window_start_throbber(struct gui_window *g)
 {
 	g->throbber_index = 0;
 	schedule(10, throbber_advance, g);
 }
 
-void
+static void
 gui_window_stop_throbber(struct gui_window *gw)
 {
 	gw->throbber_index = -1;
@@ -1850,7 +1738,7 @@ gui_window_remove_caret_cb(fbtk_widget_t *widget)
 	}
 }
 
-void
+static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -1868,7 +1756,7 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 			y + height - bwidget->scrolly);
 }
 
-void
+static void
 gui_window_remove_caret(struct gui_window *g)
 {
 	int c_x, c_y, c_h;
@@ -1879,121 +1767,172 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
-void
-gui_window_new_content(struct gui_window *g)
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+static char *filename_from_path(char *path)
 {
-}
+	char *leafname;
 
-bool
-gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
+	leafname = strrchr(path, '/');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
 
-bool
-gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                      const struct rect *rect)
-{
-	return true;
-}
-
-void
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
+	return strdup(leafname);
 }
 
 /**
- * set favicon
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
  */
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+
+static bool path_add_part(char *path, int length, const char *newpart)
 {
+	if(path[strlen(path) - 1] != '/')
+		strncat(path, "/", length);
+
+	strncat(path, newpart, length);
+
+	return true;
 }
 
-/**
- * set gui display of a retrieved favicon representing the search provider
- * \param ico may be NULL for local calls; then access current cache from
- * search_web_ico()
+static struct gui_window_table framebuffer_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+static struct gui_browser_table framebuffer_browser_table = {
+	.poll = gui_poll,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+
+	.quit = gui_quit,
+	.get_resource_url = gui_get_resource_url,
+};
+
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector.
+ * /param argv The argument string vector.
+ * /return The return code to the OS
  */
-void
-gui_window_set_search_ico(hlcache_handle *ico)
+int
+main(int argc, char** argv)
 {
+	struct browser_window *bw;
+	char *options;
+	char *messages;
+	nsurl *url;
+	nserror ret;
+	nsfb_t *nsfb;
+	struct gui_table framebuffer_gui_table = {
+		.browser = &framebuffer_browser_table,
+		.window = &framebuffer_window_table,
+		.clipboard = framebuffer_clipboard_table,
+	};
+
+	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	options = filepath_find(respaths, "Choices");
+	nsoption_read(options, nsoptions);
+	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages, &framebuffer_gui_table);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	/* Override, since we have no support for non-core SELECT menu */
+	nsoption_set_bool(core_select_menu, true);
+
+	if (process_cmdline(argc,argv) != true)
+		die("unable to process command line.\n");
+
+	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
+	if (nsfb == NULL)
+		die("Unable to initialise framebuffer");
+
+	framebuffer_set_cursor(&pointer_image);
+
+	if (fb_font_init() == false)
+		die("Unable to initialise the font system");
+
+	fbtk = fbtk_init(nsfb);
+
+	fbtk_enable_oskb(fbtk);
+
+	urldb_load_cookies(nsoption_charp(cookie_file));
+
+	/* create an initial browser window */
+
+	LOG(("calling browser_window_create"));
+
+	ret = nsurl_create(feurl, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					      BROWSER_WINDOW_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      &bw);
+		nsurl_unref(url);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	} else {
+		netsurf_main_loop();
+
+		browser_window_destroy(bw);
+	}
+
+	netsurf_exit();
+
+	if (fb_font_finalise() == false)
+		LOG(("Font finalisation failed."));
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
+
+	return 0;
 }
 
-struct gui_download_window *
-gui_download_window_create(download_context *ctx, struct gui_window *parent)
-{
-	return NULL;
-}
-
-nserror
-gui_download_window_data(struct gui_download_window *dw,
-			 const char *data,
-			 unsigned int size)
-{
-	return NSERROR_OK;
-}
-
-void
-gui_download_window_error(struct gui_download_window *dw,
-			  const char *error_msg)
-{
-}
-
-void
-gui_download_window_done(struct gui_download_window *dw)
-{
-}
-
-void
-gui_drag_save_object(gui_save_type type,
-		     hlcache_handle *c,
-		     struct gui_window *w)
-{
-}
-
-void
-gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void
-gui_start_selection(struct gui_window *g)
-{
-}
-
-void
-gui_clear_selection(struct gui_window *g)
-{
-}
-
-void
-gui_create_form_select_menu(struct browser_window *bw,
-			    struct form_control *control)
-{
-}
-
-void
-gui_launch_url(const char *url)
-{
-}
-
-void
-gui_cert_verify(nsurl *url,
-		const struct ssl_cert_info *certs,
-		unsigned long num,
-		nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	cb(false, cbpw);
-}
-
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
 
 /*
  * Local Variables:

@@ -558,10 +558,6 @@ NSBaseView::Instantiate(BMessage *archive)
 	replicated = true;
 
 	//TODO:FIXME: fix replicants
-	// netsurf_init() needs different args now...
-	//netsurf_init(2, info->args);
-	//return NULL;
-
 	// do as much as possible in this thread to avoid deadlocks
 	
 	gui_init_replicant(2, info->args);
@@ -2196,15 +2192,6 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	dynamic_cast<NSIconTextControl *>(g->url_bar)->SetBitmap(bitmap);
 
 	g->top_view->UnlockLooper();
-}
-
-/**
-* set gui display of a retrieved favicon representing the search provider
-* \param ico may be NULL for local calls; then access current cache from
-* search_web_ico()
-*/
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
 }
 
 

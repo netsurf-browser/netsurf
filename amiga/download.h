@@ -23,6 +23,8 @@
 
 #include "amiga/gui.h"
 
+extern struct gui_download_table *amiga_download_table;
+
 struct download_context;
 struct gui_download_window;
 
@@ -36,4 +38,7 @@ void ami_download_window_abort(struct gui_download_window *dw);
 BOOL ami_download_window_event(struct gui_download_window *dw);
 void ami_free_download_list(struct List *dllist);
 BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG size);
+
+void gui_window_save_link(struct gui_window *g, const char *url, const char *title);
+
 #endif

@@ -45,7 +45,7 @@ static void nsws_download_update_label(void *p);
 static void nsws_download_update_progress(void *p);
 static void nsws_download_clear_data(struct gui_download_window *w);
 
-struct gui_download_window *
+static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	if (downloading) {
@@ -259,7 +259,8 @@ void nsws_download_clear_data(struct gui_download_window *w)
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *w, const char *data,
+static nserror 
+gui_download_window_data(struct gui_download_window *w, const char *data,
 		unsigned int size)
 {
 	if ((w == NULL) || (w->file == NULL))
@@ -279,13 +280,13 @@ nserror gui_download_window_data(struct gui_download_window *w, const char *data
 	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *w,
+static void gui_download_window_error(struct gui_download_window *w,
 		const char *error_msg)
 {
 	LOG(("error %s", error_msg));
 }
 
-void gui_download_window_done(struct gui_download_window *w)
+static void gui_download_window_done(struct gui_download_window *w)
 {
 	if (w == NULL)
 		return;
@@ -294,4 +295,13 @@ void gui_download_window_done(struct gui_download_window *w)
 		EndDialog(w->hwnd, IDOK);
 	nsws_download_clear_data(w);
 }
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *win32_download_table = &download_table;
 

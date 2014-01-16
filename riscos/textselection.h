@@ -26,6 +26,8 @@
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
 
+void gui_start_selection(struct gui_window *g);
+
 typedef void (*ro_gui_selection_prepare_paste_cb)(void *pw);
 
 void ro_gui_selection_prepare_paste(wimp_w w,

@@ -335,8 +335,9 @@ float nsbeos_get_scale_for_gui(struct gui_window *g)
 }
 
 /* Create a gui_window */
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-					     struct browser_window *clone, bool new_tab)
+static struct gui_window *gui_window_create(struct browser_window *bw,
+                                     struct browser_window *clone,
+                                     bool new_tab)
 {
 	struct gui_window *g;		/**< what we're creating to return */
 
@@ -404,12 +405,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return g;
 }
 
-
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g, x0, y0);
-}
 
 void nsbeos_dispatch_event(BMessage *message)
 {
@@ -956,7 +951,7 @@ void nsbeos_window_destroy_browser(struct gui_window *g)
 	browser_window_destroy(g->bw);
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	if (!g)
 		return;
@@ -1019,7 +1014,7 @@ void nsbeos_redraw_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	if (g->view == NULL)
 		return;
@@ -1034,7 +1029,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	hlcache_handle *c = g->bw->current_content;
 
@@ -1056,7 +1051,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	g->view->UnlockLooper();
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1074,7 +1069,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1092,7 +1087,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 }
 
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	//CALLED();
 	if (!g->bw->current_content)
@@ -1174,7 +1169,7 @@ const uint8 kWatch2CursorBits[] = {
 };
 
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	BCursor *cursor = NULL;
 	bool allocated = false;
@@ -1214,12 +1209,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		delete cursor;
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	//XXX no BView::HideCursor... use empty one
-}
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	//CALLED();
@@ -1240,7 +1230,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 	g->view->UnlockLooper();
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	int oh = g->careth;
 
@@ -1262,7 +1252,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	if (!g->toplevel)
 		return;
@@ -1278,29 +1268,7 @@ void gui_window_new_content(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *g)
-{
-
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-
-}
-
-void gui_start_selection(struct gui_window *g)
+static void gui_start_selection(struct gui_window *g)
 {
 	if (!g->view->LockLooper())
 		return;
@@ -1308,10 +1276,6 @@ void gui_start_selection(struct gui_window *g)
 	g->view->MakeFocus();
 
 	g->view->UnlockLooper();
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
 }
 
 void gui_get_clipboard(char **buffer, size_t *length)
@@ -1368,7 +1332,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
 	if (g->view && g->view->LockLooper()) {
@@ -1383,3 +1347,29 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+        .new_content = gui_window_new_content,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+        .start_selection = gui_start_selection,
+
+	/* from scaffold */
+	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *beos_window_table = &window_table;

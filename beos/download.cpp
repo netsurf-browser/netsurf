@@ -178,7 +178,7 @@ NSDownloadWindow::Failure(const char* error)
 }
 
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
+static struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *parent)
 {
 	struct gui_download_window *download = (struct gui_download_window*)malloc(sizeof *download);
@@ -209,7 +209,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *dw, 
+static nserror gui_download_window_data(struct gui_download_window *dw, 
 		const char *data, unsigned int size)
 {
 	dw->window->Progress(size);
@@ -222,7 +222,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 }
 
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
 	dw->window->Failure(error_msg);
@@ -232,7 +232,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 }
 
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	dw->window->Success();
 
@@ -247,4 +247,13 @@ void gui_download_window_done(struct gui_download_window *dw)
 	else
 		dw->storageLock->Unlock();
 }
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *beos_download_table = &download_table;
 

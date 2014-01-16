@@ -25,6 +25,8 @@
 #ifndef _NETSURF_RISCOS_WINDOW_H_
 #define _NETSURF_RISCOS_WINDOW_H_
 
+extern struct gui_window_table *riscos_gui_window_table;
+
 void ro_gui_window_initialise(void);
 
 bool ro_gui_window_check_menu(wimp_menu *menu);

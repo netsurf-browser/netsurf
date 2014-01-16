@@ -30,6 +30,7 @@
 
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
@@ -274,7 +275,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
 		char *sel = selection_get_copy(s);
-		gui_drag_save_selection(top->window, sel);
+		guit->window->drag_save_selection(top->window, sel);
 		free(sel);
 	}
 	else if (!modkeys) {
@@ -293,7 +294,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			s->drag_state = DRAG_END;
 
-			gui_start_selection(top->window);
+			guit->window->start_selection(top->window);
 		}
 		else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
@@ -312,7 +313,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				s->drag_state = DRAG_START;
 			}
 
-			gui_start_selection(top->window);
+			guit->window->start_selection(top->window);
 		}
 		else if (mouse & BROWSER_MOUSE_CLICK_2) {
 
@@ -844,7 +845,7 @@ bool selection_copy_to_clipboard(struct selection *s)
 		return false;
 	}
 
-	gui_set_clipboard(sel_string.buffer, sel_string.length,
+	guit->clipboard->set(sel_string.buffer, sel_string.length,
 			sel_string.styles, sel_string.n_styles);
 
 	free(sel_string.buffer);

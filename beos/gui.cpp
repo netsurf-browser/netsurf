@@ -49,7 +49,6 @@ extern "C" {
 #include "content/fetchers/curl.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
-#include "desktop/401login.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -78,8 +77,6 @@ extern "C" {
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
-void gui_init(int argc, char** argv);
-
 
 /* Where to search for shared resources.  Must have trailing / */
 #define RESPATH "/boot/apps/netsurf/res/"
@@ -348,7 +345,7 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
 	BString u("rsrc:///");
@@ -367,42 +364,6 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-static void gui_init2(int argc, char** argv)
-{
-	const char *addr;
-	nsurl *url;
-	nserror error;
-
-	if (argc > 1) {
-		addr = argv[1];
-	} else if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
-
-	/* create an initial browser window */
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create((browser_window_nav_flags)
-			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
-			url,
-			NULL,
-			NULL,
-			NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
-
-	if (gFirstRefsReceived) {
-		// resend the refs we got before having a window to send them to
-		be_app_messenger.SendMessage(gFirstRefsReceived);
-		delete gFirstRefsReceived;
-		gFirstRefsReceived = NULL;
-	}
-}
 
 
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
@@ -532,91 +493,12 @@ static BPath get_messages_path()
 	return p;
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
+
+static void gui_init(int argc, char** argv)
 {
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
-
-	if (!replicated) {
-		// create the Application object before trying to use messages
-		// so we can open an alert in case of error.
-		new NSBrowserApplication;
-	}
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
-}
-
-/** called when replicated from NSBaseView::Instantiate() */
-int gui_init_replicant(int argc, char** argv)
-{
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	// FIXME: use options as readonly for replicants
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	return 0;
-}
-
-void gui_init(int argc, char** argv)
-{
+	const char *addr;
+	nsurl *url;
+	nserror error;
 	char buf[PATH_MAX];
 
 	if (pipe(sEventPipe) < 0)
@@ -746,6 +628,36 @@ void gui_init(int argc, char** argv)
 	if (!replicated)
 		be_app->Unlock();
 
+	if (argc > 1) {
+		addr = argv[1];
+	} else if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create((browser_window_nav_flags)
+			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
+			url,
+			NULL,
+			NULL,
+			NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+	if (gFirstRefsReceived) {
+		// resend the refs we got before having a window to send them to
+		be_app_messenger.SendMessage(gFirstRefsReceived);
+		delete gFirstRefsReceived;
+		gFirstRefsReceived = NULL;
+	}
+
 }
 
 
@@ -783,7 +695,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 }
 
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
@@ -858,7 +770,7 @@ void gui_poll(bool active)
 }
 
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -870,18 +782,6 @@ void gui_quit(void)
 	fetch_rsrc_unregister();
 }
 
-
-
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control)
-{
-	CALLED();
-}
-
-void 
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
-}
 
 /**
  * Send the source of a content to a text editor.
@@ -980,7 +880,7 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
  * Broadcast an URL that we can't handle.
  */
 
-void gui_launch_url(const char *url)
+static void gui_launch_url(const char *url)
 {
 	status_t status;
 	// try to open it as an URI
@@ -1039,13 +939,6 @@ void die(const char * const error)
 		debugger("die");
 
 	exit(EXIT_FAILURE);
-}
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	CALLED();
 }
 
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
@@ -1133,7 +1026,7 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
  * \return filename (will be freed with free())
  */
 
-char *filename_from_path(char *path)
+static char *filename_from_path(char *path)
 {
 	char *leafname;
 
@@ -1155,7 +1048,7 @@ char *filename_from_path(char *path)
  * \return true on success
  */
 
-bool path_add_part(char *path, int length, const char *newpart)
+static bool path_add_part(char *path, int length, const char *newpart)
 {
 	if(path[strlen(path) - 1] != '/')
 		strncat(path, "/", length);
@@ -1165,10 +1058,113 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
+static struct gui_clipboard_table beos_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+static struct gui_browser_table beos_browser_table = {
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+        .login = gui_401login_open,
+};
+
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
 {
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
+	nserror ret;
+	BPath options;
+	struct gui_table beos_gui_table = {
+		.browser = &beos_browser_table,
+		.window = beos_window_table,
+		.clipboard = &beos_clipboard_table,
+		.download = beos_download_table,
+	};
+
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	if (!replicated) {
+		// create the Application object before trying to use messages
+		// so we can open an alert in case of error.
+		new NSBrowserApplication;
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path(), &beos_gui_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
+/** called when replicated from NSBaseView::Instantiate() */
+int gui_init_replicant(int argc, char** argv)
+{
+	nserror ret;
+	BPath options;
+	struct gui_table beos_gui_table = {
+		.browser = &beos_browser_table,
+		.window = beos_window_table,
+		.clipboard = &beos_clipboard_table,
+		.download = beos_download_table,
+	};
+
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	// FIXME: use options as readonly for replicants
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+	ret = netsurf_init(messages.Path(), &beos_gui_table);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	return 0;
+}

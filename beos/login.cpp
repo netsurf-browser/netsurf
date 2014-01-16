@@ -31,7 +31,6 @@ extern "C" {
 #include "content/content.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/401login.h"
 #include "desktop/gui.h"
 #include "utils/messages.h"
 #include "utils/url.h"

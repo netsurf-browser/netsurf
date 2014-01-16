@@ -42,6 +42,7 @@
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "desktop/gui.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -206,7 +207,7 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 			}
 		}
 
-		e->url = gui_get_resource_url(fetch_resource_paths[i]);
+		e->url = guit->browser->get_resource_url(fetch_resource_paths[i]);
 		if (e->url == NULL) {
 			lwc_string_unref(e->path);
 		} else {

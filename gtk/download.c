@@ -712,8 +712,8 @@ static void nsgtk_download_store_create_item (struct gui_download_window *dl)
 			   NSGTK_DOWNLOAD, dl, -1);
 }
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-						       struct gui_window *gui)
+static struct gui_download_window *
+gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	const char *url = download_context_get_url(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
@@ -797,7 +797,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *dw,
+static nserror gui_download_window_data(struct gui_download_window *dw,
 				 const char *data, unsigned int size)
 {
 	g_io_channel_write_chars(dw->write, data, size, NULL, &dw->error);
@@ -820,13 +820,13 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 }
 
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 			       const char *error_msg)
 {
 }
 
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	g_io_channel_shutdown(dw->write, TRUE, &dw->error);
 	g_io_channel_unref(dw->write);
@@ -845,17 +845,11 @@ void gui_download_window_done(struct gui_download_window *dw)
 }
 
 
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+struct gui_download_table *nsgtk_download_table = &download_table;

@@ -26,6 +26,11 @@ struct selection;
 struct gui_window;
 struct gui_window_2;
 
+void gui_start_selection(struct gui_window *g);
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
+
+
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
 void ami_drag_selection(struct gui_window *g);

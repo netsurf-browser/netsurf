@@ -22,6 +22,9 @@
 #include "desktop/browser.h"
 #include "content/hlcache.h"
 
+extern struct gui_window_table *monkey_window_table;
+extern struct gui_download_table *monkey_download_table;
+
 struct gui_window {
   struct gui_window *r_next;
   struct gui_window *r_prev;
@@ -42,4 +45,5 @@ void monkey_window_process_reformats(void);
 
 void monkey_window_handle_command(int argc, char **argv);
 void monkey_kill_browser_windows(void);
+
 #endif /* NETSURF_MONKEY_BROWSER_H */

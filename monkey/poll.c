@@ -88,7 +88,7 @@ monkey_prepare_input(void)
 }
 
 void
-gui_poll(bool active)
+monkey_poll(bool active)
 {
   CURLMcode code;
   fd_set read_fd_set, write_fd_set, exc_fd_set;

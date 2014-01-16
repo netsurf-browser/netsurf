@@ -183,6 +183,12 @@ int main( int argc, char **argv )
 {
 	nsurl *url;
 	nserror error;
+	struct gui_table cocoa_gui_table = {
+		.browser = cocoa_browser_table,
+		.window = cocoa_window_table,
+		.clipboard = cocoa_clipboard_table,
+		.download = cocoa_download_table,
+	};
 
 	cocoa_autorelease();
 		
@@ -203,7 +209,7 @@ int main( int argc, char **argv )
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	error = netsurf_init(messages);
+	error = netsurf_init(messages, &cocoa_gui_table);
 	if (error != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

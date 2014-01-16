@@ -85,6 +85,8 @@ static bool on_content_mouse_click(ROOTWIN *rootwin);
 static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area);
 static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip);
 
+bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
+
 static bool redraw_active = false;
 
 static const struct redraw_context rootwin_rdrw_ctx = {

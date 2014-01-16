@@ -58,6 +58,7 @@
 #define CNT_INTERACTIVE 512
 #define CNT_IMG 1024
 
+bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
 struct s_context_info {
 	unsigned long flags;

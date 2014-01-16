@@ -357,8 +357,8 @@ bool ro_gui_save_ok(wimp_w w)
  * \param  g          gui window
  */
 
-void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
-		struct gui_window *g)
+void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
+		gui_save_type save_type)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];

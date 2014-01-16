@@ -73,14 +73,11 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 static struct nsws_pointers nsws_pointer;
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
+void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
-void gui_poll(bool active)
+
+static void gui_poll(bool active)
 {
 	MSG Msg; /* message from system */
 	BOOL bRet; /* message fetch result */
@@ -723,6 +720,18 @@ nsws_window_resize(struct gui_window *gw,
 	return 0;
 }
 
+/**
+ * redraw the whole window
+ */
+static void gui_window_redraw_window(struct gui_window *gw)
+{
+	/* LOG(("gw:%p", gw)); */
+	if (gw == NULL)
+		return;
+
+	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
+}
+
 
 static LRESULT
 nsws_window_command(HWND hwnd,
@@ -1220,10 +1229,10 @@ static HWND nsws_window_create(struct gui_window *gw)
  * create a new gui_window to contain a browser_window
  * \param bw the browser_window to connect to the new gui_window
  */
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *gw;
 
@@ -1399,7 +1408,7 @@ struct browser_window *gui_window_browser_window(struct gui_window *w)
 /**
  * window cleanup code
  */
-void gui_window_destroy(struct gui_window *w)
+static void gui_window_destroy(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1422,7 +1431,7 @@ void gui_window_destroy(struct gui_window *w)
  * set window title
  * \param title the [url]
  */
-void gui_window_set_title(struct gui_window *w, const char *title)
+static void gui_window_set_title(struct gui_window *w, const char *title)
 {
 	if (w == NULL)
 		return;
@@ -1439,19 +1448,7 @@ void gui_window_set_title(struct gui_window *w, const char *title)
 	free(fulltitle);
 }
 
-/**
- * redraw the whole window
- */
-void gui_window_redraw_window(struct gui_window *gw)
-{
-	/* LOG(("gw:%p", gw)); */
-	if (gw == NULL)
-		return;
-
-	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
-}
-
-void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
 
@@ -1469,7 +1466,7 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 }
 
-bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
 	LOG(("get scroll"));
 	if (w == NULL)
@@ -1543,13 +1540,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
-			       int x1, int y1)
-{
-	LOG(("scroll visible (%p, %d, %d, %d, %d)", w, x0, y0, x1, y1));
-}
-
-void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 			       bool scaled)
 {
 	if (w == NULL)
@@ -1561,7 +1552,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 	*height = w->height;
 }
 
-void gui_window_update_extent(struct gui_window *w)
+static void gui_window_update_extent(struct gui_window *w)
 {
 
 }
@@ -1569,7 +1560,7 @@ void gui_window_update_extent(struct gui_window *w)
 /**
  * set the status bar message
  */
-void gui_window_set_status(struct gui_window *w, const char *text)
+static void gui_window_set_status(struct gui_window *w, const char *text)
 {
 	if (w == NULL)
 		return;
@@ -1579,7 +1570,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 /**
  * set the pointer shape
  */
-void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
 {
 	if (w == NULL)
 		return;
@@ -1650,11 +1641,7 @@ struct nsws_pointers *nsws_get_pointers(void)
 	return &nsws_pointer;
 }
 
-void gui_window_hide_pointer(struct gui_window *w)
-{
-}
-
-void gui_window_set_url(struct gui_window *w, const char *url)
+static void gui_window_set_url(struct gui_window *w, const char *url)
 {
 	if (w == NULL)
 		return;
@@ -1662,7 +1649,7 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 }
 
 
-void gui_window_start_throbber(struct gui_window *w)
+static void gui_window_start_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1687,7 +1674,7 @@ void gui_window_start_throbber(struct gui_window *w)
 	Animate_Play(w->throbber, 0, -1, -1);
 }
 
-void gui_window_stop_throbber(struct gui_window *w)
+static void gui_window_stop_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1715,8 +1702,8 @@ void gui_window_stop_throbber(struct gui_window *w)
 /**
  * place caret in window
  */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
-		const struct rect *clip)
+static void gui_window_place_caret(struct gui_window *w, int x, int y,
+				   int height, const struct rect *clip)
 {
 	if (w == NULL)
 		return;
@@ -1729,60 +1716,11 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 /**
  * clear window caret
  */
-void
-gui_window_remove_caret(struct gui_window *w)
+static void gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
 	HideCaret(w->drawingarea);
-}
-
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-}
-
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
-
-void gui_window_new_content(struct gui_window *w)
-{
-}
-
-bool gui_window_scroll_start(struct gui_window *w)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-			  const char *title)
-{
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *w)
-{
-}
-
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void gui_start_selection(struct gui_window *w)
-{
-}
-
-void gui_clear_selection(struct gui_window *w)
-{
 }
 
 /**
@@ -1791,7 +1729,7 @@ void gui_clear_selection(struct gui_window *w)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	/* TODO: Implement this */
 	HANDLE clipboard_handle;
@@ -1813,7 +1751,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	/* TODO: Implement this */
@@ -1838,19 +1776,6 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	SetClipboardData(CF_TEXT, hnew);
 }
 
-
-void gui_create_form_select_menu(struct browser_window *bw,
-				 struct form_control *control)
-{
-}
-
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		     unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw)
-{
-	cb(false, cbpw);
-}
 
 /**
  * Create the main window class.
@@ -1883,3 +1808,77 @@ nsws_create_main_class(HINSTANCE hinstance) {
 
 	return ret;
 }
+
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+static char *filename_from_path(char *path)
+{
+	char *leafname;
+
+	leafname = strrchr(path, '\\');
+	if (!leafname)
+		leafname = path;
+	else
+		leafname += 1;
+
+	return strdup(leafname);
+}
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if(path[strlen(path) - 1] != '\\')
+		strncat(path, "\\", length);
+
+	strncat(path, newpart, length);
+
+	return true;
+}
+
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *win32_window_table = &window_table;
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
+
+static struct gui_table browser_table = {
+	.poll = gui_poll,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+};
+
+struct gui_browser_table *win32_browser_table = &browser_table;

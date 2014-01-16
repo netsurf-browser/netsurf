@@ -87,9 +87,10 @@ monkey_kill_browser_windows(void)
   }
 }
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-                          struct browser_window *clone, bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
   struct gui_window *ret = calloc(sizeof(*ret), 1);
   if (ret == NULL)
@@ -111,7 +112,7 @@ gui_create_browser_window(struct browser_window *bw,
   return ret;
 }
 
-void
+static void
 gui_window_destroy(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW DESTROY WIN %u\n", g->win_num);
@@ -119,19 +120,19 @@ gui_window_destroy(struct gui_window *g)
   free(g);
 }
 
-void
+static void
 gui_window_set_title(struct gui_window *g, const char *title)
 {
   fprintf(stdout, "WINDOW TITLE WIN %u STR %s\n", g->win_num, title);
 }
 
-void
+static void
 gui_window_redraw_window(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW REDRAW WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                           bool scaled)
 {
@@ -141,31 +142,31 @@ gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
   *height = g->height;
 }
 
-void
+static void
 gui_window_new_content(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW NEW_CONTENT WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
   fprintf(stdout, "WINDOW NEW_ICON WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_start_throbber(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW START_THROBBER WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_stop_throbber(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW STOP_THROBBER WIN %u\n", g->win_num);
 }
 
-void
+static void
 gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
   g->scrollx = sx;
@@ -173,7 +174,7 @@ gui_window_set_scroll(struct gui_window *g, int sx, int sy)
   fprintf(stdout, "WINDOW SET_SCROLL WIN %u X %d Y %d\n", g->win_num, sx, sy);
 }
 
-void
+static void
 gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
   fprintf(stdout, "WINDOW UPDATE_BOX WIN %u X %d Y %d WIDTH %d HEIGHT %d\n",
@@ -182,7 +183,7 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
   
 }
 
-void
+static void
 gui_window_update_extent(struct gui_window *g)
 {
   if (!g->bw->current_content)
@@ -194,13 +195,13 @@ gui_window_update_extent(struct gui_window *g)
           content_get_height(g->bw->current_content));
 }
 
-void
+static void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
   fprintf(stdout, "WINDOW SET_STATUS WIN %u STR %s\n", g->win_num, text);
 }
 
-void
+static void
 gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
   const char *ptr_name = "UNKNOWN";
@@ -269,20 +270,13 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
   fprintf(stdout, "WINDOW SET_POINTER WIN %u POINTER %s\n", g->win_num, ptr_name);
 }
 
-void
+static void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
   fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
 }
 
-void
-gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-                     struct gui_window *g)
-{
-  /* Ignore? */
-}
-
-bool
+static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
   fprintf(stdout, "WINDOW GET_SCROLL WIN %u X %d Y %d\n",
@@ -292,7 +286,7 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
   return true;
 }
 
-bool
+static bool
 gui_window_scroll_start(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW SCROLL_START WIN %u\n", g->win_num);
@@ -300,12 +294,7 @@ gui_window_scroll_start(struct gui_window *g)
   return true;
 }
 
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
-
-void
+static void
 gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
                           int x1, int y1)
 {
@@ -313,46 +302,7 @@ gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
           g->win_num, x0, y0, x1, y1);
 }
 
-void
-gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void
-gui_start_selection(struct gui_window *g)
-{
-}
-
-void
-gui_clear_selection(struct gui_window *g)
-{
-}
-
-/**
- * Core asks front end for clipboard contents.
- *
- * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
- * \param  length  Byte length of UTF-8 text in buffer
- */
-void gui_get_clipboard(char **buffer, size_t *length)
-{
-}
-
-
-/**
- * Core tells front end to put given text in clipboard
- *
- * \param  buffer    UTF-8 text, owned by core
- * \param  length    Byte length of UTF-8 text in buffer
- * \param  styles    Array of styles given to text runs, owned by core, or NULL
- * \param  n_styles  Number of text run styles in array
- */
-void gui_set_clipboard(const char *buffer, size_t length,
-		nsclipboard_styles styles[], int n_styles)
-{
-}
-
-void
+static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -360,13 +310,13 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height,
           g->win_num, x, y, height);
 }
 
-void
+static void
 gui_window_remove_caret(struct gui_window *g)
 {
   fprintf(stdout, "WINDOW REMOVE_CARET WIN %u\n", g->win_num);
 }
 
-bool
+static bool
 gui_window_drag_start(struct gui_window *g, gui_drag_type type,
                       const struct rect *rect)
 {
@@ -374,15 +324,7 @@ gui_window_drag_start(struct gui_window *g, gui_drag_type type,
   return false;
 }
 
-void
-gui_create_form_select_menu(struct browser_window *bw,
-                            struct form_control *control)
-{
-  fprintf(stdout, "WINDOW SELECT_MENU WIN %u\n",
-          bw->window->win_num);
-}
-
-void
+static void
 gui_window_save_link(struct gui_window *g, const char *url, 
                      const char *title)
 {
@@ -390,12 +332,6 @@ gui_window_save_link(struct gui_window *g, const char *url,
           g->win_num, url, title);
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
-	struct form_control *gadget)
-{
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
-	/* browser_window_set_gadget_filename(bw, gadget, "filename"); */
-}
 
 
 /**** Handlers ****/
@@ -566,3 +502,31 @@ monkey_window_handle_command(int argc, char **argv)
   }
   
 }
+
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.drag_start = gui_window_drag_start,
+	.save_link = gui_window_save_link,
+	.scroll_visible = gui_window_scroll_visible,
+	.scroll_start = gui_window_scroll_start,
+	.new_content = gui_window_new_content,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *monkey_window_table = &window_table;

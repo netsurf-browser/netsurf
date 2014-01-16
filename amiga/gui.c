@@ -200,11 +200,41 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
 static void ami_do_redraw(struct gui_window_2 *g);
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+
 /* accessors for default options - user option is updated if it is set as per default */
 #define nsoption_default_set_int(OPTION, VALUE)				\
 	if (nsoptions_default[NSOPTION_##OPTION].value.i == nsoptions[NSOPTION_##OPTION].value.i)	\
 		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
+
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+
+static char *filename_from_path(char *path)
+{
+	return strdup(FilePart(path));
+}
+
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if(AddPart(path, newpart, length)) return true;
+		else return false;
+}
 
 STRPTR ami_locale_langs(void)
 {
@@ -621,7 +651,7 @@ void ami_amiupdate(void)
 	}
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[1024];
 	char path2[1024];
@@ -993,93 +1023,6 @@ static void gui_init2(int argc, char** argv)
 	}
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
-{
-	setbuf(stderr, NULL);
-	char messages[100];
-	char script[1024];
-	char temp[1024];
-	BPTR lock = 0;
-	int32 user = 0;
-	nserror ret;
-	Object *splash_window = ami_gui_splash_open();
-
-	/* Open popupmenu.library just to check the version.
-	 * Versions older than 53.11 are dangerous, so we
-	 * forcibly disable context menus if these are in use.
-	 */
-	popupmenu_lib_ok = FALSE;
-	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
-		LOG(("popupmenu.library v%d.%d",
-			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
-		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
-			popupmenu_lib_ok = TRUE;
-		CloseLibrary(PopupMenuBase);
-	}
-
-	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
-	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
-	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
-
-	if(lock = CreateDirTree(current_user_dir))
-		UnLock(lock);
-
-	current_user_options = ASPrintf("%s/Choices", current_user_dir);
-
-	ami_mime_init("PROGDIR:Resources/mimetypes");
-	sprintf(temp, "%s/mimetypes.user", current_user_dir);
-	ami_mime_init(temp);
-	ami_schedule_open_timer();
-	ami_schedule_create();
-
-	amiga_plugin_hack_init();
-	amiga_datatypes_init();
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(NULL, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(current_user_options, NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	if(ami_locate_resource(messages, "Messages") == false)
-		die("Cannot open Messages file");
-	
-	ret = netsurf_init(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	amiga_icon_init();
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	ami_gui_splash_close(splash_window);
-
-	strlcpy(script, nsoption_charp(arexx_dir), 1024);
-	AddPart(script, nsoption_charp(arexx_startup), 1024);
-	ami_arexx_execute(script);
-
-	netsurf_main_loop();
-
-	strlcpy(script, nsoption_charp(arexx_dir), 1024);
-	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
-	ami_arexx_execute(script);
-
-	netsurf_exit();
-
-	ami_mime_free();
-
-	return 0;
-}
 
 void ami_gui_history(struct gui_window_2 *gwin, bool back)
 {
@@ -1403,6 +1346,69 @@ void ami_gui_menu_update_all(void)
 			ami_menu_update_checked(gwin);
 		}
 	} while(node = nnode);
+}
+
+/**
+ * function to add retrieved favicon to gui
+ */
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+{
+	struct BitMap *bm = NULL;
+	struct IBox *bbox;
+	ULONG cur_tab = 0;
+	struct bitmap *icon_bitmap;
+
+	if(nsoption_bool(kiosk_mode) == true) return;
+	if(!g) return;
+
+	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
+						g->shared->objects[GID_TABS],
+						(ULONG *)&cur_tab);
+
+	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
+	{
+		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
+					g->shared->win->RPort->BitMap);
+	}
+
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
+	{
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
+
+		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
+					g->shared->win, NULL, 1);
+
+		if(bm)
+		{
+			ULONG tag, tag_data, minterm;
+
+			if(ami_plot_screen_is_palettemapped() == false) {
+				tag = BLITA_UseSrcAlpha;
+				tag_data = !icon_bitmap->opaque;
+				minterm = 0xc0;
+			} else {
+				tag = BLITA_MaskPlane;
+				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
+				minterm = (ABC|ABNC|ANBC);
+			}
+
+			BltBitMapTags(BLITA_SrcX, 0,
+						BLITA_SrcY, 0,
+						BLITA_DestX, bbox->Left,
+						BLITA_DestY, bbox->Top,
+						BLITA_Width, 16,
+						BLITA_Height, 16,
+						BLITA_Source, bm,
+						BLITA_Dest, g->shared->win->RPort,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_RASTPORT,
+						BLITA_Minterm, minterm,
+						tag, tag_data,
+						TAG_DONE);
+		}
+	}
+
+	g->favicon = icon;
 }
 
 void ami_handle_msg(void)
@@ -2253,7 +2259,7 @@ void ami_handle_msg(void)
 
 	if(refresh_search_ico)
 	{
-		gui_window_set_search_ico(NULL);
+		gui_set_search_ico(NULL);
 		refresh_search_ico = FALSE;
 	}
 
@@ -2567,7 +2573,7 @@ static void ami_gui_fetch_callback(void *p)
 	 */
 }
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	if(active) schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
@@ -2749,7 +2755,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	CloseScreen(scrn);
 }
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	int i;
 
@@ -3170,8 +3176,10 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 	return NSERROR_OK;
 }
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-		struct browser_window *clone, bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		  struct browser_window *clone,
+		  bool new_tab)
 {
 	struct gui_window *g = NULL;
 	bool closegadg=TRUE;
@@ -3875,7 +3883,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 	}
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	struct Node *ptab;
 	ULONG ptabnum = 0;
@@ -3981,7 +3989,7 @@ void gui_window_destroy(struct gui_window *g)
 	win_destroyed = true;
 }
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
 	ULONG cur_tab = 0;
@@ -4206,7 +4214,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	return;
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	ULONG cur_tab = 0;
 
@@ -4284,7 +4292,7 @@ struct nsObject *nnode;
 	return true;
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct nsObject *nsobj;
 	struct rect *deferred_rect;
@@ -4502,13 +4510,13 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 	*ys /= gwin->bw->scale;
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	ami_get_hscroll_pos(g->shared, (ULONG *)sx);
 	ami_get_vscroll_pos(g->shared, (ULONG *)sy);
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
@@ -4567,13 +4575,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 //	g->shared->new_content = false;
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g, x0, y0);
-}
-
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled)
 {
 	struct IBox *bbox;
@@ -4591,7 +4593,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox, zbox;
 	ULONG cur_tab = 0;
@@ -4638,7 +4640,7 @@ void gui_window_update_extent(struct gui_window *g)
 	g->shared->new_content = true;
 }
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	ULONG cur_tab = 0;
 	char *utf8text;
@@ -4677,7 +4679,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 	}
 }
 
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	ULONG cur_tab = 0;
 
@@ -4696,68 +4698,6 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	ami_update_buttons(g->shared);
 }
 
-/**
- * function to add retrieved favicon to gui
- */
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-	struct BitMap *bm = NULL;
-	struct IBox *bbox;
-	ULONG cur_tab = 0;
-	struct bitmap *icon_bitmap;
-
-	if(nsoption_bool(kiosk_mode) == true) return;
-	if(!g) return;
-
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-						g->shared->objects[GID_TABS],
-						(ULONG *)&cur_tab);
-
-	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
-	{
-		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
-					g->shared->win->RPort->BitMap);
-	}
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
-
-		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
-					g->shared->win, NULL, 1);
-
-		if(bm)
-		{
-			ULONG tag, tag_data, minterm;
-			
-			if(ami_plot_screen_is_palettemapped() == false) {
-				tag = BLITA_UseSrcAlpha;
-				tag_data = !icon_bitmap->opaque;
-				minterm = 0xc0;
-			} else {
-				tag = BLITA_MaskPlane;
-				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
-				minterm = (ABC|ABNC|ANBC);
-			}
-		
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, bbox->Left,
-						BLITA_DestY, bbox->Top,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, g->shared->win->RPort,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_RASTPORT,
-						BLITA_Minterm, minterm,
-						tag, tag_data,
-						TAG_DONE);
-		}
-	}
-
-	g->favicon = icon;
-}
 
 static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
@@ -4772,7 +4712,7 @@ static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
  * \param ico may be NULL for local calls; then access current cache from
  * search_web_ico()
  */
-void gui_window_set_search_ico(hlcache_handle *ico)
+static void gui_set_search_ico(hlcache_handle *ico)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -4855,7 +4795,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	return 0;
 }
 
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	struct IBox *bbox;
@@ -4892,7 +4832,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	struct IBox *bbox;
 	int xs,ys;
@@ -4909,7 +4849,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	g->c_h = 0;
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	hlcache_handle *c;
 
@@ -4929,12 +4869,7 @@ void gui_window_new_content(struct gui_window *g)
 	ami_gui_update_hotlist_button(g->shared);
 }
 
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
 	g->shared->drag_op = type;
@@ -5158,7 +5093,7 @@ void ami_gui_splash_close(Object *win_obj)
 	if(win_obj) DisposeObject(win_obj);
 }
 
-void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
+static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
 	LOG(("File open dialog rquest for %p/%p", g, gadget));
@@ -5177,3 +5112,145 @@ void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 	}
 }
 
+static struct gui_window_table amiga_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+
+	.set_icon = gui_window_set_icon,
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.drag_start = gui_window_drag_start,
+	.new_content = gui_window_new_content,
+	.file_gadget_open = gui_file_gadget_open,
+	.drag_save_object = gui_drag_save_object,
+	.drag_save_selection =gui_drag_save_selection,
+	.start_selection = gui_start_selection,
+
+	/* from theme */
+	.set_pointer = gui_window_set_pointer,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+
+	/* from download */
+	.save_link = gui_window_save_link,
+};
+
+static struct gui_clipboard_table amiga_clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+static struct gui_browser_table amiga_browser_table = {
+	.poll = gui_poll,
+	.quit = gui_quit,
+	.set_search_ico = gui_set_search_ico,
+	.get_resource_url = gui_get_resource_url,
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.cert_verify = gui_cert_verify,
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.login = gui_401login_open,
+};
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+	char messages[100];
+	char script[1024];
+	char temp[1024];
+	BPTR lock = 0;
+	int32 user = 0;
+	nserror ret;
+	Object *splash_window = ami_gui_splash_open();
+	struct gui_table amiga_gui_table = {
+		.browser = &amiga_browser_table,
+		.window = &amiga_window_table,
+		.clipboard = &amiga_clipboard_table,
+		.download = amiga_download_table,
+	};
+
+	/* Open popupmenu.library just to check the version.
+	 * Versions older than 53.11 are dangerous, so we
+	 * forcibly disable context menus if these are in use.
+	 */
+	popupmenu_lib_ok = FALSE;
+	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
+		LOG(("popupmenu.library v%d.%d",
+			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
+		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
+			popupmenu_lib_ok = TRUE;
+		CloseLibrary(PopupMenuBase);
+	}
+
+	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
+	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
+
+	if(lock = CreateDirTree(current_user_dir))
+		UnLock(lock);
+
+	current_user_options = ASPrintf("%s/Choices", current_user_dir);
+
+	ami_mime_init("PROGDIR:Resources/mimetypes");
+	sprintf(temp, "%s/mimetypes.user", current_user_dir);
+	ami_mime_init(temp);
+	ami_schedule_open_timer();
+	ami_schedule_create();
+
+	amiga_plugin_hack_init();
+	amiga_datatypes_init();
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(current_user_options, NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	if (ami_locate_resource(messages, "Messages") == false)
+		die("Cannot open Messages file");
+	ret = netsurf_init(messages, &amiga_gui_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	amiga_icon_init();
+
+	gui_init(argc, argv);
+	gui_init2(argc, argv);
+
+	ami_gui_splash_close(splash_window);
+
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_startup), 1024);
+	ami_arexx_execute(script);
+
+	netsurf_main_loop();
+
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
+	ami_arexx_execute(script);
+
+	netsurf_exit();
+
+	ami_mime_free();
+
+	return 0;
+}

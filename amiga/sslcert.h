@@ -19,5 +19,9 @@
 #ifndef AMIGA_SSLCERT_H
 #define AMIGA_SSLCERT_H
 
+void gui_cert_verify(nsurl *url, 
+		const struct ssl_cert_info *certs, unsigned long num,
+		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
+
 void ami_ssl_free(struct treeview_window *twin);
 #endif
