@@ -688,16 +688,14 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 					 parm);
 
 	if (f->downgrade_tls) {
+		/* Disable TLS 1.1/1.2 if the server can't cope with them */
 #ifdef SSL_OP_NO_TLSv1_1
-		/* Disable TLS1.1, if the server can't cope with it */
 		options |= SSL_OP_NO_TLSv1_1;
 #endif
-	}
-
 #ifdef SSL_OP_NO_TLSv1_2
-	/* Disable TLS1.2, as it causes some servers to stall. */
-	options |= SSL_OP_NO_TLSv1_2;
+		options |= SSL_OP_NO_TLSv1_2;
 #endif
+	}
 
 	SSL_CTX_set_options(sslctx, options);
 
