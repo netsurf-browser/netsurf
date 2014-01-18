@@ -236,14 +236,7 @@ void search_web_retrieve_ico(bool localdefault)
 	if (localdefault) {
 		if (search_default_ico_location == NULL)
 			return;
-		url = malloc(SLEN("file://") + strlen(
-				search_default_ico_location) + 1);
-		if (url == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			return;
-		}
-		strcpy(url, "file://");
-		strcat(url, search_default_ico_location);
+		url = path_to_url(search_default_ico_location);
 	} else {
 		url = search_web_ico_name();
 	}
