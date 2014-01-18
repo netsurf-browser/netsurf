@@ -862,6 +862,7 @@ static void gui_init2(int argc, char** argv)
 
 			if(rarray[A_URL])
 			{
+				LOG(("URL %s specified on command line", rarray[A_URL]));
 				temp_homepage_url = (char *)strdup((char *)rarray[A_URL]);
 
 				if(notalreadyrunning)
@@ -886,10 +887,13 @@ static void gui_init2(int argc, char** argv)
 
 			if(rarray[A_FORCE])
 			{
+				LOG(("FORCE specified on command line"));
 				notalreadyrunning = TRUE;
 			}
 
 			FreeArgs(args);
+		} else {
+			LOG(("ReadArgs failed to parse command line"));
 		}
 	}
 	else
