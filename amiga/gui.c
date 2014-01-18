@@ -169,6 +169,9 @@ BOOL refresh_favicon = FALSE;
 BOOL refresh_throbber = FALSE;
 struct Hook newprefs_hook;
 
+STRPTR temp_homepage_url = NULL;
+bool cli_force = false;
+
 static char *current_user;
 static char *current_user_dir;
 
@@ -812,15 +815,10 @@ void ami_openscreenfirst(void)
 	ami_theme_throbber_setup();
 }
 
-static void gui_init2(int argc, char** argv)
+static void ami_gui_commandline(int *argc, char **argv)
 {
-	struct Screen *screen;
-	nsurl *url;
-	nserror error;
-	struct browser_window *bw = NULL;
+	int new_argc = 0;
 	struct RDArgs *args;
-	STRPTR temp_homepage_url = NULL;
-	BOOL notalreadyrunning;
 	STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
 	long rarray[] = {0,0,0};
 	enum
@@ -829,6 +827,55 @@ static void gui_init2(int argc, char** argv)
 		A_URL,
 		A_FORCE
 	};
+
+	if(*argc == 0) return; // argc==0 is started from wb
+
+	if(args = ReadArgs(template, rarray, NULL)) {
+		if(rarray[A_URL]) {
+			LOG(("URL %s specified on command line", rarray[A_URL]));
+			temp_homepage_url = (char *)strdup((char *)rarray[A_URL]);
+		}
+
+		if(rarray[A_FORCE]) {
+			LOG(("FORCE specified on command line"));
+			cli_force = true;
+		}
+
+		if(rarray[A_NSOPTS]) {
+		/* The NSOPTS/M parameter specified in the ReadArgs template is
+		 * special. The /M means it collects all arguments that can't
+		 * be assigned to any other parameter, and stores them in an
+		 * array.  We collect these and pass them as a fake argc/argv
+		 * to nsoption_commandline().
+		 * This trickery is necessary because if ReadArgs() is called
+		 * first, nsoption_commandline() can no longer parse (fetch?)
+		 * the arguments.  If nsoption_commandline() is called first,
+		 * then ReadArgs cannot fetch the arguments.
+		 */
+			char **p = (char **)rarray[A_NSOPTS];
+			do {
+				LOG(("Arg [%d] assigned to NSOPTS/M by ReadArgs: %s", new_argc, *p));
+				new_argc++;
+				p++;
+			} while(*p != NULL);
+
+			nsoption_commandline(&new_argc, (char **)rarray[A_NSOPTS], NULL);
+		}
+
+		FreeArgs(args);
+	} else {
+		LOG(("ReadArgs failed to parse command line"));
+	}
+}
+
+
+static void gui_init2(int argc, char** argv)
+{
+	struct Screen *screen;
+	BOOL notalreadyrunning;
+	nsurl *url;
+	nserror error;
+	struct browser_window *bw = NULL;
 
 	notalreadyrunning = ami_arexx_init();
 
@@ -852,52 +899,32 @@ static void gui_init2(int argc, char** argv)
 
 	search_web_provider_details(nsoption_int(search_provider));
 
-	if(argc) // argc==0 is started from wb
-	{
-		if(args = ReadArgs(template,rarray,NULL))
-		{
-			if (notalreadyrunning && 
-			    (nsoption_bool(startup_no_window) == false))
-				ami_openscreenfirst();
+	if (notalreadyrunning && 
+	    (nsoption_bool(startup_no_window) == false))
+		ami_openscreenfirst();
 
-			if(rarray[A_URL])
-			{
-				LOG(("URL %s specified on command line", rarray[A_URL]));
-				temp_homepage_url = (char *)strdup((char *)rarray[A_URL]);
-
-				if(notalreadyrunning)
-				{
-					error = nsurl_create(temp_homepage_url, &url);
-					if (error == NSERROR_OK) {
-						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-								BROWSER_WINDOW_HISTORY,
-								url,
-								NULL,
-								NULL,
-								&bw);
-						nsurl_unref(url);
-					}
-					if (error != NSERROR_OK) {
-						warn_user(messages_get_errorcode(error), 0);
-					}
-
-					free(temp_homepage_url);
-				}
-			}
-
-			if(rarray[A_FORCE])
-			{
-				LOG(("FORCE specified on command line"));
-				notalreadyrunning = TRUE;
-			}
-
-			FreeArgs(args);
-		} else {
-			LOG(("ReadArgs failed to parse command line"));
+	if(temp_homepage_url && notalreadyrunning) {
+		error = nsurl_create(temp_homepage_url, &url);
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
+					BROWSER_WINDOW_HISTORY,
+					url,
+					NULL,
+					NULL,
+					&bw);
+			nsurl_unref(url);
 		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
+		free(temp_homepage_url);
 	}
-	else
-	{
+
+	if(cli_force == true) {
+		notalreadyrunning = TRUE;
+	}
+
+	if(argc == 0) { // WB
 		struct WBStartup *WBenchMsg = (struct WBStartup *)argv;
 		struct WBArg *wbarg;
 		int first=0,i=0;
@@ -5228,7 +5255,7 @@ int main(int argc, char** argv)
 		die("Options failed to initialise");
 	}
 	nsoption_read(current_user_options, NULL);
-	nsoption_commandline(&argc, argv, NULL);
+	ami_gui_commandline(&argc, argv); /* calls nsoption_commandline */
 
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
