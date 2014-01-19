@@ -210,7 +210,10 @@ nserror netsurf_init(const char *messages, struct gui_table *gt)
 
 	setlocale(LC_ALL, "C");
 
-	fetch_init();
+	/* initialise the fetchers */
+	error = fetch_init();
+	if (error != NSERROR_OK)
+		return error;
 	
 	/* Initialise the hlcache and allow it to init the llcache for us */
 	hlcache_initialise(&hlcache_parameters);

@@ -85,7 +85,7 @@ struct fetch {
 	lwc_string *host;	/**< Host part of URL, interned */
 	long http_code;		/**< HTTP response code, or 0. */
 	scheme_fetcher *ops;	/**< Fetcher operations for this fetch,
-				     NULL if not set. */
+				   NULL if not set. */
 	void *fetcher_handle;	/**< The handle for the fetcher. */
 	bool fetch_is_active;	/**< This fetch is active. */
 	struct fetch *r_prev;	/**< Previous active fetch in ::fetch_ring. */
@@ -96,101 +96,16 @@ static struct fetch *fetch_ring = 0;	/**< Ring of active fetches. */
 static struct fetch *queue_ring = 0;	/**< Ring of queued fetches */
 
 #define fetch_ref_fetcher(F) F->refcount++
-static void fetch_unref_fetcher(scheme_fetcher *fetcher);
-static void fetch_dispatch_jobs(void);
-static bool fetch_choose_and_dispatch(void);
-static bool fetch_dispatch_job(struct fetch *fetch);
 
 /* Static lwc_strings */
 static lwc_string *fetch_http_lwc;
 static lwc_string *fetch_https_lwc;
 
+/******************************************************************************
+ * fetch internals							      *
+ ******************************************************************************/
 
-/**
- * Initialise the fetcher.
- */
-
-void fetch_init(void)
-{
-	fetch_curl_register();
-	fetch_data_register();
-	fetch_file_register();
-	fetch_resource_register();
-	fetch_about_register();
-	fetch_active = false;
-
-	if (lwc_intern_string("http", SLEN("http"), &fetch_http_lwc) !=
-			lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"http\").");
-	}
-
-	if (lwc_intern_string("https", SLEN("https"), &fetch_https_lwc) !=
-			lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"https\").");
-	}
-}
-
-
-/**
- * Clean up for quit.
- *
- * Must be called before exiting.
- */
-
-void fetch_quit(void)
-{
-	while (fetchers != NULL) {
-		if (fetchers->refcount != 1) {
-			LOG(("Fetcher for scheme %s still active?!",
-					lwc_string_data(fetchers->scheme_name)));
-			/* We shouldn't do this, but... */
-			fetchers->refcount = 1;
-		}
-		fetch_unref_fetcher(fetchers);
-	}
-
-	lwc_string_unref(fetch_http_lwc);
-	lwc_string_unref(fetch_https_lwc);
-}
-
-
-bool fetch_add_fetcher(lwc_string *scheme,
-		  fetcher_initialise initialiser,
-		  fetcher_can_fetch can_fetch,
-		  fetcher_setup_fetch setup_fetch,
-		  fetcher_start_fetch start_fetch,
-		  fetcher_abort_fetch abort_fetch,
-		  fetcher_free_fetch free_fetch,
-		  fetcher_poll_fetcher poll_fetcher,
-		  fetcher_finalise finaliser)
-{
-	scheme_fetcher *new_fetcher;
-	if (!initialiser(scheme))
-		return false;
-	new_fetcher = malloc(sizeof(scheme_fetcher));
-	if (new_fetcher == NULL) {
-		finaliser(scheme);
-		return false;
-	}
-	new_fetcher->scheme_name = scheme;
-	new_fetcher->refcount = 0;
-	new_fetcher->can_fetch = can_fetch;
-	new_fetcher->setup_fetch = setup_fetch;
-	new_fetcher->start_fetch = start_fetch;
-	new_fetcher->abort_fetch = abort_fetch;
-	new_fetcher->free_fetch = free_fetch;
-	new_fetcher->poll_fetcher = poll_fetcher;
-	new_fetcher->finaliser = finaliser;
-	new_fetcher->next_fetcher = fetchers;
-	fetchers = new_fetcher;
-	fetch_ref_fetcher(new_fetcher);
-	return true;
-}
-
-
-void fetch_unref_fetcher(scheme_fetcher *fetcher)
+static void fetch_unref_fetcher(scheme_fetcher *fetcher)
 {
 	if (--fetcher->refcount == 0) {
 		fetcher->finaliser(fetcher->scheme_name);
@@ -201,169 +116,76 @@ void fetch_unref_fetcher(scheme_fetcher *fetcher)
 				fetchers->prev_fetcher = NULL;
 		} else {
 			fetcher->prev_fetcher->next_fetcher =
-					fetcher->next_fetcher;
+				fetcher->next_fetcher;
 			if (fetcher->next_fetcher != NULL)
 				fetcher->next_fetcher->prev_fetcher =
-						fetcher->prev_fetcher;
+					fetcher->prev_fetcher;
 		}
 		free(fetcher);
 	}
 }
 
-
 /**
- * Start fetching data for the given URL.
- *
- * The function returns immediately. The fetch may be queued for later
- * processing.
- *
- * A pointer to an opaque struct fetch is returned, which can be passed to
- * fetch_abort() to abort the fetch at any time. Returns 0 if memory is
- * exhausted (or some other fatal error occurred).
- *
- * The caller must supply a callback function which is called when anything
- * interesting happens. The callback function is first called with msg
- * FETCH_HEADER, with the header in data, then one or more times
- * with FETCH_DATA with some data for the url, and finally with
- * FETCH_FINISHED. Alternatively, FETCH_ERROR indicates an error occurred:
- * data contains an error message. FETCH_REDIRECT may replace the FETCH_HEADER,
- * FETCH_DATA, FETCH_FINISHED sequence if the server sends a replacement URL.
- *
+ * Dispatch a single job
  */
-
-struct fetch * fetch_start(nsurl *url, nsurl *referer,
-			   fetch_callback callback,
-			   void *p, bool only_2xx, const char *post_urlenc,
-			   const struct fetch_multipart_data *post_multipart,
-			   bool verifiable, bool downgrade_tls,
-			   const char *headers[])
+static bool fetch_dispatch_job(struct fetch *fetch)
 {
-	struct fetch *fetch;
-	scheme_fetcher *fetcher = fetchers;
-	lwc_string *scheme;
-	bool match;
-
-	fetch = malloc(sizeof (*fetch));
-	if (fetch == NULL)
-		return NULL;
-
-	/* The URL we're fetching must have a scheme */
-	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	assert(scheme != NULL);
-
+	RING_REMOVE(queue_ring, fetch);
 #ifdef DEBUG_FETCH_VERBOSE
-	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
+	LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
+	     fetch->fetcher_handle, nsurl_access(fetch->url)));
 #endif
-
-	/* construct a new fetch structure */
-	fetch->callback = callback;
-	fetch->url = nsurl_ref(url);
-	fetch->verifiable = verifiable;
-	fetch->p = p;
-	fetch->http_code = 0;
-	fetch->r_prev = NULL;
-	fetch->r_next = NULL;
-	fetch->referer = NULL;
-	fetch->send_referer = false;
-	fetch->fetcher_handle = NULL;
-	fetch->ops = NULL;
-	fetch->fetch_is_active = false;
-	fetch->host = nsurl_get_component(url, NSURL_HOST);
-        
-	if (referer != NULL) {
-		lwc_string *ref_scheme;
-		fetch->referer = nsurl_ref(referer);
-
-		ref_scheme = nsurl_get_component(referer, NSURL_SCHEME);
-		/* Not a problem if referer has no scheme */
-
-		/* Determine whether to send the Referer header */
-		if (nsoption_bool(send_referer) && ref_scheme != NULL) {
-			/* User permits us to send the header 
-			 * Only send it if:
-			 *    1) The fetch and referer schemes match
-			 * or 2) The fetch is https and the referer is http
-			 *
-			 * This ensures that referer information is only sent
-			 * across schemes in the special case of an https
-			 * request from a page served over http. The inverse
-			 * (https -> http) should not send the referer (15.1.3)
-			 */
-			bool match1;
-			bool match2;
-			if (lwc_string_isequal(scheme, ref_scheme,
-					&match) != lwc_error_ok) {
-				match = false;
-			}
-			if (lwc_string_isequal(scheme, fetch_https_lwc,
-					&match1) != lwc_error_ok) {
-				match1 = false;
-			}
-			if (lwc_string_isequal(ref_scheme, fetch_http_lwc,
-					&match2) != lwc_error_ok) {
-				match2= false;
-			}
-			if (match == true || (match1 == true && match2 == true))
-				fetch->send_referer = true;
-		}
-		if (ref_scheme != NULL)
-			lwc_string_unref(ref_scheme);
+	if (!fetch->ops->start_fetch(fetch->fetcher_handle)) {
+		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
+		return false;
+	} else {
+		RING_INSERT(fetch_ring, fetch);
+		fetch->fetch_is_active = true;
+		return true;
 	}
-
-	/* Pick the scheme ops */
-	while (fetcher) {
-		if ((lwc_string_isequal(fetcher->scheme_name, scheme,
-				&match) == lwc_error_ok) && (match == true)) {
-			fetch->ops = fetcher;
-			break;
-		}
-		fetcher = fetcher->next_fetcher;
-	}
-
-	if (fetch->ops == NULL)
-		goto failed;
-
-	/* Got a scheme fetcher, try and set up the fetch */
-	fetch->fetcher_handle = fetch->ops->setup_fetch(fetch, url,
-					only_2xx, downgrade_tls,
-					post_urlenc, post_multipart,
-					headers);
-
-	if (fetch->fetcher_handle == NULL)
-		goto failed;
-
-	/* Rah, got it, so ref the fetcher. */
-	fetch_ref_fetcher(fetch->ops);
-
-	/* these aren't needed past here */
-	lwc_string_unref(scheme);
-
-	/* Dump us in the queue and ask the queue to run. */
-	RING_INSERT(queue_ring, fetch);
-	fetch_dispatch_jobs();
-
-	return fetch;
-
-failed:
-	lwc_string_unref(scheme);
-
-	if (fetch->host != NULL)
-		lwc_string_unref(fetch->host);
-	if (fetch->url != NULL)
-		nsurl_unref(fetch->url);
-	if (fetch->referer != NULL)
-		nsurl_unref(fetch->referer);
-
-	free(fetch);
-
-	return NULL;
 }
 
+/**
+ * Choose and dispatch a single job. Return false if we failed to dispatch
+ * anything.
+ *
+ * We don't check the overall dispatch size here because we're not called unless
+ * there is room in the fetch queue for us.
+ */
+static bool fetch_choose_and_dispatch(void)
+{
+	bool same_host;
+	struct fetch *queueitem;
+	queueitem = queue_ring;
+	do {
+		/* We can dispatch the selected item if there is room in the
+		 * fetch ring
+		 */
+		int countbyhost;
+		RING_COUNTBYLWCHOST(struct fetch, fetch_ring, countbyhost,
+				    queueitem->host);
+		if (countbyhost < nsoption_int(max_fetchers_per_host)) {
+			/* We can dispatch this item in theory */
+			return fetch_dispatch_job(queueitem);
+		}
+		/* skip over other items with the same host */
+		same_host = true;
+		while (same_host == true && queueitem->r_next != queue_ring) {
+			if (lwc_string_isequal(queueitem->host,
+					       queueitem->r_next->host, &same_host) ==
+			    lwc_error_ok && same_host == true) {
+				queueitem = queueitem->r_next;
+			}
+		}
+		queueitem = queueitem->r_next;
+	} while (queueitem != queue_ring);
+	return false;
+}
 
 /**
  * Dispatch as many jobs as we have room to dispatch.
  */
-void fetch_dispatch_jobs(void)
+static void fetch_dispatch_jobs(void)
 {
 	int all_active, all_queued;
 #ifdef DEBUG_FETCH_VERBOSE
@@ -412,85 +234,231 @@ void fetch_dispatch_jobs(void)
 #endif
 }
 
+/******************************************************************************
+ * Public API								      *
+ ******************************************************************************/
 
-/**
- * Choose and dispatch a single job. Return false if we failed to dispatch
- * anything.
- *
- * We don't check the overall dispatch size here because we're not called unless
- * there is room in the fetch queue for us.
- */
-bool fetch_choose_and_dispatch(void)
+/* exported interface documented in content/fetch.h */
+nserror fetch_init(void)
 {
-	bool same_host;
-	struct fetch *queueitem;
-	queueitem = queue_ring;
-	do {
-		/* We can dispatch the selected item if there is room in the
-		 * fetch ring
-		 */
-		int countbyhost;
-		RING_COUNTBYLWCHOST(struct fetch, fetch_ring, countbyhost,
-				queueitem->host);
-		if (countbyhost < nsoption_int(max_fetchers_per_host)) {
-			/* We can dispatch this item in theory */
-			return fetch_dispatch_job(queueitem);
-		}
-		/* skip over other items with the same host */
-		same_host = true;
-		while (same_host == true && queueitem->r_next != queue_ring) {
-			if (lwc_string_isequal(queueitem->host,
-					queueitem->r_next->host, &same_host) ==
-					lwc_error_ok && same_host == true) {
-				queueitem = queueitem->r_next;
-			}
-		}
-		queueitem = queueitem->r_next;
-	} while (queueitem != queue_ring);
-	return false;
-}
-
-
-/**
- * Dispatch a single job
- */
-bool fetch_dispatch_job(struct fetch *fetch)
-{
-	RING_REMOVE(queue_ring, fetch);
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
-			fetch->fetcher_handle, nsurl_access(fetch->url)));
-#endif
-	if (!fetch->ops->start_fetch(fetch->fetcher_handle)) {
-		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
-		return false;
-	} else {
-		RING_INSERT(fetch_ring, fetch);
-		fetch->fetch_is_active = true;
-		return true;
+	if (lwc_intern_string("http", SLEN("http"), &fetch_http_lwc) !=
+	    lwc_error_ok) {
+		LOG(("Failed to initialise the fetch module "
+		     "(couldn't intern \"http\")."));
+		return NSERROR_INIT_FAILED;
 	}
+
+	if (lwc_intern_string("https", SLEN("https"), &fetch_https_lwc) !=
+	    lwc_error_ok) {
+		LOG(("Failed to initialise the fetch module "
+		     "(couldn't intern \"https\")."));
+		return NSERROR_INIT_FAILED;
+	}
+
+	fetch_curl_register();
+	fetch_data_register();
+	fetch_file_register();
+	fetch_resource_register();
+	fetch_about_register();
+
+	fetch_active = false;
+
+	return NSERROR_OK;
 }
 
+/* exported interface documented in content/fetch.h */
+void fetch_quit(void)
+{
+	while (fetchers != NULL) {
+		if (fetchers->refcount != 1) {
+			LOG(("Fetcher for scheme %s still active?!",
+			     lwc_string_data(fetchers->scheme_name)));
+			/* We shouldn't do this, but... */
+			fetchers->refcount = 1;
+		}
+		fetch_unref_fetcher(fetchers);
+	}
 
-/**
- * Abort a fetch.
- */
+	lwc_string_unref(fetch_http_lwc);
+	lwc_string_unref(fetch_https_lwc);
+}
 
+/* exported interface documented in content/fetch.h */
+bool fetch_add_fetcher(lwc_string *scheme,
+		       fetcher_initialise initialiser,
+		       fetcher_can_fetch can_fetch,
+		       fetcher_setup_fetch setup_fetch,
+		       fetcher_start_fetch start_fetch,
+		       fetcher_abort_fetch abort_fetch,
+		       fetcher_free_fetch free_fetch,
+		       fetcher_poll_fetcher poll_fetcher,
+		       fetcher_finalise finaliser)
+{
+	scheme_fetcher *new_fetcher;
+	if (!initialiser(scheme))
+		return false;
+	new_fetcher = malloc(sizeof(scheme_fetcher));
+	if (new_fetcher == NULL) {
+		finaliser(scheme);
+		return false;
+	}
+	new_fetcher->scheme_name = scheme;
+	new_fetcher->refcount = 0;
+	new_fetcher->can_fetch = can_fetch;
+	new_fetcher->setup_fetch = setup_fetch;
+	new_fetcher->start_fetch = start_fetch;
+	new_fetcher->abort_fetch = abort_fetch;
+	new_fetcher->free_fetch = free_fetch;
+	new_fetcher->poll_fetcher = poll_fetcher;
+	new_fetcher->finaliser = finaliser;
+	new_fetcher->next_fetcher = fetchers;
+	fetchers = new_fetcher;
+	fetch_ref_fetcher(new_fetcher);
+
+	return true;
+}
+
+/* exported interface documented in content/fetch.h */
+struct fetch * fetch_start(nsurl *url, nsurl *referer,
+			   fetch_callback callback,
+			   void *p, bool only_2xx, const char *post_urlenc,
+			   const struct fetch_multipart_data *post_multipart,
+			   bool verifiable, bool downgrade_tls,
+			   const char *headers[])
+{
+	struct fetch *fetch;
+	scheme_fetcher *fetcher = fetchers;
+	lwc_string *scheme;
+	bool match;
+
+	fetch = malloc(sizeof (*fetch));
+	if (fetch == NULL)
+		return NULL;
+
+	/* The URL we're fetching must have a scheme */
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	assert(scheme != NULL);
+
+#ifdef DEBUG_FETCH_VERBOSE
+	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
+#endif
+
+	/* construct a new fetch structure */
+	fetch->callback = callback;
+	fetch->url = nsurl_ref(url);
+	fetch->verifiable = verifiable;
+	fetch->p = p;
+	fetch->http_code = 0;
+	fetch->r_prev = NULL;
+	fetch->r_next = NULL;
+	fetch->referer = NULL;
+	fetch->send_referer = false;
+	fetch->fetcher_handle = NULL;
+	fetch->ops = NULL;
+	fetch->fetch_is_active = false;
+	fetch->host = nsurl_get_component(url, NSURL_HOST);
+
+	if (referer != NULL) {
+		lwc_string *ref_scheme;
+		fetch->referer = nsurl_ref(referer);
+
+		ref_scheme = nsurl_get_component(referer, NSURL_SCHEME);
+		/* Not a problem if referer has no scheme */
+
+		/* Determine whether to send the Referer header */
+		if (nsoption_bool(send_referer) && ref_scheme != NULL) {
+			/* User permits us to send the header
+			 * Only send it if:
+			 *    1) The fetch and referer schemes match
+			 * or 2) The fetch is https and the referer is http
+			 *
+			 * This ensures that referer information is only sent
+			 * across schemes in the special case of an https
+			 * request from a page served over http. The inverse
+			 * (https -> http) should not send the referer (15.1.3)
+			 */
+			bool match1;
+			bool match2;
+			if (lwc_string_isequal(scheme, ref_scheme,
+					       &match) != lwc_error_ok) {
+				match = false;
+			}
+			if (lwc_string_isequal(scheme, fetch_https_lwc,
+					       &match1) != lwc_error_ok) {
+				match1 = false;
+			}
+			if (lwc_string_isequal(ref_scheme, fetch_http_lwc,
+					       &match2) != lwc_error_ok) {
+				match2= false;
+			}
+			if (match == true || (match1 == true && match2 == true))
+				fetch->send_referer = true;
+		}
+		if (ref_scheme != NULL)
+			lwc_string_unref(ref_scheme);
+	}
+
+	/* Pick the scheme ops */
+	while (fetcher) {
+		if ((lwc_string_isequal(fetcher->scheme_name, scheme,
+					&match) == lwc_error_ok) && (match == true)) {
+			fetch->ops = fetcher;
+			break;
+		}
+		fetcher = fetcher->next_fetcher;
+	}
+
+	if (fetch->ops == NULL)
+		goto failed;
+
+	/* Got a scheme fetcher, try and set up the fetch */
+	fetch->fetcher_handle = fetch->ops->setup_fetch(fetch, url,
+							only_2xx, downgrade_tls,
+							post_urlenc, post_multipart,
+							headers);
+
+	if (fetch->fetcher_handle == NULL)
+		goto failed;
+
+	/* Rah, got it, so ref the fetcher. */
+	fetch_ref_fetcher(fetch->ops);
+
+	/* these aren't needed past here */
+	lwc_string_unref(scheme);
+
+	/* Dump us in the queue and ask the queue to run. */
+	RING_INSERT(queue_ring, fetch);
+	fetch_dispatch_jobs();
+
+	return fetch;
+
+failed:
+	lwc_string_unref(scheme);
+
+	if (fetch->host != NULL)
+		lwc_string_unref(fetch->host);
+	if (fetch->url != NULL)
+		nsurl_unref(fetch->url);
+	if (fetch->referer != NULL)
+		nsurl_unref(fetch->referer);
+
+	free(fetch);
+
+	return NULL;
+}
+
+/* exported interface documented in content/fetch.h */
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
-			nsurl_access(f->url)));
+	     nsurl_access(f->url)));
 #endif
 	f->ops->abort_fetch(f->fetcher_handle);
 }
 
-
-/**
- * Free a fetch structure and associated resources.
- */
-
+/* exported interface documented in content/fetch.h */
 void fetch_free(struct fetch *f)
 {
 #ifdef DEBUG_FETCH_VERBOSE
@@ -503,16 +471,10 @@ void fetch_free(struct fetch *f)
 		nsurl_unref(f->referer);
 	if (f->host != NULL)
 		lwc_string_unref(f->host);
-        free(f);
+	free(f);
 }
 
-
-/**
- * Do some work on current fetches.
- *
- * Must be called regularly to make progress on fetches.
- */
-
+/* exported interface documented in content/fetch.h */
 void fetch_poll(void)
 {
 	scheme_fetcher *fetcher = fetchers;
@@ -533,14 +495,7 @@ void fetch_poll(void)
 	}
 }
 
-
-/**
- * Check if a URL's scheme can be fetched.
- *
- * \param  url  URL to check
- * \return  true if the scheme is supported
- */
-
+/* exported interface documented in content/fetch.h */
 bool fetch_can_fetch(const nsurl *url)
 {
 	scheme_fetcher *fetcher = fetchers;
@@ -560,11 +515,7 @@ bool fetch_can_fetch(const nsurl *url)
 	return fetcher == NULL ? false : fetcher->can_fetch(url);
 }
 
-
-/**
- * Change the callback function for a fetch.
- */
-
+/* exported interface documented in content/fetch.h */
 void fetch_change_callback(struct fetch *fetch,
 			   fetch_callback callback,
 			   void *p)
@@ -574,22 +525,13 @@ void fetch_change_callback(struct fetch *fetch,
 	fetch->p = p;
 }
 
-
-/**
- * Get the HTTP response code.
- */
-
+/* exported interface documented in content/fetch.h */
 long fetch_http_code(struct fetch *fetch)
 {
 	return fetch->http_code;
 }
 
-/**
- * Determine if a fetch was verifiable
- *
- * \param fetch  Fetch to consider
- * \return Verifiable status of fetch
- */
+/* exported interface documented in content/fetch.h */
 bool fetch_get_verifiable(struct fetch *fetch)
 {
 	assert(fetch);
@@ -597,14 +539,9 @@ bool fetch_get_verifiable(struct fetch *fetch)
 	return fetch->verifiable;
 }
 
-/**
- * Clone a linked list of fetch_multipart_data.
- *
- * \param list  List to clone
- * \return Pointer to head of cloned list, or NULL on failure
- */
-struct fetch_multipart_data *fetch_multipart_data_clone(
-		const struct fetch_multipart_data *list)
+/* exported interface documented in content/fetch.h */
+struct fetch_multipart_data *
+fetch_multipart_data_clone(const struct fetch_multipart_data *list)
 {
 	struct fetch_multipart_data *clone, *last = NULL;
 	struct fetch_multipart_data *result = NULL;
@@ -667,11 +604,7 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 	return result;
 }
 
-/**
- * Free a linked list of fetch_multipart_data.
- *
- * \param list Pointer to head of list to free
- */
+/* exported interface documented in content/fetch.h */
 void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 {
 	struct fetch_multipart_data *next;
@@ -688,6 +621,7 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 	}
 }
 
+/* exported interface documented in content/fetch.h */
 void
 fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 {
@@ -695,15 +629,17 @@ fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 }
 
 
+/* exported interface documented in content/fetch.h */
 void fetch_remove_from_queues(struct fetch *fetch)
 {
-	int all_active, all_queued;
+	int all_active;
 
-	/* Go ahead and free the fetch properly now */
 #ifdef DEBUG_FETCH_VERBOSE
+	int all_queued;
 	LOG(("Fetch %p, fetcher %p can be freed", fetch, fetch->fetcher_handle));
 #endif
 
+	/* Go ahead and free the fetch properly now */
 	if (fetch->fetch_is_active) {
 		RING_REMOVE(fetch_ring, fetch);
 	} else {
@@ -711,19 +647,21 @@ void fetch_remove_from_queues(struct fetch *fetch)
 	}
 
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
-	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 
 	fetch_active = (all_active > 0);
 
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Fetch ring is now %d elements.", all_active));
+
+	RING_GETSIZE(struct fetch, queue_ring, all_queued);
+
 	LOG(("Queue ring is now %d elements.", all_queued));
 #endif
 }
 
 
-void
-fetch_set_http_code(struct fetch *fetch, long http_code)
+/* exported interface documented in content/fetch.h */
+void fetch_set_http_code(struct fetch *fetch, long http_code)
 {
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Setting HTTP code to %ld", http_code));
@@ -731,6 +669,7 @@ fetch_set_http_code(struct fetch *fetch, long http_code)
 	fetch->http_code = http_code;
 }
 
+/* exported interface documented in content/fetch.h */
 const char *fetch_get_referer_to_send(struct fetch *fetch)
 {
 	if (fetch->send_referer)
@@ -738,8 +677,8 @@ const char *fetch_get_referer_to_send(struct fetch *fetch)
 	return NULL;
 }
 
-void
-fetch_set_cookie(struct fetch *fetch, const char *data)
+/* exported interface documented in content/fetch.h */
+void fetch_set_cookie(struct fetch *fetch, const char *data)
 {
 	assert(fetch && data);
 
@@ -762,4 +701,3 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 		urldb_set_cookie(data, fetch->url, fetch->referer);
 	}
 }
-
