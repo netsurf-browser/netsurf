@@ -2078,10 +2078,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 	r = *clip;
 
-	if (r.x1 < x || r.x0 > x + ta->vis_width || r.y1 < y ||
-		   r.y0 > y + ta->vis_height)
-		/* Textarea outside the clipping rectangle */
+	/* Nothing to render if textarea is outside clip rectangle */
+	if (r.x1 < x || r.y1 < y)
 		return;
+	if (scale == 1.0) {
+		if (r.x0 > x + ta->vis_width || r.y0 > y + ta->vis_height)
+			return;
+	} else {
+		if (r.x0 > x + ta->vis_width * scale ||
+				r.y0 > y + ta->vis_height * scale)
+			return;
+	}
 
 	if (ta->lines == NULL)
 		/* Nothing to redraw */
@@ -2264,6 +2271,8 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 						&right);
 			} else {
 				right = ta->lines[line].width;
+				if (scale != 1.0)
+					right *= scale;
 			}
 			right += x + ta->border_width + ta->pad_left -
 					ta->scroll_x;
