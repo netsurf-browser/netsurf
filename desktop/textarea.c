@@ -2157,7 +2157,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 				scale)
 			r.y1 = y + (ta->vis_height - ta->border_width -
 					(ta->bar_x != NULL ? SCROLLBAR_WIDTH :
-							0) * scale);
+							0)) * scale;
 	}
 
 	if (line0 > 0)
