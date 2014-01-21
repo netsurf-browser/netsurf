@@ -520,7 +520,7 @@ bool form_successful_controls_dom(struct form *_form,
 				goto dom_no_memory;
 			}
 			for(option_index = 0; option_index < options_count;
-			    ++option_index) {
+					++option_index) {
 				bool selected;
 				if (option_element != NULL) {
 					dom_node_unref(option_element);
@@ -1335,19 +1335,23 @@ static void form__select_process_selection(html_content *html,
 			count++, o = o->next) {
 		if (!control->data.select.multiple)
 			o->selected = false;
+			dom_html_option_element_set_selected(o->node, false);
 		if (count == item) {
 			if (control->data.select.multiple) {
 				if (o->selected) {
 					o->selected = false;
-					dom_html_option_element_set_selected(o->node, false);
+					dom_html_option_element_set_selected(
+							o->node, false);
 					control->data.select.num_selected--;
 				} else {
 					o->selected = true;
-					dom_html_option_element_set_selected(o->node, true);
+					dom_html_option_element_set_selected(
+							o->node, true);
 					control->data.select.num_selected++;
 				}
 			} else {
-				dom_html_option_element_set_selected(o->node, true);
+				dom_html_option_element_set_selected(
+						o->node, true);
 				o->selected = true;
 			}
 		}
