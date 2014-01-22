@@ -289,6 +289,46 @@ static nserror verify_clipboard_register(struct gui_clipboard_table *gct)
 	return NSERROR_OK;
 }
 
+static nsurl *gui_default_get_resource_url(const char *path)
+{
+	return NULL;
+}
+
+static char *gui_default_mimetype(const char *path)
+{
+	return strdup(guit->fetch->filetype(path));
+}
+
+/** verify fetch table is valid */
+static nserror verify_fetch_register(struct gui_fetch_table *gft)
+{
+	/* check table is present */
+	if (gft == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (gft->filename_from_path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->path_add_part == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->filetype == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+
+	/* fill in the optional entries with defaults */
+	if (gft->get_resource_url == NULL) {
+		gft->get_resource_url = gui_default_get_resource_url;
+	}
+	if (gft->mimetype == NULL) {
+		gft->mimetype = gui_default_mimetype;
+	}
+
+	return NSERROR_OK;
+}
 
 static void gui_default_quit(void)
 {
@@ -296,11 +336,6 @@ static void gui_default_quit(void)
 
 static void gui_default_set_search_ico(hlcache_handle *ico)
 {
-}
-
-static nsurl *gui_default_get_resource_url(const char *path)
-{
-	return NULL;
 }
 
 static void gui_default_launch_url(const char *url)
@@ -340,13 +375,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	if (gbt->poll == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
-	if (gbt->filename_from_path == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-	if (gbt->path_add_part == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 
 	/* fill in the optional entries with defaults */
 	if (gbt->quit == NULL) {
@@ -354,9 +382,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	}
 	if (gbt->set_search_ico == NULL) {
 		gbt->set_search_ico = gui_default_set_search_ico;
-	}
-	if (gbt->get_resource_url == NULL) {
-		gbt->get_resource_url = gui_default_get_resource_url;
 	}
 	if (gbt->launch_url == NULL) {
 		gbt->launch_url = gui_default_launch_url;
@@ -410,6 +435,12 @@ nserror gui_factory_register(struct gui_table *gt)
 
 	/* window table */
 	err = verify_window_register(gt->window);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* fetch table */
+	err = verify_fetch_register(gt->fetch);
 	if (err != NSERROR_OK) {
 		return err;
 	}

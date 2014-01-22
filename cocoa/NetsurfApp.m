@@ -190,6 +190,7 @@ int main( int argc, char **argv )
 		.window = cocoa_window_table,
 		.clipboard = cocoa_clipboard_table,
 		.download = cocoa_download_table,
+		.fetch = cocoa_fetch_table,
 	};
 
 	cocoa_autorelease();

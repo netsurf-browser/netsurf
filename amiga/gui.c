@@ -5181,17 +5181,22 @@ static struct gui_window_table amiga_window_table = {
 	.save_link = gui_window_save_link,
 };
 
+static struct gui_fetch_table amiga_fetch_table = {
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+
+	.get_resource_url = gui_get_resource_url,
+};
 
 static struct gui_browser_table amiga_browser_table = {
 	.poll = gui_poll,
+
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
-	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.login = gui_401login_open,
 };
 
@@ -5211,6 +5216,7 @@ int main(int argc, char** argv)
 		.window = &amiga_window_table,
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
+		.fetch = &amiga_fetch_table,
 	};
 
 	/* Open popupmenu.library just to check the version.

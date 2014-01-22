@@ -27,6 +27,8 @@
 #include "utils/log.h"
 #include "content/fetch.h"
 
+#include "atari/filetype.h"
+
 /**
  * filetype -- determine the MIME type of a local file
  */

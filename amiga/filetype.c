@@ -144,12 +144,6 @@ const char *fetch_filetype(const char *unix_path)
 	return mimetype;
 }
 
-
-char *fetch_mimetype(const char *ro_path)
-{
-	return strdup(fetch_filetype(ro_path));
-}
-
 const char *ami_content_type_to_file_type(content_type type)
 {
 	switch(type)

@@ -26,6 +26,7 @@
 
 extern struct gui_window_table *win32_window_table;
 extern struct gui_clipboard_table *win32_clipboard_table;
+extern struct gui_fetch_table *win32_fetch_table;
 extern struct gui_browser_table *win32_browser_table;
 
 extern HINSTANCE hInstance;

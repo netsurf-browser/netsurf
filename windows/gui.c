@@ -56,6 +56,7 @@
 #include "windows/schedule.h"
 #include "windows/findfile.h"
 #include "windows/windbg.h"
+#include "windows/filetype.h"
 
 HINSTANCE hInstance; /** win32 application instance handle. */
 
@@ -1868,6 +1869,7 @@ static struct gui_window_table window_table = {
 
 struct gui_window_table *win32_window_table = &window_table;
 
+
 static struct gui_clipboard_table clipboard_table = {
 	.get = gui_get_clipboard,
 	.set = gui_set_clipboard,
@@ -1875,10 +1877,19 @@ static struct gui_clipboard_table clipboard_table = {
 
 struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
-static struct gui_browser_table browser_table = {
-	.poll = gui_poll,
+
+static struct gui_fetch_table fetch_table = {
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+
+	.mimetype = fetch_mimetype,
+};
+struct gui_fetch_table *win32_fetch_table = &fetch_table;
+
+
+static struct gui_browser_table browser_table = {
+	.poll = gui_poll,
 };
 
 struct gui_browser_table *win32_browser_table = &browser_table;

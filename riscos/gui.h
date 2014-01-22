@@ -167,6 +167,8 @@ void ro_gui_history_open(struct browser_window *bw, struct history *history,
 		bool pointer);
 
 /* in filetype.c */
+const char *fetch_filetype(const char *unix_path);
+char *fetch_mimetype(const char *ro_path);
 int ro_content_filetype(struct hlcache_handle *c);
 int ro_content_native_type(struct hlcache_handle *c);
 int ro_content_filetype_from_mime_type(lwc_string *mime_type);

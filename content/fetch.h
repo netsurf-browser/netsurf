@@ -99,11 +99,6 @@ extern bool fetch_active;
 
 typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
 
-/** @todo these calls should be in a file_table in gui_factory */
-const char *fetch_filetype(const char *unix_path);
-char *fetch_mimetype(const char *ro_path);
-
-
 /**
  * Initialise the fetcher.
  *

@@ -135,9 +135,3 @@ const char *fetch_filetype(const char *unix_path)
 	
 	return type;
 }
-
-char *fetch_mimetype(const char *unix_path)
-{
-	return strdup(fetch_filetype(unix_path));
-}
-

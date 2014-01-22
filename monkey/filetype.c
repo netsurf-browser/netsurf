@@ -26,14 +26,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "gtk/filetype.h"
 #include "content/fetch.h"
 #include "utils/log.h"
 #include "utils/hashtable.h"
 
+#include "monkey/filetype.h"
+
 static struct hash_table *mime_hash = NULL;
 
-void gtk_fetch_filetype_init(const char *mimefile)
+void monkey_fetch_filetype_init(const char *mimefile)
 {
 	struct stat statbuf;
 	FILE *fh = NULL;
@@ -143,12 +144,12 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	fclose(fh);
 }
 
-void gtk_fetch_filetype_fin(void)
+void monkey_fetch_filetype_fin(void)
 {
 	hash_destroy(mime_hash);
 }
 
-const char *fetch_filetype(const char *unix_path)
+const char *monkey_fetch_filetype(const char *unix_path)
 {
 	struct stat statbuf;
 	char *ext;
@@ -193,11 +194,6 @@ const char *fetch_filetype(const char *unix_path)
 	free(ext);
 
 	return type != NULL ? type : "text/plain";
-}
-
-char *fetch_mimetype(const char *unix_path)
-{
-	return strdup(fetch_filetype(unix_path));
 }
 
 #ifdef TEST_RIG

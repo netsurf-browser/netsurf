@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2008, 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -55,6 +55,7 @@
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
 #include "framebuffer/clipboard.h"
+#include "framebuffer/filetype.h"
 
 #include "content/urldb.h"
 #include "desktop/local_history.h"
@@ -1824,13 +1825,19 @@ static struct gui_window_table framebuffer_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_browser_table framebuffer_browser_table = {
-	.poll = gui_poll,
+static struct gui_fetch_table framebuffer_fetch_table = {
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+
+	.get_resource_url = gui_get_resource_url,
+	.mimetype = fetch_mimetype,
+};
+
+static struct gui_browser_table framebuffer_browser_table = {
+	.poll = gui_poll,
 
 	.quit = gui_quit,
-	.get_resource_url = gui_get_resource_url,
 };
 
 /** Entry point from OS.
@@ -1852,6 +1859,7 @@ main(int argc, char** argv)
 		.browser = &framebuffer_browser_table,
 		.window = &framebuffer_window_table,
 		.clipboard = framebuffer_clipboard_table,
+		.fetch = &framebuffer_fetch_table,
 	};
 
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);

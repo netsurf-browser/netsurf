@@ -22,6 +22,8 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+#include "windows/filetype.h"
+
 /**
  * filetype -- determine the MIME type of a local file
  */

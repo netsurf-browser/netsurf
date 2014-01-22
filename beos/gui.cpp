@@ -1067,13 +1067,18 @@ static struct gui_clipboard_table beos_clipboard_table = {
 	gui_set_clipboard,
 };
 
+static struct gui_fetch_table beos_fetch_table = {
+	filename_from_path,
+        path_add_part,
+        fetch_filetype,
+        gui_get_resource_url,
+        NULL //fetch_mimetype
+};
+
 static struct gui_browser_table beos_browser_table = {
 	gui_poll,
-	filename_from_path,
-	path_add_part,
 	gui_quit,
 	NULL, //set_search_ico
-	gui_get_resource_url,
 	gui_launch_url,
 	NULL, //create_form_select_menu
 	NULL, //cert_verify
@@ -1090,7 +1095,8 @@ int main(int argc, char** argv)
 		&beos_browser_table,
 		beos_window_table,
 		beos_download_table,
-		&beos_clipboard_table
+		&beos_clipboard_table,
+                &beos_fetch_table
 	};
 
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
@@ -1141,7 +1147,8 @@ int gui_init_replicant(int argc, char** argv)
 		&beos_browser_table,
 		beos_window_table,
 		beos_download_table,
-		&beos_clipboard_table
+		&beos_clipboard_table,
+                &beos_fetch_table
 	};
 
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {

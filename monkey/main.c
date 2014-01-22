@@ -63,7 +63,7 @@ static void monkey_quit(void)
 	urldb_save(nsoption_charp(url_file));
 	free(nsoption_charp(cookie_file));
 	free(nsoption_charp(cookie_jar));
-	gtk_fetch_filetype_fin();
+	monkey_fetch_filetype_fin();
 }
 
 static nsurl *gui_get_resource_url(const char *path)
@@ -124,15 +124,15 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static char *filename_from_path(char *path)
 {
-	char *leafname;
+  char *leafname;
 
-	leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
+  leafname = strrchr(path, '/');
+  if (!leafname)
+    leafname = path;
+  else
+    leafname += 1;
 
-	return strdup(leafname);
+  return strdup(leafname);
 }
 
 /**
@@ -146,22 +146,28 @@ static char *filename_from_path(char *path)
 
 static bool path_add_part(char *path, int length, const char *newpart)
 {
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
+  if(path[strlen(path) - 1] != '/')
+    strncat(path, "/", length);
 
-	strncat(path, newpart, length);
+  strncat(path, newpart, length);
 
-	return true;
+  return true;
 }
+
+static struct gui_fetch_table monkey_fetch_table = {
+  .filename_from_path = filename_from_path,
+  .path_add_part = path_add_part,
+  .filetype = monkey_fetch_filetype,
+
+  .get_resource_url = gui_get_resource_url,
+};
 
 static struct gui_browser_table monkey_browser_table = {
   .poll = monkey_poll,
+
   .quit = monkey_quit,
-  .get_resource_url = gui_get_resource_url,
   .launch_url = gui_launch_url,
   .cert_verify = gui_cert_verify,
-  .filename_from_path = filename_from_path,
-  .path_add_part = path_add_part,
   .login = gui_401login_open,
 };
 
@@ -176,6 +182,7 @@ main(int argc, char **argv)
     .browser = &monkey_browser_table,
     .window = monkey_window_table,
     .download = monkey_download_table,
+    .fetch = &monkey_fetch_table,
   };
 
   /* Unbuffer stdin/out/err */
@@ -210,7 +217,7 @@ main(int argc, char **argv)
   }
     
   filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
-  gtk_fetch_filetype_init(buf);
+  monkey_fetch_filetype_init(buf);
   
   urldb_load(nsoption_charp(url_file));
   urldb_load_cookies(nsoption_charp(cookie_file));

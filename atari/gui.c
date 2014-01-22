@@ -74,6 +74,7 @@
 #include "atari/search.h"
 #include "atari/deskmenu.h"
 #include "atari/download.h"
+#include "atari/filetype.h"
 #include "cflib.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
@@ -1072,13 +1073,20 @@ static struct gui_clipboard_table atari_clipboard_table = {
     .set = gui_set_clipboard,
 };
 
-static struct gui_browser_table atari_browser_table = {
-    .poll = gui_poll,
-    .quit = gui_quit,
-    .get_resource_url = gui_get_resource_url,
-    .cert_verify = gui_cert_verify,
+static struct gui_fetch_table atari_fetch_table = {
     .filename_from_path = filename_from_path,
     .path_add_part = path_add_part,
+    .filetype = fetch_filetype,
+
+    .get_resource_url = gui_get_resource_url,
+    .mimetype = fetch_mimetype,
+};
+
+static struct gui_browser_table atari_browser_table = {
+    .poll = gui_poll,
+
+    .quit = gui_quit,
+    .cert_verify = gui_cert_verify,
     .login = gui_401login_open,
 };
 
@@ -1102,6 +1110,7 @@ int main(int argc, char** argv)
 	.window = &atari_window_table,
 	.clipboard = &atari_clipboard_table,
 	.download = atari_download_table,
+	.fetch = &atari_fetch_table,
     };
 
     /* @todo logging file descriptor update belongs in a nslog_init callback */

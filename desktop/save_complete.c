@@ -148,7 +148,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 	char fullpath[PATH_MAX];
 
 	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = guit->browser->path_add_part(fullpath, sizeof fullpath, leafname);
+	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, leafname);
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;
@@ -1049,7 +1049,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	else 
 		snprintf(filename, sizeof filename, "%p", c);
 
-	error = guit->browser->path_add_part(fullpath, sizeof fullpath, filename);
+	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, filename);
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;
@@ -1126,7 +1126,7 @@ static bool save_complete_inventory(save_complete_ctx *ctx)
 	char fullpath[PATH_MAX];
 
 	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = guit->browser->path_add_part(fullpath, sizeof fullpath, "Inventory");
+	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, "Inventory");
 	if (error == false) {
 		warn_user("NoMemory", NULL);
 		return false;

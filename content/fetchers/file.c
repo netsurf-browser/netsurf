@@ -305,7 +305,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			fetch_filetype(ctx->path)))
+			guit->fetch->filetype(ctx->path)))
 		goto fetch_file_process_aborted;
 
 	/* content length */
@@ -385,7 +385,7 @@ fetch_file_process_aborted:
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			fetch_filetype(ctx->path)))
+			guit->fetch->filetype(ctx->path)))
 		goto fetch_file_process_aborted;
 
 	/* content length */
@@ -575,7 +575,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			continue;
 
 		strncpy(urlpath, ctx->path, sizeof urlpath);
-		if (guit->browser->path_add_part(urlpath, sizeof urlpath, 
+		if (guit->fetch->path_add_part(urlpath, sizeof urlpath,
 				ent->d_name) == false)
 			continue;
 
@@ -608,7 +608,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 					     false,
 					     path,
 					     ent->d_name,
-					     fetch_filetype(urlpath),
+					     guit->fetch->filetype(urlpath),
 					     ent_stat.st_size,
 					     datebuf, timebuf,
 					     buffer, sizeof(buffer));

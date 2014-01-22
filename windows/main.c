@@ -110,6 +110,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.window = win32_window_table,
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,
+		.fetch = win32_fetch_table,
 	};
 	win32_browser_table->get_resource_url = gui_get_resource_url;
 

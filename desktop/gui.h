@@ -280,6 +280,75 @@ struct gui_clipboard_table {
 	void (*set)(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
 };
 
+/**
+ * function table for fetcher operations
+ */
+struct gui_fetch_table {
+	/* Mandantory entries */
+
+	/**
+	 * Return the filename part of a full path
+	 *
+	 * @note used in curl fetcher
+	 *
+	 * \param path full path and filename
+	 * \return filename (will be freed with free())
+	 */
+	char *(*filename_from_path)(char *path);
+
+	/**
+	 * Add a path component/filename to an existing path
+	 *
+	 * @note used in save complete and file fetcher
+	 *
+	 * \param path buffer containing path + free space
+	 * \param length length of buffer "path"
+	 * \param newpart string containing path component to add to path
+	 * \return true on success
+	 */
+	bool (*path_add_part)(char *path, int length, const char *newpart);
+
+	/**
+	 * Determine the MIME type of a local file.
+	 *
+	 * @note used in file fetcher
+	 *
+	 * \param unix_path Unix style path to file on disk
+	 * \return Pointer to MIME type string (should not be freed) -
+	 *	   invalidated on next call to fetch_filetype.
+	 */
+	const char *(*filetype)(const char *unix_path);
+
+
+	/* Optional entries */
+
+	/**
+	 * Callback to translate resource to full url.
+	 *
+	 * @note used in resource fetcher
+	 *
+	 * Transforms a resource: path into a full URL. The returned URL
+	 * is used as the target for a redirect. The caller takes ownership of
+	 * the returned nsurl including unrefing it when finished with it.
+	 *
+	 * \param path The path of the resource to locate.
+	 * \return A string containing the full URL of the target object or
+	 *         NULL if no suitable resource can be found.
+	 */
+	nsurl* (*get_resource_url)(const char *path);
+
+	/**
+	 * Find a MIME type for a local file
+	 *
+	 * @note used in file fetcher
+	 *
+	 * \param ro_path RISC OS style path to file on disk
+	 * \return MIME type string (on heap, caller should free), or NULL
+	 */
+	char *(*mimetype)(const char *ro_path);
+
+};
+
 /** Graphical user interface browser misc function table
  *
  * function table implementing GUI interface to miscelaneous browser
@@ -294,23 +363,6 @@ struct gui_browser_table {
 	 */
 	void (*poll)(bool active);
 
-	/**
-	 * Return the filename part of a full path
-	 *
-	 * \param path full path and filename
-	 * \return filename (will be freed with free())
-	 */
-	char *(*filename_from_path)(char *path);
-
-	/**
-	 * Add a path component/filename to an existing path
-	 *
-	 * \param path buffer containing path + free space
-	 * \param length length of buffer "path"
-	 * \param newpart string containing path component to add to path
-	 * \return true on success
-	 */
-	bool (*path_add_part)(char *path, int length, const char *newpart);
 
 	/* Optional entries */
 
@@ -325,19 +377,6 @@ struct gui_browser_table {
 	 * cache from search_web_ico()
 	 */
 	void (*set_search_ico)(hlcache_handle *ico);
-
-	/**
-	 * Callback to translate resource to full url.
-	 *
-	 * Transforms a resource: path into a full URL. The returned URL
-	 * is used as the target for a redirect. The caller takes ownership of
-	 * the returned nsurl including unrefing it when finished with it.
-	 *
-	 * \param path The path of the resource to locate.
-	 * \return A string containing the full URL of the target object or
-	 *         NULL if no suitable resource can be found.
-	 */
-	nsurl* (*get_resource_url)(const char *path);
 
 	/**
 	 * core has no fetcher for url
@@ -380,6 +419,9 @@ struct gui_table {
 
 	/** Clipboard table */
 	struct gui_clipboard_table *clipboard;
+
+	/** Fetcher table */
+	struct gui_fetch_table *fetch;
 };
 
 

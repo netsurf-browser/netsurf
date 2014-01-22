@@ -24,6 +24,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/FormSelectMenu.h"
+#import "cocoa/fetch.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -311,16 +312,22 @@ static struct gui_window_table window_table = {
 
 struct gui_window_table *cocoa_window_table = &window_table;
 
+static struct gui_fetch_table fetch_table = {
+	.filename_from_path = filename_from_path,
+        .path_add_part = path_add_part,
+        .filetype = fetch_filetype,
+
+        .get_resource_url = gui_get_resource_url,
+};
+
+struct gui_fetch_table *cocoa_fetch_table = &fetch_table;
+
 static struct gui_browser_table browser_table = {
 	.poll = gui_poll,
-	.get_resource_url = gui_get_resource_url,
+
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 };
 
 struct gui_browser_table *cocoa_browser_table = &browser_table;
-
-

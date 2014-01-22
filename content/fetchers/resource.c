@@ -207,7 +207,7 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 			}
 		}
 
-		e->url = guit->browser->get_resource_url(fetch_resource_paths[i]);
+		e->url = guit->fetch->get_resource_url(fetch_resource_paths[i]);
 		if (e->url == NULL) {
 			lwc_string_unref(e->path);
 		} else {

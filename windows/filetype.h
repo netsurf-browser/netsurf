@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Sven Weidauer <sven.weidauer@gmail.com>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import <Cocoa/Cocoa.h>
+#ifndef _NETSURF_WINDOWS_FILETYPE_H_
+#define _NETSURF_WINDOWS_FILETYPE_H_
 
-extern struct gui_window_table *cocoa_window_table;
-extern struct gui_clipboard_table *cocoa_clipboard_table;
-extern struct gui_fetch_table *cocoa_fetch_table;
-extern struct gui_browser_table *cocoa_browser_table;
+const char *fetch_filetype(const char *unix_path);
+char *fetch_mimetype(const char *ro_path);
 
-extern NSString * const kCookiesFileOption;
-extern NSString * const kURLsFileOption;
-extern NSString * const kHotlistFileOption;
-extern NSString * const kHomepageURLOption;
-extern NSString * const kOptionsFileOption;
-extern NSString * const kAlwaysCancelDownload;
-extern NSString * const kAlwaysCloseMultipleTabs;
-
-void cocoa_autorelease( void );
+#endif

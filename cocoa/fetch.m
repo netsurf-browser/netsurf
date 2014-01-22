@@ -21,6 +21,8 @@
 #import "utils/log.h"
 #import "content/fetch.h"
 
+#import "cocoa/fetch.h"
+
 static char cocoafiletype[200];
 
 static const struct mimemap_s {
@@ -90,10 +92,4 @@ const char *fetch_filetype(const char *unix_path)
 	LOG(( "\tMIME type for '%s' is '%s'", unix_path, cocoafiletype ));
 	
 	return cocoafiletype;
-}
-
-
-char *fetch_mimetype(const char *ro_path)
-{
-	return strdup( fetch_filetype( ro_path ) );
 }

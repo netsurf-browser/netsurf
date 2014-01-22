@@ -1133,16 +1133,23 @@ static struct gui_clipboard_table nsgtk_clipboard_table = {
 	.set = gui_set_clipboard,
 };
 
+static struct gui_fetch_table nsgtk_fetch_table = {
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+
+	.get_resource_url = gui_get_resource_url,
+
+};
+
 static struct gui_browser_table nsgtk_browser_table = {
 	.poll = gui_poll,
+
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,
-	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
         .login = gui_401login_open,
 };
 
@@ -1159,6 +1166,7 @@ int main(int argc, char** argv)
 		.window = nsgtk_window_table,
 		.clipboard = &nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
+		.fetch = &nsgtk_fetch_table,
 	};
 
 	/* check home directory is available */

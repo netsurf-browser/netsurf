@@ -207,11 +207,6 @@ const char *fetch_filetype(const char *unix_path)
 	return type != NULL ? type : "text/plain";
 }
 
-char *fetch_mimetype(const char *unix_path)
-{
-	return strdup(fetch_filetype(unix_path));
-}
-
 #ifdef TEST_RIG
 
 int main(int argc, char *argv[])

@@ -2353,15 +2353,22 @@ static struct gui_clipboard_table riscos_clipboard_table = {
 	.set = gui_set_clipboard,
 };
 
+static struct gui_fetch_table riscos_fetch_table = {
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+
+	.get_resource_url = gui_get_resource_url,
+	.mimetype = fetch_mimetype,
+};
+
 static struct gui_browser_table riscos_browser_table = {
 	.poll = gui_poll,
+
 	.quit = gui_quit,
-	.get_resource_url = gui_get_resource_url,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.login = gui_401login_open,
 };
 
@@ -2381,6 +2388,7 @@ int main(int argc, char** argv)
 		.window = riscos_window_table,
 		.clipboard = &riscos_clipboard_table,
 		.download = riscos_download_table,
+		.fetch = &riscos_fetch_table,
 	};
 
 	/* Consult NetSurf$Logging environment variable to decide if logging

@@ -1267,7 +1267,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 		if (control->file) {
 			char *leafname = 0;
 
-			leafname = guit->browser->filename_from_path(control->value);
+			leafname = guit->fetch->filename_from_path(control->value);
 
 			if (leafname == NULL)
 				continue;
@@ -1297,7 +1297,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 					LOG(("curl_formadd: %d (%s)",
 						code, control->name));
 			} else {
-				char *mimetype = fetch_mimetype(control->value);
+				char *mimetype = guit->fetch->mimetype(control->value);
 				code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_FILE, control->rawfile,
