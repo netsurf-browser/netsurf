@@ -112,7 +112,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.download = win32_download_table,
 		.fetch = win32_fetch_table,
 	};
-	win32_browser_table->get_resource_url = gui_get_resource_url;
+	win32_fetch_table->get_resource_url = gui_get_resource_url;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);

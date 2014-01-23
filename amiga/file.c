@@ -62,7 +62,7 @@ static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 	strcpy(fname,fr->fr_Drawer);
 	AddPart(fname,ap->ap_Info.fib_FileName,1024);
 
-  	mt = fetch_mimetype(fname);
+  	mt = strdup(fetch_filetype(fname));
 	lerror = lwc_intern_string(mt, strlen(mt), &lwc_mt);
 	if (lerror != lwc_error_ok)
 		return FALSE;
