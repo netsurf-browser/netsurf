@@ -55,7 +55,7 @@
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
 #include "framebuffer/clipboard.h"
-#include "framebuffer/filetype.h"
+#include "framebuffer/fetch.h"
 
 #include "content/urldb.h"
 #include "desktop/local_history.h"
@@ -1768,43 +1768,6 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-static char *filename_from_path(char *path)
-{
-	char *leafname;
-
-	leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
-
-	return strdup(leafname);
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
-
-	strncat(path, newpart, length);
-
-	return true;
-}
 
 static struct gui_window_table framebuffer_window_table = {
 	.create = gui_window_create,
@@ -1825,14 +1788,6 @@ static struct gui_window_table framebuffer_window_table = {
 	.stop_throbber = gui_window_stop_throbber,
 };
 
-static struct gui_fetch_table framebuffer_fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
-	.filetype = fetch_filetype,
-
-	.get_resource_url = gui_get_resource_url,
-	.mimetype = fetch_mimetype,
-};
 
 static struct gui_browser_table framebuffer_browser_table = {
 	.poll = gui_poll,
@@ -1859,7 +1814,7 @@ main(int argc, char** argv)
 		.browser = &framebuffer_browser_table,
 		.window = &framebuffer_window_table,
 		.clipboard = framebuffer_clipboard_table,
-		.fetch = &framebuffer_fetch_table,
+		.fetch = framebuffer_fetch_table,
 	};
 
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
