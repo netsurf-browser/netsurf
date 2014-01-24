@@ -29,6 +29,7 @@
 #include "content/fetch.h"
 #include "content/llcache.h"
 #include "content/urldb.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
@@ -161,11 +162,6 @@ struct llcache_s {
 
 /** low level cache state */
 static struct llcache_s *llcache = NULL;
-
-/* Static lwc_strings */
-static lwc_string *llcache_file_lwc;
-static lwc_string *llcache_about_lwc;
-static lwc_string *llcache_resource_lwc;
 
 /* forward referenced callback function */
 static void llcache_fetch_callback(const fetch_msg *msg, void *p);
@@ -1272,16 +1268,16 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 
 	/* resource: and about: are allowed to redirect anywhere */
-	if ((lwc_string_isequal(object_scheme, llcache_resource_lwc,
+	if ((lwc_string_isequal(object_scheme, corestring_lwc_resource,
 			&match) == lwc_error_ok && match == false) &&
-	    (lwc_string_isequal(object_scheme, llcache_about_lwc,
+	    (lwc_string_isequal(object_scheme, corestring_lwc_about,
 			&match) == lwc_error_ok && match == false)) {
 		/* file, about and resource are not valid redirect targets */
-		if ((lwc_string_isequal(object_scheme, llcache_file_lwc,
+		if ((lwc_string_isequal(object_scheme, corestring_lwc_file,
 				&match) == lwc_error_ok && match == true) ||
-		    (lwc_string_isequal(object_scheme, llcache_about_lwc,
+		    (lwc_string_isequal(object_scheme, corestring_lwc_about,
 				&match) == lwc_error_ok && match == true) ||
-		    (lwc_string_isequal(object_scheme, llcache_resource_lwc,
+		    (lwc_string_isequal(object_scheme, corestring_lwc_resource,
 				&match) == lwc_error_ok && match == true)) {
 			lwc_string_unref(object_scheme);
 			lwc_string_unref(scheme);
@@ -2287,19 +2283,6 @@ llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit)
 	llcache->query_cb_pw = pw;
 	llcache->limit = llcache_limit;
 
-	/* Create static scheme strings */
-	if (lwc_intern_string("file", SLEN("file"),
-			&llcache_file_lwc) != lwc_error_ok)
-		return NSERROR_NOMEM;
-
-	if (lwc_intern_string("about", SLEN("about"),
-			&llcache_about_lwc) != lwc_error_ok)
-		return NSERROR_NOMEM;
-
-	if (lwc_intern_string("resource", SLEN("resource"),
-			&llcache_resource_lwc) != lwc_error_ok)
-		return NSERROR_NOMEM;
-
 	LOG(("llcache initialised with a limit of %d bytes", llcache_limit));
 
 	return NSERROR_OK;
@@ -2351,11 +2334,6 @@ void llcache_finalise(void)
 
 		llcache_object_destroy(object);
 	}
-
-	/* Unref static scheme lwc strings */
-	lwc_string_unref(llcache_file_lwc);
-	lwc_string_unref(llcache_about_lwc);
-	lwc_string_unref(llcache_resource_lwc);
 
 	free(llcache);
 	llcache = NULL;
