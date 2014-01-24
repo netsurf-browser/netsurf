@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_FB_FILETYPE_H
-#define NETSURF_FB_FILETYPE_H
 
-const char *fetch_filetype(const char *unix_path);
-char *fetch_mimetype(const char *ro_path);
+#ifndef NETSURF_FB_FETCH_H
+#define NETSURF_FB_FETCH_H
+
+struct gui_fetch_table *framebuffer_fetch_table;
 
 #endif

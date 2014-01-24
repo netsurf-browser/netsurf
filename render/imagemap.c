@@ -304,6 +304,10 @@ imagemap_extract(html_content *c)
 		if (name != NULL) {
 			struct mapentry *entry = NULL;
 			if (imagemap_extract_map(node, c, &entry) == false) {
+				if (entry != NULL) {
+					imagemap_freelist(entry);
+				}
+
 				dom_string_unref(name);
 				dom_node_unref(node);
 				ret = NSERROR_NOMEM; /** @todo check this */
@@ -317,6 +321,8 @@ imagemap_extract(html_content *c)
 			 */
 			if ((entry != NULL) && 
 			    (imagemap_add(c, name, entry) == false)) {
+				imagemap_freelist(entry);
+
 				dom_string_unref(name);
 				dom_node_unref(node);
 				ret = NSERROR_NOMEM; /** @todo check this */
