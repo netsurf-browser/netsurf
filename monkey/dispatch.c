@@ -81,6 +81,9 @@ monkey_process_command(void)
     }
   } RING_ITERATE_END(handler_ring, handler);
   
-  if (fn != NULL)
+  if (fn != NULL) {
     fn(argc, argv);
+  }
+
+  free(argv);
 }
