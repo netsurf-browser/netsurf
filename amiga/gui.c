@@ -2787,9 +2787,13 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	if(locked_screen == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
-	LOG(("Waiting for visitor windows to close..."));
+	LOG(("Waiting for visitor windows to close... (signal)"));
 	Wait(scrnsig);
-	CloseScreen(scrn);
+
+	while (CloseScreen(scrn) == FALSE) {
+		LOG(("Still waiting for visitor windows to close... (polling)"));
+		Delay(50);
+	}
 }
 
 static void gui_quit(void)
