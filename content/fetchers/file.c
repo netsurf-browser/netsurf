@@ -48,6 +48,7 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -734,12 +735,7 @@ static void fetch_file_poll(lwc_string *scheme)
 
 void fetch_file_register(void)
 {
-	lwc_string *scheme;
-
-	if (lwc_intern_string("file", SLEN("file"), &scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"file\").");
-	}
+	lwc_string *scheme = lwc_string_ref(corestring_lwc_file);
 
 	fetch_add_fetcher(scheme,
 		fetch_file_initialise,
