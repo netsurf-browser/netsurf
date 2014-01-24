@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/corestrings.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
@@ -819,11 +820,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 	switch (section) {
 	case URL_SCHEME:
 		if (length == 0) {
-			/* No scheme, assuming http, and add to URL */
-			if (lwc_intern_string("http", SLEN("http"),
-					&url->scheme) != lwc_error_ok) {
-				return NSERROR_NOMEM;
-			}
+			/* No scheme, assuming http */
+			url->scheme = lwc_string_ref(corestring_lwc_http);
 		} else {
 			/* Add scheme to URL */
 			if (lwc_intern_string(norm_start, length,
