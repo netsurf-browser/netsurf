@@ -60,6 +60,7 @@
 #include "render/form.h"
 #include "render/html.h"
 #include "render/box.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
@@ -1004,6 +1005,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	if (link == NULL) {
 		lwc_string *scheme;
 		bool speculative_default = false;
+		bool match;
 
 		nsurl = hlcache_handle_get_url(c);
 
@@ -1011,12 +1013,10 @@ static void browser_window_update_favicon(hlcache_handle *c,
 
 		/* If the document was fetched over http(s), then speculate 
 		 * that there's a favicon living at /favicon.ico */
-		if ((lwc_string_length(scheme) == SLEN("HTTP") &&
-				strcasecmp(lwc_string_data(scheme), 
-						"http") == 0) ||
-		    (lwc_string_length(scheme) == SLEN("HTTPS") &&
-				strcasecmp(lwc_string_data(scheme), 
-						"https") == 0)) {
+		if ((lwc_string_caseless_isequal(scheme, corestring_lwc_http,
+				&match) == lwc_error_ok && match) ||
+		    (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+				&match) == lwc_error_ok && match)) {
 			speculative_default = true;
 		}
 
