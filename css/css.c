@@ -28,6 +28,7 @@
 #include "css/internal.h"
 #include "desktop/system_colour.h"
 #include "render/html.h"
+#include "utils/corestrings.h"
 #include "utils/utils.h"
 #include "utils/http.h"
 #include "utils/log.h"
@@ -111,7 +112,6 @@ static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
 
-static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
 
@@ -146,7 +146,7 @@ nserror nscss_create(const content_handler *handler,
 	}
 
 	/* Find charset specified on HTTP layer, if any */
-	error = http_parameter_list_find_item(params, css_charset, 
+	error = http_parameter_list_find_item(params, corestring_lwc_charset, 
 			&charset_value);
 	if (error != NSERROR_OK || lwc_string_length(charset_value) == 0) {
 		/* No charset specified, use fallback, if any */
@@ -800,11 +800,6 @@ css_error nscss_register_import(struct content_css_data *c,
  */
 static void nscss_fini(void)
 {
-	if (css_charset != NULL) {
-		lwc_string_unref(css_charset);
-		css_charset = NULL;
-	}
-
 	if (blank_import != NULL) {
 		css_stylesheet_destroy(blank_import);
 		blank_import = NULL;
@@ -828,14 +823,7 @@ static const content_handler css_content_handler = {
  */
 nserror nscss_init(void)
 {
-	lwc_error lerror;
 	nserror error;
-
-	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
-	if (lerror != lwc_error_ok) {
-		error = NSERROR_NOMEM;
-		goto error;
-	}
 
 	error = content_factory_register_handler("text/css", 
 			&css_content_handler);
