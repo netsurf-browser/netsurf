@@ -967,7 +967,6 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 static void browser_window_update_favicon(hlcache_handle *c,
 		struct browser_window *bw, struct content_rfc5988_link *link)
 {
-	lwc_string *icon_str;
 	nsurl *nsref = NULL;
 	nsurl *nsurl;
 	nserror error;
@@ -986,20 +985,14 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	bw->failed_favicon = false;
 
 	if (link == NULL) {
-		/* look for favicon metadata link */
-		if (lwc_intern_string("icon", SLEN("icon"), 
-				&icon_str) == lwc_error_ok) {
-			link = content_find_rfc5988_link(c, icon_str);
-			lwc_string_unref(icon_str);
-		}
+		/* Look for "icon" */
+		link = content_find_rfc5988_link(c, corestring_lwc_icon);
 	}
 
 	if (link == NULL) {
-		if (lwc_intern_string("shortcut icon", SLEN("shortcut icon"), 
-				&icon_str) == lwc_error_ok) {
-			link = content_find_rfc5988_link(c, icon_str);
-			lwc_string_unref(icon_str);
-		}
+		/* Look for "shortcut icon" */
+		link = content_find_rfc5988_link(c,
+				corestring_lwc_shortcut_icon);
 	}
 
 	if (link == NULL) {
@@ -1404,34 +1397,17 @@ static nserror browser_window_callback(hlcache_handle *c,
 		
 	case CONTENT_MSG_LINK: /* content has an rfc5988 link element */
 	{
-		lwc_string *icon_str;
-		lwc_string *shortcut_icon_str;
-		bool icon_match = false;
-		bool shortcut_icon_match = false;
+		bool match;
 
-		if (lwc_intern_string("icon", SLEN("icon"), 
-				&icon_str) == lwc_error_ok) {
-			if (lwc_string_caseless_isequal(
-					event->data.rfc5988_link->rel, 
-					icon_str,
-					&icon_match) != lwc_error_ok) {
-				icon_match = false;
-			}
-			lwc_string_unref(icon_str);
-		}
-
-		if (lwc_intern_string("shortcut icon", SLEN("shortcut icon"), 
-				&shortcut_icon_str) == lwc_error_ok) {
-			if (lwc_string_caseless_isequal(
-					event->data.rfc5988_link->rel, 
-					shortcut_icon_str, 
-					&shortcut_icon_match) != lwc_error_ok) {
-				shortcut_icon_match = false;
-			}
-			lwc_string_unref(shortcut_icon_str);
-		}
-
-		if (icon_match || shortcut_icon_match) {
+		/* Handle "icon" and "shortcut icon" */
+		if ((lwc_string_caseless_isequal(
+				event->data.rfc5988_link->rel,
+				corestring_lwc_icon,
+				&match) == lwc_error_ok && match) ||
+		    (lwc_string_caseless_isequal(
+				event->data.rfc5988_link->rel,
+				corestring_lwc_shortcut_icon,
+				&match) == lwc_error_ok && match)) {
 			/* it's a favicon perhaps start a fetch for it */
 			browser_window_update_favicon(c, bw,
 					event->data.rfc5988_link);

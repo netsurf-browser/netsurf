@@ -67,6 +67,7 @@ extern lwc_string *corestring_lwc_hr;
 extern lwc_string *corestring_lwc_html;
 extern lwc_string *corestring_lwc_http;
 extern lwc_string *corestring_lwc_https;
+extern lwc_string *corestring_lwc_icon;
 extern lwc_string *corestring_lwc_iframe;
 extern lwc_string *corestring_lwc_image;
 extern lwc_string *corestring_lwc_img;
@@ -77,7 +78,7 @@ extern lwc_string *corestring_lwc_li;
 extern lwc_string *corestring_lwc_link;
 extern lwc_string *corestring_lwc_meta;
 extern lwc_string *corestring_lwc_middle;
-extern lwc_string *corestring_lwc_multipart_form_data;
+extern lwc_string *corestring_lwc_multipart_form_data; /* multipart/form-data */
 extern lwc_string *corestring_lwc_no;
 extern lwc_string *corestring_lwc_noscript;
 extern lwc_string *corestring_lwc_object;
@@ -98,6 +99,7 @@ extern lwc_string *corestring_lwc_resource;
 extern lwc_string *corestring_lwc_right;
 extern lwc_string *corestring_lwc_search;
 extern lwc_string *corestring_lwc_select;
+extern lwc_string *corestring_lwc_shortcut_icon; /* shortcut icon */
 extern lwc_string *corestring_lwc_src;
 extern lwc_string *corestring_lwc_style;
 extern lwc_string *corestring_lwc_submit;
@@ -107,7 +109,7 @@ extern lwc_string *corestring_lwc_td;
 extern lwc_string *corestring_lwc_text;
 extern lwc_string *corestring_lwc_textarea;
 extern lwc_string *corestring_lwc_texttop;
-extern lwc_string *corestring_lwc_text_css;
+extern lwc_string *corestring_lwc_text_css; /* text/css */
 extern lwc_string *corestring_lwc_tfoot;
 extern lwc_string *corestring_lwc_th;
 extern lwc_string *corestring_lwc_thead;
@@ -183,7 +185,7 @@ extern struct dom_string *corestring_dom_height;
 extern struct dom_string *corestring_dom_href;
 extern struct dom_string *corestring_dom_hreflang;
 extern struct dom_string *corestring_dom_hspace;
-extern struct dom_string *corestring_dom_http_equiv;
+extern struct dom_string *corestring_dom_http_equiv; /* http-equiv */
 extern struct dom_string *corestring_dom_id;
 extern struct dom_string *corestring_dom_input;
 extern struct dom_string *corestring_dom_invalid;
@@ -244,7 +246,7 @@ extern struct dom_string *corestring_dom_submit;
 extern struct dom_string *corestring_dom_suspend;
 extern struct dom_string *corestring_dom_target;
 extern struct dom_string *corestring_dom_text;
-extern struct dom_string *corestring_dom_text_javascript;
+extern struct dom_string *corestring_dom_text_javascript; /* text/javascript */
 extern struct dom_string *corestring_dom_timeupdate;
 extern struct dom_string *corestring_dom_title;
 extern struct dom_string *corestring_dom_type;

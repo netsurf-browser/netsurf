@@ -63,6 +63,7 @@ lwc_string *corestring_lwc_hr;
 lwc_string *corestring_lwc_html;
 lwc_string *corestring_lwc_http;
 lwc_string *corestring_lwc_https;
+lwc_string *corestring_lwc_icon;
 lwc_string *corestring_lwc_iframe;
 lwc_string *corestring_lwc_image;
 lwc_string *corestring_lwc_img;
@@ -94,6 +95,7 @@ lwc_string *corestring_lwc_resource;
 lwc_string *corestring_lwc_right;
 lwc_string *corestring_lwc_search;
 lwc_string *corestring_lwc_select;
+lwc_string *corestring_lwc_shortcut_icon;
 lwc_string *corestring_lwc_src;
 lwc_string *corestring_lwc_style;
 lwc_string *corestring_lwc_submit;
@@ -315,6 +317,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(html);
 	CSS_LWC_STRING_UNREF(http);
 	CSS_LWC_STRING_UNREF(https);
+	CSS_LWC_STRING_UNREF(icon);
 	CSS_LWC_STRING_UNREF(iframe);
 	CSS_LWC_STRING_UNREF(image);
 	CSS_LWC_STRING_UNREF(img);
@@ -346,6 +349,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(right);
 	CSS_LWC_STRING_UNREF(search);
 	CSS_LWC_STRING_UNREF(select);
+	CSS_LWC_STRING_UNREF(shortcut_icon);
 	CSS_LWC_STRING_UNREF(src);
 	CSS_LWC_STRING_UNREF(style);
 	CSS_LWC_STRING_UNREF(submit);
@@ -591,6 +595,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(html);
 	CSS_LWC_STRING_INTERN(http);
 	CSS_LWC_STRING_INTERN(https);
+	CSS_LWC_STRING_INTERN(icon);
 	CSS_LWC_STRING_INTERN(iframe);
 	CSS_LWC_STRING_INTERN(image);
 	CSS_LWC_STRING_INTERN(img);
@@ -651,6 +656,13 @@ nserror corestrings_init(void)
 			&corestring_lwc_multipart_form_data);
 	if ((lerror != lwc_error_ok) ||
 			(corestring_lwc_multipart_form_data == NULL)) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+	lerror = lwc_intern_string("shortcut icon", SLEN("shortcut icon"),
+			&corestring_lwc_shortcut_icon);
+	if ((lerror != lwc_error_ok) || (corestring_lwc_shortcut_icon == NULL)) {
 		error = NSERROR_NOMEM;
 		goto error;
 	}
