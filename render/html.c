@@ -2180,8 +2180,6 @@ static content_type html_content_type(void)
 
 static void html_fini(void)
 {
-	box_construct_fini();
-
 	html_css_fini();
 }
 
@@ -2218,10 +2216,6 @@ nserror html_init(void)
 	nserror error;
 
 	error = html_css_init();
-	if (error != NSERROR_OK)
-		goto error;
-
-	error = box_construct_init();
 	if (error != NSERROR_OK)
 		goto error;
 

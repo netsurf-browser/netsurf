@@ -339,8 +339,6 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
-nserror box_construct_init(void);
-void box_construct_fini(void);
 nserror dom_to_box(struct dom_node *n, struct html_content *c,
 		box_construct_complete_cb cb);
 
