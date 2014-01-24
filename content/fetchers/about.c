@@ -48,6 +48,7 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -839,13 +840,7 @@ static void fetch_about_poll(lwc_string *scheme)
 
 void fetch_about_register(void)
 {
-	lwc_string *scheme;
-
-	if (lwc_intern_string("about", SLEN("about"),
-			&scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"about\").");
-	}
+	lwc_string *scheme = lwc_string_ref(corestring_lwc_about);
 
 	fetch_add_fetcher(scheme,
 		fetch_about_initialise,

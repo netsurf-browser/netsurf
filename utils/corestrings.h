@@ -31,6 +31,7 @@ void corestrings_fini(void);
 
 /* lwc_string strings */
 extern lwc_string *corestring_lwc_a;
+extern lwc_string *corestring_lwc_about;
 extern lwc_string *corestring_lwc_abscenter;
 extern lwc_string *corestring_lwc_absmiddle;
 extern lwc_string *corestring_lwc_align;
@@ -46,6 +47,7 @@ extern lwc_string *corestring_lwc_charset;
 extern lwc_string *corestring_lwc_checkbox;
 extern lwc_string *corestring_lwc_circle;
 extern lwc_string *corestring_lwc_col;
+extern lwc_string *corestring_lwc_data;
 extern lwc_string *corestring_lwc_default;
 extern lwc_string *corestring_lwc_div;
 extern lwc_string *corestring_lwc_embed;
@@ -92,6 +94,7 @@ extern lwc_string *corestring_lwc_rect;
 extern lwc_string *corestring_lwc_rectangle;
 extern lwc_string *corestring_lwc_refresh;
 extern lwc_string *corestring_lwc_reset;
+extern lwc_string *corestring_lwc_resource;
 extern lwc_string *corestring_lwc_right;
 extern lwc_string *corestring_lwc_search;
 extern lwc_string *corestring_lwc_select;
