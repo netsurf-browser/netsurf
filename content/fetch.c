@@ -45,6 +45,7 @@
 #include "content/fetchers/file.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -96,10 +97,6 @@ static struct fetch *fetch_ring = 0;	/**< Ring of active fetches. */
 static struct fetch *queue_ring = 0;	/**< Ring of queued fetches */
 
 #define fetch_ref_fetcher(F) F->refcount++
-
-/* Static lwc_strings */
-static lwc_string *fetch_http_lwc;
-static lwc_string *fetch_https_lwc;
 
 /******************************************************************************
  * fetch internals							      *
@@ -241,20 +238,6 @@ static void fetch_dispatch_jobs(void)
 /* exported interface documented in content/fetch.h */
 nserror fetch_init(void)
 {
-	if (lwc_intern_string("http", SLEN("http"), &fetch_http_lwc) !=
-	    lwc_error_ok) {
-		LOG(("Failed to initialise the fetch module "
-		     "(couldn't intern \"http\")."));
-		return NSERROR_INIT_FAILED;
-	}
-
-	if (lwc_intern_string("https", SLEN("https"), &fetch_https_lwc) !=
-	    lwc_error_ok) {
-		LOG(("Failed to initialise the fetch module "
-		     "(couldn't intern \"https\")."));
-		return NSERROR_INIT_FAILED;
-	}
-
 	fetch_curl_register();
 	fetch_data_register();
 	fetch_file_register();
@@ -278,9 +261,6 @@ void fetch_quit(void)
 		}
 		fetch_unref_fetcher(fetchers);
 	}
-
-	lwc_string_unref(fetch_http_lwc);
-	lwc_string_unref(fetch_https_lwc);
 }
 
 /* exported interface documented in content/fetch.h */
@@ -383,11 +363,11 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 					       &match) != lwc_error_ok) {
 				match = false;
 			}
-			if (lwc_string_isequal(scheme, fetch_https_lwc,
+			if (lwc_string_isequal(scheme, corestring_lwc_https,
 					       &match1) != lwc_error_ok) {
 				match1 = false;
 			}
-			if (lwc_string_isequal(ref_scheme, fetch_http_lwc,
+			if (lwc_string_isequal(ref_scheme, corestring_lwc_http,
 					       &match2) != lwc_error_ok) {
 				match2= false;
 			}
