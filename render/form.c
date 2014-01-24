@@ -1333,9 +1333,10 @@ static void form__select_process_selection(html_content *html,
 	for (count = 0, o = control->data.select.items;
 			o != NULL;
 			count++, o = o->next) {
-		if (!control->data.select.multiple)
+		if (!control->data.select.multiple && o->selected) {
 			o->selected = false;
 			dom_html_option_element_set_selected(o->node, false);
+		}
 		if (count == item) {
 			if (control->data.select.multiple) {
 				if (o->selected) {
