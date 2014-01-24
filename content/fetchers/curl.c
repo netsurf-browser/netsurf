@@ -46,6 +46,7 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -236,18 +237,10 @@ void fetch_curl_register(void)
 
 	for (i = 0; data->protocols[i]; i++) {
 		if (strcmp(data->protocols[i], "http") == 0) {
-			if (lwc_intern_string("http", SLEN("http"),
-					&scheme) != lwc_error_ok) {
-				die("Failed to initialise the fetch module "
-						"(couldn't intern \"http\").");
-			}
+			scheme = lwc_string_ref(corestring_lwc_http);
 
 		} else if (strcmp(data->protocols[i], "https") == 0) {
-			if (lwc_intern_string("https", SLEN("https"),
-					&scheme) != lwc_error_ok) {
-				die("Failed to initialise the fetch module "
-						"(couldn't intern \"https\").");
-			}
+			scheme = lwc_string_ref(corestring_lwc_https);
 
 		} else {
 			/* Ignore non-http(s) protocols */
