@@ -2780,6 +2780,8 @@ bool box_select(BOX_SPECIAL_PARAMS)
 		gadget->data.select.current->initial_selected =
 			gadget->data.select.current->selected = true;
 		gadget->data.select.num_selected = 1;
+		dom_html_option_element_set_selected(
+				gadget->data.select.current->node, true);
 	}
 
 	if (gadget->data.select.num_selected == 0)
