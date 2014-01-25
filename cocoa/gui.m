@@ -46,15 +46,6 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-static nsurl *gui_get_resource_url(const char *path)
-{
-	nsurl *url = NULL;
-	NSString *nspath = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: path] ofType: @""];
-	if (nspath == nil) return NULL;
-	nsurl_create([[[NSURL fileURLWithPath: nspath] absoluteString] UTF8String], &url);
-	return url;
-}
-
 static void gui_poll(bool active)
 {
 	cocoa_autorelease();
@@ -273,20 +264,6 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	cb( false, cbpw );
 }
 
-static char *filename_from_path(char *path)
-{
-	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
-}
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
-
-	strncpy( path, [newPath UTF8String], length );
-	
-	return true;
-}
-
 
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
@@ -312,15 +289,6 @@ static struct gui_window_table window_table = {
 
 struct gui_window_table *cocoa_window_table = &window_table;
 
-static struct gui_fetch_table fetch_table = {
-	.filename_from_path = filename_from_path,
-        .path_add_part = path_add_part,
-        .filetype = fetch_filetype,
-
-        .get_resource_url = gui_get_resource_url,
-};
-
-struct gui_fetch_table *cocoa_fetch_table = &fetch_table;
 
 static struct gui_browser_table browser_table = {
 	.poll = gui_poll,

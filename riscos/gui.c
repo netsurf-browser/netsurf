@@ -719,6 +719,135 @@ void ro_gui_check_resolvers(void)
 	}
 }
 
+/**
+ * Convert a RISC OS pathname to a file: URL.
+ *
+ * \param  path  RISC OS pathname
+ * \return  URL, allocated on heap, or 0 on failure
+ */
+
+static char *path_to_url(const char *path)
+{
+	int spare;
+	char *canonical_path; /* canonicalised RISC OS path */
+	char *unix_path; /* unix path */
+	char *escurl;
+	os_error *error;
+	url_func_result url_err;
+	int urllen;
+	char *url; /* resulting url */
+
+        /* calculate the canonical risc os path */
+	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
+	if (error) {
+		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PathToURL", error->errmess);
+		return NULL;
+	}
+
+	canonical_path = malloc(1 - spare);
+	if (canonical_path == NULL) {
+		LOG(("malloc failed"));
+		warn_user("NoMemory", 0);
+		free(canonical_path);
+		return NULL;
+	}
+
+	error = xosfscontrol_canonicalise_path(path, canonical_path, 0, 0, 1 - spare, 0);
+	if (error) {
+		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PathToURL", error->errmess);
+		free(canonical_path);
+		return NULL;
+	}
+
+	/* create a unix path from teh cananocal risc os one */
+	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
+
+	if (unix_path == NULL) {
+		LOG(("__unixify failed: %s", canonical_path));
+		free(canonical_path);
+		return NULL;
+	}
+	free(canonical_path);
+
+        /* convert the unix path into a url */
+	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
+	url = malloc(urllen);
+	if (url == NULL) {
+		LOG(("Unable to allocate url"));
+		free(unix_path);
+		return NULL;
+	}
+
+	if (*unix_path == '/') {
+		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path + 1);
+	} else {
+		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path);
+	}
+	free(unix_path);
+
+	/* We don't want '/' to be escaped.  */
+	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
+	free(url); url = NULL;
+	if (url_err != URL_FUNC_OK) {
+		LOG(("url_escape failed: %s", url));
+		return NULL;
+	}
+
+	return escurl;
+}
+
+
+/**
+ * Convert a file: URL to a RISC OS pathname.
+ *
+ * \param  url  a file: URL
+ * \return  RISC OS pathname, allocated on heap, or 0 on failure
+ */
+
+static char *url_to_path(const char *url)
+{
+	char *path;
+	char *filename;
+	char *respath;
+	url_func_result res; /* result from url routines */
+	char *r;
+
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	res = url_unescape(path, &respath);
+	free(path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
+
+	/* RISC OS path should not be more than 100 characters longer */
+	filename = malloc(strlen(respath) + 100);
+	if (!filename) {
+		free(respath);
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	r = __riscosify(respath, 0, __RISCOSIFY_NO_SUFFIX,
+			filename, strlen(respath) + 100, 0);
+
+	free(respath);
+	if (r == 0) {
+		free(filename);
+		LOG(("__riscosify failed"));
+		return NULL;
+	}
+
+	return filename;
+}
 
 /**
  * Last-minute gui init, after all other modules have initialised.
@@ -836,7 +965,6 @@ static bool nslog_stream_configure(FILE *fptr)
 
 	return true;
 }
-
 
 
 /**
@@ -1873,135 +2001,6 @@ void ro_msg_window_info(wimp_message *message)
 }
 
 
-/**
- * Convert a RISC OS pathname to a file: URL.
- *
- * \param  path  RISC OS pathname
- * \return  URL, allocated on heap, or 0 on failure
- */
-
-char *path_to_url(const char *path)
-{
-	int spare;
-	char *canonical_path; /* canonicalised RISC OS path */
-	char *unix_path; /* unix path */
-	char *escurl;
-	os_error *error;
-	url_func_result url_err;
-	int urllen;
-	char *url; /* resulting url */
-
-        /* calculate the canonical risc os path */
-	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
-	if (error) {
-		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("PathToURL", error->errmess);
-		return NULL;
-	}
-
-	canonical_path = malloc(1 - spare);
-	if (canonical_path == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		free(canonical_path);
-		return NULL;
-	}
-
-	error = xosfscontrol_canonicalise_path(path, canonical_path, 0, 0, 1 - spare, 0);
-	if (error) {
-		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("PathToURL", error->errmess);
-		free(canonical_path);
-		return NULL;
-	}
-
-	/* create a unix path from teh cananocal risc os one */
-	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
-
-	if (unix_path == NULL) {
-		LOG(("__unixify failed: %s", canonical_path));
-		free(canonical_path);
-		return NULL;
-	}
-	free(canonical_path);
-
-        /* convert the unix path into a url */
-	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
-	url = malloc(urllen);
-	if (url == NULL) {
-		LOG(("Unable to allocate url"));
-		free(unix_path);
-		return NULL;
-	}
-
-	if (*unix_path == '/') {
-		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path + 1);
-	} else {
-		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path);
-	}
-	free(unix_path);
-
-	/* We don't want '/' to be escaped.  */
-	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
-	free(url); url = NULL;
-	if (url_err != URL_FUNC_OK) {
-		LOG(("url_escape failed: %s", url));
-		return NULL;
-	}
-
-	return escurl;
-}
-
-
-/**
- * Convert a file: URL to a RISC OS pathname.
- *
- * \param  url  a file: URL
- * \return  RISC OS pathname, allocated on heap, or 0 on failure
- */
-
-char *url_to_path(const char *url)
-{
-	char *path;
-	char *filename;
-	char *respath;
-	url_func_result res; /* result from url routines */
-	char *r;
-
-	res = url_path(url, &path);
-	if (res != URL_FUNC_OK) {
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	res = url_unescape(path, &respath);
-	free(path);
-	if (res != URL_FUNC_OK) {
-		return NULL;
-	}
-
-	/* RISC OS path should not be more than 100 characters longer */
-	filename = malloc(strlen(respath) + 100);
-	if (!filename) {
-		free(respath);
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	r = __riscosify(respath, 0, __RISCOSIFY_NO_SUFFIX,
-			filename, strlen(respath) + 100, 0);
-
-	free(respath);
-	if (r == 0) {
-		free(filename);
-		LOG(("__riscosify failed"));
-		return NULL;
-	}
-
-	return filename;
-}
 
 
 /**
@@ -2357,6 +2356,8 @@ static struct gui_fetch_table riscos_fetch_table = {
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
+	.path_to_url = path_to_url,
+	.url_to_path = url_to_path,
 
 	.get_resource_url = gui_get_resource_url,
 	.mimetype = fetch_mimetype,

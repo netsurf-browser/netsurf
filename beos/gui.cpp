@@ -786,6 +786,17 @@ static void gui_quit(void)
 	fetch_rsrc_unregister();
 }
 
+static char *url_to_path(const char *url)
+{
+	char *url_path = curl_unescape(url, 0);
+	char *path;
+
+	/* return the absolute path including leading / */
+	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	curl_free(url_path);
+
+	return path;
+}
 
 /**
  * Send the source of a content to a text editor.
@@ -983,7 +994,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	return UTF8_CONVERT_OK;
 }
 
-char *path_to_url(const char *path)
+static char *path_to_url(const char *path)
 {
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
 	char *url = (char *)malloc(urllen);
@@ -1001,17 +1012,6 @@ char *path_to_url(const char *path)
 	return url;
 }
 
-char *url_to_path(const char *url)
-{
-	char *url_path = curl_unescape(url, 0);
-	char *path;
-
-	/* return the absolute path including leading / */
-	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	curl_free(url_path);
-
-	return path;
-}
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
@@ -1071,6 +1071,8 @@ static struct gui_fetch_table beos_fetch_table = {
 	filename_from_path,
         path_add_part,
         fetch_filetype,
+        path_to_url,
+        url_to_path,
         gui_get_resource_url,
         NULL //fetch_mimetype
 };

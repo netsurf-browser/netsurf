@@ -142,7 +142,7 @@ fetch_file_setup(struct fetch *fetchh,
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->path = url_to_path(nsurl_access(url));
+	ctx->path = guit->fetch->url_to_path(nsurl_access(url));
 	if (ctx->path == NULL) {
 		free(ctx);
 		return NULL;
@@ -600,7 +600,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 			}
 		}
 
-		if((path = path_to_url(urlpath)) == NULL)
+		if((path = guit->fetch->path_to_url(urlpath)) == NULL)
 			continue;
 
 		if (S_ISREG(ent_stat.st_mode)) {

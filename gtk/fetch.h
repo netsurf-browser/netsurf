@@ -1,6 +1,5 @@
 /*
- * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
- * Copyright 2007 Vincent Sanders <vince@debian.org>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,6 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef NETSURF_GTK_FETCH_H
+#define NETSURF_GTK_FETCH_H
+
+struct gui_fetch_table *nsgtk_fetch_table;
+
 void gtk_fetch_filetype_init(const char *mimefile);
 void gtk_fetch_filetype_fin(void);
 const char *fetch_filetype(const char *unix_path);
+
+char *path_to_url(const char *path);
+
+#endif

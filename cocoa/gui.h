@@ -20,7 +20,6 @@
 
 extern struct gui_window_table *cocoa_window_table;
 extern struct gui_clipboard_table *cocoa_clipboard_table;
-extern struct gui_fetch_table *cocoa_fetch_table;
 extern struct gui_browser_table *cocoa_browser_table;
 
 extern NSString * const kCookiesFileOption;

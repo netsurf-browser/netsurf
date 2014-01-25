@@ -58,7 +58,4 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 url_func_result url_unescape(const char *str, char **result);
 url_func_result url_path(const char *url, char **result);
 
-char *path_to_url(const char *path);
-char *url_to_path(const char *url);
-
 #endif

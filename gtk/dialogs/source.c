@@ -23,13 +23,6 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 
-#include "gtk/compat.h"
-#include "gtk/dialogs/source.h"
-#include "gtk/dialogs/about.h"
-#include "gtk/window.h"
-#include "gtk/gui.h"
-#include "gtk/print.h"
-#include "gtk/selection.h"
 #include "desktop/browser_private.h"
 #include "desktop/netsurf.h"
 #include "desktop/print.h"
@@ -42,8 +35,16 @@
 #include "render/font.h"
 #include "content/content.h"
 #include "content/content_type.h"
-
 #include "utils/log.h"
+
+#include "gtk/compat.h"
+#include "gtk/dialogs/source.h"
+#include "gtk/dialogs/about.h"
+#include "gtk/window.h"
+#include "gtk/gui.h"
+#include "gtk/print.h"
+#include "gtk/selection.h"
+#include "gtk/fetch.h"
 
 struct nsgtk_source_window {
 	gchar *url;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Sven Weidauer <sven.weidauer@gmail.com>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import <Cocoa/Cocoa.h>
-
-#import "utils/url.h"
-
-
-char *url_to_path(const char *url)
-{
-	NSURL *nsurl = [NSURL URLWithString: [NSString stringWithUTF8String: url]];
-	return strdup([[nsurl path] UTF8String]);
-}
-
-char *path_to_url(const char *path)
-{
-	return strdup( [[[NSURL fileURLWithPath: [NSString stringWithUTF8String: path]] 
-					 absoluteString] UTF8String] );
-}
+struct gui_fetch_table *monkey_fetch_table;

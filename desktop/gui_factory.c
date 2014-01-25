@@ -317,6 +317,12 @@ static nserror verify_fetch_register(struct gui_fetch_table *gft)
 	if (gft->filetype == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gft->path_to_url == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->url_to_path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 
 	/* fill in the optional entries with defaults */

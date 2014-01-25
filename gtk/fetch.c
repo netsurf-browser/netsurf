@@ -1,6 +1,5 @@
 /*
- * Copyright 2007 Rob Kendrick <rjek@netsurf-browser.org>
- * Copyright 2007 Vincent Sanders <vince@debian.org>
+ * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,18 +17,18 @@
  */
 
 #include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "gtk/filetype.h"
-#include "content/fetch.h"
-#include "utils/log.h"
 #include "utils/hashtable.h"
+#include "utils/url.h"
+#include "utils/log.h"
+#include "utils/filepath.h"
+#include "desktop/gui.h"
+
+#include "gtk/gui.h"
+#include "gtk/fetch.h"
 
 static struct hash_table *mime_hash = NULL;
 
@@ -43,9 +42,8 @@ void gtk_fetch_filetype_init(const char *mimefile)
 	/* first, check to see if /etc/mime.types in preference */
 
 	if ((stat("/etc/mime.types", &statbuf) == 0) &&
-			S_ISREG(statbuf.st_mode)) {
+	    S_ISREG(statbuf.st_mode)) {
 		mimefile = "/etc/mime.types";
-
 	}
 
 	fh = fopen(mimefile, "r");
@@ -75,25 +73,30 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 	while (!feof(fh)) {
 		char line[256], *ptr, *type, *ext;
+
 		if (fgets(line, 256, fh) == NULL)
-                	break;
+			break;
+
 		if (!feof(fh) && line[0] != '#') {
 			ptr = line;
 
 			/* search for the first non-whitespace character */
-			while (isspace(*ptr))
+			while (isspace(*ptr)) {
 				ptr++;
+			}
 
 			/* is this line empty other than leading whitespace? */
-			if (*ptr == '\n' || *ptr == '\0')
+			if (*ptr == '\n' || *ptr == '\0') {
 				continue;
+			}
 
 			type = ptr;
 
 			/* search for the first non-whitespace char or NUL or
 			 * NL */
-			while (*ptr && (!isspace(*ptr)) && *ptr != '\n')
+			while (*ptr && (!isspace(*ptr)) && *ptr != '\n') {
 				ptr++;
+			}
 
 			if (*ptr == '\0' || *ptr == '\n') {
 				/* this mimetype has no extensions - read next
@@ -106,8 +109,9 @@ void gtk_fetch_filetype_init(const char *mimefile)
 
 			/* search for the first non-whitespace character which
 			 * will be the first filename extenion */
-			while (isspace(*ptr))
+			while (isspace(*ptr)) {
 				ptr++;
+			}
 
 			while(true) {
 				ext = ptr;
@@ -115,9 +119,11 @@ void gtk_fetch_filetype_init(const char *mimefile)
 				/* search for the first whitespace char or
 				 * NUL or NL which is the end of the ext.
 				 */
-				while (*ptr && (!isspace(*ptr)) &&
-					*ptr != '\n')
+				while (*ptr &&
+				       (!isspace(*ptr)) &&
+				       *ptr != '\n') {
 					ptr++;
+				}
 
 				if (*ptr == '\0' || *ptr == '\n') {
 					/* special case for last extension on
@@ -134,8 +140,11 @@ void gtk_fetch_filetype_init(const char *mimefile)
 				/* search for the first non-whitespace char or
 				 * NUL or NL, to find start of next ext.
 				 */
-				while (*ptr && (isspace(*ptr)) && *ptr != '\n')
+				while (*ptr &&
+				       (isspace(*ptr)) &&
+				       *ptr != '\n') {
 					ptr++;
+				}
 			}
 		}
 	}
@@ -162,8 +171,9 @@ const char *fetch_filetype(const char *unix_path)
 		return "text/plain";
 	}
 
-	if (S_ISDIR(statbuf.st_mode))
+	if (S_ISDIR(statbuf.st_mode)) {
 		return "application/x-netsurf-directory";
+	}
 
 	l = strlen(unix_path);
 
@@ -184,11 +194,13 @@ const char *fetch_filetype(const char *unix_path)
 	}
 
 	ptr = unix_path + strlen(unix_path);
-	while (*ptr != '.' && *ptr != '/')
+	while (*ptr != '.' && *ptr != '/') {
 		ptr--;
+	}
 
-	if (*ptr != '.')
+	if (*ptr != '.') {
 		return "text/plain";
+	}
 
 	ext = strdup(ptr + 1);	/* skip the . */
 
@@ -196,7 +208,7 @@ const char *fetch_filetype(const char *unix_path)
 	 * copy is lower case too.
 	 */
 	lowerchar = ext;
-	while(*lowerchar) {
+	while (*lowerchar) {
 		*lowerchar = tolower(*lowerchar);
 		lowerchar++;
 	}
@@ -204,31 +216,132 @@ const char *fetch_filetype(const char *unix_path)
 	type = hash_get(mime_hash, ext);
 	free(ext);
 
-	return type != NULL ? type : "text/plain";
+	if (type == NULL) {
+		type = "text/plain";
+	}
+
+	return type;
 }
 
-#ifdef TEST_RIG
-
-int main(int argc, char *argv[])
+/**
+ * Return the filename part of a full path
+ *
+ * \param path full path and filename
+ * \return filename (will be freed with free())
+ */
+static char *filename_from_path(char *path)
 {
-	unsigned int c1, *c2;
-	const char *key;
+	char *leafname;
 
-	gtk_fetch_filetype_init("./mime.types");
-
-	c1 = 0; c2 = 0;
-
-	while ( (key = hash_iterate(mime_hash, &c1, &c2)) != NULL) {
-		printf("%s ", key);
+	leafname = strrchr(path, '/');
+	if (!leafname) {
+		leafname = path;
+	} else {
+		leafname += 1;
 	}
 
-	printf("\n");
-
-	if (argc > 1) {
-		printf("%s maps to %s\n", argv[1], fetch_filetype(argv[1]));
-	}
-
-	gtk_fetch_filetype_fin();
+	return strdup(leafname);
 }
 
-#endif
+/**
+ * Add a path component/filename to an existing path
+ *
+ * \param path buffer containing path + free space
+ * \param length length of buffer "path"
+ * \param newpart string containing path component to add to path
+ * \return true on success
+ */
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	if (path[strlen(path) - 1] != '/') {
+		strncat(path, "/", length);
+	}
+
+	strncat(path, newpart, length);
+
+	return true;
+}
+
+char *path_to_url(const char *path)
+{
+	int urllen;
+	char *url;
+
+	if (path == NULL) {
+		return NULL;
+	}
+
+	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+
+	url = malloc(urllen);
+	if (url == NULL) {
+		return NULL;
+	}
+
+	if (*path == '/') {
+		path++; /* file: paths are already absolute */
+	}
+
+	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+
+	return url;
+}
+
+
+static char *url_to_path(const char *url)
+{
+	char *path;
+	char *respath;
+	url_func_result res; /* result from url routines */
+
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
+
+	res = url_unescape(path, &respath);
+	free(path);
+	if (res != URL_FUNC_OK) {
+		return NULL;
+	}
+
+	return respath;
+}
+
+static nsurl *gui_get_resource_url(const char *path)
+{
+	char buf[PATH_MAX];
+	char *raw;
+	nsurl *url = NULL;
+
+	/* default.css -> gtkdefault.css */
+	if (strcmp(path, "default.css") == 0) {
+		path = "gtkdefault.css";
+	}
+
+	/* favicon.ico -> favicon.png */
+	if (strcmp(path, "favicon.ico") == 0) {
+		path = "favicon.png";
+	}
+
+	raw = path_to_url(filepath_sfind(respaths, buf, path));
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
+}
+
+static struct gui_fetch_table fetch_table = {
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+	.path_to_url = path_to_url,
+	.url_to_path = url_to_path,
+
+	.get_resource_url = gui_get_resource_url,
+
+};
+
+struct gui_fetch_table *nsgtk_fetch_table = &fetch_table;

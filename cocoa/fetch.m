@@ -19,7 +19,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "utils/log.h"
-#import "content/fetch.h"
+#import "desktop/gui.h"
 
 #import "cocoa/fetch.h"
 
@@ -42,9 +42,9 @@ static const struct mimemap_s {
 };
 
 
-const char *fetch_filetype(const char *unix_path)
+static const char *fetch_filetype(const char *unix_path)
 {
-	NSString *uti; 
+	NSString *uti;
 	NSString *mimeType = nil;
 	NSError *utiError = nil;
 
@@ -58,7 +58,7 @@ const char *fetch_filetype(const char *unix_path)
 
 		LOG(("uti call failed"));
 
-		strncpy(cocoafiletype, "text/html", sizeof(cocoafiletype));	
+		strncpy(cocoafiletype, "text/html", sizeof(cocoafiletype));
 		return cocoafiletype;
 	}
 
@@ -83,13 +83,60 @@ const char *fetch_filetype(const char *unix_path)
 				eidx++;
 			}
 
-			strncpy(cocoafiletype, 
-				cocoamimemap[eidx].mimetype, 
+			strncpy(cocoafiletype,
+				cocoamimemap[eidx].mimetype,
 				sizeof(cocoafiletype));
 		}
 	}
 
 	LOG(( "\tMIME type for '%s' is '%s'", unix_path, cocoafiletype ));
-	
+
 	return cocoafiletype;
 }
+
+char *url_to_path(const char *url)
+{
+	NSURL *nsurl = [NSURL URLWithString: [NSString stringWithUTF8String: url]];
+	return strdup([[nsurl path] UTF8String]);
+}
+
+static char *path_to_url(const char *path)
+{
+	return strdup( [[[NSURL fileURLWithPath: [NSString stringWithUTF8String: path]]
+					 absoluteString] UTF8String] );
+}
+
+static char *filename_from_path(char *path)
+{
+	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
+}
+
+static bool path_add_part(char *path, int length, const char *newpart)
+{
+	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
+
+	strncpy( path, [newPath UTF8String], length );
+
+	return true;
+}
+
+static nsurl *gui_get_resource_url(const char *path)
+{
+	nsurl *url = NULL;
+	NSString *nspath = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: path] ofType: @""];
+	if (nspath == nil) return NULL;
+	nsurl_create([[[NSURL fileURLWithPath: nspath] absoluteString] UTF8String], &url);
+	return url;
+}
+
+static struct gui_fetch_table fetch_table = {
+	.filename_from_path = filename_from_path,
+	.path_add_part = path_add_part,
+	.filetype = fetch_filetype,
+	.path_to_url = path_to_url,
+	.url_to_path = url_to_path,
+
+	.get_resource_url = gui_get_resource_url,
+};
+
+struct gui_fetch_table *cocoa_fetch_table = &fetch_table;

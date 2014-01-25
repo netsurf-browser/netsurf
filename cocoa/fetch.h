@@ -16,4 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const char *fetch_filetype(const char *unix_path);
+extern struct gui_fetch_table *cocoa_fetch_table;
+
+char *url_to_path(const char *url);

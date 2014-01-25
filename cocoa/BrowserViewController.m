@@ -19,6 +19,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserView.h"
 #import "cocoa/BrowserWindowController.h"
+#import "cocoa/fetch.h"
 
 #import "desktop/browser_private.h"
 #import "desktop/local_history.h"

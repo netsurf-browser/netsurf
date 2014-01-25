@@ -25,7 +25,6 @@
 
 #import "desktop/gui.h"
 #import "content/urldb.h"
-#import "content/fetch.h"
 #import "css/utils.h"
 #import "desktop/gui.h"
 #import "desktop/local_history.h"

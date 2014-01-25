@@ -1882,6 +1882,8 @@ static struct gui_fetch_table fetch_table = {
 	.filename_from_path = filename_from_path,
 	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
+	.path_to_url = path_to_url,
+	.url_to_path = url_to_path,
 
 	.mimetype = fetch_mimetype,
 };

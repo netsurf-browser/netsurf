@@ -59,6 +59,8 @@ extern char *themelist_file_location;
 
 extern GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 
+extern char **respaths; /** resource search path vector */
+
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
 
 extern void gui_401login_open(nsurl *url, const char *realm,

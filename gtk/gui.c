@@ -60,7 +60,7 @@
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
 #include "gtk/download.h"
-#include "gtk/filetype.h"
+#include "gtk/fetch.h"
 #include "gtk/gui.h"
 #include "gtk/history.h"
 #include "gtk/hotlist.h"
@@ -109,7 +109,7 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 #define THROBBER_FRAMES 9
 
-static char **respaths; /** resource search path vector */
+char **respaths; /** resource search path vector */
 
 /** Create an array of valid paths to search for resources.
  *
@@ -324,28 +324,6 @@ static void check_options(char **respath)
 
 }
 
-static nsurl *gui_get_resource_url(const char *path)
-{
-	char buf[PATH_MAX];
-	char *raw;
-	nsurl *url = NULL;
-
-	/* default.css -> gtkdefault.css */
-	if (strcmp(path, "default.css") == 0)
-		path = "gtkdefault.css";
-
-	/* favicon.ico -> favicon.png */
-	if (strcmp(path, "favicon.ico") == 0)
-		path = "favicon.png";
-
-	raw = path_to_url(filepath_sfind(respaths, buf, path));
-	if (raw != NULL) {
-		nsurl_create(raw, &url);
-		free(raw);
-	}
-
-	return url;
-}
 
 
 /**
@@ -842,51 +820,6 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 }
 
 
-char *path_to_url(const char *path)
-{
-	int urllen;
-	char *url;
-
-	if (path == NULL) {
-		return NULL;
-	}
-
-	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-
-	url = malloc(urllen);
-	if (url == NULL) {
-		return NULL;
-	}
-
-	if (*path == '/') {
-		path++; /* file: paths are already absolute */
-	}
-
-	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
-
-	return url;
-}
-
-
-char *url_to_path(const char *url)
-{
-	char *path;
-	char *respath;
-	url_func_result res; /* result from url routines */
-
-	res = url_path(url, &path);
-	if (res != URL_FUNC_OK) {
-		return NULL;
-	}
-
-	res = url_unescape(path, &respath);
-	free(path);
-	if (res != URL_FUNC_OK) {
-		return NULL;
-	}
-
-	return respath;
-}
 
 #ifdef WITH_PDF_EXPORT
 
@@ -1089,57 +1022,10 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	}
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-
-static char *filename_from_path(char *path)
-{
-	char *leafname;
-
-	leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
-
-	return strdup(leafname);
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
-
-	strncat(path, newpart, length);
-
-	return true;
-}
 
 static struct gui_clipboard_table nsgtk_clipboard_table = {
 	.get = gui_get_clipboard,
 	.set = gui_set_clipboard,
-};
-
-static struct gui_fetch_table nsgtk_fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
-	.filetype = fetch_filetype,
-
-	.get_resource_url = gui_get_resource_url,
-
 };
 
 static struct gui_browser_table nsgtk_browser_table = {
@@ -1166,7 +1052,7 @@ int main(int argc, char** argv)
 		.window = nsgtk_window_table,
 		.clipboard = &nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
-		.fetch = &nsgtk_fetch_table,
+		.fetch = nsgtk_fetch_table,
 	};
 
 	/* check home directory is available */

@@ -20,13 +20,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "monkey/filetype.h"
 #include "utils/nsoption.h"
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
 #include "monkey/cert.h"
 #include "monkey/401login.h"
+#include "monkey/filetype.h"
+#include "monkey/fetch.h"
 
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
@@ -36,49 +37,34 @@
 #include "utils/filepath.h"
 #include "utils/url.h"
 
-static char **respaths; /** resource search path vector */
+char **respaths; /** resource search path vector */
 
 /* Stolen from gtk/gui.c */
 static char **
 nsmonkey_init_resource(const char *resource_path)
 {
-	const gchar * const *langv;
-	char **pathv; /* resource path string vector */
-	char **respath; /* resource paths vector */
+  const gchar * const *langv;
+  char **pathv; /* resource path string vector */
+  char **respath; /* resource paths vector */
 
-	pathv = filepath_path_to_strvec(resource_path);
+  pathv = filepath_path_to_strvec(resource_path);
 
-	langv = g_get_language_names();
+  langv = g_get_language_names();
 
-	respath = filepath_generate(pathv, langv);
+  respath = filepath_generate(pathv, langv);
 
-	filepath_free_strvec(pathv);
+  filepath_free_strvec(pathv);
 
-	return respath;
+  return respath;
 }
 
 static void monkey_quit(void)
 {
-	urldb_save_cookies(nsoption_charp(cookie_jar));
-	urldb_save(nsoption_charp(url_file));
-	free(nsoption_charp(cookie_file));
-	free(nsoption_charp(cookie_jar));
-	monkey_fetch_filetype_fin();
-}
-
-static nsurl *gui_get_resource_url(const char *path)
-{
-	char buf[PATH_MAX];
-	char *raw;
-	nsurl *url = NULL;
-
-	raw = path_to_url(filepath_sfind(respaths, buf, path));
-	if (raw != NULL) {
-		nsurl_create(raw, &url);
-		free(raw);
-	}
-
-	return url;
+  urldb_save_cookies(nsoption_charp(cookie_jar));
+  urldb_save(nsoption_charp(url_file));
+  free(nsoption_charp(cookie_file));
+  free(nsoption_charp(cookie_jar));
+  monkey_fetch_filetype_fin();
 }
 
 static void
@@ -115,53 +101,6 @@ static bool nslog_stream_configure(FILE *fptr)
   return true;
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-
-static char *filename_from_path(char *path)
-{
-  char *leafname;
-
-  leafname = strrchr(path, '/');
-  if (!leafname)
-    leafname = path;
-  else
-    leafname += 1;
-
-  return strdup(leafname);
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-  if(path[strlen(path) - 1] != '/')
-    strncat(path, "/", length);
-
-  strncat(path, newpart, length);
-
-  return true;
-}
-
-static struct gui_fetch_table monkey_fetch_table = {
-  .filename_from_path = filename_from_path,
-  .path_add_part = path_add_part,
-  .filetype = monkey_fetch_filetype,
-
-  .get_resource_url = gui_get_resource_url,
-};
-
 static struct gui_browser_table monkey_browser_table = {
   .poll = monkey_poll,
 
@@ -182,14 +121,14 @@ main(int argc, char **argv)
     .browser = &monkey_browser_table,
     .window = monkey_window_table,
     .download = monkey_download_table,
-    .fetch = &monkey_fetch_table,
+    .fetch = monkey_fetch_table,
   };
 
   /* Unbuffer stdin/out/err */
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
-  
+
   /* Prep the search paths */
   respaths = nsmonkey_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"MONKEY_RESPATH":./monkey/res");
 
@@ -215,22 +154,22 @@ main(int argc, char **argv)
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");
   }
-    
+
   filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
   monkey_fetch_filetype_init(buf);
-  
+
   urldb_load(nsoption_charp(url_file));
   urldb_load_cookies(nsoption_charp(cookie_file));
-  
+
   monkey_prepare_input();
   monkey_register_handler("QUIT", quit_handler);
   monkey_register_handler("WINDOW", monkey_window_handle_command);
-  
+
   fprintf(stdout, "GENERIC STARTED\n");
   netsurf_main_loop();
   fprintf(stdout, "GENERIC CLOSING_DOWN\n");
   monkey_kill_browser_windows();
-  
+
   netsurf_exit();
   fprintf(stdout, "GENERIC FINISHED\n");
 

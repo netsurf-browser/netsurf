@@ -25,50 +25,6 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 
-char *path_to_url(const char *path)
-{
-	int urllen;
-	char *url;
-
-	if (path == NULL) {
-		return NULL;
-	}
-		
-	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-
-	url = malloc(urllen);
-	if (url == NULL) {
-		return NULL;
-	}
-
-	if (*path == '/') {
-		path++; /* file: paths are already absolute */
-	} 
-
-	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
-
-	return url;
-}
-
-char *url_to_path(const char *url)
-{
-	char *path;
-	char *respath;
-	url_func_result res; /* result from url routines */
-
-	res = url_path(url, &path);
-	if (res != URL_FUNC_OK) {
-		return NULL;
-	}
-
-	res = url_unescape(path, &respath);
-	free(path);
-	if (res != URL_FUNC_OK) {
-		return NULL;
-	}
-
-	return respath;
-}
 
 
 void warn_user(const char *warning, const char *detail)

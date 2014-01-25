@@ -108,7 +108,7 @@ $(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
-	selection.c history.c window.c filetype.c download.c menu.c	\
+	selection.c history.c window.c fetch.c download.c menu.c	\
 	print.c search.c tabs.c theme.c toolbar.c gettext.c		\
 	compat.c cookies.c hotlist.c 					\
 	$(addprefix dialogs/,preferences.c about.c source.c)
