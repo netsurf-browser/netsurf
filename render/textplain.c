@@ -46,6 +46,7 @@
 #include "render/textplain.h"
 #include "render/html.h"
 #include "render/search.h"
+#include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -159,7 +160,6 @@ static const content_handler textplain_content_handler = {
 	.no_share = true,
 };
 
-static lwc_string *textplain_charset;
 static lwc_string *textplain_default_charset;
 
 /**
@@ -170,16 +170,9 @@ nserror textplain_init(void)
 	lwc_error lerror;
 	nserror error;
 
-	lerror = lwc_intern_string("charset", SLEN("charset"),
-			&textplain_charset);
-	if (lerror != lwc_error_ok) {
-		return NSERROR_NOMEM;
-	}
-
 	lerror = lwc_intern_string("Windows-1252", SLEN("Windows-1252"),
 			&textplain_default_charset);
 	if (lerror != lwc_error_ok) {
-		lwc_string_unref(textplain_charset);
 		return NSERROR_NOMEM;
 	}
 
@@ -187,7 +180,6 @@ nserror textplain_init(void)
 			&textplain_content_handler);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(textplain_default_charset);
-		lwc_string_unref(textplain_charset);
 	}
 
 	return error;
@@ -201,11 +193,6 @@ void textplain_fini(void)
 	if (textplain_default_charset != NULL) {
 		lwc_string_unref(textplain_default_charset);
 		textplain_default_charset = NULL;
-	}
-
-	if (textplain_charset != NULL) {
-		lwc_string_unref(textplain_charset);
-		textplain_charset = NULL;
 	}
 }
 
@@ -233,7 +220,7 @@ nserror textplain_create(const content_handler *handler,
 		return error;
 	}
 
-	error = http_parameter_list_find_item(params, textplain_charset, 
+	error = http_parameter_list_find_item(params, corestring_lwc_charset,
 			&encoding);
 	if (error != NSERROR_OK) {
 		encoding = lwc_string_ref(textplain_default_charset);
