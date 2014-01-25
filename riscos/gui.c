@@ -808,7 +808,7 @@ static char *path_to_url(const char *path)
  * \return  RISC OS pathname, allocated on heap, or 0 on failure
  */
 
-static char *url_to_path(const char *url)
+char *url_to_path(const char *url)
 {
 	char *path;
 	char *filename;

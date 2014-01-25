@@ -22,6 +22,7 @@
 #import "cocoa/plotter.h"
 #import "cocoa/DownloadWindowController.h"
 #import "cocoa/selection.h"
+#import "cocoa/fetch.h"
 
 #import "desktop/gui.h"
 #import "content/urldb.h"
