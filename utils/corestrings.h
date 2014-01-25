@@ -52,6 +52,7 @@ extern lwc_string *corestring_lwc_default;
 extern lwc_string *corestring_lwc_div;
 extern lwc_string *corestring_lwc_embed;
 extern lwc_string *corestring_lwc_file;
+extern lwc_string *corestring_lwc_filename;
 extern lwc_string *corestring_lwc_font;
 extern lwc_string *corestring_lwc_frame;
 extern lwc_string *corestring_lwc_frameset;

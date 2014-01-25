@@ -28,6 +28,7 @@
 #include "desktop/download.h"
 #include "desktop/gui.h"
 #include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -114,26 +115,18 @@ static nserror download_context_process_headers(download_context *ctx)
 	http_header = llcache_handle_get_header(ctx->llcache, 
 			"Content-Disposition");
 	if (http_header != NULL) {
-		lwc_string *filename;
 		lwc_string *filename_value;
 		http_content_disposition *disposition;
-
-		if (lwc_intern_string("filename", SLEN("filename"),
-				&filename) != lwc_error_ok) {
-			http_content_type_destroy(content_type);
-			return NSERROR_NOMEM;
-		}
 
 		error = http_parse_content_disposition(http_header, 
 				&disposition);
 		if (error != NSERROR_OK) {
-			lwc_string_unref(filename);
 			http_content_type_destroy(content_type);
 			return error;
 		}
 
 		error = http_parameter_list_find_item(disposition->parameters, 
-				filename, &filename_value);
+				corestring_lwc_filename, &filename_value);
 		if (error == NSERROR_OK) {
 			ctx->filename = download_parse_filename(
 					lwc_string_data(filename_value));
@@ -141,7 +134,6 @@ static nserror download_context_process_headers(download_context *ctx)
 		}
 
 		http_content_disposition_destroy(disposition);
-		lwc_string_unref(filename);
 	}
 
 	ctx->mime_type = lwc_string_ref(content_type->media_type);
