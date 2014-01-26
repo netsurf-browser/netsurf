@@ -976,11 +976,14 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	 */
 
 	if (strlen(local_url) >= url_bar->text_size) {
-		strncpy(url_bar->text_buffer, "", url_bar->text_size);
+		strncpy(url_bar->text_buffer, "", url_bar->text_size - 1);
+		url_bar->text_buffer[url_bar->text_size - 1] = '\0';
 		warn_user("LongURL", NULL);
 		LOG(("Long URL (%d chars): %s", strlen(url), url));
 	} else {
-		strncpy(url_bar->text_buffer, local_url, url_bar->text_size);
+		strncpy(url_bar->text_buffer, local_url,
+				url_bar->text_size - 1);
+		url_bar->text_buffer[url_bar->text_size - 1] = '\0';
 	}
 
 	if (local_text != NULL)
