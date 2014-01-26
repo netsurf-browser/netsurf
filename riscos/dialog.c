@@ -85,6 +85,7 @@ static struct {
 } persistent_dialog[MAX_PERSISTENT];
 
 
+static bool ro_gui_dialog_open_url_init(void);
 static bool ro_gui_dialog_openurl_apply(wimp_w w);
 static bool ro_gui_dialog_open_url_menu_prepare(wimp_w w, wimp_i i,
 		wimp_menu *menu, wimp_pointer *pointer);
@@ -161,15 +162,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_set_help_prefix(dialog_url_complete, "HelpAutoURL");
 
 	/* open URL */
-	dialog_openurl = ro_gui_dialog_create("open_url");
-	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
-			ICON_OPENURL_MENU, ro_gui_url_suggest_menu);
-	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
-	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
-			ro_gui_dialog_openurl_apply);
-	ro_gui_wimp_event_register_menu_prepare(dialog_openurl,
-			ro_gui_dialog_open_url_menu_prepare);
-	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
+	ro_gui_dialog_open_url_init();
 
 	/* scale view */
 	dialog_zoom = ro_gui_dialog_create("zoom");
@@ -700,6 +693,70 @@ void ro_gui_dialog_update_zoom(struct gui_window *g) {
 	if (g == ro_gui_current_zoom_gui)
 		ro_gui_dialog_prepare_zoom(g);
 }
+
+
+/**
+ * Create the Open URL dialogue, allocating storage for the URL field icon
+ * as we go.
+ *
+ * \return		true on success; false on failure (although errors with
+ *			the templates or memory allocation will exit via die()).
+ */
+
+static bool ro_gui_dialog_open_url_init(void)
+{
+	wimp_window	*definition;
+	char		*buffer;
+	os_error	*error;
+
+	definition = ro_gui_dialog_load_template("open_url");
+
+	/* _load_template() should die on any error, so we trust its data. */
+
+	assert(definition != NULL);
+
+	/* Create the dialogue, with modifications. */
+
+	if ((definition->icons[ICON_OPENURL_URL].flags & wimp_ICON_INDIRECTED)
+			== 0) {
+		LOG(("open_url URL icon not indirected"));
+		xwimp_close_template();
+		die("Template");
+	}
+
+	buffer = malloc(RO_GUI_MAX_URL_SIZE);
+	if (buffer == NULL) {
+		xwimp_close_template();
+		die("NoMemory");
+	}
+
+	definition->icons[ICON_OPENURL_URL].data.indirected_text.text = buffer;
+	definition->icons[ICON_OPENURL_URL].data.indirected_text.size =
+			RO_GUI_MAX_URL_SIZE;
+	definition->sprite_area = gui_sprites;
+
+	error = xwimp_create_window(definition, &dialog_openurl);
+	if (error != NULL) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+	
+	free(definition);
+	
+	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
+			ICON_OPENURL_MENU, ro_gui_url_suggest_menu);
+	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
+			ro_gui_dialog_openurl_apply);
+	ro_gui_wimp_event_register_menu_prepare(dialog_openurl,
+			ro_gui_dialog_open_url_menu_prepare);
+	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
+
+	return true;
+}
+
 
 
 bool ro_gui_dialog_openurl_apply(wimp_w w) {

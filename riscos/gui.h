@@ -35,6 +35,10 @@
 #define THUMBNAIL_WIDTH 100
 #define THUMBNAIL_HEIGHT 86
 
+/* The maximum size for user-editable URLs in the RISC OS GUI. */
+
+#define RO_GUI_MAX_URL_SIZE 2048
+
 extern int os_version;
 
 extern const char * NETSURF_DIR;

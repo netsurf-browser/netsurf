@@ -1695,7 +1695,7 @@ wimp_window {
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_WHITE
     text.text:""
-    text.size:128
+    text.size:1
     text.validation:"Pptr_write;Kta"
   }
   wimp_icon {
