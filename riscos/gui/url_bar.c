@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2011-2013 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2011-2014 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
