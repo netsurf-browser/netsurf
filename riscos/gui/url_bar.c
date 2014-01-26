@@ -50,7 +50,7 @@
 #define URLBAR_MIN_WIDTH 52
 #define URLBAR_GRIGHT_GUTTER 8
 #define URLBAR_FAVICON_NAME_LENGTH 12
-#define URLBAR_INITIAL_LENGTH 256
+#define URLBAR_URL_LENGTH 2048
 
 struct url_bar {
 	/** The applied theme (or NULL to use the default) */
@@ -167,7 +167,7 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->hotlist.extent.x1 = 0;
 	url_bar->hotlist.extent.y1 = 0;
 
-	url_bar->text_size = URLBAR_INITIAL_LENGTH;
+	url_bar->text_size = URLBAR_URL_LENGTH;
 	url_bar->text_buffer = malloc(url_bar->text_size);
 	strncpy(url_bar->text_buffer, "", url_bar->text_size);
 
