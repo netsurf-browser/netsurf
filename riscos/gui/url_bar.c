@@ -39,6 +39,7 @@
 #include "riscos/window.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 
 #define URLBAR_HEIGHT 52
@@ -50,7 +51,6 @@
 #define URLBAR_GRIGHT_GUTTER 8
 #define URLBAR_FAVICON_NAME_LENGTH 12
 #define URLBAR_INITIAL_LENGTH 256
-#define URLBAR_EXTEND_LENGTH 128
 
 struct url_bar {
 	/** The applied theme (or NULL to use the default) */
@@ -942,24 +942,65 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 {
 	wimp_caret	caret;
 	os_error	*error;
-	const char	*set_url;
+	char		*local_text = NULL;
+	const char	*set_url, *local_url;
 	nsurl *n;
 
-	if (url_bar == NULL || url_bar->text_buffer == NULL)
+	if (url_bar == NULL || url_bar->text_buffer == NULL || url == NULL)
 		return;
 
-	if (nsurl_create(url, &n) == NSERROR_OK) {
+	/* Before we do anything with the URL, get it into local encoding so
+	 * that behaviour is consistant with the rest of the URL Bar module
+	 * (which will act on the icon's text buffer, which is always in local
+	 * encoding).
+	 */
+
+	if (is_utf8) {
+		utf8_convert_ret err;
+
+		err = utf8_to_local_encoding(url, 0, &local_text);
+		if (err != UTF8_CONVERT_OK) {
+			/* A bad encoding should never happen, so assert this */
+			assert(err != UTF8_CONVERT_BADENC);
+			LOG(("utf8_to_enc failed"));
+			/* Paranoia */
+			local_text = NULL;
+		}
+		local_url = (local_text != NULL) ? local_text : url;
+	} else {
+		local_url = url;
+	}
+
+	/* Copy the text into the icon buffer. If the text is too long, blank
+	 * the buffer and warn the user.
+	 */
+
+	if (strlen(local_url) >= url_bar->text_size) {
+		strncpy(url_bar->text_buffer, "", url_bar->text_size);
+		warn_user("LongURL", NULL);
+		LOG(("Long URL (%d chars): %s", strlen(url), url));
+	} else {
+		strncpy(url_bar->text_buffer, local_url, url_bar->text_size);
+	}
+
+	if (local_text != NULL)
+		free(local_text);
+
+	/* Set the hotlist flag. */
+
+	if (nsurl_create(url_bar->text_buffer, &n) == NSERROR_OK) {
 		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
 		nsurl_unref(n);
 	}
 
-	if (url_bar->text_icon == -1) {
-		strncpy(url_bar->text_buffer, url, url_bar->text_size);
-		return;
-	}
+	/* If there's no icon, then there's nothing else to do... */
 
-	ro_gui_set_icon_string(url_bar->window, url_bar->text_icon,
-			url, is_utf8);
+	if (url_bar->text_icon == -1)
+		return;
+
+	/* ...if there is, redraw the icon and fix the caret's position. */
+
+	ro_gui_redraw_icon(url_bar->window, url_bar->text_icon);
 
 	error = xwimp_get_caret_position(&caret);
 	if (error) {

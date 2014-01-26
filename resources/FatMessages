@@ -2916,6 +2916,11 @@ de.all.NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen un
 fr.all.NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
 it.all.NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
 nl.all.NoMemory:NetSurf krijgt gebrek aan geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
+en.ro.LongURL:The URL for this page is too long for NetSurf to display.
+de.ro.LongURL:The URL for this page is too long for NetSurf to display.
+fr.ro.LongURL:The URL for this page is too long for NetSurf to display.
+it.ro.LongURL:The URL for this page is too long for NetSurf to display.
+nl.ro.LongURL:The URL for this page is too long for NetSurf to display.
 en.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
 de.ro.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
 fr.ro.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
