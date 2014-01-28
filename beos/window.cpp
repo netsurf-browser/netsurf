@@ -80,7 +80,7 @@ struct gui_window {
 	// those are the last queued event of their kind,
 	// we can safely drop others and avoid wasting cpu.
 	// number of pending resizes
-	vint32				pending_resizes;
+	int32				pending_resizes;
 	// accumulated rects of pending redraws
 	//volatile BMessage	*lastRedraw;
 	// UNUSED YET
