@@ -547,7 +547,6 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 	hlcache_handle *content;
 	char *escaped;
 	nserror error;
-	utf8_convert_ret ret;
 
 	error = nsurl_join(ctx->base, value, &url);
 	if (error == NSERROR_NOMEM)
@@ -562,11 +561,11 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 			fprintf(ctx->fp, "\"%p\"", content);
 		} else {
 			/* no match found */
-			ret = utf8_to_html(nsurl_access(url), "UTF-8",
+			error = utf8_to_html(nsurl_access(url), "UTF-8",
 					nsurl_length(url), &escaped);
 			nsurl_unref(url);
 
-			if (ret != UTF8_CONVERT_OK)
+			if (error != NSERROR_OK)
 				return false;
 
 			fprintf(ctx->fp, "\"%s\"", escaped);
@@ -574,8 +573,8 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 			free(escaped);
 		}
 	} else {
-		ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
-		if (ret != UTF8_CONVERT_OK)
+		error = utf8_to_html(value, "UTF-8", value_len, &escaped);
+		if (error != NSERROR_OK)
 			return false;
 
 		fprintf(ctx->fp, "\"%s\"", escaped);
@@ -590,10 +589,10 @@ static bool save_complete_write_value(save_complete_ctx *ctx,
 		const char *value, size_t value_len)
 {
 	char *escaped;
-	utf8_convert_ret ret;
+	nserror ret;
 
 	ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
-	if (ret != UTF8_CONVERT_OK)
+	if (ret != NSERROR_OK)
 		return false;
 
 	fprintf(ctx->fp, "\"%s\"", escaped);
@@ -919,7 +918,7 @@ static bool save_complete_node_handler(dom_node *node,
 	save_complete_ctx *ctx = ctxin;
 	dom_node_type type;
 	dom_exception error;
-	utf8_convert_ret ret;
+	nserror ret;
 
 	error = dom_node_get_node_type(node, &type);
 	if (error != DOM_NO_ERR)
@@ -953,7 +952,7 @@ static bool save_complete_node_handler(dom_node *node,
 
 				ret = utf8_to_html(text_data, "UTF-8",
 						text_len, &escaped);
-				if (ret != UTF8_CONVERT_OK)
+				if (ret != NSERROR_OK)
 					return false;
 
 				fwrite(escaped, sizeof(*escaped), 

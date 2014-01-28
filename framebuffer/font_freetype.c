@@ -75,27 +75,27 @@ enum fb_face_e {
 static fb_faceid_t *fb_faces[FB_FACE_COUNT];
 
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, 
+nserror utf8_to_local_encoding(const char *string, 
 				       size_t len,
 				       char **result)
 {
 	return utf8_to_enc(string, "UTF-8", len, result);
 }
 
-utf8_convert_ret utf8_from_local_encoding(const char *string,
+nserror utf8_from_local_encoding(const char *string,
 					size_t len,
 					char **result)
 {
 	*result = malloc(len + 1);
 	if (*result == NULL) {
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	memcpy(*result, string, len);
 
 	(*result)[len] = '\0';
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
 /* map cache manager handle to face id */

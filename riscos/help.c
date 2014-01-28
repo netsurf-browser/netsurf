@@ -225,7 +225,7 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 	char *base_token;
 	char *local_token;
 	os_error *error;
-	utf8_convert_ret err;
+	nserror err;
 
 	/* start off with an empty reply */
 	reply = (help_full_message_reply *)message;
@@ -255,9 +255,9 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 		/* convert to local encoding */
 		err = utf8_to_local_encoding(translated_token, 0,
 				&local_token);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			/* simply use UTF-8 string */
 			strncpy(reply->reply, translated_token, 235);
 		}

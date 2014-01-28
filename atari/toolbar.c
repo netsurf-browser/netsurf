@@ -740,11 +740,11 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			int clip_length = strlen( clip );
 			if ( clip_length > 0 ) {
 				char *utf8;
-				utf8_convert_ret res;
+				nserror res;
 				/* Clipboard is in local encoding so
 				 * convert to UTF8 */
 				res = utf8_from_local_encoding( clip, clip_length, &utf8 );
-				if ( res == UTF8_CONVERT_OK ) {
+				if ( res == NSERROR_OK ) {
 					toolbar_set_url(tb, utf8);
 					free(utf8);
 					ret = true;

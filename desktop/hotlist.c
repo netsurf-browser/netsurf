@@ -879,21 +879,21 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort)
 {
 	struct treeview_export_walk_ctx *tw = ctx;
+	nserror ret;
 
 	if (type == TREE_NODE_ENTRY) {
 		struct hotlist_entry *e = node_data;
-		utf8_convert_ret ret;
 		char *t_text;
 		char *u_text;
 
 		ret = utf8_to_html(e->data[HL_TITLE].value, "iso-8859-1",
 				e->data[HL_TITLE].value_len, &t_text);
-		if (ret != UTF8_CONVERT_OK)
+		if (ret != NSERROR_OK)
 			return NSERROR_SAVE_FAILED;
 
 		ret = utf8_to_html(e->data[HL_URL].value, "iso-8859-1",
 				e->data[HL_URL].value_len, &u_text);
-		if (ret != UTF8_CONVERT_OK) {
+		if (ret != NSERROR_OK) {
 			free(t_text);
 			return NSERROR_SAVE_FAILED;
 		}
@@ -906,12 +906,11 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 
 	} else if (type == TREE_NODE_FOLDER) {
 		struct hotlist_folder *f = node_data;
-		utf8_convert_ret ret;
 		char *f_text;
 
 		ret = utf8_to_html(f->data.value, "iso-8859-1",
 				f->data.value_len, &f_text);
-		if (ret != UTF8_CONVERT_OK)
+		if (ret != NSERROR_OK)
 			return NSERROR_SAVE_FAILED;
 
 		if (f == hl_ctx.default_folder) {

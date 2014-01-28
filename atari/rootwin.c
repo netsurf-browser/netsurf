@@ -1510,15 +1510,15 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                                                               mx+sx, my+sy,
                                                               NULL);
                 if(processed == true) {
-                    utf8_convert_ret ret;
+                    nserror ret;
                     char *utf8_fn;
 
                     ret = utf8_from_local_encoding(buff, 0, &utf8_fn);
-                    if (ret != UTF8_CONVERT_OK) {
+                    if (ret != NSERROR_OK) {
                         free(buff);
                         /* A bad encoding should never happen */
                         LOG(("utf8_from_local_encoding failed"));
-                        assert(ret != UTF8_CONVERT_BADENC);
+                        assert(ret != NSERROR_BAD_ENCODING);
                         /* no memory */
                         goto error;
                     }

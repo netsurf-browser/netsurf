@@ -26,40 +26,144 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum {
-	UTF8_CONVERT_OK,
-	UTF8_CONVERT_NOMEM,
-	UTF8_CONVERT_BADENC
-} utf8_convert_ret;
+#include "utils/errors.h"
 
+/**
+ * Convert a UTF-8 multibyte sequence into a single UCS4 character
+ *
+ * Encoding of UCS values outside the UTF-16 plane has been removed from
+ * RFC3629. This function conforms to RFC2279, however.
+ *
+ * \param s_in  The sequence to process
+ * \param l  Length of sequence
+ * \return   UCS4 character
+ */
 uint32_t utf8_to_ucs4(const char *s, size_t l);
+
+/**
+ * Convert a single UCS4 character into a UTF-8 multibyte sequence
+ *
+ * Encoding of UCS values outside the UTF-16 plane has been removed from
+ * RFC3629. This function conforms to RFC2279, however.
+ *
+ * \param c  The character to process (0 <= c <= 0x7FFFFFFF)
+ * \param s  Pointer to 6 byte long output buffer
+ * \return   Length of multibyte sequence
+ */
 size_t utf8_from_ucs4(uint32_t c, char *s);
 
+
+/**
+ * Calculate the length (in characters) of a NULL-terminated UTF-8 string
+ *
+ * \param s  The string
+ * \return   Length of string
+ */
 size_t utf8_length(const char *s);
+
+/**
+ * Calculated the length (in characters) of a bounded UTF-8 string
+ *
+ * \param s  The string
+ * \param l  Maximum length of input (in bytes)
+ * \return Length of string, in characters
+ */
 size_t utf8_bounded_length(const char *s, size_t l);
+
+/**
+ * Calculate the length (in bytes) of a bounded UTF-8 string
+ *
+ * \param s  The string
+ * \param l  Maximum length of input (in bytes)
+ * \param c  Maximum number of characters to measure
+ * \return Length of string, in bytes
+ */
 size_t utf8_bounded_byte_length(const char *s, size_t l, size_t c);
 
+/**
+ * Calculate the length (in bytes) of a UTF-8 character
+ *
+ * \param s  Pointer to start of character
+ * \return Length of character, in bytes
+ */
 size_t utf8_char_byte_length(const char *s);
 
+
+/**
+ * Find previous legal UTF-8 char in string
+ *
+ * \param s  The string
+ * \param o  Offset in the string to start at
+ * \return Offset of first byte of previous legal character
+ */
 size_t utf8_prev(const char *s, size_t o);
+
+/**
+ * Find next legal UTF-8 char in string
+ *
+ * \param s  The string
+ * \param l  Maximum offset in string
+ * \param o  Offset in the string to start at
+ * \return Offset of first byte of next legal character
+ */
 size_t utf8_next(const char *s, size_t l, size_t o);
 
-utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
+
+/**
+ * Convert a UTF8 string into the named encoding
+ *
+ * \param string  The NULL-terminated string to convert
+ * \param encname The encoding name (suitable for passing to iconv)
+ * \param len     Length of input string to consider (in bytes), or 0
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return standard nserror value
+ */
+nserror utf8_to_enc(const char *string, const char *encname,
 		size_t len, char **result);
-utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
+
+/**
+ * Convert a string in the named encoding into a UTF-8 string
+ *
+ * \param string  The NULL-terminated string to convert
+ * \param encname The encoding name (suitable for passing to iconv)
+ * \param len     Length of input string to consider (in bytes), or 0
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return standard nserror value
+ */
+nserror utf8_from_enc(const char *string, const char *encname,
 		size_t len, char **result, size_t *result_len);
 
-utf8_convert_ret utf8_to_html(const char *string, const char *encname,
+/**
+ * Convert a UTF-8 encoded string into a string of the given encoding,
+ * applying HTML escape sequences where necessary.
+ *
+ * \param string   String to convert (NUL-terminated)
+ * \param encname  Name of encoding to convert to
+ * \param len      Length, in bytes, of the input string, or 0
+ * \param result   Pointer to location to receive result
+ * \return standard nserror code
+ */
+nserror utf8_to_html(const char *string, const char *encname,
 		size_t len, char **result);
 
+/**
+ * Save the given utf8 text to a file, converting to local encoding.
+ *
+ * \param  utf8_text	text to save to file
+ * \param  path		pathname to save to
+ * \return true iff the save succeeded
+ */
 bool utf8_save_text(const char *utf8_text, const char *path);
 
-/* These two are platform specific */
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-		char **result);
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
-		char **result);
 
-void utf8_finalise(void);
+/**
+ * Finalise the UTF-8 library
+ */
+nserror utf8_finalise(void);
+
+/* These two are platform specific */
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result);
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result);
+
 
 #endif

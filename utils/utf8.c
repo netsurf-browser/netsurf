@@ -33,23 +33,14 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 
-/**
- * Convert a UTF-8 multibyte sequence into a single UCS4 character
- *
- * Encoding of UCS values outside the UTF-16 plane has been removed from
- * RFC3629. This function conforms to RFC2279, however.
- *
- * \param s_in  The sequence to process
- * \param l  Length of sequence
- * \return   UCS4 character
- */
+/* exported interface documented in utils/utf8.h */
 uint32_t utf8_to_ucs4(const char *s_in, size_t l)
 {
 	uint32_t ucs4;
 	size_t len;
 	parserutils_error perror;
 
-	perror = parserutils_charset_utf8_to_ucs4((const uint8_t *) s_in, l, 
+	perror = parserutils_charset_utf8_to_ucs4((const uint8_t *) s_in, l,
 			&ucs4, &len);
 	if (perror != PARSERUTILS_OK)
 		ucs4 = 0xfffd;
@@ -57,16 +48,7 @@ uint32_t utf8_to_ucs4(const char *s_in, size_t l)
 	return ucs4;
 }
 
-/**
- * Convert a single UCS4 character into a UTF-8 multibyte sequence
- *
- * Encoding of UCS values outside the UTF-16 plane has been removed from
- * RFC3629. This function conforms to RFC2279, however.
- *
- * \param c  The character to process (0 <= c <= 0x7FFFFFFF)
- * \param s  Pointer to 6 byte long output buffer
- * \return   Length of multibyte sequence
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_from_ucs4(uint32_t c, char *s)
 {
 	uint8_t *in = (uint8_t *) s;
@@ -84,24 +66,13 @@ size_t utf8_from_ucs4(uint32_t c, char *s)
 	return 6 - len;
 }
 
-/**
- * Calculate the length (in characters) of a NULL-terminated UTF-8 string
- *
- * \param s  The string
- * \return   Length of string
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_length(const char *s)
 {
 	return utf8_bounded_length(s, strlen(s));
 }
 
-/**
- * Calculated the length (in characters) of a bounded UTF-8 string
- *
- * \param s  The string
- * \param l  Maximum length of input (in bytes)
- * \return Length of string, in characters
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_bounded_length(const char *s, size_t l)
 {
 	size_t len;
@@ -114,14 +85,7 @@ size_t utf8_bounded_length(const char *s, size_t l)
 	return len;
 }
 
-/**
- * Calculate the length (in bytes) of a bounded UTF-8 string
- *
- * \param s  The string
- * \param l  Maximum length of input (in bytes)
- * \param c  Maximum number of characters to measure
- * \return Length of string, in bytes
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_bounded_byte_length(const char *s, size_t l, size_t c)
 {
 	size_t len = 0;
@@ -132,12 +96,7 @@ size_t utf8_bounded_byte_length(const char *s, size_t l, size_t c)
 	return len;
 }
 
-/**
- * Calculate the length (in bytes) of a UTF-8 character
- *
- * \param s  Pointer to start of character
- * \return Length of character, in bytes
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_char_byte_length(const char *s)
 {
 	size_t len;
@@ -150,13 +109,7 @@ size_t utf8_char_byte_length(const char *s)
 	return len;
 }
 
-/**
- * Find previous legal UTF-8 char in string
- *
- * \param s  The string
- * \param o  Offset in the string to start at
- * \return Offset of first byte of previous legal character
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_prev(const char *s, size_t o)
 {
 	uint32_t prev;
@@ -168,20 +121,13 @@ size_t utf8_prev(const char *s, size_t o)
 	return prev;
 }
 
-/**
- * Find next legal UTF-8 char in string
- *
- * \param s  The string
- * \param l  Maximum offset in string
- * \param o  Offset in the string to start at
- * \return Offset of first byte of next legal character
- */
+/* exported interface documented in utils/utf8.h */
 size_t utf8_next(const char *s, size_t l, size_t o)
 {
 	uint32_t next;
 	parserutils_error perror;
 
-	perror = parserutils_charset_utf8_next((const uint8_t *) s, l, o, 
+	perror = parserutils_charset_utf8_next((const uint8_t *) s, l, o,
 			&next);
 	assert(perror == PARSERUTILS_OK);
 
@@ -202,16 +148,16 @@ static inline void utf8_clear_cd_cache(void)
 	last_cd.cd = 0;
 }
 
-/**
- * Finalise the UTF-8 library
- */
-void utf8_finalise(void)
+/* exported interface documented in utils/utf8.h */
+nserror utf8_finalise(void)
 {
 	if (last_cd.cd != 0)
 		iconv_close(last_cd.cd);
 
 	/* paranoia follows */
 	utf8_clear_cd_cache();
+
+	return NSERROR_OK;
 }
 
 
@@ -224,11 +170,16 @@ void utf8_finalise(void)
  * \param to      The encoding name to convert to
  * \param result  Pointer to location in which to store result.
  * \param result_len Pointer to location in which to store result length.
- * \return Appropriate utf8_convert_ret value
+ * \return NSERROR_OK for no error, NSERROR_NOMEM on allocation error,
+ *         NSERROR_BAD_ENCODING for a bad character encoding
  */
-static utf8_convert_ret utf8_convert(const char *string, size_t len,
-				     const char *from, const char *to,
-				     char **result, size_t *result_len)
+static nserror
+utf8_convert(const char *string,
+	     size_t len,
+	     const char *from,
+	     const char *to,
+	     char **result,
+	     size_t *result_len)
 {
 	iconv_t cd;
 	char *temp, *out, *in;
@@ -237,16 +188,16 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 	assert(string && from && to && result);
 
 	if (string[0] == '\0') {
-		/* On AmigaOS, iconv() returns an error if we pass an 
-		 * empty string.  This prevents iconv() being called as 
+		/* On AmigaOS, iconv() returns an error if we pass an
+		 * empty string.  This prevents iconv() being called as
 		 * there is no conversion necessary anyway. */
 		*result = strdup("");
 		if (!(*result)) {
 			*result = NULL;
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
-		return UTF8_CONVERT_OK;
+		return NSERROR_OK;
 	}
 
 	if (strcasecmp(from, to) == 0) {
@@ -255,10 +206,10 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		*(result) = strndup(string, slen);
 		if (!(*result)) {
 			*(result) = NULL;
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
-		return UTF8_CONVERT_OK;
+		return NSERROR_OK;
 	}
 
 	in = (char *)string;
@@ -274,9 +225,9 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		cd = iconv_open(to, from);
 		if (cd == (iconv_t)-1) {
 			if (errno == EINVAL)
-				return UTF8_CONVERT_BADENC;
+				return NSERROR_BAD_ENCODING;
 			/* default to no memory */
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
 		/* close the last cd - we don't care if this fails */
@@ -297,8 +248,9 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 	rlen = slen * 4 + 4;
 
 	temp = out = malloc(rlen);
-	if (!out)
-		return UTF8_CONVERT_NOMEM;
+	if (!out) {
+		return NSERROR_NOMEM;
+	}
 
 	/* perform conversion */
 	if (iconv(cd, (void *) &in, &slen, &out, &rlen) == (size_t)-1) {
@@ -312,14 +264,14 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		 * a) Insufficiently large output buffer
 		 * b) Invalid input byte sequence
 		 * c) Incomplete input sequence */
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	*(result) = realloc(temp, out - temp + 4);
 	if (!(*result)) {
 		free(temp);
 		*(result) = NULL; /* for sanity's sake */
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	/* NULL terminate - needs 4 characters as we may have
@@ -330,42 +282,32 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
 		*result_len = (out - temp);
 	}
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
-/**
- * Convert a UTF8 string into the named encoding
- *
- * \param string  The NULL-terminated string to convert
- * \param encname The encoding name (suitable for passing to iconv)
- * \param len     Length of input string to consider (in bytes), or 0
- * \param result  Pointer to location to store result (allocated on heap)
- * \return Appropriate utf8_convert_ret value
- */
-utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
+/* exported interface documented in utils/utf8.h */
+nserror utf8_to_enc(const char *string, const char *encname,
 		size_t len, char **result)
 {
 	return utf8_convert(string, len, "UTF-8", encname, result, NULL);
 }
 
-/**
- * Convert a string in the named encoding into a UTF-8 string
- *
- * \param string  The NULL-terminated string to convert
- * \param encname The encoding name (suitable for passing to iconv)
- * \param len     Length of input string to consider (in bytes), or 0
- * \param result  Pointer to location to store result (allocated on heap)
- * \return Appropriate utf8_convert_ret value
- */
-utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
+/* exported interface documented in utils/utf8.h */
+nserror utf8_from_enc(const char *string, const char *encname,
 		size_t len, char **result, size_t *result_len)
 {
 	return utf8_convert(string, len, encname, "UTF-8", result, result_len);
 }
 
-static utf8_convert_ret utf8_convert_html_chunk(iconv_t cd,
-		const char *chunk, size_t inlen,
-		char **out, size_t *outlen)
+/**
+ * convert a chunk of html data
+ */
+static nserror
+utf8_convert_html_chunk(iconv_t cd,
+			const char *chunk,
+			size_t inlen,
+			char **out,
+			size_t *outlen)
 {
 	size_t ret, esclen;
 	uint32_t ucs4;
@@ -377,7 +319,7 @@ static utf8_convert_ret utf8_convert_html_chunk(iconv_t cd,
 			break;
 
 		if (errno != EILSEQ)
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 
 		ucs4 = utf8_to_ucs4(chunk, inlen);
 		esclen = snprintf(escape, sizeof(escape), "&#x%06x;", ucs4);
@@ -385,34 +327,25 @@ static utf8_convert_ret utf8_convert_html_chunk(iconv_t cd,
 		ret = iconv(cd, (void *) &pescape, &esclen,
 				(void *) out, outlen);
 		if (ret == (size_t) -1)
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 
 		esclen = utf8_next(chunk, inlen, 0);
 		chunk += esclen;
 		inlen -= esclen;
 	}
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
-/**
- * Convert a UTF-8 encoded string into a string of the given encoding, 
- * applying HTML escape sequences where necessary.
- *
- * \param string   String to convert (NUL-terminated)
- * \param encname  Name of encoding to convert to
- * \param len      Length, in bytes, of the input string, or 0
- * \param result   Pointer to location to receive result
- * \return Appropriate utf8_convert_ret value
- */
-utf8_convert_ret utf8_to_html(const char *string, const char *encname,
-		size_t len, char **result)
+/* exported interface documented in utils/utf8.h */
+nserror
+utf8_to_html(const char *string, const char *encname, size_t len, char **result)
 {
 	iconv_t cd;
 	const char *in;
 	char *out, *origout;
 	size_t off, prev_off, inlen, outlen, origoutlen, esclen;
-	utf8_convert_ret ret;
+	nserror ret;
 	char *pescape, escape[11];
 
 	if (len == 0)
@@ -425,15 +358,14 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 					sizeof(last_cd.to)) == 0 &&
 			last_cd.cd != 0) {
 		cd = last_cd.cd;
-	}
-	else {
+	} else {
 		/* no match, so create a new cd */
 		cd = iconv_open(encname, "UTF-8");
 		if (cd == (iconv_t) -1) {
 			if (errno == EINVAL)
-				return UTF8_CONVERT_BADENC;
+				return NSERROR_BAD_ENCODING;
 			/* default to no memory */
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
 		/* close the last cd - we don't care if this fails */
@@ -446,8 +378,8 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		last_cd.cd = cd;
 	}
 
-	/* Worst case is ASCII -> UCS4, with all characters escaped: 
-	 * "&#xYYYYYY;", thus each input character may become a string 
+	/* Worst case is ASCII -> UCS4, with all characters escaped:
+	 * "&#xYYYYYY;", thus each input character may become a string
 	 * of 10 UCS4 characters, each 4 bytes in length, plus four for
 	 * terminating the string */
 	origoutlen = outlen = len * 10 * 4 + 4;
@@ -455,7 +387,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 	if (out == NULL) {
 		iconv_close(cd);
 		utf8_clear_cd_cache();
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	/* Process input in chunks between characters we must escape */
@@ -470,7 +402,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 				inlen = off - prev_off;
 				ret = utf8_convert_html_chunk(cd, in, inlen,
 						&out, &outlen);
-				if (ret != UTF8_CONVERT_OK) {
+				if (ret != NSERROR_OK) {
 					free(origout);
 					iconv_close(cd);
 					utf8_clear_cd_cache();
@@ -484,7 +416,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 			pescape = escape;
 			ret = utf8_convert_html_chunk(cd, pescape, esclen,
 					&out, &outlen);
-			if (ret != UTF8_CONVERT_OK) {
+			if (ret != NSERROR_OK) {
 				free(origout);
 				iconv_close(cd);
 				utf8_clear_cd_cache();
@@ -502,7 +434,7 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 		in = string + prev_off;
 		inlen = len - prev_off;
 		ret = utf8_convert_html_chunk(cd, in, inlen, &out, &outlen);
-		if (ret != UTF8_CONVERT_OK) {
+		if (ret != NSERROR_OK) {
 			free(origout);
 			iconv_close(cd);
 			utf8_clear_cd_cache();
@@ -518,30 +450,22 @@ utf8_convert_ret utf8_to_html(const char *string, const char *encname,
 	*result = realloc(origout, origoutlen - outlen);
 	if (*result == NULL) {
 		free(origout);
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
-
-/**
- * Save the given utf8 text to a file, converting to local encoding.
- *
- * \param  utf8_text	text to save to file
- * \param  path		pathname to save to
- * \return true iff the save succeeded
- */
-
+/* exported interface documented in utils/utf8.h */
 bool utf8_save_text(const char *utf8_text, const char *path)
 {
-	utf8_convert_ret ret;
+	nserror ret;
 	char *conv;
 	FILE *out;
 
 	ret = utf8_to_local_encoding(utf8_text, strlen(utf8_text), &conv);
 
-	if (ret != UTF8_CONVERT_OK) {
+	if (ret != NSERROR_OK) {
 		LOG(("failed to convert to local encoding, return %d", ret));
 		return false;
 	}
@@ -562,5 +486,3 @@ bool utf8_save_text(const char *utf8_text, const char *path)
 
 	return false;
 }
-
-

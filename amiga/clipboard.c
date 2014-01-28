@@ -246,7 +246,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 			if(nsoption_bool(clipboard_write_utf8)) {
 				WriteChunkBytes(iffh, buffer, length);
 			} else {
-				if(utf8_to_local_encoding(buffer, length, &text) == UTF8_CONVERT_OK) {
+				if(utf8_to_local_encoding(buffer, length, &text) == NSERROR_OK) {
 					char *p;
 
 					p = text;

@@ -956,12 +956,12 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	 */
 
 	if (is_utf8) {
-		utf8_convert_ret err;
+		nserror err;
 
 		err = utf8_to_local_encoding(url, 0, &local_text);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* A bad encoding should never happen, so assert this */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_to_enc failed"));
 			/* Paranoia */
 			local_text = NULL;

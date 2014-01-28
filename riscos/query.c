@@ -150,7 +150,7 @@ query_id query_user_xy(const char *query, const char *detail,
 	int len;
 	int tx;
 	char *local_text = NULL;
-	utf8_convert_ret err;
+	nserror err;
 
 	qw = malloc(sizeof(struct gui_query_window));
 	if (!qw) {
@@ -171,8 +171,8 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	/* set the text of the 'Yes' button and size accordingly */
 	err = utf8_to_local_encoding(yes, 0, &local_text);
-	if (err != UTF8_CONVERT_OK) {
-		assert(err != UTF8_CONVERT_BADENC);
+	if (err != NSERROR_OK) {
+		assert(err != NSERROR_BAD_ENCODING);
 		LOG(("utf8_to_local_encoding_failed"));
 		local_text = NULL;
 	}
@@ -201,8 +201,8 @@ query_id query_user_xy(const char *query, const char *detail,
 
 	/* set the text of the 'No' button and size accordingly */
 	err = utf8_to_local_encoding(no, 0, &local_text);
-	if (err != UTF8_CONVERT_OK) {
-		assert(err != UTF8_CONVERT_BADENC);
+	if (err != NSERROR_OK) {
+		assert(err != NSERROR_BAD_ENCODING);
 		LOG(("utf8_to_local_encoding_failed"));
 		local_text = NULL;
 	}

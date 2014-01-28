@@ -267,7 +267,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	short fx=0;
 	GRECT canvas;
 	char *lstr = NULL;
-	assert( utf8_to_local_encoding(text, length, &lstr) == UTF8_CONVERT_OK);
+	assert( utf8_to_local_encoding(text, length, &lstr) == NSERROR_OK);
 	assert( lstr != NULL );
 
 	int slen = strlen(lstr);

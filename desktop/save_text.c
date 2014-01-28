@@ -58,7 +58,7 @@ void save_as_text(hlcache_handle *c, char *path)
 	struct save_text_state save = { NULL, 0, 0 };
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
-	utf8_convert_ret ret;
+	nserror ret;
 	char *result;
 
 	if (!c || content_get_type(c) != CONTENT_HTML) {
@@ -72,7 +72,7 @@ void save_as_text(hlcache_handle *c, char *path)
 	ret = utf8_to_local_encoding(save.block, save.length, &result);
 	free(save.block);
 
-	if (ret != UTF8_CONVERT_OK) {
+	if (ret != NSERROR_OK) {
 		LOG(("failed to convert to local encoding, return %d", ret));
 		return;
 	}

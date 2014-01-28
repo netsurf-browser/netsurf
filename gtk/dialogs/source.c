@@ -169,16 +169,16 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	source_data = content_get_source_data(bw->current_content,
 			&source_size);
 
-	utf8_convert_ret r = utf8_from_enc(
+	nserror r = utf8_from_enc(
 			source_data,
 			html_get_encoding(bw->current_content),
 			source_size,
 			&data,
 			&data_len);
-	if (r == UTF8_CONVERT_NOMEM) {
+	if (r == NSERROR_NOMEM) {
 		warn_user("NoMemory",0);
 		return;
-	} else if (r == UTF8_CONVERT_BADENC) {
+	} else if (r == NSERROR_BAD_ENCODING) {
 		warn_user("EncNotRec",0);
 		return;
 	}
@@ -270,7 +270,7 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	size_t ndata_len;
 	nsurl *url;
 	nserror error;
-	utf8_convert_ret r;
+	nserror r;
 	gchar *filename;
 	char *fileurl;
 	gint handle;
@@ -283,10 +283,10 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 			  source_size,
 			  &ndata,
 			  &ndata_len);
-	if (r == UTF8_CONVERT_NOMEM) {
+	if (r == NSERROR_NOMEM) {
 		warn_user("NoMemory",0);
 		return;
-	} else if (r == UTF8_CONVERT_BADENC) {
+	} else if (r == NSERROR_BAD_ENCODING) {
 		warn_user("EncNotRec",0);
 		return;
 	}

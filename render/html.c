@@ -1765,14 +1765,14 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 static void html__set_file_gadget_filename(struct content *c,
 	struct form_control *gadget, const char *fn)
 {
-	utf8_convert_ret ret;
+	nserror ret;
 	char *utf8_fn, *oldfile = NULL;
 	html_content *html = (html_content *)c;
 	struct box *file_box = gadget->box;
 	
 	ret = utf8_from_local_encoding(fn,0, &utf8_fn);
-	if (ret != UTF8_CONVERT_OK) {
-		assert(ret != UTF8_CONVERT_BADENC);
+	if (ret != NSERROR_OK) {
+		assert(ret != NSERROR_BAD_ENCODING);
 		LOG(("utf8_from_local_encoding failed"));
 		/* Load was for us - just no memory */
 		return;		
@@ -1874,7 +1874,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		FILE *fp = NULL;
 		char *buffer;
 		char *utf8_buff;
-		utf8_convert_ret ret;
+		nserror ret;
 		unsigned int size;
 		int bx, by;
 
@@ -1916,9 +1916,9 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 
 		/* Convert to UTF-8 */
 		ret = utf8_from_local_encoding(buffer, file_len, &utf8_buff);
-		if (ret != UTF8_CONVERT_OK) {
+		if (ret != NSERROR_OK) {
 			/* bad encoding shouldn't happen */
-			assert(ret != UTF8_CONVERT_BADENC);
+			assert(ret != NSERROR_BAD_ENCODING);
 			LOG(("utf8_from_local_encoding failed"));
 			free(buffer);
 			warn_user("NoMemory", NULL);

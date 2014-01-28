@@ -35,7 +35,7 @@
 #include "windows/gui.h"
 #include "windows/plot.h"
 
-utf8_convert_ret utf8_to_font_encoding(const struct font_desc* font,
+nserror utf8_to_font_encoding(const struct font_desc* font,
 				       const char *string, 
 				       size_t len,
 				       char **result)
@@ -43,14 +43,14 @@ utf8_convert_ret utf8_to_font_encoding(const struct font_desc* font,
 	return utf8_to_enc(string, font->encoding, len, result);
 }
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, 
+nserror utf8_to_local_encoding(const char *string, 
 				       size_t len,
 				       char **result)
 {
 	return utf8_to_enc(string, "UCS-2", len, result);
 }
 
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+nserror utf8_from_local_encoding(const char *string, size_t len,
 		char **result)
 {
 	assert(string && result);
@@ -60,9 +60,9 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 	*result = strndup(string, len);
 	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
 HFONT get_font(const plot_font_style_t *style)

@@ -212,7 +212,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
-	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return false;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
@@ -301,7 +301,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
-	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
+	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return false;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
@@ -732,7 +732,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
-	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
 

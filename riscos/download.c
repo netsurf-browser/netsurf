@@ -228,7 +228,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	os_error *error;
 	url_func_result res;
 	char *local_path;
-	utf8_convert_ret err;
+	nserror err;
 	size_t i, last_dot;
 
 	dw = malloc(sizeof *dw);
@@ -376,9 +376,9 @@ static struct gui_download_window *gui_download_window_create(download_context *
 				filename);
 
 	err = utf8_to_local_encoding(dw->path, 0, &local_path);
-	if (err != UTF8_CONVERT_OK) {
+	if (err != NSERROR_OK) {
 		/* badenc should never happen */
-		assert(err != UTF8_CONVERT_BADENC);
+		assert(err !=NSERROR_BAD_ENCODING);
 		LOG(("utf8_to_local_encoding failed"));
 		warn_user("NoMemory", 0);
 		free(dw);
@@ -588,7 +588,7 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	os_error *error;
 	int width;
 	char *local_status;
-	utf8_convert_ret err;
+	nserror err;
 
 	gettimeofday(&t, 0);
 	dt = (t.tv_sec + 0.000001 * t.tv_usec) - (dw->last_time.tv_sec +
@@ -622,9 +622,9 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 			/* convert to local encoding */
 			err = utf8_to_local_encoding(
 				messages_get("Download"), 0, &local_status);
-			if (err != UTF8_CONVERT_OK) {
+			if (err != NSERROR_OK) {
 				/* badenc should never happen */
-				assert(err != UTF8_CONVERT_BADENC);
+				assert(err != NSERROR_BAD_ENCODING);
 				/* hide nomem error */
 				snprintf(dw->status, sizeof dw->status,
 					messages_get("Download"),
@@ -645,9 +645,9 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 
 			err = utf8_to_local_encoding(
 				messages_get("DownloadU"), 0, &local_status);
-			if (err != UTF8_CONVERT_OK) {
+			if (err != NSERROR_OK) {
 				/* badenc should never happen */
-				assert(err != UTF8_CONVERT_BADENC);
+				assert(err != NSERROR_BAD_ENCODING);
 				/* hide nomem error */
 				snprintf(dw->status, sizeof dw->status,
 					messages_get("DownloadU"),
@@ -673,9 +673,9 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 
 		err = utf8_to_local_encoding(messages_get("Downloaded"), 0,
 				&local_status);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			/* hide nomem error */
 			snprintf(dw->status, sizeof dw->status,
 				messages_get("Downloaded"),

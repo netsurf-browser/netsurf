@@ -29,7 +29,7 @@ struct font_desc {
     const char *encoding;
 };
 
-extern utf8_convert_ret utf8_to_font_encoding(const struct font_desc* font,
+extern nserror utf8_to_font_encoding(const struct font_desc* font,
 				       const char *string, 
 				       size_t len,
 				       char **result);

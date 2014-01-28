@@ -992,7 +992,7 @@ char *form_acceptable_charset(struct form *form)
 char *form_encode_item(const char *item, uint32_t len, const char *charset,
 		const char *fallback)
 {
-	utf8_convert_ret err;
+	nserror err;
 	char *ret = NULL;
 	char cset[256];
 
@@ -1002,19 +1002,19 @@ char *form_encode_item(const char *item, uint32_t len, const char *charset,
 	snprintf(cset, sizeof cset, "%s//TRANSLIT", charset);
 
 	err = utf8_to_enc(item, cset, 0, &ret);
-	if (err == UTF8_CONVERT_BADENC) {
+	if (err == NSERROR_BAD_ENCODING) {
 		/* charset not understood, try without transliteration */
 		snprintf(cset, sizeof cset, "%s", charset);
 		err = utf8_to_enc(item, cset, len, &ret);
 
-		if (err == UTF8_CONVERT_BADENC) {
+		if (err == NSERROR_BAD_ENCODING) {
 			/* nope, try fallback charset (if any) */
 			if (fallback) {
 				snprintf(cset, sizeof cset, 
 						"%s//TRANSLIT", fallback);
 				err = utf8_to_enc(item, cset, 0, &ret);
 
-				if (err == UTF8_CONVERT_BADENC) {
+				if (err == NSERROR_BAD_ENCODING) {
 					/* and without transliteration */
 					snprintf(cset, sizeof cset,
 							"%s", fallback);
@@ -1022,11 +1022,11 @@ char *form_encode_item(const char *item, uint32_t len, const char *charset,
 				}
 			}
 
-			if (err == UTF8_CONVERT_BADENC) {
+			if (err == NSERROR_BAD_ENCODING) {
 				/* that also failed, use 8859-1 */
 				err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
 						0, &ret);
-				if (err == UTF8_CONVERT_BADENC) {
+				if (err == NSERROR_BAD_ENCODING) {
 					/* and without transliteration */
 					err = utf8_to_enc(item, "ISO-8859-1",
 							0, &ret);
@@ -1034,7 +1034,7 @@ char *form_encode_item(const char *item, uint32_t len, const char *charset,
 			}
 		}
 	}
-	if (err == UTF8_CONVERT_NOMEM) {
+	if (err == NSERROR_NOMEM) {
 		return NULL;
 	}
 

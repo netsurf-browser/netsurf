@@ -59,7 +59,7 @@ fb_get_font(const plot_font_style_t *fstyle)
 	}
 }
 
-utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
+nserror_ret utf8_to_font_encoding(const struct fb_font_desc* font,
 				       const char *string,
 				       size_t len,
 				       char **result)
@@ -68,7 +68,7 @@ utf8_convert_ret utf8_to_font_encoding(const struct fb_font_desc* font,
 
 }
 
-utf8_convert_ret utf8_to_local_encoding(const char *string,
+nserror utf8_to_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
@@ -76,20 +76,20 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 
 }
 
-utf8_convert_ret utf8_from_local_encoding(const char *string,
+nserror utf8_from_local_encoding(const char *string,
 					size_t len,
 					char **result)
 {
 	*result = malloc(len + 1);
 	if (*result == NULL) {
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	memcpy(*result, string, len);
 
 	(*result)[len] = '\0';
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
 static bool nsfont_width(const plot_font_style_t *fstyle,

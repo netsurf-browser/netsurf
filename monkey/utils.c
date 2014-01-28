@@ -38,20 +38,16 @@ void die(const char * const error)
   exit(EXIT_FAILURE);
 }
 
-utf8_convert_ret
-utf8_to_local_encoding(const char *string, size_t len,
-                       char **result)
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
   *result = strndup(string, len);
-  return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
+  return (*result == NULL) ? NSERROR_NOMEM : NSERROR_OK;
 }
 
-utf8_convert_ret
-utf8_from_local_encoding(const char *string, size_t len,
-                         char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
   *result = strndup(string, len);
-  return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
+  return (*result == NULL) ? NSERROR_NOMEM : NSERROR_OK;
 }
 
 

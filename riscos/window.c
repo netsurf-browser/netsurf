@@ -4621,7 +4621,7 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 	os_error *error;
 	char *buf, *utf8_buf, *sp;
 	int size;
-	utf8_convert_ret ret;
+	nserror ret;
 	const char *ep;
 	char *p;
 
@@ -4656,9 +4656,9 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 	}
 
 	ret = utf8_from_local_encoding(buf, size, &utf8_buf);
-	if (ret != UTF8_CONVERT_OK) {
+	if (ret != NSERROR_OK) {
 		/* bad encoding shouldn't happen */
-		assert(ret != UTF8_CONVERT_BADENC);
+		assert(ret != NSERROR_BAD_ENCODING);
 		LOG(("utf8_from_local_encoding failed"));
 		free(buf);
 		warn_user("NoMemory", NULL);
@@ -4802,7 +4802,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 	char *text_convert, *temp;
 	struct form_option *option;
 	bool reopen = true;
-	utf8_convert_ret err;
+	nserror err;
 
 	assert(control);
 
@@ -4839,9 +4839,9 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 		}
 		err = utf8_to_local_encoding(messages_get("SelectMenu"), 0,
 				&text_convert);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_to_local_encoding failed"));
 			warn_user("NoMemory", 0);
 			ro_gui_menu_closed();
@@ -4875,10 +4875,10 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 
 			err = utf8_to_local_encoding(temp,
 				0, &text_convert);
-			if (err != UTF8_CONVERT_OK) {
+			if (err != NSERROR_OK) {
 				/* A bad encoding should never happen,
 				 * so assert this */
-				assert(err != UTF8_CONVERT_BADENC);
+				assert(err != NSERROR_BAD_ENCODING);
 				LOG(("utf8_to_enc failed"));
 				warn_user("NoMemory", 0);
 				ro_gui_menu_closed();

@@ -34,7 +34,7 @@ char *ami_utf8_easy(const char *string)
 {
 	char *localtext;
 
-	if(utf8_to_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
+	if(utf8_to_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
 	{
 		return localtext;
 	}
@@ -48,7 +48,7 @@ char *ami_to_utf8_easy(const char *string)
 {
 	char *localtext;
 
-	if(utf8_from_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
+	if(utf8_from_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
 	{
 		return localtext;
 	}
@@ -58,8 +58,7 @@ char *ami_to_utf8_easy(const char *string)
 	}
 }
 
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
-	char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	const char *encname = "ISO-8859-1";
 
@@ -73,8 +72,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	return utf8_from_enc(string,encname,len,result,NULL);
 }
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-	char **result)
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
 	const char *encname = "ISO-8859-1";
 

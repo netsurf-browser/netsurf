@@ -391,7 +391,7 @@ bool ro_gui_selection_prepare_paste_dataload(
 	FILE *fp;
 	long size;
 	char *local_cb;
-	utf8_convert_ret ret;
+	nserror ret;
 
 	/* Ignore messages that aren't for us */
 	if (dataxfer->your_ref == 0 || dataxfer->your_ref != paste_prev_message)
@@ -410,7 +410,7 @@ bool ro_gui_selection_prepare_paste_dataload(
 
 				ret = utf8_from_local_encoding(local_cb, size,
 						&clipboard);
-				if (ret == UTF8_CONVERT_OK) {
+				if (ret == NSERROR_OK) {
 					clip_length = strlen(clipboard);
 				}
 
@@ -509,13 +509,13 @@ void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 bool ro_gui_save_clipboard(const char *path)
 {
 	char *local_cb;
-	utf8_convert_ret ret;
+	nserror ret;
 	os_error *error;
 
 	assert(clip_length > 0 && clipboard);
 
 	ret = utf8_to_local_encoding(clipboard, clip_length, &local_cb);
-	if (ret != UTF8_CONVERT_OK) {
+	if (ret != NSERROR_OK) {
 		warn_user("SaveError", "Could not convert");
 		return false;
 	}

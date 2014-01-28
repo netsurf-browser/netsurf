@@ -614,7 +614,7 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	os_error *error;
 	char *dp, *ep;
 	char *local_name = NULL;
-	utf8_convert_ret err;
+	nserror err;
 
 	if (dragbox_active)
 		ro_gui_drag_box_cancel();
@@ -651,9 +651,9 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 		/* saving directly from browser window, choose a
 		 * name based upon the URL */
 		err = utf8_to_local_encoding(save_leafname, 0, &local_name);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			local_name = NULL;
 		}
 		name = local_name ? local_name : save_leafname;
@@ -1216,7 +1216,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	const char *name = gui_save_table[save_type].name;
 	bool done = false;
 	char *nice = NULL;
-	utf8_convert_ret err;
+	nserror err;
 	char *local_name;
 	size_t i;
 
@@ -1270,9 +1270,9 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	leaf_buf[leaf_len - 1] = 0;
 
 	err = utf8_to_local_encoding(name, 0, &local_name);
-	if (err != UTF8_CONVERT_OK) {
+	if (err != NSERROR_OK) {
 		/* badenc should never happen */
-		assert(err != UTF8_CONVERT_BADENC);
+		assert(err != NSERROR_BAD_ENCODING);
 		local_name = NULL;
 	}
 

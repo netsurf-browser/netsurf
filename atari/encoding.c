@@ -21,23 +21,21 @@
 
 /* TODO: this need a rework..., encoding to atari st doesn|t always work.
 ( gui_add_to_clipboard...) */
-utf8_convert_ret utf8_to_local_encoding(const char *string,
+nserror utf8_to_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
-	utf8_convert_ret r;
+	nserror r;
 	r = utf8_to_enc(string, "ATARIST", len, result);
-	if(r != UTF8_CONVERT_OK) {
+	if(r != NSERROR_OK) {
 		r = utf8_to_enc(string, "UTF-8", len, result);
-		assert( r == UTF8_CONVERT_OK );
+		assert( r == NSERROR_OK );
 	}
 	return r;
 }
 
 
-utf8_convert_ret utf8_from_local_encoding(const char *string,
-				       size_t len,
-				       char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	return utf8_from_enc(string, "ATARIST", len, result, NULL);
 }

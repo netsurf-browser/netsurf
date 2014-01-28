@@ -273,12 +273,12 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text, bool is_utf8)
 	unsigned int button_type;
 
 	if (is_utf8) {
-		utf8_convert_ret err;
+		nserror err;
 		/* convert text to local encoding */
 		err = utf8_to_local_encoding(text, 0, &local_text);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* A bad encoding should never happen, so assert this */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_to_enc failed"));
 			/* Paranoia */
 			local_text = NULL;
@@ -677,7 +677,7 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 	wimp_window_info_base window;
 	os_error *error;
 	char *title_local_enc;
-	utf8_convert_ret err;
+	nserror err;
 
 	/*	Get the window details
 	*/
@@ -692,10 +692,10 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 
 	/* convert text to local encoding */
 	err = utf8_to_local_encoding(text, 0, &title_local_enc);
-	if (err != UTF8_CONVERT_OK) {
+	if (err != NSERROR_OK) {
 		/* A bad encoding should never happen,
 		 * so assert this */
-		assert(err != UTF8_CONVERT_BADENC);
+		assert(err != NSERROR_BAD_ENCODING);
 		LOG(("utf8_to_enc failed"));
 		return;
 	}

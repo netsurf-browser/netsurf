@@ -326,7 +326,7 @@ static void gui_window_set_title(struct gui_window *gw, const char *title)
         int l;
         char * conv;
         l = strlen(title)+1;
-        if (utf8_to_local_encoding(title, l-1, &conv) == UTF8_CONVERT_OK ) {
+        if (utf8_to_local_encoding(title, l-1, &conv) == NSERROR_OK ) {
             l = MIN((uint32_t)atari_sysinfo.aes_max_win_title_len, strlen(conv));
             if(gw->title == NULL)
                 gw->title = malloc(l);
@@ -699,16 +699,16 @@ static void gui_get_clipboard(char **buffer, size_t *length)
         // clipboard is in atari encoding, convert it to utf8:
 
         char *utf8 = NULL;
-        utf8_convert_ret ret;
+        nserror ret;
 
         clip_len = strlen(clip);
         if (clip_len > 0) {
             ret = utf8_to_local_encoding(clip, clip_len, &utf8);
-            if (ret == UTF8_CONVERT_OK && utf8 != NULL) {
+            if (ret == NSERROR_OK && utf8 != NULL) {
                 *buffer = utf8;
                 *length = strlen(utf8);
             } else {
-                assert(ret == UTF8_CONVERT_OK && utf8 != NULL);
+                assert(ret == NSERROR_OK && utf8 != NULL);
             }
         }
 
@@ -731,14 +731,14 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 
         // convert utf8 input to atari encoding:
 
-        utf8_convert_ret ret;
+        nserror ret;
         char *clip = NULL;
 
         ret = utf8_to_local_encoding(buffer,length, &clip);
-        if (ret == UTF8_CONVERT_OK) {
+        if (ret == NSERROR_OK) {
             scrap_txt_write(clip);
         } else {
-            assert(ret == UTF8_CONVERT_OK);
+            assert(ret == NSERROR_OK);
         }
         free(clip);
     }
