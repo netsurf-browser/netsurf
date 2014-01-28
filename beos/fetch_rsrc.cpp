@@ -44,6 +44,7 @@ extern "C" {
 #include "utils/base64.h"
 }
 #include "beos/fetch_rsrc.h"
+#include "beos/filetype.h"
 #include "beos/gui.h"
 
 #include <image.h>
