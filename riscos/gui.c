@@ -1315,7 +1315,8 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_MENUS_DELETED:
-			ro_gui_menu_closed();
+			ro_gui_menu_message_deleted((wimp_message_menus_deleted *)
+					&message->data);
 			break;
 
 		case message_CLAIM_ENTITY:
