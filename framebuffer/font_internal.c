@@ -59,7 +59,7 @@ fb_get_font(const plot_font_style_t *fstyle)
 	}
 }
 
-nserror_ret utf8_to_font_encoding(const struct fb_font_desc* font,
+nserror utf8_to_font_encoding(const struct fb_font_desc* font,
 				       const char *string,
 				       size_t len,
 				       char **result)

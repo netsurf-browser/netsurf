@@ -645,7 +645,7 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 						(3 * SPECIAL_CHUNK_SIZE));
 				if (!temp) {
 					free(*result);
-					return NSERRO_NOMEM;
+					return NSERROR_NOMEM;
 				}
 
 				*result = temp;
