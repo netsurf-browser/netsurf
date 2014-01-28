@@ -720,7 +720,6 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				ro_gui_dialog_add_persistent(current_menu_window,
 						pointer->w);
 				ro_gui_menu_closed();
-				gui_poll(true);
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
 					LOG(("xwimp_open_window: 0x%x: %s",
