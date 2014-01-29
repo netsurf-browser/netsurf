@@ -525,7 +525,7 @@ void ro_print_cleanup(void)
 	print_text_black = false;
 	print_prev_message = 0;
 	print_max_sheets = -1;
-	ro_gui_menu_closed();
+	ro_gui_menu_destroy();
 	ro_gui_dialog_close(dialog_print);
 }
 

@@ -168,7 +168,7 @@ struct ns_menu {
 
 void ro_gui_menu_init(void);
 void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w);
-void ro_gui_menu_closed(void);
+void ro_gui_menu_destroy(void);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_window_changed(wimp_w from, wimp_w to);
 void ro_gui_menu_selection(wimp_selection* selection);

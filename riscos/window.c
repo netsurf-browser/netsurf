@@ -653,7 +653,7 @@ static void gui_window_destroy(struct gui_window *g)
 	ro_gui_url_complete_close();
 	ro_gui_dialog_close_persistent(w);
 	if (current_menu_window == w)
-		ro_gui_menu_closed();
+		ro_gui_menu_destroy();
 	ro_gui_window_remove_update_boxes(g);
 
 	/* delete window */
@@ -1393,7 +1393,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		LOG(("xwimp_get_pointer_info: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		ro_gui_menu_closed();
+		ro_gui_menu_destroy();
 		return;
 	}
 
@@ -4810,7 +4810,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 			option = option->next)
 		entries++;
 	if (entries == 0) {
-		ro_gui_menu_closed();
+		ro_gui_menu_destroy();
 		return false;
 	}
 
@@ -4834,7 +4834,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 		gui_form_select_menu = malloc(wimp_SIZEOF_MENU(entries));
 		if (!gui_form_select_menu) {
 			warn_user("NoMemory", 0);
-			ro_gui_menu_closed();
+			ro_gui_menu_destroy();
 			return false;
 		}
 		err = utf8_to_local_encoding(messages_get("SelectMenu"), 0,
@@ -4844,7 +4844,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_to_local_encoding failed"));
 			warn_user("NoMemory", 0);
-			ro_gui_menu_closed();
+			ro_gui_menu_destroy();
 			return false;
 		}
 		gui_form_select_menu->title_data.indirected_text.text =
@@ -4869,7 +4869,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 			if (!temp) {
 				LOG(("cnv_space2nbsp failed"));
 				warn_user("NoMemory", 0);
-				ro_gui_menu_closed();
+				ro_gui_menu_destroy();
 				return false;
 			}
 
@@ -4881,7 +4881,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 				assert(err != NSERROR_BAD_ENCODING);
 				LOG(("utf8_to_enc failed"));
 				warn_user("NoMemory", 0);
-				ro_gui_menu_closed();
+				ro_gui_menu_destroy();
 				return false;
 			}
 

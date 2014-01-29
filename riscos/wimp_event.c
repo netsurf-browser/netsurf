@@ -719,7 +719,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				}
 				ro_gui_dialog_add_persistent(current_menu_window,
 						pointer->w);
-				ro_gui_menu_closed();
+				ro_gui_menu_destroy();
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
 					LOG(("xwimp_open_window: 0x%x: %s",
@@ -768,7 +768,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 			if (pointer->buttons & wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(pointer->w);
 				ro_gui_wimp_event_close_window(pointer->w);
-				ro_gui_menu_closed();
+				ro_gui_menu_destroy();
 			} else {
 				ro_gui_wimp_event_restore(pointer->w);
 			}
@@ -850,7 +850,7 @@ void ro_gui_wimp_event_ok_click(struct event_window *window,
 	if (state & wimp_CLICK_SELECT) {
 		ro_gui_dialog_close(window->w);
 		ro_gui_wimp_event_close_window(window->w);
-		ro_gui_menu_closed();
+		ro_gui_menu_destroy();
 	} else {
 		ro_gui_wimp_event_memorise(window->w);
 	}
@@ -1045,7 +1045,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 				return false;
 			ro_gui_dialog_close(key->w);
 			ro_gui_wimp_event_close_window(key->w);
-			ro_gui_menu_closed();
+			ro_gui_menu_destroy();
 			return true;
 		/* Return performs the OK action */
 		case wimp_KEY_RETURN:
@@ -1772,7 +1772,7 @@ bool ro_gui_wimp_event_submenu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 }
 
 /**
- * Handle menus being closed.  This is called from ro_gui_menu_closed(), in
+ * Handle menus being closed.  This is called from the menus modules, in
  * every scenario when one of our own menus is open.
  *
  * \param w		the window to owning the menu
