@@ -23,9 +23,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/time.h>
-#include "desktop/netsurf.h"
 
 #include "utils/log.h"
+
+bool verbose_log = false;
 
 nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {

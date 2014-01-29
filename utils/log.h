@@ -21,8 +21,11 @@
 #define _NETSURF_LOG_H_
 
 #include <stdio.h>
-#include "desktop/netsurf.h"
+#include <stdbool.h>
+
 #include "utils/errors.h"
+
+extern bool verbose_log;
 
 /**
  * Ensures the FILE handle is available to write logging to.

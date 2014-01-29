@@ -73,7 +73,6 @@
 #define HL_CACHE_CLEAN_TIME (2 * IMAGE_CACHE_CLEAN_TIME)
 
 bool netsurf_quit = false;
-bool verbose_log = false;
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
