@@ -399,9 +399,10 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 /**
  * Create and open a new browser window.
  *
- * \param  bw	  browser_window structure to update
- * \param  clone  the browser window to clone options from, or NULL for default
- * \return  gui_window, or 0 on error and error reported
+ * \param bw The browser window structure to update
+ * \param clone The browser window to clone options from, or NULL for default
+ * \param new_tab Determines if new browser context should be a tab or window.
+ * \return A gui window, or NULL on error and error reported
  */
 
 static struct gui_window *gui_window_create(struct browser_window *bw,
@@ -731,8 +732,8 @@ void gui_window_redraw_window(struct gui_window *g)
 /**
  * Redraw an area of a window.
  *
- * \param  g   gui_window
- * \param  data  content_msg_data union with filled in redraw data
+ * \param  g The window to update
+ * \param  rect  The area of the window to update.
  */
 
 static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
@@ -1292,8 +1293,9 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 /**
  * Save the specified content as a link.
  *
- * \param  g  gui_window containing the content
- * \param  c  the content to save
+ * \param g  The window containing the content
+ * \param url The url of the link
+ * \param title The title of the link
  */
 static void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
@@ -3106,7 +3108,7 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 			inc = 0.02;  /* RO5 sends the msg 5 times;
 				      * don't ask me why
 				      *
-				      * \TODO -- this is liable to break if
+				      * @todo this is liable to break if
 				      * HID is configured optimally for
 				      * frame scrolling. *5 appears to be
 				      * an artifact of non-HID mode scrolling.
@@ -3752,8 +3754,8 @@ void ro_gui_window_toolbar_click(void *data,
 /**
  * Handle Message_DataLoad (file dragged in) for a toolbar
  *
- * \TODO -- This belongs in the toolbar module, and should be moved there
- *          once the module is able to usefully handle its own events.
+ * @todo This belongs in the toolbar module, and should be moved there
+ * once the module is able to usefully handle its own events.
  *
  * \param  g	    window
  * \param  message  Message_DataLoad block
@@ -4607,11 +4609,10 @@ void ro_gui_window_update_theme(void *data, bool ok)
  */
 
 /**
- * Import text file into window or its toolbar
+ * Import text file into window
  *
  * \param  g	     gui window containing textarea
  * \param  filename  pathname of file to be imported
- * \param  toolbar   true iff imported to toolbar rather than main window
  * \return true iff successful
  */
 
@@ -4946,8 +4947,8 @@ struct gui_window *ro_gui_window_lookup(wimp_w window)
 /**
  * Convert a toolbar RISC OS window handle to a gui_window.
  *
- * \param  w		RISC OS window handle of a toolbar
- * \return		pointer to a structure if found, 0 otherwise
+ * \param  window RISC OS window handle of a toolbar
+ * \return pointer to a structure if found, NULL otherwise
  */
 
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window)
