@@ -243,7 +243,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
  */
 bool browser_window_redraw_ready(struct browser_window *bw);
 
-/*
+/**
  * Update the extent of the inside of a browser window to that of the current
  * content
  *
@@ -251,7 +251,7 @@ bool browser_window_redraw_ready(struct browser_window *bw);
  */
 void browser_window_update_extent(struct browser_window *bw);
 
-/*
+/**
  * Get the position of the current browser window with respect to the root or
  * parent browser window
  *
@@ -263,7 +263,7 @@ void browser_window_update_extent(struct browser_window *bw);
 void browser_window_get_position(struct browser_window *bw, bool root,
 		int *pos_x, int *pos_y);
 
-/*
+/**
  * Set the position of the current browser window with respect to the parent
  * browser window
  *
@@ -273,7 +273,7 @@ void browser_window_get_position(struct browser_window *bw, bool root,
  */
 void browser_window_set_position(struct browser_window *bw, int x, int y);
 
-/*
+/**
  * Scroll the browser window to display the passed area
  *
  * \param  bw		browser window to scroll
@@ -294,7 +294,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
  */
 void browser_window_set_scroll(struct browser_window *bw, int x, int y);
 
-/*
+/**
  * Set drag type for a browser window, and inform front end
  *
  * \param  bw     browser window to set the type of the current drag for
@@ -304,7 +304,7 @@ void browser_window_set_scroll(struct browser_window *bw, int x, int y);
 void browser_window_set_drag_type(struct browser_window *bw,
 		browser_drag_type type, const struct rect *rect);
 
-/*
+/**
  * Get type of any current drag for a browser window
  *
  * \param  bw     browser window to set the type of the current drag for
@@ -312,7 +312,7 @@ void browser_window_set_drag_type(struct browser_window *bw,
  */
 browser_drag_type browser_window_get_drag_type(struct browser_window *bw);
 
-/*
+/**
  * Get the root level browser window
  *
  * \param  bw     browser window to set the type of the current drag for

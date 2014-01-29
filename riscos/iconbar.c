@@ -28,6 +28,7 @@
 #include <string.h>
 #include <time.h>
 #include <features.h>
+
 #include "oslib/os.h"
 #include "oslib/osbyte.h"
 #include "oslib/wimp.h"
@@ -37,6 +38,7 @@
 #include "riscos/global_history.h"
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
+#include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "utils/nsoption.h"
 #include "riscos/wimp_event.h"
