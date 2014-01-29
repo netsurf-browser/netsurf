@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <curl/curl.h>
+
 #include "oslib/mimemap.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
@@ -43,6 +44,7 @@
 #include "oslib/wimpspriteop.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
+#include "desktop/download.h"
 #include "riscos/dialog.h"
 #include "utils/nsoption.h"
 #include "riscos/mouse.h"
