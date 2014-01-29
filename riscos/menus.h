@@ -173,6 +173,7 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_window_changed(wimp_w from, wimp_w to);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_menu_message_deleted(wimp_message_menus_deleted *deleted);
 void ro_gui_menu_refresh(wimp_menu *menu);
 void ro_gui_menu_init_structure(wimp_menu *menu, int entries);
 const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,

@@ -118,6 +118,7 @@ wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 /**
  * Create menu structures.
  */
+
 void ro_gui_menu_init(void)
 {
 	/* image quality menu */
@@ -438,6 +439,28 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		warn_user("MenuError", error->errmess);
 	}
 }
+
+
+/**
+ * Handle Message_MenusDeleted, removing our current record of an open menu
+ * if it matches the deleted menu handle.
+ *
+ * \param *deleted		The message block.
+ */
+
+void ro_gui_menu_message_deleted(wimp_message_menus_deleted *deleted)
+{
+	if (deleted != NULL && deleted->menu == current_menu) {
+		ro_gui_wimp_event_menus_closed(current_menu_window,
+				current_menu_icon, current_menu);
+
+		current_menu = NULL;
+		current_menu_window = NULL;
+		current_menu_icon = 0;
+		current_menu_open = false;
+	}
+}
+
 
 /**
  * Update the current menu by sending it a Menu Prepare event through wimp_event
