@@ -16,11 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/browser.h"
-#include "monkey/browser.h"
+#include <stdio.h>
+
+#include "desktop/gui.h"
+#include "desktop/download.h"
 #include "utils/ring.h"
 
-#include <stdio.h>
+#include "monkey/browser.h"
 
 static uint32_t dwin_ctr = 0;
 

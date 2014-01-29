@@ -30,7 +30,6 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/gui.h"
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/html.h"

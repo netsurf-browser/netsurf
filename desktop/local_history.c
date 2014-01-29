@@ -26,12 +26,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"

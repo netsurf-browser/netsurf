@@ -24,10 +24,13 @@
 #define _NETSURF_DESKTOP_GUI_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
 
-#include "content/hlcache.h"
-#include "desktop/download.h"
+#include "utils/types.h"
 #include "utils/errors.h"
+#include "utils/nsurl.h"
+#include "desktop/plot_style.h"
+#include "desktop/mouse.h"
 
 typedef enum {
 	GUI_SAVE_SOURCE,
@@ -58,6 +61,8 @@ struct gui_download_window;
 struct browser_window;
 struct form_control;
 struct ssl_cert_info;
+struct hlcache_handle;
+struct download_context;
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */
@@ -155,7 +160,7 @@ struct gui_window_table {
 	void (*set_url)(struct gui_window *g, const char *url);
 
 	/** set favicon */
-	void (*set_icon)(struct gui_window *g, hlcache_handle *icon);
+	void (*set_icon)(struct gui_window *g, struct hlcache_handle *icon);
 
 	/**
 	 * Set the status bar of a browser window.
@@ -232,10 +237,10 @@ struct gui_window_table {
 	/**
 	 * Called when file chooser gadget is activated
 	 */
-	void (*file_gadget_open)(struct gui_window *g, hlcache_handle *hl, struct form_control *gadget);
+	void (*file_gadget_open)(struct gui_window *g, struct hlcache_handle *hl, struct form_control *gadget);
 
 	/** object dragged to window*/
-	void (*drag_save_object)(struct gui_window *g, hlcache_handle *c, gui_save_type type);
+	void (*drag_save_object)(struct gui_window *g, struct hlcache_handle *c, gui_save_type type);
 
 	/** drag selection save */
 	void (*drag_save_selection)(struct gui_window *g, const char *selection);
@@ -248,7 +253,7 @@ struct gui_window_table {
  * function table for download windows
  */
 struct gui_download_table {
-	struct gui_download_window *(*create)(download_context *ctx, struct gui_window *parent);
+	struct gui_download_window *(*create)(struct download_context *ctx, struct gui_window *parent);
 
 	nserror (*data)(struct gui_download_window *dw,	const char *data, unsigned int size);
 
@@ -365,6 +370,31 @@ struct gui_fetch_table {
 
 };
 
+/**
+ * User interface utf8 characterset conversion routines
+ */
+struct gui_utf8_table {
+	/**
+	 * Convert a UTF-8 encoded string into the system local encoding
+	 *
+	 * \param string The string to convert
+	 * \param len The length (in bytes) of the string, or 0
+	 * \param result Pointer to location in which to store result
+	 * \return An nserror code
+	 */
+	nserror (*utf8_to_local)(const char *string, size_t len, char **result);
+
+	/**
+	 * Convert a string encoded in the system local encoding to UTF-8
+	 *
+	 * \param string The string to convert
+	 * \param len The length (in bytes) of the string, or 0
+	 * \param result Pointer to location in which to store result
+	 * \return An nserror code
+	 */
+	nserror (*local_to_utf8)(const char *string, size_t len, char **result);
+};
+
 /** Graphical user interface browser misc function table
  *
  * function table implementing GUI interface to miscelaneous browser
@@ -392,7 +422,7 @@ struct gui_browser_table {
 	 * \param ico may be NULL for local calls; then access current
 	 * cache from search_web_ico()
 	 */
-	void (*set_search_ico)(hlcache_handle *ico);
+	void (*set_search_ico)(struct hlcache_handle *ico);
 
 	/**
 	 * core has no fetcher for url
@@ -424,7 +454,11 @@ struct gui_browser_table {
  */
 struct gui_table {
 
-	/** Browser table */
+	/** Browser table.
+	 *
+	 * Provides miscellaneous browser functionality. The table
+	 * is mandantory and must be provided.
+	 */
 	struct gui_browser_table *browser;
 
 	/** Window table */
@@ -438,6 +472,14 @@ struct gui_table {
 
 	/** Fetcher table */
 	struct gui_fetch_table *fetch;
+
+	/** UTF8 table
+	 *
+	 * Provides for conversion between the gui local character
+	 * encoding and utf8. The table optional and may be NULL which
+	 * implies the local encoding is utf8.
+	 */
+	struct gui_utf8_table *utf8;
 };
 
 

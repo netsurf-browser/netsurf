@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "desktop/gui.h"
 #include "utils/url.h"

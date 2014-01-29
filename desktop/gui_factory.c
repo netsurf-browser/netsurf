@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/gui.h"
+#include "content/hlcache.h"
+#include "desktop/download.h"
 #include "desktop/gui_factory.h"
 
 /** The global GUI interface table */

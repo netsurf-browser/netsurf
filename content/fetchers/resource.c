@@ -41,7 +41,6 @@
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
-#include "desktop/gui.h"
 #include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"

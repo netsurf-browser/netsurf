@@ -27,10 +27,12 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "desktop/download.h"
 #include "desktop/gui.h"
+
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
-#include "utils/nsoption.h"
 #include "gtk/download.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"

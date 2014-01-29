@@ -32,12 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <dom/dom.h>
+
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"

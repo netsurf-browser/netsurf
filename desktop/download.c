@@ -23,10 +23,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "content/llcache.h"
 #include "desktop/download.h"
-#include "desktop/gui.h"
 #include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"

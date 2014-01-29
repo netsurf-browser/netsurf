@@ -27,8 +27,8 @@
 #include <stdbool.h>
 
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/frame_types.h"
-#include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "utils/types.h"
 
