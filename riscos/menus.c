@@ -77,7 +77,7 @@ struct menu_definition {
 	struct menu_definition *next;		/**< next menu */
 };
 
-
+static void ro_gui_menu_closed(void);
 static void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		const struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry,
@@ -213,6 +213,7 @@ void ro_gui_menu_init(void)
  * \param y			The y position.
  * \param w			The window that the menu belongs to.
  */
+
 void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 {
 	os_error *error;
@@ -252,6 +253,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
  * \param  w	 window handle
  * \param  i	 icon handle
  */
+
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 {
 	wimp_window_state state;
@@ -286,29 +288,24 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 
 
 /**
- * Clean up after a menu has been closed, or forcible close an open menu.
-  */
-void ro_gui_menu_closed(void)
+ * Forcibly close any menu or transient dialogue box that is currently open.
+ */
+
+void ro_gui_menu_destroy(void)
 {
 	os_error *error;
 
-	if (current_menu) {
-		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-		if (error) {
-			LOG(("xwimp_create_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
+	if (current_menu == NULL)
+		return;
 
-	  	ro_gui_wimp_event_menus_closed(current_menu_window,
-	  			current_menu_icon, current_menu);
-
-		current_menu = NULL;
+	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	if (error) {
+		LOG(("xwimp_create_menu: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
 	}
 
-	current_menu_window = NULL;
-	current_menu_icon = 0;
-	current_menu_open = false;
+	ro_gui_menu_closed();
 }
 
 
@@ -450,15 +447,25 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 void ro_gui_menu_message_deleted(wimp_message_menus_deleted *deleted)
 {
-	if (deleted != NULL && deleted->menu == current_menu) {
+	if (deleted != NULL && deleted->menu == current_menu)
+		ro_gui_menu_closed();
+}
+
+
+/**
+ * Clean up after a menu has been closed, or forcibly close an open menu.
+  */
+
+static void ro_gui_menu_closed(void)
+{
+	if (current_menu != NULL)
 		ro_gui_wimp_event_menus_closed(current_menu_window,
 				current_menu_icon, current_menu);
 
-		current_menu = NULL;
-		current_menu_window = NULL;
-		current_menu_icon = 0;
-		current_menu_open = false;
-	}
+	current_menu = NULL;
+	current_menu_window = NULL;
+	current_menu_icon = 0;
+	current_menu_open = false;
 }
 
 
