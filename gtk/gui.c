@@ -1021,11 +1021,6 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 }
 
 
-static struct gui_clipboard_table nsgtk_clipboard_table = {
-	.get = gui_get_clipboard,
-	.set = gui_set_clipboard,
-};
-
 static struct gui_browser_table nsgtk_browser_table = {
 	.poll = gui_poll,
 
@@ -1048,7 +1043,7 @@ int main(int argc, char** argv)
 	struct gui_table nsgtk_gui_table = {
 		.browser = &nsgtk_browser_table,
 		.window = nsgtk_window_table,
-		.clipboard = &nsgtk_clipboard_table,
+		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
 		.fetch = nsgtk_fetch_table,
 	};
