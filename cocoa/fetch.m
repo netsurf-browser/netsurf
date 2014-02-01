@@ -19,6 +19,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "utils/log.h"
+#import "utils/nsurl.h"
 #import "desktop/gui.h"
 
 #import "cocoa/fetch.h"

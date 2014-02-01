@@ -27,11 +27,13 @@
 #include <oslib/territory.h>
 
 #include "utils/config.h"
-#include "riscos/ucstables.h"
+#include "utils/nserrors.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "desktop/gui.h"
+
+#include "riscos/ucstables.h"
 
 /* Common values (ASCII) */
 #define common								\

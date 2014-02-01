@@ -145,6 +145,8 @@
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
+extern struct gui_utf8_table *amiga_utf8_table;
+
 struct ami_gui_tb_userdata {
 	struct List *sblist;
 	struct gui_window_2 *gw;
