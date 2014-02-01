@@ -90,6 +90,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
+#include "riscos/ucstables.h"
 
 void gui_window_redraw_window(struct gui_window *g);
 

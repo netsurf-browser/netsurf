@@ -1815,6 +1815,7 @@ main(int argc, char** argv)
 		.window = &framebuffer_window_table,
 		.clipboard = framebuffer_clipboard_table,
 		.fetch = framebuffer_fetch_table,
+		.utf8 = framebuffer_utf8_table,
 	};
 
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);

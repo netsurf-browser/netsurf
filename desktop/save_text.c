@@ -28,14 +28,16 @@
 #include <dom/dom.h>
 
 #include "utils/config.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/save_text.h"
-#include "render/box.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "render/box.h"
+#include "render/html.h"
+
+#include "desktop/gui_factory.h"
+#include "desktop/save_text.h"
 
 static void extract_text(struct box *box, bool *first,
 		save_text_whitespace *before, struct save_text_state *save);
@@ -69,7 +71,7 @@ void save_as_text(hlcache_handle *c, char *path)
 	if (!save.block)
 		return;
 
-	ret = utf8_to_local_encoding(save.block, save.length, &result);
+	ret = guit->utf8->utf8_to_local(save.block, save.length, &result);
 	free(save.block);
 
 	if (ret != NSERROR_OK) {

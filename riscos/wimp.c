@@ -40,6 +40,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "riscos/ucstables.h"
 
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);

@@ -963,35 +963,6 @@ static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
 	CALLED();
 }
 
-
-nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return NSERROR_NOMEM;
-
-	return NSERROR_OK;
-}
-
-nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return NSERROR_NOMEM;
-
-	return NSERROR_OK;
-}
-
 static char *path_to_url(const char *path)
 {
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;

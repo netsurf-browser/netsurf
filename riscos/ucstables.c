@@ -31,6 +31,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "desktop/gui.h"
 
 /* Common values (ASCII) */
 #define common								\
@@ -684,3 +685,10 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 
 	return NSERROR_OK;
 }
+
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *riscos_utf8_table = &utf8_table;

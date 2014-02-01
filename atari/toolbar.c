@@ -55,6 +55,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "content/hlcache.h"
+#include "atari/encoding.h"
 
 
 #define TB_BUTTON_WIDTH 32

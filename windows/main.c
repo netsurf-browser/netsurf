@@ -111,6 +111,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,
 		.fetch = win32_fetch_table,
+		.utf8 = win32_utf8_table,
 	};
 	win32_fetch_table->get_resource_url = gui_get_resource_url;
 

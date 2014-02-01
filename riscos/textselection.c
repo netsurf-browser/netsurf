@@ -39,6 +39,7 @@
 #include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
+#include "riscos/ucstables.h"
 
 
 #ifndef wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX

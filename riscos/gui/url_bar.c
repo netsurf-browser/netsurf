@@ -42,6 +42,7 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "riscos/ucstables.h"
 
 #define URLBAR_HEIGHT 52
 #define URLBAR_FAVICON_SIZE 16

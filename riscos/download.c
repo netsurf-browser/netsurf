@@ -58,6 +58,7 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "riscos/ucstables.h"
 
 #define ICON_DOWNLOAD_ICON 0
 #define ICON_DOWNLOAD_URL 1

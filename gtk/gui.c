@@ -788,37 +788,6 @@ gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
 	return FALSE;
 }
 
-nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return NSERROR_NOMEM;
-
-	return NSERROR_OK;
-}
-
-
-nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return NSERROR_NOMEM;
-
-	return NSERROR_OK;
-}
-
-
-
 #ifdef WITH_PDF_EXPORT
 
 void PDF_Password(char **owner_pass, char **user_pass, char *path)

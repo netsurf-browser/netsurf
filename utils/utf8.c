@@ -29,6 +29,8 @@
 
 #include <parserutils/charset/utf8.h>
 
+#include "desktop/gui_factory.h"
+
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -463,8 +465,7 @@ bool utf8_save_text(const char *utf8_text, const char *path)
 	char *conv;
 	FILE *out;
 
-	ret = utf8_to_local_encoding(utf8_text, strlen(utf8_text), &conv);
-
+	ret = guit->utf8->utf8_to_local(utf8_text, strlen(utf8_text), &conv);
 	if (ret != NSERROR_OK) {
 		LOG(("failed to convert to local encoding, return %d", ret));
 		return false;

@@ -18,12 +18,43 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
+
 #include "utils/utf8.h"
+#include "desktop/gui.h"
 #include <proto/exec.h>
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
+
+#include "amiga/utf8.h"
+
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
+{
+	const char *encname = "ISO-8859-1";
+
+#ifdef __amigaos4__
+	LONG charset;
+
+	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
+	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#endif
+	
+	return utf8_from_enc(string,encname,len,result,NULL);
+}
+
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
+{
+	const char *encname = "ISO-8859-1";
+
+#ifdef __amigaos4__
+	LONG charset;
+
+	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
+	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#endif
+
+	return utf8_to_enc(string,encname,len,result);
+}
 
 void ami_utf8_free(char *ptr)
 {
@@ -58,32 +89,10 @@ char *ami_to_utf8_easy(const char *string)
 	}
 }
 
-nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
-{
-	const char *encname = "ISO-8859-1";
 
-#ifdef __amigaos4__
-	LONG charset;
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
 
-	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-#endif
-	
-	return utf8_from_enc(string,encname,len,result,NULL);
-}
-
-nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
-{
-	const char *encname = "ISO-8859-1";
-
-#ifdef __amigaos4__
-	LONG charset;
-
-	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-#endif
-
-	return utf8_to_enc(string,encname,len,result);
-}
-
-
+struct gui_utf8_table *amiga_utf8_table = &utf8_table;

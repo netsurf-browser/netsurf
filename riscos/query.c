@@ -29,6 +29,7 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "riscos/ucstables.h"
 
 #define ICON_QUERY_MESSAGE 0
 #define ICON_QUERY_YES 1

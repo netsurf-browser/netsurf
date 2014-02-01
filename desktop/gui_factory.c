@@ -272,6 +272,11 @@ static void gui_default_set_clipboard(const char *buffer, size_t length,
 {
 }
 
+static struct gui_clipboard_table default_clipboard_table = {
+	.get = gui_default_get_clipboard,
+	.set = gui_default_set_clipboard,
+};
+
 /** verify clipboard table is valid */
 static nserror verify_clipboard_register(struct gui_clipboard_table *gct)
 {
@@ -286,6 +291,54 @@ static nserror verify_clipboard_register(struct gui_clipboard_table *gct)
 	}
 	if (gct->set == NULL) {
 		gct->set = gui_default_set_clipboard;
+	}
+	return NSERROR_OK;
+}
+
+/**
+ * The default utf8 conversion implementation.
+ *
+ * The default implementation assumes the local encoding is utf8
+ * allowing the conversion to be a simple copy.
+ *
+ * @param [in] string The source string.
+ * @param [in] len The \a string length or 0 to compute it.
+ * @param [out] result A pointer to the converted string.
+ * @result NSERROR_OK or NSERROR_NOMEM if memory could not be allocated.
+ */
+static nserror gui_default_utf8(const char *string, size_t len, char **result)
+{
+	assert(string && result);
+
+	if (len == 0)
+		len = strlen(string);
+
+	*result = strndup(string, len);
+	if (!(*result))
+		return NSERROR_NOMEM;
+
+	return NSERROR_OK;
+}
+
+static struct gui_utf8_table default_utf8_table = {
+	.utf8_to_local = gui_default_utf8,
+	.local_to_utf8 = gui_default_utf8,
+};
+
+/** verify clipboard table is valid */
+static nserror verify_utf8_register(struct gui_utf8_table *gut)
+{
+	/* check table is present */
+	if (gut == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* mandantory operations */
+	if (gut->utf8_to_local == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gut->local_to_utf8 == NULL) {
+		return NSERROR_BAD_PARAMETER;
 	}
 	return NSERROR_OK;
 }
@@ -370,6 +423,13 @@ static void gui_default_401login_open(nsurl *url, const char *realm,
 	cb(false, cbpw);
 }
 
+static struct gui_download_table default_download_table = {
+	.create = gui_default_download_create,
+	.data = gui_default_download_data,
+	.error = gui_default_download_error,
+	.done = gui_default_download_done,
+};
+
 /** verify browser table is valid */
 static nserror verify_browser_register(struct gui_browser_table *gbt)
 {
@@ -405,19 +465,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	return NSERROR_OK;
 }
 
-
-
-static struct gui_download_table default_download_table = {
-	.create = gui_default_download_create,
-	.data = gui_default_download_data,
-	.error = gui_default_download_error,
-	.done = gui_default_download_done,
-};
-
-static struct gui_clipboard_table default_clipboard_table = {
-	.get = gui_default_get_clipboard,
-	.set = gui_default_set_clipboard,
-};
 
 /* exported interface documented in desktop/gui_factory.h */
 nserror gui_factory_register(struct gui_table *gt)
@@ -468,6 +515,16 @@ nserror gui_factory_register(struct gui_table *gt)
 		gt->clipboard = &default_clipboard_table;
 	}
 	err = verify_clipboard_register(gt->clipboard);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* utf8 table */
+	if (gt->utf8 == NULL) {
+		/* set default clipboard table */
+		gt->utf8 = &default_utf8_table;
+	}
+	err = verify_utf8_register(gt->utf8);
 	if (err != NSERROR_OK) {
 		return err;
 	}

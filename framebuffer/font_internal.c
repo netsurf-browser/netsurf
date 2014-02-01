@@ -19,12 +19,13 @@
 
 #include <inttypes.h>
 #include <string.h>
-
 #include <assert.h>
-#include "css/css.h"
-#include "render/font.h"
+
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
+#include "desktop/gui.h"
+#include "css/css.h"
+#include "render/font.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
@@ -68,7 +69,7 @@ nserror utf8_to_font_encoding(const struct fb_font_desc* font,
 
 }
 
-nserror utf8_to_local_encoding(const char *string,
+static nserror utf8_to_local(const char *string,
 				       size_t len,
 				       char **result)
 {
@@ -76,7 +77,7 @@ nserror utf8_to_local_encoding(const char *string,
 
 }
 
-nserror utf8_from_local_encoding(const char *string,
+static nserror utf8_from_local(const char *string,
 					size_t len,
 					char **result)
 {
@@ -182,6 +183,14 @@ const struct font_functions nsfont = {
 	nsfont_position_in_string,
 	nsfont_split
 };
+
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local,
+	.local_to_utf8 = utf8_from_local,
+};
+
+struct gui_utf8_table *framebuffer_utf8_table = &utf8_table;
+
 
 /*
  * Local Variables:

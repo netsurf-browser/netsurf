@@ -31,6 +31,12 @@
 #include "oslib/osgbpb.h"
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
+#include "utils/utf8.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -40,6 +46,7 @@
 #include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/textinput.h"
+
 #include "riscos/dialog.h"
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
@@ -56,11 +63,7 @@
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
-#include "utils/utf8.h"
+#include "riscos/ucstables.h"
 
 struct menu_definition_entry {
 	menu_action action;			/**< menu action */

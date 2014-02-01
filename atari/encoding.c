@@ -67,3 +67,9 @@ int atari_to_ucs4(unsigned char atari)
 }
 
 
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *atari_utf8_table = &utf8_table;

@@ -30,6 +30,12 @@
 #include <stdbool.h>
 #include <hubbub/hubbub.h>
 
+#include "utils/schedule.h"
+#include "utils/url.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
@@ -38,8 +44,6 @@
 #include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-
-#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/treeview.h"
@@ -47,11 +51,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "render/font.h"
-#include "utils/schedule.h"
-#include "utils/url.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"
@@ -1113,6 +1112,7 @@ int main(int argc, char** argv)
 	.clipboard = &atari_clipboard_table,
 	.download = atari_download_table,
 	.fetch = &atari_fetch_table,
+	.utf8 = atari_utf8_table,
     };
 
     /* @todo logging file descriptor update belongs in a nslog_init callback */

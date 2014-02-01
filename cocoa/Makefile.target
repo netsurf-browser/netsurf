@@ -95,7 +95,6 @@ S_COCOA := \
 	schedule.m \
 	selection.m \
 	thumbnail.m \
-	utf8.m \
 	utils.m \
 	ArrowBox.m \
 	ArrowWindow.m \

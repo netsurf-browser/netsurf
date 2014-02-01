@@ -43,14 +43,14 @@ nserror utf8_to_font_encoding(const struct font_desc* font,
 	return utf8_to_enc(string, font->encoding, len, result);
 }
 
-nserror utf8_to_local_encoding(const char *string, 
+static nserror utf8_to_local_encoding(const char *string, 
 				       size_t len,
 				       char **result)
 {
 	return utf8_to_enc(string, "UCS-2", len, result);
 }
 
-nserror utf8_from_local_encoding(const char *string, size_t len,
+static nserror utf8_from_local_encoding(const char *string, size_t len,
 		char **result)
 {
 	assert(string && result);
@@ -234,3 +234,10 @@ const struct font_functions nsfont = {
 	nsfont_position_in_string,
 	nsfont_split
 };
+
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *win32_utf8_table = &utf8_table;

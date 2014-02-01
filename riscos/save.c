@@ -69,6 +69,7 @@
 #include "riscos/thumbnail.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/ucstables.h"
 
 //typedef enum
 //{

@@ -18,7 +18,14 @@
 
 #ifndef AMIGA_UTF8_H
 #define AMIGA_UTF8_H
+
+extern struct gui_utf8_table *ami_utf8_table;
+
 char *ami_utf8_easy(const char *string);
 void ami_utf8_free(char *ptr);
 char *ami_to_utf8_easy(const char *string);
+
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result);
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result);
+
 #endif

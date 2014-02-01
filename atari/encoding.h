@@ -27,6 +27,11 @@
 #include "render/font.h"
 #include "utils/utf8.h"
 
+struct gui_utf8_table *atari_utf8_table;
+
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result);
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result);
+
 int atari_to_ucs4( unsigned char atarichar);
 
 #endif

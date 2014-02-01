@@ -16,10 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <proto/iffparse.h>
+#include <proto/intuition.h>
+#include <proto/exec.h>
+#include <proto/datatypes.h>
+#include <proto/diskfont.h>
+
+#include <diskfont/diskfonttag.h>
+#include <datatypes/textclass.h>
+#include <datatypes/pictureclass.h>
+
+#include "utils/nsoption.h"
+#include "utils/utf8.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "utils/nsoption.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
@@ -30,18 +41,6 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
 #include "amiga/utf8.h"
-
-#include "utils/utf8.h"
-
-#include <proto/iffparse.h>
-#include <proto/intuition.h>
-#include <proto/exec.h>
-#include <proto/datatypes.h>
-#include <proto/diskfont.h>
-
-#include <diskfont/diskfonttag.h>
-#include <datatypes/textclass.h>
-#include <datatypes/pictureclass.h>
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')
 

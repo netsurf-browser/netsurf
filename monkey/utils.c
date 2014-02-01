@@ -22,10 +22,6 @@
 
 #include "utils/config.h"
 #include "utils/utils.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-
-
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -37,17 +33,3 @@ void die(const char * const error)
   fprintf(stderr, "DIE %s\n", error);
   exit(EXIT_FAILURE);
 }
-
-nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
-{
-  *result = strndup(string, len);
-  return (*result == NULL) ? NSERROR_NOMEM : NSERROR_OK;
-}
-
-nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
-{
-  *result = strndup(string, len);
-  return (*result == NULL) ? NSERROR_NOMEM : NSERROR_OK;
-}
-
-

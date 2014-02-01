@@ -29,22 +29,6 @@
 #include <stdlib.h>
 
 #include "utils/config.h"
-#include "content/content_protected.h"
-#include "content/fetch.h"
-#include "content/hlcache.h"
-#include "utils/nsoption.h"
-#include "desktop/selection.h"
-#include "desktop/scrollbar.h"
-#include "desktop/textarea.h"
-#include "image/bitmap.h"
-#include "render/box.h"
-#include "render/font.h"
-#include "render/form.h"
-#include "render/html_internal.h"
-#include "render/imagemap.h"
-#include "render/layout.h"
-#include "render/search.h"
-#include "javascript/js.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/libdom.h"
@@ -55,6 +39,24 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "content/content_protected.h"
+#include "content/fetch.h"
+#include "content/hlcache.h"
+#include "desktop/selection.h"
+#include "desktop/scrollbar.h"
+#include "desktop/textarea.h"
+#include "image/bitmap.h"
+#include "javascript/js.h"
+#include "desktop/gui_factory.h"
+
+#include "render/box.h"
+#include "render/font.h"
+#include "render/form.h"
+#include "render/html_internal.h"
+#include "render/imagemap.h"
+#include "render/layout.h"
+#include "render/search.h"
 
 #define CHUNK 4096
 
@@ -1770,10 +1772,10 @@ static void html__set_file_gadget_filename(struct content *c,
 	html_content *html = (html_content *)c;
 	struct box *file_box = gadget->box;
 	
-	ret = utf8_from_local_encoding(fn,0, &utf8_fn);
+	ret = guit->utf8->local_to_utf8(fn,0, &utf8_fn);
 	if (ret != NSERROR_OK) {
 		assert(ret != NSERROR_BAD_ENCODING);
-		LOG(("utf8_from_local_encoding failed"));
+		LOG(("utf8 to local encoding conversion failed"));
 		/* Load was for us - just no memory */
 		return;		
 	}
@@ -1915,11 +1917,11 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		/* TODO: Sniff for text? */
 
 		/* Convert to UTF-8 */
-		ret = utf8_from_local_encoding(buffer, file_len, &utf8_buff);
+		ret = guit->utf8->local_to_utf8(buffer, file_len, &utf8_buff);
 		if (ret != NSERROR_OK) {
 			/* bad encoding shouldn't happen */
 			assert(ret != NSERROR_BAD_ENCODING);
-			LOG(("utf8_from_local_encoding failed"));
+			LOG(("local to utf8 encoding failed"));
 			free(buffer);
 			warn_user("NoMemory", NULL);
 			return true;

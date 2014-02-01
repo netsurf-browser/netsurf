@@ -26,6 +26,8 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 
+#include "atari/encoding.h"
+
 
 
 

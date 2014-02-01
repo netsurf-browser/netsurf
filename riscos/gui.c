@@ -99,7 +99,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
-
+#include "riscos/ucstables.h"
 
 
 #ifndef FILETYPE_ACORN_URI
@@ -2389,6 +2389,7 @@ int main(int argc, char** argv)
 		.clipboard = riscos_clipboard_table,
 		.download = riscos_download_table,
 		.fetch = &riscos_fetch_table,
+		.utf8 = riscos_utf8_table,
 	};
 
 	/* Consult NetSurf$Logging environment variable to decide if logging

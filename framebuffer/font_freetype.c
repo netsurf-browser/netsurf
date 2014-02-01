@@ -23,13 +23,14 @@
 #include <ft2build.h>
 #include FT_CACHE_H
 
-#include "css/css.h"
-#include "css/utils.h"
-#include "render/font.h"
 #include "utils/filepath.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "css/css.h"
+#include "css/utils.h"
+#include "render/font.h"
+#include "desktop/gui.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
@@ -73,30 +74,6 @@ enum fb_face_e {
 #define FB_FACE_DEFAULT 0
 
 static fb_faceid_t *fb_faces[FB_FACE_COUNT];
-
-
-nserror utf8_to_local_encoding(const char *string, 
-				       size_t len,
-				       char **result)
-{
-	return utf8_to_enc(string, "UTF-8", len, result);
-}
-
-nserror utf8_from_local_encoding(const char *string,
-					size_t len,
-					char **result)
-{
-	*result = malloc(len + 1);
-	if (*result == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	memcpy(*result, string, len);
-
-	(*result)[len] = '\0';
-
-	return NSERROR_OK;
-}
 
 /* map cache manager handle to face id */
 static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Pointer request_data, FT_Face *face )
@@ -580,6 +557,8 @@ const struct font_functions nsfont = {
 	nsfont_position_in_string,
 	nsfont_split
 };
+
+struct gui_utf8_table *framebuffer_utf8_table = NULL;
 
 /*
  * Local Variables:

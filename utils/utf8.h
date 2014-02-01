@@ -161,9 +161,4 @@ bool utf8_save_text(const char *utf8_text, const char *path);
  */
 nserror utf8_finalise(void);
 
-/* These two are platform specific */
-nserror utf8_to_local_encoding(const char *string, size_t len, char **result);
-nserror utf8_from_local_encoding(const char *string, size_t len, char **result);
-
-
 #endif

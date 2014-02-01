@@ -5223,6 +5223,7 @@ int main(int argc, char** argv)
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
 		.fetch = &amiga_fetch_table,
+		.utf8 = amiga_utf8_table,
 	};
 
 	/* Open popupmenu.library just to check the version.
