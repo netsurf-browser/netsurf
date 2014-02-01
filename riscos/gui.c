@@ -50,7 +50,13 @@
 #include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
 #include "rufl.h"
+
 #include "utils/config.h"
+#include "utils/filename.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -61,6 +67,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
 #include "render/font.h"
+
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
@@ -92,11 +99,6 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
-#include "utils/filename.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 
 
 
@@ -2348,10 +2350,6 @@ static bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-static struct gui_clipboard_table riscos_clipboard_table = {
-	.get = gui_get_clipboard,
-	.set = gui_set_clipboard,
-};
 
 static struct gui_fetch_table riscos_fetch_table = {
 	.filename_from_path = filename_from_path,
@@ -2388,7 +2386,7 @@ int main(int argc, char** argv)
 	struct gui_table riscos_gui_table = {
 		.browser = &riscos_browser_table,
 		.window = riscos_window_table,
-		.clipboard = &riscos_clipboard_table,
+		.clipboard = riscos_clipboard_table,
 		.download = riscos_download_table,
 		.fetch = &riscos_fetch_table,
 	};

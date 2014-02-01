@@ -40,7 +40,15 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
 #include "utils/config.h"
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -58,6 +66,7 @@
 #include "desktop/gui.h"
 #include "render/form.h"
 #include "render/html.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
 #include "riscos/cookies.h"
@@ -69,7 +78,6 @@
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/mouse.h"
-#include "utils/nsoption.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
 #include "riscos/content-handlers/sprite.h"
@@ -82,12 +90,6 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
-#include "utils/log.h"
-#include "utils/talloc.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "utils/messages.h"
 
 void gui_window_redraw_window(struct gui_window *g);
 

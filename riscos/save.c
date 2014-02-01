@@ -35,6 +35,13 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
+#include "utils/config.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/hotlist.h"
@@ -43,8 +50,10 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/thumbnail.h"
+#include "desktop/gui.h"
 #include "image/bitmap.h"
 #include "render/form.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -60,12 +69,6 @@
 #include "riscos/thumbnail.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 //typedef enum
 //{

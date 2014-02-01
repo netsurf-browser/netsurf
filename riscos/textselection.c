@@ -25,23 +25,25 @@
 #include <string.h>
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
+
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
+
 
 #ifndef wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX
 #define wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX ((wimp_drag_claim_flags) 0x2u)
 #endif
-
 
 
 /** Receive of Dragging message has claimed it */
@@ -194,7 +196,7 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	char *new_cb;
@@ -245,7 +247,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
  * \param  buffer  UTF-8 text, allocated by front end, ownership yielded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	*buffer = NULL;
 	*length = 0;
@@ -652,3 +654,10 @@ void ro_gui_dragging_bounced(wimp_message *message)
 {
 	dragging_claimed = false;
 }
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *riscos_clipboard_table = &clipboard_table;

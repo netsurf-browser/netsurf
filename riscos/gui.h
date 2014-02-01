@@ -27,7 +27,6 @@
 #include "oslib/wimp.h"
 #include "rufl.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "content/content_type.h"
 #include "utils/config.h"
 
@@ -212,10 +211,6 @@ extern int ro_plot_origin_y;
 
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
-
-/* in textselection.c */
-void gui_get_clipboard(char **buffer, size_t *length);
-void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
 
 /* in sslcert.c */
 void gui_cert_verify(nsurl *url,

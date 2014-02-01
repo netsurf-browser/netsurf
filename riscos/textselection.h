@@ -24,7 +24,8 @@
 #define _NETSURF_RISCOS_TEXTSELECTION_H_
 
 #include "oslib/wimp.h"
-#include "desktop/gui.h"
+
+struct gui_clipboard_table *riscos_clipboard_table;
 
 void gui_start_selection(struct gui_window *g);
 
