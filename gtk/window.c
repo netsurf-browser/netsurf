@@ -26,14 +26,18 @@
 #include <gdk/gdkkeysyms.h>
 #include <gdk-pixbuf/gdk-pixdata.h>
 
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/hlcache.h"
 #include "gtk/window.h"
 #include "gtk/selection.h"
+#include "desktop/gui.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
-#include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
@@ -42,8 +46,6 @@
 #include "gtk/tabs.h"
 #include "gtk/bitmap.h"
 #include "gtk/gdk.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 /* helper macro to conenct signals to callbacks */
 #define CONNECT(obj, sig, callback, ptr) \

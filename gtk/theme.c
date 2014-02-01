@@ -22,21 +22,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "utils/config.h"
+#include "utils/nsoption.h"
+#include "utils/container.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "desktop/browser.h"
 #include "content/content.h"
 #include "content/content_type.h"
 #include "content/hlcache.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/menu.h"
 #include "gtk/theme.h"
 #include "gtk/window.h"
-#include "utils/nsoption.h"
 #include "gtk/dialogs/preferences.h"
-#include "utils/container.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 enum image_sets {
 	IMAGE_SET_MAIN_MENU = 0,
