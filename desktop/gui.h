@@ -17,18 +17,14 @@
  */
 
 /** \file
- * Interface to platform-specific gui functions.
+ * Interface to platform-specific gui operation tables.
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
-
 #include "utils/types.h"
 #include "utils/errors.h"
-#include "utils/nsurl.h"
 #include "desktop/plot_style.h"
 #include "desktop/mouse.h"
 
@@ -63,6 +59,7 @@ struct form_control;
 struct ssl_cert_info;
 struct hlcache_handle;
 struct download_context;
+struct nsurl;
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */
@@ -356,7 +353,7 @@ struct gui_fetch_table {
 	 * \return A string containing the full URL of the target object or
 	 *         NULL if no suitable resource can be found.
 	 */
-	nsurl* (*get_resource_url)(const char *path);
+	struct nsurl* (*get_resource_url)(const char *path);
 
 	/**
 	 * Find a MIME type for a local file
@@ -437,12 +434,12 @@ struct gui_browser_table {
 	/**
 	 * verify certificate
 	 */
-	void (*cert_verify)(nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+	void (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 	/**
 	 * Prompt user for login
 	 */
-	void (*login)(nsurl *url, const char *realm,
+	void (*login)(struct nsurl *url, const char *realm,
 			nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 };

@@ -21,13 +21,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
-#include "desktop/gui.h"
+#include "utils/nsurl.h"
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/filepath.h"
+#include "desktop/gui.h"
 
 #include "framebuffer/findfile.h"
 #include "framebuffer/fetch.h"
