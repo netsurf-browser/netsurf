@@ -26,6 +26,7 @@ extern "C" {
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
+#include "desktop/netsurf.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "utils/log.h"

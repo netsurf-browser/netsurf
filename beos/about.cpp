@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 extern "C" {
+#include "desktop/netsurf.h"
 #include "utils/log.h"
 #include "utils/testament.h"
 #include "utils/useragent.h"
