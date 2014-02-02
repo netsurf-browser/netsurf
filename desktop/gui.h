@@ -23,6 +23,8 @@
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
 
+#include <stddef.h>
+
 #include "utils/types.h"
 #include "utils/errors.h"
 #include "desktop/plot_style.h"
