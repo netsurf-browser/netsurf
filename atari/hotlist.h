@@ -20,6 +20,8 @@
 #define NS_ATARI_HOTLIST_H
 
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <limits.h>
 
 #include "desktop/tree.h"
