@@ -703,7 +703,9 @@ INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.h \
                          *.y \
-                         *.l
+                         *.l \
+			 *.cpp \
+			 *.m
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.
@@ -717,12 +719,7 @@ RECURSIVE              = NO
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = css/css_enum.c \
-                         css/css_enum.h \
-                         css/parser.c \
-                         css/parser.h \
-                         css/scanner.c \
-                         css/scanner.h
+EXCLUDE                =
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
