@@ -16,35 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <gtk/gtk.h>
 
-#include "desktop/browser_private.h"
-#include "desktop/netsurf.h"
-#include "desktop/print.h"
+#include "utils/log.h"
 #include "utils/nsoption.h"
+#include "utils/utf8.h"
 #include "utils/messages.h"
 #include "utils/url.h"
-#include "utils/utils.h"
-#include "utils/utf8.h"
+#include "desktop/netsurf.h"
+#include "desktop/browser_private.h"
 #include "render/html.h"
-#include "render/font.h"
-#include "content/content.h"
-#include "content/content_type.h"
-#include "utils/log.h"
 
-#include "gtk/compat.h"
-#include "gtk/dialogs/source.h"
 #include "gtk/dialogs/about.h"
-#include "gtk/window.h"
-#include "gtk/gui.h"
-#include "gtk/print.h"
-#include "gtk/selection.h"
 #include "gtk/fetch.h"
+#include "gtk/compat.h"
+#include "gtk/gui.h"
+#include "gtk/dialogs/source.h"
 
 struct nsgtk_source_window {
 	gchar *url;

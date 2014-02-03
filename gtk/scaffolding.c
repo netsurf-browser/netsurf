@@ -18,26 +18,22 @@
  */
 
 #include <assert.h>
-#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <errno.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-#include "gtk/scaffolding.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "css/utils.h"
+#include "utils/messages.h"
+#include "utils/schedule.h"
+#include "utils/url.h"
+#include "utils/log.h"
+#include "utils/nsoption.h"
 #include "desktop/browser_private.h"
 #include "desktop/local_history.h"
 #include "desktop/hotlist.h"
-#include "desktop/gui.h"
 #include "desktop/netsurf.h"
-#include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
@@ -46,43 +42,33 @@
 #include "desktop/save_pdf/pdf_plotters.h"
 #endif
 #include "desktop/save_text.h"
-#include "desktop/search.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "desktop/tree.h"
+#include "render/font.h"
+#include "render/html.h"
+
+#include "gtk/compat.h"
 #include "gtk/cookies.h"
 #include "gtk/completion.h"
 #include "gtk/dialogs/preferences.h"
 #include "gtk/dialogs/about.h"
 #include "gtk/dialogs/source.h"
 #include "gtk/bitmap.h"
-#include "gtk/download.h"
 #include "gtk/gui.h"
 #include "gtk/history.h"
 #include "gtk/hotlist.h"
+#include "gtk/download.h"
 #include "gtk/menu.h"
 #include "gtk/plotters.h"
 #include "gtk/print.h"
-#include "gtk/schedule.h"
 #include "gtk/search.h"
-#include "gtk/tabs.h"
 #include "gtk/theme.h"
 #include "gtk/throbber.h"
 #include "gtk/toolbar.h"
-#include "gtk/treeview.h"
 #include "gtk/window.h"
-#include "gtk/compat.h"
 #include "gtk/gdk.h"
-#include "image/ico.h"
-#include "render/font.h"
-#include "render/form.h"
-#include "render/html.h"
-#include "utils/messages.h"
-#include "utils/schedule.h"
-#include "utils/utils.h"
-#include "utils/url.h"
-
-#include "utils/log.h"
+#include "gtk/scaffolding.h"
+#include "gtk/tabs.h"
 
 
 
