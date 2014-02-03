@@ -25,7 +25,6 @@
 #include <NetPositive.h>
 
 extern "C" {
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
 }
 
