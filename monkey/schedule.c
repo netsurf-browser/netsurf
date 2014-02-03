@@ -21,7 +21,8 @@
 #include <stdbool.h>
 
 #include "utils/schedule.h"
-#include "gtk/schedule.h"
+
+#include "monkey/schedule.h"
 
 #undef DEBUG_MONKEY_SCHEDULE
 
