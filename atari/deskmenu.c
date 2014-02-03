@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <cflib.h>
-#include <sys/types.h>
+#include <unistd.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
