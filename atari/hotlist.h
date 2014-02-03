@@ -18,10 +18,14 @@
 
 #ifndef NS_ATARI_HOTLIST_H
 #define NS_ATARI_HOTLIST_H
+
 #include <stdbool.h>
+#include <limits.h>
+
 #include "desktop/tree.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"
+
 /* The hotlist window, toolbar and treeview data. */
 
 struct atari_hotlist {
