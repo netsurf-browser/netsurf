@@ -35,6 +35,8 @@
 #import "utils/log.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
+#import "content/hlcache.h"
+#import "content/content.h"
 
 NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";

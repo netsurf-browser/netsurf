@@ -32,6 +32,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/hlcache.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

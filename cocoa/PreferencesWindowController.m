@@ -25,6 +25,7 @@
 #import "desktop/browser_private.h"
 #import "content/content.h"
 #import "utils/nsoption.h"
+#import "content/hlcache.h"
 
 @implementation PreferencesWindowController
 

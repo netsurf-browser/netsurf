@@ -30,6 +30,14 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "content/hlcache.h"
+#include "content/content.h"
+
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/gui/url_bar.h"
@@ -38,10 +46,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/window.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 #include "riscos/ucstables.h"
 
 #define URLBAR_HEIGHT 52

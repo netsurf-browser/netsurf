@@ -30,6 +30,7 @@
 #import "utils/filename.h"
 #import "utils/messages.h"
 #import "utils/url.h"
+#import "content/hlcache.h"
 
 
 @implementation BrowserViewController

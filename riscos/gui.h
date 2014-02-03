@@ -51,6 +51,7 @@ struct tree;
 struct node;
 struct history;
 struct css_style;
+struct ssl_cert_info;
 
 extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 

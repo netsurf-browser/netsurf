@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <cflib.h>
+#include <limits.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"

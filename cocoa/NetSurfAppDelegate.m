@@ -24,6 +24,7 @@
 #import "desktop/browser.h"
 #import "utils/nsoption.h"
 #import "utils/messages.h"
+#import "utils/utils.h"
 
 @interface NetSurfAppDelegate ()
 
