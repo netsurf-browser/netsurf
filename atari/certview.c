@@ -25,6 +25,7 @@
 
 #include "desktop/browser.h"
 #include "content/urldb.h"
+#include "content/hlcache.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/gui.h"
 #include "desktop/core_window.h"
@@ -32,7 +33,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "content/hlcache.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"

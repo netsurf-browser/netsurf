@@ -25,8 +25,7 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
-
-struct hlcache_handle;
+#include "desktop/gui.h"
 
 void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, gui_save_type save_type);
 void gui_drag_save_selection(struct gui_window *g, const char *selection);

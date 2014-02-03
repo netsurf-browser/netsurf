@@ -29,6 +29,7 @@
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 #import "utils/messages.h"
+#import "content/hlcache.h"
 
 @interface BrowserView ()
 

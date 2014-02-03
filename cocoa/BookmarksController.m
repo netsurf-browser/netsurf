@@ -28,7 +28,7 @@
 #import "desktop/tree.h"
 #import "utils/messages.h"
 #import "utils/utils.h"
-#inport "content/hlcache.h"
+#import "content/hlcache.h"
 
 @interface BookmarksController ()
 - (void) noteAppWillTerminate: (NSNotification *) note;
