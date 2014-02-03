@@ -46,6 +46,7 @@
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "render/html.h"
+#include "content/hlcache.h"
 
 #include "gtk/compat.h"
 #include "gtk/cookies.h"

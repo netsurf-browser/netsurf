@@ -18,10 +18,11 @@
 
 #include <stdint.h>
 
+#include "utils/utils.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/dialogs/about.h"
-#include "desktop/browser.h"
 
 
 static void

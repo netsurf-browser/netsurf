@@ -20,15 +20,17 @@
  * Treeview handling (implementation).
  */
 
+#include "utils/log.h"
 #include "css/utils.h"
+#include "image/bitmap.h"
+#include "render/font.h"
+#include "content/hlcache.h"
+
 #include "desktop/system_colour.h"
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
-#include "image/bitmap.h"
-#include "render/font.h"
-#include "utils/log.h"
 
 /* TODO: get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000

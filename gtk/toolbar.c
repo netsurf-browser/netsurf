@@ -23,6 +23,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/hlcache.h"
 
 #include "gtk/toolbar.h"
 #include "gtk/gui.h"

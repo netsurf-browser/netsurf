@@ -24,9 +24,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-
 #include "content/fetch.h"
 #include "content/urldb.h"
+#include "content/hlcache.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/treeview.h"
 #include "utils/messages.h"

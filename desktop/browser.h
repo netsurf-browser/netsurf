@@ -25,12 +25,13 @@
 #define _NETSURF_DESKTOP_BROWSER_H_
 
 #include <stdbool.h>
+#include <stdio.h>
 
-#include "content/content.h"
-#include "content/hlcache.h"
+#include "utils/types.h"
+#include "utils/nsurl.h"
+#include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
 #include "desktop/mouse.h"
-#include "utils/types.h"
 
 
 struct browser_window;
@@ -39,7 +40,7 @@ struct gui_window;
 struct history;
 struct selection;
 struct fetch_multipart_data;
-
+struct form_control;
 
 typedef enum {
 	DRAGGING_NONE,
@@ -116,7 +117,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 			     enum browser_window_nav_flags flags,
 			     char *post_urlenc,
 			     struct fetch_multipart_data *post_multipart,
-			     hlcache_handle *parent);
+			     struct hlcache_handle *parent);
 
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);

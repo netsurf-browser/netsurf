@@ -23,11 +23,14 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
+
+#include "utils/log.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+
 #include "framebuffer/gui.h"
 #include "framebuffer/clipboard.h"
-#include "utils/log.h"
 
 
 static struct gui_clipboard {

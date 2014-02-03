@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
@@ -24,9 +25,12 @@
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/utils.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser_private.h"
 #include "render/html.h"
+#include "content/hlcache.h"
+#include "content/content.h"
 
 #include "gtk/dialogs/about.h"
 #include "gtk/fetch.h"

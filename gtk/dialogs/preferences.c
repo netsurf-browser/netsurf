@@ -19,12 +19,13 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "desktop/browser_private.h"
-#include "utils/nsoption.h"
-#include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
+#include "desktop/browser_private.h"
+#include "utils/nsoption.h"
+#include "desktop/searchweb.h"
+#include "content/hlcache.h"
 
 #include "gtk/compat.h"
 #include "gtk/window.h"

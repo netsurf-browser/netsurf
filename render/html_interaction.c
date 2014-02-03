@@ -29,6 +29,7 @@
 #include <dom/dom.h>
 
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui_factory.h"
 #include "desktop/frames.h"

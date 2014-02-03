@@ -18,11 +18,12 @@
 
 #include <string.h>
 #include <gtk/gtk.h>
+#include <stdlib.h>
 
 #include "utils/log.h"
-
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+
 #include "gtk/window.h"
  
 static GString *current_selection = NULL;

@@ -35,6 +35,7 @@ struct form_option;
 struct form_select_menu;
 struct html_content;
 struct dom_string;
+struct content;
 
 /** Form submit method. */
 typedef enum {
@@ -186,7 +187,7 @@ void form_select_mouse_drag_end(struct form_control *control,
 		browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
-void form_select_process_selection(hlcache_handle *h,
+void form_select_process_selection(struct hlcache_handle *h,
 		struct form_control *control, int item);
 void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
