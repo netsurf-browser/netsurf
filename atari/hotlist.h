@@ -20,13 +20,14 @@
 #define NS_ATARI_HOTLIST_H
 
 #include <stdbool.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <limits.h>
 
 #include "desktop/tree.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"
+
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
 
 /* The hotlist window, toolbar and treeview data. */
 
