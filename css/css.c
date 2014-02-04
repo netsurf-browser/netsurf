@@ -17,22 +17,21 @@
  */
 
 #include <assert.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 #include <dom/dom.h>
 
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "css/css.h"
-#include "css/internal.h"
 #include "desktop/system_colour.h"
-#include "render/html.h"
 #include "utils/corestrings.h"
 #include "utils/utils.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+
+#include "css/css.h"
+#include "css/internal.h"
 
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE
