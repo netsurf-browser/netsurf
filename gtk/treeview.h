@@ -24,8 +24,6 @@
 #ifndef __NSGTK_TREEVIEW_H__
 #define __NSGTK_TREEVIEW_H__
 
-#include "desktop/browser.h"
-
 struct nsgtk_treeview;
 
 struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,

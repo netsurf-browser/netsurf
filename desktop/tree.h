@@ -27,9 +27,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/browser.h"
+#include "desktop/mouse.h"
 
 struct sslcert_session_data;
+struct tree;
+struct redraw_context;
 
 extern struct sslcert_session_data *ssl_current_session;
 extern const char *tree_hotlist_path;
@@ -41,9 +43,6 @@ enum tree_flags {
 	TREE_SSLCERT,
 	TREE_HOTLIST
 };
-
-
-struct tree;
 
 typedef enum {
 	TREE_NO_DRAG = 0,
