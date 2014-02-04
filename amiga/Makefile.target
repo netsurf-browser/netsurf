@@ -54,7 +54,7 @@ else
   CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl openssl)
   CFLAGS += $(shell $(PKG_CONFIG) --cflags tre libdom libcss)
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl openssl)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs tre libdom libcss)
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
