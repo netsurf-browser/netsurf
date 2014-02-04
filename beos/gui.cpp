@@ -48,6 +48,7 @@ extern "C" {
 #include "content/fetch.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/resource.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
