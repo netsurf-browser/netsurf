@@ -31,15 +31,13 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
-#include "css/css.h"
 #include "image/bitmap.h"
 #include "desktop/browser.h"
 #include "utils/nsoption.h"
-#include "render/html.h"
-#include "render/textplain.h"
 
 #include "utils/http.h"
 #include "utils/log.h"
