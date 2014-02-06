@@ -2788,7 +2788,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	if(locked_screen == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
-	if(screen_signal = AllocSignal(-1) != -1) {
+	if((screen_signal = AllocSignal(-1)) != -1) {
 		ULONG scrnsig = 1 << screen_signal;
 		SetScreenAttr(scrn, SA_PubSig, (APTR)screen_signal, sizeof(ULONG));
 		LOG(("Waiting for visitor windows to close... (signal)"));
