@@ -1823,6 +1823,7 @@ void ami_handle_msg(void)
 					switch(result & WMHI_GADGETMASK)
 					{
 						case GID_TABS:
+							if(gwin->objects[GID_TABS] == NULL) break;
 							GetAttrs(gwin->objects[GID_TABS],
 								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
 							if(tabnode)
@@ -3151,6 +3152,11 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_ADDTAB]);
+
+		/* NB: We are NULLing these, but not disposing them as
+		 * that causes an Intuition deadlock (TODO) */
+		gwin->objects[GID_TABS] = NULL;
+		gwin->objects[GID_ADDTAB] = NULL;
 	}
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
