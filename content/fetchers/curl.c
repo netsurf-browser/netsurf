@@ -19,7 +19,7 @@
  */
 
 /** \file
- * Fetching of data from a URL (implementation).
+ * Fetching of data from an URL (implementation).
  *
  * This implementation uses libcurl's 'multi' interface.
  *
@@ -54,12 +54,6 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/useragent.h"
-
-/* BIG FAT WARNING: This is here because curl doesn't give you an FD to
- * poll on, until it has processed a bit of the handle.	 So we need schedules
- * in order to make this work.
- */
-#include <desktop/browser.h>
 
 /* uncomment this to use scheduler based calling
 #define FETCHER_CURLL_SCHEDULED 1
@@ -178,6 +172,25 @@ void fetch_curl_register(void)
 		die("Failed to initialise the fetch module "
 				"(curl_multi_init failed).");
 
+#if LIBCURL_VERSION_NUM >= 0x071e00
+	/* We've been built against 7.30.0 or later: configure caching */
+	{
+		CURLMcode mcode;
+		int maxconnects = nsoption_int(max_fetchers) +
+				nsoption_int(max_cached_fetch_handles);
+
+#undef SETOPT
+#define SETOPT(option, value) \
+	mcode = curl_multi_setopt(fetch_curl_multi, option, value);	\
+	if (mcode != CURLM_OK)						\
+		goto curl_multi_setopt_failed;
+
+		SETOPT(CURLMOPT_MAXCONNECTS, maxconnects);
+		SETOPT(CURLMOPT_MAX_TOTAL_CONNECTIONS, maxconnects);
+		SETOPT(CURLMOPT_MAX_HOST_CONNECTIONS, nsoption_int(max_fetchers_per_host));
+	}
+#endif
+
 	/* Create a curl easy handle with the options that are common to all
 	   fetches. */
 	fetch_blank_curl = curl_easy_init();
@@ -269,6 +282,12 @@ void fetch_curl_register(void)
 curl_easy_setopt_failed:
 	die("Failed to initialise the fetch module "
 			"(curl_easy_setopt failed).");
+
+#if LIBCURL_VERSION_NUM >= 0x071e00
+curl_multi_setopt_failed:
+	die("Failed to initialise the fetch module "
+			"(curl_multi_setopt failed).");
+#endif
 }
 
 
@@ -518,6 +537,11 @@ CURL *fetch_curl_get_handle(lwc_string *host)
 
 void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 {
+#if LIBCURL_VERSION_NUM >= 0x071e00
+	/* 7.30.0 or later has its own connection caching; suppress ours */
+	curl_easy_cleanup(handle);
+	return;
+#else
 	struct cache_handle *h = 0;
 	int c;
 	RING_FINDBYLWCHOST(curl_handle_ring, h, host);
@@ -555,6 +579,7 @@ void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 	h->handle = handle;
 	h->host = lwc_string_ref(host);
 	RING_INSERT(curl_handle_ring, h);
+#endif
 }
 
 
