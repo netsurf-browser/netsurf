@@ -442,7 +442,6 @@ void ami_open_resources(void)
 							TAG_DONE))) die(messages_get("NoMemory"));
 
 	ami_file_req_init();
-	ami_help_init(NULL);
 }
 
 static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
@@ -2181,7 +2180,7 @@ void ami_handle_msg(void)
 								break;
 								
 								case RAWKEY_HELP: // help
-									ami_help_open(AMI_HELP_GUI);
+									ami_help_open(AMI_HELP_GUI, scrn);
 								break;
 							}
 						}

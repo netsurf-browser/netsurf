@@ -1930,10 +1930,10 @@ BOOL ami_gui_opts_event(void)
 			case WMHI_GADGETHELP:
 				if((result & WMHI_GADGETMASK) == 0) {
 					/* Pointer not over our window */
-					ami_help_open(AMI_HELP_MAIN);
+					ami_help_open(AMI_HELP_MAIN, scrn);
 				} else {
 					/* TODO: Make this sensitive to the tab the user is currently on */
-					ami_help_open(AMI_HELP_PREFS);
+					ami_help_open(AMI_HELP_PREFS, scrn);
 				}
 			break;
 			

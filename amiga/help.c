@@ -45,8 +45,9 @@ void ami_help_init(struct Screen *screen)
 		TAG_DONE);
 }
 
-void ami_help_open(ULONG node)
+void ami_help_open(ULONG node, struct Screen *screen)
 {
+	if(AmigaGuideObject == NULL) ami_help_init(screen);
 	SetAttrs(AmigaGuideObject, AMIGAGUIDE_ContextID, node, TAG_DONE);
 	IDoMethod(AmigaGuideObject, AGM_OPEN, NULL);
 }
@@ -62,5 +63,6 @@ void ami_help_free(void)
 
 void ami_help_new_screen(struct Screen *screen)
 {
+	if(AmigaGuideObject == NULL) return;
 	SetAttrs(AmigaGuideObject, AMIGAGUIDE_Screen, screen, TAG_DONE);
 }
