@@ -378,7 +378,8 @@ void ami_print(struct hlcache_handle *c, int copies)
 	double height, print_height;
 	float scale = nsoption_int(print_scale) / 100.0;
 
-	if(!ami_print_info.msgport) return;
+	if(ami_print_info.msgport == NULL)
+		ami_print_init();
 
 	if(!(ami_print_info.PReq =
 			(struct IODRPTagsReq *)AllocSysObjectTags(ASOT_IOREQUEST,
@@ -450,7 +451,8 @@ struct MsgPort *ami_print_init(void)
 
 void ami_print_free(void)
 {
-	FreeSysObject(ASOT_PORT,ami_print_info.msgport);
+	FreeSysObject(ASOT_PORT, ami_print_info.msgport);
+	ami_print_info.msgport = NULL;
 }
 
 struct MsgPort *ami_print_get_msgport(void)
@@ -491,6 +493,7 @@ void ami_print_end(void)
 	glob = &browserglob;
 
 	ami_print_close_device();
+	ami_print_free();
 }
 
 void ami_print_close_device(void)

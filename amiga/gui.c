@@ -699,7 +699,6 @@ void gui_init(int argc, char** argv)
 	BPTR lock = 0;
 
 	ami_open_resources(); /* alloc ports/asl reqs, open libraries/devices */
-	ami_print_init();
 	ami_clipboard_init();
 	ami_openurl_open();
 
@@ -2562,13 +2561,12 @@ void ami_get_msg(void)
 	ULONG signal;
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
-	ULONG printsig = 1L << printmsgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig;
+	ULONG printsig = 0;
+	if(printmsgport) printsig = 1L << printmsgport->mp_SigBit;
+	ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig;
 
-    signal = Wait(signalmask);
-/*
-printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig , schedulesig , rxsig , printsig , applibsig);
-*/
+	signal = Wait(signalmask);
+
 	if(signal & winsignal)
 		ami_handle_msg();
 
@@ -2837,8 +2835,6 @@ static void gui_quit(void)
 	LOG(("Freeing clipboard"));
 	ami_clipboard_free();
 
-	ami_print_free();
-
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
@@ -2846,7 +2842,7 @@ static void gui_quit(void)
 	ami_file_req_free();
 
 	ami_openurl_close();
-    FreeStringClass(urlStringClass);
+	FreeStringClass(urlStringClass);
 
 	if(IApplication) DropInterface((struct Interface *)IApplication);
 	if(ApplicationBase) CloseLibrary(ApplicationBase);
