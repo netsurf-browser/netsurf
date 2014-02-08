@@ -3215,9 +3215,10 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		warn_user(messages_get_errorcode(error), 0);
 		return error;
 	}
-	
+
+	/* Front end /really/ should not be doing this. */
 	history_destroy(bw->history);
-	bw->history = history_create();
+	bw->history = history_create(bw);
 
 	return NSERROR_OK;
 }
