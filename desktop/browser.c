@@ -1927,6 +1927,23 @@ nserror browser_window_navigate(struct browser_window *bw,
 }
 
 
+/* Exported interface, documented in browser.h */
+nsurl * browser_window_get_url(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	if (bw->current_content != NULL) {
+		return hlcache_handle_get_url(bw->current_content);
+
+	} else if (bw->loading_content != NULL) {
+		/* TODO: should we return this? */
+		return hlcache_handle_get_url(bw->loading_content);
+	}
+
+	return corestring_nsurl_about_blank;
+}
+
+
 /*
  * Get the dimensions of the area a browser window occupies
  *

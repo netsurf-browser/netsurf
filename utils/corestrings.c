@@ -268,6 +268,9 @@ dom_string *corestring_dom___ns_key_libcss_node_data;
 dom_string *corestring_dom___ns_key_file_name_node_data;
 dom_string *corestring_dom___ns_key_image_coords_node_data;
 
+/* nsurl URLs */
+nsurl *corestring_nsurl_about_blank;
+
 /*
  * Free the core strings
  */
@@ -535,6 +538,10 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_image_coords_node_data);
 #undef CSS_DOM_STRING_UNREF
+
+	/* nsurl URLs */
+	if (corestring_nsurl_about_blank != NULL)
+		nsurl_unref(corestring_nsurl_about_blank);
 }
 
 
@@ -853,6 +860,11 @@ nserror corestrings_init(void)
 			&corestring_dom_http_equiv);
 	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL)) {
 		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+	error = nsurl_create("about:blank", &corestring_nsurl_about_blank);
+	if (error != NSERROR_OK) {
 		goto error;
 	}
 

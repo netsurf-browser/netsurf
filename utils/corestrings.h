@@ -24,6 +24,7 @@
 #define NETSURF_UTILS_CORESTRINGS_H_
 
 #include <libwapcaplet/libwapcaplet.h>
+#include "utils/nsurl.h"
 #include "utils/errors.h"
 
 nserror corestrings_init(void);
@@ -279,5 +280,7 @@ extern struct dom_string *corestring_dom___ns_key_libcss_node_data;
 extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 extern struct dom_string *corestring_dom___ns_key_image_coords_node_data;
 
+/* URLs */
+extern nsurl *corestring_nsurl_about_blank;
 
 #endif

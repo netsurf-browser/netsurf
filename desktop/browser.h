@@ -119,6 +119,16 @@ nserror browser_window_navigate(struct browser_window *bw,
 			     struct fetch_multipart_data *post_multipart,
 			     struct hlcache_handle *parent);
 
+/**
+ * Get a browser window's URL.
+ *
+ * \param bw	  browser window
+ * \return pointer to nsurl.  Doesn't create a ref for caller.
+ *
+ * Note: guaranteed to return a valid nsurl ptr, never returns NULL.
+ */
+nsurl * browser_window_get_url(struct browser_window *bw);
+
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
 void browser_window_set_dimensions(struct browser_window *bw,
