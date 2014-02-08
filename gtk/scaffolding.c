@@ -667,8 +667,7 @@ static gboolean nsgtk_filter_directory(const GtkFileFilterInfo *info,
 
 MULTIHANDLER(savepage)
 {
-	if (nsgtk_get_browser_window(g->top_level)->current_content
-			== NULL)
+	if (!browser_window_has_content(nsgtk_get_browser_window(g->top_level)))
 		return FALSE;
 
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
@@ -809,8 +808,7 @@ MULTIHANDLER(pdf)
 
 MULTIHANDLER(plaintext)
 {
-	if (nsgtk_get_browser_window(g->top_level)->current_content
-			== NULL)
+	if (!browser_window_has_content(nsgtk_get_browser_window(g->top_level)))
 		return FALSE;
 
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
@@ -2537,13 +2535,9 @@ void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
  */
 static bool is_menu_over_link(struct gtk_scaffolding *g, gdouble x, gdouble y)
 {
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-
-	if ((bw->current_content != NULL) &&
-	    (content_get_type(bw->current_content) == CONTENT_HTML)) {
-		browser_window_get_contextual_content(bw, x, y,
-				&current_menu_ctx);
-	}
+	browser_window_get_contextual_content(
+			nsgtk_get_browser_window(g->top_level),
+			x, y, &current_menu_ctx);
 
 	if (current_menu_ctx.link_url == NULL)
 		return false;
