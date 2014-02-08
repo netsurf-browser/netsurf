@@ -1521,8 +1521,7 @@ MULTIHANDLER(addbookmarks)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
-	if (bw == NULL || bw->current_content == NULL ||
-			hlcache_handle_get_url(bw->current_content) == NULL)
+	if (bw == NULL || !browser_window_has_content(bw))
 		return TRUE;
 	hotlist_add_url(browser_window_get_url(bw));
 	return TRUE;
