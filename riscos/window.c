@@ -1779,14 +1779,11 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 bool ro_gui_window_keypress(wimp_key *key)
 {
 	struct gui_window	*g;
-	hlcache_handle		*h;
 	uint32_t		c = (uint32_t) key->c;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(key->w);
 	if (g == NULL)
 		return false;
-
-	h = g->bw->current_content;
 
 	/* First send the key to the browser window, eg. form fields. */
 
