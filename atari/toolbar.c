@@ -948,7 +948,7 @@ void toolbar_back_click(struct s_toolbar *tb)
     assert(bw != NULL);
 
     if( history_back_available(bw->history) )
-		history_back(bw, bw->history);
+		history_back(bw->history, false);
 }
 
 void toolbar_reload_click(struct s_toolbar *tb)
@@ -975,7 +975,7 @@ void toolbar_forward_click(struct s_toolbar *tb)
     assert(bw != NULL);
 
 	if (history_forward_available(bw->history))
-		history_forward(bw, bw->history);
+		history_forward(bw->history, false);
 }
 
 void toolbar_home_click(struct s_toolbar *tb)

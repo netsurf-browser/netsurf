@@ -348,7 +348,7 @@ bool ro_gui_history_click(wimp_pointer *pointer)
 
 	x = (pointer->pos.x - (state.visible.x0 - state.xscroll)) / 2;
 	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / 2;
-	history_click(history_bw, history_current, x, y,
+	history_click(history_current, x, y,
 			pointer->buttons == wimp_CLICK_ADJUST);
 
 	return true;

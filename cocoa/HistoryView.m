@@ -72,7 +72,7 @@
 {
 	const NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
 	const bool newWindow = [theEvent modifierFlags] & NSCommandKeyMask;
-	if (history_click( browser, browser->history, 
+	if (history_click( browser->history, 
 					   cocoa_pt_to_px( location.x ), cocoa_pt_to_px( location.y ),
 					   newWindow )) {
 		[browserView setHistoryVisible: NO];

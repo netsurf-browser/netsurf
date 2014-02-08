@@ -1422,7 +1422,7 @@ MULTIHANDLER(back)
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-	history_back(bw, bw->history);
+	history_back(bw->history, false);
 	nsgtk_window_update_back_forward(g);
 
 	return TRUE;
@@ -1442,7 +1442,7 @@ MULTIHANDLER(forward)
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-	history_forward(bw, bw->history);
+	history_forward(bw->history, false);
 	nsgtk_window_update_back_forward(g);
 
 	return TRUE;
@@ -1741,8 +1741,7 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 	LOG(("X=%g, Y=%g", event->x, event->y));
 
-	history_click(bw, bw->history,
-		      event->x, event->y, false);
+	history_click(bw->history, event->x, event->y, false);
 
 	return TRUE;
 }

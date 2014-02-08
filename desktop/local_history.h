@@ -32,14 +32,15 @@ struct browser_window;
 struct history_entry;
 struct redraw_context;
 
-struct history *history_create(void);
-struct history *history_clone(struct history *history);
+struct history *history_create(struct browser_window *bw);
+struct history *history_clone(struct history *history,
+		struct browser_window *bw);
 void history_add(struct history *history, struct hlcache_handle *content,
 		lwc_string *frag_id);
 void history_update(struct history *history, struct hlcache_handle *content);
 void history_destroy(struct history *history);
-void history_back(struct browser_window *bw, struct history *history);
-void history_forward(struct browser_window *bw, struct history *history);
+void history_back(struct history *history, bool new_window);
+void history_forward(struct history *history, bool new_window);
 bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
 void history_size(struct history *history, int *width, int *height);
@@ -47,8 +48,7 @@ bool history_redraw(struct history *history, const struct redraw_context *ctx);
 bool history_redraw_rectangle(struct history *history,
 		int x0, int y0, int x1, int y1, int x, int y,
 		const struct redraw_context *ctx);
-bool history_click(struct browser_window *bw, struct history *history,
-		int x, int y, bool new_window);
+bool history_click(struct history *history, int x, int y, bool new_window);
 const char *history_position_url(struct history *history, int x, int y);
 
 /**
@@ -59,9 +59,10 @@ const char *history_position_url(struct history *history, int x, int y);
  * \param	entry			Current history entry
  * \return	true to continue enumeration, false to cancel enumeration
  */
-typedef bool (*history_enumerate_cb)(const struct history *history, int x0, int y0, 
-	 int x1, int y1, 
-	 const struct history_entry *entry, void *user_data);
+typedef bool (*history_enumerate_cb)(const struct history *history,
+		int x0, int y0, 
+		 int x1, int y1, 
+		 const struct history_entry *entry, void *user_data);
 
 /**
  * Enumerate all entries in the history.
@@ -71,7 +72,8 @@ typedef bool (*history_enumerate_cb)(const struct history *history, int x0, int 
  * \param	cb			callback function
  * \param	user_data	context pointer passed to cb
  */
-void history_enumerate(const struct history *history, history_enumerate_cb cb, void *user_data);
+void history_enumerate(const struct history *history,
+		history_enumerate_cb cb, void *user_data);
 
 /**
  * Enumerate all entries that will be reached by the 'forward' button
@@ -81,7 +83,7 @@ void history_enumerate(const struct history *history, history_enumerate_cb cb, v
  * \param	user_data	Data passed to the callback
  */
 void history_enumerate_forward( struct history *history, 
-		history_enumerate_cb cb, void *user_data );
+		history_enumerate_cb cb, void *user_data);
 
 /**
  * Enumerate all entries that will be reached by the 'back' button
@@ -91,7 +93,7 @@ void history_enumerate_forward( struct history *history,
  * \param	user_data	Data passed to the callback
  */
 void history_enumerate_back( struct history *history, 
-		history_enumerate_cb cb, void *user_data );
+		history_enumerate_cb cb, void *user_data);
 
 /**
  * Returns the URL to a history entry
@@ -125,7 +127,7 @@ const char *history_entry_get_title(const struct history_entry *entry);
  * \param  entry       entry to open
  * \param  new_window  open entry in new window
  */
-void history_go(struct browser_window *bw, struct history *history,
-				struct history_entry *entry, bool new_window);
+void history_go(struct history *history, struct history_entry *entry,
+		bool new_window);
 
 #endif

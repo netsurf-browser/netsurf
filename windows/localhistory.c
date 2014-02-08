@@ -167,8 +167,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
 
-		if (history_click(gw->bw,
-				   gw->bw->history,
+		if (history_click(gw->bw->history,
 				   gw->localhistory->hscroll + x,
 				   gw->localhistory->vscroll + y,
 				   false)) {

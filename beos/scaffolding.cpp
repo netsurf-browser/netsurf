@@ -976,7 +976,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case 'back':
 			if (!history_back_available(bw->history))
 				break;
-			history_back(bw, bw->history);
+			history_back(bw->history, false);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case B_NETPOSITIVE_FORWARD:
@@ -984,7 +984,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case 'forw':
 			if (!history_forward_available(bw->history))
 				break;
-			history_forward(bw, bw->history);
+			history_forward(bw->history, false);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case B_NETPOSITIVE_STOP:

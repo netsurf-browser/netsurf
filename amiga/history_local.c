@@ -210,13 +210,13 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 	switch(code)
 	{
 		case SELECTUP:
-			history_click(hw->bw,history_current,x,y,false);
+			history_click(history_current,x,y,false);
 			ami_history_redraw(hw);
 			ami_schedule_redraw(hw->bw->window->shared, true);
 		break;
 
 		case MIDDLEUP:
-			history_click(hw->bw,history_current,x,y,true);
+			history_click(history_current,x,y,true);
 			ami_history_redraw(hw);
 		break;
 

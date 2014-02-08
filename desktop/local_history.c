@@ -78,6 +78,8 @@ struct history {
 	int width;
 	/** Height of layout. */
 	int height;
+	/** Browser window that local history belongs to */
+	struct browser_window *bw;
 };
 
 static struct history_entry *history_clone_entry(struct history *history,
@@ -102,7 +104,7 @@ static bool history_enumerate_entry(const struct history *history,
  * \return  pointer to an opaque history structure, 0 on failure.
  */
 
-struct history *history_create(void)
+struct history *history_create(struct browser_window *bw)
 {
 	struct history *history;
 
@@ -113,6 +115,7 @@ struct history *history_create(void)
 	}
 	history->width = RIGHT_MARGIN / 2;
 	history->height = BOTTOM_MARGIN / 2;
+	history->bw = bw;
 	return history;
 }
 
@@ -125,12 +128,13 @@ struct history *history_create(void)
  * \return  pointer to an opaque history structure, 0 on failure.
  */
 
-struct history *history_clone(struct history *history)
+struct history *history_clone(struct history *history,
+		struct browser_window *bw)
 {
 	struct history *new_history;
 
 	if (!history->start)
-		return history_create();
+		return history_create(bw);
 
 	new_history = malloc(sizeof *history);
 	if (!new_history)
@@ -370,13 +374,14 @@ void history_free_entry(struct history_entry *entry)
  *
  * \param  bw       browser window
  * \param  history  history of the window
+ * \param  new_window  whether to open in new window
  */
 
-void history_back(struct browser_window *bw, struct history *history)
+void history_back(struct history *history, bool new_window)
 {
 	if (!history || !history->current || !history->current->back)
 		return;
-	history_go(bw, history, history->current->back, false);
+	history_go(history, history->current->back, new_window);
 }
 
 
@@ -385,13 +390,14 @@ void history_back(struct browser_window *bw, struct history *history)
  *
  * \param  bw       browser window
  * \param  history  history of the window
+ * \param  new_window  whether to open in new window
  */
 
-void history_forward(struct browser_window *bw, struct history *history)
+void history_forward(struct history *history, bool new_window)
 {
 	if (!history || !history->current || !history->current->forward_pref)
 		return;
-	history_go(bw, history, history->current->forward_pref, false);
+	history_go(history, history->current->forward_pref, new_window);
 }
 
 
@@ -422,9 +428,7 @@ bool history_forward_available(struct history *history)
 
 
 /* Documented in local_history.h */
-void history_go(struct browser_window *bw, 
-		struct history *history,
-		struct history_entry *entry, 
+void history_go(struct history *history, struct history_entry *entry, 
 		bool new_window)
 {
 	nsurl *url;
@@ -452,14 +456,11 @@ void history_go(struct browser_window *bw,
 		history->current = entry;
 
 		browser_window_create(BROWSER_WINDOW_VERIFIABLE,
-				      url,
-				      NULL,
-				      bw,
-				      NULL);
+				url, NULL, history->bw, NULL);
 		history->current = current;
 	} else {
 		history->current = entry;
-		browser_window_navigate(bw, url, NULL,
+		browser_window_navigate(history->bw, url, NULL,
 				BROWSER_WINDOW_VERIFIABLE, NULL, NULL, NULL);
 	}
 
@@ -702,8 +703,7 @@ bool history_redraw_entry(struct history *history,
  * \return  true if action was taken, false if click was not on an entry
  */
 
-bool history_click(struct browser_window *bw, struct history *history,
-		int x, int y, bool new_window)
+bool history_click(struct history *history, int x, int y, bool new_window)
 {
 	struct history_entry *entry;
 
@@ -713,7 +713,7 @@ bool history_click(struct browser_window *bw, struct history *history,
 	if (entry == history->current)
 		return false;
 
-	history_go(bw, history, entry, new_window);
+	history_go(history, entry, new_window);
 
 	return true;
 }

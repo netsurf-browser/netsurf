@@ -1064,12 +1064,12 @@ void ami_gui_history(struct gui_window_2 *gwin, bool back)
 	if(back == true)
 	{
 		if(browser_window_back_available(gwin->bw))
-			history_back(gwin->bw, gwin->bw->history);
+			history_back(gwin->bw->history, false);
 	}
 	else
 	{
 		if(browser_window_forward_available(gwin->bw))
-			history_forward(gwin->bw, gwin->bw->history);
+			history_forward(gwin->bw->history, false);
 	}
 
 	ami_update_buttons(gwin);

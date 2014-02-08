@@ -118,7 +118,7 @@
 - (IBAction) goBack: (id) sender;
 {
 	if (browser && history_back_available( browser->history )) {
-		history_back(browser, browser->history);
+		history_back(browser->history, false);
 		[self updateBackForward];
 	}
 }
@@ -126,7 +126,7 @@
 - (IBAction) goForward: (id) sender;
 {
 	if (browser && history_forward_available( browser->history )) {
-		history_forward(browser, browser->history);
+		history_forward(browser->history, false);
 		[self updateBackForward];
 	}
 }
@@ -316,7 +316,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 - (IBAction) historyItemSelected: (id) sender;
 {
 	struct history_entry *entry = [[sender representedObject] pointerValue];
-	history_go( browser, browser->history, entry, false );
+	history_go( browser->history, entry, false );
 	[self updateBackForward];
 }
 

@@ -135,8 +135,6 @@ static bool ro_gui_window_navigate_up(struct gui_window *g, const char *url);
 static void ro_gui_window_action_home(struct gui_window *g);
 static void ro_gui_window_action_new_window(struct gui_window *g);
 static void ro_gui_window_action_local_history(struct gui_window *g);
-static void ro_gui_window_action_navigate_back_new(struct gui_window *g);
-static void ro_gui_window_action_navigate_forward_new(struct gui_window *g);
 static void ro_gui_window_action_save(struct gui_window *g,
 		gui_save_type save_type);
 static void ro_gui_window_action_search(struct gui_window *g);
@@ -2944,11 +2942,11 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 	case BROWSER_NAVIGATE_BACK:
 		if (bw != NULL && bw->history != NULL)
-			history_back(bw, bw->history);
+			history_back(bw->history, false);
 		break;
 	case BROWSER_NAVIGATE_FORWARD:
 		if (bw != NULL && bw->history != NULL)
-			history_forward(bw, bw->history);
+			history_forward(bw->history, false);
 		break;
 	case BROWSER_NAVIGATE_UP:
 		if (bw != NULL && h != NULL)
@@ -3642,20 +3640,22 @@ void ro_gui_window_toolbar_click(void *data,
 	switch (action.button) {
 	case TOOLBAR_BUTTON_BACK:
 		if (g->bw != NULL && g->bw->history != NULL)
-				history_back(g->bw, g->bw->history);
+				history_back(g->bw->history, false);
 		break;
 
 	case TOOLBAR_BUTTON_BACK_NEW:
-		ro_gui_window_action_navigate_back_new(g);
+		if (g->bw != NULL && g->bw->history != NULL)
+				history_back(g->bw->history, true);
 		break;
 
 	case TOOLBAR_BUTTON_FORWARD:
 		if (g->bw != NULL && g->bw->history != NULL)
-				history_forward(g->bw, g->bw->history);
+				history_forward(g->bw->history, false);
 		break;
 
 	case TOOLBAR_BUTTON_FORWARD_NEW:
-		ro_gui_window_action_navigate_forward_new(g);
+		if (g->bw != NULL && g->bw->history != NULL)
+				history_forward(g->bw->history, true);
 		break;
 
 	case TOOLBAR_BUTTON_STOP:
@@ -4094,62 +4094,6 @@ void ro_gui_window_action_home(struct gui_window *g)
 	}
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
-	}
-}
-
-
-/**
- * Navigate back from a browser window into a new window.
- *
- * \param *g			The browser window to act on.
- */
-
-void ro_gui_window_action_navigate_back_new(struct gui_window *g)
-{
-	struct browser_window *new_bw;
-	nserror error;
-
-	if (g == NULL || g->bw == NULL)
-		return;
-
-	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
-				      NULL,
-				      NULL,
-				      g->bw,
-				      &new_bw);
-
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		history_back(new_bw, new_bw->history);
-	}
-}
-
-
-/**
- * Navigate forward from a browser window into a new window.
- *
- * \param *g			The browser window to act on.
- */
-
-void ro_gui_window_action_navigate_forward_new(struct gui_window *g)
-{
-	struct browser_window *new_bw;
-	nserror error;
-
-	if (g == NULL || g->bw == NULL)
-		return;
-
-	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
-				      NULL,
-				      NULL,
-				      g->bw,
-				      &new_bw);
-
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		history_forward(new_bw, new_bw->history);
 	}
 }
 

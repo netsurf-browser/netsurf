@@ -764,9 +764,9 @@ void browser_window_initialise_common(struct browser_window *bw,
 	assert(bw);
 
 	if (!clone)
-		bw->history = history_create();
+		bw->history = history_create(bw);
 	else
-		bw->history = history_clone(clone->history);
+		bw->history = history_clone(clone->history, bw);
 
 	/* window characteristics */
 	bw->refresh_interval = -1;

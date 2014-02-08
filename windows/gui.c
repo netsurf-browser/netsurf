@@ -853,7 +853,7 @@ nsws_window_command(HWND hwnd,
 	case IDM_NAV_BACK:
 		if ((gw->bw != NULL) &&
 		    (history_back_available(gw->bw->history))) {
-			history_back(gw->bw, gw->bw->history);
+			history_back(gw->bw->history, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;
@@ -861,7 +861,7 @@ nsws_window_command(HWND hwnd,
 	case IDM_NAV_FORWARD:
 		if ((gw->bw != NULL) &&
 		    (history_forward_available(gw->bw->history))) {
-			history_forward(gw->bw, gw->bw->history);
+			history_forward(gw->bw->history, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;

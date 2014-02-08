@@ -97,7 +97,7 @@ localhistory_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	history_click(glh->bw, glh->bw->history, cbi->x, cbi->y, false);
+	history_click(glh->bw->history, cbi->x, cbi->y, false);
 
 	fbtk_set_mapping(glh->window, false);
 

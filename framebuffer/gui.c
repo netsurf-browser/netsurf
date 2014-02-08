@@ -989,7 +989,7 @@ fb_leftarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		return 0;
 
 	if (history_back_available(bw->history))
-		history_back(bw, bw->history);
+		history_back(bw->history, false);
 
 	fb_update_back_forward(gw);
 
@@ -1007,7 +1007,7 @@ fb_rightarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		return 0;
 
 	if (history_forward_available(bw->history))
-		history_forward(bw, bw->history);
+		history_forward(bw->history, false);
 
 	fb_update_back_forward(gw);
 	return 1;
