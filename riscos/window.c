@@ -1320,11 +1320,9 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 {
   	int screen_width;
 	int toolbar_height = 0;
-	hlcache_handle *h;
 	wimp_window_state state;
 	os_error *error;
 
-	h = g->bw->current_content;
 	if (g->toolbar)
 		toolbar_height = ro_toolbar_full_height(g->toolbar);
 
@@ -1356,9 +1354,11 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 		height -= ro_get_hscroll_height(g->window);
 		height -= ro_get_title_height(g->window);
 	}
-	if (h) {
-		width = max(width, content_get_width(h) * 2 * g->bw->scale);
-		height = max(height, content_get_height(h) * 2 * g->bw->scale);
+	if (browser_window_has_content(g->bw)) {
+		int w, h;
+		browser_window_get_extents(g->bw, true, &w, &h);
+		width = max(width, w * 2);
+		height = max(height, h * 2);
 	}
 	os_box extent = { 0, -height, width, toolbar_height };
 	error = xwimp_set_extent(g->window, &extent);
