@@ -331,6 +331,7 @@ fb_redraw(fbtk_widget_t *widget,
 		.plot = &fb_plotters
 	};
 	nsfb_t *nsfb = fbtk_get_nsfb(widget);
+	float scale = browser_window_get_scale(bw);
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -356,8 +357,8 @@ fb_redraw(fbtk_widget_t *widget,
 	clip.y1 = bwidget->redraw_box.y1;
 
 	browser_window_redraw(bw,
-			(x - bwidget->scrollx) / bw->scale,
-			(y - bwidget->scrolly) / bw->scale,
+			(x - bwidget->scrollx) / scale,
+			(y - bwidget->scrolly) / scale,
 			&clip, &ctx);
 
 	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
@@ -601,7 +602,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	browser_mouse_state mouse;
-	float scale = gw->bw->scale;
+	float scale = browser_window_get_scale(gw->bw);
 	int x = (cbi->x + bwidget->scrollx) / scale;
 	int y = (cbi->y + bwidget->scrolly) / scale;
 	unsigned int time_now;
@@ -753,8 +754,9 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	browser_mouse_state mouse = 0;
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
-	int x = (cbi->x + bwidget->scrollx) / gw->bw->scale;
-	int y = (cbi->y + bwidget->scrolly) / gw->bw->scale;
+	float scale = browser_window_get_scale(gw->bw);
+	int x = (cbi->x + bwidget->scrollx) / scale;
+	int y = (cbi->y + bwidget->scrolly) / scale;
 
 	if (gui_drag.state == GUI_DRAG_PRESSED &&
 			(abs(x - gui_drag.x) > 5 ||
@@ -1558,9 +1560,10 @@ static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
+	float scale = browser_window_get_scale(g->bw);
 
-	*sx = bwidget->scrollx / g->bw->scale;
-	*sy = bwidget->scrolly / g->bw->scale;
+	*sx = bwidget->scrollx / scale;
+	*sy = bwidget->scrolly / scale;
 
 	return true;
 }
@@ -1569,11 +1572,12 @@ static void
 gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
+	float scale = browser_window_get_scale(gw->bw);
 
 	assert(bwidget);
 
-	widget_scroll_x(gw, sx * gw->bw->scale, true);
-	widget_scroll_y(gw, sy * gw->bw->scale, true);
+	widget_scroll_x(gw, sx * scale, true);
+	widget_scroll_y(gw, sy * scale, true);
 }
 
 
@@ -1583,12 +1587,14 @@ gui_window_get_dimensions(struct gui_window *g,
 			  int *height,
 			  bool scaled)
 {
+	float scale = browser_window_get_scale(g->bw);
+
 	*width = fbtk_get_width(g->browser);
 	*height = fbtk_get_height(g->browser);
 
 	if (scaled) {
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		*width /= scale;
+		*height /= scale;
 	}
 }
 
