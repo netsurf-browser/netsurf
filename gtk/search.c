@@ -32,7 +32,7 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"
@@ -57,8 +57,8 @@ static struct gui_search_callbacks nsgtk_search_callbacks = {
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	struct browser_window *bw = nsgtk_get_browser_window(
-			nsgtk_scaffolding_top_level(g));
+	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
 	assert(bw);
 
@@ -70,7 +70,7 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)bw, flags,
+	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -80,8 +80,8 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	struct browser_window *bw = nsgtk_get_browser_window(
-			nsgtk_scaffolding_top_level(g));
+	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
 	assert(bw);
 
@@ -93,7 +93,7 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)bw, flags,
+	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -112,8 +112,8 @@ gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 {
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
-	struct browser_window *bw = nsgtk_get_browser_window(
-			nsgtk_scaffolding_top_level(g));
+	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
 	assert(bw != NULL);
 
@@ -128,7 +128,7 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)bw, flags,
+	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -138,8 +138,8 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 {
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
-	struct browser_window *bw = nsgtk_get_browser_window(
-			nsgtk_scaffolding_top_level(g));
+	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
 	assert(bw);
 
@@ -151,7 +151,7 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)bw, flags,
+	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return FALSE;
 }
@@ -238,9 +238,9 @@ void nsgtk_search_add_recent(const char *string, void *p)
 
 void nsgtk_search_set_forward_state(bool active, void *p)
 {
-	struct browser_window *bw = (struct browser_window *)p;
-	if ((bw != NULL) && (bw->window != NULL)) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(bw->window);
+	struct gui_window *gw = (struct gui_window *)p;
+	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
+		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
 		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
 				g)->buttons[1]), active);
 	}
@@ -254,9 +254,9 @@ void nsgtk_search_set_forward_state(bool active, void *p)
 
 void nsgtk_search_set_back_state(bool active, void *p)
 {
-	struct browser_window *bw = (struct browser_window *)p;
-	if ((bw != NULL) && (bw->window != NULL)) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(bw->window);
+	struct gui_window *gw = (struct gui_window *)p;
+	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
+		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
 		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
 				g)->buttons[0]), active);
 	}
