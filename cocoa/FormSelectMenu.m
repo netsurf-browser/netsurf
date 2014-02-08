@@ -19,7 +19,7 @@
 #import "cocoa/FormSelectMenu.h"
 #import "cocoa/coordinates.h"
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "render/form.h"
 
 @interface FormSelectMenu ()
