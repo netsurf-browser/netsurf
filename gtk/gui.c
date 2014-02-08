@@ -44,7 +44,7 @@
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
