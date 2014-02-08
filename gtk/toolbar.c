@@ -18,12 +18,11 @@
 
 #include <gtk/gtk.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "content/hlcache.h"
 
 #include "gtk/toolbar.h"
 #include "gtk/gui.h"
@@ -422,14 +421,9 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
-		if ((nsgtk_get_browser_window(nsgtk_scaffolding_top_level(
-				list))->current_content	!= NULL) &&
-				(hlcache_handle_get_url(nsgtk_get_browser_window(
-				nsgtk_scaffolding_top_level(list))->
-				current_content) != NULL))
-			browser_window_refresh_url_bar(
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list)));
+		browser_window_refresh_url_bar(
+				nsgtk_get_browser_window(
+				nsgtk_scaffolding_top_level(list)));
 
 		if (list != g)
 			gtk_widget_set_sensitive(GTK_WIDGET(
