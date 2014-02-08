@@ -687,8 +687,8 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = url_nice(nsurl_access(hlcache_handle_get_url(nsgtk_get_browser_window(
-			g->top_level)->current_content)), &path, false);
+	res = url_nice(nsurl_access(browser_window_get_url(
+			nsgtk_get_browser_window(g->top_level))), &path, false);
 	if (res != URL_FUNC_OK) {
 		path = strdup(messages_get("SaveText"));
 		if (path == NULL) {
@@ -747,7 +747,7 @@ MULTIHANDLER(pdf)
 
 	LOG(("Print preview (generating PDF)  started."));
 
-	res = url_nice(nsurl_access(hlcache_handle_get_url(bw->current_content)),
+	res = url_nice(nsurl_access(browser_window_get_url(bw)),
 			&url_name, true);
 	if (res != URL_FUNC_OK) {
 		warn_user(messages_get(res == URL_FUNC_NOMEM ? "NoMemory"
@@ -822,8 +822,9 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	url_func_result res;
 
-	res = url_nice(nsurl_access(hlcache_handle_get_url(nsgtk_get_browser_window(
-			g->top_level)->current_content)), &filename, false);
+	res = url_nice(nsurl_access(browser_window_get_url(
+			nsgtk_get_browser_window(g->top_level))),
+			&filename, false);
 	if (res != URL_FUNC_OK) {
 		filename = strdup(messages_get("SaveText"));
 		if (filename == NULL) {
@@ -1523,7 +1524,7 @@ MULTIHANDLER(addbookmarks)
 	if (bw == NULL || bw->current_content == NULL ||
 			hlcache_handle_get_url(bw->current_content) == NULL)
 		return TRUE;
-	hotlist_add_url(hlcache_handle_get_url(bw->current_content));
+	hotlist_add_url(browser_window_get_url(bw));
 	return TRUE;
 }
 
