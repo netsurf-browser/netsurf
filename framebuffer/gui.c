@@ -124,9 +124,8 @@ static void
 widget_scroll_y(struct gui_window *gw, int y, bool abs)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
-	int content_height;
+	int content_width, content_height;
 	int height;
-	float scale = gw->bw->scale;
 
 	LOG(("window scroll"));
 	if (abs) {
@@ -135,7 +134,8 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 		bwidget->pany += y;
 	}
 
-	content_height = content_get_height(gw->bw->current_content) * scale;
+	browser_window_get_extents(gw->bw, true,
+			&content_width, &content_height);
 
 	height = fbtk_get_height(gw->browser);
 
@@ -162,9 +162,8 @@ static void
 widget_scroll_x(struct gui_window *gw, int x, bool abs)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
-	int content_width;
+	int content_width, content_height;
 	int width;
-	float scale = gw->bw->scale;
 
 	if (abs) {
 		bwidget->panx = x - bwidget->scrollx;
@@ -172,7 +171,8 @@ widget_scroll_x(struct gui_window *gw, int x, bool abs)
 		bwidget->panx += x;
 	}
 
-	content_width = content_get_width(gw->bw->current_content) * scale;
+	browser_window_get_extents(gw->bw, true,
+			&content_width, &content_height);
 
 	width = fbtk_get_width(gw->browser);
 
@@ -1595,14 +1595,13 @@ gui_window_get_dimensions(struct gui_window *g,
 static void
 gui_window_update_extent(struct gui_window *gw)
 {
-	float scale = gw->bw->scale;
+	int w, h;
+	browser_window_get_extents(gw->bw, true, &w, &h);
 
-	fbtk_set_scroll_parameters(gw->hscroll, 0,
-			content_get_width(gw->bw->current_content) * scale,
+	fbtk_set_scroll_parameters(gw->hscroll, 0, w,
 			fbtk_get_width(gw->browser), 100);
 
-	fbtk_set_scroll_parameters(gw->vscroll, 0,
-			content_get_height(gw->bw->current_content) * scale,
+	fbtk_set_scroll_parameters(gw->vscroll, 0, h,
 			fbtk_get_height(gw->browser), 100);
 }
 
