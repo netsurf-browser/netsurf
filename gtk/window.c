@@ -155,7 +155,7 @@ struct gui_window *nsgtk_window_iterate(struct gui_window *g)
 
 float nsgtk_get_scale_for_gui(struct gui_window *g)
 {
-	return g->bw->scale;
+	return browser_window_get_scale(g->bw);
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
@@ -304,7 +304,8 @@ static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
 	browser_window_mouse_track(g->bw, g->mouse.state,
-			event->x / g->bw->scale, event->y / g->bw->scale);
+			event->x / browser_window_get_scale(g->bw),
+			event->y / browser_window_get_scale(g->bw));
 
 	return TRUE;
 }
@@ -318,8 +319,8 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
 			g->scaffold)->window));
 
-	g->mouse.pressed_x = event->x / g->bw->scale;
-	g->mouse.pressed_y = event->y / g->bw->scale;
+	g->mouse.pressed_x = event->x / browser_window_get_scale(g->bw);
+	g->mouse.pressed_y = event->y / browser_window_get_scale(g->bw);
 
 	switch (event->button) {
 	case 1:	/* Left button, usually. Pass to core as BUTTON 1. */
@@ -385,11 +386,12 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 
 	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
 		browser_window_mouse_click(g->bw, g->mouse.state,
-				event->x / g->bw->scale,
-				event->y / g->bw->scale);
+				event->x / browser_window_get_scale(g->bw),
+				event->y / browser_window_get_scale(g->bw));
 	} else {
-		browser_window_mouse_track(g->bw, 0, event->x / g->bw->scale,
-				event->y / g->bw->scale);
+		browser_window_mouse_track(g->bw, 0,
+				event->x / browser_window_get_scale(g->bw),
+				event->y / browser_window_get_scale(g->bw));
 	}
 
 	g->mouse.state = 0;
@@ -440,9 +442,9 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 	deltay *= nsgtk_adjustment_get_step_increment(vscroll);
 
 	if (browser_window_scroll_at_point(g->bw,
-					   event->x / g->bw->scale,
-					   event->y / g->bw->scale,
-					   deltax, deltay) != true) {
+			event->x / browser_window_get_scale(g->bw),
+			event->y / browser_window_get_scale(g->bw),
+			deltax, deltay) != true) {
 
 		/* core did not handle event so change adjustments */
 
@@ -694,7 +696,7 @@ gui_window_create(struct browser_window *bw,
 	if (clone != NULL) {
 		bw->scale = clone->scale;
 	} else {
-		bw->scale = (float) nsoption_int(scale) / 100.0;
+		bw->scale = nsoption_int(scale) / 100;
 	}
 
 	/* attach scaffold */
@@ -944,17 +946,19 @@ static void gui_window_redraw_window(struct gui_window *g)
 static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
+	float scale;
 
 	if (!browser_window_has_content(g->bw))
 		return;
 
 	gui_window_get_scroll(g, &sx, &sy);
+	scale = browser_window_get_scale(g->bw);
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   rect->x0 * g->bw->scale - sx,
-				   rect->y0 * g->bw->scale - sy,
-				   (rect->x1 - rect->x0) * g->bw->scale,
-				   (rect->y1 - rect->y0) * g->bw->scale);
+			rect->x0 * scale - sx,
+			rect->y0 * scale - sy,
+			(rect->x1 - rect->x0) * scale,
+			(rect->y1 - rect->y0) * scale);
 }
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
@@ -1123,8 +1127,9 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	*height = alloc.height;
 
 	if (scaled) {
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		float scale = browser_window_get_scale(g->bw);
+		*width /= scale;
+		*height /= scale;
 	}
 	LOG(("width: %i", *width));
 	LOG(("height: %i", *height));
