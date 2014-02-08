@@ -1281,7 +1281,7 @@ static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 
 	if(GetAttr(PMIA_ID, item, &itemid))
 	{
-		form_select_process_selection(gwin->shared->bw->current_content,gwin->shared->control,itemid);
+		form_select_process_selection(gwin->shared->control,itemid);
 	}
 
 	return itemid;

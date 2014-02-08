@@ -4919,9 +4919,7 @@ void ro_gui_window_process_form_select_menu(struct gui_window *g,
 	assert(g != NULL);
 
 	if (selection->items[0] >= 0)
-		form_select_process_selection(
-				ro_gui_select_menu_bw->current_content,
-				gui_form_select_control,
+		form_select_process_selection(gui_form_select_control,
 				selection->items[0]);
 }
 

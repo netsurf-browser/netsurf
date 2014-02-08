@@ -46,6 +46,7 @@ typedef enum {
 
 /** HTML form. */
 struct form {
+	struct html_content *html;	/**< HTML content containing form */
 	void *node;			/**< Corresponding DOM node */
 
 	char *action;			/**< Absolute URL to submit to. */
@@ -156,6 +157,7 @@ typedef void(*select_menu_redraw_callback)(void *client_data,
 struct form *form_new(void *node, const char *action, const char *target, 
 		form_method method, const char *charset, 
 		const char *doc_charset);
+void form_set_html_content(struct form *f, struct html_content *html);
 void form_free(struct form *form);
 struct form_control *form_new_control(void *node, form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
@@ -187,13 +189,11 @@ void form_select_mouse_drag_end(struct form_control *control,
 		browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
-void form_select_process_selection(struct hlcache_handle *h,
-		struct form_control *control, int item);
+void form_select_process_selection(struct form_control *control, int item);
 void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
-void form_radio_set(struct html_content *html, struct form_control *radio);
+void form_radio_set(struct form_control *radio);
 
-void form_gadget_update_value(struct html_content *html,
-			      struct form_control *control, char *value);
+void form_gadget_update_value(struct form_control *control, char *value);
 
 #endif

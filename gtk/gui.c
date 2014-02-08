@@ -611,8 +611,8 @@ static void gui_quit(void)
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {
-	form_select_process_selection(select_menu_bw->current_content,
-			select_menu_control, (intptr_t)user_data);
+	form_select_process_selection(select_menu_control,
+			(intptr_t)user_data);
 }
 
 static void gui_create_form_select_menu(struct browser_window *bw,

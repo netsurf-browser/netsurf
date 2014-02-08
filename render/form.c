@@ -103,6 +103,7 @@ static void form_select_menu_scroll_callback(void *client_data,
  * \param  method  method and enctype
  * \param  charset acceptable encodings for form submission, or NULL
  * \param  doc_charset  encoding of containing document, or NULL
+ * \param  html  HTML content containing form
  * \return  a new structure, or NULL on memory exhaustion
  */
 struct form *form_new(void *node, const char *action, const char *target, 
@@ -151,6 +152,18 @@ struct form *form_new(void *node, const char *action, const char *target,
 	form->node = node;
 
 	return form;
+}
+
+
+/**
+ * Set form's html content, so it can ask to redraw.
+ *
+ * \param form  form to set html content for
+ * \param html  html content for form
+ */
+void form_set_html_content(struct form *f, struct html_content *html)
+{
+	f->html = html;
 }
 
 /**
@@ -1381,14 +1394,12 @@ static void form__select_process_selection(html_content *html,
 }
 
 
-void form_select_process_selection(hlcache_handle *h,
-		struct form_control *control, int item)
+void form_select_process_selection(struct form_control *control, int item)
 {
-	assert(h != NULL);
+	assert(control != NULL);
+	assert(control->form != NULL);
 
-	form__select_process_selection(
-			(html_content *)hlcache_handle_get_content(h),
-			control, item);
+	form__select_process_selection(control->form->html, control, item);
 }
 
 /**
@@ -1616,12 +1627,10 @@ void form_select_menu_callback(void *client_data,
  * \param  radio    form control of type GADGET_RADIO
  */
 
-void form_radio_set(html_content *html,
-		struct form_control *radio)
+void form_radio_set(struct form_control *radio)
 {
 	struct form_control *control;
 
-	assert(html);
 	assert(radio);
 	if (!radio->form)
 		return;
@@ -1641,13 +1650,13 @@ void form_radio_set(html_content *html,
 		if (control->selected) {
 			control->selected = false;
 			dom_html_input_element_set_checked(control->node, false);
-			html__redraw_a_box(html, control->box);
+			html__redraw_a_box(radio->form->html, control->box);
 		}
 	}
 
 	radio->selected = true;
 	dom_html_input_element_set_checked(radio->node, true);
-	html__redraw_a_box(html, radio->box);
+	html__redraw_a_box(radio->form->html, radio->box);
 }
 
 
@@ -1748,8 +1757,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 	free(data);
 }
 
-void form_gadget_update_value(struct html_content *html,
-			      struct form_control *control, char *value)
+void form_gadget_update_value(struct form_control *control, char *value)
 {
 	switch (control->type) {
 	case GADGET_HIDDEN:

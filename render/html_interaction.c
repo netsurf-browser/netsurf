@@ -671,7 +671,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		case GADGET_RADIO:
 			status = messages_get("FormRadio");
 			if (mouse & BROWSER_MOUSE_CLICK_1)
-				form_radio_set(html, gadget);
+				form_radio_set(gadget);
 			break;
 		case GADGET_IMAGE:
 			if (mouse & BROWSER_MOUSE_CLICK_1) {

@@ -87,7 +87,7 @@
 
 - (void) itemSelected: (id) sender;
 {
-	form_select_process_selection( browser->current_content, control, [sender tag] );
+	form_select_process_selection( control, [sender tag] );
 }
 
 - (void) menuDidClose: (NSMenu *) sender;

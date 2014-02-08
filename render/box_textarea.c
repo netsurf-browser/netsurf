@@ -206,7 +206,7 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 		break;
 
 	case TEXTAREA_MSG_TEXT_MODIFIED:
-		form_gadget_update_value(d->html, gadget,
+		form_gadget_update_value(gadget,
 					 strndup(msg->data.modified.text,
 						 msg->data.modified.len));
 		break;

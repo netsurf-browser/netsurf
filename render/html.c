@@ -1182,6 +1182,9 @@ html_begin_conversion(html_content *htmlc)
 				return false;
 			}
 		}
+
+		/* Tell each form what content its in, so it can redraw */
+		form_set_html_content(f, htmlc);
 	}
 
 	dom_node_unref(html);
@@ -1780,7 +1783,7 @@ static void html__set_file_gadget_filename(struct content *c,
 		return;		
 	}
 	
-	form_gadget_update_value(html, gadget, utf8_fn);
+	form_gadget_update_value(gadget, utf8_fn);
 
 	/* corestring_dom___ns_key_file_name_node_data */
 	if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
