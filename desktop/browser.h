@@ -262,14 +262,6 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 bool browser_window_redraw_ready(struct browser_window *bw);
 
 /**
- * Update the extent of the inside of a browser window to that of the current
- * content
- *
- * \param  bw	browser_window to update the extent of
- */
-void browser_window_update_extent(struct browser_window *bw);
-
-/**
  * Get the position of the current browser window with respect to the root or
  * parent browser window
  *

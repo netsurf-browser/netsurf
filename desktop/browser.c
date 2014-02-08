@@ -295,7 +295,7 @@ bool browser_window_redraw_ready(struct browser_window *bw)
 	return true;
 }
 
-/* exported interface, documented in browser.h */
+/* exported interface, documented in browser_private.h */
 void browser_window_update_extent(struct browser_window *bw)
 {
 	if (bw->window != NULL)
