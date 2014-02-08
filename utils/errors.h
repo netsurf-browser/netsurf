@@ -67,6 +67,8 @@ typedef enum {
 
 	NSERROR_BAD_URL,		/**< Bad URL */
 
+	NSERROR_BAD_CONTENT,		/**< Bad Content */
+
 	NSERROR_FRAME_DEPTH             /**< Exceeded frame depth */
 } nserror;
 

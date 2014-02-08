@@ -130,6 +130,18 @@ nserror browser_window_navigate(struct browser_window *bw,
 nsurl * browser_window_get_url(struct browser_window *bw);
 
 /**
+ * Get a browser window's content extents.
+ *
+ * \param bw	  browser window
+ * \param scaled  whether to apply current browser window scale
+ * \param width   updated to content width extent in px
+ * \param width   updated to content height extent in px
+ * \return NSERROR_OK, or appropriate error otherwise.
+ */
+nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
+		int *width, int *height);
+
+/**
  * Find out if a browser window is currently showing a content.
  *
  * \param bw	  browser window

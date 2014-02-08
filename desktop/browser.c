@@ -1957,6 +1957,30 @@ bool browser_window_has_content(struct browser_window *bw)
 }
 
 
+/* Exported interface, documented in browser.h */
+nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
+		int *width, int *height)
+{
+	assert(bw != NULL);
+
+	if (bw->current_content == NULL) {
+		*width = 0;
+		*height = 0;
+		return NSERROR_BAD_CONTENT;
+	}
+
+	*width = content_get_width(bw->current_content);
+	*height = content_get_height(bw->current_content);
+
+	if (scaled) {
+		*width *= bw->scale;
+		*height *= bw->scale;
+	}
+
+	return NSERROR_OK;
+}
+
+
 /*
  * Get the dimensions of the area a browser window occupies
  *
