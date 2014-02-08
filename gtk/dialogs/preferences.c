@@ -22,10 +22,9 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
-#include "content/hlcache.h"
 
 #include "gtk/compat.h"
 #include "gtk/window.h"
@@ -894,13 +893,7 @@ ENTRY_SIGNALS(entryHomePageURL, homepage_url)
 G_MODULE_EXPORT void
 nsgtk_preferences_setCurrentPage_clicked(GtkButton *button, struct ppref *priv)
 {
-	const gchar *url;
-
-	if (priv->bw != NULL) {
-		url = nsurl_access(hlcache_handle_get_url(priv->bw->current_content));
-	} else {
-		url = "about:blank";
-	}
+	const gchar *url = nsurl_access(browser_window_get_url(priv->bw));
 
 	if (priv->entryHomePageURL != NULL) {
 		gtk_entry_set_text(GTK_ENTRY(priv->entryHomePageURL), url);
