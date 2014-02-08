@@ -1175,9 +1175,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_convert_to_download(bw, event->data.download);
 
 		if (bw->current_content != NULL) {
-			browser_window_refresh_url_bar(bw,
-					hlcache_handle_get_url(bw->current_content),
-					bw->frag_id);
+			browser_window_refresh_url_bar(bw);
 		}
 		break;
 
@@ -1227,9 +1225,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		if (bw->window != NULL) {
 			guit->window->new_content(bw->window);
 
-			browser_window_refresh_url_bar(bw,
-				hlcache_handle_get_url(bw->current_content),
-				bw->frag_id);
+			browser_window_refresh_url_bar(bw);
 		}
 
 		/* new content; set scroll_to_top */
@@ -1697,6 +1693,70 @@ void browser_window_destroy(struct browser_window *bw)
 }
 
 
+/**
+ * Update URL bar for a given browser window to given URL
+ *
+ * \param bw	Browser window to update URL bar for.
+ * \param url	URL for content displayed by bw including any fragment.
+ */
+
+static inline void browser_window_refresh_url_bar_internal(
+		struct browser_window *bw, nsurl *url)
+{
+	assert(bw);
+	assert(url);
+
+	if (bw->parent != NULL) {
+		/* Not root window; don't set a URL in GUI URL bar */
+		return;
+	}
+
+	guit->window->set_url(bw->window, nsurl_access(url));
+}
+
+
+/**
+ * Update URL bar for a given browser window to bw's content's URL
+ *
+ * \param bw	Browser window to update URL bar for.
+ */
+
+void browser_window_refresh_url_bar(struct browser_window *bw)
+{
+	assert(bw);
+
+	if (bw->parent != NULL) {
+		/* Not root window; don't set a URL in GUI URL bar */
+		return;
+	}
+
+	if (bw->current_content == NULL) {
+		/* TODO: set "about:blank"? */
+		return;
+	}
+
+	if (bw->frag_id == NULL) {
+		browser_window_refresh_url_bar_internal(bw,
+				hlcache_handle_get_url(bw->current_content));
+	} else {
+		nsurl *display_url;
+		nserror error;
+
+		/* Combine URL and Fragment */
+		error = nsurl_refragment(
+				hlcache_handle_get_url(bw->current_content),
+				bw->frag_id, &display_url);
+		if (error != NSERROR_OK) {
+			warn_user("NoMemory", 0);
+			return;
+		}
+
+		browser_window_refresh_url_bar_internal(bw, display_url);
+		nsurl_unref(display_url);
+	}
+}
+
+
 /* exported interface documented in desktop/browser.h */
 nserror browser_window_navigate(struct browser_window *bw,
 			     nsurl *url,
@@ -1807,10 +1867,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 			browser_window_update(bw, false);
 
 			if (bw->current_content != NULL) {
-				browser_window_refresh_url_bar(bw,
-					hlcache_handle_get_url(
-							bw->current_content),
-					bw->frag_id);
+				browser_window_refresh_url_bar(bw);
 			}
 			return NSERROR_OK;
 		}
@@ -1842,7 +1899,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
-		browser_window_refresh_url_bar(bw, url, NULL);
+		browser_window_refresh_url_bar_internal(bw, url);
 		break;
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
@@ -2074,9 +2131,7 @@ void browser_window_stop(struct browser_window *bw)
 	}
 
 	if (bw->current_content != NULL) {
-		browser_window_refresh_url_bar(bw, 
-				hlcache_handle_get_url(bw->current_content),
-				bw->frag_id);
+		browser_window_refresh_url_bar(bw);
 	}
 
 	browser_window_stop_throbber(bw);
@@ -2311,46 +2366,6 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 float browser_window_get_scale(struct browser_window *bw)
 {
 	return bw->scale;
-}
-
-
-/**
- * Update URL bar for a given browser window to given URL
- *
- * \param bw	Browser window to update URL bar for.
- * \param url	URL for content displayed by bw, excluding any fragment.
- * \param frag	Additional fragment. May be NULL if none.
- */
-
-void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
-		lwc_string *frag)
-{
-	assert(bw);
-	assert(url);
-
-	if (bw->parent != NULL) {
-		/* Not root window; don't set a URL in GUI URL bar */
-		return;
-	}
-
-	if (frag == NULL) {
-		/* With no fragment, we may as well pass url straight through
-		 * saving a malloc, copy, free cycle.
-		 */
-		guit->window->set_url(bw->window, nsurl_access(url));
-	} else {
-		nsurl *display_url;
-		nserror error;
-
-		error = nsurl_refragment(url, frag, &display_url);
-		if (error != NSERROR_OK) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		guit->window->set_url(bw->window, nsurl_access(display_url));
-		nsurl_unref(display_url);
-	}
 }
 
 

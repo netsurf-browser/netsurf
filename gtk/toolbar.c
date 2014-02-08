@@ -429,14 +429,7 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 				current_content) != NULL))
 			browser_window_refresh_url_bar(
 					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list)),
-					hlcache_handle_get_url(
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list))->
-					current_content),
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list))->
-					frag_id);
+					nsgtk_scaffolding_top_level(list)));
 
 		if (list != g)
 			gtk_widget_set_sensitive(GTK_WIDGET(

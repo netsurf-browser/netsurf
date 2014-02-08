@@ -303,11 +303,7 @@ static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	nsgtk_scaffolding_set_sensitivity(g);
 
 	/* update the url bar, particularly necessary when tabbing */
-	if (bw->current_content != NULL &&
-			hlcache_handle_get_url(bw->current_content) != NULL)
-		browser_window_refresh_url_bar(bw,
-				hlcache_handle_get_url(bw->current_content),
-				bw->frag_id);
+	browser_window_refresh_url_bar(bw);
 
 	/* update the local history window, as well as queuing a redraw
 	 * for it.

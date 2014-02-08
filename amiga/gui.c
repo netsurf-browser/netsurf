@@ -2690,8 +2690,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 			gwin->bw->window->scrollx, gwin->bw->window->scrolly);
 		gwin->redraw_scroll = false;
 
-		browser_window_refresh_url_bar(gwin->bw,
-			hlcache_handle_get_url(gwin->bw->current_content), gwin->bw->frag_id);
+		browser_window_refresh_url_bar(gwin->bw);
 			
 		ami_gui_update_hotlist_button(gwin);
 	}
