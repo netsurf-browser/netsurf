@@ -129,6 +129,14 @@ nserror browser_window_navigate(struct browser_window *bw,
  */
 nsurl * browser_window_get_url(struct browser_window *bw);
 
+/**
+ * Find out if a browser window is currently showing a content.
+ *
+ * \param bw	  browser window
+ * \return true iff browser window is showing a content, else false.
+ */
+bool browser_window_has_content(struct browser_window *bw);
+
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
 void browser_window_set_dimensions(struct browser_window *bw,

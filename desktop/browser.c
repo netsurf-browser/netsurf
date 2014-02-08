@@ -1944,6 +1944,19 @@ nsurl * browser_window_get_url(struct browser_window *bw)
 }
 
 
+/* Exported interface, documented in browser.h */
+bool browser_window_has_content(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	if (bw->current_content == NULL) {
+		return false;
+	}
+
+	return true;
+}
+
+
 /*
  * Get the dimensions of the area a browser window occupies
  *
