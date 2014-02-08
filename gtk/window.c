@@ -944,9 +944,8 @@ static void gui_window_redraw_window(struct gui_window *g)
 static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
-	hlcache_handle *c = g->bw->current_content;
 
-	if (c == NULL)
+	if (g->bw->current_content == NULL)
 		return;
 
 	gui_window_get_scroll(g, &sx, &sy);
