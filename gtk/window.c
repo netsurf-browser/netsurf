@@ -992,12 +992,11 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 static void gui_window_update_extent(struct gui_window *g)
 {
-	if (!browser_window_has_content(g->bw))
-		return;
+	int w, h;
 
-	gtk_layout_set_size(g->layout,
-		content_get_width(g->bw->current_content) * g->bw->scale,
-		content_get_height(g->bw->current_content) * g->bw->scale);
+	if (browser_window_get_extents(g->bw, true, &w, &h) == NSERROR_OK) {
+		gtk_layout_set_size(g->layout, w, h);
+	}
 }
 
 static GdkCursor *nsgtk_create_menu_cursor(void)
