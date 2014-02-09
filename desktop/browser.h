@@ -64,15 +64,23 @@ extern bool browser_reformat_pending;
 
 /** flags to browser window go */
 enum browser_window_nav_flags {
-	BROWSER_WINDOW_NONE = 0,
+	/** No flags set */
+	BROWSER_WINDOW_NONE		= 0,
+
 	/** this will form a new history node (don't set for back/reload/etc) */
-	BROWSER_WINDOW_HISTORY = 1,
+	BROWSER_WINDOW_HISTORY		= (1 << 0),
+
 	/** download rather than render the uri */
-	BROWSER_WINDOW_DOWNLOAD = 2,
+	BROWSER_WINDOW_DOWNLOAD		= (1 << 1),
+
 	/** this transaction is verifiable */
-	BROWSER_WINDOW_VERIFIABLE = 4,
-	/** open a new tab rather than a new window */
-	BROWSER_WINDOW_TAB = 8,
+	BROWSER_WINDOW_VERIFIABLE	= (1 << 2),
+
+	/** New gui_window to be tab in same window as "existing" gui_window */
+	BROWSER_WINDOW_TAB		= (1 << 3),
+
+	/** New gui_window to be clone of "existing" gui_window */
+	BROWSER_WINDOW_CLONE		= (1 << 4)
 };
 
 void browser_window_initialise_common(struct browser_window *bw,
