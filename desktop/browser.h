@@ -83,9 +83,6 @@ enum browser_window_nav_flags {
 	BROWSER_WINDOW_CLONE		= (1 << 4)
 };
 
-void browser_window_initialise_common(struct browser_window *bw,
-		struct browser_window *clone);
-
 /**
  * Create and open a new root browser window with the given page.
  *

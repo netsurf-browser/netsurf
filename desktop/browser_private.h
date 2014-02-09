@@ -165,6 +165,9 @@ struct browser_window {
 
 
 
+void browser_window_initialise_common(struct browser_window *bw,
+		struct browser_window *clone);
+
 /**
  * Update the extent of the inside of a browser window to that of the current
  * content
