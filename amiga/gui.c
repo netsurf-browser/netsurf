@@ -3246,7 +3246,7 @@ gui_window_create(struct browser_window *bw,
 
 	if (!scrn) ami_openscreenfirst();
 
-	if (nsoption_bool(kiosk_mode)) (flags & GW_CREATE_TAB) = false;
+	if (nsoption_bool(kiosk_mode)) flags &= ~GW_CREATE_TAB;
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 	bw->scale = 1.0;
 
