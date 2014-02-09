@@ -3246,7 +3246,7 @@ gui_window_create(struct browser_window *bw,
 
 	if (!scrn) ami_openscreenfirst();
 
-	if (nsoption_bool(kiosk_mode)) new_tab = false;
+	if (nsoption_bool(kiosk_mode)) (flags & GW_CREATE_TAB) = false;
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 	bw->scale = 1.0;
 
@@ -3294,7 +3294,7 @@ gui_window_create(struct browser_window *bw,
 		}
 		else
 		{
-			struct Node *insert_after = clone->window->tab_node;
+			struct Node *insert_after = existing->tab_node;
 
 			if(existing->last_new_tab)
 				insert_after = existing->last_new_tab;
