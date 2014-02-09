@@ -70,7 +70,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	BrowserWindowController *window = nil;
 
 	if (existing != NULL) {
-		bw->scale = existing->bw->scale;
+		bw->scale = (float) nsoption_int(scale) / 100;
 		window = [(BrowserViewController *)(existing) windowController];
 	} else {
 		bw->scale = (float) nsoption_int(scale) / 100;	
