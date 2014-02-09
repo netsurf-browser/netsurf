@@ -89,8 +89,8 @@ monkey_kill_browser_windows(void)
 
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
   struct gui_window *ret = calloc(sizeof(*ret), 1);
   if (ret == NULL)
@@ -102,8 +102,9 @@ gui_window_create(struct browser_window *bw,
   ret->width = 800;
   ret->height = 600;
   
-  fprintf(stdout, "WINDOW NEW WIN %u FOR %p CLONE %p NEWTAB %s\n",
-          ret->win_num, bw, clone, new_tab ? "TRUE" : "FALSE");
+  fprintf(stdout, "WINDOW NEW WIN %u FOR %p EXISTING %p NEWTAB %s CLONE %s\n",
+          ret->win_num, bw, existing, flags & GW_CREATE_TAB ? "TRUE" : "FALSE",
+          flags & GW_CREATE_CLONE ? "TRUE" : "FALSE");
   fprintf(stdout, "WINDOW SIZE WIN %u WIDTH %d HEIGHT %d\n",
           ret->win_num, ret->width, ret->height);
   

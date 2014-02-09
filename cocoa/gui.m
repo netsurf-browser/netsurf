@@ -64,21 +64,21 @@ static void gui_poll(bool active)
 struct browser_window;
 
 static struct gui_window *gui_window_create(struct browser_window *bw,
-                                            struct browser_window *clone,
-                                            bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	BrowserWindowController *window = nil;
 
-	if (clone != NULL) {
+	if (existing != NULL) {
 		bw->scale = clone->scale;
-		window = [(BrowserViewController *)(clone->window) windowController];
+		window = [(BrowserViewController *)(existing) windowController];
 	} else {
 		bw->scale = (float) nsoption_int(scale) / 100;	
 	}
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
 
-	if (!new_tab || nil == window) {
+	if (!(flags & GW_CREATE_TAB) || nil == window) {
 		window = [[[BrowserWindowController alloc] init] autorelease];
 		[[window window] makeKeyAndOrderFront: nil];
 	}

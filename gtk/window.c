@@ -663,8 +663,8 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 /* Core interface documented in desktop/gui.h to create a gui_window */
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *g; /**< what we're creating to return */
 	GError* error = NULL;
@@ -693,16 +693,17 @@ gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (clone != NULL) {
-		bw->scale = clone->scale;
+	if (flags & GW_CREATE_CLONE) {
+		assert(existing != NULL);
+		bw->scale = existing->bw->scale;
 	} else {
 		bw->scale = nsoption_int(scale) / 100;
 	}
 
 	/* attach scaffold */
-	if (new_tab) {
-		assert(clone != NULL);
-		g->scaffold = clone->window->scaffold;
+	if (flags & GW_CREATE_TAB) {
+		assert(existing != NULL);
+		g->scaffold = existing->scaffold;
 	} else {
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);

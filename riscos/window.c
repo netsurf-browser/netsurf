@@ -152,8 +152,9 @@ static void ro_gui_window_update_theme(void *data, bool ok);
 
 static bool ro_gui_window_import_text(struct gui_window *g,
 		const char *filename);
-static void ro_gui_window_clone_options(struct browser_window *new_bw,
-		struct browser_window *old_bw);
+static void ro_gui_window_clone_options(
+		struct gui_window *new_gui,
+		struct gui_window *old_gui);
 
 static bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 		struct form_control *control);
@@ -400,14 +401,15 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 /**
  * Create and open a new browser window.
  *
- * \param bw The browser window structure to update
- * \param clone The browser window to clone options from, or NULL for default
- * \param new_tab Determines if new browser context should be a tab or window.
- * \return A gui window, or NULL on error and error reported
+ * \param bw		bw to create gui_window for
+ * \param existing	an existing gui_window, may be NULL
+ * \param flags		flags for gui window creation
+ * \return gui window, or NULL on error
  */
 
 static struct gui_window *gui_window_create(struct browser_window *bw,
-		struct browser_window *clone, bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;
 	static int window_count = 2;
@@ -416,7 +418,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	os_error *error;
 	bool open_centred = true;
 	struct gui_window *g;
-	struct browser_window *top;
 
 	g = malloc(sizeof *g);
 	if (!g) {
@@ -433,9 +434,10 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->iconise_icon = -1;
 
 	/* Set the window position */
-	if (clone && clone->window && nsoption_bool(window_size_clone)) {
-		for (top = clone; top->parent; top = top->parent);
-		state.w = top->window->window;
+	if (existing != NULL &&
+			flags & GW_CREATE_CLONE &&
+			nsoption_bool(window_size_clone)) {
+		state.w = existing->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -594,7 +596,8 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 
 	/* Set the window options */
 	bw->window = g;
-	ro_gui_window_clone_options(bw, clone);
+	bw->scale = ((float)nsoption_int(scale)) / 100;
+	ro_gui_window_clone_options(g, existing);
 	ro_gui_window_update_toolbar_buttons(g);
 
 	/* Open the window at the top of the stack */
@@ -4634,29 +4637,19 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 /**
  * Clones a browser window's options.
  *
- * \param  new_bw  the new browser window
- * \param  old_bw  the browser window to clone from, or NULL for default
+ * \param  new_gui  the new gui window
+ * \param  old_gui  the gui window to clone from, or NULL for default
  */
 
-void ro_gui_window_clone_options(struct browser_window *new_bw,
-		struct browser_window *old_bw)
+void ro_gui_window_clone_options(
+		struct gui_window *new_gui,
+		struct gui_window *old_gui)
 {
-	struct gui_window *old_gui = NULL;
-	struct gui_window *new_gui;
-
-	assert(new_bw);
-
-	/*	Get our GUIs
-	*/
-	new_gui = new_bw->window;
-
-	if (old_bw)
-		old_gui = old_bw->window;
+	assert(new_gui);
 
 	/*	Clone the basic options
 	*/
 	if (!old_gui) {
-		new_bw->scale = ((float)nsoption_int(scale)) / 100;
 		new_gui->option.buffer_animations = nsoption_bool(buffer_animations);
 		new_gui->option.buffer_everything = nsoption_bool(buffer_everything);
 	} else {

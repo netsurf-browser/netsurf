@@ -699,7 +699,6 @@ browser_window_create(enum browser_window_nav_flags flags,
 		      struct browser_window **ret_bw)
 {
 	struct browser_window *bw;
-	struct browser_window *top;
 
 	/* caller must provide window to clone or be adding to history */
 	assert(clone ||
@@ -730,9 +729,14 @@ browser_window_create(enum browser_window_nav_flags flags,
 	/* gui window */
 	/* from the front end's pov, it clones the top level browser window,
 	 * so find that. */
-	top = browser_window_get_root(clone);
+	clone = browser_window_get_root(clone);
 
-	bw->window = guit->window->create(bw, top, ((flags & BROWSER_WINDOW_TAB) != 0));
+	bw->window = guit->window->create(bw,
+			(clone != NULL) ? clone->window : NULL,
+			((flags & BROWSER_WINDOW_TAB) ?
+					GW_CREATE_TAB : GW_CREATE_NONE) |
+			((clone != NULL) ?
+					GW_CREATE_CLONE : GW_CREATE_NONE));
 
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
@@ -1941,6 +1945,15 @@ nsurl * browser_window_get_url(struct browser_window *bw)
 	}
 
 	return corestring_nsurl_about_blank;
+}
+
+
+/* Exported interface, documented in browser.h */
+struct history * browser_window_get_history(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	return bw->history;
 }
 
 

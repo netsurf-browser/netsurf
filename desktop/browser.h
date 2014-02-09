@@ -130,6 +130,16 @@ nserror browser_window_navigate(struct browser_window *bw,
 nsurl * browser_window_get_url(struct browser_window *bw);
 
 /**
+ * Get a browser window's history object.
+ *
+ * \param bw	  browser window
+ * \return pointer browser window's history object
+ *
+ * Clients need history object to make use of the history_* functions.
+ */
+struct history * browser_window_get_history(struct browser_window *bw);
+
+/**
  * Get a browser window's content extents.
  *
  * \param bw	  browser window

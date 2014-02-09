@@ -230,7 +230,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 int window_create(struct gui_window * gw,
                   struct browser_window * bw,
-                  struct browser_window * clone,
+                  struct gui_window * existing,
                   unsigned long inflags)
 {
     int err = 0;
@@ -294,8 +294,8 @@ int window_create(struct gui_window * gw,
     assert(gw->browser);
 
     gw->browser->bw = bw;
-    if(clone)
-        gw->browser->bw->scale = clone->scale;
+    if(existing)
+        gw->browser->bw->scale = existing->browser->bw->scale;
     else
         gw->browser->bw->scale = 1;
 

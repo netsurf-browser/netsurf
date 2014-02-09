@@ -1232,8 +1232,8 @@ static HWND nsws_window_create(struct gui_window *gw)
  */
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *gw;
 

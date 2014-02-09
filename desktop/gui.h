@@ -54,6 +54,12 @@ typedef enum {
 	GDRAGGING_OTHER
 } gui_drag_type;
 
+typedef enum {
+	GW_CREATE_NONE		= 0,		/* New window */
+	GW_CREATE_CLONE		= (1 << 0),	/* Clone existing window */
+	GW_CREATE_TAB		= (1 << 1)	/* In same window as existing */
+} gui_window_create_flags;
+
 struct gui_window;
 struct gui_download_window;
 struct browser_window;
@@ -77,8 +83,23 @@ struct gui_window_table {
 
 	/* Mandantory entries */
 
-	/** create a gui window for a browsing context */
-	struct gui_window *(*create)(struct browser_window *bw, struct browser_window *clone, bool new_tab);
+	/**
+	 * Create and open a gui window for a browsing context.
+	 *
+	 * \param bw		bw to create gui_window for
+	 * \param existing	an existing gui_window, may be NULL
+	 * \param flags		flags for gui window creation
+	 * \return gui window, or NULL on error
+	 *
+	 * If GW_CREATE_CLONE or GW_CREATE_TAB flags are set, existing is
+	 * non-NULL.
+	 *
+	 * Front end's gui_window must include a reference to the
+	 * browser window passed in the bw param.
+	 */
+	struct gui_window *(*create)(struct browser_window *bw,
+			struct gui_window *existing,
+			gui_window_create_flags flags);
 
 	/** destroy previously created gui window */
 	void (*destroy)(struct gui_window *g);

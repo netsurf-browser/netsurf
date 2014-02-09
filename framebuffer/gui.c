@@ -1507,8 +1507,8 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *gw;
 
@@ -1517,8 +1517,7 @@ gui_window_create(struct browser_window *bw,
 	if (gw == NULL)
 		return NULL;
 
-	/* seems we need to associate the gui window with the underlying
-	 * browser window
+	/* associate the gui window with the underlying browser window
 	 */
 	gw->bw = bw;
 

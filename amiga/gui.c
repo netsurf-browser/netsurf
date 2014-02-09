@@ -3225,8 +3225,8 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *g = NULL;
 	bool closegadg=TRUE;
@@ -3250,15 +3250,12 @@ gui_window_create(struct browser_window *bw,
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 	bw->scale = 1.0;
 
-	if(clone)
+	if(existing)
 	{
-		if(clone->window)
-		{
-			curx=clone->window->shared->win->LeftEdge;
-			cury=clone->window->shared->win->TopEdge;
-			curw=clone->window->shared->win->Width;
-			curh=clone->window->shared->win->Height;
-		}
+		curx=existing->shared->win->LeftEdge;
+		cury=existing->shared->win->TopEdge;
+		curw=existing->shared->win->Width;
+		curh=existing->shared->win->Height;
 	}
 
 	g = AllocVecTags(sizeof(struct gui_window), AVT_ClearWithValue, 0, TAG_DONE);
@@ -3272,9 +3269,9 @@ gui_window_create(struct browser_window *bw,
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
 
-	if(new_tab && clone)
+	if((flags & GW_CREATE_TAB) && existing)
 	{
-		g->shared = clone->window->shared;
+		g->shared = existing->shared;
 		g->tab = g->shared->next_tab;
 
 		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
@@ -3299,10 +3296,10 @@ gui_window_create(struct browser_window *bw,
 		{
 			struct Node *insert_after = clone->window->tab_node;
 
-			if(clone->window->last_new_tab)
-				insert_after = clone->window->last_new_tab;
+			if(existing->last_new_tab)
+				insert_after = existing->last_new_tab;
 			Insert(&g->shared->tab_list, g->tab_node, insert_after);
-			clone->window->last_new_tab = g->tab_node;
+			existing->last_new_tab = g->tab_node;
 		}
 
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],

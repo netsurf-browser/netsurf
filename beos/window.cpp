@@ -337,8 +337,8 @@ float nsbeos_get_scale_for_gui(struct gui_window *g)
 
 /* Create a gui_window */
 static struct gui_window *gui_window_create(struct browser_window *bw,
-                                     struct browser_window *clone,
-                                     bool new_tab)
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *g;		/**< what we're creating to return */
 
@@ -353,8 +353,8 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (clone != NULL)
-		bw->scale = clone->scale;
+	if (existing != NULL)
+		bw->scale = existing->bw->scale;
 	else
 		bw->scale = (float) nsoption_int(scale) / 100;
 

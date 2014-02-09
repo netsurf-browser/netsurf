@@ -211,11 +211,11 @@ static void gui_poll(bool active)
 
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
-		  struct browser_window *clone,
-		  bool new_tab) {
+		struct gui_window *existing,
+		gui_window_create_flags flags) {
     struct gui_window *gw=NULL;
-    LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone,
-          (int)new_tab
+    LOG(( "gw: %p, BW: %p, existing %p, flags: %d\n" , gw,  bw, existing,
+          (int)flags
         ));
 
     gw = calloc(1, sizeof(struct gui_window));
@@ -223,7 +223,7 @@ gui_window_create(struct browser_window *bw,
         return NULL;
 
     LOG(("new window: %p, bw: %p\n", gw, bw));
-    window_create(gw, bw, clone, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
+    window_create(gw, bw, existing, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
                   |WIDGET_SCROLL);
     if (gw->root->win) {
         GRECT pos = {
