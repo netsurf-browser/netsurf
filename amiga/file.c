@@ -22,6 +22,7 @@
 #include "amiga/filetype.h"
 #include "amiga/icon.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/misc.h"
 #include "amiga/save_pdf.h"
 #include "amiga/theme.h"
 
