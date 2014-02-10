@@ -2819,6 +2819,7 @@ static void gui_quit(void)
 	ami_free_layers(&browserglob);
 
 	ami_close_fonts();
+	ami_help_free();
 	
 	LOG(("Closing screen"));
 	ami_gui_close_screen(scrn, locked_screen, FALSE);
@@ -2836,9 +2837,7 @@ static void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
-	ami_help_free();
 	ami_file_req_free();
-
 	ami_openurl_close();
 	FreeStringClass(urlStringClass);
 
