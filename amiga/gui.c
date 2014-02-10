@@ -2635,17 +2635,14 @@ void ami_quit_netsurf(void)
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 
-	if(!IsMinListEmpty(window_list))
-	{
+	if(!IsMinListEmpty(window_list)) {
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
-		do
-		{
+		do {
 			nnode=(struct nsObject *)GetSucc((struct Node *)node);
 			gwin = node->objstruct;
 
-			switch(node->Type)
-			{
+			switch(node->Type) {
 				case AMINS_TVWINDOW:
 					ami_tree_close((struct treeview_window *)gwin);
 				break;
@@ -2658,15 +2655,17 @@ void ami_quit_netsurf(void)
 				case AMINS_GUIOPTSWINDOW:
 					ami_gui_opts_close();
 				break;
-			}
 
+				case AMINS_DLWINDOW:
+					ami_download_window_abort((struct gui_download_window *)gwin);
+				break;
+			}
 		} while(node = nnode);
 
 		win_destroyed = true;
 	}
 
-	if(IsMinListEmpty(window_list))
-	{
+	if(IsMinListEmpty(window_list)) {
 		/* last window closed, so exit */
 		netsurf_quit = true;
 	}
