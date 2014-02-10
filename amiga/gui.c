@@ -2759,7 +2759,11 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 {
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn) == TRUE) {
-		if(locked_screen == FALSE) scrn = NULL;
+		if(locked_screen == FALSE) {
+			FreeSignal(screen_signal);
+			screen_signal = NULL;
+			scrn = NULL;
+		}
 		return;
 	}
 	if(locked_screen == TRUE) return;
