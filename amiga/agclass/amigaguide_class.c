@@ -362,7 +362,7 @@ uint32 agm_process(Class *cl, Object *o, Msg msg)
 		while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) ) {
 			switch(lod->agm->agm_Type) {
 				default:
-					printf("%d\n", lod->agm->agm_Type);
+					//printf("%d\n", lod->agm->agm_Type);
 				break;
 			}
 		}

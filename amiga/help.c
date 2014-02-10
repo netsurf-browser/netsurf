@@ -78,6 +78,6 @@ ULONG ami_help_signal(void)
 void ami_help_process(void)
 {
 	ULONG ret = IDoMethod(AmigaGuideObject, AGM_PROCESS, NULL);
-	printf("ret = %d\n", ret); // should be NULL if closed
+	//printf("ret = %d\n", ret); // should be NULL if closed
 }
 
