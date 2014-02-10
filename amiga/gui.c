@@ -163,6 +163,7 @@ Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
+ULONG screen_signal = -1;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
@@ -763,11 +764,15 @@ void ami_openscreen(void)
 			}
 		}
 
+		screen_signal = AllocSignal(-1);
+		LOG(("Screen signal %d", screen_signal));
 		scrn = OpenScreenTags(NULL,
 					SA_DisplayID, id,
 					SA_Title, nsscreentitle,
 					SA_Type, PUBLICSCREEN,
 					SA_PubName, "NetSurf",
+					SA_PubSig, screen_signal,
+					SA_PubTask, FindTask(0),
 					SA_LikeWorkbench, TRUE,
 					SA_Compositing, compositing,
 					TAG_DONE);
@@ -2686,20 +2691,6 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	}
 }
 
-void ami_try_quit(void)
-{
-	if(nsoption_bool(close_no_quit) == false)
-	{
-		netsurf_quit = true;
-		return;
-	}
-	else
-	{
-		if(locked_screen == FALSE)
-			if(CloseScreen(scrn)) scrn = NULL;
-	}
-}
-
 void ami_quit_netsurf(void)
 {
 	struct nsObject *node;
@@ -2767,16 +2758,16 @@ void ami_quit_netsurf_delayed(void)
 
 void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 {
-	ULONG screen_signal = -1;
-
 	if(scrn == NULL) return;
-	if(CloseScreen(scrn)) return;
+	if(CloseScreen(scrn) == TRUE) {
+		if(locked_screen == FALSE) scrn = NULL;
+		return;
+	}
 	if(locked_screen == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
-	if((screen_signal = AllocSignal(-1)) != -1) {
+	if(screen_signal != -1) {
 		ULONG scrnsig = 1 << screen_signal;
-		SetScreenAttr(scrn, SA_PubSig, (APTR)screen_signal, sizeof(ULONG));
 		LOG(("Waiting for visitor windows to close... (signal)"));
 		Wait(scrnsig);
 	}
@@ -2787,6 +2778,20 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	}
 
 	FreeSignal(screen_signal);
+	scrn = NULL;
+}
+
+void ami_try_quit(void)
+{
+	if(nsoption_bool(close_no_quit) == false)
+	{
+		netsurf_quit = true;
+		return;
+	}
+	else
+	{
+		ami_gui_close_screen(scrn, locked_screen);
+	}
 }
 
 static void gui_quit(void)
