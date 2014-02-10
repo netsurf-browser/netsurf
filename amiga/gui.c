@@ -2792,6 +2792,8 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwai
 
 void ami_try_quit(void)
 {
+	if(!IsMinListEmpty(window_list)) return;
+
 	if(nsoption_bool(close_no_quit) == false)
 	{
 		netsurf_quit = true;

@@ -153,6 +153,7 @@ struct gui_window
 
 void ami_get_msg(void);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
+void ami_try_quit(void);
 void ami_quit_netsurf(void);
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
 STRPTR ami_locale_langs(void);

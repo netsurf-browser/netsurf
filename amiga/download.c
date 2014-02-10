@@ -282,6 +282,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 			nsurl_unref(url);
 		}
 	}
+	ami_try_quit(); /* In case the only window open was this download */
 }
 
 static void gui_download_window_error(struct gui_download_window *dw,
