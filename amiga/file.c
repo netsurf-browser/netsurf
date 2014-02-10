@@ -103,8 +103,8 @@ void ami_file_open(struct gui_window_2 *gwin)
 				browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

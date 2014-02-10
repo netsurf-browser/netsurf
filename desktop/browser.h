@@ -62,42 +62,53 @@ typedef enum {
 
 extern bool browser_reformat_pending;
 
-/** flags to browser window go */
-enum browser_window_nav_flags {
+/** flags to browser_window_create */
+enum browser_window_create_flags {
 	/** No flags set */
-	BROWSER_WINDOW_NONE		= 0,
+	BW_CREATE_NONE			= 0,
 
 	/** this will form a new history node (don't set for back/reload/etc) */
-	BROWSER_WINDOW_HISTORY		= (1 << 0),
-
-	/** download rather than render the uri */
-	BROWSER_WINDOW_DOWNLOAD		= (1 << 1),
-
-	/** this transaction is verifiable */
-	BROWSER_WINDOW_VERIFIABLE	= (1 << 2),
+	BW_CREATE_HISTORY		= (1 << 0),
 
 	/** New gui_window to be tab in same window as "existing" gui_window */
-	BROWSER_WINDOW_TAB		= (1 << 3),
+	BW_CREATE_TAB			= (1 << 1),
 
 	/** New gui_window to be clone of "existing" gui_window */
-	BROWSER_WINDOW_CLONE		= (1 << 4)
+	BW_CREATE_CLONE			= (1 << 2),
+
+	/** Window not opened by user interaction (e.g. JS popup) */
+	BW_CREATE_UNVERIFIABLE		= (1 << 3),
+};
+
+/** flags to browser_window_navigate  */
+enum browser_window_nav_flags {
+	/** No flags set */
+	BW_NAVIGATE_NONE		= 0,
+
+	/** this will form a new history node (don't set for back/reload/etc) */
+	BW_NAVIGATE_HISTORY		= (1 << 0),
+
+	/** download rather than render the uri */
+	BW_NAVIGATE_DOWNLOAD		= (1 << 1),
+
+	/** this transaction is verifiable */
+	BW_NAVIGATE_VERIFIABLE		= (1 << 2)
 };
 
 /**
  * Create and open a new root browser window with the given page.
  *
- * \param flags Flags to control operation
- * \param url URL to start fetching in the new window or NULL for blank
- * \param referer The referring uri or NULL if none
- * \param clone The browser window to clone
- * \param bw pointer to created browser window or untouched on error.
- * \return error code
+ * \param flags		Flags to control operation
+ * \param url		URL to fetch in the new window or NULL for blank
+ * \param referer	The referring uri or NULL if none
+ * \param existing	The an existing bw or NULL, required for some flags.
+ * \param bw		Updated to created browser window or untouched on error.
+ * \return NSERROR_OK, or appropriate error otherwise.
  */
-nserror browser_window_create(enum browser_window_nav_flags flags,
-			      nsurl *url,
-			      nsurl *referrer,
-			      struct browser_window *clone,
-			      struct browser_window **bw);
+nserror browser_window_create(enum browser_window_create_flags flags,
+		nsurl *url, nsurl *referrer,
+		struct browser_window *existing,
+		struct browser_window **bw);
 
 /**
  * Start fetching a page in a browser window.

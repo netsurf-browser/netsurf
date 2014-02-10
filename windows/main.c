@@ -189,8 +189,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

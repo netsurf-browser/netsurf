@@ -170,8 +170,7 @@ void atari_about_show(void)
 	if (goto_url != NULL) {
 		nserr = nsurl_create(goto_url, &url);
 		if (nserr == NSERROR_OK) {
-			nserr = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				    BROWSER_WINDOW_HISTORY,
+			nserr = browser_window_create(BW_CREATE_HISTORY,
 				    url,
 				    NULL,
 				    NULL,

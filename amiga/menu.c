@@ -698,8 +698,7 @@ static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct 
 
 	error = nsurl_create(nsoption_charp(homepage_url), &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -811,8 +810,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 	if(url) {
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							  BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 							  url,
 							  NULL,
 							  NULL,
@@ -1036,8 +1034,8 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 	browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

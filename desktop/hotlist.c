@@ -472,23 +472,22 @@ static nserror hotlist_tree_node_entry_cb(
 	case TREE_MSG_NODE_LAUNCH:
 	{
 		nserror error;
-		struct browser_window *clone = NULL;
-		enum browser_window_nav_flags flags =
-				BROWSER_WINDOW_VERIFIABLE |
-				BROWSER_WINDOW_HISTORY |
-				BROWSER_WINDOW_TAB;
+		struct browser_window *existing = NULL;
+		enum browser_window_create_flags flags =
+				BW_CREATE_HISTORY;
 
-		/* TODO: Set clone window, to window that new tab appears in */
+		/* TODO: Set existing to window that new tab appears in */
 
 		if (msg.data.node_launch.mouse &
 				(BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2) ||
-				clone == NULL) {
+				existing == NULL) {
 			/* Shift or Ctrl launch, open in new window rather
 			 * than tab. */
-			flags ^= BROWSER_WINDOW_TAB;
+			/* TODO: flags ^= BW_CREATE_TAB; */
 		}
 
-		error = browser_window_create(flags, e->url, NULL, clone, NULL);
+		error = browser_window_create(flags, e->url, NULL,
+				existing, NULL);
 		if (error != NSERROR_OK) {
 			warn_user(messages_get_errorcode(error), 0);
 		}

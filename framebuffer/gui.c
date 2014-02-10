@@ -1097,8 +1097,8 @@ fb_url_enter(void *pw, char *text)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1874,8 +1874,7 @@ main(int argc, char** argv)
 
 	ret = nsurl_create(feurl, &url);
 	if (ret == NSERROR_OK) {
-		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		ret = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

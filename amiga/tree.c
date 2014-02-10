@@ -322,8 +322,8 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 				browser_window_navigate(gwin->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);

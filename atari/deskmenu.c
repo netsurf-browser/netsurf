@@ -170,8 +170,7 @@ static void __CDECL menu_about(short item, short title, void *data)
 
 	error = nsurl_create(buf, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -202,8 +201,7 @@ static void __CDECL menu_new_win(short item, short title, void *data)
 	/* create an initial browser window */
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -224,8 +222,7 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 
 	gw = input_window;
 	if( gw == NULL ) {
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				      BROWSER_WINDOW_HISTORY,
+		browser_window_create(BW_CREATE_HISTORY,
 				      NULL,
 				      NULL,
 				      NULL,
@@ -256,8 +253,7 @@ static void __CDECL menu_open_file(short item, short title, void *data)
 
 			error = nsurl_create(urltxt, &url);
 			if (error == NSERROR_OK) {
-				error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							      BROWSER_WINDOW_HISTORY,
+				error = browser_window_create(BW_CREATE_HISTORY,
 							      url,
 							      NULL,
 							      NULL,

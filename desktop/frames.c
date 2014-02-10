@@ -209,7 +209,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 
 		/* Initialise common parts */
-		browser_window_initialise_common(window, NULL);
+		browser_window_initialise_common(BW_CREATE_NONE,
+				window, NULL);
 
 		/* window characteristics */
 		window->browser_window_type = BROWSER_WINDOW_IFRAME;
@@ -251,7 +252,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 			browser_window_navigate(window, 
 				cur->url,
 				hlcache_handle_get_url(bw->current_content),
-				BROWSER_WINDOW_NONE,
+				BW_NAVIGATE_NONE,
 				NULL,
 				NULL,
 				bw->current_content);
@@ -314,7 +315,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 			window = &bw->children[index];
 
 			/* Initialise common parts */
-			browser_window_initialise_common(window, NULL);
+			browser_window_initialise_common(BW_CREATE_NONE,
+					window, NULL);
 
 			/* window characteristics */
 			if (frame->children)
@@ -387,7 +389,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 				browser_window_navigate(window,
 					frame->url,
 					hlcache_handle_get_url(parent),
-					BROWSER_WINDOW_HISTORY,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					parent);

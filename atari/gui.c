@@ -1172,8 +1172,7 @@ int main(int argc, char** argv)
     /* create an initial browser window */
     ret = nsurl_create(addr, &url);
     if (ret == NSERROR_OK) {
-	ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				    BROWSER_WINDOW_HISTORY,
+	ret = browser_window_create(BW_CREATE_HISTORY,
 				    url,
 				    NULL,
 				    NULL,

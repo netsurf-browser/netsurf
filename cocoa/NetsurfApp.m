@@ -231,8 +231,7 @@ int main( int argc, char **argv )
 
                 error = nsurl_create(argv[i], &url);
                 if (error == NSERROR_OK) {
-                        error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-                                                      BROWSER_WINDOW_HISTORY,
+                        error = browser_window_create(BW_CREATE_HISTORY,
                                                       url,
                                                       NULL,
                                                       NULL,

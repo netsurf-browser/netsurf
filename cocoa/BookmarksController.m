@@ -142,14 +142,13 @@ static const char *cocoa_hotlist_path( void )
                         error = browser_window_navigate([tab browser],
                                                 url,
                                                 NULL,
-                                                BROWSER_WINDOW_HISTORY |
-                                                BROWSER_WINDOW_VERIFIABLE,
+                                                BW_NAVIGATE_HISTORY |
+                                                BW_NAVIGATE_VERIFIABLE,
                                                 NULL,
                                                 NULL,
                                                 NULL);
                 } else {
-                        error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+                        error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

@@ -133,8 +133,8 @@ nsws_window_go(HWND hwnd, const char *urltxt)
 		browser_window_navigate(gw->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -762,7 +762,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_FILE_OPEN_WINDOW:
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+		browser_window_create(BW_CREATE_NONE,
 				      NULL,
 				      NULL,
 				      gw->bw,
@@ -876,8 +876,8 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -1045,8 +1045,8 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);

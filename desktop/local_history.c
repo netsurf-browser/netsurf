@@ -150,6 +150,8 @@ struct history *history_clone(struct history *history,
 		return 0;
 	}
 
+	new_history->bw = bw;
+
 	return new_history;
 }
 
@@ -455,13 +457,13 @@ void history_go(struct history *history, struct history_entry *entry,
 		current = history->current;
 		history->current = entry;
 
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+		browser_window_create(BW_CREATE_CLONE,
 				url, NULL, history->bw, NULL);
 		history->current = current;
 	} else {
 		history->current = entry;
 		browser_window_navigate(history->bw, url, NULL,
-				BROWSER_WINDOW_VERIFIABLE, NULL, NULL, NULL);
+				BW_NAVIGATE_VERIFIABLE, NULL, NULL, NULL);
 	}
 
 	nsurl_unref(url);

@@ -690,66 +690,81 @@ static bool slow_script(void *ctx)
 }
 
 /* exported interface, documented in desktop/browser.h */
-
-nserror
-browser_window_create(enum browser_window_nav_flags flags,
-		      nsurl *url,
-		      nsurl *referrer,
-		      struct browser_window *clone,
-		      struct browser_window **ret_bw)
+nserror browser_window_create(enum browser_window_create_flags flags,
+		nsurl *url, nsurl *referrer,
+		struct browser_window *existing,
+		struct browser_window **bw)
 {
-	struct browser_window *bw;
+	gui_window_create_flags gw_flags = GW_CREATE_NONE;
+	struct browser_window *ret;
 
-	/* caller must provide window to clone or be adding to history */
-	assert(clone ||
-	       ((flags & BROWSER_WINDOW_HISTORY) != 0));
+	/* Check parameters */
+	if (flags & (BW_CREATE_TAB | BW_CREATE_CLONE)) {
+		if (existing == NULL) {
+			assert(0 && "Failed: No existing window provided.");
+			return NSERROR_BAD_PARAMETER;
+		}
+	}
+	if (!(flags & BW_CREATE_HISTORY)) {
+		if (!(flags & BW_CREATE_CLONE) || existing == NULL) {
+			assert(0 && "Failed: Must have existing for history.");
+			return NSERROR_BAD_PARAMETER;
+		}
+	}
 
 
-	if ((bw = calloc(1, sizeof(struct browser_window))) == NULL) {
+	if ((ret = calloc(1, sizeof(struct browser_window))) == NULL) {
 		warn_user("NoMemory", 0);
 		return NSERROR_NOMEM;
 	}
 
 	/* new javascript context for window */
-	bw->jsctx = js_newcontext(nsoption_int(script_timeout),
+	ret->jsctx = js_newcontext(nsoption_int(script_timeout),
 				  slow_script,
 				  NULL);
 
 	/* Initialise common parts */
-	browser_window_initialise_common(bw, clone);
+	browser_window_initialise_common(flags, ret, existing);
 
 	/* window characteristics */
-	bw->browser_window_type = BROWSER_WINDOW_NORMAL;
-	bw->scrolling = SCROLLING_YES;
-	bw->border = true;
-	bw->no_resize = true;
-	bw->last_action = wallclock();
-	bw->focus = bw;
+	ret->browser_window_type = BROWSER_WINDOW_NORMAL;
+	ret->scrolling = SCROLLING_YES;
+	ret->border = true;
+	ret->no_resize = true;
+	ret->last_action = wallclock();
+	ret->focus = ret;
 
-	/* gui window */
-	/* from the front end's pov, it clones the top level browser window,
-	 * so find that. */
-	clone = browser_window_get_root(clone);
+	/* The existing gui_window is on the top-level existing
+	 * browser_window. */
+	existing = browser_window_get_root(existing);
 
-	bw->window = guit->window->create(bw,
-			(clone != NULL) ? clone->window : NULL,
-			((flags & BROWSER_WINDOW_TAB) ?
-					GW_CREATE_TAB : GW_CREATE_NONE) |
-			((clone != NULL) ?
-					GW_CREATE_CLONE : GW_CREATE_NONE));
+	/* Set up gui_window creation flags */
+	if (flags & BW_CREATE_TAB)
+		gw_flags |= GW_CREATE_TAB;
+	if (flags & BW_CREATE_CLONE)
+		gw_flags |= GW_CREATE_CLONE;
 
-	if (bw->window == NULL) {
-		browser_window_destroy(bw);
+	ret->window = guit->window->create(ret,
+			(existing != NULL) ? existing->window : NULL,
+			gw_flags);
+
+	if (ret->window == NULL) {
+		browser_window_destroy(ret);
 		return NSERROR_BAD_PARAMETER;
 	}
 
 	if (url != NULL) {
-		flags |= BROWSER_WINDOW_VERIFIABLE;
-		browser_window_navigate(bw, url, referrer, flags, NULL, NULL, NULL);
+		enum browser_window_nav_flags nav_flags = BW_NAVIGATE_NONE;
+		if (!(flags & BW_CREATE_UNVERIFIABLE))
+			nav_flags |= BW_NAVIGATE_VERIFIABLE;
+		if (flags & BW_CREATE_HISTORY)
+			nav_flags |= BW_NAVIGATE_HISTORY;
+		browser_window_navigate(ret, url, referrer, nav_flags, NULL,
+				NULL, NULL);
 	}
 
-	if (ret_bw != NULL) {
-		*ret_bw = bw;
+	if (bw != NULL) {
+		*bw = ret;
 	}
 
 	return NSERROR_OK;
@@ -759,18 +774,21 @@ browser_window_create(enum browser_window_nav_flags flags,
 /**
  * Initialise common parts of a browser window
  *
- * \param bw     The window to initialise
- * \param clone  The window to clone, or NULL if none
+ * \param flags     Flags to control operation
+ * \param bw        The window to initialise
+ * \param existing  The existing window if cloning, else NULL
  */
-void browser_window_initialise_common(struct browser_window *bw,
-		struct browser_window *clone)
+void browser_window_initialise_common(enum browser_window_create_flags flags,
+		struct browser_window *bw, struct browser_window *existing)
 {
 	assert(bw);
 
-	if (!clone)
+	if (flags & BW_CREATE_CLONE) {
+		assert(existing != NULL);
+		bw->history = history_clone(existing->history, bw);
+	} else {
 		bw->history = history_create(bw);
-	else
-		bw->history = history_clone(clone->history, bw);
+	}
 
 	/* window characteristics */
 	bw->refresh_interval = -1;
@@ -1091,7 +1109,7 @@ static void browser_window_refresh(void *p)
 	nsurl *url;
 	nsurl *refresh;
 	hlcache_handle *parent = NULL;
-	enum browser_window_nav_flags flags = BROWSER_WINDOW_NONE;
+	enum browser_window_nav_flags flags = BW_NAVIGATE_NONE;
 
 	assert(bw->current_content != NULL &&
 		(content_get_status(bw->current_content) == 
@@ -1110,7 +1128,7 @@ static void browser_window_refresh(void *p)
 
 	url = hlcache_handle_get_url(bw->current_content);
 	if ((url == NULL) || (nsurl_compare(url, refresh, NSURL_COMPLETE))) {
-		flags |= BROWSER_WINDOW_HISTORY;
+		flags |= BW_NAVIGATE_HISTORY;
 	}
 
 	/* Treat an (almost) immediate refresh in a top-level browser window as
@@ -1121,7 +1139,7 @@ static void browser_window_refresh(void *p)
 	 * all.
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		flags |= BROWSER_WINDOW_VERIFIABLE;
+		flags |= BW_NAVIGATE_VERIFIABLE;
 	} else {
 		parent = bw->current_content;
 	}
@@ -1794,7 +1812,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Set up retrieval parameters */
-	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
+	if ((flags & BW_NAVIGATE_VERIFIABLE) != 0) {
 		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
 	}
 
@@ -1818,7 +1836,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Get download out of the way */
-	if ((flags & BROWSER_WINDOW_DOWNLOAD) != 0) {
+	if ((flags & BW_NAVIGATE_DOWNLOAD) != 0) {
 		error = browser_window_download(bw, 
 						url, 
 						referrer, 
@@ -1863,7 +1881,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 				nsurl_unref(referrer);
 			}
 
-			if ((flags & BROWSER_WINDOW_HISTORY) != 0) {
+			if ((flags & BW_NAVIGATE_HISTORY) != 0) {
 				history_add(bw->history, 
 					    bw->current_content, bw->frag_id);
 			}
@@ -1884,10 +1902,10 @@ nserror browser_window_navigate(struct browser_window *bw,
 	LOG(("Loading '%s'", nsurl_access(url)));
 
 	browser_window_set_status(bw, messages_get("Loading"));
-	bw->history_add = (flags & BROWSER_WINDOW_HISTORY);
+	bw->history_add = (flags & BW_NAVIGATE_HISTORY);
 
 	/* Verifiable fetches may trigger a download */
-	if ((flags & BROWSER_WINDOW_VERIFIABLE) != 0) {
+	if ((flags & BW_NAVIGATE_VERIFIABLE) != 0) {
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
 	}
 
@@ -2250,7 +2268,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	browser_window_navigate(bw,
 				hlcache_handle_get_url(bw->current_content),
 				NULL,
-				BROWSER_WINDOW_VERIFIABLE,
+				BW_NAVIGATE_VERIFIABLE,
 				NULL,
 				NULL,
 				NULL);
@@ -2536,8 +2554,9 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * OR
 		 * - button_2 opens in new tab and the link target is "_blank"
 		 */
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_TAB,
+		error = browser_window_create(BW_CREATE_TAB |
+					      BW_CREATE_HISTORY |
+					      BW_CREATE_CLONE,
 					      NULL,
 					      NULL,
 					      bw,
@@ -2563,7 +2582,8 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		 * - button_2 doesn't open in new tabs and the link target is
 		 *   "_blank"
 		 */
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+		error = browser_window_create(BW_CREATE_HISTORY |
+					      BW_CREATE_CLONE,
 					      NULL,
 					      NULL,
 					      bw,
@@ -2602,7 +2622,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if (!nsoption_bool(target_blank))
 		return bw;
 
-	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+	error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 				      NULL,
 				      NULL,
 				      bw,

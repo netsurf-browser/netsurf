@@ -135,8 +135,7 @@ bool ro_gui_iconbar_click(wimp_pointer *pointer)
 
 		/* create an initial browser window */
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -206,9 +205,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_CONTENTS:
 		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(
-					BROWSER_WINDOW_VERIFIABLE |
-					BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 					url,
 					NULL,
 					NULL,

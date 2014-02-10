@@ -581,9 +581,9 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 	error = nsurl_create([[sender representedObject] UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-                                              BROWSER_WINDOW_TAB,
+		error = browser_window_create(BW_CREATE_HISTORY |
+                                              BW_CREATE_TAB |
+                                              BW_CREATE_CLONE,
 					      url,
 					      NULL,
 					      browser,
@@ -602,8 +602,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 	error = nsurl_create([[sender representedObject] UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY |
+                                              BW_CREATE_CLONE,
 					      url,
 					      NULL,
 					      browser,
@@ -623,8 +623,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                 browser_window_navigate(browser,
                                         url,
                                         NULL,
-                                        BROWSER_WINDOW_DOWNLOAD |
-                                        BROWSER_WINDOW_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD |
+                                        BW_NAVIGATE_VERIFIABLE,
                                         NULL,
                                         NULL,
                                         NULL);
@@ -688,8 +688,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		browser_window_navigate(browser,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD |
+                                        BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);

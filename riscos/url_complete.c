@@ -734,8 +734,8 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		browser_window_navigate(g->bw,
 			url_complete_matches[url_complete_matches_selection],
 			NULL,
-			BROWSER_WINDOW_HISTORY |
-			BROWSER_WINDOW_VERIFIABLE,
+			BW_NAVIGATE_HISTORY |
+			BW_NAVIGATE_VERIFIABLE,
 			NULL,
 			NULL,
 			NULL);

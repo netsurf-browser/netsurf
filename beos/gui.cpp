@@ -645,7 +645,7 @@ static void gui_init(int argc, char** argv)
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
 		error = browser_window_create((browser_window_nav_flags)
-			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
+			BW_CREATE_HISTORY,
 			url,
 			NULL,
 			NULL,

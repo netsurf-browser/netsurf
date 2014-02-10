@@ -888,10 +888,10 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 					if (/*message->WasDropped() &&*/ i == 0) {
 						browser_window_navigate(bw, nsurl, NULL,
 							(browser_window_nav_flags)
-							(BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE),
+							(BW_NAVIGATE_HISTORY | BW_NAVIGATE_VERIFIABLE),
 							NULL, NULL, NULL);
 					} else {
-						error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+						error = browser_window_create(BW_CREATE_CLONE,
 								nsurl,
 								NULL,
 								bw,
@@ -915,7 +915,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			for (i = 1; message->FindString("argv", i, &urltxt) >= B_OK; i++) {
                                 error = nsurl_create(urltxt.String(), &url);
                                 if (error == NSERROR_OK) {
-                                        error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+                                        error = browser_window_create(BW_CREATE_CLONE,
                                                                       url,
                                                                       NULL,
                                                                       bw,
@@ -949,8 +949,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				browser_window_navigate(bw,
 						nsurl,
 						NULL,
-						(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE),
+						(browser_window_nav_flags)(BW_NAVIGATE_HISTORY),
 						NULL,
 						NULL,
 						NULL);
@@ -1020,8 +1019,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				browser_window_navigate(bw,
 					url,
 					NULL,
-					(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE),
+					(browser_window_nav_flags)(BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE),
 					NULL,
 					NULL,
 					NULL);
@@ -1049,8 +1048,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
                                 browser_window_navigate(bw,
 					url,
 					NULL,
-					(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE),
+					(browser_window_nav_flags)(BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE),
 					NULL,
 					NULL,
 					NULL);
@@ -1133,7 +1132,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
                         error = nsurl_create(text.String(), &url);
                         if (error == NSERROR_OK) {
-                                error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+                                error = browser_window_create(BW_CREATE_CLONE,
                                                               url,
                                                               NULL,
                                                               bw,
@@ -1269,7 +1268,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 				if (nserr == NSERROR_OK) {
 					nserr = browser_window_navigate(bw,
 			    			url, NULL,
-							(browser_window_nav_flags)(BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE),
+							(browser_window_nav_flags)(BW_NAVIGATE_HISTORY | BW_NAVIGATE_VERIFIABLE),
 						    NULL, NULL, NULL);
 					nsurl_unref(url);
 				}

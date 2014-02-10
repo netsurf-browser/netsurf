@@ -904,8 +904,7 @@ static void gui_init2(int argc, char** argv)
 	if(temp_homepage_url && notalreadyrunning) {
 		error = nsurl_create(temp_homepage_url, &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -950,8 +949,7 @@ static void gui_init2(int argc, char** argv)
 					if (error == NSERROR_OK) {
 						if(!first)
 						{
-							error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-										      BROWSER_WINDOW_HISTORY,
+							error = browser_window_create(BW_CREATE_HISTORY,
 										      url,
 										      NULL,
 										      NULL,
@@ -961,8 +959,7 @@ static void gui_init2(int argc, char** argv)
 						}
 						else
 						{
-							error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-										      BROWSER_WINDOW_HISTORY,
+							error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 										      url,
 										      NULL,
 										      bw,
@@ -1044,8 +1041,7 @@ static void gui_init2(int argc, char** argv)
 	if(!bw && (nsoption_bool(startup_no_window) == false)) {
 		error = nsurl_create(nsoption_charp(homepage_url), &url);
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-						      BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 						      url,
 						      NULL,
 						      NULL,
@@ -1859,8 +1855,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_HISTORY |
-											BROWSER_WINDOW_VERIFIABLE,
+											BW_NAVIGATE_HISTORY |
+											BW_NAVIGATE_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1886,8 +1882,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_HISTORY |
-											BROWSER_WINDOW_VERIFIABLE,
+											BW_NAVIGATE_HISTORY |
+											BW_NAVIGATE_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1904,8 +1900,8 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_HISTORY |
-											BROWSER_WINDOW_VERIFIABLE,
+											BW_NAVIGATE_HISTORY |
+											BW_NAVIGATE_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -1992,8 +1988,7 @@ void ami_handle_msg(void)
 
 									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 									if (error == NSERROR_OK) {
-										error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-													      BROWSER_WINDOW_HISTORY,
+										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 													      urlns,
 													      NULL,
 													      gwin->bw,
@@ -2014,9 +2009,8 @@ void ami_handle_msg(void)
 
 									error = nsurl_create(nsoption_charp(homepage_url), &urlns);
 									if (error == NSERROR_OK) {
-										error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-													      BROWSER_WINDOW_HISTORY |
-														  BROWSER_WINDOW_TAB,
+										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY |
+													      BW_CREATE_TAB,
 													      urlns,
 													      NULL,
 													      gwin->bw,
@@ -2388,8 +2382,8 @@ void ami_handle_appmsg(void)
 									browser_window_navigate(gwin->bw,
 										url,
 										NULL,
-										BROWSER_WINDOW_HISTORY |
-										BROWSER_WINDOW_VERIFIABLE,
+										BW_NAVIGATE_HISTORY |
+										BW_NAVIGATE_VERIFIABLE,
 										NULL,
 										NULL,
 										NULL);
@@ -2398,9 +2392,8 @@ void ami_handle_appmsg(void)
 								}
 								else
 								{
-									browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-											      BROWSER_WINDOW_HISTORY |
-											      BROWSER_WINDOW_TAB,
+									browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY |
+											      BW_CREATE_TAB,
 											      url,
 											      NULL,
 											      gwin->bw,
@@ -2429,8 +2422,8 @@ void ami_handle_appmsg(void)
 										browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BROWSER_WINDOW_HISTORY |
-											BROWSER_WINDOW_VERIFIABLE,
+											BW_NAVIGATE_HISTORY |
+											BW_NAVIGATE_VERIFIABLE,
 											NULL,
 											NULL,
 											NULL);
@@ -2439,9 +2432,8 @@ void ami_handle_appmsg(void)
 									}
 									else
 									{
-										browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-												      BROWSER_WINDOW_HISTORY |
-												      BROWSER_WINDOW_TAB,
+										browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY |
+												      BW_CREATE_TAB,
 												      url,
 												      NULL,
 												      gwin->bw,
@@ -2480,8 +2472,7 @@ void ami_handle_applib(void)
 
 				error = nsurl_create(nsoption_charp(homepage_url), &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-								      BROWSER_WINDOW_HISTORY,
+					error = browser_window_create(BW_CREATE_HISTORY,
 								      url,
 								      NULL,
 								      NULL,
@@ -2504,8 +2495,7 @@ void ami_handle_applib(void)
 
 				error = nsurl_create(tempurl, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-								      BROWSER_WINDOW_HISTORY,
+					error = browser_window_create(BW_CREATE_HISTORY,
 								      url,
 								      NULL,
 								      NULL,
@@ -3202,9 +3192,8 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 
 	error = nsurl_create(nsoption_charp(homepage_url), &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-					      BROWSER_WINDOW_TAB,
+		error = browser_window_create(BW_CREATE_HISTORY |
+					      BW_CREATE_TAB,
 					      url,
 					      NULL,
 					      gwin->bw,
@@ -3215,10 +3204,6 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 		warn_user(messages_get_errorcode(error), 0);
 		return error;
 	}
-
-	/* Front end /really/ should not be doing this. */
-	history_destroy(bw->history);
-	bw->history = history_create(bw);
 
 	return NSERROR_OK;
 }
@@ -4965,8 +4950,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
 
 						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
-							browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-										      BROWSER_WINDOW_TAB,
+							browser_window_create(BW_CREATE_TAB,
 										      url,
 										      NULL,
 										      gwin->bw,
@@ -4975,8 +4959,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 							browser_window_navigate(gwin->bw,
 									url,
 									NULL,
-									BROWSER_WINDOW_HISTORY |
-									BROWSER_WINDOW_VERIFIABLE,
+									BW_NAVIGATE_HISTORY |
+									BW_NAVIGATE_VERIFIABLE,
 									NULL,
 									NULL,
 									NULL);

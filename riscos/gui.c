@@ -941,8 +941,7 @@ static void gui_init2(int argc, char** argv)
 
 		errorns = nsurl_create(url, &urlns);
 		if (errorns == NSERROR_OK) {
-			errorns = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							BROWSER_WINDOW_HISTORY,
+			errorns = browser_window_create(BW_CREATE_HISTORY,
 							urlns,
 							NULL,
 							NULL,
@@ -1516,8 +1515,8 @@ void ro_msg_dataload(wimp_message *message)
 			error = browser_window_navigate(g->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1529,9 +1528,7 @@ void ro_msg_dataload(wimp_message *message)
 			ro_gui_hotlist_url_drop(message, urltxt);
 #endif
 		} else {
-			error = browser_window_create(
-					BROWSER_WINDOW_VERIFIABLE |
-					BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 					url,
 					NULL,
 					NULL,
@@ -1906,8 +1903,7 @@ void ro_msg_dataopen(wimp_message *message)
 	free(url);
 	if (error == NSERROR_OK) {
 	/* create a new window with the file */
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      urlns,
 					      NULL,
 					      NULL,

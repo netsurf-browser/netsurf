@@ -71,9 +71,8 @@ bool search_web_new_window(struct browser_window *bw, const char *searchterm)
 
 	error = nsurl_create(urltxt, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-					      BROWSER_WINDOW_TAB,
+		error = browser_window_create(BW_CREATE_HISTORY |
+					      BW_CREATE_TAB,
 					      url,
 					      NULL,
 					      bw,

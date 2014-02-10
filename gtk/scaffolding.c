@@ -437,8 +437,8 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -550,8 +550,8 @@ static void nsgtk_openfile_open(const char *filename)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY |
+						BW_NAVIGATE_VERIFIABLE,
 						NULL,
 						NULL,
 						NULL);
@@ -578,7 +578,7 @@ MULTIHANDLER(newwindow)
 
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      bw,
@@ -611,8 +611,8 @@ nserror nsgtk_scaffolding_new_tab(struct gui_window *gw)
 		}
 	}
 
-	error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				      BROWSER_WINDOW_TAB,
+	error = browser_window_create(BW_CREATE_HISTORY |
+				      BW_CREATE_TAB,
 				      url,
 				      NULL,
 				      bw,
@@ -959,8 +959,8 @@ MENUHANDLER(savelink)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_DOWNLOAD |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_DOWNLOAD |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -986,12 +986,9 @@ MENUHANDLER(link_openwin)
 
 	error = nsurl_create(current_menu_ctx.link_url, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      bw,
-					      NULL);
+		error = browser_window_create(
+				BW_CREATE_CLONE | BW_CREATE_HISTORY,
+				url, NULL, bw, NULL);
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
@@ -1019,13 +1016,9 @@ MENUHANDLER(link_opentab)
 
 	error = nsurl_create(current_menu_ctx.link_url, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-					      BROWSER_WINDOW_TAB,
-					      url,
-					      NULL,
-					      bw,
-					      NULL);
+		error = browser_window_create(BW_CREATE_CLONE |
+				BW_CREATE_HISTORY | BW_CREATE_TAB,
+				url, NULL, bw, NULL);
 		nsurl_unref(url);
 	}
 	if (error != NSERROR_OK) {
@@ -1466,8 +1459,8 @@ MULTIHANDLER(home)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1583,8 +1576,8 @@ MULTIHANDLER(contents)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1605,8 +1598,8 @@ MULTIHANDLER(guide)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
@@ -1627,8 +1620,8 @@ MULTIHANDLER(info)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_VERIFIABLE,
 					NULL,
 					NULL,
 					NULL);
