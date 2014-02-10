@@ -2648,6 +2648,8 @@ void ami_quit_netsurf(void)
 				break;
 
 				case AMINS_WINDOW:
+					/* This also closes windows that are attached to the
+					 * gui_window, such as local history and find. */
 					ShowWindow(gwin->win, WINDOW_BACKMOST);
 					ami_close_all_tabs(gwin);
 				break;
