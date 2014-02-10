@@ -71,6 +71,7 @@ typedef struct html_content {
 	struct content base;
 
 	dom_hubbub_parser *parser; /**< Parser object handle */
+	bool parse_completed; /**< Whether the parse has been completed */
 
 	/** Document tree */
 	dom_document *document;

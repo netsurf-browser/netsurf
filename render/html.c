@@ -731,6 +731,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	dom_hubbub_error error;
 
 	c->parser = NULL;
+	c->parse_completed = false;
 	c->document = NULL;
 	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
@@ -1070,16 +1071,35 @@ html_begin_conversion(html_content *htmlc)
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
 
-	LOG(("Completing parse"));
-	/* complete parsing */
-	error = dom_hubbub_parser_completed(htmlc->parser);
-	if (error != DOM_HUBBUB_OK) {
-		LOG(("Parsing failed"));
+	/* The act of completing the parse can result in additional data 
+	 * being flushed through the parser. This may result in new style or 
+	 * script nodes, upon which the conversion depends. Thus, once we 
+	 * have completed the parse, we must check again to see if we can 
+	 * begin the conversion. If we can't, we must stop and wait for the 
+	 * new styles/scripts to be processed. Once they have been processed,
+	 * we will be called again to begin the conversion for real. Thus, 
+	 * we must also ensure that we don't attempt to complete the parse 
+	 * multiple times, so store a flag to indicate that parsing is
+	 * complete to avoid repeating the completion pointlessly.
+	 */
+	if (htmlc->parse_completed == false) {
+		LOG(("Completing parse"));
+		/* complete parsing */
+		error = dom_hubbub_parser_completed(htmlc->parser);
+		if (error != DOM_HUBBUB_OK) {
+			LOG(("Parsing failed"));
+	
+			content_broadcast_errorcode(&htmlc->base, 
+						    libdom_hubbub_error_to_nserror(error));
 
-		content_broadcast_errorcode(&htmlc->base, 
-					    libdom_hubbub_error_to_nserror(error));
+			return false;
+		}
+		htmlc->parse_completed = true;
+	}
 
-		return false;
+	if (html_can_begin_conversion(htmlc) == false) {
+		/* We can't proceed (see commentary above) */
+		return true;
 	}
 
 	/* Give up processing if we've been aborted */
