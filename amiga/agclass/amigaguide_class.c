@@ -34,7 +34,7 @@ uint32 om_set(Class *, Object *, struct opSet *);
 uint32 om_get(Class *, Object *, struct opGet *);
 uint32 agm_open(Class *, Object *, Msg);
 uint32 agm_close(Class *, Object *, Msg);
-
+uint32 agm_process(Class *, Object *, Msg);
 
 /* ***************************  class initialization and disposal   ***************************** */
 
@@ -106,6 +106,9 @@ static uint32 dispatchAGClass(Class *cl, Object *o, Msg msg)
 
    case AGM_CLOSE:
      return agm_close(cl, o, msg);
+
+   case AGM_PROCESS:
+     return agm_process(cl, o, msg);
 
    default:
      return IIntuition->IDoSuperMethodA(cl, o, msg);
@@ -289,6 +292,11 @@ uint32 om_get(Class *cl, Object *o, struct opGet *msg)
      retVal = 1;
    break;
 
+   case AMIGAGUIDE_Signal:
+     *(msg->opg_Storage) = (uint32)lod->agSignal;
+     retVal = 1;
+   break;
+
    default:
      retVal = IIntuition->IDoSuperMethodA(cl, o, (Msg)msg);
   }
@@ -344,3 +352,23 @@ uint32 agm_close(Class *cl, Object *o, Msg msg)
  return (uint32)lod->agHandle;
 
 }
+
+
+uint32 agm_process(Class *cl, Object *o, Msg msg)
+{
+	struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
+
+	if (lod->agHandle) {
+		while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) ) {
+			switch(lod->agm->agm_Type) {
+				default:
+					printf("%d\n", lod->agm->agm_Type);
+				break;
+			}
+		}
+		IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
+	}
+
+	return (uint32)lod->agHandle;
+}
+
