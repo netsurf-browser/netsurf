@@ -2765,7 +2765,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwai
 	if(CloseScreen(scrn) == TRUE) {
 		if(locked_screen == FALSE) {
 			FreeSignal(screen_signal);
-			screen_signal = NULL;
+			screen_signal = -1;
 			scrn = NULL;
 		}
 		return;
