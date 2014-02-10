@@ -2715,6 +2715,10 @@ void ami_quit_netsurf(void)
 					ShowWindow(gwin->win, WINDOW_BACKMOST);
 					ami_close_all_tabs(gwin);
 				break;
+
+				case AMINS_GUIOPTSWINDOW:
+					ami_gui_opts_close();
+				break;
 			}
 
 		} while(node = nnode);
