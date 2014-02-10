@@ -76,7 +76,15 @@ enum browser_window_create_flags {
 	/** New gui_window to be clone of "existing" gui_window */
 	BW_CREATE_CLONE			= (1 << 2),
 
-	/** Window not opened by user interaction (e.g. JS popup) */
+	/** Window not opened by user interaction (e.g. JS popup)
+	 *
+	 * rfc2965:
+	 *    A transaction is verifiable if the user, or a
+	 *    user-designated agent, has the option to review
+	 *    the request-URI prior to its use in the transaction.
+	 *    A transaction is unverifiable if the user does not
+	 *    have that option.
+	 */
 	BW_CREATE_UNVERIFIABLE		= (1 << 3),
 };
 
@@ -91,8 +99,16 @@ enum browser_window_nav_flags {
 	/** download rather than render the uri */
 	BW_NAVIGATE_DOWNLOAD		= (1 << 1),
 
-	/** this transaction is verifiable */
-	BW_NAVIGATE_VERIFIABLE		= (1 << 2)
+	/** Transation not caused by user interaction (e.g. JS-caused)
+	 *
+	 * rfc2965:
+	 *    A transaction is verifiable if the user, or a
+	 *    user-designated agent, has the option to review
+	 *    the request-URI prior to its use in the transaction.
+	 *    A transaction is unverifiable if the user does not
+	 *    have that option.
+	 */
+	BW_NAVIGATE_UNVERIFIABLE	= (1 << 2)
 };
 
 /**

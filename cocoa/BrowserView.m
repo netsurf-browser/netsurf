@@ -623,8 +623,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                 browser_window_navigate(browser,
                                         url,
                                         NULL,
-                                        BW_NAVIGATE_DOWNLOAD |
-                                        BW_NAVIGATE_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD,
                                         NULL,
                                         NULL,
                                         NULL);
@@ -688,8 +687,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		browser_window_navigate(browser,
 					url,
 					NULL,
-                                        BW_NAVIGATE_DOWNLOAD |
-                                        BW_NAVIGATE_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
 					NULL);

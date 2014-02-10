@@ -820,8 +820,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BW_NAVIGATE_DOWNLOAD |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL);
@@ -835,8 +834,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				browser_window_navigate(gwin->bw,
 					hlcache_handle_get_url(userdata),
 					hlcache_handle_get_url(gwin->bw->current_content),
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -852,8 +850,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -928,8 +925,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -999,8 +995,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 						browser_window_navigate(gwin->bw,
 							url,
 							NULL,
-							BW_NAVIGATE_HISTORY |
-							BW_NAVIGATE_VERIFIABLE,
+							BW_NAVIGATE_HISTORY,
 							NULL,
 							NULL,
 							NULL);

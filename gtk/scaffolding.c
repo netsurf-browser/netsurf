@@ -437,8 +437,7 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -550,8 +549,7 @@ static void nsgtk_openfile_open(const char *filename)
 			browser_window_navigate(bw,
 						url,
 						NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -959,8 +957,7 @@ MENUHANDLER(savelink)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_DOWNLOAD |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
 					NULL);
@@ -1459,8 +1456,7 @@ MULTIHANDLER(home)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1576,8 +1572,7 @@ MULTIHANDLER(contents)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1598,8 +1593,7 @@ MULTIHANDLER(guide)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1620,8 +1614,7 @@ MULTIHANDLER(info)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

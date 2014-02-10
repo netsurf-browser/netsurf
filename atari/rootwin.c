@@ -1537,7 +1537,7 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                         if ((tmp_url  != NULL)
                             && nsurl_create(tmp_url, &ns_url) == NSERROR_OK) {
                             browser_window_navigate(gw->browser->bw, ns_url, NULL,
-                                BW_NAVIGATE_HISTORY | BW_NAVIGATE_VERIFIABLE,
+                                BW_NAVIGATE_HISTORY,
                                 NULL, NULL, NULL);
                             nsurl_unref(ns_url);
                         }

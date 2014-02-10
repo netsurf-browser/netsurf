@@ -755,8 +755,8 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 
 	if (url != NULL) {
 		enum browser_window_nav_flags nav_flags = BW_NAVIGATE_NONE;
-		if (!(flags & BW_CREATE_UNVERIFIABLE))
-			nav_flags |= BW_NAVIGATE_VERIFIABLE;
+		if (flags & BW_CREATE_UNVERIFIABLE)
+			nav_flags |= BW_NAVIGATE_UNVERIFIABLE;
 		if (flags & BW_CREATE_HISTORY)
 			nav_flags |= BW_NAVIGATE_HISTORY;
 		browser_window_navigate(ret, url, referrer, nav_flags, NULL,
@@ -1109,7 +1109,7 @@ static void browser_window_refresh(void *p)
 	nsurl *url;
 	nsurl *refresh;
 	hlcache_handle *parent = NULL;
-	enum browser_window_nav_flags flags = BW_NAVIGATE_NONE;
+	enum browser_window_nav_flags flags = BW_NAVIGATE_UNVERIFIABLE;
 
 	assert(bw->current_content != NULL &&
 		(content_get_status(bw->current_content) == 
@@ -1139,7 +1139,7 @@ static void browser_window_refresh(void *p)
 	 * all.
 	 */
 	if (bw->refresh_interval <= 100 && bw->parent == NULL) {
-		flags |= BW_NAVIGATE_VERIFIABLE;
+		flags &= ~BW_NAVIGATE_UNVERIFIABLE;
 	} else {
 		parent = bw->current_content;
 	}
@@ -1812,7 +1812,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	}
 
 	/* Set up retrieval parameters */
-	if ((flags & BW_NAVIGATE_VERIFIABLE) != 0) {
+	if (!(flags & BW_NAVIGATE_UNVERIFIABLE)) {
 		fetch_flags |= LLCACHE_RETRIEVE_VERIFIABLE;
 	}
 
@@ -1905,7 +1905,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 	bw->history_add = (flags & BW_NAVIGATE_HISTORY);
 
 	/* Verifiable fetches may trigger a download */
-	if ((flags & BW_NAVIGATE_VERIFIABLE) != 0) {
+	if (!(flags & BW_NAVIGATE_UNVERIFIABLE)) {
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
 	}
 
@@ -2268,7 +2268,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	browser_window_navigate(bw,
 				hlcache_handle_get_url(bw->current_content),
 				NULL,
-				BW_NAVIGATE_VERIFIABLE,
+				BW_NAVIGATE_NONE,
 				NULL,
 				NULL,
 				NULL);

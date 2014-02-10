@@ -274,8 +274,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 			browser_window_navigate(bw,
 				url,
 				NULL,
-				BW_NAVIGATE_DOWNLOAD |
-				BW_NAVIGATE_VERIFIABLE,
+				BW_NAVIGATE_DOWNLOAD,
 				NULL,
 				NULL,
 				NULL);

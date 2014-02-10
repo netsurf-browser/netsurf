@@ -252,7 +252,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 			browser_window_navigate(window, 
 				cur->url,
 				hlcache_handle_get_url(bw->current_content),
-				BW_NAVIGATE_NONE,
+				BW_NAVIGATE_UNVERIFIABLE,
 				NULL,
 				NULL,
 				bw->current_content);
@@ -389,7 +389,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 				browser_window_navigate(window,
 					frame->url,
 					hlcache_handle_get_url(parent),
-					BW_NAVIGATE_HISTORY,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_UNVERIFIABLE,
 					NULL,
 					NULL,
 					parent);

@@ -1799,8 +1799,7 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BW_NAVIGATE_HISTORY |
-											BW_NAVIGATE_VERIFIABLE,
+											BW_NAVIGATE_HISTORY,
 											NULL,
 											NULL,
 											NULL);
@@ -1826,8 +1825,7 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BW_NAVIGATE_HISTORY |
-											BW_NAVIGATE_VERIFIABLE,
+											BW_NAVIGATE_HISTORY,
 											NULL,
 											NULL,
 											NULL);
@@ -1844,8 +1842,7 @@ void ami_handle_msg(void)
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BW_NAVIGATE_HISTORY |
-											BW_NAVIGATE_VERIFIABLE,
+											BW_NAVIGATE_HISTORY,
 											NULL,
 											NULL,
 											NULL);
@@ -2326,8 +2323,7 @@ void ami_handle_appmsg(void)
 									browser_window_navigate(gwin->bw,
 										url,
 										NULL,
-										BW_NAVIGATE_HISTORY |
-										BW_NAVIGATE_VERIFIABLE,
+										BW_NAVIGATE_HISTORY,
 										NULL,
 										NULL,
 										NULL);
@@ -4914,8 +4910,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 							browser_window_navigate(gwin->bw,
 									url,
 									NULL,
-									BW_NAVIGATE_HISTORY |
-									BW_NAVIGATE_VERIFIABLE,
+									BW_NAVIGATE_HISTORY,
 									NULL,
 									NULL,
 									NULL);

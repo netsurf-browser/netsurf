@@ -133,8 +133,7 @@ nsws_window_go(HWND hwnd, const char *urltxt)
 		browser_window_navigate(gw->bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -876,8 +875,7 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -1045,8 +1043,7 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);

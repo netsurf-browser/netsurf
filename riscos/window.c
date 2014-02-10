@@ -2831,8 +2831,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 				error = browser_window_navigate(bw,
 						url,
 						hlcache_handle_get_url(h),
-						BW_NAVIGATE_DOWNLOAD |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL);
@@ -4006,7 +4005,7 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 			browser_window_navigate(g->bw,
 				url,
 				NULL,
-				BW_CREATE_HISTORY,
+				BW_NAVIGATE_HISTORY | BW_NAVIGATE_UNVERIFIABLE,
 				NULL,
 				NULL,
 				NULL);
@@ -4046,8 +4045,7 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
 		browser_window_navigate(g->bw,
 					parent,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -4083,8 +4081,7 @@ void ro_gui_window_action_home(struct gui_window *g)
 		error = browser_window_navigate(g->bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

@@ -463,7 +463,7 @@ void history_go(struct history *history, struct history_entry *entry,
 	} else {
 		history->current = entry;
 		browser_window_navigate(history->bw, url, NULL,
-				BW_NAVIGATE_VERIFIABLE, NULL, NULL, NULL);
+				BW_NAVIGATE_NONE, NULL, NULL, NULL);
 	}
 
 	nsurl_unref(url);

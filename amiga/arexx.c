@@ -248,8 +248,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(curbw,
 					url,
 					NULL,
-					BW_NAVIGATE_DOWNLOAD |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
 					NULL);
@@ -279,8 +278,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -507,8 +505,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

@@ -1034,8 +1034,7 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 	browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

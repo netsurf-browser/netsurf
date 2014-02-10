@@ -1094,14 +1094,8 @@ fb_url_enter(void *pw, char *text)
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
+		browser_window_navigate(bw, url, NULL, BW_NAVIGATE_HISTORY,
+				NULL, NULL, NULL);
 		nsurl_unref(url);
 	}
 

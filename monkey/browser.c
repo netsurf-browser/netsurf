@@ -409,8 +409,7 @@ monkey_window_handle_go(int argc, char **argv)
       browser_window_navigate(gw->bw,
 			      url,
 			      ref_url,
-			      BW_NAVIGATE_HISTORY |
-			      BW_NAVIGATE_VERIFIABLE,
+			      BW_NAVIGATE_HISTORY,
 			      NULL,
 			      NULL,
 			      NULL);

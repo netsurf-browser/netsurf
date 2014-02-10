@@ -142,8 +142,7 @@ static const char *cocoa_hotlist_path( void )
                         error = browser_window_navigate([tab browser],
                                                 url,
                                                 NULL,
-                                                BW_NAVIGATE_HISTORY |
-                                                BW_NAVIGATE_VERIFIABLE,
+                                                BW_NAVIGATE_HISTORY,
                                                 NULL,
                                                 NULL,
                                                 NULL);

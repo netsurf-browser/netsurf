@@ -823,8 +823,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_window_navigate(bw,
 				url,
 				content_get_url(c),
-				BW_NAVIGATE_DOWNLOAD |
-				BW_NAVIGATE_VERIFIABLE,
+				BW_NAVIGATE_DOWNLOAD,
 				NULL,
 				NULL,
 				NULL);
@@ -1003,8 +1002,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		browser_window_navigate(browser_window_find_target(bw, target, mouse),
 					url,
 					content_get_url(c),
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

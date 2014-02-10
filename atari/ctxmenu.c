@@ -238,8 +238,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						hlcache_handle_get_url(ctx->ccdata.object),
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BW_NAVIGATE_DOWNLOAD |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL
@@ -258,8 +257,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						url,
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BW_NAVIGATE_DOWNLOAD |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL

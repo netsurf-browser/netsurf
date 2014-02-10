@@ -1515,8 +1515,7 @@ void ro_msg_dataload(wimp_message *message)
 			error = browser_window_navigate(g->bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

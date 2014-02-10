@@ -37,8 +37,7 @@ nsgtk_about_dialog_credits(GtkWidget *button, gpointer data)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -60,8 +59,7 @@ nsgtk_about_dialog_licence(GtkWidget *button, gpointer data)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
