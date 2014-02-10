@@ -1480,121 +1480,60 @@ void ami_handle_msg(void)
 
 		gwin = node->objstruct;
 
-		if(node->Type == AMINS_TVWINDOW)
-		{
-			if(ami_tree_event((struct treeview_window *)gwin))
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		if(node->Type == AMINS_TVWINDOW) {
+			if(ami_tree_event((struct treeview_window *)gwin)) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_FINDWINDOW)
-		{
-			if(ami_search_event())
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		} else if(node->Type == AMINS_FINDWINDOW) {
+			if(ami_search_event()) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_HISTORYWINDOW)
-		{
-			if(ami_history_event((struct history_window *)gwin))
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		} else if(node->Type == AMINS_HISTORYWINDOW) {
+			if(ami_history_event((struct history_window *)gwin)) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_PRINTWINDOW)
-		{
-			if(ami_print_event((struct ami_print_window *)gwin))
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		} else if(node->Type == AMINS_PRINTWINDOW) {
+			if(ami_print_event((struct ami_print_window *)gwin)) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_GUIOPTSWINDOW)
-		{
-			if(ami_gui_opts_event())
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit with conditions ;) */
-					if(scrn) ami_try_quit();
-				}
+		} else if(node->Type == AMINS_GUIOPTSWINDOW) {
+			if(ami_gui_opts_event()) {
+				/* last window possibly closed, so exit with conditions ;) */
+				if(scrn) ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_DLWINDOW)
-		{
-			if(ami_download_window_event((struct gui_download_window *)gwin))
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		} else if(node->Type == AMINS_DLWINDOW) {
+			if(ami_download_window_event((struct gui_download_window *)gwin)) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
-		}
-		else if(node->Type == AMINS_LOGINWINDOW)
-		{
-			if(ami_401login_event((struct gui_login_window *)gwin))
-			{
-				if(IsMinListEmpty(window_list))
-				{
-					/* last window closed, so exit */
-					ami_try_quit();
-				}
+		} else if(node->Type == AMINS_LOGINWINDOW) {
+			if(ami_401login_event((struct gui_login_window *)gwin)) {
+				ami_try_quit();
 				break;
-			}
-			else
-			{
+			} else {
 				node = nnode;
 				continue;
 			}
