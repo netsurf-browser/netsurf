@@ -2755,7 +2755,7 @@ void ami_quit_netsurf_delayed(void)
 	}
 }
 
-void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
+void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwait)
 {
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn) == TRUE) {
@@ -2767,6 +2767,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 		return;
 	}
 	if(locked_screen == TRUE) return;
+	if(donotwait == TRUE) return;
 
 	/* If this is our own screen, wait for visitor windows to close */
 	if(screen_signal != -1) {
@@ -2794,7 +2795,7 @@ void ami_try_quit(void)
 	}
 	else
 	{
-		ami_gui_close_screen(scrn, locked_screen);
+		ami_gui_close_screen(scrn, locked_screen, TRUE);
 	}
 }
 
@@ -2820,7 +2821,7 @@ static void gui_quit(void)
 	ami_close_fonts();
 	
 	LOG(("Closing screen"));
-	ami_gui_close_screen(scrn, locked_screen);
+	ami_gui_close_screen(scrn, locked_screen, FALSE);
 	FreeVec(nsscreentitle);
 
 	LOG(("Freeing menu items"));
