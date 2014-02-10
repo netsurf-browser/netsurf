@@ -66,3 +66,18 @@ void ami_help_new_screen(struct Screen *screen)
 	if(AmigaGuideObject == NULL) return;
 	SetAttrs(AmigaGuideObject, AMIGAGUIDE_Screen, screen, TAG_DONE);
 }
+
+ULONG ami_help_signal(void)
+{
+	ULONG ag_sig = 0;
+	if(AmigaGuideObject)
+		SetAttrs(AmigaGuideObject, AMIGAGUIDE_Signal, &ag_sig, TAG_DONE);
+	return ag_sig;
+}
+
+void ami_help_process(void)
+{
+	ULONG ret = IDoMethod(AmigaGuideObject, AGM_PROCESS, NULL);
+	printf("ret = %d\n", ret); // should be NULL if closed
+}
+

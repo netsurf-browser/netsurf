@@ -2556,8 +2556,9 @@ void ami_get_msg(void)
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 0;
+	ULONG helpsignal = ami_help_signal();
 	if(printmsgport) printsig = 1L << printmsgport->mp_SigBit;
-	ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig;
+	ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig | helpsignal;
 
 	signal = Wait(signalmask);
 
@@ -2573,25 +2574,23 @@ void ami_get_msg(void)
 	if(signal & applibsig)
 		ami_handle_applib();
 
-	if(signal & printsig)
-	{
+	if(signal & printsig) {
 		while(GetMsg(printmsgport));  //ReplyMsg
 		ami_print_cont();
 	}
 
-	if(signal & schedulesig)
-	{
-		if(timermsg = (struct TimerRequest *)GetMsg(msgport))
-		{
+	if(signal & schedulesig) {
+		if(timermsg = (struct TimerRequest *)GetMsg(msgport)) {
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
 		}
 	}
 
+	if(signal & helpsignal)
+		ami_help_process();
+
 	if(signal & ctrlcsig)
-	{
 		ami_quit_netsurf_delayed();
-	}
 }
 
 static void ami_gui_fetch_callback(void *p)
@@ -2778,6 +2777,7 @@ void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen)
 	}
 
 	FreeSignal(screen_signal);
+	screen_signal = -1;
 	scrn = NULL;
 }
 

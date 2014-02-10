@@ -32,4 +32,7 @@ struct Screen;
 void ami_help_open(ULONG node, struct Screen *screen);
 void ami_help_free(void);
 void ami_help_new_screen(struct Screen *screen);
+ULONG ami_help_signal(void);
+void ami_help_process(void);
 #endif
+
