@@ -71,7 +71,7 @@ ULONG ami_help_signal(void)
 {
 	ULONG ag_sig = 0;
 	if(AmigaGuideObject)
-		SetAttrs(AmigaGuideObject, AMIGAGUIDE_Signal, &ag_sig, TAG_DONE);
+		GetAttr(AMIGAGUIDE_Signal, AmigaGuideObject, &ag_sig);
 	return ag_sig;
 }
 
