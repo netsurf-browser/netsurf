@@ -2362,8 +2362,7 @@ void ami_handle_appmsg(void)
 										browser_window_navigate(gwin->bw,
 											url,
 											NULL,
-											BW_NAVIGATE_HISTORY |
-											BW_NAVIGATE_VERIFIABLE,
+											BW_NAVIGATE_HISTORY,
 											NULL,
 											NULL,
 											NULL);

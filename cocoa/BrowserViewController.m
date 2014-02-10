@@ -79,8 +79,7 @@
 		browser_window_navigate(browser,
 					urlns,
 					NULL,
-					BW_NAVIGATE_HISTORY |
-					BW_NAVIGATE_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -141,8 +140,7 @@
                 error = browser_window_navigate(browser,
                                                 urlns,
                                                 NULL,
-						BW_NAVIGATE_HISTORY |
-						BW_NAVIGATE_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
                                                 NULL,
                                                 NULL,
                                                 NULL);
