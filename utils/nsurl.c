@@ -1221,6 +1221,39 @@ static void nsurl_calc_hash(nsurl *url)
 }
 
 
+/**
+ * Destroy components
+ *
+ * \param c	url components
+ */
+static void nsurl_destroy_components(struct nsurl_components *c)
+{
+	if (c->scheme)
+		lwc_string_unref(c->scheme);
+
+	if (c->username)
+		lwc_string_unref(c->username);
+
+	if (c->password)
+		lwc_string_unref(c->password);
+
+	if (c->host)
+		lwc_string_unref(c->host);
+
+	if (c->port)
+		lwc_string_unref(c->port);
+
+	if (c->path)
+		lwc_string_unref(c->path);
+
+	if (c->query)
+		lwc_string_unref(c->query);
+
+	if (c->fragment)
+		lwc_string_unref(c->fragment);
+}
+
+
 #ifdef NSURL_DEBUG
 /**
  * Dump a NetSurf URL's internal components
@@ -1272,6 +1305,7 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
 	enum nsurl_string_flags str_flags = 0;
 	nserror e = NSERROR_OK;
+	bool match;
 
 	assert(url_s != NULL);
 
@@ -1300,8 +1334,22 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	/* Finished with buffer */
 	free(buff);
 
-	if (e != NSERROR_OK)
+	if (e != NSERROR_OK) {
+		nsurl_destroy_components(&c);
 		return NSERROR_NOMEM;
+	}
+
+	/* Validate URL */
+	if ((lwc_string_isequal(c.scheme, corestring_lwc_http,
+			&match) == lwc_error_ok && match == true) ||
+			(lwc_string_isequal(c.scheme, corestring_lwc_https,
+			&match) == lwc_error_ok && match == true)) {
+		/* http, https must have host */
+		if (c.host == NULL) {
+			nsurl_destroy_components(&c);
+			return NSERROR_BAD_URL;
+		}
+	}
 
 	/* Get the string length and find which parts of url are present */
 	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
@@ -1309,8 +1357,10 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 
 	/* Create NetSurf URL object */
 	*url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*url == NULL)
+	if (*url == NULL) {
+		nsurl_destroy_components(&c);
 		return NSERROR_NOMEM;
+	}
 
 	(*url)->components = c;
 	(*url)->length = length;
@@ -1353,29 +1403,7 @@ void nsurl_unref(nsurl *url)
 #endif
 
 	/* Release lwc strings */
-	if (url->components.scheme)
-		lwc_string_unref(url->components.scheme);
-
-	if (url->components.username)
-		lwc_string_unref(url->components.username);
-
-	if (url->components.password)
-		lwc_string_unref(url->components.password);
-
-	if (url->components.host)
-		lwc_string_unref(url->components.host);
-
-	if (url->components.port)
-		lwc_string_unref(url->components.port);
-
-	if (url->components.path)
-		lwc_string_unref(url->components.path);
-
-	if (url->components.query)
-		lwc_string_unref(url->components.query);
-
-	if (url->components.fragment)
-		lwc_string_unref(url->components.fragment);
+	nsurl_destroy_components(&url->components);
 
 	/* Free the NetSurf URL */
 	free(url);
