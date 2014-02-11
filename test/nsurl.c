@@ -6,11 +6,9 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "desktop/netsurf.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
-
-/* desktop/netsurf.h */
-bool verbose_log = true;
 
 struct test_pairs {
 	const char* test;
@@ -30,9 +28,10 @@ static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 }
 
 static const struct test_pairs create_tests[] = {
-	{ "http:",		"http:" },
-	{ "http:/",		"http:" },
-	{ "http://",		"http:" },
+	{ "",			NULL },
+	{ "http:",		NULL },
+	{ "http:/",		NULL },
+	{ "http://",		NULL },
 	{ "http:a",		"http://a/" },
 	{ "http:a/",		"http://a/" },
 	{ "http:a/b",		"http://a/b" },
@@ -182,6 +181,13 @@ int main(void)
 	const struct test_triplets *ttest;
 	int passed = 0;
 	int count = 0;
+	nserror err;
+
+	verbose_log = true;
+
+	if (corestrings_init() != NSERROR_OK) {
+		assert(0 && "Failed to init corestrings.");
+	}
 
 	/* Create base URL */
 	if (nsurl_create("http://a/b/c/d;p?q", &base) != NSERROR_OK) {
@@ -228,8 +234,22 @@ int main(void)
 	/* Create tests */
 	LOG(("Testing nsurl_create"));
 	for (test = create_tests; test->test != NULL; test++) {
-		if (nsurl_create(test->test, &base) != NSERROR_OK) {
-			LOG(("Failed to create URL:\n\t\t%s.", test->test));
+		err = nsurl_create(test->test, &base);
+		if (err != NSERROR_OK || test->res == NULL) {
+			if (test->res == NULL && err != NSERROR_OK) {
+				LOG(("\tPASS: \"%s\"\t--> BAD INPUT",
+						test->test));
+				passed++;
+			} else if (test->res != NULL && err != NSERROR_OK) {
+				LOG(("Failed to create URL:\n\t\t%s.",
+						test->test));
+			} else {
+				LOG(("\tFAIL: \"%s\"\t--> %s",
+					test->test, nsurl_access(base)));
+				LOG(("\t\tExpecting BAD INPUT"));
+			}
+			if (err == NSERROR_OK)
+				nsurl_unref(base);
 		} else {
 			if (strcmp(nsurl_access(base), test->res) == 0) {
 				LOG(("\tPASS: \"%s\"\t--> %s",
@@ -285,6 +305,8 @@ int main(void)
 		LOG(("Testing complete: FAILURE"));
 		LOG(("Failed %d out of %d", count - passed, count));
 	}
+
+	corestrings_fini();
 
 	LOG(("Remaining lwc strings:"));
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
