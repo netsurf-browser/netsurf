@@ -61,7 +61,6 @@
 #include "desktop/hotlist.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"

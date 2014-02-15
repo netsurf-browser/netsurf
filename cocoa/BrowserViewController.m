@@ -21,8 +21,8 @@
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/fetch.h"
 
+#import "desktop/browser_history.h"
 #import "desktop/browser_private.h"
-#import "desktop/local_history.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 
@@ -116,16 +116,16 @@
 
 - (IBAction) goBack: (id) sender;
 {
-	if (browser && history_back_available( browser->history )) {
-		history_back(browser->history, false);
+	if (browser && browser_window_history_back_available( browser )) {
+		browser_window_history_back(browser, false);
 		[self updateBackForward];
 	}
 }
 
 - (IBAction) goForward: (id) sender;
 {
-	if (browser && history_forward_available( browser->history )) {
-		history_forward(browser->history, false);
+	if (browser && browser_window_history_forward_available( browser )) {
+		browser_window_history_forward(browser, false);
 		[self updateBackForward];
 	}
 }
@@ -272,8 +272,8 @@ static inline bool compare_float( float a, float b )
 - (void) updateBackForward;
 {
 	[browserView updateHistory];
-	[self setCanGoBack: browser != NULL && history_back_available( browser->history )];
-	[self setCanGoForward: browser != NULL && history_forward_available( browser->history )];
+	[self setCanGoBack: browser != NULL && browser_window_history_back_available( browser )];
+	[self setCanGoForward: browser != NULL && browser_window_history_forward_available( browser )];
 }
 
 - (void) contentUpdated;
@@ -287,7 +287,7 @@ struct history_add_menu_item_data {
 	id target;
 };
 
-static bool history_add_menu_item_cb( const struct history *history, int x0, int y0, int x1, int y1, 
+static bool history_add_menu_item_cb( const struct browser_window *bw, int x0, int y0, int x1, int y1, 
 									 const struct history_entry *page, void *user_data )
 {
 	struct history_add_menu_item_data *data = user_data; 
@@ -305,7 +305,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 	++data->index;
 	
 	[item setTarget: data->target];
-	[item setTitle: [NSString stringWithUTF8String: history_entry_get_title( page )]];
+	[item setTitle: [NSString stringWithUTF8String: browser_window_history_entry_get_title( page )]];
 	[item setRepresentedObject: [NSValue valueWithPointer: page]];
 	
 	return true;
@@ -314,7 +314,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 - (IBAction) historyItemSelected: (id) sender;
 {
 	struct history_entry *entry = [[sender representedObject] pointerValue];
-	history_go( browser->history, entry, false );
+	browser_window_history_go( browser, entry, false );
 	[self updateBackForward];
 }
 
@@ -325,7 +325,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 		.menu = menu,
 		.target = self
 	};
-	history_enumerate_back( browser->history, history_add_menu_item_cb, &data );
+	browser_window_history_enumerate_back( browser, history_add_menu_item_cb, &data );
 	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
 }
 
@@ -336,7 +336,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 		.menu = menu,
 		.target = self
 	};
-	history_enumerate_forward( browser->history, history_add_menu_item_cb, &data );
+	browser_window_history_enumerate_forward( browser, history_add_menu_item_cb, &data );
 	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
 }
 

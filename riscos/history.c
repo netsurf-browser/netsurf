@@ -27,10 +27,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "desktop/local_history.h"
+#include "desktop/browser_history.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
-#include "desktop/browser_private.h"
 #include "utils/nsoption.h"
 #include "riscos/gui.h"
 #include "riscos/mouse.h"
@@ -43,7 +42,6 @@
 
 
 static struct browser_window *history_bw;
-static struct history *history_current = 0;
 /* Last position of mouse in window. */
 static int mouse_x = 0;
 /* Last position of mouse in window. */
@@ -82,20 +80,20 @@ void ro_gui_history_init(void)
  * \param  at_pointer  open the window at the pointer
  */
 
-void ro_gui_history_open(struct browser_window *bw,
-		struct history *history, bool at_pointer)
+void ro_gui_history_open(struct gui_window *g, bool at_pointer)
 {
+	struct browser_window *bw;
 	int width, height;
 	os_box box = {0, 0, 0, 0};
 	wimp_window_state state;
 	os_error *error;
 
-	assert(history);
-
-	history_current = history;
+	assert(g != NULL);
+	assert(g->bw != NULL);
+	bw = g->bw;
 	history_bw = bw;
 
-	history_size(history, &width, &height);
+	browser_window_history_size(bw, &width, &height);
 	width *= 2;
 	height *= 2;
 
@@ -132,8 +130,7 @@ void ro_gui_history_open(struct browser_window *bw,
 		return;
 	}
 
-	ro_gui_dialog_open_persistent(bw->window->window, history_window,
-			at_pointer);
+	ro_gui_dialog_open_persistent(g->window, history_window, at_pointer);
 }
 
 
@@ -161,7 +158,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	while (more) {
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
-		history_redraw(history_current, &ctx);
+		browser_window_history_redraw(history_bw, &ctx);
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",
@@ -237,7 +234,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer, void *data)
 
 	x = (pointer->pos.x - (state.visible.x0 - state.xscroll)) / 2;
 	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / 2;
-	url = history_position_url(history_current, x, y);
+	url = browser_window_history_position_url(history_bw, x, y);
 	if (!url) {
 		/* not over a tree entry => close tooltip window. */
 		error = xwimp_close_window(dialog_tooltip);
@@ -348,7 +345,7 @@ bool ro_gui_history_click(wimp_pointer *pointer)
 
 	x = (pointer->pos.x - (state.visible.x0 - state.xscroll)) / 2;
 	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / 2;
-	history_click(history_current, x, y,
+	browser_window_history_click(history_bw, x, y,
 			pointer->buttons == wimp_CLICK_ADJUST);
 
 	return true;

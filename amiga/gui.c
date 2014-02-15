@@ -19,9 +19,9 @@
 /* NetSurf core includes */
 #include "content/urldb.h"
 #include "css/utils.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/hotlist.h"
-#include "desktop/local_history.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -1065,12 +1065,12 @@ void ami_gui_history(struct gui_window_2 *gwin, bool back)
 	if(back == true)
 	{
 		if(browser_window_back_available(gwin->bw))
-			history_back(gwin->bw->history, false);
+			browser_window_history_back(gwin->bw, false);
 	}
 	else
 	{
 		if(browser_window_forward_available(gwin->bw))
-			history_forward(gwin->bw->history, false);
+			browser_window_history_forward(gwin->bw, false);
 	}
 
 	ami_update_buttons(gwin);

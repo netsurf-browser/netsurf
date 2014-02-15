@@ -39,8 +39,8 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
@@ -607,7 +607,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
-		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
+		browser_window_history_enumerate_back(gwin->bw, ami_context_menu_history, gwin);
 
 		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -630,7 +630,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
-		history_enumerate_forward(gwin->bw->history, ami_context_menu_history, gwin);
+		browser_window_history_enumerate_forward(gwin->bw, ami_context_menu_history, gwin);
 
 		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -1247,8 +1247,9 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 	return itemid;
 }
 
-static bool ami_context_menu_history(const struct history *history, int x0, int y0,
-	int x1, int y1, const struct history_entry *entry, void *user_data)
+static bool ami_context_menu_history(const struct browser_window *bw,
+		int x0, int y0, int x1, int y1,
+		const struct history_entry *entry, void *user_data)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)user_data;
 

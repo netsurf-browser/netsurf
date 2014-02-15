@@ -33,7 +33,6 @@
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"
-#include "desktop/local_history.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "utils/log.h"

@@ -53,11 +53,11 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"
-#include "desktop/local_history.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
@@ -2404,9 +2404,9 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_shaded(menu, HOTLIST_ADD_URL, h == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, HISTORY_SHOW_LOCAL,
-			(bw == NULL || (bw->history == NULL) ||
-			!(h != NULL || history_back_available(bw->history) ||
-			history_forward_available(bw->history))));
+			(bw == NULL ||
+			!(h != NULL || browser_window_back_available(bw) ||
+			browser_window_forward_available(bw))));
 
 
 	/* Help Submenu */
@@ -2938,12 +2938,12 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_action_home(g);
 		break;
 	case BROWSER_NAVIGATE_BACK:
-		if (bw != NULL && bw->history != NULL)
-			history_back(bw->history, false);
+		if (bw != NULL)
+			browser_window_history_back(bw, false);
 		break;
 	case BROWSER_NAVIGATE_FORWARD:
-		if (bw != NULL && bw->history != NULL)
-			history_forward(bw->history, false);
+		if (bw != NULL)
+			browser_window_history_forward(bw, false);
 		break;
 	case BROWSER_NAVIGATE_UP:
 		if (bw != NULL && h != NULL)
@@ -3636,23 +3636,23 @@ void ro_gui_window_toolbar_click(void *data,
 
 	switch (action.button) {
 	case TOOLBAR_BUTTON_BACK:
-		if (g->bw != NULL && g->bw->history != NULL)
-				history_back(g->bw->history, false);
+		if (g->bw != NULL)
+			browser_window_history_back(g->bw, false);
 		break;
 
 	case TOOLBAR_BUTTON_BACK_NEW:
-		if (g->bw != NULL && g->bw->history != NULL)
-				history_back(g->bw->history, true);
+		if (g->bw != NULL)
+			browser_window_history_back(g->bw, true);
 		break;
 
 	case TOOLBAR_BUTTON_FORWARD:
-		if (g->bw != NULL && g->bw->history != NULL)
-				history_forward(g->bw->history, false);
+		if (g->bw != NULL)
+			browser_window_history_forward(g->bw, false);
 		break;
 
 	case TOOLBAR_BUTTON_FORWARD_NEW:
-		if (g->bw != NULL && g->bw->history != NULL)
-				history_forward(g->bw->history, true);
+		if (g->bw != NULL)
+			browser_window_history_forward(g->bw, true);
 		break;
 
 	case TOOLBAR_BUTTON_STOP:
@@ -4127,7 +4127,7 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 void ro_gui_window_action_local_history(struct gui_window *g)
 {
 	if (g != NULL && g->bw != NULL && g->bw->history != NULL)
-		ro_gui_history_open(g->bw, g->bw->history, true);
+		ro_gui_history_open(g, true);
 }
 
 

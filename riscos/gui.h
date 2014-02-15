@@ -169,8 +169,7 @@ void gui_create_form_select_menu(struct browser_window *bw, struct form_control 
 
 /* in history.c */
 void ro_gui_history_init(void);
-void ro_gui_history_open(struct browser_window *bw, struct history *history,
-		bool pointer);
+void ro_gui_history_open(struct gui_window *g, bool pointer);
 
 /* in filetype.c */
 const char *fetch_filetype(const char *unix_path);

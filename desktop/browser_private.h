@@ -165,7 +165,7 @@ struct browser_window {
 
 
 
-void browser_window_initialise_common(enum browser_window_create_flags flags,
+nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 		struct browser_window *bw, struct browser_window *existing);
 
 /**

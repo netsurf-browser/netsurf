@@ -23,8 +23,7 @@
 #import "cocoa/LocalHistoryController.h"
 #import "cocoa/BrowserView.h"
 
-#import "desktop/browser_private.h"
-#import "desktop/local_history.h"
+#import "desktop/browser_history.h"
 #import "desktop/plotters.h"
 
 @implementation HistoryView
@@ -41,7 +40,7 @@
 - (NSSize) size;
 {
 	int width, height;
-	history_size( browser->history, &width, &height );
+	browser_window_history_size( browser, &width, &height );
 	
 	return cocoa_size( width, height );
 }
@@ -65,14 +64,14 @@
 	
 	cocoa_set_clip( rect );
 	
-	history_redraw( browser->history, &ctx );
+	browser_window_history_redraw( browser, &ctx );
 }
 
 - (void) mouseUp: (NSEvent *)theEvent;
 {
 	const NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
 	const bool newWindow = [theEvent modifierFlags] & NSCommandKeyMask;
-	if (history_click( browser->history, 
+	if (browser_window_history_click( browser, 
 					   cocoa_pt_to_px( location.x ), cocoa_pt_to_px( location.y ),
 					   newWindow )) {
 		[browserView setHistoryVisible: NO];
@@ -94,7 +93,7 @@
 	[[NSCursor arrowCursor] set];
 }
 
-static bool cursor_rects_cb( const struct history *history, int x0, int y0, int x1, int y1, 
+static bool cursor_rects_cb( const struct browser_window *bw, int x0, int y0, int x1, int y1, 
 							const struct history_entry *page, void *user_data )
 {
 	HistoryView *view = user_data;
@@ -102,8 +101,8 @@ static bool cursor_rects_cb( const struct history *history, int x0, int y0, int 
 	NSRect rect = NSIntersectionRect( [view visibleRect], cocoa_rect( x0, y0, x1, y1 ) );
 	if (!NSIsEmptyRect( rect )) {
 		
-		NSString *toolTip = [NSString stringWithFormat: @"%s\n%s", history_entry_get_title(page),
-							  history_entry_get_url( page )];
+		NSString *toolTip = [NSString stringWithFormat: @"%s\n%s", browser_window_history_entry_get_title(page),
+							  browser_window_history_entry_get_url( page )];
 		
 		[view addToolTipRect: rect owner: toolTip userData: nil];
 		NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect: rect 
@@ -138,7 +137,7 @@ static bool cursor_rects_cb( const struct history *history, int x0, int y0, int 
 		[self removeTrackingArea: area];
 	}
 	
-	history_enumerate( browser->history, cursor_rects_cb, self );
+	browser_window_history_enumerate( browser, cursor_rects_cb, self );
 	
 	[super updateTrackingAreas];
 }

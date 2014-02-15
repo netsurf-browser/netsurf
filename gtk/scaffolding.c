@@ -30,8 +30,8 @@
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
@@ -296,9 +296,9 @@ static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	g->buttons[BACK_BUTTON]->sensitivity =
-			history_back_available(bw->history);
-	g->buttons[FORWARD_BUTTON]->sensitivity = history_forward_available(
-			bw->history);
+			browser_window_history_back_available(bw);
+	g->buttons[FORWARD_BUTTON]->sensitivity =
+			browser_window_history_forward_available(bw);
 
 	nsgtk_scaffolding_set_sensitivity(g);
 
@@ -308,7 +308,7 @@ static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 	/* update the local history window, as well as queuing a redraw
 	 * for it.
 	 */
-	history_size(bw->history, &width, &height);
+	browser_window_history_size(bw, &width, &height);
 	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->drawing_area),
 			width, height);
 	gtk_widget_queue_draw(GTK_WIDGET(g->history_window->drawing_area));
@@ -434,13 +434,9 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 		if (error != NSERROR_OK) {
 			warn_user(messages_get_errorcode(error), 0);
 		} else {
-			browser_window_navigate(bw,
-						url,
-						NULL,
-						BW_NAVIGATE_HISTORY,
-						NULL,
-						NULL,
-						NULL);
+			browser_window_navigate(bw, url, NULL,
+					BW_NAVIGATE_HISTORY, NULL,
+					NULL, NULL);
 			nsurl_unref(url);
 		}
 		free(urltxt);
@@ -1403,7 +1399,7 @@ MULTIHANDLER(back)
 	struct browser_window *bw =
 			nsgtk_get_browser_window(g->top_level);
 
-	if ((bw == NULL) || (!history_back_available(bw->history)))
+	if ((bw == NULL) || (!browser_window_history_back_available(bw)))
 		return TRUE;
 
 	/* clear potential search effects */
@@ -1412,7 +1408,7 @@ MULTIHANDLER(back)
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-	history_back(bw->history, false);
+	browser_window_history_back(bw, false);
 	nsgtk_window_update_back_forward(g);
 
 	return TRUE;
@@ -1423,7 +1419,7 @@ MULTIHANDLER(forward)
 	struct browser_window *bw =
 			nsgtk_get_browser_window(g->top_level);
 
-	if ((bw == NULL) || (!history_forward_available(bw->history)))
+	if ((bw == NULL) || (!browser_window_history_forward_available(bw)))
 		return TRUE;
 
 	/* clear potential search effects */
@@ -1432,7 +1428,7 @@ MULTIHANDLER(forward)
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-	history_forward(bw->history, false);
+	browser_window_history_forward(bw, false);
 	nsgtk_window_update_back_forward(g);
 
 	return TRUE;
@@ -1474,7 +1470,7 @@ MULTIHANDLER(localhistory)
 	/* if entries of the same url but different frag_ids have been added
 	 * the history needs redrawing (what throbber code normally does)
 	 */
-	history_size(bw->history, &width, &height);
+	browser_window_history_size(bw, &width, &height);
 	nsgtk_window_update_back_forward(g);
 	gtk_window_get_position(g->window, &x, &y);
 	gtk_window_get_size(g->window, &mainwidth, &mainheight);
@@ -1674,7 +1670,7 @@ nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 	ctx.plot->clip(&clip);
 
-	history_redraw(bw->history, &ctx);
+	browser_window_history_redraw(bw, &ctx);
 
 	current_widget = NULL;
 
@@ -1707,7 +1703,7 @@ nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 	clip.y1 = event->area.y + event->area.height;
 	ctx.plot->clip(&clip);
 
-	history_redraw(bw->history, &ctx);
+	browser_window_history_redraw(bw, &ctx);
 
 	cairo_destroy(current_cr);
 
@@ -1727,7 +1723,7 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 	LOG(("X=%g, Y=%g", event->x, event->y));
 
-	history_click(bw->history, event->x, event->y, false);
+	browser_window_history_click(bw, event->x, event->y, false);
 
 	return TRUE;
 }

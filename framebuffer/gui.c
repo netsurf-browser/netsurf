@@ -31,7 +31,7 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser_history.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
@@ -58,7 +58,6 @@
 #include "framebuffer/fetch.h"
 
 #include "content/urldb.h"
-#include "desktop/local_history.h"
 #include "content/fetch.h"
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
@@ -988,8 +987,8 @@ fb_leftarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	if (history_back_available(bw->history))
-		history_back(bw->history, false);
+	if (browser_window_back_available(bw))
+		browser_window_history_back(bw, false);
 
 	fb_update_back_forward(gw);
 
@@ -1006,8 +1005,8 @@ fb_rightarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	if (history_forward_available(bw->history))
-		history_forward(bw->history, false);
+	if (browser_window_forward_available(bw))
+		browser_window_history_forward(bw, false);
 
 	fb_update_back_forward(gw);
 	return 1;

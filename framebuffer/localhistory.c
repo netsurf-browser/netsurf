@@ -31,7 +31,7 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser_history.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
@@ -52,7 +52,6 @@
 #include "framebuffer/font.h"
 
 #include "content/urldb.h"
-#include "desktop/local_history.h"
 #include "content/fetch.h"
 
 static int
@@ -77,7 +76,7 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	nsfb_plot_rectangle_fill(fbtk_get_nsfb(widget), &rbox, 0xffffffff);
 
-	history_redraw_rectangle(glh->bw->history,
+	browser_window_history_redraw_rectangle(glh->bw,
 				 glh->scrollx,
 				 glh->scrolly,
 				 fbtk_get_width(widget) + glh->scrollx,
@@ -97,7 +96,7 @@ localhistory_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	history_click(glh->bw->history, cbi->x, cbi->y, false);
+	browser_window_history_click(glh->bw, cbi->x, cbi->y, false);
 
 	fbtk_set_mapping(glh->window, false);
 

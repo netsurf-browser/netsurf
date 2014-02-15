@@ -41,7 +41,6 @@
 #include "content/fetchers/resource.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
 #include "desktop/save_complete.h"

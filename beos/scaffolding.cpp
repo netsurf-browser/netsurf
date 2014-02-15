@@ -52,8 +52,8 @@
 #include <fs_attr.h>
 extern "C" {
 #include "content/content.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
@@ -973,17 +973,17 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case B_NETPOSITIVE_BACK:
 		case BROWSER_NAVIGATE_BACK:
 		case 'back':
-			if (!history_back_available(bw->history))
+			if (!browser_window_history_back_available(bw))
 				break;
-			history_back(bw->history, false);
+			browser_window_history_back(bw, false);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case B_NETPOSITIVE_FORWARD:
 		case BROWSER_NAVIGATE_FORWARD:
 		case 'forw':
-			if (!history_forward_available(bw->history))
+			if (!browser_window_history_forward_available(bw))
 				break;
-			history_forward(bw->history, false);
+			browser_window_history_forward(bw->history, false);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case B_NETPOSITIVE_STOP:
@@ -1300,8 +1300,8 @@ void nsbeos_window_update_back_forward(struct beos_scaffolding *g)
 	if (!g->top_view->LockLooper())
 		return;
 
-	g->back_button->SetEnabled(history_back_available(bw->history));
-	g->forward_button->SetEnabled(history_forward_available(bw->history));
+	g->back_button->SetEnabled(browser_window_history_back_available(bw));
+	g->forward_button->SetEnabled(browser_window_history_forward_available(bw));
 
 	g->top_view->UnlockLooper();
 

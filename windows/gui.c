@@ -32,8 +32,8 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "css/utils.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -342,8 +342,8 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 	if (w->bw == NULL)
 		return;
 
-	bool forward = history_forward_available(w->bw->history);
-	bool back = history_back_available(w->bw->history);
+	bool forward = browser_window_history_forward_available(w->bw);
+	bool back = browser_window_history_back_available(w->bw);
 
 	if (w->mainmenu != NULL) {
 		EnableMenuItem(w->mainmenu, IDM_NAV_FORWARD,
@@ -851,16 +851,16 @@ nsws_window_command(HWND hwnd,
 
 	case IDM_NAV_BACK:
 		if ((gw->bw != NULL) &&
-		    (history_back_available(gw->bw->history))) {
-			history_back(gw->bw->history, false);
+		    (browser_window_history_back_available(gw->bw))) {
+			browser_window_history_back(gw->bw, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;
 
 	case IDM_NAV_FORWARD:
 		if ((gw->bw != NULL) &&
-		    (history_forward_available(gw->bw->history))) {
-			history_forward(gw->bw->history, false);
+		    (browser_window_history_forward_available(gw->bw))) {
+			browser_window_history_forward(gw->bw, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;

@@ -41,6 +41,7 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/download.h"
 #include "desktop/frames.h"
@@ -48,7 +49,6 @@
 #include "desktop/gui_factory.h"
 #include "desktop/hotlist.h"
 #include "desktop/knockout.h"
-#include "desktop/local_history.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
@@ -778,17 +778,21 @@ nserror browser_window_create(enum browser_window_create_flags flags,
  * \param bw        The window to initialise
  * \param existing  The existing window if cloning, else NULL
  */
-void browser_window_initialise_common(enum browser_window_create_flags flags,
+nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 		struct browser_window *bw, struct browser_window *existing)
 {
+	nserror err;
 	assert(bw);
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);
-		bw->history = history_clone(existing->history, bw);
+		err = browser_window_history_clone(existing, bw);
 	} else {
-		bw->history = history_create(bw);
+		err = browser_window_history_create(bw);
 	}
+
+	if (err != NSERROR_OK)
+		return err;
 
 	/* window characteristics */
 	bw->refresh_interval = -1;
@@ -807,6 +811,8 @@ void browser_window_initialise_common(enum browser_window_create_flags flags,
 	bw->status_text_len = 0;
 	bw->status_match = 0;
 	bw->status_miss = 0;
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1288,7 +1294,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 			 * after, we only leak the thumbnails when urldb does
 			 * not add the URL.
 			 */
-			history_add(bw->history, c, bw->frag_id);
+			browser_window_history_add(bw, c, bw->frag_id);
 		}
 
 		/* frames */
@@ -1318,7 +1324,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_stop_throbber(bw);
 		browser_window_update_favicon(c, bw, NULL);
 
-		history_update(bw->history, c);
+		browser_window_history_update(bw, c);
 		hotlist_update_url(hlcache_handle_get_url(c));
 
 		if (bw->refresh_interval != -1)
@@ -1689,7 +1695,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	if (bw->frag_id != NULL)
 		lwc_string_unref(bw->frag_id);
 
-	history_destroy(bw->history);
+	browser_window_history_destroy(bw);
 
 	free(bw->name);
 	free(bw->status_text);
@@ -1882,7 +1888,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 			}
 
 			if ((flags & BW_NAVIGATE_HISTORY) != 0) {
-				history_add(bw->history, 
+				browser_window_history_add(bw, 
 					    bw->current_content, bw->frag_id);
 			}
 
@@ -3047,7 +3053,8 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 
 bool browser_window_back_available(struct browser_window *bw)
 {
-	return (bw && bw->history && history_back_available(bw->history));
+	return (bw && bw->history &&
+			browser_window_history_back_available(bw));
 }
 
 
@@ -3060,7 +3067,8 @@ bool browser_window_back_available(struct browser_window *bw)
 
 bool browser_window_forward_available(struct browser_window *bw)
 {
-	return (bw && bw->history && history_forward_available(bw->history));
+	return (bw && bw->history &&
+			browser_window_history_forward_available(bw));
 }
 
 

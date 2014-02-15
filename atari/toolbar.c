@@ -29,9 +29,9 @@
 
 #include "utils/log.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
@@ -947,8 +947,8 @@ void toolbar_back_click(struct s_toolbar *tb)
     bw = gw->browser->bw;
     assert(bw != NULL);
 
-    if( history_back_available(bw->history) )
-		history_back(bw->history, false);
+    if( browser_window_back_available(bw) )
+		browser_window_history_back(bw, false);
 }
 
 void toolbar_reload_click(struct s_toolbar *tb)
@@ -974,8 +974,8 @@ void toolbar_forward_click(struct s_toolbar *tb)
     bw = gw->browser->bw;
     assert(bw != NULL);
 
-	if (history_forward_available(bw->history))
-		history_forward(bw->history, false);
+	if (browser_window_forward_available(bw))
+		browser_window_history_forward(bw, false);
 }
 
 void toolbar_home_click(struct s_toolbar *tb)
