@@ -910,7 +910,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				}
 				else
 				{
-					history_go(gwin->bw->history,
+					browser_window_history_go(gwin->bw,
 						(struct history_entry *)userdata, false);
 				}
 			break;

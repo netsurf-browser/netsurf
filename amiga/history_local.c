@@ -297,7 +297,7 @@ void ami_history_update_extent(struct history_window *hw)
 	struct IBox *bbox;
 	int width, height;
 
-	history_size(hw->bw->history, &width, &height);
+	browser_window_history_size(hw->bw, &width, &height);
 	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL],hw->win,NULL,
