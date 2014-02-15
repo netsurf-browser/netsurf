@@ -361,7 +361,7 @@ uint32 agm_process(Class *cl, Object *o, Msg msg)
 	if (lod->agHandle) {
 		while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) ) {
 			switch(lod->agm->agm_Type) {
-				case ShutdownMsgId:
+				case ShutdownMsgID:
 					agm_close(cl, o, (Msg)msg);
 				break;
 
