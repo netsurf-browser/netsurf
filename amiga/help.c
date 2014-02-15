@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2013-4 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -78,6 +78,6 @@ ULONG ami_help_signal(void)
 void ami_help_process(void)
 {
 	ULONG ret = IDoMethod(AmigaGuideObject, AGM_PROCESS, NULL);
-	//printf("ret = %d\n", ret); // should be NULL if closed
+	if(ret == NULL) ami_help_free();
 }
 
