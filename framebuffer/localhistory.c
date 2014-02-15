@@ -32,16 +32,7 @@
 #include <libnsfb_event.h>
 
 #include "desktop/browser_history.h"
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
-#include "desktop/netsurf.h"
-#include "utils/nsoption.h"
-#include "utils/log.h"
-#include "utils/url.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "desktop/textinput.h"
-#include "render/form.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
