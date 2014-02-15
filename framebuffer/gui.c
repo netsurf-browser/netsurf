@@ -42,8 +42,6 @@
 #include "utils/messages.h"
 #include "utils/schedule.h"
 #include "utils/types.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 #include "desktop/textinput.h"
 #include "render/form.h"
 
