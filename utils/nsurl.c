@@ -2080,10 +2080,9 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 	pos += query_len;
 	if (url->components.fragment != NULL) {
 		const char *frag = lwc_string_data(url->components.fragment);
-		size_t frag_len = lwc_string_length(url->components.fragment);
 		*pos = '#';
-		memcpy(++pos, frag, frag_len);
-		pos += frag_len;
+		memcpy(++pos, frag, frag_len - 1);
+		pos += frag_len - 1;
 	}
 	*pos = '\0';
 
