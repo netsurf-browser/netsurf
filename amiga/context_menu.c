@@ -53,7 +53,7 @@
 
 static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
 static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved);
-static bool ami_context_menu_history(const struct history *history, int x0, int y0,
+static bool ami_context_menu_history(const struct browser_window *bw, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
 static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -1258,7 +1258,7 @@ static bool ami_context_menu_history(const struct browser_window *bw,
 
 	IDoMethod(ctxmenuobj, PM_INSERT,
 		NewObject(POPUPMENU_GetItemClass(), NULL,
-			PMIA_Title, (ULONG)history_entry_get_title(entry),
+			PMIA_Title, (ULONG)browser_window_history_entry_get_title(entry),
 			PMIA_ID, CMID_HISTORY,
 			PMIA_UserData, entry,
 		TAG_DONE),
