@@ -2032,8 +2032,9 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 nserror nsurl_replace_query(const nsurl *url, const char *query,
 		nsurl **new_url)
 {
-	int query_len;
-	int base_len;
+	int query_len;		/* Length of new query string, including '?' */
+	int frag_len = 0;	/* Length of fragment, including '#' */
+	int base_len;		/* Length of URL up to start of query */
 	char *pos;
 	size_t len;
 	lwc_string *lwc_query;
@@ -2051,11 +2052,12 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 		base_len -= lwc_string_length(url->components.query);
 	}
 	if (url->components.fragment != NULL) {
-		base_len -= 1 + lwc_string_length(url->components.fragment);
+		frag_len = 1 + lwc_string_length(url->components.fragment);
+		base_len -= frag_len;
 	}
 
 	/* Set new_url's length */
-	len = base_len + query_len;
+	len = base_len + query_len + frag_len;
 
 	/* Create NetSurf URL object */
 	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
