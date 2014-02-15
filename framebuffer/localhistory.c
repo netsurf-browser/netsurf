@@ -16,16 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <limits.h>
-#include <unistd.h>
-#include <assert.h>
-#include <string.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
@@ -37,13 +28,6 @@
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
 #include "framebuffer/framebuffer.h"
-#include "framebuffer/schedule.h"
-#include "framebuffer/findfile.h"
-#include "framebuffer/image_data.h"
-#include "framebuffer/font.h"
-
-#include "content/urldb.h"
-#include "content/fetch.h"
 
 static int
 localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
