@@ -347,6 +347,7 @@ uint32 agm_close(Class *cl, Object *o, Msg msg)
    IAmigaGuide->CloseAmigaGuide(lod->agHandle);
    lod->agHandle = NULL;
    lod->agActive = FALSE;
+   lod->agSignal = NULL;
   }
 
  return (uint32)lod->agHandle;
