@@ -204,20 +204,42 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 			cairo_image_surface_get_height(gbitmap->surface);
 
 	if (fmt == CAIRO_FORMAT_RGB24) {
-		/* Opaque image: simply swap R & B channels */
+		/* Opaque image */
 		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
-			b = pixels[4 * pixel_loop + 0];
-			r = pixels[4 * pixel_loop + 2];
-			pixels[4 * pixel_loop + 0] = r;
-			pixels[4 * pixel_loop + 2] = b;
-		}
-	} else {
-		/* Alpha image: swap R & B channels, and de-multiply alpha */
-		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			/* Cairo surface is ARGB, written in native endian */
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
 			b = pixels[4 * pixel_loop + 0];
 			g = pixels[4 * pixel_loop + 1];
 			r = pixels[4 * pixel_loop + 2];
 			t = pixels[4 * pixel_loop + 3];
+#else
+			t = pixels[4 * pixel_loop + 0];
+			r = pixels[4 * pixel_loop + 1];
+			g = pixels[4 * pixel_loop + 2];
+			b = pixels[4 * pixel_loop + 3];
+#endif
+
+			/* Core bitmaps always have a component order of rgba,
+			 * regardless of system endianness */
+			pixels[4 * pixel_loop + 0] = r;
+			pixels[4 * pixel_loop + 1] = g;
+			pixels[4 * pixel_loop + 2] = b;
+			pixels[4 * pixel_loop + 3] = t;
+		}
+	} else {
+		/* Alpha image: de-multiply alpha */
+		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+			b = pixels[4 * pixel_loop + 0];
+			g = pixels[4 * pixel_loop + 1];
+			r = pixels[4 * pixel_loop + 2];
+			t = pixels[4 * pixel_loop + 3];
+#else
+			t = pixels[4 * pixel_loop + 0];
+			r = pixels[4 * pixel_loop + 1];
+			g = pixels[4 * pixel_loop + 2];
+			b = pixels[4 * pixel_loop + 3];
+#endif
 
 			if (t != 0) {
 				r = (r << 8) / t;
@@ -343,15 +365,30 @@ void bitmap_modified(void *vbitmap) {
 	}
 
 	if (fmt == CAIRO_FORMAT_RGB24) {
-		/* Opaque image: simply swap R & B channels */
+		/* Opaque image */
 		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			/* Core bitmaps always have a component order of rgba,
+			 * regardless of system endianness */
 			r = pixels[4 * pixel_loop + 0];
+			g = pixels[4 * pixel_loop + 1];
 			b = pixels[4 * pixel_loop + 2];
+			t = pixels[4 * pixel_loop + 3];
+
+			/* Cairo surface is ARGB, written in native endian */
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
 			pixels[4 * pixel_loop + 0] = b;
+			pixels[4 * pixel_loop + 1] = g;
 			pixels[4 * pixel_loop + 2] = r;
+			pixels[4 * pixel_loop + 3] = t;
+#else
+			pixels[4 * pixel_loop + 0] = t;
+			pixels[4 * pixel_loop + 1] = r;
+			pixels[4 * pixel_loop + 2] = g;
+			pixels[4 * pixel_loop + 3] = b;
+#endif
 		}
 	} else {
-		/* Alpha image: swap R & B channels, and pre-multiply alpha */
+		/* Alpha image: pre-multiply alpha */
 		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
 			r = pixels[4 * pixel_loop + 0];
 			g = pixels[4 * pixel_loop + 1];
@@ -366,10 +403,17 @@ void bitmap_modified(void *vbitmap) {
 				r = g = b = 0;
 			}
 
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
 			pixels[4 * pixel_loop + 0] = b;
 			pixels[4 * pixel_loop + 1] = g;
 			pixels[4 * pixel_loop + 2] = r;
 			pixels[4 * pixel_loop + 3] = t;
+#else
+			pixels[4 * pixel_loop + 0] = t;
+			pixels[4 * pixel_loop + 1] = r;
+			pixels[4 * pixel_loop + 2] = g;
+			pixels[4 * pixel_loop + 3] = b;
+#endif
 		}
 	}
 	
