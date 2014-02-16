@@ -359,9 +359,9 @@ void bitmap_modified(void *vbitmap) {
 			t = pixels[4 * pixel_loop + 3];
 
 			if (t != 0) {
-				r = ((r * t) >> 8) & 0xff;
-				g = ((g * t) >> 8) & 0xff;
-				b = ((b * t) >> 8) & 0xff;
+				r = ((r * (t + 1)) >> 8) & 0xff;
+				g = ((g * (t + 1)) >> 8) & 0xff;
+				b = ((b * (t + 1)) >> 8) & 0xff;
 			} else {
 				r = g = b = 0;
 			}
