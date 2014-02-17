@@ -202,6 +202,17 @@ static void textarea_normalise_text(struct textarea *ta,
 
 
 /**
+ * Reset the selection (no redraw)
+ *
+ * \param ta Text area
+ */
+static inline void textarea_reset_selection(struct textarea *ta)
+{
+	ta->sel_start = ta->sel_end = -1;
+}
+
+
+/**
  * Get the caret's position
  *
  * \param ta Text area
@@ -2400,8 +2411,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					length, false, &byte_delta, &r))
 				return false;
 
+			redraw = true;
 			caret = ta->sel_end;
-			textarea_clear_selection(ta);
+			textarea_reset_selection(ta);
 		} else {
 			if (!textarea_replace_text(ta, caret, caret,
 					utf8, length, false, &byte_delta, &r))
@@ -2431,8 +2443,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else if (caret > 0) {
 				b_off = utf8_prev(ta->show->data, caret);
 				if (!textarea_replace_text(ta, b_off, caret,
@@ -2451,8 +2464,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else if (caret < ta->show->len - 1) {
 				b_off = utf8_next(ta->show->data,
 						ta->show->len - 1, caret);
@@ -2476,8 +2490,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						&byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta, caret, caret,
 						"\n", 1, false,
@@ -2506,8 +2521,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta,
 						caret, caret,
@@ -2530,9 +2546,10 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, true, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
 				caret += byte_delta;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			}
 			break;
 		case KEY_ESCAPE:
@@ -2704,8 +2721,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (ta->lines[line].b_length != 0) {
 					/* Delete line */
@@ -2736,8 +2754,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				b_len = ta->lines[line].b_length;
 				b_off = ta->lines[line].b_start + b_len;
@@ -2757,8 +2776,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.byte_off,
@@ -3043,7 +3063,7 @@ bool textarea_clear_selection(struct textarea *ta)
 			break;
 
 	/* Clear selection and redraw */
-	ta->sel_start = ta->sel_end = -1;
+	textarea_reset_selection(ta);
 
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;
