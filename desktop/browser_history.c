@@ -712,9 +712,13 @@ void browser_window_history_go(struct browser_window *bw,
 		current = history->current;
 		history->current = entry;
 
-		browser_window_create(BW_CREATE_CLONE,
+		error = browser_window_create(BW_CREATE_CLONE,
 				url, NULL, bw, NULL);
 		history->current = current;
+		if (error != NSERROR_OK) {
+			nsurl_unref(url);
+			return;
+		}
 	} else {
 		history->current = entry;
 		browser_window_navigate(bw, url, NULL,
