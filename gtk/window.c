@@ -27,6 +27,7 @@
 #include <gdk-pixbuf/gdk-pixdata.h>
 
 #include "utils/log.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "content/hlcache.h"
@@ -104,6 +105,9 @@ struct gui_window {
 
 	/** The icon this window should have */
 	GdkPixbuf *icon;
+
+	/** The input method to use with this window */
+	GtkIMContext *input_method;
 
 	/** list for cleanup */
 	struct gui_window *next, *prev;
@@ -315,6 +319,7 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
+	gtk_im_context_reset(g->input_method);
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
 			g->scaffold)->window));
@@ -490,7 +495,12 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 				GdkEventKey *event, gpointer data)
 {
 	struct gui_window *g = data;
-	uint32_t nskey = gtk_gui_gdkkey_to_nskey(event);
+	uint32_t nskey;
+	
+	if (gtk_im_context_filter_keypress(g->input_method, event))
+		return TRUE;
+
+	nskey = gtk_gui_gdkkey_to_nskey(event);
 
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
@@ -598,6 +608,31 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	return TRUE;
 }
 
+static gboolean nsgtk_window_keyrelease_event(GtkWidget *widget,
+				GdkEventKey *event, gpointer data)
+{
+	struct gui_window *g = data;
+	
+	return gtk_im_context_filter_keypress(g->input_method, event);
+}
+
+
+static void nsgtk_window_input_method_commit(GtkIMContext *ctx,
+				const gchar *str, gpointer data)
+{
+	struct gui_window *g = data;
+	size_t len = strlen(str), offset = 0;
+
+	while (offset < len) {
+		uint32_t nskey = utf8_to_ucs4(str + offset, len - offset);
+
+		browser_window_key_press(g->bw, nskey);
+
+		offset = utf8_next(str, len, offset);
+	}
+}
+
+
 static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 		GtkAllocation *allocation, gpointer data)
 {
@@ -658,6 +693,8 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 	struct gui_window *gw = data;
 
 	browser_window_destroy(gw->bw);
+
+	g_object_unref(gw->input_method);
 }
 
 /* Core interface documented in desktop/gui.h to create a gui_window */
@@ -720,6 +757,7 @@ gui_window_create(struct browser_window *bw,
 	g->layout = GTK_LAYOUT(gtk_builder_get_object(xml, "layout"));
 	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
 	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
+	g->input_method = gtk_im_multicontext_new();
 
 
 	/* add new gui window to global list (push_top) */
@@ -763,6 +801,8 @@ gui_window_create(struct browser_window *bw,
 			nsgtk_window_button_release_event, g);
 	CONNECT(g->layout, "key-press-event",
 			nsgtk_window_keypress_event, g);
+	CONNECT(g->layout, "key-release-event",
+			nsgtk_window_keyrelease_event, g);
 	CONNECT(g->layout, "size-allocate",
 			nsgtk_window_size_allocate_event, g);
 	CONNECT(g->layout, "scroll-event",
@@ -778,6 +818,14 @@ gui_window_create(struct browser_window *bw,
 	/* gtk container destructor */
 	CONNECT(g->container, "destroy",
 		window_destroy, g);
+
+	/* input method */
+	gtk_im_context_set_client_window(g->input_method,
+			nsgtk_layout_get_bin_window(g->layout));
+	gtk_im_context_set_use_preedit(g->input_method, FALSE);
+	/* input method signals */
+	CONNECT(g->input_method, "commit",
+		nsgtk_window_input_method_commit, g);
 
 	/* add the tab container to the scaffold notebook */
 	switch (temp_open_background) {

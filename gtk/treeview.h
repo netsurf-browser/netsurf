@@ -33,16 +33,6 @@ void nsgtk_treeview_destroy(struct nsgtk_treeview *tv);
 
 struct tree *nsgtk_treeview_get_tree(struct nsgtk_treeview *tv);
 
-gboolean nsgtk_tree_window_expose_event(GtkWidget *, GdkEventExpose *,
-		gpointer g);
 void nsgtk_tree_window_hide(GtkWidget *widget, gpointer g);
-gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer g);
-gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer g);
-gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
-		GdkEventMotion *event, gpointer g);
-gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
-		gpointer g);
 
 #endif /*__NSGTK_TREEVIEW_H__*/
