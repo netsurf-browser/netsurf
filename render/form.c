@@ -156,17 +156,6 @@ struct form *form_new(void *node, const char *action, const char *target,
 
 
 /**
- * Set form's html content, so it can ask to redraw.
- *
- * \param form  form to set html content for
- * \param html  html content for form
- */
-void form_set_html_content(struct form *f, struct html_content *html)
-{
-	f->html = html;
-}
-
-/**
  * Free a form, and any controls it owns.
  *
  * \param form  The form to free
@@ -1397,9 +1386,8 @@ static void form__select_process_selection(html_content *html,
 void form_select_process_selection(struct form_control *control, int item)
 {
 	assert(control != NULL);
-	assert(control->form != NULL);
 
-	form__select_process_selection(control->form->html, control, item);
+	form__select_process_selection(control->html, control, item);
 }
 
 /**
@@ -1650,13 +1638,13 @@ void form_radio_set(struct form_control *radio)
 		if (control->selected) {
 			control->selected = false;
 			dom_html_input_element_set_checked(control->node, false);
-			html__redraw_a_box(radio->form->html, control->box);
+			html__redraw_a_box(radio->html, control->box);
 		}
 	}
 
 	radio->selected = true;
 	dom_html_input_element_set_checked(radio->node, true);
-	html__redraw_a_box(radio->form->html, radio->box);
+	html__redraw_a_box(radio->html, radio->box);
 }
 
 

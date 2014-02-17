@@ -2391,6 +2391,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		goto no_memory;
 	box->gadget = gadget;
 	gadget->box = box;
+	gadget->html = content;
 
 	if (type && dom_string_caseless_lwc_isequal(type,
 			corestring_lwc_password)) {
@@ -2526,6 +2527,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 	if (!gadget)
 		return false;
 
+	gadget->html = content;
 	box->gadget = gadget;
 	gadget->box = box;
 
@@ -2554,6 +2556,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	if (gadget == NULL)
 		return false;
 
+	gadget->html = content;
 	err = dom_node_get_first_child(n, &c);
 	if (err != DOM_NO_ERR)
 		return false;
@@ -2761,6 +2764,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	if (box->gadget == NULL)
 		return false;
 
+	box->gadget->html = content;
 	box->gadget->box = box;
 
 	if (!box_input_text(content, box, n))

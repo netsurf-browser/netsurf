@@ -46,7 +46,6 @@ typedef enum {
 
 /** HTML form. */
 struct form {
-	struct html_content *html;	/**< HTML content containing form */
 	void *node;			/**< Corresponding DOM node */
 
 	char *action;			/**< Absolute URL to submit to. */
@@ -78,13 +77,13 @@ typedef enum {
 
 /** Data for textarea */
 struct form_textarea_data {
-	struct html_content *html;
 	struct form_control *gadget;
 };
 
 /** Form control. */
 struct form_control {
 	void *node;			/**< Corresponding DOM node */
+	struct html_content *html;	/**< HTML content containing control */
 
 	form_control_type type;		/**< Type of control */
 
@@ -157,7 +156,6 @@ typedef void(*select_menu_redraw_callback)(void *client_data,
 struct form *form_new(void *node, const char *action, const char *target, 
 		form_method method, const char *charset, 
 		const char *doc_charset);
-void form_set_html_content(struct form *f, struct html_content *html);
 void form_free(struct form *form);
 struct form_control *form_new_control(void *node, form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);

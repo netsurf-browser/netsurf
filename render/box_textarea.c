@@ -107,8 +107,8 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 static void box_textarea_callback(void *data, struct textarea_msg *msg)
 {
 	struct form_textarea_data *d = data;
-	struct html_content *html = d->html;
 	struct form_control *gadget = d->gadget;
+	struct html_content *html = d->gadget->html;
 	struct box *box = gadget->box;
 
 	switch (msg->type) {
@@ -119,7 +119,7 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 			union html_drag_owner drag_owner;
 			drag_owner.no_owner = true;
 
-			html_set_drag_type(d->html, drag_type, drag_owner,
+			html_set_drag_type(html, drag_type, drag_owner,
 					NULL);
 		} else {
 			/* Textarea drag started */
@@ -146,7 +146,7 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 				break;
 			}
 
-			html_set_drag_type(d->html, drag_type, drag_owner,
+			html_set_drag_type(html, drag_type, drag_owner,
 					&rect);
 		}
 		break;
@@ -171,7 +171,7 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 			union html_selection_owner sel_owner;
 			sel_owner.textarea = box;
 
-			html_set_selection(d->html, HTML_SELECTION_TEXTAREA,
+			html_set_selection(html, HTML_SELECTION_TEXTAREA,
 					sel_owner,
 					msg->data.selection.read_only);
 		} else {
@@ -179,7 +179,7 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 			union html_selection_owner sel_owner;
 			sel_owner.none = true;
 
-			html_set_selection(d->html, HTML_SELECTION_NONE,
+			html_set_selection(html, HTML_SELECTION_NONE,
 					sel_owner, true);
 		}
 		break;
@@ -191,12 +191,12 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 		if (msg->data.caret.type == TEXTAREA_CARET_HIDE) {
 			union html_focus_owner focus_owner;
 			focus_owner.textarea = box;
-			html_set_focus(d->html, HTML_FOCUS_TEXTAREA,
+			html_set_focus(html, HTML_FOCUS_TEXTAREA,
 					focus_owner, true, 0, 0, 0, NULL);
 		} else {
 			union html_focus_owner focus_owner;
 			focus_owner.textarea = box;
-			html_set_focus(d->html, HTML_FOCUS_TEXTAREA,
+			html_set_focus(html, HTML_FOCUS_TEXTAREA,
 					focus_owner, false,
 					msg->data.caret.pos.x,
 					msg->data.caret.pos.y,
@@ -277,7 +277,6 @@ bool box_textarea_create_textarea(html_content *html,
 	if (read_only)
 		ta_flags |= TEXTAREA_READONLY;
 
-	gadget->data.text.data.html = html;
 	gadget->data.text.data.gadget = gadget;
 
 	font_plot_style_from_css(gadget->box->style, &fstyle);

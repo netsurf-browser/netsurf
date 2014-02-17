@@ -1202,9 +1202,6 @@ html_begin_conversion(html_content *htmlc)
 				return false;
 			}
 		}
-
-		/* Tell each form what content its in, so it can redraw */
-		form_set_html_content(f, htmlc);
 	}
 
 	dom_node_unref(html);
