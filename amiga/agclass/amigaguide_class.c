@@ -4,6 +4,7 @@
  *   by Daniel "Trixie" Jedlicka
  */
 
+#undef __USE_INLINE__
 
 #include "amigaguide_class.h"
 
@@ -261,6 +262,11 @@ uint32 om_get(Class *cl, Object *o, struct opGet *msg)
      retVal = 1L;
    break;
 
+   case AMIGAGUIDE_Signal:
+     *(msg->opg_Storage) = (uint32)lod->agSignal;
+     retVal = 1L;
+   break;
+
    default:
      retVal = IIntuition->IDoSuperMethodA(cl, o, (Msg)msg);
   }
@@ -335,6 +341,7 @@ uint32 agm_close(Class *cl, Object *o, Msg msg)
   {
    IAmigaGuide->CloseAmigaGuide(lod->agHandle);
    lod->agHandle = NULL;
+   lod->agSignal = 0;
    retVal = 1L;
   }
 
