@@ -443,36 +443,39 @@ nserror browser_window_history_create(struct browser_window *bw)
 /**
  * Clone a bw's history tree for new bw
  *
- * \param  bw	browser window with history to clone.
- * \param  new	browser window to make cloned history for.
+ * \param  existing	browser window with history to clone.
+ * \param  clone	browser window to make cloned history for.
  *
  * \return  NSERROR_OK or appropriate error otherwise
  */
 
-nserror browser_window_history_clone(const struct browser_window *bw,
-		struct browser_window *new)
+nserror browser_window_history_clone(const struct browser_window *existing,
+		struct browser_window *clone)
 {
 	struct history *new_history;
 
-	new->history = NULL;
+	clone->history = NULL;
 
-	if (bw == NULL || bw->history == NULL || bw->history->start == NULL)
-		return browser_window_history_create(new);
+	if (existing == NULL || existing->history == NULL ||
+			existing->history->start == NULL)
+		/* Nothing to clone, create new history for clone window */
+		return browser_window_history_create(clone);
 
+	/* Make cloned history */
 	new_history = malloc(sizeof *new_history);
 	if (!new_history)
 		return NSERROR_NOMEM;
 
-	new->history = new_history;
-	memcpy(new_history, bw->history, sizeof *new_history);
+	clone->history = new_history;
+	memcpy(new_history, existing->history, sizeof *new_history);
 
 	new_history->start = browser_window_history__clone_entry(new_history,
 			new_history->start);
 	if (!new_history->start) {
 		LOG(("Insufficient memory to clone history"));
 		warn_user("NoMemory", 0);
-		browser_window_history_destroy(new);
-		new->history = NULL;
+		browser_window_history_destroy(clone);
+		clone->history = NULL;
 		return NSERROR_NOMEM;
 	}
 

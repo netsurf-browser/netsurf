@@ -34,8 +34,8 @@ struct history_entry;
 struct redraw_context;
 
 nserror browser_window_history_create(struct browser_window *bw);
-nserror browser_window_history_clone(const struct browser_window *bw,
-		struct browser_window *new);
+nserror browser_window_history_clone(const struct browser_window *existing,
+		struct browser_window *clone);
 void browser_window_history_add(struct browser_window *bw,
 		struct hlcache_handle *content, lwc_string *frag_id);
 void browser_window_history_update(struct browser_window *bw,
