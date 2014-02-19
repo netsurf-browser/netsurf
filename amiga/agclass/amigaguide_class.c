@@ -368,6 +368,7 @@ uint32 agm_process(Class *cl, Object *o, Msg msg)
       {
        case ShutdownMsgID:
          agm_close(cl, o, msg);
+         retVal = 1L;
        break;
 
        default:

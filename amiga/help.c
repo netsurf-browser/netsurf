@@ -78,6 +78,6 @@ ULONG ami_help_signal(void)
 void ami_help_process(void)
 {
 	ULONG ret = IDoMethod(AmigaGuideObject, AGM_PROCESS, NULL);
-	if(ret == NULL) ami_help_free();
+	if(ret) ami_help_free();
 }
 
