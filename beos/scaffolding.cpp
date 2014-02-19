@@ -983,7 +983,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		case 'forw':
 			if (!browser_window_history_forward_available(bw))
 				break;
-			browser_window_history_forward(bw->history, false);
+			browser_window_history_forward(bw, false);
 			nsbeos_window_update_back_forward(scaffold);
 			break;
 		case B_NETPOSITIVE_STOP:
