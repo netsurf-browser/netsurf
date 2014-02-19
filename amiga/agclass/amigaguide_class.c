@@ -4,9 +4,10 @@
  *   by Daniel "Trixie" Jedlicka
  */
 
-#undef __USE_INLINE__
 
 #include "amigaguide_class.h"
+
+
 
 struct localObjectData
 {
@@ -15,7 +16,6 @@ struct localObjectData
  AMIGAGUIDECONTEXT     agHandle;
  uint32                agContextID;
  uint32                agSignal;
- BOOL                  agActive;
 };
 
 struct Library         *AmigaGuideBase = NULL;
@@ -35,6 +35,7 @@ uint32 om_get(Class *, Object *, struct opGet *);
 uint32 agm_open(Class *, Object *, Msg);
 uint32 agm_close(Class *, Object *, Msg);
 uint32 agm_process(Class *, Object *, Msg);
+
 
 /* ***************************  class initialization and disposal   ***************************** */
 
@@ -131,7 +132,6 @@ uint32 om_new(Class *cl, Object *o, struct opSet *msg)
    if ( (lod = (struct localObjectData *)INST_DATA(cl, retVal)) )
     {
      // Initialize values.
-     lod->agActive          = FALSE;
      lod->agHandle          = NULL;
      lod->agContextID       = 0;
      lod->nag.nag_Name      = NULL;
@@ -172,10 +172,9 @@ uint32 om_dispose(Class *cl, Object *o, Msg msg)
 uint32 om_set(Class *cl, Object *o, struct opSet *msg)
 {
  struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
- struct TagItem *tags, *ti;
-
-
- tags = msg->ops_AttrList;
+ struct TagItem *ti = NULL, *tags = msg->ops_AttrList;
+ uint32 retVal = 0L;
+ 
 
  while ((ti = IUtility->NextTagItem (&tags)))
   {
@@ -183,31 +182,32 @@ uint32 om_set(Class *cl, Object *o, struct opSet *msg)
     {
      case AMIGAGUIDE_Name:
        lod->nag.nag_Name = (STRPTR)ti->ti_Data;
-       lod->agActive = FALSE; // Database name has changed, we must setup the help system again.
+       retVal++;
      break;
 
      case AMIGAGUIDE_Screen:
        lod->nag.nag_Screen = (struct Screen *)ti->ti_Data;
-       lod->agActive = FALSE; // Screen pointer has changed, we must setup the help system again.
+       retVal++;
      break;
 
      case AMIGAGUIDE_PubScreen:
        lod->nag.nag_PubScreen = (STRPTR)ti->ti_Data;
-       lod->agActive = FALSE; // Pubscreen name has changed, we must setup the help system again.
+       retVal++;
      break;
 
      case AMIGAGUIDE_BaseName:
        lod->nag.nag_BaseName = (STRPTR)ti->ti_Data;
-       lod->agActive = FALSE; // Application basename has changed, we must setup the help system again.
+       retVal++;
      break;
 
      case AMIGAGUIDE_ContextArray:
        lod->nag.nag_Context = (STRPTR *)ti->ti_Data;
-       lod->agActive = FALSE; // Context array has changed, we must setup the help system again.
+       retVal++;
      break;
 
      case AMIGAGUIDE_ContextID:
        lod->agContextID = (uint32)ti->ti_Data;
+       retVal++;
      break;
 
      default:
@@ -215,38 +215,7 @@ uint32 om_set(Class *cl, Object *o, struct opSet *msg)
     }
   }
 
-
- // Setup the help system, if not ready yet or needs changing.
- if ( lod->agActive == FALSE )
-  {
-   // Shut down help system should it already be running.
-   if ( lod->agHandle ) agm_close(cl, o, (Msg)msg);
-
-   // (Re)establish the AmigaGuide context and open the database asynchronously.
-   if ( (lod->agHandle = IAmigaGuide->OpenAmigaGuideAsync(&(lod->nag), NULL)) )
-    {
-     if ( (lod->agSignal = IAmigaGuide->AmigaGuideSignal(lod->agHandle)) )
-      {
-       // Wait until the help system is up and running.
-       IExec->Wait(lod->agSignal);
-       while ( !(lod->agActive) )
-        {
-         while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) )
-          {
-           // The AmigaGuide process started OK.
-           if ( lod->agm->agm_Type == ActiveToolID ) lod->agActive = TRUE;
-
-           // Opening the guide file failed for some reason, continue as usual.
-           if ( lod->agm->agm_Type == ToolStatusID && lod->agm->agm_Pri_Ret ) lod->agActive = TRUE;
-
-           IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
-          }
-        }
-      }
-    }
-  }
-
- return (uint32)lod->agHandle;
+ return retVal;
 
 }
 
@@ -264,37 +233,32 @@ uint32 om_get(Class *cl, Object *o, struct opGet *msg)
   {
    case AMIGAGUIDE_Name:
      *(msg->opg_Storage) = (uint32)lod->nag.nag_Name;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    case AMIGAGUIDE_Screen:
      *(msg->opg_Storage) = (uint32)lod->nag.nag_Screen;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    case AMIGAGUIDE_PubScreen:
      *(msg->opg_Storage) = (uint32)lod->nag.nag_PubScreen;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    case AMIGAGUIDE_BaseName:
      *(msg->opg_Storage) = (uint32)lod->nag.nag_BaseName;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    case AMIGAGUIDE_ContextArray:
      *(msg->opg_Storage) = (uint32)lod->nag.nag_Context;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    case AMIGAGUIDE_ContextID:
      *(msg->opg_Storage) = (uint32)lod->agContextID;
-     retVal = 1;
-   break;
-
-   case AMIGAGUIDE_Signal:
-     *(msg->opg_Storage) = (uint32)lod->agSignal;
-     retVal = 1;
+     retVal = 1L;
    break;
 
    default:
@@ -312,23 +276,47 @@ uint32 om_get(Class *cl, Object *o, struct opGet *msg)
 uint32 agm_open(Class *cl, Object *o, Msg msg)
 {
  struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
- uint32 retVal = 0;
+ BOOL   agActive = FALSE;
+ uint32 retVal = 0L;
 
 
- if ( (lod->agHandle) && (lod->agActive) )
-  {
-   if ( lod->nag.nag_Context )
+ // Close a previous instance.
+ if ( lod->agHandle ) agm_close(cl, o, msg);
+
+   // (Re)establish the AmigaGuide context and open the database asynchronously.
+   if ( (lod->agHandle = IAmigaGuide->OpenAmigaGuideAsync(&(lod->nag), NULL)) )
     {
-     // A context node array is provided = open the current context node.
-     IAmigaGuide->SetAmigaGuideContext(lod->agHandle, lod->agContextID, NULL);
-     retVal = IAmigaGuide->SendAmigaGuideContext(lod->agHandle, NULL);
+     if ( (lod->agSignal = IAmigaGuide->AmigaGuideSignal(lod->agHandle)) )
+      {
+       // Wait until the database is displayed and ready.
+       IExec->Wait(lod->agSignal);
+       while ( agActive == FALSE )
+        {
+         while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) )
+          {
+           // The AmigaGuide process started OK.
+           if ( lod->agm->agm_Type == ActiveToolID ) agActive = TRUE;
+
+           // Opening the guide file failed for some reason, continue as usual.
+           if ( lod->agm->agm_Type == ToolStatusID && lod->agm->agm_Pri_Ret ) agActive = TRUE;
+
+           IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
+          }
+        }
+       if ( lod->nag.nag_Context )
+        {
+         // A context node array is provided = open the current context node.
+         IAmigaGuide->SetAmigaGuideContext(lod->agHandle, lod->agContextID, NULL);
+         retVal = IAmigaGuide->SendAmigaGuideContext(lod->agHandle, NULL);
+        }
+       else
+        {
+         // No context array is provided = open the main node.
+         retVal = IAmigaGuide->SendAmigaGuideCmd(lod->agHandle, "LINK MAIN", TAG_DONE);
+        }
+      }
     }
-   else
-    {
-     // No context array is provided = open the main node.
-     retVal = IAmigaGuide->SendAmigaGuideCmd(lod->agHandle, "LINK MAIN", TAG_DONE);
-    }
-  }
+
 
  return retVal;
 }
@@ -340,40 +328,50 @@ uint32 agm_open(Class *cl, Object *o, Msg msg)
 uint32 agm_close(Class *cl, Object *o, Msg msg)
 {
  struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
+ uint32 retVal = 0L;
 
 
  if ( lod->agHandle )
   {
    IAmigaGuide->CloseAmigaGuide(lod->agHandle);
    lod->agHandle = NULL;
-   lod->agActive = FALSE;
-   lod->agSignal = NULL;
+   retVal = 1L;
   }
 
- return (uint32)lod->agHandle;
+ return retVal;
 
 }
 
 
+
+
+
+
 uint32 agm_process(Class *cl, Object *o, Msg msg)
 {
-	struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
+ struct localObjectData *lod = (struct localObjectData *)INST_DATA(cl, o);
+ uint32 retVal = 0L;
+ 
 
-	if (lod->agHandle) {
-		while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) ) {
-			switch(lod->agm->agm_Type) {
-				case ShutdownMsgID:
-					agm_close(cl, o, (Msg)msg);
-				break;
+ if (lod->agHandle)
+  {
+   while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) )
+    {
+     switch (lod->agm->agm_Type)
+      {
+       case ShutdownMsgID:
+         agm_close(cl, o, msg);
+       break;
 
-				default:
-					//printf("%d\n", lod->agm->agm_Type);
-				break;
-			}
-		}
-		IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
-	}
+       default:
+         //printf("%d\n", lod->agm->agm_Type);
+       break;
+      }
+     IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
+    }
+  }
 
-	return (uint32)lod->agHandle;
+ return retVal;
+ 
 }
 
