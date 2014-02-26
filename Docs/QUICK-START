@@ -1,0 +1,53 @@
+--------------------------------------------------------------------------------
+  Quick Build Steps for NetSurf                               26 February 2014
+--------------------------------------------------------------------------------
+
+  This document provides steps for building the GTK version of NetSurf on a
+  debian based linux system.
+
+
+  Grab a temporary env.sh
+==========================
+
+      $ wget http://git.netsurf-browser.org/netsurf.git/plain/Docs/env.sh
+      $ source env.sh
+
+
+  Install any packages you need
+===============================
+
+      $ ns-apt-get-install
+
+
+  Get the NetSurf project source code
+=====================================
+
+      $ ns-clone
+
+
+  Build and install our project libraries
+=========================================
+
+      $ ns-pull-install
+
+
+  Switch to new NetSurf workspace
+=================================
+
+      $ rm env.sh
+      $ cd ~/dev-netsurf/workspace
+      $ source env.sh
+
+
+  Build and run NetSurf
+=======================
+
+      $ cd netsurf
+      $ make
+      $ ./nsgtk
+
+  For the framebuffer front end, you could do:
+
+      $ make TARGET=framebuffer
+      $ ./nsfb
+
