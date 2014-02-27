@@ -7,32 +7,37 @@
 
 
   Grab a temporary env.sh
-==========================
+--------------------------
 
       $ wget http://git.netsurf-browser.org/netsurf.git/plain/Docs/env.sh
       $ source env.sh
 
 
   Install any packages you need
-===============================
+-------------------------------
+
+  Installs all packages required to build NetSurf and the NetSurf project
+  libraries.
 
       $ ns-apt-get-install
 
 
   Get the NetSurf project source code
-=====================================
+-------------------------------------
 
       $ ns-clone
 
 
   Build and install our project libraries
-=========================================
+-----------------------------------------
+
+   Updates NetSurf project library sources to latest, builds and installs them.
 
       $ ns-pull-install
 
 
   Switch to new NetSurf workspace
-=================================
+---------------------------------
 
       $ rm env.sh
       $ cd ~/dev-netsurf/workspace
@@ -40,7 +45,7 @@
 
 
   Build and run NetSurf
-=======================
+-----------------------
 
       $ cd netsurf
       $ make
@@ -50,4 +55,12 @@
 
       $ make TARGET=framebuffer
       $ ./nsfb
+
+
+  Not working?
+==============
+
+  If the above steps are inapplicable, or don't work, you can build manually.
+  Follow the instructions in the BUILDING-* documents in the Docs/ directory
+  the NetSurf browser source tree.
 
