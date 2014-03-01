@@ -406,6 +406,7 @@ void ami_gui_opts_open(void)
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
+	BOOL ditherdisable = TRUE;
 	BOOL download_notify_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
 	char animspeed[10];
@@ -445,6 +446,9 @@ void ami_gui_opts_open(void)
 	{
 		screenmodeid = strtoul(nsoption_charp(screen_modeid),NULL,0);
 	}
+
+	if(ami_plot_screen_is_palettemapped() == true)
+		ditherdisable = FALSE;
 
 	if(nsoption_bool(http_proxy) == true)
 	{
@@ -907,6 +911,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_DITHERQ] = ChooserObject,
 										GA_ID, GID_OPTS_DITHERQ,
 										GA_RelVerify, TRUE,
+										GA_Disabled, ditherdisable,
 										CHOOSER_PopUp, TRUE,
 										CHOOSER_LabelArray, ditheropts,
 										CHOOSER_Selected, nsoption_int(dither_quality),
