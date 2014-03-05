@@ -129,7 +129,6 @@ struct llcache_object {
 	llcache_object *next;		/**< Next in list */
 
 	nsurl *url;			/**< Post-redirect URL for object */
-	bool has_query;			/**< URL has a query segment */
 
 	/** \todo We need a generic dynamic buffer object */
 	uint8_t *source_data;		/**< Source data for object */
@@ -1081,7 +1080,6 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 {
 	nserror error;
 	llcache_object *obj;
-	bool has_query;
 	nsurl *defragmented_url;
 
 	LLCACHE_LOG(("Retrieve %s (%x, %p, %p)",
@@ -1093,9 +1091,6 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	 * 1) Forced fetches are never cached
 	 * 2) POST requests are never cached
 	 */
-
-	/* Look for a query segment */
-	has_query = nsurl_has_component(url, NSURL_QUERY);
 
 	/* Get rid of any url fragment */
 	error = nsurl_defragment(url, &defragmented_url);
@@ -1131,8 +1126,6 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 
 		/* Returned object is already in the cached list */
 	}
-
-	obj->has_query = has_query;
 
 	LLCACHE_LOG(("Retrieved %p", obj));
 
@@ -1657,7 +1650,7 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 			long http_code = fetch_http_code(object->fetch.fetch);
 
 			if ((http_code != 200 && http_code != 203) ||
-				(object->has_query &&
+				(nsurl_has_component(object->url, NSURL_QUERY) &&
 				(object->cache.max_age == INVALID_AGE &&
 					object->cache.expires == 0))) {
 				/* Invalidate cache control data */
@@ -2091,8 +2084,6 @@ static nserror llcache_object_snapshot(llcache_object *object,
 
 	if (error != NSERROR_OK)
 		return error;
-
-	newobj->has_query = object->has_query;
 
 	newobj->source_alloc = newobj->source_len = object->source_len;
 
