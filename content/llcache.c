@@ -1098,13 +1098,9 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	has_query = nsurl_has_component(url, NSURL_QUERY);
 
 	/* Get rid of any url fragment */
-	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
-		error = nsurl_defragment(url, &defragmented_url);
-		if (error != NSERROR_OK)
-			return error;
-	} else {
-		defragmented_url = nsurl_ref(url);
-	}
+	error = nsurl_defragment(url, &defragmented_url);
+	if (error != NSERROR_OK)
+		return error;
 
 	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
 		/* Create new object */

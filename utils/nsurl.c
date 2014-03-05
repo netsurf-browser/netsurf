@@ -1911,6 +1911,15 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	size_t length;
 	char *pos;
 
+	/* check for source url having no fragment already */
+	if (url->components.fragment == NULL) {
+		*no_frag = (nsurl *)url;
+
+		(*no_frag)->count++;
+
+		return NSERROR_OK;
+	}
+
 	/* Find the change in length from url to new_url */
 	length = url->length;
 	if (url->components.fragment != NULL) {
