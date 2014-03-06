@@ -1081,23 +1081,44 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	nserror error;
 	llcache_object *obj;
 	nsurl *defragmented_url;
+	bool uncachable = false;
 
 	LLCACHE_LOG(("Retrieve %s (%x, %p, %p)",
 		     nsurl_access(url), flags, referer, post));
 
-	/**
-	 * Caching Rules:
-	 *
-	 * 1) Forced fetches are never cached
-	 * 2) POST requests are never cached
-	 */
 
 	/* Get rid of any url fragment */
 	error = nsurl_defragment(url, &defragmented_url);
 	if (error != NSERROR_OK)
 		return error;
 
-	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
+	/* determine if content is cachable */
+	if ((flags & LLCACHE_RETRIEVE_FORCE_FETCH) != 0) {
+		/* Forced fetches are never cached */
+		uncachable = true;
+	} else if (post != NULL) {
+		/* POST requests are never cached */
+		uncachable = true;
+	} else {
+		/* only http and https schemes are cached */
+		lwc_string *scheme;
+		bool match;
+
+		scheme = nsurl_get_component(defragmented_url, NSURL_SCHEME);
+
+		if (lwc_string_caseless_isequal(scheme, corestring_lwc_http,
+						&match) == lwc_error_ok &&
+		    (match == false)) {
+			if (lwc_string_caseless_isequal(scheme,	corestring_lwc_https,
+							&match) == lwc_error_ok &&
+			    (match == false)) {
+				uncachable = true;
+			}
+		}
+	}
+
+
+	if (uncachable) {
 		/* Create new object */
 		error = llcache_object_new(defragmented_url, &obj);
 		if (error != NSERROR_OK) {
