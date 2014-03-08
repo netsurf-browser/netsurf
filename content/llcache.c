@@ -382,11 +382,25 @@ static nserror llcache_fetch_split_header(const uint8_t *data, size_t len,
 	char *n, *v;
 	const uint8_t *colon;
 
+	/* Strip leading whitespace from name */
+	while (data[0] == ' ' || data[0] == '\t' ||
+	       data[0] == '\r' || data[0] == '\n') {
+		data++;
+	}
+
 	/* Find colon */
 	colon = (const uint8_t *) strchr((const char *) data, ':');
 	if (colon == NULL) {
 		/* Failed, assume a key with no value */
-		n = strdup((const char *) data);
+		colon = data + strlen((const char *)data);
+
+		/* Strip trailing whitespace from name */
+		while ((colon > data) &&
+		       (colon[-1] == ' ' || colon[-1] == '\t' ||
+			colon[-1] == '\r' || colon[-1] == '\n')) {
+			colon--;
+		}
+		n = strndup((const char *) data, colon - data);
 		if (n == NULL)
 			return NSERROR_NOMEM;
 
@@ -397,12 +411,6 @@ static nserror llcache_fetch_split_header(const uint8_t *data, size_t len,
 		}
 	} else {
 		/* Split header into name & value */
-
-		/* Strip leading whitespace from name */
-		while (data[0] == ' ' || data[0] == '\t' ||
-				data[0] == '\r' || data[0] == '\n') {
-			data++;
-		}
 
 		/* Strip trailing whitespace from name */
 		while (colon > data && (colon[-1] == ' ' ||
@@ -611,6 +619,13 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 	error = llcache_fetch_parse_header(object, data, len, &name, &value);
 	if (error != NSERROR_OK) {
 		return error;
+	}
+
+	/* deal with empty header */
+	if (name[0] == 0) {
+		free(name);
+		free(value);
+		return NSERROR_OK;
 	}
 
 	/* Append header data to the object's headers array */
