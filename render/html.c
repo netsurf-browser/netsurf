@@ -34,7 +34,6 @@
 #include "utils/libdom.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
@@ -591,6 +590,7 @@ void html_finish_conversion(html_content *c)
 
 	error = dom_to_box(html, c, html_box_convert_done);
 	if (error != NSERROR_OK) {
+		LOG(("box conversion failed"));
 		dom_node_unref(html);
 		html_object_free_objects(c);
 		content_broadcast_errorcode(&c->base, error);

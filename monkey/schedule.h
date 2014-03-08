@@ -19,7 +19,8 @@
 #ifndef NETSURF_GTK_CALLBACK_H
 #define NETSURF_GTK_CALLBACK_H 1
 
-typedef void (*gtk_callback)(void *p);
+nserror monkey_schedule(int t, void (*callback)(void *p), void *p);
+
 bool schedule_run(void);
 
 #endif /* NETSURF_GTK_CALLBACK_H */

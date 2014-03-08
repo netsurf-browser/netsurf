@@ -33,7 +33,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <curl/curl.h>
-
 #include "oslib/mimemap.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
@@ -42,22 +41,24 @@
 #include "oslib/osgbpb.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/download.h"
-#include "riscos/dialog.h"
 #include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+
+#include "riscos/gui.h"
+#include "riscos/dialog.h"
 #include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/schedule.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 #include "riscos/ucstables.h"
 
 #define ICON_DOWNLOAD_ICON 0
@@ -455,7 +456,7 @@ static void gui_download_window_error(struct gui_download_window *dw,
 	dw->ctx = NULL;
 	dw->error = true;
 
-	schedule_remove(ro_gui_download_update_status_wrapper, dw);
+	riscos_schedule(-1, ro_gui_download_update_status_wrapper, dw);
 
 	/* place error message in status icon in red */
 	strncpy(dw->status, error_msg, sizeof dw->status);
@@ -715,15 +716,16 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		warn_user("WimpError", error->errmess);
 	}
 
-	if (dw->ctx)
-		schedule(100, ro_gui_download_update_status_wrapper, dw);
-	else
-		schedule_remove(ro_gui_download_update_status_wrapper, dw);
+	if (dw->ctx) {
+		riscos_schedule(1000, ro_gui_download_update_status_wrapper, dw);
+	} else {
+		riscos_schedule(-1, ro_gui_download_update_status_wrapper, dw);
+	}
 }
 
 
 /**
- * Wrapper for ro_gui_download_update_status(), suitable for schedule().
+ * Wrapper for ro_gui_download_update_status(), suitable for riscos_schedule().
  */
 
 void ro_gui_download_update_status_wrapper(void *p)
@@ -795,10 +797,11 @@ static void gui_download_window_done(struct gui_download_window *dw)
 			warn_user("SaveError", error->errmess);
 		}
 
-		if (dw->send_dataload)
+		if (dw->send_dataload) {
 			ro_gui_download_send_dataload(dw);
+		}
 
-		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+		riscos_schedule(2000, ro_gui_download_window_destroy_wrapper, dw);
 	}
 }
 
@@ -889,7 +892,7 @@ bool ro_gui_download_keypress(wimp_key *key)
 					!nsoption_bool(confirm_overwrite)) && !dw->ctx)
 			{
 				/* finished already */
-				schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+				riscos_schedule(2000, ro_gui_download_window_destroy_wrapper, dw);
 			}
 			return true;
 		}
@@ -985,7 +988,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 
 		ro_gui_download_send_dataload(dw);
 
-		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+		riscos_schedule(2000, ro_gui_download_window_destroy_wrapper, dw);
 	}
 }
 
@@ -1417,7 +1420,7 @@ void ro_gui_download_send_dataload(struct gui_download_window *dw)
 		warn_user("WimpError", error->errmess);
 	}
 
-	schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+	riscos_schedule(2000, ro_gui_download_window_destroy_wrapper, dw);
 }
 
 
@@ -1480,8 +1483,8 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 		return false;
 	}
 
-	schedule_remove(ro_gui_download_update_status_wrapper, dw);
-	schedule_remove(ro_gui_download_window_destroy_wrapper, dw);
+	riscos_schedule(-1, ro_gui_download_update_status_wrapper, dw);
+	riscos_schedule(-1, ro_gui_download_window_destroy_wrapper, dw);
 
 	/* remove from list */
 	if (dw->prev)
@@ -1534,7 +1537,7 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 
 
 /**
- * Wrapper for ro_gui_download_window_destroy(), suitable for schedule().
+ * Wrapper for ro_gui_download_window_destroy(), suitable for riscos_schedule().
  */
 
 void ro_gui_download_window_destroy_wrapper(void *p)
@@ -1613,7 +1616,7 @@ void ro_gui_download_overwrite_confirmed(query_id id, enum query_response res, v
 
 		ro_gui_download_send_dataload(dw);
 
-		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+		riscos_schedule(2000, ro_gui_download_window_destroy_wrapper, dw);
 	}
 }
 

@@ -1077,7 +1077,7 @@ void ro_gui_cleanup(void)
  * \param active return as soon as possible
  */
 
-void gui_poll(bool active)
+static void riscos_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
@@ -1116,8 +1116,9 @@ void gui_poll(bool active)
 	 * from gui_multitask(). Scheduled callbacks must only be run from the
 	 * top-level.
 	 */
-	if (event == wimp_NULL_REASON_CODE)
+	if (event == wimp_NULL_REASON_CODE) {
 		schedule_run();
+	}
 
 	ro_gui_window_update_boxes();
 
@@ -2358,7 +2359,8 @@ static struct gui_fetch_table riscos_fetch_table = {
 };
 
 static struct gui_browser_table riscos_browser_table = {
-	.poll = gui_poll,
+	.poll = riscos_poll,
+	.schedule = riscos_schedule,
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,

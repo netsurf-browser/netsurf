@@ -443,6 +443,10 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 		return NSERROR_BAD_PARAMETER;
 	}
 
+	if (gbt->schedule == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
 	/* fill in the optional entries with defaults */
 	if (gbt->quit == NULL) {
 		gbt->quit = gui_default_quit;

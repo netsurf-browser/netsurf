@@ -30,7 +30,6 @@
 #include <stdbool.h>
 #include <hubbub/hubbub.h>
 
-#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -597,7 +596,7 @@ static void throbber_advance( void * data )
         return;
 
     toolbar_throbber_progress(gw->root->toolbar);
-    schedule(100, throbber_advance, gw );
+    atari_schedule(1000, throbber_advance, gw );
 }
 
 static void gui_window_start_throbber(struct gui_window *w)
@@ -607,7 +606,7 @@ static void gui_window_start_throbber(struct gui_window *w)
         return;
 
     toolbar_set_throbber_state(w->root->toolbar, true);
-    schedule(100, throbber_advance, w );
+    atari_schedule(1000, throbber_advance, w );
     rendering = true;
 }
 
@@ -618,7 +617,7 @@ static void gui_window_stop_throbber(struct gui_window *w)
     if (w->root->toolbar->throbber.running == false)
         return;
 
-    schedule_remove(throbber_advance, w);
+    atari_schedule(-1, throbber_advance, w);
 
     toolbar_set_throbber_state(w->root->toolbar, false);
 
@@ -1084,6 +1083,7 @@ static struct gui_fetch_table atari_fetch_table = {
 
 static struct gui_browser_table atari_browser_table = {
     .poll = gui_poll,
+    .schedule = atari_schedule,
 
     .quit = gui_quit,
     .cert_verify = gui_cert_verify,

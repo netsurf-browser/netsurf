@@ -31,24 +31,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
-#include "render/box.h"
-#include "render/box_textarea.h"
-#include "render/form.h"
-#include "render/html_internal.h"
 #include "utils/corestrings.h"
 #include "utils/locale.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+
+#include "render/box.h"
+#include "render/box_textarea.h"
+#include "render/form.h"
+#include "render/html_internal.h"
 
 /**
  * Context for box tree construction
@@ -183,9 +185,7 @@ nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 	ctx->cb = cb;
 	ctx->bctx = c->bctx;
 
-	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
-
-	return NSERROR_OK;
+	return guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /* mapping from CSS display to box type
@@ -446,7 +446,7 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 	} while (++num_processed < max_processed_before_yield);
 
 	/* More work to do: schedule a continuation */
-	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
+	guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /**

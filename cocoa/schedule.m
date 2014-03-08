@@ -17,7 +17,8 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import "utils/schedule.h"
+
+#import "cocoa/schedule.h"
 
 @interface ScheduledCallback : NSObject {
 	void (*callback)( void *userData );
@@ -73,18 +74,15 @@ static NSMutableSet *timerSet = nil;
 
 @end
 
-/* In platform specific schedule.c. */
-void schedule(int t, void (*callback)(void *p), void *p)
-{
-	ScheduledCallback *cb = [[ScheduledCallback alloc] initWithCallback: callback userData: p];
-	[cb schedule: (NSTimeInterval)t / 100];
-	[cb release];
-}
-
-void schedule_remove(void (*callback)(void *p), void *p)
+/* exported interface documented in cocoa/schedule.h */
+nserror cocoa_schedule(int t, void (*callback)(void *p), void *p)
 {
 	ScheduledCallback *cb = [[ScheduledCallback alloc] initWithCallback: callback userData: p];
 	[timerSet removeObject: cb];
+        if (t >= 0) {
+          [cb schedule: (NSTimeInterval)t / 1000];
+        }
 	[cb release];
-}
 
+        return NSERROR_OK;
+}

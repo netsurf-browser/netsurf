@@ -23,7 +23,7 @@
 #include <List.h>
 
 extern "C" {
-#include "utils/schedule.h"
+#include "beos/schedule.h"
 #include "desktop/browser.h"
 
 #ifdef DEBUG_BEOS_SCHEDULE
@@ -65,7 +65,7 @@ nsbeos_schedule_kill_callback(void *_target, void *_match)
 	return false;
 }
 
-void
+static void
 schedule_remove(void (*callback)(void *p), void *p)
 {
 	LOG(("schedule_remove() for %p(%p)", cb->callback, cb->context));
@@ -75,22 +75,26 @@ schedule_remove(void (*callback)(void *p), void *p)
 	cb_match.callback = callback;
 	cb_match.context = p;
 
-
 	callbacks->DoForEach(nsbeos_schedule_kill_callback, &cb_match);
 }
 
-void
-schedule(int t, void (*callback)(void *p), void *p)
+nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 {
-	LOG(("schedule(%d, %p, %p)", t, cb->callback, cb->context));
-	if (callbacks == NULL)
-		callbacks = new BList;
+	LOG(("t:%d cb:%p p:%p", t, cb->callback, cb->context));
 
-	bigtime_t timeout = system_time() + t * 10 * 1000LL;
-	const int msec_timeout = t * 10;
-	_nsbeos_callback_t *cb = (_nsbeos_callback_t *)malloc(sizeof(_nsbeos_callback_t));
+	if (callbacks == NULL) {
+		callbacks = new BList;
+        }
+
 	/* Kill any pending schedule of this kind. */
 	schedule_remove(callback, p);
+
+        if (t < 0) {
+          return NSERROR_OK;
+        }
+
+	bigtime_t timeout = system_time() + t * 1000LL;
+	_nsbeos_callback_t *cb = (_nsbeos_callback_t *)malloc(sizeof(_nsbeos_callback_t));
 	cb->callback = callback;
 	cb->context = p;
 	cb->callback_killed = cb->callback_fired = false;
@@ -99,6 +103,8 @@ schedule(int t, void (*callback)(void *p), void *p)
 		earliest_callback_timeout = timeout;
 	}
 	callbacks->AddItem(cb);
+
+        return NSERROR_OK;
 }
 
 bool

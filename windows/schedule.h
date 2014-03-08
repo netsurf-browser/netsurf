@@ -16,8 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FRAMEBUFFER_SCHEDULE_H
-#define FRAMEBUFFER_SCHEDULE_H
+#ifndef WINDOWS_SCHEDULE_H
+#define WINDOWS_SCHEDULE_H
+
+/**
+ * Schedule a callback.
+ *
+ * \param  ival interval before the callback should be made in ms
+ * \param  callback callback function
+ * \param  p user parameter, passed to callback function
+ *
+ * The callback function will be called as soon as possible after t ms have
+ * passed.
+ */
+nserror win32_schedule(int ival, void (*callback)(void *p), void *p);
 
 /**
  * Process scheduled callbacks up to current time.

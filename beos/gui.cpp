@@ -1049,6 +1049,7 @@ static struct gui_fetch_table beos_fetch_table = {
 
 static struct gui_browser_table beos_browser_table = {
 	gui_poll,
+        beos_schedule,
 	gui_quit,
 	NULL, //set_search_ico
 	gui_launch_url,

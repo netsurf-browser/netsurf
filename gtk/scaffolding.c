@@ -26,7 +26,6 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
@@ -70,7 +69,7 @@
 #include "gtk/gdk.h"
 #include "gtk/scaffolding.h"
 #include "gtk/tabs.h"
-
+#include "gtk/schedule.h"
 
 
 /** Macro to define a handler for menu, button and activate events. */
@@ -329,7 +328,7 @@ static void nsgtk_throb(void *p)
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[
 							g->throb_frame]);
 
-	schedule(10, nsgtk_throb, p);
+	nsgtk_schedule(100, nsgtk_throb, p);
 }
 
 static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
@@ -2175,7 +2174,7 @@ void gui_window_start_throbber(struct gui_window* _g)
 
 	nsgtk_window_update_back_forward(g);
 
-	schedule(10, nsgtk_throb, g);
+	nsgtk_schedule(100, nsgtk_throb, g);
 }
 
 void gui_window_stop_throbber(struct gui_window* _g)
@@ -2184,7 +2183,7 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	if (g == NULL)
 		return;
 	nsgtk_window_update_back_forward(g);
-	schedule_remove(nsgtk_throb, g);
+	nsgtk_schedule(-1, nsgtk_throb, g);
 	if (g->buttons[STOP_BUTTON] != NULL)
 		g->buttons[STOP_BUTTON]->sensitivity = false;
 	if (g->buttons[RELOAD_BUTTON] != NULL)

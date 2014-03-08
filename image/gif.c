@@ -39,13 +39,14 @@
 #include "content/hlcache.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
+#include "desktop/gui_factory.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
 #include "image/image.h"
 #include "image/bitmap.h"
 #include "image/gif.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/schedule.h"
-#include "utils/utils.h"
 
 typedef struct nsgif_content {
 	struct content base;
@@ -159,7 +160,7 @@ static void nsgif_animate(void *p)
 		delay = gif->gif->frames[gif->current_frame].frame_delay;
 		if (delay < nsoption_int(minimum_gif_delay))
 			delay = nsoption_int(minimum_gif_delay);
-		schedule(delay, nsgif_animate, gif);
+		guit->browser->schedule(delay * 10, nsgif_animate, gif);
 	}
 
 	if ((!nsoption_bool(animate_images)) ||
@@ -292,7 +293,9 @@ static bool nsgif_convert(struct content *c)
 	/* Schedule the animation if we have one */
 	gif->current_frame = 0;
 	if (gif->gif->frame_count_partial > 1)
-		schedule(gif->gif->frames[0].frame_delay, nsgif_animate, c);
+		guit->browser->schedule(gif->gif->frames[0].frame_delay * 10,
+					nsgif_animate,
+					c);
 
 	/* Exit as a success */
 	content_set_ready(c);
@@ -351,7 +354,7 @@ static void nsgif_destroy(struct content *c)
 	nsgif_content *gif = (nsgif_content *) c;
 
 	/* Free all the associated memory buffers */
-	schedule_remove(nsgif_animate, c);
+	guit->browser->schedule(-1, nsgif_animate, c);
 	gif_finalise(gif->gif);
 	free(gif->gif);
 }

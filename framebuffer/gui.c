@@ -40,7 +40,6 @@
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/types.h"
 #include "desktop/textinput.h"
 #include "render/form.h"
@@ -557,7 +556,7 @@ static bool nslog_stream_configure(FILE *fptr)
 
 
 
-static void gui_poll(bool active)
+static void framebuffer_poll(bool active)
 {
 	nsfb_event_t event;
 	int timeout; /* timeout in miliseconds */
@@ -1696,7 +1695,7 @@ throbber_advance(void *pw)
 
 	if (g->throbber_index >= 0) {
 		fbtk_set_bitmap(g->throbber, image);
-		schedule(10, throbber_advance, g);
+		framebuffer_schedule(100, throbber_advance, g);
 	}
 }
 
@@ -1704,7 +1703,7 @@ static void
 gui_window_start_throbber(struct gui_window *g)
 {
 	g->throbber_index = 0;
-	schedule(10, throbber_advance, g);
+	framebuffer_schedule(100, throbber_advance, g);
 }
 
 static void
@@ -1785,7 +1784,8 @@ static struct gui_window_table framebuffer_window_table = {
 
 
 static struct gui_browser_table framebuffer_browser_table = {
-	.poll = gui_poll,
+	.poll = framebuffer_poll,
+	.schedule = framebuffer_schedule,
 
 	.quit = gui_quit,
 };

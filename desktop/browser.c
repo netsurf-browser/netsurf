@@ -63,7 +63,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
-#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
@@ -1327,9 +1326,10 @@ static nserror browser_window_callback(hlcache_handle *c,
 		browser_window_history_update(bw, c);
 		hotlist_update_url(hlcache_handle_get_url(c));
 
-		if (bw->refresh_interval != -1)
-			schedule(bw->refresh_interval,
+		if (bw->refresh_interval != -1) {
+			guit->browser->schedule(bw->refresh_interval * 10,
 					browser_window_refresh, bw);
+		}
 		break;
 
 	case CONTENT_MSG_ERRORCODE:
@@ -1620,10 +1620,11 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	LOG(("Destroying window"));
 
-	if (bw->children != NULL || bw->iframes != NULL)
+	if (bw->children != NULL || bw->iframes != NULL) {
 		browser_window_destroy_children(bw);
+	}
 
-	schedule_remove(browser_window_refresh, bw);
+	guit->browser->schedule(-1, browser_window_refresh, bw);
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -2208,7 +2209,7 @@ void browser_window_stop(struct browser_window *bw)
 		assert(error == NSERROR_OK);
 	}
 
-	schedule_remove(browser_window_refresh, bw);
+	guit->browser->schedule(-1, browser_window_refresh, bw);
 
 	if (bw->children) {
 		children = bw->rows * bw->cols;

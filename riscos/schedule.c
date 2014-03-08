@@ -24,10 +24,11 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include "oslib/os.h"
-#include "riscos/gui.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
+
+#include "riscos/gui.h"
 
 
 /** Entry in the queue of scheduled callbacks. */
@@ -50,25 +51,53 @@ bool sched_active = false;
 /** Time of soonest scheduled event (valid only if sched_active is true). */
 os_t sched_time;
 
-
 /**
- * Schedule a callback.
+ * Unschedule a callback.
  *
- * \param  t         interval before the callback should be made / cs
  * \param  callback  callback function
  * \param  p         user parameter, passed to callback function
  *
- * The callback function will be called as soon as possible after t cs have
- * passed.
+ * All scheduled callbacks matching both callback and p are removed.
  */
 
-void schedule(int t, void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p)
+{
+	struct sched_entry *entry, *next;
+
+	for (entry = &sched_queue; entry->next; entry = entry->next) {
+		if (entry->next->callback != callback || entry->next->p != p)
+			continue;
+		next = entry->next;
+		entry->next = entry->next->next;
+		free(next);
+		if (!entry->next)
+			break;
+	}
+
+	if (sched_queue.next) {
+		sched_active = true;
+		sched_time = sched_queue.next->time;
+	} else {
+		sched_active = false;
+	}
+
+	return NSERROR_OK;
+}
+
+/* exported function documented in riscos/gui.h */
+nserror riscos_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct sched_entry *entry;
 	struct sched_entry *queue;
 	os_t time;
+	nserror ret;
 
-	schedule_remove(callback, p);
+	ret = schedule_remove(callback, p);
+	if ((t < 0) || (ret != NSERROR_OK)) {
+		return ret;
+	}
+
+	t = t / 10; /* convert to centiseconds */
 
 	time = os_read_monotonic_time() + t;
 
@@ -91,44 +120,12 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	sched_active = true;
 	sched_time = sched_queue.next->time;
+
+	return NSERROR_OK;
 }
 
 
-/**
- * Unschedule a callback.
- *
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
- *
- * All scheduled callbacks matching both callback and p are removed.
- */
-
-void schedule_remove(void (*callback)(void *p), void *p)
-{
-	struct sched_entry *entry, *next;
-
-	for (entry = &sched_queue; entry->next; entry = entry->next) {
-		if (entry->next->callback != callback || entry->next->p != p)
-			continue;
-		next = entry->next;
-		entry->next = entry->next->next;
-		free(next);
-		if (!entry->next)
-			break;
-	}
-
-	if (sched_queue.next) {
-		sched_active = true;
-		sched_time = sched_queue.next->time;
-	} else
-		sched_active = false;
-}
-
-
-/**
- * Process events up to current time.
- */
-
+/* exported function documented in riscos/gui.h */
 bool schedule_run(void)
 {
 	struct sched_entry *entry;
@@ -144,8 +141,9 @@ bool schedule_run(void)
 		p = entry->p;
 		sched_queue.next = entry->next;
 		free(entry);
-		/* The callback may call schedule() or schedule_remove(), so
-		 * leave the queue in a safe state. */
+		/* The callback may call riscos_schedule(), so leave
+		 * the queue in a safe state.
+		 */
 		callback(p);
 	}
 

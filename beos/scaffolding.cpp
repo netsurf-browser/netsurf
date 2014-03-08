@@ -62,7 +62,6 @@ extern "C" {
 #include "render/font.h"
 #include "render/form.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 }
@@ -75,7 +74,7 @@ extern "C" {
 //#include "beos/completion.h"
 #include "beos/throbber.h"
 #include "beos/window.h"
-//#include "beos/schedule.h"
+#include "beos/schedule.h"
 //#include "beos/download.h"
 
 #define TOOLBAR_HEIGHT 32
@@ -1324,7 +1323,7 @@ void nsbeos_throb(void *p)
 
 	g->top_view->UnlockLooper();
 
-	schedule(10, nsbeos_throb, p);
+	beos_schedule(100, nsbeos_throb, p);
 
 }
 
@@ -2190,7 +2189,7 @@ void gui_window_start_throbber(struct gui_window* _g)
 
 	nsbeos_window_update_back_forward(g);
 
-	schedule(10, nsbeos_throb, g);
+	beos_schedule(100, nsbeos_throb, g);
 }
 
 void gui_window_stop_throbber(struct gui_window* _g)
@@ -2199,7 +2198,7 @@ void gui_window_stop_throbber(struct gui_window* _g)
 
 	nsbeos_window_update_back_forward(g);
 
-	schedule_remove(nsbeos_throb, g);
+	beos_schedule(-1, nsbeos_throb, g);
 
 	if (!g->top_view->LockLooper())
 		return;

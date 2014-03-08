@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "desktop/gui_factory.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/mimesniff.h"
@@ -31,7 +32,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/ring.h"
-#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 
@@ -146,7 +146,7 @@ static void hlcache_clean(void *ignored)
 	llcache_clean();
 
 	/* Re-schedule ourselves */
-	schedule(hlcache->params.bg_clean_time / 10, hlcache_clean, NULL);
+	guit->browser->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
 }
 
 /**
@@ -536,7 +536,7 @@ hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 	hlcache->params = *hlcache_parameters;
 
 	/* Schedule the cache cleanup */
-	schedule(hlcache->params.bg_clean_time / 10, hlcache_clean, NULL);
+	guit->browser->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);
 
 	return NSERROR_OK;
 }
@@ -545,7 +545,7 @@ hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 void hlcache_stop(void)
 {
 	/* Remove the hlcache_clean schedule */
-	schedule_remove(hlcache_clean, NULL);
+	guit->browser->schedule(-1, hlcache_clean, NULL);
 }
 
 /* See hlcache.h for documentation */

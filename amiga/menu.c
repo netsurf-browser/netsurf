@@ -58,12 +58,13 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "amiga/schedule.h"
 #include "desktop/hotlist.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
+
 
 enum {
 	NSA_GLYPH_SUBMENU,
@@ -481,7 +482,11 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 
 	/* Set up scheduler to refresh the hotlist menu */
 	if(nsoption_int(menu_refresh) > 0)
-		schedule(nsoption_int(menu_refresh), (void *)ami_menu_refresh, gwin);
+	{
+		ami_schedule(nsoption_int(menu_refresh) * 10,
+			     ami_menu_refresh,
+			     gwin);
+	}
 
 	return(gwin->menu);
 }

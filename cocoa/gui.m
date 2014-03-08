@@ -25,6 +25,7 @@
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/FormSelectMenu.h"
 #import "cocoa/fetch.h"
+#import "cocoa/schedule.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -294,6 +295,7 @@ struct gui_window_table *cocoa_window_table = &window_table;
 
 static struct gui_browser_table browser_table = {
 	.poll = gui_poll,
+        .schedule = cocoa_schedule,
 
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,

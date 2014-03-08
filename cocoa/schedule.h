@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2011 Sven Weidauer <sven.weidauer@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,17 +16,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Job scheduler (interface).
- */
-
-#ifndef _NETSURF_UTILS_SCHEDULE_H_
-#define _NETSURF_UTILS_SCHEDULE_H_
-
-/* In platform specific schedule.c. */
-typedef void (*schedule_callback_fn)(void *p);
-
-void schedule(int t, schedule_callback_fn callback, void *p);
-void schedule_remove(schedule_callback_fn callback, void *p);
-
-#endif
+nserror cocoa_schedule(int t, void (*callback)(void *p), void *p);

@@ -36,24 +36,24 @@
 #include <strings.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <openssl/ssl.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include <openssl/ssl.h>
-#include "content/fetch.h"
-#include "content/fetchers/curl.h"
-#include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/useragent.h"
+
+#include "content/fetch.h"
+#include "content/fetchers/curl.h"
+#include "content/urldb.h"
 
 /* uncomment this to use scheduler based calling
 #define FETCHER_CURLL_SCHEDULED 1
@@ -504,7 +504,7 @@ bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 	
-	schedule(1, (schedule_callback_fn)fetch_curl_poll, NULL);
+	guit->browser->schedule(10, (void *)fetch_curl_poll, NULL);
 	
 	return true;
 }
@@ -837,7 +837,7 @@ void fetch_curl_poll(lwc_string *scheme_ignored)
 
 #ifdef FETCHER_CURLL_SCHEDULED
 	if (running != 0) {
-		schedule(1, (schedule_callback_fn)fetch_curl_poll, fetch_curl_poll);
+		guit->browser->schedule(10, fetch_curl_poll, fetch_curl_poll);
 	}
 #endif
 }

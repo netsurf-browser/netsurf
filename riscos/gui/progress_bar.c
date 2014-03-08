@@ -29,10 +29,11 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
 #include "desktop/plotters.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp_event.h"
@@ -159,8 +160,9 @@ void ro_gui_progress_bar_destroy(struct progress_bar *pb)
 	os_error *error;
 	assert(pb);
 
-	if (pb->animating)
-		schedule_remove(ro_gui_progress_bar_animate, pb);
+	if (pb->animating) {
+		riscos_schedule(-1, ro_gui_progress_bar_animate, pb);
+	}
 	ro_gui_wimp_event_finalise(pb->w);
 	error = xwimp_delete_window(pb->w);
 	if (error) {
@@ -292,12 +294,14 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
 
  	/* update the animation state */
 	if ((pb->value == 0) || (pb->value == pb->range)) {
-		if (pb->animating)
-			schedule_remove(ro_gui_progress_bar_animate, pb);
+		if (pb->animating) {
+			riscos_schedule(-1, ro_gui_progress_bar_animate, pb);
+		}
 		pb->animating = false;
 	} else {
-	  	if (!pb->animating)
-			schedule(20, ro_gui_progress_bar_animate, pb);
+	  	if (!pb->animating) {
+			riscos_schedule(200, ro_gui_progress_bar_animate, pb);
+		}
 		pb->animating = true;
 	}
 
@@ -372,8 +376,9 @@ void ro_gui_progress_bar_animate(void *p)
 	if (pb->offset < 0)
 		pb->offset += progress_width * 2;
 
-	if (pb->animating)
-		schedule(20, ro_gui_progress_bar_animate, pb);
+	if (pb->animating) {
+		riscos_schedule(200, ro_gui_progress_bar_animate, pb);
+	}
 
 	redraw.w = pb->w;
 	redraw.box = pb->visible;

@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "utils/schedule.h"
+#include "utils/errors.h"
 
 #include "monkey/schedule.h"
 
@@ -75,7 +75,7 @@ nsgtk_schedule_kill_callback(void *_target, void *_match)
         }
 }
 
-void
+static void
 schedule_remove(void (*callback)(void *p), void *p)
 {
         _nsgtk_callback_t cb_match = {
@@ -91,20 +91,27 @@ schedule_remove(void (*callback)(void *p), void *p)
                        nsgtk_schedule_kill_callback, &cb_match);
 }
 
-void
-schedule(int t, void (*callback)(void *p), void *p)
+nserror monkey_schedule(int t, void (*callback)(void *p), void *p)
 {
-        const int msec_timeout = t * 10;
-        _nsgtk_callback_t *cb = malloc(sizeof(_nsgtk_callback_t));
+        _nsgtk_callback_t *cb;
+
         /* Kill any pending schedule of this kind. */
         schedule_remove(callback, p);
+	if (t < 0) {
+		return NSERROR_OK;
+	}
+
+	cb = malloc(sizeof(_nsgtk_callback_t));
         cb->callback = callback;
         cb->context = p;
         cb->callback_killed = false;
         /* Prepend is faster right now. */
-        LOG(("queued a callback to %p(%p) for %d msecs time", callback, p, msec_timeout));
+        LOG(("queued a callback to %p(%p) for %d msecs time", callback, p, t));
         queued_callbacks = g_list_prepend(queued_callbacks, cb);
-        g_timeout_add(msec_timeout, nsgtk_schedule_generic_callback, cb);
+        g_timeout_add(t, nsgtk_schedule_generic_callback, cb);
+
+	return NSERROR_OK;
+
 }
 
 bool

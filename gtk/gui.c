@@ -522,7 +522,7 @@ static bool nslog_stream_configure(FILE *fptr)
 
 
 
-static void gui_poll(bool active)
+static void nsgtk_poll(bool active)
 {
 	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
@@ -990,7 +990,8 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 
 
 static struct gui_browser_table nsgtk_browser_table = {
-	.poll = gui_poll,
+	.poll = nsgtk_poll,
+	.schedule = nsgtk_schedule,
 
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,

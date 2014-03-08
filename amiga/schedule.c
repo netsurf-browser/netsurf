@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/schedule.h"
 #include "amiga/os3support.h"
 #include "amiga/schedule.h"
 
@@ -37,51 +36,18 @@ struct nscallback
 
 PblHeap *schedule_list;
 
-void ami_remove_timer_event(struct nscallback *nscb);
-
-/**
- * Schedule a callback.
- *
- * \param  t         interval before the callback should be made / cs
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
- *
- * The callback function will be called as soon as possible after t cs have
- * passed.
- */
-
-void schedule(int t, void (*callback)(void *p), void *p)
+static void ami_remove_timer_event(struct nscallback *nscb)
 {
-	struct nscallback *nscb;
-	struct TimeVal tv;
-	ULONG time_us = 0;
-
-	if(schedule_list == NULL) return;
-
-	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
 	if(!nscb) return;
 
-	time_us = t*10000; /* t converted to µs */
-
-	nscb->tv.Seconds = time_us / 1000000;
-	nscb->tv.Microseconds = time_us % 1000000;
-
-	GetSysTime(&tv);
-	AddTime(&nscb->tv,&tv); // now contains time when event occurs
-
-	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
+	if(nscb->treq)
 	{
-		*nscb->treq = *tioreq;
-    	nscb->treq->Request.io_Command=TR_ADDREQUEST;
-    	nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
-    	nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
-    	SendIO((struct IORequest *)nscb->treq);
+		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
+   			AbortIO((struct IORequest *)nscb->treq);
+
+		WaitIO((struct IORequest *)nscb->treq);
+		FreeVec(nscb->treq);
 	}
-
-	nscb->callback = callback;
-	nscb->p = p;
-
-	pblHeapInsert(schedule_list, nscb);
 }
 
 /**
@@ -93,14 +59,22 @@ void schedule(int t, void (*callback)(void *p), void *p)
  * All scheduled callbacks matching both callback and p are removed.
  */
 
-void schedule_remove(void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
 	PblIterator *iterator;
 	struct nscallback *nscb;
 	bool restoreheap = false;
 
-	if(schedule_list == NULL) return;
-	if(pblHeapIsEmpty(schedule_list)) return;
+	/* check there is something on the list to remove */
+        if (schedule_list == NULL)
+	{
+                return NSERROR_OK;
+	}
+
+	if(pblHeapIsEmpty(schedule_list))
+	{
+		return NSERROR_OK;
+	}
 
 	iterator = pblHeapIterator(schedule_list);
 
@@ -117,10 +91,15 @@ void schedule_remove(void (*callback)(void *p), void *p)
 
 	pblIteratorFree(iterator);
 
-	if(restoreheap) pblHeapConstruct(schedule_list);
+	if(restoreheap)
+	{
+		pblHeapConstruct(schedule_list);
+	}
+
+	return NSERROR_OK;
 }
 
-void schedule_remove_all(void)
+static void schedule_remove_all(void)
 {
 	PblIterator *iterator;
 	struct nscallback *nscb;
@@ -139,13 +118,16 @@ void schedule_remove_all(void)
 	pblIteratorFree(iterator);
 }
 
-/**
- * Process events up to current time.
- * This implementation only takes the top entry off the heap, it does not
- * venture to later scheduled events until the next time it is called -
- * immediately afterwards, if we're in a timer signalled loop.
- */
+static int ami_schedule_compare(const void *prev, const void *next)
+{
+	struct nscallback *nscb1 = *(struct nscallback **)prev;
+	struct nscallback *nscb2 = *(struct nscallback **)next;
 
+	return CmpTime(&nscb1->tv, &nscb2->tv);
+}
+
+
+/* exported function documented in amiga/schedule.h */
 void schedule_run(BOOL poll)
 {
 	struct nscallback *nscb;
@@ -176,28 +158,7 @@ void schedule_run(BOOL poll)
 	callback(p);
 }
 
-void ami_remove_timer_event(struct nscallback *nscb)
-{
-	if(!nscb) return;
-
-	if(nscb->treq)
-	{
-		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
-   			AbortIO((struct IORequest *)nscb->treq);
-
-		WaitIO((struct IORequest *)nscb->treq);
-		FreeVec(nscb->treq);
-	}
-}
-
-int ami_schedule_compare(const void *prev, const void *next)
-{
-	struct nscallback *nscb1 = *(struct nscallback **)prev;
-	struct nscallback *nscb2 = *(struct nscallback **)next;
-
-	return CmpTime(&nscb1->tv, &nscb2->tv);
-}
-
+/* exported function documented in amiga/schedule.h */
 BOOL ami_schedule_create(void)
 {
 	schedule_list = pblHeapNew();
@@ -206,6 +167,7 @@ BOOL ami_schedule_create(void)
 	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
 }
 
+/* exported function documented in amiga/schedule.h */
 void ami_schedule_free(void)
 {
 	schedule_remove_all();
@@ -213,6 +175,7 @@ void ami_schedule_free(void)
 	schedule_list = NULL;
 }
 
+/* exported function documented in amiga/schedule.h */
 void ami_schedule_open_timer(void)
 {
 	msgport = AllocSysObjectTags(ASOT_PORT,
@@ -231,6 +194,7 @@ void ami_schedule_open_timer(void)
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 }
 
+/* exported function documented in amiga/schedule.h */
 void ami_schedule_close_timer(void)
 {
 	if(ITimer)
@@ -241,4 +205,52 @@ void ami_schedule_close_timer(void)
 	CloseDevice((struct IORequest *) tioreq);
 	FreeSysObject(ASOT_IOREQUEST,tioreq);
 	FreeSysObject(ASOT_PORT,msgport);
+}
+
+/* exported function documented in amiga/schedule.h */
+nserror ami_schedule(int t, void (*callback)(void *p), void *p)
+{
+	struct nscallback *nscb;
+	struct TimeVal tv;
+	ULONG time_us = 0;
+
+	if(schedule_list == NULL)
+	{
+		return NSERROR_INIT_FAILED;
+	}
+
+	if(t < 0)
+	{
+		return schedule_remove(callback, p);
+	}
+
+	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
+	if(!nscb)
+	{
+		return NSERROR_NOMEM;
+	}
+
+	time_us = t * 1000; /* t converted to µs */
+
+	nscb->tv.Seconds = time_us / 1000000;
+	nscb->tv.Microseconds = time_us % 1000000;
+
+	GetSysTime(&tv);
+	AddTime(&nscb->tv,&tv); // now contains time when event occurs
+
+	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
+	{
+		*nscb->treq = *tioreq;
+		nscb->treq->Request.io_Command=TR_ADDREQUEST;
+		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
+		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
+		SendIO((struct IORequest *)nscb->treq);
+	}
+
+	nscb->callback = callback;
+	nscb->p = p;
+
+	pblHeapInsert(schedule_list, nscb);
+
+	return NSERROR_OK;
 }

@@ -123,7 +123,6 @@ void ro_gui_dump_browser_window(struct browser_window *bw);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);
-void gui_poll(bool active); /* exported for riscos/wimp_event.c:722 */
 char *url_to_path(const char *url);
 
 /* in download.c */
@@ -183,7 +182,23 @@ bits ro_filetype_from_unix_path(const char *unix_path);
 /* in schedule.c */
 extern bool sched_active;
 extern os_t sched_time;
+
+/**
+ * Process events up to current time.
+ */
 bool schedule_run(void);
+
+/**
+ * Schedule a callback.
+ *
+ * \param  t         interval before the callback should be made in ms
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ *
+ * The callback function will be called as soon as possible after t ms have
+ * passed.
+ */
+nserror riscos_schedule(int t, void (*callback)(void *p), void *p);
 
 /* in search.c */
 void ro_gui_search_init(void);

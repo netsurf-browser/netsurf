@@ -78,7 +78,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
 static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
 
-static void gui_poll(bool active)
+static void win32_poll(bool active)
 {
 	MSG Msg; /* message from system */
 	BOOL bRet; /* message fetch result */
@@ -1888,7 +1888,8 @@ struct gui_fetch_table *win32_fetch_table = &fetch_table;
 
 
 static struct gui_browser_table browser_table = {
-	.poll = gui_poll,
+	.poll = win32_poll,
+	.schedule = win32_schedule,
 };
 
 struct gui_browser_table *win32_browser_table = &browser_table;

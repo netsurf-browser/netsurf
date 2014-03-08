@@ -1390,11 +1390,11 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	atrr_data->height = height;
 	atrr_data->twin = (struct treeview_window *)data;
 	
-	/**TODO: Queue these requests properly like the main browser code does
+	/** /todo Queue these requests properly like the main browser code does
 	 **/
 
 	if(nsoption_bool(direct_render) == false)
-		schedule(0, ami_tree_redraw_req, atrr_data);
+		ami_schedule(0, ami_tree_redraw_req, atrr_data);
 	else
-		schedule(0, ami_tree_redraw_req_dr, atrr_data);
+		am_schedule(0, ami_tree_redraw_req_dr, atrr_data);
 }

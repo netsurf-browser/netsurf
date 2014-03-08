@@ -30,7 +30,6 @@
 #include "oslib/wimpspriteop.h"
 #include "desktop/plotters.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
@@ -171,7 +170,7 @@ void ro_gui_status_bar_destroy(struct status_bar *sb)
 	ro_gui_progress_bar_destroy(sb->pb);
 
 	/* Remove any scheduled redraw callbacks */
-	schedule_remove(ro_gui_status_bar_redraw_callback, (void *) sb);
+	riscos_schedule(-1, ro_gui_status_bar_redraw_callback, (void *) sb);
 
 	free(sb);
 }
@@ -331,7 +330,7 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)
 	 * { callback, handle } pair is registered at once.
 	 */
 	if (sb->visible && text != NULL) {
-		schedule(1, ro_gui_status_bar_redraw_callback, (void *) sb);
+		riscos_schedule(10, ro_gui_status_bar_redraw_callback, sb);
 	}
 }
 

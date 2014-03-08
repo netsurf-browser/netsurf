@@ -51,9 +51,6 @@ virtual void	AboutRequested();
 virtual bool	QuitRequested();
 };
 
-
-extern void schedule_run(void);
-
 extern BWindow *wndAbout;
 
 extern BWindow *wndTooltip;

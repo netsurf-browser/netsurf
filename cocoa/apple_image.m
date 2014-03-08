@@ -25,7 +25,8 @@
 #include "image/bitmap.h"
 #include "desktop/plotters.h"
 #include "utils/utils.h"
-#include "utils/schedule.h"
+
+#include "cocoa/schedule.h"
 
 typedef struct apple_image_content {
 	struct content base;
@@ -147,7 +148,7 @@ static void animate_image_cb( void *ptr )
 	data.redraw.object = &ai->base;
     content_broadcast( &ai->base, CONTENT_MSG_REDRAW, data );
 
-    schedule( ai->frameTimes[ai->currentFrame], animate_image_cb, ai );
+    cocoa_schedule(ai->frameTimes[ai->currentFrame], animate_image_cb, ai );
 }
 
 /**
@@ -190,10 +191,10 @@ bool apple_image_convert(struct content *c)
         ai->frameTimes = calloc( ai->frames , sizeof(int));
         for (NSUInteger i = 0; i < frames; i++) {
             [image setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: i]];
-            ai->frameTimes[i] = 100 * [[image valueForProperty: NSImageCurrentFrameDuration] floatValue];
+            ai->frameTimes[i] = 1000 * [[image valueForProperty: NSImageCurrentFrameDuration] floatValue];
         }
         [image setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: 0]];
-        schedule( ai->frameTimes[0], animate_image_cb, ai );
+        cocoa_schedule( ai->frameTimes[0], animate_image_cb, ai );
     }
 	
 	return true;
@@ -206,7 +207,7 @@ void apple_image_destroy(struct content *c)
 
 	[(id)ai_c->bitmap release];
 	ai_c->bitmap = NULL;
-    schedule_remove( animate_image_cb, c );
+        cocoa_schedule(-1, animate_image_cb, c );
 }
 
 

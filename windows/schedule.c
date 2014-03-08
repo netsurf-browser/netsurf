@@ -19,11 +19,16 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "utils/schedule.h"
 #include "windows/schedule.h"
 
 #include "utils/log.h"
 #include "utils/utils.h"
+
+#ifdef DEBUG_SCHEDULER
+#define SRLOG(x) LOG(x)
+#else
+#define SRLOG(x)
+#endif
 
 /* linked list of scheduled callbacks */
 static struct nscallback *schedule_list = NULL;
@@ -41,39 +46,6 @@ struct nscallback
 
 
 /**
- * Schedule a callback.
- *
- * \param  tival     interval before the callback should be made / cs
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
- *
- * The callback function will be called as soon as possible after t cs have
- * passed.
- */
-void schedule(int cs_ival, void (*callback)(void *p), void *p)
-{
-	struct nscallback *nscb;
-	struct timeval tv;
-
-        tv.tv_sec = cs_ival / 100; /* cs to seconds */
-        tv.tv_usec = (cs_ival % 100) * 10000; /* remainder to microseconds */
-
-	nscb = calloc(1, sizeof(struct nscallback));
-
-	LOG(("adding callback %p for %p(%p) at %d cs", nscb, callback, p, cs_ival));
-
-	gettimeofday(&nscb->tv, NULL);
-	timeradd(&nscb->tv, &tv, &nscb->tv);
-
-	nscb->callback = callback;
-	nscb->p = p;
-
-        /* add to list front */
-        nscb->next = schedule_list;
-        schedule_list = nscb;
-}
-
-/**
  * Unschedule a callback.
  *
  * \param  callback  callback function
@@ -82,16 +54,18 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
  * All scheduled callbacks matching both callback and p are removed.
  */
 
-void schedule_remove(void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
         struct nscallback *cur_nscb;
         struct nscallback *prev_nscb;
         struct nscallback *unlnk_nscb;
 
-        if (schedule_list == NULL)
-                return;
+	/* check there is something on the list to remove */
+        if (schedule_list == NULL) {
+                return NSERROR_OK;
+	}
 
-	LOG(("removing %p, %p", callback, p));
+	SRLOG(("removing %p, %p", callback, p));
 
         cur_nscb = schedule_list;
         prev_nscb = NULL;
@@ -101,7 +75,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
 
-                        LOG(("callback entry %p removing  %p(%p)",
+                        SRLOG(("callback entry %p removing  %p(%p)",
                              cur_nscb, cur_nscb->callback, cur_nscb->p));
 
                         /* remove callback */
@@ -120,8 +94,44 @@ void schedule_remove(void (*callback)(void *p), void *p)
                         cur_nscb = prev_nscb->next;
                 }
         }
+	return NSERROR_OK;
 }
 
+/* exported interface documented in windows/schedule.h */
+nserror win32_schedule(int ival, void (*callback)(void *p), void *p)
+{
+	struct nscallback *nscb;
+	struct timeval tv;
+	nserror ret;
+
+	ret = schedule_remove(callback, p);
+	if ((ival < 0) || (ret != NSERROR_OK)) {
+		return ret;
+	}
+
+        tv.tv_sec = ival / 1000; /* miliseconds to seconds */
+        tv.tv_usec = (cs_ival % 1000) * 1000; /* remainder to microseconds */
+
+	nscb = calloc(1, sizeof(struct nscallback));
+	if (nscb == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	SRLOG(("adding callback %p for %p(%p) at %d cs",
+	       nscb, callback, p, ival));
+
+	gettimeofday(&nscb->tv, NULL);
+	timeradd(&nscb->tv, &tv, &nscb->tv);
+
+	nscb->callback = callback;
+	nscb->p = p;
+
+        /* add to list front */
+        nscb->next = schedule_list;
+        schedule_list = nscb;
+
+	return NSERROR_OK;
+}
 
 /* exported interface documented in schedule.h */
 int 
@@ -157,7 +167,7 @@ schedule_run(void)
                                 prev_nscb->next = unlnk_nscb->next;
                         }
 
-                        LOG(("callback entry %p running %p(%p)",
+                        SRLOG(("callback entry %p running %p(%p)",
                              unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
@@ -190,9 +200,9 @@ schedule_run(void)
 	/* make returned time relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-#if defined(DEBUG_SCHEDULER)
-	LOG(("returning time to next event as %ldms",(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000))); 
-#endif
+	SRLOG(("returning time to next event as %ldms",
+	     (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000)));
+
 	/* return next event time in milliseconds (24days max wait) */
         return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
 }

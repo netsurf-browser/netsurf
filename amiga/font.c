@@ -23,12 +23,12 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "amiga/object.h"
+#include "amiga/schedule.h"
 #include "utils/nsoption.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
@@ -831,7 +831,7 @@ void ami_init_fonts(void)
 	NewList(&ami_diskfontlib_list);
 
 	/* run first cleanup in ten minutes */
-	schedule(60000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
+	ami_schedule(600000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
@@ -875,7 +875,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	}while(node=nnode);
 
 	/* reschedule to run in five minutes */
-	schedule(30000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
+	ami_schedule(300000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_font_setdevicedpi(int id)

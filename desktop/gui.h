@@ -75,7 +75,8 @@ typedef struct nsnsclipboard_styles {
 	plot_font_style_t style;	/**< Style to give text run */
 } nsclipboard_styles;
 
-/** Graphical user interface window function table
+/**
+ * Graphical user interface window function table.
  *
  * function table implementing window operations
  */
@@ -176,7 +177,9 @@ struct gui_window_table {
 	 */
 	void (*set_title)(struct gui_window *g, const char *title);
 
-	/** set the navigation url. */
+	/**
+	 * set the navigation url.
+	 */
 	void (*set_url)(struct gui_window *g, const char *url);
 
 	/** set favicon */
@@ -209,7 +212,7 @@ struct gui_window_table {
 	/**
 	 * Remove the caret, if present.
 	 *
-	 * \param  g	   window with caret
+	 * \param g window with caret
 	 */
 	void (*remove_caret)(struct gui_window *g);
 
@@ -269,8 +272,9 @@ struct gui_window_table {
 	void (*start_selection)(struct gui_window *g);
 };
 
+
 /**
- * function table for download windows
+ * function table for download windows.
  */
 struct gui_download_table {
 	struct gui_download_window *(*create)(struct download_context *ctx, struct gui_window *parent);
@@ -282,8 +286,9 @@ struct gui_download_table {
 	void (*done)(struct gui_download_window *dw);
 };
 
+
 /**
- * function table for clipboard operations
+ * function table for clipboard operations.
  */
 struct gui_clipboard_table {
 	/**
@@ -304,6 +309,7 @@ struct gui_clipboard_table {
 	 */
 	void (*set)(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
 };
+
 
 /**
  * function table for fetcher operations
@@ -390,8 +396,9 @@ struct gui_fetch_table {
 
 };
 
+
 /**
- * User interface utf8 characterset conversion routines
+ * User interface utf8 characterset conversion routines.
  */
 struct gui_utf8_table {
 	/**
@@ -415,7 +422,9 @@ struct gui_utf8_table {
 	nserror (*local_to_utf8)(const char *string, size_t len, char **result);
 };
 
-/** Graphical user interface browser misc function table
+
+/**
+ * Graphical user interface browser misc function table.
  *
  * function table implementing GUI interface to miscelaneous browser
  * functionality
@@ -429,6 +438,23 @@ struct gui_browser_table {
 	 */
 	void (*poll)(bool active);
 
+	/**
+	 * Schedule a callback.
+	 *
+	 * \param t interval before the callback should be made in ms or
+	 *          negative value to remove any existing callback.
+	 * \param callback callback function
+	 * \param p user parameter passed to callback function
+	 * \return NSERROR_OK on sucess or appropriate error on faliure
+	 *
+	 * The callback function will be called as soon as possible
+	 * after the timeout has elapsed.
+	 *
+	 * Additional calls with the same callback and user parameter will
+	 * reset the callback time to the newly specified value.
+	 *
+	 */
+	nserror (*schedule)(int t, void (*callback)(void *p), void *p);
 
 	/* Optional entries */
 
@@ -474,7 +500,8 @@ struct gui_browser_table {
  */
 struct gui_table {
 
-	/** Browser table.
+	/**
+	 * Browser table.
 	 *
 	 * Provides miscellaneous browser functionality. The table
 	 * is mandantory and must be provided.
@@ -493,7 +520,8 @@ struct gui_table {
 	/** Fetcher table */
 	struct gui_fetch_table *fetch;
 
-	/** UTF8 table
+	/**
+	 * UTF8 table.
 	 *
 	 * Provides for conversion between the gui local character
 	 * encoding and utf8. The table optional and may be NULL which

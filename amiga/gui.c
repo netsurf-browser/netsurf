@@ -2538,7 +2538,7 @@ static void ami_gui_fetch_callback(void *p)
 
 static void gui_poll(bool active)
 {
-	if(active) schedule(0, ami_gui_fetch_callback, NULL);
+	if(active) ami_schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
 }
 
@@ -4050,19 +4050,19 @@ static void ami_redraw_callback(void *p)
  */
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
-	int cs = 0;
+	int ms = 0;
 
 	if(full_redraw) gwin->redraw_required = true;
 	if(gwin->redraw_scheduled == true) return;
 
-	if(gwin->bw->reformat_pending) cs = nsoption_int(reformat_delay);
-	schedule(cs, ami_redraw_callback, gwin);
+	if(gwin->bw->reformat_pending) ms = nsoption_int(reformat_delay) * 10;
+	ami_schedule(ms, ami_redraw_callback, gwin);
 	gwin->redraw_scheduled = true;
 }
 
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
 {
-	schedule_remove(ami_redraw_callback, gwin);
+	ami_schedule(-1, ami_redraw_callback, gwin);
 }
 
 static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
@@ -5133,6 +5133,7 @@ static struct gui_fetch_table amiga_fetch_table = {
 
 static struct gui_browser_table amiga_browser_table = {
 	.poll = gui_poll,
+	.schedule = ami_schedule,
 
 	.quit = gui_quit,
 	.set_search_ico = gui_set_search_ico,

@@ -31,12 +31,13 @@
 #include "css/utils.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
-#include "render/box.h"
-#include "render/html_internal.h"
+#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
+
+#include "render/box.h"
+#include "render/html_internal.h"
 
 /* break reference loop */
 static void html_object_refresh(void *p);
@@ -335,7 +336,7 @@ html_object_callback(hlcache_handle *object,
 	case CONTENT_MSG_REFRESH:
 		if (content_get_type(object) == CONTENT_HTML) {
 			/* only for HTML objects */
-			schedule(event->data.delay * 100,
+			guit->browser->schedule(event->data.delay * 1000,
 					html_object_refresh, o);
 		}
 
@@ -534,7 +535,7 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 }
 
 /**
- * schedule() callback for object refresh
+ * schedule callback for object refresh
  */
 
 static void html_object_refresh(void *p)
@@ -630,8 +631,9 @@ nserror html_object_close_objects(html_content *html)
 		if (content_get_type(object->content) == CONTENT_NONE)
 			continue;
 
-		if (content_get_type(object->content) == CONTENT_HTML)
-			schedule_remove(html_object_refresh, object);
+		if (content_get_type(object->content) == CONTENT_HTML) {
+			guit->browser->schedule(-1, html_object_refresh, object);
+		}
 
 		content_close(object->content);
 	}
@@ -646,9 +648,9 @@ nserror html_object_free_objects(html_content *html)
 		if (victim->content != NULL) {
 			LOG(("object %p", victim->content));
 
-			if (content_get_type(victim->content) == CONTENT_HTML)
-				schedule_remove(html_object_refresh, victim);
-
+			if (content_get_type(victim->content) == CONTENT_HTML) {
+				guit->browser->schedule(-1, html_object_refresh, victim);
+			}
 			hlcache_handle_release(victim->content);
 		}
 

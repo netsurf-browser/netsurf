@@ -21,14 +21,6 @@
 #include <stdlib.h>
 
 #include "utils/nsoption.h"
-#include "monkey/poll.h"
-#include "monkey/dispatch.h"
-#include "monkey/browser.h"
-#include "monkey/cert.h"
-#include "monkey/401login.h"
-#include "monkey/filetype.h"
-#include "monkey/fetch.h"
-
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
 #include "desktop/gui.h"
@@ -36,6 +28,15 @@
 #include "utils/log.h"
 #include "utils/filepath.h"
 #include "utils/url.h"
+
+#include "monkey/poll.h"
+#include "monkey/dispatch.h"
+#include "monkey/browser.h"
+#include "monkey/cert.h"
+#include "monkey/401login.h"
+#include "monkey/filetype.h"
+#include "monkey/fetch.h"
+#include "monkey/schedule.h"
 
 char **respaths; /** resource search path vector */
 
@@ -103,6 +104,7 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static struct gui_browser_table monkey_browser_table = {
   .poll = monkey_poll,
+  .schedule = monkey_schedule,
 
   .quit = monkey_quit,
   .launch_url = gui_launch_url,

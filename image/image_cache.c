@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "utils/schedule.h"
+#include "desktop/gui_factory.h"
 #include "utils/log.h"
 #include "content/content_protected.h"
 
@@ -290,9 +290,9 @@ static void image_cache__background_update(void *p)
 
 	image_cache__clean(icache);
 
-	schedule((icache->params.bg_clean_time / 10),
-		 image_cache__background_update,
-		 icache);
+	guit->browser->schedule(icache->params.bg_clean_time,
+				image_cache__background_update,
+				icache);
 }
 
 /* exported interface documented in image_cache.h */
@@ -372,9 +372,9 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 
 	image_cache->params = *image_cache_parameters;
 
-	schedule((image_cache->params.bg_clean_time / 10),
-		 image_cache__background_update,
-		 image_cache);
+	guit->browser->schedule(image_cache->params.bg_clean_time,
+				image_cache__background_update,
+				image_cache);
 
 	LOG(("Image cache initilised with a limit of %d hysteresis of %d",
 	     image_cache->params.limit, image_cache->params.hysteresis));
@@ -387,7 +387,7 @@ nserror image_cache_fini(void)
 {
 	unsigned int op_count;
 
-	schedule_remove(image_cache__background_update, image_cache);
+	guit->browser->schedule(-1, image_cache__background_update, image_cache);
 
 	LOG(("Size at finish %d (in %d)",
 	     image_cache->total_bitmap_size,

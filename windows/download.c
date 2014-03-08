@@ -27,14 +27,15 @@
 #include "content/fetch.h"
 #include "desktop/gui.h"
 #include "desktop/download.h"
-#include "utils/schedule.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+
 #include "windows/download.h"
 #include "windows/gui.h"
 #include "windows/resourceid.h"
+#include "windows/schedule.h"
 
 static bool downloading = false;
 static struct gui_download_window *download1;
@@ -182,7 +183,7 @@ void nsws_download_update_label(void *p)
 {
 	struct gui_download_window *w = p;
 	if (w->hwnd == NULL) {
-		schedule_remove(nsws_download_update_label, p);
+		win32_schedule(-1, nsws_download_update_label, p);
 		return;
 	}
 	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_LABEL);
@@ -222,21 +223,23 @@ void nsws_download_update_label(void *p)
 		w->time_left = NULL;
 	}
 	SendMessage(sub, WM_SETTEXT, (WPARAM)0, (LPARAM)label);
-	if (w->progress < 10000)
-		schedule(50, nsws_download_update_label, p);
+	if (w->progress < 10000) {
+		win32_schedule(500, nsws_download_update_label, p);
+	}
 }
 
 void nsws_download_update_progress(void *p)
 {
 	struct gui_download_window *w = p;
 	if (w->hwnd == NULL) {
-		schedule_remove(nsws_download_update_progress, p);
+		win32_schedule(-1, nsws_download_update_progress, p);
 		return;
 	}
 	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_PROGRESS);
 	SendMessage(sub, PBM_SETPOS, (WPARAM)(w->progress / 100), 0);
-	if (w->progress < 10000)
-		schedule(50, nsws_download_update_progress, p);
+	if (w->progress < 10000) {
+		win32_schedule(500, nsws_download_update_progress, p);
+	}
 }
 
 void nsws_download_clear_data(struct gui_download_window *w)
@@ -255,8 +258,8 @@ void nsws_download_clear_data(struct gui_download_window *w)
 		free(w->total_size);
 	if (w->file != NULL)
 		fclose(w->file);
-	schedule_remove(nsws_download_update_progress, (void *)w);
-	schedule_remove(nsws_download_update_label, (void *)w);
+	win32_schedule(-1, nsws_download_update_progress, (void *)w);
+	win32_schedule(-1, nsws_download_update_label, (void *)w);
 }
 
 
