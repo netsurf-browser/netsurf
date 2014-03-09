@@ -1396,5 +1396,5 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	if(nsoption_bool(direct_render) == false)
 		ami_schedule(0, ami_tree_redraw_req, atrr_data);
 	else
-		am_schedule(0, ami_tree_redraw_req_dr, atrr_data);
+		ami_schedule(0, ami_tree_redraw_req_dr, atrr_data);
 }

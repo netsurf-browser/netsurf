@@ -19,10 +19,11 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "windows/schedule.h"
-
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/errors.h"
+
+#include "windows/schedule.h"
 
 #ifdef DEBUG_SCHEDULER
 #define SRLOG(x) LOG(x)
@@ -110,7 +111,7 @@ nserror win32_schedule(int ival, void (*callback)(void *p), void *p)
 	}
 
         tv.tv_sec = ival / 1000; /* miliseconds to seconds */
-        tv.tv_usec = (cs_ival % 1000) * 1000; /* remainder to microseconds */
+        tv.tv_usec = (ival % 1000) * 1000; /* remainder to microseconds */
 
 	nscb = calloc(1, sizeof(struct nscallback));
 	if (nscb == NULL) {

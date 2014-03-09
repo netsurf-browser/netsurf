@@ -484,7 +484,7 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	if(nsoption_int(menu_refresh) > 0)
 	{
 		ami_schedule(nsoption_int(menu_refresh) * 10,
-			     ami_menu_refresh,
+			     (void *)ami_menu_refresh,
 			     gwin);
 	}
 

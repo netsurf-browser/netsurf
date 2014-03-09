@@ -18,6 +18,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "utils/errors.h"
+
 #import "cocoa/schedule.h"
 
 @interface ScheduledCallback : NSObject {

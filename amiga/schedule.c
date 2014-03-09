@@ -17,7 +17,6 @@
  */
 
 #include "amiga/os3support.h"
-#include "amiga/schedule.h"
 
 #include <proto/exec.h>
 #include <proto/timer.h>
@@ -25,6 +24,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <pbl.h>
+
+#include "utils/errors.h"
+
+#include "amiga/schedule.h"
 
 struct nscallback
 {

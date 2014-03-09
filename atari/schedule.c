@@ -22,6 +22,8 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include "utils/errors.h"
+
 #include "atari/schedule.h"
 
 #ifdef DEBUG_SCHEDULER
