@@ -1889,7 +1889,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	/* Handle the drop */
 	if (file_box) {
 		/* File dropped on file input */
-		html__set_file_gadget_filename(c, box->gadget, file);
+		html__set_file_gadget_filename(c, file_box->gadget, file);
 
 	} else {
 		/* File dropped on text input */
