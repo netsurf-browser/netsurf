@@ -1792,8 +1792,6 @@ static void html__set_file_gadget_filename(struct content *c,
 	html_content *html = (html_content *)c;
 	struct box *file_box = gadget->box;
 
-	LOG(("content: %p, gadget: %p, file name: %s", c, gadget, fn));
-
 	ret = guit->utf8->local_to_utf8(fn, 0, &utf8_fn);
 	if (ret != NSERROR_OK) {
 		assert(ret != NSERROR_BAD_ENCODING);
