@@ -836,7 +836,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 	if(args = ReadArgs(template, rarray, NULL)) {
 		if(rarray[A_URL]) {
 			LOG(("URL %s specified on command line", rarray[A_URL]));
-			temp_homepage_url = (char *)strdup((char *)rarray[A_URL]);
+			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
 		}
 
 		if(rarray[A_FORCE]) {
@@ -949,7 +949,6 @@ static void gui_init2(int argc, char** argv)
 				if(notalreadyrunning)
 				{
 					error = nsurl_create(temp_homepage_url, &url);
-					
 
 					if (error == NSERROR_OK) {
 						if(!first)
@@ -1463,6 +1462,7 @@ void ami_handle_msg(void)
 	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
+	char *utf8 = NULL;
 	nsurl *url;
 
 	if(IsMinListEmpty(window_list))
@@ -1788,12 +1788,13 @@ void ami_handle_msg(void)
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_URL],
 								(ULONG *)&storage);
-							if(search_is_url((char *)storage) == false)
-							{
-								storage = (ULONG)search_web_from_term((char *)storage);
-							}
-							{
-								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
+							if(utf8 = ami_to_utf8_easy((const char *)storage)) {
+								if(search_is_url((char *)utf8) == false)
+								{
+									utf8 = search_web_from_term(utf8);
+								}
+
+								if (nsurl_create((char *)utf8, &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
 									browser_window_navigate(gwin->bw,
@@ -1805,6 +1806,9 @@ void ami_handle_msg(void)
 											NULL);
 									nsurl_unref(url);
 								}
+								ami_utf8_free(utf8);
+							} else {
+								warn_user("NoMemory", 0);
 							}
 						break;
 
@@ -1817,8 +1821,10 @@ void ami_handle_msg(void)
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_SEARCHSTRING],
 								(ULONG *)&storage);
-							storage = (ULONG)search_web_from_term((char *)storage);
-							{
+							if(utf8 = ami_to_utf8_easy((const char *)storage)) {
+								storage = (ULONG)search_web_from_term(utf8);
+								ami_utf8_free(utf8);
+
 								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
@@ -1831,6 +1837,8 @@ void ami_handle_msg(void)
 											NULL);
 									nsurl_unref(url);
 								}
+							} else {
+								warn_user("NoMemory", 0);
 							}
 						break;
 
@@ -1884,7 +1892,6 @@ void ami_handle_msg(void)
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_URL],
 								(ULONG *)&storage);
-								
 							if(nsurl_create((const char *)storage, &url) == NSERROR_OK) {
 								if(hotlist_has_url(url)) {
 									hotlist_remove_url(url);
@@ -1893,7 +1900,6 @@ void ami_handle_msg(void)
 								}
 								nsurl_unref(url);
 							}
-							
 							ami_gui_update_hotlist_button(gwin);
 						break;
 

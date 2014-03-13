@@ -410,6 +410,8 @@ void ami_gui_opts_open(void)
 	BOOL download_notify_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
 	char animspeed[10];
+	char *homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
+
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
 	if(gow && gow->win)
@@ -557,7 +559,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE] = StringObject,
 										GA_ID, GID_OPTS_HOMEPAGE,
 										GA_RelVerify, TRUE,
-										STRINGA_TextVal, nsoption_charp(homepage_url),
+										STRINGA_TextVal, homepage_url_lc,
 										STRINGA_BufferPos,0,
 									StringEnd,
 									CHILD_Label, LabelObject,
@@ -1529,6 +1531,7 @@ void ami_gui_opts_open(void)
 		gow->node = AddObject(window_list,AMINS_GUIOPTSWINDOW);
 		gow->node->objstruct = gow;
 	}
+	ami_utf8_free(homepage_url_lc);
 }
 
 void ami_gui_opts_use(bool save)
@@ -1543,7 +1546,7 @@ void ami_gui_opts_use(bool save)
 	ami_update_pointer(gow->win, GUI_POINTER_WAIT);
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
-	nsoption_set_charp(homepage_url, (char *)strdup((char *)data));
+	nsoption_set_charp(homepage_url, (char *)ami_to_utf8_easy((char *)data));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_CONTENTLANG],(ULONG *)&data);
 	nsoption_set_charp(accept_language, (char *)strdup((char *)data));
