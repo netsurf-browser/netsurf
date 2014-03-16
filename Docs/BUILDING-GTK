@@ -181,11 +181,11 @@
   detected and used, and where this is the case they are set to such.
   Others cannot be automatically detected from the Makefile, so you
   will either need to install the dependencies, or set them to NO.
-  
+
   You should then obtain NetSurf's dependencies, keeping in mind which options
   you have enabled in the configuration file.  See the next section for
   specifics.
-  
+
   Once done, to build GTK NetSurf on a UNIX-like platform, simply run:
 
       $ make
