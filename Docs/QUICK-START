@@ -50,10 +50,14 @@
 -----------------------
 
       $ cd netsurf
+
+  To build the native front end (the GTK front end on Linux, BSDs, etc) you
+  could do:
+
       $ make
       $ ./nsgtk
 
-  For the framebuffer front end, you could do:
+  To build the framebuffer front end, you could do:
 
       $ make TARGET=framebuffer
       $ ./nsfb
