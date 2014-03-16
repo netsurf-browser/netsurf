@@ -111,6 +111,7 @@
   The NetSurf project has developed several libraries which are required by
   the browser. These are:
 
+  BuildSystem     --  Shared build system, needed to build the other libraries
   LibParserUtils  --  Parser building utility functions
   LibWapcaplet    --  String internment
   Hubbub          --  HTML5 compliant HTML parser
