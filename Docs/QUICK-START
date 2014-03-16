@@ -2,8 +2,7 @@
   Quick Build Steps for NetSurf                               26 February 2014
 --------------------------------------------------------------------------------
 
-  This document provides steps for building the GTK version of NetSurf on a
-  debian based linux system.
+  This document provides steps for building NetSurf.
 
 
   Grab a temporary env.sh
@@ -19,11 +18,14 @@
   Installs all packages required to build NetSurf and the NetSurf project
   libraries.
 
-      $ ns-apt-get-install
+      $ ns-package-install
+
+  If your package manager is not supported, you will have to install third
+  party packages manually.
 
 
-  Get the NetSurf project source code
--------------------------------------
+  Get the NetSurf project source code from Git
+----------------------------------------------
 
       $ ns-clone
 
