@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for GTK NetSurf                              8 April 2010
+  Build Instructions for GTK NetSurf                             16 March 2014
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the GTK version of NetSurf
@@ -13,9 +13,9 @@
 =============
 
   See the QUICK-START document, which provides a simple environment with
-  which you can fetch, build and install NetSurf's dependencies.
+  which you can fetch, build and install NetSurf and its dependencies.
 
-  Following the QUICK-START is the recommended way to build NetSurf.
+  The QUICK-START is the recommended way to build NetSurf.
 
 
   Manual building
