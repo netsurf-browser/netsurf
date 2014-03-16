@@ -100,7 +100,7 @@ else
     NS_GTK_RPM="gtk2-devel librsvg2-devel"
 fi
 
-# apt get commandline to install necessary dev packages
+# yum commandline to install necessary dev packages
 ns-yum-install()
 {
     sudo yum -y install $(echo ${NS_DEV_RPM} ${NS_TOOL_RPM} ${NS_GTK_RPM})
