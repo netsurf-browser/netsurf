@@ -45,7 +45,7 @@
 
   Debian-like OS:
 
-      $ apt-get install libcurl3-dev libpng-dev 
+      $ apt-get install libcurl3-dev libpng-dev
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not
@@ -125,7 +125,7 @@
 
   To build and install these libraries, simply enter each of their directories
   and run:
-  
+
       $ make install
 
   | Note: We advise enabling iconv() support in libparserutils, which vastly
