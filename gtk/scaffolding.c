@@ -1385,8 +1385,8 @@ MULTIHANDLER(reload)
 	/* clear potential search effects */
 	browser_window_search_clear(bw);
 
-	nsgtk_search_set_forward_state(true, bw);
-	nsgtk_search_set_back_state(true, bw);
+	nsgtk_search_set_forward_state(true, g->top_level);
+	nsgtk_search_set_back_state(true, g->top_level);
 
 	browser_window_reload(bw, true);
 
@@ -1404,8 +1404,8 @@ MULTIHANDLER(back)
 	/* clear potential search effects */
 	browser_window_search_clear(bw);
 
-	nsgtk_search_set_forward_state(true, bw);
-	nsgtk_search_set_back_state(true, bw);
+	nsgtk_search_set_forward_state(true, g->top_level);
+	nsgtk_search_set_back_state(true, g->top_level);
 
 	browser_window_history_back(bw, false);
 	nsgtk_window_update_back_forward(g);
@@ -1424,8 +1424,8 @@ MULTIHANDLER(forward)
 	/* clear potential search effects */
 	browser_window_search_clear(bw);
 
-	nsgtk_search_set_forward_state(true, bw);
-	nsgtk_search_set_back_state(true, bw);
+	nsgtk_search_set_forward_state(true, g->top_level);
+	nsgtk_search_set_back_state(true, g->top_level);
 
 	browser_window_history_forward(bw, false);
 	nsgtk_window_update_back_forward(g);
@@ -2392,14 +2392,16 @@ void nsgtk_scaffolding_set_websearch(nsgtk_scaffolding *g, const char *content)
 void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
 {
 	gboolean vis;
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
+
 	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
 	if (vis) {
-		if (bw != NULL)
+		if (bw != NULL) {
 			browser_window_search_clear(bw);
-		nsgtk_search_set_forward_state(true, bw);
-		nsgtk_search_set_back_state(true, bw);
+		}
+		nsgtk_search_set_forward_state(true, g->top_level);
+		nsgtk_search_set_back_state(true, g->top_level);
+
 		gtk_widget_hide(GTK_WIDGET(g->search->bar));
 	} else {
 		gtk_widget_show(GTK_WIDGET(g->search->bar));
@@ -2436,8 +2438,8 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	/* clear effects of potential searches */
 	browser_window_search_clear(bw);
 
-	nsgtk_search_set_forward_state(true, bw);
-	nsgtk_search_set_back_state(true, bw);
+	nsgtk_search_set_forward_state(true, gw);
+	nsgtk_search_set_back_state(true, gw);
 
 	nsgtk_scaffolding_set_icon(gw);
 

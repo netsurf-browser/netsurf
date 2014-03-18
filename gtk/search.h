@@ -25,15 +25,27 @@
 void nsgtk_search_bar_toggle_visibility(struct gtk_scaffolding * g);
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, 
-		gpointer data);
+gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data);
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, 
-		gpointer data);
-void nsgtk_search_set_forward_state(bool active, void *p);
-void nsgtk_search_set_back_state(bool active, void *p);
+gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, gpointer data);
+
+/**
+ * activate search forwards button in gui.
+ *
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
+void nsgtk_search_set_forward_state(bool active, struct gui_window *gw);
+
+/**
+ * activate search back button in gui.
+ *
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
+void nsgtk_search_set_back_state(bool active, struct gui_window *gw);
 		
 #endif

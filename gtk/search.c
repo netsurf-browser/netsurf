@@ -40,13 +40,63 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-static void nsgtk_search_set_status(bool found, void *p);
-static void nsgtk_search_set_hourglass(bool active, void *p);
-static void nsgtk_search_add_recent(const char *string, void *p);
+/**
+* Change the displayed search status.
+* \param found  search pattern matched in text
+* \param p the pointer sent to search_verify_new() / search_create_context()
+*/
+
+static void nsgtk_search_set_status(bool found, void *p)
+{
+}
+
+/**
+* display hourglass while searching
+* \param active start/stop indicator
+* \param p the pointer sent to search_verify_new() / search_create_context()
+*/
+
+static void nsgtk_search_set_hourglass(bool active, void *p)
+{
+}
+
+/**
+* add search string to recent searches list
+* front is at liberty how to implement the bare notification
+* should normally store a strdup() of the string;
+* core gives no guarantee of the integrity of the const char *
+* \param string search pattern
+* \param p the pointer sent to search_verify_new() / search_create_context()
+*/
+
+static void nsgtk_search_add_recent(const char *string, void *p)
+{
+}
+
+/* exported function documented in gtk/search.h */
+void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
+{
+	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
+		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
+		gtk_widget_set_sensitive(
+			GTK_WIDGET(nsgtk_scaffolding_search(g)->buttons[1]),
+			active);
+	}
+}
+
+/* exported function documented in gtk/search.h */
+void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
+{
+	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
+		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
+		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
+				g)->buttons[0]), active);
+	}
+}
 
 static struct gui_search_callbacks nsgtk_search_callbacks = {
-	nsgtk_search_set_forward_state,
-	nsgtk_search_set_back_state,
+	(void *)nsgtk_search_set_forward_state,
+	(void *)nsgtk_search_set_back_state,
 	nsgtk_search_set_status,
 	nsgtk_search_set_hourglass,
 	nsgtk_search_add_recent
@@ -117,8 +167,8 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 
 	assert(bw != NULL);
 
-	nsgtk_search_set_forward_state(true, (void *)bw);
-	nsgtk_search_set_back_state(true, (void *)bw);
+	nsgtk_search_set_forward_state(true, gw);
+	nsgtk_search_set_back_state(true, gw);
 
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -197,67 +247,5 @@ gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f,
 	return TRUE;
 }
 
-/**
-* Change the displayed search status.
-* \param found  search pattern matched in text
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
 
-void nsgtk_search_set_status(bool found, void *p)
-{
-}
 
-/**
-* display hourglass while searching
-* \param active start/stop indicator
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-void nsgtk_search_set_hourglass(bool active, void *p)
-{
-}
-
-/**
-* add search string to recent searches list
-* front is at liberty how to implement the bare notification
-* should normally store a strdup() of the string;
-* core gives no guarantee of the integrity of the const char *
-* \param string search pattern
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-void nsgtk_search_add_recent(const char *string, void *p)
-{
-}
-
-/**
-* activate search forwards button in gui
-* \param active activate/inactivate
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-void nsgtk_search_set_forward_state(bool active, void *p)
-{
-	struct gui_window *gw = (struct gui_window *)p;
-	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
-		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
-				g)->buttons[1]), active);
-	}
-}
-
-/**
-* activate search back button in gui
-* \param active activate/inactivate
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-void nsgtk_search_set_back_state(bool active, void *p)
-{
-	struct gui_window *gw = (struct gui_window *)p;
-	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
-		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
-				g)->buttons[0]), active);
-	}
-}
