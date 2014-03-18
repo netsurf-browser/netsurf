@@ -21,9 +21,9 @@
 
 extern bigtime_t earliest_callback_timeout;
 
-extern nserror beos_schedule(int t, void (*callback)(void *p), void *p);
+extern "C" nserror beos_schedule(int t, void (*callback)(void *p), void *p);
 
-extern void schedule_run(void);
+extern "C" bool schedule_run(void);
 
 
 #endif /* NETSURF_BEOS_CALLBACK_H */

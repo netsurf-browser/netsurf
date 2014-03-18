@@ -23,6 +23,7 @@
 #include <List.h>
 
 extern "C" {
+#include "utils/errors.h"
 #include "beos/schedule.h"
 #include "desktop/browser.h"
 
