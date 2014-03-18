@@ -112,8 +112,7 @@ static void textplain_mouse_track(struct content *c, struct browser_window *bw,
 static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 static bool textplain_keypress(struct content *c, uint32_t key);
-static void textplain_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+static void textplain_search(struct content *c, void *gui_data,
 		search_flags_t flags, const char *string);
 static void textplain_search_clear(struct content *c);
 static void textplain_reformat(struct content *c, int width, int height);
@@ -760,8 +759,7 @@ bool textplain_keypress(struct content *c, uint32_t key)
  * \param  flags		search flags
  * \param  string		search string
  */
-void textplain_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void textplain_search(struct content *c, void *gui_data,
 		search_flags_t flags, const char *string)
 {
 	textplain_content *text = (textplain_content *) c;
@@ -787,7 +785,7 @@ void textplain_search(struct content *c,
 		}
 
 		text->search = search_create_context(c, CONTENT_TEXTPLAIN,
-				gui_callbacks, gui_data);
+				gui_data);
 
 		if (text->search == NULL)
 			return;

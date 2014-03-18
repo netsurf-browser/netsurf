@@ -343,6 +343,62 @@ static nserror verify_utf8_register(struct gui_utf8_table *gut)
 	return NSERROR_OK;
 }
 
+static void gui_default_status(bool found, void *p)
+{
+}
+
+static void gui_default_hourglass(bool active, void *p)
+{
+}
+
+static void gui_default_add_recent(const char *string, void *p)
+{
+}
+
+static void gui_default_forward_state(bool active, void *p)
+{
+}
+
+static void gui_default_back_state(bool active, void *p)
+{
+}
+
+static struct gui_search_table default_search_table = {
+	.status = gui_default_status,
+	.hourglass = gui_default_hourglass,
+	.add_recent = gui_default_add_recent,
+	.forward_state = gui_default_forward_state,
+	.back_state = gui_default_back_state,
+};
+
+/** verify search table is valid */
+static nserror verify_search_register(struct gui_search_table *gst)
+{
+	/* check table is present */
+	if (gst == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* fill in the optional entries with defaults */
+	if (gst->status == NULL) {
+		gst->status = default_search_table.status;
+	}
+	if (gst->hourglass == NULL) {
+		gst->hourglass = default_search_table.hourglass;
+	}
+	if (gst->add_recent == NULL) {
+		gst->add_recent = default_search_table.add_recent;
+	}
+	if (gst->forward_state == NULL) {
+		gst->forward_state = default_search_table.forward_state;
+	}
+	if (gst->back_state == NULL) {
+		gst->back_state = default_search_table.back_state;
+	}
+
+	return NSERROR_OK;
+}
+
 static nsurl *gui_default_get_resource_url(const char *path)
 {
 	return NULL;
@@ -525,10 +581,20 @@ nserror gui_factory_register(struct gui_table *gt)
 
 	/* utf8 table */
 	if (gt->utf8 == NULL) {
-		/* set default clipboard table */
+		/* set default utf8 table */
 		gt->utf8 = &default_utf8_table;
 	}
 	err = verify_utf8_register(gt->utf8);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* search table */
+	if (gt->search == NULL) {
+		/* set default search table */
+		gt->search = &default_search_table;
+	}
+	err = verify_search_register(gt->search);
 	if (err != NSERROR_OK) {
 		return err;
 	}

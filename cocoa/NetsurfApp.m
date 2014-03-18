@@ -21,6 +21,7 @@
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
 #import "cocoa/DownloadWindowController.h"
+#import "cocoa/SearchWindowController.h"
 #import "cocoa/selection.h"
 #import "cocoa/fetch.h"
 
@@ -190,6 +191,7 @@ int main( int argc, char **argv )
 		.clipboard = cocoa_clipboard_table,
 		.download = cocoa_download_table,
 		.fetch = cocoa_fetch_table,
+                .search = cocoa_search_table,
 	};
 
 	cocoa_autorelease();

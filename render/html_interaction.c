@@ -1072,13 +1072,11 @@ bool html_keypress(struct content *c, uint32_t key)
  * Handle search.
  *
  * \param  c			content of type HTML
- * \param  gui_callbacks	vtable for updating front end
- * \param  gui_data		front end private data
+ * \param  context		front end private data
  * \param  flags		search flags
  * \param  string		search string
  */
-void html_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void html_search(struct content *c, void *context,
 		search_flags_t flags, const char *string)
 {
 	html_content *html = (html_content *)c;
@@ -1103,8 +1101,7 @@ void html_search(struct content *c,
 			html->search = NULL;
 		}
 
-		html->search = search_create_context(c, CONTENT_HTML,
-				gui_callbacks, gui_data);
+		html->search = search_create_context(c, CONTENT_HTML, context);
 
 		if (html->search == NULL)
 			return;
@@ -1135,8 +1132,9 @@ void html_search_clear(struct content *c)
 	free(html->search_string);
 	html->search_string = NULL;
 
-	if (html->search != NULL)
+	if (html->search != NULL) {
 		search_destroy_context(html->search);
+	}
 	html->search = NULL;
 }
 

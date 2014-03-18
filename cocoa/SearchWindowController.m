@@ -26,13 +26,12 @@
 static void cocoa_search_set_back( bool active, void *p );
 static void cocoa_search_set_forward( bool active, void *p );
 
-static struct gui_search_callbacks cocoa_search_callbacks = {
+static struct gui_search_table search_table = {
 	.forward_state = cocoa_search_set_forward,
 	.back_state = cocoa_search_set_back,
-	.status = NULL,
-	.hourglass = NULL,
-	.add_recent = NULL
 };
+
+struct gui_search_table *cocoa_search_table = &search_table;
 
 @implementation SearchWindowController
 
@@ -76,7 +75,7 @@ static struct gui_search_callbacks cocoa_search_callbacks = {
 	if (selectAll) flags |= SEARCH_FLAG_SHOWALL;
 
 	struct browser_window *bw = [browser browser];
-	browser_window_search( bw, &cocoa_search_callbacks, self, flags, [searchString UTF8String] );
+	browser_window_search( bw, self, flags, [searchString UTF8String] );
 }
 
 - (IBAction) searchStringDidChange: (id) sender;

@@ -36,8 +36,7 @@ struct search_context;
  * \return true for success
  */
 struct search_context * search_create_context(struct content *c,
-		content_type type, struct gui_search_callbacks *callbacks,
-		void *gui_data);
+				      content_type type, void *context);
 
 /**
  * Ends the search process, invalidating all state

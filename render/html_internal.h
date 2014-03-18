@@ -254,8 +254,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 bool html_keypress(struct content *c, uint32_t key);
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
-void html_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void html_search(struct content *c, void *context,
 		search_flags_t flags, const char *string);
 void html_search_clear(struct content *c);
 

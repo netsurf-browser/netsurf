@@ -28,6 +28,8 @@ struct find_window {
 	struct gui_window *gwin;
 };
 
+struct gui_search_table *amiga_search_table;
+
 void ami_search_open(struct gui_window *gwin);
 BOOL ami_search_event(void);
 void ami_search_close(void);

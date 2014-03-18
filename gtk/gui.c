@@ -69,6 +69,7 @@
 #include "gtk/window.h"
 #include "gtk/schedule.h"
 #include "gtk/selection.h"
+#include "gtk/search.h"
 
 #include "render/form.h"
 #include "utils/filepath.h"
@@ -1015,6 +1016,7 @@ int main(int argc, char** argv)
 		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
 		.fetch = nsgtk_fetch_table,
+		.search = nsgtk_search_table,
 	};
 
 	/* check home directory is available */

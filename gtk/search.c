@@ -25,10 +25,6 @@
 #include <string.h>
 #include <gdk/gdkkeysyms.h>
 
-#include "gtk/compat.h"
-#include "gtk/search.h"
-#include "gtk/scaffolding.h"
-#include "gtk/window.h"
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -40,41 +36,18 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-/**
-* Change the displayed search status.
-* \param found  search pattern matched in text
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-static void nsgtk_search_set_status(bool found, void *p)
-{
-}
+#include "gtk/compat.h"
+#include "gtk/search.h"
+#include "gtk/scaffolding.h"
+#include "gtk/window.h"
 
 /**
-* display hourglass while searching
-* \param active start/stop indicator
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-static void nsgtk_search_set_hourglass(bool active, void *p)
-{
-}
-
-/**
-* add search string to recent searches list
-* front is at liberty how to implement the bare notification
-* should normally store a strdup() of the string;
-* core gives no guarantee of the integrity of the const char *
-* \param string search pattern
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
-static void nsgtk_search_add_recent(const char *string, void *p)
-{
-}
-
-/* exported function documented in gtk/search.h */
-void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
+ * activate search forwards button in gui.
+ *
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
+static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
 {
 	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
 		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
@@ -84,8 +57,13 @@ void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
 	}
 }
 
-/* exported function documented in gtk/search.h */
-void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
+/**
+ * activate search back button in gui.
+ *
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
+static void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
 {
 	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
 		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
@@ -93,14 +71,6 @@ void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
 				g)->buttons[0]), active);
 	}
 }
-
-static struct gui_search_callbacks nsgtk_search_callbacks = {
-	(void *)nsgtk_search_set_forward_state,
-	(void *)nsgtk_search_set_back_state,
-	nsgtk_search_set_status,
-	nsgtk_search_set_hourglass,
-	nsgtk_search_add_recent
-};
 
 /** connected to the search forward button */
 
@@ -120,7 +90,7 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
+	browser_window_search(bw, gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -143,7 +113,7 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
+	browser_window_search(bw, gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -178,7 +148,7 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
+	browser_window_search(bw, gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -201,7 +171,7 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
-	browser_window_search(bw, &nsgtk_search_callbacks, (void *)gw, flags,
+	browser_window_search(bw, gw, flags,
 			gtk_entry_get_text(nsgtk_scaffolding_search(g)->entry));
 	return FALSE;
 }
@@ -249,3 +219,9 @@ gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f,
 
 
 
+static struct gui_search_table search_table = {
+	.forward_state = (void *)nsgtk_search_set_forward_state,
+	.back_state = (void *)nsgtk_search_set_back_state,
+};
+
+struct gui_search_table *nsgtk_search_table = &search_table;

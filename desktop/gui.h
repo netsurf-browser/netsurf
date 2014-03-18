@@ -422,6 +422,52 @@ struct gui_utf8_table {
 	nserror (*local_to_utf8)(const char *string, size_t len, char **result);
 };
 
+/**
+ * function table for page text search.
+ */
+struct gui_search_table {
+	/**
+	 * Change the displayed search status.
+	 *
+	 * \param found  search pattern matched in text
+	 * \param p gui private data pointer provided with search callbacks
+	 */
+	void (*status)(bool found, void *p);
+
+	/**
+	 * display hourglass while searching.
+	 *
+	 * \param active start/stop indicator
+	 * \param p gui private data pointer provided with search callbacks
+	 */
+	void (*hourglass)(bool active, void *p);
+
+	/**
+	 * add search string to recent searches list
+	 * front has full liberty how to implement the bare notification;
+	 * core gives no guarantee of the integrity of the string
+	 *
+	 * \param string search pattern
+	 * \param p gui private data pointer provided with search callbacks
+	 */
+	void (*add_recent)(const char *string, void *p);
+
+	/**
+	 * activate search forwards button in gui
+	 *
+	 * \param active activate/inactivate
+	 * \param p gui private data pointer provided with search callbacks
+	 */
+	void (*forward_state)(bool active, void *p);
+
+	/**
+	 * activate search back button in gui
+	 *
+	 * \param active activate/inactivate
+	 * \param p gui private data pointer provided with search callbacks
+	 */
+	void (*back_state)(bool active, void *p);
+};
 
 /**
  * Graphical user interface browser misc function table.
@@ -528,6 +574,14 @@ struct gui_table {
 	 * implies the local encoding is utf8.
 	 */
 	struct gui_utf8_table *utf8;
+
+	/**
+	 *
+	 * Page search table.
+	 *
+	 * Provides routines for the interactive text search on a page.
+	 */
+	struct gui_search_table *search;
 };
 
 

@@ -73,10 +73,8 @@ struct content_handler {
 			int scrx, int scry);
 	bool (*drop_file_at_point)(struct content *c, int x, int y,
 			char *file);
-	void (*search)(struct content *c,
-			struct gui_search_callbacks *gui_callbacks,
-			void *gui_data, search_flags_t flags,
-			const char *string);
+	void (*search)(struct content *c, void *context, search_flags_t flags,
+		       const char *string);
 	void (*search_clear)(struct content *c);
 	void (*debug_dump)(struct content *c, FILE *f);
 	nserror (*clone)(const struct content *old, struct content **newc);

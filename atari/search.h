@@ -49,6 +49,9 @@ typedef struct s_search_form_session * SEARCH_FORM_SESSION;
 
 struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
 		struct browser_window *bw);
+
+struct gui_search_table *atari_search_table;
+
 void nsatari_search_session_destroy(struct s_search_form_session *s);
 void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		search_flags_t f);

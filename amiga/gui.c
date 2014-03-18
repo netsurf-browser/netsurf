@@ -5167,6 +5167,7 @@ int main(int argc, char** argv)
 		.download = amiga_download_table,
 		.fetch = &amiga_fetch_table,
 		.utf8 = amiga_utf8_table,
+		.search = amiga_search_table,
 	};
 
 	/* Open popupmenu.library just to check the version.

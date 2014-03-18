@@ -2387,6 +2387,7 @@ int main(int argc, char** argv)
 		.download = riscos_download_table,
 		.fetch = &riscos_fetch_table,
 		.utf8 = riscos_utf8_table,
+		.search = riscos_search_table,
 	};
 
 	/* Consult NetSurf$Logging environment variable to decide if logging

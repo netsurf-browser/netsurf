@@ -33,54 +33,24 @@ typedef enum {
 } search_flags_t;
 
 /**
- * Change the displayed search status.
- * \param found  search pattern matched in text
- * \param p gui private data pointer provided with search callbacks
+ * Starts or continues an existing search.
+ *
+ * \param bw The browser_window to search.
+ * \param context A context pointer passed to the callbacks.
+ * \param flags	Flags controlling the search operation.
+ * \param string The string being searched for.
  */
-typedef void (*gui_search_status)(bool found, void *p);
+void browser_window_search(struct browser_window *bw, void *context, search_flags_t flags, const char *string);
 
 /**
- * display hourglass while searching
- * \param active start/stop indicator
- * \param p gui private data pointer provided with search callbacks
+ * Clear up a search.
+ *
+ * Frees any memory used by the search.
+ *
+ * \param bw The browser window to clean up the search for.
+ * \param context A context pointer passed to the callbacks.
  */
-typedef void (*gui_search_hourglass)(bool active, void *p);
 
-/**
- * add search string to recent searches list
- * front has full liberty how to implement the bare notification;
- * core gives no guarantee of the integrity of the const char *
- * \param string search pattern
- * \param p gui private data pointer provided with search callbacks
- */
-typedef void (*gui_search_add_recent)(const char *string, void *p);
-
-/**
- * activate search forwards button in gui
- * \param active activate/inactivate
- * \param p gui private data pointer provided with search callbacks
- */
-typedef void (*gui_search_forward_state)(bool active, void *p);
-
-/**
- * activate search back button in gui
- * \param active activate/inactivate
- * \param p gui private data pointer provided with search callbacks
- */
-typedef void (*gui_search_back_state)(bool active, void *p);
-
-struct gui_search_callbacks {
-	gui_search_forward_state 	forward_state;
-	gui_search_back_state		back_state;
-	gui_search_status		status;
-	gui_search_hourglass		hourglass;
-	gui_search_add_recent		add_recent;
-};
-
-
-void browser_window_search(struct browser_window *bw,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
-		search_flags_t flags, const char *string);
 void browser_window_search_clear(struct browser_window *bw);
 
 #endif

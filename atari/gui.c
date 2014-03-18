@@ -1112,6 +1112,7 @@ int main(int argc, char** argv)
 	.download = atari_download_table,
 	.fetch = &atari_fetch_table,
 	.utf8 = atari_utf8_table,
+	.search = atari_search_table,
     };
 
     /* @todo logging file descriptor update belongs in a nslog_init callback */

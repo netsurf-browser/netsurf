@@ -69,14 +69,15 @@ static void ami_search_add_recent(const char *string, void *p);
 static void ami_search_set_forward_state(bool active, void *p);
 static void ami_search_set_back_state(bool active, void *p);
 
-static struct gui_search_callbacks ami_search_callbacks = {
-	ami_search_set_forward_state,
-	ami_search_set_back_state,
+static struct gui_search_table search_table = {
 	ami_search_set_status,
 	ami_search_set_hourglass,
-	ami_search_add_recent
+	ami_search_add_recent,
+	ami_search_set_forward_state,
+	ami_search_set_back_state,
 };
 
+struct gui_search_table *amiga_search_table = &search_table;
 
 /**
  * Change the displayed search status.
@@ -90,8 +91,6 @@ void ami_search_open(struct gui_window *gwin)
 	if(fwin)
 	{
 		browser_window_search_clear(fwin->gwin->shared->bw);
-		ami_search_set_forward_state(true, NULL);
-		ami_search_set_back_state(true, NULL);
 		fwin->gwin->shared->searchwin = NULL;
 		fwin->gwin = gwin;
 		gwin->shared->searchwin = fwin;
@@ -177,8 +176,6 @@ void ami_search_open(struct gui_window *gwin)
 void ami_search_close(void)
 {
 	browser_window_search_clear(fwin->gwin->shared->bw);
-	ami_search_set_forward_state(true, NULL);
-	ami_search_set_back_state(true, NULL);
 	fwin->gwin->shared->searchwin = NULL;
 	DisposeObject(fwin->objects[OID_MAIN]);
 	DelObject(fwin->node);
@@ -201,12 +198,7 @@ BOOL ami_search_event(void)
 		switch(result & WMHI_GADGETMASK)
 		{
 			case GID_SEARCHSTRING:
-				browser_window_search_clear(
-						fwin->gwin->shared->bw);
-				ami_search_set_forward_state(
-					true, NULL);
-				ami_search_set_back_state(
-					true, NULL);
+				browser_window_search_clear(fwin->gwin->shared->bw);
 						
 				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_PREV],
 					fwin->win, NULL,
@@ -226,7 +218,7 @@ BOOL ami_search_event(void)
 					ami_search_flags();
 				browser_window_search(
 						fwin->gwin->shared->bw,
-						&ami_search_callbacks, NULL,
+						NULL,
 						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
 			break;
@@ -237,7 +229,7 @@ BOOL ami_search_event(void)
 					ami_search_flags();
 				browser_window_search(
 						fwin->gwin->shared->bw,
-						&ami_search_callbacks, NULL,
+						NULL,
 						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
 			break;
