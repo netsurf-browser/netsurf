@@ -2,67 +2,66 @@
 # Mac OS X target setup
 # ----------------------------------------------------------------------------
 
-  POSTEXES += NetSurf.app
+POSTEXES += NetSurf.app
 
-  LDFLAGS += -L/usr/lib
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss libdom)
-  LDFLAGS += -L/usr/X11/lib
-  LDFLAGS += -lm -lcurl -liconv
-  LDFLAGS += -lssl -lcrypto
+LDFLAGS += -L/usr/lib
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss libdom)
+LDFLAGS += -L/usr/X11/lib
+LDFLAGS += -lm -lcurl -liconv
+LDFLAGS += -lssl -lcrypto
 
-  CFLAGS += -O $(WARNFLAGS) -Dnscocoa		\
-		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
+CFLAGS += -O $(WARNFLAGS) -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE \
 		-std=c99 -g -Os
 
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags libhubbub libcss libdom)
+CFLAGS += $(shell $(PKG_CONFIG) --cflags libhubbub libcss libdom)
 
-  # shut up zconf.h and zlib.h
-  #CFLAGS += -D_LARGEFILE64_SOURCE=1
+# shut up zconf.h and zlib.h
+#CFLAGS += -D_LARGEFILE64_SOURCE=1
 
 ifneq ($(WITH_MACPORTS),)
   LDFLAGS += -L/opt/local/lib
   CFLAGS += -I/opt/local/include
 endif
 
-  # for timerisset()
-  CFLAGS += -D_DARWIN_C_SOURCE
+# for timerisset()
+CFLAGS += -D_DARWIN_C_SOURCE
 
-  MACOSX_VERSION ?= 10.5
-  SDK_VERSION ?= $(MACOSX_VERSION)
-  SDK_PATH ?= $(DEVELOPER_PATH)/SDKs/MacOSX$(SDK_VERSION).sdk
-  SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION) 
-  CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
-  LDFLAGS :=  $(SDK_FLAGS) -Wl,-syslibroot,$(SDK_PATH) $(LDFLAGS)
-  CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
+MACOSX_VERSION ?= 10.5
+SDK_VERSION ?= $(MACOSX_VERSION)
+SDK_PATH ?= $(DEVELOPER_PATH)/SDKs/MacOSX$(SDK_VERSION).sdk
+SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION)
+CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
+LDFLAGS :=  $(SDK_FLAGS) -Wl,-syslibroot,$(SDK_PATH) $(LDFLAGS)
+CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
 
-  CFLAGS += -I/usr/X11/include
-  CFLAGS += -include cocoa/Prefix.pch
+CFLAGS += -I/usr/X11/include
+CFLAGS += -include cocoa/Prefix.pch
 
 #  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
 # TODO: this needs fixing properly everywhere
-  VERSION_FULL := "3.0 (Dev)"
-  VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
-  VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+VERSION_FULL := "3.0 (Dev)"
+VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
+VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 
-  LDFLAGS += -Wl,-framework,Cocoa -Wl,-framework,Carbon $(NETLDFLAGS)
+LDFLAGS += -Wl,-framework,Cocoa -Wl,-framework,Carbon $(NETLDFLAGS)
 
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 
-  $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
-  $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
-  $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
-  $(eval $(call feature_enabled,IMAGEIO,-DWITH_APPLE_IMAGE,,Apple ImageIO       ))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call feature_enabled,IMAGEIO,-DWITH_APPLE_IMAGE,,Apple ImageIO       ))
 
-  ifneq ($(UNIVERSAL),)
+ifneq ($(UNIVERSAL),)
     UNIVERSAL_FLAGS := $(foreach arch,$(UNIVERSAL),-arch $(arch) )
     CFLAGS += $(UNIVERSAL_FLAGS)
 	LDFLAGS += $(UNIVERSAL_FLAGS)
 	CXXFLAGS += $(UNIVERSAL_FLAGS)
-  endif
+endif
 
 # ----------------------------------------------------------------------------
 # Source file setup
@@ -240,4 +239,3 @@ clean-package-cocoa:
 	$(Q)$(RM) NetSurf.dmg 
 	$(VQ)echo "   CLEAN: NetSurf.app"
 	$(Q)$(RM) -r NetSurf.app 
-
