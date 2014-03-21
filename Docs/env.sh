@@ -80,7 +80,7 @@ fi
 NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libpng-dev libjpeg-dev libmozjs185-dev"
 NS_TOOL_DEB="flex bison libhtml-parser-perl"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
-    NS_GTK_DEB="libgtk3-dev librsvg2-dev"
+    NS_GTK_DEB="libgtk-3-dev librsvg2-dev"
 else
     NS_GTK_DEB="libgtk2.0-dev librsvg2-dev"
 fi
