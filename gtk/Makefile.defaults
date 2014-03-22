@@ -21,6 +21,9 @@ NETSURF_USE_NSSVG := AUTO
 # Valid options: YES, NO, AUTO
 NETSURF_USE_ROSPRITE := AUTO
 
+# Enable building the source object cache filesystem based backing store.
+NETSURF_FS_BACKING_STORE := YES
+
 # Configuration overrides for Mac OS X
 ifeq ($(HOST),macosx)
     NETSURF_USE_LIBICONV_PLUG := NO

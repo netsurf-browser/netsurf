@@ -44,6 +44,7 @@
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "content/backing_store.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -1100,7 +1101,107 @@ static nserror create_config_home(char **config_home_out)
 	/* strip the trailing separator */
 	config_home[strlen(config_home) - 1] = 0;
 
+	LOG(("\"%s\"", config_home));
+
 	*config_home_out = config_home;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Get the path to the cache directory.
+ *
+ * @param cache_home_out Path to cache directory.
+ * @return NSERROR_OK on sucess and \a cache_home_out updated else error code.
+ */
+static nserror get_cache_home(char **cache_home_out)
+{
+	nserror ret;
+	char *xdg_cache_dir;
+	char *cache_home;
+	char *home_dir;
+
+	/* $XDG_CACHE_HOME defines the base directory relative to
+	 * which user specific non-essential data files should be
+	 * stored.
+	 */
+	xdg_cache_dir = getenv("XDG_CACHE_HOME");
+
+	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
+		/* If $XDG_CACHE_HOME is either not set or empty, a
+		 * default equal to $HOME/.cache should be used.
+		 */
+
+		home_dir = getenv("HOME");
+
+		/* the HOME envvar is required */
+		if (home_dir == NULL) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = check_dirname(home_dir, ".cache/netsurf", &cache_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = check_dirname(xdg_cache_dir, "netsurf", &cache_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	LOG(("\"%s\"", cache_home));
+
+	*cache_home_out = cache_home;
+	return NSERROR_OK;
+}
+
+static nserror create_cache_home(char **cache_home_out)
+{
+	char *cache_home = NULL;
+	char *home_dir;
+	char *xdg_cache_dir;
+	nserror ret;
+
+	LOG(("Attempting to create configuration directory"));
+
+	/* $XDG_CACHE_HOME defines the base directory
+	 * relative to which user specific cache files
+	 * should be stored.
+	 */
+	xdg_cache_dir = getenv("XDG_CACHE_HOME");
+
+	if ((xdg_cache_dir == NULL) || (*xdg_cache_dir == 0)) {
+		home_dir = getenv("HOME");
+
+		if ((home_dir == NULL) || (*home_dir == 0)) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = netsurf_mkpath(&cache_home, NULL, 4, home_dir, ".cache", "netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = netsurf_mkpath(&cache_home, NULL, 3, xdg_cache_dir, "netsurf", "/");
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	/* ensure all elements of path exist (the trailing / is required) */
+	ret = filepath_mkdir_all(cache_home);
+	if (ret != NSERROR_OK) {
+		free(cache_home);
+		return ret;
+	}
+
+	/* strip the trailing separator */
+	cache_home[strlen(cache_home) - 1] = 0;
+
+	LOG(("\"%s\"", cache_home));
+
+	*cache_home_out = cache_home;
 
 	return NSERROR_OK;
 }
@@ -1162,6 +1263,7 @@ static struct gui_browser_table nsgtk_browser_table = {
 int main(int argc, char** argv)
 {
 	char *messages;
+	char *cache_home = NULL;
 	nserror ret;
 	struct netsurf_table nsgtk_table = {
 		.browser = &nsgtk_browser_table,
@@ -1170,6 +1272,7 @@ int main(int argc, char** argv)
 		.download = nsgtk_download_table,
 		.fetch = nsgtk_fetch_table,
 		.search = nsgtk_search_table,
+		.llcache = filesystem_llcache_table,
 	};
 
         ret = netsurf_register(&nsgtk_table);
@@ -1210,9 +1313,20 @@ int main(int argc, char** argv)
 	/* Obtain path to messages */
 	messages = filepath_find(respaths, "Messages");
 
+	/* Locate the correct user cache directory path */
+	ret = get_cache_home(&cache_home);
+	if (ret == NSERROR_NOT_FOUND) {
+		/* no cache directory exists yet so try to create one */
+		ret = create_cache_home(&cache_home);
+	}
+	if (ret != NSERROR_OK) {
+		LOG(("Unable to locate a cache directory."));
+	}
+
 	/* core initialisation */
-	ret = netsurf_init(messages, NULL);
+	ret = netsurf_init(messages, cache_home);
 	free(messages);
+	free(cache_home);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
 			messages_get_errorcode(ret));
