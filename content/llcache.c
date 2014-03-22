@@ -17,32 +17,50 @@
  */
 
 /** \file
- * Low-level resource cache (implementation)
+ * Low-level resource cache implementation
+ *
+ * This is the implementation of the low level cache. This cache
+ * stores source objects in memory and may use a persistant backing
+ * store to extend their lifetime.
+ *
+ * \todo fix writeout conditions and ordering.
+ *
+ * \todo support mmaped retrieve
+ *
+ * \todo instrument and (auto)tune
+ *
+ * \todo turn llcache debugging off
+ *
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include <curl/curl.h>
 
-#include "content/fetch.h"
-#include "content/llcache.h"
-#include "content/urldb.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "desktop/gui_factory.h"
+
+#include "content/fetch.h"
+#include "content/backing_store.h"
+#include "content/urldb.h"
 
 /** Define to enable tracing of llcache operations. */
-#undef LLCACHE_TRACE
+//#undef LLCACHE_TRACE
+#define LLCACHE_TRACE 1
 
 #ifdef LLCACHE_TRACE
 #define LLCACHE_LOG(x) LOG(x)
 #else
 #define LLCACHE_LOG(x)
 #endif
+
+#define LLCACHE_MIN_DISC_LIFETIME 3600
+#define LLCACHE_MAX_DISC_BANDWIDTH (512*1024)
 
 /** State of a low-level cache object fetch */
 typedef enum {
@@ -96,19 +114,23 @@ typedef struct {
 	bool outstanding_query;		/**< Waiting for a query response */
 } llcache_fetch_ctx;
 
+/** validation control */
 typedef enum {
 	LLCACHE_VALIDATE_FRESH,		/**< Only revalidate if not fresh */
 	LLCACHE_VALIDATE_ALWAYS,	/**< Always revalidate */
 	LLCACHE_VALIDATE_ONCE		/**< Revalidate once only */
 } llcache_validate;
 
+/** cache control value for invalid age */
+#define INVALID_AGE -1
+
 /** Cache control data */
 typedef struct {
 	time_t req_time;	/**< Time of request */
 	time_t res_time;	/**< Time of response */
+	time_t fin_time;	/**< Time of request completion */
 	time_t date;		/**< Date: response header */
 	time_t expires;		/**< Expires: response header */
-#define INVALID_AGE -1
 	int age;		/**< Age: response header */
 	int max_age;		/**< Max-Age Cache-control parameter */
 	llcache_validate no_cache;	/**< No-Cache Cache-control parameter */
@@ -122,31 +144,49 @@ typedef struct {
 	char *value;		/**< Header value */
 } llcache_header;
 
+/** Current status of objects data */
+typedef enum {
+	LLCACHE_STATE_RAM = 0, /**< source data is stored in RAM only */
+	LLCACHE_STATE_MMAP, /**< source data is mmaped (implies on disc too) */
+	LLCACHE_STATE_DISC, /**< source data is stored on disc */
+} llcache_store_state;
+
 /** Low-level cache object */
 /** \todo Consider whether a list is a sane container */
 struct llcache_object {
-	llcache_object *prev;		/**< Previous in list */
-	llcache_object *next;		/**< Next in list */
+	llcache_object *prev;	     /**< Previous in list */
+	llcache_object *next;	     /**< Next in list */
 
-	nsurl *url;			/**< Post-redirect URL for object */
+	nsurl *url;		     /**< Post-redirect URL for object */
 
 	/** \todo We need a generic dynamic buffer object */
-	uint8_t *source_data;		/**< Source data for object */
-	size_t source_len;		/**< Byte length of source data */
-	size_t source_alloc;		/**< Allocated size of source buffer */
+	uint8_t *source_data;	     /**< Source data for object */
+	size_t source_len;	     /**< Byte length of source data */
+	size_t source_alloc;	     /**< Allocated size of source buffer */
 
-	llcache_object_user *users;	/**< List of users */
+	llcache_store_state store_state; /**< where the data for the object is stored */
 
-	llcache_fetch_ctx fetch;	/**< Fetch context for object */
+	llcache_object_user *users;  /**< List of users */
 
-	llcache_cache_control cache;	/**< Cache control data for object */
-	llcache_object *candidate;	/**< Object to use, if fetch determines
-					 * that it is still fresh */
-	uint32_t candidate_count;	/**< Count of objects this is a
-					 * candidate for */
+	llcache_fetch_ctx fetch;     /**< Fetch context for object */
 
-	llcache_header *headers;	/**< Fetch headers */
-	size_t num_headers;		/**< Number of fetch headers */
+	llcache_cache_control cache; /**< Cache control data for object */
+	llcache_object *candidate;   /**< Object to use, if fetch determines
+				      * that it is still fresh
+				      */
+	uint32_t candidate_count;    /**< Count of objects this is a
+				      * candidate for
+				      */
+
+	llcache_header *headers;     /**< Fetch headers */
+	size_t num_headers;	     /**< Number of fetch headers */
+
+	/* Instrumentation. These elemnts are strictly for information
+	 * to improve the cache performance and to provide performace
+	 * metrics. The values are non-authorative and must not be used to
+	 * determine object lifetime etc.
+	 */
+	time_t last_used; /**< time the last user was removed from the object */
 };
 
 struct llcache_s {
@@ -162,7 +202,17 @@ struct llcache_s {
 	/** Head of the low-level uncached object list */
 	llcache_object *uncached_objects;
 
+	/** The target upper bound for the RAM cache size */
 	uint32_t limit;
+
+	/** The minimum lifetime to consider sending objects to
+	 * backing store.
+	 */
+	int minimum_lifetime;
+
+	/** The maximum bandwidth to allow the backing store to use. */
+	size_t bandwidth;
+
 };
 
 /** low level cache state */
@@ -260,6 +310,11 @@ static nserror llcache_object_remove_user(llcache_object *object,
 		user->next->prev = user->prev;
 
 	user->next = user->prev = NULL;
+
+	/* record the time the last user was removed from the object */
+	if (object->users == NULL) {
+		object->last_used = time(NULL);
+	}
 
 	LLCACHE_LOG(("Removing user %p from %p", user, object));
 
@@ -711,6 +766,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 	/* Reset cache control data */
 	llcache_invalidate_cache_control_data(object);
 	object->cache.req_time = time(NULL);
+	object->cache.fin_time = object->cache.req_time;
 
 	/* Reset fetch state */
 	object->fetch.state = LLCACHE_FETCH_INIT;
@@ -878,7 +934,7 @@ llcache_object_rfc2616_remaining_lifetime(const llcache_cache_control *cd)
 	else
 		freshness_lifetime = 0;
 
-	LLCACHE_LOG(("%d:%d", freshness_lifetime, current_age));
+	/* LLCACHE_LOG(("%d:%d", freshness_lifetime, current_age)); */
 
 	if ((cd->no_cache == LLCACHE_VALIDATE_FRESH) &&
 	    (freshness_lifetime > current_age)) {
@@ -957,6 +1013,7 @@ static nserror llcache_object_clone_cache_data(llcache_object *source,
 
 	destination->cache.req_time = source->cache.req_time;
 	destination->cache.res_time = source->cache.res_time;
+	destination->cache.fin_time = source->cache.fin_time;
 
 	if (source->cache.date != 0)
 		destination->cache.date = source->cache.date;
@@ -980,6 +1037,367 @@ static nserror llcache_object_clone_cache_data(llcache_object *source,
 }
 
 /**
+ * Remove a low-level cache object from a cache list
+ *
+ * \param object  Object to remove
+ * \param list	  List to remove from
+ * \return NSERROR_OK
+ */
+static nserror
+llcache_object_remove_from_list(llcache_object *object, llcache_object **list)
+{
+	if (object == *list)
+		*list = object->next;
+	else
+		object->prev->next = object->next;
+
+	if (object->next != NULL)
+		object->next->prev = object->prev;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Retrieve source data for an object from persistant store if necessary.
+ *
+ * If an objects source data has been placed in the persistant store
+ * and the in memory copy freed this will attempt to retrive the
+ * source data.
+ *
+ * @param object the object to operate on.
+ * @return apropriate error code.
+ */
+static nserror llcache_persist_retrieve(llcache_object *object)
+{
+	enum backing_store_flags flags = BACKING_STORE_NONE;
+
+	/* ensure the source data is present if necessary */
+	if ((object->source_data != NULL) ||
+	    (object->store_state != LLCACHE_STATE_DISC)) {
+		/* source data does not require retriving from
+		 * persistant store.
+		 */
+		return NSERROR_OK;
+	}
+
+	/* Source data for the object may be in the persiatant store */
+	return guit->llcache->fetch(object->url,
+				    &flags,
+				    &object->source_data,
+				    &object->source_len);
+}
+
+/**
+ * Generate a serialised version of an objects metadata
+ *
+ * metadata includes object headers
+ */
+static nserror
+llcache_serialise_metadata(llcache_object *object,
+			   uint8_t **data_out,
+			   size_t *datasize_out)
+{
+	size_t allocsize;
+	int datasize;
+	uint8_t *data;
+	char *op;
+	unsigned int hloop;
+	int use;
+	struct tm *ltm;
+
+	allocsize = 10 + 1; /* object length */
+
+	allocsize += 10 + 1; /* request time */
+
+	allocsize += 10 + 1; /* response time */
+
+	allocsize += 10 + 1; /* completion time */
+
+	allocsize += 10 + 1; /* space for number of header entries */
+
+	allocsize += nsurl_length(object->url) + 1;
+
+	for (hloop = 0 ; hloop < object->num_headers ; hloop++) {
+		allocsize += strlen(object->headers[hloop].name) + 1;
+		allocsize += strlen(object->headers[hloop].value) + 1;
+	}
+
+	data = malloc(allocsize);
+	if (data == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	op = (char *)data;
+	datasize = allocsize;
+
+	/* the url, used for checking for collisions */
+	use = snprintf(op, datasize, "%s%c", nsurl_access(object->url), 0);
+	if (use > datasize)
+		goto overflow;
+	op += use;
+	datasize -= use;
+
+	/* object size */
+	use = snprintf(op, datasize, "%zu%c", object->source_len, 0);
+	if (use > datasize)
+		goto overflow;
+	op += use;
+	datasize -= use;
+
+	/* Time of request */
+	ltm = localtime(&object->cache.req_time);
+	use = strftime(op, datasize, "%s", ltm);
+	if (use == 0)
+		goto overflow;
+	use++; /* does not count the null */
+	op += use;
+	datasize -= use;
+
+	/* Time of response */
+	ltm = localtime(&object->cache.res_time);
+	use = strftime(op, datasize, "%s", ltm);
+	if (use == 0)
+		goto overflow;
+	use++; /* does not count the null */
+	op += use;
+	datasize -= use;
+
+	/* Time of completion */
+	ltm = localtime(&object->cache.fin_time);
+	use = strftime(op, datasize, "%s", ltm);
+	if (use == 0)
+		goto overflow;
+	use++; /* does not count the null */
+	op += use;
+	datasize -= use;
+
+	/* number of headers */
+	use = snprintf(op, datasize, "%zu%c", object->num_headers, 0);
+	if (use > datasize)
+		goto overflow;
+	op += use;
+	datasize -= use;
+
+	/* headers */
+	for (hloop = 0 ; hloop < object->num_headers ; hloop++) {
+		use = snprintf(op, datasize,
+			       "%s:%s%c",
+			       object->headers[hloop].name,
+			       object->headers[hloop].value,
+			       0);
+		if (use > datasize)
+			goto overflow;
+		op += use;
+		datasize -= use;
+	}
+
+	LLCACHE_LOG(("Filled buffer with %d spare", datasize));
+
+	*data_out = data;
+	*datasize_out = allocsize - datasize;
+
+	return NSERROR_OK;
+
+overflow:
+	/* somehow we overflowed the buffer - hth? */
+	LOG(("Overflowed metadata buffer"));
+	free(data);
+	return NSERROR_INVALID;
+}
+
+/**
+ * un-serialise an objects metadata.
+ */
+static nserror
+llcache_process_metadata(llcache_object *object)
+{
+	nserror res;
+	uint8_t *metadata = NULL;
+	size_t metadatalen = 0;
+	nsurl *metadataurl;
+	unsigned int line;
+	uint8_t *end;
+	char *ln;
+	int lnsize;
+	size_t num_headers;
+	size_t hloop;
+	struct tm ltm;
+	enum backing_store_flags flags = BACKING_STORE_META;
+
+	LOG(("Retriving metadata"));
+
+	/* attempt to retrieve object metadata from the backing store */
+	res = guit->llcache->fetch(object->url,
+				   &flags,
+				   &metadata,
+				   &metadatalen);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	end = metadata + metadatalen;
+
+	LOG(("Processing retrived data"));
+
+	/* metadata line 1 is the url the metadata referrs to */
+	line = 1;
+	ln = (char *)metadata;
+	lnsize = strlen(ln);
+
+	if (lnsize < 7)
+		goto format_error;
+
+	res = nsurl_create(ln, &metadataurl);
+	if (res != NSERROR_OK) {
+		free(metadata);
+		return res;
+	}
+
+	if (nsurl_compare(object->url, metadataurl, NSURL_COMPLETE) != true) {
+		/* backing store returned the wrong object for the
+		 * request. This may occour if the backing store had
+		 * a collision in its stoage method. We cope with this
+		 * by simply skipping caching of this object.
+		 */
+
+		LOG(("Got metadata for %s instead of %s",
+		     nsurl_access(metadataurl),
+		     nsurl_access(object->url)));
+
+		nsurl_unref(metadataurl);
+
+		free(metadata);
+
+		return NSERROR_BAD_URL;
+	}
+	nsurl_unref(metadataurl);
+
+
+	/* metadata line 2 is the objects length */
+	line = 2;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+
+	if ((lnsize < 1) ||
+	    (sscanf(ln, "%zu", &object->source_len) != 1))
+		goto format_error;
+	object->source_alloc = metadatalen;
+
+	/* metadata line 3 is the time of request */
+	line = 3;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+
+	if ((lnsize < 1) ||
+	    (strptime(ln, "%s", &ltm) == NULL))
+		goto format_error;
+	object->cache.req_time = mktime(&ltm);
+
+	/* metadata line 4 is the time of response */
+	line = 4;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+
+	if ((lnsize < 1) ||
+	    (strptime(ln, "%s", &ltm) == NULL))
+		goto format_error;
+	object->cache.res_time = mktime(&ltm);
+
+	/* metadata line 5 is the time of request completion */
+	line = 5;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+
+	if ((lnsize < 1) ||
+	    (strptime(ln, "%s", &ltm) == NULL))
+		goto format_error;
+	object->cache.fin_time = mktime(&ltm);
+
+
+	/* metadata line 6 is the number of headers */
+	line = 6;
+	ln += lnsize + 1;
+	lnsize = strlen(ln);
+
+	if ((lnsize < 1) ||
+	    (sscanf(ln, "%zu", &num_headers) != 1))
+		goto format_error;
+
+
+	/* read headers */
+	for (hloop = 0 ; hloop < num_headers; hloop++) {
+		line++;
+		ln += lnsize + 1;
+		lnsize = strlen(ln);
+
+		res = llcache_fetch_process_header(object, (uint8_t *)ln, lnsize);
+		if (res != NSERROR_OK) {
+			free(metadata);
+			return res;
+		}
+	}
+
+	free(metadata);
+
+	/* object stored in backing store */
+	object->store_state = LLCACHE_STATE_DISC;
+
+	return NSERROR_OK;
+
+format_error:
+	LOG(("metadata error on line %d\n", line));
+	free(metadata);
+	return NSERROR_INVALID;
+
+}
+
+/**
+ * attempt to retrieve an object from persistant storage.
+ */
+static nserror
+llcache_object_fetch_persistant(llcache_object *object,
+				uint32_t flags,
+				nsurl *referer,
+				const llcache_post_data *post,
+				uint32_t redirect_count)
+{
+	nserror error;
+	nsurl *referer_clone = NULL;
+	llcache_post_data *post_clone = NULL;
+
+	object->cache.req_time = time(NULL);
+	object->cache.fin_time = object->cache.req_time;
+
+	/* retrieve and process metadata */
+	error = llcache_process_metadata(object);
+	if (error != NSERROR_OK) {
+		return error;
+	}
+
+	/* entry came out of cache - need to setup object state */
+	if (post != NULL) {
+		error = llcache_post_data_clone(post, &post_clone);
+		if (error != NSERROR_OK)
+			return error;
+	}
+
+	if (referer != NULL) {
+		referer_clone = nsurl_ref(referer);
+	}
+
+	object->fetch.flags = flags;
+	object->fetch.referer = referer_clone;
+	object->fetch.post = post_clone;
+	object->fetch.redirect_count = redirect_count;
+
+	/* fetch is "finished" */
+	object->fetch.state = LLCACHE_FETCH_COMPLETE;
+	object->fetch.fetch = NULL;
+
+	return NSERROR_OK;
+}
+
+/**
  * Retrieve a potentially cached object
  *
  * \param url		  URL of object to retrieve
@@ -990,88 +1408,157 @@ static nserror llcache_object_clone_cache_data(llcache_object *source,
  * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror llcache_object_retrieve_from_cache(nsurl *url, uint32_t flags,
-		nsurl *referer, const llcache_post_data *post,
-		uint32_t redirect_count, llcache_object **result)
+static nserror
+llcache_object_retrieve_from_cache(nsurl *url,
+				   uint32_t flags,
+				   nsurl *referer,
+				   const llcache_post_data *post,
+				   uint32_t redirect_count,
+				   llcache_object **result)
 {
 	nserror error;
 	llcache_object *obj, *newest = NULL;
 
-	LLCACHE_LOG(("Searching cache for %s (%x %p %p)",
-		     nsurl_access(url), flags, referer, post));
+	LLCACHE_LOG(("Searching cache for %s flags:%x referer:%s post:%p",
+	     nsurl_access(url), flags, referer==NULL?"":nsurl_access(referer), post));
 
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache->cached_objects; obj != NULL; obj = obj->next) {
 
 		if ((newest == NULL ||
-				obj->cache.req_time > newest->cache.req_time) &&
-				nsurl_compare(obj->url, url,
-						NSURL_COMPLETE) == true) {
+		     obj->cache.req_time > newest->cache.req_time) &&
+		    nsurl_compare(obj->url, url,
+				  NSURL_COMPLETE) == true) {
 			newest = obj;
 		}
 	}
 
-	if (newest != NULL && llcache_object_is_fresh(newest)) {
-		/* Found a suitable object, and it's still fresh, so use it */
-		obj = newest;
+	/* No viable object found in cache create one and attempt to
+	 * pull from persistant store.
+	 */
+	if (newest == NULL) {
+		LLCACHE_LOG(("No viable object found in cache"));
 
-		LLCACHE_LOG(("Found fresh %p", obj));
+		error = llcache_object_new(url, &obj);
+		if (error != NSERROR_OK)
+			return error;
+
+		/* attempt to retrieve object from persistant store */
+		error = llcache_object_fetch_persistant(obj, flags, referer, post, redirect_count);
+		if (error == NSERROR_OK) {
+			LLCACHE_LOG(("retrived object from persistant store"));
+
+			/* set object from persistant store as newest */
+			newest = obj;
+
+			/* Add new object to cached object list */
+			llcache_object_add_to_list(obj, &llcache->cached_objects);
+
+		}
+		/* else no object found and unretrivable from cache,
+		 * fall through to start fetch
+		 */
+	}
+
+	if ((newest != NULL) && (llcache_object_is_fresh(newest))) {
+		/* Found a suitable object, and it's still fresh */
+		LLCACHE_LOG(("Found fresh %p", newest));
 
 		/* The client needs to catch up with the object's state.
 		 * This will occur the next time that llcache_poll is called.
 		 */
+
+		/* ensure the source data is present */
+		error = llcache_persist_retrieve(newest);
+		if (error == NSERROR_OK) {
+			/* source data was sucessfully retrived from
+			 * persistant store
+			 */
+			*result = newest;
+
+			return NSERROR_OK;
+		}
+
+		/* retrival of source data from persistant store
+		 * failed, destroy cache object and fall though to
+		 * cache miss to re-retch
+		 */
+		LLCACHE_LOG(("Persistant retrival failed for %p", newest));
+
+		llcache_object_remove_from_list(newest,	&llcache->cached_objects);
+		llcache_object_destroy(newest);
+
+		error = llcache_object_new(url, &obj);
+		if (error != NSERROR_OK) {
+			return error;
+		}
 	} else if (newest != NULL) {
 		/* Found a candidate object but it needs freshness validation */
 
-		/* Create a new object */
+		/* ensure the source data is present */
+		error = llcache_persist_retrieve(newest);
+		if (error == NSERROR_OK) {
+
+			/* Create a new object */
+			error = llcache_object_new(url, &obj);
+			if (error != NSERROR_OK)
+				return error;
+
+			LLCACHE_LOG(("Found candidate %p (%p)", obj, newest));
+
+			/* Clone candidate's cache data */
+			error = llcache_object_clone_cache_data(newest, obj, true);
+			if (error != NSERROR_OK) {
+				llcache_object_destroy(obj);
+				return error;
+			}
+
+			/* Record candidate, so we can fall back if it is still fresh */
+			newest->candidate_count++;
+			obj->candidate = newest;
+
+			/* Attempt to kick-off fetch */
+			error = llcache_object_fetch(obj, flags, referer, post,
+						     redirect_count);
+			if (error != NSERROR_OK) {
+				newest->candidate_count--;
+				llcache_object_destroy(obj);
+				return error;
+			}
+
+			/* Add new object to cache */
+			llcache_object_add_to_list(obj, &llcache->cached_objects);
+
+			*result = obj;
+
+			return NSERROR_OK;
+		}
+
+		LLCACHE_LOG(("Persistant retrival failed for %p", newest));
+
+		/* retrival of source data from persistant store
+		 * failed, destroy cache object and fall though to
+		 * cache miss to re-retch
+		 */
+		llcache_object_remove_from_list(newest,
+						&llcache->cached_objects);
+		llcache_object_destroy(newest);
+
 		error = llcache_object_new(url, &obj);
-		if (error != NSERROR_OK)
-			return error;
-
-		LLCACHE_LOG(("Found candidate %p (%p)", obj, newest));
-
-		/* Clone candidate's cache data */
-		error = llcache_object_clone_cache_data(newest, obj, true);
 		if (error != NSERROR_OK) {
-			llcache_object_destroy(obj);
 			return error;
 		}
-
-		/* Record candidate, so we can fall back if it is still fresh */
-		newest->candidate_count++;
-		obj->candidate = newest;
-
-		/* Attempt to kick-off fetch */
-		error = llcache_object_fetch(obj, flags, referer, post,
-				redirect_count);
-		if (error != NSERROR_OK) {
-			newest->candidate_count--;
-			llcache_object_destroy(obj);
-			return error;
-		}
-
-		/* Add new object to cache */
-		llcache_object_add_to_list(obj, &llcache->cached_objects);
-	} else {
-		/* No object found; create a new one */
-		/* Create new object */
-		error = llcache_object_new(url, &obj);
-		if (error != NSERROR_OK)
-			return error;
-
-		LLCACHE_LOG(("Not found %p", obj));
-
-		/* Attempt to kick-off fetch */
-		error = llcache_object_fetch(obj, flags, referer, post,
-				redirect_count);
-		if (error != NSERROR_OK) {
-			llcache_object_destroy(obj);
-			return error;
-		}
-
-		/* Add new object to cache */
-		llcache_object_add_to_list(obj, &llcache->cached_objects);
 	}
+
+	/* Attempt to kick-off fetch */
+	error = llcache_object_fetch(obj, flags, referer, post, redirect_count);
+	if (error != NSERROR_OK) {
+		llcache_object_destroy(obj);
+		return error;
+	}
+
+	/* Add new object to cache */
+	llcache_object_add_to_list(obj, &llcache->cached_objects);
 
 	*result = obj;
 
@@ -1098,8 +1585,8 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	nsurl *defragmented_url;
 	bool uncachable = false;
 
-	LLCACHE_LOG(("Retrieve %s (%x, %p, %p)",
-		     nsurl_access(url), flags, referer, post));
+	LLCACHE_LOG(("Retrieve %s (%x, %s, %p)", nsurl_access(url), flags,
+		     referer==NULL?"":nsurl_access(referer), post));
 
 
 	/* Get rid of any url fragment */
@@ -1626,6 +2113,146 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 }
 
 /**
+ * construct a sorted list of objects available for writeout operation
+ *
+ * The list contains fresh cacheable objects held in RAM with no
+ * pending fetches. Any objects with a remaining lifetime less than
+ * the configured minimum lifetime are simply not considered, they will
+ * become stale before pushing to backing store is worth the cost.
+ *
+ * \todo calculate useful cost metrics to improve sorting.
+ *
+ */
+static nserror
+build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
+{
+	llcache_object *object, *next;
+	struct llcache_object **lst;
+	int lst_len = 0;
+	int remaining_lifetime;
+
+	lst = calloc(512, sizeof(struct llcache_object *));
+	if (lst == NULL)
+		return NSERROR_NOMEM;
+
+	for (object = llcache->cached_objects; object != NULL; object = next) {
+		next = object->next;
+
+		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(&object->cache);
+
+		/* cacehable objects with no pending fetches, not
+		 * already on disc and with sufficient lifetime to
+		 * make disc cache worthwile
+		 */
+		if ((object->candidate_count == 0) &&
+		    (object->fetch.fetch == NULL) &&
+		    (object->fetch.outstanding_query == false) &&
+		    (object->store_state == LLCACHE_STATE_RAM) &&
+		    (remaining_lifetime > llcache->minimum_lifetime)) {
+			lst[lst_len] = object;
+			lst_len++;
+			if (lst_len == 512)
+				break;
+		}
+	}
+
+	if (lst_len == 0) {
+		free(lst);
+		return NSERROR_NOT_FOUND;
+	}
+
+	/* sort list here */
+
+	*lst_len_out = lst_len;
+	*lst_out = lst;
+
+	return NSERROR_OK;
+}
+
+static nserror
+write_backing_store(struct llcache_object *object, size_t *written_out)
+{
+	nserror ret;
+	uint8_t *metadata;
+	size_t metadatasize;
+
+	/* put object data in backing store */
+	ret = guit->llcache->store(object->url,
+				   BACKING_STORE_NONE,
+				   object->source_data,
+				   object->source_len);
+	if (ret != NSERROR_OK) {
+		/* unable to put source data in backing store */
+		return ret;
+	}
+
+	ret = llcache_serialise_metadata(object, &metadata, &metadatasize);
+	if (ret != NSERROR_OK) {
+		/* There has been a metadata serialisation error. Ensure the
+		 * already written data object is invalidated.
+		 */
+		guit->llcache->invalidate(object->url);
+		return ret;
+	}
+
+	ret = guit->llcache->store(object->url,
+				   BACKING_STORE_META,
+				   metadata,
+				   metadatasize);
+	free(metadata);
+	if (ret != NSERROR_OK) {
+		/* There has been an error putting the metadata in the
+		 * backing store. Ensure the data object is invalidated.
+		 */
+		guit->llcache->invalidate(object->url);
+		return ret;
+	}
+	object->store_state = LLCACHE_STATE_DISC;
+
+	*written_out = object->source_len + metadatasize;
+
+	return NSERROR_OK;
+}
+
+/**
+ * possibly write objects data to backing store.
+ */
+static void llcache_persist(void *p)
+{
+	nserror ret;
+	size_t size_written;
+	size_t total_written = 0;
+	struct llcache_object **lst;
+	int lst_count;
+	int idx;
+
+	ret = build_candidate_list(&lst, &lst_count);
+	if (ret == NSERROR_OK) {
+		/* obtained a candidate list, make each object
+		 * persistant in turn
+		 */
+		for (idx = 0; idx < lst_count; idx++) {
+			ret = write_backing_store(lst[idx], &size_written);
+			if (ret != NSERROR_OK) {
+				break;
+			}
+			total_written += size_written;
+
+			if (total_written > llcache->bandwidth) {
+				/* The bandwidth limit has been reached.
+				 * Writeout scheduled for the remaining objects
+				 */
+				guit->browser->schedule(1000, llcache_persist, NULL);
+				break;
+			}
+		}
+
+		free(lst);
+	}
+}
+
+
+/**
  * Handler for fetch events
  *
  * \param msg	     Fetch event
@@ -1724,6 +2351,11 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		}
 
 		llcache_object_cache_update(object);
+
+		/* record when the fetch finished */
+		object->cache.fin_time = time(NULL);
+
+		guit->browser->schedule(5000, llcache_persist, NULL);
 	}
 		break;
 
@@ -1833,26 +2465,6 @@ static llcache_object_user *llcache_object_find_user(const llcache_handle *handl
 	return user;
 }
 
-/**
- * Remove a low-level cache object from a cache list
- *
- * \param object  Object to remove
- * \param list	  List to remove from
- * \return NSERROR_OK
- */
-static nserror llcache_object_remove_from_list(llcache_object *object,
-		llcache_object **list)
-{
-	if (object == *list)
-		*list = object->next;
-	else
-		object->prev->next = object->next;
-
-	if (object->next != NULL)
-		object->next->prev = object->prev;
-
-	return NSERROR_OK;
-}
 
 /**
  * Determine if a low-level cache object resides in a given list
@@ -2110,8 +2722,8 @@ static nserror llcache_object_notify_users(llcache_object *object)
  * \param snapshot  Pointer to receive snapshot of \a object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror llcache_object_snapshot(llcache_object *object,
-		llcache_object **snapshot)
+static nserror
+llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 {
 	llcache_object *newobj;
 	nserror error;
@@ -2162,6 +2774,35 @@ static nserror llcache_object_snapshot(llcache_object *object,
 	return NSERROR_OK;
 }
 
+/**
+ * total ram usage of object
+ */
+static inline uint32_t
+total_object_size(llcache_object *object)
+{
+	uint32_t tot;
+	size_t hdrc;
+
+	tot = sizeof(*object);
+	tot += nsurl_length(object->url);
+
+	if (object->source_data != NULL) {
+		tot += object->source_len;
+	}
+
+	tot += sizeof(llcache_header) * object->num_headers;
+
+	for (hdrc = 0; hdrc < object->num_headers; hdrc++) {
+		if (object->headers[hdrc].name != NULL) {
+			tot += strlen(object->headers[hdrc].name);
+		}
+		if (object->headers[hdrc].value != NULL) {
+			tot += strlen(object->headers[hdrc].value);
+		}
+	}
+
+	return tot;
+}
 
 /******************************************************************************
  * Public API								      *
@@ -2169,6 +2810,8 @@ static nserror llcache_object_snapshot(llcache_object *object,
 
 /**
  * Attempt to clean the cache
+ *
+ * The memory cache cleaning discards objects in order of increasing value.
  */
 /* Exported interface documented in llcache.h */
 void llcache_clean(void)
@@ -2179,15 +2822,10 @@ void llcache_clean(void)
 
 	LLCACHE_LOG(("Attempting cache clean"));
 
-	/* Candidates for cleaning are (in order of priority):
-	 *
-	 * 1) Uncacheable objects with no users
-	 * 2) Stale cacheable objects with no users or pending fetches
-	 * 3) Fresh cacheable objects with no users or pending fetches
-	 */
-
-	/* 1) Uncacheable objects with no users or fetches */
-	for (object = llcache->uncached_objects; object != NULL; object = next) {
+	/* Uncacheable objects with no users or fetches */
+	for (object = llcache->uncached_objects;
+	     object != NULL;
+	     object = next) {
 		next = object->next;
 
 		/* The candidate count of uncacheable objects is always 0 */
@@ -2195,18 +2833,21 @@ void llcache_clean(void)
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false)) {
-			LLCACHE_LOG(("Found victim %p", object));
+			LLCACHE_LOG(("Discarding uncachable object with no users (%p) %s", object, nsurl_access(object->url)));
 
 			llcache_object_remove_from_list(object,
 					&llcache->uncached_objects);
 			llcache_object_destroy(object);
 		} else {
-			llcache_size += object->source_len + sizeof(*object);
+			llcache_size += total_object_size(object);
 		}
 	}
 
-	/* 2) Stale cacheable objects with no users or pending fetches */
-	for (object = llcache->cached_objects; object != NULL; object = next) {
+
+	/* Stale cacheable objects with no users or pending fetches */
+	for (object = llcache->cached_objects;
+	     object != NULL;
+	     object = next) {
 		next = object->next;
 
 		remaining_lifetime = llcache_object_rfc2616_remaining_lifetime(&object->cache);
@@ -2214,45 +2855,113 @@ void llcache_clean(void)
 		if ((object->users == NULL) &&
 		    (object->candidate_count == 0) &&
 		    (object->fetch.fetch == NULL) &&
-		    (object->fetch.outstanding_query == false)) {
-
-			if (remaining_lifetime > 0) {
-				/* object is fresh */
-				llcache_size += object->source_len + sizeof(*object);
-			} else {
-				/* object is not fresh */
-				LLCACHE_LOG(("Found stale cacheable object (%p) with no users or pending fetches", object));
+		    (object->fetch.outstanding_query == false) &&
+		    (remaining_lifetime <= 0)) {
+				/* object is stale */
+			LLCACHE_LOG(("discarding stale cacheable object with no users or pending fetches (%p) %s", object, nsurl_access(object->url)));
 
 				llcache_object_remove_from_list(object,
 						&llcache->cached_objects);
+
+				if (object->store_state == LLCACHE_STATE_DISC) {
+					guit->llcache->invalidate(object->url);
+				}
+
 				llcache_object_destroy(object);
-			}
+
 		} else {
-			llcache_size += object->source_len + sizeof(*object);
+			/* object has users so account for the storage */
+			llcache_size += total_object_size(object);
 		}
 	}
 
-	/* 3) Fresh cacheable objects with no users or pending
-	 * fetches, only if the cache exceeds the configured size.
+	/* if the cache limit is exceeded try to make some objects
+	 * persistant so their RAM can be reclaimed in the next
+	 * step
 	 */
-	if (llcache->limit < llcache_size) {
-		for (object = llcache->cached_objects; object != NULL;
-				object = next) {
-			next = object->next;
+	if  (llcache->limit < llcache_size) {
+		llcache_persist(NULL);
+	}
 
-			if ((object->users == NULL) &&
-			    (object->candidate_count == 0) &&
-			    (object->fetch.fetch == NULL) &&
-			    (object->fetch.outstanding_query == false)) {
-				LLCACHE_LOG(("Found victim %p", object));
+	/* Source data of fresh cacheable objects with no users, no
+	 * pending fetches and pushed to persistant store while the
+	 * cache exceeds the configured size.
+	 */
+	for (object = llcache->cached_objects;
+	     ((llcache->limit < llcache_size) && (object != NULL));
+	     object = next) {
+		next = object->next;
+		if ((object->users == NULL) &&
+		    (object->candidate_count == 0) &&
+		    (object->fetch.fetch == NULL) &&
+		    (object->fetch.outstanding_query == false) &&
+		    (object->store_state == LLCACHE_STATE_DISC)) {
+			free(object->source_data);
+			object->source_data = NULL;
 
-				llcache_size -=
-					object->source_len + sizeof(*object);
+			llcache_size -=	object->source_len;
 
-				llcache_object_remove_from_list(object,
+			LLCACHE_LOG(("Freeing source data for %p len:%d",
+				     object,
+				     object->source_len));
+		}
+	}
+
+	/* Fresh cacheable objects with no users, no pending fetches
+	 * and pushed to persistant store while the cache exceeds
+	 * the configured size. Efectively just the object metadata.
+	 */
+	for (object = llcache->cached_objects;
+	     ((llcache->limit < llcache_size) && (object != NULL));
+	     object = next) {
+		next = object->next;
+		if ((object->users == NULL) &&
+		    (object->candidate_count == 0) &&
+		    (object->fetch.fetch == NULL) &&
+		    (object->fetch.outstanding_query == false) &&
+		    (object->store_state == LLCACHE_STATE_DISC) &&
+		    (object->source_data == NULL)) {
+			LLCACHE_LOG(("discarding backed object len:%d age:%d (%p) %s",
+				     object->source_len,
+				     time(NULL) - object->last_used,
+				     object,
+				     nsurl_access(object->url)));
+
+			llcache_size -=	total_object_size(object);
+
+			llcache_object_remove_from_list(object,
 						&llcache->cached_objects);
-				llcache_object_destroy(object);
-			}
+			llcache_object_destroy(object);
+
+		}
+	}
+
+	/* Fresh cacheable objects with no users or pending fetches
+	 * while the cache exceeds the configured size.  These are the
+	 * most valuble objects as replacing them is a full network
+	 * fetch
+	 */
+	for (object = llcache->cached_objects;
+	     ((llcache->limit < llcache_size) && (object != NULL));
+	     object = next) {
+		next = object->next;
+
+		if ((object->users == NULL) &&
+		    (object->candidate_count == 0) &&
+		    (object->fetch.fetch == NULL) &&
+		    (object->fetch.outstanding_query == false) &&
+		    (object->store_state == LLCACHE_STATE_RAM)) {
+			LLCACHE_LOG(("discarding fresh object len:%d age:%d (%p) %s",
+				     object->source_len,
+				     time(NULL) - object->last_used,
+				     object,
+				     nsurl_access(object->url)));
+
+			llcache_size -=	object->source_len + sizeof(*object);
+
+			llcache_object_remove_from_list(object,
+						&llcache->cached_objects);
+			llcache_object_destroy(object);
 		}
 	}
 
@@ -2261,20 +2970,23 @@ void llcache_clean(void)
 
 /* See llcache.h for documentation */
 nserror
-llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit)
+llcache_initialise(const struct llcache_parameters *prm)
 {
 	llcache = calloc(1, sizeof(struct llcache_s));
 	if (llcache == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	llcache->query_cb = cb;
-	llcache->query_cb_pw = pw;
-	llcache->limit = llcache_limit;
+	llcache->query_cb = prm->cb;
+	llcache->query_cb_pw = prm->cb_ctx;
+	llcache->limit = prm->limit;
+	llcache->minimum_lifetime = prm->minimum_lifetime;
+	llcache->bandwidth = prm->bandwidth;
 
-	LOG(("llcache initialised with a limit of %d bytes", llcache_limit));
+	LOG(("llcache initialising with a limit of %d bytes", llcache->limit));
 
-	return NSERROR_OK;
+	/* backing store initialisation */
+	return guit->llcache->initialise(&prm->store);
 }
 
 /* See llcache.h for documentation */
@@ -2323,6 +3035,9 @@ void llcache_finalise(void)
 
 		llcache_object_destroy(object);
 	}
+
+	/* backing store finalisation */
+	guit->llcache->finalise();
 
 	free(llcache);
 	llcache = NULL;

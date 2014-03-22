@@ -76,7 +76,7 @@ typedef struct {
 	} data;				/**< Event data */
 } llcache_event;
 
-/** 
+/**
  * Client callback for low-level cache events
  *
  * \param handle  Handle for which event is issued
@@ -84,18 +84,18 @@ typedef struct {
  * \param pw      Pointer to client-specific data
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-typedef nserror (*llcache_handle_callback)(llcache_handle *handle, 
+typedef nserror (*llcache_handle_callback)(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 
 /** Flags for low-level cache object retrieval */
 enum llcache_retrieve_flag {
 	/* Note: We're permitted a maximum of 16 flags which must reside in the
-	 * bottom 16 bits of the flags word. See hlcache.h for further details. 
+	 * bottom 16 bits of the flags word. See hlcache.h for further details.
 	 */
 	/** Force a new fetch */
-	LLCACHE_RETRIEVE_FORCE_FETCH    = (1 << 0), 
+	LLCACHE_RETRIEVE_FORCE_FETCH    = (1 << 0),
 	/** Requested URL was verified */
-	LLCACHE_RETRIEVE_VERIFIABLE     = (1 << 1), 
+	LLCACHE_RETRIEVE_VERIFIABLE     = (1 << 1),
 	/**< No error pages */
 	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 2),
 	/**< Stream data (implies that object is not cacheable) */
@@ -149,12 +149,80 @@ typedef nserror (*llcache_query_response)(bool proceed, void *cbpw);
  * \param cbpw   Opaque value to pass into \a cb
  * \return NSERROR_OK on success, appropriate error otherwise
  *
- * \note This callback should return immediately. Once a suitable answer to 
- *       the query has been obtained, the provided response callback should be 
+ * \note This callback should return immediately. Once a suitable answer to
+ *       the query has been obtained, the provided response callback should be
  *       called. This is intended to be an entirely asynchronous process.
  */
 typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
 		llcache_query_response cb, void *cbpw);
+
+/**
+ * Parameters to configure the low level cache backing store.
+ */
+struct llcache_store_parameters {
+	const char *path; /**< The path to the backing store */
+
+	size_t limit; /**< The backing store upper bound target size */
+	size_t hysteresis; /**< The hysteresis around the target size */
+
+	/** log2 of the default maximum number of entries the cache
+	 * can track.
+	 *
+	 * If unset this defaults to 16 (65536 entries) The cache
+	 * control file takes precedence so cache data remains
+	 * portable between builds with differing defaults.
+	 */
+	unsigned int entry_size;
+
+	/** log2 of the default number of entries in the mapping between
+	 * the url and cache entries.
+	 *
+	 * @note This is exposing an internal implementation detail of
+	 * the filesystem based default backing store implementation.
+	 * However it is likely any backing store implementation will
+	 * need some way to map url to cache entries so it is a
+	 * generally useful configuration value.
+	 *
+	 * Too small a value will cause unecessary collisions and
+	 * cache misses and larger values cause proportionaly larger
+	 * amounts of memory to be used.
+	 *
+	 * The "birthday paradox" means that the hash will experience
+	 * a collision in every 2^(address_size/2) urls the cache
+	 * stores.
+	 *
+	 * A value of 20 means one object stored in every 1024 will
+	 * cause a collion and a cache miss while using two megabytes
+	 * of storage.
+	 *
+	 * If unset this defaults to 20 (1048576 entries using two
+	 * megabytes) The cache control file takes precedence so cache
+	 * data remains portable between builds with differing
+	 * defaults.
+	 */
+	unsigned int address_size;
+};
+
+/**
+ * Parameters to configure the low level cache.
+ */
+struct llcache_parameters {
+	llcache_query_callback cb; /**< Query handler for llcache */
+	void *cb_ctx; /**< Pointer to llcache query handler data */
+
+	size_t limit; /**< The target upper bound for the RAM cache size */
+	size_t hysteresis; /**< The hysteresis around the target size */
+
+	int minimum_lifetime; /**< The minimum lifetime to consider
+			       * sending objects to backing store.
+			       */
+
+	size_t bandwidth; /**< The maximum bandwidth to allow the
+			   * backing store to use.
+			   */
+
+	struct llcache_store_parameters store;
+};
 
 /**
  * Initialise the low-level cache
@@ -163,7 +231,7 @@ typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
  * \param pw  Pointer to query handler data
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit);
+nserror llcache_initialise(const struct llcache_parameters *parameters);
 
 /**
  * Finalise the low-level cache
@@ -280,12 +348,12 @@ const uint8_t *llcache_handle_get_source_data(const llcache_handle *handle,
  * \return Header value, or NULL if header does not exist
  *
  * \todo Make the key an enumeration, to avoid needless string comparisons
- * \todo Forcing the client to parse the header value seems wrong. 
- *       Better would be to return the actual value part and an array of 
+ * \todo Forcing the client to parse the header value seems wrong.
+ *       Better would be to return the actual value part and an array of
  *       key-value pairs for any additional parameters.
  * \todo Deal with multiple headers of the same key (e.g. Set-Cookie)
  */
-const char *llcache_handle_get_header(const llcache_handle *handle, 
+const char *llcache_handle_get_header(const llcache_handle *handle,
 		const char *key);
 
 /**
@@ -295,7 +363,7 @@ const char *llcache_handle_get_header(const llcache_handle *handle,
  * \param b  Second handle
  * \return True if handles reference the same object, false otherwise
  */
-bool llcache_handle_references_same_object(const llcache_handle *a, 
+bool llcache_handle_references_same_object(const llcache_handle *a,
 		const llcache_handle *b);
 
 #endif

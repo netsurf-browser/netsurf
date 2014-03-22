@@ -23,10 +23,11 @@
 #ifndef NETSURF_CONTENT_HLCACHE_H_
 #define NETSURF_CONTENT_HLCACHE_H_
 
-#include "content/content.h"
-#include "content/llcache.h"
 #include "utils/errors.h"
 #include "utils/nsurl.h"
+
+#include "content/content.h"
+#include "content/llcache.h"
 
 /** High-level cache handle */
 typedef struct hlcache_handle hlcache_handle;
@@ -44,18 +45,10 @@ typedef struct {
 } hlcache_event;
 
 struct hlcache_parameters {
-	llcache_query_callback cb; /**< Query handler for llcache */
-	void *cb_ctx; /**< Pointer to llcache query handler data */
-
 	/** How frequently the background cache clean process is run (ms) */
 	unsigned int bg_clean_time;
 
-	/** The target upper bound for the cache size */
-	size_t limit;
-
-	/** The hysteresis allowed round the target size */
-	size_t hysteresis;
-
+	struct llcache_parameters llcache;
 };
 
 /**
@@ -67,13 +60,13 @@ struct hlcache_parameters {
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 typedef nserror (*hlcache_handle_callback)(hlcache_handle *handle,
-		const hlcache_event *event, void *pw); 
+		const hlcache_event *event, void *pw);
 
 /** Flags for high-level cache object retrieval */
 enum hlcache_retrieve_flag {
-	/* Note: low-level cache retrieval flags occupy the bottom 16 bits of 
-	 * the flags word. High-level cache flags occupy the top 16 bits. 
-	 * To avoid confusion, high-level flags are allocated from bit 31 down. 
+	/* Note: low-level cache retrieval flags occupy the bottom 16 bits of
+	 * the flags word. High-level cache flags occupy the top 16 bits.
+	 * To avoid confusion, high-level flags are allocated from bit 31 down.
 	 */
 	/** It's permitted to convert this request into a download */
 	HLCACHE_RETRIEVE_MAY_DOWNLOAD = (1 << 31),
@@ -84,7 +77,7 @@ enum hlcache_retrieve_flag {
 /**
  * Initialise the high-level cache, preparing the llcache also.
  *
- * \param hlcache_parameters Settings to initialise cache with  
+ * \param hlcache_parameters Settings to initialise cache with
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 nserror hlcache_initialise(const struct hlcache_parameters *hlcache_parameters);
@@ -133,7 +126,7 @@ nserror hlcache_poll(void);
 nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
 		nsurl *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,
-		hlcache_child_context *child, 
+		hlcache_child_context *child,
 		content_type accepted_types, hlcache_handle **result);
 
 /**
@@ -169,13 +162,13 @@ nserror hlcache_handle_replace_callback(hlcache_handle *handle,
  * \param handle  Cache handle to dereference
  * \return Pointer to content object, or NULL if there is none
  *
- * \todo This may not be correct. Ideally, the client should never need to 
- * directly access a content object. It may, therefore, be better to provide a 
- * bunch of veneers here that take a hlcache_handle and invoke the 
+ * \todo This may not be correct. Ideally, the client should never need to
+ * directly access a content object. It may, therefore, be better to provide a
+ * bunch of veneers here that take a hlcache_handle and invoke the
  * corresponding content_ API. If there's no content object associated with the
- * hlcache_handle (e.g. because the source data is still being fetched, so it 
- * doesn't exist yet), then these veneers would behave as a NOP. The important 
- * thing being that the client need not care about this possibility and can 
+ * hlcache_handle (e.g. because the source data is still being fetched, so it
+ * doesn't exist yet), then these veneers would behave as a NOP. The important
+ * thing being that the client need not care about this possibility and can
  * just call the functions with impugnity.
  */
 struct content *hlcache_handle_get_content(const hlcache_handle *handle);
