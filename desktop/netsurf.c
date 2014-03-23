@@ -128,7 +128,7 @@ nserror netsurf_register(struct netsurf_table *table)
 }
 
 /* exported interface documented in desktop/netsurf.h */
-nserror netsurf_init(const char *messages)
+nserror netsurf_init(const char *messages, const char *store_path)
 {
 	nserror ret;
 	struct utsname utsname;
@@ -197,8 +197,7 @@ nserror netsurf_init(const char *messages)
 	hlcache_parameters.llcache.store.hysteresis = (hlcache_parameters.llcache.store.limit * 20) / 100;;
 
 	/* set the path to the backing store */
-	/** \todo set the backing store path properly */
-	hlcache_parameters.llcache.store.path = "/tmp/ns";
+	hlcache_parameters.llcache.store.path = store_path;
 
 	/* image handler bitmap cache */
 	ret = image_cache_init(&image_cache_parameters);

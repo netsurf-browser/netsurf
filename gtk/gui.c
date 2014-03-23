@@ -1211,7 +1211,7 @@ int main(int argc, char** argv)
 	messages = filepath_find(respaths, "Messages");
 
 	/* core initialisation */
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, NULL);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",

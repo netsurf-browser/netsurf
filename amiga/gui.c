@@ -5294,7 +5294,7 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, NULL);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
