@@ -1261,6 +1261,7 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	union content_msg_data msg_data;
 	int x_off = 0;
 	int y_off = 0;
+	struct rect cr;
 	bool textarea_lost_focus = html->focus_type == HTML_FOCUS_TEXTAREA &&
 			focus_type != HTML_FOCUS_TEXTAREA;
 
@@ -1291,7 +1292,6 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	} else if (focus_type != HTML_FOCUS_SELF && hide_caret) {
 		msg_data.caret.type = CONTENT_CARET_HIDE;
 	} else {
-		struct rect cr;
 		if (clip != NULL) {
 			cr = *clip;
 			cr.x0 += x_off;
