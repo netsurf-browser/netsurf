@@ -1154,9 +1154,21 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 {
 	nsgtk_redraw_caret(g);
 
+	height -= 2;
+	y += 1;
+
+	if (y < clip->y0) {
+		height -= clip->y0 - y + 1;
+		y = clip->y0 - 1;
+	}
+
+	if (y + height > clip->y1) {
+		height = clip->y1 - y + 1;
+	}
+
 	g->caretx = x;
-	g->carety = y + 1;
-	g->careth = height - 2;
+	g->carety = y;
+	g->careth = height;
 
 	nsgtk_redraw_caret(g);
 
