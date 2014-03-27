@@ -1780,13 +1780,14 @@ static void textarea_setup_text_offsets(struct textarea *ta)
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		/* Multiline textarea */
 		text_y_offset += ta->pad_top;
-		text_y_offset_baseline += (ta->line_height * 3 + 2) / 4 +
-				ta->pad_top;
+		text_y_offset_baseline +=
+				(ta->line_height * 3 + 2) / 4 + ta->pad_top;
 	} else {
 		/* Single line text area; text is vertically centered */
 		int vis_height = ta->vis_height - 2 * ta->border_width;
 		text_y_offset += (vis_height - ta->line_height + 1) / 2;
-		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
+		text_y_offset_baseline +=
+				(2 * vis_height + ta->line_height + 2) / 4;
 	}
 
 	ta->text_y_offset = text_y_offset;
