@@ -1895,9 +1895,9 @@ struct textarea *textarea_create(const textarea_flags flags,
 		ret->show = &ret->text;
 	}
 
-	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.3),
-			FMUL(nscss_screen_dpi, INTTOFIX((setup->text.size))))),
-			FONT_SIZE_SCALE * F_72));
+	ret->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
+			nscss_screen_dpi, FDIV(INTTOFIX(setup->text.size),
+			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
 
 	ret->caret_pos.line = ret->caret_pos.byte_off = -1;
 	ret->caret_x = 0;
