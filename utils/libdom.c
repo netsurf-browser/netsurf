@@ -50,58 +50,42 @@ bool libdom_treewalk(dom_node *root,
 			break;
 		}
 
-		if (next != NULL) {  /* 1. children */
+		if (next != NULL) {
+			/* 1. Got children */
 			dom_node_unref(node);
 			node = next;
 		} else {
-			exc = dom_node_get_next_sibling(node, &next);
-			if (exc != DOM_NO_ERR) {
-				dom_node_unref(node);
-				break;
-			}
-
-			if (next != NULL) {  /* 2. siblings */
-				dom_node_unref(node);
-				node = next;
-			} else {  /* 3. ancestor siblings */
-				while (node != NULL) {
-					exc = dom_node_get_next_sibling(node,
-							&next);
-					if (exc != DOM_NO_ERR) {
-						dom_node_unref(node);
-						node = NULL;
-						break;
-					}
-
-					if (next != NULL) {
-						dom_node_unref(next);
-						break;
-					}
-
-					exc = dom_node_get_parent_node(node,
-							&next);
-					if (exc != DOM_NO_ERR) {
-						dom_node_unref(node);
-						node = NULL;
-						break;
-					}
-
-					dom_node_unref(node);
-					node = next;
-				}
-
-				if (node == NULL)
-					break;
-
+			/* No children; siblings & ancestor's siblings */
+			while (node != NULL) {
 				exc = dom_node_get_next_sibling(node, &next);
 				if (exc != DOM_NO_ERR) {
 					dom_node_unref(node);
+					node = NULL;
 					break;
 				}
 
+				if (next != NULL) {
+					/* 2. Got sibling */
+					break;
+				}
+
+				exc = dom_node_get_parent_node(node, &next);
+				if (exc != DOM_NO_ERR) {
+					dom_node_unref(node);
+					node = NULL;
+					break;
+				}
+
+				/* 3. Try parent */
 				dom_node_unref(node);
 				node = next;
 			}
+
+			if (node == NULL)
+				break;
+
+			dom_node_unref(node);
+			node = next;
 		}
 
 		assert(node != NULL);
