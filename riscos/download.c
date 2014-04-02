@@ -379,6 +379,8 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		snprintf(dw->path, RO_DOWNLOAD_MAX_PATH_LEN, "%s",
 				filename);
 
+	free(filename);
+
 	err = utf8_to_local_encoding(dw->path, 0, &local_path);
 	if (err != NSERROR_OK) {
 		/* badenc should never happen */
