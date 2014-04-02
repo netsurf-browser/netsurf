@@ -481,7 +481,7 @@ nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 	/* get encoding name */
 	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
 			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END + 1]
+					localencodings[CONT_ENC_END - 100 + 1]
 						 : localencodings[0]));
 
 	/* create output buffer */
@@ -591,7 +591,7 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 	/* get encoding name */
 	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
 			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END + 1]
+					localencodings[CONT_ENC_END - 100 + 1]
 						 : localencodings[0]));
 
 	/* create output buffer (oversized) */
