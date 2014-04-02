@@ -1594,6 +1594,7 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 	/* URI */
 	if (!ro_gui_uri_file_parse_line(fp, line))
 		goto uri_syntax_error;
+
 	url = strdup(line);
 	if (!url) {
 		warn_user("NoMemory", 0);
@@ -1603,7 +1604,7 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 
 	/* title */
 	if (!ro_gui_uri_file_parse_line(fp, line))
-		goto uri_syntax_error;
+		goto uri_free;
 	if (uri_title && line[0] && ((line[0] != '*') || line[1])) {
 		*uri_title = strdup(line);
 		if (!*uri_title) /* non-fatal */
@@ -1612,6 +1613,9 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 	fclose(fp);
 
 	return url;
+
+uri_free:
+	free(url);
 
 uri_syntax_error:
 	fclose(fp);
