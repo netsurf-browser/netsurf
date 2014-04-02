@@ -1686,7 +1686,7 @@ void ro_toolbar_set_content_favicon(struct toolbar *toolbar,
 
 void ro_toolbar_update_urlsuggest(struct toolbar *toolbar)
 {
-	if (toolbar != NULL && toolbar->url != NULL)
+	if (toolbar == NULL || toolbar->url == NULL)
 		return;
 
 	ro_gui_url_bar_update_urlsuggest(toolbar->url);
