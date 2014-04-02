@@ -435,13 +435,14 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 	};
 
 	while (more) {
-		ro_plot_origin_x = redraw->box.x0 + tv->origin.x -
-				redraw->xscroll;
-		ro_plot_origin_y = redraw->box.y1 + tv->origin.y -
-				redraw->yscroll;
 
 		if (tv != NULL && tv->tree != NULL) {
 			struct rect clip;
+
+			ro_plot_origin_x = redraw->box.x0 + tv->origin.x -
+					redraw->xscroll;
+			ro_plot_origin_y = redraw->box.y1 + tv->origin.y -
+					redraw->yscroll;
 
 			clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
 			clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
