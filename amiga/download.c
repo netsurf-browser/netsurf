@@ -230,11 +230,12 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 static void gui_download_window_done(struct gui_download_window *dw)
 {
 	struct dlnode *dln,*dln2 = NULL;
-	struct browser_window *bw = dw->bw;
+	struct browser_window *bw;
 	bool queuedl = false;
 	STRPTR sendcmd = NULL;
 
 	if(!dw) return;
+	bw = dw->bw;
 
 	if((nsoption_bool(download_notify)) && (dw->result == AMINS_DLOAD_OK))
 	{
