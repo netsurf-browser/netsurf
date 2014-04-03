@@ -3555,7 +3555,7 @@ gui_window_create(struct browser_window *bw,
 									GA_TabCycle, TRUE,
 									STRINGA_Buffer, g->shared->svbuffer,
 									STRINGVIEW_Header, URLHistory_GetList(),
-							StringEnd,
+							TAG_DONE),
 
 						LAYOUT_AddChild, g->shared->objects[GID_FAVE] = ButtonObject,
 							GA_ID, GID_FAVE,
