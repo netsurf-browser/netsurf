@@ -341,7 +341,7 @@ APTR ami_colormap_to_clut(struct ColorMap *cmap)
 {
 	int i;
 	UBYTE *clut = AllocVecTags(256 * 4, AVT_ClearWithValue, 0, TAG_DONE); /* NB: Was not MEMF_PRIVATE */
-	ULONG colour[3 * 256];
+	ULONG colour[256 * 4];
 
 	if(!clut) return NULL;
 
