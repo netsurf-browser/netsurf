@@ -470,10 +470,10 @@ void gui_window_stop_throbber(struct gui_window *g)
 //	g->shared->throbber_frame = 0;
 }
 
-void ami_update_throbber(struct gui_window_2 *g,bool redraw)
+void ami_update_throbber(struct gui_window_2 *g, bool redraw)
 {
 	struct IBox *bbox;
-	int frame = g->throbber_frame;
+	int frame;
 
 	if(!g) return;
 	if(!g->objects[GID_THROBBER]) return;
@@ -481,10 +481,12 @@ void ami_update_throbber(struct gui_window_2 *g,bool redraw)
 	if(g->bw->window->throbbing == false)
 	{
 		frame = 0;
-		g->throbber_frame=1;
+		g->throbber_frame = 1;
 	}
 	else
 	{
+		frame = g->throbber_frame;
+
 		if(!redraw)
 		{
 			if(g->throbber_update_count < throbber_update_interval)
