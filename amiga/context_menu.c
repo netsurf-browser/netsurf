@@ -269,7 +269,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, nsurl_access(hlcache_handle_get_url(userdata)),
 							PMIA_CommKey, "B",
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
