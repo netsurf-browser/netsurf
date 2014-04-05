@@ -156,7 +156,6 @@ void ami_theme_init(void)
 void ami_theme_throbber_setup(void)
 {
 	char throbberfile[1024];
-	Object *dto;
 	struct bitmap *bm;
 
 	ami_get_theme_filename(throbberfile,"theme_throbber",false);

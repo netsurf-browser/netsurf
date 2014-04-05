@@ -4290,7 +4290,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	struct IBox *bbox;
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
 	struct RastPort *temprp;
-	hlcache_handle *c;
 
 	if(browser_window_redraw_ready(gwin->bw) == false) return;
 
@@ -4300,8 +4299,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 
 	gwin->bw->window->scrollx = hcurrent;
 	gwin->bw->window->scrolly = vcurrent;
-
-	c = gwin->bw->current_content;
 
 	width=bbox->Width;
 	height=bbox->Height;

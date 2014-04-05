@@ -375,7 +375,7 @@ BOOL ami_print_event(struct ami_print_window *pw)
 
 void ami_print(struct hlcache_handle *c, int copies)
 {
-	double height, print_height;
+	double height;
 	float scale = nsoption_int(print_scale) / 100.0;
 
 	if(ami_print_info.msgport == NULL)
