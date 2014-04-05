@@ -289,7 +289,7 @@ void ami_init_mouse_pointers(void)
 
 	for(i=0;i<=AMI_LASTPOINTER;i++)
 	{
-		BPTR ptrfile = 0;
+		BPTR ptrfile;
 		mouseptrbm[i] = NULL;
 		mouseptrobj[i] = NULL;
 		char ptrfname[1024];

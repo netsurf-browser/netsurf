@@ -1093,13 +1093,13 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 	char *script = hook->h_Data;
 	char *temp;
 	struct gui_window_2 *gwin;
-	BPTR lock = 0;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(script)
 	{
 		if(temp = AllocVecTagList(1024, NULL))
 		{
+			BPTR lock;
 			if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK)) {
 				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
 				AddPart(temp, script, 1024);
@@ -1110,3 +1110,4 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 		}
 	}
 }
+

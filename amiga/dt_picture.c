@@ -174,7 +174,6 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	UBYTE *bm_buffer;
 	Object *dto;
 	struct bitmap *bitmap;
-	unsigned int bm_flags = BITMAP_NEW;
 #ifdef __amigaos4__
 	int bm_format = PBPAFMT_RGBA;
 #else
@@ -184,7 +183,7 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 
 	if(dto = amiga_dt_picture_newdtobject(adt))
 	{
-		bitmap = bitmap_create(c->width, c->height, bm_flags);
+		bitmap = bitmap_create(c->width, c->height, BITMAP_NEW);
 		if (!bitmap) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);

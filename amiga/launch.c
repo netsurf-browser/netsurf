@@ -126,7 +126,6 @@ void gui_launch_url(const char *url)
 {
 	APTR procwin = SetProcWindow((APTR)-1L);
 	char *launchurl = NULL;
-	BPTR fptr = 0;
 
 	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
 	{
@@ -135,7 +134,7 @@ void gui_launch_url(const char *url)
 			URL_OpenA((STRPTR)url,NULL);
 		} else {
 			if(launchurl = ASPrintf("URL:%s",url)) {
-				fptr = Open(launchurl,MODE_OLDFILE);
+				BPTR fptr = Open(launchurl,MODE_OLDFILE);
 				if(fptr) Close(fptr);
 					else ami_openurl_add_protocol(url);
 				FreeVec(launchurl);

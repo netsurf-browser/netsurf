@@ -55,9 +55,7 @@ enum
 const char *fetch_filetype(const char *unix_path)
 {
 	static char mimetype[50];
-	STRPTR ttype = NULL;
 	struct DiskObject *dobj = NULL;
-	BPTR lock = 0;
 	struct DataType *dtn;
 	BOOL found = FALSE;
 	lwc_string *lwc_mimetype;
@@ -66,8 +64,7 @@ const char *fetch_filetype(const char *unix_path)
 	   We'll just do a filename check here for quickness, although the
 	   first word ought to be checked against WB_DISKMAGIC really. */
 
-	if(strncmp(unix_path + strlen(unix_path) - 5, ".info", 5) == 0)
-	{
+	if(strncmp(unix_path + strlen(unix_path) - 5, ".info", 5) == 0) {
 		strcpy(mimetype,"image/x-amiga-icon");
 		found = TRUE;
 	}
@@ -76,32 +73,26 @@ const char *fetch_filetype(const char *unix_path)
 	/* Secondly try getting a tooltype "MIMETYPE" and use that as the MIME type.
 	    Will fail over to default icons if the file doesn't have a real icon. */
 
-	if(!found)
-	{
+	if(!found) {
 		if(dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
-						TAG_DONE))
-		{
+						TAG_DONE)) {
+			STRPTR ttype = NULL;
 			ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
-			if(ttype)
-			{
+			if(ttype) {
 				strcpy(mimetype,ttype);
 				found = TRUE;
 			}
-
 			FreeDiskObject(dobj);
 		}
 	}
 
 	/* If that didn't work, use the MIME file and DataTypes */
 
-	if(!found)
-	{
-		if (lock = Lock (unix_path, ACCESS_READ))
-		{
-			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))
-			{
-				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL))
-				{
+	if(!found) {
+		BPTR lock;
+		if (lock = Lock (unix_path, ACCESS_READ)) {
+			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL)) {
+				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL)) {
 					strcpy(mimetype, lwc_string_data(lwc_mimetype));
 					found = TRUE;
 					ReleaseDataType(dtn);

@@ -473,8 +473,6 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_polygon()"));
 	#endif
 
-	int k;
-
 	if((nsoption_int(cairo_renderer) < 1) || (palette_mapped == true))
 	{
 		ULONG cx,cy;
@@ -484,7 +482,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 		if(AreaMove(glob->rp,p[0],p[1]) == -1)
 			LOG(("AreaMove: vector list full"));
 			
-		for(k=1;k<n;k++)
+		for(int k = 1; k < n; k++)
 		{
 			if(AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1)
 				LOG(("AreaDraw: vector list full"));
@@ -501,7 +499,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 		cairo_set_line_width(glob->cr, 0);
 		cairo_move_to(glob->cr, p[0], p[1]);
-		for (k = 1; k != n; k++) {
+		for (int k = 1; k != n; k++) {
 			cairo_line_to(glob->cr, p[k * 2], p[k * 2 + 1]);
 		}
 		cairo_fill(glob->cr);

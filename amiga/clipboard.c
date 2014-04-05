@@ -189,7 +189,6 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	struct StoredProperty *sp = NULL;
 	ULONG rlen=0,error;
 	struct CSet *cset;
-	LONG codeset = 0;
 
 	if(OpenIFF(iffh,IFFF_READ)) return;
 	
@@ -203,6 +202,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	if(ci = FindCollection(iffh, ID_FTXT, ID_UTF8)) {
 		*buffer = ami_clipboard_cat_collection(ci, 106, length);
 	} else if(ci = FindCollection(iffh, ID_FTXT, ID_CHRS)) {
+		LONG codeset = 0;
 		if(sp = FindProp(iffh, ID_FTXT, ID_CSET)) {
 			cset = (struct CSet *)sp->sp_Data;
 			codeset = cset->CodeSet;

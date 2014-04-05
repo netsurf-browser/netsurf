@@ -43,7 +43,6 @@ void warn_user(const char *warning, const char *detail)
 	Object *req = NULL;
 	char *utf8warning = ami_utf8_easy(messages_get(warning));
 	STRPTR bodytext = NULL;
-	LONG result = 0;
 
 	LOG(("%s %s", warning, detail));
 
@@ -63,7 +62,7 @@ void warn_user(const char *warning, const char *detail)
 		TAG_DONE);
 
 	if (req) {
-		result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
+		LONG result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
 		DisposeObject(req);
 	}
 
