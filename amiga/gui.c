@@ -251,13 +251,12 @@ static bool path_add_part(char *path, int length, const char *newpart)
 STRPTR ami_locale_langs(void)
 {
 	struct Locale *locale;
-	STRPTR acceptlangs = NULL, acceptlangs2 = NULL;
-	int i;
+	STRPTR acceptlangs = NULL;
 	char *remapped;
 
 	if(locale = OpenLocale(NULL))
 	{
-		for(i=0;i<10;i++)
+		for(int i = 0; i < 10; i++)
 		{
 			if(locale->loc_PrefLanguages[i])
 			{
@@ -266,7 +265,7 @@ STRPTR ami_locale_langs(void)
 				{
 					if(acceptlangs)
 					{
-						acceptlangs2 = acceptlangs;
+						STRPTR acceptlangs2 = acceptlangs;
 						acceptlangs = ASPrintf("%s, %s",acceptlangs2, remapped);
 						FreeVec(acceptlangs2);
 						acceptlangs2 = NULL;
