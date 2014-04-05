@@ -39,6 +39,7 @@
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
+#include "amiga/misc.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "content/content_protected.h"
