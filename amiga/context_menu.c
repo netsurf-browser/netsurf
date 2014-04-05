@@ -364,7 +364,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, !browser_window_stop_available(userdata),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -410,7 +410,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_ID, CMID_SAVEURL,
 							PMIA_UserData, userdata,
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -467,7 +467,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, !ami_mime_content_to_cmd(userdata),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
