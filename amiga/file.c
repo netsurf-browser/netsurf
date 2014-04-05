@@ -49,8 +49,6 @@ static struct Hook aslhookfunc;
 static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 		struct FileRequester *fr, struct AnchorPathOld *ap)
 {
-	BPTR file = 0;
-	char buffer[10];
 	char fname[1024];
 	BOOL ret = FALSE;
 	char *mt = NULL;

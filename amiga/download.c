@@ -89,7 +89,6 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		struct gui_window *gui)
 {
 	const char *url = download_context_get_url(ctx);
-	const char *mime_type = download_context_get_mime_type(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
 	struct gui_download_window *dw;
 	char *dl_filename = ami_utf8_easy(download_context_get_filename(ctx));

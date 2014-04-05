@@ -108,7 +108,7 @@ void die(const char *error)
 
 char *url_to_path(const char *url)
 {
-	char *tmps, *unesc, *slash, *colon, *url2;
+	char *unesc, *slash, *colon, *url2;
 
 	if (strncmp(url, "file://", SLEN("file://")) != 0)
 		return NULL;

@@ -77,7 +77,6 @@ void amiga_dt_sound_play(Object *dto)
 
 nserror amiga_dt_sound_init(void)
 {
-	char dt_mime[50];
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
 	lwc_error lerror;
@@ -146,12 +145,9 @@ bool amiga_dt_sound_convert(struct content *c)
 	LOG(("amiga_dt_sound_convert"));
 
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
-	union content_msg_data msg_data;
 	int width = 50, height = 50;
-	char title[100];
 	const uint8 *data;
 	ULONG size;
-	Object *dto;
 
 	data = (uint8 *)content__get_source_data(c, &size);
 

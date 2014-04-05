@@ -98,9 +98,8 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 
 void ami_drag_save(struct Window *win)
 {
-	ULONG which = WBO_NONE,type;
-	char path[1025],dpath[1025];
-	const char *source_data;
+	ULONG which = WBO_NONE, type;
+	char path[1025], dpath[1025];
 	ULONG source_size;
 
 	ami_drag_icon_close(NULL);
@@ -195,10 +194,8 @@ void ami_drag_save(struct Window *win)
 void ami_drag_icon_show(struct Window *win, const char *type)
 {
 	struct DiskObject *dobj = NULL;
-	ULONG *icondata1;
 	ULONG width, height;
-	long format = 0;
-	int err = 0;
+	int err;
 	int deftype = WBPROJECT;
 
 	drag_in_progress = TRUE;

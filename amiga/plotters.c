@@ -945,7 +945,6 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
 	unsigned int i;
-	struct bez_point *old_p;
 	struct bez_point start_p, cur_p, p_a, p_b, p_c, p_r;
 	
 	#ifdef AMI_PLOTTER_DEBUG

@@ -49,7 +49,6 @@ ULONG findcolour(ULONG newcol)
 
 void addcolour(ULONG newcol)
 {
-	int i;
 	ULONG colour;
 	UBYTE red,grn,blu;
 
@@ -342,7 +341,6 @@ int main(int argc, char **argv)
 {
 	BPTR fh = 0;
 	char *buffer;
-	size_t n;
 	struct IFFHandle *iffh = NULL;
 	int64 size;
 	LONG rarray[] = {0,0};

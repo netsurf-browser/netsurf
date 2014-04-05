@@ -456,8 +456,6 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
-	int i;
-
 	gwin->menu = AllocVecTags(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1),
 					AVT_ClearWithValue, 0, TAG_DONE);
 	ami_init_menulabs(gwin);
@@ -1029,7 +1027,6 @@ static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct In
 static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
 	nsurl *url = hook->h_Data;
-	nserror error;
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 

@@ -62,7 +62,6 @@ struct amiga_dt_picture_content {
 
 nserror amiga_dt_picture_init(void)
 {
-	char dt_mime[50];
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
 	lwc_error lerror;
@@ -214,14 +213,10 @@ bool amiga_dt_picture_convert(struct content *c)
 {
 	LOG(("amiga_dt_picture_convert"));
 
-	union content_msg_data msg_data;
 	int width, height;
 	char *title;
-	UBYTE *bm_buffer;
 	Object *dto;
 	struct BitMapHeader *bmh;
-	unsigned int bm_flags = BITMAP_NEW;
-	int bm_format = PBPAFMT_RGBA;
 	char *filetype;
 
 	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))

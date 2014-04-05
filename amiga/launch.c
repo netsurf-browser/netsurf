@@ -105,8 +105,6 @@ BOOL ami_openurl_check_list(struct MinList *list, const char *url)
 
 void ami_openurl_open(void)
 {
-	struct ami_protocol *ami_p;
-
 	if(nsoption_bool(use_openurl_lib)) {
 		if(OpenURLBase = OpenLibrary("openurl.library",0))
 			IOpenURL = (struct OpenURLIFace *)GetInterface(OpenURLBase,"main",1,NULL);

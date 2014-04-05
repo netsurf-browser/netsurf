@@ -92,7 +92,6 @@ static const content_handler amiga_dt_anim_content_handler = {
 
 nserror amiga_dt_anim_init(void)
 {
-	char dt_mime[50];
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
 	lwc_error lerror;
@@ -161,14 +160,11 @@ bool amiga_dt_anim_convert(struct content *c)
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 	union content_msg_data msg_data;
 	int width, height;
-	char title[100];
 	const uint8 *data;
 	UBYTE *bm_buffer;
 	ULONG size;
-	Object *dto;
 	struct BitMapHeader *bmh;
 	unsigned int bm_flags = BITMAP_NEW | BITMAP_OPAQUE;
-	int bm_format = PBPAFMT_RGBA;
 	struct adtFrame adt_frame;
 	APTR clut;
 

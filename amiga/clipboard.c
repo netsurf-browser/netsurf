@@ -185,7 +185,6 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 
 void gui_get_clipboard(char **buffer, size_t *length)
 {
-	struct ContextNode *cn;
 	struct CollectionItem *ci = NULL;
 	struct StoredProperty *sp = NULL;
 	ULONG rlen=0,error;

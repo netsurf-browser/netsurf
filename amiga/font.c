@@ -204,8 +204,6 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0,i=0;
-	size_t len, utf8len = 0;
-	uint8 *utf8;
 	int utf8_pos = 0;
 	uint32 co = 0;
 	int utf16charlen;

@@ -173,9 +173,7 @@ const char *ami_content_type_to_file_type(content_type type)
 
 nserror ami_mime_init(const char *mimefile)
 {
-	lwc_string *type;
 	lwc_error lerror;
-	nserror error;
 	char buffer[256];
 	BPTR fh = 0;
 	struct RDArgs *rargs = NULL;
