@@ -324,7 +324,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, (content_get_type(userdata) != CONTENT_HTML),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
