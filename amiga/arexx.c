@@ -196,11 +196,12 @@ int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 
 struct browser_window *ami_find_tab(int window, int tab)
 {
-	int windows = 0;
 	struct nsObject *node, *nnode;
 
 	if(!IsMinListEmpty(window_list))
 	{
+		int windows = 0;
+
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
 		do
@@ -568,7 +569,6 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	int windows = 0;
 	int window = 0, tab = 0;
 	struct browser_window *bw = curbw;
 	struct nsObject *node, *nnode;
@@ -578,6 +578,8 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 	if(!IsMinListEmpty(window_list))
 	{
+		int windows = 0;
+
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
 		do

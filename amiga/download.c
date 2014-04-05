@@ -347,7 +347,6 @@ void ami_free_download_list(struct List *dllist)
 void 
 gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 {
-	BPTR fh = 0;
 	char fname[1024];
 	STRPTR openurlstring,linkname;
 	struct DiskObject *dobj = NULL;
@@ -369,6 +368,8 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 
 		if(ami_download_check_overwrite(fname, g->shared->win, 0))
 		{
+			BPTR fh;
+
 			if(fh = FOpen(fname,MODE_NEWFILE,0))
 			{
 				/* TODO: Should be URLOpen on OS4.1 */
@@ -401,8 +402,6 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 	/* Return TRUE if file can be (over-)written */
 	int32 res = 0;
 	BPTR lock = 0;
-	BPTR fh = 0;
-	int64 oldsize = 0;
 	char *overwritetext;
 
 	if(nsoption_bool(ask_overwrite) == false) return TRUE;
@@ -412,6 +411,9 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 	if(lock)
 	{
 		if(size) {
+			BPTR fh;
+			int64 oldsize = 0;
+
 			if(fh = OpenFromLock(lock)) {
 				oldsize = GetFileSize(fh);
 				Close(fh);
