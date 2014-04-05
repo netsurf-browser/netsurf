@@ -328,7 +328,6 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 
 bool ami_gui_check_resource(char *fullpath, const char *file)
 {
-	bool free_rmap = false;
 	bool found = false;
 	char *remapped;
 	BPTR lock = 0;
@@ -1225,7 +1224,6 @@ bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int mouse_x, int mouse_y)
 {
-	int xs, ys;
 	int ns_x, ns_y;
 	struct IBox *bbox;
 
@@ -1447,17 +1445,15 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 void ami_handle_msg(void)
 {
-	struct IntuiMessage *message = NULL;
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
 	uint16 code,quals;
 	struct IBox *bbox;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin = NULL;
-	struct MenuItem *item;
 	struct InputEvent *ie;
 	struct Node *tabnode;
-	int i, nskey;
+	int nskey;
 	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
@@ -2163,7 +2159,6 @@ void ami_handle_msg(void)
 
 				case WMHI_ICONIFY:
 				{
-					struct DiskObject *dobj;
 					struct bitmap *bm;
 
 					bm = urldb_get_thumbnail(hlcache_handle_get_url(gwin->bw->current_content));
@@ -2747,8 +2742,6 @@ void ami_try_quit(void)
 
 static void gui_quit(void)
 {
-	int i;
-
 	ami_theme_throbber_free();
 
 	urldb_save(nsoption_charp(url_file));
@@ -3169,8 +3162,6 @@ gui_window_create(struct browser_window *bw,
 		gui_window_create_flags flags)
 {
 	struct gui_window *g = NULL;
-	bool closegadg=TRUE;
-	struct Node *node;
 	ULONG curx=nsoption_int(window_x),cury=nsoption_int(window_y),curw=nsoption_int(window_width),curh=nsoption_int(window_height);
 	char nav_west[100],nav_west_s[100],nav_west_g[100];
 	char nav_east[100],nav_east_s[100],nav_east_g[100];
@@ -4170,9 +4161,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
 	ULONG sx, sy;
-	struct rect clip;
-	struct RastPort *temprp;
-	int posx, posy;
+
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -4295,14 +4284,12 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
-	struct Region *reg = NULL;
 	struct Rectangle rect;
-	hlcache_handle *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
 	struct IBox *bbox;
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
-	bool morescroll = false;
 	struct RastPort *temprp;
+	hlcache_handle *c;
 
 	if(browser_window_redraw_ready(gwin->bw) == false) return;
 
@@ -4339,7 +4326,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	if(gwin->redraw_scroll)
 	{
 		struct rect rect;
-		int x0, y0, x1, y1;
 		
 		gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
 		gui_window_remove_caret(gwin->bw->window);
@@ -4430,7 +4416,7 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 
 	struct IBox *bbox;
 	int x0, x1, y0, y1, sx, sy;
-	struct RegionRectangle *regrect, *nregrect;
+	struct RegionRectangle *regrect;
 
 	sx = gwin->bw->window->scrollx;
 	sy = gwin->bw->window->scrolly;
@@ -4704,7 +4690,6 @@ static void gui_set_search_ico(hlcache_handle *ico)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
-	char fname[100];
 	struct bitmap *ico_bitmap;
 
 	if(IsMinListEmpty(window_list))	return;
@@ -4818,9 +4803,6 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 
 static void gui_window_remove_caret(struct gui_window *g)
 {
-	struct IBox *bbox;
-	int xs,ys;
-
 	if(!g) return;
 	if(g->c_h == 0) return;
 
@@ -4879,9 +4861,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	ULONG gid;
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
-	Object *reqrefresh = NULL;
 	struct Node *node = NULL;
-	char *urltxt;
 	nsurl *url;
 
 	switch(msg->Class)
@@ -4954,8 +4934,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
-	ULONG xs,ys,width,height;
-	int box_x=0,box_y=0;
+	ULONG xs, ys, width, height;
 	struct contextual_content data;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
