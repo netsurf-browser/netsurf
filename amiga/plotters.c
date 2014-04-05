@@ -239,16 +239,16 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxY = scrn->Height-1;
 }
 
-static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
+static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 {
 	struct ami_plot_pen *node;
 	ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
-			(colour & 0x000000ff) << 24,
-			(colour & 0x0000ff00) << 16,
-			(colour & 0x00ff0000) << 8,
+			(colr & 0x000000ff) << 24,
+			(colr & 0x0000ff00) << 16,
+			(colr & 0x00ff0000) << 8,
 			NULL);
 	
-	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
+	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colr));
 
 	if(shared_pens != NULL) {
 		if(node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL)) {
@@ -278,26 +278,26 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 	}while(node = nnode);
 }
 
-static void ami_plot_setapen(ULONG colour)
+static void ami_plot_setapen(ULONG colr)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
-			ns_color_to_nscss(colour),
+			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
+		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetAPen(glob->rp, pen);
 	}
 }
 
-static void ami_plot_setopen(ULONG colour)
+static void ami_plot_setopen(ULONG colr)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			ns_color_to_nscss(colour),
+			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
+		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }

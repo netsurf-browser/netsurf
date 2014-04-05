@@ -337,20 +337,20 @@ APTR ami_colormap_to_clut(struct ColorMap *cmap)
 {
 	int i;
 	UBYTE *clut = AllocVecTags(256 * 4, AVT_ClearWithValue, 0, TAG_DONE); /* NB: Was not MEMF_PRIVATE */
-	ULONG colour[256 * 4];
+	ULONG colr[256 * 4];
 
 	if(!clut) return NULL;
 
 	/* Get the palette from the ColorMap */
-	GetRGB32(cmap, 0, 256, (ULONG *)&colour);
+	GetRGB32(cmap, 0, 256, (ULONG *)&colr);
 
 	/* convert it to a table of ARGB values */
 	for(i = 0; i < 1024; i += 4)
 	{
 		clut[i] = (0xff << 24) |
-				((colour[i] & 0xff000000) >> 8) |
-				((colour[i + 1] & 0xff000000) >> 16) |
-				((colour[i + 2] & 0xff000000) >> 24);
+				((colr[i] & 0xff000000) >> 8) |
+				((colr[i + 1] & 0xff000000) >> 16) |
+				((colr[i + 2] & 0xff000000) >> 24);
 	}
 
 	return clut;
