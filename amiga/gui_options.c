@@ -198,7 +198,7 @@ enum
 #define OPTS_MAX_TABS 10
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_PROXY 5
-#define OPTS_MAX_NATIVEBM 3
+#define OPTS_MAX_NATIVEBM 4
 #define OPTS_MAX_DITHER 4
 
 struct ami_gui_opts_window {
