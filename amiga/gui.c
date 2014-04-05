@@ -547,7 +547,6 @@ static void ami_set_screen_defaults(struct Screen *screen)
 static nserror ami_set_options(struct nsoption_s *defaults)
 {
 	STRPTR tempacceptlangs;
-	BPTR lock = 0;
 	char temp[1024];
 
 	/* The following line disables the popupmenu.class select menu
@@ -605,15 +604,16 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 
 	if (nsoption_charp(font_unicode) == NULL)
 	{
+		BPTR lock = 0;
 		/* Search for some likely candidates */
 
-		if(lock=Lock("FONTS:Code2000.font",ACCESS_READ))
+		if(lock = Lock("FONTS:Code2000.font", ACCESS_READ))
 		{
 			UnLock(lock);
 			nsoption_set_charp(font_unicode, 
 					   (char *)strdup("Code2000"));
 		}
-		else if(lock=Lock("FONTS:Bitstream Cyberbit.font",ACCESS_READ))
+		else if(lock = Lock("FONTS:Bitstream Cyberbit.font", ACCESS_READ))
 		{
 			UnLock(lock);
 			nsoption_set_charp(font_unicode,
@@ -637,7 +637,7 @@ void ami_amiupdate(void)
 {
 	/* Create AppPath location for AmiUpdate use */
 
-	BPTR lock = 0, amiupdatefh = 0;
+	BPTR lock = 0;
 
 	if(((lock = Lock("ENVARC:AppPaths",SHARED_LOCK)) == 0))
 	{
@@ -649,6 +649,7 @@ void ami_amiupdate(void)
 	if(lock = Lock("PROGDIR:", ACCESS_READ))
 	{
 		char filename[1024];
+		BPTR amiupdatefh;
 
 		DevNameFromLock(lock,(STRPTR)&filename,1024L,DN_FULLPATH);
 
