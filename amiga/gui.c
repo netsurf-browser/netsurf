@@ -5178,7 +5178,7 @@ int main(int argc, char** argv)
 	ami_schedule_create();
 
 	amiga_plugin_hack_init();
-	amiga_datatypes_init();
+	ret = amiga_datatypes_init();
 
 	/* initialise logging. Not fatal if it fails but not much we
 	 * can do about it either.
@@ -5200,7 +5200,7 @@ int main(int argc, char** argv)
 		die("NetSurf failed to initialise");
 	}
 
-	amiga_icon_init();
+	ret = amiga_icon_init();
 
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
