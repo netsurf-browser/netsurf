@@ -65,9 +65,11 @@ void ro_mouse_drag_end(wimp_dragged *dragged);
  * Start tracking the mouse in a window, providing a function to be called on
  * null polls and optionally one to be called when it leaves the window.
  *
- * \param *drag_end	Callback for when the pointer leaves the window, or
- *			NULL for none.
- * \param *drag_track	Callback for mouse tracking while the pointer remains
+ * \param *poll_end	Callback for when the pointer leaves the window, or
+ *			NULL for none. Claimants can receive *leaving==NULL if
+ *			a new tracker is started before a PointerLeaving event
+ *			is received.
+ * \param *poll_track	Callback for mouse tracking while the pointer remains
  *			in the window, or NULL for none.
  * \param *data		Data to be passed to the callback functions, or NULL.
  */

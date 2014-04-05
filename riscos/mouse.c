@@ -163,9 +163,11 @@ void ro_mouse_drag_end(wimp_dragged *dragged)
  * Start tracking the mouse in a window, providing a function to be called on
  * null polls and optionally one to be called when it leaves the window.
  *
- * \param *drag_end	Callback for when the pointer leaves the window, or
- *			NULL for none.
- * \param *drag_track	Callback for mouse tracking while the pointer remains
+ * \param *poll_end	Callback for when the pointer leaves the window, or
+ *			NULL for none. Claimants can receive *leaving==NULL if
+ *			a new tracker is started before a PointerLeaving event
+ *			is received.
+ * \param *poll_track	Callback for mouse tracking while the pointer remains
  *			in the window, or NULL for none.
  * \param *data		Data to be passed to the callback functions, or NULL.
  */
@@ -175,12 +177,31 @@ void ro_mouse_track_start(void (*poll_end)(wimp_leaving *leaving, void *data),
 		void *data)
 {
 	/* It should never be possible for the mouse to be in two windows
-	 * at the same time!
+	 * at the same time! However, some third-party extensions to RISC OS
+	 * appear to make this possible (MouseAxess being one), so in the
+	 * event that there's still a claimant we tidy them up first and then
+	 * log the fact in case there are any unexpected consequences.
+	 *
+	 * NB: The Poll End callback will get called with *leaving == NULL in
+	 * this situation, as there's no PointerLeaving event to pass on.
 	 */
 
-	assert(ro_mouse_poll_end_callback == NULL &&
-			ro_mouse_poll_track_callback == NULL &&
-			ro_mouse_poll_data == NULL);
+	if (ro_mouse_poll_end_callback != NULL ||
+			ro_mouse_poll_track_callback != NULL ||
+			ro_mouse_poll_data != NULL) {
+		if (ro_mouse_poll_end_callback != NULL &&
+				ro_mouse_ignore_leaving_event == false)
+			ro_mouse_poll_end_callback(NULL, ro_mouse_poll_data);
+
+		LOG(("Unexpected mouse track termination."));
+
+		ro_mouse_ignore_leaving_event = false;
+		ro_mouse_poll_end_callback = NULL;
+		ro_mouse_poll_track_callback = NULL;
+		ro_mouse_poll_data = NULL;
+	}
+
+	/* Now record details of the new claimant. */
 
 	ro_mouse_poll_end_callback = poll_end;
 	ro_mouse_poll_track_callback = poll_track;
