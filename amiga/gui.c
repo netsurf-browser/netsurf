@@ -763,7 +763,7 @@ void ami_openscreen(void)
 			}
 		}
 
-		screen_signal = AllocSignal(-1);
+		if(screen_signal == -1) screen_signal = AllocSignal(-1);
 		LOG(("Screen signal %d", screen_signal));
 		scrn = OpenScreenTags(NULL,
 					SA_DisplayID, id,
@@ -783,6 +783,7 @@ void ami_openscreen(void)
 		else
 		{
 			FreeSignal(screen_signal);
+			screen_signal = -1;
 
 			if(scrn = LockPubScreen("NetSurf"))
 			{
