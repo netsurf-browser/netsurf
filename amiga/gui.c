@@ -782,6 +782,8 @@ void ami_openscreen(void)
 		}
 		else
 		{
+			FreeSignal(screen_signal);
+
 			if(scrn = LockPubScreen("NetSurf"))
 			{
 				locked_screen = TRUE;
@@ -930,10 +932,6 @@ static void gui_init2(int argc, char** argv)
 		struct WBArg *wbarg;
 		int first=0,i=0;
 		char fullpath[1024];
-
-		if (notalreadyrunning && 
-		    (nsoption_bool(startup_no_window) == false))
-			ami_openscreenfirst();
 
 		for(i=0,wbarg=WBenchMsg->sm_ArgList;i<WBenchMsg->sm_NumArgs;i++,wbarg++)
 		{
