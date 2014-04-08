@@ -41,6 +41,8 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "testament.h"
+
 #include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
@@ -54,7 +56,6 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "utils/testament.h"
 #include "image/image_cache.h"
 
 struct fetch_about_context;

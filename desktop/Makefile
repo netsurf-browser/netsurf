@@ -8,7 +8,7 @@ S_DESKTOP := cookie_manager.c knockout.c hotlist.c mouse.c		\
 S_DESKTOP := $(addprefix desktop/,$(S_DESKTOP))
 
 # version.c needs the testament
-desktop/version.c: testament utils/testament.h
+desktop/version.c: testament $(OBJROOT)/testament.h
 
 # S_BROWSER are sources related to full browsers but are common
 # between RISC OS, GTK, BeOS and AmigaOS builds

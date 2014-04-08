@@ -16,7 +16,6 @@ test/nsoption
 test/nsurl
 test/urldbtest
 test/llcache
-utils/testament.h
 codedocs
 nsgtk
 nsfb

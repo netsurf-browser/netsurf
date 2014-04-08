@@ -609,8 +609,8 @@ clean-target:
 	$(call clean_install_messages, !NetSurf/Resources)
 
 clean-testament:
-	$(VQ)echo "   CLEAN: utils/testament.h"
-	$(Q)$(RM) utils/testament.h
+	$(VQ)echo "   CLEAN: testament.h"
+	$(Q)$(RM) $(OBJROOT)/testament.h
 
 clean-builddir:
 	$(VQ)echo "   CLEAN: $(OBJROOT)"
@@ -621,12 +621,8 @@ all-program: $(EXETARGET) post-exe
 	$(call split_install_messages, any, !NetSurf/Resources)
 
 .PHONY: testament
-testament utils/testament.h:
-	$(Q)if test -d .svn; then \
-		$(PERL) utils/svn-testament.pl $(CURDIR) utils/testament.h; \
-	else \
-		$(PERL) utils/git-testament.pl $(CURDIR) utils/testament.h; \
-	fi
+testament $(OBJROOT)/testament.h:
+	$(Q)$(PERL) utils/git-testament.pl $(CURDIR) $(OBJROOT)/testament.h
 
 post-exe: $(POSTEXES)
 
