@@ -650,6 +650,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 				row_group->last = row;
 			row->parent = row_group;
 
+			group_row_count++;
 			if (box_normalise_table_row(row, col_info,
 					c) == false)
 				return false;
