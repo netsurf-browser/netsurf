@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/testament.h"
+#include "testament.h"
 
 /* NB: AmigaOS revision numbers start at 1 (not 0) and are monotonically
  * incremental (v1.20 is higher than v1.3 and not the same as v1.2).
