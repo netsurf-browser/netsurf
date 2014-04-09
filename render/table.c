@@ -336,8 +336,9 @@ void table_used_left_border_for_cell(struct box *cell)
 
 		if (cell->prev == NULL) {
 			struct box *row;
+			struct box *rowg;
 
-			/* Spanned from a previous row */
+			/* Spanned from a previous row in current row group */
 			for (row = cell->parent; row != NULL; row = row->prev) {
 				for (prev = row->children; prev != NULL; 
 						prev = prev->next) {
@@ -349,6 +350,25 @@ void table_used_left_border_for_cell(struct box *cell)
 
 				if (prev != NULL)
 					break;
+			}
+
+			for (rowg = cell->parent->parent;
+					rowg != NULL && prev == NULL;
+					rowg = rowg->prev) {
+				/* Spanned from a previous row in
+				 * previous row group */
+				for (row = rowg->last; row != NULL;
+						row = row->prev) {
+					for (prev = row->children;
+							prev != NULL;
+							prev = prev->next) {
+						if (prev->start_column +
+								prev->columns ==
+								cell->
+								start_column)
+							break;
+					}
+				}
 			}
 
 			assert(prev != NULL);
