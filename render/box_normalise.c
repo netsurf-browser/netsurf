@@ -419,6 +419,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 	struct box *table_row;
 	struct box *table_cell;
 	unsigned int rows_left = table->rows;
+	unsigned int group_rows_left;
 	unsigned int col;
 	nscss_select_ctx ctx;
 
@@ -427,20 +428,37 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 
 	/* Scan table, filling in width and height of table cells with 
 	 * colspan = 0 and rowspan = 0. Also generate empty cells */
-	for (table_row_group = table->children; table_row_group != NULL;
-			table_row_group = table_row_group->next) {
-		for (table_row = table_row_group->children; table_row != NULL; 
-				table_row = table_row->next){
-			for (table_cell = table_row->children; 
-					table_cell != NULL;
-					table_cell = table_cell->next) {
-				/* colspan = 0 -> colspan = 1 */
-				if (table_cell->columns == 0)
-					table_cell->columns = 1;
+	for (table_row_group = table->children;
+	     table_row_group != NULL;
+	     table_row_group = table_row_group->next) {
 
-				/* rowspan = 0 -> rowspan = rows_left */
-				if (table_cell->rows == 0)
-					table_cell->rows = rows_left;
+		group_rows_left = table_row_group->rows;
+
+		for (table_row = table_row_group->children;
+		     table_row != NULL;
+		     table_row = table_row->next) {
+
+			for (table_cell = table_row->children;
+			     table_cell != NULL;
+			     table_cell = table_cell->next) {
+
+				/* colspan = 0 -> colspan = 1 */
+				if (table_cell->columns == 0) {
+					table_cell->columns = 1;
+				}
+
+				/* if rowspan is 0 it is expanded to
+				 * the number of rows left in the row
+				 * group
+				 */
+				if (table_cell->rows == 0) {
+					table_cell->rows = group_rows_left;
+				}
+
+				/* limit rowspans within group */
+				if (table_cell->rows > group_rows_left) {
+					table_cell->rows = group_rows_left;
+				}
 
 				/* Record span information */
 				for (col = table_cell->start_column;
@@ -540,6 +558,8 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 
 			rows_left--;
 		}
+
+		group_rows_left--;
 	}
 
 	return true;
@@ -555,6 +575,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 	struct box *row;
 	css_computed_style *style;
 	nscss_select_ctx ctx;
+	unsigned int group_row_count = 0;
 
 	assert(row_group != 0);
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
@@ -569,6 +590,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		switch (child->type) {
 		case BOX_TABLE_ROW:
 			/* ok */
+			group_row_count++;
 			if (box_normalise_table_row(child, col_info,
 					c) == false)
 				return false;
@@ -676,9 +698,13 @@ bool box_normalise_table_row_group(struct box *row_group,
 		row->parent = row_group;
 		row_group->children = row_group->last = row;
 
+		group_row_count = 1;
+
 		/* Keep table's row count in sync */
 		col_info->num_rows++;
 	}
+
+	row_group->rows = group_row_count;
 
 #ifdef BOX_NORMALISE_DEBUG
 	LOG(("row_group %p done", row_group));
