@@ -867,6 +867,8 @@ bool calculate_table_row(struct columns *col_info,
 	struct span_info *spans;
 
 	/* Skip columns with cells spanning from above */
+	/* TODO: Need to ignore cells spanning from above that belong to
+	 *       different row group.  We don't have that info here. */
 	while (col_info->spans[cell_start_col].row_span != 0)
 		cell_start_col++;
 
