@@ -86,6 +86,11 @@ NETSURF_HOMEPAGE := "about:welcome"
 # Valid options: YES, NO
 NETSURF_USE_LIBICONV_PLUG := YES
 
+# Enable building the source object cache filesystem based backing store.
+# implementation.
+# Valid options: YES, NO
+NETSURF_FS_BACKING_STORE := NO
+
 # Initial CFLAGS. Optimisation level etc. tend to be target specific.
 CFLAGS :=
 
