@@ -42,6 +42,8 @@
 struct span_info {
 	/** Number of rows this cell spans */
 	unsigned int row_span;
+	/** Row group of cell */
+	struct box *rg;
 	/** The cell in this column spans all rows until the end of the table */
 	bool auto_row;
 };
@@ -72,7 +74,7 @@ static bool box_normalise_table_row(struct box *row,
 		html_content *c);
 static bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
-		unsigned int *start_column);
+		unsigned int *start_column, struct box *cell);
 static bool box_normalise_inline_container(struct box *cont, html_content *c);
 
 /**
@@ -817,7 +819,7 @@ bool box_normalise_table_row(struct box *row,
 		}
 
 		if (calculate_table_row(col_info, cell->columns, cell->rows,
-				&cell->start_column) == false)
+				&cell->start_column, cell) == false)
 			return false;
 	}
 
@@ -854,23 +856,27 @@ bool box_normalise_table_row(struct box *row,
  * \param col_span      Number of columns that current cell spans
  * \param row_span      Number of rows that current cell spans
  * \param start_column  Pointer to location to receive column index
+ * \param cell		Box for current table cell
  * \return  true on success, false on memory exhaustion
  */
 
 bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
-		unsigned int *start_column)
+		unsigned int *start_column, struct box *cell)
 {
 	unsigned int cell_start_col = col_info->current_column;
 	unsigned int cell_end_col;
 	unsigned int i;
 	struct span_info *spans;
+	struct box *rg = cell->parent->parent; /* Cell's row group */
 
 	/* Skip columns with cells spanning from above */
 	/* TODO: Need to ignore cells spanning from above that belong to
 	 *       different row group.  We don't have that info here. */
-	while (col_info->spans[cell_start_col].row_span != 0)
+	while (col_info->spans[cell_start_col].row_span != 0 &&
+			col_info->spans[cell_start_col].rg == rg) {
 		cell_start_col++;
+	}
 
 	/* Update current column with calculated start */
 	col_info->current_column = cell_start_col;
@@ -905,6 +911,7 @@ bool calculate_table_row(struct columns *col_info,
 	for (i = cell_start_col; i < cell_end_col; i++) {
 		col_info->spans[i].row_span = (row_span == 0) ? 1 : row_span;
 		col_info->spans[i].auto_row = (row_span == 0);
+		col_info->spans[i].rg = rg;
 	}
 
 	/* Update current column with calculated end. */
