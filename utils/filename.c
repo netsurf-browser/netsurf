@@ -179,10 +179,12 @@ bool filename_initialise(void)
 	directory = strdup(TEMP_FILENAME_PREFIX);
 	if (directory == NULL)
 		return false;
+	LOG(("Create directory path \"%s\"", directory));
 
 	for (start = directory; *start != '\0'; start++) {
 		if (*start == '/') {
 			*start = '\0';
+			LOG(("Creating \"%s\"", directory));
 			ret = nsmkdir(directory, S_IRWXU);
 			if (ret != 0) {
 				LOG(("Failed to create directory \"%s\"",
