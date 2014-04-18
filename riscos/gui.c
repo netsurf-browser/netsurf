@@ -2098,7 +2098,7 @@ void ro_gui_view_source(hlcache_handle *c)
 			warn_user("NoMemory", 0);
 			return;
 		}
-		LOG(("Generated file name: \"%s\"", filename));
+
 		snprintf(full_name, 256, "%s/%s", TEMP_FILENAME_PREFIX,
 				filename);
 		full_name[255] = '\0';
@@ -2109,7 +2109,7 @@ void ro_gui_view_source(hlcache_handle *c)
 			return;
 		}
 		message.file_name[211] = '\0';
-		LOG(("RISC OS-ified file name: \"%s\"", message.file_name));
+
 		error = xosfile_save_stamped(message.file_name,
 				ro_content_filetype(c),
 				(byte *) source_data,
