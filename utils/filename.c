@@ -185,8 +185,9 @@ bool filename_initialise(void)
 			*start = '\0';
 			ret = nsmkdir(directory, S_IRWXU);
 			if (ret != 0) {
+				LOG(("Failed to create directory \"%s\"",
+						directory));
 				free(directory);
-
 				return false;
 			}
 
