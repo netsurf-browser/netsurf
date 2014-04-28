@@ -27,7 +27,7 @@
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR "2"
+#define NETSURF_VERSION_MINOR "3"
 #endif
 
 
