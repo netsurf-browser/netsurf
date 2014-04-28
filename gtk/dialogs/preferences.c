@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -1001,8 +1002,14 @@ nsgtk_preferences_fileChooserDownloads_realize(GtkWidget *widget,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_response(GtkDialog *dlg, gint resid)
 {
+	char *choices;
+
 	if (resid == GTK_RESPONSE_CLOSE) {
-		nsoption_write(options_file_location, NULL, NULL);
+		choices = filepath_append(nsgtk_config_home, "Choices");
+		if (choices != NULL) {
+			nsoption_write(choices, NULL, NULL);
+			free(choices);
+		}
 		gtk_widget_hide(GTK_WIDGET(dlg));
 	}
 }
@@ -1011,18 +1018,32 @@ G_MODULE_EXPORT gboolean
 nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 						struct ppref *priv)
 {
-	nsoption_write(options_file_location, NULL, NULL);
+	char *choices;
+
+	choices = filepath_append(nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+
 	gtk_widget_hide(GTK_WIDGET(dlg));
 
-	/* delt with it by hiding window, no need to destory widget by
-	 * default */
+	/* Delt with it by hiding window, no need to destory widget by
+	 * default.
+	 */
 	return TRUE;
 }
 
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 {
-	nsoption_write(options_file_location, NULL, NULL);
+	char *choices;
+
+	choices = filepath_append(nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
 }
 
 

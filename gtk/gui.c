@@ -79,12 +79,12 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-char *options_file_location;
 char *toolbar_indices_file_location;
 char *res_dir_location;
-char *print_options_file_location;
 char *languages_file_location;
 char *themelist_file_location;
+
+char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
 GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 
@@ -243,48 +243,55 @@ nsgtk_init_glade(char **respath)
 }
 
 /**
- * Set option defaults for gtk frontend
+ * Set option defaults for gtk frontend.
  *
  * @param defaults The option table to update.
  * @return error status.
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
-	char *hdir = getenv("HOME");
-	char buf[PATH_MAX];
+	char *fname;
 
-	/* Set defaults for absent option strings */
-	snprintf(buf, PATH_MAX, "%s/.netsurf/Cookies", hdir);
-	nsoption_setnull_charp(cookie_file, strdup(buf));
-	nsoption_setnull_charp(cookie_jar, strdup(buf));
-	if (nsoption_charp(cookie_file) == NULL ||
-	    nsoption_charp(cookie_jar) == NULL) {
-		LOG(("Failed initialising cookie options"));
-		return NSERROR_BAD_PARAMETER;
+	/* cookie file default */
+	fname = filepath_append(nsgtk_config_home, "Cookies");
+	if (fname != NULL) {
+		nsoption_setnull_charp(cookie_file, fname);
 	}
 
-	if (nsoption_charp(downloads_directory) == NULL) {
-		snprintf(buf, PATH_MAX, "%s/", hdir);
-		nsoption_set_charp(downloads_directory, strdup(buf));
+	/* cookie jar default */
+	fname = filepath_append(nsgtk_config_home, "Cookies");
+	if (fname != NULL) {
+		nsoption_setnull_charp(cookie_jar, fname);
 	}
 
-	if (nsoption_charp(url_file) == NULL) {
-		snprintf(buf, PATH_MAX, "%s/.netsurf/URLs", hdir);
-		nsoption_set_charp(url_file, strdup(buf));
+	/* url database default */
+	fname = filepath_append(nsgtk_config_home, "URLs");
+	if (fname != NULL) {
+		nsoption_setnull_charp(url_file, fname);
 	}
 
-	if (nsoption_charp(hotlist_path) == NULL) {
-		snprintf(buf, PATH_MAX, "%s/.netsurf/Hotlist", hdir);
-		nsoption_set_charp(hotlist_path, strdup(buf));
+	/* bookmark database default */
+	fname = filepath_append(nsgtk_config_home, "Hotlist");
+	if (fname != NULL) {
+		nsoption_setnull_charp(hotlist_path, fname);
 	}
 
+	/* download directory default */
+	fname = filepath_append(getenv("HOME"), "");
+	if (fname != NULL) {
+		nsoption_setnull_charp(downloads_directory, fname);
+	}
+
+	/* default path to certificates */
 	nsoption_setnull_charp(ca_path, strdup("/etc/ssl/certs"));
 
-	if (nsoption_charp(url_file) == NULL ||
-			nsoption_charp(ca_path) == NULL ||
-			nsoption_charp(downloads_directory) == NULL ||
-			nsoption_charp(hotlist_path) == NULL) {
-		LOG(("Failed initialising string options"));
+	if ((nsoption_charp(cookie_file) == NULL) ||
+	    (nsoption_charp(cookie_jar) == NULL) ||
+	    (nsoption_charp(url_file) == NULL) ||
+	    (nsoption_charp(hotlist_path) == NULL) ||
+	    (nsoption_charp(downloads_directory) == NULL) ||
+	    (nsoption_charp(ca_path) == NULL)) {
+		LOG(("Failed initialising default resource paths"));
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -298,32 +305,6 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
-static void check_options(char **respath)
-{
-	char *hdir = getenv("HOME");
-	char buf[PATH_MAX];
-	nsoption_set_bool(core_select_menu, true);
-
-	/* Attempt to handle nonsense status bar widths.  These may exist
-	 * in people's Choices as the GTK front end used to abuse the
-	 * status bar width option by using it for an absolute value in px.
-	 * The GTK front end now correctly uses it as a proportion of window
-	 * width.  Here we assume that a value of less than 15% is wrong
-	 * and set to the default two thirds. */
-	if (nsoption_int(toolbar_status_size) < 1500) {
-		nsoption_set_int(toolbar_status_size, 6667);
-	}
-
-	/* user options should be stored in the users home directory */
-	snprintf(buf, PATH_MAX, "%s/.netsurf/Choices", hdir);
-	options_file_location = strdup(buf);
-
-	filepath_sfinddef(respath, buf, "Print", "~/.netsurf/");
-	LOG(("Using '%s' as Print Settings file", buf));
-	print_options_file_location = strdup(buf);
-
-
-}
 
 
 
@@ -481,34 +462,6 @@ static void gui_init(int argc, char** argv, char **respath)
 }
 
 
-/**
- * Check that ~/.netsurf/ exists, and if it doesn't, create it.
- */
-static void nsgtk_check_homedir(void)
-{
-	char *hdir = getenv("HOME");
-	char buf[PATH_MAX];
-
-	if (hdir == NULL) {
-		/* we really can't continue without a home directory. */
-		LOG(("HOME is not set - nowhere to store state!"));
-		die("NetSurf requires HOME to be set in order to run.\n");
-
-	}
-
-	snprintf(buf, PATH_MAX, "%s/.netsurf", hdir);
-	if (access(buf, F_OK) != 0) {
-		LOG(("You don't have a ~/.netsurf - creating one for you."));
-		if (mkdir(buf, S_IRWXU) == -1) {
-			LOG(("Unable to create %s", buf));
-			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
-		}
-	} else {
-		if (chmod(buf, S_IRWXU) != 0) {
-			LOG(("Unable to set permissions on %s", buf));
-		}
-	}
-}
 
 /**
  * Ensures output logging stream is correctly configured
@@ -601,10 +554,13 @@ static void gui_quit(void)
 	nsgtk_cookies_destroy();
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
-	free(print_options_file_location);
+
 	free(search_engines_file_location);
 	free(search_default_ico_location);
 	free(toolbar_indices_file_location);
+
+	free(nsgtk_config_home);
+
 	gtk_fetch_filetype_fin();
 }
 
@@ -990,6 +946,198 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 }
 
 
+/**
+ * create directory name and check it is acessible and a directory.
+ */
+static nserror
+check_dirname(const char *path, const char *leaf, char **dirname_out)
+{
+	nserror ret;
+	char *dirname;
+	struct stat dirname_stat;
+
+	dirname = filepath_append(path, leaf);
+	if (dirname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* ensure access is possible and the entry is actualy
+	 * a directory.
+	 */
+	if (stat(dirname, &dirname_stat) == 0) {
+		if (S_ISDIR(dirname_stat.st_mode)) {
+			if (access(dirname, R_OK | W_OK) == 0) {
+				*dirname_out = dirname;
+				return NSERROR_OK;
+			} else {
+				ret = NSERROR_PERMISSION;
+			}
+		} else {
+			ret = NSERROR_NOT_DIRECTORY;
+		}
+	} else {
+		ret = NSERROR_NOT_FOUND;
+	}
+
+	free(dirname);
+
+	return ret;;
+}
+
+/**
+ * Get the path to the config directory.
+ *
+ * @param config_home_out Path to configuration directory.
+ * @return NSERROR_OK on sucess and \a config_home_out updated else error code.
+ */
+static nserror get_config_home(char **config_home_out)
+{
+	nserror ret;
+	char *home_dir;
+	char *xdg_config_dir;
+	char *config_home;
+
+	home_dir = getenv("HOME");
+
+	/* The old $HOME/.netsurf/ directory should be used if it
+	 * exists and is accessible.
+	 */
+	if (home_dir != NULL) {
+		ret = check_dirname(home_dir, ".netsurf", &config_home);
+		if (ret == NSERROR_OK) {
+			LOG(("\"%s\"", config_home));
+			*config_home_out = config_home;
+			return ret;
+		}
+	}
+
+	/* $XDG_CONFIG_HOME defines the base directory
+	 * relative to which user specific configuration files
+	 * should be stored.
+	 */
+	xdg_config_dir = getenv("XDG_CONFIG_HOME");
+
+	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
+		/* If $XDG_CONFIG_HOME is either not set or empty, a
+		 * default equal to $HOME/.config should be used.
+		 */
+
+		/** @todo the meaning of empty is never defined so I
+		 * am assuming it is a zero length string but is it
+		 * supposed to mean "whitespace" and if so what counts
+		 * as whitespace? (are tabs etc. counted or should
+		 * isspace() be used)
+		 */
+
+		/* the HOME envvar is required */
+		if (home_dir == NULL) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		ret = check_dirname(home_dir, ".config/netsurf", &config_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	} else {
+		ret = check_dirname(xdg_config_dir, "netsurf", &config_home);
+		if (ret != NSERROR_OK) {
+			return ret;
+		}
+	}
+
+	LOG(("\"%s\"", config_home));
+
+	*config_home_out = config_home;
+	return NSERROR_OK;
+}
+
+static nserror create_config_home(char **config_home_out)
+{
+	char *config_home;
+	char *home_dir;
+	char *xdg_config_dir;
+	nserror ret;
+
+	LOG(("Attempting to create configuration directory"));
+
+	/* $XDG_CONFIG_HOME defines the base directory
+	 * relative to which user specific configuration files
+	 * should be stored.
+	 */
+	xdg_config_dir = getenv("XDG_CONFIG_HOME");
+
+	if ((xdg_config_dir == NULL) || (*xdg_config_dir == 0)) {
+		home_dir = getenv("HOME");
+
+		if ((home_dir == NULL) || (*home_dir == 0)) {
+			return NSERROR_NOT_DIRECTORY;
+		}
+
+		config_home = filepath_append(home_dir, ".config/netsurf/");
+		if (config_home == NULL) {
+			return NSERROR_NOMEM;
+		}
+	} else {
+		config_home = filepath_append(xdg_config_dir, "netsurf/");
+		if (config_home == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* ensure all elements of path exist (the trailing / is required) */
+	ret = filepath_mkdir_all(config_home);
+	if (ret != NSERROR_OK) {
+		free(config_home);
+		return ret;
+	}
+
+	/* strip the trailing separator */
+	config_home[strlen(config_home) - 1] = 0;
+
+	*config_home_out = config_home;
+
+	return NSERROR_OK;
+}
+
+static nserror nsgtk_option_init(int *pargc, char** argv)
+{
+	nserror ret;
+	char *choices;
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	/* Attempt to load the user choices */
+	choices = filepath_append(nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_read(choices, nsoptions);
+		free(choices);
+	}
+
+	/* overide loaded options with those from commandline */
+	nsoption_commandline(pargc, argv, nsoptions);
+
+	/* ensure all options fall within sensible bounds */
+
+	/* select menus generated by core code */
+	nsoption_set_bool(core_select_menu, true);
+
+	/* Attempt to handle nonsense status bar widths.  These may exist
+	 * in people's Choices as the GTK front end used to abuse the
+	 * status bar width option by using it for an absolute value in px.
+	 * The GTK front end now correctly uses it as a proportion of window
+	 * width.  Here we assume that a value of less than 15% is wrong
+	 * and set to the default two thirds. */
+	if (nsoption_int(toolbar_status_size) < 1500) {
+		nsoption_set_int(toolbar_status_size, 6667);
+	}
+
+	return NSERROR_OK;
+}
+
 static struct gui_browser_table nsgtk_browser_table = {
 	.poll = nsgtk_poll,
 	.schedule = nsgtk_schedule,
@@ -1008,7 +1156,6 @@ static struct gui_browser_table nsgtk_browser_table = {
 int main(int argc, char** argv)
 {
 	char *messages;
-	char *options;
 	nserror ret;
 	struct gui_table nsgtk_gui_table = {
 		.browser = &nsgtk_browser_table,
@@ -1019,11 +1166,21 @@ int main(int argc, char** argv)
 		.search = nsgtk_search_table,
 	};
 
-	/* check home directory is available */
-	nsgtk_check_homedir();
-
+	/* build the common resource path list */
 	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
 
+	/* Locate the correct user configuration directory path */
+	ret = get_config_home(&nsgtk_config_home);
+	if (ret == NSERROR_NOT_FOUND) {
+		/* no config directory exists yet so try to create one */
+		ret = create_config_home(&nsgtk_config_home);
+	}
+	if (ret != NSERROR_OK) {
+		LOG(("Unable to locate a configuration directory."));
+		nsgtk_config_home = NULL;
+	}
+
+	/* Initialise gtk */
 	gtk_init(&argc, &argv);
 
 	/* initialise logging. Not fatal if it fails but not much we
@@ -1031,21 +1188,18 @@ int main(int argc, char** argv)
 	 */
 	nslog_init(nslog_stream_configure, &argc, argv);
 
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	/* Initialise user options */
+	ret = nsgtk_option_init(&argc, argv);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "Options failed to initialise (%s)\n",
 			messages_get_errorcode(ret));
 		return 1;
 	}
-	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, nsoptions);
-	free(options);
-	nsoption_commandline(&argc, argv, nsoptions);
-	check_options(respaths); /* check user options */
 
-	/* common initialisation */
+	/* Obtain path to messages */
 	messages = filepath_find(respaths, "Messages");
+
+	/* core initialisation */
 	ret = netsurf_init(messages, &nsgtk_gui_table);
 	free(messages);
 	if (ret != NSERROR_OK) {

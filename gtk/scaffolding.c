@@ -25,6 +25,7 @@
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+#include "utils/filepath.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/log.h"
@@ -863,9 +864,10 @@ MULTIHANDLER(print)
 
 	GtkPrintOperation *print_op;
 	GtkPageSetup *page_setup;
-	GtkPrintSettings *gtk_print_settings;
+	GtkPrintSettings *print_settings;
 	GtkPrintOperationResult res = GTK_PRINT_OPERATION_RESULT_ERROR;
-	struct print_settings *settings;
+	struct print_settings *nssettings;
+	char *settings_fname;
 
 	print_op = gtk_print_operation_new();
 	if (print_op == NULL) {
@@ -874,14 +876,16 @@ MULTIHANDLER(print)
 	}
 
 	/* use previously saved settings if any */
-	gtk_print_settings = gtk_print_settings_new_from_file(
-			print_options_file_location, NULL);
-	if (gtk_print_settings != NULL) {
-		gtk_print_operation_set_print_settings(print_op,
-				gtk_print_settings);
+	settings_fname = filepath_append(nsgtk_config_home, "Print");
+	if (settings_fname != NULL) {
+		print_settings = gtk_print_settings_new_from_file(settings_fname, NULL);
+		if (print_settings != NULL) {
+			gtk_print_operation_set_print_settings(print_op,
+						print_settings);
 
-		/* We're not interested in the settings any more */
-		g_object_unref(gtk_print_settings);
+			/* We're not interested in the settings any more */
+			g_object_unref(print_settings);
+		}
 	}
 
 	content_to_print = bw->current_content;
@@ -889,33 +893,40 @@ MULTIHANDLER(print)
 	page_setup = gtk_print_run_page_setup_dialog(g->window, NULL, NULL);
 	if (page_setup == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
+		free(settings_fname);
 		g_object_unref(print_op);
 		return TRUE;
 	}
 	gtk_print_operation_set_default_page_setup(print_op, page_setup);
 
-	settings = print_make_settings(PRINT_DEFAULT, NULL, &nsfont);
+	nssettings = print_make_settings(PRINT_DEFAULT, NULL, &nsfont);
 
 	g_signal_connect(print_op, "begin_print",
-			G_CALLBACK(gtk_print_signal_begin_print), settings);
+			G_CALLBACK(gtk_print_signal_begin_print), nssettings);
 	g_signal_connect(print_op, "draw_page",
 			G_CALLBACK(gtk_print_signal_draw_page), NULL);
 	g_signal_connect(print_op, "end_print",
-			G_CALLBACK(gtk_print_signal_end_print), settings);
-	if (content_get_type(bw->current_content) != CONTENT_TEXTPLAIN)
+			G_CALLBACK(gtk_print_signal_end_print), nssettings);
+
+	if (content_get_type(bw->current_content) != CONTENT_TEXTPLAIN) {
 		res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
     				g->window,
 				NULL);
+	}
 
 	/* if the settings were used save them for future use */
-	if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
-		/* Don't ref the settings, as we don't want to own them */
-		gtk_print_settings = gtk_print_operation_get_print_settings(
-				print_op);
+	if (settings_fname != NULL) {
+		if (res == GTK_PRINT_OPERATION_RESULT_APPLY) {
+			/* Do not increment the settings reference */
+			print_settings =
+				gtk_print_operation_get_print_settings(print_op);
 
-		gtk_print_settings_to_file(gtk_print_settings,
-				print_options_file_location, NULL);
+			gtk_print_settings_to_file(print_settings,
+						   settings_fname,
+						   NULL);
+		}
+		free(settings_fname);
 	}
 
 	/* Our print_settings object is destroyed by the end print handler */
@@ -1249,6 +1260,7 @@ MULTIHANDLER(downloads)
 MULTIHANDLER(savewindowsize)
 {
 	int x,y,w,h;
+	char *choices;
 
 	gtk_window_get_position(g->window, &x, &y);
 	gtk_window_get_size(g->window, &w, &h);
@@ -1258,7 +1270,11 @@ MULTIHANDLER(savewindowsize)
 	nsoption_set_int(window_x, x);
 	nsoption_set_int(window_y, y);
 
-	nsoption_write(options_file_location, NULL, NULL);
+	choices = filepath_append(nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
 
 	return TRUE;
 }

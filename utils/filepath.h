@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** 
- * \file utils/filepath.h
- * \brief Utility routines to obtain paths to file resources. 
+/**
+ * @file utils/filepath.h
+ * @brief Utility routines to obtain paths to file resources.
  */
 
 #ifndef _NETSURF_UTILS_FILEPATH_H_
@@ -26,8 +26,10 @@
 
 #include <stdarg.h>
 
+#include "utils/errors.h"
 
-/** Create a normalised file name.
+/**
+ * Create a normalised file name.
  *
  * If the file described by the format exists and is accessible the
  * normalised path is placed in str and a pointer to str returned
@@ -43,14 +45,16 @@
 char *filepath_vsfindfile(char *str, const char *format, va_list ap);
 
 
-/** Create a normalised file name.
+/**
+ * Create a normalised file name.
  *
  * Similar to vsfindfile but takes variadic (printf like) parameters
  */
 char *filepath_sfindfile(char *str, const char *format, ...);
 
 
-/** Create a normalised file name.
+/**
+ * Create a normalised file name.
  *
  * Similar to sfindfile but allocates its own storage for the
  * returned string. The caller must free this sorage.
@@ -58,7 +62,8 @@ char *filepath_sfindfile(char *str, const char *format, ...);
 char *filepath_findfile(const char *format, ...);
 
 
-/** Searches an array of resource paths for a file.
+/**
+ * Searches an array of resource paths for a file.
  *
  * Iterates through a vector of resource paths and returns the
  * normalised file name of the first acessible file or NULL if no file
@@ -72,7 +77,8 @@ char *filepath_findfile(const char *format, ...);
 char *filepath_sfind(char **respathv, char *filepath, const char *filename);
 
 
-/** Searches an array of resource paths for a file.
+/**
+ * Searches an array of resource paths for a file.
  *
  * Similar to filepath_sfind except it allocates its own storage for
  * the returned string. The caller must free this sorage.
@@ -80,7 +86,8 @@ char *filepath_sfind(char **respathv, char *filepath, const char *filename);
 char *filepath_find(char **respathv, const char *filename);
 
 
-/** Searches an array of resource paths for a file optionally forcing a default.
+/**
+ * Searches an array of resource paths for a file optionally forcing a default.
  *
  * Similar to filepath_sfind except if no resource is found the default
  * is used as an additional path element to search, if that still
@@ -91,7 +98,8 @@ char *filepath_sfinddef(char **respathv, char *filepath, const char *filename,
 		const char *def);
 
 
-/** Merge two string vectors into a resource search path vector.
+/**
+ * Merge two string vectors into a resource search path vector.
  *
  * @param pathv A string vector containing path elemets to scan.
  * @param langv A string vector containing language names to enumerate.
@@ -101,7 +109,8 @@ char *filepath_sfinddef(char **respathv, char *filepath, const char *filename,
 char **filepath_generate(char * const *pathv, const char * const *langv);
 
 
-/** Convert a colon separated list of path elements into a string vector. 
+/**
+ * Convert a colon separated list of path elements into a string vector. 
  *
  * @param path A colon separated path.
  * @return A pointer to a NULL terminated string vector of valid
@@ -110,10 +119,32 @@ char **filepath_generate(char * const *pathv, const char * const *langv);
 char **filepath_path_to_strvec(const char *path);
 
 
-/** Free a string vector 
+/**
+ * Free a string vector.
  *
  * Free a string vector allocated by filepath_path_to_strvec
  */
 void filepath_free_strvec(char **pathv);
+
+
+/**
+ * generate a new filename from a path and leaf.
+ *
+ * @param path The base path.
+ * @param leaf The leaf to add.
+ * @return The combined path in a new string must be freed by caller
+ *         or NULL on failiure to allocte memory.
+ */
+char *filepath_append(const char *path, const char *leaf);
+
+
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+nserror filepath_mkdir_all(const char *fname);
+
 
 #endif /* _NETSURF_UTILS_FILEPATH_H_ */
