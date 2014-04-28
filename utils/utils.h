@@ -60,10 +60,13 @@ struct dirent;
 #define PRId64 "lld"
 #endif
 
+/* Windows does not have POSIX formating codes or mkdir so work around that */
 #if defined(_WIN32)
 #define SSIZET_FMT "Iu"
+#define nsmkdir(dir, mode) mkdir((dir))
 #else
 #define SSIZET_FMT "zd"
+#define nsmkdir(dir, mode) mkdir((dir), (mode))
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ < 3)
@@ -104,12 +107,6 @@ typedef struct
 	void (*confirm)(query_id id, enum query_response res, void *pw);
 	void (*cancel)(query_id, enum query_response res, void *pw);
 } query_callback;
-
-#ifdef HAVE_MKDIR
-#define nsmkdir(dir, mode) mkdir((dir), (mode))
-#else
-#define nsmkdir(dir, mode) mkdir((dir))
-#endif
 
 #ifndef timeradd
 #define timeradd(a, aa, result)						\

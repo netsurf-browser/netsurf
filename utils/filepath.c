@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "utils/utils.h"
 #include "utils/config.h"
 #include "utils/filepath.h"
 
@@ -378,7 +379,7 @@ nserror filepath_mkdir_all(const char *fname)
 	while ((sep = strchr(sep, '/')) != NULL) {
 		*sep = 0;
 		if (stat(dname, &sb) != 0) {
-			if (mkdir(dname, S_IRWXU) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
 				/* could not create path element */
 				free(dname);
 				return NSERROR_NOT_FOUND;
