@@ -7,7 +7,7 @@ POSTEXES += NetSurf.app
 LDFLAGS += -L/usr/lib
 LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss libdom)
 LDFLAGS += -L/usr/X11/lib
-LDFLAGS += -lm -lcurl -liconv
+LDFLAGS += -lm -lcurl
 LDFLAGS += -lssl -lcrypto
 
 CFLAGS += -O $(WARNFLAGS) -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE \

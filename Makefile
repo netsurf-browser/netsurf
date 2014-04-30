@@ -314,6 +314,8 @@ DEPROOT := $(OBJROOT)/deps
 TOOLROOT := $(OBJROOT)/tools
 
 
+# A macro that conditionaly adds flags to the build when a feature is enabled.
+#
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
 # 2: Parameters to add to CFLAGS
 # 3: Parameters to add to LDFLAGS
@@ -328,6 +330,33 @@ define feature_enabled
   else ifeq ($$(NETSURF_USE_$(1)),NO)
     ifneq ($(MAKECMDGOALS),clean)
       $$(info M.CONFIG: $(4)	disabled      (NETSURF_USE_$(1) := NO))
+    endif
+  else
+    $$(info M.CONFIG: $(4)	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+    $$(error NETSURF_USE_$(1) must be YES or NO)
+  endif
+endef
+
+# A macro that conditionaly adds flags to the build with a uniform display.
+#
+# 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
+# 2: Human-readable name for the feature
+# 3: Parameters to add to CFLAGS when enabled
+# 4: Parameters to add to LDFLAGS when enabled
+# 5: Parameters to add to CFLAGS when disabled
+# 6: Parameters to add to LDFLAGS when disabled
+define feature_switch
+  ifeq ($$(NETSURF_USE_$(1)),YES)
+    CFLAGS += $(3)
+    LDFLAGS += $(4)
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: $(2)	enabled       (NETSURF_USE_$(1) := YES))
+    endif
+  else ifeq ($$(NETSURF_USE_$(1)),NO)
+    CFLAGS += $(5)
+    LDFLAGS += $(6)
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: $(2)	disabled      (NETSURF_USE_$(1) := NO))
     endif
   else
     $$(info M.CONFIG: $(4)	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
@@ -431,10 +460,14 @@ endif
 # Pull in the configuration
 include Makefile.defaults
 
-$(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG (libjpeg)))
+# Build flags for libjpeg as it has no pkgconfig file
+$(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
 
-$(eval $(call feature_enabled,HARU_PDF,-DWITH_PDF_EXPORT,-lhpdf -lpng,PDF export (haru)))
-$(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal iconv))
+# Build flags for haru
+$(eval $(call feature_switch,HARU_PDF,PDF export (haru),-DWITH_PDF_EXPORT,-lhpdf -lpng,-UWITH_PDF_EXPORT,))
+
+# Build flags for iconv
+$(eval $(call feature_switch,LIBICONV_PLUG,glibc internal iconv,-DLIBICONV_PLUG,,-ULIBICONV_PLUG,-liconv))
 
 # common libraries without pkg-config support
 LDFLAGS += -lz

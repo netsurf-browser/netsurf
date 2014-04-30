@@ -12,7 +12,7 @@ LDFLAGS += -L/boot/common/lib
 LDFLAGS += -lssl -lcrypto -lcss
 $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
 LDFLAGS += -ldom -lparserutils -lhubbub -lwapcaplet
-LDFLAGS += -lexpat -lcurl -liconv
+LDFLAGS += -lexpat -lcurl
 
 CFLAGS += -O $(WARNFLAGS) -Dnsbeos -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
 	    -Drestrict="" -Wno-multichar

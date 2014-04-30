@@ -69,7 +69,7 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -Dsmall $(WARNFLAGS) -Dnsatari \
 LDFLAGS += -lcflib -lcurl
 LDFLAGS += -lcss -lparserutils -ldom -lwapcaplet -lhubbub
 LDFLAGS += -lssl -lcrypto
-LDFLAGS += -lz -liconv -lcares -lHermes -lgem -lm
+LDFLAGS += -lz -lcares -lHermes -lgem -lm
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 

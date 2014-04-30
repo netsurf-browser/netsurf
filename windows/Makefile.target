@@ -30,8 +30,7 @@ else
   LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
 endif
 
-LDFLAGS += -lssl -lcrypto -lregex -liconv \
-	     -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
+LDFLAGS += -lssl -lcrypto -lregex -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
 
 CFLAGS += -U__STRICT_ANSI__ -mwin32
 # only windows versions after XP are supported
