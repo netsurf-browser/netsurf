@@ -421,13 +421,15 @@ static void gui_init(int argc, char** argv, char **respath)
 	if (argc > 1) {
 		struct stat fs;
 		if (stat(argv[1], &fs) == 0) {
+			size_t addrlen;
 			char *rp = realpath(argv[1], NULL);
 			assert(rp != NULL);
-			addr = malloc(SLEN("file://") + strlen(rp) + /*\0 */ 1);
+
+			/* calculate file url length including terminator */
+			addrlen = SLEN("file://") + strlen(rp) + 1;
+			addr = malloc(addrlen);
 			assert(addr != NULL);
-			/* These are safe thanks to the above sum */
-			strcpy(addr, "file://");
-			strcat(addr, rp);
+			snprintf(addr, addrlen, "file://%s", rp);
 			free(rp);
 		} else {
 			addr = strdup(argv[1]);
