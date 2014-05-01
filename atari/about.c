@@ -30,7 +30,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/about.h"
 
-#include "utils/testament.h"
+#include "testament.h"
 #include "utils/useragent.h"
 #include "desktop/netsurf.h"
 #include "utils/nsurl.h"

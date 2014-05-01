@@ -23,7 +23,7 @@
 extern "C" {
 #include "desktop/netsurf.h"
 #include "utils/log.h"
-#include "utils/testament.h"
+#include "testament.h"
 #include "utils/useragent.h"
 #include "curl/curlver.h"
 }
