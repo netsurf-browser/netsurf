@@ -31,7 +31,7 @@
 char *strndup(const char *s, size_t n);
 #endif
 
-#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__))
+#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__)) || defined(__OpenBSD__))
 #define HAVE_STRCASESTR
 #else
 #undef HAVE_STRCASESTR
