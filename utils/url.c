@@ -22,19 +22,14 @@
  * URL parsing and joining (implementation).
  */
 
-#include <sys/types.h>
-#include <assert.h>
 #include <ctype.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <curl/curl.h>
 
-#include "curl/curl.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/url.h"
 
 struct url_components_internal {
 	char *buffer;	/* buffer used for all the following data */
