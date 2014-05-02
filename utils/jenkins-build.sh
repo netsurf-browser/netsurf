@@ -167,8 +167,12 @@ case ${TARGET} in
 		ARTIFACT_TARGET=Linux
 		;;
 
+	    "amd64-unknown-openbsd5.4")
+		ARTIFACT_TARGET=OpenBSD
+		;;
+
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${label}\""
 		exit 1
 		;;
 
