@@ -325,11 +325,17 @@ fi
 
 # convert javascript parameters
 if [ "${BUILD_JS}" = "json" ];then
-    case ${TARGET} in
-	"riscos")
+    case ${label} in
+        "arm-unknown-riscos")
 	    BUILD_MOZJS=NO
 	    BUILD_JS=YES
 	    ;;
+
+        "amd64-unknown-openbsd5.4")
+	    BUILD_MOZJS=NO
+	    BUILD_JS=YES
+            ;;
+
 	*)
 	    BUILD_MOZJS=YES
 	    BUILD_JS=NO
