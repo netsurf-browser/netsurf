@@ -49,6 +49,9 @@ OLD_IDENTIFIER="$CC-${BUILD_JS}-$((BUILD_NUMBER - ${OLD_ARTIFACT_COUNT}))"
 # default atari architecture - bletch
 ATARIARCH=68020-60
 
+# make tool
+MAKE=make
+
 # Ensure the combination of target and toolchain works and set build
 #   specific parameters too
 case ${TARGET} in
@@ -169,6 +172,7 @@ case ${TARGET} in
 
 	    "amd64-unknown-openbsd5.4")
 		ARTIFACT_TARGET=OpenBSD
+		MAKE=gmake
 		;;
 
 	    *)
@@ -344,11 +348,10 @@ fi
 ########### Build from source ##################
 
 # Clean first
-make NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
+${MAKE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
 
 # Do the Build
-make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
-
+${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
 
 
 
@@ -356,7 +359,7 @@ make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${B
 ############ Package artifact construction ################
 
 # build the package file
-make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
+${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
 
 if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
     # unable to find package file
