@@ -55,20 +55,34 @@ monkey_process_command(void)
   char **argv = NULL;
   char *p, *r = NULL;
   handle_command_fn fn = NULL;
+  char **nargv;
   
   if (fgets(buffer, PATH_MAX, stdin) == NULL) {
     netsurf_quit = true;
+    return;
   }
-  
-  buffer[strlen(buffer)-1] = '\0';
+
+  /* remove newline */
+  buffer[strlen(buffer) - 1] = '\0';
   
   argv = malloc(sizeof *argv);
+  if (argv == NULL) {
+    return;
+  }
   argc = 1;
   *argv = buffer;
   
   for (p = r = buffer; *p != '\0'; p++) {
     if (*p == ' ') {
-      argv = realloc(argv, sizeof(*argv) * (argc + 1));
+      nargv = realloc(argv, sizeof(*argv) * (argc + 1));
+      if (nargv == NULL) {
+	/* reallocation of argument vector failed, try using what is
+	 * already processed.
+	 */
+	break;
+      } else {
+	argv = nargv;
+      }
       argv[argc++] = r = p + 1;
       *p = '\0';
     }
