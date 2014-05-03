@@ -181,12 +181,6 @@ static const char *fetch_filetype(const char *unix_path)
 	return "text/html";
 }
 
-
-static char *fetch_mimetype(const char *ro_path)
-{
-	return strdup("text/plain");
-}
-
 /* table for fetch operations */
 static struct gui_fetch_table fetch_table = {
 	.filename_from_path = filename_from_path,
@@ -196,7 +190,6 @@ static struct gui_fetch_table fetch_table = {
 	.url_to_path = url_to_path,
 
 	.get_resource_url = get_resource_url,
-	.mimetype = fetch_mimetype,
 };
 
 struct gui_fetch_table *framebuffer_fetch_table = &fetch_table;

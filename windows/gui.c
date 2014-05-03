@@ -1881,8 +1881,6 @@ static struct gui_fetch_table fetch_table = {
 	.filetype = fetch_filetype,
 	.path_to_url = path_to_url,
 	.url_to_path = url_to_path,
-
-	.mimetype = fetch_mimetype,
 };
 struct gui_fetch_table *win32_fetch_table = &fetch_table;
 

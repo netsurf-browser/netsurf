@@ -1078,7 +1078,6 @@ static struct gui_fetch_table atari_fetch_table = {
     .url_to_path = url_to_path,
 
     .get_resource_url = gui_get_resource_url,
-    .mimetype = fetch_mimetype,
 };
 
 static struct gui_browser_table atari_browser_table = {

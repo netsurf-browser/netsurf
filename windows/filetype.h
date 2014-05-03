@@ -20,6 +20,5 @@
 #define _NETSURF_WINDOWS_FILETYPE_H_
 
 const char *fetch_filetype(const char *unix_path);
-char *fetch_mimetype(const char *ro_path);
 
 #endif

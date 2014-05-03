@@ -91,9 +91,3 @@ error:
 	LOG(("mime type: %s", res ));
 	return( res );
 }
-
-
-char *fetch_mimetype(const char *ro_path)
-{
-	return strdup("text/plain");
-}
