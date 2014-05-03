@@ -149,6 +149,15 @@ void monkey_fetch_filetype_fin(void)
 	hash_destroy(mime_hash);
 }
 
+/**
+ * Determine the MIME type of a local file.
+ *
+ * @note used in file fetcher
+ *
+ * \param unix_path Unix style path to file on disk
+ * \return Pointer to static MIME type string (should not be freed) not NULL.
+ *	   invalidated on next call to fetch_filetype.
+ */
 const char *monkey_fetch_filetype(const char *unix_path)
 {
 	struct stat statbuf;
@@ -158,9 +167,16 @@ const char *monkey_fetch_filetype(const char *unix_path)
 	const char *type;
 	int l;
 
-	stat(unix_path, &statbuf);
-	if (S_ISDIR(statbuf.st_mode))
+	if (stat(unix_path, &statbuf) != 0) {
+		/* error calling stat, the file has probably become
+		 * inacessible, this routine cannot fail so just
+		 * return the default mime type.
+		 */
+		return "text/plain";
+	}
+	if (S_ISDIR(statbuf.st_mode)) {
 		return "application/x-netsurf-directory";
+	}
 
 	l = strlen(unix_path);
 	if ((3 < l) && (strcasecmp(unix_path + l - 4, ",f79") == 0)) {
@@ -176,8 +192,9 @@ const char *monkey_fetch_filetype(const char *unix_path)
 	while (*ptr != '.' && *ptr != '/')
 		ptr--;
 
-	if (*ptr != '.')
+	if (*ptr != '.') {
 		return "text/plain";
+	}
 
 	ext = strdup(ptr + 1);	/* skip the . */
 
