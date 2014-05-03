@@ -403,7 +403,6 @@
 		(exit (quiet))
 	)
 	(
-		(p_failedsobjs)
 		(exit)
 	)
 )
