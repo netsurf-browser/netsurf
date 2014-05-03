@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for AmigaOS NetSurf                           29 March 2014
+  Build Instructions for AmigaOS NetSurf                            02 May 2014
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the AmigaOS version of
@@ -75,9 +75,6 @@
 
       http://www.os4depot.net/share/development/library/misc/libcurl.lha
 
-  To use the shared object when compiling with Cairo support, a link must be made:
-
-      1> makelink sdk:local/newlib/lib/libcurl.so sobjs:libcurl.so.8 soft
 
 
   libpng
@@ -88,9 +85,6 @@
 
       http://www.os4depot.net/share/development/library/graphics/libpng.lha
 
-  If building with Cairo, NetSurf MUST be linked against the version of
-  libpng.so included with OS4.
-
 
   OpenSSL
 ---------
@@ -98,11 +92,6 @@
   NetSurf uses OpenSSL for encrypted transfers.
 
       http://www.os4depot.net/share/development/library/misc/libopenssl.lha
-
-  To use the shared object when compiling with Cairo support, a link must be made:
-
-      1> makelink sdk:local/newlib/lib/libssl.so sobjs:libssl.so.1.0.0 soft
-      1> makelink sdk:local/newlib/lib/libcrypto.so sobjs:libcrypto.so.1.0.0 soft
 
 
   Libharu
@@ -137,13 +126,4 @@
 
   Experimental Javascript support requires Spidermonkey.  The patches to
   build v1.7 are available from the NetSurf toolchains Git repository.
-
-
-  General requirements
-----------------------
-
-  Please note that building with Cairo (option NETSURF_AMIGA_USE_CAIRO) will
-  link NetSurf against shared objects, and require the OS4.1 SDK to build and
-  AmigaOS 4.1 to run.  There is no longer any advantage in building against
-  Cairo beyond anti-aliasing, and this option may be removed in the future.
 

@@ -788,18 +788,9 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 				TDR_TitleString, messages_get("NetSurf"),
 				TDR_Window, gwin->win,
 				TDR_GadgetString, temp2,
-#ifndef NDEBUG
-				TDR_FormatString,"NetSurf %s\n%s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
-#else
-				TDR_FormatString,"NetSurf %s\n%s\n\nhttp://www.netsurf-browser.org",
-#endif
+				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
 				TDR_Arg1,netsurf_version,
-#ifdef NS_AMIGA_CAIRO
-				TDR_Arg2,"Cairo (OS4.1+) SObjs build",
-#else
-				TDR_Arg2,"graphics.library static build",
-#endif
-				TDR_Arg3,verdate,
+				TDR_Arg2,verdate,
 				TAG_DONE);
 
 	free(temp2);

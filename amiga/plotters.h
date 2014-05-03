@@ -21,9 +21,6 @@
 #include "desktop/plotters.h"
 #include <proto/layers.h>
 #include <proto/graphics.h>
-#ifdef NS_AMIGA_CAIRO
-#include <cairo/cairo.h>
-#endif
 
 struct gui_globals
 {
@@ -34,10 +31,6 @@ struct gui_globals
 	APTR tmprasbuf;
 	struct Rectangle rect;
 	struct MinList *shared_pens;
-#ifdef NS_AMIGA_CAIRO
-	cairo_surface_t *surface;
-	cairo_t *cr;
-#endif
 };
 
 extern const struct plotter_table amiplot;

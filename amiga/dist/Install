@@ -309,71 +309,8 @@
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
 (set osver (getversion))
 (set osver (/ osver 65536))
-(set #versions-available 0)
-
-(set #static-filename "NetSurf")
-(set #cairo-filename "NetSurf")
-
-(if (exists "NetSurf")
-	(
-		(if (exists "SObjs")
-			(
-				(if (>= osver 53) 
-					(
-						(set #cairo-name "Shared objects/part-Cairo")
-						(set #versions-available (+ #versions-available 1))
-						(set #cairo-version 1)
-					)
-					;else
-					(
-						(set #cairo-version 0)
-						(set #cairo-name "")
-					)
-				)
-			)
-			;else
-			(
-				; assume static if sobjs is not present
-				(set #static-name "Static/graphics.library")
-				(set #versions-available (+ #versions-available 1))
-				(set #cairo-version 0)
-				(set #static-filename "NetSurf")
-			)
-		)
-	)
-	; else
-	(
-		(set #cairo-version 0)
-		(set #cairo-name "")		
-	)
-)
-
-(transcript "Versions avaiable for install: " #versions-available "  " #static-name "  " #cairo-name)
-
-(if (= #versions-available 0)
-	(
-		(abort "Did not find any compatible versions of NetSurf to install!\n\n"
-			"NetSurf requires AmigaOS 4.1 or higher.")
-	)
-)
 
 (complete 10)
-
-(if (AND (> @user-level 0) (> #versions-available 1))
-	(
-		(set #cairo-version
-			(askchoice
-				(prompt "Which version of NetSurf would you like to install?")
-				(help "The Cairo version has anti-aliasing of graphical elements.\n\n"
-					@askchoice-help)
-				(choices #static-name #cairo-name)
-				(default #cairo-version)
-			)
-		)
-	)
-)
-
-(complete 15)
 
 (set #user (getenv "user"))
 (if (= #user "") (set #user "Default"))
@@ -415,7 +352,7 @@
 	)
 )
 
-(complete 18)
+(complete 15)
 
 (if (>= osver 53)
 	(
@@ -436,7 +373,7 @@
 	)
 )
 
-(complete 19)
+(complete 20)
 
 (set #runfixfonts
 	(askbool
@@ -449,9 +386,7 @@
 	)
 )
 
-(complete 20)
-
-(set #netsurf-name (select #cairo-version #static-filename #cairo-filename))
+(complete 25)
 
 (working "Installing NetSurf")
 
@@ -460,7 +395,7 @@
 		(copyfiles
 			(prompt "Copying NetSurf...")
 			(help @copyfiles-help)
-			(source #netsurf-name)
+			(source "NetSurf")
 			(dest @default-dest)
 			(newname "NetSurf")
 			(optional "askuser" "force" "oknodelete")
@@ -473,7 +408,7 @@
 	)
 )
 
-(complete 30)
+(complete 40)
 
 (if #searchengines-exist
 	(rename (tackon @default-dest "Resources/SearchEngines") (tackon @default-dest "Resources/SearchEngines.backup"))
@@ -482,6 +417,8 @@
 (run "c:filenote Rexx/CloseTabs.nsrx \"Close other tabs\"")
 (run "c:filenote Rexx/ViewSource.nsrx \"View source\"")
 (run "c:filenote Rexx/GetVideo.nsrx \"Get video\"")
+
+(complete 50)
 
 (copyfiles
 	(prompt "Copying files")
@@ -494,6 +431,8 @@
 ;	(all)
 )
 
+(complete 65)
+
 (copyfiles
 	(prompt "Copying additional documentation")
 	(source "")
@@ -504,34 +443,7 @@
 	(optional "nofail")
 )
 
-(set #complete 40)
-(working "Copying Libraries")
-
-(if (exists "Libs")
-	(
-		(foreach "Libs" "#?"
-			(complete #complete)
-			(p_copylib @each-name)
-			(set #complete (+ #complete 2))
-		)
-	)
-)
-
-(set #complete 60)
-
-(if (= #cairo-version 1)
-	(
-		(working "Copying Shared Objects")
-
-		(foreach "SObjs" "#?"
-			(complete #complete)
-			(p_copysobj @each-name)
-			(set #complete (+ #complete 1))
-		)
-	)
-)
-
-(complete 90)
+(complete 70)
 
 (if #themeshort
 	(
@@ -578,7 +490,7 @@
 	)
 )
 
-(complete 95)
+(complete 75)
 
 (if (= (exists "ENVARC:Sys/def_css.info") 0)
 	(copyfiles
@@ -591,7 +503,7 @@
 	)
 )
 
-(complete 96)
+(complete 80)
 
 (working "Setting MIME types")
 (p_setmimetype "css" "text/css")
@@ -611,7 +523,7 @@
 (p_setmimetype "zip" "application/x-zip")
 (p_setmimetype "js" "application/javascript")
 
-(complete 97)
+(complete 85)
 
 (if (>= osver 53)
 	(if (= (exists "Rexx:NetSurf") 0)
@@ -659,7 +571,7 @@
 	)
 )
 
-(complete 98)
+(complete 90)
 
 (if (= #addlaunchhandler 1)
 	(
@@ -691,7 +603,7 @@
 	)
 )
 
-(complete 99)
+(complete 95)
 
 (working "Running FixFonts")
 

@@ -556,11 +556,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 
 	nsoption_set_bool(core_select_menu, true);
 
-	#ifndef NS_AMIGA_CAIRO
-	/* Ensure we get some output when Cairo not available */
-	nsoption_set_int(cairo_renderer, 0);
-	#endif
-
 	if((!nsoption_charp(accept_language)) || 
 	   (nsoption_charp(accept_language)[0] == '\0') ||
 	   (nsoption_bool(accept_lang_locale) == true))
