@@ -57,6 +57,9 @@
 
 (if (<> #AutoInstall 1) (welcome))
 
+; (hopefully temporary) workaround for a bug in Installer:
+(if (= @language "dutch") (set @askdir-help ""))
+
 (complete 0)
 
 (set @default-dest (getenv "AppPaths/NetSurf"))
