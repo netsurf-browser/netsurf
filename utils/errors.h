@@ -73,7 +73,9 @@ typedef enum {
 
 	NSERROR_FRAME_DEPTH,            /**< Exceeded frame depth */
 
-	NSERROR_PERMISSION             /**< Permission error */
+	NSERROR_PERMISSION,             /**< Permission error */
+
+	NSERROR_NOSPACE                 /**< Insufficient space */
 } nserror;
 
 #endif

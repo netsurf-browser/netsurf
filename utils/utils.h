@@ -28,6 +28,9 @@
 #include <sys/time.h>
 #include <regex.h>
 #include <assert.h>
+#include <stdarg.h>
+
+#include "utils/errors.h"
 
 struct dirent;
 
@@ -145,6 +148,49 @@ char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
 unsigned int wallclock(void);
 
+/**
+ * Generate a string from one or more component elemnts separated with
+ * a single value.
+ *
+ * This is similar in intent to the perl join function creating a
+ * single delimited string from an array of several.
+ *
+ * @note If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] sep The character to separete the elemnts with.
+ * @param[in] nemb The number of elements up to a maximum of 16.
+ * @param[in] ap The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str or error
+ *         code on faliure.
+ */
+nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap);
+
+/**
+ * Generate a string from one or more component elemnts separated with
+ * a single value.
+ *
+ * This is similar in intent to the perl join function creating a
+ * single delimited string from an array of several.
+ *
+ * @note If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] sep The character to separete the elemnts with.
+ * @param[in] nemb The number of elements up to a maximum of 16.
+ * @param[in] ... The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str or error
+ *         code on faliure.
+ */
+nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...);
 
 /**
  * Comparison function for sorting directories.

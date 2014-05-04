@@ -160,6 +160,85 @@ bool is_dir(const char *path)
 	return S_ISDIR(s.st_mode) ? true : false;
 }
 
+/* exported interface documented in utils/utils.h */
+nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap)
+{
+	const char *elm[16];
+	size_t elm_len[16];
+	size_t elm_idx;
+	char *fname;
+	size_t fname_len = 0;
+	char *curp;
+
+	/* check the parameters are all sensible */
+	if ((nelm == 0) || (nelm > 16)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if ((*str != NULL) && (size == NULL)) {
+		/* if the caller is providing the buffer they must say
+		 * how much space is available.
+		 */
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* calculate how much storage we need for the complete path
+	 * with all the elements.
+	 */
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		elm[elm_idx] = va_arg(ap, const char *);
+		elm_len[elm_idx] = strlen(elm[elm_idx]);
+		fname_len += elm_len[elm_idx];
+	}
+	fname_len += nelm; /* allow for separators and terminator */
+
+	/* ensure there is enough space */
+	fname = *str;
+	if (fname != NULL) {
+		if (fname_len > *size) {
+			return NSERROR_NOSPACE;
+		}
+	} else {
+		fname = malloc(fname_len);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* copy the elements in with apropriate separator */
+	curp = fname;
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		memmove(curp, elm[elm_idx], elm_len[elm_idx]);
+		curp += elm_len[elm_idx];
+		/* ensure string are separated */
+		if (curp[-1] != sep) {
+			*curp = sep;
+			curp++;
+		}
+	}
+	curp[-1] = 0; /* NULL terminate */
+
+	assert((curp - fname) <= (int)fname_len);
+
+	*str = fname;
+	if (size != NULL) {
+		*size = fname_len;
+	}
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in utils/utils.h */
+nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
+{
+	va_list ap;
+	nserror ret;
+
+	va_start(ap, nelm);
+	ret = vsnstrjoin(str, size, sep, nelm, ap);
+	va_end(ap);
+
+	return ret;
+}
 
 /**
  * Compile a regular expression, handling errors.
