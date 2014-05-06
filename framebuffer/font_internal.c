@@ -254,7 +254,6 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 		if (section != 0 || ucs4 / 256 == 0) {
 			offset = section * 256 + (ucs4 & 0xff);
 			g_offset = fb_regular_sections[offset] * 16;
-if (ucs4 == 0x010C) printf("section: %i, offset: %i, g_offset:%i\n", section, offset, g_offset);
 			if (g_offset != 0) {
 				return &font_glyph_data[g_offset];
 			}
