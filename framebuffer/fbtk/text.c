@@ -66,7 +66,7 @@ fb_text_font_style(fbtk_widget_t *widget, int *font_height, int *padding,
 	*padding += widget->height / 6;
 	*font_height = widget->height - *padding - *padding;
 #else
-	*font_height = font_regular.height;
+	*font_height = FB_FONT_HEIGHT;
 	*padding = (widget->height - *padding - *font_height) / 2;
 #endif
 

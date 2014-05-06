@@ -143,11 +143,6 @@ S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\
 
 S_FRAMEBUFFER += font_$(NETSURF_FB_FONTLIB).c
 
-ifeq ($(NETSURF_FB_FONTLIB),internal)
-S_FRAMEBUFFER += nsfont_regular.c nsfont_italic.c nsfont_bold.c		\
-	nsfont_italic_bold.c 
-endif
-
 S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER)) $(addprefix framebuffer/fbtk/,$(S_FRAMEBUFFER_FBTK))
 
 # This is the final source build list

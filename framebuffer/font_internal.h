@@ -21,22 +21,23 @@
 
 struct fb_font_desc {
     const char *name;
-    int width, height;
-    const char *encoding;
-    const uint32_t *data;
+    int width, height, pitch;
 };
 
-extern const struct fb_font_desc font_regular;
-extern const struct fb_font_desc font_italic;
-extern const struct fb_font_desc font_bold;
-extern const struct fb_font_desc font_italic_bold;
+#define FB_FONT_WIDTH		8
+#define FB_FONT_HEIGHT		16
+#define FB_FONT_PITCH		8
 
-extern const struct fb_font_desc* fb_get_font(const plot_font_style_t *fstyle);
+enum fb_font_style {
+	FB_REGULAR	= 0,
+	FB_ITALIC	= (1 << 0),
+	FB_BOLD		= (1 << 1),
+	FB_BOLD_ITALIC	= (FB_ITALIC | FB_BOLD)
+};
 
-extern nserror utf8_to_font_encoding(const struct fb_font_desc* font,
-				       const char *string,
-				       size_t len,
-				       char **result);
+enum fb_font_style fb_get_font_style(const plot_font_style_t *fstyle);
+
+const uint8_t * fb_get_glyph(uint32_t ucs4, enum fb_font_style style);
 
 #endif /* NETSURF_FB_FONT_INTERNAL_H */
 

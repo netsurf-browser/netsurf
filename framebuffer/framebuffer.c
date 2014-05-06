@@ -125,42 +125,33 @@ framebuffer_plot_text(int x, int y, const char *text, size_t length,
 static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
-    const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-    const uint32_t *chrp;
-    char *buffer = NULL;
-    int chr;
-    int blen;
+    enum fb_font_style style = fb_get_font_style(fstyle);
+    const uint8_t *chrp;
+    size_t nxtchr = 0;
     nsfb_bbox_t loc;
+    uint32_t ucs4;
 
-    utf8_to_font_encoding(fb_font, text, length, &buffer);
-    if (buffer == NULL)
-        return true;
+    y -= ((FB_FONT_HEIGHT * 3) / 4);
+    /* the coord is the bottom-left of the pixels offset by 1 to make
+     * it work since fb coords are the top-left of pixels */
+    y += 1;
 
-        /* y is given as the baseline, at 3/4 from top.
-         * we need it to the top */
-        y -= ((fb_font->height * 3) / 4);
+    while (nxtchr < length) {
+        ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
+        nxtchr = utf8_next(text, length, nxtchr);
 
-        /* the coord is the bottom-left of the pixels offset by 1 to make
-         *   it work since fb coords are the top-left of pixels
-         */
-        y += 1;
-
-    blen = strlen(buffer);
-
-    for (chr = 0; chr < blen; chr++) {
         loc.x0 = x;
         loc.y0 = y;
-        loc.x1 = loc.x0 + fb_font->width;
-        loc.y1 = loc.y0 + fb_font->height;
+        loc.x1 = loc.x0 + FB_FONT_WIDTH;
+        loc.y1 = loc.y0 + FB_FONT_HEIGHT;
 
-        chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
-        nsfb_plot_glyph1(nsfb, &loc, (uint8_t *)chrp, 32, fstyle->foreground);
+        chrp = fb_get_glyph(ucs4, style);
+        nsfb_plot_glyph1(nsfb, &loc, chrp, FB_FONT_PITCH, fstyle->foreground);
 
-        x += fb_font->width;
+        x += FB_FONT_WIDTH;
 
     }
 
-    free(buffer);
     return true;
 }
 #endif

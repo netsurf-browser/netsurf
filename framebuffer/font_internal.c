@@ -30,6 +30,160 @@
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
 
+#include "framebuffer/GEN_font_internal.c"
+
+
+#define GLYPH_LEN		16
+
+uint8_t code_point[GLYPH_LEN];
+
+#define SEVEN_SET	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | 	\
+			 (1 << 4) | (1 << 5) | (1 << 6))
+
+#define THREE_SSS	 ((1 << 0) | (1 << 1) | (1 << 2))
+#define THREE_SS	 (           (1 << 1) | (1 << 2))
+#define THREE_S_S	 ((1 << 0) |            (1 << 2))
+#define THREE__SS	 ((1 << 0) | (1 << 1)           )
+#define THREE_SS_	 (           (1 << 1) | (1 << 2))
+#define THREE_S__	                        (1 << 2)
+#define THREE__S_	             (1 << 1)
+#define THREE___S	  (1 << 0)
+
+uint8_t frag[16][5] = {
+	{ THREE_SSS,
+	  THREE_S_S,
+	  THREE_S_S,
+	  THREE_S_S,
+	  THREE_SSS },
+
+	{ THREE__S_,
+	  THREE_SS_,
+	  THREE__S_,
+	  THREE__S_,
+	  THREE_SSS },
+
+	{ THREE_SS_,
+	  THREE___S,
+	  THREE__S_,
+	  THREE_S__,
+	  THREE_SSS },
+
+	{ THREE_SS_,
+	  THREE___S,
+	  THREE_SS_,
+	  THREE___S,
+	  THREE_SS_ },
+
+	{ THREE_S_S,
+	  THREE_S_S,
+	  THREE_SSS,
+	  THREE___S,
+	  THREE___S },
+
+	{ THREE_SSS,
+	  THREE_S__,
+	  THREE_SSS,
+	  THREE___S,
+	  THREE_SSS },
+
+	{ THREE__SS,
+	  THREE_S__,
+	  THREE_SSS,
+	  THREE_S_S,
+	  THREE_SSS },
+
+	{ THREE_SSS,
+	  THREE___S,
+	  THREE__S_,
+	  THREE__S_,
+	  THREE__S_ },
+
+	{ THREE_SSS,
+	  THREE_S_S,
+	  THREE_SSS,
+	  THREE_S_S,
+	  THREE_SSS },
+
+	{ THREE_SSS,
+	  THREE_S_S,
+	  THREE_SSS,
+	  THREE___S,
+	  THREE___S },
+
+	{ THREE__S_,
+	  THREE_S_S,
+	  THREE_SSS,
+	  THREE_S_S,
+	  THREE_S_S },
+
+	{ THREE_SS_,
+	  THREE_S_S,
+	  THREE_SS_,
+	  THREE_S_S,
+	  THREE_SS_ },
+
+	{ THREE__S_,
+	  THREE_S_S,
+	  THREE_S__,
+	  THREE_S_S,
+	  THREE__S_ },
+
+	{ THREE_SS_,
+	  THREE_S_S,
+	  THREE_S_S,
+	  THREE_S_S,
+	  THREE_SS_ },
+
+	{ THREE_SSS,
+	  THREE_S__,
+	  THREE_SS_,
+	  THREE_S__,
+	  THREE_SSS },
+
+	{ THREE_SSS,
+	  THREE_S__,
+	  THREE_SS_,
+	  THREE_S__,
+	  THREE_S__ }
+};
+
+static uint8_t * get_codepoint(uint32_t id, bool italic)
+{
+	int shift = 0;
+	int l;
+	int r;
+
+	if (!italic)
+		shift = 1;
+
+	l =       (id >> 12);
+	r = 0xf & (id >>  8);
+
+	code_point[ 0] = SEVEN_SET << shift;
+
+	code_point[ 2] = (frag[l][0] << (4 + shift)) | (frag[r][0] << shift);
+	code_point[ 3] = (frag[l][1] << (4 + shift)) | (frag[r][1] << shift);
+	code_point[ 4] = (frag[l][2] << (4 + shift)) | (frag[r][2] << shift);
+	code_point[ 5] = (frag[l][3] << (4 + shift)) | (frag[r][3] << shift);
+	code_point[ 6] = (frag[l][4] << (4 + shift)) | (frag[r][4] << shift);
+
+	shift = 1;
+
+	l = 0xf & (id >>  4);
+	r = 0xf & id;
+
+	code_point[ 8] = (frag[l][0] << (4 + shift)) | (frag[r][0] << shift);
+	code_point[ 9] = (frag[l][1] << (4 + shift)) | (frag[r][1] << shift);
+	code_point[10] = (frag[l][2] << (4 + shift)) | (frag[r][2] << shift);
+	code_point[11] = (frag[l][3] << (4 + shift)) | (frag[r][3] << shift);
+	code_point[12] = (frag[l][4] << (4 + shift)) | (frag[r][4] << shift);
+
+	code_point[14] = SEVEN_SET << shift;
+
+	return (uint8_t *)code_point;
+}
+
+
 bool fb_font_init(void)
 {
 	return true;
@@ -40,33 +194,74 @@ bool fb_font_finalise(void)
 	return true;
 }
 
-const struct fb_font_desc*
-fb_get_font(const plot_font_style_t *fstyle)
+enum fb_font_style
+fb_get_font_style(const plot_font_style_t *fstyle)
 {
 	if (fstyle->weight >= 700) {
 		if ((fstyle->flags & FONTF_ITALIC) ||
 				(fstyle->flags & FONTF_OBLIQUE)) {
-			return &font_italic_bold;
+			return FB_BOLD_ITALIC;
 		} else {
-			return &font_bold;
+			return FB_BOLD;
 		}
 	} else {
 		if ((fstyle->flags & FONTF_ITALIC) ||
 				(fstyle->flags & FONTF_OBLIQUE)) {
-			return &font_italic;
+			return FB_ITALIC;
 		} else {
-			return &font_regular;
+			return FB_REGULAR;
 		}
 	}
 }
 
-nserror utf8_to_font_encoding(const struct fb_font_desc* font,
-				       const char *string,
-				       size_t len,
-				       char **result)
+const uint8_t *
+fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 {
-	return utf8_to_enc(string, font->encoding, len, result);
+	unsigned int section;
+	unsigned int offset;
+	uint16_t g_offset;
 
+	switch (style) {
+	case FB_BOLD_ITALIC:
+		section = fb_bold_italic_section_table[ucs4 / 256];
+		if (section != 0 || ucs4 / 256 == 0) {
+			offset = section * 256 + (ucs4 & 0xff);
+			g_offset = fb_bold_italic_sections[offset] * 16;
+			if (g_offset != 0) {
+				return &font_glyph_data[g_offset];
+			}
+		}
+	case FB_BOLD:
+		section = fb_bold_section_table[ucs4 / 256];
+		if (section != 0 || ucs4 / 256 == 0) {
+			offset = section * 256 + (ucs4 & 0xff);
+			g_offset = fb_bold_sections[offset] * 16;
+			if (g_offset != 0) {
+				return &font_glyph_data[g_offset];
+			}
+		}
+	case FB_ITALIC:
+		section = fb_italic_section_table[ucs4 / 256];
+		if (section != 0 || ucs4 / 256 == 0) {
+			offset = section * 256 + (ucs4 & 0xff);
+			g_offset = fb_italic_sections[offset] * 16;
+			if (g_offset != 0) {
+				return &font_glyph_data[g_offset];
+			}
+		}
+	case FB_REGULAR:
+		section = fb_regular_section_table[ucs4 / 256];
+		if (section != 0 || ucs4 / 256 == 0) {
+			offset = section * 256 + (ucs4 & 0xff);
+			g_offset = fb_regular_sections[offset] * 16;
+if (ucs4 == 0x010C) printf("section: %i, offset: %i, g_offset:%i\n", section, offset, g_offset);
+			if (g_offset != 0) {
+				return &font_glyph_data[g_offset];
+			}
+		}
+	}
+
+	return get_codepoint(ucs4, style & FB_ITALIC);
 }
 
 static nserror utf8_to_local(const char *string,
@@ -97,8 +292,7 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
-        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-        *width = fb_font->width * utf8_bounded_length(string, length);
+        *width = FB_FONT_WIDTH * utf8_bounded_length(string, length);
 	return true;
 }
 
@@ -118,11 +312,20 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-        *char_offset = (x + fb_font->width / 2) / fb_font->width;
-        if (*char_offset > length)
-                *char_offset = length;
-        *actual_x = *char_offset * fb_font->width;
+        size_t nxtchr = 0;
+	int x_pos = 0;
+
+        while (nxtchr < length) {
+                if (abs(x_pos - x) <= (FB_FONT_WIDTH / 2))
+                        break;
+
+                x_pos += FB_FONT_WIDTH;
+                nxtchr = utf8_next(string, length, nxtchr);
+        }
+
+        *actual_x = x_pos;
+
+        *char_offset = nxtchr;
 	return true;
 }
 
@@ -155,26 +358,32 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+        size_t nxtchr = 0;
+        int last_space_x = 0;
+        int last_space_idx = 0;
 
-        const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-        int c_off = *char_offset = x / fb_font->width;
-        if (*char_offset > length) {
-                *char_offset = length;
-        } else {
-                while (*char_offset > 0) {
-                        if (string[*char_offset] == ' ')
-                                break;
-                        (*char_offset)--;
+        *actual_x = 0;
+        while (nxtchr < length) {
+
+                if (string[nxtchr] == ' ') {
+                        last_space_x = *actual_x;
+                        last_space_idx = nxtchr;
                 }
-                if (*char_offset == 0) {
-                        *char_offset = c_off;
-                        while (*char_offset < length &&
-                                        string[*char_offset] != ' ') {
-                                (*char_offset)++;
-                        }
+
+                *actual_x += FB_FONT_WIDTH;
+                if (*actual_x > x && last_space_idx != 0) {
+                        /* string has exceeded available width and we've
+                         * found a space; return previous space */
+                        *actual_x = last_space_x;
+                        *char_offset = last_space_idx;
+                        return true;
                 }
+
+                nxtchr = utf8_next(string, length, nxtchr);
         }
-        *actual_x = *char_offset * fb_font->width;
+
+        *char_offset = nxtchr;
+
 	return true;
 }
 
