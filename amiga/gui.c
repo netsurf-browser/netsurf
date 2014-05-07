@@ -491,7 +491,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		{
 			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
 				locale->loc_PrefLanguages[i], "LangNames");
-			amiga_mkpath(&fullpath, &fullpath_len, 2 fullpath, remapped);
+			amiga_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
 			found = ami_gui_check_resource(fullpath, file);
 		}
