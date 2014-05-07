@@ -17,26 +17,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** 
+/**
  * \file utils/url.h
- * \brief URL parsing and joining (interface).
+ * \brief Interface to URL parsing and joining operations.
  */
 
 #ifndef _NETSURF_UTILS_URL_H_
 #define _NETSURF_UTILS_URL_H_
 
-/** File url prefix */
+#include "utils/errors.h"
+
+/** File url prefix. */
 #define FILE_SCHEME_PREFIX "file:///"
-/** File url prefix length */
+
+/** File url prefix length. */
 #define FILE_SCHEME_PREFIX_LEN 8
 
-/** URL utility function return codes */
-typedef enum {
-	URL_FUNC_OK,     /**< No error */
-	URL_FUNC_NOMEM,  /**< Insufficient memory */
-	URL_FUNC_FAILED  /**< Non fatal error (eg failed to match regex) */
-} url_func_result;
-
+/** Split out components of a url. */
 struct url_components {
   	const char *buffer;
 	const char *scheme;
@@ -46,16 +43,99 @@ struct url_components {
 	const char *fragment;
 };
 
+
+/**
+ * Initialise URL routines.
+ *
+ * Compiles regular expressions required by the url_ functions.
+ */
 void url_init(void);
+
+
+/**
+ * Check whether a host string is an IP address.
+ *
+ * This call detects IPv4 addresses (all of dotted-quad or subsets,
+ * decimal or hexadecimal notations) and IPv6 addresses (including
+ * those containing embedded IPv4 addresses.)
+ *
+ * \param host a hostname terminated by '\0'
+ * \return true if the hostname is an IP address, false otherwise
+ */
 bool url_host_is_ip_address(const char *host);
-url_func_result url_join(const char *rel, const char *base, char **result);
-url_func_result url_host(const char *url, char **result);
-url_func_result url_scheme(const char *url, char **result);
-url_func_result url_nice(const char *url, char **result,
-		bool remove_extensions);
-url_func_result url_escape(const char *unescaped, size_t toskip,
-		bool sptoplus, const char *escexceptions, char **result);
-url_func_result url_unescape(const char *str, char **result);
-url_func_result url_path(const char *url, char **result);
+
+
+/**
+ * Resolve a relative URL to absolute form.
+ *
+ * \param  rel	   relative URL
+ * \param  base	   base URL, must be absolute and cleaned as by nsurl_create()
+ * \param  result  pointer to pointer to buffer to hold absolute url
+ * \return  NSERROR_OK on success
+ */
+nserror url_join(const char *rel, const char *base, char **result);
+
+
+/**
+ * Return the host name from an URL.
+ *
+ * \param  url	   an absolute URL
+ * \param  result  pointer to pointer to buffer to hold host name
+ * \return  NSERROR_OK on success
+ */
+nserror url_host(const char *url, char **result);
+
+
+/**
+ * Return the scheme name from an URL.
+ *
+ * See RFC 3986, 3.1 for reference.
+ *
+ * \param  url	   an absolute URL
+ * \param  result  pointer to pointer to buffer to hold scheme name
+ * \return  NSERROR_OK on success
+ */
+nserror url_scheme(const char *url, char **result);
+
+
+/**
+ * Attempt to find a nice filename for a URL.
+ *
+ * \param  url	   an absolute URL
+ * \param  result  pointer to pointer to buffer to hold filename
+ * \param  remove_extensions  remove any extensions from the filename
+ * \return  NSERROR_OK on success
+ */
+nserror url_nice(const char *url, char **result, bool remove_extensions);
+
+/**
+ * Escape a string suitable for inclusion in an URL.
+ *
+ * \param  unescaped      the unescaped string
+ * \param  toskip         number of bytes to skip in unescaped string
+ * \param  sptoplus       true iff spaces should be converted to +
+ * \param  escexceptions  NULL or a string of characters excluded to be escaped
+ * \param  result         pointer to pointer to buffer to hold escaped string
+ * \return  NSERROR_OK on success
+ */
+nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus, const char *escexceptions, char **result);
+
+
+/**
+ * Convert an escaped string to plain.
+ * \param result unescaped string owned by caller must be freed with free()
+ * \return  NSERROR_OK on success
+ */
+nserror url_unescape(const char *str, char **result);
+
+
+/**
+ * Extract path segment from an URL
+ *
+ * \param url	  an absolute URL
+ * \param result  pointer to pointer to buffer to hold result
+ * \return NSERROR_OK on success
+ */
+nserror url_path(const char *url, char **result);
 
 #endif

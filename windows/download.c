@@ -70,14 +70,14 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 			messages_get("UnknownSize") :
 			human_friendly_bytesize(total_size);
 	
-	if (url_nice(url, &filename, false) != URL_FUNC_OK)
+	if (url_nice(url, &filename, false) != NSERROR_OK)
 		filename = strdup(messages_get("UnknownFile"));
 	if (filename == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		free(w);
 		return NULL;
 	}
-	if (url_host(url, &domain) != URL_FUNC_OK)
+	if (url_host(url, &domain) != NSERROR_OK)
 		domain = strdup(messages_get("UnknownHost"));
 	if (domain == NULL) {
 		warn_user(messages_get("NoMemory"), 0);

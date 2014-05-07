@@ -736,7 +736,7 @@ static char *path_to_url(const char *path)
 	char *unix_path; /* unix path */
 	char *escurl;
 	os_error *error;
-	url_func_result url_err;
+	nserror url_err;
 	int urllen;
 	char *url; /* resulting url */
 
@@ -795,7 +795,7 @@ static char *path_to_url(const char *path)
 	/* We don't want '/' to be escaped.  */
 	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
 	free(url); url = NULL;
-	if (url_err != URL_FUNC_OK) {
+	if (url_err != NSERROR_OK) {
 		LOG(("url_escape failed: %s", url));
 		return NULL;
 	}
@@ -816,18 +816,18 @@ char *url_to_path(const char *url)
 	char *path;
 	char *filename;
 	char *respath;
-	url_func_result res; /* result from url routines */
+	nserror res; /* result from url routines */
 	char *r;
 
 	res = url_path(url, &path);
-	if (res != URL_FUNC_OK) {
+	if (res != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
 	res = url_unescape(path, &respath);
 	free(path);
-	if (res != URL_FUNC_OK) {
+	if (res != NSERROR_OK) {
 		return NULL;
 	}
 

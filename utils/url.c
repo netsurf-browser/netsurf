@@ -19,7 +19,7 @@
  */
 
 /** \file
- * URL parsing and joining (implementation).
+ * \brief Implementation of URL parsing and joining operations.
  */
 
 #include <ctype.h>
@@ -43,12 +43,7 @@ struct url_components_internal {
 
 regex_t url_re, url_up_re;
 
-/**
- * Initialise URL routines.
- *
- * Compiles regular expressions required by the url_ functions.
- */
-
+/* exported interface documented in utils/url.h */
 void url_init(void)
 {
 	/* regex from RFC 2396 */
@@ -70,16 +65,7 @@ void url_init(void)
 			REG_EXTENDED);
 }
 
-
-/**
- * Check whether a host string is an IP address.  It should support and
- * detect IPv4 addresses (all of dotted-quad or subsets, decimal or
- * hexadecimal notations) and IPv6 addresses (including those containing
- * embedded IPv4 addresses.)
- *
- * \param  host a hostname terminated by '\0'
- * \return true if the hostname is an IP address, false otherwise
- */
+/* exported interface documented in utils/url.h */
 bool url_host_is_ip_address(const char *host)
 {
 	struct in_addr ipv4;
@@ -90,7 +76,7 @@ bool url_host_is_ip_address(const char *host)
 	struct in6_addr ipv6;
 	char ipv6_addr[64];
 #endif
-	/* FIXME TODO: Some parts of urldb.c (and perhaps other parts of
+	/** @todo FIXME Some parts of urldb.c (and perhaps other parts of
 	 * NetSurf) make confusions between hosts and "prefixes", we can
 	 * sometimes be erroneously passed more than just a host.  Sometimes
 	 * we may be passed trailing slashes, or even whole path segments.
@@ -170,13 +156,12 @@ out_true:
  *
  * See RFC 3986 for reference.
  *
- * \param  url	     a valid absolute or relative URL
- * \param  result    pointer to buffer to hold components
- * \return  URL_FUNC_OK on success
+ * \param url A valid absolute or relative URL.
+ * \param result Pointer to buffer to hold components.
+ * \return NSERROR_OK on success
  */
-
-static url_func_result url_get_components(const char *url,
-		struct url_components *result)
+static nserror
+url_get_components(const char *url, struct url_components *result)
 {
   	int storage_length;
 	char *storage_end;
@@ -197,7 +182,7 @@ static url_func_result url_get_components(const char *url,
 	storage_length = strlen(url) + 8;
 	internal->buffer = malloc(storage_length);
 	if (!internal->buffer)
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	storage_end = internal->buffer;
 
 	/* look for a valid scheme */
@@ -275,7 +260,7 @@ static url_func_result url_get_components(const char *url,
 	}
 
 	assert((result->buffer + storage_length) >= storage_end);
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 }
 
 
@@ -284,10 +269,9 @@ static url_func_result url_get_components(const char *url,
  *
  * See RFC 3986 for reference.
  *
- * \param  components  the components to reform into a URL
- * \return  a new URL allocated on the heap, or NULL on failure
+ * \param components The components to reform into a URL.
+ * \return A new URL allocated on the heap, or NULL on failure
  */
-
 static char *url_reform_components(const struct url_components *components)
 {
 	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
@@ -353,19 +337,10 @@ static void url_destroy_components(const struct url_components *components)
 		free(internal->buffer);
 }
 
-
-/**
- * Resolve a relative URL to absolute form.
- *
- * \param  rel	   relative URL
- * \param  base	   base URL, must be absolute and cleaned as by nsurl_create()
- * \param  result  pointer to pointer to buffer to hold absolute url
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_join(const char *rel, const char *base, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_join(const char *rel, const char *base, char **result)
 {
-	url_func_result status = URL_FUNC_NOMEM;
+	nserror status = NSERROR_NOMEM;
 	struct url_components_internal base_components = {0,0,0,0,0,0};
 	struct url_components_internal *base_ptr = &base_components;
 	struct url_components_internal rel_components = {0,0,0,0,0,0};
@@ -384,9 +359,9 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 	/* break down the relative URL (not cached, corruptable) */
 	status = url_get_components(rel, (struct url_components *) rel_ptr);
-	if (status != URL_FUNC_OK) {
+	if (status != NSERROR_OK) {
 		LOG(("relative url '%s' failed to get components", rel));
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	}
 
 	/* [1] relative URL is absolute, use it entirely */
@@ -396,10 +371,10 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 	/* break down the base URL (possibly cached, not corruptable) */
 	status = url_get_components(base, (struct url_components *) base_ptr);
-	if (status != URL_FUNC_OK) {
+	if (status != NSERROR_OK) {
 		url_destroy_components((struct url_components *) rel_ptr);
 		LOG(("base url '%s' failed to get components", base));
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	}
 
 	/* [2] relative authority takes presidence */
@@ -542,7 +517,7 @@ url_join_reform_url:
 		goto url_join_no_mem;
 
 	/* return success */
-	status = URL_FUNC_OK;
+	status = NSERROR_OK;
 
 url_join_no_mem:
 	free(start);
@@ -553,27 +528,20 @@ url_join_no_mem:
 }
 
 
-/**
- * Return the host name from an URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold host name
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_host(const char *url, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_host(const char *url, char **result)
 {
-	url_func_result status;
+	nserror status;
 	struct url_components components;
 	const char *host_start, *host_end;
 
 	assert(url);
 
 	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
+	if (status == NSERROR_OK) {
 		if (!components.authority) {
 			url_destroy_components(&components);
-			return URL_FUNC_FAILED;
+			return NSERROR_NOT_FOUND;
 		}
 		host_start = strchr(components.authority, '@');
 		host_start = host_start ? host_start + 1 : components.authority;
@@ -592,7 +560,7 @@ url_func_result url_host(const char *url, char **result)
 		*result = malloc(host_end - host_start + 1);
 		if (!(*result)) {
 			url_destroy_components(&components);
-			return URL_FUNC_FAILED;
+			return NSERROR_NOT_FOUND;
 		}
 		memcpy((*result), host_start, host_end - host_start);
 		(*result)[host_end - host_start] = '\0';
@@ -602,31 +570,22 @@ url_func_result url_host(const char *url, char **result)
 }
 
 
-/**
- * Return the scheme name from an URL.
- *
- * See RFC 3986, 3.1 for reference.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold scheme name
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_scheme(const char *url, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_scheme(const char *url, char **result)
 {
-	url_func_result status;
+	nserror status;
 	struct url_components components;
 
 	assert(url);
 
 	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
+	if (status == NSERROR_OK) {
 		if (!components.scheme) {
-			status = URL_FUNC_FAILED;
+			status = NSERROR_NOT_FOUND;
 		} else {
 			*result = strdup(components.scheme);
 			if (!(*result))
-				status = URL_FUNC_NOMEM;
+				status = NSERROR_NOMEM;
 		}
 	}
 	url_destroy_components(&components);
@@ -634,45 +593,31 @@ url_func_result url_scheme(const char *url, char **result)
 }
 
 
-/**
- * Extract path segment from an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_path(const char *url, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_path(const char *url, char **result)
 {
-	url_func_result status;
+	nserror status;
 	struct url_components components;
 
 	assert(url);
 
 	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
+	if (status == NSERROR_OK) {
 		if (!components.path) {
-			status = URL_FUNC_FAILED;
+			status = NSERROR_NOT_FOUND;
 		} else {
 			*result = strdup(components.path);
 			if (!(*result))
-				status = URL_FUNC_NOMEM;
+				status = NSERROR_NOMEM;
 		}
 	}
 	url_destroy_components(&components);
 	return status;
 }
 
-/**
- * Attempt to find a nice filename for a URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold filename
- * \param  remove_extensions  remove any extensions from the filename
- * \return  URL_FUNC_OK on success
- */
 
-url_func_result url_nice(const char *url, char **result,
+/* exported interface documented in utils/url.h */
+nserror url_nice(const char *url, char **result,
 		bool remove_extensions)
 {
 	int m;
@@ -686,7 +631,7 @@ url_func_result url_nice(const char *url, char **result,
 	m = regexec(&url_re, url, 10, match, 0);
 	if (m) {
 		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	}
 
 	/* extract the last component of the path, if possible */
@@ -732,7 +677,7 @@ url_func_result url_nice(const char *url, char **result,
 	*result = malloc(end - start + 1);
 	if (!*result) {
 		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 	strncpy(*result, url + start, end - start);
 	(*result)[end - start] = 0;
@@ -743,7 +688,7 @@ url_func_result url_nice(const char *url, char **result,
 			*dot = 0;
 	}
 
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 
 no_path:
 
@@ -755,7 +700,7 @@ no_path:
 				match[URL_RE_AUTHORITY].rm_so + 1);
 		if (!*result) {
 			LOG(("malloc failed"));
-			return URL_FUNC_NOMEM;
+			return NSERROR_NOMEM;
 		}
 		strncpy(*result, url + match[URL_RE_AUTHORITY].rm_so,
 				match[URL_RE_AUTHORITY].rm_eo -
@@ -767,50 +712,38 @@ no_path:
 			if ((*result)[i] == '.')
 				(*result)[i] = '_';
 
-		return URL_FUNC_OK;
+		return NSERROR_OK;
 	}
 
-	return URL_FUNC_FAILED;
+	return NSERROR_NOT_FOUND;
 }
 
-/**
- * Convert an escaped string to plain.
- * \param result unescaped string owned by caller must be freed with free()
- * \return  URL_FUNC_OK on success
- */
-url_func_result url_unescape(const char *str, char **result)
+
+/* exported interface documented in utils/url.h */
+nserror url_unescape(const char *str, char **result)
 {
 	char *curlstr;
 	char *retstr;
 
 	curlstr = curl_unescape(str, 0);
 	if (curlstr == NULL) {
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	retstr = strdup(curlstr);
 	curl_free(curlstr);
 
 	if (retstr == NULL) {
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	*result = retstr;
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 }
 
-/**
- * Escape a string suitable for inclusion in an URL.
- *
- * \param  unescaped      the unescaped string
- * \param  toskip         number of bytes to skip in unescaped string
- * \param  sptoplus       true iff spaces should be converted to +
- * \param  escexceptions  NULL or a string of characters excluded to be escaped
- * \param  result         pointer to pointer to buffer to hold escaped string
- * \return  URL_FUNC_OK on success
- */
 
-url_func_result url_escape(const char *unescaped, size_t toskip,
+/* exported interface documented in utils/url.h */
+nserror url_escape(const char *unescaped, size_t toskip,
 		bool sptoplus, const char *escexceptions, char **result)
 {
 	size_t len;
@@ -818,18 +751,18 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 	const char *c;
 
 	if (!unescaped || !result)
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 
 	*result = NULL;
 
 	len = strlen(unescaped);
 	if (len < toskip)
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	len -= toskip;
 
 	escaped = malloc(len * 3 + 1);
 	if (!escaped)
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 
 	for (c = unescaped + toskip, d = escaped; *c; c++) {
 		/* Check if we should escape this byte.
@@ -859,7 +792,7 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 	tmpres = malloc(d - escaped + toskip);
 	if (!tmpres) {
 		free(escaped);
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	memcpy(tmpres, unescaped, toskip); 
@@ -868,7 +801,7 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 
 	free(escaped);
 
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 }
 
 
@@ -877,25 +810,25 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 int main(int argc, char *argv[])
 {
 	int i;
-	url_func_result res;
+	nserror res;
 	char *s;
 	url_init();
 	for (i = 1; i != argc; i++) {
 /*		printf("==> '%s'\n", argv[i]);
 		res = url_normalize(argv[i], &s);
-		if (res == URL_FUNC_OK) {
+		if (res == NSERROR_OK) {
 			printf("<== '%s'\n", s);
 			free(s);
 		}*/
 /*		printf("==> '%s'\n", argv[i]);
 		res = url_host(argv[i], &s);
-		if (res == URL_FUNC_OK) {
+		if (res == NSERROR_OK) {
 			printf("<== '%s'\n", s);
 			free(s);
 		}*/
 		if (1 != i) {
 			res = url_join(argv[i], argv[1], &s);
-			if (res == URL_FUNC_OK) {
+			if (res == NSERROR_OK) {
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
 				free(s);
@@ -903,14 +836,14 @@ int main(int argc, char *argv[])
 		}
 /*		printf("'%s' => ", argv[i]);
 		res = url_nice(argv[i], &s, true);
-		if (res == URL_FUNC_OK) {
+		if (res == NSERROR_OK) {
 			printf("'%s', ", s);
 			free(s);
 		} else {
 			printf("failed %u, ", res);
 		}
 		res = url_nice(argv[i], &s, false);
-		if (res == URL_FUNC_OK) {
+		if (res == NSERROR_OK) {
 			printf("'%s', ", s);
 			free(s);
 		} else {

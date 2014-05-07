@@ -245,7 +245,6 @@ static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	size_t elm_idx;
 	char *fname;
 	size_t fname_len = 0;
-	char *curp;
 
 	/* check the parameters are all sensible */
 	if ((nelm == 0) || (nelm > 16)) {

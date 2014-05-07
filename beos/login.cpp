@@ -166,7 +166,6 @@ extern "C" void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	lwc_string *host;
-	url_func_result res;
 
 	host = nsurl_get_component(url, NSURL_HOST);
 

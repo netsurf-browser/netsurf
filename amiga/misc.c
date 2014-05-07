@@ -141,7 +141,7 @@ char *url_to_path(const char *url)
 		}
 	}
 
-	if(url_unescape(url2,&unesc) == URL_FUNC_OK)
+	if(url_unescape(url2,&unesc) == NSERROR_OK)
 		return unesc;
 
 	return (char *)url2;

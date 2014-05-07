@@ -63,7 +63,7 @@ bool search_web_new_window(struct browser_window *bw, const char *searchterm)
 	nsurl *url;
 	nserror error;
 
-	if (url_escape(searchterm,0, true, NULL, &encsearchterm) != URL_FUNC_OK)
+	if (url_escape(searchterm,0, true, NULL, &encsearchterm) != NSERROR_OK)
 		return false;
 
 	urltxt = search_web_get_url(encsearchterm);
@@ -146,8 +146,7 @@ void search_web_provider_details(int reference)
 char *search_web_from_term(const char *searchterm)
 {
 	char *encsearchterm, *url;
-	if (url_escape(searchterm, 0, true, NULL, &encsearchterm)
-			!= URL_FUNC_OK)
+	if (url_escape(searchterm, 0, true, NULL, &encsearchterm) != NSERROR_OK)
 		return strdup(searchterm);
 	url = search_web_get_url(encsearchterm);
 	free(encsearchterm);

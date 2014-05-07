@@ -75,7 +75,7 @@ static char *download_default_filename(const char *url)
 {
 	char *nice;
 
-	if (url_nice(url, &nice, false) == URL_FUNC_OK)
+	if (url_nice(url, &nice, false) == NSERROR_OK)
 		return nice;
 
 	return NULL;

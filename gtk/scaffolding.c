@@ -672,7 +672,7 @@ MULTIHANDLER(savepage)
 			NULL);
 	DIR *d;
 	char *path;
-	url_func_result res;
+	nserror res;
 	GtkFileFilter *filter = gtk_file_filter_new();
 	gtk_file_filter_set_name(filter, "Directories");
 	gtk_file_filter_add_custom(filter, GTK_FILE_FILTER_FILENAME,
@@ -682,7 +682,7 @@ MULTIHANDLER(savepage)
 
 	res = url_nice(nsurl_access(browser_window_get_url(
 			nsgtk_get_browser_window(g->top_level))), &path, false);
-	if (res != URL_FUNC_OK) {
+	if (res != NSERROR_OK) {
 		path = strdup(messages_get("SaveText"));
 		if (path == NULL) {
 			warn_user("NoMemory", 0);
@@ -736,15 +736,14 @@ MULTIHANDLER(pdf)
 	char filename[PATH_MAX];
 	char dirname[PATH_MAX];
 	char *url_name;
-	url_func_result res;
+	nserror res;
 
 	LOG(("Print preview (generating PDF)  started."));
 
 	res = url_nice(nsurl_access(browser_window_get_url(bw)),
 			&url_name, true);
-	if (res != URL_FUNC_OK) {
-		warn_user(messages_get(res == URL_FUNC_NOMEM ? "NoMemory"
-							     : "URIError"), 0);
+	if (res != NSERROR_OK) {
+		warn_user(messages_get_errorcode(res), 0);
 		return TRUE;
 	}
 
@@ -812,12 +811,12 @@ MULTIHANDLER(plaintext)
 			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	char *filename;
-	url_func_result res;
+	nserror res;
 
 	res = url_nice(nsurl_access(browser_window_get_url(
 			nsgtk_get_browser_window(g->top_level))),
 			&filename, false);
-	if (res != URL_FUNC_OK) {
+	if (res != NSERROR_OK) {
 		filename = strdup(messages_get("SaveText"));
 		if (filename == NULL) {
 			warn_user("NoMemory", 0);

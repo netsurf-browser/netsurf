@@ -62,16 +62,16 @@ static char *url_to_path(const char *url)
 {
   char *path;
   char *respath;
-  url_func_result res; /* result from url routines */
+  nserror res; /* result from url routines */
 
   res = url_path(url, &path);
-  if (res != URL_FUNC_OK) {
+  if (res != NSERROR_OK) {
     return NULL;
   }
 
   res = url_unescape(path, &respath);
   free(path);
-  if (res != URL_FUNC_OK) {
+  if (res != NSERROR_OK) {
     return NULL;
   }
 

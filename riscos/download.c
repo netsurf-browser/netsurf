@@ -230,7 +230,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	struct gui_download_window *dw;
 	bool space_warning = false;
 	os_error *error;
-	url_func_result res;
+	nserror res;
 	char *local_path;
 	nserror err;
 	size_t i, last_dot;
@@ -260,22 +260,22 @@ static struct gui_download_window *gui_download_window_create(download_context *
 
 	/* Get scheme from URL */
 	res = url_scheme(url, &scheme);
-	if (res == URL_FUNC_NOMEM) {
+	if (res == NSERROR_NOMEM) {
 		warn_user("NoMemory", 0);
 		free(dw);
 		return 0;
-	} else if (res == URL_FUNC_OK) {
+	} else if (res == NSERROR_OK) {
 		/* If we have a scheme and it's "file", then
 		 * attempt to use the local filetype directly */
 		if (strcasecmp(scheme, "file") == 0) {
 			char *path = NULL;
 			res = url_path(url, &path);
-			if (res == URL_FUNC_NOMEM) {
+			if (res == NSERROR_NOMEM) {
 				warn_user("NoMemory", 0);
 				free(scheme);
 				free(dw);
 				return 0;
-			} else if (res == URL_FUNC_OK) {
+			} else if (res == NSERROR_OK) {
 				char *raw_path = curl_unescape(path,
 						strlen(path));
 				if (raw_path == NULL) {

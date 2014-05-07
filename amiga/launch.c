@@ -49,7 +49,7 @@ struct ami_protocol *ami_openurl_add_protocol(const char *url)
 	struct ami_protocol *ami_p =
 		(struct ami_protocol *)AllocVecTagList(sizeof(struct ami_protocol), NULL);
 
-	if(url_scheme(url, &ami_p->protocol) != URL_FUNC_OK)
+	if(url_scheme(url, &ami_p->protocol) != NSERROR_OK)
 	{
 		FreeVec(ami_p);
 		return NULL;

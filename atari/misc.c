@@ -213,7 +213,6 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 {
 	char *url = NULL;
 	const char *icon_url = NULL;
-	int len;
 	hlcache_handle *c;
 	nserror err;
 	nsurl *icon_nsurl;

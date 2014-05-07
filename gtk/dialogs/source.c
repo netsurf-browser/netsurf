@@ -369,10 +369,10 @@ gboolean nsgtk_on_source_save_as_activate(GtkMenuItem *widget, gpointer g)
 			GTK_RESPONSE_ACCEPT,
 			NULL);
 	char *filename;
-	url_func_result res;
+	nserror res;
 
 	res = url_nice(nsg->url, &filename, false);
-	if (res != URL_FUNC_OK) {
+	if (res != NSERROR_OK) {
 		filename = strdup(messages_get("SaveSource"));
 		if (filename == NULL) {
 			warn_user("NoMemory", 0);

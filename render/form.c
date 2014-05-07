@@ -857,7 +857,7 @@ static char *form_url_encode(struct form *form,
 	char *name, *value;
 	char *s, *s2;
 	unsigned int len, len1, len_init;
-	url_func_result url_err;
+	nserror url_err;
 
 	if (query_string)
 		s = malloc(2);
@@ -878,21 +878,21 @@ static char *form_url_encode(struct form *form,
 
 	for (; control; control = control->next) {
 		url_err = url_escape(control->name, 0, true, NULL, &name);
-		if (url_err == URL_FUNC_NOMEM) {
+		if (url_err == NSERROR_NOMEM) {
 			free(s);
 			return NULL;
 		}
 
-		assert(url_err == URL_FUNC_OK);
+		assert(url_err == NSERROR_OK);
 
 		url_err = url_escape(control->value, 0, true, NULL, &value);
-		if (url_err == URL_FUNC_NOMEM) {
+		if (url_err == NSERROR_NOMEM) {
 			free(name);
 			free(s);
 			return NULL;
 		}
 
-		assert(url_err == URL_FUNC_OK);
+		assert(url_err == NSERROR_OK);
 
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);

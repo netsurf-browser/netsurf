@@ -1251,7 +1251,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 
 	/* leafname */
 	if (url && url_nice(url, &nice, nsoption_bool(strip_extensions)) ==
-			URL_FUNC_OK) {
+			NSERROR_OK) {
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')
 				nice[i] = '/';

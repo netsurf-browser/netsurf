@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file utils/utsname.h
+ * \brief Interface to uts API to get name and information about current kernel.
+ */
+
 #ifndef _NETSURF_UTILS_UTSNAME_H_
 #define _NETSURF_UTILS_UTSNAME_H_
 

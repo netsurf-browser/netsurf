@@ -733,7 +733,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	if (download == NULL)
 		return NULL;
 
-	if (url_host(url, &domain) != URL_FUNC_OK) {
+	if (url_host(url, &domain) != NSERROR_OK) {
 		domain = g_strdup(messages_get("gtkUnknownHost"));
 		if (domain == NULL) {
 			free(download);
