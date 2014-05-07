@@ -231,7 +231,7 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 
 		err = netsurf_mkpath(&native_path, NULL, 2, icons_dir, name);
 		if (err != NSERROR_OK) {
-			warn_user(messages_get_errorcode(err));
+			warn_user(messages_get_errorcode(err), 0);
 			return NULL;
 		}
 

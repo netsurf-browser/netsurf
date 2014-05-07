@@ -238,7 +238,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.
  */
-static nserror amiga_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
+static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 {
 	const char *elm[16];
 	size_t elm_len[16];
@@ -298,6 +298,18 @@ static nserror amiga_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	}
 
 	return NSERROR_OK;
+}
+
+static nserror amiga_mkpath(char **str, size_t *size, size_t nelm, ...)
+{
+	va_list ap;
+	nserror ret;
+
+	va_start(ap, nelm);
+	ret = amiga_vmkpath(str, size, nelm, ap);
+	va_end(ap);
+
+	return ret;
 }
 
 /**
@@ -5195,7 +5207,7 @@ static struct gui_window_table amiga_window_table = {
 
 /* amiga file handling operations */
 static struct gui_file_table amiga_file_table = {
-	.mkpath = amiga_mkpath,
+	.mkpath = amiga_vmkpath,
 	.basename = amiga_basename,
 };
 

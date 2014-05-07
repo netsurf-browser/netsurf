@@ -43,7 +43,7 @@
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.
  */
-static nserror posix_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
+static nserror posix_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 {
 	return vsnstrjoin(str, size, '/', nelm, ap);
 }
@@ -110,7 +110,7 @@ nserror netsurf_mkpath(char **str, size_t *size, size_t nelm, ...)
 
 /* default to using the posix file handling */
 static struct gui_file_table file_table = {
-	.mkpath = posix_mkpath,
+	.mkpath = posix_vmkpath,
 	.basename = posix_basename,
 };
 
