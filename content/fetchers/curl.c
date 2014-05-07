@@ -50,6 +50,7 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/useragent.h"
+#include "utils/file.h"
 
 #include "content/fetch.h"
 #include "content/fetchers/curl.h"
@@ -1280,15 +1281,15 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
 	CURLFORMcode code;
+	nserror ret;
 
 	for (; control; control = control->next) {
 		if (control->file) {
-			char *leafname = 0;
-
-			leafname = guit->fetch->filename_from_path(control->value);
-
-			if (leafname == NULL)
+			char *leafname = NULL;
+			ret = guit->file->basename(control->value, &leafname, NULL);
+			if (ret != NSERROR_OK) {
 				continue;
+			}
 
 			/* We have to special case filenames of "", so curl
 			 * a) actually attempts the fetch and

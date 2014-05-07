@@ -24,6 +24,7 @@
 #include "desktop/gui.h"
 #include "windows/localhistory.h"
 
+struct gui_file_table *win32_file_table;
 extern struct gui_window_table *win32_window_table;
 extern struct gui_clipboard_table *win32_clipboard_table;
 extern struct gui_fetch_table *win32_fetch_table;

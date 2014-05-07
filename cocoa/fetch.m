@@ -107,20 +107,6 @@ static char *path_to_url(const char *path)
 					 absoluteString] UTF8String] );
 }
 
-static char *filename_from_path(char *path)
-{
-	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
-}
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
-
-	strncpy( path, [newPath UTF8String], length );
-
-	return true;
-}
-
 static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
@@ -131,8 +117,6 @@ static nsurl *gui_get_resource_url(const char *path)
 }
 
 static struct gui_fetch_table fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
 	.path_to_url = path_to_url,
 	.url_to_path = url_to_path,

@@ -19,12 +19,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "utils/filepath.h"
-#include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
 #include "utils/nsoption.h"
+#include "utils/file.h"
+#include "utils/log.h"
+#include "desktop/browser.h"
 #include "desktop/searchweb.h"
 
 #include "gtk/compat.h"
@@ -1002,10 +1002,10 @@ nsgtk_preferences_fileChooserDownloads_realize(GtkWidget *widget,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_response(GtkDialog *dlg, gint resid)
 {
-	char *choices;
+	char *choices = NULL;
 
 	if (resid == GTK_RESPONSE_CLOSE) {
-		choices = filepath_append(nsgtk_config_home, "Choices");
+		netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
 		if (choices != NULL) {
 			nsoption_write(choices, NULL, NULL);
 			free(choices);
@@ -1018,9 +1018,9 @@ G_MODULE_EXPORT gboolean
 nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 						struct ppref *priv)
 {
-	char *choices;
+	char *choices = NULL;
 
-	choices = filepath_append(nsgtk_config_home, "Choices");
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
 	if (choices != NULL) {
 		nsoption_write(choices, NULL, NULL);
 		free(choices);
@@ -1037,9 +1037,9 @@ nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 {
-	char *choices;
+	char *choices = NULL;
 
-	choices = filepath_append(nsgtk_config_home, "Choices");
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
 	if (choices != NULL) {
 		nsoption_write(choices, NULL, NULL);
 		free(choices);

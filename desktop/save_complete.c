@@ -21,8 +21,6 @@
  * Save HTML document with dependencies (implementation).
  */
 
-#include "utils/config.h"
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -30,21 +28,23 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
-
 #include <dom/dom.h>
 
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "css/css.h"
-#include "desktop/save_complete.h"
-#include "desktop/gui_factory.h"
-#include "render/box.h"
-#include "render/html.h"
+#include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/file.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/html.h"
+
+#include "desktop/gui_factory.h"
+#include "desktop/save_complete.h"
 
 regex_t save_complete_import_re;
 
@@ -143,19 +143,19 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 		const char *leafname, const char *data, size_t data_len,
 		lwc_string *mime_type)
 {
+	nserror ret;
 	FILE *fp;
-	bool error;
-	char fullpath[PATH_MAX];
+	char *fname = NULL;
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, leafname);
-	if (error == false) {
-		warn_user("NoMemory", NULL);
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, leafname);
+	if (ret != NSERROR_OK) {
+		warn_user("NoMemory", 0);
 		return false;
 	}
 
-	fp = fopen(fullpath, "wb");
+	fp = fopen(fname, "wb");
 	if (fp == NULL) {
+		free(fname);
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));
 		return false;
@@ -165,8 +165,10 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 
 	fclose(fp);
 
-	if (ctx->set_type != NULL)
-		ctx->set_type(fullpath, mime_type);
+	if (ctx->set_type != NULL) {
+		ctx->set_type(fname, mime_type);
+	}
+	free(fname);
 
 	return true;
 }
@@ -1034,29 +1036,30 @@ static bool save_complete_node_handler(dom_node *node,
 static bool save_complete_save_html_document(save_complete_ctx *ctx,
 		hlcache_handle *c, bool index)
 {
-	bool error;
+	nserror ret;
 	FILE *fp;
+	char *fname = NULL;
 	dom_document *doc;
 	lwc_string *mime_type;
 	char filename[32];
-	char fullpath[PATH_MAX];
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-
-	if (index)
+	if (index) {
 		snprintf(filename, sizeof filename, "index");
-	else 
+	} else {
 		snprintf(filename, sizeof filename, "%p", c);
+	}
 
-	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, filename);
-	if (error == false) {
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, filename);
+	if (ret != NSERROR_OK) {
 		warn_user("NoMemory", NULL);
 		return false;
 	}
 
-	fp = fopen(fullpath, "wb");
+	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		warn_user("NoMemory", NULL);
+		free(fname);
+		LOG(("fopen(): errno = %i", errno));
+		warn_user("SaveError", strerror(errno));
 		return false;
 	}
 
@@ -1068,6 +1071,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 
 	if (save_complete_libdom_treewalk((dom_node *) doc,
 			save_complete_node_handler, ctx) == false) {
+		free(fname);
 		warn_user("NoMemory", 0);
 		fclose(fp);
 		return false;
@@ -1078,10 +1082,11 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	mime_type = content_get_mime_type(c);
 	if (mime_type != NULL) {
 		if (ctx->set_type != NULL)
-			ctx->set_type(fullpath, mime_type);
+			ctx->set_type(fname, mime_type);
 
 		lwc_string_unref(mime_type);
 	}
+	free(fname);
 
 	return true;
 }
@@ -1119,19 +1124,18 @@ static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
 
 static bool save_complete_inventory(save_complete_ctx *ctx)
 {
+	nserror ret;
 	FILE *fp;
-	bool error;
+	char *fname = NULL;
 	save_complete_entry *entry;
-	char fullpath[PATH_MAX];
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = guit->fetch->path_add_part(fullpath, sizeof fullpath, "Inventory");
-	if (error == false) {
-		warn_user("NoMemory", NULL);
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, "Inventory");
+	if (ret != NSERROR_OK) {
 		return false;
 	}
 
-	fp = fopen(fullpath, "w");
+	fp = fopen(fname, "w");
+	free(fname);
 	if (fp == NULL) {
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));

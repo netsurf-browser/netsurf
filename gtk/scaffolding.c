@@ -30,6 +30,7 @@
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "utils/file.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/hotlist.h"
@@ -71,7 +72,6 @@
 #include "gtk/scaffolding.h"
 #include "gtk/tabs.h"
 #include "gtk/schedule.h"
-
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
@@ -867,7 +867,7 @@ MULTIHANDLER(print)
 	GtkPrintSettings *print_settings;
 	GtkPrintOperationResult res = GTK_PRINT_OPERATION_RESULT_ERROR;
 	struct print_settings *nssettings;
-	char *settings_fname;
+	char *settings_fname = NULL;
 
 	print_op = gtk_print_operation_new();
 	if (print_op == NULL) {
@@ -876,7 +876,7 @@ MULTIHANDLER(print)
 	}
 
 	/* use previously saved settings if any */
-	settings_fname = filepath_append(nsgtk_config_home, "Print");
+	netsurf_mkpath(&settings_fname, NULL, 2, nsgtk_config_home, "Print");
 	if (settings_fname != NULL) {
 		print_settings = gtk_print_settings_new_from_file(settings_fname, NULL);
 		if (print_settings != NULL) {
@@ -1260,7 +1260,7 @@ MULTIHANDLER(downloads)
 MULTIHANDLER(savewindowsize)
 {
 	int x,y,w,h;
-	char *choices;
+	char *choices = NULL;
 
 	gtk_window_get_position(g->window, &x, &y);
 	gtk_window_get_size(g->window, &w, &h);
@@ -1270,7 +1270,7 @@ MULTIHANDLER(savewindowsize)
 	nsoption_set_int(window_x, x);
 	nsoption_set_int(window_y, y);
 
-	choices = filepath_append(nsgtk_config_home, "Choices");
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
 	if (choices != NULL) {
 		nsoption_write(choices, NULL, NULL);
 		free(choices);

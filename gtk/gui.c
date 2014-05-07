@@ -55,6 +55,14 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "css/utils.h"
+#include "render/form.h"
+#include "utils/filepath.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/file.h"
 
 #include "gtk/compat.h"
 #include "gtk/completion.h"
@@ -71,13 +79,6 @@
 #include "gtk/selection.h"
 #include "gtk/search.h"
 
-#include "render/form.h"
-#include "utils/filepath.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 char *toolbar_indices_file_location;
 char *res_dir_location;
@@ -253,33 +254,37 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	char *fname;
 
 	/* cookie file default */
-	fname = filepath_append(nsgtk_config_home, "Cookies");
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsgtk_config_home, "Cookies");
 	if (fname != NULL) {
 		nsoption_setnull_charp(cookie_file, fname);
 	}
 
 	/* cookie jar default */
-	fname = filepath_append(nsgtk_config_home, "Cookies");
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsgtk_config_home, "Cookies");
 	if (fname != NULL) {
 		nsoption_setnull_charp(cookie_jar, fname);
 	}
 
 	/* url database default */
-	fname = filepath_append(nsgtk_config_home, "URLs");
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsgtk_config_home, "URLs");
 	if (fname != NULL) {
 		nsoption_setnull_charp(url_file, fname);
 	}
 
 	/* bookmark database default */
-	fname = filepath_append(nsgtk_config_home, "Hotlist");
+	fname = NULL;
+	netsurf_mkpath(&fname, NULL, 2, nsgtk_config_home, "Hotlist");
 	if (fname != NULL) {
 		nsoption_setnull_charp(hotlist_path, fname);
 	}
 
 	/* download directory default */
-	fname = filepath_append(getenv("HOME"), "");
+	fname = getenv("HOME");
 	if (fname != NULL) {
-		nsoption_setnull_charp(downloads_directory, fname);
+		nsoption_setnull_charp(downloads_directory, strdup(fname));
 	}
 
 	/* default path to certificates */
@@ -955,12 +960,12 @@ static nserror
 check_dirname(const char *path, const char *leaf, char **dirname_out)
 {
 	nserror ret;
-	char *dirname;
+	char *dirname = NULL;
 	struct stat dirname_stat;
 
-	dirname = filepath_append(path, leaf);
-	if (dirname == NULL) {
-		return NSERROR_NOMEM;
+	ret = netsurf_mkpath(&dirname, NULL, 2, path, leaf);
+	if (ret != NSERROR_OK) {
+		return ret;
 	}
 
 	/* ensure access is possible and the entry is actualy
@@ -1075,14 +1080,14 @@ static nserror create_config_home(char **config_home_out)
 			return NSERROR_NOT_DIRECTORY;
 		}
 
-		config_home = filepath_append(home_dir, ".config/netsurf/");
-		if (config_home == NULL) {
-			return NSERROR_NOMEM;
+		ret = netsurf_mkpath(&config_home, NULL, 2, home_dir, ".config/netsurf/");
+		if (ret != NSERROR_OK) {
+			return ret;
 		}
 	} else {
-		config_home = filepath_append(xdg_config_dir, "netsurf/");
-		if (config_home == NULL) {
-			return NSERROR_NOMEM;
+		ret = netsurf_mkpath(&config_home, NULL, 2, xdg_config_dir, "netsurf/");
+		if (ret != NSERROR_OK) {
+			return ret;
 		}
 	}
 
@@ -1113,8 +1118,8 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 	}
 
 	/* Attempt to load the user choices */
-	choices = filepath_append(nsgtk_config_home, "Choices");
-	if (choices != NULL) {
+	ret = netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (ret == NSERROR_OK) {
 		nsoption_read(choices, nsoptions);
 		free(choices);
 	}

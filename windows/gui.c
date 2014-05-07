@@ -43,6 +43,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/file.h"
 
 #include "windows/window.h"
 #include "windows/about.h"
@@ -1808,41 +1809,74 @@ nsws_create_main_class(HINSTANCE hinstance) {
 }
 
 /**
- * Return the filename part of a full path
+ * Generate a windows path from one or more component elemnts.
  *
- * \param path full path and filename
- * \return filename (will be freed with free())
+ * If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] nemb The number of elements.
+ * @param[in] ... The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
  */
-static char *filename_from_path(char *path)
+static nserror windows_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
 {
-	char *leafname;
-
-	leafname = strrchr(path, '\\');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
-
-	return strdup(leafname);
+	return vsnstrjoin(str, size, '\\', nelm, ap);
 }
 
 /**
- * Add a path component/filename to an existing path
+ * Get the basename of a file using windows path handling.
  *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
+ * This gets the last element of a path and returns it.
+ *
+ * @param[in] path The path to extract the name from.
+ * @param[in,out] str Pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the path element.
+ * @param[in,out] size The size of the space available if \a
+ *                     str not NULL on input and set to the total
+ *                     output length on output.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
  */
-static bool path_add_part(char *path, int length, const char *newpart)
+static nserror windows_basename(const char *path, char **str, size_t *size)
 {
-	if(path[strlen(path) - 1] != '\\')
-		strncat(path, "\\", length);
+	const char *leafname;
+	char *fname;
 
-	strncat(path, newpart, length);
+	if (path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	return true;
+	leafname = strrchr(path, '\\');
+	if (!leafname) {
+		leafname = path;
+	} else {
+		leafname += 1;
+	}
+
+	fname = strdup(leafname);
+	if (fname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = strlen(fname);
+	}
+	return NSERROR_OK;
 }
+
+/* default to using the posix file handling */
+static struct gui_file_table file_table = {
+	.mkpath = windows_mkpath,
+	.basename = windows_basename,
+};
+
+struct gui_file_table *win32_file_table = &file_table;
 
 static struct gui_window_table window_table = {
 	.create = gui_window_create,
@@ -1876,8 +1910,6 @@ struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
 
 static struct gui_fetch_table fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
 	.path_to_url = path_to_url,
 	.url_to_path = url_to_path,

@@ -114,28 +114,6 @@ short aes_msg_out[8];
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 static void gui_window_set_url(struct gui_window *w, const char *url);
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-static char *filename_from_path(char *path)
-{
-	char *leafname;
-
-	leafname = strrchr(path, '\\');
-	if( !leafname )
-		leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
-
-	return strdup(leafname);
-}
-
-
 static void gui_poll(bool active)
 {
 
@@ -1071,8 +1049,6 @@ static struct gui_clipboard_table atari_clipboard_table = {
 };
 
 static struct gui_fetch_table atari_fetch_table = {
-    .filename_from_path = filename_from_path,
-    .path_add_part = path_add_part,
     .filetype = fetch_filetype,
     .path_to_url = path_to_url,
     .url_to_path = url_to_path,

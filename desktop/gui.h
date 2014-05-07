@@ -68,6 +68,7 @@ struct ssl_cert_info;
 struct hlcache_handle;
 struct download_context;
 struct nsurl;
+struct gui_file_table;
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */
@@ -318,28 +319,6 @@ struct gui_fetch_table {
 	/* Mandantory entries */
 
 	/**
-	 * Return the filename part of a full path
-	 *
-	 * @note used in curl fetcher
-	 *
-	 * \param path full path and filename
-	 * \return filename (will be freed with free())
-	 */
-	char *(*filename_from_path)(char *path);
-
-	/**
-	 * Add a path component/filename to an existing path
-	 *
-	 * @note used in save complete and file fetcher
-	 *
-	 * \param path buffer containing path + free space
-	 * \param length length of buffer "path"
-	 * \param newpart string containing path component to add to path
-	 * \return true on success
-	 */
-	bool (*path_add_part)(char *path, int length, const char *newpart);
-
-	/**
 	 * Determine the MIME type of a local file.
 	 *
 	 * @note used in file fetcher
@@ -396,6 +375,7 @@ struct gui_fetch_table {
 	char *(*mimetype)(const char *ro_path);
 
 };
+
 
 
 /**
@@ -566,6 +546,15 @@ struct gui_table {
 
 	/** Fetcher table */
 	struct gui_fetch_table *fetch;
+
+	/**
+	 * File table
+	 *
+	 * Provides file and filename operations to the core. The
+	 * table is optional and may be NULL in which case the default
+	 * posix compliant operations will be used.
+	 */
+	struct gui_file_table *file;
 
 	/**
 	 * UTF8 table.

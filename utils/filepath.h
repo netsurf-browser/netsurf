@@ -128,17 +128,6 @@ void filepath_free_strvec(char **pathv);
 
 
 /**
- * generate a new filename from a path and leaf.
- *
- * @param path The base path.
- * @param leaf The leaf to add.
- * @return The combined path in a new string must be freed by caller
- *         or NULL on failiure to allocte memory.
- */
-char *filepath_append(const char *path, const char *leaf);
-
-
-/**
  * Ensure that all directory elements needed to store a filename exist.
  *
  * @param fname The filename to ensure the path to exists.

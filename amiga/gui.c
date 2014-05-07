@@ -36,6 +36,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/url.h"
+#include "utils/file.h"
 #include "content/fetchers/resource.h"
 
 /* NetSurf Amiga platform includes */
@@ -221,32 +222,125 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 		nsoptions[NSOPTION_##OPTION].value.i = VALUE;	\
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
 
-static char *filename_from_path(char *path)
+/**
+ * Generate a posix path from one or more component elemnts.
+ *
+ * If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] nemb The number of elements.
+ * @param[in] ... The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror amiga_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
 {
-	return strdup(FilePart(path));
+	const char *elm[16];
+	size_t elm_len[16];
+	size_t elm_idx;
+	char *fname;
+	size_t fname_len = 0;
+	char *curp;
+
+	/* check the parameters are all sensible */
+	if ((nelm == 0) || (nelm > 16)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if ((*str != NULL) && (size == NULL)) {
+		/* if the caller is providing the buffer they must say
+		 * how much space is available.
+		 */
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* calculate how much storage we need for the complete path
+	 * with all the elements.
+	 */
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		elm[elm_idx] = va_arg(ap, const char *);
+		elm_len[elm_idx] = strlen(elm[elm_idx]);
+		fname_len += elm_len[elm_idx];
+	}
+	fname_len += nelm; /* allow for separators and terminator */
+
+	/* ensure there is enough space */
+	fname = *str;
+	if (fname != NULL) {
+		if (fname_len > *size) {
+			return NSERROR_NOSPACE;
+		}
+	} else {
+		fname = malloc(fname_len);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* copy the first element complete */
+	memmove(fname, elm[0], elm_len[0]);
+	fname[elm_len[0]] = 0;
+
+	/* add the remaining elements */
+	for (elm_idx = 1; elm_idx < nelm; elm_idx++) {
+		if (!AddPart(fname, elm[elm_idx], fname_len)) {
+			break;
+		}
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = fname_len;
+	}
+
+	return NSERROR_OK;
 }
 
 /**
- * Add a path component/filename to an existing path
+ * Get the basename of a file using posix path handling.
  *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
+ * This gets the last element of a path and returns it.
+ *
+ * @param[in] path The path to extract the name from.
+ * @param[in,out] str Pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the path element.
+ * @param[in,out] size The size of the space available if \a
+ *                     str not NULL on input and set to the total
+ *                     output length on output.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
  */
-
-static bool path_add_part(char *path, int length, const char *newpart)
+static nserror amiga_basename(const char *path, char **str, size_t *size)
 {
-	if(AddPart(path, newpart, length)) return true;
-		else return false;
+	const char *leafname;
+	char *fname;
+
+	if (path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	leafname = FilePart(path);
+	if (leafname == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	fname = strdup(leafname);
+	if (fname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = strlen(fname);
+	}
+	return NSERROR_OK;
 }
+
+
 
 STRPTR ami_locale_langs(void)
 {
@@ -290,12 +384,12 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 {
 	BPTR fh = 0;
 	char mapfile[1024];
+	size_t mapfile_size = 1024;
 	char buffer[1024];
 	char *realfname;
 	bool found = false;
 
-	strcpy(mapfile, path);
-	path_add_part(mapfile, 1024, map);
+	amiga_mkpath(&mapfile, &mapfile_size, 2, path, map);
 
 	if(fh = FOpen(mapfile, MODE_OLDFILE, 0))
 	{
@@ -331,9 +425,10 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	bool found = false;
 	char *remapped;
 	BPTR lock = 0;
+	size_t fullpath_len = 1024;
 
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
-	path_add_part(fullpath, 1024, remapped);
+	amiga_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
 	LOG(("Checking for %s", fullpath));
 	
@@ -356,6 +451,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	BPTR lock = 0;
 	bool found = false;
 	char *remapped;
+	size_t fullpath_len = 1024;
 
 	/* Check NetSurf user data area first */
 
@@ -383,7 +479,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		{
 			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
 				locale->loc_PrefLanguages[i], "LangNames");
-			path_add_part(fullpath, 1024, remapped);
+			amiga_mkpath(&fullpath, &fullpath_len, 2 fullpath, remapped);
 
 			found = ami_gui_check_resource(fullpath, file);
 		}
@@ -5097,9 +5193,13 @@ static struct gui_window_table amiga_window_table = {
 	.save_link = gui_window_save_link,
 };
 
+/* amiga file handling operations */
+static struct gui_file_table amiga_file_table = {
+	.mkpath = amiga_mkpath,
+	.basename = amiga_basename,
+};
+
 static struct gui_fetch_table amiga_fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
 	.path_to_url = path_to_url,
 	.url_to_path = url_to_path,
@@ -5136,6 +5236,7 @@ int main(int argc, char** argv)
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
 		.fetch = &amiga_fetch_table,
+		.file = &amiga_file_table,
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
 	};

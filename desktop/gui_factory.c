@@ -19,6 +19,7 @@
 #include "content/hlcache.h"
 #include "desktop/download.h"
 #include "desktop/gui_factory.h"
+#include "utils/file.h"
 
 /** The global GUI interface table */
 struct gui_table *guit = NULL;
@@ -418,12 +419,6 @@ static nserror verify_fetch_register(struct gui_fetch_table *gft)
 	}
 
 	/* check the mandantory fields are set */
-	if (gft->filename_from_path == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-	if (gft->path_add_part == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
 	if (gft->filetype == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
@@ -441,6 +436,25 @@ static nserror verify_fetch_register(struct gui_fetch_table *gft)
 	}
 	if (gft->mimetype == NULL) {
 		gft->mimetype = gui_default_mimetype;
+	}
+
+	return NSERROR_OK;
+}
+
+/** verify file table is valid */
+static nserror verify_file_register(struct gui_file_table *gft)
+{
+	/* check table is present */
+	if (gft == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (gft->mkpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->basename == NULL) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	return NSERROR_OK;
@@ -555,6 +569,15 @@ nserror gui_factory_register(struct gui_table *gt)
 
 	/* fetch table */
 	err = verify_fetch_register(gt->fetch);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* file table */
+	if (gt->file == NULL) {
+		gt->file = default_file_table;
+	}
+	err = verify_file_register(gt->file);
 	if (err != NSERROR_OK) {
 		return err;
 	}

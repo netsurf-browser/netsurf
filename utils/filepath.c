@@ -326,25 +326,6 @@ void filepath_free_strvec(char **pathv)
 }
 
 /* exported interface documented in filepath.h */
-char *filepath_append(const char *path, const char *leaf)
-{
-	int dirname_len;
-	char *dirname;
-
-	if ((path == NULL) || (leaf == NULL)) {
-		return NULL;
-	}
-
-	dirname_len = strlen(path) + strlen(leaf) + 2;
-	dirname = malloc(dirname_len);
-	if (dirname != NULL) {
-		snprintf(dirname, dirname_len, "%s/%s", path, leaf);
-	}
-
-	return dirname;
-}
-
-/* exported interface documented in filepath.h */
 nserror filepath_mkdir_all(const char *fname)
 {
 	char *dname;

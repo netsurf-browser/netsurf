@@ -70,24 +70,6 @@ void die(const char *error)
 	exit(1);
 }
 
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
-
-	strncat(path, newpart, length);
-
-	return true;
-}
 
 struct gui_window * find_guiwin_by_aes_handle(short handle){
 
@@ -242,24 +224,16 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 	if (!strncmp(name, "file://", 7)) {
 		icon_url = name;
 	} else {
-		char *native_path;
+		char *native_path = NULL;
 
 		if (icons_dir == NULL)
 			return NULL;
 
-		/* path + separator + leafname + '\0' */
-		len = strlen(icons_dir) + 1 + strlen(name) + 1;
-		native_path = malloc(len);
-		if (native_path == NULL) {
-			LOG(("malloc failed"));
-			warn_user("NoMemory", 0);
+		err = netsurf_mkpath(&native_path, NULL, 2, icons_dir, name);
+		if (err != NSERROR_OK) {
+			warn_user(messages_get_errorcode(err));
 			return NULL;
 		}
-
-		/* Build native path */
-		memcpy(native_path, icons_dir,
-		       strlen(icons_dir) + 1);
-		path_add_part(native_path, len, name);
 
 		/* Convert native path to URL */
 		url = path_to_url(native_path);

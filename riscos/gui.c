@@ -67,6 +67,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
 #include "render/font.h"
+#include "utils/file.h"
 
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/bitmap.h"
@@ -2285,77 +2286,173 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
 	*owner_pass = NULL;
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
 
-static char *filename_from_path(char *path)
+#define DIR_SEP ('.')
+
+/**
+ * Generate a riscos path from one or more component elemnts.
+ *
+ * Constructs a complete path element from passed components. The
+ * second (and subsequent) components have a slash substituted for all
+ * riscos directory separators.
+ *
+ * If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] nemb The number of elements.
+ * @param[in] ap The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror riscos_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
 {
-	char *leafname;
+	const char *elm[16];
+	size_t elm_len[16];
+	size_t elm_idx;
+	char *fname;
+	size_t fname_len = 0;
+	char *curp;
+	size_t idx;
+
+	/* check the parameters are all sensible */
+	if ((nelm == 0) || (nelm > 16)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if ((*str != NULL) && (size == NULL)) {
+		/* if the caller is providing the buffer they must say
+		 * how much space is available.
+		 */
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* calculate how much storage we need for the complete path
+	 * with all the elements.
+	 */
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		elm[elm_idx] = va_arg(ap, const char *);
+		elm_len[elm_idx] = strlen(elm[elm_idx]);
+		fname_len += elm_len[elm_idx];
+	}
+	fname_len += nelm; /* allow for separators and terminator */
+
+	/* ensure there is enough space */
+	fname = *str;
+	if (fname != NULL) {
+		if (fname_len > *size) {
+			return NSERROR_NOSPACE;
+		}
+	} else {
+		fname = malloc(fname_len);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* copy the elements in with directory separator */
+	curp = fname;
+
+	/* first element is not altered */
+	memmove(curp, elm[elm_idx], elm_len[elm_idx]);
+	curp += elm_len[elm_idx];
+	/* ensure there is a delimiter */
+	if (curp[-1] != DIR_SEP) {
+		*curp = DIR_SEP;
+		curp++;
+	}
+
+	/* subsequent elemnts have slashes substituted with directory
+	 * separators.
+	 */
+	for (elm_idx = 1; elm_idx < nelm; elm_idx++) {
+		for (idx = 0; idx < elm_len[elm_idx]; idx++) {
+			if (elm[elm_idx][idx] == DIR_SEP) {
+				*curp = '/';
+			} else {
+				*curp = elm[elm_idx][idx];
+			}
+			curp++;
+		}
+		*curp = DIR_SEP;
+		curp++;
+	}
+	curp[-1] = 0; /* NULL terminate */
+
+	assert((curp - fname) <= (int)fname_len);
+
+	*str = fname;
+	if (size != NULL) {
+		*size = fname_len;
+	}
+
+	return NSERROR_OK;
+
+}
+
+
+/**
+ * Get the basename of a file using posix path handling.
+ *
+ * This gets the last element of a path and returns it. The returned
+ * element has all forward slashes translated into riscos directory
+ * separators.
+ *
+ * @param[in] path The path to extract the name from.
+ * @param[in,out] str Pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the path element.
+ * @param[in,out] size The size of the space available if \a
+ *                     str not NULL on input and set to the total
+ *                     output length on output.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror riscos_basename(const char *path, char **str, size_t *size)
+{
+	const char *leafname;
+	char *fname;
 	char *temp;
-	int leaflen;
 
-	temp = strrchr(path, '.');
-	if (!temp)
-		temp = path; /* already leafname */
-	else
-		temp += 1;
+	if (path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	leaflen = strlen(temp);
-
-	leafname = malloc(leaflen + 1);
+	leafname = strrchr(path, DIR_SEP);
 	if (!leafname) {
-		LOG(("malloc failed"));
-		return NULL;
+		leafname = path;
+	} else {
+		leafname += 1;
 	}
-	memcpy(leafname, temp, leaflen + 1);
 
+	fname = strdup(leafname);
+	if (fname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/** @todo check this leafname translation is actually required */
 	/* and s/\//\./g */
-	for (temp = leafname; *temp; temp++)
-		if (*temp == '/')
-			*temp = '.';
-
-	return leafname;
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing platform-native format path + free space
- * \param length length of buffer "path"
- * \param newpart string containing unix-format path component to add to path
- * \return true on success
- */
-
-static bool path_add_part(char *path, int length, const char *newpart)
-{
-	size_t path_len = strlen(path);
-
-	/* Append directory separator, if there isn't one */
-	if (path[path_len - 1] != '.') {
-		strncat(path, ".", length);
-		path_len += 1;
+	for (temp = fname; *temp != 0; temp++) {
+		if (*temp == '/') {
+			*temp = DIR_SEP;
+		}
 	}
 
-	strncat(path, newpart, length);
-
-	/* Newpart is either a directory name, or a file leafname
- 	 * Either way, we must replace all dots with forward slashes */
-	for (path = path + path_len; *path; path++) {
-		if (*path == '.')
-			*path = '/';
+	*str = fname;
+	if (size != NULL) {
+		*size = strlen(fname);
 	}
-
-	return true;
+	return NSERROR_OK;
 }
 
+
+static struct gui_file_table riscos_file_table = {
+	.mkpath = riscos_mkpath,
+	.basename = riscos_basename,
+};
 
 static struct gui_fetch_table riscos_fetch_table = {
-	.filename_from_path = filename_from_path,
-	.path_add_part = path_add_part,
 	.filetype = fetch_filetype,
 	.path_to_url = path_to_url,
 	.url_to_path = url_to_path,
@@ -2392,6 +2489,7 @@ int main(int argc, char** argv)
 		.clipboard = riscos_clipboard_table,
 		.download = riscos_download_table,
 		.fetch = &riscos_fetch_table,
+		.file = &riscos_file_table,
 		.utf8 = riscos_utf8_table,
 		.search = riscos_search_table,
 	};
