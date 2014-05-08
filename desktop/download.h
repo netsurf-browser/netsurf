@@ -67,10 +67,14 @@ void download_context_abort(download_context *ctx);
 /**
  * Retrieve the URL for a download
  *
- * \param ctx  Context to retrieve URL from
- * \return URL string
+ * The caller is borrowing the url reference from the underlying low
+ * level cache object. If it is used beyond the immediate scope of the
+ * caller an additional reference should be made.
+ *
+ * \param ctx Context to retrieve URL from
+ * \return URL object
  */
-const char *download_context_get_url(const download_context *ctx);
+nsurl *download_context_get_url(const download_context *ctx);
 
 /**
  * Retrieve the MIME type for a download

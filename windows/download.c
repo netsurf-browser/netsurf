@@ -30,6 +30,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 #include "windows/download.h"
@@ -64,21 +65,25 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	}
 	int total_size = download_context_get_total_length(ctx);
 	char *domain, *filename, *destination;
-	const char *url=download_context_get_url(ctx);
+	nsurl *url = download_context_get_url(ctx);
 	bool unknown_size = (total_size == 0);
 	const char *size = (unknown_size) ? 
 			messages_get("UnknownSize") :
 			human_friendly_bytesize(total_size);
 	
-	if (url_nice(url, &filename, false) != NSERROR_OK)
+	if (url_nice(nsurl_access(url), &filename, false) != NSERROR_OK)
 		filename = strdup(messages_get("UnknownFile"));
 	if (filename == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		free(w);
 		return NULL;
 	}
-	if (url_host(url, &domain) != NSERROR_OK)
+
+	if (nsurl_has_component(url, NSURL_HOST)) {
+		domain = strdup(lwc_string_data(nsurl_get_component(url, NSURL_HOST)));
+	} else {
 		domain = strdup(messages_get("UnknownHost"));
+	}
 	if (domain == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		free(filename);

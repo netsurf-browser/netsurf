@@ -25,7 +25,7 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/download.h"
@@ -717,7 +717,7 @@ static void nsgtk_download_store_create_item (struct gui_download_window *dl)
 static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
-	const char *url = download_context_get_url(ctx);
+	nsurl *url = download_context_get_url(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
 	gchar *domain;
 	gchar *destination;
@@ -730,17 +730,22 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		nsgtk_scaffolding_window(nsgtk_get_scaffold(gui));
 
 	struct gui_download_window *download = malloc(sizeof *download);
-	if (download == NULL)
+	if (download == NULL) {
 		return NULL;
-
-	if (url_host(url, &domain) != NSERROR_OK) {
-		domain = g_strdup(messages_get("gtkUnknownHost"));
-		if (domain == NULL) {
-			free(download);
-			return NULL;
-		}
 	}
 
+	/* set the domain to the host component of the url if it exists */
+	if (nsurl_has_component(url, NSURL_HOST)) {
+		domain = g_strdup(lwc_string_data(nsurl_get_component(url, NSURL_HOST)));
+	} else {
+		domain = g_strdup(messages_get("gtkUnknownHost"));
+	}
+	if (domain == NULL) {
+		free(download);
+		return NULL;
+	}
+
+	/* show the dialog */
 	destination = nsgtk_download_dialog_show(
 		download_context_get_filename(ctx), domain, size);
 	if (destination == NULL) {

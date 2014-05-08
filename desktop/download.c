@@ -71,11 +71,11 @@ static char *download_parse_filename(const char *filename)
  * \param url  URL of item being fetched
  * \return Default filename, or NULL on memory exhaustion
  */
-static char *download_default_filename(const char *url)
+static char *download_default_filename(nsurl *url)
 {
 	char *nice;
 
-	if (url_nice(url, &nice, false) == NSERROR_OK)
+	if (url_nice(nsurl_access(url), &nice, false) == NSERROR_OK)
 		return nice;
 
 	return NULL;
@@ -140,8 +140,7 @@ static nserror download_context_process_headers(download_context *ctx)
 	ctx->total_length = length;
 	if (ctx->filename == NULL) {
 		ctx->filename = download_default_filename(
-				nsurl_access(
-				llcache_handle_get_url(ctx->llcache)));
+				llcache_handle_get_url(ctx->llcache));
 	}
 
 	http_content_type_destroy(content_type);
@@ -283,9 +282,9 @@ void download_context_abort(download_context *ctx)
 }
 
 /* See download.h for documentation */
-const char *download_context_get_url(const download_context *ctx)
+nsurl *download_context_get_url(const download_context *ctx)
 {
-	return nsurl_access(llcache_handle_get_url(ctx->llcache));
+	return llcache_handle_get_url(ctx->llcache);
 }
 
 /* See download.h for documentation */

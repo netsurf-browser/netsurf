@@ -34,7 +34,6 @@
 #include "desktop/textinput.h"
 #include "desktop/download.h"
 #include "render/html.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -251,7 +250,6 @@ gui_download_window_create(download_context *ctx, struct gui_window *parent)
 	const char *filename;
 	char *destination;
 	char gdos_path[PATH_MAX];
-	const char * url;
 	struct gui_download_window * gdw;
 	int dlgres = 0;
 	OBJECT * tree = gemtk_obj_get_tree(DOWNLOAD);
@@ -306,7 +304,6 @@ gui_download_window_create(download_context *ctx, struct gui_window *parent)
 	gdw->size_total = download_context_get_total_length(ctx);
 	gdw->destination = destination;
 	gdw->tree = tree;
-	url = download_context_get_url(ctx);
 
 	gdw->fd = fopen(gdw->destination, "wb");
 	if( gdw->fd == NULL ){

@@ -53,7 +53,7 @@ static void cocoa_register_download( DownloadWindowController *download );
 	
 	context = ctx;
 	totalSize = download_context_get_total_length( context );
-	[self setURL: [NSURL URLWithString: [NSString stringWithUTF8String: download_context_get_url( context )]]];
+	[self setURL: [NSURL URLWithString: [NSString stringWithUTF8String: nsurl_access(download_context_get_url( context ))]]];
 	[self setMIMEType: [NSString stringWithUTF8String: download_context_get_mime_type( context )]];
 	[self setStartDate: [NSDate date]];
 	
