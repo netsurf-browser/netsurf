@@ -28,6 +28,7 @@
 
 struct gui_window;
 struct llcache_handle;
+struct nsurl;
 
 /** Type of a download context */
 typedef struct download_context download_context;
@@ -74,7 +75,7 @@ void download_context_abort(download_context *ctx);
  * \param ctx Context to retrieve URL from
  * \return URL object
  */
-nsurl *download_context_get_url(const download_context *ctx);
+struct nsurl *download_context_get_url(const download_context *ctx);
 
 /**
  * Retrieve the MIME type for a download

@@ -33,6 +33,8 @@
 #include <sys/time.h>
 #include <time.h>
 #include <curl/curl.h>
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "oslib/mimemap.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
@@ -51,6 +53,7 @@
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/corestrings.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"
