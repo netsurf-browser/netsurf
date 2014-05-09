@@ -27,7 +27,6 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 
 void warn_user(const char *warning, const char *detail)
 {

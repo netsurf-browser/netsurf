@@ -34,7 +34,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
 #include "content/content.h"

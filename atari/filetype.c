@@ -23,7 +23,6 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "content/fetch.h"
 

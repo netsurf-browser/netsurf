@@ -36,7 +36,6 @@
 #include "desktop/save_text.h"
 
 #include "utils/messages.h"
-#include "utils/url.h"
 
 #include <proto/asl.h>
 #include <proto/dos.h>

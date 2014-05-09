@@ -23,15 +23,15 @@
 
 #include "content/content_protected.h"
 #include "content/urldb.h"
-#include "css/internal.h"
-#include "css/select.h"
-#include "css/utils.h"
 #include "desktop/system_colour.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+
+#include "css/internal.h"
+#include "css/select.h"
+#include "css/utils.h"
 
 #undef PRINT_NODE_BLOOM_DETAILS
 

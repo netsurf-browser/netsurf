@@ -44,8 +44,7 @@ MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		$(WARNFLAGS) -g \
 		$(shell $(PKG_CONFIG) --cflags glib-2.0) \
 		$(shell $(PKG_CONFIG) --cflags libdom libcurl) \
-		$(shell $(PKG_CONFIG) --cflags openssl) \
-		$(shell xml2-config --cflags)
+		$(shell $(PKG_CONFIG) --cflags openssl)
 
 MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
 

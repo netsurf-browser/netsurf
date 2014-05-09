@@ -35,7 +35,6 @@
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/file.h"
 #include "content/fetchers/resource.h"
 

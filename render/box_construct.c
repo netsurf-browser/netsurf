@@ -44,7 +44,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 #include "render/box.h"

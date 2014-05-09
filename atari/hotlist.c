@@ -36,7 +36,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/treeview.h"

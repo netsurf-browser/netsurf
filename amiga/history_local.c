@@ -32,7 +32,6 @@
 #include "amiga/object.h"
 #include "amiga/gui.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include <proto/intuition.h>
 #include "amiga/history_local.h"

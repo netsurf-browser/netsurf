@@ -32,7 +32,6 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "atari/misc.h"

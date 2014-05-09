@@ -27,7 +27,6 @@
 #include "desktop/netsurf.h"
 #include "utils/log.h"
 #include "utils/filepath.h"
-#include "utils/url.h"
 
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"

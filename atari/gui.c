@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-	This File provides all the mandatory functions prefixed with gui_
-*/
+/**
+ * \file Provides all the mandatory functions prefixed with gui_ for atari
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,7 +30,6 @@
 #include <stdbool.h>
 #include <hubbub/hubbub.h>
 
-#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

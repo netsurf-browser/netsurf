@@ -46,8 +46,7 @@ CFLAGS += -std=c99 -g -Dsmall $(WARNFLAGS) 	\
 	  -D_BSD_SOURCE \
 	  -D_XOPEN_SOURCE=600 \
 	  -D_POSIX_C_SOURCE=200112L \
-	  $(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl) \
-	  $(shell xml2-config --cflags)
+	  $(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl)
 
 LDFLAGS += -lm -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
 

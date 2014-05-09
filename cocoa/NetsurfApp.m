@@ -37,7 +37,6 @@
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
 #import "render/html.h"
-#import "utils/url.h"
 #import "utils/filename.h"
 #import "utils/log.h"
 #import "utils/messages.h"

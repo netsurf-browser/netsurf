@@ -32,7 +32,6 @@
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 #define ICON_401LOGIN_LOGIN 0

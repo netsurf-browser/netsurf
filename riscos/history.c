@@ -37,7 +37,6 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 

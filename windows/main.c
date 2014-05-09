@@ -29,7 +29,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/filepath.h"
 #include "content/fetchers/resource.h"
 

@@ -23,7 +23,6 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
-#include "utils/url.h"
 #include "content/urldb.h"
 #include "utils/messages.h"
 #include "utils/errors.h"

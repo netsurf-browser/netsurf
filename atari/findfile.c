@@ -26,7 +26,6 @@
 #include <curl/curl.h>
 
 #include "utils/log.h"
-#include "utils/url.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/findfile.h"
 #include "atari/gui.h"

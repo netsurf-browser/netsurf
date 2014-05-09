@@ -35,7 +35,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
-#include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
