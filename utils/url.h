@@ -66,27 +66,6 @@ bool url_host_is_ip_address(const char *host);
 
 
 /**
- * Resolve a relative URL to absolute form.
- *
- * \param  rel	   relative URL
- * \param  base	   base URL, must be absolute and cleaned as by nsurl_create()
- * \param  result  pointer to pointer to buffer to hold absolute url
- * \return  NSERROR_OK on success
- */
-nserror url_join(const char *rel, const char *base, char **result);
-
-
-/**
- * Return the host name from an URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold host name
- * \return  NSERROR_OK on success
- */
-nserror url_host(const char *url, char **result);
-
-
-/**
  * Return the scheme name from an URL.
  *
  * See RFC 3986, 3.1 for reference.
