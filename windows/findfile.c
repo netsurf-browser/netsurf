@@ -31,6 +31,7 @@
 #include <curl/curl.h>
 
 #include "utils/log.h"
+#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/filepath.h"
 
