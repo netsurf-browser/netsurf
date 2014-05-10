@@ -97,12 +97,7 @@ nserror netsurf_mkpath(char **str, size_t *size, size_t nelm, ...)
 	nserror ret;
 
 	va_start(ap, nelm);
-	if (guit != NULL) {
-		ret = guit->file->mkpath(str, size, nelm, ap);
-	} else {
-		/* default to posix */
-		ret = vsnstrjoin(str, size, '/', nelm, ap);
-	}
+	ret = guit->file->mkpath(str, size, nelm, ap);
 	va_end(ap);
 
 	return ret;
