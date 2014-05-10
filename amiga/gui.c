@@ -393,13 +393,15 @@ STRPTR ami_locale_langs(void)
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file, const char *map)
 {
 	BPTR fh = 0;
-	char mapfile[1024];
-	size_t mapfile_size = 1024;
+	char *mapfile = NULL;
+	size_t mapfile_size = 0;
 	char buffer[1024];
 	char *realfname;
 	bool found = false;
 
 	amiga_mkpath(&mapfile, &mapfile_size, 2, path, map);
+
+	if(mapfile == NULL) return false;
 
 	if(fh = FOpen(mapfile, MODE_OLDFILE, 0))
 	{
@@ -426,6 +428,8 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 
 	if(found == false) *remapped = strdup(file);
 		else LOG(("Remapped %s to %s in path %s using %s", file, *remapped, path, map));
+
+	free(mapfile);
 
 	return found;
 }
