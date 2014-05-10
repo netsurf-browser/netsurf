@@ -1805,13 +1805,18 @@ main(int argc, char** argv)
 	nsurl *url;
 	nserror ret;
 	nsfb_t *nsfb;
-	struct gui_table framebuffer_gui_table = {
+	struct netsurf_table framebuffer_table = {
 		.browser = &framebuffer_browser_table,
 		.window = &framebuffer_window_table,
 		.clipboard = framebuffer_clipboard_table,
 		.fetch = framebuffer_fetch_table,
 		.utf8 = framebuffer_utf8_table,
 	};
+
+        ret = netsurf_register(&framebuffer_table);
+        if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 
 	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
 
@@ -1832,7 +1837,7 @@ main(int argc, char** argv)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "Messages");
-	ret = netsurf_init(messages, &framebuffer_gui_table);
+	ret = netsurf_init(messages);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");

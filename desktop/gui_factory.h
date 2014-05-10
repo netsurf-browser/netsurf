@@ -26,7 +26,7 @@
 #include "desktop/gui.h"
 
 /** The global operation table */
-extern struct gui_table *guit;
+extern struct netsurf_table *guit;
 
 /** register and verify global operation table
  *
@@ -34,6 +34,6 @@ extern struct gui_table *guit;
  * @return NSERROR_OK on success or error code on faliure. On faliure
  * global table will not be initialised
  */
-nserror gui_factory_register(struct gui_table *gt);
+nserror gui_factory_register(struct netsurf_table *gt);
 
 #endif

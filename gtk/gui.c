@@ -1163,7 +1163,7 @@ int main(int argc, char** argv)
 {
 	char *messages;
 	nserror ret;
-	struct gui_table nsgtk_gui_table = {
+	struct netsurf_table nsgtk_table = {
 		.browser = &nsgtk_browser_table,
 		.window = nsgtk_window_table,
 		.clipboard = nsgtk_clipboard_table,
@@ -1171,6 +1171,11 @@ int main(int argc, char** argv)
 		.fetch = nsgtk_fetch_table,
 		.search = nsgtk_search_table,
 	};
+
+        ret = netsurf_register(&nsgtk_table);
+        if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 
 	/* build the common resource path list */
 	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
@@ -1206,7 +1211,7 @@ int main(int argc, char** argv)
 	messages = filepath_find(respaths, "Messages");
 
 	/* core initialisation */
-	ret = netsurf_init(messages, &nsgtk_gui_table);
+	ret = netsurf_init(messages);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",

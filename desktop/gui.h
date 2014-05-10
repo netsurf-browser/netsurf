@@ -521,11 +521,12 @@ struct gui_browser_table {
 };
 
 
-/** Graphical user interface function table
+/**
+ * NetSurf operation function table
  *
- * function table implementing GUI interface to browser core
+ * Function table implementing interface operations for the browser core.
  */
-struct gui_table {
+struct netsurf_table {
 
 	/**
 	 * Browser table.
@@ -566,7 +567,6 @@ struct gui_table {
 	struct gui_utf8_table *utf8;
 
 	/**
-	 *
 	 * Page search table.
 	 *
 	 * Provides routines for the interactive text search on a page.

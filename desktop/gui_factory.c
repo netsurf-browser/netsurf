@@ -21,8 +21,8 @@
 #include "desktop/gui_factory.h"
 #include "utils/file.h"
 
-/** The global GUI interface table */
-struct gui_table *guit = NULL;
+/** The global interface table */
+struct netsurf_table *guit = NULL;
 
 
 
@@ -541,7 +541,7 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 
 
 /* exported interface documented in desktop/gui_factory.h */
-nserror gui_factory_register(struct gui_table *gt)
+nserror gui_factory_register(struct netsurf_table *gt)
 {
 	nserror err;
 

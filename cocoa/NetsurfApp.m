@@ -184,7 +184,7 @@ int main( int argc, char **argv )
 {
 	nsurl *url;
 	nserror error;
-	struct gui_table cocoa_gui_table = {
+	struct netsurf_table cocoa_table = {
 		.browser = cocoa_browser_table,
 		.window = cocoa_window_table,
 		.clipboard = cocoa_clipboard_table,
@@ -194,6 +194,11 @@ int main( int argc, char **argv )
 	};
 
 	cocoa_autorelease();
+
+        error = netsurf_register(&cocoa_table);
+        if (error != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
@@ -212,7 +217,7 @@ int main( int argc, char **argv )
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	error = netsurf_init(messages, &cocoa_gui_table);
+	error = netsurf_init(messages);
 	if (error != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

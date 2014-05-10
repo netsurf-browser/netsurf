@@ -103,8 +103,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	nserror ret;
 	const char *addr;
 	nsurl *url;
-	nserror error;
-	struct gui_table win32_gui_table = {
+	struct netsurf_table win32_table = {
 		.browser = win32_browser_table,
 		.window = win32_window_table,
 		.clipboard = win32_clipboard_table,
@@ -114,6 +113,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.utf8 = win32_utf8_table,
 	};
 	win32_fetch_table->get_resource_url = gui_get_resource_url;
+
+	ret = netsurf_register(&win32_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf operation table registration failed");
+	}
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -160,7 +164,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages, &win32_gui_table);
+	ret = netsurf_init(messages);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);
@@ -187,9 +191,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	LOG(("calling browser_window_create"));
 
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
+	ret = nsurl_create(addr, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -197,8 +201,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		nsurl_unref(url);
 
 	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	} else {
 		netsurf_main_loop();
 	}

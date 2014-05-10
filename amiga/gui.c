@@ -5240,7 +5240,7 @@ int main(int argc, char** argv)
 	int32 user = 0;
 	nserror ret;
 	Object *splash_window = ami_gui_splash_open();
-	struct gui_table amiga_gui_table = {
+	struct netsurf_table amiga_table = {
 		.browser = &amiga_browser_table,
 		.window = &amiga_window_table,
 		.clipboard = amiga_clipboard_table,
@@ -5250,6 +5250,11 @@ int main(int argc, char** argv)
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
 	};
+
+	ret = netsurf_register(&amiga_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+	}
 
 	/* Open popupmenu.library just to check the version.
 	 * Versions older than 53.11 are dangerous, so we
@@ -5297,7 +5302,7 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
-	ret = netsurf_init(messages, &amiga_gui_table);
+	ret = netsurf_init(messages);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

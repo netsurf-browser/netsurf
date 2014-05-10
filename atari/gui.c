@@ -1079,7 +1079,7 @@ int main(int argc, char** argv)
     struct stat stat_buf;
     nsurl *url;
     nserror ret;
-    struct gui_table atari_gui_table = {
+    struct netsurf_table atari_table = {
         .browser = &atari_browser_table,
 	.window = &atari_window_table,
 	.clipboard = &atari_clipboard_table,
@@ -1089,7 +1089,12 @@ int main(int argc, char** argv)
 	.search = atari_search_table,
     };
 
-    /* @todo logging file descriptor update belongs in a nslog_init callback */
+    ret = netsurf_register(&atari_table);
+    if (ret != NSERROR_OK) {
+        die("NetSurf operation table failed registration");
+    }
+
+    /** @todo logging file descriptor update belongs in a nslog_init callback */
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
 #ifdef WITH_DBG_LOGFILE
@@ -1121,7 +1126,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-    ret = netsurf_init(messages, &atari_gui_table);
+    ret = netsurf_init(messages);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }

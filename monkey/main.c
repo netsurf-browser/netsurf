@@ -118,12 +118,17 @@ main(int argc, char **argv)
   char *options;
   char buf[PATH_MAX];
   nserror ret;
-  struct gui_table monkey_gui_table = {
+  struct netsurf_table monkey_table = {
     .browser = &monkey_browser_table,
     .window = monkey_window_table,
     .download = monkey_download_table,
     .fetch = monkey_fetch_table,
   };
+
+  ret = netsurf_register(&monkey_table);
+  if (ret != NSERROR_OK) {
+    die("NetSurf operation table failed registration");
+  }
 
   /* Unbuffer stdin/out/err */
   setbuf(stdin, NULL);
@@ -150,7 +155,7 @@ main(int argc, char **argv)
 
   /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-  ret = netsurf_init(messages, &monkey_gui_table);
+  ret = netsurf_init(messages);
   free(messages);
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");

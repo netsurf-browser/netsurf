@@ -110,11 +110,15 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 
 #define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
 
-/**
- * Initialise components used by gui NetSurf.
- */
+/* exported interface documented in desktop/netsurf.h */
+nserror netsurf_register(struct netsurf_table *table)
+{
+	/* register the operation handlers */
+	return gui_factory_register(table);
+}
 
-nserror netsurf_init(const char *messages, struct gui_table *gt)
+/* exported interface documented in desktop/netsurf.h */
+nserror netsurf_init(const char *messages)
 {
 	nserror error;
 	struct utsname utsname;
@@ -147,11 +151,6 @@ nserror netsurf_init(const char *messages, struct gui_table *gt)
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
-
-	/* register the gui handlers */
-	error = gui_factory_register(gt);
-	if (error != NSERROR_OK)
-		return error;
 
 	messages_load(messages);
 

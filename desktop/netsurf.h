@@ -27,15 +27,32 @@ extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
-struct gui_table;
+struct netsurf_table;
 
-/** Initialise netsurf core */
-nserror netsurf_init(const char *messages, struct gui_table *gt);
+/**
+ * Register operation table.
+ *
+ * @param table NetSurf operations table.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+nserror netsurf_register(struct netsurf_table *table);
 
-/** Run primary event loop */
+/**
+ * Initialise netsurf core.
+ *
+ * @param messages path to translation mesage file.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+nserror netsurf_init(const char *messages);
+
+/**
+ * Run event loop.
+ */
 extern int netsurf_main_loop(void);
 
-/** finalise NetSurf core */
+/**
+ * Finalise NetSurf core
+ */
 extern void netsurf_exit(void);
 
 

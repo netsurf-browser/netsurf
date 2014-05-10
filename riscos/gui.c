@@ -2483,7 +2483,7 @@ int main(int argc, char** argv)
 	int used = -1;  /* slightly better with older OSLib versions */
 	os_error *error;
 	nserror ret;
-	struct gui_table riscos_gui_table = {
+	struct netsurf_table riscos_table = {
 		.browser = &riscos_browser_table,
 		.window = riscos_window_table,
 		.clipboard = riscos_clipboard_table,
@@ -2493,6 +2493,11 @@ int main(int argc, char** argv)
 		.utf8 = riscos_utf8_table,
 		.search = riscos_search_table,
 	};
+
+	ret = netsurf_register(&riscos_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+	}
 
 	/* Consult NetSurf$Logging environment variable to decide if logging
 	 * is required. */
@@ -2537,7 +2542,7 @@ int main(int argc, char** argv)
 	}
 
 	/* common initialisation */
-	ret = netsurf_init(path, &riscos_gui_table);
+	ret = netsurf_init(path);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
