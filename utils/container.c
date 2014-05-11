@@ -119,9 +119,10 @@ static void container_add_to_dir(struct container_ctx *ctx,
 	ctx->entries += 1;
 	ctx->directory = temp;
 
-	strncpy((char *)ctx->directory[ctx->entries - 1].filename,
-				(char *)entryname, sizeof(ctx->directory[
-				ctx->entries - 1].filename));
+	snprintf((char*)ctx->directory[ctx->entries - 1].filename, 
+		 sizeof(ctx->directory[ctx->entries - 1].filename),
+		 "%s", (char *)entryname);
+
 	ctx->directory[ctx->entries - 1].startoffset = offset;
 	ctx->directory[ctx->entries - 1].len = length;
 	ctx->directory[ctx->entries - 1].flags1 = 0;
