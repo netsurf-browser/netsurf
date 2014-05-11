@@ -23,6 +23,24 @@
 #include "oslib/wimp.h"
 #include "utils/utils.h"
 
+enum query_response {
+  QUERY_CONTINUE,
+  QUERY_YES,
+  QUERY_NO,
+  QUERY_ESCAPE
+};
+
+typedef int query_id;
+
+#define QUERY_INVALID ((query_id)-1)
+
+typedef struct
+{
+	void (*confirm)(query_id id, enum query_response res, void *pw);
+	void (*cancel)(query_id, enum query_response res, void *pw);
+} query_callback;
+
+
 query_id query_user_xy(const char *query, const char *detail,
 	const query_callback *cb, void *pw, const char *yes, const char *no,
 	int x, int y);

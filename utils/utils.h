@@ -17,6 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file utils/utils.h
+ * \brief Interface to a number of general purpose functionality.
+ * \todo Many of these functions and macros should have their own headers.
+ */
+
 #ifndef _NETSURF_UTILS_UTILS_H_
 #define _NETSURF_UTILS_UTILS_H_
 
@@ -89,27 +95,11 @@ struct dirent;
 /**
  * Calculate length of constant C string.
  *
- * \param  x	   a constant C string.
- * \return the length of C string without its terminating NUL accounted.
+ * \param  x a constant C string.
+ * \return The length of C string without its terminator.
  */
 #define SLEN(x) (sizeof((x)) - 1)
 
-enum query_response {
-  QUERY_CONTINUE,
-  QUERY_YES,
-  QUERY_NO,
-  QUERY_ESCAPE
-};
-
-typedef int query_id;
-
-#define QUERY_INVALID ((query_id)-1)
-
-typedef struct
-{
-	void (*confirm)(query_id id, enum query_response res, void *pw);
-	void (*cancel)(query_id, enum query_response res, void *pw);
-} query_callback;
 
 #ifndef timeradd
 #define timeradd(a, aa, result)						\
@@ -137,15 +127,78 @@ typedef struct
 
 
 
-char * strip(char * const s);
-int whitespace(const char * str);
+/**
+ * Replace consecutive whitespace with a single space.
+ *
+ * @todo determine if squash_whitespace utf-8 safe and that it needs to be
+ *
+ * \param  s  source string
+ * \return  heap allocated result, or NULL on memory exhaustion
+ */
 char * squash_whitespace(const char * s);
+
+/**
+ * returns a string without its underscores
+ * \param replacespace true to insert a space where there was an underscore
+ */
 char *remove_underscores(const char *s, bool replacespace);
+
+/**
+ * Converts NUL terminated UTF-8 encoded string s containing zero or more
+ * spaces (char 32) or TABs (char 9) to non-breaking spaces
+ * (0xC2 + 0xA0 in UTF-8 encoding).
+ *
+ * Caller needs to free() result.  Returns NULL in case of error.  No
+ * checking is done on validness of the UTF-8 input string.
+ */
 char *cnv_space2nbsp(const char *s);
+
+/**
+ * Check if a directory exists.
+ */
 bool is_dir(const char *path);
+
+/**
+ * Compile a regular expression, handling errors.
+ *
+ * Parameters as for regcomp(), see man regex.
+ */
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
+
+/**
+ * Create a human redable representation of a size in bytes.
+ *
+ * Does a simple conversion which assumes the user speaks English.
+ * The buffer returned is one of three static ones so may change each
+ * time this call is made.  Don't store the buffer for later use.
+ * It's done this way for convenience and to fight possible memory
+ * leaks, it is not necessarily pretty.
+ *
+ * @todo This implementation is strange doe sit need
+ * reconsidering?
+ *
+ * @param bsize The size in bytes.
+ * @return A human readable string representing the size.
+ */
 char *human_friendly_bytesize(unsigned long bytesize);
+
+/**
+ * Create an RFC 1123 compliant date string from a Unix timestamp
+ *
+ * \param t The timestamp to consider
+ * \return Pointer to buffer containing string - invalidated by next call.
+ */
 const char *rfc1123_date(time_t t);
+
+/**
+ * Returns a number of centiseconds, that increases in real time, for the
+ * purposes of measuring how long something takes in wall-clock terms.
+ *
+ * The implementation uses gettimeofday() for this.  Should the call
+ * to gettimeofday() fail, it returns zero.
+ *
+ * \return number of centiseconds that increases monotonically
+ */
 unsigned int wallclock(void);
 
 /**
@@ -202,27 +255,6 @@ nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...);
  * d2	second directory entry
  */
 int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2);
-
-/**
- * Return a hex digit for the given numerical value.
- *
- * \return character in range 0-9a-f
- */
-inline static char digit2lowcase_hex(unsigned char digit) {
-	assert(digit < 16);
-	return "0123456789abcdef"[digit];
-}
-
-/**
- * Return a hex digit for the given numerical value.
- *
- * \return character in range 0-9A-F
- */
-inline static char digit2uppercase_hex(unsigned char digit) {
-	assert(digit < 16);
-	return "0123456789ABCDEF"[digit];
-}
-
 
 /* Platform specific functions */
 void die(const char * const error);

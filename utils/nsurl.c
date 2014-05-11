@@ -36,6 +36,17 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
+/**
+ * Return a hex digit for the given numerical value.
+ *
+ * \param digit the value to get the hex digit for.
+ * \return character in range 0-9A-F
+ */
+inline static char digit2uppercase_hex(unsigned char digit) {
+	assert(digit < 16);
+	return "0123456789ABCDEF"[digit];
+}
+
 static bool nsurl__is_unreserved(unsigned char c)
 {
 	/* From RFC3986 section 2.3 (unreserved characters) 
