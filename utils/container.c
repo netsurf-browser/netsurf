@@ -322,8 +322,14 @@ struct container_ctx *container_create(const char *filename,
 	ctx->entries = 0;
 	ctx->directory = NULL;
 	ctx->header.parser = htonl(3);
-	strncpy((char *)ctx->header.name, (char *)name, 32);
-	strncpy((char *)ctx->header.author, (char *)author, 64);
+
+	snprintf((char *)ctx->header.name,
+		 sizeof(ctx->header.name),
+		 "%s", (char *)name);
+
+	snprintf((char *)ctx->header.author,
+		 sizeof(ctx->header.author),
+		 "%s", (char *)author);
 
 	val = fwrite("NSTM", 4, 1, ctx->fh);
 	if (val == 0)
