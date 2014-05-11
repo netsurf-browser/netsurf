@@ -298,18 +298,6 @@ static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	return NSERROR_OK;
 }
 
-static nserror amiga_mkpath(char **str, size_t *size, size_t nelm, ...)
-{
-	va_list ap;
-	nserror ret;
-
-	va_start(ap, nelm);
-	ret = amiga_vmkpath(str, size, nelm, ap);
-	va_end(ap);
-
-	return ret;
-}
-
 /**
  * Get the basename of a file using posix path handling.
  *
@@ -399,7 +387,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 	char *realfname;
 	bool found = false;
 
-	amiga_mkpath(&mapfile, &mapfile_size, 2, path, map);
+	netsurf_mkpath(&mapfile, &mapfile_size, 2, path, map);
 
 	if(mapfile == NULL) return false;
 
@@ -442,7 +430,7 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	size_t fullpath_len = 1024;
 
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
-	amiga_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
 	LOG(("Checking for %s", fullpath));
 	
@@ -493,7 +481,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		{
 			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
 				locale->loc_PrefLanguages[i], "LangNames");
-			amiga_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
+			netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
 			found = ami_gui_check_resource(fullpath, file);
 		}
