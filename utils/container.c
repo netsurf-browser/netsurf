@@ -195,12 +195,16 @@ static void container_process(struct container_ctx *ctx)
 				fileno(ctx->fh), 0);
 #else
 	ctx->data = malloc(ctx->header.diroffset);
-	fseek(ctx->fh, 0, SEEK_SET);
+	if (fseek(ctx->fh, 0, SEEK_SET) != 0) {
+		return;
+	}
 	val = fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
 	if (val == 0)
 		LOG(("empty read diroffset"));
 #endif
-	fseek(ctx->fh, ctx->header.diroffset, SEEK_SET);
+	if (fseek(ctx->fh, ctx->header.diroffset, SEEK_SET) != 0) {
+		return;
+	}
 	/* now work through the directory structure taking it apart into
 	 * our structure */
 #define BEREAD(x) do { val = fread(&(x), 4, 1, ctx->fh); if (val == 0)\
