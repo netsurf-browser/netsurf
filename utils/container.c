@@ -382,15 +382,17 @@ void container_close(struct container_ctx *ctx)
 		flen = (flen + 3) & (~3); /* round up to nearest 4 bytes */
 
 		/* write this location to the header */
-		fseek(ctx->fh, 104, SEEK_SET);
-		nflen = htonl(flen);
-		val = fwrite(&nflen, 4, 1, ctx->fh);
-		if (val == 0)
-			LOG(("empty write directory location"));
+		if (fseek(ctx->fh, 104, SEEK_SET) == 0) {
+			nflen = htonl(flen);
+			val = fwrite(&nflen, 4, 1, ctx->fh);
+			if (val == 0)
+				LOG(("empty write directory location"));
 
-		/* seek to where the directory will be, and write it */
-		fseek(ctx->fh, flen, SEEK_SET);
-		container_write_dir(ctx);
+			/* seek to where the directory will be, and write it */
+			if (fseek(ctx->fh, flen, SEEK_SET) == 0) {
+				container_write_dir(ctx);
+			}
+		}
 
 	} else if (ctx->processed) {
 #ifdef WITH_MMAP
