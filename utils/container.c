@@ -89,10 +89,16 @@ inline static size_t container_filelen(FILE *fd)
 		return 0;
 	}
 
-	fseek(fd, 0, SEEK_END);
+	if (fseek(fd, 0, SEEK_END) != 0) {
+		LOG(("Could not get seek to end of file"));
+		return 0;
+	}
 	a = ftell(fd);
 
-	fseek(fd, o, SEEK_SET);
+	if (fseek(fd, o, SEEK_SET) != 0) {
+		LOG(("Could not reset seek position in file"));
+		return 0;
+	}
 	if (a == -1) {
 		LOG(("could not ascertain size of file in theme container; omitting"));
 		return 0;
