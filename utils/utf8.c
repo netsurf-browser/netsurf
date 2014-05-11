@@ -374,9 +374,9 @@ utf8_to_html(const char *string, const char *encname, size_t len, char **result)
 		if (last_cd.cd)
 			iconv_close(last_cd.cd);
 
-		/* and copy the to/from/cd data into last_cd */
-		strncpy(last_cd.from, "UTF-8", sizeof(last_cd.from));
-		strncpy(last_cd.to, encname, sizeof(last_cd.to));
+		/* and safely copy the to/from/cd data into last_cd */
+		snprintf(last_cd.from, sizeof(last_cd.from), "UTF-8");
+		snprintf(last_cd.to, sizeof(last_cd.to), "%s", encname);
 		last_cd.cd = cd;
 	}
 
