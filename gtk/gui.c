@@ -1108,7 +1108,7 @@ static nserror create_config_home(char **config_home_out)
 static nserror nsgtk_option_init(int *pargc, char** argv)
 {
 	nserror ret;
-	char *choices;
+	char *choices = NULL;
 
 	/* user options setup */
 	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
