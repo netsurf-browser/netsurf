@@ -69,6 +69,7 @@ struct hlcache_handle;
 struct download_context;
 struct nsurl;
 struct gui_file_table;
+struct gui_llcache_table;
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */
@@ -520,7 +521,6 @@ struct gui_browser_table {
 
 };
 
-
 /**
  * NetSurf operation function table
  *
@@ -572,6 +572,15 @@ struct netsurf_table {
 	 * Provides routines for the interactive text search on a page.
 	 */
 	struct gui_search_table *search;
+
+	/**
+	 * Low level cache table.
+	 *
+	 * Used by the low level cache to push objects to persistant
+	 * storage. The table is optional and may be NULL which
+	 * uses the default implementation.
+	 */
+	struct gui_llcache_table *llcache;
 };
 
 

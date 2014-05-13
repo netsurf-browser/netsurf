@@ -43,7 +43,7 @@ nserror netsurf_register(struct netsurf_table *table);
  * @param messages path to translation mesage file.
  * @return NSERROR_OK on success or error code on faliure.
  */
-nserror netsurf_init(const char *messages);
+nserror netsurf_init(const char *messages, const char *store_path);
 
 /**
  * Run event loop.

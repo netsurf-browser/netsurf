@@ -164,7 +164,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, NULL);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);

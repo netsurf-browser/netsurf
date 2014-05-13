@@ -17,13 +17,14 @@
  */
 
 #include "content/hlcache.h"
+#include "content/backing_store.h"
+
 #include "desktop/download.h"
 #include "desktop/gui_factory.h"
 #include "utils/file.h"
 
 /** The global interface table */
 struct netsurf_table *guit = NULL;
-
 
 
 static void gui_default_window_set_title(struct gui_window *g, const char *title)
@@ -400,6 +401,34 @@ static nserror verify_search_register(struct gui_search_table *gst)
 	return NSERROR_OK;
 }
 
+/** verify low level cache persistant backing store table is valid */
+static nserror verify_llcache_register(struct gui_llcache_table *glt)
+{
+	/* check table is present */
+	if (glt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* mandantory operations */
+	if (glt->store == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (glt->fetch == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (glt->invalidate == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (glt->initialise == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (glt->finalise == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	return NSERROR_OK;
+}
+
 static nsurl *gui_default_get_resource_url(const char *path)
 {
 	return NULL;
@@ -618,6 +647,16 @@ nserror gui_factory_register(struct netsurf_table *gt)
 		gt->search = &default_search_table;
 	}
 	err = verify_search_register(gt->search);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* llcache table */
+	if (gt->llcache == NULL) {
+		/* set default backing store table */
+		gt->llcache = null_llcache_table;
+	}
+	err = verify_llcache_register(gt->llcache);
 	if (err != NSERROR_OK) {
 		return err;
 	}

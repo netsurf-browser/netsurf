@@ -1126,7 +1126,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-    ret = netsurf_init(messages);
+    ret = netsurf_init(messages, NULL);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }

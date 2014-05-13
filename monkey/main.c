@@ -155,7 +155,7 @@ main(int argc, char **argv)
 
   /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-  ret = netsurf_init(messages);
+  ret = netsurf_init(messages, NULL);
   free(messages);
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");

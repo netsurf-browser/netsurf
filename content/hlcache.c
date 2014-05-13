@@ -339,9 +339,10 @@ static nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 
 	ctx->migrate_target = true;
 
-	if (effective_type != NULL &&
-			hlcache_type_is_acceptable(effective_type,
-			ctx->accepted_types, &type)) {
+	if ((effective_type != NULL) &&
+	    hlcache_type_is_acceptable(effective_type,
+				       ctx->accepted_types,
+				       &type)) {
 		error = hlcache_find_content(ctx, effective_type);
 		if (error != NSERROR_OK && error != NSERROR_NEED_DATA) {
 			if (ctx->handle->cb != NULL) {
@@ -524,9 +525,7 @@ hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 		return NSERROR_NOMEM;
 	}
 
-	ret = llcache_initialise(hlcache_parameters->cb,
-				 hlcache_parameters->cb_ctx,
-				 hlcache_parameters->limit);
+	ret = llcache_initialise(&hlcache_parameters->llcache);
 	if (ret != NSERROR_OK) {
 		free(hlcache);
 		hlcache = NULL;

@@ -2542,7 +2542,7 @@ int main(int argc, char** argv)
 	}
 
 	/* common initialisation */
-	ret = netsurf_init(path);
+	ret = netsurf_init(path, NULL);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

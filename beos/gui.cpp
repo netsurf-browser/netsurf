@@ -1062,7 +1062,7 @@ int main(int argc, char** argv)
 
 	/* common initialisation */
 	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
+        ret = netsurf_init(messages.Path(), NULL);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
@@ -1115,7 +1115,7 @@ int gui_init_replicant(int argc, char** argv)
 
 	/* common initialisation */
 	BPath messages = get_messages_path();
-	ret = netsurf_init(messages.Path());
+        ret = netsurf_init(messages.Path(), NULL);
 	if (ret != NSERROR_OK) {
 		// FIXME: must not die when in replicant!
 		die("NetSurf failed to initialise");
