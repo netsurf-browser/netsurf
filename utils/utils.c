@@ -579,7 +579,7 @@ char *nsc_time_strptime(const char *s, const char *format, struct tm *tm)
 		return NULL;
 	}
 
-	esecs = (time_t)strtoll(a, &endptr, 10);
+	esecs = (time_t)strtoll(s, &endptr, 10);
 
 	gtm = gmtime(esecs);
 	*tm = *gtm;
