@@ -38,6 +38,8 @@
 #include <time.h>
 #include <curl/curl.h>
 
+#include "utils/config.h"
+
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"

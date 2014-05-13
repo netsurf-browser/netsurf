@@ -38,6 +38,14 @@ char *strndup(const char *s, size_t n);
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 
+#if (defined(riscos) || defined(_WIN32))
+#undef HAVE_STRPTIME
+#define strptime nsc_time_strptime
+char *nsc_time_strptime(const char *s, const char *format, struct tm *tm);
+#else
+#define HAVE_STRPTIME
+#endif
+
 /* For some reason, UnixLib defines this unconditionally. 
  * Assume we're using UnixLib if building for RISC OS. */
 #if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) || defined(riscos))

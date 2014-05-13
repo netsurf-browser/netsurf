@@ -561,3 +561,30 @@ int inet_pton(int af, const char *src, void *dst)
 
 
 #endif
+
+#ifndef HAVE_STRPTIME
+
+/**
+ * naff strptime implementation for risc os and windows.
+ *
+ * @warning only supports %s format
+ */
+char *nsc_time_strptime(const char *s, const char *format, struct tm *tm)
+{
+	time_t esecs;
+	struct tm *gtm;
+	char *endptr;
+
+	if ((format[0] != '%') || (format[1] != 's')) {
+		return NULL
+	}
+
+	esecs = (time_t)strtoll(a, &endptr, 10);
+
+	gtm = gmtime(esecs);
+	*tm = *gtm;
+
+	return endptr;
+}
+
+#endif
