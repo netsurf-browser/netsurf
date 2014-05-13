@@ -576,7 +576,7 @@ char *nsc_time_strptime(const char *s, const char *format, struct tm *tm)
 	char *endptr;
 
 	if ((format[0] != '%') || (format[1] != 's')) {
-		return NULL
+		return NULL;
 	}
 
 	esecs = (time_t)strtoll(a, &endptr, 10);

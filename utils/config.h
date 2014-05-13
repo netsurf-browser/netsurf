@@ -41,6 +41,7 @@ char *strcasestr(const char *haystack, const char *needle);
 #if (defined(riscos) || defined(_WIN32))
 #undef HAVE_STRPTIME
 #define strptime nsc_time_strptime
+struct tm;
 char *nsc_time_strptime(const char *s, const char *format, struct tm *tm);
 #else
 #define HAVE_STRPTIME
