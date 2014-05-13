@@ -1060,7 +1060,7 @@ static nserror get_config_home(char **config_home_out)
 
 static nserror create_config_home(char **config_home_out)
 {
-	char *config_home;
+	char *config_home = NULL;
 	char *home_dir;
 	char *xdg_config_dir;
 	nserror ret;
@@ -1080,12 +1080,12 @@ static nserror create_config_home(char **config_home_out)
 			return NSERROR_NOT_DIRECTORY;
 		}
 
-		ret = netsurf_mkpath(&config_home, NULL, 2, home_dir, ".config/netsurf/");
+		ret = netsurf_mkpath(&config_home, NULL, 4, home_dir, ".config","netsurf", "/");
 		if (ret != NSERROR_OK) {
 			return ret;
 		}
 	} else {
-		ret = netsurf_mkpath(&config_home, NULL, 2, xdg_config_dir, "netsurf/");
+		ret = netsurf_mkpath(&config_home, NULL, 3, xdg_config_dir, "netsurf", "/");
 		if (ret != NSERROR_OK) {
 			return ret;
 		}
