@@ -146,6 +146,10 @@ nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap)
 	 */
 	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
 		elm[elm_idx] = va_arg(ap, const char *);
+		/* check the argument is not NULL */
+		if (elm[elm_idx] == NULL) {
+			return NSERROR_BAD_PARAMETER;
+		}
 		elm_len[elm_idx] = strlen(elm[elm_idx]);
 		fname_len += elm_len[elm_idx];
 	}
