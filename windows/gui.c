@@ -1484,16 +1484,18 @@ static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
 	SCROLLINFO si;
+	nserror err;
+	int height;
+	int width;
 	POINT p;
 
-	if ((w == NULL) ||
-	    (w->bw == NULL) ||
-	    (browser_window_has_content(bw) == false))
+	if ((w == NULL) || (w->bw == NULL))
 		return;
 
-	/* limit scale range */
-	if (abs(w->bw->scale - 0.0) < 0.00001)
-		w->bw->scale = 1.0;
+	err = browser_window_get_extents(w->bw, true, &width, &height);
+	if (err != NSERROR_OK) {
+		return;
+	}
 
 	w->requestscrollx = sx - w->scrollx;
 	w->requestscrolly = sy - w->scrolly;
@@ -1502,10 +1504,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (content_get_height(w->bw->current_content) * w->bw->scale) - 1;
+	si.nMax = height - 1;
 	si.nPage = w->height;
 	si.nPos = max(w->scrolly + w->requestscrolly, 0);
-	si.nPos = min(si.nPos, content_get_height(w->bw->current_content) * w->bw->scale - w->height);
+	si.nPos = min(si.nPos, height - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
 	LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -1513,10 +1515,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (content_get_width(w->bw->current_content) * w->bw->scale) -1;
+	si.nMax = width -1;
 	si.nPage = w->width;
 	si.nPos = max(w->scrollx + w->requestscrollx, 0);
-	si.nPos = min(si.nPos, content_get_width(w->bw->current_content) * w->bw->scale - w->width);
+	si.nPos = min(si.nPos, width - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
 	LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
