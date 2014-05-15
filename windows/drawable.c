@@ -326,8 +326,8 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 		clip.y1 = ps.rcPaint.bottom;
 
 		browser_window_redraw(gw->bw,
-				      -gw->scrollx / gw->bw->scale,
-				      -gw->scrolly / gw->bw->scale,
+				      -gw->scrollx / gw->scale,
+				      -gw->scrolly / gw->scale,
 				      &clip, &ctx);
 	}
 
@@ -372,18 +372,18 @@ nsws_drawable_mouseup(struct gui_window *gw,
 	if ((gw->mouse->state & click) != 0) {
 		LOG(("mouse click bw %p, state 0x%x, x %f, y %f",gw->bw,
 		     gw->mouse->state,
-		     (x + gw->scrollx) / gw->bw->scale,
-		     (y + gw->scrolly) / gw->bw->scale));
+		     (x + gw->scrollx) / gw->scale,
+		     (y + gw->scrolly) / gw->scale));
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale);
+					   (x + gw->scrollx) / gw->scale,
+					   (y + gw->scrolly) / gw->scale);
 	} else {
 		browser_window_mouse_track(gw->bw,
 					   0,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale);
+					   (x + gw->scrollx) / gw->scale,
+					   (y + gw->scrolly) / gw->scale);
 	}
 
 	gw->mouse->state = 0;
@@ -414,17 +414,17 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
 		gw->mouse->state |= BROWSER_MOUSE_MOD_3;
 
-	gw->mouse->pressed_x = (x + gw->scrollx) / gw->bw->scale;
-	gw->mouse->pressed_y = (y + gw->scrolly) / gw->bw->scale;
+	gw->mouse->pressed_x = (x + gw->scrollx) / gw->scale;
+	gw->mouse->pressed_y = (y + gw->scrolly) / gw->scale;
 
 	LOG(("mouse click bw %p, state %x, x %f, y %f", gw->bw,
 	     gw->mouse->state,
-	     (x + gw->scrollx) / gw->bw->scale,
-	     (y + gw->scrolly) / gw->bw->scale));
+	     (x + gw->scrollx) / gw->scale,
+	     (y + gw->scrolly) / gw->scale));
 
 	browser_window_mouse_click(gw->bw, gw->mouse->state,
-				   (x + gw->scrollx) / gw->bw->scale ,
-				   (y + gw->scrolly) / gw->bw->scale);
+				   (x + gw->scrollx) / gw->scale,
+				   (y + gw->scrolly) / gw->scale);
 
 	return 0;
 }
@@ -443,8 +443,8 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 		return 0;
 
 	/* scale co-ordinates */
-	x = (x + gw->scrollx) / gw->bw->scale;
-	y = (y + gw->scrolly) / gw->bw->scale;
+	x = (x + gw->scrollx) / gw->scale;
+	y = (y + gw->scrolly) / gw->scale;
 
 	/* if mouse button held down and pointer moved more than
 	 * minimum distance drag is happening */
