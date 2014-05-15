@@ -35,7 +35,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <curl/curl.h>
 
 #include "utils/config.h"
@@ -45,6 +44,7 @@
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "utils/time.h"
 #include "desktop/gui_factory.h"
 
 #include "content/fetch.h"
@@ -1105,7 +1105,6 @@ llcache_serialise_metadata(llcache_object *object,
 	char *op;
 	unsigned int hloop;
 	int use;
-	struct tm *ltm;
 
 	allocsize = 10 + 1; /* object length */
 
@@ -1133,22 +1132,30 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize = allocsize;
 
 	/* the url, used for checking for collisions */
-	use = snprintf(op, datasize, "%s%c", nsurl_access(object->url), 0);
-	if (use > datasize)
+	use = snprintf(op, datasize, "%s", nsurl_access(object->url));
+	if (use < 0) {
+		goto operror;
+	}
+	use++; /* does not count the null */
+	if (use > datasize) {
 		goto overflow;
+	}
 	op += use;
 	datasize -= use;
 
 	/* object size */
-	use = snprintf(op, datasize, "%zu%c", object->source_len, 0);
+	use = snprintf(op, datasize, "%zu", object->source_len);
+	if (use < 0) {
+		goto operror;
+	}
+	use++; /* does not count the null */
 	if (use > datasize)
 		goto overflow;
 	op += use;
 	datasize -= use;
 
 	/* Time of request */
-	ltm = localtime(&object->cache.req_time);
-	use = strftime(op, datasize, "%s", ltm);
+	use = nsc_sntimet(op, datasize, &object->cache.req_time);
 	if (use == 0)
 		goto overflow;
 	use++; /* does not count the null */
@@ -1156,8 +1163,7 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* Time of response */
-	ltm = localtime(&object->cache.res_time);
-	use = strftime(op, datasize, "%s", ltm);
+	use = nsc_sntimet(op, datasize, &object->cache.res_time);
 	if (use == 0)
 		goto overflow;
 	use++; /* does not count the null */
@@ -1165,8 +1171,7 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* Time of completion */
-	ltm = localtime(&object->cache.fin_time);
-	use = strftime(op, datasize, "%s", ltm);
+	use = nsc_sntimet(op, datasize, &object->cache.fin_time);
 	if (use == 0)
 		goto overflow;
 	use++; /* does not count the null */
@@ -1174,7 +1179,11 @@ llcache_serialise_metadata(llcache_object *object,
 	datasize -= use;
 
 	/* number of headers */
-	use = snprintf(op, datasize, "%zu%c", object->num_headers, 0);
+	use = snprintf(op, datasize, "%zu", object->num_headers);
+	if (use < 0) {
+		goto operror;
+	}
+	use++; /* does not count the null */
 	if (use > datasize)
 		goto overflow;
 	op += use;
@@ -1183,10 +1192,13 @@ llcache_serialise_metadata(llcache_object *object,
 	/* headers */
 	for (hloop = 0 ; hloop < object->num_headers ; hloop++) {
 		use = snprintf(op, datasize,
-			       "%s:%s%c",
+			       "%s:%s",
 			       object->headers[hloop].name,
-			       object->headers[hloop].value,
-			       0);
+			       object->headers[hloop].value);
+		if (use < 0) {
+			goto operror;
+		}
+		use++; /* does not count the null */
 		if (use > datasize)
 			goto overflow;
 		op += use;
@@ -1203,6 +1215,12 @@ llcache_serialise_metadata(llcache_object *object,
 overflow:
 	/* somehow we overflowed the buffer - hth? */
 	LOG(("Overflowed metadata buffer"));
+	free(data);
+	return NSERROR_INVALID;
+
+operror:
+	/* output error */
+	LOG(("Output error"));
 	free(data);
 	return NSERROR_INVALID;
 }
@@ -1223,7 +1241,6 @@ llcache_process_metadata(llcache_object *object)
 	int lnsize;
 	size_t num_headers;
 	size_t hloop;
-	struct tm ltm;
 	enum backing_store_flags flags = BACKING_STORE_META;
 
 	LOG(("Retriving metadata"));
@@ -1290,31 +1307,24 @@ llcache_process_metadata(llcache_object *object)
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) ||
-	    (strptime(ln, "%s", &ltm) == NULL))
+	if (nsc_snptimet(ln, lnsize, &object->cache.req_time) != NSERROR_OK)
 		goto format_error;
-	object->cache.req_time = mktime(&ltm);
 
 	/* metadata line 4 is the time of response */
 	line = 4;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) ||
-	    (strptime(ln, "%s", &ltm) == NULL))
+	if (nsc_snptimet(ln, lnsize, &object->cache.res_time) != NSERROR_OK)
 		goto format_error;
-	object->cache.res_time = mktime(&ltm);
 
 	/* metadata line 5 is the time of request completion */
 	line = 5;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) ||
-	    (strptime(ln, "%s", &ltm) == NULL))
+	if (nsc_snptimet(ln, lnsize, &object->cache.fin_time) != NSERROR_OK)
 		goto format_error;
-	object->cache.fin_time = mktime(&ltm);
-
 
 	/* metadata line 6 is the number of headers */
 	line = 6;

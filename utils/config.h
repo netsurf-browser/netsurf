@@ -38,13 +38,15 @@ char *strndup(const char *s, size_t n);
 char *strcasestr(const char *haystack, const char *needle);
 #endif
 
-#if (defined(riscos) || defined(_WIN32))
+/* Although these platforms might have strftime or strptime they
+ * appear not to support the time_t seconds format specifier.
+ */
+#if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
 #undef HAVE_STRPTIME
-#define strptime nsc_time_strptime
-struct tm;
-char *nsc_time_strptime(const char *s, const char *format, struct tm *tm);
+#undef HAVE_STRFTIME
 #else
 #define HAVE_STRPTIME
+#define HAVE_STRFTIME
 #endif
 
 /* For some reason, UnixLib defines this unconditionally. 

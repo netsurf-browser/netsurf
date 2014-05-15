@@ -35,6 +35,7 @@
 #include "utils/config.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
+#include "utils/time.h"
 #include "utils/utils.h"
 
 /* exported interface documented in utils/utils.h */
@@ -566,29 +567,57 @@ int inet_pton(int af, const char *src, void *dst)
 
 #endif
 
-#ifndef HAVE_STRPTIME
-
-/**
- * naff strptime implementation for risc os and windows.
- *
- * @warning only supports %s format
- */
-char *nsc_time_strptime(const char *s, const char *format, struct tm *tm)
+/* exported function documented in utils/time.h */
+int nsc_sntimet(char *str, size_t size, time_t *timep)
 {
-	time_t esecs;
-	struct tm *gtm;
-	char *endptr;
+#ifndef HAVE_STRFTIME
+	long long val;
+	val = (long long)*timep;
 
-	if ((format[0] != '%') || (format[1] != 's')) {
-		return NULL;
+	return snprintf(str, size, "%lld", val);
+#else
+	struct tm *ltm;
+
+	ltm = localtime(timep);
+	if (ltm == NULL) {
+		return -1;
 	}
 
-	esecs = (time_t)strtoll(s, &endptr, 10);
-
-	gtm = gmtime(esecs);
-	*tm = *gtm;
-
-	return endptr;
+	return strftime(str, size, "%s", ltm);
+#endif 
 }
 
+nserror nsc_snptimet(char *str, size_t size, time_t *timep)
+{
+	time_t time_out;
+
+#ifndef HAVE_STRPTIME
+
+	if (size < 1) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	time_out = (time_t)strtoll(str, NULL, 10);
+
+	if (time_out == 0) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+#else
+	struct tm ltm;
+
+	if (size < 1) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (strptime(str, "%s", &ltm) == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	time_out = mktime(&ltm);
+
 #endif
+	*timep = time_out;
+
+	return NSERROR_OK;
+}
