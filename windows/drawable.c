@@ -73,6 +73,7 @@ nsws_drawable_wheel(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 static LRESULT
 nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 {
+	int width, height;
 	SCROLLINFO si;
 	int mem;
 
@@ -120,10 +121,10 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	}
 
 	si.fMask = SIF_POS;
-	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
-		si.nPos = min(si.nPos,
-			      content_get_height(gw->bw->current_content) *
-			      gw->bw->scale - gw->height);
+	if ((gw->bw != NULL) &&
+			(browser_window_get_extents(gw->bw, true,
+			&width, &height) == NSERROR_OK)) {
+		si.nPos = min(si.nPos, height - gw->height);
 	}
 
 	si.nPos = max(si.nPos, 0);
@@ -144,6 +145,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 static LRESULT
 nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 {
+	int width, height;
 	SCROLLINFO si;
 	int mem;
 
@@ -184,10 +186,10 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	si.fMask = SIF_POS;
 
-	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
-		si.nPos = min(si.nPos,
-			      content_get_width(gw->bw->current_content) *
-			      gw->bw->scale - gw->width);
+	if ((gw->bw != NULL) &&
+			(browser_window_get_extents(gw->bw, true,
+			&width, &height) == NSERROR_OK)) {
+		si.nPos = min(si.nPos, width - gw->width);
 	}
 	si.nPos = max(si.nPos, 0);
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
