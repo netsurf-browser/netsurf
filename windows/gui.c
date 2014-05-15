@@ -1488,7 +1488,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 	if ((w == NULL) ||
 	    (w->bw == NULL) ||
-	    (w->bw->current_content == NULL))
+	    (browser_window_has_content(bw) == false))
 		return;
 
 	/* limit scale range */
