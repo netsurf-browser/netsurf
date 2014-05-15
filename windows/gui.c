@@ -33,7 +33,7 @@
 #include "content/fetch.h"
 #include "css/utils.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
