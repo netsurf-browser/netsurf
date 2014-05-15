@@ -78,6 +78,22 @@ static struct nsws_pointers nsws_pointer;
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
 static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
+static void nsws_set_scale(struct gui_window *gw, float scale)
+{
+	assert(gw != NULL);
+
+	if (gw->scale == scale)
+		return;
+
+	gw->scale = scale;
+
+	if (gw->bw == NULL)
+		return;
+
+	browser_window_set_scale(gw->bw, scale, true);
+	browser_window_reformat(gw->bw, false, gw->width, gw->height);
+}
+
 
 static void win32_poll(bool active)
 {
@@ -904,8 +920,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw, gw->bw->scale * 1.1, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, gw->scale * 1.1);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -916,9 +931,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw,
-						 gw->bw->scale * 0.9, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, gw->scale * 0.9);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -929,8 +942,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw, 1.0, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, 1.0);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -1248,6 +1260,7 @@ gui_window_create(struct browser_window *bw,
 
 	gw->width = 800;
 	gw->height = 600;
+	gw->scale = 1.0;
 	gw->toolbuttonsize = 24;
 	gw->requestscrollx = 0;
 	gw->requestscrolly = 0;
@@ -1456,8 +1469,8 @@ static void gui_window_update_box(struct gui_window *gw, const struct rect *rect
 
 	RECT redrawrect;
 
-	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->bw->scale);
-	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->bw->scale);
+	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->scale);
+	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->scale);
 	redrawrect.right =(long)rect->x1;
 	redrawrect.bottom = (long)rect->y1;
 
@@ -1708,9 +1721,9 @@ static void gui_window_place_caret(struct gui_window *w, int x, int y,
 {
 	if (w == NULL)
 		return;
-	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->bw->scale);
-	SetCaretPos(x * w->bw->scale - w->scrollx,
-		    y * w->bw->scale - w->scrolly);
+	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->scale);
+	SetCaretPos(x * w->scale - w->scrollx,
+		    y * w->scale - w->scrolly);
 	ShowCaret(w->drawingarea);
 }
 
