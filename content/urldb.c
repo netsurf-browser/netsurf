@@ -104,7 +104,6 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
-#include "utils/filename.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/bloom.h"
