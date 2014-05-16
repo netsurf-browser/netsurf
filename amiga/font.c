@@ -289,30 +289,33 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	ULONG co;
-	uint16 *utf16 = NULL,*outf16 = NULL;
-	uint16 *utf16next = NULL;
+	uint16 *utf16_str = NULL;
+	const uint16 *utf16 = NULL;
+	const uint16 *utf16next = NULL;
 	FIXED kern = 0;
-	int utf16charlen = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0;
 	int utf8_pos = 0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
-	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return false;
-	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
+	/* Get utf16 conversion of string for glyph measuring routines */
+	if (utf8_to_enc(string, "UTF-16", length, (char **)&utf16_str) !=
+			NSERROR_OK)
+		return false;
+
+	utf16 = utf16_str;
+	if (!(ofont = ami_open_outline_font(fstyle, 0)))
+		return false;
 
 	*char_offset = 0;
 	*actual_x = 0;
 
 	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
-			utf16charlen = 1;
+			utf16next = utf16 + 1;
 		else
-			utf16charlen = 2;
-
-		utf16next = &utf16[utf16charlen];
+			utf16next = utf16 + 2;
 
 		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 
@@ -330,21 +333,13 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			/* Got a space */
 			*actual_x = tx;
 			*char_offset = utf8_pos;
-
-			if (x < tx) {
-				/* Beyond available width,
-				 * so don't look further */
-				free(outf16);
-				return true;
-			}
 		}
 
 		tx += tempx;
-
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
-			free(outf16);
+			free(utf16_str);
 			return true;
 		}
 
@@ -352,7 +347,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
-	free(outf16);
+	free(utf16_str);
 
 	/* No spaces to split at, or everything fits */
 	assert(*char_offset == 0 || x >= tx);
@@ -640,7 +635,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 }
 
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 *char1, uint16 *char2, uint32 emwidth)
+		const uint16 *char1, const uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
 	FIXED kern = 0;
