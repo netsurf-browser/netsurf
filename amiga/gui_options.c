@@ -299,7 +299,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
 	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
-	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
+	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
 	gadlab[GID_OPTS_NOTIFY] = (char *)ami_utf8_easy((char *)messages_get("DownloadNotify"));
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
@@ -1157,15 +1157,14 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_DISC] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
-											GA_Disabled, TRUE,
-											INTEGER_Number, nsoption_int(disc_cache_age),
+											INTEGER_Number, nsoption_int(disc_cache_size) / 1048576,
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 366,
 											INTEGER_Arrows, TRUE,
 										IntegerEnd,
 										CHILD_WeightedWidth, 0,
 										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_DAYS],
+											LABEL_Text, gadlab[LAB_OPTS_MB],
 										LabelEnd,
 									LayoutEnd,
 									CHILD_Label, LabelObject,
@@ -1751,7 +1750,8 @@ void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_int(disc_cache_age));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_int(disc_cache_size));
+	nsoption_set_int(disc_cache_size, nsoption_int(disc_cache_size) * 1048576);
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_OVERWRITE],(ULONG *)&data);
 	if (data) { 
