@@ -149,7 +149,7 @@ ULONG ami_xdpi;
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 *char1, uint16 *char2, uint32 emwidth);
+		const uint16 *char1, const uint16 *char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
@@ -642,6 +642,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	struct MinList *gwlist;
 	FIXED char1w;
 	struct GlyphWidthEntry *gwnode;
+	bool skip_c2 = false;
 
 	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
@@ -650,7 +651,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		*char2 = 0;
+		skip_c2 = true;
 	}
 	
 	if(ESetInfo(&ofont->olf_EEngine,
@@ -667,7 +668,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 			kern = 0;
 
-			if(*char2) {
+			if(!skip_c2) {
 				if(ESetInfo(&ofont->olf_EEngine,
 						OT_GlyphCode, *char1,
 						OT_GlyphCode2, *char2,
@@ -680,7 +681,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 			
-			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(!skip_c2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 				
