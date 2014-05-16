@@ -1629,6 +1629,7 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 				uncachable = true;
 			}
 		}
+		lwc_string_unref(scheme);
 	}
 
 
