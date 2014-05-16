@@ -17,6 +17,8 @@
  */
 
 /* NetSurf core includes */
+#include "content/backing_store.h"
+#include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_history.h"
@@ -24,7 +26,6 @@
 #include "desktop/hotlist.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
-#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
@@ -33,10 +34,10 @@
 #include "image/ico.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/file.h"
-#include "content/fetchers/resource.h"
 
 /* NetSurf Amiga platform includes */
 #include "amiga/arexx.h"
@@ -5228,6 +5229,7 @@ int main(int argc, char** argv)
 	char messages[100];
 	char script[1024];
 	char temp[1024];
+	STRPTR current_user_cache = NULL;
 	BPTR lock = 0;
 	int32 user = 0;
 	nserror ret;
@@ -5241,6 +5243,7 @@ int main(int argc, char** argv)
 		.file = &amiga_file_table,
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
+		.llcache = filesystem_llcache_table,
 	};
 
 	ret = netsurf_register(&amiga_table);
@@ -5269,6 +5272,9 @@ int main(int argc, char** argv)
 		UnLock(lock);
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
+	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
+
+	if(lock = CreateDirTree(current_user_cache)) UnLock(lock);
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
@@ -5294,11 +5300,12 @@ int main(int argc, char** argv)
 
 	if (ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
-	ret = netsurf_init(messages, NULL);
+	ret = netsurf_init(messages, current_user_cache);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
 
+	if(current_user_cache != NULL) FreeVec(current_user_cache);
 	ret = amiga_icon_init();
 
 	gui_init(argc, argv);
