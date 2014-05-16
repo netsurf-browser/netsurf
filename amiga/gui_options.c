@@ -1159,7 +1159,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											INTEGER_Number, nsoption_int(disc_cache_size) / 1048576,
 											INTEGER_Minimum, 0,
-											INTEGER_Maximum, 366,
+											INTEGER_Maximum, 4096,
 											INTEGER_Arrows, TRUE,
 										IntegerEnd,
 										CHILD_WeightedWidth, 0,
