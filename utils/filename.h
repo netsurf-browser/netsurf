@@ -22,9 +22,9 @@
 #include <stdbool.h>
 
 #ifdef riscos
-#define TEMP_FILENAME_PREFIX "<Wimp$ScrapDir>/WWW/NetSurf/Cache"
+#define TEMP_FILENAME_PREFIX "<Wimp$ScrapDir>/WWW/NetSurf/Misc"
 #else
-#define TEMP_FILENAME_PREFIX "/tmp/WWW/NetSurf/Cache"
+#define TEMP_FILENAME_PREFIX "/tmp/WWW/NetSurf/Misc"
 #endif
 
 const char *filename_request(void);
