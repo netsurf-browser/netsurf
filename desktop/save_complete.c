@@ -37,6 +37,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/file.h"
+#include "utils/messages.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "css/css.h"
@@ -149,7 +150,7 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 
 	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, leafname);
 	if (ret != NSERROR_OK) {
-		warn_user("NoMemory", 0);
+		warn_user(messages_get_errorcode(ret), 0);
 		return false;
 	}
 
@@ -1051,7 +1052,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 
 	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, filename);
 	if (ret != NSERROR_OK) {
-		warn_user("NoMemory", NULL);
+		warn_user(messages_get_errorcode(ret), NULL);
 		return false;
 	}
 
@@ -1197,8 +1198,9 @@ bool save_complete(hlcache_handle *c, const char *path,
 	
 	result = save_complete_save_html(&ctx, c, true);
 
-	if (result)
+	if (result) {
 		result = save_complete_inventory(&ctx);
+	}
 
 	save_complete_ctx_finalise(&ctx);
 

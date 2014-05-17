@@ -2360,8 +2360,8 @@ static nserror riscos_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
 	curp = fname;
 
 	/* first element is not altered */
-	memmove(curp, elm[elm_idx], elm_len[elm_idx]);
-	curp += elm_len[elm_idx];
+	memmove(curp, elm[0], elm_len[0]);
+	curp += elm_len[0];
 	/* ensure there is a delimiter */
 	if (curp[-1] != DIR_SEP) {
 		*curp = DIR_SEP;
