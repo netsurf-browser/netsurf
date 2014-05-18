@@ -653,7 +653,9 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 		/* Don't attempt to kern a UTF-16 surrogate */
 		skip_c2 = true;
 	}
-	
+
+	if (*char2 == 0) skip_c2 = true;
+
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode, *char1,
 			OT_GlyphCode2, *char1,
