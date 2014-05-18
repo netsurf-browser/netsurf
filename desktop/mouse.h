@@ -27,7 +27,7 @@
 
 /* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
  *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
-typedef enum {
+typedef enum browser_mouse_state {
 	BROWSER_MOUSE_HOVER = 0,		/* No mouse buttons pressed,
 						 * May be used to indicate
 						 * hover or end of drag. */
