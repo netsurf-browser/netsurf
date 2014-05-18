@@ -23,6 +23,7 @@
 #include FT_CACHE_H
 
 #include "utils/nsoption.h"
+#include "css/css.h"
 #include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"
