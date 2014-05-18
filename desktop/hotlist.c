@@ -26,6 +26,7 @@
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/treeview.h"
+#include "desktop/browser.h"
 #include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

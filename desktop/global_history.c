@@ -19,14 +19,16 @@
 
 #include <stdlib.h>
 
-#include "content/urldb.h"
-#include "desktop/global_history.h"
-#include "desktop/treeview.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
 #include "utils/libdom.h"
 #include "utils/log.h"
+#include "content/urldb.h"
+
+#include "desktop/global_history.h"
+#include "desktop/treeview.h"
+#include "desktop/browser.h"
 
 #define N_DAYS 28
 #define N_SEC_PER_DAY (60 * 60 * 24)
