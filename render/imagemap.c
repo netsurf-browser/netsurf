@@ -76,18 +76,44 @@ struct imagemap {
 	struct imagemap *next;	/**< next entry in this hash chain */
 };
 
-static bool imagemap_add(html_content *c, dom_string *key,
-		struct mapentry *list);
-static bool imagemap_create(html_content *c);
-static bool imagemap_extract_map(dom_node *node, html_content *c,
-		struct mapentry **entry);
-static bool imagemap_addtolist(dom_node *n, nsurl *base_url,
-		struct mapentry **entry, dom_string *tagtype);
-static void imagemap_freelist(struct mapentry *list);
-static unsigned int imagemap_hash(const char *key);
-static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
-		unsigned long x, unsigned long y, unsigned long click_x,
-		unsigned long click_y);
+/**
+ * Create hashtable of imagemaps
+ *
+ * \param c The containing content
+ * \return true on success, false otherwise
+ */
+static bool imagemap_create(html_content *c)
+{
+	assert(c != NULL);
+
+	if (c->imagemaps == NULL) {
+		c->imagemaps = calloc(HASH_SIZE, sizeof(struct imagemap *));
+		if (c->imagemaps == NULL) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Hash function.
+ *
+ * \param key The key to hash.
+ * \return The hashed value.
+ */
+static unsigned int imagemap_hash(const char *key)
+{
+	unsigned int z = 0;
+
+	if (key == 0) return 0;
+
+	for (; *key != 0; key++) {
+		z += *key & 0x1f;
+	}
+
+	return (z % (HASH_SIZE - 1)) + 1;
+}
 
 /**
  * Add an imagemap to the hashtable, creating it if it doesn't exist
@@ -97,7 +123,8 @@ static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
  * \param list List of map regions
  * \return true on succes, false otherwise
  */
-bool imagemap_add(html_content *c, dom_string *key, struct mapentry *list)
+static bool
+imagemap_add(html_content *c, dom_string *key, struct mapentry *list)
 {
 	struct imagemap *map;
 	unsigned int slot;
@@ -112,7 +139,7 @@ bool imagemap_add(html_content *c, dom_string *key, struct mapentry *list)
 	map = calloc(1, sizeof(*map));
 	if (map == NULL)
 		return false;
-	
+
 	/* \todo Stop relying on NULL termination of dom_string */
 	map->key = strdup(dom_string_data(key));
 	if (map->key == NULL) {
@@ -131,23 +158,34 @@ bool imagemap_add(html_content *c, dom_string *key, struct mapentry *list)
 }
 
 /**
- * Create hashtable of imagemaps
+ * Free list of imagemap entries
  *
- * \param c The containing content
- * \return true on success, false otherwise
+ * \param list Pointer to head of list
  */
-bool imagemap_create(html_content *c)
+static void imagemap_freelist(struct mapentry *list)
 {
-	assert(c != NULL);
+	struct mapentry *entry, *prev;
 
-	if (c->imagemaps == NULL) {
-		c->imagemaps = calloc(HASH_SIZE, sizeof(struct imagemap *));
-		if (c->imagemaps == NULL) {
-			return false;
+	assert(list != NULL);
+
+	entry = list;
+
+	while (entry != NULL) {
+		prev = entry;
+
+		nsurl_unref(entry->url);
+
+		if (entry->target)
+			free(entry->target);
+
+		if (entry->type == IMAGEMAP_POLY) {
+			free(entry->bounds.poly.xcoords);
+			free(entry->bounds.poly.ycoords);
 		}
-	}
 
-	return true;
+		entry = entry->next;
+		free(prev);
+	}
 }
 
 /**
@@ -245,172 +283,6 @@ void imagemap_dump(html_content *c)
 }
 
 /**
- * Extract all imagemaps from a document tree
- *
- * \param c The content
- * \param map_str A dom_string which is "map"
- * \return false on memory exhaustion, true otherwise
- */
-nserror
-imagemap_extract(html_content *c)
-{
-	dom_nodelist *nlist;
-	dom_exception exc;
-	unsigned long mapnr;
-	uint32_t maybe_maps;
-	nserror ret = NSERROR_OK;
-
-	exc = dom_document_get_elements_by_tag_name(c->document, 
-						    corestring_dom_map, 
-						    &nlist);
-	if (exc != DOM_NO_ERR) {
-		return NSERROR_DOM;
-	}
-	
-	exc = dom_nodelist_get_length(nlist, &maybe_maps);
-	if (exc != DOM_NO_ERR) {
-		ret = NSERROR_DOM;
-		goto out_nlist;
-	}
-	
-	for (mapnr = 0; mapnr < maybe_maps; ++mapnr) {
-		dom_node *node;
-		dom_string *name;
-		exc = dom_nodelist_item(nlist, mapnr, &node);
-		if (exc != DOM_NO_ERR) {
-			ret = NSERROR_DOM;
-			goto out_nlist;
-		}
-		
-		exc = dom_element_get_attribute(node, corestring_dom_id,
-						&name);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(node);
-			ret = NSERROR_DOM;
-			goto out_nlist;
-		}
-		
-		if (name == NULL) {
-			exc = dom_element_get_attribute(node, 
-							corestring_dom_name,
-							&name);
-			if (exc != DOM_NO_ERR) {
-				dom_node_unref(node);
-				ret = NSERROR_DOM;
-				goto out_nlist;
-			}
-		}
-		
-		if (name != NULL) {
-			struct mapentry *entry = NULL;
-			if (imagemap_extract_map(node, c, &entry) == false) {
-				if (entry != NULL) {
-					imagemap_freelist(entry);
-				}
-
-				dom_string_unref(name);
-				dom_node_unref(node);
-				ret = NSERROR_NOMEM; /** @todo check this */
-				goto out_nlist;
-			}
-			
-			/* imagemap_extract_map may not extract anything,
-			 * so entry can still be NULL here. This isn't an
-			 * error as it just means that we've encountered
-			 * an incorrectly defined <map>...</map> block
-			 */
-			if ((entry != NULL) && 
-			    (imagemap_add(c, name, entry) == false)) {
-				imagemap_freelist(entry);
-
-				dom_string_unref(name);
-				dom_node_unref(node);
-				ret = NSERROR_NOMEM; /** @todo check this */
-				goto out_nlist;
-			}
-		}
-		
-		dom_string_unref(name);
-		dom_node_unref(node);
-	}
-	
-	
-out_nlist:
-	
-	dom_nodelist_unref(nlist);
-
-	return ret;
-}
-
-/**
- * Extract an imagemap from html source
- *
- * \param node  XML node containing map
- * \param c     Content containing document
- * \param entry List of map entries
- * \param tname The sub-tags to consider on this pass
- * \return false on memory exhaustion, true otherwise
- */
-static bool
-imagemap_extract_map_entries(dom_node *node, html_content *c,
-			     struct mapentry **entry, dom_string *tname)
-{
-	dom_nodelist *nlist;
-	dom_exception exc;
-	unsigned long ent;
-	uint32_t tag_count;
-	
-	exc = dom_element_get_elements_by_tag_name(node, tname, &nlist);
-	if (exc != DOM_NO_ERR) {
-		return false;
-	}
-	
-	exc = dom_nodelist_get_length(nlist, &tag_count);
-	if (exc != DOM_NO_ERR) {
-		dom_nodelist_unref(nlist);
-		return false;
-	}
-	
-	for (ent = 0; ent < tag_count; ++ent) {
-		dom_node *subnode;
-		
-		exc = dom_nodelist_item(nlist, ent, &subnode);
-		if (exc != DOM_NO_ERR) {
-			dom_nodelist_unref(nlist);
-			return false;
-		}
-		if (imagemap_addtolist(subnode, c->base_url, 
-				       entry, tname) == false) {
-			dom_node_unref(subnode);
-			dom_nodelist_unref(nlist);
-			return false;
-		}
-		dom_node_unref(subnode);
-	}
-	
-	dom_nodelist_unref(nlist);
-	
-	return true;
-}
-
-/**
- * Extract an imagemap from html source
- *
- * \param node  XML node containing map
- * \param c     Content containing document
- * \param entry List of map entries
- * \return false on memory exhaustion, true otherwise
- */
-bool imagemap_extract_map(dom_node *node, html_content *c,
-		struct mapentry **entry)
-{
-	if (imagemap_extract_map_entries(node, c, entry, 
-			corestring_dom_area) == false)
-		return false;
-	return imagemap_extract_map_entries(node, c, entry,
-			corestring_dom_a);
-}
-/**
  * Adds an imagemap entry to the list
  *
  * \param n     The xmlNode representing the entry to add
@@ -418,7 +290,7 @@ bool imagemap_extract_map(dom_node *node, html_content *c,
  * \param entry Pointer to list of entries
  * \return false on memory exhaustion, true otherwise
  */
-bool
+static bool
 imagemap_addtolist(dom_node *n, nsurl *base_url,
 		   struct mapentry **entry, dom_string *tagtype)
 {
@@ -427,50 +299,50 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 	dom_string *coords = NULL;
 	struct mapentry *new_map, *temp;
 	bool ret = true;
-	
+
 	if (dom_string_caseless_isequal(tagtype, corestring_dom_area)) {
 		bool nohref = false;
-		exc = dom_element_has_attribute(n, 
+		exc = dom_element_has_attribute(n,
 				corestring_dom_nohref, &nohref);
 		if ((exc != DOM_NO_ERR) || nohref)
 			/* Skip <area nohref="anything" /> */
 			goto ok_out;
 	}
-	
+
 	exc = dom_element_get_attribute(n, corestring_dom_href, &href);
 	if (exc != DOM_NO_ERR || href == NULL) {
 		/* No href="" attribute, skip this element */
 		goto ok_out;
 	}
-	
+
 	exc = dom_element_get_attribute(n, corestring_dom_target, &target);
 	if (exc != DOM_NO_ERR) {
 		goto ok_out;
 	}
-	
+
 	exc = dom_element_get_attribute(n, corestring_dom_shape, &shape);
 	if (exc != DOM_NO_ERR) {
 		goto ok_out;
 	}
-	
+
 	/* If there's no shape, we default to rectangles */
 	if (shape == NULL)
 		shape = dom_string_ref(corestring_dom_rect);
-	
+
 	if (!dom_string_caseless_lwc_isequal(shape, corestring_lwc_default)) {
 		/* If not 'default' and there's no 'coords' give up */
-		exc = dom_element_get_attribute(n, corestring_dom_coords, 
+		exc = dom_element_get_attribute(n, corestring_dom_coords,
 						&coords);
 		if (exc != DOM_NO_ERR || coords == NULL) {
 			goto ok_out;
 		}
 	}
-	
+
 	new_map = calloc(1, sizeof(*new_map));
 	if (new_map == NULL) {
 		goto bad_out;
 	}
-	
+
 	if (dom_string_caseless_lwc_isequal(shape, corestring_lwc_rect) ||
 	    dom_string_caseless_lwc_isequal(shape, corestring_lwc_rectangle))
 		new_map->type = IMAGEMAP_RECT;
@@ -483,16 +355,16 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 		new_map->type = IMAGEMAP_DEFAULT;
 	else
 		goto bad_out;
-	
-	if (box_extract_link(dom_string_data(href), 
+
+	if (box_extract_link(dom_string_data(href),
 			     base_url, &new_map->url) == false)
 		goto bad_out;
-	
+
 	if (new_map->url == NULL) {
 		/* non-fatal error -> ignore this */
 		goto ok_free_map_out;
 	}
-	
+
 	if (target != NULL) {
 		/* Copy target into the map */
 		new_map->target = malloc(dom_string_byte_length(target) + 1);
@@ -502,7 +374,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 		/* \todo Do this better */
 		strcpy(new_map->target, dom_string_data(target));
 	}
-	
+
 	if (new_map->type != IMAGEMAP_DEFAULT) {
 		int x, y;
 		float *xcoords, *ycoords;
@@ -593,22 +465,21 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 			break;
 		}
 	}
-	
+
 	new_map->next = NULL;
 
-	if (entry && *entry) {
+	if (*entry) {
 		/* add to END of list */
 		for (temp = (*entry); temp->next != NULL; temp = temp->next)
 			;
 		temp->next = new_map;
-	}
-	else {
+	} else {
 		(*entry) = new_map;
 	}
-	
+
 	/* All good, linked in, let's clean up */
 	goto ok_out;
-	
+
 bad_out:
 	ret = false;
 ok_free_map_out:
@@ -635,39 +506,207 @@ ok_out:
 		dom_string_unref(shape);
 	if (coords != NULL)
 		dom_string_unref(coords);
-	
+
 	return ret;
 }
 
 /**
- * Free list of imagemap entries
+ * Extract an imagemap from html source
  *
- * \param list Pointer to head of list
+ * \param node  XML node containing map
+ * \param c     Content containing document
+ * \param entry List of map entries
+ * \param tname The sub-tags to consider on this pass
+ * \return false on memory exhaustion, true otherwise
  */
-void imagemap_freelist(struct mapentry *list)
+static bool
+imagemap_extract_map_entries(dom_node *node, html_content *c,
+			     struct mapentry **entry, dom_string *tname)
 {
-	struct mapentry *entry, *prev;
+	dom_nodelist *nlist;
+	dom_exception exc;
+	unsigned long ent;
+	uint32_t tag_count;
 
-	assert(list != NULL);
+	exc = dom_element_get_elements_by_tag_name(node, tname, &nlist);
+	if (exc != DOM_NO_ERR) {
+		return false;
+	}
 
-	entry = list;
+	exc = dom_nodelist_get_length(nlist, &tag_count);
+	if (exc != DOM_NO_ERR) {
+		dom_nodelist_unref(nlist);
+		return false;
+	}
 
-	while (entry != NULL) {
-		prev = entry;
+	for (ent = 0; ent < tag_count; ++ent) {
+		dom_node *subnode;
 
-		nsurl_unref(entry->url);
+		exc = dom_nodelist_item(nlist, ent, &subnode);
+		if (exc != DOM_NO_ERR) {
+			dom_nodelist_unref(nlist);
+			return false;
+		}
+		if (imagemap_addtolist(subnode, c->base_url,
+				       entry, tname) == false) {
+			dom_node_unref(subnode);
+			dom_nodelist_unref(nlist);
+			return false;
+		}
+		dom_node_unref(subnode);
+	}
 
-		if (entry->target)
-			free(entry->target);
+	dom_nodelist_unref(nlist);
 
-		if (entry->type == IMAGEMAP_POLY) {
-			free(entry->bounds.poly.xcoords);
-			free(entry->bounds.poly.ycoords);
+	return true;
+}
+
+/**
+ * Extract an imagemap from html source
+ *
+ * \param node  XML node containing map
+ * \param c     Content containing document
+ * \param entry List of map entries
+ * \return false on memory exhaustion, true otherwise
+ */
+static bool imagemap_extract_map(dom_node *node, html_content *c,
+		struct mapentry **entry)
+{
+	if (imagemap_extract_map_entries(node, c, entry,
+			corestring_dom_area) == false)
+		return false;
+	return imagemap_extract_map_entries(node, c, entry,
+			corestring_dom_a);
+}
+
+/**
+ * Extract all imagemaps from a document tree
+ *
+ * \param c The content
+ * \param map_str A dom_string which is "map"
+ * \return false on memory exhaustion, true otherwise
+ */
+nserror
+imagemap_extract(html_content *c)
+{
+	dom_nodelist *nlist;
+	dom_exception exc;
+	unsigned long mapnr;
+	uint32_t maybe_maps;
+	nserror ret = NSERROR_OK;
+
+	exc = dom_document_get_elements_by_tag_name(c->document,
+						    corestring_dom_map,
+						    &nlist);
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
+
+	exc = dom_nodelist_get_length(nlist, &maybe_maps);
+	if (exc != DOM_NO_ERR) {
+		ret = NSERROR_DOM;
+		goto out_nlist;
+	}
+
+	for (mapnr = 0; mapnr < maybe_maps; ++mapnr) {
+		dom_node *node;
+		dom_string *name;
+		exc = dom_nodelist_item(nlist, mapnr, &node);
+		if (exc != DOM_NO_ERR) {
+			ret = NSERROR_DOM;
+			goto out_nlist;
 		}
 
-		entry = entry->next;
-		free(prev);
+		exc = dom_element_get_attribute(node, corestring_dom_id,
+						&name);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(node);
+			ret = NSERROR_DOM;
+			goto out_nlist;
+		}
+
+		if (name == NULL) {
+			exc = dom_element_get_attribute(node,
+							corestring_dom_name,
+							&name);
+			if (exc != DOM_NO_ERR) {
+				dom_node_unref(node);
+				ret = NSERROR_DOM;
+				goto out_nlist;
+			}
+		}
+
+		if (name != NULL) {
+			struct mapentry *entry = NULL;
+			if (imagemap_extract_map(node, c, &entry) == false) {
+				if (entry != NULL) {
+					imagemap_freelist(entry);
+				}
+
+				dom_string_unref(name);
+				dom_node_unref(node);
+				ret = NSERROR_NOMEM; /** @todo check this */
+				goto out_nlist;
+			}
+
+			/* imagemap_extract_map may not extract anything,
+			 * so entry can still be NULL here. This isn't an
+			 * error as it just means that we've encountered
+			 * an incorrectly defined <map>...</map> block
+			 */
+			if ((entry != NULL) &&
+			    (imagemap_add(c, name, entry) == false)) {
+				imagemap_freelist(entry);
+
+				dom_string_unref(name);
+				dom_node_unref(node);
+				ret = NSERROR_NOMEM; /** @todo check this */
+				goto out_nlist;
+			}
+		}
+
+		dom_string_unref(name);
+		dom_node_unref(node);
 	}
+
+out_nlist:
+
+	dom_nodelist_unref(nlist);
+
+	return ret;
+}
+
+/**
+ * Test if a point lies within an arbitrary polygon
+ * Modified from comp.graphics.algorithms FAQ 2.03
+ *
+ * \param num Number of vertices
+ * \param xpt Array of x coordinates
+ * \param ypt Array of y coordinates
+ * \param x Left hand edge of containing box
+ * \param y Top edge of containing box
+ * \param click_x X coordinate of click
+ * \param click_y Y coordinate of click
+ * \return 1 if point is in polygon, 0 if outside. 0 or 1 if on boundary
+ */
+static int
+imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x,
+		unsigned long y, unsigned long click_x,	unsigned long click_y)
+{
+	int i, j, c = 0;
+
+	assert(xpt != NULL);
+	assert(ypt != NULL);
+
+	for (i = 0, j = num - 1; i < num; j = i++) {
+		if ((((ypt[i] + y <= click_y) && (click_y < ypt[j] + y)) ||
+		     ((ypt[j] + y <= click_y) && (click_y < ypt[i] + y))) &&
+		     (click_x < (xpt[j] - xpt[i]) *
+		     (click_y - (ypt[i] + y)) / (ypt[j] - ypt[i]) + xpt[i] + x))
+			c = !c;
+	}
+
+	return c;
 }
 
 /**
@@ -756,56 +795,4 @@ nsurl *imagemap_get(struct html_content *c, const char *key,
 		*target = NULL;
 
 	return NULL;
-}
-
-/**
- * Hash function
- *
- * \param key The key to hash
- * \return The hashed value
- */
-unsigned int imagemap_hash(const char *key)
-{
-	unsigned int z = 0;
-
-	if (key == 0) return 0;
-
-	for (; *key != 0; key++) {
-		z += *key & 0x1f;
-	}
-
-	return (z % (HASH_SIZE - 1)) + 1;
-}
-
-/**
- * Test if a point lies within an arbitrary polygon
- * Modified from comp.graphics.algorithms FAQ 2.03
- *
- * \param num Number of vertices
- * \param xpt Array of x coordinates
- * \param ypt Array of y coordinates
- * \param x Left hand edge of containing box
- * \param y Top edge of containing box
- * \param click_x X coordinate of click
- * \param click_y Y coordinate of click
- * \return 1 if point is in polygon, 0 if outside. 0 or 1 if on boundary
- */
-int imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x,
-		unsigned long y, unsigned long click_x,
-		unsigned long click_y)
-{
-	int i, j, c = 0;
-
-	assert(xpt != NULL);
-	assert(ypt != NULL);
-
-	for (i = 0, j = num - 1; i < num; j = i++) {
-		if ((((ypt[i] + y <= click_y) && (click_y < ypt[j] + y)) ||
-		     ((ypt[j] + y <= click_y) && (click_y < ypt[i] + y))) &&
-		     (click_x < (xpt[j] - xpt[i]) *
-		     (click_y - (ypt[i] + y)) / (ypt[j] - ypt[i]) + xpt[i] + x))
-			c = !c;
-	}
-
-	return c;
 }
