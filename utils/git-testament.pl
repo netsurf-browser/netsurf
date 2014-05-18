@@ -73,6 +73,7 @@ if ( $git_present ) {
    @bits = split /\s+/, `git describe --tags --exact-match HEAD 2>/dev/null`;
    $bits[0] = "" unless exists $bits[0];
    $gitinfo{tag} = $bits[0];
+   $gitinfo{branch} = $gitinfo{tag} if ($gitinfo{tag} =~ m@.@);
 } else {
    $gitinfo{url} = "http://nowhere/tarball/";
    $gitinfo{revision} = "unknown";
