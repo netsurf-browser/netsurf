@@ -360,7 +360,11 @@ struct container_ctx *container_create(const char *filename,
 	 * we don't know where it'll be yet!
 	 */
 
-	fseek(ctx->fh, 108, SEEK_SET);
+	if (fseek(ctx->fh, 108, SEEK_SET) == -1) {
+		LOG(("directory offset seek failed"));
+		free(ctx);
+		return NULL;
+	}
 
 	return ctx;
 }
