@@ -457,13 +457,20 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 	strcpy(dirname, dirbasename);
 	strcat(dirname, themename);
 	if (stat(dirname, &statbuf) != -1) {
+		/* directory exists */
 		warn_user("DirectoryError", dirname);
 		container_close(cctx);
 		free(dirname);
 		free(themename);
 		return NULL;
 	}
-	mkdir(dirname, S_IRWXU);
+	if (mkdir(dirname, S_IRWXU) != 0) {
+		warn_user("DirectoryError", dirname);
+		container_close(cctx);
+		free(dirname);
+		free(themename);
+		return NULL;
+	}
 
 	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
 			e = container_iterate(cctx, &state), i++) {
