@@ -237,8 +237,8 @@ utf8_convert(const char *string,
 			iconv_close(last_cd.cd);
 
 		/* and copy the to/from/cd data into last_cd */
-		strncpy(last_cd.from, from, sizeof(last_cd.from));
-		strncpy(last_cd.to, to, sizeof(last_cd.to));
+		snprintf(last_cd.from, sizeof(last_cd.from), "%s", from);
+		snprintf(last_cd.to, sizeof(last_cd.to), "%s", to);
 		last_cd.cd = cd;
 	}
 
