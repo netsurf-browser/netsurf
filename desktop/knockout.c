@@ -64,10 +64,13 @@
 
 #include <assert.h>
 #include <string.h>
-#include "desktop/knockout.h"
-#include "desktop/plotters.h"
+#include <stdio.h>
+
 #include "image/bitmap.h"
 #include "utils/log.h"
+#include "content/content.h"
+#include "desktop/knockout.h"
+#include "desktop/plotters.h"
 
 /* Define to enable knockout debug */
 #undef KNOCKOUT_DEBUG

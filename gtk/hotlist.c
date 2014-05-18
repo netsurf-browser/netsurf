@@ -16,17 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 
-#include "desktop/hotlist.h"
+#include "utils/log.h"
 #include "utils/nsoption.h"
+#include "desktop/hotlist.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+
 #include "gtk/gui.h"
 #include "gtk/hotlist.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
-#include "utils/log.h"
 
 #define GLADE_NAME "hotlist.glade"
 

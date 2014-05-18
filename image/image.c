@@ -25,6 +25,7 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "desktop/plotters.h"
+#include "content/content.h"
 #include "image/bitmap.h"
 
 #include "image/bmp.h"

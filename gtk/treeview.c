@@ -24,19 +24,20 @@
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>
-
+#include <string.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "desktop/tree.h"
 #include "desktop/plotters.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/plotters.h"
 #include "gtk/treeview.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 struct nsgtk_treeview {
 	GtkWindow *window;
