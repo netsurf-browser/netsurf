@@ -118,7 +118,6 @@ static void gui_poll(bool active)
 
 	struct gui_window *tmp;
     short mx, my, dummy;
-    unsigned short nkc = 0;
 
     aes_event_in.emi_tlow = schedule_run();
 
@@ -130,8 +129,6 @@ static void gui_poll(bool active)
         aes_event_in.emi_tlow = 10000;
         printf("long poll!\n");
     }
-
-    struct gui_window * g;
 
     if( !active ) {
         if(input_window && input_window->root->redraw_slots.areas_used > 0) {
@@ -396,7 +393,6 @@ static void gui_window_update_box(struct gui_window *gw, const struct rect *rect
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
-    int x,y;
     if (w == NULL)
         return false;
 
@@ -407,7 +403,6 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 
 static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
-    int units = 0;
     if ((w == NULL)
             || (w->browser->bw == NULL)
             || (w->browser->bw->current_content == NULL))
@@ -743,8 +738,6 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 {
 	struct sslcert_session_data *data;
     LOG((""));
-
-    bool bres;
 
     // TODO: localize string
     int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
