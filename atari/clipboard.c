@@ -63,14 +63,14 @@ char *scrap_txt_read(void)
 {
 	char * buf = NULL;
 	char path[80];
-	int file;
-	int len;
 
 	if (get_scrapdir (path))
 	{
+		int len;
 		strcat (path, "scrap.txt");
 		len = filesize(path);
 		if(len > 0){
+			int file;
 			if ((file = (int) Fopen (path, 0)) >= 0)
 			{
 				buf = malloc(len);
