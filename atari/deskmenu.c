@@ -352,7 +352,6 @@ static void __CDECL menu_paste(short item, short title, void *data)
 
 static void __CDECL menu_find(short item, short title, void *data)
 {
-	static bool visible = false;
 	LOG(("%s", __FUNCTION__));
 	if (input_window != NULL) {
 		if (input_window->search) {
@@ -631,7 +630,6 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
         // find keycodes / chracters:
 		if( str[x] <= 28 ){
 			// parse symbol
-			unsigned short keycode=0;
 			switch( str[x] ){
 					case 0x03:
 					accel->keycode = NK_RIGHT;
