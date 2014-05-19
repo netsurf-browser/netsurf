@@ -142,11 +142,7 @@ static void atari_sslcert_viewer_mouse_action(struct core_window *cw,
 
 	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
-	if ((mouse & BROWSER_MOUSE_HOVER)) {
-		sslcert_viewer_mouse_action(cvwin->ssl_session_data, mouse, x, y);
-	} else {
-		sslcert_viewer_mouse_action(cvwin->ssl_session_data, mouse, x, y);
-	}
+	sslcert_viewer_mouse_action(cvwin->ssl_session_data, mouse, x, y);
 }
 
 
