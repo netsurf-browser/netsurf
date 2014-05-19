@@ -1338,7 +1338,7 @@ bool gemtk_wm_has_intersection(GUIWIN *win, GRECT *work)
     }
 
     wind_get_grect(win->handle, WF_FIRSTXYWH, &area);
-    while (area.g_w && area.g_w) {
+    while (area.g_w) {
         //GRECT * ptr = &area;
         if (RC_WITHIN(work, &area)) {
             retval = false;
