@@ -71,7 +71,6 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 {
 	hlcache_handle *h;
 	GRECT area;
-	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
 	int sx, sy;
 
@@ -166,8 +165,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	char cmdline[128];
 	/* skip first byte, which must hold length of commandline: */
 	char * tempfile = &cmdline[1];
-	int err = 0;
-	char * editor, *lastslash;
+	char * editor;
 	MENU pop_menu, me_data;
 
 	pop = gemtk_obj_get_tree( POP_CTX );
