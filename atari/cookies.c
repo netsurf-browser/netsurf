@@ -102,12 +102,7 @@ static void atari_cookie_manager_mouse_action(struct core_window *cw,
 												browser_mouse_state mouse,
 												int x, int y)
 {
-	if((mouse & BROWSER_MOUSE_HOVER) && cookie_manager_has_selection()){
-		cookie_manager_mouse_action(mouse, x, y);
-	} else {
-		cookie_manager_mouse_action(mouse, x, y);
-	}
-
+	cookie_manager_mouse_action(mouse, x, y);
 }
 
 
