@@ -27,8 +27,6 @@
 char *gemtk_obj_get_text(OBJECT * tree, short idx)
 {
     static char p[]="";
-    USERBLK *user;
-    char *retval;
 
     switch (tree[idx].ob_type & 0x00FF) {
     case G_BUTTON:
@@ -71,7 +69,6 @@ char gemtk_obj_set_str_safe(OBJECT * tree, short idx, const char *txt)
     char spare[204];
     short type = 0;
     short maxlen = 0;
-    TEDINFO *ted;
 
 
     type = (tree[idx].ob_type & 0xFF);
