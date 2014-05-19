@@ -362,11 +362,8 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	uint32_t clck = clock();
 	uint32_t tnow = clck / (CLOCKS_PER_SEC>>3);
 	uint32_t sdiff = (clck / (CLOCKS_PER_SEC)) - dw->start;
-	float pf = 0;
 
 	LOG((""));
-
-	OBJECT * tree = dw->tree;
 
 	if(dw->abort == true){
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
@@ -424,7 +421,6 @@ static void gui_download_window_error(struct gui_download_window *dw,
 
 static void gui_download_window_done(struct gui_download_window *dw)
 {
-	OBJECT * tree;
 	LOG((""));
 
 // TODO: change abort to close
@@ -435,7 +431,6 @@ static void gui_download_window_done(struct gui_download_window *dw)
 		dw->fd = NULL;
 	}
 
-	tree = dw->tree;
 	if (dw->close_on_finish) {
 		gemtk_wm_send_msg(dw->guiwin, WM_CLOSED, 0, 0, 0, 0);
 	} else {
