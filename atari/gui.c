@@ -654,7 +654,6 @@ static void gui_window_new_content(struct gui_window *w)
 static void gui_get_clipboard(char **buffer, size_t *length)
 {
     char *clip;
-    size_t clip_len;
 
     *length = 0;
     *buffer = 0;
@@ -667,11 +666,12 @@ static void gui_get_clipboard(char **buffer, size_t *length)
 
         // clipboard is in atari encoding, convert it to utf8:
 
+        size_t clip_len;
         char *utf8 = NULL;
-        nserror ret;
 
         clip_len = strlen(clip);
         if (clip_len > 0) {
+            nserror ret;
             ret = utf8_to_local_encoding(clip, clip_len, &utf8);
             if (ret == NSERROR_OK && utf8 != NULL) {
                 *buffer = utf8;
