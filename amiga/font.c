@@ -151,7 +151,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 *codepoint);
+		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
@@ -433,7 +433,7 @@ struct ami_font_node *ami_font_open(const char *font)
  * \return outline font or NULL on error
  */
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 *codepoint)
+		const uint16 *codepoint)
 {
 	struct ami_font_node *node;
 	struct OutlineFont *ofont;
@@ -647,8 +647,8 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 {
 	int32 char_advance = 0;
 	FIXED kern = 0;
-	struct MinList *gwlist;
-	FIXED char1w;
+	struct MinList *gwlist = NULL;
+	FIXED char1w = 0;
 	struct GlyphWidthEntry *gwnode;
 	bool skip_c2 = false;
 
@@ -662,7 +662,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 		skip_c2 = true;
 	}
 
-	if (*char2 == 0) skip_c2 = true;
+	if (*char2 < 0x0020) skip_c2 = true;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode, *char1,

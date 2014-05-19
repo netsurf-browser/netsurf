@@ -71,7 +71,7 @@ struct ami_font_scan_window {
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return font name or NULL
  */
-const char *ami_font_scan_lookup(uint16 *code, lwc_string **glypharray)
+const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
 {
 	if(*code >= 0xd800 && *code <= 0xdbff) {
 		/* This is a multi-byte character, we don't support falback for these yet. */
