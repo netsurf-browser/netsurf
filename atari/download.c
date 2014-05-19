@@ -362,8 +362,6 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	uint32_t clck = clock();
 	uint32_t tnow = clck / (CLOCKS_PER_SEC>>3);
 	uint32_t sdiff = (clck / (CLOCKS_PER_SEC)) - dw->start;
-	uint32_t p = 0;
-	float speed;
 	float pf = 0;
 
 	LOG((""));
@@ -384,11 +382,13 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 
 	/* Update GUI */
 	if ((tnow - dw->lastrdw) > 1) {
+		float speed;
 
 		dw->lastrdw = tnow;
 		speed = dw->size_downloaded / sdiff;
 
 		if( dw->size_total > 0 ){
+			uint32_t p = 0;
 			p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
 				"%lu%s", p, "%"
