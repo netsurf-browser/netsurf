@@ -50,9 +50,6 @@ static short __CDECL about_userdraw(PARMBLK *parmblock)
 {
 	short pxy[8];
 	short dummy;
-	int content_len;
-	char *content;
-	short cur_x, cur_y;
 	short cheight = 8, cwidth = gl_wchar;
 	char c[2] = {0,0};
 
@@ -73,6 +70,9 @@ static short __CDECL about_userdraw(PARMBLK *parmblock)
 	};
 
 	if(parmblock->pb_currstate == parmblock->pb_prevstate){
+		short cur_x, cur_y;
+		char *content;
+		int content_len;
 
 		content = (char*)parmblock->pb_parm;
 		content_len = strlen(content);
