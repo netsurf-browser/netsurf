@@ -60,12 +60,12 @@ const char *fetch_filetype(const char *unix_path)
 		else if (2 < l && strcasecmp(unix_path + l - 3, "txt") == 0)
 			res = (char*)"text/plain";
 	} else {
-		int n=0;
-		int c;
 		FILE * fp;
 		char buffer[16];
 		fp = fopen( unix_path, "r" );
 		if( fp ){
+			int n=0;
+			int c;
 			do {
 				c = fgetc (fp);
 				if( c != EOF )
