@@ -109,12 +109,7 @@ static void atari_cookie_manager_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct atari_treeview_window *tv=NULL;
 	GRECT tb_area;
-	GUIWIN * gemtk_win;
-	struct gui_window * gw;
-	char *cur_url = NULL;
-	char *cur_title = NULL;
 	short retval = 0;
 
 	LOG((""));
