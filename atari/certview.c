@@ -152,8 +152,6 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	GRECT tb_area;
 	GUIWIN * gemtk_win;
 	struct atari_sslcert_viewer_s *cvwin = NULL;
-	char *cur_url = NULL;
-	char *cur_title = NULL;
 	short retval = 0;
 	OBJECT *toolbar;
 
