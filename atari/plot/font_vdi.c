@@ -131,7 +131,6 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	short cw, ch, cellw, cellh;
 	short pxsize;
 	short fx=0;
-	int i;
 	char *lstr = NULL;
 	size_t slen = 0;
 	int last_space_x = 0;
@@ -159,7 +158,6 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	vst_point( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
 	*actual_x = 0;
 	//*char_offset = 0;
-	int cpos=0;
 	while (nxtchr < slen) {
 		if( lstr[nxtchr] == ' ' ) {
 			last_space_x = *actual_x;
@@ -208,7 +206,6 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 
 	char *lstr = NULL;
 	int i=0;
-	int curpx=0;
 	utf8_to_local_encoding(string, length, &lstr );
 	assert( lstr != NULL );
 	int slen = strlen(lstr);
