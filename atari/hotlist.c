@@ -107,12 +107,8 @@ static void atari_hotlist_mouse_action(struct core_window *cw,
 												int x, int y)
 {
 	LOG(("x:  %d, y: %d\n", x, y));
-	if((mouse & BROWSER_MOUSE_HOVER) && hotlist_has_selection()){
-		hotlist_mouse_action(mouse, x, y);
-	} else {
-		hotlist_mouse_action(mouse, x, y);
-	}
 
+	hotlist_mouse_action(mouse, x, y);
 }
 
 
