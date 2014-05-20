@@ -1031,6 +1031,9 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
+	bw = bitmap_get_width( img );
+	bh = bitmap_get_height( img );
+
 	// The converted bitmap can be saved for subsequent blits, when
 	// the bitmap is fully opaque
 
