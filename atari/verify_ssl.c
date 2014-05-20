@@ -59,8 +59,6 @@ static struct ssl_info_draw_param
 static int cert_display_width( struct ssl_cert_info * cert_info )
 {
 	int l1, l2;
-	int max=0;
-	int i;
 	int add = 16; /* strlen("Issuer:         "); */
 
 	l1 = strlen(cert_info->issuer) + add;
@@ -78,7 +76,7 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 	short d, cbh, cbw;
 	int i = 0;
 	short x,y,w,h;
-	int px_ypos, px_xpos;
+	int px_ypos;
 	char * line = malloc(512);
 	if( line == NULL )
 		return;
@@ -104,7 +102,7 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 	vst_alignment(atari_plot_vdi_handle, 0, 5, &d, &d );
 	vst_color( atari_plot_vdi_handle, BLACK );
 	vst_effects( atari_plot_vdi_handle, 0 );
-	px_ypos = px_xpos = 0;
+	px_ypos = 0;
 	for(i=0; i<CERT_INF_LINES; i++ ) {
 		switch( i ) {
 			case 0:
@@ -161,7 +159,6 @@ static void do_popup( WINDOW *win, int index, int mode, void *data)
 	char * items[dp->num_certs];
 	short x, y;
 	unsigned int i;
-	int dispw;
 	LOG(("do_popup: num certs: %d", dp->num_certs));
 	for( i = 0; i<dp->num_certs; i++) {
 		items[i] = malloc( 48 );
