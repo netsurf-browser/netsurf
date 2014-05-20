@@ -428,7 +428,6 @@ static void toolbar_reflow(struct s_toolbar *tb)
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 {
     GRECT area, area_ro;
-    float old_scale;
 
     if (tb->attached == false) {
         return;
@@ -447,6 +446,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
     area = area_ro;
 
     if (rc_intersect(clip, &area)) {
+        float old_scale;
 
         plot_set_dimensions(area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
         struct rect r = {
@@ -474,9 +474,6 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 	struct s_tb_button * bt;
 	bool enable = false;
 	GRECT area;
-	nsurl * ns_url;
-	char * c_url;
-	size_t c_url_len;
 
 	assert(bw != NULL);
 
@@ -771,8 +768,6 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
     LOG((""));
     GRECT work;
 	short mx, my, mb, kstat;
-	int old;
-	OBJECT * toolbar_tree;
 	struct gui_window * gw;
 
 
@@ -819,10 +814,6 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
         else {
             /* when execution reaches here, mouse input is a click or dclick */
             /* TODO: recognize click + shitoolbar_update_buttonsft key */
-			int mstate = BROWSER_MOUSE_PRESS_1;
-			if ((kstat & (K_LSHIFT|K_RSHIFT)) != 0) {
-				mstate = BROWSER_MOUSE_MOD_1;
-			}
             if (aes_event_out.emo_mclicks == 2 ) {
 				textarea_mouse_action( tb->url.textarea,
 						BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1, mx,
