@@ -342,13 +342,11 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 static void __CDECL on_keybd_event(struct core_window *cw, EVMULT_OUT *ev_out,
 									short msg[8])
 {
-	bool r=false;
 	long kstate = 0;
 	long kcode = 0;
 	long ucs4;
 	long ik;
 	unsigned short nkc = 0;
-	unsigned short nks = 0;
 	unsigned char ascii;
 	struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 
@@ -435,7 +433,6 @@ static void __CDECL on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
 	GRECT work;
 	short mx, my;
 	int bms;
-	bool ignore=false;
 	short cur_rel_x, cur_rel_y, dummy, mbut;
 
 	assert(tv);
@@ -636,7 +633,6 @@ void atari_treeview_close(struct core_window *cw)
 		wind_close(gemtk_wm_get_handle(tv->window));
 		gemtk_wm_unlink(tv->window);
 		/* unlink the window: */
-		struct atari_treeview_window *tmp = treeviews_open;
 		if (tv->prev_open != NULL) {
 			tv->prev_open->next_open = tv->next_open;
 		} else {
@@ -753,7 +749,6 @@ void atari_treeview_get_window_dimensions(struct core_window *cw,
 {
 	if (cw != NULL && (width != NULL || height != NULL)) {
 		GRECT work;
-		struct atari_treeview_window *tv = (struct atari_treeview_window *)cw;
 		atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &work);
 		*width = work.g_w;
 		*height = work.g_h;
