@@ -625,7 +625,6 @@ inline static unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 */
 inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 {
-    short ret = 0;
     short i;
     unsigned char rgb[3] = {r,g,b};
     unsigned char tval[3];
@@ -1016,11 +1015,8 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	MFDB stdform;
 	int dststride;						/* stride of dest. image */
 	int dstsize;						/* size of dest. in byte */
-	int err;
 	int bw, bh;
-	int process_w, process_h;
 	struct bitmap * scrbuf = NULL;
-	struct bitmap * source;
 	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
 	bool opaque = bitmap_get_opaque( img );
 
@@ -1034,9 +1030,6 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
-
-	process_w = bw = bitmap_get_width( img );
-	process_h = bh = bitmap_get_height( img );
 
 	// The converted bitmap can be saved for subsequent blits, when
 	// the bitmap is fully opaque
@@ -1526,7 +1519,7 @@ int plot_init(char * fdrvrname)
 {
 
     GRECT loc_pos= {0,0,360,400};
-    int err=0,i;
+    int err=0;
 
     if( nsoption_int(atari_dither) == 1)
         atari_plot_flags |= PLOT_FLAG_DITHER;
@@ -1589,11 +1582,10 @@ int plot_init(char * fdrvrname)
 	bitmap_convert = (vdi_sysinfo.scr_bpp > 8) ? bitmap_convert_tc : bitmap_convert_8;
 
 	/* Setup color lookup tables and palette */
-	i = 0;
-	unsigned char * col;
 	unsigned char rgbcol[4];
-	unsigned char graytone=0;
 	if( vdi_sysinfo.scr_bpp <= 8 ){
+		unsigned char graytone=0;
+		int i;
 		for( i=0; i<=255; i++ ) {
 
 			// get the current color and save it for restore:
@@ -1659,12 +1651,12 @@ int plot_init(char * fdrvrname)
 
 int plot_finalise( void )
 {
-	int i=0;
 
     delete_font_plotter(fplotter);
 
 #ifdef WITH_8BPP_SUPPORT
 	if (vfmt.indexed) {
+		int i;
 		for (i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++) {
 			vs_color(atari_plot_vdi_handle, i, &sys_pal[i][0]);
 		}
@@ -1857,7 +1849,6 @@ static bool plot_polygon(const int *p, unsigned int n,
 {
 	short pxy[n*2];
 	unsigned int i=0;
-	short d[4];
 	if (vdi_sysinfo.maxpolycoords > 0)
 		assert( (signed int)n < vdi_sysinfo.maxpolycoords);
 
@@ -1894,7 +1885,6 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 	GRECT absclip = {x, y, w, h};
 
 	if (!(w == view.w && h == view.h)) {
-		struct rect newclip = { 0, 0, w-1, h-1 };
 		view.w = (short)w;
 		view.h = (short)h;
 		doupdate = true;
