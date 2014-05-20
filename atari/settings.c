@@ -404,7 +404,7 @@ static void form_event(int index, int external)
     MENU pop_menu, me_data;
 
     short x, y;
-    int choice, i;
+    int choice;
 
     switch(index) {
 
@@ -814,8 +814,6 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
     GRECT clip, work;
-    static short edit_idx = 0;
-    struct gemtk_wm_scroll_info_s *slid;
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
