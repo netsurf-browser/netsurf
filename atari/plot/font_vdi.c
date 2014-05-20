@@ -280,19 +280,18 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
 	atari_to_vdi_str(lstr, slen);
 
-	if( fstyle != NULL){
-		if( fstyle->flags & FONTF_ITALIC )
-			fx |= 4;
-		if( fstyle->flags & FONTF_OBLIQUE )
-			fx |= 4;
-		if( fstyle->weight > 450 )
-			fx |= 1;
+	if( fstyle->flags & FONTF_ITALIC )
+		fx |= 4;
+	if( fstyle->flags & FONTF_OBLIQUE )
+		fx |= 4;
+	if( fstyle->weight > 450 )
+		fx |= 1;
 
-		/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
-			use that value or pass it as arg, to reduce netsurf dependency */
-		//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
-		pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
-	}
+	/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
+	   use that value or pass it as arg, to reduce netsurf dependency */
+	//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+
 	plot_get_dimensions(&canvas);
 	x += canvas.g_x;
 	y += canvas.g_y;
