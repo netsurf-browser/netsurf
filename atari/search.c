@@ -235,7 +235,6 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 /** checks for search parameters changes */
 static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 {
-	bool check;
 	uint32_t flags_old;
 	uint32_t flags_mask = SEARCH_FLAG_SHOWALL | SEARCH_FLAG_CASE_SENSITIVE;
 	struct s_search_form_state cur;
@@ -264,10 +263,6 @@ static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		search_flags_t f)
 {
-
-	bool fwd;
-	search_flags_t flags = f;
-
 	assert(s!=null);
 	assert(input_window->browser->bw == s->bw);
 
