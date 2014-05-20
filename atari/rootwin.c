@@ -99,11 +99,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     short retval = 0;
     GRECT area;
     static bool prev_url = false;
-    static short prev_x=0;
-    static short prev_y=0;
     struct rootwin_data_s * data = gemtk_wm_get_user_data(win);
     struct gui_window *tmp;
-    OBJECT *obj;
 
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
@@ -468,7 +465,6 @@ void window_set_title(struct s_gui_win_root * rootwin, char *title)
 
 void window_scroll_by(ROOTWIN *root, int sx, int sy)
 {
-    int units;
     GRECT content_area;
     struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(root->win);
 
@@ -510,8 +506,6 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
 void window_set_focus(struct s_gui_win_root *rootwin,
                       enum focus_element_type type, void * element)
 {
-    struct textarea * ta;
-
     assert(rootwin != NULL);
 
     if (rootwin->focus.type != type || rootwin->focus.element != element) {
@@ -569,7 +563,6 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
     rootwin->icon = bmp;
     /* redraw window when it is iconyfied: */
     if (rootwin->icon != NULL) {
-        short info, dummy;
         if (gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
             window_redraw_favicon(rootwin, NULL);
         }
@@ -768,7 +761,6 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip_ro)
     } else {
         //printf("window_redraw_favicon image %p\n", rootwin->icon);
         VdiHdl plot_vdi_handle = plot_get_vdi_handle();
-        struct rect work_clip = { 0,0,work.g_w,work.g_h };
         short pxy[4];
         int xoff=0;
 
@@ -778,7 +770,6 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip_ro)
         }
         plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w,
 							work.g_h);
-		//plot_clip(&work_clip);
 
 		wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible);
 		while (visible.g_h > 0 && visible.g_w > 0) {
@@ -887,7 +878,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
     short pxy[8];
     GRECT mywork, caret_pos;
     MFDB screen;
-    int i, scroll_x, scroll_y;
+    int scroll_x, scroll_y;
     uint16_t *fd_addr;
     struct gemtk_wm_scroll_info_s *slid;
     short colors[2] = {G_BLACK, G_WHITE};
@@ -973,6 +964,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
 
     // draw the caret into the mfdb buffer:
     if (render_required) {
+        int i;
 
         assert(caret->symbol.fd_nplanes == 1);
         assert(caret->symbol.fd_w == 16);
@@ -1023,7 +1015,6 @@ void window_process_redraws(ROOTWIN * rootwin)
     GRECT work, visible_ro, tb_area, content_area;
     short i;
     short scroll_x=0, scroll_y=0;
-    bool toolbar_rdrw_required;
     bool caret_rdrw_required = false;
     struct gemtk_wm_scroll_info_s *slid =NULL;
     int caret_h = 0;
@@ -1367,7 +1358,6 @@ static short on_window_key_input(ROOTWIN *rootwin, unsigned short nkc)
 {
     bool done = false;
     struct gui_window * gw = window_get_active_gui_window(rootwin);
-    struct gui_window * gw_tmp;
 
     if( gw == NULL )
         return(false);
@@ -1397,8 +1387,6 @@ static short on_window_key_input(ROOTWIN *rootwin, unsigned short nkc)
 
 static void on_redraw(ROOTWIN *rootwin, short msg[8])
 {
-    short handle;
-
     GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
 
     //dbg_grect("on_redraw", &clip);
@@ -1415,7 +1403,6 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 static void on_resized(ROOTWIN *rootwin)
 {
     GRECT g, work;
-    OBJECT *toolbar;
     struct gui_window *gw;
 
     gw = window_get_active_gui_window(rootwin);
