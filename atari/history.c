@@ -103,11 +103,8 @@ static void atari_global_history_mouse_action(struct core_window *cw,
 												int x, int y)
 {
 	LOG(("x:  %d, y: %d\n", x, y));
-	if((mouse & BROWSER_MOUSE_HOVER) && global_history_has_selection()){
-		global_history_mouse_action(mouse, x, y);
-	} else {
-		global_history_mouse_action(mouse, x, y);
-	}
+
+	global_history_mouse_action(mouse, x, y);
 
 }
 
