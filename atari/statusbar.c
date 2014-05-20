@@ -49,7 +49,6 @@ extern int atari_plot_vdi_handle;
 static
 void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 {
-	size_t i;
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	assert(gw != NULL);
 	CMP_STATUSBAR sb = gw->root->statusbar;
@@ -107,6 +106,7 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 
 
 	if( sb->textlen > 0 ) {
+		size_t i;
 		short curx;
 		short vqw[4];
 		char t[2];
@@ -146,7 +146,6 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 static void __CDECL evnt_sb_click( COMPONENT *c, long buff[8] )
 {
 	static bool prevstate;
-	short sbuff[8], mx, my;
 	LGRECT work;
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	if( evnt.mx >= work.g_x + (work.g_w) && evnt.mx <= work.g_x + work.g_w &&
