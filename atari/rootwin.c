@@ -1498,6 +1498,8 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                  size, mx, my
                 ));
 
+                gui_window_get_scroll(gw, &sx, &sy);
+
                 window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
                 mx = mx - content_area.g_x;
                 my = my - content_area.g_y;
@@ -1521,7 +1523,6 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                         /* no memory */
                         goto error;
                     }
-                    gui_window_get_scroll(gw, &sx, &sy);
                     processed = browser_window_drop_file_at_point(gw->browser->bw,
                                                                   mx+sx, my+sy,
                                                                   utf8_fn);
