@@ -432,7 +432,6 @@ static void __CDECL on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
 	struct gemtk_wm_scroll_info_s *slid;
 	GRECT work;
 	short mx, my;
-	int bms;
 	short cur_rel_x, cur_rel_y, dummy, mbut;
 
 	assert(tv);
@@ -464,6 +463,7 @@ static void __CDECL on_mbutton_event(struct core_window *cw, EVMULT_OUT *ev_out,
 		graf_mkstate(&cur_rel_x, &cur_rel_y, &mbut, &dummy);
 		/* check for click or hold: */
 		if( (mbut&1) == 0 ){
+			int bms;
 			bms = BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1;
 			if(ev_out->emo_mclicks == 2 ) {
 				bms = BROWSER_MOUSE_DOUBLE_CLICK;
