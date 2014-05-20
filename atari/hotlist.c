@@ -290,9 +290,6 @@ struct node;
 
 void atari_hotlist_add_page( const char * url, const char * title )
 {
-	struct node * root;
-	struct node * selected = NULL;
-	struct node * folder = NULL;
 	nsurl *nsurl;
 
 	if(hl.tv == NULL)
