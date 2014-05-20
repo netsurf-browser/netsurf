@@ -635,7 +635,7 @@ inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
     diff_b = abs(r-b);
     diff_c = abs(r-b);
     if( diff_a < 2 && diff_b < 2 && diff_c < 2 ) {
-        if( (r!=0XFF) && (g!=0XFF) && (g!=0XFF)  ) {
+        if( (r!=0XFF) && (g!=0XFF) && (b!=0XFF)  ) {
             if( ((r&0xF0)>>4) != 0 )
                 //printf("conv gray: %x -> %d\n", ((r&0xF0)>>4) , (OFFSET_CUST_PAL) + ((r&0xF0)>>4) );
                 return( (OFFSET_CUST_PAL - OFFSET_WEB_PAL) + ((r&0xF0)>>4) );
