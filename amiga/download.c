@@ -72,7 +72,7 @@ struct gui_download_window {
 	struct dlnode *dln;
 	struct browser_window *bw;
 	struct download_context *ctx;
-	char *url;
+	const char *url;
 	char fname[1024];
 	int result;
 };
@@ -88,7 +88,7 @@ int downloads_in_progress = 0;
 static struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
 {
-	const char *url = download_context_get_url(ctx);
+	const char *url = nsurl_access(download_context_get_url(ctx));
 	unsigned long total_size = download_context_get_total_length(ctx);
 	struct gui_download_window *dw;
 	char *dl_filename = ami_utf8_easy(download_context_get_filename(ctx));
@@ -131,7 +131,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	dw->size = total_size;
 	dw->downloaded = 0;
 	if(gui) dw->bw = gui->shared->bw;
-	dw->url = (char *)strdup((char *)url);
+	dw->url = url;
 
 	va[0] = (APTR)dw->downloaded;
 	va[1] = (APTR)dw->size;
@@ -260,7 +260,6 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	FClose(dw->fh);
 	SetComment(dw->fname, dw->url);
-	if(dw->url) free(dw->url);
 
 	downloads_in_progress--;
 
