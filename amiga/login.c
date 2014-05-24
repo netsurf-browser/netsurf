@@ -91,7 +91,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 	lw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title,lw->url,
+           	WA_Title, nsurl_access(lw->url),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
