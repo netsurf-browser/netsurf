@@ -700,6 +700,7 @@ static nserror write_entries(struct store_state *state)
 {
 	int fd;
 	char *fname = NULL;
+	ssize_t written;
 	nserror ret;
 
 	if (state->entries_dirty == false) {
@@ -718,8 +719,13 @@ static nserror write_entries(struct store_state *state)
 		return NSERROR_SAVE_FAILED;
 	}
 
-	write(fd, state->entries, state->last_entry * sizeof(struct store_entry));
+	written = write(fd, state->entries,
+			state->last_entry * sizeof(struct store_entry));
 	close(fd);
+	if (written < 0) {
+		/* TODO: Delete the file? */
+		return NSERROR_SAVE_FAILED;
+	}
 
 	return NSERROR_OK;
 }
@@ -1043,6 +1049,7 @@ store(nsurl *url,
 {
 	nserror ret;
 	struct store_entry *bse;
+	ssize_t written;
 	int fd;
 
 	/* check backing store is initialised */
@@ -1064,10 +1071,15 @@ store(nsurl *url,
 		return NSERROR_SAVE_FAILED;
 	}
 
+
 	LOG(("Writing %d bytes from %p", datalen, data));
-	write(fd, data, datalen);
+	written = write(fd, data, datalen);
 
 	close(fd);
+	if (written < 0) {
+		/* TODO: Delete the file? */
+		return NSERROR_SAVE_FAILED;
+	}
 
 	return NSERROR_OK;
 }
