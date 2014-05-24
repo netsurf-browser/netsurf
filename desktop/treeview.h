@@ -34,9 +34,10 @@ typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;
 
 enum treeview_node_type {
-	TREE_NODE_ROOT		= (1 << 0),
-	TREE_NODE_FOLDER	= (1 << 1),
-	TREE_NODE_ENTRY		= (1 << 2)
+	TREE_NODE_NONE		= 0,		/**< No node  */
+	TREE_NODE_ROOT		= (1 << 0),	/**< Node is treeview's root */
+	TREE_NODE_FOLDER	= (1 << 1),	/**< Node is folder */
+	TREE_NODE_ENTRY		= (1 << 2)	/**< Node is an entry */
 };
 
 enum treeview_relationship {
@@ -381,8 +382,10 @@ bool treeview_has_selection(treeview *tree);
  *
  * \param tree		Treeview object to get selected node in
  * \param node_data	Client data for the selected treeview node, or NULL
+ * \return node type of first selected node.
  */
-void treeview_get_selection(treeview *tree, void **node_data);
+enum treeview_node_type treeview_get_selection(treeview *tree,
+		void **node_data);
 
 /**
  * Edit the first selected node

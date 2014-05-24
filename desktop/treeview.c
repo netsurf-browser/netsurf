@@ -66,10 +66,10 @@ struct treeview_field {
 };
 
 enum treeview_node_flags {
-	TREE_NODE_NONE		= 0,		/**< No node flags set */
-	TREE_NODE_EXPANDED	= (1 << 0),	/**< Whether node is expanded */
-	TREE_NODE_SELECTED	= (1 << 1),	/**< Whether node is selected */
-	TREE_NODE_SPECIAL	= (1 << 2)	/**< Render as special node */
+	TV_NFLAGS_NONE		= 0,		/**< No node flags set */
+	TV_NFLAGS_EXPANDED	= (1 << 0),	/**< Whether node is expanded */
+	TV_NFLAGS_SELECTED	= (1 << 1),	/**< Whether node is selected */
+	TV_NFLAGS_SPECIAL	= (1 << 2)	/**< Render as special node */
 };
 
 enum treeview_target_pos {
@@ -221,7 +221,7 @@ static inline treeview_node * treeview_node_next(treeview_node *node, bool full)
 {
 	assert(node != NULL);
 
-	if ((full || (node->flags & TREE_NODE_EXPANDED)) &&
+	if ((full || (node->flags & TV_NFLAGS_EXPANDED)) &&
 			node->children != NULL) {
 		/* Next node is child */
 		node = node->children;
@@ -332,7 +332,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 	parent = node->parent;
 	next_sibling = node->next_sib;
 	child = (!skip_children &&
-			(full || (node->flags & TREE_NODE_EXPANDED))) ?
+			(full || (node->flags & TV_NFLAGS_EXPANDED))) ?
 			node->children : NULL;
 
 	while (node != NULL) {
@@ -389,7 +389,7 @@ static nserror treeview_walk_internal(treeview_node *root, bool full,
 
 		parent = node->parent;
 		next_sibling = node->next_sib;
-		child = (full || (node->flags & TREE_NODE_EXPANDED)) ?
+		child = (full || (node->flags & TV_NFLAGS_EXPANDED)) ?
 				node->children : NULL;
 
 		if (callback_fwd != NULL) {
@@ -425,7 +425,7 @@ static nserror treeview_create_node_root(treeview_node **root)
 		return NSERROR_NOMEM;
 	}
 
-	n->flags = TREE_NODE_EXPANDED;
+	n->flags = TV_NFLAGS_EXPANDED;
 	n->type = TREE_NODE_ROOT;
 
 	n->height = 0;
@@ -508,7 +508,7 @@ static inline void treeview_insert_node(treeview_node *a,
 				treeview_set_inset_from_parent, NULL);
 	}
 
-	if (a->parent->flags & TREE_NODE_EXPANDED) {
+	if (a->parent->flags & TV_NFLAGS_EXPANDED) {
 		int height = a->height;
 		/* Parent is expanded, so inserted node will be visible and
 		 * affect layout */
@@ -552,7 +552,7 @@ nserror treeview_create_node_folder(treeview *tree,
 	}
 
 	n->flags = (flags & TREE_OPTION_SPECIAL_DIR) ?
-			TREE_NODE_SPECIAL : TREE_NODE_NONE;
+			TV_NFLAGS_SPECIAL : TV_NFLAGS_NONE;
 	n->type = TREE_NODE_FOLDER;
 
 	n->height = tree_g.line_height;
@@ -570,7 +570,7 @@ nserror treeview_create_node_folder(treeview *tree,
 
 	treeview_insert_node(n, relation, rel);
 
-	if (n->parent->flags & TREE_NODE_EXPANDED) {
+	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
 		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
 			tree->cw_t->update_size(tree->cw_h, -1,
@@ -615,7 +615,7 @@ nserror treeview_update_node_folder(treeview *tree,
 	folder->text.len = field->value_len;
 	folder->text.width = 0;
 
-	if (folder->parent->flags & TREE_NODE_EXPANDED) {
+	if (folder->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Text will be seen, get its width */
 		nsfont.font_width(&plot_style_odd.text,
 				folder->text.data,
@@ -627,7 +627,7 @@ nserror treeview_update_node_folder(treeview *tree,
 	}
 
 	/* Redraw */
-	if (folder->parent->flags & TREE_NODE_EXPANDED) {
+	if (folder->parent->flags & TV_NFLAGS_EXPANDED) {
 		struct rect r;
 		r.x0 = 0;
 		r.y0 = treeview_node_y(tree, folder);
@@ -665,7 +665,7 @@ nserror treeview_update_node_entry(treeview *tree,
 	entry->text.len = fields[0].value_len;
 	entry->text.width = 0;
 
-	if (entry->parent->flags & TREE_NODE_EXPANDED) {
+	if (entry->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Text will be seen, get its width */
 		nsfont.font_width(&plot_style_odd.text,
 				entry->text.data,
@@ -685,7 +685,7 @@ nserror treeview_update_node_entry(treeview *tree,
 		e->fields[i - 1].value.data = fields[i].value;
 		e->fields[i - 1].value.len = fields[i].value_len;
 
-		if (entry->flags & TREE_NODE_EXPANDED) {
+		if (entry->flags & TV_NFLAGS_EXPANDED) {
 			/* Text will be seen, get its width */
 			nsfont.font_width(&plot_style_odd.text,
 					e->fields[i - 1].value.data,
@@ -698,7 +698,7 @@ nserror treeview_update_node_entry(treeview *tree,
 	}
 
 	/* Redraw */
-	if (entry->parent->flags & TREE_NODE_EXPANDED) {
+	if (entry->parent->flags & TV_NFLAGS_EXPANDED) {
 		struct rect r;
 		r.x0 = 0;
 		r.y0 = treeview_node_y(tree, entry);
@@ -742,7 +742,7 @@ nserror treeview_create_node_entry(treeview *tree,
 
 	n = (treeview_node *) e;
 
-	n->flags = TREE_NODE_NONE;
+	n->flags = TV_NFLAGS_NONE;
 	n->type = TREE_NODE_ENTRY;
 
 	n->height = tree_g.line_height;
@@ -776,7 +776,7 @@ nserror treeview_create_node_entry(treeview *tree,
 
 	treeview_insert_node(n, relation, rel);
 
-	if (n->parent->flags & TREE_NODE_EXPANDED) {
+	if (n->parent->flags & TV_NFLAGS_EXPANDED) {
 		/* Inform front end of change in dimensions */
 		if (!(flags & TREE_OPTION_SUPPRESS_RESIZE))
 			tree->cw_t->update_size(tree->cw_h, -1,
@@ -876,7 +876,7 @@ static inline bool treeview_unlink_node(treeview_node *n)
 	}
 
 	/* Reduce ancestor heights */
-	if (n->parent != NULL && n->parent->flags & TREE_NODE_EXPANDED) {
+	if (n->parent != NULL && n->parent->flags & TV_NFLAGS_EXPANDED) {
 		return true;
 	}
 
@@ -1069,13 +1069,13 @@ static nserror treeview_delete_node_internal(treeview *tree, treeview_node *n,
 
 	n = p;
 	/* Reduce ancestor heights */
-	while (n != NULL && n->flags & TREE_NODE_EXPANDED) {
+	while (n != NULL && n->flags & TV_NFLAGS_EXPANDED) {
 		n->height -= nd.h_reduction;
 		n = n->parent;
 	}
 
 	/* Inform front end of change in dimensions */
-	if (tree->root != NULL && p != NULL && p->flags & TREE_NODE_EXPANDED &&
+	if (tree->root != NULL && p != NULL && p->flags & TV_NFLAGS_EXPANDED &&
 			nd.h_reduction > 0 &&
 			!(flags & TREE_OPTION_SUPPRESS_RESIZE)) {
 		tree->cw_t->update_size(tree->cw_h, -1,
@@ -1114,7 +1114,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 	node = tree->root;
 	parent = node->parent;
 	next_sibling = node->next_sib;
-	child = (node->flags & TREE_NODE_EXPANDED) ? node->children : NULL;
+	child = (node->flags & TV_NFLAGS_EXPANDED) ? node->children : NULL;
 
 	while (node != NULL) {
 
@@ -1141,7 +1141,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 					/* Reduce ancestor heights */
 					while (p != NULL &&
 							p->flags &
-							TREE_NODE_EXPANDED) {
+							TV_NFLAGS_EXPANDED) {
 						p->height -= nd.h_reduction;
 						p = p->parent;
 					}
@@ -1167,7 +1167,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 
 				/* Reduce ancestor heights */
 				while (p != NULL &&
-						p->flags & TREE_NODE_EXPANDED) {
+						p->flags & TV_NFLAGS_EXPANDED) {
 					p->height -= nd.h_reduction;
 					p = p->parent;
 				}
@@ -1181,7 +1181,7 @@ static nserror treeview_delete_empty_nodes(treeview *tree, bool interaction)
 
 		parent = node->parent;
 		next_sibling = node->next_sib;
-		child = (node->flags & TREE_NODE_EXPANDED) ?
+		child = (node->flags & TV_NFLAGS_EXPANDED) ?
 				node->children : NULL;
 	}
 
@@ -1201,7 +1201,7 @@ nserror treeview_delete_node(treeview *tree, treeview_node *n,
 	assert(n != NULL);
 	assert(n->parent != NULL);
 
-	visible = n->parent->flags & TREE_NODE_EXPANDED;
+	visible = n->parent->flags & TV_NFLAGS_EXPANDED;
 
 	r.y0 = treeview_node_y(tree, n);
 	r.y1 = tree->root->height;
@@ -1367,7 +1367,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 	assert(tree != NULL);
 	assert(node != NULL);
 
-	if (node->flags & TREE_NODE_EXPANDED) {
+	if (node->flags & TV_NFLAGS_EXPANDED) {
 		/* What madness is this? */
 		LOG(("Tried to expand an expanded node."));
 		return NSERROR_OK;
@@ -1382,7 +1382,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 		}
 
 		do {
-			assert((child->flags & TREE_NODE_EXPANDED) == false);
+			assert((child->flags & TV_NFLAGS_EXPANDED) == false);
 			if (child->text.width == 0) {
 				nsfont.font_width(&plot_style_odd.text,
 						child->text.data,
@@ -1418,12 +1418,14 @@ static nserror treeview_node_expand_internal(treeview *tree,
 		break;
 
 	case TREE_NODE_ROOT:
+	case TREE_NODE_NONE:
 		assert(node->type != TREE_NODE_ROOT);
+		assert(node->type != TREE_NODE_NONE);
 		break;
 	}
 
 	/* Update the node */
-	node->flags |= TREE_NODE_EXPANDED;
+	node->flags |= TV_NFLAGS_EXPANDED;
 
 	/* And parent's heights */
 	do {
@@ -1475,15 +1477,15 @@ static nserror treeview_node_contract_cb(treeview_node *n, void *ctx, bool *end)
 	assert(n != NULL);
 	assert(n->type != TREE_NODE_ROOT);
 
-	n->flags &= ~TREE_NODE_SELECTED;
+	n->flags &= ~TV_NFLAGS_SELECTED;
 
-	if ((n->flags & TREE_NODE_EXPANDED) == false ||
+	if ((n->flags & TV_NFLAGS_EXPANDED) == false ||
 			(n->type == TREE_NODE_FOLDER && data->only_entries)) {
 		/* Nothing to do. */
 		return NSERROR_OK;
 	}
 
-	n->flags ^= TREE_NODE_EXPANDED;
+	n->flags ^= TV_NFLAGS_EXPANDED;
 	h_reduction = n->height - tree_g.line_height;
 
 	assert(h_reduction >= 0);
@@ -1509,14 +1511,14 @@ static nserror treeview_node_contract_internal(treeview *tree,
 	bool selected;
 	assert(node != NULL);
 
-	if ((node->flags & TREE_NODE_EXPANDED) == false) {
+	if ((node->flags & TV_NFLAGS_EXPANDED) == false) {
 		/* What madness is this? */
 		LOG(("Tried to contract a contracted node."));
 		return NSERROR_OK;
 	}
 
 	data.only_entries = false;
-	selected = node->flags & TREE_NODE_SELECTED;
+	selected = node->flags & TV_NFLAGS_SELECTED;
 
 	/* Contract children. */
 	treeview_walk_internal(node, false, treeview_node_contract_cb,
@@ -1526,7 +1528,7 @@ static nserror treeview_node_contract_internal(treeview *tree,
 	treeview_node_contract_cb(node, &data, false);
 
 	if (selected)
-		node->flags |= TREE_NODE_SELECTED;
+		node->flags |= TV_NFLAGS_SELECTED;
 
 	/* Inform front end of change in dimensions */
 	tree->cw_t->update_size(tree->cw_h, -1, tree->root->height);
@@ -1578,11 +1580,11 @@ nserror treeview_contract(treeview *tree, bool all)
 	data.only_entries = !all;
 
 	for (n = tree->root->children; n != NULL; n = n->next_sib) {
-		if ((n->flags & TREE_NODE_EXPANDED) == false) {
+		if ((n->flags & TV_NFLAGS_EXPANDED) == false) {
 			continue;
 		}
 
-		selected = n->flags & TREE_NODE_SELECTED;
+		selected = n->flags & TV_NFLAGS_SELECTED;
 
 		/* Contract children. */
 		treeview_walk_internal(n, false,
@@ -1592,7 +1594,7 @@ nserror treeview_contract(treeview *tree, bool all)
 		treeview_node_contract_cb(n, &data, false);
 
 		if (selected)
-			n->flags |= TREE_NODE_SELECTED;
+			n->flags |= TV_NFLAGS_SELECTED;
 	}
 
 	/* Inform front end of change in dimensions */
@@ -1619,7 +1621,7 @@ static nserror treeview_expand_cb(treeview_node *n, void *ctx,
 	assert(n != NULL);
 	assert(n->type != TREE_NODE_ROOT);
 
-	if (n->flags & TREE_NODE_EXPANDED ||
+	if (n->flags & TV_NFLAGS_EXPANDED ||
 			(data->only_folders && n->type != TREE_NODE_FOLDER)) {
 		/* Nothing to do. */
 		return NSERROR_OK;
@@ -1685,7 +1687,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
-	assert(tree->root->flags & TREE_NODE_EXPANDED);
+	assert(tree->root->flags & TV_NFLAGS_EXPANDED);
 
 	if (tree->drag.start.y > tree->drag.prev.y) {
 		sel_min = tree->drag.prev.y;
@@ -1718,7 +1720,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 	while (node != NULL) {
 		int i;
-		next = (node->flags & TREE_NODE_EXPANDED) ?
+		next = (node->flags & TV_NFLAGS_EXPANDED) ?
 				node->children : NULL;
 
 		if (next != NULL) {
@@ -1764,20 +1766,20 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 		} else {
 			invert_selection = false;
 		}
-		if ((node->flags & TREE_NODE_SELECTED && !invert_selection) ||
-				(!(node->flags & TREE_NODE_SELECTED) &&
+		if ((node->flags & TV_NFLAGS_SELECTED && !invert_selection) ||
+				(!(node->flags & TV_NFLAGS_SELECTED) &&
 				invert_selection)) {
 			bg_style = &style->sbg;
 			text_style = &style->stext;
 			infotext_style = &style->sitext;
-			furniture = (node->flags & TREE_NODE_EXPANDED) ?
+			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
 					style->furn[TREE_FURN_CONTRACT].sel :
 					style->furn[TREE_FURN_EXPAND].sel;
 		} else {
 			bg_style = &style->bg;
 			text_style = &style->text;
 			infotext_style = &style->itext;
-			furniture = (node->flags & TREE_NODE_EXPANDED) ?
+			furniture = (node->flags & TV_NFLAGS_EXPANDED) ?
 					style->furn[TREE_FURN_CONTRACT].bmp :
 					style->furn[TREE_FURN_EXPAND].bmp;
 		}
@@ -1797,7 +1799,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 		/* Render icon */
 		if (node->type == TREE_NODE_ENTRY)
 			res = TREE_RES_CONTENT;
-		else if (node->flags & TREE_NODE_SPECIAL)
+		else if (node->flags & TV_NFLAGS_SPECIAL)
 			res = TREE_RES_FOLDER_SPECIAL;
 		else
 			res = TREE_RES_FOLDER;
@@ -1829,7 +1831,7 @@ void treeview_redraw(treeview *tree, const int x, const int y,
 
 
 		if (node->type != TREE_NODE_ENTRY ||
-				!(node->flags & TREE_NODE_EXPANDED))
+				!(node->flags & TV_NFLAGS_EXPANDED))
 			/* Done everything for this node */
 			continue;
 
@@ -1951,7 +1953,7 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 
 	switch (sw->purpose) {
 	case TREEVIEW_WALK_HAS_SELECTION:
-		if (n->flags & TREE_NODE_SELECTED) {
+		if (n->flags & TV_NFLAGS_SELECTED) {
 			sw->data.has_selection = true;
 			*end = true; /* Can abort tree walk */
 			return NSERROR_OK;
@@ -1959,7 +1961,7 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 		break;
 
 	case TREEVIEW_WALK_GET_FIRST_SELECTED:
-		if (n->flags & TREE_NODE_SELECTED) {
+		if (n->flags & TV_NFLAGS_SELECTED) {
 			sw->data.first.n = n;
 			*end = true; /* Can abort tree walk */
 			return NSERROR_OK;
@@ -1967,7 +1969,7 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 		break;
 
 	case TREEVIEW_WALK_DELETE_SELECTION:
-		if (n->flags & TREE_NODE_SELECTED) {
+		if (n->flags & TV_NFLAGS_SELECTED) {
 			err = treeview_delete_node_internal(sw->tree, n, true,
 					TREE_OPTION_NONE);
 			if (err != NSERROR_OK) {
@@ -1980,23 +1982,23 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 
 	case TREEVIEW_WALK_PROPAGATE_SELECTION:
 		if (n->parent != NULL &&
-				n->parent->flags & TREE_NODE_SELECTED &&
-				!(n->flags & TREE_NODE_SELECTED)) {
-			n->flags ^= TREE_NODE_SELECTED;
+				n->parent->flags & TV_NFLAGS_SELECTED &&
+				!(n->flags & TV_NFLAGS_SELECTED)) {
+			n->flags ^= TV_NFLAGS_SELECTED;
 			changed = true;
 		}
 		break;
 
 	case TREEVIEW_WALK_CLEAR_SELECTION:
-		if (n->flags & TREE_NODE_SELECTED) {
-			n->flags ^= TREE_NODE_SELECTED;
+		if (n->flags & TV_NFLAGS_SELECTED) {
+			n->flags ^= TV_NFLAGS_SELECTED;
 			changed = true;
 		}
 		break;
 
 	case TREEVIEW_WALK_SELECT_ALL:
-		if (!(n->flags & TREE_NODE_SELECTED)) {
-			n->flags ^= TREE_NODE_SELECTED;
+		if (!(n->flags & TV_NFLAGS_SELECTED)) {
+			n->flags ^= TV_NFLAGS_SELECTED;
 			changed = true;
 		}
 		break;
@@ -2005,12 +2007,12 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 		if (sw->current_y >= sw->data.drag.sel_min &&
 				sw->current_y - height <
 						sw->data.drag.sel_max) {
-			n->flags ^= TREE_NODE_SELECTED;
+			n->flags ^= TV_NFLAGS_SELECTED;
 		}
 		return NSERROR_OK;
 
 	case TREEVIEW_WALK_YANK_SELECTION:
-		if (n->flags & TREE_NODE_SELECTED) {
+		if (n->flags & TV_NFLAGS_SELECTED) {
 			treeview_node *p = n->parent;
 			int h = 0;
 
@@ -2018,7 +2020,7 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 				h = n->height;
 
 			/* Reduce ancestor heights */
-			while (p != NULL && p->flags & TREE_NODE_EXPANDED) {
+			while (p != NULL && p->flags & TV_NFLAGS_EXPANDED) {
 				p->height -= h;
 				p = p->parent;
 			}
@@ -2091,7 +2093,8 @@ static treeview_node * treeview_get_first_selected(treeview *tree)
 
 
 /* Exported interface, documented in treeview.h */
-void treeview_get_selection(treeview *tree, void **node_data)
+enum treeview_node_type treeview_get_selection(treeview *tree,
+		void **node_data)
 {
 	treeview_node *n;
 
@@ -2099,7 +2102,13 @@ void treeview_get_selection(treeview *tree, void **node_data)
 
 	n = treeview_get_first_selected(tree);
 
-	*node_data = n->client_data;
+	if (n != NULL && n->type & (TREE_NODE_ENTRY | TREE_NODE_FOLDER)) {
+		*node_data = n->client_data;
+		return n->type;
+	}
+
+	*node_data = NULL;
+	return TREE_NODE_NONE;
 }
 
 
@@ -2334,7 +2343,7 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 	}
 
 	/* The node that we're moving selection to can't itself be selected */
-	assert(!(relation->flags & TREE_NODE_SELECTED));
+	assert(!(relation->flags & TV_NFLAGS_SELECTED));
 
 	/* Move all selected nodes from treeview to tree->move.root */
 	treeview_move_yank_selection(tree);
@@ -2343,10 +2352,10 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 	for (node = tree->move.root; node != NULL; node = next) {
 		next = node->next_sib;
 
-		if (!(parent->flags & TREE_NODE_EXPANDED)) {
-			if (node->flags & TREE_NODE_EXPANDED)
+		if (!(parent->flags & TV_NFLAGS_EXPANDED)) {
+			if (node->flags & TV_NFLAGS_EXPANDED)
 				treeview_node_contract_internal(tree, node);
-			node->flags &= ~TREE_NODE_SELECTED;
+			node->flags &= ~TV_NFLAGS_SELECTED;
 		}
 
 		treeview_insert_node(node, relation, relationship);
@@ -2380,7 +2389,7 @@ static nserror treeview_node_launch_walk_bwd_cb(treeview_node *n, void *ctx,
 {
 	struct treeview_launch_walk_data *lw = ctx;
 
-	if (n->type == TREE_NODE_FOLDER && n->flags == TREE_NODE_SELECTED) {
+	if (n->type == TREE_NODE_FOLDER && n->flags == TV_NFLAGS_SELECTED) {
 		lw->selected_depth--;
 	}
 
@@ -2392,11 +2401,11 @@ static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
 {
 	struct treeview_launch_walk_data *lw = ctx;
 
-	if (n->type == TREE_NODE_FOLDER && n->flags & TREE_NODE_SELECTED) {
+	if (n->type == TREE_NODE_FOLDER && n->flags & TV_NFLAGS_SELECTED) {
 		lw->selected_depth++;
 
 	} else if (n->type == TREE_NODE_ENTRY &&
-			(n->flags & TREE_NODE_SELECTED ||
+			(n->flags & TV_NFLAGS_SELECTED ||
 					lw->selected_depth > 0)) {
 		struct treeview_node_msg msg;
 		msg.msg = TREE_MSG_NODE_LAUNCH;
@@ -2493,7 +2502,7 @@ static nserror treeview_node_nav_cb(treeview_node *node, void *ctx,
 	if (node == ns->tree->root)
 		return NSERROR_OK;
 
-	if (node->flags & TREE_NODE_SELECTED) {
+	if (node->flags & TV_NFLAGS_SELECTED) {
 		ns->n_selected++;
 		if (ns->curr == NULL) {
 			ns->curr = node;
@@ -2556,51 +2565,51 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 				ns.curr->parent != NULL &&
 				ns.curr->parent->type != TREE_NODE_ROOT) {
 			/* Step to parent */
-			ns.curr->parent->flags |= TREE_NODE_SELECTED;
+			ns.curr->parent->flags |= TV_NFLAGS_SELECTED;
 
 		} else if (ns.curr != NULL && tree->root->children != NULL) {
 			/* Select first node in tree */
-			tree->root->children->flags |= TREE_NODE_SELECTED;
+			tree->root->children->flags |= TV_NFLAGS_SELECTED;
 		}
 		break;
 
 	case KEY_RIGHT:
 		if (ns.curr != NULL) {
-			if (!(ns.curr->flags & TREE_NODE_EXPANDED)) {
+			if (!(ns.curr->flags & TV_NFLAGS_EXPANDED)) {
 				/* Toggle node to expanded */
 				treeview_node_expand_internal(tree, ns.curr);
 				if (ns.curr->children != NULL) {
 					/* Step to first child */
 					ns.curr->children->flags |=
-							TREE_NODE_SELECTED;
+							TV_NFLAGS_SELECTED;
 				} else {
 					/* Retain current node selection */
-					ns.curr->flags |= TREE_NODE_SELECTED;
+					ns.curr->flags |= TV_NFLAGS_SELECTED;
 				}
 			} else {
 				/* Toggle node to contracted */
 				treeview_node_contract_internal(tree, ns.curr);
 				/* Retain current node selection */
-				ns.curr->flags |= TREE_NODE_SELECTED;
+				ns.curr->flags |= TV_NFLAGS_SELECTED;
 			}
 
 		} else if (ns.curr != NULL) {
 			/* Retain current node selection */
-			ns.curr->flags |= TREE_NODE_SELECTED;
+			ns.curr->flags |= TV_NFLAGS_SELECTED;
 		}
 		break;
 
 	case KEY_UP:
 		if (ns.prev != NULL) {
 			/* Step to previous node */
-			ns.prev->flags |= TREE_NODE_SELECTED;
+			ns.prev->flags |= TV_NFLAGS_SELECTED;
 		}
 		break;
 
 	case KEY_DOWN:
 		if (ns.next != NULL) {
 			/* Step to next node */
-			ns.next->flags |= TREE_NODE_SELECTED;
+			ns.next->flags |= TV_NFLAGS_SELECTED;
 		}
 		break;
 
@@ -2722,16 +2731,16 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 	assert(tree->root->children != NULL);
 	assert(target != NULL);
 
-	if (target->flags & TREE_NODE_SELECTED) {
+	if (target->flags & TV_NFLAGS_SELECTED) {
 		/* Find top selected ancestor */
 		while (target->parent &&
-				target->parent->flags & TREE_NODE_SELECTED) {
+				target->parent->flags & TV_NFLAGS_SELECTED) {
 			target = target->parent;
 		}
 
 		/* Find top ajdacent selected sibling */
 		while (target->prev_sib &&
-				target->prev_sib->flags & TREE_NODE_SELECTED) {
+				target->prev_sib->flags & TV_NFLAGS_SELECTED) {
 			target = target->prev_sib;
 		}
 		target_pos = TV_TARGET_ABOVE;
@@ -2741,7 +2750,7 @@ static bool treeview_set_move_indicator(treeview *tree, bool need_redraw,
 		if (mouse_pos <= node_height / 4) {
 			target_pos = TV_TARGET_ABOVE;
 		} else if (mouse_pos <= (3 * node_height) / 4 ||
-				target->flags & TREE_NODE_EXPANDED) {
+				target->flags & TV_NFLAGS_EXPANDED) {
 			target_pos = TV_TARGET_INSIDE;
 		} else {
 			target_pos = TV_TARGET_BELOW;
@@ -3129,7 +3138,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	/* Record what position / part a drag started on */
 	if (ma->mouse & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2) &&
 			ma->tree->drag.type == TV_DRAG_NONE) {
-		ma->tree->drag.selected = node->flags & TREE_NODE_SELECTED;
+		ma->tree->drag.selected = node->flags & TV_NFLAGS_SELECTED;
 		ma->tree->drag.start_node = node;
 		ma->tree->drag.part = part;
 		ma->tree->drag.start.x = ma->x;
@@ -3169,7 +3178,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 
 		if (ma->tree->drag.start_node != NULL &&
 				ma->tree->drag.type == TV_DRAG_SELECTION) {
-			ma->tree->drag.start_node->flags ^= TREE_NODE_SELECTED;
+			ma->tree->drag.start_node->flags ^= TV_NFLAGS_SELECTED;
 		}
 	}
 
@@ -3214,7 +3223,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 		redraw |= treeview_clear_selection(ma->tree, &r);
 
 		/* Toggle node expansion */
-		if (node->flags & TREE_NODE_EXPANDED) {
+		if (node->flags & TV_NFLAGS_EXPANDED) {
 			err = treeview_node_contract_internal(ma->tree, node);
 		} else {
 			err = treeview_node_expand_internal(ma->tree, node);
@@ -3262,7 +3271,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 	} else if (ma->mouse & BROWSER_MOUSE_PRESS_1 &&
 			!(ma->mouse &
 				(BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_3)) &&
-			!(node->flags & TREE_NODE_SELECTED) &&
+			!(node->flags & TV_NFLAGS_SELECTED) &&
 			part != TV_NODE_PART_TOGGLE) {
 		/* Clear any existing selection */
 		redraw |= treeview_clear_selection(ma->tree, &r);
@@ -3274,7 +3283,7 @@ static nserror treeview_node_mouse_action_cb(treeview_node *node, void *ctx,
 
 	if (action & TV_NODE_ACTION_SELECTION) {
 		/* Handle change in selection */
-		node->flags ^= TREE_NODE_SELECTED;
+		node->flags ^= TV_NFLAGS_SELECTED;
 
 		/* Redraw */
 		if (!redraw) {
@@ -3400,7 +3409,7 @@ void treeview_mouse_action(treeview *tree,
 			if (tree->drag.start_node != NULL &&
 					tree->drag.type == TV_DRAG_SELECTION) {
 				tree->drag.start_node->flags ^=
-						TREE_NODE_SELECTED;
+						TV_NFLAGS_SELECTED;
 			}
 		}
 

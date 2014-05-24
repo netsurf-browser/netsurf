@@ -954,10 +954,11 @@ bool global_history_has_selection(void)
 bool global_history_get_selection(nsurl **url, const char **title)
 {
 	struct global_history_entry *e;
+	enum treeview_node_type type;
 	void *v;
 
-	treeview_get_selection(gh_ctx.tree, &v);
-	if (v == NULL) {
+	type = treeview_get_selection(gh_ctx.tree, &v);
+	if (type != TREE_NODE_ENTRY || v == NULL) {
 		*url = NULL;
 		*title = NULL;
 		return false;
