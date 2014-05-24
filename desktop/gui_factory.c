@@ -20,6 +20,7 @@
 #include "content/backing_store.h"
 
 #include "desktop/download.h"
+#include "desktop/searchweb.h"
 #include "desktop/gui_factory.h"
 #include "utils/file.h"
 
@@ -401,6 +402,33 @@ static nserror verify_search_register(struct gui_search_table *gst)
 	return NSERROR_OK;
 }
 
+static nserror
+gui_default_provider_update(const char *provider_name,
+			    struct bitmap *provider_bitmap)
+{
+	return NSERROR_OK;
+}
+
+static struct gui_search_web_table default_search_web_table = {
+	.provider_update = gui_default_provider_update,
+};
+
+/** verify search table is valid */
+static nserror verify_search_web_register(struct gui_search_web_table *gswt)
+{
+	/* check table is present */
+	if (gswt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* mandantory operations */
+	if (gswt->provider_update == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	return NSERROR_OK;
+}
+
 /** verify low level cache persistant backing store table is valid */
 static nserror verify_llcache_register(struct gui_llcache_table *glt)
 {
@@ -493,9 +521,6 @@ static void gui_default_quit(void)
 {
 }
 
-static void gui_default_set_search_ico(hlcache_handle *ico)
-{
-}
 
 static void gui_default_launch_url(const char *url)
 {
@@ -549,9 +574,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	/* fill in the optional entries with defaults */
 	if (gbt->quit == NULL) {
 		gbt->quit = gui_default_quit;
-	}
-	if (gbt->set_search_ico == NULL) {
-		gbt->set_search_ico = gui_default_set_search_ico;
 	}
 	if (gbt->launch_url == NULL) {
 		gbt->launch_url = gui_default_launch_url;
@@ -647,6 +669,16 @@ nserror gui_factory_register(struct netsurf_table *gt)
 		gt->search = &default_search_table;
 	}
 	err = verify_search_register(gt->search);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* web search table */
+	if (gt->search_web == NULL) {
+		/* set default search table */
+		gt->search_web = &default_search_web_table;
+	}
+	err = verify_search_web_register(gt->search_web);
 	if (err != NSERROR_OK) {
 		return err;
 	}

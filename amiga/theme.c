@@ -123,7 +123,6 @@ int osmouseptr[AMI_LASTPOINTER+1] = {
 void ami_theme_init(void)
 {
 	char themefile[1024];
-	char searchico[1024];
 	BPTR lock = 0;
 
 	strcpy(themefile,nsoption_charp(theme));
@@ -148,9 +147,6 @@ void ami_theme_init(void)
 		UnLock(lock);
 		messages_load(themefile);
 	}
-
-	ami_get_theme_filename(searchico, "theme_search", false);
-	search_default_ico_location = (char *)strdup(searchico);
 }
 
 void ami_theme_throbber_setup(void)

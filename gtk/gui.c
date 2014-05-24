@@ -364,12 +364,12 @@ static void gui_init(int argc, char** argv, char **respath)
 	}
 
 	/* Search engine sources */
-	search_engines_file_location = filepath_find(respath, "SearchEngines");
-	LOG(("Using '%s' as Search Engines file", search_engines_file_location));
-
-	/* Default Icon */
-	search_default_ico_location = filepath_find(respath, "default.ico");
-	LOG(("Using '%s' as default search ico", search_default_ico_location));
+	resource_filename = filepath_find(respath, "SearchEngines");
+	search_web_init(resource_filename);
+	if (resource_filename != NULL) {
+		LOG(("Using '%s' as Search Engines file", resource_filename));
+		free(resource_filename);
+	}
 
 	/* Default favicon */
 	resource_filename = filepath_find(respath, "favicon.png");
@@ -562,8 +562,6 @@ static void gui_quit(void)
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
 
-	free(search_engines_file_location);
-	free(search_default_ico_location);
 	free(toolbar_indices_file_location);
 
 	free(nsgtk_config_home);
@@ -1250,7 +1248,6 @@ static struct gui_browser_table nsgtk_browser_table = {
 	.schedule = nsgtk_schedule,
 
 	.quit = gui_quit,
-	.set_search_ico = gui_set_search_ico,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
@@ -1271,8 +1268,9 @@ int main(int argc, char** argv)
 		.clipboard = nsgtk_clipboard_table,
 		.download = nsgtk_download_table,
 		.fetch = nsgtk_fetch_table,
-		.search = nsgtk_search_table,
 		.llcache = filesystem_llcache_table,
+		.search = nsgtk_search_table,
+		.search_web = nsgtk_search_web_table,
 	};
 
         ret = netsurf_register(&nsgtk_table);

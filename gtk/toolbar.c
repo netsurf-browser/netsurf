@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <gtk/gtk.h>
 
 #include "desktop/browser.h"
@@ -438,7 +439,7 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 	/* update favicon etc */
 	nsgtk_scaffolding_set_top_level(nsgtk_scaffolding_top_level(g));
 
-	gui_set_search_ico(search_web_ico());
+	search_web_select_provider(-1);
 }
 
 /**

@@ -1811,8 +1811,7 @@ void ami_gui_opts_use(bool save)
 		ami_gui_tabs_toggle_all();
 	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
-	search_web_provider_details(nsoption_int(search_provider));
-	search_web_retrieve_ico(false);
+	search_web_select_provider(nsoption_int(search_provider));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if (data) {

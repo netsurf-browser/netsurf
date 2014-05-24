@@ -192,13 +192,29 @@ gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event,
 
 gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	temp_open_background = 0;
-	search_web_new_window(nsgtk_get_browser_window(
-			nsgtk_scaffolding_top_level(g)),
-			(char *)gtk_entry_get_text(GTK_ENTRY(
-			nsgtk_scaffolding_websearch(g))));
-	temp_open_background = -1;
+	struct gtk_scaffolding *g = data;
+	nserror ret;
+	nsurl *url;
+
+	ret = search_web_omni(
+		gtk_entry_get_text(GTK_ENTRY(nsgtk_scaffolding_websearch(g))),
+		SEARCH_WEB_OMNI_SEARCHONLY,
+		&url);
+	if (ret == NSERROR_OK) {
+		temp_open_background = 0;
+		ret = browser_window_create(
+			BW_CREATE_HISTORY | BW_CREATE_TAB,
+			url,
+			NULL,
+			nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g)),
+			NULL);
+		temp_open_background = -1;
+		nsurl_unref(url);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	}
+
 	return TRUE;
 }
 

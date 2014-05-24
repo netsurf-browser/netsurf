@@ -70,6 +70,7 @@ struct download_context;
 struct nsurl;
 struct gui_file_table;
 struct gui_llcache_table;
+struct gui_search_web_table;
 
 typedef struct nsnsclipboard_styles {
 	size_t start;			/**< Start of run */
@@ -490,15 +491,6 @@ struct gui_browser_table {
 	void (*quit)(void);
 
 	/**
-	 * set gui display of a retrieved favicon representing the
-	 * search provider
-	 *
-	 * \param ico may be NULL for local calls; then access current
-	 * cache from search_web_ico()
-	 */
-	void (*set_search_ico)(struct hlcache_handle *ico);
-
-	/**
 	 * core has no fetcher for url
 	 */
 	void (*launch_url)(const char *url);
@@ -572,6 +564,15 @@ struct netsurf_table {
 	 * Provides routines for the interactive text search on a page.
 	 */
 	struct gui_search_table *search;
+
+	/**
+	 * Web search table.
+	 *
+	 * Used by the web search provider system. The table is
+	 * optional and may be NULL which uses the default empty
+	 * implementation.
+	 */
+	struct gui_search_web_table *search_web;
 
 	/**
 	 * Low level cache table.

@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -923,8 +924,6 @@ TOGGLEBUTTON_SIGNALS(checkUrlSearch, search_url_bar)
 G_MODULE_EXPORT void
 nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
-	char *name;
 	int provider;
 
 	provider = gtk_combo_box_get_active(widget);
@@ -932,27 +931,8 @@ nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 	/* set the option */
 	nsoption_set_int(search_provider, provider);
 
-	/* refresh web search prefs from file */
-	search_web_provider_details(provider);
-
-	/* retrieve ico */
-	search_web_retrieve_ico(false);
-
-	/* callback may handle changing gui */
-	gui_set_search_ico(search_web_ico());
-
-	/* set entry */
-	name = search_web_provider_name();
-	if (name != NULL) {
-		char content[strlen(name) + SLEN("Search ") + 1];
-
-		sprintf(content, "Search %s", name);
-		free(name);
-		while (current) {
-			nsgtk_scaffolding_set_websearch(current, content);
-			current = nsgtk_scaffolding_iterate(current);
-		}
-	}
+	/* set search provider */
+	search_web_select_provider(provider);
 }
 
 G_MODULE_EXPORT void

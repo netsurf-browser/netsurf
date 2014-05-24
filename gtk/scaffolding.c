@@ -417,29 +417,20 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
-	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	char *urltxt;
+	nserror ret;
 	nsurl *url;
-	nserror error;
 
-	if (search_is_url(gtk_entry_get_text(GTK_ENTRY(g->url_bar))) == false) {
-		urltxt = search_web_from_term(gtk_entry_get_text(GTK_ENTRY(
-				g->url_bar)));
-	} else {
-		urltxt = strdup(gtk_entry_get_text(GTK_ENTRY(g->url_bar)));
+	ret = search_web_omni(gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
+			      SEARCH_WEB_OMNI_NONE,
+			      &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_navigate(nsgtk_get_browser_window(g->top_level),
+					      url, NULL, BW_NAVIGATE_HISTORY,
+					      NULL, NULL, NULL);
+		nsurl_unref(url);
 	}
-
-	if (urltxt != NULL) {
-		error = nsurl_create(urltxt, &url);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		} else {
-			browser_window_navigate(bw, url, NULL,
-					BW_NAVIGATE_HISTORY, NULL,
-					NULL, NULL);
-			nsurl_unref(url);
-		}
-		free(urltxt);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	}
 
 	return TRUE;
@@ -1814,7 +1805,6 @@ static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	struct gtk_scaffolding *g;
-	char *searchname;
 	int i;
 	GtkAccelGroup *group;
 	GError* error = NULL;
@@ -2078,29 +2068,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_toolbar_connect_all(g);
 	nsgtk_attach_menu_handlers(g);
 
-	/* prepare to set the web search ico */
-
-	/* init web search prefs from file */
-	search_web_provider_details(nsoption_int(search_provider));
-
-	/* potentially retrieve ico */
-	if (search_web_ico() == NULL) {
-		search_web_retrieve_ico(false);
-	}
-
-	/* set entry */
-	searchname = search_web_provider_name();
-	if (searchname != NULL) {
-		char searchcontent[strlen(searchname) + SLEN("Search ")	+ 1];
-		sprintf(searchcontent, "Search %s", searchname);
-		nsgtk_scaffolding_set_websearch(g, searchcontent);
-		free(searchname);
-	}
-
 	nsgtk_scaffolding_initial_sensitivity(g);
 
 	g->fullscreen = false;
-
 
 	/* attach to the list */
 	if (scaf_list)
@@ -2113,8 +2083,8 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_theme_init();
 	nsgtk_theme_implement(g);
 
-	/* set web search ico */
-	gui_set_search_ico(search_web_ico());
+	/* set web search provider */
+	search_web_select_provider(nsoption_int(search_provider));
 
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
@@ -2227,37 +2197,64 @@ nsgtk_scaffolding_set_icon(struct gui_window *gw)
 	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
 }
 
-void gui_set_search_ico(hlcache_handle *ico)
+/**
+ * Gui callback when search provider details are updated.
+ *
+ * \param provider_name The providers name.
+ * \param ico_bitmap The icon bitmap representing the provider.
+ * \return NSERROR_OK on success else error code.
+ */
+static nserror
+gui_search_web_provider_update(const char *provider_name,
+			       struct bitmap *provider_bitmap)
 {
-	struct bitmap *srch_bitmap;
 	nsgtk_scaffolding *current;
-	GdkPixbuf *srch_pixbuf;
+	GdkPixbuf *srch_pixbuf = NULL;
+	char *searchcontent;
 
-	if ((ico == NULL) &&
-	    (ico = search_web_ico()) == NULL) {
-		return;
+	if (provider_bitmap != NULL) {
+		srch_pixbuf = nsgdk_pixbuf_get_from_surface(provider_bitmap->surface, 16, 16);
+
+		if (srch_pixbuf == NULL) {
+			return NSERROR_NOMEM;
+		}
 	}
 
-	srch_bitmap = content_get_bitmap(ico);
-	if (srch_bitmap == NULL) {
-		return;
+	/* setup the search content name */
+	searchcontent = malloc(strlen(provider_name) + SLEN("Search ") + 1);
+	if (searchcontent != NULL) {
+		sprintf(searchcontent, "Search %s", provider_name);
 	}
 
-	srch_pixbuf = nsgdk_pixbuf_get_from_surface(srch_bitmap->surface, 16, 16);
-
-	if (srch_pixbuf == NULL) {
-		return;
-	}
-
-	/* add ico to each window's toolbar */
+	/* set the search provider parameters up in each scaffold */
 	for (current = scaf_list; current != NULL; current = current->next) {
-		nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
-						 GTK_ENTRY_ICON_PRIMARY,
-						 srch_pixbuf);
+	/* add ico to each window's toolbar */
+		if (srch_pixbuf != NULL) {
+			nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
+							 GTK_ENTRY_ICON_PRIMARY,
+							 srch_pixbuf);
+		}
+
+		/* set search entry text */
+		if (searchcontent != NULL) {
+			nsgtk_scaffolding_set_websearch(current, searchcontent);
+		} else {
+			nsgtk_scaffolding_set_websearch(current, provider_name);
+		}
 	}
+
+	free(searchcontent);
 
 	g_object_unref(srch_pixbuf);
+
+	return NSERROR_OK;
 }
+
+static struct gui_search_web_table search_web_table = {
+	.provider_update = gui_search_web_provider_update,
+};
+
+struct gui_search_web_table *nsgtk_search_web_table = &search_web_table;
 
 bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g)
 {

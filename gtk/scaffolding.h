@@ -22,9 +22,13 @@
 #include <stdbool.h>
 #include "utils/errors.h"
 
+struct bitmap;
 struct hlcache_handle;
 struct gui_window;
+struct gui_search_web_table;
 typedef struct gtk_scaffolding nsgtk_scaffolding;
+
+extern struct gui_search_web_table *nsgtk_search_web_table;
 
 typedef enum {
 	BACK_BUTTON = 0,
@@ -178,6 +182,6 @@ void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
-void gui_set_search_ico(struct hlcache_handle *ico);
+
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */

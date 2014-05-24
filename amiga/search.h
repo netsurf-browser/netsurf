@@ -34,6 +34,4 @@ void ami_search_open(struct gui_window *gwin);
 BOOL ami_search_event(void);
 void ami_search_close(void);
 
-char *search_engines_file_location;
-char *search_default_ico_location;
 #endif

@@ -278,8 +278,8 @@ void netsurf_exit(void)
 	LOG(("Finalising JavaScript"));
 	js_finalise();
 
-	LOG(("Closing search and related resources"));
-	search_web_cleanup();
+	LOG(("Finalising Web Search"));
+	search_web_finalise();
 
 	LOG(("Finalising high-level cache"));
 	hlcache_finalise();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,65 +16,81 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file desktop/searchweb.h
+ * \brief core web search facilities interface.
+ */
+
 #ifndef _NETSURF_DESKTOP_SEARCH_WEB_H_
 #define _NETSURF_DESKTOP_SEARCH_WEB_H_
 
-#include <ctype.h>
-#include <stdbool.h>
-#include <string.h>
-
-struct browser_window;
-struct hlcache_handle;
-
-extern char *search_engines_file_location;
-extern char *search_default_ico_location;
+struct bitmap;
 
 /**
- * open new tab/window for web search term
+ * Graphical user interface browser web search function table.
+ *
  */
-bool search_web_new_window(struct browser_window *bw, const char *searchterm);
+struct gui_search_web_table {
+	/**
+	 * called when the search provider details are updated.
+	 *
+	 * \param provider_name The name of the provider.
+	 * \param ico_bitmap The bitmap of the search icon may be NULL
+	 * if no icon is yet available.
+	 */
+	nserror (*provider_update)(const char *provider_name, struct bitmap *ico_bitmap);
+};
 
 /**
- * retrieve full search url from unencoded search term
+ * Flags which alter the behaviour of the omin search.
  */
-char *search_web_from_term(const char *searchterm);
+enum search_web_omni_flags {
+	SEARCH_WEB_OMNI_NONE = 0, /**< no changes to default operation */
+	SEARCH_WEB_OMNI_SEARCHONLY = 1, /**< The search does not attempt to
+					 * interpret the url as a url before
+					 * using it as a search term.
+					 */
+};
 
 /**
- * retrieve full search url from encoded web search term
+ * Generate a nsurl from a search term.
+ *
+ * This interface obtains a url appropriate for the given search
+ * term. The flags allow control over the operation. By default the
+ * operations are:
+ *  - interpret the \a term as a url
+ *  - if missing a scheme as a http: url
+ *  - combined with the search providers url into a url for that provider.
+ *
+ * \param term The search term.
+ * \param flags Flags to control operation.
+ * \param url_out The ourput url on success.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-char *search_web_get_url(const char *encsearchterm);
+nserror search_web_omni(const char *term, enum search_web_omni_flags flags, struct nsurl **url_out);
 
 /**
- *  cache details of web search provider from file
+ * Change the currently selected web search provider.
+ *
+ * \param selection Index of the search provider to select or -1 to
+ *                  reselect the current provider
+ * \return NSERROR_OK on success or appropriate error code.
  */
-void search_web_provider_details(int reference);
+nserror search_web_select_provider(int selection);
 
 /**
- * retrieve name of web search provider
+ * Initialise the web search operations.
+ *
+ * \param provider_fname Path to web search providers file.
+ * \return NSERROR_OK on successful initialisation or appropriate error code.
  */
-char *search_web_provider_name(void);
+nserror search_web_init(const char *provider_fname);
 
 /**
- * retrieve hostname of web search provider
+ * Finalise the web search operations freeing all resources.
+ *
+ * \return NSERROR_OK on success or appropriate error code.
  */
-char *search_web_provider_host(void);
-
-/**
- * retrieve name of .ico for search bar
- */
-char *search_web_ico_name(void);
-
-/**
- * check whether an URL is in fact a search term
- * \param url the url being checked
- * \return true for url, false for search
- */
-bool search_is_url(const char *url);
-
-void search_web_retrieve_ico(bool localdefault);
-
-struct hlcache_handle *search_web_ico(void);
-
-void search_web_cleanup(void);
+nserror search_web_finalise(void);
 
 #endif

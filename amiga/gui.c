@@ -687,7 +687,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
 	
-	search_engines_file_location = nsoption_charp(search_engines_file);
+	search_web_init(nsoption_charp(search_engines_file));
 
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
 	nsoption_setnull_charp(font_unicode_file,
@@ -1000,7 +1000,7 @@ static void gui_init2(int argc, char** argv)
 	ami_cookies_initialise();
 	ami_global_history_initialise();
 
-	search_web_provider_details(nsoption_int(search_provider));
+	search_web_select_provider(nsoption_int(search_provider));
 
 	if (notalreadyrunning && 
 	    (nsoption_bool(startup_no_window) == false))
@@ -1878,18 +1878,17 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_URL:
+						{
+							nserror ret;
+							nsurl *url;
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_URL],
 								(ULONG *)&storage);
-							if(utf8 = ami_to_utf8_easy((const char *)storage)) {
-								if(search_is_url((char *)utf8) == false)
-								{
-									utf8 = search_web_from_term(utf8);
-								}
+							utf8 = ami_to_utf8_easy((const char *)storage);
 
-								if (nsurl_create((char *)utf8, &url) != NSERROR_OK) {
-									warn_user("NoMemory", 0);
-								} else {
+							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_NONE, &url);
+							ami_utf8_free(utf8);
+							if (ret == NSERROR_OK) {
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
@@ -1898,29 +1897,32 @@ void ami_handle_msg(void)
 											NULL,
 											NULL);
 									nsurl_unref(url);
-								}
-								ami_utf8_free(utf8);
-							} else {
-								warn_user("NoMemory", 0);
 							}
+							if (ret != NSERROR_OK) {
+								warn_user(messages_get_errorcode(ret), 0);
+							}
+						}
 						break;
 
 						case GID_TOOLBARLAYOUT:
 							/* Need fixing: never gets here */
-							search_web_retrieve_ico(false);
+							search_web_select_provider(-1);
 						break;
 
 						case GID_SEARCHSTRING:
+						{
+							nserror ret;
+							nsurl *url;
+
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_SEARCHSTRING],
 								(ULONG *)&storage);
-							if(utf8 = ami_to_utf8_easy((const char *)storage)) {
-								storage = (ULONG)search_web_from_term(utf8);
-								ami_utf8_free(utf8);
 
-								if (nsurl_create((char *)storage, &url) != NSERROR_OK) {
-									warn_user("NoMemory", 0);
-								} else {
+							utf8 = ami_to_utf8_easy((const char *)storage);
+
+							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_SEARCHONLY, &url);
+							ami_utf8_free(utf8);
+							if (ret == NSERROR_OK) {
 									browser_window_navigate(gwin->bw,
 											url,
 											NULL,
@@ -1928,11 +1930,13 @@ void ami_handle_msg(void)
 											NULL,
 											NULL,
 											NULL);
-									nsurl_unref(url);
-								}
-							} else {
-								warn_user("NoMemory", 0);
+								nsurl_unref(url);
 							}
+							if (ret != NSERROR_OK) {
+								warn_user(messages_get_errorcode(ret), 0);
+							}
+
+						}
 						break;
 
 						case GID_HOME:
@@ -3873,7 +3877,9 @@ gui_window_create(struct browser_window *bw,
 	glob = &browserglob;
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
-	search_web_retrieve_ico(false);
+
+	/* set web search provider */
+	search_web_select_provider(nsoption_int(search_provider));
 
 	ScreenToFront(scrn);
 
@@ -4772,12 +4778,14 @@ static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 }
 
 /**
- * set gui display of a retrieved favicon representing the search
- * provider
- * \param ico may be NULL for local calls; then access current cache from
- * search_web_ico()
+ * Gui callback when search provider details are updated.
+ *
+ * \param provider_name The providers name.
+ * \param ico_bitmap The icon bitmap representing the provider.
+ * \return NSERROR_OK on success else error code.
  */
-static void gui_set_search_ico(hlcache_handle *ico)
+nserror gui_search_web_provider_update(const char *provider_name,
+	struct bitmap *ico_bitmap)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
@@ -4790,10 +4798,9 @@ static void gui_set_search_ico(hlcache_handle *ico)
 	if(IsMinListEmpty(window_list))	return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
-	if (ico == NULL) ico = search_web_ico();
-	ico_bitmap = content_get_bitmap(ico);
-	if ((ico != NULL) && (ico_bitmap != NULL))
+	if (ico_bitmap != NULL) {
 		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, NULL);
+	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
@@ -4807,7 +4814,7 @@ static void gui_set_search_ico(hlcache_handle *ico)
 
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCH_ICON],
 				gwin->win, NULL,
-				GA_HintInfo, search_web_provider_name(),
+				GA_HintInfo, provider_name,
 				TAG_DONE);
 
 			EraseRect(gwin->win->RPort, bbox->Left, bbox->Top,
@@ -4843,6 +4850,8 @@ static void gui_set_search_ico(hlcache_handle *ico)
 			}
 		}
 	} while(node = nnode);
+
+	return NSERROR_OK;
 }
 
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
@@ -5214,12 +5223,15 @@ static struct gui_fetch_table amiga_fetch_table = {
 	.get_resource_url = gui_get_resource_url,
 };
 
+static struct gui_search_web_table amiga_search_web_table = {
+	.provider_update = gui_search_web_provider_update,
+};
+
 static struct gui_browser_table amiga_browser_table = {
 	.poll = gui_poll,
 	.schedule = ami_schedule,
 
 	.quit = gui_quit,
-	.set_search_ico = gui_set_search_ico,
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
@@ -5247,6 +5259,7 @@ int main(int argc, char** argv)
 		.file = &amiga_file_table,
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
+		.search_web = &amiga_search_web_table,
 		.llcache = filesystem_llcache_table,
 	};
 
