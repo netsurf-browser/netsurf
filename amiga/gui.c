@@ -2245,6 +2245,7 @@ void ami_handle_msg(void)
 								} while(tab=ntab);
 							}
 
+							refresh_favicon = TRUE;
 							gwin->bw->reformat_pending = true;
 							ami_schedule_redraw(gwin, true);
 						break;
