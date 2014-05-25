@@ -4793,7 +4793,6 @@ nserror gui_search_web_provider_update(const char *provider_name,
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
-	struct bitmap *ico_bitmap;
 
 	if(IsMinListEmpty(window_list))	return;
 	if(nsoption_bool(kiosk_mode) == true) return;
