@@ -288,6 +288,7 @@ make_search_nsurl(struct search_provider *provider,
 		}
 	}
 	free(eterm);
+	*urlstro = '\0'; /* ensure string is NULL-terminated */
 
 	ret = nsurl_create(urlstr, &url);
 	free(urlstr);
