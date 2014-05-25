@@ -685,9 +685,6 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(ca_bundle,
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
-	
-	search_web_init(nsoption_charp(search_engines_file));
-
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
 	nsoption_setnull_charp(font_unicode_file,
 			       (char *)strdup(temp));
@@ -5322,6 +5319,8 @@ int main(int argc, char** argv)
 
 	if(current_user_cache != NULL) FreeVec(current_user_cache);
 	ret = amiga_icon_init();
+
+	search_web_init(nsoption_charp(search_engines_file));
 
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
