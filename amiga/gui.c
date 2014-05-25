@@ -2331,7 +2331,7 @@ void ami_handle_msg(void)
 
 	if(refresh_search_ico)
 	{
-		gui_set_search_ico(NULL);
+		search_web_select_provider(-1);
 		refresh_search_ico = FALSE;
 	}
 
