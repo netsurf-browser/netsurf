@@ -3876,6 +3876,7 @@ gui_window_create(struct browser_window *bw,
 
 	/* set web search provider */
 	search_web_select_provider(nsoption_int(search_provider));
+	refresh_search_ico = TRUE;
 
 	ScreenToFront(scrn);
 
