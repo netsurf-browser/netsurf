@@ -211,7 +211,6 @@ static void ami_schedule_redraw_remove(struct gui_window_2 *gwin);
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 static void gui_window_remove_caret(struct gui_window *g);
-static void gui_set_search_ico(hlcache_handle *ico);
 static void gui_window_place_caret(struct gui_window *g, int x, int y, int height, const struct rect *clip);
 
 
@@ -4784,7 +4783,7 @@ static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
  * \param ico_bitmap The icon bitmap representing the provider.
  * \return NSERROR_OK on success else error code.
  */
-nserror gui_search_web_provider_update(const char *provider_name,
+static nserror gui_search_web_provider_update(const char *provider_name,
 	struct bitmap *ico_bitmap)
 {
 	struct BitMap *bm = NULL;
@@ -4794,8 +4793,8 @@ nserror gui_search_web_provider_update(const char *provider_name,
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 
-	if(IsMinListEmpty(window_list))	return;
-	if(nsoption_bool(kiosk_mode) == true) return;
+	if(IsMinListEmpty(window_list))	return NSERROR_BAD_PARAMETER;
+	if(nsoption_bool(kiosk_mode) == true) return NSERROR_BAD_PARAMETER;
 
 	if (ico_bitmap != NULL) {
 		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, NULL);
