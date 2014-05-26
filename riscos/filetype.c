@@ -72,7 +72,7 @@ const char *fetch_filetype(const char *unix_path)
 	struct type_entry *t;
 	unsigned int len = strlen(unix_path) + 100;
 	char *path = calloc(len, 1);
-	char *r, *slash;
+	char *r;
 	os_error *error;
 	bits file_type, temp;
 	int objtype;
@@ -110,7 +110,7 @@ const char *fetch_filetype(const char *unix_path)
 	/* If filetype is text or data, and the file has an extension, try to
 	 * map the extension to a filetype via the MimeMap file. */
 	if (file_type == osfile_TYPE_TEXT || file_type == osfile_TYPE_DATA) {
-		slash = strrchr(path, '/');
+		char *slash = strrchr(path, '/');
 		if (slash) {
 			error = xmimemaptranslate_extension_to_filetype(
 					slash+1, &temp);
