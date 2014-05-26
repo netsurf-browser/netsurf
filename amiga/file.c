@@ -31,6 +31,7 @@
 
 #include "desktop/browser_private.h"
 #include "utils/nsoption.h"
+#include "utils/file.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/save_text.h"

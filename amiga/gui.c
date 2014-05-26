@@ -915,7 +915,7 @@ static void gui_init2(int argc, char** argv)
 				if(!temp_homepage_url) {
 					nsurl *temp_url;
 					if (netsurf_path_to_nsurl(fullpath, &temp_url) == NSERROR_OK) {
-						temp_homepage_url = strdup(nsurl_data(temp_url));
+						temp_homepage_url = strdup(nsurl_access(temp_url));
 						nsurl_unref(temp_url);
 					}
 				}
