@@ -947,7 +947,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	wimp_caret	caret;
 	os_error	*error;
 	char		*local_text = NULL;
-	const char	*set_url, *local_url;
+	const char	*local_url;
 	nsurl *n;
 
 	if (url_bar == NULL || url_bar->text_buffer == NULL || url == NULL)
@@ -1019,7 +1019,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 	if (set_caret || (caret.w == url_bar->window &&
 			caret.i == url_bar->text_icon)) {
-		set_url = ro_gui_get_icon_string(url_bar->window,
+		const char *set_url = ro_gui_get_icon_string(url_bar->window,
 				url_bar->text_icon);
 
 		error = xwimp_set_caret_position(url_bar->window,
