@@ -177,9 +177,8 @@ void ro_gui_configure_open_window(wimp_open *open)
 	int screen_width, screen_height;
 	int height, width;
 	int icons_per_line, icon_lines;
-	int max_icons_per_line, max_height;
+	int max_height;
 	os_box extent = { 0, 0, 0, 0 };
-	int x, y, l;
 	struct configure_tool *tool;
 
 	if (!ro_gui_configure_translate()) {
@@ -195,6 +194,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 
 	/* move our icons */
 	if (icons_per_line != configure_icons_per_line) {
+		int x, y, l;
 		configure_icons_per_line = icons_per_line;
 		x = CONFIGURE_ICON_PADDING_H / 2;
 		y = -configure_icon_height + (CONFIGURE_ICON_PADDING_V / 2);
@@ -238,6 +238,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 
 	/* set the extent */
 	if ((configure_height != height) || (configure_width != width)) {
+		int max_icons_per_line;
 		ro_gui_screen_size(&screen_width, &screen_height);
 		max_icons_per_line = screen_width / configure_icon_width;
 		if (max_icons_per_line > configure_icons)
