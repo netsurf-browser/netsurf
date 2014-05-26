@@ -44,6 +44,8 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/file.h"
+#include "utils/corestrings.h"
+#include "utils/url.h"
 
 #include "windows/window.h"
 #include "windows/about.h"

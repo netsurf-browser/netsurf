@@ -34,6 +34,7 @@
 #include "amiga/utf8.h"
 #include "desktop/cookie_manager.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/file.h"

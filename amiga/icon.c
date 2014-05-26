@@ -47,6 +47,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
+#include "utils/file.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */

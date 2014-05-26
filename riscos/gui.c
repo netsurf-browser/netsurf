@@ -57,6 +57,7 @@
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/corestrings.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -746,7 +747,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	char *unix_path; /* unix path */
 	char *escurl;
 	os_error *error;
-	nserror url_err;
+	nserror ret;
 	int urllen;
 	char *url; /* resulting url */
 
@@ -801,10 +802,10 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	free(unix_path);
 
 	/* We don't want '/' to be escaped.  */
-	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
+	ret = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
 	free(url);
-	if (url_err != NSERROR_OK) {
-		return url_err;
+	if (ret != NSERROR_OK) {
+		return ret;
 	}
 
 	ret = nsurl_create(escurl, url_out);

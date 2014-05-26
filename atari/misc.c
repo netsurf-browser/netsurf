@@ -246,10 +246,6 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 
 	nsurl_unref(icon_nsurl);
 
-	/* If we built the URL here, free it */
-	if (url != NULL)
-		free(url);
-
 	if (err != NSERROR_OK) {
 		return NULL;
 	}

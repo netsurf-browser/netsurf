@@ -26,10 +26,12 @@
 #include "desktop/gui.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
+#include "desktop/netsurf.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/filepath.h"
+#include "utils/file.h"
 #include "content/fetchers/resource.h"
 
 #include "windows/findfile.h"

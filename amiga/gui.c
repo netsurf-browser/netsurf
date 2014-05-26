@@ -37,6 +37,7 @@
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/nsurl.h"
 #include "utils/file.h"
 
 /* NetSurf Amiga platform includes */
@@ -912,9 +913,9 @@ static void gui_init2(int argc, char** argv)
 				AddPart(fullpath,wbarg->wa_Name,1024);
 
 				if(!temp_homepage_url) {
-					nsurl temp_url;
+					nsurl *temp_url;
 					if (netsurf_path_to_nsurl(fullpath, &temp_url) == NSERROR_OK) {
-						temp_homepage_url = strcpy(nsurl_data(temp_url));
+						temp_homepage_url = strdup(nsurl_data(temp_url));
 						nsurl_unref(temp_url);
 					}
 				}
