@@ -285,12 +285,12 @@ bool ro_gui_throbber_icon_update(struct throbber *throbber)
 
 bool ro_gui_throbber_icon_resize(struct throbber *throbber)
 {
-	os_error	*error;
 
 	if (throbber->window == NULL)
 		return false;
 
 	if (throbber->icon != -1) {
+		os_error *error;
 		error = xwimp_resize_icon(throbber->window, throbber->icon,
 				throbber->extent.x0, throbber->extent.y0,
 				throbber->extent.x1, throbber->extent.y1);
