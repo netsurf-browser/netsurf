@@ -407,8 +407,6 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 	os_error *error;
 	int screen_width, screen_height;
 	wimp_window_state state;
-	int dimension;
-	int scroll_width;
 	bool open;
 
 	state.w = w;
@@ -422,6 +420,8 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 	 * open in the centre of the screen. */
 	open = state.flags & wimp_WINDOW_OPEN;
 	if (!open) {
+		int dimension;
+		int scroll_width;
 	  	/* cancel any editing */
 	  	if (ro_toolbar_get_editing(toolbar))
 	  		ro_toolbar_toggle_edit(toolbar);
