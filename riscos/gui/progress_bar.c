@@ -328,6 +328,11 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
 	redraw.box = pb->visible;
 	redraw.box.x0 = cur.x1;
 	error = xwimp_update_window(&redraw, &more);
+	if (error) {
+		LOG(("Error getting update window: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
 	if (more)
 		ro_gui_progress_bar_redraw_window(&redraw, pb);
 }
@@ -383,6 +388,10 @@ void ro_gui_progress_bar_animate(void *p)
 	redraw.w = pb->w;
 	redraw.box = pb->visible;
 	error = xwimp_update_window(&redraw, &more);
+	if (error != NULL) {
+		LOG(("Error getting update window: '%s'", error->errmess));
+		return;
+	}
 	if (more)
 		ro_gui_progress_bar_redraw_window(&redraw, pb);
 }
