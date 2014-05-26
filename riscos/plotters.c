@@ -77,9 +77,8 @@ bool ro_plot_patterned_lines = true;
 
 bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	os_error *error;
-
-	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+	if (style->fill_type != PLOT_OP_TYPE_NONE) {
+		os_error *error;
 		error = xcolourtrans_set_gcol(style->fill_colour << 8, 
 						colourtrans_USE_ECFS_GCOL,
 						os_ACTION_OVERWRITE, 0, 0);
@@ -145,17 +144,17 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 
 bool ro_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	const int path[] = { draw_MOVE_TO,
-			(ro_plot_origin_x + x0 * 2) * 256,
-			(ro_plot_origin_y - y0 * 2 - 1) * 256,
-			draw_LINE_TO,
-			(ro_plot_origin_x + x1 * 2) * 256,
-			(ro_plot_origin_y - y1 * 2 - 1) * 256,
-			draw_END_PATH };
-	bool dotted = false; 
-	bool dashed = false;
-
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		const int path[] = { draw_MOVE_TO,
+				(ro_plot_origin_x + x0 * 2) * 256,
+				(ro_plot_origin_y - y0 * 2 - 1) * 256,
+				draw_LINE_TO,
+				(ro_plot_origin_x + x1 * 2) * 256,
+				(ro_plot_origin_y - y1 * 2 - 1) * 256,
+				draw_END_PATH };
+		bool dotted = false; 
+		bool dashed = false;
+
 		if (style->stroke_type == PLOT_OP_TYPE_DOT) 
 			dotted = true;
 
