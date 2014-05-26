@@ -427,9 +427,11 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
 				progress_bar_definition.sprite_area,
 				(osspriteop_id)pb->icon,
 				&icon_width, &icon_height, 0, 0);
-		error = xosspriteop_select_sprite(osspriteop_USER_AREA,
-				progress_bar_definition.sprite_area,
-				(osspriteop_id)pb->icon, &icon);
+		if (!error) {
+			error = xosspriteop_select_sprite(osspriteop_USER_AREA,
+					progress_bar_definition.sprite_area,
+					(osspriteop_id)pb->icon, &icon);
+		}
 		if (!error) {
 			progress_x0 += 32 + MARGIN;
 			width -= 32 + MARGIN;
