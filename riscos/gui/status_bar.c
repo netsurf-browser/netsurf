@@ -343,7 +343,7 @@ void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)
  */
 void ro_gui_status_bar_resize(struct status_bar *sb)
 {
-	int window_width, window_height;
+	int window_width;
 	int status_width, status_height;
 	int redraw_left, redraw_right;
 	wimp_window_state state;
@@ -362,7 +362,6 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 		return;
 	}
 	window_width = state.visible.x1 - state.visible.x0;
-	window_height = state.visible.y1 - state.visible.y0;
 
 
 	/* recalculate the scaled width */
