@@ -246,7 +246,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	*/
 	if ((error = xos_set_ecf_origin(-ro_plot_origin_x,
 			-ro_plot_origin_y)) != NULL) {
-	  	LOG(("Invalid ECF origin"));
+		LOG(("Invalid ECF origin: '%s'", error->errmess));
 	}
 }
 
