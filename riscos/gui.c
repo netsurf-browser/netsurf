@@ -637,13 +637,13 @@ void ro_gui_create_dir(char *path)
 
 void ro_gui_choose_language(void)
 {
-	char path[40];
-
 	/* if option_language exists and is valid, use that */
 	if (nsoption_charp(language)) {
+		char path[40];
 		if (2 < strlen(nsoption_charp(language)))
 			nsoption_charp(language)[2] = 0;
 		sprintf(path, "NetSurf:Resources.%s", nsoption_charp(language));
+
 		if (is_dir(path)) {
 			nsoption_setnull_charp(accept_language, 
 					strdup(nsoption_charp(language)));
@@ -1860,7 +1860,6 @@ void ro_msg_dataopen(wimp_message *message)
 {
 	int file_type = message->data.data_xfer.file_type;
 	char *url = 0;
-	size_t len;
 	os_error *oserror;
 	nsurl *urlns;
 	nserror error;
@@ -1873,7 +1872,7 @@ void ro_msg_dataopen(wimp_message *message)
 		url = ro_gui_ieurl_file_parse(message->
 				data.data_xfer.file_name);
 	else if (file_type == 0x2000) {		/* application */
-		len = strlen(message->data.data_xfer.file_name);
+		size_t len = strlen(message->data.data_xfer.file_name);
 		if (len < 9 || strcmp(".!NetSurf",
 				message->data.data_xfer.file_name + len - 9))
 			return;
@@ -2055,8 +2054,7 @@ void ro_gui_screen_size(int *width, int *height)
 void ro_gui_view_source(hlcache_handle *c)
 {
 	os_error *error;
-	char full_name[256];
-	char *temp_name, *r;
+	char *temp_name;
 	wimp_full_message_data_xfer message;
 	int objtype;
 	bool done = false;
@@ -2094,6 +2092,8 @@ void ro_gui_view_source(hlcache_handle *c)
 		 * allow it to be re-used next time NetSurf is started. The
 		 * memory overhead from doing this is under 1 byte per
 		 * filename. */
+		char *r;
+		char full_name[256];
 		const char *filename = filename_request();
 		if (!filename) {
 			warn_user("NoMemory", 0);
@@ -2482,7 +2482,6 @@ int main(int argc, char** argv)
 {
 	char path[40];
 	int length;
-	char logging_env[2];
 	os_var_type type;
 	int used = -1;  /* slightly better with older OSLib versions */
 	os_error *error;
@@ -2510,6 +2509,7 @@ int main(int argc, char** argv)
 	if (error != NULL || type != os_VARTYPE_STRING || used != -2) {
 		verbose_log = true;
 	} else {
+		char logging_env[2];
 		error = xos_read_var_val("NetSurf$Logging", logging_env,
 				sizeof(logging_env), 0, os_VARTYPE_STRING,
 				&used, NULL, &type);
