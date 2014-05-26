@@ -212,15 +212,13 @@ unsigned int ro_gui_status_bar_get_width(struct status_bar *sb)
  */
 void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible)
 {
-	os_error *error;
-
 	assert(sb);
 
 	sb->visible = visible;
 	if (visible) {
 		ro_gui_status_bar_resize(sb);
 	} else {
-		error = xwimp_close_window(sb->w);
+		os_error *error = xwimp_close_window(sb->w);
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x:%s",
 				error->errnum, error->errmess));
@@ -270,7 +268,6 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 		unsigned int range)
 {
 	unsigned int old_range;
-	os_error *error;
 
 	assert(sb);
 
@@ -281,7 +278,7 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 	if ((old_range == 0) && (range != 0)) {
 		ro_gui_status_position_progress_bar(sb);
 	} else if ((old_range != 0) && (range == 0)) {
-		error = xwimp_close_window(
+		os_error *error = xwimp_close_window(
 				ro_gui_progress_bar_get_window(sb->pb));
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x:%s",
@@ -345,7 +342,6 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 {
 	int window_width;
 	int status_width, status_height;
-	int redraw_left, redraw_right;
 	wimp_window_state state;
 	os_error *error;
 	os_box extent;
@@ -373,6 +369,8 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 	/* resize the status/resize icons */
 	if (status_width != sb->width) {
 		/* update the window extent */
+		int redraw_left, redraw_right;
+
 		extent.x0 = 0;
 		extent.y0 = 0;
 		extent.x1 = status_width;
