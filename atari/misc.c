@@ -210,7 +210,6 @@ static nserror load_icon_callback(hlcache_handle *handle,
 hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 						void * pw )
 {
-	char *url = NULL;
 	const char *icon_url = NULL;
 	hlcache_handle *c;
 	nserror err;
@@ -220,7 +219,7 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 	/** @todo something like bitmap_from_disc is needed here */
 
 	if (!strncmp(name, "file://", 7)) {
-		icon_url = name;
+		err = nsurl_create(name, &icon_nsurl);
 	} else {
 		char *native_path = NULL;
 
@@ -228,22 +227,15 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 			return NULL;
 
 		err = netsurf_mkpath(&native_path, NULL, 2, icons_dir, name);
-		if (err != NSERROR_OK) {
-			warn_user(messages_get_errorcode(err), 0);
-			return NULL;
+		if (err == NSERROR_OK) {
+			/* Convert native path to URL */
+			err = netsurf_path_to_nsurl(native_path, &icon_nsurl);
+			free(native_path);
 		}
-
-		/* Convert native path to URL */
-		url = path_to_url(native_path);
-
-		free(native_path);
-		icon_url = url;
 	}
 
-	err = nsurl_create(icon_url, &icon_nsurl);
 	if (err != NSERROR_OK) {
-		if (url != NULL)
-			free(url);
+		warn_user(messages_get_errorcode(err), 0);
 		return NULL;
 	}
 

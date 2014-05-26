@@ -44,7 +44,6 @@
 #include "testament.h"
 
 #include "utils/config.h"
-#include "content/dirlist.h"
 #include "content/fetch.h"
 #include "content/fetchers/about.h"
 #include "content/urldb.h"

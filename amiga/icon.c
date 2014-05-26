@@ -144,14 +144,12 @@ bool amiga_icon_convert(struct content *c)
 	uint8 r, g, b, a;
 	ULONG offset;
 	const char *url;
-	char *filename;
+	char *filename = NULL;
 	char *p;
 	ULONG trans, pals1;
 	struct ColorRegister *pal1;
 
-	url = nsurl_access(content_get_url(c));
-	filename = url_to_path(url);
-
+	netsurf_nsurl_to_path(content_get_url(c), &filename);
 	/* This loader will only work on local files, so fail if not a local path */
 	if(filename == NULL)
 	{

@@ -222,127 +222,6 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 	nsoptions_default[NSOPTION_##OPTION].value.i = VALUE
 
 
-/**
- * Generate a posix path from one or more component elemnts.
- *
- * If a string is allocated it must be freed by the caller.
- *
- * @param[in,out] str pointer to string pointer if this is NULL enough
- *                    storage will be allocated for the complete path.
- * @param[in,out] size The size of the space available if \a str not
- *                     NULL on input and if not NULL set to the total
- *                     output length on output.
- * @param[in] nemb The number of elements.
- * @param[in] ... The elements of the path as string pointers.
- * @return NSERROR_OK and the complete path is written to str
- *         or error code on faliure.
- */
-static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
-{
-	const char *elm[16];
-	size_t elm_len[16];
-	size_t elm_idx;
-	char *fname;
-	size_t fname_len = 0;
-
-	/* check the parameters are all sensible */
-	if ((nelm == 0) || (nelm > 16)) {
-		return NSERROR_BAD_PARAMETER;
-	}
-	if ((*str != NULL) && (size == NULL)) {
-		/* if the caller is providing the buffer they must say
-		 * how much space is available.
-		 */
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	/* calculate how much storage we need for the complete path
-	 * with all the elements.
-	 */
-	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
-		elm[elm_idx] = va_arg(ap, const char *);
-		/* check the argument is not NULL */
-		if (elm[elm_idx] == NULL) {
-			return NSERROR_BAD_PARAMETER;
-		}
-		elm_len[elm_idx] = strlen(elm[elm_idx]);
-		fname_len += elm_len[elm_idx];
-	}
-	fname_len += nelm; /* allow for separators and terminator */
-
-	/* ensure there is enough space */
-	fname = *str;
-	if (fname != NULL) {
-		if (fname_len > *size) {
-			return NSERROR_NOSPACE;
-		}
-	} else {
-		fname = malloc(fname_len);
-		if (fname == NULL) {
-			return NSERROR_NOMEM;
-		}
-	}
-
-	/* copy the first element complete */
-	memmove(fname, elm[0], elm_len[0]);
-	fname[elm_len[0]] = 0;
-
-	/* add the remaining elements */
-	for (elm_idx = 1; elm_idx < nelm; elm_idx++) {
-		if (!AddPart(fname, elm[elm_idx], fname_len)) {
-			break;
-		}
-	}
-
-	*str = fname;
-	if (size != NULL) {
-		*size = fname_len;
-	}
-
-	return NSERROR_OK;
-}
-
-/**
- * Get the basename of a file using posix path handling.
- *
- * This gets the last element of a path and returns it.
- *
- * @param[in] path The path to extract the name from.
- * @param[in,out] str Pointer to string pointer if this is NULL enough
- *                    storage will be allocated for the path element.
- * @param[in,out] size The size of the space available if \a
- *                     str not NULL on input and set to the total
- *                     output length on output.
- * @return NSERROR_OK and the complete path is written to str
- *         or error code on faliure.
- */
-static nserror amiga_basename(const char *path, char **str, size_t *size)
-{
-	const char *leafname;
-	char *fname;
-
-	if (path == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	leafname = FilePart(path);
-	if (leafname == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
-	fname = strdup(leafname);
-	if (fname == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	*str = fname;
-	if (size != NULL) {
-		*size = strlen(fname);
-	}
-	return NSERROR_OK;
-}
-
-
 
 STRPTR ami_locale_langs(void)
 {
@@ -778,11 +657,7 @@ static nsurl *gui_get_resource_url(const char *path)
 		else return NULL;
 	}
 
-	raw = path_to_url(buf);
-	if (raw != NULL) {
-		nsurl_create(raw, &url);
-		free(raw);
-	}
+	netsurf_path_to_nsurl(buf, &url);
 
 	return url;
 }
@@ -1036,7 +911,13 @@ static void gui_init2(int argc, char** argv)
 				DevNameFromLock(wbarg->wa_Lock,fullpath,1024,DN_FULLPATH);
 				AddPart(fullpath,wbarg->wa_Name,1024);
 
-				if(!temp_homepage_url) temp_homepage_url = path_to_url(fullpath);
+				if(!temp_homepage_url) {
+					nsurl temp_url;
+					if (netsurf_path_to_nsurl(fullpath, &temp_url) == NSERROR_OK) {
+						temp_homepage_url = strcpy(nsurl_data(temp_url));
+						nsurl_unref(temp_url);
+					}
+				}
 
 				if(notalreadyrunning)
 				{
@@ -2378,7 +2259,6 @@ void ami_handle_appmsg(void)
 	int x, y;
 	struct WBArg *appwinargs;
 	STRPTR filename;
-	char *urlfilename;
 	int i = 0;
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
@@ -2410,9 +2290,8 @@ void ami_handle_appmsg(void)
 							appmsg->am_MouseX, appmsg->am_MouseY) == false)
 						{
 							nsurl *url;
-							urlfilename = path_to_url(filename);
 
-							if (nsurl_create(urlfilename, &url) != NSERROR_OK) {
+							if (netsurf_path_to_nsurl(filename, &url) != NSERROR_OK) {
 								warn_user("NoMemory", 0);
 							}
 							else
@@ -2440,17 +2319,14 @@ void ami_handle_appmsg(void)
 								}
 								nsurl_unref(url);
 							}
-
-							free(urlfilename);
 						}
 						else
 						{
 							if(browser_window_drop_file_at_point(gwin->bw, x, y, filename) == false)
 							{
 								nsurl *url;
-								urlfilename = path_to_url(filename);
 
-								if (nsurl_create(urlfilename, &url) != NSERROR_OK) {
+								if (netsurf_path_to_nsurl(filename, &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								}
 								else
@@ -2480,7 +2356,6 @@ void ami_handle_appmsg(void)
 									}
 									nsurl_unref(url);
 								}
-								free(urlfilename);
 							}
 						}
 						FreeVec(filename);
@@ -2527,11 +2402,8 @@ void ami_handle_applib(void)
 			{
 				struct ApplicationOpenPrintDocMsg *applibopdmsg =
 					(struct ApplicationOpenPrintDocMsg *)applibmsg;
-				char *tempurl;
 
-				tempurl = path_to_url(applibopdmsg->fileName);
-
-				error = nsurl_create(tempurl, &url);
+				error = netsurf_path_to_nsurl(applibopdmsg->fileName, &url);
 				if (error == NSERROR_OK) {
 					error = browser_window_create(BW_CREATE_HISTORY,
 								      url,
@@ -2543,7 +2415,6 @@ void ami_handle_applib(void)
 				if (error != NSERROR_OK) {
 					warn_user(messages_get_errorcode(error), 0);
 				}
-				free(tempurl);
 			}
 			break;
 
@@ -5206,16 +5077,9 @@ static struct gui_window_table amiga_window_table = {
 	.save_link = gui_window_save_link,
 };
 
-/* amiga file handling operations */
-static struct gui_file_table amiga_file_table = {
-	.mkpath = amiga_vmkpath,
-	.basename = amiga_basename,
-};
 
 static struct gui_fetch_table amiga_fetch_table = {
 	.filetype = fetch_filetype,
-	.path_to_url = path_to_url,
-	.url_to_path = url_to_path,
 
 	.get_resource_url = gui_get_resource_url,
 };
@@ -5253,7 +5117,7 @@ int main(int argc, char** argv)
 		.clipboard = amiga_clipboard_table,
 		.download = amiga_download_table,
 		.fetch = &amiga_fetch_table,
-		.file = &amiga_file_table,
+		.file = amiga_file_table,
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
 		.search_web = &amiga_search_web_table,

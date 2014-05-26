@@ -729,7 +729,17 @@ void ro_gui_check_resolvers(void)
  * \return  URL, allocated on heap, or 0 on failure
  */
 
-static char *path_to_url(const char *path)
+/**
+ * Create a nsurl from a RISC OS pathname.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The RISC OS pathname to convert.
+ * @param[out] url pointer to recive the nsurl, The returned url must be
+ *                 unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error code on faliure.
+ */
+static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 {
 	int spare;
 	char *canonical_path; /* canonicalised RISC OS path */
@@ -746,15 +756,13 @@ static char *path_to_url(const char *path)
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("PathToURL", error->errmess);
-		return NULL;
+		return NSERROR_NOT_FOUND;
 	}
 
 	canonical_path = malloc(1 - spare);
 	if (canonical_path == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
 		free(canonical_path);
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
 	error = xosfscontrol_canonicalise_path(path, canonical_path, 0, 0, 1 - spare, 0);
@@ -763,7 +771,7 @@ static char *path_to_url(const char *path)
 				error->errnum, error->errmess));
 		warn_user("PathToURL", error->errmess);
 		free(canonical_path);
-		return NULL;
+		return NSERROR_NOT_FOUND;
 	}
 
 	/* create a unix path from teh cananocal risc os one */
@@ -772,7 +780,7 @@ static char *path_to_url(const char *path)
 	if (unix_path == NULL) {
 		LOG(("__unixify failed: %s", canonical_path));
 		free(canonical_path);
-		return NULL;
+		return NSERROR_BAD_PARAMETER;
 	}
 	free(canonical_path);
 
@@ -782,7 +790,7 @@ static char *path_to_url(const char *path)
 	if (url == NULL) {
 		LOG(("Unable to allocate url"));
 		free(unix_path);
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
 	if (*unix_path == '/') {
@@ -794,63 +802,83 @@ static char *path_to_url(const char *path)
 
 	/* We don't want '/' to be escaped.  */
 	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);
-	free(url); url = NULL;
+	free(url);
 	if (url_err != NSERROR_OK) {
-		LOG(("url_escape failed: %s", url));
-		return NULL;
+		return url_err;
 	}
 
-	return escurl;
+	ret = nsurl_create(escurl, url_out);
+	free(escurl);
+
+	return ret;
 }
 
-
 /**
- * Convert a file: URL to a RISC OS pathname.
+ * Create a path from a nsurl using posix file handling.
  *
- * \param  url  a file: URL
- * \return  RISC OS pathname, allocated on heap, or 0 on failure
+ * @parm[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which should
+ *                      be freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path or error code
+ *         on faliure.
  */
-
-char *url_to_path(const char *url)
+static nserror ro_nsurl_to_path(struct nsurl *url, char **path_out)
 {
+	lwc_string *urlpath;
+	char *unpath;
 	char *path;
-	char *filename;
-	char *respath;
-	nserror res; /* result from url routines */
+	bool match;
+	lwc_string *scheme;
+	nserror res;
 	char *r;
 
-	res = url_path(url, &path);
-	if (res != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-		return NULL;
+	if ((url == NULL) || (path_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
 	}
 
-	res = url_unescape(path, &respath);
-	free(path);
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+					&match) != lwc_error_ok)
+	{
+		return NSERROR_BAD_PARAMETER;
+	}
+	lwc_string_unref(scheme);
+	if (match == false) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	urlpath = nsurl_get_component(url, NSURL_PATH);
+	if (urlpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	res = url_unescape(lwc_string_data(urlpath), &unpath);
+	lwc_string_unref(urlpath);
 	if (res != NSERROR_OK) {
-		return NULL;
+		return res;
 	}
 
 	/* RISC OS path should not be more than 100 characters longer */
-	filename = malloc(strlen(respath) + 100);
-	if (!filename) {
-		free(respath);
-		warn_user("NoMemory", 0);
-		return NULL;
+	path = malloc(strlen(unpath) + 100);
+	if (path == NULL) {
+		free(unpath);
+		return NSERROR_NOMEM;
 	}
 
-	r = __riscosify(respath, 0, __RISCOSIFY_NO_SUFFIX,
-			filename, strlen(respath) + 100, 0);
-
-	free(respath);
-	if (r == 0) {
-		free(filename);
-		LOG(("__riscosify failed"));
-		return NULL;
+	r = __riscosify(unpath, 0, __RISCOSIFY_NO_SUFFIX,
+			path, strlen(unpath) + 100, 0);
+	free(unpath);
+	if (r == NULL) {
+		free(path);
+		return NSERROR_NOMEM;
 	}
 
-	return filename;
+	*path_out = path;
+
+	return NSERROR_OK;
 }
+
 
 /**
  * Last-minute gui init, after all other modules have initialised.
@@ -858,8 +886,9 @@ char *url_to_path(const char *url)
 
 static void gui_init2(int argc, char** argv)
 {
-	char *url = 0;
-	bool open_window = nsoption_bool(open_browser_at_startup);
+	nsurl *url;
+	nserror ret;
+	bool open_window;
 
 	/* Complete initialisation of the treeview modules. */
 
@@ -875,13 +904,16 @@ static void gui_init2(int argc, char** argv)
 	/* cookies window */
 	ro_gui_cookies_postinitialise();
 
+	open_window = nsoption_bool(open_browser_at_startup);
 
 	/* parse command-line arguments */
 	if (argc == 2) {
 		LOG(("parameters: '%s'", argv[1]));
 		/* this is needed for launching URI files */
-		if (strcasecmp(argv[1], "-nowin") == 0)
-			open_window = false;
+		if (strcasecmp(argv[1], "-nowin") == 0) {
+			return;
+		}
+		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
 	}
 	else if (argc == 3) {
 		LOG(("parameters: '%s' '%s'", argv[1], argv[2]));
@@ -889,27 +921,21 @@ static void gui_init2(int argc, char** argv)
 
 		/* HTML files */
 		if (strcasecmp(argv[1], "-html") == 0) {
-			url = path_to_url(argv[2]);
-			if (!url) {
-				LOG(("malloc failed"));
-				die("Insufficient memory for URL");
-			}
+			ret = netsurf_path_to_nsurl(argv[2], &url);
 		}
 		/* URL files */
 		else if (strcasecmp(argv[1], "-urlf") == 0) {
-			url = ro_gui_url_file_parse(argv[2]);
+			char *urlf = ro_gui_url_file_parse(argv[2]);
 			if (!url) {
 				LOG(("malloc failed"));
 				die("Insufficient memory for URL");
 			}
+			ret = nsurl_create(urlf, &url);
+			free(urlf);
 		}
 		/* ANT URL Load */
 		else if (strcasecmp(argv[1], "-url") == 0) {
-			url = strdup(argv[2]);
-			if (!url) {
-				LOG(("malloc failed"));
-				die("Insufficient memory for URL");
-			}
+			ret = nsurl_create(argv[2], &url);
 		}
 		/* Unknown => exit here. */
 		else {
@@ -919,42 +945,32 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 	/* get user's homepage (if configured) */
-	else if (nsoption_charp(homepage_url) && nsoption_charp(homepage_url)[0]) {
-		url = calloc(strlen(nsoption_charp(homepage_url)) + 5, sizeof(char));
-		if (!url) {
-			LOG(("malloc failed"));
-			die("Insufficient memory for URL");
-		}
-		sprintf(url, "%s", nsoption_charp(homepage_url));
+	else if (nsoption_charp(homepage_url) &&
+		 nsoption_charp(homepage_url)[0]) {
+		ret = nsurl_create(nsoption_charp(homepage_url), &url);
 	}
 	/* default homepage */
 	else {
-		url = strdup(NETSURF_HOMEPAGE);
-		if (!url) {
-			LOG(("malloc failed"));
-			die("Insufficient memory for URL");
-		}
+		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
+	}
+
+	/* check for url creation error */
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+		return;
 	}
 
 	if (open_window) {
-		nsurl *urlns;
-		nserror errorns;
-
-		errorns = nsurl_create(url, &urlns);
-		if (errorns == NSERROR_OK) {
-			errorns = browser_window_create(BW_CREATE_HISTORY,
-							urlns,
-							NULL,
-							NULL,
-							NULL);
-			nsurl_unref(urlns);
-		}
-		if (errorns != NSERROR_OK) {
-			warn_user(messages_get_errorcode(errorns), 0);
+		ret = browser_window_create(BW_CREATE_HISTORY,
+					    url,
+					    NULL,
+					    NULL,
+					    NULL);
+		if (ret != NSERROR_OK) {
+			warn_user(messages_get_errorcode(ret), 0);
 		}
 	}
-
-	free(url);
+	nsurl_unref(url);	
 }
 
 /** 
@@ -1471,12 +1487,20 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_ACORN_URI:
 			urltxt = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
 					&title);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
 			break;
+
 		case FILETYPE_ANT_URL:
 			urltxt = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
 			break;
+
 		case FILETYPE_IEURL:
 			urltxt = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
 			break;
 
 		case FILETYPE_HTML:
@@ -1494,50 +1518,40 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_ARTWORKS:
 		case FILETYPE_SVG:
 			/* display the actual file */
-			urltxt = path_to_url(message->data.data_xfer.file_name);
+			error = netsurf_path_to_nsurl(message->data.data_xfer.file_name, &url);
 			break;
 
 		default:
 			return;
 	}
 
-	if (!urltxt)
-		/* error has already been reported by one of the
-		 * functions called above */
+	/* report error to user */
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
 		return;
-
-
-	error = nsurl_create(urltxt, &url);
-	if (error == NSERROR_OK) {
-		if (g) {
-			error = browser_window_navigate(g->bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-
-#ifdef DROPURLHOTLIST /** @todo This was commented out should it be removed? */
-		} else if (ro_gui_hotlist_check_window(
-				message->data.data_xfer.w)) {
-			/* Drop URL into hotlist */
-			ro_gui_hotlist_url_drop(message, urltxt);
-#endif
-		} else {
-			error = browser_window_create(BW_CREATE_HISTORY,
-					url,
-					NULL,
-					NULL,
-					NULL);
-		}
-		nsurl_unref(url);
 	}
+
+
+	if (g) {
+		error = browser_window_navigate(g->bw,
+						url,
+						NULL,
+						BW_NAVIGATE_HISTORY,
+						NULL,
+						NULL,
+						NULL);
+	} else {
+		error = browser_window_create(BW_CREATE_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+	}
+	nsurl_unref(url);	
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	}
 
-	free(urltxt);
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -1859,29 +1873,45 @@ void ro_msg_dataopen(wimp_message *message)
 	os_error *oserror;
 	nsurl *urlns;
 	nserror error;
+	size_t len;
 
-	if (file_type == 0xb28)			/* ANT URL file */
+	switch (file_type) {
+	case 0xb28:			/* ANT URL file */
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
-	else if (file_type == 0xfaf)		/* HTML file */
-		url = path_to_url(message->data.data_xfer.file_name);
-	else if (file_type == 0x1ba)		/* IEURL file */
+		error = nsurl_create(url, &urlns);
+		free(url);
+		break;
+
+	case 0xfaf:		/* HTML file */
+		error = netsurf_path_to_nsurl(message->data.data_xfer.file_name,
+					      &urlns);
+		break;
+
+	case 0x1ba:		/* IEURL file */
 		url = ro_gui_ieurl_file_parse(message->
 				data.data_xfer.file_name);
-	else if (file_type == 0x2000) {		/* application */
-		size_t len = strlen(message->data.data_xfer.file_name);
+		error = nsurl_create(url, &urlns);
+		free(url);
+		break;
+
+	case 0x2000: 		/* application */
+		len = strlen(message->data.data_xfer.file_name);
 		if (len < 9 || strcmp(".!NetSurf",
 				message->data.data_xfer.file_name + len - 9))
 			return;
+
 		if (nsoption_charp(homepage_url) &&
-					nsoption_charp(homepage_url)[0]) {
-			url = strdup(nsoption_charp(homepage_url));
+		    nsoption_charp(homepage_url)[0]) {
+			error = nsurl_create(nsoption_charp(homepage_url),
+					     &urlns);
 		} else {
-			url = strdup(NETSURF_HOMEPAGE);
+			error = nsurl_create(NETSURF_HOMEPAGE, &urlns);
 		}
-		if (!url)
-			warn_user("NoMemory", 0);
-	} else
+		break;
+
+	default:
 		return;
+	}
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -1894,22 +1924,18 @@ void ro_msg_dataopen(wimp_message *message)
 		return;
 	}
 
-	if (!url)
-		/* error has already been reported by one of the
-		 * functions called above */
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
 		return;
-
-	error = nsurl_create(url, &urlns);
-	free(url);
-	if (error == NSERROR_OK) {
-	/* create a new window with the file */
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      urlns,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(urlns);
 	}
+
+	/* create a new window with the file */
+	error = browser_window_create(BW_CREATE_HISTORY,
+				      urlns,
+				      NULL,
+				      NULL,
+				      NULL);
+	nsurl_unref(urlns);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	}
@@ -2071,8 +2097,7 @@ void ro_gui_view_source(hlcache_handle *c)
 	}
 
 	/* try to load local files directly. */
-	temp_name = url_to_path(nsurl_access(hlcache_handle_get_url(c)));
-	if (temp_name) {
+	if (netsurf_nsurl_to_path(hlcache_handle_get_url(c), &temp_name) == NSERROR_OK) {
 		error = xosfile_read_no_path(temp_name, &objtype, 0, 0, 0, 0);
 		if ((!error) && (objtype == osfile_IS_FILE)) {
 			snprintf(message.file_name, 212, "%s", temp_name);
@@ -2450,12 +2475,12 @@ static nserror riscos_basename(const char *path, char **str, size_t *size)
 static struct gui_file_table riscos_file_table = {
 	.mkpath = riscos_mkpath,
 	.basename = riscos_basename,
+	.nsurl_to_path = ro_nsurl_to_path,
+	.path_to_nsurl = ro_path_to_nsurl,
 };
 
 static struct gui_fetch_table riscos_fetch_table = {
 	.filetype = fetch_filetype,
-	.path_to_url = path_to_url,
-	.url_to_path = url_to_path,
 
 	.get_resource_url = gui_get_resource_url,
 	.mimetype = fetch_mimetype,

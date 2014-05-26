@@ -890,15 +890,11 @@ static inline void create_cursor(int flags, short mode, void * form,
 static nsurl *gui_get_resource_url(const char *path)
 {
     char buf[PATH_MAX];
-    char *raw;
     nsurl *url = NULL;
 
     atari_find_resource((char*)&buf, path, path);
-    raw = path_to_url((char*)&buf);
-    if (raw != NULL) {
-        nsurl_create(raw, &url);
-        free(raw);
-    }
+
+    netsurf_path_to_nsurl(buf, &url);
 
     return url;
 }
@@ -1042,8 +1038,6 @@ static struct gui_clipboard_table atari_clipboard_table = {
 
 static struct gui_fetch_table atari_fetch_table = {
     .filetype = fetch_filetype,
-    .path_to_url = path_to_url,
-    .url_to_path = url_to_path,
 
     .get_resource_url = gui_get_resource_url,
 };

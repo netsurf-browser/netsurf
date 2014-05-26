@@ -95,18 +95,6 @@ static const char *fetch_filetype(const char *unix_path)
 	return cocoafiletype;
 }
 
-char *url_to_path(const char *url)
-{
-	NSURL *nsurl = [NSURL URLWithString: [NSString stringWithUTF8String: url]];
-	return strdup([[nsurl path] UTF8String]);
-}
-
-static char *path_to_url(const char *path)
-{
-	return strdup( [[[NSURL fileURLWithPath: [NSString stringWithUTF8String: path]]
-					 absoluteString] UTF8String] );
-}
-
 static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
@@ -118,8 +106,6 @@ static nsurl *gui_get_resource_url(const char *path)
 
 static struct gui_fetch_table fetch_table = {
 	.filetype = fetch_filetype,
-	.path_to_url = path_to_url,
-	.url_to_path = url_to_path,
 
 	.get_resource_url = gui_get_resource_url,
 };

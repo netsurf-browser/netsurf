@@ -138,13 +138,14 @@ fetch_file_setup(struct fetch *fetchh,
 {
 	struct fetch_file_context *ctx;
 	int i;
+	nserror ret;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->path = guit->fetch->url_to_path(nsurl_access(url));
-	if (ctx->path == NULL) {
+	ret = guit->file->nsurl_to_path(url, &ctx->path);
+	if (ret != NSERROR_OK) {
 		free(ctx);
 		return NULL;
 	}
@@ -503,11 +504,11 @@ process_dir_ent(struct fetch_file_context *ctx,
 		 size_t buffer_len)
 {
 	nserror ret;
-	char *path; /* url for list entries */
 	char *urlpath = NULL; /* buffer for leaf entry path */
 	struct stat ent_stat; /* stat result of leaf entry */
 	char datebuf[64]; /* buffer for date text */
 	char timebuf[64]; /* buffer for time text */
+	nsurl *url;
 
 	/* skip hidden files */
 	if (ent->d_name[0] == '.') {
@@ -539,16 +540,17 @@ process_dir_ent(struct fetch_file_context *ctx,
 		}
 	}
 
-	if ((path = guit->fetch->path_to_url(urlpath)) == NULL) {
+	ret = guit->file->path_to_nsurl(urlpath, &url);
+	if (ret != NSERROR_OK) {
 		free(urlpath);
-		return NSERROR_NOMEM;
+		return ret;
 	}
 
 	if (S_ISREG(ent_stat.st_mode)) {
 		/* regular file */
 		dirlist_generate_row(even,
 				     false,
-				     path,
+				     url,
 				     ent->d_name,
 				     guit->fetch->filetype(urlpath),
 				     ent_stat.st_size,
@@ -558,7 +560,7 @@ process_dir_ent(struct fetch_file_context *ctx,
 		/* directory */
 		dirlist_generate_row(even,
 				     true,
-				     path,
+				     url,
 				     ent->d_name,
 				     messages_get("FileDirectory"),
 				     -1,
@@ -568,7 +570,7 @@ process_dir_ent(struct fetch_file_context *ctx,
 		/* something else */
 		dirlist_generate_row(even,
 				     false,
-				     path,
+				     url,
 				     ent->d_name,
 				     "",
 				     -1,
@@ -576,7 +578,7 @@ process_dir_ent(struct fetch_file_context *ctx,
 				     buffer, buffer_len);
 	}
 
-	free(path);
+	nsurl_unref(url);
 	free(urlpath);
 
 	return NSERROR_OK;

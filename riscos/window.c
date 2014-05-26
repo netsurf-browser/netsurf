@@ -46,6 +46,7 @@
 #include "utils/log.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
+#include "utils/file.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
@@ -1673,7 +1674,7 @@ void ro_gui_window_close(wimp_w w)
 	wimp_pointer pointer;
 	os_error *error;
 	char *temp_name, *r;
-	char *filename;
+	char *filename = NULL;
 	hlcache_handle *h = NULL;
 	bool destroy;
 
@@ -1688,10 +1689,12 @@ void ro_gui_window_close(wimp_w w)
 		h = g->bw->current_content;
 	if (pointer.buttons & wimp_CLICK_ADJUST) {
 		destroy = !ro_gui_shift_pressed();
-		filename = (h && hlcache_handle_get_url(h)) ?
-				url_to_path(nsurl_access(hlcache_handle_get_url(h))) :
-				NULL;
-		if (filename) {
+
+		if (h && hlcache_handle_get_url(h)) {
+			netsurf_nsurl_to_path(hlcache_handle_get_url(h), 
+					      &filename);
+		}
+		if (filename != NULL) {
 			temp_name = malloc(strlen(filename) + 32);
 			if (temp_name) {
 				sprintf(temp_name, "Filer_OpenDir %s",

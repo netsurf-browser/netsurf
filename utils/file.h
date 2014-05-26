@@ -16,8 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Default operations table for files.
+/**
+ * \file utils/file.h
+ * \brief Default operations table for files.
+ *
+ * These are file operations that depend upon the filesystem the
+ * browser is operating on. These allow the core browser functionality
+ * to be filesystem agnostic.
+ *
+ * The provided defaults operate on POSIX path names with / as a
+ * directory separator in a single hieracy from a root directory.
+ *
+ * Other path conventions require the default operations to be
+ * overridden. For example windows frontend runs on a filesystem with
+ * drive letter and a \\ as a separator.
  */
 
 #ifndef NETSURF_UTILS_FILE_H
@@ -25,11 +37,15 @@
 
 #include <stdarg.h>
 
+struct nsurl;
+
 /**
- * function table for file and filename operations.
+ * /brief function table for file and filename operations.
  *
- * function table implementing GUI interface to file and filename
- * functionality appropriate for the OS.
+ * function table implementing an interface to file and filename
+ * functionality appropriate for the OS filesystem. All paths are in
+ * terms of the OS filesystem convention and must not require additional
+ * system specific changes.
  */
 struct gui_file_table {
 	/* Mandantory entries */
@@ -45,7 +61,7 @@ struct gui_file_table {
 	 *                     NULL on input and if not NULL set to the total
 	 *                     output length on output.
 	 * @param[in] nemb The number of elements.
-	 * @param[in] ... The elements of the path as string pointers.
+	 * @param[in] ap The elements of the path as string pointers.
 	 * @return NSERROR_OK and the complete path is written to str
 	 *         or error code on faliure.
 	 */
@@ -62,10 +78,34 @@ struct gui_file_table {
 	 * @param[in,out] size The size of the space available if \a
 	 *                     str not NULL on input and set to the total
 	 *                     output length on output.
-	 * @return NSERROR_OK and the complete path is written to str
+	 * @return NSERROR_OK and the complete path is written to \a str
 	 *         or error code on faliure.
 	 */
 	nserror (*basename)(const char *path, char **str, size_t *size);
+
+	/**
+	 * Create a path from a nsurl.
+	 *
+	 * @parm[in] url The url to encode.
+	 * @param[out] path A string containing the result path which
+	 *                  must be freed by the caller.
+	 * @return NSERROR_OK and the path is written to \a path
+	 *         or error code on faliure.
+	 */
+	nserror (*nsurl_to_path)(struct nsurl *url, char **path);
+
+	/**
+	 * Create a nsurl from a path.
+	 *
+	 * Perform the necessary operations on a path to generate a nsurl.
+	 *
+	 * @param[in] path The path to convert.
+	 * @param[out] url pointer to recive the nsurl, The returned
+	 *                 url should be unreferenced by the caller.
+	 * @return NSERROR_OK and the url is placed in \a url or error
+	 *         code on faliure.
+	 */
+	nserror (*path_to_nsurl)(const char *path, struct nsurl **url);
 };
 
 /** Default (posix) file operation table. */
@@ -91,5 +131,29 @@ struct gui_file_table *default_file_table;
  *         or error code on faliure.
  */
 nserror netsurf_mkpath(char **str, size_t *size, size_t nelm, ...);
+
+/**
+ * Create a path from a nsurl.
+ *
+ * @parm[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which  must be
+ *                      freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path_out or error code on
+ *         faliure.
+ */
+nserror netsurf_nsurl_to_path(struct nsurl *url, char **path_out);
+
+/**
+ * Create a nsurl from a path.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The path to convert.
+ * @param[out] url pointer to recive the nsurl, The returned
+ *                 url should be unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error
+ *         code on faliure.
+ */
+nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url);
 
 #endif

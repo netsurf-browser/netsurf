@@ -44,14 +44,9 @@ char *options_file_location;
 static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	char *raw;
 	nsurl *url = NULL;
 
-	raw = path_to_url(filepath_sfind(respaths, buf, path));
-	if (raw != NULL) {
-		nsurl_create(raw, &url);
-		free(raw);
-	}
+	netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
 
 	return url;
 }

@@ -68,59 +68,6 @@ char * local_file_to_url( const char * filename )
 	#undef BACKSLASH
 }
 
-/* convert an local path to an URL, memory for URL is allocated. */
-char *path_to_url(const char *path_in)
-{
-	#define BACKSLASH	0x5C
-	char * path;
-
-	LOG(("path2url in: %s\n", path_in));
-
-	path = (char*)path_in;
-
-	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-	char *url = malloc(urllen);
-
-	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
-
-	int i=0;
-	while( url[i] != 0 ){
-		if( url[i] == BACKSLASH ){
-			url[i] = '/';
-		}
-		i++;
-	}
-
-	LOG(("path2url out: %s\n", url));
-	return url;
-	#undef BACKSLASH
-}
-
-
-char *url_to_path(const char *url)
-{
-	char *url_path = curl_unescape(url, 0);
-	char *path;
-	char abspath[PATH_MAX+1];
-
-	LOG(( "url2path in: %s (%s)\n", url, url_path ));
-
-	// is the URL relative?
-	if (url_path[7] == '.') {
-		// yes, make it absolute...
-		gemdos_realpath(url_path + (FILE_SCHEME_PREFIX_LEN-1), abspath);
-		path = strdup(abspath);
-	} else {
-		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN));
-	}
-
-	curl_free(url_path);
-
-	LOG(( "url2path out: %s\n", path ));
-
-	return path;
-}
-
 
 /**
  * Locate a shared resource file by searching known places in order.

@@ -25,6 +25,4 @@ void gtk_fetch_filetype_init(const char *mimefile);
 void gtk_fetch_filetype_fin(void);
 const char *fetch_filetype(const char *unix_path);
 
-char *path_to_url(const char *path);
-
 #endif

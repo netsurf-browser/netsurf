@@ -189,7 +189,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
 		if (hFont != NULL) {
 			LOG(("Destroyed font object"));
-			DeleteObject(hFont); 	
+			DeleteObject(hFont);
 		}
 
 
@@ -549,7 +549,7 @@ get_imagelist(int resid, int bsize, int bcnt)
 	LOG(("resource id %d, bzize %d, bcnt %d",resid, bsize, bcnt));
 
 	hImageList = ImageList_Create(bsize, bsize, ILC_COLOR24 | ILC_MASK, 0, bcnt);
-	if (hImageList == NULL) 
+	if (hImageList == NULL)
 		return NULL;
 
 	hScrBM = LoadImage(hInstance, MAKEINTRESOURCE(resid),
@@ -557,7 +557,7 @@ get_imagelist(int resid, int bsize, int bcnt)
 
 	if (hScrBM == NULL) {
 		win_perror("LoadImage");
-		return NULL;		
+		return NULL;
 	}
 
 	if (ImageList_AddMasked(hImageList, hScrBM, 0xcccccc) == -1) {
@@ -669,17 +669,17 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 
 	/* Create the standard image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the disabled image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_GREY, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the hot image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_HOT, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Add buttons. */
@@ -1090,7 +1090,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	if (msg == WM_CREATE) {
 		/* To cause all the component child windows to be
 		 * re-sized correctly a WM_SIZE message of the actual
-		 * created size must be sent. 
+		 * created size must be sent.
 		 *
 		 * The message must be posted here because the actual
 		 * size values of the component windows are not known
@@ -1794,7 +1794,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 /**
  * Create the main window class.
  */
-nserror 
+nserror
 nsws_create_main_class(HINSTANCE hinstance) {
 	nserror ret = NSERROR_OK;
 	WNDCLASSEX w;
@@ -1885,10 +1885,134 @@ static nserror windows_basename(const char *path, char **str, size_t *size)
 	return NSERROR_OK;
 }
 
-/* default to using the posix file handling */
+/**
+ * Create a path from a nsurl using windows file handling.
+ *
+ * @parm[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which should
+ *                      be freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path or error code
+ *         on faliure.
+ */
+static nserror windows_nsurl_to_path(struct nsurl *url, char **path_out)
+{
+	lwc_string *urlpath;
+	char *path;
+	bool match;
+	lwc_string *scheme;
+	nserror res;
+
+	if ((url == NULL) || (path_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+					&match) != lwc_error_ok)
+	{
+		return NSERROR_BAD_PARAMETER;
+	}
+	lwc_string_unref(scheme);
+	if (match == false) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	urlpath = nsurl_get_component(url, NSURL_PATH);
+	if (urlpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	res = url_unescape(lwc_string_data(urlpath), &path);
+	lwc_string_unref(urlpath);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* if there is a drive: prefix treat path as DOS filename */
+	if ((path[2] == ':') ||  (path[2] == '|')) {
+		char *sidx; /* slash index */
+
+		/* move the string down to remove leading / note the
+		 * strlen is *not* copying too much data as we are
+		 * moving the null too!
+		 */
+		memmove(path, path + 1, strlen(path));
+
+		/* swap / for \ */
+		sidx = strrchr(path, '/');
+		while (sidx != NULL) {
+			*sidx = '\\';
+			sidx = strrchr(path, '/');
+		}
+	}
+	/* if the path does not have a drive letter we return the
+	 * complete path.
+	 */
+	/** @todo Need to check returning the unaltered path in this
+	 * case is correct
+	 */
+
+	*path_out = path;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Create a nsurl from a path using windows file handling.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The path to convert.
+ * @param[out] url_out pointer to recive the nsurl, The returned url
+ *                     should be unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error code on
+ *         faliure.
+ */
+static nserror windows_path_to_nsurl(const char *path, struct nsurl **url_out)
+{
+	nserror ret;
+	int urllen;
+	char *urlstr;
+	char *sidx; /* slash index */
+
+	if ((path == NULL) || (url_out == NULL) || (*path == 0)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* build url as a string for nsurl constructor */
+	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 5;
+	urlstr = malloc(urllen);
+	if (urlstr == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/** @todo check if this should be url escaping the path. */
+	if (*path == '/') {
+		/* unix style path start, so try wine Z: */
+		snprintf(urlstr, urllen, "%sZ%%3A%s", FILE_SCHEME_PREFIX, path);
+	} else {
+		snprintf(urlstr, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+	}
+
+	sidx = strrchr(urlstr, '\\');
+	while (sidx != NULL) {
+		*sidx = '/';
+		sidx = strrchr(urlstr, '\\');
+	}
+
+	ret = nsurl_create(urlstr, url_out);
+	free(urlstr);
+
+	return ret;
+}
+
+/* windows file handling */
 static struct gui_file_table file_table = {
 	.mkpath = windows_mkpath,
 	.basename = windows_basename,
+	.nsurl_to_path = windows_nsurl_to_path,
+	.path_to_nsurl = windows_path_to_nsurl,
 };
 
 struct gui_file_table *win32_file_table = &file_table;
@@ -1926,8 +2050,6 @@ struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
 static struct gui_fetch_table fetch_table = {
 	.filetype = fetch_filetype,
-	.path_to_url = path_to_url,
-	.url_to_path = url_to_path,
 };
 struct gui_fetch_table *win32_fetch_table = &fetch_table;
 

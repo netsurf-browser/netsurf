@@ -26,6 +26,7 @@
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/file.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser_private.h"
 #include "render/html.h"
@@ -263,7 +264,6 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	nserror error;
 	nserror r;
 	gchar *filename;
-	char *fileurl;
 	gint handle;
 
 	source_data = content_get_source_data(bw->current_content,
@@ -301,29 +301,21 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	fprintf(f, "%s", ndata);
 	fclose(f);
 	free(ndata);
-	fileurl = path_to_url(filename);
-	g_free(filename);
-	if (fileurl == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return;
-	}
 
 	/* Open tab */
-	error = nsurl_create(fileurl, &url);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
+	error = netsurf_path_to_nsurl(filename, &url);
+	g_free(filename);
+	if (error == NSERROR_OK) {
 		error = browser_window_create(BW_CREATE_TAB,
 					      url,
 					      NULL,
 					      bw,
 					      NULL);
 		nsurl_unref(url);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		}
 	}
-	free(fileurl);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
 }
 
 static void nsgtk_source_file_save(GtkWindow *parent, const char *filename,

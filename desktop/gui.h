@@ -331,23 +331,6 @@ struct gui_fetch_table {
 	 */
 	const char *(*filetype)(const char *unix_path);
 
-	/**
-	 * Convert a pathname to a file: URL.
-	 *
-	 * \param  path  pathname
-	 * \return  URL, allocated on heap, or NULL on failure
-	 */
-	char *(*path_to_url)(const char *path);
-
-	/**
-	 * Convert a file: URL to a pathname.
-	 *
-	 * \param  url  a file: URL
-	 * \return  pathname, allocated on heap, or NULL on failure
-	 */
-	char *(*url_to_path)(const char *url);
-
-
 	/* Optional entries */
 
 	/**
@@ -377,7 +360,6 @@ struct gui_fetch_table {
 	char *(*mimetype)(const char *ro_path);
 
 };
-
 
 
 /**

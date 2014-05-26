@@ -28,6 +28,7 @@
 
 #import "utils/corestrings.h"
 #import "utils/filename.h"
+#import "utils/file.h"
 #import "utils/messages.h"
 #import "utils/url.h"
 #import "content/hlcache.h"
@@ -166,7 +167,7 @@
 	struct hlcache_handle *content;
 	size_t size;
 	const char *source;
-	const char *path = NULL;
+	char *path = NULL;
 
 	if (browser == NULL)
 		return;
@@ -178,14 +179,7 @@
 		return;
 
 	/* try to load local files directly. */
-	lwc_string *scheme = nsurl_get_component(hlcache_handle_get_url(content), NSURL_SCHEME);
-	if (scheme == NULL)
-		return;
-
-	bool match;
-	if (lwc_string_isequal(scheme, corestring_lwc_file, &match) == lwc_error_ok && match == true)
-		path = url_to_path(nsurl_access(hlcache_handle_get_url(content)));
-	lwc_string_unref(scheme);
+	netsurf_nsurl_to_path(hlcache_handle_get_url(content), &path);
 
 	if (path == NULL) {
 		/* We cannot release the requested filename until after it

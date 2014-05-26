@@ -17,5 +17,3 @@
  */
 
 extern struct gui_fetch_table *cocoa_fetch_table;
-
-char *url_to_path(const char *url);

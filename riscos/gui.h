@@ -123,7 +123,6 @@ void ro_gui_dump_browser_window(struct browser_window *bw);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);
-char *url_to_path(const char *url);
 
 /* in download.c */
 void ro_gui_download_init(void);

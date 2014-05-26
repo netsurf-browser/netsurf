@@ -37,7 +37,6 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include "content/dirlist.h"
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"

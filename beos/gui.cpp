@@ -964,25 +964,6 @@ static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
 	CALLED();
 }
 
-static char *path_to_url(const char *path)
-{
-	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-	char *url = (char *)malloc(urllen);
-
-	if (url == NULL) {
-		return NULL;
-	}
-
-	if (*path == '/') {
-		path++; /* file: paths are already absolute */
-	} 
-
-	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
-
-	return url;
-}
-
-
 static void *myrealloc(void *ptr, size_t len, void *pw)
 {
 	if (len == 0) {
@@ -1001,8 +982,6 @@ static struct gui_clipboard_table beos_clipboard_table = {
 
 static struct gui_fetch_table beos_fetch_table = {
         fetch_filetype,
-        path_to_url,
-        url_to_path,
         gui_get_resource_url,
         NULL //fetch_mimetype
 };

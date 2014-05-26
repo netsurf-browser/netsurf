@@ -22,10 +22,14 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "desktop/gui_factory.h"
-#include "utils/utils.h"
 
+#include "utils/utils.h"
+#include "utils/corestrings.h"
+#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/file.h"
 
 /**
@@ -90,6 +94,118 @@ static nserror posix_basename(const char *path, char **str, size_t *size)
 	return NSERROR_OK;
 }
 
+/**
+ * Create a path from a nsurl using posix file handling.
+ *
+ * @parm[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which should
+ *                      be freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path or error code
+ *         on faliure.
+ */
+static nserror posix_nsurl_to_path(struct nsurl *url, char **path_out)
+{
+	lwc_string *urlpath;
+	char *path;
+	bool match;
+	lwc_string *scheme;
+	nserror res;
+
+	if ((url == NULL) || (path_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+					&match) != lwc_error_ok)
+	{
+		return NSERROR_BAD_PARAMETER;
+	}
+	lwc_string_unref(scheme);
+	if (match == false) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	urlpath = nsurl_get_component(url, NSURL_PATH);
+	if (urlpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	res = url_unescape(lwc_string_data(urlpath), &path);
+	lwc_string_unref(urlpath);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	*path_out = path;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Create a nsurl from a path using posix file handling.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The path to convert.
+ * @param[out] url_out pointer to recive the nsurl, The returned url
+ *                     should be unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error code on
+ *         faliure.
+ */
+static nserror posix_path_to_nsurl(const char *path, struct nsurl **url_out)
+{
+	nserror ret;
+	int urllen;
+	char *urlstr;
+	char *escpath; /* escaped version of the path */
+	char *escpaths;
+
+	if ((path == NULL) || (url_out == NULL) || (*path == 0)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* escape the path so it can be placed in a url */
+	ret = url_escape(path, 0, false, "/", &escpath);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+	/* remove unecessary / as file: paths are already absolute */
+	escpaths = escpath;
+	while (*escpaths == '/') {
+		escpaths++;
+	}
+
+	/* build url as a string for nsurl constructor */
+	urllen = strlen(escpaths) + FILE_SCHEME_PREFIX_LEN + 1;
+	urlstr = malloc(urllen);
+	if (urlstr == NULL) {
+		free(escpath);
+		return NSERROR_NOMEM;
+	}
+
+	snprintf(urlstr, urllen, "%s%s", FILE_SCHEME_PREFIX, escpaths);
+	free(escpath);
+
+	ret = nsurl_create(urlstr, url_out);
+	free(urlstr);
+
+	return ret;
+}
+
+/**
+ * default to using the posix file handling
+ */
+static struct gui_file_table file_table = {
+	.mkpath = posix_vmkpath,
+	.basename = posix_basename,
+	.nsurl_to_path = posix_nsurl_to_path,
+	.path_to_nsurl = posix_path_to_nsurl,
+};
+
+struct gui_file_table *default_file_table = &file_table;
+
 /* exported interface documented in utils/file.h */
 nserror netsurf_mkpath(char **str, size_t *size, size_t nelm, ...)
 {
@@ -103,10 +219,14 @@ nserror netsurf_mkpath(char **str, size_t *size, size_t nelm, ...)
 	return ret;
 }
 
-/* default to using the posix file handling */
-static struct gui_file_table file_table = {
-	.mkpath = posix_vmkpath,
-	.basename = posix_basename,
-};
+/* exported interface documented in utils/file.h */
+nserror netsurf_nsurl_to_path(struct nsurl *url, char **path_out)
+{
+	return guit->file->nsurl_to_path(url, path_out);
+}
 
-struct gui_file_table *default_file_table = &file_table;
+/* exported interface documented in utils/file.h */
+nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url)
+{
+	return guit->file->path_to_nsurl(path, url);
+}
