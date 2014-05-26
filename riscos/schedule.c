@@ -104,7 +104,7 @@ nserror riscos_schedule(int t, void (*callback)(void *p), void *p)
 	entry = malloc(sizeof *entry);
 	if (!entry) {
 		LOG(("malloc failed"));
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	entry->time = time;
