@@ -483,7 +483,6 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 	wimp_icon_create		icon;
 	struct button_bar_button	*button, *b;
 	os_error			*error;
-	bool				on_bar;
 
 
 	if (button_bar == NULL || button_bar->window == NULL)
@@ -492,7 +491,7 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 	button = button_bar->buttons;
 
 	while (button != NULL) {
-		on_bar = false;
+		bool on_bar = false;
 
 		/* Check if the icon is currently on the bar. */
 
@@ -720,8 +719,6 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 	struct button_bar_button	*button;
 	os_coord			pos;
 	os_box				box;
-	os_error			*error;
-	char				*sprite;
 
 	if (button_bar == NULL || button_bar->hidden)
 		return false;
@@ -746,6 +743,8 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 
 		if (button != NULL && (!button->shaded || drag_separator ||
 				button_bar->edit_source != NULL)) {
+			char *sprite;
+			os_error *error;
 
 			drag_start = button_bar;
 			drag_opt = button->opt_key;
@@ -1186,7 +1185,6 @@ struct button_bar_button *ro_gui_button_bar_find_coords(
 		bool *separator, bool *right)
 {
 	struct button_bar_button	*button;
-	int				x0, y0, x1, y1;
 
 	if (button_bar == NULL)
 		return NULL;
@@ -1195,6 +1193,7 @@ struct button_bar_button *ro_gui_button_bar_find_coords(
 
 	while (button != NULL) {
 		/* Match button extents. */
+		int x0, y0, x1, y1;
 
 		x0 = button_bar->extent.x0 + button->x_pos;
 		y0 = button_bar->extent.y0 + button->y_pos;
