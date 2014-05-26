@@ -284,7 +284,6 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	struct gui_download_window *dw;
 	bool space_warning = false;
 	os_error *error;
-	nserror res;
 	char *local_path;
 	nserror err;
 	size_t i, last_dot;
