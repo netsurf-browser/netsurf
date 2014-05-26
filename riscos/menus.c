@@ -482,7 +482,6 @@ static void ro_gui_menu_closed(void)
 void ro_gui_menu_refresh(wimp_menu *menu)
 {
 	int checksum = 0;
-	os_error *error;
 
 	if (!current_menu_open)
 		return;
@@ -496,6 +495,7 @@ void ro_gui_menu_refresh(wimp_menu *menu)
 	/* \TODO -- Call the menu's event handler here. */
 
 	if (checksum != ro_gui_menu_get_checksum()) {
+		os_error *error;
 		error = xwimp_create_menu(current_menu, 0, 0);
 		if (error) {
 			LOG(("xwimp_create_menu: 0x%x: %s",
@@ -566,17 +566,17 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		wimp_menu_entry *parent_entry, int first, int last,
 		const char *prefix, int prefix_length)
 {
-	int entry, id, cur_depth;
+	int entry;
 	int entries = 0;
 	int matches[last - first + 1];
-	const char *match;
 	const char *text, *menu_text;
 	wimp_menu *new_menu;
 	struct menu_definition_entry *definition_entry;
 
 	/* step 1: store the matches for depth and subset string */
 	for (entry = first; entry < last; entry++) {
-		cur_depth = 0;
+		const char *match;
+		int cur_depth = 0;
 		match = menu->entries[entry].text;
 
 		/* skip specials at start of string */
@@ -626,7 +626,7 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 	/* and then create the entries */
 	for (entry = 0; entry < entries; entry++) {
 		/* add the entry */
-		id = matches[entry];
+		int id = matches[entry];
 
 		text = menu->entries[id].text;
 
