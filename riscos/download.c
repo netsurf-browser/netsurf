@@ -234,9 +234,10 @@ static nserror download_ro_filetype(download_context *ctx, bits *ftype_out)
 
 		if (filescheme) {
 			lwc_string *path = nsurl_get_component(url, NSURL_PATH);
-			if (path != NULL) {
+			if (path != NULL && lwc_string_length(path) != 0) {
 				char *raw_path;
-				raw_path = curl_unescape(path, strlen(path));
+				raw_path = curl_unescape(lwc_string_data(path),
+						lwc_string_length(path));
 				if (raw_path != NULL) {
 					ftype =	ro_filetype_from_unix_path(raw_path);
 					curl_free(raw_path);
