@@ -75,7 +75,9 @@ typedef enum {
 
 	NSERROR_PERMISSION,             /**< Permission error */
 
-	NSERROR_NOSPACE                 /**< Insufficient space */
+	NSERROR_NOSPACE,		/**< Insufficient space */
+
+	NSERROR_BAD_SIZE                /**< Bad size */
 } nserror;
 
 #endif

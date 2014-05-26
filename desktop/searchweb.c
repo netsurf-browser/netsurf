@@ -138,6 +138,7 @@ read_providers(const char *fname,
 	if (fread(providersd, 1, fsize, providersf) != fsize) {
 		fclose(providersf);
 		free(providersd);
+		return NSERROR_BAD_SIZE;
 	}
 	providersd[fsize] = 0; /* ensure null terminated */
 
