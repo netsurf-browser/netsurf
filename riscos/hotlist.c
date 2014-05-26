@@ -219,12 +219,12 @@ void ro_gui_hotlist_destroy(void)
 
 void ro_gui_hotlist_open(void)
 {
-	os_error	*error;
-	char		command[2048];
-
 	if (nsoption_bool(external_hotlists) &&
-	    nsoption_charp(external_hotlist_app) != NULL &&
-	    *nsoption_charp(external_hotlist_app) != '\0') {
+			nsoption_charp(external_hotlist_app) != NULL &&
+			*nsoption_charp(external_hotlist_app) != '\0') {
+		char command[2048];
+		os_error *error;
+
 		snprintf(command, sizeof(command), "Filer_Run %s",
 			 nsoption_charp(external_hotlist_app));
 		error = xos_cli(command);
