@@ -598,7 +598,6 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 
 void ro_gui_download_update_status(struct gui_download_window *dw)
 {
-	char *received;
 	char *total_size;
 	char *speed;
 	char time[20] = "?";
@@ -620,6 +619,7 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	total_size = human_friendly_bytesize(max(dw->received, dw->total_size));
 
 	if (dw->ctx) {
+		char *received;
 		rate = (dw->received - dw->last_received) / dt;
 		received = human_friendly_bytesize(dw->received);
 		/* A simple 'modified moving average' download rate calculation
@@ -833,9 +833,6 @@ static void gui_download_window_done(struct gui_download_window *dw)
 bool ro_gui_download_click(wimp_pointer *pointer)
 {
   	struct gui_download_window *dw;
-	char command[256] = "Filer_OpenDir ";
-	char *dot;
-	os_error *error;
 
 	dw = (struct gui_download_window *)ro_gui_wimp_event_get_user_data(pointer->w);
 	if ((pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) &&
@@ -859,6 +856,10 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 		ro_gui_drag_icon(x, y, sprite);
 
 	} else if (pointer->i == ICON_DOWNLOAD_DESTINATION) {
+		os_error *error;
+		char command[256] = "Filer_OpenDir ";
+		char *dot;
+
 		strncpy(command + 14, dw->path, 242);
 		command[255] = 0;
 		dot = strrchr(command, '.');
