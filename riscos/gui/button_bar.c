@@ -131,7 +131,6 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 {
 	struct button_bar		*button_bar;
 	struct button_bar_button	*icon, *new_icon;
-	bool				failed;
 	int				def;
 
 	/* Allocate memory. */
@@ -170,12 +169,10 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 	/* Process the button icon definitions */
 
 	icon = NULL;
-	failed = false;
 
 	for (def = 0; buttons[def].icon != NULL; def++) {
 		new_icon = malloc(sizeof(struct button_bar_button));
 		if (new_icon == NULL) {
-			failed = true;
 			break;
 		}
 
@@ -248,7 +245,6 @@ bool ro_gui_button_bar_rebuild(struct button_bar *button_bar,
 		wimp_w window, bool edit)
 {
 	struct button_bar_button	*button;
-	os_error			*error;
 	int				height;
 
 
@@ -276,7 +272,6 @@ bool ro_gui_button_bar_rebuild(struct button_bar *button_bar,
 	button_bar->separators = (height == 0) ? false : true;
 
 	button = button_bar->buttons;
-	error = NULL;
 
 	while (button != NULL) {
 		button->x_size = 0;
