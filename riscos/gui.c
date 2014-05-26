@@ -1449,7 +1449,6 @@ void ro_msg_terminate_filename(wimp_full_message_data_xfer *message)
 void ro_msg_dataload(wimp_message *message)
 {
 	int file_type = message->data.data_xfer.file_type;
-	int tree_file_type = file_type;
 	char *urltxt = NULL;
 	char *title = NULL;
 	struct gui_window *g;
@@ -1472,15 +1471,12 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_ACORN_URI:
 			urltxt = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
 					&title);
-			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_ANT_URL:
 			urltxt = ro_gui_url_file_parse(message->data.data_xfer.file_name);
-			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_IEURL:
 			urltxt = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
-			tree_file_type = 0xfaf;
 			break;
 
 		case FILETYPE_HTML:
