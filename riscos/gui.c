@@ -2214,10 +2214,11 @@ void ro_gui_dump_browser_window(struct browser_window *bw)
  * Broadcast an URL that we can't handle.
  */
 
-static void gui_launch_url(const char *url)
+static nserror gui_launch_url(struct nsurl *url)
 {
-	/* Try ant broadcast first */
-	ro_url_broadcast(url);
+	/* Try ant broadcast */
+	ro_url_broadcast(nsurl_access(url));
+	return NSERROR_OK;
 }
 
 

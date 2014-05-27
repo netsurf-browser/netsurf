@@ -475,7 +475,7 @@ struct gui_browser_table {
 	/**
 	 * core has no fetcher for url
 	 */
-	void (*launch_url)(const char *url);
+	nserror (*launch_url)(struct nsurl *url);
 
 	/**
 	 * create a form select menu

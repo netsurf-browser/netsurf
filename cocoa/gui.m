@@ -253,9 +253,10 @@ static void gui_create_form_select_menu(struct browser_window *bw,
 	[menu release];
 }
 
-static void gui_launch_url(const char *url)
+static nserror gui_launch_url(nsurl *url)
 {
-	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: url]]];
+	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: nsurl_access(url)]]];
+        return NSERROR_OK;
 }
 
 struct ssl_cert_info;

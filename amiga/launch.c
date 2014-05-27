@@ -122,25 +122,31 @@ void ami_openurl_close(const char *scheme)
 	ami_openurl_free_list(&ami_unsupportedprotocols);
 }
 
-void gui_launch_url(const char *url)
+nserror gui_launch_url(struct nsurl *url)
 {
 	APTR procwin = SetProcWindow((APTR)-1L);
 	char *launchurl = NULL;
 
-	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
+	if(ami_openurl_check_list(&ami_unsupportedprotocols, nsurl_access(url)) == FALSE)
 	{
 		if(IOpenURL)
 		{
 			URL_OpenA((STRPTR)url,NULL);
 		} else {
-			if(launchurl = ASPrintf("URL:%s",url)) {
+			if(launchurl = ASPrintf("URL:%s", nsurl_access(url))) {
 				BPTR fptr = Open(launchurl,MODE_OLDFILE);
-				if(fptr) Close(fptr);
-					else ami_openurl_add_protocol(url);
+				if(fptr)
+				{
+					Close(fptr);
+				} else {
+					ami_openurl_add_protocol(nsurl_access(url));
+				}
 				FreeVec(launchurl);
 			}
 		}
 	}
 
-	SetProcWindow(procwin);		
+	SetProcWindow(procwin);
+
+	return NSERROR_OK;
 }

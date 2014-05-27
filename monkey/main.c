@@ -67,10 +67,10 @@ static void monkey_quit(void)
   monkey_fetch_filetype_fin();
 }
 
-static void
-gui_launch_url(const char *url)
+static nserror gui_launch_url(struct nsurl *url)
 {
-  fprintf(stdout, "GENERIC LAUNCH URL %s\n", url);
+  fprintf(stdout, "GENERIC LAUNCH URL %s\n", nsurl_access(url));
+  return NSERROR_OK;
 }
 
 static void quit_handler(int argc, char **argv)

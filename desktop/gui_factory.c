@@ -515,8 +515,9 @@ static void gui_default_quit(void)
 }
 
 
-static void gui_default_launch_url(const char *url)
+static nserror gui_default_launch_url(struct nsurl *url)
 {
+	return NSERROR_NO_FETCH_HANDLER;
 }
 
 static void gui_default_create_form_select_menu(struct browser_window *bw,

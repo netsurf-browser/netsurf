@@ -839,7 +839,7 @@ browser_window_download(struct browser_window *bw,
 					NULL, NULL, &l);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
 		/* no internal handler for this type, call out to frontend */
-		guit->browser->launch_url(nsurl_access(url));
+		error = guit->browser->launch_url(url);
 	} else if (error != NSERROR_OK) {
 		LOG(("Failed to fetch download: %d", error));
 	} else {
@@ -1932,7 +1932,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
 		/** @todo does this always try and download even unverifiable content? */
-		guit->browser->launch_url(nsurl_access(url));
+		error = guit->browser->launch_url(url);
 		break;
 
 	default: /* report error to user */

@@ -896,12 +896,13 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
  * Broadcast an URL that we can't handle.
  */
 
-static void gui_launch_url(const char *url)
+static nserror gui_launch_url(struct nsurl *url)
 {
 	status_t status;
 	// try to open it as an URI
 	BString mimeType = "application/x-vnd.Be.URL.";
-	BString arg(url);
+	BString arg(nsurl_access(url));
+
 	mimeType.Append(arg, arg.FindFirst(":"));
 
 	// special case, text/x-email is used traditionally
@@ -913,11 +914,12 @@ static void gui_launch_url(const char *url)
 	// we just check if it's registered
 	// if not there is likely no supporting app anyway
 	if (!BMimeType::IsValid(mimeType.String()))
-		return;
-	char *args[2] = { (char *)url, NULL };
+		return NSERROR_NO_FETCH_HANDLER;
+	char *args[2] = { (char *)nsurl_access(url), NULL };
 	status = be_roster->Launch(mimeType.String(), 1, args);
 	if (status < B_OK)
 		warn_user("Cannot launch url", strerror(status));
+        return NSERROR_OK;
 }
 
 

@@ -617,19 +617,21 @@ static void gui_create_form_select_menu(struct browser_window *bw,
 
 }
 
-static void gui_launch_url(const char *url)
+static nserror gui_launch_url(struct nsurl *url)
 {
 	gboolean ok;
 	GError *error = NULL;
 
-	ok = nsgtk_show_uri(NULL, url, GDK_CURRENT_TIME, &error);
-	if (ok == TRUE)
-		return;
+	ok = nsgtk_show_uri(NULL, nsurl_access(url), GDK_CURRENT_TIME, &error);
+	if (ok == TRUE) {
+		return NSERROR_OK;
+	}
 
 	if (error) {
 		warn_user(messages_get("URIOpenError"), error->message);
 		g_error_free(error);
 	}
+	return NSERROR_NO_FETCH_HANDLER;
 }
 
 void warn_user(const char *warning, const char *detail)
