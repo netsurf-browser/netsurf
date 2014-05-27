@@ -357,7 +357,6 @@ search_web_omni(const char *term,
 /* exported interface documented in desktop/searchweb.h */
 nserror search_web_select_provider(int selection)
 {
-	nserror ret;
 	struct search_provider *provider;
 	struct bitmap *ico_bitmap = NULL;
 
@@ -383,10 +382,11 @@ nserror search_web_select_provider(int selection)
 	if (provider->ico_handle != NULL) {
 		ico_bitmap = content_get_bitmap(provider->ico_handle);
 	}
-	if (ico_bitmap == NULL) {
+	if ((ico_bitmap == NULL) &&
+	    (search_web_ctx.default_ico_handle != NULL)) {
 		ico_bitmap = content_get_bitmap(search_web_ctx.default_ico_handle);
 	}
-	/* update the callback with teh provider change. Bitmap may
+	/* update the callback with the provider change. Bitmap may
 	 * be NULL at this point.
 	 */
 	guit->search_web->provider_update(provider->name, ico_bitmap);
@@ -395,6 +395,7 @@ nserror search_web_select_provider(int selection)
 	/* if the providers icon has not been retrived get it now */
 	if (provider->ico_handle == NULL) {
 		nsurl *icon_nsurl;
+		nserror ret;
 
 		/* create search icon url */
 		ret = nsurl_create(provider->ico, &icon_nsurl);
