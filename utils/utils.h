@@ -257,7 +257,7 @@ nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...);
 int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2);
 
 /* Platform specific functions */
-void die(const char * const error);
+void die(const char * const error) __attribute__ ((noreturn));
 void warn_user(const char *warning, const char *detail);
 void PDF_Password(char **owner_pass, char **user_pass, char *path);
 
