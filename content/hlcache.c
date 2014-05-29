@@ -143,7 +143,7 @@ static void hlcache_clean(void *ignored)
 	}
 
 	/* Attempt to clean the llcache */
-	llcache_clean();
+	llcache_clean(false);
 
 	/* Re-schedule ourselves */
 	guit->browser->schedule(hlcache->params.bg_clean_time, hlcache_clean, NULL);

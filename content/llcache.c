@@ -1916,9 +1916,43 @@ static nserror llcache_fetch_notmodified(llcache_object *object,
  * \param len	  Byte length of data
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-static nserror llcache_fetch_process_data(llcache_object *object, const uint8_t *data,
-		size_t len)
+static nserror
+llcache_fetch_process_data(llcache_object *object,
+			   const uint8_t *data,
+			   size_t len)
 {
+	if (object->fetch.state != LLCACHE_FETCH_DATA) {
+		/* On entry into this state, check if we need to
+		 * invalidate the cache control data. We are guaranteed
+		 * to have received all response headers.
+		 *
+		 * There are two cases in which we want to suppress
+		 * cacheing of an object:
+		 *
+		 * 1) The HTTP response code is not 200 or 203
+		 * 2) The request URI had a query string and the
+		 *    response headers did not provide an explicit
+		 *    object expiration time.
+		 */
+		long http_code = fetch_http_code(object->fetch.fetch);
+
+		if ((http_code != 200 && http_code != 203) ||
+		    (nsurl_has_component(object->url, NSURL_QUERY) &&
+		     (object->cache.max_age == INVALID_AGE &&
+		      object->cache.expires == 0))) {
+			/* Invalidate cache control data */
+			llcache_invalidate_cache_control_data(object);
+		}
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
+		object->fetch.state = LLCACHE_FETCH_DATA;
+	}
+
 	/* Resize source buffer if it's too small */
 	if (object->source_len + len >= object->source_alloc) {
 		const size_t new_len = object->source_len + len + 64 * 1024;
@@ -2310,38 +2344,6 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 	/* Normal 2xx state machine */
 	case FETCH_DATA:
 		/* Received some data */
-		if (object->fetch.state != LLCACHE_FETCH_DATA) {
-			/* On entry into this state, check if we need to
-			 * invalidate the cache control data. We are guaranteed
-			 * to have received all response headers.
-			 *
-			 * There are two cases in which we want to suppress
-			 * cacheing of an object:
-			 *
-			 * 1) The HTTP response code is not 200 or 203
-			 * 2) The request URI had a query string and the
-			 *    response headers did not provide an explicit
-			 *    object expiration time.
-			 */
-			long http_code = fetch_http_code(object->fetch.fetch);
-
-			if ((http_code != 200 && http_code != 203) ||
-				(nsurl_has_component(object->url, NSURL_QUERY) &&
-				(object->cache.max_age == INVALID_AGE &&
-					object->cache.expires == 0))) {
-				/* Invalidate cache control data */
-				llcache_invalidate_cache_control_data(object);
-			}
-
-			/* Release candidate, if any */
-			if (object->candidate != NULL) {
-				object->candidate->candidate_count--;
-				object->candidate = NULL;
-			}
-		}
-
-		object->fetch.state = LLCACHE_FETCH_DATA;
-
 		error = llcache_fetch_process_data(object,
 				msg->data.header_or_data.buf,
 				msg->data.header_or_data.len);
@@ -2445,6 +2447,14 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 	/* Deal with any errors reported by event handlers */
 	if (error != NSERROR_OK) {
+		if (error == NSERROR_NOMEM) {
+			/* attempt to purge the cache to free some
+			 * memory. will not help this fetch, but may
+			 * allow the UI to report errors etc.
+			 */
+			llcache_clean(true);
+		}
+
 		if (object->fetch.fetch != NULL) {
 			fetch_abort(object->fetch.fetch);
 			object->fetch.fetch = NULL;
@@ -2454,7 +2464,6 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 
 			object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		}
-		return;
 	}
 }
 
@@ -2821,19 +2830,28 @@ total_object_size(llcache_object *object)
  * Public API								      *
  ******************************************************************************/
 
-/**
+/*
  * Attempt to clean the cache
  *
  * The memory cache cleaning discards objects in order of increasing value.
+ *
+ * Exported interface documented in llcache.h
  */
-/* Exported interface documented in llcache.h */
-void llcache_clean(void)
+void llcache_clean(bool purge)
 {
 	llcache_object *object, *next;
 	uint32_t llcache_size = 0;
 	int remaining_lifetime;
+	uint32_t limit;
 
 	LLCACHE_LOG(("Attempting cache clean"));
+
+	/* If the cache is being purged set the size limit to zero. */
+	if (purge) {
+		limit = 0;
+	} else {
+		limit = llcache->limit;
+	}
 
 	/* Uncacheable objects with no users or fetches */
 	for (object = llcache->uncached_objects;
@@ -2892,7 +2910,7 @@ void llcache_clean(void)
 	 * persistant so their RAM can be reclaimed in the next
 	 * step
 	 */
-	if  (llcache->limit < llcache_size) {
+	if (limit < llcache_size) {
 		llcache_persist(NULL);
 	}
 
@@ -2901,7 +2919,7 @@ void llcache_clean(void)
 	 * cache exceeds the configured size.
 	 */
 	for (object = llcache->cached_objects;
-	     ((llcache->limit < llcache_size) && (object != NULL));
+	     ((limit < llcache_size) && (object != NULL));
 	     object = next) {
 		next = object->next;
 		if ((object->users == NULL) &&
@@ -2925,7 +2943,7 @@ void llcache_clean(void)
 	 * the configured size. Efectively just the object metadata.
 	 */
 	for (object = llcache->cached_objects;
-	     ((llcache->limit < llcache_size) && (object != NULL));
+	     ((limit < llcache_size) && (object != NULL));
 	     object = next) {
 		next = object->next;
 		if ((object->users == NULL) &&
@@ -2955,7 +2973,7 @@ void llcache_clean(void)
 	 * fetch
 	 */
 	for (object = llcache->cached_objects;
-	     ((llcache->limit < llcache_size) && (object != NULL));
+	     ((limit < llcache_size) && (object != NULL));
 	     object = next) {
 		next = object->next;
 

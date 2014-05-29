@@ -246,11 +246,15 @@ void llcache_finalise(void);
 nserror llcache_poll(void);
 
 /**
- * Cause the low-level cache to attempt to perform cleanup.  No
- * guarantees are made as to whether or not cleanups will take
+ * Cause the low-level cache to attempt to perform cleanup.
+ *
+ * No guarantees are made as to whether or not cleanups will take
  * place and what, if any, space savings will be made.
+ *
+ * \param purge Any objects held in the cache that are safely removable will
+ *              be freed regardless of the configured size limits.
  */
-void llcache_clean(void);
+void llcache_clean(bool purge);
 
 /**
  * Retrieve a handle for a low-level cache object
