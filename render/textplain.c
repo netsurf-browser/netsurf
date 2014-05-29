@@ -29,6 +29,7 @@
 #include <math.h>
 
 #include <parserutils/input/inputstream.h>
+#include <parserutils/charset/utf8.h>
 
 #include "content/content_protected.h"
 #include "content/hlcache.h"
@@ -465,6 +466,8 @@ void textplain_reformat(struct content *c, int width, int height)
 	int character_width;
 	size_t line_start;
 
+	LOG(("content %p w:%d h:%d",c, width, height));
+
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy */
 	if (!nsfont.font_width(&textplain_style, "ABCDEFGH", 8, &character_width))
@@ -485,12 +488,27 @@ void textplain_reformat(struct content *c, int width, int height)
 
 	line[line_count++].start = line_start = 0;
 	space = 0;
-	for (i = 0, col = 0; i != utf8_data_size; i++) {
-		bool term = (utf8_data[i] == '\n' || utf8_data[i] == '\r');
-		size_t next_col = col + 1;
+	i = 0;
+	col = 0;
+	while (i < utf8_data_size) {
+		size_t csize; /* number of bytes in character */
+		uint32_t chr;
+		bool term;
+		size_t next_col;
+		parserutils_error perror;
 
-		if (utf8_data[i] == '\t')
+		perror = parserutils_charset_utf8_to_ucs4((const uint8_t *)utf8_data + i, utf8_data_size - i, &chr, &csize);
+		if (perror != PARSERUTILS_OK) {
+			chr = 0xfffd;
+		}
+
+		term = (chr == '\n' || chr == '\r');
+
+		next_col = col + 1;
+
+		if (chr == '\t') {
 			next_col = (next_col + TAB_WIDTH - 1) & ~(TAB_WIDTH - 1);
+		}
 
 		if (term || next_col >= columns) {
 			if (line_count % 1024 == 0) {
@@ -515,7 +533,6 @@ void textplain_reformat(struct content *c, int width, int height)
 					/* break at last space in line */
 					i = space;
 					line[line_count-1].length = (i + 1) - line_start;
-
 				} else
 					line[line_count-1].length = i - line_start;
 			}
@@ -524,9 +541,10 @@ void textplain_reformat(struct content *c, int width, int height)
 			space = 0;
 		} else {
 			col++;
-			if (utf8_data[i] == ' ')
+			if (chr == ' ')
 				space = i;
 		}
+		i += csize;
 	}
 	line[line_count-1].length = i - line[line_count-1].start;
 	line[line_count].start = utf8_data_size;
