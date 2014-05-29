@@ -777,6 +777,42 @@ read_entries(struct store_state *state)
 	return NSERROR_OK;
 }
 
+/**
+ * Write the cache tag file.
+ *
+ * @param state The cache state.
+ * @return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror
+write_cache_tag(struct store_state *state)
+{
+	FILE *fcachetag;
+	nserror ret;
+	char *fname = NULL;
+
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, "CACHEDIR.TAG");
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	fcachetag = fopen(fname, "wb");
+
+	free(fname);
+
+	if (fcachetag == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	fprintf(fcachetag,
+		"Signature: 8a477f597d28d172789f06886806bc55\n"
+		"# This file is a cache directory tag created by NetSurf.\n"
+		"# For information about cache directory tags, see:\n"
+		"#	http://www.brynosaurus.com/cachedir/\n");
+
+	fclose(fcachetag);
+
+	return NSERROR_OK;
+}
 
 /**
  * Write the control file for the current state.
@@ -960,6 +996,9 @@ initialise(const struct llcache_store_parameters *parameters)
 	if (ret != NSERROR_OK) {
 		LOG(("read control failed %s", messages_get_errorcode(ret)));
 		ret = write_control(newstate);
+		if (ret == NSERROR_OK) {
+			write_cache_tag(newstate);
+		}
 	}
 	if (ret != NSERROR_OK) {
 		/* that went well obviously */
