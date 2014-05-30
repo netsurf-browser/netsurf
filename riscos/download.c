@@ -857,7 +857,6 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 		ro_gui_drag_icon(x, y, sprite);
 
 	} else if (pointer->i == ICON_DOWNLOAD_DESTINATION) {
-		os_error *error;
 		char command[256] = "Filer_OpenDir ";
 		char *dot;
 
@@ -865,6 +864,7 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 		command[255] = 0;
 		dot = strrchr(command, '.');
 		if (dot) {
+			os_error *error;
 			*dot = 0;
 			error = xos_cli(command);
 			if (error) {
