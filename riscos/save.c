@@ -1280,7 +1280,8 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 		local_name = NULL;
 	}
 
-	name = local_name ? local_name : name;
+	if (local_name != NULL)
+		name = local_name;
 
 	/* sprite name used for icon and dragging */
 	if (save_type == GUI_SAVE_COMPLETE) {
