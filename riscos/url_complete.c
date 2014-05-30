@@ -96,7 +96,7 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 	wimp_window_state	state;
 	char			*match_url;
 	const char		*url;
-	int			i, lines;
+	int			i;
 	int			old_selection;
 	int			height;
 	os_error		*error;
@@ -144,7 +144,7 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 			(strcmp(match_url, url_complete_matched_string))) {
 
 		/* memorize the current matches */
-		lines = MAXIMUM_VISIBLE_LINES;
+		int lines = MAXIMUM_VISIBLE_LINES;
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
 		if (url_complete_matches) {
@@ -528,8 +528,7 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 {
 	osbool more;
 	os_error *error;
-	int clip_y0, clip_y1, origin_y;
-	int first_line, last_line, line;
+	int line;
 	const struct url_data *data;
 	int type;
 
@@ -564,9 +563,10 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 	/* redraw */
 	more = wimp_redraw_window(redraw);
 	while (more) {
-		origin_y = redraw->box.y1 - redraw->yscroll;
-		clip_y0 = redraw->clip.y0 - origin_y;
-		clip_y1 = redraw->clip.y1 - origin_y;
+		int first_line, last_line;
+		int origin_y = redraw->box.y1 - redraw->yscroll;
+		int clip_y0 = redraw->clip.y0 - origin_y;
+		int clip_y1 = redraw->clip.y1 - origin_y;
 
 		first_line = (-clip_y1) / 44;
 		last_line = (-clip_y0 + 43) / 44;
@@ -656,9 +656,8 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 {
 	wimp_window_state state;
 	os_error *error;
-	int selection, old_selection;
+	int selection;
 	struct gui_window *g;
-	const char *url;
 
 	if ((mouse_x == pointer->pos.x) && (mouse_y == pointer->pos.y) &&
 			(!pointer->buttons))
@@ -678,7 +677,11 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 
 	selection = (state.visible.y1 - pointer->pos.y - state.yscroll) / 44;
 	if (selection != url_complete_matches_selection) {
+		int old_selection;
+
 		if (url_complete_matches_selection == -1) {
+			const char *url;
+
 			g = ro_gui_window_lookup(url_complete_parent);
 			if (!g)
 				return false;
