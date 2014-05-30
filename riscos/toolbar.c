@@ -847,8 +847,8 @@ void ro_toolbar_refresh_widget_dimensions(struct toolbar *toolbar)
 		toolbar->full_height = 0;
 	}
 	toolbar->full_width = 2 * TOOLBAR_WIDGET_GUTTER +
-			(row_width > toolbar->editor_size.x) ?
-				row_width : toolbar->editor_size.x;
+			((row_width > toolbar->editor_size.x) ?
+				row_width : toolbar->editor_size.x);
 }
 
 
