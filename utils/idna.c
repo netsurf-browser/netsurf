@@ -487,15 +487,23 @@ static bool idna__verify(const char *label, size_t len)
 	char *ace;
 	size_t ucs4_len, ace_len;
 
+	/* Convert our ACE label back to UCS-4 */
 	error = idna__ace_to_ucs4(label, len,
 				&ucs4, &ucs4_len);
 	if (error != NSERROR_OK) return false;
 
+	/* Perform NFC normalisation */
+	ucs4_len = utf8proc_normalise(ucs4, ucs4_len,
+		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
+	if(ucs4_len < 0) return false;
+
+	/* Convert the UCS-4 label back to ACE */
 	error = idna__ucs4_to_ace(ucs4, ucs4_len,
 				&ace, &ace_len);
 	free(ucs4);
 	if (error != NSERROR_OK) return false;
 
+	/* Check if it matches the input */
 	if ((len == ace_len) && (strncmp(label, ace, len) == 0)) {
 		free(ace);
 		return true;
