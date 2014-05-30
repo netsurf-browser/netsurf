@@ -160,7 +160,7 @@ bool ro_gui_url_suggest_callback(nsurl *url, const struct url_data *data)
 
 	/* Ignore unvisited URLs, and those that don't apply to HTML or Text. */
 
-	if (data->visits <= 0 || (data->type != CONTENT_HTML &&
+	if (data->visits == 0 || (data->type != CONTENT_HTML &&
 			data->type != CONTENT_TEXTPLAIN))
 		return true;
 
