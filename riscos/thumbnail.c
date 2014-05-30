@@ -85,7 +85,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
-	_kernel_oserror *error;
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
@@ -137,6 +136,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	/* if we changed to 8bpp then go back to 32bpp */
 	if (thumbnail_32bpp_available != 1) {
 		const uint8_t *pixbufp = bitmap_get_buffer(bitmap);
+		_kernel_oserror *error;
+
 		if (!pixbufp || !bitmap->sprite_area) {
 			free(sprite_area);
 			return false;
