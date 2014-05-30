@@ -89,7 +89,6 @@ bool ro_gui_url_suggest_get_menu_available(void)
 
 bool ro_gui_url_suggest_prepare_menu(void)
 {
-	int			i;
 	struct url_suggest_item	*list, *next;
 
 	/* Fetch the URLs we want to include from URLdb. */
@@ -108,7 +107,7 @@ bool ro_gui_url_suggest_prepare_menu(void)
 	assert(suggest_entries <= URL_SUGGEST_MAX_URLS);
 
 	if (suggest_entries > 0) {
-		i = suggest_entries;
+		int i = suggest_entries;
 
 		list = suggest_list;
 		suggest_list = NULL;
@@ -156,7 +155,7 @@ bool ro_gui_url_suggest_callback(nsurl *url, const struct url_data *data)
 {
 	int			count;
 	unsigned int		weight;
-	struct url_suggest_item	**list, *new, *old;
+	struct url_suggest_item	**list, *new;
 
 	/* Ignore unvisited URLs, and those that don't apply to HTML or Text. */
 
@@ -206,7 +205,7 @@ bool ro_gui_url_suggest_callback(nsurl *url, const struct url_data *data)
 	 */
 
 	while (suggest_list != NULL && suggest_entries > URL_SUGGEST_MAX_URLS) {
-		old = suggest_list;
+		struct url_suggest_item	*old = suggest_list;
 		suggest_list = suggest_list->next;
 
 		free(old);
