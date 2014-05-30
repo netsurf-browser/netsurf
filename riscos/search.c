@@ -48,12 +48,10 @@ struct search_static_data {
 	char *recent_searches[RECENT_SEARCHES];
 	bool search_insert;
 	struct browser_window *search_window;
-	search_flags_t flags;
-	char *string;
 };
 
 static struct search_static_data search_data =
-		{{NULL}, false, NULL, 0, NULL};
+		{ { NULL }, false, NULL };
 
 static wimp_MENU(RECENT_SEARCHES) menu_recent;
 wimp_menu *recent_search_menu = (wimp_menu *)&menu_recent;
