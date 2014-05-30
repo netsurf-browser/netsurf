@@ -909,11 +909,8 @@ bool ro_textarea_key_press(wimp_key *key)
 	uint32_t c = (uint32_t) key->c;
 	wimp_key keypress;
 	struct text_area *ta;
-	char utf8[7];
-	size_t utf8_len;
 	bool redraw = false;
 	unsigned int c_pos;
-	os_error *error;
 
 	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(key->w);
 
@@ -923,6 +920,9 @@ bool ro_textarea_key_press(wimp_key *key)
 	if (!(c & IS_WIMP_KEY ||
 			(c <= 0x001f || (0x007f <= c && c <= 0x009f)))) {
 		/* normal character - insert */
+		char utf8[7];
+		size_t utf8_len;
+
 		utf8_len = utf8_from_ucs4(c, utf8);
 		utf8[utf8_len] = '\0';
 
@@ -932,6 +932,7 @@ bool ro_textarea_key_press(wimp_key *key)
 
 		redraw = true;
 	} else {
+		os_error *error;
 		/** \todo handle command keys */
 		switch (c & ~IS_WIMP_KEY) {
 		case 8: /* Backspace */
@@ -1065,8 +1066,7 @@ void ro_textarea_redraw(wimp_draw *redraw)
 void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 {
 	struct text_area *ta;
-	int clip_y0, clip_y1;
-	int line0, line1, line;
+	int line;
 	osbool more;
 	rufl_code code;
 	os_error *error;
@@ -1084,6 +1084,8 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 	}
 
 	while (more) {
+		int line0, line1;
+		int clip_y0, clip_y1;
 		clip_y0 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y1;
 		clip_y1 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y0;
 
