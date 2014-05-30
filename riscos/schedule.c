@@ -129,13 +129,14 @@ nserror riscos_schedule(int t, void (*callback)(void *p), void *p)
 bool schedule_run(void)
 {
 	struct sched_entry *entry;
-	void (*callback)(void *p);
-	void *p;
 	os_t now;
 
 	now = os_read_monotonic_time();
 
 	while (sched_queue.next && sched_queue.next->time <= now) {
+		void (*callback)(void *p);
+		void *p;
+
 		entry = sched_queue.next;
 		callback = entry->callback;
 		p = entry->p;
