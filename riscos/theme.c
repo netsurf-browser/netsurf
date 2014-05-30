@@ -176,11 +176,10 @@ static void ro_gui_theme_get_available_in_dir(const char *directory)
 	int context = 0;
 	int read_count;
 	osgbpb_INFO(100) info;
-	os_error *error;
 
 	while (context != -1) {
 	  	/* read some directory info */
-		error = xosgbpb_dir_entries_info(directory,
+		os_error *error = xosgbpb_dir_entries_info(directory,
 				(osgbpb_info_list *) &info, 1, context,
 				sizeof(info), 0, &read_count, &context);
 		if (error) {
