@@ -593,20 +593,12 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 	wimp_window_state	state;
 	os_box			extent;
 	int			old_height, old_width;
-	int			xeig, yeig;
-	os_coord		pixel = {1, 1};
 
 	if (!toolbar)
 		return false;
 
 	old_height = toolbar->current_height;
 	old_width = toolbar->current_width;
-
-	/* calculate 1px in OS units */
-
-	ro_convert_pixels_to_os_units(&pixel, (os_mode)-1);
-	xeig = pixel.x;
-	yeig = pixel.y;
 
 	/* Measure the parent window width if the caller has asked us to
 	 * calculate the clip width ourselves.  Otherwise, if a clip width
