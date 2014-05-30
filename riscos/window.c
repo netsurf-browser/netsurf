@@ -412,7 +412,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
 		gui_window_create_flags flags)
 {
-	int screen_width, screen_height, win_width, win_height, scroll_width;
+	int screen_width, screen_height;
 	static int window_count = 2;
 	wimp_window window;
 	wimp_window_state state;
@@ -451,19 +451,24 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 		window.visible.y1 = state.visible.y1 - 48;
 		open_centred = false;
 	} else {
+		int win_width, win_height;
 		ro_gui_screen_size(&screen_width, &screen_height);
 
 		/* Check if we have a preferred position */
 		if ((nsoption_int(window_screen_width) != 0) &&
 		    (nsoption_int(window_screen_height) != 0)) {
-			win_width = (nsoption_int(window_width) * screen_width) /
-				nsoption_int(window_screen_width);
-			win_height = (nsoption_int(window_height) * screen_height) /
-				nsoption_int(window_screen_height);
-			window.visible.x0 = (nsoption_int(window_x) * screen_width) /
-				nsoption_int(window_screen_width);
-			window.visible.y0 = (nsoption_int(window_y) * screen_height) /
-				nsoption_int(window_screen_height);
+			win_width = (nsoption_int(window_width) *
+					screen_width) /
+					nsoption_int(window_screen_width);
+			win_height = (nsoption_int(window_height) *
+					screen_height) /
+					nsoption_int(window_screen_height);
+			window.visible.x0 = (nsoption_int(window_x) *
+					screen_width) /
+					nsoption_int(window_screen_width);
+			window.visible.y0 = (nsoption_int(window_y) *
+					screen_height) /
+					nsoption_int(window_screen_height);
 			if (nsoption_bool(window_stagger)) {
 				window.visible.y0 += 96 -
 						(48 * (window_count % 5));
@@ -535,7 +540,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 			wimp_WINDOW_TOGGLE_ICON;
 
 	if (open_centred) {
-		scroll_width = ro_get_vscroll_width(NULL);
+		int scroll_width = ro_get_vscroll_width(NULL);
 		window.visible.x0 -= scroll_width;
 	}
 
@@ -684,13 +689,12 @@ static void gui_window_destroy(struct gui_window *g)
 
 static void gui_window_set_title(struct gui_window *g, const char *title)
 {
-	int scale_disp;
-
 	assert(g);
 	assert(title);
 
 	if (g->bw->scale != 1.0) {
-		scale_disp = g->bw->scale * 100;
+		int scale_disp = g->bw->scale * 100;
+
 		if (ABS((float)scale_disp - g->bw->scale * 100) >= 0.05)
 			snprintf(g->title, sizeof g->title, "%s (%.1f%%)",
 					title, g->bw->scale * 100);
@@ -972,7 +976,6 @@ static void gui_window_update_extent(struct gui_window *g)
 	wimp_window_state	state;
 	bool			update;
 	unsigned int		flags;
-	int			scroll = 0;
 
 	assert(g);
 
@@ -987,7 +990,7 @@ static void gui_window_update_extent(struct gui_window *g)
 
 	/* scroll on toolbar height change */
 	if (g->toolbar) {
-		scroll = ro_toolbar_height(g->toolbar) - info.extent.y1;
+		int scroll = ro_toolbar_height(g->toolbar) - info.extent.y1;
 		info.yscroll += scroll;
 	}
 
@@ -1246,13 +1249,12 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
 	wimp_pointer pointer;
-	os_error *error;
 	wimp_drag drag;
 
 	if (rect != NULL) {
 		/* We have a box to constrain the pointer to, for the drag
 		 * duration */
-		error = xwimp_get_pointer_info(&pointer);
+		os_error *error = xwimp_get_pointer_info(&pointer);
 		if (error) {
 			LOG(("xwimp_get_pointer_info 0x%x : %s",
 					error->errnum, error->errmess));
@@ -1505,8 +1507,7 @@ void ro_gui_window_open(wimp_open *open)
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(open->w);
 	int width = open->visible.x1 - open->visible.x0;
 	int height = open->visible.y1 - open->visible.y0;
-	int size, toolbar_height = 0;
-	bool no_vscroll, no_hscroll;
+	int toolbar_height = 0;
 	float new_scale = 0;
 	hlcache_handle *h;
 	wimp_window_state state;
@@ -1546,9 +1547,11 @@ void ro_gui_window_open(wimp_open *open)
 	/* handle 'auto' scroll bars' and non-fitting scrollbar removal */
 	if ((g->bw->scrolling == SCROLLING_AUTO) ||
 			(g->bw->scrolling == SCROLLING_YES)) {
+		int size;
+
 		/* windows lose scrollbars when containing a frameset */
-		no_hscroll = false;
-		no_vscroll = g->bw->children;
+		bool no_hscroll = false;
+		bool no_vscroll = g->bw->children;
 
 		/* hscroll */
 		size = ro_get_hscroll_height(NULL);
