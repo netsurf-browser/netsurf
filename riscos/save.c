@@ -618,7 +618,6 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	os_error *error;
 	char *dp, *ep;
 	char *local_name = NULL;
-	nserror err;
 
 	if (dragbox_active)
 		ro_gui_drag_box_cancel();
@@ -654,6 +653,7 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	if (!saving_from_dialog) {
 		/* saving directly from browser window, choose a
 		 * name based upon the URL */
+		nserror err;
 		err = utf8_to_local_encoding(save_leafname, 0, &local_name);
 		if (err != NSERROR_OK) {
 			/* badenc should never happen */
@@ -1222,7 +1222,6 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	char *nice = NULL;
 	nserror err;
 	char *local_name;
-	size_t i;
 
 	assert(icon_len >= 13);
 
@@ -1252,6 +1251,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	/* leafname */
 	if (url && url_nice(url, &nice, nsoption_bool(strip_extensions)) ==
 			NSERROR_OK) {
+		size_t i;
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')
 				nice[i] = '/';
