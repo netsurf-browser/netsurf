@@ -1065,7 +1065,7 @@ void ro_textarea_redraw(wimp_draw *redraw)
 void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 {
 	struct text_area *ta;
-	int clip_x0, clip_y0, clip_x1, clip_y1;
+	int clip_y0, clip_y1;
 	int line0, line1, line;
 	osbool more;
 	rufl_code code;
@@ -1084,9 +1084,7 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 	}
 
 	while (more) {
-		clip_x0 = redraw->clip.x0 - (redraw->box.x0-redraw->xscroll);
 		clip_y0 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y1;
-		clip_x1 = redraw->clip.x1 - (redraw->box.x0-redraw->xscroll);
 		clip_y1 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y0;
 
 		error = xcolourtrans_set_gcol(
