@@ -84,15 +84,14 @@ void theme_install_start(hlcache_handle *c)
 nserror theme_install_callback(hlcache_handle *handle,
 		const hlcache_event *event, void *pw)
 {
-	char buffer[256];
-	int author_indent = 0;
-
 	switch (event->type) {
 
 	case CONTENT_MSG_DONE:
 	{
 		const char *source_data;
 		unsigned long source_size;
+		int author_indent = 0;
+		char buffer[256];
 
 		theme_install_content = handle;
 
