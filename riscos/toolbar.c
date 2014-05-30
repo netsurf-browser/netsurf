@@ -1774,8 +1774,6 @@ bool ro_toolbar_get_editing(struct toolbar *toolbar)
 
 bool ro_toolbar_toggle_edit(struct toolbar *toolbar)
 {
-	char		*new_buttons;
-
 	if (toolbar == NULL || toolbar->editor == NULL)
 		return false;
 
@@ -1799,6 +1797,7 @@ bool ro_toolbar_toggle_edit(struct toolbar *toolbar)
 	if (!toolbar->editing && toolbar->buttons != NULL &&
 			toolbar->callbacks != NULL &&
 			toolbar->callbacks->save_buttons != NULL) {
+		char *new_buttons;
 		new_buttons = ro_gui_button_bar_get_config(toolbar->buttons);
 		toolbar->callbacks->save_buttons(toolbar->client_data,
 				new_buttons);
