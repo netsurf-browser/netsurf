@@ -392,9 +392,6 @@ bool ro_gui_selection_prepare_paste_dataload(
 		wimp_full_message_data_xfer *dataxfer)
 {
 	FILE *fp;
-	long size;
-	char *local_cb;
-	nserror ret;
 
 	/* Ignore messages that aren't for us */
 	if (dataxfer->your_ref == 0 || dataxfer->your_ref != paste_prev_message)
@@ -402,13 +399,15 @@ bool ro_gui_selection_prepare_paste_dataload(
 
 	fp = fopen(dataxfer->file_name, "r");
 	if (fp != NULL) {
+		long size;
 		fseek(fp, 0, SEEK_END);
 		size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 
 		if (size > 0) {
-			local_cb = malloc(size);
+			char *local_cb = malloc(size);
 			if (local_cb != NULL) {
+				nserror ret;
 				fread(local_cb, 1, size, fp);
 
 				ret = utf8_from_local_encoding(local_cb, size,
