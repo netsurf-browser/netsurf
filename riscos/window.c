@@ -1673,7 +1673,7 @@ void ro_gui_window_close(wimp_w w)
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(w);
 	wimp_pointer pointer;
 	os_error *error;
-	char *temp_name, *r;
+	char *temp_name;
 	char *filename = NULL;
 	hlcache_handle *h = NULL;
 	bool destroy;
@@ -1697,6 +1697,7 @@ void ro_gui_window_close(wimp_w w)
 		if (filename != NULL) {
 			temp_name = malloc(strlen(filename) + 32);
 			if (temp_name) {
+				char *r;
 				sprintf(temp_name, "Filer_OpenDir %s",
 						filename);
 				r = temp_name + strlen(temp_name);
@@ -1894,13 +1895,11 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	os_error			*ro_error;
 	wimp_pointer			pointer;
 	os_coord			pos;
-	const char			*toolbar_url;
 	float				scale;
 	uint32_t			c = (uint32_t) key->c;
 	wimp_scroll_direction		xscroll = wimp_SCROLL_NONE;
 	wimp_scroll_direction		yscroll = wimp_SCROLL_NONE;
 	nsurl				*url;
-	nserror				error;
 
 	if (g == NULL)
 		return false;
@@ -1924,7 +1923,9 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
 	{
-		error = nsurl_create("http://www.netsurf-browser.org/documentation/", &url);
+		nserror error = nsurl_create(
+				"http://www.netsurf-browser.org/documentation/",
+				&url);
 		if (error == NSERROR_OK) {
 			error = browser_window_create(BW_CREATE_HISTORY,
 					url,
@@ -2032,6 +2033,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case wimp_KEY_RETURN:
 		if (is_toolbar) {
+			const char *toolbar_url;
 			toolbar_url = ro_toolbar_get_url(g->toolbar);
 			if (toolbar_url != NULL)
 				ro_gui_window_launch_url(g, toolbar_url);
@@ -3590,7 +3592,6 @@ void ro_gui_window_toolbar_click(void *data,
 {
 	struct gui_window	*g = data;
 	struct browser_window	*new_bw;
-	gui_save_type		save_type;
 
 	if (g == NULL)
 		return;
@@ -3599,6 +3600,9 @@ void ro_gui_window_toolbar_click(void *data,
 	if (action_type == TOOLBAR_ACTION_URL) {
 		switch (action.url) {
 		case TOOLBAR_URL_DRAG_URL:
+		{
+			gui_save_type save_type;
+
 			if (g->bw->current_content == NULL)
 				break;
 
@@ -3612,6 +3616,7 @@ void ro_gui_window_toolbar_click(void *data,
 			ro_gui_drag_save_link(save_type,
 					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h), g);
+		}
 			break;
 
 		case TOOLBAR_URL_SELECT_HOTLIST:
@@ -3862,10 +3867,9 @@ bool ro_gui_window_up_available(struct browser_window *bw)
 {
 	bool result = false;
 	nsurl *parent;
-	nserror	err;
 
 	if (bw != NULL && bw->current_content != NULL) {
-		err = nsurl_parent(hlcache_handle_get_url(
+		nserror	err = nsurl_parent(hlcache_handle_get_url(
 				bw->current_content), &parent);
 		if (err == NSERROR_OK) {
 			result = nsurl_compare(hlcache_handle_get_url(
@@ -3890,7 +3894,6 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 	hlcache_handle *h = g->bw->current_content;
 	char icon_buf[20] = "file_xxx";
 	char enc_buf[40];
-	char enc_token[10] = "Encoding0";
 	const char *icon = icon_buf;
 	const char *title, *url;
 	lwc_string *mime;
@@ -3912,6 +3915,7 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 
 	if (content_get_type(h) == CONTENT_HTML) {
 		if (html_get_encoding(h)) {
+			char enc_token[10] = "Encoding0";
 			enc_token[8] = '0' + html_get_encoding_source(h);
 			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
 					html_get_encoding(h),
@@ -3991,13 +3995,13 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 {
 	char *url2; /** @todo The risc os maintainer needs to examine why the url is copied here */
-	nsurl *url;
-	nserror error;
 
 	ro_gui_url_complete_close();
 
 	url2 = strdup(url1);
 	if (url2 != NULL) {
+		nserror error;
+		nsurl *url;
 
 		gui_window_set_url(g, url2);
 
@@ -4408,10 +4412,8 @@ void ro_gui_window_process_reformats(void)
 
 void ro_gui_window_quit(void)
 {
-	struct gui_window *cur;
-
 	while (window_list) {
-		cur = window_list;
+		struct gui_window *cur = window_list;
 		window_list = window_list->next;
 
 		browser_window_destroy(cur->bw);
