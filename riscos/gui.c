@@ -927,8 +927,8 @@ static void gui_init2(int argc, char** argv)
 		/* URL files */
 		else if (strcasecmp(argv[1], "-urlf") == 0) {
 			char *urlf = ro_gui_url_file_parse(argv[2]);
-			if (!url) {
-				LOG(("malloc failed"));
+			if (!urlf) {
+				LOG(("allocation failed"));
 				die("Insufficient memory for URL");
 			}
 			ret = nsurl_create(urlf, &url);
