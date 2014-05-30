@@ -28,6 +28,7 @@
 
 #include "utils/corestrings.h"
 #include "utils/errors.h"
+#include "utils/idna.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
@@ -690,8 +691,10 @@ static nserror nsurl__create_from_section(const char * const url_s,
 	const char *pos;
 	const char *pos_url_s;
 	char *norm_start = pos_norm;
+	char *host;
 	size_t copy_len;
 	size_t length;
+	size_t host_len;
 	enum {
 		NSURL_F_NO_PORT		= (1 << 0)
 	} flags = 0;
@@ -756,7 +759,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				continue;
 			}
 
-			if (nsurl__is_unreserved(ascii_offset) == false) {
+			if ((section != URL_SCHEME && section != URL_HOST) &&
+				(nsurl__is_unreserved(ascii_offset) == false)) {
 				/* This character should be escaped after all,
 				 * just let it get copied */
 				copy_len += 3;
@@ -778,7 +782,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 
 			length -= 2;
 
-		} else if (nsurl__is_no_escape(*pos) == false) {
+		} else if ((section != URL_SCHEME && section != URL_HOST) &&
+				(nsurl__is_no_escape(*pos) == false)) {
 
 			/* This needs to be escaped */
 			if (copy_len > 0) {
@@ -955,9 +960,15 @@ static nserror nsurl__create_from_section(const char * const url_s,
 			}
 
 			/* host */
-			if (lwc_intern_string(norm_start, length,
-					&url->host) != lwc_error_ok) {
-				return NSERROR_NOMEM;
+			/* Encode host according to IDNA2008 */
+			if (idna_encode(norm_start, length, &host, &host_len) == NSERROR_OK) {
+				if (lwc_intern_string(host, host_len,
+						&url->host) != lwc_error_ok) {
+					return NSERROR_NOMEM;
+				}
+				free(host);
+			} else {
+				return NSERROR_BAD_URL;
 			}
 		}
 
