@@ -1505,7 +1505,7 @@ void ro_gui_window_open(wimp_open *open)
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(open->w);
 	int width = open->visible.x1 - open->visible.x0;
 	int height = open->visible.y1 - open->visible.y0;
-	int size, fheight, fwidth, toolbar_height = 0;
+	int size, toolbar_height = 0;
 	bool no_vscroll, no_hscroll;
 	float new_scale = 0;
 	hlcache_handle *h;
@@ -1554,9 +1554,6 @@ void ro_gui_window_open(wimp_open *open)
 		size = ro_get_hscroll_height(NULL);
 		if (g->bw->border)
 			size -= 2;
-		fheight = height;
-		if (state.flags & wimp_WINDOW_HSCROLL)
-			fheight += size;
 		if (!no_hscroll) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
@@ -1583,9 +1580,6 @@ void ro_gui_window_open(wimp_open *open)
 		size = ro_get_vscroll_width(NULL);
 		if (g->bw->border)
 			size -= 2;
-		fwidth = width;
-		if (state.flags & wimp_WINDOW_VSCROLL)
-			fwidth += size;
 		if (!no_vscroll) {
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
