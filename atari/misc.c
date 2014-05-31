@@ -210,7 +210,6 @@ static nserror load_icon_callback(hlcache_handle *handle,
 hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 						void * pw )
 {
-	const char *icon_url = NULL;
 	hlcache_handle *c;
 	nserror err;
 	nsurl *icon_nsurl;
