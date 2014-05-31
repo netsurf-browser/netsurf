@@ -144,7 +144,6 @@ bool amiga_icon_convert(struct content *c)
 	int err;
 	uint8 r, g, b, a;
 	ULONG offset;
-	const char *url;
 	char *filename = NULL;
 	char *p;
 	ULONG trans, pals1;
