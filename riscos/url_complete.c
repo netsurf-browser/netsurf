@@ -96,7 +96,6 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 	wimp_window_state	state;
 	char			*match_url;
 	const char		*url;
-	int			i;
 	int			old_selection;
 	int			height;
 	os_error		*error;
@@ -144,6 +143,7 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 			(strcmp(match_url, url_complete_matched_string))) {
 
 		/* memorize the current matches */
+		int i;
 		int lines = MAXIMUM_VISIBLE_LINES;
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
