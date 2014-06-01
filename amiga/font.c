@@ -311,6 +311,8 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	*char_offset = 0;
 	*actual_x = 0;
 
+	if (*utf16 == 0xFEFF) utf16++;
+
 	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
 			utf16next = utf16 + 1;
@@ -339,10 +341,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
-			LOG(("Split %u chars at %ipx: "
-					"Split at char %i (%ipx) - %.*s",
-					length, x, *char_offset, *actual_x,
-					*char_offset, string));
 			free(utf16_str);
 			return true;
 		}
