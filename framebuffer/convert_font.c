@@ -781,6 +781,11 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 	}
 
 	while (pos < end) {
+		if (*pos == '\r') {
+			LOG(LOG_ERROR, "Detected \'\\r\': Bad line ending\n");
+			return false;
+		}
+
 		switch (ctx->state) {
 		case START:
 			if (*pos != '*') {
