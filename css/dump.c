@@ -1294,19 +1294,38 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	}
 
 	/* overflow */
-	val = css_computed_overflow(style);
+	val = css_computed_overflow_x(style);
 	switch (val) {
 	case CSS_OVERFLOW_VISIBLE:
-		fprintf(stream, "overflow: visible ");
+		fprintf(stream, "overflow-x: visible ");
 		break;
 	case CSS_OVERFLOW_HIDDEN:
-		fprintf(stream, "overflow: hidden ");
+		fprintf(stream, "overflow-x: hidden ");
 		break;
 	case CSS_OVERFLOW_SCROLL:
-		fprintf(stream, "overflow: scroll ");
+		fprintf(stream, "overflow-x: scroll ");
 		break;
 	case CSS_OVERFLOW_AUTO:
-		fprintf(stream, "overflow: auto ");
+		fprintf(stream, "overflow-x auto ");
+		break;
+	default:
+		break;
+	}
+
+	/* overflow */
+	val = css_computed_overflow_y(style);
+	switch (val) {
+	case CSS_OVERFLOW_VISIBLE:
+		fprintf(stream, "overflow-y: visible ");
+		break;
+	case CSS_OVERFLOW_HIDDEN:
+		fprintf(stream, "overflow-y: hidden ");
+		break;
+	case CSS_OVERFLOW_SCROLL:
+		fprintf(stream, "overflow-y: scroll ");
+		break;
+	case CSS_OVERFLOW_AUTO:
+		fprintf(stream, "overflow-y: auto ");
 		break;
 	default:
 		break;

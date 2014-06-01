@@ -281,6 +281,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 	 * then the while loop will visit each box marked with *, setting box
 	 * to each in the order shown. */
 	while (box) {
+		enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
+		enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
+
 		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
 				box->type == BOX_INLINE_CONTAINER);
 
@@ -321,6 +324,12 @@ bool layout_block_context(struct box *block, int viewport_height,
 			y = layout_clear(block->float_children,
 					css_computed_clear(box->style));
 
+		/* Find box's overflow properties */
+		if (box->style) {
+			overflow_x = css_computed_overflow_x(box->style);
+			overflow_y = css_computed_overflow_y(box->style);
+		}
+
 		/* Blocks establishing a block formatting context get minimum
 		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
@@ -329,8 +338,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			if (!box->object && !(box->flags & IFRAME) &&
 					!(box->flags & REPLACE_DIM) &&
 					box->style &&
-					css_computed_overflow(box->style) !=
-					CSS_OVERFLOW_VISIBLE) {
+					(overflow_x != CSS_OVERFLOW_VISIBLE ||
+					 overflow_y != CSS_OVERFLOW_VISIBLE)) {
 				/* box establishes new block formatting context
 				 * so available width may be diminished due to
 				 * floats. */
@@ -437,8 +446,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		/* Unless the box has an overflow style of visible, the box
 		 * establishes a new block context. */
 		if (box->type == BOX_BLOCK && box->style &&
-				css_computed_overflow(box->style) !=
-				CSS_OVERFLOW_VISIBLE) {
+				(overflow_x != CSS_OVERFLOW_VISIBLE ||
+				 overflow_y != CSS_OVERFLOW_VISIBLE)) {
 
 			layout_block_context(box, viewport_height, content);
 
@@ -922,7 +931,7 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 					box->border[TOP].width ||
 					box->padding[TOP] ||
 					(box->style &&
-					css_computed_overflow(box->style) !=
+					css_computed_overflow_y(box->style) !=
 					CSS_OVERFLOW_VISIBLE) ||
 					(box->type == BOX_INLINE_CONTAINER &&
 					box != box->parent->children)) {
@@ -935,7 +944,7 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 		/* Find next box */
 		if (box->type == BOX_BLOCK && !box->object && box->children &&
 				box->style &&
-				css_computed_overflow(box->style) ==
+				css_computed_overflow_y(box->style) ==
 				CSS_OVERFLOW_VISIBLE) {
 			/* Down into children. */
 			box = box->children;
@@ -1286,32 +1295,42 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 void layout_block_add_scrollbar(struct box *box, int which)
 {
-	enum css_overflow_e overflow;
+	enum css_overflow_e overflow_x, overflow_y;
 
 	assert(box->type == BOX_BLOCK && (which == RIGHT || which == BOTTOM));
 
 	if (box->style == NULL)
 		return;
 
-	overflow = css_computed_overflow(box->style);
+	overflow_x = css_computed_overflow_x(box->style);
+	overflow_y = css_computed_overflow_y(box->style);
 
-	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO ||
-			(box->object && content_get_type(box->object) ==
-					CONTENT_HTML)) {
-		/* make space for scrollbars, unless height/width are AUTO */
+	if (which == BOTTOM &&
+			(overflow_x == CSS_OVERFLOW_SCROLL ||
+			 overflow_x == CSS_OVERFLOW_AUTO ||
+			(box->object &&
+			 content_get_type(box->object) == CONTENT_HTML))) {
+		/* make space for scrollbar, unless height is AUTO */
+		if (box->height != AUTO &&
+				(overflow_x == CSS_OVERFLOW_SCROLL ||
+				box_hscrollbar_present(box))) {
+			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
+		}
+
+	} else if (which == RIGHT &&
+			(overflow_y == CSS_OVERFLOW_SCROLL ||
+			 overflow_y == CSS_OVERFLOW_AUTO ||
+			(box->object &&
+			 content_get_type(box->object) == CONTENT_HTML))) {
+		/* make space for scrollbars, unless width is AUTO */
 		enum css_height_e htype;
 		css_fixed height = 0;
 		css_unit hunit = CSS_UNIT_PX;
 		htype = css_computed_height(box->style, &height, &hunit);
 
-		if (which == BOTTOM && box->height != AUTO &&
-				(overflow == CSS_OVERFLOW_SCROLL ||
-				box_hscrollbar_present(box))) {
-			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
-		}
 		if (which == RIGHT && box->width != AUTO &&
 				htype == CSS_HEIGHT_SET &&
-				(overflow == CSS_OVERFLOW_SCROLL ||
+				(overflow_y == CSS_OVERFLOW_SCROLL ||
 				box_vscrollbar_present(box))) {
 			box->width -= SCROLLBAR_WIDTH;
 			box->padding[RIGHT] += SCROLLBAR_WIDTH;
@@ -1458,9 +1477,15 @@ void layout_float_find_dimensions(int available_width,
 	int *margin = box->margin;
 	int *padding = box->padding;
 	struct box_border *border = box->border;
-	int scrollbar_width =
-			(css_computed_overflow(style) == CSS_OVERFLOW_SCROLL ||
-			 css_computed_overflow(style) == CSS_OVERFLOW_AUTO) ?
+	enum css_overflow_e overflow_x = css_computed_overflow_x(style);
+	enum css_overflow_e overflow_y = css_computed_overflow_y(style);
+	int scrollbar_width_x =
+			(overflow_x == CSS_OVERFLOW_SCROLL ||
+			 overflow_x == CSS_OVERFLOW_AUTO) ?
+			SCROLLBAR_WIDTH : 0;
+	int scrollbar_width_y =
+			(overflow_y == CSS_OVERFLOW_SCROLL ||
+			 overflow_y == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
 	layout_find_dimensions(available_width, -1, box, style, &width, &height,
@@ -1473,8 +1498,8 @@ void layout_float_find_dimensions(int available_width,
 		margin[RIGHT] = 0;
 
         if (box->gadget == NULL) {
-		padding[RIGHT] += scrollbar_width;
-		padding[BOTTOM] += scrollbar_width;
+		padding[RIGHT] += scrollbar_width_y;
+		padding[BOTTOM] += scrollbar_width_x;
 	}
 
 	if (box->object && !(box->flags & REPLACE_DIM) &&
@@ -1555,7 +1580,7 @@ void layout_float_find_dimensions(int available_width,
 	} else {
 		if (max_width >= 0 && width > max_width) width = max_width;
 		if (min_width >  0 && width < min_width) width = min_width;
-		width -= scrollbar_width;
+		width -= scrollbar_width_y;
 	}
 
 	box->width = width;
@@ -3490,17 +3515,27 @@ bool layout_table(struct box *table, int available_width,
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
+				enum css_overflow_e overflow_x;
+				enum css_overflow_e overflow_y;
+
 				assert(c->style);
 				table_used_border_for_cell(c);
 				layout_find_dimensions(available_width, -1,
 						c, c->style, 0, 0, 0, 0, 0, 0,
 						0, c->padding, c->border);
-				if (css_computed_overflow(c->style) ==
-						CSS_OVERFLOW_SCROLL ||
-					css_computed_overflow(c->style) ==
+
+				overflow_x = css_computed_overflow_x(c->style);
+				overflow_y = css_computed_overflow_y(c->style);
+
+				if (overflow_x == CSS_OVERFLOW_SCROLL ||
+						overflow_x ==
+						CSS_OVERFLOW_AUTO) {
+					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
+				}
+				if (overflow_y == CSS_OVERFLOW_SCROLL ||
+						overflow_y ==
 						CSS_OVERFLOW_AUTO) {
 					c->padding[RIGHT] += SCROLLBAR_WIDTH;
-					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
 				}
 			}
 		}
@@ -5024,7 +5059,7 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 	/* To stop the top of text getting clipped when css line-height is
 	 * reduced, we increase the top of the descendant bbox. */
 	if (box->type == BOX_BLOCK && box->style != NULL &&
-			css_computed_overflow(box->style) ==
+			css_computed_overflow_y(box->style) ==
 					CSS_OVERFLOW_VISIBLE &&
 			box->object == NULL) {
 		css_fixed font_size = 0;
@@ -5060,22 +5095,47 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 	bool html_object = (child->object &&
 			content_get_type(child->object) == CONTENT_HTML);
 
+	enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
+	enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
+
+	if (child->style != NULL) {
+		overflow_x = css_computed_overflow_x(child->style);
+		overflow_y = css_computed_overflow_y(child->style);
+	}
+
+	if (html_object == true ||
+			overflow_x != CSS_OVERFLOW_VISIBLE ||
+			overflow_y != CSS_OVERFLOW_VISIBLE)
+		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
+				&child_desc_x1, &child_desc_y1);
+
 	if (child->style == NULL ||
-			(child->style && css_computed_overflow(child->style) ==
-			CSS_OVERFLOW_VISIBLE && html_object == false)) {
+			(child->style &&
+			 overflow_x == CSS_OVERFLOW_VISIBLE &&
+			 html_object == false)) {
 		/* get child's descendant bbox relative to box */
 		child_desc_x0 = child_x + child->descendant_x0;
-		child_desc_y0 = child_y + child->descendant_y0;
 		child_desc_x1 = child_x + child->descendant_x1;
+	} else {
+		/* child's descendants don't matter; use child's border edge */
+		/* get the bbox relative to box */
+		child_desc_x0 += child_x;
+		child_desc_x1 += child_x;
+	}
+
+	if (child->style == NULL ||
+			(child->style &&
+			 overflow_y == CSS_OVERFLOW_VISIBLE &&
+			 html_object == false)) {
+		/* get child's descendant bbox relative to box */
+		child_desc_y0 = child_y + child->descendant_y0;
 		child_desc_y1 = child_y + child->descendant_y1;
 	} else {
 		/* child's descendants don't matter; use child's border edge */
 		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
 				&child_desc_x1, &child_desc_y1);
 		/* get the bbox relative to box */
-		child_desc_x0 += child_x;
 		child_desc_y0 += child_y;
-		child_desc_x1 += child_x;
 		child_desc_y1 += child_y;
 	}
 
@@ -5159,7 +5219,9 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_calculate_descendant_bboxes(child);
 
-		if (box->style && css_computed_overflow(box->style) ==
+		if (box->style && css_computed_overflow_x(box->style) ==
+				CSS_OVERFLOW_HIDDEN &&
+				css_computed_overflow_y(box->style) ==
 				CSS_OVERFLOW_HIDDEN)
 			continue;
 
