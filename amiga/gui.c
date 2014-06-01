@@ -180,7 +180,7 @@ bool cli_force = false;
 static char *current_user;
 static char *current_user_dir;
 
-static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
+static const __attribute__((used)) char *stack_cookie = "\0$STACK:262144\0";
 
 const char * const versvn;
 const char * const verdate;
