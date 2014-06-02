@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <assert.h>
 
 #define GLYPH_LEN		16
@@ -762,7 +761,7 @@ static bool assemble_codepoint(const char* c, int n, int *id)
 		return false;
 	}
 
-	*id += v * pow(16, 3 - n);
+	*id += v << (4 * (3 - n));
 
 	return true;
 }
