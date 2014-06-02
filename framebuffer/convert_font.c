@@ -44,6 +44,7 @@ enum font_style {
 enum log_level {
 	LOG_DEBUG,
 	LOG_INFO,
+	LOG_RESULT,
 	LOG_WARNING,
 	LOG_ERROR
 };
@@ -1030,7 +1031,7 @@ bool load_font(const char *path, struct font_data **data)
 		count += ctx.count[i];
 	}
 
-	LOG(LOG_INFO, "  Total %i gylphs "
+	LOG(LOG_RESULT, "  Total %i gylphs "
 			"(of which %i unique, %i codepoints, %i duplicates)\n",
 			count, d->glyphs, ctx.codepoints,
 			count - d->glyphs - ctx.codepoints);
@@ -1050,7 +1051,7 @@ int main(int argc, char** argv)
 	bool ok;
 	int i;
 
-	level = LOG_WARNING;
+	level = LOG_RESULT;
 
 	/* Handle program arguments */
 	for (i = 1; i < argc; i++) {
@@ -1076,7 +1077,7 @@ int main(int argc, char** argv)
 				level = LOG_DEBUG;
 			} else if (argc >= 3 && (strcmp(argv[i], "-q") == 0 ||
 					strcmp(argv[i], "--quiet") == 0)) {
-				level = LOG_ERROR;
+				level = LOG_WARNING;
 			}
 
 			continue;
