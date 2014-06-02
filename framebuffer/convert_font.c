@@ -461,13 +461,13 @@ static bool check_glyph_data_valid(int pos, char c)
 #define SEVEN_SET	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | 	\
 			 (1 << 4) | (1 << 5) | (1 << 6))
 
-#define THREE_SSS	 ((1 << 0) | (1 << 1) | (1 << 2))
-#define THREE_S_S	 ((1 << 0) |            (1 << 2))
-#define THREE__SS	 ((1 << 0) | (1 << 1)           )
-#define THREE_SS_	 (           (1 << 1) | (1 << 2))
-#define THREE_S__	                        (1 << 2)
-#define THREE__S_	             (1 << 1)
-#define THREE___S	  (1 << 0)
+#define THREE_SSS	((1 << 0) | (1 << 1) | (1 << 2))
+#define THREE_S_S	((1 << 0) |            (1 << 2))
+#define THREE__SS	((1 << 0) | (1 << 1)           )
+#define THREE_SS_	(           (1 << 1) | (1 << 2))
+#define THREE_S__	                       (1 << 2)
+#define THREE__S_	            (1 << 1)
+#define THREE___S	 (1 << 0)
 
 uint8_t frag[16][5] = {
 	{ THREE_SSS,
@@ -605,6 +605,15 @@ void build_codepoint(int id, bool italic, uint8_t *code_point)
 	code_point[14] = 0;
 	code_point[15] = SEVEN_SET << shift;
 }
+
+#undef SEVEN_SET
+#undef THREE_SSS
+#undef THREE_S_S
+#undef THREE__SS
+#undef THREE_SS_
+#undef THREE_S__
+#undef THREE__S_
+#undef THREE___S
 
 static bool glyph_is_codepoint(const glyph_entry *e, int id, int style)
 {
