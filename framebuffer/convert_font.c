@@ -28,10 +28,10 @@ const char *var_lables[4] = {
 };
 
 const char *short_labels[4] = {
-	" r ",
-	" i ",
-	" b ",
-	"b+i"
+	"  ",
+	" i",
+	"b ",
+	"bi"
 };
 
 enum font_style {
