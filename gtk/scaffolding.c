@@ -2212,6 +2212,8 @@ gui_search_web_provider_update(const char *provider_name,
 	GdkPixbuf *srch_pixbuf = NULL;
 	char *searchcontent;
 
+	LOG(("name:%s bitmap %p", provider_name, provider_bitmap));
+
 	if (provider_bitmap != NULL) {
 		srch_pixbuf = nsgdk_pixbuf_get_from_surface(provider_bitmap->surface, 16, 16);
 

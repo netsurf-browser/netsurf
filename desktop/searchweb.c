@@ -37,7 +37,7 @@ struct search_provider {
 	hlcache_handle *ico_handle;
 };
 
-static struct {
+static struct search_web_ctx_s {
 	struct search_provider *providers; /* web search providers */
 	size_t providers_count; /* number of providers */
 
@@ -50,42 +50,13 @@ static struct {
 
 static const char *default_providers = "Google|www.google.com|http://www.google.com/search?q=%s|http://www.google.com/favicon.ico|\n";
 
-static const char *default_search_icon_url = "resource:default.ico";
+static const char *default_search_icon_url = "resource:icons/search.png";
 
-/**
- * callback for hlcache icon fetch events.
- */
-static nserror search_web_ico_callback(hlcache_handle *ico,
-			       const hlcache_event *event, void *pw)
-{
-	hlcache_handle **pico = pw;
-
-	switch (event->type) {
-
-	case CONTENT_MSG_DONE:
-		LOG(("icon '%s' retrived", nsurl_access(hlcache_handle_get_url(ico))));
-		guit->search_web->provider_update(search_web_ctx.providers[search_web_ctx.current].name, content_get_bitmap(ico));
-		break;
-
-	case CONTENT_MSG_ERROR:
-		LOG(("icon %s error: %s",
-		     nsurl_access(hlcache_handle_get_url(ico)),
-		     event->data.error));
-		hlcache_handle_release(ico);
-		*pico = NULL; /* clear reference to released handle */
-		break;
-
-	default:
-		break;
-	}
-
-	return NSERROR_OK;
-}
 
 /**
  * Read providers file.
  *
- * Allocates stoage of sufficient size for teh providers fiel and
+ * Allocates stoage of sufficient size for the providers file and
  * reads the entire file in.
  *
  * \param fname The filename to read.
@@ -153,7 +124,7 @@ read_providers(const char *fname,
 /**
  * parse search providers from a memory block.
  *
- * \parm providersd The provider info data.
+ * \param providersd The provider info data.
  * \param providers_size The size of the provider data.
  * \param providers_out The resulting provider array.
  * \param providers_count The number of providers in the output array.
@@ -301,6 +272,41 @@ make_search_nsurl(struct search_provider *provider,
 	return NSERROR_OK;
 }
 
+/**
+ * callback for hlcache icon fetch events.
+ */
+static nserror
+search_web_ico_callback(hlcache_handle *ico,
+			const hlcache_event *event,
+			void *pw)
+{
+	struct search_provider *provider = pw;
+
+	switch (event->type) {
+
+	case CONTENT_MSG_DONE:
+		LOG(("icon '%s' retrived",
+		     nsurl_access(hlcache_handle_get_url(ico))));
+		guit->search_web->provider_update(provider->name,
+						  content_get_bitmap(ico));
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("icon %s error: %s",
+		     nsurl_access(hlcache_handle_get_url(ico)),
+		     event->data.error));
+		hlcache_handle_release(ico);
+		/* clear reference to released handle */
+		provider->ico_handle = NULL;
+		break;
+
+	default:
+		break;
+	}
+
+	return NSERROR_OK;
+}
+
 /* exported interface documented in desktop/searchweb.h */
 nserror
 search_web_omni(const char *term,
@@ -405,7 +411,7 @@ nserror search_web_select_provider(int selection)
 
 		ret = hlcache_handle_retrieve(icon_nsurl, 0, NULL, NULL,
 					      search_web_ico_callback,
-					      &provider->ico_handle,
+					      provider,
 					      NULL, CONTENT_IMAGE,
 					      &provider->ico_handle);
 		nsurl_unref(icon_nsurl);
@@ -413,6 +419,46 @@ nserror search_web_select_provider(int selection)
 			provider->ico_handle = NULL;
 			return ret;
 		}
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * callback for hlcache icon fetch events.
+ */
+static nserror
+default_ico_callback(hlcache_handle *ico,
+		     const hlcache_event *event,
+		     void *pw)
+{
+	struct search_web_ctx_s *ctx = pw;
+
+	switch (event->type) {
+
+	case CONTENT_MSG_DONE:
+		LOG(("default icon '%s' retrived",
+		     nsurl_access(hlcache_handle_get_url(ico))));
+
+		/* only set to default icon if providers icon has no handle */
+		if (ctx->providers[search_web_ctx.current].ico_handle == NULL) {
+			guit->search_web->provider_update(
+				ctx->providers[search_web_ctx.current].name,
+				content_get_bitmap(ico));
+		}
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("icon %s error: %s",
+		     nsurl_access(hlcache_handle_get_url(ico)),
+		     event->data.error));
+		hlcache_handle_release(ico);
+		/* clear reference to released handle */
+		ctx->default_ico_handle = NULL;
+		break;
+
+	default:
+		break;
 	}
 
 	return NSERROR_OK;
@@ -454,8 +500,8 @@ nserror search_web_init(const char *provider_fname)
 
 	/* get default search icon */
 	ret = hlcache_handle_retrieve(icon_nsurl, 0, NULL, NULL,
-				      search_web_ico_callback,
-				      &search_web_ctx.default_ico_handle,
+				      default_ico_callback,
+				      &search_web_ctx,
 				      NULL, CONTENT_IMAGE,
 				      &search_web_ctx.default_ico_handle);
 	nsurl_unref(icon_nsurl);
