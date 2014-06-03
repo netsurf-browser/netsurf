@@ -78,6 +78,30 @@ nserror search_web_omni(const char *term, enum search_web_omni_flags flags, stru
  */
 nserror search_web_select_provider(int selection);
 
+
+/**
+ * Iterate the search providers, returning their names.
+ *
+ * \param from Index to start iteration from.  Use 0 to begin iteration.
+ *             Use the value returned from search_web_iterate_providers to
+ *             continue an iteration.
+ * \param name Pointer to fill in with the search provider name requested.
+ * \return -1 if there are no more, otherwise the iterator for the next item.
+ *
+ * \verb
+ *     ssize_t iter;
+ *     const char *name;
+ *     ...
+ *     for (iter = search_web_iterate_providers(0, &name);
+ *          iter != -1;
+ *          iter = search_web_iterate_providers(iter, &name)) {
+ *         do_something_with(name);
+ *     }
+ * \endverb
+ */
+ssize_t search_web_iterate_providers(ssize_t from, const char **name);
+
+
 /**
  * Initialise the web search operations.
  *

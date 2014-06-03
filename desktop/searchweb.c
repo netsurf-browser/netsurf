@@ -465,6 +465,21 @@ default_ico_callback(hlcache_handle *ico,
 }
 
 /* exported interface documented in desktop/searchweb.h */
+ssize_t search_web_iterate_providers(ssize_t from, const char **name)
+{
+	if (from < 0)
+		return -1;
+
+	if ((size_t)from >= search_web_ctx.providers_count)
+		return -1;
+
+	*name = search_web_ctx.providers[from].name;
+
+	return from + 1;
+}
+
+
+/* exported interface documented in desktop/searchweb.h */
 nserror search_web_init(const char *provider_fname)
 {
 	nserror ret;
