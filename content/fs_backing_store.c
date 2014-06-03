@@ -192,7 +192,7 @@ remove_store_entry(struct store_state *state,
 	state->last_entry--;
 
 	if (sei == state->last_entry) {
-		/* the removed entry was the last one, how conveniant */
+		/* the removed entry was the last one, how convenient */
 		*bse = &state->entries[sei];
 	} else {
 		/* need to swap entries */
@@ -318,7 +318,7 @@ store_fname(struct store_state *state,
 		break;
 
 	default:
-		assert(false);
+		assert("Invalid path depth in store_fname()" == NULL);
 	}
 
 	return fname;
@@ -516,7 +516,7 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
  *
  * @param url The value used as the unique key to search entries for.
  * @param bse Pointer used to return value.
- * @return NSERROR_OK and bse updated on succes or NSERROR_NOT_FOUND
+ * @return NSERROR_OK and \a bse updated on success or NSERROR_NOT_FOUND
  *         if no entry coresponds to the url.
  */
 static nserror
@@ -625,6 +625,7 @@ store_open(struct store_state *state,
 		return -1;
 	}
 
+	/** @todo mkdir only on write flag */
 	/* ensure path to file is usable */
 	ret = filepath_mkdir_all(fname);
 	if (ret != NSERROR_OK) {
@@ -693,6 +694,8 @@ build_entrymap(struct store_state *state)
 /**
  * Write filesystem entries to file.
  *
+ * @todo consider atomic replace using rename.
+ *
  * @param state The backing store state to read the entries from.
  * @return NSERROR_OK on sucess or error code on faliure.
  */
@@ -723,7 +726,7 @@ static nserror write_entries(struct store_state *state)
 			state->last_entry * sizeof(struct store_entry));
 	close(fd);
 	if (written < 0) {
-		/* TODO: Delete the file? */
+		/** @todo Delete the file? */
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -908,7 +911,6 @@ read_control(struct store_state *state)
 
 	/* second line is log2 max number of entries */
 	if (fscanf(fcontrol, "%u", &entrybits) != 1) {
-		LOG(("c"));
 		goto control_error;
 	}
 	if (fgetc(fcontrol) != 0) {
@@ -917,7 +919,6 @@ read_control(struct store_state *state)
 
 	/* second line is log2 size of address hash */
 	if (fscanf(fcontrol, "%u", &addrbits) != 1) {
-		LOG(("d"));
 		goto control_error;
 	}
 	if (fgetc(fcontrol) != 0) {
@@ -1115,8 +1116,8 @@ store(nsurl *url,
 	written = write(fd, data, datalen);
 
 	close(fd);
-	if (written < 0) {
-		/* TODO: Delete the file? */
+	if (written < datalen) {
+		/** @todo Delete the file? */
 		return NSERROR_SAVE_FAILED;
 	}
 

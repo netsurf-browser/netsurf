@@ -29,8 +29,6 @@
  *
  * \todo instrument and (auto)tune
  *
- * \todo turn llcache debugging off
- *
  */
 
 #include <stdlib.h>
@@ -52,8 +50,8 @@
 #include "content/urldb.h"
 
 /** Define to enable tracing of llcache operations. */
-//#undef LLCACHE_TRACE
-#define LLCACHE_TRACE 1
+#undef LLCACHE_TRACE
+//#define LLCACHE_TRACE 1
 
 #ifdef LLCACHE_TRACE
 #define LLCACHE_LOG(x) LOG(x)
@@ -2182,7 +2180,9 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 	int lst_len = 0;
 	int remaining_lifetime;
 
-	lst = calloc(512, sizeof(struct llcache_object *));
+#define MAX_PERSIST_PER_RUN 512
+
+	lst = calloc(MAX_PERSIST_PER_RUN, sizeof(struct llcache_object *));
 	if (lst == NULL)
 		return NSERROR_NOMEM;
 
@@ -2202,7 +2202,7 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 		    (remaining_lifetime > llcache->minimum_lifetime)) {
 			lst[lst_len] = object;
 			lst_len++;
-			if (lst_len == 512)
+			if (lst_len == MAX_PERSIST_PER_RUN)
 				break;
 		}
 	}
@@ -2212,10 +2212,12 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 		return NSERROR_NOT_FOUND;
 	}
 
-	/* sort list here */
+	/** \todo sort list here */
 
 	*lst_len_out = lst_len;
 	*lst_out = lst;
+
+#undef MAX_PERSIST_PER_RUN
 
 	return NSERROR_OK;
 }
