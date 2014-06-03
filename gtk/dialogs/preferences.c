@@ -53,6 +53,7 @@ struct ppref {
 	/* dynamic list stores */
 	GtkListStore *themes;
 	GtkListStore *content_language;
+	GtkListStore *search_providers;
 };
 
 static struct ppref ppref;
@@ -938,8 +939,22 @@ nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 G_MODULE_EXPORT void
 nsgtk_preferences_comboSearch_realize(GtkWidget *widget, struct ppref *priv)
 {
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widget),
-				 nsoption_int(search_provider));
+	int iter;
+	const char *name;
+	int provider = nsoption_int(search_provider);
+
+	if (priv->search_providers != NULL) {
+		gtk_list_store_clear(priv->search_providers);
+		for (iter = search_web_iterate_providers(0, &name);
+		     iter != -1;
+		     iter = search_web_iterate_providers(iter, &name)) {
+			gtk_list_store_insert_with_values(priv->search_providers,
+							  NULL, -1,
+							  0, name, -1);
+		}
+	}
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), provider);
 }
 
 
@@ -1069,6 +1084,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	priv->entryHomePageURL = GB(ENTRY, entryHomePageURL);
 	priv->themes = GB(LIST_STORE, liststore_themes);
 	priv->content_language = GB(LIST_STORE, liststore_content_language);
+	priv->search_providers = GB(LIST_STORE, liststore_search_provider);
 	priv->entryProxyHost = GB(ENTRY, entryProxyHost);
 	priv->spinProxyPort = GB(SPIN_BUTTON, spinProxyPort);
 	priv->entryProxyUser = GB(ENTRY, entryProxyUser);
