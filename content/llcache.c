@@ -215,6 +215,8 @@ struct llcache_s {
 	/** The maximum bandwidth to allow the backing store to use. */
 	size_t bandwidth;
 
+	/** Whether or not our users are caught up */
+	bool all_caught_up;
 };
 
 /** low level cache state */
@@ -222,6 +224,8 @@ static struct llcache_s *llcache = NULL;
 
 /* forward referenced callback function */
 static void llcache_fetch_callback(const fetch_msg *msg, void *p);
+/* forward referenced catch up function */
+static void llcache_users_not_caught_up(void);
 
 
 /******************************************************************************
@@ -2465,6 +2469,9 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 			object->fetch.state = LLCACHE_FETCH_COMPLETE;
 		}
 	}
+
+	/* There may be users which are not caught up so schedule ourselves */
+	llcache_users_not_caught_up();
 }
 
 /**
@@ -2628,6 +2635,7 @@ static nserror llcache_object_notify_users(llcache_object *object)
 				 * reemit the event next time round */
 				user->iterator_target = false;
 				next_user = user->next;
+				llcache_users_not_caught_up();
 				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;
@@ -2681,6 +2689,7 @@ static nserror llcache_object_notify_users(llcache_object *object)
 				 * reemit the data next time round */
 				user->iterator_target = false;
 				next_user = user->next;
+				llcache_users_not_caught_up();
 				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;
@@ -2714,6 +2723,7 @@ static nserror llcache_object_notify_users(llcache_object *object)
 				 * reemit the event next time round */
 				user->iterator_target = false;
 				next_user = user->next;
+				llcache_users_not_caught_up();
 				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;
@@ -3013,6 +3023,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->limit = prm->limit;
 	llcache->minimum_lifetime = prm->minimum_lifetime;
 	llcache->bandwidth = prm->bandwidth;
+	llcache->all_caught_up = true;
 
 	LOG(("llcache initialising with a limit of %d bytes", llcache->limit));
 
@@ -3077,9 +3088,25 @@ void llcache_finalise(void)
 /* See llcache.h for documentation */
 nserror llcache_poll(void)
 {
+	fetch_poll();
+
+	return NSERROR_OK;
+}
+
+/**
+ * Catch up the cache users with state changes from fetchers.
+ *
+ * \param ignored We ignore this because all our state comes from llcache.
+ */
+static void llcache_catch_up_all_users(void *ignored)
+{
 	llcache_object *object;
 
-	fetch_poll();
+	/* Assume after this we'll be all caught up.  If any user of a handle
+	 * defers then we'll end up set not caught up and we'll
+	 * reschedule at that point via llcache_users_not_caught_up()
+	 */
+	llcache->all_caught_up = true;
 
 	/* Catch new users up with state of objects */
 	for (object = llcache->cached_objects; object != NULL;
@@ -3091,9 +3118,20 @@ nserror llcache_poll(void)
 			object = object->next) {
 		llcache_object_notify_users(object);
 	}
-
-	return NSERROR_OK;
 }
+
+/**
+ * Ask for ::llcache_catch_up_all_users to be scheduled ASAP to pump the
+ * user state machines.
+ */
+static void llcache_users_not_caught_up()
+{
+	if (llcache->all_caught_up) {
+		llcache->all_caught_up = false;
+		guit->browser->schedule(0, llcache_catch_up_all_users, NULL);
+	}
+}
+
 
 /* See llcache.h for documentation */
 nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
@@ -3126,6 +3164,9 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 	llcache_object_add_user(object, user);
 
 	*result = user->handle;
+
+	/* Users exist which are now not caught up! */
+	llcache_users_not_caught_up();
 
 	return NSERROR_OK;
 }
