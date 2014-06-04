@@ -4946,7 +4946,7 @@ const uint16_t utf8proc_stage2table[] = {
   0, };
 
 const utf8proc_property_t utf8proc_properties[] = {
-  {0, 0, 0, 0, NULL, false, -1, -1, -1, -1, -1, false},
+  {0, 0, 0, 0, NULL, false, -1, -1, -1, -1, -1, false, false, false, false, NULL},
   {UTF8PROC_CATEGORY_CC, 0, UTF8PROC_BIDI_CLASS_BN, 0, NULL, false, -1, -1, -1, -1, -1, false, true, true, false, NULL},
   {UTF8PROC_CATEGORY_CC, 0, UTF8PROC_BIDI_CLASS_S, 0, NULL, false, -1, -1, -1, -1, -1, false, false, true, false, NULL},
   {UTF8PROC_CATEGORY_CC, 0, UTF8PROC_BIDI_CLASS_B, 0, NULL, false, -1, -1, -1, -1, -1, false, false, true, false, NULL},

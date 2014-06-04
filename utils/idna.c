@@ -94,13 +94,13 @@ static idna_unicode_jt idna__jt_property(int32_t cp)
  */
 static bool idna__contexto_rule(int32_t cp)
 {
-	bool rule = false;
-	int32_t *t = idna_contexto;
-	while (*t) {
-		if (*t == cp) rule = true;
-	};
+	int32_t *t;
+	for (t = idna_contexto; *t != 0; t++) {
+		if (*t == cp)
+			return true;
+	}
 
-	return rule;
+	return false;
 }
 
 
@@ -485,20 +485,21 @@ static bool idna__verify(const char *label, size_t len)
 	nserror error;
 	int32_t *ucs4;
 	char *ace;
-	size_t ucs4_len, ace_len;
+	ssize_t ucs4_len;
+	size_t u_ucs4_len, ace_len;
 
 	/* Convert our ACE label back to UCS-4 */
 	error = idna__ace_to_ucs4(label, len,
-				&ucs4, &ucs4_len);
+				&ucs4, &u_ucs4_len);
 	if (error != NSERROR_OK) return false;
 
 	/* Perform NFC normalisation */
-	ucs4_len = utf8proc_normalise(ucs4, ucs4_len,
+	ucs4_len = utf8proc_normalise(ucs4, u_ucs4_len,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
 	if(ucs4_len < 0) return false;
 
 	/* Convert the UCS-4 label back to ACE */
-	error = idna__ucs4_to_ace(ucs4, ucs4_len,
+	error = idna__ucs4_to_ace(ucs4, (size_t)ucs4_len,
 				&ace, &ace_len);
 	free(ucs4);
 	if (error != NSERROR_OK) return false;
