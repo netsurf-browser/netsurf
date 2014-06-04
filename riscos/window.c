@@ -92,6 +92,7 @@
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
 #include "riscos/ucstables.h"
+#include "riscos/filetype.h"
 
 void gui_window_redraw_window(struct gui_window *g);
 

@@ -63,6 +63,7 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/ucstables.h"
+#include "riscos/filetype.h"
 
 #define ICON_DOWNLOAD_ICON 0
 #define ICON_DOWNLOAD_URL 1

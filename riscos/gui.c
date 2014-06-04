@@ -21,131 +21,65 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <fpu_control.h>
 #include <signal.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <features.h>
 #include <unixlib/local.h>
-#include <curl/curl.h>
-#include "oslib/font.h"
-#include "oslib/help.h"
-#include "oslib/hourglass.h"
-#include "oslib/inetsuite.h"
-#include "oslib/os.h"
-#include "oslib/osbyte.h"
-#include "oslib/osfile.h"
-#include "oslib/osfscontrol.h"
-#include "oslib/osgbpb.h"
-#include "oslib/osmodule.h"
-#include "oslib/osspriteop.h"
-#include "oslib/pdriver.h"
-#include "oslib/plugin.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
-#include "oslib/uri.h"
-#include "rufl.h"
+#include <fpu_control.h>
+#include <oslib/help.h>
+#include <oslib/uri.h>
+#include <oslib/inetsuite.h>
+#include <oslib/pdriver.h>
+#include <oslib/osfile.h>
+#include <oslib/hourglass.h>
+#include <oslib/osgbpb.h>
+#include <oslib/osbyte.h>
+#include <oslib/osmodule.h>
+#include <oslib/osfscontrol.h>
 
-#include "utils/config.h"
-#include "utils/filename.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/file.h"
+#include "utils/filename.h"
 #include "utils/url.h"
-#include "utils/utils.h"
 #include "utils/corestrings.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
-#include "content/fetchers/resource.h"
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
-#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/treeview.h"
-#include "render/font.h"
-#include "utils/file.h"
+#include "desktop/netsurf.h"
+#include "content/urldb.h"
+#include "content/hlcache.h"
 
-#include "riscos/content-handlers/artworks.h"
-#include "riscos/bitmap.h"
-#include "riscos/buffer.h"
-#include "riscos/cookies.h"
-#include "riscos/dialog.h"
-#include "riscos/content-handlers/draw.h"
-#include "riscos/global_history.h"
 #include "riscos/gui.h"
-#include "riscos/gui/url_bar.h"
-#include "riscos/help.h"
+#include "riscos/wimputils.h"
 #include "riscos/hotlist.h"
-#include "riscos/iconbar.h"
-#include "riscos/menus.h"
-#include "riscos/message.h"
-#include "riscos/mouse.h"
-#include "riscos/print.h"
-#include "riscos/query.h"
-#include "riscos/save.h"
-#include "riscos/sslcert.h"
-#include "riscos/content-handlers/sprite.h"
+#include "riscos/buffer.h"
 #include "riscos/textselection.h"
-#include "riscos/theme.h"
-#include "riscos/toolbar.h"
-#include "riscos/treeview.h"
+#include "riscos/print.h"
+#include "riscos/save.h"
+#include "riscos/dialog.h"
+#include "riscos/wimp.h"
+#include "riscos/message.h"
+#include "riscos/help.h"
+#include "riscos/query.h"
+#include "riscos/window.h"
+#include "riscos/iconbar.h"
+#include "riscos/sslcert.h"
+#include "riscos/global_history.h"
+#include "riscos/cookies.h"
+#include "riscos/wimp_event.h"
 #include "riscos/uri.h"
 #include "riscos/url_protocol.h"
-#include "riscos/url_complete.h"
-#include "riscos/wimp.h"
-#include "riscos/wimp_event.h"
-#include "riscos/wimputils.h"
-#include "riscos/window.h"
+#include "riscos/mouse.h"
 #include "riscos/ucstables.h"
-
-
-#ifndef FILETYPE_ACORN_URI
-#define FILETYPE_ACORN_URI 0xf91
-#endif
-#ifndef FILETYPE_ANT_URL
-#define FILETYPE_ANT_URL 0xb28
-#endif
-#ifndef FILETYPE_IEURL
-#define FILETYPE_IEURL 0x1ba
-#endif
-#ifndef FILETYPE_HTML
-#define FILETYPE_HTML 0xfaf
-#endif
-#ifndef FILETYPE_JNG
-#define FILETYPE_JNG 0xf78
-#endif
-#ifndef FILETYPE_CSS
-#define FILETYPE_CSS 0xf79
-#endif
-#ifndef FILETYPE_MNG
-#define FILETYPE_MNG 0xf83
-#endif
-#ifndef FILETYPE_GIF
-#define FILETYPE_GIF 0x695
-#endif
-#ifndef FILETYPE_BMP
-#define FILETYPE_BMP 0x69c
-#endif
-#ifndef FILETYPE_ICO
-#define FILETYPE_ICO 0x132
-#endif
-#ifndef FILETYPE_PNG
-#define FILETYPE_PNG 0xb60
-#endif
-#ifndef FILETYPE_JPEG
-#define FILETYPE_JPEG 0xc85
-#endif
-#ifndef FILETYPE_ARTWORKS
-#define FILETYPE_ARTWORKS 0xd94
-#endif
-#ifndef FILETYPE_SVG
-#define FILETYPE_SVG 0xaad
-#endif
+#include "riscos/filetype.h"
+#include "riscos/content-handlers/artworks.h"
+#include "riscos/content-handlers/draw.h"
+#include "riscos/content-handlers/sprite.h"
 
 extern bool ro_plot_patterned_lines;
 
@@ -167,11 +101,15 @@ static const char *task_name = "NetSurf";
 #define CHOICES_PREFIX "<Choices$Write>.WWW.NetSurf."
 
 ro_gui_drag_type gui_current_drag_type;
-wimp_t task_handle;	/**< RISC OS wimp task handle. */
-static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
-osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
+wimp_t task_handle; /**< RISC OS wimp task handle. */
+static clock_t gui_last_poll; /**< Time of last wimp_poll. */
+osspriteop_area *gui_sprites; /**< Sprite area containing pointer and hotlist sprites */
 
-/** Accepted wimp user messages. */
+#define DIR_SEP ('.')
+
+/**
+ * Accepted wimp user messages.
+ */
 static ns_wimp_message_list task_messages = {
 	message_HELP_REQUEST,
 	{
@@ -225,37 +163,25 @@ static ns_wimp_message_list task_messages = {
 	}
 };
 
+
 static struct
 {
-	int	width;  /* in OS units */
-	int	height;
+	int width; /* in OS units */
+	int height;
 } screen_info;
 
-static void ro_gui_create_dirs(void);
-static void ro_gui_create_dir(char *path);
-static void ro_gui_choose_language(void);
-static void ro_gui_signal(int sig);
-static void ro_gui_cleanup(void);
-static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
-static void ro_gui_close_window_request(wimp_close *close);
-static void ro_gui_check_resolvers(void);
-static void ro_gui_keypress(wimp_key *key);
-static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
-static void ro_msg_dataload(wimp_message *block);
-static char *ro_gui_uri_file_parse(const char *file_name, char **uri_title);
-static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
-static char *ro_gui_url_file_parse(const char *file_name);
-static char *ro_gui_ieurl_file_parse(const char *file_name);
-static void ro_msg_terminate_filename(wimp_full_message_data_xfer *message);
-static void ro_msg_datasave(wimp_message *message);
-static void ro_msg_datasave_ack(wimp_message *message);
-static void ro_msg_dataopen(wimp_message *message);
-static void ro_gui_get_screen_properties(void);
-static void ro_msg_prequit(wimp_message *message);
-static void ro_msg_save_desktop(wimp_message *message);
-static void ro_msg_window_info(wimp_message *message);
-static void ro_gui_view_source_bounce(wimp_message *message);
 
+/**
+ * Callback to translate resource to full url for RISC OS.
+ *
+ * Transforms a resource: path into a full URL. The returned URL is
+ * used as the target for a redirect. The caller takes ownership of
+ * the returned nsurl including unrefing it when finished with it.
+ *
+ * \param path The path of the resource to locate.
+ * \return A string containing the full URL of the target object or
+ *         NULL if no suitable resource can be found.
+ */
 static nsurl *gui_get_resource_url(const char *path)
 {
 	static const char base_url[] = "file:///NetSurf:/Resources/";
@@ -317,14 +243,21 @@ static nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
+
 /**
- * set option from wimp
+ * Set colour option from wimp.
+ *
+ * \param opts The netsurf options.
+ * \param wimp wimp colour value
+ * \param option the netsurf option enum.
+ * \param def_colour The default colour value to use.
+ * \return NSERROR_OK on success or error code.
  */
 static nserror
 set_colour_from_wimp(struct nsoption_s *opts,
-                   wimp_colour wimp,
-                   enum nsoption_e option,
-                   colour def_colour)
+		   wimp_colour wimp,
+		   enum nsoption_e option,
+		   colour def_colour)
 {
 	os_error *error;
 	os_PALETTE(20) palette;
@@ -343,17 +276,16 @@ set_colour_from_wimp(struct nsoption_s *opts,
 	return NSERROR_OK;
 }
 
+
 /**
  * Set option defaults for riscos frontend
  *
  * @param defaults The option table to update.
  * @return error status.
  *
- * @TODO -- The wimp_COLOUR_... values here map the colour definitions
- *          to parts of the RISC OS desktop palette.  In places this
- *          is fairly arbitrary, and could probably do with
- *          re-checking.
- *
+ * @todo The wimp_COLOUR_... values here map the colour definitions to
+ * parts of the RISC OS desktop palette. In places this is fairly
+ * arbitrary, and could probably do with re-checking.
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
@@ -402,11 +334,771 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
-/**
- * Initialise the gui (RISC OS specific part).
- */
 
-static void gui_init(int argc, char** argv)
+/**
+ * Create directory structure for a path
+ *
+ * Given a path of x.y.z directories x and x.y will be created
+ *
+ * \param path the directory path to create
+ */
+static void ro_gui_create_dir(char *path)
+{
+	char *cur = path;
+	while ((cur = strchr(cur, '.'))) {
+		*cur = '\0';
+		xosfile_create_dir(path, 0);
+		*cur++ = '.';
+	}
+}
+
+
+/**
+ * Create intermediate directories for Choices and User Data files
+ */
+static void ro_gui_create_dirs(void)
+{
+	char buf[256];
+	char *path;
+
+	/* Choices */
+	path = getenv("NetSurf$ChoicesSave");
+	if (!path)
+		die("Failed to find NetSurf Choices save path");
+
+	snprintf(buf, sizeof(buf), "%s", path);
+	ro_gui_create_dir(buf);
+
+	/* URL */
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(url_save));
+	ro_gui_create_dir(buf);
+
+	/* Hotlist */
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(hotlist_save));
+	ro_gui_create_dir(buf);
+
+	/* Recent */
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(recent_save));
+	ro_gui_create_dir(buf);
+
+	/* Theme */
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(theme_save));
+	ro_gui_create_dir(buf);
+	/* and the final directory part (as theme_save is a directory) */
+	xosfile_create_dir(buf, 0);
+}
+
+
+/**
+ * Ensures the gui exits cleanly.
+ */
+static void ro_gui_cleanup(void)
+{
+	ro_gui_buffer_close();
+	xhourglass_off();
+	/* Uninstall NetSurf-specific fonts */
+	xos_cli("FontRemove NetSurf:Resources.Fonts.");
+}
+
+
+/**
+ * Handles a signal
+ */
+static void ro_gui_signal(int sig)
+{
+	static const os_error error = { 1, "NetSurf has detected a serious "
+			"error and must exit. Please submit a bug report, "
+			"attaching the browser log file." };
+	os_colour old_sand, old_glass;
+
+	ro_gui_cleanup();
+
+	xhourglass_on();
+	xhourglass_colours(0x0000ffff, 0x000000ff, &old_sand, &old_glass);
+	nsoption_dump(stderr, NULL);
+	/*rufl_dump_state();*/
+
+#ifndef __ELF__
+	/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
+	int used;
+	xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
+	if (used) {
+		int curr_slot;
+		xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
+		LOG(("saving WimpSlot, size 0x%x", curr_slot));
+		xosfile_save("$.NetSurf_Slot", 0x8000, 0,
+				(byte *) 0x8000,
+				(byte *) 0x8000 + curr_slot);
+
+		if (__dynamic_num != -1) {
+			int size;
+			byte *base_address;
+			xosdynamicarea_read(__dynamic_num, &size,
+					&base_address, 0, 0, 0, 0, 0);
+			LOG(("saving DA %i, base %p, size 0x%x",
+					__dynamic_num,
+					base_address, size));
+			xosfile_save("$.NetSurf_DA",
+					(bits) base_address, 0,
+					base_address,
+					base_address + size);
+		}
+	}
+#else
+	/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
+	 * defines a coredump directory.  */
+	_kernel_oserror *err = __unixlib_write_coredump (NULL);
+	if (err != NULL)
+		LOG(("Coredump failed: %s", err->errmess));
+#endif
+
+	xhourglass_colours(old_sand, old_glass, 0, 0);
+	xhourglass_off();
+
+	__write_backtrace(sig);
+
+	xwimp_report_error_by_category(&error,
+			wimp_ERROR_BOX_GIVEN_CATEGORY |
+			wimp_ERROR_BOX_CATEGORY_ERROR <<
+				wimp_ERROR_BOX_CATEGORY_SHIFT,
+			"NetSurf", "!netsurf",
+			(osspriteop_area *) 1, "Quit", 0);
+	xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
+
+	_Exit(sig);
+}
+
+
+/**
+ * Read a "line" from an Acorn URI file.
+ *
+ * \param fp file pointer to read from
+ * \param b buffer for line, size 400 bytes
+ * \return true on success, false on EOF
+ */
+static bool ro_gui_uri_file_parse_line(FILE *fp, char *b)
+{
+	int c;
+	unsigned int i = 0;
+
+	c = getc(fp);
+	if (c == EOF)
+		return false;
+
+	/* skip comment lines */
+	while (c == '#') {
+		do { c = getc(fp); } while (c != EOF && 32 <= c);
+		if (c == EOF)
+			return false;
+		do { c = getc(fp); } while (c != EOF && c < 32);
+		if (c == EOF)
+			return false;
+	}
+
+	/* read "line" */
+	do {
+		if (i == 399)
+			return false;
+		b[i++] = c;
+		c = getc(fp);
+	} while (c != EOF && 32 <= c);
+
+	/* skip line ending control characters */
+	while (c != EOF && c < 32)
+		c = getc(fp);
+
+	if (c != EOF)
+		ungetc(c, fp);
+
+	b[i] = 0;
+	return true;
+}
+
+
+/**
+ * Parse an Acorn URI file.
+ *
+ * \param file_name file to read
+ * \param uri_title pointer to receive title data, or NULL for no data
+ * \return URL from file, or 0 on error and error reported
+ */
+static char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
+{
+	/* See the "Acorn URI Handler Functional Specification" for the
+	 * definition of the URI file format. */
+	char line[400];
+	char *url = NULL;
+	FILE *fp;
+
+	*uri_title = NULL;
+	fp = fopen(file_name, "rb");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"rb\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
+	}
+
+	/* "URI" */
+	if (!ro_gui_uri_file_parse_line(fp, line) || strcmp(line, "URI") != 0)
+		goto uri_syntax_error;
+
+	/* version */
+	if (!ro_gui_uri_file_parse_line(fp, line) ||
+			strspn(line, "0123456789") != strlen(line))
+		goto uri_syntax_error;
+
+	/* URI */
+	if (!ro_gui_uri_file_parse_line(fp, line))
+		goto uri_syntax_error;
+
+	url = strdup(line);
+	if (!url) {
+		warn_user("NoMemory", 0);
+		fclose(fp);
+		return 0;
+	}
+
+	/* title */
+	if (!ro_gui_uri_file_parse_line(fp, line))
+		goto uri_free;
+	if (uri_title && line[0] && ((line[0] != '*') || line[1])) {
+		*uri_title = strdup(line);
+		if (!*uri_title) /* non-fatal */
+			warn_user("NoMemory", 0);
+	}
+	fclose(fp);
+
+	return url;
+
+uri_free:
+	free(url);
+
+uri_syntax_error:
+	fclose(fp);
+	warn_user("URIError", 0);
+	return 0;
+}
+
+
+/**
+ * Parse an ANT URL file.
+ *
+ * \param  file_name  file to read
+ * \return  URL from file, or 0 on error and error reported
+ */
+static char *ro_gui_url_file_parse(const char *file_name)
+{
+	char line[400];
+	char *url;
+	FILE *fp;
+
+	fp = fopen(file_name, "r");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"r\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
+	}
+
+	if (!fgets(line, sizeof line, fp)) {
+		if (ferror(fp)) {
+			LOG(("fgets: %i: %s",
+					errno, strerror(errno)));
+			warn_user("LoadError", strerror(errno));
+		} else
+			warn_user("LoadError", messages_get("EmptyError"));
+		fclose(fp);
+		return 0;
+	}
+
+	fclose(fp);
+
+	if (line[strlen(line) - 1] == '\n')
+		line[strlen(line) - 1] = '\0';
+
+	url = strdup(line);
+	if (!url) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+
+	return url;
+}
+
+
+/**
+ * Parse an IEURL file.
+ *
+ * \param  file_name  file to read
+ * \return  URL from file, or 0 on error and error reported
+ */
+static char *ro_gui_ieurl_file_parse(const char *file_name)
+{
+	char line[400];
+	char *url = 0;
+	FILE *fp;
+
+	fp = fopen(file_name, "r");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"r\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
+	}
+
+	while (fgets(line, sizeof line, fp)) {
+		if (strncmp(line, "URL=", 4) == 0) {
+			if (line[strlen(line) - 1] == '\n')
+				line[strlen(line) - 1] = '\0';
+			url = strdup(line + 4);
+			if (!url) {
+				fclose(fp);
+				warn_user("NoMemory", 0);
+				return 0;
+			}
+			break;
+		}
+	}
+	if (ferror(fp)) {
+		LOG(("fgets: %i: %s",
+				errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		fclose(fp);
+		return 0;
+	}
+
+	fclose(fp);
+
+	if (!url)
+		warn_user("URIError", 0);
+
+	return url;
+}
+
+
+/**
+ * Handle Message_DataOpen (double-click on file in the Filer).
+ *
+ * \param message The wimp message to open.
+ */
+static void ro_msg_dataopen(wimp_message *message)
+{
+	int file_type = message->data.data_xfer.file_type;
+	char *url = 0;
+	os_error *oserror;
+	nsurl *urlns;
+	nserror error;
+	size_t len;
+
+	switch (file_type) {
+	case 0xb28:			/* ANT URL file */
+		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+		error = nsurl_create(url, &urlns);
+		free(url);
+		break;
+
+	case 0xfaf:		/* HTML file */
+		error = netsurf_path_to_nsurl(message->data.data_xfer.file_name,
+					      &urlns);
+		break;
+
+	case 0x1ba:		/* IEURL file */
+		url = ro_gui_ieurl_file_parse(message->
+				data.data_xfer.file_name);
+		error = nsurl_create(url, &urlns);
+		free(url);
+		break;
+
+	case 0x2000: 		/* application */
+		len = strlen(message->data.data_xfer.file_name);
+		if (len < 9 || strcmp(".!NetSurf",
+				message->data.data_xfer.file_name + len - 9))
+			return;
+
+		if (nsoption_charp(homepage_url) &&
+		    nsoption_charp(homepage_url)[0]) {
+			error = nsurl_create(nsoption_charp(homepage_url),
+					     &urlns);
+		} else {
+			error = nsurl_create(NETSURF_HOMEPAGE, &urlns);
+		}
+		break;
+
+	default:
+		return;
+	}
+
+	/* send DataLoadAck */
+	message->action = message_DATA_LOAD_ACK;
+	message->your_ref = message->my_ref;
+	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (oserror) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				oserror->errnum, oserror->errmess));
+		warn_user("WimpError", oserror->errmess);
+		return;
+	}
+
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+		return;
+	}
+
+	/* create a new window with the file */
+	error = browser_window_create(BW_CREATE_HISTORY,
+				      urlns,
+				      NULL,
+				      NULL,
+				      NULL);
+	nsurl_unref(urlns);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+}
+
+
+/**
+ * Handle Message_DataLoad (file dragged in).
+ */
+static void ro_msg_dataload(wimp_message *message)
+{
+	int file_type = message->data.data_xfer.file_type;
+	char *urltxt = NULL;
+	char *title = NULL;
+	struct gui_window *g;
+	os_error *oserror;
+	nsurl *url;
+	nserror error;
+
+	g = ro_gui_window_lookup(message->data.data_xfer.w);
+	if (g) {
+		if (ro_gui_window_dataload(g, message))
+			return;
+	}
+	else {
+		g = ro_gui_toolbar_lookup(message->data.data_xfer.w);
+		if (g && ro_gui_toolbar_dataload(g, message))
+			return;
+	}
+
+	switch (file_type) {
+		case FILETYPE_ACORN_URI:
+			urltxt = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
+					&title);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
+			break;
+
+		case FILETYPE_ANT_URL:
+			urltxt = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
+			break;
+
+		case FILETYPE_IEURL:
+			urltxt = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
+			error = nsurl_create(urltxt, &url);
+			free(urltxt);
+			break;
+
+		case FILETYPE_HTML:
+		case FILETYPE_JNG:
+		case FILETYPE_CSS:
+		case FILETYPE_MNG:
+		case FILETYPE_GIF:
+		case FILETYPE_BMP:
+		case FILETYPE_ICO:
+		case osfile_TYPE_DRAW:
+		case FILETYPE_PNG:
+		case FILETYPE_JPEG:
+		case osfile_TYPE_SPRITE:
+		case osfile_TYPE_TEXT:
+		case FILETYPE_ARTWORKS:
+		case FILETYPE_SVG:
+			/* display the actual file */
+			error = netsurf_path_to_nsurl(message->data.data_xfer.file_name, &url);
+			break;
+
+		default:
+			return;
+	}
+
+	/* report error to user */
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+		return;
+	}
+
+
+	if (g) {
+		error = browser_window_navigate(g->bw,
+						url,
+						NULL,
+						BW_NAVIGATE_HISTORY,
+						NULL,
+						NULL,
+						NULL);
+	} else {
+		error = browser_window_create(BW_CREATE_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+	}
+	nsurl_unref(url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+
+	/* send DataLoadAck */
+	message->action = message_DATA_LOAD_ACK;
+	message->your_ref = message->my_ref;
+	oserror = xwimp_send_message(wimp_USER_MESSAGE, message,
+			message->sender);
+	if (oserror) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				oserror->errnum, oserror->errmess));
+		warn_user("WimpError", oserror->errmess);
+		return;
+	}
+
+}
+
+
+/**
+ * Ensure that the filename in a data transfer message is NULL terminated
+ * (some applications, especially BASIC programs use CR)
+ *
+ * \param message message to be corrected
+ */
+static void ro_msg_terminate_filename(wimp_full_message_data_xfer *message)
+{
+	const char *ep = (char*)message + message->size;
+	char *p = message->file_name;
+
+	if ((size_t)message->size >= sizeof(*message))
+		ep = (char*)message + sizeof(*message) - 1;
+
+	while (p < ep && *p >= ' ') p++;
+	*p = '\0';
+}
+
+
+/**
+ * Handle Message_DataSave
+ */
+static void ro_msg_datasave(wimp_message *message)
+{
+	wimp_full_message_data_xfer *dataxfer = (wimp_full_message_data_xfer*)message;
+
+	/* remove ghost caret if drag-and-drop protocol was used */
+//	ro_gui_selection_drag_reset();
+
+	ro_msg_terminate_filename(dataxfer);
+
+	if (ro_gui_selection_prepare_paste_datasave(dataxfer))
+		return;
+
+	switch (dataxfer->file_type) {
+		case FILETYPE_ACORN_URI:
+		case FILETYPE_ANT_URL:
+		case FILETYPE_IEURL:
+		case FILETYPE_HTML:
+		case FILETYPE_JNG:
+		case FILETYPE_CSS:
+		case FILETYPE_MNG:
+		case FILETYPE_GIF:
+		case FILETYPE_BMP:
+		case FILETYPE_ICO:
+		case osfile_TYPE_DRAW:
+		case FILETYPE_PNG:
+		case FILETYPE_JPEG:
+		case osfile_TYPE_SPRITE:
+		case osfile_TYPE_TEXT:
+		case FILETYPE_ARTWORKS:
+		case FILETYPE_SVG: {
+			os_error *error;
+
+			dataxfer->your_ref = dataxfer->my_ref;
+			dataxfer->size = offsetof(wimp_full_message_data_xfer, file_name) + 16;
+			dataxfer->action = message_DATA_SAVE_ACK;
+			dataxfer->est_size = -1;
+			memcpy(dataxfer->file_name, "<Wimp$Scrap>", 13);
+
+			error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)dataxfer, message->sender);
+			if (error) {
+				LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+		}
+		break;
+	}
+}
+
+
+/**
+ * Handle Message_DataSaveAck.
+ */
+static void ro_msg_datasave_ack(wimp_message *message)
+{
+	ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
+
+	if (ro_print_ack(message))
+		return;
+
+	switch (gui_current_drag_type) {
+		case GUI_DRAG_DOWNLOAD_SAVE:
+			ro_gui_download_datasave_ack(message);
+			break;
+
+		case GUI_DRAG_SAVE:
+			ro_gui_save_datasave_ack(message);
+			gui_current_drag_type = GUI_DRAG_NONE;
+			break;
+
+		default:
+			break;
+	}
+
+	gui_current_drag_type = GUI_DRAG_NONE;
+}
+
+
+/**
+ * Handle PreQuit message
+ *
+ * \param  message  PreQuit message from Wimp
+ */
+static void ro_msg_prequit(wimp_message *message)
+{
+	if (!ro_gui_prequit()) {
+		os_error *error;
+
+		/* we're objecting to the close down */
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
+						message, message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+}
+
+
+/**
+ * Handle SaveDesktop message.
+ *
+ * \param message SaveDesktop message from Wimp.
+ */
+static void ro_msg_save_desktop(wimp_message *message)
+{
+	os_error *error;
+
+	error = xosgbpb_writew(message->data.save_desktopw.file,
+				(const byte*)"Run ", 4, NULL);
+	if (!error) {
+		error = xosgbpb_writew(message->data.save_desktopw.file,
+					(const byte*)NETSURF_DIR, strlen(NETSURF_DIR), NULL);
+		if (!error)
+			error = xos_bputw('\n', message->data.save_desktopw.file);
+	}
+
+	if (error) {
+		LOG(("xosgbpb_writew/xos_bputw: 0x%x:%s", error->errnum, error->errmess));
+		warn_user("SaveError", error->errmess);
+
+		/* we must cancel the save by acknowledging the message */
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
+						message, message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+}
+
+
+/**
+ * Handle WindowInfo message (part of the iconising protocol)
+ *
+ * \param  message  WindowInfo message from the Iconiser
+ */
+static void ro_msg_window_info(wimp_message *message)
+{
+	wimp_full_message_window_info *wi;
+	struct gui_window *g;
+
+	/* allow the user to turn off thumbnail icons */
+	if (!nsoption_bool(thumbnail_iconise))
+		return;
+
+	wi = (wimp_full_message_window_info*)message;
+	g = ro_gui_window_lookup(wi->w);
+
+	/* ic_<task name> will suffice for our other windows */
+	if (g) {
+		ro_gui_window_iconise(g, wi);
+		ro_gui_dialog_close_persistent(wi->w);
+	}
+}
+
+
+/**
+ * Get screen properties following a mode change.
+ */
+static void ro_gui_get_screen_properties(void)
+{
+	static const ns_os_vdu_var_list vars = {
+		os_MODEVAR_XWIND_LIMIT,
+		{
+			os_MODEVAR_YWIND_LIMIT,
+			os_MODEVAR_XEIG_FACTOR,
+			os_MODEVAR_YEIG_FACTOR,
+			os_VDUVAR_END_LIST
+		}
+	};
+	os_error *error;
+	int vals[4];
+
+	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
+	if (error) {
+		LOG(("xos_read_vdu_variables: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		return;
+	}
+	screen_info.width  = (vals[0] + 1) << vals[2];
+	screen_info.height = (vals[1] + 1) << vals[3];
+}
+
+
+/**
+ * Warn the user if Inet$Resolvers is not set.
+ */
+static void ro_gui_check_resolvers(void)
+{
+	char *resolvers;
+	resolvers = getenv("Inet$Resolvers");
+	if (resolvers && resolvers[0]) {
+		LOG(("Inet$Resolvers '%s'", resolvers));
+	} else {
+		LOG(("Inet$Resolvers not set or empty"));
+		warn_user("Resolvers", 0);
+	}
+}
+
+
+/**
+ * Initialise the RISC OS specific GUI.
+ *
+ * \param argc The number of command line arguments.
+ * \param argv The string vector of command line arguments.
+ */
+static nserror gui_init(int argc, char** argv)
 {
 	struct {
 		void (*sigabrt)(int);
@@ -421,7 +1113,9 @@ static void gui_init(int argc, char** argv)
 	int length;
 	char *nsdir_temp;
 	byte *base;
-	nserror err;
+	nsurl *url;
+	nserror ret;
+	bool open_window;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
 	 * which we're not interested in, and underflow which is incorrectly
@@ -544,27 +1238,35 @@ static void gui_init(int argc, char** argv)
 		die(error->errmess);
 	}
 
-	err = treeview_init(12);
-	if (err != NSERROR_OK) {
+	ret = treeview_init(12);
+	if (ret != NSERROR_OK) {
 		die("Failed to initialise treeview");
 	}
 
 	/* Initialise themes before dialogs */
 	ro_gui_theme_initialise();
+
 	/* Initialise dialog windows (must be after UI sprites are loaded) */
 	ro_gui_dialog_init();
+
 	/* Initialise download window */
 	ro_gui_download_init();
+
 	/* Initialise menus */
 	ro_gui_menu_init();
+
 	/* Initialise query windows */
 	ro_gui_query_init();
+
 	/* Initialise the history subsystem */
 	ro_gui_history_init();
+
 	/* Initialise toolbars */
 	ro_toolbar_init();
+
 	/* Initialise url bar module */
 	ro_gui_url_bar_init();
+
 	/* Initialise browser windows */
 	ro_gui_window_initialise();
 
@@ -576,89 +1278,84 @@ static void gui_init(int argc, char** argv)
 
 	/* Finally, check Inet$Resolvers for sanity */
 	ro_gui_check_resolvers();
-}
 
-/**
- * Create intermediate directories for Choices and User Data files
- */
-void ro_gui_create_dirs(void)
-{
-	char buf[256];
-	char *path;
+	/* certificate verification window */
+	ro_gui_cert_postinitialise();
 
-	/* Choices */
-	path = getenv("NetSurf$ChoicesSave");
-	if (!path)
-		die("Failed to find NetSurf Choices save path");
+	/* hotlist window */
+	ro_gui_hotlist_postinitialise();
 
-	snprintf(buf, sizeof(buf), "%s", path);
-	ro_gui_create_dir(buf);
+	/* global history window */
+	ro_gui_global_history_postinitialise();
 
-	/* URL */
-	snprintf(buf, sizeof(buf), "%s", nsoption_charp(url_save));
-	ro_gui_create_dir(buf);
+	/* cookies window */
+	ro_gui_cookies_postinitialise();
 
-	/* Hotlist */
-	snprintf(buf, sizeof(buf), "%s", nsoption_charp(hotlist_save));
-	ro_gui_create_dir(buf);
+	open_window = nsoption_bool(open_browser_at_startup);
 
-	/* Recent */
-	snprintf(buf, sizeof(buf), "%s", nsoption_charp(recent_save));
-	ro_gui_create_dir(buf);
-
-	/* Theme */
-	snprintf(buf, sizeof(buf), "%s", nsoption_charp(theme_save));
-	ro_gui_create_dir(buf);
-	/* and the final directory part (as theme_save is a directory) */
-	xosfile_create_dir(buf, 0);
-}
-
-
-/**
- * Create directory structure for a path
- *
- * Given a path of x.y.z directories x and x.y will be created
- *
- * \param path the directory path to create
- */
-void ro_gui_create_dir(char *path)
-{
-  	char *cur = path;
-	while ((cur = strchr(cur, '.'))) {
-		*cur = '\0';
-		xosfile_create_dir(path, 0);
-		*cur++ = '.';
-	}
-}
-
-
-/**
- * Choose the language to use.
- */
-
-void ro_gui_choose_language(void)
-{
-	/* if option_language exists and is valid, use that */
-	if (nsoption_charp(language)) {
-		char path[40];
-		if (2 < strlen(nsoption_charp(language)))
-			nsoption_charp(language)[2] = 0;
-		sprintf(path, "NetSurf:Resources.%s", nsoption_charp(language));
-
-		if (is_dir(path)) {
-			nsoption_setnull_charp(accept_language, 
-					strdup(nsoption_charp(language)));
-			return;
+	/* parse command-line arguments */
+	if (argc == 2) {
+		LOG(("parameters: '%s'", argv[1]));
+		/* this is needed for launching URI files */
+		if (strcasecmp(argv[1], "-nowin") == 0) {
+			return NSERROR_OK;
 		}
-		nsoption_set_charp(language, NULL);
+		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
+	}
+	else if (argc == 3) {
+		LOG(("parameters: '%s' '%s'", argv[1], argv[2]));
+		open_window = true;
+
+		/* HTML files */
+		if (strcasecmp(argv[1], "-html") == 0) {
+			ret = netsurf_path_to_nsurl(argv[2], &url);
+		}
+		/* URL files */
+		else if (strcasecmp(argv[1], "-urlf") == 0) {
+			char *urlf = ro_gui_url_file_parse(argv[2]);
+			if (!urlf) {
+				LOG(("allocation failed"));
+				die("Insufficient memory for URL");
+			}
+			ret = nsurl_create(urlf, &url);
+			free(urlf);
+		}
+		/* ANT URL Load */
+		else if (strcasecmp(argv[1], "-url") == 0) {
+			ret = nsurl_create(argv[2], &url);
+		}
+		/* Unknown => exit here. */
+		else {
+			LOG(("Unknown parameters: '%s' '%s'",
+				argv[1], argv[2]));
+			return NSERROR_BAD_PARAMETER;
+		}
+	}
+	/* get user's homepage (if configured) */
+	else if (nsoption_charp(homepage_url) &&
+		 nsoption_charp(homepage_url)[0]) {
+		ret = nsurl_create(nsoption_charp(homepage_url), &url);
+	}
+	/* default homepage */
+	else {
+		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
 	}
 
-	nsoption_set_charp(language, strdup(ro_gui_default_language()));
-	if (nsoption_charp(language) == NULL)
-		die("Out of memory");
-	nsoption_set_charp(accept_language, strdup(nsoption_charp(language)));
-	if (nsoption_charp(accept_language) == NULL)
-		die("Out of memory");
+	/* check for url creation error */
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	if (open_window) {
+		ret = browser_window_create(BW_CREATE_HISTORY,
+					    url,
+					    NULL,
+					    NULL,
+					    NULL);
+	}
+	nsurl_unref(url);
+
+	return ret;
 }
 
 
@@ -668,7 +1365,6 @@ void ro_gui_choose_language(void)
  * RISC OS has no standard way of determining which language the user prefers.
  * We have to guess from the 'Country' setting.
  */
-
 const char *ro_gui_default_language(void)
 {
 	char path[40];
@@ -708,29 +1404,6 @@ const char *ro_gui_default_language(void)
 
 
 /**
- * Warn the user if Inet$Resolvers is not set.
- */
-
-void ro_gui_check_resolvers(void)
-{
-	char *resolvers;
-	resolvers = getenv("Inet$Resolvers");
-	if (resolvers && resolvers[0]) {
-		LOG(("Inet$Resolvers '%s'", resolvers));
-	} else {
-		LOG(("Inet$Resolvers not set or empty"));
-		warn_user("Resolvers", 0);
-	}
-}
-
-/**
- * Convert a RISC OS pathname to a file: URL.
- *
- * \param  path  RISC OS pathname
- * \return  URL, allocated on heap, or 0 on failure
- */
-
-/**
  * Create a nsurl from a RISC OS pathname.
  *
  * Perform the necessary operations on a path to generate a nsurl.
@@ -751,7 +1424,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	int urllen;
 	char *url; /* resulting url */
 
-        /* calculate the canonical risc os path */
+	/* calculate the canonical risc os path */
 	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
@@ -785,7 +1458,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	}
 	free(canonical_path);
 
-        /* convert the unix path into a url */
+	/* convert the unix path into a url */
 	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
 	url = malloc(urllen);
 	if (url == NULL) {
@@ -813,6 +1486,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 
 	return ret;
 }
+
 
 /**
  * Create a path from a nsurl using posix file handling.
@@ -882,104 +1556,11 @@ static nserror ro_nsurl_to_path(struct nsurl *url, char **path_out)
 
 
 /**
- * Last-minute gui init, after all other modules have initialised.
- */
-
-static void gui_init2(int argc, char** argv)
-{
-	nsurl *url;
-	nserror ret;
-	bool open_window;
-
-	/* Complete initialisation of the treeview modules. */
-
-	/* certificate verification window */
-	ro_gui_cert_postinitialise();
-
-	/* hotlist window */
-	ro_gui_hotlist_postinitialise();
-
-	/* global history window */
-	ro_gui_global_history_postinitialise();
-
-	/* cookies window */
-	ro_gui_cookies_postinitialise();
-
-	open_window = nsoption_bool(open_browser_at_startup);
-
-	/* parse command-line arguments */
-	if (argc == 2) {
-		LOG(("parameters: '%s'", argv[1]));
-		/* this is needed for launching URI files */
-		if (strcasecmp(argv[1], "-nowin") == 0) {
-			return;
-		}
-		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
-	}
-	else if (argc == 3) {
-		LOG(("parameters: '%s' '%s'", argv[1], argv[2]));
-		open_window = true;
-
-		/* HTML files */
-		if (strcasecmp(argv[1], "-html") == 0) {
-			ret = netsurf_path_to_nsurl(argv[2], &url);
-		}
-		/* URL files */
-		else if (strcasecmp(argv[1], "-urlf") == 0) {
-			char *urlf = ro_gui_url_file_parse(argv[2]);
-			if (!urlf) {
-				LOG(("allocation failed"));
-				die("Insufficient memory for URL");
-			}
-			ret = nsurl_create(urlf, &url);
-			free(urlf);
-		}
-		/* ANT URL Load */
-		else if (strcasecmp(argv[1], "-url") == 0) {
-			ret = nsurl_create(argv[2], &url);
-		}
-		/* Unknown => exit here. */
-		else {
-			LOG(("Unknown parameters: '%s' '%s'",
-				argv[1], argv[2]));
-			return;
-		}
-	}
-	/* get user's homepage (if configured) */
-	else if (nsoption_charp(homepage_url) &&
-		 nsoption_charp(homepage_url)[0]) {
-		ret = nsurl_create(nsoption_charp(homepage_url), &url);
-	}
-	/* default homepage */
-	else {
-		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
-	}
-
-	/* check for url creation error */
-	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
-		return;
-	}
-
-	if (open_window) {
-		ret = browser_window_create(BW_CREATE_HISTORY,
-					    url,
-					    NULL,
-					    NULL,
-					    NULL);
-		if (ret != NSERROR_OK) {
-			warn_user(messages_get_errorcode(ret), 0);
-		}
-	}
-	nsurl_unref(url);	
-}
-
-/** 
- * Ensures output logging stream is correctly configured
+ * Ensures output logging stream is correctly configured.
  */
 static bool nslog_stream_configure(FILE *fptr)
 {
-        /* set log stream to be non-buffering */
+	/* set log stream to be non-buffering */
 	setbuf(fptr, NULL);
 
 	return true;
@@ -989,7 +1570,6 @@ static bool nslog_stream_configure(FILE *fptr)
 /**
  * Close down the gui (RISC OS).
  */
-
 static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
@@ -1008,238 +1588,9 @@ static void gui_quit(void)
 
 
 /**
- * Handles a signal
- */
-
-void ro_gui_signal(int sig)
-{
-	static const os_error error = { 1, "NetSurf has detected a serious "
-			"error and must exit. Please submit a bug report, "
-			"attaching the browser log file." };
-	os_colour old_sand, old_glass;
-
-	ro_gui_cleanup();
-
-	xhourglass_on();
-	xhourglass_colours(0x0000ffff, 0x000000ff, &old_sand, &old_glass);
-	nsoption_dump(stderr, NULL);
-	/*rufl_dump_state();*/
-
-#ifndef __ELF__
-	/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
-	int used;
-	xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
-	if (used) {
-		int curr_slot;
-		xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
-		LOG(("saving WimpSlot, size 0x%x", curr_slot));
-		xosfile_save("$.NetSurf_Slot", 0x8000, 0,
-				(byte *) 0x8000,
-				(byte *) 0x8000 + curr_slot);
-
-		if (__dynamic_num != -1) {
-			int size;
-			byte *base_address;
-			xosdynamicarea_read(__dynamic_num, &size,
-					&base_address, 0, 0, 0, 0, 0);
-			LOG(("saving DA %i, base %p, size 0x%x",
-					__dynamic_num,
-					base_address, size));
-			xosfile_save("$.NetSurf_DA",
-					(bits) base_address, 0,
-					base_address,
-					base_address + size);
-		}
-	}
-#else
-	/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
-	 * defines a coredump directory.  */
-	_kernel_oserror *err = __unixlib_write_coredump (NULL);
-	if (err != NULL)
-		LOG(("Coredump failed: %s", err->errmess));
-#endif
-
-	xhourglass_colours(old_sand, old_glass, 0, 0);
-	xhourglass_off();
-
-	__write_backtrace(sig);
-
-	xwimp_report_error_by_category(&error,
-			wimp_ERROR_BOX_GIVEN_CATEGORY |
-			wimp_ERROR_BOX_CATEGORY_ERROR <<
-				wimp_ERROR_BOX_CATEGORY_SHIFT,
-			"NetSurf", "!netsurf",
-			(osspriteop_area *) 1, "Quit", 0);
-	xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
-
-	_Exit(sig);
-}
-
-
-/**
- * Ensures the gui exits cleanly.
- */
-
-void ro_gui_cleanup(void)
-{
-	ro_gui_buffer_close();
-	xhourglass_off();
-	/* Uninstall NetSurf-specific fonts */
-	xos_cli("FontRemove NetSurf:Resources.Fonts.");
-}
-
-
-/**
- * Poll the OS for events (RISC OS).
- *
- * \param active return as soon as possible
- */
-
-static void riscos_poll(bool active)
-{
-	wimp_event_no event;
-	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
-			wimp_SAVE_FP;
-	os_t track_poll_offset;
-
-	/* Poll wimp. */
-	xhourglass_off();
-	track_poll_offset = ro_mouse_poll_interval();
-	if (active) {
-		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || (track_poll_offset > 0) ||
-			browser_reformat_pending) {
-		os_t t = os_read_monotonic_time();
-
-		if (track_poll_offset > 0)
-			t += track_poll_offset;
-		else
-			t += 10;
-
-		if (sched_active && (sched_time - t) < 0)
-			t = sched_time;
-
-		event = wimp_poll_idle(mask, &block, t, 0);
-	} else {
-		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
-	}
-
-	xhourglass_on();
-	gui_last_poll = clock();
-	ro_gui_handle_event(event, &block);
-
-	/* Only run scheduled callbacks on a null poll
-	 * We cannot do this in the null event handler, as that may be called
-	 * from gui_multitask(). Scheduled callbacks must only be run from the
-	 * top-level.
-	 */
-	if (event == wimp_NULL_REASON_CODE) {
-		schedule_run();
-	}
-
-	ro_gui_window_update_boxes();
-
-	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
-		ro_gui_window_process_reformats();
-}
-
-
-/**
- * Process a Wimp_Poll event.
- *
- * \param event wimp event number
- * \param block parameter block
- */
-
-void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
-{
-	switch (event) {
-		case wimp_NULL_REASON_CODE:
-			ro_gui_throb();
-			ro_mouse_poll();
-			break;
-
-		case wimp_REDRAW_WINDOW_REQUEST:
-			ro_gui_wimp_event_redraw_window(&block->redraw);
-			break;
-
-		case wimp_OPEN_WINDOW_REQUEST:
-			ro_gui_open_window_request(&block->open);
-			break;
-
-		case wimp_CLOSE_WINDOW_REQUEST:
-			ro_gui_close_window_request(&block->close);
-			break;
-
-		case wimp_POINTER_LEAVING_WINDOW:
-			ro_mouse_pointer_leaving_window(&block->leaving);
-			break;
-
-		case wimp_POINTER_ENTERING_WINDOW:
-			ro_gui_wimp_event_pointer_entering_window(&block->entering);
-			break;
-
-		case wimp_MOUSE_CLICK:
-			ro_gui_wimp_event_mouse_click(&block->pointer);
-			break;
-
-		case wimp_USER_DRAG_BOX:
-			ro_mouse_drag_end(&block->dragged);
-			break;
-
-		case wimp_KEY_PRESSED:
-			ro_gui_keypress(&(block->key));
-			break;
-
-		case wimp_MENU_SELECTION:
-			ro_gui_menu_selection(&(block->selection));
-			break;
-
-		/* Scroll requests fall back to a generic handler because we
-		 * might get these events for any window from a scroll-wheel.
-		 */
-
-		case wimp_SCROLL_REQUEST:
-			if (!ro_gui_wimp_event_scroll_window(&(block->scroll)))
-				ro_gui_scroll(&(block->scroll));
-			break;
-
-		case wimp_USER_MESSAGE:
-		case wimp_USER_MESSAGE_RECORDED:
-		case wimp_USER_MESSAGE_ACKNOWLEDGE:
-			ro_gui_user_message(event, &(block->message));
-			break;
-	}
-}
-
-
-/**
- * Handle Open_Window_Request events.
- */
-
-void ro_gui_open_window_request(wimp_open *open)
-{
-	os_error *error;
-
-	if (ro_gui_wimp_event_open_window(open))
-		return;
-
-	error = xwimp_open_window(open);
-	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-}
-
-
-/**
  * Handle Close_Window_Request events.
  */
-
-void ro_gui_close_window_request(wimp_close *close)
+static void ro_gui_close_window_request(wimp_close *close)
 {
 	if (ro_gui_alt_pressed())
 		ro_gui_window_close_all();
@@ -1252,9 +1603,8 @@ void ro_gui_close_window_request(wimp_close *close)
 
 
 /**
- * Handle Key_Pressed events.
+ * Handle key press paste callback.
  */
-
 static void ro_gui_keypress_cb(void *pw)
 {
 	wimp_key *key = (wimp_key *) pw;
@@ -1271,14 +1621,20 @@ static void ro_gui_keypress_cb(void *pw)
 	free(key);
 }
 
-void ro_gui_keypress(wimp_key *key)
+
+/**
+ * Handle gui keypress.
+ */
+static void ro_gui_keypress(wimp_key *key)
 {
 	if (key->c == wimp_KEY_ESCAPE &&
 		(gui_current_drag_type == GUI_DRAG_SAVE ||
 		 gui_current_drag_type == GUI_DRAG_DOWNLOAD_SAVE)) {
 
-		/* Allow Escape key to be used for cancelling a drag save
-			(easier than finding somewhere safe to abort the drag) */
+		/* Allow Escape key to be used for cancelling a drag
+		 * save (easier than finding somewhere safe to abort
+		 * the drag)
+		 */
 		ro_gui_drag_box_cancel();
 		gui_current_drag_type = GUI_DRAG_NONE;
 	} else if (key->c == 22 /* Ctrl-V */) {
@@ -1305,7 +1661,7 @@ void ro_gui_keypress(wimp_key *key)
 /**
  * Handle the three User_Message events.
  */
-void ro_gui_user_message(wimp_event_no event, wimp_message *message)
+static void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
 	/* attempt automatic routing */
 	if (ro_message_handle_message(event, message))
@@ -1440,640 +1796,172 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 
 /**
- * Ensure that the filename in a data transfer message is NUL terminated
- * (some applications, especially BASIC programs use CR)
+ * Process a Wimp_Poll event.
  *
- * \param  message  message to be corrected
+ * \param event wimp event number
+ * \param block parameter block
  */
-
-void ro_msg_terminate_filename(wimp_full_message_data_xfer *message)
+static void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 {
-	const char *ep = (char*)message + message->size;
-	char *p = message->file_name;
+	switch (event) {
+		case wimp_NULL_REASON_CODE:
+			ro_gui_throb();
+			ro_mouse_poll();
+			break;
 
-	if ((size_t)message->size >= sizeof(*message))
-		ep = (char*)message + sizeof(*message) - 1;
+		case wimp_REDRAW_WINDOW_REQUEST:
+			ro_gui_wimp_event_redraw_window(&block->redraw);
+			break;
 
-	while (p < ep && *p >= ' ') p++;
-	*p = '\0';
+		case wimp_OPEN_WINDOW_REQUEST:
+			ro_gui_open_window_request(&block->open);
+			break;
+
+		case wimp_CLOSE_WINDOW_REQUEST:
+			ro_gui_close_window_request(&block->close);
+			break;
+
+		case wimp_POINTER_LEAVING_WINDOW:
+			ro_mouse_pointer_leaving_window(&block->leaving);
+			break;
+
+		case wimp_POINTER_ENTERING_WINDOW:
+			ro_gui_wimp_event_pointer_entering_window(&block->entering);
+			break;
+
+		case wimp_MOUSE_CLICK:
+			ro_gui_wimp_event_mouse_click(&block->pointer);
+			break;
+
+		case wimp_USER_DRAG_BOX:
+			ro_mouse_drag_end(&block->dragged);
+			break;
+
+		case wimp_KEY_PRESSED:
+			ro_gui_keypress(&(block->key));
+			break;
+
+		case wimp_MENU_SELECTION:
+			ro_gui_menu_selection(&(block->selection));
+			break;
+
+		/* Scroll requests fall back to a generic handler because we
+		 * might get these events for any window from a scroll-wheel.
+		 */
+
+		case wimp_SCROLL_REQUEST:
+			if (!ro_gui_wimp_event_scroll_window(&(block->scroll)))
+				ro_gui_scroll(&(block->scroll));
+			break;
+
+		case wimp_USER_MESSAGE:
+		case wimp_USER_MESSAGE_RECORDED:
+		case wimp_USER_MESSAGE_ACKNOWLEDGE:
+			ro_gui_user_message(event, &(block->message));
+			break;
+	}
 }
 
 
 /**
- * Handle Message_DataLoad (file dragged in).
+ * Poll the OS for events (RISC OS).
+ *
+ * \param active return as soon as possible
  */
-
-void ro_msg_dataload(wimp_message *message)
+static void riscos_poll(bool active)
 {
-	int file_type = message->data.data_xfer.file_type;
-	char *urltxt = NULL;
-	char *title = NULL;
-	struct gui_window *g;
-	os_error *oserror;
-	nsurl *url;
-	nserror error;
+	wimp_event_no event;
+	wimp_block block;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
+			wimp_SAVE_FP;
+	os_t track_poll_offset;
 
-	g = ro_gui_window_lookup(message->data.data_xfer.w);
-	if (g) {
-		if (ro_gui_window_dataload(g, message))
-			return;
-	}
-	else {
-		g = ro_gui_toolbar_lookup(message->data.data_xfer.w);
-		if (g && ro_gui_toolbar_dataload(g, message))
-			return;
-	}
+	/* Poll wimp. */
+	xhourglass_off();
+	track_poll_offset = ro_mouse_poll_interval();
+	if (active) {
+		event = wimp_poll(mask, &block, 0);
+	} else if (sched_active || (track_poll_offset > 0) ||
+			browser_reformat_pending) {
+		os_t t = os_read_monotonic_time();
 
-	switch (file_type) {
-		case FILETYPE_ACORN_URI:
-			urltxt = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
-					&title);
-			error = nsurl_create(urltxt, &url);
-			free(urltxt);
-			break;
+		if (track_poll_offset > 0)
+			t += track_poll_offset;
+		else
+			t += 10;
 
-		case FILETYPE_ANT_URL:
-			urltxt = ro_gui_url_file_parse(message->data.data_xfer.file_name);
-			error = nsurl_create(urltxt, &url);
-			free(urltxt);
-			break;
+		if (sched_active && (sched_time - t) < 0)
+			t = sched_time;
 
-		case FILETYPE_IEURL:
-			urltxt = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
-			error = nsurl_create(urltxt, &url);
-			free(urltxt);
-			break;
-
-		case FILETYPE_HTML:
-		case FILETYPE_JNG:
-		case FILETYPE_CSS:
-		case FILETYPE_MNG:
-		case FILETYPE_GIF:
-		case FILETYPE_BMP:
-		case FILETYPE_ICO:
-		case osfile_TYPE_DRAW:
-		case FILETYPE_PNG:
-		case FILETYPE_JPEG:
-		case osfile_TYPE_SPRITE:
-		case osfile_TYPE_TEXT:
-		case FILETYPE_ARTWORKS:
-		case FILETYPE_SVG:
-			/* display the actual file */
-			error = netsurf_path_to_nsurl(message->data.data_xfer.file_name, &url);
-			break;
-
-		default:
-			return;
-	}
-
-	/* report error to user */
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-		return;
-	}
-
-
-	if (g) {
-		error = browser_window_navigate(g->bw,
-						url,
-						NULL,
-						BW_NAVIGATE_HISTORY,
-						NULL,
-						NULL,
-						NULL);
+		event = wimp_poll_idle(mask, &block, t, 0);
 	} else {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-	}
-	nsurl_unref(url);	
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
 	}
 
+	xhourglass_on();
+	gui_last_poll = clock();
+	ro_gui_handle_event(event, &block);
 
-	/* send DataLoadAck */
-	message->action = message_DATA_LOAD_ACK;
-	message->your_ref = message->my_ref;
-	oserror = xwimp_send_message(wimp_USER_MESSAGE, message,
-			message->sender);
-	if (oserror) {
-		LOG(("xwimp_send_message: 0x%x: %s",
-				oserror->errnum, oserror->errmess));
-		warn_user("WimpError", oserror->errmess);
-		return;
+	/* Only run scheduled callbacks on a null poll
+	 * We cannot do this in the null event handler, as that may be called
+	 * from gui_multitask(). Scheduled callbacks must only be run from the
+	 * top-level.
+	 */
+	if (event == wimp_NULL_REASON_CODE) {
+		schedule_run();
 	}
 
+	ro_gui_window_update_boxes();
+
+	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
+		ro_gui_window_process_reformats();
 }
 
 
 /**
- * Parse an Acorn URI file.
- *
- * \param  file_name  file to read
- * \param  uri_title  pointer to receive title data, or NULL for no data
- * \return  URL from file, or 0 on error and error reported
+ * Handle Open_Window_Request events.
  */
-
-char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
-{
-	/* See the "Acorn URI Handler Functional Specification" for the
-	 * definition of the URI file format. */
-	char line[400];
-	char *url = NULL;
-	FILE *fp;
-
-	*uri_title = NULL;
-	fp = fopen(file_name, "rb");
-	if (!fp) {
-		LOG(("fopen(\"%s\", \"rb\"): %i: %s",
-				file_name, errno, strerror(errno)));
-		warn_user("LoadError", strerror(errno));
-		return 0;
-	}
-
-	/* "URI" */
-	if (!ro_gui_uri_file_parse_line(fp, line) || strcmp(line, "URI") != 0)
-		goto uri_syntax_error;
-
-	/* version */
-	if (!ro_gui_uri_file_parse_line(fp, line) ||
-			strspn(line, "0123456789") != strlen(line))
-		goto uri_syntax_error;
-
-	/* URI */
-	if (!ro_gui_uri_file_parse_line(fp, line))
-		goto uri_syntax_error;
-
-	url = strdup(line);
-	if (!url) {
-		warn_user("NoMemory", 0);
-		fclose(fp);
-		return 0;
-	}
-
-	/* title */
-	if (!ro_gui_uri_file_parse_line(fp, line))
-		goto uri_free;
-	if (uri_title && line[0] && ((line[0] != '*') || line[1])) {
-		*uri_title = strdup(line);
-		if (!*uri_title) /* non-fatal */
-			warn_user("NoMemory", 0);
-	}
-	fclose(fp);
-
-	return url;
-
-uri_free:
-	free(url);
-
-uri_syntax_error:
-	fclose(fp);
-	warn_user("URIError", 0);
-	return 0;
-}
-
-
-/**
- * Read a "line" from an Acorn URI file.
- *
- * \param  fp  file pointer to read from
- * \param  b   buffer for line, size 400 bytes
- * \return  true on success, false on EOF
- */
-
-bool ro_gui_uri_file_parse_line(FILE *fp, char *b)
-{
-	int c;
-	unsigned int i = 0;
-
-	c = getc(fp);
-	if (c == EOF)
-		return false;
-
-	/* skip comment lines */
-	while (c == '#') {
-		do { c = getc(fp); } while (c != EOF && 32 <= c);
-		if (c == EOF)
-			return false;
-		do { c = getc(fp); } while (c != EOF && c < 32);
-		if (c == EOF)
-			return false;
-	}
-
-	/* read "line" */
-	do {
-		if (i == 399)
-			return false;
-		b[i++] = c;
-		c = getc(fp);
-	} while (c != EOF && 32 <= c);
-
-	/* skip line ending control characters */
-	while (c != EOF && c < 32)
-		c = getc(fp);
-
-	if (c != EOF)
-		ungetc(c, fp);
-
-	b[i] = 0;
-	return true;
-}
-
-
-/**
- * Parse an ANT URL file.
- *
- * \param  file_name  file to read
- * \return  URL from file, or 0 on error and error reported
- */
-
-char *ro_gui_url_file_parse(const char *file_name)
-{
-	char line[400];
-	char *url;
-	FILE *fp;
-
-	fp = fopen(file_name, "r");
-	if (!fp) {
-		LOG(("fopen(\"%s\", \"r\"): %i: %s",
-				file_name, errno, strerror(errno)));
-		warn_user("LoadError", strerror(errno));
-		return 0;
-	}
-
-	if (!fgets(line, sizeof line, fp)) {
-		if (ferror(fp)) {
-			LOG(("fgets: %i: %s",
-					errno, strerror(errno)));
-			warn_user("LoadError", strerror(errno));
-		} else
-			warn_user("LoadError", messages_get("EmptyError"));
-		fclose(fp);
-		return 0;
-	}
-
-	fclose(fp);
-
-	if (line[strlen(line) - 1] == '\n')
-		line[strlen(line) - 1] = '\0';
-
-	url = strdup(line);
-	if (!url) {
-		warn_user("NoMemory", 0);
-		return 0;
-	}
-
-	return url;
-}
-
-
-/**
- * Parse an IEURL file.
- *
- * \param  file_name  file to read
- * \return  URL from file, or 0 on error and error reported
- */
-
-char *ro_gui_ieurl_file_parse(const char *file_name)
-{
-	char line[400];
-	char *url = 0;
-	FILE *fp;
-
-	fp = fopen(file_name, "r");
-	if (!fp) {
-		LOG(("fopen(\"%s\", \"r\"): %i: %s",
-				file_name, errno, strerror(errno)));
-		warn_user("LoadError", strerror(errno));
-		return 0;
-	}
-
-	while (fgets(line, sizeof line, fp)) {
-		if (strncmp(line, "URL=", 4) == 0) {
-			if (line[strlen(line) - 1] == '\n')
-				line[strlen(line) - 1] = '\0';
-			url = strdup(line + 4);
-			if (!url) {
-				fclose(fp);
-				warn_user("NoMemory", 0);
-				return 0;
-			}
-			break;
-		}
-	}
-	if (ferror(fp)) {
-		LOG(("fgets: %i: %s",
-				errno, strerror(errno)));
-		warn_user("LoadError", strerror(errno));
-		fclose(fp);
-		return 0;
-	}
-
-	fclose(fp);
-
-	if (!url)
-		warn_user("URIError", 0);
-
-	return url;
-}
-
-
-/**
- * Handle Message_DataSave
- */
-
-void ro_msg_datasave(wimp_message *message)
-{
-	wimp_full_message_data_xfer *dataxfer = (wimp_full_message_data_xfer*)message;
-
-	/* remove ghost caret if drag-and-drop protocol was used */
-//	ro_gui_selection_drag_reset();
-
-	ro_msg_terminate_filename(dataxfer);
-
-	if (ro_gui_selection_prepare_paste_datasave(dataxfer))
-		return;
-
-	switch (dataxfer->file_type) {
-		case FILETYPE_ACORN_URI:
-		case FILETYPE_ANT_URL:
-		case FILETYPE_IEURL:
-		case FILETYPE_HTML:
-		case FILETYPE_JNG:
-		case FILETYPE_CSS:
-		case FILETYPE_MNG:
-		case FILETYPE_GIF:
-		case FILETYPE_BMP:
-		case FILETYPE_ICO:
-		case osfile_TYPE_DRAW:
-		case FILETYPE_PNG:
-		case FILETYPE_JPEG:
-		case osfile_TYPE_SPRITE:
-		case osfile_TYPE_TEXT:
-		case FILETYPE_ARTWORKS:
-		case FILETYPE_SVG: {
-			os_error *error;
-
-			dataxfer->your_ref = dataxfer->my_ref;
-			dataxfer->size = offsetof(wimp_full_message_data_xfer, file_name) + 16;
-			dataxfer->action = message_DATA_SAVE_ACK;
-			dataxfer->est_size = -1;
-			memcpy(dataxfer->file_name, "<Wimp$Scrap>", 13);
-
-			error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)dataxfer, message->sender);
-			if (error) {
-				LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-			}
-		}
-		break;
-	}
-}
-
-
-/**
- * Handle Message_DataSaveAck.
- */
-
-void ro_msg_datasave_ack(wimp_message *message)
-{
-	ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
-
-	if (ro_print_ack(message))
-		return;
-
-	switch (gui_current_drag_type) {
-		case GUI_DRAG_DOWNLOAD_SAVE:
-			ro_gui_download_datasave_ack(message);
-			break;
-
-		case GUI_DRAG_SAVE:
-			ro_gui_save_datasave_ack(message);
-			gui_current_drag_type = GUI_DRAG_NONE;
-			break;
-
-		default:
-			break;
-	}
-	
-	gui_current_drag_type = GUI_DRAG_NONE;
-}
-
-
-/**
- * Handle Message_DataOpen (double-click on file in the Filer).
- */
-
-void ro_msg_dataopen(wimp_message *message)
-{
-	int file_type = message->data.data_xfer.file_type;
-	char *url = 0;
-	os_error *oserror;
-	nsurl *urlns;
-	nserror error;
-	size_t len;
-
-	switch (file_type) {
-	case 0xb28:			/* ANT URL file */
-		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
-		error = nsurl_create(url, &urlns);
-		free(url);
-		break;
-
-	case 0xfaf:		/* HTML file */
-		error = netsurf_path_to_nsurl(message->data.data_xfer.file_name,
-					      &urlns);
-		break;
-
-	case 0x1ba:		/* IEURL file */
-		url = ro_gui_ieurl_file_parse(message->
-				data.data_xfer.file_name);
-		error = nsurl_create(url, &urlns);
-		free(url);
-		break;
-
-	case 0x2000: 		/* application */
-		len = strlen(message->data.data_xfer.file_name);
-		if (len < 9 || strcmp(".!NetSurf",
-				message->data.data_xfer.file_name + len - 9))
-			return;
-
-		if (nsoption_charp(homepage_url) &&
-		    nsoption_charp(homepage_url)[0]) {
-			error = nsurl_create(nsoption_charp(homepage_url),
-					     &urlns);
-		} else {
-			error = nsurl_create(NETSURF_HOMEPAGE, &urlns);
-		}
-		break;
-
-	default:
-		return;
-	}
-
-	/* send DataLoadAck */
-	message->action = message_DATA_LOAD_ACK;
-	message->your_ref = message->my_ref;
-	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
-	if (oserror) {
-		LOG(("xwimp_send_message: 0x%x: %s",
-				oserror->errnum, oserror->errmess));
-		warn_user("WimpError", oserror->errmess);
-		return;
-	}
-
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-		return;
-	}
-
-	/* create a new window with the file */
-	error = browser_window_create(BW_CREATE_HISTORY,
-				      urlns,
-				      NULL,
-				      NULL,
-				      NULL);
-	nsurl_unref(urlns);
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
-}
-
-
-/**
- * Handle PreQuit message
- *
- * \param  message  PreQuit message from Wimp
- */
-
-void ro_msg_prequit(wimp_message *message)
-{
-	if (!ro_gui_prequit()) {
-		os_error *error;
-
-		/* we're objecting to the close down */
-		message->your_ref = message->my_ref;
-		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
-						message, message->sender);
-		if (error) {
-			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
-}
-
-
-/**
- * Handle SaveDesktop message
- *
- * \param  message  SaveDesktop message from Wimp
- */
-
-void ro_msg_save_desktop(wimp_message *message)
+void ro_gui_open_window_request(wimp_open *open)
 {
 	os_error *error;
 
-	error = xosgbpb_writew(message->data.save_desktopw.file,
-				(const byte*)"Run ", 4, NULL);
-	if (!error) {
-		error = xosgbpb_writew(message->data.save_desktopw.file,
-					(const byte*)NETSURF_DIR, strlen(NETSURF_DIR), NULL);
-		if (!error)
-			error = xos_bputw('\n', message->data.save_desktopw.file);
-	}
-
-	if (error) {
-		LOG(("xosgbpb_writew/xos_bputw: 0x%x:%s", error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-
-		/* we must cancel the save by acknowledging the message */
-		message->your_ref = message->my_ref;
-		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
-						message, message->sender);
-		if (error) {
-			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
-}
-
-
-/**
- * Handle WindowInfo message (part of the iconising protocol)
- *
- * \param  message  WindowInfo message from the Iconiser
- */
-
-void ro_msg_window_info(wimp_message *message)
-{
-	wimp_full_message_window_info *wi;
-	struct gui_window *g;
-
-	/* allow the user to turn off thumbnail icons */
-	if (!nsoption_bool(thumbnail_iconise))
+	if (ro_gui_wimp_event_open_window(open))
 		return;
 
-	wi = (wimp_full_message_window_info*)message;
-	g = ro_gui_window_lookup(wi->w);
-
-	/* ic_<task name> will suffice for our other windows */
-	if (g) {
-		ro_gui_window_iconise(g, wi);
-		ro_gui_dialog_close_persistent(wi->w);
+	error = xwimp_open_window(open);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
 }
 
 
-
-
 /**
- * Get screen properties following a mode change.
+ * source bounce callback.
  */
-
-void ro_gui_get_screen_properties(void)
+static void ro_gui_view_source_bounce(wimp_message *message)
 {
-	static const ns_os_vdu_var_list vars = {
-		os_MODEVAR_XWIND_LIMIT,
-		{
-			os_MODEVAR_YWIND_LIMIT,
-			os_MODEVAR_XEIG_FACTOR,
-			os_MODEVAR_YEIG_FACTOR,
-			os_VDUVAR_END_LIST
-		}
-	};
+	char *filename;
 	os_error *error;
-	int vals[4];
+	char command[256];
 
-	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
+	/* run the file as text */
+	filename = ((wimp_full_message_data_xfer *)message)->file_name;
+	sprintf(command, "@RunType_FFF %s", filename);
+	error = xwimp_start_task(command, 0);
 	if (error) {
-		LOG(("xos_read_vdu_variables: 0x%x: %s",
-			error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
-		return;
+		LOG(("xwimp_start_task failed: 0x%x: %s",
+					error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
-	screen_info.width  = (vals[0] + 1) << vals[2];
-	screen_info.height = (vals[1] + 1) << vals[3];
-}
-
-
-/**
- * Find screen size in OS units.
- */
-
-void ro_gui_screen_size(int *width, int *height)
-{
-	*width = screen_info.width;
-	*height = screen_info.height;
 }
 
 
 /**
  * Send the source of a content to a text editor.
  */
-
 void ro_gui_view_source(hlcache_handle *c)
 {
 	os_error *error;
@@ -2161,59 +2049,9 @@ void ro_gui_view_source(hlcache_handle *c)
 }
 
 
-void ro_gui_view_source_bounce(wimp_message *message)
-{
-	char *filename;
-	os_error *error;
-	char command[256];
-
-	/* run the file as text */
-	filename = ((wimp_full_message_data_xfer *)message)->file_name;
-	sprintf(command, "@RunType_FFF %s", filename);
-	error = xwimp_start_task(command, 0);
-	if (error) {
-		LOG(("xwimp_start_task failed: 0x%x: %s",
-					error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
- * Send the debug dump of a content to a text editor.
- */
-
-void ro_gui_dump_browser_window(struct browser_window *bw)
-{
-	os_error *error;
-
-	/* open file for dump */
-	FILE *stream = fopen("<Wimp$ScrapDir>.WWW.NetSurf.dump", "w");
-	if (!stream) {
-		LOG(("fopen: errno %i", errno));
-		warn_user("SaveError", strerror(errno));
-		return;
-	}
-
-	browser_window_debug_dump(bw, stream);
-
-	fclose(stream);
-
-	/* launch file in editor */
-	error = xwimp_start_task("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.dump",
-			0);
-	if (error) {
-		LOG(("xwimp_start_task failed: 0x%x: %s",
-					error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
-
-
 /**
  * Broadcast an URL that we can't handle.
  */
-
 static nserror gui_launch_url(struct nsurl *url)
 {
 	/* Try ant broadcast */
@@ -2223,12 +2061,40 @@ static nserror gui_launch_url(struct nsurl *url)
 
 
 /**
+ * Choose the language to use.
+ */
+static void ro_gui_choose_language(void)
+{
+	/* if option_language exists and is valid, use that */
+	if (nsoption_charp(language)) {
+		char path[40];
+		if (2 < strlen(nsoption_charp(language)))
+			nsoption_charp(language)[2] = 0;
+		sprintf(path, "NetSurf:Resources.%s", nsoption_charp(language));
+
+		if (is_dir(path)) {
+			nsoption_setnull_charp(accept_language,
+					strdup(nsoption_charp(language)));
+			return;
+		}
+		nsoption_set_charp(language, NULL);
+	}
+
+	nsoption_set_charp(language, strdup(ro_gui_default_language()));
+	if (nsoption_charp(language) == NULL)
+		die("Out of memory");
+	nsoption_set_charp(accept_language, strdup(nsoption_charp(language)));
+	if (nsoption_charp(accept_language) == NULL)
+		die("Out of memory");
+}
+
+
+/**
  * Display a warning for a serious problem (eg memory exhaustion).
  *
  * \param  warning  message key for warning message
  * \param  detail   additional message, or 0
  */
-
 void warn_user(const char *warning, const char *detail)
 {
 	LOG(("%s %s", warning, detail));
@@ -2270,7 +2136,6 @@ void warn_user(const char *warning, const char *detail)
  *
  * Should only be used during initialisation.
  */
-
 void die(const char * const error)
 {
 	os_error warn_error;
@@ -2297,20 +2162,18 @@ void die(const char * const error)
  *
  * \return true iff it's okay to shutdown immediately
  */
-
 bool ro_gui_prequit(void)
 {
 	return ro_gui_download_prequit();
 }
 
+
 void PDF_Password(char **owner_pass, char **user_pass, char *path)
 {
-	/*TODO:this waits to be written, until then no PDF encryption*/
+	/** @todo this waits to be written, until then no PDF encryption */
 	*owner_pass = NULL;
 }
 
-
-#define DIR_SEP ('.')
 
 /**
  * Generate a riscos path from one or more component elemnts.
@@ -2474,6 +2337,46 @@ static nserror riscos_basename(const char *path, char **str, size_t *size)
 }
 
 
+/**
+ * Find screen size in OS units.
+ */
+void ro_gui_screen_size(int *width, int *height)
+{
+	*width = screen_info.width;
+	*height = screen_info.height;
+}
+
+
+/**
+ * Send the debug dump of a content to a text editor.
+ */
+void ro_gui_dump_browser_window(struct browser_window *bw)
+{
+	os_error *error;
+
+	/* open file for dump */
+	FILE *stream = fopen("<Wimp$ScrapDir>.WWW.NetSurf.dump", "w");
+	if (!stream) {
+		LOG(("fopen: errno %i", errno));
+		warn_user("SaveError", strerror(errno));
+		return;
+	}
+
+	browser_window_debug_dump(bw, stream);
+
+	fclose(stream);
+
+	/* launch file in editor */
+	error = xwimp_start_task("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.dump",
+			0);
+	if (error) {
+		LOG(("xwimp_start_task failed: 0x%x: %s",
+					error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
 static struct gui_file_table riscos_file_table = {
 	.mkpath = riscos_mkpath,
 	.basename = riscos_basename,
@@ -2500,7 +2403,9 @@ static struct gui_browser_table riscos_browser_table = {
 };
 
 
-/** Normal entry point from OS */
+/**
+ * Normal entry point from RISC OS.
+ */
 int main(int argc, char** argv)
 {
 	char path[40];
@@ -2563,7 +2468,7 @@ int main(int argc, char** argv)
 	if (((length = snprintf(path,
 				sizeof(path),
 			       "NetSurf:Resources.%s.Messages",
-				nsoption_charp(language))) < 0) || 
+				nsoption_charp(language))) < 0) ||
 	    (length >= (int)sizeof(path))) {
 		die("Failed to locate Messages resource.");
 	}
@@ -2581,9 +2486,10 @@ int main(int argc, char** argv)
 	/* Load some extra RISC OS specific Messages */
 	messages_load("NetSurf:Resources.LangNames");
 
-	gui_init(argc, argv);
-
-	gui_init2(argc, argv);
+	ret = gui_init(argc, argv);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	}
 
 	netsurf_main_loop();
 

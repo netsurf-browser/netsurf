@@ -38,6 +38,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "utils/utils.h"
+#include "riscos/filetype.h"
 
 #define MAXIMUM_VISIBLE_LINES 7
 

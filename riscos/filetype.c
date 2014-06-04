@@ -24,7 +24,7 @@
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "riscos/gui.h"
+#include "riscos/filetype.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -60,13 +60,7 @@ static char type_buf[BUF_SIZE];
 
 static int cmp_type(const void *x, const void *y);
 
-/**
- * Determine the MIME type of a local file.
- *
- * \param unix_path Unix style path to file on disk
- * \return Pointer to MIME type string (should not be freed) - invalidated
- *	   on next call to fetch_filetype.
- */
+/* exported interface documented in riscos/filetype.h */
 const char *fetch_filetype(const char *unix_path)
 {
 	struct type_entry *t;
@@ -154,12 +148,7 @@ const char *fetch_filetype(const char *unix_path)
 
 }
 
-/**
- * Find a MIME type for a local file
- *
- * \param ro_path RISC OS style path to file on disk
- * \return MIME type string (on heap, caller should free), or NULL
- */
+/* exported interface documented in riscos/filetype.h */
 char *fetch_mimetype(const char *ro_path)
 {
 	os_error *e;
@@ -246,12 +235,7 @@ int cmp_type(const void *x, const void *y)
 	return *p < q->file_type ? -1 : (*p == q->file_type ? 0 : +1);
 }
 
-/**
- * Determine the RISC OS filetype for a content.
- *
- * \param content The content to examine.
- * \return The RISC OS filetype corresponding to the content
- */
+/* exported interface documented in riscos/filetype.h */
 int ro_content_filetype(hlcache_handle *c)
 {
 	lwc_string *mime_type;
@@ -270,25 +254,21 @@ int ro_content_filetype(hlcache_handle *c)
 	return file_type;
 }
 
-/**
- * Determine the native RISC OS filetype to export a content as
- *
- * \param c  The content to examine
- * \return Native RISC OS filetype for export
- */
+
+/* exported interface documented in riscos/filetype.h */
 int ro_content_native_type(hlcache_handle *c)
 {
 	switch (ro_content_filetype(c)) {
-	case 0xc85: /* jpeg */
-	case 0xf78: /* jng */
-	case 0xf83: /* mng */
-	case 0x695: /* gif */
-	case 0x69c: /* bmp */
-	case 0x132: /* ico */
-	case 0xb60: /* png */
+	case FILETYPE_JPEG: /* jpeg */
+	case FILETYPE_JNG: /* jng */
+	case FILETYPE_MNG: /* mng */
+	case FILETYPE_GIF: /* gif */
+	case FILETYPE_BMP: /* bmp */
+	case FILETYPE_ICO: /* ico */
+	case FILETYPE_PNG: /* png */
 	case 0xff9: /* sprite */
 		return osfile_TYPE_SPRITE;
-	case 0xaad: /* svg */
+	case FILETYPE_SVG: /* svg */
 	case 0xaff: /* draw */
 		return osfile_TYPE_DRAW;
 	default:
@@ -298,12 +278,8 @@ int ro_content_native_type(hlcache_handle *c)
 	return osfile_TYPE_DATA;
 }
 
-/**
- * Determine the RISC OS filetype for a MIME type
- *
- * \param mime_type  MIME type to consider
- * \return Corresponding RISC OS filetype
- */
+
+/* exported interface documented in riscos/filetype.h */
 int ro_content_filetype_from_mime_type(lwc_string *mime_type)
 {
 	int file_type, index;
@@ -329,15 +305,11 @@ int ro_content_filetype_from_mime_type(lwc_string *mime_type)
 	return file_type;
 }
 
-/**
- * Determine the RISC OS filetype from a content type.
- *
- * \param type The content type to examine.
- * \return The RISC OS filetype corresponding to the content, or 0 for unknown
- */
+
+/* exported interface documented in riscos/filetype.h */
 int ro_content_filetype_from_type(content_type type) {
 	switch (type) {
-	case CONTENT_HTML:	return 0xfaf;
+	case CONTENT_HTML:	return FILETYPE_HTML;
 	case CONTENT_TEXTPLAIN:	return 0xfff;
 	case CONTENT_CSS:	return 0xf79;
 	default:		break;
@@ -345,12 +317,8 @@ int ro_content_filetype_from_type(content_type type) {
 	return 0;
 }
 
-/**
- * Determine the type of a local file.
- *
- * \param unix_path Unix style path to file on disk
- * \return File type
- */
+
+/* exported interface documented in riscos/filetype.h */
 bits ro_filetype_from_unix_path(const char *unix_path)
 {
 	unsigned int len = strlen(unix_path) + 100;

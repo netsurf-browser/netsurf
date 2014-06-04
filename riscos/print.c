@@ -43,6 +43,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "riscos/filetype.h"
 
 
 #define ICON_PRINT_TO_BOTTOM 1

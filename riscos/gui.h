@@ -170,15 +170,6 @@ void gui_create_form_select_menu(struct browser_window *bw, struct form_control 
 void ro_gui_history_init(void);
 void ro_gui_history_open(struct gui_window *g, bool pointer);
 
-/* in filetype.c */
-const char *fetch_filetype(const char *unix_path);
-char *fetch_mimetype(const char *ro_path);
-int ro_content_filetype(struct hlcache_handle *c);
-int ro_content_native_type(struct hlcache_handle *c);
-int ro_content_filetype_from_mime_type(lwc_string *mime_type);
-int ro_content_filetype_from_type(content_type type);
-bits ro_filetype_from_unix_path(const char *unix_path);
-
 /* in schedule.c */
 extern bool sched_active;
 extern os_t sched_time;

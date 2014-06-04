@@ -47,6 +47,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/window.h"
 #include "riscos/ucstables.h"
+#include "riscos/filetype.h"
 
 #define URLBAR_HEIGHT 52
 #define URLBAR_FAVICON_SIZE 16
