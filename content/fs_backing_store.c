@@ -1116,7 +1116,7 @@ store(nsurl *url,
 	written = write(fd, data, datalen);
 
 	close(fd);
-	if (written < datalen) {
+	if (written < 0 || (size_t) written < datalen) {
 		/** @todo Delete the file? */
 		return NSERROR_SAVE_FAILED;
 	}
