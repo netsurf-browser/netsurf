@@ -36,6 +36,7 @@
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
+#include "desktop/gui.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

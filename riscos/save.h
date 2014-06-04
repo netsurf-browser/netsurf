@@ -25,22 +25,23 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
-#include "desktop/gui.h"
 
-void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, gui_save_type save_type);
+enum gui_save_type;
+
+void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, enum gui_save_type save_type);
 void gui_drag_save_selection(struct gui_window *g, const char *selection);
 
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);
-void ro_gui_save_prepare(gui_save_type save_type, struct hlcache_handle *h,
+void ro_gui_save_prepare(enum gui_save_type save_type, struct hlcache_handle *h,
 			char *s, const char *url,
 			const char *title);
 void ro_gui_save_start_drag(wimp_pointer *pointer);
-void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
+void ro_gui_drag_save_link(enum gui_save_type save_type, const char *url,
 			const char *title, struct gui_window *g);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_drag_box_cancel(void);
-void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
+void ro_gui_send_datasave(enum gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
 bool ro_gui_save_ok(wimp_w w);
 void ro_gui_convert_save_path(char *dp, size_t len, const char *p);
