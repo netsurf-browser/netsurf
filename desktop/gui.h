@@ -30,7 +30,7 @@
 #include "desktop/plot_style.h"
 #include "desktop/mouse.h"
 
-typedef enum {
+typedef enum gui_save_type {
 	GUI_SAVE_SOURCE,
 	GUI_SAVE_DRAW,
 	GUI_SAVE_PDF,

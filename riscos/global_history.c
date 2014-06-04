@@ -32,6 +32,7 @@
 #include "content/urldb.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
+#include "desktop/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
