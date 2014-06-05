@@ -2009,12 +2009,76 @@ static nserror windows_path_to_nsurl(const char *path, struct nsurl **url_out)
 	return ret;
 }
 
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror windows_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *sep;
+	struct stat sb;
+
+	dname = strdup(fname);
+
+	sep = strrchr(dname, '\\');
+	if (sep == NULL) {
+		/* no directory separator path is just filename so its ok */
+		free(dname);
+		return NSERROR_OK;
+	}
+
+	*sep = 0; /* null terminate directory path */
+
+	if (stat(dname, &sb) == 0) {
+		free(dname);
+		if (S_ISDIR(sb.st_mode)) {
+			/* path to file exists and is a directory */
+			return NSERROR_OK;
+		}
+		return NSERROR_NOT_DIRECTORY;
+	}
+	*sep = '\\'; /* restore separator */
+
+	sep = dname;
+	while (*sep == '\\') {
+		sep++;
+	}
+	while ((sep = strchr(sep, '\\')) != NULL) {
+		*sep = 0;
+		if (stat(dname, &sb) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
+				/* could not create path element */
+				free(dname);
+				return NSERROR_NOT_FOUND;
+			}
+		} else {
+			if (! S_ISDIR(sb.st_mode)) {
+				/* path element not a directory */
+				free(dname);
+				return NSERROR_NOT_DIRECTORY;
+			}
+		}
+		*sep = '\\'; /* restore separator */
+		/* skip directory separators */
+		while (*sep == '\\') {
+			sep++;
+		}
+	}
+
+	free(dname);
+	return NSERROR_OK;
+}
+
 /* windows file handling */
 static struct gui_file_table file_table = {
 	.mkpath = windows_mkpath,
 	.basename = windows_basename,
 	.nsurl_to_path = windows_nsurl_to_path,
 	.path_to_nsurl = windows_path_to_nsurl,
+	.mkdir_all = windows_mkdir_all,
 };
 
 struct gui_file_table *win32_file_table = &file_table;

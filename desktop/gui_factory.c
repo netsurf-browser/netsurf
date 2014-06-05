@@ -506,6 +506,15 @@ static nserror verify_file_register(struct gui_file_table *gft)
 	if (gft->basename == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (gft->nsurl_to_path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->path_to_nsurl == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if (gft->mkdir_all == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	return NSERROR_OK;
 }

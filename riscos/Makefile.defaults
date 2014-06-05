@@ -26,5 +26,8 @@ NETSURF_USE_PLUGINS := NO
 # Valid options: YES, NO
 NETSURF_USE_DRAW_EXPORT := YES
 
+# Enable building the source object cache filesystem based backing store.
+NETSURF_FS_BACKING_STORE := YES
+
 # Optimisation levels
 CFLAGS += -O2

@@ -127,13 +127,5 @@ char **filepath_path_to_strvec(const char *path);
 void filepath_free_strvec(char **pathv);
 
 
-/**
- * Ensure that all directory elements needed to store a filename exist.
- *
- * @param fname The filename to ensure the path to exists.
- * @return NSERROR_OK on success or error code on failure.
- */
-nserror filepath_mkdir_all(const char *fname);
-
 
 #endif /* _NETSURF_UTILS_FILEPATH_H_ */

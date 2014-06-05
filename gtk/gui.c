@@ -1092,7 +1092,7 @@ static nserror create_config_home(char **config_home_out)
 	}
 
 	/* ensure all elements of path exist (the trailing / is required) */
-	ret = filepath_mkdir_all(config_home);
+	ret = netsurf_mkdir_all(config_home);
 	if (ret != NSERROR_OK) {
 		free(config_home);
 		return ret;
@@ -1190,7 +1190,7 @@ static nserror create_cache_home(char **cache_home_out)
 	}
 
 	/* ensure all elements of path exist (the trailing / is required) */
-	ret = filepath_mkdir_all(cache_home);
+	ret = netsurf_mkdir_all(cache_home);
 	if (ret != NSERROR_OK) {
 		free(cache_home);
 		return ret;

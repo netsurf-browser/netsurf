@@ -627,7 +627,7 @@ store_open(struct store_state *state,
 
 	/** @todo mkdir only on write flag */
 	/* ensure path to file is usable */
-	ret = filepath_mkdir_all(fname);
+	ret = netsurf_mkdir_all(fname);
 	if (ret != NSERROR_OK) {
 		LOG(("file path \"%s\" could not be created", fname));
 		free(fname);
@@ -835,7 +835,9 @@ write_control(struct store_state *state)
 		return ret;
 	}
 
-	ret = filepath_mkdir_all(fname);
+	LOG(("writing control file \"%s\"", fname));
+
+	ret = netsurf_mkdir_all(fname);
 	if (ret != NSERROR_OK) {
 		free(fname);
 		return ret;
@@ -880,6 +882,8 @@ read_control(struct store_state *state)
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
+
+	LOG(("opening control file \"%s\"", fname));
 
 	fcontrol = fopen(fname, "rb");
 

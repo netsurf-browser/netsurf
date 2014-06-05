@@ -23,6 +23,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "desktop/gui_factory.h"
 
@@ -195,6 +198,69 @@ static nserror posix_path_to_nsurl(const char *path, struct nsurl **url_out)
 }
 
 /**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror posix_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *sep;
+	struct stat sb;
+
+	dname = strdup(fname);
+
+	sep = strrchr(dname, '/');
+	if (sep == NULL) {
+		/* no directory separator path is just filename so its ok */
+		free(dname);
+		return NSERROR_OK;
+	}
+
+	*sep = 0; /* null terminate directory path */
+
+	if (stat(dname, &sb) == 0) {
+		free(dname);
+		if (S_ISDIR(sb.st_mode)) {
+			/* path to file exists and is a directory */
+			return NSERROR_OK;
+		}
+		return NSERROR_NOT_DIRECTORY;
+	}
+	*sep = '/'; /* restore separator */
+
+	sep = dname;
+	while (*sep == '/') {
+		sep++;
+	}
+	while ((sep = strchr(sep, '/')) != NULL) {
+		*sep = 0;
+		if (stat(dname, &sb) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
+				/* could not create path element */
+				free(dname);
+				return NSERROR_NOT_FOUND;
+			}
+		} else {
+			if (! S_ISDIR(sb.st_mode)) {
+				/* path element not a directory */
+				free(dname);
+				return NSERROR_NOT_DIRECTORY;
+			}
+		}
+		*sep = '/'; /* restore separator */
+		/* skip directory separators */
+		while (*sep == '/') {
+			sep++;
+		}
+	}
+
+	free(dname);
+	return NSERROR_OK;
+}
+
+/**
  * default to using the posix file handling
  */
 static struct gui_file_table file_table = {
@@ -202,6 +268,7 @@ static struct gui_file_table file_table = {
 	.basename = posix_basename,
 	.nsurl_to_path = posix_nsurl_to_path,
 	.path_to_nsurl = posix_path_to_nsurl,
+	.mkdir_all = posix_mkdir_all,
 };
 
 struct gui_file_table *default_file_table = &file_table;
@@ -229,4 +296,10 @@ nserror netsurf_nsurl_to_path(struct nsurl *url, char **path_out)
 nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url)
 {
 	return guit->file->path_to_nsurl(path, url);
+}
+
+/* exported interface documented in utils/file.h */
+nserror netsurf_mkdir_all(const char *fname)
+{
+	return guit->file->mkdir_all(fname);
 }

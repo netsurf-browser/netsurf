@@ -53,6 +53,7 @@
 #include "desktop/netsurf.h"
 #include "content/urldb.h"
 #include "content/hlcache.h"
+#include "content/backing_store.h"
 
 #include "riscos/gui.h"
 #include "riscos/wimputils.h"
@@ -335,22 +336,6 @@ static nserror set_defaults(struct nsoption_s *defaults)
 }
 
 
-/**
- * Create directory structure for a path
- *
- * Given a path of x.y.z directories x and x.y will be created
- *
- * \param path the directory path to create
- */
-static void ro_gui_create_dir(char *path)
-{
-	char *cur = path;
-	while ((cur = strchr(cur, '.'))) {
-		*cur = '\0';
-		xosfile_create_dir(path, 0);
-		*cur++ = '.';
-	}
-}
 
 
 /**
@@ -367,23 +352,23 @@ static void ro_gui_create_dirs(void)
 		die("Failed to find NetSurf Choices save path");
 
 	snprintf(buf, sizeof(buf), "%s", path);
-	ro_gui_create_dir(buf);
+	netsurf_mkdir_all(buf);
 
 	/* URL */
 	snprintf(buf, sizeof(buf), "%s", nsoption_charp(url_save));
-	ro_gui_create_dir(buf);
+	netsurf_mkdir_all(buf);
 
 	/* Hotlist */
 	snprintf(buf, sizeof(buf), "%s", nsoption_charp(hotlist_save));
-	ro_gui_create_dir(buf);
+	netsurf_mkdir_all(buf);
 
 	/* Recent */
 	snprintf(buf, sizeof(buf), "%s", nsoption_charp(recent_save));
-	ro_gui_create_dir(buf);
+	netsurf_mkdir_all(buf);
 
 	/* Theme */
 	snprintf(buf, sizeof(buf), "%s", nsoption_charp(theme_save));
-	ro_gui_create_dir(buf);
+	netsurf_mkdir_all(buf);
 	/* and the final directory part (as theme_save is a directory) */
 	xosfile_create_dir(buf, 0);
 }
@@ -2338,6 +2323,33 @@ static nserror riscos_basename(const char *path, char **str, size_t *size)
 
 
 /**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * Given a path of x.y.z directories x and x.y will be created.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror riscos_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *cur;
+
+	dname = strdup(fname);
+
+	cur = dname;
+	while ((cur = strchr(cur, '.'))) {
+		*cur = '\0';
+		xosfile_create_dir(dname, 0);
+		*cur++ = '.';
+	}
+
+	free(dname);
+
+	return NSERROR_OK;
+}
+
+/**
  * Find screen size in OS units.
  */
 void ro_gui_screen_size(int *width, int *height)
@@ -2382,6 +2394,7 @@ static struct gui_file_table riscos_file_table = {
 	.basename = riscos_basename,
 	.nsurl_to_path = ro_nsurl_to_path,
 	.path_to_nsurl = ro_path_to_nsurl,
+	.mkdir_all = riscos_mkdir_all,
 };
 
 static struct gui_fetch_table riscos_fetch_table = {
@@ -2403,11 +2416,30 @@ static struct gui_browser_table riscos_browser_table = {
 };
 
 
+static char *get_cachepath(void)
+{
+	char *cachedir;
+	char *cachepath = NULL;
+	nserror ret;
+
+	cachedir = getenv("Cache$Dir");
+	if ((cachedir == NULL) || (cachedir[0] == 0)) {
+		LOG(("cachedir was null"));
+		return NULL;
+	}
+	ret = netsurf_mkpath(&cachepath, NULL, 2, cachedir, "NetSurf");
+	if (ret != NSERROR_OK) {
+		return NULL;
+	}
+	return cachepath;
+}
+
 /**
  * Normal entry point from RISC OS.
  */
 int main(int argc, char** argv)
 {
+	char *cachepath;
 	char path[40];
 	int length;
 	os_var_type type;
@@ -2423,6 +2455,7 @@ int main(int argc, char** argv)
 		.file = &riscos_file_table,
 		.utf8 = riscos_utf8_table,
 		.search = riscos_search_table,
+		.llcache = filesystem_llcache_table,
 	};
 
 	ret = netsurf_register(&riscos_table);
@@ -2473,10 +2506,14 @@ int main(int argc, char** argv)
 		die("Failed to locate Messages resource.");
 	}
 
+	/* obtain cache path */
+	cachepath = get_cachepath();
+
 	/* common initialisation */
-	ret = netsurf_init(path, NULL);
+	ret = netsurf_init(path, cachepath);
+	free(cachepath);
 	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
+		die("NetSurf failed to initialise core");
 	}
 
 	artworks_init();

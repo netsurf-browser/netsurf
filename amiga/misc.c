@@ -19,8 +19,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -362,12 +364,76 @@ static nserror amiga_basename(const char *path, char **str, size_t *size)
 	return NSERROR_OK;
 }
 
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror amiga_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *sep;
+	struct stat sb;
+
+	dname = strdup(fname);
+
+	sep = strrchr(dname, '/');
+	if (sep == NULL) {
+		/* no directory separator path is just filename so its ok */
+		free(dname);
+		return NSERROR_OK;
+	}
+
+	*sep = 0; /* null terminate directory path */
+
+	if (stat(dname, &sb) == 0) {
+		free(dname);
+		if (S_ISDIR(sb.st_mode)) {
+			/* path to file exists and is a directory */
+			return NSERROR_OK;
+		}
+		return NSERROR_NOT_DIRECTORY;
+	}
+	*sep = '/'; /* restore separator */
+
+	sep = dname;
+	while (*sep == '/') {
+		sep++;
+	}
+	while ((sep = strchr(sep, '/')) != NULL) {
+		*sep = 0;
+		if (stat(dname, &sb) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
+				/* could not create path element */
+				free(dname);
+				return NSERROR_NOT_FOUND;
+			}
+		} else {
+			if (! S_ISDIR(sb.st_mode)) {
+				/* path element not a directory */
+				free(dname);
+				return NSERROR_NOT_DIRECTORY;
+			}
+		}
+		*sep = '/'; /* restore separator */
+		/* skip directory separators */
+		while (*sep == '/') {
+			sep++;
+		}
+	}
+
+	free(dname);
+	return NSERROR_OK;
+}
+
 /* amiga file handling operations */
 static struct gui_file_table file_table = {
 	.mkpath = amiga_vmkpath,
 	.basename = amiga_basename,
 	.nsurl_to_path = amiga_nsurl_to_path,
 	.path_to_nsurl = amiga_path_to_nsurl,
+	.mkdir_all = amiga_mkdir_all,
 };
 
 struct gui_file_table *amiga_file_table = &file_table;

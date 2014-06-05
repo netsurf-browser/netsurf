@@ -106,6 +106,14 @@ struct gui_file_table {
 	 *         code on faliure.
 	 */
 	nserror (*path_to_nsurl)(const char *path, struct nsurl **url);
+
+	/**
+	 * Ensure that all directory elements needed to store a filename exist.
+	 *
+	 * @param[in] fname The filename to ensure the path to exists.
+	 * @return NSERROR_OK on success or error code on failure.
+	 */
+	nserror (*mkdir_all)(const char *fname);
 };
 
 /** Default (posix) file operation table. */
@@ -155,5 +163,13 @@ nserror netsurf_nsurl_to_path(struct nsurl *url, char **path_out);
  *         code on faliure.
  */
 nserror netsurf_path_to_nsurl(const char *path, struct nsurl **url);
+
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+nserror netsurf_mkdir_all(const char *fname);
 
 #endif
