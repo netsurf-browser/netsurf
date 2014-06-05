@@ -39,6 +39,7 @@
 #include "riscos/iconbar.h"
 #include "riscos/window.h"
 #include "riscos/ucstables.h"
+#include "riscos/gui.h"
 
 /*	Recognised help keys
 	====================

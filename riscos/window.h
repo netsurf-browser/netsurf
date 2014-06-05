@@ -25,6 +25,8 @@
 #ifndef _NETSURF_RISCOS_WINDOW_H_
 #define _NETSURF_RISCOS_WINDOW_H_
 
+struct gui_window;
+
 extern struct gui_window_table *riscos_window_table;
 
 void ro_gui_window_initialise(void);

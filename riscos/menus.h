@@ -19,10 +19,6 @@
 #ifndef _NETSURF_RISCOS_MENUS_H_
 #define _NETSURF_RISCOS_MENUS_H_
 
-#include <stdbool.h>
-#include "oslib/wimp.h"
-#include "riscos/gui.h"
-
 extern wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 
 extern wimp_menu *current_menu;

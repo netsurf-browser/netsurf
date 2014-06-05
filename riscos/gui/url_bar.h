@@ -39,6 +39,7 @@ typedef enum {
 } url_bar_action;
 
 struct url_bar;
+struct hlcache_handle;
 
 /**
  * Initialise the url bar module.
