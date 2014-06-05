@@ -19,11 +19,6 @@
 #ifndef _NETSURF_RISCOS_PRINT_H_
 #define _NETSURF_RISCOS_PRINT_H_
 
-#include "utils/config.h"
-
-#include <stdbool.h>
-#include "oslib/wimp.h"
-
 struct gui_window;
 
 extern struct gui_window *ro_print_current_window;
