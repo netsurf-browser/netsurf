@@ -25,13 +25,16 @@
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/os.h"
+
+#include "utils/log.h"
 #include "desktop/plotters.h"
 #include "render/font.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/image.h"
 #include "riscos/gui.h"
+#include "riscos/font.h"
 #include "riscos/oslib_pre7.h"
-#include "utils/log.h"
 
 
 static bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);

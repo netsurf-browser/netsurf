@@ -31,10 +31,12 @@
 #include "desktop/plotters.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
+#include "riscos/font.h"
 #include "riscos/gui/progress_bar.h"
 #include "riscos/gui/status_bar.h"
 

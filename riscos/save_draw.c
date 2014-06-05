@@ -26,18 +26,21 @@
 
 #include <assert.h>
 #include <limits.h>
-#include "oslib/draw.h"
-#include "oslib/osfile.h"
-#include "pencil.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/plotters.h"
-#include "riscos/bitmap.h"
-#include "riscos/gui.h"
-#include "riscos/save_draw.h"
+#include <oslib/draw.h>
+#include <oslib/osfile.h>
+#include <pencil.h>
+
 #include "utils/log.h"
 #include "utils/types.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "desktop/plotters.h"
+
+#include "riscos/bitmap.h"
+#include "riscos/gui.h"
+#include "riscos/save_draw.h"
+#include "riscos/font.h"
 
 static bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t *style);

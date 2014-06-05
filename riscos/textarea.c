@@ -24,13 +24,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "swis.h"
-#include "oslib/colourtrans.h"
-#include "oslib/osbyte.h"
-#include "oslib/serviceinternational.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
-#include "rufl.h"
+#include <swis.h>
+#include <oslib/colourtrans.h>
+#include <oslib/osbyte.h>
+#include <oslib/serviceinternational.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "desktop/browser.h"
+
 #include "riscos/gui.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/textarea.h"
@@ -38,8 +42,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
 
 #define MARGIN_LEFT 8
 #define MARGIN_RIGHT 8

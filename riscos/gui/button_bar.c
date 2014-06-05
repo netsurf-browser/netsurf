@@ -26,18 +26,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/dragasprite.h"
-#include "oslib/os.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/dragasprite.h>
+#include <oslib/os.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+
+#include "utils/log.h"
+#include "utils/utils.h"
+
 #include "riscos/gui/button_bar.h"
 #include "riscos/gui.h"
 #include "riscos/mouse.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #define BUTTONBAR_SPRITE_NAME_LENGTH 12
 #define BUTTONBAR_VALIDATION_LENGTH 40

@@ -37,6 +37,7 @@
 #include "utils/utils.h"
 #include "content/hlcache.h"
 #include "content/content.h"
+#include "desktop/browser.h"
 
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"

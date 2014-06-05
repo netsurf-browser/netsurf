@@ -18,17 +18,17 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include <stdbool.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 #include "riscos/dialog.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 #include "riscos/ucstables.h"
 
 #define ICON_QUERY_MESSAGE 0

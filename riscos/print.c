@@ -21,29 +21,32 @@
 
 #include <assert.h>
 #include <string.h>
-#include "swis.h"
-#include "oslib/font.h"
-#include "oslib/hourglass.h"
-#include "oslib/osfile.h"
-#include "oslib/osfind.h"
-#include "oslib/pdriver.h"
-#include "oslib/wimp.h"
-#include "rufl.h"
+#include <swis.h>
+#include <oslib/font.h>
+#include <oslib/hourglass.h>
+#include <oslib/osfile.h>
+#include <oslib/osfind.h>
+#include <oslib/pdriver.h>
+#include <oslib/wimp.h>
+#include <rufl.h>
+
 #include "utils/config.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
-#include "utils/nsoption.h"
 #include "desktop/plotters.h"
+
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/print.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 #include "riscos/filetype.h"
+#include "riscos/font.h"
 
 
 #define ICON_PRINT_TO_BOTTOM 1

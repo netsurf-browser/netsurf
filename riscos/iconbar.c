@@ -28,23 +28,24 @@
 #include <string.h>
 #include <time.h>
 #include <features.h>
+#include <oslib/os.h>
+#include <oslib/osbyte.h>
+#include <oslib/wimp.h>
 
-#include "oslib/os.h"
-#include "oslib/osbyte.h"
-#include "oslib/wimp.h"
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "desktop/netsurf.h"
+#include "desktop/browser.h"
+
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
-#include "desktop/netsurf.h"
-#include "desktop/browser.h"
-#include "utils/nsoption.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 static bool ro_gui_iconbar_click(wimp_pointer *pointer);
 

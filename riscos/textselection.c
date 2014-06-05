@@ -32,6 +32,7 @@
 #include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
+#include "desktop/browser.h"
 
 #include "riscos/gui.h"
 #include "riscos/menus.h"

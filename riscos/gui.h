@@ -21,15 +21,7 @@
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <oslib/osspriteop.h>
 #include <oslib/wimp.h>
-#include <rufl.h>
-
-#include "desktop/browser.h"
-#include "content/content_type.h"
-#include "utils/config.h"
 
 #define RISCOS5 0xAA
 
@@ -53,6 +45,10 @@ struct node;
 struct history;
 struct css_style;
 struct ssl_cert_info;
+struct nsurl;
+struct hlcache_handle;
+
+enum gui_pointer_shape;
 
 extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 
@@ -75,12 +71,6 @@ typedef enum { GUI_DRAG_NONE, GUI_DRAG_DOWNLOAD_SAVE, GUI_DRAG_SAVE }
 		ro_gui_drag_type;
 
 extern ro_gui_drag_type gui_current_drag_type;
-
-/** desktop font, size and style being used */
-extern char ro_gui_desktop_font_family[];
-extern int ro_gui_desktop_font_size;
-extern rufl_style ro_gui_desktop_font_style;
-
 
 /** RISC OS data for a browser window. */
 struct gui_window {
@@ -133,7 +123,7 @@ extern struct gui_download_table *riscos_download_table;
 
 /* in 401login.c */
 void ro_gui_401login_init(void);
-void gui_401login_open(nsurl *url, const char *realm,
+void gui_401login_open(struct nsurl *url, const char *realm,
 		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* in window.c */
@@ -156,14 +146,14 @@ bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y,
 		os_coord *pos);
 bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y,
 		os_coord *pos);
-browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
+enum browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		wimp_icon_flags type);
-browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
+enum browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 		wimp_icon_flags type);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
+void gui_window_set_pointer(struct gui_window *g, enum gui_pointer_shape shape);
 void gui_create_form_select_menu(struct browser_window *bw, struct form_control *control);
 
 /* in history.c */
@@ -200,17 +190,6 @@ struct gui_search_table *riscos_search_table;
 void ro_gui_print_init(void);
 void ro_gui_print_prepare(struct gui_window *g);
 
-/* in font.c */
-void nsfont_init(void);
-bool nsfont_exists(const char *font_family);
-const char *nsfont_fallback_font(void);
-bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
-		size_t length, int x, int y);
-void nsfont_read_style(const plot_font_style_t *fstyle,
-		const char **font_family, unsigned int *font_size,
-		rufl_style *font_style);
-void ro_gui_wimp_get_desktop_font(void);
-
 /* in plotters.c */
 extern const struct plotter_table ro_plotters;
 extern int ro_plot_origin_x;
@@ -220,7 +199,7 @@ extern int ro_plot_origin_y;
 bool ro_gui_theme_install_apply(wimp_w w);
 
 /* in sslcert.c */
-void gui_cert_verify(nsurl *url,
+void gui_cert_verify(struct nsurl *url,
 		const struct ssl_cert_info *certs, unsigned long num,
 		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
 

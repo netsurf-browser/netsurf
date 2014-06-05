@@ -22,19 +22,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/colourtrans.h"
-#include "oslib/osfile.h"
-#include "oslib/osgbpb.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "rufl.h"
-#include "utils/config.h"
+#include <oslib/colourtrans.h>
+#include <oslib/osfile.h>
+#include <oslib/osgbpb.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 #include "desktop/netsurf.h"
+#include "desktop/browser.h"
 #include "render/font.h"
+
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
@@ -42,7 +50,6 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
 #include "riscos/toolbar.h"
@@ -51,10 +58,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 
 #define ICON_ZOOM_VALUE 1
 #define ICON_ZOOM_DEC 2

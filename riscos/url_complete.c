@@ -25,19 +25,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/wimp.h"
-#include "content/urldb.h"
+#include <oslib/wimp.h>
+
 #include "utils/log.h"
+#include "utils/nsoption.h"
+#include "utils/utils.h"
+#include "content/urldb.h"
+#include "desktop/browser.h"
+
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/mouse.h"
-#include "utils/nsoption.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/utils.h"
 #include "riscos/filetype.h"
 
 #define MAXIMUM_VISIBLE_LINES 7

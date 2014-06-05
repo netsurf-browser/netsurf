@@ -20,32 +20,25 @@
  * Interactive help (implementation).
  */
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include "oslib/help.h"
-#include "oslib/os.h"
-#include "oslib/taskmanager.h"
-#include "oslib/wimp.h"
-#include "desktop/tree.h"
-#include "riscos/cookies.h"
-#include "riscos/global_history.h"
-#include "riscos/gui.h"
-#include "riscos/hotlist.h"
-#include "riscos/help.h"
-#include "riscos/iconbar.h"
-#include "riscos/menus.h"
-#include "utils/nsoption.h"
-#include "riscos/treeview.h"
-#include "riscos/wimp.h"
-#include "riscos/wimp_event.h"
-#include "riscos/window.h"
-#include "utils/messages.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "riscos/ucstables.h"
+#include <oslib/wimp.h>
+#include <oslib/taskmanager.h>
 
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+
+#include "riscos/treeview.h"
+#include "riscos/help.h"
+#include "riscos/wimp_event.h"
+#include "riscos/hotlist.h"
+#include "riscos/global_history.h"
+#include "riscos/cookies.h"
+#include "riscos/wimp.h"
+#include "riscos/iconbar.h"
+#include "riscos/window.h"
+#include "riscos/ucstables.h"
 
 /*	Recognised help keys
 	====================

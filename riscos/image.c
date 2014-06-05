@@ -17,16 +17,17 @@
  */
 
 #include <stdbool.h>
-#include "swis.h"
-#include "oslib/colourtrans.h"
-#include "oslib/osspriteop.h"
-#include "riscos/image.h"
-#include "riscos/gui.h"
+#include <swis.h>
+#include <oslib/colourtrans.h>
+#include <oslib/osspriteop.h>
+
 #include "utils/nsoption.h"
-#include "riscos/tinct.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
+#include "riscos/image.h"
+#include "riscos/gui.h"
+#include "riscos/tinct.h"
 
 static bool image_redraw_tinct(osspriteop_id header, int x, int y,
 		int req_width, int req_height, int width, int height,

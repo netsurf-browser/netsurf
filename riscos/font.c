@@ -17,24 +17,28 @@
  */
 
 /** \file
- * Font handling (RISC OS implementation).
+ * RISC OS implementation of Font handling.
  *
- * The RUfl is used handle and render fonts.
+ * The RUfl is used to handle and render fonts.
  */
+
+#include "utils/config.h"
 
 #include <assert.h>
 #include <string.h>
-#include "oslib/wimp.h"
-#include "oslib/wimpreadsysinfo.h"
-#include "rufl.h"
+#include <oslib/wimp.h>
+#include <oslib/wimpreadsysinfo.h>
+
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
-#include "riscos/gui.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+
+#include "riscos/gui.h"
+#include "riscos/font.h"
 
 static void nsfont_check_option(char **option, const char *family,
 		const char *fallback);
