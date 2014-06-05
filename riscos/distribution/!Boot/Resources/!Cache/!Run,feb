@@ -1,0 +1,10 @@
+Set Cache$AppDir <Obey$Dir>
+IconSprites <Cache$AppDir>.!Sprites
+
+Run <Cache$AppDir>.Resources.ResFind CacheApp
+Set Cache$Meta CacheAppRes:!Meta
+
+RMEnsure SysLog 0.17 IfThere <SysLog$Dir>.!Run Then Run <SysLog$Dir>.!Run
+RMEnsure SysLog 0.17 Set Cache$SysLogMissing "True"
+
+Run <Cache$AppDir>.!RunImage

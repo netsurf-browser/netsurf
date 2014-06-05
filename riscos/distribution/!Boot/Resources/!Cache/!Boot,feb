@@ -1,0 +1,3 @@
+Set Cache$FromBoot True
+If "<Cache$Dir>" = "" Then Run <Obey$Dir>.!Run
+Unset Cache$FromBoot
