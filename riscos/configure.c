@@ -34,6 +34,7 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/configure.h"
 #include "riscos/wimp.h"

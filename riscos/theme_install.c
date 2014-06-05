@@ -22,19 +22,22 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include "oslib/osfile.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/browser.h"
-#include "riscos/dialog.h"
-#include "riscos/gui.h"
+#include <oslib/osfile.h>
+#include <oslib/wimp.h>
+
 #include "utils/nsoption.h"
-#include "riscos/theme.h"
-#include "riscos/wimp.h"
-#include "riscos/wimp_event.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "desktop/browser.h"
+
+#include "riscos/dialog.h"
+#include "riscos/gui.h"
+#include "riscos/theme.h"
+#include "riscos/wimp.h"
+#include "riscos/wimp_event.h"
 
 
 static hlcache_handle *theme_install_content = NULL;

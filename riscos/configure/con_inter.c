@@ -20,12 +20,12 @@
 
 #include "utils/nsoption.h"
 
-#include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
 #include "riscos/configure/configure.h"
+#include "riscos/dialog.h"
 
 #define INTERFACE_STRIP_EXTNS_OPTION 2
 #define INTERFACE_CONFIRM_OVWR_OPTION 3

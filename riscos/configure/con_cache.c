@@ -17,17 +17,19 @@
  */
 
 #include <stdbool.h>
-#include "oslib/hourglass.h"
+#include <oslib/hourglass.h>
+
 #include "utils/nsoption.h"
-#include "riscos/dialog.h"
+#include "utils/filename.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
 #include "riscos/configure/configure.h"
-#include "utils/filename.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+#include "riscos/dialog.h"
 
 
 #define CACHE_MEMORY_SIZE 3

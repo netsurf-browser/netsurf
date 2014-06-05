@@ -40,6 +40,7 @@
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
 
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/print.h"

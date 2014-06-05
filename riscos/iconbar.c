@@ -39,6 +39,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
 
+#include "riscos/gui.h"
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"

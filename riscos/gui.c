@@ -80,6 +80,7 @@
 #include "riscos/ucstables.h"
 #include "riscos/filetype.h"
 #include "riscos/font.h"
+#include "riscos/toolbar.h"
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/content-handlers/draw.h"
 #include "riscos/content-handlers/sprite.h"

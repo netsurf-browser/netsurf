@@ -25,11 +25,12 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-#include "riscos/dialog.h"
+#include "riscos/gui.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/ucstables.h"
+#include "riscos/dialog.h"
 
 #define ICON_QUERY_MESSAGE 0
 #define ICON_QUERY_YES 1

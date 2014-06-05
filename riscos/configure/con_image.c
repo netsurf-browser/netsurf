@@ -17,18 +17,21 @@
  */
 
 #include <stdbool.h>
-#include "swis.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
+#include <swis.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+
 #include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+
+#include "riscos/gui.h"
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 
 #define IMAGE_FOREGROUND_FIELD 3

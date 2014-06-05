@@ -24,13 +24,14 @@
 #include "desktop/plot_style.h"
 #include "css/css.h"
 
-#include "riscos/dialog.h"
+#include "riscos/gui.h"
 #include "riscos/font.h"
 #include "riscos/menus.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
 #include "riscos/configure/configure.h"
+#include "riscos/dialog.h"
 
 
 #define FONT_SANS_FIELD 3

@@ -27,20 +27,22 @@
 #include <string.h>
 #include "oslib/hourglass.h"
 #include "oslib/wimp.h"
-#include "utils/config.h"
+
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/browser_private.h"
 #include "desktop/search.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 #define RECENT_SEARCHES 8
 
