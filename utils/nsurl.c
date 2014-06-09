@@ -685,6 +685,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 		char *pos_norm,
 		struct nsurl_components *url)
 {
+	nserror ret;
 	int ascii_offset;
 	int start = 0;
 	int end = 0;
@@ -961,14 +962,20 @@ static nserror nsurl__create_from_section(const char * const url_s,
 
 			/* host */
 			/* Encode host according to IDNA2008 */
-			if (idna_encode(norm_start, length, &host, &host_len) == NSERROR_OK) {
+			ret = idna_encode(norm_start, length, &host, &host_len);
+			if (ret == NSERROR_OK) {
+				/* valid idna encoding */
 				if (lwc_intern_string(host, host_len,
 						&url->host) != lwc_error_ok) {
 					return NSERROR_NOMEM;
 				}
 				free(host);
 			} else {
-				return NSERROR_BAD_URL;
+				/* fall back to straight interning */
+				if (lwc_intern_string(norm_start, length,
+						      &url->host) != lwc_error_ok) {
+					return NSERROR_NOMEM;
+				}
 			}
 		}
 
@@ -1736,6 +1743,8 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(base != NULL);
 	assert(rel != NULL);
 
+	LOG(("base \"%s\" rel \"%s\"", nsurl_access(base), rel));
+
 	/* Peg out the URL sections */
 	nsurl__get_string_markers(rel, &m, true);
 
@@ -1743,11 +1752,13 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	length = nsurl__get_longest_section(&m);
 
 	/* Initially assume that the joined URL can be formed entierly from
-	 * the relative URL. */
+	 * the relative URL.
+	 */
 	joined_parts = NSURL_F_REL;
 
 	/* Update joined_compnents to indicate any required parts from the
-	 * base URL. */
+	 * base URL.
+	 */
 	if (m.scheme_end - m.start <= 0) {
 		/* The relative url has no scheme.
 		 * Use base URL's scheme. */
@@ -1777,7 +1788,8 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	}
 
 	/* Allocate enough memory to url escape the longest section, plus
-	 * space for path merging (if required). */
+	 * space for path merging (if required).
+	 */
 	if (joined_parts & NSURL_F_MERGED_PATH) {
 		/* Need to merge paths */
 		length += (base->components.path != NULL) ?
@@ -1789,8 +1801,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 			lwc_string_length(base->components.path) : 0);
 
 	buff = malloc(length + 5);
-	if (buff == NULL)
+	if (buff == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	buff_pos = buff;
 
@@ -1803,8 +1816,11 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	} else {
 		c.scheme_type = m.scheme_type;
 
-		error |= nsurl__create_from_section(rel, URL_SCHEME, &m,
-				buff, &c);
+		error = nsurl__create_from_section(rel, URL_SCHEME, &m,	buff, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
 	if (joined_parts & NSURL_F_BASE_AUTHORITY) {
@@ -1813,10 +1829,16 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		c.host = nsurl__component_copy(base->components.host);
 		c.port = nsurl__component_copy(base->components.port);
 	} else {
-		error |= nsurl__create_from_section(rel, URL_CREDENTIALS, &m,
-				buff, &c);
-		error |= nsurl__create_from_section(rel, URL_HOST, &m,
-				buff, &c);
+		error = nsurl__create_from_section(rel, URL_CREDENTIALS, &m,
+						   buff, &c);
+		if (error == NSERROR_OK) {
+			error = nsurl__create_from_section(rel, URL_HOST, &m,
+							   buff, &c);
+		}
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
 	if (joined_parts & NSURL_F_BASE_PATH) {
@@ -1866,8 +1888,12 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		m_path.query = new_length;
 
 		buff_start = buff_pos + new_length;
-		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
+		error = nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
 				buff_start, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 
 	} else {
 		struct url_markers m_path;
@@ -1883,24 +1909,34 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		m_path.query = new_length;
 
 		buff_start = buff_pos + new_length;
-		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
+
+		error = nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
 				buff_start, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
-	if (joined_parts & NSURL_F_BASE_QUERY)
+	if (joined_parts & NSURL_F_BASE_QUERY) {
 		c.query = nsurl__component_copy(base->components.query);
-	else
-		error |= nsurl__create_from_section(rel, URL_QUERY, &m,
+	} else {
+		error = nsurl__create_from_section(rel, URL_QUERY, &m,
 				buff, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
+	}
 
-	error |= nsurl__create_from_section(rel, URL_FRAGMENT, &m,
-			buff, &c);
+	error = nsurl__create_from_section(rel, URL_FRAGMENT, &m, buff, &c);
 
 	/* Free temporary buffer */
 	free(buff);
 
-	if (error != NSERROR_OK)
-		return NSERROR_NOMEM;
+	if (error != NSERROR_OK) {
+		return error;
+	}
 
 	/* Get the string length and find which parts of url are present */
 	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
@@ -1908,8 +1944,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	/* Create NetSurf URL object */
 	*joined = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*joined == NULL)
+	if (*joined == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	(*joined)->components = c;
 	(*joined)->length = length;
