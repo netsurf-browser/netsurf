@@ -2653,10 +2653,10 @@
     <property name="page_increment">16</property>
   </object>
   <object class="GtkAdjustment" id="adjustment_cache_disc_size">
-    <property name="value">16</property>
-    <property name="upper">2048</property>
-    <property name="step_increment">4</property>
-    <property name="page_increment">16</property>
+    <property name="value">1024</property>
+    <property name="upper">4096</property>
+    <property name="step_increment">32</property>
+    <property name="page_increment">256</property>
   </object>
   <object class="GtkAdjustment" id="adjustment_disc_cache_age">
     <property name="value">28</property>

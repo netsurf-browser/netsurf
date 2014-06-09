@@ -1157,7 +1157,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_DISC] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(disc_cache_size) / 1048576,
+											INTEGER_Number, nsoption_uint(disc_cache_size) / 1048576,
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 4096,
 											INTEGER_Arrows, TRUE,
@@ -1750,8 +1750,8 @@ void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_int(disc_cache_size));
-	nsoption_set_int(disc_cache_size, nsoption_int(disc_cache_size) * 1048576);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_uint(disc_cache_size));
+	nsoption_set_uint(disc_cache_size, nsoption_uint(disc_cache_size) * 1048576);
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_OVERWRITE],(ULONG *)&data);
 	if (data) { 
