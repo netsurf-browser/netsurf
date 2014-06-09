@@ -1743,7 +1743,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(base != NULL);
 	assert(rel != NULL);
 
-	LOG(("base \"%s\" rel \"%s\"", nsurl_access(base), rel));
+#ifdef NSURL_DEBUG
+	LOG(("base: \"%s\", rel: \"%s\"", nsurl_access(base), rel));
+#endif
 
 	/* Peg out the URL sections */
 	nsurl__get_string_markers(rel, &m, true);
