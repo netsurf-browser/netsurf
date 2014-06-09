@@ -43,6 +43,41 @@ int32_t idna_contexto[] = {
 	0x06f6, 0x06f7, 0x06f8, 0x06f9, 0
 };
 
+/**
+ * Convert punycode status into nserror.
+ *
+ * \param status The punycode status to convert.
+ * \return The corresponding nserror code for the status.
+ */
+static nserror punycode_status_to_nserror(enum punycode_status status)
+{
+	nserror ret = NSERROR_NOMEM;
+
+	switch (status) {
+	case punycode_success:
+		ret = NSERROR_OK;
+		break;
+
+	case punycode_bad_input:
+		LOG(("Bad input"));
+		ret = NSERROR_BAD_ENCODING;
+		break;
+
+	case punycode_big_output:
+		LOG(("Output too big"));
+		ret = NSERROR_BAD_SIZE;
+		break;
+
+	case punycode_overflow:
+		LOG(("Overflow"));
+		ret = NSERROR_NOSPACE;
+		break;
+
+	default:
+		break;
+	}
+	return ret;
+}
 
 /**
  * Find the IDNA property of a UCS-4 codepoint
@@ -56,8 +91,9 @@ static idna_property idna__cp_property(int32_t cp)
 
 	t = idna_derived;
 	while (t->p.property) {
-		if ((cp >= t->start) && (cp <= t->end))
+		if ((cp >= t->start) && (cp <= t->end)) {
 			return t->p.property;
+		}
 		t++;
 	};
 
@@ -77,8 +113,9 @@ static idna_unicode_jt idna__jt_property(int32_t cp)
 
 	t = idna_joiningtype;
 	while (t->p.jt) {
-		if ((cp >= t->start) && (cp <= t->end))
+		if ((cp >= t->start) && (cp <= t->end)) {
 			return t->p.jt;
+		}
 		t++;
 	};
 
@@ -96,8 +133,9 @@ static bool idna__contexto_rule(int32_t cp)
 {
 	int32_t *t;
 	for (t = idna_contexto; *t != 0; t++) {
-		if (*t == cp)
+		if (*t == cp) {
 			return true;
+		}
 	}
 
 	return false;
@@ -124,43 +162,52 @@ static bool idna__contextj_rule(int32_t *label, int index, size_t len)
 	 */
 
 	if (label[index] == 0x200c) {
-		if (index == 0) return false; /* No previous character */
+		if (index == 0) {
+			return false; /* No previous character */
+		}
 		unicode_props = utf8proc_get_property(label[index - 1]);
-		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA)
+		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA) {
 			return true;
+		}
 
 		match = false;
 		for (i = 0; i < (index - 1); i++) {
 			joining_type = idna__jt_property(label[i]);
 			if (((joining_type == IDNA_UNICODE_JT_L) ||
-				(joining_type == IDNA_UNICODE_JT_D)) &&
-				(idna__jt_property(label[i+1]) == IDNA_UNICODE_JT_T)) {
+			     (joining_type == IDNA_UNICODE_JT_D)) &&
+			    (idna__jt_property(label[i+1]) == IDNA_UNICODE_JT_T)) {
 				match = true;
 				break;
 			}
 		}
 
-		if (match == false) return false;
-
-		if (idna__jt_property(label[index+1]) != IDNA_UNICODE_JT_T)
+		if (match == false) {
 			return false;
+		}
+
+		if (idna__jt_property(label[index+1]) != IDNA_UNICODE_JT_T) {
+			return false;
+		}
 
 		for (i = (index + 1); i < (int)len; i++) {
 			joining_type = idna__jt_property(label[i]);
+
 			if ((joining_type == IDNA_UNICODE_JT_R) ||
-				(joining_type == IDNA_UNICODE_JT_D)) {
+			    (joining_type == IDNA_UNICODE_JT_D)) {
 				return true;
-				break;
 			}
 		}
 
 		return false;
 
 	} else if (label[index] == 0x200d) {
-		if (index == 0) return false; /* No previous character */
+		if (index == 0) {
+			return false; /* No previous character */
+		}
 		unicode_props = utf8proc_get_property(label[index - 1]);
-		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA)
+		if (unicode_props->combining_class == UTF8PROC_CCC_VIRAMA) {
 			return true;
+		}
 		return false;
 	}
 
@@ -180,24 +227,35 @@ static bool idna__contextj_rule(int32_t *label, int index, size_t len)
  *
  * If return value != NSERROR_OK, output will be left untouched.
  */
-static nserror idna__utf8_to_ucs4(const char *utf8_label, size_t len, int32_t **ucs4_label, size_t *ucs4_len)
+static nserror
+idna__utf8_to_ucs4(const char *utf8_label,
+		   size_t len,
+		   int32_t **ucs4_label,
+		   size_t *ucs4_len)
 {
 	int32_t *nfc_label;
 	ssize_t nfc_size;
 
 	nfc_label = malloc(len * 4);
-	if (nfc_label == NULL) return NSERROR_NOMEM;
+	if (nfc_label == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	nfc_size = utf8proc_decompose((const uint8_t *)utf8_label, len,
 		nfc_label, len * 4, UTF8PROC_STABLE | UTF8PROC_COMPOSE);
-	if(nfc_size < 0) return NSERROR_NOMEM;
+	if (nfc_size < 0) {
+		return NSERROR_NOMEM;
+	}
 
 	nfc_size = utf8proc_normalise(nfc_label, nfc_size,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
-	if(nfc_size < 0) return NSERROR_NOMEM;
+	if (nfc_size < 0) {
+		return NSERROR_NOMEM;
+	}
 
 	*ucs4_label = nfc_label;
 	*ucs4_len = nfc_size;
+
 	return NSERROR_OK;
 }
 
@@ -213,18 +271,26 @@ static nserror idna__utf8_to_ucs4(const char *utf8_label, size_t len, int32_t **
  *
  * If return value != NSERROR_OK, output will be left untouched.
  */
-static nserror idna__ucs4_to_utf8(const int32_t *ucs4_label, size_t ucs4_len, char **utf8_label, size_t *utf8_len)
+static nserror
+idna__ucs4_to_utf8(const int32_t *ucs4_label,
+		   size_t ucs4_len,
+		   char **utf8_label,
+		   size_t *utf8_len)
 {
 	int32_t *nfc_label;
 	ssize_t nfc_size = ucs4_len;
 
 	nfc_label = malloc(1 + ucs4_len * 4);
-	if (nfc_label == NULL) return NSERROR_NOMEM;
+	if (nfc_label == NULL) {
+		return NSERROR_NOMEM;
+	}
 	memcpy(nfc_label, ucs4_label, ucs4_len * 4);
 
 	nfc_size = utf8proc_reencode(nfc_label, ucs4_len,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
-	if(nfc_size < 0) return NSERROR_NOMEM;
+	if (nfc_size < 0) {
+		return NSERROR_NOMEM;
+	}
 
 	*utf8_label = (char *)nfc_label;
 	*utf8_len = nfc_size;
@@ -244,28 +310,26 @@ static nserror idna__ucs4_to_utf8(const int32_t *ucs4_label, size_t ucs4_len, ch
  *
  * If return value != NSERROR_OK, output will be left untouched.
  */
-static nserror idna__ucs4_to_ace(int32_t *ucs4_label, size_t len, char **ace_label, size_t *out_len)
+static nserror
+idna__ucs4_to_ace(int32_t *ucs4_label,
+		  size_t len,
+		  char **ace_label,
+		  size_t *out_len)
 {
 	char punycode[65]; /* max length of host label + NULL */
-	enum punycode_status status;
 	size_t output_length = 60; /* punycode length - 4 - 1 */
+	nserror ret;
 
 	punycode[0] = 'x';
 	punycode[1] = 'n';
 	punycode[2] = '-';
 	punycode[3] = '-';
 
-	status = punycode_encode(len, (const punycode_uint *)ucs4_label,
-			NULL, &output_length, punycode + 4);
-	if (status == punycode_bad_input) {
-		LOG(("Bad input"));
-		return NSERROR_BAD_ENCODING;
-	} else if (status == punycode_big_output) {
-		LOG(("Output too big"));
-		return NSERROR_NOMEM;
-	} else if (status == punycode_overflow) {
-		LOG(("Overflow"));
-		return NSERROR_NOMEM;
+	ret = punycode_status_to_nserror(punycode_encode(len,
+			(const punycode_uint *)ucs4_label, NULL,
+			&output_length, punycode + 4));
+	if (ret != NSERROR_OK) {
+		return ret;
 	}
 
 	output_length += SLEN("xn--");
@@ -289,10 +353,14 @@ static nserror idna__ucs4_to_ace(int32_t *ucs4_label, size_t len, char **ace_lab
  *
  * If return value != NSERROR_OK, output will be left untouched.
  */
-static nserror idna__ace_to_ucs4(const char *ace_label, size_t ace_len, int32_t **ucs4_label, size_t *ucs4_len)
+static nserror
+idna__ace_to_ucs4(const char *ace_label,
+		  size_t ace_len,
+		  int32_t **ucs4_label,
+		  size_t *ucs4_len)
 {
 	int32_t *ucs4;
-	enum punycode_status status;
+	nserror ret;
 	size_t output_length = ace_len; /* never exceeds input length */
 
 	/* The header should always have been checked before calling */
@@ -300,20 +368,15 @@ static nserror idna__ace_to_ucs4(const char *ace_label, size_t ace_len, int32_t 
 		(ace_label[2] == '-') && (ace_label[3] == '-'));
 
 	ucs4 = malloc(output_length * 4);
-	if (ucs4 == NULL) return NSERROR_NOMEM;
-
-	status = punycode_decode(ace_len - 4, ace_label + 4,
-				&output_length, (punycode_uint *)ucs4, NULL);
-
-	if (status == punycode_bad_input) {
-		LOG(("Bad input"));
-		return NSERROR_BAD_ENCODING;
-	} else if (status == punycode_big_output) {
-		LOG(("Output too big"));
+	if (ucs4 == NULL) {
 		return NSERROR_NOMEM;
-	} else if (status == punycode_overflow) {
-		LOG(("Overflow"));
-		return NSERROR_NOMEM;
+	}
+
+	ret = punycode_status_to_nserror(punycode_decode(ace_len - 4,
+		ace_label + 4, &output_length, (punycode_uint *)ucs4, NULL));
+	if (ret != NSERROR_OK) {
+		free(ucs4);
+		return ret;
 	}
 
 	ucs4[output_length] = '\0';
@@ -338,7 +401,9 @@ static size_t idna__host_label_length(const char *host, size_t max_length)
 	size_t length = 0;
 
 	while (length < max_length) {
-		if ((*p == '.') || (*p == ':') || (*p == '\0')) break;
+		if ((*p == '.') || (*p == ':') || (*p == '\0')) {
+			break;
+		}
 		length++;
 		p++;
 	}
@@ -399,7 +464,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		}
 
 		/* 6. Check CONTEXTO characters have a rule defined */
-		/*\todo optionally we can check conformance to this rule */
+		/** \todo optionally we can check conformance to this rule */
 		if (idna_prop == IDNA_P_CONTEXTO) {
 			if (idna__contexto_rule(label[i]) == false) {
 				LOG(("Check failed: character %d (%x) has no CONTEXTO rule defined", i, label[i]));
@@ -413,7 +478,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 			return false;
 		}
 
-		/*\todo 8. (optionally) check Bidi compliance */
+		/** \todo 8. (optionally) check Bidi compliance */
 	}
 
 	return true;
@@ -461,13 +526,15 @@ static bool idna__is_ldh(const char *label, size_t len)
 static bool idna__is_ace(const char *label, size_t len)
 {
 	/* Check it is a valid DNS string */
-	if (idna__is_ldh(label, len) == false)
+	if (idna__is_ldh(label, len) == false) {
 		return false;
+	}
 
 	/* Check the ACE prefix is present */
 	if ((label[0] == 'x') && (label[1] == 'n') &&
-		(label[2] == '-') && (label[3] == '-'))
+	    (label[2] == '-') && (label[3] == '-')) {
 		return true;
+	}
 
 	return false;
 }
@@ -489,20 +556,25 @@ static bool idna__verify(const char *label, size_t len)
 	size_t u_ucs4_len, ace_len;
 
 	/* Convert our ACE label back to UCS-4 */
-	error = idna__ace_to_ucs4(label, len,
-				&ucs4, &u_ucs4_len);
-	if (error != NSERROR_OK) return false;
+	error = idna__ace_to_ucs4(label, len, &ucs4, &u_ucs4_len);
+	if (error != NSERROR_OK) {
+		return false;
+	}
 
 	/* Perform NFC normalisation */
 	ucs4_len = utf8proc_normalise(ucs4, u_ucs4_len,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
-	if(ucs4_len < 0) return false;
+	if (ucs4_len < 0) {
+		return false;
+	}
 
 	/* Convert the UCS-4 label back to ACE */
 	error = idna__ucs4_to_ace(ucs4, (size_t)ucs4_len,
 				&ace, &ace_len);
 	free(ucs4);
-	if (error != NSERROR_OK) return false;
+	if (error != NSERROR_OK) {
+		return false;
+	}
 
 	/* Check if it matches the input */
 	if ((len == ace_len) && (strncmp(label, ace, len) == 0)) {
@@ -518,7 +590,8 @@ static bool idna__verify(const char *label, size_t len)
 
 
 /* exported interface documented in idna.h */
-nserror idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
+nserror
+idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 {
 	nserror error;
 	int32_t *ucs4_host;
@@ -532,18 +605,22 @@ nserror idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_l
 
 			/* Convert to Unicode */
 			if ((error = idna__utf8_to_ucs4(host, label_len,
-				&ucs4_host, &ucs4_len)) != NSERROR_OK)
+					&ucs4_host, &ucs4_len)) != NSERROR_OK) {
 				return error;
+			}
 
 			/* Check this is valid for conversion */
-			if (idna__is_valid(ucs4_host, ucs4_len) == false)
+			if (idna__is_valid(ucs4_host, ucs4_len) == false) {
 				return NSERROR_BAD_URL;
+			}
 
 			/* Convert to ACE */
 			error = idna__ucs4_to_ace(ucs4_host, ucs4_len,
 						&output, &output_len);
 			free(ucs4_host);
-			if (error != NSERROR_OK) return error;
+			if (error != NSERROR_OK) {
+				return error;
+			}
 			strncpy(fqdn_p, output, output_len);
 			free(output);
 			fqdn_p += output_len;
@@ -551,7 +628,7 @@ nserror idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_l
 		} else {
 			/* This is already a DNS-valid ASCII string */
 			if ((idna__is_ace(host, label_len) == true) &&
-				(idna__verify(host, label_len) == false)) {
+			    (idna__verify(host, label_len) == false)) {
 				LOG(("Cannot verify ACE label %s", host));
 				return NSERROR_BAD_URL;
 			}
@@ -565,7 +642,9 @@ nserror idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_l
 		fqdn_len++;
 
 		host += label_len;
-		if ((*host == '\0') || (*host == ':')) break;
+		if ((*host == '\0') || (*host == ':')) {
+			break;
+		}
 		host++;
 		len = len - label_len - 1;
 	}
@@ -580,7 +659,8 @@ nserror idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_l
 
 
 /* exported interface documented in idna.h */
-nserror idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
+nserror
+idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 {
 	nserror error;
 	int32_t *ucs4_host;
@@ -594,15 +674,19 @@ nserror idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *h
 
 			/* Decode to Unicode */
 			error = idna__ace_to_ucs4(ace_host, label_len,
-						&ucs4_host, &ucs4_len);
-			if (error != NSERROR_OK) return error;
+					&ucs4_host, &ucs4_len);
+			if (error != NSERROR_OK) {
+				return error;
+			}
 
 			/* Convert to UTF-8 */
-			if ((error = idna__ucs4_to_utf8(ucs4_host, ucs4_len,
-				&output, &output_len)) != NSERROR_OK)
-				return error;
-
+			error = idna__ucs4_to_utf8(ucs4_host, ucs4_len,
+						   &output, &output_len);
 			free(ucs4_host);
+			if (error != NSERROR_OK) {
+				return error;
+			}
+
 			memcpy(fqdn_p, output, output_len * 4);
 			free(output);
 			fqdn_p += output_len;
@@ -631,4 +715,3 @@ nserror idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *h
 
 	return NSERROR_OK;
 }
-
