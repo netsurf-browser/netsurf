@@ -54,7 +54,7 @@ bool ro_gui_options_cache_initialise(wimp_w w)
 	ro_gui_set_icon_decimal(w, CACHE_MEMORY_SIZE,
 			(nsoption_int(memory_cache_size) * 10) >> 20, 1);
 	ro_gui_set_icon_decimal(w, CACHE_DISC_SIZE,
-			(nsoption_int(disc_cache_size)) >> 20, 0);
+			(int) ((nsoption_uint(disc_cache_size)) >> 20), 0);
 	ro_gui_set_icon_decimal(w, CACHE_DISC_EXPIRE,
 			(nsoption_int(disc_cache_age)), 0);
 
@@ -62,7 +62,7 @@ bool ro_gui_options_cache_initialise(wimp_w w)
 	ro_gui_wimp_event_register_numeric_field(w, CACHE_MEMORY_SIZE,
 			CACHE_MEMORY_INC, CACHE_MEMORY_DEC, 0, 640, 1, 1);
 	ro_gui_wimp_event_register_numeric_field(w, CACHE_DISC_SIZE,
-			CACHE_DISC_INC, CACHE_DISC_DEC, 0, 2047, 1, 0);
+			CACHE_DISC_INC, CACHE_DISC_DEC, 0, 4095, 1, 0);
 	ro_gui_wimp_event_register_numeric_field(w, CACHE_DISC_EXPIRE,
 			CACHE_DISC_EXPIRE_INC, CACHE_DISC_EXPIRE_DEC, 1, 3650,
 			1, 0);
@@ -97,9 +97,9 @@ bool ro_gui_options_cache_ok(wimp_w w)
 	nsoption_set_int(memory_cache_size,
 			(((ro_gui_get_icon_decimal(w,
 					CACHE_MEMORY_SIZE, 1) + 1) << 20) - 1) / 10);
-	nsoption_set_int(disc_cache_size,
-			(((ro_gui_get_icon_decimal(w,
-					CACHE_DISC_SIZE, 0) + 1) << 20) - 1));
+	nsoption_set_uint(disc_cache_size,
+			(uint) (ro_gui_get_icon_decimal(w,
+					CACHE_DISC_SIZE, 0) << 20));
 	nsoption_set_int(disc_cache_age,
 			ro_gui_get_icon_decimal(w, CACHE_DISC_EXPIRE, 0));
 
