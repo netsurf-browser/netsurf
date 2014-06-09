@@ -89,7 +89,7 @@ NSOPTION_STRING(accept_charset, NULL)
 NSOPTION_INTEGER(memory_cache_size, 12 * 1024 * 1024)
 
 /** Preferred expiry size of disc cache / bytes. */
-NSOPTION_INTEGER(disc_cache_size, 1024 * 1024 * 1024)
+NSOPTION_UINT(disc_cache_size, 1024 * 1024 * 1024)
 
 /** Preferred expiry age of disc cache / days. */
 NSOPTION_INTEGER(disc_cache_age, 28)

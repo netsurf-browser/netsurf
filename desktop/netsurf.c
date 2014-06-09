@@ -191,7 +191,7 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	hlcache_parameters.llcache.limit -= image_cache_parameters.limit;
 
 	/* set backing store target limit */
-	hlcache_parameters.llcache.store.limit = nsoption_int(disc_cache_size);
+	hlcache_parameters.llcache.store.limit = nsoption_uint(disc_cache_size);
 
 	/* set backing store hysterissi to 20% */
 	hlcache_parameters.llcache.store.hysteresis = (hlcache_parameters.llcache.store.limit * 20) / 100;;

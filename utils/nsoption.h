@@ -308,6 +308,9 @@ int nsoption_snoptionf(char *string, size_t size, enum nsoption_e option, const 
 /** set an integer option in the default table */
 #define nsoption_set_int(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.i = VALUE
 
+/** set an unsigned integer option in the default table */
+#define nsoption_set_uint(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.u = VALUE
+
 
 /** set a colour option in the default table */
 #define nsoption_set_colour(OPTION, VALUE) nsoptions[NSOPTION_##OPTION].value.c = VALUE

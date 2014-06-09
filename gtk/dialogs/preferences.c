@@ -108,6 +108,27 @@ nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv) \
 		((gdouble)nsoption_int(OPTION)) / MULTIPLIER);		\
 }
 
+#define SPINBUTTON_UINT_SIGNALS(WIDGET, OPTION, MULTIPLIER)		\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_valuechanged(GtkSpinButton *spinbutton,	\
+					  struct ppref *priv);		\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_valuechanged(GtkSpinButton *spinbutton,	\
+					  struct ppref *priv)		\
+{									\
+	nsoption_set_uint(OPTION,					\
+		round(gtk_spin_button_get_value(spinbutton) * MULTIPLIER)); \
+}									\
+									\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv); \
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv) \
+{									\
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(widget),		\
+		((gdouble)nsoption_uint(OPTION)) / MULTIPLIER);		\
+}
+
 #define ENTRY_SIGNALS(WIDGET, OPTION)					\
 G_MODULE_EXPORT void							\
 nsgtk_preferences_##WIDGET##_changed(GtkEditable *editable, struct ppref *priv); \
@@ -372,7 +393,7 @@ SPINBUTTON_SIGNALS(spinHistoryAge, history_age, 1.0)
 SPINBUTTON_SIGNALS(spinMemoryCacheSize, memory_cache_size, (1024*1024))
 
 /* disc cache size */
-SPINBUTTON_SIGNALS(spinDiscCacheSize, disc_cache_size, (1024*1024))
+SPINBUTTON_UINT_SIGNALS(spinDiscCacheSize, disc_cache_size, (1024*1024))
 
 
 /* disc cache age */
