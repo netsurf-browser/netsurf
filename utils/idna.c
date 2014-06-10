@@ -600,7 +600,12 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 	char fqdn[256];
 	char *output, *fqdn_p = fqdn;
 
-	while ((label_len = idna__host_label_length(host, len)) != 0) {
+	label_len = idna__host_label_length(host, len);
+	if (label_len == 0) {
+		return NSERROR_BAD_URL;
+	}
+
+	while (label_len != 0) {
 		if (idna__is_ldh(host, label_len) == false) {
 			/* This string is IDN or invalid */
 
@@ -649,6 +654,8 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 		}
 		host++;
 		len = len - label_len - 1;
+
+		label_len = idna__host_label_length(host, len);
 	}
 
 	fqdn_p--;
@@ -670,7 +677,12 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 	char fqdn[256];
 	char *output, *fqdn_p = fqdn;
 
-	while ((label_len = idna__host_label_length(ace_host, ace_len)) != 0) {
+	label_len = idna__host_label_length(ace_host, ace_len);
+	if (label_len == 0) {
+		return NSERROR_BAD_URL;
+	}
+
+	while (label_len != 0) {
 		if (idna__is_ace(ace_host, label_len) == true) {
 			/* This string is DNS-valid and (probably) encoded */
 
@@ -705,9 +717,13 @@ idna_decode(const char *ace_host, size_t ace_len, char **host, size_t *host_len)
 		fqdn_len++;
 
 		ace_host += label_len;
-		if ((*ace_host == '\0') || (*ace_host == ':')) break;
+		if ((*ace_host == '\0') || (*ace_host == ':')) {
+			break;
+		}
 		ace_host++;
 		ace_len = ace_len - label_len - 1;
+
+		label_len = idna__host_label_length(ace_host, ace_len);
 	}
 
 	fqdn_p--;
