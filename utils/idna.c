@@ -565,6 +565,7 @@ static bool idna__verify(const char *label, size_t len)
 	ucs4_len = utf8proc_normalise(ucs4, u_ucs4_len,
 		UTF8PROC_STABLE | UTF8PROC_COMPOSE);
 	if (ucs4_len < 0) {
+		free(ucs4);
 		return false;
 	}
 
@@ -611,6 +612,7 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 
 			/* Check this is valid for conversion */
 			if (idna__is_valid(ucs4_host, ucs4_len) == false) {
+				free(ucs4_host);
 				return NSERROR_BAD_URL;
 			}
 
