@@ -4827,21 +4827,51 @@ de.ro.HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespe
 fr.ro.HelpCacheConfig5:\Saugmenter la quantité de mémoire.
 it.ro.HelpCacheConfig5:\Saumenta la quantità di memoria.
 nl.ro.HelpCacheConfig5:\Sincrease the amount of memory.
-en.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-de.ro.HelpCacheConfig7:Stellt die Standardeinstellungen wieder her.
-fr.ro.HelpCacheConfig7:\Srevenir aux valeurs par défaut des options du Cache.
-it.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-nl.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-en.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-de.ro.HelpCacheConfig8:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
-fr.ro.HelpCacheConfig8:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
-it.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-nl.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-en.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-de.ro.HelpCacheConfig9:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
-fr.ro.HelpCacheConfig9:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-nl.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+en.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+de.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+fr.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+it.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+nl.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+en.ro.HelpCacheConfig11:\Sreduce the amount of memory.
+de.ro.HelpCacheConfig11:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
+fr.ro.HelpCacheConfig11:\Sréduire la quantité de mémoire.
+it.ro.HelpCacheConfig11:\Sriduce la quantità di memoria.
+nl.ro.HelpCacheConfig11:\Sreduce the amount of memory.
+en.ro.HelpCacheConfig12:\Sincrease the amount of memory.
+de.ro.HelpCacheConfig12:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
+fr.ro.HelpCacheConfig12:\Saugmenter la quantité de mémoire.
+it.ro.HelpCacheConfig12:\Saumenta la quantità di memoria.
+nl.ro.HelpCacheConfig12:\Sincrease the amount of memory.
+en.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+de.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+fr.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+it.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+nl.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+en.ro.HelpCacheConfig16:\Sreduce the number of days.
+de.ro.HelpCacheConfig16:\Sreduce the number of days.
+fr.ro.HelpCacheConfig16:\Sreduce the number of days.
+it.ro.HelpCacheConfig16:\Sreduce the number of days.
+nl.ro.HelpCacheConfig16:\Sreduce the number of days.
+en.ro.HelpCacheConfig17:\Sincrease the number of days.
+de.ro.HelpCacheConfig17:\Sincrease the number of days.
+fr.ro.HelpCacheConfig17:\Sincrease the number of days.
+it.ro.HelpCacheConfig17:\Sincrease the number of days.
+nl.ro.HelpCacheConfig17:\Sincrease the number of days.
+en.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+de.ro.HelpCacheConfig19:Stellt die Standardeinstellungen wieder her.
+fr.ro.HelpCacheConfig19:\Srevenir aux valeurs par défaut des options du Cache.
+it.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+nl.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+en.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+de.ro.HelpCacheConfig20:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
+fr.ro.HelpCacheConfig20:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
+it.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+nl.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+en.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+de.ro.HelpCacheConfig21:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+fr.ro.HelpCacheConfig21:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
+it.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+nl.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
 en.ro.HelpConnectConfig:\Tconnection configuration \w
 de.ro.HelpConnectConfig:Das ist das Fenster zur Einstellung der Parameter für die Netzanbindung.
