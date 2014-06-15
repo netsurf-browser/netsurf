@@ -1786,6 +1786,11 @@ void ami_handle_msg(void)
 							search_web_select_provider(-1);
 						break;
 
+						case GID_SEARCH_ICON:
+							GetAttr(CHOOSER_Selected, gwin->objects[GID_SEARCH_ICON], (ULONG *)&storage);
+							search_web_select_provider(storage);
+						break;
+
 						case GID_SEARCHSTRING:
 						{
 							nserror ret;
@@ -3534,6 +3539,7 @@ gui_window_create(struct browser_window *bw,
 						LAYOUT_VertAlignment, LALIGN_CENTER,
 						LAYOUT_AddChild, g->shared->objects[GID_SEARCH_ICON] = ChooserObject,
 							GA_ID, GID_SEARCH_ICON,
+							GA_RelVerify, TRUE,
 							CHOOSER_DropDown, TRUE,
 							CHOOSER_Labels, g->shared->web_search_list,
 							CHOOSER_MaxLabels, 40, /* Same as options GUI */
@@ -4682,8 +4688,7 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 				DisposeObject(gwin->search_bm);
 
 			gwin->search_bm = BitMapObject,
-						BITMAP_Masking, TRUE,
-						BITMAP_HasAlpha, TRUE,
+						BITMAP_Screen, scrn,
 						BITMAP_Width, 16,
 						BITMAP_Height, 16,
 						BITMAP_BitMap, bm,
