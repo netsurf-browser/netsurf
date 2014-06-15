@@ -218,9 +218,6 @@ CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 struct List *websearch_list;
 
-struct List *ami_gui_opts_websearch(void);
-void ami_gui_opts_websearch_free(struct List *websearchlist);
-
 void ami_gui_opts_setup(void)
 {
 	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
@@ -2155,3 +2152,4 @@ void ami_gui_opts_websearch_free(struct List *websearchlist)
 
 	FreeVec(websearchlist);
 }
+
