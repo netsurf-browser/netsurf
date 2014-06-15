@@ -2333,23 +2333,35 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	 * or scroll */
 	need_clip = false;
 	if (box->object || box->flags & IFRAME ||
-			(box->style && (overflow_x != CSS_OVERFLOW_VISIBLE ||
-			                overflow_y != CSS_OVERFLOW_VISIBLE))) {
+			(overflow_x != CSS_OVERFLOW_VISIBLE &&
+			 overflow_y != CSS_OVERFLOW_VISIBLE)) {
 		r.x0 = x;
+		r.y0 = y;
 		r.x1 = x + padding_width;
+		r.y1 = y + padding_height;
+		if (r.x0 < clip->x0) r.x0 = clip->x0;
+		if (r.y0 < clip->y0) r.y0 = clip->y0;
+		if (clip->x1 < r.x1) r.x1 = clip->x1;
+		if (clip->y1 < r.y1) r.y1 = clip->y1;
+		if (r.x1 <= r.x0 || r.y1 <= r.y0)
+			return ((!plot->group_end) || (plot->group_end()));
+		need_clip = true;
+
+	} else if (overflow_x != CSS_OVERFLOW_VISIBLE) {
+		r.x0 = x;
+		r.y0 = clip->y0;
+		r.x1 = x + padding_width;
+		r.y1 = clip->y1;
 		if (r.x0 < clip->x0) r.x0 = clip->x0;
 		if (clip->x1 < r.x1) r.x1 = clip->x1;
 		if (r.x1 <= r.x0)
 			return ((!plot->group_end) || (plot->group_end()));
 		need_clip = true;
-	}
 
-	/* clip to the padding edge for objects, or boxes with overflow hidden
-	 * or scroll */
-	if (box->object || box->flags & IFRAME ||
-			(box->style && (overflow_x != CSS_OVERFLOW_VISIBLE ||
-			                overflow_y != CSS_OVERFLOW_VISIBLE))) {
+	} else if (overflow_y != CSS_OVERFLOW_VISIBLE) {
+		r.x0 = clip->x0;
 		r.y0 = y;
+		r.x1 = clip->x1;
 		r.y1 = y + padding_height;
 		if (r.y0 < clip->y0) r.y0 = clip->y0;
 		if (clip->y1 < r.y1) r.y1 = clip->y1;
