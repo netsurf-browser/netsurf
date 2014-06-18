@@ -19,6 +19,8 @@
 #ifndef NETSURF_FB_FONT_INTERNAL_H
 #define NETSURF_FB_FONT_INTERNAL_H
 
+#include <stdbool.h>
+
 struct fb_font_desc {
     const char *name;
     int width, height, pitch;
@@ -38,6 +40,9 @@ enum fb_font_style {
 enum fb_font_style fb_get_font_style(const plot_font_style_t *fstyle);
 
 const uint8_t * fb_get_glyph(uint32_t ucs4, enum fb_font_style style);
+
+#define codepoint_displayable(u) \
+	(!(u >= 0x200b && u <= 0x200f))
 
 #endif /* NETSURF_FB_FONT_INTERNAL_H */
 

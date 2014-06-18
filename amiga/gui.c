@@ -113,6 +113,7 @@
 #include <proto/bevel.h>
 #include <proto/bitmap.h>
 #include <proto/button.h>
+#include <proto/chooser.h>
 #include <proto/clicktab.h>
 #include <proto/layout.h>
 #include <proto/space.h>
@@ -122,6 +123,7 @@
 
 #include <classes/window.h>
 #include <gadgets/button.h>
+#include <gadgets/chooser.h>
 #include <gadgets/clicktab.h>
 #include <gadgets/layout.h>
 #include <gadgets/scroller.h>
@@ -197,8 +199,6 @@ void ami_try_quit(void);
 void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
-static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg);
 static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg);
 static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
@@ -1786,6 +1786,11 @@ void ami_handle_msg(void)
 							search_web_select_provider(-1);
 						break;
 
+						case GID_SEARCH_ICON:
+							GetAttr(CHOOSER_Selected, gwin->objects[GID_SEARCH_ICON], (ULONG *)&storage);
+							search_web_select_provider(storage);
+						break;
+
 						case GID_SEARCHSTRING:
 						{
 							nserror ret;
@@ -3241,9 +3246,6 @@ gui_window_create(struct browser_window *bw,
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
 
-	g->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
-	g->shared->search_ico_hook.h_Data = g->shared;
-
 	g->shared->favicon_hook.h_Entry = (void *)ami_set_favicon_render_hook;
 	g->shared->favicon_hook.h_Data = g->shared;
 
@@ -3277,6 +3279,9 @@ gui_window_create(struct browser_window *bw,
 											TNA_CloseGadget, TRUE,
 											TAG_DONE);
 		AddTail(&g->shared->tab_list,g->tab_node);
+
+		g->shared->web_search_list = ami_gui_opts_websearch();
+		g->shared->search_bm = NULL;
 
 		g->shared->tabs=1;
 		g->shared->next_tab=1;
@@ -3387,12 +3392,12 @@ gui_window_create(struct browser_window *bw,
 		}
 
 		g->shared->objects[OID_MAIN] = WindowObject,
-       	    WA_ScreenTitle,nsscreentitle,
-       	   	WA_Activate, TRUE,
-           	WA_DepthGadget, TRUE,
-           	WA_DragBar, TRUE,
-       	   	WA_CloseGadget, TRUE,
-           	WA_SizeGadget, TRUE,
+			WA_ScreenTitle,nsscreentitle,
+			WA_Activate, TRUE,
+			WA_DepthGadget, TRUE,
+			WA_DragBar, TRUE,
+			WA_CloseGadget, TRUE,
+			WA_SizeGadget, TRUE,
 			WA_Top,cury,
 			WA_Left,curx,
 			WA_Width,curw,
@@ -3401,12 +3406,12 @@ gui_window_create(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
-       	   	WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
-						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-						IDCMP_RAWKEY | idcmp_sizeverify |
-						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-						IDCMP_REFRESHWINDOW |
-						IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
+			WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
+				IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+				IDCMP_RAWKEY | idcmp_sizeverify |
+				IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+				IDCMP_REFRESHWINDOW |
+				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, g->shared->menu,
 			WINDOW_MenuUserData, WGUD_HOOK,
@@ -3419,8 +3424,8 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_BuiltInScroll, TRUE,
 			WINDOW_GadgetHelp, TRUE,
 			WINDOW_UserData, g->shared,
-           	WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = VGroupObject,
-               	LAYOUT_SpaceOuter, TRUE,
+  			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = VGroupObject,
+				LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
 					LAYOUT_VertAlignment, LALIGN_CENTER,
 					LAYOUT_AddChild, g->shared->objects[GID_BACK] = ButtonObject,
@@ -3532,13 +3537,13 @@ gui_window_create(struct browser_window *bw,
 					LAYOUT_WeightBar, TRUE,
 					LAYOUT_AddChild, HGroupObject,
 						LAYOUT_VertAlignment, LALIGN_CENTER,
-						LAYOUT_AddChild, g->shared->objects[GID_SEARCH_ICON] = SpaceObject,
+						LAYOUT_AddChild, g->shared->objects[GID_SEARCH_ICON] = ChooserObject,
 							GA_ID, GID_SEARCH_ICON,
-							SPACE_MinWidth, 16,
-							SPACE_MinHeight, 16,
-							SPACE_Transparent, FALSE,
-							SPACE_RenderHook, &g->shared->search_ico_hook,
-						SpaceEnd,
+							GA_RelVerify, TRUE,
+							CHOOSER_DropDown, TRUE,
+							CHOOSER_Labels, g->shared->web_search_list,
+							CHOOSER_MaxLabels, 40, /* Same as options GUI */
+						ChooserEnd,
 						CHILD_WeightedWidth,0,
 						CHILD_WeightedHeight,0,
 						LAYOUT_AddChild, g->shared->objects[GID_SEARCHSTRING] =StringObject,
@@ -3746,8 +3751,6 @@ gui_window_create(struct browser_window *bw,
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 
-	/* set web search provider */
-	search_web_select_provider(nsoption_int(search_provider));
 	refresh_search_ico = TRUE;
 
 	ScreenToFront(scrn);
@@ -3911,6 +3914,9 @@ static void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
 	DisposeObject(g->shared->objects[GID_FAVE_ADD]);
 	DisposeObject(g->shared->objects[GID_FAVE_RMV]);
+
+	ami_gui_opts_websearch_free(g->shared->web_search_list);
+	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
 	ami_free_menulabs(g->shared);
 	free(g->shared->wintitle);
@@ -4678,55 +4684,25 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 
 		if(node->Type == AMINS_WINDOW)
 		{
-			GetAttr(SPACE_AreaBox, gwin->objects[GID_SEARCH_ICON], (ULONG *)&bbox);
+			if(gwin->search_bm != NULL)
+				DisposeObject(gwin->search_bm);
+
+			gwin->search_bm = BitMapObject,
+						BITMAP_Screen, scrn,
+						BITMAP_Width, 16,
+						BITMAP_Height, 16,
+						BITMAP_BitMap, bm,
+					BitMapEnd;
 
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCH_ICON],
 				gwin->win, NULL,
 				GA_HintInfo, provider_name,
+				GA_Image, gwin->search_bm,
 				TAG_DONE);
-
-			EraseRect(gwin->win->RPort, bbox->Left, bbox->Top,
-				bbox->Left+16, bbox->Top+16);
-
-			if(bm)
-			{
-				ULONG tag, tag_data, minterm;
-				
-				if(ami_plot_screen_is_palettemapped() == false) {
-					tag = BLITA_UseSrcAlpha;
-					tag_data = !ico_bitmap->opaque;
-					minterm = 0xc0;
-				} else {
-					tag = BLITA_MaskPlane;
-					tag_data = (ULONG)ami_bitmap_get_mask(ico_bitmap, 16, 16, bm);
-					minterm = (ABC|ABNC|ANBC);
-				}
-
-				BltBitMapTags(BLITA_SrcX, 0,
-							BLITA_SrcY, 0,
-							BLITA_DestX, bbox->Left,
-							BLITA_DestY, bbox->Top,
-							BLITA_Width, 16,
-							BLITA_Height, 16,
-							BLITA_Source, bm,
-							BLITA_Dest, gwin->win->RPort,
-							BLITA_SrcType, BLITT_BITMAP,
-							BLITA_DestType, BLITT_RASTPORT,
-							BLITA_Minterm, minterm,
-							tag, tag_data,
-							TAG_DONE);
-			}
 		}
 	} while(node = nnode);
 
 	return NSERROR_OK;
-}
-
-static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg)
-{
-	refresh_search_ico = TRUE;
-	return 0;
 }
 
 static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,

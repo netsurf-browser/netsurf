@@ -216,10 +216,7 @@ CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
-STRPTR *websearch_list;
-
-STRPTR *ami_gui_opts_websearch(void);
-void ami_gui_opts_websearch_free(STRPTR *websearchlist);
+struct List *websearch_list;
 
 void ami_gui_opts_setup(void)
 {
@@ -1312,7 +1309,7 @@ void ami_gui_opts_open(void)
 											GA_ID, GID_OPTS_SEARCH_PROV,
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
-											CHOOSER_LabelArray, websearch_list,
+											CHOOSER_Labels, websearch_list,
 											CHOOSER_Selected, nsoption_int(search_provider),
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
@@ -2118,39 +2115,41 @@ BOOL ami_gui_opts_event(void)
 	return FALSE;
 }
 
-STRPTR *ami_gui_opts_websearch(void)
+struct List *ami_gui_opts_websearch(void)
 {
-	char buf[300];
-	ULONG ref = 0;
-	STRPTR *websearchlist;
+	struct List *list;
+	struct Node *node;
+	const char *name;
+	int iter;
 
-	websearchlist = AllocVecTagList(200, NULL); /* NB: Was not MEMF_PRIVATE */
+	list = AllocVecTagList(sizeof(struct List), NULL);
+	NewList(list);
 
-	if (nsoption_charp(search_engines_file) == NULL) return websearchlist;
+	if (nsoption_charp(search_engines_file) == NULL) return list;
 
-	FILE *f = fopen(nsoption_charp(search_engines_file), "r");
-	if (f == NULL) return websearchlist;
-
-	while (fgets(buf, sizeof(buf), f) != NULL) {
-		if (buf[0] == '\0') continue;
-		buf[strlen(buf)-1] = '\0';
-		websearchlist[ref] = strdup(strtok(buf, "|"));
-		ref++;
+	for (iter = search_web_iterate_providers(0, &name);
+		iter != -1;
+		iter = search_web_iterate_providers(iter, &name)) {
+			node = AllocChooserNode(CNA_Text, name, TAG_DONE);
+			AddTail(list, node);
 	}
-	fclose(f);
-	websearchlist[ref] = NULL;
 
-	return websearchlist;
+	return list;
 }
 
-void ami_gui_opts_websearch_free(STRPTR *websearchlist)
+void ami_gui_opts_websearch_free(struct List *websearchlist)
 {
-	ULONG ref = 0;
+	struct Node *node;
+	struct Node *nnode;
 
-	while (websearchlist[ref] != NULL) {
-		free(websearchlist[ref]);
-		ref++;
-	}
+	if(IsListEmpty(websearchlist)) return;
+	node = GetHead(websearchlist);
+
+	do {
+		nnode = GetSucc(node);
+		Remove(node);
+	} while(node = nnode);
 
 	FreeVec(websearchlist);
 }
+

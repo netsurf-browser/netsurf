@@ -140,6 +140,9 @@ static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
         ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
         nxtchr = utf8_next(text, length, nxtchr);
 
+	if (!codepoint_displayable(ucs4))
+		continue;
+
         loc.x0 = x;
         loc.y0 = y;
         loc.x1 = loc.x0 + FB_FONT_WIDTH;

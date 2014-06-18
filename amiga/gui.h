@@ -111,6 +111,8 @@ struct gui_window_2 {
 	ULONG hotlist_items;
 	char *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;
+	struct List *web_search_list;
+	Object *search_bm;
 	char *svbuffer;
 	char *status;
 	char *wintitle;
@@ -120,7 +122,6 @@ struct gui_window_2 {
 	BOOL rmbtrapped;
 	struct AppIcon *appicon; /* iconify appicon */
 	struct DiskObject *dobj; /* iconify appicon */
-	struct Hook search_ico_hook;
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
 	gui_drag_type drag_op;
