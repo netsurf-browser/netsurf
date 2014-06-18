@@ -287,11 +287,24 @@ static nserror utf8_from_local(const char *string,
 	return NSERROR_OK;
 }
 
+
 static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)
 {
-        *width = FB_FONT_WIDTH * utf8_bounded_length(string, length);
+        size_t nxtchr = 0;
+
+	*width = 0;
+        while (nxtchr < length) {
+		uint32_t ucs4;
+		ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
+		if (codepoint_displayable(ucs4)) {
+			*width += FB_FONT_WIDTH;
+		}
+
+		nxtchr = utf8_next(string, length, nxtchr);
+        }
+
 	return true;
 }
 
@@ -315,10 +328,15 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	int x_pos = 0;
 
         while (nxtchr < length) {
+		uint32_t ucs4;
                 if (abs(x_pos - x) <= (FB_FONT_WIDTH / 2))
                         break;
 
-                x_pos += FB_FONT_WIDTH;
+		ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
+		if (codepoint_displayable(ucs4)) {
+			x_pos += FB_FONT_WIDTH;
+		}
+
                 nxtchr = utf8_next(string, length, nxtchr);
         }
 
@@ -363,13 +381,18 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 
         *actual_x = 0;
         while (nxtchr < length) {
+		uint32_t ucs4;
 
                 if (string[nxtchr] == ' ') {
                         last_space_x = *actual_x;
                         last_space_idx = nxtchr;
                 }
 
-                *actual_x += FB_FONT_WIDTH;
+		ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
+		if (codepoint_displayable(ucs4)) {
+			*actual_x += FB_FONT_WIDTH;
+		}
+
                 if (*actual_x > x && last_space_idx != 0) {
                         /* string has exceeded available width and we've
                          * found a space; return previous space */
