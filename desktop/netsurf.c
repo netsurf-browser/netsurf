@@ -29,7 +29,7 @@
 #include "utils/config.h"
 #include "utils/utsname.h"
 #include "content/content_factory.h"
-#include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/hlcache.h"
 #include "content/mimesniff.h"
 #include "content/urldb.h"
@@ -231,7 +231,7 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	setlocale(LC_ALL, "C");
 
 	/* initialise the fetchers */
-	ret = fetch_init();
+	ret = fetcher_init();
 	if (ret != NSERROR_OK)
 		return ret;
 	
@@ -258,7 +258,7 @@ int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
 		guit->browser->poll(fetch_active);
-		hlcache_poll();
+		fetcher_poll();
 	}
 
 	return 0;
@@ -285,7 +285,7 @@ void netsurf_exit(void)
 	hlcache_finalise();
 
 	LOG(("Closing fetches"));
-	fetch_quit();
+	fetcher_quit();
 
 	mimesniff_fini();
 

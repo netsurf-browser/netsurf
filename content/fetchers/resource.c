@@ -37,16 +37,19 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include "content/fetch.h"
-#include "content/fetchers/resource.h"
-#include "content/urldb.h"
-#include "desktop/gui_factory.h"
+#include "utils/errors.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
+#include "desktop/gui_factory.h"
+
+#include "content/fetch.h"
+#include "content/fetchers.h"
+#include "content/fetchers/resource.h"
+#include "content/urldb.h"
 
 struct fetch_resource_context;
 
@@ -353,17 +356,19 @@ static void fetch_resource_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_resource_register(void)
+nserror fetch_resource_register(void)
 {
 	lwc_string *scheme = lwc_string_ref(corestring_lwc_resource);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_resource_initialise,
+		.acceptable = fetch_resource_can_fetch,
+		.setup = fetch_resource_setup,
+		.start = fetch_resource_start,
+		.abort = fetch_resource_abort,
+		.free = fetch_resource_free,
+		.poll = fetch_resource_poll,
+		.finalise = fetch_resource_finalise
+	};
 
-	fetch_add_fetcher(scheme,
-		fetch_resource_initialise,
-		fetch_resource_can_fetch,
-		fetch_resource_setup,
-		fetch_resource_start,
-		fetch_resource_abort,
-		fetch_resource_free,
-		fetch_resource_poll,
-		fetch_resource_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

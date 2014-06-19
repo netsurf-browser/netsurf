@@ -35,6 +35,6 @@
  * 
  * should only be called from the fetch initialise
  */
-void fetch_resource_register(void);
+nserror fetch_resource_register(void);
 
 #endif

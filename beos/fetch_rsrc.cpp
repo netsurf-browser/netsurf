@@ -33,6 +33,7 @@
 extern "C" {
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -358,6 +359,16 @@ void fetch_rsrc_register(void)
 {
 	lwc_string *scheme;
 	int err;
+	const struct fetcher_operation_table fetcher_ops_rsrc = {
+		fetch_rsrc_initialise,
+		fetch_rsrc_can_fetch,
+		fetch_rsrc_setup,
+		fetch_rsrc_start,
+		fetch_rsrc_abort,
+		fetch_rsrc_free,
+		fetch_rsrc_poll,
+		fetch_rsrc_finalise
+	};
 
 	err = find_app_resources();
 
@@ -371,15 +382,7 @@ void fetch_rsrc_register(void)
 				"(couldn't intern \"rsrc\").");
 	}
 
-	fetch_add_fetcher(scheme,
-		fetch_rsrc_initialise,
-		fetch_rsrc_can_fetch,
-		fetch_rsrc_setup,
-		fetch_rsrc_start,
-		fetch_rsrc_abort,
-		fetch_rsrc_free,
-		fetch_rsrc_poll,
-		fetch_rsrc_finalise);
+	fetcher_add(scheme, &fetcher_ops_rsrc);
 }
 
 void fetch_rsrc_unregister(void)

@@ -53,12 +53,10 @@
 #include "utils/file.h"
 
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/fetchers/curl.h"
 #include "content/urldb.h"
 
-/* uncomment this to use scheduler based calling
-#define FETCHER_CURLL_SCHEDULED 1
-*/
 
 /** SSL certificate info */
 struct cert_info {
@@ -160,6 +158,16 @@ void fetch_curl_register(void)
 	curl_version_info_data *data;
 	int i;
 	lwc_string *scheme;
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_curl_initialise,
+		.acceptable = fetch_curl_can_fetch,
+		.setup = fetch_curl_setup,
+		.start = fetch_curl_start,
+		.abort = fetch_curl_abort,
+		.free = fetch_curl_free,
+		.poll = fetch_curl_poll,
+		.finalise = fetch_curl_finalise
+	};
 
 	LOG(("curl_version %s", curl_version()));
 
@@ -261,19 +269,7 @@ void fetch_curl_register(void)
 			continue;
 		}
 
-		if (!fetch_add_fetcher(scheme,
-				fetch_curl_initialise,
-				fetch_curl_can_fetch,
-				fetch_curl_setup,
-				fetch_curl_start,
-				fetch_curl_abort,
-				fetch_curl_free,
-#ifdef FETCHER_CURLL_SCHEDULED
-				       NULL,
-#else
-				fetch_curl_poll,
-#endif
-				fetch_curl_finalise)) {
+		if (fetcher_add(scheme, &fetcher_ops) != NSERROR_OK) {
 			LOG(("Unable to register cURL fetcher for %s",
 					data->protocols[i]));
 		}
@@ -835,12 +831,6 @@ void fetch_curl_poll(lwc_string *scheme_ignored)
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
-
-#ifdef FETCHER_CURLL_SCHEDULED
-	if (running != 0) {
-		guit->browser->schedule(10, fetch_curl_poll, fetch_curl_poll);
-	}
-#endif
 }
 
 

@@ -239,13 +239,6 @@ nserror llcache_initialise(const struct llcache_parameters *parameters);
 void llcache_finalise(void);
 
 /**
- * Cause the low-level cache to emit any pending notifications.
- *
- * \return NSERROR_OK on success, appropriate error otherwise.
- */
-nserror llcache_poll(void);
-
-/**
  * Cause the low-level cache to attempt to perform cleanup.
  *
  * No guarantees are made as to whether or not cleanups will take

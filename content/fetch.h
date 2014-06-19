@@ -25,8 +25,6 @@
 
 #include <stdbool.h>
 
-#include <libwapcaplet/libwapcaplet.h>
-
 #include "utils/config.h"
 #include "utils/nsurl.h"
 
@@ -95,16 +93,7 @@ struct ssl_cert_info {
 	int cert_type;		/**< Certificate type */
 };
 
-extern bool fetch_active;
-
 typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
-
-/**
- * Initialise the fetcher.
- *
- * @return NSERROR_OK or error code
- */
-nserror fetch_init(void);
 
 /**
  * Start fetching data for the given URL.
@@ -137,19 +126,6 @@ struct fetch *fetch_start(nsurl *url, nsurl *referer,
  */
 void fetch_abort(struct fetch *f);
 
-/**
- * Do some work on current fetches.
- *
- * Must be called regularly to make progress on fetches.
- */
-void fetch_poll(void);
-
-/**
- * Clean up for quit.
- *
- * Must be called before exiting.
- */
-void fetch_quit(void);
 
 /**
  * Check if a URL's scheme can be fetched.
@@ -162,9 +138,7 @@ bool fetch_can_fetch(const nsurl *url);
 /**
  * Change the callback function for a fetch.
  */
-void fetch_change_callback(struct fetch *fetch,
-			   fetch_callback callback,
-			   void *p);
+void fetch_change_callback(struct fetch *fetch, fetch_callback callback, void *p);
 
 /**
  * Get the HTTP response code.
@@ -224,42 +198,5 @@ const char *fetch_get_referer_to_send(struct fetch *fetch);
  */
 void fetch_set_cookie(struct fetch *fetch, const char *data);
 
-
-/* API for fetchers themselves */
-
-typedef bool (*fetcher_initialise)(lwc_string *scheme);
-typedef bool (*fetcher_can_fetch)(const nsurl *url);
-typedef void *(*fetcher_setup_fetch)(struct fetch *parent_fetch, nsurl *url,
-		bool only_2xx, bool downgrade_tls, const char *post_urlenc,
-		const struct fetch_multipart_data *post_multipart,
-		const char **headers);
-typedef bool (*fetcher_start_fetch)(void *fetch);
-typedef void (*fetcher_abort_fetch)(void *fetch);
-typedef void (*fetcher_free_fetch)(void *fetch);
-typedef void (*fetcher_poll_fetcher)(lwc_string *scheme);
-typedef void (*fetcher_finalise)(lwc_string *scheme);
-
-/** Register a fetcher for a scheme
- *
- * \param scheme	scheme fetcher is for (caller relinquishes ownership)
- * \param initialiser	fetcher initialiser
- * \param can_fetch     fetcher can fetch function
- * \param setup_fetch	fetcher fetch setup function
- * \param start_fetch	fetcher fetch start function
- * \param abort_fetch	fetcher fetch abort function
- * \param free_fetch	fetcher fetch free function
- * \param poll_fetcher	fetcher poll function
- * \param finaliser	fetcher finaliser
- * \return true iff success
- */
-bool fetch_add_fetcher(lwc_string *scheme,
-		       fetcher_initialise initialiser,
-		       fetcher_can_fetch can_fetch,
-		       fetcher_setup_fetch setup_fetch,
-		       fetcher_start_fetch start_fetch,
-		       fetcher_abort_fetch abort_fetch,
-		       fetcher_free_fetch free_fetch,
-		       fetcher_poll_fetcher poll_fetcher,
-		       fetcher_finalise finaliser);
 
 #endif
