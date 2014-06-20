@@ -196,12 +196,11 @@ NSIconTextControl::NSIconTextControl(BRect frame, const char* name,
 	fIconBitmap(NULL)
 {
 	BRect r(Bounds());
-	BRect frame = r;
-	frame.right = frame.left + ICON_WIDTH - 1;
-	frame.bottom = frame.top + ICON_WIDTH - 1;
-	frame.OffsetBy((int32)((r.IntegerHeight() - ICON_WIDTH + 3) / 2),
+	fIconFrame = r;
+	fIconFrame.right = fIconFrame.left + ICON_WIDTH - 1;
+	fIconFrame.bottom = fIconFrame.top + ICON_WIDTH - 1;
+	fIconFrame.OffsetBy((int32)((r.IntegerHeight() - ICON_WIDTH + 3) / 2),
 		(int32)((r.IntegerHeight() - ICON_WIDTH + 1) / 2));
-	fIconFrame = frame;
 	FixupTextRect();
 }
 
