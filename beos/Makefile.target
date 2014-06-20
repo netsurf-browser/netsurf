@@ -38,7 +38,7 @@ ifeq ($(HOST),beos)
     ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
       LDFLAGS += -lzeta
     endif
-    ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
+    ifneq ($(wildcard /boot/system/develop/lib/*/libnetwork.so),)
       # Haiku
       CFLAGS += -I/boot/common/include		\
 		-I/boot/common/include/hubbub	\
