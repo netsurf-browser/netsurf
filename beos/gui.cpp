@@ -37,6 +37,7 @@
 #include <FindDirectory.h>
 #include <Mime.h>
 #include <Path.h>
+#include <PathFinder.h>
 #include <Roster.h>
 #include <Screen.h>
 #include <String.h>
@@ -78,9 +79,6 @@ extern "C" {
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
-
-/* Where to search for shared resources.  Must have trailing / */
-#define RESPATH "/boot/apps/netsurf/res/"
 
 //TODO: use resources
 // enable using resources instead of files
@@ -297,7 +295,13 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 			return buf;
 	}
 
-	strcpy(t, RESPATH);
+
+	BPathFinder f((void*)find_resource);
+
+	BPath p;
+	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res/", p);
+	strcpy(t, p.Path());
+
 	strcat(t, filename);
 	realpath(t, buf);
 	if (access(buf, R_OK) == 0)
@@ -488,7 +492,10 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static BPath get_messages_path()
 {
-	BPath p("/boot/apps/netsurf/res");
+	BPathFinder f((void*)get_messages_path);
+
+	BPath p;
+	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p);
 	// TODO: use Haiku's BLocale stuff
 	BString lang(getenv("LC_MESSAGES"));
 	lang.Truncate(2);
