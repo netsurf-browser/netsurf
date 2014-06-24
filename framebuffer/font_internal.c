@@ -221,6 +221,12 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 	unsigned int offset;
 	uint16_t g_offset;
 
+	/* Internal font has no glyphs beyond U+FFFF and there isn't
+	 * space to render a >4 digit codepoint; just show replacement
+	 * character. */
+	if (ucs4 > 0xffff)
+		ucs4 = 0xfffd;
+
 	switch (style) {
 	case FB_BOLD_ITALIC:
 		section = fb_bold_italic_section_table[ucs4 / 256];
