@@ -257,8 +257,7 @@ nserror netsurf_init(const char *messages, const char *store_path)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		guit->browser->poll(fetch_active);
-		fetcher_poll();
+		guit->browser->poll(false);
 	}
 
 	return 0;
@@ -310,5 +309,3 @@ void netsurf_exit(void)
 
 	LOG(("Exited successfully"));
 }
-
-

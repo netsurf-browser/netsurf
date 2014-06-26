@@ -23,13 +23,12 @@
 #ifndef _NETSURF_DESKTOP_FETCHERS_H_
 #define _NETSURF_DESKTOP_FETCHERS_H_
 
+#include <sys/select.h>
 #include <libwapcaplet/libwapcaplet.h>
 
 struct nsurl;
 struct fetch_multipart_data;
 struct fetch;
-
-extern bool fetch_active;
 
 /**
  * Fetcher operations API
@@ -86,6 +85,7 @@ struct fetcher_operation_table {
 	void (*finalise)(lwc_string *scheme);
 };
 
+
 /**
  * Register a fetcher for a scheme
  *
@@ -95,12 +95,14 @@ struct fetcher_operation_table {
  */
 nserror fetcher_add(lwc_string *scheme, const struct fetcher_operation_table *ops);
 
+
 /**
  * Initialise the fetchers.
  *
  * @return NSERROR_OK or error code
  */
 nserror fetcher_init(void);
+
 
 /**
  * Clean up for quit.
@@ -109,11 +111,31 @@ nserror fetcher_init(void);
  */
 void fetcher_quit(void);
 
+
 /**
- * Do some work on current fetches.
+ * Get the set of file descriptors the fetchers are currently using.
  *
- * Must be called regularly to make progress on fetches.
+ * This obtains the file descriptors the fetch system is using to
+ * obtain data. It will cause the fetchers to make progress, if
+ * possible, potentially completing fetches before requiring activity
+ * on file descriptors.
+ *
+ * If a set of descriptors is returned (maxfd is not -1) The caller is
+ * expected to wait on them (with select etc.) and continue to obtain
+ * the fdset with this call. This will switch the fetchers from polled
+ * mode to waiting for network activity which is much more efficient.
+ *
+ * \note If the caller does not subsequently obtain the fdset again
+ * the fetchers will fall back to the less efficient polled
+ * operation. The fallback to polled operation will only occour after
+ * a timeout which introduces additional delay.
+ *
+ * \param read_fd_set[out] The fd set for read.
+ * \param write_fd_set[out] The fd set for write.
+ * \param except_fd_set[out] The fd set for exceptions.
+ * \param maxfd[out] The highest fd number in the set or -1 if no fd available.
+ * \return NSERROR_OK on success or appropriate error code.
  */
-void fetcher_poll(void);
+nserror fetcher_fdset(fd_set *read_fd_set, fd_set *write_fd_set, fd_set *except_fd_set, int *maxfd);
 
 #endif

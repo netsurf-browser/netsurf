@@ -500,9 +500,7 @@ bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
-	
-	guit->browser->schedule(10, (void *)fetch_curl_poll, NULL);
-	
+
 	return true;
 }
 
