@@ -121,7 +121,7 @@ static void gui_poll(bool active)
 
     aes_event_in.emi_tlow = schedule_run();
 
-    if(active || rendering){
+    if(rendering){
         aes_event_in.emi_tlow = nsoption_int(atari_gui_poll_timeout);
 	}
 
@@ -130,11 +130,10 @@ static void gui_poll(bool active)
         printf("long poll!\n");
     }
 
-    if( !active ) {
         if(input_window && input_window->root->redraw_slots.areas_used > 0) {
             window_process_redraws(input_window->root);
         }
-    }
+    
 
     graf_mkstate(&mx, &my, &dummy, &dummy);
     aes_event_in.emi_m1.g_x = mx;

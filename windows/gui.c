@@ -107,10 +107,6 @@ static void win32_poll(bool active)
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
 
-	/* if active set timeout so message is not waited for */
-	if (active)
-		timeout = 0;
-
 	if (timeout == 0) {
 		bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
 	} else {
@@ -127,7 +123,6 @@ static void win32_poll(bool active)
 			KillTimer(NULL, timer_id);
 		}
 	}
-
 
 	if (bRet > 0) {
 		TranslateMessage(&Msg);

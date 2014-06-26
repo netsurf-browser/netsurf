@@ -61,6 +61,7 @@
 
 /* Define this to turn on verbose fetch logging */
 #undef DEBUG_FETCH_VERBOSE
+#define DEBUG_FETCH_VERBOSE
 
 /** The maximum number of fetchers that can be added */
 #define MAX_FETCHERS 8

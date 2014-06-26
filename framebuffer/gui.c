@@ -564,10 +564,6 @@ static void framebuffer_poll(bool active)
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
 
-	/* if active do not wait for event, return immediately */
-	if (active)
-		timeout = 0;
-
 	/* if redraws are pending do not wait for event, return immediately */
 	if (fbtk_get_redraw_pending(fbtk))
 		timeout = 0;
