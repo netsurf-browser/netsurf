@@ -405,6 +405,13 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 						BITMAP_SourceFile, gwin->menuicon[i],
 						BITMAP_Masking, TRUE,
 					BitMapEnd;
+
+				/* \todo make this scale the bitmap to these dimensions */
+				SetAttrs(icon,
+					BITMAP_Width, 16,
+					BITMAP_Height, 16,
+					TAG_DONE);
+
 				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
 				
 				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
@@ -551,7 +558,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
 {
 	UBYTE type;
-	char *icon;
+	STRPTR icon;
 	struct gui_window_2 *gw = (struct gui_window_2 *)userdata;
 	
 	if(item >= AMI_MENU_HOTLIST_MAX) return false;
@@ -570,15 +577,18 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 	}
 
 	if(is_folder == true) {
-		icon = "icons/directory.png";
+		icon = ASPrintf("icons/directory.png");
 	} else {
-		icon = "icons/content.png";
+		icon = ami_gui_get_cache_favicon_name(url, true);
+		if (icon == NULL) icon = ASPrintf("icons/content.png");
 	}
 
 	ami_menu_alloc_item(gw, item, type, title,
 		0, icon, ami_menu_item_hotlist_entries, (void *)url);
 	if((is_folder == true) && (type == NM_SUB))
 		gw->menu[item].nm_Flags = NM_ITEMDISABLED;
+
+	if(icon) FreeVec(icon);
 
 	return true;
 }

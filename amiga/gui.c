@@ -181,6 +181,7 @@ bool cli_force = false;
 
 static char *current_user;
 static char *current_user_dir;
+static char *current_user_faviconcache;
 
 static const __attribute__((used)) char *stack_cookie = "\0$STACK:262144\0";
 
@@ -2769,7 +2770,38 @@ static void gui_quit(void)
 
 	FreeVec(current_user_options);
 	FreeVec(current_user_dir);
+	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
+}
+
+char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
+{
+	STRPTR filename = NULL;
+	BPTR lock = 0;
+
+	if (filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url))) {
+		LOG(("favicon cache location: %s", filename));
+
+		if (only_if_avail == true) {
+			if(lock = Lock(filename, ACCESS_READ)) {
+				UnLock(lock);
+				return filename;
+			}
+		} else {
+			return filename;
+		}
+	}
+	return NULL;
+}
+
+static void ami_gui_cache_favicon(nsurl *url, struct bitmap *favicon)
+{
+	STRPTR filename = NULL;
+
+	if (filename = ami_gui_get_cache_favicon_name(url, false)) {
+		if(favicon) bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
+		FreeVec(filename);
+	}
 }
 
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
@@ -2785,6 +2817,9 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 		if(hotlist_has_url(nsurl)) {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV], TAG_DONE);
+
+			if (gwin->bw->window->favicon)
+				ami_gui_cache_favicon(nsurl, content_get_bitmap(gwin->bw->window->favicon));
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD], TAG_DONE);
@@ -5127,8 +5162,10 @@ int main(int argc, char** argv)
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
+	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
 
 	if(lock = CreateDirTree(current_user_cache)) UnLock(lock);
+	if(lock = CreateDirTree(current_user_faviconcache)) UnLock(lock);
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
