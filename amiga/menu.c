@@ -485,14 +485,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	if(nsoption_bool(background_images) == true)
 		gwin->menu[M_IMGBACK].nm_Flags |= CHECKED;
 
-	/* Set up scheduler to refresh the hotlist menu */
-	if(nsoption_int(menu_refresh) > 0)
-	{
-		ami_schedule(nsoption_int(menu_refresh) * 10,
-			     (void *)ami_menu_refresh,
-			     gwin);
-	}
-
 	return(gwin->menu);
 }
 

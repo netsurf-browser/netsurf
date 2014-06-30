@@ -162,7 +162,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
-void ami_gui_hotlist_toolbar_update_all(void);
+void ami_gui_hotlist_update_all(void);
 void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);

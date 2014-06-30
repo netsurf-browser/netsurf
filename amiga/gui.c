@@ -3030,7 +3030,10 @@ void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_toolbar_update_all(void)
+/**
+ * Update hotlist toolbar and recreate the menu for all windows
+ */
+void ami_gui_hotlist_update_all(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -3047,6 +3050,7 @@ void ami_gui_hotlist_toolbar_update_all(void)
 		if(node->Type == AMINS_WINDOW)
 		{
 			ami_gui_hotlist_toolbar_update(gwin);
+			ami_menu_refresh(gwin);
 		}
 	} while(node = nnode);
 }
