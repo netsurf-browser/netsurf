@@ -64,19 +64,13 @@ monkey_find_window_by_content(hlcache_handle *content)
   return ret;
 }
 
-void
-monkey_window_process_reformats(void)
+
+/**
+ * callback from core to reformat a window.
+ */
+static void monkey_window_reformat(struct gui_window *gw)
 {
-  RING_ITERATE_START(struct gui_window, gw_ring, c_ring) {
-    if (c_ring == NULL)
-      RING_ITERATE_STOP(gw_ring, c_ring);
-    if (c_ring->bw->reformat_pending) {
-      browser_window_reformat(c_ring->bw,
-                              false,
-                              c_ring->width,
-                              c_ring->height);
-    }
-  } RING_ITERATE_END(gw_ring, c_ring);
+	browser_window_reformat(gw->bw,	false, gw->width, gw->height);
 }
 
 void
@@ -511,6 +505,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = monkey_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

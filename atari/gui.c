@@ -201,7 +201,6 @@ gui_window_create(struct browser_window *bw,
             option_window_x, option_window_y,
             option_window_width, option_window_height
         };
-        gui_window_set_scale(gw, 1.0);
         gui_window_set_url(gw, "");
         gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
         gui_set_input_gui_window(gw);
@@ -343,21 +342,14 @@ void gui_window_set_status(struct gui_window *w, const char *text)
         window_set_stauts(w->root, (char*)text);
 }
 
-float gui_window_get_scale(struct gui_window *gw)
+static void atari_window_reformat(struct gui_window *gw)
 {
-    return(gw->scale);
-}
+    int width = 0, height = 0;
 
-void gui_window_set_scale(struct gui_window *gw, float scale)
-{
-    int width = 0, heigth = 0;
-
-	LOG(("scale: %f", scale));
-
-    gw->scale = MAX(scale, 0.25);
-
-	gui_window_get_dimensions(gw, &width, &heigth, true);
- 	browser_window_reformat(gw->browser->bw, false, width, heigth);
+    if (gw != NULL) {
+	gui_window_get_dimensions(gw, &width, &height, true);
+	browser_window_reformat(gw->browser->bw, false, width, height);
+    }
 }
 
 static void gui_window_redraw_window(struct gui_window *gw)
@@ -1017,6 +1009,7 @@ static struct gui_window_table atari_window_table = {
     .set_scroll = gui_window_set_scroll,
     .get_dimensions = gui_window_get_dimensions,
     .update_extent = gui_window_update_extent,
+    .reformat = atari_window_reformat,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,

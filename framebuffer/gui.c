@@ -1758,6 +1758,15 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
+static void nsgtk_window_reformat(struct gui_window *gw)
+{
+	/** @todo if we ever do zooming reformat should be implemented */
+	LOG(("window:%p", gw));
+
+	/*
+	  browser_window_reformat(gw->bw, false, width, height);
+	*/
+}
 
 static struct gui_window_table framebuffer_window_table = {
 	.create = gui_window_create,
@@ -1768,6 +1777,7 @@ static struct gui_window_table framebuffer_window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = framebuffer_window_reformat,
 
 	.set_url = gui_window_set_url,
 	.set_status = gui_window_set_status,

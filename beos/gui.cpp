@@ -713,7 +713,6 @@ static void gui_poll(bool active)
 	int max_fd;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
-	bool block = true;
 	bigtime_t next_schedule = 0;
 
         /* get any active fetcher fd */
@@ -728,34 +727,23 @@ static void gui_poll(bool active)
         /** @todo Check if this max_fd should have + 1 */
 	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
-	// If there are pending events elsewhere, we should not be blocking
-	if (!browser_reformat_pending) {
-		if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
-			next_schedule = earliest_callback_timeout - system_time();
-			block = false;
-		}
-
-		// we're quite late already...
-		if (next_schedule < 0)
-			next_schedule = 0;
-
-	} else {//we're not allowed to sleep, there is other activity going on.
-		nsbeos_window_process_reformats();
-		block = false;
+	// compute schedule timeout
+        if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
+                next_schedule = earliest_callback_timeout - system_time();
+        } else {
+                next_schedule = earliest_callback_timeout;
         }
 
-	/*
-	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
-		" next_schedule:%Ld block:%d ", browser_reformat_pending,
-		earliest_callback_timeout, next_schedule, block));
-	*/
+        // we're quite late already...
+        if (next_schedule < 0)
+                next_schedule = 0;
 
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
 	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		block ? NULL : &timeout);
+		&timeout);
 	//LOG(("select: %d\n", fd_count));
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {

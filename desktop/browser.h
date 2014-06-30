@@ -60,8 +60,6 @@ typedef enum {
 	BW_EDITOR_CAN_PASTE	= (1 << 2)	/**< Can paste, input */
 } browser_editor_flags;
 
-extern bool browser_reformat_pending;
-
 /** flags to browser_window_create */
 enum browser_window_create_flags {
 	/** No flags set */
@@ -258,6 +256,21 @@ void browser_window_mouse_track(struct browser_window *bw,
 struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
+
+/**
+ * Cause the frontends reformat entry to be called in safe context.
+ *
+ * The browser_window_reformat call cannot safely be called from some
+ * contexts, this call allows for the reformat to happen from a safe
+ * top level context.
+ *
+ * The callback is frontend provided as the context information (size
+ * etc.) about the windowing toolkit is only available to the
+ * frontend.
+ */
+nserror browser_window_schedule_reformat(struct browser_window *bw);
+
+
 
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);

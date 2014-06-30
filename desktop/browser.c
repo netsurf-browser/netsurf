@@ -66,12 +66,9 @@
 #include "utils/utils.h"
 #include "utils/utf8.h"
 
-/** one or more windows require a reformat */
-bool browser_reformat_pending;
 
 /** maximum frame depth */
 #define FRAME_DEPTH 8
-
 
 
 /**
@@ -795,7 +792,6 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	/* window characteristics */
 	bw->refresh_interval = -1;
 
-	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scale = (float) nsoption_int(scale) / 100.0;
 
@@ -1623,7 +1619,13 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		browser_window_destroy_children(bw);
 	}
 
+	/* clear any pending callbacks */
 	guit->browser->schedule(-1, browser_window_refresh, bw);
+	/* The ugly cast here is so the reformat function can be
+	 * passed a gui window pointer in its API rather than void*
+	 */
+	LOG(("Clearing schedule %p(%p)", guit->window->reformat, bw->window));
+	guit->browser->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);      
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -2362,6 +2364,16 @@ void browser_window_set_pointer(struct browser_window *bw,
 	guit->window->set_pointer(root->window, gui_shape);
 }
 
+/* exported function documented in desktop/browser.h */
+nserror browser_window_schedule_reformat(struct browser_window *bw)
+{
+	/* The ugly cast here is so the reformat function can be
+	 * passed a gui window pointer in its API rather than void*
+	 */
+	LOG(("Scheduleing %p(%p)", guit->window->reformat, bw->window));
+	guit->browser->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
+	return NSERROR_OK;
+}
 
 /**
  * Reformat a browser window contents to a new width or height.
@@ -2413,8 +2425,7 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 		if (content_can_reformat(c) == false) {
 			browser_window_update(bw, false);
 		} else {
-			bw->reformat_pending = true;
-			browser_reformat_pending = true;
+			browser_window_schedule_reformat(bw);
 		}
 	}
 

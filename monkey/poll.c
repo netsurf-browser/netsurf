@@ -126,11 +126,6 @@ monkey_poll(bool active)
 
   schedule_run();
 
-  if (browser_reformat_pending) {
-    monkey_window_process_reformats();
-    block = false;
-  }
-
   LOG(("Iterate %sblocking", block?"":"non-"));
   if (block) {
     fprintf(stdout, "GENERIC POLL BLOCKING\n");
