@@ -23,7 +23,7 @@
 #ifndef _NETSURF_DESKTOP_FETCHERS_H_
 #define _NETSURF_DESKTOP_FETCHERS_H_
 
-#include <sys/select.h>
+#include "utils/config.h"
 #include <libwapcaplet/libwapcaplet.h>
 
 struct nsurl;
