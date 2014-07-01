@@ -35,8 +35,6 @@
 #include <images/label.h>
 #include <proto/bitmap.h>
 #include <images/bitmap.h>
-#include <proto/glyph.h>
-#include <images/glyph.h>
 
 #include <reaction/reaction_macros.h>
 
@@ -358,10 +356,29 @@ void ami_menu_free_glyphs(void)
 	menu_glyphs_loaded = false;
 }
 
+static int ami_menu_calc_item_width(struct gui_window_2 *gwin, int j, struct RastPort *rp)
+{
+	int space_width = TextLength(rp, " ", 1);
+	int item_size;
+
+	item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
+	item_size += space_width;
+
+	if(gwin->menukey[j]) {
+		item_size += TextLength(rp, &gwin->menukey[j], 1);
+		item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
+		/**TODO: take account of the size of other imagery too
+		 */
+	}
+
+	return item_size;
+}
+
+
 static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
-	int txtlen = 0;
+	int txtlen = 0, subtxtlen = 0;
 	int left_posn;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
@@ -375,20 +392,10 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 		if(gwin->menutype[i] == NM_TITLE) {
 			j = i + 1;
 			txtlen = 0;
-			int item_size = 0;
 			do {
 				if(gwin->menulab[j] != NM_BARLABEL) {
 					if(gwin->menutype[j] == NM_ITEM) {
-						item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
-						item_size += space_width;
-
-						if(gwin->menukey[j]) {
-							item_size += TextLength(rp, &gwin->menukey[j], 1);
-							item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
-							/**TODO: take account of the size of other imagery too
-							 */
-						}
-						
+						int item_size = ami_menu_calc_item_width(gwin, j, rp);
 						if(item_size > txtlen) {
 							txtlen = item_size;
 						}
@@ -403,6 +410,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
 				int icon_width = 0;
+				Object *blank_space = NULL;
 				Object *submenuarrow = NULL;
 				Object *icon = 	BitMapObject,
 						BITMAP_Screen, scrn,
@@ -418,21 +426,49 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 
 				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
 
+				if(gwin->menutype[i] == NM_SUB) {
+					left_posn = subtxtlen;
+				} else {
+					left_posn = txtlen;
+				}
+
+				left_posn = left_posn -
+					TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
+					icon_width - space_width;
+
 				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
-					left_posn = txtlen -
-						TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
-						menu_glyph_width[NSA_GLYPH_SUBMENU] -
-						icon_width - space_width;
+					left_posn -= menu_glyph_width[NSA_GLYPH_SUBMENU];
 
 					submenuarrow = NewObject(NULL, "sysiclass",
 									SYSIA_Which, MENUSUB,
 									SYSIA_DrawInfo, dri,
 									IA_Left, left_posn,
 									TAG_DONE);
+
+					j = i + 1;
+					subtxtlen = 0;
+					do {
+						if(gwin->menulab[j] != NM_BARLABEL) {
+							if(gwin->menutype[j] == NM_SUB) {
+								int item_size = ami_menu_calc_item_width(gwin, j, rp);
+								if(item_size > subtxtlen) {
+									subtxtlen = item_size;
+								}
+							}
+						}
+						j++;
+					} while((gwin->menutype[j] == NM_SUB));
 				}
 
 				/**TODO: Checkmark/MX images and keyboard shortcuts
 				 */
+
+				if(gwin->menutype[i] == NM_SUB) {
+					blank_space = NewObject(NULL, "fillrectclass",
+									IA_Height, 0,
+									IA_Width, left_posn + icon_width,
+									TAG_DONE);
+				}
 				
 				gwin->menuobj[i] = LabelObject,
 					LABEL_DrawInfo, dri,
@@ -440,6 +476,8 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 					LABEL_Image, icon,
 					LABEL_Text, " ",
 					LABEL_Text, gwin->menulab[i],
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, blank_space,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, submenuarrow,
 				LabelEnd;
