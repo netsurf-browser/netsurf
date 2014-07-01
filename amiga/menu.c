@@ -362,9 +362,11 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
 	int txtlen = 0;
+	int left_posn;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-	
+	int space_width = TextLength(rp, " ", 1);
+
 	if(menu_glyphs_loaded == false)
 		ami_menu_load_glyphs(dri);
 
@@ -378,6 +380,8 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				if(gwin->menulab[j] != NM_BARLABEL) {
 					if(gwin->menutype[j] == NM_ITEM) {
 						item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
+						item_size += space_width;
+
 						if(gwin->menukey[j]) {
 							item_size += TextLength(rp, &gwin->menukey[j], 1);
 							item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
@@ -413,13 +417,17 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 					TAG_DONE);
 
 				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
-				
+
 				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
+					left_posn = txtlen -
+						TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
+						menu_glyph_width[NSA_GLYPH_SUBMENU] -
+						icon_width - space_width;
+
 					submenuarrow = NewObject(NULL, "sysiclass",
-										SYSIA_Which, MENUSUB,
-										SYSIA_DrawInfo, dri,
-										IA_Left, txtlen - TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
-													menu_glyph_width[NSA_GLYPH_SUBMENU] - icon_width,
+									SYSIA_Which, MENUSUB,
+									SYSIA_DrawInfo, dri,
+									IA_Left, left_posn,
 									TAG_DONE);
 				}
 
@@ -430,6 +438,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, icon,
+					LABEL_Text, " ",
 					LABEL_Text, gwin->menulab[i],
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, submenuarrow,
