@@ -2503,18 +2503,9 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
-static void ami_gui_fetch_callback(void *p)
-{
-	/* This doesn't need to do anything - the scheduled event will
-	 * send a message to trigger Wait() to return, thereby causing
-	 * the event function to return, and NetSurf to call
-	 * hlcache_poll() as part of the usual fetch/event loop.
-	 */
-}
 
 static void gui_poll(bool active)
 {
-	if(active) ami_schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
 }
 

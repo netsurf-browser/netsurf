@@ -53,7 +53,7 @@ static void gui_poll(bool active)
 {
 	cocoa_autorelease();
 	
-	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: active ? nil : [NSDate distantFuture]
+	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: [NSDate distantFuture]
 										   inMode: NSDefaultRunLoopMode dequeue: YES];
 	
 	if (nil != event) {

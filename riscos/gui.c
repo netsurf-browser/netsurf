@@ -1852,24 +1852,19 @@ static void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 
 
 /**
- * Poll the OS for events (RISC OS).
- *
- * \param active return as soon as possible
+ * Poll the RISC OS wimp for events.
  */
 static void riscos_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
-			wimp_SAVE_FP;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP;
 	os_t track_poll_offset;
 
 	/* Poll wimp. */
 	xhourglass_off();
 	track_poll_offset = ro_mouse_poll_interval();
-	if (active) {
-		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || (track_poll_offset > 0) ||
+	if (sched_active || (track_poll_offset > 0) ||
 			browser_reformat_pending) {
 		os_t t = os_read_monotonic_time();
 

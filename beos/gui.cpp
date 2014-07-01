@@ -47,7 +47,7 @@ extern "C" {
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchers/curl.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -709,32 +709,23 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 static void gui_poll(bool active)
 {
-	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd = 0;
+	int max_fd;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
 	bool block = true;
 	bigtime_t next_schedule = 0;
 
-	// handle early deadlines
+        /* get any active fetcher fd */
+	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+
+        /* run the scheduler */
 	schedule_run();
-
-	FD_ZERO(&read_fd_set);
-	FD_ZERO(&write_fd_set);
-	FD_ZERO(&exc_fd_set);
-
-	if (active) {
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-	}
 
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
+
+        /** @todo Check if this max_fd should have + 1 */
 	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
 	// If there are pending events elsewhere, we should not be blocking
@@ -748,8 +739,10 @@ static void gui_poll(bool active)
 		if (next_schedule < 0)
 			next_schedule = 0;
 
-	} else //we're not allowed to sleep, there is other activity going on.
+	} else {//we're not allowed to sleep, there is other activity going on.
+		nsbeos_window_process_reformats();
 		block = false;
+        }
 
 	/*
 	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
@@ -774,11 +767,6 @@ static void gui_poll(bool active)
 			nsbeos_dispatch_event(message);
 		}
 	}
-
-	schedule_run();
-
-	if (browser_reformat_pending)
-		nsbeos_window_process_reformats();
 }
 
 

@@ -3087,14 +3087,6 @@ void llcache_finalise(void)
 	llcache = NULL;
 }
 
-/* See llcache.h for documentation */
-nserror llcache_poll(void)
-{
-	fetch_poll();
-
-	return NSERROR_OK;
-}
-
 /**
  * Catch up the cache users with state changes from fetchers.
  *

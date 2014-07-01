@@ -55,6 +55,7 @@
 
 #include "content/dirlist.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/urldb.h"
 #include "content/fetchers/file.h"
 
@@ -760,17 +761,19 @@ static void fetch_file_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_file_register(void)
+nserror fetch_file_register(void)
 {
 	lwc_string *scheme = lwc_string_ref(corestring_lwc_file);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_file_initialise,
+		.acceptable = fetch_file_can_fetch,
+		.setup = fetch_file_setup,
+		.start = fetch_file_start,
+		.abort = fetch_file_abort,
+		.free = fetch_file_free,
+		.poll = fetch_file_poll,
+		.finalise = fetch_file_finalise
+	};
 
-	fetch_add_fetcher(scheme,
-		fetch_file_initialise,
-		fetch_file_can_fetch,
-		fetch_file_setup,
-		fetch_file_start,
-		fetch_file_abort,
-		fetch_file_free,
-		fetch_file_poll,
-		fetch_file_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

@@ -622,15 +622,6 @@ void hlcache_finalise(void)
 }
 
 /* See hlcache.h for documentation */
-nserror hlcache_poll(void)
-{
-
-	llcache_poll();
-
-	return NSERROR_OK;
-}
-
-/* See hlcache.h for documentation */
 nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
 		nsurl *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,

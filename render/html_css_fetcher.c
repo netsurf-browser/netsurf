@@ -28,6 +28,7 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "render/html_internal.h"
 #include "utils/log.h"
 #include "utils/ring.h"
@@ -276,6 +277,16 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 void html_css_fetcher_register(void)
 {
 	lwc_string *scheme;
+	const struct fetcher_operation_table html_css_fetcher_ops = {
+		.initialise = html_css_fetcher_initialise,
+		.acceptable = html_css_fetcher_can_fetch,
+		.setup = html_css_fetcher_setup,
+		.start = html_css_fetcher_start,
+		.abort = html_css_fetcher_abort,
+		.free = html_css_fetcher_free,
+		.poll = html_css_fetcher_poll,
+		.finalise = html_css_fetcher_finalise
+	};
 
 	if (lwc_intern_string("x-ns-css", SLEN("x-ns-css"),
 			&scheme) != lwc_error_ok) {
@@ -283,15 +294,7 @@ void html_css_fetcher_register(void)
 				"(couldn't intern \"x-ns-css\").");
 	}
 
-	fetch_add_fetcher(scheme,
-		html_css_fetcher_initialise,
-		html_css_fetcher_can_fetch,
-		html_css_fetcher_setup,
-		html_css_fetcher_start,
-		html_css_fetcher_abort,
-		html_css_fetcher_free,
-		html_css_fetcher_poll,
-		html_css_fetcher_finalise);
+	fetcher_add(scheme, &html_css_fetcher_ops);
 }
 
 nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
