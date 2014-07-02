@@ -61,16 +61,26 @@
 
 /* Define this to turn on verbose fetch logging */
 #undef DEBUG_FETCH_VERBOSE
-#define DEBUG_FETCH_VERBOSE
 
-/** The maximum number of fetchers that can be added */
-#define MAX_FETCHERS 8
-
+/** Verbose fetcher logging */
 #ifdef DEBUG_FETCH_VERBOSE
 #define FETCH_LOG(x) LOG(x)
 #else
 #define FETCH_LOG(x)
 #endif
+
+/** The maximum number of fetchers that can be added */
+#define MAX_FETCHERS 8
+
+/** The time in ms between polling the fetchers.
+ *
+ * \todo The schedule timeout should be profiled to see if there is a
+ * better value or even if it needs to be dynamic.
+ */
+#define SCHEDULE_TIME 10
+
+/** The fdset timeout in ms */
+#define FDSET_TIMEOUT 1000
 
 /**
  * Information about a fetcher for a given scheme.
@@ -265,7 +275,7 @@ static void fetcher_poll(void *unused)
 		}
 
 		/* schedule active fetchers to run again in 10ms */
-		guit->browser->schedule(10, fetcher_poll, NULL);
+		guit->browser->schedule(SCHEDULE_TIME, fetcher_poll, NULL);
 	}
 }
 
@@ -395,7 +405,7 @@ nserror fetcher_fdset(fd_set *read_fd_set,
 		 * select on. All the other fetchers continue to need
 		 * polling frequently.
 		 */
-		guit->browser->schedule(1000, fetcher_poll, NULL);
+		guit->browser->schedule(FDSET_TIMEOUT, fetcher_poll, NULL);
 	}
 
 	*maxfd_out = maxfd;
