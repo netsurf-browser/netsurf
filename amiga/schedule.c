@@ -80,6 +80,37 @@ static struct nscallback *ami_schedule_locate(void (*callback)(void *p), void *p
 }
 
 /**
+ * Reschedule a callback.
+ */
+
+static nserror ami_schedule_reschedule(int t, struct nscallback *nscb)
+{
+	struct TimeVal tv;
+	ULONG time_us = t * 1000; /* t converted to µs */
+
+	ami_remove_timer_event(nscb);
+
+	nscb->tv.Seconds = time_us / 1000000;
+	nscb->tv.Microseconds = time_us % 1000000;
+
+	GetSysTime(&tv);
+	AddTime(&nscb->tv, &tv); // now contains time when event occurs
+
+	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
+	{
+		*nscb->treq = *tioreq;
+		nscb->treq->Request.io_Command=TR_ADDREQUEST;
+		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
+		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
+		SendIO((struct IORequest *)nscb->treq);
+	}
+
+	pblHeapConstruct(schedule_list);
+
+	return NSERROR_OK;
+}
+
+/**
  * Unschedule a callback.
  *
  * \param  callback  callback function
@@ -219,21 +250,15 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	struct TimeVal tv;
 	ULONG time_us = 0;
 
-	if(schedule_list == NULL)
-	{
-		return NSERROR_INIT_FAILED;
-	}
-
-	if(t < 0)
-	{
-		return schedule_remove(callback, p);
+	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
+	if (t < 0) return schedule_remove(callback, p);
+	
+	if (nscb = ami_schedule_locate(callback, p, false)) {
+		return ami_schedule_reschedule(t, nscb);
 	}
 
 	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
-	if(!nscb)
-	{
-		return NSERROR_NOMEM;
-	}
+	if(!nscb) return NSERROR_NOMEM;
 
 	time_us = t * 1000; /* t converted to µs */
 
