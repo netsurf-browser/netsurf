@@ -53,6 +53,32 @@ static void ami_remove_timer_event(struct nscallback *nscb)
 	}
 }
 
+static struct nscallback *ami_schedule_locate(void (*callback)(void *p), void *p, bool remove)
+{
+	PblIterator *iterator;
+	struct nscallback *nscb;
+	bool found_cb = false;
+
+	/* check there is something on the list */
+        if (schedule_list == NULL) return NULL;
+	if(pblHeapIsEmpty(schedule_list)) return NULL;
+
+	iterator = pblHeapIterator(schedule_list);
+
+	while ((nscb = pblIteratorNext(iterator)) != -1) {
+		if ((nscb->callback == callback) && (nscb->p == p)) {
+			if (remove == true) pblIteratorRemove(iterator);
+			found_cb = true;
+			break;
+		}
+	};
+
+	pblIteratorFree(iterator);
+
+	if (found_cb == true) return nscb;
+		else return NULL;
+}
+
 /**
  * Unschedule a callback.
  *
@@ -66,36 +92,12 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
 	PblIterator *iterator;
 	struct nscallback *nscb;
-	bool restoreheap = false;
 
-	/* check there is something on the list to remove */
-        if (schedule_list == NULL)
-	{
-                return NSERROR_OK;
-	}
+	nscb = ami_schedule_locate(callback, p, true);
 
-	if(pblHeapIsEmpty(schedule_list))
-	{
-		return NSERROR_OK;
-	}
-
-	iterator = pblHeapIterator(schedule_list);
-
-	while ((nscb = pblIteratorNext(iterator)) != -1)
-	{
-		if((nscb->callback == callback) && (nscb->p == p))
-		{
-			ami_remove_timer_event(nscb);
-			pblIteratorRemove(iterator);
-			FreeVec(nscb);
-			restoreheap = true;
-		}
-	};
-
-	pblIteratorFree(iterator);
-
-	if(restoreheap)
-	{
+	if(nscb != NULL) {
+		ami_remove_timer_event(nscb);
+		FreeVec(nscb);
 		pblHeapConstruct(schedule_list);
 	}
 
@@ -257,3 +259,4 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 
 	return NSERROR_OK;
 }
+
