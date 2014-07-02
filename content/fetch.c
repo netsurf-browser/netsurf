@@ -306,10 +306,10 @@ void fetcher_quit(void)
 			 * be stopped.
 			 */
 			LOG(("Fetcher for scheme %s still has %d active users at quit.",
-			     lwc_string_data(fetchers->scheme_name),
-			     fetchers->refcount));
+			     lwc_string_data(fetchers[fetcherd].scheme),
+			     fetchers[fetcherd].refcount));
 
-			fetchers->refcount = 1;
+			fetchers[fetcherd].refcount = 1;
 		}
 		if (fetchers[fetcherd].refcount == 1) {
 
