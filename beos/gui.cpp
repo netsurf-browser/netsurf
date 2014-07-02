@@ -731,7 +731,8 @@ static void gui_poll(bool active)
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
 
-	max_fd = MAX(max_fd, sEventPipe[0] + 1);
+	// max of all the fds in the set, plus one for select()
+	max_fd = MAX(max_fd, sEventPipe[0]) + 1;
 
 	// If there are pending events elsewhere, we should not be blocking
 	if (!browser_reformat_pending) {
