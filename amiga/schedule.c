@@ -39,7 +39,15 @@ struct nscallback
 
 PblHeap *schedule_list;
 
-static void ami_remove_timer_event(struct nscallback *nscb)
+/**
+ * Remove timer event
+ *
+ * \param  nscb  callback
+ *
+ * The timer event for the callback is aborted
+ */
+
+static void ami_schedule_remove_timer_event(struct nscallback *nscb)
 {
 	if(!nscb) return;
 
@@ -52,6 +60,49 @@ static void ami_remove_timer_event(struct nscallback *nscb)
 		FreeVec(nscb->treq);
 	}
 }
+
+/**
+ * Add timer event
+ *
+ * \param  nscb  callback
+ * \param  t     time in ms
+ *
+ * NetSurf will be signalled in t ms for this event.
+ */
+
+static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
+{
+	struct TimeVal tv;
+	ULONG time_us = t * 1000; /* t converted to µs */
+
+	nscb->tv.Seconds = time_us / 1000000;
+	nscb->tv.Microseconds = time_us % 1000000;
+
+	GetSysTime(&tv);
+	AddTime(&nscb->tv,&tv); // now contains time when event occurs
+
+	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL)) {
+		*nscb->treq = *tioreq;
+		nscb->treq->Request.io_Command=TR_ADDREQUEST;
+		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
+		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
+		SendIO((struct IORequest *)nscb->treq);
+	} else {
+		return NSERROR_NOMEM;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * Locate a scheduled callback
+ *
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ * \param  remove    remove callback from the heap
+ *
+ * A scheduled callback matching both callback and p is returned, or NULL if none present.
+ */
 
 static struct nscallback *ami_schedule_locate(void (*callback)(void *p), void *p, bool remove)
 {
@@ -81,32 +132,20 @@ static struct nscallback *ami_schedule_locate(void (*callback)(void *p), void *p
 
 /**
  * Reschedule a callback.
+ *
+ * \param  nscb  callback
+ * \param  t     time in ms
+ *
+ * The nscallback will be rescheduled for t ms.
  */
 
-static nserror ami_schedule_reschedule(int t, struct nscallback *nscb)
+static nserror ami_schedule_reschedule(struct nscallback *nscb, int t)
 {
-	struct TimeVal tv;
-	ULONG time_us = t * 1000; /* t converted to µs */
-
-	ami_remove_timer_event(nscb);
-
-	nscb->tv.Seconds = time_us / 1000000;
-	nscb->tv.Microseconds = time_us % 1000000;
-
-	GetSysTime(&tv);
-	AddTime(&nscb->tv, &tv); // now contains time when event occurs
-
-	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
-	{
-		*nscb->treq = *tioreq;
-		nscb->treq->Request.io_Command=TR_ADDREQUEST;
-		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
-		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
-		SendIO((struct IORequest *)nscb->treq);
-	}
+	ami_schedule_remove_timer_event(nscb);
+	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
+		return NSERROR_NOMEM;
 
 	pblHeapConstruct(schedule_list);
-
 	return NSERROR_OK;
 }
 
@@ -127,7 +166,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
 	nscb = ami_schedule_locate(callback, p, true);
 
 	if(nscb != NULL) {
-		ami_remove_timer_event(nscb);
+		ami_schedule_remove_timer_event(nscb);
 		FreeVec(nscb);
 		pblHeapConstruct(schedule_list);
 	}
@@ -146,7 +185,7 @@ static void schedule_remove_all(void)
 
 	while ((nscb = pblIteratorNext(iterator)) != -1)
 	{
-		ami_remove_timer_event(nscb);
+		ami_schedule_remove_timer_event(nscb);
 		pblIteratorRemove(iterator);
 		FreeVec(nscb);
 	};
@@ -188,7 +227,7 @@ void schedule_run(BOOL poll)
 
 	callback = nscb->callback;
 	p = nscb->p;
-	ami_remove_timer_event(nscb);
+	ami_schedule_remove_timer_event(nscb);
 	pblHeapRemoveFirst(schedule_list);
 	FreeVec(nscb);
 	callback(p);
@@ -233,11 +272,7 @@ void ami_schedule_open_timer(void)
 /* exported function documented in amiga/schedule.h */
 void ami_schedule_close_timer(void)
 {
-	if(ITimer)
-	{
-		DropInterface((struct Interface *)ITimer);
-	}
-
+	if(ITimer) DropInterface((struct Interface *)ITimer);
 	CloseDevice((struct IORequest *) tioreq);
 	FreeSysObject(ASOT_IOREQUEST,tioreq);
 	FreeSysObject(ASOT_PORT,msgport);
@@ -247,35 +282,19 @@ void ami_schedule_close_timer(void)
 nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
-	struct TimeVal tv;
-	ULONG time_us = 0;
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if (t < 0) return schedule_remove(callback, p);
 	
 	if (nscb = ami_schedule_locate(callback, p, false)) {
-		return ami_schedule_reschedule(t, nscb);
+		return ami_schedule_reschedule(nscb, t);
 	}
 
 	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
 	if(!nscb) return NSERROR_NOMEM;
 
-	time_us = t * 1000; /* t converted to µs */
-
-	nscb->tv.Seconds = time_us / 1000000;
-	nscb->tv.Microseconds = time_us % 1000000;
-
-	GetSysTime(&tv);
-	AddTime(&nscb->tv,&tv); // now contains time when event occurs
-
-	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))
-	{
-		*nscb->treq = *tioreq;
-		nscb->treq->Request.io_Command=TR_ADDREQUEST;
-		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
-		nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
-		SendIO((struct IORequest *)nscb->treq);
-	}
+	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
+		return NSERROR_NOMEM;
 
 	nscb->callback = callback;
 	nscb->p = p;
