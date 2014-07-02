@@ -299,13 +299,13 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 	BPathFinder f((void*)find_resource);
 
 	BPath p;
-	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res/", p);
-	strcpy(t, p.Path());
-
-	strcat(t, filename);
-	realpath(t, buf);
-	if (access(buf, R_OK) == 0)
-		return buf;
+	if (f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p) == B_OK) {
+		strcpy(t, p.Path());
+		strcat(t, filename);
+		realpath(t, buf);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
 
 	if (def[0] == '%') {
 		snprintf(t, PATH_MAX, "%s%s", path.Path(), def + 1);
