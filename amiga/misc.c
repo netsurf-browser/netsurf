@@ -112,7 +112,7 @@ void die(const char *error)
 /**
  * Create a path from a nsurl using amiga file handling.
  *
- * @parm[in] url The url to encode.
+ * @param[in] url The url to encode.
  * @param[out] path_out A string containing the result path which should
  *                      be freed by the caller.
  * @return NSERROR_OK and the path is written to \a path or error code
@@ -254,8 +254,8 @@ char *translate_escape_chars(const char *s)
  * @param[in,out] size The size of the space available if \a str not
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
- * @param[in] nemb The number of elements.
- * @param[in] ... The elements of the path as string pointers.
+ * @param[in] nelm The number of elements.
+ * @param[in] ap The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.
  */

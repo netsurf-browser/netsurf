@@ -93,7 +93,7 @@ static char *realpath(const char *path, char *resolved_path)
  *
  * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
  * environment variable), then the path specified in
-  NETSURF_WINDOWS_RESPATH in the Makefile then .\res\ [windows paths]
+ * NETSURF_WINDOWS_RESPATH in the Makefile then .\res\ [windows paths]
  */
 
 char *nsws_find_resource(char *buf, const char *filename, const char *def)

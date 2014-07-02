@@ -312,7 +312,8 @@ int fbtk_destroy_widget(fbtk_widget_t *widget);
 /********************************* Widgets *********************************/
 
 
-/** Create a window widget.
+/**
+ * Create a window widget.
  *
  * @param parent The parent window or the root widget for a top level window.
  * @param x The x location relative to the parent window.
@@ -323,7 +324,7 @@ int fbtk_destroy_widget(fbtk_widget_t *widget);
  *              window.
  * @param height The height of the window limited in a similar way to the
  *               /a width.
- * @param c The background colour.
+ * @param bg The background colour.
  * @return new window widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_window(fbtk_widget_t *parent, int x, int y, int width, int height, colour bg);

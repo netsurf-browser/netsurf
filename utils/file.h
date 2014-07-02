@@ -86,7 +86,7 @@ struct gui_file_table {
 	/**
 	 * Create a path from a nsurl.
 	 *
-	 * @parm[in] url The url to encode.
+	 * @param[in] url The url to encode.
 	 * @param[out] path A string containing the result path which
 	 *                  must be freed by the caller.
 	 * @return NSERROR_OK and the path is written to \a path

@@ -1072,13 +1072,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 }
 
 
-/**
- * Set the contents of a window's address bar.
- *
- * \param  g	gui_window to update
- * \param  url  new url for address bar
- */
-
+/* exported function documented in riscos/window.h */
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	if (!g->toolbar)
@@ -3810,13 +3804,13 @@ bool ro_gui_window_check_menu(wimp_menu *menu)
  * Return boolean flags to show what RISC OS types we can sensibly convert
  * the given object into.
  *
- * \TODO -- This should probably be somewhere else but in window.c, and
- *          should probably even be done in content_().
+ * \todo This should probably be somewhere else but in window.c, and
+ * should probably even be done in content_().
  *
- * \param *h			The object to test.
- * \param *export_draw		true on exit if a drawfile would be possible.
- * \param *export_sprite	true on exit if a sprite would be possible.
- * \return			true if valid data is returned; else false.
+ * \param h The object to test.
+ * \param export_draw true on exit if a drawfile would be possible.
+ * \param export_sprite true on exit if a sprite would be possible.
+ * \return true if valid data is returned; else false.
  */
 
 bool ro_gui_window_content_export_types(hlcache_handle *h,
@@ -3855,10 +3849,10 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 /**
  * Return true if a browser window can navigate upwards.
  *
- * \TODO -- This should probably be somewhere else but in window.c.
+ * \todo This should probably be somewhere else but in window.c.
  *
- * \param *bw		the browser window to test.
- * \return		true if navigation up is possible; else false.
+ * \param bw the browser window to test.
+ * \return true if navigation up is possible otherwise false.
  */
 
 bool ro_gui_window_up_available(struct browser_window *bw)
@@ -3986,8 +3980,8 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 /**
  * Launch a new url in the given window.
  *
- * \param  g	gui_window to update
- * \param  url  url to be launched
+ * \param g gui_window to update
+ * \param url1 url to be launched
  */
 
 void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
@@ -4860,8 +4854,8 @@ void ro_gui_window_process_form_select_menu(struct gui_window *g,
 /**
  * Convert a RISC OS window handle to a gui_window.
  *
- * \param  w  RISC OS window handle
- * \return  pointer to a structure if found, 0 otherwise
+ * \param window RISC OS window handle.
+ * \return A pointer to a riscos gui window if found or NULL.
  */
 
 struct gui_window *ro_gui_window_lookup(wimp_w window)
@@ -4870,7 +4864,7 @@ struct gui_window *ro_gui_window_lookup(wimp_w window)
 	for (g = window_list; g; g = g->next)
 		if (g->window == window)
 			return g;
-	return 0;
+	return NULL;
 }
 
 
