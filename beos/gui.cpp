@@ -731,7 +731,6 @@ static void gui_poll(bool active)
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
 
-        /** @todo Check if this max_fd should have + 1 */
 	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
 	// If there are pending events elsewhere, we should not be blocking
