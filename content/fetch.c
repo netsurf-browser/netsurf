@@ -290,9 +290,28 @@ void fetcher_quit(void)
 {
 	int fetcherd; /* fetcher index */
 	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
-		if (fetchers[fetcherd].refcount > 0) {
-			/* assert if the fetcher is active at quit */
-			assert(fetchers[fetcherd].refcount == 1);
+		if (fetchers[fetcherd].refcount > 1) {
+			/* fetcher still has reference at quit. This
+			 * should not happen as the fetch should have
+			 * been aborted in llcache shutdown.
+			 *
+			 * This appears to be normal behaviour if a
+			 * curl operation is still in progress at exit
+			 * as the abort waits for curl to complete.
+			 *
+			 * We could make the user wait for curl to
+			 * complete but we are exiting anyway so thats
+			 * unhelpful. Instead we just log it and force
+			 * the reference count to allow the fetcher to
+			 * be stopped.
+			 */
+			LOG(("Fetcher for scheme %s still has %d active users at quit.",
+			     lwc_string_data(fetchers->scheme_name),
+			     fetchers->refcount));
+
+			fetchers->refcount = 1;
+		}
+		if (fetchers[fetcherd].refcount == 1) {
 
 			fetch_unref_fetcher(fetcherd);
 		}
