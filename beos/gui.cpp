@@ -309,12 +309,18 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 
 	if (def[0] == '%') {
 		snprintf(t, PATH_MAX, "%s%s", path.Path(), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else {
-		realpath(def, buf);
+		if (realpath(def, buf) == NULL) {
+			strcpy(buf, def);
+		}
 	}
 
 	return buf;
