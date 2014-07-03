@@ -18,6 +18,7 @@
 
 /* NetSurf core includes */
 #include "content/backing_store.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "css/utils.h"
@@ -2462,15 +2463,36 @@ void ami_get_msg(void)
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
 	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
-	ULONG signal;
+	uint32 signal = 0;
+	fd_set read_fd_set, write_fd_set, except_fd_set;
+	int max_fd = -1;
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 0;
 	ULONG helpsignal = ami_help_signal();
 	if(printmsgport) printsig = 1L << printmsgport->mp_SigBit;
-	ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig | helpsignal;
+	uint32 signalmask = winsignal | appsig | schedulesig | rxsig |
+				printsig | applibsig |  helpsignal;
 
-	signal = Wait(signalmask);
+	if ((fetcher_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
+			(max_fd != -1)) {
+		/* max_fd is the highest fd in use, but waitselect() needs to know how many
+		 * are in use, so we add 1. */
+		int ws = waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
+			NULL, (unsigned int *)&signalmask);
+		signal = signalmask;
+
+		/* \todo Fix Ctrl-C handling.
+		 * WaitSelect() from bsdsocket.library returns -1 if the task was signalled
+		 * with a Ctrl-C.  waitselect() from newlib.library does not - instead
+		 * the task terminates (rather than be signalled) when it receives a Ctrl-C.
+		 * Adding the Ctrl-C signal to our user signal mask causes a Ctrl-C to occur
+		 * immediately. */
+	} else {
+		/* If fetcher_fdset fails or no network activity, do it the old fashioned way. */
+		signalmask |= ctrlcsig;
+		signal = Wait(signalmask);
+	}
 
 	if(signal & winsignal)
 		ami_handle_msg();
