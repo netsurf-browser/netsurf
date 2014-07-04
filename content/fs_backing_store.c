@@ -54,7 +54,7 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 100
+#define CONTROL_VERSION 110
 
 /** Get address from ident */
 #define BS_ADDRESS(ident, state) ((ident) & ((1 << state->ident_bits) - 1))
@@ -215,6 +215,26 @@ remove_store_entry(struct store_state *state,
 /**
  * Generate a filename for an object.
  *
+ * this generates the filename for an object on disc. It is necessary
+ * for this to generate a filename which conforms to the limitations
+ * of all the filesystems the cache can be placed upon.
+ *
+ * From http://en.wikipedia.org/wiki/Comparison_of_file_systems#Limits
+ * the relevant subset is:
+ *  - path elements no longer than 8 characters
+ *  - acceptable characters are A-Z, 0-9
+ *  - short total path lengths (255 or less)
+ *
+ * The short total path lengths mean the encoding must represent as
+ * much data as possible in the least number of characters.
+ *
+ * To achieve all these goals we use RFC4648 base32 encoding which packs
+ * 5bits into each character of the filename.
+ *
+ * @note Version 1.00 of the cache implementation used base64 to
+ * encode this, however that did not meet the requirement for only
+ * using uppercase characters.
+ *
  * @param state The store state to use.
  * @param ident The identifier to use.
  * @return The filename string or NULL on allocation error.
@@ -225,96 +245,79 @@ store_fname(struct store_state *state,
 	    enum backing_store_flags flags)
 {
 	char *fname = NULL;
-	uint8_t b64u_i[7]; /* base64 ident */
-	uint8_t b64u_d[6][2]; /* base64 ident as separate components */
+	uint8_t b32u_i[8]; /* base32 encoded ident */
+	uint8_t b32u_d[6][2]; /* base64 ident as separate components */
 	const char *dat;
 
-	/** Base64url encoding table */
+	/* RFC4648 base32 encoding table */
 	static const uint8_t encoding_table[] = {
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 		'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
 		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-		'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-		'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-		'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-		'w', 'x', 'y', 'z', '0', '1', '2', '3',
-		'4', '5', '6', '7', '8', '9', '-', '_'
+		'Y', 'Z', '2', '3', '4', '5', '6', '7'
 	};
 
-	/* base64 encode ident */
-	b64u_i[0] = b64u_d[0][0] = encoding_table[(ident      ) & 0x3f];
-	b64u_i[1] = b64u_d[1][0] = encoding_table[(ident >>  6) & 0x3f];
-	b64u_i[2] = b64u_d[2][0] = encoding_table[(ident >> 12) & 0x3f];
-	b64u_i[3] = b64u_d[3][0] = encoding_table[(ident >> 18) & 0x3f];
-	b64u_i[4] = b64u_d[4][0] = encoding_table[(ident >> 24) & 0x3f];
-	b64u_i[5] = b64u_d[5][0] = encoding_table[(ident >> 30) & 0x3f];
+	/* base32 encode ident */
+	b32u_i[0] = b32u_d[0][0] = encoding_table[(ident      ) & 0x1f];
+	b32u_i[1] = b32u_d[1][0] = encoding_table[(ident >>  5) & 0x1f];
+	b32u_i[2] = b32u_d[2][0] = encoding_table[(ident >> 10) & 0x1f];
+	b32u_i[3] = b32u_d[3][0] = encoding_table[(ident >> 15) & 0x1f];
+	b32u_i[4] = b32u_d[4][0] = encoding_table[(ident >> 20) & 0x1f];
+	b32u_i[5] = b32u_d[5][0] = encoding_table[(ident >> 25) & 0x1f];
+	b32u_i[6] = encoding_table[(ident >> 30) & 0x1f];
 	/* null terminate strings */
-	b64u_i[6] = b64u_d[0][1] = b64u_d[1][1] = b64u_d[2][1] =
-		b64u_d[3][1] = b64u_d[4][1] = b64u_d[5][1] = 0;
+	b32u_i[7] = b32u_d[0][1] = b32u_d[1][1] = b32u_d[2][1] =
+		b32u_d[3][1] = b32u_d[4][1] = b32u_d[5][1] = 0;
 
 	if ((flags & BACKING_STORE_META) != 0) {
-		dat = "meta";
+		dat = "m"; /* metadata */
 	} else {
-		dat = "data";
+		dat = "d"; /* data */
 	}
 
-	/* number of chars with usefully encoded data in b64 */
-	switch(((state->ident_bits + 5) / 6)) {
+	/* number of chars with usefully encoded data in base 32 */
+	switch(((state->ident_bits + 4) / 5)) {
 	case 1:
-		netsurf_mkpath(&fname, NULL, 3,
-			       state->path,
-			       dat,
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 3, state->path, dat,
+			       b32u_i);
 		break;
 
 	case 2:
-		netsurf_mkpath(&fname, NULL, 4,
-			       state->path,
-			       dat,
-			       b64u_d[0],
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 4, state->path, dat,
+			       b32u_d[0],
+			       b32u_i);
 		break;
 
 	case 3:
-		netsurf_mkpath(&fname, NULL, 5,
-			       state->path,
-			       dat,
-			       b64u_d[0],
-			       b64u_d[1],
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 5, state->path, dat,
+			       b32u_d[0], b32u_d[1],
+			       b32u_i);
 		break;
 
 	case 4:
-		netsurf_mkpath(&fname, NULL, 6,
-			       state->path,
-			       dat,
-			       b64u_d[0],
-			       b64u_d[1],
-			       b64u_d[2],
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 6, state->path, dat,
+			       b32u_d[0], b32u_d[1], b32u_d[2],
+			       b32u_i);
 		break;
 
 	case 5:
-		netsurf_mkpath(&fname, NULL, 7,
-			       state->path,
-			       dat,
-			       b64u_d[0],
-			       b64u_d[1],
-			       b64u_d[2],
-			       b64u_d[3],
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 7, state->path, dat,
+			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
+			       b32u_i);
 		break;
 
 	case 6:
-		netsurf_mkpath(&fname, NULL, 8,
-			       state->path,
-			       dat,
-			       b64u_d[0],
-			       b64u_d[1],
-			       b64u_d[2],
-			       b64u_d[3],
-			       b64u_d[4],
-			       b64u_i);
+		netsurf_mkpath(&fname, NULL, 8, state->path, dat,
+			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
+			       b32u_d[4],
+			       b32u_i);
+		break;
+
+	case 7:
+		netsurf_mkpath(&fname, NULL, 9, state->path, dat,
+			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
+			       b32u_d[4], b32u_d[5],
+			       b32u_i);
 		break;
 
 	default:
