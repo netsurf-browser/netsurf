@@ -2472,22 +2472,25 @@ void ami_get_msg(void)
 	ULONG helpsignal = ami_help_signal();
 	if(printmsgport) printsig = 1L << printmsgport->mp_SigBit;
 	uint32 signalmask = winsignal | appsig | schedulesig | rxsig |
-				printsig | applibsig |  helpsignal;
+				printsig | applibsig | helpsignal;
 
 	if ((fetcher_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
 			(max_fd != -1)) {
 		/* max_fd is the highest fd in use, but waitselect() needs to know how many
 		 * are in use, so we add 1. */
-		int ws = waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
-			NULL, (unsigned int *)&signalmask);
-		signal = signalmask;
-
-		/* \todo Fix Ctrl-C handling.
-		 * WaitSelect() from bsdsocket.library returns -1 if the task was signalled
-		 * with a Ctrl-C.  waitselect() from newlib.library does not - instead
-		 * the task terminates (rather than be signalled) when it receives a Ctrl-C.
-		 * Adding the Ctrl-C signal to our user signal mask causes a Ctrl-C to occur
-		 * immediately. */
+		if (waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
+				NULL, (unsigned int *)&signalmask) != -1) {
+			signal = signalmask;
+		} else {
+			LOG(("waitselect() returned error"));
+			/* \todo Fix Ctrl-C handling.
+			 * WaitSelect() from bsdsocket.library returns -1 if the task was
+			 * signalled with a Ctrl-C.  waitselect() from newlib.library does not.
+			 * Adding the Ctrl-C signal to our user signal mask causes a Ctrl-C to
+			 * occur sporadically.  Otherwise we never get a -1 except on error.
+			 * NetSurf still terminates at the Wait() when network activity is over.
+			 */
+		}
 	} else {
 		/* If fetcher_fdset fails or no network activity, do it the old fashioned way. */
 		signalmask |= ctrlcsig;
@@ -5151,6 +5154,8 @@ int main(int argc, char** argv)
 		.search_web = &amiga_search_web_table,
 		.llcache = filesystem_llcache_table,
 	};
+
+	signal(SIGINT, SIG_IGN);
 
 	ret = netsurf_register(&amiga_table);
 	if (ret != NSERROR_OK) {
