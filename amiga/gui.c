@@ -172,7 +172,6 @@ ULONG screen_signal = -1;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
-BOOL refresh_favicon = FALSE;
 struct Hook newprefs_hook;
 
 STRPTR temp_homepage_url = NULL;
@@ -1418,6 +1417,12 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	g->favicon = icon;
 }
 
+static void ami_gui_refresh_favicon(void *p)
+{
+	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
+	gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+}
+
 void ami_handle_msg(void)
 {
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
@@ -2131,7 +2136,7 @@ void ami_handle_msg(void)
 								} while(tab=ntab);
 							}
 
-							refresh_favicon = TRUE;
+							ami_schedule(0, ami_gui_refresh_favicon, gwin);
 							gwin->bw->reformat_pending = true;
 							ami_schedule_redraw(gwin, true);
 						break;
@@ -2209,12 +2214,6 @@ void ami_handle_msg(void)
 			}
 		}
 	} while(node = nnode);
-
-	if(refresh_favicon)
-	{
-		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
-		refresh_favicon = FALSE;
-	}
 
 	if(ami_menu_window_close)
 	{
@@ -2561,8 +2560,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
 				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
-						TNA_UserData, &gwin->bw,
-						TAG_DONE);
+				TNA_UserData, &gwin->bw,
+				TAG_DONE);
 	curbw = gwin->bw;
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
 
@@ -3271,6 +3270,7 @@ gui_window_create(struct browser_window *bw,
 		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
 
 		ami_update_buttons(g->shared);
+		ami_schedule(0, ami_gui_refresh_favicon, g->shared);
 
 		return g;
 	}
@@ -4690,7 +4690,7 @@ static void gui_window_set_url(struct gui_window *g, const char *url)
 static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
-	refresh_favicon = TRUE;
+	ami_schedule(0, ami_gui_refresh_favicon, hook->h_Data);
 	return 0;
 }
 
