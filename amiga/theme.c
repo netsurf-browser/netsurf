@@ -424,7 +424,7 @@ void gui_window_start_throbber(struct gui_window *g)
 	}
 
 	g->throbbing = true;
-	g->shared->throbber_frame = 1;
+	if(g->shared->throbber_frame == 0) g->shared->throbber_frame = 1;
 	ami_throbber_redraw_schedule(throbber_update_interval, g);
 }
 
