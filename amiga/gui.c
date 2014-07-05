@@ -173,7 +173,6 @@ ULONG screen_signal = -1;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 BOOL refresh_favicon = FALSE;
-BOOL refresh_throbber = FALSE;
 struct Hook newprefs_hook;
 
 STRPTR temp_homepage_url = NULL;
@@ -2116,7 +2115,7 @@ void ami_handle_msg(void)
 
 						case AMINS_WINDOW:
 							ami_set_border_gadget_balance(gwin);
-							ami_update_throbber(gwin,true);
+							ami_throbber_redraw_schedule(0, gwin->bw->window);
 
 							if(gwin->tabs)
 							{
@@ -2208,9 +2207,6 @@ void ami_handle_msg(void)
 			if(gwin->bw->reformat_pending) {
 				ami_schedule_redraw(gwin, true);
 			}
-			
-			if(gwin->bw->window->throbbing)
-				ami_update_throbber(gwin,false);
 		}
 	} while(node = nnode);
 
@@ -2220,12 +2216,6 @@ void ami_handle_msg(void)
 		refresh_favicon = FALSE;
 	}
 
-	if(refresh_throbber)
-	{
-		ami_update_throbber(gwin, true);
-		refresh_throbber = FALSE;
-	}
-	
 	if(ami_menu_window_close)
 	{
 		if(ami_menu_window_close == (void *)AMI_MENU_WINDOW_CLOSE_ALL)
@@ -2596,7 +2586,6 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
-
 		browser_window_update(gwin->bw, false);
 
 		gui_window_set_scroll(gwin->bw->window,
@@ -2604,8 +2593,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		gwin->redraw_scroll = false;
 
 		browser_window_refresh_url_bar(gwin->bw);
-			
 		ami_gui_update_hotlist_button(gwin);
+		ami_throbber_redraw_schedule(0, gwin->bw->window);
 	}
 }
 
@@ -3153,6 +3142,11 @@ void ami_gui_tabs_toggle_all(void)
 			}
 		}
 	} while(node = nnode);
+}
+
+void ami_gui_search_ico_refresh(void *p)
+{
+	search_web_select_provider(-1);
 }
 
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
@@ -3799,7 +3793,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 
-	ami_schedule(0, search_web_select_provider, -1);
+	ami_schedule(0, ami_gui_search_ico_refresh, NULL);
 
 	ScreenToFront(scrn);
 
@@ -4756,7 +4750,8 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
-	refresh_throbber = TRUE;
+	struct gui_window_2 *gwin = hook->h_Data;
+	ami_throbber_redraw_schedule(0, gwin->bw->window);
 	return 0;
 }
 

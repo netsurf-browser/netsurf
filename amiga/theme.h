@@ -44,7 +44,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape);
 
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
-void ami_throbber_redraw_schedule(int t, struct gui_window_2 *gwin);
+void ami_throbber_redraw_schedule(int t, struct gui_window *g);
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 #endif

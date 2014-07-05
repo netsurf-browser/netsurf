@@ -158,7 +158,7 @@ void ami_theme_throbber_setup(void)
 	ami_get_theme_filename(throbberfile,"theme_throbber",false);
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
-	if(throbber_update_interval == 0) throbber_update_interval = 100;
+	if(throbber_update_interval == 0) throbber_update_interval = 250;
 
 	bm = ami_bitmap_from_datatype(throbberfile);
 	throbber = ami_bitmap_get_native(bm, bm->width, bm->height, NULL);
@@ -424,16 +424,8 @@ void gui_window_start_throbber(struct gui_window *g)
 	}
 
 	g->throbbing = true;
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
-				(ULONG *)&bbox);
-
-		if(g->shared->throbber_frame == 0) g->shared->throbber_frame=1;
-
-		BltBitMapRastPort(throbber,throbber_width,0,g->shared->win->RPort,bbox->Left,bbox->Top,throbber_width,throbber_height,0x0C0);
-	}
+	g->shared->throbber_frame = 1;
+	ami_throbber_redraw_schedule(throbber_update_interval, g);
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
@@ -453,8 +445,6 @@ void gui_window_stop_throbber(struct gui_window *g)
 			g->shared->win, NULL);
 	}
 
-	g->throbbing = false;
-
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
@@ -463,71 +453,58 @@ void gui_window_stop_throbber(struct gui_window *g)
 		BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
 			bbox->Top, throbber_width, throbber_height, 0x0C0);
 	}
-//	g->shared->throbber_frame = 0;
+
+	g->throbbing = false;
+	ami_throbber_redraw_schedule(-1, g);
 }
 
-void ami_update_throbber(struct gui_window_2 *g, bool redraw)
+static void ami_throbber_update(void *p)
 {
+	struct gui_window *g = (struct gui_window *)p;
 	struct IBox *bbox;
-	int frame;
+	int frame = 0;
+	ULONG cur_tab = 0;
 
 	if(!g) return;
-	if(!g->objects[GID_THROBBER]) return;
+	if(!g->shared->objects[GID_THROBBER]) return;
 
-	if(g->bw->window->throbbing == false)
-	{
-		frame = 0;
-		g->throbber_frame = 1;
-	}
-	else
-	{
-		frame = g->throbber_frame;
-
-		if(!redraw)
-		{
-			if(g->throbber_update_count < throbber_update_interval)
-			{
-				g->throbber_update_count++;
-				return;
-			}
-
-			g->throbber_update_count = 0;
-
-			g->throbber_frame++;
-			if(g->throbber_frame > (throbber_frames-1))
-				g->throbber_frame=1;
-
-		}
+	if(g->throbbing == true) {
+		frame = g->shared->throbber_frame;
+		g->shared->throbber_frame++;
+		if(g->shared->throbber_frame > (throbber_frames-1))
+			g->shared->throbber_frame=1;
 	}
 
-	GetAttr(SPACE_AreaBox,(Object *)g->objects[GID_THROBBER],(ULONG *)&bbox);
+	if(g->tab_node && (g->shared->tabs > 1))
+	{
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+			(ULONG *)&cur_tab);
+	}
 
-/*
-	EraseRect(g->win->RPort,bbox->Left,bbox->Top,
-		bbox->Left+throbber_width,bbox->Top+throbber_height);
-*/
+	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
+	{
+		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
+				(ULONG *)&bbox);
 
-	BltBitMapTags(BLITA_SrcX, throbber_width * frame,
-					BLITA_SrcY,0,
-					BLITA_DestX,bbox->Left,
-					BLITA_DestY,bbox->Top,
-					BLITA_Width,throbber_width,
-					BLITA_Height,throbber_height,
-					BLITA_Source,throbber,
-					BLITA_Dest,g->win->RPort,
-					BLITA_SrcType,BLITT_BITMAP,
-					BLITA_DestType,BLITT_RASTPORT,
-//					BLITA_UseSrcAlpha,TRUE,
+		BltBitMapTags(BLITA_SrcX, throbber_width * frame,
+					BLITA_SrcY, 0,
+					BLITA_DestX, bbox->Left,
+					BLITA_DestY, bbox->Top,
+					BLITA_Width, throbber_width,
+					BLITA_Height, throbber_height,
+					BLITA_Source, throbber,
+					BLITA_Dest, g->shared->win->RPort,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_RASTPORT,
+				//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
+	}
+
+	if(frame > 0) ami_throbber_redraw_schedule(throbber_update_interval, g);
 }
 
-static void ami_throbber_redraw(void *gwin)
+void ami_throbber_redraw_schedule(int t, struct gui_window *g)
 {
-	ami_update_throbber((struct gui_window_2 *)gwin, true);
-}
-
-void ami_throbber_redraw_schedule(int t, struct gui_window_2 *gwin)
-{
-	ami_schedule(t, ami_throbber_redraw, (void *)gwin); 
+	ami_schedule(t, ami_throbber_update, g); 
 }
 
