@@ -172,7 +172,6 @@ ULONG screen_signal = -1;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
-BOOL refresh_search_ico = FALSE;
 BOOL refresh_favicon = FALSE;
 BOOL refresh_throbber = FALSE;
 struct Hook newprefs_hook;
@@ -2215,12 +2214,6 @@ void ami_handle_msg(void)
 		}
 	} while(node = nnode);
 
-	if(refresh_search_ico)
-	{
-		search_web_select_provider(-1);
-		refresh_search_ico = FALSE;
-	}
-
 	if(refresh_favicon)
 	{
 		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
@@ -3806,7 +3799,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 
-	refresh_search_ico = TRUE;
+	ami_schedule(0, search_web_select_provider, -1);
 
 	ScreenToFront(scrn);
 
