@@ -36,11 +36,12 @@
 
 #include "amiga/bitmap.h"
 #include "amiga/drag.h"
-#include "desktop/browser_private.h"
-#include "utils/nsoption.h"
+#include "amiga/schedule.h"
 #include "amiga/theme.h"
+#include "desktop/browser_private.h"
 #include "desktop/searchweb.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
 #include "utils/utils.h"
 
 struct BitMap *throbber = NULL;
@@ -519,3 +520,14 @@ void ami_update_throbber(struct gui_window_2 *g, bool redraw)
 //					BLITA_UseSrcAlpha,TRUE,
 					TAG_DONE);
 }
+
+static void ami_throbber_redraw(void *gwin)
+{
+	ami_update_throbber((struct gui_window_2 *)gwin, true);
+}
+
+void ami_throbber_redraw_schedule(int t, struct gui_window_2 *gwin)
+{
+	ami_schedule(t, ami_throbber_redraw, (void *)gwin); 
+}
+
