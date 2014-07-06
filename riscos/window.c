@@ -602,8 +602,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 			ro_gui_window_menu_close);
 
 	/* Set the window options */
-	bw->window = g;
-	bw->scale = ((float)nsoption_int(scale)) / 100;
 	ro_gui_window_clone_options(g, existing);
 	ro_gui_window_update_toolbar_buttons(g);
 
@@ -2424,7 +2422,6 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	struct gui_window	*g;
-	struct browser_window	*bw;
 	hlcache_handle		*h;
 	struct toolbar		*toolbar;
 	bool			export;
@@ -2434,8 +2431,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
-	bw = g->bw;
-	h = bw->current_content;
+	h = g->bw->current_content;
 
 	switch (action) {
 	case BROWSER_PAGE_INFO:
@@ -2472,9 +2468,9 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case BROWSER_SELECTION_SAVE:
-		if (browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_COPY)
+		if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY)
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
-					browser_window_get_selection(bw),
+					browser_window_get_selection(g->bw),
 					NULL, NULL);
 		break;
 

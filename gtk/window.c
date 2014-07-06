@@ -34,7 +34,7 @@
 #include "gtk/window.h"
 #include "gtk/selection.h"
 #include "desktop/gui.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
@@ -728,12 +728,6 @@ gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (flags & GW_CREATE_CLONE) {
-		assert(existing != NULL);
-		bw->scale = existing->bw->scale;
-	} else {
-		bw->scale = nsoption_int(scale) / 100;
-	}
 
 	/* attach scaffold */
 	if (flags & GW_CREATE_TAB) {

@@ -893,8 +893,12 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 	}
 	else if(bm = content_get_bitmap(gwin->bw->current_content))
 	{
-		bm->url = (char *)nsurl_access(hlcache_handle_get_url(gwin->bw->current_content));
-		bm->title = (char *)content_get_title(gwin->bw->current_content);
+		/** @todo It should be checked that the lifetime of
+		 * the objects containing the values returned (and the
+		 * constness cast away) is safe.
+		 */
+		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->bw));
+		bm->title = (char *)browser_window_get_title(gwin->bw);
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG

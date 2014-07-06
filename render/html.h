@@ -51,6 +51,7 @@ struct scrollbar;
 struct scrollbar_msg_data;
 struct search_context;
 struct selection;
+struct nsurl;
 
 /**
  * Container for stylesheets used by an HTML document
@@ -113,7 +114,7 @@ struct content_html_frames {
 	int margin_height;	/** frame margin height */
 
 	char *name;	/** frame name (for targetting) */
-	nsurl *url;	/** frame url */
+	struct nsurl *url;	/** frame url */
 
 	bool no_resize;	/** frame is not resizable */
 	frame_scrolling scrolling;	/** scrolling characteristics */
@@ -131,7 +132,7 @@ struct content_html_iframe {
 	int margin_height;	/** frame margin height */
 
 	char *name;	/** frame name (for targetting) */
-	nsurl *url;	/** frame url */
+	struct nsurl *url;	/** frame url */
 
 	frame_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */
@@ -176,7 +177,7 @@ const char *html_get_encoding(struct hlcache_handle *h);
 dom_hubbub_encoding_source html_get_encoding_source(struct hlcache_handle *h);
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
-nsurl *html_get_base_url(struct hlcache_handle *h);
+struct nsurl *html_get_base_url(struct hlcache_handle *h);
 const char *html_get_base_target(struct hlcache_handle *h);
 void html_set_file_gadget_filename(struct hlcache_handle *hl,
 	struct form_control *gadget, const char *fn);

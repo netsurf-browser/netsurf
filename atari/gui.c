@@ -394,10 +394,10 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 
 static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
-    if ((w == NULL)
-            || (w->browser->bw == NULL)
-            || (w->browser->bw->current_content == NULL))
-        return;
+    if (   (w == NULL)
+	|| (w->browser->bw == NULL)
+	|| (!browser_window_has_content(w->browser->bw)))
+	    return;
 
     LOG(("scroll (gui_window: %p) %d, %d\n", w, sx, sy));
     window_scroll_by(w->root, sx, sy);
@@ -412,7 +412,7 @@ static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 static void gui_window_update_extent(struct gui_window *gw)
 {
 
-    if( gw->browser->bw->current_content != NULL ) {
+	if(browser_window_has_content(gw->browser->bw)) {
         // TODO: store content size!
         if(window_get_active_gui_window(gw->root) == gw) {
             window_set_content_size( gw->root,

@@ -28,7 +28,7 @@
 #include <stdio.h>
 
 #include "utils/types.h"
-#include "utils/nsurl.h"
+#include "utils/errors.h"
 #include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
 #include "desktop/mouse.h"
@@ -41,6 +41,7 @@ struct history;
 struct selection;
 struct fetch_multipart_data;
 struct form_control;
+struct nsurl;
 
 typedef enum {
 	DRAGGING_NONE,
@@ -120,7 +121,7 @@ enum browser_window_nav_flags {
  * \return NSERROR_OK, or appropriate error otherwise.
  */
 nserror browser_window_create(enum browser_window_create_flags flags,
-		nsurl *url, nsurl *referrer,
+		struct nsurl *url, struct nsurl *referrer,
 		struct browser_window *existing,
 		struct browser_window **bw);
 
@@ -142,8 +143,8 @@ nserror browser_window_create(enum browser_window_create_flags flags,
  *
  */
 nserror browser_window_navigate(struct browser_window *bw,
-			     nsurl *url,
-			     nsurl *referrer,
+			     struct nsurl *url,
+			     struct nsurl *referrer,
 			     enum browser_window_nav_flags flags,
 			     char *post_urlenc,
 			     struct fetch_multipart_data *post_multipart,
@@ -157,7 +158,14 @@ nserror browser_window_navigate(struct browser_window *bw,
  *
  * Note: guaranteed to return a valid nsurl ptr, never returns NULL.
  */
-nsurl * browser_window_get_url(struct browser_window *bw);
+struct nsurl* browser_window_get_url(struct browser_window *bw);
+
+/**
+ * Get the title of a browser_window.
+ *
+ * \param bw The browser window.
+ */
+const char* browser_window_get_title(struct browser_window *bw);
 
 /**
  * Get a browser window's history object.
@@ -200,7 +208,24 @@ void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height);
+
+
+/**
+ * Sets the scale of a browser window.
+ *
+ * \param bw The browser window to scale.
+ * \param scale The new scale.
+ * \param all Scale all windows in the tree (ie work up aswell as down)
+ */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
+
+
+/**
+ * Gets the scale of a browser window
+ *
+ * \param bw The browser window to get the scale of.
+ * \return The scale of teh window.
+ */
 float browser_window_get_scale(struct browser_window *bw);
 
 /**

@@ -781,9 +781,18 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);
+
+		/* clone history */
 		err = browser_window_history_clone(existing, bw);
+
+		/* copy the scale */
+		bw->scale = existing->scale;
 	} else {
+		/* create history */
 		err = browser_window_history_create(bw);
+
+		/* default scale */
+		bw->scale = (float) nsoption_int(scale) / 100.0;
 	}
 
 	if (err != NSERROR_OK)
@@ -793,7 +802,6 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	bw->refresh_interval = -1;
 
 	bw->drag_type = DRAGGING_NONE;
-	bw->scale = (float) nsoption_int(scale) / 100.0;
 
 	bw->scroll_x = NULL;
 	bw->scroll_y = NULL;
@@ -1958,7 +1966,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 
 /* Exported interface, documented in browser.h */
-nsurl * browser_window_get_url(struct browser_window *bw)
+nsurl* browser_window_get_url(struct browser_window *bw)
 {
 	assert(bw != NULL);
 
@@ -1973,6 +1981,17 @@ nsurl * browser_window_get_url(struct browser_window *bw)
 	return corestring_nsurl_about_blank;
 }
 
+/* Exported interface, documented in browser.h */
+const char* browser_window_get_title(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	if (bw->current_content != NULL) {
+		return content_get_title(bw->current_content);
+	}
+
+	return NULL;
+}
 
 /* Exported interface, documented in browser.h */
 struct history * browser_window_get_history(struct browser_window *bw)
@@ -2436,14 +2455,7 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 }
 
 
-/**
- * Sets the scale of a browser window
- *
- * \param bw	The browser window to scale
- * \param scale	The new scale
- * \param all	Scale all windows in the tree (ie work up aswell as down)
- */
-
+/* exported interface documented in desktop/browser.h */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 {
 	while (bw->parent && all)
@@ -2458,13 +2470,7 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 }
 
 
-/**
- * Gets the scale of a browser window
- *
- * \param bw	The browser window to scale
- * \return 
- */
-
+/* exported interface documented in desktop/browser.h */
 float browser_window_get_scale(struct browser_window *bw)
 {
 	return bw->scale;

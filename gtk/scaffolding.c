@@ -2444,9 +2444,8 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	nsgtk_scaffolding_set_icon(gw);
 
 	/* Ensure the window's title bar is updated */
-	if (bw->current_content != NULL) {
-		gui_window_set_title(gw, content_get_title(bw->current_content));
-	}
+	gui_window_set_title(gw, browser_window_get_title(bw));
+
 }
 
 /* exported interface documented in scaffolding.h */
