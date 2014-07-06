@@ -32,6 +32,7 @@
 #include "utils/messages.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
+#include "utils/nsurl.h"
 #include "content/fetchers/resource.h"
 
 #include "windows/findfile.h"
