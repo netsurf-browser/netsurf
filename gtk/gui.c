@@ -518,11 +518,6 @@ static void nsgtk_poll(bool active)
 
 	schedule_run();
 
-	if (browser_reformat_pending) {
-		nsgtk_window_process_reformats();
-		block = false;
-	}
-
 	gtk_main_iteration_do(block);
 
 	for (unsigned int i = 0; i != fd_count; i++) {

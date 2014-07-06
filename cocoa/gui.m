@@ -129,8 +129,20 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-							   bool scaled)
+/**
+ * callback from core to reformat a window.
+ */
+static void cocoa_window_reformat(struct gui_window *gw)
+{
+	if (gw != NULL) {
+                [[(BrowserViewController *)g browserView] reformat ];
+	}
+}
+
+
+static void gui_window_get_dimensions(struct gui_window *g,
+                                      int *width, int *height,
+                                      bool scaled)
 {
 	NSCParameterAssert( width != NULL && height != NULL );
 	
@@ -278,6 +290,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+        .reformat = cocoa_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

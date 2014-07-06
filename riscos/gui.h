@@ -134,7 +134,6 @@ void ro_gui_window_iconise(struct gui_window *g,
 bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_redraw_all(void);
 void ro_gui_window_update_boxes(void);
-void ro_gui_window_process_reformats(void);
 void ro_gui_window_quit(void);
 /* void ro_gui_window_close_all(void); */
 #define ro_gui_window_close_all ro_gui_window_quit  /* no need for a separate fn */

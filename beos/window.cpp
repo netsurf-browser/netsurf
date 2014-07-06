@@ -883,9 +883,7 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 	width++;
 	height++;
 
-
-		g->bw->reformat_pending = true;
-		browser_reformat_pending = true;
+        browser_window_schedule_reformat(g->bw);
 
 	return;
 }
@@ -901,50 +899,39 @@ void nsbeos_window_moved_event(BView *view, gui_window *g, BMessage *event)
 	//view->Invalidate(view->Bounds());
 	view->UnlockLooper();
 
-	//g->bw->reformat_pending = true;
-	//browser_reformat_pending = true;
-	
-
 	return;
 }
 
 
 void nsbeos_reflow_all_windows(void)
 {
-	for (struct gui_window *g = window_list; g; g = g->next)
-		g->bw->reformat_pending = true;
-
-	browser_reformat_pending = true;
+	for (struct gui_window *g = window_list; g; g = g->next) {
+                browser_window_schedule_reformat(g->bw);
+        }
 }
+
 
 
 /**
- * Process pending reformats
+ * callback from core to reformat a window.
  */
-
-void nsbeos_window_process_reformats(void)
+static void beos_window_reformat(struct gui_window *g)
 {
-	struct gui_window *g;
+        if (g == NULL) {
+                return;
+        }
 
-	browser_reformat_pending = false;
-	for (g = window_list; g; g = g->next) {
-		NSBrowserFrameView *view = g->view;
-		if (!g->bw->reformat_pending)
-			continue;
-		if (!view || !view->LockLooper())
-			continue;
-		g->bw->reformat_pending = false;
-		BRect bounds = view->Bounds();
-		view->UnlockLooper();
+        NSBrowserFrameView *view = g->view;
+        if (view && view->LockLooper()) {
+                BRect bounds = view->Bounds();
+                view->UnlockLooper();
 #warning XXX why - 1 & - 2 !???
-		browser_window_reformat(g->bw,
-				false,
-				bounds.Width() + 1 /* - 2*/,
-				bounds.Height() + 1);
-	}
-
+                browser_window_reformat(g->bw,
+                                        false,
+                                        bounds.Width() + 1 /* - 2*/,
+                                        bounds.Height() + 1);
+        }        
 }
-
 
 void nsbeos_window_destroy_browser(struct gui_window *g)
 {
@@ -1356,6 +1343,7 @@ static struct gui_window_table window_table = {
 	gui_window_set_scroll,
 	gui_window_get_dimensions,
 	gui_window_update_extent,
+        beos_window_reformat,
 
 	/* from scaffold */
 	gui_window_set_title,

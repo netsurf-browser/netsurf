@@ -2132,12 +2132,11 @@ void ami_handle_msg(void)
 									GetClickTabNodeAttrs(tab,
 										TNA_UserData, &bw,
 										TAG_DONE);
-									bw->reformat_pending = true;
 								} while(tab=ntab);
 							}
 
 							ami_schedule(0, ami_gui_refresh_favicon, gwin);
-							gwin->bw->reformat_pending = true;
+							browser_window_schedule_reformat(gwin->bw);
 							ami_schedule_redraw(gwin, true);
 						break;
 					}
@@ -2206,13 +2205,6 @@ void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
-		if(node->Type == AMINS_WINDOW)
-		{
-			/* Catch any reformats tagged by the core - only used by scale? */
-			if(gwin->bw->reformat_pending) {
-				ami_schedule_redraw(gwin, true);
-			}
-		}
 	} while(node = nnode);
 
 	if(ami_menu_window_close)
@@ -2956,7 +2948,6 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				gwin->win, NULL, TRUE);
 		
 		if(gwin->bw) {
-			gwin->bw->reformat_pending = true;
 			ami_schedule_redraw(gwin, true);
 		}
 	}
@@ -2998,7 +2989,6 @@ void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	gwin->bw->reformat_pending = true;
 	ami_schedule_redraw(gwin, true);
 }
 
@@ -3111,7 +3101,6 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 			gwin->win, NULL, TRUE);
 
 	if(gwin->bw) {
-		gwin->bw->reformat_pending = true;
 		ami_schedule_redraw(gwin, true);
 	}
 }
@@ -4043,7 +4032,7 @@ static void ami_redraw_callback(void *p)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
 
-	if(gwin->redraw_required || gwin->bw->reformat_pending) {
+	if(gwin->redraw_required) {
 		ami_do_redraw(gwin);
 	}
 
@@ -4072,7 +4061,6 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 	if(full_redraw) gwin->redraw_required = true;
 	if(gwin->redraw_scheduled == true) return;
 
-	if(gwin->bw->reformat_pending) ms = nsoption_int(reformat_delay) * 10;
 	ami_schedule(ms, ami_redraw_callback, gwin);
 	gwin->redraw_scheduled = true;
 }
@@ -4303,6 +4291,21 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	ami_schedule_redraw(g->shared, false);
 }
 
+/**
+ * callback from core to reformat a window.
+ */
+static void amiga_window_reformat(struct gui_window *gw)
+{
+	struct IBox *bbox;
+
+	if (gw != NULL) {
+		GetAttr(SPACE_AreaBox, (Object *)gw->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
+
+		gw->shared->redraw_scroll = false;
+	}
+}
+
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	struct Rectangle rect;
@@ -4324,13 +4327,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
-
-	if(gwin->bw->reformat_pending)
-	{
-		browser_window_reformat(gwin->bw, false, width, height);
-		gwin->bw->reformat_pending = false;
-		gwin->redraw_scroll = false;
-	}
 
 	if(gwin->redraw_scroll)
 	{
@@ -5073,6 +5069,7 @@ static struct gui_window_table amiga_window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = amiga_window_reformat,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,

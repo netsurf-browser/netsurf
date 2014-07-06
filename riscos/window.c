@@ -975,7 +975,6 @@ static void gui_window_update_extent(struct gui_window *g)
 	os_error		*error;
 	wimp_window_info	info;
 	wimp_window_state	state;
-	bool			update;
 	unsigned int		flags;
 
 	assert(g);
@@ -995,9 +994,8 @@ static void gui_window_update_extent(struct gui_window *g)
 		info.yscroll += scroll;
 	}
 
-	/* only allow a further reformat if we've gained/lost scrollbars */
+	/* only schedule a reformat if we've gained/lost scrollbars */
 	flags = info.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
-	update = g->bw->reformat_pending;
 	g->update_extent = true;
 	ro_gui_window_open(PTR_WIMP_OPEN(&info));
 
@@ -1009,8 +1007,9 @@ static void gui_window_update_extent(struct gui_window *g)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL)))
-		g->bw->reformat_pending = update;
+	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL))) {
+		browser_window_schedule_reformat(g->bw);
+	}
 }
 
 
@@ -1557,8 +1556,7 @@ void ro_gui_window_open(wimp_open *open)
 				height -= size;
 				state.visible.y0 += size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags |= wimp_WINDOW_HSCROLL;
@@ -1567,8 +1565,7 @@ void ro_gui_window_open(wimp_open *open)
 				height += size;
 				state.visible.y0 -= size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags &= ~wimp_WINDOW_HSCROLL;
@@ -1583,8 +1580,7 @@ void ro_gui_window_open(wimp_open *open)
 				width -= size;
 				state.visible.x1 -= size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags |= wimp_WINDOW_VSCROLL;
@@ -1593,8 +1589,7 @@ void ro_gui_window_open(wimp_open *open)
 				width += size;
 				state.visible.x1 += size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags &= ~wimp_WINDOW_VSCROLL;
@@ -1607,8 +1602,7 @@ void ro_gui_window_open(wimp_open *open)
 		if ((g->old_width > 0) && (g->old_width != width) &&
 				(ro_gui_ctrl_pressed()))
 			new_scale = (g->bw->scale * width) / g->old_width;
-		g->bw->reformat_pending = true;
-		browser_reformat_pending = true;
+		browser_window_schedule_reformat(g->bw);
 	}
 	if (g->update_extent || g->old_width != width ||
 			g->old_height != height) {
@@ -4379,24 +4373,16 @@ void ro_gui_window_update_boxes(void)
 
 
 /**
- * Process pending reformats
+ * callback from core to reformat a window.
  */
-
-void ro_gui_window_process_reformats(void)
+static void riscos_window_reformat(struct gui_window *gw)
 {
-	struct gui_window *g;
-
-	browser_reformat_pending = false;
-	for (g = window_list; g; g = g->next) {
-		if (!g->bw->reformat_pending)
-			continue;
-		g->bw->reformat_pending = false;
-		browser_window_reformat(g->bw, false,
-				g->old_width / 2,
-				g->old_height / 2);
+	if (gw != NULL) {
+		browser_window_reformat(gw->bw, false,
+					gw->old_width / 2,
+					gw->old_height / 2);
 	}
 }
-
 
 /**
  * Destroy all browser windows.
@@ -5174,6 +5160,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = riscos_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

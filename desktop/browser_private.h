@@ -87,9 +87,6 @@ struct browser_window {
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
 
-	/** Window has been resized, and content needs reformatting. */
-	bool reformat_pending;
-
 	/** Window dimensions */
 	int x;
 	int y;

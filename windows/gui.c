@@ -93,7 +93,6 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 		return;
 
 	browser_window_set_scale(gw->bw, scale, true);
-	browser_window_reformat(gw->bw, false, gw->width, gw->height);
 }
 
 
@@ -1821,6 +1820,16 @@ nsws_create_main_class(HINSTANCE hinstance) {
 }
 
 /**
+ * callback from core to reformat a window.
+ */
+static void win32_window_reformat(struct gui_window *gw)
+{
+	if (gw != NULL) {
+		browser_window_reformat(gw->bw, false, gw->width, gw->height);
+	}
+}
+
+/**
  * Generate a windows path from one or more component elemnts.
  *
  * If a string is allocated it must be freed by the caller.
@@ -2087,6 +2096,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = win32_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
