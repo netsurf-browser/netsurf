@@ -1758,7 +1758,7 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
-static void nsgtk_window_reformat(struct gui_window *gw)
+static void framebuffer_window_reformat(struct gui_window *gw)
 {
 	/** @todo if we ever do zooming reformat should be implemented */
 	LOG(("window:%p", gw));

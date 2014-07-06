@@ -135,7 +135,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 static void cocoa_window_reformat(struct gui_window *gw)
 {
 	if (gw != NULL) {
-                [[(BrowserViewController *)g browserView] reformat ];
+                [[(BrowserViewController *)gw browserView] reformat ];
 	}
 }
 

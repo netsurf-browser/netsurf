@@ -834,7 +834,7 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
 
     plot_set_dimensions(content_area->g_x, content_area->g_y,
                         content_area->g_w, content_area->g_h);
-    oldscale = plot_set_scale(browser_window_get_scale(rootwin->active_gui_window->bw));
+    oldscale = plot_set_scale(browser_window_get_scale(rootwin->active_gui_window->browser->bw));
 
     /* first, we make the coords relative to the content area: */
     content_area_rel.g_x = clip->g_x - content_area->g_x;
