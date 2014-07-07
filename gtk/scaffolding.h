@@ -166,8 +166,15 @@ void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g);
 void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g);
 
 void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g);
-void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, gdouble x,
-    gdouble y);
+
+/**
+ * Open a context sensitive menu.
+ *
+ * \param g the scaffolding containing the browser window.
+ * \param x The x co-ordinate.
+ * \param y The y co-ordinate.
+ */
+void nsgtk_scaffolding_context_menu(struct gtk_scaffolding *g, gdouble x, gdouble y);
 void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 		GtkAllocation *alloc, gpointer data);
 void nsgtk_scaffolding_set_icon(struct gui_window *gw);

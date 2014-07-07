@@ -49,7 +49,11 @@ struct redraw_context {
 };
 
 
-/* Content located at a specific spatial location */
+/**
+ * Content located at a specific spatial location.
+ *
+ * \todo This structure should contain a nsurl not a string.
+ */
 struct contextual_content {
 	const char *link_url;
 	struct hlcache_handle *object;

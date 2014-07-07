@@ -338,8 +338,9 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 
 	case 3:	/* Right button, usually. Action button, context menu. */
 		browser_window_remove_caret(g->bw, true);
-		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse.pressed_x,
-				g->mouse.pressed_y);
+		nsgtk_scaffolding_context_menu(g->scaffold,
+					       g->mouse.pressed_x,
+					       g->mouse.pressed_y);
 		return TRUE;
 
 	default:

@@ -143,7 +143,7 @@ struct nsgtk_bar_submenu {
 	struct nsgtk_help_menu	*help_submenu;
 };
 
-struct nsgtk_popup_submenu {
+struct nsgtk_popup_menu {
 	GtkMenu	*popup_menu;
 
 	GtkImageMenuItem *file_menuitem;
@@ -189,7 +189,33 @@ struct nsgtk_popup_submenu {
 
 };
 
+struct nsgtk_link_menu {
+	GtkMenu	*link_menu;
+
+	GtkImageMenuItem *opentab_menuitem;
+	GtkImageMenuItem *openwin_menuitem;
+
+	GtkImageMenuItem *save_menuitem;
+	GtkImageMenuItem *bookmark_menuitem;
+	GtkImageMenuItem *copy_menuitem;
+};
+
+/**
+ * Create main menu bar.
+ */
 struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group);
-struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkAccelGroup *group);
+
+/**
+ * Generate right click menu menu.
+ *
+ */
+struct nsgtk_popup_menu *nsgtk_popup_menu_create(GtkAccelGroup *group);
+
+/**
+ * Generate context sensitive popup menu for link.
+ *
+ */
+struct nsgtk_link_menu *nsgtk_link_menu_create(GtkAccelGroup *group);
+
 
 #endif
