@@ -443,6 +443,7 @@ fetch_start(nsurl *url,
 	fetch->fetcherd = get_fetcher_for_scheme(scheme);
 	if (fetch->fetcherd == -1) {
 		lwc_string_unref(scheme);
+		free(fetch);
 		return NULL;
 	}
 
