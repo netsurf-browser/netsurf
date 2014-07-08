@@ -2309,6 +2309,10 @@ gui_search_web_provider_update(const char *provider_name,
 			nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry,
 							 GTK_ENTRY_ICON_PRIMARY,
 							 srch_pixbuf);
+		} else {
+			nsgtk_entry_set_icon_from_stock(current->webSearchEntry,
+							 GTK_ENTRY_ICON_PRIMARY,
+							 "gtk-find");
 		}
 
 		/* set search entry text */
@@ -2321,7 +2325,9 @@ gui_search_web_provider_update(const char *provider_name,
 
 	free(searchcontent);
 
-	g_object_unref(srch_pixbuf);
+	if (srch_pixbuf != NULL) {
+		g_object_unref(srch_pixbuf);
+	}
 
 	return NSERROR_OK;
 }
