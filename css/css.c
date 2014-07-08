@@ -575,14 +575,14 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 	/* Create content */
 	c->imports[c->import_count].media = media;
 
-	/* TODO: Why aren't we getting a relative url part, to join? */
+	/** \todo Why aren't we getting a relative url part, to join? */
 	nerror = nsurl_create(lwc_string_data(url), &ns_url);
 	if (nerror != NSERROR_OK) {
 		free(ctx);
 		return CSS_NOMEM;
 	}
 
-	/* TODO: Constructing nsurl for referer here is silly, avoid */
+	/** \todo Constructing nsurl for referer here is silly, avoid */
 	nerror = nsurl_create(referer, &ns_ref);
 	if (nerror != NSERROR_OK) {
 		nsurl_unref(ns_url);
