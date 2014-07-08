@@ -74,9 +74,8 @@ void ro_gui_history_init(void)
 /**
  * Open history window.
  *
- * \param  bw          browser window to open history for
- * \param  history     history to open
- * \param  at_pointer  open the window at the pointer
+ * \param g The riscos window to open history for.
+ * \param at_pointer open the window at the pointer.
  */
 
 void ro_gui_history_open(struct gui_window *g, bool at_pointer)

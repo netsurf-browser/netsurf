@@ -31,6 +31,7 @@
 #include <proto/openurl.h>
 
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "utils/url.h"
 
 struct Library *OpenURLBase = NULL;

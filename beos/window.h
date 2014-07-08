@@ -51,7 +51,6 @@ void nsbeos_dispatch_event(BMessage *message);
 
 
 void nsbeos_reflow_all_windows(void);
-void nsbeos_window_process_reformats(void);
 
 nsbeos_scaffolding *nsbeos_get_scaffold(struct gui_window *g);
 struct browser_window *nsbeos_get_browser_for_gui(struct gui_window *g);

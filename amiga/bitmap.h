@@ -26,6 +26,7 @@
 #include <libraries/Picasso96.h>
 
 #define AMI_BITMAP_FORMAT RGBFB_R8G8B8A8
+#define AMI_BITMAP_FORCE_OVERWRITE 0xFF
 
 struct bitmap {
 	int width;

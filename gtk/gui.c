@@ -33,13 +33,13 @@
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <glib.h>
 
 #include "content/content.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
@@ -485,52 +485,38 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static void nsgtk_poll(bool active)
 {
-	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
 	int max_fd;
 	GPollFD *fd_list[1000];
 	unsigned int fd_count = 0;
 	bool block = true;
 
-	schedule_run();
-
-	if (browser_reformat_pending)
-		block = false;
-
-	if (active) {
-		FD_ZERO(&read_fd_set);
-		FD_ZERO(&write_fd_set);
-		FD_ZERO(&exc_fd_set);
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-		for (int i = 0; i <= max_fd; i++) {
-			if (FD_ISSET(i, &read_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &write_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_OUT | G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
-			if (FD_ISSET(i, &exc_fd_set)) {
-				GPollFD *fd = malloc(sizeof *fd);
-				fd->fd = i;
-				fd->events = G_IO_ERR;
-				g_main_context_add_poll(0, fd, 0);
-				fd_list[fd_count++] = fd;
-			}
+	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+	for (int i = 0; i <= max_fd; i++) {
+		if (FD_ISSET(i, &read_fd_set)) {
+			GPollFD *fd = malloc(sizeof *fd);
+			fd->fd = i;
+			fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+			g_main_context_add_poll(0, fd, 0);
+			fd_list[fd_count++] = fd;
+		}
+		if (FD_ISSET(i, &write_fd_set)) {
+			GPollFD *fd = malloc(sizeof *fd);
+			fd->fd = i;
+			fd->events = G_IO_OUT | G_IO_ERR;
+			g_main_context_add_poll(0, fd, 0);
+			fd_list[fd_count++] = fd;
+		}
+		if (FD_ISSET(i, &exc_fd_set)) {
+			GPollFD *fd = malloc(sizeof *fd);
+			fd->fd = i;
+			fd->events = G_IO_ERR;
+			g_main_context_add_poll(0, fd, 0);
+			fd_list[fd_count++] = fd;
 		}
 	}
+
+	schedule_run();
 
 	gtk_main_iteration_do(block);
 
@@ -539,10 +525,6 @@ static void nsgtk_poll(bool active)
 		free(fd_list[i]);
 	}
 
-	schedule_run();
-
-	if (browser_reformat_pending)
-		nsgtk_window_process_reformats();
 }
 
 

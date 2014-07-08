@@ -152,7 +152,9 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 	int err = 0;
 	Object *dto = NULL;
 
-	if(!ami_download_check_overwrite(path, NULL, 0)) return false;
+	if ((flags & AMI_BITMAP_FORCE_OVERWRITE) == 0) {
+		if(!ami_download_check_overwrite(path, NULL, 0)) return false;
+	}
 
 	if(dto = ami_datatype_object_from_bitmap(bitmap))
 	{

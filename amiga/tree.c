@@ -711,7 +711,7 @@ void ami_tree_close(struct treeview_window *twin)
 		ami_ssl_free(twin);
 	}
 	
-	ami_gui_hotlist_toolbar_update_all();
+	ami_gui_hotlist_update_all();
 }
 
 void ami_tree_update_quals(struct treeview_window *twin)

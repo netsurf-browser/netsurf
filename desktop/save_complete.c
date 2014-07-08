@@ -355,8 +355,11 @@ static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
 	uint32_t i;
 
 	for (i = 0; i < import_count; i++) {
-		if (save_complete_save_stylesheet(ctx, imports[i].c) == false)
-			return false;
+		/* treat a valid content as a stylesheet to save */
+		if ((imports[i].c != NULL) &&
+		    (save_complete_save_stylesheet(ctx, imports[i].c) == false)) {
+				return false;
+		}
 	}
 
 	return true;

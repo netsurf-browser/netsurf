@@ -66,12 +66,9 @@
 #include "utils/utils.h"
 #include "utils/utf8.h"
 
-/** one or more windows require a reformat */
-bool browser_reformat_pending;
 
 /** maximum frame depth */
 #define FRAME_DEPTH 8
-
 
 
 /**
@@ -784,9 +781,18 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 
 	if (flags & BW_CREATE_CLONE) {
 		assert(existing != NULL);
+
+		/* clone history */
 		err = browser_window_history_clone(existing, bw);
+
+		/* copy the scale */
+		bw->scale = existing->scale;
 	} else {
+		/* create history */
 		err = browser_window_history_create(bw);
+
+		/* default scale */
+		bw->scale = (float) nsoption_int(scale) / 100.0;
 	}
 
 	if (err != NSERROR_OK)
@@ -795,9 +801,7 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 	/* window characteristics */
 	bw->refresh_interval = -1;
 
-	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
-	bw->scale = (float) nsoption_int(scale) / 100.0;
 
 	bw->scroll_x = NULL;
 	bw->scroll_y = NULL;
@@ -1623,7 +1627,13 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		browser_window_destroy_children(bw);
 	}
 
+	/* clear any pending callbacks */
 	guit->browser->schedule(-1, browser_window_refresh, bw);
+	/* The ugly cast here is so the reformat function can be
+	 * passed a gui window pointer in its API rather than void*
+	 */
+	LOG(("Clearing schedule %p(%p)", guit->window->reformat, bw->window));
+	guit->browser->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);      
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -1956,7 +1966,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 
 /* Exported interface, documented in browser.h */
-nsurl * browser_window_get_url(struct browser_window *bw)
+nsurl* browser_window_get_url(struct browser_window *bw)
 {
 	assert(bw != NULL);
 
@@ -1971,6 +1981,17 @@ nsurl * browser_window_get_url(struct browser_window *bw)
 	return corestring_nsurl_about_blank;
 }
 
+/* Exported interface, documented in browser.h */
+const char* browser_window_get_title(struct browser_window *bw)
+{
+	assert(bw != NULL);
+
+	if (bw->current_content != NULL) {
+		return content_get_title(bw->current_content);
+	}
+
+	return NULL;
+}
 
 /* Exported interface, documented in browser.h */
 struct history * browser_window_get_history(struct browser_window *bw)
@@ -2362,6 +2383,16 @@ void browser_window_set_pointer(struct browser_window *bw,
 	guit->window->set_pointer(root->window, gui_shape);
 }
 
+/* exported function documented in desktop/browser.h */
+nserror browser_window_schedule_reformat(struct browser_window *bw)
+{
+	/* The ugly cast here is so the reformat function can be
+	 * passed a gui window pointer in its API rather than void*
+	 */
+	LOG(("Scheduleing %p(%p)", guit->window->reformat, bw->window));
+	guit->browser->schedule(0, (void(*)(void*))guit->window->reformat, bw->window);
+	return NSERROR_OK;
+}
 
 /**
  * Reformat a browser window contents to a new width or height.
@@ -2413,8 +2444,7 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 		if (content_can_reformat(c) == false) {
 			browser_window_update(bw, false);
 		} else {
-			bw->reformat_pending = true;
-			browser_reformat_pending = true;
+			browser_window_schedule_reformat(bw);
 		}
 	}
 
@@ -2425,14 +2455,7 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 }
 
 
-/**
- * Sets the scale of a browser window
- *
- * \param bw	The browser window to scale
- * \param scale	The new scale
- * \param all	Scale all windows in the tree (ie work up aswell as down)
- */
-
+/* exported interface documented in desktop/browser.h */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 {
 	while (bw->parent && all)
@@ -2447,13 +2470,7 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 }
 
 
-/**
- * Gets the scale of a browser window
- *
- * \param bw	The browser window to scale
- * \return 
- */
-
+/* exported interface documented in desktop/browser.h */
 float browser_window_get_scale(struct browser_window *bw)
 {
 	return bw->scale;

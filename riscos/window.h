@@ -33,6 +33,12 @@ void ro_gui_window_initialise(void);
 
 bool ro_gui_window_check_menu(wimp_menu *menu);
 
+/**
+ * Set the contents of a window's address bar.
+ *
+ * \param g gui_window to update
+ * \param url new url for address bar
+ */
 void gui_window_set_url(struct gui_window *g, const char *url);
 
 #endif

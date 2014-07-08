@@ -18,6 +18,7 @@
 
 /* NetSurf core includes */
 #include "content/backing_store.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "css/utils.h"
@@ -171,9 +172,6 @@ ULONG screen_signal = -1;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
-BOOL refresh_search_ico = FALSE;
-BOOL refresh_favicon = FALSE;
-BOOL refresh_throbber = FALSE;
 struct Hook newprefs_hook;
 
 STRPTR temp_homepage_url = NULL;
@@ -181,6 +179,7 @@ bool cli_force = false;
 
 static char *current_user;
 static char *current_user_dir;
+static char *current_user_faviconcache;
 
 static const __attribute__((used)) char *stack_cookie = "\0$STACK:262144\0";
 
@@ -1418,6 +1417,12 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	g->favicon = icon;
 }
 
+static void ami_gui_refresh_favicon(void *p)
+{
+	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
+	gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+}
+
 void ami_handle_msg(void)
 {
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
@@ -2115,7 +2120,7 @@ void ami_handle_msg(void)
 
 						case AMINS_WINDOW:
 							ami_set_border_gadget_balance(gwin);
-							ami_update_throbber(gwin,true);
+							ami_throbber_redraw_schedule(0, gwin->bw->window);
 
 							if(gwin->tabs)
 							{
@@ -2127,12 +2132,11 @@ void ami_handle_msg(void)
 									GetClickTabNodeAttrs(tab,
 										TNA_UserData, &bw,
 										TAG_DONE);
-									bw->reformat_pending = true;
 								} while(tab=ntab);
 							}
 
-							refresh_favicon = TRUE;
-							gwin->bw->reformat_pending = true;
+							ami_schedule(0, ami_gui_refresh_favicon, gwin);
+							browser_window_schedule_reformat(gwin->bw);
 							ami_schedule_redraw(gwin, true);
 						break;
 					}
@@ -2201,36 +2205,8 @@ void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
-		if(node->Type == AMINS_WINDOW)
-		{
-			/* Catch any reformats tagged by the core - only used by scale? */
-			if(gwin->bw->reformat_pending) {
-				ami_schedule_redraw(gwin, true);
-			}
-			
-			if(gwin->bw->window->throbbing)
-				ami_update_throbber(gwin,false);
-		}
 	} while(node = nnode);
 
-	if(refresh_search_ico)
-	{
-		search_web_select_provider(-1);
-		refresh_search_ico = FALSE;
-	}
-
-	if(refresh_favicon)
-	{
-		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
-		refresh_favicon = FALSE;
-	}
-
-	if(refresh_throbber)
-	{
-		ami_update_throbber(gwin, true);
-		refresh_throbber = FALSE;
-	}
-	
 	if(ami_menu_window_close)
 	{
 		if(ami_menu_window_close == (void *)AMI_MENU_WINDOW_CLOSE_ALL)
@@ -2461,15 +2437,39 @@ void ami_get_msg(void)
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
 	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
-	ULONG signal;
+	uint32 signal = 0;
+	fd_set read_fd_set, write_fd_set, except_fd_set;
+	int max_fd = -1;
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 0;
 	ULONG helpsignal = ami_help_signal();
 	if(printmsgport) printsig = 1L << printmsgport->mp_SigBit;
-	ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig | helpsignal;
+	uint32 signalmask = winsignal | appsig | schedulesig | rxsig |
+				printsig | applibsig | helpsignal;
 
-	signal = Wait(signalmask);
+	if ((fetcher_fdset(&read_fd_set, &write_fd_set, &except_fd_set, &max_fd) == NSERROR_OK) &&
+			(max_fd != -1)) {
+		/* max_fd is the highest fd in use, but waitselect() needs to know how many
+		 * are in use, so we add 1. */
+		if (waitselect(max_fd + 1, &read_fd_set, &write_fd_set, &except_fd_set,
+				NULL, (unsigned int *)&signalmask) != -1) {
+			signal = signalmask;
+		} else {
+			LOG(("waitselect() returned error"));
+			/* \todo Fix Ctrl-C handling.
+			 * WaitSelect() from bsdsocket.library returns -1 if the task was
+			 * signalled with a Ctrl-C.  waitselect() from newlib.library does not.
+			 * Adding the Ctrl-C signal to our user signal mask causes a Ctrl-C to
+			 * occur sporadically.  Otherwise we never get a -1 except on error.
+			 * NetSurf still terminates at the Wait() when network activity is over.
+			 */
+		}
+	} else {
+		/* If fetcher_fdset fails or no network activity, do it the old fashioned way. */
+		signalmask |= ctrlcsig;
+		signal = Wait(signalmask);
+	}
 
 	if(signal & winsignal)
 		ami_handle_msg();
@@ -2502,18 +2502,9 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
-static void ami_gui_fetch_callback(void *p)
-{
-	/* This doesn't need to do anything - the scheduled event will
-	 * send a message to trigger Wait() to return, thereby causing
-	 * the event function to return, and NetSurf to call
-	 * hlcache_poll() as part of the usual fetch/event loop.
-	 */
-}
 
 static void gui_poll(bool active)
 {
-	if(active) ami_schedule(0, ami_gui_fetch_callback, NULL);
 	ami_get_msg();
 }
 
@@ -2561,8 +2552,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
 				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
-						TNA_UserData, &gwin->bw,
-						TAG_DONE);
+				TNA_UserData, &gwin->bw,
+				TAG_DONE);
 	curbw = gwin->bw;
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
 
@@ -2586,7 +2577,6 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
-
 		browser_window_update(gwin->bw, false);
 
 		gui_window_set_scroll(gwin->bw->window,
@@ -2594,8 +2584,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		gwin->redraw_scroll = false;
 
 		browser_window_refresh_url_bar(gwin->bw);
-			
 		ami_gui_update_hotlist_button(gwin);
+		ami_throbber_redraw_schedule(0, gwin->bw->window);
 	}
 }
 
@@ -2769,7 +2759,38 @@ static void gui_quit(void)
 
 	FreeVec(current_user_options);
 	FreeVec(current_user_dir);
+	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
+}
+
+char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
+{
+	STRPTR filename = NULL;
+	BPTR lock = 0;
+
+	if (filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url))) {
+		LOG(("favicon cache location: %s", filename));
+
+		if (only_if_avail == true) {
+			if(lock = Lock(filename, ACCESS_READ)) {
+				UnLock(lock);
+				return filename;
+			}
+		} else {
+			return filename;
+		}
+	}
+	return NULL;
+}
+
+static void ami_gui_cache_favicon(nsurl *url, struct bitmap *favicon)
+{
+	STRPTR filename = NULL;
+
+	if (filename = ami_gui_get_cache_favicon_name(url, false)) {
+		if(favicon) bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
+		FreeVec(filename);
+	}
 }
 
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
@@ -2785,6 +2806,9 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 		if(hotlist_has_url(nsurl)) {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV], TAG_DONE);
+
+			if (gwin->bw->window->favicon)
+				ami_gui_cache_favicon(nsurl, content_get_bitmap(gwin->bw->window->favicon));
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD], TAG_DONE);
@@ -2924,7 +2948,6 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				gwin->win, NULL, TRUE);
 		
 		if(gwin->bw) {
-			gwin->bw->reformat_pending = true;
 			ami_schedule_redraw(gwin, true);
 		}
 	}
@@ -2966,7 +2989,6 @@ void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	gwin->bw->reformat_pending = true;
 	ami_schedule_redraw(gwin, true);
 }
 
@@ -2995,7 +3017,10 @@ void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_toolbar_update_all(void)
+/**
+ * Update hotlist toolbar and recreate the menu for all windows
+ */
+void ami_gui_hotlist_update_all(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -3012,6 +3037,7 @@ void ami_gui_hotlist_toolbar_update_all(void)
 		if(node->Type == AMINS_WINDOW)
 		{
 			ami_gui_hotlist_toolbar_update(gwin);
+			ami_menu_refresh(gwin);
 		}
 	} while(node = nnode);
 }
@@ -3075,7 +3101,6 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 			gwin->win, NULL, TRUE);
 
 	if(gwin->bw) {
-		gwin->bw->reformat_pending = true;
 		ami_schedule_redraw(gwin, true);
 	}
 }
@@ -3105,6 +3130,11 @@ void ami_gui_tabs_toggle_all(void)
 			}
 		}
 	} while(node = nnode);
+}
+
+void ami_gui_search_ico_refresh(void *p)
+{
+	search_web_select_provider(-1);
 }
 
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
@@ -3229,6 +3259,7 @@ gui_window_create(struct browser_window *bw,
 		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
 
 		ami_update_buttons(g->shared);
+		ami_schedule(0, ami_gui_refresh_favicon, g->shared);
 
 		return g;
 	}
@@ -3751,7 +3782,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
 
-	refresh_search_ico = TRUE;
+	ami_schedule(0, ami_gui_search_ico_refresh, NULL);
 
 	ScreenToFront(scrn);
 
@@ -4001,7 +4032,7 @@ static void ami_redraw_callback(void *p)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
 
-	if(gwin->redraw_required || gwin->bw->reformat_pending) {
+	if(gwin->redraw_required) {
 		ami_do_redraw(gwin);
 	}
 
@@ -4030,7 +4061,6 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 	if(full_redraw) gwin->redraw_required = true;
 	if(gwin->redraw_scheduled == true) return;
 
-	if(gwin->bw->reformat_pending) ms = nsoption_int(reformat_delay) * 10;
 	ami_schedule(ms, ami_redraw_callback, gwin);
 	gwin->redraw_scheduled = true;
 }
@@ -4261,6 +4291,21 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	ami_schedule_redraw(g->shared, false);
 }
 
+/**
+ * callback from core to reformat a window.
+ */
+static void amiga_window_reformat(struct gui_window *gw)
+{
+	struct IBox *bbox;
+
+	if (gw != NULL) {
+		GetAttr(SPACE_AreaBox, (Object *)gw->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
+
+		gw->shared->redraw_scroll = false;
+	}
+}
+
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	struct Rectangle rect;
@@ -4282,13 +4327,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
-
-	if(gwin->bw->reformat_pending)
-	{
-		browser_window_reformat(gwin->bw, false, width, height);
-		gwin->bw->reformat_pending = false;
-		gwin->redraw_scroll = false;
-	}
 
 	if(gwin->redraw_scroll)
 	{
@@ -4648,7 +4686,7 @@ static void gui_window_set_url(struct gui_window *g, const char *url)
 static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
-	refresh_favicon = TRUE;
+	ami_schedule(0, ami_gui_refresh_favicon, hook->h_Data);
 	return 0;
 }
 
@@ -4708,7 +4746,8 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
-	refresh_throbber = TRUE;
+	struct gui_window_2 *gwin = hook->h_Data;
+	ami_throbber_redraw_schedule(0, gwin->bw->window);
 	return 0;
 }
 
@@ -5030,6 +5069,7 @@ static struct gui_window_table amiga_window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = amiga_window_reformat,
 
 	.set_icon = gui_window_set_icon,
 	.set_title = gui_window_set_title,
@@ -5100,6 +5140,8 @@ int main(int argc, char** argv)
 		.llcache = filesystem_llcache_table,
 	};
 
+	signal(SIGINT, SIG_IGN);
+
 	ret = netsurf_register(&amiga_table);
 	if (ret != NSERROR_OK) {
 		die("NetSurf operation table failed registration");
@@ -5127,8 +5169,10 @@ int main(int argc, char** argv)
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
+	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
 
 	if(lock = CreateDirTree(current_user_cache)) UnLock(lock);
+	if(lock = CreateDirTree(current_user_faviconcache)) UnLock(lock);
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);

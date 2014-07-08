@@ -37,6 +37,7 @@
 #include <FindDirectory.h>
 #include <Mime.h>
 #include <Path.h>
+#include <PathFinder.h>
 #include <Roster.h>
 #include <Screen.h>
 #include <String.h>
@@ -46,7 +47,7 @@ extern "C" {
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchers/curl.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -78,9 +79,6 @@ extern "C" {
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
-
-/* Where to search for shared resources.  Must have trailing / */
-#define RESPATH "/boot/apps/netsurf/res/"
 
 //TODO: use resources
 // enable using resources instead of files
@@ -297,20 +295,32 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 			return buf;
 	}
 
-	strcpy(t, RESPATH);
-	strcat(t, filename);
-	realpath(t, buf);
-	if (access(buf, R_OK) == 0)
-		return buf;
+
+	BPathFinder f((void*)find_resource);
+
+	BPath p;
+	if (f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p) == B_OK) {
+		strcpy(t, p.Path());
+		strcat(t, filename);
+		realpath(t, buf);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
 
 	if (def[0] == '%') {
 		snprintf(t, PATH_MAX, "%s%s", path.Path(), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else {
-		realpath(def, buf);
+		if (realpath(def, buf) == NULL) {
+			strcpy(buf, def);
+		}
 	}
 
 	return buf;
@@ -488,7 +498,10 @@ static bool nslog_stream_configure(FILE *fptr)
 
 static BPath get_messages_path()
 {
-	BPath p("/boot/apps/netsurf/res");
+	BPathFinder f((void*)get_messages_path);
+
+	BPath p;
+	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p);
 	// TODO: use Haiku's BLocale stuff
 	BString lang(getenv("LC_MESSAGES"));
 	lang.Truncate(2);
@@ -702,60 +715,41 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 static void gui_poll(bool active)
 {
-	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd = 0;
+	int max_fd;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
-	bool block = true;
 	bigtime_t next_schedule = 0;
 
-	// handle early deadlines
+        /* get any active fetcher fd */
+	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+
+        /* run the scheduler */
 	schedule_run();
-
-	FD_ZERO(&read_fd_set);
-	FD_ZERO(&write_fd_set);
-	FD_ZERO(&exc_fd_set);
-
-	if (active) {
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-	}
 
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
-	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
-	// If there are pending events elsewhere, we should not be blocking
-	if (!browser_reformat_pending) {
-		if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
-			next_schedule = earliest_callback_timeout - system_time();
-			block = false;
-		}
+	// max of all the fds in the set, plus one for select()
+	max_fd = MAX(max_fd, sEventPipe[0]) + 1;
 
-		// we're quite late already...
-		if (next_schedule < 0)
-			next_schedule = 0;
+	// compute schedule timeout
+        if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
+                next_schedule = earliest_callback_timeout - system_time();
+        } else {
+                next_schedule = earliest_callback_timeout;
+        }
 
-	} else //we're not allowed to sleep, there is other activity going on.
-		block = false;
-
-	/*
-	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
-		" next_schedule:%Ld block:%d ", browser_reformat_pending,
-		earliest_callback_timeout, next_schedule, block));
-	*/
+        // we're quite late already...
+        if (next_schedule < 0)
+                next_schedule = 0;
 
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
 	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		block ? NULL : &timeout);
+		&timeout);
 	//LOG(("select: %d\n", fd_count));
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
@@ -767,11 +761,6 @@ static void gui_poll(bool active)
 			nsbeos_dispatch_event(message);
 		}
 	}
-
-	schedule_run();
-
-	if (browser_reformat_pending)
-		nsbeos_window_process_reformats();
 }
 
 
@@ -990,9 +979,8 @@ static struct gui_fetch_table beos_fetch_table = {
 
 static struct gui_browser_table beos_browser_table = {
 	gui_poll,
-        beos_schedule,
+	beos_schedule,
 	gui_quit,
-	NULL, //set_search_ico
 	gui_launch_url,
 	NULL, //create_form_select_menu
 	NULL, //cert_verify

@@ -36,6 +36,7 @@ extern "C" {
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 }
 #include "beos/font.h"
 #include "beos/gui.h"

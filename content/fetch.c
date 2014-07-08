@@ -19,12 +19,15 @@
  */
 
 /** \file
- * Fetching of data from a URL (implementation).
+ * Implementation of fetching of data from a URL.
+ *
+ * The implementation is the fetch factory and the generic operations
+ * around the fetcher specific methods.
  *
  * Active fetches are held in the circular linked list ::fetch_ring. There may
  * be at most ::option_max_fetchers_per_host active requests per Host: header.
  * There may be at most ::option_max_fetchers active requests overall. Inactive
- * fetchers are stored in the ::queue_ring waiting for use.
+ * fetches are stored in the ::queue_ring waiting for use.
  */
 
 #include <assert.h>
@@ -33,18 +36,12 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-
 #include <libwapcaplet/libwapcaplet.h>
+#include <curl/curl.h>
 
 #include "utils/config.h"
-#include "content/fetch.h"
-#include "content/fetchers/resource.h"
-#include "content/fetchers/about.h"
-#include "content/fetchers/curl.h"
-#include "content/fetchers/data.h"
-#include "content/fetchers/file.h"
-#include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
@@ -53,27 +50,49 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 
+#include "content/fetch.h"
+#include "content/fetchers.h"
+#include "content/fetchers/resource.h"
+#include "content/fetchers/about.h"
+#include "content/fetchers/curl.h"
+#include "content/fetchers/data.h"
+#include "content/fetchers/file.h"
+#include "content/urldb.h"
+
 /* Define this to turn on verbose fetch logging */
 #undef DEBUG_FETCH_VERBOSE
 
-bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
+/** Verbose fetcher logging */
+#ifdef DEBUG_FETCH_VERBOSE
+#define FETCH_LOG(x) LOG(x)
+#else
+#define FETCH_LOG(x)
+#endif
 
-/** Information about a fetcher for a given scheme. */
+/** The maximum number of fetchers that can be added */
+#define MAX_FETCHERS 8
+
+/** The time in ms between polling the fetchers.
+ *
+ * \todo The schedule timeout should be profiled to see if there is a
+ * better value or even if it needs to be dynamic.
+ */
+#define SCHEDULE_TIME 10
+
+/** The fdset timeout in ms */
+#define FDSET_TIMEOUT 1000
+
+/**
+ * Information about a fetcher for a given scheme.
+ */
 typedef struct scheme_fetcher_s {
-	lwc_string *scheme_name;		/**< The scheme. */
-	fetcher_can_fetch can_fetch;		/**< Ensure an URL can be fetched. */
-	fetcher_setup_fetch setup_fetch;	/**< Set up a fetch. */
-	fetcher_start_fetch start_fetch;	/**< Start a fetch. */
-	fetcher_abort_fetch abort_fetch;	/**< Abort a fetch. */
-	fetcher_free_fetch free_fetch;		/**< Free a fetch. */
-	fetcher_poll_fetcher poll_fetcher;	/**< Poll this fetcher. */
-	fetcher_finalise finaliser;		/**< Clean up this fetcher. */
-	int refcount;				/**< When zero, clean up the fetcher. */
-	struct scheme_fetcher_s *next_fetcher;	/**< Next fetcher in the list. */
-	struct scheme_fetcher_s *prev_fetcher;  /**< Prev fetcher in the list. */
+	lwc_string *scheme; /**< The scheme. */
+
+	struct fetcher_operation_table ops; /**< The fetchers operations. */
+	int refcount; /**< When zero the fetcher is no longer in use. */
 } scheme_fetcher;
 
-static scheme_fetcher *fetchers = NULL;
+static scheme_fetcher fetchers[MAX_FETCHERS];
 
 /** Information for a single fetch. */
 struct fetch {
@@ -85,41 +104,51 @@ struct fetch {
 	void *p;		/**< Private data for callback. */
 	lwc_string *host;	/**< Host part of URL, interned */
 	long http_code;		/**< HTTP response code, or 0. */
-	scheme_fetcher *ops;	/**< Fetcher operations for this fetch,
-				   NULL if not set. */
+	int fetcherd;           /**< Fetcher descriptor for this fetch */
 	void *fetcher_handle;	/**< The handle for the fetcher. */
 	bool fetch_is_active;	/**< This fetch is active. */
 	struct fetch *r_prev;	/**< Previous active fetch in ::fetch_ring. */
 	struct fetch *r_next;	/**< Next active fetch in ::fetch_ring. */
 };
 
-static struct fetch *fetch_ring = 0;	/**< Ring of active fetches. */
-static struct fetch *queue_ring = 0;	/**< Ring of queued fetches */
-
-#define fetch_ref_fetcher(F) F->refcount++
+static struct fetch *fetch_ring = NULL;	/**< Ring of active fetches. */
+static struct fetch *queue_ring = NULL;	/**< Ring of queued fetches */
 
 /******************************************************************************
  * fetch internals							      *
  ******************************************************************************/
 
-static void fetch_unref_fetcher(scheme_fetcher *fetcher)
+static inline void fetch_ref_fetcher(int fetcherd)
 {
-	if (--fetcher->refcount == 0) {
-		fetcher->finaliser(fetcher->scheme_name);
-		lwc_string_unref(fetcher->scheme_name);
-		if (fetcher == fetchers) {
-			fetchers = fetcher->next_fetcher;
-			if (fetchers)
-				fetchers->prev_fetcher = NULL;
-		} else {
-			fetcher->prev_fetcher->next_fetcher =
-				fetcher->next_fetcher;
-			if (fetcher->next_fetcher != NULL)
-				fetcher->next_fetcher->prev_fetcher =
-					fetcher->prev_fetcher;
-		}
-		free(fetcher);
+	fetchers[fetcherd].refcount++;
+}
+
+static inline void fetch_unref_fetcher(int fetcherd)
+{
+	fetchers[fetcherd].refcount--;
+	if (fetchers[fetcherd].refcount == 0) {
+		fetchers[fetcherd].ops.finalise(fetchers[fetcherd].scheme);
+		lwc_string_unref(fetchers[fetcherd].scheme);
 	}
+}
+
+/**
+ * Find a suitable fetcher for a scheme.
+ */
+static int get_fetcher_for_scheme(lwc_string *scheme)
+{
+	int fetcherd;
+	bool match;
+
+	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+		if ((fetchers[fetcherd].refcount > 0) &&
+		    (lwc_string_isequal(fetchers[fetcherd].scheme,
+					scheme, &match) == lwc_error_ok) &&
+		    (match == true)) {
+			return fetcherd;
+	       }
+	}
+	return -1;
 }
 
 /**
@@ -128,11 +157,10 @@ static void fetch_unref_fetcher(scheme_fetcher *fetcher)
 static bool fetch_dispatch_job(struct fetch *fetch)
 {
 	RING_REMOVE(queue_ring, fetch);
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
+	FETCH_LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
 	     fetch->fetcher_handle, nsurl_access(fetch->url)));
-#endif
-	if (!fetch->ops->start_fetch(fetch->fetcher_handle)) {
+
+	if (!fetchers[fetch->fetcherd].ops.start(fetch->fetcher_handle)) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
 		return false;
 	} else {
@@ -179,56 +207,76 @@ static bool fetch_choose_and_dispatch(void)
 	return false;
 }
 
-/**
- * Dispatch as many jobs as we have room to dispatch.
- */
-static void fetch_dispatch_jobs(void)
+static void dump_rings(void)
 {
-	int all_active, all_queued;
 #ifdef DEBUG_FETCH_VERBOSE
 	struct fetch *q;
 	struct fetch *f;
-#endif
-
-	if (!queue_ring)
-		return; /* Nothing to do, the queue is empty */
-	RING_GETSIZE(struct fetch, queue_ring, all_queued);
-	RING_GETSIZE(struct fetch, fetch_ring, all_active);
-
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
 
 	q = queue_ring;
 	if (q) {
 		do {
-			LOG(("queue_ring: %s", q->url));
+			LOG(("queue_ring: %s", nsurl_access(q->url)));
 			q = q->r_next;
 		} while (q != queue_ring);
 	}
 	f = fetch_ring;
 	if (f) {
 		do {
-			LOG(("fetch_ring: %s", f->url));
+			LOG(("fetch_ring: %s", nsurl_access(f->url)));
 			f = f->r_next;
 		} while (f != fetch_ring);
 	}
 #endif
+}
 
-	while ( all_queued && all_active < nsoption_int(max_fetchers) ) {
-		/*LOG(("%d queued, %d fetching", all_queued, all_active));*/
-		if (fetch_choose_and_dispatch()) {
+/**
+ * Dispatch as many jobs as we have room to dispatch.
+ *
+ * @return true if there are active fetchers that require polling else false.
+ */
+static bool fetch_dispatch_jobs(void)
+{
+	int all_active;
+	int all_queued;
+
+	RING_GETSIZE(struct fetch, queue_ring, all_queued);
+	RING_GETSIZE(struct fetch, fetch_ring, all_active);
+
+	FETCH_LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
+	dump_rings();
+
+	while ((all_queued != 0) &&
+	       (all_active < nsoption_int(max_fetchers)) &&
+	       fetch_choose_and_dispatch()) {
 			all_queued--;
 			all_active++;
-		} else {
-			/* Either a dispatch failed or we ran out. Just stop */
-			break;
-		}
+			FETCH_LOG(("%d queued, %d fetching",
+				   all_queued, all_active));
 	}
-	fetch_active = (all_active > 0);
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Fetch ring is now %d elements.", all_active));
-	LOG(("Queue ring is now %d elements.", all_queued));
-#endif
+
+	FETCH_LOG(("Fetch ring is now %d elements.", all_active));
+	FETCH_LOG(("Queue ring is now %d elements.", all_queued));
+
+	return (all_active > 0);
+}
+
+static void fetcher_poll(void *unused)
+{
+	int fetcherd;
+
+	if (fetch_dispatch_jobs()) {
+		FETCH_LOG(("Polling fetchers"));
+		for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+			if (fetchers[fetcherd].refcount > 0) {
+				/* fetcher present */
+				fetchers[fetcherd].ops.poll(fetchers[fetcherd].scheme);
+			}
+		}
+
+		/* schedule active fetchers to run again in 10ms */
+		guit->browser->schedule(SCHEDULE_TIME, fetcher_poll, NULL);
+	}
 }
 
 /******************************************************************************
@@ -236,7 +284,7 @@ static void fetch_dispatch_jobs(void)
  ******************************************************************************/
 
 /* exported interface documented in content/fetch.h */
-nserror fetch_init(void)
+nserror fetcher_init(void)
 {
 	fetch_curl_register();
 	fetch_data_register();
@@ -244,84 +292,162 @@ nserror fetch_init(void)
 	fetch_resource_register();
 	fetch_about_register();
 
-	fetch_active = false;
+	return NSERROR_OK;
+}
+
+/* exported interface documented in content/fetchers.h */
+void fetcher_quit(void)
+{
+	int fetcherd; /* fetcher index */
+	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+		if (fetchers[fetcherd].refcount > 1) {
+			/* fetcher still has reference at quit. This
+			 * should not happen as the fetch should have
+			 * been aborted in llcache shutdown.
+			 *
+			 * This appears to be normal behaviour if a
+			 * curl operation is still in progress at exit
+			 * as the abort waits for curl to complete.
+			 *
+			 * We could make the user wait for curl to
+			 * complete but we are exiting anyway so thats
+			 * unhelpful. Instead we just log it and force
+			 * the reference count to allow the fetcher to
+			 * be stopped.
+			 */
+			LOG(("Fetcher for scheme %s still has %d active users at quit.",
+			     lwc_string_data(fetchers[fetcherd].scheme),
+			     fetchers[fetcherd].refcount));
+
+			fetchers[fetcherd].refcount = 1;
+		}
+		if (fetchers[fetcherd].refcount == 1) {
+
+			fetch_unref_fetcher(fetcherd);
+		}
+	}
+}
+
+/* exported interface documented in content/fetchers.h */
+nserror
+fetcher_add(lwc_string *scheme, const struct fetcher_operation_table *ops)
+{
+	int fetcherd;
+
+	/* find unused fetcher descriptor */
+	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+		if (fetchers[fetcherd].refcount == 0) {
+			break;
+		}
+	}
+	if (fetcherd == MAX_FETCHERS) {
+		return NSERROR_INIT_FAILED;
+	}
+
+	if (!ops->initialise(scheme)) {
+		return NSERROR_INIT_FAILED;
+	}
+
+	fetchers[fetcherd].scheme = scheme;
+	fetchers[fetcherd].ops = *ops;
+
+	fetch_ref_fetcher(fetcherd);
 
 	return NSERROR_OK;
 }
 
 /* exported interface documented in content/fetch.h */
-void fetch_quit(void)
+nserror fetcher_fdset(fd_set *read_fd_set,
+		      fd_set *write_fd_set,
+		      fd_set *except_fd_set,
+		      int *maxfd_out)
 {
-	while (fetchers != NULL) {
-		if (fetchers->refcount != 1) {
-			LOG(("Fetcher for scheme %s still active?!",
-			     lwc_string_data(fetchers->scheme_name)));
-			/* We shouldn't do this, but... */
-			fetchers->refcount = 1;
+	CURLMcode code;
+	int maxfd;
+	int fetcherd; /* fetcher index */
+
+	if (!fetch_dispatch_jobs()) {
+		FETCH_LOG(("No jobs"));
+		*maxfd_out = -1;
+		return NSERROR_OK;
+	}
+
+	FETCH_LOG(("Polling fetchers"));
+
+	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
+		if (fetchers[fetcherd].refcount > 0) {
+			/* fetcher present */
+			fetchers[fetcherd].ops.poll(fetchers[fetcherd].scheme);
 		}
-		fetch_unref_fetcher(fetchers);
 	}
+
+	FD_ZERO(read_fd_set);
+	FD_ZERO(write_fd_set);
+	FD_ZERO(except_fd_set);
+	code = curl_multi_fdset(fetch_curl_multi,
+				read_fd_set,
+				write_fd_set,
+				except_fd_set,
+				&maxfd);
+	assert(code == CURLM_OK);
+
+	if (maxfd >= 0) {
+		/* change the scheduled poll to happen is a 1000ms as
+		 * we assume fetching an fdset means the fetchers will
+		 * be run by the client waking up on data available on
+		 * the fd and re-calling fetcher_fdset() if this does
+		 * not happen the fetch polling will continue as
+		 * usual.
+		 */
+		/** @note adjusting the schedule time is only done for
+		 * curl currently. This is because as it is assumed to
+		 * be the only fetcher that can possibly have fd to
+		 * select on. All the other fetchers continue to need
+		 * polling frequently.
+		 */
+		guit->browser->schedule(FDSET_TIMEOUT, fetcher_poll, NULL);
+	}
+
+	*maxfd_out = maxfd;
+
+	return NSERROR_OK;
 }
 
 /* exported interface documented in content/fetch.h */
-bool fetch_add_fetcher(lwc_string *scheme,
-		       fetcher_initialise initialiser,
-		       fetcher_can_fetch can_fetch,
-		       fetcher_setup_fetch setup_fetch,
-		       fetcher_start_fetch start_fetch,
-		       fetcher_abort_fetch abort_fetch,
-		       fetcher_free_fetch free_fetch,
-		       fetcher_poll_fetcher poll_fetcher,
-		       fetcher_finalise finaliser)
-{
-	scheme_fetcher *new_fetcher;
-	if (!initialiser(scheme))
-		return false;
-	new_fetcher = malloc(sizeof(scheme_fetcher));
-	if (new_fetcher == NULL) {
-		finaliser(scheme);
-		return false;
-	}
-	new_fetcher->scheme_name = scheme;
-	new_fetcher->refcount = 0;
-	new_fetcher->can_fetch = can_fetch;
-	new_fetcher->setup_fetch = setup_fetch;
-	new_fetcher->start_fetch = start_fetch;
-	new_fetcher->abort_fetch = abort_fetch;
-	new_fetcher->free_fetch = free_fetch;
-	new_fetcher->poll_fetcher = poll_fetcher;
-	new_fetcher->finaliser = finaliser;
-	new_fetcher->next_fetcher = fetchers;
-	fetchers = new_fetcher;
-	fetch_ref_fetcher(new_fetcher);
-
-	return true;
-}
-
-/* exported interface documented in content/fetch.h */
-struct fetch * fetch_start(nsurl *url, nsurl *referer,
-			   fetch_callback callback,
-			   void *p, bool only_2xx, const char *post_urlenc,
-			   const struct fetch_multipart_data *post_multipart,
-			   bool verifiable, bool downgrade_tls,
-			   const char *headers[])
+struct fetch *
+fetch_start(nsurl *url,
+	    nsurl *referer,
+	    fetch_callback callback,
+	    void *p,
+	    bool only_2xx,
+	    const char *post_urlenc,
+	    const struct fetch_multipart_data *post_multipart,
+	    bool verifiable,
+	    bool downgrade_tls,
+	    const char *headers[])
 {
 	struct fetch *fetch;
-	scheme_fetcher *fetcher = fetchers;
 	lwc_string *scheme;
 	bool match;
 
 	fetch = malloc(sizeof (*fetch));
-	if (fetch == NULL)
+	if (fetch == NULL) {
 		return NULL;
+	}
 
 	/* The URL we're fetching must have a scheme */
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	assert(scheme != NULL);
 
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
-#endif
+	/* try and obtain a fetcher for this scheme */
+	fetch->fetcherd = get_fetcher_for_scheme(scheme);
+	if (fetch->fetcherd == -1) {
+		lwc_string_unref(scheme);
+		free(fetch);
+		return NULL;
+	}
+
+	FETCH_LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
@@ -334,7 +460,6 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 	fetch->referer = NULL;
 	fetch->send_referer = false;
 	fetch->fetcher_handle = NULL;
-	fetch->ops = NULL;
 	fetch->fetch_is_active = false;
 	fetch->host = nsurl_get_component(url, NSURL_HOST);
 
@@ -378,121 +503,90 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 			lwc_string_unref(ref_scheme);
 	}
 
-	/* Pick the scheme ops */
-	while (fetcher) {
-		if ((lwc_string_isequal(fetcher->scheme_name, scheme,
-					&match) == lwc_error_ok) && (match == true)) {
-			fetch->ops = fetcher;
-			break;
-		}
-		fetcher = fetcher->next_fetcher;
-	}
-
-	if (fetch->ops == NULL)
-		goto failed;
-
-	/* Got a scheme fetcher, try and set up the fetch */
-	fetch->fetcher_handle = fetch->ops->setup_fetch(fetch, url,
-							only_2xx, downgrade_tls,
-							post_urlenc, post_multipart,
-							headers);
-
-	if (fetch->fetcher_handle == NULL)
-		goto failed;
-
-	/* Rah, got it, so ref the fetcher. */
-	fetch_ref_fetcher(fetch->ops);
-
 	/* these aren't needed past here */
 	lwc_string_unref(scheme);
 
-	/* Dump us in the queue and ask the queue to run. */
+	/* try and set up the fetch */
+	fetch->fetcher_handle = fetchers[fetch->fetcherd].ops.setup(fetch, url,
+						only_2xx, downgrade_tls,
+						post_urlenc, post_multipart,
+						headers);
+	if (fetch->fetcher_handle == NULL) {
+
+		if (fetch->host != NULL)
+			lwc_string_unref(fetch->host);
+
+		if (fetch->url != NULL)
+			nsurl_unref(fetch->url);
+
+		if (fetch->referer != NULL)
+			nsurl_unref(fetch->referer);
+
+		free(fetch);
+
+		return NULL;
+	}
+
+	/* Rah, got it, so ref the fetcher. */
+	fetch_ref_fetcher(fetch->fetcherd);
+
+	/* Dump new fetch in the queue. */
 	RING_INSERT(queue_ring, fetch);
-	fetch_dispatch_jobs();
+
+	/* Ask the queue to run. */
+	if (fetch_dispatch_jobs()) {
+		FETCH_LOG(("scheduling poll"));
+		/* schedule active fetchers to run again in 10ms */
+		guit->browser->schedule(10, fetcher_poll, NULL);
+	}
 
 	return fetch;
-
-failed:
-	lwc_string_unref(scheme);
-
-	if (fetch->host != NULL)
-		lwc_string_unref(fetch->host);
-	if (fetch->url != NULL)
-		nsurl_unref(fetch->url);
-	if (fetch->referer != NULL)
-		nsurl_unref(fetch->referer);
-
-	free(fetch);
-
-	return NULL;
 }
 
 /* exported interface documented in content/fetch.h */
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
+	FETCH_LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
 	     nsurl_access(f->url)));
-#endif
-	f->ops->abort_fetch(f->fetcher_handle);
+	fetchers[f->fetcherd].ops.abort(f->fetcher_handle);
 }
 
 /* exported interface documented in content/fetch.h */
 void fetch_free(struct fetch *f)
 {
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Freeing fetch %p, fetcher %p", f, f->fetcher_handle));
-#endif
-	f->ops->free_fetch(f->fetcher_handle);
-	fetch_unref_fetcher(f->ops);
+	FETCH_LOG(("Freeing fetch %p, fetcher %p", f, f->fetcher_handle));
+
+	fetchers[f->fetcherd].ops.free(f->fetcher_handle);
+
+	fetch_unref_fetcher(f->fetcherd);
+
 	nsurl_unref(f->url);
-	if (f->referer != NULL)
+	if (f->referer != NULL) {
 		nsurl_unref(f->referer);
-	if (f->host != NULL)
+	}
+	if (f->host != NULL) {
 		lwc_string_unref(f->host);
+	}
 	free(f);
 }
 
-/* exported interface documented in content/fetch.h */
-void fetch_poll(void)
-{
-	scheme_fetcher *fetcher = fetchers;
-	scheme_fetcher *next_fetcher;
 
-	fetch_dispatch_jobs();
-
-	if (!fetch_active)
-		return; /* No point polling, there's no fetch active. */
-	while (fetcher != NULL) {
-		next_fetcher = fetcher->next_fetcher;
-		if (fetcher->poll_fetcher != NULL) {
-			/* LOG(("Polling fetcher for %s",
-			   lwc_string_data(fetcher->scheme_name))); */
-			fetcher->poll_fetcher(fetcher->scheme_name);
-		}
-		fetcher = next_fetcher;
-	}
-}
 
 /* exported interface documented in content/fetch.h */
 bool fetch_can_fetch(const nsurl *url)
 {
-	scheme_fetcher *fetcher = fetchers;
-	bool match;
 	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
+	int fetcherd;
 
-	while (fetcher != NULL) {
-		if (lwc_string_isequal(fetcher->scheme_name, scheme, &match) == lwc_error_ok && match == true) {
-			break;
-		}
-
-		fetcher = fetcher->next_fetcher;
-	}
-
+	fetcherd = get_fetcher_for_scheme(scheme);
 	lwc_string_unref(scheme);
 
-	return fetcher == NULL ? false : fetcher->can_fetch(url);
+	if (fetcherd == -1) {
+		return false;
+	}
+
+	return fetchers[fetcherd].ops.acceptable(url);
 }
 
 /* exported interface documented in content/fetch.h */
@@ -594,7 +688,7 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 		free(list->name);
 		free(list->value);
 		if (list->file) {
-			LOG(("Freeing rawfile: %s", list->rawfile));
+			FETCH_LOG(("Freeing rawfile: %s", list->rawfile));
 			free(list->rawfile);
 		}
 		free(list);
@@ -612,12 +706,8 @@ fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 /* exported interface documented in content/fetch.h */
 void fetch_remove_from_queues(struct fetch *fetch)
 {
-	int all_active;
-
-#ifdef DEBUG_FETCH_VERBOSE
-	int all_queued;
-	LOG(("Fetch %p, fetcher %p can be freed", fetch, fetch->fetcher_handle));
-#endif
+	FETCH_LOG(("Fetch %p, fetcher %p can be freed",
+		   fetch, fetch->fetcher_handle));
 
 	/* Go ahead and free the fetch properly now */
 	if (fetch->fetch_is_active) {
@@ -626,14 +716,14 @@ void fetch_remove_from_queues(struct fetch *fetch)
 		RING_REMOVE(queue_ring, fetch);
 	}
 
-	RING_GETSIZE(struct fetch, fetch_ring, all_active);
-
-	fetch_active = (all_active > 0);
-
 #ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Fetch ring is now %d elements.", all_active));
+	int all_active;
+	int all_queued;
 
+	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
+
+	LOG(("Fetch ring is now %d elements.", all_active));
 
 	LOG(("Queue ring is now %d elements.", all_queued));
 #endif
@@ -643,9 +733,8 @@ void fetch_remove_from_queues(struct fetch *fetch)
 /* exported interface documented in content/fetch.h */
 void fetch_set_http_code(struct fetch *fetch, long http_code)
 {
-#ifdef DEBUG_FETCH_VERBOSE
-	LOG(("Setting HTTP code to %ld", http_code));
-#endif
+	FETCH_LOG(("Setting HTTP code to %ld", http_code));
+
 	fetch->http_code = http_code;
 }
 

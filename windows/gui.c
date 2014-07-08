@@ -93,7 +93,6 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 		return;
 
 	browser_window_set_scale(gw->bw, scale, true);
-	browser_window_reformat(gw->bw, false, gw->width, gw->height);
 }
 
 
@@ -106,10 +105,6 @@ static void win32_poll(bool active)
 
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
-
-	/* if active set timeout so message is not waited for */
-	if (active)
-		timeout = 0;
 
 	if (timeout == 0) {
 		bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
@@ -127,7 +122,6 @@ static void win32_poll(bool active)
 			KillTimer(NULL, timer_id);
 		}
 	}
-
 
 	if (bRet > 0) {
 		TranslateMessage(&Msg);
@@ -1826,6 +1820,16 @@ nsws_create_main_class(HINSTANCE hinstance) {
 }
 
 /**
+ * callback from core to reformat a window.
+ */
+static void win32_window_reformat(struct gui_window *gw)
+{
+	if (gw != NULL) {
+		browser_window_reformat(gw->bw, false, gw->width, gw->height);
+	}
+}
+
+/**
  * Generate a windows path from one or more component elemnts.
  *
  * If a string is allocated it must be freed by the caller.
@@ -2092,6 +2096,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = win32_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

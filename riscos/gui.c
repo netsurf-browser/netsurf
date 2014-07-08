@@ -1852,34 +1852,30 @@ static void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 
 
 /**
- * Poll the OS for events (RISC OS).
- *
- * \param active return as soon as possible
+ * Poll the RISC OS wimp for events.
  */
 static void riscos_poll(bool active)
 {
 	wimp_event_no event;
 	wimp_block block;
-	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN |
-			wimp_SAVE_FP;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP;
 	os_t track_poll_offset;
 
 	/* Poll wimp. */
 	xhourglass_off();
 	track_poll_offset = ro_mouse_poll_interval();
-	if (active) {
-		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || (track_poll_offset > 0) ||
-			browser_reformat_pending) {
+	if (sched_active || (track_poll_offset > 0)) {
 		os_t t = os_read_monotonic_time();
 
-		if (track_poll_offset > 0)
+		if (track_poll_offset > 0) {
 			t += track_poll_offset;
-		else
+		} else {
 			t += 10;
+		}
 
-		if (sched_active && (sched_time - t) < 0)
+		if (sched_active && (sched_time - t) < 0) {
 			t = sched_time;
+		}
 
 		event = wimp_poll_idle(mask, &block, t, 0);
 	} else {
@@ -1900,9 +1896,6 @@ static void riscos_poll(bool active)
 	}
 
 	ro_gui_window_update_boxes();
-
-	if (browser_reformat_pending && event == wimp_NULL_REASON_CODE)
-		ro_gui_window_process_reformats();
 }
 
 

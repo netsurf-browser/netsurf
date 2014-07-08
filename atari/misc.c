@@ -203,12 +203,15 @@ static nserror load_icon_callback(hlcache_handle *handle,
 /**
  * utility function. Copied from NetSurf tree API.
  *
- * \param name	the name of the loaded icon, if it's not a full path the icon is
- *		looked for in the directory specified by icons_dir
+ * \param name the name of the loaded icon, if it's not a full path
+ *	       the icon is looked for in the directory specified by
+ *	       icons_dir.
+ * \param cb callback function to deal with hlcache callback.
+ * \param pw Context pointer to be passed to callback.
  * \return the icon in form of a content or NULL on failure
  */
-hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
-						void * pw )
+hlcache_handle *
+load_icon(const char *name, hlcache_handle_callback cb,	void *pw)
 {
 	hlcache_handle *c;
 	nserror err;

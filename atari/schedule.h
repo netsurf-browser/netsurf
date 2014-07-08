@@ -22,20 +22,23 @@
 
 /**
  * Process events up to current time.
+ *
+ * \return The number of miliseconds until the next scheduled event.
  */
 int schedule_run(void);
 
 /**
  * Schedule a callback.
  *
- * \param  tival     interval before the callback should be made in ms
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
+ * \param ival interval before the callback should be made in miliseconds.
+ * \param callback callback function.
+ * \param p user parameter, passed to callback function.
+ * \return NSERROR_OK on success or appropriate error code.
  *
- * The callback function will be called as soon as possible after t ms have
- * passed.
+ * The callback function will be called as soon as possible after \a ival
+ * ms have passed.
  */
-nserror atari_schedule(int cs_ival, void (*callback)(void *p), void *p);
+nserror atari_schedule(int ival, void (*callback)(void *p), void *p);
 
 /**
  * LOG all current scheduled events.

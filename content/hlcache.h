@@ -94,14 +94,6 @@ void hlcache_stop(void);
 void hlcache_finalise(void);
 
 /**
- * Drive the low-level cache poll loop, and attempt to clean the cache.
- * No guarantee is made about what, if any, cache cleaning will occur.
- *
- * \return NSERROR_OK
- */
-nserror hlcache_poll(void);
-
-/**
  * Retrieve a high-level cache handle for an object
  *
  * \param url             URL of the object to retrieve handle for

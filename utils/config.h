@@ -58,15 +58,18 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strchrnul(const char *s, int c);
 #endif
 
+#define HAVE_SYS_SELECT
 #define HAVE_INETATON
 #if (defined(_WIN32))
 #undef HAVE_INETATON
+#undef HAVE_SYS_SELECT
 #include <winsock2.h>
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
 int inet_aton(const char *cp, struct in_addr *inp);
 #else
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 #endif
 
 #define HAVE_INETPTON

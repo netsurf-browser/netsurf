@@ -2222,26 +2222,38 @@ fr.gtk.gtkAbout:_A propos...
 it.gtk.gtkAbout:_Informazioni
 nl.gtk.gtkAbout:_About
 
+
 en.gtk.gtkCustomize:Customise…
 de.gtk.gtkCustomize:Customise..
 fr.gtk.gtkCustomize:Customise…
 it.gtk.gtkCustomize:Personalizza...
 nl.gtk.gtkCustomize:Customise…
-en.gtk.gtkOpentab:Open Link in _New Tab
-de.gtk.gtkOpentab:Link in _neuem Tab öffnen
-fr.gtk.gtkOpentab:Open Link in _New Tab
-it.gtk.gtkOpentab:Apri in una _nuova scheda
-nl.gtk.gtkOpentab:Open Link in _New Tab
-en.gtk.gtkOpenwin:Open Link in New Window
-de.gtk.gtkOpenwin:Link in neuem Fenster öffnen
-fr.gtk.gtkOpenwin:Open Link in New Window
-it.gtk.gtkOpenwin:Apri in una nuova finestra
-nl.gtk.gtkOpenwin:Open Link in New Window
-en.gtk.gtkSavelink:Save Link
-de.gtk.gtkSavelink:Link speichern..
-fr.gtk.gtkSavelink:Save Link
-it.gtk.gtkSavelink:Salva Link
-nl.gtk.gtkSavelink:Save Link
+en.gtk.gtkOpentab:Open Link in New _Tab
+de.gtk.gtkOpentab:Link in neuem _Tab öffnen
+fr.gtk.gtkOpentab:Ouvrir dans un nouvel _Onglet
+it.gtk.gtkOpentab:Apri in una nuova _scheda
+nl.gtk.gtkOpentab:Open Link in New _Tab
+en.gtk.gtkOpenwin:Open Link in New _Window
+de.gtk.gtkOpenwin:Link in neuem _Fenster öffnen
+fr.gtk.gtkOpenwin:Ouvrir dans une nouvelle _Fenêtre
+it.gtk.gtkOpenwin:Apri in una nuova _finestra
+nl.gtk.gtkOpenwin:Open Link in New _Window
+en.gtk.gtkSavelink:Save Lin_k
+de.gtk.gtkSavelink:Lin_k speichern..
+fr.gtk.gtkSavelink:Save Lin_k
+it.gtk.gtkSavelink:Salva Lin_k
+nl.gtk.gtkSavelink:Save Lin_k
+en.gtk.gtkBookmarklink:Bookmark _Link
+de.gtk.gtkBookmarklink:Bookmark _Link
+fr.gtk.gtkBookmarklink:Bookmark _Link
+it.gtk.gtkBookmarklink:Bookmark _Link
+nl.gtk.gtkBookmarklink:Bookmark _Link
+en.gtk.gtkCopylink:Copy link loc_ation
+de.gtk.gtkCopylink:Copy link loc_ation
+fr.gtk.gtkCopylink:Copy link loc_ation
+it.gtk.gtkCopylink:Copy link loc_ation
+nl.gtk.gtkCopylink:Copy link loc_ation
+
 
 en.gtk.gtkToolBarTitle:Toolbar custom button store
 de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons

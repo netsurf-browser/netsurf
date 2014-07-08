@@ -34,7 +34,7 @@
 #include "gtk/window.h"
 #include "gtk/selection.h"
 #include "desktop/gui.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
@@ -338,8 +338,9 @@ static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 
 	case 3:	/* Right button, usually. Action button, context menu. */
 		browser_window_remove_caret(g->bw, true);
-		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse.pressed_x,
-				g->mouse.pressed_y);
+		nsgtk_scaffolding_context_menu(g->scaffold,
+					       g->mouse.pressed_x,
+					       g->mouse.pressed_y);
 		return TRUE;
 
 	default:
@@ -638,9 +639,7 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
-	g->bw->reformat_pending = true;
-	browser_reformat_pending = true;
-
+	browser_window_schedule_reformat(g->bw);
 
 	return TRUE;
 }
@@ -730,12 +729,6 @@ gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (flags & GW_CREATE_CLONE) {
-		assert(existing != NULL);
-		bw->scale = existing->bw->scale;
-	} else {
-		bw->scale = nsoption_int(scale) / 100;
-	}
 
 	/* attach scaffold */
 	if (flags & GW_CREATE_TAB) {
@@ -854,35 +847,24 @@ gui_window_create(struct browser_window *bw,
 void nsgtk_reflow_all_windows(void)
 {
 	for (struct gui_window *g = window_list; g; g = g->next) {
-		nsgtk_tab_options_changed(
-				nsgtk_scaffolding_notebook(g->scaffold));
-		g->bw->reformat_pending = true;
+		nsgtk_tab_options_changed(nsgtk_scaffolding_notebook(g->scaffold));
+		browser_window_schedule_reformat(g->bw);
 	}
-
-	browser_reformat_pending = true;
 }
 
 
 /**
- * Process pending reformats
+ * callback from core to reformat a window.
  */
-
-void nsgtk_window_process_reformats(void)
+static void nsgtk_window_reformat(struct gui_window *gw)
 {
-	struct gui_window *g;
 	GtkAllocation alloc;
 
-	browser_reformat_pending = false;
-	for (g = window_list; g; g = g->next) {
-		if (!g->bw->reformat_pending)
-			continue;
+	if (gw != NULL) {
+		/** @todo consider gtk_widget_get_allocated_width() */
+		nsgtk_widget_get_allocation(GTK_WIDGET(gw->layout), &alloc);
 
-		g->bw->reformat_pending = false;
-
-		/* @todo consider gtk_widget_get_allocated_width() */
-		nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
-
-		browser_window_reformat(g->bw, false, alloc.width, alloc.height);
+		browser_window_reformat(gw->bw, false, alloc.width, alloc.height);
 	}
 }
 
@@ -1242,6 +1224,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = nsgtk_window_reformat,
 
 	.set_icon = gui_window_set_icon,
 	.set_status = gui_window_set_status,

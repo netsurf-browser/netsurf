@@ -105,7 +105,9 @@ struct gui_window_table {
 			struct gui_window *existing,
 			gui_window_create_flags flags);
 
-	/** destroy previously created gui window */
+	/**
+	 * Destroy previously created gui window
+	 */
 	void (*destroy)(struct gui_window *g);
 
 	/**
@@ -168,6 +170,17 @@ struct gui_window_table {
 	 */
 	void (*update_extent)(struct gui_window *g);
 
+	/**
+	 * Reformat a window.
+	 *
+	 * This is used to perform reformats when the page contents
+	 * require reformating. The reformat is requested using
+	 * browser_window_schedule_reformat and occours via a scheduled
+	 * callback hence from top level context.
+	 *
+	 * \param g gui_window to reformat.
+	 */
+	void (*reformat)(struct gui_window *g);
 
 
 	/* Optional entries */

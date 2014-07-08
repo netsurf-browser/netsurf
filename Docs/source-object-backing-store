@@ -34,8 +34,8 @@ As the backing store only holds cache data one should not expect a
 great deal of effort to be expended converting formats (i.e. the cache
 may simply be discarded).
 
-Layout version 1
-----------------
+Layout version 1.1
+------------------
 
 An object has an identifier value generated from the url (NetSurf
 backing stores uses the url as the unique key). The value used is
@@ -54,7 +54,7 @@ overhead of reconstructing it at initialisation and to keep the data
 used to improve the eviction decisions.
 
 Each object is stored and retrived directly into the filesystem using
-a filename generated from a base64url encoding of an address
+a filename generated from a RFC4648 base32 encoding of an address
 value. The objects address is derived from the identifier by cropping
 it to a shorter length.
 
@@ -71,17 +71,27 @@ E.g. Linux based systems can easily cope with several megabytes of
 mmaped index but RISC OS might want to limit this to a few megabytes
 of heap at most.
 
-The files are stored on disc using their base64url address value.
+The files are stored on disc using their base32 address value.
 By creating a directory for each character of the encoded filename
 (except the last which is of course the leafname) we create a
-directory structure where no directory has more than 64 entries.
+directory structure where no directory has more than 32 entries.
 
-E.g. A 19bit address of 0x1 would be base64url encoded into AAAB
+E.g. A 19bit address of 0x1 would be base32 encoded into AAAB
 resulting in the data being stored in a file path of
-"/store/prefix/data/B/A/A/BAAAAA".
+"/store/prefix/d/B/A/A/BAAAAA".
 
 An address of 0x00040001 encodes to BAAB and a file path of
-"/store/prefix/meta/B/A/A/BAABAA"
+"/store/prefix/m/B/A/A/BAABAAA"
+
+Version 1.0
+-----------
+
+The version 1 layout was identical to the 1.1 except base64url
+encoding was used, this proved problematic as some systems filesystems
+were case insensitive so upper and lower case letetrs collided.
+
+There is no upgrade provision from the previous version simply delete
+the cache directory.
 
 Control files
 ~~~~~~~~~~~~~
@@ -99,7 +109,7 @@ filesystem.
 
 Each control file table entry is 28 bytes and consists of
 
- - signed 64 but value for last use time
+ - signed 64 bit value for last use time
 
  - 32bit full url hash allowing for index reconstruction and
    addiitonal collision detection. Also the possibility of increasing

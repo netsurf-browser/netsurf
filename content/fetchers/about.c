@@ -45,6 +45,7 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/fetchers/about.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
@@ -837,17 +838,19 @@ static void fetch_about_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_about_register(void)
+nserror fetch_about_register(void)
 {
 	lwc_string *scheme = lwc_string_ref(corestring_lwc_about);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_about_initialise,
+		.acceptable = fetch_about_can_fetch,
+		.setup = fetch_about_setup,
+		.start = fetch_about_start,
+		.abort = fetch_about_abort,
+		.free = fetch_about_free,
+		.poll = fetch_about_poll,
+		.finalise = fetch_about_finalise
+	};
 
-	fetch_add_fetcher(scheme,
-		fetch_about_initialise,
-		fetch_about_can_fetch,
-		fetch_about_setup,
-		fetch_about_start,
-		fetch_about_abort,
-		fetch_about_free,
-		fetch_about_poll,
-		fetch_about_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

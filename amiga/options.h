@@ -86,6 +86,4 @@ NSOPTION_INTEGER(redraw_tile_size_y, 0)
 NSOPTION_INTEGER(monitor_aspect_x, 0)
 NSOPTION_INTEGER(monitor_aspect_y, 0)
 NSOPTION_BOOL(accept_lang_locale, true)
-NSOPTION_INTEGER(menu_refresh, 0)
-
 

@@ -602,8 +602,6 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 			ro_gui_window_menu_close);
 
 	/* Set the window options */
-	bw->window = g;
-	bw->scale = ((float)nsoption_int(scale)) / 100;
 	ro_gui_window_clone_options(g, existing);
 	ro_gui_window_update_toolbar_buttons(g);
 
@@ -975,7 +973,6 @@ static void gui_window_update_extent(struct gui_window *g)
 	os_error		*error;
 	wimp_window_info	info;
 	wimp_window_state	state;
-	bool			update;
 	unsigned int		flags;
 
 	assert(g);
@@ -995,9 +992,8 @@ static void gui_window_update_extent(struct gui_window *g)
 		info.yscroll += scroll;
 	}
 
-	/* only allow a further reformat if we've gained/lost scrollbars */
+	/* only schedule a reformat if we've gained/lost scrollbars */
 	flags = info.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
-	update = g->bw->reformat_pending;
 	g->update_extent = true;
 	ro_gui_window_open(PTR_WIMP_OPEN(&info));
 
@@ -1009,8 +1005,9 @@ static void gui_window_update_extent(struct gui_window *g)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL)))
-		g->bw->reformat_pending = update;
+	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL))) {
+		browser_window_schedule_reformat(g->bw);
+	}
 }
 
 
@@ -1072,13 +1069,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 }
 
 
-/**
- * Set the contents of a window's address bar.
- *
- * \param  g	gui_window to update
- * \param  url  new url for address bar
- */
-
+/* exported function documented in riscos/window.h */
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	if (!g->toolbar)
@@ -1563,8 +1554,7 @@ void ro_gui_window_open(wimp_open *open)
 				height -= size;
 				state.visible.y0 += size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags |= wimp_WINDOW_HSCROLL;
@@ -1573,8 +1563,7 @@ void ro_gui_window_open(wimp_open *open)
 				height += size;
 				state.visible.y0 -= size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags &= ~wimp_WINDOW_HSCROLL;
@@ -1589,8 +1578,7 @@ void ro_gui_window_open(wimp_open *open)
 				width -= size;
 				state.visible.x1 -= size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags |= wimp_WINDOW_VSCROLL;
@@ -1599,8 +1587,7 @@ void ro_gui_window_open(wimp_open *open)
 				width += size;
 				state.visible.x1 += size;
 				if (h) {
-					g->bw->reformat_pending = true;
-					browser_reformat_pending = true;
+					browser_window_schedule_reformat(g->bw);
 				}
 			}
 			state.flags &= ~wimp_WINDOW_VSCROLL;
@@ -1613,8 +1600,7 @@ void ro_gui_window_open(wimp_open *open)
 		if ((g->old_width > 0) && (g->old_width != width) &&
 				(ro_gui_ctrl_pressed()))
 			new_scale = (g->bw->scale * width) / g->old_width;
-		g->bw->reformat_pending = true;
-		browser_reformat_pending = true;
+		browser_window_schedule_reformat(g->bw);
 	}
 	if (g->update_extent || g->old_width != width ||
 			g->old_height != height) {
@@ -2436,7 +2422,6 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	struct gui_window	*g;
-	struct browser_window	*bw;
 	hlcache_handle		*h;
 	struct toolbar		*toolbar;
 	bool			export;
@@ -2446,8 +2431,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
-	bw = g->bw;
-	h = bw->current_content;
+	h = g->bw->current_content;
 
 	switch (action) {
 	case BROWSER_PAGE_INFO:
@@ -2484,9 +2468,9 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case BROWSER_SELECTION_SAVE:
-		if (browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_COPY)
+		if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY)
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
-					browser_window_get_selection(bw),
+					browser_window_get_selection(g->bw),
 					NULL, NULL);
 		break;
 
@@ -3810,13 +3794,13 @@ bool ro_gui_window_check_menu(wimp_menu *menu)
  * Return boolean flags to show what RISC OS types we can sensibly convert
  * the given object into.
  *
- * \TODO -- This should probably be somewhere else but in window.c, and
- *          should probably even be done in content_().
+ * \todo This should probably be somewhere else but in window.c, and
+ * should probably even be done in content_().
  *
- * \param *h			The object to test.
- * \param *export_draw		true on exit if a drawfile would be possible.
- * \param *export_sprite	true on exit if a sprite would be possible.
- * \return			true if valid data is returned; else false.
+ * \param h The object to test.
+ * \param export_draw true on exit if a drawfile would be possible.
+ * \param export_sprite true on exit if a sprite would be possible.
+ * \return true if valid data is returned; else false.
  */
 
 bool ro_gui_window_content_export_types(hlcache_handle *h,
@@ -3855,10 +3839,10 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 /**
  * Return true if a browser window can navigate upwards.
  *
- * \TODO -- This should probably be somewhere else but in window.c.
+ * \todo This should probably be somewhere else but in window.c.
  *
- * \param *bw		the browser window to test.
- * \return		true if navigation up is possible; else false.
+ * \param bw the browser window to test.
+ * \return true if navigation up is possible otherwise false.
  */
 
 bool ro_gui_window_up_available(struct browser_window *bw)
@@ -3986,8 +3970,8 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 /**
  * Launch a new url in the given window.
  *
- * \param  g	gui_window to update
- * \param  url  url to be launched
+ * \param g gui_window to update
+ * \param url1 url to be launched
  */
 
 void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
@@ -4385,24 +4369,16 @@ void ro_gui_window_update_boxes(void)
 
 
 /**
- * Process pending reformats
+ * callback from core to reformat a window.
  */
-
-void ro_gui_window_process_reformats(void)
+static void riscos_window_reformat(struct gui_window *gw)
 {
-	struct gui_window *g;
-
-	browser_reformat_pending = false;
-	for (g = window_list; g; g = g->next) {
-		if (!g->bw->reformat_pending)
-			continue;
-		g->bw->reformat_pending = false;
-		browser_window_reformat(g->bw, false,
-				g->old_width / 2,
-				g->old_height / 2);
+	if (gw != NULL) {
+		browser_window_reformat(gw->bw, false,
+					gw->old_width / 2,
+					gw->old_height / 2);
 	}
 }
-
 
 /**
  * Destroy all browser windows.
@@ -4860,8 +4836,8 @@ void ro_gui_window_process_form_select_menu(struct gui_window *g,
 /**
  * Convert a RISC OS window handle to a gui_window.
  *
- * \param  w  RISC OS window handle
- * \return  pointer to a structure if found, 0 otherwise
+ * \param window RISC OS window handle.
+ * \return A pointer to a riscos gui window if found or NULL.
  */
 
 struct gui_window *ro_gui_window_lookup(wimp_w window)
@@ -4870,7 +4846,7 @@ struct gui_window *ro_gui_window_lookup(wimp_w window)
 	for (g = window_list; g; g = g->next)
 		if (g->window == window)
 			return g;
-	return 0;
+	return NULL;
 }
 
 
@@ -5180,6 +5156,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
+	.reformat = riscos_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,

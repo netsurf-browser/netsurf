@@ -121,7 +121,7 @@ static void gui_poll(bool active)
 
     aes_event_in.emi_tlow = schedule_run();
 
-    if(active || rendering){
+    if(rendering){
         aes_event_in.emi_tlow = nsoption_int(atari_gui_poll_timeout);
 	}
 
@@ -130,11 +130,10 @@ static void gui_poll(bool active)
         printf("long poll!\n");
     }
 
-    if( !active ) {
         if(input_window && input_window->root->redraw_slots.areas_used > 0) {
             window_process_redraws(input_window->root);
         }
-    }
+    
 
     graf_mkstate(&mx, &my, &dummy, &dummy);
     aes_event_in.emi_m1.g_x = mx;
@@ -202,7 +201,6 @@ gui_window_create(struct browser_window *bw,
             option_window_x, option_window_y,
             option_window_width, option_window_height
         };
-        gui_window_set_scale(gw, 1.0);
         gui_window_set_url(gw, "");
         gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
         gui_set_input_gui_window(gw);
@@ -344,21 +342,14 @@ void gui_window_set_status(struct gui_window *w, const char *text)
         window_set_stauts(w->root, (char*)text);
 }
 
-float gui_window_get_scale(struct gui_window *gw)
+static void atari_window_reformat(struct gui_window *gw)
 {
-    return(gw->scale);
-}
+    int width = 0, height = 0;
 
-void gui_window_set_scale(struct gui_window *gw, float scale)
-{
-    int width = 0, heigth = 0;
-
-	LOG(("scale: %f", scale));
-
-    gw->scale = MAX(scale, 0.25);
-
-	gui_window_get_dimensions(gw, &width, &heigth, true);
- 	browser_window_reformat(gw->browser->bw, false, width, heigth);
+    if (gw != NULL) {
+	gui_window_get_dimensions(gw, &width, &height, true);
+	browser_window_reformat(gw->browser->bw, false, width, height);
+    }
 }
 
 static void gui_window_redraw_window(struct gui_window *gw)
@@ -403,10 +394,10 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 
 static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
-    if ((w == NULL)
-            || (w->browser->bw == NULL)
-            || (w->browser->bw->current_content == NULL))
-        return;
+    if (   (w == NULL)
+	|| (w->browser->bw == NULL)
+	|| (!browser_window_has_content(w->browser->bw)))
+	    return;
 
     LOG(("scroll (gui_window: %p) %d, %d\n", w, sx, sy));
     window_scroll_by(w->root, sx, sy);
@@ -421,7 +412,7 @@ static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 static void gui_window_update_extent(struct gui_window *gw)
 {
 
-    if( gw->browser->bw->current_content != NULL ) {
+	if(browser_window_has_content(gw->browser->bw)) {
         // TODO: store content size!
         if(window_get_active_gui_window(gw->root) == gw) {
             window_set_content_size( gw->root,
@@ -1018,6 +1009,7 @@ static struct gui_window_table atari_window_table = {
     .set_scroll = gui_window_set_scroll,
     .get_dimensions = gui_window_get_dimensions,
     .update_extent = gui_window_update_extent,
+    .reformat = atari_window_reformat,
 
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,
