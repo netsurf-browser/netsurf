@@ -62,16 +62,21 @@ os_t sched_time;
 
 static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
-	struct sched_entry *entry, *next;
+	struct sched_entry *entry, *prev;
 
-	for (entry = &sched_queue; entry->next; entry = entry->next) {
-		if (entry->next->callback != callback || entry->next->p != p)
+	prev = &sched_queue;
+
+	for (entry = prev->next; entry; entry = prev->next) {
+		if (entry->callback != callback || entry->p != p) {
+			prev = entry;
 			continue;
-		next = entry->next;
-		entry->next = entry->next->next;
-		free(next);
-		if (!entry->next)
-			break;
+		}
+
+		prev->next = entry->next;
+		free(entry);
+
+		/* There can only ever be one match, and we've found it */
+		break;
 	}
 
 	if (sched_queue.next) {
