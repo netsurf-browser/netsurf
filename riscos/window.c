@@ -972,8 +972,6 @@ static void gui_window_update_extent(struct gui_window *g)
 {
 	os_error		*error;
 	wimp_window_info	info;
-	wimp_window_state	state;
-	unsigned int		flags;
 
 	assert(g);
 
@@ -992,8 +990,7 @@ static void gui_window_update_extent(struct gui_window *g)
 		info.yscroll += scroll;
 	}
 
-	/* only schedule a reformat if we've gained/lost scrollbars */
-	flags = info.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
+	/* Handle change of extents */
 	g->update_extent = true;
 	ro_gui_window_open(PTR_WIMP_OPEN(&info));
 }
