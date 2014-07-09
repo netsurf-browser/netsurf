@@ -1005,9 +1005,6 @@ static void gui_window_update_extent(struct gui_window *g)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL))) {
-		browser_window_schedule_reformat(g->bw);
-	}
 }
 
 
