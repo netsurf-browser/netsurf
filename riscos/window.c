@@ -996,15 +996,6 @@ static void gui_window_update_extent(struct gui_window *g)
 	flags = info.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL);
 	g->update_extent = true;
 	ro_gui_window_open(PTR_WIMP_OPEN(&info));
-
-	state.w = g->window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
 }
 
 
