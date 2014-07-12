@@ -3100,9 +3100,7 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	if(gwin->bw) {
-		ami_schedule_redraw(gwin, true);
-	}
+	browser_window_update(gwin->bw, false);
 }
 
 void ami_gui_tabs_toggle_all(void)
@@ -3209,9 +3207,11 @@ gui_window_create(struct browser_window *bw,
 	{
 		g->shared = existing->shared;
 		g->tab = g->shared->next_tab;
+		g->shared->tabs++; /* do this early so functions know to update the tabs */
 
-		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
+		if((g->shared->tabs == 2) && (nsoption_bool(tab_always_show) == false)) {
 			ami_toggletabbar(g->shared, true);
+		}
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 						g->shared->win, NULL,
@@ -3253,7 +3253,6 @@ gui_window_create(struct browser_window *bw,
 		if(ClickTabBase->lib_Version < 53)
 			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
 
-		g->shared->tabs++;
 		g->shared->next_tab++;
 
 		if(nsoption_bool(new_tab_is_active)) ami_switch_tab(g->shared,false);
