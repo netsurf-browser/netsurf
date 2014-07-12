@@ -3984,7 +3984,7 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 
 	utf8title = ami_utf8_easy((char *)title);
 
-	if(g->tab_node && (g->shared->tabs > 1))
+	if(g->tab_node) // && (g->shared->tabs > 1))
 	{
 		node = g->tab_node;
 
@@ -3996,8 +3996,8 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 							TAG_DONE);
 
 			SetClickTabNodeAttrs(node, TNA_Text, utf8title,
-									TNA_HintInfo, utf8title,
-									TAG_DONE);
+							TNA_HintInfo, utf8title,
+							TAG_DONE);
 
 			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 								g->shared->win, NULL,
