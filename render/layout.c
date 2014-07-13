@@ -5103,39 +5103,24 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 		overflow_y = css_computed_overflow_y(child->style);
 	}
 
-	if (html_object == true ||
-			overflow_x != CSS_OVERFLOW_VISIBLE ||
-			overflow_y != CSS_OVERFLOW_VISIBLE)
-		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
-				&child_desc_x1, &child_desc_y1);
-
 	if (child->style == NULL ||
 			(child->style &&
 			 overflow_x == CSS_OVERFLOW_VISIBLE &&
-			 html_object == false)) {
-		/* get child's descendant bbox relative to box */
-		child_desc_x0 = child_x + child->descendant_x0;
-		child_desc_x1 = child_x + child->descendant_x1;
-	} else {
-		/* child's descendants don't matter; use child's border edge */
-		/* get the bbox relative to box */
-		child_desc_x0 += child_x;
-		child_desc_x1 += child_x;
-	}
-
-	if (child->style == NULL ||
-			(child->style &&
 			 overflow_y == CSS_OVERFLOW_VISIBLE &&
 			 html_object == false)) {
 		/* get child's descendant bbox relative to box */
+		child_desc_x0 = child_x + child->descendant_x0;
 		child_desc_y0 = child_y + child->descendant_y0;
+		child_desc_x1 = child_x + child->descendant_x1;
 		child_desc_y1 = child_y + child->descendant_y1;
 	} else {
 		/* child's descendants don't matter; use child's border edge */
 		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
 				&child_desc_x1, &child_desc_y1);
 		/* get the bbox relative to box */
+		child_desc_x0 += child_x;
 		child_desc_y0 += child_y;
+		child_desc_x1 += child_x;
 		child_desc_y1 += child_y;
 	}
 
