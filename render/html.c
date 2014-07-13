@@ -100,7 +100,7 @@ static void html_box_convert_done(html_content *c, bool success)
 
 
 #if ALWAYS_DUMP_BOX
-	box_dump(stderr, c->layout->children, 0);
+	box_dump(stderr, c->layout->children, 0, true);
 #endif
 #if ALWAYS_DUMP_FRAMESET
 	if (c->frameset)
@@ -1981,7 +1981,7 @@ static void html_debug_dump(struct content *c, FILE *f)
 	assert(html != NULL);
 	assert(html->layout != NULL);
 
-	box_dump(f, html->layout, 0);
+	box_dump(f, html->layout, 0, true);
 }
 
 

@@ -880,7 +880,7 @@ bool box_visible(struct box *box)
  * Print a box tree to a file.
  */
 
-void box_dump(FILE *stream, struct box *box, unsigned int depth)
+void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 {
 	unsigned int i;
 	struct box *c, *prev;
@@ -935,7 +935,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	}
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");
-	if (box->style)
+	if (style && box->style)
 		nscss_dump_computed_style(stream, box->style);
 	if (box->href)
 		fprintf(stream, " -> '%s'", nsurl_access(box->href));
@@ -971,7 +971,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		for (i = 0; i != depth; i++)
 			fprintf(stream, "  ");
 		fprintf(stream, "list_marker:\n");
-		box_dump(stream, box->list_marker, depth + 1);
+		box_dump(stream, box->list_marker, depth + 1, style);
 	}
 
 	for (c = box->children; c && c->next; c = c->next)
@@ -988,7 +988,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 			fprintf(stream, "warning: box->prev %p (should be "
 					"%p) (box on next line)\n",
 					c->prev, prev);
-		box_dump(stream, c, depth + 1);
+		box_dump(stream, c, depth + 1, style);
 	}
 }
 
