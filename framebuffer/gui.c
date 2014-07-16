@@ -36,6 +36,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
+#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/filepath.h"
 #include "utils/log.h"

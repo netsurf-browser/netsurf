@@ -212,8 +212,6 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 
 	switch (tree->flags) {
 	case TREE_SSLCERT:
-		assert(ssl_current_session != NULL &&
-			"Can't use sslcert window after sslcert_viewer_fini()");
 		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
 		return true;
 	case TREE_COOKIES:

@@ -486,6 +486,9 @@ void sslcert_viewer_redraw(struct sslcert_session_data *ssl_d,
 		int x, int y, struct rect *clip,
 		const struct redraw_context *ctx)
 {
+	assert(ssl_d != NULL &&
+	       "sslcert_viewer_redraw() given bad session data");
+
 	treeview_redraw(ssl_d->tree, x, y, clip, ctx);
 }
 

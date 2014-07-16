@@ -22,13 +22,15 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 
-#include "content/urldb.h"
-#include "desktop/cookie_manager.h"
-#include "desktop/treeview.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
+#include "content/urldb.h"
+
+#include "desktop/cookie_manager.h"
+#include "desktop/treeview.h"
 
 enum cookie_manager_field {
 	COOKIE_M_NAME,

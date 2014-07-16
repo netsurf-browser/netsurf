@@ -22,8 +22,10 @@
 #include <libnsfb_plot.h>
 
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "desktop/thumbnail.h"
 #include "content/urldb.h"
+#include "content/content.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
