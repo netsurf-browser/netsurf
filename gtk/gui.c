@@ -653,10 +653,18 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	GError* error = NULL;
 	GtkBuilder* builder;
 
+	/* state while window is open */
+	session = calloc(sizeof(void *), 3);
+	if (session == NULL) {
+		return;
+	}
+
 	builder = gtk_builder_new ();
 	if (!gtk_builder_add_from_file(builder, glade_file_location->ssl, &error)) {
 		g_warning("Couldn't load builder file: %s", error->message);
 		g_error_free(error);
+
+		free(session);
 		return;
 	}
 
@@ -667,11 +675,6 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
-	session = calloc(sizeof(void *), 3);
-
-	if (session == NULL) {
-		return;
-	}
 
 	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, window, scrolled,
 			drawing_area);

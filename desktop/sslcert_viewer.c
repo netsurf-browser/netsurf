@@ -47,7 +47,7 @@ enum sslcert_viewer_field {
 
 /** ssl certificate verification context. */
 struct sslcert_session_data {
-	const struct ssl_cert_info *certs; /**< Certificates */
+	struct ssl_cert_info *certs; /**< Certificates */
 	unsigned long num;		/**< Number of certificates in chain */
 	nsurl *url;			/**< The url of the certificate */
 	llcache_query_response cb;	/**< Cert accept/reject callback */
@@ -394,8 +394,15 @@ static void sslcert_cleanup_session(struct sslcert_session_data *ssl_d)
 {
 	assert(ssl_d != NULL);
 
-	if (ssl_d->url)
+	if (ssl_d->url) {
 		nsurl_unref(ssl_d->url);
+		ssl_d->url = NULL;
+	}
+
+	if (ssl_d->certs) {
+		free(ssl_d->certs);
+		ssl_d->certs = NULL;
+	}
 
 	free(ssl_d);
 }
@@ -439,12 +446,19 @@ nserror sslcert_viewer_create_session_data(unsigned long num, nsurl *url,
 
 	data = malloc(sizeof(struct sslcert_session_data));
 	if (data == NULL) {
-		warn_user("NoMemory", 0);
 		*ssl_d = NULL;
 		return NSERROR_NOMEM;
 	}
 
-	data->certs = certs;
+	/* copy certificate data */
+	data->certs = malloc(num * sizeof(struct ssl_cert_info));
+	if (data->certs == NULL) {
+		free(data);
+		*ssl_d = NULL;
+		return NSERROR_NOMEM;
+	}
+	memcpy(data->certs, certs, num * sizeof(struct ssl_cert_info));
+
 	data->url = nsurl_ref(url);
 	data->num = num;
 	data->cb = cb;
