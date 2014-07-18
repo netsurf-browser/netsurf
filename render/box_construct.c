@@ -513,8 +513,16 @@ static bool box_construct_marker(struct box *box, const char *title,
 				while (last_inner != NULL) {
 					if (last_inner->list_marker != NULL)
 						break;
-
-					last_inner = last_inner->last;
+					if (last_inner->type ==
+							BOX_INLINE_CONTAINER ||
+							last_inner->type ==
+							BOX_FLOAT_LEFT ||
+							last_inner->type ==
+							BOX_FLOAT_RIGHT) {
+						last_inner = last_inner->last;
+					} else {
+						last_inner = NULL;
+					}
 				}
 				if (last_inner != NULL) {
 					last = last_inner;
