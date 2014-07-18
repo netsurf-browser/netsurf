@@ -507,11 +507,20 @@ static bool box_construct_marker(struct box *box, const char *title,
 			 *       BOX_BLOCK <-- list box
 			 *        ...
 			 */
-			while (last != NULL) {
-				if (last->list_marker != NULL)
-					break;
+			while (last != NULL && last->list_marker == NULL) {
+				struct box *last_inner = last;
 
-				last = last->last;
+				while (last_inner != NULL) {
+					if (last_inner->list_marker != NULL)
+						break;
+
+					last_inner = last_inner->last;
+				}
+				if (last_inner != NULL) {
+					last = last_inner;
+				} else {
+					last = last->prev;
+				}
 			}
 
 			if (last && last->list_marker) {
