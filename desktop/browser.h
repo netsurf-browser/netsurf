@@ -197,6 +197,11 @@ nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
  */
 bool browser_window_has_content(struct browser_window *bw);
 
+/**
+ * Get a cache handle for the content within a browser window.
+ */
+struct hlcache_handle *browser_window_get_content(struct browser_window *bw);
+
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
 void browser_window_set_dimensions(struct browser_window *bw,

@@ -59,8 +59,6 @@ static GtkBuilder *glade_File;
 static struct nsgtk_source_window *nsgtk_source_list = 0;
 static char source_zoomlevel = 10;
 
-void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw);
-
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
 					GtkMenuItem *widget, gpointer g)
@@ -130,82 +128,81 @@ static gboolean nsgtk_source_delete_event(GtkWindow * window, gpointer g)
 	return FALSE;
 }
 
-void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
-{
-	char glade_Location[strlen(res_dir_location) + SLEN("source.gtk2.ui")
-			+ 1];
-	if (content_get_type(bw->current_content) != CONTENT_HTML)
-		return;
 
-	if (nsoption_bool(source_tab)) {
-		nsgtk_source_tab_init(parent, bw);
-		return;
+static nserror
+nsgtk_source_win_init(GtkWindow *parent, struct browser_window *bw)
+{
+	char glade_Location[strlen(res_dir_location) + SLEN("source.gtk2.ui") + 1];
+
+	struct hlcache_handle *hlcontent;
+	GError* error = NULL;
+	const char *source_data;
+	unsigned long source_size;
+	char *data = NULL;
+	size_t data_len;
+	nserror ret;
+	GtkWindow *wndSource;
+	GtkWidget *cutbutton;
+	GtkWidget *pastebutton;
+	GtkWidget *deletebutton;
+	GtkWidget *printbutton;
+	GtkTextView *sourceview;
+	PangoFontDescription *fontdesc;
+	GtkTextBuffer *tb;
+	struct nsgtk_source_window *thiswindow;
+
+	hlcontent = browser_window_get_content(bw);
+	if (hlcontent == NULL) {
+		return NSERROR_OK;
+	}
+
+	if (content_get_type(hlcontent) != CONTENT_HTML) {
+		return NSERROR_OK;
 	}
 
 	sprintf(glade_Location, "%ssource.gtk2.ui", res_dir_location);
 
-	GError* error = NULL;
 	glade_File = gtk_builder_new();
 	if (!gtk_builder_add_from_file(glade_File, glade_Location, &error)) {
 		g_warning ("Couldn't load builder file: %s", error->message);
 		g_error_free (error);
 		LOG(("error loading glade tree"));
-		return;
+		return NSERROR_OK;
 	}
 
+	source_data = content_get_source_data(hlcontent, &source_size);
 
-	const char *source_data;
-	unsigned long source_size;
-	char *data = NULL;
-	size_t data_len;
-
-	source_data = content_get_source_data(bw->current_content,
-			&source_size);
-
-	nserror r = utf8_from_enc(
-			source_data,
-			html_get_encoding(bw->current_content),
-			source_size,
-			&data,
-			&data_len);
-	if (r == NSERROR_NOMEM) {
-		warn_user("NoMemory",0);
-		return;
-	} else if (r == NSERROR_BAD_ENCODING) {
-		warn_user("EncNotRec",0);
-		return;
+	ret = utf8_from_enc(source_data,
+			    html_get_encoding(hlcontent),
+			    source_size,
+			    &data,
+			    &data_len);
+	if (ret != NSERROR_OK) {
+		return ret;
 	}
 
-	GtkWindow *wndSource = GTK_WINDOW(gtk_builder_get_object(
-			glade_File, "wndSource"));
-	GtkWidget *cutbutton = GTK_WIDGET(gtk_builder_get_object(
-						  glade_File, "source_cut"));
-	GtkWidget *pastebutton = GTK_WIDGET(gtk_builder_get_object(
-						    glade_File, "source_paste"));
-	GtkWidget *deletebutton = GTK_WIDGET(gtk_builder_get_object(
-						     glade_File, "source_delete"));
-	GtkWidget *printbutton = GTK_WIDGET(gtk_builder_get_object(
-						    glade_File, "source_print"));
+	wndSource = GTK_WINDOW(gtk_builder_get_object(glade_File, "wndSource"));
+	cutbutton = GTK_WIDGET(gtk_builder_get_object(glade_File, "source_cut"));
+	pastebutton = GTK_WIDGET(gtk_builder_get_object(glade_File, "source_paste"));
+	deletebutton = GTK_WIDGET(gtk_builder_get_object(glade_File, "source_delete"));
+	printbutton = GTK_WIDGET(gtk_builder_get_object(glade_File, "source_print"));
 	gtk_widget_set_sensitive(cutbutton, FALSE);
 	gtk_widget_set_sensitive(pastebutton, FALSE);
 	gtk_widget_set_sensitive(deletebutton, FALSE);
 	/* for now */
 	gtk_widget_set_sensitive(printbutton, FALSE);
 
-	struct nsgtk_source_window *thiswindow =
-			malloc(sizeof(struct nsgtk_source_window));
+	thiswindow = malloc(sizeof(struct nsgtk_source_window));
 	if (thiswindow == NULL) {
 		free(data);
-		warn_user("NoMemory", 0);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	thiswindow->url = strdup(nsurl_access(browser_window_get_url(bw)));
 	if (thiswindow->url == NULL) {
 		free(thiswindow);
 		free(data);
-		warn_user("NoMemory", 0);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	thiswindow->data = data;
@@ -219,8 +216,9 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 
 	thiswindow->next = nsgtk_source_list;
 	thiswindow->prev = NULL;
-	if (nsgtk_source_list != NULL)
+	if (nsgtk_source_list != NULL) {
 		nsgtk_source_list->prev = thiswindow;
+	}
 	nsgtk_source_list = thiswindow;
 
 	nsgtk_attach_source_menu_handlers(glade_File, thiswindow);
@@ -234,87 +232,102 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 			G_CALLBACK(nsgtk_source_delete_event),
 			thiswindow);
 
-	GtkTextView *sourceview = GTK_TEXT_VIEW(
+	sourceview = GTK_TEXT_VIEW(
 			gtk_builder_get_object(glade_File,
 			"source_view"));
 
-	PangoFontDescription *fontdesc =
-		pango_font_description_from_string("Monospace 8");
+	fontdesc = pango_font_description_from_string("Monospace 8");
 
 	thiswindow->gv = sourceview;
 	nsgtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
 
-	GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
+	tb = gtk_text_view_get_buffer(sourceview);
 	gtk_text_buffer_set_text(tb, thiswindow->data, -1);
 
 	gtk_widget_show(GTK_WIDGET(wndSource));
 
+	return NSERROR_OK;
 }
 
 /**
  * create a new tab with page source
  */
-void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
+static nserror
+nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 {
 	const char *source_data;
 	unsigned long source_size;
-	char *ndata = 0;
+	char *ndata = NULL;
 	size_t ndata_len;
 	nsurl *url;
-	nserror error;
-	nserror r;
+	nserror ret;
 	gchar *filename;
 	gint handle;
+	struct hlcache_handle *hlcontent;
+	FILE *f;
 
-	source_data = content_get_source_data(bw->current_content,
-					      &source_size);
+	hlcontent = browser_window_get_content(bw);
+	if (hlcontent == NULL) {
+		return NSERROR_OK;
+	}
 
-	r = utf8_from_enc(source_data,
-			  html_get_encoding(bw->current_content),
+	if (content_get_type(hlcontent) != CONTENT_HTML) {
+		return NSERROR_OK;
+	}
+
+	source_data = content_get_source_data(hlcontent, &source_size);
+
+	ret = utf8_from_enc(source_data,
+			  html_get_encoding(hlcontent),
 			  source_size,
 			  &ndata,
 			  &ndata_len);
-	if (r == NSERROR_NOMEM) {
-		warn_user("NoMemory",0);
-		return;
-	} else if (r == NSERROR_BAD_ENCODING) {
-		warn_user("EncNotRec",0);
-		return;
+	if (ret != NSERROR_OK) {
+		return ret;
 	}
 
 	handle = g_file_open_tmp("nsgtksourceXXXXXX", &filename, NULL);
 	if ((handle == -1) || (filename == NULL)) {
 		warn_user(messages_get("gtkSourceTabError"), 0);
 		free(ndata);
-		return;
+		return NSERROR_SAVE_FAILED;
 	}
-	close (handle); /* in case it was binary mode */
+	close(handle); /* in case it was binary mode */
 
-	FILE *f = fopen(filename, "w");
+	f = fopen(filename, "w");
 	if (f == NULL) {
 		warn_user(messages_get("gtkSourceTabError"), 0);
 		g_free(filename);
 		free(ndata);
-		return;
+		return NSERROR_SAVE_FAILED;
 	}
-
 	fprintf(f, "%s", ndata);
 	fclose(f);
 	free(ndata);
 
 	/* Open tab */
-	error = netsurf_path_to_nsurl(filename, &url);
+	ret = netsurf_path_to_nsurl(filename, &url);
 	g_free(filename);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_TAB,
-					      url,
-					      NULL,
-					      bw,
-					      NULL);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BW_CREATE_TAB | BW_CREATE_CLONE,
+					    url, NULL, bw, NULL);
 		nsurl_unref(url);
 	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+
+	return ret;
+}
+
+void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
+{
+	nserror ret;
+
+	if (nsoption_bool(source_tab)) {
+		ret = nsgtk_source_tab_init(parent, bw);
+	} else {
+		ret = nsgtk_source_win_init(parent, bw);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	}
 }
 

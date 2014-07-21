@@ -2014,6 +2014,11 @@ bool browser_window_has_content(struct browser_window *bw)
 	return true;
 }
 
+/* Exported interface, documented in browser.h */
+struct hlcache_handle *browser_window_get_content(struct browser_window *bw)
+{
+	return bw->current_content;
+}
 
 /* Exported interface, documented in browser.h */
 nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
