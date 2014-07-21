@@ -212,7 +212,9 @@ static bool treeview_test_redraw(struct tree *tree, int x, int y,
 
 	switch (tree->flags) {
 	case TREE_SSLCERT:
-		sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
+		if (ssl_current_session != NULL) {
+			sslcert_viewer_redraw(ssl_current_session, x, y, &clip, ctx);
+		}
 		return true;
 	case TREE_COOKIES:
 		cookie_manager_redraw(x, y, &clip, ctx);

@@ -33,6 +33,10 @@ struct sslcert_session_data;
 struct tree;
 struct redraw_context;
 
+/** Current ssl session data for treeview
+ *
+ * @fixme global certificate treeview state must go away, this is just wrong.
+ */
 extern struct sslcert_session_data *ssl_current_session;
 extern const char *tree_hotlist_path;
 
