@@ -510,12 +510,6 @@ struct nsgtk_popup_menu *nsgtk_popup_menu_create(GtkAccelGroup *group)
 
 	ADD_NAMED_SEP(popup, first, nmenu);
 
-	IMAGE_ITEM(popup, opentab, gtkOpentab, nmenu, group);
-	IMAGE_ITEM(popup, openwin, gtkOpenwin, nmenu, group);
-	IMAGE_ITEM(popup, savelink, gtkSavelink, nmenu, group);
-
-	ADD_NAMED_SEP(popup, second, nmenu);
-
 	IMAGE_ITEM(popup, back, gtkBack, nmenu, group);
 	IMAGE_ITEM(popup, forward, gtkForward, nmenu, group);
 

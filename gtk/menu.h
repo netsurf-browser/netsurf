@@ -166,12 +166,6 @@ struct nsgtk_popup_menu {
 
 	GtkWidget *first_separator;
 
-	GtkImageMenuItem *opentab_menuitem;
-	GtkImageMenuItem *openwin_menuitem;
-	GtkImageMenuItem *savelink_menuitem;
-
-	GtkWidget *second_separator;
-
 	/* navigation entries */
 	GtkImageMenuItem *back_menuitem;
 	GtkImageMenuItem *forward_menuitem;

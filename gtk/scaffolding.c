@@ -151,7 +151,7 @@ static struct contextual_content current_menu_ctx;
  * Helper to hide popup menu entries by grouping
  */
 static void popup_menu_hide(struct nsgtk_popup_menu *menu, bool submenu,
-		bool link, bool nav, bool cnp, bool custom)
+		bool nav, bool cnp, bool custom)
 {
 	if (submenu){
 		gtk_widget_hide(GTK_WIDGET(menu->file_menuitem));
@@ -161,14 +161,6 @@ static void popup_menu_hide(struct nsgtk_popup_menu *menu, bool submenu,
 		gtk_widget_hide(GTK_WIDGET(menu->help_menuitem));
 
 		gtk_widget_hide(menu->first_separator);
-	}
-
-	if (link) {
-		gtk_widget_hide(GTK_WIDGET(menu->opentab_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->openwin_menuitem));
-		gtk_widget_hide(GTK_WIDGET(menu->savelink_menuitem));
-
-		gtk_widget_hide(menu->second_separator);
 	}
 
 	if (nav) {
@@ -194,7 +186,7 @@ static void popup_menu_hide(struct nsgtk_popup_menu *menu, bool submenu,
  * Helper to show popup menu entries by grouping
  */
 static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
-		bool link, bool nav, bool cnp, bool custom)
+		bool nav, bool cnp, bool custom)
 {
 	if (submenu){
 		gtk_widget_show(GTK_WIDGET(menu->file_menuitem));
@@ -204,14 +196,6 @@ static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
 		gtk_widget_show(GTK_WIDGET(menu->help_menuitem));
 
 		gtk_widget_show(menu->first_separator);
-	}
-
-	if (link) {
-		gtk_widget_show(GTK_WIDGET(menu->opentab_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->openwin_menuitem));
-		gtk_widget_show(GTK_WIDGET(menu->savelink_menuitem));
-
-		gtk_widget_show(menu->second_separator);
 	}
 
 	if (nav) {
@@ -368,17 +352,6 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 			(g->buttons[PASTE_BUTTON]->sensitivity));
 }
 
-static void nsgtk_scaffolding_enable_link_operations_sensitivity(
-		struct gtk_scaffolding *g)
-{
-
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_popup->savelink_menuitem), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_popup->opentab_menuitem), TRUE);
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_popup->openwin_menuitem), TRUE);
-
-	popup_menu_show(g->menu_popup, false, true, false, false, false);
-
-}
 
 static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
 		struct gtk_scaffolding *g)
@@ -389,7 +362,7 @@ static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
 	g->buttons[CUT_BUTTON]->sensitivity = true;
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	popup_menu_show(g->menu_popup, false, false, false, true, false);
+	popup_menu_show(g->menu_popup, false, false, true, false);
 }
 
 /* signal handling functions for the toolbar, URL bar, and menu bar */
@@ -412,7 +385,6 @@ static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 		struct gtk_scaffolding *g)
 {
-	nsgtk_scaffolding_enable_link_operations_sensitivity(g);
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g);
 	return TRUE;
 }
@@ -460,8 +432,8 @@ static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 
 	/* set visibility for right-click popup menu */
-	popup_menu_hide(g->menu_popup, true, true, false, true, false);
-	popup_menu_show(g->menu_popup, false, false, false, false, true);
+	popup_menu_hide(g->menu_popup, true, false, true, false);
+	popup_menu_show(g->menu_popup, false, false, false, true);
 
 	gtk_menu_popup(g->menu_popup->popup_menu, NULL, NULL, NULL, NULL, 0,
 		       gtk_get_current_event_time());
@@ -1227,8 +1199,8 @@ MENUHANDLER(menubar)
 
 		gtk_widget_show(GTK_WIDGET(g->menu_bar->bar_menu));
 
-		popup_menu_show(g->menu_popup, false, true, true, true, true);
-		popup_menu_hide(g->menu_popup, true, false, false, false, false);
+		popup_menu_show(g->menu_popup, false, true, true, true);
+		popup_menu_hide(g->menu_popup, true, false, false, false);
 	} else {
 		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->menubar_menuitem);
 		if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(w)))
@@ -1242,7 +1214,7 @@ MENUHANDLER(menubar)
 
 		gtk_widget_hide(GTK_WIDGET(g->menu_bar->bar_menu));
 
-		popup_menu_show(g->menu_popup, true, true, true, true, true);
+		popup_menu_show(g->menu_popup, true, true, true, true);
 
 	}
 	return TRUE;
@@ -1812,15 +1784,6 @@ nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
 	g_signal_connect(nmenu->popup_menu, "hide",
 			 G_CALLBACK(nsgtk_window_popup_menu_hidden), g);
 
-	g_signal_connect(nmenu->savelink_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_savelink_activate_menu), g);
-
-	g_signal_connect(nmenu->opentab_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_opentab_activate_menu), g);
-
-	g_signal_connect(nmenu->openwin_menuitem, "activate",
-			 G_CALLBACK(nsgtk_on_link_openwin_activate_menu), g);
-
 	g_signal_connect(nmenu->cut_menuitem, "activate",
 			 G_CALLBACK(nsgtk_on_cut_activate_menu), g);
 
@@ -1834,7 +1797,7 @@ nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
 			 G_CALLBACK(nsgtk_on_customize_activate_menu), g);
 
 	/* set initial popup menu visibility */
-	popup_menu_hide(nmenu, true, false, false, false, true);
+	popup_menu_hide(nmenu, true, false, false, true);
 
 	return nmenu;
 }
@@ -2605,33 +2568,31 @@ void nsgtk_scaffolding_context_menu(struct gtk_scaffolding *g,
 	if (current_menu_ctx.link_url != NULL) {
 		/* menu is opening over a link */
 		gtkmenu = g->link_menu->link_menu;
-
-		popup_menu_show(g->menu_popup, false, true, false, false, false);
-
 	} else {
 		gtkmenu = g->menu_popup->popup_menu;
 
-		popup_menu_hide(g->menu_popup, false, true, false, false, false);
-	
 		nsgtk_scaffolding_update_edit_actions_sensitivity(g);
 
-		if (!(g->buttons[COPY_BUTTON]->sensitivity))
+		if (!(g->buttons[COPY_BUTTON]->sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->copy_menuitem));
-		else
+		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->copy_menuitem));
+		}
 
-		if (!(g->buttons[CUT_BUTTON]->sensitivity))
+		if (!(g->buttons[CUT_BUTTON]->sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->cut_menuitem));
-		else
+		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->cut_menuitem));
+		}
 
-		if (!(g->buttons[PASTE_BUTTON]->sensitivity))
+		if (!(g->buttons[PASTE_BUTTON]->sensitivity)) {
 			gtk_widget_hide(GTK_WIDGET(g->menu_popup->paste_menuitem));
-		else
+		} else {
 			gtk_widget_show(GTK_WIDGET(g->menu_popup->paste_menuitem));
+		}
 
 		/* hide customize */
-		popup_menu_hide(g->menu_popup, false, false, false, false, true);
+		popup_menu_hide(g->menu_popup, false, false, false, true);
 	}
 
 	gtk_menu_popup(gtkmenu, NULL, NULL, NULL, NULL, 0,
