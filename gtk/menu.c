@@ -105,15 +105,13 @@ static bool nsgtk_menu_add_image_item(GtkMenu *menu,
 
 #define ATTACH_PARENT(parent, msgname, menuv, group)			\
 	do {								\
-		if (parent != NULL) {					\
-			/* create top level menu entry and attach to parent */ \
-			menuv = GTK_MENU_ITEM(gtk_menu_item_new_with_mnemonic(messages_get(#msgname))); \
-			gtk_menu_shell_append(parent, GTK_WIDGET(menuv)); \
-			gtk_widget_show(GTK_WIDGET(menuv));		\
-			/* attach submenu to parent */			\
-			gtk_menu_item_set_submenu(menuv, GTK_WIDGET(menuv##_menu)); \
-			gtk_menu_set_accel_group(menuv##_menu, group);	\
-		}							\
+		/* create top level menu entry and attach to parent */	\
+		menuv = GTK_MENU_ITEM(gtk_menu_item_new_with_mnemonic(messages_get(#msgname))); \
+		gtk_menu_shell_append(parent, GTK_WIDGET(menuv));	\
+		gtk_widget_show(GTK_WIDGET(menuv));			\
+		/* attach submenu to parent */				\
+		gtk_menu_item_set_submenu(menuv, GTK_WIDGET(menuv##_menu)); \
+		gtk_menu_set_accel_group(menuv##_menu, group);		\
 	} while(0)
 
 /**
@@ -460,28 +458,28 @@ nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group)
 {
 	struct nsgtk_bar_submenu *nmenu;
 
-	nmenu = malloc(sizeof(struct nsgtk_bar_submenu));
+	nmenu = calloc(1, sizeof(struct nsgtk_bar_submenu));
 	if (nmenu == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 
-	nmenu->bar_menu = GTK_MENU_BAR(menubar);
-
+	/* create sub menus */
 	nmenu->file_submenu = nsgtk_menu_file_submenu(group);
-	ATTACH_PARENT(menubar, gtkFile, nmenu->file_submenu->file, group);
-
 	nmenu->edit_submenu = nsgtk_menu_edit_submenu(group);
-	ATTACH_PARENT(menubar, gtkEdit, nmenu->edit_submenu->edit, group);
-
 	nmenu->view_submenu = nsgtk_menu_view_submenu(group);
-	ATTACH_PARENT(menubar, gtkView, nmenu->view_submenu->view, group);
-
 	nmenu->nav_submenu = nsgtk_menu_nav_submenu(group);
-	ATTACH_PARENT(menubar, gtkNavigate, nmenu->nav_submenu->nav, group);
-
 	nmenu->help_submenu = nsgtk_menu_help_submenu(group);
-	ATTACH_PARENT(menubar, gtkHelp, nmenu->help_submenu->help, group);
+
+	if (menubar != NULL) {
+		nmenu->bar_menu = GTK_MENU_BAR(menubar);
+
+		/* attach menus to menubar */
+		ATTACH_PARENT(menubar, gtkFile, nmenu->file_submenu->file, group);
+		ATTACH_PARENT(menubar, gtkEdit, nmenu->edit_submenu->edit, group);
+		ATTACH_PARENT(menubar, gtkView, nmenu->view_submenu->view, group);
+		ATTACH_PARENT(menubar, gtkNavigate, nmenu->nav_submenu->nav, group);
+		ATTACH_PARENT(menubar, gtkHelp, nmenu->help_submenu->help, group);
+	}
 
 	return nmenu;
 }
