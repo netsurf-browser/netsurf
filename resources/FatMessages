@@ -1760,11 +1760,11 @@ de.gtk.gtkNavigate:_Navigation
 fr.gtk.gtkNavigate:_Navigate
 it.gtk.gtkNavigate:_Visualizza
 nl.gtk.gtkNavigate:_Navigate
-en.gtk.gtkTabs:_Tabs
-de.gtk.gtkTabs:_Tabs
-fr.gtk.gtkTabs:_Tabs
-it.gtk.gtkTabs:_Schede
-nl.gtk.gtkTabs:_Tabs
+en.gtk.gtkTools:_Tools
+de.gtk.gtkTools:_Tools
+fr.gtk.gtkTools:_Tools
+it.gtk.gtkTools:_Tools
+nl.gtk.gtkTools:_Tools
 en.gtk.gtkHelp:_Help
 de.gtk.gtkHelp:_Hilfe
 fr.gtk.gtkHelp:_Help
@@ -2003,16 +2003,16 @@ de.gtk.gtkFullScreenAccel:F11
 fr.gtk.gtkFullScreenAccel:F11
 it.gtk.gtkFullScreenAccel:F11
 nl.gtk.gtkFullScreenAccel:F11
-en.gtk.gtkViewSource:View S_ource
-de.gtk.gtkViewSource: Q_uelltext Anzeigen
-fr.gtk.gtkViewSource:Voir la S_ource
-it.gtk.gtkViewSource:Mostra s_orgente
-nl.gtk.gtkViewSource:View S_ource
-en.gtk.gtkViewSourceAccel:F8
-de.gtk.gtkViewSourceAccel:F8
-fr.gtk.gtkViewSourceAccel:F8
-it.gtk.gtkViewSourceAccel:F8
-nl.gtk.gtkViewSourceAccel:F8
+en.gtk.gtkPageSource:Page S_ource
+de.gtk.gtkPageSource: Q_uelltext Anzeigen
+fr.gtk.gtkPageSource:Voir la S_ource
+it.gtk.gtkPageSource:Mostra s_orgente
+nl.gtk.gtkPageSource:Page S_ource
+en.gtk.gtkPageSourceAccel:<ctrl>U
+de.gtk.gtkPageSourceAccel:<ctrl>U
+fr.gtk.gtkPageSourceAccel:<ctrl>U
+it.gtk.gtkPageSourceAccel:<ctrl>U
+nl.gtk.gtkPageSourceAccel:<ctrl>U
 en.gtk.gtkImages:_Images
 de.gtk.gtkImages:B_ilder
 fr.gtk.gtkImages:_Images
@@ -2033,6 +2033,11 @@ de.gtk.gtkToolbars:_Werkzeugleisten
 fr.gtk.gtkToolbars:_Barre d'outils
 it.gtk.gtkToolbars:_Barre strumenti
 nl.gtk.gtkToolbars:_Toolbars
+en.gtk.gtkTabs:_Tabs
+de.gtk.gtkTabs:_Tabs
+fr.gtk.gtkTabs:_Tabs
+it.gtk.gtkTabs:_Schede
+nl.gtk.gtkTabs:_Tabs
 en.gtk.gtkMenuBar:_Menu Bar
 de.gtk.gtkMenuBar:_Menüleiste
 fr.gtk.gtkMenuBar:_Barre de menu
@@ -2048,11 +2053,11 @@ de.gtk.gtkStatusBar:_Statusleiste
 fr.gtk.gtkStatusBar:_Bar de statut
 it.gtk.gtkStatusBar:Barra di s_tato
 nl.gtk.gtkStatusBar:_Status Bar
-en.gtk.gtkDownloads:_Downloads
-de.gtk.gtkDownloads:_Downloads
-fr.gtk.gtkDownloads:_Téléchargements
-it.gtk.gtkDownloads:_Trasferimenti
-nl.gtk.gtkDownloads:_Downloads
+en.gtk.gtkDownloads:_Downloads...
+de.gtk.gtkDownloads:_Downloads...
+fr.gtk.gtkDownloads:_Téléchargements...
+it.gtk.gtkDownloads:_Trasferimenti...
+nl.gtk.gtkDownloads:_Downloads...
 en.gtk.gtkDownloadsAccel:<ctrl>d
 de.gtk.gtkDownloadsAccel:<ctrl>d
 fr.gtk.gtkDownloadsAccel:<ctrl>d
@@ -2063,26 +2068,26 @@ de.gtk.gtkSaveWindowSize:Fenstergröße _speichern
 fr.gtk.gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
 it.gtk.gtkSaveWindowSize:S_alva dimensione finestra
 nl.gtk.gtkSaveWindowSize:S_ave Window Size
-en.gtk.gtkDebugging:De_bugging
-de.gtk.gtkDebugging:De_bugging
-fr.gtk.gtkDebugging:D_ébogage
-it.gtk.gtkDebugging:De_bugging
-nl.gtk.gtkDebugging:De_bugging
+en.gtk.gtkDeveloper:De_veloper
+de.gtk.gtkDeveloper:De_veloper
+fr.gtk.gtkDeveloper:D_ébogage
+it.gtk.gtkDeveloper:De_veloper
+nl.gtk.gtkDeveloper:De_veloper
 en.gtk.gtkToggleDebugging:T_oggle debug rendering
 de.gtk.gtkToggleDebugging:T_oggle debug rendering
 fr.gtk.gtkToggleDebugging:Activer le débogage
 it.gtk.gtkToggleDebugging:In_verti debug del rendering
 nl.gtk.gtkToggleDebugging:T_oggle debug rendering
-en.gtk.gtkSaveBoxTree:_Save box tree
-de.gtk.gtkSaveBoxTree:_Save box tree
-fr.gtk.gtkSaveBoxTree:_Save box tree
-it.gtk.gtkSaveBoxTree:_Salva albero Box
-nl.gtk.gtkSaveBoxTree:_Save box tree
-en.gtk.gtkSaveDomTree:Save DOM tree
-de.gtk.gtkSaveDomTree:Save DOM tree
-fr.gtk.gtkSaveDomTree:Save DOM tree
-it.gtk.gtkSaveDomTree:Salva albero DOM
-nl.gtk.gtkSaveDomTree:Save DOM tree
+en.gtk.gtkDebugBoxTree:Debug _box tree
+de.gtk.gtkDebugBoxTree:Debug _box tree
+fr.gtk.gtkDebugBoxTree:Debug _box tree
+it.gtk.gtkDebugBoxTree:Debug _box tree
+nl.gtk.gtkDebugBoxTree:Debug _box tree
+en.gtk.gtkDebugDomTree:Debug _DOM tree
+de.gtk.gtkDebugDomTree:Debug _DOM tree
+fr.gtk.gtkDebugDomTree:Debug _DOM tree
+it.gtk.gtkDebugDomTree:Debug albero _DOM
+nl.gtk.gtkDebugDomTree:Debug _DOM tree
 
 en.gtk.gtkBack:_Back
 de.gtk.gtkBack:_Zurück

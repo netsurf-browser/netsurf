@@ -55,17 +55,13 @@ struct nsgtk_view_menu {
 	GtkImageMenuItem		*scaleview_menuitem;
 	struct nsgtk_scaleview_submenu	*scaleview_submenu;
 	GtkImageMenuItem		*fullscreen_menuitem;
-	GtkImageMenuItem		*viewsource_menuitem;
 	GtkImageMenuItem		*images_menuitem;
 	struct nsgtk_images_submenu	*images_submenu;
 	GtkImageMenuItem		*toolbars_menuitem;
 	struct nsgtk_toolbars_submenu	*toolbars_submenu;
 	GtkImageMenuItem		*tabs_menuitem;
 	struct nsgtk_tabs_submenu	*tabs_submenu;
-	GtkImageMenuItem		*downloads_menuitem;
 	GtkImageMenuItem		*savewindowsize_menuitem;
-	GtkImageMenuItem		*debugging_menuitem;
-	struct nsgtk_debugging_submenu	*debugging_submenu;
 };
 
 struct nsgtk_nav_menu {
@@ -78,8 +74,17 @@ struct nsgtk_nav_menu {
 	GtkImageMenuItem	*globalhistory_menuitem;
 	GtkImageMenuItem	*addbookmarks_menuitem;
 	GtkImageMenuItem	*showbookmarks_menuitem;
-	GtkImageMenuItem	*showcookies_menuitem;
 	GtkImageMenuItem	*openlocation_menuitem;
+};
+
+struct nsgtk_tools_menu {
+	GtkMenuItem  *tools; /* Tools menu item on menubar */
+	GtkMenu	*tools_menu;
+
+	GtkImageMenuItem *showcookies_menuitem;
+	GtkImageMenuItem *downloads_menuitem;
+	GtkImageMenuItem *developer_menuitem;
+	struct nsgtk_developer_submenu *developer_submenu;
 };
 
 struct nsgtk_help_menu {
@@ -90,6 +95,7 @@ struct nsgtk_help_menu {
 	GtkImageMenuItem	*info_menuitem;
 	GtkImageMenuItem	*about_menuitem;
 };
+
 
 struct nsgtk_export_submenu {
 	GtkMenu			*export_menu;
@@ -125,11 +131,13 @@ struct nsgtk_toolbars_submenu {
 	GtkCheckMenuItem	*toolbar_menuitem;
 };
 
-struct nsgtk_debugging_submenu {
-	GtkMenu			*debugging_menu;
+struct nsgtk_developer_submenu {
+	GtkMenu			*developer_menu;
+
+	GtkImageMenuItem *viewsource_menuitem;
 	GtkImageMenuItem	*toggledebugging_menuitem;
-	GtkImageMenuItem	*saveboxtree_menuitem;
-	GtkImageMenuItem	*savedomtree_menuitem;
+	GtkImageMenuItem	*debugboxtree_menuitem;
+	GtkImageMenuItem	*debugdomtree_menuitem;
 };
 
 
@@ -139,7 +147,8 @@ struct nsgtk_bar_submenu {
 	struct nsgtk_edit_menu	*edit_submenu;
 	struct nsgtk_view_menu	*view_submenu;
 	struct nsgtk_nav_menu	*nav_submenu;
-	struct nsgtk_tabs_menu	*tabs_submenu;
+	struct nsgtk_tabs_submenu	*tabs_submenu;
+	struct nsgtk_tools_menu	*tools_submenu;
 	struct nsgtk_help_menu	*help_submenu;
 };
 
@@ -159,7 +168,10 @@ struct nsgtk_popup_menu {
 	struct nsgtk_nav_menu *nav_submenu;
 
 	GtkImageMenuItem *tabs_menuitem;
-	struct nsgtk_tabs_menu *tabs_submenu;
+	struct nsgtk_tabs_submenu *tabs_submenu;
+
+	GtkImageMenuItem *tools_menuitem;
+	struct nsgtk_tools_menu *tools_submenu;
 
 	GtkImageMenuItem *help_menuitem;
 	struct nsgtk_help_menu *help_submenu;

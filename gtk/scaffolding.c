@@ -1289,7 +1289,7 @@ MULTIHANDLER(toggledebugging)
 	return TRUE;
 }
 
-MULTIHANDLER(saveboxtree)
+MULTIHANDLER(debugboxtree)
 {
 	GtkWidget *save_dialog;
 
@@ -1333,7 +1333,7 @@ MULTIHANDLER(saveboxtree)
 	return TRUE;
 }
 
-MULTIHANDLER(savedomtree)
+MULTIHANDLER(debugdomtree)
 {
 	GtkWidget *save_dialog;
 
@@ -2644,18 +2644,12 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 {
 #define ITEM_MAIN(p, q, r)\
-	g->buttons[p##_BUTTON]->main =\
-			g->menu_bar->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->rclick =\
-			g->menu_popup->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->mhandler =\
-			nsgtk_on_##r##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##r##_activate_button;\
-	g->buttons[p##_BUTTON]->dataplus =\
-			nsgtk_toolbar_##r##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus =\
-			nsgtk_toolbar_##r##_toolbar_button_data
+	g->buttons[p##_BUTTON]->main = g->menu_bar->q->r##_menuitem;\
+	g->buttons[p##_BUTTON]->rclick = g->menu_popup->q->r##_menuitem;\
+	g->buttons[p##_BUTTON]->mhandler = nsgtk_on_##r##_activate_menu;\
+	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;\
+	g->buttons[p##_BUTTON]->dataplus = nsgtk_toolbar_##r##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus = nsgtk_toolbar_##r##_toolbar_button_data
 
 #define ITEM_SUB(p, q, r, s)\
 	g->buttons[p##_BUTTON]->main =\
@@ -2691,6 +2685,7 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 			nsgtk_toolbar_##q##_button_data;\
 	g->buttons[p##_ITEM]->dataminus =\
 			nsgtk_toolbar_##q##_toolbar_button_data
+
 	ITEM_ITEM(WEBSEARCH, websearch);
 	ITEM_ITEM(THROBBER, throbber);
 	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
@@ -2714,8 +2709,7 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_MAIN(RELOAD, view_submenu, reload);
 	ITEM_POP(RELOAD, reload);
 	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
-	ITEM_MAIN(VIEWSOURCE, view_submenu, viewsource);
-	ITEM_MAIN(DOWNLOADS, view_submenu, downloads);
+	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
 	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
 	ITEM_MAIN(BACK, nav_submenu, back);
 	ITEM_POP(BACK, back);
@@ -2726,7 +2720,7 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
 	ITEM_MAIN(ADDBOOKMARKS, nav_submenu, addbookmarks);
 	ITEM_MAIN(SHOWBOOKMARKS, nav_submenu, showbookmarks);
-	ITEM_MAIN(SHOWCOOKIES, nav_submenu, showcookies);
+	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
 	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
 	ITEM_MAIN(CONTENTS, help_submenu, contents);
 	ITEM_MAIN(INFO, help_submenu, info);
@@ -2742,10 +2736,14 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
 	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
 	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
-	ITEM_SUB(TOGGLEDEBUGGING, view_submenu, debugging, toggledebugging);
-	ITEM_SUB(SAVEBOXTREE, view_submenu, debugging, saveboxtree);
-	ITEM_SUB(SAVEDOMTREE, view_submenu, debugging, savedomtree);
+
+	/* development submenu */
+	ITEM_SUB(VIEWSOURCE, tools_submenu, developer, viewsource);
+	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
+	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
+	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
 	ITEM_BUTTON(HISTORY, history);
+
 	/* disable items that make no sense initially, as well as
 	 * as-yet-unimplemented items */
 	SENSITIVITY(BACK);
