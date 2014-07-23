@@ -28,7 +28,7 @@
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "desktop/netsurf.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "render/html.h"
 #include "content/hlcache.h"
 #include "content/content.h"
