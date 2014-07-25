@@ -696,13 +696,26 @@ static void window_destroy(GtkWidget *widget, gpointer data)
 	g_object_unref(gw->input_method);
 }
 
-/* Core interface documented in desktop/gui.h to create a gui_window */
+
+/**
+ * Create and open a gtk container (window or tab) for a browsing context.
+ *
+ * \param bw The browsing context to create gui_window for.
+ * \param existing An existing gui_window, may be NULL
+ * \param flags	flags to control the container creation
+ * \return gui window, or NULL on error
+ *
+ * If GW_CREATE_CLONE flag is set existing is non-NULL.
+ *
+ * Front end's gui_window must include a reference to the
+ * browser window passed in the bw param.
+ */
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
 		gui_window_create_flags flags)
 {
-	struct gui_window *g; /**< what we're creating to return */
+	struct gui_window *g; /* what is being creating to return */
 	GError* error = NULL;
 	bool tempback;
 	GtkBuilder* xml;
@@ -732,8 +745,11 @@ gui_window_create(struct browser_window *bw,
 
 	/* attach scaffold */
 	if (flags & GW_CREATE_TAB) {
-		assert(existing != NULL);
-		g->scaffold = existing->scaffold;
+		if (existing != NULL) {
+			g->scaffold = existing->scaffold;
+		} else {
+			g->scaffold = nsgtk_current_scaffolding();
+		}
 	} else {
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);

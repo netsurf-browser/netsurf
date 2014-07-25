@@ -19,8 +19,6 @@
 #ifndef NETSURF_GTK_ABOUT_H
 #define NETSURF_GTK_ABOUT_H
 
-#include "desktop/browser.h"
-
-void nsgtk_about_dialog_init(GtkWindow *parent, struct browser_window *bw, const char *version);
+void nsgtk_about_dialog_init(GtkWindow *parent, const char *version);
 
 #endif

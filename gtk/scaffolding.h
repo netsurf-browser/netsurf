@@ -115,7 +115,17 @@ struct nsgtk_button_connect {
 
 extern nsgtk_scaffolding *scaf_list;
 
+/**
+ * create a new scaffolding for a window.
+ */
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel);
+
+/**
+ * Obtain the most recently used scaffolding element.
+ *
+ * This allows tabs to be opened in the most recently used window
+ */
+nsgtk_scaffolding *nsgtk_current_scaffolding(void);
 
 bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g);
 

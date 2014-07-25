@@ -76,7 +76,7 @@ MENUPROTO(source_zoom_out);
 MENUPROTO(source_zoom_normal);
 MENUPROTO(source_about);
 
-struct menu_events source_menu_events[] = {
+static struct menu_events source_menu_events[] = {
 MENUEVENT(source_save_as),
 MENUEVENT(source_print),
 MENUEVENT(source_close),
@@ -309,8 +309,8 @@ nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	ret = netsurf_path_to_nsurl(filename, &url);
 	g_free(filename);
 	if (ret == NSERROR_OK) {
-		ret = browser_window_create(BW_CREATE_TAB | BW_CREATE_CLONE,
-					    url, NULL, bw, NULL);
+		ret = browser_window_create(BW_CREATE_TAB,
+					    url, NULL, NULL, NULL);
 		nsurl_unref(url);
 	}
 
@@ -530,7 +530,7 @@ gboolean nsgtk_on_source_about_activate(GtkMenuItem *widget, gpointer g)
 {
 	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
 
-	nsgtk_about_dialog_init(nsg->sourcewindow, nsg->bw, netsurf_version);
+	nsgtk_about_dialog_init(nsg->sourcewindow, netsurf_version);
 
 	return TRUE;
 }

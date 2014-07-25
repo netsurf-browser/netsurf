@@ -136,8 +136,8 @@ struct gtk_scaffolding {
 	struct gtk_scaffolding 		*next, *prev;
 };
 
-/** current window for model dialogue use */
-static struct gtk_scaffolding *current_model;
+/** current scaffold for model dialogue use */
+static struct gtk_scaffolding *scaf_current;
 
 /** global list for interface changes */
 nsgtk_scaffolding *scaf_list = NULL;
@@ -497,7 +497,7 @@ static void nsgtk_openfile_open(const char *filename)
 	nsurl *url;
 	nserror error;
 
-	bw = nsgtk_get_browser_window(current_model->top_level);
+	bw = nsgtk_get_browser_window(scaf_current->top_level);
 
 	urltxt = malloc(strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1);
 
@@ -596,9 +596,9 @@ MULTIHANDLER(newtab)
 
 MULTIHANDLER(openfile)
 {
-	current_model = g;
+	scaf_current = g;
 	GtkWidget *dlgOpen = gtk_file_chooser_dialog_new("Open File",
-			current_model->window, GTK_FILE_CHOOSER_ACTION_OPEN,
+			scaf_current->window, GTK_FILE_CHOOSER_ACTION_OPEN,
 			GTK_STOCK_CANCEL, -6, GTK_STOCK_OPEN, -5, NULL);
 
 	gint response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
@@ -1631,9 +1631,7 @@ MULTIHANDLER(info)
 
 MULTIHANDLER(about)
 {
-	nsgtk_about_dialog_init(g->window,
-			nsgtk_get_browser_window(g->top_level),
-			netsurf_version);
+	nsgtk_about_dialog_init(g->window, netsurf_version);
 	return TRUE;
 }
 
@@ -1837,6 +1835,16 @@ nsgtk_new_scaffolding_link_popup(struct gtk_scaffolding *g, GtkAccelGroup *group
 	return nmenu;
 }
 
+/* exported interface documented in gtk/scaffolding.h */
+nsgtk_scaffolding *nsgtk_current_scaffolding(void)
+{
+	if (scaf_current == NULL) {
+		scaf_current = scaf_list;
+	}
+	return scaf_current;
+}
+
+/* exported interface documented in gtk/scaffolding.h */
 nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
 	struct gtk_scaffolding *g;
