@@ -181,7 +181,7 @@ static char *current_user;
 static char *current_user_dir;
 static char *current_user_faviconcache;
 
-static const __attribute__((used)) char *stack_cookie = "\0$STACK:262144\0";
+static const __attribute__((used)) char *stack_cookie = "\0$STACK:524288\0";
 
 const char * const versvn;
 const char * const verdate;
