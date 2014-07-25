@@ -694,7 +694,7 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 	struct browser_window *ret;
 
 	/* Check parameters */
-	if (flags & (BW_CREATE_TAB | BW_CREATE_CLONE)) {
+	if (flags & BW_CREATE_CLONE) {
 		if (existing == NULL) {
 			assert(0 && "Failed: No existing window provided.");
 			return NSERROR_BAD_PARAMETER;

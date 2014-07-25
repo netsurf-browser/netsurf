@@ -95,8 +95,7 @@ struct gui_window_table {
 	 * \param flags		flags for gui window creation
 	 * \return gui window, or NULL on error
 	 *
-	 * If GW_CREATE_CLONE or GW_CREATE_TAB flags are set, existing is
-	 * non-NULL.
+	 * If GW_CREATE_CLONE flag is set existing is non-NULL.
 	 *
 	 * Front end's gui_window must include a reference to the
 	 * browser window passed in the bw param.
