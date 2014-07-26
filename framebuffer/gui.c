@@ -1660,9 +1660,8 @@ resize_normal_browser_window(struct gui_window *gw, int furniture_width)
 {
 	bool resized;
 	int width, height;
+	int statusbar_width;
 	int toolbar_height = fbtk_get_height(gw->toolbar);
-	int statusbar_width = nsoption_int(toolbar_status_size) *
-			width / 10000;
 
 	/* Resize the main window widget */
 	resized = fbtk_set_pos_and_size(gw->window, 0, 0, 0, 0);
@@ -1671,6 +1670,7 @@ resize_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 	width = fbtk_get_width(gw->window);
 	height = fbtk_get_height(gw->window);
+	statusbar_width = nsoption_int(toolbar_status_size) * width / 10000;
 
 	resize_toolbar(gw, toolbar_height, 2,
 			nsoption_charp(fb_toolbar_layout));
