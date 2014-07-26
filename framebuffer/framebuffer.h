@@ -3,6 +3,7 @@
 extern const struct plotter_table fb_plotters;
 
 nsfb_t *framebuffer_initialise(const char *fename, int width, int height, int bpp);
+bool framebuffer_resize(nsfb_t *nsfb, int width, int height, int bpp);
 void framebuffer_finalise(void);
 bool framebuffer_set_cursor(struct fbtk_bitmap *bm);
 

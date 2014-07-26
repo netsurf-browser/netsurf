@@ -341,6 +341,42 @@ const struct plotter_table fb_plotters = {
 };
 
 
+static bool framebuffer_format_from_bpp(int bpp, enum nsfb_format_e *fmt)
+{
+	switch (bpp) {
+	case 32:
+		*fmt = NSFB_FMT_XRGB8888;
+		break;
+
+	case 24:
+		*fmt = NSFB_FMT_RGB888;
+		break;
+
+	case 16:
+		*fmt = NSFB_FMT_RGB565;
+		break;
+
+	case 8:
+		*fmt = NSFB_FMT_I8;
+		break;
+
+	case 4:
+		*fmt = NSFB_FMT_I4;
+		break;
+
+	case 1:
+		*fmt = NSFB_FMT_I1;
+		break;
+
+	default:
+		LOG(("Bad bits per pixel (%d)\n", bpp));
+		return false;
+	}
+
+	return true;
+}
+
+
 
 nsfb_t *
 framebuffer_initialise(const char *fename, int width, int height, int bpp)
@@ -349,34 +385,8 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
     enum nsfb_format_e fbfmt;
 
     /* bpp is a proxy for the framebuffer format */
-    switch (bpp) {
-    case 32:
-	    fbfmt = NSFB_FMT_XRGB8888;
-	    break;
-
-    case 24:
-	    fbfmt = NSFB_FMT_RGB888;
-	    break;
-
-    case 16:
-	    fbfmt = NSFB_FMT_RGB565;
-	    break;
-
-    case 8:
-	    fbfmt = NSFB_FMT_I8;
-	    break;
-
-    case 4:
-	    fbfmt = NSFB_FMT_I4;
-	    break;
-
-    case 1:
-	    fbfmt = NSFB_FMT_I1;
-	    break;
-
-    default:
-        LOG(("Bad bits per pixel (%d)\n", bpp));
-        return NULL;	    
+    if (framebuffer_format_from_bpp(bpp, &fbfmt) == false) {
+        return NULL;
     }
 
     fbtype = nsfb_type_from_name(fename);
@@ -406,6 +416,25 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
     }
 
     return nsfb;
+
+}
+
+bool
+framebuffer_resize(nsfb_t *nsfb, int width, int height, int bpp)
+{
+    enum nsfb_format_e fbfmt;
+
+    /* bpp is a proxy for the framebuffer format */
+    if (framebuffer_format_from_bpp(bpp, &fbfmt) == false) {
+        return false;
+    }
+
+    if (nsfb_set_geometry(nsfb, width, height, fbfmt) == -1) {
+        LOG(("Unable to change surface geometry\n"));
+        return false;
+    }
+
+    return true;
 
 }
 

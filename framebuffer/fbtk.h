@@ -270,7 +270,7 @@ bool fbtk_get_caret(fbtk_widget_t *widget, int *x, int *y, int *height);
 
 /******************* Widget Manipulation **********************/
 
-/** Change the widget's position and size.
+/** Change the widget's position and size. (Doesn't redraw)
  *
  */
 bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int height);
@@ -369,6 +369,27 @@ bool fbtk_set_scroll_parameters(fbtk_widget_t *widget, int min, int max, int thu
 bool fbtk_set_scroll_position(fbtk_widget_t *widget, int pos);
 
 
+/** Move and/or resize a horizontal scroll widget
+ *
+ * @param vscroll  the horizontal scroll widget
+ * @param x        new x pos
+ * @param y        new y pos
+ * @param width    new width
+ * @param height   new height
+ */
+void fbtk_reposition_hscroll(fbtk_widget_t *scrollh,
+		int x, int y, int width, int height);
+
+/** Move and/or resize a vertical scroll widget
+ *
+ * @param vscroll  the vertical scroll widget
+ * @param x        new x pos
+ * @param y        new y pos
+ * @param width    new width
+ * @param height   new height
+ */
+void fbtk_reposition_vscroll(fbtk_widget_t *scrollv,
+		int x, int y, int width, int height);
 
 
 

@@ -209,6 +209,29 @@ fbtk_set_pos_and_size(fbtk_widget_t *widget,
 		      int x, int y,
 		      int width, int height)
 {
+	if (widget->parent != NULL) {
+		fbtk_widget_t *parent = widget->parent;
+
+		/* make new window fit inside parent */
+		if (width == 0) {
+			width = parent->width - x;
+		} else if (width < 0) {
+			width = parent->width + width - x;
+		}
+		if ((width + x) > parent->width) {
+			width = parent->width - x;
+		}
+
+		if (height == 0) {
+			height = parent->height - y;
+		} else if (height < 0) {
+			height = parent->height + height - y;
+		}
+		if ((height + y) > parent->height) {
+			height = parent->height - y;
+		}
+	}
+
 	if ((widget->x != x) ||
 	    (widget->y != y) ||
 	    (widget->width != width) ||
@@ -217,10 +240,6 @@ fbtk_set_pos_and_size(fbtk_widget_t *widget,
 		widget->y = y;
 		widget->width = width;
 		widget->height = height;
-		/* @todo This should limit the redrawn area to the sum
-		 * of the old and new widget dimensions, not redraw the lot.
-		 */
-		fbtk_request_redraw(widget->parent);
 		return true;
 	}
 	return false;

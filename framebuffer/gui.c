@@ -1229,6 +1229,7 @@ create_toolbar(struct gui_window *gw,
 						    &history_image,
 						    fb_localhistory_btn_clik,
 						    gw);
+			gw->history = widget;
 			break;
 
 		case 'f': /* forward */
@@ -1256,6 +1257,7 @@ create_toolbar(struct gui_window *gw,
 						    &stop_image_g,
 						    fb_close_click,
 						    gw->bw);
+			gw->close = widget;
 			break;
 
 		case 's': /* stop  */
@@ -1269,6 +1271,7 @@ create_toolbar(struct gui_window *gw,
 						    &stop_image,
 						    fb_stop_click,
 						    gw->bw);
+			gw->stop = widget;
 			break;
 
 		case 'r': /* reload */
@@ -1282,6 +1285,7 @@ create_toolbar(struct gui_window *gw,
 						    &reload,
 						    fb_reload_click,
 						    gw->bw);
+			gw->reload = widget;
 			break;
 
 		case 't': /* throbber/activity indicator */
@@ -1356,6 +1360,155 @@ create_toolbar(struct gui_window *gw,
 	return toolbar;
 }
 
+
+/** Resize a toolbar.
+ *
+ * @param gw Parent window
+ * @param toolbar_height The height in pixels of the toolbar
+ * @param padding The padding in pixels round each element of the toolbar
+ * @param toolbar_layout A string defining which buttons and controls
+ *                       should be added to the toolbar. May be empty
+ *                       string to disable the bar.
+ */
+static void
+resize_toolbar(struct gui_window *gw,
+	       int toolbar_height,
+	       int padding,
+	       const char *toolbar_layout)
+{
+	fbtk_widget_t *widget;
+
+	int xpos; /* The position of the next widget. */
+	int xlhs = 0; /* extent of the left hand side widgets */
+	int xdir = 1; /* the direction of movement + or - 1 */
+	const char *itmtype; /* type of the next item */
+	int x = 0, y = 0, w = 0, h = 0;
+
+	if (gw->toolbar == NULL) {
+		return;
+	}
+
+	if (toolbar_layout == NULL) {
+		toolbar_layout = NSFB_TOOLBAR_DEFAULT_LAYOUT;
+	}
+
+	itmtype = toolbar_layout;
+
+	if (*itmtype == 0) {
+		return;
+	}
+
+	fbtk_set_pos_and_size(gw->toolbar, 0, 0, 0, toolbar_height);
+
+	xpos = padding;
+
+	/* loop proceeds creating widget on the left hand side until
+	 * it runs out of layout or encounters a url bar declaration
+	 * wherupon it works backwards from the end of the layout
+	 * untill the space left is for the url bar
+	 */
+	while (itmtype >= toolbar_layout && xdir != 0) {
+
+		switch (*itmtype) {
+		case 'b': /* back */
+			widget = gw->back;
+			x = (xdir == 1) ? xpos : xpos - left_arrow.width;
+			y = padding;
+			w = left_arrow.width;
+			h = -padding;
+			break;
+
+		case 'l': /* local history */
+			widget = gw->history;
+			x = (xdir == 1) ? xpos : xpos - history_image.width;
+			y = padding;
+			w = history_image.width;
+			h = -padding;
+			break;
+
+		case 'f': /* forward */
+			widget = gw->forward;
+			x = (xdir == 1) ? xpos : xpos - right_arrow.width;
+			y = padding;
+			w = right_arrow.width;
+			h = -padding;
+			break;
+
+		case 'c': /* close the current window */
+			widget = gw->close;
+			x = (xdir == 1) ? xpos : xpos - stop_image_g.width;
+			y = padding;
+			w = stop_image_g.width;
+			h = -padding;
+			break;
+
+		case 's': /* stop  */
+			widget = gw->stop;
+			x = (xdir == 1) ? xpos : xpos - stop_image.width;
+			y = padding;
+			w = stop_image.width;
+			h = -padding;
+			break;
+
+		case 'r': /* reload */
+			widget = gw->reload;
+			x = (xdir == 1) ? xpos : xpos - reload.width;
+			y = padding;
+			w = reload.width;
+			h = -padding;
+			break;
+
+		case 't': /* throbber/activity indicator */
+			widget = gw->throbber;
+			x = (xdir == 1) ? xpos : xpos - throbber0.width;
+			y = padding;
+			w = throbber0.width;
+			h = -padding;
+			break;
+
+
+		case 'u': /* url bar*/
+			if (xdir == -1) {
+				/* met the u going backwards add url
+				 * now we know available extent
+				 */
+				widget = gw->url;
+				x = xlhs;
+				y = padding;
+				w = xpos - xlhs;
+				h = -padding;
+
+				/* toolbar is complete */
+				xdir = 0;
+				break;
+			}
+			/* met url going forwards, note position and
+			 * reverse direction
+			 */
+			itmtype = toolbar_layout + strlen(toolbar_layout);
+			xdir = -1;
+			xlhs = xpos;
+			w = fbtk_get_width(gw->toolbar);
+			xpos = 2 * w;
+			widget = gw->toolbar;
+			break;
+
+		default:
+			widget = NULL;
+		        break;
+
+		}
+
+		if (widget != NULL) {
+			if (widget != gw->toolbar)
+				fbtk_set_pos_and_size(widget, x, y, w, h);
+			xpos += xdir * (w + padding);
+		}
+
+		itmtype += xdir;
+	}
+}
+
 /** Routine called when "stripped of focus" event occours for browser widget.
  *
  * @param widget The widget reciving "stripped of focus" event.
@@ -1392,6 +1545,14 @@ create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_w
 }
 
 static void
+resize_browser_widget(struct gui_window *gw, int x, int y,
+		int width, int height)
+{
+	fbtk_set_pos_and_size(gw->browser, x, y, width, height);
+	browser_window_reformat(gw->bw, false, width, height);
+}
+
+static void
 create_normal_browser_window(struct gui_window *gw, int furniture_width)
 {
 	fbtk_widget_t *widget;
@@ -1412,6 +1573,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 				 2, 
 				 FB_FRAME_COLOUR, 
 				 nsoption_charp(fb_toolbar_layout));
+	gw->toolbar = toolbar;
 
 	/* set the actually created toolbar height */
 	if (toolbar != NULL) {
@@ -1473,6 +1635,8 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 		fbtk_set_handler(widget, FBTK_CBT_POINTERENTER, set_ptr_default_move, NULL);
 	}
 
+	gw->bottom_right = widget;
+
 	/* create vertical scrollbar */
 	gw->vscroll = fbtk_create_vscroll(gw->window,
 					  fbtk_get_width(gw->window) - furniture_width,
@@ -1489,6 +1653,81 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 	/* Give browser_window's user widget input focus */
 	fbtk_set_focus(gw->browser);
+}
+
+static void
+resize_normal_browser_window(struct gui_window *gw, int furniture_width)
+{
+	bool resized;
+	int width, height;
+	int toolbar_height = fbtk_get_height(gw->toolbar);
+	int statusbar_width = nsoption_int(toolbar_status_size) *
+			width / 10000;
+
+	/* Resize the main window widget */
+	resized = fbtk_set_pos_and_size(gw->window, 0, 0, 0, 0);
+	if (!resized)
+		return;
+
+	width = fbtk_get_width(gw->window);
+	height = fbtk_get_height(gw->window);
+
+	resize_toolbar(gw, toolbar_height, 2,
+			nsoption_charp(fb_toolbar_layout));
+	fbtk_set_pos_and_size(gw->status,
+			0, height - furniture_width,
+			statusbar_width, furniture_width);
+	fbtk_reposition_hscroll(gw->hscroll,
+			statusbar_width, height - furniture_width,
+			width - statusbar_width - furniture_width,
+			furniture_width);
+	fbtk_set_pos_and_size(gw->bottom_right,
+			width - furniture_width, height - furniture_width,
+			furniture_width, furniture_width);
+	fbtk_reposition_vscroll(gw->vscroll,
+			width - furniture_width,
+			toolbar_height, furniture_width,
+			height - toolbar_height - furniture_width);
+	resize_browser_widget(gw,
+			0, toolbar_height,
+			width - furniture_width,
+			height - furniture_width - toolbar_height);
+}
+
+static void gui_window_add_to_window_list(struct gui_window *gw)
+{
+	gw->next = NULL;
+	gw->prev = NULL;
+
+	if (window_list == NULL) {
+		window_list = gw;
+	} else {
+		window_list->prev = gw;
+		gw->next = window_list;
+		window_list = gw;
+	}
+}
+
+static void gui_window_remove_from_window_list(struct gui_window *gw)
+{
+	struct gui_window *list;
+
+	for (list = window_list; list != NULL; list = list->next) {
+		if (list != gw)
+			continue;
+
+		if (list == window_list) {
+			window_list = list->next;
+			if (window_list != NULL)
+				window_list->prev = NULL;
+		} else {
+			list->prev->next = list->next;
+			if (list->next != NULL) {
+				list->next->prev = list->prev;
+			}
+		}
+		break;
+	}
 }
 
 
@@ -1514,12 +1753,17 @@ gui_window_create(struct browser_window *bw,
 	/* map and request redraw of gui window */
 	fbtk_set_mapping(gw->window, true);
 
+	/* Add it to the window list */
+	gui_window_add_to_window_list(gw);
+
 	return gw;
 }
 
 static void
 gui_window_destroy(struct gui_window *gw)
 {
+	gui_window_remove_from_window_list(gw);
+
 	fbtk_destroy_widget(gw->window);
 
 	free(gw);
@@ -1901,6 +2145,34 @@ main(int argc, char** argv)
 	nsoption_finalise(nsoptions, nsoptions_default);
 
 	return 0;
+}
+
+void gui_resize(fbtk_widget_t *root, int width, int height)
+{
+	struct gui_window *gw;
+	nsfb_t *nsfb = fbtk_get_nsfb(root);
+
+	/* Enforce a minimum */
+	if (width < 300)
+		width = 300;
+	if (height < 200)
+		height = 200;
+
+	if (framebuffer_resize(nsfb, width, height, febpp) == false) {
+		return;
+	}
+
+	fbtk_set_pos_and_size(root, 0, 0, width, height);
+
+	fewidth = width;
+	feheight = height;
+
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		resize_normal_browser_window(gw,
+				nsoption_int(fb_furniture_size));
+	}
+
+	fbtk_request_redraw(root);
 }
 
 
