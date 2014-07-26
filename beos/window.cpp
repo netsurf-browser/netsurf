@@ -21,6 +21,7 @@
 #define __STDBOOL_H__	1
 #include <assert.h>
 extern "C" {
+#include "content/content.h"
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
