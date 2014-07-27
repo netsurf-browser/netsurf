@@ -58,7 +58,7 @@ struct gui_window {
 	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
 	 * drawing area, etc that may contain one or more gui_windows.
 	 */
-	nsgtk_scaffolding *scaffold;
+	struct nsgtk_scaffolding *scaffold;
 
 	/** The 'content' window that is rendered in the gui_window */
 	struct browser_window	*bw;
@@ -116,7 +116,7 @@ struct gui_window {
 struct gui_window *window_list = NULL;	/**< first entry in win list*/
 int temp_open_background = -1;
 
-nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
+struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
 	return g->scaffold;
 }

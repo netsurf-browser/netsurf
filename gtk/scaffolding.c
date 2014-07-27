@@ -75,18 +75,18 @@
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
-static gboolean nsgtk_on_##q##_activate(struct gtk_scaffolding *g);\
+static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g);\
 static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)\
 {\
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;\
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;\
 	return nsgtk_on_##q##_activate(g);\
 }\
 static gboolean nsgtk_on_##q##_activate_button(GtkButton *widget, gpointer data)\
 {\
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;\
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;\
 	return nsgtk_on_##q##_activate(g);\
 }\
-static gboolean nsgtk_on_##q##_activate(struct gtk_scaffolding *g)
+static gboolean nsgtk_on_##q##_activate(struct nsgtk_scaffolding *g)
 
 /** Macro to define a handler for menu events. */
 #define MENUHANDLER(q)\
@@ -97,7 +97,7 @@ static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 /** Core scaffolding structure. */
-struct gtk_scaffolding {
+struct nsgtk_scaffolding {
 	GtkWindow			*window;
 	GtkNotebook			*notebook;
 	GtkWidget			*url_bar;
@@ -133,14 +133,14 @@ struct gtk_scaffolding {
 	bool				fullscreen;
 
 	/* keep global linked list for gui interface adjustments */
-	struct gtk_scaffolding 		*next, *prev;
+	struct nsgtk_scaffolding 		*next, *prev;
 };
 
 /** current scaffold for model dialogue use */
-static struct gtk_scaffolding *scaf_current;
+static struct nsgtk_scaffolding *scaf_current;
 
 /** global list for interface changes */
-nsgtk_scaffolding *scaf_list = NULL;
+static struct nsgtk_scaffolding *scaf_list = NULL;
 
 /** holds the context data for what's under the pointer, when the contextual
  *  menu is opened. */
@@ -225,7 +225,7 @@ static void popup_menu_show(struct nsgtk_popup_menu *menu, bool submenu,
  */
 static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *gs = data;
+	struct nsgtk_scaffolding *gs = data;
 
 	LOG(("scaffold:%p", gs));
 
@@ -256,7 +256,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 		GdkEvent *event, gpointer data)
 {
-	struct gtk_scaffolding *g = data;
+	struct nsgtk_scaffolding *g = data;
 
 	if (nsgtk_check_for_downloads(GTK_WINDOW(widget)) == false) {
 		gtk_widget_destroy(GTK_WIDGET(g->window));
@@ -265,19 +265,23 @@ static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 }
 
 /* exported interface documented in gtk_scaffold.h */
-void nsgtk_scaffolding_destroy(nsgtk_scaffolding *gs)
+void nsgtk_scaffolding_destroy(void)
 {
-	LOG(("scaffold: %p", gs));
+	struct nsgtk_scaffolding *gs;
 
-	if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) != TRUE) {
-		gtk_widget_destroy(GTK_WIDGET(gs->window));
+	gs = scaf_list;
+	while (gs != NULL) {
+		LOG(("destroying scaffold: %p", gs));
+		if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) != TRUE) {
+			gtk_widget_destroy(GTK_WIDGET(gs->window));
+		}
 	}
 }
 
 /**
  * Update the back and forward button sensitivity.
  */
-static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
+static void nsgtk_window_update_back_forward(struct nsgtk_scaffolding *g)
 {
 	int width, height;
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
@@ -306,7 +310,7 @@ static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
  */
 static void nsgtk_throb(void *p)
 {
-	struct gtk_scaffolding *g = p;
+	struct nsgtk_scaffolding *g = p;
 
 	if (g->throb_frame >= (nsgtk_throbber->nframes - 1))
 		g->throb_frame = 1;
@@ -320,7 +324,7 @@ static void nsgtk_throb(void *p)
 }
 
 static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
-		struct gtk_scaffolding *g)
+		struct nsgtk_scaffolding *g)
 {
 	GtkWidget *widget = gtk_window_get_focus(g->window);
 	gboolean has_selection;
@@ -354,7 +358,7 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 
 
 static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
-		struct gtk_scaffolding *g)
+		struct nsgtk_scaffolding *g)
 {
 
 	g->buttons[PASTE_BUTTON]->sensitivity = true;
@@ -367,7 +371,7 @@ static void nsgtk_scaffolding_enable_edit_actions_sensitivity(
 
 /* signal handling functions for the toolbar, URL bar, and menu bar */
 static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget,
-		struct gtk_scaffolding *g)
+		struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_update_edit_actions_sensitivity(g);
 
@@ -375,7 +379,7 @@ static gboolean nsgtk_window_edit_menu_clicked(GtkWidget *widget,
 }
 
 static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
-		struct gtk_scaffolding *g)
+		struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g);
 
@@ -383,7 +387,7 @@ static gboolean nsgtk_window_edit_menu_hidden(GtkWidget *widget,
 }
 
 static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
-		struct gtk_scaffolding *g)
+		struct nsgtk_scaffolding *g)
 {
 	nsgtk_scaffolding_enable_edit_actions_sensitivity(g);
 	return TRUE;
@@ -391,7 +395,7 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = data;
+	struct nsgtk_scaffolding *g = data;
 	nserror ret;
 	nsurl *url;
 
@@ -429,7 +433,7 @@ gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
 static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 		gint x, gint y,	gint button, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
 	/* set visibility for right-click popup menu */
 	popup_menu_hide(g->menu_popup, true, false, true, false);
@@ -445,7 +449,7 @@ static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
  * Update the menus when the number of tabs changes.
  */
 static void nsgtk_window_tabs_add(GtkNotebook *notebook,
-		GtkWidget *page, guint page_num, struct gtk_scaffolding *g)
+		GtkWidget *page, guint page_num, struct nsgtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
 	g_object_set(g->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
@@ -463,7 +467,7 @@ static void
 nsgtk_window_tabs_remove(GtkNotebook *notebook,
 			 GtkWidget *page,
 			 guint page_num,
-			 struct gtk_scaffolding *gs)
+			 struct nsgtk_scaffolding *gs)
 {
 	/* if the scaffold is being destroyed it is not useful to
 	 * update the state, futher many of the widgets may have
@@ -473,8 +477,9 @@ nsgtk_window_tabs_remove(GtkNotebook *notebook,
 		return;
 	}
 
+	/* if this is the last tab destroy the scaffold in addition */
 	if (gtk_notebook_get_n_pages(notebook) == 1) {
-		nsgtk_scaffolding_destroy(gs);
+		gtk_widget_destroy(GTK_WIDGET(gs->window));
 		return;
 	}
 
@@ -917,7 +922,7 @@ MULTIHANDLER(quit)
 MENUHANDLER(savelink)
 {
 	nsurl *url;
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
@@ -943,7 +948,7 @@ MENUHANDLER(savelink)
  */
 MENUHANDLER(link_openwin)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 	nsurl *url;
@@ -971,7 +976,7 @@ MENUHANDLER(link_openwin)
  */
 MENUHANDLER(link_opentab)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 	nsurl *url;
@@ -1086,7 +1091,7 @@ MULTIHANDLER(delete)
 
 MENUHANDLER(customize)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	nsgtk_toolbar_customization_init(g);
 	return TRUE;
 }
@@ -1177,7 +1182,7 @@ MULTIHANDLER(viewsource)
 MENUHANDLER(menubar)
 {
 	GtkWidget *w;
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
 	/* if the menubar is not being shown the popup menu shows the
 	 * menubar entries instead.
@@ -1223,7 +1228,7 @@ MENUHANDLER(menubar)
 MENUHANDLER(toolbar)
 {
 	GtkWidget *w;
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 
 	if (gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(widget))) {
 		w = GTK_WIDGET(g->menu_popup->view_submenu->toolbars_submenu->toolbar_menuitem);
@@ -1637,7 +1642,7 @@ MULTIHANDLER(about)
 
 BUTTONHANDLER(history)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	return nsgtk_on_localhistory_activate(g);
 }
 
@@ -1737,7 +1742,7 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 
 
-static void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
+static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
 {
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		if (g->buttons[i]->main != NULL) {
@@ -1769,7 +1774,7 @@ static void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
  * \return menu structure on sucess or NULL on error.
  */
 static struct nsgtk_popup_menu *
-nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
+nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 {
 	struct nsgtk_popup_menu *nmenu;
 
@@ -1807,7 +1812,7 @@ nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
  * \return true on success or false on error.
  */
 static struct nsgtk_link_menu *
-nsgtk_new_scaffolding_link_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
+nsgtk_new_scaffolding_link_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 {
 	struct nsgtk_link_menu *nmenu;
 
@@ -1836,7 +1841,7 @@ nsgtk_new_scaffolding_link_popup(struct gtk_scaffolding *g, GtkAccelGroup *group
 }
 
 /* exported interface documented in gtk/scaffolding.h */
-nsgtk_scaffolding *nsgtk_current_scaffolding(void)
+struct nsgtk_scaffolding *nsgtk_current_scaffolding(void)
 {
 	if (scaf_current == NULL) {
 		scaf_current = scaf_list;
@@ -1844,10 +1849,164 @@ nsgtk_scaffolding *nsgtk_current_scaffolding(void)
 	return scaf_current;
 }
 
-/* exported interface documented in gtk/scaffolding.h */
-nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
+/**
+ * init the array g->buttons[]
+ */
+static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 {
-	struct gtk_scaffolding *g;
+#define ITEM_MAIN(p, q, r)\
+	g->buttons[p##_BUTTON]->main = g->menu_bar->q->r##_menuitem;\
+	g->buttons[p##_BUTTON]->rclick = g->menu_popup->q->r##_menuitem;\
+	g->buttons[p##_BUTTON]->mhandler = nsgtk_on_##r##_activate_menu;\
+	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;\
+	g->buttons[p##_BUTTON]->dataplus = nsgtk_toolbar_##r##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus = nsgtk_toolbar_##r##_toolbar_button_data
+
+#define ITEM_SUB(p, q, r, s)\
+	g->buttons[p##_BUTTON]->main =\
+			g->menu_bar->q->r##_submenu->s##_menuitem;\
+	g->buttons[p##_BUTTON]->rclick =\
+			g->menu_popup->q->r##_submenu->s##_menuitem;\
+	g->buttons[p##_BUTTON]->mhandler =\
+			nsgtk_on_##s##_activate_menu;\
+	g->buttons[p##_BUTTON]->bhandler =\
+			nsgtk_on_##s##_activate_button;\
+	g->buttons[p##_BUTTON]->dataplus =\
+			nsgtk_toolbar_##s##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus =\
+			nsgtk_toolbar_##s##_toolbar_button_data
+
+#define ITEM_BUTTON(p, q)\
+	g->buttons[p##_BUTTON]->bhandler =\
+			nsgtk_on_##q##_activate;\
+	g->buttons[p##_BUTTON]->dataplus =\
+			nsgtk_toolbar_##q##_button_data;\
+	g->buttons[p##_BUTTON]->dataminus =\
+			nsgtk_toolbar_##q##_toolbar_button_data
+
+#define ITEM_POP(p, q)					\
+	g->buttons[p##_BUTTON]->popup = GTK_IMAGE_MENU_ITEM(\
+			g->menu_popup->q##_menuitem)
+
+#define SENSITIVITY(q)				\
+	g->buttons[q##_BUTTON]->sensitivity = false
+
+#define ITEM_ITEM(p, q)\
+	g->buttons[p##_ITEM]->dataplus =\
+			nsgtk_toolbar_##q##_button_data;\
+	g->buttons[p##_ITEM]->dataminus =\
+			nsgtk_toolbar_##q##_toolbar_button_data
+
+	ITEM_ITEM(WEBSEARCH, websearch);
+	ITEM_ITEM(THROBBER, throbber);
+	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
+	ITEM_MAIN(NEWTAB, file_submenu, newtab);
+	ITEM_MAIN(OPENFILE, file_submenu, openfile);
+	ITEM_MAIN(PRINT, file_submenu, print);
+	ITEM_MAIN(CLOSEWINDOW, file_submenu, closewindow);
+	ITEM_MAIN(SAVEPAGE, file_submenu, savepage);
+	ITEM_MAIN(PRINTPREVIEW, file_submenu, printpreview);
+	ITEM_MAIN(PRINT, file_submenu, print);
+	ITEM_MAIN(QUIT, file_submenu, quit);
+	ITEM_MAIN(CUT, edit_submenu, cut);
+	ITEM_MAIN(COPY, edit_submenu, copy);
+	ITEM_MAIN(PASTE, edit_submenu, paste);
+	ITEM_MAIN(DELETE, edit_submenu, delete);
+	ITEM_MAIN(SELECTALL, edit_submenu, selectall);
+	ITEM_MAIN(FIND, edit_submenu, find);
+	ITEM_MAIN(PREFERENCES, edit_submenu, preferences);
+	ITEM_MAIN(STOP, view_submenu, stop);
+	ITEM_POP(STOP, stop);
+	ITEM_MAIN(RELOAD, view_submenu, reload);
+	ITEM_POP(RELOAD, reload);
+	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
+	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
+	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
+	ITEM_MAIN(BACK, nav_submenu, back);
+	ITEM_POP(BACK, back);
+	ITEM_MAIN(FORWARD, nav_submenu, forward);
+	ITEM_POP(FORWARD, forward);
+	ITEM_MAIN(HOME, nav_submenu, home);
+	ITEM_MAIN(LOCALHISTORY, nav_submenu, localhistory);
+	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
+	ITEM_MAIN(ADDBOOKMARKS, nav_submenu, addbookmarks);
+	ITEM_MAIN(SHOWBOOKMARKS, nav_submenu, showbookmarks);
+	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
+	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
+	ITEM_MAIN(CONTENTS, help_submenu, contents);
+	ITEM_MAIN(INFO, help_submenu, info);
+	ITEM_MAIN(GUIDE, help_submenu, guide);
+	ITEM_MAIN(ABOUT, help_submenu, about);
+	ITEM_SUB(PLAINTEXT, file_submenu, export, plaintext);
+	ITEM_SUB(PDF, file_submenu, export, pdf);
+	ITEM_SUB(DRAWFILE, file_submenu, export, drawfile);
+	ITEM_SUB(POSTSCRIPT, file_submenu, export, postscript);
+	ITEM_SUB(ZOOMPLUS, view_submenu, scaleview, zoomplus);
+	ITEM_SUB(ZOOMMINUS, view_submenu, scaleview, zoomminus);
+	ITEM_SUB(ZOOMNORMAL, view_submenu, scaleview, zoomnormal);
+	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
+	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
+	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
+
+	/* development submenu */
+	ITEM_SUB(VIEWSOURCE, tools_submenu, developer, viewsource);
+	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
+	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
+	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
+	ITEM_BUTTON(HISTORY, history);
+
+	/* disable items that make no sense initially, as well as
+	 * as-yet-unimplemented items */
+	SENSITIVITY(BACK);
+	SENSITIVITY(FORWARD);
+	SENSITIVITY(STOP);
+	SENSITIVITY(PRINTPREVIEW);
+	SENSITIVITY(DELETE);
+	SENSITIVITY(DRAWFILE);
+	SENSITIVITY(POSTSCRIPT);
+	SENSITIVITY(NEXTTAB);
+	SENSITIVITY(PREVTAB);
+	SENSITIVITY(CLOSETAB);
+#ifndef WITH_PDF_EXPORT
+	SENSITIVITY(PDF);
+#endif
+
+#undef ITEM_MAIN
+#undef ITEM_SUB
+#undef ITEM_BUTTON
+#undef ITEM_POP
+#undef SENSITIVITY
+
+}
+
+static void nsgtk_scaffolding_initial_sensitivity(struct nsgtk_scaffolding *g)
+{
+	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
+		if (g->buttons[i]->main != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->main),
+					g->buttons[i]->sensitivity);
+		if (g->buttons[i]->rclick != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->rclick),
+					g->buttons[i]->sensitivity);
+		if ((g->buttons[i]->location != -1) &&
+				(g->buttons[i]->button != NULL))
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->button),
+					g->buttons[i]->sensitivity);
+		if (g->buttons[i]->popup != NULL)
+			gtk_widget_set_sensitive(GTK_WIDGET(
+					g->buttons[i]->popup),
+					g->buttons[i]->sensitivity);
+	}
+	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
+}
+
+/* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
+{
+	struct nsgtk_scaffolding *g;
 	int i;
 	GtkAccelGroup *group;
 	GError* error = NULL;
@@ -2146,7 +2305,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
  */
 void gui_window_set_title(struct gui_window *gw, const char *title)
 {
-	struct gtk_scaffolding *gs = nsgtk_get_scaffold(gw);
+	struct nsgtk_scaffolding *gs = nsgtk_get_scaffold(gw);
 	int title_len;
 	char *newtitle;
 
@@ -2180,7 +2339,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 
 void gui_window_set_url(struct gui_window *_g, const char *url)
 {
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	if (g->top_level != _g) return;
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
 	gtk_editable_set_position(GTK_EDITABLE(g->url_bar), -1);
@@ -2188,7 +2347,7 @@ void gui_window_set_url(struct gui_window *_g, const char *url)
 
 void gui_window_start_throbber(struct gui_window* _g)
 {
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	g->buttons[STOP_BUTTON]->sensitivity = true;
 	g->buttons[RELOAD_BUTTON]->sensitivity = false;
 	nsgtk_scaffolding_set_sensitivity(g);
@@ -2200,7 +2359,7 @@ void gui_window_start_throbber(struct gui_window* _g)
 
 void gui_window_stop_throbber(struct gui_window* _g)
 {
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
+	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	if (g == NULL)
 		return;
 	nsgtk_window_update_back_forward(g);
@@ -2226,7 +2385,7 @@ void gui_window_stop_throbber(struct gui_window* _g)
 void
 nsgtk_scaffolding_set_icon(struct gui_window *gw)
 {
-	struct gtk_scaffolding *sc = nsgtk_get_scaffold(gw);
+	struct nsgtk_scaffolding *sc = nsgtk_get_scaffold(gw);
 	GdkPixbuf *icon_pixbuf = nsgtk_get_icon(gw);
 
 	/* check icon needs to be shown */
@@ -2242,8 +2401,62 @@ nsgtk_scaffolding_set_icon(struct gui_window *gw)
 	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
 }
 
+static void
+nsgtk_scaffolding_set_websearch(struct nsgtk_scaffolding *g, const char *content)
+{
+	/** \todo this code appears technically correct, though
+	 * currently has no effect at all.
+	 */
+	PangoLayout *lo = gtk_entry_get_layout(GTK_ENTRY(g->webSearchEntry));
+	if (lo != NULL) {
+		pango_layout_set_font_description(lo, NULL);
+		PangoFontDescription *desc = pango_font_description_new();
+		if (desc != NULL) {
+			pango_font_description_set_style(desc,
+					PANGO_STYLE_ITALIC);
+			pango_font_description_set_family(desc, "Arial");
+			pango_font_description_set_weight(desc,
+					PANGO_WEIGHT_ULTRALIGHT);
+			pango_font_description_set_size(desc,
+					10 * PANGO_SCALE);
+			pango_layout_set_font_description(lo, desc);
+		}
+
+		PangoAttrList *list = pango_attr_list_new();
+		if (list != NULL) {
+			PangoAttribute *italic = pango_attr_style_new(
+					PANGO_STYLE_ITALIC);
+			if (italic != NULL) {
+				italic->start_index = 0;
+				italic->end_index = strlen(content);
+			}
+			PangoAttribute *grey = pango_attr_foreground_new(
+					0x7777, 0x7777, 0x7777);
+			if (grey != NULL) {
+				grey->start_index = 0;
+				grey->end_index = strlen(content);
+			}
+			pango_attr_list_insert(list, italic);
+			pango_attr_list_insert(list, grey);
+			pango_layout_set_attributes(lo, list);
+			pango_attr_list_unref(list);
+		}
+		pango_layout_set_text(lo, content, -1);
+	}
+/*	an alternative method */
+/*	char *parse = malloc(strlen(content) + 1);
+	PangoAttrList *list = pango_layout_get_attributes(lo);
+	char *markup = g_strconcat("<span foreground='#777777'><i>", content,
+			"</i></span>", NULL);
+	pango_parse_markup(markup, -1, 0, &list, &parse, NULL, NULL);
+	gtk_widget_show_all(g->webSearchEntry);
+*/
+	gtk_entry_set_visibility(GTK_ENTRY(g->webSearchEntry), TRUE);
+	gtk_entry_set_text(GTK_ENTRY(g->webSearchEntry), content);
+}
+
 /**
- * Gui callback when search provider details are updated.
+ * GTK UI callback when search provider details are updated.
  *
  * \param provider_name The providers name.
  * \param ico_bitmap The icon bitmap representing the provider.
@@ -2253,7 +2466,7 @@ static nserror
 gui_search_web_provider_update(const char *provider_name,
 			       struct bitmap *provider_bitmap)
 {
-	nsgtk_scaffolding *current;
+	struct nsgtk_scaffolding *current;
 	GdkPixbuf *srch_pixbuf = NULL;
 	char *searchcontent;
 
@@ -2309,71 +2522,79 @@ static struct gui_search_web_table search_web_table = {
 
 struct gui_search_web_table *nsgtk_search_web_table = &search_web_table;
 
-bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g)
-{
-	/* We are considered "busy" if the stop button is sensitive */
-	return g->buttons[STOP_BUTTON]->sensitivity;
-}
-
-GtkWindow* nsgtk_scaffolding_window(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkWindow* nsgtk_scaffolding_window(struct nsgtk_scaffolding *g)
 {
 	return g->window;
 }
 
-GtkNotebook* nsgtk_scaffolding_notebook(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkNotebook* nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g)
 {
 	return g->notebook;
 }
 
-GtkWidget *nsgtk_scaffolding_urlbar(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g)
 {
 	return g->url_bar;
 }
 
-GtkWidget *nsgtk_scaffolding_websearch(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkWidget *nsgtk_scaffolding_websearch(struct nsgtk_scaffolding *g)
 {
 	return g->webSearchEntry;
 }
 
-
-GtkToolbar *nsgtk_scaffolding_toolbar(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g)
 {
 	return g->tool_bar;
 }
 
-struct nsgtk_button_connect *nsgtk_scaffolding_button(nsgtk_scaffolding *g,
-		int i)
+/* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_button_connect *
+nsgtk_scaffolding_button(struct nsgtk_scaffolding *g, int i)
 {
 	return g->buttons[i];
 }
 
-struct gtk_search *nsgtk_scaffolding_search(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g)
 {
 	return g->search;
 }
 
-GtkMenuBar *nsgtk_scaffolding_menu_bar(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g)
 {
 	return g->menu_bar->bar_menu;
 }
 
-struct gtk_history_window *nsgtk_scaffolding_history_window(nsgtk_scaffolding
-		*g)
+/* exported interface documented in gtk/scaffolding.h */
+struct gtk_history_window *
+nsgtk_scaffolding_history_window(struct nsgtk_scaffolding *g)
 {
 	return g->history_window;
 }
 
-nsgtk_scaffolding *nsgtk_scaffolding_iterate(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g)
 {
+	if (g == NULL) {
+		return scaf_list;
+	}
 	return g->next;
 }
 
-void nsgtk_scaffolding_reset_offset(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g)
 {
 	g->offset = 0;
 }
 
-void nsgtk_scaffolding_update_url_bar_ref(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
 {
 	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
 			nsgtk_scaffolding_button(g, URL_BAR_ITEM)->button)));
@@ -2381,71 +2602,23 @@ void nsgtk_scaffolding_update_url_bar_ref(nsgtk_scaffolding *g)
 	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
 			g->url_bar_completion);
 }
-void nsgtk_scaffolding_update_throbber_ref(nsgtk_scaffolding *g)
+
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g)
 {
 	g->throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(
 			GTK_BIN(g->buttons[THROBBER_ITEM]->button)))));
 }
 
-void nsgtk_scaffolding_update_websearch_ref(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g)
 {
 	g->webSearchEntry = gtk_bin_get_child(GTK_BIN(
 			g->buttons[WEBSEARCH_ITEM]->button));
 }
 
-void nsgtk_scaffolding_set_websearch(nsgtk_scaffolding *g, const char *content)
-{
-	/* this code appears technically correct, though currently has no
-	 * effect at all - tinkering encouraged */
-	PangoLayout *lo = gtk_entry_get_layout(GTK_ENTRY(g->webSearchEntry));
-	if (lo != NULL) {
-		pango_layout_set_font_description(lo, NULL);
-		PangoFontDescription *desc = pango_font_description_new();
-		if (desc != NULL) {
-			pango_font_description_set_style(desc,
-					PANGO_STYLE_ITALIC);
-			pango_font_description_set_family(desc, "Arial");
-			pango_font_description_set_weight(desc,
-					PANGO_WEIGHT_ULTRALIGHT);
-			pango_font_description_set_size(desc,
-					10 * PANGO_SCALE);
-			pango_layout_set_font_description(lo, desc);
-		}
-
-		PangoAttrList *list = pango_attr_list_new();
-		if (list != NULL) {
-			PangoAttribute *italic = pango_attr_style_new(
-					PANGO_STYLE_ITALIC);
-			if (italic != NULL) {
-				italic->start_index = 0;
-				italic->end_index = strlen(content);
-			}
-			PangoAttribute *grey = pango_attr_foreground_new(
-					0x7777, 0x7777, 0x7777);
-			if (grey != NULL) {
-				grey->start_index = 0;
-				grey->end_index = strlen(content);
-			}
-			pango_attr_list_insert(list, italic);
-			pango_attr_list_insert(list, grey);
-			pango_layout_set_attributes(lo, list);
-			pango_attr_list_unref(list);
-		}
-		pango_layout_set_text(lo, content, -1);
-	}
-/*	an alternative method */
-/*	char *parse = malloc(strlen(content) + 1);
-	PangoAttrList *list = pango_layout_get_attributes(lo);
-	char *markup = g_strconcat("<span foreground='#777777'><i>", content,
-			"</i></span>", NULL);
-	pango_parse_markup(markup, -1, 0, &list, &parse, NULL, NULL);
-	gtk_widget_show_all(g->webSearchEntry);
-*/
-	gtk_entry_set_visibility(GTK_ENTRY(g->webSearchEntry), TRUE);
-	gtk_entry_set_text(GTK_ENTRY(g->webSearchEntry), content);
-}
-
-void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g)
 {
 	gboolean vis;
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
@@ -2463,17 +2636,17 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
 	}
 }
 
-
-struct gui_window *nsgtk_scaffolding_top_level(nsgtk_scaffolding *g)
+/* exported interface documented in gtk/scaffolding.h */
+struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g)
 {
 	return g->top_level;
 }
 
-/* set the current active top level gui window */
+/* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 {
 	struct browser_window *bw;
-	nsgtk_scaffolding *sc;
+	struct nsgtk_scaffolding *sc;
 
 	assert(gw != NULL);
 
@@ -2500,7 +2673,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 }
 
 /* exported interface documented in scaffolding.h */
-void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g)
+void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g)
 {
 	int i;
 #define SENSITIVITY(q)\
@@ -2536,32 +2709,9 @@ void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g)
 #undef SENSITIVITY
 }
 
-void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
-{
-	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		if (g->buttons[i]->main != NULL)
-			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->main),
-					g->buttons[i]->sensitivity);
-		if (g->buttons[i]->rclick != NULL)
-			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->rclick),
-					g->buttons[i]->sensitivity);
-		if ((g->buttons[i]->location != -1) &&
-				(g->buttons[i]->button != NULL))
-			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->button),
-					g->buttons[i]->sensitivity);
-		if (g->buttons[i]->popup != NULL)
-			gtk_widget_set_sensitive(GTK_WIDGET(
-					g->buttons[i]->popup),
-					g->buttons[i]->sensitivity);
-	}
-	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
-}
 
 /* exported interface documented in gtk/scaffolding.h */
-void nsgtk_scaffolding_context_menu(struct gtk_scaffolding *g,
+void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 				    gdouble x,
 				    gdouble y)
 {
@@ -2614,7 +2764,7 @@ void nsgtk_scaffolding_context_menu(struct gtk_scaffolding *g,
 void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 		GtkAllocation *alloc, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	int i = nsgtk_toolbar_get_id_from_widget(widget, g);
 	if (i == -1)
 		return;
@@ -2646,132 +2796,3 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 
 
 
-/**
- * init the array g->buttons[]
- */
-void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
-{
-#define ITEM_MAIN(p, q, r)\
-	g->buttons[p##_BUTTON]->main = g->menu_bar->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->rclick = g->menu_popup->q->r##_menuitem;\
-	g->buttons[p##_BUTTON]->mhandler = nsgtk_on_##r##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler = nsgtk_on_##r##_activate_button;\
-	g->buttons[p##_BUTTON]->dataplus = nsgtk_toolbar_##r##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus = nsgtk_toolbar_##r##_toolbar_button_data
-
-#define ITEM_SUB(p, q, r, s)\
-	g->buttons[p##_BUTTON]->main =\
-			g->menu_bar->q->r##_submenu->s##_menuitem;\
-	g->buttons[p##_BUTTON]->rclick =\
-			g->menu_popup->q->r##_submenu->s##_menuitem;\
-	g->buttons[p##_BUTTON]->mhandler =\
-			nsgtk_on_##s##_activate_menu;\
-	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##s##_activate_button;\
-	g->buttons[p##_BUTTON]->dataplus =\
-			nsgtk_toolbar_##s##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus =\
-			nsgtk_toolbar_##s##_toolbar_button_data
-
-#define ITEM_BUTTON(p, q)\
-	g->buttons[p##_BUTTON]->bhandler =\
-			nsgtk_on_##q##_activate;\
-	g->buttons[p##_BUTTON]->dataplus =\
-			nsgtk_toolbar_##q##_button_data;\
-	g->buttons[p##_BUTTON]->dataminus =\
-			nsgtk_toolbar_##q##_toolbar_button_data
-
-#define ITEM_POP(p, q)					\
-	g->buttons[p##_BUTTON]->popup = GTK_IMAGE_MENU_ITEM(\
-			g->menu_popup->q##_menuitem)
-
-#define SENSITIVITY(q)				\
-	g->buttons[q##_BUTTON]->sensitivity = false
-
-#define ITEM_ITEM(p, q)\
-	g->buttons[p##_ITEM]->dataplus =\
-			nsgtk_toolbar_##q##_button_data;\
-	g->buttons[p##_ITEM]->dataminus =\
-			nsgtk_toolbar_##q##_toolbar_button_data
-
-	ITEM_ITEM(WEBSEARCH, websearch);
-	ITEM_ITEM(THROBBER, throbber);
-	ITEM_MAIN(NEWWINDOW, file_submenu, newwindow);
-	ITEM_MAIN(NEWTAB, file_submenu, newtab);
-	ITEM_MAIN(OPENFILE, file_submenu, openfile);
-	ITEM_MAIN(PRINT, file_submenu, print);
-	ITEM_MAIN(CLOSEWINDOW, file_submenu, closewindow);
-	ITEM_MAIN(SAVEPAGE, file_submenu, savepage);
-	ITEM_MAIN(PRINTPREVIEW, file_submenu, printpreview);
-	ITEM_MAIN(PRINT, file_submenu, print);
-	ITEM_MAIN(QUIT, file_submenu, quit);
-	ITEM_MAIN(CUT, edit_submenu, cut);
-	ITEM_MAIN(COPY, edit_submenu, copy);
-	ITEM_MAIN(PASTE, edit_submenu, paste);
-	ITEM_MAIN(DELETE, edit_submenu, delete);
-	ITEM_MAIN(SELECTALL, edit_submenu, selectall);
-	ITEM_MAIN(FIND, edit_submenu, find);
-	ITEM_MAIN(PREFERENCES, edit_submenu, preferences);
-	ITEM_MAIN(STOP, view_submenu, stop);
-	ITEM_POP(STOP, stop);
-	ITEM_MAIN(RELOAD, view_submenu, reload);
-	ITEM_POP(RELOAD, reload);
-	ITEM_MAIN(FULLSCREEN, view_submenu, fullscreen);
-	ITEM_MAIN(DOWNLOADS, tools_submenu, downloads);
-	ITEM_MAIN(SAVEWINDOWSIZE, view_submenu, savewindowsize);
-	ITEM_MAIN(BACK, nav_submenu, back);
-	ITEM_POP(BACK, back);
-	ITEM_MAIN(FORWARD, nav_submenu, forward);
-	ITEM_POP(FORWARD, forward);
-	ITEM_MAIN(HOME, nav_submenu, home);
-	ITEM_MAIN(LOCALHISTORY, nav_submenu, localhistory);
-	ITEM_MAIN(GLOBALHISTORY, nav_submenu, globalhistory);
-	ITEM_MAIN(ADDBOOKMARKS, nav_submenu, addbookmarks);
-	ITEM_MAIN(SHOWBOOKMARKS, nav_submenu, showbookmarks);
-	ITEM_MAIN(SHOWCOOKIES, tools_submenu, showcookies);
-	ITEM_MAIN(OPENLOCATION, nav_submenu, openlocation);
-	ITEM_MAIN(CONTENTS, help_submenu, contents);
-	ITEM_MAIN(INFO, help_submenu, info);
-	ITEM_MAIN(GUIDE, help_submenu, guide);
-	ITEM_MAIN(ABOUT, help_submenu, about);
-	ITEM_SUB(PLAINTEXT, file_submenu, export, plaintext);
-	ITEM_SUB(PDF, file_submenu, export, pdf);
-	ITEM_SUB(DRAWFILE, file_submenu, export, drawfile);
-	ITEM_SUB(POSTSCRIPT, file_submenu, export, postscript);
-	ITEM_SUB(ZOOMPLUS, view_submenu, scaleview, zoomplus);
-	ITEM_SUB(ZOOMMINUS, view_submenu, scaleview, zoomminus);
-	ITEM_SUB(ZOOMNORMAL, view_submenu, scaleview, zoomnormal);
-	ITEM_SUB(NEXTTAB, view_submenu, tabs, nexttab);
-	ITEM_SUB(PREVTAB, view_submenu, tabs, prevtab);
-	ITEM_SUB(CLOSETAB, view_submenu, tabs, closetab);
-
-	/* development submenu */
-	ITEM_SUB(VIEWSOURCE, tools_submenu, developer, viewsource);
-	ITEM_SUB(TOGGLEDEBUGGING, tools_submenu, developer, toggledebugging);
-	ITEM_SUB(SAVEBOXTREE, tools_submenu, developer, debugboxtree);
-	ITEM_SUB(SAVEDOMTREE, tools_submenu, developer, debugdomtree);
-	ITEM_BUTTON(HISTORY, history);
-
-	/* disable items that make no sense initially, as well as
-	 * as-yet-unimplemented items */
-	SENSITIVITY(BACK);
-	SENSITIVITY(FORWARD);
-	SENSITIVITY(STOP);
-	SENSITIVITY(PRINTPREVIEW);
-	SENSITIVITY(DELETE);
-	SENSITIVITY(DRAWFILE);
-	SENSITIVITY(POSTSCRIPT);
-	SENSITIVITY(NEXTTAB);
-	SENSITIVITY(PREVTAB);
-	SENSITIVITY(CLOSETAB);
-#ifndef WITH_PDF_EXPORT
-	SENSITIVITY(PDF);
-#endif
-
-#undef ITEM_MAIN
-#undef ITEM_SUB
-#undef ITEM_BUTTON
-#undef ITEM_POP
-#undef SENSITIVITY
-
-}

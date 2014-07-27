@@ -26,7 +26,6 @@ struct bitmap;
 struct hlcache_handle;
 struct gui_window;
 struct gui_search_web_table;
-typedef struct gtk_scaffolding nsgtk_scaffolding;
 
 extern struct gui_search_web_table *nsgtk_search_web_table;
 
@@ -86,7 +85,7 @@ typedef enum {
 } nsgtk_toolbar_button;    /* PLACEHOLDER_BUTTON - 1 */
 
 struct gtk_history_window {
-	struct gtk_scaffolding 	*g;
+	struct nsgtk_scaffolding 	*g;
 	GtkWindow		*window;
 	GtkScrolledWindow	*scrolled;
 	GtkDrawingArea		*drawing_area;
@@ -113,48 +112,93 @@ struct nsgtk_button_connect {
 	void				*dataminus; /* customization -> store */
 };
 
-extern nsgtk_scaffolding *scaf_list;
-
 /**
  * create a new scaffolding for a window.
+ *
+ * \param gw The gui window to create the new scaffold around.
+ * \return The newly constructed scaffold or NULL on error.
  */
-nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel);
+struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *gw);
 
 /**
  * Obtain the most recently used scaffolding element.
  *
  * This allows tabs to be opened in the most recently used window
  */
-nsgtk_scaffolding *nsgtk_current_scaffolding(void);
+struct nsgtk_scaffolding *nsgtk_current_scaffolding(void);
 
-bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g);
+/* acessors for gtk elements withing a scaffold */
 
-GtkWindow *nsgtk_scaffolding_window(nsgtk_scaffolding *g);
-GtkNotebook *nsgtk_scaffolding_notebook(nsgtk_scaffolding *g);
-GtkWidget *nsgtk_scaffolding_urlbar(nsgtk_scaffolding *g);
-GtkWidget *nsgtk_scaffolding_websearch(nsgtk_scaffolding *g);
-GtkToolbar *nsgtk_scaffolding_toolbar(nsgtk_scaffolding *g);
-struct nsgtk_button_connect *nsgtk_scaffolding_button(nsgtk_scaffolding *g,
-		int i);
-struct gtk_search *nsgtk_scaffolding_search(nsgtk_scaffolding *g);
-GtkMenuBar *nsgtk_scaffolding_menu_bar(nsgtk_scaffolding *g);
-struct gtk_history_window *nsgtk_scaffolding_history_window(nsgtk_scaffolding
-		*g);
-struct gui_window *nsgtk_scaffolding_top_level(nsgtk_scaffolding *g);
-void nsgtk_scaffolding_reset_offset(nsgtk_scaffolding *g);
-nsgtk_scaffolding *nsgtk_scaffolding_iterate(nsgtk_scaffolding *g);
-void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g);
-void nsgtk_scaffolding_update_url_bar_ref(nsgtk_scaffolding *g);
-void nsgtk_scaffolding_update_throbber_ref(nsgtk_scaffolding *g);
-void nsgtk_scaffolding_update_websearch_ref(nsgtk_scaffolding *g);
-void nsgtk_scaffolding_set_websearch(nsgtk_scaffolding *g, const char
-		*content);
-void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g);
+/**
+ * Get the gtk window for a scaffolding.
+ */
+GtkWindow *nsgtk_scaffolding_window(struct nsgtk_scaffolding *g);
+
+/**
+ * Get the gtk notebook from a scaffold.
+ */
+GtkNotebook *nsgtk_scaffolding_notebook(struct nsgtk_scaffolding *g);
+
+/**
+ * Get the gtk url bar from a scaffold.
+ */
+GtkWidget *nsgtk_scaffolding_urlbar(struct nsgtk_scaffolding *g);
+
+/**
+ * Get the gtk web search entry from a scaffold.
+ */
+GtkWidget *nsgtk_scaffolding_websearch(struct nsgtk_scaffolding *g);
+
+/**
+ * Get the gtk toolbar from a scaffold.
+ */
+GtkToolbar *nsgtk_scaffolding_toolbar(struct nsgtk_scaffolding *g);
+
+
+struct nsgtk_button_connect *nsgtk_scaffolding_button(struct nsgtk_scaffolding *g, int i);
+
+struct gtk_search *nsgtk_scaffolding_search(struct nsgtk_scaffolding *g);
+
+GtkMenuBar *nsgtk_scaffolding_menu_bar(struct nsgtk_scaffolding *g);
+
+struct gtk_history_window *nsgtk_scaffolding_history_window(struct nsgtk_scaffolding *g);
+
+struct gui_window *nsgtk_scaffolding_top_level(struct nsgtk_scaffolding *g);
+
+/**
+ * reset the scaffold offset value to 0.
+ *
+ * \todo The value is only ever altered in
+ * nsgtk_scaffolding_toolbar_size_allocate and is something to do with
+ * the history button either clarify or remove!
+ */
+void nsgtk_scaffolding_reset_offset(struct nsgtk_scaffolding *g);
+
+/**
+ * Iterate through available scaffolding.
+ */
+struct nsgtk_scaffolding *nsgtk_scaffolding_iterate(struct nsgtk_scaffolding *g);
+
+void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g);
+
+void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g);
+
+void nsgtk_scaffolding_update_websearch_ref(struct nsgtk_scaffolding *g);
+
+void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g);
+
+/**
+ * Set the current active top level gui window.
+ */
 void nsgtk_scaffolding_set_top_level(struct gui_window *g);
 
-void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g);
+/**
+ * Destroy all scaffolds.
+ */
+void nsgtk_scaffolding_destroy(void);
 
-/** update the sensitivity of context sensitive UI elements
+/**
+ * update the sensitivity of context sensitive UI elements
  *
  * widgets altered in arrays:
  *   main
@@ -173,9 +217,7 @@ void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g);
  *   prevtab
  *   closetab
  */
-void nsgtk_scaffolding_set_sensitivity(struct gtk_scaffolding *g);
-
-void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g);
+void nsgtk_scaffolding_set_sensitivity(struct nsgtk_scaffolding *g);
 
 /**
  * Open a context sensitive menu.
@@ -184,12 +226,14 @@ void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g);
  * \param x The x co-ordinate.
  * \param y The y co-ordinate.
  */
-void nsgtk_scaffolding_context_menu(struct gtk_scaffolding *g, gdouble x, gdouble y);
-void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
-		GtkAllocation *alloc, gpointer data);
+void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g, gdouble x, gdouble y);
+
+void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,	GtkAllocation *alloc, gpointer data);
+
 void nsgtk_scaffolding_set_icon(struct gui_window *gw);
 
 gboolean nsgtk_window_url_activate_event(GtkWidget *, gpointer);
+
 gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 
 nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);

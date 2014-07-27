@@ -50,7 +50,7 @@
 static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
 {
 	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
+		struct nsgtk_scaffolding *g = nsgtk_get_scaffold(gw);
 		gtk_widget_set_sensitive(
 			GTK_WIDGET(nsgtk_scaffolding_search(g)->buttons[1]),
 			active);
@@ -66,7 +66,7 @@ static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
 static void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
 {
 	if (gw != NULL && nsgtk_get_browser_window(gw) != NULL) {
-		struct gtk_scaffolding *g = nsgtk_get_scaffold(gw);
+		struct nsgtk_scaffolding *g = nsgtk_get_scaffold(gw);
 		gtk_widget_set_sensitive(GTK_WIDGET(nsgtk_scaffolding_search(
 				g)->buttons[0]), active);
 	}
@@ -76,7 +76,7 @@ static void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
 
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
@@ -99,7 +99,7 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
@@ -122,7 +122,7 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 
 gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	nsgtk_scaffolding_toggle_search_bar_visibility(g);
 	return TRUE;	
 }
@@ -131,20 +131,21 @@ gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data)
 
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
+	search_flags_t flags;
 
 	assert(bw != NULL);
 
 	nsgtk_search_set_forward_state(true, gw);
 	nsgtk_search_set_back_state(true, gw);
 
-	search_flags_t flags = SEARCH_FLAG_FORWARDS |
-			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+	flags = SEARCH_FLAG_FORWARDS |
+		(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->caseSens)) ?
 			SEARCH_FLAG_CASE_SENSITIVE : 0) | 
-			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+		(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
@@ -157,17 +158,18 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	struct gui_window *gw = nsgtk_scaffolding_top_level(g);
 	struct browser_window *bw = nsgtk_get_browser_window(gw);
+	search_flags_t flags;
 
 	assert(bw);
 
-	search_flags_t flags = SEARCH_FLAG_FORWARDS |
-			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+	flags = SEARCH_FLAG_FORWARDS |
+		(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->caseSens)) ?
 			SEARCH_FLAG_CASE_SENSITIVE : 0) | 
-			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+		(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
 
@@ -178,11 +180,11 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 
 /** allows escape key to close search bar too */
 
-gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, 
-		gpointer data)
+gboolean
+nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
 	if (event->keyval == GDK_KEY(Escape)) {
-		struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+		struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 		nsgtk_scaffolding_toggle_search_bar_visibility(g);
 	}
 	return FALSE;
@@ -192,7 +194,7 @@ gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event,
 
 gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
 {
-	struct gtk_scaffolding *g = data;
+	struct nsgtk_scaffolding *g = data;
 	nserror ret;
 	nsurl *url;
 
@@ -226,7 +228,7 @@ gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
 gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, 
 		gpointer data)
 {
-	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	gtk_editable_select_region(GTK_EDITABLE(
 			nsgtk_scaffolding_websearch(g)), 0, -1);
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_websearch(g)));

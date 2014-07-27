@@ -161,7 +161,7 @@ static bool nsgtk_theme_verify(const char *themename)
 void nsgtk_theme_init(void)
 {
 	int theme;
-	nsgtk_scaffolding *list = scaf_list;
+	struct nsgtk_scaffolding *list;
 	FILE *fp;
 	char buf[50];
 	int row_count = 0;
@@ -194,6 +194,7 @@ void nsgtk_theme_init(void)
 	}
 	fclose(fp);
 
+	list = nsgtk_scaffolding_iterate(NULL);
 	while (list != NULL) {
 		nsgtk_theme_implement(list);
 		list = nsgtk_scaffolding_iterate(list);
@@ -287,7 +288,7 @@ void nsgtk_theme_add(const char *themename)
  * sets the images for a particular scaffolding according to the current theme
  */
 
-void nsgtk_theme_implement(struct gtk_scaffolding *g)
+void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 {
 	struct nsgtk_theme *theme[IMAGE_SET_COUNT];
 	int i;

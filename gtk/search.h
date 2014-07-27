@@ -21,9 +21,9 @@
 
 struct gui_search_table *nsgtk_search_table;
 
-struct gtk_scaffolding;
+struct nsgtk_scaffolding;
 
-void nsgtk_search_bar_toggle_visibility(struct gtk_scaffolding * g);
+void nsgtk_search_bar_toggle_visibility(struct nsgtk_scaffolding * g);
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data);

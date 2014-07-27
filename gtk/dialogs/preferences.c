@@ -611,7 +611,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 G_MODULE_EXPORT void
 nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
 	int theme = 0;
 	gchar *name;
 	GtkTreeIter iter;
@@ -643,7 +643,8 @@ nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv)
 			g_free(name);
 		}
 
-		while (current)	{
+		current = nsgtk_scaffolding_iterate(NULL);
+		while (current != NULL)	{
 			nsgtk_theme_implement(current);
 			current = nsgtk_scaffolding_iterate(current);
 		}
@@ -797,12 +798,13 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
 
 	/* set the option */
 	nsoption_set_int(position_tab, gtk_combo_box_get_active(widget));
 
 	/* update all notebooks in all scaffolds */
+	current = nsgtk_scaffolding_iterate(NULL);
 	while (current)	{
 		nsgtk_scaffolding_reset_offset(current);
 
@@ -854,13 +856,15 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
+
 	nsoption_set_int(button_type, gtk_combo_box_get_active(widget) + 1);
 
-	/* value of 0 is reserved for 'unset' */
-	while (current)	{
+	current = nsgtk_scaffolding_iterate(NULL);
+	while (current != NULL)	{
 		nsgtk_scaffolding_reset_offset(current);
 		switch(nsoption_int(button_type)) {
+			/* value of 0 is reserved for 'unset' */
 		case 1:
 			gtk_toolbar_set_style(
 				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
