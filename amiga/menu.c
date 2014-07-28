@@ -63,6 +63,12 @@
 #include "desktop/textinput.h"
 #include "utils/messages.h"
 
+/* This is here temporarily until we get a new SDK */
+#define LABEL_MenuMode          (LABEL_Dummy+12)
+    /* (BOOL) Use highlighting that fits in better visually in a
+       menu. Defaults to FALSE. */
+/**/
+
 
 enum {
 	NSA_GLYPH_SUBMENU,
@@ -471,6 +477,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				}
 				
 				gwin->menuobj[i] = LabelObject,
+					LABEL_MenuMode, TRUE,
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, icon,
