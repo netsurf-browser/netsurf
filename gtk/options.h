@@ -68,6 +68,9 @@ NSOPTION_STRING(hotlist_path, NULL)
 /* open source views in a tab */
 NSOPTION_BOOL(source_tab, false)
 
+/* Developer information viewer display method */
+NSOPTION_INTEGER(developer_view, 0)
+
 /* currently selected theme */
 NSOPTION_INTEGER(current_theme, 0)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Mark Benjamin <netsurfbrowser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,13 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef netsurf_gtk_dialogs_source_h_
-#define netsurf_gtk_dialogs_source_h_
+#ifndef _NETSURF_GTK_VIEWSOURCE_H_
+#define _NETSURF_GTK_VIEWSOURCE_H_
 
-#include <gtk/gtk.h>
-#include "desktop/browser.h"
-
-void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw);
+void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw);
 
 #endif
 

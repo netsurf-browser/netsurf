@@ -2,7 +2,7 @@
 <interface>
   <!-- interface-requires gtk+ 2.12 -->
   <!-- interface-naming-policy toplevel-contextual -->
-  <object class="GtkWindow" id="wndSource">
+  <object class="GtkWindow" id="ViewDataWindow">
     <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -19,7 +19,7 @@
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_save_as">
+                      <object class="GtkImageMenuItem" id="viewdata_save_as">
                         <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -28,7 +28,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_print">
+                      <object class="GtkImageMenuItem" id="viewdata_print">
                         <property name="label">gtk-print</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -42,7 +42,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_close">
+                      <object class="GtkImageMenuItem" id="viewdata_close">
                         <property name="label">gtk-close</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -62,7 +62,7 @@
                   <object class="GtkMenu" id="menu2">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_select_all">
+                      <object class="GtkImageMenuItem" id="viewdata_select_all">
                         <property name="label">gtk-select-all</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -71,7 +71,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_cut">
+                      <object class="GtkImageMenuItem" id="viewdata_cut">
                         <property name="label">gtk-cut</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -79,7 +79,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_copy">
+                      <object class="GtkImageMenuItem" id="viewdata_copy">
                         <property name="label">gtk-copy</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -87,7 +87,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_paste">
+                      <object class="GtkImageMenuItem" id="viewdata_paste">
                         <property name="label">gtk-paste</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -95,7 +95,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_delete">
+                      <object class="GtkImageMenuItem" id="viewdata_delete">
                         <property name="label">gtk-delete</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -116,7 +116,7 @@
                   <object class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_zoom_in">
+                      <object class="GtkImageMenuItem" id="viewdata_zoom_in">
                         <property name="label">gtk-zoom-in</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -125,7 +125,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_zoom_out">
+                      <object class="GtkImageMenuItem" id="viewdata_zoom_out">
                         <property name="label">gtk-zoom-out</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -134,7 +134,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_zoom_normal">
+                      <object class="GtkImageMenuItem" id="viewdata_zoom_normal">
                         <property name="label">gtk-zoom-100</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -155,7 +155,7 @@
                   <object class="GtkMenu" id="menu3">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="source_about">
+                      <object class="GtkImageMenuItem" id="viewdata_about">
                         <property name="label">gtk-about</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -179,7 +179,7 @@
             <property name="hscrollbar_policy">automatic</property>
             <property name="vscrollbar_policy">automatic</property>
             <child>
-              <object class="GtkTextView" id="source_view">
+              <object class="GtkTextView" id="viewdata_view">
                 <property name="width_request">600</property>
                 <property name="height_request">400</property>
                 <property name="visible">True</property>

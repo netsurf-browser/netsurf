@@ -208,6 +208,11 @@ nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 
 	if (pglade != NULL) {
 		*pglade = builder;
+	} else {
+		/* release our reference to the builder if it is not
+		 * being used.
+		 */
+		g_object_unref(G_OBJECT(builder));
 	}
 
 	return filepath;
@@ -237,6 +242,7 @@ nsgtk_init_glade(char **respath)
 	glade_file_location->options = nsgtk_new_ui(respath, "options", NULL);
 	glade_file_location->hotlist = nsgtk_new_ui(respath, "hotlist", NULL);
 	glade_file_location->cookies = nsgtk_new_ui(respath, "cookies", NULL);
+	glade_file_location->viewdata = nsgtk_new_ui(respath, "viewdata", NULL);
 
 	glade_file_location->warning = nsgtk_new_ui(respath, "warning", &gladeWarning);
 	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(gladeWarning, "wndWarning"));

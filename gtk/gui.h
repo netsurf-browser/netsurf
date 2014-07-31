@@ -45,6 +45,7 @@ struct glade_file_location_s {
 	char *history;
 	char *hotlist;
 	char *cookies;
+	char *viewdata;
 };
 
 /** location of all glade files. */

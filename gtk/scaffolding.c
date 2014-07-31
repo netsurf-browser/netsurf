@@ -54,7 +54,7 @@
 #include "gtk/completion.h"
 #include "gtk/dialogs/preferences.h"
 #include "gtk/dialogs/about.h"
-#include "gtk/dialogs/source.h"
+#include "gtk/viewsource.h"
 #include "gtk/bitmap.h"
 #include "gtk/gui.h"
 #include "gtk/history.h"
@@ -1174,8 +1174,7 @@ MULTIHANDLER(fullscreen)
 
 MULTIHANDLER(viewsource)
 {
-	nsgtk_source_dialog_init(g->window,
-			nsgtk_get_browser_window(g->top_level));
+	nsgtk_viewsource(g->window, nsgtk_get_browser_window(g->top_level));
 	return TRUE;
 }
 
