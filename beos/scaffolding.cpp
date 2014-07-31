@@ -1496,7 +1496,7 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 
 }
 
-static BMenuItem *make_menu_item(const char *name, BMessage *message)
+static BMenuItem *make_menu_item(const char *name, BMessage *message, bool enabled=false)
 {
 	BMenuItem *item;
 	BString label(messages_get(name));
@@ -1545,6 +1545,8 @@ static BMenuItem *make_menu_item(const char *name, BMessage *message)
 	label.ReplaceAll("...", B_UTF8_ELLIPSIS);
 
 	item = new BMenuItem(label.String(), message, key, mods);
+
+	item->SetEnabled(enabled);
 
 	return item;
 }
@@ -1730,7 +1732,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu->AddItem(item);
 
 		message = new BMessage(APPLICATION_QUIT);
-		item = make_menu_item("Quit", message);
+		item = make_menu_item("Quit", message, true);
 		menu->AddItem(item);
 
 		// Page menu
@@ -1778,11 +1780,11 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NEW_WINDOW);
-		item = make_menu_item("NewWindow", message);
+		item = make_menu_item("NewWindow", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_VIEW_SOURCE);
-		item = make_menu_item("ViewSrc", message);
+		item = make_menu_item("ViewSrc", message, true);
 		menu->AddItem(item);
 
 		// Object menu
@@ -1809,15 +1811,15 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		g->menu_bar->AddItem(menu);
 
 		message = new BMessage(BROWSER_NAVIGATE_HOME);
-		item = make_menu_item("Home", message);
+		item = make_menu_item("Home", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NAVIGATE_BACK);
-		item = make_menu_item("Back", message);
+		item = make_menu_item("Back", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NAVIGATE_FORWARD);
-		item = make_menu_item("Forward", message);
+		item = make_menu_item("Forward", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NAVIGATE_UP);
@@ -1825,11 +1827,11 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NAVIGATE_RELOAD);
-		item = make_menu_item("Reload", message);
+		item = make_menu_item("Reload", message, true);
 		menu->AddItem(item);
 
 		message = new BMessage(BROWSER_NAVIGATE_STOP);
-		item = make_menu_item("Stop", message);
+		item = make_menu_item("Stop", message, true);
 		menu->AddItem(item);
 
 		// View menu
