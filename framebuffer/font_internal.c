@@ -221,34 +221,26 @@ fb_get_font_size(const plot_font_style_t *fstyle)
 	return size;
 }
 
+/** Lookup table to scale 4 bits to 8 bits, so e.g. 0101 --> 00110011 */
+const uint8_t glyph_lut[16] = {
+		0x00, 0x03, 0x0c, 0x0f,
+		0x30, 0x33, 0x3c, 0x3f,
+		0xc0, 0xc3, 0xcc, 0xcf,
+		0xf0, 0xf3, 0xfc, 0xff
+};
+
 static const uint8_t *
 glyph_scale_2(const uint8_t *glyph_data)
 {
-	int y, x;
+	const uint8_t *glyph_max = glyph_data + GLYPH_LEN;
 	uint8_t *pos = glyph_x2;
 
-	for (y = 0; y < 16; y++) {
-		*pos = 0;
-		for (x = 0; x < 4; x++) {
-			if (glyph_data[y] & (1 << (7 - x))) {
-				*pos |= 1 << ((3 - x) * 2);
-				*pos |= 1 << ((3 - x) * 2 + 1);
-			}
-		}
-		pos++;
-		*pos = 0;
-		for (x = 4; x < 8; x++) {
-			if (glyph_data[y] & (1 << (7 - x))) {
-				*pos |= 1 << ((7 - x) * 2);
-				*pos |= 1 << ((7 - x) * 2 + 1);
-			}
-		}
-		pos++;
-		*pos = *(pos - 2);
-		pos++;
-		*pos = *(pos - 2);
-		pos++;
-	}
+	do {
+		*pos++ = glyph_lut[*glyph_data >> 4];
+		*pos++ = glyph_lut[*glyph_data & 0xf];
+		*pos++ = glyph_lut[*glyph_data >> 4];
+		*pos++ = glyph_lut[*glyph_data & 0xf];
+	} while (++glyph_data < glyph_max);
 
 	return glyph_x2;
 }
