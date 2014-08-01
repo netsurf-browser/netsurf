@@ -41,7 +41,6 @@ uint8_t code_point[GLYPH_LEN];
 			 (1 << 4) | (1 << 5) | (1 << 6))
 
 #define THREE_SSS	 ((1 << 0) | (1 << 1) | (1 << 2))
-#define THREE_SS	 (           (1 << 1) | (1 << 2))
 #define THREE_S_S	 ((1 << 0) |            (1 << 2))
 #define THREE__SS	 ((1 << 0) | (1 << 1)           )
 #define THREE_SS_	 (           (1 << 1) | (1 << 2))
