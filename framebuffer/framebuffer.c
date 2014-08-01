@@ -126,12 +126,16 @@ static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
     enum fb_font_style style = fb_get_font_style(fstyle);
+    int size = fb_get_font_size(fstyle);
     const uint8_t *chrp;
     size_t nxtchr = 0;
     nsfb_bbox_t loc;
     uint32_t ucs4;
+    int p = FB_FONT_PITCH * size;
+    int w = FB_FONT_WIDTH * size;
+    int h = FB_FONT_HEIGHT * size;
 
-    y -= ((FB_FONT_HEIGHT * 3) / 4);
+    y -= ((h * 3) / 4);
     /* the coord is the bottom-left of the pixels offset by 1 to make
      * it work since fb coords are the top-left of pixels */
     y += 1;
@@ -145,13 +149,13 @@ static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
 
         loc.x0 = x;
         loc.y0 = y;
-        loc.x1 = loc.x0 + FB_FONT_WIDTH;
-        loc.y1 = loc.y0 + FB_FONT_HEIGHT;
+        loc.x1 = loc.x0 + w;
+        loc.y1 = loc.y0 + h;
 
-        chrp = fb_get_glyph(ucs4, style);
-        nsfb_plot_glyph1(nsfb, &loc, chrp, FB_FONT_PITCH, fstyle->foreground);
+        chrp = fb_get_glyph(ucs4, style, size);
+        nsfb_plot_glyph1(nsfb, &loc, chrp, p, fstyle->foreground);
 
-        x += FB_FONT_WIDTH;
+        x += w;
 
     }
 

@@ -36,6 +36,7 @@
 #define GLYPH_LEN		16
 
 uint8_t code_point[GLYPH_LEN];
+uint8_t glyph_x2[GLYPH_LEN * 4];
 
 #define SEVEN_SET	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | 	\
 			 (1 << 4) | (1 << 5) | (1 << 6))
@@ -213,9 +214,68 @@ fb_get_font_style(const plot_font_style_t *fstyle)
 	}
 }
 
-const uint8_t *
-fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
+int
+fb_get_font_size(const plot_font_style_t *fstyle)
 {
+	int size = fstyle->size * 10 /
+			(((nsoption_int(font_min_size) * 3 +
+			   nsoption_int(font_size)) / 4) * FONT_SIZE_SCALE);
+	if (size > 2)
+		size = 2;
+	else if (size <= 0)
+		size = 1;
+
+	return size;
+}
+
+static const uint8_t *
+glyph_scale_2(const uint8_t *glyph_data)
+{
+	int y, x;
+	uint8_t *pos = glyph_x2;
+
+	for (y = 0; y < 16; y++) {
+		*pos = 0;
+		for (x = 0; x < 4; x++) {
+			if (glyph_data[y] & (1 << (7 - x))) {
+				*pos |= 1 << ((3 - x) * 2);
+				*pos |= 1 << ((3 - x) * 2 + 1);
+			}
+		}
+		pos++;
+		*pos = 0;
+		for (x = 4; x < 8; x++) {
+			if (glyph_data[y] & (1 << (7 - x))) {
+				*pos |= 1 << ((7 - x) * 2);
+				*pos |= 1 << ((7 - x) * 2 + 1);
+			}
+		}
+		pos++;
+		*pos = 0;
+		for (x = 0; x < 4; x++) {
+			if (glyph_data[y] & (1 << (7 - x))) {
+				*pos |= 1 << ((3 - x) * 2);
+				*pos |= 1 << ((3 - x) * 2 + 1);
+			}
+		}
+		pos++;
+		*pos = 0;
+		for (x = 4; x < 8; x++) {
+			if (glyph_data[y] & (1 << (7 - x))) {
+				*pos |= 1 << ((7 - x) * 2);
+				*pos |= 1 << ((7 - x) * 2 + 1);
+			}
+		}
+		pos++;
+	}
+
+	return glyph_x2;
+}
+
+const uint8_t *
+fb_get_glyph(uint32_t ucs4, enum fb_font_style style, int scale)
+{
+	const uint8_t *glyph_data;
 	unsigned int section;
 	unsigned int offset;
 	uint16_t g_offset;
@@ -233,7 +293,8 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 			offset = section * 256 + (ucs4 & 0xff);
 			g_offset = fb_bold_italic_sections[offset] * 16;
 			if (g_offset != 0) {
-				return &font_glyph_data[g_offset];
+				glyph_data = &font_glyph_data[g_offset];
+				break;
 			}
 		}
 	case FB_BOLD:
@@ -242,7 +303,8 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 			offset = section * 256 + (ucs4 & 0xff);
 			g_offset = fb_bold_sections[offset] * 16;
 			if (g_offset != 0) {
-				return &font_glyph_data[g_offset];
+				glyph_data = &font_glyph_data[g_offset];
+				break;
 			}
 		}
 	case FB_ITALIC:
@@ -251,7 +313,8 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 			offset = section * 256 + (ucs4 & 0xff);
 			g_offset = fb_italic_sections[offset] * 16;
 			if (g_offset != 0) {
-				return &font_glyph_data[g_offset];
+				glyph_data = &font_glyph_data[g_offset];
+				break;
 			}
 		}
 	case FB_REGULAR:
@@ -260,12 +323,27 @@ fb_get_glyph(uint32_t ucs4, enum fb_font_style style)
 			offset = section * 256 + (ucs4 & 0xff);
 			g_offset = fb_regular_sections[offset] * 16;
 			if (g_offset != 0) {
-				return &font_glyph_data[g_offset];
+				glyph_data = &font_glyph_data[g_offset];
+				break;
 			}
 		}
+	default:
+		glyph_data = get_codepoint(ucs4, style & FB_ITALIC);
+		break;
 	}
 
-	return get_codepoint(ucs4, style & FB_ITALIC);
+	switch (scale) {
+	case 1:
+		break;
+	case 2:
+		glyph_data = glyph_scale_2(glyph_data);
+		break;
+	default:
+		assert(scale >= 1 && scale <= 2);
+		break;
+	}
+
+	return glyph_data;
 }
 
 static nserror utf8_to_local(const char *string,
@@ -310,6 +388,7 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
 		nxtchr = utf8_next(string, length, nxtchr);
         }
 
+	*width *= fb_get_font_size(fstyle);
 	return true;
 }
 
@@ -329,17 +408,18 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+        const int width = fb_get_font_size(fstyle) * FB_FONT_WIDTH;
         size_t nxtchr = 0;
 	int x_pos = 0;
 
         while (nxtchr < length) {
 		uint32_t ucs4;
-                if (abs(x_pos - x) <= (FB_FONT_WIDTH / 2))
+                if (abs(x_pos - x) <= (width / 2))
                         break;
 
 		ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 		if (codepoint_displayable(ucs4)) {
-			x_pos += FB_FONT_WIDTH;
+			x_pos += width;
 		}
 
                 nxtchr = utf8_next(string, length, nxtchr);
@@ -380,6 +460,7 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
+        const int width = fb_get_font_size(fstyle) * FB_FONT_WIDTH;
         size_t nxtchr = 0;
         int last_space_x = 0;
         int last_space_idx = 0;
@@ -395,7 +476,7 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 
 		ucs4 = utf8_to_ucs4(string + nxtchr, length - nxtchr);
 		if (codepoint_displayable(ucs4)) {
-			*actual_x += FB_FONT_WIDTH;
+			*actual_x += width;
 		}
 
                 if (*actual_x > x && last_space_idx != 0) {

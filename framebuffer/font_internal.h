@@ -38,8 +38,9 @@ enum fb_font_style {
 };
 
 enum fb_font_style fb_get_font_style(const plot_font_style_t *fstyle);
+int fb_get_font_size(const plot_font_style_t *fstyle);
 
-const uint8_t * fb_get_glyph(uint32_t ucs4, enum fb_font_style style);
+const uint8_t *fb_get_glyph(uint32_t ucs4, enum fb_font_style style, int scale);
 
 #define codepoint_displayable(u) \
 	(!(u >= 0x200b && u <= 0x200f))
