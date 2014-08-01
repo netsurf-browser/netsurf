@@ -197,21 +197,14 @@ bool fb_font_finalise(void)
 enum fb_font_style
 fb_get_font_style(const plot_font_style_t *fstyle)
 {
-	if (fstyle->weight >= 700) {
-		if ((fstyle->flags & FONTF_ITALIC) ||
-				(fstyle->flags & FONTF_OBLIQUE)) {
-			return FB_BOLD_ITALIC;
-		} else {
-			return FB_BOLD;
-		}
-	} else {
-		if ((fstyle->flags & FONTF_ITALIC) ||
-				(fstyle->flags & FONTF_OBLIQUE)) {
-			return FB_ITALIC;
-		} else {
-			return FB_REGULAR;
-		}
-	}
+	enum fb_font_style style = FB_REGULAR;
+
+	if (fstyle->weight >= 700)
+		style |= FB_BOLD;
+	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
+		style |= FB_ITALIC;
+
+	return style;
 }
 
 int
