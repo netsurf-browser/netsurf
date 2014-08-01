@@ -244,21 +244,9 @@ glyph_scale_2(const uint8_t *glyph_data)
 			}
 		}
 		pos++;
-		*pos = 0;
-		for (x = 0; x < 4; x++) {
-			if (glyph_data[y] & (1 << (7 - x))) {
-				*pos |= 1 << ((3 - x) * 2);
-				*pos |= 1 << ((3 - x) * 2 + 1);
-			}
-		}
+		*pos = *(pos - 2);
 		pos++;
-		*pos = 0;
-		for (x = 4; x < 8; x++) {
-			if (glyph_data[y] & (1 << (7 - x))) {
-				*pos |= 1 << ((7 - x) * 2);
-				*pos |= 1 << ((7 - x) * 2 + 1);
-			}
-		}
+		*pos = *(pos - 2);
 		pos++;
 	}
 
