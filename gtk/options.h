@@ -65,9 +65,6 @@ NSOPTION_BOOL(new_blank, false)
 /* path to save hotlist file */
 NSOPTION_STRING(hotlist_path, NULL)
 
-/* open source views in a tab */
-NSOPTION_BOOL(source_tab, false)
-
 /* Developer information viewer display method */
 NSOPTION_INTEGER(developer_view, 0)
 

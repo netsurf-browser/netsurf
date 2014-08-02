@@ -170,8 +170,8 @@ G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_toggled(GtkToggleButto
 G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboTabPosition_realize(GtkWidget *widget, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_sourceButtonWindow_toggled(GtkToggleButton *togglebutton, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_sourceButtonWindow_realize(GtkWidget *widget, struct ppref *priv);
+G_MODULE_EXPORT void nsgtk_preferences_comboDeveloperView_changed(GtkComboBox *widget, struct ppref *priv);
+G_MODULE_EXPORT void nsgtk_preferences_comboDeveloperView_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboButtonType_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_setCurrentPage_clicked(GtkButton *button, struct ppref *priv);
@@ -822,25 +822,23 @@ nsgtk_preferences_comboTabPosition_realize(GtkWidget *widget,
 				 nsoption_int(position_tab));
 }
 
-/* Source */
+/* Tools */
 
-/* source view opening */
-TOGGLEBUTTON_SIGNALS(sourceButtonTab, source_tab)
-
+/* developer view opening */
 G_MODULE_EXPORT void
-nsgtk_preferences_sourceButtonWindow_toggled(GtkToggleButton *togglebutton,
-				     struct ppref *priv)
+nsgtk_preferences_comboDeveloperView_changed(GtkComboBox *widget,
+					   struct ppref *priv)
 {
-	nsoption_set_bool(source_tab,
-			  !gtk_toggle_button_get_active(togglebutton));
+	/* set the option */
+	nsoption_set_int(developer_view, gtk_combo_box_get_active(widget));
 }
 
 G_MODULE_EXPORT void
-nsgtk_preferences_sourceButtonWindow_realize(GtkWidget *widget,
+nsgtk_preferences_comboDeveloperView_realize(GtkWidget *widget,
 					   struct ppref *priv)
 {
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-				     !nsoption_bool(source_tab));
+	gtk_combo_box_set_active(GTK_COMBO_BOX(widget),
+				 nsoption_int(developer_view));
 }
 
 

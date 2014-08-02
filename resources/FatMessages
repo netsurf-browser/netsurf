@@ -2322,10 +2322,11 @@ en.gtk.preferencesTabsAlways:Always show tab bar
 en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
 en.gtk.preferencesTabsNewly:Newly opened tabs are blank
 en.gtk.preferencesTabsPosition:Position:
-en.gtk.preferencesSource:<b>Source</b>
-en.gtk.preferencesSourceOpen:Open source view in new:
-en.gtk.preferencesSourceWindow:window
-en.gtk.preferencesSourceTab:tab
+en.gtk.preferencesTools:<b>Tools</b>
+en.gtk.preferencesDeveloperView:Open developer views in a
+en.gtk.preferencesDeveloperViewWindow:Window
+en.gtk.preferencesDeveloperViewTab:Tab
+en.gtk.preferencesDeveloperViewEditor:Editor
 en.gtk.preferencesURLbar:<b>URLbar</b>
 en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
 en.gtk.preferencesToolbar:<b>Toolbar</b>
