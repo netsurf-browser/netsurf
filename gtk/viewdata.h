@@ -33,4 +33,16 @@
  */
 nserror nsgtk_viewdata(const char *title, const char *filename, char *data, size_t data_size);
 
+/**
+ * Display file to a user.
+ *
+ * The file is interpreted as utf-8 encoded text and will be presented
+ * in a window, a tab or an editor as per the user configuration.
+ *
+ * \param title The title of the data being displayed.
+ * \param leafname The suggested leafname to be used.
+ * \param filename The filename of the data to be viewed.
+ */
+nserror nsgtk_viewfile(const char *title, const char *leafname, const char *filename);
+
 #endif

@@ -447,39 +447,60 @@ window_init(const char *title,
 }
 
 /**
- * create a new tab with page source
+ * open a window to dispaly an existing file.
  */
 static nserror
-tab_init(const char *title,
-	 const char *filename,
-	 char *ndata,
-	 size_t ndata_len)
+window_init_fname(const char *title,
+	       const char *leafname,
+	       const char *filename)
+{
+	nserror ret;
+	FILE *f;
+	char *ndata;
+	size_t ndata_len;
+
+	f = fopen(filename, "r");
+	if (f == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
+	if (fseek(f, 0, SEEK_END) != 0) {
+		fclose(f);
+		return NSERROR_BAD_SIZE;
+	}
+
+	ndata_len = ftell(f);
+
+	if (fseek(f, 0, SEEK_SET) != 0) {
+		fclose(f);
+		return NSERROR_BAD_SIZE;
+	}
+
+	ndata = malloc(ndata_len);
+
+	fread(ndata, 1, ndata_len, f);
+
+	fclose(f);
+
+	ret = window_init(title, leafname, ndata, ndata_len);
+
+	free(ndata);
+
+	return ret;
+}
+
+/**
+ * open a new tab from an existing file.
+ */
+static nserror
+tab_init_fname(const char *title,
+	       const char *leafname,
+	       const char *fname)
 {
 	nsurl *url;
 	nserror ret;
-	gchar *fname;
-	gint handle;
-	FILE *f;
-
-	handle = g_file_open_tmp("nsgtksourceXXXXXX", &fname, NULL);
-	if ((handle == -1) || (fname == NULL)) {
-		return NSERROR_SAVE_FAILED;
-	}
-	close(handle); /* in case it was binary mode */
-
-	/* save data to temportary file */
-	f = fopen(fname, "w");
-	if (f == NULL) {
-		warn_user(messages_get("gtkSourceTabError"), 0);
-		g_free(fname);
-		return NSERROR_SAVE_FAILED;
-	}
-	fprintf(f, "%s", ndata);
-	fclose(f);
 
 	/* Open tab on temporary file */
 	ret = netsurf_path_to_nsurl(fname, &url);
-	g_free(fname);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
@@ -491,19 +512,56 @@ tab_init(const char *title,
 		return ret;
 	}
 
-	free(ndata);
-
 	return NSERROR_OK;
 }
 
 /**
- * create a new tab with page source
+ * create a new tab from data.
  */
 static nserror
-editor_init(const char *title,
-	    const char *filename,
-	    char *ndata,
-	    size_t ndata_len)
+tab_init(const char *title,
+	 const char *leafname,
+	 char *ndata,
+	 size_t ndata_len)
+{
+	nserror ret;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+
+	handle = g_file_open_tmp("nsgtkdataXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return NSERROR_SAVE_FAILED;
+	}
+	close(handle); /* in case it was binary mode */
+
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		warn_user(messages_get("gtkSourceTabError"), 0);
+		g_free(fname);
+		return NSERROR_SAVE_FAILED;
+	}
+	fprintf(f, "%s", ndata);
+	fclose(f);
+
+	ret = tab_init_fname(title, leafname, fname);
+	if (ret == NSERROR_OK) {
+		free(ndata);
+	}
+
+	g_free(fname);
+
+	return ret;
+}
+
+/**
+ * open an editor from an existing file.
+ */
+static nserror
+editor_init_fname(const char *title,
+	       const char *leafname,
+	       const char *fname)
 {
 /* find user configured app for opening text/plain */
 
@@ -527,10 +585,48 @@ editor_init(const char *title,
  *
  * execute target app on saved data
  */
-
-	free(ndata);
-
 	return NSERROR_OK;
+}
+
+/**
+ * create a new tab with page source
+ */
+static nserror
+editor_init(const char *title,
+	    const char *leafname,
+	    char *ndata,
+	    size_t ndata_len)
+{
+
+	nserror ret;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+
+	handle = g_file_open_tmp("nsgtkdataXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return NSERROR_SAVE_FAILED;
+	}
+	close(handle); /* in case it was binary mode */
+
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		warn_user(messages_get("gtkSourceTabError"), 0);
+		g_free(fname);
+		return NSERROR_SAVE_FAILED;
+	}
+	fprintf(f, "%s", ndata);
+	fclose(f);
+
+	ret = editor_init_fname(title, leafname, fname);
+	if (ret == NSERROR_OK) {
+		free(ndata);
+	}
+
+	g_free(fname);
+
+	return ret;
 }
 
 /* exported interface documented in gtk/viewdata.h */
@@ -564,6 +660,35 @@ nsgtk_viewdata(const char *title,
 		free(ndata);
 	}
 
+
+	return ret;
+}
+
+/* exported interface documented in gtk/viewdata.h */
+nserror
+nsgtk_viewfile(const char *title,
+	       const char *leafname,
+	       const char *filename)
+{
+	nserror ret;
+
+	switch (nsoption_int(developer_view)) {
+	case 0:
+		ret = window_init_fname(title, leafname, filename);
+		break;
+
+	case 1:
+		ret = tab_init_fname(title, leafname, filename);
+		break;
+
+	case 2:
+		ret = editor_init_fname(title, leafname, filename);
+		break;
+
+	default:
+		ret = NSERROR_BAD_PARAMETER;
+		break;
+	}
 
 	return ret;
 }

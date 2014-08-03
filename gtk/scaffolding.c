@@ -72,6 +72,7 @@
 #include "gtk/scaffolding.h"
 #include "gtk/tabs.h"
 #include "gtk/schedule.h"
+#include "gtk/viewdata.h"
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
@@ -1295,44 +1296,35 @@ MULTIHANDLER(toggledebugging)
 
 MULTIHANDLER(debugboxtree)
 {
-	GtkWidget *save_dialog;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+	struct browser_window *bw;
 
-	save_dialog = gtk_file_chooser_dialog_new("Save File", g->window,
-			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-			NULL);
+	handle = g_file_open_tmp("nsgtkboxtreeXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return TRUE;
+	}
+	close(handle); /* in case it was binary mode */
 
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-			getenv("HOME") ? getenv("HOME") : "/");
-
-	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-			"boxtree.txt");
-
-	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-		gchar *filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(save_dialog));
-		FILE *fh;
-
-		LOG(("Saving box tree dump to %s...\n", filename));
-
-		fh = fopen((const char *) filename, "w");
-		if (fh == NULL) {
-			warn_user("Error saving box tree dump.",
-				"Unable to open file for writing.");
-		} else {
-			struct browser_window *bw;
-			bw = nsgtk_get_browser_window(g->top_level);
-
-			browser_window_debug_dump(bw, fh);
-
-			fclose(fh);
-		}
-
-		g_free(filename);
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		warn_user("Error saving box tree dump.",
+			  "Unable to open file for writing.");
+		unlink(fname);
+		return TRUE;
 	}
 
-	gtk_widget_destroy(save_dialog);
+	bw = nsgtk_get_browser_window(g->top_level);
+
+	browser_window_debug_dump(bw, f);
+
+	fclose(f);
+
+	nsgtk_viewfile("Box Tree Debug", "boxtree", fname);
+
+	g_free(fname);
 
 	return TRUE;
 }
