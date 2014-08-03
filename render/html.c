@@ -1971,17 +1971,43 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 /**
  * Dump debug info concerning the html_content
  *
- * \param  bw    The browser window
- * \param  bw    The file to dump to
+ * \param bw The browser window
+ * \param f The file to dump to
  */
-static void html_debug_dump(struct content *c, FILE *f)
+static nserror
+html_debug_dump(struct content *c, FILE *f, enum content_debug op)
 {
-	html_content *html = (html_content *) c;
+	html_content *htmlc = (html_content *)c;
+	dom_node *html;
+	dom_exception exc; /* returned by libdom functions */
+	nserror ret;
 
-	assert(html != NULL);
-	assert(html->layout != NULL);
+	assert(htmlc != NULL);
 
-	box_dump(f, html->layout, 0, true);
+	if (op == CONTENT_DEBUG_RENDER) {
+		assert(htmlc->layout != NULL);
+		box_dump(f, htmlc->layout, 0, true);
+		ret = NSERROR_OK;
+	} else {
+		if (htmlc->document == NULL) {
+			LOG(("No document to dump"));
+			return NSERROR_DOM;
+		}
+
+		exc = dom_document_get_document_element(htmlc->document, (void *) &html);
+		if ((exc != DOM_NO_ERR) || (html == NULL)) {
+			LOG(("Unable to obtain root node"));
+			return NSERROR_DOM;
+		}
+
+		ret = libdom_dump_structure(html, f, 0);
+
+		LOG(("DOM structure dump returning %d", ret));
+
+		dom_node_unref(html);
+	}
+
+	return ret;
 }
 
 

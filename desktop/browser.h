@@ -42,6 +42,7 @@ struct selection;
 struct fetch_multipart_data;
 struct form_control;
 struct nsurl;
+enum content_debug;
 
 typedef enum {
 	DRAGGING_NONE,
@@ -452,7 +453,7 @@ char * browser_window_get_selection(struct browser_window *bw);
  * \param  bw    The browser window
  * \param  f    The file to dump to
  */
-void browser_window_debug_dump(struct browser_window *bw, FILE *f);
+nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op);
 
 /* In platform specific theme_install.c. */
 #ifdef WITH_THEME_INSTALL

@@ -1318,7 +1318,7 @@ MULTIHANDLER(debugboxtree)
 
 	bw = nsgtk_get_browser_window(g->top_level);
 
-	browser_window_debug_dump(bw, f);
+	browser_window_debug_dump(bw, f, CONTENT_DEBUG_RENDER);
 
 	fclose(f);
 
@@ -1331,50 +1331,35 @@ MULTIHANDLER(debugboxtree)
 
 MULTIHANDLER(debugdomtree)
 {
-	GtkWidget *save_dialog;
+	gchar *fname;
+	gint handle;
+	FILE *f;
+	struct browser_window *bw;
 
-	save_dialog = gtk_file_chooser_dialog_new("Save File", g->window,
-			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-			NULL);
+	handle = g_file_open_tmp("nsgtkdomtreeXXXXXX", &fname, NULL);
+	if ((handle == -1) || (fname == NULL)) {
+		return TRUE;
+	}
+	close(handle); /* in case it was binary mode */
 
-	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
-			getenv("HOME") ? getenv("HOME") : "/");
-
-	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
-			"domtree.txt");
-
-	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
-		gchar *filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(save_dialog));
-		FILE *fh;
-		LOG(("Saving dom tree to %s...\n", filename));
-
-		fh = fopen((const char *) filename, "w");
-		if (fh == NULL) {
-			warn_user("Error saving box tree dump.",
-				"Unable to open file for writing.");
-		} else {
-			struct browser_window *bw;
-			bw = nsgtk_get_browser_window(g->top_level);
-
-			if (bw->current_content &&
-					content_get_type(bw->current_content) ==
-					CONTENT_HTML) {
-#ifdef FIXME
-				xmlDebugDumpDocument(fh,
-					html_get_document(bw->current_content));
-#endif
-			}
-
-			fclose(fh);
-		}
-
-		g_free(filename);
+	/* save data to temporary file */
+	f = fopen(fname, "w");
+	if (f == NULL) {
+		warn_user("Error saving box tree dump.",
+			  "Unable to open file for writing.");
+		unlink(fname);
+		return TRUE;
 	}
 
-	gtk_widget_destroy(save_dialog);
+	bw = nsgtk_get_browser_window(g->top_level);
+
+	browser_window_debug_dump(bw, f, CONTENT_DEBUG_DOM);
+
+	fclose(f);
+
+	nsgtk_viewfile("DOM Tree Debug", "domtree", fname);
+
+	g_free(fname);
 
 	return TRUE;
 }

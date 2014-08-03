@@ -483,8 +483,6 @@ window_init_fname(const char *title,
 
 	ret = window_init(title, leafname, ndata, ndata_len);
 
-	free(ndata);
-
 	return ret;
 }
 

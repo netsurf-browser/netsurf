@@ -664,10 +664,13 @@ void browser_window_set_gadget_filename(struct browser_window *bw,
 }
 
 /* exported interface, documented in browser.h */
-void browser_window_debug_dump(struct browser_window *bw, FILE *f)
+nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op)
 {
-	if (bw->current_content != NULL)
-		content_debug_dump(bw->current_content, f);
+	if (bw->current_content == NULL) {
+		return NSERROR_OK;
+	}
+
+	return content_debug_dump(bw->current_content, f, op);
 }
 
 /** slow script handler

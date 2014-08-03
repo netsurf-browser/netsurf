@@ -77,7 +77,9 @@ typedef enum {
 
 	NSERROR_NOSPACE,		/**< Insufficient space */
 
-	NSERROR_BAD_SIZE                /**< Bad size */
+	NSERROR_BAD_SIZE,               /**< Bad size */
+
+	NSERROR_NOT_IMPLEMENTED,        /**< Functionality is not implemented */
 } nserror;
 
 #endif

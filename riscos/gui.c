@@ -2370,7 +2370,7 @@ void ro_gui_dump_browser_window(struct browser_window *bw)
 		return;
 	}
 
-	browser_window_debug_dump(bw, stream);
+	browser_window_debug_dump(bw, stream, CONTENT_DEBUG_RENDER);
 
 	fclose(stream);
 

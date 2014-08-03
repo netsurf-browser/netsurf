@@ -87,6 +87,12 @@ typedef enum {
 	CONTENT_MSG_GADGETCLICK/**< A gadget has been clicked on (mainly for file) */
 } content_msg;
 
+/** Debugging dump operations */
+enum content_debug {
+	CONTENT_DEBUG_RENDER, /** Debug the contents rendering. */
+	CONTENT_DEBUG_DOM     /** Debug teh contents Document Object. */
+};
+
 /** RFC5988 metadata link */
 struct content_rfc5988_link {
 	struct content_rfc5988_link *next; /**< next rfc5988_link in list */
@@ -271,7 +277,15 @@ void content_search(struct hlcache_handle *h, void *context,
 		search_flags_t flags, const char *string);
 void content_search_clear(struct hlcache_handle *h);
 
-void content_debug_dump(struct hlcache_handle *h, FILE *f);
+/**
+ * Dump debug information to file.
+ *
+ * \param h content handle to debug.
+ * \param f File to write output to.
+ * \param op Debug operation type.
+ */
+nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op);
+
 struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 		lwc_string *rel);
 

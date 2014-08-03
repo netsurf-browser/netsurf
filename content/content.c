@@ -860,14 +860,17 @@ void content_search_clear(struct hlcache_handle *h)
 	}
 }
 
-
-void content_debug_dump(struct hlcache_handle *h, FILE *f)
+/* exported interface documented in content/content.h */
+nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
-	if (c->handler->debug_dump != NULL)
-		c->handler->debug_dump(c, f);
+	if (c->handler->debug_dump == NULL) {
+		return NSERROR_NOT_IMPLEMENTED;
+	}
+
+	return c->handler->debug_dump(c, f, op);
 }
 
 

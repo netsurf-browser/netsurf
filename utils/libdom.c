@@ -21,11 +21,11 @@
  */
 
 #include <assert.h>
+#include <string.h>
 #include <dom/dom.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
-
 #include "utils/libdom.h"
 
 /* exported interface documented in libdom.h */
@@ -196,7 +196,7 @@ dom_node *libdom_find_first_element(dom_node *parent, lwc_string *element_name)
 
 /* exported interface documented in libdom.h */
 /* TODO: return appropriate errors */
-nserror libdom_iterate_child_elements(dom_node *parent, 
+nserror libdom_iterate_child_elements(dom_node *parent,
 		libdom_iterate_cb cb, void *ctx)
 {
 	dom_nodelist *children;
@@ -308,6 +308,195 @@ nserror libdom_hubbub_error_to_nserror(dom_hubbub_error error)
 static void ignore_dom_msg(uint32_t severity, void *ctx, const char *msg, ...)
 {
 }
+
+
+
+/**
+ * Dump attribute/value for an element node
+ *
+ * \param node       The element node to dump attribute details for
+ * \param attribute  The attribute to dump
+ * \return  true on success, or false on error
+ */
+static bool dump_dom_element_attribute(dom_node *node, FILE *f, const char *attribute)
+{
+	dom_exception exc;
+	dom_string *attr = NULL;
+	dom_string *attr_value = NULL;
+	dom_node_type type;
+	const char *string;
+	size_t length;
+
+	/* Should only have element nodes here */
+	exc = dom_node_get_node_type(node, &type);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, " Exception raised for node_get_node_type\n");
+		return false;
+	}
+	assert(type == DOM_ELEMENT_NODE);
+
+	/* Create a dom_string containing required attribute name. */
+	exc = dom_string_create_interned((uint8_t *)attribute,
+					 strlen(attribute), &attr);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, " Exception raised for dom_string_create\n");
+		return false;
+	}
+
+	/* Get class attribute's value */
+	exc = dom_element_get_attribute(node, attr, &attr_value);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, " Exception raised for element_get_attribute\n");
+		dom_string_unref(attr);
+		return false;
+	} else if (attr_value == NULL) {
+		/* Element lacks required attribute */
+		dom_string_unref(attr);
+		return true;
+	}
+
+	/* Finished with the attr dom_string */
+	dom_string_unref(attr);
+
+	/* Get attribute value's string data */
+	string = dom_string_data(attr_value);
+	length = dom_string_byte_length(attr_value);
+
+	/* Print attribute info */
+	fprintf(f, " %s=\"%.*s\"", attribute, (int)length, string);
+
+	/* Finished with the attr_value dom_string */
+	dom_string_unref(attr_value);
+
+	return true;
+}
+
+
+/**
+ * Print a line in a DOM structure dump for an element
+ *
+ * \param node   The node to dump
+ * \param depth  The node's depth
+ * \return  true on success, or false on error
+ */
+static bool dump_dom_element(dom_node *node, FILE *f, int depth)
+{
+	dom_exception exc;
+	dom_string *node_name = NULL;
+	dom_node_type type;
+	int i;
+	const char *string;
+	size_t length;
+
+	/* Only interested in element nodes */
+	exc = dom_node_get_node_type(node, &type);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, "Exception raised for node_get_node_type\n");
+		return false;
+	} else if (type != DOM_ELEMENT_NODE) {
+		/* Nothing to print */
+		return true;
+	}
+
+	/* Get element name */
+	exc = dom_node_get_node_name(node, &node_name);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, "Exception raised for get_node_name\n");
+		return false;
+	} else if (node_name == NULL) {
+		fprintf(f, "Broken: root_name == NULL\n");
+		return false;
+	}
+
+	/* Print ASCII tree structure for current node */
+	if (depth > 0) {
+		for (i = 0; i < depth; i++) {
+			fprintf(f, "| ");
+		}
+		fprintf(f, "+-");
+	}
+
+	/* Get string data and print element name */
+	string = dom_string_data(node_name);
+	length = dom_string_byte_length(node_name);
+	fprintf(f, "[%.*s]", (int)length, string);
+
+	if (length == 5 && strncmp(string, "title", 5) == 0) {
+		/* Title tag, gather the title */
+		dom_string *str;
+		exc = dom_node_get_text_content(node, &str);
+		if (exc == DOM_NO_ERR && str != NULL) {
+			fprintf(f, " $%.*s$", (int)dom_string_byte_length(str),
+				dom_string_data(str));
+			dom_string_unref(str);
+		}
+	}
+
+	/* Finished with the node_name dom_string */
+	dom_string_unref(node_name);
+
+	/* Print the element's id & class, if it has them */
+	if (dump_dom_element_attribute(node, f, "id") == false ||
+	    dump_dom_element_attribute(node, f, "class") == false) {
+		/* Error occured */
+		fprintf(f, "\n");
+		return false;
+	}
+
+	fprintf(f, "\n");
+	return true;
+}
+
+
+/* exported interface documented in libdom.h */
+nserror libdom_dump_structure(dom_node *node, FILE *f, int depth)
+{
+	dom_exception exc;
+	dom_node *child;
+	nserror ret;
+	dom_node *next_child;
+
+	/* Print this node's entry */
+	if (dump_dom_element(node, f, depth) == false) {
+		/* There was an error; return */
+		return NSERROR_DOM;
+	}
+
+	/* Get the node's first child */
+	exc = dom_node_get_first_child(node, &child);
+	if (exc != DOM_NO_ERR) {
+		fprintf(f, "Exception raised for node_get_first_child\n");
+		return NSERROR_DOM;
+	} else if (child != NULL) {
+		/* node has children;  decend to children's depth */
+		depth++;
+
+		/* Loop though all node's children */
+		do {
+			/* Visit node's descendents */
+			ret = libdom_dump_structure(child, f, depth);
+			if (ret !=NSERROR_OK) {
+				/* There was an error; return */
+				dom_node_unref(child);
+				return NSERROR_DOM;
+			}
+
+			/* Go to next sibling */
+			exc = dom_node_get_next_sibling(child, &next_child);
+			if (exc != DOM_NO_ERR) {
+				fprintf(f, "Exception raised for node_get_next_sibling\n");
+				dom_node_unref(child);
+				return NSERROR_DOM;
+			}
+
+			dom_node_unref(child);
+			child = next_child;
+		} while (child != NULL); /* No more children */
+	}
+
+	return NSERROR_OK;
+}
+
 
 /* exported interface documented in libdom.h */
 nserror libdom_parse_file(const char *filename, const char *encoding, dom_document **doc)
