@@ -446,8 +446,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	int bx = *box_x, by = *box_y;
 	struct box *child, *sibling;
 	bool physically;
-printf("x0:%i y0:%i x1:%i y1:%i\n", box->descendant_x0, box->descendant_y0,
-		box->descendant_y0, box->descendant_y1);
+
 	assert(box);
 
 	/* consider floats first, since they will often overlap other boxes */
