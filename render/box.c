@@ -342,6 +342,79 @@ void box_bounds(struct box *box, struct rect *r)
 	r->y1 = r->y0 + height;
 }
 
+enum box_walk_dir {
+	BOX_WALK_CHILDREN,
+	BOX_WALK_PARENT,
+	BOX_WALK_NEXT_SIBLING,
+	BOX_WALK_FLOAT_CHILDREN,
+	BOX_WALK_NEXT_FLOAT_SIBLING
+};
+
+static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
+		int *x, int *y)
+{
+	switch (dir) {
+	case BOX_WALK_CHILDREN:
+		b = b->children;
+		*x += b->x;
+		*y += b->y;
+		return b;
+
+	case BOX_WALK_PARENT:
+		*x -= b->x;
+		*y -= b->y;
+		return b->parent;
+
+	case BOX_WALK_NEXT_SIBLING:
+		*x -= b->x;
+		*y -= b->y;
+		b = b->next;
+		*x += b->x;
+		*y += b->y;
+		return b;
+
+	case BOX_WALK_FLOAT_CHILDREN:
+		b = b->float_children;
+		*x += b->x;
+		*y += b->y;
+		return b;
+
+	case BOX_WALK_NEXT_FLOAT_SIBLING:
+		*x -= b->x;
+		*y -= b->y;
+		b = b->next_float;
+		*x += b->x;
+		*y += b->y;
+		return b;
+	}
+}
+
+
+static struct box *box_next_xy(struct box *b, int *x, int *y)
+{
+	assert(b != NULL);
+
+	if (b->float_children != NULL) {
+		/* Next node is float child */
+		b = box_move_xy(b, BOX_WALK_FLOAT_CHILDREN, x, y);
+	} else if (b->children != NULL) {
+		/* Next node is child */
+		b = box_move_xy(b, BOX_WALK_CHILDREN, x, y);
+	} else if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT) {
+		/* Go to next float sibling */
+		b = box_move_xy(b, BOX_WALK_NEXT_FLOAT_SIBLING, x, y);
+	} else {
+		/* Go to next sibling, or nearest ancestor with next sibling. */
+		while (b->next == NULL && b->parent != NULL) {
+			b = box_move_xy(b, BOX_WALK_PARENT, x, y);
+		}
+
+		b = box_move_xy(b, BOX_WALK_NEXT_SIBLING, x, y);
+	}
+
+	return b;
+}
+
 
 /**
  * Find the boxes at a point.
@@ -373,7 +446,8 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	int bx = *box_x, by = *box_y;
 	struct box *child, *sibling;
 	bool physically;
-
+printf("x0:%i y0:%i x1:%i y1:%i\n", box->descendant_x0, box->descendant_y0,
+		box->descendant_y0, box->descendant_y1);
 	assert(box);
 
 	/* consider floats first, since they will often overlap other boxes */

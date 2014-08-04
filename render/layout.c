@@ -5068,7 +5068,7 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 
 		css_computed_font_size(box->style, &font_size, &font_unit);
 		text_height = nscss_len2px(font_size, font_unit, box->style);
-
+printf("%i", text_height);
 		*desc_y0 = (*desc_y0 < -text_height) ? *desc_y0 : -text_height;
 	}
 }

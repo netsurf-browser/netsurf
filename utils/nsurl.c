@@ -411,13 +411,15 @@ static void nsurl__get_string_markers(const char * const url_s,
 				/* End of the authority */
 				break;
 
-			} else if (*pos == ':' && marker.colon_first ==
+			} else if (marker.scheme_type != NSURL_SCHEME_MAILTO &&
+					*pos == ':' && marker.colon_first ==
 					marker.authority) {
 				/* could be username:password or host:port
 				 * separator */
 				marker.colon_first = pos - url_s;
 
-			} else if (*pos == ':' && marker.colon_first !=
+			} else if (marker.scheme_type != NSURL_SCHEME_MAILTO &&
+					*pos == ':' && marker.colon_first !=
 					marker.authority) {
 				/* could be host:port separator */
 				marker.colon_last = pos - url_s;
