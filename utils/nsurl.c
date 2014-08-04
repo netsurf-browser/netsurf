@@ -501,6 +501,22 @@ static void nsurl__get_string_markers(const char * const url_s,
 			marker.fragment = marker.end;
 	}
 
+#ifdef NSURL_DEBUG
+	LOG(("marker.start: %i", marker.start));
+	LOG(("marker.scheme_end: %i", marker.scheme_end));
+	LOG(("marker.authority: %i", marker.authority));
+
+	LOG(("marker.colon_first: %i", marker.colon_first));
+	LOG(("marker.at: %i", marker.at));
+	LOG(("marker.colon_last: %i", marker.colon_last));
+
+	LOG(("marker.path: %i", marker.path));
+	LOG(("marker.query: %i", marker.query));
+	LOG(("marker.fragment: %i", marker.fragment));
+
+	LOG(("marker.end: %i", marker.end));
+#endif
+
 	/* Got all the URL components pegged out now */
 	*markers = marker;
 }
