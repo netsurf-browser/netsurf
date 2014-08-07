@@ -20,6 +20,7 @@
 #define NETSURF_BEOS_WINDOW_H 1
 
 extern "C" {
+#include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/browser.h"
 }
