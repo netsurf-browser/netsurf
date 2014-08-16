@@ -976,7 +976,7 @@ check_dirname(const char *path, const char *leaf, char **dirname_out)
 
 	free(dirname);
 
-	return ret;;
+	return ret;
 }
 
 /**

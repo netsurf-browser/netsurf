@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
@@ -35,6 +36,8 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/file.h"
+#include "utils/filepath.h"
+
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "render/html.h"
@@ -553,6 +556,251 @@ tab_init(const char *title,
 	return ret;
 }
 
+
+/**
+ * Build string vector of search path.
+ *
+ * ${XDG_DATA_HOME:-$HOME/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
+ *
+ * $XDG_DATA_HOME if empty use $HOME/.local/share
+ *
+ * XDG_DATA_DIRS if empty use /usr/local/share/:/usr/share/
+ *
+ * \return string vector of search pathnames or NULL on error.
+ */
+static char** xdg_data_strvec(void)
+{
+	const char *xdg_data_dirs;
+	const char *xdg_data_home;
+	const char *home_dir;
+	char *xdg_data_path;
+	int xdg_data_size;
+	char **svec;
+
+	xdg_data_dirs = getenv("XDG_DATA_DIRS");
+	if ((xdg_data_dirs == NULL) || (*xdg_data_dirs == 0)) {
+		xdg_data_dirs = "/usr/local/share/:/usr/share/";
+	}
+
+	xdg_data_home = getenv("XDG_DATA_HOME");
+	if ((xdg_data_home == NULL) || (*xdg_data_home == 0)) {
+		/* $XDG_DATA_HOME is empty use $HOME/.local/share */
+
+		home_dir = getenv("HOME");
+		if ((home_dir != NULL) && (*home_dir != 0)) {
+			xdg_data_size = strlen(home_dir) + SLEN("/.local/share:" ) + strlen(xdg_data_dirs) + 1;
+			xdg_data_path = malloc(xdg_data_size);
+			snprintf(xdg_data_path, xdg_data_size ,
+				 "%s/.local/share/:%s", home_dir, xdg_data_dirs);
+		} else {
+			xdg_data_path = strdup(xdg_data_dirs);
+		}
+	} else {
+		xdg_data_size = strlen(xdg_data_home) + strlen(xdg_data_dirs) + 2;
+		xdg_data_path = malloc(xdg_data_size);
+		snprintf(xdg_data_path, xdg_data_size , "%s:%s", xdg_data_home, xdg_data_dirs);
+	}
+
+	LOG(("%s", xdg_data_path));
+
+	svec = filepath_path_to_strvec(xdg_data_path);
+	free(xdg_data_path);
+
+	return svec;
+}
+
+/**
+ * Search application defaults file for matching mime type.
+ *
+ * create filename form path and applications/defaults.list
+ *
+ * look for [Default Applications]
+ * search lines looking like mime/type=Desktop
+ *
+ * \param path The base path.
+ * \param mimetype The mimetype to search for.
+ * \return The desktop file associated with the mime type or NULL if not found.
+ */
+static char *xdg_get_default_app(const char *path, const char *mimetype)
+{
+	FILE *fp;
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t rd;
+	int fname_len;
+	char *fname;
+	int mimetype_len;
+	char *ret = NULL;
+
+	fname_len = strlen(path) + SLEN("/applications/defaults.list") + 1;
+	fname = malloc(fname_len);
+	snprintf(fname, fname_len, "%s/applications/defaults.list", path);
+
+	LOG(("Checking %s", fname));
+
+	fp = fopen(fname, "r");
+	free(fname);
+	if (fp == NULL) {
+		return NULL;
+	}
+
+	mimetype_len = strlen(mimetype);
+	while ((rd = getline(&line, &len, fp)) != -1) {
+		/* line includes line endings if present, remove them */
+		while ((line[rd - 1] == '\n') || (line[rd - 1] == '\r')) {
+			rd--;
+		}
+		line[rd] = 0;
+
+		/* look for mimetype */
+		if ((rd > mimetype_len) &&
+		    (line[mimetype_len] == '=') &&
+		    (strncmp(line, mimetype, mimetype_len) == 0)) {
+
+			ret = strdup(line + mimetype_len + 1);
+
+			LOG(("Found line match for %s length %zu\n", mimetype, rd));
+			LOG(("Result %s", ret));
+
+			break;
+		}
+	}
+
+	free(line);
+	fclose(fp);
+
+	return ret;
+}
+
+/**
+ * Search desktop file for an Exec line.
+ *
+ * search path is combined with applications/application.desktop to
+ * create a filename.
+ *
+ * Desktop file format http://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+ *
+ * \todo The parsing of the desktop file is badly incomplete and needs
+ * improving. For example the handling of the = delimiter is wrong and
+ * selection from the "Desktop Entry" group is completely absent.
+ *
+ */
+static char *xdg_get_exec_cmd(const char *path, const char *desktop)
+{
+	FILE *fp;
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t rd;
+	int fname_len;
+	char *fname;
+	char *ret = NULL;
+
+	fname_len = strlen(path) + SLEN("/applications/") + strlen(desktop) + 1;
+	fname = malloc(fname_len);
+	snprintf(fname, fname_len, "%s/applications/%s", path, desktop);
+
+	LOG(("Checking %s", fname));
+
+	fp = fopen(fname, "r");
+	free(fname);
+	if (fp == NULL) {
+		return NULL;
+	}
+
+	while ((rd = getline(&line, &len, fp)) != -1) {
+		/* line includes line endings if present, remove them */
+		while ((line[rd - 1] == '\n') || (line[rd - 1] == '\r')) {
+			rd--;
+		}
+		line[rd] = 0;
+
+		/* look for mimetype */
+		if ((rd > (ssize_t)SLEN("Exec=")) &&
+		    (strncmp(line, "Exec=", SLEN("Exec=")) == 0)) {
+
+			ret = strdup(line + SLEN("Exec="));
+
+			LOG(("Found Exec length %zu", rd));
+			LOG(("Result %s", ret));
+
+			break;
+		}
+	}
+
+	free(line);
+	fclose(fp);
+
+	return ret;
+}
+
+static char *exec_arg(const char *arg, int len, const char *fname)
+{
+	char *res = NULL;
+
+	if (*arg == '%') {
+		arg++;
+		if ((*arg == 'f') || (*arg == 'F') ||
+		    (*arg == 'u') || (*arg == 'U')) {
+			res = strdup(fname);
+		}
+	} else {
+		res = calloc(1, len + 1);
+		if (res != NULL) {
+			memcpy(res, arg, len);
+		}
+	}
+
+	return res;
+}
+
+/**
+ * Build vector for executing app.
+ */
+static char **build_exec_argv(const char *fname, const char *exec_cmd)
+{
+	char **argv;
+	const char *start; /* current arguments start */
+	const char *cur; /* current ptr within exec cmd */
+	int aidx = 0; /* argv index */
+
+	argv = calloc(10, sizeof(char *));
+	if (argv == NULL) {
+		return NULL;
+	}
+
+	cur = exec_cmd;
+	while (*cur != 0) {
+		/* skip whitespace */
+		while ((*cur != 0) && (*cur == ' ')) {
+			cur++;
+		}
+		if (*cur == 0) {
+			break;
+		}
+		start = cur;
+
+		/* find end of element */
+		while ((*cur != 0) && (*cur != ' ')) {
+			cur++;
+		}
+
+		argv[aidx] = exec_arg(start, cur - start, fname);
+		if (argv[aidx] != NULL) {
+			LOG(("adding \"%s\"", argv[aidx]));
+			aidx++;
+		}
+	}
+
+	/* if no arguments were found there was nothing to execute */
+	if (aidx == 0) {
+		free(argv);
+		return NULL;
+	}
+
+	return argv;
+}
+
+
 /**
  * open an editor from an existing file.
  */
@@ -561,33 +809,64 @@ editor_init_fname(const char *title,
 	       const char *leafname,
 	       const char *fname)
 {
-/* find user configured app for opening text/plain */
+	char **xdg_data_vec;
+	int veci;
+	char *default_app; /* desktop file of default app for mimetype */
+	char *exec_cmd;
+	char **argv;
 
-/*
- * serach path is ${XDG_DATA_HOME:-$HOME/.local/share}:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
- *
- * $XDG_DATA_HOME if empty use $HOME/.local/share
- *
- * XDG_DATA_DIRS if empty use /usr/local/share/:/usr/share/
- *
- * search path looking for applications/defaults.list
- *
- * look for [Default Applications]
- * search lines looking like mime/type=Desktop
- *
- * if mimetype is found
- * use search path with applications/application.desktop
- *
- * search desktop file for:
- * Exec=gedit %U
- *
- * execute target app on saved data
- */
+	/* build string vector of search path */
+	xdg_data_vec = xdg_data_strvec();
+
+	/* find user configured app for opening text/plain */
+	veci = 0;
+	while (xdg_data_vec[veci] != NULL) {
+		default_app = xdg_get_default_app(xdg_data_vec[veci],
+						  "text/plain");
+		if (default_app != NULL) {
+			break;
+		}
+		veci++;
+	}
+
+	if (default_app == NULL) {
+		/* no default app */
+		filepath_free_strvec(xdg_data_vec);
+		return NSERROR_NOT_FOUND;
+	}
+
+	/* find app to execute */
+	veci = 0;
+	while (xdg_data_vec[veci] != NULL) {
+		exec_cmd = xdg_get_exec_cmd(xdg_data_vec[veci], default_app);
+		if (exec_cmd != NULL) {
+			break;
+		}
+		veci++;
+	}
+	filepath_free_strvec(xdg_data_vec);
+
+	if (exec_cmd == NULL) {
+		/* no exec entry */
+		return NSERROR_NOT_FOUND;
+	}
+
+	/* build exec vector */
+	argv = build_exec_argv(fname, exec_cmd);
+	free(exec_cmd);
+
+	/* execute target app on saved data */
+	if (g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+			  NULL, NULL) != TRUE) {
+		return NSERROR_NOT_FOUND;
+	}
+	filepath_free_strvec(argv);
+
 	return NSERROR_OK;
 }
 
 /**
- * create a new tab with page source
+ * open an editor with data.
  */
 static nserror
 editor_init(const char *title,
