@@ -1,16 +1,37 @@
+/*
+ * Copyright 2014 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
+#include <getopt.h>
 
-#define GLYPH_LEN		16
-#define BUCKETS			512
-#define CHUNK_SIZE		(64 * 1024)
-#define HEADER_MAX		2000
+#define GLYPH_LEN	16
+#define BUCKETS		512
+#define CHUNK_SIZE	(64 * 1024)
+#define HEADER_MAX	2000
 
-#define SECTION_SIZE		(sizeof(uint16_t) * 256)
+#define SECTION_SIZE	(sizeof(uint16_t) * 256)
 
 const char *labels[4] = {
 	"      Regular",
@@ -34,10 +55,10 @@ const char *short_labels[4] = {
 };
 
 enum font_style {
-	REGULAR			= 0,
-	ITALIC			= (1 << 0),
-	BOLD			= (1 << 1),
-	ITALIC_BOLD		= (1 << 2)
+	REGULAR		= 0,
+	ITALIC		= (1 << 0),
+	BOLD		= (1 << 1),
+	ITALIC_BOLD	= (1 << 2)
 };
 
 enum log_level {
@@ -71,7 +92,7 @@ glyph_entry *ht[BUCKETS];
 
 /**
  * Get hash for glyph data
- * \param g 		Glyph data (GLYPH_LEN bytes)
+ * \param g Glyph data (GLYPH_LEN bytes)
  * \return glyph's hash
  */
 static inline uint32_t glyph_hash(const uint8_t *g)
@@ -82,7 +103,7 @@ static inline uint32_t glyph_hash(const uint8_t *g)
 	while (len > 0) {
 		hash *= 0x01000193;
 		hash ^= *g++;
-                len--;
+		len--;
 	}
 
 	return hash;
@@ -92,8 +113,8 @@ static inline uint32_t glyph_hash(const uint8_t *g)
 /**
  * Check whether glyphs are identical (compares glyph data)
  *
- * \param g1		First glyph's data (GLYPH_LEN bytes)
- * \param g2		Second glyph's data (GLYPH_LEN bytes)
+ * \param g1 First glyph's data (GLYPH_LEN bytes)
+ * \param g2 Second glyph's data (GLYPH_LEN bytes)
  * \return true iff both glyphs are identical, else false
  */
 static inline bool glyphs_match(const uint8_t *g1, const uint8_t *g2)
@@ -109,8 +130,8 @@ static inline bool glyphs_match(const uint8_t *g1, const uint8_t *g2)
  * the existing glyph is returned.  If the glyph does not exist in the chain
  * it is added and its pointer is returned.
  *
- * \param head		Head of hash chain
- * \param new		New glyph to add (may be freed)
+ * \param head Head of hash chain
+ * \param new New glyph to add (may be freed)
  * \return pointer to glyph in hash chain
  */
 static glyph_entry * glyph_add_to_chain(glyph_entry **head, glyph_entry *new)
@@ -142,7 +163,7 @@ static glyph_entry * glyph_add_to_chain(glyph_entry **head, glyph_entry *new)
 /**
  * Free a glyph entry chain
  *
- * \param head		Head of hash chain
+ * \param head Head of hash chain
  */
 static void free_chain(glyph_entry *head)
 {
@@ -166,7 +187,7 @@ static void free_chain(glyph_entry *head)
  * the existing glyph is returned.  If the glyph does not exist in the table
  * it is added and its pointer is returned.
  *
- * \param new		New glyph to add (may be freed)
+ * \param new New glyph to add (may be freed)
  * \return pointer to glyph in hash table
  */
 static glyph_entry * glyph_add_to_table(glyph_entry *new)
@@ -184,7 +205,7 @@ static glyph_entry * glyph_add_to_table(glyph_entry *new)
  * the existing glyph is returned.  If the glyph does not exist in the table
  * it is added and its pointer is returned.
  *
- * \param new		New glyph to add (may be freed)
+ * \param new New glyph to add (may be freed)
  * \return pointer to glyph in hash table
  */
 static void free_table(void)
@@ -250,6 +271,41 @@ struct font_data {
 	int glyphs;
 };
 
+bool generate_font_header(const char *path, struct font_data *data)
+{
+	FILE *fp;
+	int s;
+
+	fp = fopen(path, "wb");
+	if (fp == NULL) {
+		LOG(LOG_ERROR, "Couldn't open header file \"%s\"\n", path);
+		return false;
+	}
+
+	fprintf(fp, "/*\n");
+	fwrite(data->header, 1, data->header_len, fp);
+	fprintf(fp, " */\n\n");
+	fprintf(fp, "/* Don't edit this file, it was generated from the "
+			"plain text source data. */\n\n");
+
+
+	for (s = 0; s < 4; s++) {
+		fprintf(fp, "const uint8_t *%s_section_table;\n",
+			var_lables[s]);
+		fprintf(fp, "const uint16_t *%s_sections;\n",
+			var_lables[s]);
+
+	}
+
+	fprintf(fp, "const uint8_t *font_glyph_data;\n");
+
+	fprintf(fp, "\n\n");
+
+	fclose(fp);
+
+	return true;
+
+}
 
 bool generate_font_source(const char *path, struct font_data *data)
 {
@@ -307,7 +363,7 @@ bool generate_font_source(const char *path, struct font_data *data)
 			else
 				fprintf(fp, "0x%.4X, ", offset);
 		}
-	
+
 		fprintf(fp, "};\n\n");
 	}
 
@@ -334,7 +390,6 @@ bool generate_font_source(const char *path, struct font_data *data)
 	}
 
 	fprintf(fp, "};\n\n");
-		
 
 	fclose(fp);
 
@@ -465,8 +520,8 @@ static bool check_glyph_data_valid(int pos, char c)
 #define THREE_S_S	((1 << 0) |            (1 << 2))
 #define THREE__SS	((1 << 0) | (1 << 1)           )
 #define THREE_SS_	(           (1 << 1) | (1 << 2))
-#define THREE_S__	                       (1 << 2)
-#define THREE__S_	            (1 << 1)
+#define THREE_S__			       (1 << 2)
+#define THREE__S_		    (1 << 1)
 #define THREE___S	 (1 << 0)
 
 uint8_t frag[16][5] = {
@@ -709,7 +764,7 @@ static bool parse_glyph_data(struct parse_context *ctx, char c,
 						ctx->id, i)) {
 					LOG(LOG_DEBUG, "  U+%.4X (%s) is "
 							"codepoint\n",
-							ctx->id, 
+							ctx->id,
 							short_labels[i]);
 					ctx->codepoints += 1;
 					free(ctx->data.in_gd.e[i]);
@@ -929,7 +984,7 @@ static bool parse_chunk(struct parse_context *ctx, const char *buf, size_t len,
 			if (!ok) {
 				return false;
 			}
-	
+
 			break;
 		}
 
@@ -1030,7 +1085,7 @@ bool load_font(const char *path, struct font_data **data)
 		free(d);
 		return false;
 	}
-	
+
 	LOG(LOG_INFO, "Parsing complete:\n");
 	count = 0;
 	for (i = 0; i < 4; i++) {
@@ -1049,59 +1104,77 @@ bool load_font(const char *path, struct font_data **data)
 	return true;
 }
 
+static void log_usage(const char *argv0)
+{
+	level = LOG_INFO;
+	LOG(LOG_INFO,
+	    "Usage:\n"
+	    "\t%s [options] <in_file> <out_file>\n"
+	    "\n"
+	    "Options:\n"
+	    "\t--help    -h   Display this text\n"
+	    "\t--quiet   -q   Don't show warnings\n"
+	    "\t--verbose -v   Verbose output\n"
+	    "\t--debug   -d   Full debug output\n",
+	    argv0);
+}
 
 int main(int argc, char** argv)
 {
 	const char *in_path = NULL;
 	const char *out_path = NULL;
+	char *header_path = NULL;
 	struct font_data *data;
 	bool ok;
 	int i;
+	int opt;
 
 	level = LOG_RESULT;
 
 	/* Handle program arguments */
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			if (strcmp(argv[i], "-h") == 0 ||
-					strcmp(argv[i], "--help") == 0) {
-				level = LOG_INFO;
-				LOG(LOG_INFO, "Usage:\n"
-					"\t%s [options] <in_file> <out_file>\n"
-					"\n"
-					"Options:\n"
-					"\t--help    -h   Display this text\n"
-					"\t--quiet   -q   Don't show warnings\n"
-					"\t--verbose -v   Verbose output\n"
-					"\t--debug   -d   Full debug output\n",
-					argv[0]);
-				return EXIT_SUCCESS;
-			} if (argc >= 3 && (strcmp(argv[i], "-v") == 0 ||
-					strcmp(argv[i], "--verbose") == 0)) {
-				level = LOG_INFO;
-			} else if (argc >= 3 && (strcmp(argv[i], "-d") == 0 ||
-					strcmp(argv[i], "--debug") == 0)) {
-				level = LOG_DEBUG;
-			} else if (argc >= 3 && (strcmp(argv[i], "-q") == 0 ||
-					strcmp(argv[i], "--quiet") == 0)) {
-				level = LOG_WARNING;
-			}
+	struct option long_options[] = {
+		{ "help",    no_argument,       NULL, 'h' },
+		{ "quiet",   no_argument,       NULL, 'q' },
+		{ "verbose", no_argument,       NULL, 'v' },
+		{ "debug",   no_argument,       NULL, 'd' },
+		{ "header",  required_argument, NULL, 'H' },
+	};
 
-			continue;
+	while ((opt = getopt_long(argc, argv, "hqvdH:", long_options, NULL)) != -1) {
+		switch (opt) {
+		case 'q':
+			level = LOG_WARNING;
+			break;
+
+		case 'v':
+			level = LOG_INFO;
+			break;
+
+		case 'd':
+			level = LOG_DEBUG;
+			break;
+
+		case 'H':
+			header_path = strdup(optarg);
+			break;
+
+		case 'h':
+			log_usage(argv[0]);
+			return EXIT_SUCCESS;
+
+		default:
+			log_usage(argv[0]);
+			return EXIT_FAILURE;
 		}
-
-		if (in_path == NULL)
-			in_path = argv[i];
-		else
-			out_path = argv[i];
 	}
 
-	if (in_path == NULL || out_path == NULL) {
-		LOG(LOG_ERROR, "Usage:\n"
-				"\t%s [options] <in_file> <out_file>\n",
-				argv[0]);
+	if ((argc - optind) < 2) {
+		log_usage(argv[0]);
 		return EXIT_FAILURE;
 	}
+
+	in_path = argv[optind];
+	out_path = argv[optind + 1];
 
 	LOG(LOG_DEBUG, "Using input path: \"%s\"\n", in_path);
 	LOG(LOG_DEBUG, "Using output path: \"%s\"\n", out_path);
@@ -1113,6 +1186,9 @@ int main(int argc, char** argv)
 	}
 
 	ok = generate_font_source(out_path, data);
+	if (ok && (header_path != NULL)) {
+		ok = generate_font_header(header_path, data);
+	}
 	free_table();
 	for (i = 0; i < 4; i++) {
 		free(data->sections[i]);
@@ -1124,4 +1200,3 @@ int main(int argc, char** argv)
 
 	return EXIT_SUCCESS;
 }
-

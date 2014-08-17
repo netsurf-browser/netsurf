@@ -30,8 +30,7 @@
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
 
-#include "framebuffer/GEN_font_internal.c"
-
+#include <font-core.h>
 
 #define GLYPH_LEN		16
 
