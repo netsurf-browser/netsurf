@@ -16,14 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 #include <gtk/gtk.h>
 
-#include "utils/nsurl.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser.h"
@@ -71,11 +67,10 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 			  source_size,
 			  &ndata,
 			  &ndata_len);
-	if (ret != NSERROR_OK) {
-	free(filename);
-		return;
+	if (ret == NSERROR_OK) {
+		ret = nsgtk_viewdata(title, filename, ndata, ndata_len);
 	}
 
-	ret = nsgtk_viewdata(title, filename, ndata, ndata_len);
 	free(filename);
+	free(title);
 }
