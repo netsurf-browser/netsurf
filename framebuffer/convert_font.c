@@ -505,16 +505,15 @@ static bool check_glyph_data_valid(int pos, char c)
 		} else {
 			return true;
 		}
-	} else if (offset >= 3) {
-		if (c != '.' && c != '#' && c != ' ') {
-			LOG(LOG_ERROR, "  Invalid glyph data: "
-					"expecting '.', '#', or ' ', "
-					"got '%c' (%i)\n",
-					c, c);
-			return false;
-		} else {
-			return true;
-		}
+	}
+
+	/* offset must be >=3 */
+	if (c != '.' && c != '#' && c != ' ') {
+		LOG(LOG_ERROR, "  Invalid glyph data: "
+		    "expecting '.', '#', or ' ', "
+		    "got '%c' (%i)\n",
+		    c, c);
+		return false;
 	}
 
 	return true;
