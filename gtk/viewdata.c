@@ -811,7 +811,7 @@ editor_init_fname(const char *title,
 {
 	char **xdg_data_vec;
 	int veci;
-	char *default_app; /* desktop file of default app for mimetype */
+	char *def_app_desktop; /* desktop file of default app for mimetype */
 	char *exec_cmd;
 	char **argv;
 
@@ -821,15 +821,15 @@ editor_init_fname(const char *title,
 	/* find user configured app for opening text/plain */
 	veci = 0;
 	while (xdg_data_vec[veci] != NULL) {
-		default_app = xdg_get_default_app(xdg_data_vec[veci],
+		def_app_desktop = xdg_get_default_app(xdg_data_vec[veci],
 						  "text/plain");
-		if (default_app != NULL) {
+		if (def_app_desktop != NULL) {
 			break;
 		}
 		veci++;
 	}
 
-	if (default_app == NULL) {
+	if (def_app_desktop == NULL) {
 		/* no default app */
 		filepath_free_strvec(xdg_data_vec);
 		return NSERROR_NOT_FOUND;
@@ -838,12 +838,13 @@ editor_init_fname(const char *title,
 	/* find app to execute */
 	veci = 0;
 	while (xdg_data_vec[veci] != NULL) {
-		exec_cmd = xdg_get_exec_cmd(xdg_data_vec[veci], default_app);
+		exec_cmd = xdg_get_exec_cmd(xdg_data_vec[veci], def_app_desktop);
 		if (exec_cmd != NULL) {
 			break;
 		}
 		veci++;
 	}
+	free(def_app_desktop);
 	filepath_free_strvec(xdg_data_vec);
 
 	if (exec_cmd == NULL) {
