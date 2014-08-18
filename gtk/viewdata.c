@@ -460,6 +460,7 @@ window_init_fname(const char *title,
 	nserror ret;
 	FILE *f;
 	char *ndata;
+	long tell_len;
 	size_t ndata_len;
 
 	f = fopen(filename, "r");
@@ -471,17 +472,21 @@ window_init_fname(const char *title,
 		return NSERROR_BAD_SIZE;
 	}
 
-	ndata_len = ftell(f);
+	tell_len = ftell(f);
+	if (tell_len == -1) {
+		fclose(f);
+		return NSERROR_BAD_SIZE;		
+	}
 
 	if (fseek(f, 0, SEEK_SET) != 0) {
 		fclose(f);
 		return NSERROR_BAD_SIZE;
 	}
 
-	ndata = malloc(ndata_len);
+	ndata = malloc(tell_len);
 
-	fread(ndata, 1, ndata_len, f);
-
+	ndata_len = fread(ndata, 1, tell_len, f);
+	
 	fclose(f);
 
 	ret = window_init(title, leafname, ndata, ndata_len);
