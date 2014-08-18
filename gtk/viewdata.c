@@ -578,27 +578,38 @@ static char** xdg_data_strvec(void)
 	char **svec;
 
 	xdg_data_dirs = getenv("XDG_DATA_DIRS");
-	if ((xdg_data_dirs == NULL) || (*xdg_data_dirs == 0)) {
+	if ((xdg_data_dirs == NULL) ||
+	    (*xdg_data_dirs == 0) ||
+	    (strlen(xdg_data_dirs) > 4096)) {
 		xdg_data_dirs = "/usr/local/share/:/usr/share/";
 	}
 
 	xdg_data_home = getenv("XDG_DATA_HOME");
-	if ((xdg_data_home == NULL) || (*xdg_data_home == 0)) {
+	if ((xdg_data_home == NULL) ||
+	    (*xdg_data_home == 0) ||
+	    (strlen(xdg_data_home) > 4096)) {
 		/* $XDG_DATA_HOME is empty use $HOME/.local/share */
 
 		home_dir = getenv("HOME");
-		if ((home_dir != NULL) && (*home_dir != 0)) {
-			xdg_data_size = strlen(home_dir) + SLEN("/.local/share:" ) + strlen(xdg_data_dirs) + 1;
+		if ((home_dir == NULL) ||
+		    (*home_dir == 0) ||
+		    (strlen(home_dir) > 4096)) {
+			xdg_data_path = strdup(xdg_data_dirs);
+		} else {
+			xdg_data_size = strlen(home_dir) +
+				SLEN("/.local/share:") +
+				strlen(xdg_data_dirs) + 1;
 			xdg_data_path = malloc(xdg_data_size);
 			snprintf(xdg_data_path, xdg_data_size ,
-				 "%s/.local/share/:%s", home_dir, xdg_data_dirs);
-		} else {
-			xdg_data_path = strdup(xdg_data_dirs);
+				 "%s/.local/share/:%s",
+				 home_dir, xdg_data_dirs);
 		}
 	} else {
-		xdg_data_size = strlen(xdg_data_home) + strlen(xdg_data_dirs) + 2;
+		xdg_data_size = strlen(xdg_data_home) +
+			strlen(xdg_data_dirs) + 2;
 		xdg_data_path = malloc(xdg_data_size);
-		snprintf(xdg_data_path, xdg_data_size , "%s:%s", xdg_data_home, xdg_data_dirs);
+		snprintf(xdg_data_path, xdg_data_size , "%s:%s",
+			 xdg_data_home, xdg_data_dirs);
 	}
 
 	LOG(("%s", xdg_data_path));
