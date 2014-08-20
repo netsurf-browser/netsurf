@@ -337,7 +337,7 @@ bool generate_font_source(const char *path, struct font_data *data)
 
 	for (s = 0; s < 4; s++) {
 
-		fprintf(fp, "const uint8_t %s_section_table[256] = {\n",
+		fprintf(fp, "static const uint8_t %s_section_table_c[256] = {\n",
 				var_lables[s]);
 
 		for (i = 0; i < 256; i++) {
@@ -355,7 +355,9 @@ bool generate_font_source(const char *path, struct font_data *data)
 						data->section_table[s][i]);
 		}
 
-		fprintf(fp, "};\nconst uint16_t %s_sections[%i] = {\n",
+		fprintf(fp, "};\nconst uint8_t *%s_section_table = &%s_section_table_c[0];\n\n",
+			var_lables[s], var_lables[s]);
+		fprintf(fp, "static const uint16_t %s_sections_c[%i] = {\n",
 				var_lables[s], data->sec_count[s] * 256);
 
 		limit = data->sec_count[s] * 256;
@@ -371,10 +373,10 @@ bool generate_font_source(const char *path, struct font_data *data)
 				fprintf(fp, "0x%.4X, ", offset);
 		}
 
-		fprintf(fp, "};\n\n");
+		fprintf(fp, "};\nconst uint16_t *%s_sections = &%s_sections_c[0];\n\n", var_lables[s], var_lables[s]);
 	}
 
-	fprintf(fp, "const uint8_t font_glyph_data[%i] = {\n",
+	fprintf(fp, "static const uint8_t font_glyph_data_c[%i] = {\n",
 			(data->glyphs + 1) * 16);
 
 	fprintf(fp, "\t0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,\n"
@@ -396,7 +398,8 @@ bool generate_font_source(const char *path, struct font_data *data)
 		}
 	}
 
-	fprintf(fp, "};\n\n");
+	fprintf(fp, "};\n");
+	fprintf(fp, "const uint8_t *font_glyph_data = &font_glyph_data_c[0];\n\n");
 
 	fclose(fp);
 
