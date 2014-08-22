@@ -32,7 +32,7 @@
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
 #include "desktop/plotters.h"
@@ -688,8 +688,8 @@ MULTIHANDLER(savepage)
 		return TRUE;
 	}
 	closedir(d);
-	save_complete(nsgtk_get_browser_window(
-			g->top_level)->current_content, path, NULL);
+	save_complete(browser_window_get_content(nsgtk_get_browser_window(
+			g->top_level)), path, NULL);
 	g_free(path);
 
 	gtk_widget_destroy(fc);
@@ -761,7 +761,8 @@ MULTIHANDLER(pdf)
 		}
 
 		/* This will clean up the print_settings object for us */
-		print_basic_run(bw->current_content, &pdf_printer, settings);
+		print_basic_run(browser_window_get_content(bw),
+				&pdf_printer, settings);
 	}
 
 	gtk_widget_destroy(save_dialog);
@@ -804,8 +805,9 @@ MULTIHANDLER(plaintext)
 
 	if (gtk_dialog_run(GTK_DIALOG(fc)) == GTK_RESPONSE_ACCEPT) {
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-		save_as_text(nsgtk_get_browser_window(
-				g->top_level)->current_content, filename);
+		save_as_text(browser_window_get_content(
+				nsgtk_get_browser_window(
+				g->top_level)), filename);
 		g_free(filename);
 	}
 
@@ -859,7 +861,7 @@ MULTIHANDLER(print)
 		}
 	}
 
-	content_to_print = bw->current_content;
+	content_to_print = browser_window_get_content(bw);
 
 	page_setup = gtk_print_run_page_setup_dialog(g->window, NULL, NULL);
 	if (page_setup == NULL) {
@@ -879,7 +881,8 @@ MULTIHANDLER(print)
 	g_signal_connect(print_op, "end_print",
 			G_CALLBACK(gtk_print_signal_end_print), nssettings);
 
-	if (content_get_type(bw->current_content) != CONTENT_TEXTPLAIN) {
+	if (content_get_type(browser_window_get_content(bw)) !=
+			CONTENT_TEXTPLAIN) {
 		res = gtk_print_operation_run(print_op,
 				GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG,
     				g->window,
