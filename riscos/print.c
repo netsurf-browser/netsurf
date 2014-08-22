@@ -37,7 +37,7 @@
 #include "utils/nsoption.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/plotters.h"
 
 #include "riscos/gui.h"
@@ -282,7 +282,8 @@ bool ro_gui_print_apply(wimp_w w)
 	print_bg_images = ro_gui_get_icon_selected_state(dialog_print,
 			ICON_PRINT_BG_IMAGES);
 
-	print_send_printsave(ro_print_current_window->bw->current_content);
+	print_send_printsave(browser_window_get_content(
+			ro_print_current_window->bw));
 
 	return true;
 }
@@ -548,7 +549,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	int left, right, top, bottom, width, height;
 	int saved_width, saved_height;
 	int yscroll = 0, sheets = print_max_sheets;
-	hlcache_handle *h = g->bw->current_content;
+	hlcache_handle *h = browser_window_get_content(g->bw);
 	const char *error_message;
 	pdriver_features features;
 	os_fw fhandle, old_job = 0;
