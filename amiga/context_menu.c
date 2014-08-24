@@ -988,7 +988,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					nserror ret;
 					nsurl *url;
 
-					ret = search_web_omni(sel, SEARCH_WEB_OMNI_NONE, &url);
+					ret = search_web_omni(sel, SEARCH_WEB_OMNI_SEARCHONLY, &url);
 					free(sel);
 					if (ret == NSERROR_OK) {
 						ret = browser_window_navigate(gwin->bw,
