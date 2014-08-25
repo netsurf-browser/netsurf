@@ -69,6 +69,7 @@ lwc_string *corestring_lwc_iframe;
 lwc_string *corestring_lwc_image;
 lwc_string *corestring_lwc_img;
 lwc_string *corestring_lwc_input;
+lwc_string *corestring_lwc_javascript;
 lwc_string *corestring_lwc_justify;
 lwc_string *corestring_lwc_left;
 lwc_string *corestring_lwc_li;
@@ -327,6 +328,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(image);
 	CSS_LWC_STRING_UNREF(img);
 	CSS_LWC_STRING_UNREF(input);
+	CSS_LWC_STRING_UNREF(javascript);
 	CSS_LWC_STRING_UNREF(justify);
 	CSS_LWC_STRING_UNREF(left);
 	CSS_LWC_STRING_UNREF(li);
@@ -610,6 +612,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(image);
 	CSS_LWC_STRING_INTERN(img);
 	CSS_LWC_STRING_INTERN(input);
+	CSS_LWC_STRING_INTERN(javascript);
 	CSS_LWC_STRING_INTERN(justify);
 	CSS_LWC_STRING_INTERN(left);
 	CSS_LWC_STRING_INTERN(li);

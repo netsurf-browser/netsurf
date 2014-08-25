@@ -57,6 +57,7 @@
 #include "content/fetchers/curl.h"
 #include "content/fetchers/data.h"
 #include "content/fetchers/file.h"
+#include "javascript/fetcher.h"
 #include "content/urldb.h"
 
 /* Define this to turn on verbose fetch logging */
@@ -291,6 +292,7 @@ nserror fetcher_init(void)
 	fetch_file_register();
 	fetch_resource_register();
 	fetch_about_register();
+	fetch_javascript_register();
 
 	return NSERROR_OK;
 }
