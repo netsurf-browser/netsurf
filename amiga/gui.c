@@ -3918,6 +3918,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
+		ami_schedule(0, ami_gui_refresh_favicon, g->shared);
 
 		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);

@@ -74,6 +74,7 @@ extern lwc_string *corestring_lwc_iframe;
 extern lwc_string *corestring_lwc_image;
 extern lwc_string *corestring_lwc_img;
 extern lwc_string *corestring_lwc_input;
+extern lwc_string *corestring_lwc_javascript;
 extern lwc_string *corestring_lwc_justify;
 extern lwc_string *corestring_lwc_left;
 extern lwc_string *corestring_lwc_li;

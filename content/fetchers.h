@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file content/fetchers.h
+/**
+ * \file content/fetchers.h
+ *
  * Interface for fetchers factory.
  */
 
@@ -34,6 +36,15 @@ struct fetch;
  * Fetcher operations API
  *
  * These are the operations a fetcher must implement.
+ *
+ * Each fetcher is called once for initialisaion and finalisation.
+ * The poll entry point will be called to allow all active fetches to progress.
+ * The flow of a fetch operation is:
+ *   URL is checked for aceptability.
+ *   setup with all applicable data.
+ *   start is called before teh first poll
+ *   after completion or abort it is freed
+ *
  */
 struct fetcher_operation_table {
 	/**
@@ -44,7 +55,7 @@ struct fetcher_operation_table {
 	bool (*initialise)(lwc_string *scheme);
 
 	/**
-	 * can this fetcher accept a url.
+	 * Can this fetcher accept a url.
 	 *
 	 * \param url the URL to check
 	 * \return true if the fetcher can handle the url else false.
@@ -80,7 +91,7 @@ struct fetcher_operation_table {
 	void (*poll)(lwc_string *scheme);
 
 	/**
-	 * finalise the fetcher.
+	 * Finalise the fetcher.
 	 */
 	void (*finalise)(lwc_string *scheme);
 };
@@ -97,9 +108,9 @@ nserror fetcher_add(lwc_string *scheme, const struct fetcher_operation_table *op
 
 
 /**
- * Initialise the fetchers.
+ * Initialise all registered fetchers.
  *
- * @return NSERROR_OK or error code
+ * \return NSERROR_OK or error code
  */
 nserror fetcher_init(void);
 

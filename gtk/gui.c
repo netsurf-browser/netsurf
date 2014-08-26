@@ -539,7 +539,6 @@ static void gui_quit(void)
 	LOG(("Quitting GUI"));
 
 	/* Ensure all scaffoldings are destroyed before we go into exit */
-	nsgtk_scaffolding_destroy();
 	nsgtk_download_destroy();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));

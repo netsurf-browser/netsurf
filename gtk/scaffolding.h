@@ -193,11 +193,6 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(struct nsgtk_scaffolding *g)
 void nsgtk_scaffolding_set_top_level(struct gui_window *g);
 
 /**
- * Destroy all scaffolds.
- */
-void nsgtk_scaffolding_destroy(void);
-
-/**
  * update the sensitivity of context sensitive UI elements
  *
  * widgets altered in arrays:

@@ -265,20 +265,6 @@ static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 	return TRUE;
 }
 
-/* exported interface documented in gtk_scaffold.h */
-void nsgtk_scaffolding_destroy(void)
-{
-	struct nsgtk_scaffolding *gs;
-
-	gs = scaf_list;
-	while (gs != NULL) {
-		LOG(("destroying scaffold: %p", gs));
-		if (gtk_widget_in_destruction(GTK_WIDGET(gs->window)) != TRUE) {
-			gtk_widget_destroy(GTK_WIDGET(gs->window));
-		}
-	}
-}
-
 /**
  * Update the back and forward button sensitivity.
  */
@@ -918,8 +904,16 @@ MULTIHANDLER(closewindow)
 
 MULTIHANDLER(quit)
 {
-	if (nsgtk_check_for_downloads(g->window) == false)
-		netsurf_quit = true;
+	struct nsgtk_scaffolding *gs;
+
+	if (nsgtk_check_for_downloads(g->window) == false) {
+		gs = scaf_list;
+		while (gs != NULL) {
+			gtk_widget_destroy(GTK_WIDGET(gs->window));
+			gs = gs->next;
+		}
+	}
+
 	return TRUE;
 }
 

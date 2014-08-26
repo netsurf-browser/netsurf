@@ -55,6 +55,8 @@ void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
 {
 	const char *filetype = NULL;
 
+	/* Check we are running on Workbench */
+	if(nsoption_charp(pubscreen_name) == NULL) return;
 	if(strcmp(nsoption_charp(pubscreen_name), "Workbench")) return;
 
 	switch(type)
