@@ -32,7 +32,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -259,6 +259,24 @@ bool ro_gui_search_prepare_menu(void)
 	return true;
 }
 
+bool ro_gui_search_bw_searchable(struct browser_window *bw)
+{
+	hlcache_handle *h;
+
+	assert(bw != NULL);
+
+	h = browser_window_get_content(bw);
+
+	/* only handle html/textplain contents */
+	/* TODO: Should have content_is_searchable() api */
+	if ((!h) || (content_get_type(h) != CONTENT_HTML &&
+			content_get_type(h) != CONTENT_TEXTPLAIN))
+		return false;
+
+	return true;
+}
+
+
 /**
  * Open the search dialog
  *
@@ -266,15 +284,8 @@ bool ro_gui_search_prepare_menu(void)
  */
 void ro_gui_search_prepare(struct browser_window *bw)
 {
-	hlcache_handle *h;
-
-	assert(bw != NULL);
-
-	h = bw->current_content;
-
-	/* only handle html/textplain contents */
-	if ((!h) || (content_get_type(h) != CONTENT_HTML &&
-			content_get_type(h) != CONTENT_TEXTPLAIN))
+	/* only handle searchable contents */
+	if (!ro_gui_search_bw_searchable(bw))
 		return;
 
 	/* if the search dialogue is reopened over a new window, we may
