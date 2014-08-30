@@ -356,11 +356,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 	*char_offset = length;
 	*actual_x = tx;
-
-	LOG(("Split %u chars at %ipx: "
-			"Split at char %i (%ipx) - %.*s",
-			length, x, *char_offset, *actual_x,
-			*char_offset, string));
 	return true;
 }
 
