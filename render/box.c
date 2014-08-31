@@ -951,6 +951,8 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 		fprintf(stream, " float_children %p", box->float_children);
 	if (box->next_float)
 		fprintf(stream, " next_float %p", box->next_float);
+	if (box->float_container)
+		fprintf(stream, " float_container %p", box->float_container);
 	if (box->col) {
 		fprintf(stream, " (columns");
 		for (i = 0; i != box->columns; i++)
