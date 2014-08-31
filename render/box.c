@@ -42,7 +42,6 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
-static bool box_contains_point(struct box *box, int x, int y, bool *physically);
 static bool box_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd);
@@ -343,6 +342,128 @@ void box_bounds(struct box *box, struct rect *r)
 }
 
 
+/**
+ * Determine if a point lies within a box.
+ *
+ * \param  box		box to consider
+ * \param  x		coordinate relative to box
+ * \param  y		coordinate relative to box
+ * \param  physically	if function returning true, physically is set true if
+ *			point is within the box's physical dimensions and false
+ *			if the point is not within the box's physical dimensions
+ *			but is in the area defined by the box's descendants.
+ *			if function returning false, physically is undefined.
+ * \return  true if the point is within the box or a descendant box
+ *
+ * This is a helper function for box_at_point().
+ */
+
+static bool box_contains_point(struct box *box, int x, int y, bool *physically)
+{
+	css_computed_clip_rect css_rect;
+
+	if (box->style != NULL &&
+			css_computed_position(box->style) ==
+					CSS_POSITION_ABSOLUTE &&
+			css_computed_clip(box->style, &css_rect) ==
+					CSS_CLIP_RECT) {
+		/* We have an absolutly positioned box with a clip rect */
+		struct rect r = {
+			.x0 = box->border[LEFT].width,
+			.y0 = box->border[TOP].width,
+			.x1 = box->padding[LEFT] + box->width +
+					box->border[RIGHT].width +
+					box->padding[RIGHT],
+			.y1 = box->padding[TOP] + box->height +
+					box->border[BOTTOM].width +
+					box->padding[BOTTOM]
+		};
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)
+			*physically = true;
+		else
+			*physically = false;
+
+		/* Adjust rect to css clip region */
+		if (css_rect.left_auto == false) {
+			r.x0 += FIXTOINT(nscss_len2px(
+					css_rect.left, css_rect.lunit,
+					box->style));
+		}
+		if (css_rect.top_auto == false) {
+			r.y0 += FIXTOINT(nscss_len2px(
+					css_rect.top, css_rect.tunit,
+					box->style));
+		}
+		if (css_rect.right_auto == false) {
+			r.x1 = box->border[LEFT].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.right,
+							css_rect.runit,
+							box->style));
+		}
+		if (css_rect.bottom_auto == false) {
+			r.y1 = box->border[TOP].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.bottom,
+							css_rect.bunit,
+							box->style));
+		}
+
+		/* Test if point is in clipped box */
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
+			/* inside clip area */
+			return true;
+		}
+
+		/* Not inside clip area */
+		return false;
+	}
+	if (x >= -box->border[LEFT].width &&
+			x < box->padding[LEFT] + box->width +
+			box->padding[RIGHT] + box->border[RIGHT].width &&
+			y >= -box->border[TOP].width &&
+			y < box->padding[TOP] + box->height +
+			box->padding[BOTTOM] + box->border[BOTTOM].width) {
+		*physically = true;
+		return true;
+	}
+	if (box->list_marker && box->list_marker->x - box->x <= x +
+			box->list_marker->border[LEFT].width &&
+			x < box->list_marker->x - box->x +
+			box->list_marker->padding[LEFT] +
+			box->list_marker->width +
+			box->list_marker->border[RIGHT].width +
+			box->list_marker->padding[RIGHT] &&
+			box->list_marker->y - box->y <= y +
+			box->list_marker->border[TOP].width &&
+			y < box->list_marker->y - box->y +
+			box->list_marker->padding[TOP] +
+			box->list_marker->height +
+			box->list_marker->border[BOTTOM].width +
+			box->list_marker->padding[BOTTOM]) {
+		*physically = true;
+		return true;
+	}
+	if ((box->style && css_computed_overflow_x(box->style) == 
+			CSS_OVERFLOW_VISIBLE) || !box->style) {
+		if (box->descendant_x0 <= x &&
+				x < box->descendant_x1) {
+			*physically = false;
+			return true;
+		}
+	}
+	if ((box->style && css_computed_overflow_y(box->style) == 
+			CSS_OVERFLOW_VISIBLE) || !box->style) {
+		if (box->descendant_y0 <= y &&
+				y < box->descendant_y1) {
+			*physically = false;
+			return true;
+		}
+	}
+	return false;
+}
+
+
 /** Direction to move in a box-tree walk */
 enum box_walk_dir {
 	BOX_WALK_CHILDREN,
@@ -577,128 +698,6 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	}
 
 	return NULL;
-}
-
-
-/**
- * Determine if a point lies within a box.
- *
- * \param  box		box to consider
- * \param  x		coordinate relative to box
- * \param  y		coordinate relative to box
- * \param  physically	if function returning true, physically is set true if
- *			point is within the box's physical dimensions and false
- *			if the point is not within the box's physical dimensions
- *			but is in the area defined by the box's descendants.
- *			if function returning false, physically is undefined.
- * \return  true if the point is within the box or a descendant box
- *
- * This is a helper function for box_at_point().
- */
-
-bool box_contains_point(struct box *box, int x, int y, bool *physically)
-{
-	css_computed_clip_rect css_rect;
-
-	if (box->style != NULL &&
-			css_computed_position(box->style) ==
-					CSS_POSITION_ABSOLUTE &&
-			css_computed_clip(box->style, &css_rect) ==
-					CSS_CLIP_RECT) {
-		/* We have an absolutly positioned box with a clip rect */
-		struct rect r = {
-			.x0 = box->border[LEFT].width,
-			.y0 = box->border[TOP].width,
-			.x1 = box->padding[LEFT] + box->width +
-					box->border[RIGHT].width +
-					box->padding[RIGHT],
-			.y1 = box->padding[TOP] + box->height +
-					box->border[BOTTOM].width +
-					box->padding[BOTTOM]
-		};
-		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)
-			*physically = true;
-		else
-			*physically = false;
-
-		/* Adjust rect to css clip region */
-		if (css_rect.left_auto == false) {
-			r.x0 += FIXTOINT(nscss_len2px(
-					css_rect.left, css_rect.lunit,
-					box->style));
-		}
-		if (css_rect.top_auto == false) {
-			r.y0 += FIXTOINT(nscss_len2px(
-					css_rect.top, css_rect.tunit,
-					box->style));
-		}
-		if (css_rect.right_auto == false) {
-			r.x1 = box->border[LEFT].width +
-					FIXTOINT(nscss_len2px(
-							css_rect.right,
-							css_rect.runit,
-							box->style));
-		}
-		if (css_rect.bottom_auto == false) {
-			r.y1 = box->border[TOP].width +
-					FIXTOINT(nscss_len2px(
-							css_rect.bottom,
-							css_rect.bunit,
-							box->style));
-		}
-
-		/* Test if point is in clipped box */
-		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
-			/* inside clip area */
-			return true;
-		}
-
-		/* Not inside clip area */
-		return false;
-	}
-	if (x >= -box->border[LEFT].width &&
-			x < box->padding[LEFT] + box->width +
-			box->padding[RIGHT] + box->border[RIGHT].width &&
-			y >= -box->border[TOP].width &&
-			y < box->padding[TOP] + box->height +
-			box->padding[BOTTOM] + box->border[BOTTOM].width) {
-		*physically = true;
-		return true;
-	}
-	if (box->list_marker && box->list_marker->x - box->x <= x +
-			box->list_marker->border[LEFT].width &&
-			x < box->list_marker->x - box->x +
-			box->list_marker->padding[LEFT] +
-			box->list_marker->width +
-			box->list_marker->border[RIGHT].width +
-			box->list_marker->padding[RIGHT] &&
-			box->list_marker->y - box->y <= y +
-			box->list_marker->border[TOP].width &&
-			y < box->list_marker->y - box->y +
-			box->list_marker->padding[TOP] +
-			box->list_marker->height +
-			box->list_marker->border[BOTTOM].width +
-			box->list_marker->padding[BOTTOM]) {
-		*physically = true;
-		return true;
-	}
-	if ((box->style && css_computed_overflow_x(box->style) == 
-			CSS_OVERFLOW_VISIBLE) || !box->style) {
-		if (box->descendant_x0 <= x &&
-				x < box->descendant_x1) {
-			*physically = false;
-			return true;
-		}
-	}
-	if ((box->style && css_computed_overflow_y(box->style) == 
-			CSS_OVERFLOW_VISIBLE) || !box->style) {
-		if (box->descendant_y0 <= y &&
-				y < box->descendant_y1) {
-			*physically = false;
-			return true;
-		}
-	}
-	return false;
 }
 
 
