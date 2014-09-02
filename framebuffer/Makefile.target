@@ -133,7 +133,7 @@ $(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V
 
 
 # Internal fonts to generate
-FB_FONT_internal_core := framebuffer/res/fonts/glyph_data
+FB_FONT_internal_ns-sans := framebuffer/res/fonts/glyph_data
 
 # Internal font conversion
 $(TOOLROOT)/convert_font: $(TOOLROOT)/created framebuffer/convert_font.c
