@@ -6,9 +6,6 @@
 @{b}NetSurf@{ub} Amiga-specific documentation
 http://www.netsurf-browser.org
 
-@{" Change Log           " link ChangeLog/Main}
-@{" Licence              " link COPYING/Main}
-
 @{" GUI                  " link GUI}
 @{" Preferences GUI      " link Prefs}
 
