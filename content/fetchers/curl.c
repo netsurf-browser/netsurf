@@ -953,23 +953,29 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].issuer,
-					min(sizeof ssl_certs[i].issuer,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+				 min(sizeof ssl_certs[i].issuer - 1,
+				     (unsigned) buf->length + 1),
+				 "%s", buf->data);
+			ssl_certs[i].issuer[min(sizeof ssl_certs[i].issuer,
+						(unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			mem = BIO_new(BIO_s_mem());
 			X509_NAME_print_ex(mem,
 				X509_get_subject_name(certs[i].cert),
-				0, XN_FLAG_SEP_CPLUS_SPC |
-					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+					   0,
+					   XN_FLAG_SEP_CPLUS_SPC |
+					   XN_FLAG_DN_REV |
+					   XN_FLAG_FN_NONE);
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
 			snprintf(ssl_certs[i].subject,
-					min(sizeof ssl_certs[i].subject,
-						(unsigned) buf->length + 1),
+				 min(sizeof(ssl_certs[i].subject) - 1,
+				     (unsigned) buf->length + 1),
 					"%s", buf->data);
+			ssl_certs[i].subject[min(sizeof(ssl_certs[i].subject),
+						 (unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			ssl_certs[i].cert_type =
