@@ -921,10 +921,12 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].not_before,
-					min(sizeof ssl_certs[i].not_before,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].not_before,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].not_before) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].not_before[min(sizeof(ssl_certs[i].not_before) - 1,
+						    (unsigned)buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			mem = BIO_new(BIO_s_mem());
@@ -933,10 +935,13 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].not_after,
-					min(sizeof ssl_certs[i].not_after,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].not_after,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].not_after) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].not_after[min(sizeof(ssl_certs[i].not_after) - 1,
+						 (unsigned)buf->length)] = 0;
+
 			BUF_MEM_free(buf);
 
 			ssl_certs[i].sig_type =
@@ -952,11 +957,11 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].issuer,
-				 min(sizeof ssl_certs[i].issuer - 1,
-				     (unsigned) buf->length + 1),
-				 "%s", buf->data);
-			ssl_certs[i].issuer[min(sizeof ssl_certs[i].issuer,
+			memcpy(ssl_certs[i].issuer,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].issuer) - 1,
+				   (unsigned) buf->length));
+			ssl_certs[i].issuer[min(sizeof(ssl_certs[i].issuer) - 1,
 						(unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
@@ -970,11 +975,11 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].subject,
-				 min(sizeof(ssl_certs[i].subject) - 1,
-				     (unsigned) buf->length + 1),
-					"%s", buf->data);
-			ssl_certs[i].subject[min(sizeof(ssl_certs[i].subject),
+			memcpy(ssl_certs[i].subject,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].subject) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].subject[min(sizeof(ssl_certs[i].subject) - 1,
 						 (unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
