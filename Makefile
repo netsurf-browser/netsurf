@@ -447,7 +447,7 @@ endef
 # Set up the WARNFLAGS here so that they can be overridden in the Makefile.config
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wmissing-prototypes -Wmissing-declarations \
 	-Wnested-externs -Wuninitialized
 ifneq ($(CC_MAJOR),2)
   WARNFLAGS += -Wno-unused-parameter 
@@ -455,6 +455,13 @@ endif
 # deal with lots of unwanted warnings from javascript
 ifeq ($(call cc_ver_ge,4,6),1)
 	WARNFLAGS += -Wno-unused-but-set-variable
+endif
+# deal with chaging warning flags on differing HOST systems
+ifeq ($(HOST),OpenBSD)
+  # OpenBSD headers are not compatible with redundant declaration warning
+  WARNFLAGS += -Wno-redundant-decls
+else
+  WARNFLAGS += -Wredundant-decls
 endif
 
 # Pull in the configuration
