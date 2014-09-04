@@ -359,6 +359,8 @@ void fetch_rsrc_register(void)
 {
 	lwc_string *scheme;
 	int err;
+	nserror ret;
+
 	const struct fetcher_operation_table fetcher_ops_rsrc = {
 		fetch_rsrc_initialise,
 		fetch_rsrc_can_fetch,
@@ -382,7 +384,10 @@ void fetch_rsrc_register(void)
 				"(couldn't intern \"rsrc\").");
 	}
 
-	fetcher_add(scheme, &fetcher_ops_rsrc);
+	ret = fetcher_add(scheme, &fetcher_ops_rsrc);
+        if (ret != NSERROR_OK) {
+		die("unable to add rsrc fetcher.");
+        }
 }
 
 void fetch_rsrc_unregister(void)

@@ -71,7 +71,7 @@
 #endif
 
 /** The maximum number of fetchers that can be added */
-#define MAX_FETCHERS 8
+#define MAX_FETCHERS 10
 
 /** The time in ms between polling the fetchers.
  *
