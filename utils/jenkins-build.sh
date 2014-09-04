@@ -72,6 +72,23 @@ case ${TARGET} in
 	PKG_SFX=.zip
 	;;
 
+    "beos")
+	case ${label} in
+	    "i586-pc-haiku")
+		ARTIFACT_TARGET=Haiku
+		;;
+
+	    *)
+		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		exit 1
+		;;
+
+	esac
+
+	PKG_SRC=Netsurf
+	PKG_SFX=
+	;;
+
 
     "windows")
 	case ${label} in
