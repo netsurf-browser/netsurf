@@ -94,6 +94,9 @@ NETSURF_FS_BACKING_STORE := NO
 # Initial CFLAGS. Optimisation level etc. tend to be target specific.
 CFLAGS :=
 
+# Initial CXXFLAGS. Optimisation level etc. tend to be target specific.
+CXXFLAGS :=
+
 # Default installation/execution prefix
 PREFIX ?= /usr/local
 
