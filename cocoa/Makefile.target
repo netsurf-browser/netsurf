@@ -10,8 +10,7 @@ LDFLAGS += -L/usr/X11/lib
 LDFLAGS += -lm -lcurl
 LDFLAGS += -lssl -lcrypto
 
-CFLAGS += -O $(WARNFLAGS) -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE \
-		-std=c99 -g -Os
+CFLAGS += -Dnscocoa -D_BSD_SOURCE -D_POSIX_C_SOURCE -std=c99 -g -Os
 
 CFLAGS += $(shell $(PKG_CONFIG) --cflags libhubbub libcss libdom)
 

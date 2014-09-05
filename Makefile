@@ -70,6 +70,9 @@ else
     ifeq ($(TARGET),)
       TARGET := beos
     endif
+    ifeq ($(TARGET),haiku)
+      TARGET := beos
+    endif
   else
     ifeq ($(HOST),AmigaOS)
       HOST := amiga
@@ -131,13 +134,19 @@ ifneq ($(TARGET),riscos)
   endif
 endif
 
-Q=@
-VQ=@
 PERL=perl
 MKDIR=mkdir
 TOUCH=touch
 STRIP=strip
 SPLIT_MESSAGES=$(PERL) utils/split-messages.pl
+
+# build verbosity
+ifeq ($(V),1)
+  Q:=
+else
+  Q=@
+endif
+VQ=@
 
 # Override this only if the host compiler is called something different
 HOST_CC := gcc
@@ -323,6 +332,7 @@ TOOLROOT := $(OBJROOT)/tools
 define feature_enabled
   ifeq ($$(NETSURF_USE_$(1)),YES)
     CFLAGS += $(2)
+    CXXFLAGS += $(2)
     LDFLAGS += $(3)
     ifneq ($(MAKECMDGOALS),clean)
       $$(info M.CONFIG: $(4)	enabled       (NETSURF_USE_$(1) := YES))
@@ -348,12 +358,14 @@ endef
 define feature_switch
   ifeq ($$(NETSURF_USE_$(1)),YES)
     CFLAGS += $(3)
+    CXXFLAGS += $(3)
     LDFLAGS += $(4)
     ifneq ($(MAKECMDGOALS),clean)
       $$(info M.CONFIG: $(2)	enabled       (NETSURF_USE_$(1) := YES))
     endif
   else ifeq ($$(NETSURF_USE_$(1)),NO)
     CFLAGS += $(5)
+    CXXFLAGS += $(5)
     LDFLAGS += $(6)
     ifneq ($(MAKECMDGOALS),clean)
       $$(info M.CONFIG: $(2)	disabled      (NETSURF_USE_$(1) := NO))
@@ -377,6 +389,7 @@ define pkg_config_find_and_add
 
   ifeq ($$(PKG_CONFIG_$(1)_EXISTS),yes)
       CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
+      CXXFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(1))
       ifneq ($(MAKECMDGOALS),clean)
         $$(info PKG.CNFG: $(2) ($(1))	enabled)
@@ -404,6 +417,7 @@ define pkg_config_find_and_add_enabled
   ifeq ($$(NETSURF_USE_$(1)),YES)
     ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
       CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+      CXXFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
       ifneq ($(MAKECMDGOALS),clean)
         $$(info M.CONFIG: $(3) ($(2))	enabled       (NETSURF_USE_$(1) := YES))
@@ -417,6 +431,7 @@ define pkg_config_find_and_add_enabled
   else ifeq ($$(NETSURF_USE_$(1)),AUTO)
     ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
       CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
+      CXXFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(2)) $$(NETSURF_FEATURE_$(1)_CFLAGS)
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
       ifneq ($(MAKECMDGOALS),clean)
         $$(info M.CONFIG: $(3) ($(2))	auto-enabled  (NETSURF_USE_$(1) := AUTO))
@@ -444,25 +459,30 @@ endef
 # General flag setup
 # ----------------------------------------------------------------------------
 
-# Set up the WARNFLAGS here so that they can be overridden in the Makefile.config
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
-	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations \
-	-Wnested-externs -Wuninitialized
+# Set up the warning flags here so that they can be overridden in the
+#   Makefile.config
+COMMON_WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-align \
+	-Wwrite-strings -Wmissing-declarations -Wuninitialized
 ifneq ($(CC_MAJOR),2)
-  WARNFLAGS += -Wno-unused-parameter 
+  COMMON_WARNFLAGS += -Wno-unused-parameter
 endif
 # deal with lots of unwanted warnings from javascript
 ifeq ($(call cc_ver_ge,4,6),1)
-	WARNFLAGS += -Wno-unused-but-set-variable
+	COMMON_WARNFLAGS += -Wno-unused-but-set-variable
 endif
 # deal with chaging warning flags on differing HOST systems
 ifeq ($(HOST),OpenBSD)
   # OpenBSD headers are not compatible with redundant declaration warning
-  WARNFLAGS += -Wno-redundant-decls
+  COMMON_WARNFLAGS += -Wno-redundant-decls
 else
-  WARNFLAGS += -Wredundant-decls
+  COMMON_WARNFLAGS += -Wredundant-decls
 endif
+
+# c++ default warning flags
+CXXWARNFLAGS :=
+
+# C default warning flags
+CWARNFLAGS := -Wstrict-prototypes -Wmissing-prototypes -Wnested-externs
 
 # Pull in the configuration
 include Makefile.defaults
@@ -481,12 +501,15 @@ LDFLAGS += -lz
 
 # add top level and build directory to include search path
 CFLAGS += -I. -I$(OBJROOT)
+CXXFLAGS += -I. -I$(OBJROOT)
 
 # export the user agent format
 CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
+CXXFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
 
 # set the default homepage to use
 CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
+CXXFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
 # ----------------------------------------------------------------------------
 # General make rules
@@ -703,7 +726,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 else
@@ -712,7 +735,8 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CC) $$(CFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
+	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CWARNFLAGS) \
+		    -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
@@ -722,12 +746,12 @@ define compile_target_cpp
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "     DEP: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
-	$$(Q)$$(CC) $$(CFLAGS) -MM  \
+	$$(Q)$$(CC) $$(CFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -MM  \
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(OBJROOT)/$(2)
-	$$(Q)$$(CXX) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
+	$$(Q)$$(CXX) $$(CXXFLAGS) $$(COMMON_WARNFLAGS) $$(CXXWARNFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
 
