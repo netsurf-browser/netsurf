@@ -42,13 +42,6 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
-static bool box_nearer_text_box(struct box *box, int bx, int by,
-		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
-		int *nr_xd, int *nr_yd);
-static bool box_nearest_text_box(struct box *box, int bx, int by,
-		int fx, int fy, int x, int y, int dir, struct box **nearest,
-		int *tx, int *ty, int *nr_xd, int *nr_yd);
-
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
 
@@ -724,7 +717,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
  * \return true if mouse point is inside box
  */
 
-bool box_nearer_text_box(struct box *box, int bx, int by,
+static bool box_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd)
 {
@@ -796,7 +789,7 @@ bool box_nearer_text_box(struct box *box, int bx, int by,
  * \return true if mouse point is inside text_box
  */
 
-bool box_nearest_text_box(struct box *box, int bx, int by,
+static bool box_nearest_text_box(struct box *box, int bx, int by,
 		int fx, int fy, int x, int y, int dir, struct box **nearest,
 		int *tx, int *ty, int *nr_xd, int *nr_yd)
 {
