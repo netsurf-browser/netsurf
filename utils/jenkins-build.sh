@@ -72,7 +72,7 @@ case ${TARGET} in
 	PKG_SFX=.zip
 	;;
 
-    "beos")
+    "haiku")
 	case ${label} in
 	    "i586-pc-haiku")
 		ARTIFACT_TARGET=Haiku
