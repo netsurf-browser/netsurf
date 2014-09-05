@@ -248,8 +248,14 @@ expand_path(const char *path, int pathlen)
 					explen - cloop);
 				explen -= replen;
 			} else {
+				char *tmp;
 				envlen = strlen(envv);
-				exp = realloc(exp, explen + envlen - replen);
+				tmp = realloc(exp, explen + envlen - replen);
+				if (tmp == NULL) {
+					free(exp);
+					return NULL;
+				}
+				exp = tmp;
 				memmove(exp + cstart + envlen, 
 					exp + cloop + 1, 
 					explen - cloop );
