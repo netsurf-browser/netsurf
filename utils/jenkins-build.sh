@@ -85,7 +85,7 @@ case ${TARGET} in
 
 	esac
 
-	PKG_SRC=Netsurf
+	PKG_SRC=NetSurf
 	PKG_SFX=
 	;;
 
