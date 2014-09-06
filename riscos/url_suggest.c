@@ -21,9 +21,13 @@
  */
 
 #include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "oslib/wimp.h"
 #include "content/content_type.h"
 #include "content/urldb.h"
+
 #include "riscos/menus.h"
 #include "riscos/url_suggest.h"
 #include "utils/messages.h"
