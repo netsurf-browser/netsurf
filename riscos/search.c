@@ -259,7 +259,12 @@ bool ro_gui_search_prepare_menu(void)
 	return true;
 }
 
-bool ro_gui_search_bw_searchable(struct browser_window *bw)
+/**
+ * Determine of the browser window is searchable.
+ *
+ * \param bw The browser window to check.
+ */
+static bool ro_gui_search_bw_searchable(struct browser_window *bw)
 {
 	hlcache_handle *h;
 
@@ -268,7 +273,7 @@ bool ro_gui_search_bw_searchable(struct browser_window *bw)
 	h = browser_window_get_content(bw);
 
 	/* only handle html/textplain contents */
-	/* TODO: Should have content_is_searchable() api */
+	/** \todo Should have content_is_searchable() api */
 	if ((!h) || (content_get_type(h) != CONTENT_HTML &&
 			content_get_type(h) != CONTENT_TEXTPLAIN))
 		return false;
