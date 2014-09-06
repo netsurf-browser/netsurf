@@ -233,17 +233,11 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 	PangoFontDescription *desc;
 	PangoLayout *layout;
 	PangoLayoutLine *line;
-	gint size;
 
 	if (length == 0)
 		return true;
 
 	desc = nsfont_style_to_description(fstyle);
-	size = (gint)(pango_font_description_get_size(desc));
-	if (pango_font_description_get_size_is_absolute(desc))
-		pango_font_description_set_absolute_size(desc, size);
-	else
-		pango_font_description_set_size(desc, size);
 
 	layout = pango_cairo_create_layout(current_cr);
 
