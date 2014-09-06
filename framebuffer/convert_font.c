@@ -1175,16 +1175,19 @@ int main(int argc, char** argv)
 
 		case 'h':
 			log_usage(argv[0]);
+			free(header_path);
 			return EXIT_SUCCESS;
 
 		default:
 			log_usage(argv[0]);
+			free(header_path);
 			return EXIT_FAILURE;
 		}
 	}
 
 	if ((argc - optind) < 2) {
 		log_usage(argv[0]);
+		free(header_path);
 		return EXIT_FAILURE;
 	}
 
@@ -1197,6 +1200,7 @@ int main(int argc, char** argv)
 	ok = load_font(in_path, &data);
 	if (!ok) {
 		free_table();
+		free(header_path);
 		return EXIT_FAILURE;
 	}
 
@@ -1204,6 +1208,7 @@ int main(int argc, char** argv)
 	if (ok && (header_path != NULL)) {
 		ok = generate_font_header(header_path, data);
 	}
+	free(header_path);
 	free_table();
 	for (i = 0; i < 4; i++) {
 		free(data->sections[i]);
