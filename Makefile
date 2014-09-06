@@ -618,7 +618,7 @@ ifeq ($(TARGET),beos)
 	$(Q)$(BEOS_SETVER) $(EXETARGET) \
                 -app $(VERSION_MAJ) $(VERSION_MIN) 0 d 0 \
                 -short "NetSurf $(VERSION_FULL)" \
-                -long "NetSurf $(VERSION_FULL) © 2003 - 2013 The NetSurf Developers"
+                -long "NetSurf $(VERSION_FULL) © 2003 - 2014 The NetSurf Developers"
 	$(VQ)echo " MIMESET: $(EXETARGET)"
 	$(Q)$(BEOS_MIMESET) $(EXETARGET)
 endif
@@ -680,14 +680,16 @@ clean-builddir:
 	$(Q)$(RM) -r $(OBJROOT)
 CLEANS += clean-builddir
 
-all-program: $(EXETARGET) post-exe
-	$(call split_install_messages, any, !NetSurf/Resources)
 
-.PHONY: testament
+.PHONY: all-program all-messages testament
+
 testament $(OBJROOT)/testament.h:
 	$(Q)$(PERL) utils/git-testament.pl $(CURDIR) $(OBJROOT)/testament.h
 
-post-exe: $(POSTEXES)
+all-messages:
+	$(call split_install_messages, any, !NetSurf/Resources)
+
+all-program: all-messages $(EXETARGET) $(POSTEXES)
 
 .SUFFIXES:
 
