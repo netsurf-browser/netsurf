@@ -435,7 +435,8 @@ int main(int argc, char *argv[])
 		base64_decode(argv[1], strlen(argv[1]), out, &outz));
 	fprintf(stderr, "bytes decoded: %d\n", outz);
 	fwrite(out, outz, 1, stdout);
-	
+
+	free(out);
 	return 0;
 }
 #endif
