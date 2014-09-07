@@ -3961,32 +3961,23 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 
 void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 {
-	char *url2; /** @todo The risc os maintainer needs to examine why the url is copied here */
+	nserror error;
+	nsurl *url;
+
+	if (url1 == NULL)
+		return;
 
 	ro_gui_url_complete_close();
+	gui_window_set_url(g, url1);
 
-	url2 = strdup(url1);
-	if (url2 != NULL) {
-		nserror error;
-		nsurl *url;
-
-		gui_window_set_url(g, url2);
-
-		error = nsurl_create(url2, &url);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		} else {
-			browser_window_navigate(g->bw,
-				url,
-				NULL,
-				BW_NAVIGATE_HISTORY,
-				NULL,
-				NULL,
-				NULL);
-			nsurl_unref(url);
-		}
-
-		free(url2);
+	error = nsurl_create(url1, &url);
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	} else {
+		browser_window_navigate(g->bw, url,
+				NULL, BW_NAVIGATE_HISTORY,
+				NULL, NULL, NULL);
+		nsurl_unref(url);
 	}
 }
 
