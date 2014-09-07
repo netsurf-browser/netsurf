@@ -3979,7 +3979,7 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 			browser_window_navigate(g->bw,
 				url,
 				NULL,
-				BW_NAVIGATE_HISTORY | BW_NAVIGATE_UNVERIFIABLE,
+				BW_NAVIGATE_HISTORY,
 				NULL,
 				NULL,
 				NULL);
