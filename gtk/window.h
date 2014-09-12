@@ -19,10 +19,9 @@
 #ifndef NETSURF_GTK_WINDOW_H
 #define NETSURF_GTK_WINDOW_H 1
 
-#include "desktop/gui.h"
-#include "desktop/browser.h"
 #include "gtk/scaffolding.h"
 
+extern struct gui_window_table *nsgtk_window_table;
 
 typedef enum nsgtk_window_signals {
 	NSGTK_WINDOW_SIGNAL_CLICK,
@@ -33,12 +32,10 @@ typedef enum nsgtk_window_signals {
 extern struct gui_window *window_list;
 extern int temp_open_background;
 
-
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
-nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
+struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
 GdkPixbuf *nsgtk_get_icon(struct gui_window *gw);
 void nsgtk_reflow_all_windows(void);
-void nsgtk_window_process_reformats(void);
 float nsgtk_get_scale_for_gui(struct gui_window *g);
 int nsgtk_gui_window_update_targets(struct gui_window *g);
 void nsgtk_window_destroy_browser(struct gui_window *g);
@@ -47,6 +44,5 @@ GtkLayout *nsgtk_window_get_layout(struct gui_window *g);
 struct gui_window *nsgtk_window_iterate(struct gui_window *g);
 GtkWidget *nsgtk_window_get_tab(struct gui_window *g);
 void nsgtk_window_set_tab(struct gui_window *g, GtkWidget *w);
-
 
 #endif /* NETSURF_GTK_WINDOW_H */

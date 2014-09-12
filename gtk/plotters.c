@@ -33,11 +33,12 @@
 
 #include "utils/log.h"
 #include "desktop/plotters.h"
+#include "render/font.h"
+#include "utils/nsoption.h"
+
 #include "gtk/font_pango.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
-#include "render/font.h"
-#include "utils/nsoption.h"
 #include "gtk/bitmap.h"
 
 GtkWidget *current_widget;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2011 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2011-2014 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,15 +30,25 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "content/hlcache.h"
+#include "content/content.h"
+#include "desktop/browser.h"
+
+#include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/gui/url_bar.h"
 #include "riscos/theme.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+#include "riscos/window.h"
+#include "riscos/ucstables.h"
+#include "riscos/filetype.h"
 
 #define URLBAR_HEIGHT 52
 #define URLBAR_FAVICON_SIZE 16
@@ -48,8 +58,6 @@
 #define URLBAR_MIN_WIDTH 52
 #define URLBAR_GRIGHT_GUTTER 8
 #define URLBAR_FAVICON_NAME_LENGTH 12
-#define URLBAR_INITIAL_LENGTH 256
-#define URLBAR_EXTEND_LENGTH 128
 
 struct url_bar {
 	/** The applied theme (or NULL to use the default) */
@@ -166,7 +174,7 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 	url_bar->hotlist.extent.x1 = 0;
 	url_bar->hotlist.extent.y1 = 0;
 
-	url_bar->text_size = URLBAR_INITIAL_LENGTH;
+	url_bar->text_size = RO_GUI_MAX_URL_SIZE;
 	url_bar->text_buffer = malloc(url_bar->text_size);
 	strncpy(url_bar->text_buffer, "", url_bar->text_size);
 
@@ -851,8 +859,7 @@ bool ro_gui_url_bar_menu_select(struct url_bar *url_bar, wimp_i i,
 			browser_window_navigate(g->bw,
 				url,
 				NULL,
-				BROWSER_WINDOW_HISTORY |
-				BROWSER_WINDOW_VERIFIABLE,
+				BW_NAVIGATE_HISTORY,
 				NULL,
 				NULL,
 				NULL);
@@ -941,24 +948,68 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 {
 	wimp_caret	caret;
 	os_error	*error;
-	const char	*set_url;
+	char		*local_text = NULL;
+	const char	*local_url;
 	nsurl *n;
 
-	if (url_bar == NULL || url_bar->text_buffer == NULL)
+	if (url_bar == NULL || url_bar->text_buffer == NULL || url == NULL)
 		return;
 
-	if (nsurl_create(url, &n) == NSERROR_OK) {
+	/* Before we do anything with the URL, get it into local encoding so
+	 * that behaviour is consistant with the rest of the URL Bar module
+	 * (which will act on the icon's text buffer, which is always in local
+	 * encoding).
+	 */
+
+	if (is_utf8) {
+		nserror err;
+
+		err = utf8_to_local_encoding(url, 0, &local_text);
+		if (err != NSERROR_OK) {
+			/* A bad encoding should never happen, so assert this */
+			assert(err != NSERROR_BAD_ENCODING);
+			LOG(("utf8_to_enc failed"));
+			/* Paranoia */
+			local_text = NULL;
+		}
+		local_url = (local_text != NULL) ? local_text : url;
+	} else {
+		local_url = url;
+	}
+
+	/* Copy the text into the icon buffer. If the text is too long, blank
+	 * the buffer and warn the user.
+	 */
+
+	if (strlen(local_url) >= url_bar->text_size) {
+		strncpy(url_bar->text_buffer, "", url_bar->text_size - 1);
+		url_bar->text_buffer[url_bar->text_size - 1] = '\0';
+		warn_user("LongURL", NULL);
+		LOG(("Long URL (%d chars): %s", strlen(url), url));
+	} else {
+		strncpy(url_bar->text_buffer, local_url,
+				url_bar->text_size - 1);
+		url_bar->text_buffer[url_bar->text_size - 1] = '\0';
+	}
+
+	if (local_text != NULL)
+		free(local_text);
+
+	/* Set the hotlist flag. */
+
+	if (nsurl_create(url_bar->text_buffer, &n) == NSERROR_OK) {
 		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
 		nsurl_unref(n);
 	}
 
-	if (url_bar->text_icon == -1) {
-		strncpy(url_bar->text_buffer, url, url_bar->text_size);
-		return;
-	}
+	/* If there's no icon, then there's nothing else to do... */
 
-	ro_gui_set_icon_string(url_bar->window, url_bar->text_icon,
-			url, is_utf8);
+	if (url_bar->text_icon == -1)
+		return;
+
+	/* ...if there is, redraw the icon and fix the caret's position. */
+
+	ro_gui_redraw_icon(url_bar->window, url_bar->text_icon);
 
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
@@ -970,7 +1021,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 
 	if (set_caret || (caret.w == url_bar->window &&
 			caret.i == url_bar->text_icon)) {
-		set_url = ro_gui_get_icon_string(url_bar->window,
+		const char *set_url = ro_gui_get_icon_string(url_bar->window,
 				url_bar->text_icon);
 
 		error = xwimp_set_caret_position(url_bar->window,
@@ -1013,9 +1064,9 @@ static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set)
 {
 	if (url_bar == NULL || set == url_bar->hotlist.set)
 		return;
-	
+
 	url_bar->hotlist.set = set;
-	
+
 	if (!url_bar->hidden) {
 			xwimp_force_redraw(url_bar->window,
 					url_bar->hotlist.extent.x0,
@@ -1097,7 +1148,7 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 		return false;
 
 	/* Update hotlist indicator */
-	
+
 	url = (const char *) url_bar->text_buffer;
 	if (url != NULL && nsurl_create(url, &n) == NSERROR_OK) {
 		ro_gui_url_bar_set_hotlist(url_bar, ro_gui_hotlist_has_page(n));
@@ -1278,4 +1329,3 @@ void ro_gui_url_bar_fini(void)
 		hlcache_handle_release(url_bar_res[i].c);
 	}
 }
-

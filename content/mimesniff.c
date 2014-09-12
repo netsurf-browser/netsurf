@@ -155,7 +155,7 @@ static bool mimesniff__has_binary_octets(const uint8_t *data, size_t len)
 static nserror mimesniff__match_mp4(const uint8_t *data, size_t len,
 		lwc_string **effective_type)
 {
-	size_t box_size, i;
+	uint32_t box_size, i;
 
 	/* ISO/IEC 14496-12:2008 $4.3 says (effectively):
 	 *
@@ -204,7 +204,9 @@ static nserror mimesniff__match_mp4(const uint8_t *data, size_t len,
 
 	/* Search each compatible brand in the box for "mp4" */
 	for (i = 16; i <= box_size - 4; i += 4) {
-		if (data[i] == 'm' && data[i+1] == 'p' && data[i+2] == '4') {
+		if (data[i] == 'm' && 
+		    data[i+1] == 'p' && 
+		    data[i+2] == '4') {
 			*effective_type = lwc_string_ref(video_mp4);
 			return NSERROR_OK;
 		}

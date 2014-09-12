@@ -266,7 +266,7 @@ void nsgtk_tab_options_changed(GtkNotebook *notebook)
 
 
 /* exported interface documented in gtk/tabs.h */
-void nsgtk_tab_init(struct gtk_scaffolding *gs)
+void nsgtk_tab_init(struct nsgtk_scaffolding *gs)
 {
 	GtkNotebook *notebook;
 

@@ -24,10 +24,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "content/dirlist.h"
+
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 
-static const char footer[] = "</div>\n</body>\n</html>\n";
+#include "content/dirlist.h"
 
 static int dirlist_filesize_calculate(unsigned long *bytesize);
 static int dirlist_filesize_value(unsigned long bytesize);
@@ -264,7 +265,7 @@ bool dirlist_generate_headings(char *buffer, int buffer_length)
  *     dirlist_generate_bottom()
  */
 
-bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
+bool dirlist_generate_row(bool even, bool directory, nsurl *url, char *name,
 		const char *mimetype, long long size, char *date, char *time,
 		char *buffer, int buffer_length)
 {
@@ -290,7 +291,7 @@ bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
 			"\t<span class=\"date\">%s</span>\n"
 			"\t<span class=\"time\">%s</span>\n"
 			"</a>\n",
-			url, even ? "even" : "odd",
+			 nsurl_access(url), even ? "even" : "odd",
 			directory ? "dir" : "file",
 			name, mimetype, size_string, unit, date, time);
 	if (error < 0 || error >= buffer_length)

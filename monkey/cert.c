@@ -16,11 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/gui.h"
-#include "utils/ring.h"
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "utils/ring.h"
+#include "utils/nsurl.h"
+#include "desktop/gui.h"
+
+#include "monkey/cert.h"
 
 typedef struct monkey_cert {
   struct monkey_cert *r_next, *r_prev;

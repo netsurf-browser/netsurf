@@ -172,10 +172,9 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 
 void ro_gui_options_theme_finalise(wimp_w w)
 {
-	os_error *error;
-
 	ro_gui_options_theme_free();
 	if (theme_pane) {
+		os_error *error;
 		ro_gui_wimp_event_finalise(theme_pane);
 		error = xwimp_delete_window(theme_pane);
 		if (error) {
@@ -249,7 +248,6 @@ void ro_gui_options_theme_load(void)
 	wimp_icon_create new_icon;
 	wimp_window_state state;
 	int parent_width, nested_y, min_extent, base_extent;
-	int item_height;
 	int *radio_icons, *radio_set;
 	int theme_count;
 
@@ -315,7 +313,7 @@ void ro_gui_options_theme_load(void)
 			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 	while (link) {
 		/* update the toolbar */
-		item_height = 44 + 44 + 16;
+		int item_height = 44 + 44 + 16;
 		if (link->next) item_height += 16;
 		ro_toolbar_process(link->toolbar, parent_width, false);
 		extent.y0 = nested_y -

@@ -125,42 +125,40 @@ framebuffer_plot_text(int x, int y, const char *text, size_t length,
 static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
-    const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-    const uint32_t *chrp;
-    char *buffer = NULL;
-    int chr;
-    int blen;
+    enum fb_font_style style = fb_get_font_style(fstyle);
+    int size = fb_get_font_size(fstyle);
+    const uint8_t *chrp;
+    size_t nxtchr = 0;
     nsfb_bbox_t loc;
+    uint32_t ucs4;
+    int p = FB_FONT_PITCH * size;
+    int w = FB_FONT_WIDTH * size;
+    int h = FB_FONT_HEIGHT * size;
 
-    utf8_to_font_encoding(fb_font, text, length, &buffer);
-    if (buffer == NULL)
-        return true;
+    y -= ((h * 3) / 4);
+    /* the coord is the bottom-left of the pixels offset by 1 to make
+     * it work since fb coords are the top-left of pixels */
+    y += 1;
 
-        /* y is given as the baseline, at 3/4 from top.
-         * we need it to the top */
-        y -= ((fb_font->height * 3) / 4);
+    while (nxtchr < length) {
+        ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
+        nxtchr = utf8_next(text, length, nxtchr);
 
-        /* the coord is the bottom-left of the pixels offset by 1 to make
-         *   it work since fb coords are the top-left of pixels
-         */
-        y += 1;
+	if (!codepoint_displayable(ucs4))
+		continue;
 
-    blen = strlen(buffer);
-
-    for (chr = 0; chr < blen; chr++) {
         loc.x0 = x;
         loc.y0 = y;
-        loc.x1 = loc.x0 + fb_font->width;
-        loc.y1 = loc.y0 + fb_font->height;
+        loc.x1 = loc.x0 + w;
+        loc.y1 = loc.y0 + h;
 
-        chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
-        nsfb_plot_glyph1(nsfb, &loc, (uint8_t *)chrp, 32, fstyle->foreground);
+        chrp = fb_get_glyph(ucs4, style, size);
+        nsfb_plot_glyph1(nsfb, &loc, chrp, p, fstyle->foreground);
 
-        x += fb_font->width;
+        x += w;
 
     }
 
-    free(buffer);
     return true;
 }
 #endif
@@ -347,6 +345,42 @@ const struct plotter_table fb_plotters = {
 };
 
 
+static bool framebuffer_format_from_bpp(int bpp, enum nsfb_format_e *fmt)
+{
+	switch (bpp) {
+	case 32:
+		*fmt = NSFB_FMT_XRGB8888;
+		break;
+
+	case 24:
+		*fmt = NSFB_FMT_RGB888;
+		break;
+
+	case 16:
+		*fmt = NSFB_FMT_RGB565;
+		break;
+
+	case 8:
+		*fmt = NSFB_FMT_I8;
+		break;
+
+	case 4:
+		*fmt = NSFB_FMT_I4;
+		break;
+
+	case 1:
+		*fmt = NSFB_FMT_I1;
+		break;
+
+	default:
+		LOG(("Bad bits per pixel (%d)\n", bpp));
+		return false;
+	}
+
+	return true;
+}
+
+
 
 nsfb_t *
 framebuffer_initialise(const char *fename, int width, int height, int bpp)
@@ -355,34 +389,8 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
     enum nsfb_format_e fbfmt;
 
     /* bpp is a proxy for the framebuffer format */
-    switch (bpp) {
-    case 32:
-	    fbfmt = NSFB_FMT_XRGB8888;
-	    break;
-
-    case 24:
-	    fbfmt = NSFB_FMT_RGB888;
-	    break;
-
-    case 16:
-	    fbfmt = NSFB_FMT_RGB565;
-	    break;
-
-    case 8:
-	    fbfmt = NSFB_FMT_I8;
-	    break;
-
-    case 4:
-	    fbfmt = NSFB_FMT_I4;
-	    break;
-
-    case 1:
-	    fbfmt = NSFB_FMT_I1;
-	    break;
-
-    default:
-        LOG(("Bad bits per pixel (%d)\n", bpp));
-        return NULL;	    
+    if (framebuffer_format_from_bpp(bpp, &fbfmt) == false) {
+        return NULL;
     }
 
     fbtype = nsfb_type_from_name(fename);
@@ -412,6 +420,25 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
     }
 
     return nsfb;
+
+}
+
+bool
+framebuffer_resize(nsfb_t *nsfb, int width, int height, int bpp)
+{
+    enum nsfb_format_e fbfmt;
+
+    /* bpp is a proxy for the framebuffer format */
+    if (framebuffer_format_from_bpp(bpp, &fbfmt) == false) {
+        return false;
+    }
+
+    if (nsfb_set_geometry(nsfb, width, height, fbfmt) == -1) {
+        LOG(("Unable to change surface geometry\n"));
+        return false;
+    }
+
+    return true;
 
 }
 

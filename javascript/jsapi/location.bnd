@@ -62,8 +62,7 @@ operation assign %{
 		browser_window_navigate(bw,
 					joined,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -84,7 +83,7 @@ operation replace %{
 		browser_window_navigate(bw,
 					joined,
 					NULL,
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_NONE,
 					NULL,
 					NULL,
 					NULL);
@@ -129,7 +128,7 @@ setter href %{
 			browser_window_navigate(bw,
 						joined,
 						NULL,
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_NONE,
 						NULL,
 						NULL,
 						NULL);

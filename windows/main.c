@@ -26,43 +26,32 @@
 #include "desktop/gui.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
+#include "desktop/netsurf.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/filepath.h"
+#include "utils/file.h"
+#include "utils/nsurl.h"
 #include "content/fetchers/resource.h"
 
 #include "windows/findfile.h"
 #include "windows/drawable.h"
 #include "windows/gui.h"
+#include "windows/download.h"
 
 static char **respaths; /** resource search path vector. */
 
 char *options_file_location;
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	char *raw;
 	nsurl *url = NULL;
 
-	raw = path_to_url(filepath_sfind(respaths, buf, path));
-	if (raw != NULL) {
-		nsurl_create(raw, &url);
-		free(raw);
-	}
+	netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
 
 	return url;
-}
-
-void gui_launch_url(const char *url)
-{
-}
-
-void gui_quit(void)
-{
-	LOG(("gui_quit"));
 }
 
 /** 
@@ -96,6 +85,8 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
+
+
 /**
  * Entry point from operating system
  **/
@@ -110,7 +101,21 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	nserror ret;
 	const char *addr;
 	nsurl *url;
-	nserror error;
+	struct netsurf_table win32_table = {
+		.browser = win32_browser_table,
+		.window = win32_window_table,
+		.clipboard = win32_clipboard_table,
+		.download = win32_download_table,
+		.fetch = win32_fetch_table,
+		.file = win32_file_table,
+		.utf8 = win32_utf8_table,
+	};
+	win32_fetch_table->get_resource_url = gui_get_resource_url;
+
+	ret = netsurf_register(&win32_table);
+	if (ret != NSERROR_OK) {
+		die("NetSurf operation table registration failed");
+	}
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -157,7 +162,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	/* common initialisation */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages);
+	ret = netsurf_init(messages, NULL);
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);
@@ -184,10 +189,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 
 	LOG(("calling browser_window_create"));
 
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+	ret = nsurl_create(addr, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -195,8 +199,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		nsurl_unref(url);
 
 	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	} else {
 		netsurf_main_loop();
 	}

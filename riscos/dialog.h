@@ -19,11 +19,8 @@
 #ifndef _NETSURF_RISCOS_DIALOG_H_
 #define _NETSURF_RISCOS_DIALOG_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include "oslib/wimp.h"
-#include "riscos/toolbar.h"
-#include "riscos/gui.h"
+struct toolbar;
+struct gui_window;
 
 void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);

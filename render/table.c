@@ -337,7 +337,7 @@ void table_used_left_border_for_cell(struct box *cell)
 		if (cell->prev == NULL) {
 			struct box *row;
 
-			/* Spanned from a previous row */
+			/* Spanned from a previous row in current row group */
 			for (row = cell->parent; row != NULL; row = row->prev) {
 				for (prev = row->children; prev != NULL; 
 						prev = prev->next) {
@@ -954,12 +954,12 @@ bool table_cell_top_process_row(struct box *cell, struct box *row,
 		while (processed == false) {
 			for (c = row->children; c != NULL; c = c->next) {
 				/* Ignore cells to the left */
-				if (c->start_column + c->columns < 
+				if (c->start_column + c->columns - 1 <
 						cell->start_column)
 					continue;
 				/* Ignore cells to the right */
-				if (c->start_column >= cell->start_column + 
-						cell->columns)
+				if (c->start_column > cell->start_column +
+						cell->columns - 1)
 					continue;
 
 				/* Flag that we've processed a cell */

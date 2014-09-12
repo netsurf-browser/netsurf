@@ -22,13 +22,15 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 
-#include "content/urldb.h"
-#include "desktop/cookie_manager.h"
-#include "desktop/treeview.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
+#include "content/urldb.h"
+
+#include "desktop/cookie_manager.h"
+#include "desktop/treeview.h"
 
 enum cookie_manager_field {
 	COOKIE_M_NAME,
@@ -836,7 +838,7 @@ void cookie_manager_redraw(int x, int y, struct rect *clip,
 
 
 /* Exported interface, documented in cookie_manager.h */
-void cookie_manager_mouse_action(browser_mouse_state mouse, int x, int y)
+void cookie_manager_mouse_action(enum browser_mouse_state mouse, int x, int y)
 {
 	treeview_mouse_action(cm_ctx.tree, mouse, x, y);
 }

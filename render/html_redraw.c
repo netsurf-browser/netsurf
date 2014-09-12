@@ -1905,9 +1905,16 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	struct box *bg_box = NULL;
 	bool has_x_scroll, has_y_scroll;
 	css_computed_clip_rect css_rect;
+	enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
+	enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
 
 	if (html_redraw_printing && (box->flags & PRINTED))
 		return true;
+
+	if (box->style != NULL) {
+		overflow_x = css_computed_overflow_x(box->style);
+		overflow_y = css_computed_overflow_y(box->style);
+	}
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
@@ -1946,49 +1953,66 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	}
 
 	/* calculate rectangle covering this box and descendants */
-	if (box->style && css_computed_overflow(box->style) != 
-			CSS_OVERFLOW_VISIBLE) {
+	if (box->style && overflow_x != CSS_OVERFLOW_VISIBLE &&
+			box->parent != NULL) {
 		/* box contents clipped to box size */
 		r.x0 = x - border_left;
-		r.y0 = y - border_top;
 		r.x1 = x + padding_width + border_right;
-		r.y1 = y + padding_height + border_bottom;
 	} else {
 		/* box contents can hang out of the box; use descendant box */
 		if (scale == 1.0) {
 			r.x0 = x + box->descendant_x0;
-			r.y0 = y + box->descendant_y0;
 			r.x1 = x + box->descendant_x1 + 1;
-			r.y1 = y + box->descendant_y1 + 1;
 		} else {
 			r.x0 = x + box->descendant_x0 * scale;
-			r.y0 = y + box->descendant_y0 * scale;
 			r.x1 = x + box->descendant_x1 * scale + 1;
-			r.y1 = y + box->descendant_y1 * scale + 1;
 		}
 		if (!box->parent) {
 			/* root element */
 			int margin_left, margin_right;
-			int margin_top, margin_bottom;
 			if (scale == 1.0) {
 				margin_left = box->margin[LEFT];
-				margin_top = box->margin[TOP];
 				margin_right = box->margin[RIGHT];
-				margin_bottom = box->margin[BOTTOM];
 			} else {
 				margin_left = box->margin[LEFT] * scale;
-				margin_top = box->margin[TOP] * scale;
 				margin_right = box->margin[RIGHT] * scale;
-				margin_bottom = box->margin[BOTTOM] * scale;
 			}
 			r.x0 = x - border_left - margin_left < r.x0 ?
 					x - border_left - margin_left : r.x0;
-			r.y0 = y - border_top - margin_top < r.y0 ?
-					y - border_top - margin_top : r.y0;
 			r.x1 = x + padding_width + border_right +
 					margin_right > r.x1 ?
 					x + padding_width + border_right +
 					margin_right : r.x1;
+		}
+	}
+
+	/* calculate rectangle covering this box and descendants */
+	if (box->style && overflow_y != CSS_OVERFLOW_VISIBLE &&
+			box->parent != NULL) {
+		/* box contents clipped to box size */
+		r.y0 = y - border_top;
+		r.y1 = y + padding_height + border_bottom;
+	} else {
+		/* box contents can hang out of the box; use descendant box */
+		if (scale == 1.0) {
+			r.y0 = y + box->descendant_y0;
+			r.y1 = y + box->descendant_y1 + 1;
+		} else {
+			r.y0 = y + box->descendant_y0 * scale;
+			r.y1 = y + box->descendant_y1 * scale + 1;
+		}
+		if (!box->parent) {
+			/* root element */
+			int margin_top, margin_bottom;
+			if (scale == 1.0) {
+				margin_top = box->margin[TOP];
+				margin_bottom = box->margin[BOTTOM];
+			} else {
+				margin_top = box->margin[TOP] * scale;
+				margin_bottom = box->margin[BOTTOM] * scale;
+			}
+			r.y0 = y - border_top - margin_top < r.y0 ?
+					y - border_top - margin_top : r.y0;
 			r.y1 = y + padding_height + border_bottom +
 					margin_bottom > r.y1 ?
 					y + padding_height + border_bottom +
@@ -2307,22 +2331,50 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	}
 
 	/* clip to the padding edge for objects, or boxes with overflow hidden
-	 * or scroll */
-	if ((box->style && css_computed_overflow(box->style) != 
-			CSS_OVERFLOW_VISIBLE) || box->object ||
-			box->flags & IFRAME) {
-		r.x0 = x;
-		r.y0 = y;
-		r.x1 = x + padding_width;
-		r.y1 = y + padding_height;
-		if (r.x0 < clip->x0) r.x0 = clip->x0;
-		if (r.y0 < clip->y0) r.y0 = clip->y0;
-		if (clip->x1 < r.x1) r.x1 = clip->x1;
-		if (clip->y1 < r.y1) r.y1 = clip->y1;
-		if (r.x1 <= r.x0 || r.y1 <= r.y0)
-			return ((!plot->group_end) || (plot->group_end()));
-		if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-				box->type == BOX_TABLE_CELL || box->object) {
+	 * or scroll, unless it's the root element */
+	if (box->parent != NULL) {
+		bool need_clip = false;
+		if (box->object || box->flags & IFRAME ||
+				(overflow_x != CSS_OVERFLOW_VISIBLE &&
+				 overflow_y != CSS_OVERFLOW_VISIBLE)) {
+			r.x0 = x;
+			r.y0 = y;
+			r.x1 = x + padding_width;
+			r.y1 = y + padding_height;
+			if (r.x0 < clip->x0) r.x0 = clip->x0;
+			if (r.y0 < clip->y0) r.y0 = clip->y0;
+			if (clip->x1 < r.x1) r.x1 = clip->x1;
+			if (clip->y1 < r.y1) r.y1 = clip->y1;
+			if (r.x1 <= r.x0 || r.y1 <= r.y0)
+				return (!plot->group_end || plot->group_end());
+			need_clip = true;
+
+		} else if (overflow_x != CSS_OVERFLOW_VISIBLE) {
+			r.x0 = x;
+			r.y0 = clip->y0;
+			r.x1 = x + padding_width;
+			r.y1 = clip->y1;
+			if (r.x0 < clip->x0) r.x0 = clip->x0;
+			if (clip->x1 < r.x1) r.x1 = clip->x1;
+			if (r.x1 <= r.x0)
+				return (!plot->group_end || plot->group_end());
+			need_clip = true;
+
+		} else if (overflow_y != CSS_OVERFLOW_VISIBLE) {
+			r.x0 = clip->x0;
+			r.y0 = y;
+			r.x1 = clip->x1;
+			r.y1 = y + padding_height;
+			if (r.y0 < clip->y0) r.y0 = clip->y0;
+			if (clip->y1 < r.y1) r.y1 = clip->y1;
+			if (r.y1 <= r.y0)
+				return (!plot->group_end || plot->group_end());
+			need_clip = true;
+		}
+
+		if (need_clip && (box->type == BOX_BLOCK ||
+				box->type == BOX_INLINE_BLOCK ||
+				box->type == BOX_TABLE_CELL || box->object)) {
 			if (!plot->clip(&r))
 				return false;
 		}
@@ -2440,12 +2492,12 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	/* scrollbars */
 	if (((box->style && box->type != BOX_BR &&
 			box->type != BOX_TABLE && box->type != BOX_INLINE &&
-			(css_computed_overflow(box->style) == 
-				CSS_OVERFLOW_SCROLL ||
-			css_computed_overflow(box->style) == 
-				CSS_OVERFLOW_AUTO)) || (box->object &&
-			content_get_type(box->object) == CONTENT_HTML)) &&
-			box->parent != NULL) {
+			(overflow_x == CSS_OVERFLOW_SCROLL ||
+			 overflow_x == CSS_OVERFLOW_AUTO ||
+			 overflow_y == CSS_OVERFLOW_SCROLL ||
+			 overflow_y == CSS_OVERFLOW_AUTO)) ||
+			(box->object && content_get_type(box->object) ==
+			CONTENT_HTML)) && box->parent != NULL) {
 
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);

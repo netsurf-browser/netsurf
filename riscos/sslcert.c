@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "oslib/wimp.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -36,6 +37,9 @@
 #include "desktop/sslcert_viewer.h"
 #include "desktop/gui.h"
 #include "desktop/tree.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+
 #include "riscos/dialog.h"
 #include "riscos/sslcert.h"
 #include "riscos/textarea.h"
@@ -43,8 +47,7 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utils.h"
+#include "riscos/gui.h"
 
 #define ICON_SSL_PANE 1
 #define ICON_SSL_REJECT 3

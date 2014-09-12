@@ -24,8 +24,9 @@
 #define _NETSURF_DESKTOP_PLOTTERS_H_
 
 #include <stdbool.h>
-#include "css/css.h"
-#include "content/content.h"
+#include <stdio.h>
+
+#include "utils/types.h"
 #include "desktop/plot_style.h"
 
 struct bitmap;

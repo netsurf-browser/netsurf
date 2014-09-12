@@ -32,6 +32,7 @@
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
 #include "desktop/gui.h"
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/ucstables.h"
@@ -633,7 +634,6 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 	int current, step, stepping, min, max, decimal_places;
 	wimp_window_state open;
 	wimp_caret caret;
-	os_error *error;
 	bool prepared;
 
 	w = pointer->w;
@@ -701,6 +701,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 			 * button, then close the menu (which closes us) and then finally
 			 * re-open ourselves. ugh! */
 			if (current_menu != NULL) {
+				os_error *error;
 				open.w = pointer->w;
 				error = xwimp_get_window_state(&open);
 				if (error) {
@@ -718,8 +719,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				}
 				ro_gui_dialog_add_persistent(current_menu_window,
 						pointer->w);
-				ro_gui_menu_closed();
-				gui_poll(true);
+				ro_gui_menu_destroy();
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
 					LOG(("xwimp_open_window: 0x%x: %s",
@@ -768,7 +768,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 			if (pointer->buttons & wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(pointer->w);
 				ro_gui_wimp_event_close_window(pointer->w);
-				ro_gui_menu_closed();
+				ro_gui_menu_destroy();
 			} else {
 				ro_gui_wimp_event_restore(pointer->w);
 			}
@@ -850,7 +850,7 @@ void ro_gui_wimp_event_ok_click(struct event_window *window,
 	if (state & wimp_CLICK_SELECT) {
 		ro_gui_dialog_close(window->w);
 		ro_gui_wimp_event_close_window(window->w);
-		ro_gui_menu_closed();
+		ro_gui_menu_destroy();
 	} else {
 		ro_gui_wimp_event_memorise(window->w);
 	}
@@ -1045,7 +1045,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 				return false;
 			ro_gui_dialog_close(key->w);
 			ro_gui_wimp_event_close_window(key->w);
-			ro_gui_menu_closed();
+			ro_gui_menu_destroy();
 			return true;
 		/* Return performs the OK action */
 		case wimp_KEY_RETURN:
@@ -1163,25 +1163,25 @@ bool ro_gui_wimp_event_pointer_entering_window(wimp_entering *entering)
 bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer)
 {
 	struct event_window	*window;
-	int			xpos, ypos, line_height, gap_height, entry;
 
 	window = ro_gui_wimp_event_find_window(pointer->w);
 	if ((window) && (window->window_menu)
 			&& (pointer->buttons == wimp_CLICK_MENU)) {
+		int xpos, ypos;
+
 		if (window->menu_prepare)
 			if (!window->menu_prepare(window->w, wimp_ICON_WINDOW,
 					window->window_menu, pointer))
 				return false;
 
 		if (window->window_menu_iconbar) {
+			int entry = 0;
+			int line_height = window->window_menu->height +
+					window->window_menu->gap;
+			int gap_height = 24; /* The fixed dotted line height */
+
 			xpos = pointer->pos.x;
 			ypos = 96;
-
-			line_height = window->window_menu->height +
-					window->window_menu->gap;
-			gap_height = 24; /* The fixed dotted line height */
-
-			entry = 0;
 			do {
 				ypos += line_height;
 				if ((window->window_menu->
@@ -1340,7 +1340,6 @@ bool ro_gui_wimp_event_register_checkbox(wimp_w w, wimp_i i)
 bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i)
 {
 	struct event_window *window;
-	struct icon_event *event;
 
 	window = ro_gui_wimp_event_get_window(w);
 	if (!window)
@@ -1348,7 +1347,8 @@ bool ro_gui_wimp_event_register_radio(wimp_w w, wimp_i *i)
 	window->max_radio_group++;
 
 	while (*i != -1) {
-		event = ro_gui_wimp_event_get_event(w, *i, EVENT_RADIO);
+		struct icon_event *event = ro_gui_wimp_event_get_event(w, *i,
+				EVENT_RADIO);
 		if (!event)
 			return false;
 		event->data.radio_group = window->max_radio_group;
@@ -1772,7 +1772,7 @@ bool ro_gui_wimp_event_submenu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 }
 
 /**
- * Handle menus being closed.  This is called from ro_gui_menu_closed(), in
+ * Handle menus being closed.  This is called from the menus modules, in
  * every scenario when one of our own menus is open.
  *
  * \param w		the window to owning the menu

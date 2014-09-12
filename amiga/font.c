@@ -23,12 +23,12 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "amiga/object.h"
+#include "amiga/schedule.h"
 #include "utils/nsoption.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
@@ -149,9 +149,9 @@ ULONG ami_xdpi;
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 *char1, uint16 *char2, uint32 emwidth);
+		const uint16 *char1, const uint16 *char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 *codepoint);
+		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
@@ -204,15 +204,13 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0,i=0;
-	size_t len, utf8len = 0;
-	uint8 *utf8;
 	int utf8_pos = 0;
 	uint32 co = 0;
 	int utf16charlen;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
-	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return false;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
@@ -291,30 +289,35 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	ULONG co;
-	uint16 *utf16 = NULL,*outf16 = NULL;
-	uint16 *utf16next = NULL;
+	uint16 *utf16_str = NULL;
+	const uint16 *utf16 = NULL;
+	const uint16 *utf16next = NULL;
 	FIXED kern = 0;
-	int utf16charlen = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	uint32 tx=0;
 	int utf8_pos = 0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
-	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
-	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
+	/* Get utf16 conversion of string for glyph measuring routines */
+	if (utf8_to_enc(string, "UTF-16", length, (char **)&utf16_str) !=
+			NSERROR_OK)
+		return false;
+
+	utf16 = utf16_str;
+	if (!(ofont = ami_open_outline_font(fstyle, 0)))
+		return false;
 
 	*char_offset = 0;
 	*actual_x = 0;
 
+	if (*utf16 == 0xFEFF) utf16++;
+
 	while (utf8_pos < length) {
 		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
-			utf16charlen = 1;
+			utf16next = utf16 + 1;
 		else
-			utf16charlen = 2;
-
-		utf16next = &utf16[utf16charlen];
+			utf16next = utf16 + 2;
 
 		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 
@@ -332,21 +335,13 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			/* Got a space */
 			*actual_x = tx;
 			*char_offset = utf8_pos;
-
-			if (x < tx) {
-				/* Beyond available width,
-				 * so don't look further */
-				free(outf16);
-				return true;
-			}
 		}
 
 		tx += tempx;
-
 		if ((x < tx) && (*char_offset != 0)) {
 			/* Reached available width, and a space was found;
 			 * split there. */
-			free(outf16);
+			free(utf16_str);
 			return true;
 		}
 
@@ -354,14 +349,13 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		utf8_pos = utf8_next(string, length, utf8_pos);
 	}
 
-	free(outf16);
+	free(utf16_str);
 
 	/* No spaces to split at, or everything fits */
 	assert(*char_offset == 0 || x >= tx);
 
 	*char_offset = length;
 	*actual_x = tx;
-	
 	return true;
 }
 
@@ -432,7 +426,7 @@ struct ami_font_node *ami_font_open(const char *font)
  * \return outline font or NULL on error
  */
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		uint16 *codepoint)
+		const uint16 *codepoint)
 {
 	struct ami_font_node *node;
 	struct OutlineFont *ofont;
@@ -642,13 +636,14 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 }
 
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
-		uint16 *char1, uint16 *char2, uint32 emwidth)
+		const uint16 *char1, const uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
 	FIXED kern = 0;
-	struct MinList *gwlist;
-	FIXED char1w;
+	struct MinList *gwlist = NULL;
+	FIXED char1w = 0;
 	struct GlyphWidthEntry *gwnode;
+	bool skip_c2 = false;
 
 	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
@@ -657,9 +652,11 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
-		*char2 = 0;
+		skip_c2 = true;
 	}
-	
+
+	if (*char2 < 0x0020) skip_c2 = true;
+
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode, *char1,
 			OT_GlyphCode2, *char1,
@@ -674,7 +671,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 			kern = 0;
 
-			if(*char2) {
+			if(!skip_c2) {
 				if(ESetInfo(&ofont->olf_EEngine,
 						OT_GlyphCode, *char1,
 						OT_GlyphCode2, *char2,
@@ -687,7 +684,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 			
-			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(!skip_c2) EReleaseInfo(&ofont->olf_EEngine,
 				OT_TextKernPair, kern,
 				TAG_END);
 				
@@ -732,7 +729,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
-	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
 
@@ -831,7 +828,7 @@ void ami_init_fonts(void)
 	NewList(&ami_diskfontlib_list);
 
 	/* run first cleanup in ten minutes */
-	schedule(60000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
+	ami_schedule(600000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
@@ -875,7 +872,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	}while(node=nnode);
 
 	/* reschedule to run in five minutes */
-	schedule(30000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
+	ami_schedule(300000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_font_setdevicedpi(int id)

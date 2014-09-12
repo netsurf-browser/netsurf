@@ -20,31 +20,26 @@
  * Interactive help (implementation).
  */
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include "oslib/help.h"
-#include "oslib/os.h"
-#include "oslib/taskmanager.h"
-#include "oslib/wimp.h"
-#include "desktop/tree.h"
-#include "riscos/cookies.h"
-#include "riscos/global_history.h"
-#include "riscos/gui.h"
-#include "riscos/hotlist.h"
-#include "riscos/help.h"
-#include "riscos/iconbar.h"
-#include "riscos/menus.h"
-#include "utils/nsoption.h"
-#include "riscos/treeview.h"
-#include "riscos/wimp.h"
-#include "riscos/wimp_event.h"
-#include "riscos/window.h"
-#include "utils/messages.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
+#include <oslib/wimp.h>
+#include <oslib/taskmanager.h>
 
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "utils/utf8.h"
+
+#include "riscos/treeview.h"
+#include "riscos/help.h"
+#include "riscos/wimp_event.h"
+#include "riscos/hotlist.h"
+#include "riscos/global_history.h"
+#include "riscos/cookies.h"
+#include "riscos/wimp.h"
+#include "riscos/iconbar.h"
+#include "riscos/window.h"
+#include "riscos/ucstables.h"
+#include "riscos/gui.h"
 
 /*	Recognised help keys
 	====================
@@ -102,7 +97,7 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	bool				greyed = false;
 	wimp_menu			*test_menu;
 	os_error			*error;
-	const char			*auto_text, *auto_suffix;
+	const char			*auto_text;
 	int				i;
 
 	/* check we aren't turned off */
@@ -125,8 +120,9 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	/* do the basic window checks */
 	auto_text = ro_gui_wimp_event_get_help_prefix(window);
 	if (auto_text != NULL) {
-		auto_suffix = ro_gui_wimp_event_get_help_suffix(window, icon,
-				&message_data->pos, message_data->buttons);
+		const char *auto_suffix = ro_gui_wimp_event_get_help_suffix(
+				window, icon, &message_data->pos,
+				message_data->buttons);
 
 		if (auto_suffix == NULL)
 			sprintf(message_token, "%s%i", auto_text, (int)icon);
@@ -222,10 +218,8 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 {
 	const char *translated_token;
 	help_full_message_reply *reply;
-	char *base_token;
 	char *local_token;
 	os_error *error;
-	utf8_convert_ret err;
 
 	/* start off with an empty reply */
 	reply = (help_full_message_reply *)message;
@@ -237,7 +231,7 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 		/* no default help for 'g' suffix */
 		if (token[strlen(token) - 1] != 'g') {
 			/* find the base key from the token */
-			base_token = token;
+			char *base_token = token;
 			while (base_token[0] != 0x00) {
 				if ((base_token[0] == '-') ||
 						((base_token[0] >= '0') &&
@@ -253,11 +247,11 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 	/* copy our message string */
 	if (translated_token != token) {
 		/* convert to local encoding */
-		err = utf8_to_local_encoding(translated_token, 0,
+		nserror err = utf8_to_local_encoding(translated_token, 0,
 				&local_token);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			/* simply use UTF-8 string */
 			strncpy(reply->reply, translated_token, 235);
 		}
@@ -292,7 +286,6 @@ bool ro_gui_interactive_help_available(void)
 	taskmanager_task task;
 	int context = 0;
 	os_t time;
-	os_error *error;
 
 	/* generic test: any help request within the last 100cs */
 	xos_read_monotonic_time(&time);
@@ -301,6 +294,7 @@ bool ro_gui_interactive_help_available(void)
 
 	/* special cases: check known application names */
 	do {
+		os_error *error;
 		error = xtaskmanager_enumerate_tasks(context, &task,
 				sizeof(taskmanager_task), &context, 0);
 		if (error) {

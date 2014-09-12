@@ -18,28 +18,17 @@
 
 #include <string.h>
 #include <gtk/gtk.h>
+#include <stdlib.h>
 
 #include "utils/log.h"
-
-#include "desktop/gui.h"
 #include "desktop/browser.h"
-#include "gtk/selection.h"
+#include "desktop/gui.h"
+
 #include "gtk/window.h"
  
 static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
 
-
-
-
-void gui_start_selection(struct gui_window *g)
-{
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_window_get_layout(g)));
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-}
 
 /**
  * Core asks front end for clipboard contents.
@@ -47,7 +36,7 @@ void gui_clear_selection(struct gui_window *g)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	gchar *gtext;
 
@@ -83,7 +72,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
@@ -99,3 +88,9 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	gtk_clipboard_set_text(clipboard, current_selection->str, -1);
 }
  
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *nsgtk_clipboard_table = &clipboard_table;

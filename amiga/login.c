@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/401login.h"
 #include "amiga/os3support.h"
 #include "amiga/gui.h"
 #include "amiga/object.h"
@@ -24,7 +23,6 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
-#include "utils/url.h"
 #include "content/urldb.h"
 #include "utils/messages.h"
 #include "utils/errors.h"
@@ -93,7 +91,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 	lw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title,lw->url,
+           	WA_Title, nsurl_access(lw->url),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,

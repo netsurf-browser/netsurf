@@ -29,9 +29,9 @@
 
 #include "utils/log.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
@@ -55,6 +55,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "content/hlcache.h"
+#include "atari/encoding.h"
 
 
 #define TB_BUTTON_WIDTH 32
@@ -427,7 +428,6 @@ static void toolbar_reflow(struct s_toolbar *tb)
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 {
     GRECT area, area_ro;
-    float old_scale;
 
     if (tb->attached == false) {
         return;
@@ -446,6 +446,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
     area = area_ro;
 
     if (rc_intersect(clip, &area)) {
+        float old_scale;
 
         plot_set_dimensions(area_ro.g_x, area_ro.g_y, area_ro.g_w, area_ro.g_h);
         struct rect r = {
@@ -473,9 +474,6 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 	struct s_tb_button * bt;
 	bool enable = false;
 	GRECT area;
-	nsurl * ns_url;
-	char * c_url;
-	size_t c_url_len;
 
 	assert(bw != NULL);
 
@@ -714,7 +712,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 				warn_user("NoMemory", 0);
 			} else {
 				browser_window_navigate(gw->browser->bw, url, NULL,
-					BROWSER_WINDOW_HISTORY | BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL, NULL, NULL);
 				nsurl_unref(url);
 			}
@@ -740,11 +738,11 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			int clip_length = strlen( clip );
 			if ( clip_length > 0 ) {
 				char *utf8;
-				utf8_convert_ret res;
+				nserror res;
 				/* Clipboard is in local encoding so
 				 * convert to UTF8 */
 				res = utf8_from_local_encoding( clip, clip_length, &utf8 );
-				if ( res == UTF8_CONVERT_OK ) {
+				if ( res == NSERROR_OK ) {
 					toolbar_set_url(tb, utf8);
 					free(utf8);
 					ret = true;
@@ -770,8 +768,6 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
     LOG((""));
     GRECT work;
 	short mx, my, mb, kstat;
-	int old;
-	OBJECT * toolbar_tree;
 	struct gui_window * gw;
 
 
@@ -818,10 +814,6 @@ void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
         else {
             /* when execution reaches here, mouse input is a click or dclick */
             /* TODO: recognize click + shitoolbar_update_buttonsft key */
-			int mstate = BROWSER_MOUSE_PRESS_1;
-			if ((kstat & (K_LSHIFT|K_RSHIFT)) != 0) {
-				mstate = BROWSER_MOUSE_MOD_1;
-			}
             if (aes_event_out.emo_mclicks == 2 ) {
 				textarea_mouse_action( tb->url.textarea,
 						BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1, mx,
@@ -946,8 +938,8 @@ void toolbar_back_click(struct s_toolbar *tb)
     bw = gw->browser->bw;
     assert(bw != NULL);
 
-    if( history_back_available(bw->history) )
-		history_back(bw, bw->history);
+    if( browser_window_back_available(bw) )
+		browser_window_history_back(bw, false);
 }
 
 void toolbar_reload_click(struct s_toolbar *tb)
@@ -973,8 +965,8 @@ void toolbar_forward_click(struct s_toolbar *tb)
     bw = gw->browser->bw;
     assert(bw != NULL);
 
-	if (history_forward_available(bw->history))
-		history_forward(bw, bw->history);
+	if (browser_window_forward_available(bw))
+		browser_window_history_forward(bw, false);
 }
 
 void toolbar_home_click(struct s_toolbar *tb)
@@ -1000,8 +992,7 @@ void toolbar_home_click(struct s_toolbar *tb)
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);

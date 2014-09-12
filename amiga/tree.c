@@ -304,26 +304,26 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	BOOL drag;
 	nsurl *url = NULL;
 	const char *title = NULL;
+	bool ok = false;
 
 	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
 
 	if(drag && (twin != ami_window_at_pointer(AMINS_TVWINDOW)))
 	{
 		if((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) {
-			hotlist_get_selection(&url, &title);
+			ok = hotlist_get_selection(&url, &title);
 		} else if((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection())) {
-			global_history_get_selection(&url, &title);
+			ok = global_history_get_selection(&url, &title);
 		}
 
-		if((title == NULL) || (title && (url == NULL))) {
+		if((ok == false) || (url == NULL)) {
 			DisplayBeep(scrn);
 		} else if(url) {
 			if(gwin = ami_window_at_pointer(AMINS_WINDOW)) {
 				browser_window_navigate(gwin->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -332,9 +332,11 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 					hotlist_add_entry(url, title, true, y);
 			}
 		}
+		tree_mouse_action(twin->tree, twin->mouse_state | twin->key_state,
+				twin->drag_x, twin->drag_y); /* Keep the tree happy */
 		tree_drag_end(twin->tree, twin->mouse_state,
 			twin->drag_x, twin->drag_y,
-			twin->drag_x, twin->drag_y); /* Keep the tree happy */
+			twin->drag_x, twin->drag_y); /* Keep the tree happier */
 	} else {
 		if(tree_drag_status(twin->tree) == TREE_UNKNOWN_DRAG)
 			DisplayBeep(scrn);
@@ -709,7 +711,7 @@ void ami_tree_close(struct treeview_window *twin)
 		ami_ssl_free(twin);
 	}
 	
-	ami_gui_hotlist_toolbar_update_all();
+	ami_gui_hotlist_update_all();
 }
 
 void ami_tree_update_quals(struct treeview_window *twin)
@@ -1391,11 +1393,11 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	atrr_data->height = height;
 	atrr_data->twin = (struct treeview_window *)data;
 	
-	/**TODO: Queue these requests properly like the main browser code does
+	/** /todo Queue these requests properly like the main browser code does
 	 **/
 
 	if(nsoption_bool(direct_render) == false)
-		schedule(0, ami_tree_redraw_req, atrr_data);
+		ami_schedule(0, ami_tree_redraw_req, atrr_data);
 	else
-		schedule(0, ami_tree_redraw_req_dr, atrr_data);
+		ami_schedule(0, ami_tree_redraw_req_dr, atrr_data);
 }

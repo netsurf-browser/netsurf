@@ -132,7 +132,7 @@ void amiga_plugin_hack_destroy(struct content *c)
 {
 	amiga_plugin_hack_content *plugin = (amiga_plugin_hack_content *) c;
 
-	LOG(("amiga_plugin_hack_destroy"));
+	LOG(("amiga_plugin_hack_destroy %p", plugin));
 
 	return;
 }

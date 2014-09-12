@@ -23,13 +23,37 @@
 #include "utils/errors.h"
 
 extern bool netsurf_quit;
-extern bool verbose_log;
 extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
 
-nserror netsurf_init(const char *messages);
-extern void netsurf_exit(void);
+struct netsurf_table;
+
+/**
+ * Register operation table.
+ *
+ * @param table NetSurf operations table.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+nserror netsurf_register(struct netsurf_table *table);
+
+/**
+ * Initialise netsurf core.
+ *
+ * @param messages path to translation mesage file.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+nserror netsurf_init(const char *messages, const char *store_path);
+
+/**
+ * Run event loop.
+ */
 extern int netsurf_main_loop(void);
+
+/**
+ * Finalise NetSurf core
+ */
+extern void netsurf_exit(void);
+
 
 #endif

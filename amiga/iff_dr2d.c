@@ -31,7 +31,7 @@ ULONG numcols;
 ULONG findcolour(ULONG newcol)
 {
 	ULONG i;
-	ULONG colour = 0xFFFFFFFF;
+	ULONG colr = 0xFFFFFFFF;
 	UBYTE red,grn,blu;
 
 	red = svgtiny_RED(newcol);
@@ -41,21 +41,20 @@ ULONG findcolour(ULONG newcol)
 	for(i=0;i<numcols;i++)
 	{
 		if((cm[i].red == red) && (cm[i].green == grn) && (cm[i].blue == blu))
-			colour = i;
+			colr = i;
 	}
 
-	return colour;
+	return colr;
 }
 
 void addcolour(ULONG newcol)
 {
-	int i;
-	ULONG colour;
+	ULONG colr;
 	UBYTE red,grn,blu;
 
-	colour = findcolour(newcol);
+	colr = findcolour(newcol);
 
-	if(colour == 0xFFFFFFFF)
+	if(colr == 0xFFFFFFFF)
 	{
 		cm[numcols].red = svgtiny_RED(newcol);
 		cm[numcols].green = svgtiny_GREEN(newcol);
@@ -342,7 +341,6 @@ int main(int argc, char **argv)
 {
 	BPTR fh = 0;
 	char *buffer;
-	size_t n;
 	struct IFFHandle *iffh = NULL;
 	int64 size;
 	LONG rarray[] = {0,0};

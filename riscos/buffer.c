@@ -19,19 +19,22 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "swis.h"
-#include "oslib/colourtrans.h"
-#include "oslib/os.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpreadsysinfo.h"
+#include <swis.h>
+#include <oslib/colourtrans.h>
+#include <oslib/os.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpreadsysinfo.h>
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+
 #include "riscos/buffer.h"
 #include "riscos/gui.h"
-#include "utils/nsoption.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
+
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 //#define BUFFER_EMULATE_32BPP "Redirect to a 32bpp sprite and plot with Tinct"
 
@@ -246,7 +249,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	*/
 	if ((error = xos_set_ecf_origin(-ro_plot_origin_x,
 			-ro_plot_origin_y)) != NULL) {
-	  	LOG(("Invalid ECF origin"));
+		LOG(("Invalid ECF origin: '%s'", error->errmess));
 	}
 }
 

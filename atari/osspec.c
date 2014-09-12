@@ -74,7 +74,6 @@ void init_os_info(void)
 int tos_getcookie(long tag, long * value)
 {
 	COOKIE * cptr;
-	long oldsp;
 
 	if( atari_sysinfo.gemdos_version > TOS4VER ){
 		return( Getcookie(tag, value) );

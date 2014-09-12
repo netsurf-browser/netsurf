@@ -17,21 +17,21 @@
  */
 
 #include <assert.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 #include <dom/dom.h>
 
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "css/css.h"
-#include "css/internal.h"
-#include "desktop/gui.h"
-#include "render/html.h"
+#include "desktop/system_colour.h"
+#include "utils/corestrings.h"
 #include "utils/utils.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+
+#include "css/css.h"
+#include "css/internal.h"
 
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE
@@ -111,7 +111,6 @@ static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
 
-static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
 
@@ -146,7 +145,7 @@ nserror nscss_create(const content_handler *handler,
 	}
 
 	/* Find charset specified on HTTP layer, if any */
-	error = http_parameter_list_find_item(params, css_charset, 
+	error = http_parameter_list_find_item(params, corestring_lwc_charset, 
 			&charset_value);
 	if (error != NSERROR_OK || lwc_string_length(charset_value) == 0) {
 		/* No charset specified, use fallback, if any */
@@ -221,7 +220,7 @@ static nserror nscss_create_css_data(struct content_css_data *c,
 	params.resolve_pw = NULL;
 	params.import = nscss_handle_import;
 	params.import_pw = c;
-	params.color = gui_system_colour;
+	params.color = ns_system_colour;
 	params.color_pw = NULL;
 	params.font = NULL;
 	params.font_pw = NULL;
@@ -576,14 +575,14 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 	/* Create content */
 	c->imports[c->import_count].media = media;
 
-	/* TODO: Why aren't we getting a relative url part, to join? */
+	/** \todo Why aren't we getting a relative url part, to join? */
 	nerror = nsurl_create(lwc_string_data(url), &ns_url);
 	if (nerror != NSERROR_OK) {
 		free(ctx);
 		return CSS_NOMEM;
 	}
 
-	/* TODO: Constructing nsurl for referer here is silly, avoid */
+	/** \todo Constructing nsurl for referer here is silly, avoid */
 	nerror = nsurl_create(referer, &ns_ref);
 	if (nerror != NSERROR_OK) {
 		nsurl_unref(ns_url);
@@ -655,19 +654,8 @@ nserror nscss_import(hlcache_handle *handle,
 		/* Already released handle */
 		break;
 
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_READY:
-	case CONTENT_MSG_STATUS:
-	case CONTENT_MSG_REDIRECT:
-		/* messages content handler will legitamately recive
-		 * but does not need to handle
-		 */
-		break;
-
 	default:
-		/* all other messages are unexpected and fatal */
-		LOG(("Unhandled message type %d", event->type));
-		assert(0);
+		break;
 	}
 
 	/* Preserve out-of-memory. Anything else is OK */
@@ -778,7 +766,7 @@ css_error nscss_register_import(struct content_css_data *c,
 			params.resolve_pw = NULL;
 			params.import = NULL;
 			params.import_pw = NULL;
-			params.color = gui_system_colour;
+			params.color = ns_system_colour;
 			params.color_pw = NULL;
 			params.font = NULL;
 			params.font_pw = NULL;
@@ -811,11 +799,6 @@ css_error nscss_register_import(struct content_css_data *c,
  */
 static void nscss_fini(void)
 {
-	if (css_charset != NULL) {
-		lwc_string_unref(css_charset);
-		css_charset = NULL;
-	}
-
 	if (blank_import != NULL) {
 		css_stylesheet_destroy(blank_import);
 		blank_import = NULL;
@@ -839,14 +822,7 @@ static const content_handler css_content_handler = {
  */
 nserror nscss_init(void)
 {
-	lwc_error lerror;
 	nserror error;
-
-	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
-	if (lerror != lwc_error_ok) {
-		error = NSERROR_NOMEM;
-		goto error;
-	}
 
 	error = content_factory_register_handler("text/css", 
 			&css_content_handler);

@@ -28,14 +28,12 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/download.h"
 #include "render/html.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -246,13 +244,12 @@ static char * select_filepath( const char * path, const char * filename )
 	return(ret);
 }
 
-struct gui_download_window * gui_download_window_create(download_context *ctx,
-		struct gui_window *parent)
+static struct gui_download_window * 
+gui_download_window_create(download_context *ctx, struct gui_window *parent)
 {
 	const char *filename;
 	char *destination;
 	char gdos_path[PATH_MAX];
-	const char * url;
 	struct gui_download_window * gdw;
 	int dlgres = 0;
 	OBJECT * tree = gemtk_obj_get_tree(DOWNLOAD);
@@ -307,7 +304,6 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 	gdw->size_total = download_context_get_total_length(ctx);
 	gdw->destination = destination;
 	gdw->tree = tree;
-	url = download_context_get_url(ctx);
 
 	gdw->fd = fopen(gdw->destination, "wb");
 	if( gdw->fd == NULL ){
@@ -359,20 +355,15 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *dw,
+static nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 
 	uint32_t clck = clock();
 	uint32_t tnow = clck / (CLOCKS_PER_SEC>>3);
 	uint32_t sdiff = (clck / (CLOCKS_PER_SEC)) - dw->start;
-	uint32_t p = 0;
-	float speed;
-	float pf = 0;
 
 	LOG((""));
-
-	OBJECT * tree = dw->tree;
 
 	if(dw->abort == true){
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
@@ -388,11 +379,13 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 
 	/* Update GUI */
 	if ((tnow - dw->lastrdw) > 1) {
+		float speed;
 
 		dw->lastrdw = tnow;
 		speed = dw->size_downloaded / sdiff;
 
 		if( dw->size_total > 0 ){
+			uint32_t p = 0;
 			p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
 				"%lu%s", p, "%"
@@ -415,7 +408,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
                                const char *error_msg)
 {
 	LOG(("%s", error_msg));
@@ -426,9 +419,8 @@ void gui_download_window_error(struct gui_download_window *dw,
 	// TODO: change abort to close
 }
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
-	OBJECT * tree;
 	LOG((""));
 
 // TODO: change abort to close
@@ -439,7 +431,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 		dw->fd = NULL;
 	}
 
-	tree = dw->tree;
 	if (dw->close_on_finish) {
 		gemtk_wm_send_msg(dw->guiwin, WM_CLOSED, 0, 0, 0, 0);
 	} else {
@@ -454,3 +445,12 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 	gui_window_set_status(input_window, messages_get("Done") );
 }
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *atari_download_table = &download_table;

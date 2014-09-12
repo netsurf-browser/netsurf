@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "desktop/system_colour.h"
 #include "desktop/mouse.h"
 #include "desktop/scrollbar.h"
 #include "utils/nsoption.h"
@@ -190,9 +191,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 	int v[6]; /* array of triangle vertices */
 	int x0, y0, x1, y1;
 
-	colour bg_fill_colour = gui_system_colour_char("Scrollbar");
-	colour fg_fill_colour = gui_system_colour_char("ButtonFace");
-	colour arrow_fill_colour = gui_system_colour_char("ButtonText");
+	colour bg_fill_colour = ns_system_colour_char("Scrollbar");
+	colour fg_fill_colour = ns_system_colour_char("ButtonFace");
+	colour arrow_fill_colour = ns_system_colour_char("ButtonText");
 
 	plot_style_t bg_fill_style = {
 		.fill_type = PLOT_OP_TYPE_SOLID,

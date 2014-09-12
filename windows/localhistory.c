@@ -22,8 +22,7 @@
 #include <windowsx.h>
 #include <commctrl.h>
 
-#include "desktop/browser_private.h"
-#include "desktop/local_history.h"
+#include "desktop/browser_history.h"
 #include "desktop/plotters.h"
 #include "utils/utils.h"
 #include "utils/log.h"
@@ -56,7 +55,7 @@ static void nsws_localhistory_scroll_check(struct nsws_localhistory *l, struct g
 	if ((gw->bw == NULL) || (l->hwnd == NULL))
 		return;
 
-	history_size(gw->bw->history, &(l->width), &(l->height));
+	browser_window_history_size(gw->bw, &(l->width), &(l->height));
 
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
@@ -97,7 +96,7 @@ static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window 
 		tmp_hdc = plot_hdc;
 		plot_hdc = GetDC(l->hwnd);
 
-		history_redraw(gw->bw->history, &ctx);
+		browser_window_history_redraw(gw->bw, &ctx);
 
 		ReleaseDC(l->hwnd, plot_hdc);
 
@@ -167,8 +166,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
 
-		if (history_click(gw->bw,
-				   gw->bw->history,
+		if (browser_window_history_click(gw->bw,
 				   gw->localhistory->hscroll + x,
 				   gw->localhistory->vscroll + y,
 				   false)) {
@@ -180,8 +178,6 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 	case WM_MOUSEMOVE: 
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
-/*		if (gw->bw != NULL)
-		history_hover(gw->bw->history, x, y, (void *)hwnd);*/
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
 	
@@ -287,7 +283,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 			tmp_hdc = plot_hdc;
 			plot_hdc = hdc;
 
-			history_redraw_rectangle(gw->bw->history,
+			browser_window_history_redraw_rectangle(gw->bw,
 				 gw->localhistory->hscroll + ps.rcPaint.left,
 				 gw->localhistory->vscroll + ps.rcPaint.top,
 				 gw->localhistory->hscroll + (ps.rcPaint.right - ps.rcPaint.left),
@@ -347,8 +343,8 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 	localhistory->width = 0;
 	localhistory->height = 0;
 
-	if ((gw->bw != NULL) && (gw->bw->history != NULL)) {
-		history_size(gw->bw->history, 
+	if (gw->bw != NULL) {
+		browser_window_history_size(gw->bw, 
 			     &(localhistory->width), 
 			     &(localhistory->height));
 	}

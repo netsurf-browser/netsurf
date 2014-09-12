@@ -19,20 +19,13 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/BrowserViewController.h"
+#import "cocoa/selection.h"
 
+#import "desktop/gui.h"
 #import "desktop/browser_private.h"
 
 
 static NSMutableString *cocoa_clipboard_string;
-
-void gui_start_selection(struct gui_window *g)
-{
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-}
-
 
 /**
  * Core asks front end for clipboard contents.
@@ -40,7 +33,7 @@ void gui_clear_selection(struct gui_window *g)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
 	NSString *string = [pb stringForType: NSStringPboardType];
@@ -70,7 +63,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	/* Empty clipboard string */
@@ -104,3 +97,9 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *cocoa_clipboard_table = &clipboard_table;

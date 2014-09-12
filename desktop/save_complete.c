@@ -21,8 +21,6 @@
  * Save HTML document with dependencies (implementation).
  */
 
-#include "utils/config.h"
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -30,20 +28,24 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
-
 #include <dom/dom.h>
 
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "css/css.h"
-#include "desktop/save_complete.h"
-#include "render/box.h"
-#include "render/html.h"
+#include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "utils/file.h"
+#include "utils/messages.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/html.h"
+
+#include "desktop/gui_factory.h"
+#include "desktop/save_complete.h"
 
 regex_t save_complete_import_re;
 
@@ -142,19 +144,19 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 		const char *leafname, const char *data, size_t data_len,
 		lwc_string *mime_type)
 {
+	nserror ret;
 	FILE *fp;
-	bool error;
-	char fullpath[PATH_MAX];
+	char *fname = NULL;
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, leafname);
-	if (error == false) {
-		warn_user("NoMemory", NULL);
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, leafname);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 		return false;
 	}
 
-	fp = fopen(fullpath, "wb");
+	fp = fopen(fname, "wb");
 	if (fp == NULL) {
+		free(fname);
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));
 		return false;
@@ -164,8 +166,10 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 
 	fclose(fp);
 
-	if (ctx->set_type != NULL)
-		ctx->set_type(fullpath, mime_type);
+	if (ctx->set_type != NULL) {
+		ctx->set_type(fname, mime_type);
+	}
+	free(fname);
 
 	return true;
 }
@@ -351,8 +355,11 @@ static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
 	uint32_t i;
 
 	for (i = 0; i < import_count; i++) {
-		if (save_complete_save_stylesheet(ctx, imports[i].c) == false)
-			return false;
+		/* treat a valid content as a stylesheet to save */
+		if ((imports[i].c != NULL) &&
+		    (save_complete_save_stylesheet(ctx, imports[i].c) == false)) {
+				return false;
+		}
 	}
 
 	return true;
@@ -435,7 +442,7 @@ static bool save_complete_save_html_objects(save_complete_ctx *ctx,
 	object = html_get_objects(c, &count);
 
 	for (; object != NULL; object = object->next) {
-		if (object->content != NULL) {
+		if ((object->content != NULL) && (object->box != NULL)) {
 			if (save_complete_save_html_object(ctx,
 					object->content) == false)
 				return false;
@@ -546,7 +553,6 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 	hlcache_handle *content;
 	char *escaped;
 	nserror error;
-	utf8_convert_ret ret;
 
 	error = nsurl_join(ctx->base, value, &url);
 	if (error == NSERROR_NOMEM)
@@ -561,11 +567,11 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 			fprintf(ctx->fp, "\"%p\"", content);
 		} else {
 			/* no match found */
-			ret = utf8_to_html(nsurl_access(url), "UTF-8",
+			error = utf8_to_html(nsurl_access(url), "UTF-8",
 					nsurl_length(url), &escaped);
 			nsurl_unref(url);
 
-			if (ret != UTF8_CONVERT_OK)
+			if (error != NSERROR_OK)
 				return false;
 
 			fprintf(ctx->fp, "\"%s\"", escaped);
@@ -573,8 +579,8 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 			free(escaped);
 		}
 	} else {
-		ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
-		if (ret != UTF8_CONVERT_OK)
+		error = utf8_to_html(value, "UTF-8", value_len, &escaped);
+		if (error != NSERROR_OK)
 			return false;
 
 		fprintf(ctx->fp, "\"%s\"", escaped);
@@ -589,10 +595,10 @@ static bool save_complete_write_value(save_complete_ctx *ctx,
 		const char *value, size_t value_len)
 {
 	char *escaped;
-	utf8_convert_ret ret;
+	nserror ret;
 
 	ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
-	if (ret != UTF8_CONVERT_OK)
+	if (ret != NSERROR_OK)
 		return false;
 
 	fprintf(ctx->fp, "\"%s\"", escaped);
@@ -918,7 +924,7 @@ static bool save_complete_node_handler(dom_node *node,
 	save_complete_ctx *ctx = ctxin;
 	dom_node_type type;
 	dom_exception error;
-	utf8_convert_ret ret;
+	nserror ret;
 
 	error = dom_node_get_node_type(node, &type);
 	if (error != DOM_NO_ERR)
@@ -952,7 +958,7 @@ static bool save_complete_node_handler(dom_node *node,
 
 				ret = utf8_to_html(text_data, "UTF-8",
 						text_len, &escaped);
-				if (ret != UTF8_CONVERT_OK)
+				if (ret != NSERROR_OK)
 					return false;
 
 				fwrite(escaped, sizeof(*escaped), 
@@ -1034,29 +1040,30 @@ static bool save_complete_node_handler(dom_node *node,
 static bool save_complete_save_html_document(save_complete_ctx *ctx,
 		hlcache_handle *c, bool index)
 {
-	bool error;
+	nserror ret;
 	FILE *fp;
+	char *fname = NULL;
 	dom_document *doc;
 	lwc_string *mime_type;
 	char filename[32];
-	char fullpath[PATH_MAX];
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-
-	if (index)
+	if (index) {
 		snprintf(filename, sizeof filename, "index");
-	else 
+	} else {
 		snprintf(filename, sizeof filename, "%p", c);
+	}
 
-	error = path_add_part(fullpath, sizeof fullpath, filename);
-	if (error == false) {
-		warn_user("NoMemory", NULL);
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, filename);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), NULL);
 		return false;
 	}
 
-	fp = fopen(fullpath, "wb");
+	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		warn_user("NoMemory", NULL);
+		free(fname);
+		LOG(("fopen(): errno = %i", errno));
+		warn_user("SaveError", strerror(errno));
 		return false;
 	}
 
@@ -1068,6 +1075,7 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 
 	if (save_complete_libdom_treewalk((dom_node *) doc,
 			save_complete_node_handler, ctx) == false) {
+		free(fname);
 		warn_user("NoMemory", 0);
 		fclose(fp);
 		return false;
@@ -1078,10 +1086,11 @@ static bool save_complete_save_html_document(save_complete_ctx *ctx,
 	mime_type = content_get_mime_type(c);
 	if (mime_type != NULL) {
 		if (ctx->set_type != NULL)
-			ctx->set_type(fullpath, mime_type);
+			ctx->set_type(fname, mime_type);
 
 		lwc_string_unref(mime_type);
 	}
+	free(fname);
 
 	return true;
 }
@@ -1119,19 +1128,18 @@ static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
 
 static bool save_complete_inventory(save_complete_ctx *ctx)
 {
+	nserror ret;
 	FILE *fp;
-	bool error;
+	char *fname = NULL;
 	save_complete_entry *entry;
-	char fullpath[PATH_MAX];
 
-	strncpy(fullpath, ctx->path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, "Inventory");
-	if (error == false) {
-		warn_user("NoMemory", NULL);
+	ret = netsurf_mkpath(&fname, NULL, 2, ctx->path, "Inventory");
+	if (ret != NSERROR_OK) {
 		return false;
 	}
 
-	fp = fopen(fullpath, "w");
+	fp = fopen(fname, "w");
+	free(fname);
 	if (fp == NULL) {
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));
@@ -1193,8 +1201,9 @@ bool save_complete(hlcache_handle *c, const char *path,
 	
 	result = save_complete_save_html(&ctx, c, true);
 
-	if (result)
+	if (result) {
 		result = save_complete_inventory(&ctx);
+	}
 
 	save_complete_ctx_finalise(&ctx);
 

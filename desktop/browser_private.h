@@ -25,6 +25,7 @@
 #define _NETSURF_DESKTOP_BROWSER_PRIVATE_H_
 
 #include <stdbool.h>
+#include <libwapcaplet/libwapcaplet.h>
 
 #include "desktop/browser.h"
 
@@ -86,9 +87,6 @@ struct browser_window {
 
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
-
-	/** Window has been resized, and content needs reformatting. */
-	bool reformat_pending;
 
 	/** Window dimensions */
 	int x;
@@ -162,5 +160,18 @@ struct browser_window {
 	int status_match; /**< Number of times an idempotent status-set operation was performed. */
 	int status_miss; /**< Number of times status was really updated. */
 };
+
+
+
+nserror browser_window_initialise_common(enum browser_window_create_flags flags,
+		struct browser_window *bw, struct browser_window *existing);
+
+/**
+ * Update the extent of the inside of a browser window to that of the current
+ * content
+ *
+ * \param  bw	browser_window to update the extent of
+ */
+void browser_window_update_extent(struct browser_window *bw);
 
 #endif

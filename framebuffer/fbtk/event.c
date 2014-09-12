@@ -248,6 +248,13 @@ fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
 			timeout = 0;
 			break;
 
+		case NSFB_EVENT_RESIZE:
+			/* Try to resize framebuffer */
+			gui_resize(root,
+					event->value.resize.w,
+					event->value.resize.h);
+			break;
+
 		default:
 			break;
 		}

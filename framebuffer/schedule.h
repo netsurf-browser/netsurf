@@ -19,7 +19,27 @@
 #ifndef FRAMEBUFFER_SCHEDULE_H
 #define FRAMEBUFFER_SCHEDULE_H
 
+/**
+ * Schedule a callback.
+ *
+ * \param  tival     interval before the callback should be made in ms
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ *
+ * The callback function will be called as soon as possible after t ms have
+ * passed.
+ */
+
+nserror framebuffer_schedule(int tival, void (*callback)(void *p), void *p);
+
+/**
+ * Process scheduled callbacks up to current time.
+ *
+ * @return The number of milliseconds untill the next scheduled event
+ * or -1 for no event.
+ */
 int schedule_run(void);
+
 void list_schedule(void);
 
 #endif

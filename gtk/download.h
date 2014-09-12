@@ -21,6 +21,8 @@
 
 #include <gtk/gtk.h>
 
+struct gui_download_table *nsgtk_download_table;
+
 bool nsgtk_download_init(const char *glade_file_location);
 void nsgtk_download_destroy (void);
 bool nsgtk_check_for_downloads(GtkWindow *parent);

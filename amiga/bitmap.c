@@ -152,7 +152,9 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 	int err = 0;
 	Object *dto = NULL;
 
-	if(!ami_download_check_overwrite(path, NULL, 0)) return false;
+	if ((flags & AMI_BITMAP_FORCE_OVERWRITE) == 0) {
+		if(!ami_download_check_overwrite(path, NULL, 0)) return false;
+	}
 
 	if(dto = ami_datatype_object_from_bitmap(bitmap))
 	{
@@ -453,7 +455,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 						COMPTAG_DestHeight,height,
 						COMPTAG_OffsetX,0,
 						COMPTAG_OffsetY,0,
-						COMPTAG_FriendBitMap,friendbm,
+						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 						TAG_DONE);
 #endif
 		}

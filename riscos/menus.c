@@ -31,15 +31,20 @@
 #include "oslib/osgbpb.h"
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/utf8.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/netsurf.h"
 #include "desktop/textinput.h"
+
 #include "riscos/dialog.h"
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
@@ -56,11 +61,7 @@
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
-#include "utils/utf8.h"
+#include "riscos/ucstables.h"
 
 struct menu_definition_entry {
 	menu_action action;			/**< menu action */
@@ -77,7 +78,7 @@ struct menu_definition {
 	struct menu_definition *next;		/**< next menu */
 };
 
-
+static void ro_gui_menu_closed(void);
 static void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		const struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry,
@@ -118,6 +119,7 @@ wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 /**
  * Create menu structures.
  */
+
 void ro_gui_menu_init(void)
 {
 	/* image quality menu */
@@ -212,6 +214,7 @@ void ro_gui_menu_init(void)
  * \param y			The y position.
  * \param w			The window that the menu belongs to.
  */
+
 void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 {
 	os_error *error;
@@ -251,6 +254,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
  * \param  w	 window handle
  * \param  i	 icon handle
  */
+
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 {
 	wimp_window_state state;
@@ -285,29 +289,24 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 
 
 /**
- * Clean up after a menu has been closed, or forcible close an open menu.
-  */
-void ro_gui_menu_closed(void)
+ * Forcibly close any menu or transient dialogue box that is currently open.
+ */
+
+void ro_gui_menu_destroy(void)
 {
 	os_error *error;
 
-	if (current_menu) {
-		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-		if (error) {
-			LOG(("xwimp_create_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
+	if (current_menu == NULL)
+		return;
 
-	  	ro_gui_wimp_event_menus_closed(current_menu_window,
-	  			current_menu_icon, current_menu);
-
-		current_menu = NULL;
+	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	if (error) {
+		LOG(("xwimp_create_menu: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
 	}
 
-	current_menu_window = NULL;
-	current_menu_icon = 0;
-	current_menu_open = false;
+	ro_gui_menu_closed();
 }
 
 
@@ -439,6 +438,38 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 	}
 }
 
+
+/**
+ * Handle Message_MenusDeleted, removing our current record of an open menu
+ * if it matches the deleted menu handle.
+ *
+ * \param *deleted		The message block.
+ */
+
+void ro_gui_menu_message_deleted(wimp_message_menus_deleted *deleted)
+{
+	if (deleted != NULL && deleted->menu == current_menu)
+		ro_gui_menu_closed();
+}
+
+
+/**
+ * Clean up after a menu has been closed, or forcibly close an open menu.
+  */
+
+static void ro_gui_menu_closed(void)
+{
+	if (current_menu != NULL)
+		ro_gui_wimp_event_menus_closed(current_menu_window,
+				current_menu_icon, current_menu);
+
+	current_menu = NULL;
+	current_menu_window = NULL;
+	current_menu_icon = 0;
+	current_menu_open = false;
+}
+
+
 /**
  * Update the current menu by sending it a Menu Prepare event through wimp_event
  * and then reopening it if the contents has changed.
@@ -451,7 +482,6 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 void ro_gui_menu_refresh(wimp_menu *menu)
 {
 	int checksum = 0;
-	os_error *error;
 
 	if (!current_menu_open)
 		return;
@@ -465,6 +495,7 @@ void ro_gui_menu_refresh(wimp_menu *menu)
 	/* \TODO -- Call the menu's event handler here. */
 
 	if (checksum != ro_gui_menu_get_checksum()) {
+		os_error *error;
 		error = xwimp_create_menu(current_menu, 0, 0);
 		if (error) {
 			LOG(("xwimp_create_menu: 0x%x: %s",
@@ -535,17 +566,17 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		wimp_menu_entry *parent_entry, int first, int last,
 		const char *prefix, int prefix_length)
 {
-	int entry, id, cur_depth;
+	int entry;
 	int entries = 0;
 	int matches[last - first + 1];
-	const char *match;
 	const char *text, *menu_text;
 	wimp_menu *new_menu;
 	struct menu_definition_entry *definition_entry;
 
 	/* step 1: store the matches for depth and subset string */
 	for (entry = first; entry < last; entry++) {
-		cur_depth = 0;
+		const char *match;
+		int cur_depth = 0;
 		match = menu->entries[entry].text;
 
 		/* skip specials at start of string */
@@ -595,7 +626,7 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 	/* and then create the entries */
 	for (entry = 0; entry < entries; entry++) {
 		/* add the entry */
-		id = matches[entry];
+		int id = matches[entry];
 
 		text = menu->entries[id].text;
 
@@ -875,8 +906,7 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 	int alphabet;
 	struct menu_definition_entry *entry;
 	char *translated;
-	utf8_convert_ret err;
-
+	nserror err;
 
 	/* read current alphabet */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
@@ -895,8 +925,8 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 	free(menu->menu->title_data.indirected_text.text);
 	err = utf8_to_local_encoding(messages_get(menu->title_key),
 			0, &translated);
-	if (err != UTF8_CONVERT_OK) {
-		assert(err != UTF8_CONVERT_BADENC);
+	if (err != NSERROR_OK) {
+		assert(err != NSERROR_BAD_ENCODING);
 		LOG(("utf8_to_enc failed"));
 		return false;
 	}
@@ -912,8 +942,8 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 		free(entry->menu_entry->data.indirected_text.text);
 		err = utf8_to_local_encoding(messages_get(entry->entry_key),
 				0, &translated);
-		if (err != UTF8_CONVERT_OK) {
-			assert(err != UTF8_CONVERT_BADENC);
+		if (err != NSERROR_OK) {
+			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_to_enc failed"));
 			return false;
 		}

@@ -24,11 +24,11 @@
 #import "cocoa/BrowserWindowController.h"
 
 #import "desktop/browser_private.h"
-#import "desktop/local_history.h"
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 #import "utils/messages.h"
+#import "content/hlcache.h"
 
 @interface BrowserView ()
 
@@ -38,7 +38,6 @@
 - (void) scrollVertical: (CGFloat) amount;
 - (CGFloat) pageScroll;
 
-+ (void)reformatTimerFired: (NSTimer *) timer;
 - (void) reformat;
 
 - (void) popUpContextMenuForEvent: (NSEvent *) event;
@@ -60,8 +59,6 @@
 
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
-static NSMutableArray *cocoa_reformat_pending = nil;
-
 
 - initWithFrame: (NSRect) frame;
 {
@@ -438,13 +435,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) adjustFrame;
 {
-	browser->reformat_pending = true;
-	browser_reformat_pending = true;
-
-	if (cocoa_reformat_pending == nil) {
-		cocoa_reformat_pending = [[NSMutableArray alloc] init];
-	}
-	[cocoa_reformat_pending addObject: self];
+        browser_window_schedule_reformat(browser);
 	
 	[super adjustFrame];
 }
@@ -490,24 +481,6 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 {
 	NSRect size = [[self superview] frame];
 	browser_window_reformat( browser, false, cocoa_pt_to_px( NSWidth( size ) ), cocoa_pt_to_px( NSHeight( size ) ) );
-}
-
-+ (void)reformatTimerFired: (NSTimer *) timer;
-{
-	if (browser_reformat_pending) {
-		[cocoa_reformat_pending makeObjectsPerformSelector: @selector( reformat )];
-		[cocoa_reformat_pending removeAllObjects];
-		browser_reformat_pending = false;
-	}
-}
-
-+ (void) initialize;
-{
-	NSTimer *timer = [[NSTimer alloc] initWithFireDate: nil interval: 0.02 
-												target: self selector: @selector(reformatTimerFired:) 
-											  userInfo: nil repeats: YES];
-	[[NSRunLoop currentRunLoop] addTimer: timer forMode: NSRunLoopCommonModes];
-	[timer release];
 }
 
 - (void) popUpContextMenuForEvent: (NSEvent *) event;
@@ -580,9 +553,9 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 	error = nsurl_create([[sender representedObject] UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-                                              BROWSER_WINDOW_TAB,
+		error = browser_window_create(BW_CREATE_HISTORY |
+                                              BW_CREATE_TAB |
+                                              BW_CREATE_CLONE,
 					      url,
 					      NULL,
 					      browser,
@@ -601,8 +574,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 	error = nsurl_create([[sender representedObject] UTF8String], &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY |
+                                              BW_CREATE_CLONE,
 					      url,
 					      NULL,
 					      browser,
@@ -622,8 +595,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
                 browser_window_navigate(browser,
                                         url,
                                         NULL,
-                                        BROWSER_WINDOW_DOWNLOAD |
-                                        BROWSER_WINDOW_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD,
                                         NULL,
                                         NULL,
                                         NULL);
@@ -687,8 +659,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		browser_window_navigate(browser,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+                                        BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
 					NULL);

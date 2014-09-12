@@ -23,6 +23,6 @@
 #ifndef NETSURF_CONTENT_FETCHERS_FETCH_ABOUT_H
 #define NETSURF_CONTENT_FETCHERS_FETCH_ABOUT_H
 
-void fetch_about_register(void);
+nserror fetch_about_register(void);
 
 #endif

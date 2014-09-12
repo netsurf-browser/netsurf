@@ -28,6 +28,8 @@
 #import "desktop/browser.h"
 #import "utils/nsoption.h"
 #import "utils/messages.h"
+#import "utils/utils.h"
+#import "utils/nsurl.h"
 
 @interface BrowserWindowController ()
 
@@ -160,9 +162,8 @@
                 error = nsurl_create(NETSURF_HOMEPAGE, &url);
 	}
         if (error == NSERROR_OK) {
-                error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-                                              BROWSER_WINDOW_HISTORY |
-                                              BROWSER_WINDOW_TAB,
+                error = browser_window_create(BW_CREATE_HISTORY |
+                                              BW_CREATE_TAB,
                                               url,
                                               NULL,
                                               [activeBrowser browser],

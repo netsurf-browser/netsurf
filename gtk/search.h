@@ -19,21 +19,18 @@
 #ifndef _NETSURF_GTK_SEARCH_H_
 #define _NETSURF_GTK_SEARCH_H_
 
-#include <gtk/gtk.h>
-#include "gtk/scaffolding.h"
+struct gui_search_table *nsgtk_search_table;
 
-void nsgtk_search_bar_toggle_visibility(struct gtk_scaffolding * g);
+struct nsgtk_scaffolding;
+
+void nsgtk_search_bar_toggle_visibility(struct nsgtk_scaffolding * g);
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, 
-		gpointer data);
+gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, gpointer data);
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data);
 gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data);
-gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, 
-		gpointer data);
-void nsgtk_search_set_forward_state(bool active, void *p);
-void nsgtk_search_set_back_state(bool active, void *p);
+gboolean nsgtk_websearch_clear(GtkWidget *widget, GdkEventFocus *f, gpointer data);
 		
 #endif

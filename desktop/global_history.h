@@ -22,12 +22,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/browser.h"
 #include "desktop/core_window.h"
 #include "desktop/textinput.h"
 #include "utils/errors.h"
 #include "utils/nsurl.h"
 
+enum browser_mouse_state;
 
 /**
  * Initialise the global history.
@@ -92,7 +92,7 @@ void global_history_redraw(int x, int y, struct rect *clip,
  * \param x		X coordinate
  * \param y		Y coordinate
  */
-void global_history_mouse_action(browser_mouse_state mouse, int x, int y);
+void global_history_mouse_action(enum browser_mouse_state mouse, int x, int y);
 
 /**
  * Key press handling.

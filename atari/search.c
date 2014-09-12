@@ -53,13 +53,16 @@ static void nsatari_search_add_recent(const char *string, void *p);
 void nsatari_search_set_forward_state(bool active, void *p);
 void nsatari_search_set_back_state(bool active, void *p);
 
-static struct gui_search_callbacks nsatari_search_callbacks = {
-	nsatari_search_set_forward_state,
-	nsatari_search_set_back_state,
+static struct gui_search_table search_table = {
 	nsatari_search_set_status,
 	nsatari_search_set_hourglass,
-	nsatari_search_add_recent
+	nsatari_search_add_recent,
+	nsatari_search_set_forward_state,
+	nsatari_search_set_back_state,
 };
+
+struct gui_search_table *atari_search_table = &search_table;
+
 
 
 /**
@@ -232,7 +235,6 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 /** checks for search parameters changes */
 static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 {
-	bool check;
 	uint32_t flags_old;
 	uint32_t flags_mask = SEARCH_FLAG_SHOWALL | SEARCH_FLAG_CASE_SENSITIVE;
 	struct s_search_form_state cur;
@@ -261,10 +263,6 @@ static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		search_flags_t f)
 {
-
-	bool fwd;
-	search_flags_t flags = f;
-
 	assert(s!=null);
 	assert(input_window->browser->bw == s->bw);
 
@@ -282,7 +280,7 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 	else
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 
-	browser_window_search(s->bw, &nsatari_search_callbacks, s,
+	browser_window_search(s->bw, s,
 			s->state.flags,
 			gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
 

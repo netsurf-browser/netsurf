@@ -39,7 +39,7 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length);
 bool dirlist_generate_parent_link(const char *parent, char *buffer,
 		int buffer_length);
 bool dirlist_generate_headings(char *buffer, int buffer_length);
-bool dirlist_generate_row(bool even, bool directory, char *url, char *name,
+bool dirlist_generate_row(bool even, bool directory, nsurl *url, char *name,
 		const char *mimetype, long long size, char *date, char *time,
 		char *buffer, int buffer_length);
 bool dirlist_generate_bottom(char *buffer, int buffer_length);

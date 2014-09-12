@@ -22,7 +22,7 @@
 #include "desktop/gui.h"
 #include "monkey/schedule.h"
 #include "monkey/browser.h"
-#include "content/fetchers/curl.h"
+#include "content/fetchers.h"
 #include "monkey/dispatch.h"
 #include "monkey/poll.h"
 
@@ -88,60 +88,45 @@ monkey_prepare_input(void)
 }
 
 void
-gui_poll(bool active)
+monkey_poll(bool active)
 {
-  CURLMcode code;
   fd_set read_fd_set, write_fd_set, exc_fd_set;
   int max_fd;
   GPollFD *fd_list[1000];
   unsigned int fd_count = 0;
   bool block = true;
-        
-  schedule_run();
 
-  if (browser_reformat_pending)
-    block = false;
-
-  if (active) {
-    FD_ZERO(&read_fd_set);
-    FD_ZERO(&write_fd_set);
-    FD_ZERO(&exc_fd_set);
-    code = curl_multi_fdset(fetch_curl_multi,
-                            &read_fd_set,
-                            &write_fd_set,
-                            &exc_fd_set,
-                            &max_fd);
-    assert(code == CURLM_OK);
-    LOG(("maxfd from curl is %d", max_fd));
-    for (int i = 0; i <= max_fd; i++) {
-      if (FD_ISSET(i, &read_fd_set)) {
-        GPollFD *fd = malloc(sizeof *fd);
-        fd->fd = i;
-        fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-        g_main_context_add_poll(0, fd, 0);
-        fd_list[fd_count++] = fd;
-        LOG(("Want to read %d", i));
-      }
-      if (FD_ISSET(i, &write_fd_set)) {
-        GPollFD *fd = malloc(sizeof *fd);
-        fd->fd = i;
-        fd->events = G_IO_OUT | G_IO_ERR;
-        g_main_context_add_poll(0, fd, 0);
-        fd_list[fd_count++] = fd;
-        LOG(("Want to write %d", i));
-      }
-      if (FD_ISSET(i, &exc_fd_set)) {
-        GPollFD *fd = malloc(sizeof *fd);
-        fd->fd = i;
-        fd->events = G_IO_ERR;
-        g_main_context_add_poll(0, fd, 0);
-        fd_list[fd_count++] = fd;
-        LOG(("Want to check %d", i));
-      }
+  fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+  for (int i = 0; i <= max_fd; i++) {
+    if (FD_ISSET(i, &read_fd_set)) {
+      GPollFD *fd = malloc(sizeof *fd);
+      fd->fd = i;
+      fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+      g_main_context_add_poll(0, fd, 0);
+      fd_list[fd_count++] = fd;
+      LOG(("Want to read %d", i));
+    }
+    if (FD_ISSET(i, &write_fd_set)) {
+      GPollFD *fd = malloc(sizeof *fd);
+      fd->fd = i;
+      fd->events = G_IO_OUT | G_IO_ERR;
+      g_main_context_add_poll(0, fd, 0);
+      fd_list[fd_count++] = fd;
+      LOG(("Want to write %d", i));
+    }
+    if (FD_ISSET(i, &exc_fd_set)) {
+      GPollFD *fd = malloc(sizeof *fd);
+      fd->fd = i;
+      fd->events = G_IO_ERR;
+      g_main_context_add_poll(0, fd, 0);
+      fd_list[fd_count++] = fd;
+      LOG(("Want to check %d", i));
     }
   }
-  
-  LOG(("Iterate %sactive %sblocking", active?"":"in", block?"":"non-"));
+
+  schedule_run();
+
+  LOG(("Iterate %sblocking", block?"":"non-"));
   if (block) {
     fprintf(stdout, "GENERIC POLL BLOCKING\n");
   }
@@ -152,9 +137,5 @@ gui_poll(bool active)
     free(fd_list[i]);
   }
 
-  schedule_run();
-
-  if (browser_reformat_pending)
-    monkey_window_process_reformats();
 }
 

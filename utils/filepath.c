@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "utils/utils.h"
 #include "utils/config.h"
 #include "utils/filepath.h"
 
@@ -202,7 +203,13 @@ filepath_generate(char * const *pathv, const char * const *langv)
 	return respath;
 }
 
-/* expand ${} in a string into environment variables */
+/**
+ * expand ${} in a string into environment variables.
+ *
+ * @param path The pathname to expand.
+ * @param pathlen The length of the path element.
+ * @return A string with the expanded path or NULL on empty expansion or error.
+ */
 static char *
 expand_path(const char *path, int pathlen)
 {
@@ -241,8 +248,14 @@ expand_path(const char *path, int pathlen)
 					explen - cloop);
 				explen -= replen;
 			} else {
+				char *tmp;
 				envlen = strlen(envv);
-				exp = realloc(exp, explen + envlen - replen);
+				tmp = realloc(exp, explen + envlen - replen);
+				if (tmp == NULL) {
+					free(exp);
+					return NULL;
+				}
+				exp = tmp;
 				memmove(exp + cstart + envlen, 
 					exp + cloop + 1, 
 					explen - cloop );
@@ -317,3 +330,4 @@ void filepath_free_strvec(char **pathv)
 	}
 	free(pathv);
 }
+

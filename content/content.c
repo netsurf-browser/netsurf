@@ -31,15 +31,13 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
-#include "css/css.h"
 #include "image/bitmap.h"
 #include "desktop/browser.h"
 #include "utils/nsoption.h"
-#include "render/html.h"
-#include "render/textplain.h"
 
 #include "utils/http.h"
 #include "utils/log.h"
@@ -840,15 +838,15 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
-void content_search(struct hlcache_handle *h,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void content_search(struct hlcache_handle *h, void *context,
 		search_flags_t flags, const char *string)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
-	if (c->handler->search != NULL)
-		c->handler->search(c, gui_callbacks, gui_data, flags, string);
+	if (c->handler->search != NULL) {
+		c->handler->search(c, context, flags, string);
+	}
 }
 
 
@@ -857,18 +855,22 @@ void content_search_clear(struct hlcache_handle *h)
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
-	if (c->handler->search_clear != NULL)
+	if (c->handler->search_clear != NULL) {
 		c->handler->search_clear(c);
+	}
 }
 
-
-void content_debug_dump(struct hlcache_handle *h, FILE *f)
+/* exported interface documented in content/content.h */
+nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
-	if (c->handler->debug_dump != NULL)
-		c->handler->debug_dump(c, f);
+	if (c->handler->debug_dump == NULL) {
+		return NSERROR_NOT_IMPLEMENTED;
+	}
+
+	return c->handler->debug_dump(c, f, op);
 }
 
 

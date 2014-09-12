@@ -21,7 +21,7 @@
 
 struct gui_window;
 
-void nsgtk_tab_init(struct gtk_scaffolding *gs);
+void nsgtk_tab_init(struct nsgtk_scaffolding *gs);
 void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background);
 
 /** set the tab title

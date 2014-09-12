@@ -26,12 +26,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/browser.h"
 #include "desktop/core_window.h"
 #include "desktop/textinput.h"
 #include "utils/errors.h"
 
 struct cookie_data;
+enum browser_mouse_state;
 
 /**
  * Initialise the cookie manager.
@@ -92,7 +92,7 @@ void cookie_manager_redraw(int x, int y, struct rect *clip,
  * \param x		X coordinate
  * \param y		Y coordinate
  */
-void cookie_manager_mouse_action(browser_mouse_state mouse, int x, int y);
+void cookie_manager_mouse_action(enum browser_mouse_state mouse, int x, int y);
 
 /**
  * Key press handling.

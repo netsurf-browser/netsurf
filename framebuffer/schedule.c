@@ -20,10 +20,15 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "utils/schedule.h"
+#include "utils/log.h"
+
 #include "framebuffer/schedule.h"
 
-#include "utils/log.h"
+#ifdef DEBUG_SCHEDULER
+#define SRLOG(x) LOG(x)
+#else
+#define SRLOG(x)
+#endif
 
 /* linked list of scheduled callbacks */
 static struct nscallback *schedule_list = NULL;
@@ -39,39 +44,6 @@ struct nscallback
 	void *p;
 };
 
-
-/**
- * Schedule a callback.
- *
- * \param  tival     interval before the callback should be made / cs
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
- *
- * The callback function will be called as soon as possible after t cs have
- * passed.
- */
-
-void schedule(int cs_ival, void (*callback)(void *p), void *p)
-{
-	struct nscallback *nscb;
-	struct timeval tv;
-
-        tv.tv_sec = cs_ival / 100; /* cs to seconds */
-        tv.tv_usec = (cs_ival % 100) * 10000; /* remainder to microseconds */
-
-	nscb = calloc(1, sizeof(struct nscallback));
-
-	gettimeofday(&nscb->tv, NULL);
-	timeradd(&nscb->tv, &tv, &nscb->tv);
-
-	nscb->callback = callback;
-	nscb->p = p;
-
-        /* add to list front */
-        nscb->next = schedule_list;
-        schedule_list = nscb;
-}
-
 /**
  * Unschedule a callback.
  *
@@ -80,17 +52,18 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
  *
  * All scheduled callbacks matching both callback and p are removed.
  */
-
-void schedule_remove(void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
         struct nscallback *cur_nscb;
         struct nscallback *prev_nscb;
         struct nscallback *unlnk_nscb;
 
-        if (schedule_list == NULL)
-                return;
+	/* check there is something on the list to remove */
+        if (schedule_list == NULL) {
+                return NSERROR_OK;
+	}
 
-	LOG(("removing %p, %p", callback, p));
+	SRLOG(("removing %p, %p", callback, p));
 
         cur_nscb = schedule_list;
         prev_nscb = NULL;
@@ -100,7 +73,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
 
-                        LOG(("callback entry %p removing  %p(%p)",
+                        SRLOG(("callback entry %p removing  %p(%p)",
                              cur_nscb, cur_nscb->callback, cur_nscb->p));
 
                         /* remove callback */
@@ -119,16 +92,45 @@ void schedule_remove(void (*callback)(void *p), void *p)
                         cur_nscb = prev_nscb->next;
                 }
         }
+
+	return NSERROR_OK;
 }
 
-/**
- * Process scheduled callbacks up to current time.
- *
- * @return The number of milliseconds untill the next scheduled event
- * or -1 for no event.
- */
-int 
-schedule_run(void)
+/* exported function documented in framebuffer/schedule.h */
+nserror framebuffer_schedule(int tival, void (*callback)(void *p), void *p)
+{
+	struct nscallback *nscb;
+	struct timeval tv;
+	nserror ret;
+
+	/* ensure uniqueness of the callback and context */
+	ret = schedule_remove(callback, p);
+	if ((tival < 0) || (ret != NSERROR_OK)) {
+		return ret;
+	}
+
+	SRLOG(("Adding %p(%p) in %d", callback, p, tival));
+
+        tv.tv_sec = tival / 1000; /* miliseconds to seconds */
+        tv.tv_usec = (tival % 1000) * 1000; /* remainder to microseconds */
+
+	nscb = calloc(1, sizeof(struct nscallback));
+
+	gettimeofday(&nscb->tv, NULL);
+	timeradd(&nscb->tv, &tv, &nscb->tv);
+
+	nscb->callback = callback;
+	nscb->p = p;
+
+        /* add to list front */
+        nscb->next = schedule_list;
+        schedule_list = nscb;
+
+	return NSERROR_OK;
+}
+
+/* exported function documented in framebuffer/schedule.h */
+int schedule_run(void)
 {
 	struct timeval tv;
 	struct timeval nexttime;
@@ -188,7 +190,8 @@ schedule_run(void)
 	/* make rettime relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-	/*LOG(("returning time to next event as %ldms",(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000))); */
+	SRLOG(("returning time to next event as %ldms",(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000))); 
+
 	/* return next event time in milliseconds (24days max wait) */
         return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
 }

@@ -6,9 +6,6 @@
 @{b}NetSurf@{ub} Amiga-specific documentation
 http://www.netsurf-browser.org
 
-@{" Change Log           " link ChangeLog/Main}
-@{" Licence              " link COPYING/Main}
-
 @{" GUI                  " link GUI}
 @{" Preferences GUI      " link Prefs}
 
@@ -121,7 +118,6 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @{b}kiosk_mode@{ub} No gadgets
 @{b}printer_unit@{ub} Specifies which printer.device unit to print to
 @{b}drag_save_icons@{ub} Enables displaying Workbench-style transparent icons under the pointer when performing drag saves (ctrl-drag of objects available if NetSurf is running on the Workbench screen) and text selection drags.  If set to 0 the pointer style will change instead.  OS 4.0 users may want to set this to 0 as icons will appear opaque and obscure the drop position.
-@{b}cairo_renderer@{ub} Set rendering engine. -1 = palette-mapped (set automatically when required), 0 = graphics.library (default), 1 = Cairo/graphics.library mixed, 2 = Full Cairo.
 @{b}monitor_aspect_x@{ub}/@{b}monitor_aspect_y@{ub} Correct aspect ratio for displays (default of 0 means "assume square pixels").
 @{b}screen_compositing@{ub} Use compositing on NetSurf's own screen. 0=disable, 1=enable, 2=default (NB: This is indirectly modified by changing the "simple refresh" option in the GUI)
 @{b}resize_with_contents@{ub} Set to 1 to respect GUI prefs' "resize with contents" option. Default is to use old-style "resize on release"
@@ -183,6 +179,7 @@ Commands are:
 
 @{b}OPEN URL/A,NEW=NEWWINDOW/S,NEWTAB/S,SAVEAS/K,W=WINDOW/K/N,T=TAB/K/N@{ub}
 Opens URL in current window or a new window/tab if NEWWINDOW/NEWTAB is specified.  Saves the location without displaying if SAVEAS and a filename is specified (SAVEAS available in 2.6325)
+Note that if the URL is non-ASCII it is expected to be encoded in UTF-8 (file: references should always be in local charset due to filesystem limitations). Usually this is not relevant, as all normalised URLs will be in their ASCII form.
 
 @{b}SAVE FILENAME/A,W=WINDOW/K/N,T=TAB/K/N@{ub} (2.6027)
 Saves current page source to FILENAME
@@ -255,6 +252,10 @@ Under OS4.1 Update 1, launch-handler is used in preference to OpenURL.  The
 Installer script can add the relevant configuration to launch URLs in NetSurf.
 Please ensure your email application is configured in URL Prefs for mailto:
 links clicked within NetSurf.
+
+Note that a helper script is installed in S:ARexx which can be used instead of
+the main executable, to stop the NetSurf executable from being loaded again if
+it is already running.
 @endnode
 
 @node hotlist "Hotlist menu"
@@ -366,8 +367,6 @@ There are a number of options which can be changed that will affect the speed of
 @{lindent 2}* In preferences, Rendering tab set:
 @{b}Cache native versions@{ub} to @{b}Scaled@{ub} (or preferably @{b}All@{ub}, but this will use more graphics mem, and scaling images is a bigger performance hit)
 Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in hardware.@{lindent}
-
-@{lindent 2}* In @{"Options" link Options}, set cairo_renderer:1@{lindent}
 
 @{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent}
 

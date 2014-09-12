@@ -50,11 +50,13 @@ ULONG drag_icon_width;
 ULONG drag_icon_height;
 BOOL drag_in_progress = FALSE;
 
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-		struct gui_window *g)
+void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
+		gui_save_type type)
 {
 	const char *filetype = NULL;
 
+	/* Check we are running on Workbench */
+	if(nsoption_charp(pubscreen_name) == NULL) return;
 	if(strcmp(nsoption_charp(pubscreen_name), "Workbench")) return;
 
 	switch(type)
@@ -98,9 +100,8 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
 
 void ami_drag_save(struct Window *win)
 {
-	ULONG which = WBO_NONE,type;
-	char path[1025],dpath[1025];
-	const char *source_data;
+	ULONG which = WBO_NONE, type;
+	char path[1025], dpath[1025];
 	ULONG source_size;
 
 	ami_drag_icon_close(NULL);
@@ -195,10 +196,8 @@ void ami_drag_save(struct Window *win)
 void ami_drag_icon_show(struct Window *win, const char *type)
 {
 	struct DiskObject *dobj = NULL;
-	ULONG *icondata1;
 	ULONG width, height;
-	long format = 0;
-	int err = 0;
+	int err;
 	int deftype = WBPROJECT;
 
 	drag_in_progress = TRUE;

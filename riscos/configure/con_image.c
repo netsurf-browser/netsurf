@@ -17,18 +17,21 @@
  */
 
 #include <stdbool.h>
-#include "swis.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
+#include <swis.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+
 #include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utils.h"
+
+#include "riscos/gui.h"
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 
 #define IMAGE_FOREGROUND_FIELD 3
@@ -62,11 +65,11 @@ unsigned int tinct_options[] = {tinct_USE_OS_SPRITE_OP, 0, tinct_DITHER,
 
 bool ro_gui_options_image_initialise(wimp_w w)
 {
-	char pathname[256];
 	int i;
 
 	/* load the sprite file */
 	if (example_users == 0) {
+		char pathname[256];
 		snprintf(pathname, 256, "%s.Resources.Image", NETSURF_DIR);
 		pathname[255] = '\0';
 		example_images = ro_gui_load_sprite_file(pathname);
@@ -138,7 +141,6 @@ bool ro_gui_options_image_update(wimp_w w, wimp_i i, wimp_menu *m,
 void ro_gui_options_image_redraw(wimp_draw *redraw)
 {
 	osbool more;
-	int origin_x, origin_y;
 	os_error *error;
 	wimp_icon_state icon_state;
 	osspriteop_header *bg = NULL, *fg = NULL;
@@ -168,6 +170,7 @@ void ro_gui_options_image_redraw(wimp_draw *redraw)
 	/* perform the redraw */
 	more = wimp_redraw_window(redraw);
 	while (more) {
+		int origin_x, origin_y;
 		origin_x = redraw->box.x0 - redraw->xscroll +
 				icon_state.icon.extent.x0 + 2;
 		origin_y = redraw->box.y1 - redraw->yscroll +

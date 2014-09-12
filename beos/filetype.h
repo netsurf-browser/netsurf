@@ -18,3 +18,4 @@
 
 void beos_fetch_filetype_init(void);
 void beos_fetch_filetype_fin(void);
+const char *fetch_filetype(const char *unix_path);

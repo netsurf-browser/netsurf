@@ -23,10 +23,12 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "content/llcache.h"
 #include "desktop/download.h"
-#include "desktop/gui.h"
+#include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -69,11 +71,11 @@ static char *download_parse_filename(const char *filename)
  * \param url  URL of item being fetched
  * \return Default filename, or NULL on memory exhaustion
  */
-static char *download_default_filename(const char *url)
+static char *download_default_filename(nsurl *url)
 {
 	char *nice;
 
-	if (url_nice(url, &nice, false) == URL_FUNC_OK)
+	if (url_nice(nsurl_access(url), &nice, false) == NSERROR_OK)
 		return nice;
 
 	return NULL;
@@ -113,26 +115,18 @@ static nserror download_context_process_headers(download_context *ctx)
 	http_header = llcache_handle_get_header(ctx->llcache, 
 			"Content-Disposition");
 	if (http_header != NULL) {
-		lwc_string *filename;
 		lwc_string *filename_value;
 		http_content_disposition *disposition;
-
-		if (lwc_intern_string("filename", SLEN("filename"),
-				&filename) != lwc_error_ok) {
-			http_content_type_destroy(content_type);
-			return NSERROR_NOMEM;
-		}
 
 		error = http_parse_content_disposition(http_header, 
 				&disposition);
 		if (error != NSERROR_OK) {
-			lwc_string_unref(filename);
 			http_content_type_destroy(content_type);
 			return error;
 		}
 
 		error = http_parameter_list_find_item(disposition->parameters, 
-				filename, &filename_value);
+				corestring_lwc_filename, &filename_value);
 		if (error == NSERROR_OK) {
 			ctx->filename = download_parse_filename(
 					lwc_string_data(filename_value));
@@ -140,15 +134,13 @@ static nserror download_context_process_headers(download_context *ctx)
 		}
 
 		http_content_disposition_destroy(disposition);
-		lwc_string_unref(filename);
 	}
 
 	ctx->mime_type = lwc_string_ref(content_type->media_type);
 	ctx->total_length = length;
 	if (ctx->filename == NULL) {
 		ctx->filename = download_default_filename(
-				nsurl_access(
-				llcache_handle_get_url(ctx->llcache)));
+				llcache_handle_get_url(ctx->llcache));
 	}
 
 	http_content_type_destroy(content_type);
@@ -160,7 +152,7 @@ static nserror download_context_process_headers(download_context *ctx)
 	}
 
 	/* Create the frontend window */
-	ctx->window = gui_download_window_create(ctx, ctx->parent);
+	ctx->window = guit->download->create(ctx, ctx->parent);
 	if (ctx->window == NULL) {
 		free(ctx->filename);
 		ctx->filename = NULL;
@@ -210,7 +202,7 @@ static nserror download_callback(llcache_handle *handle,
 
 		if (error == NSERROR_OK) {
 			/** \todo Lose ugly cast */
-			error = gui_download_window_data(ctx->window,
+			error = guit->download->data(ctx->window,
 					(char *) event->data.data.buf,
 					event->data.data.len);
 			if (error != NSERROR_OK)
@@ -222,7 +214,7 @@ static nserror download_callback(llcache_handle *handle,
 	case LLCACHE_EVENT_DONE:
 		/* There may be no associated window if there was no data or headers */
 		if (ctx->window != NULL)
-			gui_download_window_done(ctx->window);
+			guit->download->done(ctx->window);
 		else
 			download_context_destroy(ctx);
 
@@ -230,7 +222,7 @@ static nserror download_callback(llcache_handle *handle,
 
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->window != NULL)
-			gui_download_window_error(ctx->window, event->data.msg);
+			guit->download->error(ctx->window, event->data.msg);
 		else
 			download_context_destroy(ctx);
 
@@ -290,9 +282,9 @@ void download_context_abort(download_context *ctx)
 }
 
 /* See download.h for documentation */
-const char *download_context_get_url(const download_context *ctx)
+nsurl *download_context_get_url(const download_context *ctx)
 {
-	return nsurl_access(llcache_handle_get_url(ctx->llcache));
+	return llcache_handle_get_url(ctx->llcache);
 }
 
 /* See download.h for documentation */

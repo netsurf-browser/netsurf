@@ -19,8 +19,11 @@
 #ifndef NETSURF_BEOS_CALLBACK_H
 #define NETSURF_BEOS_CALLBACK_H 1
 
-typedef void (*beos_callback)(void *p);
-
 extern bigtime_t earliest_callback_timeout;
+
+extern "C" nserror beos_schedule(int t, void (*callback)(void *p), void *p);
+
+extern "C" bool schedule_run(void);
+
 
 #endif /* NETSURF_BEOS_CALLBACK_H */

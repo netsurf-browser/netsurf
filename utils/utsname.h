@@ -16,22 +16,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file utils/utsname.h
+ * \brief Interface to uts API to get name and information about current kernel.
+ */
+
 #ifndef _NETSURF_UTILS_UTSNAME_H_
 #define _NETSURF_UTILS_UTSNAME_H_
 
 #ifdef HAVE_UTSNAME
 #include <sys/utsname.h>
 #else
-/* from posix spec */
+/** system information filled in by uname derived from posix spec. */
 struct utsname {
-	char sysname[65];    /* Operating system name (e.g., "Linux") */
-	char nodename[65];   /* Name within "some implementation-defined
-			      network" */
-	char release[65];    /* OS release (e.g., "2.6.28") */
-	char version[65];    /* OS version */
-	char machine[65];    /* Hardware identifier */
+	char sysname[65]; /**< Operating system name (e.g., "Linux") */
+	char nodename[65]; /**< Name within "some implementation-defined
+			    * network"
+			    */
+	char release[65]; /**< OS release (e.g., "2.6.28") */
+	char version[65]; /**< OS version */
+	char machine[65]; /**< Hardware identifier */
 };
 
+/**
+ * Get the system information.
+ *
+ * @param buf the buffer to fill with teh information.
+ * @return 0 on sucess or -1 and errno set on faliure.
+ */
 int uname(struct utsname *buf);
 
 #endif

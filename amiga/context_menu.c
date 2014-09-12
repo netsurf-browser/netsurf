@@ -39,8 +39,8 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/hotlist.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
@@ -53,7 +53,7 @@
 
 static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
 static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved);
-static bool ami_context_menu_history(const struct history *history, int x0, int y0,
+static bool ami_context_menu_history(const struct browser_window *bw, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
 static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -269,7 +269,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, nsurl_access(hlcache_handle_get_url(userdata)),
 							PMIA_CommKey, "B",
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -324,7 +324,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, (content_get_type(userdata) != CONTENT_HTML),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -364,7 +364,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, !browser_window_stop_available(userdata),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -410,7 +410,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_ID, CMID_SAVEURL,
 							PMIA_UserData, userdata,
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -467,7 +467,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_UserData, userdata,
 							PMIA_Disabled, !ami_mime_content_to_cmd(userdata),
 						TAG_DONE),
-					TAG_DONE),
+					PMEND,
 				TAG_DONE),
 			~0);
 		break;
@@ -598,8 +598,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	ctxmenuhook.h_SubEntry = NULL;
 	ctxmenuhook.h_Data = gwin;
 
-    ctxmenuobj = NewObject( POPUPMENU_GetClass(), NULL,
-                        PMA_MenuHandler, &ctxmenuhook,
+	ctxmenuobj = NewObject( POPUPMENU_GetClass(), NULL,
+				PMA_MenuHandler, &ctxmenuhook,
 						TAG_DONE);
 
 	if(gwin->bw && gwin->bw->history &&
@@ -607,7 +607,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
-		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
+		browser_window_history_enumerate_back(gwin->bw, ami_context_menu_history, gwin);
 
 		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -630,7 +630,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
-		history_enumerate_forward(gwin->bw->history, ami_context_menu_history, gwin);
+		browser_window_history_enumerate_forward(gwin->bw, ami_context_menu_history, gwin);
 
 		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -707,7 +707,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 
 static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 {
-    int32 itemid = 0;
+	int32 itemid = 0;
 	struct gui_window_2 *gwin = hook->h_Data;
 	APTR userdata = NULL;
 	struct browser_window *bw;
@@ -718,10 +718,9 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 	nsurl *url;
 	nserror error;
 
-    if(GetAttrs(item,PMIA_ID,&itemid,
-					PMIA_UserData,&userdata,
-					TAG_DONE))
-    {
+	if(GetAttrs(item, PMIA_ID, &itemid,
+			PMIA_UserData, &userdata,
+			TAG_DONE)) {
 		switch(itemid)
 		{
 			case CMID_SELECTFILE:
@@ -742,17 +741,11 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					strlcpy(fname,filereq->fr_Drawer,1024);
 					AddPart(fname,filereq->fr_File,1024);
 
-					if(utf8_from_local_encoding(fname,0,&utf8_fn) != UTF8_CONVERT_OK)
-					{
-						warn_user("NoMemory","");
-						break;
-					}
-
 					browser_window_drop_file_at_point(
 							file_input->bw,
 							file_input->x,
 							file_input->y,
-							utf8_fn);
+							fname);
 				}
 			break;
 
@@ -786,8 +779,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_URLOPENWIN:
 				error = nsurl_create(userdata, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-								      BROWSER_WINDOW_HISTORY,
+					error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 								      url,
 								      hlcache_handle_get_url(gwin->bw->current_content),
 								      gwin->bw,
@@ -805,9 +797,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_URLOPENTAB:
 				error = nsurl_create(userdata, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-								      BROWSER_WINDOW_HISTORY |
-								      BROWSER_WINDOW_TAB,
+					error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY | BW_CREATE_TAB,
 								      url,
 								      hlcache_handle_get_url(gwin->bw->current_content),
 								      gwin->bw,
@@ -830,8 +820,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BROWSER_WINDOW_DOWNLOAD |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL);
@@ -845,8 +834,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				browser_window_navigate(gwin->bw,
 					hlcache_handle_get_url(userdata),
 					hlcache_handle_get_url(gwin->bw->current_content),
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -862,8 +850,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						hlcache_handle_get_url(gwin->bw->current_content),
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -923,7 +910,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				}
 				else
 				{
-					history_go(gwin->bw, gwin->bw->history,
+					browser_window_history_go(gwin->bw,
 						(struct history_entry *)userdata, false);
 				}
 			break;
@@ -938,8 +925,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					browser_window_navigate(gwin->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -996,27 +982,27 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_SELSEARCH:
 			{
 				char *sel;
-				char *urltxt;
-				nsurl *url;
 
 				if(sel = browser_window_get_selection(gwin->bw))
 				{
-					urltxt = search_web_from_term(sel);
+					nserror ret;
+					nsurl *url;
 
-					if (nsurl_create(urltxt, &url) != NSERROR_OK) {
-						warn_user("NoMemory", 0);
-					} else {
-						browser_window_navigate(gwin->bw,
-							url,
-							NULL,
-							BROWSER_WINDOW_HISTORY |
-							BROWSER_WINDOW_VERIFIABLE,
-							NULL,
-							NULL,
-							NULL);
+					ret = search_web_omni(sel, SEARCH_WEB_OMNI_SEARCHONLY, &url);
+					free(sel);
+					if (ret == NSERROR_OK) {
+						ret = browser_window_navigate(gwin->bw,
+									      url,
+									      NULL,
+									      BW_NAVIGATE_HISTORY,
+									      NULL,
+									      NULL,
+									      NULL);
 						nsurl_unref(url);
 					}
-					free(sel);
+					if (ret != NSERROR_OK) {
+						warn_user(messages_get_errorcode(ret), 0);
+					}
 				}
 			}
 			break;
@@ -1262,8 +1248,9 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 	return itemid;
 }
 
-static bool ami_context_menu_history(const struct history *history, int x0, int y0,
-	int x1, int y1, const struct history_entry *entry, void *user_data)
+static bool ami_context_menu_history(const struct browser_window *bw,
+		int x0, int y0, int x1, int y1,
+		const struct history_entry *entry, void *user_data)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)user_data;
 
@@ -1272,7 +1259,7 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 
 	IDoMethod(ctxmenuobj, PM_INSERT,
 		NewObject(POPUPMENU_GetItemClass(), NULL,
-			PMIA_Title, (ULONG)history_entry_get_title(entry),
+			PMIA_Title, (ULONG)browser_window_history_entry_get_title(entry),
 			PMIA_ID, CMID_HISTORY,
 			PMIA_UserData, entry,
 		TAG_DONE),
@@ -1288,7 +1275,7 @@ static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 
 	if(GetAttr(PMIA_ID, item, &itemid))
 	{
-		form_select_process_selection(gwin->shared->bw->current_content,gwin->shared->control,itemid);
+		form_select_process_selection(gwin->shared->control,itemid);
 	}
 
 	return itemid;

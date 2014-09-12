@@ -29,10 +29,11 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
 #include "desktop/plotters.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp_event.h"
@@ -159,8 +160,9 @@ void ro_gui_progress_bar_destroy(struct progress_bar *pb)
 	os_error *error;
 	assert(pb);
 
-	if (pb->animating)
-		schedule_remove(ro_gui_progress_bar_animate, pb);
+	if (pb->animating) {
+		riscos_schedule(-1, ro_gui_progress_bar_animate, pb);
+	}
 	ro_gui_wimp_event_finalise(pb->w);
 	error = xwimp_delete_window(pb->w);
 	if (error) {
@@ -292,12 +294,14 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
 
  	/* update the animation state */
 	if ((pb->value == 0) || (pb->value == pb->range)) {
-		if (pb->animating)
-			schedule_remove(ro_gui_progress_bar_animate, pb);
+		if (pb->animating) {
+			riscos_schedule(-1, ro_gui_progress_bar_animate, pb);
+		}
 		pb->animating = false;
 	} else {
-	  	if (!pb->animating)
-			schedule(20, ro_gui_progress_bar_animate, pb);
+	  	if (!pb->animating) {
+			riscos_schedule(200, ro_gui_progress_bar_animate, pb);
+		}
 		pb->animating = true;
 	}
 
@@ -324,6 +328,11 @@ void ro_gui_progress_bar_update(struct progress_bar *pb, int width, int height)
 	redraw.box = pb->visible;
 	redraw.box.x0 = cur.x1;
 	error = xwimp_update_window(&redraw, &more);
+	if (error) {
+		LOG(("Error getting update window: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
 	if (more)
 		ro_gui_progress_bar_redraw_window(&redraw, pb);
 }
@@ -372,12 +381,17 @@ void ro_gui_progress_bar_animate(void *p)
 	if (pb->offset < 0)
 		pb->offset += progress_width * 2;
 
-	if (pb->animating)
-		schedule(20, ro_gui_progress_bar_animate, pb);
+	if (pb->animating) {
+		riscos_schedule(200, ro_gui_progress_bar_animate, pb);
+	}
 
 	redraw.w = pb->w;
 	redraw.box = pb->visible;
 	error = xwimp_update_window(&redraw, &more);
+	if (error != NULL) {
+		LOG(("Error getting update window: '%s'", error->errmess));
+		return;
+	}
 	if (more)
 		ro_gui_progress_bar_redraw_window(&redraw, pb);
 }
@@ -394,9 +408,8 @@ void ro_gui_progress_bar_animate(void *p)
 void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
 		int height)
 {
-	os_error *error;
 	int icon_width, icon_height;
-	int icon_x0 = 0, icon_y0 = 0, progress_x0, progress_x1, progress_ymid = 0;
+	int icon_x0 = 0, icon_y0 = 0, progress_x0, progress_x1;
 	osspriteop_header *icon = NULL;
 	bool icon_redraw = false;
 
@@ -417,14 +430,17 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
 
 	/* get the icon information */
 	if (progress_bar_definition.sprite_area != wimpspriteop_AREA) {
-		progress_ymid = height / 2;
+		int progress_ymid = height / 2;
+		os_error *error;
 		error = xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 				progress_bar_definition.sprite_area,
 				(osspriteop_id)pb->icon,
 				&icon_width, &icon_height, 0, 0);
-		error = xosspriteop_select_sprite(osspriteop_USER_AREA,
-				progress_bar_definition.sprite_area,
-				(osspriteop_id)pb->icon, &icon);
+		if (!error) {
+			error = xosspriteop_select_sprite(osspriteop_USER_AREA,
+					progress_bar_definition.sprite_area,
+					(osspriteop_id)pb->icon, &icon);
+		}
 		if (!error) {
 			progress_x0 += 32 + MARGIN;
 			width -= 32 + MARGIN;
@@ -467,7 +483,6 @@ void ro_gui_progress_bar_calculate(struct progress_bar *pb, int width,
 void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 		struct progress_bar *pb)
 {
-	os_error *error;
 	osbool more = true;
 	struct rect clip;
 	int progress_ymid;
@@ -484,6 +499,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 
 	/* redraw the window */
 	while (more) {
+		os_error *error;
 		if (pb->icon)
 			_swix(Tinct_PlotAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 					pb->icon_img,

@@ -24,18 +24,29 @@
 
 /* Try to detect which features the target OS supports */
 
-#if (defined(_GNU_SOURCE) && !defined(__APPLE__) || defined(__HAIKU__))
+#if (defined(_GNU_SOURCE) && !defined(__APPLE__) || defined(__HAIKU__) || (defined(_POSIX_C_SOURCE) && ((_POSIX_C_SOURCE - 0) >= 200809L)))
 #define HAVE_STRNDUP
 #else
 #undef HAVE_STRNDUP
 char *strndup(const char *s, size_t n);
 #endif
 
-#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__))
+#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__) || defined(__OpenBSD__))
 #define HAVE_STRCASESTR
 #else
 #undef HAVE_STRCASESTR
 char *strcasestr(const char *haystack, const char *needle);
+#endif
+
+/* Although these platforms might have strftime or strptime they
+ * appear not to support the time_t seconds format specifier.
+ */
+#if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
+#undef HAVE_STRPTIME
+#undef HAVE_STRFTIME
+#else
+#define HAVE_STRPTIME
+#define HAVE_STRFTIME
 #endif
 
 /* For some reason, UnixLib defines this unconditionally. 
@@ -47,15 +58,18 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strchrnul(const char *s, int c);
 #endif
 
+#define HAVE_SYS_SELECT
 #define HAVE_INETATON
 #if (defined(_WIN32))
 #undef HAVE_INETATON
+#undef HAVE_SYS_SELECT
 #include <winsock2.h>
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
 int inet_aton(const char *cp, struct in_addr *inp);
 #else
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 #endif
 
 #define HAVE_INETPTON

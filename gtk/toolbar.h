@@ -23,13 +23,12 @@
 
 #include "gtk/scaffolding.h"
 
-void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g);
-void nsgtk_toolbar_init(nsgtk_scaffolding *g);
-void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g);
-void nsgtk_toolbar_set_physical(nsgtk_scaffolding *g);
-void nsgtk_toolbar_connect_all(nsgtk_scaffolding *g);
-int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, nsgtk_scaffolding
-		*g);
+void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g);
+void nsgtk_toolbar_init(struct nsgtk_scaffolding *g);
+void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g);
+void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g);
+void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g);
+int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g);
 
 #define TOOLPROTO(q) gboolean nsgtk_toolbar_##q##_button_data(\
 		GtkWidget *widget, GdkDragContext *cont, GtkSelectionData\
@@ -81,8 +80,8 @@ TOOLPROTO(nexttab);
 TOOLPROTO(prevtab);
 TOOLPROTO(savewindowsize);
 TOOLPROTO(toggledebugging);
-TOOLPROTO(saveboxtree);
-TOOLPROTO(savedomtree);
+TOOLPROTO(debugboxtree);
+TOOLPROTO(debugdomtree);
 TOOLPROTO(contents);
 TOOLPROTO(guide);
 TOOLPROTO(info);

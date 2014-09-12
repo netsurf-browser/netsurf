@@ -18,48 +18,17 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
+
 #include "utils/utf8.h"
+#include "desktop/gui.h"
 #include <proto/exec.h>
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
 
-void ami_utf8_free(char *ptr)
-{
-	if(ptr) free(ptr);
-}
+#include "amiga/utf8.h"
 
-char *ami_utf8_easy(const char *string)
-{
-	char *localtext;
-
-	if(utf8_to_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
-	{
-		return localtext;
-	}
-	else
-	{
-		return strdup(string);
-	}
-}
-
-char *ami_to_utf8_easy(const char *string)
-{
-	char *localtext;
-
-	if(utf8_from_local_encoding(string,strlen(string),&localtext) == UTF8_CONVERT_OK)
-	{
-		return localtext;
-	}
-	else
-	{
-		return strdup(string);
-	}
-}
-
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
-	char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	const char *encname = "ISO-8859-1";
 
@@ -73,8 +42,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	return utf8_from_enc(string,encname,len,result,NULL);
 }
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-	char **result)
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
 	const char *encname = "ISO-8859-1";
 
@@ -88,4 +56,43 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	return utf8_to_enc(string,encname,len,result);
 }
 
+void ami_utf8_free(char *ptr)
+{
+	if(ptr) free(ptr);
+}
 
+char *ami_utf8_easy(const char *string)
+{
+	char *localtext;
+
+	if(utf8_to_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
+	{
+		return localtext;
+	}
+	else
+	{
+		return strdup(string);
+	}
+}
+
+char *ami_to_utf8_easy(const char *string)
+{
+	char *localtext;
+
+	if(utf8_from_local_encoding(string,strlen(string),&localtext) == NSERROR_OK)
+	{
+		return localtext;
+	}
+	else
+	{
+		return strdup(string);
+	}
+}
+
+
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *amiga_utf8_table = &utf8_table;

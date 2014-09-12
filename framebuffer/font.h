@@ -21,6 +21,8 @@
 
 #include "utils/utf8.h"
 
+extern struct gui_utf8_table *framebuffer_utf8_table;
+
 bool fb_font_init(void);
 bool fb_font_finalise(void);
 

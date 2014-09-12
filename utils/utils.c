@@ -35,34 +35,10 @@
 #include "utils/config.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
+#include "utils/time.h"
 #include "utils/utils.h"
 
-char * strip(char * const s)
-{
-	size_t i;
-	for (i = strlen(s);
-			i != 0 && (s[i - 1] == ' ' || s[i - 1] == '\n' ||
-			s[i - 1] == '\r' || s[i - 1] == '\t');
-			i--)
-		;
-	s[i] = 0;
-	return s + strspn(s, " \t\r\n");
-}
-
-int whitespace(const char * str)
-{
-	unsigned int i;
-	for (i = 0; i < strlen(str); i++)
-		if (!isspace(str[i]))
-			return 0;
-	return 1;
-}
-
-/**
- * returns a string without its underscores
- * \param replacespace true to insert a space where there was an underscore
- */
-
+/* exported interface documented in utils/utils.h */
 char *remove_underscores(const char *s, bool replacespace)
 {
 	size_t i, ii, len;
@@ -81,15 +57,8 @@ char *remove_underscores(const char *s, bool replacespace)
 	return ret;
 }
 
-/**
- * Replace consecutive whitespace with a single space.
- *
- * @todo determine if squash_whitespace utf-8 safe and that it needs to be
- *
- * \param  s  source string
- * \return  heap allocated result, or NULL on memory exhaustion
- */
 
+/* exported interface documented in utils/utils.h */
 char *squash_whitespace(const char *s)
 {
 	char *c;
@@ -116,14 +85,7 @@ char *squash_whitespace(const char *s)
 }
 
 
-/**
- * Converts NUL terminated UTF-8 encoded string s containing zero or more
- * spaces (char 32) or TABs (char 9) to non-breaking spaces
- * (0xC2 + 0xA0 in UTF-8 encoding).
- *
- * Caller needs to free() result.  Returns NULL in case of error.  No
- * checking is done on validness of the UTF-8 input string.
- */
+/* exported interface documented in utils/utils.h */
 char *cnv_space2nbsp(const char *s)
 {
 	const char *srcP;
@@ -146,10 +108,8 @@ char *cnv_space2nbsp(const char *s)
 	return d;
 }
 
-/**
- * Check if a directory exists.
- */
 
+/* exported interface documented in utils/utils.h */
 bool is_dir(const char *path)
 {
 	struct stat s;
@@ -161,12 +121,92 @@ bool is_dir(const char *path)
 }
 
 
-/**
- * Compile a regular expression, handling errors.
- *
- * Parameters as for regcomp(), see man regex.
- */
+/* exported interface documented in utils/utils.h */
+nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap)
+{
+	const char *elm[16];
+	size_t elm_len[16];
+	size_t elm_idx;
+	char *fname;
+	size_t fname_len = 0;
+	char *curp;
 
+	/* check the parameters are all sensible */
+	if ((nelm == 0) || (nelm > 16)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if ((*str != NULL) && (size == NULL)) {
+		/* if the caller is providing the buffer they must say
+		 * how much space is available.
+		 */
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* calculate how much storage we need for the complete path
+	 * with all the elements.
+	 */
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		elm[elm_idx] = va_arg(ap, const char *);
+		/* check the argument is not NULL */
+		if (elm[elm_idx] == NULL) {
+			return NSERROR_BAD_PARAMETER;
+		}
+		elm_len[elm_idx] = strlen(elm[elm_idx]);
+		fname_len += elm_len[elm_idx];
+	}
+	fname_len += nelm; /* allow for separators and terminator */
+
+	/* ensure there is enough space */
+	fname = *str;
+	if (fname != NULL) {
+		if (fname_len > *size) {
+			return NSERROR_NOSPACE;
+		}
+	} else {
+		fname = malloc(fname_len);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* copy the elements in with apropriate separator */
+	curp = fname;
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		memmove(curp, elm[elm_idx], elm_len[elm_idx]);
+		curp += elm_len[elm_idx];
+		/* ensure string are separated */
+		if (curp[-1] != sep) {
+			*curp = sep;
+			curp++;
+		}
+	}
+	curp[-1] = 0; /* NULL terminate */
+
+	assert((curp - fname) <= (int)fname_len);
+
+	*str = fname;
+	if (size != NULL) {
+		*size = fname_len;
+	}
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in utils/utils.h */
+nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
+{
+	va_list ap;
+	nserror ret;
+
+	va_start(ap, nelm);
+	ret = vsnstrjoin(str, size, sep, nelm, ap);
+	va_end(ap);
+
+	return ret;
+}
+
+
+/* exported interface documented in utils/utils.h */
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 {
 	int r;
@@ -179,24 +219,20 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 	}
 }
 
-/** We can have a fairly good estimate of how long the buffer needs to
-  * be.  The unsigned long can store a value representing a maximum size
-  * of around 4 GB.  Therefore the greatest space required is to
-  * represent 1023MB.  Currently that would be represented as "1023MB" so 12
-  * including a null terminator.
-  * Ideally we would be able to know this value for sure, in the mean
-  * time the following should suffice.
- **/
-
+/**
+ * The size of buffers within human_friendly_bytesize.
+ *
+ * We can have a fairly good estimate of how long the buffer needs to
+ * be.  The unsigned long can store a value representing a maximum
+ * size of around 4 GB.  Therefore the greatest space required is to
+ * represent 1023MB.  Currently that would be represented as "1023MB"
+ * so 12 including a null terminator.  Ideally we would be able to
+ * know this value for sure, in the mean time the following should
+ * suffice.
+ */
 #define BYTESIZE_BUFFER_SIZE 20
 
-/**
-  * Does a simple conversion which assumes the user speaks English.  The buffer
-  * returned is one of three static ones so may change each time this call is
-  * made.  Don't store the buffer for later use.  It's done this way for
-  * convenience and to fight possible memory leaks, it is not necessarily pretty.
- **/
-
+/* exported interface documented in utils/utils.h */
 char *human_friendly_bytesize(unsigned long bsize) {
 	static char buffer1[BYTESIZE_BUFFER_SIZE];
 	static char buffer2[BYTESIZE_BUFFER_SIZE];
@@ -229,17 +265,13 @@ char *human_friendly_bytesize(unsigned long bsize) {
 		unit = gigabytes;
 	}
 
-	sprintf(curbuffer, "%3.2f%s", bytesize, messages_get(units[unit]));
+	snprintf(curbuffer, BYTESIZE_BUFFER_SIZE, "%3.2f%s", bytesize, messages_get(units[unit]));
 
 	return curbuffer;
 }
 
-/**
- * Create an RFC 1123 compliant date string from a Unix timestamp
- *
- * \param t The timestamp to consider
- * \return Pointer to buffer containing string - invalidated by next call.
- */
+
+/* exported interface documented in utils/utils.h */
 const char *rfc1123_date(time_t t)
 {
 	static char ret[30];
@@ -257,14 +289,8 @@ const char *rfc1123_date(time_t t)
 	return ret;
 }
 
-/**
- * Returns a number of centiseconds, that increases in real time, for the
- * purposes of measuring how long something takes in wall-clock terms.  It uses
- * gettimeofday() for this.  Should the call to gettimeofday() fail, it returns
- * zero.
- *
- * \return number of centiseconds that increases monotonically
- */
+
+/* exported interface documented in utils/utils.h */
 unsigned int wallclock(void)
 {
 	struct timeval tv;
@@ -540,3 +566,58 @@ int inet_pton(int af, const char *src, void *dst)
 
 
 #endif
+
+/* exported function documented in utils/time.h */
+int nsc_sntimet(char *str, size_t size, time_t *timep)
+{
+#ifndef HAVE_STRFTIME
+	long long val;
+	val = (long long)*timep;
+
+	return snprintf(str, size, "%lld", val);
+#else
+	struct tm *ltm;
+
+	ltm = localtime(timep);
+	if (ltm == NULL) {
+		return -1;
+	}
+
+	return strftime(str, size, "%s", ltm);
+#endif 
+}
+
+nserror nsc_snptimet(char *str, size_t size, time_t *timep)
+{
+	time_t time_out;
+
+#ifndef HAVE_STRPTIME
+
+	if (size < 1) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	time_out = (time_t)strtoll(str, NULL, 10);
+
+	if (time_out == 0) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+#else
+	struct tm ltm;
+
+	if (size < 1) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (strptime(str, "%s", &ltm) == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	time_out = mktime(&ltm);
+
+#endif
+	*timep = time_out;
+
+	return NSERROR_OK;
+}

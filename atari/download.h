@@ -19,6 +19,8 @@
 #ifndef NS_ATARI_DOWNLOAD_H
 #define NS_ATARI_DOWNLOAD_H
 
+extern struct gui_download_table *atari_download_table;
+
 #define MAX_SLEN_LBL_DONE 64
 #define MAX_SLEN_LBL_PERCENT 5
 #define MAX_SLEN_LBL_SPEED 13

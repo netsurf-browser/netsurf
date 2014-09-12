@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2008, 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -31,19 +31,17 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser_history.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
+#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/types.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 #include "desktop/textinput.h"
 #include "render/form.h"
 
@@ -54,9 +52,10 @@
 #include "framebuffer/findfile.h"
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
+#include "framebuffer/clipboard.h"
+#include "framebuffer/fetch.h"
 
 #include "content/urldb.h"
-#include "desktop/local_history.h"
 #include "content/fetch.h"
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrutc"
@@ -122,9 +121,8 @@ static void
 widget_scroll_y(struct gui_window *gw, int y, bool abs)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
-	int content_height;
+	int content_width, content_height;
 	int height;
-	float scale = gw->bw->scale;
 
 	LOG(("window scroll"));
 	if (abs) {
@@ -133,7 +131,8 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 		bwidget->pany += y;
 	}
 
-	content_height = content_get_height(gw->bw->current_content) * scale;
+	browser_window_get_extents(gw->bw, true,
+			&content_width, &content_height);
 
 	height = fbtk_get_height(gw->browser);
 
@@ -160,9 +159,8 @@ static void
 widget_scroll_x(struct gui_window *gw, int x, bool abs)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
-	int content_width;
+	int content_width, content_height;
 	int width;
-	float scale = gw->bw->scale;
 
 	if (abs) {
 		bwidget->panx = x - bwidget->scrollx;
@@ -170,7 +168,8 @@ widget_scroll_x(struct gui_window *gw, int x, bool abs)
 		bwidget->panx += x;
 	}
 
-	content_width = content_get_width(gw->bw->current_content) * scale;
+	browser_window_get_extents(gw->bw, true,
+			&content_width, &content_height);
 
 	width = fbtk_get_width(gw->browser);
 
@@ -329,6 +328,7 @@ fb_redraw(fbtk_widget_t *widget,
 		.plot = &fb_plotters
 	};
 	nsfb_t *nsfb = fbtk_get_nsfb(widget);
+	float scale = browser_window_get_scale(bw);
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -354,8 +354,8 @@ fb_redraw(fbtk_widget_t *widget,
 	clip.y1 = bwidget->redraw_box.y1;
 
 	browser_window_redraw(bw,
-			(x - bwidget->scrollx) / bw->scale,
-			(y - bwidget->scrolly) / bw->scale,
+			(x - bwidget->scrollx) / scale,
+			(y - bwidget->scrolly) / scale,
 			&clip, &ctx);
 
 	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
@@ -555,114 +555,15 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-/** Entry point from OS.
- *
- * /param argc The number of arguments in the string vector.
- * /param argv The argument string vector.
- * /return The return code to the OS
- */
-int
-main(int argc, char** argv)
-{
-	struct browser_window *bw;
-	char *options;
-	char *messages;
-	nsurl *url;
-	nserror ret;
-	nsfb_t *nsfb;
-
-	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	options = filepath_find(respaths, "Choices");
-	nsoption_read(options, nsoptions);
-	free(options);
-	nsoption_commandline(&argc, argv, nsoptions);
-
-	/* common initialisation */
-	messages = filepath_find(respaths, "Messages");
-	ret = netsurf_init(messages);
-	free(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	/* Override, since we have no support for non-core SELECT menu */
-	nsoption_set_bool(core_select_menu, true);
-
-	if (process_cmdline(argc,argv) != true)
-		die("unable to process command line.\n");
-
-	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
-	if (nsfb == NULL)
-		die("Unable to initialise framebuffer");
-
-	framebuffer_set_cursor(&pointer_image);
-
-	if (fb_font_init() == false)
-		die("Unable to initialise the font system");
-
-	fbtk = fbtk_init(nsfb);
-
-	fbtk_enable_oskb(fbtk);
-
-	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	/* create an initial browser window */
-
-	LOG(("calling browser_window_create"));
-
-	ret = nsurl_create(feurl, &url);
-	if (ret == NSERROR_OK) {
-		ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      &bw);
-		nsurl_unref(url);
-	}
-	if (ret != NSERROR_OK) {
-		warn_user(messages_get_errorcode(ret), 0);
-	} else {
-		netsurf_main_loop();
-
-		browser_window_destroy(bw);
-	}
-
-	netsurf_exit();
-
-	if (fb_font_finalise() == false)
-		LOG(("Font finalisation failed."));
-
-	/* finalise options */
-	nsoption_finalise(nsoptions, nsoptions_default);
-
-	return 0;
-}
 
 
-void
-gui_poll(bool active)
+static void framebuffer_poll(bool active)
 {
 	nsfb_event_t event;
 	int timeout; /* timeout in miliseconds */
 
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
-
-	/* if active do not wait for event, return immediately */
-	if (active)
-		timeout = 0;
 
 	/* if redraws are pending do not wait for event, return immediately */
 	if (fbtk_get_redraw_pending(fbtk))
@@ -678,8 +579,7 @@ gui_poll(bool active)
 
 }
 
-void
-gui_quit(void)
+static void gui_quit(void)
 {
 	LOG(("gui_quit"));
 
@@ -695,7 +595,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	browser_mouse_state mouse;
-	float scale = gw->bw->scale;
+	float scale = browser_window_get_scale(gw->bw);
 	int x = (cbi->x + bwidget->scrollx) / scale;
 	int y = (cbi->y + bwidget->scrolly) / scale;
 	unsigned int time_now;
@@ -847,8 +747,9 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	browser_mouse_state mouse = 0;
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
-	int x = (cbi->x + bwidget->scrollx) / gw->bw->scale;
-	int y = (cbi->y + bwidget->scrolly) / gw->bw->scale;
+	float scale = browser_window_get_scale(gw->bw);
+	int x = (cbi->x + bwidget->scrollx) / scale;
+	int y = (cbi->y + bwidget->scrolly) / scale;
 
 	if (gui_drag.state == GUI_DRAG_PRESSED &&
 			(abs(x - gui_drag.x) > 5 ||
@@ -1080,8 +981,8 @@ fb_leftarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	if (history_back_available(bw->history))
-		history_back(bw, bw->history);
+	if (browser_window_back_available(bw))
+		browser_window_history_back(bw, false);
 
 	fb_update_back_forward(gw);
 
@@ -1098,8 +999,8 @@ fb_rightarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	if (history_forward_available(bw->history))
-		history_forward(bw, bw->history);
+	if (browser_window_forward_available(bw))
+		browser_window_history_forward(bw, false);
 
 	fb_update_back_forward(gw);
 	return 1;
@@ -1186,14 +1087,8 @@ fb_url_enter(void *pw, char *text)
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
+		browser_window_navigate(bw, url, NULL, BW_NAVIGATE_HISTORY,
+				NULL, NULL, NULL);
 		nsurl_unref(url);
 	}
 
@@ -1334,6 +1229,7 @@ create_toolbar(struct gui_window *gw,
 						    &history_image,
 						    fb_localhistory_btn_clik,
 						    gw);
+			gw->history = widget;
 			break;
 
 		case 'f': /* forward */
@@ -1361,6 +1257,7 @@ create_toolbar(struct gui_window *gw,
 						    &stop_image_g,
 						    fb_close_click,
 						    gw->bw);
+			gw->close = widget;
 			break;
 
 		case 's': /* stop  */
@@ -1374,6 +1271,7 @@ create_toolbar(struct gui_window *gw,
 						    &stop_image,
 						    fb_stop_click,
 						    gw->bw);
+			gw->stop = widget;
 			break;
 
 		case 'r': /* reload */
@@ -1387,6 +1285,7 @@ create_toolbar(struct gui_window *gw,
 						    &reload,
 						    fb_reload_click,
 						    gw->bw);
+			gw->reload = widget;
 			break;
 
 		case 't': /* throbber/activity indicator */
@@ -1461,6 +1360,155 @@ create_toolbar(struct gui_window *gw,
 	return toolbar;
 }
 
+
+/** Resize a toolbar.
+ *
+ * @param gw Parent window
+ * @param toolbar_height The height in pixels of the toolbar
+ * @param padding The padding in pixels round each element of the toolbar
+ * @param toolbar_layout A string defining which buttons and controls
+ *                       should be added to the toolbar. May be empty
+ *                       string to disable the bar.
+ */
+static void
+resize_toolbar(struct gui_window *gw,
+	       int toolbar_height,
+	       int padding,
+	       const char *toolbar_layout)
+{
+	fbtk_widget_t *widget;
+
+	int xpos; /* The position of the next widget. */
+	int xlhs = 0; /* extent of the left hand side widgets */
+	int xdir = 1; /* the direction of movement + or - 1 */
+	const char *itmtype; /* type of the next item */
+	int x = 0, y = 0, w = 0, h = 0;
+
+	if (gw->toolbar == NULL) {
+		return;
+	}
+
+	if (toolbar_layout == NULL) {
+		toolbar_layout = NSFB_TOOLBAR_DEFAULT_LAYOUT;
+	}
+
+	itmtype = toolbar_layout;
+
+	if (*itmtype == 0) {
+		return;
+	}
+
+	fbtk_set_pos_and_size(gw->toolbar, 0, 0, 0, toolbar_height);
+
+	xpos = padding;
+
+	/* loop proceeds creating widget on the left hand side until
+	 * it runs out of layout or encounters a url bar declaration
+	 * wherupon it works backwards from the end of the layout
+	 * untill the space left is for the url bar
+	 */
+	while (itmtype >= toolbar_layout && xdir != 0) {
+
+		switch (*itmtype) {
+		case 'b': /* back */
+			widget = gw->back;
+			x = (xdir == 1) ? xpos : xpos - left_arrow.width;
+			y = padding;
+			w = left_arrow.width;
+			h = -padding;
+			break;
+
+		case 'l': /* local history */
+			widget = gw->history;
+			x = (xdir == 1) ? xpos : xpos - history_image.width;
+			y = padding;
+			w = history_image.width;
+			h = -padding;
+			break;
+
+		case 'f': /* forward */
+			widget = gw->forward;
+			x = (xdir == 1) ? xpos : xpos - right_arrow.width;
+			y = padding;
+			w = right_arrow.width;
+			h = -padding;
+			break;
+
+		case 'c': /* close the current window */
+			widget = gw->close;
+			x = (xdir == 1) ? xpos : xpos - stop_image_g.width;
+			y = padding;
+			w = stop_image_g.width;
+			h = -padding;
+			break;
+
+		case 's': /* stop  */
+			widget = gw->stop;
+			x = (xdir == 1) ? xpos : xpos - stop_image.width;
+			y = padding;
+			w = stop_image.width;
+			h = -padding;
+			break;
+
+		case 'r': /* reload */
+			widget = gw->reload;
+			x = (xdir == 1) ? xpos : xpos - reload.width;
+			y = padding;
+			w = reload.width;
+			h = -padding;
+			break;
+
+		case 't': /* throbber/activity indicator */
+			widget = gw->throbber;
+			x = (xdir == 1) ? xpos : xpos - throbber0.width;
+			y = padding;
+			w = throbber0.width;
+			h = -padding;
+			break;
+
+
+		case 'u': /* url bar*/
+			if (xdir == -1) {
+				/* met the u going backwards add url
+				 * now we know available extent
+				 */
+				widget = gw->url;
+				x = xlhs;
+				y = padding;
+				w = xpos - xlhs;
+				h = -padding;
+
+				/* toolbar is complete */
+				xdir = 0;
+				break;
+			}
+			/* met url going forwards, note position and
+			 * reverse direction
+			 */
+			itmtype = toolbar_layout + strlen(toolbar_layout);
+			xdir = -1;
+			xlhs = xpos;
+			w = fbtk_get_width(gw->toolbar);
+			xpos = 2 * w;
+			widget = gw->toolbar;
+			break;
+
+		default:
+			widget = NULL;
+		        break;
+
+		}
+
+		if (widget != NULL) {
+			if (widget != gw->toolbar)
+				fbtk_set_pos_and_size(widget, x, y, w, h);
+			xpos += xdir * (w + padding);
+		}
+
+		itmtype += xdir;
+	}
+}
+
 /** Routine called when "stripped of focus" event occours for browser widget.
  *
  * @param widget The widget reciving "stripped of focus" event.
@@ -1497,6 +1545,14 @@ create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_w
 }
 
 static void
+resize_browser_widget(struct gui_window *gw, int x, int y,
+		int width, int height)
+{
+	fbtk_set_pos_and_size(gw->browser, x, y, width, height);
+	browser_window_reformat(gw->bw, false, width, height);
+}
+
+static void
 create_normal_browser_window(struct gui_window *gw, int furniture_width)
 {
 	fbtk_widget_t *widget;
@@ -1517,6 +1573,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 				 2, 
 				 FB_FRAME_COLOUR, 
 				 nsoption_charp(fb_toolbar_layout));
+	gw->toolbar = toolbar;
 
 	/* set the actually created toolbar height */
 	if (toolbar != NULL) {
@@ -1578,6 +1635,8 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 		fbtk_set_handler(widget, FBTK_CBT_POINTERENTER, set_ptr_default_move, NULL);
 	}
 
+	gw->bottom_right = widget;
+
 	/* create vertical scrollbar */
 	gw->vscroll = fbtk_create_vscroll(gw->window,
 					  fbtk_get_width(gw->window) - furniture_width,
@@ -1596,11 +1655,86 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 	fbtk_set_focus(gw->browser);
 }
 
+static void
+resize_normal_browser_window(struct gui_window *gw, int furniture_width)
+{
+	bool resized;
+	int width, height;
+	int statusbar_width;
+	int toolbar_height = fbtk_get_height(gw->toolbar);
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+	/* Resize the main window widget */
+	resized = fbtk_set_pos_and_size(gw->window, 0, 0, 0, 0);
+	if (!resized)
+		return;
+
+	width = fbtk_get_width(gw->window);
+	height = fbtk_get_height(gw->window);
+	statusbar_width = nsoption_int(toolbar_status_size) * width / 10000;
+
+	resize_toolbar(gw, toolbar_height, 2,
+			nsoption_charp(fb_toolbar_layout));
+	fbtk_set_pos_and_size(gw->status,
+			0, height - furniture_width,
+			statusbar_width, furniture_width);
+	fbtk_reposition_hscroll(gw->hscroll,
+			statusbar_width, height - furniture_width,
+			width - statusbar_width - furniture_width,
+			furniture_width);
+	fbtk_set_pos_and_size(gw->bottom_right,
+			width - furniture_width, height - furniture_width,
+			furniture_width, furniture_width);
+	fbtk_reposition_vscroll(gw->vscroll,
+			width - furniture_width,
+			toolbar_height, furniture_width,
+			height - toolbar_height - furniture_width);
+	resize_browser_widget(gw,
+			0, toolbar_height,
+			width - furniture_width,
+			height - furniture_width - toolbar_height);
+}
+
+static void gui_window_add_to_window_list(struct gui_window *gw)
+{
+	gw->next = NULL;
+	gw->prev = NULL;
+
+	if (window_list == NULL) {
+		window_list = gw;
+	} else {
+		window_list->prev = gw;
+		gw->next = window_list;
+		window_list = gw;
+	}
+}
+
+static void gui_window_remove_from_window_list(struct gui_window *gw)
+{
+	struct gui_window *list;
+
+	for (list = window_list; list != NULL; list = list->next) {
+		if (list != gw)
+			continue;
+
+		if (list == window_list) {
+			window_list = list->next;
+			if (window_list != NULL)
+				window_list->prev = NULL;
+		} else {
+			list->prev->next = list->next;
+			if (list->next != NULL) {
+				list->next->prev = list->prev;
+			}
+		}
+		break;
+	}
+}
+
+
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *gw;
 
@@ -1609,8 +1743,7 @@ gui_create_browser_window(struct browser_window *bw,
 	if (gw == NULL)
 		return NULL;
 
-	/* seems we need to associate the gui window with the underlying
-	 * browser window
+	/* associate the gui window with the underlying browser window
 	 */
 	gw->bw = bw;
 
@@ -1620,30 +1753,29 @@ gui_create_browser_window(struct browser_window *bw,
 	/* map and request redraw of gui window */
 	fbtk_set_mapping(gw->window, true);
 
+	/* Add it to the window list */
+	gui_window_add_to_window_list(gw);
+
 	return gw;
 }
 
-void
+static void
 gui_window_destroy(struct gui_window *gw)
 {
+	gui_window_remove_from_window_list(gw);
+
 	fbtk_destroy_widget(gw->window);
 
 	free(gw);
 }
 
-void
-gui_window_set_title(struct gui_window *g, const char *title)
-{
-	LOG(("%p, %s", g, title));
-}
-
-void
+static void
 gui_window_redraw_window(struct gui_window *g)
 {
 	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );
 }
 
-void
+static void
 gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
@@ -1654,71 +1786,68 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
 			rect->y1 - bwidget->scrolly);
 }
 
-bool
+static bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
+	float scale = browser_window_get_scale(g->bw);
 
-	*sx = bwidget->scrollx / g->bw->scale;
-	*sy = bwidget->scrolly / g->bw->scale;
+	*sx = bwidget->scrollx / scale;
+	*sy = bwidget->scrolly / scale;
 
 	return true;
 }
 
-void
+static void
 gui_window_set_scroll(struct gui_window *gw, int sx, int sy)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(gw->browser);
+	float scale = browser_window_get_scale(gw->bw);
 
 	assert(bwidget);
 
-	widget_scroll_x(gw, sx * gw->bw->scale, true);
-	widget_scroll_y(gw, sy * gw->bw->scale, true);
+	widget_scroll_x(gw, sx * scale, true);
+	widget_scroll_y(gw, sy * scale, true);
 }
 
-void
-gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-			  int x1, int y1)
-{
-	LOG(("%s:(%p, %d, %d, %d, %d)", __func__, g, x0, y0, x1, y1));
-}
 
-void
+static void
 gui_window_get_dimensions(struct gui_window *g,
 			  int *width,
 			  int *height,
 			  bool scaled)
 {
+	float scale = browser_window_get_scale(g->bw);
+
 	*width = fbtk_get_width(g->browser);
 	*height = fbtk_get_height(g->browser);
 
 	if (scaled) {
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		*width /= scale;
+		*height /= scale;
 	}
 }
 
-void
+static void
 gui_window_update_extent(struct gui_window *gw)
 {
-	float scale = gw->bw->scale;
+	int w, h;
+	browser_window_get_extents(gw->bw, true, &w, &h);
 
-	fbtk_set_scroll_parameters(gw->hscroll, 0,
-			content_get_width(gw->bw->current_content) * scale,
+	fbtk_set_scroll_parameters(gw->hscroll, 0, w,
 			fbtk_get_width(gw->browser), 100);
 
-	fbtk_set_scroll_parameters(gw->vscroll, 0,
-			content_get_height(gw->bw->current_content) * scale,
+	fbtk_set_scroll_parameters(gw->vscroll, 0, h,
 			fbtk_get_height(gw->browser), 100);
 }
 
-void
+static void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
 	fbtk_set_text(g->status, text);
 }
 
-void
+static void
 gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch (shape) {
@@ -1748,12 +1877,7 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	}
 }
 
-void
-gui_window_hide_pointer(struct gui_window *g)
-{
-}
-
-void
+static void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
 	fbtk_set_text(g->url, url);
@@ -1812,18 +1936,18 @@ throbber_advance(void *pw)
 
 	if (g->throbber_index >= 0) {
 		fbtk_set_bitmap(g->throbber, image);
-		schedule(10, throbber_advance, g);
+		framebuffer_schedule(100, throbber_advance, g);
 	}
 }
 
-void
+static void
 gui_window_start_throbber(struct gui_window *g)
 {
 	g->throbber_index = 0;
-	schedule(10, throbber_advance, g);
+	framebuffer_schedule(100, throbber_advance, g);
 }
 
-void
+static void
 gui_window_stop_throbber(struct gui_window *gw)
 {
 	gw->throbber_index = -1;
@@ -1850,7 +1974,7 @@ gui_window_remove_caret_cb(fbtk_widget_t *widget)
 	}
 }
 
-void
+static void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
@@ -1868,7 +1992,7 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 			y + height - bwidget->scrolly);
 }
 
-void
+static void
 gui_window_remove_caret(struct gui_window *g)
 {
 	int c_x, c_y, c_h;
@@ -1879,114 +2003,178 @@ gui_window_remove_caret(struct gui_window *g)
 	}
 }
 
-void
-gui_window_new_content(struct gui_window *g)
+static void framebuffer_window_reformat(struct gui_window *gw)
 {
+	/** @todo if we ever do zooming reformat should be implemented */
+	LOG(("window:%p", gw));
+
+	/*
+	  browser_window_reformat(gw->bw, false, width, height);
+	*/
 }
 
-bool
-gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
+static struct gui_window_table framebuffer_window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+	.reformat = framebuffer_window_reformat,
 
-bool
-gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                      const struct rect *rect)
-{
-	return true;
-}
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
 
-void
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
-}
 
-/**
- * set favicon
+static struct gui_browser_table framebuffer_browser_table = {
+	.poll = framebuffer_poll,
+	.schedule = framebuffer_schedule,
+
+	.quit = gui_quit,
+};
+
+/** Entry point from OS.
+ *
+ * /param argc The number of arguments in the string vector.
+ * /param argv The argument string vector.
+ * /return The return code to the OS
  */
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+int
+main(int argc, char** argv)
 {
+	struct browser_window *bw;
+	char *options;
+	char *messages;
+	nsurl *url;
+	nserror ret;
+	nsfb_t *nsfb;
+	struct netsurf_table framebuffer_table = {
+		.browser = &framebuffer_browser_table,
+		.window = &framebuffer_window_table,
+		.clipboard = framebuffer_clipboard_table,
+		.fetch = framebuffer_fetch_table,
+		.utf8 = framebuffer_utf8_table,
+	};
+
+        ret = netsurf_register(&framebuffer_table);
+        if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
+
+	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	options = filepath_find(respaths, "Choices");
+	nsoption_read(options, nsoptions);
+	free(options);
+	nsoption_commandline(&argc, argv, nsoptions);
+
+	/* common initialisation */
+	messages = filepath_find(respaths, "Messages");
+	ret = netsurf_init(messages, NULL);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	/* Override, since we have no support for non-core SELECT menu */
+	nsoption_set_bool(core_select_menu, true);
+
+	if (process_cmdline(argc,argv) != true)
+		die("unable to process command line.\n");
+
+	nsfb = framebuffer_initialise(fename, fewidth, feheight, febpp);
+	if (nsfb == NULL)
+		die("Unable to initialise framebuffer");
+
+	framebuffer_set_cursor(&pointer_image);
+
+	if (fb_font_init() == false)
+		die("Unable to initialise the font system");
+
+	fbtk = fbtk_init(nsfb);
+
+	fbtk_enable_oskb(fbtk);
+
+	urldb_load_cookies(nsoption_charp(cookie_file));
+
+	/* create an initial browser window */
+
+	LOG(("calling browser_window_create"));
+
+	ret = nsurl_create(feurl, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(BW_CREATE_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      &bw);
+		nsurl_unref(url);
+	}
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	} else {
+		netsurf_main_loop();
+
+		browser_window_destroy(bw);
+	}
+
+	netsurf_exit();
+
+	if (fb_font_finalise() == false)
+		LOG(("Font finalisation failed."));
+
+	/* finalise options */
+	nsoption_finalise(nsoptions, nsoptions_default);
+
+	return 0;
 }
 
-/**
- * set gui display of a retrieved favicon representing the search provider
- * \param ico may be NULL for local calls; then access current cache from
- * search_web_ico()
- */
-void
-gui_window_set_search_ico(hlcache_handle *ico)
+void gui_resize(fbtk_widget_t *root, int width, int height)
 {
+	struct gui_window *gw;
+	nsfb_t *nsfb = fbtk_get_nsfb(root);
+
+	/* Enforce a minimum */
+	if (width < 300)
+		width = 300;
+	if (height < 200)
+		height = 200;
+
+	if (framebuffer_resize(nsfb, width, height, febpp) == false) {
+		return;
+	}
+
+	fbtk_set_pos_and_size(root, 0, 0, width, height);
+
+	fewidth = width;
+	feheight = height;
+
+	for (gw = window_list; gw != NULL; gw = gw->next) {
+		resize_normal_browser_window(gw,
+				nsoption_int(fb_furniture_size));
+	}
+
+	fbtk_request_redraw(root);
 }
 
-struct gui_download_window *
-gui_download_window_create(download_context *ctx, struct gui_window *parent)
-{
-	return NULL;
-}
-
-nserror
-gui_download_window_data(struct gui_download_window *dw,
-			 const char *data,
-			 unsigned int size)
-{
-	return NSERROR_OK;
-}
-
-void
-gui_download_window_error(struct gui_download_window *dw,
-			  const char *error_msg)
-{
-}
-
-void
-gui_download_window_done(struct gui_download_window *dw)
-{
-}
-
-void
-gui_drag_save_object(gui_save_type type,
-		     hlcache_handle *c,
-		     struct gui_window *w)
-{
-}
-
-void
-gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void
-gui_start_selection(struct gui_window *g)
-{
-}
-
-void
-gui_clear_selection(struct gui_window *g)
-{
-}
-
-void
-gui_create_form_select_menu(struct browser_window *bw,
-			    struct form_control *control)
-{
-}
-
-void
-gui_launch_url(const char *url)
-{
-}
-
-void
-gui_cert_verify(nsurl *url,
-		const struct ssl_cert_info *certs,
-		unsigned long num,
-		nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	cb(false, cbpw);
-}
 
 /*
  * Local Variables:

@@ -23,7 +23,7 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/textinput.h"
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -36,6 +36,8 @@
 #include "windows/drawable.h"
 
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
+
+void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
 
 /**
  * Handle wheel scroll messages.
@@ -71,6 +73,7 @@ nsws_drawable_wheel(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 static LRESULT
 nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 {
+	int width, height;
 	SCROLLINFO si;
 	int mem;
 
@@ -118,10 +121,10 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	}
 
 	si.fMask = SIF_POS;
-	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
-		si.nPos = min(si.nPos,
-			      content_get_height(gw->bw->current_content) *
-			      gw->bw->scale - gw->height);
+	if ((gw->bw != NULL) &&
+			(browser_window_get_extents(gw->bw, true,
+			&width, &height) == NSERROR_OK)) {
+		si.nPos = min(si.nPos, height - gw->height);
 	}
 
 	si.nPos = max(si.nPos, 0);
@@ -142,6 +145,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 static LRESULT
 nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 {
+	int width, height;
 	SCROLLINFO si;
 	int mem;
 
@@ -182,10 +186,10 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	si.fMask = SIF_POS;
 
-	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
-		si.nPos = min(si.nPos,
-			      content_get_width(gw->bw->current_content) *
-			      gw->bw->scale - gw->width);
+	if ((gw->bw != NULL) &&
+			(browser_window_get_extents(gw->bw, true,
+			&width, &height) == NSERROR_OK)) {
+		si.nPos = min(si.nPos, width - gw->width);
 	}
 	si.nPos = max(si.nPos, 0);
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
@@ -324,8 +328,8 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 		clip.y1 = ps.rcPaint.bottom;
 
 		browser_window_redraw(gw->bw,
-				      -gw->scrollx / gw->bw->scale,
-				      -gw->scrolly / gw->bw->scale,
+				      -gw->scrollx / gw->scale,
+				      -gw->scrolly / gw->scale,
 				      &clip, &ctx);
 	}
 
@@ -370,18 +374,18 @@ nsws_drawable_mouseup(struct gui_window *gw,
 	if ((gw->mouse->state & click) != 0) {
 		LOG(("mouse click bw %p, state 0x%x, x %f, y %f",gw->bw,
 		     gw->mouse->state,
-		     (x + gw->scrollx) / gw->bw->scale,
-		     (y + gw->scrolly) / gw->bw->scale));
+		     (x + gw->scrollx) / gw->scale,
+		     (y + gw->scrolly) / gw->scale));
 
 		browser_window_mouse_click(gw->bw,
 					   gw->mouse->state,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale);
+					   (x + gw->scrollx) / gw->scale,
+					   (y + gw->scrolly) / gw->scale);
 	} else {
 		browser_window_mouse_track(gw->bw,
 					   0,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale);
+					   (x + gw->scrollx) / gw->scale,
+					   (y + gw->scrolly) / gw->scale);
 	}
 
 	gw->mouse->state = 0;
@@ -412,17 +416,17 @@ nsws_drawable_mousedown(struct gui_window *gw,
 	if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
 		gw->mouse->state |= BROWSER_MOUSE_MOD_3;
 
-	gw->mouse->pressed_x = (x + gw->scrollx) / gw->bw->scale;
-	gw->mouse->pressed_y = (y + gw->scrolly) / gw->bw->scale;
+	gw->mouse->pressed_x = (x + gw->scrollx) / gw->scale;
+	gw->mouse->pressed_y = (y + gw->scrolly) / gw->scale;
 
 	LOG(("mouse click bw %p, state %x, x %f, y %f", gw->bw,
 	     gw->mouse->state,
-	     (x + gw->scrollx) / gw->bw->scale,
-	     (y + gw->scrolly) / gw->bw->scale));
+	     (x + gw->scrollx) / gw->scale,
+	     (y + gw->scrolly) / gw->scale));
 
 	browser_window_mouse_click(gw->bw, gw->mouse->state,
-				   (x + gw->scrollx) / gw->bw->scale ,
-				   (y + gw->scrolly) / gw->bw->scale);
+				   (x + gw->scrollx) / gw->scale,
+				   (y + gw->scrolly) / gw->scale);
 
 	return 0;
 }
@@ -441,8 +445,8 @@ nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 		return 0;
 
 	/* scale co-ordinates */
-	x = (x + gw->scrollx) / gw->bw->scale;
-	y = (y + gw->scrolly) / gw->bw->scale;
+	x = (x + gw->scrollx) / gw->scale;
+	y = (y + gw->scrolly) / gw->scale;
 
 	/* if mouse button held down and pointer moved more than
 	 * minimum distance drag is happening */

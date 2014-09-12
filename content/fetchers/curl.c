@@ -19,7 +19,7 @@
  */
 
 /** \file
- * Fetching of data from a URL (implementation).
+ * Fetching of data from an URL (implementation).
  *
  * This implementation uses libcurl's 'multi' interface.
  *
@@ -36,32 +36,27 @@
 #include <strings.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <openssl/ssl.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include <openssl/ssl.h>
-#include "content/fetch.h"
-#include "content/fetchers/curl.h"
-#include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/useragent.h"
+#include "utils/file.h"
 
-/* BIG FAT WARNING: This is here because curl doesn't give you an FD to
- * poll on, until it has processed a bit of the handle.	 So we need schedules
- * in order to make this work.
- */
-#include <desktop/browser.h>
+#include "content/fetch.h"
+#include "content/fetchers.h"
+#include "content/fetchers/curl.h"
+#include "content/urldb.h"
 
-/* uncomment this to use scheduler based calling
-#define FETCHER_CURLL_SCHEDULED 1
-*/
 
 /** SSL certificate info */
 struct cert_info {
@@ -163,6 +158,16 @@ void fetch_curl_register(void)
 	curl_version_info_data *data;
 	int i;
 	lwc_string *scheme;
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_curl_initialise,
+		.acceptable = fetch_curl_can_fetch,
+		.setup = fetch_curl_setup,
+		.start = fetch_curl_start,
+		.abort = fetch_curl_abort,
+		.free = fetch_curl_free,
+		.poll = fetch_curl_poll,
+		.finalise = fetch_curl_finalise
+	};
 
 	LOG(("curl_version %s", curl_version()));
 
@@ -175,6 +180,25 @@ void fetch_curl_register(void)
 	if (!fetch_curl_multi)
 		die("Failed to initialise the fetch module "
 				"(curl_multi_init failed).");
+
+#if LIBCURL_VERSION_NUM >= 0x071e00
+	/* We've been built against 7.30.0 or later: configure caching */
+	{
+		CURLMcode mcode;
+		int maxconnects = nsoption_int(max_fetchers) +
+				nsoption_int(max_cached_fetch_handles);
+
+#undef SETOPT
+#define SETOPT(option, value) \
+	mcode = curl_multi_setopt(fetch_curl_multi, option, value);	\
+	if (mcode != CURLM_OK)						\
+		goto curl_multi_setopt_failed;
+
+		SETOPT(CURLMOPT_MAXCONNECTS, maxconnects);
+		SETOPT(CURLMOPT_MAX_TOTAL_CONNECTIONS, maxconnects);
+		SETOPT(CURLMOPT_MAX_HOST_CONNECTIONS, nsoption_int(max_fetchers_per_host));
+	}
+#endif
 
 	/* Create a curl easy handle with the options that are common to all
 	   fetches. */
@@ -235,37 +259,17 @@ void fetch_curl_register(void)
 
 	for (i = 0; data->protocols[i]; i++) {
 		if (strcmp(data->protocols[i], "http") == 0) {
-			if (lwc_intern_string("http", SLEN("http"),
-					&scheme) != lwc_error_ok) {
-				die("Failed to initialise the fetch module "
-						"(couldn't intern \"http\").");
-			}
+			scheme = lwc_string_ref(corestring_lwc_http);
 
 		} else if (strcmp(data->protocols[i], "https") == 0) {
-			if (lwc_intern_string("https", SLEN("https"),
-					&scheme) != lwc_error_ok) {
-				die("Failed to initialise the fetch module "
-						"(couldn't intern \"https\").");
-			}
+			scheme = lwc_string_ref(corestring_lwc_https);
 
 		} else {
 			/* Ignore non-http(s) protocols */
 			continue;
 		}
 
-		if (!fetch_add_fetcher(scheme,
-				fetch_curl_initialise,
-				fetch_curl_can_fetch,
-				fetch_curl_setup,
-				fetch_curl_start,
-				fetch_curl_abort,
-				fetch_curl_free,
-#ifdef FETCHER_CURLL_SCHEDULED
-				       NULL,
-#else
-				fetch_curl_poll,
-#endif
-				fetch_curl_finalise)) {
+		if (fetcher_add(scheme, &fetcher_ops) != NSERROR_OK) {
 			LOG(("Unable to register cURL fetcher for %s",
 					data->protocols[i]));
 		}
@@ -275,6 +279,12 @@ void fetch_curl_register(void)
 curl_easy_setopt_failed:
 	die("Failed to initialise the fetch module "
 			"(curl_easy_setopt failed).");
+
+#if LIBCURL_VERSION_NUM >= 0x071e00
+curl_multi_setopt_failed:
+	die("Failed to initialise the fetch module "
+			"(curl_multi_setopt failed).");
+#endif
 }
 
 
@@ -490,9 +500,7 @@ bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
-	
-	schedule(1, (schedule_callback_fn)fetch_curl_poll, NULL);
-	
+
 	return true;
 }
 
@@ -524,6 +532,11 @@ CURL *fetch_curl_get_handle(lwc_string *host)
 
 void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 {
+#if LIBCURL_VERSION_NUM >= 0x071e00
+	/* 7.30.0 or later has its own connection caching; suppress ours */
+	curl_easy_cleanup(handle);
+	return;
+#else
 	struct cache_handle *h = 0;
 	int c;
 	RING_FINDBYLWCHOST(curl_handle_ring, h, host);
@@ -561,6 +574,7 @@ void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 	h->handle = handle;
 	h->host = lwc_string_ref(host);
 	RING_INSERT(curl_handle_ring, h);
+#endif
 }
 
 
@@ -687,16 +701,14 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 					 parm);
 
 	if (f->downgrade_tls) {
+		/* Disable TLS 1.1/1.2 if the server can't cope with them */
 #ifdef SSL_OP_NO_TLSv1_1
-		/* Disable TLS1.1, if the server can't cope with it */
 		options |= SSL_OP_NO_TLSv1_1;
 #endif
-	}
-
 #ifdef SSL_OP_NO_TLSv1_2
-	/* Disable TLS1.2, as it causes some servers to stall. */
-	options |= SSL_OP_NO_TLSv1_2;
+		options |= SSL_OP_NO_TLSv1_2;
 #endif
+	}
 
 	SSL_CTX_set_options(sslctx, options);
 
@@ -817,12 +829,6 @@ void fetch_curl_poll(lwc_string *scheme_ignored)
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
-
-#ifdef FETCHER_CURLL_SCHEDULED
-	if (running != 0) {
-		schedule(1, (schedule_callback_fn)fetch_curl_poll, fetch_curl_poll);
-	}
-#endif
 }
 
 
@@ -915,10 +921,12 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].not_before,
-					min(sizeof ssl_certs[i].not_before,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].not_before,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].not_before) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].not_before[min(sizeof(ssl_certs[i].not_before) - 1,
+						    (unsigned)buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			mem = BIO_new(BIO_s_mem());
@@ -927,10 +935,13 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].not_after,
-					min(sizeof ssl_certs[i].not_after,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].not_after,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].not_after) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].not_after[min(sizeof(ssl_certs[i].not_after) - 1,
+						 (unsigned)buf->length)] = 0;
+
 			BUF_MEM_free(buf);
 
 			ssl_certs[i].sig_type =
@@ -946,24 +957,30 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].issuer,
-					min(sizeof ssl_certs[i].issuer,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].issuer,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].issuer) - 1,
+				   (unsigned) buf->length));
+			ssl_certs[i].issuer[min(sizeof(ssl_certs[i].issuer) - 1,
+						(unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			mem = BIO_new(BIO_s_mem());
 			X509_NAME_print_ex(mem,
 				X509_get_subject_name(certs[i].cert),
-				0, XN_FLAG_SEP_CPLUS_SPC |
-					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+					   0,
+					   XN_FLAG_SEP_CPLUS_SPC |
+					   XN_FLAG_DN_REV |
+					   XN_FLAG_FN_NONE);
 			BIO_get_mem_ptr(mem, &buf);
 			(void) BIO_set_close(mem, BIO_NOCLOSE);
 			BIO_free(mem);
-			snprintf(ssl_certs[i].subject,
-					min(sizeof ssl_certs[i].subject,
-						(unsigned) buf->length + 1),
-					"%s", buf->data);
+			memcpy(ssl_certs[i].subject,
+			       buf->data,
+			       min(sizeof(ssl_certs[i].subject) - 1,
+				   (unsigned)buf->length));
+			ssl_certs[i].subject[min(sizeof(ssl_certs[i].subject) - 1,
+						 (unsigned) buf->length)] = 0;
 			BUF_MEM_free(buf);
 
 			ssl_certs[i].cert_type =
@@ -1263,15 +1280,15 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
 	CURLFORMcode code;
+	nserror ret;
 
 	for (; control; control = control->next) {
 		if (control->file) {
-			char *leafname = 0;
-
-			leafname = filename_from_path(control->value);
-
-			if (leafname == NULL)
+			char *leafname = NULL;
+			ret = guit->file->basename(control->value, &leafname, NULL);
+			if (ret != NSERROR_OK) {
 				continue;
+			}
 
 			/* We have to special case filenames of "", so curl
 			 * a) actually attempts the fetch and
@@ -1298,10 +1315,10 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 					LOG(("curl_formadd: %d (%s)",
 						code, control->name));
 			} else {
-				char *mimetype = fetch_mimetype(control->value);
+				char *mimetype = guit->fetch->mimetype(control->value);
 				code = curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
-					CURLFORM_FILE, control->value,
+					CURLFORM_FILE, control->rawfile,
 					CURLFORM_FILENAME, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),

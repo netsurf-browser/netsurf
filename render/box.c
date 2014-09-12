@@ -42,14 +42,6 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
-static bool box_contains_point(struct box *box, int x, int y, bool *physically);
-static bool box_nearer_text_box(struct box *box, int bx, int by,
-		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
-		int *nr_xd, int *nr_yd);
-static bool box_nearest_text_box(struct box *box, int bx, int by,
-		int fx, int fy, int x, int y, int dir, struct box **nearest,
-		int *tx, int *ty, int *nr_xd, int *nr_yd);
-
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
 
@@ -344,6 +336,313 @@ void box_bounds(struct box *box, struct rect *r)
 
 
 /**
+ * Determine if a point lies within a box.
+ *
+ * \param  box		box to consider
+ * \param  x		coordinate relative to box
+ * \param  y		coordinate relative to box
+ * \param  physically	if function returning true, physically is set true if
+ *			point is within the box's physical dimensions and false
+ *			if the point is not within the box's physical dimensions
+ *			but is in the area defined by the box's descendants.
+ *			if function returning false, physically is undefined.
+ * \return  true if the point is within the box or a descendant box
+ *
+ * This is a helper function for box_at_point().
+ */
+
+static bool box_contains_point(struct box *box, int x, int y, bool *physically)
+{
+	css_computed_clip_rect css_rect;
+
+	if (box->style != NULL &&
+			css_computed_position(box->style) ==
+					CSS_POSITION_ABSOLUTE &&
+			css_computed_clip(box->style, &css_rect) ==
+					CSS_CLIP_RECT) {
+		/* We have an absolutly positioned box with a clip rect */
+		struct rect r = {
+			.x0 = box->border[LEFT].width,
+			.y0 = box->border[TOP].width,
+			.x1 = box->padding[LEFT] + box->width +
+					box->border[RIGHT].width +
+					box->padding[RIGHT],
+			.y1 = box->padding[TOP] + box->height +
+					box->border[BOTTOM].width +
+					box->padding[BOTTOM]
+		};
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)
+			*physically = true;
+		else
+			*physically = false;
+
+		/* Adjust rect to css clip region */
+		if (css_rect.left_auto == false) {
+			r.x0 += FIXTOINT(nscss_len2px(
+					css_rect.left, css_rect.lunit,
+					box->style));
+		}
+		if (css_rect.top_auto == false) {
+			r.y0 += FIXTOINT(nscss_len2px(
+					css_rect.top, css_rect.tunit,
+					box->style));
+		}
+		if (css_rect.right_auto == false) {
+			r.x1 = box->border[LEFT].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.right,
+							css_rect.runit,
+							box->style));
+		}
+		if (css_rect.bottom_auto == false) {
+			r.y1 = box->border[TOP].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.bottom,
+							css_rect.bunit,
+							box->style));
+		}
+
+		/* Test if point is in clipped box */
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
+			/* inside clip area */
+			return true;
+		}
+
+		/* Not inside clip area */
+		return false;
+	}
+	if (x >= -box->border[LEFT].width &&
+			x < box->padding[LEFT] + box->width +
+			box->padding[RIGHT] + box->border[RIGHT].width &&
+			y >= -box->border[TOP].width &&
+			y < box->padding[TOP] + box->height +
+			box->padding[BOTTOM] + box->border[BOTTOM].width) {
+		*physically = true;
+		return true;
+	}
+	if (box->list_marker && box->list_marker->x - box->x <= x +
+			box->list_marker->border[LEFT].width &&
+			x < box->list_marker->x - box->x +
+			box->list_marker->padding[LEFT] +
+			box->list_marker->width +
+			box->list_marker->border[RIGHT].width +
+			box->list_marker->padding[RIGHT] &&
+			box->list_marker->y - box->y <= y +
+			box->list_marker->border[TOP].width &&
+			y < box->list_marker->y - box->y +
+			box->list_marker->padding[TOP] +
+			box->list_marker->height +
+			box->list_marker->border[BOTTOM].width +
+			box->list_marker->padding[BOTTOM]) {
+		*physically = true;
+		return true;
+	}
+	if ((box->style && css_computed_overflow_x(box->style) == 
+			CSS_OVERFLOW_VISIBLE) || !box->style) {
+		if (box->descendant_x0 <= x &&
+				x < box->descendant_x1) {
+			*physically = false;
+			return true;
+		}
+	}
+	if ((box->style && css_computed_overflow_y(box->style) == 
+			CSS_OVERFLOW_VISIBLE) || !box->style) {
+		if (box->descendant_y0 <= y &&
+				y < box->descendant_y1) {
+			*physically = false;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+/** Direction to move in a box-tree walk */
+enum box_walk_dir {
+	BOX_WALK_CHILDREN,
+	BOX_WALK_PARENT,
+	BOX_WALK_NEXT_SIBLING,
+	BOX_WALK_FLOAT_CHILDREN,
+	BOX_WALK_NEXT_FLOAT_SIBLING,
+	BOX_WALK_FLOAT_CONTAINER
+};
+
+
+/**
+ * Move from box to next box in given direction, adjusting for box coord change
+ *
+ * \param b	box to move from from
+ * \param dir	direction to move in
+ * \param x	box's global x-coord, updated to position of next box
+ * \param y	box's global y-coord, updated to position of next box
+ *
+ * If no box can be found in given direction, NULL is returned.
+ */
+static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
+		int *x, int *y)
+{
+	switch (dir) {
+	case BOX_WALK_CHILDREN:
+		b = b->children;
+		if (b == NULL)
+			return NULL;
+		*x += b->x;
+		*y += b->y;
+		if (!box_is_float(b)) {
+			return b;
+		}
+		/* Fall through */
+
+	case BOX_WALK_NEXT_SIBLING:
+		do {
+			*x -= b->x;
+			*y -= b->y;
+			b = b->next;
+			if (b == NULL)
+				break;
+			*x += b->x;
+			*y += b->y;
+		} while (box_is_float(b));
+		return b;
+
+	case BOX_WALK_PARENT:
+		*x -= b->x;
+		*y -= b->y;
+		return b->parent;
+
+	case BOX_WALK_FLOAT_CHILDREN:
+		b = b->float_children;
+		if (b == NULL)
+			return NULL;
+		*x += b->x;
+		*y += b->y;
+		return b;
+
+	case BOX_WALK_NEXT_FLOAT_SIBLING:
+		*x -= b->x;
+		*y -= b->y;
+		b = b->next_float;
+		if (b == NULL)
+			return NULL;
+		*x += b->x;
+		*y += b->y;
+		return b;
+
+	case BOX_WALK_FLOAT_CONTAINER:
+		*x -= b->x;
+		*y -= b->y;
+		return b->float_container;
+
+	default:
+		assert(0 && "Bad box walk type.");
+	}
+}
+
+
+/**
+ * Itterator for walking to next box in interaction order
+ *
+ * \param b	box to find next box from
+ * \param x	box's global x-coord, updated to position of next box
+ * \param y	box's global y-coord, updated to position of next box
+ * \param skip_children	whether to skip box's children
+ *
+ * This walks to a boxes float children before its children.  When walking
+ * children, floating boxes are skipped.
+ */
+static inline struct box *box_next_xy(struct box *b, int *x, int *y,
+		bool skip_children)
+{
+	struct box *n;
+	int tx, ty;
+
+	assert(b != NULL);
+
+	if (skip_children) {
+		/* Caller is not interested in any kind of children */
+		goto skip_children;
+	}
+
+	tx = *x; ty = *y;
+	n = box_move_xy(b, BOX_WALK_FLOAT_CHILDREN, &tx, &ty);
+	if (n) {
+		/* Next node is float child */
+		*x = tx;
+		*y = ty;
+		return n;
+	}
+done_float_children:
+
+	tx = *x; ty = *y;
+	n = box_move_xy(b, BOX_WALK_CHILDREN, &tx, &ty);
+	if (n) {
+		/* Next node is child */
+		*x = tx;
+		*y = ty;
+		return n;
+	}
+
+skip_children:
+	tx = *x; ty = *y;
+	n = box_move_xy(b, BOX_WALK_NEXT_FLOAT_SIBLING, &tx, &ty);
+	if (n) {
+		/* Go to next float sibling */
+		*x = tx;
+		*y = ty;
+		return n;
+	}
+
+	if (box_is_float(b)) {
+		/* Done floats, but the float container may have children,
+		 * or siblings, or ansestors with siblings.  Change to
+		 * float container and move past handling its float children.
+		 */
+		b = box_move_xy(b, BOX_WALK_FLOAT_CONTAINER, x, y);
+		goto done_float_children;
+	}
+
+	/* Go to next sibling, or nearest ancestor with next sibling. */
+	while (b) {
+		while (!b->next && b->parent) {
+			b = box_move_xy(b, BOX_WALK_PARENT, x, y);
+			if (box_is_float(b)) {
+				/* Go on to next float, if there is one */
+				goto skip_children;
+			}
+		}
+		if (!b->next) {
+			/* No more boxes */
+			return NULL;
+		}
+
+		tx = *x; ty = *y;
+		n = box_move_xy(b, BOX_WALK_NEXT_SIBLING, &tx, &ty);
+		if (n) {
+			/* Go to non-float (ancestor) sibling */
+			*x = tx;
+			*y = ty;
+			return n;
+
+		} else if (b->parent) {
+			b = box_move_xy(b, BOX_WALK_PARENT, x, y);
+			if (box_is_float(b)) {
+				/* Go on to next float, if there is one */
+				goto skip_children;
+			}
+
+		} else {
+			/* No more boxes */
+			return NULL;
+		}
+	}
+
+	assert(b != NULL);
+	return NULL;
+}
+
+
+
+/**
  * Find the boxes at a point.
  *
  * \param  box      box to search children of
@@ -370,231 +669,28 @@ void box_bounds(struct box *box, struct rect *r)
 struct box *box_at_point(struct box *box, const int x, const int y,
 		int *box_x, int *box_y)
 {
-	int bx = *box_x, by = *box_y;
-	struct box *child, *sibling;
+	bool skip_children;
 	bool physically;
 
 	assert(box);
 
-	/* consider floats first, since they will often overlap other boxes */
-	for (child = box->float_children; child; child = child->next_float) {
-		if (box_contains_point(child, x - bx, y - by, &physically)) {
-			*box_x = bx + child->x -
-					scrollbar_get_offset(child->scroll_x);
-			*box_y = by + child->y -
-					scrollbar_get_offset(child->scroll_y);
-
-			if (physically)
-				return child;
-			else
-				return box_at_point(child, x, y, box_x, box_y);
-		}
-	}
-
-non_float_children:
-	/* non-float children */
-	for (child = box->children; child; child = child->next) {
-		if (box_is_float(child))
-			continue;
-		if (box_contains_point(child, x - bx, y - by, &physically)) {
-			*box_x = bx + child->x -
-					scrollbar_get_offset(child->scroll_x);
-			*box_y = by + child->y -
-					scrollbar_get_offset(child->scroll_y);
-
-			if (physically)
-				return child;
-			else
-				return box_at_point(child, x, y, box_x, box_y);
-		}
-	}
-
-	/* marker boxes */
-	if (box->list_marker) {
-		if (box_contains_point(box->list_marker, x - bx, y - by,
+	skip_children = false;
+	while ((box = box_next_xy(box, box_x, box_y, skip_children))) {
+		if (box_contains_point(box, x - *box_x, y - *box_y,
 				&physically)) {
-			*box_x = bx + box->list_marker->x;
-			*box_y = by + box->list_marker->y;
-			return box->list_marker;
-		}
-	}
+			*box_x -= scrollbar_get_offset(box->scroll_x);
+			*box_y -= scrollbar_get_offset(box->scroll_y);
 
-	/* siblings and siblings of ancestors */
-	while (box) {
-		if (box_is_float(box)) {
-			bx -= box->x - scrollbar_get_offset(box->scroll_x);
-			by -= box->y - scrollbar_get_offset(box->scroll_y);
-			for (sibling = box->next_float; sibling;
-					sibling = sibling->next_float) {
-				if (box_contains_point(sibling,
-						x - bx, y - by, &physically)) {
-					*box_x = bx + sibling->x -
-							scrollbar_get_offset(
-							sibling->scroll_x);
-					*box_y = by + sibling->y -
-							scrollbar_get_offset(
-							sibling->scroll_y);
+			if (physically)
+				return box;
 
-					if (physically)
-						return sibling;
-					else
-						return box_at_point(sibling,
-								x, y,
-								box_x, box_y);
-				}
-			}
-			/* ascend to float's parent */
-			do {
-				box = box->parent;
-			} while (!box->float_children);
-			/* process non-float children of float's parent */
-			goto non_float_children;
-
+			skip_children = false;
 		} else {
-			bx -= box->x - scrollbar_get_offset(box->scroll_x);
-			by -= box->y - scrollbar_get_offset(box->scroll_y);
-			for (sibling = box->next; sibling;
-					sibling = sibling->next) {
-				if (box_is_float(sibling))
-					continue;
-				if (box_contains_point(sibling, x - bx, y - by,
-						&physically)) {
-					*box_x = bx + sibling->x -
-							scrollbar_get_offset(
-							sibling->scroll_x);
-					*box_y = by + sibling->y -
-							scrollbar_get_offset(
-							sibling->scroll_y);
-
-					if (physically)
-						return sibling;
-					else
-						return box_at_point(sibling,
-								x, y,
-								box_x, box_y);
-				}
-			}
-			box = box->parent;
+			skip_children = true;
 		}
 	}
 
-	return 0;
-}
-
-
-/**
- * Determine if a point lies within a box.
- *
- * \param  box		box to consider
- * \param  x		coordinate relative to box parent
- * \param  y		coordinate relative to box parent
- * \param  physically	if function returning true, physically is set true if
- *			point is within the box's physical dimensions and false
- *			if the point is not within the box's physical dimensions
- *			but is in the area defined by the box's descendants.
- *			if function returning false, physically is undefined.
- * \return  true if the point is within the box or a descendant box
- *
- * This is a helper function for box_at_point().
- */
-
-bool box_contains_point(struct box *box, int x, int y, bool *physically)
-{
-	css_computed_clip_rect css_rect;
-
-	if (box->style != NULL &&
-			css_computed_position(box->style) ==
-					CSS_POSITION_ABSOLUTE &&
-			css_computed_clip(box->style, &css_rect) ==
-					CSS_CLIP_RECT) {
-		/* We have an absolutly positioned box with a clip rect */
-		struct rect r = {
-			.x0 = box->x - box->border[LEFT].width,
-			.y0 = box->y - box->border[TOP].width,
-			.x1 = box->x + box->padding[LEFT] + box->width +
-					box->border[RIGHT].width +
-					box->padding[RIGHT],
-			.y1 = box->y + box->padding[TOP] + box->height +
-					box->border[BOTTOM].width +
-					box->padding[BOTTOM]
-		};
-		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)
-			*physically = true;
-		else
-			*physically = false;
-
-		/* Adjust rect to css clip region */
-		if (css_rect.left_auto == false) {
-			r.x0 += FIXTOINT(nscss_len2px(
-					css_rect.left, css_rect.lunit,
-					box->style));
-		}
-		if (css_rect.top_auto == false) {
-			r.y0 += FIXTOINT(nscss_len2px(
-					css_rect.top, css_rect.tunit,
-					box->style));
-		}
-		if (css_rect.right_auto == false) {
-			r.x1 = box->x - box->border[LEFT].width +
-					FIXTOINT(nscss_len2px(
-							css_rect.right,
-							css_rect.runit,
-							box->style));
-		}
-		if (css_rect.bottom_auto == false) {
-			r.y1 = box->y - box->border[TOP].width +
-					FIXTOINT(nscss_len2px(
-							css_rect.bottom,
-							css_rect.bunit,
-							box->style));
-		}
-
-		/* Test if point is in clipped box */
-		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
-			/* inside clip area */
-			return true;
-		}
-
-		/* Not inside clip area */
-		return false;
-	}
-	if (box->x <= x + box->border[LEFT].width &&
-			x < box->x + box->padding[LEFT] + box->width +
-			box->border[RIGHT].width + box->padding[RIGHT] &&
-			box->y <= y + box->border[TOP].width &&
-			y < box->y + box->padding[TOP] + box->height +
-			box->border[BOTTOM].width + box->padding[BOTTOM]) {
-		*physically = true;
-		return true;
-	}
-	if (box->list_marker && box->list_marker->x <= x +
-			box->list_marker->border[LEFT].width &&
-			x < box->list_marker->x +
-			box->list_marker->padding[LEFT] +
-			box->list_marker->width +
-			box->list_marker->border[RIGHT].width +
-			box->list_marker->padding[RIGHT] &&
-			box->list_marker->y <= y +
-			box->list_marker->border[TOP].width &&
-			y < box->list_marker->y +
-			box->list_marker->padding[TOP] +
-			box->list_marker->height +
-			box->list_marker->border[BOTTOM].width +
-			box->list_marker->padding[BOTTOM]) {
-		*physically = true;
-		return true;
-	}
-	if ((box->style && css_computed_overflow(box->style) == 
-			CSS_OVERFLOW_VISIBLE) || !box->style) {
-		if (box->x + box->descendant_x0 <= x &&
-				x < box->x + box->descendant_x1 &&
-				box->y + box->descendant_y0 <= y &&
-				y < box->y + box->descendant_y1) {
-			*physically = false;
-			return true;
-		}
-	}
-	return false;
+	return NULL;
 }
 
 
@@ -621,7 +717,7 @@ bool box_contains_point(struct box *box, int x, int y, bool *physically)
  * \return true if mouse point is inside box
  */
 
-bool box_nearer_text_box(struct box *box, int bx, int by,
+static bool box_nearer_text_box(struct box *box, int bx, int by,
 		int x, int y, int dir, struct box **nearest, int *tx, int *ty,
 		int *nr_xd, int *nr_yd)
 {
@@ -693,7 +789,7 @@ bool box_nearer_text_box(struct box *box, int bx, int by,
  * \return true if mouse point is inside text_box
  */
 
-bool box_nearest_text_box(struct box *box, int bx, int by,
+static bool box_nearest_text_box(struct box *box, int bx, int by,
 		int fx, int fy, int x, int y, int dir, struct box **nearest,
 		int *tx, int *ty, int *nr_xd, int *nr_yd)
 {
@@ -874,7 +970,7 @@ bool box_visible(struct box *box)
  * Print a box tree to a file.
  */
 
-void box_dump(FILE *stream, struct box *box, unsigned int depth)
+void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style)
 {
 	unsigned int i;
 	struct box *c, *prev;
@@ -929,7 +1025,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	}
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");
-	if (box->style)
+	if (style && box->style)
 		nscss_dump_computed_style(stream, box->style);
 	if (box->href)
 		fprintf(stream, " -> '%s'", nsurl_access(box->href));
@@ -945,6 +1041,8 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, " float_children %p", box->float_children);
 	if (box->next_float)
 		fprintf(stream, " next_float %p", box->next_float);
+	if (box->float_container)
+		fprintf(stream, " float_container %p", box->float_container);
 	if (box->col) {
 		fprintf(stream, " (columns");
 		for (i = 0; i != box->columns; i++)
@@ -965,7 +1063,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		for (i = 0; i != depth; i++)
 			fprintf(stream, "  ");
 		fprintf(stream, "list_marker:\n");
-		box_dump(stream, box->list_marker, depth + 1);
+		box_dump(stream, box->list_marker, depth + 1, style);
 	}
 
 	for (c = box->children; c && c->next; c = c->next)
@@ -982,7 +1080,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 			fprintf(stream, "warning: box->prev %p (should be "
 					"%p) (box on next line)\n",
 					c->prev, prev);
-		box_dump(stream, c, depth + 1);
+		box_dump(stream, c, depth + 1, style);
 	}
 }
 

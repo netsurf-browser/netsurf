@@ -22,21 +22,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "utils/config.h"
+#include "utils/nsoption.h"
+#include "utils/container.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "desktop/browser.h"
 #include "content/content.h"
 #include "content/content_type.h"
 #include "content/hlcache.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/menu.h"
 #include "gtk/theme.h"
 #include "gtk/window.h"
-#include "utils/nsoption.h"
 #include "gtk/dialogs/preferences.h"
-#include "utils/container.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 enum image_sets {
 	IMAGE_SET_MAIN_MENU = 0,
@@ -158,7 +161,7 @@ static bool nsgtk_theme_verify(const char *themename)
 void nsgtk_theme_init(void)
 {
 	int theme;
-	nsgtk_scaffolding *list = scaf_list;
+	struct nsgtk_scaffolding *list;
 	FILE *fp;
 	char buf[50];
 	int row_count = 0;
@@ -191,6 +194,7 @@ void nsgtk_theme_init(void)
 	}
 	fclose(fp);
 
+	list = nsgtk_scaffolding_iterate(NULL);
 	while (list != NULL) {
 		nsgtk_theme_implement(list);
 		list = nsgtk_scaffolding_iterate(list);
@@ -284,7 +288,7 @@ void nsgtk_theme_add(const char *themename)
  * sets the images for a particular scaffolding according to the current theme
  */
 
-void nsgtk_theme_implement(struct gtk_scaffolding *g)
+void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 {
 	struct nsgtk_theme *theme[IMAGE_SET_COUNT];
 	int i;
@@ -793,11 +797,8 @@ theme_install_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
 	switch (event->type) {
-	case CONTENT_MSG_READY:
-		break;
 
-	case CONTENT_MSG_DONE:
-	{
+	case CONTENT_MSG_DONE: {
 		const char *source_data;
 		unsigned long source_size;
 
@@ -807,21 +808,14 @@ theme_install_callback(hlcache_handle *c,
 			warn_user("ThemeInvalid", 0);
 
 		hlcache_handle_release(c);
+		break;
 	}
-	break;
 
 	case CONTENT_MSG_ERROR:
 		warn_user(event->data.error, 0);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
-	case CONTENT_MSG_LOADING:
-	case CONTENT_MSG_REFORMAT:
-	case CONTENT_MSG_REDRAW:
 	default:
-		assert(0);
 		break;
 	}
 

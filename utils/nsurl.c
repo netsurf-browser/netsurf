@@ -26,7 +26,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/corestrings.h"
 #include "utils/errors.h"
+#include "utils/idna.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
@@ -34,6 +36,17 @@
 
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
+
+/**
+ * Return a hex digit for the given numerical value.
+ *
+ * \param digit the value to get the hex digit for.
+ * \return character in range 0-9A-F
+ */
+inline static char digit2uppercase_hex(unsigned char digit) {
+	assert(digit < 16);
+	return "0123456789ABCDEF"[digit];
+}
 
 static bool nsurl__is_unreserved(unsigned char c)
 {
@@ -398,13 +411,15 @@ static void nsurl__get_string_markers(const char * const url_s,
 				/* End of the authority */
 				break;
 
-			} else if (*pos == ':' && marker.colon_first ==
+			} else if (marker.scheme_type != NSURL_SCHEME_MAILTO &&
+					*pos == ':' && marker.colon_first ==
 					marker.authority) {
 				/* could be username:password or host:port
 				 * separator */
 				marker.colon_first = pos - url_s;
 
-			} else if (*pos == ':' && marker.colon_first !=
+			} else if (marker.scheme_type != NSURL_SCHEME_MAILTO &&
+					*pos == ':' && marker.colon_first !=
 					marker.authority) {
 				/* could be host:port separator */
 				marker.colon_last = pos - url_s;
@@ -487,6 +502,22 @@ static void nsurl__get_string_markers(const char * const url_s,
 		if (marker.fragment > marker.end)
 			marker.fragment = marker.end;
 	}
+
+#ifdef NSURL_DEBUG
+	LOG(("marker.start: %i", marker.start));
+	LOG(("marker.scheme_end: %i", marker.scheme_end));
+	LOG(("marker.authority: %i", marker.authority));
+
+	LOG(("marker.colon_first: %i", marker.colon_first));
+	LOG(("marker.at: %i", marker.at));
+	LOG(("marker.colon_last: %i", marker.colon_last));
+
+	LOG(("marker.path: %i", marker.path));
+	LOG(("marker.query: %i", marker.query));
+	LOG(("marker.fragment: %i", marker.fragment));
+
+	LOG(("marker.end: %i", marker.end));
+#endif
 
 	/* Got all the URL components pegged out now */
 	*markers = marker;
@@ -672,14 +703,17 @@ static nserror nsurl__create_from_section(const char * const url_s,
 		char *pos_norm,
 		struct nsurl_components *url)
 {
+	nserror ret;
 	int ascii_offset;
 	int start = 0;
 	int end = 0;
 	const char *pos;
 	const char *pos_url_s;
 	char *norm_start = pos_norm;
+	char *host;
 	size_t copy_len;
 	size_t length;
+	size_t host_len;
 	enum {
 		NSURL_F_NO_PORT		= (1 << 0)
 	} flags = 0;
@@ -744,7 +778,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 				continue;
 			}
 
-			if (nsurl__is_unreserved(ascii_offset) == false) {
+			if ((section != URL_SCHEME && section != URL_HOST) &&
+				(nsurl__is_unreserved(ascii_offset) == false)) {
 				/* This character should be escaped after all,
 				 * just let it get copied */
 				copy_len += 3;
@@ -766,7 +801,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 
 			length -= 2;
 
-		} else if (nsurl__is_no_escape(*pos) == false) {
+		} else if ((section != URL_SCHEME && section != URL_HOST) &&
+				(nsurl__is_no_escape(*pos) == false)) {
 
 			/* This needs to be escaped */
 			if (copy_len > 0) {
@@ -819,11 +855,8 @@ static nserror nsurl__create_from_section(const char * const url_s,
 	switch (section) {
 	case URL_SCHEME:
 		if (length == 0) {
-			/* No scheme, assuming http, and add to URL */
-			if (lwc_intern_string("http", SLEN("http"),
-					&url->scheme) != lwc_error_ok) {
-				return NSERROR_NOMEM;
-			}
+			/* No scheme, assuming http */
+			url->scheme = lwc_string_ref(corestring_lwc_http);
 		} else {
 			/* Add scheme to URL */
 			if (lwc_intern_string(norm_start, length,
@@ -946,9 +979,21 @@ static nserror nsurl__create_from_section(const char * const url_s,
 			}
 
 			/* host */
-			if (lwc_intern_string(norm_start, length,
-					&url->host) != lwc_error_ok) {
-				return NSERROR_NOMEM;
+			/* Encode host according to IDNA2008 */
+			ret = idna_encode(norm_start, length, &host, &host_len);
+			if (ret == NSERROR_OK) {
+				/* valid idna encoding */
+				if (lwc_intern_string(host, host_len,
+						&url->host) != lwc_error_ok) {
+					return NSERROR_NOMEM;
+				}
+				free(host);
+			} else {
+				/* fall back to straight interning */
+				if (lwc_intern_string(norm_start, length,
+						      &url->host) != lwc_error_ok) {
+					return NSERROR_NOMEM;
+				}
 			}
 		}
 
@@ -1223,6 +1268,39 @@ static void nsurl_calc_hash(nsurl *url)
 }
 
 
+/**
+ * Destroy components
+ *
+ * \param c	url components
+ */
+static void nsurl_destroy_components(struct nsurl_components *c)
+{
+	if (c->scheme)
+		lwc_string_unref(c->scheme);
+
+	if (c->username)
+		lwc_string_unref(c->username);
+
+	if (c->password)
+		lwc_string_unref(c->password);
+
+	if (c->host)
+		lwc_string_unref(c->host);
+
+	if (c->port)
+		lwc_string_unref(c->port);
+
+	if (c->path)
+		lwc_string_unref(c->path);
+
+	if (c->query)
+		lwc_string_unref(c->query);
+
+	if (c->fragment)
+		lwc_string_unref(c->fragment);
+}
+
+
 #ifdef NSURL_DEBUG
 /**
  * Dump a NetSurf URL's internal components
@@ -1274,6 +1352,7 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
 	enum nsurl_string_flags str_flags = 0;
 	nserror e = NSERROR_OK;
+	bool match;
 
 	assert(url_s != NULL);
 
@@ -1302,8 +1381,22 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 	/* Finished with buffer */
 	free(buff);
 
-	if (e != NSERROR_OK)
+	if (e != NSERROR_OK) {
+		nsurl_destroy_components(&c);
 		return NSERROR_NOMEM;
+	}
+
+	/* Validate URL */
+	if ((lwc_string_isequal(c.scheme, corestring_lwc_http,
+			&match) == lwc_error_ok && match == true) ||
+			(lwc_string_isequal(c.scheme, corestring_lwc_https,
+			&match) == lwc_error_ok && match == true)) {
+		/* http, https must have host */
+		if (c.host == NULL) {
+			nsurl_destroy_components(&c);
+			return NSERROR_BAD_URL;
+		}
+	}
 
 	/* Get the string length and find which parts of url are present */
 	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
@@ -1311,8 +1404,10 @@ nserror nsurl_create(const char * const url_s, nsurl **url)
 
 	/* Create NetSurf URL object */
 	*url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*url == NULL)
+	if (*url == NULL) {
+		nsurl_destroy_components(&c);
 		return NSERROR_NOMEM;
+	}
 
 	(*url)->components = c;
 	(*url)->length = length;
@@ -1355,29 +1450,7 @@ void nsurl_unref(nsurl *url)
 #endif
 
 	/* Release lwc strings */
-	if (url->components.scheme)
-		lwc_string_unref(url->components.scheme);
-
-	if (url->components.username)
-		lwc_string_unref(url->components.username);
-
-	if (url->components.password)
-		lwc_string_unref(url->components.password);
-
-	if (url->components.host)
-		lwc_string_unref(url->components.host);
-
-	if (url->components.port)
-		lwc_string_unref(url->components.port);
-
-	if (url->components.path)
-		lwc_string_unref(url->components.path);
-
-	if (url->components.query)
-		lwc_string_unref(url->components.query);
-
-	if (url->components.fragment)
-		lwc_string_unref(url->components.fragment);
+	nsurl_destroy_components(&url->components);
 
 	/* Free the NetSurf URL */
 	free(url);
@@ -1688,6 +1761,10 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(base != NULL);
 	assert(rel != NULL);
 
+#ifdef NSURL_DEBUG
+	LOG(("base: \"%s\", rel: \"%s\"", nsurl_access(base), rel));
+#endif
+
 	/* Peg out the URL sections */
 	nsurl__get_string_markers(rel, &m, true);
 
@@ -1695,11 +1772,13 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	length = nsurl__get_longest_section(&m);
 
 	/* Initially assume that the joined URL can be formed entierly from
-	 * the relative URL. */
+	 * the relative URL.
+	 */
 	joined_parts = NSURL_F_REL;
 
 	/* Update joined_compnents to indicate any required parts from the
-	 * base URL. */
+	 * base URL.
+	 */
 	if (m.scheme_end - m.start <= 0) {
 		/* The relative url has no scheme.
 		 * Use base URL's scheme. */
@@ -1729,7 +1808,8 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	}
 
 	/* Allocate enough memory to url escape the longest section, plus
-	 * space for path merging (if required). */
+	 * space for path merging (if required).
+	 */
 	if (joined_parts & NSURL_F_MERGED_PATH) {
 		/* Need to merge paths */
 		length += (base->components.path != NULL) ?
@@ -1741,8 +1821,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 			lwc_string_length(base->components.path) : 0);
 
 	buff = malloc(length + 5);
-	if (buff == NULL)
+	if (buff == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	buff_pos = buff;
 
@@ -1755,8 +1836,11 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	} else {
 		c.scheme_type = m.scheme_type;
 
-		error |= nsurl__create_from_section(rel, URL_SCHEME, &m,
-				buff, &c);
+		error = nsurl__create_from_section(rel, URL_SCHEME, &m,	buff, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
 	if (joined_parts & NSURL_F_BASE_AUTHORITY) {
@@ -1765,10 +1849,16 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		c.host = nsurl__component_copy(base->components.host);
 		c.port = nsurl__component_copy(base->components.port);
 	} else {
-		error |= nsurl__create_from_section(rel, URL_CREDENTIALS, &m,
-				buff, &c);
-		error |= nsurl__create_from_section(rel, URL_HOST, &m,
-				buff, &c);
+		error = nsurl__create_from_section(rel, URL_CREDENTIALS, &m,
+						   buff, &c);
+		if (error == NSERROR_OK) {
+			error = nsurl__create_from_section(rel, URL_HOST, &m,
+							   buff, &c);
+		}
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
 	if (joined_parts & NSURL_F_BASE_PATH) {
@@ -1818,8 +1908,12 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		m_path.query = new_length;
 
 		buff_start = buff_pos + new_length;
-		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
+		error = nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
 				buff_start, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 
 	} else {
 		struct url_markers m_path;
@@ -1835,24 +1929,34 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		m_path.query = new_length;
 
 		buff_start = buff_pos + new_length;
-		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
+
+		error = nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
 				buff_start, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
 	}
 
-	if (joined_parts & NSURL_F_BASE_QUERY)
+	if (joined_parts & NSURL_F_BASE_QUERY) {
 		c.query = nsurl__component_copy(base->components.query);
-	else
-		error |= nsurl__create_from_section(rel, URL_QUERY, &m,
+	} else {
+		error = nsurl__create_from_section(rel, URL_QUERY, &m,
 				buff, &c);
+		if (error != NSERROR_OK) {
+			free(buff);
+			return error;
+		}
+	}
 
-	error |= nsurl__create_from_section(rel, URL_FRAGMENT, &m,
-			buff, &c);
+	error = nsurl__create_from_section(rel, URL_FRAGMENT, &m, buff, &c);
 
 	/* Free temporary buffer */
 	free(buff);
 
-	if (error != NSERROR_OK)
-		return NSERROR_NOMEM;
+	if (error != NSERROR_OK) {
+		return error;
+	}
 
 	/* Get the string length and find which parts of url are present */
 	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
@@ -1860,8 +1964,9 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	/* Create NetSurf URL object */
 	*joined = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
-	if (*joined == NULL)
+	if (*joined == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	(*joined)->components = c;
 	(*joined)->length = length;
@@ -1884,6 +1989,15 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 {
 	size_t length;
 	char *pos;
+
+	/* check for source url having no fragment already */
+	if (url->components.fragment == NULL) {
+		*no_frag = (nsurl *)url;
+
+		(*no_frag)->count++;
+
+		return NSERROR_OK;
+	}
 
 	/* Find the change in length from url to new_url */
 	length = url->length;
@@ -2006,8 +2120,9 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 nserror nsurl_replace_query(const nsurl *url, const char *query,
 		nsurl **new_url)
 {
-	int query_len;
-	int base_len;
+	int query_len;		/* Length of new query string, including '?' */
+	int frag_len = 0;	/* Length of fragment, including '#' */
+	int base_len;		/* Length of URL up to start of query */
 	char *pos;
 	size_t len;
 	lwc_string *lwc_query;
@@ -2025,11 +2140,12 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 		base_len -= lwc_string_length(url->components.query);
 	}
 	if (url->components.fragment != NULL) {
-		base_len -= 1 + lwc_string_length(url->components.fragment);
+		frag_len = 1 + lwc_string_length(url->components.fragment);
+		base_len -= frag_len;
 	}
 
 	/* Set new_url's length */
-	len = base_len + query_len;
+	len = base_len + query_len + frag_len;
 
 	/* Create NetSurf URL object */
 	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
@@ -2052,10 +2168,9 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 	pos += query_len;
 	if (url->components.fragment != NULL) {
 		const char *frag = lwc_string_data(url->components.fragment);
-		size_t frag_len = lwc_string_length(url->components.fragment);
 		*pos = '#';
-		memcpy(++pos, frag, frag_len);
-		pos += frag_len;
+		memcpy(++pos, frag, frag_len - 1);
+		pos += frag_len - 1;
 	}
 	*pos = '\0';
 

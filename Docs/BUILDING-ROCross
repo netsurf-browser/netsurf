@@ -56,8 +56,6 @@
 
       $ ../autobuilder/build libpng12-0
 
-      $ ../autobuilder/build libmng1
-
       $ ../autobuilder/build oslib
 
   B. NetSurf libraries

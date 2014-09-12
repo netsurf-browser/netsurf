@@ -19,7 +19,6 @@
 #ifndef GTK_SELECTION_H
 #define GTK_SELECTION_H
 
-#include <gtk/gtk.h>
-#include "desktop/gui.h"
+struct gui_clipboard_table *nsgtk_clipboard_table;
 
 #endif

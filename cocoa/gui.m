@@ -24,16 +24,20 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserWindowController.h"
 #import "cocoa/FormSelectMenu.h"
+#import "cocoa/fetch.h"
+#import "cocoa/schedule.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
 #import "desktop/browser_private.h"
 #import "utils/nsoption.h"
 #import "desktop/textinput.h"
-#import "desktop/401login.h"
 #import "utils/utils.h"
+#import "utils/log.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
+#import "content/hlcache.h"
+#import "content/content.h"
 
 NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";
@@ -45,20 +49,11 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-nsurl *gui_get_resource_url(const char *path)
-{
-	nsurl *url = NULL;
-	NSString *nspath = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: path] ofType: @""];
-	if (nspath == nil) return NULL;
-	nsurl_create([[[NSURL fileURLWithPath: nspath] absoluteString] UTF8String], &url);
-	return url;
-}
-
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 	cocoa_autorelease();
 	
-	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: active ? nil : [NSDate distantFuture]
+	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: [NSDate distantFuture]
 										   inMode: NSDefaultRunLoopMode dequeue: YES];
 	
 	if (nil != event) {
@@ -67,28 +62,24 @@ void gui_poll(bool active)
 	}
 }
 
-void gui_quit(void)
-{
-	// nothing to do
-}
-
 struct browser_window;
 
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-											 struct browser_window *clone, bool new_tab)
+static struct gui_window *gui_window_create(struct browser_window *bw,
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	BrowserWindowController *window = nil;
 
-	if (clone != NULL) {
-		bw->scale = clone->scale;
-		window = [(BrowserViewController *)(clone->window) windowController];
+	if (existing != NULL) {
+		bw->scale = (float) nsoption_int(scale) / 100;
+		window = [(BrowserViewController *)(existing) windowController];
 	} else {
 		bw->scale = (float) nsoption_int(scale) / 100;	
 	}
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
 
-	if (!new_tab || nil == window) {
+	if (!(flags & GW_CREATE_TAB) || nil == window) {
 		window = [[[BrowserWindowController alloc] init] autorelease];
 		[[window window] makeKeyAndOrderFront: nil];
 	}
@@ -97,7 +88,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return (struct gui_window *)result;
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	BrowserViewController *vc = (BrowserViewController *)g;
 
@@ -105,17 +96,17 @@ void gui_window_destroy(struct gui_window *g)
 	[vc release];
 }
 
-void gui_window_set_title(struct gui_window *g, const char *title)
+static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	[(BrowserViewController *)g setTitle: [NSString stringWithUTF8String: title]];
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	[[(BrowserViewController *)g browserView] setNeedsDisplay: YES];
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	const NSRect nsrect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
 											 rect->x0, rect->y0, 
@@ -123,7 +114,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: nsrect];
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	NSCParameterAssert( g != NULL && sx != NULL && sy != NULL );
 	
@@ -133,19 +124,25 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-							   int x1, int y1)
+/**
+ * callback from core to reformat a window.
+ */
+static void cocoa_window_reformat(struct gui_window *gw)
 {
-	gui_window_set_scroll( g, x0, y0 );
+	if (gw != NULL) {
+                [[(BrowserViewController *)gw browserView] reformat ];
+	}
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-							   bool scaled)
+
+static void gui_window_get_dimensions(struct gui_window *g,
+                                      int *width, int *height,
+                                      bool scaled)
 {
 	NSCParameterAssert( width != NULL && height != NULL );
 	
@@ -159,7 +156,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	*height = cocoa_pt_to_px( NSHeight( frame ) );
 }
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	BrowserViewController * const window = (BrowserViewController *)g;
 
@@ -170,12 +167,12 @@ void gui_window_update_extent(struct gui_window *g)
 	[[window browserView] setMinimumSize: cocoa_scaled_size( browser->scale, width, height )];
 }
 
-void gui_window_set_status(struct gui_window *g, const char *text)
+static void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	[(BrowserViewController *)g setStatus: [NSString stringWithUTF8String: text]];
 }
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	switch (shape) {
 		case GUI_POINTER_DEFAULT:
@@ -208,28 +205,24 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	}
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-}
-
-void gui_window_set_url(struct gui_window *g, const char *url)
+static void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
 }
 
-void gui_window_start_throbber(struct gui_window *g)
+static void gui_window_start_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: YES];
 	[(BrowserViewController *)g updateBackForward];
 }
 
-void gui_window_stop_throbber(struct gui_window *g)
+static void gui_window_stop_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: NO];
 	[(BrowserViewController *)g updateBackForward];
 }
 
-void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
+static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	NSBitmapImageRep *bmp = icon != NULL ? (NSBitmapImageRep *)content_get_bitmap( icon ) : NULL;
 
@@ -246,56 +239,25 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	[image release];
 }
 
-void gui_window_set_search_ico(hlcache_handle *ico)
-{
-	UNIMPL();
-}
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	[[(BrowserViewController *)g browserView] addCaretAt: cocoa_point( x, y ) 
 												  height: cocoa_px_to_pt( height )];
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	[[(BrowserViewController *)g browserView] removeCaret];
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	[(BrowserViewController *)g contentUpdated];
 }
 
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
 
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url, 
-						  const char *title)
-{
-	UNIMPL();
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-						  struct gui_window *g)
-{
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-
-void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct browser_window *bw,
 								 struct form_control *control)
 {
 	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: bw];
@@ -303,14 +265,15 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	[menu release];
 }
 
-void gui_launch_url(const char *url)
+static nserror gui_launch_url(nsurl *url)
 {
-	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: url]]];
+	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: nsurl_access(url)]]];
+        return NSERROR_OK;
 }
 
 struct ssl_cert_info;
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
 					 unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					 void *cbpw)
 {
@@ -318,9 +281,39 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 }
 
 
-void gui_401login_open(nsurl *url, const char *realm,
-					   nserror (*cb)(bool proceed, void *pw), void *cbpw)
-{
-	cb( false, cbpw );
-}
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+        .reformat = cocoa_window_reformat,
 
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_icon = gui_window_set_icon,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+        .new_content = gui_window_new_content,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *cocoa_window_table = &window_table;
+
+
+static struct gui_browser_table browser_table = {
+	.poll = gui_poll,
+        .schedule = cocoa_schedule,
+
+	.launch_url = gui_launch_url,
+	.create_form_select_menu = gui_create_form_select_menu,
+	.cert_verify = gui_cert_verify,
+};
+
+struct gui_browser_table *cocoa_browser_table = &browser_table;

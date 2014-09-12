@@ -26,14 +26,17 @@
 
 #include "content/fetch.h"
 #include "desktop/gui.h"
-#include "utils/schedule.h"
+#include "desktop/download.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
+
 #include "windows/download.h"
 #include "windows/gui.h"
 #include "windows/resourceid.h"
+#include "windows/schedule.h"
 
 static bool downloading = false;
 static struct gui_download_window *download1;
@@ -45,7 +48,7 @@ static void nsws_download_update_label(void *p);
 static void nsws_download_update_progress(void *p);
 static void nsws_download_clear_data(struct gui_download_window *w);
 
-struct gui_download_window *
+static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
 	if (downloading) {
@@ -62,21 +65,25 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	}
 	int total_size = download_context_get_total_length(ctx);
 	char *domain, *filename, *destination;
-	const char *url=download_context_get_url(ctx);
+	nsurl *url = download_context_get_url(ctx);
 	bool unknown_size = (total_size == 0);
 	const char *size = (unknown_size) ? 
 			messages_get("UnknownSize") :
 			human_friendly_bytesize(total_size);
 	
-	if (url_nice(url, &filename, false) != URL_FUNC_OK)
+	if (url_nice(nsurl_access(url), &filename, false) != NSERROR_OK)
 		filename = strdup(messages_get("UnknownFile"));
 	if (filename == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		free(w);
 		return NULL;
 	}
-	if (url_host(url, &domain) != URL_FUNC_OK)
+
+	if (nsurl_has_component(url, NSURL_HOST)) {
+		domain = strdup(lwc_string_data(nsurl_get_component(url, NSURL_HOST)));
+	} else {
 		domain = strdup(messages_get("UnknownHost"));
+	}
 	if (domain == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		free(filename);
@@ -181,7 +188,7 @@ void nsws_download_update_label(void *p)
 {
 	struct gui_download_window *w = p;
 	if (w->hwnd == NULL) {
-		schedule_remove(nsws_download_update_label, p);
+		win32_schedule(-1, nsws_download_update_label, p);
 		return;
 	}
 	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_LABEL);
@@ -221,21 +228,23 @@ void nsws_download_update_label(void *p)
 		w->time_left = NULL;
 	}
 	SendMessage(sub, WM_SETTEXT, (WPARAM)0, (LPARAM)label);
-	if (w->progress < 10000)
-		schedule(50, nsws_download_update_label, p);
+	if (w->progress < 10000) {
+		win32_schedule(500, nsws_download_update_label, p);
+	}
 }
 
 void nsws_download_update_progress(void *p)
 {
 	struct gui_download_window *w = p;
 	if (w->hwnd == NULL) {
-		schedule_remove(nsws_download_update_progress, p);
+		win32_schedule(-1, nsws_download_update_progress, p);
 		return;
 	}
 	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_PROGRESS);
 	SendMessage(sub, PBM_SETPOS, (WPARAM)(w->progress / 100), 0);
-	if (w->progress < 10000)
-		schedule(50, nsws_download_update_progress, p);
+	if (w->progress < 10000) {
+		win32_schedule(500, nsws_download_update_progress, p);
+	}
 }
 
 void nsws_download_clear_data(struct gui_download_window *w)
@@ -254,12 +263,13 @@ void nsws_download_clear_data(struct gui_download_window *w)
 		free(w->total_size);
 	if (w->file != NULL)
 		fclose(w->file);
-	schedule_remove(nsws_download_update_progress, (void *)w);
-	schedule_remove(nsws_download_update_label, (void *)w);
+	win32_schedule(-1, nsws_download_update_progress, (void *)w);
+	win32_schedule(-1, nsws_download_update_label, (void *)w);
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *w, const char *data,
+static nserror 
+gui_download_window_data(struct gui_download_window *w, const char *data,
 		unsigned int size)
 {
 	if ((w == NULL) || (w->file == NULL))
@@ -279,13 +289,13 @@ nserror gui_download_window_data(struct gui_download_window *w, const char *data
 	return NSERROR_OK;
 }
 
-void gui_download_window_error(struct gui_download_window *w,
+static void gui_download_window_error(struct gui_download_window *w,
 		const char *error_msg)
 {
 	LOG(("error %s", error_msg));
 }
 
-void gui_download_window_done(struct gui_download_window *w)
+static void gui_download_window_done(struct gui_download_window *w)
 {
 	if (w == NULL)
 		return;
@@ -294,4 +304,13 @@ void gui_download_window_done(struct gui_download_window *w)
 		EndDialog(w->hwnd, IDOK);
 	nsws_download_clear_data(w);
 }
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *win32_download_table = &download_table;
 

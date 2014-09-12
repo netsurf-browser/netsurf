@@ -104,7 +104,6 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
-#include "utils/filename.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/bloom.h"
@@ -1806,14 +1805,9 @@ struct path_data *urldb_add_path(lwc_string *scheme, unsigned int port,
 	free(path_query);
 
 	if (d && !d->url) {
-		/* Insert URL */
-		if (nsurl_has_component(url, NSURL_FRAGMENT)) {
-			nserror err = nsurl_defragment(url, &d->url);
-			if (err != NSERROR_OK)
-				return NULL;
-		} else {
-			d->url = nsurl_ref(url);
-		}
+		/* Insert defragmented URL */
+		if (nsurl_defragment(url, &d->url) != NSERROR_OK)
+			return NULL;
 	}
 
 	return d;
@@ -2728,12 +2722,8 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 	assert(url && header);
 
 	/* Get defragmented URL, as 'urlt' */
-	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
-		if (nsurl_defragment(url, &urlt) != NSERROR_OK)
-			return NULL;
-	} else {
-		urlt = nsurl_ref(url);
-	}
+	if (nsurl_defragment(url, &urlt) != NSERROR_OK)
+		return NULL;
 
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	if (scheme == NULL) {

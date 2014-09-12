@@ -32,12 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <dom/dom.h>
+
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"
@@ -50,6 +49,7 @@
 #include "render/html.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -87,7 +87,7 @@ static plot_font_style_t plot_fstyle_entry = {
 };
 
 static char *form_acceptable_charset(struct form *form);
-static char *form_encode_item(const char *item, const char *charset,
+static char *form_encode_item(const char *item, uint32_t len, const char *charset,
 		const char *fallback);
 static void form_select_menu_clicked(struct form_control *control,
 		int x, int y);
@@ -103,6 +103,7 @@ static void form_select_menu_scroll_callback(void *client_data,
  * \param  method  method and enctype
  * \param  charset acceptable encodings for form submission, or NULL
  * \param  doc_charset  encoding of containing document, or NULL
+ * \param  html  HTML content containing form
  * \return  a new structure, or NULL on memory exhaustion
  */
 struct form *form_new(void *node, const char *action, const char *target, 
@@ -152,6 +153,7 @@ struct form *form_new(void *node, const char *action, const char *target,
 
 	return form;
 }
+
 
 /**
  * Free a form, and any controls it owns.
@@ -278,10 +280,11 @@ void form_free_control(struct form_control *control)
  * \param  value     value of option, used directly (not copied)
  * \param  text      text for option, used directly (not copied)
  * \param  selected  this option is selected
+ * \param  node      the DOM node this option is associated with
  * \return  true on success, false on memory exhaustion
  */
 bool form_add_option(struct form_control *control, char *value, char *text,
-		bool selected)
+		     bool selected, void *node)
 {
 	struct form_option *option;
 
@@ -312,12 +315,14 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 
 	control->data.select.num_items++;
 
+	option->node = node;
+
 	return true;
 }
 
 
 /**
- * Identify 'successful' controls.
+ * Identify 'successful' controls via the DOM.
  *
  * All text strings in the successful controls list will be in the charset most
  * appropriate for submission. Therefore, no utf8_to_* processing should be
@@ -334,313 +339,507 @@ bool form_add_option(struct form_control *control, char *value, char *text,
  *
  * See HTML 4.01 section 17.13.2.
  */
-bool form_successful_controls(struct form *form,
-		struct form_control *submit_button,
-		struct fetch_multipart_data **successful_controls)
+bool form_successful_controls_dom(struct form *_form,
+				  struct form_control *_submit_button,
+				  struct fetch_multipart_data **successful_controls)
 {
-	struct form_control *control;
-	struct form_option *option;
+	dom_html_form_element *form = _form->node;
+	dom_html_element *submit_button = (_submit_button != NULL) ? _submit_button->node : NULL;
+	dom_html_collection *form_elements = NULL;
+	dom_html_options_collection *options = NULL;
+	dom_node *form_element = NULL, *option_element = NULL;
+	dom_exception err;
+	dom_string *nodename = NULL, *inputname = NULL, *inputvalue = NULL, *inputtype = NULL;
 	struct fetch_multipart_data sentinel, *last_success, *success_new;
-	char *value = NULL;
-	bool had_submit = false;
-	char *charset;
+	bool had_submit = false, element_disabled, checked;
+	char *charset, *rawfile_temp = NULL, *basename;
+	uint32_t index, element_count;
+	struct image_input_coords *coords;
 
 	last_success = &sentinel;
 	sentinel.next = NULL;
-
-	charset = form_acceptable_charset(form);
-	if (charset == NULL)
+	
+	LOG(("XYZZY: Yay, let's look for a form"));
+	
+	/** \todo Replace this call with something DOMish */
+	charset = form_acceptable_charset(_form);
+	if (charset == NULL) {
+		LOG(("failed to find charset"));
 		return false;
-
-#define ENCODE_ITEM(i) form_encode_item((i), charset, form->document_charset)
-
-	for (control = form->controls; control; control = control->next) {
-		/* ignore disabled controls */
-		if (control->disabled)
-			continue;
-
-		/* ignore controls with no name */
-		if (!control->name)
-			continue;
-
-		switch (control->type) {
-			case GADGET_HIDDEN:
-				if (control->value)
-					value = ENCODE_ITEM(control->value);
-				else
-					value = ENCODE_ITEM("");
-				if (!value) {
-					LOG(("failed to duplicate value"
-						"'%s' for control %s",
-							control->value,
-							control->name));
-					goto no_memory;
-				}
-				break;
-
-			case GADGET_RADIO:
-			case GADGET_CHECKBOX:
-				/* ignore checkboxes and radio buttons which
-				 * aren't selected */
-				if (!control->selected)
-					continue;
-				if (control->value)
-					value = ENCODE_ITEM(control->value);
-				else
-					value = ENCODE_ITEM("on");
-				if (!value) {
-					LOG(("failed to duplicate"
-						"value '%s' for"
-						"control %s",
-						control->value,
-						control->name));
-					goto no_memory;
-				}
-				break;
-
-			case GADGET_SELECT:
-				/* select */
-				for (option = control->data.select.items;
-						option != NULL;
-						option = option->next) {
-					if (!option->selected)
-						continue;
-					success_new =
-						malloc(sizeof(*success_new));
-					if (!success_new) {
-						LOG(("malloc failed"));
-						goto no_memory;
-					}
-					success_new->file = false;
-					success_new->name =
-						ENCODE_ITEM(control->name);
-					success_new->value =
-						ENCODE_ITEM(option->value);
-					success_new->next = NULL;
-					last_success->next = success_new;
-					last_success = success_new;
-					if (!success_new->name ||
-						!success_new->value) {
-						LOG(("strdup failed"));
-						goto no_memory;
-					}
-				}
-
-				continue;
-				break;
-
-			case GADGET_TEXTBOX:
-			case GADGET_PASSWORD:
-			case GADGET_TEXTAREA:
-			{
-				char *v2;
-				int ta_len = textarea_get_text(
-						control->data.text.ta,
-						NULL, 0);
-
-				value = malloc(ta_len);
-				if (!value) {
-					LOG(("failed handling textarea"));
-					goto no_memory;
-				}
-				textarea_get_text(control->data.text.ta,
-						value, ta_len);
-
-				if (control->type == GADGET_TEXTAREA &&
-						value[0] == '\0') {
-					/* Textarea not submitted if empty */
-					free(value);
-					continue;
-				}
-
-				v2 = ENCODE_ITEM(value);
-				if (!v2) {
-					LOG(("failed handling textarea"));
-					free(value);
-					goto no_memory;
-				}
-
-				free(value);
-				value = v2;
-			}
-				break;
-
-			case GADGET_IMAGE: {
-				/* image */
-				size_t len;
-				char *name;
-
-				if (control != submit_button)
-					/* only the activated submit button
-					 * is successful */
-					continue;
-
-				name = ENCODE_ITEM(control->name);
-				if (name == NULL)
-					goto no_memory;
-
-				len = strlen(name) + 3;
-
-				/* x */
-				success_new = malloc(sizeof(*success_new));
-				if (!success_new) {
-					free(name);
-					LOG(("malloc failed"));
-					goto no_memory;
-				}
-				success_new->file = false;
-				success_new->name = malloc(len);
-				success_new->value = malloc(20);
-				if (!success_new->name ||
-						!success_new->value) {
-					free(success_new->name);
-					free(success_new->value);
-					free(success_new);
-					free(name);
-					LOG(("malloc failed"));
-					goto no_memory;
-				}
-				sprintf(success_new->name, "%s.x", name);
-				sprintf(success_new->value, "%i",
-						control->data.image.mx);
-				success_new->next = 0;
-				last_success->next = success_new;
-				last_success = success_new;
-
-				/* y */
-				success_new = malloc(sizeof(*success_new));
-				if (!success_new) {
-					free(name);
-					LOG(("malloc failed"));
-					goto no_memory;
-				}
-				success_new->file = false;
-				success_new->name = malloc(len);
-				success_new->value = malloc(20);
-				if (!success_new->name ||
-						!success_new->value) {
-					free(success_new->name);
-					free(success_new->value);
-					free(success_new);
-					free(name);
-					LOG(("malloc failed"));
-					goto no_memory;
-				}
-				sprintf(success_new->name, "%s.y", name);
-				sprintf(success_new->value, "%i",
-						control->data.image.my);
-				success_new->next = 0;
-				last_success->next = success_new;
-				last_success = success_new;
-
-				free(name);
-
-				continue;
-				break;
-			}
-
-			case GADGET_SUBMIT:
-				if (!submit_button && !had_submit)
-					/* no submit button specified, so
-					 * use first declared in form */
-					had_submit = true;
-				else if (control != submit_button)
-					/* only the activated submit button
-					 * is successful */
-					continue;
-				if (control->value)
-					value = ENCODE_ITEM(control->value);
-				else
-					value = ENCODE_ITEM("");
-				if (!value) {
-					LOG(("failed to duplicate value"
-						"'%s' for control %s",
-							control->value,
-							control->name));
-					goto no_memory;
-				}
-				break;
-
-			case GADGET_RESET:
-				/* ignore reset */
-				continue;
-				break;
-
-			case GADGET_FILE:
-				/* file */
-				/* Handling of blank file entries is
-				 * implementation defined - we're perfectly
-				 * within our rights to treat it as an
-				 * unsuccessful control. Unfortunately, every
-				 * other browser submits the field with
-				 * a blank filename and no content. So,
-				 * that's what we have to do, too.
-				 */
-				success_new = malloc(sizeof(*success_new));
-				if (!success_new) {
-					LOG(("malloc failed"));
-					goto no_memory;
-				}
-				success_new->file = true;
-				success_new->name = ENCODE_ITEM(control->name);
-				success_new->value = 
-						ENCODE_ITEM(control->value ?
-						control->value : "");
-				success_new->next = 0;
-				last_success->next = success_new;
-				last_success = success_new;
-				if (!success_new->name ||
-						!success_new->value) {
-					LOG(("strdup failed"));
-					goto no_memory;
-				}
-
-				continue;
-				break;
-
-			case GADGET_BUTTON:
-				/* Ignore it */
-				continue;
-				break;
-
-			default:
-				assert(0);
-				break;
-		}
-
-		success_new = malloc(sizeof(*success_new));
-		if (!success_new) {
-			LOG(("malloc failed"));
-			free(value);
-			goto no_memory;
-		}
-		success_new->file = false;
-		success_new->name = ENCODE_ITEM(control->name);
-		success_new->value = value;
-		success_new->next = NULL;
-		last_success->next = success_new;
-		last_success = success_new;
-		if (!success_new->name) {
-			LOG(("failed to duplicate name '%s'",
-					control->name));
-			goto no_memory;
-		}
 	}
 
+#define ENCODE_ITEM(i) (((i) == NULL) ? (				\
+			form_encode_item("", 0, charset, _form->document_charset) \
+			):(					\
+			form_encode_item(dom_string_data(i), dom_string_byte_length(i), \
+					 charset, _form->document_charset) \
+			))
+	
+	err = dom_html_form_element_get_elements(form, &form_elements);
+	
+	if (err != DOM_NO_ERR) {
+		LOG(("Could not get form elements"));
+		goto dom_no_memory;
+	}
+	
+	LOG(("Reffed %p", form_elements));
+	
+	err = dom_html_collection_get_length(form_elements, &element_count);
+	
+	if (err != DOM_NO_ERR) {
+		LOG(("Could not get form element count"));
+		goto dom_no_memory;
+	}
+	
+	for (index = 0; index < element_count; index++) {
+		if (form_element != NULL) {
+			LOG(("Unreffed %p", form_element));
+			dom_node_unref(form_element);
+			form_element = NULL;
+		}
+		if (nodename != NULL) {
+			dom_string_unref(nodename);
+			nodename = NULL;
+		}
+		if (inputname != NULL) {
+			dom_string_unref(inputname);
+			inputname = NULL;
+		}
+		if (inputvalue != NULL) {
+			dom_string_unref(inputvalue);
+			inputvalue = NULL;
+		}
+		if (inputtype != NULL) {
+			dom_string_unref(inputtype);
+			inputtype = NULL;
+		}
+		if (options != NULL) {
+			dom_html_options_collection_unref(options);
+			options = NULL;
+		}
+		err = dom_html_collection_item(form_elements,
+					       index, &form_element);
+		if (err != DOM_NO_ERR) {
+			LOG(("Could not retrieve form element %d", index));
+			goto dom_no_memory;
+		}
+		LOG(("Reffed %p", form_element));
+		/* Form elements are one of:
+		 *   HTMLInputElement
+		 *   HTMLTextAreaElement
+		 *   HTMLSelectElement
+		 */
+		err = dom_node_get_node_name(form_element, &nodename);
+		if (err != DOM_NO_ERR) {
+			LOG(("Could not get node name"));
+			goto dom_no_memory;
+		}
+		LOG(("Found a node(%p): `%*s`", nodename,
+		     dom_string_byte_length(nodename),
+		     dom_string_data(nodename)));
+		if (dom_string_isequal(nodename, corestring_dom_TEXTAREA)) {
+			err = dom_html_text_area_element_get_disabled(
+				(dom_html_text_area_element *)form_element,
+				&element_disabled);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get text area disabled property"));
+				goto dom_no_memory;
+			}
+			err = dom_html_text_area_element_get_name(
+				(dom_html_text_area_element *)form_element,
+				&inputname);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get text area name property"));
+				goto dom_no_memory;
+			}
+		} else if (dom_string_isequal(nodename, corestring_dom_SELECT)) {
+			err = dom_html_select_element_get_disabled(
+				(dom_html_select_element *)form_element,
+				&element_disabled);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get select disabled property"));
+				goto dom_no_memory;
+			}
+			err = dom_html_select_element_get_name(
+				(dom_html_select_element *)form_element,
+				&inputname);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get select name property"));
+				goto dom_no_memory;
+			}
+		} else if (dom_string_isequal(nodename, corestring_dom_INPUT)) {
+			err = dom_html_input_element_get_disabled(
+				(dom_html_input_element *)form_element,
+				&element_disabled);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get input disabled property"));
+				goto dom_no_memory;
+			}
+			err = dom_html_input_element_get_name(
+				(dom_html_input_element *)form_element,
+				&inputname);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get input name property"));
+				goto dom_no_memory;
+			}
+		} else if (dom_string_isequal(nodename, corestring_dom_BUTTON)) {
+			/* It was a button, no fair */
+			continue;
+		} else {
+			/* Unknown element type came through! */
+			LOG(("Unknown element type: %*s",
+			     dom_string_byte_length(nodename),
+			     dom_string_data(nodename)));
+			goto dom_no_memory;
+		}
+		if (element_disabled)
+			continue;
+		if (inputname == NULL)
+			continue;
+		
+		if (dom_string_isequal(nodename, corestring_dom_TEXTAREA)) {
+			err = dom_html_text_area_element_get_value(
+				(dom_html_text_area_element *)form_element,
+				&inputvalue);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get text area content"));
+				goto dom_no_memory;
+			}
+		} else if (dom_string_isequal(nodename, corestring_dom_SELECT)) {
+			uint32_t options_count, option_index;
+			err = dom_html_select_element_get_options(
+				(dom_html_select_element *)form_element,
+				&options);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get select options collection"));
+				goto dom_no_memory;
+			}
+			err = dom_html_options_collection_get_length(
+				options, &options_count);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get select options collection length"));
+				goto dom_no_memory;
+			}
+			for(option_index = 0; option_index < options_count;
+					++option_index) {
+				bool selected;
+				if (option_element != NULL) {
+					dom_node_unref(option_element);
+					option_element = NULL;
+				}
+				if (inputvalue != NULL) {
+					dom_string_unref(inputvalue);
+					inputvalue = NULL;
+				}
+				err = dom_html_options_collection_item(
+					options, option_index, &option_element);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get options item %d", option_index));
+					goto dom_no_memory;
+				}
+				err = dom_html_option_element_get_selected(
+					(dom_html_option_element *)option_element,
+					&selected);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get option selected property"));
+					goto dom_no_memory;
+				}
+				if (!selected)
+					continue;
+				err = dom_html_option_element_get_value(
+					(dom_html_option_element *)option_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get option value"));
+					goto dom_no_memory;
+				}
+				
+				success_new = calloc(1, sizeof(*success_new));
+				if (success_new == NULL) {
+					LOG(("Could not allocate data for option"));
+					goto dom_no_memory;
+				}
+		
+				last_success->next = success_new;
+				last_success = success_new;
+		
+				success_new->name = ENCODE_ITEM(inputname);
+				if (success_new->name == NULL) {
+					LOG(("Could not encode name for option"));
+					goto dom_no_memory;
+				}
+				success_new->value = ENCODE_ITEM(inputvalue);
+				if (success_new->value == NULL) {
+					LOG(("Could not encode value for option"));
+					goto dom_no_memory;
+				}
+			}
+			continue;
+		} else if (dom_string_isequal(nodename, corestring_dom_INPUT)) {
+			/* Things to consider here */
+			/* Buttons -- only if the successful control */
+			/* radio and checkbox -- only if selected */
+			/* file -- also get the rawfile */
+			/* everything else -- just value */
+			err = dom_html_input_element_get_type(
+				(dom_html_input_element *) form_element,
+				&inputtype);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get input element type"));
+				goto dom_no_memory;
+			}
+			if (dom_string_caseless_isequal(
+				    inputtype, corestring_dom_submit)) {
+				LOG(("Examining submit button"));
+				if (submit_button == NULL && !had_submit)
+					/* no button used, and first submit
+					 * node found, so use it
+					 */
+					had_submit = true;
+				else if ((dom_node *)submit_button !=
+					 (dom_node *)form_element)
+					continue;
+				err = dom_html_input_element_get_value(
+					(dom_html_input_element *)form_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get submit button value"));
+					goto dom_no_memory;
+				}
+				/* Drop through to report the successful button */
+			} else if (dom_string_caseless_isequal(
+					   inputtype, corestring_dom_image)) {
+				/* We *ONLY* use an image input if it was the
+				 * thing which activated us
+				 */
+				LOG(("Examining image button"));
+				 if ((dom_node *)submit_button !=
+				     (dom_node *)form_element)
+					 continue;
+				 
+				 err = dom_node_get_user_data(
+					 form_element,
+					 corestring_dom___ns_key_image_coords_node_data,
+					 &coords);
+				 if (err != DOM_NO_ERR) {
+					 LOG(("Could not get image XY data"));
+					 goto dom_no_memory;
+				 }
+				 if (coords == NULL) {
+					 LOG(("No XY data on the image input"));
+					 goto dom_no_memory;
+				 }
+				 
+				 basename = ENCODE_ITEM(inputname);
+				 
+				 success_new = calloc(1, sizeof(*success_new));
+				 if (success_new == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate data for image.x"));
+					 goto dom_no_memory;
+				 }
+				 
+				 last_success->next = success_new;
+				 last_success = success_new;
+				 
+				 success_new->name = malloc(strlen(basename) + 3);
+				 if (success_new->name == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate name for image.x"));
+					 goto dom_no_memory;
+				 }
+				 success_new->value = malloc(20);
+				 if (success_new->value == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate value for image.x"));
+					 goto dom_no_memory;
+				 }
+				 sprintf(success_new->name, "%s.x", basename);
+				 sprintf(success_new->value, "%d", coords->x);
+				 
+				 success_new = calloc(1, sizeof(*success_new));
+				 if (success_new == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate data for image.y"));
+					 goto dom_no_memory;
+				 }
+				 
+				 last_success->next = success_new;
+				 last_success = success_new;
+				 
+				 success_new->name = malloc(strlen(basename) + 3);
+				 if (success_new->name == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate name for image.y"));
+					 goto dom_no_memory;
+				 }
+				 success_new->value = malloc(20);
+				 if (success_new->value == NULL) {
+					 free(basename);
+					 LOG(("Could not allocate value for image.y"));
+					 goto dom_no_memory;
+				 }
+				 sprintf(success_new->name, "%s.y", basename);
+				 sprintf(success_new->value, "%d", coords->y);
+				 free(basename);
+				 continue;
+			} else if (dom_string_caseless_isequal(
+					   inputtype, corestring_dom_radio) ||
+				   dom_string_caseless_isequal(
+					   inputtype, corestring_dom_checkbox)) {
+				LOG(("Examining radio or checkbox"));
+				err = dom_html_input_element_get_checked(
+					(dom_html_input_element *)form_element,
+					&checked);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get input element checked"));
+					goto dom_no_memory;
+				}
+				if (!checked)
+					continue;
+				err = dom_html_input_element_get_value(
+					(dom_html_input_element *)form_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get input element value"));
+					goto dom_no_memory;
+				}
+				if (inputvalue == NULL)
+					inputvalue = dom_string_ref(
+						corestring_dom_on);
+				/* Fall through to simple allocation */
+			} else if (dom_string_caseless_isequal(
+					   inputtype, corestring_dom_file)) {
+				LOG(("Examining file input"));
+				err = dom_html_input_element_get_value(
+					(dom_html_input_element *)form_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get file value"));
+					goto dom_no_memory;
+				}
+				err = dom_node_get_user_data(
+					form_element,
+					corestring_dom___ns_key_file_name_node_data,
+					&rawfile_temp);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get file rawname"));
+					goto dom_no_memory;
+				}
+				rawfile_temp = strdup(rawfile_temp != NULL ?
+						      rawfile_temp :
+						      "");
+				if (rawfile_temp == NULL) {
+					LOG(("Could not copy file rawname"));
+					goto dom_no_memory;
+				}
+				/* Fall out to the allocation */
+			} else if (dom_string_caseless_isequal(
+					   inputtype, corestring_dom_reset) ||
+				   dom_string_caseless_isequal(
+					   inputtype, corestring_dom_button)) {
+				/* Skip these */
+				LOG(("Skipping RESET and BUTTON"));
+				continue;
+			} else {
+				/* Everything else is treated as text values */
+				LOG(("Retrieving generic input text"));
+				err = dom_html_input_element_get_value(
+					(dom_html_input_element *)form_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get input value"));
+					goto dom_no_memory;
+				}
+				/* Fall out to the allocation */
+			}
+		}
+		
+		success_new = calloc(1, sizeof(*success_new));
+		if (success_new == NULL) {
+			LOG(("Could not allocate data for generic"));
+			goto dom_no_memory;
+		}
+		
+		last_success->next = success_new;
+		last_success = success_new;
+		
+		success_new->name = ENCODE_ITEM(inputname);
+		if (success_new->name == NULL) {
+			LOG(("Could not encode name for generic"));
+			goto dom_no_memory;
+		}
+		success_new->value = ENCODE_ITEM(inputvalue);
+		if (success_new->value == NULL) {
+			LOG(("Could not encode value for generic"));
+			goto dom_no_memory;
+		}
+		if (rawfile_temp != NULL) {
+			success_new->file = true;
+			success_new->rawfile = rawfile_temp;
+			rawfile_temp = NULL;
+		}
+	}
+	
 	free(charset);
-
+	if (form_element != NULL) {
+		LOG(("Unreffed %p", form_element));
+		dom_node_unref(form_element);
+	}
+	if (form_elements != NULL) {
+		LOG(("Unreffed %p", form_elements));
+		dom_html_collection_unref(form_elements);
+	}
+	if (nodename != NULL)
+		dom_string_unref(nodename);
+	if (inputname != NULL)
+		dom_string_unref(inputname);
+	if (inputvalue != NULL)
+		dom_string_unref(inputvalue);
+	if (options != NULL)
+		dom_html_options_collection_unref(options);
+	if (option_element != NULL)
+		dom_node_unref(option_element);
+	if (inputtype != NULL)
+		dom_string_unref(inputtype);
+	if (rawfile_temp != NULL)
+		free(rawfile_temp);
 	*successful_controls = sentinel.next;
+	
+	for (success_new = *successful_controls; success_new != NULL;
+	     success_new = success_new->next) {
+		LOG(("%p -> %s=%s", success_new, success_new->name, success_new->value));
+		LOG(("%p -> file=%s rawfile=%s", success_new,
+		     success_new->file ? "yes" : "no", success_new->rawfile));
+	}
 	return true;
-
-no_memory:
-	warn_user("NoMemory", 0);
+	
+dom_no_memory:
 	free(charset);
 	fetch_multipart_data_destroy(sentinel.next);
+	
+	if (form_elements != NULL)
+		dom_html_collection_unref(form_elements);
+	if (form_element != NULL)
+		dom_node_unref(form_element);
+	if (nodename != NULL)
+		dom_string_unref(nodename);
+	if (inputname != NULL)
+		dom_string_unref(inputname);
+	if (inputvalue != NULL)
+		dom_string_unref(inputvalue);
+	if (options != NULL)
+		dom_html_options_collection_unref(options);
+	if (option_element != NULL)
+		dom_node_unref(option_element);
+	if (inputtype != NULL)
+		dom_string_unref(inputtype);
+	if (rawfile_temp != NULL)
+		free(rawfile_temp);
+	
 	return false;
-
-#undef ENCODE_ITEM
 }
-
+#undef ENCODE_ITEM
 
 /**
  * Encode controls using application/x-www-form-urlencoded.
@@ -658,7 +857,7 @@ static char *form_url_encode(struct form *form,
 	char *name, *value;
 	char *s, *s2;
 	unsigned int len, len1, len_init;
-	url_func_result url_err;
+	nserror url_err;
 
 	if (query_string)
 		s = malloc(2);
@@ -679,21 +878,21 @@ static char *form_url_encode(struct form *form,
 
 	for (; control; control = control->next) {
 		url_err = url_escape(control->name, 0, true, NULL, &name);
-		if (url_err == URL_FUNC_NOMEM) {
+		if (url_err == NSERROR_NOMEM) {
 			free(s);
 			return NULL;
 		}
 
-		assert(url_err == URL_FUNC_OK);
+		assert(url_err == NSERROR_OK);
 
 		url_err = url_escape(control->value, 0, true, NULL, &value);
-		if (url_err == URL_FUNC_NOMEM) {
+		if (url_err == NSERROR_NOMEM) {
 			free(name);
 			free(s);
 			return NULL;
 		}
 
-		assert(url_err == URL_FUNC_OK);
+		assert(url_err == NSERROR_OK);
 
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);
@@ -785,15 +984,16 @@ char *form_acceptable_charset(struct form *form)
  * \todo Return charset used?
  *
  * \param item String to convert
+ * \param len Length of string to convert
  * \param charset Destination charset
  * \param fallback Fallback charset (may be NULL),
  *                 used iff converting to charset fails
  * \return Pointer to converted string (on heap, caller frees), or NULL
  */
-char *form_encode_item(const char *item, const char *charset,
+char *form_encode_item(const char *item, uint32_t len, const char *charset,
 		const char *fallback)
 {
-	utf8_convert_ret err;
+	nserror err;
 	char *ret = NULL;
 	char cset[256];
 
@@ -803,19 +1003,19 @@ char *form_encode_item(const char *item, const char *charset,
 	snprintf(cset, sizeof cset, "%s//TRANSLIT", charset);
 
 	err = utf8_to_enc(item, cset, 0, &ret);
-	if (err == UTF8_CONVERT_BADENC) {
+	if (err == NSERROR_BAD_ENCODING) {
 		/* charset not understood, try without transliteration */
 		snprintf(cset, sizeof cset, "%s", charset);
-		err = utf8_to_enc(item, cset, 0, &ret);
+		err = utf8_to_enc(item, cset, len, &ret);
 
-		if (err == UTF8_CONVERT_BADENC) {
+		if (err == NSERROR_BAD_ENCODING) {
 			/* nope, try fallback charset (if any) */
 			if (fallback) {
 				snprintf(cset, sizeof cset, 
 						"%s//TRANSLIT", fallback);
 				err = utf8_to_enc(item, cset, 0, &ret);
 
-				if (err == UTF8_CONVERT_BADENC) {
+				if (err == NSERROR_BAD_ENCODING) {
 					/* and without transliteration */
 					snprintf(cset, sizeof cset,
 							"%s", fallback);
@@ -823,11 +1023,11 @@ char *form_encode_item(const char *item, const char *charset,
 				}
 			}
 
-			if (err == UTF8_CONVERT_BADENC) {
+			if (err == NSERROR_BAD_ENCODING) {
 				/* that also failed, use 8859-1 */
 				err = utf8_to_enc(item, "ISO-8859-1//TRANSLIT",
 						0, &ret);
-				if (err == UTF8_CONVERT_BADENC) {
+				if (err == NSERROR_BAD_ENCODING) {
 					/* and without transliteration */
 					err = utf8_to_enc(item, "ISO-8859-1",
 							0, &ret);
@@ -835,7 +1035,7 @@ char *form_encode_item(const char *item, const char *charset,
 			}
 		}
 	}
-	if (err == UTF8_CONVERT_NOMEM) {
+	if (err == NSERROR_NOMEM) {
 		return NULL;
 	}
 
@@ -1134,18 +1334,26 @@ static void form__select_process_selection(html_content *html,
 	for (count = 0, o = control->data.select.items;
 			o != NULL;
 			count++, o = o->next) {
-		if (!control->data.select.multiple)
+		if (!control->data.select.multiple && o->selected) {
 			o->selected = false;
+			dom_html_option_element_set_selected(o->node, false);
+		}
 		if (count == item) {
 			if (control->data.select.multiple) {
 				if (o->selected) {
 					o->selected = false;
+					dom_html_option_element_set_selected(
+							o->node, false);
 					control->data.select.num_selected--;
 				} else {
 					o->selected = true;
+					dom_html_option_element_set_selected(
+							o->node, true);
 					control->data.select.num_selected++;
 				}
 			} else {
+				dom_html_option_element_set_selected(
+						o->node, true);
 				o->selected = true;
 			}
 		}
@@ -1175,14 +1383,11 @@ static void form__select_process_selection(html_content *html,
 }
 
 
-void form_select_process_selection(hlcache_handle *h,
-		struct form_control *control, int item)
+void form_select_process_selection(struct form_control *control, int item)
 {
-	assert(h != NULL);
+	assert(control != NULL);
 
-	form__select_process_selection(
-			(html_content *)hlcache_handle_get_content(h),
-			control, item);
+	form__select_process_selection(control->html, control, item);
 }
 
 /**
@@ -1410,12 +1615,10 @@ void form_select_menu_callback(void *client_data,
  * \param  radio    form control of type GADGET_RADIO
  */
 
-void form_radio_set(html_content *html,
-		struct form_control *radio)
+void form_radio_set(struct form_control *radio)
 {
 	struct form_control *control;
 
-	assert(html);
 	assert(radio);
 	if (!radio->form)
 		return;
@@ -1434,12 +1637,14 @@ void form_radio_set(html_content *html,
 
 		if (control->selected) {
 			control->selected = false;
-			html__redraw_a_box(html, control->box);
+			dom_html_input_element_set_checked(control->node, false);
+			html__redraw_a_box(radio->html, control->box);
 		}
 	}
 
 	radio->selected = true;
-	html__redraw_a_box(html, radio->box);
+	dom_html_input_element_set_checked(radio->node, true);
+	html__redraw_a_box(radio->html, radio->box);
 }
 
 
@@ -1458,7 +1663,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 
 	assert(form != NULL);
 
-	if (form_successful_controls(form, submit_button, &success) == false) {
+	if (form_successful_controls_dom(form, submit_button, &success) == false) {
 		warn_user("NoMemory", 0);
 		return;
 	}
@@ -1494,8 +1699,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target,
 					action_query,
 					page_url,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1515,8 +1719,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target,
 					action_url,
 					page_url,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					data,
 					NULL,
 					NULL);
@@ -1526,8 +1729,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		browser_window_navigate(target, 
 					action_url, 
 					page_url,
-					BROWSER_WINDOW_HISTORY | 
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL, 
 					success, 
 					NULL);
@@ -1538,4 +1740,40 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 	nsurl_unref(action_url);
 	fetch_multipart_data_destroy(success);
 	free(data);
+}
+
+void form_gadget_update_value(struct form_control *control, char *value)
+{
+	switch (control->type) {
+	case GADGET_HIDDEN:
+	case GADGET_TEXTBOX:
+	case GADGET_TEXTAREA:
+	case GADGET_PASSWORD:
+	case GADGET_FILE:
+		if (control->value != NULL) {
+			free(control->value);
+		}
+		control->value = value;
+		if (control->node != NULL) {
+			dom_exception err;
+			dom_string *str;
+			err = dom_string_create((uint8_t *)value,
+						strlen(value), &str);
+			if (err == DOM_NO_ERR) {
+				if (control->type == GADGET_TEXTAREA)
+					err = dom_html_text_area_element_set_value(
+						(dom_html_text_area_element *)(control->node),
+						str);
+				else
+					err = dom_html_input_element_set_value(
+						(dom_html_input_element *)(control->node),
+						str);
+				dom_string_unref(str);
+			}
+		}
+		break;
+	default:
+		/* Do nothing */
+		break;
+	}
 }

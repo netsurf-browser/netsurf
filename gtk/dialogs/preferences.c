@@ -18,13 +18,15 @@
 
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
-#include "desktop/browser_private.h"
-#include "utils/nsoption.h"
-#include "desktop/searchweb.h"
-#include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "utils/file.h"
+#include "utils/log.h"
+#include "desktop/browser.h"
+#include "desktop/searchweb.h"
 
 #include "gtk/compat.h"
 #include "gtk/window.h"
@@ -51,6 +53,7 @@ struct ppref {
 	/* dynamic list stores */
 	GtkListStore *themes;
 	GtkListStore *content_language;
+	GtkListStore *search_providers;
 };
 
 static struct ppref ppref;
@@ -105,6 +108,27 @@ nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv) \
 		((gdouble)nsoption_int(OPTION)) / MULTIPLIER);		\
 }
 
+#define SPINBUTTON_UINT_SIGNALS(WIDGET, OPTION, MULTIPLIER)		\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_valuechanged(GtkSpinButton *spinbutton,	\
+					  struct ppref *priv);		\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_valuechanged(GtkSpinButton *spinbutton,	\
+					  struct ppref *priv)		\
+{									\
+	nsoption_set_uint(OPTION,					\
+		round(gtk_spin_button_get_value(spinbutton) * MULTIPLIER)); \
+}									\
+									\
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv); \
+G_MODULE_EXPORT void							\
+nsgtk_preferences_##WIDGET##_realize(GtkWidget *widget, struct ppref *priv) \
+{									\
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(widget),		\
+		((gdouble)nsoption_uint(OPTION)) / MULTIPLIER);		\
+}
+
 #define ENTRY_SIGNALS(WIDGET, OPTION)					\
 G_MODULE_EXPORT void							\
 nsgtk_preferences_##WIDGET##_changed(GtkEditable *editable, struct ppref *priv); \
@@ -146,8 +170,8 @@ G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_toggled(GtkToggleButto
 G_MODULE_EXPORT void nsgtk_preferences_checkShowSingleTab_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboTabPosition_realize(GtkWidget *widget, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_sourceButtonWindow_toggled(GtkToggleButton *togglebutton, struct ppref *priv);
-G_MODULE_EXPORT void nsgtk_preferences_sourceButtonWindow_realize(GtkWidget *widget, struct ppref *priv);
+G_MODULE_EXPORT void nsgtk_preferences_comboDeveloperView_changed(GtkComboBox *widget, struct ppref *priv);
+G_MODULE_EXPORT void nsgtk_preferences_comboDeveloperView_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_comboButtonType_realize(GtkWidget *widget, struct ppref *priv);
 G_MODULE_EXPORT void nsgtk_preferences_setCurrentPage_clicked(GtkButton *button, struct ppref *priv);
@@ -369,7 +393,7 @@ SPINBUTTON_SIGNALS(spinHistoryAge, history_age, 1.0)
 SPINBUTTON_SIGNALS(spinMemoryCacheSize, memory_cache_size, (1024*1024))
 
 /* disc cache size */
-SPINBUTTON_SIGNALS(spinDiscCacheSize, disc_cache_size, (1024*1024))
+SPINBUTTON_UINT_SIGNALS(spinDiscCacheSize, disc_cache_size, (1024*1024))
 
 
 /* disc cache age */
@@ -587,7 +611,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 G_MODULE_EXPORT void
 nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
 	int theme = 0;
 	gchar *name;
 	GtkTreeIter iter;
@@ -619,7 +643,8 @@ nsgtk_preferences_comboTheme_changed(GtkComboBox *combo, struct ppref *priv)
 			g_free(name);
 		}
 
-		while (current)	{
+		current = nsgtk_scaffolding_iterate(NULL);
+		while (current != NULL)	{
 			nsgtk_theme_implement(current);
 			current = nsgtk_scaffolding_iterate(current);
 		}
@@ -773,12 +798,13 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboTabPosition_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
 
 	/* set the option */
 	nsoption_set_int(position_tab, gtk_combo_box_get_active(widget));
 
 	/* update all notebooks in all scaffolds */
+	current = nsgtk_scaffolding_iterate(NULL);
 	while (current)	{
 		nsgtk_scaffolding_reset_offset(current);
 
@@ -796,25 +822,23 @@ nsgtk_preferences_comboTabPosition_realize(GtkWidget *widget,
 				 nsoption_int(position_tab));
 }
 
-/* Source */
+/* Tools */
 
-/* source view opening */
-TOGGLEBUTTON_SIGNALS(sourceButtonTab, source_tab)
-
+/* developer view opening */
 G_MODULE_EXPORT void
-nsgtk_preferences_sourceButtonWindow_toggled(GtkToggleButton *togglebutton,
-				     struct ppref *priv)
+nsgtk_preferences_comboDeveloperView_changed(GtkComboBox *widget,
+					   struct ppref *priv)
 {
-	nsoption_set_bool(source_tab,
-			  !gtk_toggle_button_get_active(togglebutton));
+	/* set the option */
+	nsoption_set_int(developer_view, gtk_combo_box_get_active(widget));
 }
 
 G_MODULE_EXPORT void
-nsgtk_preferences_sourceButtonWindow_realize(GtkWidget *widget,
+nsgtk_preferences_comboDeveloperView_realize(GtkWidget *widget,
 					   struct ppref *priv)
 {
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget),
-				     !nsoption_bool(source_tab));
+	gtk_combo_box_set_active(GTK_COMBO_BOX(widget),
+				 nsoption_int(developer_view));
 }
 
 
@@ -830,13 +854,15 @@ G_MODULE_EXPORT void
 nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget,
 					   struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
+	struct nsgtk_scaffolding *current;
+
 	nsoption_set_int(button_type, gtk_combo_box_get_active(widget) + 1);
 
-	/* value of 0 is reserved for 'unset' */
-	while (current)	{
+	current = nsgtk_scaffolding_iterate(NULL);
+	while (current != NULL)	{
 		nsgtk_scaffolding_reset_offset(current);
 		switch(nsoption_int(button_type)) {
+			/* value of 0 is reserved for 'unset' */
 		case 1:
 			gtk_toolbar_set_style(
 				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
@@ -893,13 +919,7 @@ ENTRY_SIGNALS(entryHomePageURL, homepage_url)
 G_MODULE_EXPORT void
 nsgtk_preferences_setCurrentPage_clicked(GtkButton *button, struct ppref *priv)
 {
-	const gchar *url;
-
-	if (priv->bw != NULL) {
-		url = nsurl_access(hlcache_handle_get_url(priv->bw->current_content));
-	} else {
-		url = "about:blank";
-	}
+	const gchar *url = nsurl_access(browser_window_get_url(priv->bw));
 
 	if (priv->entryHomePageURL != NULL) {
 		gtk_entry_set_text(GTK_ENTRY(priv->entryHomePageURL), url);
@@ -928,8 +948,6 @@ TOGGLEBUTTON_SIGNALS(checkUrlSearch, search_url_bar)
 G_MODULE_EXPORT void
 nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 {
-	nsgtk_scaffolding *current = scaf_list;
-	char *name;
 	int provider;
 
 	provider = gtk_combo_box_get_active(widget);
@@ -937,36 +955,29 @@ nsgtk_preferences_comboSearch_changed(GtkComboBox *widget, struct ppref *priv)
 	/* set the option */
 	nsoption_set_int(search_provider, provider);
 
-	/* refresh web search prefs from file */
-	search_web_provider_details(provider);
-
-	/* retrieve ico */
-	search_web_retrieve_ico(false);
-
-	/* callback may handle changing gui */
-	if (search_web_ico() != NULL) {
-		gui_window_set_search_ico(search_web_ico());
-	}
-
-	/* set entry */
-	name = search_web_provider_name();
-	if (name != NULL) {
-		char content[strlen(name) + SLEN("Search ") + 1];
-
-		sprintf(content, "Search %s", name);
-		free(name);
-		while (current) {
-			nsgtk_scaffolding_set_websearch(current, content);
-			current = nsgtk_scaffolding_iterate(current);
-		}
-	}
+	/* set search provider */
+	search_web_select_provider(provider);
 }
 
 G_MODULE_EXPORT void
 nsgtk_preferences_comboSearch_realize(GtkWidget *widget, struct ppref *priv)
 {
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widget),
-				 nsoption_int(search_provider));
+	int iter;
+	const char *name;
+	int provider = nsoption_int(search_provider);
+
+	if (priv->search_providers != NULL) {
+		gtk_list_store_clear(priv->search_providers);
+		for (iter = search_web_iterate_providers(0, &name);
+		     iter != -1;
+		     iter = search_web_iterate_providers(iter, &name)) {
+			gtk_list_store_insert_with_values(priv->search_providers,
+							  NULL, -1,
+							  0, name, -1);
+		}
+	}
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), provider);
 }
 
 
@@ -1009,8 +1020,14 @@ nsgtk_preferences_fileChooserDownloads_realize(GtkWidget *widget,
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_response(GtkDialog *dlg, gint resid)
 {
+	char *choices = NULL;
+
 	if (resid == GTK_RESPONSE_CLOSE) {
-		nsoption_write(options_file_location, NULL, NULL);
+		netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+		if (choices != NULL) {
+			nsoption_write(choices, NULL, NULL);
+			free(choices);
+		}
 		gtk_widget_hide(GTK_WIDGET(dlg));
 	}
 }
@@ -1019,18 +1036,32 @@ G_MODULE_EXPORT gboolean
 nsgtk_preferences_dialogPreferences_deleteevent(GtkDialog *dlg,
 						struct ppref *priv)
 {
-	nsoption_write(options_file_location, NULL, NULL);
+	char *choices = NULL;
+
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
+
 	gtk_widget_hide(GTK_WIDGET(dlg));
 
-	/* delt with it by hiding window, no need to destory widget by
-	 * default */
+	/* Delt with it by hiding window, no need to destory widget by
+	 * default.
+	 */
 	return TRUE;
 }
 
 G_MODULE_EXPORT void
 nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 {
-	nsoption_write(options_file_location, NULL, NULL);
+	char *choices = NULL;
+
+	netsurf_mkpath(&choices, NULL, 2, nsgtk_config_home, "Choices");
+	if (choices != NULL) {
+		nsoption_write(choices, NULL, NULL);
+		free(choices);
+	}
 }
 
 
@@ -1076,6 +1107,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	priv->entryHomePageURL = GB(ENTRY, entryHomePageURL);
 	priv->themes = GB(LIST_STORE, liststore_themes);
 	priv->content_language = GB(LIST_STORE, liststore_content_language);
+	priv->search_providers = GB(LIST_STORE, liststore_search_provider);
 	priv->entryProxyHost = GB(ENTRY, entryProxyHost);
 	priv->spinProxyPort = GB(SPIN_BUTTON, spinProxyPort);
 	priv->entryProxyUser = GB(ENTRY, entryProxyUser);

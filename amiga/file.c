@@ -22,6 +22,7 @@
 #include "amiga/filetype.h"
 #include "amiga/icon.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/misc.h"
 #include "amiga/save_pdf.h"
 #include "amiga/theme.h"
 
@@ -30,12 +31,12 @@
 
 #include "desktop/browser_private.h"
 #include "utils/nsoption.h"
+#include "utils/file.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/save_text.h"
 
 #include "utils/messages.h"
-#include "utils/url.h"
 
 #include <proto/asl.h>
 #include <proto/dos.h>
@@ -48,8 +49,6 @@ static struct Hook aslhookfunc;
 static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 		struct FileRequester *fr, struct AnchorPathOld *ap)
 {
-	BPTR file = 0;
-	char buffer[10];
 	char fname[1024];
 	BOOL ret = FALSE;
 	char *mt = NULL;
@@ -62,7 +61,7 @@ static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 	strcpy(fname,fr->fr_Drawer);
 	AddPart(fname,ap->ap_Info.fib_FileName,1024);
 
-  	mt = fetch_mimetype(fname);
+  	mt = strdup(fetch_filetype(fname));
 	lerror = lwc_intern_string(mt, strlen(mt), &lwc_mt);
 	if (lerror != lwc_error_ok)
 		return FALSE;
@@ -78,7 +77,7 @@ static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
 
 void ami_file_open(struct gui_window_2 *gwin)
 {
-	char *temp, *temp2;
+	char *temp;
 	nsurl *url;
 
 	if(AslRequestTags(filereq,
@@ -95,23 +94,20 @@ void ami_file_open(struct gui_window_2 *gwin)
 		{
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
-			temp2 = path_to_url(temp);
 
-			if (nsurl_create(temp2, &url) != NSERROR_OK) {
+			if (netsurf_path_to_nsurl(temp, &url) != NSERROR_OK) {
 				warn_user("NoMemory", 0);
 			} else {
 				browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
 				nsurl_unref(url);
 			}
 
-			free(temp2);
 			FreeVec(temp);
 		}
 	}
@@ -151,23 +147,19 @@ void ami_file_save(int type, char *fname, struct Window *win,
 		struct hlcache_handle *object, struct hlcache_handle *favicon,
 		struct browser_window *bw)
 {
-	BPTR lock = 0;
+	BPTR lock, fh;
 	const char *source_data;
 	ULONG source_size;
 	struct bitmap *bm;
-	BPTR fh=0;
 
 	ami_update_pointer(win, GUI_POINTER_WAIT);
 
-	if(ami_download_check_overwrite(fname, win, 0))
-	{
-		switch(type)
-		{
+	if(ami_download_check_overwrite(fname, win, 0)) {
+		switch(type) {
 			case AMINS_SAVE_SOURCE:
-				if((source_data = content_get_source_data(object, &source_size)))
-				{
-					if(fh = FOpen(fname, MODE_NEWFILE,0))
-					{
+				if((source_data = content_get_source_data(object, &source_size))) {
+					BPTR fh;
+					if(fh = FOpen(fname, MODE_NEWFILE,0)) {
 						FWrite(fh, source_data, 1, source_size);
 						FClose(fh);
 					}
@@ -179,8 +171,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_COMPLETE:
-				if(lock = CreateDir(fname))
-				{
+				if(lock = CreateDir(fname)) {
 					UnLock(lock);
 					save_complete(object, fname, ami_file_set_type);
 					amiga_icon_superimpose_favicon(fname, favicon, NULL);
@@ -195,15 +186,13 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_IFF:
-				if((bm = content_get_bitmap(object)))
-				{
+				if((bm = content_get_bitmap(object))) {
 					bm->url = (char *)nsurl_access(hlcache_handle_get_url(object));
 					bm->title = (char *)content_get_title(object);
 					bitmap_save(bm, fname, 0);
 				}
 #ifdef WITH_NS_SVG
-				else if(ami_mime_compare(object, "svg") == true)
-				{
+				else if(ami_mime_compare(object, "svg") == true) {
 					ami_save_svg(object, fname);
 				}
 #endif

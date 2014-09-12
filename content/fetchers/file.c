@@ -18,6 +18,8 @@
 
 /* file: URL handling. Based on the data fetcher by Rob Kendrick */
 
+#include "utils/config.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -34,26 +36,28 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#include "utils/config.h"
-
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "content/dirlist.h"
-#include "content/fetch.h"
-#include "content/fetchers/file.h"
-#include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "desktop/gui_factory.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
+#include "utils/file.h"
+
+#include "content/dirlist.h"
+#include "content/fetch.h"
+#include "content/fetchers.h"
+#include "content/urldb.h"
+#include "content/fetchers/file.h"
 
 /* Maximum size of read buffer */
 #define FETCH_FILE_MAX_BUF_SIZE (1024 * 1024)
@@ -135,13 +139,14 @@ fetch_file_setup(struct fetch *fetchh,
 {
 	struct fetch_file_context *ctx;
 	int i;
+	nserror ret;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->path = url_to_path(nsurl_access(url));
-	if (ctx->path == NULL) {
+	ret = guit->file->nsurl_to_path(url, &ctx->path);
+	if (ret != NSERROR_OK) {
 		free(ctx);
 		return NULL;
 	}
@@ -304,7 +309,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			fetch_filetype(ctx->path)))
+			guit->fetch->filetype(ctx->path)))
 		goto fetch_file_process_aborted;
 
 	/* content length */
@@ -384,7 +389,7 @@ fetch_file_process_aborted:
 
 	/* content type */
 	if (fetch_file_send_header(ctx, "Content-Type: %s", 
-			fetch_filetype(ctx->path)))
+			guit->fetch->filetype(ctx->path)))
 		goto fetch_file_process_aborted;
 
 	/* content length */
@@ -487,6 +492,98 @@ static char *gen_nice_title(char *path)
 	return title;
 }
 
+/**
+ * generate an output row of the directory listing.
+ *
+ * @param ent current directory entry.
+ */
+static nserror
+process_dir_ent(struct fetch_file_context *ctx,
+		 struct dirent *ent,
+		 bool even,
+		 char *buffer,
+		 size_t buffer_len)
+{
+	nserror ret;
+	char *urlpath = NULL; /* buffer for leaf entry path */
+	struct stat ent_stat; /* stat result of leaf entry */
+	char datebuf[64]; /* buffer for date text */
+	char timebuf[64]; /* buffer for time text */
+	nsurl *url;
+
+	/* skip hidden files */
+	if (ent->d_name[0] == '.') {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	ret = netsurf_mkpath(&urlpath, NULL, 2, ctx->path, ent->d_name);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	if (stat(urlpath, &ent_stat) != 0) {
+		ent_stat.st_mode = 0;
+		datebuf[0] = 0;
+		timebuf[0] = 0;
+	} else {
+		/* Get date in output format */
+		if (strftime((char *)&datebuf, sizeof datebuf, "%a %d %b %Y",
+			     localtime(&ent_stat.st_mtime)) == 0) {
+			datebuf[0] = '-';
+			datebuf[1] = 0;
+		}
+
+		/* Get time in output format */
+		if (strftime((char *)&timebuf, sizeof timebuf, "%H:%M",
+			     localtime(&ent_stat.st_mtime)) == 0) {
+			timebuf[0] = '-';
+			timebuf[1] = 0;
+		}
+	}
+
+	ret = guit->file->path_to_nsurl(urlpath, &url);
+	if (ret != NSERROR_OK) {
+		free(urlpath);
+		return ret;
+	}
+
+	if (S_ISREG(ent_stat.st_mode)) {
+		/* regular file */
+		dirlist_generate_row(even,
+				     false,
+				     url,
+				     ent->d_name,
+				     guit->fetch->filetype(urlpath),
+				     ent_stat.st_size,
+				     datebuf, timebuf,
+				     buffer, buffer_len);
+	} else if (S_ISDIR(ent_stat.st_mode)) {
+		/* directory */
+		dirlist_generate_row(even,
+				     true,
+				     url,
+				     ent->d_name,
+				     messages_get("FileDirectory"),
+				     -1,
+				     datebuf, timebuf,
+				     buffer, buffer_len);
+	} else {
+		/* something else */
+		dirlist_generate_row(even,
+				     false,
+				     url,
+				     ent->d_name,
+				     "",
+				     -1,
+				     datebuf, timebuf,
+				     buffer, buffer_len);
+	}
+
+	nsurl_unref(url);
+	free(urlpath);
+
+	return NSERROR_OK;
+}
 
 static void fetch_file_process_dir(struct fetch_file_context *ctx,
 				   struct stat *fdstat)
@@ -497,13 +594,7 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	char *title; /* pretty printed title */
 	nserror err; /* result from url routines */
 	nsurl *up; /* url of parent */
-	char *path; /* url for list entries */
 
-	struct stat ent_stat; /* stat result of leaf entry */
-	char datebuf[64]; /* buffer for date text */
-	char timebuf[64]; /* buffer for time text */
-	char urlpath[PATH_MAX]; /* buffer for leaf entry path */
-	struct dirent *ent; /* current directory entry */
 	struct dirent **listing = NULL; /* directory entry listing */
 	int i; /* directory entry index */
 	int n; /* number of directory entries */
@@ -568,78 +659,17 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 		goto fetch_file_process_dir_aborted;
 
 	for (i = 0; i < n; i++) {
-		ent = listing[i];
 
-		if (ent->d_name[0] == '.')
-			continue;
+		err = process_dir_ent(ctx, listing[i], even, buffer,
+				       sizeof(buffer));
 
-		strncpy(urlpath, ctx->path, sizeof urlpath);
-		if (path_add_part(urlpath, sizeof urlpath, 
-				ent->d_name) == false)
-			continue;
+		if (err == NSERROR_OK) {
+			msg.data.header_or_data.len = strlen(buffer);
+			if (fetch_file_send_callback(&msg, ctx))
+				goto fetch_file_process_dir_aborted;
 
-		if (stat(urlpath, &ent_stat) != 0) {
-			ent_stat.st_mode = 0;
-			datebuf[0] = 0;
-			timebuf[0] = 0;
-		} else {
-			/* Get date in output format */
-			if (strftime((char *)&datebuf, sizeof datebuf,
-				     "%a %d %b %Y",
-				     localtime(&ent_stat.st_mtime)) == 0) {
-				strncpy(datebuf, "-", sizeof datebuf);
-			}
-
-			/* Get time in output format */
-			if (strftime((char *)&timebuf, sizeof timebuf,
-				     "%H:%M",
-				     localtime(&ent_stat.st_mtime)) == 0) {
-				strncpy(timebuf, "-", sizeof timebuf);
-			}
+			even = !even;
 		}
-
-		if((path = path_to_url(urlpath)) == NULL)
-			continue;
-
-		if (S_ISREG(ent_stat.st_mode)) {
-			/* regular file */
-			dirlist_generate_row(even,
-					     false,
-					     path,
-					     ent->d_name,
-					     fetch_filetype(urlpath),
-					     ent_stat.st_size,
-					     datebuf, timebuf,
-					     buffer, sizeof(buffer));
-		} else if (S_ISDIR(ent_stat.st_mode)) {
-			/* directory */
-			dirlist_generate_row(even,
-					     true,
-					     path,
-					     ent->d_name,
-					     messages_get("FileDirectory"),
-					     -1,
-					     datebuf, timebuf,
-					     buffer, sizeof(buffer));
-		} else {
-			/* something else */
-			dirlist_generate_row(even,
-					     false,
-					     path,
-					     ent->d_name,
-					     "",
-					     -1,
-					     datebuf, timebuf,
-					     buffer, sizeof(buffer));
-		}
-
-		free(path);
-
-		msg.data.header_or_data.len = strlen(buffer);
-		if (fetch_file_send_callback(&msg, ctx))
-			goto fetch_file_process_dir_aborted;
-
-		even = !even;
 	}
 
 	/* directory listing bottom */
@@ -731,22 +761,19 @@ static void fetch_file_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_file_register(void)
+nserror fetch_file_register(void)
 {
-	lwc_string *scheme;
+	lwc_string *scheme = lwc_string_ref(corestring_lwc_file);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_file_initialise,
+		.acceptable = fetch_file_can_fetch,
+		.setup = fetch_file_setup,
+		.start = fetch_file_start,
+		.abort = fetch_file_abort,
+		.free = fetch_file_free,
+		.poll = fetch_file_poll,
+		.finalise = fetch_file_finalise
+	};
 
-	if (lwc_intern_string("file", SLEN("file"), &scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"file\").");
-	}
-
-	fetch_add_fetcher(scheme,
-		fetch_file_initialise,
-		fetch_file_can_fetch,
-		fetch_file_setup,
-		fetch_file_start,
-		fetch_file_abort,
-		fetch_file_free,
-		fetch_file_poll,
-		fetch_file_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

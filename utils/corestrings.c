@@ -27,6 +27,7 @@
 
 /* lwc_string strings */
 lwc_string *corestring_lwc_a;
+lwc_string *corestring_lwc_about;
 lwc_string *corestring_lwc_abscenter;
 lwc_string *corestring_lwc_absmiddle;
 lwc_string *corestring_lwc_align;
@@ -42,10 +43,12 @@ lwc_string *corestring_lwc_charset;
 lwc_string *corestring_lwc_checkbox;
 lwc_string *corestring_lwc_circle;
 lwc_string *corestring_lwc_col;
+lwc_string *corestring_lwc_data;
 lwc_string *corestring_lwc_default;
 lwc_string *corestring_lwc_div;
 lwc_string *corestring_lwc_embed;
 lwc_string *corestring_lwc_file;
+lwc_string *corestring_lwc_filename;
 lwc_string *corestring_lwc_font;
 lwc_string *corestring_lwc_frame;
 lwc_string *corestring_lwc_frameset;
@@ -59,11 +62,14 @@ lwc_string *corestring_lwc_head;
 lwc_string *corestring_lwc_hidden;
 lwc_string *corestring_lwc_hr;
 lwc_string *corestring_lwc_html;
+lwc_string *corestring_lwc_http;
 lwc_string *corestring_lwc_https;
+lwc_string *corestring_lwc_icon;
 lwc_string *corestring_lwc_iframe;
 lwc_string *corestring_lwc_image;
 lwc_string *corestring_lwc_img;
 lwc_string *corestring_lwc_input;
+lwc_string *corestring_lwc_javascript;
 lwc_string *corestring_lwc_justify;
 lwc_string *corestring_lwc_left;
 lwc_string *corestring_lwc_li;
@@ -87,9 +93,11 @@ lwc_string *corestring_lwc_rect;
 lwc_string *corestring_lwc_rectangle;
 lwc_string *corestring_lwc_refresh;
 lwc_string *corestring_lwc_reset;
+lwc_string *corestring_lwc_resource;
 lwc_string *corestring_lwc_right;
 lwc_string *corestring_lwc_search;
 lwc_string *corestring_lwc_select;
+lwc_string *corestring_lwc_shortcut_icon;
 lwc_string *corestring_lwc_src;
 lwc_string *corestring_lwc_style;
 lwc_string *corestring_lwc_submit;
@@ -116,6 +124,7 @@ lwc_string *corestring_lwc__top;
 
 /* dom_string strings */
 dom_string *corestring_dom_a;
+dom_string *corestring_dom_alt;
 dom_string *corestring_dom_abort;
 dom_string *corestring_dom_afterprint;
 dom_string *corestring_dom_align;
@@ -136,14 +145,18 @@ dom_string *corestring_dom_cellspacing;
 dom_string *corestring_dom_change;
 dom_string *corestring_dom_charset;
 dom_string *corestring_dom_class;
+dom_string *corestring_dom_classid;
 dom_string *corestring_dom_click;
 dom_string *corestring_dom_close;
+dom_string *corestring_dom_codebase;
 dom_string *corestring_dom_color;
 dom_string *corestring_dom_cols;
+dom_string *corestring_dom_colspan;
 dom_string *corestring_dom_content;
 dom_string *corestring_dom_contextmenu;
 dom_string *corestring_dom_coords;
 dom_string *corestring_dom_cuechange;
+dom_string *corestring_dom_data;
 dom_string *corestring_dom_dblclick;
 dom_string *corestring_dom_defer;
 dom_string *corestring_dom_DOMAttrModified;
@@ -162,6 +175,7 @@ dom_string *corestring_dom_emptied;
 dom_string *corestring_dom_ended;
 dom_string *corestring_dom_error;
 dom_string *corestring_dom_focus;
+dom_string *corestring_dom_frameborder;
 dom_string *corestring_dom_hashchange;
 dom_string *corestring_dom_height;
 dom_string *corestring_dom_href;
@@ -180,6 +194,8 @@ dom_string *corestring_dom_loadeddata;
 dom_string *corestring_dom_loadedmetadata;
 dom_string *corestring_dom_loadstart;
 dom_string *corestring_dom_map;
+dom_string *corestring_dom_marginheight;
+dom_string *corestring_dom_marginwidth;
 dom_string *corestring_dom_media;
 dom_string *corestring_dom_message;
 dom_string *corestring_dom_mousedown;
@@ -190,6 +206,7 @@ dom_string *corestring_dom_mouseup;
 dom_string *corestring_dom_mousewheel;
 dom_string *corestring_dom_name;
 dom_string *corestring_dom_nohref;
+dom_string *corestring_dom_noresize;
 dom_string *corestring_dom_offline;
 dom_string *corestring_dom_online;
 dom_string *corestring_dom_pagehide;
@@ -206,10 +223,13 @@ dom_string *corestring_dom_rel;
 dom_string *corestring_dom_reset;
 dom_string *corestring_dom_resize;
 dom_string *corestring_dom_rows;
+dom_string *corestring_dom_rowspan;
 dom_string *corestring_dom_scroll;
+dom_string *corestring_dom_scrolling;
 dom_string *corestring_dom_seeked;
 dom_string *corestring_dom_seeking;
 dom_string *corestring_dom_select;
+dom_string *corestring_dom_selected;
 dom_string *corestring_dom_shape;
 dom_string *corestring_dom_show;
 dom_string *corestring_dom_size;
@@ -224,16 +244,33 @@ dom_string *corestring_dom_target;
 dom_string *corestring_dom_text;
 dom_string *corestring_dom_text_javascript;
 dom_string *corestring_dom_timeupdate;
+dom_string *corestring_dom_title;
 dom_string *corestring_dom_type;
 dom_string *corestring_dom_unload;
 dom_string *corestring_dom_valign;
+dom_string *corestring_dom_value;
 dom_string *corestring_dom_vlink;
 dom_string *corestring_dom_volumechange;
 dom_string *corestring_dom_vspace;
 dom_string *corestring_dom_waiting;
 dom_string *corestring_dom_width;
+dom_string *corestring_dom_BUTTON;
+dom_string *corestring_dom_INPUT;
+dom_string *corestring_dom_SELECT;
+dom_string *corestring_dom_TEXTAREA;
+dom_string *corestring_dom_button;
+dom_string *corestring_dom_image;
+dom_string *corestring_dom_radio;
+dom_string *corestring_dom_checkbox;
+dom_string *corestring_dom_file;
+dom_string *corestring_dom_on;
+dom_string *corestring_dom___ns_key_box_node_data;
 dom_string *corestring_dom___ns_key_libcss_node_data;
+dom_string *corestring_dom___ns_key_file_name_node_data;
+dom_string *corestring_dom___ns_key_image_coords_node_data;
 
+/* nsurl URLs */
+nsurl *corestring_nsurl_about_blank;
 
 /*
  * Free the core strings
@@ -249,6 +286,7 @@ void corestrings_fini(void)
 	} while (0)
 
 	CSS_LWC_STRING_UNREF(a);
+	CSS_LWC_STRING_UNREF(about);
 	CSS_LWC_STRING_UNREF(abscenter);
 	CSS_LWC_STRING_UNREF(absmiddle);
 	CSS_LWC_STRING_UNREF(align);
@@ -264,10 +302,12 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(checkbox);
 	CSS_LWC_STRING_UNREF(circle);
 	CSS_LWC_STRING_UNREF(col);
+	CSS_LWC_STRING_UNREF(data);
 	CSS_LWC_STRING_UNREF(default);
 	CSS_LWC_STRING_UNREF(div);
 	CSS_LWC_STRING_UNREF(embed);
 	CSS_LWC_STRING_UNREF(file);
+	CSS_LWC_STRING_UNREF(filename);
 	CSS_LWC_STRING_UNREF(font);
 	CSS_LWC_STRING_UNREF(frame);
 	CSS_LWC_STRING_UNREF(frameset);
@@ -281,11 +321,14 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(hidden);
 	CSS_LWC_STRING_UNREF(hr);
 	CSS_LWC_STRING_UNREF(html);
+	CSS_LWC_STRING_UNREF(http);
 	CSS_LWC_STRING_UNREF(https);
+	CSS_LWC_STRING_UNREF(icon);
 	CSS_LWC_STRING_UNREF(iframe);
 	CSS_LWC_STRING_UNREF(image);
 	CSS_LWC_STRING_UNREF(img);
 	CSS_LWC_STRING_UNREF(input);
+	CSS_LWC_STRING_UNREF(javascript);
 	CSS_LWC_STRING_UNREF(justify);
 	CSS_LWC_STRING_UNREF(left);
 	CSS_LWC_STRING_UNREF(li);
@@ -309,9 +352,11 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(rectangle);
 	CSS_LWC_STRING_UNREF(refresh);
 	CSS_LWC_STRING_UNREF(reset);
+	CSS_LWC_STRING_UNREF(resource);
 	CSS_LWC_STRING_UNREF(right);
 	CSS_LWC_STRING_UNREF(search);
 	CSS_LWC_STRING_UNREF(select);
+	CSS_LWC_STRING_UNREF(shortcut_icon);
 	CSS_LWC_STRING_UNREF(src);
 	CSS_LWC_STRING_UNREF(style);
 	CSS_LWC_STRING_UNREF(submit);
@@ -350,6 +395,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(abort);
 	CSS_DOM_STRING_UNREF(afterprint);
 	CSS_DOM_STRING_UNREF(align);
+	CSS_DOM_STRING_UNREF(alt);
 	CSS_DOM_STRING_UNREF(area);
 	CSS_DOM_STRING_UNREF(async);
 	CSS_DOM_STRING_UNREF(background);
@@ -367,14 +413,18 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(change);
 	CSS_DOM_STRING_UNREF(charset);
 	CSS_DOM_STRING_UNREF(class);
+	CSS_DOM_STRING_UNREF(classid);
 	CSS_DOM_STRING_UNREF(click);
 	CSS_DOM_STRING_UNREF(close);
+	CSS_DOM_STRING_UNREF(codebase);
 	CSS_DOM_STRING_UNREF(color);
 	CSS_DOM_STRING_UNREF(cols);
+	CSS_DOM_STRING_UNREF(colspan);
 	CSS_DOM_STRING_UNREF(content);
 	CSS_DOM_STRING_UNREF(contextmenu);
 	CSS_DOM_STRING_UNREF(coords);
 	CSS_DOM_STRING_UNREF(cuechange);
+	CSS_DOM_STRING_UNREF(data);
 	CSS_DOM_STRING_UNREF(dblclick);
 	CSS_DOM_STRING_UNREF(defer);
 	CSS_DOM_STRING_UNREF(DOMAttrModified);
@@ -393,6 +443,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(ended);
 	CSS_DOM_STRING_UNREF(error);
 	CSS_DOM_STRING_UNREF(focus);
+	CSS_DOM_STRING_UNREF(frameborder);
 	CSS_DOM_STRING_UNREF(hashchange);
 	CSS_DOM_STRING_UNREF(height);
 	CSS_DOM_STRING_UNREF(href);
@@ -411,6 +462,8 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(loadedmetadata);
 	CSS_DOM_STRING_UNREF(loadstart);
 	CSS_DOM_STRING_UNREF(map);
+	CSS_DOM_STRING_UNREF(marginheight);
+	CSS_DOM_STRING_UNREF(marginwidth);
 	CSS_DOM_STRING_UNREF(media);
 	CSS_DOM_STRING_UNREF(message);
 	CSS_DOM_STRING_UNREF(mousedown);
@@ -421,6 +474,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(mousewheel);
 	CSS_DOM_STRING_UNREF(name);
 	CSS_DOM_STRING_UNREF(nohref);
+	CSS_DOM_STRING_UNREF(noresize);
 	CSS_DOM_STRING_UNREF(offline);
 	CSS_DOM_STRING_UNREF(online);
 	CSS_DOM_STRING_UNREF(pagehide);
@@ -437,10 +491,13 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(reset);
 	CSS_DOM_STRING_UNREF(resize);
 	CSS_DOM_STRING_UNREF(rows);
+	CSS_DOM_STRING_UNREF(rowspan);
 	CSS_DOM_STRING_UNREF(scroll);
+	CSS_DOM_STRING_UNREF(scrolling);
 	CSS_DOM_STRING_UNREF(seeked);
 	CSS_DOM_STRING_UNREF(seeking);
 	CSS_DOM_STRING_UNREF(select);
+	CSS_DOM_STRING_UNREF(selected);
 	CSS_DOM_STRING_UNREF(shape);
 	CSS_DOM_STRING_UNREF(show);
 	CSS_DOM_STRING_UNREF(size);
@@ -455,16 +512,38 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(text);
 	CSS_DOM_STRING_UNREF(text_javascript);
 	CSS_DOM_STRING_UNREF(timeupdate);
+	CSS_DOM_STRING_UNREF(title);
 	CSS_DOM_STRING_UNREF(type);
 	CSS_DOM_STRING_UNREF(unload);
 	CSS_DOM_STRING_UNREF(valign);
+	CSS_DOM_STRING_UNREF(value);
 	CSS_DOM_STRING_UNREF(vlink);
 	CSS_DOM_STRING_UNREF(volumechange);
 	CSS_DOM_STRING_UNREF(vspace);
 	CSS_DOM_STRING_UNREF(waiting);
 	CSS_DOM_STRING_UNREF(width);
+	/* DOM node names, not really CSS */
+	CSS_DOM_STRING_UNREF(BUTTON);
+	CSS_DOM_STRING_UNREF(INPUT);
+	CSS_DOM_STRING_UNREF(SELECT);
+	CSS_DOM_STRING_UNREF(TEXTAREA);
+	/* DOM input types, not really CSS */
+	CSS_DOM_STRING_UNREF(button);
+	CSS_DOM_STRING_UNREF(image);
+	CSS_DOM_STRING_UNREF(radio);
+	CSS_DOM_STRING_UNREF(checkbox);
+	CSS_DOM_STRING_UNREF(file);
+	CSS_DOM_STRING_UNREF(on);
+	/* DOM userdata keys, not really CSS */
+	CSS_DOM_STRING_UNREF(__ns_key_box_node_data);
 	CSS_DOM_STRING_UNREF(__ns_key_libcss_node_data);
+	CSS_DOM_STRING_UNREF(__ns_key_file_name_node_data);
+	CSS_DOM_STRING_UNREF(__ns_key_image_coords_node_data);
 #undef CSS_DOM_STRING_UNREF
+
+	/* nsurl URLs */
+	if (corestring_nsurl_about_blank != NULL)
+		nsurl_unref(corestring_nsurl_about_blank);
 }
 
 
@@ -491,6 +570,7 @@ nserror corestrings_init(void)
 	} while(0)
 
 	CSS_LWC_STRING_INTERN(a);
+	CSS_LWC_STRING_INTERN(about);
 	CSS_LWC_STRING_INTERN(abscenter);
 	CSS_LWC_STRING_INTERN(absmiddle);
 	CSS_LWC_STRING_INTERN(align);
@@ -506,10 +586,12 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(checkbox);
 	CSS_LWC_STRING_INTERN(circle);
 	CSS_LWC_STRING_INTERN(col);
+	CSS_LWC_STRING_INTERN(data);
 	CSS_LWC_STRING_INTERN(default);
 	CSS_LWC_STRING_INTERN(div);
 	CSS_LWC_STRING_INTERN(embed);
 	CSS_LWC_STRING_INTERN(file);
+	CSS_LWC_STRING_INTERN(filename);
 	CSS_LWC_STRING_INTERN(font);
 	CSS_LWC_STRING_INTERN(frame);
 	CSS_LWC_STRING_INTERN(frameset);
@@ -523,11 +605,14 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(hidden);
 	CSS_LWC_STRING_INTERN(hr);
 	CSS_LWC_STRING_INTERN(html);
+	CSS_LWC_STRING_INTERN(http);
 	CSS_LWC_STRING_INTERN(https);
+	CSS_LWC_STRING_INTERN(icon);
 	CSS_LWC_STRING_INTERN(iframe);
 	CSS_LWC_STRING_INTERN(image);
 	CSS_LWC_STRING_INTERN(img);
 	CSS_LWC_STRING_INTERN(input);
+	CSS_LWC_STRING_INTERN(javascript);
 	CSS_LWC_STRING_INTERN(justify);
 	CSS_LWC_STRING_INTERN(left);
 	CSS_LWC_STRING_INTERN(li);
@@ -550,6 +635,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(rectangle);
 	CSS_LWC_STRING_INTERN(refresh);
 	CSS_LWC_STRING_INTERN(reset);
+	CSS_LWC_STRING_INTERN(resource);
 	CSS_LWC_STRING_INTERN(right);
 	CSS_LWC_STRING_INTERN(search);
 	CSS_LWC_STRING_INTERN(select);
@@ -587,6 +673,13 @@ nserror corestrings_init(void)
 		goto error;
 	}
 
+	lerror = lwc_intern_string("shortcut icon", SLEN("shortcut icon"),
+			&corestring_lwc_shortcut_icon);
+	if ((lerror != lwc_error_ok) || (corestring_lwc_shortcut_icon == NULL)) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
+
 	lerror = lwc_intern_string("text/css", SLEN("text/css"),
 			&corestring_lwc_text_css);
 	if ((lerror != lwc_error_ok) || (corestring_lwc_text_css == NULL)) {
@@ -612,6 +705,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(abort);
 	CSS_DOM_STRING_INTERN(afterprint);
 	CSS_DOM_STRING_INTERN(align);
+	CSS_DOM_STRING_INTERN(alt);
 	CSS_DOM_STRING_INTERN(area);
 	CSS_DOM_STRING_INTERN(async);
 	CSS_DOM_STRING_INTERN(background);
@@ -629,14 +723,18 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(change);
 	CSS_DOM_STRING_INTERN(charset);
 	CSS_DOM_STRING_INTERN(class);
+	CSS_DOM_STRING_INTERN(classid);
 	CSS_DOM_STRING_INTERN(click);
 	CSS_DOM_STRING_INTERN(close);
+	CSS_DOM_STRING_INTERN(codebase);
 	CSS_DOM_STRING_INTERN(color);
 	CSS_DOM_STRING_INTERN(cols);
+	CSS_DOM_STRING_INTERN(colspan);
 	CSS_DOM_STRING_INTERN(content);
 	CSS_DOM_STRING_INTERN(contextmenu);
 	CSS_DOM_STRING_INTERN(coords);
 	CSS_DOM_STRING_INTERN(cuechange);
+	CSS_DOM_STRING_INTERN(data);
 	CSS_DOM_STRING_INTERN(dblclick);
 	CSS_DOM_STRING_INTERN(defer);
 	CSS_DOM_STRING_INTERN(DOMAttrModified);
@@ -655,6 +753,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(ended);
 	CSS_DOM_STRING_INTERN(error);
 	CSS_DOM_STRING_INTERN(focus);
+	CSS_DOM_STRING_INTERN(frameborder);
 	CSS_DOM_STRING_INTERN(hashchange);
 	CSS_DOM_STRING_INTERN(height);
 	CSS_DOM_STRING_INTERN(href);
@@ -673,6 +772,8 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(loadedmetadata);
 	CSS_DOM_STRING_INTERN(loadstart);
 	CSS_DOM_STRING_INTERN(map);
+	CSS_DOM_STRING_INTERN(marginheight);
+	CSS_DOM_STRING_INTERN(marginwidth);
 	CSS_DOM_STRING_INTERN(media);
 	CSS_DOM_STRING_INTERN(message);
 	CSS_DOM_STRING_INTERN(mousedown);
@@ -683,6 +784,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(mousewheel);
 	CSS_DOM_STRING_INTERN(name);
 	CSS_DOM_STRING_INTERN(nohref);
+	CSS_DOM_STRING_INTERN(noresize);
 	CSS_DOM_STRING_INTERN(offline);
 	CSS_DOM_STRING_INTERN(online);
 	CSS_DOM_STRING_INTERN(pagehide);
@@ -699,10 +801,13 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(reset);
 	CSS_DOM_STRING_INTERN(resize);
 	CSS_DOM_STRING_INTERN(rows);
+	CSS_DOM_STRING_INTERN(rowspan);
 	CSS_DOM_STRING_INTERN(scroll);
+	CSS_DOM_STRING_INTERN(scrolling);
 	CSS_DOM_STRING_INTERN(seeked);
 	CSS_DOM_STRING_INTERN(seeking);
 	CSS_DOM_STRING_INTERN(select);
+	CSS_DOM_STRING_INTERN(selected);
 	CSS_DOM_STRING_INTERN(shape);
 	CSS_DOM_STRING_INTERN(show);
 	CSS_DOM_STRING_INTERN(size);
@@ -716,15 +821,33 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(target);
 	CSS_DOM_STRING_INTERN(text);
 	CSS_DOM_STRING_INTERN(timeupdate);
+	CSS_DOM_STRING_INTERN(title);
 	CSS_DOM_STRING_INTERN(type);
 	CSS_DOM_STRING_INTERN(unload);
 	CSS_DOM_STRING_INTERN(valign);
+	CSS_DOM_STRING_INTERN(value);
 	CSS_DOM_STRING_INTERN(vlink);
 	CSS_DOM_STRING_INTERN(volumechange);
 	CSS_DOM_STRING_INTERN(vspace);
 	CSS_DOM_STRING_INTERN(waiting);
 	CSS_DOM_STRING_INTERN(width);
+	/* DOM node names, not really CSS */
+	CSS_DOM_STRING_INTERN(BUTTON);
+	CSS_DOM_STRING_INTERN(INPUT);
+	CSS_DOM_STRING_INTERN(SELECT);
+	CSS_DOM_STRING_INTERN(TEXTAREA);
+	/* DOM input types, not really CSS */
+	CSS_DOM_STRING_INTERN(button);
+	CSS_DOM_STRING_INTERN(image);
+	CSS_DOM_STRING_INTERN(radio);
+	CSS_DOM_STRING_INTERN(checkbox);
+	CSS_DOM_STRING_INTERN(file);
+	CSS_DOM_STRING_INTERN(on);
+	/* DOM userdata keys, not really CSS */
+	CSS_DOM_STRING_INTERN(__ns_key_box_node_data);
 	CSS_DOM_STRING_INTERN(__ns_key_libcss_node_data);
+	CSS_DOM_STRING_INTERN(__ns_key_file_name_node_data);
+	CSS_DOM_STRING_INTERN(__ns_key_image_coords_node_data);
 #undef CSS_DOM_STRING_INTERN
 
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
@@ -740,6 +863,11 @@ nserror corestrings_init(void)
 			&corestring_dom_http_equiv);
 	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL)) {
 		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+	error = nsurl_create("about:blank", &corestring_nsurl_about_blank);
+	if (error != NSERROR_OK) {
 		goto error;
 	}
 

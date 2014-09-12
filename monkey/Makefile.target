@@ -33,25 +33,19 @@ $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
-WARNFLAGS += -Werror
+CWARNFLAGS += -Werror
 
-MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
-		-D_BSD_SOURCE \
-		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
-		-D_NETBSD_SOURCE \
-		-DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
-		$(WARNFLAGS) -g \
-		$(shell $(PKG_CONFIG) --cflags glib-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libdom libcurl) \
-		$(shell $(PKG_CONFIG) --cflags openssl) \
-		$(shell xml2-config --cflags)
+CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
+	  -D_BSD_SOURCE \
+	  -D_XOPEN_SOURCE=600 \
+	  -D_POSIX_C_SOURCE=200112L \
+	  -D_NETBSD_SOURCE \
+	  -DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
+	  $(shell $(PKG_CONFIG) --cflags glib-2.0) \
+	  $(shell $(PKG_CONFIG) --cflags libdom libcurl) \
+	  $(shell $(PKG_CONFIG) --cflags openssl)
 
-MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
-
-
-CFLAGS += $(MONKEYCFLAGS)
-LDFLAGS += $(MONKEYLDFLAGS)
+LDFLAGS += -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
 
 # ---------------------------------------------------------------------------
 # Windows flag setup
@@ -68,7 +62,7 @@ endif
 # S_MONKEY are sources purely for the MONKEY build
 S_MONKEY := main.c utils.c filetype.c schedule.c \
             bitmap.c plot.c browser.c download.c thumbnail.c		\
-            401login.c cert.c font.c poll.c dispatch.c
+            401login.c cert.c font.c poll.c dispatch.c fetch.c
 
 S_MONKEY := $(addprefix monkey/,$(S_MONKEY))
 

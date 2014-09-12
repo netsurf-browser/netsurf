@@ -28,10 +28,8 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
-#include "desktop/401login.h"
 #include "desktop/gui.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 struct session_401 {

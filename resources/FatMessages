@@ -1760,11 +1760,11 @@ de.gtk.gtkNavigate:_Navigation
 fr.gtk.gtkNavigate:_Navigate
 it.gtk.gtkNavigate:_Visualizza
 nl.gtk.gtkNavigate:_Navigate
-en.gtk.gtkTabs:_Tabs
-de.gtk.gtkTabs:_Tabs
-fr.gtk.gtkTabs:_Tabs
-it.gtk.gtkTabs:_Schede
-nl.gtk.gtkTabs:_Tabs
+en.gtk.gtkTools:_Tools
+de.gtk.gtkTools:_Tools
+fr.gtk.gtkTools:_Tools
+it.gtk.gtkTools:_Tools
+nl.gtk.gtkTools:_Tools
 en.gtk.gtkHelp:_Help
 de.gtk.gtkHelp:_Hilfe
 fr.gtk.gtkHelp:_Help
@@ -2003,16 +2003,16 @@ de.gtk.gtkFullScreenAccel:F11
 fr.gtk.gtkFullScreenAccel:F11
 it.gtk.gtkFullScreenAccel:F11
 nl.gtk.gtkFullScreenAccel:F11
-en.gtk.gtkViewSource:View S_ource
-de.gtk.gtkViewSource: Q_uelltext Anzeigen
-fr.gtk.gtkViewSource:Voir la S_ource
-it.gtk.gtkViewSource:Mostra s_orgente
-nl.gtk.gtkViewSource:View S_ource
-en.gtk.gtkViewSourceAccel:F8
-de.gtk.gtkViewSourceAccel:F8
-fr.gtk.gtkViewSourceAccel:F8
-it.gtk.gtkViewSourceAccel:F8
-nl.gtk.gtkViewSourceAccel:F8
+en.gtk.gtkPageSource:Page S_ource
+de.gtk.gtkPageSource: Q_uelltext Anzeigen
+fr.gtk.gtkPageSource:Voir la S_ource
+it.gtk.gtkPageSource:Mostra s_orgente
+nl.gtk.gtkPageSource:Page S_ource
+en.gtk.gtkPageSourceAccel:<ctrl>U
+de.gtk.gtkPageSourceAccel:<ctrl>U
+fr.gtk.gtkPageSourceAccel:<ctrl>U
+it.gtk.gtkPageSourceAccel:<ctrl>U
+nl.gtk.gtkPageSourceAccel:<ctrl>U
 en.gtk.gtkImages:_Images
 de.gtk.gtkImages:B_ilder
 fr.gtk.gtkImages:_Images
@@ -2033,6 +2033,11 @@ de.gtk.gtkToolbars:_Werkzeugleisten
 fr.gtk.gtkToolbars:_Barre d'outils
 it.gtk.gtkToolbars:_Barre strumenti
 nl.gtk.gtkToolbars:_Toolbars
+en.gtk.gtkTabs:_Tabs
+de.gtk.gtkTabs:_Tabs
+fr.gtk.gtkTabs:_Tabs
+it.gtk.gtkTabs:_Schede
+nl.gtk.gtkTabs:_Tabs
 en.gtk.gtkMenuBar:_Menu Bar
 de.gtk.gtkMenuBar:_Menüleiste
 fr.gtk.gtkMenuBar:_Barre de menu
@@ -2048,11 +2053,11 @@ de.gtk.gtkStatusBar:_Statusleiste
 fr.gtk.gtkStatusBar:_Bar de statut
 it.gtk.gtkStatusBar:Barra di s_tato
 nl.gtk.gtkStatusBar:_Status Bar
-en.gtk.gtkDownloads:_Downloads
-de.gtk.gtkDownloads:_Downloads
-fr.gtk.gtkDownloads:_Téléchargements
-it.gtk.gtkDownloads:_Trasferimenti
-nl.gtk.gtkDownloads:_Downloads
+en.gtk.gtkDownloads:_Downloads...
+de.gtk.gtkDownloads:_Downloads...
+fr.gtk.gtkDownloads:_Téléchargements...
+it.gtk.gtkDownloads:_Trasferimenti...
+nl.gtk.gtkDownloads:_Downloads...
 en.gtk.gtkDownloadsAccel:<ctrl>d
 de.gtk.gtkDownloadsAccel:<ctrl>d
 fr.gtk.gtkDownloadsAccel:<ctrl>d
@@ -2063,26 +2068,26 @@ de.gtk.gtkSaveWindowSize:Fenstergröße _speichern
 fr.gtk.gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
 it.gtk.gtkSaveWindowSize:S_alva dimensione finestra
 nl.gtk.gtkSaveWindowSize:S_ave Window Size
-en.gtk.gtkDebugging:De_bugging
-de.gtk.gtkDebugging:De_bugging
-fr.gtk.gtkDebugging:D_ébogage
-it.gtk.gtkDebugging:De_bugging
-nl.gtk.gtkDebugging:De_bugging
+en.gtk.gtkDeveloper:De_veloper
+de.gtk.gtkDeveloper:De_veloper
+fr.gtk.gtkDeveloper:D_ébogage
+it.gtk.gtkDeveloper:De_veloper
+nl.gtk.gtkDeveloper:De_veloper
 en.gtk.gtkToggleDebugging:T_oggle debug rendering
 de.gtk.gtkToggleDebugging:T_oggle debug rendering
 fr.gtk.gtkToggleDebugging:Activer le débogage
 it.gtk.gtkToggleDebugging:In_verti debug del rendering
 nl.gtk.gtkToggleDebugging:T_oggle debug rendering
-en.gtk.gtkSaveBoxTree:_Save box tree
-de.gtk.gtkSaveBoxTree:_Save box tree
-fr.gtk.gtkSaveBoxTree:_Save box tree
-it.gtk.gtkSaveBoxTree:_Salva albero Box
-nl.gtk.gtkSaveBoxTree:_Save box tree
-en.gtk.gtkSaveDomTree:Save DOM tree
-de.gtk.gtkSaveDomTree:Save DOM tree
-fr.gtk.gtkSaveDomTree:Save DOM tree
-it.gtk.gtkSaveDomTree:Salva albero DOM
-nl.gtk.gtkSaveDomTree:Save DOM tree
+en.gtk.gtkDebugBoxTree:Debug _box tree
+de.gtk.gtkDebugBoxTree:Debug _box tree
+fr.gtk.gtkDebugBoxTree:Debug _box tree
+it.gtk.gtkDebugBoxTree:Debug _box tree
+nl.gtk.gtkDebugBoxTree:Debug _box tree
+en.gtk.gtkDebugDomTree:Debug _DOM tree
+de.gtk.gtkDebugDomTree:Debug _DOM tree
+fr.gtk.gtkDebugDomTree:Debug _DOM tree
+it.gtk.gtkDebugDomTree:Debug albero _DOM
+nl.gtk.gtkDebugDomTree:Debug _DOM tree
 
 en.gtk.gtkBack:_Back
 de.gtk.gtkBack:_Zurück
@@ -2222,26 +2227,38 @@ fr.gtk.gtkAbout:_A propos...
 it.gtk.gtkAbout:_Informazioni
 nl.gtk.gtkAbout:_About
 
+
 en.gtk.gtkCustomize:Customise…
 de.gtk.gtkCustomize:Customise..
 fr.gtk.gtkCustomize:Customise…
 it.gtk.gtkCustomize:Personalizza...
 nl.gtk.gtkCustomize:Customise…
-en.gtk.gtkOpentab:Open Link in _New Tab
-de.gtk.gtkOpentab:Link in _neuem Tab öffnen
-fr.gtk.gtkOpentab:Open Link in _New Tab
-it.gtk.gtkOpentab:Apri in una _nuova scheda
-nl.gtk.gtkOpentab:Open Link in _New Tab
-en.gtk.gtkOpenwin:Open Link in New Window
-de.gtk.gtkOpenwin:Link in neuem Fenster öffnen
-fr.gtk.gtkOpenwin:Open Link in New Window
-it.gtk.gtkOpenwin:Apri in una nuova finestra
-nl.gtk.gtkOpenwin:Open Link in New Window
-en.gtk.gtkSavelink:Save Link
-de.gtk.gtkSavelink:Link speichern..
-fr.gtk.gtkSavelink:Save Link
-it.gtk.gtkSavelink:Salva Link
-nl.gtk.gtkSavelink:Save Link
+en.gtk.gtkOpentab:Open Link in New _Tab
+de.gtk.gtkOpentab:Link in neuem _Tab öffnen
+fr.gtk.gtkOpentab:Ouvrir dans un nouvel _Onglet
+it.gtk.gtkOpentab:Apri in una nuova _scheda
+nl.gtk.gtkOpentab:Open Link in New _Tab
+en.gtk.gtkOpenwin:Open Link in New _Window
+de.gtk.gtkOpenwin:Link in neuem _Fenster öffnen
+fr.gtk.gtkOpenwin:Ouvrir dans une nouvelle _Fenêtre
+it.gtk.gtkOpenwin:Apri in una nuova _finestra
+nl.gtk.gtkOpenwin:Open Link in New _Window
+en.gtk.gtkSavelink:Save Lin_k
+de.gtk.gtkSavelink:Lin_k speichern..
+fr.gtk.gtkSavelink:Save Lin_k
+it.gtk.gtkSavelink:Salva Lin_k
+nl.gtk.gtkSavelink:Save Lin_k
+en.gtk.gtkBookmarklink:Bookmark _Link
+de.gtk.gtkBookmarklink:Bookmark _Link
+fr.gtk.gtkBookmarklink:Bookmark _Link
+it.gtk.gtkBookmarklink:Bookmark _Link
+nl.gtk.gtkBookmarklink:Bookmark _Link
+en.gtk.gtkCopylink:Copy link loc_ation
+de.gtk.gtkCopylink:Copy link loc_ation
+fr.gtk.gtkCopylink:Copy link loc_ation
+it.gtk.gtkCopylink:Copy link loc_ation
+nl.gtk.gtkCopylink:Copy link loc_ation
+
 
 en.gtk.gtkToolBarTitle:Toolbar custom button store
 de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
@@ -2305,10 +2322,11 @@ en.gtk.preferencesTabsAlways:Always show tab bar
 en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
 en.gtk.preferencesTabsNewly:Newly opened tabs are blank
 en.gtk.preferencesTabsPosition:Position:
-en.gtk.preferencesSource:<b>Source</b>
-en.gtk.preferencesSourceOpen:Open source view in new:
-en.gtk.preferencesSourceWindow:window
-en.gtk.preferencesSourceTab:tab
+en.gtk.preferencesTools:<b>Tools</b>
+en.gtk.preferencesDeveloperView:Open developer views in a
+en.gtk.preferencesDeveloperViewWindow:Window
+en.gtk.preferencesDeveloperViewTab:Tab
+en.gtk.preferencesDeveloperViewEditor:Editor
 en.gtk.preferencesURLbar:<b>URLbar</b>
 en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
 en.gtk.preferencesToolbar:<b>Toolbar</b>
@@ -2611,7 +2629,12 @@ de.all.Form_Many:(Viele)
 fr.all.Form_Many:(Plusieurs)
 it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
-en.all.Form_Drop:Drop file here
+en.gtk.Form_Drop:Click to select file
+en.ro.Form_Drop:Drop file here
+en.ami.Form_Drop:Click or drop file here
+en.beos.Form_Drop:Drop file here
+en.fb.Form_Drop:Click to select file
+en.osx.Form_Drop:Click to select file
 de.all.Form_Drop:Datei hier hinziehen
 fr.all.Form_Drop:Déposer les fichiers ici
 it.all.Form_Drop:Inserisci un file qui
@@ -2911,6 +2934,11 @@ de.all.NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen un
 fr.all.NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
 it.all.NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
 nl.all.NoMemory:NetSurf krijgt gebrek aan geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
+en.ro.LongURL:The URL for this page is too long for NetSurf to display.
+de.ro.LongURL:The URL for this page is too long for NetSurf to display.
+fr.ro.LongURL:The URL for this page is too long for NetSurf to display.
+it.ro.LongURL:The URL for this page is too long for NetSurf to display.
+nl.ro.LongURL:The URL for this page is too long for NetSurf to display.
 en.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
 de.ro.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
 fr.ro.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
@@ -4810,28 +4838,58 @@ nl.ro.HelpCacheConfig3:\Tamount of memory to be used for caching content.
 en.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 de.ro.HelpCacheConfig4:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig4:\Sréduire la quantité de mémoire.
-it.ro.HelpCacheConfig4:\Sriduce la quantit� di memoria.
+it.ro.HelpCacheConfig4:\Sriduce la quantità di memoria.
 nl.ro.HelpCacheConfig4:\Sreduce the amount of memory.
 en.ro.HelpCacheConfig5:\Sincrease the amount of memory.
 de.ro.HelpCacheConfig5:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
 fr.ro.HelpCacheConfig5:\Saugmenter la quantité de mémoire.
-it.ro.HelpCacheConfig5:\Saumenta la quantit� di memoria.
+it.ro.HelpCacheConfig5:\Saumenta la quantità di memoria.
 nl.ro.HelpCacheConfig5:\Sincrease the amount of memory.
-en.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-de.ro.HelpCacheConfig7:Stellt die Standardeinstellungen wieder her.
-fr.ro.HelpCacheConfig7:\Srevenir aux valeurs par défaut des options du Cache.
-it.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-nl.ro.HelpCacheConfig7:\Sreset the Cache options back to their default values.
-en.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-de.ro.HelpCacheConfig8:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
-fr.ro.HelpCacheConfig8:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
-it.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-nl.ro.HelpCacheConfig8:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-en.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-de.ro.HelpCacheConfig9:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
-fr.ro.HelpCacheConfig9:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
-it.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
-nl.ro.HelpCacheConfig9:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+en.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+de.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+fr.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+it.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+nl.ro.HelpCacheConfig10:\Tamount of disc space to be used for caching content between sessions.
+en.ro.HelpCacheConfig11:\Sreduce the amount of memory.
+de.ro.HelpCacheConfig11:Klicken mit AUSWAHL verringert die Größe des Cachespeichers.
+fr.ro.HelpCacheConfig11:\Sréduire la quantité de mémoire.
+it.ro.HelpCacheConfig11:\Sriduce la quantità di memoria.
+nl.ro.HelpCacheConfig11:\Sreduce the amount of memory.
+en.ro.HelpCacheConfig12:\Sincrease the amount of memory.
+de.ro.HelpCacheConfig12:Klicken mit AUSWAHL vergrößert die Größe des Cachespeichers.
+fr.ro.HelpCacheConfig12:\Saugmenter la quantité de mémoire.
+it.ro.HelpCacheConfig12:\Saumenta la quantità di memoria.
+nl.ro.HelpCacheConfig12:\Sincrease the amount of memory.
+en.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+de.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+fr.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+it.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+nl.ro.HelpCacheConfig15:\Tmaximum number of days that content will be retained in the disc cache.
+en.ro.HelpCacheConfig16:\Sreduce the number of days.
+de.ro.HelpCacheConfig16:\Sreduce the number of days.
+fr.ro.HelpCacheConfig16:\Sreduce the number of days.
+it.ro.HelpCacheConfig16:\Sreduce the number of days.
+nl.ro.HelpCacheConfig16:\Sreduce the number of days.
+en.ro.HelpCacheConfig17:\Sincrease the number of days.
+de.ro.HelpCacheConfig17:\Sincrease the number of days.
+fr.ro.HelpCacheConfig17:\Sincrease the number of days.
+it.ro.HelpCacheConfig17:\Sincrease the number of days.
+nl.ro.HelpCacheConfig17:\Sincrease the number of days.
+en.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+de.ro.HelpCacheConfig19:Stellt die Standardeinstellungen wieder her.
+fr.ro.HelpCacheConfig19:\Srevenir aux valeurs par défaut des options du Cache.
+it.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+nl.ro.HelpCacheConfig19:\Sreset the Cache options back to their default values.
+en.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+de.ro.HelpCacheConfig20:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
+fr.ro.HelpCacheConfig20:\Sfermer cette fenêtre sans sauver les changements.|M\Arevenir aux options de Cache précédemment sauvegardées.
+it.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+nl.ro.HelpCacheConfig20:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+en.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+de.ro.HelpCacheConfig21:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+fr.ro.HelpCacheConfig21:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
+it.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+nl.ro.HelpCacheConfig21:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
 en.ro.HelpConnectConfig:\Tconnection configuration \w
 de.ro.HelpConnectConfig:Das ist das Fenster zur Einstellung der Parameter für die Netzanbindung.
@@ -5671,11 +5729,11 @@ de.all.ScaleQuality:Skalieren hoher Qualität
 fr.all.ScaleQuality:Higher quality scaling
 it.all.ScaleQuality:Massima qualità di visualizzazione
 nl.all.ScaleQuality:Higher quality scaling
-en.ami.DitherQuality:Dither quality (<= 8-bit modes only)
-de.ami.DitherQuality:Dither quality (<= 8-bit modes only)
-fr.ami.DitherQuality:Dither quality (<= 8-bit modes only)
-it.ami.DitherQuality:Qualità dither (<= solo modi a 8-bit)
-nl.ami.DitherQuality:Dither quality (<= 8-bit modes only)
+en.ami.DitherQuality:Dither quality
+de.ami.DitherQuality:Dither quality
+fr.ami.DitherQuality:Dither quality
+it.ami.DitherQuality:Qualità dither
+nl.ami.DitherQuality:Dither quality
 en.ami.Low:Low
 de.ami.Low:Low
 fr.ami.Low:Low

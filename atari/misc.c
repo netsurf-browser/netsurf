@@ -33,7 +33,6 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "content/fetch.h"
 
@@ -70,46 +69,6 @@ void die(const char *error)
 	exit(1);
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-
-char *filename_from_path(char *path)
-{
-	char *leafname;
-
-	leafname = strrchr(path, '\\');
-	if( !leafname )
-		leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
-
-	return strdup(leafname);
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
-
-	strncat(path, newpart, length);
-
-	return true;
-}
 
 struct gui_window * find_guiwin_by_aes_handle(short handle){
 
@@ -244,16 +203,16 @@ static nserror load_icon_callback(hlcache_handle *handle,
 /**
  * utility function. Copied from NetSurf tree API.
  *
- * \param name	the name of the loaded icon, if it's not a full path the icon is
- *		looked for in the directory specified by icons_dir
+ * \param name the name of the loaded icon, if it's not a full path
+ *	       the icon is looked for in the directory specified by
+ *	       icons_dir.
+ * \param cb callback function to deal with hlcache callback.
+ * \param pw Context pointer to be passed to callback.
  * \return the icon in form of a content or NULL on failure
  */
-hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
-						void * pw )
+hlcache_handle *
+load_icon(const char *name, hlcache_handle_callback cb,	void *pw)
 {
-	char *url = NULL;
-	const char *icon_url = NULL;
-	int len;
 	hlcache_handle *c;
 	nserror err;
 	nsurl *icon_nsurl;
@@ -262,38 +221,23 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 	/** @todo something like bitmap_from_disc is needed here */
 
 	if (!strncmp(name, "file://", 7)) {
-		icon_url = name;
+		err = nsurl_create(name, &icon_nsurl);
 	} else {
-		char *native_path;
+		char *native_path = NULL;
 
 		if (icons_dir == NULL)
 			return NULL;
 
-		/* path + separator + leafname + '\0' */
-		len = strlen(icons_dir) + 1 + strlen(name) + 1;
-		native_path = malloc(len);
-		if (native_path == NULL) {
-			LOG(("malloc failed"));
-			warn_user("NoMemory", 0);
-			return NULL;
+		err = netsurf_mkpath(&native_path, NULL, 2, icons_dir, name);
+		if (err == NSERROR_OK) {
+			/* Convert native path to URL */
+			err = netsurf_path_to_nsurl(native_path, &icon_nsurl);
+			free(native_path);
 		}
-
-		/* Build native path */
-		memcpy(native_path, icons_dir,
-		       strlen(icons_dir) + 1);
-		path_add_part(native_path, len, name);
-
-		/* Convert native path to URL */
-		url = path_to_url(native_path);
-
-		free(native_path);
-		icon_url = url;
 	}
 
-	err = nsurl_create(icon_url, &icon_nsurl);
 	if (err != NSERROR_OK) {
-		if (url != NULL)
-			free(url);
+		warn_user(messages_get_errorcode(err), 0);
 		return NULL;
 	}
 
@@ -303,10 +247,6 @@ hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
 				      CONTENT_IMAGE, &c);
 
 	nsurl_unref(icon_nsurl);
-
-	/* If we built the URL here, free it */
-	if (url != NULL)
-		free(url);
 
 	if (err != NSERROR_OK) {
 		return NULL;

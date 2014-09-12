@@ -75,7 +75,8 @@ static struct box* layout_next_margin_block(struct box *box, struct box *block,
 		int viewport_height, int *max_pos_margin, int *max_neg_margin);
 static bool layout_block_object(struct box *block);
 static void layout_get_object_dimensions(struct box *box,
-		int *width, int *height, int min_width, int max_width);
+		int *width, int *height, int min_width, int max_width,
+		int min_height, int max_height);
 static void layout_block_find_dimensions(int available_width,
 		int viewport_height, int lm, int rm,
 		struct box *box);
@@ -88,7 +89,8 @@ static void layout_float_find_dimensions(int available_width,
 static void layout_find_dimensions(int available_width, int viewport_height,
 		struct box *box, const css_computed_style *style,
 		int *width, int *height, int *max_width, int *min_width,
-		int margin[4], int padding[4], struct box_border border[4]);
+		int *max_height, int *min_height, int margin[4], int padding[4],
+		struct box_border border[4]);
 static void layout_tweak_form_dimensions(struct box *box, bool percentage,
 		int available_width, bool setwidth, int *dimension);
 static int layout_clear(struct box *fl, enum css_clear_e clear);
@@ -229,7 +231,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (!layout_block_object(block))
 			return false;
 		layout_get_object_dimensions(block, &temp_width,
-				&block->height, INT_MIN, INT_MAX);
+				&block->height, INT_MIN, INT_MAX,
+				INT_MIN, INT_MAX);
 		return true;
 	} else if (block->flags & REPLACE_DIM) {
 		return true;
@@ -278,6 +281,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 	 * then the while loop will visit each box marked with *, setting box
 	 * to each in the order shown. */
 	while (box) {
+		enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
+		enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
+
 		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
 				box->type == BOX_INLINE_CONTAINER);
 
@@ -318,6 +324,12 @@ bool layout_block_context(struct box *block, int viewport_height,
 			y = layout_clear(block->float_children,
 					css_computed_clear(box->style));
 
+		/* Find box's overflow properties */
+		if (box->style) {
+			overflow_x = css_computed_overflow_x(box->style);
+			overflow_y = css_computed_overflow_y(box->style);
+		}
+
 		/* Blocks establishing a block formatting context get minimum
 		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
@@ -326,8 +338,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			if (!box->object && !(box->flags & IFRAME) &&
 					!(box->flags & REPLACE_DIM) &&
 					box->style &&
-					css_computed_overflow(box->style) !=
-					CSS_OVERFLOW_VISIBLE) {
+					(overflow_x != CSS_OVERFLOW_VISIBLE ||
+					 overflow_y != CSS_OVERFLOW_VISIBLE)) {
 				/* box establishes new block formatting context
 				 * so available width may be diminished due to
 				 * floats. */
@@ -434,8 +446,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		/* Unless the box has an overflow style of visible, the box
 		 * establishes a new block context. */
 		if (box->type == BOX_BLOCK && box->style &&
-				css_computed_overflow(box->style) !=
-				CSS_OVERFLOW_VISIBLE) {
+				(overflow_x != CSS_OVERFLOW_VISIBLE ||
+				 overflow_y != CSS_OVERFLOW_VISIBLE)) {
 
 			layout_block_context(box, viewport_height, content);
 
@@ -815,7 +827,7 @@ void layout_minmax_block(struct box *block,
 	}
 
 	if (max < min) {
-		box_dump(stderr, block, 0);
+		box_dump(stderr, block, 0, true);
 		assert(0);
 	}
 
@@ -903,8 +915,8 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 						viewport_height, box,
 						box->style,
 						NULL, NULL, NULL, NULL,
-						box->margin, box->padding,
-						box->border);
+						NULL, NULL, box->margin,
+						box->padding, box->border);
 
 				/* Apply top margin */
 				if (*max_pos_margin < box->margin[TOP])
@@ -919,7 +931,7 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 					box->border[TOP].width ||
 					box->padding[TOP] ||
 					(box->style &&
-					css_computed_overflow(box->style) !=
+					css_computed_overflow_y(box->style) !=
 					CSS_OVERFLOW_VISIBLE) ||
 					(box->type == BOX_INLINE_CONTAINER &&
 					box != box->parent->children)) {
@@ -932,7 +944,7 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 		/* Find next box */
 		if (box->type == BOX_BLOCK && !box->object && box->children &&
 				box->style &&
-				css_computed_overflow(box->style) ==
+				css_computed_overflow_y(box->style) ==
 				CSS_OVERFLOW_VISIBLE) {
 			/* Down into children. */
 			box = box->children;
@@ -977,8 +989,8 @@ struct box* layout_next_margin_block(struct box *box, struct box *block,
 						viewport_height, box,
 						box->style,
 						NULL, NULL, NULL, NULL,
-						box->margin, box->padding,
-						box->border);
+						NULL, NULL, box->margin,
+						box->padding, box->border);
 			}
 		}
 	}
@@ -1029,12 +1041,14 @@ bool layout_block_object(struct box *block)
  * \param  height  Height value in px or AUTO. If AUTO, updated to value in px.
  * \param  min_width  Box's min width, as given by layout_find_dimensions.
  * \param  max_width  Box's max width, as given by layout_find_dimensions.
+ * \param  min_height  Box's min height, as given by layout_find_dimensions.
+ * \param  max_height  Box's max height, as given by layout_find_dimensions.
  *
  * See CSS 2.1 sections 10.3 and 10.6.
  */
 
 void layout_get_object_dimensions(struct box *box, int *width, int *height,
-		int min_width, int max_width)
+		int min_width, int max_width, int min_height, int max_height)
 {
 	assert(box->object != NULL);
 	assert(width != NULL && height != NULL);
@@ -1050,6 +1064,7 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 		*width = intrinsic_width;
 		*height = intrinsic_height;
 
+		/* Deal with min/max-width first */
 		if (min_width >  0 && min_width > *width) {
 			*width = min_width;
 			scaled = true;
@@ -1060,8 +1075,26 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 		}
 
 		if (scaled && (intrinsic_width != 0)) {
+			/* Update height */
 			*height = (*width * intrinsic_height) /
 					intrinsic_width;
+		}
+
+		scaled = false;
+		/* Deal with min/max-height */
+		if (min_height >  0 && min_height > *height) {
+			*height = min_height;
+			scaled = true;
+		}
+		if (max_height >= 0 && max_height < *height) {
+			*height = max_height;
+			scaled = true;
+		}
+
+		if (scaled && (intrinsic_height != 0)) {
+			/* Update width */
+			*width = (*height * intrinsic_width) /
+					intrinsic_height;
 		}
 
 	} else if (*width == AUTO) {
@@ -1116,7 +1149,7 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 		int lm, int rm, struct box *box)
 {
 	int width, max_width, min_width;
-	int height;
+	int height, max_height, min_height;
 	int *margin = box->margin;
 	int *padding = box->padding;
 	struct box_border *border = box->border;
@@ -1124,13 +1157,13 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 
 	layout_find_dimensions(available_width, viewport_height, box, style,
 			&width, &height, &max_width, &min_width,
-			margin, padding, border);
+			&max_height, &min_height, margin, padding, border);
 
 	if (box->object && !(box->flags & REPLACE_DIM) &&
 			content_get_type(box->object) != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
 		layout_get_object_dimensions(box, &width, &height,
-				min_width, max_width);
+				min_width, max_width, min_height, max_height);
 	}
 
 	box->width = layout_solve_width(box, available_width, width, lm, rm,
@@ -1262,32 +1295,42 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 void layout_block_add_scrollbar(struct box *box, int which)
 {
-	enum css_overflow_e overflow;
+	enum css_overflow_e overflow_x, overflow_y;
 
 	assert(box->type == BOX_BLOCK && (which == RIGHT || which == BOTTOM));
 
 	if (box->style == NULL)
 		return;
 
-	overflow = css_computed_overflow(box->style);
+	overflow_x = css_computed_overflow_x(box->style);
+	overflow_y = css_computed_overflow_y(box->style);
 
-	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO ||
-			(box->object && content_get_type(box->object) ==
-					CONTENT_HTML)) {
-		/* make space for scrollbars, unless height/width are AUTO */
+	if (which == BOTTOM &&
+			(overflow_x == CSS_OVERFLOW_SCROLL ||
+			 overflow_x == CSS_OVERFLOW_AUTO ||
+			(box->object &&
+			 content_get_type(box->object) == CONTENT_HTML))) {
+		/* make space for scrollbar, unless height is AUTO */
+		if (box->height != AUTO &&
+				(overflow_x == CSS_OVERFLOW_SCROLL ||
+				box_hscrollbar_present(box))) {
+			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
+		}
+
+	} else if (which == RIGHT &&
+			(overflow_y == CSS_OVERFLOW_SCROLL ||
+			 overflow_y == CSS_OVERFLOW_AUTO ||
+			(box->object &&
+			 content_get_type(box->object) == CONTENT_HTML))) {
+		/* make space for scrollbars, unless width is AUTO */
 		enum css_height_e htype;
 		css_fixed height = 0;
 		css_unit hunit = CSS_UNIT_PX;
 		htype = css_computed_height(box->style, &height, &hunit);
 
-		if (which == BOTTOM && box->height != AUTO &&
-				(overflow == CSS_OVERFLOW_SCROLL ||
-				box_hscrollbar_present(box))) {
-			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
-		}
 		if (which == RIGHT && box->width != AUTO &&
 				htype == CSS_HEIGHT_SET &&
-				(overflow == CSS_OVERFLOW_SCROLL ||
+				(overflow_y == CSS_OVERFLOW_SCROLL ||
 				box_vscrollbar_present(box))) {
 			box->width -= SCROLLBAR_WIDTH;
 			box->padding[RIGHT] += SCROLLBAR_WIDTH;
@@ -1430,17 +1473,24 @@ int layout_solve_width(struct box *box, int available_width, int width,
 void layout_float_find_dimensions(int available_width,
 		const css_computed_style *style, struct box *box)
 {
-	int width, height, max_width, min_width;
+	int width, height, max_width, min_width, max_height, min_height;
 	int *margin = box->margin;
 	int *padding = box->padding;
 	struct box_border *border = box->border;
-	int scrollbar_width =
-			(css_computed_overflow(style) == CSS_OVERFLOW_SCROLL ||
-			 css_computed_overflow(style) == CSS_OVERFLOW_AUTO) ?
+	enum css_overflow_e overflow_x = css_computed_overflow_x(style);
+	enum css_overflow_e overflow_y = css_computed_overflow_y(style);
+	int scrollbar_width_x =
+			(overflow_x == CSS_OVERFLOW_SCROLL ||
+			 overflow_x == CSS_OVERFLOW_AUTO) ?
+			SCROLLBAR_WIDTH : 0;
+	int scrollbar_width_y =
+			(overflow_y == CSS_OVERFLOW_SCROLL ||
+			 overflow_y == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
 	layout_find_dimensions(available_width, -1, box, style, &width, &height,
-			&max_width, &min_width, margin, padding, border);
+			&max_width, &min_width, &max_height, &min_height,
+			margin, padding, border);
 
 	if (margin[LEFT] == AUTO)
 		margin[LEFT] = 0;
@@ -1448,8 +1498,8 @@ void layout_float_find_dimensions(int available_width,
 		margin[RIGHT] = 0;
 
         if (box->gadget == NULL) {
-		padding[RIGHT] += scrollbar_width;
-		padding[BOTTOM] += scrollbar_width;
+		padding[RIGHT] += scrollbar_width_y;
+		padding[BOTTOM] += scrollbar_width_x;
 	}
 
 	if (box->object && !(box->flags & REPLACE_DIM) &&
@@ -1457,7 +1507,7 @@ void layout_float_find_dimensions(int available_width,
 		/* Floating replaced element, with intrinsic width or height.
 		 * See 10.3.6 and 10.6.2 */
 		layout_get_object_dimensions(box, &width, &height,
-				min_width, max_width);
+				min_width, max_width, min_height, max_height);
 	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
@@ -1530,7 +1580,7 @@ void layout_float_find_dimensions(int available_width,
 	} else {
 		if (max_width >= 0 && width > max_width) width = max_width;
 		if (min_width >  0 && width < min_width) width = min_width;
-		width -= scrollbar_width;
+		width -= scrollbar_width_y;
 	}
 
 	box->width = width;
@@ -1555,6 +1605,8 @@ void layout_float_find_dimensions(int available_width,
  * \param  height           updated to height, may be NULL
  * \param  max_width        updated to max-width, may be NULL
  * \param  min_width        updated to min-width, may be NULL
+ * \param  max_height       updated to max-height, may be NULL
+ * \param  min_height       updated to min-height, may be NULL
  * \param  margin[4]	    filled with margins, may be NULL
  * \param  padding[4]	    filled with paddings, may be NULL
  * \param  border[4]	    filled with border widths, may be NULL
@@ -1563,7 +1615,8 @@ void layout_float_find_dimensions(int available_width,
 void layout_find_dimensions(int available_width, int viewport_height,
 		struct box *box, const css_computed_style *style,
 		int *width, int *height, int *max_width, int *min_width,
-		int margin[4], int padding[4], struct box_border border[4])
+		int *max_height, int *min_height, int margin[4], int padding[4],
+		struct box_border border[4])
 {
 	struct box *containing_block = NULL;
 	unsigned int i;
@@ -1747,6 +1800,48 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 			layout_tweak_form_dimensions(box, percentage,
 					available_width, true, min_width);
+		}
+	}
+
+	if (max_height) {
+		enum css_max_height_e type;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		type = css_computed_max_height(style, &value, &unit);
+
+		if (type == CSS_MAX_HEIGHT_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				/* TODO: handle percentage */
+				*max_height = -1;
+			} else {
+				*max_height = FIXTOINT(nscss_len2px(value, unit,
+						style));
+			}
+		} else {
+			/* Inadmissible */
+			*max_height = -1;
+		}
+	}
+
+	if (min_height) {
+		enum css_min_height_e type;
+		css_fixed value = 0;
+		css_unit unit = CSS_UNIT_PX;
+
+		type = css_computed_min_height(style, &value, &unit);
+
+		if (type == CSS_MIN_HEIGHT_SET) {
+			if (unit == CSS_UNIT_PCT) {
+				/* TODO: handle percentage */
+				*min_height = 0;
+			} else {
+				*min_height = FIXTOINT(nscss_len2px(value, unit,
+						style));
+			}
+		} else {
+			/* Inadmissible */
+			*min_height = 0;
 		}
 	}
 
@@ -2297,7 +2392,7 @@ bool layout_line(struct box *first, int *width, int *y,
 #endif
 
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
-		int min_width, max_width;
+		int min_width, max_width, min_height, max_height;
 
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
@@ -2347,7 +2442,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
 			layout_find_dimensions(*width, -1, b, b->style, 0, 0,
-					0, 0, b->margin, b->padding, b->border);
+					0, 0, 0, 0, b->margin, b->padding,
+					b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
@@ -2454,11 +2550,12 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		layout_find_dimensions(*width, -1, b, b->style,
 				&b->width, &b->height, &max_width, &min_width,
-				NULL, NULL, NULL);
+				&max_height, &min_height, NULL, NULL, NULL);
 
 		if (b->object && !(b->flags & REPLACE_DIM)) {
 			layout_get_object_dimensions(b, &b->width, &b->height,
-					min_width, max_width);
+					min_width, max_width,
+					min_height, max_height);
 		} else if (b->flags & IFRAME) {
 			/* TODO: should we look at the content dimensions? */
 			if (b->width == AUTO)
@@ -2697,7 +2794,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				LOG(("float %p already placed", b));
 #endif
 
-				box_dump(stderr, cont, 0);
+				box_dump(stderr, cont, 0, true);
 				assert(0);
 			}
 			b->next_float = cont->float_children;
@@ -3185,6 +3282,7 @@ struct box *layout_minmax_line(struct box *first,
 				int temp_height = height;
 				layout_get_object_dimensions(b,
 						&width, &temp_height,
+						INT_MIN, INT_MAX,
 						INT_MIN, INT_MAX);
 			}
 
@@ -3412,22 +3510,32 @@ bool layout_table(struct box *table, int available_width,
 
 	/* find margins, paddings, and borders for table and cells */
 	layout_find_dimensions(available_width, -1, table, style, 0, 0, 0, 0,
-			table->margin, table->padding, table->border);
+			0, 0, table->margin, table->padding, table->border);
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
+				enum css_overflow_e overflow_x;
+				enum css_overflow_e overflow_y;
+
 				assert(c->style);
 				table_used_border_for_cell(c);
 				layout_find_dimensions(available_width, -1,
-						c, c->style, 0, 0, 0, 0, 0,
-						c->padding, c->border);
-				if (css_computed_overflow(c->style) ==
-						CSS_OVERFLOW_SCROLL ||
-					css_computed_overflow(c->style) ==
+						c, c->style, 0, 0, 0, 0, 0, 0,
+						0, c->padding, c->border);
+
+				overflow_x = css_computed_overflow_x(c->style);
+				overflow_y = css_computed_overflow_y(c->style);
+
+				if (overflow_x == CSS_OVERFLOW_SCROLL ||
+						overflow_x ==
+						CSS_OVERFLOW_AUTO) {
+					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
+				}
+				if (overflow_y == CSS_OVERFLOW_SCROLL ||
+						overflow_y ==
 						CSS_OVERFLOW_AUTO) {
 					c->padding[RIGHT] += SCROLLBAR_WIDTH;
-					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
 				}
 			}
 		}
@@ -4031,7 +4139,7 @@ void layout_minmax_table(struct box *table,
 
 	for (i = 0; i != table->columns; i++) {
 		if (col[i].max < col[i].min) {
-			box_dump(stderr, table, 0);
+			box_dump(stderr, table, 0, true);
 			assert(0);
 		}
 		table_min += col[i].min;
@@ -4518,7 +4626,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	box->float_container = containing_block;
 	layout_find_dimensions(available_width, -1, box, box->style,
 			&width, &height, &max_width, &min_width,
-			margin, padding, border);
+			0, 0, margin, padding, border);
 	box->float_container = NULL;
 
 	/* 10.3.7 */
@@ -4951,7 +5059,7 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 	/* To stop the top of text getting clipped when css line-height is
 	 * reduced, we increase the top of the descendant bbox. */
 	if (box->type == BOX_BLOCK && box->style != NULL &&
-			css_computed_overflow(box->style) ==
+			css_computed_overflow_y(box->style) ==
 					CSS_OVERFLOW_VISIBLE &&
 			box->object == NULL) {
 		css_fixed font_size = 0;
@@ -4960,7 +5068,7 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 
 		css_computed_font_size(box->style, &font_size, &font_unit);
 		text_height = nscss_len2px(font_size, font_unit, box->style);
-
+		text_height = FIXTOINT(text_height * 3 / 4);
 		*desc_y0 = (*desc_y0 < -text_height) ? *desc_y0 : -text_height;
 	}
 }
@@ -4987,9 +5095,19 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 	bool html_object = (child->object &&
 			content_get_type(child->object) == CONTENT_HTML);
 
+	enum css_overflow_e overflow_x = CSS_OVERFLOW_VISIBLE;
+	enum css_overflow_e overflow_y = CSS_OVERFLOW_VISIBLE;
+
+	if (child->style != NULL) {
+		overflow_x = css_computed_overflow_x(child->style);
+		overflow_y = css_computed_overflow_y(child->style);
+	}
+
 	if (child->style == NULL ||
-			(child->style && css_computed_overflow(child->style) ==
-			CSS_OVERFLOW_VISIBLE && html_object == false)) {
+			(child->style &&
+			 overflow_x == CSS_OVERFLOW_VISIBLE &&
+			 overflow_y == CSS_OVERFLOW_VISIBLE &&
+			 html_object == false)) {
 		/* get child's descendant bbox relative to box */
 		child_desc_x0 = child_x + child->descendant_x0;
 		child_desc_y0 = child_y + child->descendant_y0;
@@ -5086,7 +5204,9 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_calculate_descendant_bboxes(child);
 
-		if (box->style && css_computed_overflow(box->style) ==
+		if (box->style && css_computed_overflow_x(box->style) ==
+				CSS_OVERFLOW_HIDDEN &&
+				css_computed_overflow_y(box->style) ==
 				CSS_OVERFLOW_HIDDEN)
 			continue;
 

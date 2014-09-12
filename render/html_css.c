@@ -28,12 +28,13 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
-#include "render/html_internal.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
+
+#include "render/html_internal.h"
 
 static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
@@ -97,14 +98,6 @@ html_convert_css_callback(hlcache_handle *css,
 	assert(i != parent->stylesheet_count);
 
 	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
-
-	case CONTENT_MSG_REDIRECT:
-		break;
 
 	case CONTENT_MSG_DONE:
 		LOG(("done stylesheet slot %d '%s'", i,
@@ -143,7 +136,7 @@ html_convert_css_callback(hlcache_handle *css,
 		return NSERROR_OK;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	if (html_can_begin_conversion(parent)) {
@@ -315,7 +308,7 @@ static void html_css_process_modified_styles(void *pw)
 
 	/* If we failed to process any sheet, schedule a retry */
 	if (all_done == false) {
-		schedule(100, html_css_process_modified_styles, c);
+		guit->browser->schedule(1000, html_css_process_modified_styles, c);
 	}
 }
 
@@ -340,7 +333,7 @@ bool html_css_update_style(html_content *c, dom_node *style)
 
 	s->modified = true;
 
-	schedule(0, html_css_process_modified_styles, c);
+	guit->browser->schedule(0, html_css_process_modified_styles, c);
 
 	return true;
 }
@@ -470,7 +463,7 @@ nserror html_css_free_stylesheets(html_content *html)
 {
 	unsigned int i;
 
-	schedule_remove(html_css_process_modified_styles, html);
+	guit->browser->schedule(-1, html_css_process_modified_styles, html);
 
 	for (i = 0; i != html->stylesheet_count; i++) {
 		if (html->stylesheets[i].sheet != NULL) {

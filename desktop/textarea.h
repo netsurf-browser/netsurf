@@ -51,7 +51,8 @@ typedef enum {
 	TEXTAREA_MSG_DRAG_REPORT,	/**< Textarea drag start/end report */
 	TEXTAREA_MSG_SELECTION_REPORT,	/**< Textarea text selection presence */
 	TEXTAREA_MSG_REDRAW_REQUEST,	/**< Textarea redraw request */
-	TEXTAREA_MSG_CARET_UPDATE	/**< Textarea caret */
+	TEXTAREA_MSG_CARET_UPDATE,	/**< Textarea caret */
+	TEXTAREA_MSG_TEXT_MODIFIED	/**< Textarea text modified */
 } textarea_msg_type;
 
 struct textarea_msg {
@@ -77,6 +78,10 @@ struct textarea_msg {
 				struct rect *clip;	/**< Carret clip rect */
 			} pos;			/**< With _CARET_SET_POS */
 		} caret;			/**< With _CARET_UPDATE */
+		struct {
+			const char *text;	/**< UTF8 text */
+			unsigned int len;	/**< Byte length of text */
+		} modified;			/**< With _TEXT_MODIFIED */
 	} data;				/**< Depends on msg type */
 };
 

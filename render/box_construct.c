@@ -31,24 +31,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
-#include "render/box.h"
-#include "render/box_textarea.h"
-#include "render/form.h"
-#include "render/html_internal.h"
 #include "utils/corestrings.h"
 #include "utils/locale.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
 #include "utils/talloc.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+
+#include "render/box.h"
+#include "render/box_textarea.h"
+#include "render/form.h"
+#include "render/html_internal.h"
 
 /**
  * Context for box tree construction
@@ -183,9 +184,7 @@ nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 	ctx->cb = cb;
 	ctx->bctx = c->bctx;
 
-	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
-
-	return NSERROR_OK;
+	return guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /* mapping from CSS display to box type
@@ -210,134 +209,13 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
-/** Key for box userdata on DOM elements (== '__ns_box') */
-static dom_string *kstr_box_key;
-static dom_string *kstr_title;
-static dom_string *kstr_id;
-static dom_string *kstr_colspan;
-static dom_string *kstr_rowspan;
-static dom_string *kstr_style;
-static dom_string *kstr_href;
-static dom_string *kstr_name;
-static dom_string *kstr_target;
-static dom_string *kstr_alt;
-static dom_string *kstr_src;
-static dom_string *kstr_codebase;
-static dom_string *kstr_classid;
-static dom_string *kstr_data;
-static dom_string *kstr_rows;
-static dom_string *kstr_cols;
-static dom_string *kstr_border;
-static dom_string *kstr_frameborder;
-static dom_string *kstr_bordercolor;
-static dom_string *kstr_noresize;
-static dom_string *kstr_scrolling;
-static dom_string *kstr_marginwidth;
-static dom_string *kstr_marginheight;
-static dom_string *kstr_type;
-static dom_string *kstr_value;
-static dom_string *kstr_selected;
-
-nserror box_construct_init(void)
-{
-	dom_exception err;
-
-	err = dom_string_create_interned((const uint8_t *) "__ns_box",
-				SLEN("__ns_box"), &kstr_box_key);
-	if (err != DOM_NO_ERR || kstr_box_key == NULL)
-		goto error;
-
-#define BOX_CONSTRUCT_STRING_INTERN(NAME)				\
-	err = dom_string_create_interned((const uint8_t *)#NAME,	\
-					 sizeof(#NAME) - 1,		\
-					 &kstr_##NAME );		\
-	if ((err != DOM_NO_ERR) || (kstr_##NAME == NULL))		\
-		goto error						
-
-	BOX_CONSTRUCT_STRING_INTERN(title);
-	BOX_CONSTRUCT_STRING_INTERN(id);
-	BOX_CONSTRUCT_STRING_INTERN(colspan);
-	BOX_CONSTRUCT_STRING_INTERN(rowspan);
-	BOX_CONSTRUCT_STRING_INTERN(style);
-	BOX_CONSTRUCT_STRING_INTERN(href);
-	BOX_CONSTRUCT_STRING_INTERN(name);
-	BOX_CONSTRUCT_STRING_INTERN(target);
-	BOX_CONSTRUCT_STRING_INTERN(alt);
-	BOX_CONSTRUCT_STRING_INTERN(src);
-	BOX_CONSTRUCT_STRING_INTERN(codebase);
-	BOX_CONSTRUCT_STRING_INTERN(classid);
-	BOX_CONSTRUCT_STRING_INTERN(data);
-	BOX_CONSTRUCT_STRING_INTERN(rows);
-	BOX_CONSTRUCT_STRING_INTERN(cols);
-	BOX_CONSTRUCT_STRING_INTERN(border);
-	BOX_CONSTRUCT_STRING_INTERN(frameborder);
-	BOX_CONSTRUCT_STRING_INTERN(bordercolor);
-	BOX_CONSTRUCT_STRING_INTERN(noresize);
-	BOX_CONSTRUCT_STRING_INTERN(scrolling);
-	BOX_CONSTRUCT_STRING_INTERN(marginwidth);
-	BOX_CONSTRUCT_STRING_INTERN(marginheight);
-	BOX_CONSTRUCT_STRING_INTERN(type);
-	BOX_CONSTRUCT_STRING_INTERN(value);
-	BOX_CONSTRUCT_STRING_INTERN(selected);
-
-#undef BOX_CONSTRUCT_STRING_INTERN
-
-	return NSERROR_OK;
-
-error:
-	return NSERROR_NOMEM;
-}
-
-void box_construct_fini(void)
-{
-	if (kstr_box_key != NULL) {
-		dom_string_unref(kstr_box_key);
-		kstr_box_key = NULL;
-	}
-
-#define BOX_CONSTRUCT_STRING_UNREF(NAME)				\
-	do {								\
-		if (kstr_##NAME != NULL) {				\
-			dom_string_unref(kstr_##NAME);			\
-			kstr_##NAME = NULL;				\
-		}							\
-	} while (0)							\
-
-	BOX_CONSTRUCT_STRING_UNREF(title);
-	BOX_CONSTRUCT_STRING_UNREF(id);
-	BOX_CONSTRUCT_STRING_UNREF(colspan);
-	BOX_CONSTRUCT_STRING_UNREF(rowspan);
-	BOX_CONSTRUCT_STRING_UNREF(style);
-	BOX_CONSTRUCT_STRING_UNREF(href);
-	BOX_CONSTRUCT_STRING_UNREF(name);
-	BOX_CONSTRUCT_STRING_UNREF(target);
-	BOX_CONSTRUCT_STRING_UNREF(alt);
-	BOX_CONSTRUCT_STRING_UNREF(src);
-	BOX_CONSTRUCT_STRING_UNREF(codebase);
-	BOX_CONSTRUCT_STRING_UNREF(classid);
-	BOX_CONSTRUCT_STRING_UNREF(data);
-	BOX_CONSTRUCT_STRING_UNREF(rows);
-	BOX_CONSTRUCT_STRING_UNREF(cols);
-	BOX_CONSTRUCT_STRING_UNREF(border);
-	BOX_CONSTRUCT_STRING_UNREF(frameborder);
-	BOX_CONSTRUCT_STRING_UNREF(bordercolor);
-	BOX_CONSTRUCT_STRING_UNREF(noresize);
-	BOX_CONSTRUCT_STRING_UNREF(scrolling);
-	BOX_CONSTRUCT_STRING_UNREF(marginwidth);
-	BOX_CONSTRUCT_STRING_UNREF(marginheight);
-	BOX_CONSTRUCT_STRING_UNREF(type);
-	BOX_CONSTRUCT_STRING_UNREF(value);
-	BOX_CONSTRUCT_STRING_UNREF(selected);
-
-#undef BOX_CONSTRUCT_DOM_STRING_UNREF
-}
-
 static inline struct box *box_for_node(dom_node *n)
 {
 	struct box *box = NULL;
 	dom_exception err;
 
-	err = dom_node_get_user_data(n, kstr_box_key, (void *) &box);
+	err = dom_node_get_user_data(n, corestring_dom___ns_key_box_node_data,
+			(void *) &box);
 	if (err != DOM_NO_ERR)
 		return NULL;
 
@@ -567,7 +445,7 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 	} while (++num_processed < max_processed_before_yield);
 
 	/* More work to do: schedule a continuation */
-	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
+	guit->browser->schedule(0, (void *)convert_xml_to_box, ctx);
 }
 
 /**
@@ -629,11 +507,28 @@ static bool box_construct_marker(struct box *box, const char *title,
 			 *       BOX_BLOCK <-- list box
 			 *        ...
 			 */
-			while (last != NULL) {
-				if (last->list_marker != NULL)
-					break;
+			while (last != NULL && last->list_marker == NULL) {
+				struct box *last_inner = last;
 
-				last = last->last;
+				while (last_inner != NULL) {
+					if (last_inner->list_marker != NULL)
+						break;
+					if (last_inner->type ==
+							BOX_INLINE_CONTAINER ||
+							last_inner->type ==
+							BOX_FLOAT_LEFT ||
+							last_inner->type ==
+							BOX_FLOAT_RIGHT) {
+						last_inner = last_inner->last;
+					} else {
+						last_inner = NULL;
+					}
+				}
+				if (last_inner != NULL) {
+					last = last_inner;
+				} else {
+					last = last->prev;
+				}
 			}
 
 			if (last && last->list_marker) {
@@ -859,7 +754,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		return false;
 
 	/* Extract title attribute, if present */
-	err = dom_element_get_attribute(ctx->n, kstr_title, &title0);
+	err = dom_element_get_attribute(ctx->n, corestring_dom_title, &title0);
 	if (err != DOM_NO_ERR)
 		return false;
 
@@ -880,7 +775,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Extract id attribute, if present */
-	err = dom_element_get_attribute(ctx->n, kstr_id, &s);
+	err = dom_element_get_attribute(ctx->n, corestring_dom_id, &s);
 	if (err != DOM_NO_ERR)
 		return false;
 
@@ -903,7 +798,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		ctx->root_box = box;
 
 	/* Deal with colspan/rowspan */
-	err = dom_element_get_attribute(ctx->n, kstr_colspan, &s);
+	err = dom_element_get_attribute(ctx->n, corestring_dom_colspan, &s);
 	if (err != DOM_NO_ERR)
 		return false;
 
@@ -916,7 +811,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(ctx->n, kstr_rowspan, &s);
+	err = dom_element_get_attribute(ctx->n, corestring_dom_rowspan, &s);
 	if (err != DOM_NO_ERR)
 		return false;
 
@@ -1000,7 +895,8 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Attach DOM node to box */
-	err = dom_node_set_user_data(ctx->n, kstr_box_key, box, NULL, 
+	err = dom_node_set_user_data(ctx->n,
+			corestring_dom___ns_key_box_node_data, box, NULL, 
 			(void *) &old_box);
 	if (err != DOM_NO_ERR)
 		return false;
@@ -1013,12 +909,13 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 			 box->type == BOX_BR ||
 			 box->type == BOX_INLINE_BLOCK ||
 			 css_computed_float(box->style) == CSS_FLOAT_LEFT ||
-			 css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
+			 css_computed_float(box->style) == CSS_FLOAT_RIGHT) &&
+			props.node_is_root == false) {
 		/* Found an inline child of a block without a current container
 		 * (i.e. this box is the first child of its parent, or was
 		 * preceded by block-level siblings) */
 		assert(props.containing_block != NULL && 
-				"Root box must not be inline or floated");
+				"Box must have containing block.");
 
 		props.inline_container = box_create(NULL, NULL, false, NULL, 
 				NULL, NULL, NULL, ctx->bctx);
@@ -1073,9 +970,11 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 				return false;
 		}
 
-		if (css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+		if (props.node_is_root == false &&
+				(css_computed_float(box->style) ==
+				CSS_FLOAT_LEFT ||
 				css_computed_float(box->style) == 
-				CSS_FLOAT_RIGHT) {
+				CSS_FLOAT_RIGHT)) {
 			/* Float: insert a float between the parent and box. */
 			struct box *flt = box_create(NULL, NULL, false,
 					props.href, props.target, props.title, 
@@ -1430,7 +1329,7 @@ css_select_results *box_get_style(html_content *c,
 	nscss_select_ctx ctx;
 
 	/* Firstly, construct inline stylesheet, if any */
-	err = dom_element_get_attribute(n, kstr_style, &s);
+	err = dom_element_get_attribute(n, corestring_dom_style, &s);
 	if (err != DOM_NO_ERR)
 		return NULL;
 
@@ -1572,7 +1471,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	dom_string *s;
 	dom_exception err;
 
-	err = dom_element_get_attribute(n, kstr_href, &s);
+	err = dom_element_get_attribute(n, corestring_dom_href, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		ok = box_extract_link(dom_string_data(s),
 				content->base_url, &url);
@@ -1587,7 +1486,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	}
 
 	/* name and id share the same namespace */
-	err = dom_element_get_attribute(n, kstr_name, &s);
+	err = dom_element_get_attribute(n, corestring_dom_name, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		lwc_string *lwc_name;
 
@@ -1606,7 +1505,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	}
 
 	/* target frame [16.3] */
-	err = dom_element_get_attribute(n, kstr_target, &s);
+	err = dom_element_get_attribute(n, corestring_dom_target, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc__blank))
@@ -1660,7 +1559,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* handle alt text */
-	err = dom_element_get_attribute(n, kstr_alt, &s);
+	err = dom_element_get_attribute(n, corestring_dom_alt, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		char *alt = squash_whitespace(dom_string_data(s));
 		dom_string_unref(s);
@@ -1684,7 +1583,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		box->usemap++;
 
 	/* get image URL */
-	err = dom_element_get_attribute(n, kstr_src, &s);
+	err = dom_element_get_attribute(n, corestring_dom_src, &s);
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
 
@@ -1787,7 +1686,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	/* codebase, classid, and data are URLs
 	 * (codebase is the base for the other two) */
-	err = dom_element_get_attribute(n, kstr_codebase, &codebase);
+	err = dom_element_get_attribute(n, corestring_dom_codebase, &codebase);
 	if (err == DOM_NO_ERR && codebase != NULL) {
 		if (box_extract_link(dom_string_data(codebase), 
 				content->base_url, 
@@ -1800,7 +1699,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	if (params->codebase == NULL)
 		params->codebase = nsurl_ref(content->base_url);
 
-	err = dom_element_get_attribute(n, kstr_classid, &classid);
+	err = dom_element_get_attribute(n, corestring_dom_classid, &classid);
 	if (err == DOM_NO_ERR && classid != NULL) {
 		if (box_extract_link(dom_string_data(classid), params->codebase,
 				&params->classid) == false) {
@@ -1810,7 +1709,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		dom_string_unref(classid);
 	}
 
-	err = dom_element_get_attribute(n, kstr_data, &data);
+	err = dom_element_get_attribute(n, corestring_dom_data, &data);
 	if (err == DOM_NO_ERR && data != NULL) {
 		if (box_extract_link(dom_string_data(data), params->codebase,
 				&params->data) == false) {
@@ -2049,7 +1948,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	colour default_border_colour = 0x000000;
 
 	/* parse rows and columns */
-	err = dom_element_get_attribute(n, kstr_rows, &s);
+	err = dom_element_get_attribute(n, corestring_dom_rows, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		row_height = box_parse_multi_lengths(dom_string_data(s), &rows);
 		dom_string_unref(s);
@@ -2063,7 +1962,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		row_height->unit = FRAME_DIMENSION_PERCENT;
 	}
 
-	err = dom_element_get_attribute(n, kstr_cols, &s);
+	err = dom_element_get_attribute(n, corestring_dom_cols, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		col_width = box_parse_multi_lengths(dom_string_data(s), &cols);
 		dom_string_unref(s);
@@ -2082,7 +1981,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	}
 
 	/* common extension: border="0|1" to control all children */
-	err = dom_element_get_attribute(n, kstr_border, &s);
+	err = dom_element_get_attribute(n, corestring_dom_border, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		if ((dom_string_data(s)[0] == '0') && 
 				(dom_string_data(s)[1] == '\0'))
@@ -2091,7 +1990,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	}
 
 	/* common extension: frameborder="yes|no" to control all children */
-	err = dom_element_get_attribute(n, kstr_frameborder, &s);
+	err = dom_element_get_attribute(n, corestring_dom_frameborder, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 	  	if (dom_string_caseless_lwc_isequal(s,
 	  			corestring_lwc_no) == 0)
@@ -2101,7 +2000,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 	/* common extension: bordercolor="#RRGGBB|<named colour>" to control
 	 *all children */
-	err = dom_element_get_attribute(n, kstr_bordercolor, &s);
+	err = dom_element_get_attribute(n, corestring_dom_bordercolor, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		css_color color;
 
@@ -2230,7 +2129,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 			/* get frame URL (not required) */
 			url = NULL;
-			err = dom_element_get_attribute(c, kstr_src, &s);
+			err = dom_element_get_attribute(c, corestring_dom_src, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				box_extract_link(dom_string_data(s), 
 						content->base_url, &url);
@@ -2247,17 +2146,17 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			}
 
 			/* fill in specified values */
-			err = dom_element_get_attribute(c, kstr_name, &s);
+			err = dom_element_get_attribute(c, corestring_dom_name, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				frame->name = talloc_strdup(content->bctx, 
 						dom_string_data(s));
 				dom_string_unref(s);
 			}
 
-			dom_element_has_attribute(c, kstr_noresize, 
+			dom_element_has_attribute(c, corestring_dom_noresize, 
 					&frame->no_resize);
 
-			err = dom_element_get_attribute(c, kstr_frameborder, 
+			err = dom_element_get_attribute(c, corestring_dom_frameborder, 
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				i = atoi(dom_string_data(s));
@@ -2265,7 +2164,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, kstr_scrolling, &s);
+			err = dom_element_get_attribute(c, corestring_dom_scrolling, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				if (dom_string_caseless_lwc_isequal(s,
 						corestring_lwc_yes))
@@ -2276,21 +2175,21 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, kstr_marginwidth, 
+			err = dom_element_get_attribute(c, corestring_dom_marginwidth, 
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				frame->margin_width = atoi(dom_string_data(s));
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, kstr_marginheight,
+			err = dom_element_get_attribute(c, corestring_dom_marginheight,
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				frame->margin_height = atoi(dom_string_data(s));
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, kstr_bordercolor, 
+			err = dom_element_get_attribute(c, corestring_dom_bordercolor, 
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				css_color color;
@@ -2360,7 +2259,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* get frame URL */
-	err = dom_element_get_attribute(n, kstr_src, &s);
+	err = dom_element_get_attribute(n, corestring_dom_src, &s);
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
 	if (box_extract_link(dom_string_data(s), content->base_url, 
@@ -2400,20 +2299,20 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	content->iframe = iframe;
 
 	/* fill in specified values */
-	err = dom_element_get_attribute(n, kstr_name, &s);
+	err = dom_element_get_attribute(n, corestring_dom_name, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		iframe->name = talloc_strdup(content->bctx, dom_string_data(s));
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(n, kstr_frameborder, &s);
+	err = dom_element_get_attribute(n, corestring_dom_frameborder, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		i = atoi(dom_string_data(s));
 		iframe->border = (i != 0);
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(n, kstr_bordercolor, &s);
+	err = dom_element_get_attribute(n, corestring_dom_bordercolor, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		css_color color;
 
@@ -2423,7 +2322,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(n, kstr_scrolling, &s);
+	err = dom_element_get_attribute(n, corestring_dom_scrolling, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc_yes))
@@ -2434,13 +2333,13 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(n, kstr_marginwidth, &s);
+	err = dom_element_get_attribute(n, corestring_dom_marginwidth, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		iframe->margin_width = atoi(dom_string_data(s));
 		dom_string_unref(s);
 	}
 
-	err = dom_element_get_attribute(n, kstr_marginheight, &s);
+	err = dom_element_get_attribute(n, corestring_dom_marginheight, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		iframe->margin_height = atoi(dom_string_data(s));
 		dom_string_unref(s);
@@ -2501,13 +2400,14 @@ bool box_input(BOX_SPECIAL_PARAMS)
 	nsurl *url;
 	nserror error;
 
-	dom_element_get_attribute(n, kstr_type, &type);
+	dom_element_get_attribute(n, corestring_dom_type, &type);
 
 	gadget = html_forms_get_control_for_node(content->forms, n);
 	if (gadget == NULL)
 		goto no_memory;
 	box->gadget = gadget;
 	gadget->box = box;
+	gadget->html = content;
 
 	if (type && dom_string_caseless_lwc_isequal(type,
 			corestring_lwc_password)) {
@@ -2586,7 +2486,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		    nsoption_bool(foreground_images) == true) {
 			dom_string *s;
 
-			err = dom_element_get_attribute(n, kstr_src, &s);
+			err = dom_element_get_attribute(n, corestring_dom_src, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				error = nsurl_join(content->base_url, 
 						dom_string_data(s), &url);
@@ -2643,6 +2543,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 	if (!gadget)
 		return false;
 
+	gadget->html = content;
 	box->gadget = gadget;
 	gadget->box = box;
 
@@ -2671,6 +2572,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	if (gadget == NULL)
 		return false;
 
+	gadget->html = content;
 	err = dom_node_get_first_child(n, &c);
 	if (err != DOM_NO_ERR)
 		return false;
@@ -2777,6 +2679,8 @@ bool box_select(BOX_SPECIAL_PARAMS)
 		gadget->data.select.current->initial_selected =
 			gadget->data.select.current->selected = true;
 		gadget->data.select.num_selected = 1;
+		dom_html_option_element_set_selected(
+				gadget->data.select.current->node, true);
 	}
 
 	if (gadget->data.select.num_selected == 0)
@@ -2832,7 +2736,7 @@ bool box_select_add_option(struct form_control *control, dom_node *n)
 	if (text == NULL)
 		goto no_memory;
 
-	err = dom_element_get_attribute(n, kstr_value, &s);
+	err = dom_element_get_attribute(n, corestring_dom_value, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
 		value = strdup(dom_string_data(s));
 		dom_string_unref(s);
@@ -2843,14 +2747,14 @@ bool box_select_add_option(struct form_control *control, dom_node *n)
 	if (value == NULL)
 		goto no_memory;
 
-	dom_element_has_attribute(n, kstr_selected, &selected);
+	dom_element_has_attribute(n, corestring_dom_selected, &selected);
 
 	/* replace spaces/TABs with hard spaces to prevent line wrapping */
 	text_nowrap = cnv_space2nbsp(text);
 	if (text_nowrap == NULL)
 		goto no_memory;
 
-	if (form_add_option(control, value, text_nowrap, selected) == false)
+	if (form_add_option(control, value, text_nowrap, selected, n) == false)
 		goto no_memory;
 
 	free(text);
@@ -2876,6 +2780,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	if (box->gadget == NULL)
 		return false;
 
+	box->gadget->html = content;
 	box->gadget->box = box;
 
 	if (!box_input_text(content, box, n))
@@ -2919,7 +2824,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	params->params = NULL;
 
 	/* src is a URL */
-	err = dom_element_get_attribute(n, kstr_src, &src);
+	err = dom_element_get_attribute(n, corestring_dom_src, &src);
 	if (err != DOM_NO_ERR || src == NULL)
 		return true;
 	if (box_extract_link(dom_string_data(src), content->base_url, 

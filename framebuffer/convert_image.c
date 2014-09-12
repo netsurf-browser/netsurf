@@ -159,6 +159,7 @@ main(int argc, char **argv)
         
         if (br < 0) {
                 printf("Error reading input: %s\n", strerror(errno));
+                fclose(f);
                 return 1;
         }
         

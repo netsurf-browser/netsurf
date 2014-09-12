@@ -23,6 +23,8 @@
 #ifndef NETSURF_GTK_COMPAT_H_
 #define NETSURF_GTK_COMPAT_H_
 
+#include <stdint.h>
+
 #include <gtk/gtk.h>
 
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus);

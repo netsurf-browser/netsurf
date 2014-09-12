@@ -22,20 +22,22 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include "oslib/osfile.h"
+#include <oslib/osfile.h>
+#include <oslib/wimp.h>
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
+
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "utils/nsoption.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 
 
 static hlcache_handle *theme_install_content = NULL;
@@ -85,17 +87,14 @@ void theme_install_start(hlcache_handle *c)
 nserror theme_install_callback(hlcache_handle *handle,
 		const hlcache_event *event, void *pw)
 {
-	char buffer[256];
-	int author_indent = 0;
-
 	switch (event->type) {
-	case CONTENT_MSG_READY:
-		break;
 
 	case CONTENT_MSG_DONE:
 	{
 		const char *source_data;
 		unsigned long source_size;
+		int author_indent = 0;
+		char buffer[256];
 
 		theme_install_content = handle;
 
@@ -129,11 +128,7 @@ nserror theme_install_callback(hlcache_handle *handle,
 		warn_user(event->data.error, 0);
 		break;
 
-	case CONTENT_MSG_STATUS:
-		break;
-
 	default:
-		assert(0);
 		break;
 	}
 

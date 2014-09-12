@@ -21,11 +21,13 @@
 #define __STDBOOL_H__	1
 #include <assert.h>
 extern "C" {
+#include "content/content.h"
 #include "content/urldb.h"
 #include "css/utils.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
+#include "desktop/netsurf.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
 #include "utils/log.h"
@@ -80,7 +82,7 @@ struct gui_window {
 	// those are the last queued event of their kind,
 	// we can safely drop others and avoid wasting cpu.
 	// number of pending resizes
-	vint32				pending_resizes;
+	int32				pending_resizes;
 	// accumulated rects of pending redraws
 	//volatile BMessage	*lastRedraw;
 	// UNUSED YET
@@ -335,8 +337,9 @@ float nsbeos_get_scale_for_gui(struct gui_window *g)
 }
 
 /* Create a gui_window */
-struct gui_window *gui_create_browser_window(struct browser_window *bw,
-					     struct browser_window *clone, bool new_tab)
+static struct gui_window *gui_window_create(struct browser_window *bw,
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *g;		/**< what we're creating to return */
 
@@ -351,8 +354,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (clone != NULL)
-		bw->scale = clone->scale;
+	if (existing != NULL)
+		bw->scale = existing->bw->scale;
 	else
 		bw->scale = (float) nsoption_int(scale) / 100;
 
@@ -404,12 +407,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return g;
 }
 
-
-void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
-		int x1, int y1)
-{
-	gui_window_set_scroll(g, x0, y0);
-}
 
 void nsbeos_dispatch_event(BMessage *message)
 {
@@ -463,11 +460,9 @@ void nsbeos_dispatch_event(BMessage *message)
 			break;
 		case B_ABOUT_REQUESTED:
 		{
+			if (gui == NULL)
+				gui = window_list;
 			nsbeos_about(gui);
-			/* XXX: doesn't work yet! bug in rsrc:/
-			BString url("rsrc:/about.en.html,text/html");
-			browser_window_create(url.String(), NULL, NULL, true, false);
-			*/
 			break;
 		}
 		case _UPDATE_:
@@ -650,8 +645,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		case B_MOUSE_WHEEL_CHANGED:
 			break;
 		case B_UI_SETTINGS_CHANGED:
-			//FIXME:
-			//nsbeos_update_system_ui_colors();
+			nsbeos_update_system_ui_colors();
 			break;
 		case 'nsLO': // login
 		{
@@ -890,9 +884,7 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 	width++;
 	height++;
 
-
-		g->bw->reformat_pending = true;
-		browser_reformat_pending = true;
+        browser_window_schedule_reformat(g->bw);
 
 	return;
 }
@@ -908,57 +900,46 @@ void nsbeos_window_moved_event(BView *view, gui_window *g, BMessage *event)
 	//view->Invalidate(view->Bounds());
 	view->UnlockLooper();
 
-	//g->bw->reformat_pending = true;
-	//browser_reformat_pending = true;
-	
-
 	return;
 }
 
 
 void nsbeos_reflow_all_windows(void)
 {
-	for (struct gui_window *g = window_list; g; g = g->next)
-		g->bw->reformat_pending = true;
-
-	browser_reformat_pending = true;
+	for (struct gui_window *g = window_list; g; g = g->next) {
+                browser_window_schedule_reformat(g->bw);
+        }
 }
+
 
 
 /**
- * Process pending reformats
+ * callback from core to reformat a window.
  */
-
-void nsbeos_window_process_reformats(void)
+static void beos_window_reformat(struct gui_window *g)
 {
-	struct gui_window *g;
+        if (g == NULL) {
+                return;
+        }
 
-	browser_reformat_pending = false;
-	for (g = window_list; g; g = g->next) {
-		NSBrowserFrameView *view = g->view;
-		if (!g->bw->reformat_pending)
-			continue;
-		if (!view || !view->LockLooper())
-			continue;
-		g->bw->reformat_pending = false;
-		BRect bounds = view->Bounds();
-		view->UnlockLooper();
+        NSBrowserFrameView *view = g->view;
+        if (view && view->LockLooper()) {
+                BRect bounds = view->Bounds();
+                view->UnlockLooper();
 #warning XXX why - 1 & - 2 !???
-		browser_window_reformat(g->bw,
-				false,
-				bounds.Width() + 1 /* - 2*/,
-				bounds.Height() + 1);
-	}
-
+                browser_window_reformat(g->bw,
+                                        false,
+                                        bounds.Width() + 1 /* - 2*/,
+                                        bounds.Height() + 1);
+        }        
 }
-
 
 void nsbeos_window_destroy_browser(struct gui_window *g)
 {
 	browser_window_destroy(g->bw);
 }
 
-void gui_window_destroy(struct gui_window *g)
+static void gui_window_destroy(struct gui_window *g)
 {
 	if (!g)
 		return;
@@ -1021,7 +1002,7 @@ void nsbeos_redraw_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_redraw_window(struct gui_window *g)
+static void gui_window_redraw_window(struct gui_window *g)
 {
 	if (g->view == NULL)
 		return;
@@ -1036,7 +1017,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_update_box(struct gui_window *g, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	hlcache_handle *c = g->bw->current_content;
 
@@ -1058,7 +1039,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	g->view->UnlockLooper();
 }
 
-bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1076,7 +1057,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	return true;
 }
 
-void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	//CALLED();
 	if (g->view == NULL)
@@ -1094,7 +1075,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 }
 
 
-void gui_window_update_extent(struct gui_window *g)
+static void gui_window_update_extent(struct gui_window *g)
 {
 	//CALLED();
 	if (!g->bw->current_content)
@@ -1176,7 +1157,7 @@ const uint8 kWatch2CursorBits[] = {
 };
 
 
-void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	BCursor *cursor = NULL;
 	bool allocated = false;
@@ -1216,12 +1197,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		delete cursor;
 }
 
-void gui_window_hide_pointer(struct gui_window *g)
-{
-	//XXX no BView::HideCursor... use empty one
-}
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 		const struct rect *clip)
 {
 	//CALLED();
@@ -1242,7 +1218,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height,
 	g->view->UnlockLooper();
 }
 
-void gui_window_remove_caret(struct gui_window *g)
+static void gui_window_remove_caret(struct gui_window *g)
 {
 	int oh = g->careth;
 
@@ -1264,7 +1240,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_new_content(struct gui_window *g)
+static void gui_window_new_content(struct gui_window *g)
 {
 	if (!g->toplevel)
 		return;
@@ -1280,29 +1256,7 @@ void gui_window_new_content(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-bool gui_window_scroll_start(struct gui_window *g)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *g)
-{
-
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-
-}
-
-void gui_start_selection(struct gui_window *g)
+static void gui_start_selection(struct gui_window *g)
 {
 	if (!g->view->LockLooper())
 		return;
@@ -1310,10 +1264,6 @@ void gui_start_selection(struct gui_window *g)
 	g->view->MakeFocus();
 
 	g->view->UnlockLooper();
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
 }
 
 void gui_get_clipboard(char **buffer, size_t *length)
@@ -1370,7 +1320,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 	}
 }
 
-void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
 	if (g->view && g->view->LockLooper()) {
@@ -1385,3 +1335,36 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
+static struct gui_window_table window_table = {
+	gui_window_create,
+	gui_window_destroy,
+	gui_window_redraw_window,
+	gui_window_update_box,
+	gui_window_get_scroll,
+	gui_window_set_scroll,
+	gui_window_get_dimensions,
+	gui_window_update_extent,
+        beos_window_reformat,
+
+	/* from scaffold */
+	gui_window_set_title,
+	gui_window_set_url,
+	gui_window_set_icon,
+	gui_window_set_status,
+	gui_window_set_pointer,
+	gui_window_place_caret,
+	gui_window_remove_caret,
+	gui_window_start_throbber,
+	gui_window_stop_throbber,
+	NULL, //drag_start
+	NULL, //save_link
+	NULL, //scroll_visible
+	NULL, //scroll_start
+	gui_window_new_content,
+	NULL, //file_gadget_open
+	NULL, //drag_save_object
+	NULL, //drag_save_selection
+	gui_start_selection
+};
+
+struct gui_window_table *beos_window_table = &window_table;

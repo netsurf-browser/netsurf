@@ -23,15 +23,15 @@
 
 #include "content/content_protected.h"
 #include "content/urldb.h"
-#include "css/internal.h"
-#include "css/select.h"
-#include "css/utils.h"
-#include "desktop/gui.h"
+#include "desktop/system_colour.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+
+#include "css/internal.h"
+#include "css/select.h"
+#include "css/utils.h"
 
 #undef PRINT_NODE_BLOOM_DETAILS
 
@@ -185,7 +185,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	params.resolve_pw = NULL;
 	params.import = NULL;
 	params.import_pw = NULL;
-	params.color = gui_system_colour;
+	params.color = ns_system_colour;
 	params.color_pw = NULL;
 	params.font = NULL;
 	params.font_pw = NULL;
@@ -219,11 +219,9 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 		struct dom_node *dst)
 {
 	css_error error;
-	bool match;
 
-	if (lwc_string_isequal(corestring_dom___ns_key_libcss_node_data,
-			key, &match) != lwc_error_ok || match == false ||
-			data == NULL) {
+	if (dom_string_isequal(corestring_dom___ns_key_libcss_node_data,
+			key) == false || data == NULL) {
 		return;
 	}
 

@@ -25,14 +25,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "amiga/os3support.h"
 #include "amiga/object.h"
 #include "amiga/gui.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include <proto/intuition.h>
 #include "amiga/history_local.h"
@@ -52,7 +51,7 @@
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
-static struct history *history_current = 0;
+static struct browser_window *history_bw;
 /* Last position of mouse in window. */
 static int mouse_x = 0;
 /* Last position of mouse in window. */
@@ -74,11 +73,10 @@ static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct In
 void ami_history_open(struct browser_window *bw, struct history *history)
 {
 	int width, height;
-	struct IBox *bbox;
 
 	assert(history);
 
-	history_current = history;
+	history_bw = bw;
 
 	if(!hwindow)
 	{
@@ -87,7 +85,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 		ami_init_layers(&hwindow->gg, scrn->Width, scrn->Height);
 
 		hwindow->bw = bw;
-		history_size(history, &width, &height);
+		browser_window_history_size(bw, &width, &height);
 
 		hwindow->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
 		hwindow->scrollerhook.h_Data = hwindow;
@@ -173,7 +171,7 @@ void ami_history_redraw(struct history_window *hw)
 	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 
-	history_redraw_rectangle(history_current, xs, ys,
+	browser_window_history_redraw_rectangle(history_bw, xs, ys,
 			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
 
 	glob = &browserglob;
@@ -210,13 +208,13 @@ bool ami_history_click(struct history_window *hw,uint16 code)
 	switch(code)
 	{
 		case SELECTUP:
-			history_click(hw->bw,history_current,x,y,false);
+			browser_window_history_click(history_bw,x,y,false);
 			ami_history_redraw(hw);
 			ami_schedule_redraw(hw->bw->window->shared, true);
 		break;
 
 		case MIDDLEUP:
-			history_click(hw->bw,history_current,x,y,true);
+			browser_window_history_click(history_bw,x,y,true);
 			ami_history_redraw(hw);
 		break;
 
@@ -239,7 +237,6 @@ BOOL ami_history_event(struct history_window *hw)
 	/* return TRUE if window destroyed */
 	ULONG class,result,relevent = 0;
 	uint16 code;
-	struct MenuItem *item;
 	const char *url;
 	struct IBox *bbox;
 	ULONG xs, ys;
@@ -265,7 +262,7 @@ BOOL ami_history_event(struct history_window *hw)
 				GetAttr(SCROLLER_Top, hw->objects[OID_HSCROLL], (ULONG *)&xs);
 				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
 
-				url = history_position_url(history_current,
+				url = browser_window_history_position_url(history_bw,
 					hw->win->MouseX - bbox->Left + xs,
 					hw->win->MouseY - bbox->Top + ys);
 
@@ -297,7 +294,7 @@ void ami_history_update_extent(struct history_window *hw)
 	struct IBox *bbox;
 	int width, height;
 
-	history_size(hw->bw->history, &width, &height);
+	browser_window_history_size(hw->bw, &width, &height);
 	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL],hw->win,NULL,

@@ -31,13 +31,14 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/fetchers/data.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
+#include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/base64.h"
@@ -324,22 +325,19 @@ static void fetch_data_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_data_register(void)
+nserror fetch_data_register(void)
 {
-	lwc_string *scheme;
+	lwc_string *scheme = lwc_string_ref(corestring_lwc_data);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_data_initialise,
+		.acceptable = fetch_data_can_fetch,
+		.setup = fetch_data_setup,
+		.start = fetch_data_start,
+		.abort = fetch_data_abort,
+		.free = fetch_data_free,
+		.poll = fetch_data_poll,
+		.finalise = fetch_data_finalise
+	};
 
-	if (lwc_intern_string("data", SLEN("data"), &scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"data\").");
-	}
-
-	fetch_add_fetcher(scheme,
-		fetch_data_initialise,
-		fetch_data_can_fetch,
-		fetch_data_setup,
-		fetch_data_start,
-		fetch_data_abort,
-		fetch_data_free,
-		fetch_data_poll,
-		fetch_data_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

@@ -39,6 +39,7 @@
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
+#include "amiga/misc.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "content/content_protected.h"
@@ -46,6 +47,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
+#include "utils/file.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */
@@ -139,18 +141,15 @@ bool amiga_icon_convert(struct content *c)
 	ULONG size;
 	int width = 0, height = 0;
 	long format = 0;
-	int err = 0;
+	int err;
 	uint8 r, g, b, a;
 	ULONG offset;
-	const char *url;
-	char *filename;
+	char *filename = NULL;
 	char *p;
 	ULONG trans, pals1;
 	struct ColorRegister *pal1;
 
-	url = nsurl_access(content_get_url(c));
-	filename = url_to_path(url);
-
+	netsurf_nsurl_to_path(content_get_url(c), &filename);
 	/* This loader will only work on local files, so fail if not a local path */
 	if(filename == NULL)
 	{
@@ -365,7 +364,7 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
 	ULONG *icondata1, *icondata2;
 	ULONG width, height;
 	long format = 0;
-	int err = 0;
+	int err;
 
 	if(dobj == NULL) return;
 
@@ -420,11 +419,10 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
 void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
 {
 	struct DiskObject *dobj = NULL;
-	struct BitMap *bm = NULL;
 	ULONG *icondata1, *icondata2;
 	ULONG width, height;
 	long format = 0;
-	int err = 0;
+	int err;
 	ULONG trans1, pals1;
 	ULONG trans2, pals2;
 	struct ColorRegister *pal1;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2013 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -30,26 +30,29 @@
 #include "oslib/osfile.h"
 #include "oslib/osmodule.h"
 #include "oslib/wimp.h"
+
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
+#include "desktop/gui.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
+
+#include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/schedule.h"
-#include "utils/utils.h"
-#include "utils/url.h"
+#include "riscos/query.h"
 
 static void ro_gui_hotlist_toolbar_update_buttons(void);
 static void ro_gui_hotlist_toolbar_save_buttons(char *config);
@@ -217,12 +220,12 @@ void ro_gui_hotlist_destroy(void)
 
 void ro_gui_hotlist_open(void)
 {
-	os_error	*error;
-	char		command[2048];
+	if (nsoption_bool(external_hotlists) &&
+			nsoption_charp(external_hotlist_app) != NULL &&
+			*nsoption_charp(external_hotlist_app) != '\0') {
+		char command[2048];
+		os_error *error;
 
-	if (nsoption_bool(external_hotlists) && 
-	    nsoption_charp(external_hotlist_app) != NULL &&
-	    *nsoption_charp(external_hotlist_app) != '\0') {
 		snprintf(command, sizeof(command), "Filer_Run %s",
 			 nsoption_charp(external_hotlist_app));
 		error = xos_cli(command);
@@ -542,7 +545,7 @@ void ro_gui_hotlist_add_page(nsurl *url)
 	 * message didn't bounce.
 	 */
 
-	schedule(0, ro_gui_hotlist_scheduled_callback, NULL);
+	riscos_schedule(0, ro_gui_hotlist_scheduled_callback, NULL);
 }
 
 
@@ -568,7 +571,7 @@ static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 
 	/* There's no longer any need to listen for the next Null poll. */
 
-	schedule_remove(ro_gui_hotlist_scheduled_callback, NULL);
+	riscos_schedule(-1, ro_gui_hotlist_scheduled_callback, NULL);
 }
 
 
@@ -732,4 +735,3 @@ void ro_gui_hotlist_url_drop(wimp_message *message, const char *url)
 	nsurl_unref(nsurl);
 }
 #endif
-

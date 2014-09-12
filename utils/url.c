@@ -19,22 +19,17 @@
  */
 
 /** \file
- * URL parsing and joining (implementation).
+ * \brief Implementation of URL parsing and joining operations.
  */
 
-#include <sys/types.h>
-#include <assert.h>
 #include <ctype.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <curl/curl.h>
 
-#include "curl/curl.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
+#include "utils/url.h"
 
 struct url_components_internal {
 	char *buffer;	/* buffer used for all the following data */
@@ -48,12 +43,7 @@ struct url_components_internal {
 
 regex_t url_re, url_up_re;
 
-/**
- * Initialise URL routines.
- *
- * Compiles regular expressions required by the url_ functions.
- */
-
+/* exported interface documented in utils/url.h */
 void url_init(void)
 {
 	/* regex from RFC 2396 */
@@ -75,16 +65,7 @@ void url_init(void)
 			REG_EXTENDED);
 }
 
-
-/**
- * Check whether a host string is an IP address.  It should support and
- * detect IPv4 addresses (all of dotted-quad or subsets, decimal or
- * hexadecimal notations) and IPv6 addresses (including those containing
- * embedded IPv4 addresses.)
- *
- * \param  host a hostname terminated by '\0'
- * \return true if the hostname is an IP address, false otherwise
- */
+/* exported interface documented in utils/url.h */
 bool url_host_is_ip_address(const char *host)
 {
 	struct in_addr ipv4;
@@ -95,7 +76,7 @@ bool url_host_is_ip_address(const char *host)
 	struct in6_addr ipv6;
 	char ipv6_addr[64];
 #endif
-	/* FIXME TODO: Some parts of urldb.c (and perhaps other parts of
+	/** @todo FIXME Some parts of urldb.c (and perhaps other parts of
 	 * NetSurf) make confusions between hosts and "prefixes", we can
 	 * sometimes be erroneously passed more than just a host.  Sometimes
 	 * we may be passed trailing slashes, or even whole path segments.
@@ -175,13 +156,12 @@ out_true:
  *
  * See RFC 3986 for reference.
  *
- * \param  url	     a valid absolute or relative URL
- * \param  result    pointer to buffer to hold components
- * \return  URL_FUNC_OK on success
+ * \param url A valid absolute or relative URL.
+ * \param result Pointer to buffer to hold components.
+ * \return NSERROR_OK on success
  */
-
-static url_func_result url_get_components(const char *url,
-		struct url_components *result)
+static nserror
+url_get_components(const char *url, struct url_components *result)
 {
   	int storage_length;
 	char *storage_end;
@@ -202,7 +182,7 @@ static url_func_result url_get_components(const char *url,
 	storage_length = strlen(url) + 8;
 	internal->buffer = malloc(storage_length);
 	if (!internal->buffer)
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	storage_end = internal->buffer;
 
 	/* look for a valid scheme */
@@ -280,65 +260,7 @@ static url_func_result url_get_components(const char *url,
 	}
 
 	assert((result->buffer + storage_length) >= storage_end);
-	return URL_FUNC_OK;
-}
-
-
-/**
- * Reform a URL from separate components
- *
- * See RFC 3986 for reference.
- *
- * \param  components  the components to reform into a URL
- * \return  a new URL allocated on the heap, or NULL on failure
- */
-
-static char *url_reform_components(const struct url_components *components)
-{
-	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
-			fragment_len = 0;
-	char *result, *url;
-
-	/* 5.3 */
-	if (components->scheme)
-		scheme_len = strlen(components->scheme) + 1;
-	if (components->authority)
-		authority_len = strlen(components->authority) + 2;
-	if (components->path)
-		path_len = strlen(components->path);
-	if (components->query)
-		query_len = strlen(components->query) + 1;
-	if (components->fragment)
-		fragment_len = strlen(components->fragment) + 1;
-
-	/* claim memory */
-	url = result = malloc(scheme_len + authority_len + path_len +
-			query_len + fragment_len + 1);
-	if (!url) {
-		LOG(("malloc failed"));
-		return NULL;
-	}
-
-	/* rebuild URL */
-	if (components->scheme) {
-	  	sprintf(url, "%s:", components->scheme);
-		url += scheme_len;
-	}
-	if (components->authority) {
-	  	sprintf(url, "//%s", components->authority);
-		url += authority_len;
-	}
-	if (components->path) {
-	  	sprintf(url, "%s", components->path);
-		url += path_len;
-	}
-	if (components->query) {
-	  	sprintf(url, "?%s", components->query);
-		url += query_len;
-	}
-	if (components->fragment)
-	  	sprintf(url, "#%s", components->fragment);
-	return result;
+	return NSERROR_OK;
 }
 
 
@@ -359,279 +281,22 @@ static void url_destroy_components(const struct url_components *components)
 }
 
 
-/**
- * Resolve a relative URL to absolute form.
- *
- * \param  rel	   relative URL
- * \param  base	   base URL, must be absolute and cleaned as by nsurl_create()
- * \param  result  pointer to pointer to buffer to hold absolute url
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_join(const char *rel, const char *base, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_scheme(const char *url, char **result)
 {
-	url_func_result status = URL_FUNC_NOMEM;
-	struct url_components_internal base_components = {0,0,0,0,0,0};
-	struct url_components_internal *base_ptr = &base_components;
-	struct url_components_internal rel_components = {0,0,0,0,0,0};
-	struct url_components_internal *rel_ptr = &rel_components;
-	struct url_components_internal merged_components = {0,0,0,0,0,0};
-	struct url_components_internal *merged_ptr = &merged_components;
-	char *merge_path = NULL, *split_point;
-	char *input, *output, *start = NULL;
-	int len, buf_len;
-
-	(*result) = 0;
-
-	assert(base);
-	assert(rel);
-
-
-	/* break down the relative URL (not cached, corruptable) */
-	status = url_get_components(rel, (struct url_components *) rel_ptr);
-	if (status != URL_FUNC_OK) {
-		LOG(("relative url '%s' failed to get components", rel));
-		return URL_FUNC_FAILED;
-	}
-
-	/* [1] relative URL is absolute, use it entirely */
-	merged_components = rel_components;
-	if (rel_components.scheme)
-		goto url_join_reform_url;
-
-	/* break down the base URL (possibly cached, not corruptable) */
-	status = url_get_components(base, (struct url_components *) base_ptr);
-	if (status != URL_FUNC_OK) {
-		url_destroy_components((struct url_components *) rel_ptr);
-		LOG(("base url '%s' failed to get components", base));
-		return URL_FUNC_FAILED;
-	}
-
-	/* [2] relative authority takes presidence */
-	merged_components.scheme = base_components.scheme;
-	if (rel_components.authority)
-		goto url_join_reform_url;
-
-	/* [3] handle empty paths */
-	merged_components.authority = base_components.authority;
-	if (!rel_components.path) {
-	  	merged_components.path = base_components.path;
-		if (!rel_components.query)
-			merged_components.query = base_components.query;
-		goto url_join_reform_url;
-	}
-
-	/* [4] handle valid paths */
-	if (rel_components.path[0] == '/')
-		merged_components.path = rel_components.path;
-	else {
-		/* 5.2.3 */
-		if ((base_components.authority) && (!base_components.path)) {
-			merge_path = malloc(strlen(rel_components.path) + 2);
-			if (!merge_path) {
-				LOG(("malloc failed"));
-				goto url_join_no_mem;
-			}
-			sprintf(merge_path, "/%s", rel_components.path);
-			merged_components.path = merge_path;
-		} else {
-			split_point = base_components.path ?
-					strrchr(base_components.path, '/') :
-					NULL;
-			if (!split_point) {
-				merged_components.path = rel_components.path;
-			} else {
-				len = ++split_point - base_components.path;
-				buf_len = len + 1 + strlen(rel_components.path);
-				merge_path = malloc(buf_len);
-				if (!merge_path) {
-					LOG(("malloc failed"));
-					goto url_join_no_mem;
-				}
-				memcpy(merge_path, base_components.path, len);
-				memcpy(merge_path + len, rel_components.path,
-						strlen(rel_components.path));
-				merge_path[buf_len - 1] = '\0';
-				merged_components.path = merge_path;
-			}
-		}
-	}
-
-url_join_reform_url:
-	/* 5.2.4 */
-	input = merged_components.path;
-	if ((input) && (strchr(input, '.'))) {
-	  	/* [1] remove all dot references */
-	  	output = start = malloc(strlen(input) + 1);
-	  	if (!output) {
-			LOG(("malloc failed"));
-			goto url_join_no_mem;
-		}
-		merged_components.path = output;
-		*output = '\0';
-
-		while (*input != '\0') {
-		  	/* [2A] */
-		  	if (input[0] == '.') {
-		  		if (input[1] == '/') {
-		  			input = input + 2;
-		  			continue;
-		  		} else if ((input[1] == '.') &&
-		  				(input[2] == '/')) {
-		  			input = input + 3;
-		  			continue;
-		  		}
-		  	}
-
-		  	/* [2B] */
-		  	if ((input[0] == '/') && (input[1] == '.')) {
-		  		if (input[2] == '/') {
-		  		  	input = input + 2;
-		  		  	continue;
-		  		} else if (input[2] == '\0') {
-		  		  	input = input + 1;
-		  		  	*input = '/';
-		  		  	continue;
-		  		}
-
-		  		/* [2C] */
-		  		if ((input[2] == '.') && ((input[3] == '/') ||
-		  				(input[3] == '\0'))) {
-			  		if (input[3] == '/') {
-			  		  	input = input + 3;
-			  		} else {
-		  				input = input + 2;
-		  			  	*input = '/';
-		  			}
-
-		  			if ((output > start) &&
-		  					(output[-1] == '/'))
-		  				*--output = '\0';
-		  			split_point = strrchr(start, '/');
-		  			if (!split_point)
-		  				output = start;
-		  			else
-		  				output = split_point;
-		  			*output = '\0';
-		  			continue;
-		  		}
-		  	}
-
-
-		  	/* [2D] */
-		  	if (input[0] == '.') {
-		  		if (input[1] == '\0') {
-		  			input = input + 1;
-		  			continue;
-		  		} else if ((input[1] == '.') &&
-		  				(input[2] == '\0')) {
-		  			input = input + 2;
-		  			continue;
-		  		}
-		  	}
-
-		  	/* [2E] */
-		  	if (*input == '/')
-		  		*output++ = *input++;
-		  	while ((*input != '/') && (*input != '\0'))
-		  		*output++ = *input++;
-		  	*output = '\0';
-                }
-                /* [3] */
-      		merged_components.path = start;
-	}
-
-	/* 5.3 */
-	*result = url_reform_components((struct url_components *) merged_ptr);
-  	if (!(*result))
-		goto url_join_no_mem;
-
-	/* return success */
-	status = URL_FUNC_OK;
-
-url_join_no_mem:
-	free(start);
-	free(merge_path);
-	url_destroy_components((struct url_components *) base_ptr);
-	url_destroy_components((struct url_components *) rel_ptr);
-	return status;
-}
-
-
-/**
- * Return the host name from an URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold host name
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_host(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-	const char *host_start, *host_end;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if (!components.authority) {
-			url_destroy_components(&components);
-			return URL_FUNC_FAILED;
-		}
-		host_start = strchr(components.authority, '@');
-		host_start = host_start ? host_start + 1 : components.authority;
-
-		/* skip over an IPv6 address if there is one */
-		if (host_start[0] == '[') {
-			host_end = strchr(host_start, ']') + 1;
-		} else {
-			host_end = strchr(host_start, ':');
-		}
-
-		if (!host_end)
-			host_end = components.authority +
-					strlen(components.authority);
-
-		*result = malloc(host_end - host_start + 1);
-		if (!(*result)) {
-			url_destroy_components(&components);
-			return URL_FUNC_FAILED;
-		}
-		memcpy((*result), host_start, host_end - host_start);
-		(*result)[host_end - host_start] = '\0';
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-
-/**
- * Return the scheme name from an URL.
- *
- * See RFC 3986, 3.1 for reference.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold scheme name
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_scheme(const char *url, char **result)
-{
-	url_func_result status;
+	nserror status;
 	struct url_components components;
 
 	assert(url);
 
 	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
+	if (status == NSERROR_OK) {
 		if (!components.scheme) {
-			status = URL_FUNC_FAILED;
+			status = NSERROR_NOT_FOUND;
 		} else {
 			*result = strdup(components.scheme);
 			if (!(*result))
-				status = URL_FUNC_NOMEM;
+				status = NSERROR_NOMEM;
 		}
 	}
 	url_destroy_components(&components);
@@ -639,45 +304,31 @@ url_func_result url_scheme(const char *url, char **result)
 }
 
 
-/**
- * Extract path segment from an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_path(const char *url, char **result)
+/* exported interface documented in utils/url.h */
+nserror url_path(const char *url, char **result)
 {
-	url_func_result status;
+	nserror status;
 	struct url_components components;
 
 	assert(url);
 
 	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
+	if (status == NSERROR_OK) {
 		if (!components.path) {
-			status = URL_FUNC_FAILED;
+			status = NSERROR_NOT_FOUND;
 		} else {
 			*result = strdup(components.path);
 			if (!(*result))
-				status = URL_FUNC_NOMEM;
+				status = NSERROR_NOMEM;
 		}
 	}
 	url_destroy_components(&components);
 	return status;
 }
 
-/**
- * Attempt to find a nice filename for a URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold filename
- * \param  remove_extensions  remove any extensions from the filename
- * \return  URL_FUNC_OK on success
- */
 
-url_func_result url_nice(const char *url, char **result,
+/* exported interface documented in utils/url.h */
+nserror url_nice(const char *url, char **result,
 		bool remove_extensions)
 {
 	int m;
@@ -691,7 +342,7 @@ url_func_result url_nice(const char *url, char **result,
 	m = regexec(&url_re, url, 10, match, 0);
 	if (m) {
 		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	}
 
 	/* extract the last component of the path, if possible */
@@ -737,7 +388,7 @@ url_func_result url_nice(const char *url, char **result,
 	*result = malloc(end - start + 1);
 	if (!*result) {
 		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 	strncpy(*result, url + start, end - start);
 	(*result)[end - start] = 0;
@@ -748,7 +399,7 @@ url_func_result url_nice(const char *url, char **result,
 			*dot = 0;
 	}
 
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 
 no_path:
 
@@ -760,7 +411,7 @@ no_path:
 				match[URL_RE_AUTHORITY].rm_so + 1);
 		if (!*result) {
 			LOG(("malloc failed"));
-			return URL_FUNC_NOMEM;
+			return NSERROR_NOMEM;
 		}
 		strncpy(*result, url + match[URL_RE_AUTHORITY].rm_so,
 				match[URL_RE_AUTHORITY].rm_eo -
@@ -772,50 +423,38 @@ no_path:
 			if ((*result)[i] == '.')
 				(*result)[i] = '_';
 
-		return URL_FUNC_OK;
+		return NSERROR_OK;
 	}
 
-	return URL_FUNC_FAILED;
+	return NSERROR_NOT_FOUND;
 }
 
-/**
- * Convert an escaped string to plain.
- * \param result unescaped string owned by caller must be freed with free()
- * \return  URL_FUNC_OK on success
- */
-url_func_result url_unescape(const char *str, char **result)
+
+/* exported interface documented in utils/url.h */
+nserror url_unescape(const char *str, char **result)
 {
 	char *curlstr;
 	char *retstr;
 
 	curlstr = curl_unescape(str, 0);
 	if (curlstr == NULL) {
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	retstr = strdup(curlstr);
 	curl_free(curlstr);
 
 	if (retstr == NULL) {
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	*result = retstr;
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 }
 
-/**
- * Escape a string suitable for inclusion in an URL.
- *
- * \param  unescaped      the unescaped string
- * \param  toskip         number of bytes to skip in unescaped string
- * \param  sptoplus       true iff spaces should be converted to +
- * \param  escexceptions  NULL or a string of characters excluded to be escaped
- * \param  result         pointer to pointer to buffer to hold escaped string
- * \return  URL_FUNC_OK on success
- */
 
-url_func_result url_escape(const char *unescaped, size_t toskip,
+/* exported interface documented in utils/url.h */
+nserror url_escape(const char *unescaped, size_t toskip,
 		bool sptoplus, const char *escexceptions, char **result)
 {
 	size_t len;
@@ -823,18 +462,18 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 	const char *c;
 
 	if (!unescaped || !result)
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 
 	*result = NULL;
 
 	len = strlen(unescaped);
 	if (len < toskip)
-		return URL_FUNC_FAILED;
+		return NSERROR_NOT_FOUND;
 	len -= toskip;
 
 	escaped = malloc(len * 3 + 1);
 	if (!escaped)
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 
 	for (c = unescaped + toskip, d = escaped; *c; c++) {
 		/* Check if we should escape this byte.
@@ -864,7 +503,7 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 	tmpres = malloc(d - escaped + toskip);
 	if (!tmpres) {
 		free(escaped);
-		return URL_FUNC_NOMEM;
+		return NSERROR_NOMEM;
 	}
 
 	memcpy(tmpres, unescaped, toskip); 
@@ -873,70 +512,5 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 
 	free(escaped);
 
-	return URL_FUNC_OK;
+	return NSERROR_OK;
 }
-
-
-#ifdef TEST
-
-int main(int argc, char *argv[])
-{
-	int i;
-	url_func_result res;
-	char *s;
-	url_init();
-	for (i = 1; i != argc; i++) {
-/*		printf("==> '%s'\n", argv[i]);
-		res = url_normalize(argv[i], &s);
-		if (res == URL_FUNC_OK) {
-			printf("<== '%s'\n", s);
-			free(s);
-		}*/
-/*		printf("==> '%s'\n", argv[i]);
-		res = url_host(argv[i], &s);
-		if (res == URL_FUNC_OK) {
-			printf("<== '%s'\n", s);
-			free(s);
-		}*/
-		if (1 != i) {
-			res = url_join(argv[i], argv[1], &s);
-			if (res == URL_FUNC_OK) {
-				printf("'%s' + '%s' \t= '%s'\n", argv[1],
-						argv[i], s);
-				free(s);
-			}
-		}
-/*		printf("'%s' => ", argv[i]);
-		res = url_nice(argv[i], &s, true);
-		if (res == URL_FUNC_OK) {
-			printf("'%s', ", s);
-			free(s);
-		} else {
-			printf("failed %u, ", res);
-		}
-		res = url_nice(argv[i], &s, false);
-		if (res == URL_FUNC_OK) {
-			printf("'%s', ", s);
-			free(s);
-		} else {
-			printf("failed %u, ", res);
-		}
-		printf("\n");*/
-	}
-	return 0;
-}
-
-void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
-{
-	char errbuf[200];
-	int r;
-	r = regcomp(preg, regex, cflags);
-	if (r) {
-		regerror(r, preg, errbuf, sizeof errbuf);
-		fprintf(stderr, "Failed to compile regexp '%s'\n", regex);
-		fprintf(stderr, "error: %s\n", errbuf);
-		exit(1);
-	}
-}
-
-#endif

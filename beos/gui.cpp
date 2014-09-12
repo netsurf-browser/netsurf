@@ -37,6 +37,7 @@
 #include <FindDirectory.h>
 #include <Mime.h>
 #include <Path.h>
+#include <PathFinder.h>
 #include <Roster.h>
 #include <Screen.h>
 #include <String.h>
@@ -46,10 +47,10 @@ extern "C" {
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchers/curl.h"
+#include "content/fetchers.h"
 #include "content/fetchers/resource.h"
+#include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/401login.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -71,18 +72,13 @@ extern "C" {
 #include "beos/window.h"
 #include "beos/throbber.h"
 #include "beos/filetype.h"
-//#include "beos/download.h"
+#include "beos/download.h"
 #include "beos/schedule.h"
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
-void gui_init(int argc, char** argv);
-
-
-/* Where to search for shared resources.  Must have trailing / */
-#define RESPATH "/boot/apps/netsurf/res/"
 
 //TODO: use resources
 // enable using resources instead of files
@@ -131,6 +127,7 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case B_REFS_RECEIVED:
+		case B_UI_SETTINGS_CHANGED:
 		// messages for top-level
 		// we'll just send them to the first window
 		case 'back':
@@ -298,20 +295,32 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 			return buf;
 	}
 
-	strcpy(t, RESPATH);
-	strcat(t, filename);
-	realpath(t, buf);
-	if (access(buf, R_OK) == 0)
-		return buf;
+
+	BPathFinder f((void*)find_resource);
+
+	BPath p;
+	if (f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p) == B_OK) {
+		strcpy(t, p.Path());
+		strcat(t, filename);
+		realpath(t, buf);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
 
 	if (def[0] == '%') {
 		snprintf(t, PATH_MAX, "%s%s", path.Path(), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
-		realpath(t, buf);
+		if (realpath(t, buf) == NULL) {
+			strcpy(buf, t);
+		}
 	} else {
-		realpath(def, buf);
+		if (realpath(def, buf) == NULL) {
+			strcpy(buf, def);
+		}
 	}
 
 	return buf;
@@ -348,55 +357,25 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
 	BString u("rsrc:///");
+
+	/* default.css -> beosdefault.css */
 	if (strcmp(path, "default.css") == 0)
-		u << "beosdefault.css";
-	else
-		u << path;
+		path = "beosdefault.css";
+
+	/* favicon.ico -> favicon.png */
+	if (strcmp(path, "favicon.ico") == 0)
+		path = "favicon.png";
+
+	u << path;
 	LOG(("(%s) -> '%s'\n", path, u.String()));
 	nsurl_create(u.String(), &url);
 	return url;
 }
 
-static void gui_init2(int argc, char** argv)
-{
-	const char *addr;
-	nsurl *url;
-	nserror error;
-
-	if (argc > 1) {
-		addr = argv[1];
-	} else if (nsoption_charp(homepage_url) != NULL) {
-		addr = nsoption_charp(homepage_url);
-	} else {
-		addr = NETSURF_HOMEPAGE;
-	}
-
-	/* create an initial browser window */
-	error = nsurl_create(addr, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create((browser_window_nav_flags)
-			(BROWSER_WINDOW_VERIFIABLE | BROWSER_WINDOW_HISTORY),
-			url,
-			NULL,
-			NULL,
-			NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
-
-	if (gFirstRefsReceived) {
-		// resend the refs we got before having a window to send them to
-		be_app_messenger.SendMessage(gFirstRefsReceived);
-		delete gFirstRefsReceived;
-		gFirstRefsReceived = NULL;
-	}
-}
 
 
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
@@ -501,6 +480,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
+void nsbeos_update_system_ui_colors(void)
+{
+	set_defaults(nsoptions);
+}
+
 /**
  * Ensures output logging stream is correctly configured
  */
@@ -512,93 +496,29 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-/** Normal entry point from OS */
-int main(int argc, char** argv)
+static BPath get_messages_path()
 {
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
+	BPathFinder f((void*)get_messages_path);
 
-	if (!replicated) {
-		// create the Application object before trying to use messages
-		// so we can open an alert in case of error.
-		new NSBrowserApplication;
-	}
-
-	const char* messages = "/boot/apps/netsurf/res/en/Messages";
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	ret = netsurf_init(messages);
-	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	return 0;
+	BPath p;
+	f.FindPath(B_FIND_PATH_APPS_DIRECTORY, "netsurf/res", p);
+	// TODO: use Haiku's BLocale stuff
+	BString lang(getenv("LC_MESSAGES"));
+	lang.Truncate(2);
+	BDirectory d(p.Path());
+	if (!d.Contains(lang.String(), B_DIRECTORY_NODE))
+		lang = "en";
+	p.Append(lang.String());
+	p.Append("Messages");
+	return p;
 }
 
-/** called when replicated from NSBaseView::Instantiate() */
-int gui_init_replicant(int argc, char** argv)
+
+static void gui_init(int argc, char** argv)
 {
-	nserror ret;
-	BPath options;
-	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
-		options.Append("x-vnd.NetSurf");
-	}
-
-	const char* messages = "/boot/apps/netsurf/res/en/Messages";
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(nslog_stream_configure, &argc, argv);
-
-	// FIXME: use options as readonly for replicants
-	/* user options setup */
-	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("Options failed to initialise");
-	}
-	nsoption_read(options.Path(), NULL);
-	nsoption_commandline(&argc, argv, NULL);
-
-	/* common initialisation */
-	ret = netsurf_init(messages);
-	if (ret != NSERROR_OK) {
-		// FIXME: must not die when in replicant!
-		die("NetSurf failed to initialise");
-	}
-
-	gui_init(argc, argv);
-	gui_init2(argc, argv);
-
-	return 0;
-}
-
-void gui_init(int argc, char** argv)
-{
+	const char *addr;
+	nsurl *url;
+	nserror error;
 	char buf[PATH_MAX];
 
 	if (pipe(sEventPipe) < 0)
@@ -611,16 +531,14 @@ void gui_init(int argc, char** argv)
 			return;
 	}
 
-	// ui_color() gives hardcoded values before BApplication is created.
-	//FIXME:
-	//nsbeos_update_system_ui_colors();
+	nsbeos_update_system_ui_colors();
 
 	fetch_rsrc_register();
 
 	check_homedir();
 
 	// make sure the cache dir exists
-	create_directory(TEMP_FILENAME_PREFIX, 0600);
+	create_directory(TEMP_FILENAME_PREFIX, 0700);
 
 	//nsbeos_completion_init();
 
@@ -631,7 +549,7 @@ void gui_init(int argc, char** argv)
 	{
 #define STROF(n) #n
 #define FIND_THROB(n) filenames[(n)] = \
-				"throbber" STROF(n) ".png";
+				"throbber/throbber" STROF(n) ".png";
 		char *filenames[9];
 		FIND_THROB(0);
 		FIND_THROB(1);
@@ -728,6 +646,36 @@ void gui_init(int argc, char** argv)
 	if (!replicated)
 		be_app->Unlock();
 
+	if (argc > 1) {
+		addr = argv[1];
+	} else if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	} else {
+		addr = NETSURF_HOMEPAGE;
+	}
+
+	/* create an initial browser window */
+	error = nsurl_create(addr, &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(
+			BW_CREATE_HISTORY,
+			url,
+			NULL,
+			NULL,
+			NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+
+	if (gFirstRefsReceived) {
+		// resend the refs we got before having a window to send them to
+		be_app_messenger.SendMessage(gFirstRefsReceived);
+		delete gFirstRefsReceived;
+		gFirstRefsReceived = NULL;
+	}
+
 }
 
 
@@ -765,62 +713,43 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 }
 
 
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
-	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd = 0;
+	int max_fd;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
-	bool block = true;
 	bigtime_t next_schedule = 0;
 
-	// handle early deadlines
+        /* get any active fetcher fd */
+	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+
+        /* run the scheduler */
 	schedule_run();
-
-	FD_ZERO(&read_fd_set);
-	FD_ZERO(&write_fd_set);
-	FD_ZERO(&exc_fd_set);
-
-	if (active) {
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-	}
 
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
-	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
-	// If there are pending events elsewhere, we should not be blocking
-	if (!browser_reformat_pending) {
-		if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
-			next_schedule = earliest_callback_timeout - system_time();
-			block = false;
-		}
+	// max of all the fds in the set, plus one for select()
+	max_fd = MAX(max_fd, sEventPipe[0]) + 1;
 
-		// we're quite late already...
-		if (next_schedule < 0)
-			next_schedule = 0;
+	// compute schedule timeout
+        if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
+                next_schedule = earliest_callback_timeout - system_time();
+        } else {
+                next_schedule = earliest_callback_timeout;
+        }
 
-	} else //we're not allowed to sleep, there is other activity going on.
-		block = false;
-
-	/*
-	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
-		" next_schedule:%Ld block:%d ", browser_reformat_pending,
-		earliest_callback_timeout, next_schedule, block));
-	*/
+        // we're quite late already...
+        if (next_schedule < 0)
+                next_schedule = 0;
 
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
 	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		block ? NULL : &timeout);
+		&timeout);
 	//LOG(("select: %d\n", fd_count));
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
@@ -832,15 +761,10 @@ void gui_poll(bool active)
 			nsbeos_dispatch_event(message);
 		}
 	}
-
-	schedule_run();
-
-	if (browser_reformat_pending)
-		nsbeos_window_process_reformats();
 }
 
 
-void gui_quit(void)
+static void gui_quit(void)
 {
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
@@ -852,17 +776,16 @@ void gui_quit(void)
 	fetch_rsrc_unregister();
 }
 
-
-
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control)
+static char *url_to_path(const char *url)
 {
-	CALLED();
-}
+	char *url_path = curl_unescape(url, 0);
+	char *path;
 
-void 
-gui_window_save_link(struct gui_window *g, const char *url, const char *title)
-{
+	/* return the absolute path including leading / */
+	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+	curl_free(url_path);
+
+	return path;
 }
 
 /**
@@ -918,10 +841,11 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
 			return;
 		}
 		lwc_string *mime = content_get_mime_type(content);
-		const char *mime_string = lwc_string_data(mime);
-		if (mime)
+		if (mime) {
 			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
-				mime_string, lwc_string_length(mime) + 1);
+				lwc_string_data(mime), lwc_string_length(mime) + 1);
+			lwc_string_unref(mime);
+		}
 		
 	}
 
@@ -961,12 +885,13 @@ void nsbeos_gui_view_source(struct hlcache_handle *content)
  * Broadcast an URL that we can't handle.
  */
 
-void gui_launch_url(const char *url)
+static nserror gui_launch_url(struct nsurl *url)
 {
 	status_t status;
 	// try to open it as an URI
 	BString mimeType = "application/x-vnd.Be.URL.";
-	BString arg(url);
+	BString arg(nsurl_access(url));
+
 	mimeType.Append(arg, arg.FindFirst(":"));
 
 	// special case, text/x-email is used traditionally
@@ -978,11 +903,12 @@ void gui_launch_url(const char *url)
 	// we just check if it's registered
 	// if not there is likely no supporting app anyway
 	if (!BMimeType::IsValid(mimeType.String()))
-		return;
-	char *args[2] = { (char *)url, NULL };
+		return NSERROR_NO_FETCH_HANDLER;
+	char *args[2] = { (char *)nsurl_access(url), NULL };
 	status = be_roster->Launch(mimeType.String(), 1, args);
 	if (status < B_OK)
 		warn_user("Cannot launch url", strerror(status));
+        return NSERROR_OK;
 }
 
 
@@ -1022,79 +948,11 @@ void die(const char * const error)
 	exit(EXIT_FAILURE);
 }
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		unsigned long num, nserror (*cb)(bool proceed, void *pw),
-		void *cbpw)
-{
-	CALLED();
-}
-
 static void nsbeos_create_ssl_verify_window(struct browser_window *bw,
 		hlcache_handle *c, const struct ssl_cert_info *certs,
 		unsigned long num)
 {
 	CALLED();
-}
-
-
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-		char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
-
-	return UTF8_CONVERT_OK;
-}
-
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
-		char **result)
-{
-	assert(string && result);
-
-	if (len == 0)
-		len = strlen(string);
-
-	*result = strndup(string, len);
-	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
-
-	return UTF8_CONVERT_OK;
-}
-
-char *path_to_url(const char *path)
-{
-	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-	char *url = (char *)malloc(urllen);
-
-	if (url == NULL) {
-		return NULL;
-	}
-
-	if (*path == '/') {
-		path++; /* file: paths are already absolute */
-	} 
-
-	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
-
-	return url;
-}
-
-char *url_to_path(const char *url)
-{
-	char *url_path = curl_unescape(url, 0);
-	char *path;
-
-	/* return the absolute path including leading / */
-	path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	curl_free(url_path);
-
-	return path;
 }
 
 static void *myrealloc(void *ptr, size_t len, void *pw)
@@ -1107,41 +965,132 @@ static void *myrealloc(void *ptr, size_t len, void *pw)
 	return realloc(ptr, len);
 }
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
 
-char *filename_from_path(char *path)
+static struct gui_clipboard_table beos_clipboard_table = {
+	gui_get_clipboard,
+	gui_set_clipboard,
+};
+
+static struct gui_fetch_table beos_fetch_table = {
+        fetch_filetype,
+        gui_get_resource_url,
+        NULL //fetch_mimetype
+};
+
+static struct gui_browser_table beos_browser_table = {
+	gui_poll,
+	beos_schedule,
+	gui_quit,
+	gui_launch_url,
+	NULL, //create_form_select_menu
+	NULL, //cert_verify
+	gui_401login_open
+};
+
+
+/** Normal entry point from OS */
+int main(int argc, char** argv)
 {
-	char *leafname;
+	nserror ret;
+	BPath options;
+	struct netsurf_table beos_table = {
+		&beos_browser_table,
+		beos_window_table,
+		beos_download_table,
+		&beos_clipboard_table,
+                &beos_fetch_table
+	};
 
-	leafname = strrchr(path, '/');
-	if (!leafname)
-		leafname = path;
-	else
-		leafname += 1;
+        ret = netsurf_register(&beos_table);
+        if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 
-	return strdup(leafname);
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	if (!replicated) {
+		// create the Application object before trying to use messages
+		// so we can open an alert in case of error.
+		new NSBrowserApplication;
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+        ret = netsurf_init(messages.Path(), NULL);
+	if (ret != NSERROR_OK) {
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	netsurf_main_loop();
+
+	netsurf_exit();
+
+	return 0;
 }
 
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-bool path_add_part(char *path, int length, const char *newpart)
+/** called when replicated from NSBaseView::Instantiate() */
+int gui_init_replicant(int argc, char** argv)
 {
-	if(path[strlen(path) - 1] != '/')
-		strncat(path, "/", length);
+	nserror ret;
+	BPath options;
+	struct netsurf_table beos_table = {
+		&beos_browser_table,
+		beos_window_table,
+		beos_download_table,
+		&beos_clipboard_table,
+                &beos_fetch_table
+	};
 
-	strncat(path, newpart, length);
+        ret = netsurf_register(&beos_table);
+        if (ret != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 
-	return true;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(nslog_stream_configure, &argc, argv);
+
+	// FIXME: use options as readonly for replicants
+	/* user options setup */
+	ret = nsoption_init(set_defaults, &nsoptions, &nsoptions_default);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("Options failed to initialise");
+	}
+	nsoption_read(options.Path(), NULL);
+	nsoption_commandline(&argc, argv, NULL);
+
+	/* common initialisation */
+	BPath messages = get_messages_path();
+        ret = netsurf_init(messages.Path(), NULL);
+	if (ret != NSERROR_OK) {
+		// FIXME: must not die when in replicant!
+		die("NetSurf failed to initialise");
+	}
+
+	gui_init(argc, argv);
+
+	return 0;
 }

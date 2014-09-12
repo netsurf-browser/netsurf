@@ -25,13 +25,13 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "desktop/plotters.h"
+#include "content/content.h"
 #include "image/bitmap.h"
 
 #include "image/bmp.h"
 #include "image/gif.h"
 #include "image/ico.h"
 #include "image/jpeg.h"
-#include "image/mng.h"
 #include "image/nssprite.h"
 #include "image/png.h"
 #include "image/rsvg.h"
@@ -73,18 +73,7 @@ nserror image_init(void)
 		return error;
 #endif
 
-#ifdef WITH_MNG
-	error = nsmng_init();
-	if (error != NSERROR_OK)
-		return error;
-
-	error = nsjpng_init();
-	if (error != NSERROR_OK)
-		return error;
-#endif
-
 #ifdef WITH_PNG
-	/* Prefer libpng over libmng for pngs by registering later */
 	error = nspng_init();
 	if (error != NSERROR_OK)
 		return error;

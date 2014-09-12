@@ -16,28 +16,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
+#include "desktop/gui.h"
+
 #include "atari/encoding.h"
 
 
 /* TODO: this need a rework..., encoding to atari st doesn|t always work.
 ( gui_add_to_clipboard...) */
-utf8_convert_ret utf8_to_local_encoding(const char *string,
+nserror utf8_to_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
-	utf8_convert_ret r;
+	nserror r;
 	r = utf8_to_enc(string, "ATARIST", len, result);
-	if(r != UTF8_CONVERT_OK) {
+	if(r != NSERROR_OK) {
 		r = utf8_to_enc(string, "UTF-8", len, result);
-		assert( r == UTF8_CONVERT_OK );
+		assert( r == NSERROR_OK );
 	}
 	return r;
 }
 
 
-utf8_convert_ret utf8_from_local_encoding(const char *string,
-				       size_t len,
-				       char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	return utf8_from_enc(string, "ATARIST", len, result, NULL);
 }
@@ -69,3 +71,9 @@ int atari_to_ucs4(unsigned char atari)
 }
 
 
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *atari_utf8_table = &utf8_table;

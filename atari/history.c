@@ -37,7 +37,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/treeview.h"
@@ -104,11 +103,8 @@ static void atari_global_history_mouse_action(struct core_window *cw,
 												int x, int y)
 {
 	LOG(("x:  %d, y: %d\n", x, y));
-	if((mouse & BROWSER_MOUSE_HOVER) && global_history_has_selection()){
-		global_history_mouse_action(mouse, x, y);
-	} else {
-		global_history_mouse_action(mouse, x, y);
-	}
+
+	global_history_mouse_action(mouse, x, y);
 
 }
 
@@ -116,12 +112,7 @@ static void atari_global_history_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct atari_treeview_window *tv=NULL;
 	GRECT tb_area;
-	GUIWIN * gemtk_win;
-	struct gui_window * gw;
-	char *cur_url = NULL;
-	char *cur_title = NULL;
 	short retval = 0;
 
 	LOG((""));

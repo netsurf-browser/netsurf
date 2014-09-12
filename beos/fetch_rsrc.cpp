@@ -33,17 +33,18 @@
 extern "C" {
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/base64.h"
 }
 #include "beos/fetch_rsrc.h"
+#include "beos/filetype.h"
 #include "beos/gui.h"
 
 #include <image.h>
@@ -358,6 +359,18 @@ void fetch_rsrc_register(void)
 {
 	lwc_string *scheme;
 	int err;
+	nserror ret;
+
+	const struct fetcher_operation_table fetcher_ops_rsrc = {
+		fetch_rsrc_initialise,
+		fetch_rsrc_can_fetch,
+		fetch_rsrc_setup,
+		fetch_rsrc_start,
+		fetch_rsrc_abort,
+		fetch_rsrc_free,
+		fetch_rsrc_poll,
+		fetch_rsrc_finalise
+	};
 
 	err = find_app_resources();
 
@@ -371,15 +384,10 @@ void fetch_rsrc_register(void)
 				"(couldn't intern \"rsrc\").");
 	}
 
-	fetch_add_fetcher(scheme,
-		fetch_rsrc_initialise,
-		fetch_rsrc_can_fetch,
-		fetch_rsrc_setup,
-		fetch_rsrc_start,
-		fetch_rsrc_abort,
-		fetch_rsrc_free,
-		fetch_rsrc_poll,
-		fetch_rsrc_finalise);
+	ret = fetcher_add(scheme, &fetcher_ops_rsrc);
+        if (ret != NSERROR_OK) {
+		die("unable to add rsrc fetcher.");
+        }
 }
 
 void fetch_rsrc_unregister(void)

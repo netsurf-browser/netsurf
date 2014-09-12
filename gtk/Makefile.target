@@ -44,14 +44,13 @@ GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \
 # libsexy currently means we cannot enable this
 #		-DGDK_DISABLE_DEPRECATED 
 
-GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
+GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk -g \
 		$(GTKDEPFLAGS) \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
+		-D_POSIX_C_SOURCE=200809L \
 		-D_NETBSD_SOURCE \
-		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-		$(WARNFLAGS) -g
+		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\"
 
 # non optional pkg-configed libs
 $(eval $(call pkg_config_find_and_add,libcss,CSS))
@@ -62,8 +61,6 @@ $(eval $(call pkg_config_find_and_add,libcurl,Curl ))
 $(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_GTK_MAJOR)))
 $(eval $(call pkg_config_find_and_add,gthread-2.0,GThread2))
 $(eval $(call pkg_config_find_and_add,gmodule-2.0,GModule2))
-$(eval $(call pkg_config_find_and_add,lcms,lcms))
-
 
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += -lm
@@ -109,10 +106,10 @@ $(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
-	selection.c history.c window.c filetype.c download.c menu.c	\
+	selection.c history.c window.c fetch.c download.c menu.c	\
 	print.c search.c tabs.c theme.c toolbar.c gettext.c		\
-	compat.c cookies.c hotlist.c 					\
-	$(addprefix dialogs/,preferences.c about.c source.c)
+	compat.c cookies.c hotlist.c viewdata.c viewsource.c		\
+	$(addprefix dialogs/,preferences.c about.c)
 
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems
@@ -127,28 +124,31 @@ EXETARGET := nsgtk
 # Install target
 # ----------------------------------------------------------------------------
 
-GTK_RESOURCES_LIST := adblock.css arrow_down_8x32.png ca-bundle.txt default.css \
-			default.ico favicon.png gtkdefault.css internal.css \
-			languages license netsurf.png netsurf.xpm \
-			netsurf-16x16.xpm quirks.css themelist toolbarIndices \
-			SearchEngines
-GTK_RESOURCES_LIST := $(addprefix gtk/res/, $(GTK_RESOURCES_LIST)) \
-			$(wildcard gtk/res/*.gtk*.ui)
+GTK_RESOURCES_LIST := \
+	languages themelist SearchEngines toolbarIndices ca-bundle.txt \
+	default.css adblock.css quirks.css internal.css gtkdefault.css \
+	credits.html licence.html welcome.html Messages \
+	default.ico favicon.png netsurf.png netsurf.xpm netsurf-16x16.xpm \
+	arrow_down_8x32.png
+
+GTK_RESOURCES_LIST := \
+	$(addprefix gtk/res/, $(GTK_RESOURCES_LIST)) \
+	$(wildcard gtk/res/*.gtk$(NETSURF_GTK_MAJOR).ui)
 
 # translations with more than just Messages files
 GTK_TRANSLATIONS_HTML := de en fr it ja nl
 
 install-gtk:
-	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	$(Q)install nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
 	$(Q)install -m 0644 gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	$(Q)install -m 0644 gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
 	$(Q)tar -c -h -C gtk/res -f - themes | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
-	$(Q)tar -c -h -C gtk/res -f - C $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
+	$(Q)tar -c -h -C gtk/res -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
+	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
 # ----------------------------------------------------------------------------
 # Package target

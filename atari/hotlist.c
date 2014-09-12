@@ -36,7 +36,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/treeview.h"
@@ -108,12 +107,8 @@ static void atari_hotlist_mouse_action(struct core_window *cw,
 												int x, int y)
 {
 	LOG(("x:  %d, y: %d\n", x, y));
-	if((mouse & BROWSER_MOUSE_HOVER) && hotlist_has_selection()){
-		hotlist_mouse_action(mouse, x, y);
-	} else {
-		hotlist_mouse_action(mouse, x, y);
-	}
 
+	hotlist_mouse_action(mouse, x, y);
 }
 
 
@@ -295,9 +290,6 @@ struct node;
 
 void atari_hotlist_add_page( const char * url, const char * title )
 {
-	struct node * root;
-	struct node * selected = NULL;
-	struct node * folder = NULL;
 	nsurl *nsurl;
 
 	if(hl.tv == NULL)

@@ -35,8 +35,6 @@
 #include <images/label.h>
 #include <proto/bitmap.h>
 #include <images/bitmap.h>
-#include <proto/glyph.h>
-#include <images/glyph.h>
 
 #include <reaction/reaction_macros.h>
 
@@ -58,12 +56,19 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "amiga/schedule.h"
 #include "desktop/hotlist.h"
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
-#include "utils/schedule.h"
+
+/* This is here temporarily until we get a new SDK */
+#define LABEL_MenuMode          (LABEL_Dummy+12)
+    /* (BOOL) Use highlighting that fits in better visually in a
+       menu. Defaults to FALSE. */
+/**/
+
 
 enum {
 	NSA_GLYPH_SUBMENU,
@@ -357,13 +362,34 @@ void ami_menu_free_glyphs(void)
 	menu_glyphs_loaded = false;
 }
 
+static int ami_menu_calc_item_width(struct gui_window_2 *gwin, int j, struct RastPort *rp)
+{
+	int space_width = TextLength(rp, " ", 1);
+	int item_size;
+
+	item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
+	item_size += space_width;
+
+	if(gwin->menukey[j]) {
+		item_size += TextLength(rp, &gwin->menukey[j], 1);
+		item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
+		/**TODO: take account of the size of other imagery too
+		 */
+	}
+
+	return item_size;
+}
+
+
 static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
-	int txtlen = 0;
+	int txtlen = 0, subtxtlen = 0;
+	int left_posn;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-	
+	int space_width = TextLength(rp, " ", 1);
+
 	if(menu_glyphs_loaded == false)
 		ami_menu_load_glyphs(dri);
 
@@ -372,18 +398,10 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 		if(gwin->menutype[i] == NM_TITLE) {
 			j = i + 1;
 			txtlen = 0;
-			int item_size = 0;
 			do {
 				if(gwin->menulab[j] != NM_BARLABEL) {
 					if(gwin->menutype[j] == NM_ITEM) {
-						item_size = TextLength(rp, gwin->menulab[j], strlen(gwin->menulab[j]));
-						if(gwin->menukey[j]) {
-							item_size += TextLength(rp, &gwin->menukey[j], 1);
-							item_size += menu_glyph_width[NSA_GLYPH_AMIGAKEY];
-							/**TODO: take account of the size of other imagery too
-							 */
-						}
-						
+						int item_size = ami_menu_calc_item_width(gwin, j, rp);
 						if(item_size > txtlen) {
 							txtlen = item_size;
 						}
@@ -398,31 +416,75 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
 				int icon_width = 0;
+				Object *blank_space = NULL;
 				Object *submenuarrow = NULL;
 				Object *icon = 	BitMapObject,
 						BITMAP_Screen, scrn,
 						BITMAP_SourceFile, gwin->menuicon[i],
 						BITMAP_Masking, TRUE,
 					BitMapEnd;
+
+				/* \todo make this scale the bitmap to these dimensions */
+				SetAttrs(icon,
+					BITMAP_Width, 16,
+					BITMAP_Height, 16,
+					TAG_DONE);
+
 				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
-				
+
+				if(gwin->menutype[i] == NM_SUB) {
+					left_posn = subtxtlen;
+				} else {
+					left_posn = txtlen;
+				}
+
+				left_posn = left_posn -
+					TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
+					icon_width - space_width;
+
 				if((gwin->menutype[i] == NM_ITEM) && (gwin->menutype[i+1] == NM_SUB)) {
+					left_posn -= menu_glyph_width[NSA_GLYPH_SUBMENU];
+
 					submenuarrow = NewObject(NULL, "sysiclass",
-										SYSIA_Which, MENUSUB,
-										SYSIA_DrawInfo, dri,
-										IA_Left, txtlen - TextLength(rp, gwin->menulab[i], strlen(gwin->menulab[i])) -
-													menu_glyph_width[NSA_GLYPH_SUBMENU] - icon_width,
+									SYSIA_Which, MENUSUB,
+									SYSIA_DrawInfo, dri,
+									IA_Left, left_posn,
 									TAG_DONE);
+
+					j = i + 1;
+					subtxtlen = 0;
+					do {
+						if(gwin->menulab[j] != NM_BARLABEL) {
+							if(gwin->menutype[j] == NM_SUB) {
+								int item_size = ami_menu_calc_item_width(gwin, j, rp);
+								if(item_size > subtxtlen) {
+									subtxtlen = item_size;
+								}
+							}
+						}
+						j++;
+					} while((gwin->menutype[j] == NM_SUB));
 				}
 
 				/**TODO: Checkmark/MX images and keyboard shortcuts
 				 */
+
+				if(gwin->menutype[i] == NM_SUB) {
+					blank_space = NewObject(NULL, "fillrectclass",
+									IA_Height, 0,
+									IA_Width, left_posn + icon_width,
+									TAG_DONE);
+				}
 				
 				gwin->menuobj[i] = LabelObject,
+					LABEL_MenuMode, TRUE,
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, icon,
+					LABEL_Text, " ",
 					LABEL_Text, gwin->menulab[i],
+					LABEL_DisposeImage, TRUE,
+					LABEL_Image, blank_space,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, submenuarrow,
 				LabelEnd;
@@ -455,8 +517,6 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
-	int i;
-
 	gwin->menu = AllocVecTags(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1),
 					AVT_ClearWithValue, 0, TAG_DONE);
 	ami_init_menulabs(gwin);
@@ -478,10 +538,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	gwin->menu[M_IMGBACK].nm_Flags = CHECKIT | MENUTOGGLE;
 	if(nsoption_bool(background_images) == true)
 		gwin->menu[M_IMGBACK].nm_Flags |= CHECKED;
-
-	/* Set up scheduler to refresh the hotlist menu */
-	if(nsoption_int(menu_refresh) > 0)
-		schedule(nsoption_int(menu_refresh), (void *)ami_menu_refresh, gwin);
 
 	return(gwin->menu);
 }
@@ -548,7 +604,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char *title, nsurl *url, bool is_folder)
 {
 	UBYTE type;
-	char *icon;
+	STRPTR icon;
 	struct gui_window_2 *gw = (struct gui_window_2 *)userdata;
 	
 	if(item >= AMI_MENU_HOTLIST_MAX) return false;
@@ -567,15 +623,18 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 	}
 
 	if(is_folder == true) {
-		icon = "icons/directory.png";
+		icon = ASPrintf("icons/directory.png");
 	} else {
-		icon = "icons/content.png";
+		icon = ami_gui_get_cache_favicon_name(url, true);
+		if (icon == NULL) icon = ASPrintf("icons/content.png");
 	}
 
 	ami_menu_alloc_item(gw, item, type, title,
 		0, icon, ami_menu_item_hotlist_entries, (void *)url);
 	if((is_folder == true) && (type == NM_SUB))
 		gw->menu[item].nm_Flags = NM_ITEMDISABLED;
+
+	if(icon) FreeVec(icon);
 
 	return true;
 }
@@ -697,8 +756,7 @@ static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct 
 
 	error = nsurl_create(nsoption_charp(homepage_url), &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -713,25 +771,10 @@ static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct 
 static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
 	struct gui_window_2 *gwin;
-	nsurl *url;
 	nserror error;
+
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-
-	error = nsurl_create(nsoption_charp(homepage_url), &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY |
-					      BROWSER_WINDOW_TAB,
-					      url,
-					      NULL,
-					      gwin->bw,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+	error = ami_gui_new_blank_tab(gwin);
 }
 
 static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -801,18 +844,9 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 				TDR_TitleString, messages_get("NetSurf"),
 				TDR_Window, gwin->win,
 				TDR_GadgetString, temp2,
-#ifndef NDEBUG
-				TDR_FormatString,"NetSurf %s\n%s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
-#else
-				TDR_FormatString,"NetSurf %s\n%s\n\nhttp://www.netsurf-browser.org",
-#endif
+				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
 				TDR_Arg1,netsurf_version,
-#ifdef NS_AMIGA_CAIRO
-				TDR_Arg2,"Cairo (OS4.1+) SObjs build",
-#else
-				TDR_Arg2,"graphics.library static build",
-#endif
-				TDR_Arg3,verdate,
+				TDR_Arg2,verdate,
 				TAG_DONE);
 
 	free(temp2);
@@ -825,8 +859,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 	if(url) {
 		if (error == NSERROR_OK) {
-			error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							  BROWSER_WINDOW_HISTORY,
+			error = browser_window_create(BW_CREATE_HISTORY,
 							  url,
 							  NULL,
 							  NULL,
@@ -867,8 +900,12 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 	}
 	else if(bm = content_get_bitmap(gwin->bw->current_content))
 	{
-		bm->url = (char *)nsurl_access(hlcache_handle_get_url(gwin->bw->current_content));
-		bm->title = (char *)content_get_title(gwin->bw->current_content);
+		/** @todo It should be checked that the lifetime of
+		 * the objects containing the values returned (and the
+		 * constness cast away) is safe.
+		 */
+		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->bw));
+		bm->title = (char *)browser_window_get_title(gwin->bw);
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG
@@ -1041,7 +1078,6 @@ static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct In
 static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
 	nsurl *url = hook->h_Data;
-	nserror error;
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
@@ -1050,8 +1086,7 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 	browser_window_navigate(gwin->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1109,13 +1144,13 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 	char *script = hook->h_Data;
 	char *temp;
 	struct gui_window_2 *gwin;
-	BPTR lock = 0;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(script)
 	{
 		if(temp = AllocVecTagList(1024, NULL))
 		{
+			BPTR lock;
 			if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK)) {
 				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
 				AddPart(temp, script, 1024);
@@ -1126,3 +1161,4 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 		}
 	}
 }
+

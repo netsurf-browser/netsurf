@@ -32,6 +32,7 @@
 #include "content/urldb.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
+#include "desktop/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
@@ -44,7 +45,6 @@
 #include "riscos/wimp_event.h"
 #include "utils/messages.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 static void ro_gui_global_history_toolbar_update_buttons(void);

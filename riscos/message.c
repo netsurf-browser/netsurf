@@ -188,14 +188,14 @@ struct active_message *ro_message_add(unsigned int message_code,
 bool ro_message_handle_message(wimp_event_no event, wimp_message *message)
 {
 	struct active_message *test;
-	bool handled = false;
-	int ref;
 
 	assert(message);
 
 	if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
 		/* handle message acknowledgement */
-		ref = message->my_ref;
+		bool handled = false;
+		int ref = message->my_ref;
+
 		if (ref == 0)
 			return false;
 

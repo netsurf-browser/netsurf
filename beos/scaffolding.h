@@ -25,7 +25,6 @@
 #include <NetPositive.h>
 
 extern "C" {
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
 }
 
@@ -173,6 +172,7 @@ typedef enum {
 
 	/* misc actions */
 	CHOICES_SHOW,
+	ABOUT_BUTTON,
 	APPLICATION_QUIT,
 } menu_action;
 
@@ -180,6 +180,8 @@ typedef enum {
 NSBrowserWindow *nsbeos_find_last_window(void);
 
 NSBrowserWindow *nsbeos_get_bwindow_for_scaffolding(nsbeos_scaffolding *scaffold);
+
+NSBaseView *nsbeos_get_baseview_for_scaffolding(nsbeos_scaffolding *scaffold);
 
 nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel);
 
@@ -197,5 +199,11 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold);
 
 void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where);
 
+void gui_window_set_title(struct gui_window *_g, const char *title);
+void gui_window_set_url(struct gui_window *_g, const char *url);
+void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon);
+void gui_window_set_status(struct gui_window *_g, const char *text);
+void gui_window_start_throbber(struct gui_window* _g);
+void gui_window_stop_throbber(struct gui_window* _g);
 
 #endif /* NETSURF_BEOS_SCAFFOLDING_H */

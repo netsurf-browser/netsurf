@@ -22,7 +22,7 @@
 #include <FilePanel.h>
 #include <Window.h>
 #include <BeBuild.h>
- 
+
 #ifndef B_BEOS_VERSION_DANO
 #define B_UI_SETTINGS_CHANGED '_UIC'
 #endif
@@ -31,6 +31,9 @@
 
 extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
+
+extern "C" void gui_401login_open(nsurl *url, const char *realm,
+				  nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 
 extern char *options_file_location;
@@ -47,9 +50,6 @@ virtual void	ArgvReceived(int32 argc, char **argv);
 virtual void	AboutRequested();
 virtual bool	QuitRequested();
 };
-
-
-extern void schedule_run(void);
 
 extern BWindow *wndAbout;
 

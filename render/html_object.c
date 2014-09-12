@@ -31,12 +31,13 @@
 #include "css/utils.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
-#include "render/box.h"
-#include "render/html_internal.h"
+#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
-#include "utils/schedule.h"
+
+#include "render/box.h"
+#include "render/html_internal.h"
 
 /* break reference loop */
 static void html_object_refresh(void *p);
@@ -123,6 +124,9 @@ html_object_callback(hlcache_handle *object,
 	assert(c->base.status != CONTENT_STATUS_ERROR);
 
 	box = o->box;
+	if (box == NULL && event->type != CONTENT_MSG_ERROR) {
+		return NSERROR_OK;
+	}
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -181,11 +185,13 @@ html_object_callback(hlcache_handle *object,
 
 		o->content = NULL;
 
-		c->base.active--;
-		LOG(("%d fetches active", c->base.active));
+		if (box != NULL) {
+			c->base.active--;
+			LOG(("%d fetches active", c->base.active));
 
-		content_add_error(&c->base, "?", 0);
-		html_object_failed(box, c, o->background);
+			content_add_error(&c->base, "?", 0);
+			html_object_failed(box, c, o->background);
+		}
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -201,10 +207,6 @@ html_object_callback(hlcache_handle *object,
 			content_broadcast(&c->base, CONTENT_MSG_STATUS,
 					event->data);
 		}
-		break;
-
-	case CONTENT_MSG_REFORMAT:
-	case CONTENT_MSG_REDIRECT:
 		break;
 
 	case CONTENT_MSG_REDRAW:
@@ -334,7 +336,7 @@ html_object_callback(hlcache_handle *object,
 	case CONTENT_MSG_REFRESH:
 		if (content_get_type(object) == CONTENT_HTML) {
 			/* only for HTML objects */
-			schedule(event->data.delay * 100,
+			guit->browser->schedule(event->data.delay * 1000,
 					html_object_refresh, o);
 		}
 
@@ -372,6 +374,7 @@ html_object_callback(hlcache_handle *object,
 
 	case CONTENT_MSG_SAVELINK:
 	case CONTENT_MSG_POINTER:
+	case CONTENT_MSG_GADGETCLICK:
 		/* These messages are for browser window layer.
 		 * we're not interested, so pass them on. */
 		content_broadcast(&c->base, event->type, event->data);
@@ -440,7 +443,7 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	if (c->base.status == CONTENT_STATUS_READY && c->base.active == 0 &&
@@ -464,7 +467,7 @@ html_object_callback(hlcache_handle *object,
 	 * then reformat the page to display newly fetched objects */
 	else if (nsoption_bool(incremental_reflow) &&
 			event->type == CONTENT_MSG_DONE &&
-			!(box->flags & REPLACE_DIM) &&
+			box != NULL && !(box->flags & REPLACE_DIM) &&
 			(c->base.status == CONTENT_STATUS_READY ||
 			 c->base.status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->base.reformat_time)) {
@@ -491,6 +494,7 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 	nserror error;
 
 	assert(object != NULL);
+	assert(object->box != NULL);
 
 	c = (html_content *) object->parent;
 
@@ -531,7 +535,7 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 }
 
 /**
- * schedule() callback for object refresh
+ * schedule callback for object refresh
  */
 
 static void html_object_refresh(void *p)
@@ -562,7 +566,7 @@ nserror html_object_open_objects(html_content *html, struct browser_window *bw)
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
 
-		if (object->content == NULL)
+		if (object->content == NULL || object->box == NULL)
 			continue;
 
 		if (content_get_type(object->content) == CONTENT_NONE)
@@ -621,14 +625,15 @@ nserror html_object_close_objects(html_content *html)
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
 
-		if (object->content == NULL)
+		if (object->content == NULL || object->box == NULL)
 			continue;
 
 		if (content_get_type(object->content) == CONTENT_NONE)
 			continue;
 
-		if (content_get_type(object->content) == CONTENT_HTML)
-			schedule_remove(html_object_refresh, object);
+		if (content_get_type(object->content) == CONTENT_HTML) {
+			guit->browser->schedule(-1, html_object_refresh, object);
+		}
 
 		content_close(object->content);
 	}
@@ -643,9 +648,9 @@ nserror html_object_free_objects(html_content *html)
 		if (victim->content != NULL) {
 			LOG(("object %p", victim->content));
 
-			if (content_get_type(victim->content) == CONTENT_HTML)
-				schedule_remove(html_object_refresh, victim);
-
+			if (content_get_type(victim->content) == CONTENT_HTML) {
+				guit->browser->schedule(-1, html_object_refresh, victim);
+			}
 			hlcache_handle_release(victim->content);
 		}
 
@@ -701,8 +706,10 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	c->object_list = object;
 
 	c->num_objects++;
-	c->base.active++;
-	LOG(("%d fetches active", c->base.active));
+	if (box != NULL) {
+		c->base.active++;
+		LOG(("%d fetches active", c->base.active));
+	}
 
 	return true;
 }

@@ -23,9 +23,10 @@
 
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "content/fetch.h"
+
+#include "atari/filetype.h"
 
 /**
  * filetype -- determine the MIME type of a local file
@@ -59,12 +60,12 @@ const char *fetch_filetype(const char *unix_path)
 		else if (2 < l && strcasecmp(unix_path + l - 3, "txt") == 0)
 			res = (char*)"text/plain";
 	} else {
-		int n=0;
-		int c;
 		FILE * fp;
 		char buffer[16];
 		fp = fopen( unix_path, "r" );
 		if( fp ){
+			int n=0;
+			int c;
 			do {
 				c = fgetc (fp);
 				if( c != EOF )
@@ -88,10 +89,4 @@ const char *fetch_filetype(const char *unix_path)
 error:
 	LOG(("mime type: %s", res ));
 	return( res );
-}
-
-
-char *fetch_mimetype(const char *ro_path)
-{
-	return strdup("text/plain");
 }

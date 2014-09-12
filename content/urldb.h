@@ -25,9 +25,8 @@
 
 #include <stdbool.h>
 #include <time.h>
-#include "content/content.h"
-#include "content/content_type.h"
 #include "utils/nsurl.h"
+#include "content/content_type.h"
 
 typedef enum {
 	COOKIE_NETSCAPE = 0,

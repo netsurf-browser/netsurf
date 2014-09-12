@@ -49,6 +49,9 @@ OLD_IDENTIFIER="$CC-${BUILD_JS}-$((BUILD_NUMBER - ${OLD_ARTIFACT_COUNT}))"
 # default atari architecture - bletch
 ATARIARCH=68020-60
 
+# make tool
+MAKE=make
+
 # Ensure the combination of target and toolchain works and set build
 #   specific parameters too
 case ${TARGET} in
@@ -67,6 +70,23 @@ case ${TARGET} in
 
 	PKG_SRC=netsurf
 	PKG_SFX=.zip
+	;;
+
+    "haiku")
+	case ${label} in
+	    "i586-pc-haiku")
+		ARTIFACT_TARGET=Haiku
+		;;
+
+	    *)
+		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		exit 1
+		;;
+
+	esac
+
+	PKG_SRC=NetSurf
+	PKG_SFX=
 	;;
 
 
@@ -167,8 +187,13 @@ case ${TARGET} in
 		ARTIFACT_TARGET=Linux
 		;;
 
+	    "amd64-unknown-openbsd5.4")
+		ARTIFACT_TARGET=OpenBSD
+		MAKE=gmake
+		;;
+
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${label}\""
 		exit 1
 		;;
 
@@ -317,11 +342,17 @@ fi
 
 # convert javascript parameters
 if [ "${BUILD_JS}" = "json" ];then
-    case ${TARGET} in
-	"riscos")
+    case ${label} in
+        "arm-unknown-riscos")
 	    BUILD_MOZJS=NO
 	    BUILD_JS=YES
 	    ;;
+
+        "amd64-unknown-openbsd5.4")
+	    BUILD_MOZJS=NO
+	    BUILD_JS=YES
+            ;;
+
 	*)
 	    BUILD_MOZJS=YES
 	    BUILD_JS=NO
@@ -340,11 +371,10 @@ fi
 ########### Build from source ##################
 
 # Clean first
-make NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
+${MAKE} NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} clean
 
 # Do the Build
-make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
-
+${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} Q=
 
 
 
@@ -352,7 +382,7 @@ make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${B
 ############ Package artifact construction ################
 
 # build the package file
-make -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
+${MAKE} -k NETSURF_USE_JS=${BUILD_JS} NETSURF_USE_MOZJS=${BUILD_MOZJS} CI_BUILD=${BUILD_NUMBER} ATARIARCH=${ATARIARCH} package Q=
 
 if [ ! -f "${PKG_SRC}${PKG_SFX}" ]; then
     # unable to find package file

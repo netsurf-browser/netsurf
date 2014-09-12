@@ -29,13 +29,13 @@
 #include <math.h>
 
 #include <parserutils/input/inputstream.h>
+#include <parserutils/charset/utf8.h>
 
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/search.h"
@@ -46,6 +46,7 @@
 #include "render/textplain.h"
 #include "render/html.h"
 #include "render/search.h"
+#include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -112,8 +113,7 @@ static void textplain_mouse_track(struct content *c, struct browser_window *bw,
 static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 static bool textplain_keypress(struct content *c, uint32_t key);
-static void textplain_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+static void textplain_search(struct content *c, void *gui_data,
 		search_flags_t flags, const char *string);
 static void textplain_search_clear(struct content *c);
 static void textplain_reformat(struct content *c, int width, int height);
@@ -159,7 +159,6 @@ static const content_handler textplain_content_handler = {
 	.no_share = true,
 };
 
-static lwc_string *textplain_charset;
 static lwc_string *textplain_default_charset;
 
 /**
@@ -170,16 +169,9 @@ nserror textplain_init(void)
 	lwc_error lerror;
 	nserror error;
 
-	lerror = lwc_intern_string("charset", SLEN("charset"),
-			&textplain_charset);
-	if (lerror != lwc_error_ok) {
-		return NSERROR_NOMEM;
-	}
-
 	lerror = lwc_intern_string("Windows-1252", SLEN("Windows-1252"),
 			&textplain_default_charset);
 	if (lerror != lwc_error_ok) {
-		lwc_string_unref(textplain_charset);
 		return NSERROR_NOMEM;
 	}
 
@@ -187,7 +179,6 @@ nserror textplain_init(void)
 			&textplain_content_handler);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(textplain_default_charset);
-		lwc_string_unref(textplain_charset);
 	}
 
 	return error;
@@ -201,11 +192,6 @@ void textplain_fini(void)
 	if (textplain_default_charset != NULL) {
 		lwc_string_unref(textplain_default_charset);
 		textplain_default_charset = NULL;
-	}
-
-	if (textplain_charset != NULL) {
-		lwc_string_unref(textplain_charset);
-		textplain_charset = NULL;
 	}
 }
 
@@ -233,7 +219,7 @@ nserror textplain_create(const content_handler *handler,
 		return error;
 	}
 
-	error = http_parameter_list_find_item(params, textplain_charset, 
+	error = http_parameter_list_find_item(params, corestring_lwc_charset,
 			&encoding);
 	if (error != NSERROR_OK) {
 		encoding = lwc_string_ref(textplain_default_charset);
@@ -480,6 +466,8 @@ void textplain_reformat(struct content *c, int width, int height)
 	int character_width;
 	size_t line_start;
 
+	LOG(("content %p w:%d h:%d",c, width, height));
+
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy */
 	if (!nsfont.font_width(&textplain_style, "ABCDEFGH", 8, &character_width))
@@ -500,12 +488,27 @@ void textplain_reformat(struct content *c, int width, int height)
 
 	line[line_count++].start = line_start = 0;
 	space = 0;
-	for (i = 0, col = 0; i != utf8_data_size; i++) {
-		bool term = (utf8_data[i] == '\n' || utf8_data[i] == '\r');
-		size_t next_col = col + 1;
+	i = 0;
+	col = 0;
+	while (i < utf8_data_size) {
+		size_t csize; /* number of bytes in character */
+		uint32_t chr;
+		bool term;
+		size_t next_col;
+		parserutils_error perror;
 
-		if (utf8_data[i] == '\t')
+		perror = parserutils_charset_utf8_to_ucs4((const uint8_t *)utf8_data + i, utf8_data_size - i, &chr, &csize);
+		if (perror != PARSERUTILS_OK) {
+			chr = 0xfffd;
+		}
+
+		term = (chr == '\n' || chr == '\r');
+
+		next_col = col + 1;
+
+		if (chr == '\t') {
 			next_col = (next_col + TAB_WIDTH - 1) & ~(TAB_WIDTH - 1);
+		}
 
 		if (term || next_col >= columns) {
 			if (line_count % 1024 == 0) {
@@ -530,7 +533,6 @@ void textplain_reformat(struct content *c, int width, int height)
 					/* break at last space in line */
 					i = space;
 					line[line_count-1].length = (i + 1) - line_start;
-
 				} else
 					line[line_count-1].length = i - line_start;
 			}
@@ -539,9 +541,10 @@ void textplain_reformat(struct content *c, int width, int height)
 			space = 0;
 		} else {
 			col++;
-			if (utf8_data[i] == ' ')
+			if (chr == ' ')
 				space = i;
 		}
+		i += csize;
 	}
 	line[line_count-1].length = i - line[line_count-1].start;
 	line[line_count].start = utf8_data_size;
@@ -774,8 +777,7 @@ bool textplain_keypress(struct content *c, uint32_t key)
  * \param  flags		search flags
  * \param  string		search string
  */
-void textplain_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void textplain_search(struct content *c, void *gui_data,
 		search_flags_t flags, const char *string)
 {
 	textplain_content *text = (textplain_content *) c;
@@ -801,7 +803,7 @@ void textplain_search(struct content *c,
 		}
 
 		text->search = search_create_context(c, CONTENT_TEXTPLAIN,
-				gui_callbacks, gui_data);
+				gui_data);
 
 		if (text->search == NULL)
 			return;

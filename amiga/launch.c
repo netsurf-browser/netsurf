@@ -31,6 +31,7 @@
 #include <proto/openurl.h>
 
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "utils/url.h"
 
 struct Library *OpenURLBase = NULL;
@@ -49,7 +50,7 @@ struct ami_protocol *ami_openurl_add_protocol(const char *url)
 	struct ami_protocol *ami_p =
 		(struct ami_protocol *)AllocVecTagList(sizeof(struct ami_protocol), NULL);
 
-	if(url_scheme(url, &ami_p->protocol) != URL_FUNC_OK)
+	if(url_scheme(url, &ami_p->protocol) != NSERROR_OK)
 	{
 		FreeVec(ami_p);
 		return NULL;
@@ -105,8 +106,6 @@ BOOL ami_openurl_check_list(struct MinList *list, const char *url)
 
 void ami_openurl_open(void)
 {
-	struct ami_protocol *ami_p;
-
 	if(nsoption_bool(use_openurl_lib)) {
 		if(OpenURLBase = OpenLibrary("openurl.library",0))
 			IOpenURL = (struct OpenURLIFace *)GetInterface(OpenURLBase,"main",1,NULL);
@@ -124,26 +123,31 @@ void ami_openurl_close(const char *scheme)
 	ami_openurl_free_list(&ami_unsupportedprotocols);
 }
 
-void gui_launch_url(const char *url)
+nserror gui_launch_url(struct nsurl *url)
 {
 	APTR procwin = SetProcWindow((APTR)-1L);
 	char *launchurl = NULL;
-	BPTR fptr = 0;
 
-	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
+	if(ami_openurl_check_list(&ami_unsupportedprotocols, nsurl_access(url)) == FALSE)
 	{
 		if(IOpenURL)
 		{
 			URL_OpenA((STRPTR)url,NULL);
 		} else {
-			if(launchurl = ASPrintf("URL:%s",url)) {
-				fptr = Open(launchurl,MODE_OLDFILE);
-				if(fptr) Close(fptr);
-					else ami_openurl_add_protocol(url);
+			if(launchurl = ASPrintf("URL:%s", nsurl_access(url))) {
+				BPTR fptr = Open(launchurl,MODE_OLDFILE);
+				if(fptr)
+				{
+					Close(fptr);
+				} else {
+					ami_openurl_add_protocol(nsurl_access(url));
+				}
 				FreeVec(launchurl);
 			}
 		}
 	}
 
-	SetProcWindow(procwin);		
+	SetProcWindow(procwin);
+
+	return NSERROR_OK;
 }

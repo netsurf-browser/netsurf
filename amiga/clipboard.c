@@ -16,10 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <proto/iffparse.h>
+#include <proto/intuition.h>
+#include <proto/exec.h>
+#include <proto/datatypes.h>
+#include <proto/diskfont.h>
+
+#include <diskfont/diskfonttag.h>
+#include <datatypes/textclass.h>
+#include <datatypes/pictureclass.h>
+
+#include "utils/nsoption.h"
+#include "utils/utf8.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "utils/nsoption.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
@@ -30,18 +41,6 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
 #include "amiga/utf8.h"
-
-#include "utils/utf8.h"
-
-#include <proto/iffparse.h>
-#include <proto/intuition.h>
-#include <proto/exec.h>
-#include <proto/datatypes.h>
-#include <proto/diskfont.h>
-
-#include <diskfont/diskfonttag.h>
-#include <datatypes/textclass.h>
-#include <datatypes/pictureclass.h>
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')
 
@@ -105,17 +104,6 @@ void gui_start_selection(struct gui_window *g)
 
 	if (browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-	if(!g) return;
-	if(!g->shared->win) return;
-	if(nsoption_bool(kiosk_mode) == true) return;
-
-	OffMenu(g->shared->win, AMI_MENU_CLEAR);
-	OffMenu(g->shared->win, AMI_MENU_CUT);
-	OffMenu(g->shared->win, AMI_MENU_COPY);
 }
 
 char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
@@ -197,12 +185,10 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 
 void gui_get_clipboard(char **buffer, size_t *length)
 {
-	struct ContextNode *cn;
 	struct CollectionItem *ci = NULL;
 	struct StoredProperty *sp = NULL;
 	ULONG rlen=0,error;
 	struct CSet *cset;
-	LONG codeset = 0;
 
 	if(OpenIFF(iffh,IFFF_READ)) return;
 	
@@ -216,6 +202,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	if(ci = FindCollection(iffh, ID_FTXT, ID_UTF8)) {
 		*buffer = ami_clipboard_cat_collection(ci, 106, length);
 	} else if(ci = FindCollection(iffh, ID_FTXT, ID_CHRS)) {
+		LONG codeset = 0;
 		if(sp = FindProp(iffh, ID_FTXT, ID_CSET)) {
 			cset = (struct CSet *)sp->sp_Data;
 			codeset = cset->CodeSet;
@@ -226,7 +213,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 	CloseIFF(iffh);
 }
 
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 	nsclipboard_styles styles[], int n_styles)
 {
 	char *text;
@@ -257,7 +244,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
 			if(nsoption_bool(clipboard_write_utf8)) {
 				WriteChunkBytes(iffh, buffer, length);
 			} else {
-				if(utf8_to_local_encoding(buffer, length, &text) == UTF8_CONVERT_OK) {
+				if(utf8_to_local_encoding(buffer, length, &text) == NSERROR_OK) {
 					char *p;
 
 					p = text;
@@ -387,3 +374,10 @@ bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 	return true;
 }
 #endif
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *amiga_clipboard_table = &clipboard_table;

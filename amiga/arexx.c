@@ -196,12 +196,12 @@ int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 
 struct browser_window *ami_find_tab(int window, int tab)
 {
-	int windows = 0, tabs = 0;
 	struct nsObject *node, *nnode;
-	struct gui_window_2 *gwin;
 
 	if(!IsMinListEmpty(window_list))
 	{
+		int windows = 0;
+
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
 		do
@@ -248,8 +248,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(curbw,
 					url,
 					NULL,
-					BROWSER_WINDOW_DOWNLOAD |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_DOWNLOAD,
 					NULL,
 					NULL,
 					NULL);
@@ -257,9 +256,8 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[2])
 	{
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				      BROWSER_WINDOW_HISTORY |
-				      BROWSER_WINDOW_TAB,
+		browser_window_create(BW_CREATE_HISTORY |
+				      BW_CREATE_TAB,
 				      url,
 				      NULL,
 				      bw,
@@ -267,8 +265,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else if(cmd->ac_ArgList[1])
 	{
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				      BROWSER_WINDOW_HISTORY,
+		browser_window_create(BW_CREATE_HISTORY,
 				      url,
 				      NULL,
 				      NULL,
@@ -281,16 +278,14 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
 		}
 		else
 		{
-			browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+			browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -510,8 +505,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		browser_window_navigate(bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -575,7 +569,6 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	int windows = 0, tabs = 0;
 	int window = 0, tab = 0;
 	struct browser_window *bw = curbw;
 	struct nsObject *node, *nnode;
@@ -585,6 +578,8 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 	if(!IsMinListEmpty(window_list))
 	{
+		int windows = 0;
+
 		node = (struct nsObject *)GetHead((struct List *)window_list);
 
 		do

@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include <gtk/gtk.h>
 
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -66,11 +67,10 @@ possible into the store */
 static struct nsgtk_toolbar_custom_store store;
 static struct nsgtk_toolbar_custom_store *window = &store;
 
-static void nsgtk_toolbar_close(nsgtk_scaffolding *g);
-static void nsgtk_toolbar_window_open(nsgtk_scaffolding *g);
-static void nsgtk_toolbar_customization_save(nsgtk_scaffolding *g);
-static void nsgtk_toolbar_add_item_to_toolbar(nsgtk_scaffolding *g, int i,
-		struct nsgtk_theme *theme);
+static void nsgtk_toolbar_close(struct nsgtk_scaffolding *g);
+static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g);
+static void nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g);
+static void nsgtk_toolbar_add_item_to_toolbar(struct nsgtk_scaffolding *g, int i, struct nsgtk_theme *theme);
 static bool nsgtk_toolbar_add_store_widget(GtkWidget *widget);
 static gboolean nsgtk_toolbar_data(GtkWidget *widget, GdkDragContext *context,
 		gint x, gint y, guint time, gpointer data);
@@ -89,28 +89,30 @@ static gboolean nsgtk_toolbar_delete(GtkWidget *widget, GdkEvent *event,
 static gboolean nsgtk_toolbar_cancel_clicked(GtkWidget *widget, gpointer data);
 static gboolean nsgtk_toolbar_reset(GtkWidget *widget, gpointer data);
 static gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data);
-static void nsgtk_toolbar_cast(nsgtk_scaffolding *g);
-static GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
+static void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g);
+static GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i,	struct nsgtk_theme *theme);
-static void nsgtk_toolbar_set_handler(nsgtk_scaffolding *g,
+static void nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i);
-static void nsgtk_toolbar_temp_connect(nsgtk_scaffolding *g,
+static void nsgtk_toolbar_temp_connect(struct nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i);
 static void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data);
 static nsgtk_toolbar_button nsgtk_toolbar_get_id_at_location(
-		nsgtk_scaffolding *g, int i);
+		struct nsgtk_scaffolding *g, int i);
 
 /**
- * change behaviour of scaffoldings while editing toolbar; all buttons as
- * well as window clicks are desensitized; then buttons in the front window
- * are changed to movable buttons
+ * change behaviour of scaffoldings while editing toolbar
+ *
+ * All buttons as well as window clicks are desensitized; then buttons
+ * in the front window are changed to movable buttons
  */
-void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
+void nsgtk_toolbar_customization_init(struct nsgtk_scaffolding *g)
 {
 	int i;
-	nsgtk_scaffolding *list = scaf_list;
+	struct nsgtk_scaffolding *list;
 	edit_mode = true;
 
+	list = nsgtk_scaffolding_iterate(NULL);
 	while (list) {
 		g_signal_handler_block(GTK_WIDGET(
 				nsgtk_window_get_layout(
@@ -186,7 +188,7 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 /**
  * create store window
  */
-void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
+void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 {
 	int x = 0, y = 0;
 	GError* error = NULL;
@@ -285,7 +287,7 @@ gboolean nsgtk_toolbar_delete(GtkWidget *widget, GdkEvent *event,
 		gpointer data)
 {
 	edit_mode = false;
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	/* reset g->buttons->location */
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		nsgtk_scaffolding_button(g, i)->location =
@@ -305,7 +307,7 @@ gboolean nsgtk_toolbar_delete(GtkWidget *widget, GdkEvent *event,
 gboolean nsgtk_toolbar_cancel_clicked(GtkWidget *widget, gpointer data)
 {
 	edit_mode = false;
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	/* reset g->buttons->location */
 	for (int i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		nsgtk_scaffolding_button(g, i)->location =
@@ -325,7 +327,7 @@ gboolean nsgtk_toolbar_cancel_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data)
 {
 	edit_mode = false;
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	/* save state to file, update toolbars for all windows */
 	nsgtk_toolbar_customization_save(g);
 	nsgtk_toolbar_cast(g);
@@ -340,7 +342,7 @@ gboolean nsgtk_toolbar_persist(GtkWidget *widget, gpointer data)
  */
 gboolean nsgtk_toolbar_reset(GtkWidget *widget, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	int i;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
 		nsgtk_scaffolding_button(g, i)->location =
@@ -364,7 +366,7 @@ gboolean nsgtk_toolbar_reset(GtkWidget *widget, gpointer data)
  * to correspond to the logically stored schema in terms of location
  * visibility etc
  */
-void nsgtk_toolbar_set_physical(nsgtk_scaffolding *g)
+void nsgtk_toolbar_set_physical(struct nsgtk_scaffolding *g)
 {
 	int i;
 	struct nsgtk_theme *theme =
@@ -386,13 +388,16 @@ void nsgtk_toolbar_set_physical(nsgtk_scaffolding *g)
  * cleanup code physical update of all toolbars; resensitize
  * \param g the 'front' scaffolding that called customize
  */
-void nsgtk_toolbar_close(nsgtk_scaffolding *g)
+void nsgtk_toolbar_close(struct nsgtk_scaffolding *g)
 {
 	int i;
-	nsgtk_scaffolding *list = scaf_list;
+
+	struct nsgtk_scaffolding *list;
+	struct nsgtk_theme *theme; 
+
+	list = nsgtk_scaffolding_iterate(NULL);
 	while (list) {
-		struct nsgtk_theme *theme =
-				nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+		theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 		if (theme == NULL) {
 			warn_user(messages_get("NoMemory"), 0);
 			continue;
@@ -421,21 +426,9 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
-		if ((nsgtk_get_browser_window(nsgtk_scaffolding_top_level(
-				list))->current_content	!= NULL) &&
-				(hlcache_handle_get_url(nsgtk_get_browser_window(
-				nsgtk_scaffolding_top_level(list))->
-				current_content) != NULL))
-			browser_window_refresh_url_bar(
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list)),
-					hlcache_handle_get_url(
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list))->
-					current_content),
-					nsgtk_get_browser_window(
-					nsgtk_scaffolding_top_level(list))->
-					frag_id);
+		browser_window_refresh_url_bar(
+				nsgtk_get_browser_window(
+				nsgtk_scaffolding_top_level(list)));
 
 		if (list != g)
 			gtk_widget_set_sensitive(GTK_WIDGET(
@@ -449,8 +442,8 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 			TRUE);
 	/* update favicon etc */
 	nsgtk_scaffolding_set_top_level(nsgtk_scaffolding_top_level(g));
-	if (search_web_ico())
-		gui_window_set_search_ico(search_web_ico());
+
+	search_web_select_provider(-1);
 }
 
 /**
@@ -458,7 +451,7 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
  */
 void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	gtk_container_remove(GTK_CONTAINER(nsgtk_scaffolding_toolbar(g)), widget);
 }
 
@@ -469,7 +462,7 @@ void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
  * the function should be called, when multiple items are being added,
  * in ascending order
  */
-void nsgtk_toolbar_add_item_to_toolbar(nsgtk_scaffolding *g, int i,
+void nsgtk_toolbar_add_item_to_toolbar(struct nsgtk_scaffolding *g, int i,
 		struct nsgtk_theme *theme)
 {
 	int q;
@@ -521,7 +514,7 @@ bool nsgtk_toolbar_add_store_widget(GtkWidget *widget)
 gboolean nsgtk_toolbar_data(GtkWidget *widget, GdkDragContext *gdc, gint x,
 		gint y, guint time, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	int ind = gtk_toolbar_get_drop_index(nsgtk_scaffolding_toolbar(g),
 			x, y);
 	int q, i;
@@ -613,7 +606,7 @@ gboolean nsgtk_toolbar_move_complete(GtkWidget *widget, GdkDragContext *gdc,
 gboolean nsgtk_toolbar_store_return(GtkWidget *widget, GdkDragContext *gdc,
 		gint x, gint y, guint time, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	int q, i;
 
 	if ((window->fromstore) || (window->currentbutton == -1)) {
@@ -648,7 +641,7 @@ gboolean nsgtk_toolbar_store_return(GtkWidget *widget, GdkDragContext *gdc,
 gboolean nsgtk_toolbar_action(GtkWidget *widget, GdkDragContext *gdc, gint x,
 		gint y, guint time, gpointer data)
 {
-	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
+	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *)data;
 	GtkToolItem *item = gtk_tool_button_new(NULL, NULL);
 	if (item != NULL)
 		gtk_toolbar_set_drop_highlight_item(
@@ -682,7 +675,7 @@ void nsgtk_toolbar_clear(GtkWidget *widget, GdkDragContext *gdc, guint time,
  * \param i the id of the widget
  * \param theme the theme to make the widgets from
  */
-GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
+GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i,	struct nsgtk_theme *theme)
 {
 	switch(i) {
@@ -818,8 +811,8 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 	MAKE_MENUBUTTON(DOWNLOADS, gtkDownloads)
 	MAKE_MENUBUTTON(SAVEWINDOWSIZE, gtkSaveWindowSize)
 	MAKE_MENUBUTTON(TOGGLEDEBUGGING, gtkToggleDebugging)
-	MAKE_MENUBUTTON(SAVEBOXTREE, gtkSaveBoxTree)
-	MAKE_MENUBUTTON(SAVEDOMTREE, gtkSaveDomTree)
+	MAKE_MENUBUTTON(SAVEBOXTREE, gtkDebugBoxTree)
+	MAKE_MENUBUTTON(SAVEDOMTREE, gtkDebugDomTree)
 	MAKE_MENUBUTTON(LOCALHISTORY, gtkLocalHistory)
 	MAKE_MENUBUTTON(GLOBALHISTORY, gtkGlobalHistory)
 	MAKE_MENUBUTTON(ADDBOOKMARKS, gtkAddBookMarks)
@@ -840,7 +833,7 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
  * \return toolbar item id when a widget is an element of the scaffolding
  * else -1
  */
-int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, nsgtk_scaffolding *g)
+int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, struct nsgtk_scaffolding *g)
 {
 	int i;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
@@ -857,8 +850,8 @@ int nsgtk_toolbar_get_id_from_widget(GtkWidget *widget, nsgtk_scaffolding *g)
  * \return toolbar item id from location when there is an item at that logical
  * location; else -1
  */
-nsgtk_toolbar_button nsgtk_toolbar_get_id_at_location(nsgtk_scaffolding *g,
-		int i)
+nsgtk_toolbar_button
+nsgtk_toolbar_get_id_at_location(struct nsgtk_scaffolding *g, int i)
 {
 	int q;
 	for (q = BACK_BUTTON; q < PLACEHOLDER_BUTTON; q++)
@@ -871,7 +864,7 @@ nsgtk_toolbar_button nsgtk_toolbar_get_id_at_location(nsgtk_scaffolding *g,
  * connect 'normal' handlers to toolbar buttons
  */
 
-void nsgtk_toolbar_connect_all(nsgtk_scaffolding *g)
+void nsgtk_toolbar_connect_all(struct nsgtk_scaffolding *g)
 {
 	int q, i;
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
@@ -893,7 +886,8 @@ void nsgtk_toolbar_connect_all(nsgtk_scaffolding *g)
  * \param g the scaffolding to attach handlers to
  * \param i the toolbar item id
  */
-void nsgtk_toolbar_set_handler(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
+void
+nsgtk_toolbar_set_handler(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 {
 	switch(i){
 	case URL_BAR_ITEM:
@@ -983,8 +977,8 @@ DATAHANDLER(find, FIND, window)
 DATAHANDLER(downloads, DOWNLOADS, window)
 DATAHANDLER(savewindowsize, SAVEWINDOWSIZE, window)
 DATAHANDLER(toggledebugging, TOGGLEDEBUGGING, window)
-DATAHANDLER(saveboxtree, SAVEBOXTREE, window)
-DATAHANDLER(savedomtree, SAVEDOMTREE, window)
+DATAHANDLER(debugboxtree, SAVEBOXTREE, window)
+DATAHANDLER(debugdomtree, SAVEDOMTREE, window)
 DATAHANDLER(localhistory, LOCALHISTORY, window)
 DATAHANDLER(globalhistory, GLOBALHISTORY, window)
 DATAHANDLER(addbookmarks, ADDBOOKMARKS, window)
@@ -1021,7 +1015,7 @@ DATAHANDLER(websearch, WEBSEARCH, window)
 /**
  * connect temporary handler for toolbar edit events
  */
-void nsgtk_toolbar_temp_connect(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
+void nsgtk_toolbar_temp_connect(struct nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 {
 	if ((i == URL_BAR_ITEM) ||
 			(nsgtk_scaffolding_button(g, i)->button == NULL) ||
@@ -1036,7 +1030,7 @@ void nsgtk_toolbar_temp_connect(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
  * load toolbar settings from file; file is a set of fields arranged as
  * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
  */
-void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g)
+void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
 {
 	int i, ii;
 	char *val;
@@ -1077,17 +1071,21 @@ void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g)
  * cast toolbar settings to all scaffoldings referenced from the global linked
  * list of gui_windows
  */
-void nsgtk_toolbar_cast(nsgtk_scaffolding *g)
+void nsgtk_toolbar_cast(struct nsgtk_scaffolding *g)
 {
 	int i;
-	nsgtk_scaffolding *list = scaf_list;
-	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
+	struct nsgtk_scaffolding *list;
+
+	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		window->buttonlocations[i] =
 				((nsgtk_scaffolding_button(g, i)->location
 				>= -1) &&
 				(nsgtk_scaffolding_button(g, i)->location
 				< PLACEHOLDER_BUTTON)) ?
 				nsgtk_scaffolding_button(g, i)->location : -1;
+	}
+
+	list = nsgtk_scaffolding_iterate(NULL);
 	while (list) {
 		if (list != g)
 			for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++)
@@ -1100,7 +1098,7 @@ void nsgtk_toolbar_cast(nsgtk_scaffolding *g)
 /**
  * save toolbar settings to file
  */
-void nsgtk_toolbar_customization_save(nsgtk_scaffolding *g)
+void nsgtk_toolbar_customization_save(struct nsgtk_scaffolding *g)
 {
 	int i;
 	FILE *f = fopen(toolbar_indices_file_location, "w");

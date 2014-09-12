@@ -20,10 +20,13 @@
 #define NETSURF_BEOS_WINDOW_H 1
 
 extern "C" {
+#include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/browser.h"
 }
 #include "beos/scaffolding.h"
+
+extern struct gui_window_table *beos_window_table;
 
 class NSBrowserFrameView : public BView {
 public:
@@ -48,9 +51,7 @@ private:
 void nsbeos_dispatch_event(BMessage *message);
 
 
-
 void nsbeos_reflow_all_windows(void);
-void nsbeos_window_process_reformats(void);
 
 nsbeos_scaffolding *nsbeos_get_scaffold(struct gui_window *g);
 struct browser_window *nsbeos_get_browser_for_gui(struct gui_window *g);
@@ -60,5 +61,8 @@ int nsbeos_gui_window_update_targets(struct gui_window *g);
 void nsbeos_window_destroy_browser(struct gui_window *g);
 
 struct browser_window *nsbeos_get_browser_window(struct gui_window *g);
+
+void gui_get_clipboard(char **buffer, size_t *length);
+void gui_set_clipboard(const char *buffer, size_t length, nsclipboard_styles styles[], int n_styles);
 
 #endif /* NETSURF_BEOS_WINDOW_H */

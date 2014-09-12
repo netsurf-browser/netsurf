@@ -19,16 +19,19 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserView.h"
 #import "cocoa/BrowserWindowController.h"
+#import "cocoa/fetch.h"
 
+#import "desktop/browser_history.h"
 #import "desktop/browser_private.h"
-#import "desktop/local_history.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 
 #import "utils/corestrings.h"
 #import "utils/filename.h"
+#import "utils/file.h"
 #import "utils/messages.h"
 #import "utils/url.h"
+#import "content/hlcache.h"
 
 
 @implementation BrowserViewController
@@ -77,8 +80,7 @@
 		browser_window_navigate(browser,
 					urlns,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -115,16 +117,16 @@
 
 - (IBAction) goBack: (id) sender;
 {
-	if (browser && history_back_available( browser->history )) {
-		history_back(browser, browser->history);
+	if (browser && browser_window_history_back_available( browser )) {
+		browser_window_history_back(browser, false);
 		[self updateBackForward];
 	}
 }
 
 - (IBAction) goForward: (id) sender;
 {
-	if (browser && history_forward_available( browser->history )) {
-		history_forward(browser, browser->history);
+	if (browser && browser_window_history_forward_available( browser )) {
+		browser_window_history_forward(browser, false);
 		[self updateBackForward];
 	}
 }
@@ -139,8 +141,7 @@
                 error = browser_window_navigate(browser,
                                                 urlns,
                                                 NULL,
-                                                BROWSER_WINDOW_HISTORY |
-                                                BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
                                                 NULL,
                                                 NULL,
                                                 NULL);
@@ -166,7 +167,7 @@
 	struct hlcache_handle *content;
 	size_t size;
 	const char *source;
-	const char *path = NULL;
+	char *path = NULL;
 
 	if (browser == NULL)
 		return;
@@ -178,14 +179,7 @@
 		return;
 
 	/* try to load local files directly. */
-	lwc_string *scheme = nsurl_get_component(hlcache_handle_get_url(content), NSURL_SCHEME);
-	if (scheme == NULL)
-		return;
-
-	bool match;
-	if (lwc_string_isequal(scheme, corestring_lwc_file, &match) == lwc_error_ok && match == true)
-		path = url_to_path(nsurl_access(hlcache_handle_get_url(content)));
-	lwc_string_unref(scheme);
+	netsurf_nsurl_to_path(hlcache_handle_get_url(content), &path);
 
 	if (path == NULL) {
 		/* We cannot release the requested filename until after it
@@ -272,8 +266,8 @@ static inline bool compare_float( float a, float b )
 - (void) updateBackForward;
 {
 	[browserView updateHistory];
-	[self setCanGoBack: browser != NULL && history_back_available( browser->history )];
-	[self setCanGoForward: browser != NULL && history_forward_available( browser->history )];
+	[self setCanGoBack: browser != NULL && browser_window_history_back_available( browser )];
+	[self setCanGoForward: browser != NULL && browser_window_history_forward_available( browser )];
 }
 
 - (void) contentUpdated;
@@ -287,7 +281,7 @@ struct history_add_menu_item_data {
 	id target;
 };
 
-static bool history_add_menu_item_cb( const struct history *history, int x0, int y0, int x1, int y1, 
+static bool history_add_menu_item_cb( const struct browser_window *bw, int x0, int y0, int x1, int y1, 
 									 const struct history_entry *page, void *user_data )
 {
 	struct history_add_menu_item_data *data = user_data; 
@@ -305,7 +299,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 	++data->index;
 	
 	[item setTarget: data->target];
-	[item setTitle: [NSString stringWithUTF8String: history_entry_get_title( page )]];
+	[item setTitle: [NSString stringWithUTF8String: browser_window_history_entry_get_title( page )]];
 	[item setRepresentedObject: [NSValue valueWithPointer: page]];
 	
 	return true;
@@ -314,7 +308,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 - (IBAction) historyItemSelected: (id) sender;
 {
 	struct history_entry *entry = [[sender representedObject] pointerValue];
-	history_go( browser, browser->history, entry, false );
+	browser_window_history_go( browser, entry, false );
 	[self updateBackForward];
 }
 
@@ -325,7 +319,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 		.menu = menu,
 		.target = self
 	};
-	history_enumerate_back( browser->history, history_add_menu_item_cb, &data );
+	browser_window_history_enumerate_back( browser, history_add_menu_item_cb, &data );
 	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
 }
 
@@ -336,7 +330,7 @@ static bool history_add_menu_item_cb( const struct history *history, int x0, int
 		.menu = menu,
 		.target = self
 	};
-	history_enumerate_forward( browser->history, history_add_menu_item_cb, &data );
+	browser_window_history_enumerate_forward( browser, history_add_menu_item_cb, &data );
 	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
 }
 

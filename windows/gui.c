@@ -32,8 +32,8 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "css/utils.h"
-#include "desktop/browser_private.h"
-#include "desktop/local_history.h"
+#include "desktop/browser_history.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
@@ -43,6 +43,9 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/file.h"
+#include "utils/corestrings.h"
+#include "utils/url.h"
 
 #include "windows/window.h"
 #include "windows/about.h"
@@ -56,6 +59,7 @@
 #include "windows/schedule.h"
 #include "windows/findfile.h"
 #include "windows/windbg.h"
+#include "windows/filetype.h"
 
 HINSTANCE hInstance; /** win32 application instance handle. */
 
@@ -73,7 +77,26 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 static struct nsws_pointers nsws_pointer;
 
-void gui_poll(bool active)
+void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
+
+static void nsws_set_scale(struct gui_window *gw, float scale)
+{
+	assert(gw != NULL);
+
+	if (gw->scale == scale)
+		return;
+
+	gw->scale = scale;
+
+	if (gw->bw == NULL)
+		return;
+
+	browser_window_set_scale(gw->bw, scale, true);
+}
+
+
+static void win32_poll(bool active)
 {
 	MSG Msg; /* message from system */
 	BOOL bRet; /* message fetch result */
@@ -82,10 +105,6 @@ void gui_poll(bool active)
 
 	/* run the scheduler and discover how long to wait for the next event */
 	timeout = schedule_run();
-
-	/* if active set timeout so message is not waited for */
-	if (active)
-		timeout = 0;
 
 	if (timeout == 0) {
 		bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
@@ -103,7 +122,6 @@ void gui_poll(bool active)
 			KillTimer(NULL, timer_id);
 		}
 	}
-
 
 	if (bRet > 0) {
 		TranslateMessage(&Msg);
@@ -128,8 +146,7 @@ nsws_window_go(HWND hwnd, const char *urltxt)
 		browser_window_navigate(gw->bw,
 					url,
 					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -168,7 +185,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
 		if (hFont != NULL) {
 			LOG(("Destroyed font object"));
-			DeleteObject(hFont); 	
+			DeleteObject(hFont);
 		}
 
 
@@ -338,8 +355,8 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 	if (w->bw == NULL)
 		return;
 
-	bool forward = history_forward_available(w->bw->history);
-	bool back = history_back_available(w->bw->history);
+	bool forward = browser_window_history_forward_available(w->bw);
+	bool back = browser_window_history_back_available(w->bw);
 
 	if (w->mainmenu != NULL) {
 		EnableMenuItem(w->mainmenu, IDM_NAV_FORWARD,
@@ -528,7 +545,7 @@ get_imagelist(int resid, int bsize, int bcnt)
 	LOG(("resource id %d, bzize %d, bcnt %d",resid, bsize, bcnt));
 
 	hImageList = ImageList_Create(bsize, bsize, ILC_COLOR24 | ILC_MASK, 0, bcnt);
-	if (hImageList == NULL) 
+	if (hImageList == NULL)
 		return NULL;
 
 	hScrBM = LoadImage(hInstance, MAKEINTRESOURCE(resid),
@@ -536,7 +553,7 @@ get_imagelist(int resid, int bsize, int bcnt)
 
 	if (hScrBM == NULL) {
 		win_perror("LoadImage");
-		return NULL;		
+		return NULL;
 	}
 
 	if (ImageList_AddMasked(hImageList, hScrBM, 0xcccccc) == -1) {
@@ -648,17 +665,17 @@ nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 
 	/* Create the standard image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the disabled image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_GREY, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the hot image list and assign to toolbar. */
 	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_HOT, gw->toolbuttonsize, gw->toolbuttonc);
-	if (hImageList != NULL) 
+	if (hImageList != NULL)
 		SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Add buttons. */
@@ -716,6 +733,18 @@ nsws_window_resize(struct gui_window *gw,
 	return 0;
 }
 
+/**
+ * redraw the whole window
+ */
+static void gui_window_redraw_window(struct gui_window *gw)
+{
+	/* LOG(("gw:%p", gw)); */
+	if (gw == NULL)
+		return;
+
+	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
+}
+
 
 static LRESULT
 nsws_window_command(HWND hwnd,
@@ -745,7 +774,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_FILE_OPEN_WINDOW:
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE,
+		browser_window_create(BW_CREATE_NONE,
 				      NULL,
 				      NULL,
 				      gw->bw,
@@ -835,16 +864,16 @@ nsws_window_command(HWND hwnd,
 
 	case IDM_NAV_BACK:
 		if ((gw->bw != NULL) &&
-		    (history_back_available(gw->bw->history))) {
-			history_back(gw->bw, gw->bw->history);
+		    (browser_window_history_back_available(gw->bw))) {
+			browser_window_history_back(gw->bw, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;
 
 	case IDM_NAV_FORWARD:
 		if ((gw->bw != NULL) &&
-		    (history_forward_available(gw->bw->history))) {
-			history_forward(gw->bw, gw->bw->history);
+		    (browser_window_history_forward_available(gw->bw))) {
+			browser_window_history_forward(gw->bw, false);
 		}
 		nsws_window_update_forward_back(gw);
 		break;
@@ -859,8 +888,7 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -888,8 +916,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw, gw->bw->scale * 1.1, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, gw->scale * 1.1);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -900,9 +927,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw,
-						 gw->bw->scale * 0.9, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, gw->scale * 0.9);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -913,8 +938,7 @@ nsws_window_command(HWND hwnd,
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
-			browser_window_set_scale(gw->bw, 1.0, true);
-			browser_window_reformat(gw->bw, false, gw->width, gw->height);
+			nsws_set_scale(gw, 1.0);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -1028,8 +1052,7 @@ nsws_window_command(HWND hwnd,
 			browser_window_navigate(gw->bw,
 						url,
 						NULL,
-						BROWSER_WINDOW_HISTORY |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
 						NULL);
@@ -1063,7 +1086,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	if (msg == WM_CREATE) {
 		/* To cause all the component child windows to be
 		 * re-sized correctly a WM_SIZE message of the actual
-		 * created size must be sent. 
+		 * created size must be sent.
 		 *
 		 * The message must be posted here because the actual
 		 * size values of the component windows are not known
@@ -1213,10 +1236,10 @@ static HWND nsws_window_create(struct gui_window *gw)
  * create a new gui_window to contain a browser_window
  * \param bw the browser_window to connect to the new gui_window
  */
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-			  struct browser_window *clone,
-			  bool new_tab)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		struct gui_window *existing,
+		gui_window_create_flags flags)
 {
 	struct gui_window *gw;
 
@@ -1233,6 +1256,7 @@ gui_create_browser_window(struct browser_window *bw,
 
 	gw->width = 800;
 	gw->height = 600;
+	gw->scale = 1.0;
 	gw->toolbuttonsize = 24;
 	gw->requestscrollx = 0;
 	gw->requestscrolly = 0;
@@ -1392,7 +1416,7 @@ struct browser_window *gui_window_browser_window(struct gui_window *w)
 /**
  * window cleanup code
  */
-void gui_window_destroy(struct gui_window *w)
+static void gui_window_destroy(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1415,7 +1439,7 @@ void gui_window_destroy(struct gui_window *w)
  * set window title
  * \param title the [url]
  */
-void gui_window_set_title(struct gui_window *w, const char *title)
+static void gui_window_set_title(struct gui_window *w, const char *title)
 {
 	if (w == NULL)
 		return;
@@ -1432,19 +1456,7 @@ void gui_window_set_title(struct gui_window *w, const char *title)
 	free(fulltitle);
 }
 
-/**
- * redraw the whole window
- */
-void gui_window_redraw_window(struct gui_window *gw)
-{
-	/* LOG(("gw:%p", gw)); */
-	if (gw == NULL)
-		return;
-
-	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
-}
-
-void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
 
@@ -1453,8 +1465,8 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 	RECT redrawrect;
 
-	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->bw->scale);
-	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->bw->scale);
+	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->scale);
+	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->scale);
 	redrawrect.right =(long)rect->x1;
 	redrawrect.bottom = (long)rect->y1;
 
@@ -1462,7 +1474,7 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 }
 
-bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
+static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
 	LOG(("get scroll"));
 	if (w == NULL)
@@ -1481,16 +1493,18 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
 	SCROLLINFO si;
+	nserror err;
+	int height;
+	int width;
 	POINT p;
 
-	if ((w == NULL) ||
-	    (w->bw == NULL) ||
-	    (w->bw->current_content == NULL))
+	if ((w == NULL) || (w->bw == NULL))
 		return;
 
-	/* limit scale range */
-	if (abs(w->bw->scale - 0.0) < 0.00001)
-		w->bw->scale = 1.0;
+	err = browser_window_get_extents(w->bw, true, &width, &height);
+	if (err != NSERROR_OK) {
+		return;
+	}
 
 	w->requestscrollx = sx - w->scrollx;
 	w->requestscrolly = sy - w->scrolly;
@@ -1499,10 +1513,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (content_get_height(w->bw->current_content) * w->bw->scale) - 1;
+	si.nMax = height - 1;
 	si.nPage = w->height;
 	si.nPos = max(w->scrolly + w->requestscrolly, 0);
-	si.nPos = min(si.nPos, content_get_height(w->bw->current_content) * w->bw->scale - w->height);
+	si.nPos = min(si.nPos, height - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
 	LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -1510,10 +1524,10 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
 	si.nMin = 0;
-	si.nMax = (content_get_width(w->bw->current_content) * w->bw->scale) -1;
+	si.nMax = width -1;
 	si.nPage = w->width;
 	si.nPos = max(w->scrollx + w->requestscrollx, 0);
-	si.nPos = min(si.nPos, content_get_width(w->bw->current_content) * w->bw->scale - w->width);
+	si.nPos = min(si.nPos, width - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
 	LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -1536,13 +1550,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
-			       int x1, int y1)
-{
-	LOG(("scroll visible (%p, %d, %d, %d, %d)", w, x0, y0, x1, y1));
-}
-
-void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
+static void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 			       bool scaled)
 {
 	if (w == NULL)
@@ -1554,7 +1562,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 	*height = w->height;
 }
 
-void gui_window_update_extent(struct gui_window *w)
+static void gui_window_update_extent(struct gui_window *w)
 {
 
 }
@@ -1562,7 +1570,7 @@ void gui_window_update_extent(struct gui_window *w)
 /**
  * set the status bar message
  */
-void gui_window_set_status(struct gui_window *w, const char *text)
+static void gui_window_set_status(struct gui_window *w, const char *text)
 {
 	if (w == NULL)
 		return;
@@ -1572,7 +1580,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 /**
  * set the pointer shape
  */
-void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
+static void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
 {
 	if (w == NULL)
 		return;
@@ -1643,11 +1651,7 @@ struct nsws_pointers *nsws_get_pointers(void)
 	return &nsws_pointer;
 }
 
-void gui_window_hide_pointer(struct gui_window *w)
-{
-}
-
-void gui_window_set_url(struct gui_window *w, const char *url)
+static void gui_window_set_url(struct gui_window *w, const char *url)
 {
 	if (w == NULL)
 		return;
@@ -1655,7 +1659,7 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 }
 
 
-void gui_window_start_throbber(struct gui_window *w)
+static void gui_window_start_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1680,7 +1684,7 @@ void gui_window_start_throbber(struct gui_window *w)
 	Animate_Play(w->throbber, 0, -1, -1);
 }
 
-void gui_window_stop_throbber(struct gui_window *w)
+static void gui_window_stop_throbber(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
@@ -1708,74 +1712,25 @@ void gui_window_stop_throbber(struct gui_window *w)
 /**
  * place caret in window
  */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
-		const struct rect *clip)
+static void gui_window_place_caret(struct gui_window *w, int x, int y,
+				   int height, const struct rect *clip)
 {
 	if (w == NULL)
 		return;
-	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->bw->scale);
-	SetCaretPos(x * w->bw->scale - w->scrollx,
-		    y * w->bw->scale - w->scrolly);
+	CreateCaret(w->drawingarea, (HBITMAP)NULL, 1, height * w->scale);
+	SetCaretPos(x * w->scale - w->scrollx,
+		    y * w->scale - w->scrolly);
 	ShowCaret(w->drawingarea);
 }
 
 /**
  * clear window caret
  */
-void
-gui_window_remove_caret(struct gui_window *w)
+static void gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
 	HideCaret(w->drawingarea);
-}
-
-void
-gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{
-}
-
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-}
-
-void gui_window_new_content(struct gui_window *w)
-{
-}
-
-bool gui_window_scroll_start(struct gui_window *w)
-{
-	return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		const struct rect *rect)
-{
-	return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-			  const char *title)
-{
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-			  struct gui_window *w)
-{
-}
-
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-}
-
-void gui_start_selection(struct gui_window *w)
-{
-}
-
-void gui_clear_selection(struct gui_window *w)
-{
 }
 
 /**
@@ -1784,7 +1739,7 @@ void gui_clear_selection(struct gui_window *w)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	/* TODO: Implement this */
 	HANDLE clipboard_handle;
@@ -1806,7 +1761,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	/* TODO: Implement this */
@@ -1832,23 +1787,10 @@ void gui_set_clipboard(const char *buffer, size_t length,
 }
 
 
-void gui_create_form_select_menu(struct browser_window *bw,
-				 struct form_control *control)
-{
-}
-
-
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
-		     unsigned long num,
-		     nserror (*cb)(bool proceed, void *pw), void *cbpw)
-{
-	cb(false, cbpw);
-}
-
 /**
  * Create the main window class.
  */
-nserror 
+nserror
 nsws_create_main_class(HINSTANCE hinstance) {
 	nserror ret = NSERROR_OK;
 	WNDCLASSEX w;
@@ -1876,3 +1818,316 @@ nsws_create_main_class(HINSTANCE hinstance) {
 
 	return ret;
 }
+
+/**
+ * callback from core to reformat a window.
+ */
+static void win32_window_reformat(struct gui_window *gw)
+{
+	if (gw != NULL) {
+		browser_window_reformat(gw->bw, false, gw->width, gw->height);
+	}
+}
+
+/**
+ * Generate a windows path from one or more component elemnts.
+ *
+ * If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] nemb The number of elements.
+ * @param[in] ... The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror windows_mkpath(char **str, size_t *size, size_t nelm, va_list ap)
+{
+	return vsnstrjoin(str, size, '\\', nelm, ap);
+}
+
+/**
+ * Get the basename of a file using windows path handling.
+ *
+ * This gets the last element of a path and returns it.
+ *
+ * @param[in] path The path to extract the name from.
+ * @param[in,out] str Pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the path element.
+ * @param[in,out] size The size of the space available if \a
+ *                     str not NULL on input and set to the total
+ *                     output length on output.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror windows_basename(const char *path, char **str, size_t *size)
+{
+	const char *leafname;
+	char *fname;
+
+	if (path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	leafname = strrchr(path, '\\');
+	if (!leafname) {
+		leafname = path;
+	} else {
+		leafname += 1;
+	}
+
+	fname = strdup(leafname);
+	if (fname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = strlen(fname);
+	}
+	return NSERROR_OK;
+}
+
+/**
+ * Create a path from a nsurl using windows file handling.
+ *
+ * @parm[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which should
+ *                      be freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path or error code
+ *         on faliure.
+ */
+static nserror windows_nsurl_to_path(struct nsurl *url, char **path_out)
+{
+	lwc_string *urlpath;
+	char *path;
+	bool match;
+	lwc_string *scheme;
+	nserror res;
+
+	if ((url == NULL) || (path_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+					&match) != lwc_error_ok)
+	{
+		return NSERROR_BAD_PARAMETER;
+	}
+	lwc_string_unref(scheme);
+	if (match == false) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	urlpath = nsurl_get_component(url, NSURL_PATH);
+	if (urlpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	res = url_unescape(lwc_string_data(urlpath), &path);
+	lwc_string_unref(urlpath);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* if there is a drive: prefix treat path as DOS filename */
+	if ((path[2] == ':') ||  (path[2] == '|')) {
+		char *sidx; /* slash index */
+
+		/* move the string down to remove leading / note the
+		 * strlen is *not* copying too much data as we are
+		 * moving the null too!
+		 */
+		memmove(path, path + 1, strlen(path));
+
+		/* swap / for \ */
+		sidx = strrchr(path, '/');
+		while (sidx != NULL) {
+			*sidx = '\\';
+			sidx = strrchr(path, '/');
+		}
+	}
+	/* if the path does not have a drive letter we return the
+	 * complete path.
+	 */
+	/** @todo Need to check returning the unaltered path in this
+	 * case is correct
+	 */
+
+	*path_out = path;
+
+	return NSERROR_OK;
+}
+
+/**
+ * Create a nsurl from a path using windows file handling.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The path to convert.
+ * @param[out] url_out pointer to recive the nsurl, The returned url
+ *                     should be unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error code on
+ *         faliure.
+ */
+static nserror windows_path_to_nsurl(const char *path, struct nsurl **url_out)
+{
+	nserror ret;
+	int urllen;
+	char *urlstr;
+	char *sidx; /* slash index */
+
+	if ((path == NULL) || (url_out == NULL) || (*path == 0)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* build url as a string for nsurl constructor */
+	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 5;
+	urlstr = malloc(urllen);
+	if (urlstr == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/** @todo check if this should be url escaping the path. */
+	if (*path == '/') {
+		/* unix style path start, so try wine Z: */
+		snprintf(urlstr, urllen, "%sZ%%3A%s", FILE_SCHEME_PREFIX, path);
+	} else {
+		snprintf(urlstr, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
+	}
+
+	sidx = strrchr(urlstr, '\\');
+	while (sidx != NULL) {
+		*sidx = '/';
+		sidx = strrchr(urlstr, '\\');
+	}
+
+	ret = nsurl_create(urlstr, url_out);
+	free(urlstr);
+
+	return ret;
+}
+
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror windows_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *sep;
+	struct stat sb;
+
+	dname = strdup(fname);
+
+	sep = strrchr(dname, '\\');
+	if (sep == NULL) {
+		/* no directory separator path is just filename so its ok */
+		free(dname);
+		return NSERROR_OK;
+	}
+
+	*sep = 0; /* null terminate directory path */
+
+	if (stat(dname, &sb) == 0) {
+		free(dname);
+		if (S_ISDIR(sb.st_mode)) {
+			/* path to file exists and is a directory */
+			return NSERROR_OK;
+		}
+		return NSERROR_NOT_DIRECTORY;
+	}
+	*sep = '\\'; /* restore separator */
+
+	sep = dname;
+	while (*sep == '\\') {
+		sep++;
+	}
+	while ((sep = strchr(sep, '\\')) != NULL) {
+		*sep = 0;
+		if (stat(dname, &sb) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
+				/* could not create path element */
+				free(dname);
+				return NSERROR_NOT_FOUND;
+			}
+		} else {
+			if (! S_ISDIR(sb.st_mode)) {
+				/* path element not a directory */
+				free(dname);
+				return NSERROR_NOT_DIRECTORY;
+			}
+		}
+		*sep = '\\'; /* restore separator */
+		/* skip directory separators */
+		while (*sep == '\\') {
+			sep++;
+		}
+	}
+
+	free(dname);
+	return NSERROR_OK;
+}
+
+/* windows file handling */
+static struct gui_file_table file_table = {
+	.mkpath = windows_mkpath,
+	.basename = windows_basename,
+	.nsurl_to_path = windows_nsurl_to_path,
+	.path_to_nsurl = windows_path_to_nsurl,
+	.mkdir_all = windows_mkdir_all,
+};
+
+struct gui_file_table *win32_file_table = &file_table;
+
+static struct gui_window_table window_table = {
+	.create = gui_window_create,
+	.destroy = gui_window_destroy,
+	.redraw = gui_window_redraw_window,
+	.update = gui_window_update_box,
+	.get_scroll = gui_window_get_scroll,
+	.set_scroll = gui_window_set_scroll,
+	.get_dimensions = gui_window_get_dimensions,
+	.update_extent = gui_window_update_extent,
+	.reformat = win32_window_reformat,
+
+	.set_title = gui_window_set_title,
+	.set_url = gui_window_set_url,
+	.set_status = gui_window_set_status,
+	.set_pointer = gui_window_set_pointer,
+	.place_caret = gui_window_place_caret,
+	.remove_caret = gui_window_remove_caret,
+	.start_throbber = gui_window_start_throbber,
+	.stop_throbber = gui_window_stop_throbber,
+};
+
+struct gui_window_table *win32_window_table = &window_table;
+
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
+
+
+static struct gui_fetch_table fetch_table = {
+	.filetype = fetch_filetype,
+};
+struct gui_fetch_table *win32_fetch_table = &fetch_table;
+
+
+static struct gui_browser_table browser_table = {
+	.poll = win32_poll,
+	.schedule = win32_schedule,
+};
+
+struct gui_browser_table *win32_browser_table = &browser_table;

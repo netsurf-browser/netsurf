@@ -35,7 +35,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/treeview.h"
@@ -103,24 +102,14 @@ static void atari_cookie_manager_mouse_action(struct core_window *cw,
 												browser_mouse_state mouse,
 												int x, int y)
 {
-	if((mouse & BROWSER_MOUSE_HOVER) && cookie_manager_has_selection()){
-		cookie_manager_mouse_action(mouse, x, y);
-	} else {
-		cookie_manager_mouse_action(mouse, x, y);
-	}
-
+	cookie_manager_mouse_action(mouse, x, y);
 }
 
 
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct atari_treeview_window *tv=NULL;
 	GRECT tb_area;
-	GUIWIN * gemtk_win;
-	struct gui_window * gw;
-	char *cur_url = NULL;
-	char *cur_title = NULL;
 	short retval = 0;
 
 	LOG((""));

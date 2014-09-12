@@ -25,23 +25,27 @@
 #include <string.h>
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/textinput.h"
+#include "desktop/browser.h"
+
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/mouse.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
+#include "riscos/ucstables.h"
+
 
 #ifndef wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX
 #define wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX ((wimp_drag_claim_flags) 0x2u)
 #endif
-
 
 
 /** Receive of Dragging message has claimed it */
@@ -186,20 +190,6 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 		browser_window_mouse_track(g->bw, 0, pos.x, pos.y);
 }
 
-
-/**
- * Perform tasks after a selection has been cleared.
- *
- * \param g  gui window
- */
-
-void gui_clear_selection(struct gui_window *g)
-{
-	/* Refresh any open menu, in case it's the browser window menu.  */
-	ro_gui_menu_refresh(0);
-}
-
-
 /**
  * Core tells front end to put given text in clipboard
  *
@@ -208,7 +198,7 @@ void gui_clear_selection(struct gui_window *g)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
 		nsclipboard_styles styles[], int n_styles)
 {
 	char *new_cb;
@@ -259,7 +249,7 @@ void gui_set_clipboard(const char *buffer, size_t length,
  * \param  buffer  UTF-8 text, allocated by front end, ownership yielded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	*buffer = NULL;
 	*length = 0;
@@ -403,9 +393,6 @@ bool ro_gui_selection_prepare_paste_dataload(
 		wimp_full_message_data_xfer *dataxfer)
 {
 	FILE *fp;
-	long size;
-	char *local_cb;
-	utf8_convert_ret ret;
 
 	/* Ignore messages that aren't for us */
 	if (dataxfer->your_ref == 0 || dataxfer->your_ref != paste_prev_message)
@@ -413,18 +400,20 @@ bool ro_gui_selection_prepare_paste_dataload(
 
 	fp = fopen(dataxfer->file_name, "r");
 	if (fp != NULL) {
+		long size;
 		fseek(fp, 0, SEEK_END);
 		size = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 
 		if (size > 0) {
-			local_cb = malloc(size);
+			char *local_cb = malloc(size);
 			if (local_cb != NULL) {
+				nserror ret;
 				fread(local_cb, 1, size, fp);
 
 				ret = utf8_from_local_encoding(local_cb, size,
 						&clipboard);
-				if (ret == UTF8_CONVERT_OK) {
+				if (ret == NSERROR_OK) {
 					clip_length = strlen(clipboard);
 				}
 
@@ -523,13 +512,13 @@ void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 bool ro_gui_save_clipboard(const char *path)
 {
 	char *local_cb;
-	utf8_convert_ret ret;
+	nserror ret;
 	os_error *error;
 
 	assert(clip_length > 0 && clipboard);
 
 	ret = utf8_to_local_encoding(clipboard, clip_length, &local_cb);
-	if (ret != UTF8_CONVERT_OK) {
+	if (ret != NSERROR_OK) {
 		warn_user("SaveError", "Could not convert");
 		return false;
 	}
@@ -666,3 +655,10 @@ void ro_gui_dragging_bounced(wimp_message *message)
 {
 	dragging_claimed = false;
 }
+
+static struct gui_clipboard_table clipboard_table = {
+	.get = gui_get_clipboard,
+	.set = gui_set_clipboard,
+};
+
+struct gui_clipboard_table *riscos_clipboard_table = &clipboard_table;

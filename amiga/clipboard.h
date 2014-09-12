@@ -25,6 +25,11 @@ struct hlcache_handle;
 struct selection;
 struct gui_window;
 struct gui_window_2;
+struct gui_clipboard_table;
+
+extern struct gui_clipboard_table *amiga_clipboard_table;
+
+void gui_start_selection(struct gui_window *g);
 
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);

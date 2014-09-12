@@ -58,6 +58,7 @@
 #define CNT_INTERACTIVE 512
 #define CNT_IMG 1024
 
+bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
 struct s_context_info {
 	unsigned long flags;
@@ -70,7 +71,6 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 {
 	hlcache_handle *h;
 	GRECT area;
-	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
 	int sx, sy;
 
@@ -165,8 +165,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 	char cmdline[128];
 	/* skip first byte, which must hold length of commandline: */
 	char * tempfile = &cmdline[1];
-	int err = 0;
-	char * editor, *lastslash;
+	char * editor;
 	MENU pop_menu, me_data;
 
 	pop = gemtk_obj_get_tree( POP_CTX );
@@ -237,8 +236,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						hlcache_handle_get_url(ctx->ccdata.object),
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BROWSER_WINDOW_DOWNLOAD |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL
@@ -257,8 +255,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 						gw->browser->bw,
 						url,
 						hlcache_handle_get_url(gw->browser->bw->current_content),
-						BROWSER_WINDOW_DOWNLOAD |
-						BROWSER_WINDOW_VERIFIABLE,
+						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
 						NULL
@@ -294,8 +291,8 @@ void context_popup(struct gui_window * gw, short x, short y)
 
 				error = nsurl_create(ctx->ccdata.link_url, &url);
 				if (error == NSERROR_OK) {
-					error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							BROWSER_WINDOW_HISTORY,
+					error = browser_window_create(
+							BW_CREATE_HISTORY | BW_CREATE_CLONE,
 							url,
 							hlcache_handle_get_url(gw->browser->bw->current_content),
 								      gw->browser->bw,

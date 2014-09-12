@@ -18,6 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+
 #include <stdbool.h>
 
 #include <libnsfb.h>
@@ -272,6 +274,26 @@ fbtk_create_vscroll(fbtk_widget_t *parent,
 	return neww;
 }
 
+
+/* exported function documented in fbtk.h */
+void
+fbtk_reposition_vscroll(fbtk_widget_t *vscroll,
+		    int x,
+		    int y,
+		    int width,
+		    int height)
+{
+	assert(vscroll->type == FB_WIDGET_TYPE_VSCROLL);
+
+	fbtk_set_pos_and_size(vscroll, x, y + scrollu.height,
+			width, height  - scrollu.height - scrolld.height);
+	fbtk_set_pos_and_size(vscroll->u.scroll.btnul,
+			x, y, width, scrollu.height);
+	fbtk_set_pos_and_size(vscroll->u.scroll.btndr,
+			x, y + height - scrolld.height,
+			width, scrolld.height);
+}
+
 /* Horizontal scroll widget */
 
 static int
@@ -486,6 +508,25 @@ fbtk_create_hscroll(fbtk_widget_t *parent,
 						  neww);
 
 	return neww;
+}
+
+/* exported function documented in fbtk.h */
+void
+fbtk_reposition_hscroll(fbtk_widget_t *scrollh,
+		    int x,
+		    int y,
+		    int width,
+		    int height)
+{
+	assert(scrollh->type == FB_WIDGET_TYPE_HSCROLL);
+
+	fbtk_set_pos_and_size(scrollh, x + scrolll.width, y,
+			width - scrolll.width - scrollr.width, height);
+	fbtk_set_pos_and_size(scrollh->u.scroll.btnul,
+			x, y, scrolll.width, height);
+	fbtk_set_pos_and_size(scrollh->u.scroll.btndr,
+			x + width - scrollr.width, y,
+			scrollr.width, height);
 }
 
 

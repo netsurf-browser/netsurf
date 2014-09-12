@@ -25,6 +25,7 @@
 #define NETSURF_UTILS_LIBDOM_H_
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <dom/dom.h>
 
@@ -76,5 +77,14 @@ nserror libdom_parse_file(const char *filename, const char *encoding,
  * \return The appropriate nserror
  */
 nserror libdom_hubbub_error_to_nserror(dom_hubbub_error error);
+
+/**
+ * Walk though a DOM (sub)tree, in depth first order, printing DOM structure.
+ *
+ * \param node The root node to start from.
+ * \param f The file to write output into.
+ * \param depth The depth of 'node' in the (sub)tree.
+ */
+nserror libdom_dump_structure(dom_node *node, FILE *f, int depth);
 
 #endif

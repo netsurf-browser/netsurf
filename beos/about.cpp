@@ -21,112 +21,58 @@
 #include <stdlib.h>
 #include <string.h>
 extern "C" {
+#include "desktop/netsurf.h"
 #include "utils/log.h"
+#include "testament.h"
+#include "utils/useragent.h"
+#include "curl/curlver.h"
 }
 #include "beos/about.h"
 #include "beos/scaffolding.h"
 #include "beos/window.h"
 
 #include <Alert.h>
-#include <ScrollView.h>
+#include <Application.h>
+#include <Invoker.h>
 #include <String.h>
-#include <TextView.h>
 
-static const char *authors[] = {
-		"John-Mark Bell", "James Bursa", "Michael Drake",
-		"Rob Kendrick", "Adrian Lees", "Vincent Sanders",
-		"Daniel Silverstone", "Richard Wilson",
-		"\nContributors:", "Kevin Bagust", "Stefaan Claes",
-		"Matthew Hambley", "Rob Jackson", "Jeffrey Lee", "Phil Mellor",
-		"Philip Pemberton", "Darren Salt", "Andrew Timmins",
-		"John Tytgat", "Chris Williams",
-		"\nGoogle Summer of Code Contributors:", "Adam Blokus",
-		"Sean Fox", "Michael Lester", "Andrew Sidwell", NULL
-};
-
-static const char *translators[] = { "Sebastian Barthel", "Bruno D'Arcangeli",
-		"Gerard van Katwijk", "Jérôme Mathevet", "Simon Voortman.", NULL 
-};
-static const char *artists[] = {
-		"Michael Drake", "\nContributors:", "Andrew Duffell",
-		"John Duffell", "Richard Hallas", "Phil Mellor", NULL
-};
-
-static const char *documenters[] = {
-		"John-Mark Bell", "James Bursa", "Michael Drake",
-		"Richard Wilson", "\nContributors:", "James Shaw", NULL
-};
-
-static const char *name = "NetSurf";
-static const char *description =
-		"Small as a mouse, fast as a cheetah, and available for free.\n"
-		"NetSurf is a web browser for RISC OS and UNIX-like platforms.";
-static const char *url = "http://www.netsurf-browser.org/";
-static const char *url_label = "NetSurf Website";
-static const char *copyright =
-		"Copyright © 2003 - 2008 The NetSurf Developers";
-
-static void add_section(BTextView *textview, const char *header, 
-	const char *text)
-{
-	BFont titleFont;
-	titleFont.SetSize(titleFont.Size() + 10);
-	BFont textFont;
-	text_run_array titleRuns = { 1, { 0, titleFont, { 0, 0, 0, 255 } } };
-	text_run_array textRuns = { 1, { 0, textFont, { 0, 0, 0, 255 } } };
-	BString h(header);
-	BString t(text);
-	h << "\n";
-	t << "\n\n";
-	if (header)
-		textview->Insert(h.String(), &titleRuns);
-	if (text)
-		textview->Insert(t.String(), &textRuns);
-}
-
-static void add_section(BTextView *textview, const char *header, 
-	const char **texts)
-{
-	BString t;
-	while (*texts) {
-		t << *texts;
-		t << ", ";
-		texts++;
-	}
-	add_section(textview, header, t.String());
-}
 
 /**
  * Creates the about alert
  */
 void nsbeos_about(struct gui_window *gui)
 {
-	BAlert *alert;
-	alert = new BAlert("about", "", /*"HomePage",*/ "Ok");
-	//XXX: i18n-ize
-	BTextView *tv = alert->TextView();
+	BString text;
+	text << "Netsurf  : " << user_agent_string() << "\n";
+	text << "Version  : " << netsurf_version << "\n";
+	text << "Build ID : " << WT_REVID << "\n";
+	text << "Date     : " << WT_COMPILEDATE << "\n";
+	text << "cURL     : " << LIBCURL_VERSION << "\n";
+
+	BAlert *alert = new BAlert("about", text.String(), "Credits", "Licence", "Ok");
+
+	BHandler *target = be_app;
+	BMessage *message = new BMessage(ABOUT_BUTTON);
+	BInvoker *invoker = NULL;
 	if (gui) {
-		alert->SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
 		nsbeos_scaffolding *s = nsbeos_get_scaffold(gui);
 		if (s) {
 			NSBrowserWindow *w = nsbeos_get_bwindow_for_scaffolding(s);
-			if (w)
+			if (w) {
+				alert->SetFeel(B_MODAL_SUBSET_WINDOW_FEEL);
 				alert->AddToSubset(w);
+			}
+			NSBaseView *v = nsbeos_get_baseview_for_scaffolding(s);
+			if (v) {
+				if (w)
+					message->AddPointer("Window", w);
+				target = v;
+			}
 		}
 	}
-	tv->SetStylable(true);
-	add_section(tv, name, description);
-	add_section(tv, NULL, copyright);
-	add_section(tv, "authors", authors);
-	add_section(tv, "translators", translators);
-	add_section(tv, "artists", artists);
-	add_section(tv, "documenters", documenters);
-	add_section(tv, url_label, url);
+	invoker = new BInvoker(message, target);
 
-	// make space for controls
-	alert->ResizeBy(200, 500);
-	alert->MoveTo(alert->AlertPosition(alert->Frame().Width() + 1, 
-		alert->Frame().Height() + 1));
+	//TODO: i18n-ize
 
-	alert->Go(NULL);
+	alert->Go(invoker);
 }

@@ -19,8 +19,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -34,8 +36,10 @@
 #include "amiga/utf8.h"
 #include "desktop/cookie_manager.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/file.h"
 #include "utils/utils.h"
 
 void warn_user(const char *warning, const char *detail)
@@ -43,7 +47,6 @@ void warn_user(const char *warning, const char *detail)
 	Object *req = NULL;
 	char *utf8warning = ami_utf8_easy(messages_get(warning));
 	STRPTR bodytext = NULL;
-	LONG result = 0;
 
 	LOG(("%s %s", warning, detail));
 
@@ -63,7 +66,7 @@ void warn_user(const char *warning, const char *detail)
 		TAG_DONE);
 
 	if (req) {
-		result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
+		LONG result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
 		DisposeObject(req);
 	}
 
@@ -106,54 +109,91 @@ void die(const char *error)
 	exit(1);
 }
 
-char *url_to_path(const char *url)
+/**
+ * Create a path from a nsurl using amiga file handling.
+ *
+ * @param[in] url The url to encode.
+ * @param[out] path_out A string containing the result path which should
+ *                      be freed by the caller.
+ * @return NSERROR_OK and the path is written to \a path or error code
+ *         on faliure.
+ */
+static nserror amiga_nsurl_to_path(struct nsurl *url, char **path_out)
 {
-	char *tmps, *unesc, *slash, *colon, *url2;
+	lwc_string *urlpath;
+	char *path;
+	bool match;
+	lwc_string *scheme;
+	nserror res;
+	char *colon;
+	char *slash;
 
-	if (strncmp(url, "file://", SLEN("file://")) != 0)
-		return NULL;
+	if ((url == NULL) || (path_out == NULL)) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	url += SLEN("file://");
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
 
-	if (strncmp(url, "localhost", SLEN("localhost")) == 0)
-		url += SLEN("localhost");
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_file,
+					&match) != lwc_error_ok)
+	{
+		return NSERROR_BAD_PARAMETER;
+	}
+	lwc_string_unref(scheme);
+	if (match == false) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	if (strncmp(url, "/", SLEN("/")) == 0)
-		url += SLEN("/");
+	urlpath = nsurl_get_component(url, NSURL_PATH);
+	if (urlpath == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
-	if(*url == '\0')
-		return NULL; /* file:/// is not a valid path */
+	res = url_unescape(lwc_string_data(urlpath) + 1, &path);
+	lwc_string_unref(urlpath);
+	if (res != NSERROR_OK) {
+		return res;
+	}
 
-	url2 = malloc(strlen(url) + 2);
-	strcpy(url2, url);
-
-	colon = strchr(url2, ':');
+	colon = strchr(path, ':');
 	if(colon == NULL)
 	{
-		if(slash = strchr(url2, '/'))
+		slash = strchr(path, '/');
+		if(slash)
 		{
 			*slash = ':';
 		}
 		else
 		{
-			int len = strlen(url2);
-			url2[len] = ':';
-			url2[len + 1] = '\0';
+			int len = strlen(path);
+			path[len] = ':';
+			path[len + 1] = '\0';
 		}
 	}
 
-	if(url_unescape(url2,&unesc) == URL_FUNC_OK)
-		return unesc;
+	*path_out = path;
 
-	return (char *)url2;
+	return NSERROR_OK;
 }
 
-char *path_to_url(const char *path)
+/**
+ * Create a nsurl from a path using amiga file handling.
+ *
+ * Perform the necessary operations on a path to generate a nsurl.
+ *
+ * @param[in] path The path to convert.
+ * @param[out] url_out pointer to recive the nsurl, The returned url
+ *                     must be unreferenced by the caller.
+ * @return NSERROR_OK and the url is placed in \a url or error code on
+ *         faliure.
+ */
+static nserror amiga_path_to_nsurl(const char *path, struct nsurl **url_out)
 {
 	char *colon = NULL;
 	char *r = NULL;
 	char newpath[1024 + strlen(path)];
 	BPTR lock = 0;
+	nserror ret;
 
 	if(lock = Lock(path, MODE_OLDFILE))
 	{
@@ -163,40 +203,19 @@ char *path_to_url(const char *path)
 	else strlcpy(newpath, path, sizeof newpath);
 
 	r = malloc(strlen(newpath) + SLEN("file:///") + 1);
+	if (r == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	if(colon = strchr(newpath, ':')) *colon = '/';
 
 	strcpy(r, "file:///");
 	strcat(r, newpath);
 
-	return r;
-}
+	ret = nsurl_create(r, url_out);
+	free(r);
 
-/**
- * Return the filename part of a full path
- *
- * \param path full path and filename
- * \return filename (will be freed with free())
- */
-
-char *filename_from_path(char *path)
-{
-	return strdup(FilePart(path));
-}
-
-/**
- * Add a path component/filename to an existing path
- *
- * \param path buffer containing path + free space
- * \param length length of buffer "path"
- * \param newpart string containing path component to add to path
- * \return true on success
- */
-
-bool path_add_part(char *path, int length, const char *newpart)
-{
-	if(AddPart(path, newpart, length)) return true;
-		else return false;
+	return ret;
 }
 
 /**
@@ -224,3 +243,197 @@ char *translate_escape_chars(const char *s)
 	ret[ii] = '\0';
 	return ret;
 }
+
+/**
+ * Generate a posix path from one or more component elemnts.
+ *
+ * If a string is allocated it must be freed by the caller.
+ *
+ * @param[in,out] str pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the complete path.
+ * @param[in,out] size The size of the space available if \a str not
+ *                     NULL on input and if not NULL set to the total
+ *                     output length on output.
+ * @param[in] nelm The number of elements.
+ * @param[in] ap The elements of the path as string pointers.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror amiga_vmkpath(char **str, size_t *size, size_t nelm, va_list ap)
+{
+	const char *elm[16];
+	size_t elm_len[16];
+	size_t elm_idx;
+	char *fname;
+	size_t fname_len = 0;
+
+	/* check the parameters are all sensible */
+	if ((nelm == 0) || (nelm > 16)) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	if ((*str != NULL) && (size == NULL)) {
+		/* if the caller is providing the buffer they must say
+		 * how much space is available.
+		 */
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* calculate how much storage we need for the complete path
+	 * with all the elements.
+	 */
+	for (elm_idx = 0; elm_idx < nelm; elm_idx++) {
+		elm[elm_idx] = va_arg(ap, const char *);
+		/* check the argument is not NULL */
+		if (elm[elm_idx] == NULL) {
+			return NSERROR_BAD_PARAMETER;
+		}
+		elm_len[elm_idx] = strlen(elm[elm_idx]);
+		fname_len += elm_len[elm_idx];
+	}
+	fname_len += nelm; /* allow for separators and terminator */
+
+	/* ensure there is enough space */
+	fname = *str;
+	if (fname != NULL) {
+		if (fname_len > *size) {
+			return NSERROR_NOSPACE;
+		}
+	} else {
+		fname = malloc(fname_len);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+	}
+
+	/* copy the first element complete */
+	memmove(fname, elm[0], elm_len[0]);
+	fname[elm_len[0]] = 0;
+
+	/* add the remaining elements */
+	for (elm_idx = 1; elm_idx < nelm; elm_idx++) {
+		if (!AddPart(fname, elm[elm_idx], fname_len)) {
+			break;
+		}
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = fname_len;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * Get the basename of a file using posix path handling.
+ *
+ * This gets the last element of a path and returns it.
+ *
+ * @param[in] path The path to extract the name from.
+ * @param[in,out] str Pointer to string pointer if this is NULL enough
+ *                    storage will be allocated for the path element.
+ * @param[in,out] size The size of the space available if \a
+ *                     str not NULL on input and set to the total
+ *                     output length on output.
+ * @return NSERROR_OK and the complete path is written to str
+ *         or error code on faliure.
+ */
+static nserror amiga_basename(const char *path, char **str, size_t *size)
+{
+	const char *leafname;
+	char *fname;
+
+	if (path == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	leafname = FilePart(path);
+	if (leafname == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	fname = strdup(leafname);
+	if (fname == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	*str = fname;
+	if (size != NULL) {
+		*size = strlen(fname);
+	}
+	return NSERROR_OK;
+}
+
+/**
+ * Ensure that all directory elements needed to store a filename exist.
+ *
+ * @param fname The filename to ensure the path to exists.
+ * @return NSERROR_OK on success or error code on failure.
+ */
+static nserror amiga_mkdir_all(const char *fname)
+{
+	char *dname;
+	char *sep;
+	struct stat sb;
+
+	dname = strdup(fname);
+
+	sep = strrchr(dname, '/');
+	if (sep == NULL) {
+		/* no directory separator path is just filename so its ok */
+		free(dname);
+		return NSERROR_OK;
+	}
+
+	*sep = 0; /* null terminate directory path */
+
+	if (stat(dname, &sb) == 0) {
+		free(dname);
+		if (S_ISDIR(sb.st_mode)) {
+			/* path to file exists and is a directory */
+			return NSERROR_OK;
+		}
+		return NSERROR_NOT_DIRECTORY;
+	}
+	*sep = '/'; /* restore separator */
+
+	sep = dname;
+	while (*sep == '/') {
+		sep++;
+	}
+	while ((sep = strchr(sep, '/')) != NULL) {
+		*sep = 0;
+		if (stat(dname, &sb) != 0) {
+			if (nsmkdir(dname, S_IRWXU) != 0) {
+				/* could not create path element */
+				free(dname);
+				return NSERROR_NOT_FOUND;
+			}
+		} else {
+			if (! S_ISDIR(sb.st_mode)) {
+				/* path element not a directory */
+				free(dname);
+				return NSERROR_NOT_DIRECTORY;
+			}
+		}
+		*sep = '/'; /* restore separator */
+		/* skip directory separators */
+		while (*sep == '/') {
+			sep++;
+		}
+	}
+
+	free(dname);
+	return NSERROR_OK;
+}
+
+/* amiga file handling operations */
+static struct gui_file_table file_table = {
+	.mkpath = amiga_vmkpath,
+	.basename = amiga_basename,
+	.nsurl_to_path = amiga_nsurl_to_path,
+	.path_to_nsurl = amiga_path_to_nsurl,
+	.mkdir_all = amiga_mkdir_all,
+};
+
+struct gui_file_table *amiga_file_table = &file_table;

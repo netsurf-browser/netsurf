@@ -17,16 +17,17 @@
  */
 
 #include <stdbool.h>
+
 #include "utils/nsoption.h"
-#include "riscos/dialog.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
 #include "riscos/configure/configure.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-
+#include "riscos/dialog.h"
 
 #define SECURITY_REFERRER 2
 #define SECURITY_DURATION_FIELD 6

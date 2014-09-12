@@ -21,67 +21,27 @@
  /** \file
  * Free text search (core)
  */
-#include "utils/config.h"
 
-#include <ctype.h>
-#include <string.h>
-#include <dom/dom.h>
 #include "content/content.h"
-#include "content/hlcache.h"
+
 #include "desktop/browser_private.h"
-#include "desktop/gui.h"
-#include "utils/nsoption.h"
 #include "desktop/search.h"
-#include "desktop/selection.h"
-#include "render/box.h"
-#include "render/html.h"
-#include "render/search.h"
-#include "render/textplain.h"
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 
-
-
-
-/**
- * Starts or continues an existing search.
- *
- * \param bw 		the browser_window to search
- * \param callbacks 	callbacks vtable to update frontend according to results
- * \param gui_data	a pointer returned to the callbacks
- * \param flags		search flags
- * \param string	string to search for
- */
-void browser_window_search(struct browser_window *bw,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+/* exported function documented in desktop/search.h */
+void browser_window_search(struct browser_window *bw, void *context,
 		search_flags_t flags, const char *string)
 {
-	assert(gui_callbacks != NULL);
-
-	if (bw == NULL || bw->current_content == NULL)
-		return;
-
-	content_search(bw->current_content, gui_callbacks, gui_data,
-			flags, string);
+	if ((bw != NULL) &&
+	    (bw->current_content != NULL)) {
+		content_search(bw->current_content, context, flags, string);
+	}
 }
 
-
-/**
- * Clear up a search.  Frees any memory used by the search
- *
- * \param bw 		the browser_window to search
- * \param callbacks 	callbacks vtable to update frontend according to results
- * \param gui_data	a pointer returned to the callbacks
- * \param flags		search flags
- * \param string	string to search for
- */
+/* exported function documented in desktop/search.h */
 void browser_window_search_clear(struct browser_window *bw)
 {
-	if (bw == NULL || bw->current_content == NULL)
-		return;
-
-	content_search_clear(bw->current_content);
+	if ((bw != NULL) &&
+	    (bw->current_content != NULL)) {
+		content_search_clear(bw->current_content);
+	}
 }

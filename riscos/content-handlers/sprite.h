@@ -32,7 +32,10 @@ nserror sprite_init(void);
 
 #else
 
-#define sprite_init() NSERROR_OK
+static inline nserror sprite_init(void)
+{
+	return NSERROR_OK;
+}
 
 #endif
 

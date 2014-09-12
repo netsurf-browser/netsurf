@@ -29,7 +29,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
-//#include <glade/glade.h>
+
+#include "utils/nsurl.h"
 
 struct glade_file_location_s {
 	char *netsurf;
@@ -44,6 +45,7 @@ struct glade_file_location_s {
 	char *history;
 	char *hotlist;
 	char *cookies;
+	char *viewdata;
 };
 
 /** location of all glade files. */
@@ -51,14 +53,20 @@ extern struct glade_file_location_s *glade_file_location;
 
 extern char *languages_file_location;
 extern char *toolbar_indices_file_location;
-extern char *options_file_location; /**< location where user options are written */
 extern char *res_dir_location;
-extern char *print_options_file_location;
 extern char *themelist_file_location;
+
+/** Directory where all configuration files are held. */
+extern char *nsgtk_config_home;
 
 extern GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 
+extern char **respaths; /** resource search path vector */
+
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
+
+extern void gui_401login_open(nsurl *url, const char *realm,
+		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 #endif /* GTK_GUI_H */
 

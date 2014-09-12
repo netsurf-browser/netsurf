@@ -198,7 +198,7 @@ enum
 #define OPTS_MAX_TABS 10
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_PROXY 5
-#define OPTS_MAX_NATIVEBM 3
+#define OPTS_MAX_NATIVEBM 4
 #define OPTS_MAX_DITHER 4
 
 struct ami_gui_opts_window {
@@ -216,10 +216,7 @@ CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
 CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
-STRPTR *websearch_list;
-
-STRPTR *ami_gui_opts_websearch(void);
-void ami_gui_opts_websearch_free(STRPTR *websearchlist);
+struct List *websearch_list;
 
 void ami_gui_opts_setup(void)
 {
@@ -299,7 +296,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
 	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
-	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
+	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
 	gadlab[GID_OPTS_NOTIFY] = (char *)ami_utf8_easy((char *)messages_get("DownloadNotify"));
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
@@ -406,9 +403,12 @@ void ami_gui_opts_open(void)
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE, proxybypassdisabled = FALSE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
+	BOOL ditherdisable = TRUE;
 	BOOL download_notify_disabled = FALSE;
 	BOOL ptr_disable = FALSE;
 	char animspeed[10];
+	char *homepage_url_lc = ami_utf8_easy(nsoption_charp(homepage_url));
+
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
 	if(gow && gow->win)
@@ -445,6 +445,9 @@ void ami_gui_opts_open(void)
 	{
 		screenmodeid = strtoul(nsoption_charp(screen_modeid),NULL,0);
 	}
+
+	if(ami_plot_screen_is_palettemapped() == true)
+		ditherdisable = FALSE;
 
 	if(nsoption_bool(http_proxy) == true)
 	{
@@ -553,7 +556,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE] = StringObject,
 										GA_ID, GID_OPTS_HOMEPAGE,
 										GA_RelVerify, TRUE,
-										STRINGA_TextVal, nsoption_charp(homepage_url),
+										STRINGA_TextVal, homepage_url_lc,
 										STRINGA_BufferPos,0,
 									StringEnd,
 									CHILD_Label, LabelObject,
@@ -907,6 +910,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_DITHERQ] = ChooserObject,
 										GA_ID, GID_OPTS_DITHERQ,
 										GA_RelVerify, TRUE,
+										GA_Disabled, ditherdisable,
 										CHOOSER_PopUp, TRUE,
 										CHOOSER_LabelArray, ditheropts,
 										CHOOSER_Selected, nsoption_int(dither_quality),
@@ -1150,15 +1154,14 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_DISC] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
-											GA_Disabled, TRUE,
-											INTEGER_Number, nsoption_int(disc_cache_age),
+											INTEGER_Number, nsoption_uint(disc_cache_size) / 1048576,
 											INTEGER_Minimum, 0,
-											INTEGER_Maximum, 366,
+											INTEGER_Maximum, 4096,
 											INTEGER_Arrows, TRUE,
 										IntegerEnd,
 										CHILD_WeightedWidth, 0,
 										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_DAYS],
+											LABEL_Text, gadlab[LAB_OPTS_MB],
 										LabelEnd,
 									LayoutEnd,
 									CHILD_Label, LabelObject,
@@ -1306,7 +1309,7 @@ void ami_gui_opts_open(void)
 											GA_ID, GID_OPTS_SEARCH_PROV,
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
-											CHOOSER_LabelArray, websearch_list,
+											CHOOSER_Labels, websearch_list,
 											CHOOSER_Selected, nsoption_int(search_provider),
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
@@ -1328,6 +1331,7 @@ void ami_gui_opts_open(void)
        	 	           					GA_RelVerify, TRUE,
    	     	           					GA_Text, gadlab[GID_OPTS_CONTEXTMENU],
    	     	           					GA_Selected, nsoption_bool(context_menu),
+								GA_Disabled, !popupmenu_lib_ok,
            	    					CheckBoxEnd,
 #endif
 			               			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
@@ -1523,6 +1527,7 @@ void ami_gui_opts_open(void)
 		gow->node = AddObject(window_list,AMINS_GUIOPTSWINDOW);
 		gow->node->objstruct = gow;
 	}
+	ami_utf8_free(homepage_url_lc);
 }
 
 void ami_gui_opts_use(bool save)
@@ -1537,7 +1542,7 @@ void ami_gui_opts_use(bool save)
 	ami_update_pointer(gow->win, GUI_POINTER_WAIT);
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
-	nsoption_set_charp(homepage_url, (char *)strdup((char *)data));
+	nsoption_set_charp(homepage_url, (char *)ami_to_utf8_easy((char *)data));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_CONTENTLANG],(ULONG *)&data);
 	nsoption_set_charp(accept_language, (char *)strdup((char *)data));
@@ -1742,7 +1747,8 @@ void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_int(disc_cache_age));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_uint(disc_cache_size));
+	nsoption_set_uint(disc_cache_size, nsoption_uint(disc_cache_size) * 1048576);
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_OVERWRITE],(ULONG *)&data);
 	if (data) { 
@@ -1802,8 +1808,7 @@ void ami_gui_opts_use(bool save)
 		ami_gui_tabs_toggle_all();
 	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
-	search_web_provider_details(nsoption_int(search_provider));
-	search_web_retrieve_ico(false);
+	search_web_select_provider(nsoption_int(search_provider));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
 	if (data) {
@@ -1929,10 +1934,10 @@ BOOL ami_gui_opts_event(void)
 			case WMHI_GADGETHELP:
 				if((result & WMHI_GADGETMASK) == 0) {
 					/* Pointer not over our window */
-					ami_help_open(AMI_HELP_MAIN);
+					ami_help_open(AMI_HELP_MAIN, scrn);
 				} else {
 					/* TODO: Make this sensitive to the tab the user is currently on */
-					ami_help_open(AMI_HELP_PREFS);
+					ami_help_open(AMI_HELP_PREFS, scrn);
 				}
 			break;
 			
@@ -2110,39 +2115,41 @@ BOOL ami_gui_opts_event(void)
 	return FALSE;
 }
 
-STRPTR *ami_gui_opts_websearch(void)
+struct List *ami_gui_opts_websearch(void)
 {
-	char buf[300];
-	ULONG ref = 0;
-	STRPTR *websearchlist;
+	struct List *list;
+	struct Node *node;
+	const char *name;
+	int iter;
 
-	websearchlist = AllocVecTagList(200, NULL); /* NB: Was not MEMF_PRIVATE */
+	list = AllocVecTagList(sizeof(struct List), NULL);
+	NewList(list);
 
-	if (nsoption_charp(search_engines_file) == NULL) return websearchlist;
+	if (nsoption_charp(search_engines_file) == NULL) return list;
 
-	FILE *f = fopen(nsoption_charp(search_engines_file), "r");
-	if (f == NULL) return websearchlist;
-
-	while (fgets(buf, sizeof(buf), f) != NULL) {
-		if (buf[0] == '\0') continue;
-		buf[strlen(buf)-1] = '\0';
-		websearchlist[ref] = strdup(strtok(buf, "|"));
-		ref++;
+	for (iter = search_web_iterate_providers(0, &name);
+		iter != -1;
+		iter = search_web_iterate_providers(iter, &name)) {
+			node = AllocChooserNode(CNA_Text, name, TAG_DONE);
+			AddTail(list, node);
 	}
-	fclose(f);
-	websearchlist[ref] = NULL;
 
-	return websearchlist;
+	return list;
 }
 
-void ami_gui_opts_websearch_free(STRPTR *websearchlist)
+void ami_gui_opts_websearch_free(struct List *websearchlist)
 {
-	ULONG ref = 0;
+	struct Node *node;
+	struct Node *nnode;
 
-	while (websearchlist[ref] != NULL) {
-		free(websearchlist[ref]);
-		ref++;
-	}
+	if(IsListEmpty(websearchlist)) return;
+	node = GetHead(websearchlist);
+
+	do {
+		nnode = GetSucc(node);
+		Remove(node);
+	} while(node = nnode);
 
 	FreeVec(websearchlist);
 }
+

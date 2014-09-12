@@ -129,7 +129,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
     GRECT g, g_ro, g2;
     short retval = 1;
-    int val = 1, old_val;
+    int val = 1;
     struct gemtk_wm_scroll_info_s *slid;
 
     switch(msg[0]) {
@@ -1338,7 +1338,7 @@ bool gemtk_wm_has_intersection(GUIWIN *win, GRECT *work)
     }
 
     wind_get_grect(win->handle, WF_FIRSTXYWH, &area);
-    while (area.g_w && area.g_w) {
+    while (area.g_w) {
         //GRECT * ptr = &area;
         if (RC_WITHIN(work, &area)) {
             retval = false;
@@ -1375,10 +1375,8 @@ void gemtk_wm_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 void gemtk_wm_form_redraw(GUIWIN *gw, GRECT *clip)
 {
     GRECT area, area_ro, g;
-	int scroll_px_x, scroll_px_y;
 	struct gemtk_wm_scroll_info_s *slid;
 	//int new_x, new_y, old_x, old_y;
-	short edit_idx;
 
 	DEBUG_PRINT(("gemtk_wm_form_redraw\n"));
 

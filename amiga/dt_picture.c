@@ -62,7 +62,6 @@ struct amiga_dt_picture_content {
 
 nserror amiga_dt_picture_init(void)
 {
-	char dt_mime[50];
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
 	lwc_error lerror;
@@ -175,7 +174,6 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	UBYTE *bm_buffer;
 	Object *dto;
 	struct bitmap *bitmap;
-	unsigned int bm_flags = BITMAP_NEW;
 #ifdef __amigaos4__
 	int bm_format = PBPAFMT_RGBA;
 #else
@@ -185,7 +183,7 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 
 	if(dto = amiga_dt_picture_newdtobject(adt))
 	{
-		bitmap = bitmap_create(c->width, c->height, bm_flags);
+		bitmap = bitmap_create(c->width, c->height, BITMAP_NEW);
 		if (!bitmap) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -214,14 +212,10 @@ bool amiga_dt_picture_convert(struct content *c)
 {
 	LOG(("amiga_dt_picture_convert"));
 
-	union content_msg_data msg_data;
 	int width, height;
 	char *title;
-	UBYTE *bm_buffer;
 	Object *dto;
 	struct BitMapHeader *bmh;
-	unsigned int bm_flags = BITMAP_NEW;
-	int bm_format = PBPAFMT_RGBA;
 	char *filetype;
 
 	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))

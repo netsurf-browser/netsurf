@@ -29,7 +29,9 @@
 #include <dom/dom.h>
 
 #include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/browser.h"
+#include "desktop/gui_factory.h"
 #include "desktop/frames.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
@@ -45,8 +47,10 @@
 #include "render/imagemap.h"
 #include "render/search.h"
 #include "javascript/js.h"
+#include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/log.h"
 
 
 /**
@@ -228,6 +232,47 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 	html_mouse_action(c, bw, mouse, x, y);
 }
 
+/** Helper for file gadgets to store their filename unencoded on the
+ * dom node associated with the gadget.
+ *
+ * \todo Get rid of this crap eventually
+ */
+static void html__image_coords_dom_user_data_handler(dom_node_operation operation,
+		dom_string *key, void *_data, struct dom_node *src,
+		struct dom_node *dst)
+{
+	struct image_input_coords *oldcoords, *coords = _data, *newcoords;
+
+	if (!dom_string_isequal(corestring_dom___ns_key_image_coords_node_data,
+				key) || coords == NULL) {
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		newcoords = calloc(1, sizeof(*newcoords));
+		*newcoords = *coords;
+		if (dom_node_set_user_data(dst,
+					   corestring_dom___ns_key_image_coords_node_data,
+					   newcoords, html__image_coords_dom_user_data_handler,
+					   &oldcoords) == DOM_NO_ERR) {
+			free(oldcoords);
+		}
+		break;
+
+	case DOM_NODE_RENAMED:
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+		break;
+
+	case DOM_NODE_DELETED:
+		free(coords);
+		break;
+	default:
+		LOG(("User data operation not handled."));
+		assert(0);
+	}
+}
 
 /**
  * Handle mouse clicks and movements in an HTML content window.
@@ -611,24 +656,40 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						c);
 				pointer = BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
-				gui_create_form_select_menu(bw, gadget);
+				guit->browser->create_form_select_menu(bw, gadget);
 			break;
 		case GADGET_CHECKBOX:
 			status = messages_get("FormCheckbox");
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
 				gadget->selected = !gadget->selected;
+				dom_html_input_element_set_checked(
+					(dom_html_input_element *)(gadget->node),
+					gadget->selected);
 				html__redraw_a_box(html, gadget_box);
 			}
 			break;
 		case GADGET_RADIO:
 			status = messages_get("FormRadio");
 			if (mouse & BROWSER_MOUSE_CLICK_1)
-				form_radio_set(html, gadget);
+				form_radio_set(gadget);
 			break;
 		case GADGET_IMAGE:
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
-				gadget->data.image.mx = x - gadget_box_x;
-				gadget->data.image.my = y - gadget_box_y;
+				struct image_input_coords *coords, *oldcoords;
+				/** \todo Find a way to not ignore errors */
+				coords = calloc(1, sizeof(*coords));
+				if (coords == NULL) {
+					return;
+				}
+				coords->x = x - gadget_box_x;
+				coords->y = y - gadget_box_y;
+				if (dom_node_set_user_data(
+					    gadget->node,
+					    corestring_dom___ns_key_image_coords_node_data,
+					    coords, html__image_coords_dom_user_data_handler,
+					    &oldcoords) != DOM_NO_ERR)
+					return;
+				free(oldcoords);
 			}
 			/* drop through */
 		case GADGET_SUBMIT:
@@ -682,6 +743,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			break;
 		case GADGET_FILE:
 			status = messages_get("FormFile");
+			if (mouse & BROWSER_MOUSE_CLICK_1) {
+				msg_data.gadget_click.gadget = gadget;
+				content_broadcast(c, CONTENT_MSG_GADGETCLICK, msg_data);
+			}
 			break;
 		case GADGET_BUTTON:
 			/* This gadget cannot be activated */
@@ -758,8 +823,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_window_navigate(bw,
 				url,
 				content_get_url(c),
-				BROWSER_WINDOW_DOWNLOAD |
-				BROWSER_WINDOW_VERIFIABLE,
+				BW_NAVIGATE_DOWNLOAD,
 				NULL,
 				NULL,
 				NULL);
@@ -938,8 +1002,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		browser_window_navigate(browser_window_find_target(bw, target, mouse),
 					url,
 					content_get_url(c),
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
+					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
 					NULL);
@@ -1009,13 +1072,11 @@ bool html_keypress(struct content *c, uint32_t key)
  * Handle search.
  *
  * \param  c			content of type HTML
- * \param  gui_callbacks	vtable for updating front end
- * \param  gui_data		front end private data
+ * \param  context		front end private data
  * \param  flags		search flags
  * \param  string		search string
  */
-void html_search(struct content *c,
-		struct gui_search_callbacks *gui_callbacks, void *gui_data,
+void html_search(struct content *c, void *context,
 		search_flags_t flags, const char *string)
 {
 	html_content *html = (html_content *)c;
@@ -1040,8 +1101,7 @@ void html_search(struct content *c,
 			html->search = NULL;
 		}
 
-		html->search = search_create_context(c, CONTENT_HTML,
-				gui_callbacks, gui_data);
+		html->search = search_create_context(c, CONTENT_HTML, context);
 
 		if (html->search == NULL)
 			return;
@@ -1072,8 +1132,9 @@ void html_search_clear(struct content *c)
 	free(html->search_string);
 	html->search_string = NULL;
 
-	if (html->search != NULL)
+	if (html->search != NULL) {
 		search_destroy_context(html->search);
+	}
 	html->search = NULL;
 }
 
@@ -1200,6 +1261,7 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	union content_msg_data msg_data;
 	int x_off = 0;
 	int y_off = 0;
+	struct rect cr;
 	bool textarea_lost_focus = html->focus_type == HTML_FOCUS_TEXTAREA &&
 			focus_type != HTML_FOCUS_TEXTAREA;
 
@@ -1230,7 +1292,6 @@ void html_set_focus(html_content *html, html_focus_type focus_type,
 	} else if (focus_type != HTML_FOCUS_SELF && hide_caret) {
 		msg_data.caret.type = CONTENT_CARET_HIDE;
 	} else {
-		struct rect cr;
 		if (clip != NULL) {
 			cr = *clip;
 			cr.x0 += x_off;

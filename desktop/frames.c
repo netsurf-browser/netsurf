@@ -28,12 +28,11 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+
 #include "utils/config.h"
 #include "content/hlcache.h"
 #include "desktop/browser_private.h"
 #include "desktop/frames.h"
-#include "desktop/local_history.h"
-#include "desktop/gui.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "utils/log.h"
@@ -209,7 +208,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 
 		/* Initialise common parts */
-		browser_window_initialise_common(window, NULL);
+		browser_window_initialise_common(BW_CREATE_NONE,
+				window, NULL);
 
 		/* window characteristics */
 		window->browser_window_type = BROWSER_WINDOW_IFRAME;
@@ -251,7 +251,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 			browser_window_navigate(window, 
 				cur->url,
 				hlcache_handle_get_url(bw->current_content),
-				BROWSER_WINDOW_NONE,
+				BW_NAVIGATE_UNVERIFIABLE,
 				NULL,
 				NULL,
 				bw->current_content);
@@ -314,7 +314,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 			window = &bw->children[index];
 
 			/* Initialise common parts */
-			browser_window_initialise_common(window, NULL);
+			browser_window_initialise_common(BW_CREATE_NONE,
+					window, NULL);
 
 			/* window characteristics */
 			if (frame->children)
@@ -387,7 +388,8 @@ void browser_window_create_frameset(struct browser_window *bw,
 				browser_window_navigate(window,
 					frame->url,
 					hlcache_handle_get_url(parent),
-					BROWSER_WINDOW_HISTORY,
+					BW_NAVIGATE_HISTORY |
+					BW_NAVIGATE_UNVERIFIABLE,
 					NULL,
 					NULL,
 					parent);

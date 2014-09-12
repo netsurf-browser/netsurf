@@ -27,7 +27,7 @@
 
 /* Mouse state.	1 is    primary mouse button (e.g. Select on RISC OS).
  *		2 is  secondary mouse button (e.g. Adjust on RISC OS). */
-typedef enum {
+typedef enum browser_mouse_state {
 	BROWSER_MOUSE_HOVER = 0,		/* No mouse buttons pressed,
 						 * May be used to indicate
 						 * hover or end of drag. */
@@ -78,13 +78,14 @@ typedef enum {
 } browser_mouse_state;
 
 
-typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
-	       GUI_POINTER_MENU, GUI_POINTER_UP, GUI_POINTER_DOWN,
-	       GUI_POINTER_LEFT, GUI_POINTER_RIGHT, GUI_POINTER_RU,
-	       GUI_POINTER_LD, GUI_POINTER_LU, GUI_POINTER_RD,
-	       GUI_POINTER_CROSS, GUI_POINTER_MOVE, GUI_POINTER_WAIT,
-	       GUI_POINTER_HELP, GUI_POINTER_NO_DROP, GUI_POINTER_NOT_ALLOWED,
-               GUI_POINTER_PROGRESS } gui_pointer_shape;
+typedef enum gui_pointer_shape {
+	GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
+	GUI_POINTER_MENU, GUI_POINTER_UP, GUI_POINTER_DOWN,
+	GUI_POINTER_LEFT, GUI_POINTER_RIGHT, GUI_POINTER_RU,
+	GUI_POINTER_LD, GUI_POINTER_LU, GUI_POINTER_RD,
+	GUI_POINTER_CROSS, GUI_POINTER_MOVE, GUI_POINTER_WAIT,
+	GUI_POINTER_HELP, GUI_POINTER_NO_DROP, GUI_POINTER_NOT_ALLOWED,
+	GUI_POINTER_PROGRESS } gui_pointer_shape;
 
 /** Mouse pointer type */
 typedef enum {

@@ -859,7 +859,6 @@ Class *MakeStringClass( void )
 
 void FreeStringClass(Class *cl)
 {
-    struct Library *libbase;
     URLHistory_Free();
     FreeClass(cl);
 }

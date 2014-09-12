@@ -22,6 +22,8 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+#include "windows/filetype.h"
+
 /**
  * filetype -- determine the MIME type of a local file
  */
@@ -48,10 +50,4 @@ const char *fetch_filetype(const char *unix_path)
 	if (2 < l && strcasecmp(unix_path + l - 3, "bmp") == 0)
 		return "image/x-ms-bmp";
 	return "text/html";
-}
-
-
-char *fetch_mimetype(const char *ro_path)
-{
-	return strdup("text/plain");
 }

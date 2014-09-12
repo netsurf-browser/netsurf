@@ -27,6 +27,8 @@
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
 #import "utils/messages.h"
+#import "utils/utils.h"
+#import "content/hlcache.h"
 
 @interface BookmarksController ()
 - (void) noteAppWillTerminate: (NSNotification *) note;
@@ -140,14 +142,12 @@ static const char *cocoa_hotlist_path( void )
                         error = browser_window_navigate([tab browser],
                                                 url,
                                                 NULL,
-                                                BROWSER_WINDOW_HISTORY |
-                                                BROWSER_WINDOW_VERIFIABLE,
+                                                BW_NAVIGATE_HISTORY,
                                                 NULL,
                                                 NULL,
                                                 NULL);
                 } else {
-                        error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+                        error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,

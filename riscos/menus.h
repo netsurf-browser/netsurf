@@ -19,10 +19,6 @@
 #ifndef _NETSURF_RISCOS_MENUS_H_
 #define _NETSURF_RISCOS_MENUS_H_
 
-#include <stdbool.h>
-#include "oslib/wimp.h"
-#include "riscos/gui.h"
-
 extern wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 
 extern wimp_menu *current_menu;
@@ -168,11 +164,12 @@ struct ns_menu {
 
 void ro_gui_menu_init(void);
 void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w);
-void ro_gui_menu_closed(void);
+void ro_gui_menu_destroy(void);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_window_changed(wimp_w from, wimp_w to);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_menu_message_deleted(wimp_message_menus_deleted *deleted);
 void ro_gui_menu_refresh(wimp_menu *menu);
 void ro_gui_menu_init_structure(wimp_menu *menu, int entries);
 const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,

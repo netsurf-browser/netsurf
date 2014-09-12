@@ -32,7 +32,10 @@ nserror draw_init(void);
 
 #else
 
-#define draw_init() NSERROR_OK
+static inline nserror draw_init(void)
+{
+	return NSERROR_OK;
+}
 
 #endif /* WITH_DRAW */
 

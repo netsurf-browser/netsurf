@@ -25,6 +25,6 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		lwc_string **glypharray);
 void ami_font_scan_fini(lwc_string **glypharray);
 void ami_font_scan_save(const char *filename, lwc_string **glypharray);
-const char *ami_font_scan_lookup(uint16 *code, lwc_string **glypharray);
+const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray);
 
 #endif

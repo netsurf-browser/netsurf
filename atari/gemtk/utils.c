@@ -123,7 +123,6 @@ void gemtk_send_msg(short msg_type, short data2, short data3, short data4,
 
 void gemtk_wind_get_str(short aes_handle, short mode, char *str, int len)
 {
-	char tmp_str[255];
 
     // TODO: remove or implement function
 

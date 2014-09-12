@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2013-4 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -45,8 +45,9 @@ void ami_help_init(struct Screen *screen)
 		TAG_DONE);
 }
 
-void ami_help_open(ULONG node)
+void ami_help_open(ULONG node, struct Screen *screen)
 {
+	if(AmigaGuideObject == NULL) ami_help_init(screen);
 	SetAttrs(AmigaGuideObject, AMIGAGUIDE_ContextID, node, TAG_DONE);
 	IDoMethod(AmigaGuideObject, AGM_OPEN, NULL);
 }
@@ -62,5 +63,21 @@ void ami_help_free(void)
 
 void ami_help_new_screen(struct Screen *screen)
 {
+	if(AmigaGuideObject == NULL) return;
 	SetAttrs(AmigaGuideObject, AMIGAGUIDE_Screen, screen, TAG_DONE);
 }
+
+ULONG ami_help_signal(void)
+{
+	ULONG ag_sig = 0;
+	if(AmigaGuideObject)
+		GetAttr(AMIGAGUIDE_Signal, AmigaGuideObject, &ag_sig);
+	return ag_sig;
+}
+
+void ami_help_process(void)
+{
+	ULONG ret = IDoMethod(AmigaGuideObject, AGM_PROCESS, NULL);
+	if(ret) ami_help_free();
+}
+

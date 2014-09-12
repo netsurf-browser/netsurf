@@ -17,5 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-void gtk_fetch_filetype_init(const char *mimefile);
-void gtk_fetch_filetype_fin(void);
+void monkey_fetch_filetype_init(const char *mimefile);
+void monkey_fetch_filetype_fin(void);
+const char *monkey_fetch_filetype(const char *unix_path);

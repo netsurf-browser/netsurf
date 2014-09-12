@@ -41,6 +41,8 @@
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 
+struct content_redraw_data;
+
 typedef struct bitmap * (image_cache_convert_fn) (struct content *content);
 
 struct image_cache_parameters {

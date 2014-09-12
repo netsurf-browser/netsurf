@@ -16,15 +16,3 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-enum {
-	R_ResizeHandle = 1000,
-	R_ResBackNavActive = 1042,
-	R_ResBackNavInactive = 1043,
-	R_ResForwNavActive = 1044,
-	R_ResForwNavInactive = 1045,
-	R_ResUpNavActive = 1046,
-	R_ResUpNavInactive = 1047,
-	R_ResBackNavActiveSel = 1048,
-	R_ResForwNavActiveSel = 1049,
-	R_ResUpNavActiveSel = 1050
-};

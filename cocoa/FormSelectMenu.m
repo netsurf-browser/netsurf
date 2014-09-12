@@ -19,7 +19,7 @@
 #import "cocoa/FormSelectMenu.h"
 #import "cocoa/coordinates.h"
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "render/form.h"
 
 @interface FormSelectMenu ()
@@ -87,7 +87,7 @@
 
 - (void) itemSelected: (id) sender;
 {
-	form_select_process_selection( browser->current_content, control, [sender tag] );
+	form_select_process_selection( control, [sender tag] );
 }
 
 - (void) menuDidClose: (NSMenu *) sender;

@@ -22,9 +22,9 @@ urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/log.c \
 urldbtest_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom) -O2
 urldbtest_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom)
 
-nsurl_SRCS := utils/log.c utils/nsurl.c test/nsurl.c
-nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet)
-nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet)
+nsurl_SRCS := utils/corestrings.c utils/log.c utils/nsurl.c utils/idna.c utils/utf8proc.c test/nsurl.c
+nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom)
+nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom)
 
 nsoption_SRCS := utils/log.c utils/nsoption.c test/nsoption.c
 nsoption_CFLAGS := -Dnsgtk

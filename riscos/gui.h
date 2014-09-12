@@ -21,19 +21,16 @@
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "rufl.h"
-#include "desktop/browser.h"
-#include "content/content_type.h"
-#include "utils/config.h"
+#include <oslib/wimp.h>
 
 #define RISCOS5 0xAA
 
 #define THUMBNAIL_WIDTH 100
 #define THUMBNAIL_HEIGHT 86
+
+/* The maximum size for user-editable URLs in the RISC OS GUI. */
+
+#define RO_GUI_MAX_URL_SIZE 2048
 
 extern int os_version;
 
@@ -47,6 +44,11 @@ struct tree;
 struct node;
 struct history;
 struct css_style;
+struct ssl_cert_info;
+struct nsurl;
+struct hlcache_handle;
+
+enum gui_pointer_shape;
 
 extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 
@@ -69,12 +71,6 @@ typedef enum { GUI_DRAG_NONE, GUI_DRAG_DOWNLOAD_SAVE, GUI_DRAG_SAVE }
 		ro_gui_drag_type;
 
 extern ro_gui_drag_type gui_current_drag_type;
-
-/** desktop font, size and style being used */
-extern char ro_gui_desktop_font_family[];
-extern int ro_gui_desktop_font_size;
-extern rufl_style ro_gui_desktop_font_style;
-
 
 /** RISC OS data for a browser window. */
 struct gui_window {
@@ -123,9 +119,12 @@ const char *ro_gui_default_language(void);
 void ro_gui_download_init(void);
 void ro_gui_download_datasave_ack(wimp_message *message);
 bool ro_gui_download_prequit(void);
+extern struct gui_download_table *riscos_download_table;
 
 /* in 401login.c */
 void ro_gui_401login_init(void);
+void gui_401login_open(struct nsurl *url, const char *realm,
+		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* in window.c */
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
@@ -135,7 +134,6 @@ void ro_gui_window_iconise(struct gui_window *g,
 bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_redraw_all(void);
 void ro_gui_window_update_boxes(void);
-void ro_gui_window_process_reformats(void);
 void ro_gui_window_quit(void);
 /* void ro_gui_window_close_all(void); */
 #define ro_gui_window_close_all ro_gui_window_quit  /* no need for a separate fn */
@@ -147,49 +145,49 @@ bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y,
 		os_coord *pos);
 bool ro_gui_window_to_screen_pos(struct gui_window *g, int x, int y,
 		os_coord *pos);
-browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
+enum browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		wimp_icon_flags type);
-browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
+enum browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 		wimp_icon_flags type);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
+void gui_window_set_pointer(struct gui_window *g, enum gui_pointer_shape shape);
+void gui_create_form_select_menu(struct browser_window *bw, struct form_control *control);
 
 /* in history.c */
 void ro_gui_history_init(void);
-void ro_gui_history_open(struct browser_window *bw, struct history *history,
-		bool pointer);
-
-/* in filetype.c */
-int ro_content_filetype(struct hlcache_handle *c);
-int ro_content_native_type(struct hlcache_handle *c);
-int ro_content_filetype_from_mime_type(lwc_string *mime_type);
-int ro_content_filetype_from_type(content_type type);
-bits ro_filetype_from_unix_path(const char *unix_path);
+void ro_gui_history_open(struct gui_window *g, bool pointer);
 
 /* in schedule.c */
 extern bool sched_active;
 extern os_t sched_time;
+
+/**
+ * Process events up to current time.
+ */
 bool schedule_run(void);
+
+/**
+ * Schedule a callback.
+ *
+ * \param  t         interval before the callback should be made in ms
+ * \param  callback  callback function
+ * \param  p         user parameter, passed to callback function
+ *
+ * The callback function will be called as soon as possible after t ms have
+ * passed.
+ */
+nserror riscos_schedule(int t, void (*callback)(void *p), void *p);
 
 /* in search.c */
 void ro_gui_search_init(void);
 void ro_gui_search_prepare(struct browser_window *g);
+struct gui_search_table *riscos_search_table;
 
 /* in print.c */
 void ro_gui_print_init(void);
 void ro_gui_print_prepare(struct gui_window *g);
-
-/* in font.c */
-void nsfont_init(void);
-bool nsfont_exists(const char *font_family);
-const char *nsfont_fallback_font(void);
-bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
-		size_t length, int x, int y);
-void nsfont_read_style(const plot_font_style_t *fstyle,
-		const char **font_family, unsigned int *font_size,
-		rufl_style *font_style);
-void ro_gui_wimp_get_desktop_font(void);
 
 /* in plotters.c */
 extern const struct plotter_table ro_plotters;
@@ -198,6 +196,11 @@ extern int ro_plot_origin_y;
 
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
+
+/* in sslcert.c */
+void gui_cert_verify(struct nsurl *url,
+		const struct ssl_cert_info *certs, unsigned long num,
+		     nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* icon numbers */
 #define ICON_STATUS_RESIZE 0

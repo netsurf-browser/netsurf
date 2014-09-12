@@ -37,6 +37,8 @@ typedef enum {
 
 	NSERROR_NOT_FOUND,		/**< Requested item not found */
 
+	NSERROR_NOT_DIRECTORY,           /**< Missing directory */
+
 	NSERROR_SAVE_FAILED,		/**< Failed to save data */
 
 	NSERROR_CLONE_FAILED,		/**< Failed to clone handle */
@@ -67,7 +69,17 @@ typedef enum {
 
 	NSERROR_BAD_URL,		/**< Bad URL */
 
-	NSERROR_FRAME_DEPTH             /**< Exceeded frame depth */
+	NSERROR_BAD_CONTENT,		/**< Bad Content */
+
+	NSERROR_FRAME_DEPTH,            /**< Exceeded frame depth */
+
+	NSERROR_PERMISSION,             /**< Permission error */
+
+	NSERROR_NOSPACE,		/**< Insufficient space */
+
+	NSERROR_BAD_SIZE,               /**< Bad size */
+
+	NSERROR_NOT_IMPLEMENTED,        /**< Functionality is not implemented */
 } nserror;
 
 #endif

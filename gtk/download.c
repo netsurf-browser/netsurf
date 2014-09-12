@@ -25,12 +25,14 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
-#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "desktop/download.h"
 #include "desktop/gui.h"
+
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
-#include "utils/nsoption.h"
 #include "gtk/download.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
@@ -712,10 +714,10 @@ static void nsgtk_download_store_create_item (struct gui_download_window *dl)
 			   NSGTK_DOWNLOAD, dl, -1);
 }
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-						       struct gui_window *gui)
+static struct gui_download_window *
+gui_download_window_create(download_context *ctx, struct gui_window *gui)
 {
-	const char *url = download_context_get_url(ctx);
+	nsurl *url = download_context_get_url(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
 	gchar *domain;
 	gchar *destination;
@@ -728,17 +730,22 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		nsgtk_scaffolding_window(nsgtk_get_scaffold(gui));
 
 	struct gui_download_window *download = malloc(sizeof *download);
-	if (download == NULL)
+	if (download == NULL) {
 		return NULL;
-
-	if (url_host(url, &domain) != URL_FUNC_OK) {
-		domain = g_strdup(messages_get("gtkUnknownHost"));
-		if (domain == NULL) {
-			free(download);
-			return NULL;
-		}
 	}
 
+	/* set the domain to the host component of the url if it exists */
+	if (nsurl_has_component(url, NSURL_HOST)) {
+		domain = g_strdup(lwc_string_data(nsurl_get_component(url, NSURL_HOST)));
+	} else {
+		domain = g_strdup(messages_get("gtkUnknownHost"));
+	}
+	if (domain == NULL) {
+		free(download);
+		return NULL;
+	}
+
+	/* show the dialog */
 	destination = nsgtk_download_dialog_show(
 		download_context_get_filename(ctx), domain, size);
 	if (destination == NULL) {
@@ -797,7 +804,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 }
 
 
-nserror gui_download_window_data(struct gui_download_window *dw,
+static nserror gui_download_window_data(struct gui_download_window *dw,
 				 const char *data, unsigned int size)
 {
 	g_io_channel_write_chars(dw->write, data, size, NULL, &dw->error);
@@ -820,13 +827,13 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 }
 
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 			       const char *error_msg)
 {
 }
 
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	g_io_channel_shutdown(dw->write, TRUE, &dw->error);
 	g_io_channel_unref(dw->write);
@@ -845,17 +852,11 @@ void gui_download_window_done(struct gui_download_window *dw)
 }
 
 
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+struct gui_download_table *nsgtk_download_table = &download_table;

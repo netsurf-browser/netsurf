@@ -1,6 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2013 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -45,10 +45,9 @@ void ro_gui_hotlist_open(void);
 void ro_gui_hotlist_save(void);
 bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
-void ro_gui_hotlist_add_page(nsurl *url);
+void ro_gui_hotlist_add_page(struct nsurl *url);
 void ro_gui_hotlist_add_cleanup(void);
-void ro_gui_hotlist_remove_page(nsurl *url);
-bool ro_gui_hotlist_has_page(nsurl *url);
+void ro_gui_hotlist_remove_page(struct nsurl *url);
+bool ro_gui_hotlist_has_page(struct nsurl *url);
 
 #endif
-

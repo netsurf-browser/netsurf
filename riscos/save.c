@@ -35,6 +35,13 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
+#include "utils/config.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/hotlist.h"
@@ -43,8 +50,10 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/thumbnail.h"
+#include "desktop/gui.h"
 #include "image/bitmap.h"
 #include "render/form.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
@@ -60,12 +69,8 @@
 #include "riscos/thumbnail.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/config.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
+#include "riscos/ucstables.h"
+#include "riscos/filetype.h"
 
 //typedef enum
 //{
@@ -357,8 +362,8 @@ bool ro_gui_save_ok(wimp_w w)
  * \param  g          gui window
  */
 
-void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
-		struct gui_window *g)
+void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
+		gui_save_type save_type)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
@@ -614,7 +619,6 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	os_error *error;
 	char *dp, *ep;
 	char *local_name = NULL;
-	utf8_convert_ret err;
 
 	if (dragbox_active)
 		ro_gui_drag_box_cancel();
@@ -650,10 +654,11 @@ static void ro_gui_save_drag_end(wimp_dragged *drag, void *data)
 	if (!saving_from_dialog) {
 		/* saving directly from browser window, choose a
 		 * name based upon the URL */
+		nserror err;
 		err = utf8_to_local_encoding(save_leafname, 0, &local_name);
-		if (err != UTF8_CONVERT_OK) {
+		if (err != NSERROR_OK) {
 			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
+			assert(err != NSERROR_BAD_ENCODING);
 			local_name = NULL;
 		}
 		name = local_name ? local_name : save_leafname;
@@ -1216,9 +1221,8 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	const char *name = gui_save_table[save_type].name;
 	bool done = false;
 	char *nice = NULL;
-	utf8_convert_ret err;
+	nserror err;
 	char *local_name;
-	size_t i;
 
 	assert(icon_len >= 13);
 
@@ -1247,7 +1251,8 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 
 	/* leafname */
 	if (url && url_nice(url, &nice, nsoption_bool(strip_extensions)) ==
-			URL_FUNC_OK) {
+			NSERROR_OK) {
+		size_t i;
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')
 				nice[i] = '/';
@@ -1270,13 +1275,14 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	leaf_buf[leaf_len - 1] = 0;
 
 	err = utf8_to_local_encoding(name, 0, &local_name);
-	if (err != UTF8_CONVERT_OK) {
+	if (err != NSERROR_OK) {
 		/* badenc should never happen */
-		assert(err != UTF8_CONVERT_BADENC);
+		assert(err != NSERROR_BAD_ENCODING);
 		local_name = NULL;
 	}
 
-	name = local_name ? local_name : name;
+	if (local_name != NULL)
+		name = local_name;
 
 	/* sprite name used for icon and dragging */
 	if (save_type == GUI_SAVE_COMPLETE) {

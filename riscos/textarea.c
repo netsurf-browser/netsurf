@@ -24,13 +24,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include "swis.h"
-#include "oslib/colourtrans.h"
-#include "oslib/osbyte.h"
-#include "oslib/serviceinternational.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
-#include "rufl.h"
+#include <swis.h>
+#include <oslib/colourtrans.h>
+#include <oslib/osbyte.h>
+#include <oslib/serviceinternational.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "desktop/browser.h"
+
 #include "riscos/gui.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/textarea.h"
@@ -38,8 +42,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
 
 #define MARGIN_LEFT 8
 #define MARGIN_RIGHT 8
@@ -909,11 +911,8 @@ bool ro_textarea_key_press(wimp_key *key)
 	uint32_t c = (uint32_t) key->c;
 	wimp_key keypress;
 	struct text_area *ta;
-	char utf8[7];
-	size_t utf8_len;
 	bool redraw = false;
 	unsigned int c_pos;
-	os_error *error;
 
 	ta = (struct text_area *)ro_gui_wimp_event_get_user_data(key->w);
 
@@ -923,6 +922,9 @@ bool ro_textarea_key_press(wimp_key *key)
 	if (!(c & IS_WIMP_KEY ||
 			(c <= 0x001f || (0x007f <= c && c <= 0x009f)))) {
 		/* normal character - insert */
+		char utf8[7];
+		size_t utf8_len;
+
 		utf8_len = utf8_from_ucs4(c, utf8);
 		utf8[utf8_len] = '\0';
 
@@ -932,6 +934,7 @@ bool ro_textarea_key_press(wimp_key *key)
 
 		redraw = true;
 	} else {
+		os_error *error;
 		/** \todo handle command keys */
 		switch (c & ~IS_WIMP_KEY) {
 		case 8: /* Backspace */
@@ -1065,8 +1068,7 @@ void ro_textarea_redraw(wimp_draw *redraw)
 void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 {
 	struct text_area *ta;
-	int clip_x0, clip_y0, clip_x1, clip_y1;
-	int line0, line1, line;
+	int line;
 	osbool more;
 	rufl_code code;
 	os_error *error;
@@ -1084,9 +1086,9 @@ void ro_textarea_redraw_internal(wimp_draw *redraw, bool update)
 	}
 
 	while (more) {
-		clip_x0 = redraw->clip.x0 - (redraw->box.x0-redraw->xscroll);
+		int line0, line1;
+		int clip_y0, clip_y1;
 		clip_y0 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y1;
-		clip_x1 = redraw->clip.x1 - (redraw->box.x0-redraw->xscroll);
 		clip_y1 = (redraw->box.y1-redraw->yscroll) - redraw->clip.y0;
 
 		error = xcolourtrans_set_gcol(

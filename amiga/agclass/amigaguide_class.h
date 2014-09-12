@@ -27,10 +27,13 @@
 #define AMIGAGUIDE_BaseName     (AMIGAGUIDE_Dummy + 4) // Basename of the application that opens the help file.
 #define AMIGAGUIDE_ContextArray (AMIGAGUIDE_Dummy + 5) // Context node array (must be NULL-terminated).
 #define AMIGAGUIDE_ContextID    (AMIGAGUIDE_Dummy + 6) // Index value of the node to display.
+#define AMIGAGUIDE_Signal       (AMIGAGUIDE_Dummy + 7) // Signal mask to wait on
 
 // method definition
-#define AGM_OPEN  WM_OPEN
-#define AGM_CLOSE WM_CLOSE
+#define AGM_Dummy   AMIGAGUIDE_Dummy + 100
+#define AGM_OPEN    AGM_Dummy + 1
+#define AGM_CLOSE   AGM_Dummy + 2
+#define AGM_PROCESS AGM_Dummy + 3
 
 // function prototypes
 Class *initAGClass(void);

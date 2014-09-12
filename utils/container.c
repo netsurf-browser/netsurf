@@ -89,10 +89,16 @@ inline static size_t container_filelen(FILE *fd)
 		return 0;
 	}
 
-	fseek(fd, 0, SEEK_END);
+	if (fseek(fd, 0, SEEK_END) != 0) {
+		LOG(("Could not get seek to end of file"));
+		return 0;
+	}
 	a = ftell(fd);
 
-	fseek(fd, o, SEEK_SET);
+	if (fseek(fd, o, SEEK_SET) != 0) {
+		LOG(("Could not reset seek position in file"));
+		return 0;
+	}
 	if (a == -1) {
 		LOG(("could not ascertain size of file in theme container; omitting"));
 		return 0;
@@ -119,9 +125,10 @@ static void container_add_to_dir(struct container_ctx *ctx,
 	ctx->entries += 1;
 	ctx->directory = temp;
 
-	strncpy((char *)ctx->directory[ctx->entries - 1].filename,
-				(char *)entryname, sizeof(ctx->directory[
-				ctx->entries - 1].filename));
+	snprintf((char*)ctx->directory[ctx->entries - 1].filename, 
+		 sizeof(ctx->directory[ctx->entries - 1].filename),
+		 "%s", (char *)entryname);
+
 	ctx->directory[ctx->entries - 1].startoffset = offset;
 	ctx->directory[ctx->entries - 1].len = length;
 	ctx->directory[ctx->entries - 1].flags1 = 0;
@@ -188,12 +195,16 @@ static void container_process(struct container_ctx *ctx)
 				fileno(ctx->fh), 0);
 #else
 	ctx->data = malloc(ctx->header.diroffset);
-	fseek(ctx->fh, 0, SEEK_SET);
+	if (fseek(ctx->fh, 0, SEEK_SET) != 0) {
+		return;
+	}
 	val = fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
 	if (val == 0)
 		LOG(("empty read diroffset"));
 #endif
-	fseek(ctx->fh, ctx->header.diroffset, SEEK_SET);
+	if (fseek(ctx->fh, ctx->header.diroffset, SEEK_SET) != 0) {
+		return;
+	}
 	/* now work through the directory structure taking it apart into
 	 * our structure */
 #define BEREAD(x) do { val = fread(&(x), 4, 1, ctx->fh); if (val == 0)\
@@ -321,8 +332,14 @@ struct container_ctx *container_create(const char *filename,
 	ctx->entries = 0;
 	ctx->directory = NULL;
 	ctx->header.parser = htonl(3);
-	strncpy((char *)ctx->header.name, (char *)name, 32);
-	strncpy((char *)ctx->header.author, (char *)author, 64);
+
+	snprintf((char *)ctx->header.name,
+		 sizeof(ctx->header.name),
+		 "%s", (char *)name);
+
+	snprintf((char *)ctx->header.author,
+		 sizeof(ctx->header.author),
+		 "%s", (char *)author);
 
 	val = fwrite("NSTM", 4, 1, ctx->fh);
 	if (val == 0)
@@ -343,7 +360,11 @@ struct container_ctx *container_create(const char *filename,
 	 * we don't know where it'll be yet!
 	 */
 
-	fseek(ctx->fh, 108, SEEK_SET);
+	if (fseek(ctx->fh, 108, SEEK_SET) == -1) {
+		LOG(("directory offset seek failed"));
+		free(ctx);
+		return NULL;
+	}
 
 	return ctx;
 }
@@ -369,15 +390,17 @@ void container_close(struct container_ctx *ctx)
 		flen = (flen + 3) & (~3); /* round up to nearest 4 bytes */
 
 		/* write this location to the header */
-		fseek(ctx->fh, 104, SEEK_SET);
-		nflen = htonl(flen);
-		val = fwrite(&nflen, 4, 1, ctx->fh);
-		if (val == 0)
-			LOG(("empty write directory location"));
+		if (fseek(ctx->fh, 104, SEEK_SET) == 0) {
+			nflen = htonl(flen);
+			val = fwrite(&nflen, 4, 1, ctx->fh);
+			if (val == 0)
+				LOG(("empty write directory location"));
 
-		/* seek to where the directory will be, and write it */
-		fseek(ctx->fh, flen, SEEK_SET);
-		container_write_dir(ctx);
+			/* seek to where the directory will be, and write it */
+			if (fseek(ctx->fh, flen, SEEK_SET) == 0) {
+				container_write_dir(ctx);
+			}
+		}
 
 	} else if (ctx->processed) {
 #ifdef WITH_MMAP
@@ -438,13 +461,20 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 	strcpy(dirname, dirbasename);
 	strcat(dirname, themename);
 	if (stat(dirname, &statbuf) != -1) {
+		/* directory exists */
 		warn_user("DirectoryError", dirname);
 		container_close(cctx);
 		free(dirname);
 		free(themename);
 		return NULL;
 	}
-	mkdir(dirname, S_IRWXU);
+	if (mkdir(dirname, S_IRWXU) != 0) {
+		warn_user("DirectoryError", dirname);
+		container_close(cctx);
+		free(dirname);
+		free(themename);
+		return NULL;
+	}
 
 	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
 			e = container_iterate(cctx, &state), i++) {

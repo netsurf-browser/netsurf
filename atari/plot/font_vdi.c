@@ -26,6 +26,8 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 
+#include "atari/encoding.h"
+
 
 
 
@@ -129,7 +131,6 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	short cw, ch, cellw, cellh;
 	short pxsize;
 	short fx=0;
-	int i;
 	char *lstr = NULL;
 	size_t slen = 0;
 	int last_space_x = 0;
@@ -157,7 +158,6 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	vst_point( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
 	*actual_x = 0;
 	//*char_offset = 0;
-	int cpos=0;
 	while (nxtchr < slen) {
 		if( lstr[nxtchr] == ' ' ) {
 			last_space_x = *actual_x;
@@ -206,7 +206,6 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 
 	char *lstr = NULL;
 	int i=0;
-	int curpx=0;
 	utf8_to_local_encoding(string, length, &lstr );
 	assert( lstr != NULL );
 	int slen = strlen(lstr);
@@ -267,7 +266,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	short fx=0;
 	GRECT canvas;
 	char *lstr = NULL;
-	assert( utf8_to_local_encoding(text, length, &lstr) == UTF8_CONVERT_OK);
+	assert( utf8_to_local_encoding(text, length, &lstr) == NSERROR_OK);
 	assert( lstr != NULL );
 
 	int slen = strlen(lstr);
@@ -278,19 +277,18 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
 	atari_to_vdi_str(lstr, slen);
 
-	if( fstyle != NULL){
-		if( fstyle->flags & FONTF_ITALIC )
-			fx |= 4;
-		if( fstyle->flags & FONTF_OBLIQUE )
-			fx |= 4;
-		if( fstyle->weight > 450 )
-			fx |= 1;
+	if( fstyle->flags & FONTF_ITALIC )
+		fx |= 4;
+	if( fstyle->flags & FONTF_OBLIQUE )
+		fx |= 4;
+	if( fstyle->weight > 450 )
+		fx |= 1;
 
-		/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
-			use that value or pass it as arg, to reduce netsurf dependency */
-		//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
-		pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
-	}
+	/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
+	   use that value or pass it as arg, to reduce netsurf dependency */
+	//pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
+
 	plot_get_dimensions(&canvas);
 	x += canvas.g_x;
 	y += canvas.g_y;

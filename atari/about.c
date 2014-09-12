@@ -30,7 +30,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/about.h"
 
-#include "utils/testament.h"
+#include "testament.h"
 #include "utils/useragent.h"
 #include "desktop/netsurf.h"
 #include "utils/nsurl.h"
@@ -50,9 +50,6 @@ static short __CDECL about_userdraw(PARMBLK *parmblock)
 {
 	short pxy[8];
 	short dummy;
-	int content_len;
-	char *content;
-	short cur_x, cur_y;
 	short cheight = 8, cwidth = gl_wchar;
 	char c[2] = {0,0};
 
@@ -73,6 +70,9 @@ static short __CDECL about_userdraw(PARMBLK *parmblock)
 	};
 
 	if(parmblock->pb_currstate == parmblock->pb_prevstate){
+		short cur_x, cur_y;
+		char *content;
+		int content_len;
 
 		content = (char*)parmblock->pb_parm;
 		content_len = strlen(content);
@@ -170,8 +170,7 @@ void atari_about_show(void)
 	if (goto_url != NULL) {
 		nserr = nsurl_create(goto_url, &url);
 		if (nserr == NSERROR_OK) {
-			nserr = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				    BROWSER_WINDOW_HISTORY,
+			nserr = browser_window_create(BW_CREATE_HISTORY,
 				    url,
 				    NULL,
 				    NULL,

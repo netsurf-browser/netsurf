@@ -41,19 +41,20 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "testament.h"
+
 #include "utils/config.h"
-#include "content/dirlist.h"
 #include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/fetchers/about.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "utils/nsoption.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "utils/testament.h"
 #include "image/image_cache.h"
 
 struct fetch_about_context;
@@ -489,8 +490,8 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 
 	
 	slen = snprintf(buffer, sizeof buffer, 
-			"Built by %s (%s) from %s at revision %s\n\n",
-			GECOS, USERNAME, WT_BRANCHPATH, WT_REVID);
+			"Built by %s (%s) from %s at revision %s on %s\n\n",
+			GECOS, USERNAME, WT_BRANCHPATH, WT_REVID, WT_COMPILEDATE);
 
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
@@ -837,23 +838,19 @@ static void fetch_about_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void fetch_about_register(void)
+nserror fetch_about_register(void)
 {
-	lwc_string *scheme;
+	lwc_string *scheme = lwc_string_ref(corestring_lwc_about);
+	const struct fetcher_operation_table fetcher_ops = {
+		.initialise = fetch_about_initialise,
+		.acceptable = fetch_about_can_fetch,
+		.setup = fetch_about_setup,
+		.start = fetch_about_start,
+		.abort = fetch_about_abort,
+		.free = fetch_about_free,
+		.poll = fetch_about_poll,
+		.finalise = fetch_about_finalise
+	};
 
-	if (lwc_intern_string("about", SLEN("about"),
-			&scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"about\").");
-	}
-
-	fetch_add_fetcher(scheme,
-		fetch_about_initialise,
-		fetch_about_can_fetch,
-		fetch_about_setup,
-		fetch_about_start,
-		fetch_about_abort,
-		fetch_about_free,
-		fetch_about_poll,
-		fetch_about_finalise);
+	return fetcher_add(scheme, &fetcher_ops);
 }

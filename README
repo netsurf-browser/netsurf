@@ -8,8 +8,7 @@
   Building NetSurf
 ==================
   
-  Read the appropriate BUILDING-* document in the Docs/ directory for
-  instructions.
+  Read the QUICK-START document in the Docs/ directory for instructions.
 
 
   Creating a new port

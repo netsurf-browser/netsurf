@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Mike Lester <element3260@gmail.com>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,63 +16,56 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file gtk/dialogs/about.c
+ *
+ * Implementation of gtk about dialog.
+ */
+
 #include <stdint.h>
+
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "desktop/browser.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/dialogs/about.h"
-#include "desktop/browser.h"
 
-
+/**
+ * About dialog information button click.
+ *
+ * \param button The button widget that was clicked
+ * \param data The text of the url to open
+ */
 static void
-nsgtk_about_dialog_credits(GtkWidget *button, gpointer data)
+nsgtk_about_dialog_info(GtkWidget *button, gpointer data)
 {
-	struct browser_window *bw = data;
 	nsurl *url;
+	nserror ret;
+	const char *url_text = data;
+	enum browser_window_create_flags flags = BW_CREATE_HISTORY;
 
-	if (nsurl_create("about:credits", &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
+	if (nsoption_bool(show_single_tab) == true) {
+		flags |= BW_CREATE_TAB;
+	}
+
+	ret = nsurl_create(url_text, &url);
+	if (ret == NSERROR_OK) {
+		ret = browser_window_create(flags, url, NULL, NULL, NULL);
 		nsurl_unref(url);
 	}
 
-	gtk_widget_destroy(gtk_widget_get_toplevel(button));
-}
-
-static void
-nsgtk_about_dialog_licence(GtkWidget *button, gpointer data)
-{
-	struct browser_window *bw = data;
-	nsurl *url;
-
-	if (nsurl_create("about:licence", &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-	} else {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BROWSER_WINDOW_HISTORY |
-					BROWSER_WINDOW_VERIFIABLE,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
 	}
 
+	/* close about dialog */
 	gtk_widget_destroy(gtk_widget_get_toplevel(button));
 }
 
-void nsgtk_about_dialog_init(GtkWindow *parent,
-			     struct browser_window *bw,
-			     const char *version)
+void nsgtk_about_dialog_init(GtkWindow *parent, const char *version)
 {
 	GtkWidget *dialog, *vbox, *button, *image, *label;
 	gchar *name_string;
@@ -90,7 +83,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 	vbox = nsgtk_vbox_new(FALSE, 8);
 
 	gtk_box_pack_start(GTK_BOX(nsgtk_dialog_get_content_area(GTK_DIALOG(dialog))), vbox, TRUE, TRUE, 0);
-	
+
 	if (pixbufs != NULL) {
 		GtkIconSet *icon_set = gtk_icon_set_new_from_pixbuf(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)));
 
@@ -104,7 +97,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 
 		gtk_box_pack_start(GTK_BOX (vbox), image, FALSE, FALSE, 0);
 	}
-	
+
 
 	label = gtk_label_new (NULL);
 	gtk_label_set_markup (GTK_LABEL (label), name_string);
@@ -113,7 +106,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 	gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
 	gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
-        label = gtk_label_new("NetSurf is a small fast web browser");
+	label = gtk_label_new("NetSurf is a small fast web browser");
 	gtk_label_set_selectable(GTK_LABEL (label), TRUE);
 	gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
 	gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
@@ -136,14 +129,14 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 	gtk_box_pack_end(GTK_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))),
 			 button, FALSE, TRUE, 0);
 	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);
-	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_credits), (gpointer)bw);
+	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_info), (gpointer)"about:credits");
 
 	/* Add the Licence button */
 	button = gtk_button_new_from_stock ("Licence");
-	gtk_box_pack_end(GTK_BOX (GTK_DIALOG(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog)))),
+	gtk_box_pack_end(GTK_BOX (nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))),
 			 button, FALSE, TRUE, 0);
 	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);
-	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_licence), (gpointer)bw);
+	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_info), (gpointer)"about:licence");
 
 
 	/* Ensure that the dialog box is destroyed when the user responds. */

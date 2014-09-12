@@ -24,23 +24,26 @@
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>
-
+#include <string.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "desktop/tree.h"
 #include "desktop/plotters.h"
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/plotters.h"
 #include "gtk/treeview.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 struct nsgtk_treeview {
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
+	GtkIMContext *input_method;
 	bool mouse_pressed;
 	int mouse_pressed_x;
 	int mouse_pressed_y;
@@ -52,6 +55,7 @@ struct nsgtk_treeview {
 void nsgtk_treeview_destroy(struct nsgtk_treeview *tv)
 {
 	tree_delete(tv->tree);
+	g_object_unref(tv->input_method);
 	gtk_widget_destroy(GTK_WIDGET(tv->window));
 	free(tv);
 }
@@ -206,12 +210,14 @@ void nsgtk_tree_window_hide(GtkWidget *widget, gpointer g)
 {
 }
 
-gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
+static gboolean
+nsgtk_tree_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g)
 {	
 	struct nsgtk_treeview *tw = g;
 	struct tree *tree = tw->tree;
 	
+	gtk_im_context_reset(tw->input_method);
 	gtk_widget_grab_focus(GTK_WIDGET(tw->drawing_area));
 
 	tw->mouse_pressed = true;	
@@ -243,7 +249,8 @@ gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
+static gboolean
+nsgtk_tree_window_button_release_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g)
 {
 	bool shift = event->state & GDK_SHIFT_MASK;
@@ -307,7 +314,8 @@ gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 	return TRUE;	
 }
 
-gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
+static gboolean
+nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer g)
 {
 	bool shift = event->state & GDK_SHIFT_MASK;
@@ -369,7 +377,8 @@ gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 }
 
 
-gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
+static gboolean
+nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 		gpointer g)
 {
 	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
@@ -381,6 +390,9 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	GtkAdjustment *scroll = NULL;
 	gdouble hpage, vpage;
 	
+	if (gtk_im_context_filter_keypress(tw->input_method, event))
+		return TRUE;
+
 	nskey = gtk_gui_gdkkey_to_nskey(event);
 
 	if (tree_keypress(tree, nskey) == true)
@@ -473,6 +485,32 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	return TRUE;
 }	
 
+static gboolean
+nsgtk_tree_window_keyrelease_event(GtkWidget *widget, GdkEventKey *event,
+		gpointer g)
+{
+	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
+	
+	return gtk_im_context_filter_keypress(tw->input_method, event);
+}
+
+static void
+nsgtk_tree_window_input_method_commit(GtkIMContext *ctx,
+		const gchar *str, gpointer data)
+{
+	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) data;
+	size_t len = strlen(str), offset = 0;
+
+	while (offset < len) {
+		uint32_t nskey = utf8_to_ucs4(str + offset, len - offset);
+
+		tree_keypress(tw->tree, nskey);
+
+		offset = utf8_next(str, len, offset);
+	}
+}
+
+
 static const struct treeview_table nsgtk_tree_callbacks = {
 	.redraw_request = nsgtk_tree_redraw_request,
 	.resized = nsgtk_tree_resized,
@@ -498,6 +536,7 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 	tv->window = window;
 	tv->scrolled = scrolled;
 	tv->drawing_area = drawing_area;
+	tv->input_method = gtk_im_multicontext_new();
 	tv->tree = tree_create(flags, &nsgtk_tree_callbacks, tv);
 	tv->mouse_state = 0;
 	tv->mouse_pressed = false;
@@ -510,17 +549,31 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 	
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	CONNECT(drawing_area, "button_press_event",
+	CONNECT(drawing_area, "button-press-event",
 			nsgtk_tree_window_button_press_event,
 			tv);
-	CONNECT(drawing_area, "button_release_event",
+	CONNECT(drawing_area, "button-release-event",
 			nsgtk_tree_window_button_release_event,
   			tv);
-	CONNECT(drawing_area, "motion_notify_event",
+	CONNECT(drawing_area, "motion-notify-event",
 			nsgtk_tree_window_motion_notify_event,
   			tv);
-	CONNECT(drawing_area, "key_press_event",
+	CONNECT(drawing_area, "key-press-event",
 			nsgtk_tree_window_keypress_event,
   			tv);
+	CONNECT(drawing_area, "key-release-event",
+			nsgtk_tree_window_keyrelease_event,
+			tv);
+
+
+	/* input method */
+	gtk_im_context_set_client_window(tv->input_method,
+			nsgtk_widget_get_window(GTK_WIDGET(tv->window)));
+	gtk_im_context_set_use_preedit(tv->input_method, FALSE);
+	/* input method signals */
+	CONNECT(tv->input_method, "commit",
+			nsgtk_tree_window_input_method_commit,
+			tv);
+
 	return tv;
 }

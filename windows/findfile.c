@@ -30,8 +30,8 @@
 
 #include <curl/curl.h>
 
-#include "utils/url.h"
 #include "utils/log.h"
+#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/filepath.h"
 
@@ -82,61 +82,6 @@ static char *realpath(const char *path, char *resolved_path)
 	return strncpy(resolved_path, path, PATH_MAX);
 }
 
-char *path_to_url(const char *path)
-{
-	char *url;
-	char *sidx;
-
-	if (path == NULL)
-		return NULL;
-
-	url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 3);
-
-	if (url == NULL)
-		return NULL;
-
-	strcpy(url, FILE_SCHEME_PREFIX);
-	if (*path == '/') {
-		/* unix style path start, so try wine Z: */
-		strcat(url, "Z:");
-	}
-	strcat(url, path);
-
-	sidx = strrchr(url, '\\');
-	while (sidx != NULL) {
-		*sidx = '/';
-		sidx = strrchr(url, '\\');
-	}
-
-	return url;
-}
-
-
-char *url_to_path(const char *url)
-{
-	char *url_path = curl_unescape(url, 0);
-	char *path;
-	char *sidx;
-
-	if ((url_path[FILE_SCHEME_PREFIX_LEN + 1] == ':') || 
-	    (url_path[FILE_SCHEME_PREFIX_LEN + 1] == '|')) {
-		/* url_path contains a drive: prefix */
-		path = strdup(url_path + FILE_SCHEME_PREFIX_LEN);
-
-		/* swap / for \ */
-		sidx = strrchr(path, '/');
-		while (sidx != NULL) {
-			*sidx = '\\';
-			sidx = strrchr(path, '/');
-		}	
-	} else {
-		/* return the absolute path including leading / */
-		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
-	}
-	curl_free(url_path);
-
-	return path;
-}
 
 /**
  * Locate a shared resource file by searching known places in order.
@@ -148,7 +93,7 @@ char *url_to_path(const char *url)
  *
  * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
  * environment variable), then the path specified in
-  NETSURF_WINDOWS_RESPATH in the Makefile then .\res\ [windows paths]
+ * NETSURF_WINDOWS_RESPATH in the Makefile then .\res\ [windows paths]
  */
 
 char *nsws_find_resource(char *buf, const char *filename, const char *def)

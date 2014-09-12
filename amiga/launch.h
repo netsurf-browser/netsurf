@@ -25,4 +25,7 @@
 
 void ami_openurl_open(void);
 void ami_openurl_close(void);
+
+nserror gui_launch_url(struct nsurl *url);
+
 #endif

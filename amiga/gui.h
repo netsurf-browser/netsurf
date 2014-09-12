@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -111,6 +111,8 @@ struct gui_window_2 {
 	ULONG hotlist_items;
 	char *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
 	struct List hotlist_toolbar_list;
+	struct List *web_search_list;
+	Object *search_bm;
 	char *svbuffer;
 	char *status;
 	char *wintitle;
@@ -120,7 +122,6 @@ struct gui_window_2 {
 	BOOL rmbtrapped;
 	struct AppIcon *appicon; /* iconify appicon */
 	struct DiskObject *dobj; /* iconify appicon */
-	struct Hook search_ico_hook;
 	struct Hook favicon_hook;
 	struct Hook throbber_hook;
 	gui_drag_type drag_op;
@@ -153,6 +154,7 @@ struct gui_window
 
 void ami_get_msg(void);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
+void ami_try_quit(void);
 void ami_quit_netsurf(void);
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw);
 STRPTR ami_locale_langs(void);
@@ -160,10 +162,12 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
-void ami_gui_hotlist_toolbar_update_all(void);
+void ami_gui_hotlist_update_all(void);
 void ami_gui_tabs_toggle_all(void);
 bool ami_locate_resource(char *fullpath, const char *file);
 void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
+nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
+char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;
@@ -175,4 +179,6 @@ struct browser_window *curbw;
 struct gui_globals browserglob;
 uint32 ami_appid;
 BOOL ami_autoscroll;
+BOOL popupmenu_lib_ok;
 #endif
+

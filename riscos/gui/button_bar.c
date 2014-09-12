@@ -26,18 +26,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/dragasprite.h"
-#include "oslib/os.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
+#include <oslib/dragasprite.h>
+#include <oslib/os.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <oslib/wimpspriteop.h>
+
+#include "utils/log.h"
+#include "utils/utils.h"
+
 #include "riscos/gui/button_bar.h"
 #include "riscos/gui.h"
 #include "riscos/mouse.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #define BUTTONBAR_SPRITE_NAME_LENGTH 12
 #define BUTTONBAR_VALIDATION_LENGTH 40
@@ -131,7 +133,6 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 {
 	struct button_bar		*button_bar;
 	struct button_bar_button	*icon, *new_icon;
-	bool				failed;
 	int				def;
 
 	/* Allocate memory. */
@@ -170,12 +171,10 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 	/* Process the button icon definitions */
 
 	icon = NULL;
-	failed = false;
 
 	for (def = 0; buttons[def].icon != NULL; def++) {
 		new_icon = malloc(sizeof(struct button_bar_button));
 		if (new_icon == NULL) {
-			failed = true;
 			break;
 		}
 
@@ -248,7 +247,6 @@ bool ro_gui_button_bar_rebuild(struct button_bar *button_bar,
 		wimp_w window, bool edit)
 {
 	struct button_bar_button	*button;
-	os_error			*error;
 	int				height;
 
 
@@ -276,7 +274,6 @@ bool ro_gui_button_bar_rebuild(struct button_bar *button_bar,
 	button_bar->separators = (height == 0) ? false : true;
 
 	button = button_bar->buttons;
-	error = NULL;
 
 	while (button != NULL) {
 		button->x_size = 0;
@@ -488,7 +485,6 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 	wimp_icon_create		icon;
 	struct button_bar_button	*button, *b;
 	os_error			*error;
-	bool				on_bar;
 
 
 	if (button_bar == NULL || button_bar->window == NULL)
@@ -497,7 +493,7 @@ bool ro_gui_button_bar_icon_update(struct button_bar *button_bar)
 	button = button_bar->buttons;
 
 	while (button != NULL) {
-		on_bar = false;
+		bool on_bar = false;
 
 		/* Check if the icon is currently on the bar. */
 
@@ -725,8 +721,6 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 	struct button_bar_button	*button;
 	os_coord			pos;
 	os_box				box;
-	os_error			*error;
-	char				*sprite;
 
 	if (button_bar == NULL || button_bar->hidden)
 		return false;
@@ -751,6 +745,8 @@ bool ro_gui_button_bar_click(struct button_bar *button_bar,
 
 		if (button != NULL && (!button->shaded || drag_separator ||
 				button_bar->edit_source != NULL)) {
+			char *sprite;
+			os_error *error;
 
 			drag_start = button_bar;
 			drag_opt = button->opt_key;
@@ -1191,7 +1187,6 @@ struct button_bar_button *ro_gui_button_bar_find_coords(
 		bool *separator, bool *right)
 {
 	struct button_bar_button	*button;
-	int				x0, y0, x1, y1;
 
 	if (button_bar == NULL)
 		return NULL;
@@ -1200,6 +1195,7 @@ struct button_bar_button *ro_gui_button_bar_find_coords(
 
 	while (button != NULL) {
 		/* Match button extents. */
+		int x0, y0, x1, y1;
 
 		x0 = button_bar->extent.x0 + button->x_pos;
 		y0 = button_bar->extent.y0 + button->y_pos;

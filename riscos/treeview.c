@@ -427,7 +427,6 @@ void ro_treeview_scroll(wimp_scroll *scroll)
 
 void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 {
-	os_error *error;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -435,13 +434,15 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 	};
 
 	while (more) {
-		ro_plot_origin_x = redraw->box.x0 + tv->origin.x -
-				redraw->xscroll;
-		ro_plot_origin_y = redraw->box.y1 + tv->origin.y -
-				redraw->yscroll;
+		os_error *error;
 
 		if (tv != NULL && tv->tree != NULL) {
 			struct rect clip;
+
+			ro_plot_origin_x = redraw->box.x0 + tv->origin.x -
+					redraw->xscroll;
+			ro_plot_origin_y = redraw->box.y1 + tv->origin.y -
+					redraw->yscroll;
 
 			clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
 			clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
@@ -610,7 +611,6 @@ void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
 		wimp_window_state	state;
 		int			new_x, new_y;
 		int			visible_x, visible_y;
-		int			new_x_scroll, new_y_scroll;
 
 		/* Calculate the new window extents, in RISC OS units. */
 
@@ -657,8 +657,8 @@ void ro_treeview_set_window_extent(ro_treeview *tv, int width, int height)
 
 		if ((state.flags & wimp_WINDOW_OPEN) &&
 				(visible_x > new_x || visible_y < new_y)) {
-			new_x_scroll = state.xscroll;
-			new_y_scroll = state.yscroll;
+			int new_x_scroll = state.xscroll;
+			int new_y_scroll = state.yscroll;
 
 			if (visible_x > new_x)
 				new_x_scroll = new_x - (state.visible.x1

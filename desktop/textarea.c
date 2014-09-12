@@ -24,11 +24,13 @@
 #include <stdint.h>
 #include <string.h>
 #include "css/utils.h"
+
 #include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
+#include "desktop/gui_factory.h"
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -160,6 +162,7 @@ static void textarea_normalise_text(struct textarea *ta,
 		unsigned int b_start, unsigned int b_len)
 {
 	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true : false;
+	struct textarea_msg msg;
 	unsigned int index;
 
 	/* Remove CR characters. If it's a CRLF pair delete the CR, or replace
@@ -187,6 +190,25 @@ static void textarea_normalise_text(struct textarea *ta,
 			ta->text.data[b_start + index] = ' ';
 	}
 
+	/* Build text modified message */
+	msg.ta = ta;
+	msg.type = TEXTAREA_MSG_TEXT_MODIFIED;
+	msg.data.modified.text = ta->text.data;
+	msg.data.modified.len = ta->text.len;
+
+	/* Pass message to client */
+	ta->callback(ta->data, &msg);
+}
+
+
+/**
+ * Reset the selection (no redraw)
+ *
+ * \param ta Text area
+ */
+static inline void textarea_reset_selection(struct textarea *ta)
+{
+	ta->sel_start = ta->sel_end = -1;
 }
 
 
@@ -1408,7 +1430,7 @@ static bool textarea_replace_text_internal(struct textarea *ta, size_t b_start,
 
 	/* Place CUTs on clipboard */
 	if (add_to_clipboard) {
-		gui_set_clipboard(ta->show->data + b_start, b_end - b_start,
+		guit->clipboard->set(ta->show->data + b_start, b_end - b_start,
 				NULL, 0);
 	}
 
@@ -1758,13 +1780,14 @@ static void textarea_setup_text_offsets(struct textarea *ta)
 	if (ta->flags & TEXTAREA_MULTILINE) {
 		/* Multiline textarea */
 		text_y_offset += ta->pad_top;
-		text_y_offset_baseline += (ta->line_height * 3 + 2) / 4 +
-				ta->pad_top;
+		text_y_offset_baseline +=
+				(ta->line_height * 3 + 2) / 4 + ta->pad_top;
 	} else {
 		/* Single line text area; text is vertically centered */
 		int vis_height = ta->vis_height - 2 * ta->border_width;
 		text_y_offset += (vis_height - ta->line_height + 1) / 2;
-		text_y_offset_baseline += (vis_height * 3 + 2) / 4;
+		text_y_offset_baseline +=
+				(2 * vis_height + ta->line_height + 2) / 4;
 	}
 
 	ta->text_y_offset = text_y_offset;
@@ -1872,9 +1895,9 @@ struct textarea *textarea_create(const textarea_flags flags,
 		ret->show = &ret->text;
 	}
 
-	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.3),
-			FMUL(nscss_screen_dpi, INTTOFIX((setup->text.size))))),
-			FONT_SIZE_SCALE * F_72));
+	ret->line_height = FIXTOINT(FMUL(FLTTOFIX(1.3), FDIV(FMUL(
+			nscss_screen_dpi, FDIV(INTTOFIX(setup->text.size),
+			INTTOFIX(FONT_SIZE_SCALE))), F_72)));
 
 	ret->caret_pos.line = ret->caret_pos.byte_off = -1;
 	ret->caret_x = 0;
@@ -2067,10 +2090,17 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 
 	r = *clip;
 
-	if (r.x1 < x || r.x0 > x + ta->vis_width || r.y1 < y ||
-		   r.y0 > y + ta->vis_height)
-		/* Textarea outside the clipping rectangle */
+	/* Nothing to render if textarea is outside clip rectangle */
+	if (r.x1 < x || r.y1 < y)
 		return;
+	if (scale == 1.0) {
+		if (r.x0 > x + ta->vis_width || r.y0 > y + ta->vis_height)
+			return;
+	} else {
+		if (r.x0 > x + ta->vis_width * scale ||
+				r.y0 > y + ta->vis_height * scale)
+			return;
+	}
 
 	if (ta->lines == NULL)
 		/* Nothing to redraw */
@@ -2146,7 +2176,7 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 				scale)
 			r.y1 = y + (ta->vis_height - ta->border_width -
 					(ta->bar_x != NULL ? SCROLLBAR_WIDTH :
-							0) * scale);
+							0)) * scale;
 	}
 
 	if (line0 > 0)
@@ -2253,6 +2283,8 @@ void textarea_redraw(struct textarea *ta, int x, int y, colour bg, float scale,
 						&right);
 			} else {
 				right = ta->lines[line].width;
+				if (scale != 1.0)
+					right *= scale;
 			}
 			right += x + ta->border_width + ta->pad_left -
 					ta->scroll_x;
@@ -2380,8 +2412,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					length, false, &byte_delta, &r))
 				return false;
 
+			redraw = true;
 			caret = ta->sel_end;
-			textarea_clear_selection(ta);
+			textarea_reset_selection(ta);
 		} else {
 			if (!textarea_replace_text(ta, caret, caret,
 					utf8, length, false, &byte_delta, &r))
@@ -2411,8 +2444,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else if (caret > 0) {
 				b_off = utf8_prev(ta->show->data, caret);
 				if (!textarea_replace_text(ta, b_off, caret,
@@ -2431,8 +2465,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else if (caret < ta->show->len - 1) {
 				b_off = utf8_next(ta->show->data,
 						ta->show->len - 1, caret);
@@ -2456,8 +2491,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						&byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta, caret, caret,
 						"\n", 1, false,
@@ -2475,7 +2511,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			if (readonly)
 				break;
 
-			gui_get_clipboard(&clipboard, &clipboard_length);
+			guit->clipboard->get(&clipboard, &clipboard_length);
 			if (clipboard == NULL)
 				return false;
 
@@ -2486,8 +2522,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						false, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta,
 						caret, caret,
@@ -2510,9 +2547,10 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						"", 0, true, &byte_delta, &r))
 					return false;
 
+				redraw = true;
 				caret = ta->sel_end;
 				caret += byte_delta;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			}
 			break;
 		case KEY_ESCAPE:
@@ -2684,8 +2722,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (ta->lines[line].b_length != 0) {
 					/* Delete line */
@@ -2716,8 +2755,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				b_len = ta->lines[line].b_length;
 				b_off = ta->lines[line].b_start + b_len;
@@ -2737,8 +2777,9 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 						ta->sel_start, ta->sel_end,
 						"", 0, false, &byte_delta, &r))
 					return false;
+				redraw = true;
 				caret = ta->sel_end;
-				textarea_clear_selection(ta);
+				textarea_reset_selection(ta);
 			} else {
 				if (!textarea_replace_text(ta,
 						caret - ta->caret_pos.byte_off,
@@ -3023,7 +3064,7 @@ bool textarea_clear_selection(struct textarea *ta)
 			break;
 
 	/* Clear selection and redraw */
-	ta->sel_start = ta->sel_end = -1;
+	textarea_reset_selection(ta);
 
 	msg.ta = ta;
 	msg.type = TEXTAREA_MSG_REDRAW_REQUEST;

@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <dom/dom.h>
 #include <dom/bindings/hubbub/parser.h>
@@ -26,6 +27,7 @@
 #include "content/urldb.h"
 #include "desktop/hotlist.h"
 #include "desktop/treeview.h"
+#include "desktop/browser.h"
 #include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -472,23 +474,22 @@ static nserror hotlist_tree_node_entry_cb(
 	case TREE_MSG_NODE_LAUNCH:
 	{
 		nserror error;
-		struct browser_window *clone = NULL;
-		enum browser_window_nav_flags flags =
-				BROWSER_WINDOW_VERIFIABLE |
-				BROWSER_WINDOW_HISTORY |
-				BROWSER_WINDOW_TAB;
+		struct browser_window *existing = NULL;
+		enum browser_window_create_flags flags =
+				BW_CREATE_HISTORY;
 
-		/* TODO: Set clone window, to window that new tab appears in */
+		/* TODO: Set existing to window that new tab appears in */
 
 		if (msg.data.node_launch.mouse &
 				(BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2) ||
-				clone == NULL) {
+				existing == NULL) {
 			/* Shift or Ctrl launch, open in new window rather
 			 * than tab. */
-			flags ^= BROWSER_WINDOW_TAB;
+			/* TODO: flags ^= BW_CREATE_TAB; */
 		}
 
-		error = browser_window_create(flags, e->url, NULL, clone, NULL);
+		error = browser_window_create(flags, e->url, NULL,
+				existing, NULL);
 		if (error != NSERROR_OK) {
 			warn_user(messages_get_errorcode(error), 0);
 		}
@@ -879,21 +880,21 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort)
 {
 	struct treeview_export_walk_ctx *tw = ctx;
+	nserror ret;
 
 	if (type == TREE_NODE_ENTRY) {
 		struct hotlist_entry *e = node_data;
-		utf8_convert_ret ret;
 		char *t_text;
 		char *u_text;
 
 		ret = utf8_to_html(e->data[HL_TITLE].value, "iso-8859-1",
 				e->data[HL_TITLE].value_len, &t_text);
-		if (ret != UTF8_CONVERT_OK)
+		if (ret != NSERROR_OK)
 			return NSERROR_SAVE_FAILED;
 
 		ret = utf8_to_html(e->data[HL_URL].value, "iso-8859-1",
 				e->data[HL_URL].value_len, &u_text);
-		if (ret != UTF8_CONVERT_OK) {
+		if (ret != NSERROR_OK) {
 			free(t_text);
 			return NSERROR_SAVE_FAILED;
 		}
@@ -906,12 +907,11 @@ static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 
 	} else if (type == TREE_NODE_FOLDER) {
 		struct hotlist_folder *f = node_data;
-		utf8_convert_ret ret;
 		char *f_text;
 
 		ret = utf8_to_html(f->data.value, "iso-8859-1",
 				f->data.value_len, &f_text);
-		if (ret != UTF8_CONVERT_OK)
+		if (ret != NSERROR_OK)
 			return NSERROR_SAVE_FAILED;
 
 		if (f == hl_ctx.default_folder) {
@@ -1502,10 +1502,11 @@ bool hotlist_has_selection(void)
 bool hotlist_get_selection(nsurl **url, const char **title)
 {
 	struct hotlist_entry *e;
+	enum treeview_node_type type;
 	void *v;
 
-	treeview_get_selection(hl_ctx.tree, &v);
-	if (v == NULL) {
+	type = treeview_get_selection(hl_ctx.tree, &v);
+	if (type != TREE_NODE_ENTRY || v == NULL) {
 		*url = NULL;
 		*title = NULL;
 		return false;

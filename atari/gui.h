@@ -149,7 +149,6 @@ struct gui_window {
     char * title;
     char * url;
 	struct bitmap * icon;
-	float scale;
 	struct s_caret caret;
 	struct s_search_form_session *search;
 	struct gui_window *next, *prev;
@@ -163,8 +162,10 @@ extern struct gui_window *window_list;
 void gui_set_input_gui_window(struct gui_window *gw);
 struct gui_window *gui_get_input_window(void);
 char *gui_window_get_url(struct gui_window *gw);
-char * gui_window_get_title(struct gui_window *gw);
-void gui_window_set_scale(struct gui_window *gw, float scale);
-float gui_window_get_scale(struct gui_window *gw);
+char *gui_window_get_title(struct gui_window *gw);
+
+void gui_window_set_status(struct gui_window *w, const char *text);
+void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape);
+void gui_window_destroy(struct gui_window *w);
 
 #endif

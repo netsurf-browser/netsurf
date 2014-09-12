@@ -27,10 +27,13 @@
 #include <oslib/territory.h>
 
 #include "utils/config.h"
-#include "riscos/ucstables.h"
+#include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "desktop/gui.h"
+
+#include "riscos/ucstables.h"
 
 /* Common values (ASCII) */
 #define common								\
@@ -446,17 +449,16 @@ static const struct special {
  * \param string The string to convert
  * \param len The length (in bytes) of the string, or 0
  * \param result Pointer to location in which to store result
- * \return The appropriate utf8_convert_ret value
+ * \return An nserror code
  */
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-		char **result)
+nserror utf8_to_local_encoding(const char *string, size_t len, char **result)
 {
 	os_error *error;
 	int alphabet, i;
 	size_t off, prev_off;
 	char *temp, *cur_pos;
 	const char *enc;
-	utf8_convert_ret err;
+	nserror err;
 
 	assert(string);
 	assert(result);
@@ -473,19 +475,19 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	/* UTF-8 -> simply copy string */
 	if (alphabet == 111 /* UTF-8 */) {
 		*result = strndup(string, len);
-		return UTF8_CONVERT_OK;
+		return NSERROR_OK;
 	}
 
 	/* get encoding name */
 	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
 			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END + 1]
+					localencodings[CONT_ENC_END - 100 + 1]
 						 : localencodings[0]));
 
 	/* create output buffer */
 	*(result) = malloc(len + 1);
 	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	*(*result) = '\0';
 
 	prev_off = 0;
@@ -508,10 +510,10 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 			if (off - prev_off > 0) {
 				err = utf8_to_enc(string + prev_off, enc,
 						off - prev_off, &temp);
-				if (err != UTF8_CONVERT_OK) {
-					assert(err != UTF8_CONVERT_BADENC);
+				if (err != NSERROR_OK) {
+					assert(err != NSERROR_BAD_ENCODING);
 					free(*result);
-					return UTF8_CONVERT_NOMEM;
+					return NSERROR_NOMEM;
 				}
 
 				strcat(cur_pos, temp);
@@ -533,10 +535,10 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	if (prev_off < len) {
 		err = utf8_to_enc(string + prev_off, enc, len - prev_off,
 				&temp);
-		if (err != UTF8_CONVERT_OK) {
-			assert(err != UTF8_CONVERT_BADENC);
+		if (err != NSERROR_OK) {
+			assert(err != NSERROR_BAD_ENCODING);
 			free(*result);
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
 		strcat(cur_pos, temp);
@@ -544,7 +546,7 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		free(temp);
 	}
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
 
 /**
@@ -553,10 +555,9 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
  * \param string The string to convert
  * \param len The length (in bytes) of the string, or 0
  * \param result Pointer to location in which to store result
- * \return The appropriate utf8_convert_ret value
+ * \return An nserror code
  */
-utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
-		char **result)
+nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 {
 	os_error *error;
 	int alphabet, i, num_specials = 0, result_alloc;
@@ -564,7 +565,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	size_t off, prev_off, cur_off;
 	char *temp;
 	const char *enc;
-	utf8_convert_ret err;
+	nserror err;
 
 	assert(string && result);
 
@@ -581,16 +582,16 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	if (alphabet == 111 /* UTF-8 */) {
 		temp = strndup(string, len);
 		if (!temp)
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 
 		*result = temp;
-		return UTF8_CONVERT_OK;
+		return NSERROR_OK;
 	}
 
 	/* get encoding name */
 	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
 			      : (alphabet == 120 ?
-					localencodings[CONT_ENC_END + 1]
+					localencodings[CONT_ENC_END - 100 + 1]
 						 : localencodings[0]));
 
 	/* create output buffer (oversized) */
@@ -598,7 +599,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 	*(result) = malloc(result_alloc);
 	if (!(*result))
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	*(*result) = '\0';
 
 	prev_off = 0;
@@ -619,11 +620,11 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 			if (off - prev_off > 0) {
 				err = utf8_from_enc(string + prev_off, enc,
 						    off - prev_off, &temp, NULL);
-				if (err != UTF8_CONVERT_OK) {
-					assert(err != UTF8_CONVERT_BADENC);
+				if (err != NSERROR_OK) {
+					assert(err != NSERROR_BAD_ENCODING);
 					LOG(("utf8_from_enc failed"));
 					free(*result);
-					return UTF8_CONVERT_NOMEM;
+					return NSERROR_NOMEM;
 				}
 
 				strcat((*result) + cur_off, temp);
@@ -647,7 +648,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 						(3 * SPECIAL_CHUNK_SIZE));
 				if (!temp) {
 					free(*result);
-					return UTF8_CONVERT_NOMEM;
+					return NSERROR_NOMEM;
 				}
 
 				*result = temp;
@@ -661,11 +662,11 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	if (prev_off < len) {
 		err = utf8_from_enc(string + prev_off, enc, len - prev_off,
 				    &temp, NULL);
-		if (err != UTF8_CONVERT_OK) {
-			assert(err != UTF8_CONVERT_BADENC);
+		if (err != NSERROR_OK) {
+			assert(err != NSERROR_BAD_ENCODING);
 			LOG(("utf8_from_enc failed"));
 			free(*result);
-			return UTF8_CONVERT_NOMEM;
+			return NSERROR_NOMEM;
 		}
 
 		strcat((*result) + cur_off, temp);
@@ -680,9 +681,16 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	if (!temp) {
 		LOG(("realloc failed"));
 		free(*result);
-		return UTF8_CONVERT_NOMEM;
+		return NSERROR_NOMEM;
 	}
 	*result = temp;
 
-	return UTF8_CONVERT_OK;
+	return NSERROR_OK;
 }
+
+static struct gui_utf8_table utf8_table = {
+	.utf8_to_local = utf8_to_local_encoding,
+	.local_to_utf8 = utf8_from_local_encoding,
+};
+
+struct gui_utf8_table *riscos_utf8_table = &utf8_table;

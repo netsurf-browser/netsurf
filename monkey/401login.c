@@ -16,11 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/401login.h"
 #include "utils/ring.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "monkey/401login.h"
 
 typedef struct monkey401 {
   struct monkey401 *r_next, *r_prev;

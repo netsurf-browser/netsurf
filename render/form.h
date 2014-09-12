@@ -35,6 +35,8 @@ struct form_option;
 struct form_select_menu;
 struct html_content;
 struct dom_string;
+struct content;
+struct nsurl;
 
 /** Form submit method. */
 typedef enum {
@@ -76,13 +78,13 @@ typedef enum {
 
 /** Data for textarea */
 struct form_textarea_data {
-	struct html_content *html;
 	struct form_control *gadget;
 };
 
 /** Form control. */
 struct form_control {
 	void *node;			/**< Corresponding DOM node */
+	struct html_content *html;	/**< HTML content containing control */
 
 	form_control_type type;		/**< Type of control */
 
@@ -126,11 +128,17 @@ struct form_control {
 
 /** Option in a select. */
 struct form_option {
+	void *node;			/**< Corresponding DOM node */
 	bool selected;
 	bool initial_selected;
 	char *value;
 	char *text; /**< NUL terminated. */
 	struct form_option* next;
+};
+
+struct image_input_coords {
+	int x;
+	int y;
 };
 
 /**
@@ -154,8 +162,11 @@ struct form_control *form_new_control(void *node, form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
 bool form_add_option(struct form_control *control, char *value, char *text,
-		bool selected);
+		     bool selected, void *node);
 bool form_successful_controls(struct form *form,
+		struct form_control *submit_button,
+		struct fetch_multipart_data **successful_controls);
+bool form_successful_controls_dom(struct form *form,
 		struct form_control *submit_button,
 		struct fetch_multipart_data **successful_controls);
 
@@ -177,10 +188,11 @@ void form_select_mouse_drag_end(struct form_control *control,
 		browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
-void form_select_process_selection(hlcache_handle *h,
-		struct form_control *control, int item);
-void form_submit(nsurl *page_url, struct browser_window *target,
+void form_select_process_selection(struct form_control *control, int item);
+void form_submit(struct nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
-void form_radio_set(struct html_content *html, struct form_control *radio);
+void form_radio_set(struct form_control *radio);
+
+void form_gadget_update_value(struct form_control *control, char *value);
 
 #endif

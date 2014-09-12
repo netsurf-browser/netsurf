@@ -53,7 +53,7 @@ static void cocoa_register_download( DownloadWindowController *download );
 	
 	context = ctx;
 	totalSize = download_context_get_total_length( context );
-	[self setURL: [NSURL URLWithString: [NSString stringWithUTF8String: download_context_get_url( context )]]];
+	[self setURL: [NSURL URLWithString: [NSString stringWithUTF8String: nsurl_access(download_context_get_url( context ))]]];
 	[self setMIMEType: [NSString stringWithUTF8String: download_context_get_mime_type( context )]];
 	[self setStartDate: [NSDate date]];
 	
@@ -327,7 +327,7 @@ static NSString *cocoa_time_string( unsigned seconds )
 #pragma mark -
 #pragma mark NetSurf interface functions
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
+static struct gui_download_window *gui_download_window_create(download_context *ctx,
 													   struct gui_window *parent)
 {
 	DownloadWindowController * const window = [[DownloadWindowController alloc] initWithContext: ctx];
@@ -338,21 +338,21 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	return (struct gui_download_window *)window;
 }
 
-nserror gui_download_window_data(struct gui_download_window *dw, 
+static nserror gui_download_window_data(struct gui_download_window *dw, 
 								 const char *data, unsigned int size)
 {
 	DownloadWindowController * const window = (DownloadWindowController *)dw;
 	return [window receivedData: [NSData dataWithBytes: data length: size]] ? NSERROR_OK : NSERROR_SAVE_FAILED;
 }
 
-void gui_download_window_error(struct gui_download_window *dw,
+static void gui_download_window_error(struct gui_download_window *dw,
 							   const char *error_msg)
 {
 	DownloadWindowController * const window = (DownloadWindowController *)dw;
 	[window showError: [NSString stringWithUTF8String: error_msg]];
 }
 
-void gui_download_window_done(struct gui_download_window *dw)
+static void gui_download_window_done(struct gui_download_window *dw)
 {
 	DownloadWindowController * const window = (DownloadWindowController *)dw;
 	[window downloadDone];
@@ -376,3 +376,12 @@ static void cocoa_unregister_download( DownloadWindowController *download )
 	[cocoa_all_downloads removeObject: download];
 }
 
+
+static struct gui_download_table download_table = {
+	.create = gui_download_window_create,
+	.data = gui_download_window_data,
+	.error = gui_download_window_error,
+	.done = gui_download_window_done,
+};
+
+struct gui_download_table *cocoa_download_table = &download_table;

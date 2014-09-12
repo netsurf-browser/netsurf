@@ -71,7 +71,7 @@ struct ami_font_scan_window {
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return font name or NULL
  */
-const char *ami_font_scan_lookup(uint16 *code, lwc_string **glypharray)
+const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
 {
 	if(*code >= 0xd800 && *code <= 0xdbff) {
 		/* This is a multi-byte character, we don't support falback for these yet. */
@@ -294,7 +294,7 @@ ULONG ami_font_scan_fonts(struct MinList *list,
  */
 ULONG ami_font_scan_list(struct MinList *list)
 {
-	int afShortage, afSize = 100, i;
+	int afShortage, afSize = 100;
 	struct AvailFontsHeader *afh;
 	struct AvailFonts *af;
 	ULONG found = 0;
@@ -315,7 +315,7 @@ ULONG ami_font_scan_list(struct MinList *list)
 	if(afh) {
 		af = (struct AvailFonts *)&(afh[1]);
 
-		for(i = 0; i < afh->afh_NumEntries; i++) {
+		for(int i = 0; i < afh->afh_NumEntries; i++) {
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
 				if(af[i].af_Attr.ta_Name != NULL) {
 					node = (struct nsObject *)FindIName((struct List *)list,

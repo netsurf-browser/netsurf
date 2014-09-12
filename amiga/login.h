@@ -24,4 +24,8 @@
 struct gui_login_window;
 
 BOOL ami_401login_event(struct gui_login_window *lw);
+
+void gui_401login_open(nsurl *url, const char *realm,
+		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
+
 #endif

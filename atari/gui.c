@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
-	This File provides all the mandatory functions prefixed with gui_
-*/
+/**
+ * \file Provides all the mandatory functions prefixed with gui_ for atari
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,17 +30,17 @@
 #include <stdbool.h>
 #include <hubbub/hubbub.h>
 
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
-#include "desktop/local_history.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
-#include "desktop/401login.h"
-
-#include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"
 #include "desktop/treeview.h"
@@ -48,11 +48,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "render/font.h"
-#include "utils/schedule.h"
-#include "utils/url.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"
@@ -74,6 +69,8 @@
 #include "atari/osspec.h"
 #include "atari/search.h"
 #include "atari/deskmenu.h"
+#include "atari/download.h"
+#include "atari/filetype.h"
 #include "cflib.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
@@ -113,18 +110,18 @@ EVMULT_IN aes_event_in = {
 EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
+bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
+static void gui_window_set_url(struct gui_window *w, const char *url);
 
-
-void gui_poll(bool active)
+static void gui_poll(bool active)
 {
 
 	struct gui_window *tmp;
     short mx, my, dummy;
-    unsigned short nkc = 0;
 
     aes_event_in.emi_tlow = schedule_run();
 
-    if(active || rendering){
+    if(rendering){
         aes_event_in.emi_tlow = nsoption_int(atari_gui_poll_timeout);
 	}
 
@@ -133,13 +130,10 @@ void gui_poll(bool active)
         printf("long poll!\n");
     }
 
-    struct gui_window * g;
-
-    if( !active ) {
         if(input_window && input_window->root->redraw_slots.areas_used > 0) {
             window_process_redraws(input_window->root);
         }
-    }
+    
 
     graf_mkstate(&mx, &my, &dummy, &dummy);
     aes_event_in.emi_m1.g_x = mx;
@@ -186,13 +180,13 @@ void gui_poll(bool active)
 }
 
 
-struct gui_window *
-gui_create_browser_window(struct browser_window *bw,
-                          struct browser_window *clone,
-                          bool new_tab) {
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+		struct gui_window *existing,
+		gui_window_create_flags flags) {
     struct gui_window *gw=NULL;
-    LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone,
-          (int)new_tab
+    LOG(( "gw: %p, BW: %p, existing %p, flags: %d\n" , gw,  bw, existing,
+          (int)flags
         ));
 
     gw = calloc(1, sizeof(struct gui_window));
@@ -200,14 +194,13 @@ gui_create_browser_window(struct browser_window *bw,
         return NULL;
 
     LOG(("new window: %p, bw: %p\n", gw, bw));
-    window_create(gw, bw, clone, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
+    window_create(gw, bw, existing, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
                   |WIDGET_SCROLL);
     if (gw->root->win) {
         GRECT pos = {
             option_window_x, option_window_y,
             option_window_width, option_window_height
         };
-        gui_window_set_scale(gw, 1.0);
         gui_window_set_url(gw, "");
         gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
         gui_set_input_gui_window(gw);
@@ -277,8 +270,11 @@ void gui_window_destroy(struct gui_window *w)
     }
 }
 
-void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
-                               bool scaled)
+static void
+gui_window_get_dimensions(struct gui_window *w,
+			  int *width,
+			  int *height,
+			  bool scaled)
 {
     if (w == NULL)
         return;
@@ -288,7 +284,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
     *height = rect.g_h;
 }
 
-void gui_window_set_title(struct gui_window *gw, const char *title)
+static void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 
     if (gw == NULL)
@@ -299,7 +295,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
         int l;
         char * conv;
         l = strlen(title)+1;
-        if (utf8_to_local_encoding(title, l-1, &conv) == UTF8_CONVERT_OK ) {
+        if (utf8_to_local_encoding(title, l-1, &conv) == NSERROR_OK ) {
             l = MIN((uint32_t)atari_sysinfo.aes_max_win_title_len, strlen(conv));
             if(gw->title == NULL)
                 gw->title = malloc(l);
@@ -346,24 +342,17 @@ void gui_window_set_status(struct gui_window *w, const char *text)
         window_set_stauts(w->root, (char*)text);
 }
 
-float gui_window_get_scale(struct gui_window *gw)
+static void atari_window_reformat(struct gui_window *gw)
 {
-    return(gw->scale);
+    int width = 0, height = 0;
+
+    if (gw != NULL) {
+	gui_window_get_dimensions(gw, &width, &height, true);
+	browser_window_reformat(gw->browser->bw, false, width, height);
+    }
 }
 
-void gui_window_set_scale(struct gui_window *gw, float scale)
-{
-    int width = 0, heigth = 0;
-
-	LOG(("scale: %f", scale));
-
-    gw->scale = MAX(scale, 0.25);
-
-	gui_window_get_dimensions(gw, &width, &heigth, true);
- 	browser_window_reformat(gw->browser->bw, false, width, heigth);
-}
-
-void gui_window_redraw_window(struct gui_window *gw)
+static void gui_window_redraw_window(struct gui_window *gw)
 {
     CMP_BROWSER b;
     GRECT rect;
@@ -374,7 +363,7 @@ void gui_window_redraw_window(struct gui_window *gw)
     window_schedule_redraw_grect(gw->root, &rect);
 }
 
-void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
+static void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
     GRECT area;
     struct gemtk_wm_scroll_info_s *slid;
@@ -395,7 +384,6 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
-    int x,y;
     if (w == NULL)
         return false;
 
@@ -404,13 +392,12 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
     return( true );
 }
 
-void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
+static void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
-    int units = 0;
-    if ((w == NULL)
-            || (w->browser->bw == NULL)
-            || (w->browser->bw->current_content == NULL))
-        return;
+    if (   (w == NULL)
+	|| (w->browser->bw == NULL)
+	|| (!browser_window_has_content(w->browser->bw)))
+	    return;
 
     LOG(("scroll (gui_window: %p) %d, %d\n", w, sx, sy));
     window_scroll_by(w->root, sx, sy);
@@ -418,21 +405,14 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 
 }
 
-void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int y1)
-{
-    LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
-    gui_window_set_scroll(w,x0,y0);
-}
-
-
 /* It seems this method is called when content size got adjusted,
 	so that we can adjust scroll info. We also have to call it when tab
 	change occurs.
 */
-void gui_window_update_extent(struct gui_window *gw)
+static void gui_window_update_extent(struct gui_window *gw)
 {
 
-    if( gw->browser->bw->current_content != NULL ) {
+	if(browser_window_has_content(gw->browser->bw)) {
         // TODO: store content size!
         if(window_get_active_gui_window(gw->root) == gw) {
             window_set_content_size( gw->root,
@@ -446,13 +426,6 @@ void gui_window_update_extent(struct gui_window *gw)
         }
     }
 }
-
-
-void gui_clear_selection(struct gui_window *g)
-{
-
-}
-
 
 
 /**
@@ -534,13 +507,8 @@ void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape)
     }
 }
 
-void gui_window_hide_pointer(struct gui_window *w)
-{
-    TODO();
-}
 
-
-void gui_window_set_url(struct gui_window *w, const char *url)
+static void gui_window_set_url(struct gui_window *w, const char *url)
 {
     int l;
 
@@ -591,28 +559,28 @@ static void throbber_advance( void * data )
         return;
 
     toolbar_throbber_progress(gw->root->toolbar);
-    schedule(100, throbber_advance, gw );
+    atari_schedule(1000, throbber_advance, gw );
 }
 
-void gui_window_start_throbber(struct gui_window *w)
+static void gui_window_start_throbber(struct gui_window *w)
 {
     GRECT work;
     if (w == NULL)
         return;
 
     toolbar_set_throbber_state(w->root->toolbar, true);
-    schedule(100, throbber_advance, w );
+    atari_schedule(1000, throbber_advance, w );
     rendering = true;
 }
 
-void gui_window_stop_throbber(struct gui_window *w)
+static void gui_window_stop_throbber(struct gui_window *w)
 {
     if (w == NULL)
         return;
     if (w->root->toolbar->throbber.running == false)
         return;
 
-    schedule_remove(throbber_advance, w);
+    atari_schedule(-1, throbber_advance, w);
 
     toolbar_set_throbber_state(w->root->toolbar, false);
 
@@ -620,7 +588,7 @@ void gui_window_stop_throbber(struct gui_window *w)
 }
 
 /* Place caret in window */
-void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
+static void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 		const struct rect *clip)
 {
     window_place_caret(w->root, 1, x, y, height, NULL);
@@ -632,7 +600,7 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height,
 /**
  * clear window caret
  */
-void
+static void
 gui_window_remove_caret(struct gui_window *w)
 {
     if (w == NULL)
@@ -646,7 +614,7 @@ gui_window_remove_caret(struct gui_window *w)
     return;
 }
 
-void
+static void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
     struct bitmap *bmp_icon;
@@ -658,57 +626,13 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
     }
 }
 
-void
-gui_window_set_search_ico(hlcache_handle *ico)
-{
-    TODO();
-}
-
-void gui_window_new_content(struct gui_window *w)
+static void gui_window_new_content(struct gui_window *w)
 {
     struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w->root->win);
     slid->x_pos = 0;
     slid->y_pos = 0;
     gemtk_wm_update_slider(w->root->win, GEMTK_WM_VH_SLIDER);
     gui_window_redraw_window(w);
-}
-
-bool gui_window_scroll_start(struct gui_window *w)
-{
-    TODO();
-    return true;
-}
-
-bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                           const struct rect *rect)
-{
-    TODO();
-    return true;
-}
-
-void gui_window_save_link(struct gui_window *g, const char *url,
-                          const char *title)
-{
-    LOG(("%s -> %s", title, url ));
-    TODO();
-}
-
-void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
-                          struct gui_window *w)
-{
-    LOG((""));
-    TODO();
-}
-
-void gui_drag_save_selection(struct gui_window *g, const char *selection)
-{
-    LOG((""));
-    TODO();
-}
-
-void gui_start_selection(struct gui_window *w)
-{
-
 }
 
 
@@ -718,10 +642,9 @@ void gui_start_selection(struct gui_window *w)
  * \param  buffer  UTF-8 text, allocated by front end, ownership yeilded to core
  * \param  length  Byte length of UTF-8 text in buffer
  */
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
     char *clip;
-    size_t clip_len;
 
     *length = 0;
     *buffer = 0;
@@ -734,17 +657,18 @@ void gui_get_clipboard(char **buffer, size_t *length)
 
         // clipboard is in atari encoding, convert it to utf8:
 
+        size_t clip_len;
         char *utf8 = NULL;
-        utf8_convert_ret ret;
 
         clip_len = strlen(clip);
         if (clip_len > 0) {
+            nserror ret;
             ret = utf8_to_local_encoding(clip, clip_len, &utf8);
-            if (ret == UTF8_CONVERT_OK && utf8 != NULL) {
+            if (ret == NSERROR_OK && utf8 != NULL) {
                 *buffer = utf8;
                 *length = strlen(utf8);
             } else {
-                assert(ret == UTF8_CONVERT_OK && utf8 != NULL);
+                assert(ret == NSERROR_OK && utf8 != NULL);
             }
         }
 
@@ -760,43 +684,27 @@ void gui_get_clipboard(char **buffer, size_t *length)
  * \param  styles    Array of styles given to text runs, owned by core, or NULL
  * \param  n_styles  Number of text run styles in array
  */
-void gui_set_clipboard(const char *buffer, size_t length,
+static void gui_set_clipboard(const char *buffer, size_t length,
                        nsclipboard_styles styles[], int n_styles)
 {
     if (length > 0 && buffer != NULL) {
 
         // convert utf8 input to atari encoding:
 
-        utf8_convert_ret ret;
+        nserror ret;
         char *clip = NULL;
 
         ret = utf8_to_local_encoding(buffer,length, &clip);
-        if (ret == UTF8_CONVERT_OK) {
+        if (ret == NSERROR_OK) {
             scrap_txt_write(clip);
         } else {
-            assert(ret == UTF8_CONVERT_OK);
+            assert(ret == NSERROR_OK);
         }
         free(clip);
     }
 }
 
-
-void gui_create_form_select_menu(struct browser_window *bw,
-                                 struct form_control *control)
-{
-    TODO();
-}
-
-/**
- * Broadcast an URL that we can't handle.
- */
-void gui_launch_url(const char *url)
-{
-    TODO();
-    LOG(("launch file: %s\n", url));
-}
-
-void gui_401login_open(nsurl *url, const char *realm,
+static void gui_401login_open(nsurl *url, const char *realm,
                        nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
     bool bres;
@@ -815,14 +723,12 @@ void gui_401login_open(nsurl *url, const char *realm,
 
 }
 
-void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
+static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
                     unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					void *cbpw)
 {
 	struct sslcert_session_data *data;
     LOG((""));
-
-    bool bres;
 
     // TODO: localize string
     int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort|Details...]");
@@ -854,7 +760,7 @@ struct gui_window * gui_get_input_window(void)
 	return(input_window);
 }
 
-void gui_quit(void)
+static void gui_quit(void)
 {
     LOG((""));
 
@@ -972,18 +878,14 @@ static inline void create_cursor(int flags, short mode, void * form,
     }
 }
 
-nsurl *gui_get_resource_url(const char *path)
+static nsurl *gui_get_resource_url(const char *path)
 {
     char buf[PATH_MAX];
-    char *raw;
     nsurl *url = NULL;
 
     atari_find_resource((char*)&buf, path, path);
-    raw = path_to_url((char*)&buf);
-    if (raw != NULL) {
-        nsurl_create(raw, &url);
-        free(raw);
-    }
+
+    netsurf_path_to_nsurl(buf, &url);
 
     return url;
 }
@@ -1098,6 +1000,49 @@ static void gui_init2(int argc, char** argv)
     toolbar_init();
 }
 
+static struct gui_window_table atari_window_table = {
+    .create = gui_window_create,
+    .destroy = gui_window_destroy,
+    .redraw = gui_window_redraw_window,
+    .update = gui_window_update_box,
+    .get_scroll = gui_window_get_scroll,
+    .set_scroll = gui_window_set_scroll,
+    .get_dimensions = gui_window_get_dimensions,
+    .update_extent = gui_window_update_extent,
+    .reformat = atari_window_reformat,
+
+    .set_title = gui_window_set_title,
+    .set_url = gui_window_set_url,
+    .set_icon = gui_window_set_icon,
+    .set_status = gui_window_set_status,
+    .set_pointer = gui_window_set_pointer,
+    .place_caret = gui_window_place_caret,
+    .remove_caret = gui_window_remove_caret,
+    .new_content = gui_window_new_content,
+    .start_throbber = gui_window_start_throbber,
+    .stop_throbber = gui_window_stop_throbber,
+};
+
+static struct gui_clipboard_table atari_clipboard_table = {
+    .get = gui_get_clipboard,
+    .set = gui_set_clipboard,
+};
+
+static struct gui_fetch_table atari_fetch_table = {
+    .filetype = fetch_filetype,
+
+    .get_resource_url = gui_get_resource_url,
+};
+
+static struct gui_browser_table atari_browser_table = {
+    .poll = gui_poll,
+    .schedule = atari_schedule,
+
+    .quit = gui_quit,
+    .cert_verify = gui_cert_verify,
+    .login = gui_401login_open,
+};
+
 /* #define WITH_DBG_LOGFILE 1 */
 /** Entry point from OS.
  *
@@ -1113,8 +1058,22 @@ int main(int argc, char** argv)
     struct stat stat_buf;
     nsurl *url;
     nserror ret;
+    struct netsurf_table atari_table = {
+        .browser = &atari_browser_table,
+	.window = &atari_window_table,
+	.clipboard = &atari_clipboard_table,
+	.download = atari_download_table,
+	.fetch = &atari_fetch_table,
+	.utf8 = atari_utf8_table,
+	.search = atari_search_table,
+    };
 
-    /* @todo logging file descriptor update belongs in a nslog_init callback */
+    ret = netsurf_register(&atari_table);
+    if (ret != NSERROR_OK) {
+        die("NetSurf operation table failed registration");
+    }
+
+    /** @todo logging file descriptor update belongs in a nslog_init callback */
     setbuf(stderr, NULL);
     setbuf(stdout, NULL);
 #ifdef WITH_DBG_LOGFILE
@@ -1146,7 +1105,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-    ret = netsurf_init(messages);
+    ret = netsurf_init(messages, NULL);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }
@@ -1171,8 +1130,7 @@ int main(int argc, char** argv)
     /* create an initial browser window */
     ret = nsurl_create(addr, &url);
     if (ret == NSERROR_OK) {
-	ret = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				    BROWSER_WINDOW_HISTORY,
+	ret = browser_window_create(BW_CREATE_HISTORY,
 				    url,
 				    NULL,
 				    NULL,

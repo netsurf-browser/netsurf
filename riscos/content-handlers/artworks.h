@@ -32,7 +32,10 @@ nserror artworks_init(void);
 
 #else
 
-#define artworks_init() NSERROR_OK
+static inline nserror artworks_init(void)
+{
+	return NSERROR_OK;
+}
 
 #endif
 

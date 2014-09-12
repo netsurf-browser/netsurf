@@ -29,7 +29,7 @@
 #include "utils/config.h"
 #include "utils/utsname.h"
 #include "content/content_factory.h"
-#include "content/fetch.h"
+#include "content/fetchers.h"
 #include "content/hlcache.h"
 #include "content/mimesniff.h"
 #include "content/urldb.h"
@@ -37,9 +37,9 @@
 #include "image/image.h"
 #include "image/image_cache.h"
 #include "desktop/netsurf.h"
-#include "desktop/401login.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
+#include "desktop/system_colour.h"
+#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "desktop/searchweb.h"
 
@@ -67,13 +67,24 @@
 */
 #define SPECULATE_SMALL 4096
 
-/* the time between cache clean runs in ms */
+/** the time between image cache clean runs in ms. */
 #define IMAGE_CACHE_CLEAN_TIME (10 * 1000)
 
+/** default time between content cache cleans. */
 #define HL_CACHE_CLEAN_TIME (2 * IMAGE_CACHE_CLEAN_TIME)
 
+/** default minimum object time before object is pushed to backing store. */
+#define LLCACHE_MIN_DISC_LIFETIME (60 * 30)
+
+/** default maximum bandwidth for backing store writeout. */
+#define LLCACHE_MAX_DISC_BANDWIDTH (128 * 1024)
+
+/** ensure there is a minimal amount of memory for source objetcs and
+ * decoded bitmaps.
+ */
+#define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
+
 bool netsurf_quit = false;
-bool verbose_log = false;
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
@@ -94,14 +105,14 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 {
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
-		gui_401login_open(query->url, query->data.auth.realm, cb, cbpw);
+		guit->browser->login(query->url, query->data.auth.realm, cb, cbpw);
 		break;
 	case LLCACHE_QUERY_REDIRECT:
 		/** \todo Need redirect query dialog */
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
 	case LLCACHE_QUERY_SSL:
-		gui_cert_verify(query->url, query->data.ssl.certs, 
+		guit->browser->cert_verify(query->url, query->data.ssl.certs,
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}
@@ -109,20 +120,25 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 	return NSERROR_OK;
 }
 
-#define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
-
-/**
- * Initialise components used by gui NetSurf.
- */
-
-nserror netsurf_init(const char *messages)
+/* exported interface documented in desktop/netsurf.h */
+nserror netsurf_register(struct netsurf_table *table)
 {
-	nserror error;
+	/* register the operation handlers */
+	return gui_factory_register(table);
+}
+
+/* exported interface documented in desktop/netsurf.h */
+nserror netsurf_init(const char *messages, const char *store_path)
+{
+	nserror ret;
 	struct utsname utsname;
-	nserror ret = NSERROR_OK;
 	struct hlcache_parameters hlcache_parameters = {
 		.bg_clean_time = HL_CACHE_CLEAN_TIME,
-		.cb = netsurf_llcache_query_handler,
+		.llcache = {
+			.cb = netsurf_llcache_query_handler,
+			.minimum_lifetime = LLCACHE_MIN_DISC_LIFETIME,
+			.bandwidth = LLCACHE_MAX_DISC_BANDWIDTH,
+		}
 	}; 
 	struct image_cache_parameters image_cache_parameters = {
 		.bg_clean_time = IMAGE_CACHE_CLEAN_TIME,
@@ -152,70 +168,86 @@ nserror netsurf_init(const char *messages)
 	messages_load(messages);
 
 	/* corestrings init */
-	error = corestrings_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = corestrings_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
 	/* set up cache limits based on the memory cache size option */
-	hlcache_parameters.limit = nsoption_int(memory_cache_size);
+	hlcache_parameters.llcache.limit = nsoption_int(memory_cache_size);
 
-	if (hlcache_parameters.limit < MINIMUM_MEMORY_CACHE_SIZE) {
-		hlcache_parameters.limit = MINIMUM_MEMORY_CACHE_SIZE;
-		LOG(("Setting minimum memory cache size to %d",
-		     hlcache_parameters.limit));
+	if (hlcache_parameters.llcache.limit < MINIMUM_MEMORY_CACHE_SIZE) {
+		hlcache_parameters.llcache.limit = MINIMUM_MEMORY_CACHE_SIZE;
+		LOG(("Setting minimum memory cache size %d",
+		     hlcache_parameters.llcache.limit));
 	} 
 
 	/* image cache is 25% of total memory cache size */
-	image_cache_parameters.limit = (hlcache_parameters.limit * 25) / 100;
+	image_cache_parameters.limit = (hlcache_parameters.llcache.limit * 25) / 100;
 
 	/* image cache hysteresis is 20% of the image cache size */
 	image_cache_parameters.hysteresis = (image_cache_parameters.limit * 20) / 100;
 
 	/* account for image cache use from total */
-	hlcache_parameters.limit -= image_cache_parameters.limit;
+	hlcache_parameters.llcache.limit -= image_cache_parameters.limit;
+
+	/* set backing store target limit */
+	hlcache_parameters.llcache.store.limit = nsoption_uint(disc_cache_size);
+
+	/* set backing store hysterissi to 20% */
+	hlcache_parameters.llcache.store.hysteresis = (hlcache_parameters.llcache.store.limit * 20) / 100;;
+
+	/* set the path to the backing store */
+	hlcache_parameters.llcache.store.path = store_path;
 
 	/* image handler bitmap cache */
-	error = image_cache_init(&image_cache_parameters);
-	if (error != NSERROR_OK)
-		return error;
+	ret = image_cache_init(&image_cache_parameters);
+	if (ret != NSERROR_OK)
+		return ret;
 
 	/* content handler initialisation */
-	error = nscss_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = nscss_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
-	error = html_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = html_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
-	error = image_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = image_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
-	error = textplain_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = textplain_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
 
-	error = mimesniff_init();
-	if (error != NSERROR_OK)
-		return error;
+	ret = mimesniff_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
 	url_init();
 
 	setlocale(LC_ALL, "C");
 
-	fetch_init();
+	/* initialise the fetchers */
+	ret = fetcher_init();
+	if (ret != NSERROR_OK)
+		return ret;
 	
 	/* Initialise the hlcache and allow it to init the llcache for us */
-	hlcache_initialise(&hlcache_parameters);
+	ret = hlcache_initialise(&hlcache_parameters);
+	if (ret != NSERROR_OK)
+		return ret;
 
 	/* Initialize system colours */
-	gui_system_colour_init();
+	ret = ns_system_colour_init();
+	if (ret != NSERROR_OK)
+		return ret;
 
 	js_initialise();
 
-	return ret;
+	return NSERROR_OK;
 }
 
 
@@ -225,8 +257,7 @@ nserror netsurf_init(const char *messages)
 int netsurf_main_loop(void)
 {
 	while (!netsurf_quit) {
-		gui_poll(fetch_active);
-		hlcache_poll();
+		guit->browser->poll(false);
 	}
 
 	return 0;
@@ -241,19 +272,19 @@ void netsurf_exit(void)
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));
-	gui_quit();
+	guit->browser->quit();
 	
 	LOG(("Finalising JavaScript"));
 	js_finalise();
 
-	LOG(("Closing search and related resources"));
-	search_web_cleanup();
+	LOG(("Finalising Web Search"));
+	search_web_finalise();
 
 	LOG(("Finalising high-level cache"));
 	hlcache_finalise();
 
 	LOG(("Closing fetches"));
-	fetch_quit();
+	fetcher_quit();
 
 	mimesniff_fini();
 
@@ -270,7 +301,7 @@ void netsurf_exit(void)
 	urldb_destroy();
 
 	LOG(("Destroying System colours"));
-	gui_system_colour_finalize();
+	ns_system_colour_finalize();
 
 	corestrings_fini();
 	LOG(("Remaining lwc strings:"));
@@ -278,5 +309,3 @@ void netsurf_exit(void)
 
 	LOG(("Exited successfully"));
 }
-
-

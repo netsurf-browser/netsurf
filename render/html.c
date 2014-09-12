@@ -29,14 +29,25 @@
 #include <stdlib.h>
 
 #include "utils/config.h"
+#include "utils/corestrings.h"
+#include "utils/http.h"
+#include "utils/libdom.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "utils/nsoption.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
 #include "image/bitmap.h"
+#include "javascript/js.h"
+#include "desktop/gui_factory.h"
+
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -44,17 +55,6 @@
 #include "render/imagemap.h"
 #include "render/layout.h"
 #include "render/search.h"
-#include "javascript/js.h"
-#include "utils/corestrings.h"
-#include "utils/http.h"
-#include "utils/libdom.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/schedule.h"
-#include "utils/talloc.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 #define CHUNK 4096
 
@@ -100,7 +100,7 @@ static void html_box_convert_done(html_content *c, bool success)
 
 
 #if ALWAYS_DUMP_BOX
-	box_dump(stderr, c->layout->children, 0);
+	box_dump(stderr, c->layout->children, 0, true);
 #endif
 #if ALWAYS_DUMP_FRAMESET
 	if (c->frameset)
@@ -507,6 +507,37 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 	return error;
 }
 
+static bool html_process_img(html_content *c, dom_node *node)
+{
+	dom_string *src;
+	nsurl *url;
+	nserror err;
+	dom_exception exc;
+	bool success;
+
+	/* Do nothing if foreground images are disabled */
+	if (nsoption_bool(foreground_images) == false) {
+		return true;
+	}
+
+	exc = dom_element_get_attribute(node, corestring_dom_src, &src);
+	if (exc != DOM_NO_ERR || src == NULL) {
+		return true;
+	}
+
+	err = nsurl_join(c->base_url, dom_string_data(src), &url);
+	if (err != NSERROR_OK) {
+		dom_string_unref(src);
+		return false;
+	}
+	dom_string_unref(src);
+
+	/* Speculatively fetch the image */
+	success = html_fetch_object(c, url, NULL, CONTENT_IMAGE, 0, 0, false);
+	nsurl_unref(url);
+
+	return success;
+}
 
 /**
  * Complete conversion of an HTML document
@@ -558,6 +589,7 @@ void html_finish_conversion(html_content *c)
 
 	error = dom_to_box(html, c, html_box_convert_done);
 	if (error != NSERROR_OK) {
+		LOG(("box conversion failed"));
 		dom_node_unref(html);
 		html_object_free_objects(c);
 		content_broadcast_errorcode(&c->base, error);
@@ -608,6 +640,10 @@ dom_default_action_DOMNodeInserted_cb(struct dom_event *evt, void *pw)
 						name, corestring_lwc_title) &&
 						htmlc->title == NULL) {
 					htmlc->title = dom_node_ref(node);
+				} else if (dom_string_caseless_lwc_isequal(
+						name, corestring_lwc_img)) {
+					html_process_img(htmlc,
+							(dom_node *) node);
 				}
 
 				dom_string_unref(name);
@@ -694,6 +730,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	dom_hubbub_error error;
 
 	c->parser = NULL;
+	c->parse_completed = false;
 	c->document = NULL;
 	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
@@ -1033,16 +1070,35 @@ html_begin_conversion(html_content *htmlc)
 	dom_string *node_name = NULL;
 	dom_hubbub_error error;
 
-	LOG(("Completing parse"));
-	/* complete parsing */
-	error = dom_hubbub_parser_completed(htmlc->parser);
-	if (error != DOM_HUBBUB_OK) {
-		LOG(("Parsing failed"));
+	/* The act of completing the parse can result in additional data 
+	 * being flushed through the parser. This may result in new style or 
+	 * script nodes, upon which the conversion depends. Thus, once we 
+	 * have completed the parse, we must check again to see if we can 
+	 * begin the conversion. If we can't, we must stop and wait for the 
+	 * new styles/scripts to be processed. Once they have been processed,
+	 * we will be called again to begin the conversion for real. Thus, 
+	 * we must also ensure that we don't attempt to complete the parse 
+	 * multiple times, so store a flag to indicate that parsing is
+	 * complete to avoid repeating the completion pointlessly.
+	 */
+	if (htmlc->parse_completed == false) {
+		LOG(("Completing parse"));
+		/* complete parsing */
+		error = dom_hubbub_parser_completed(htmlc->parser);
+		if (error != DOM_HUBBUB_OK) {
+			LOG(("Parsing failed"));
+	
+			content_broadcast_errorcode(&htmlc->base, 
+						    libdom_hubbub_error_to_nserror(error));
 
-		content_broadcast_errorcode(&htmlc->base, 
-					    libdom_hubbub_error_to_nserror(error));
+			return false;
+		}
+		htmlc->parse_completed = true;
+	}
 
-		return false;
+	if (html_can_begin_conversion(htmlc) == false) {
+		/* We can't proceed (see commentary above) */
+		return true;
 	}
 
 	/* Give up processing if we've been aborted */
@@ -1685,6 +1741,85 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 	return false;
 }
 
+/** Helper for file gadgets to store their filename unencoded on the
+ * dom node associated with the gadget.
+ *
+ * \todo Get rid of this crap eventually
+ */
+static void html__dom_user_data_handler(dom_node_operation operation,
+		dom_string *key, void *_data, struct dom_node *src,
+		struct dom_node *dst)
+{
+	char *oldfile;
+	char *data = (char *)_data;
+
+	if (!dom_string_isequal(corestring_dom___ns_key_file_name_node_data,
+				key) || data == NULL) {
+		return;
+	}
+
+	switch (operation) {
+	case DOM_NODE_CLONED:
+		if (dom_node_set_user_data(dst,
+					   corestring_dom___ns_key_file_name_node_data,
+					   strdup(data), html__dom_user_data_handler,
+					   &oldfile) == DOM_NO_ERR) {
+			if (oldfile != NULL)
+				free(oldfile);
+		}
+		break;
+
+	case DOM_NODE_RENAMED:
+	case DOM_NODE_IMPORTED:
+	case DOM_NODE_ADOPTED:
+		break;
+
+	case DOM_NODE_DELETED:
+		free(data);
+		break;
+	default:
+		LOG(("User data operation not handled."));
+		assert(0);
+	}
+}
+
+static void html__set_file_gadget_filename(struct content *c,
+	struct form_control *gadget, const char *fn)
+{
+	nserror ret;
+	char *utf8_fn, *oldfile = NULL;
+	html_content *html = (html_content *)c;
+	struct box *file_box = gadget->box;
+
+	ret = guit->utf8->local_to_utf8(fn, 0, &utf8_fn);
+	if (ret != NSERROR_OK) {
+		assert(ret != NSERROR_BAD_ENCODING);
+		LOG(("utf8 to local encoding conversion failed"));
+		/* Load was for us - just no memory */
+		return;		
+	}
+	
+	form_gadget_update_value(gadget, utf8_fn);
+
+	/* corestring_dom___ns_key_file_name_node_data */
+	if (dom_node_set_user_data((dom_node *)file_box->gadget->node,
+				   corestring_dom___ns_key_file_name_node_data,
+				   strdup(fn), html__dom_user_data_handler,
+				   &oldfile) == DOM_NO_ERR) {
+		if (oldfile != NULL)
+			free(oldfile);
+	}
+
+	/* Redraw box. */
+	html__redraw_a_box(html, file_box);		
+}
+
+void html_set_file_gadget_filename(struct hlcache_handle *hl,
+	struct form_control *gadget, const char *fn)
+{
+	return html__set_file_gadget_filename(hlcache_handle_get_content(hl),
+		gadget, fn);
+}
 
 /**
  * Drop a file onto a content at a particular point, or determine if a file
@@ -1751,25 +1886,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	/* Handle the drop */
 	if (file_box) {
 		/* File dropped on file input */
-		utf8_convert_ret ret;
-		char *utf8_fn;
-
-		ret = utf8_from_local_encoding(file, 0,
-				&utf8_fn);
-		if (ret != UTF8_CONVERT_OK) {
-			/* A bad encoding should never happen */
-			assert(ret != UTF8_CONVERT_BADENC);
-			LOG(("utf8_from_local_encoding failed"));
-			/* Load was for us - just no memory */
-			return true;
-		}
-
-		/* Found: update form input */
-		free(file_box->gadget->value);
-		file_box->gadget->value = utf8_fn;
-
-		/* Redraw box. */
-		html__redraw_a_box(html, file_box);
+		html__set_file_gadget_filename(c, file_box->gadget, file);
 
 	} else {
 		/* File dropped on text input */
@@ -1778,7 +1895,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		FILE *fp = NULL;
 		char *buffer;
 		char *utf8_buff;
-		utf8_convert_ret ret;
+		nserror ret;
 		unsigned int size;
 		int bx, by;
 
@@ -1819,11 +1936,11 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		/* TODO: Sniff for text? */
 
 		/* Convert to UTF-8 */
-		ret = utf8_from_local_encoding(buffer, file_len, &utf8_buff);
-		if (ret != UTF8_CONVERT_OK) {
+		ret = guit->utf8->local_to_utf8(buffer, file_len, &utf8_buff);
+		if (ret != NSERROR_OK) {
 			/* bad encoding shouldn't happen */
-			assert(ret != UTF8_CONVERT_BADENC);
-			LOG(("utf8_from_local_encoding failed"));
+			assert(ret != NSERROR_BAD_ENCODING);
+			LOG(("local to utf8 encoding failed"));
 			free(buffer);
 			warn_user("NoMemory", NULL);
 			return true;
@@ -1854,17 +1971,43 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 /**
  * Dump debug info concerning the html_content
  *
- * \param  bw    The browser window
- * \param  bw    The file to dump to
+ * \param bw The browser window
+ * \param f The file to dump to
  */
-static void html_debug_dump(struct content *c, FILE *f)
+static nserror
+html_debug_dump(struct content *c, FILE *f, enum content_debug op)
 {
-	html_content *html = (html_content *) c;
+	html_content *htmlc = (html_content *)c;
+	dom_node *html;
+	dom_exception exc; /* returned by libdom functions */
+	nserror ret;
 
-	assert(html != NULL);
-	assert(html->layout != NULL);
+	assert(htmlc != NULL);
 
-	box_dump(f, html->layout, 0);
+	if (op == CONTENT_DEBUG_RENDER) {
+		assert(htmlc->layout != NULL);
+		box_dump(f, htmlc->layout, 0, true);
+		ret = NSERROR_OK;
+	} else {
+		if (htmlc->document == NULL) {
+			LOG(("No document to dump"));
+			return NSERROR_DOM;
+		}
+
+		exc = dom_document_get_document_element(htmlc->document, (void *) &html);
+		if ((exc != DOM_NO_ERR) || (html == NULL)) {
+			LOG(("Unable to obtain root node"));
+			return NSERROR_DOM;
+		}
+
+		ret = libdom_dump_structure(html, f, 0);
+
+		LOG(("DOM structure dump returning %d", ret));
+
+		dom_node_unref(html);
+	}
+
+	return ret;
 }
 
 
@@ -2084,8 +2227,6 @@ static content_type html_content_type(void)
 
 static void html_fini(void)
 {
-	box_construct_fini();
-
 	html_css_fini();
 }
 
@@ -2122,10 +2263,6 @@ nserror html_init(void)
 	nserror error;
 
 	error = html_css_init();
-	if (error != NSERROR_OK)
-		goto error;
-
-	error = box_construct_init();
 	if (error != NSERROR_OK)
 		goto error;
 

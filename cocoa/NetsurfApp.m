@@ -20,13 +20,15 @@
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
+#import "cocoa/DownloadWindowController.h"
+#import "cocoa/SearchWindowController.h"
+#import "cocoa/selection.h"
+#import "cocoa/fetch.h"
 
 #import "desktop/gui.h"
 #import "content/urldb.h"
-#import "content/fetch.h"
 #import "css/utils.h"
 #import "desktop/gui.h"
-#import "desktop/local_history.h"
 #import "desktop/mouse.h"
 #import "desktop/netsurf.h"
 #import "utils/nsoption.h"
@@ -35,7 +37,6 @@
 #import "desktop/textinput.h"
 #import "desktop/tree.h"
 #import "render/html.h"
-#import "utils/url.h"
 #import "utils/filename.h"
 #import "utils/log.h"
 #import "utils/messages.h"
@@ -183,8 +184,21 @@ int main( int argc, char **argv )
 {
 	nsurl *url;
 	nserror error;
+	struct netsurf_table cocoa_table = {
+		.browser = cocoa_browser_table,
+		.window = cocoa_window_table,
+		.clipboard = cocoa_clipboard_table,
+		.download = cocoa_download_table,
+		.fetch = cocoa_fetch_table,
+                .search = cocoa_search_table,
+	};
 
 	cocoa_autorelease();
+
+        error = netsurf_register(&cocoa_table);
+        if (error != NSERROR_OK) {
+		die("NetSurf operation table failed registration");
+        }
 		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
@@ -203,7 +217,7 @@ int main( int argc, char **argv )
 	nsoption_commandline(&argc, argv, NULL);
 
 	/* common initialisation */
-	error = netsurf_init(messages);
+        error = netsurf_init(messages, NULL);
 	if (error != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
@@ -222,8 +236,7 @@ int main( int argc, char **argv )
 
                 error = nsurl_create(argv[i], &url);
                 if (error == NSERROR_OK) {
-                        error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-                                                      BROWSER_WINDOW_HISTORY,
+                        error = browser_window_create(BW_CREATE_HISTORY,
                                                       url,
                                                       NULL,
                                                       NULL,

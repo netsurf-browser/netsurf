@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/plotters.h"
-
 #include <stdio.h>
+
+#include "desktop/plotters.h"
 
 static bool
 monkey_plot_disc(int x, int y, int radius, const plot_style_t *style)

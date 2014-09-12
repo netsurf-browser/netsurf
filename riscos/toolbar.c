@@ -593,20 +593,12 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 	wimp_window_state	state;
 	os_box			extent;
 	int			old_height, old_width;
-	int			xeig, yeig;
-	os_coord		pixel = {1, 1};
 
 	if (!toolbar)
 		return false;
 
 	old_height = toolbar->current_height;
 	old_width = toolbar->current_width;
-
-	/* calculate 1px in OS units */
-
-	ro_convert_pixels_to_os_units(&pixel, (os_mode)-1);
-	xeig = pixel.x;
-	yeig = pixel.y;
 
 	/* Measure the parent window width if the caller has asked us to
 	 * calculate the clip width ourselves.  Otherwise, if a clip width
@@ -847,8 +839,8 @@ void ro_toolbar_refresh_widget_dimensions(struct toolbar *toolbar)
 		toolbar->full_height = 0;
 	}
 	toolbar->full_width = 2 * TOOLBAR_WIDGET_GUTTER +
-			(row_width > toolbar->editor_size.x) ?
-				row_width : toolbar->editor_size.x;
+			((row_width > toolbar->editor_size.x) ?
+				row_width : toolbar->editor_size.x);
 }
 
 
@@ -1579,7 +1571,7 @@ bool ro_toolbar_set_button_order(struct toolbar *toolbar, char order[])
 void ro_toolbar_set_button_shaded_state(struct toolbar *toolbar,
 		button_bar_action action, bool shaded)
 {
-	if (toolbar == NULL && toolbar->buttons == NULL)
+	if (toolbar == NULL || toolbar->buttons == NULL)
 		return;
 
 	ro_gui_button_bar_shade_button(toolbar->buttons, action, shaded);
@@ -1686,7 +1678,7 @@ void ro_toolbar_set_content_favicon(struct toolbar *toolbar,
 
 void ro_toolbar_update_urlsuggest(struct toolbar *toolbar)
 {
-	if (toolbar != NULL && toolbar->url != NULL)
+	if (toolbar == NULL || toolbar->url == NULL)
 		return;
 
 	ro_gui_url_bar_update_urlsuggest(toolbar->url);
@@ -1774,8 +1766,6 @@ bool ro_toolbar_get_editing(struct toolbar *toolbar)
 
 bool ro_toolbar_toggle_edit(struct toolbar *toolbar)
 {
-	char		*new_buttons;
-
 	if (toolbar == NULL || toolbar->editor == NULL)
 		return false;
 
@@ -1799,6 +1789,7 @@ bool ro_toolbar_toggle_edit(struct toolbar *toolbar)
 	if (!toolbar->editing && toolbar->buttons != NULL &&
 			toolbar->callbacks != NULL &&
 			toolbar->callbacks->save_buttons != NULL) {
+		char *new_buttons;
 		new_buttons = ro_gui_button_bar_get_config(toolbar->buttons);
 		toolbar->callbacks->save_buttons(toolbar->client_data,
 				new_buttons);

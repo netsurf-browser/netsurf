@@ -23,5 +23,4 @@ extern char *nsws_find_resource(char *buf, const char *filename, const char *def
 
 char **nsws_init_resource(const char *resource_path);
 
-
 #endif /* _NETSURF_WINDOWS_FINDFILE_H_ */

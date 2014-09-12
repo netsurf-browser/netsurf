@@ -1,9 +1,26 @@
+/*
+ * Copyright 2010 Ole Loots <ole@monochrom.net>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdlib.h>
 #include <cflib.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "utils/nsoption.h"
@@ -170,8 +187,7 @@ static void __CDECL menu_about(short item, short title, void *data)
 
 	error = nsurl_create(buf, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -202,8 +218,7 @@ static void __CDECL menu_new_win(short item, short title, void *data)
 	/* create an initial browser window */
 	error = nsurl_create(addr, &url);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-					      BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 					      url,
 					      NULL,
 					      NULL,
@@ -224,8 +239,7 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 
 	gw = input_window;
 	if( gw == NULL ) {
-		browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				      BROWSER_WINDOW_HISTORY,
+		browser_window_create(BW_CREATE_HISTORY,
 				      NULL,
 				      NULL,
 				      NULL,
@@ -256,8 +270,7 @@ static void __CDECL menu_open_file(short item, short title, void *data)
 
 			error = nsurl_create(urltxt, &url);
 			if (error == NSERROR_OK) {
-				error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-							      BROWSER_WINDOW_HISTORY,
+				error = browser_window_create(BW_CREATE_HISTORY,
 							      url,
 							      NULL,
 							      NULL,
@@ -339,7 +352,6 @@ static void __CDECL menu_paste(short item, short title, void *data)
 
 static void __CDECL menu_find(short item, short title, void *data)
 {
-	static bool visible = false;
 	LOG(("%s", __FUNCTION__));
 	if (input_window != NULL) {
 		if (input_window->search) {
@@ -382,7 +394,9 @@ static void __CDECL menu_inc_scale(short item, short title, void *data)
 	if(input_window == NULL)
 		return;
 
-    gui_window_set_scale(input_window, gui_window_get_scale(input_window)+0.25);
+	browser_window_set_scale(input_window->browser->bw,
+		browser_window_get_scale(input_window->browser->bw) + 0.25,
+		true);
 }
 
 
@@ -391,7 +405,9 @@ static void __CDECL menu_dec_scale(short item, short title, void *data)
 	if(input_window == NULL)
 		return;
 
-    gui_window_set_scale(input_window, gui_window_get_scale(input_window)-0.25);
+	browser_window_set_scale(input_window->browser->bw,
+		browser_window_get_scale(input_window->browser->bw) - 0.25,
+		true);
 }
 
 
@@ -618,7 +634,6 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
         // find keycodes / chracters:
 		if( str[x] <= 28 ){
 			// parse symbol
-			unsigned short keycode=0;
 			switch( str[x] ){
 					case 0x03:
 					accel->keycode = NK_RIGHT;

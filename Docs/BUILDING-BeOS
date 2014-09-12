@@ -89,10 +89,10 @@
   TODO
 
 
-  libmng
+  libpng
 --------
 
-  NetSurf uses libMNG to display MNG and PNG files.
+  NetSurf uses libPNG to display PNG files.
   It should build just fine on BeOS.
 
 

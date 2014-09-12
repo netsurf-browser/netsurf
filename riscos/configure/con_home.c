@@ -17,8 +17,11 @@
  */
 
 #include <stdbool.h>
+
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "riscos/dialog.h"
+
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/url_suggest.h"
@@ -26,8 +29,7 @@
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
 #include "riscos/configure/configure.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+#include "riscos/dialog.h"
 
 #define HOME_URL_FIELD 3
 #define HOME_URL_GRIGHT 4

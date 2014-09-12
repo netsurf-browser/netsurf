@@ -27,6 +27,8 @@
 struct hlcache_handle;
 struct ami_mime_entry;
 
+const char *fetch_filetype(const char *unix_path);
+
 nserror ami_mime_init(const char *mimefile);
 void ami_mime_free(void);
 void ami_mime_entry_free(struct ami_mime_entry *mimeentry);
@@ -46,4 +48,5 @@ bool ami_mime_compare(struct hlcache_handle *c, const char *type);
 
 /* deprecated */
 const char *ami_content_type_to_file_type(content_type type);
+
 #endif

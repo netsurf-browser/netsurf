@@ -5,6 +5,7 @@
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
+ * Copyright 2014 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -21,19 +22,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "oslib/colourtrans.h"
-#include "oslib/osfile.h"
-#include "oslib/osgbpb.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "rufl.h"
-#include "utils/config.h"
+#include <oslib/colourtrans.h>
+#include <oslib/osfile.h>
+#include <oslib/osgbpb.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/nsurl.h"
+#include "utils/url.h"
+#include "utils/utils.h"
 #include "desktop/netsurf.h"
+#include "desktop/browser.h"
 #include "render/font.h"
+
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
@@ -41,7 +51,6 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
 #include "riscos/toolbar.h"
@@ -50,10 +59,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utils.h"
 
 #define ICON_ZOOM_VALUE 1
 #define ICON_ZOOM_DEC 2
@@ -85,6 +90,7 @@ static struct {
 } persistent_dialog[MAX_PERSISTENT];
 
 
+static bool ro_gui_dialog_open_url_init(void);
 static bool ro_gui_dialog_openurl_apply(wimp_w w);
 static bool ro_gui_dialog_open_url_menu_prepare(wimp_w w, wimp_i i,
 		wimp_menu *menu, wimp_pointer *pointer);
@@ -161,15 +167,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_set_help_prefix(dialog_url_complete, "HelpAutoURL");
 
 	/* open URL */
-	dialog_openurl = ro_gui_dialog_create("open_url");
-	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
-			ICON_OPENURL_MENU, ro_gui_url_suggest_menu);
-	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
-	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
-			ro_gui_dialog_openurl_apply);
-	ro_gui_wimp_event_register_menu_prepare(dialog_openurl,
-			ro_gui_dialog_open_url_menu_prepare);
-	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
+	ro_gui_dialog_open_url_init();
 
 	/* scale view */
 	dialog_zoom = ro_gui_dialog_create("zoom");
@@ -413,8 +411,6 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 	os_error *error;
 	int screen_width, screen_height;
 	wimp_window_state state;
-	int dimension;
-	int scroll_width;
 	bool open;
 
 	state.w = w;
@@ -428,6 +424,8 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 	 * open in the centre of the screen. */
 	open = state.flags & wimp_WINDOW_OPEN;
 	if (!open) {
+		int dimension;
+		int scroll_width;
 	  	/* cancel any editing */
 	  	if (ro_toolbar_get_editing(toolbar))
 	  		ro_toolbar_toggle_edit(toolbar);
@@ -702,6 +700,70 @@ void ro_gui_dialog_update_zoom(struct gui_window *g) {
 }
 
 
+/**
+ * Create the Open URL dialogue, allocating storage for the URL field icon
+ * as we go.
+ *
+ * \return		true on success; false on failure (although errors with
+ *			the templates or memory allocation will exit via die()).
+ */
+
+static bool ro_gui_dialog_open_url_init(void)
+{
+	wimp_window	*definition;
+	char		*buffer;
+	os_error	*error;
+
+	definition = ro_gui_dialog_load_template("open_url");
+
+	/* _load_template() should die on any error, so we trust its data. */
+
+	assert(definition != NULL);
+
+	/* Create the dialogue, with modifications. */
+
+	if ((definition->icons[ICON_OPENURL_URL].flags & wimp_ICON_INDIRECTED)
+			== 0) {
+		LOG(("open_url URL icon not indirected"));
+		xwimp_close_template();
+		die("Template");
+	}
+
+	buffer = malloc(RO_GUI_MAX_URL_SIZE);
+	if (buffer == NULL) {
+		xwimp_close_template();
+		die("NoMemory");
+	}
+
+	definition->icons[ICON_OPENURL_URL].data.indirected_text.text = buffer;
+	definition->icons[ICON_OPENURL_URL].data.indirected_text.size =
+			RO_GUI_MAX_URL_SIZE;
+	definition->sprite_area = gui_sprites;
+
+	error = xwimp_create_window(definition, &dialog_openurl);
+	if (error != NULL) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+	
+	free(definition);
+	
+	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
+			ICON_OPENURL_MENU, ro_gui_url_suggest_menu);
+	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
+			ro_gui_dialog_openurl_apply);
+	ro_gui_wimp_event_register_menu_prepare(dialog_openurl,
+			ro_gui_dialog_open_url_menu_prepare);
+	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
+
+	return true;
+}
+
+
+
 bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	const char *urltxt;
 	char *url2;
@@ -717,8 +779,7 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	error = nsurl_create(url2, &url);
 	free(url2);
 	if (error == NSERROR_OK) {
-		error = browser_window_create(BROWSER_WINDOW_VERIFIABLE |
-				BROWSER_WINDOW_HISTORY,
+		error = browser_window_create(BW_CREATE_HISTORY,
 				url,
 				NULL,
 				NULL,

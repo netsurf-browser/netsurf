@@ -46,7 +46,7 @@ enum browser_area_e {
 /*	Creates an normal Browser window with [toolbar], [statusbar] */
 int window_create(struct gui_window * gw,
 				struct browser_window * bw,
-				struct browser_window * clone,
+				struct gui_window * existing,
 				unsigned long flags );
 /* Destroys WinDom part of gui_window */
 int window_destroy(ROOTWIN *rootwin);

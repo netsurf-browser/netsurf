@@ -22,12 +22,17 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "utils/schedule.h"
+#include "utils/errors.h"
+
 #include "atari/schedule.h"
 
+#ifdef DEBUG_SCHEDULER
 #include "utils/log.h"
+#else
+#define LOG(X)
+#endif
 
-#define CS_NOW() ((clock() * 100) / CLOCKS_PER_SEC)
+#define MS_NOW() ((clock() * 1000) / CLOCKS_PER_SEC)
 
 /* linked list of scheduled callbacks */
 static struct nscallback *schedule_list = NULL;
@@ -47,45 +52,6 @@ static int max_scheduled;
 static int cur_scheduled;
 
 /**
- * Schedule a callback.
- *
- * \param  tival     interval before the callback should be made / cs
- * \param  callback  callback function
- * \param  p         user parameter, passed to callback function
- *
- * The callback function will be called as soon as possible after t cs have
- * passed.
- */
-void schedule( int cs_ival,  void (*callback)(void *p), void *p)
-{
-	struct nscallback *nscb;
-
-	/*
-		remove any callback of this kind,
-		other frontend do this, too. framebuffer frontend doesn't do it.
-	*/
-	schedule_remove(callback, p);
-
-	nscb = calloc(1, sizeof(struct nscallback));
-
-	nscb->timeout = CS_NOW() + cs_ival;
-#ifdef DEBUG_SCHEDULER
-	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, nscb->timeout ));
-#endif
-	nscb->callback = callback;
-	nscb->p = p;
-
-    /* add to list front */
-	nscb->next = schedule_list;
-	schedule_list = nscb;
-	cur_scheduled++;
-	if( cur_scheduled > max_scheduled )
-		max_scheduled = cur_scheduled;
-}
-
-
-
-/**
  * Unschedule a callback.
  *
  * \param  callback  callback function
@@ -94,18 +60,18 @@ void schedule( int cs_ival,  void (*callback)(void *p), void *p)
  * All scheduled callbacks matching both callback and p are removed.
  */
 
-void schedule_remove(void (*callback)(void *p), void *p)
+static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
 	struct nscallback *cur_nscb;
 	struct nscallback *prev_nscb;
 	struct nscallback *unlnk_nscb;
 
-	if (schedule_list == NULL)
-		return;
+	/* check there is something on the list to remove */
+        if (schedule_list == NULL) {
+                return NSERROR_OK;
+	}
 
-#ifdef DEBUG_SCHEDULER
 	LOG(("removing %p, %p", callback, p));
-#endif
 
 	cur_nscb = schedule_list;
 	prev_nscb = NULL;
@@ -114,9 +80,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
 		if ((cur_nscb->callback ==  callback) &&
                     (cur_nscb->p ==  p)) {
 			/* item to remove */
-#ifdef DEBUG_SCHEDULER
-			LOG(("callback entry %p removing  %p(%p)", cur_nscb, cur_nscb->callback, cur_nscb->p));
-#endif
+			LOG(("callback entry %p removing  %p(%p)",
+			       cur_nscb, cur_nscb->callback, cur_nscb->p));
 
 			/* remove callback */
 			unlnk_nscb = cur_nscb;
@@ -135,20 +100,51 @@ void schedule_remove(void (*callback)(void *p), void *p)
 			cur_nscb = prev_nscb->next;
 		}
 	}
+	return NSERROR_OK;
 }
 
-/**
- * Process events up to current time.
- */
+/* exported function documented in atari/schedule.h */
+nserror atari_schedule(int ival, void (*callback)(void *p), void *p)
+{
+	struct nscallback *nscb;
+	nserror ret;
 
-int
-schedule_run(void)
+	/* remove any existing callback of this kind */
+	ret = schedule_remove(callback, p);
+	if ((ival < 0) || (ret != NSERROR_OK)) {
+		return ret;
+	}
+	
+	nscb = calloc(1, sizeof(struct nscallback));
+
+	nscb->timeout = MS_NOW() + ival;
+
+	LOG(("adding callback %p for  %p(%p) at %d ms",
+	       nscb, callback, p, nscb->timeout ));
+
+	nscb->callback = callback;
+	nscb->p = p;
+
+	/* add to list front */
+	nscb->next = schedule_list;
+	schedule_list = nscb;
+	cur_scheduled++;
+	if( cur_scheduled > max_scheduled ) {
+		max_scheduled = cur_scheduled;
+	}
+
+	return NSERROR_OK;
+}
+
+
+/* exported function documented in atari/schedule.h */
+int schedule_run(void)
 {
 	unsigned long nexttime;
 	struct nscallback *cur_nscb;
 	struct nscallback *prev_nscb;
 	struct nscallback *unlnk_nscb;
-	unsigned long now = CS_NOW();
+	unsigned long now = MS_NOW();
 
 	if (schedule_list == NULL)
 		return -1;
@@ -170,9 +166,9 @@ schedule_run(void)
 				prev_nscb->next = unlnk_nscb->next;
 			}
 
-#ifdef DEBUG_SCHEDULER
-			LOG(("callback entry %p running %p(%p)", unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
-#endif
+			LOG(("callback entry %p running %p(%p)",
+			       unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
+
 			/* call callback */
 			unlnk_nscb->callback(unlnk_nscb->p);
 			free(unlnk_nscb);
@@ -180,9 +176,8 @@ schedule_run(void)
 
 			/* need to deal with callback modifying the list. */
 			if (schedule_list == NULL) 	{
-#ifdef DEBUG_SCHEDULER
 				LOG(("schedule_list == NULL"));
-#endif
+
 				return -1; /* no more callbacks scheduled */
 			}
 
@@ -204,21 +199,22 @@ schedule_run(void)
 	}
 
 	/* make rettime relative to now and convert to ms */
-	nexttime = (nexttime - now)*10;
-#ifdef DEBUG_SCHEDULER
+	nexttime = nexttime - now;
+
 	LOG(("returning time to next event as %ldms", nexttime ));
-#endif
+
 	/*return next event time in milliseconds (24days max wait) */
-  return ( nexttime );
+	return nexttime;
 }
 
 
+/* exported function documented in atari/schedule.h */
 void list_schedule(void)
 {
 	struct timeval tv;
 	struct nscallback *cur_nscb;
 
-	LOG(("schedule list at cs clock %ld", CS_NOW() ));
+	LOG(("schedule list at ms clock %ld", MS_NOW() ));
 
 	cur_nscb = schedule_list;
 	while (cur_nscb != NULL) {
