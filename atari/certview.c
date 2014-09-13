@@ -221,7 +221,6 @@ static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
 
 	int flags = ATARI_TREEVIEW_WIDGETS;
 	short handle = -1;
-	GRECT desk;
 	OBJECT * tree = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
 	assert( tree );
 
