@@ -83,6 +83,6 @@ char *scrap_txt_read(void)
 			}
 		}
 	}
-
+	return buf;
 }
 
