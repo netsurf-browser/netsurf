@@ -84,6 +84,7 @@ S_ATARI := \
 	deskmenu.c \
 	download.c \
 	encoding.c \
+	file.c \
 	findfile.c \
 	filetype.c \
 	font.c \

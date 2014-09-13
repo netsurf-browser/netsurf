@@ -70,6 +70,7 @@
 #include "atari/search.h"
 #include "atari/deskmenu.h"
 #include "atari/download.h"
+#include "atari/file.h"
 #include "atari/filetype.h"
 #include "cflib.h"
 
@@ -133,7 +134,7 @@ static void gui_poll(bool active)
         if(input_window && input_window->root->redraw_slots.areas_used > 0) {
             window_process_redraws(input_window->root);
         }
-    
+
 
     graf_mkstate(&mx, &my, &dummy, &dummy);
     aes_event_in.emi_m1.g_x = mx;
@@ -1064,6 +1065,7 @@ int main(int argc, char** argv)
 	.clipboard = &atari_clipboard_table,
 	.download = atari_download_table,
 	.fetch = &atari_fetch_table,
+	.file = atari_file_table,
 	.utf8 = atari_utf8_table,
 	.search = atari_search_table,
     };
