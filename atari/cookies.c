@@ -109,7 +109,6 @@ static void atari_cookie_manager_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	GRECT tb_area;
 	short retval = 0;
 
 	LOG((""));
@@ -119,23 +118,6 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 			case WM_TOOLBAR:
 				LOG(("WM_TOOLBAR"));
-				/*
-				tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
-				assert(tv);
-				switch	(msg[4]) {
-
-					case TOOLBAR_HOTLIST_EDIT:
-						hotlist_edit_selection();
-						break;
-				}
-
-				gemtk_win = atari_treeview_get_gemtk_window(tv);
-				assert(gemtk_win);
-				gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
-				atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_area);
-				evnt_timer(150);
-				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
-				*/
 			break;
 
 			case WM_CLOSED:
