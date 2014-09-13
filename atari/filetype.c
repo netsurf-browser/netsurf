@@ -86,7 +86,6 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-error:
 	LOG(("mime type: %s", res ));
 	return( res );
 }
