@@ -139,7 +139,6 @@ void atari_cookie_manager_init(void)
 		if (atari_cookie_manager.window == NULL) {
 			int flags = ATARI_TREEVIEW_WIDGETS;
 			short handle = -1;
-			GRECT desk;
 			OBJECT * tree = gemtk_obj_get_tree(TOOLBAR_COOKIES);
 			assert( tree );
 
