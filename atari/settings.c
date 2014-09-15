@@ -24,22 +24,21 @@
 extern char options[PATH_MAX];
 extern GRECT desk_area;
 
-static float tmp_option_memory_cache_size;
 static float tmp_option_minimum_gif_delay;
+static unsigned tmp_option_memory_cache_size;
+static unsigned int tmp_option_disc_cache_size;
 static unsigned int tmp_option_expire_url;
+static unsigned int tmp_option_disc_cache_age;
 static unsigned int tmp_option_font_min_size;
 static unsigned int tmp_option_font_size;
 static unsigned int tmp_option_min_reflow_period;
 static unsigned int tmp_option_max_fetchers;
 static unsigned int tmp_option_max_fetchers_per_host;
 static unsigned int tmp_option_max_cached_fetch_handles;
-static colour tmp_option_atari_toolbar_bg;
 
 static int num_locales = 0;
 static char **locales = NULL;
 static short h_aes_win = 0;
-static short edit_obj = -1;
-static short any_obj = -1;
 static GUIWIN * settings_guiwin = NULL;
 static OBJECT * dlgtree;
 
@@ -95,8 +94,8 @@ static const char *gui_timeouts[]  = {
 #define LABEL_ICONSET_MAX_LEN 8
 #define INPUT_TOOLBAR_COLOR_MAX_LEN 6
 
-static void on_close(void);
-static void on_redraw(GRECT *clip);
+
+static void display_settings(void);
 static void form_event(int index, int external);
 static void apply_settings(void);
 static void save_settings(void);
@@ -109,7 +108,7 @@ static void set_text( short idx, char * text, int len )
     if( len > 254 )
         len = 254;
     if( text != NULL ) {
-        strncpy( spare, text, 254);
+        strncpy(spare, text, 254);
     } else {
         strcpy(spare, "");
     }
@@ -230,12 +229,20 @@ static void display_settings(void)
 
     tmp_option_expire_url = nsoption_int(expire_url);
     snprintf( spare, 255, "%02d", nsoption_int(expire_url) );
-    set_text( SETTINGS_EDIT_HISTORY_AGE, spare, 2 );
+    set_text( SETTINGS_EDIT_HISTORY_AGE, spare,  3);
 
     /* "Cache" tab: */
-    tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / 1000000;
-    snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
-    set_text( SETTINGS_STR_MAX_MEM_CACHE, spare, 5 );
+    tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / (1024*1024);
+    snprintf( spare, 255, "%d", tmp_option_memory_cache_size );
+    set_text( SETTINGS_STR_MAX_MEM_CACHE, spare, 4 );
+
+    tmp_option_disc_cache_size = nsoption_int(disc_cache_size) / (1024*1024);
+    snprintf( spare, 255, "%d", tmp_option_disc_cache_size );
+    set_text( SETTINGS_STR_MAX_DISC_CACHE, spare, 4 );
+
+    tmp_option_disc_cache_age = nsoption_int(disc_cache_age);
+    snprintf( spare, 255, "%02d", tmp_option_disc_cache_age );
+    set_text( SETTINGS_EDIT_CACHE_AGE, spare, 3 );
 
     /* "Paths" tab: */
     set_text( SETTINGS_EDIT_DOWNLOAD_PATH, nsoption_charp(downloads_path),
@@ -322,7 +329,7 @@ static void display_settings(void)
     toggle_objects();
 }
 
-static bool handle_filesystem_select_button(short rsc_bt)
+static void handle_filesystem_select_button(short rsc_bt)
 {
     bool require_path = false;
     bool is_folder = false;
@@ -570,18 +577,51 @@ static void form_event(int index, int external)
     case SETTINGS_INC_MEM_CACHE:
     case SETTINGS_DEC_MEM_CACHE:
         if( index == SETTINGS_DEC_MEM_CACHE )
-            tmp_option_memory_cache_size -= 0.1;
+            tmp_option_memory_cache_size -= 1;
         else
-            tmp_option_memory_cache_size += 0.1;
+            tmp_option_memory_cache_size += 1;
 
-        if( tmp_option_memory_cache_size < 0.5 )
-            tmp_option_memory_cache_size = 0.5;
-        if( tmp_option_memory_cache_size > 999.9 )
-            tmp_option_memory_cache_size = 999.9;
-        snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
+        if( tmp_option_memory_cache_size < 0 )
+            tmp_option_memory_cache_size = 1;
+        if( tmp_option_memory_cache_size > 999 )
+            tmp_option_memory_cache_size = 999;
+        snprintf( spare, 255, "%02d", tmp_option_memory_cache_size );
         set_text( SETTINGS_STR_MAX_MEM_CACHE, spare, 5 );
         is_button = true;
         OBJ_REDRAW(SETTINGS_STR_MAX_MEM_CACHE);
+        break;
+
+    case SETTINGS_INC_DISC_CACHE:
+    case SETTINGS_DEC_DISC_CACHE:
+        if( index == SETTINGS_DEC_DISC_CACHE )
+            tmp_option_disc_cache_size -= 1;
+        else
+            tmp_option_disc_cache_size += 1;
+
+        if( tmp_option_disc_cache_size < 0 )
+            tmp_option_disc_cache_size = 1;
+        if( tmp_option_disc_cache_size > 9999 )
+            tmp_option_disc_cache_size = 9999;
+        snprintf( spare, 255, "%02d", tmp_option_disc_cache_size );
+        set_text( SETTINGS_STR_MAX_DISC_CACHE, spare, 5 );
+        is_button = true;
+        OBJ_REDRAW(SETTINGS_STR_MAX_DISC_CACHE);
+        break;
+
+    case SETTINGS_INC_CACHE_AGE:
+    case SETTINGS_DEC_CACHE_AGE:
+        if( index == SETTINGS_INC_CACHE_AGE )
+            tmp_option_disc_cache_age += 1;
+        else
+            tmp_option_disc_cache_age -= 1;
+
+        if( tmp_option_disc_cache_age > 99 )
+            tmp_option_disc_cache_age =  0;
+
+        snprintf( spare, 255, "%02d", tmp_option_disc_cache_age );
+        set_text( SETTINGS_EDIT_CACHE_AGE, spare, 2 );
+        is_button = true;
+        OBJ_REDRAW(SETTINGS_EDIT_CACHE_AGE);
         break;
 
     case SETTINGS_INC_CACHED_CONNECTIONS:
@@ -788,8 +828,23 @@ static void apply_settings(void)
                        gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_DOWNLOAD_PATH));
 
     /* "Cache" tab: */
+    tmp_option_memory_cache_size = atoi(gemtk_obj_get_text(dlgtree,
+                                                    SETTINGS_STR_MAX_MEM_CACHE));
+    tmp_option_expire_url = atoi(gemtk_obj_get_text(dlgtree,
+                                                    SETTINGS_EDIT_HISTORY_AGE));
+    tmp_option_disc_cache_size = atoi(gemtk_obj_get_text(dlgtree,
+                                                    SETTINGS_STR_MAX_DISC_CACHE));
+    tmp_option_disc_cache_age = atoi(gemtk_obj_get_text(dlgtree,
+                                                    SETTINGS_EDIT_CACHE_AGE));
     nsoption_set_int(memory_cache_size,
-                     tmp_option_memory_cache_size * 1000000);
+                     tmp_option_memory_cache_size * (1024*1024));
+
+    nsoption_set_int(expire_url, tmp_option_expire_url);
+
+    nsoption_set_int(disc_cache_size, tmp_option_disc_cache_size * (1024*1024));
+
+    nsoption_set_int(disc_cache_age, tmp_option_disc_cache_age);
+
 
     /* "Browser" tab: */
     nsoption_set_bool(target_blank,
@@ -798,8 +853,6 @@ static void apply_settings(void)
                       OBJ_SELECTED(SETTINGS_CB_HIDE_ADVERTISEMENT));
     nsoption_set_charp(accept_language,
                        gemtk_obj_get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));
-    nsoption_set_int(expire_url,
-                     atoi(gemtk_obj_get_text(dlgtree, SETTINGS_EDIT_HISTORY_AGE)));
     nsoption_set_int(atari_gui_poll_timeout,
                      atoi(gemtk_obj_get_text(dlgtree, SETTINGS_BT_GUI_TOUT)));
     nsoption_set_bool(send_referer,
@@ -813,7 +866,6 @@ static void apply_settings(void)
 static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
-    GRECT clip, work;
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
