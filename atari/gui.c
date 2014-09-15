@@ -566,7 +566,6 @@ static void throbber_advance( void * data )
 
 static void gui_window_start_throbber(struct gui_window *w)
 {
-    GRECT work;
     if (w == NULL)
         return;
 
@@ -1061,7 +1060,6 @@ int main(int argc, char** argv)
     struct stat stat_buf;
     nsurl *url;
     nserror ret;
-    extern struct gui_llcache_table* filesystem_llcache_table;
 
     struct netsurf_table atari_table = {
         .browser = &atari_browser_table,

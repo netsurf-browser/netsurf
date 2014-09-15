@@ -170,8 +170,6 @@ static const struct redraw_context toolbar_rdrw_ctx = {
 			};
 
 static void tb_txt_request_redraw(void *data, int x, int y, int w, int h );
-static nserror toolbar_icon_callback( hlcache_handle *handle,
-		const hlcache_event *event, void *pw );
 
 /**
 *   Find a button for a specific resource ID
@@ -688,8 +686,6 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 {
 
 	assert(tb!=NULL);
-
-	GRECT work;
 	bool ret = false;
 	struct gui_window *gw = window_get_active_gui_window(tb->owner);
 

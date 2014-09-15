@@ -110,7 +110,7 @@ void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
 		slots->areas[slots->size-1].x1 = MAX(slots->areas[i].x1, x1);
 		slots->areas[slots->size-1].y1 = MAX(slots->areas[i].y1, y1);
 	}
-done:
+
 	return;
 }
 

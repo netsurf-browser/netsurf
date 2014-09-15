@@ -91,7 +91,7 @@ static void on_redraw_event(struct core_window *cw, EVMULT_OUT *ev_out,
 									short msg[8]);
 
 /* static utils: */
-static void atari_treeview_dump_info(struct atari_treeview_window *tv, char *s);
+//static void atari_treeview_dump_info(struct atari_treeview_window *tv, char *s);
 
 /**
  * Schedule a redraw of the treeview content
@@ -144,6 +144,7 @@ GUIWIN * atari_treeview_get_gemtk_window(struct core_window *cw)
 	return(tv->window);
 }
 
+/*
 static void atari_treeview_dump_info(struct atari_treeview_window *tv,
 									char * title)
 {
@@ -152,8 +153,9 @@ static void atari_treeview_dump_info(struct atari_treeview_window *tv,
 	gemtk_wm_dump_window_info(atari_treeview_get_gemtk_window((struct core_window *)tv));
 	GEMTK_DBG_GRECT("Redraw Area: \n", &tv->rdw_area)
 	dbg_grect("Redraw Area2:      \n", &tv->rdw_area);
-	printf("Extent: x: %d, y: %d\n", tv->extent, tv->extent);
+	printf("Extent: x: %d, y: %d\n", tv->extent.x, tv->extent.y);
 }
+*/
 
 static bool atari_treeview_is_iconified(struct core_window *cw){
 

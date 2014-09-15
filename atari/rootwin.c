@@ -80,8 +80,8 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8]);
 static void on_resized(ROOTWIN *rootwin);
 static void on_file_dropped(ROOTWIN *rootwin, short msg[8]);
 static short on_window_key_input(ROOTWIN * rootwin, unsigned short nkc);
-static bool on_content_mouse_click(ROOTWIN *rootwin);
-static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area);
+static void on_content_mouse_click(ROOTWIN *rootwin);
+static void on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area);
 static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip);
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
@@ -381,7 +381,7 @@ int window_destroy(ROOTWIN *rootwin)
 
 void window_open(ROOTWIN *rootwin, struct gui_window *gw, GRECT pos)
 {
-    GRECT br, g;
+    GRECT g;
 
     rootwin->active_gui_window = gw;
 
@@ -465,7 +465,6 @@ void window_set_title(struct s_gui_win_root * rootwin, char *title)
 
 void window_scroll_by(ROOTWIN *root, int sx, int sy)
 {
-    GRECT content_area;
     struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(root->win);
 
     if (sx < 0) {
@@ -1012,7 +1011,7 @@ exit:
 
 void window_process_redraws(ROOTWIN * rootwin)
 {
-    GRECT work, visible_ro, tb_area, content_area;
+    GRECT visible_ro, tb_area, content_area;
     short i;
     short scroll_x=0, scroll_y=0;
     bool caret_rdrw_required = false;
@@ -1133,7 +1132,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 /* -------------------------------------------------------------------------- */
 /* Event Handlers:                                                            */
 /* -------------------------------------------------------------------------- */
-static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
+static void on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
 {
     int mx, my, sx, sy;
     struct gemtk_wm_scroll_info_s *slid;
@@ -1155,7 +1154,7 @@ static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
     browser_window_mouse_track(bw, 0, mx + sx, my + sy);
 }
 
-static bool on_content_mouse_click(ROOTWIN *rootwin)
+static void on_content_mouse_click(ROOTWIN *rootwin)
 {
     short dummy, mbut, mx, my;
     GRECT cwork;
@@ -1393,7 +1392,6 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 
     if(gemtk_wm_get_state(rootwin->win) & GEMTK_WM_STATUS_ICONIFIED) {
         // TODO: remove asignment:
-        GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(rootwin, NULL);
     } else {
         window_schedule_redraw_grect(rootwin, &clip);
@@ -1476,7 +1474,6 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                 int sx, sy;
                 bool processed = false;
                 GRECT content_area;
-                struct browser_window * bw = gw->browser->bw;
 
                 buff[size] = 0;
 

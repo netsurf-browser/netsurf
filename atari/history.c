@@ -112,57 +112,12 @@ static void atari_global_history_mouse_action(struct core_window *cw,
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	GRECT tb_area;
 	short retval = 0;
 
 	LOG((""));
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
-
-//			case WM_TOOLBAR:
-//				LOG(("WM_TOOLBAR"));
-//				tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
-//				assert(tv);
-//				switch	(msg[4]) {
-//					case TOOLBAR_HOTLIST_CREATE_FOLDER:
-//						hotlist_add_folder(NULL, 0, 0);
-//						break;
-//
-//					case TOOLBAR_HOTLIST_ADD:
-//						gw = gui_window_get_input_window();
-//						if(gw && gw->browser){
-//							cur_url = gui_window_get_url(gw);
-//							cur_title = gui_window_get_title(gw);
-//							// TODO: read language string.
-//							cur_title = (cur_title ? cur_title : "New bookmark");
-//						} else {
-//							cur_url = "http://www";
-//						}
-//						atari_global_history_add_page(cur_url, cur_title);
-//						break;
-//
-//					case TOOLBAR_HOTLIST_DELETE:
-//						hotlist_keypress(KEY_DELETE_LEFT);
-//						// TODO: check if redraw is really required,
-//						// 		  - implement treeview getter for the gemtk
-//						//          handle.
-//						break;
-//
-//					case TOOLBAR_HOTLIST_EDIT:
-//						hotlist_edit_selection();
-//						break;
-//				}
-//
-//				gemtk_win = atari_treeview_get_gemtk_window(tv);
-//				assert(gemtk_win);
-//				gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
-//				atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_area);
-//				evnt_timer(150);
-//				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
-//
-//			break;
-
 			case WM_CLOSED:
 				atari_global_history_close();
 				retval = 1;
@@ -185,7 +140,6 @@ void atari_global_history_init(void)
 		if( atari_global_history.window == NULL ){
 			int flags = ATARI_TREEVIEW_WIDGETS;
 			short handle = -1;
-			GRECT desk;
 			OBJECT * tree = gemtk_obj_get_tree(TOOLBAR_HISTORY);
 			assert( tree );
 

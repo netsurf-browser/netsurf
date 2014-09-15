@@ -114,7 +114,7 @@ nserror atari_schedule(int ival, void (*callback)(void *p), void *p)
 	if ((ival < 0) || (ret != NSERROR_OK)) {
 		return ret;
 	}
-	
+
 	nscb = calloc(1, sizeof(struct nscallback));
 
 	nscb->timeout = MS_NOW() + ival;
@@ -211,7 +211,6 @@ int schedule_run(void)
 /* exported function documented in atari/schedule.h */
 void list_schedule(void)
 {
-	struct timeval tv;
 	struct nscallback *cur_nscb;
 
 	LOG(("schedule list at ms clock %ld", MS_NOW() ));
