@@ -26,6 +26,11 @@ NETSURF_USE_NSSVG := AUTO
 # Valid options: YES, NO
 NETSURF_USE_MOZJS := NO
 
+# Enable building the source object cache filesystem based backing store.
+# implementation.
+# Valid options: YES, NO
+NETSURF_FS_BACKING_STORE := YES
+
 # enable true type fonts via freetype2
 # Valid options: YES, NO
 NETSURF_USE_ATARI_FREETYPE_FONT := YES

@@ -37,6 +37,7 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
+#include "content/backing_store.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
@@ -1060,6 +1061,8 @@ int main(int argc, char** argv)
     struct stat stat_buf;
     nsurl *url;
     nserror ret;
+    extern struct gui_llcache_table* filesystem_llcache_table;
+
     struct netsurf_table atari_table = {
         .browser = &atari_browser_table,
 	.window = &atari_window_table,
@@ -1069,6 +1072,7 @@ int main(int argc, char** argv)
 	.file = atari_file_table,
 	.utf8 = atari_utf8_table,
 	.search = atari_search_table,
+    .llcache = filesystem_llcache_table
     };
 
     ret = netsurf_register(&atari_table);
