@@ -205,7 +205,6 @@ void atari_hotlist_init(void)
 		if( hl.window == NULL ){
 			int flags = ATARI_TREEVIEW_WIDGETS;
 			short handle = -1;
-			GRECT desk;
 			OBJECT * tree = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
 			assert( tree );
 

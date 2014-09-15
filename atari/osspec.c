@@ -121,7 +121,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 	LOG(("realpath in: %s\n", path));
 	r = realpath(path, work);
 	if (r != NULL) {
-		int e = unx2dos((const char *)r, rpath);
+		unx2dos((const char *)r, rpath);
 		LOG(("realpath out: %s\n", rpath));
 		return(rpath);
 	}

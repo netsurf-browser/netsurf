@@ -623,8 +623,7 @@ short gemtk_wm_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8]
     We receive VA_PROTOSTATUS but AV_START doesn't seem to cause
     an TeraDesk response. Check if something happens with Thing!
     Desktop.
-/*
-/*
+
         case VA_PROTOSTATUS:
         case VA_VIEWED:
         case AV_STARTED:
@@ -1259,7 +1258,6 @@ short gemtk_wm_exec_msg(GUIWIN *win, short msg_type, short a, short b, short c,
                      short d)
 {
     short msg[8], retval;
-    GRECT work;
 
     EVMULT_OUT event_out;
     EVMULT_IN event_in = {
@@ -1355,7 +1353,7 @@ bool gemtk_wm_has_intersection(GUIWIN *win, GRECT *work)
 */
 void gemtk_wm_toolbar_redraw(GUIWIN *gw, uint16_t msg, GRECT *clip)
 {
-    GRECT tb_area, tb_area_ro, g;
+    GRECT tb_area, tb_area_ro;
 
     gemtk_wm_get_grect(gw, GEMTK_WM_AREA_TOOLBAR, &tb_area_ro);
 
