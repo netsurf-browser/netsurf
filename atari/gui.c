@@ -1054,6 +1054,7 @@ static struct gui_browser_table atari_browser_table = {
 int main(int argc, char** argv)
 {
     char messages[PATH_MAX];
+    char store[PATH_MAX];
     const char *addr;
     char * file_url = NULL;
     struct stat stat_buf;
@@ -1091,6 +1092,7 @@ int main(int argc, char** argv)
 
     atari_find_resource((char*)&messages, "messages", "res/messages");
     atari_find_resource((char*)&options, "Choices", "Choices");
+    atari_find_resource((char*)&store, "cache", "res/cache");
 
     /* initialise logging - not fatal if it fails but not much we can
      * do about it
@@ -1107,7 +1109,7 @@ int main(int argc, char** argv)
 
     /* common initialisation */
     LOG(("Initialising core..."));
-    ret = netsurf_init(messages, NULL);
+    ret = netsurf_init(messages, store);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }
