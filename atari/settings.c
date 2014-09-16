@@ -415,18 +415,6 @@ static void form_event(int index, int external)
 
     switch(index) {
 
-    case SETTINGS_SAVE:
-		OBJ_UNCHECK(index);
-        OBJ_REDRAW(index);
-        save_settings();
-        break;
-
-    case SETTINGS_ABORT:
-		OBJ_UNCHECK(index);
-        OBJ_REDRAW(index);
-        close_settings();
-        break;
-
     case SETTINGS_CB_USE_PROXY:
         if( checked ) {
             ENABLE_OBJ(SETTINGS_EDIT_PROXY_HOST);
@@ -888,6 +876,13 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
         case WM_TOOLBAR:
             switch(msg[4]) {
+                case TOOLBAR_SETTINGS_SAVE:
+                    save_settings();
+                break;
+
+                case TOOLBAR_SETTINGS_ABORT:
+                    close_settings();
+                    break;
             default:
                 break;
             }
@@ -916,11 +911,13 @@ void open_settings(void)
     if (h_aes_win == 0) {
 
         GRECT curr, area;
+        OBJECT * toolbartree;
         struct gemtk_wm_scroll_info_s *slid;
         uint32_t kind = CLOSER | NAME | MOVER | VSLIDE | HSLIDE | UPARROW
                         | DNARROW | LFARROW | RTARROW | SIZER | FULLER;
 
         dlgtree = gemtk_obj_get_tree(SETTINGS);
+        toolbartree = gemtk_obj_get_tree(TOOLBAR_SETTINGS);
         area.g_x = area.g_y = 0;
         area.g_w = MIN(dlgtree->ob_width, desk_area.g_w);
         area.g_h = MIN(dlgtree->ob_height, desk_area.g_h);
@@ -944,6 +941,7 @@ void open_settings(void)
 
         wind_open_grect(h_aes_win, &curr);
 
+        gemtk_wm_set_toolbar(settings_guiwin, toolbartree, 0, 0);
         gemtk_wm_set_form(settings_guiwin, dlgtree, 0);
         gemtk_wm_set_scroll_grid(settings_guiwin, 32, 32);
         gemtk_wm_get_grect(settings_guiwin, GEMTK_WM_AREA_CONTENT, &area);
