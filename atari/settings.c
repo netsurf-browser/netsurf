@@ -914,7 +914,7 @@ void open_settings(void)
         OBJECT * toolbartree;
         struct gemtk_wm_scroll_info_s *slid;
         uint32_t kind = CLOSER | NAME | MOVER | VSLIDE | HSLIDE | UPARROW
-                        | DNARROW | LFARROW | RTARROW | SIZER | FULLER;
+                        | DNARROW | LFARROW | RTARROW | SIZER;
 
         dlgtree = gemtk_obj_get_tree(SETTINGS);
         toolbartree = gemtk_obj_get_tree(TOOLBAR_SETTINGS);
