@@ -954,11 +954,15 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	if (start != 0)
 		start--;
 
+	/* During layout we may decide we need to restart again from the
+	 * textarea's first line. */
 	do {
-		/* Set line count to start point */
+		/* If a vertical scrollbar has been added or removed, we need
+		 * to restart from the first line in the textarea. */
 		if (restart)
 			start = 0;
 
+		/* Set current line to the starting line */
 		line = start;
 
 		/* Find available width */
