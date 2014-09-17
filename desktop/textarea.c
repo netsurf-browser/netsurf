@@ -972,14 +972,18 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 			avail_width = 0;
 		h_extent = avail_width;
 
-		/* Set up initial length and text offset */
-		if (line == 0) {
-			len = ta->text.len - 1;
-			text = ta->text.data;
-		} else {
+		/* Set up length of remaining text and offset to current point
+		 * in text.  Initially set it to start of textarea */
+		len = ta->text.len - 1;
+		text = ta->text.data;
+
+		if (line != 0) {
+			/* Not starting at the beginning of the textarea, so
+			 * jump forward, and make sure the horizontal extents
+			 * accommodate the width of the skipped lines. */
 			unsigned int i;
-			len = ta->text.len - 1 - ta->lines[line].b_start;
-			text = ta->text.data + ta->lines[line].b_start;
+			len -= ta->lines[line].b_start;
+			text += ta->lines[line].b_start;
 
 			for (i = 0; i < line; i++) {
 				if (ta->lines[i].width > h_extent) {
