@@ -905,6 +905,7 @@ static bool textarea_reflow_singleline(struct textarea *ta, size_t b_off,
  * \param ta		Textarea to reflow
  * \param b_start	0-based byte offset in ta->text to start of modification
  * \param b_length	Byte length of change in textarea text
+ * \param r		Modified/reduced to area where redraw is required
  * \return true on success false otherwise
  */
 static bool textarea_reflow_multiline(struct textarea *ta,
