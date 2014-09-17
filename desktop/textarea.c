@@ -947,9 +947,10 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 				ta->pad_top - ta->pad_bottom) /
 				ta->line_height;
 
-	/* Have to start on line before where the changes are in case an
-	 * added space makes the text before the space on a soft-wrapped line
-	 * fit on the line above */
+	/* Start on the line before the first change, in case the
+	 * modification on this line alters what fits on the line
+	 * above.  For example adding a space or deleting text on
+	 * a soft-wrapped line */
 	if (start != 0)
 		start--;
 
