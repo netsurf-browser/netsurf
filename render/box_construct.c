@@ -1338,7 +1338,7 @@ css_select_results *box_get_style(html_content *c,
 				(const uint8_t *) dom_string_data(s),
 				dom_string_byte_length(s),
 				c->encoding,
-				nsurl_access(content_get_url(&c->base)), 
+				nsurl_access(c->base_url),
 				c->quirks != DOM_DOCUMENT_QUIRKS_MODE_NONE);
 
 		dom_string_unref(s);

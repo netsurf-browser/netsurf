@@ -163,7 +163,7 @@ static css_select_handler selection_handler = {
  * \param data          Source data
  * \param len           Length of data in bytes
  * \param charset       Charset of data, or NULL if unknown
- * \param url           URL of document containing data
+ * \param url           Base URL of document containing data
  * \param allow_quirks  True to permit CSS parsing quirks
  * \return Pointer to stylesheet, or NULL on failure.
  */
