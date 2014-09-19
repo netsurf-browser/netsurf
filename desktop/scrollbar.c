@@ -514,6 +514,12 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
 	int well_length;
 	struct scrollbar_msg_data msg;
 
+	if (length == s->length && visible_size == s->visible_size &&
+			full_size == s->full_size) {
+		/* Nothing's changed. */
+		return;
+	}
+
 	if (length != -1)
 		s->length = length;
 	if (visible_size != -1)
