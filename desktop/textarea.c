@@ -1078,7 +1078,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 				continue;
 
 			} else if (len - b_off > 0) {
-				/* soft wraped, find last space (if any) */
+				/* soft wrapped, find last space (if any) */
 				for (space = text + b_off; space > text;
 						space--) {
 					if (*space == ' ')
@@ -1156,7 +1156,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	ta->v_extent = v_extent;
 	ta->line_count = line;
 
-	/* Don't need to redraw above changes, so update redraw request rect*/
+	/* Don't need to redraw above changes, so update redraw request rect */
 	if (ta->lines[start].b_start + ta->lines[start].b_length < b_start &&
 			restart == false) {
 		/* Start line is unchanged */
