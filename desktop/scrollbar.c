@@ -510,8 +510,9 @@ int scrollbar_get_offset(struct scrollbar *s)
 void scrollbar_set_extents(struct scrollbar *s, int length,
 		int visible_size, int full_size)
 {
-	int well_length;
 	int cur_excess = s->full_size - s->visible_size;
+	int well_length;
+	struct scrollbar_msg_data msg;
 
 	if (length != -1)
 		s->length = length;
@@ -539,6 +540,11 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
 		s->bar_len = (well_length * s->visible_size) / s->full_size;
 		s->bar_pos = (well_length * s->offset) / s->full_size;
 	}
+
+	msg.scrollbar = s;
+	msg.msg = SCROLLBAR_MSG_MOVED;
+	msg.scroll_offset = s->offset;
+	s->client_callback(s->client_data, &msg);
 }
 
 
