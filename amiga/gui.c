@@ -4985,6 +4985,7 @@ Object *ami_gui_splash_open(void)
 				LayoutEnd,
 			EndWindow;
 
+	LOG(("Attempting to open splash window..."));
 	win = RA_OpenWindow(win_obj);
 
 	GetAttrs(bm_obj, IA_Top, &top,
@@ -5038,13 +5039,16 @@ Object *ami_gui_splash_open(void)
 
 void ami_gui_splash_close(Object *win_obj)
 {
-	if(win_obj) DisposeObject(win_obj);
+	if(win_obj == NULL) return;
+
+	LOG(("Closing splash window"));
+	DisposeObject(win_obj);
 }
 
 static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
-	LOG(("File open dialog rquest for %p/%p", g, gadget));
+	LOG(("File open dialog request for %p/%p", g, gadget));
 
 	if(AslRequestTags(filereq,
 			ASLFR_Window, g->shared->win,
@@ -5126,7 +5130,7 @@ int main(int argc, char** argv)
 	BPTR lock = 0;
 	int32 user = 0;
 	nserror ret;
-	Object *splash_window = ami_gui_splash_open();
+
 	struct netsurf_table amiga_table = {
 		.browser = &amiga_browser_table,
 		.window = &amiga_window_table,
@@ -5146,6 +5150,14 @@ int main(int argc, char** argv)
 	if (ret != NSERROR_OK) {
 		die("NetSurf operation table failed registration");
 	}
+
+	/* initialise logging. Not fatal if it fails but not much we
+	 * can do about it either.
+	 */
+	nslog_init(NULL, &argc, argv);
+
+	/* Open splash window */
+	Object *splash_window = ami_gui_splash_open();
 
 	/* Open popupmenu.library just to check the version.
 	 * Versions older than 53.11 are dangerous, so we
@@ -5182,11 +5194,6 @@ int main(int argc, char** argv)
 
 	amiga_plugin_hack_init();
 	ret = amiga_datatypes_init();
-
-	/* initialise logging. Not fatal if it fails but not much we
-	 * can do about it either.
-	 */
-	nslog_init(NULL, &argc, argv);
 
 	/* user options setup */
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);

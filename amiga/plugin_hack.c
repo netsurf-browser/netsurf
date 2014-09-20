@@ -77,7 +77,7 @@ nserror amiga_plugin_hack_init(void)
 
 		if(node)
 		{
-			LOG(("plugin_hack registered %s\n",lwc_string_data(type)));
+			LOG(("plugin_hack registered %s",lwc_string_data(type)));
 
 			error = content_factory_register_handler(
 				lwc_string_data(type), 
