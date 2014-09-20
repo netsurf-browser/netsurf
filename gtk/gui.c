@@ -322,7 +322,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 /**
  * Initialize GTK interface.
  */
-static void gui_init(int argc, char** argv, char **respath)
+static nserror nsgtk_init(int argc, char** argv, char **respath)
 {
 	char buf[PATH_MAX];
 	char *resource_filename;
@@ -467,11 +467,7 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	free(addr);
 
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	} else {
-		netsurf_main_loop();
-	}
+	return error;
 }
 
 
@@ -1321,7 +1317,13 @@ int main(int argc, char** argv)
 	}
 
 	/* run the browser */
-	gui_init(argc, argv, respaths);
+	ret = nsgtk_init(argc, argv, respaths);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "NetSurf gtk specific initialise failed (%s)\n",
+			messages_get_errorcode(ret));
+	} else {
+		netsurf_main_loop();
+	}
 
 	/* common finalisation */
 	netsurf_exit();
