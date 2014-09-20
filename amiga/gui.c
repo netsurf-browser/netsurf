@@ -192,8 +192,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
-ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
-ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
+static void ami_set_border_gadget_balance(struct gui_window_2 *gwin);
+static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_try_quit(void);
 void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
@@ -3788,7 +3788,7 @@ gui_window_create(struct browser_window *bw,
 	return g;
 }
 
-ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
+static void ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 {
 	/* Reset gadget widths according to new calculation */
 	ULONG size1, size2, sz;
@@ -3809,7 +3809,7 @@ ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 	RefreshWindowFrame(gwin->win);
 }
 
-ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
+static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
 {
 	/* Get the sizes that border gadget 1 (status) and 2 (hscroller) need to be.
 	** Returns the width of the vertical scroller (right-hand window border) as
