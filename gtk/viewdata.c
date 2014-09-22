@@ -38,7 +38,6 @@
 #include "utils/file.h"
 #include "utils/filepath.h"
 
-#include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "render/html.h"
 #include "content/hlcache.h"
@@ -337,7 +336,7 @@ gboolean nsgtk_on_viewdata_about_activate(GtkMenuItem *widget, gpointer g)
 {
 	struct nsgtk_viewdata_ctx *nsg = (struct nsgtk_viewdata_ctx *) g;
 
-	nsgtk_about_dialog_init(nsg->window, netsurf_version);
+	nsgtk_about_dialog_init(nsg->window);
 
 	return TRUE;
 }

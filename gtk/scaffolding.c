@@ -34,7 +34,6 @@
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/hotlist.h"
-#include "desktop/netsurf.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
@@ -246,8 +245,8 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 	LOG(("scaffold list head: %p", scaf_list));
 
 	if (scaf_list == NULL) {
-		/* no more open windows */
-		netsurf_quit = true;
+		/* no more open windows - stop the browser */
+		nsgtk_complete = true;
 	}
 }
 
@@ -1609,7 +1608,7 @@ MULTIHANDLER(info)
 
 MULTIHANDLER(about)
 {
-	nsgtk_about_dialog_init(g->window, netsurf_version);
+	nsgtk_about_dialog_init(g->window);
 	return TRUE;
 }
 

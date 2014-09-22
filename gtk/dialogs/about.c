@@ -28,6 +28,7 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
+#include "desktop/netsurf.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"
@@ -65,13 +66,13 @@ nsgtk_about_dialog_info(GtkWidget *button, gpointer data)
 	gtk_widget_destroy(gtk_widget_get_toplevel(button));
 }
 
-void nsgtk_about_dialog_init(GtkWindow *parent, const char *version)
+void nsgtk_about_dialog_init(GtkWindow *parent)
 {
 	GtkWidget *dialog, *vbox, *button, *image, *label;
 	gchar *name_string;
 	GList *pixbufs = gtk_window_get_default_icon_list();
 
-	name_string = g_markup_printf_escaped ("<span size=\"xx-large\" weight=\"bold\">NetSurf %s</span>", version);
+	name_string = g_markup_printf_escaped ("<span size=\"xx-large\" weight=\"bold\">NetSurf %s</span>", netsurf_version);
 
 
 	/* Create the widgets */

@@ -19,6 +19,6 @@
 #ifndef NETSURF_GTK_ABOUT_H
 #define NETSURF_GTK_ABOUT_H
 
-void nsgtk_about_dialog_init(GtkWindow *parent, const char *version);
+void nsgtk_about_dialog_init(GtkWindow *parent);
 
 #endif
