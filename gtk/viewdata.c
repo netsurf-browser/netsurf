@@ -43,7 +43,7 @@
 #include "content/hlcache.h"
 #include "content/content.h"
 
-#include "gtk/dialogs/about.h"
+#include "gtk/about.h"
 #include "gtk/fetch.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"

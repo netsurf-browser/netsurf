@@ -39,7 +39,7 @@
 #include "gtk/menu.h"
 #include "gtk/theme.h"
 #include "gtk/window.h"
-#include "gtk/dialogs/preferences.h"
+#include "gtk/preferences.h"
 
 enum image_sets {
 	IMAGE_SET_MAIN_MENU = 0,

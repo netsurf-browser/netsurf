@@ -17,7 +17,7 @@
  */
 
 /**
- * \file gtk/dialogs/about.c
+ * \file gtk/about.c
  *
  * Implementation of gtk about dialog.
  */
@@ -32,7 +32,7 @@
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"
-#include "gtk/dialogs/about.h"
+#include "gtk/about.h"
 
 /**
  * About dialog information button click.

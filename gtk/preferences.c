@@ -33,7 +33,7 @@
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/theme.h"
-#include "gtk/dialogs/preferences.h"
+#include "gtk/preferences.h"
 
 /* private prefs */
 struct ppref {
@@ -1065,7 +1065,7 @@ nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 }
 
 
-/* exported interface documented in gtk/dialogs/preferences.h */
+/* exported interface documented in gtk/preferences.h */
 GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 {
 	GError *error = NULL;
@@ -1127,7 +1127,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	return GTK_WIDGET(priv->dialog);
 }
 
-/* exported interface documented in gtk/dialogs/preferences.h */
+/* exported interface documented in gtk/preferences.h */
 void nsgtk_preferences_theme_add(const char *themename)
 {
 	struct ppref *priv = &ppref;
