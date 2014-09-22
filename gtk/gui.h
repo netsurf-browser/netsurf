@@ -1,12 +1,5 @@
 /*
- * Copyright 2004-2010 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2010 Vincent Sanders <vince@debian.org>
- * Copyright 2004-2009 John-Mark Bell <jmb@netsurf-browser.org>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
- * Copyright 2006-2009 Daniel Silverstone <dsilvers@netsurf-browser.org>
- * Copyright 2006-2008 Rob Kendrick <rjek@netsurf-browser.org>
- * Copyright 2008 John Tytgat <joty@netsurf-browser.org>
- * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -32,6 +25,7 @@
 
 #include "utils/nsurl.h"
 
+/** glade file paths. */
 struct glade_file_location_s {
 	char *netsurf;
 	char *tabcontents;
@@ -51,22 +45,34 @@ struct glade_file_location_s {
 /** location of all glade files. */
 extern struct glade_file_location_s *glade_file_location;
 
+/** language list file path. */
 extern char *languages_file_location;
+
+/** toolbar arrangement file path. */
 extern char *toolbar_indices_file_location;
+
+/** Resource directory path. */
 extern char *res_dir_location;
+
+/** Theme location. */
 extern char *themelist_file_location;
 
 /** Directory where all configuration files are held. */
 extern char *nsgtk_config_home;
 
-extern GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
+/** favicon default pixbuf */
+extern GdkPixbuf *favicon_pixbuf;
 
-extern char **respaths; /** resource search path vector */
+/** resource search path vector */
+extern char **respaths;
 
-uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
+/** input conversion. */
+uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *eventkey);
 
-extern void gui_401login_open(nsurl *url, const char *realm,
-		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
+/** login window request. */
+extern void gui_401login_open(nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+
+/** set when no windows remain open. */
+extern bool nsgtk_complete;
 
 #endif /* GTK_GUI_H */
-
