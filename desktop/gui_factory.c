@@ -569,10 +569,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	}
 
 	/* check the mandantory fields are set */
-	if (gbt->poll == NULL) {
-		return NSERROR_BAD_PARAMETER;
-	}
-
 	if (gbt->schedule == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
