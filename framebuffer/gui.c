@@ -62,6 +62,8 @@
 
 fbtk_widget_t *fbtk;
 
+static bool fb_complete = false;
+
 struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
@@ -555,28 +557,31 @@ static bool nslog_stream_configure(FILE *fptr)
 	return true;
 }
 
-
-
-static void framebuffer_poll(bool active)
+static void framebuffer_run(void)
 {
 	nsfb_event_t event;
 	int timeout; /* timeout in miliseconds */
 
-	/* run the scheduler and discover how long to wait for the next event */
-	timeout = schedule_run();
+	while (fb_complete != true) {
+		/* run the scheduler and discover how long to wait for
+		 * the next event.
+		 */
+		timeout = schedule_run();
 
-	/* if redraws are pending do not wait for event, return immediately */
-	if (fbtk_get_redraw_pending(fbtk))
-		timeout = 0;
+		/* if redraws are pending do not wait for event,
+		 * return immediately
+		 */
+		if (fbtk_get_redraw_pending(fbtk))
+			timeout = 0;
 
-	if (fbtk_event(fbtk, &event, timeout)) {
-		if ((event.type == NSFB_EVENT_CONTROL) &&
-		    (event.value.controlcode ==  NSFB_CONTROL_QUIT))
-			netsurf_quit = true;
+		if (fbtk_event(fbtk, &event, timeout)) {
+			if ((event.type == NSFB_EVENT_CONTROL) &&
+			    (event.value.controlcode ==  NSFB_CONTROL_QUIT))
+				fb_complete = true;
+		}
+
+		fbtk_redraw(fbtk);
 	}
-
-	fbtk_redraw(fbtk);
-
 }
 
 static void gui_quit(void)
@@ -1052,7 +1057,8 @@ fb_close_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
-	netsurf_quit = true;
+	fb_complete = true;
+
 	return 0;
 }
 
@@ -2035,7 +2041,6 @@ static struct gui_window_table framebuffer_window_table = {
 
 
 static struct gui_browser_table framebuffer_browser_table = {
-	.poll = framebuffer_poll,
 	.schedule = framebuffer_schedule,
 
 	.quit = gui_quit,
@@ -2131,7 +2136,7 @@ main(int argc, char** argv)
 	if (ret != NSERROR_OK) {
 		warn_user(messages_get_errorcode(ret), 0);
 	} else {
-		netsurf_main_loop();
+		framebuffer_run();
 
 		browser_window_destroy(bw);
 	}
