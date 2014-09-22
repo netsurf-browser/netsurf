@@ -79,6 +79,7 @@
 #include "gtk/selection.h"
 #include "gtk/search.h"
 
+bool nsgtk_complete = false;
 
 char *toolbar_indices_file_location;
 char *res_dir_location;
@@ -484,49 +485,60 @@ static bool nslog_stream_configure(FILE *fptr)
 }
 
 
-
-static void nsgtk_poll(bool active)
+/**
+ * Run the gtk event loop.
+ *
+ * The same as the standard gtk_main loop except this ensures active
+ * FD are added to the gtk poll event set.
+ */
+static void nsgtk_main(void)
 {
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
 	int max_fd;
 	GPollFD *fd_list[1000];
-	unsigned int fd_count = 0;
-	bool block = true;
+	unsigned int fd_count;
 
-	fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
-	for (int i = 0; i <= max_fd; i++) {
-		if (FD_ISSET(i, &read_fd_set)) {
-			GPollFD *fd = malloc(sizeof *fd);
-			fd->fd = i;
-			fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
-			g_main_context_add_poll(0, fd, 0);
-			fd_list[fd_count++] = fd;
+	while (!nsgtk_complete) {
+		max_fd = -1;
+		fd_count = 0;
+		FD_ZERO(&read_fd_set);
+		FD_ZERO(&write_fd_set);
+		FD_ZERO(&exc_fd_set);
+
+		fetcher_fdset(&read_fd_set, &write_fd_set, &exc_fd_set, &max_fd);
+		for (int i = 0; i <= max_fd; i++) {
+			if (FD_ISSET(i, &read_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &write_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_OUT | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &exc_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
 		}
-		if (FD_ISSET(i, &write_fd_set)) {
-			GPollFD *fd = malloc(sizeof *fd);
-			fd->fd = i;
-			fd->events = G_IO_OUT | G_IO_ERR;
-			g_main_context_add_poll(0, fd, 0);
-			fd_list[fd_count++] = fd;
-		}
-		if (FD_ISSET(i, &exc_fd_set)) {
-			GPollFD *fd = malloc(sizeof *fd);
-			fd->fd = i;
-			fd->events = G_IO_ERR;
-			g_main_context_add_poll(0, fd, 0);
-			fd_list[fd_count++] = fd;
+
+		schedule_run();
+
+		gtk_main_iteration();
+
+		for (unsigned int i = 0; i != fd_count; i++) {
+			g_main_context_remove_poll(0, fd_list[i]);
+			free(fd_list[i]);
 		}
 	}
-
-	schedule_run();
-
-	gtk_main_iteration_do(block);
-
-	for (unsigned int i = 0; i != fd_count; i++) {
-		g_main_context_remove_poll(0, fd_list[i]);
-		free(fd_list[i]);
-	}
-
 }
 
 
@@ -1229,7 +1241,6 @@ static nserror nsgtk_option_init(int *pargc, char** argv)
 }
 
 static struct gui_browser_table nsgtk_browser_table = {
-	.poll = nsgtk_poll,
 	.schedule = nsgtk_schedule,
 
 	.quit = gui_quit,
@@ -1260,7 +1271,7 @@ int main(int argc, char** argv)
 
         ret = netsurf_register(&nsgtk_table);
         if (ret != NSERROR_OK) {
-		die("NetSurf operation table failed registration");
+		die("NetSurf operation table failed registration\n");
         }
 
 	/* build the common resource path list */
@@ -1322,7 +1333,7 @@ int main(int argc, char** argv)
 		fprintf(stderr, "NetSurf gtk specific initialise failed (%s)\n",
 			messages_get_errorcode(ret));
 	} else {
-		netsurf_main_loop();
+		nsgtk_main();
 	}
 
 	/* common finalisation */
