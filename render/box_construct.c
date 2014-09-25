@@ -930,7 +930,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	/* Kick off fetch for any background image */
 	if (css_computed_background_image(box->style, &bgimage_uri) == 
 			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL &&
-	    nsoption_bool(background_images) == true) {
+			nsoption_bool(background_images) == true) {
 		nsurl *url;
 		nserror error;
 
@@ -939,16 +939,17 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		 *       nsurl_joined it.  Can this be improved?
 		 *       For now, just making another nsurl. */
 		error = nsurl_create(lwc_string_data(bgimage_uri), &url);
-		if (error != NSERROR_OK)
-			return false;
-
-		if (html_fetch_object(ctx->content, url, box, image_types,
-				ctx->content->base.available_width, 1000,
-				true) == false) {
+		if (error == NSERROR_OK) {
+			/* Fetch image if we got a valid URL */
+			if (html_fetch_object(ctx->content, url, box,
+					image_types,
+					ctx->content->base.available_width,
+					1000, true) == false) {
+				nsurl_unref(url);
+				return false;
+			}
 			nsurl_unref(url);
-			return false;
 		}
-		nsurl_unref(url);
 	}
 
 	if (*convert_children)
