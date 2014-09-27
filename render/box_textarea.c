@@ -155,6 +155,13 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 	{
 		/* Request redraw of the required textarea rectangle */
 		int x, y;
+
+		if (html->reflowing == true) {
+			/* Can't redraw during layout, and it will
+			 * be redrawn after layout anyway. */
+			break;
+		}
+
 		box_coords(box, &x, &y);
 
 		content__request_redraw((struct content *)html,

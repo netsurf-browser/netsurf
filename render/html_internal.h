@@ -94,6 +94,9 @@ typedef struct html_content {
 	/** Whether a meta refresh has been handled */
 	bool refresh;
 
+	/** Whether a layout (reflow) is in progress */
+	bool reflowing;
+
 	/* Title element node */
 	dom_node *title;
 

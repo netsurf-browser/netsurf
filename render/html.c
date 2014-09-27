@@ -738,6 +738,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->base_target = NULL;
 	c->aborted = false;
 	c->refresh = false;
+	c->reflowing = false;
 	c->title = NULL;
 	c->bctx = NULL;
 	c->layout = NULL;
@@ -1263,6 +1264,8 @@ static void html_reformat(struct content *c, int width, int height)
 
 	time_before = wallclock();
 
+	htmlc->reflowing = true;
+
 	layout_document(htmlc, width, height);
 	layout = htmlc->layout;
 
@@ -1281,6 +1284,8 @@ static void html_reformat(struct content *c, int width, int height)
 		c->height = layout->y + layout->descendant_y1;
 
 	selection_reinit(&htmlc->sel, htmlc->layout);
+
+	htmlc->reflowing = false;
 
 	time_taken = wallclock() - time_before;
 	c->reformat_time = wallclock() +

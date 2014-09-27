@@ -1154,6 +1154,13 @@ void html_overflow_scroll_callback(void *client_data,
 	
 	switch(scrollbar_data->msg) {
 	case SCROLLBAR_MSG_MOVED:
+
+		if (html->reflowing == true) {
+			/* Can't redraw during layout, and it will
+			 * be redrawn after layout anyway. */
+			break;
+		}
+
 		html__redraw_a_box(html, box);
 		break;
 	case SCROLLBAR_MSG_SCROLL_START:
