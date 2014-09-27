@@ -915,6 +915,7 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	unsigned int len;
 	unsigned int start;
 	size_t b_off;
+	size_t b_start_line_end;
 	int x;
 	char *space, *para_end;
 	unsigned int line; /* line count */
@@ -953,6 +954,9 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	 * a soft-wrapped line */
 	if (start != 0)
 		start--;
+
+	/* Record original end pos of start line */
+	b_start_line_end = ta->lines[start].b_start + ta->lines[start].b_length;
 
 	/* During layout we may decide we need to restart again from the
 	 * textarea's first line. */
@@ -1156,9 +1160,15 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	ta->v_extent = v_extent;
 	ta->line_count = line;
 
+	/* Update start line end byte pos, if it's increased */
+	if (ta->lines[start].b_start + ta->lines[start].b_length >
+			b_start_line_end) {
+		b_start_line_end = ta->lines[start].b_start +
+				ta->lines[start].b_length;
+	}
+
 	/* Don't need to redraw above changes, so update redraw request rect */
-	if (ta->lines[start].b_start + ta->lines[start].b_length < b_start &&
-			restart == false) {
+	if (b_start_line_end < b_start && restart == false) {
 		/* Start line is unchanged */
 		start++;
 		skip_line = true;
