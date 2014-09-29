@@ -195,7 +195,7 @@ static nserror amiga_path_to_nsurl(const char *path, struct nsurl **url_out)
 	BPTR lock = 0;
 	nserror ret;
 
-	if(lock = Lock(path, MODE_OLDFILE))
+	if(lock = Lock(path, SHARED_LOCK))
 	{
 		DevNameFromLock(lock, newpath, sizeof newpath, DN_FULLPATH);
 		UnLock(lock);
