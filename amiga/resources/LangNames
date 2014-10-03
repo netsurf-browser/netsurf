@@ -16,6 +16,7 @@ belarusian:be
 bosnian:bs
 bulgarian:bg
 catalan:ca
+chinese:zh
 croatian:hr
 czech:cs
 danish:da
@@ -35,6 +36,8 @@ hungarian:hu
 icelandic:is
 irish:ga
 italian:it
+japanese:ja
+korean:ko
 latvian:lv
 lithuanian:lt
 macedonian:mk
@@ -57,3 +60,4 @@ thai:th
 turkish:tr
 ukrainian:uk
 welsh:cy
+
