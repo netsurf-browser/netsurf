@@ -62,6 +62,11 @@ if [ "x${TARGET_ABI}" = "xHaiku" ]; then
     # tools required to build the browser
     NS_TOOLS=""
     NS_FRONTEND_LIBS=""
+elif [ "x${TARGET_ABI}" = "xDarwin" ]; then
+    # tools required to build the browser
+    NS_TOOLS=""
+    # libraries required for the Darwin target abi
+    NS_FRONTEND_LIBS="libsvgtiny libnsfb"
 elif [ "x${TARGET_ABI}" = "xriscos" ]; then
     # tools required to build the browser
     NS_TOOLS="nsgenbind"
@@ -128,6 +133,12 @@ else
     NS_GTK_GEN="gtk+ 2 toolkit library, librsvg2 library"
 fi
 
+NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
+
+ns-macport-install()
+{
+    PATH=/opt/local/bin:/opt/local/sbin:$PATH sudo /opt/local/bin/port install $(echo ${NS_DEV_MACPORT})
+}
 
 # Genertic OS package install
 #  looks for package managers and tries to use them if present
@@ -139,6 +150,8 @@ ns-package-install()
 	ns-yum-install
     elif [ -x "/bin/pkgman" ]; then
 	ns-pkgman-install
+    elif [ -x "/opt/local/bin/port" ]; then
+	ns-macport-install
     else
         echo "Unable to determine OS packaging system in use."
 	echo "Please ensure development packages are installed for:"
