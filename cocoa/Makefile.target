@@ -25,7 +25,7 @@ endif
 # for timerisset()
 CFLAGS += -D_DARWIN_C_SOURCE
 
-MACOSX_VERSION ?= 10.5
+MACOSX_VERSION ?= 10.6
 SDK_VERSION ?= $(MACOSX_VERSION)
 SDK_PATH ?= $(DEVELOPER_PATH)/SDKs/MacOSX$(SDK_VERSION).sdk
 SDK_FLAGS := -isysroot $(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION)
