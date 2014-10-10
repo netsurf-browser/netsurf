@@ -17,9 +17,11 @@
  */
 
 /** \file
- * 	Printer interface - contains plotter to use, functions for
- * initialization, handling pages and cleaning up.
-*/
+ * Printer interface.
+ *
+ * Interface to generic plotters, initialization, handling pages and
+ * cleaning up.
+ */
 
 #ifndef NETSURF_DESKTOP_PRINTER_H
 #define NETSURF_DESKTOP_PRINTER_H

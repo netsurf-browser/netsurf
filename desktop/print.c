@@ -17,8 +17,8 @@
  */
 
 /** \file
- * Output-in-pages implementation
-*/
+ * Implementation of paginated output.
+ */
 
 #include "utils/config.h"
 
@@ -194,7 +194,7 @@ bool print_apply_settings(hlcache_handle *content,
 	if (settings == NULL)
 		return false;
 	
-	/*Apply settings - adjust page size etc*/
+	/* Apply settings - adjust page size etc */
 
 	page_content_width = (settings->page_width - 
 			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
@@ -243,8 +243,8 @@ bool print_cleanup(hlcache_handle *content, const struct printer *printer,
  * \param configuration the requested configuration
  * \param filename the filename or NULL
  * \param font handling functions
- * \return print_settings in case if successful, NULL if unknown configuration \
- * 	or lack of memory.
+ * \return print_settings in case if successful, NULL if unknown
+ *                        configuration or lack of memory.
  */
 struct print_settings *print_make_settings(print_configuration configuration,
 		const char *filename, const struct font_functions *font_func)

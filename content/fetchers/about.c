@@ -16,9 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* about: URL handling. 
+/** \file content/fetchers/about.c
  *
- * Based on the data fetcher by Rob Kendrick 
+ * URL handling for the "about" scheme.
+ *
+ * Based on the data fetcher by Rob Kendrick
  * This fetcher provides a simple scheme for the user to access
  * information from the browser from a known, fixed URL.
  */
@@ -174,10 +176,13 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
-/** Handler to generate about:cache page.
+/**
+ * Handler to generate about:cache page.
  *
- * Shows details of current iamge cache
+ * Shows details of current image cache.
  *
+ * \param ctx The fetcher context.
+ * \return true if handled false if aborted.
  */
 static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 {
@@ -199,7 +204,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
 	/* page head */
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 			"<html>\n<head>\n"
 			"<title>NetSurf Browser Image Cache Status</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -216,7 +221,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 		goto fetch_about_imagecache_handler_aborted;
 
 	/* image cache summary */
-	slen = image_cache_snsummaryf(buffer, sizeof(buffer), 
+	slen = image_cache_snsummaryf(buffer, sizeof(buffer),
 		"<p>Configured limit of %a hysteresis of %b</p>\n"
 		"<p>Total bitmap size in use %c (in %d)</p>\n"
 		"<p>Age %es</p>\n"
@@ -225,7 +230,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 		"<p>Cache total/hit/miss/fail (counts) %j/%k/%l/%m "
 				"(%pj%%/%pk%%/%pl%%/%pm%%)</p>\n"
 		"<p>Cache total/hit/miss/fail (size) %n/%o/%q/%r "
-				"(%pn%%/%po%%/%pq%%/%pr%%)</p>\n" 
+				"(%pn%%/%po%%/%pq%%/%pr%%)</p>\n"
 		"<p>Total images never rendered: %s "
 				"(includes %t that were converted)</p>\n"
 		"<p>Total number of excessive conversions: %u "
@@ -233,7 +238,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				"</p>\n"
 		"<p>Bitmap of size %w had most (%x) conversions</p>\n"
 		"<h2>Current image cache contents</h2>\n");
-	if (slen >= (int) (sizeof(buffer))) 
+	if (slen >= (int) (sizeof(buffer)))
 		goto fetch_about_imagecache_handler_aborted; /* overflow */
 
 	msg.data.header_or_data.len = slen;
@@ -242,7 +247,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 
 
 	/* image cache entry table */
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 			"<p class=\"imagecachelist\">\n"
 			"<strong>"
 			"<span>Entry</span>"
@@ -267,7 +272,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				"<span>%s</span>"
 				"<span>%o</span>"
 				"</a>\n");
-		if (res <= 0) 
+		if (res <= 0)
 			break; /* last option */
 
 		if (res >= (int) (sizeof buffer - slen)) {
@@ -283,7 +288,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 		}
 	} while (res > 0);
 
-	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+	slen += snprintf(buffer + slen, sizeof buffer - slen,
 			 "</p>\n</body>\n</html>\n");
 
 	msg.data.header_or_data.len = slen;
@@ -319,7 +324,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 			"<html>\n<head>\n"
 			"<title>NetSurf Browser Config</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -335,11 +340,11 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"<tr><th>Option</th><th>Type</th><th>Provenance</th><th>Setting</th></tr>\n");
 
 	do {
-		res = nsoption_snoptionf(buffer + slen, 
+		res = nsoption_snoptionf(buffer + slen,
 					 sizeof buffer - slen,
 					 opt_loop,
 					 "<tr><th>%k</th><td>%t</td><td>%p</td><td>%V</td></tr>\n");
-		if (res <= 0) 
+		if (res <= 0)
 			break; /* last option */
 
 		if (res >= (int) (sizeof buffer - slen)) {
@@ -355,7 +360,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 		}
 	} while (res > 0);
 
-	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+	slen += snprintf(buffer + slen, sizeof buffer - slen,
 			 "</table>\n</body>\n</html>\n");
 
 	msg.data.header_or_data.len = slen;
@@ -373,7 +378,7 @@ fetch_about_config_handler_aborted:
 
 
 /** Generate the text of a Choices file which represents the current
- * in use options. 
+ * in use options.
  */
 static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 {
@@ -394,15 +399,15 @@ static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 		 "# Automatically generated current NetSurf browser Choices\n");
 
 	do {
-		res = nsoption_snoptionf(buffer + slen, 
-				sizeof buffer - slen, 
-				opt_loop, 
+		res = nsoption_snoptionf(buffer + slen,
+				sizeof buffer - slen,
+				opt_loop,
 				"%k:%v\n");
-		if (res <= 0) 
+		if (res <= 0)
 			break; /* last option */
 
 		if (res >= (int) (sizeof buffer - slen)) {
@@ -443,7 +448,7 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 	int code = 200;
 	int slen;
 	int i;
-	
+
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
@@ -455,27 +460,27 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 		 "# Automatically generated by NetSurf build system\n\n");
 
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_testament_handler_aborted;
-	
-	slen = snprintf(buffer, sizeof buffer, 
+
+	slen = snprintf(buffer, sizeof buffer,
 #if defined(WT_BRANCHISTRUNK) || defined(WT_BRANCHISMASTER)
 			"# This is a *DEVELOPMENT* build from the main line.\n\n"
 #elif defined(WT_BRANCHISTAG) && (WT_MODIFIED == 0)
 			"# This is a tagged build of NetSurf\n"
 #ifdef WT_TAGIS
-                        "#      The tag used was '" WT_TAGIS "'\n\n"
+			"#      The tag used was '" WT_TAGIS "'\n\n"
 #else
-                        "\n"
+			"\n"
 #endif
 #elif defined(WT_NO_SVN) || defined(WT_NO_GIT)
 			"# This NetSurf was built outside of our revision "
 			"control environment.\n"
-			"# This testament is therefore very useful.\n\n"
+			"# This testament is therefore not very useful.\n\n"
 #else
 			"# This NetSurf was built from a branch (" WT_BRANCHPATH ").\n\n"
 #endif
@@ -484,29 +489,29 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 #endif
 			);
 
-	msg.data.header_or_data.len = slen;	
+	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_testament_handler_aborted;
 
-	
-	slen = snprintf(buffer, sizeof buffer, 
+
+	slen = snprintf(buffer, sizeof buffer,
 			"Built by %s (%s) from %s at revision %s on %s\n\n",
 			GECOS, USERNAME, WT_BRANCHPATH, WT_REVID, WT_COMPILEDATE);
 
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_testament_handler_aborted;
-	
-	slen = snprintf(buffer, sizeof buffer, 
+
+	slen = snprintf(buffer, sizeof buffer,
 			"Built on %s in %s\n\n",
 			WT_HOSTNAME, WT_ROOT);
 
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_testament_handler_aborted;
-	
+
 	if (WT_MODIFIED > 0) {
-		slen = snprintf(buffer, sizeof buffer, 
+		slen = snprintf(buffer, sizeof buffer,
 				"Working tree has %d modification%s\n\n",
 				WT_MODIFIED, WT_MODIFIED == 1 ? "" : "s");
 	} else {
@@ -517,7 +522,7 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
 		goto fetch_about_testament_handler_aborted;
-	
+
 	for (i = 0; i < WT_MODIFIED; ++i) {
 		slen = snprintf(buffer, sizeof buffer,
 				"  %s  %s\n",
@@ -526,10 +531,10 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 		msg.data.header_or_data.len = slen;
 		if (fetch_about_send_callback(&msg, ctx))
 			goto fetch_about_testament_handler_aborted;
-		
+
 	}
 
-	msg.type = FETCH_FINISHED;	
+	msg.type = FETCH_FINISHED;
 	fetch_about_send_callback(&msg, ctx);
 
 	return true;
@@ -604,15 +609,15 @@ struct about_handlers about_handler_list[] = {
 			fetch_about_imagecache_handler, true },
 	/* The default blank page */
 	{ "blank", SLEN("blank"), NULL,
-			fetch_about_blank_handler, true } 
+			fetch_about_blank_handler, true }
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) /		\
 		sizeof(struct about_handlers))
 
 /**
- * List all the valid about: paths available 
- * 
+ * List all the valid about: paths available
+ *
  * \param ctx The fetch context.
  * \return true for sucess or false to generate an error.
  */
@@ -635,7 +640,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 	msg.type = FETCH_DATA;
 	msg.data.header_or_data.buf = (const uint8_t *) buffer;
 
-	slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer,
 			"<html>\n<head>\n"
 			"<title>NetSurf List of About pages</title>\n"
 			"<link rel=\"stylesheet\" type=\"text/css\" "
@@ -655,11 +660,11 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		if (about_handler_list[abt_loop].hidden)
 			continue;
 
-		res = snprintf(buffer + slen, sizeof buffer - slen, 
-			       "<li><a href=\"about:%s\">about:%s</a></li>\n", 
-			       about_handler_list[abt_loop].name, 
+		res = snprintf(buffer + slen, sizeof buffer - slen,
+			       "<li><a href=\"about:%s\">about:%s</a></li>\n",
+			       about_handler_list[abt_loop].name,
 			       about_handler_list[abt_loop].name);
-		if (res <= 0) 
+		if (res <= 0)
 			break; /* last option */
 
 		if (res >= (int)(sizeof buffer - slen)) {
@@ -674,7 +679,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		}
 	}
 
-	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+	slen += snprintf(buffer + slen, sizeof buffer - slen,
 			 "</ul>\n</body>\n</html>\n");
 
 	msg.data.header_or_data.len = slen;
@@ -698,8 +703,8 @@ static bool fetch_about_initialise(lwc_string *scheme)
 	lwc_error error;
 
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
-		error = lwc_intern_string(about_handler_list[abt_loop].name, 
-					about_handler_list[abt_loop].name_len, 
+		error = lwc_intern_string(about_handler_list[abt_loop].name,
+					about_handler_list[abt_loop].name_len,
 					&about_handler_list[abt_loop].lname);
 		if (error != lwc_error_ok) {
 			while (abt_loop-- != 0) {
@@ -747,15 +752,15 @@ fetch_about_setup(struct fetch *fetchh,
 
 	path = nsurl_get_component(url, NSURL_PATH);
 
-	for (handler_loop = 0; 
-	     handler_loop < about_handler_list_len; 
+	for (handler_loop = 0;
+	     handler_loop < about_handler_list_len;
 	     handler_loop++) {
 		ctx->handler = about_handler_list[handler_loop].handler;
-		if (lwc_string_isequal(path, 
-				       about_handler_list[handler_loop].lname, 
+		if (lwc_string_isequal(path,
+				       about_handler_list[handler_loop].lname,
 				       &match) == lwc_error_ok && match) {
 			break;
-		}		
+		}
 	}
 
 	if (path != NULL)

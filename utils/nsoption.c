@@ -602,7 +602,7 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 		return NSERROR_NOT_FOUND;
 	}
 
-	LOG(("Sucessfully opened '%s' for Options file", path));
+	LOG(("Successfully opened '%s' for Options file", path));
 
 	while (fgets(s, 100, fp)) {
 		char *colon, *value;
