@@ -77,6 +77,8 @@
 #include "atari/filetype.h"
 #include "cflib.h"
 
+static bool atari_quit = false;
+
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
 void *h_gem_rsrc;
@@ -117,7 +119,7 @@ static void gui_window_set_url(struct gui_window *w, const char *url);
 /**
  * Core atari event processing.
  */
-static void gui_poll(bool active)
+static void atari_poll(void)
 {
 
     struct gui_window *tmp;
@@ -154,7 +156,7 @@ static void gui_poll(bool active)
 		break;
 
 	    case AP_TERM:
-		netsurf_quit = true;
+		atari_quit = true;
 		break;
 	    default:
 		break;
@@ -959,6 +961,11 @@ static nserror set_defaults(struct nsoption_s *defaults)
     return NSERROR_OK;
 }
 
+static char *theapp = (char*)"NetSurf";
+
+/**
+ * Initialise atari gui.
+ */
 static void gui_init(int argc, char** argv)
 {
     char buf[PATH_MAX];
@@ -1020,7 +1027,6 @@ static void gui_init(int argc, char** argv)
     LOG(("Initializing NKC..."));
     nkc_init();
 
-
     LOG(("Initializing plotters..."));
     plot_init(nsoption_charp(atari_font_driver));
 
@@ -1028,11 +1034,7 @@ static void gui_init(int argc, char** argv)
     aes_event_in.emi_m1.g_w = 1;
     aes_event_in.emi_m1.g_h = 1;
     //next_poll = clock() + (CLOCKS_PER_SEC>>3);
-}
 
-static char *theapp = (char*)"NetSurf";
-static void gui_init2(int argc, char** argv)
-{
     deskmenu_init();
     menu_register( -1, theapp);
     if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
@@ -1087,7 +1089,6 @@ static struct gui_fetch_table atari_fetch_table = {
 };
 
 static struct gui_browser_table atari_browser_table = {
-    .poll = gui_poll,
     .schedule = atari_schedule,
 
     .quit = gui_quit,
@@ -1096,7 +1097,8 @@ static struct gui_browser_table atari_browser_table = {
 };
 
 /* #define WITH_DBG_LOGFILE 1 */
-/** Entry point from OS.
+/**
+ * Entry point from OS.
  *
  * /param argc The number of arguments in the string vector.
  * /param argv The argument string vector.
@@ -1170,9 +1172,6 @@ int main(int argc, char** argv)
     LOG(("Initializing GUI..."));
     gui_init(argc, argv);
 
-    LOG(("Initializing GUI2"));
-    gui_init2(argc, argv);
-
     graf_mouse( ARROW , NULL);
 
     LOG(("Creating initial browser window..."));
@@ -1197,8 +1196,10 @@ int main(int argc, char** argv)
     if (ret != NSERROR_OK) {
 	warn_user(messages_get_errorcode(ret), 0);
     } else {
-	LOG(("Entering NetSurf mainloop..."));
-	netsurf_main_loop();
+	LOG(("Entering Atari event mainloop..."));
+	while (!atari_quit) {
+	    atari_poll();
+	}
     }
 
     netsurf_exit();
