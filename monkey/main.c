@@ -86,7 +86,11 @@ static void quit_handler(int argc, char **argv)
  */
 static nserror set_defaults(struct nsoption_s *defaults)
 {
-  /* currently no default overrides */
+  /* Set defaults for absent option strings */
+  nsoption_setnull_charp(cookie_file, strdup("~/.netsurf/Cookies"));
+  nsoption_setnull_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
+  nsoption_setnull_charp(url_file, strdup("~/.netsurf/URLs"));
+
   return NSERROR_OK;
 }
 

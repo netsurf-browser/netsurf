@@ -58,8 +58,8 @@ monkey_process_command(void)
   char **nargv;
   
   if (fgets(buffer, PATH_MAX, stdin) == NULL) {
-    netsurf_quit = true;
-    return;
+    /* end of input or read error so issue QUIT */
+    sprintf(buffer, "QUIT\n");
   }
 
   /* remove newline */
