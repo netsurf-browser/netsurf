@@ -21,6 +21,6 @@
 
 void monkey_prepare_input(void);
 
-void monkey_poll(bool active);
+void monkey_poll(void);
 
 #endif /* NETSURF_MONKEY_POLL_H */

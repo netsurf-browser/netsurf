@@ -39,6 +39,8 @@
 
 char **respaths; /** resource search path vector */
 
+static bool monkey_done = false;
+
 /* Stolen from gtk/gui.c */
 static char **
 nsmonkey_init_resource(const char *resource_path)
@@ -75,7 +77,7 @@ static nserror gui_launch_url(struct nsurl *url)
 
 static void quit_handler(int argc, char **argv)
 {
-  netsurf_quit = true;
+  monkey_done = true;
 }
 
 /**
@@ -106,7 +108,6 @@ static bool nslog_stream_configure(FILE *fptr)
 }
 
 static struct gui_browser_table monkey_browser_table = {
-  .poll = monkey_poll,
   .schedule = monkey_schedule,
 
   .quit = monkey_quit,
@@ -176,7 +177,11 @@ main(int argc, char **argv)
   monkey_register_handler("WINDOW", monkey_window_handle_command);
 
   fprintf(stdout, "GENERIC STARTED\n");
-  netsurf_main_loop();
+
+  while (!monkey_done) {
+    monkey_poll();
+  }
+
   fprintf(stdout, "GENERIC CLOSING_DOWN\n");
   monkey_kill_browser_windows();
 

@@ -87,8 +87,7 @@ monkey_prepare_input(void)
   g_source_attach((GSource *)gs, NULL);
 }
 
-void
-monkey_poll(bool active)
+void monkey_poll(void)
 {
   fd_set read_fd_set, write_fd_set, exc_fd_set;
   int max_fd;
