@@ -150,6 +150,8 @@
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
+static bool ami_quit = false;
+
 extern struct gui_utf8_table *amiga_utf8_table;
 
 struct ami_gui_tb_userdata {
@@ -973,7 +975,7 @@ static void gui_init2(int argc, char** argv)
 		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
 		FreeVec(sendcmd);
 
-		netsurf_quit=true;
+		ami_quit=true;
 		return;
 	}
 
@@ -2502,12 +2504,6 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
-
-static void gui_poll(bool active)
-{
-	ami_get_msg();
-}
-
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
 {
 	struct Node *tab_node = gwin->bw->window->tab_node;
@@ -2629,7 +2625,7 @@ void ami_quit_netsurf(void)
 
 	if(IsMinListEmpty(window_list)) {
 		/* last window closed, so exit */
-		netsurf_quit = true;
+		ami_quit = true;
 	}
 }
 
@@ -2696,7 +2692,7 @@ void ami_try_quit(void)
 
 	if(nsoption_bool(close_no_quit) == false)
 	{
-		netsurf_quit = true;
+		ami_quit = true;
 		return;
 	}
 	else
@@ -5109,7 +5105,6 @@ static struct gui_search_web_table amiga_search_web_table = {
 };
 
 static struct gui_browser_table amiga_browser_table = {
-	.poll = gui_poll,
 	.schedule = ami_schedule,
 
 	.quit = gui_quit,
@@ -5224,7 +5219,9 @@ int main(int argc, char** argv)
 	AddPart(script, nsoption_charp(arexx_startup), 1024);
 	ami_arexx_execute(script);
 
-	netsurf_main_loop();
+	while (!ami_quit) {
+		ami_get_msg();
+	}
 
 	strlcpy(script, nsoption_charp(arexx_dir), 1024);
 	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
