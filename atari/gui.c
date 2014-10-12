@@ -285,7 +285,7 @@ void gui_window_destroy(struct gui_window *gw)
 	gw = window_list;
 	while( gw != NULL ) {
 	    if(gw->root) {
-		gui_set_input_gui_window(w);
+		gui_set_input_gui_window(gw);
 		break;
 	    }
 	    gw = gw->next;
