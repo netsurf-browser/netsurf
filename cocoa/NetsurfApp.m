@@ -47,10 +47,11 @@
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"
 #endif
 
-
 @implementation NetSurfApp
 
 @synthesize frontTab;
+
+static bool cocoa_done = false;
 
 - (void) loadOptions;
 {
@@ -83,8 +84,23 @@
 - (void) run;
 {
 	[self finishLaunching];
+
 	[self loadOptions];
-	netsurf_main_loop();
+
+    while (!cocoa_done) {
+        cocoa_autorelease();
+
+        NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask
+                                            untilDate: [NSDate distantFuture]
+                                               inMode: NSDefaultRunLoopMode
+                                              dequeue: YES];
+        if (nil != event) {
+            [NSApp sendEvent: event];
+            [NSApp updateWindows];
+        }
+
+    }
+
 	[self saveOptions];
 }
 
@@ -92,10 +108,16 @@
 {
 	[[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification object:self];
 	
-	netsurf_quit = true;
-	[self postEvent: [NSEvent otherEventWithType: NSApplicationDefined location: NSZeroPoint 
-								   modifierFlags: 0 timestamp: 0 windowNumber: 0 context: NULL 
-										 subtype: 0 data1: 0 data2: 0]  
+	cocoa_done = true;
+	[self postEvent: [NSEvent otherEventWithType: NSApplicationDefined
+                                        location: NSZeroPoint
+								   modifierFlags: 0
+                                       timestamp: 0
+                                    windowNumber: 0
+                                         context: NULL
+										 subtype: 0
+                                           data1: 0
+                                           data2: 0]
 			atStart: YES];
 }
 
@@ -190,15 +212,15 @@ int main( int argc, char **argv )
 		.clipboard = cocoa_clipboard_table,
 		.download = cocoa_download_table,
 		.fetch = cocoa_fetch_table,
-                .search = cocoa_search_table,
+        .search = cocoa_search_table,
 	};
 
 	cocoa_autorelease();
 
-        error = netsurf_register(&cocoa_table);
-        if (error != NSERROR_OK) {
-		die("NetSurf operation table failed registration");
-        }
+    error = netsurf_register(&cocoa_table);
+    if (error != NSERROR_OK) {
+        die("NetSurf operation table failed registration");
+    }
 		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();

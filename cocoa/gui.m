@@ -49,24 +49,12 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-static void gui_poll(bool active)
-{
-	cocoa_autorelease();
-	
-	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: [NSDate distantFuture]
-										   inMode: NSDefaultRunLoopMode dequeue: YES];
-	
-	if (nil != event) {
-		[NSApp sendEvent: event];
-		[NSApp updateWindows];	
-	}
-}
-
 struct browser_window;
 
-static struct gui_window *gui_window_create(struct browser_window *bw,
-		struct gui_window *existing,
-		gui_window_create_flags flags)
+static struct gui_window *
+gui_window_create(struct browser_window *bw,
+                  struct gui_window *existing,
+                  gui_window_create_flags flags)
 {
 	BrowserWindowController *window = nil;
 
@@ -268,7 +256,7 @@ static void gui_create_form_select_menu(struct browser_window *bw,
 static nserror gui_launch_url(nsurl *url)
 {
 	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: nsurl_access(url)]]];
-        return NSERROR_OK;
+    return NSERROR_OK;
 }
 
 struct ssl_cert_info;
@@ -290,7 +278,7 @@ static struct gui_window_table window_table = {
 	.set_scroll = gui_window_set_scroll,
 	.get_dimensions = gui_window_get_dimensions,
 	.update_extent = gui_window_update_extent,
-        .reformat = cocoa_window_reformat,
+    .reformat = cocoa_window_reformat,
 
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
@@ -299,7 +287,7 @@ static struct gui_window_table window_table = {
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
 	.remove_caret = gui_window_remove_caret,
-        .new_content = gui_window_new_content,
+    .new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
 };
@@ -308,8 +296,7 @@ struct gui_window_table *cocoa_window_table = &window_table;
 
 
 static struct gui_browser_table browser_table = {
-	.poll = gui_poll,
-        .schedule = cocoa_schedule,
+    .schedule = cocoa_schedule,
 
 	.launch_url = gui_launch_url,
 	.create_form_select_menu = gui_create_form_select_menu,
