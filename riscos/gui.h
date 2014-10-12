@@ -72,6 +72,8 @@ typedef enum { GUI_DRAG_NONE, GUI_DRAG_DOWNLOAD_SAVE, GUI_DRAG_SAVE }
 
 extern ro_gui_drag_type gui_current_drag_type;
 
+extern bool riscos_done;
+
 /** RISC OS data for a browser window. */
 struct gui_window {
 	/** Associated platform-independent browser window data. */

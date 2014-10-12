@@ -85,6 +85,8 @@
 #include "riscos/content-handlers/draw.h"
 #include "riscos/content-handlers/sprite.h"
 
+bool riscos_done = false;
+
 extern bool ro_plot_patterned_lines;
 
 int os_version = 0;
@@ -1777,7 +1779,7 @@ static void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_gui_hotlist_add_cleanup();
 			break;
 		case message_QUIT:
-			netsurf_quit = true;
+			riscos_done = true;
 			break;
 	}
 }
@@ -1854,7 +1856,7 @@ static void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 /**
  * Poll the RISC OS wimp for events.
  */
-static void riscos_poll(bool active)
+static void riscos_poll(void)
 {
 	wimp_event_no event;
 	wimp_block block;
@@ -2401,7 +2403,6 @@ static struct gui_fetch_table riscos_fetch_table = {
 };
 
 static struct gui_browser_table riscos_browser_table = {
-	.poll = riscos_poll,
 	.schedule = riscos_schedule,
 
 	.quit = gui_quit,
@@ -2524,7 +2525,9 @@ int main(int argc, char** argv)
 		warn_user(messages_get_errorcode(ret), 0);
 	}
 
-	netsurf_main_loop();
+	while (!riscos_done) {
+		riscos_poll();
+	}
 
 	netsurf_exit();
 

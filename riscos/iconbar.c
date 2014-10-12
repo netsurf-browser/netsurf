@@ -239,7 +239,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case APPLICATION_QUIT:
 		if (ro_gui_prequit()) {
 			LOG(("QUIT in response to user request"));
-			netsurf_quit = true;
+			riscos_done = true;
 		}
 		return true;
 	default:

@@ -1599,7 +1599,7 @@ void ro_gui_download_close_confirmed(query_id id, enum query_response res, void 
 
 		/* and restart the shutdown */
 		if (ro_gui_prequit())
-			netsurf_quit = true;
+			riscos_done = true;
 	}
 	else
 		ro_gui_download_window_destroy(dw, false);
