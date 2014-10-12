@@ -61,6 +61,8 @@
 #include "windows/windbg.h"
 #include "windows/filetype.h"
 
+static bool win32_quit = false;
+
 HINSTANCE hInstance; /** win32 application instance handle. */
 
 struct gui_window *input_window = NULL;
@@ -95,37 +97,42 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
 	browser_window_set_scale(gw->bw, scale, true);
 }
 
-
-static void win32_poll(bool active)
+/* exported interface documented in gui.h */
+void win32_run(void)
 {
 	MSG Msg; /* message from system */
 	BOOL bRet; /* message fetch result */
 	int timeout; /* timeout in miliseconds */
 	UINT timer_id = 0;
 
-	/* run the scheduler and discover how long to wait for the next event */
-	timeout = schedule_run();
+	while (!win32_quit) {
+		/* run the scheduler and discover how long to wait for
+		 * the next event.
+		 */
+		timeout = schedule_run();
 
-	if (timeout == 0) {
-		bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
-	} else {
-		if (timeout > 0) {
-			/* set up a timer to ensure we get woken */
-			timer_id = SetTimer(NULL, 0, timeout, NULL);
+		if (timeout == 0) {
+			bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
+		} else {
+			if (timeout > 0) {
+				/* set up a timer to ensure we get woken */
+				timer_id = SetTimer(NULL, 0, timeout, NULL);
+			}
+
+			/* wait for a message */
+			bRet = GetMessage(&Msg, NULL, 0, 0);
+
+			/* if a timer was sucessfully created remove it */
+			if (timer_id != 0) {
+				KillTimer(NULL, timer_id);
+				timer_id = 0;
+			}
 		}
 
-		/* wait for a message */
-		bRet = GetMessage(&Msg, NULL, 0, 0);
-
-		/* if a timer was sucessfully created remove it */
-		if (timer_id != 0) {
-			KillTimer(NULL, timer_id);
+		if (bRet > 0) {
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
 		}
-	}
-
-	if (bRet > 0) {
-		TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
 	}
 }
 
@@ -1124,7 +1131,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		RemoveProp(hwnd, TEXT("GuiWnd"));
 		browser_window_destroy(gw->bw);
 		if (--open_windows <= 0) {
-			netsurf_quit = true;
+			win32_quit = true;
 		}
 		break;
 
@@ -2126,7 +2133,6 @@ struct gui_fetch_table *win32_fetch_table = &fetch_table;
 
 
 static struct gui_browser_table browser_table = {
-	.poll = win32_poll,
 	.schedule = win32_schedule,
 };
 

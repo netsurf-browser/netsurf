@@ -54,7 +54,7 @@ static nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-/** 
+/**
  * Ensures output logging stream is available
  */
 static bool nslog_ensure(FILE *fptr)
@@ -70,7 +70,7 @@ static bool nslog_ensure(FILE *fptr)
 }
 
 /**
- * Set option defaults for framebuffer frontend
+ * Set option defaults for windows frontend
  *
  * @param defaults The option table to update.
  * @return error status.
@@ -202,7 +202,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	if (ret != NSERROR_OK) {
 		warn_user(messages_get_errorcode(ret), 0);
 	} else {
-		netsurf_main_loop();
+		win32_run();
 	}
 
 	netsurf_exit();

@@ -97,5 +97,9 @@ nserror nsws_create_main_class(HINSTANCE hinstance);
  */
 bool nsws_window_go(HWND hwnd, const char *url);
 
+/**
+ * Run the win32 message loop with scheduling
+ */
+void win32_run(void);
 
 #endif 
