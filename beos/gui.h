@@ -29,12 +29,15 @@
 
 #define CALLED() fprintf(stderr, "%s()\n", __FUNCTION__);
 
+extern bool nsbeos_done;
+
 extern bool replicated;
 int gui_init_replicant(int argc, char** argv);
 
 extern "C" void gui_401login_open(nsurl *url, const char *realm,
 				  nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
+extern "C" void nsbeos_gui_poll(void);
 
 extern char *options_file_location;
 

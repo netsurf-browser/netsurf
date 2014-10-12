@@ -456,7 +456,7 @@ void nsbeos_dispatch_event(BMessage *message)
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			// from the BApplication
-			netsurf_quit = true;
+			nsbeos_done = true;
 			break;
 		case B_ABOUT_REQUESTED:
 		{

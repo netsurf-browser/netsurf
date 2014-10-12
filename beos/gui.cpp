@@ -84,6 +84,8 @@ static void *myrealloc(void *ptr, size_t len, void *pw);
 // enable using resources instead of files
 #define USE_RESOURCES 1
 
+bool nsbeos_done = false;
+
 bool replicated = false; /**< if we are running as a replicant */
 
 char *options_file_location;
@@ -713,7 +715,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 }
 
 
-static void gui_poll(bool active)
+void nsbeos_gui_poll(void)
 {
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
 	int max_fd;
@@ -978,7 +980,7 @@ static struct gui_fetch_table beos_fetch_table = {
 };
 
 static struct gui_browser_table beos_browser_table = {
-	gui_poll,
+	NULL, //nsbeos_gui_poll,
 	beos_schedule,
 	gui_quit,
 	gui_launch_url,
@@ -1038,7 +1040,9 @@ int main(int argc, char** argv)
 
 	gui_init(argc, argv);
 
-	netsurf_main_loop();
+	while (!nsbeos_done) {
+		nsbeos_gui_poll();
+	}
 
 	netsurf_exit();
 

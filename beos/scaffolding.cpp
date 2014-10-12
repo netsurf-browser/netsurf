@@ -754,7 +754,10 @@ int32 nsbeos_replicant_main_thread(void *_arg)
 	struct replicant_thread_info *info = (struct replicant_thread_info *)_arg;
 	int32 ret = 0;
 
-	netsurf_main_loop();
+	while (!nsbeos_done) {
+		nsbeos_gui_poll();
+	}
+
 	netsurf_exit();
 	delete info;
 	delete_sem(replicant_done_sem);
@@ -769,7 +772,7 @@ static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffold
 	LOG(("Being Destroyed = %d", g->being_destroyed));
 
 	if (--open_windows == 0)
-		netsurf_quit = true;
+		nsbeos_done = true;
 
 	if (window) {
 		window->Lock();
@@ -1275,7 +1278,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		}
 			break;
 		case APPLICATION_QUIT:
-			netsurf_quit = true;
+			nsbeos_done = true;
 			break;
 		default:
 			break;
