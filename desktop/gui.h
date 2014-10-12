@@ -106,8 +106,10 @@ struct gui_window_table {
 
 	/**
 	 * Destroy previously created gui window
+	 *
+	 * \param gw The gui window to destroy.
 	 */
-	void (*destroy)(struct gui_window *g);
+	void (*destroy)(struct gui_window *gw);
 
 	/**
 	 * Force a redraw of the entire contents of a window.
@@ -193,12 +195,20 @@ struct gui_window_table {
 	void (*set_title)(struct gui_window *g, const char *title);
 
 	/**
-	 * set the navigation url.
+	 * Set the navigation url.
+	 *
+	 * \param gw window to update.
+	 * \param url The url to use as icon.
 	 */
-	void (*set_url)(struct gui_window *g, const char *url);
+	void (*set_url)(struct gui_window *gw, const char *url);
 
-	/** set favicon */
-	void (*set_icon)(struct gui_window *g, struct hlcache_handle *icon);
+	/**
+	 * Set a favicon for a gui window.
+	 *
+	 * \param gw window to update.
+	 * \param icon handle to object to use as icon.
+	 */
+	void (*set_icon)(struct gui_window *gw, struct hlcache_handle *icon);
 
 	/**
 	 * Set the status bar of a browser window.
