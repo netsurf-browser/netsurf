@@ -39,7 +39,6 @@
 #include "utils/filepath.h"
 
 #include "desktop/browser.h"
-#include "render/html.h"
 #include "content/hlcache.h"
 #include "content/content.h"
 
