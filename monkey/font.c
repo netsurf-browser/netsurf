@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "css/css.h"
 #include "render/font.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
