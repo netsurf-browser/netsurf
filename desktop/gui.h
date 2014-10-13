@@ -466,12 +466,6 @@ struct gui_browser_table {
 	/* Mandantory entries */
 
 	/**
-	 * called to let the frontend update its state and run any
-	 * I/O operations.
-	 */
-	void (*poll)(bool active);
-
-	/**
 	 * Schedule a callback.
 	 *
 	 * \param t interval before the callback should be made in ms or
@@ -491,7 +485,9 @@ struct gui_browser_table {
 
 	/* Optional entries */
 
-	/** called to allow the gui to cleanup */
+	/**
+	 * called to allow the gui to cleanup.
+	 */
 	void (*quit)(void);
 
 	/**

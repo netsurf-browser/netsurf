@@ -980,7 +980,6 @@ static struct gui_fetch_table beos_fetch_table = {
 };
 
 static struct gui_browser_table beos_browser_table = {
-	NULL, //nsbeos_gui_poll,
 	beos_schedule,
 	gui_quit,
 	gui_launch_url,

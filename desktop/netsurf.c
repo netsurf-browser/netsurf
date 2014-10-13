@@ -84,8 +84,6 @@
  */
 #define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
 
-bool netsurf_quit = false;
-
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
 	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str), lwc_string_data(str)));
@@ -250,18 +248,6 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	return NSERROR_OK;
 }
 
-
-/**
- * Gui NetSurf main loop.
- */
-int netsurf_main_loop(void)
-{
-	while (!netsurf_quit) {
-		guit->browser->poll(false);
-	}
-
-	return 0;
-}
 
 /**
  * Clean up components used by gui NetSurf.

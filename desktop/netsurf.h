@@ -22,7 +22,6 @@
 #include <stdbool.h>
 #include "utils/errors.h"
 
-extern bool netsurf_quit;
 extern const char * const netsurf_version;
 extern const int netsurf_version_major;
 extern const int netsurf_version_minor;
@@ -44,11 +43,6 @@ nserror netsurf_register(struct netsurf_table *table);
  * @return NSERROR_OK on success or error code on faliure.
  */
 nserror netsurf_init(const char *messages, const char *store_path);
-
-/**
- * Run event loop.
- */
-extern int netsurf_main_loop(void);
 
 /**
  * Finalise NetSurf core
