@@ -33,6 +33,13 @@
 #include <string.h>
 #include <dom/dom.h>
 
+#include "utils/corestrings.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "css/css.h"
@@ -43,19 +50,13 @@
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
+
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
-#include "utils/corestrings.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/talloc.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 #define MAX_SELECT_HEIGHT 210
 #define SELECT_LINE_SPACING 0.2

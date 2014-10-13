@@ -41,7 +41,7 @@
 
 #include "utils/nsoption.h"
 #include "desktop/save_pdf/font_haru.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/log.h"
 
 

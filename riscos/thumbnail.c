@@ -31,21 +31,21 @@
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
-#include "render/font.h"
+
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
-#include "utils/nsoption.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/thumbnail.h"
 #include "riscos/tinct.h"
-#include "utils/log.h"
-
 
 /*	Whether we can use 32bpp sprites
 */

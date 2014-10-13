@@ -32,7 +32,7 @@
 #include <View.h>
 extern "C" {
 #include "css/css.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"

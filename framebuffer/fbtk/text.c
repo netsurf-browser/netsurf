@@ -29,7 +29,7 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "render/font.h"
+#include "desktop/font.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

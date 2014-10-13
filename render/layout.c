@@ -41,21 +41,24 @@
 #include <string.h>
 #include <math.h>
 #include <dom/dom.h>
+
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "content/content_protected.h"
 #include "utils/nsoption.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
+#include "desktop/font.h"
+
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
 #include "render/table.h"
-#include "utils/log.h"
-#include "utils/talloc.h"
-#include "utils/utils.h"
 
 
 /* Define to enable layout debugging */

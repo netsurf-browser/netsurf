@@ -25,10 +25,11 @@
 #include "desktop/browser.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
+#include "utils/log.h"
+
 #include "render/box_textarea.h"
 #include "render/font.h"
 #include "render/form.h"
-#include "utils/log.h"
 
 
 bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)

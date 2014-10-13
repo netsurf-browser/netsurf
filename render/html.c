@@ -47,9 +47,9 @@
 #include "image/bitmap.h"
 #include "javascript/js.h"
 #include "desktop/gui_factory.h"
+#include "desktop/font.h"
 
 #include "render/box.h"
-#include "render/font.h"
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"

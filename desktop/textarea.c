@@ -23,18 +23,19 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include "css/utils.h"
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
 
 #include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
+#include "desktop/font.h"
 #include "desktop/gui_factory.h"
-#include "render/font.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 #define CARET_COLOR 0x0000FF
 #define TA_ALLOC_STEP 512

@@ -28,19 +28,19 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
 #include "desktop/thumbnail.h"
+#include "image/bitmap.h"
+
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"
 #include "gtk/bitmap.h"
-#include "image/bitmap.h"
-#include "render/font.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 /**
  * Create a thumbnail of a page.

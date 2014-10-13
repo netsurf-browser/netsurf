@@ -18,7 +18,7 @@
 
 #include "desktop/printer.h"
 #include "amiga/plotters.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "amiga/gui.h"
 #include "utils/nsoption.h"
 #include "amiga/print.h"

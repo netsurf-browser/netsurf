@@ -39,7 +39,7 @@
 #include <stdbool.h>
 
 #include "css/css.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"

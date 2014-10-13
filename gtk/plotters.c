@@ -33,7 +33,6 @@
 
 #include "utils/log.h"
 #include "desktop/plotters.h"
-#include "render/font.h"
 #include "utils/nsoption.h"
 
 #include "gtk/font_pango.h"

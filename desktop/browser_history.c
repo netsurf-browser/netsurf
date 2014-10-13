@@ -18,7 +18,7 @@
  */
 
 /** \file
- * Browser history tree (implementation).
+ * Browser history tree implementation.
  */
 
 #include <assert.h>
@@ -27,20 +27,20 @@
 #include <string.h>
 #include <time.h>
 
+#include "utils/log.h"
+#include "utils/nsurl.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
+#include "image/bitmap.h"
+
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
-#include "image/bitmap.h"
-#include "render/font.h"
-#include "utils/log.h"
-#include "utils/nsurl.h"
-#include "utils/utils.h"
-
+#include "desktop/font.h"
 
 #define WIDTH 100
 #define HEIGHT 86

@@ -28,6 +28,10 @@
 
 #include <dom/dom.h>
 
+#include "utils/corestrings.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/log.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
@@ -39,6 +43,9 @@
 #include "desktop/selection.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
+#include "desktop/font.h"
+#include "javascript/js.h"
+
 #include "render/box.h"
 #include "render/box_textarea.h"
 #include "render/font.h"
@@ -46,12 +53,6 @@
 #include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "render/search.h"
-#include "javascript/js.h"
-#include "utils/corestrings.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/log.h"
-
 
 /**
  * Get pointer shape for given box

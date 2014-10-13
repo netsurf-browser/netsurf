@@ -31,6 +31,12 @@
 #include <parserutils/input/inputstream.h>
 #include <parserutils/charset/utf8.h>
 
+#include "utils/corestrings.h"
+#include "utils/http.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/utf8.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "css/css.h"
@@ -41,17 +47,12 @@
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "render/font.h"
+#include "desktop/font.h"
+
 #include "render/search.h"
 #include "render/textplain.h"
 #include "render/html.h"
 #include "render/search.h"
-#include "utils/corestrings.h"
-#include "utils/http.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/utf8.h"
 
 struct textplain_line {
 	size_t	start;

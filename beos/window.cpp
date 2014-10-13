@@ -29,7 +29,7 @@ extern "C" {
 #include "utils/nsoption.h"
 #include "desktop/netsurf.h"
 #include "desktop/textinput.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/log.h"
 #include "utils/types.h"
 #include "utils/utf8.h"

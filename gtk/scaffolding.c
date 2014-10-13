@@ -44,7 +44,7 @@
 #include "desktop/save_text.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "render/html.h"
 #include "content/hlcache.h"
 

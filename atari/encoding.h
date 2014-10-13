@@ -23,8 +23,6 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "css/css.h"
-#include "render/font.h"
 #include "utils/utf8.h"
 
 struct gui_utf8_table *atari_utf8_table;

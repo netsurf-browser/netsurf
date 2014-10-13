@@ -16,14 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Treeview handling (implementation).
+/**
+ * \file
+ *
+ * Treeview handling implementation.
  */
 
 #include "utils/log.h"
 #include "css/utils.h"
 #include "image/bitmap.h"
-#include "render/font.h"
 #include "content/hlcache.h"
 
 #include "desktop/system_colour.h"
@@ -31,8 +32,9 @@
 #include "desktop/plotters.h"
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
+#include "desktop/font.h"
 
-/* TODO: get rid of REDRAW_MAX -- need to be able to know window size */
+/** @todo get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000
 
 struct treeview_globals {

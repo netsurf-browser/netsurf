@@ -21,7 +21,7 @@
  */
 
 /** \file
- * Textual input handling (implementation)
+ * Textual input handling implementation
  */
 
 #include <assert.h>
@@ -29,21 +29,21 @@
 #include <string.h>
 #include <dom/dom.h>
 
+#include "utils/log.h"
+#include "utils/talloc.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "render/html_internal.h"
+#include "render/layout.h"
+
 #include "desktop/browser_private.h"
 #include "desktop/gui_factory.h"
 #include "desktop/mouse.h"
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "render/box.h"
-#include "render/font.h"
-#include "render/form.h"
-#include "render/html_internal.h"
-#include "render/layout.h"
-#include "utils/log.h"
-#include "utils/talloc.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
 
 /* Define to enable textinput debug */
 #undef TEXTINPUT_DEBUG

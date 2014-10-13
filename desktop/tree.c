@@ -26,16 +26,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "css/utils.h"
-#include "desktop/browser.h"
-#include "desktop/tree.h"
-#include "utils/nsoption.h"
-#include "render/font.h"
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "css/utils.h"
+#include "utils/nsoption.h"
+
+#include "desktop/browser.h"
+#include "desktop/tree.h"
 
 struct tree {
 	unsigned int flags;	/* Tree flags */

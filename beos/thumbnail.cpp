@@ -36,7 +36,7 @@ extern "C" {
 #include "desktop/browser.h"
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/log.h"
 }
 #include "beos/scaffolding.h"

@@ -31,19 +31,20 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
+#include "desktop/font.h"
+
 #include "gtk/font_pango.h"
 #include "gtk/bitmap.h"
 #include "gtk/print.h"
 #include "gtk/scaffolding.h"
-#include "render/font.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 /* Globals */
 cairo_t *gtk_print_current_cr;

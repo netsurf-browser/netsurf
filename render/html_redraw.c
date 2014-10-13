@@ -22,8 +22,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Redraw of a CONTENT_HTML (implementation).
+/**
+ * \file
+ *
+ * Redrawing CONTENT_HTML implementation.
  */
 
 #include <assert.h>
@@ -32,7 +34,11 @@
 #include <string.h>
 #include <math.h>
 #include <dom/dom.h>
+
 #include "utils/config.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
@@ -42,18 +48,15 @@
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
+#include "desktop/font.h"
 #include "image/bitmap.h"
+
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
 #include "render/search.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-
-
 
 
 bool html_redraw_debug = false;

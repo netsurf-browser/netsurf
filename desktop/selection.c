@@ -28,21 +28,21 @@
 #include <string.h>
 #include <dom/dom.h>
 
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "render/html_internal.h"
+#include "render/font.h"
+#include "render/textplain.h"
+
 #include "desktop/browser_private.h"
 #include "desktop/gui_factory.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
-#include "render/box.h"
-#include "render/font.h"
-#include "render/form.h"
-#include "render/html_internal.h"
-#include "render/textplain.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-
 
 /**
  * Text selection works by labelling each node in the box tree with its

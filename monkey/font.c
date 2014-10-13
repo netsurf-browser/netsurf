@@ -16,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "render/font.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
-
+#include "desktop/font.h"
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,

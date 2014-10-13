@@ -23,7 +23,7 @@
 
 #import "css/css.h"
 #import "utils/nsoption.h"
-#import "render/font.h"
+#import "desktop/font.h"
 #import "desktop/plotters.h"
 
 

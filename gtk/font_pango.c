@@ -27,12 +27,13 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 
-#include "gtk/font_pango.h"
-#include "gtk/plotters.h"
-#include "render/font.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
+#include "desktop/font.h"
+
+#include "gtk/font_pango.h"
+#include "gtk/plotters.h"
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

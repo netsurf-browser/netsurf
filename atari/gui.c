@@ -50,7 +50,7 @@
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
-#include "render/font.h"
+#include "desktop/font.h"
 
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"

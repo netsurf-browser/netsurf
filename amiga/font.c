@@ -26,7 +26,7 @@
 #include "amiga/schedule.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
-#include "render/font.h"
+#include "desktop/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"

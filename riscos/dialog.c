@@ -42,7 +42,6 @@
 #include "utils/utils.h"
 #include "desktop/netsurf.h"
 #include "desktop/browser.h"
-#include "render/font.h"
 
 #include "riscos/configure.h"
 #include "riscos/cookies.h"
