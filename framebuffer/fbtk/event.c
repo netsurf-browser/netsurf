@@ -31,7 +31,6 @@
 
 #include "utils/utils.h"
 #include "utils/log.h"
-#include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
