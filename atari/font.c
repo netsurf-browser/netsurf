@@ -38,7 +38,6 @@
 
 #include <stdbool.h>
 
-#include "css/css.h"
 #include "desktop/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"

@@ -26,7 +26,6 @@
 
 #include <windows.h>
 
-#include "css/css.h"
 #include "desktop/font.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"

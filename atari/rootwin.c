@@ -46,7 +46,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "css/css.h"
 
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"

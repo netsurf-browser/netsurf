@@ -27,7 +27,6 @@
 
 #import "desktop/gui.h"
 #import "content/urldb.h"
-#import "css/utils.h"
 #import "desktop/gui.h"
 #import "desktop/mouse.h"
 #import "desktop/netsurf.h"
@@ -41,7 +40,6 @@
 #import "utils/log.h"
 #import "utils/messages.h"
 #import "utils/utils.h"
-#import "css/utils.h"
 
 #ifndef NETSURF_HOMEPAGE
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"

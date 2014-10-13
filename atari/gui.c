@@ -40,7 +40,6 @@
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
 #include "content/backing_store.h"
-#include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"

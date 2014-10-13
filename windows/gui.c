@@ -31,7 +31,6 @@
 
 #include "content/urldb.h"
 #include "content/fetch.h"
-#include "css/utils.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
@@ -1159,21 +1158,20 @@ static HWND nsws_window_create_statusbar(struct gui_window *w)
 	return hwnd;
 }
 
-static css_fixed get_window_dpi(HWND hwnd)
+static int get_window_dpi(HWND hwnd)
 {
 	HDC hdc = GetDC(hwnd);
 	int dpi = GetDeviceCaps(hdc, LOGPIXELSY);
-	css_fixed fix_dpi = INTTOFIX(96);
 
-	if (dpi > 10) {
-		fix_dpi = INTTOFIX(dpi);
+	if (dpi <= 10) {
+		dpi = 96; /* 96DPI is the default */
 	}
 
 	ReleaseDC(hwnd, hdc);
 
-	LOG(("FIX DPI %x", fix_dpi));
+	LOG(("FIX DPI %d", dpi));
 
-	return fix_dpi;
+	return dpi;
 }
 
 /**

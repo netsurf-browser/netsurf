@@ -31,7 +31,6 @@
 #include <String.h>
 #include <View.h>
 extern "C" {
-#include "css/css.h"
 #include "desktop/font.h"
 #include "utils/utils.h"
 #include "utils/log.h"
