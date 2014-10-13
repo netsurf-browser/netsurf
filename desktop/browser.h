@@ -460,4 +460,18 @@ nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum conte
 void theme_install_start(struct hlcache_handle *c);
 #endif
 
+/**
+ * Set the DPI of the browser.
+ *
+ * \param dpi The DPI to set.
+ */
+nserror browser_set_dpi(int dpi);
+
+/**
+ * Get the browser DPI.
+ *
+ * \return The DPI in use.
+ */
+int browser_get_dpi(void);
+
 #endif

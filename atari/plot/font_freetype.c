@@ -93,8 +93,6 @@ fantasy.ttf => Fantasy
 #define CACHE_MIN_SIZE (100 * 1024)
 #define BOLD_WEIGHT 700
 
-extern css_fixed nscss_screen_dpi;
-
 extern unsigned long atari_plot_flags;
 extern int atari_plot_vdi_handle;
 
@@ -245,11 +243,11 @@ static void ft_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
 	srec->pixel = 0;
 
-	/* calculate x/y resolution, when nscss_screen_dpi isn't available 	*/
-	/* 72 is an good value. 											*/
-	/* TODO: because nscss_screen_dpi is to large, calculate that value */
-	/*       by VDI values. 											*/
-	srec->x_res = srec->y_res = 72; // FIXTOINT(nscss_screen_dpi);
+	/* calculate x/y resolution, when browser_get_dpi() isn't available */
+	/* 72 is an good value. */
+	/* TODO: because browser_get_dpi() is to large, calculate that value */
+	/*       by VDI values. */
+	srec->x_res = srec->y_res = 72; // browser_get_dpi();
 }
 
 static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)

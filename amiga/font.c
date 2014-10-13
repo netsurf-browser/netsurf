@@ -25,8 +25,7 @@
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 #include "utils/nsoption.h"
-#include "css/css.h"
-#include "css/utils.h"
+#include "desktop/browser.h"
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -869,7 +868,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 				node->dtz_Node.ln_Name, curtime.Seconds));
 			DelObject(node);
 		}
-	}while(node=nnode);
+	} while(node=nnode);
 
 	/* reschedule to run in five minutes */
 	ami_schedule(300000, ami_font_cleanup, ami_font_list);
@@ -882,7 +881,7 @@ void ami_font_setdevicedpi(int id)
 	ULONG ydpi = nsoption_int(screen_ydpi);
 	ULONG xdpi = nsoption_int(screen_ydpi);
 
-	nscss_screen_dpi = INTTOFIX(nsoption_int(screen_ydpi));
+	browser_set_dpi(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
 	{

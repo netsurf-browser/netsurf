@@ -53,6 +53,7 @@
 #include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/plotters.h"
+#include "css/utils.h"
 
 #include "javascript/js.h"
 
@@ -3123,4 +3124,18 @@ bool browser_window_stop_available(struct browser_window *bw)
 			(bw->current_content &&
 			(content_get_status(bw->current_content) != 
 			CONTENT_STATUS_DONE))));
+}
+
+/* exported interface documented in browser.h */
+nserror browser_set_dpi(int dpi)
+{
+	nscss_screen_dpi = INTTOFIX(dpi);
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in browser.h */
+int browser_get_dpi(void)
+{
+	return FIXTOINT(nscss_screen_dpi);
 }

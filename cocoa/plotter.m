@@ -22,10 +22,10 @@
 #import "cocoa/plotter.h"
 #import "cocoa/bitmap.h"
 
+#import "desktop/browser.h"
 #import "desktop/plotters.h"
 #import "desktop/plot_style.h"
 #import "utils/log.h"
-#import "css/utils.h"
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);
@@ -323,7 +323,7 @@ void cocoa_update_scale_factor( void )
 	const CGFloat scale = [[NSScreen mainScreen] userSpaceScaleFactor];
 	cocoa_scale_factor = scale == 1.0 ? 1.0 : 1.0 / scale;
 	cocoa_half_pixel = 0.5 * cocoa_scale_factor;
-	nscss_screen_dpi = FLTTOFIX( points_per_inch * scale );
+        browser_set_dpi( points_per_inch * scale );
 }
 
 static inline void cocoa_center_pixel( bool x, bool y ) 

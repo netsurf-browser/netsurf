@@ -55,7 +55,6 @@
 #include "desktop/sslcert_viewer.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
-#include "css/utils.h"
 #include "render/form.h"
 #include "utils/filepath.h"
 #include "utils/log.h"
@@ -412,10 +411,8 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	 * find that out here, rather than when we create a first browser
 	 * window.
 	 */
-
-	nscss_screen_dpi = FLTTOFIX(gdk_screen_get_resolution(
-					    gdk_screen_get_default()));
-	LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
+	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
+	LOG(("Set CSS DPI to %d", browser_get_dpi()));
 
 	if (nsgtk_history_init(glade_file_location->history) == false)
 		die("Unable to initialise history window.\n");

@@ -1219,7 +1219,7 @@ static HWND nsws_window_create(struct gui_window *gw)
 	/* set the gui window associated with this browser */
 	SetProp(hwnd, TEXT("GuiWnd"), (HANDLE)gw);
 
-	nscss_screen_dpi = get_window_dpi(hwnd);
+	browser_set_dpi(get_window_dpi(hwnd));
 
 	if ((nsoption_int(window_width) >= 100) &&
 	    (nsoption_int(window_height) >= 100) &&
