@@ -28,7 +28,6 @@
 #import "cocoa/schedule.h"
 
 #import "desktop/gui.h"
-#import "desktop/netsurf.h"
 #import "desktop/browser_private.h"
 #import "utils/nsoption.h"
 #import "desktop/textinput.h"

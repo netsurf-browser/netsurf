@@ -40,7 +40,6 @@
 #include <curl/curl.h>
 
 #include "utils/config.h"
-#include "desktop/netsurf.h"
 #include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"

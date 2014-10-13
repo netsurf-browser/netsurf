@@ -42,7 +42,6 @@
 #include "desktop/cookie_manager.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "desktop/textinput.h"
 
 #include "riscos/dialog.h"

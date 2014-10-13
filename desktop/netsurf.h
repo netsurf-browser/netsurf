@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,12 +19,7 @@
 #ifndef _NETSURF_DESKTOP_NETSURF_H_
 #define _NETSURF_DESKTOP_NETSURF_H_
 
-#include <stdbool.h>
 #include "utils/errors.h"
-
-extern const char * const netsurf_version;
-extern const int netsurf_version_major;
-extern const int netsurf_version_minor;
 
 struct netsurf_table;
 
@@ -48,6 +43,5 @@ nserror netsurf_init(const char *messages, const char *store_path);
  * Finalise NetSurf core
  */
 extern void netsurf_exit(void);
-
 
 #endif

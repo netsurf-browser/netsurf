@@ -35,7 +35,6 @@
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
-#include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"

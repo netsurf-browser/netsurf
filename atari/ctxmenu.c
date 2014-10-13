@@ -29,7 +29,6 @@
 #include <cflib.h>
 
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"

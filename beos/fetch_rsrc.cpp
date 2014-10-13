@@ -35,7 +35,6 @@ extern "C" {
 #include "content/fetch.h"
 #include "content/fetchers.h"
 #include "content/urldb.h"
-#include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"

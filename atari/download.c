@@ -28,7 +28,6 @@
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "desktop/save_complete.h"
 #include "desktop/textinput.h"

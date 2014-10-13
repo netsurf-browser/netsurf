@@ -38,6 +38,14 @@
 
 #include <reaction/reaction_macros.h>
 
+#include "utils/nsoption.h"
+#include "desktop/hotlist.h"
+#include "desktop/browser_private.h"
+#include "desktop/gui.h"
+#include "desktop/textinput.h"
+#include "desktop/version.h"
+#include "utils/messages.h"
+
 #include "amiga/arexx.h"
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
@@ -50,18 +58,12 @@
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
 #include "amiga/menu.h"
-#include "utils/nsoption.h"
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
 #include "amiga/schedule.h"
-#include "desktop/hotlist.h"
-#include "desktop/browser_private.h"
-#include "desktop/gui.h"
-#include "desktop/textinput.h"
-#include "utils/messages.h"
 
 /* This is here temporarily until we get a new SDK */
 #define LABEL_MenuMode          (LABEL_Dummy+12)

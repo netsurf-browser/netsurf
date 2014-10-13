@@ -34,7 +34,6 @@
 #include "content/fetchers.h"
 #include "content/fetchers/data.h"
 #include "content/urldb.h"
-#include "desktop/netsurf.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"

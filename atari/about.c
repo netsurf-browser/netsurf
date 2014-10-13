@@ -32,10 +32,9 @@
 
 #include "testament.h"
 #include "utils/useragent.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "utils/nsurl.h"
 #include "utils/messages.h"
-
 
 #include "curl/curlver.h"
 

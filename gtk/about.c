@@ -28,7 +28,7 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"

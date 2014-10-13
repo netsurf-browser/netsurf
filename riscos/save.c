@@ -46,7 +46,7 @@
 #include "content/hlcache.h"
 #include "desktop/hotlist.h"
 #include "desktop/global_history.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/thumbnail.h"

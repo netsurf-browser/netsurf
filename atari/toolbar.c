@@ -29,7 +29,6 @@
 
 #include "utils/log.h"
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "desktop/browser.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"

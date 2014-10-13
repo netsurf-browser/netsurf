@@ -27,6 +27,7 @@
 #include "desktop/hotlist.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"

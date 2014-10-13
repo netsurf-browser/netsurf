@@ -16,15 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "testament.h"
+/**
+ * \file
+ *
+ * Version information interface.
+ */
 
-#include "desktop/version.h"
+#ifndef _NETSURF_DESKTOP_VERSION_H_
+#define _NETSURF_DESKTOP_VERSION_H_
 
-const char * const netsurf_version = "3.3 (Dev"
-#if defined(CI_BUILD)
-	" CI #" CI_BUILD
+/**
+ * User friendly version string.
+ */
+extern const char * const netsurf_version;
+
+/**
+ * NetSuf browser major version number.
+ */
+extern const int netsurf_version_major;
+
+/**
+ * NetSuf browser minor version number.
+ */
+extern const int netsurf_version_minor;
+
 #endif
-	")"
-	;
-const int netsurf_version_major = 3;
-const int netsurf_version_minor = 3;

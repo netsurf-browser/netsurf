@@ -45,7 +45,6 @@
 #include "oslib/wimpspriteop.h"
 
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "desktop/download.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"

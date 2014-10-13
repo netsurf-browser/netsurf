@@ -40,7 +40,7 @@
 #include "utils/nsurl.h"
 #include "utils/url.h"
 #include "utils/utils.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "desktop/browser.h"
 
 #include "riscos/configure.h"

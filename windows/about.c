@@ -24,7 +24,7 @@
 
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "utils/log.h"
 
 #include "windows/gui.h"

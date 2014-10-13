@@ -50,7 +50,6 @@
 #include "content/fetchers.h"
 #include "content/fetchers/about.h"
 #include "content/urldb.h"
-#include "desktop/netsurf.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"

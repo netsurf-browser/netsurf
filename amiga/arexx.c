@@ -26,6 +26,7 @@
 #include "utils/nsoption.h"
 
 #include "desktop/browser_private.h"
+#include "desktop/version.h"
 
 #include <string.h>
 #include <math.h>

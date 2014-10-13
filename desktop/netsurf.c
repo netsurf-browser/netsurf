@@ -23,11 +23,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
 #include "utils/utsname.h"
+#include "utils/nsoption.h"
+#include "utils/corestrings.h"
+#include "utils/log.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
 #include "content/content_factory.h"
 #include "content/fetchers.h"
 #include "content/hlcache.h"
@@ -36,23 +42,16 @@
 #include "css/css.h"
 #include "image/image.h"
 #include "image/image_cache.h"
-#include "desktop/netsurf.h"
-#include "desktop/browser.h"
-#include "desktop/system_colour.h"
-#include "desktop/gui_factory.h"
-#include "utils/nsoption.h"
-#include "desktop/searchweb.h"
-
 #include "javascript/js.h"
-
 #include "render/html.h"
 #include "render/textplain.h"
-#include "utils/corestrings.h"
-#include "utils/log.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "utils/messages.h"
+
+#include "desktop/netsurf.h"
+#include "desktop/version.h"
+#include "desktop/browser.h"
+#include "desktop/system_colour.h"
+#include "desktop/searchweb.h"
+#include "desktop/gui_factory.h"
 
 /** speculative pre-conversion small image size
  *

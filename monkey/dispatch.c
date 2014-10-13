@@ -25,7 +25,6 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 
-#include "desktop/netsurf.h"
 #include "monkey/dispatch.h"
 
 typedef struct cmdhandler {

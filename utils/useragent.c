@@ -22,7 +22,7 @@
 
 #include "utils/config.h"
 #include "utils/utsname.h"
-#include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "utils/log.h"
 #include "utils/useragent.h"
 

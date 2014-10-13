@@ -56,6 +56,7 @@ extern "C" {
 #include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
+#include "desktop/version.h"
 #include "desktop/plotters.h"
 #include "utils/nsoption.h"
 #include "desktop/textinput.h"
