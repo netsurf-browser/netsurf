@@ -166,13 +166,13 @@ gui_window_update_box(struct gui_window *g, const struct rect *rect)
 static void
 gui_window_update_extent(struct gui_window *g)
 {
-  if (!g->bw->current_content)
+  int width, height;
+
+  if (browser_window_get_extents(g->bw, false, &width, &height) != NSERROR_OK)
     return;
 
   fprintf(stdout, "WINDOW UPDATE_EXTENT WIN %u WIDTH %d HEIGHT %d\n", 
-          g->win_num,
-          content_get_width(g->bw->current_content),
-          content_get_height(g->bw->current_content));
+          g->win_num, width, height);
 }
 
 static void
