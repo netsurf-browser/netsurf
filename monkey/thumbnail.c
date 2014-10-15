@@ -22,11 +22,6 @@
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		nsurl *url)
 {
-  struct gui_window *win = monkey_find_window_by_content(content);
-  if (win == NULL) {
-    fprintf(stdout, "GENERIC THUMBNAIL URL %s\n", nsurl_access(url));
-  } else {
-    fprintf(stdout, "WINDOW THUMBNAIL WIN %u URL %s\n", win->win_num, nsurl_access(url));
-  }
+  fprintf(stdout, "GENERIC THUMBNAIL URL %s\n", nsurl_access(url));
   return false;
 }
