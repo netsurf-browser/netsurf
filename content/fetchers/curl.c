@@ -693,7 +693,7 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *) parm;
 	SSL_CTX *sslctx = _sslctx;
-	long options = SSL_OP_ALL;
+	long options = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
 
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
 	SSL_CTX_set_cert_verify_callback(sslctx, fetch_curl_cert_verify_callback,
@@ -706,6 +706,10 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 #endif
 #ifdef SSL_OP_NO_TLSv1_2
 		options |= SSL_OP_NO_TLSv1_2;
+#endif
+#ifdef SSL_MODE_SEND_FALLBACK_SCSV
+		/* Ensure server rejects the connection if downgraded too far */
+		SSL_CTX_set_mode(sslctx, SSL_MODE_SEND_FALLBACK_SCSV);
 #endif
 	}
 
