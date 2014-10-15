@@ -4659,7 +4659,7 @@ void ro_gui_window_default_options(struct browser_window *bw)
 
 	/*	Save the basic options
 	*/
-	nsoption_set_int(scale, g->scale * 100);
+	nsoption_set_int(scale, gui->scale * 100);
 	nsoption_set_bool(buffer_animations, gui->option.buffer_animations);
 	nsoption_set_bool(buffer_everything, gui->option.buffer_everything);
 
