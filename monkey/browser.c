@@ -21,7 +21,6 @@
 #include <stdio.h>
 
 
-#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "utils/ring.h"
 #include "utils/log.h"
