@@ -49,21 +49,6 @@ monkey_find_window_by_num(uint32_t win_num)
   return ret;
 }
 
-struct gui_window *
-monkey_find_window_by_content(hlcache_handle *content)
-{
-  struct gui_window *ret = NULL;
-  
-  RING_ITERATE_START(struct gui_window, gw_ring, c_ring) {
-    if (c_ring->bw->current_content == content) {
-      ret = c_ring;
-      RING_ITERATE_STOP(gw_ring, c_ring);
-    }
-  } RING_ITERATE_END(gw_ring, c_ring);
-  
-  return ret;
-}
-
 
 /**
  * callback from core to reformat a window.
