@@ -248,7 +248,7 @@ static inline bool box_is_root(dom_node *n)
 }
 
 /**
- * Find the next node in the DOM tree, completing 
+ * Find the next node in the DOM tree, completing
  * element construction where appropriate.
  *
  * \param n                 Current node
@@ -305,7 +305,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 
 				assert(parent != NULL);
 
-				err = dom_node_get_next_sibling(parent, 
+				err = dom_node_get_next_sibling(parent,
 						&parent_next);
 				if (err != DOM_NO_ERR) {
 					dom_node_unref(parent);
@@ -348,7 +348,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 				}
 
 				if (box_for_node(parent) != NULL) {
-					box_construct_element_after(parent, 
+					box_construct_element_after(parent,
 							content);
 				}
 
@@ -363,7 +363,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 }
 
 /**
- * Convert an ELEMENT node to a box tree fragment, 
+ * Convert an ELEMENT node to a box tree fragment,
  * then schedule conversion of the next ELEMENT node
  */
 void convert_xml_to_box(struct box_construct_ctx *ctx)
@@ -457,13 +457,13 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
  * \param parent   Current block-level container
  * \return True on success, false on memory exhaustion
  */
-static bool box_construct_marker(struct box *box, const char *title, 
+static bool box_construct_marker(struct box *box, const char *title,
 		struct box_construct_ctx *ctx, struct box *parent)
 {
 	lwc_string *image_uri;
 	struct box *marker;
 
-	marker = box_create(NULL, box->style, false, NULL, NULL, title, 
+	marker = box_create(NULL, box->style, false, NULL, NULL, title,
 			NULL, ctx->bctx);
 	if (marker == false)
 		return false;
@@ -549,7 +549,7 @@ static bool box_construct_marker(struct box *box, const char *title,
 		break;
 	}
 
-	if (css_computed_list_style_image(box->style, &image_uri) == CSS_LIST_STYLE_IMAGE_URI && 
+	if (css_computed_list_style_image(box->style, &image_uri) == CSS_LIST_STYLE_IMAGE_URI &&
 	    (image_uri != NULL) &&
 	    (nsoption_bool(foreground_images) == true)) {
 		nsurl *url;
@@ -600,8 +600,8 @@ static void box_construct_generate(dom_node *n, html_content *content,
 	if (box->type != BOX_BLOCK)
 		return;
 
-	/* To determine if an element has a pseudo element, we select 
-	 * for it and test to see if the returned style's content 
+	/* To determine if an element has a pseudo element, we select
+	 * for it and test to see if the returned style's content
 	 * property is set to normal. */
 	if (style == NULL ||
 			css_computed_content(style, &c_item) ==
@@ -614,7 +614,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
 	if (css_computed_display(style, box_is_root(n)) == CSS_DISPLAY_BLOCK) {
 		/* currently only support block level elements */
 
-		/** \todo Not wise to drop const from the computed style */ 
+		/** \todo Not wise to drop const from the computed style */
 		gen = box_create(NULL, (css_computed_style *) style,
 				false, NULL, NULL, NULL, NULL, content->bctx);
 		if (gen == NULL) {
@@ -635,7 +635,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
  * \param n      Current DOM node to convert
  * \param props  Property object to populate
  */
-static void box_extract_properties(dom_node *n, 
+static void box_extract_properties(dom_node *n,
 		struct box_construct_props *props)
 {
 	memset(props, 0, sizeof(*props));
@@ -673,7 +673,7 @@ static void box_extract_properties(dom_node *n,
 				parent_node = NULL;
 			}
 		}
-			
+
 		/* Find containing block (may be parent) */
 		while (true) {
 			struct box *b;
@@ -693,11 +693,11 @@ static void box_extract_properties(dom_node *n,
 
 			/* Children of nodes that created an inline box
 			 * will generate boxes which are attached as
-			 * _siblings_ of the box generated for their 
+			 * _siblings_ of the box generated for their
 			 * parent node. Note, however, that we'll still
 			 * use the parent node's styling as the parent
 			 * style, above. */
-			if (b != NULL && b->type != BOX_INLINE && 
+			if (b != NULL && b->type != BOX_INLINE &&
 					b->type != BOX_BR) {
 				props->containing_block = b;
 
@@ -711,9 +711,9 @@ static void box_extract_properties(dom_node *n,
 	}
 
 	/* Compute current inline container, if any */
-	if (props->containing_block != NULL && 
+	if (props->containing_block != NULL &&
 			props->containing_block->last != NULL &&
-			props->containing_block->last->type == 
+			props->containing_block->last->type ==
 				BOX_INLINE_CONTAINER)
 		props->inline_container = props->containing_block->last;
 }
@@ -743,8 +743,8 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	box_extract_properties(ctx->n, &props);
 
 	if (props.containing_block != NULL) {
-		/* In case the containing block is a pre block, we clear 
- 		 * the PRE_STRIP flag since it is not used if we follow 
+		/* In case the containing block is a pre block, we clear
+ 		 * the PRE_STRIP flag since it is not used if we follow
  		 * the pre with a tag */
 		props.containing_block->flags &= ~PRE_STRIP;
 	}
@@ -845,7 +845,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		box->type = BOX_BLOCK;
 	} else {
 		/* Normal mapping */
-		box->type = box_map[css_computed_display(box->style, 
+		box->type = box_map[css_computed_display(box->style,
 				props.node_is_root)];
 	}
 
@@ -866,7 +866,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 
 	if (element != NULL) {
 		/* A special convert function exists for this element */
-		if (element->convert(ctx->n, ctx->content, box, 
+		if (element->convert(ctx->n, ctx->content, box,
 				convert_children) == false)
 			return false;
 	}
@@ -896,7 +896,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 
 	/* Attach DOM node to box */
 	err = dom_node_set_user_data(ctx->n,
-			corestring_dom___ns_key_box_node_data, box, NULL, 
+			corestring_dom___ns_key_box_node_data, box, NULL,
 			(void *) &old_box);
 	if (err != DOM_NO_ERR)
 		return false;
@@ -914,10 +914,10 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		/* Found an inline child of a block without a current container
 		 * (i.e. this box is the first child of its parent, or was
 		 * preceded by block-level siblings) */
-		assert(props.containing_block != NULL && 
+		assert(props.containing_block != NULL &&
 				"Box must have containing block.");
 
-		props.inline_container = box_create(NULL, NULL, false, NULL, 
+		props.inline_container = box_create(NULL, NULL, false, NULL,
 				NULL, NULL, NULL, ctx->bctx);
 		if (props.inline_container == NULL)
 			return false;
@@ -928,7 +928,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Kick off fetch for any background image */
-	if (css_computed_background_image(box->style, &bgimage_uri) == 
+	if (css_computed_background_image(box->style, &bgimage_uri) ==
 			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL &&
 			nsoption_bool(background_images) == true) {
 		nsurl *url;
@@ -955,9 +955,9 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	if (*convert_children)
 		box->flags |= CONVERT_CHILDREN;
 
-	if (box->type == BOX_INLINE || box->type == BOX_BR || 
+	if (box->type == BOX_INLINE || box->type == BOX_BR ||
 			box->type == BOX_INLINE_BLOCK) {
-		/* Inline container must exist, as we'll have 
+		/* Inline container must exist, as we'll have
 		 * created it above if it didn't */
 		assert(props.inline_container != NULL);
 
@@ -974,11 +974,11 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		if (props.node_is_root == false &&
 				(css_computed_float(box->style) ==
 				CSS_FLOAT_LEFT ||
-				css_computed_float(box->style) == 
+				css_computed_float(box->style) ==
 				CSS_FLOAT_RIGHT)) {
 			/* Float: insert a float between the parent and box. */
 			struct box *flt = box_create(NULL, NULL, false,
-					props.href, props.target, props.title, 
+					props.href, props.target, props.title,
 					NULL, ctx->bctx);
 			if (flt == NULL)
 				return false;
@@ -1029,7 +1029,7 @@ void box_construct_element_after(dom_node *n, html_content *content)
 		if (err != DOM_NO_ERR)
 			return;
 
-		if (has_children == false || 
+		if (has_children == false ||
 				(box->flags & CONVERT_CHILDREN) == 0) {
 			/* No children, or didn't want children converted */
 			return;
@@ -1037,19 +1037,19 @@ void box_construct_element_after(dom_node *n, html_content *content)
 
 		if (props.inline_container == NULL) {
 			/* Create inline container if we don't have one */
-			props.inline_container = box_create(NULL, NULL, false, 
+			props.inline_container = box_create(NULL, NULL, false,
 					NULL, NULL, NULL, NULL, content->bctx);
 			if (props.inline_container == NULL)
 				return;
 
 			props.inline_container->type = BOX_INLINE_CONTAINER;
 
-			box_add_child(props.containing_block, 
+			box_add_child(props.containing_block,
 					props.inline_container);
 		}
 
 		inline_end = box_create(NULL, box->style, false,
-				box->href, box->target, box->title, 
+				box->href, box->target, box->title,
 				box->id == NULL ? NULL :
 				lwc_string_ref(box->id), content->bctx);
 		if (inline_end != NULL) {
@@ -1093,9 +1093,9 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 	if (err != DOM_NO_ERR || content == NULL)
 		return false;
 
-	if (css_computed_white_space(props.parent_style) == 
+	if (css_computed_white_space(props.parent_style) ==
 			CSS_WHITE_SPACE_NORMAL ||
-			css_computed_white_space(props.parent_style) == 
+			css_computed_white_space(props.parent_style) ==
 			CSS_WHITE_SPACE_NOWRAP) {
 		char *text;
 
@@ -1123,9 +1123,9 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 		if (props.inline_container == NULL) {
 			/* Child of a block without a current container
-			 * (i.e. this box is the first child of its parent, or 
+			 * (i.e. this box is the first child of its parent, or
 			 * was preceded by block-level siblings) */
-			props.inline_container = box_create(NULL, NULL, false, 
+			props.inline_container = box_create(NULL, NULL, false,
 					NULL, NULL, NULL, NULL, ctx->bctx);
 			if (props.inline_container == NULL) {
 				free(text);
@@ -1134,14 +1134,14 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 			props.inline_container->type = BOX_INLINE_CONTAINER;
 
-			box_add_child(props.containing_block, 
+			box_add_child(props.containing_block,
 					props.inline_container);
 		}
 
-		/** \todo Dropping const here is not clever */ 
-		box = box_create(NULL, 
+		/** \todo Dropping const here is not clever */
+		box = box_create(NULL,
 				(css_computed_style *) props.parent_style,
-				false, props.href, props.target, props.title, 
+				false, props.href, props.target, props.title,
 				NULL, ctx->bctx);
 		if (box == NULL) {
 			free(text);
@@ -1163,7 +1163,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 			box->length--;
 		}
 
-		if (css_computed_text_transform(props.parent_style) != 
+		if (css_computed_text_transform(props.parent_style) !=
 				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(box->text, box->length,
 				css_computed_text_transform(
@@ -1207,7 +1207,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 			if (text[i] == '\t')
 				text[i] = ' ';
 
-		if (css_computed_text_transform(props.parent_style) != 
+		if (css_computed_text_transform(props.parent_style) !=
 				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(text, strlen(text),
 				css_computed_text_transform(
@@ -1239,28 +1239,28 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 			if (props.inline_container == NULL) {
 				/* Child of a block without a current container
-				 * (i.e. this box is the first child of its 
-				 * parent, or was preceded by block-level 
+				 * (i.e. this box is the first child of its
+				 * parent, or was preceded by block-level
 				 * siblings) */
 				props.inline_container = box_create(NULL, NULL,
-						false, NULL, NULL, NULL, NULL, 
+						false, NULL, NULL, NULL, NULL,
 						ctx->bctx);
 				if (props.inline_container == NULL) {
 					free(text);
 					return false;
 				}
 
-				props.inline_container->type = 
+				props.inline_container->type =
 						BOX_INLINE_CONTAINER;
 
-				box_add_child(props.containing_block, 
+				box_add_child(props.containing_block,
 						props.inline_container);
 			}
 
 			/** \todo Dropping const isn't clever */
 			box = box_create(NULL,
 				(css_computed_style *) props.parent_style,
-				false, props.href, props.target, props.title, 
+				false, props.href, props.target, props.title,
 				NULL, ctx->bctx);
 			if (box == NULL) {
 				free(text);
@@ -1286,17 +1286,17 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 			if (current[0] != '\0') {
 				/* Linebreak: create new inline container */
 				props.inline_container = box_create(NULL, NULL,
-						false, NULL, NULL, NULL, NULL, 
+						false, NULL, NULL, NULL, NULL,
 						ctx->bctx);
 				if (props.inline_container == NULL) {
 					free(text);
 					return false;
 				}
 
-				props.inline_container->type = 
+				props.inline_container->type =
 						BOX_INLINE_CONTAINER;
 
-				box_add_child(props.containing_block, 
+				box_add_child(props.containing_block,
 						props.inline_container);
 
 				if (current[0] == '\r' && current[1] == '\n')
@@ -1525,7 +1525,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 		else {
 			/* 6.16 says that frame names must begin with [a-zA-Z]
 			 * This doesn't match reality, so just take anything */
-			box->target = talloc_strdup(content->bctx, 
+			box->target = talloc_strdup(content->bctx,
 					dom_string_data(s));
 			if (!box->target) {
 				dom_string_unref(s);
@@ -1555,7 +1555,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	css_unit wunit = CSS_UNIT_PX;
 	css_unit hunit = CSS_UNIT_PX;
 
-	if (box->style && css_computed_display(box->style, 
+	if (box->style && css_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -1588,7 +1588,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
 
-	if (box_extract_link(dom_string_data(s), content->base_url, 
+	if (box_extract_link(dom_string_data(s), content->base_url,
 			&url) == false) {
 		dom_string_unref(s);
 		return false;
@@ -1646,7 +1646,7 @@ static int box_object_talloc_destructor(struct object_params *o)
 		nsurl_unref(o->classid);
 	if (o->data != NULL)
 		nsurl_unref(o->data);
-	
+
 	return 0;
 }
 
@@ -1662,7 +1662,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	dom_node *c;
 	dom_exception err;
 
-	if (box->style && css_computed_display(box->style, 
+	if (box->style && css_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -1689,8 +1689,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (codebase is the base for the other two) */
 	err = dom_element_get_attribute(n, corestring_dom_codebase, &codebase);
 	if (err == DOM_NO_ERR && codebase != NULL) {
-		if (box_extract_link(dom_string_data(codebase), 
-				content->base_url, 
+		if (box_extract_link(dom_string_data(codebase),
+				content->base_url,
 				&params->codebase) == false) {
 			dom_string_unref(codebase);
 			return false;
@@ -1734,7 +1734,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* codetype and type are MIME types */
-	if (box_get_attribute(n, "codetype", params, 
+	if (box_get_attribute(n, "codetype", params,
 			&params->codetype) == false)
 		return false;
 	if (box_get_attribute(n, "type", params, &params->type) == false)
@@ -1744,12 +1744,12 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (classid || !classid) && data => data is used (consult type)
 	 * !classid && !data => invalid; ignored */
 
-	if (params->classid != NULL && params->data == NULL && 
+	if (params->classid != NULL && params->data == NULL &&
 			params->codetype != NULL) {
 		lwc_string *icodetype;
 		lwc_error lerror;
 
-		lerror = lwc_intern_string(params->codetype, 
+		lerror = lwc_intern_string(params->codetype,
 				strlen(params->codetype), &icodetype);
 		if (lerror != lwc_error_ok)
 			return false;
@@ -1773,7 +1773,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		if (lerror != lwc_error_ok)
 			return false;
 
-		if (content_factory_type_from_mime_type(itype) == 
+		if (content_factory_type_from_mime_type(itype) ==
 				CONTENT_NONE) {
 			/* can't handle this MIME type */
 			lwc_string_unref(itype);
@@ -1809,8 +1809,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 			if (!dom_string_caseless_lwc_isequal(name,
 					corestring_lwc_param)) {
-				/* The first non-param child is the start of 
-				 * the alt html. Therefore, we should break 
+				/* The first non-param child is the start of
+				 * the alt html. Therefore, we should break
 				 * out of this loop. */
 				dom_node_unref(c);
 				break;
@@ -1827,19 +1827,19 @@ bool box_object(BOX_SPECIAL_PARAMS)
 			param->valuetype = NULL;
 			param->next = NULL;
 
-			if (box_get_attribute(c, "name", param, 
+			if (box_get_attribute(c, "name", param,
 					&param->name) == false) {
 				dom_node_unref(c);
 				return false;
 			}
 
-			if (box_get_attribute(c, "value", param, 
+			if (box_get_attribute(c, "value", param,
 					&param->value) == false) {
 				dom_node_unref(c);
 				return false;
 			}
 
-			if (box_get_attribute(c, "type", param, 
+			if (box_get_attribute(c, "type", param,
 					&param->type) == false) {
 				dom_node_unref(c);
 				return false;
@@ -1931,7 +1931,7 @@ static int box_frames_talloc_destructor(struct content_html_frames *f)
 		nsurl_unref(f->url);
 		f->url = NULL;
 	}
-	
+
 	return 0;
 }
 
@@ -1984,7 +1984,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	/* common extension: border="0|1" to control all children */
 	err = dom_element_get_attribute(n, corestring_dom_border, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		if ((dom_string_data(s)[0] == '0') && 
+		if ((dom_string_data(s)[0] == '0') &&
 				(dom_string_data(s)[1] == '\0'))
 			default_border = false;
 		dom_string_unref(s);
@@ -2073,7 +2073,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 							name,
 							corestring_lwc_frameset
 							))) {
-					err = dom_node_get_next_sibling(c, 
+					err = dom_node_get_next_sibling(c,
 							&next);
 					if (err != DOM_NO_ERR) {
 						dom_string_unref(name);
@@ -2109,7 +2109,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 					corestring_lwc_frameset)) {
 				dom_string_unref(s);
 				frame->border = 0;
-				if (box_create_frameset(frame, c, 
+				if (box_create_frameset(frame, c,
 						content) == false) {
 					dom_node_unref(c);
 					return false;
@@ -2132,7 +2132,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			url = NULL;
 			err = dom_element_get_attribute(c, corestring_dom_src, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				box_extract_link(dom_string_data(s), 
+				box_extract_link(dom_string_data(s),
 						content->base_url, &url);
 				dom_string_unref(s);
 			}
@@ -2149,15 +2149,15 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			/* fill in specified values */
 			err = dom_element_get_attribute(c, corestring_dom_name, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				frame->name = talloc_strdup(content->bctx, 
+				frame->name = talloc_strdup(content->bctx,
 						dom_string_data(s));
 				dom_string_unref(s);
 			}
 
-			dom_element_has_attribute(c, corestring_dom_noresize, 
+			dom_element_has_attribute(c, corestring_dom_noresize,
 					&frame->no_resize);
 
-			err = dom_element_get_attribute(c, corestring_dom_frameborder, 
+			err = dom_element_get_attribute(c, corestring_dom_frameborder,
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				i = atoi(dom_string_data(s));
@@ -2176,7 +2176,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, corestring_dom_marginwidth, 
+			err = dom_element_get_attribute(c, corestring_dom_marginwidth,
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				frame->margin_width = atoi(dom_string_data(s));
@@ -2190,12 +2190,12 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				dom_string_unref(s);
 			}
 
-			err = dom_element_get_attribute(c, corestring_dom_bordercolor, 
+			err = dom_element_get_attribute(c, corestring_dom_bordercolor,
 					&s);
 			if (err == DOM_NO_ERR && s != NULL) {
 				css_color color;
 
-				if (nscss_parse_colour(dom_string_data(s), 
+				if (nscss_parse_colour(dom_string_data(s),
 						&color))
 					frame->border_colour =
 						nscss_color_to_ns(color);
@@ -2231,7 +2231,7 @@ static int box_iframes_talloc_destructor(struct content_html_iframe *f)
 		nsurl_unref(f->url);
 		f->url = NULL;
 	}
-	
+
 	return 0;
 }
 
@@ -2248,7 +2248,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	struct content_html_iframe *iframe;
 	int i;
 
-	if (box->style && css_computed_display(box->style, 
+	if (box->style && css_computed_display(box->style,
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
@@ -2263,7 +2263,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	err = dom_element_get_attribute(n, corestring_dom_src, &s);
 	if (err != DOM_NO_ERR || s == NULL)
 		return true;
-	if (box_extract_link(dom_string_data(s), content->base_url, 
+	if (box_extract_link(dom_string_data(s), content->base_url,
 			&url) == false) {
 		dom_string_unref(s);
 		return false;
@@ -2424,13 +2424,13 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		/* no box for hidden inputs */
 		box->type = BOX_NONE;
 
-	} else if (type && 
+	} else if (type &&
 			(dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_checkbox) ||
 			dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_radio))) {
 
-	} else if (type && 
+	} else if (type &&
 			(dom_string_caseless_lwc_isequal(type,
 				corestring_lwc_submit) ||
 			dom_string_caseless_lwc_isequal(type,
@@ -2466,7 +2466,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 			inline_box->text = talloc_strdup(content->bctx,
 					messages_get("Form_Reset"));
 		else
-			inline_box->text = talloc_strdup(content->bctx, 
+			inline_box->text = talloc_strdup(content->bctx,
 							 "Button");
 
 		if (inline_box->text == NULL)
@@ -2489,7 +2489,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 			err = dom_element_get_attribute(n, corestring_dom_src, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				error = nsurl_join(content->base_url, 
+				error = nsurl_join(content->base_url,
 						dom_string_data(s), &url);
 				dom_string_unref(s);
 				if (error != NSERROR_OK)
@@ -2614,12 +2614,12 @@ bool box_select(BOX_SPECIAL_PARAMS)
 					dom_node_unref(c);
 					return false;
 				}
-				
+
 				if (dom_string_caseless_lwc_isequal(c2_name,
 						corestring_lwc_option)) {
 					dom_string_unref(c2_name);
 
-					if (box_select_add_option(gadget, 
+					if (box_select_add_option(gadget,
 							c2) == false) {
 						dom_node_unref(c2);
 						dom_node_unref(c);
@@ -2642,7 +2642,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 		} else {
 			dom_string_unref(name);
 		}
-	
+
 		err = dom_node_get_next_sibling(c, &next);
 		if (err != DOM_NO_ERR) {
 			dom_node_unref(c);
@@ -2828,7 +2828,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	err = dom_element_get_attribute(n, corestring_dom_src, &src);
 	if (err != DOM_NO_ERR || src == NULL)
 		return true;
-	if (box_extract_link(dom_string_data(src), content->base_url, 
+	if (box_extract_link(dom_string_data(src), content->base_url,
 			&params->data) == false) {
 		dom_string_unref(src);
 		return false;
@@ -2899,7 +2899,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 		dom_string_unref(value);
 		dom_string_unref(name);
 
-		if (param->name == NULL || param->value == NULL || 
+		if (param->name == NULL || param->value == NULL ||
 				param->valuetype == NULL) {
 			dom_namednodemap_unref(attrs);
 			return false;
@@ -2943,7 +2943,7 @@ bool box_get_attribute(dom_node *n, const char *attribute,
 	dom_string *attr, *attr_name;
 	dom_exception err;
 
-	err = dom_string_create_interned((const uint8_t *) attribute, 
+	err = dom_string_create_interned((const uint8_t *) attribute,
 			strlen(attribute), &attr_name);
 	if (err != DOM_NO_ERR)
 		return false;
@@ -2960,7 +2960,7 @@ bool box_get_attribute(dom_node *n, const char *attribute,
 		result = talloc_strdup(context, dom_string_data(attr));
 
 		dom_string_unref(attr);
-	
+
 		if (result == NULL)
 			return false;
 
@@ -3018,7 +3018,7 @@ bool box_extract_link(const char *rel, nsurl *base, nsurl **result)
 			quot0 = strchr(s, '"');
 			if (quot0)
 				quot1 = strchr(quot0 + 1, '"');
-			if (apos0 && apos1 && 
+			if (apos0 && apos1 &&
 					(!quot0 || !quot1 || apos0 < quot0)) {
 				*apos1 = 0;
 				s1 = apos0 + 1;
