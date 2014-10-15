@@ -3764,7 +3764,7 @@ static struct bitmap * treeview_generate_rotate_bitmap(
 			*(pos++) = *(orig_pos++);
 			*(pos++) = *(orig_pos);
 			*(pos++) = 0xff;
-			
+		
 		}
 
 		rpos += stride;
