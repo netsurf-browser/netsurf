@@ -668,7 +668,7 @@ bool ro_gui_dialog_zoom_apply(wimp_w w) {
 
 	scale = atoi(ro_gui_get_icon_string(w, ICON_ZOOM_VALUE));
 	all = ro_gui_get_icon_selected_state(w, ICON_ZOOM_FRAMES);
-	browser_window_set_scale(ro_gui_current_zoom_gui->bw, scale * 0.01, all);
+	ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
 	return true;
 }
 

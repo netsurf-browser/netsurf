@@ -94,6 +94,8 @@ struct gui_window {
 
 	char validation[12];	/**< Validation string for colours */
 
+	float scale;		/**< Browser window scale */
+
 	/** Options. */
 	struct {
 		bool buffer_animations;	/**< Use screen buffering for animations. */
@@ -129,6 +131,7 @@ void gui_401login_open(struct nsurl *url, const char *realm,
 		       nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /* in window.c */
+void ro_gui_window_set_scale(struct gui_window *g, float scale);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_mouse_at(wimp_pointer *pointer, void *data);
 void ro_gui_window_iconise(struct gui_window *g,
