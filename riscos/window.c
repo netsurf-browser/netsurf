@@ -3571,10 +3571,8 @@ void ro_gui_window_toolbar_click(void *data,
 		{
 			gui_save_type save_type;
 
-			if (g->bw->current_content == NULL)
+			if (!browser_window_has_content(g->bw))
 				break;
-
-			hlcache_handle *h = g->bw->current_content;
 
 			if (ro_gui_shift_pressed())
 				save_type = GUI_SAVE_LINK_URL;
@@ -3582,8 +3580,9 @@ void ro_gui_window_toolbar_click(void *data,
 				save_type = GUI_SAVE_LINK_TEXT;
 
 			ro_gui_drag_save_link(save_type,
-					nsurl_access(hlcache_handle_get_url(h)),
-					content_get_title(h), g);
+					nsurl_access(
+						browser_window_get_url(g->bw)),
+					browser_window_get_title(g->bw), g);
 		}
 			break;
 
@@ -3687,14 +3686,14 @@ void ro_gui_window_toolbar_click(void *data,
 		break;
 
 	case TOOLBAR_BUTTON_UP:
-		if (g->bw != NULL && g->bw->current_content != NULL)
-			ro_gui_window_navigate_up(g->bw->window,
-					nsurl_access(hlcache_handle_get_url(
-					g->bw->current_content)));
+		if (g->bw != NULL && browser_window_has_content(g->bw))
+			ro_gui_window_navigate_up(g,
+					nsurl_access(browser_window_get_url(
+							g->bw)));
 		break;
 
 	case TOOLBAR_BUTTON_UP_NEW:
-		if (g->bw && g->bw->current_content) {
+		if (g->bw && browser_window_has_content(g->bw)) {
 			hlcache_handle *h = g->bw->current_content;
 			nserror error;
 
@@ -3713,7 +3712,7 @@ void ro_gui_window_toolbar_click(void *data,
 				 */
 				ro_gui_window_navigate_up(new_bw->window,
 					nsurl_access(hlcache_handle_get_url(h)));
-	}
+			}
 		}
 		break;
 
