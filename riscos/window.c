@@ -1863,7 +1863,6 @@ bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
 bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		bool is_toolbar)
 {
-	hlcache_handle			*h;
 	struct contextual_content	cont;
 	os_error			*ro_error;
 	wimp_pointer			pointer;
@@ -1887,9 +1886,6 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	if (!ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
 		return false;
-
-
-	h = g->bw->current_content;
 
 	browser_window_get_contextual_content(g->bw, pos.x, pos.y, &cont);
 
@@ -1978,7 +1974,8 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
-		ro_gui_view_source((cont.main != NULL) ? cont.main : h);
+		ro_gui_view_source((cont.main != NULL) ? cont.main :
+				browser_window_get_content(bw));
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F9:
@@ -2029,7 +2026,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case 17:       /* CTRL+Q (Zoom out) */
 	case 23:       /* CTRL+W (Zoom in) */
-		if (!h)
+		if (browser_window_has_content(bw) == false)
 			break;
 		scale = g->scale;
 		if (ro_gui_shift_pressed() && c == 17)
