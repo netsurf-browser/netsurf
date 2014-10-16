@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,24 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Interface to gui interface factory
- */
-
-#ifndef _NETSURF_DESKTOP_GUI_FACTORY_H_
-#define _NETSURF_DESKTOP_GUI_FACTORY_H_
-
-#include "desktop/gui.h"
-
-/** The global operation table */
-extern struct netsurf_table *guit;
-
-/** register and verify global operation table
+/**
+ * \file
  *
- * @param gt The global table to register
- * @return NSERROR_OK on success or error code on faliure. On faliure
- * global table will not be initialised
+ * Interface to platform-specific download operations.
  */
-nserror gui_factory_register(struct netsurf_table *gt);
+
+#ifndef _NETSURF_DESKTOP_GUI_DOWNLOAD_H_
+#define _NETSURF_DESKTOP_GUI_DOWNLOAD_H_
+
+struct gui_window;
+struct download_context;
+
+/**
+ * function table for download windows.
+ */
+struct gui_download_table {
+	struct gui_download_window *(*create)(struct download_context *ctx, struct gui_window *parent);
+
+	nserror (*data)(struct gui_download_window *dw,	const char *data, unsigned int size);
+
+	void (*error)(struct gui_download_window *dw, const char *error_msg);
+
+	void (*done)(struct gui_download_window *dw);
+};
 
 #endif
