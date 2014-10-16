@@ -1975,7 +1975,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
 		ro_gui_view_source((cont.main != NULL) ? cont.main :
-				browser_window_get_content(bw));
+				browser_window_get_content(g->bw));
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F9:
@@ -2026,7 +2026,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case 17:       /* CTRL+Q (Zoom out) */
 	case 23:       /* CTRL+W (Zoom in) */
-		if (browser_window_has_content(bw) == false)
+		if (browser_window_has_content(g->bw) == false)
 			break;
 		scale = g->scale;
 		if (ro_gui_shift_pressed() && c == 17)
