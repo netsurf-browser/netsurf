@@ -27,7 +27,7 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
+#include "desktop/gui_clipboard.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/clipboard.h"

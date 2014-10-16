@@ -31,11 +31,6 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
-#include "desktop/browser_history.h"
-#include "desktop/gui.h"
-#include "desktop/mouse.h"
-#include "desktop/plotters.h"
-#include "desktop/netsurf.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "utils/filepath.h"
@@ -44,6 +39,12 @@
 #include "utils/types.h"
 #include "desktop/textinput.h"
 #include "render/form.h"
+#include "desktop/browser_history.h"
+#include "desktop/mouse.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_misc.h"
+#include "desktop/netsurf.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"

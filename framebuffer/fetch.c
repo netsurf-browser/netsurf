@@ -29,11 +29,10 @@
 #include "utils/log.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
-#include "desktop/gui.h"
+#include "desktop/gui_fetch.h"
 
 #include "framebuffer/findfile.h"
 #include "framebuffer/fetch.h"
-
 
 
 /**
