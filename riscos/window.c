@@ -1652,7 +1652,7 @@ void ro_gui_window_close(wimp_w w)
 	os_error *error;
 	char *temp_name;
 	char *filename = NULL;
-	hlcache_handle *h = NULL;
+	struct nsurl *url;
 	bool destroy;
 
 	error = xwimp_get_pointer_info(&pointer);
@@ -1662,14 +1662,13 @@ void ro_gui_window_close(wimp_w w)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if (g->bw)
-		h = g->bw->current_content;
+
 	if (pointer.buttons & wimp_CLICK_ADJUST) {
 		destroy = !ro_gui_shift_pressed();
 
-		if (h && hlcache_handle_get_url(h)) {
-			netsurf_nsurl_to_path(hlcache_handle_get_url(h), 
-					      &filename);
+		url = browser_window_get_url(g->bw);
+		if (url != NULL) {
+			netsurf_nsurl_to_path(url, &filename);
 		}
 		if (filename != NULL) {
 			temp_name = malloc(strlen(filename) + 32);
@@ -1699,11 +1698,8 @@ void ro_gui_window_close(wimp_w w)
 		} else {
 			/* this is pointless if we are about to close the
 			 * window */
-			if (!destroy && g->bw != NULL &&
-					g->bw->current_content != NULL)
-				ro_gui_window_navigate_up(g->bw->window,
-						nsurl_access(hlcache_handle_get_url(
-						g->bw->current_content)));
+			if (!destroy && url != NULL)
+				ro_gui_window_navigate_up(g, nsurl_access(url));
 		}
 	}
 	else
