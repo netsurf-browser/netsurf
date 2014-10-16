@@ -23,14 +23,14 @@
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
-#include "gtk/gui.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "desktop/browser.h"
+
+#include "gtk/gui.h"
 
 struct session_401 {
 	nsurl *url;				/**< URL being fetched */

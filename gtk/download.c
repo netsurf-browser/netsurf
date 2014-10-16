@@ -29,7 +29,7 @@
 #include "utils/messages.h"
 #include "utils/nsoption.h"
 #include "desktop/download.h"
-#include "desktop/gui.h"
+#include "desktop/gui_download.h"
 
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"

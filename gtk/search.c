@@ -26,15 +26,15 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "utils/config.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
-#include "desktop/search.h"
-#include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "desktop/browser.h"
+#include "desktop/search.h"
+#include "desktop/searchweb.h"
+#include "desktop/gui_search.h"
 
 #include "gtk/compat.h"
 #include "gtk/search.h"

@@ -33,11 +33,11 @@
 #include "content/hlcache.h"
 #include "gtk/window.h"
 #include "gtk/selection.h"
-#include "desktop/gui.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
+#include "desktop/gui_window.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"
