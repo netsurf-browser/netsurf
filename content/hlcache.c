@@ -24,12 +24,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "desktop/gui_factory.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/ring.h"
 #include "utils/utils.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "content/content.h"
 #include "content/mimesniff.h"

@@ -36,7 +36,8 @@
 #include "render/box.h"
 #include "render/html.h"
 
-#include "desktop/gui_factory.h"
+#include "desktop/gui_utf8.h"
+#include "desktop/gui_internal.h"
 #include "desktop/save_text.h"
 
 static void extract_text(struct box *box, bool *first,

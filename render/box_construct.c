@@ -37,7 +37,6 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
-#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/locale.h"
@@ -45,6 +44,8 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/box_textarea.h"

@@ -22,9 +22,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Browser window creation and manipulation (implementation).
+/**
+ * \file
+ *
+ * Browser window creation and manipulation implementation.
  */
+
+#include "utils/config.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -35,37 +39,37 @@
 #include <strings.h>
 #include <math.h>
 
-#include "curl/curl.h"
-#include "utils/config.h"
-#include "content/content.h"
-#include "content/fetch.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
-#include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
-#include "desktop/download.h"
-#include "desktop/frames.h"
-#include "desktop/global_history.h"
-#include "desktop/gui_factory.h"
-#include "desktop/hotlist.h"
-#include "desktop/knockout.h"
-#include "utils/nsoption.h"
-#include "desktop/scrollbar.h"
-#include "desktop/selection.h"
-#include "desktop/plotters.h"
-#include "css/utils.h"
-
-#include "javascript/js.h"
-
-#include "render/form.h"
-#include "render/html.h"
-#include "render/box.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
+#include "utils/nsoption.h"
+#include "content/content.h"
+#include "content/fetch.h"
+#include "content/hlcache.h"
+#include "content/urldb.h"
+#include "render/form.h"
+#include "render/html.h"
+#include "render/box.h"
+#include "curl/curl.h"
+#include "css/utils.h"
+#include "javascript/js.h"
+
+#include "desktop/browser_history.h"
+#include "desktop/browser_private.h"
+#include "desktop/download.h"
+#include "desktop/frames.h"
+#include "desktop/global_history.h"
+#include "desktop/hotlist.h"
+#include "desktop/knockout.h"
+#include "desktop/scrollbar.h"
+#include "desktop/selection.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_internal.h"
 
 
 /** maximum frame depth */

@@ -33,7 +33,8 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/selection.h"
-#include "desktop/gui_factory.h"
+#include "desktop/gui_search.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/html.h"

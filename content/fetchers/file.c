@@ -16,7 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* file: URL handling. Based on the data fetcher by Rob Kendrick */
+/**
+ * \file
+ *
+ * file scheme URL handling. Based on the data fetcher by Rob Kendrick
+ */
 
 #include "utils/config.h"
 
@@ -42,7 +46,6 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/errors.h"
@@ -51,6 +54,8 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/file.h"
+#include "desktop/gui_fetch.h"
+#include "desktop/gui_internal.h"
 
 #include "content/dirlist.h"
 #include "content/fetch.h"

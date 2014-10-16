@@ -28,11 +28,12 @@
 #include <stdlib.h>
 
 #include "content/hlcache.h"
-#include "desktop/gui_factory.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "render/html_internal.h"
 

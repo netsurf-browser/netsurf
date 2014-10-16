@@ -44,7 +44,6 @@
 #include "render/box.h"
 #include "render/html.h"
 
-#include "desktop/gui_factory.h"
 #include "desktop/save_complete.h"
 
 regex_t save_complete_import_re;

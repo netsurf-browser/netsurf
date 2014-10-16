@@ -48,7 +48,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
-#include "desktop/gui_factory.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"

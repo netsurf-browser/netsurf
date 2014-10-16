@@ -22,9 +22,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "desktop/gui_factory.h"
 #include "utils/log.h"
 #include "content/content_protected.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "image/image_cache.h"
 #include "image/image.h"

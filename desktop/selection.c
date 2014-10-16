@@ -38,11 +38,13 @@
 #include "render/textplain.h"
 
 #include "desktop/browser_private.h"
-#include "desktop/gui_factory.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_internal.h"
 
 /**
  * Text selection works by labelling each node in the box tree with its

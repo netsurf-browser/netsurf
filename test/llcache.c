@@ -123,7 +123,6 @@ char *url_to_path(const char *url)
  ******************************************************************************/
 
 #include "desktop/cookie_manager.h"
-#include "desktop/gui.h"
 #include "desktop/tree.h"
 
 /* desktop/cookie_manager.h -- used by urldb 
@@ -170,11 +169,6 @@ void fetch_file_register(void)
 {
 }
 
-/* desktop/gui.h -- used by image_cache through about: handler */
-nsurl* gui_get_resource_url(const char *path)
-{
-	return NULL;
-}
 
 /******************************************************************************
  * test: protocol handler                                                     *

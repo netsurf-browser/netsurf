@@ -19,12 +19,21 @@
 #include "content/hlcache.h"
 #include "content/backing_store.h"
 
+#include "utils/file.h"
 #include "desktop/download.h"
 #include "desktop/searchweb.h"
-#include "desktop/gui_factory.h"
-#include "utils/file.h"
+#include "desktop/gui_download.h"
+#include "desktop/gui_fetch.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_search.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_utf8.h"
+#include "desktop/netsurf.h"
 
-/** The global interface table */
+/**
+ * The global interface table.
+ */
 struct netsurf_table *guit = NULL;
 
 
@@ -593,8 +602,8 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 }
 
 
-/* exported interface documented in desktop/gui_factory.h */
-nserror gui_factory_register(struct netsurf_table *gt)
+/* exported interface documented in desktop/netsurf.h */
+nserror netsurf_register(struct netsurf_table *gt)
 {
 	nserror err;
 

@@ -26,8 +26,8 @@
 #include "utils/nsoption.h"
 #include "content/hlcache.h"
 
-#include "desktop/gui_factory.h"
 #include "desktop/searchweb.h"
+#include "desktop/gui_internal.h"
 
 struct search_provider {
 	char *name; /**< readable name such as 'google', 'yahoo', etc */

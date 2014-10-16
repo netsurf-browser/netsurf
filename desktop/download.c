@@ -26,12 +26,13 @@
 #include <string.h>
 
 #include "content/llcache.h"
-#include "desktop/download.h"
-#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "desktop/download.h"
+#include "desktop/gui_download.h"
+#include "desktop/gui_internal.h"
 
 /**
  * A context for a download

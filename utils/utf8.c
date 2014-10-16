@@ -26,14 +26,15 @@
 #include <string.h>
 #include <strings.h>
 #include <iconv.h>
-
 #include <parserutils/charset/utf8.h>
-
-#include "desktop/gui_factory.h"
 
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
+
+#include "desktop/gui_utf8.h"
+#include "desktop/gui_internal.h"
+
 
 /* exported interface documented in utils/utf8.h */
 uint32_t utf8_to_ucs4(const char *s_in, size_t l)

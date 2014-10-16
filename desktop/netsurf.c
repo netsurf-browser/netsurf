@@ -46,12 +46,13 @@
 #include "render/html.h"
 #include "render/textplain.h"
 
-#include "desktop/netsurf.h"
 #include "desktop/version.h"
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
 #include "desktop/searchweb.h"
-#include "desktop/gui_factory.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
+#include "desktop/netsurf.h"
 
 /** speculative pre-conversion small image size
  *
@@ -115,13 +116,6 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 	}
 
 	return NSERROR_OK;
-}
-
-/* exported interface documented in desktop/netsurf.h */
-nserror netsurf_register(struct netsurf_table *table)
-{
-	/* register the operation handlers */
-	return gui_factory_register(table);
 }
 
 /* exported interface documented in desktop/netsurf.h */

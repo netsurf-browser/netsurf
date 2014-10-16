@@ -43,7 +43,6 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "desktop/gui.h"
 
 #include "content/backing_store.h"
 

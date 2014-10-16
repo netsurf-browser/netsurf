@@ -18,8 +18,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/gif (implementation)
+/**
+ * \file
+ *
+ * Content for image/gif implementation
  *
  * All GIFs are dynamically decompressed using the routines that gifread.c
  * provides. Whilst this allows support for progressive decoding, it is
@@ -35,14 +37,15 @@
 #include <libnsgif.h>
 
 #include "utils/config.h"
-#include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "utils/nsoption.h"
-#include "desktop/plotters.h"
-#include "desktop/gui_factory.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "content/content_protected.h"
+#include "content/hlcache.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "image/image.h"
 #include "image/bitmap.h"

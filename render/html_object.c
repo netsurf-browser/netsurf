@@ -27,14 +27,15 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "content/hlcache.h"
-#include "css/utils.h"
-#include "utils/nsoption.h"
-#include "desktop/scrollbar.h"
-#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/nsoption.h"
+#include "content/hlcache.h"
+#include "css/utils.h"
+#include "desktop/scrollbar.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/html_internal.h"

@@ -35,7 +35,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
-#include "desktop/gui_factory.h"
 #include "desktop/frames.h"
 #include "desktop/mouse.h"
 #include "utils/nsoption.h"
@@ -45,6 +44,8 @@
 #include "desktop/textinput.h"
 #include "desktop/font.h"
 #include "javascript/js.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_internal.h"
 
 #include "render/box.h"
 #include "render/box_textarea.h"

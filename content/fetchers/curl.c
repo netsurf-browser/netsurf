@@ -41,7 +41,6 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include "desktop/gui_factory.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
@@ -50,6 +49,8 @@
 #include "utils/ring.h"
 #include "utils/useragent.h"
 #include "utils/file.h"
+#include "desktop/gui_fetch.h"
+#include "desktop/gui_internal.h"
 
 #include "content/fetch.h"
 #include "content/fetchers.h"

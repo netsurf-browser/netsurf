@@ -17,8 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Single/Multi-line UTF-8 text area (implementation)
+/**
+ * \file
+ *
+ * Single/Multi-line UTF-8 text area implementation.
  */
 
 #include <stdint.h>
@@ -35,7 +37,8 @@
 #include "desktop/plotters.h"
 #include "desktop/scrollbar.h"
 #include "desktop/font.h"
-#include "desktop/gui_factory.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_internal.h"
 
 #define CARET_COLOR 0x0000FF
 #define TA_ALLOC_STEP 512
