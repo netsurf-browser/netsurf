@@ -3068,7 +3068,7 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 {
 	struct gui_window	*g = ro_gui_window_lookup(scroll->w);
 
-	if (g && g->bw->current_content && ro_gui_shift_pressed()) {
+	if (g && browser_window_has_content(g->bw) && ro_gui_shift_pressed()) {
 		/* extended scroll request with shift held down; change zoom */
 		float scale, inc;
 
