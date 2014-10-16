@@ -36,26 +36,25 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
+
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "content/content.h"
-#include "desktop/gui.h"
+
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
-
-/* \TODO -- provide a proper interface for these and make them static again!
- */
+/** @todo provide a proper interface for these and make them static again! */
 
 static struct theme_descriptor *theme_current = NULL;
 static struct theme_descriptor *theme_descriptors = NULL;

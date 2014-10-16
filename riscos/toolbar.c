@@ -37,9 +37,13 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
+
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/content.h"
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
+
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
@@ -49,7 +53,6 @@
 #include "riscos/gui/url_bar.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"
@@ -59,8 +62,6 @@
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
 #include "riscos/window.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 
 #define TOOLBAR_WIDGET_GUTTER 8

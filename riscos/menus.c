@@ -19,8 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Menu creation and handling (implementation).
+/**
+ * \file
+ * Menu creation and handling implementation.
  */
 
 #include <ctype.h>
@@ -41,7 +42,6 @@
 #include "content/urldb.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "desktop/textinput.h"
 
 #include "riscos/dialog.h"

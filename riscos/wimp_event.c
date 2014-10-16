@@ -31,7 +31,10 @@
 #include "oslib/osbyte.h"
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
-#include "desktop/gui.h"
+
+#include "utils/log.h"
+#include "utils/utils.h"
+
 #include "riscos/gui.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
@@ -39,8 +42,6 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #define WIN_HASH_SIZE 32
 #define WIN_HASH(w) (((unsigned)(w) >> 5) % WIN_HASH_SIZE)

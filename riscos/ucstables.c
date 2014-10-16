@@ -31,7 +31,7 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "desktop/gui.h"
+#include "desktop/gui_utf8.h"
 
 #include "riscos/ucstables.h"
 

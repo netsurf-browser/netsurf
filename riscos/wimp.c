@@ -33,13 +33,14 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
-#include "desktop/gui.h"
-#include "riscos/gui.h"
-#include "riscos/oslib_pre7.h"
-#include "riscos/wimp.h"
+
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+
+#include "riscos/gui.h"
+#include "riscos/oslib_pre7.h"
+#include "riscos/wimp.h"
 #include "riscos/ucstables.h"
 
 

@@ -17,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Free text search (implementation)
+/**
+ * \file
+ * Free text search implementation
  */
 
 #include "utils/config.h"
@@ -28,15 +29,15 @@
 #include "oslib/hourglass.h"
 #include "oslib/wimp.h"
 
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
-#include "desktop/browser.h"
-#include "desktop/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "desktop/browser.h"
+#include "desktop/gui_search.h"
+#include "desktop/browser.h"
+#include "desktop/search.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"

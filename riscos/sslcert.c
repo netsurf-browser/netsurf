@@ -27,18 +27,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
 #include "oslib/wimp.h"
+
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/fetch.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/gui.h"
 #include "desktop/tree.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 #include "riscos/dialog.h"
 #include "riscos/sslcert.h"

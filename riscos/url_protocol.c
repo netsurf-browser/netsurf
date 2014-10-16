@@ -31,17 +31,18 @@
 #include <string.h>
 #include "oslib/inetsuite.h"
 #include "oslib/wimp.h"
-#include "utils/config.h"
-#include "content/fetch.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
-#include "riscos/gui.h"
-#include "riscos/uri.h"
-#include "riscos/url_protocol.h"
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "utils/config.h"
+#include "content/fetch.h"
+#include "desktop/browser.h"
+
+#include "riscos/gui.h"
+#include "riscos/uri.h"
+#include "riscos/url_protocol.h"
 
 /**
  * Handle a Message_InetSuiteOpenURL.

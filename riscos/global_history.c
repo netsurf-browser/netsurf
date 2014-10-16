@@ -29,23 +29,25 @@
 #include <time.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+
 #include "content/urldb.h"
+#include "utils/nsoption.h"
+#include "utils/messages.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "desktop/global_history.h"
 #include "desktop/tree.h"
-#include "desktop/gui.h"
+#include "desktop/gui_window.h"
+
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
-#include "utils/nsoption.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
-#include "utils/messages.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 
 static void ro_gui_global_history_toolbar_update_buttons(void);
 static void ro_gui_global_history_toolbar_save_buttons(char *config);

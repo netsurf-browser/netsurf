@@ -50,7 +50,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/thumbnail.h"
-#include "desktop/gui.h"
+#include "desktop/gui_window.h"
 #include "image/bitmap.h"
 #include "render/form.h"
 

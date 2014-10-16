@@ -18,14 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Download windows (RISC OS implementation).
+/**
+ * \file
+ * RISC OS download windows implementation.
  *
- * This file implements the interface given by desktop/gui.h for download
- * windows. Each download window has an associated fetch. Downloads start by
- * writing received data to a temporary file. At some point the user chooses
- * a destination (by drag & drop), and the temporary file is then moved to the
- * destination and the download continues until complete.
+ * This file implements the interface given by desktop/gui_download.h
+ * for download windows. Each download window has an associated
+ * fetch. Downloads start by writing received data to a temporary
+ * file. At some point the user chooses a destination (by drag &
+ * drop), and the temporary file is then moved to the destination and
+ * the download continues until complete.
  */
 
 #include <assert.h>
@@ -44,8 +46,6 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 
-#include "desktop/gui.h"
-#include "desktop/download.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -53,6 +53,8 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/corestrings.h"
+#include "desktop/gui_download.h"
+#include "desktop/download.h"
 
 #include "riscos/gui.h"
 #include "riscos/dialog.h"
