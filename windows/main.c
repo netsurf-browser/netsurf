@@ -16,29 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <limits.h>
-#include <stdbool.h>
-
 #include "utils/config.h"
 
+#include <limits.h>
+#include <stdbool.h>
 #include <windows.h>
 
-#include "desktop/gui.h"
-#include "utils/nsoption.h"
-#include "desktop/browser.h"
-#include "desktop/netsurf.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
-#include "content/fetchers/resource.h"
+#include "utils/nsoption.h"
+#include "desktop/browser.h"
+#include "desktop/gui_fetch.h"
+#include "desktop/netsurf.h"
 
 #include "windows/findfile.h"
 #include "windows/drawable.h"
-#include "windows/gui.h"
 #include "windows/download.h"
+#include "windows/localhistory.h"
+#include "windows/gui.h"
 
 static char **respaths; /** resource search path vector. */
 

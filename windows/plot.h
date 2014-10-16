@@ -17,7 +17,6 @@
  */
  
 #include <windows.h>
-#include "desktop/gui.h"
 
 extern const struct plotter_table win_plotters;
  

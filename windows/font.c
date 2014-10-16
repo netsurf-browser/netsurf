@@ -1,7 +1,6 @@
 /*
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2009 - 2014 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2009 - 2013 Michael Drake <tlsa@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,21 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
-#include <assert.h>
+/**
+ * \file
+ * Windows font handling implementation.
+ */
 
 #include "utils/config.h"
-
+#include <inttypes.h>
+#include <assert.h>
 #include <windows.h>
 
-#include "desktop/font.h"
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
+#include "desktop/font.h"
+#include "desktop/gui_utf8.h"
 
 #include "windows/font.h"
-#include "windows/gui.h"
-#include "windows/plot.h"
+
+HWND font_hwnd;
 
 nserror utf8_to_font_encoding(const struct font_desc* font,
 				       const char *string, 

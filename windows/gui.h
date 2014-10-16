@@ -20,10 +20,6 @@
 #ifndef _NETSURF_WINDOWS_GUI_H_
 #define _NETSURF_WINDOWS_GUI_H_
 
-#include <windows.h>
-#include "desktop/gui.h"
-#include "windows/localhistory.h"
-
 struct gui_file_table *win32_file_table;
 extern struct gui_window_table *win32_window_table;
 extern struct gui_clipboard_table *win32_clipboard_table;
@@ -61,7 +57,6 @@ struct nsws_pointers {
 extern struct gui_window *window_list;
 extern char *options_file_location;
 
-extern HWND font_hwnd;
 
 HWND gui_window_main_window(struct gui_window *);
 HWND gui_window_toolbar(struct gui_window *);

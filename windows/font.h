@@ -20,8 +20,7 @@
 #ifndef _NETSURF_WINDOWS_FONT_H_
 #define _NETSURF_WINDOWS_FONT_H_
 
-#include <windows.h>
-#include "utils/utf8.h"
+extern HWND font_hwnd;
 
 struct font_desc {
     const char *name;

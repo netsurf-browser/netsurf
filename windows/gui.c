@@ -17,18 +17,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-
-#include "utils/config.h"
-
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
 
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/file.h"
+#include "utils/corestrings.h"
+#include "utils/url.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "desktop/browser_history.h"
@@ -38,12 +43,10 @@
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "utils/file.h"
-#include "utils/corestrings.h"
-#include "utils/url.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_fetch.h"
 
 #include "windows/window.h"
 #include "windows/about.h"
@@ -66,7 +69,6 @@ HINSTANCE hInstance; /** win32 application instance handle. */
 struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
-HWND font_hwnd;
 
 static int open_windows = 0;
 

@@ -21,7 +21,6 @@
 
 #include <time.h>
 #include <windows.h>
-#include "desktop/gui.h"
 
 extern struct gui_download_table *win32_download_table;
 

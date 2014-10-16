@@ -17,20 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
 #include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <math.h>
-
-#include "utils/config.h"
-
 #include <windows.h>
 
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "desktop/gui.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
 #include "desktop/plotters.h"
 
 #include "windows/bitmap.h"

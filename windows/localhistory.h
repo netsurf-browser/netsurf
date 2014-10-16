@@ -25,7 +25,7 @@ void nsws_localhistory_open(struct gui_window *gw);
 void nsws_localhistory_close(struct gui_window *gw);
 
 /* creates localhistory window */
-struct nsws_localhistory * nsws_window_create_localhistory(struct gui_window *gw);
+struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw);
 
 nserror nsws_create_localhistory_class(HINSTANCE hinstance);
 

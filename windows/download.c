@@ -24,14 +24,14 @@
 #include <shlobj.h>
 #include <windows.h>
 
-#include "content/fetch.h"
-#include "desktop/gui.h"
-#include "desktop/download.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/nsurl.h"
 #include "utils/utils.h"
+#include "content/fetch.h"
+#include "desktop/gui_download.h"
+#include "desktop/download.h"
 
 #include "windows/download.h"
 #include "windows/gui.h"
