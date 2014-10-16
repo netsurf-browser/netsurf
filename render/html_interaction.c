@@ -54,6 +54,13 @@
 #include "render/imagemap.h"
 #include "render/search.h"
 
+/* TODO:
+ * This is currently needed here because the forms stuff (select menu
+ * specifically) is badly designed.  But I'd rather it were here in the
+ * core than in all the front ends.  We should fix this so we communicate
+ * with the browser window layer via the content message system. -- tlsa */
+#include <desktop/browser_private.h>
+
 /**
  * Get pointer shape for given box
  *
