@@ -192,8 +192,6 @@ static struct form_control	*gui_form_select_control;
 static wimp_menu		*ro_gui_browser_window_menu = NULL;
 /** Menu of options for form select controls. */
 static wimp_menu		*gui_form_select_menu = NULL;
-/** Browser window associated with open select menu. */
-static struct browser_window	*ro_gui_select_menu_bw = NULL;
 /** Main content object under menu, or 0 if none. */
 static hlcache_handle		*current_menu_main = 0;
 /** Object under menu, or 0 if no object. */
@@ -4710,8 +4708,6 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		ro_gui_menu_destroy();
 		return false;
 	}
-
-	ro_gui_select_menu_bw = g->bw;
 
 	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
 		for (i = 0; ; i++) {
