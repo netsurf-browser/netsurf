@@ -17,9 +17,15 @@
  */
 
 #include <proto/exec.h>
+
+#include "utils/nsurl.h"
+#include "content/llcache.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/sslcert_viewer.h"
+
 #include "amiga/tree.h"
 #include "amiga/sslcert.h"
-#include "desktop/sslcert_viewer.h"
 
 void gui_cert_verify(nsurl *url, 
 		const struct ssl_cert_info *certs, unsigned long num,

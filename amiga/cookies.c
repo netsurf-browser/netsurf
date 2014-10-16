@@ -17,8 +17,12 @@
  */
 
 #include <proto/exec.h>
-#include "amiga/cookies.h"
+
 #include "desktop/cookie_manager.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/cookies.h"
 #include "amiga/tree.h"
 
 void ami_cookies_initialise(void)

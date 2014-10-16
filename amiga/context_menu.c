@@ -23,10 +23,21 @@
 #include <proto/asl.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
-
 #include <reaction/reaction_macros.h>
+#include <string.h>
 
-#include "amiga/context_menu.h"
+#include "utils/nsoption.h"
+#include "utils/utf8.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "render/form.h"
+#include "desktop/browser_history.h"
+#include "desktop/browser_private.h"
+#include "desktop/hotlist.h"
+#include "desktop/searchweb.h"
+#include "desktop/textinput.h"
+#include "desktop/gui_window.h"
+
 #include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
 #include "amiga/file.h"
@@ -34,22 +45,12 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
-#include "utils/nsoption.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
-#include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
-#include "desktop/hotlist.h"
-#include "desktop/searchweb.h"
-#include "desktop/textinput.h"
-#include "render/form.h"
-#include "utils/utf8.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+#include "amiga/context_menu.h"
 
-#include <string.h>
 
 static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
 static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved);
@@ -556,8 +557,6 @@ void ami_context_menu_free(void)
 
 BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 {
-	int top, left, width, height;
-
 	if(nsoption_bool(context_menu) == false) return FALSE;
 
 	if((nsoption_bool(kiosk_mode) == false) && (trap == FALSE))
@@ -584,11 +583,8 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 {
 	struct hlcache_handle *cc = gwin->bw->current_content;
-	int box_x=0;
-	int box_y=0;
 	bool no_more_menus = false;
 	bool menuhascontent = false;
-	ULONG ret = 0;
 	struct contextual_content ccdata;
 
 	if(!cc) return;
@@ -734,9 +730,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				{
 					struct ami_file_input_menu_data
 							*file_input = userdata;
-					char *utf8_fn;
 					char fname[1024];
-					int x,y;
 
 					strlcpy(fname,filereq->fr_Drawer,1024);
 					AddPart(fname,filereq->fr_File,1024);

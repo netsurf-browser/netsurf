@@ -25,17 +25,6 @@
 #include "utils/config.h"
 #include <ctype.h>
 #include <string.h>
-#include "content/content.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
-#include "desktop/search.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "amiga/os3support.h"
-#include "amiga/search.h"
-#include "amiga/object.h"
-#include "amiga/theme.h"
 
 #include <proto/intuition.h>
 #include <proto/exec.h>
@@ -52,6 +41,21 @@
 #include <gadgets/checkbox.h>
 #include <images/label.h>
 #include <reaction/reaction_macros.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "content/content.h"
+#include "desktop/browser.h"
+#include "desktop/search.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_search.h"
+
+#include "amiga/os3support.h"
+#include "amiga/search.h"
+#include "amiga/object.h"
+#include "amiga/theme.h"
 
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))

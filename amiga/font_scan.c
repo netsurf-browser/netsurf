@@ -40,14 +40,16 @@
 
 #include <reaction/reaction_macros.h>
 
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
 #include "amiga/font_scan.h"
 #include "amiga/gui.h"
 #include "amiga/object.h"
 #include "amiga/utf8.h"
-
-#include "utils/nsoption.h"
-#include "utils/log.h"
-#include "utils/messages.h"
 
 enum {
 	FS_OID_MAIN = 0,

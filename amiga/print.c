@@ -16,16 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/printer.h"
-#include "amiga/plotters.h"
-#include "desktop/font.h"
-#include "amiga/gui.h"
-#include "utils/nsoption.h"
-#include "amiga/print.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-#include "amiga/utf8.h"
-
 #include <proto/utility.h>
 #include <proto/iffparse.h>
 #include <proto/dos.h>
@@ -52,6 +42,19 @@
 #include <images/label.h>
 
 #include <reaction/reaction_macros.h>
+
+#include "utils/nsoption.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "desktop/printer.h"
+#include "desktop/font.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/plotters.h"
+#include "amiga/gui.h"
+#include "amiga/print.h"
+#include "amiga/utf8.h"
 
 bool ami_print_begin(struct print_settings *ps);
 bool ami_print_next_page(void);

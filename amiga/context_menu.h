@@ -18,7 +18,6 @@
 
 #ifndef AMIGA_CONTEXT_MENU_H
 #define AMIGA_CONTEXT_MENU_H
-#include "amiga/gui.h"
 
 struct tree;
 

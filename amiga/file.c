@@ -16,6 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <proto/asl.h>
+#include <proto/dos.h>
+#include <proto/exec.h>
+#include <proto/icon.h>
+#include <workbench/icon.h>
+
+#include "utils/nsoption.h"
+#include "utils/file.h"
+#include "utils/messages.h"
+#include "content/content.h"
+#include "content/fetch.h"
+#include "desktop/browser_private.h"
+#include "desktop/save_complete.h"
+#include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/save_text.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/download.h"
 #include "amiga/file.h"
@@ -25,24 +43,6 @@
 #include "amiga/misc.h"
 #include "amiga/save_pdf.h"
 #include "amiga/theme.h"
-
-#include "content/content.h"
-#include "content/fetch.h"
-
-#include "desktop/browser_private.h"
-#include "utils/nsoption.h"
-#include "utils/file.h"
-#include "desktop/save_complete.h"
-#include "desktop/save_pdf/pdf_plotters.h"
-#include "desktop/save_text.h"
-
-#include "utils/messages.h"
-
-#include <proto/asl.h>
-#include <proto/dos.h>
-#include <proto/exec.h>
-#include <proto/icon.h>
-#include <workbench/icon.h>
 
 static struct Hook aslhookfunc;
 

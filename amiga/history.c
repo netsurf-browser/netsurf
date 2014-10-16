@@ -16,9 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdbool.h>
+#include <proto/exec.h>
+
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
 #include "amiga/history.h"
 #include "amiga/tree.h"
-#include <proto/exec.h>
 #include "amiga/tree.h"
 
 void ami_global_history_initialise(void)

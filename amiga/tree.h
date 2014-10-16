@@ -22,7 +22,6 @@
 #include <exec/types.h>
 #include <intuition/classusr.h>
 #include "amiga/os3support.h"
-#include "amiga/gui.h"
 #include "desktop/tree.h"
 
 struct treeview_window;

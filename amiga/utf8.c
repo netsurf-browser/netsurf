@@ -19,12 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-
-#include "utils/utf8.h"
-#include "desktop/gui.h"
 #include <proto/exec.h>
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
+
+#include "utils/utf8.h"
+#include "desktop/gui_utf8.h"
 
 #include "amiga/utf8.h"
 

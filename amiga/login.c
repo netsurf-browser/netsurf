@@ -16,16 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/os3support.h"
-#include "amiga/gui.h"
-#include "amiga/object.h"
-#include "amiga/login.h"
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
-#include "content/urldb.h"
-#include "utils/messages.h"
-#include "utils/errors.h"
 #include <assert.h>
 
 #include <proto/window.h>
@@ -39,6 +32,17 @@
 #include <gadgets/button.h>
 #include <images/label.h>
 #include <reaction/reaction_macros.h>
+
+#include "utils/messages.h"
+#include "utils/errors.h"
+#include "content/urldb.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/os3support.h"
+#include "amiga/gui.h"
+#include "amiga/object.h"
+#include "amiga/login.h"
 
 struct gui_login_window {
 	struct nsObject *node;

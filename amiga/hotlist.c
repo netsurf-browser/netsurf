@@ -17,9 +17,13 @@
  */
 
 #include <proto/exec.h>
+
+#include "desktop/hotlist.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
 #include "amiga/hotlist.h"
 #include "amiga/tree.h"
-#include "desktop/hotlist.h"
 
 struct ami_hotlist_ctx {
 	void *userdata;

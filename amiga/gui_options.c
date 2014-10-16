@@ -29,18 +29,6 @@
 #include <intuition/classusr.h>
 #include <graphics/gfxbase.h>
 
-#include "amiga/object.h"
-#include "amiga/font.h"
-#include "amiga/gui.h"
-#include "amiga/gui_options.h"
-#include "amiga/help.h"
-#include "amiga/theme.h"
-#include "amiga/utf8.h"
-#include "utils/messages.h"
-#include "desktop/browser_private.h"
-#include "utils/nsoption.h"
-#include "desktop/searchweb.h"
-
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/button.h>
@@ -68,6 +56,20 @@
 #include <gadgets/getfont.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
+
+#include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "desktop/browser_private.h"
+#include "desktop/searchweb.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/object.h"
+#include "amiga/font.h"
+#include "amiga/gui.h"
+#include "amiga/gui_options.h"
+#include "amiga/help.h"
+#include "amiga/theme.h"
+#include "amiga/utf8.h"
 
 enum
 {
@@ -218,7 +220,7 @@ CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 struct List *websearch_list;
 
-void ami_gui_opts_setup(void)
+static void ami_gui_opts_setup(void)
 {
 	tabs[0] = (char *)ami_utf8_easy((char *)messages_get("con_general"));
 	tabs[1] = (char *)ami_utf8_easy((char *)messages_get("Display"));
@@ -372,7 +374,7 @@ void ami_gui_opts_setup(void)
 	fontopts[5] = NULL;
 }
 
-void ami_gui_opts_free(void)
+static void ami_gui_opts_free(void)
 {
 	int i;
 
@@ -1530,7 +1532,7 @@ void ami_gui_opts_open(void)
 	ami_utf8_free(homepage_url_lc);
 }
 
-void ami_gui_opts_use(bool save)
+static void ami_gui_opts_use(bool save)
 {
 	ULONG data, id = 0;
 	float animspeed;
@@ -1701,31 +1703,31 @@ void ami_gui_opts_use(bool save)
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_sans, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SERIF],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_serif, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_MONO],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_mono, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_CURSIVE],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_cursive, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_FANTASY],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+	if((dot = strrchr(tattr->ta_Name,'.'))) *dot = '\0';
 	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
@@ -2148,7 +2150,7 @@ void ami_gui_opts_websearch_free(struct List *websearchlist)
 	do {
 		nnode = GetSucc(node);
 		Remove(node);
-	} while(node = nnode);
+	} while((node = nnode));
 
 	FreeVec(websearchlist);
 }

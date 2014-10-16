@@ -21,8 +21,6 @@
 
 #include "amiga/os3support.h"
 
-#include "amiga/gui.h"
-
 extern struct gui_download_table *amiga_download_table;
 
 struct download_context;

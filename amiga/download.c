@@ -31,27 +31,6 @@
 
 #include <workbench/icon.h>
 
-#include "amiga/download.h"
-#include "amiga/icon.h"
-#include "amiga/object.h"
-#include "utils/nsoption.h"
-#include "amiga/bitmap.h"
-#include "amiga/iff_dr2d.h"
-#include "amiga/file.h"
-#include "amiga/misc.h"
-#include "amiga/theme.h"
-#include "amiga/utf8.h"
-
-#include "desktop/download.h"
-#include "desktop/save_complete.h"
-
-#include "image/ico.h"
-
-#include "utils/errors.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
-
 #include <proto/window.h>
 #include <proto/layout.h>
 
@@ -61,6 +40,30 @@
 #include <gadgets/layout.h>
 
 #include <reaction/reaction_macros.h>
+
+#include "utils/errors.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "desktop/download.h"
+#include "desktop/save_complete.h"
+#include "desktop/browser.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_download.h"
+#include "image/ico.h"
+
+#include "amiga/gui.h"
+#include "amiga/download.h"
+#include "amiga/object.h"
+#include "amiga/bitmap.h"
+#include "amiga/icon.h"
+#include "amiga/file.h"
+#include "amiga/drag.h"
+#include "amiga/iff_dr2d.h"
+#include "amiga/misc.h"
+#include "amiga/utf8.h"
 
 struct gui_download_window {
 	struct nsObject *node;

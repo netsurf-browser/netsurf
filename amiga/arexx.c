@@ -16,17 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/os3support.h"
-
-#include "amiga/arexx.h"
-#include "amiga/download.h"
-#include "amiga/gui.h"
-#include "amiga/hotlist.h"
-#include "amiga/theme.h"
-#include "utils/nsoption.h"
-
-#include "desktop/browser_private.h"
-#include "desktop/version.h"
 
 #include <string.h>
 #include <math.h>
@@ -38,11 +27,20 @@
 #include <gadgets/clicktab.h>
 #include <reaction/reaction_macros.h>
 
+#include "utils/nsoption.h"
+#include "desktop/browser_private.h"
+#include "desktop/gui_window.h"
+#include "desktop/version.h"
+
+#include "amiga/os3support.h"
+#include "amiga/arexx.h"
+#include "amiga/download.h"
+#include "amiga/gui.h"
+#include "amiga/hotlist.h"
+#include "amiga/theme.h"
+
 extern const char * const verarexx;
-extern const char * const netsurf_version;
 extern const char * const wt_revid;
-extern const int netsurf_version_major;
-extern const int netsurf_version_minor;
 
 enum
 {
@@ -106,13 +104,13 @@ STATIC struct ARexxCmd Commands[] =
 
 BOOL ami_arexx_init(void)
 {
-	if(arexx_obj = ARexxObject,
+	if((arexx_obj = ARexxObject,
 			AREXX_HostName,"NETSURF",
 			AREXX_Commands,Commands,
 			AREXX_NoSlot,TRUE,
 			AREXX_ReplyHook,NULL,
 			AREXX_DefExtension,"nsrx",
-			End)
+			End))
 	{
 		GetAttr(AREXX_SigMask, arexx_obj, &rxsig);
 		return true;
@@ -147,7 +145,7 @@ void ami_arexx_cleanup(void)
 	if(arexx_obj) DisposeObject(arexx_obj);
 }
 
-struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
+static struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
 {
 	int tabs = 0;
 	struct Node *ctab;
@@ -166,12 +164,12 @@ struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
 							TNA_UserData, &bw,
 							TAG_DONE);
 		if(tabs == tab) return bw;
-	} while(ctab=ntab);
+	} while((ctab=ntab));
 
 	return NULL;
 }
 
-int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
+static int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 {
 	int tabs = 0;
 	struct Node *ctab;
@@ -190,12 +188,12 @@ int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 							TNA_UserData, &tbw,
 							TAG_DONE);
 		if(tbw == bw) return tabs;
-	} while(ctab=ntab);
+	} while((ctab=ntab));
 
 	return 0;
 }
 
-struct browser_window *ami_find_tab(int window, int tab)
+static struct browser_window *ami_find_tab(int window, int tab)
 {
 	struct nsObject *node, *nnode;
 
@@ -215,7 +213,7 @@ struct browser_window *ami_find_tab(int window, int tab)
 				if(windows == window)
 					return ami_find_tab_gwin(node->objstruct, tab);
 			}
-		} while(node = nnode);
+		} while((node = nnode));
 	}
 	return NULL;
 }
@@ -563,8 +561,8 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		} while(node = nnode);
 	}
 
-	if(cmd->ac_ArgList[0]) sprintf(result, "%ld", tabs);
-		else sprintf(result, "%ld", windows);
+	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tabs);
+		else sprintf(result, "%d", windows);
 	cmd->ac_Result = result;
 }
 
@@ -606,8 +604,8 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 		tab = ami_find_tab_bw(gwin, bw);
 	}
 
-	if(cmd->ac_ArgList[0]) sprintf(result, "%ld", tab);
-		else sprintf(result, "%ld", window);
+	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tab);
+		else sprintf(result, "%d", window);
 	cmd->ac_Result = result;
 }
 

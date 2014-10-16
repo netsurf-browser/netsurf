@@ -18,19 +18,6 @@
 
 #include <assert.h>
 
-#include "amiga/font.h"
-#include "amiga/font_scan.h"
-#include "amiga/gui.h"
-#include "amiga/utf8.h"
-#include "amiga/object.h"
-#include "amiga/schedule.h"
-#include "utils/nsoption.h"
-#include "desktop/browser.h"
-#include "desktop/font.h"
-#include "utils/log.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-
 #include <proto/diskfont.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -45,6 +32,21 @@
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #endif
+
+#include "utils/log.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "desktop/browser.h"
+#include "desktop/font.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/font.h"
+#include "amiga/font_scan.h"
+#include "amiga/gui.h"
+#include "amiga/utf8.h"
+#include "amiga/object.h"
+#include "amiga/schedule.h"
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 

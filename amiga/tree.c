@@ -44,27 +44,30 @@
 #include <intuition/icclass.h>
 #include <graphics/blitattr.h>
 
-#include "amiga/context_menu.h"
-#include "amiga/file.h"
+#include <assert.h>
+#include <string.h>
+
+#include "utils/nsoption.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "content/urldb.h"
+#include "content/llcache.h"
+#include "desktop/cookie_manager.h"
+#include "desktop/global_history.h"
+#include "desktop/hotlist.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/sslcert_viewer.h"
+
 #include "amiga/gui.h"
 #include "amiga/tree.h"
+#include "amiga/file.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
 #include "amiga/schedule.h"
-#include "utils/nsoption.h"
-#include "content/urldb.h"
-#include "desktop/cookie_manager.h"
-#include "desktop/global_history.h"
-#include "desktop/hotlist.h"
-#include "desktop/sslcert_viewer.h"
-#include "utils/utils.h"
-#include "utils/messages.h"
-
-#include <assert.h>
-#include <string.h>
 
 #define AMI_TREE_MENU_ITEMS 24
 #define AMI_TREE_MENU_NEWDIR FULLMENUNUM(1,0,0)

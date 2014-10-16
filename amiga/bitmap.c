@@ -18,9 +18,6 @@
 
 #include "amiga/os3support.h"
 
-#include "assert.h"
-#include "amiga/bitmap.h"
-#include "amiga/download.h"
 #include <proto/exec.h>
 #include <proto/Picasso96API.h>
 #ifdef __amigaos4__
@@ -34,7 +31,15 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include "assert.h"
+
 #include "utils/messages.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/gui.h"
+#include "amiga/bitmap.h"
+#include "amiga/download.h"
 
 /**
  * Create a bitmap.
@@ -290,6 +295,7 @@ void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 }
 #endif
 
+#if BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
 {
 	int x,y;
@@ -306,18 +312,19 @@ void bitmap_dump(struct bitmap *bitmap)
 		printf("\n");
 	}
 }
+#endif
 
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 {
 	Object *dto;
 	struct BitMapHeader *bmhd;
 
-	if(dto = NewDTObject(NULL,
+	if((dto = NewDTObject(NULL,
 					DTA_SourceType,DTST_RAM,
 					DTA_GroupID,GID_PICTURE,
 					//DTA_BaseName,"ilbm",
 					PDTA_DestMode,PMODE_V43,
-					TAG_DONE))
+					TAG_DONE)))
 	{
 		if(GetDTAttrs(dto,PDTA_BitMapHeader,&bmhd,TAG_DONE))
 		{

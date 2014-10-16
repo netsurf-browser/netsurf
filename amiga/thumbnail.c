@@ -16,15 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/os3support.h"
-#include "desktop/browser.h"
-#include "amiga/gui.h"
-#include "amiga/bitmap.h"
-#include "utils/nsoption.h"
-#include "content/urldb.h"
-#include "desktop/plotters.h"
-#include "desktop/thumbnail.h"
-
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 #include <intuition/intuition.h>
@@ -35,6 +26,18 @@
 #include <graphics/gfxbase.h>
 
 #include <sys/param.h>
+
+#include "amiga/os3support.h"
+#include "desktop/browser.h"
+#include "utils/nsoption.h"
+#include "content/urldb.h"
+#include "desktop/plotters.h"
+#include "desktop/thumbnail.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/gui.h"
+#include "amiga/bitmap.h"
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsurl *url)

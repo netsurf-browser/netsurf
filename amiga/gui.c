@@ -16,63 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* NetSurf core includes */
-#include "content/backing_store.h"
-#include "content/fetchers.h"
-#include "content/fetchers/resource.h"
-#include "content/urldb.h"
-#include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
-#include "desktop/hotlist.h"
-#include "desktop/mouse.h"
-#include "desktop/netsurf.h"
-#include "desktop/version.h"
-#include "desktop/save_complete.h"
-#include "desktop/scrollbar.h"
-#include "desktop/searchweb.h"
-#include "desktop/textinput.h"
-#include "desktop/tree.h"
-#include "image/ico.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/nsoption.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
-#include "utils/nsurl.h"
-#include "utils/file.h"
 
-/* NetSurf Amiga platform includes */
-#include "amiga/arexx.h"
-#include "amiga/bitmap.h"
-#include "amiga/clipboard.h"
-#include "amiga/context_menu.h"
-#include "amiga/cookies.h"
-#include "amiga/datatypes.h"
-#include "amiga/download.h"
-#include "amiga/drag.h"
-#include "amiga/file.h"
-#include "amiga/filetype.h"
-#include "amiga/font.h"
-#include "amiga/gui.h"
-#include "amiga/gui_options.h"
-#include "amiga/help.h"
-#include "amiga/history.h"
-#include "amiga/history_local.h"
-#include "amiga/hotlist.h"
-#include "amiga/icon.h"
-#include "amiga/launch.h"
-#include "amiga/login.h"
-#include "amiga/menu.h"
-#include "amiga/misc.h"
-#include "amiga/plotters.h"
-#include "amiga/plugin_hack.h"
-#include "amiga/print.h"
-#include "amiga/schedule.h"
-#include "amiga/search.h"
-#include "amiga/theme.h"
-#include "amiga/tree.h"
-#include "amiga/utf8.h"
-#include "amiga/sslcert.h"
 
 /* Custom StringView class */
 #include "amiga/stringview/stringview.h"
@@ -139,6 +83,67 @@
 /* newlib includes */
 #include <math.h>
 #include <string.h>
+
+/* NetSurf core includes */
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/nsoption.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+#include "utils/nsurl.h"
+#include "utils/file.h"
+#include "content/backing_store.h"
+#include "content/fetchers.h"
+#include "content/fetchers/resource.h"
+#include "content/urldb.h"
+#include "image/ico.h"
+#include "desktop/browser_history.h"
+#include "desktop/browser_private.h"
+#include "desktop/hotlist.h"
+#include "desktop/mouse.h"
+#include "desktop/netsurf.h"
+#include "desktop/version.h"
+#include "desktop/save_complete.h"
+#include "desktop/scrollbar.h"
+#include "desktop/searchweb.h"
+#include "desktop/textinput.h"
+#include "desktop/tree.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_fetch.h"
+#include "desktop/gui_misc.h"
+
+/* NetSurf Amiga platform includes */
+#include "amiga/gui.h"
+#include "amiga/arexx.h"
+#include "amiga/bitmap.h"
+#include "amiga/clipboard.h"
+#include "amiga/context_menu.h"
+#include "amiga/cookies.h"
+#include "amiga/datatypes.h"
+#include "amiga/download.h"
+#include "amiga/drag.h"
+#include "amiga/file.h"
+#include "amiga/filetype.h"
+#include "amiga/font.h"
+#include "amiga/gui_options.h"
+#include "amiga/help.h"
+#include "amiga/history.h"
+#include "amiga/history_local.h"
+#include "amiga/hotlist.h"
+#include "amiga/icon.h"
+#include "amiga/launch.h"
+#include "amiga/login.h"
+#include "amiga/menu.h"
+#include "amiga/misc.h"
+#include "amiga/plotters.h"
+#include "amiga/plugin_hack.h"
+#include "amiga/print.h"
+#include "amiga/schedule.h"
+#include "amiga/search.h"
+#include "amiga/theme.h"
+#include "amiga/tree.h"
+#include "amiga/utf8.h"
+#include "amiga/sslcert.h"
 
 #define AMINS_SCROLLERPEN NUMDRIPENS
 
@@ -307,7 +312,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 	return found;
 }
 
-bool ami_gui_check_resource(char *fullpath, const char *file)
+static bool ami_gui_check_resource(char *fullpath, const char *file)
 {
 	bool found = false;
 	char *remapped;
@@ -400,7 +405,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	return found;
 }
 
-void ami_open_resources(void)
+static void ami_open_resources(void)
 {
 	/* Allocate ports/ASL and open libraries and devices */
 
@@ -608,7 +613,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	return NSERROR_OK;
 }
 
-void ami_amiupdate(void)
+static void ami_amiupdate(void)
 {
 	/* Create AppPath location for AmiUpdate use */
 
@@ -663,7 +668,7 @@ static nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-void gui_init(int argc, char** argv)
+static void gui_init(int argc, char** argv)
 {
 	BPTR lock = 0;
 
@@ -696,7 +701,7 @@ static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
 	ami_set_screen_defaults(scrn);
 }
 
-void ami_openscreen(void)
+static void ami_openscreen(void)
 {
 	ULONG id = 0;
 	ULONG compositing;
@@ -783,7 +788,7 @@ void ami_openscreen(void)
 	ami_help_new_screen(scrn);
 }
 
-void ami_openscreenfirst(void)
+static void ami_openscreenfirst(void)
 {
 	ami_openscreen();
 	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0);
@@ -1155,7 +1160,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 	return nskey;
 }
 
-void ami_update_quals(struct gui_window_2 *gwin)
+static void ami_update_quals(struct gui_window_2 *gwin)
 {
 	uint32 quals = 0;
 
@@ -1179,7 +1184,7 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
-bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int space_x, int space_y)
 {
 	int ns_x = space_x;
@@ -1197,7 +1202,7 @@ bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return true;	
 }
 
-bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+static bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int mouse_x, int mouse_y)
 {
 	int ns_x, ns_y;
@@ -1218,7 +1223,7 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return ami_spacebox_to_ns_coords(gwin, x, y, ns_x, ns_y);
 }
 
-void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
+static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 {
 	struct IBox *bbox;
 	int x, y;
@@ -1287,7 +1292,7 @@ void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 	}
 }
 
-struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *rect)
+static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *rect)
 {
 	struct IBox *bbox, *ibox;
 
@@ -1316,7 +1321,7 @@ struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *r
 	return ibox;	
 }
 
-void ami_gui_trap_mouse(struct gui_window_2 *gwin)
+static void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 {
 	switch(gwin->drag_op)
 	{
@@ -1335,7 +1340,7 @@ void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_menu_update_all(void)
+static void ami_gui_menu_update_all(void)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -1425,7 +1430,7 @@ static void ami_gui_refresh_favicon(void *p)
 	gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
 }
 
-void ami_handle_msg(void)
+static void ami_handle_msg(void)
 {
 	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
 	uint16 code,quals;
@@ -2225,7 +2230,7 @@ void ami_handle_msg(void)
 	}
 }
 
-void ami_gui_appicon_remove(struct gui_window_2 *gwin)
+static void ami_gui_appicon_remove(struct gui_window_2 *gwin)
 {
 	if(gwin->appicon)
 	{
@@ -2235,7 +2240,7 @@ void ami_gui_appicon_remove(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_handle_appmsg(void)
+static void ami_handle_appmsg(void)
 {
 	struct AppMessage *appmsg;
 	struct gui_window_2 *gwin;
@@ -2350,7 +2355,7 @@ void ami_handle_appmsg(void)
 	}
 }
 
-void ami_handle_applib(void)
+static void ami_handle_applib(void)
 {
 	struct ApplicationMsg *applibmsg;
 	struct browser_window *bw;
@@ -2655,7 +2660,7 @@ void ami_quit_netsurf_delayed(void)
 	}
 }
 
-void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwait)
+static void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL donotwait)
 {
 	if(scrn == NULL) return;
 	if(CloseScreen(scrn) == TRUE) {
@@ -2895,7 +2900,7 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 	return true;
 }
 
-int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
+static int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
 {
 	struct ami_gui_tb_userdata userdata;
 	userdata.gw = gwin;
@@ -2906,7 +2911,7 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	return userdata.items;
 }
 
-void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
+static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 {
 	struct TagItem attrs[2];
 

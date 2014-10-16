@@ -28,13 +28,14 @@
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_clipboard.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
-#include "amiga/drag.h"
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/iff_cset.h"
@@ -61,11 +62,11 @@ static void ami_clipboard_iffp_clear_stopchunk(struct IFFHandle *iffh, ULONG iff
 	EntryHandler(iffh, iff_type, iff_chunk, IFFSLI_TOP, &entry_hook, NULL);
 }
 
-struct IFFHandle *ami_clipboard_init_internal(int unit)
+static struct IFFHandle *ami_clipboard_init_internal(int unit)
 {
 	struct IFFHandle *iffhandle = NULL;
 
-	if(iffhandle = AllocIFF())
+	if((iffhandle = AllocIFF()))
 	{
 		if(iffhandle->iff_Stream = (ULONG)OpenClipboard(unit))
 		{
@@ -81,7 +82,7 @@ void ami_clipboard_init(void)
 	iffh = ami_clipboard_init_internal(0);
 }
 
-void ami_clipboard_free_internal(struct IFFHandle *iffhandle)
+static void ami_clipboard_free_internal(struct IFFHandle *iffhandle)
 {
 	if(iffhandle == NULL) return;
 	if(iffhandle->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffhandle->iff_Stream);
@@ -106,7 +107,7 @@ void gui_start_selection(struct gui_window *g)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
 }
 
-char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
+static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
 {
 	struct CollectionItem *ci_new = NULL, *ci_next, *ci_curr = ci;
 	size_t len = 0;
@@ -183,11 +184,11 @@ char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size
 	return text;
 }
 
-void gui_get_clipboard(char **buffer, size_t *length)
+static void gui_get_clipboard(char **buffer, size_t *length)
 {
 	struct CollectionItem *ci = NULL;
 	struct StoredProperty *sp = NULL;
-	ULONG rlen=0,error;
+	ULONG error;
 	struct CSet *cset;
 
 	if(OpenIFF(iffh,IFFF_READ)) return;
@@ -354,6 +355,7 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 		DoDTMethod(dto,NULL,NULL,DTM_COPY,NULL);
 		DisposeDTObject(dto);
 	}
+	return true;
 }
 
 #ifdef WITH_NS_SVG

@@ -31,19 +31,25 @@
 #endif
 #include <workbench/icon.h>
 
+#include "utils/errors.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "desktop/browser.h"
+#include "content/hlcache.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
-#include "utils/nsoption.h"
 #include "amiga/theme.h"
 
-#include "utils/errors.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 struct Window *drag_icon = NULL;
 ULONG drag_icon_width;

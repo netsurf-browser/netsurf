@@ -32,15 +32,19 @@
 #include <proto/requester.h>
 #include <classes/requester.h>
 
-#include "amiga/gui.h"
-#include "amiga/utf8.h"
-#include "desktop/cookie_manager.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/file.h"
 #include "utils/utils.h"
+
+#include "desktop/cookie_manager.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+
+#include "amiga/gui.h"
+#include "amiga/utf8.h"
 
 void warn_user(const char *warning, const char *detail)
 {

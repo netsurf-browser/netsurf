@@ -18,7 +18,6 @@
 
 #ifndef AMIGA_DRAG_H
 #define AMIGA_DRAG_H
-#include "amiga/gui.h"
 
 #define AMI_DRAG_THRESHOLD 10
 

@@ -25,23 +25,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
-#include "desktop/plotters.h"
-#include "amiga/os3support.h"
-#include "amiga/object.h"
-#include "amiga/gui.h"
-#include "utils/log.h"
-#include "utils/utils.h"
 #include <proto/intuition.h>
-#include "amiga/history_local.h"
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <intuition/icclass.h>
 #include <proto/utility.h>
-#include "utils/messages.h"
-#include "graphics/rpattr.h"
-
 #include <proto/window.h>
 #include <proto/space.h>
 #include <proto/layout.h>
@@ -51,11 +39,22 @@
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
 
+#include "utils/log.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "desktop/browser_history.h"
+#include "desktop/browser_private.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_window.h"
+#include "graphics/rpattr.h"
+
+#include "amiga/os3support.h"
+#include "amiga/object.h"
+#include "amiga/gui.h"
+#include "amiga/history_local.h"
+
+
 static struct browser_window *history_bw;
-/* Last position of mouse in window. */
-static int mouse_x = 0;
-/* Last position of mouse in window. */
-static int mouse_y = 0;
 static struct history_window *hwindow;
 
 void ami_history_update_extent(struct history_window *hw);
@@ -189,7 +188,7 @@ void ami_history_redraw(struct history_window *hw)
  * \return true if the event was handled, false to pass it on
  */
 
-bool ami_history_click(struct history_window *hw,uint16 code)
+static bool ami_history_click(struct history_window *hw,uint16 code)
 {
 	int x, y;
 	struct IBox *bbox;
@@ -235,7 +234,7 @@ void ami_history_close(struct history_window *hw)
 BOOL ami_history_event(struct history_window *hw)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,relevent = 0;
+	ULONG result = 0;
 	uint16 code;
 	const char *url;
 	struct IBox *bbox;
@@ -316,7 +315,7 @@ void ami_history_update_extent(struct history_window *hw)
 
 void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
-	ULONG gid,x,y;
+	ULONG gid;
 	struct history_window *hw = hook->h_Data;
 
 	if (msg->Class == IDCMP_IDCMPUPDATE) 
