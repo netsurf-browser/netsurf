@@ -101,7 +101,6 @@ BWindow *wndTooltip;
 BFilePanel *wndOpenFile;
 
 //static beosWidget *select_menu;
-static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
 static thread_id sBAppThreadID;
