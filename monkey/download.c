@@ -18,9 +18,10 @@
 
 #include <stdio.h>
 
-#include "desktop/gui.h"
-#include "desktop/download.h"
+#include "utils/errors.h"
 #include "utils/ring.h"
+#include "desktop/gui_download.h"
+#include "desktop/download.h"
 
 #include "monkey/browser.h"
 

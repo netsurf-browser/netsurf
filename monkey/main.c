@@ -20,13 +20,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils/log.h"
+#include "utils/filepath.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
-#include "desktop/gui.h"
+#include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
-#include "utils/log.h"
-#include "utils/filepath.h"
 
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"

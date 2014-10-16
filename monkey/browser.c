@@ -20,11 +20,11 @@
 
 #include <stdio.h>
 
-
-#include "desktop/gui.h"
 #include "utils/ring.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "desktop/browser_private.h"
+#include "desktop/gui_window.h"
 
 #include "monkey/browser.h"
 #include "monkey/plot.h"

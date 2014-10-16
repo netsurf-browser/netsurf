@@ -21,7 +21,6 @@
 
 #include "utils/ring.h"
 #include "utils/nsurl.h"
-#include "desktop/gui.h"
 
 #include "monkey/cert.h"
 

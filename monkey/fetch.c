@@ -22,10 +22,11 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#include "desktop/gui.h"
+#include "utils/errors.h"
 #include "utils/file.h"
 #include "utils/nsurl.h"
 #include "utils/filepath.h"
+#include "desktop/gui_fetch.h"
 
 #include "monkey/filetype.h"
 #include "monkey/fetch.h"

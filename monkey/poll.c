@@ -19,7 +19,6 @@
 #include <assert.h>
 
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "monkey/schedule.h"
 #include "monkey/browser.h"
 #include "content/fetchers.h"
