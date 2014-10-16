@@ -428,15 +428,15 @@ void ro_toolbar_set_site_favicon(struct toolbar *toolbar,
 
 /**
  * Update the favicon in a browser window toolbar to reflect the RISC OS
- * filetype of the supplied content.  If the toolbar currently has a
- * site favicon set, then this call will be ignored.
+ * filetype of the content within the supplied window.  If the toolbar
+ * currently has a site favicon set, then this call will be ignored.
  *
  * \param *toolbar		The toolbar to refresh.
- * \param *h			The page content to reflect.
+ * \param *g			The gui window to set content favicon for.
  */
 
 void ro_toolbar_set_content_favicon(struct toolbar *toolbar,
-		struct hlcache_handle *h);
+		struct gui_window *g);
 
 
 /**

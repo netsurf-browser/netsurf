@@ -1665,12 +1665,12 @@ void ro_toolbar_set_site_favicon(struct toolbar *toolbar,
 /* This is an exported interface documented in toolbar.h */
 
 void ro_toolbar_set_content_favicon(struct toolbar *toolbar,
-		struct hlcache_handle *h)
+		struct gui_window *g)
 {
 	if (toolbar == NULL || toolbar->url == NULL)
 		return;
 
-	ro_gui_url_bar_set_content_favicon(toolbar->url, h);
+	ro_gui_url_bar_set_content_favicon(toolbar->url, g);
 }
 
 

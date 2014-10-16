@@ -1149,7 +1149,7 @@ static void gui_window_new_content(struct gui_window *g)
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
 	ro_gui_window_update_toolbar_buttons(g);
 	ro_gui_dialog_close_persistent(g->window);
-	ro_toolbar_set_content_favicon(g->toolbar, g->bw->current_content);
+	ro_toolbar_set_content_favicon(g->toolbar, g);
 }
 
 

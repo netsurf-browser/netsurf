@@ -1164,12 +1164,15 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 /* This is an exported interface documented in url_bar.h */
 
 bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
-		struct hlcache_handle *h)
+		struct gui_window *g)
 {
+	struct hlcache_handle	*h
 	content_type		type = CONTENT_NONE;
 
-	if (url_bar == NULL)
+	if (url_bar == NULL || g == NULL)
 		return false;
+
+	h = browser_window_get_content(g->bw);
 
 	if (h != NULL)
 		type = content_get_type(h);

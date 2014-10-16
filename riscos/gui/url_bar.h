@@ -305,15 +305,15 @@ bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 
 /**
  * Set the favicon to a RISC OS filetype sprite based on the type of the
- * supplied content.
+ * content within the supplied window.
  *
  * \param *url_bar		The URL Bar to update the favicon on.
- * \param *h			The content to use.
+ * \param *g			The window with the content to use.
  * \return			true if successful; else false.
  */
 
 bool ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
-		struct hlcache_handle *h);
+		struct gui_window *g);
 
 
 /**
