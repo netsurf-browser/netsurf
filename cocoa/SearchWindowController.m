@@ -20,7 +20,7 @@
 #import "cocoa/SearchWindowController.h"
 #import "cocoa/BrowserViewController.h"
 
-#import "desktop/gui.h"
+#import "desktop/gui_search.h"
 #import "desktop/browser.h"
 #import "desktop/search.h"
 

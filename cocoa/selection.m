@@ -21,7 +21,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/selection.h"
 
-#import "desktop/gui.h"
+#import "desktop/gui_clipboard.h"
 #import "desktop/browser_private.h"
 
 

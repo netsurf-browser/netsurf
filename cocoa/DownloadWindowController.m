@@ -19,9 +19,9 @@
 #import "cocoa/DownloadWindowController.h"
 #import "cocoa/gui.h"
 
-#import "desktop/download.h"
-#import "desktop/gui.h"
 #import "utils/log.h"
+#import "desktop/download.h"
+#import "desktop/gui_download.h"
 
 @interface DownloadWindowController ()
 
