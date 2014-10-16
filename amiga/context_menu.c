@@ -1281,7 +1281,7 @@ static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 	return itemid;
 }
 
-void gui_create_form_select_menu(struct browser_window *bw,
+void gui_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 	/* TODO: PMIA_Title memory leaks as we don't free the strings.
@@ -1289,7 +1289,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	 * improves we will probably start using this again.
 	 */
 
-	struct gui_window *gwin = bw->window;
+	struct gui_window *gwin = g;
 	struct form_option *opt = control->data.select.items;
 	ULONG i = 0;
 
@@ -1343,7 +1343,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y)
 {
 }
 
-void gui_create_form_select_menu(struct browser_window *bw,
+void gui_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 }

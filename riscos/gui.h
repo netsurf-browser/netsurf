@@ -158,7 +158,7 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
 void gui_window_set_pointer(struct gui_window *g, enum gui_pointer_shape shape);
-void gui_create_form_select_menu(struct browser_window *bw, struct form_control *control);
+void gui_create_form_select_menu(struct gui_window *g, struct form_control *control);
 
 /* in history.c */
 void ro_gui_history_init(void);

@@ -532,7 +532,7 @@ static nserror gui_default_launch_url(struct nsurl *url)
 	return NSERROR_NO_FETCH_HANDLER;
 }
 
-static void gui_default_create_form_select_menu(struct browser_window *bw,
+static void gui_default_create_form_select_menu(struct gui_window *g,
 						struct form_control *control)
 {
 }

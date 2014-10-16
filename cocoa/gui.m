@@ -244,10 +244,10 @@ static void gui_window_new_content(struct gui_window *g)
 }
 
 
-static void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct gui_window *g,
 								 struct form_control *control)
 {
-	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: bw];
+	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: g->bw];
 	[menu runInView: [(BrowserViewController *)bw->window browserView]];
 	[menu release];
 }

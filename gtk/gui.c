@@ -564,7 +564,7 @@ static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 			(intptr_t)user_data);
 }
 
-static void gui_create_form_select_menu(struct browser_window *bw,
+static void gui_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 

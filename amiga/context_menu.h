@@ -28,6 +28,6 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap);
 void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y);
 void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type);
 
-void gui_create_form_select_menu(struct browser_window *bw, struct form_control *control);
+void gui_create_form_select_menu(struct gui_window *g, struct form_control *control);
 
 #endif

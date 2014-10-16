@@ -497,8 +497,12 @@ struct gui_browser_table {
 
 	/**
 	 * create a form select menu
+	 *
+	 * \param  g	    gui window containing form control
+	 * \param  control  form control of type GADGET_SELECT
 	 */
-	void (*create_form_select_menu)(struct browser_window *bw, struct form_control *control);
+	void (*create_form_select_menu)(struct gui_window *g,
+			struct form_control *control);
 
 	/**
 	 * verify certificate

@@ -1354,17 +1354,15 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 /**
  * Display a menu of options for a form select control.
  *
- * \param  bw	    browser window containing form control
+ * \param  g	    gui window containing form control
  * \param  control  form control of type GADGET_SELECT
  */
 
-void gui_create_form_select_menu(struct browser_window *bw,
+void gui_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 	os_error	*error;
 	wimp_pointer	pointer;
-
-	bw = browser_window_get_root(bw);
 
 	/* The first time the menu is opened, control bypasses the normal
 	 * Menu Prepare event and so we prepare here.  On any re-opens,
@@ -1372,7 +1370,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	 * normal wimp event.
 	 */
 
-	if (!ro_gui_window_prepare_form_select_menu(bw->window, control))
+	if (!ro_gui_window_prepare_form_select_menu(g, control))
 		return;
 
 	error = xwimp_get_pointer_info(&pointer);
@@ -1386,7 +1384,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	gui_form_select_control = control;
 	ro_gui_menu_create(gui_form_select_menu,
-			pointer.pos.x, pointer.pos.y, bw->window->window);
+			pointer.pos.x, pointer.pos.y, g->window);
 }
 
 

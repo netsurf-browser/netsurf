@@ -656,8 +656,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						form_select_menu_callback,
 						c);
 				pointer = BROWSER_POINTER_DEFAULT;
-			} else if (mouse & BROWSER_MOUSE_CLICK_1)
-				guit->browser->create_form_select_menu(bw, gadget);
+			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
+				struct browser_window *rbw =
+						browser_window_get_root(bw);
+				guit->browser->create_form_select_menu(
+						rbw->window, gadget);
+			}
 			break;
 		case GADGET_CHECKBOX:
 			status = messages_get("FormCheckbox");
