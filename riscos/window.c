@@ -158,7 +158,7 @@ static void ro_gui_window_clone_options(
 		struct gui_window *new_gui,
 		struct gui_window *old_gui);
 
-static bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
+static bool ro_gui_window_prepare_form_select_menu(struct gui_window *bw,
 		struct form_control *control);
 static void ro_gui_window_process_form_select_menu(struct gui_window *g,
 		wimp_selection *selection);
@@ -1366,13 +1366,15 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	os_error	*error;
 	wimp_pointer	pointer;
 
+	bw = browser_window_get_root(bw);
+
 	/* The first time the menu is opened, control bypasses the normal
 	 * Menu Prepare event and so we prepare here.  On any re-opens,
 	 * ro_gui_window_prepare_form_select_menu() is called from the
 	 * normal wimp event.
 	 */
 
-	if (!ro_gui_window_prepare_form_select_menu(bw, control))
+	if (!ro_gui_window_prepare_form_select_menu(bw->window, control))
 		return;
 
 	error = xwimp_get_pointer_info(&pointer);
@@ -1383,8 +1385,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		ro_gui_menu_destroy();
 		return;
 	}
-
-	bw = browser_window_get_root(bw);
 
 	gui_form_select_control = control;
 	ro_gui_menu_create(gui_form_select_menu,
@@ -2167,7 +2167,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	 */
 
 	if (menu == gui_form_select_menu) {
-		return ro_gui_window_prepare_form_select_menu(g->bw,
+		return ro_gui_window_prepare_form_select_menu(g,
 				gui_form_select_control);
 	}
 
@@ -4692,7 +4692,7 @@ void ro_gui_window_default_options(struct browser_window *bw)
  * \return		true if the menu is OK to be opened; else false.
  */
 
-bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
+bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 	unsigned int i, entries;
@@ -4711,7 +4711,7 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 		return false;
 	}
 
-	ro_gui_select_menu_bw = bw;
+	ro_gui_select_menu_bw = g->bw;
 
 	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
 		for (i = 0; ; i++) {
