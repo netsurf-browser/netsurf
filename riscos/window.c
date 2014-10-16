@@ -53,7 +53,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "css/css.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/cookie_manager.h"

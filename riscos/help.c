@@ -28,6 +28,8 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
 
 #include "riscos/treeview.h"
 #include "riscos/help.h"
