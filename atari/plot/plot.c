@@ -29,7 +29,6 @@
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
 
 #include "atari/bitmap.h"

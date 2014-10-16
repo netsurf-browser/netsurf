@@ -18,7 +18,8 @@
 
 #include <stdlib.h>
 
-#include "desktop/gui.h"
+#include "utils/errors.h"
+#include "desktop/gui_utf8.h"
 
 #include "atari/encoding.h"
 

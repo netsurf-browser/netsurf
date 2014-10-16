@@ -28,7 +28,6 @@
 #include <math.h>
 
 #include "utils/log.h"
-#include "desktop/gui.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"

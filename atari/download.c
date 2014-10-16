@@ -25,17 +25,20 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "content/urldb.h"
-#include "content/fetch.h"
-#include "desktop/gui.h"
-#include "utils/nsoption.h"
-#include "desktop/save_complete.h"
-#include "desktop/textinput.h"
-#include "desktop/download.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
+#include "utils/types.h"
+#include "content/urldb.h"
+#include "content/fetch.h"
+#include "desktop/save_complete.h"
+#include "desktop/textinput.h"
+#include "desktop/download.h"
+#include "desktop/browser.h"
+#include "desktop/gui_download.h"
+#include "render/html.h"
+
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/res/netsurf.rsh"
@@ -50,9 +53,8 @@ static void on_abort_click(struct gui_download_window *dw);
 static void on_cbrdy_click(struct gui_download_window *dw);
 static void on_close(struct gui_download_window * dw);
 static void on_redraw(struct gui_download_window *dw, GRECT *clip);
-static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip);
 
-static void	toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
+static void toolbar_redraw_cb(GUIWIN *win, uint16_t msg, GRECT *clip)
 {
     struct gui_download_window *data;
 
@@ -387,7 +389,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 			uint32_t p = 0;
 			p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
-				"%lu%s", p, "%"
+				"%"PRIu32"%s", p, "%"
 			);
 		} else {
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
@@ -434,7 +436,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 		gemtk_wm_send_msg(dw->guiwin, WM_CLOSED, 0, 0, 0, 0);
 	} else {
 		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
-			"%lu%s", 100, "%"
+			"%u%s", 100, "%"
 		);
 		snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",
 			human_friendly_bytesize(dw->size_downloaded),

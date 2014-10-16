@@ -15,12 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Module Description:
- *
- *
- *
  */
-
 
 #include <limits.h>
 #include <stdlib.h>
@@ -30,12 +25,13 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include "desktop/gui.h"
+#include "utils/log.h"
+#include "utils/messages.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/search.h"
-#include "utils/log.h"
-#include "utils/messages.h"
+#include "desktop/gui_search.h"
+
 #include "atari/gui.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"

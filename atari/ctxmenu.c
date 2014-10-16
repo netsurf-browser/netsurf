@@ -28,7 +28,9 @@
 #include <mint/osbind.h>
 #include <cflib.h>
 
-#include "desktop/gui.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
@@ -36,9 +38,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 #include "atari/gui.h"
 #include "atari/rootwin.h"

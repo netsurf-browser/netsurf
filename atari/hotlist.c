@@ -24,6 +24,9 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "desktop/browser.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -31,11 +34,8 @@
 #include "utils/nsoption.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
-#include "desktop/gui.h"
 #include "desktop/core_window.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+
 #include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/treeview.h"

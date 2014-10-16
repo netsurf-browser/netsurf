@@ -24,8 +24,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "desktop/gui_factory.h"
-
 #include "utils/utils.h"
 #include "utils/corestrings.h"
 #include "utils/url.h"
@@ -33,9 +31,11 @@
 #include "utils/file.h"
 
 /**
+ * \file
  * Atari file handling callbacks.
+ *
  * Most of this code was taken from windows/gui.c
-*/
+ */
 
 /**
  * Generate a GEMDOS path from one or more component elemnts.

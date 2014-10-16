@@ -16,24 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <cflib.h>
 
-#include "utils/config.h"
-#include "content/content.h"
-#include "content/hlcache.h"
-#include "content/urldb.h"
-#include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "utils/errors.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/log.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "content/urldb.h"
+#include "desktop/browser.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
+
 #include "atari/misc.h"
 #include "atari/login.h"
 #include "atari/res/netsurf.rsh"

@@ -28,7 +28,6 @@
 #include <math.h>
 
 #include "utils/log.h"
-#include "desktop/gui.h"
 #include "desktop/browser.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
@@ -37,6 +36,7 @@
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/hotlist.h"
+
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
