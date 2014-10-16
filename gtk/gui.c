@@ -95,7 +95,6 @@ static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
 
 static GtkWidget *select_menu;
-static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
@@ -583,7 +582,6 @@ static void gui_create_form_select_menu(struct browser_window *bw,
 		gtk_widget_destroy(select_menu);
 
 	select_menu = gtk_menu_new();
-	select_menu_bw = bw;
 	select_menu_control = control;
 
 	for (i = 0, option = control->data.select.items; option;
