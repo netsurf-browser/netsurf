@@ -54,7 +54,6 @@ extern "C" {
 #include "content/content.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
-#include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/version.h"
 #include "desktop/plotters.h"
@@ -65,6 +64,7 @@ extern "C" {
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
+#include "desktop/gui_clipboard.h"
 }
 #include "beos/about.h"
 #include "beos/bitmap.h"

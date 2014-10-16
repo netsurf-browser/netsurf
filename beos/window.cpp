@@ -32,6 +32,9 @@ extern "C" {
 #include "utils/types.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "desktop/mouse.h"
+#include "desktop/gui_window.h"
+#include "desktop/gui_clipboard.h"
 }
 #include "beos/about.h"
 #include "beos/window.h"

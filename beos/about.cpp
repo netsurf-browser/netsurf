@@ -26,6 +26,7 @@ extern "C" {
 #include "testament.h"
 #include "utils/useragent.h"
 #include "curl/curlver.h"
+#include "desktop/gui_clipboard.h"
 }
 #include "beos/about.h"
 #include "beos/scaffolding.h"

@@ -22,7 +22,7 @@
 
 extern "C" {
 #include "desktop/download.h"
-#include "desktop/gui.h"
+#include "desktop/gui_download.h"
 #include "utils/utils.h"
 }
 #include "beos/download.h"

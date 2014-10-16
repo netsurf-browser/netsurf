@@ -21,7 +21,6 @@
 
 extern "C" {
 #include "content/content.h"
-#include "desktop/gui.h"
 #include "desktop/browser.h"
 }
 #include "beos/scaffolding.h"

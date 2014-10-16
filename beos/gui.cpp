@@ -44,6 +44,14 @@
 
 extern "C" {
 
+#include "utils/nsoption.h"
+#include "utils/filename.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/url.h"
+#include "utils/utf8.h"
+#include "utils/utils.h"
+
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -52,21 +60,16 @@ extern "C" {
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser_private.h"
-#include "desktop/gui.h"
+#include "desktop/gui_misc.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_search.h"
+#include "desktop/gui_fetch.h"
 #include "desktop/netsurf.h"
-#include "utils/nsoption.h"
-
 #include "render/form.h"
-#include "utils/filename.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/url.h"
-#include "utils/utf8.h"
-#include "utils/utils.h"
+
 }
 
 #include "beos/gui.h"
-
 #include "beos/gui_options.h"
 //#include "beos/completion.h"
 #include "beos/window.h"
@@ -76,7 +79,6 @@ extern "C" {
 #include "beos/schedule.h"
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
-
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
 
