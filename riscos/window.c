@@ -132,7 +132,6 @@ static void ro_gui_window_prepare_objectinfo(hlcache_handle *object,
 		const char *href);
 
 static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
-static bool ro_gui_window_navigate_up(struct gui_window *g, const char *url);
 static void ro_gui_window_action_home(struct gui_window *g);
 static void ro_gui_window_action_new_window(struct gui_window *g);
 static void ro_gui_window_action_local_history(struct gui_window *g);
@@ -1698,7 +1697,7 @@ void ro_gui_window_close(wimp_w w)
 			/* this is pointless if we are about to close the
 			 * window */
 			if (!destroy && url != NULL)
-				ro_gui_window_navigate_up(g, nsurl_access(url));
+				browser_window_navigate_up(g->bw, false);
 		}
 	}
 	else
@@ -2919,8 +2918,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 	case BROWSER_NAVIGATE_UP:
 		if (bw != NULL && h != NULL)
-			ro_gui_window_navigate_up(bw->window,
-						  nsurl_access(hlcache_handle_get_url(h)));
+			browser_window_navigate_up(g->bw, false);
 		break;
 	case BROWSER_NAVIGATE_RELOAD_ALL:
 		if (bw != NULL)
@@ -3559,6 +3557,7 @@ void ro_gui_window_toolbar_click(void *data,
 {
 	struct gui_window	*g = data;
 	struct browser_window	*new_bw;
+	nserror err;
 
 	if (g == NULL)
 		return;
@@ -3685,33 +3684,16 @@ void ro_gui_window_toolbar_click(void *data,
 		break;
 
 	case TOOLBAR_BUTTON_UP:
-		if (g->bw != NULL && browser_window_has_content(g->bw))
-			ro_gui_window_navigate_up(g,
-					nsurl_access(browser_window_get_url(
-							g->bw)));
+		err = browser_window_navigate_up(g->bw, false);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), NULL);
+		}
 		break;
 
 	case TOOLBAR_BUTTON_UP_NEW:
-		if (g->bw && browser_window_has_content(g->bw)) {
-			hlcache_handle *h = g->bw->current_content;
-			nserror error;
-
-			error = browser_window_create(
-					BW_CREATE_HISTORY | BW_CREATE_CLONE,
-					NULL,
-					NULL,
-					g->bw,
-					&new_bw);
-
-			if (error != NSERROR_OK) {
-				warn_user(messages_get_errorcode(error), 0);
-			} else {
-				/* do it without loading the content
-				 * into the new window
-				 */
-				ro_gui_window_navigate_up(new_bw->window,
-					nsurl_access(hlcache_handle_get_url(h)));
-			}
+		err = browser_window_navigate_up(g->bw, true);
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), NULL);
 		}
 		break;
 
@@ -3978,46 +3960,6 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 				NULL, NULL, NULL);
 		nsurl_unref(url);
 	}
-}
-
-
-/**
- * Navigate up one level
- *
- * \param  g	the gui_window to open the parent link in
- * \param  url  the URL to open the parent of
- */
-bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
-{
-	nsurl *current, *parent;
-	nserror err;
-
-	if (!g || (!g->bw))
-		return false;
-
-	err = nsurl_create(url, &current);
-	if (err != NSERROR_OK)
-		return false;
-
-	err = nsurl_parent(current, &parent);
-	if (err != NSERROR_OK) {
-		nsurl_unref(current);
-		return false;
-	}
-
-	if (nsurl_compare(current, parent, NSURL_COMPLETE) == false) {
-		browser_window_navigate(g->bw,
-					parent,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-	}
-
-	nsurl_unref(current);
-	nsurl_unref(parent);
-	return true;
 }
 
 
