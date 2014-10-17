@@ -3556,7 +3556,6 @@ void ro_gui_window_toolbar_click(void *data,
 		toolbar_action_type action_type, union toolbar_action action)
 {
 	struct gui_window	*g = data;
-	struct browser_window	*new_bw;
 	nserror err;
 
 	if (g == NULL)
