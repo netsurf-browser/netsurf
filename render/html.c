@@ -46,6 +46,7 @@
 #include "desktop/textarea.h"
 #include "image/bitmap.h"
 #include "javascript/js.h"
+#include "desktop/browser.h"
 #include "desktop/font.h"
 #include "desktop/gui_utf8.h"
 #include "desktop/gui_internal.h"

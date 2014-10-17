@@ -25,15 +25,17 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "desktop/system_colour.h"
-#include "desktop/mouse.h"
-#include "desktop/scrollbar.h"
-#include "utils/nsoption.h"
-#include "desktop/plotters.h"
-#include "desktop/plot_style.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
+
+#include "desktop/browser.h"
+#include "desktop/system_colour.h"
+#include "desktop/mouse.h"
+#include "desktop/scrollbar.h"
+#include "desktop/plotters.h"
+#include "desktop/plot_style.h"
 
 
 struct scrollbar {

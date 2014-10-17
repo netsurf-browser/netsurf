@@ -31,6 +31,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"

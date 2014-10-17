@@ -26,8 +26,6 @@
 #define _NETSURF_RENDER_FORM_H_
 
 #include <stdbool.h>
-#include "desktop/browser.h"
-#include "utils/config.h"
 
 struct box;
 struct form_control;
@@ -37,6 +35,8 @@ struct html_content;
 struct dom_string;
 struct content;
 struct nsurl;
+struct fetch_multipart_data;
+enum browser_mouse_state;
 
 /** Form submit method. */
 typedef enum {
@@ -183,9 +183,9 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		const struct rect *clip);
 const char *form_select_mouse_action(struct form_control *control,
-		browser_mouse_state mouse, int x, int y);
+		enum browser_mouse_state mouse, int x, int y);
 void form_select_mouse_drag_end(struct form_control *control,
-		browser_mouse_state mouse, int x, int y);
+		enum browser_mouse_state mouse, int x, int y);
 void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
 void form_select_process_selection(struct form_control *control, int item);

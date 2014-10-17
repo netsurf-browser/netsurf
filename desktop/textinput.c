@@ -38,6 +38,7 @@
 #include "render/html_internal.h"
 #include "render/layout.h"
 
+#include "desktop/mouse.h"
 #include "desktop/browser_private.h"
 #include "desktop/textinput.h"
 #include "desktop/gui_window.h"

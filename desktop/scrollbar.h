@@ -26,8 +26,6 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#include "desktop/browser.h"
-
 #define SCROLLBAR_WIDTH 16
 
 /* Region dependent values for scrollbar_scroll function */

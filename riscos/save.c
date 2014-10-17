@@ -44,6 +44,7 @@
 #include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/browser.h"
 #include "desktop/hotlist.h"
 #include "desktop/global_history.h"
 #include "desktop/version.h"

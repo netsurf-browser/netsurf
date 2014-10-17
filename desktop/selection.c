@@ -37,8 +37,8 @@
 #include "render/font.h"
 #include "render/textplain.h"
 
-#include "desktop/browser_private.h"
 #include "desktop/mouse.h"
+#include "desktop/browser_private.h"
 #include "desktop/plotters.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"

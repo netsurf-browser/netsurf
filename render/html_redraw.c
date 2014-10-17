@@ -28,6 +28,7 @@
  * Redrawing CONTENT_HTML implementation.
  */
 
+#include "utils/config.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -35,16 +36,16 @@
 #include <math.h>
 #include <dom/dom.h>
 
-#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/nsoption.h"
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
+#include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
-#include "utils/nsoption.h"
 #include "desktop/print.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"

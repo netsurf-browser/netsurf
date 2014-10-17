@@ -49,6 +49,7 @@
 #include "css/utils.h"
 #include "content/content_protected.h"
 #include "utils/nsoption.h"
+#include "desktop/browser.h"
 #include "desktop/scrollbar.h"
 #include "desktop/textarea.h"
 #include "desktop/font.h"

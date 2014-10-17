@@ -26,9 +26,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "desktop/browser.h"
-#include "desktop/plot_style.h"
-
 
 struct textarea;
 

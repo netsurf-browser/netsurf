@@ -23,8 +23,6 @@
 #ifndef _NETSURF_DESKTOP_FRAMES_H_
 #define _NETSURF_DESKTOP_FRAMES_H_
 
-#include "desktop/browser.h"
-
 struct scrollbar_msg_data;
 
 void browser_window_create_iframes(struct browser_window *bw,

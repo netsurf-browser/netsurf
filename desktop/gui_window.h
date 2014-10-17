@@ -60,6 +60,7 @@ struct browser_window;
 struct form_control;
 struct rect;
 struct hlcache_handle;
+enum gui_pointer_shape;
 
 /**
  * Graphical user interface window function table.
@@ -204,7 +205,7 @@ struct gui_window_table {
 	/**
 	 * Change mouse pointer shape
 	 */
-	void (*set_pointer)(struct gui_window *g, gui_pointer_shape shape);
+	void (*set_pointer)(struct gui_window *g, enum gui_pointer_shape shape);
 
 	/**
 	 * Place the caret in a browser window.

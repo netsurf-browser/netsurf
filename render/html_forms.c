@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/corestrings.h"
+#include "utils/log.h"
+
+#include "desktop/browser.h"
 
 #include "render/form.h"
 #include "render/html_internal.h"
-#include "utils/corestrings.h"
-
-#include "utils/log.h"
 
 /** 
  * process form element from dom
