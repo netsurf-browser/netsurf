@@ -201,7 +201,6 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 static void ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
-void ami_try_quit(void);
 void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
@@ -236,7 +235,7 @@ STRPTR ami_locale_langs(void)
 	STRPTR acceptlangs = NULL;
 	char *remapped;
 
-	if(locale = OpenLocale(NULL))
+	if((locale = OpenLocale(NULL)))
 	{
 		for(int i = 0; i < 10; i++)
 		{
@@ -281,7 +280,8 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 
 	if(mapfile == NULL) return false;
 
-	if(fh = FOpen(mapfile, MODE_OLDFILE, 0))
+	fh = FOpen(mapfile, MODE_OLDFILE, 0);
+	if(fh)
 	{
 		while(FGets(fh, buffer, 1024) != 0)
 		{
@@ -289,7 +289,8 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 				(buffer[0] == '\n') ||
 				(buffer[0] == '\0')) continue;
 
-			if(realfname = strchr(buffer, ':'))
+			realfname = strchr(buffer, ':');
+			if(realfname)
 			{
 				if(strncmp(buffer, file, strlen(file)) == 0)
 				{
@@ -324,7 +325,8 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 
 	LOG(("Checking for %s", fullpath));
 	
-	if(lock = Lock(fullpath, ACCESS_READ))
+	lock = Lock(fullpath, ACCESS_READ);
+	if(lock)
 	{
 		UnLock(lock);
 		found = true;
@@ -340,7 +342,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 {
 	struct Locale *locale;
 	int i;
-	BPTR lock = 0;
 	bool found = false;
 	char *remapped;
 	size_t fullpath_len = 1024;
@@ -4499,6 +4500,8 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	ami_get_hscroll_pos(g->shared, (ULONG *)sx);
 	ami_get_vscroll_pos(g->shared, (ULONG *)sy);
+
+	return true;
 }
 
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
@@ -4580,17 +4583,12 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 
 static void gui_window_update_extent(struct gui_window *g)
 {
-	struct IBox *bbox, zbox;
+	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
-	/*
-	zbox.Top = ~0;
-	zbox.Left = ~0;
-	zbox.Width = (WORD)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale);
-	zbox.Height = (WORD)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale);
-	*/
+
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
@@ -4620,7 +4618,6 @@ static void gui_window_update_extent(struct gui_window *g)
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
-		//SetWindowAttr(g->shared->win, WA_Zoom, &zbox, sizeof(ULONG));
 	}
 	g->shared->new_content = true;
 }

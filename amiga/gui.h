@@ -18,10 +18,10 @@
 
 #ifndef AMIGA_GUI_H
 #define AMIGA_GUI_H
+
 #include <graphics/rastport.h>
 #include "amiga/object.h"
 #include <intuition/classusr.h>
-#include "desktop/browser.h"
 #include <dos/dos.h>
 #include <devices/inputevent.h>
 #include "amiga/os3support.h"

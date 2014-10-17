@@ -52,10 +52,10 @@
 #include "utils/messages.h"
 #include "content/urldb.h"
 #include "content/llcache.h"
+#include "desktop/browser.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/global_history.h"
 #include "desktop/hotlist.h"
-#include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "desktop/sslcert_viewer.h"
 
@@ -115,42 +115,13 @@ struct ami_tree_redraw_req {
 	struct treeview_window *twin;
 };
 
+#if 0
 void ami_tree_draw(struct treeview_window *twin);
-static void ami_tree_redraw_request(int x, int y, int width, int height,
-		void *data);
 static void ami_tree_resized(struct tree *tree, int width,
 		int height, void *data);
 static void ami_tree_scroll_visible(int y, int height, void *data);
 static void ami_tree_get_window_dimensions(int *width, int *height, void *data);
-
-const struct treeview_table ami_tree_callbacks = {
-	.redraw_request = ami_tree_redraw_request,
-	.resized = ami_tree_resized,
-	.scroll_visible = ami_tree_scroll_visible,
-	.get_window_dimensions = ami_tree_get_window_dimensions
-};
-
-struct treeview_window *ami_tree_create(int flags,
-			struct sslcert_session_data *ssl_data)
-{
-	struct treeview_window *twin;
-
-	twin = AllocVecTags(sizeof(struct treeview_window), AVT_ClearWithValue, 0, TAG_DONE);
-
-	if(!twin)
-	{
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	twin->ssl_data = ssl_data;
-	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
-
-	NewMinList(&twin->shared_pens);
-	twin->globals.shared_pens = &twin->shared_pens;
-	
-	return twin;
-}
+#endif
 
 void ami_tree_destroy(struct treeview_window *twin)
 {
@@ -163,7 +134,7 @@ struct tree *ami_tree_get_tree(struct treeview_window *twin)
 	return twin->tree;
 }
 
-void ami_tree_resized(struct tree *tree, int width, int height, void *data)
+static void ami_tree_resized(struct tree *tree, int width, int height, void *data)
 {
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
@@ -206,7 +177,7 @@ void ami_tree_resized(struct tree *tree, int width, int height, void *data)
  * \param width	will be updated to window width if not NULL
  * \param height	will be updated to window height if not NULL
  */
-void ami_tree_get_window_dimensions(int *width, int *height, void *data)
+static void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 {
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
@@ -217,6 +188,168 @@ void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 	if(height) *height = bbox->Height;
 }
 
+static void ami_tree_redraw_req_dr(void *p)
+{
+	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
+	int x = atrr_data->x;
+	int y = atrr_data->y;
+	int width = atrr_data->width;
+	int height = atrr_data->height;
+	struct treeview_window *twin = atrr_data->twin;
+	struct IBox *bbox;
+	int pos_x, pos_y;
+	struct RastPort *temprp;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(!twin->win) return;
+
+	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+
+	glob = &twin->globals;
+	temprp = glob->rp;
+ 	glob->rp = twin->win->RPort;
+			
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER], (ULONG *)&bbox);
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
+
+	x += bbox->Left;
+	y += bbox->Top;
+	
+	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+
+	if(x < pos_x) {
+		width -= pos_x - x;
+		x = pos_x;
+	}
+
+	if(y < pos_y) {
+		height -= pos_y - y;
+		y = pos_y;
+	}
+	
+	tree_draw(twin->tree, bbox->Left - pos_x, bbox->Top - pos_y,
+				atrr_data->x, atrr_data->y,
+                atrr_data->width, atrr_data->height, &ctx);
+
+	FreeVec(atrr_data);
+	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	ami_clearclipreg(glob);
+	glob->rp = temprp;
+	glob = &browserglob;
+}
+
+static void ami_tree_redraw_req(void *p)
+{
+	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
+	int x = atrr_data->x;
+	int y = atrr_data->y;
+	int width = atrr_data->width;
+	int height = atrr_data->height;
+	struct treeview_window *twin = atrr_data->twin;
+	struct IBox *bbox;
+	int pos_x, pos_y;
+	int tile_x, tile_y, tile_w, tile_h;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(!twin->win) return;
+
+	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+
+	glob = &twin->globals;
+
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
+
+	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+
+	if(x < pos_x) {
+		width -= pos_x - x;
+		x = pos_x;
+	}
+
+	if(y < pos_y) {
+		height -= pos_y - y;
+		y = pos_y;
+	}
+
+	for(tile_y = y; tile_y < (y + height); tile_y += nsoption_int(redraw_tile_size_y)) {
+		tile_h = nsoption_int(redraw_tile_size_y);
+		if(((y + height) - tile_y) < nsoption_int(redraw_tile_size_y))
+			tile_h = (y + height) - tile_y;
+
+		for(tile_x = x; tile_x < (x + width); tile_x += nsoption_int(redraw_tile_size_x)) {
+			tile_w = nsoption_int(redraw_tile_size_x);
+			if(((x + width) - tile_x) < nsoption_int(redraw_tile_size_x))
+				tile_w = (x + width) - tile_x;
+
+			tree_draw(twin->tree, - tile_x, - tile_y,
+				tile_x, tile_y, tile_w, tile_h, &ctx);
+
+			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, twin->globals.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, twin->win->RPort,
+					BLITA_DestX, bbox->Left + tile_x - pos_x,
+					BLITA_DestY, bbox->Top + tile_y - pos_y,
+					BLITA_Width, tile_w,
+					BLITA_Height, tile_h,
+					TAG_DONE);
+		}
+	}
+
+	FreeVec(atrr_data);
+	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	ami_clearclipreg(glob);
+	glob = &browserglob;
+}
+
+static void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
+{
+	struct ami_tree_redraw_req *atrr_data = AllocVecTagList(sizeof(struct ami_tree_redraw_req), NULL);
+	
+	atrr_data->x = x;
+	atrr_data->y = y;
+	atrr_data->width = width;
+	atrr_data->height = height;
+	atrr_data->twin = (struct treeview_window *)data;
+	
+	/** /todo Queue these requests properly like the main browser code does
+	 **/
+
+	if(nsoption_bool(direct_render) == false)
+		ami_schedule(0, ami_tree_redraw_req, atrr_data);
+	else
+		ami_schedule(0, ami_tree_redraw_req_dr, atrr_data);
+}
+
+static void ami_tree_draw(struct treeview_window *twin)
+{
+	struct IBox *bbox;
+	int x, y;
+
+	if(!twin) return;
+
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+
+	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
+}
+
 /**
  * Scrolls the tree to make an element visible
  *
@@ -224,7 +357,7 @@ void ami_tree_get_window_dimensions(int *width, int *height, void *data)
  * \param height	height of the element
  * \param data	user data assigned to the tree on tree creation
  */
-void ami_tree_scroll_visible(int y, int height, void *data)
+static void ami_tree_scroll_visible(int y, int height, void *data)
 {
 	ULONG sy, scrollset;
 	struct IBox *bbox;
@@ -245,7 +378,7 @@ void ami_tree_scroll_visible(int y, int height, void *data)
 	ami_tree_draw(twin);
 }
 
-void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
+static void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 {
 	int x, y;
 
@@ -271,7 +404,7 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 	ami_tree_draw(twin);
 }
 
-void ami_tree_drag_icon_show(struct treeview_window *twin)
+static void ami_tree_drag_icon_show(struct treeview_window *twin)
 {
 	const char *type = "project";
 	nsurl *url = NULL;
@@ -300,7 +433,7 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	}
 }
 
-void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
+static void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 {
 	struct gui_window_2 *gwin;
 	struct treeview_window *tw;
@@ -309,7 +442,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	const char *title = NULL;
 	bool ok = false;
 
-	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
+	if((drag = ami_drag_in_progress())) ami_drag_icon_close(twin->win);
 
 	if(drag && (twin != ami_window_at_pointer(AMINS_TVWINDOW)))
 	{
@@ -322,7 +455,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 		if((ok == false) || (url == NULL)) {
 			DisplayBeep(scrn);
 		} else if(url) {
-			if(gwin = ami_window_at_pointer(AMINS_WINDOW)) {
+			if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
 				browser_window_navigate(gwin->bw,
 						url,
 						NULL,
@@ -349,9 +482,9 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	}
 }
 
-void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+static void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
-	ULONG gid,x,y;
+	ULONG gid;
 	struct treeview_window *twin = hook->h_Data;
 	struct IntuiWheelData *wheel;
 
@@ -380,12 +513,12 @@ void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage
 	}
 } 
 
-void ami_tree_menu(struct treeview_window *twin)
+static void ami_tree_menu(struct treeview_window *twin)
 {
 	if(twin->menu) return;
 
-	if(twin->menu = AllocVecTags(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS,
-				AVT_ClearWithValue, 0, TAG_DONE))
+	if((twin->menu = AllocVecTags(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS,
+				      AVT_ClearWithValue, 0, TAG_DONE)))
 	{
 		twin->menu[0].nm_Type = NM_TITLE;
 		twin->menu_name[0] = ami_utf8_easy((char *)messages_get("Tree"));
@@ -493,7 +626,7 @@ void ami_tree_menu(struct treeview_window *twin)
 	}
 }
 
-void ami_tree_update_buttons(struct treeview_window *twin)
+static void ami_tree_update_buttons(struct treeview_window *twin)
 {
 	if(twin->type == AMI_TREE_SSLCERT) return;
 
@@ -717,7 +850,7 @@ void ami_tree_close(struct treeview_window *twin)
 	ami_gui_hotlist_update_all();
 }
 
-void ami_tree_update_quals(struct treeview_window *twin)
+static void ami_tree_update_quals(struct treeview_window *twin)
 {
 	uint32 quals = 0;
 
@@ -744,7 +877,7 @@ void ami_tree_update_quals(struct treeview_window *twin)
 BOOL ami_tree_event(struct treeview_window *twin)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,storage = 0;
+	ULONG result,storage = 0;
 	uint16 code;
 	struct MenuItem *item;
 	ULONG menunum=0,itemnum=0,subnum=0;
@@ -1243,164 +1376,35 @@ BOOL ami_tree_event(struct treeview_window *twin)
 	return FALSE;
 }
 
-void ami_tree_draw(struct treeview_window *twin)
+
+
+
+
+const struct treeview_table ami_tree_callbacks = {
+	.redraw_request = ami_tree_redraw_request,
+	.resized = ami_tree_resized,
+	.scroll_visible = ami_tree_scroll_visible,
+	.get_window_dimensions = ami_tree_get_window_dimensions
+};
+
+struct treeview_window *ami_tree_create(int flags,
+			struct sslcert_session_data *ssl_data)
 {
-	struct IBox *bbox;
-	int x, y;
+	struct treeview_window *twin;
 
-	if(!twin) return;
+	twin = AllocVecTags(sizeof(struct treeview_window), AVT_ClearWithValue, 0, TAG_DONE);
 
-	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
-	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+	if(!twin)
+	{
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
 
-	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
-}
+	twin->ssl_data = ssl_data;
+	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
 
-static void ami_tree_redraw_req_dr(void *p)
-{
-	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
-	int x = atrr_data->x;
-	int y = atrr_data->y;
-	int width = atrr_data->width;
-	int height = atrr_data->height;
-	struct treeview_window *twin = atrr_data->twin;
-	struct IBox *bbox;
-	int pos_x, pos_y;
-	struct RastPort *temprp;
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &amiplot
-	};
-
-	if(!twin->win) return;
-
-	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
-
-	glob = &twin->globals;
-	temprp = glob->rp;
- 	glob->rp = twin->win->RPort;
-			
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER], (ULONG *)&bbox);
-	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
-	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
-
-	x += bbox->Left;
-	y += bbox->Top;
+	NewMinList(&twin->shared_pens);
+	twin->globals.shared_pens = &twin->shared_pens;
 	
-	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
-	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
-
-	if(x < pos_x) {
-		width -= pos_x - x;
-		x = pos_x;
-	}
-
-	if(y < pos_y) {
-		height -= pos_y - y;
-		y = pos_y;
-	}
-	
-	tree_draw(twin->tree, bbox->Left - pos_x, bbox->Top - pos_y,
-				atrr_data->x, atrr_data->y,
-                atrr_data->width, atrr_data->height, &ctx);
-
-	FreeVec(atrr_data);
-	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
-	ami_clearclipreg(glob);
-	glob->rp = temprp;
-	glob = &browserglob;
-}
-
-static void ami_tree_redraw_req(void *p)
-{
-	struct ami_tree_redraw_req *atrr_data = (struct ami_tree_redraw_req *)p;
-	int x = atrr_data->x;
-	int y = atrr_data->y;
-	int width = atrr_data->width;
-	int height = atrr_data->height;
-	struct treeview_window *twin = atrr_data->twin;
-	struct IBox *bbox;
-	int pos_x, pos_y;
-	int tile_x, tile_y, tile_w, tile_h;
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &amiplot
-	};
-
-	if(!twin->win) return;
-
-	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
-
-	glob = &twin->globals;
-
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
-	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
-	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
-
-	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
-	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
-
-	if(x < pos_x) {
-		width -= pos_x - x;
-		x = pos_x;
-	}
-
-	if(y < pos_y) {
-		height -= pos_y - y;
-		y = pos_y;
-	}
-
-	for(tile_y = y; tile_y < (y + height); tile_y += nsoption_int(redraw_tile_size_y)) {
-		tile_h = nsoption_int(redraw_tile_size_y);
-		if(((y + height) - tile_y) < nsoption_int(redraw_tile_size_y))
-			tile_h = (y + height) - tile_y;
-
-		for(tile_x = x; tile_x < (x + width); tile_x += nsoption_int(redraw_tile_size_x)) {
-			tile_w = nsoption_int(redraw_tile_size_x);
-			if(((x + width) - tile_x) < nsoption_int(redraw_tile_size_x))
-				tile_w = (x + width) - tile_x;
-
-			tree_draw(twin->tree, - tile_x, - tile_y,
-				tile_x, tile_y, tile_w, tile_h, &ctx);
-
-			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-					BLITA_Source, twin->globals.bm,
-					BLITA_SrcX, 0,
-					BLITA_SrcY, 0,
-					BLITA_DestType, BLITT_RASTPORT, 
-					BLITA_Dest, twin->win->RPort,
-					BLITA_DestX, bbox->Left + tile_x - pos_x,
-					BLITA_DestY, bbox->Top + tile_y - pos_y,
-					BLITA_Width, tile_w,
-					BLITA_Height, tile_h,
-					TAG_DONE);
-		}
-	}
-
-	FreeVec(atrr_data);
-	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
-	ami_clearclipreg(glob);
-	glob = &browserglob;
-}
-
-void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
-{
-	struct ami_tree_redraw_req *atrr_data = AllocVecTagList(sizeof(struct ami_tree_redraw_req), NULL);
-	
-	atrr_data->x = x;
-	atrr_data->y = y;
-	atrr_data->width = width;
-	atrr_data->height = height;
-	atrr_data->twin = (struct treeview_window *)data;
-	
-	/** /todo Queue these requests properly like the main browser code does
-	 **/
-
-	if(nsoption_bool(direct_render) == false)
-		ami_schedule(0, ami_tree_redraw_req, atrr_data);
-	else
-		ami_schedule(0, ami_tree_redraw_req_dr, atrr_data);
+	return twin;
 }

@@ -28,9 +28,9 @@
 
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
+#include "desktop/browser.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_clipboard.h"
 
