@@ -19,9 +19,6 @@
 #ifndef NETSURF_MONKEY_BROWSER_H
 #define NETSURF_MONKEY_BROWSER_H
 
-#include "desktop/browser.h"
-#include "content/hlcache.h"
-
 extern struct gui_window_table *monkey_window_table;
 extern struct gui_download_table *monkey_download_table;
 

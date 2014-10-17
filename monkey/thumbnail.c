@@ -16,8 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "monkey/browser.h"
+#include <stdint.h>
+
 #include "desktop/thumbnail.h"
+#include "content/hlcache.h"
+
+#include "monkey/browser.h"
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		nsurl *url)

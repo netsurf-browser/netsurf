@@ -17,11 +17,12 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
 
-#include "desktop/browser.h"
-#include "monkey/schedule.h"
-#include "monkey/browser.h"
+#include "content/hlcache.h"
 #include "content/fetchers.h"
+
+#include "monkey/schedule.h"
 #include "monkey/dispatch.h"
 #include "monkey/poll.h"
 

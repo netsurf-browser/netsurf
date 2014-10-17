@@ -17,11 +17,13 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "utils/errors.h"
 #include "utils/ring.h"
 #include "desktop/gui_download.h"
 #include "desktop/download.h"
+#include "content/hlcache.h"
 
 #include "monkey/browser.h"
 

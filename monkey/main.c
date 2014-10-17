@@ -25,6 +25,7 @@
 #include "utils/nsoption.h"
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
+#include "content/hlcache.h"
 #include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
 
