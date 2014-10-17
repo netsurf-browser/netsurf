@@ -152,6 +152,14 @@ nserror browser_window_navigate(struct browser_window *bw,
 			     struct hlcache_handle *parent);
 
 /**
+ * Navigate to a browser_window's parent URL.
+ *
+ * \param bw		browser window
+ * \param new_window	whether to open parent in a new window, or existing
+ */
+nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
+
+/**
  * Get a browser window's URL.
  *
  * \param bw	  browser window

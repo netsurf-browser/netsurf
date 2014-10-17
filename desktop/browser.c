@@ -1974,6 +1974,41 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 
 /* Exported interface, documented in browser.h */
+nserror browser_window_navigate_up(struct browser_window *bw, bool new_window)
+{
+	nsurl *current, *parent;
+	nserror err;
+
+	if (bw == NULL)
+		return NSERROR_BAD_PARAMETER;
+
+	current = browser_window_get_url(bw);
+
+	err = nsurl_parent(current, &parent);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	if (nsurl_compare(current, parent, NSURL_COMPLETE) == true) {
+		/* Can't go up to parent from here */
+		nsurl_unref(parent);
+		return NSERROR_OK;
+	}
+
+	if (new_window) {
+		err = browser_window_create(BW_CREATE_CLONE,
+				parent, NULL, bw, NULL);
+	} else {
+		err = browser_window_navigate(bw, parent, NULL,
+				BW_NAVIGATE_HISTORY, NULL, NULL, NULL);
+	}
+
+	nsurl_unref(parent);
+	return err;
+}
+
+
+/* Exported interface, documented in browser.h */
 nsurl* browser_window_get_url(struct browser_window *bw)
 {
 	assert(bw != NULL);
