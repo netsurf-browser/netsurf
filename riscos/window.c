@@ -3685,15 +3685,15 @@ void ro_gui_window_toolbar_click(void *data,
 
 	case TOOLBAR_BUTTON_UP:
 		err = browser_window_navigate_up(g->bw, false);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), NULL);
+		if (err != NSERROR_OK) {
+			warn_user(messages_get_errorcode(err), NULL);
 		}
 		break;
 
 	case TOOLBAR_BUTTON_UP_NEW:
 		err = browser_window_navigate_up(g->bw, true);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), NULL);
+		if (err != NSERROR_OK) {
+			warn_user(messages_get_errorcode(err), NULL);
 		}
 		break;
 
