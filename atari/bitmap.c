@@ -19,14 +19,15 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
-
-
 #include "assert.h"
+
 #include "utils/nsoption.h"
+#include "utils/log.h"
 #include "image/bitmap.h"
+#include "desktop/mouse.h"
+
 #include "atari/bitmap.h"
 #include "atari/plot/plot.h"
-#include "utils/log.h"
 
 
 /*

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "desktop/mouse.h"
+
 #include "atari/plot/fontplot.h"
 
 const struct s_font_driver_table_entry font_driver_table[] =

@@ -28,7 +28,9 @@
 #include <math.h>
 
 #include "utils/log.h"
-#include "desktop/browser.h"
+#include "utils/nsoption.h"
+#include "utils/nsurl.h"
+#include "utils/utf8.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/mouse.h"
@@ -36,24 +38,20 @@
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/hotlist.h"
+#include "desktop/textarea.h"
+#include "desktop/textinput.h"
+#include "content/hlcache.h"
 
-#include "utils/nsoption.h"
-#include "utils/nsurl.h"
-#include "utils/utf8.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"
+#include "atari/search.h"
 #include "atari/toolbar.h"
 #include "atari/rootwin.h"
-
 #include "atari/clipboard.h"
 #include "atari/misc.h"
 #include "atari/plot/plot.h"
 #include "cflib.h"
 #include "atari/res/netsurf.rsh"
-
-#include "desktop/textarea.h"
-#include "desktop/textinput.h"
-#include "content/hlcache.h"
 #include "atari/encoding.h"
 
 

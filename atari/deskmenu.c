@@ -21,10 +21,10 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
-#include "desktop/browser_private.h"
 #include "utils/nsoption.h"
+#include "desktop/browser_private.h"
 #include "desktop/save_complete.h"
+
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"
 #include "atari/deskmenu.h"
@@ -33,13 +33,11 @@
 #include "atari/cookies.h"
 #include "atari/toolbar.h"
 #include "atari/settings.h"
-#include "atari/search.h"
 #include "atari/misc.h"
 #include "atari/gui.h"
 #include "atari/findfile.h"
 #include "atari/about.h"
 #include "atari/plot/plot.h"
-
 #include "atari/rootwin.h"
 
 typedef void __CDECL (*menu_evnt_func)(short item, short title, void * data);

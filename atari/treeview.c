@@ -20,19 +20,18 @@
 #include <sys/types.h>
 #include <string.h>
 
-
 #include "assert.h"
 #include "cflib.h"
 
 #include "utils/nsoption.h"
-#include "content/urldb.h"
-#include "desktop/browser.h"
-#include "desktop/plotters.h"
-#include "desktop/mouse.h"
-#include "desktop/treeview.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "content/urldb.h"
+#include "desktop/plotters.h"
+#include "desktop/mouse.h"
+#include "desktop/treeview.h"
+
 #include "atari/gui.h"
 #include "atari/plot/plot.h"
 #include "atari/misc.h"

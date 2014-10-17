@@ -27,7 +27,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "desktop/browser.h"
 #include "content/urldb.h"
 #include "content/hlcache.h"
 #include "desktop/sslcert_viewer.h"

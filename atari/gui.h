@@ -22,7 +22,6 @@
 #include <stdbool.h>
 #include <mt_gem.h>
 
-#include "atari/search.h"
 #include "atari/redrawslots.h"
 #include "atari/gemtk/gemtk.h"
 

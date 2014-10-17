@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  *           2008 Vincent Sanders <vince@simtec.co.uk>
- *			 2011 Ole Loots <ole@monochrom.net>
+ *           2011 Ole Loots <ole@monochrom.net>
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
  * NetSurf is free software; you can redistribute it and/or modify
@@ -23,7 +23,8 @@
 #include FT_CACHE_H
 
 #include "utils/nsoption.h"
-#include "css/css.h"
+#include "desktop/mouse.h"
+
 #include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"

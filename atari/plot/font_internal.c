@@ -19,12 +19,16 @@
 
 #ifdef WITH_INTERNAL_FONT_DRIVER
 
+#include <unistd.h>
+
+#include "utils/utf8.h"
+#include "utils/log.h"
+#include "desktop/mouse.h"
+
 #include "atari/plot/plot.h"
 #include "atari/plot/fontplot.h"
 #include "atari/plot/font_internal.h"
 
-#include "utils/utf8.h"
-#include "utils/log.h"
 
 extern unsigned long atari_plot_flags;
 extern int atari_plot_vdi_handle;

@@ -27,7 +27,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "desktop/browser.h"
 #include "desktop/browser_private.h"
 #include "desktop/search.h"
 #include "desktop/gui_search.h"

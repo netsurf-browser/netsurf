@@ -23,6 +23,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "testament.h"
+#include "utils/useragent.h"
+#include "utils/nsurl.h"
+#include "utils/messages.h"
+#include "desktop/version.h"
+#include "desktop/browser.h"
+
+#include "curl/curlver.h"
+
 #include "cflib.h"
 #include "atari/misc.h"
 #include "atari/plot/plot.h"
@@ -30,20 +39,10 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/about.h"
 
-#include "testament.h"
-#include "utils/useragent.h"
-#include "desktop/version.h"
-#include "utils/nsurl.h"
-#include "utils/messages.h"
-
-#include "curl/curlver.h"
-
-
 static OBJECT * about_form = NULL;
 static char * infocontent;
 static char version[32];
 VdiHdl vdihandle;
-
 
 static short __CDECL about_userdraw(PARMBLK *parmblock)
 {

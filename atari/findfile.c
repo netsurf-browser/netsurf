@@ -29,7 +29,6 @@
 #include "utils/url.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/findfile.h"
-#include "atari/gui.h"
 #include "atari/misc.h"
 #include "atari/osspec.h"
 

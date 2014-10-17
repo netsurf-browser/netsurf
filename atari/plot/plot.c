@@ -30,9 +30,9 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "desktop/plotters.h"
+#include "desktop/mouse.h"
 
 #include "atari/bitmap.h"
-#include "atari/gui.h"
 #include "utils/nsoption.h"
 #include "atari/plot/plot.h"
 

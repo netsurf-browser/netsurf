@@ -22,9 +22,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "desktop/textarea.h"
-#include "desktop/browser.h"
-
 struct s_toolbar;
 struct nsurl;
 

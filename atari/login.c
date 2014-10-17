@@ -30,8 +30,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
-#include "content/urldb.h"
 #include "content/fetch.h"
 
 #include "atari/misc.h"

@@ -28,7 +28,6 @@
 #include <math.h>
 
 #include "utils/log.h"
-#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 
@@ -36,7 +35,6 @@
 #include "atari/statusbar.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
-
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plot.h"
 #include "atari/osspec.h"

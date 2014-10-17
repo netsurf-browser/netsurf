@@ -15,14 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Module Description:
- *
- *
- *
  */
-
-#include "desktop/browser.h"
-#include "desktop/search.h"
 
 #ifndef NS_ATARI_SEARCH_H
 #define NS_ATARI_SEARCH_H
@@ -32,18 +25,16 @@
 struct gui_window;
 struct browser_window;
 
-struct s_search_form_state
-{
+struct s_search_form_state {
 	char text[32];
 	uint32_t flags;
 	bool back_avail;
 };
 
 struct s_search_form_session {
-	struct browser_window * bw;
+	struct browser_window *bw;
 	struct s_search_form_state state;
 };
-
 
 typedef struct s_search_form_session * SEARCH_FORM_SESSION;
 
