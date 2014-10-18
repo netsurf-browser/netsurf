@@ -4065,11 +4065,10 @@ static void ro_gui_window_action_add_bookmark(struct gui_window *g)
 	nsurl *url;
 
 	if (g == NULL || g->bw == NULL || g->toolbar == NULL ||
-			g->bw->current_content == NULL ||
-			hlcache_handle_get_url(g->bw->current_content) == NULL)
+			browser_window_has_content(g->bw) == false)
 		return;
 
-	url = hlcache_handle_get_url(g->bw->current_content);
+	url = browser_window_get_url(g->bw);
 
 	ro_gui_hotlist_add_page(url);
 	ro_toolbar_update_hotlist(g->toolbar);
