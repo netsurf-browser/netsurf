@@ -4013,11 +4013,16 @@ void ro_gui_window_action_local_history(struct gui_window *g)
 
 void ro_gui_window_action_save(struct gui_window *g, gui_save_type save_type)
 {
-	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL)
+	hlcache_handle *h;
+
+	if (g == NULL || g->bw == NULL || !browser_window_has_content(g->bw))
 		return;
 
-	ro_gui_save_prepare(save_type, g->bw->current_content,
-			NULL, NULL, NULL);
+	h = browser_window_get_content(g->bw);
+	if (h == NULL)
+		return;
+
+	ro_gui_save_prepare(save_type, h, NULL, NULL, NULL);
 	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
 }
 
