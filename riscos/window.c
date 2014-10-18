@@ -4030,11 +4030,7 @@ void ro_gui_window_action_save(struct gui_window *g, gui_save_type save_type)
 
 void ro_gui_window_action_search(struct gui_window *g)
 {
-	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL ||
-			(content_get_type(g->bw->current_content) !=
-				CONTENT_HTML &&
-			content_get_type(g->bw->current_content) !=
-				CONTENT_TEXTPLAIN))
+	if (g == NULL || g->bw == NULL || !browser_window_can_search(g->bw))
 		return;
 
 	ro_gui_search_prepare(g->bw);
