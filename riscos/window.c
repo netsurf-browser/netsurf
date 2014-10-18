@@ -2297,10 +2297,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	/* Selection Submenu */
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION,
-			h == NULL || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
-			/* make menu available if there's anything that /could/
-			 * be selected */
+			!browser_window_can_select(bw));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_SAVE,
 			~editor_flags & BW_EDITOR_CAN_COPY);
