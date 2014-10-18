@@ -2145,7 +2145,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
 	bw = g->bw;
-	have_content = browser_winndow_has_content(g->bw);
+	have_content = browser_window_has_content(g->bw);
 	editor_flags = browser_window_get_editor_flags(bw);
 
 	/* If this is the form select menu, handle it now and then exit.
