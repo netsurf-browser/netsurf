@@ -454,6 +454,14 @@ struct browser_window * browser_window_get_root(struct browser_window *bw);
 browser_editor_flags browser_window_get_editor_flags(struct browser_window *bw);
 
 /**
+ * Find out if given browser window content is selectable
+ *
+ * \param bw	browser window to look at
+ * \return true iff browser window is selectable
+ */
+bool browser_window_can_select(struct browser_window *bw);
+
+/**
  * Get the current selection from a root browser window, ownership passed to
  * caller, who must free() it.
  *
