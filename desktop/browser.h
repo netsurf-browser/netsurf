@@ -152,6 +152,14 @@ nserror browser_window_navigate(struct browser_window *bw,
 			     struct hlcache_handle *parent);
 
 /**
+ * Return true if a browser window can navigate upwards.
+ *
+ * \param bw the browser window to test.
+ * \return true if navigation up is possible otherwise false.
+ */
+bool browser_window_up_available(struct browser_window *bw);
+
+/**
  * Navigate to a browser_window's parent URL.
  *
  * \param bw		browser window

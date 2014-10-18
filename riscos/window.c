@@ -126,7 +126,6 @@ static void ro_gui_window_toolbar_click(void *data,
 
 static bool ro_gui_window_content_export_types(hlcache_handle *h,
 		bool *export_draw, bool *export_sprite);
-static bool ro_gui_window_up_available(struct browser_window *bw);
 static void ro_gui_window_prepare_pageinfo(struct gui_window *g);
 static void ro_gui_window_prepare_objectinfo(hlcache_handle *object,
 		const char *href);
@@ -2335,7 +2334,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			!browser_window_stop_available(bw));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_NAVIGATE_UP,
-			!ro_gui_window_up_available(bw));
+			!browser_window_up_available(bw));
 
 
 
@@ -3802,35 +3801,6 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 
 
 /**
- * Return true if a browser window can navigate upwards.
- *
- * \todo This should probably be somewhere else but in window.c.
- *
- * \param bw the browser window to test.
- * \return true if navigation up is possible otherwise false.
- */
-
-bool ro_gui_window_up_available(struct browser_window *bw)
-{
-	bool result = false;
-	nsurl *parent;
-
-	if (bw != NULL && bw->current_content != NULL) {
-		nserror	err = nsurl_parent(hlcache_handle_get_url(
-				bw->current_content), &parent);
-		if (err == NSERROR_OK) {
-			result = nsurl_compare(hlcache_handle_get_url(
-					bw->current_content), parent,
-					NSURL_COMPLETE) == false;
-			nsurl_unref(parent);
-		}
-	}
-
-	return result;
-}
-
-
-/**
  * Prepare the page info window for use.
  *
  * \param *g		The GUI window block to use.
@@ -4366,7 +4336,7 @@ void ro_gui_window_update_toolbar_buttons(struct gui_window *g)
 			!browser_window_forward_available(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_UP,
-			!ro_gui_window_up_available(bw));
+			!browser_window_up_available(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_SEARCH,
 			h == NULL || (content_get_type(h) != CONTENT_HTML &&
