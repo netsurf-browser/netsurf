@@ -2411,7 +2411,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
-	h = g->bw->current_content;
+	h = browser_window_get_content(g->bw);
 
 	switch (action) {
 	case BROWSER_PAGE_INFO:
@@ -2617,7 +2617,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
 	bw = g->bw;
-	h = bw->current_content;
+	h = browser_window_get_content(bw);
 
 	/* If this is a form menu from the core, handle it now and then exit.
 	 * Otherwise, carry on to the main browser window menu.
@@ -2797,7 +2797,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 			if (error == NSERROR_OK) {
 				error = browser_window_navigate(bw,
 						url,
-						hlcache_handle_get_url(h),
+						browser_window_get_url(bw),
 						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
@@ -2815,7 +2815,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 						BW_CREATE_HISTORY |
 						BW_CREATE_CLONE,
 						url,
-						hlcache_handle_get_url(h),
+						browser_window_get_url(bw),
 						bw,
 						NULL);
 				nsurl_unref(url);
