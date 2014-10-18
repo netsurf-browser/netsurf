@@ -2138,15 +2138,14 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	struct browser_window	*bw;
 	struct toolbar		*toolbar;
 	struct contextual_content cont;
-	hlcache_handle		*h = NULL;
-	bool			export_sprite, export_draw;
+	bool			export_sprite, export_draw, have_content;
 	os_coord		pos;
 	browser_editor_flags	editor_flags;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
 	bw = g->bw;
-	h = g->bw->current_content;
+	have_content = browser_winndow_has_content(g->bw);
 	editor_flags = browser_window_get_editor_flags(bw);
 
 	/* If this is the form select menu, handle it now and then exit.
@@ -2214,27 +2213,29 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE,
 			!browser_window_can_search(bw));
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE_INFO, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE_INFO, !have_content);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PRINT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PRINT, !have_content);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_NEW_WINDOW, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_NEW_WINDOW, !have_content);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_FIND_TEXT,
 			!browser_window_can_search(bw));
 
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_VIEW_SOURCE, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_VIEW_SOURCE, !have_content);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URI, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URL, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_TEXT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URI, !have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URL, !have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_TEXT,
+			!have_content);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_COMPLETE, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_DRAW, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_PDF, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_TEXT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE, !have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_COMPLETE,
+			!have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_DRAW, !have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_PDF, !have_content);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_TEXT, !have_content);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_LINK_SAVE_URI,
 			!current_menu_url);
@@ -2282,15 +2283,15 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 				&export_draw, &export_sprite);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT,
-			(h == NULL && current_menu_object == NULL)
+			(!have_content && current_menu_object == NULL)
 				|| !(export_sprite || export_draw));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT_SPRITE,
-			(h == NULL && current_menu_object == NULL)
+			(!have_content && current_menu_object == NULL)
 				|| !export_sprite);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT_DRAW,
-			(h == NULL && current_menu_object == NULL)
+			(!have_content && current_menu_object == NULL)
 				|| !export_draw);
 
 
@@ -2352,7 +2353,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_BUFFER_ALL,
 			g != NULL && g->option.buffer_everything);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SCALE_VIEW, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SCALE_VIEW, !have_content);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_WINDOW_STAGGER,
 				     nsoption_int(window_screen_width) == 0);
@@ -2369,11 +2370,11 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* Utilities Submenu */
 
-	ro_gui_menu_set_entry_shaded(menu, HOTLIST_ADD_URL, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, HOTLIST_ADD_URL, !have_content);
 
 	ro_gui_menu_set_entry_shaded(menu, HISTORY_SHOW_LOCAL,
 			(bw == NULL ||
-			!(h != NULL || browser_window_back_available(bw) ||
+			!(have_content || browser_window_back_available(bw) ||
 			browser_window_forward_available(bw))));
 
 
