@@ -2957,7 +2957,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 	case BROWSER_SAVE_VIEW:
 		if (bw != NULL) {
-			ro_gui_window_default_options(bw);
+			ro_gui_window_default_options(g);
 			ro_gui_save_options();
 		}
 		break;
@@ -4534,16 +4534,12 @@ void ro_gui_window_clone_options(
  * \param  bw  the browser window to read options from
  */
 
-void ro_gui_window_default_options(struct browser_window *bw)
+void ro_gui_window_default_options(struct gui_window *gui)
 {
 	struct gui_window *gui;
 
-	assert(bw);
-
-	/*	Get our GUI
-	*/
-	gui = bw->window;
-	if (!gui) return;
+	if (gui == NULL)
+		return;
 
 	/*	Save the basic options
 	*/

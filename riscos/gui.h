@@ -143,7 +143,7 @@ void ro_gui_window_quit(void);
 /* void ro_gui_window_close_all(void); */
 #define ro_gui_window_close_all ro_gui_window_quit  /* no need for a separate fn */
 void ro_gui_throb(void);
-void ro_gui_window_default_options(struct browser_window *bw);
+void ro_gui_window_default_options(struct gui_window *gui);
 struct gui_window *ro_gui_window_lookup(wimp_w window);
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
 bool ro_gui_window_to_window_pos(struct gui_window *g, int x, int y,
