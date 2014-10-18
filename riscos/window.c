@@ -2279,7 +2279,8 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_content_export_types(current_menu_object,
 				&export_draw, &export_sprite);
 	else
-		ro_gui_window_content_export_types(h,
+		ro_gui_window_content_export_types(
+				browser_window_get_content(bw),
 				&export_draw, &export_sprite);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT,
