@@ -3391,7 +3391,7 @@ void ro_gui_window_iconise(struct gui_window *g,
 
 	assert(bw);
 
-	h = bw->current_content;
+	h = browser_window_get_content(bw);
 	if (!h) return;
 
 	/* if an overlay sprite is defined, locate it and gets its dimensions
@@ -3805,7 +3805,7 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 
 void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 {
-	hlcache_handle *h = g->bw->current_content;
+	hlcache_handle *h = browser_window_get_content(g->bw);
 	char icon_buf[20] = "file_xxx";
 	char enc_buf[40];
 	const char *icon = icon_buf;
