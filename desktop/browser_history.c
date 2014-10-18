@@ -766,6 +766,11 @@ bool browser_window_history_redraw(struct browser_window *bw,
 	assert(bw != NULL);
 	history = bw->history;
 
+	if (history == NULL) {
+		LOG(("Attempt to draw NULL history."));
+		return false;
+	}
+
 	if (!history->start)
 		return true;
 	return browser_window_history__redraw_entry(history, history->start,
