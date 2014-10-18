@@ -2211,9 +2211,8 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* Page Submenu */
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE, h == NULL ||
-			(content_get_type(h) != CONTENT_HTML &&
-			content_get_type(h) != CONTENT_TEXTPLAIN));
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE,
+			!browser_window_can_search(bw));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE_INFO, h == NULL);
 
@@ -2222,8 +2221,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_NEW_WINDOW, h == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_FIND_TEXT,
-			h == NULL || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
+			!browser_window_can_search(bw));
 
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_VIEW_SOURCE, h == NULL);
