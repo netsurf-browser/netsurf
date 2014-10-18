@@ -3999,7 +3999,7 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 
 void ro_gui_window_action_local_history(struct gui_window *g)
 {
-	if (g != NULL && g->bw != NULL && g->bw->history != NULL)
+	if (g != NULL && g->bw != NULL)
 		ro_gui_history_open(g, true);
 }
 
