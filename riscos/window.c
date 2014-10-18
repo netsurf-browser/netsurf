@@ -4542,8 +4542,6 @@ void ro_gui_window_clone_options(
 
 void ro_gui_window_default_options(struct gui_window *gui)
 {
-	struct gui_window *gui;
-
 	if (gui == NULL)
 		return;
 
