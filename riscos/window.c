@@ -4119,7 +4119,8 @@ void ro_gui_window_action_print(struct gui_window *g)
 
 void ro_gui_window_action_page_info(struct gui_window *g)
 {
-	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL)
+	if (g == NULL || g->bw == NULL ||
+			browser_window_has_content(g->bw) == false)
 		return;
 
 	ro_gui_window_prepare_pageinfo(g);
