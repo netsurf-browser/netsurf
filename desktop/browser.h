@@ -462,6 +462,14 @@ browser_editor_flags browser_window_get_editor_flags(struct browser_window *bw);
  */
 char * browser_window_get_selection(struct browser_window *bw);
 
+/**
+ * Find out if given browser window can be searched
+ *
+ * \param bw	browser window to look at
+ * \return true iff browser window is searchable
+ */
+bool browser_window_can_search(struct browser_window *bw);
+
 
 /**
  * Dump debug info concerning the browser window's contents to file

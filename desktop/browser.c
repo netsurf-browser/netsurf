@@ -443,6 +443,22 @@ char * browser_window_get_selection(struct browser_window *bw)
 	return content_get_selection(bw->selection.bw->current_content);
 }
 
+/* exported interface, documented in browser.h */
+bool browser_window_can_search(struct browser_window *bw)
+{
+	if (bw == NULL || bw->current_content == NULL)
+		return false;
+
+	/* TODO: We shouldn't have to know about specific content types
+	 *       here.  There should be a content_is_searchable() call. */
+	if (content_get_type(bw->current_content) != CONTENT_HTML &&
+			content_get_type(bw->current_content) !=
+			CONTENT_TEXTPLAIN)
+		return false;
+
+	return true;
+}
+
 /**
  * Set or remove a selection.
  *
