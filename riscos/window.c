@@ -3978,14 +3978,12 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 {
 	nserror error;
 
-	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL)
+	if (g == NULL || g->bw == NULL)
 		return;
 
 	error = browser_window_create(BW_CREATE_CLONE,
-				      hlcache_handle_get_url(g->bw->current_content),
-				      NULL,
-				      g->bw,
-				      NULL);
+			browser_window_get_url(g->bw),
+			NULL, g->bw, NULL);
 
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
