@@ -4306,14 +4306,12 @@ void ro_gui_throb(void)
 void ro_gui_window_update_toolbar_buttons(struct gui_window *g)
 {
 	struct browser_window	*bw;
-	hlcache_handle		*h;
 	struct toolbar		*toolbar;
 
 	if (g == NULL || g->toolbar == NULL)
 		return;
 
 	bw = g->bw;
-	h = bw->current_content;
 	toolbar = g->toolbar;
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_RELOAD,
@@ -4332,17 +4330,16 @@ void ro_gui_window_update_toolbar_buttons(struct gui_window *g)
 			!browser_window_up_available(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_SEARCH,
-			h == NULL || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
+			!browser_window_can_search(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_SCALE,
-			h == NULL);
+			!browser_window_has_content(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_PRINT,
-			h == NULL);
+			!browser_window_has_content(bw));
 
 	ro_toolbar_set_button_shaded_state(toolbar, TOOLBAR_BUTTON_SAVE_SOURCE,
-			h == NULL);
+			!browser_window_has_content(bw));
 
 	ro_toolbar_update_urlsuggest(toolbar);
 }
