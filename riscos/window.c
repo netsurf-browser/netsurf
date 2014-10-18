@@ -1490,11 +1490,11 @@ void ro_gui_window_open(wimp_open *open)
 	int height = open->visible.y1 - open->visible.y0;
 	int toolbar_height = 0;
 	float new_scale = 0;
-	hlcache_handle *h;
 	wimp_window_state state;
 	os_error *error;
 	wimp_w parent;
 	bits linkage;
+	bool have_content;
 
 	if (open->next == wimp_TOP && g->iconise_icon >= 0) {
 		/* window is no longer iconised, release its sprite number */
@@ -1502,7 +1502,7 @@ void ro_gui_window_open(wimp_open *open)
 		g->iconise_icon = -1;
 	}
 
-	h = g->bw->current_content;
+	have_content = browser_window_has_content(g->bw);
 
 	/* get the current flags/nesting state */
 	state.w = g->window;
@@ -1542,7 +1542,7 @@ void ro_gui_window_open(wimp_open *open)
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
 				state.visible.y0 += size;
-				if (h) {
+				if (have_content) {
 					browser_window_schedule_reformat(g->bw);
 				}
 			}
@@ -1551,7 +1551,7 @@ void ro_gui_window_open(wimp_open *open)
 			if (state.flags & wimp_WINDOW_HSCROLL) {
 				height += size;
 				state.visible.y0 -= size;
-				if (h) {
+				if (have_content) {
 					browser_window_schedule_reformat(g->bw);
 				}
 			}
@@ -1566,7 +1566,7 @@ void ro_gui_window_open(wimp_open *open)
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
 				state.visible.x1 -= size;
-				if (h) {
+				if (have_content) {
 					browser_window_schedule_reformat(g->bw);
 				}
 			}
@@ -1575,7 +1575,7 @@ void ro_gui_window_open(wimp_open *open)
 			if (state.flags & wimp_WINDOW_VSCROLL) {
 				width += size;
 				state.visible.x1 += size;
-				if (h) {
+				if (have_content) {
 					browser_window_schedule_reformat(g->bw);
 				}
 			}
@@ -1584,7 +1584,8 @@ void ro_gui_window_open(wimp_open *open)
 	}
 
 	/* reformat or change extent if necessary */
-	if ((h) && (g->old_width != width || g->old_height != height)) {
+	if (have_content &&
+			(g->old_width != width || g->old_height != height)) {
 	  	/* Ctrl-resize of a top-level window scales the content size */
 		if ((g->old_width > 0) && (g->old_width != width) &&
 				(ro_gui_ctrl_pressed()))
