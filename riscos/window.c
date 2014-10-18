@@ -427,6 +427,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->old_width = 0;
 	g->old_height = 0;
 	g->update_extent = true;
+	g->active = false;
 	strcpy(g->title, "NetSurf");
 	g->iconise_icon = -1;
 	g->scale = 1.0;
@@ -1073,6 +1074,7 @@ static void gui_window_start_throbber(struct gui_window *g)
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
 	if (g->toolbar != NULL)
 		ro_toolbar_start_throbbing(g->toolbar);
+	g->active = true;
 }
 
 
@@ -1089,6 +1091,7 @@ static void gui_window_stop_throbber(struct gui_window *g)
 	ro_gui_menu_refresh(ro_gui_browser_window_menu);
 	if (g->toolbar != NULL)
 		ro_toolbar_stop_throbbing(g->toolbar);
+	g->active = false;
 }
 
 /**
@@ -4287,7 +4290,7 @@ void ro_gui_throb(void)
 	struct browser_window	*top;
 
 	for (g = window_list; g; g = g->next) {
-		if (!g->bw->throbbing)
+		if (!g->active)
 			continue;
 		for (top = g->bw; top->parent; top = top->parent);
 		if (top->window != NULL && top->window->toolbar != NULL)
