@@ -33,7 +33,7 @@
 #import "desktop/mouse.h"
 #import "desktop/gui_window.h"
 #import "desktop/gui_misc.h"
-#import "desktop/browser.h"
+#import "desktop/browser_private.h"
 #import "desktop/textinput.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
@@ -95,9 +95,10 @@ static void gui_window_redraw_window(struct gui_window *g)
 
 static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
-	const NSRect nsrect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
-											 rect->x0, rect->y0, 
-											 rect->x1 - rect->x0, rect->y1 - rect->y0 );
+	const NSRect nsrect = cocoa_scaled_rect_wh( 
+		browser_window_get_scale([(BrowserViewController *)g browser]),
+		rect->x0, rect->y0, 
+		rect->x1 - rect->x0, rect->y1 - rect->y0 );
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: nsrect];
 }
 
@@ -135,7 +136,7 @@ static void gui_window_get_dimensions(struct gui_window *g,
 	
 	NSRect frame = [[[(BrowserViewController *)g browserView] superview] frame];
 	if (scaled) {
-		const CGFloat scale = [(BrowserViewController *)g browser]->scale;
+        	const CGFloat scale = browser_window_get_scale([(BrowserViewController *)g browser]);
 		frame.size.width /= scale;
 		frame.size.height /= scale;
 	}
@@ -146,12 +147,13 @@ static void gui_window_get_dimensions(struct gui_window *g,
 static void gui_window_update_extent(struct gui_window *g)
 {
 	BrowserViewController * const window = (BrowserViewController *)g;
-
+        int width;
+        int height;
 	struct browser_window *browser = [window browser];
-	int width = content_get_width( browser->current_content );
-	int height = content_get_height( browser->current_content );
+
+        browser_window_get_extents(browser, false, &width, &height);
 	
-	[[window browserView] setMinimumSize: cocoa_scaled_size( browser->scale, width, height )];
+	[[window browserView] setMinimumSize: cocoa_scaled_size( browser_window_get_scale(browser), width, height )];
 }
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
