@@ -19,7 +19,7 @@
 #ifndef COCOA_COORDINATES_H
 #define COCOA_COORDINATES_H
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "render/box.h"
 
 extern CGFloat cocoa_scale_factor;
@@ -108,7 +108,7 @@ static inline NSRect cocoa_rect_for_box( struct browser_window *bw, struct box *
 {
 	struct rect r;
 	box_bounds( box, &r );
-	return cocoa_scaled_rect( bw->scale, r.x0, r.y0, r.x1, r.y1 );
+	return cocoa_scaled_rect(browser_window_get_scale(bw), r.x0, r.y0, r.x1, r.y1 );
 }
 
 #endif

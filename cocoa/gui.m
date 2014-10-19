@@ -33,7 +33,7 @@
 #import "desktop/mouse.h"
 #import "desktop/gui_window.h"
 #import "desktop/gui_misc.h"
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "desktop/textinput.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
@@ -59,11 +59,9 @@ gui_window_create(struct browser_window *bw,
 {
 	BrowserWindowController *window = nil;
 
+	browser_window_set_scale(bw, (float)nsoption_int(scale) / 100, false);
 	if (existing != NULL) {
-		bw->scale = (float) nsoption_int(scale) / 100;
 		window = [(BrowserViewController *)(existing) windowController];
-	} else {
-		bw->scale = (float) nsoption_int(scale) / 100;	
 	}
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];

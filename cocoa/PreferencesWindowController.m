@@ -22,7 +22,7 @@
 #import "cocoa/gui.h"
 #import "cocoa/BrowserViewController.h"
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "content/content.h"
 #import "utils/nsoption.h"
 #import "content/hlcache.h"
@@ -39,7 +39,7 @@
 - (IBAction) useCurrentPageAsHomepage: (id) sender;
 {
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
-	const char *url = nsurl_access(hlcache_handle_get_url( bw->current_content ));
+	const char *url = nsurl_access(browser_window_get_url(bw));
 	[self setHomepageURL: [NSString stringWithUTF8String: url]];
 }
 

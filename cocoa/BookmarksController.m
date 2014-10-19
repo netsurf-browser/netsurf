@@ -23,7 +23,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/gui.h"
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
 #import "utils/messages.h"
@@ -163,8 +163,8 @@ static const char *cocoa_hotlist_path( void )
 - (IBAction) addBookmark: (id) sender;
 {
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
-	if (bw && bw->current_content) {
-		hotlist_add_url( hlcache_handle_get_url( bw->current_content ) );
+	if (bw != NULL) {
+		hotlist_add_url(browser_window_get_url(bw));
 	}
 }
 
