@@ -169,8 +169,8 @@ nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
 /**
  * Get a browser window's URL.
  *
- * \param bw	  browser window
- * \return pointer to nsurl.  Doesn't create a ref for caller.
+ * \param bw browser window
+ * \return pointer to nsurl. Doesn't create a ref for caller.
  *
  * \note guaranteed to return a valid nsurl ptr, never returns NULL.
  */
@@ -282,7 +282,7 @@ void browser_window_reformat(struct browser_window *bw, bool background,
  *
  * \param bw The browser window to scale.
  * \param scale The new scale.
- * \param all Scale all windows in the tree (ie work up aswell as down)
+ * \param all Scale all windows in the tree (ie work up as well as down)
  */
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
@@ -336,13 +336,20 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 bool browser_window_drop_file_at_point(struct browser_window *bw,
 		int x, int y, char *file);
 
+/**
+ * set filename on form control.
+ *
+ * \param bw browser window to look inside.
+ * \param gadget form control.
+ * \param fn filename to set.
+ */
 void browser_window_set_gadget_filename(struct browser_window *bw,
 		struct form_control *gadget, const char *fn);
-    
+
 /**
  * Update URL bar for a given browser window to bw's content's URL
  *
- * \param bw	Browser window to update URL bar for.
+ * \param bw Browser window to update URL bar for.
  */
 void browser_window_refresh_url_bar(struct browser_window *bw);
 
@@ -399,7 +406,7 @@ void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 
 /**
- * Redraw a rectangular region of a browser window
+ * Redraw a rectangular region of a browser window.
  *
  * \param  bw	  browser window to be redrawn
  * \param  x	  x co-ord of top-left
@@ -469,9 +476,9 @@ bool browser_window_reload_available(struct browser_window *bw);
 bool browser_window_stop_available(struct browser_window *bw);
 
 /**
- * Redraw an area of a window
+ * Redraw an area of a window.
  *
- * Calls the redraw function for the content, 
+ * Calls the redraw function for the content.
  *
  * \param  bw    The window to redraw
  * \param  x     coordinate for top-left of redraw

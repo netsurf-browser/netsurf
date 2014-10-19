@@ -5,7 +5,7 @@
  * Copyright 2004 John Tytgat <joty@netsurf-browser.org>
  * Copyright 2006 Richard Wilson <info@tinct.net>
  * Copyright 2008 Michael Drake <tlsa@netsurf-browser.org>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>  
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -142,7 +142,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	/* Browser window has content OR children (frames) */
 
-	if ((bw->window != NULL) && 
+	if ((bw->window != NULL) &&
 	    (ctx->plot->option_knockout)) {
 		/* Root browser window: start knockout */
 		knockout_plot_start(ctx, &new_ctx);
@@ -246,7 +246,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		if (x1 < content_clip.x1) content_clip.x1 = x1;
 		if (y1 < content_clip.y1) content_clip.y1 = y1;
 	}
- 
+
 	/* Render the content */
 	plot_ok &= content_redraw(bw->current_content, &data,
 			&content_clip, &new_ctx);
@@ -272,7 +272,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 					bw->scale, &new_ctx);
 		}
 	}
-	
+
 	if (bw->window != NULL && ctx->plot->option_knockout) {
 		/* Root browser window: end knockout */
 		knockout_plot_end();
@@ -694,15 +694,16 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 	return false;
 }
 
+/* exported interface, documented in desktop/browser.h */
 void browser_window_set_gadget_filename(struct browser_window *bw,
 		struct form_control *gadget, const char *fn)
 {
-	html_set_file_gadget_filename(bw->current_content,
-		gadget, fn);
+	html_set_file_gadget_filename(bw->current_content, gadget, fn);
 }
 
 /* exported interface, documented in browser.h */
-nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op)
+nserror browser_window_debug_dump(struct browser_window *bw,
+				  FILE *f, enum content_debug op)
 {
 	if (bw->current_content == NULL) {
 		return NSERROR_OK;
@@ -855,10 +856,10 @@ nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 /**
  * implements the download operation of a window navigate
  */
-static nserror 
+static nserror
 browser_window_download(struct browser_window *bw,
 			nsurl *url,
-			nsurl *nsref, 
+			nsurl *nsref,
 			uint32_t fetch_flags,
 			bool fetch_is_post,
 			llcache_post_data *post)
@@ -873,7 +874,7 @@ browser_window_download(struct browser_window *bw,
 	fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
 	fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
 
-	error = llcache_handle_retrieve(url, fetch_flags, nsref, 
+	error = llcache_handle_retrieve(url, fetch_flags, nsref,
 					fetch_is_post ? post : NULL,
 					NULL, NULL, &l);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
@@ -965,7 +966,7 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 	switch (event->type) {
 	case CONTENT_MSG_DONE:
 		if (bw->current_favicon != NULL) {
-			content_status status = 
+			content_status status =
 					content_get_status(bw->current_favicon);
 
 			if ((status == CONTENT_STATUS_READY) ||
@@ -978,7 +979,7 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		bw->current_favicon = c;
 		bw->loading_favicon = NULL;
 
-		/* content_get_bitmap on the hlcache_handle should give 
+		/* content_get_bitmap on the hlcache_handle should give
 		 *   us the favicon bitmap at this point
 		 */
 		guit->window->set_icon(bw->window, c);
@@ -1008,10 +1009,10 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 			} else {
 
 				hlcache_handle_retrieve(nsurl,
-						HLCACHE_RETRIEVE_SNIFF_TYPE, 
+						HLCACHE_RETRIEVE_SNIFF_TYPE,
 						nsref, NULL,
 						browser_window_favicon_callback,
-						bw, NULL, CONTENT_IMAGE, 
+						bw, NULL, CONTENT_IMAGE,
 						&bw->loading_favicon);
 
 				nsurl_unref(nsurl);
@@ -1039,9 +1040,9 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	if (bw->window == NULL)
 		/* Not top-level browser window; not interested */
 		return;
-	
+
 	/* already fetching the favicon - use that */
-	if (bw->loading_favicon != NULL) 
+	if (bw->loading_favicon != NULL)
 		return;
 
 	bw->failed_favicon = false;
@@ -1066,7 +1067,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 
 		scheme = nsurl_get_component(nsurl, NSURL_SCHEME);
 
-		/* If the document was fetched over http(s), then speculate 
+		/* If the document was fetched over http(s), then speculate
 		 * that there's a favicon living at /favicon.ico */
 		if ((lwc_string_caseless_isequal(scheme, corestring_lwc_http,
 				&match) == lwc_error_ok && match) ||
@@ -1093,7 +1094,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	}
 
 	if (link == NULL) {
-		LOG(("fetching general favicon from '%s'", 
+		LOG(("fetching general favicon from '%s'",
 		     nsurl_access(nsurl)));
 	} else {
 		LOG(("fetching favicon rel:%s '%s'",
@@ -1101,8 +1102,8 @@ static void browser_window_update_favicon(hlcache_handle *c,
 				nsurl_access(nsurl)));
 	}
 
-	hlcache_handle_retrieve(nsurl, HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			nsref, NULL, browser_window_favicon_callback, 
+	hlcache_handle_retrieve(nsurl, HLCACHE_RETRIEVE_SNIFF_TYPE,
+			nsref, NULL, browser_window_favicon_callback,
 			bw, NULL, CONTENT_IMAGE, &bw->loading_favicon);
 
 	nsurl_unref(nsurl);
@@ -1111,9 +1112,9 @@ static void browser_window_update_favicon(hlcache_handle *c,
 /**
  * window callback errorcode handling.
  */
-static void 
+static void
 browser_window_callback_errorcode(hlcache_handle *c,
-				  struct browser_window *bw, 
+				  struct browser_window *bw,
 				  nserror code)
 {
 	const char* message;
@@ -1154,9 +1155,9 @@ static void browser_window_refresh(void *p)
 	enum browser_window_nav_flags flags = BW_NAVIGATE_UNVERIFIABLE;
 
 	assert(bw->current_content != NULL &&
-		(content_get_status(bw->current_content) == 
+		(content_get_status(bw->current_content) ==
 				CONTENT_STATUS_READY ||
-		content_get_status(bw->current_content) == 
+		content_get_status(bw->current_content) ==
 				CONTENT_STATUS_DONE));
 
 	/* Ignore if the refresh URL has gone
@@ -1254,7 +1255,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 #endif
 		{
 			bw->refresh_interval = -1;
-			browser_window_set_status(bw, 
+			browser_window_set_status(bw,
 					content_get_status_message(c));
 		}
 		break;
@@ -1266,7 +1267,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		assert(bw->loading_content == c);
 
 		if (bw->current_content != NULL) {
-			content_status status = 
+			content_status status =
 					content_get_status(bw->current_content);
 
 			if (status == CONTENT_STATUS_READY ||
@@ -1303,7 +1304,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 			if (urldb_add_url(url)) {
 				urldb_set_url_title(url, content_get_title(c));
 				urldb_update_url_visit_data(url);
-				urldb_set_url_content_type(url, 
+				urldb_set_url_content_type(url,
 						content_get_type(c));
 
 				/* This is safe as we've just added the URL */
@@ -1333,11 +1334,11 @@ static nserror browser_window_callback(hlcache_handle *c,
 		}
 
 		/* frames */
-		if (content_get_type(c) == CONTENT_HTML && 
+		if (content_get_type(c) == CONTENT_HTML &&
 				html_get_frameset(c) != NULL)
-			browser_window_create_frameset(bw, 
+			browser_window_create_frameset(bw,
 					html_get_frameset(c));
-		if (content_get_type(c) == CONTENT_HTML && 
+		if (content_get_type(c) == CONTENT_HTML &&
 				html_get_iframe(c) != NULL)
 			browser_window_create_iframes(bw, html_get_iframe(c));
 	}
@@ -1453,7 +1454,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 	case CONTENT_MSG_REFRESH:
 		bw->refresh_interval = event->data.delay * 100;
 		break;
-		
+
 	case CONTENT_MSG_LINK: /* content has an rfc5988 link element */
 	{
 		bool match;
@@ -1474,9 +1475,9 @@ static nserror browser_window_callback(hlcache_handle *c,
 	}
 		break;
 
-	case CONTENT_MSG_GETCTX: 
+	case CONTENT_MSG_GETCTX:
 		/* only the content object created by the browser
-		 * window requires a new global compartment object 
+		 * window requires a new global compartment object
 		 */
 		assert(bw->loading_content == c);
 		if (js_newcompartment(bw->jsctx,
@@ -1604,9 +1605,9 @@ static nserror browser_window_callback(hlcache_handle *c,
 			guit->window->file_gadget_open(bw->window, c,
 				event->data.gadget_click.gadget);
 		}
-		
+
 		break;
-		
+
 	default:
 		break;
 	}
@@ -1666,7 +1667,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 	 * passed a gui window pointer in its API rather than void*
 	 */
 	LOG(("Clearing schedule %p(%p)", guit->window->reformat, bw->window));
-	guit->browser->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);      
+	guit->browser->schedule(-1, (void(*)(void*))guit->window->reformat, bw->window);
 
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
@@ -1681,9 +1682,9 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 		}
 	}
 
-	/* Destruction order is important: we must ensure that the frontend 
-	 * destroys any window(s) associated with this browser window before 
-	 * we attempt any destructive cleanup. 
+	/* Destruction order is important: we must ensure that the frontend
+	 * destroys any window(s) associated with this browser window before
+	 * we attempt any destructive cleanup.
 	 */
 
 	if (bw->window) {
@@ -1699,7 +1700,7 @@ static void browser_window_destroy_internal(struct browser_window *bw)
 
 	if (bw->current_content != NULL) {
 		content_status status = content_get_status(bw->current_content);
-		if (status == CONTENT_STATUS_READY || 
+		if (status == CONTENT_STATUS_READY ||
 				status == CONTENT_STATUS_DONE)
 			content_close(bw->current_content);
 
@@ -1874,11 +1875,11 @@ nserror browser_window_navigate(struct browser_window *bw,
 
 	/* Get download out of the way */
 	if ((flags & BW_NAVIGATE_DOWNLOAD) != 0) {
-		error = browser_window_download(bw, 
-						url, 
-						referrer, 
-						fetch_flags, 
-						fetch_is_post, 
+		error = browser_window_download(bw,
+						url,
+						referrer,
+						fetch_flags,
+						fetch_is_post,
 						&post);
 		nsurl_unref(url);
 		if (referrer != NULL) {
@@ -1898,7 +1899,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 		bw->frag_id = nsurl_get_component(url, NSURL_FRAGMENT);
 
 		/* Compare new URL with existing one (ignoring fragments) */
-		if ((bw->current_content != NULL) && 
+		if ((bw->current_content != NULL) &&
 		    (hlcache_handle_get_url(bw->current_content) != NULL)) {
 			same_url = nsurl_compare(url,
 					hlcache_handle_get_url(
@@ -1909,8 +1910,8 @@ nserror browser_window_navigate(struct browser_window *bw,
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
-		if ((same_url) && 
-		    (fetch_is_post == false) && 
+		if ((same_url) &&
+		    (fetch_is_post == false) &&
 		    (nsurl_has_component(url, NSURL_QUERY) == false)) {
 			nsurl_unref(url);
 
@@ -1919,7 +1920,7 @@ nserror browser_window_navigate(struct browser_window *bw,
 			}
 
 			if ((flags & BW_NAVIGATE_HISTORY) != 0) {
-				browser_window_history_add(bw, 
+				browser_window_history_add(bw,
 					    bw->current_content, bw->frag_id);
 			}
 
@@ -2278,7 +2279,7 @@ void browser_window_stop(struct browser_window *bw)
 	if (bw->current_content != NULL && content_get_status(
 			bw->current_content) != CONTENT_STATUS_DONE) {
 		nserror error;
-		assert(content_get_status(bw->current_content) == 
+		assert(content_get_status(bw->current_content) ==
 				CONTENT_STATUS_READY);
 		error = hlcache_handle_abort(bw->current_content);
 		assert(error == NSERROR_OK);
@@ -2359,7 +2360,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	while (bw->parent)
 		bw = bw->parent;
 
-	if ((bw->status_text != NULL) && 
+	if ((bw->status_text != NULL) &&
 	    (strcmp(text, bw->status_text) == 0)) {
 		/* status text is unchanged */
 		bw->status_match++;
@@ -2367,7 +2368,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	}
 
 	/* status text is changed */
- 
+
 	text_len = strlen(text);
 
 	if ((bw->status_text == NULL) || (bw->status_text_len < text_len)) {
@@ -2544,9 +2545,9 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 	if (bw->children != NULL) {
 		for (i = 0; i < (bw->cols * bw->rows); i++) {
 			if ((bw->children[i].name) &&
-					(!strcasecmp(bw->children[i].name, 
+					(!strcasecmp(bw->children[i].name,
 					target))) {
-				if ((page == &bw->children[i]) || 
+				if ((page == &bw->children[i]) ||
 						(depth > *rdepth)) {
 					*rdepth = depth;
 					*bw_target = &bw->children[i];
@@ -2555,14 +2556,14 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 			if (bw->children[i].children)
 				browser_window_find_target_internal(
 						&bw->children[i],
-						target, depth, page, 
+						target, depth, page,
 						rdepth, bw_target);
 		}
 	}
 
 	if (bw->iframes != NULL) {
 		for (i = 0; i < bw->iframe_count; i++)
-			browser_window_find_target_internal(&bw->iframes[i], 
+			browser_window_find_target_internal(&bw->iframes[i],
 					target, depth, page, rdepth, bw_target);
 	}
 }
@@ -2599,12 +2600,12 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	}
 
 	/* handle reserved keywords */
-	if (((nsoption_bool(button_2_tab)) && 
+	if (((nsoption_bool(button_2_tab)) &&
 	     (mouse & BROWSER_MOUSE_CLICK_2))||
 	    ((!nsoption_bool(button_2_tab)) &&
 	     ((mouse & BROWSER_MOUSE_CLICK_1) &&
 	      (mouse & BROWSER_MOUSE_MOD_2))) ||
-	    ((nsoption_bool(button_2_tab)) && 
+	    ((nsoption_bool(button_2_tab)) &&
 	     ((target == TARGET_BLANK) ||
 	      (!strcasecmp(target, "_blank"))))) {
 		/* open in new tab if:
@@ -2631,7 +2632,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		   ((nsoption_bool(button_2_tab)) &&
 		    ((mouse & BROWSER_MOUSE_CLICK_1) &&
 		     (mouse & BROWSER_MOUSE_MOD_2))) ||
-		   ((!nsoption_bool(button_2_tab)) && 
+		   ((!nsoption_bool(button_2_tab)) &&
 		    ((target == TARGET_BLANK) ||
 		     (!strcasecmp(target, "_blank"))))) {
 		/* open in new window if:
@@ -3096,7 +3097,7 @@ bool browser_window_stop_available(struct browser_window *bw)
 {
 	return (bw && (bw->loading_content ||
 			(bw->current_content &&
-			(content_get_status(bw->current_content) != 
+			(content_get_status(bw->current_content) !=
 			CONTENT_STATUS_DONE))));
 }
 
