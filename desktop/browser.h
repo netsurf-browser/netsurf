@@ -33,7 +33,6 @@
 #include "desktop/frame_types.h"
 #include "desktop/mouse.h"
 
-
 struct browser_window;
 struct hlcache_handle;
 struct gui_window;
@@ -116,7 +115,7 @@ enum browser_window_nav_flags {
  *
  * \param flags		Flags to control operation
  * \param url		URL to fetch in the new window or NULL for blank
- * \param referer	The referring uri or NULL if none
+ * \param referrer	The referring uri or NULL if none
  * \param existing	The an existing bw or NULL, required for some flags.
  * \param bw		Updated to created browser window or untouched on error.
  * \return NSERROR_OK, or appropriate error otherwise.
@@ -173,7 +172,7 @@ nserror browser_window_navigate_up(struct browser_window *bw, bool new_window);
  * \param bw	  browser window
  * \return pointer to nsurl.  Doesn't create a ref for caller.
  *
- * Note: guaranteed to return a valid nsurl ptr, never returns NULL.
+ * \note guaranteed to return a valid nsurl ptr, never returns NULL.
  */
 struct nsurl* browser_window_get_url(struct browser_window *bw);
 
@@ -219,15 +218,61 @@ bool browser_window_has_content(struct browser_window *bw);
  */
 struct hlcache_handle *browser_window_get_content(struct browser_window *bw);
 
-void browser_window_get_dimensions(struct browser_window *bw,
-		int *width, int *height, bool scaled);
+/**
+ * Set the dimensions of the area a browser window occupies
+ *
+ * \param  bw      The browser window to set dimensions of
+ * \param  width   Width in pixels
+ * \param  height  Height in pixels
+ */
 void browser_window_set_dimensions(struct browser_window *bw,
 		int width, int height);
+
+/**
+ * Redraw browser window, set extent to content, and update title.
+ *
+ * \param  bw		  browser_window
+ * \param  scroll_to_top  move view to top of page
+ */
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
+
+/**
+ * update an area of a browser window.
+ *
+ * \param bw The browser window to update.
+ * \param rect The area to redraw
+ */
 void browser_window_update_box(struct browser_window *bw, struct rect *rect);
+
+/**
+ * Stop all fetching activity in a browser window.
+ *
+ * \param bw The browser window to stop activity in.
+ */
 void browser_window_stop(struct browser_window *bw);
+
+/**
+ * Reload the page in a browser window.
+ *
+ * \param  bw  browser window
+ * \param  all whether to reload all objects associated with the page
+ */
 void browser_window_reload(struct browser_window *bw, bool all);
+
+/**
+ * Close and destroy a browser window.
+ *
+ * \param  bw  browser window
+ */
 void browser_window_destroy(struct browser_window *bw);
+
+/**
+ * Reformat a browser window contents to a new width or height.
+ *
+ * \param  bw      the browser window to reformat
+ * \param  width   new width
+ * \param  height  new height
+ */
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height);
 
@@ -294,12 +339,43 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 void browser_window_set_gadget_filename(struct browser_window *bw,
 		struct form_control *gadget, const char *fn);
     
+/**
+ * Update URL bar for a given browser window to bw's content's URL
+ *
+ * \param bw	Browser window to update URL bar for.
+ */
 void browser_window_refresh_url_bar(struct browser_window *bw);
 
+/**
+ * Handle mouse clicks in a browser window.
+ *
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+
+/**
+ * Handle non-click mouse action in a browser window. (drag ends, movements)
+ *
+ * \param  bw	  browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+
+/**
+ * Locate a browser window in the specified stack according.
+ *
+ * \param bw  the browser_window to search all relatives of
+ * \param target  the target to locate
+ * \param mouse The current mouse state
+ * \return The browser window the mouse is in
+ */
 struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
@@ -322,26 +398,75 @@ nserror browser_window_schedule_reformat(struct browser_window *bw);
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 
+/**
+ * Redraw a rectangular region of a browser window
+ *
+ * \param  bw	  browser window to be redrawn
+ * \param  x	  x co-ord of top-left
+ * \param  y	  y co-ord of top-left
+ * \param  width  width of rectangle
+ * \param  height height of rectangle
+ */
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
 
+/**
+ * Change the status bar of a browser window.
+ *
+ * \param  bw	 browser window
+ * \param  text  new status text (copied)
+ */
 void browser_window_set_status(struct browser_window *bw, const char *text);
+
+/**
+ * Change the shape of the mouse pointer
+ *
+ * \param bw Browser window to set shape in
+ * \param shape The pointer shape to use
+ */
 void browser_window_set_pointer(struct browser_window *bw,
 		browser_pointer_shape shape);
+
+/**
+ * Start drag scrolling the contents of the browser window
+ *
+ * \param bw  browser window
+ * \param x   x ordinate of initial mouse position
+ * \param y   y ordinate
+ */
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
+/**
+ * Check availability of Back action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Back action is available
+ */
 bool browser_window_back_available(struct browser_window *bw);
+
+/**
+ * Check availability of Forward action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Forward action is available
+ */
 bool browser_window_forward_available(struct browser_window *bw);
+
+/**
+ * Check availability of Reload action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Reload action is available
+ */
 bool browser_window_reload_available(struct browser_window *bw);
+
+/**
+ * Check availability of Stop action for a given browser window
+ *
+ * \param bw  browser window
+ * \return true if Stop action is available
+ */
 bool browser_window_stop_available(struct browser_window *bw);
-
-
-/* In desktop/textinput.c */
-void browser_window_place_caret(struct browser_window *bw, int x, int y,
-		int height, const struct rect *clip);
-void browser_window_remove_caret(struct browser_window *bw, bool only_hide);
-bool browser_window_key_press(struct browser_window *bw, uint32_t key);
-
 
 /**
  * Redraw an area of a window
@@ -413,7 +538,7 @@ void browser_window_scroll_visible(struct browser_window *bw,
  * \param  x	    The x scroll offset to set
  * \param  y	    The y scroll offset to set
  *
- * TODO -- Do we really need this and browser_window_scroll_visible?
+ * \todo Do we really need this and browser_window_scroll_visible?
  *         Ditto for gui_window_* variants.
  */
 void browser_window_set_scroll(struct browser_window *bw, int x, int y);

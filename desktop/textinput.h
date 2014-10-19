@@ -26,6 +26,8 @@
 #ifndef _NETSURF_DESKTOP_TEXTINPUT_H_
 #define _NETSURF_DESKTOP_TEXTINPUT_H_
 
+struct browser_window;
+
 enum input_key {
 
 	KEY_SELECT_ALL = 1,
@@ -68,5 +70,33 @@ enum input_key {
 	KEY_REDO
 };
 
+
+/**
+ * Position the caret and assign a callback for key presses.
+ *
+ * \param bw		The browser window in which to place the caret
+ * \param x		X coordinate of the caret
+ * \param y		Y coordinate
+ * \param height	Height of caret
+ * \param clip		Clip rectangle for caret, or NULL if none
+ */
+void browser_window_place_caret(struct browser_window *bw, int x, int y,
+		int height, const struct rect *clip);
+
+/**
+ * Removes the caret and callback for key process.
+ *
+ * \param bw  The browser window from which to remove caret
+ */
+void browser_window_remove_caret(struct browser_window *bw, bool only_hide);
+
+/**
+ * Handle key presses in a browser window.
+ *
+ * \param bw   The root browser window
+ * \param key  The UCS4 character codepoint
+ * \return true if key handled, false otherwise
+ */
+bool browser_window_key_press(struct browser_window *bw, uint32_t key);
 
 #endif

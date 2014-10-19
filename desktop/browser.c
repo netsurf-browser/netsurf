@@ -459,18 +459,19 @@ char * browser_window_get_selection(struct browser_window *bw)
 	return content_get_selection(bw->selection.bw->current_content);
 }
 
-/* exported interface, documented in browser.h */
+/* exported interface, documented in desktop/browser.h */
 bool browser_window_can_search(struct browser_window *bw)
 {
 	if (bw == NULL || bw->current_content == NULL)
 		return false;
 
-	/* TODO: We shouldn't have to know about specific content types
-	 *       here.  There should be a content_is_searchable() call. */
-	if (content_get_type(bw->current_content) != CONTENT_HTML &&
-			content_get_type(bw->current_content) !=
-			CONTENT_TEXTPLAIN)
+	/** \todo We shouldn't have to know about specific content
+	 * types here. There should be a content_is_searchable() call.
+	 */
+	if ((content_get_type(bw->current_content) != CONTENT_HTML) &&
+	    (content_get_type(bw->current_content) != CONTENT_TEXTPLAIN)) {
 		return false;
+	}
 
 	return true;
 }
@@ -806,13 +807,7 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 }
 
 
-/**
- * Initialise common parts of a browser window
- *
- * \param flags     Flags to control operation
- * \param bw        The window to initialise
- * \param existing  The existing window if cloning, else NULL
- */
+/* exported internal interface, documented in desktop/browser_private.h */
 nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 		struct browser_window *bw, struct browser_window *existing)
 {
@@ -926,7 +921,7 @@ static bool browser_window_check_throbber(struct browser_window *bw)
 /**
  * Start the busy indicator.
  *
- * \param  bw  browser window
+ * \param bw browser window
  */
 
 static void browser_window_start_throbber(struct browser_window *bw)
@@ -945,7 +940,6 @@ static void browser_window_start_throbber(struct browser_window *bw)
  *
  * \param  bw  browser window
  */
-
 static void browser_window_stop_throbber(struct browser_window *bw)
 {
 	bw->throbbing = false;
@@ -963,7 +957,6 @@ static void browser_window_stop_throbber(struct browser_window *bw)
 /**
  * Callback for fetchcache() for browser window favicon fetches.
  */
-
 static nserror browser_window_favicon_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
@@ -1115,7 +1108,9 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	nsurl_unref(nsurl);
 }
 
-/** window callback errorcode handling */
+/**
+ * window callback errorcode handling.
+ */
 static void 
 browser_window_callback_errorcode(hlcache_handle *c,
 				  struct browser_window *bw, 
@@ -1148,9 +1143,8 @@ browser_window_callback_errorcode(hlcache_handle *c,
 /**
  * Handle meta http-equiv refresh time elapsing by loading a new page.
  *
- * \param  p  browser window to refresh with new page
+ * \param p browser window to refresh with new page
  */
-
 static void browser_window_refresh(void *p)
 {
 	struct browser_window *bw = p;
@@ -1232,7 +1226,6 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 /**
  * Callback handler for content event messages.
  */
-
 static nserror browser_window_callback(hlcache_handle *c,
 		const hlcache_event *event, void *pw)
 {
@@ -1657,7 +1650,7 @@ static void browser_window_destroy_children(struct browser_window *bw)
  *
  * \param  bw  browser window
  */
-void browser_window_destroy_internal(struct browser_window *bw)
+static void browser_window_destroy_internal(struct browser_window *bw)
 {
 	assert(bw);
 
@@ -1754,30 +1747,12 @@ void browser_window_destroy_internal(struct browser_window *bw)
 			bw->status_match, bw->status_miss));
 }
 
-
-/**
- * Close and destroy a browser window.
- *
- * \param  bw  browser window
- */
-void browser_window_destroy(struct browser_window *bw)
-{
-	/* can't destoy child windows on their own */
-	assert(!bw->parent);
-
-	/* destroy */
-	browser_window_destroy_internal(bw);
-	free(bw);
-}
-
-
 /**
  * Update URL bar for a given browser window to given URL
  *
  * \param bw	Browser window to update URL bar for.
  * \param url	URL for content displayed by bw including any fragment.
  */
-
 static inline void browser_window_refresh_url_bar_internal(
 		struct browser_window *bw, nsurl *url)
 {
@@ -1793,12 +1768,18 @@ static inline void browser_window_refresh_url_bar_internal(
 }
 
 
-/**
- * Update URL bar for a given browser window to bw's content's URL
- *
- * \param bw	Browser window to update URL bar for.
- */
+/* exported interface, documented in desktop/browser.h */
+void browser_window_destroy(struct browser_window *bw)
+{
+	/* can't destoy child windows on their own */
+	assert(!bw->parent);
 
+	/* destroy */
+	browser_window_destroy_internal(bw);
+	free(bw);
+}
+
+/* exported interface, documented in desktop/browser.h */
 void browser_window_refresh_url_bar(struct browser_window *bw)
 {
 	assert(bw);
@@ -2140,15 +2121,7 @@ nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
 }
 
 
-/*
- * Get the dimensions of the area a browser window occupies
- *
- * \param  bw      The browser window to get dimensions of
- * \param  width   Updated to the browser window viewport width
- * \param  height  Updated to the browser window viewport height
- * \param  scaled  Whether we want the height with scale applied
- */
-
+/* exported internal interface, documented in desktop/browser_private.h */
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled)
 {
@@ -2165,14 +2138,7 @@ void browser_window_get_dimensions(struct browser_window *bw,
 }
 
 
-/*
- * Set the dimensions of the area a browser window occupies
- *
- * \param  bw      The browser window to set dimensions of
- * \param  width   Width in pixels
- * \param  height  Height in pixels
- */
-
+/* Exported interface, documented in browser.h */
 void browser_window_set_dimensions(struct browser_window *bw,
 		int width, int height)
 {
@@ -2189,13 +2155,7 @@ void browser_window_set_dimensions(struct browser_window *bw,
 }
 
 
-/**
- * Redraw browser window, set extent to content, and update title.
- *
- * \param  bw		  browser_window
- * \param  scroll_to_top  move view to top of page
- */
-
+/* Exported interface, documented in browser.h */
 void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 {
 	int x, y;
@@ -2277,7 +2237,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 	}
 }
 
-
+/* Exported interface, documented in desktop/browser.h */
 void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 {
 	int pos_x;
@@ -2304,13 +2264,7 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 	}
 }
 
-
-/**
- * Stop all fetching activity in a browser window.
- *
- * \param  bw  browser window
- */
-
+/* Exported interface, documented in desktop/browser.h */
 void browser_window_stop(struct browser_window *bw)
 {
 	int children, index;
@@ -2351,13 +2305,7 @@ void browser_window_stop(struct browser_window *bw)
 }
 
 
-/**
- * Reload the page in a browser window.
- *
- * \param  bw  browser window
- * \param  all whether to reload all objects associated with the page
- */
-
+/* Exported interface, documented in desktop/browser.h */
 void browser_window_reload(struct browser_window *bw, bool all)
 {
 	hlcache_handle *c;
@@ -2403,13 +2351,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 }
 
 
-/**
- * Change the status bar of a browser window.
- *
- * \param  bw	 browser window
- * \param  text  new status text (copied)
- */
-
+/* Exported interface, documented in desktop/browser.h */
 void browser_window_set_status(struct browser_window *bw, const char *text)
 {
 	int text_len;
@@ -2443,13 +2385,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 }
 
 
-/**
- * Change the shape of the mouse pointer
- *
- * \param bw Browser window to set shape in
- * \param shape The pointer shape to use
- */
-
+/* Exported interface, documented in desktop/browser.h */
 void browser_window_set_pointer(struct browser_window *bw,
 		browser_pointer_shape shape)
 {
@@ -2495,14 +2431,8 @@ nserror browser_window_schedule_reformat(struct browser_window *bw)
 	return NSERROR_OK;
 }
 
-/**
- * Reformat a browser window contents to a new width or height.
- *
- * \param  bw      the browser window to reformat
- * \param  width   new width
- * \param  height  new height
- */
 
+/* exported function documented in desktop/browser.h */
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height)
 {
@@ -2529,6 +2459,12 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 	content_reformat(c, background, width, height);
 }
 
+/**
+ * Set bowser window scale.
+ *
+ * \param bw Browser window.
+ * \param scale value.
+ */
 static void browser_window_set_scale_internal(struct browser_window *bw,
 		float scale)
 {
@@ -2577,7 +2513,16 @@ float browser_window_get_scale(struct browser_window *bw)
 	return bw->scale;
 }
 
-
+/**
+ * Find browser window.
+ *
+ * \param bw Browser window.
+ * \param target Name of target.
+ * \param depth Depth to scan.
+ * \param page The browser window page.
+ * \param rdepth The rdepth.
+ * \param bw_target the output browser window.
+ */
 static void browser_window_find_target_internal(struct browser_window *bw,
 		const char *target, int depth, struct browser_window *page,
 		int *rdepth, struct browser_window **bw_target)
@@ -2623,15 +2568,7 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 }
 
 
-/**
- * Locate a browser window in the specified stack according.
- *
- * \param bw  the browser_window to search all relatives of
- * \param target  the target to locate
- * \param mouse The current mouse state
- * \return The browser window the mouse is in
- */
-
+/* exported interface documented in desktop/browser.h */
 struct browser_window *browser_window_find_target(struct browser_window *bw,
 		const char *target, browser_mouse_state mouse)
 {
@@ -2779,10 +2716,9 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
  * \param  x	  coordinate of mouse
  * \param  y	  coordinate of mouse
  *
- * TODO: Remove this function, once these things are associated with content,
+ * \todo Remove this function, once these things are associated with content,
  *       rather than bw.
  */
-
 static void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -2826,15 +2762,7 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 }
 
 
-/**
- * Handle non-click mouse action in a browser window. (drag ends, movements)
- *
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- */
-
+/* exported interface documented in desktop/browser.h */
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -2982,15 +2910,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 }
 
 
-/**
- * Handle mouse clicks in a browser window.
- *
- * \param  bw	  browser window
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- */
-
+/* exported interface documented in desktop/browser.h */
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -3114,16 +3034,8 @@ void browser_window_mouse_click(struct browser_window *bw,
 }
 
 
-/**
- * Redraw a rectangular region of a browser window
- *
- * \param  bw	  browser window to be redrawn
- * \param  x	  x co-ord of top-left
- * \param  y	  y co-ord of top-left
- * \param  width  width of rectangle
- * \param  height height of rectangle
- */
 
+/* exported interface documented in desktop/browser.h */
 void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height)
 {
@@ -3131,14 +3043,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 }
 
 
-/**
- * Start drag scrolling the contents of the browser window
- *
- * \param bw  browser window
- * \param x   x ordinate of initial mouse position
- * \param y   y ordinate
- */
-
+/* exported interface documented in desktop/browser.h */
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
 	assert(bw != NULL);
@@ -3162,13 +3067,8 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 }
 
 
-/**
- * Check availability of Back action for a given browser window
- *
- * \param bw  browser window
- * \return true if Back action is available
- */
 
+/* exported interface documented in desktop/browser.h */
 bool browser_window_back_available(struct browser_window *bw)
 {
 	return (bw && bw->history &&
@@ -3176,40 +3076,22 @@ bool browser_window_back_available(struct browser_window *bw)
 }
 
 
-/**
- * Check availability of Forward action for a given browser window
- *
- * \param bw  browser window
- * \return true if Forward action is available
- */
 
+/* exported interface documented in desktop/browser.h */
 bool browser_window_forward_available(struct browser_window *bw)
 {
 	return (bw && bw->history &&
 			browser_window_history_forward_available(bw));
 }
 
-
-/**
- * Check availability of Reload action for a given browser window
- *
- * \param bw  browser window
- * \return true if Reload action is available
- */
-
+/* exported interface documented in desktop/browser.h */
 bool browser_window_reload_available(struct browser_window *bw)
 {
 	return (bw && bw->current_content && !bw->loading_content);
 }
 
 
-/**
- * Check availability of Stop action for a given browser window
- *
- * \param bw  browser window
- * \return true if Stop action is available
- */
-
+/* exported interface documented in desktop/browser.h */
 bool browser_window_stop_available(struct browser_window *bw)
 {
 	return (bw && (bw->loading_content ||

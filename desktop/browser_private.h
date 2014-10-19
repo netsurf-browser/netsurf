@@ -163,14 +163,32 @@ struct browser_window {
 
 
 
+/**
+ * Initialise common parts of a browser window
+ *
+ * \param flags     Flags to control operation
+ * \param bw        The window to initialise
+ * \param existing  The existing window if cloning, else NULL
+ */
 nserror browser_window_initialise_common(enum browser_window_create_flags flags,
 		struct browser_window *bw, struct browser_window *existing);
+
+/**
+ * Get the dimensions of the area a browser window occupies
+ *
+ * \param  bw      The browser window to get dimensions of
+ * \param  width   Updated to the browser window viewport width
+ * \param  height  Updated to the browser window viewport height
+ * \param  scaled  Whether we want the height with scale applied
+ */
+void browser_window_get_dimensions(struct browser_window *bw,
+		int *width, int *height, bool scaled);
 
 /**
  * Update the extent of the inside of a browser window to that of the current
  * content
  *
- * \param  bw	browser_window to update the extent of
+ * \param bw browser_window to update the extent of
  */
 void browser_window_update_extent(struct browser_window *bw);
 

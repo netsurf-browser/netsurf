@@ -48,15 +48,7 @@
 #undef TEXTINPUT_DEBUG
 
 
-/**
- * Position the caret and assign a callback for key presses.
- *
- * \param bw		The browser window in which to place the caret
- * \param x		X coordinate of the caret
- * \param y		Y coordinate
- * \param height	Height of caret
- * \param clip		Clip rectangle for caret, or NULL if none
- */
+/* exported interface documented in desktop/textinput.h */
 void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, const struct rect *clip)
 {
@@ -82,7 +74,7 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		crp = &cr;
 	}
 
-	/* TODO: intersect with bw viewport */
+	/** \todo intersect with bw viewport */
 
 	guit->window->place_caret(root_bw->window, x, y, height * bw->scale, crp);
 
@@ -91,12 +83,7 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
 	root_bw->can_edit = true;
 }
 
-
-/**
- * Removes the caret and callback for key process.
- *
- * \param bw  The browser window from which to remove caret
- */
+/* exported interface documented in desktop/textinput.h */
 void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 {
 	struct browser_window *root_bw;
@@ -114,14 +101,7 @@ void browser_window_remove_caret(struct browser_window *bw, bool only_hide)
 	}
 }
 
-
-/**
- * Handle key presses in a browser window.
- *
- * \param bw   The root browser window
- * \param key  The UCS4 character codepoint
- * \return true if key handled, false otherwise
- */
+/* exported interface documented in desktop/textinput.h */
 bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
 	struct browser_window *focus = bw->focus;
