@@ -462,12 +462,11 @@ static void gui_window_update_extent(struct gui_window *gw)
     if(browser_window_has_content(gw->browser->bw)) {
 	/** @todo store content size. */
 	if(window_get_active_gui_window(gw->root) == gw) {
-	    window_set_content_size( gw->root,
-				     content_get_width(gw->browser->bw->current_content),
-				     content_get_height(gw->browser->bw->current_content)
-		);
-	    window_update_back_forward(gw->root);
+	    int width, height;
 	    GRECT area;
+	    browser_window_get_extents(gw->browser->bw, false, &width, &height);
+	    window_set_content_size(gw->root, width, height);
+	    window_update_back_forward(gw->root);
 	    window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
 	    window_schedule_redraw_grect(gw->root, &area);
 	}
