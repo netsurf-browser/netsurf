@@ -430,7 +430,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->active = false;
 	strcpy(g->title, "NetSurf");
 	g->iconise_icon = -1;
-	g->scale = 1.0;
+	g->scale = browser_window_get_scale(bw);
 
 	/* Set the window position */
 	if (existing != NULL &&
