@@ -572,6 +572,21 @@ static bool fetch_about_welcome_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+static bool fetch_about_maps_handler(struct fetch_about_context *ctx)
+{
+	fetch_msg msg;
+
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
+
+	msg.type = FETCH_REDIRECT;
+	msg.data.redirect = "resource:maps.html";
+
+	fetch_about_send_callback(&msg, ctx);
+
+	return true;
+}
+
 /* Forward declaration because this handler requires the handler table. */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
@@ -593,6 +608,8 @@ struct about_handlers about_handler_list[] = {
 			fetch_about_licence_handler, true },
 	{ "welcome", SLEN("welcome"), NULL,
 			fetch_about_welcome_handler, false },
+	{ "maps", SLEN("maps"), NULL,
+			fetch_about_maps_handler, false },
 	{ "config", SLEN("config"), NULL,
 			fetch_about_config_handler, false },
 	{ "Choices", SLEN("Choices"), NULL,
