@@ -1539,8 +1539,7 @@ void ro_gui_window_open(wimp_open *open)
 
 		/* hscroll */
 		size = ro_get_hscroll_height(NULL);
-		if (g->bw->border)
-			size -= 2;
+		size -= 2; /* 1px border on both sides */
 		if (!no_hscroll) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
@@ -1563,8 +1562,7 @@ void ro_gui_window_open(wimp_open *open)
 
 		/* vscroll */
 		size = ro_get_vscroll_width(NULL);
-		if (g->bw->border)
-			size -= 2;
+		size -= 2; /* 1px border on both sides */
 		if (!no_vscroll) {
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
