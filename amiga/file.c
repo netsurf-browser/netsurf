@@ -218,13 +218,16 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		struct hlcache_handle *object)
 {
 	char *fname = AllocVecTags(1024, NULL);
+	char *initial_fname = NULL;
+
+	if(object) url_nice(nsurl_access(hlcache_handle_get_url(object)), &initial_fname, true);
 
 	if(AslRequestTags(savereq,
 			ASLFR_Window, gwin->win,
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
-			ASLFR_InitialFile, object ? FilePart(nsurl_access(hlcache_handle_get_url(object))) : "",
+			ASLFR_InitialFile, initial_fname ? initial_fname : "",
 			TAG_DONE))
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);
@@ -234,6 +237,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	}
 
 	if(fname) FreeVec(fname);
+	if(initial_fname) free(initial_fname);
 }
 
 void ami_file_req_init(void)
