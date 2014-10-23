@@ -3888,6 +3888,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	ami_free_download_list(&g->dllist);
 	FreeObjList(g->deferred_rects);
+	gui_window_stop_throbber(g);
 
 	curbw = NULL;
 
