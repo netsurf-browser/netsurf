@@ -108,6 +108,11 @@ static void gui_default_window_remove_caret(struct gui_window *g)
 {
 }
 
+static void gui_default_window_create_form_select_menu(struct gui_window *g,
+						struct form_control *control)
+{
+}
+
 static void gui_default_window_file_gadget_open(struct gui_window *g,
 						hlcache_handle *hl,
 						struct form_control *gadget)
@@ -210,6 +215,10 @@ static nserror verify_window_register(struct gui_window_table *gwt)
 	}
 	if (gwt->scroll_start == NULL) {
 		gwt->scroll_start = gui_default_window_scroll_start;
+	}
+	if (gwt->create_form_select_menu == NULL) {
+		gwt->create_form_select_menu =
+				gui_default_window_create_form_select_menu;
 	}
 	if (gwt->file_gadget_open == NULL) {
 		gwt->file_gadget_open = gui_default_window_file_gadget_open;
@@ -541,11 +550,6 @@ static nserror gui_default_launch_url(struct nsurl *url)
 	return NSERROR_NO_FETCH_HANDLER;
 }
 
-static void gui_default_create_form_select_menu(struct gui_window *g,
-						struct form_control *control)
-{
-}
-
 
 static void gui_default_cert_verify(nsurl *url,
 				    const struct ssl_cert_info *certs,
@@ -588,9 +592,6 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	}
 	if (gbt->launch_url == NULL) {
 		gbt->launch_url = gui_default_launch_url;
-	}
-	if (gbt->create_form_select_menu == NULL) {
-		gbt->create_form_select_menu = gui_default_create_form_select_menu;
 	}
 	if (gbt->cert_verify == NULL) {
 		gbt->cert_verify = gui_default_cert_verify;

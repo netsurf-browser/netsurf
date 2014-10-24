@@ -2408,7 +2408,6 @@ static struct gui_browser_table riscos_browser_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
-	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
 	.login = gui_401login_open,
 };

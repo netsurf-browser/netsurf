@@ -984,7 +984,6 @@ static struct gui_browser_table beos_browser_table = {
 	beos_schedule,
 	gui_quit,
 	gui_launch_url,
-	NULL, //create_form_select_menu
 	NULL, //cert_verify
 	gui_401login_open
 };

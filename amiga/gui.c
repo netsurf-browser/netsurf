@@ -5082,6 +5082,7 @@ static struct gui_window_table amiga_window_table = {
 	.remove_caret = gui_window_remove_caret,
 	.drag_start = gui_window_drag_start,
 	.new_content = gui_window_new_content,
+	.create_form_select_menu = gui_create_form_select_menu,
 	.file_gadget_open = gui_file_gadget_open,
 	.drag_save_object = gui_drag_save_object,
 	.drag_save_selection =gui_drag_save_selection,
@@ -5112,7 +5113,6 @@ static struct gui_browser_table amiga_browser_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
-	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
 	.login = gui_401login_open,
 };

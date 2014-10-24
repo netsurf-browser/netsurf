@@ -52,7 +52,6 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "content/backing_store.h"
-#include "render/form.h"
 #include "desktop/browser.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
@@ -94,15 +93,10 @@ struct glade_file_location_s *glade_file_location;
 static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
 
-static GtkWidget *select_menu;
-static struct form_control *select_menu_control;
-
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkWidget *w, gpointer data);
 static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event,
 		gpointer data);
-static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
-					gpointer user_data);
 #ifdef WITH_PDF_EXPORT
 static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data);
 static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
@@ -555,53 +549,6 @@ static void gui_quit(void)
 	free(nsgtk_config_home);
 
 	gtk_fetch_filetype_fin();
-}
-
-static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
-					gpointer user_data)
-{
-	form_select_process_selection(select_menu_control,
-			(intptr_t)user_data);
-}
-
-static void gui_create_form_select_menu(struct gui_window *g,
-		struct form_control *control)
-{
-
-	intptr_t i;
-	struct form_option *option;
-
-	GtkWidget *menu_item;
-
-	/* control->data.select.multiple is true if multiple selections
-	 * are allowable.  We ignore this, as the core handles it for us.
-	 * Yay. \o/
-	 */
-
-	if (select_menu != NULL)
-		gtk_widget_destroy(select_menu);
-
-	select_menu = gtk_menu_new();
-	select_menu_control = control;
-
-	for (i = 0, option = control->data.select.items; option;
-		i++, option = option->next) {
-		menu_item = gtk_check_menu_item_new_with_label(option->text);
-		if (option->selected)
-			gtk_check_menu_item_set_active(
-				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
-
-		g_signal_connect(menu_item, "toggled",
-			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)i);
-
-		gtk_menu_shell_append(GTK_MENU_SHELL(select_menu), menu_item);
-	}
-
-	gtk_widget_show_all(select_menu);
-
-	gtk_menu_popup(GTK_MENU(select_menu), NULL, NULL, NULL,
-			NULL /* data */, 0, gtk_get_current_event_time());
-
 }
 
 static nserror gui_launch_url(struct nsurl *url)
@@ -1240,7 +1187,6 @@ static struct gui_browser_table nsgtk_browser_table = {
 
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
-	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
         .login = gui_401login_open,
 };

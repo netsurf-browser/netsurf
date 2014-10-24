@@ -292,6 +292,7 @@ static struct gui_window_table window_table = {
     .new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
+	.create_form_select_menu = gui_create_form_select_menu,
 };
 
 struct gui_window_table *cocoa_window_table = &window_table;
@@ -301,7 +302,6 @@ static struct gui_browser_table browser_table = {
     .schedule = cocoa_schedule,
 
 	.launch_url = gui_launch_url,
-	.create_form_select_menu = gui_create_form_select_menu,
 	.cert_verify = gui_cert_verify,
 };
 

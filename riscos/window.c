@@ -1358,7 +1358,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
  * \param  control  form control of type GADGET_SELECT
  */
 
-void gui_create_form_select_menu(struct gui_window *g,
+static void gui_window_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
 	os_error	*error;
@@ -5044,6 +5044,7 @@ static struct gui_window_table window_table = {
 	.new_content = gui_window_new_content,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,
+	.create_form_select_menu = gui_window_create_form_select_menu,
 
 	/* from save */
 	.drag_save_object = gui_drag_save_object,

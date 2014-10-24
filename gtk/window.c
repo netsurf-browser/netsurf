@@ -38,6 +38,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/gui_window.h"
+#include "render/form.h"
 
 #include "gtk/compat.h"
 #include "gtk/gui.h"
@@ -53,6 +54,12 @@
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 extern const GdkPixdata menu_cursor_pixdata;
+
+static GtkWidget *select_menu;
+static struct form_control *select_menu_control;
+
+static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
+					gpointer user_data);
 
 struct gui_window {
 	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
@@ -160,6 +167,13 @@ struct gui_window *nsgtk_window_iterate(struct gui_window *g)
 float nsgtk_get_scale_for_gui(struct gui_window *g)
 {
 	return browser_window_get_scale(g->bw);
+}
+
+static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
+					gpointer user_data)
+{
+	form_select_process_selection(select_menu_control,
+			(intptr_t)user_data);
 }
 
 #if GTK_CHECK_VERSION(3,0,0)
@@ -1199,6 +1213,46 @@ static void gui_window_start_selection(struct gui_window *g)
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
 }
 
+static void gui_window_create_form_select_menu(struct gui_window *g,
+		struct form_control *control)
+{
+
+	intptr_t i;
+	struct form_option *option;
+
+	GtkWidget *menu_item;
+
+	/* control->data.select.multiple is true if multiple selections
+	 * are allowable.  We ignore this, as the core handles it for us.
+	 * Yay. \o/
+	 */
+
+	if (select_menu != NULL)
+		gtk_widget_destroy(select_menu);
+
+	select_menu = gtk_menu_new();
+	select_menu_control = control;
+
+	for (i = 0, option = control->data.select.items; option;
+		i++, option = option->next) {
+		menu_item = gtk_check_menu_item_new_with_label(option->text);
+		if (option->selected)
+			gtk_check_menu_item_set_active(
+				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
+
+		g_signal_connect(menu_item, "toggled",
+			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)i);
+
+		gtk_menu_shell_append(GTK_MENU_SHELL(select_menu), menu_item);
+	}
+
+	gtk_widget_show_all(select_menu);
+
+	gtk_menu_popup(GTK_MENU(select_menu), NULL, NULL, NULL,
+			NULL /* data */, 0, gtk_get_current_event_time());
+
+}
+
 static void
 gui_window_file_gadget_open(struct gui_window *g,
 			    hlcache_handle *hl,
@@ -1247,6 +1301,7 @@ static struct gui_window_table window_table = {
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
 	.remove_caret = gui_window_remove_caret,
+	.create_form_select_menu = gui_window_create_form_select_menu,
 	.file_gadget_open = gui_window_file_gadget_open,
 	.start_selection = gui_window_start_selection,
 

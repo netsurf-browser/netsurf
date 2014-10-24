@@ -1604,7 +1604,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 		if (event->data.select_menu.gadget->type == GADGET_SELECT) {
 			struct browser_window *root =
 					browser_window_get_root(bw);
-			guit->browser->create_form_select_menu(root->window,
+			guit->window->create_form_select_menu(root->window,
 					event->data.select_menu.gadget);
 		}
 

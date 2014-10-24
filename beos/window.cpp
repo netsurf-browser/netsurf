@@ -1362,6 +1362,7 @@ static struct gui_window_table window_table = {
 	NULL, //scroll_visible
 	NULL, //scroll_start
 	gui_window_new_content,
+	NULL, //create_form_select_menu
 	NULL, //file_gadget_open
 	NULL, //drag_save_object
 	NULL, //drag_save_selection

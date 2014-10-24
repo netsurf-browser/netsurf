@@ -70,11 +70,6 @@ struct gui_browser_table {
 	nserror (*launch_url)(struct nsurl *url);
 
 	/**
-	 * create a form select menu
-	 */
-	void (*create_form_select_menu)(struct gui_window *gw, struct form_control *control);
-
-	/**
 	 * verify certificate
 	 */
 	void (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);

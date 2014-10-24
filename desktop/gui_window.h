@@ -267,6 +267,11 @@ struct gui_window_table {
 	void (*new_content)(struct gui_window *g);
 
 	/**
+	 * create a form select menu
+	 */
+	void (*create_form_select_menu)(struct gui_window *gw, struct form_control *control);
+
+	/**
 	 * Called when file chooser gadget is activated
 	 */
 	void (*file_gadget_open)(struct gui_window *g, struct hlcache_handle *hl, struct form_control *gadget);
