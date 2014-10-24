@@ -19,8 +19,10 @@
 #ifndef NETSURF_FB_GUI_H
 #define NETSURF_FB_GUI_H
 
+
+struct fbtk_widget_s;
+
 typedef struct fb_cursor_s fb_cursor_t;
-typedef struct fbtk_widget_s fbtk_widget_t;
 
 /* bounding box */
 typedef struct nsfb_bbox_s bbox_t;
@@ -69,7 +71,7 @@ extern struct gui_window *window_list;
 struct gui_localhistory *fb_create_localhistory(struct browser_window *bw, struct fbtk_widget_s *parent, int furniture_width);
 void fb_localhistory_map(struct gui_localhistory * glh);
 
-void gui_resize(fbtk_widget_t *root, int width, int height);
+void gui_resize(struct fbtk_widget_s *root, int width, int height);
 
 
 #endif /* NETSURF_FB_GUI_H */
