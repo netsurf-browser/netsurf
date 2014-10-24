@@ -22,7 +22,6 @@
 #import "cocoa/selection.h"
 
 #import "desktop/gui_clipboard.h"
-#import "desktop/browser_private.h"
 
 
 static NSMutableString *cocoa_clipboard_string;
