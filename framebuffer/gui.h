@@ -68,7 +68,8 @@ struct gui_window {
 
 extern struct gui_window *window_list;
 
-struct gui_localhistory *fb_create_localhistory(struct browser_window *bw, struct fbtk_widget_s *parent, int furniture_width);
+struct gui_localhistory *fb_create_localhistory(struct browser_window *bw,
+		struct fbtk_widget_s *parent, int furniture_width);
 void fb_localhistory_map(struct gui_localhistory * glh);
 
 void gui_resize(struct fbtk_widget_s *root, int width, int height);
