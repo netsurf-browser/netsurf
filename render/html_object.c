@@ -375,6 +375,7 @@ html_object_callback(hlcache_handle *object,
 
 	case CONTENT_MSG_SAVELINK:
 	case CONTENT_MSG_POINTER:
+	case CONTENT_MSG_SELECTMENU:
 	case CONTENT_MSG_GADGETCLICK:
 		/* These messages are for browser window layer.
 		 * we're not interested, so pass them on. */

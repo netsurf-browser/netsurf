@@ -55,13 +55,6 @@
 #include "render/imagemap.h"
 #include "render/search.h"
 
-/* TODO:
- * This is currently needed here because the forms stuff (select menu
- * specifically) is badly designed.  But I'd rather it were here in the
- * core than in all the front ends.  We should fix this so we communicate
- * with the browser window layer via the content message system. -- tlsa */
-#include <desktop/browser_private.h>
-
 /**
  * Get pointer shape for given box
  *
@@ -665,10 +658,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						c);
 				pointer = BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
-				struct browser_window *rbw =
-						browser_window_get_root(bw);
-				guit->browser->create_form_select_menu(
-						rbw->window, gadget);
+				msg_data.select_menu.gadget = gadget;
+				content_broadcast(c, CONTENT_MSG_SELECTMENU,
+						msg_data);
 			}
 			break;
 		case GADGET_CHECKBOX:

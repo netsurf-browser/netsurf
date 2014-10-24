@@ -1600,6 +1600,16 @@ static nserror browser_window_callback(hlcache_handle *c,
 				event->data.selection.read_only);
 		break;
 
+	case CONTENT_MSG_SELECTMENU:
+		if (event->data.select_menu.gadget->type == GADGET_SELECT) {
+			struct browser_window *root =
+					browser_window_get_root(bw);
+			guit->browser->create_form_select_menu(root->window,
+					event->data.select_menu.gadget);
+		}
+
+		break;
+
 	case CONTENT_MSG_GADGETCLICK:
 		if (event->data.gadget_click.gadget->type == GADGET_FILE) {
 			guit->window->file_gadget_open(bw->window, c,
