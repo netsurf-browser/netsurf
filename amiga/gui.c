@@ -2537,9 +2537,8 @@ static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
 
-	if(gwin->bw) {
-		ami_schedule_redraw(gwin, true);
-	}
+	browser_window_schedule_reformat(gwin->bw);
+	ami_schedule_redraw(gwin, true);
 }
 
 /* Remove the vertical scroller, if present */
@@ -2555,6 +2554,7 @@ static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
+	browser_window_schedule_reformat(gwin->bw);
 	ami_schedule_redraw(gwin, true);
 
 	gwin->objects[GID_VSCROLL] = NULL;
@@ -3743,11 +3743,6 @@ gui_window_create(struct browser_window *bw,
 					GA_ID,GID_BROWSER,
 					SPACE_Transparent,TRUE,
 				SpaceEnd,
-				LAYOUT_AddChild, g->shared->objects[GID_VSCROLL] = ScrollerObject,
-					GA_ID, GID_VSCROLL,
-					GA_RelVerify, TRUE,
-					ICA_TARGET, ICTARGET_IDCMP,
-				ScrollerEnd,
 			EndGroup,
 		EndWindow;
 	}
