@@ -1327,7 +1327,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 	/* the top-level framed window is a total pain. to get it to maximise
 	 * to the top of the screen we need to fake it having a suitably large
 	 * extent */
-	if (g->bw->children) {
+	if (browser_window_is_frameset(g->bw)) {
 		ro_gui_screen_size(&screen_width, &height);
 		if (g->toolbar)
 			height -= ro_toolbar_full_height(g->toolbar);
@@ -1535,7 +1535,7 @@ void ro_gui_window_open(wimp_open *open)
 
 		/* windows lose scrollbars when containing a frameset */
 		bool no_hscroll = false;
-		bool no_vscroll = g->bw->children;
+		bool no_vscroll = browser_window_is_frameset(g->bw);
 
 		/* hscroll */
 		size = ro_get_hscroll_height(NULL);
@@ -1609,7 +1609,7 @@ void ro_gui_window_open(wimp_open *open)
 	 * therefore fixed.
 	 */
 
-	if (g->bw->children != NULL) {
+	if (browser_window_is_frameset(g->bw)) {
 		state.xscroll = 0;
 		state.yscroll = toolbar_height;
 	}
@@ -3258,7 +3258,7 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 	 * because it implements frame scroll bars.
 	 */
 
-	if (!handled && g->bw->children == NULL) {
+	if (!handled && (browser_window_is_frameset(g->bw) == false)) {
 		switch (step_x) {
 		case SCROLL_TOP:
 			state.xscroll -= 0x10000000;
