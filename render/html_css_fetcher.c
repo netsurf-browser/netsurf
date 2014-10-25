@@ -274,7 +274,8 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 	} while ( (c = next) != ring && ring != NULL);
 }
 
-void html_css_fetcher_register(void)
+/* exported interface documented in html_internal.h */
+nserror html_css_fetcher_register(void)
 {
 	lwc_string *scheme;
 	const struct fetcher_operation_table html_css_fetcher_ops = {
@@ -289,16 +290,17 @@ void html_css_fetcher_register(void)
 	};
 
 	if (lwc_intern_string("x-ns-css", SLEN("x-ns-css"),
-			&scheme) != lwc_error_ok) {
-		die("Failed to initialise the fetch module "
-				"(couldn't intern \"x-ns-css\").");
+			      &scheme) != lwc_error_ok) {
+		LOG(("could not intern \"x-ns-css\"."));
+		return NSERROR_INIT_FAILED;
 	}
 
-	fetcher_add(scheme, &html_css_fetcher_ops);
+	return fetcher_add(scheme, &html_css_fetcher_ops);
 }
 
-nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
-		uint32_t *key)
+/* exported interface documented in html_internal.h */
+nserror
+html_css_fetcher_add_item(dom_string *data, nsurl *base_url, uint32_t *key)
 {
 	html_css_fetcher_item *item = malloc(sizeof(*item));
 

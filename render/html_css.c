@@ -632,7 +632,9 @@ nserror html_css_init(void)
 {
 	nserror error;
 
-	html_css_fetcher_register();
+	error = html_css_fetcher_register();
+	if (error != NSERROR_OK)
+		return error;
 
 	error = nsurl_create("resource:default.css",
 			&html_default_stylesheet_url);

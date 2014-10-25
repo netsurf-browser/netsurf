@@ -293,7 +293,12 @@ nserror html_css_new_selection_context(html_content *c,
 		css_select_ctx **ret_select_ctx);
 
 /* in render/html_css_fetcher.c */
-void html_css_fetcher_register(void);
+/**
+ * Register the fetcher for the pseudo x-ns-css scheme.
+ *
+ * \return NSERROR_OK on successful registration or error code on failure.
+ */
+nserror html_css_fetcher_register(void);
 nserror html_css_fetcher_add_item(dom_string *data, nsurl *base_url,
 		uint32_t *key);
 
