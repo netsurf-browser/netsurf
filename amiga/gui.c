@@ -2507,6 +2507,24 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+		bool scaled)
+{
+	struct IBox *bbox;
+	if(!g) return;
+
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+
+	*width = bbox->Width;
+	*height = bbox->Height;
+
+	if(scaled)
+	{
+		*width /= g->shared->bw->scale;
+		*height /= g->shared->bw->scale;
+	}
+}
+
 /* Add a vertical scroller, if not already present
  * Returns true if changed, false otherwise */
 static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
@@ -2566,7 +2584,14 @@ static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
 		rethink = ami_gui_vscroll_remove(gwin);
 	} else {
-		rethink = ami_gui_vscroll_add(gwin);
+		int h, w, wh, ww;
+		if((browser_window_get_extents(gwin->bw, false, &w, &h) == NSERROR_OK)) {
+			gui_window_get_dimensions(gwin->bw->window, &ww, &wh, false);
+			if (h > wh) rethink = ami_gui_vscroll_add(gwin);
+				else rethink = ami_gui_vscroll_remove(gwin);
+		} else {
+			rethink = ami_gui_vscroll_add(gwin);
+		}
 	}
 
 	if(rethink) {
@@ -4629,24 +4654,6 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 //		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
 	}
 //	g->shared->new_content = false;
-}
-
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-		bool scaled)
-{
-	struct IBox *bbox;
-	if(!g) return;
-
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
-
-	*width = bbox->Width;
-	*height = bbox->Height;
-
-	if(scaled)
-	{
-		*width /= g->shared->bw->scale;
-		*height /= g->shared->bw->scale;
-	}
 }
 
 static void gui_window_update_extent(struct gui_window *g)
