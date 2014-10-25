@@ -2511,6 +2511,79 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
+/* Add a vertical scroller, if not already present */
+static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
+{
+	struct TagItem attrs[2];
+
+	if(gwin->objects[GID_VSCROLL] != NULL) return;
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
+	gwin->objects[GID_VSCROLL] = ScrollerObject,
+					GA_ID, GID_VSCROLL,
+					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
+				ScrollerEnd;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
+			gwin->win, gwin->objects[GID_VSCROLL], attrs);
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
+
+	if(gwin->bw) {
+		ami_schedule_redraw(gwin, true);
+	}
+}
+
+/* Remove the vertical scroller, if present */
+static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
+{
+	if(gwin->objects[GID_VSCROLL] == NULL) return;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_VSCROLL]);
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+			gwin->win, NULL, TRUE);
+
+	ami_schedule_redraw(gwin, true);
+
+	gwin->objects[GID_VSCROLL] = NULL;
+}
+
+/**
+ * Check the scroll bar requirements for a browser window, and add/remove
+ * the vertical scroller as appropriate.  This should be the main entry
+ * point used to perform this task.
+ *
+ * \param  gwin      "Shared" GUI window to check the state of
+ */
+static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
+{
+	browser_scrolling hscroll = BW_SCROLLING_YES;
+	browser_scrolling vscroll = BW_SCROLLING_YES;
+
+	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
+
+	/* We only bother with vscroll, as the hscroller is embedded in the
+	   bottom window border with the status bar, so toggling it is pointless */
+
+	if(vscroll == BW_SCROLLING_NO) {
+		ami_gui_vscroll_remove(gwin);
+	} else {
+		ami_gui_vscroll_add(gwin);
+	}
+}
+
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
 {
 	struct Node *tab_node = gwin->bw->window->tab_node;
@@ -3044,70 +3117,6 @@ void ami_gui_hotlist_update_all(void)
 			ami_menu_refresh(gwin);
 		}
 	} while(node = nnode);
-}
-
-static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
-{
-	struct TagItem attrs[2];
-
-	if(gwin->objects[GID_VSCROLL] != NULL) return;
-
-	attrs[0].ti_Tag = CHILD_MinWidth;
-	attrs[0].ti_Data = 0;
-	attrs[1].ti_Tag = TAG_DONE;
-	attrs[1].ti_Data = 0;
-
-	gwin->objects[GID_VSCROLL] = ScrollerObject,
-					GA_ID, GID_VSCROLL,
-					GA_RelVerify, TRUE,
-					ICA_TARGET, ICTARGET_IDCMP,
-				ScrollerEnd;
-
-	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
-			gwin->win, gwin->objects[GID_VSCROLL], attrs);
-
-	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
-
-	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
-				gwin->win, NULL, TRUE);
-
-	if(gwin->bw) {
-		ami_schedule_redraw(gwin, true);
-	}
-}
-
-static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
-{
-	if(gwin->objects[GID_VSCROLL] == NULL) return;
-
-	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
-			gwin->win, gwin->objects[GID_VSCROLL]);
-
-	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
-
-	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
-			gwin->win, NULL, TRUE);
-
-	ami_schedule_redraw(gwin, true);
-
-	gwin->objects[GID_VSCROLL] = NULL;
-}
-
-static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
-{
-	browser_scrolling hscroll = BW_SCROLLING_YES;
-	browser_scrolling vscroll = BW_SCROLLING_YES;
-
-	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
-
-	/* We only bother with vscroll, as the hscroller is embedded in the
-	   bottom window border with the status bar, so toggling it is pointless */
-
-	if(vscroll == BW_SCROLLING_NO) {
-		ami_gui_vscroll_remove(gwin);
-	} else {
-		ami_gui_vscroll_add(gwin);
-	}
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
