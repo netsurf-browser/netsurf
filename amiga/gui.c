@@ -3667,12 +3667,16 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,g->shared,
 			WINDOW_BuiltInScroll,TRUE,
-           	WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = VGroupObject,
-               	LAYOUT_SpaceOuter, TRUE,
+			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = HGroupObject,
+			LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 					SPACE_Transparent,TRUE,
 				SpaceEnd,
+				LAYOUT_AddChild, g->shared->objects[OID_VSCROLL] = ScrollerObject,
+					GA_ID, OID_VSCROLL,
+					GA_RelVerify, TRUE,
+				ScrollerEnd,
 			EndGroup,
 		EndWindow;
 	}
@@ -3685,11 +3689,6 @@ gui_window_create(struct browser_window *bw,
 		FreeVec(g->shared);
 		FreeVec(g);
 		return NULL;
-	}
-
-	if(nsoption_bool(kiosk_mode) == true) {
-		GetAttr(WINDOW_VertObject, g->shared->objects[OID_MAIN],
-			(ULONG *)&g->shared->objects[OID_VSCROLL]);
 	}
 
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
