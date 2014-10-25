@@ -70,7 +70,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	struct browser_window * bw = gw->browser->bw;
 	int sx, sy;
 
-	h = bw->current_content;
+	h = browser_window_get_content(bw);
 	ctxinfo.flags = 0;
 
 	window_get_grect(gw->root, BROWSER_AREA_CONTENT, &area);
@@ -79,7 +79,8 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 		mx -= area.g_x;
 		my -= area.g_y;
 
-		if (!bw->current_content || content_get_type(h) != CONTENT_HTML){
+		if (browser_window_has_content(bw) == false ||
+				content_get_type(h) != CONTENT_HTML){
 			return(&ctxinfo);
 		}
 
@@ -231,7 +232,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					browser_window_navigate(
 						gw->browser->bw,
 						hlcache_handle_get_url(ctx->ccdata.object),
-						hlcache_handle_get_url(gw->browser->bw->current_content),
+						browser_window_get_url(gw->browser->bw),
 						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
@@ -250,7 +251,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					error = browser_window_navigate(
 						gw->browser->bw,
 						url,
-						hlcache_handle_get_url(gw->browser->bw->current_content),
+						browser_window_get_url(gw->browser->bw),
 						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
@@ -290,7 +291,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 					error = browser_window_create(
 							BW_CREATE_HISTORY | BW_CREATE_CLONE,
 							url,
-							hlcache_handle_get_url(gw->browser->bw->current_content),
+							browser_window_get_url(gw->browser->bw),
 								      gw->browser->bw,
 								      NULL
 						);
@@ -305,7 +306,7 @@ void context_popup(struct gui_window * gw, short x, short y)
 		case POP_CTX_VIEW_SOURCE:
 			editor = nsoption_charp(atari_editor);
 			if (editor != NULL && strlen(editor)>0) {
-				data = content_get_source_data(gw->browser->bw->current_content,
+				data = content_get_source_data(browser_window_get_content(gw->browser->bw),
 												&size);
 				if (size > 0 && data != NULL){
 				    snprintf(tempfile, 127, "%s", get_tmpfilename("ns-", ".html"));
