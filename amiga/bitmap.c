@@ -161,7 +161,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 		if(!ami_download_check_overwrite(path, NULL, 0)) return false;
 	}
 
-	if(dto = ami_datatype_object_from_bitmap(bitmap))
+	if((dto = ami_datatype_object_from_bitmap(bitmap)))
 	{
 		err = SaveDTObjectA(dto, NULL, NULL, path, DTWM_IFF, FALSE, NULL);
 		DisposeDTObject(dto);
@@ -295,7 +295,7 @@ void ami_bitmap_argb_to_rgba(struct bitmap *bm)
 }
 #endif
 
-#if BITMAP_DUMP
+#ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
 {
 	int x,y;
@@ -362,14 +362,12 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	int bm_format = PBPAFMT_ARGB;
 #endif
 
-	if(dto = NewDTObject(filename,
+	if((dto = NewDTObject(filename,
 					DTA_GroupID, GID_PICTURE,
 					PDTA_DestMode, PMODE_V43,
 					PDTA_PromoteMask, TRUE,
-					TAG_DONE))
-	{
+					TAG_DONE))) {
 		struct BitMapHeader *bmh;
-		struct RastPort rp;
 
 		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
 		{
@@ -421,9 +419,8 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		ri.BytesPerRow = bitmap->width * 4;
 		ri.RGBFormat = AMI_BITMAP_FORMAT;
 
-		if(tbm = p96AllocBitMap(bitmap->width, bitmap->height, 32, 0,
-								friendbm, AMI_BITMAP_FORMAT))
-		{
+		if((tbm = p96AllocBitMap(bitmap->width, bitmap->height, 32, 0,
+								friendbm, AMI_BITMAP_FORMAT))) {
 			InitRastPort(&trp);
 			trp.BitMap = tbm;
 			p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0,
