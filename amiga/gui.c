@@ -1359,6 +1359,102 @@ static void ami_gui_menu_update_all(void)
 	} while((node = nnode));
 }
 
+static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
+		bool scaled)
+{
+	struct IBox *bbox;
+	if(!g) return;
+
+	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+
+	*width = bbox->Width;
+	*height = bbox->Height;
+
+	if(scaled)
+	{
+		*width /= g->shared->bw->scale;
+		*height /= g->shared->bw->scale;
+	}
+}
+
+/* Add a vertical scroller, if not already present
+ * Returns true if changed, false otherwise */
+static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
+{
+	struct TagItem attrs[2];
+
+	if(gwin->objects[GID_VSCROLL] != NULL) return false;
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
+	gwin->objects[GID_VSCROLL] = ScrollerObject,
+					GA_ID, GID_VSCROLL,
+					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
+				ScrollerEnd;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
+			gwin->win, gwin->objects[GID_VSCROLL], attrs);
+
+	return true;
+}
+
+/* Remove the vertical scroller, if present */
+static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
+{
+	if(gwin->objects[GID_VSCROLL] == NULL) return false;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_VSCROLL]);
+
+	gwin->objects[GID_VSCROLL] = NULL;
+
+	return true;
+}
+
+/**
+ * Check the scroll bar requirements for a browser window, and add/remove
+ * the vertical scroller as appropriate.  This should be the main entry
+ * point used to perform this task.
+ *
+ * \param  gwin      "Shared" GUI window to check the state of
+ */
+static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
+{
+	bool rethink = false;
+	browser_scrolling hscroll = BW_SCROLLING_YES;
+	browser_scrolling vscroll = BW_SCROLLING_YES;
+
+	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
+
+	/* We only bother with vscroll, as the hscroller is embedded in the
+	   bottom window border with the status bar, so toggling it is pointless */
+
+	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
+		rethink = ami_gui_vscroll_remove(gwin);
+	} else {
+		int h, w, wh, ww;
+		if((browser_window_get_extents(gwin->bw, false, &w, &h) == NSERROR_OK)) {
+			gui_window_get_dimensions(gwin->bw->window, &ww, &wh, false);
+			if (h > wh) rethink = ami_gui_vscroll_add(gwin);
+				else rethink = ami_gui_vscroll_remove(gwin);
+		} else {
+			rethink = ami_gui_vscroll_add(gwin);
+		}
+	}
+
+	if(rethink) {
+		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
+		browser_window_schedule_reformat(gwin->bw);
+		ami_schedule_redraw(gwin, true);
+	}
+}
+
 /**
  * function to add retrieved favicon to gui
  */
@@ -2124,6 +2220,7 @@ static void ami_handle_msg(void)
 						struct browser_window *bw = NULL;
 
 						case AMINS_WINDOW:
+							ami_gui_vscroll_update(gwin);
 							ami_set_border_gadget_balance(gwin);
 							ami_throbber_redraw_schedule(0, gwin->bw->window);
 
@@ -2505,102 +2602,6 @@ void ami_get_msg(void)
 
 	if(signal & ctrlcsig)
 		ami_quit_netsurf_delayed();
-}
-
-static void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
-		bool scaled)
-{
-	struct IBox *bbox;
-	if(!g) return;
-
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
-
-	*width = bbox->Width;
-	*height = bbox->Height;
-
-	if(scaled)
-	{
-		*width /= g->shared->bw->scale;
-		*height /= g->shared->bw->scale;
-	}
-}
-
-/* Add a vertical scroller, if not already present
- * Returns true if changed, false otherwise */
-static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
-{
-	struct TagItem attrs[2];
-
-	if(gwin->objects[GID_VSCROLL] != NULL) return false;
-
-	attrs[0].ti_Tag = CHILD_MinWidth;
-	attrs[0].ti_Data = 0;
-	attrs[1].ti_Tag = TAG_DONE;
-	attrs[1].ti_Data = 0;
-
-	gwin->objects[GID_VSCROLL] = ScrollerObject,
-					GA_ID, GID_VSCROLL,
-					GA_RelVerify, TRUE,
-					ICA_TARGET, ICTARGET_IDCMP,
-				ScrollerEnd;
-
-	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
-			gwin->win, gwin->objects[GID_VSCROLL], attrs);
-
-	return true;
-}
-
-/* Remove the vertical scroller, if present */
-static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
-{
-	if(gwin->objects[GID_VSCROLL] == NULL) return false;
-
-	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
-			gwin->win, gwin->objects[GID_VSCROLL]);
-
-	gwin->objects[GID_VSCROLL] = NULL;
-
-	return true;
-}
-
-/**
- * Check the scroll bar requirements for a browser window, and add/remove
- * the vertical scroller as appropriate.  This should be the main entry
- * point used to perform this task.
- *
- * \param  gwin      "Shared" GUI window to check the state of
- */
-static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
-{
-	bool rethink = false;
-	browser_scrolling hscroll = BW_SCROLLING_YES;
-	browser_scrolling vscroll = BW_SCROLLING_YES;
-
-	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
-
-	/* We only bother with vscroll, as the hscroller is embedded in the
-	   bottom window border with the status bar, so toggling it is pointless */
-
-	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
-		rethink = ami_gui_vscroll_remove(gwin);
-	} else {
-		int h, w, wh, ww;
-		if((browser_window_get_extents(gwin->bw, false, &w, &h) == NSERROR_OK)) {
-			gui_window_get_dimensions(gwin->bw->window, &ww, &wh, false);
-			if (h > wh) rethink = ami_gui_vscroll_add(gwin);
-				else rethink = ami_gui_vscroll_remove(gwin);
-		} else {
-			rethink = ami_gui_vscroll_add(gwin);
-		}
-	}
-
-	if(rethink) {
-		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
-		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
-				gwin->win, NULL, TRUE);
-		browser_window_schedule_reformat(gwin->bw);
-		ami_schedule_redraw(gwin, true);
-	}
 }
 
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
