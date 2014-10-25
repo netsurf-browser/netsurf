@@ -61,6 +61,7 @@
 #include <proto/chooser.h>
 #include <proto/clicktab.h>
 #include <proto/layout.h>
+#include <proto/scroller.h>
 #include <proto/space.h>
 #include <proto/speedbar.h>
 #include <proto/string.h>
@@ -3447,7 +3448,7 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, g->shared->menu,
 			WINDOW_MenuUserData, WGUD_HOOK,
-			WINDOW_VertProp, 1,
+			//WINDOW_VertProp, 1,
 			WINDOW_NewPrefsHook, &newprefs_hook,
 			WINDOW_IDCMPHook, &g->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_REFRESHWINDOW |
@@ -3619,10 +3620,17 @@ gui_window_create(struct browser_window *bw,
 					CHILD_WeightedHeight,0,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
-					GA_ID,GID_BROWSER,
-					SPACE_Transparent,TRUE,
-				SpaceEnd,
+				LAYOUT_AddChild, HGroupObject,
+					LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
+						GA_ID,GID_BROWSER,
+						SPACE_Transparent,TRUE,
+					SpaceEnd,
+					LAYOUT_AddChild, g->shared->objects[OID_VSCROLL] = ScrollerObject,
+						GA_ID, OID_VSCROLL,
+						GA_RightBorder, TRUE,
+						GA_RelVerify, TRUE,
+					ScrollerEnd,
+				EndGroup,
 			EndGroup,
 		EndWindow;
 	}
@@ -3682,8 +3690,8 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-	GetAttr(WINDOW_VertObject, g->shared->objects[OID_MAIN],
-			(ULONG *)&g->shared->objects[OID_VSCROLL]);
+//	GetAttr(WINDOW_VertObject, g->shared->objects[OID_MAIN],
+//			(ULONG *)&g->shared->objects[OID_VSCROLL]);
 
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
 			g->shared->win, NULL,
