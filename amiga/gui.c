@@ -2537,7 +2537,7 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 }
 
 /* Remove the vertical scroller, if present */
-static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
+static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 {
 	if(gwin->objects[GID_VSCROLL] == NULL) return false;
 
