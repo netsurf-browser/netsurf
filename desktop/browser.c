@@ -476,6 +476,13 @@ bool browser_window_can_search(struct browser_window *bw)
 	return true;
 }
 
+
+/* exported interface, documented in desktop/browser.h */
+bool browser_window_is_frameset(struct browser_window *bw)
+{
+	return (bw->children != NULL);
+}
+
 /**
  * Set or remove a selection.
  *

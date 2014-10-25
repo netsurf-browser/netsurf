@@ -594,6 +594,14 @@ char * browser_window_get_selection(struct browser_window *bw);
  */
 bool browser_window_can_search(struct browser_window *bw);
 
+/**
+ * Find out if a browser window contains a frameset
+ *
+ * \param bw	browser window to look at
+ * \return true iff browser window contains a frameset
+ */
+bool browser_window_is_frameset(struct browser_window *bw);
+
 
 /**
  * Dump debug info concerning the browser window's contents to file
