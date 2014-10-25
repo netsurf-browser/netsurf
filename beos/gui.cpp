@@ -59,7 +59,7 @@ extern "C" {
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_search.h"
