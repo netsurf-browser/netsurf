@@ -1491,6 +1491,8 @@ void ro_gui_window_open(wimp_open *open)
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(open->w);
 	int width = open->visible.x1 - open->visible.x0;
 	int height = open->visible.y1 - open->visible.y0;
+	browser_scrolling h_scroll;
+	browser_scrolling v_scroll;
 	int toolbar_height = 0;
 	float new_scale = 0;
 	wimp_window_state state;
@@ -1528,9 +1530,10 @@ void ro_gui_window_open(wimp_open *open)
 	state.yscroll = open->yscroll;
 	state.next = open->next;
 
+	browser_window_get_scrollbar_type(g->bw, &h_scroll, &v_scroll);
+
 	/* handle 'auto' scroll bars' and non-fitting scrollbar removal */
-	if ((g->bw->scrolling == SCROLLING_AUTO) ||
-			(g->bw->scrolling == SCROLLING_YES)) {
+	if ((h_scroll != BW_SCROLLING_NO) && (v_scroll != BW_SCROLLING_NO)) {
 		int size;
 
 		/* windows lose scrollbars when containing a frameset */
