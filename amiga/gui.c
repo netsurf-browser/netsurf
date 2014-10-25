@@ -3045,6 +3045,53 @@ void ami_gui_hotlist_update_all(void)
 	} while(node = nnode);
 }
 
+static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
+{
+	struct TagItem attrs[2];
+
+	if(gwin->objects[GID_VSCROLL] != NULL) return;
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
+	gwin->objects[GID_VSCROLL] = ScrollerObject,
+					GA_ID, GID_VSCROLL,
+					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
+				ScrollerEnd;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
+			gwin->win, gwin->objects[GID_VSCROLL], attrs);
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
+
+	if(gwin->bw) {
+		ami_schedule_redraw(gwin, true);
+	}
+}
+
+static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
+{
+	if(gwin->objects[GID_VSCROLL] == NULL) return;
+
+	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_VSCROLL]);
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+			gwin->win, NULL, TRUE);
+
+	ami_schedule_redraw(gwin, true);
+
+	gwin->objects[GID_VSCROLL] = NULL;
+}
+
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 {
 	if(ClickTabBase->lib_Version < 53) return;
@@ -3618,15 +3665,11 @@ gui_window_create(struct browser_window *bw,
 					CHILD_WeightedHeight,0,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, HGroupObject,
+				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = HGroupObject,
 					LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
 						GA_ID,GID_BROWSER,
 						SPACE_Transparent,TRUE,
 					SpaceEnd,
-					LAYOUT_AddChild, g->shared->objects[OID_VSCROLL] = ScrollerObject,
-						GA_ID, OID_VSCROLL,
-						GA_RelVerify, TRUE,
-					ScrollerEnd,
 				EndGroup,
 			EndGroup,
 		EndWindow;
@@ -3673,9 +3716,10 @@ gui_window_create(struct browser_window *bw,
 					GA_ID,GID_BROWSER,
 					SPACE_Transparent,TRUE,
 				SpaceEnd,
-				LAYOUT_AddChild, g->shared->objects[OID_VSCROLL] = ScrollerObject,
-					GA_ID, OID_VSCROLL,
+				LAYOUT_AddChild, g->shared->objects[GID_VSCROLL] = ScrollerObject,
+					GA_ID, GID_VSCROLL,
 					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
 				ScrollerEnd,
 			EndGroup,
 		EndWindow;
@@ -3690,12 +3734,6 @@ gui_window_create(struct browser_window *bw,
 		FreeVec(g);
 		return NULL;
 	}
-
-	RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
-			g->shared->win, NULL,
-			GA_ID, OID_VSCROLL,
-			ICA_TARGET, ICTARGET_IDCMP,
-			TAG_DONE);
 
 	if(nsoption_bool(kiosk_mode) == false)
 	{
@@ -3793,6 +3831,8 @@ gui_window_create(struct browser_window *bw,
 
 	ScreenToFront(scrn);
 
+ami_gui_vscroll_add(g->shared);
+
 	return g;
 }
 
@@ -3824,14 +3864,15 @@ static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *siz
 	** a convenience.
 	*/
 
-	ULONG sz;
+	ULONG sz = 30; /* temporary arbitrary value */
 	ULONG available_width;
 	float gad1percent;
 
 	/**TODO: This is getting the width of the vertical scroll bar, which is not
 		necessarily the same as the width of the size gadget that we are
-		supposed to be accounting for. */ 
-	GetAttr(GA_Width, gwin->objects[OID_VSCROLL], (ULONG *)&sz);
+		supposed to be accounting for. */
+	if(gwin->objects[GID_VSCROLL])
+		GetAttr(GA_Width, gwin->objects[GID_VSCROLL], (ULONG *)&sz);
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
 
@@ -4502,7 +4543,12 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 {
-	GetAttr(SCROLLER_Top, gwin->objects[OID_VSCROLL], ys);
+	if(gwin->objects[GID_VSCROLL]) {
+		GetAttr(SCROLLER_Top, gwin->objects[GID_VSCROLL], ys);
+	} else {
+		*ys = 0;
+	}
+
 	*ys /= gwin->bw->scale;
 }
 
@@ -4541,10 +4587,12 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
-		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
-			g->shared->win, NULL,
-			SCROLLER_Top, (ULONG)(sy * g->shared->bw->scale),
+		if(g->shared->objects[GID_VSCROLL]) {
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],
+				g->shared->win, NULL,
+				SCROLLER_Top, (ULONG)(sy * g->shared->bw->scale),
 			TAG_DONE);
+		}
 
 		if(g->shared->objects[GID_HSCROLL])
 		{
@@ -4607,10 +4655,12 @@ static void gui_window_update_extent(struct gui_window *g)
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER],
 				(ULONG *)&bbox);
 
-		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],g->shared->win,NULL,
-			SCROLLER_Total, (ULONG)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale),
-			SCROLLER_Visible, bbox->Height,
+		if(g->shared->objects[GID_VSCROLL]) {
+			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
+				SCROLLER_Total, (ULONG)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale),
+				SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
+		}
 
 		if(g->shared->objects[GID_HSCROLL])
 		{
@@ -4868,7 +4918,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			{
 				case GID_HSCROLL:
  				case OID_HSCROLL: 
- 				case OID_VSCROLL:
+ 				case GID_VSCROLL:
 					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
