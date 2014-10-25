@@ -1073,7 +1073,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 static void gui_window_update_extent(struct gui_window *g)
 {
 	//CALLED();
-	if (!g->bw->current_content)
+	if (browser_window_has_content(g->bw) == false)
 		return;
 
 	if (g->view == NULL)
