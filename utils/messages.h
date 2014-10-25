@@ -36,9 +36,23 @@
 #include "utils/errors.h"
 #include "utils/hashtable.h"
 
-void messages_load(const char *path);
-struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx);
-const char *messages_get_ctx(const char *key, struct hash_table *ctx);
+/**
+ * Read keys and values from messages file into the standard Messages hash.
+ *
+ * The messages are merged with any previously loaded messages. Any keys which
+ * are present already are replaced with the new value.
+ *
+ * \param path pathname of messages file.
+ * \return NSERROR_OK on success or error code on faliure.
+ */
+nserror messages_load(const char *path);
+
+/**
+ * Fast lookup of a message by key from the standard Messages hash.
+ *
+ * \param  key  key of message
+ * \return value of message, or key if not found
+ */
 const char *messages_get(const char *key);
 
 /**
