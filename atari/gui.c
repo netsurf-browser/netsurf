@@ -46,7 +46,6 @@
 #include "desktop/textinput.h"
 #include "desktop/treeview.h"
 #include "desktop/browser.h"
-#include "desktop/browser_private.h"
 #include "desktop/font.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_clipboard.h"
