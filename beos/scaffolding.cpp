@@ -53,7 +53,7 @@
 extern "C" {
 #include "content/content.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/netsurf.h"
 #include "desktop/version.h"
 #include "desktop/plotters.h"
