@@ -663,7 +663,7 @@ void window_open_search(ROOTWIN *rootwin, bool reformat)
 	obj = toolbar_get_form(rootwin->toolbar);
 
 	if (gw->search == NULL) {
-		gw->search = nsatari_search_session_create(obj, bw);
+		gw->search = nsatari_search_session_create(obj, gw);
 	}
 
 	toolbar_set_visible(rootwin->toolbar, TOOLBAR_AREA_SEARCH, true);

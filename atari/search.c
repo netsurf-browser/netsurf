@@ -83,9 +83,9 @@ void nsatari_search_set_hourglass(bool active, void *p)
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	LOG(("active: %d, session: %p", active, p));
 	if (active)
-		gui_window_set_pointer(s->bw->window, GUI_POINTER_PROGRESS);
+		gui_window_set_pointer(s->g, GUI_POINTER_PROGRESS);
 	else
-		gui_window_set_pointer(s->bw->window, GUI_POINTER_DEFAULT);
+		gui_window_set_pointer(s->g, GUI_POINTER_DEFAULT);
 }
 
 /**
@@ -117,7 +117,7 @@ void nsatari_search_set_forward_state(bool active, void *p)
 	/* deactivate back cb */
 	LOG(("%p: set forward state: %d\n", p, active));
 
-	gw = s->bw->window;
+	gw = s->g;
 
 	toolbar = toolbar_get_form(gw->root->toolbar);
 	if(active)
@@ -145,7 +145,7 @@ void nsatari_search_set_back_state(bool active, void *p)
 	LOG(("%p: set back state: %d\n", p, active));
 
 	s->state.back_avail = active;
-	gw = s->bw->window;
+	gw = s->g;
 
 	toolbar = toolbar_get_form(gw->root->toolbar);
 	if(active)
@@ -222,7 +222,7 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 {
 	if (s != NULL) {
 		LOG((""));
-		browser_window_search_clear(s->bw);
+		browser_window_search_clear(s->g->browser->bw);
 		free(s);
 	}
 }
@@ -259,11 +259,11 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 		search_flags_t f)
 {
 	assert(s!=null);
-	assert(input_window->browser->bw == s->bw);
+	assert(input_window->browser->bw == s->g->browser->bw);
 
 
 	if(search_session_compare(s, obj)){
-		browser_window_search_clear(s->bw);
+		browser_window_search_clear(s->g->browser->bw);
 		apply_form(obj, &s->state);
 	} else {
 
@@ -275,7 +275,7 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 	else
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 
-	browser_window_search(s->bw, s,
+	browser_window_search(s->g->browser->bw, s,
 			s->state.flags,
 			gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
 
@@ -283,7 +283,7 @@ void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
 
 
 struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
-		struct browser_window *bw)
+		struct gui_window *gw)
 {
 	struct s_search_form_session *sfs;
 
@@ -292,11 +292,11 @@ struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
 	assert(obj);
 	assert(sfs);
 
-	sfs->bw = bw;
+	sfs->g = gw;
 
 	apply_form(obj, &sfs->state);
 
-	browser_window_search_clear(bw);
+	browser_window_search_clear(gw->browser->bw);
 
 	return(sfs);
 }

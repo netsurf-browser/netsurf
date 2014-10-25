@@ -32,14 +32,14 @@ struct s_search_form_state {
 };
 
 struct s_search_form_session {
-	struct browser_window *bw;
+	struct gui_window *g;
 	struct s_search_form_state state;
 };
 
 typedef struct s_search_form_session * SEARCH_FORM_SESSION;
 
 struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
-		struct browser_window *bw);
+		struct gui_window *gw);
 
 struct gui_search_table *atari_search_table;
 
