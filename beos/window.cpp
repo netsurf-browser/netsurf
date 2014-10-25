@@ -1016,9 +1016,7 @@ static void gui_window_redraw_window(struct gui_window *g)
 
 static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
-	hlcache_handle *c = g->bw->current_content;
-
-	if (c == NULL)
+	if (browser_window_has_content(g->bw) == false)
 		return;
 
 	if (g->view == NULL)
