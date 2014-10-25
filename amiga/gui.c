@@ -3882,15 +3882,16 @@ static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *siz
 	** a convenience.
 	*/
 
-	ULONG sz = 30; /* temporary arbitrary value */
+	ULONG sz;
 	ULONG available_width;
 	float gad1percent;
 
-	/**TODO: This is getting the width of the vertical scroll bar, which is not
-		necessarily the same as the width of the size gadget that we are
-		supposed to be accounting for. */
+	/** \TODO sz is supposed to be the width of the window's size gadget,
+		possibly + scrn->WBorRight.
 	if(gwin->objects[GID_VSCROLL])
 		GetAttr(GA_Width, gwin->objects[GID_VSCROLL], (ULONG *)&sz);
+	*/
+	sz = 24; /* old calculated width on my system */
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
 
