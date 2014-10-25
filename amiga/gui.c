@@ -177,6 +177,7 @@ Class *urlStringClass;
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
 int screen_signal = -1;
+ULONG sz_gad_width = 0;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
@@ -3901,24 +3902,23 @@ static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *siz
 	** Returns the width of the size gadget as a convenience.
 	*/
 
-	ULONG sz;
 	ULONG available_width;
 	float gad1percent;
 
-	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-	GetGUIAttrs(NULL, dri, GUIA_SizeGadgetWidth, &sz, TAG_DONE);
-	FreeScreenDrawInfo(scrn, dri);
+	if(sz_gad_width == 0) {
+		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+		GetGUIAttrs(NULL, dri, GUIA_SizeGadgetWidth, &sz_gad_width, TAG_DONE);
+		FreeScreenDrawInfo(scrn, dri);
+	}
 
-	sz = 24; /* old calculated width on my system */
-
-	available_width = gwin->win->Width - scrn->WBorLeft - sz;
+	available_width = gwin->win->Width - scrn->WBorLeft - sz_gad_width;
 
 	gad1percent = nsoption_int(toolbar_status_size) / 10000.0;
 
 	*size1 = (ULONG)(available_width * gad1percent);
 	*size2 = (ULONG)(available_width * (1 - gad1percent));
 
-	return sz;
+	return sz_gad_width;
 }
 
 void ami_close_all_tabs(struct gui_window_2 *gwin)
