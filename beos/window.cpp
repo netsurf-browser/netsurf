@@ -679,7 +679,6 @@ void nsbeos_dispatch_event(BMessage *message)
 void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 {
 	BRect updateRect;
-	hlcache_handle *c;
 	float scale = g->scale;
 	struct rect clip;
 
@@ -701,8 +700,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	if (message->FindRect("rect", &updateRect) < B_OK)
 		return;
 
-	c = g->bw->current_content;
-	if (c == NULL)
+	if (browser_window_has_content(g->bw) == false)
 		return;
 
 	if (!view->LockLooper())
