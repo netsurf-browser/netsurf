@@ -609,9 +609,16 @@ bool browser_window_can_search(struct browser_window *bw);
 bool browser_window_is_frameset(struct browser_window *bw);
 
 /**
- * Find out if a browser window contains a frameset
+ * Get the browser window's scrollbar details.
+ *
+ * Vertical and horizontal scrollbars may be {YES|NO|AUTO}, although
+ * it is entirely up to the front end whether this is implemented.
+ * e.g. if the gui toolkit style-guide says all windows must have
+ * scrollbars then this API can be ignored.
  *
  * \param bw	browser window to look at
+ * \param h	Updated to indicate horizontal scrollbar type
+ * \param h	Updated to indicate vertical scrollbar type
  * \return NSERROR_OK, or appropriate error otherwise
  */
 nserror browser_window_get_scrollbar_type(struct browser_window *bw,
