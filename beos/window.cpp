@@ -955,7 +955,6 @@ static void gui_window_destroy(struct gui_window *g)
 	assert(g != NULL);
 	assert(g->bw != NULL);
 	LOG(("     Scaffolding: %p", g->scaffold));
-	LOG(("     Window name: %s", g->bw->name));
 
 	if (g->view == NULL)
 		return;
