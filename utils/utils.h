@@ -163,7 +163,7 @@ bool is_dir(const char *path);
  *
  * Parameters as for regcomp(), see man regex.
  */
-void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
+nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 
 /**
  * Create a human redable representation of a size in bytes.

@@ -49,7 +49,7 @@ struct url_components {
  *
  * Compiles regular expressions required by the url_ functions.
  */
-void url_init(void);
+nserror url_init(void);
 
 
 /**

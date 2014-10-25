@@ -44,10 +44,12 @@ struct url_components_internal {
 regex_t url_re, url_up_re;
 
 /* exported interface documented in utils/url.h */
-void url_init(void)
+nserror url_init(void)
 {
+	nserror ret;
+
 	/* regex from RFC 2396 */
-	regcomp_wrapper(&url_re, "^[[:space:]]*"
+	ret = regcomp_wrapper(&url_re, "^[[:space:]]*"
 #define URL_RE_SCHEME 2
 			"(([a-zA-Z][-a-zA-Z0-9+.]*):)?"
 #define URL_RE_AUTHORITY 4
@@ -59,7 +61,11 @@ void url_init(void)
 #define URL_RE_FRAGMENT 9
 			"(#([^[:space:]]*))?"
 			"[[:space:]]*$", REG_EXTENDED);
-	regcomp_wrapper(&url_up_re,
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	return regcomp_wrapper(&url_up_re,
 			"/([^/]?|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)"
 			"/[.][.](/|$)",
 			REG_EXTENDED);

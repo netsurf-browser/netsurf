@@ -33,6 +33,7 @@
 #include <time.h>
 
 #include "utils/config.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/time.h"
@@ -207,17 +208,19 @@ nserror snstrjoin(char **str, size_t *size, char sep, size_t nelm, ...)
 
 
 /* exported interface documented in utils/utils.h */
-void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
+nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 {
 	int r;
 	r = regcomp(preg, regex, cflags);
 	if (r) {
 		char errbuf[200];
 		regerror(r, preg, errbuf, sizeof errbuf);
-		fprintf(stderr, "Failed to compile regexp '%s'\n", regex);
-		die(errbuf);
+		LOG(("Failed to compile regexp '%s': %s\n", regex, errbuf));
+		return NSERROR_INIT_FAILED;
 	}
+	return NSERROR_OK;
 }
+
 
 /**
  * The size of buffers within human_friendly_bytesize.
