@@ -418,14 +418,6 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
 
 /**
- * Change the status bar of a browser window.
- *
- * \param  bw	 browser window
- * \param  text  new status text (copied)
- */
-void browser_window_set_status(struct browser_window *bw, const char *text);
-
-/**
  * Change the shape of the mouse pointer
  *
  * \param bw Browser window to set shape in
