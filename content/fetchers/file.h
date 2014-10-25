@@ -16,13 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * file: URL method handler
+/**
+ * \file
+ * file scheme fetcher handler interface.
  */
 
 #ifndef NETSURF_CONTENT_FETCHERS_FETCH_FILE_H
 #define NETSURF_CONTENT_FETCHERS_FETCH_FILE_H
 
+/**
+ * Register file scheme handler.
+ *
+ * \return NSERROR_OK on successful registration or error code on failure.
+ */
 nserror fetch_file_register(void);
 
 #endif

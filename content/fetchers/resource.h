@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * resource: URL method handler.
+/**
+ * \file
+ * resource URL scheme handler interface.
  * 
  * The resource fetcher is intended to provide a flat uniform URL
  * space for browser local resources referenced by URL. Using this
@@ -34,6 +35,8 @@
  * Register the resource scheme.
  * 
  * should only be called from the fetch initialise
+ *
+ * \return NSERROR_OK on successful registration or error code on failure.
  */
 nserror fetch_resource_register(void);
 

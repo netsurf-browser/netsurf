@@ -25,7 +25,12 @@
 
 #include <curl/curl.h>
 
-void fetch_curl_register(void);
+/**
+ * Register curl scheme handler.
+ *
+ * \return NSERROR_OK on successful registration or error code on failure.
+ */
+nserror fetch_curl_register(void);
 
 /** Global cURL multi handle. */
 extern CURLM *fetch_curl_multi;

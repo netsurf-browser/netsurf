@@ -287,14 +287,36 @@ static void fetcher_poll(void *unused)
 /* exported interface documented in content/fetch.h */
 nserror fetcher_init(void)
 {
-	fetch_curl_register();
-	fetch_data_register();
-	fetch_file_register();
-	fetch_resource_register();
-	fetch_about_register();
-	fetch_javascript_register();
+	nserror ret;
 
-	return NSERROR_OK;
+	ret = fetch_curl_register();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	ret = fetch_data_register();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	ret = fetch_file_register();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	ret = fetch_resource_register();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	ret = fetch_about_register();
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	ret = fetch_javascript_register();
+
+	return ret;
 }
 
 /* exported interface documented in content/fetchers.h */
