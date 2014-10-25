@@ -3690,8 +3690,10 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-//	GetAttr(WINDOW_VertObject, g->shared->objects[OID_MAIN],
-//			(ULONG *)&g->shared->objects[OID_VSCROLL]);
+	if(nsoption_bool(kiosk_mode) == true) {
+		GetAttr(WINDOW_VertObject, g->shared->objects[OID_MAIN],
+			(ULONG *)&g->shared->objects[OID_VSCROLL]);
+	}
 
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_VSCROLL],
 			g->shared->win, NULL,
@@ -3830,6 +3832,9 @@ static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *siz
 	ULONG available_width;
 	float gad1percent;
 
+	/**TODO: This is getting the width of the vertical scroll bar, which is not
+		necessarily the same as the width of the size gadget that we are
+		supposed to be accounting for. */ 
 	GetAttr(GA_Width, gwin->objects[OID_VSCROLL], (ULONG *)&sz);
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
