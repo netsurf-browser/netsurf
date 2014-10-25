@@ -200,4 +200,12 @@ void browser_window_update_extent(struct browser_window *bw);
  */
 void browser_window_set_status(struct browser_window *bw, const char *text);
 
+/**
+ * Get the root level browser window
+ *
+ * \param  bw     browser window to set the type of the current drag for
+ * \return  root browser window
+ */
+struct browser_window * browser_window_get_root(struct browser_window *bw);
+
 #endif

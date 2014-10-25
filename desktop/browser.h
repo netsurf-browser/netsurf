@@ -561,14 +561,6 @@ void browser_window_set_drag_type(struct browser_window *bw,
 browser_drag_type browser_window_get_drag_type(struct browser_window *bw);
 
 /**
- * Get the root level browser window
- *
- * \param  bw     browser window to set the type of the current drag for
- * \return  root browser window
- */
-struct browser_window * browser_window_get_root(struct browser_window *bw);
-
-/**
  * Check whether browser window can accept a cut/copy/paste, or has a selection
  * that could be saved.
  *
