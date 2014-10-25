@@ -2588,6 +2588,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		browser_window_refresh_url_bar(gwin->bw);
 		ami_gui_update_hotlist_button(gwin);
+		ami_gui_vscroll_update(gwin);
 		ami_throbber_redraw_schedule(0, gwin->bw->window);
 	}
 }
@@ -3090,6 +3091,23 @@ static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 	ami_schedule_redraw(gwin, true);
 
 	gwin->objects[GID_VSCROLL] = NULL;
+}
+
+static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
+{
+	browser_scrolling hscroll = BW_SCROLLING_YES;
+	browser_scrolling vscroll = BW_SCROLLING_YES;
+
+	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
+
+	/* We only bother with vscroll, as the hscroller is embedded in the
+	   bottom window border with the status bar, so toggling it is pointless */
+
+	if(vscroll == BW_SCROLLING_NO) {
+		ami_gui_vscroll_remove(gwin);
+	} else {
+		ami_gui_vscroll_add(gwin);
+	}
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
@@ -3830,8 +3848,6 @@ gui_window_create(struct browser_window *bw,
 	ami_schedule(0, ami_gui_search_ico_refresh, NULL);
 
 	ScreenToFront(scrn);
-
-ami_gui_vscroll_add(g->shared);
 
 	return g;
 }
@@ -4878,6 +4894,7 @@ static void gui_window_new_content(struct gui_window *g)
 	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
+	ami_gui_vscroll_update(g->shared);
 }
 
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
