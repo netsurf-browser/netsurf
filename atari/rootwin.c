@@ -1413,7 +1413,7 @@ static void on_resized(ROOTWIN *rootwin)
 		/* resized */
     	toolbar_set_width(rootwin->toolbar, work.g_w);
 
-        if ( gw->browser->bw->current_content != NULL ) {
+        if ( browser_window_has_content(gw->browser->bw) ) {
             browser_window_reformat(gw->browser->bw, true, work.g_w, work.g_h);
         }
     }
