@@ -3906,11 +3906,10 @@ static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *siz
 	ULONG available_width;
 	float gad1percent;
 
-	/** \TODO sz is supposed to be the width of the window's size gadget,
-		possibly + scrn->WBorRight.
-	if(gwin->objects[GID_VSCROLL])
-		GetAttr(GA_Width, gwin->objects[GID_VSCROLL], (ULONG *)&sz);
-	*/
+	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+	GetGUIAttrs(NULL, dri, GUIA_SizeGadgetWidth, &sz, TAG_DONE);
+	FreeScreenDrawInfo(scrn, dri);
+
 	sz = 24; /* old calculated width on my system */
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
