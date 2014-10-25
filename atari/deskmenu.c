@@ -242,8 +242,13 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 				      NULL,
 				      NULL,
 				      &bw);
+		/* TODO: Should not be accessing inside bw. */
 		gw = bw->window;
 	}
+
+	/* TODO: Can we do this stuff in gui_window_create, which is called
+	 *       in browser_window_create ? */
+
 	/* Loose focus: */
 	window_set_focus(gw->root, WIDGET_NONE, NULL );
 
@@ -315,7 +320,8 @@ static void __CDECL menu_save_page(short item, short title, void *data)
 	} while ((is_folder == false) && (path != NULL));
 
 	if( path != NULL ){
-		save_complete(input_window->browser->bw->current_content, path, NULL);
+		save_complete(browser_window_get_content(
+				input_window->browser->bw), path, NULL);
 	}
 
 }
@@ -513,9 +519,9 @@ static void __CDECL menu_add_bookmark(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
 	if (input_window) {
-		if( input_window->browser->bw->current_content != NULL ){
+		if( browser_window_has_content(input_window->browser->bw) ){
 			atari_hotlist_add_page(
-				nsurl_access(hlcache_handle_get_url(input_window->browser->bw->current_content)),
+				nsurl_access(browser_window_get_url(input_window->browser->bw)),
 				NULL
 			);
 		}
