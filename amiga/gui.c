@@ -2511,12 +2511,13 @@ void ami_get_msg(void)
 		ami_quit_netsurf_delayed();
 }
 
-/* Add a vertical scroller, if not already present */
-static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
+/* Add a vertical scroller, if not already present
+ * Returns true if changed, false otherwise */
+static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 {
 	struct TagItem attrs[2];
 
-	if(gwin->objects[GID_VSCROLL] != NULL) return;
+	if(gwin->objects[GID_VSCROLL] != NULL) return false;
 
 	attrs[0].ti_Tag = CHILD_MinWidth;
 	attrs[0].ti_Data = 0;
@@ -2532,32 +2533,20 @@ static void ami_gui_vscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
 
-	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
-
-	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
-				gwin->win, NULL, TRUE);
-
-	browser_window_schedule_reformat(gwin->bw);
-	ami_schedule_redraw(gwin, true);
+	return true;
 }
 
 /* Remove the vertical scroller, if present */
 static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 {
-	if(gwin->objects[GID_VSCROLL] == NULL) return;
+	if(gwin->objects[GID_VSCROLL] == NULL) return false;
 
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
 
-	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
-
-	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
-			gwin->win, NULL, TRUE);
-
-	browser_window_schedule_reformat(gwin->bw);
-	ami_schedule_redraw(gwin, true);
-
 	gwin->objects[GID_VSCROLL] = NULL;
+
+	return true;
 }
 
 /**
@@ -2569,6 +2558,7 @@ static void ami_gui_vscroll_remove(struct gui_window_2 *gwin)
  */
 static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 {
+	bool rethink = false;
 	browser_scrolling hscroll = BW_SCROLLING_YES;
 	browser_scrolling vscroll = BW_SCROLLING_YES;
 
@@ -2578,9 +2568,17 @@ static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 	   bottom window border with the status bar, so toggling it is pointless */
 
 	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
-		ami_gui_vscroll_remove(gwin);
+		rethink = ami_gui_vscroll_remove(gwin);
 	} else {
-		ami_gui_vscroll_add(gwin);
+		rethink = ami_gui_vscroll_add(gwin);
+	}
+
+	if(rethink) {
+		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
+		browser_window_schedule_reformat(gwin->bw);
+		ami_schedule_redraw(gwin, true);
 	}
 }
 
