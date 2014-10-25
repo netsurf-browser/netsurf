@@ -4288,14 +4288,12 @@ void ro_gui_window_quit(void)
 void ro_gui_throb(void)
 {
 	struct gui_window	*g;
-	struct browser_window	*top;
 
 	for (g = window_list; g; g = g->next) {
 		if (!g->active)
 			continue;
-		for (top = g->bw; top->parent; top = top->parent);
-		if (top->window != NULL && top->window->toolbar != NULL)
-			ro_toolbar_throb(top->window->toolbar);
+		if (g->toolbar != NULL)
+			ro_toolbar_throb(g->toolbar);
 	}
 }
 
