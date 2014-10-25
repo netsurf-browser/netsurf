@@ -2577,7 +2577,7 @@ static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 	/* We only bother with vscroll, as the hscroller is embedded in the
 	   bottom window border with the status bar, so toggling it is pointless */
 
-	if(vscroll == BW_SCROLLING_NO) {
+	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
 		ami_gui_vscroll_remove(gwin);
 	} else {
 		ami_gui_vscroll_add(gwin);
