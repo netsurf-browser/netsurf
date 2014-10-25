@@ -3092,8 +3092,6 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_ADDTAB]);
 
-		/* NB: We are NULLing these, but not disposing them as
-		 * that causes an Intuition deadlock (TODO) */
 		gwin->objects[GID_TABS] = NULL;
 		gwin->objects[GID_ADDTAB] = NULL;
 	}
@@ -3627,7 +3625,6 @@ gui_window_create(struct browser_window *bw,
 					SpaceEnd,
 					LAYOUT_AddChild, g->shared->objects[OID_VSCROLL] = ScrollerObject,
 						GA_ID, OID_VSCROLL,
-						GA_RightBorder, TRUE,
 						GA_RelVerify, TRUE,
 					ScrollerEnd,
 				EndGroup,
