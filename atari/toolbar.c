@@ -32,7 +32,7 @@
 #include "utils/nsurl.h"
 #include "utils/utf8.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
