@@ -31,7 +31,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/textinput.h"
 #include "content/content.h"
