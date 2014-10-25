@@ -200,79 +200,79 @@ const char *messages_get_errorcode(nserror code)
 {
 	switch (code) {
 	case NSERROR_OK:
-		/**< No error */
+		/* No error */
 		return messages_get_ctx("OK", messages_hash);
 
 	case NSERROR_NOMEM:
-		/**< Memory exhaustion */
+		/* Memory exhaustion */
 		return messages_get_ctx("NoMemory", messages_hash);
 
 	case NSERROR_NO_FETCH_HANDLER:
-		/**< No fetch handler for URL scheme */
+		/* No fetch handler for URL scheme */
 		return messages_get_ctx("NoHandler", messages_hash);
 
 	case NSERROR_NOT_FOUND:
-		/**< Requested item not found */
+		/* Requested item not found */
 		return messages_get_ctx("NotFound", messages_hash);
 
 	case NSERROR_SAVE_FAILED:
-		/**< Failed to save data */
+		/* Failed to save data */
 		return messages_get_ctx("SaveFailed", messages_hash);
 
 	case NSERROR_CLONE_FAILED:
-		/**< Failed to clone handle */
+		/* Failed to clone handle */
 		return messages_get_ctx("CloneFailed", messages_hash);
 
 	case NSERROR_INIT_FAILED:
-		/**< Initialisation failed */
+		/* Initialisation failed */
 		return messages_get_ctx("InitFailed", messages_hash);
 
 	case NSERROR_MNG_ERROR:
-		/**< An MNG error occurred */
+		/* An MNG error occurred */
 		return messages_get_ctx("MNGError", messages_hash);
 
 	case NSERROR_BAD_ENCODING:
-		/**< The character set is unknown */
+		/* The character set is unknown */
 		return messages_get_ctx("BadEncoding", messages_hash);
 
 	case NSERROR_NEED_DATA:
-		/**< More data needed */
+		/* More data needed */
 		return messages_get_ctx("NeedData", messages_hash);
 
 	case NSERROR_ENCODING_CHANGE:
-		/**< The character set encoding change was unhandled */
+		/* The character set encoding change was unhandled */
 		return messages_get_ctx("EncodingChanged", messages_hash);
 
 	case NSERROR_BAD_PARAMETER:
-		/**< Bad Parameter */
+		/* Bad Parameter */
 		return messages_get_ctx("BadParameter", messages_hash);
 
 	case NSERROR_INVALID:
-		/**< Invalid data */
+		/* Invalid data */
 		return messages_get_ctx("Invalid", messages_hash);
 
 	case NSERROR_BOX_CONVERT:
-		/**< Box conversion failed */
+		/* Box conversion failed */
 		return messages_get_ctx("BoxConvert", messages_hash);
 
 	case NSERROR_STOPPED:
-		/**< Content conversion stopped */
+		/* Content conversion stopped */
 		return messages_get_ctx("Stopped", messages_hash);
 
 	case NSERROR_DOM:
-		/**< DOM call returned error */
+		/* DOM call returned error */
 		return messages_get_ctx("ParsingFail", messages_hash);
 
 	case NSERROR_CSS:
-                /**< CSS call returned error */
+                /* CSS call returned error */
 		return messages_get_ctx("CSSGeneric", messages_hash);
 
 	case NSERROR_CSS_BASE:
-		/**< CSS base sheet failed */
+		/* CSS base sheet failed */
 		return messages_get_ctx("CSSBase", messages_hash);
 
 	case NSERROR_BAD_URL:
-		/**< Bad URL */
+		/* Bad URL */
 		return messages_get_ctx("BadURL", messages_hash);
 
 	default:
@@ -280,6 +280,6 @@ const char *messages_get_errorcode(nserror code)
 		break;
 	}
 
-	/**< Unknown error */
+	/* Unknown error */
 	return messages_get_ctx("Unknown", messages_hash);
 }
