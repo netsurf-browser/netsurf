@@ -178,7 +178,7 @@ void ami_theme_throbber_free(void)
 	throbber = NULL;
 }
 
-void ami_get_theme_filename(char *filename, char *themestring, bool protocol)
+void ami_get_theme_filename(char *filename, const char *themestring, bool protocol)
 {
 	if(protocol)
 		strcpy(filename,"file:///");

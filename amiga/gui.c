@@ -175,7 +175,7 @@ Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
-ULONG screen_signal = -1;
+int screen_signal = -1;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
@@ -410,12 +410,11 @@ static void ami_open_resources(void)
 {
 	/* Allocate ports/ASL and open libraries and devices */
 
-	if(KeymapBase = OpenLibrary("keymap.library",37))
-	{
+	if((KeymapBase = OpenLibrary("keymap.library",37))) {
 		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
 	}
 
-	if(ApplicationBase = OpenLibrary("application.library", 53)) {
+	if((ApplicationBase = OpenLibrary("application.library", 53))) {
 		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase, "application", 2, NULL);
 	}
 
@@ -549,7 +548,7 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	   (nsoption_charp(accept_language)[0] == '\0') ||
 	   (nsoption_bool(accept_lang_locale) == true))
 	{
-		if(tempacceptlangs = ami_locale_langs())
+		if((tempacceptlangs = ami_locale_langs()))
 		{
 			nsoption_set_charp(accept_language,
 					   (char *)strdup(tempacceptlangs));
@@ -588,13 +587,13 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 		BPTR lock = 0;
 		/* Search for some likely candidates */
 
-		if(lock = Lock("FONTS:Code2000.font", ACCESS_READ))
+		if((lock = Lock("FONTS:Code2000.font", ACCESS_READ)))
 		{
 			UnLock(lock);
 			nsoption_set_charp(font_unicode, 
 					   (char *)strdup("Code2000"));
 		}
-		else if(lock = Lock("FONTS:Bitstream Cyberbit.font", ACCESS_READ))
+		else if((lock = Lock("FONTS:Bitstream Cyberbit.font", ACCESS_READ)))
 		{
 			UnLock(lock);
 			nsoption_set_charp(font_unicode,
@@ -627,7 +626,7 @@ static void ami_amiupdate(void)
 	
 	UnLock(lock);
 
-	if(lock = Lock("PROGDIR:", ACCESS_READ))
+	if((lock = Lock("PROGDIR:", ACCESS_READ)))
 	{
 		char filename[1024];
 		BPTR amiupdatefh;
@@ -671,8 +670,6 @@ static nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init(int argc, char** argv)
 {
-	BPTR lock = 0;
-
 	ami_open_resources(); /* alloc ports/asl reqs, open libraries/devices */
 	ami_clipboard_init();
 	ami_openurl_open();
@@ -722,8 +719,7 @@ static void ami_openscreen(void)
 		{
 			struct ScreenModeRequester *screenmodereq = NULL;
 
-			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
-			{
+			if((screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))) {
 				if(AslRequestTags(screenmodereq,
 						ASLSM_MinDepth, 0,
 						ASLSM_MaxDepth, 32,
@@ -761,7 +757,7 @@ static void ami_openscreen(void)
 			FreeSignal(screen_signal);
 			screen_signal = -1;
 
-			if(scrn = LockPubScreen("NetSurf"))
+			if((scrn = LockPubScreen("NetSurf")))
 			{
 				locked_screen = TRUE;
 			}
@@ -800,7 +796,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 {
 	int new_argc = 0;
 	struct RDArgs *args;
-	STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
+	CONST_STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
 	long rarray[] = {0,0,0};
 	enum
 	{
@@ -811,7 +807,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 
 	if(*argc == 0) return; // argc==0 is started from wb
 
-	if(args = ReadArgs(template, rarray, NULL)) {
+	if((args = ReadArgs(template, rarray, NULL))) {
 		if(rarray[A_URL]) {
 			LOG(("URL %s specified on command line", rarray[A_URL]));
 			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
@@ -865,7 +861,7 @@ static void gui_init2(int argc, char** argv)
 
 	/* ...and this ensures the treeview at least gets the WB colour palette to work with */
 	if(scrn == NULL) {
-		if(screen = LockPubScreen("Workbench")) {
+		if((screen = LockPubScreen("Workbench"))) {
 			ami_set_screen_defaults(screen);
 			UnlockPubScreen(NULL, screen);
 		}
@@ -1058,7 +1054,7 @@ void ami_gui_history(struct gui_window_2 *gwin, bool back)
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 {
 	int nskey = 0, chars;
-	UBYTE buffer[20];
+	char buffer[20];
 	char *utf8 = NULL;
 
 	if(keycode >= IECODE_UP_PREFIX) return 0;
@@ -1359,7 +1355,7 @@ static void ami_gui_menu_update_all(void)
 		{
 			ami_menu_update_checked(gwin);
 		}
-	} while(node = nnode);
+	} while((node = nnode));
 }
 
 /**
@@ -1369,8 +1365,8 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
-	struct bitmap *icon_bitmap;
+	int cur_tab = 0;
+	struct bitmap *icon_bitmap = NULL;
 
 	if(nsoption_bool(kiosk_mode) == true) return;
 	if(!g) return;
@@ -1433,8 +1429,8 @@ static void ami_gui_refresh_favicon(void *p)
 
 static void ami_handle_msg(void)
 {
-	ULONG class,result,storage = 0,x,y,xs,ys,width=800,height=600;
-	uint16 code,quals;
+	ULONG result,storage = 0,x,y,xs,ys,width=800,height=600;
+	uint16 code;
 	struct IBox *bbox;
 	struct nsObject *node;
 	struct nsObject *nnode;
@@ -1644,7 +1640,7 @@ static void ami_handle_msg(void)
 						case SELECTUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 							{
-								CurrentTime(&curtime.tv_sec, &curtime.tv_usec);
+								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
 								gwin->mouse_state = BROWSER_MOUSE_CLICK_1;
 
@@ -1686,7 +1682,7 @@ static void ami_handle_msg(void)
 						case MIDDLEUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
 							{
-								CurrentTime(&curtime.tv_sec, &curtime.tv_usec);
+								CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
 								gwin->mouse_state = BROWSER_MOUSE_CLICK_2;
 
@@ -2140,7 +2136,7 @@ static void ami_handle_msg(void)
 									GetClickTabNodeAttrs(tab,
 										TNA_UserData, &bw,
 										TAG_DONE);
-								} while(tab=ntab);
+								} while((tab=ntab));
 							}
 
 							ami_schedule(0, ami_gui_refresh_favicon, gwin);
@@ -2213,7 +2209,7 @@ static void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
-	} while(node = nnode);
+	} while((node = nnode));
 
 	if(ami_menu_window_close)
 	{
@@ -2250,7 +2246,7 @@ static void ami_handle_appmsg(void)
 	STRPTR filename;
 	int i = 0;
 
-	while(appmsg=(struct AppMessage *)GetMsg(appport))
+	while((appmsg = (struct AppMessage *)GetMsg(appport)))
 	{
 		gwin = (struct gui_window_2 *)appmsg->am_UserData;
 
@@ -2264,9 +2260,9 @@ static void ami_handle_appmsg(void)
 		{
 			for(i = 0; i < appmsg->am_NumArgs; ++i)
 			{
-				if(appwinargs = &appmsg->am_ArgList[i])
+				if((appwinargs = &appmsg->am_ArgList[i]))
 				{
-					if(filename = AllocVecTagList(1024, NULL))
+					if((filename = AllocVecTagList(1024, NULL)))
 					{
 						if(appwinargs->wa_Lock)
 						{
@@ -2497,7 +2493,7 @@ void ami_get_msg(void)
 	}
 
 	if(signal & schedulesig) {
-		if(timermsg = (struct TimerRequest *)GetMsg(msgport)) {
+		if((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
 		}
@@ -2624,7 +2620,7 @@ void ami_quit_netsurf(void)
 					ami_download_window_abort((struct gui_download_window *)gwin);
 				break;
 			}
-		} while(node = nnode);
+		} while((node = nnode));
 
 		win_destroyed = true;
 	}
@@ -2770,11 +2766,11 @@ char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
 	STRPTR filename = NULL;
 	BPTR lock = 0;
 
-	if (filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url))) {
+	if ((filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url)))) {
 		LOG(("favicon cache location: %s", filename));
 
 		if (only_if_avail == true) {
-			if(lock = Lock(filename, ACCESS_READ)) {
+			if((lock = Lock(filename, ACCESS_READ))) {
 				UnLock(lock);
 				return filename;
 			}
@@ -2789,7 +2785,7 @@ static void ami_gui_cache_favicon(nsurl *url, struct bitmap *favicon)
 {
 	STRPTR filename = NULL;
 
-	if (filename = ami_gui_get_cache_favicon_name(url, false)) {
+	if ((filename = ami_gui_get_cache_favicon_name(url, false))) {
 		if(favicon) bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
 		FreeVec(filename);
 	}
@@ -2823,7 +2819,7 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
 	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
-	uint32 storage = 0;
+	BOOL storage = FALSE;
 
 	if(!browser_window_back_available(gwin->bw))
 		back=TRUE;
@@ -2850,29 +2846,29 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-	GetAttr(GA_Disabled, gwin->objects[GID_BACK], &storage);
+	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&storage);
 	if(storage != back)
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
 			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], &storage);
+	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&storage);
 	if(storage != forward)
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
 			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], &storage);
+	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&storage);
 	if(storage != reload)
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
 			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
 
-	GetAttr(GA_Disabled, gwin->objects[GID_STOP], &storage);
+	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&storage);
 	if(storage != stop)
 		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
 			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
 
 	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
 	{
-		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], &storage);
+		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&storage);
 		if(storage != tabclose)
 			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
 				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
@@ -2955,7 +2951,7 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
+static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
 {
 	int i;
 	struct Node *node;
@@ -2968,8 +2964,8 @@ void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_
 		nnode = GetSucc(node);
 		Remove(node);
 		FreeSpeedButtonNode(node);
-	} while(node = nnode);
-		
+	} while((node = nnode));
+
 	for(i = 0; i < AMI_GUI_TOOLBAR_MAX; i++) {
 		if(gwin->hotlist_toolbar_lab[i]) {
 			free(gwin->hotlist_toolbar_lab[i]);
@@ -2978,7 +2974,7 @@ void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_
 	}
 }
 
-void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
+static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 {
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLIST]);
@@ -2994,7 +2990,7 @@ void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 	ami_schedule_redraw(gwin, true);
 }
 
-void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
+static void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
 {
 	if(IsListEmpty(&gwin->hotlist_toolbar_list)) {
 		ami_gui_hotlist_toolbar_add(gwin);
@@ -3041,10 +3037,10 @@ void ami_gui_hotlist_update_all(void)
 			ami_gui_hotlist_toolbar_update(gwin);
 			ami_menu_refresh(gwin);
 		}
-	} while(node = nnode);
+	} while((node = nnode));
 }
 
-void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
+static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 {
 	if(ClickTabBase->lib_Version < 53) return;
 
@@ -3129,10 +3125,10 @@ void ami_gui_tabs_toggle_all(void)
 				}
 			}
 		}
-	} while(node = nnode);
+	} while((node = nnode));
 }
 
-void ami_gui_search_ico_refresh(void *p)
+static void ami_gui_search_ico_refresh(void *p)
 {
 	search_web_select_provider(-1);
 }
@@ -3858,7 +3854,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 								TNA_UserData,&gwin->bw,
 								TAG_DONE);
 			browser_window_destroy(gwin->bw);
-		} while(tab=ntab);
+		} while((tab=ntab));
 	}
 	else
 	{
@@ -3869,7 +3865,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 static void gui_window_destroy(struct gui_window *g)
 {
 	struct Node *ptab;
-	ULONG ptabnum = 0;
+	int ptabnum = 0;
 	int gid;
 
 	if(!g) return;
@@ -3980,7 +3976,7 @@ static void gui_window_destroy(struct gui_window *g)
 static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 	char *utf8title;
 
 	if(!g) return;
@@ -4168,10 +4164,8 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
 		int x0, int y0, int x1, int y1)
 {
-	ULONG xoffset,yoffset,width=800,height=600;
-	ULONG htemp,vtemp;
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 	ULONG sx, sy;
 
 	struct redraw_context ctx = {
@@ -4201,7 +4195,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 
 static void gui_window_redraw_window(struct gui_window *g)
 {
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 
@@ -4237,7 +4231,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 		}
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		DelObject(node);
-	} while(node = nnode);
+	} while((node = nnode));
 
 	if(draw == true) ami_reset_pointer(g->shared);
 }
@@ -4272,7 +4266,7 @@ struct nsObject *nnode;
 			DelObject(node);
 			/* Don't return - we might find more */
 		}
-	} while(node = nnode);
+	} while((node = nnode));
 
 	return true;
 }
@@ -4311,8 +4305,7 @@ static void amiga_window_reformat(struct gui_window *gw)
 
 static void ami_do_redraw(struct gui_window_2 *gwin)
 {
-	struct Rectangle rect;
-	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
+	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600;
 	struct IBox *bbox;
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
 	struct RastPort *temprp;
@@ -4427,7 +4420,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	gwin->new_content = false;
 }
 
-void ami_refresh_window(struct gui_window_2 *gwin)
+static void ami_refresh_window(struct gui_window_2 *gwin)
 {
 	/* simplerefresh only */
 
@@ -4508,7 +4501,7 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->bw || !g->shared->bw->current_content) return;
@@ -4585,7 +4578,7 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 static void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->bw->current_content) return;
@@ -4625,7 +4618,7 @@ static void gui_window_update_extent(struct gui_window *g)
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 	char *utf8text;
 	ULONG size;
 	UWORD chars;
@@ -4664,7 +4657,7 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 
 static void gui_window_set_url(struct gui_window *g, const char *url)
 {
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 	if(!url) return;
@@ -4700,8 +4693,6 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 	struct bitmap *ico_bitmap)
 {
 	struct BitMap *bm = NULL;
-	struct IBox *bbox;
-	ULONG cur_tab = 0;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
@@ -4737,7 +4728,7 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 				GA_Image, gwin->search_bm,
 				TAG_DONE);
 		}
-	} while(node = nnode);
+	} while((node = nnode));
 
 	return NSERROR_OK;
 }
@@ -4754,7 +4745,7 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 		const struct rect *clip)
 {
 	struct IBox *bbox;
-	ULONG xs,ys;
+	int xs,ys;
 
 	if(!g) return;
 
@@ -4867,7 +4858,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
  				break;
 				
 				case GID_HOTLIST:
-					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
+					if((node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress))) {
 						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
 
 						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
@@ -4999,14 +4990,14 @@ Object *ami_gui_splash_open(void)
 	tattr.ta_Style = 0;
 	tattr.ta_Flags = 0;
 
-	if(tfont = ami_font_open_disk_font(&tattr))
+	if((tfont = ami_font_open_disk_font(&tattr)))
 	{
 		SetFont(win->RPort, tfont);
 	}
 	else
 	{
 		tattr.ta_Name = "DejaVu Serif Oblique.font";
-		if(tfont = ami_font_open_disk_font(&tattr))
+		if((tfont = ami_font_open_disk_font(&tattr)))
 			SetFont(win->RPort, tfont);
 	}
 
@@ -5020,7 +5011,7 @@ Object *ami_gui_splash_open(void)
 	tattr.ta_Style = 0;
 	tattr.ta_Flags = 0;
 
-	if(tfont = ami_font_open_disk_font(&tattr))
+	if((tfont = ami_font_open_disk_font(&tattr)))
 		SetFont(win->RPort, tfont);
 
 	ver_string = ASPrintf("%s", netsurf_version);
@@ -5162,7 +5153,7 @@ int main(int argc, char** argv)
 	 * forcibly disable context menus if these are in use.
 	 */
 	popupmenu_lib_ok = FALSE;
-	if(PopupMenuBase = OpenLibrary("popupmenu.library", 53)) {
+	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
 		LOG(("popupmenu.library v%d.%d",
 			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
 		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
@@ -5174,15 +5165,15 @@ int main(int argc, char** argv)
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
 
-	if(lock = CreateDirTree(current_user_dir))
+	if((lock = CreateDirTree(current_user_dir)))
 		UnLock(lock);
 
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 	current_user_cache = ASPrintf("%s/Cache", current_user_dir);
 	current_user_faviconcache = ASPrintf("%s/IconCache", current_user_dir);
 
-	if(lock = CreateDirTree(current_user_cache)) UnLock(lock);
-	if(lock = CreateDirTree(current_user_faviconcache)) UnLock(lock);
+	if((lock = CreateDirTree(current_user_cache))) UnLock(lock);
+	if((lock = CreateDirTree(current_user_faviconcache))) UnLock(lock);
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
