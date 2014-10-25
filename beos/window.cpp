@@ -1072,6 +1072,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 static void gui_window_update_extent(struct gui_window *g)
 {
+	nserror err;
 	//CALLED();
 	if (browser_window_has_content(g->bw) == false)
 		return;
@@ -1081,8 +1082,12 @@ static void gui_window_update_extent(struct gui_window *g)
 	if (!g->view->LockLooper())
 		return;
 
-	float x_max = content_get_width(g->bw->current_content) * g->scale /* - 1*/;
-	float y_max = content_get_height(g->bw->current_content) * g->scale /* - 1*/;
+	int x_max, y_max;
+
+	err = browser_window_get_extents(g->bw, true, &x_max, &y_max);
+	if (err != NSERROR_OK)
+		return;
+
 	float x_prop = g->view->Bounds().Width() / x_max;
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
