@@ -3898,8 +3898,7 @@ static void ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
 {
 	/* Get the sizes that border gadget 1 (status) and 2 (hscroller) need to be.
-	** Returns the width of the vertical scroller (right-hand window border) as
-	** a convenience.
+	** Returns the width of the size gadget as a convenience.
 	*/
 
 	ULONG sz;
