@@ -1263,7 +1263,7 @@ static void on_content_mouse_click(ROOTWIN *rootwin)
 	parameter:
 		- unsigned short nkc ( CFLIB normalised key code )
 */
-static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
+static bool on_content_keypress(struct gui_window *gw, unsigned short nkc)
 {
     bool r = false;
     unsigned char ascii = (nkc & 0xFF);
@@ -1274,15 +1274,15 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
 
     if (ik == 0) {
         if (ascii >= 9) {
-            r = browser_window_key_press(bw, ucs4);
+            r = browser_window_key_press(gw->browser->bw, ucs4);
         }
     } else {
-        r = browser_window_key_press(bw, ik);
+        r = browser_window_key_press(gw->browser->bw, ik);
         if (r == false) {
 
             GRECT g;
-            GUIWIN * w = bw->window->root->win;
-            window_get_grect(bw->window->root, BROWSER_AREA_CONTENT, &g);
+            GUIWIN * w = gw->root->win;
+            window_get_grect(gw->root, BROWSER_AREA_CONTENT, &g);
 
             struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w);
 
@@ -1332,7 +1332,7 @@ static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
                 break;
 
 			case KEY_TEXT_START:
-				window_scroll_by(bw->window->root, 0, 0);
+				window_scroll_by(gw->root, 0, 0);
 				r = true;
 				break;
 
@@ -1360,7 +1360,7 @@ static short on_window_key_input(ROOTWIN *rootwin, unsigned short nkc)
     }  else  {
         if( window_widget_has_focus(input_window->root, BROWSER,
 			(void*)input_window->browser)) {
-			done = on_content_keypress(input_window->browser->bw, nkc);
+			done = on_content_keypress(input_window, nkc);
 		}
 		else if(window_widget_has_focus(input_window->root, SEARCH_INPUT, NULL)) {
 			OBJECT * obj;
