@@ -91,6 +91,8 @@ struct gui_window {
 
 	/* Keep gui_windows in a list for cleanup later */
 	struct gui_window	*next, *prev;
+
+	float scale;
 };
 
 
@@ -334,7 +336,7 @@ struct browser_window *nsbeos_get_browser_for_gui(struct gui_window *g)
 
 float nsbeos_get_scale_for_gui(struct gui_window *g)
 {
-	return g->bw->scale;
+	return g->scale;
 }
 
 /* Create a gui_window */
@@ -355,10 +357,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 	g->bw = bw;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (existing != NULL)
-		bw->scale = existing->bw->scale;
-	else
-		bw->scale = (float) nsoption_int(scale) / 100;
+	g->scale = browser_window_get_scale(bw);
 
 	g->careth = 0;
 	g->pending_resizes = 0;
@@ -515,8 +514,8 @@ void nsbeos_dispatch_event(BMessage *message)
 				gui->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
 			browser_window_mouse_track(gui->bw, (browser_mouse_state)gui->mouse.state, 
-					(int)(where.x / gui->bw->scale),
-					(int)(where.y / gui->bw->scale));
+					(int)(where.x / gui->scale),
+					(int)(where.y / gui->scale));
 
 			gui->last_x = (int)where.x;
 			gui->last_y = (int)where.y;
@@ -559,8 +558,8 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (mods & B_CONTROL_KEY)
 				gui->mouse.state |= BROWSER_MOUSE_MOD_2;
 
-			gui->mouse.pressed_x = where.x / gui->bw->scale;
-			gui->mouse.pressed_y = where.y / gui->bw->scale;
+			gui->mouse.pressed_x = where.x / gui->scale;
+			gui->mouse.pressed_y = where.y / gui->scale;
 
 			// make sure the view is in focus
 			if (view && view->LockLooper()) {
@@ -621,8 +620,8 @@ void nsbeos_dispatch_event(BMessage *message)
 			if (gui->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
 				browser_window_mouse_click(gui->bw, 
 					(browser_mouse_state)gui->mouse.state, 
-					where.x / gui->bw->scale,
-					where.y / gui->bw->scale);
+					where.x / gui->scale,
+					where.y / gui->scale);
 			else 
 				browser_window_mouse_track(gui->bw, (browser_mouse_state)0, 
 					where.x, where.y);
@@ -681,7 +680,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 {
 	BRect updateRect;
 	hlcache_handle *c;
-	float scale = g->bw->scale;
+	float scale = g->scale;
 	struct rect clip;
 
 	struct redraw_context ctx = { true, true, &nsbeos_plotters };
@@ -1087,8 +1086,8 @@ static void gui_window_update_extent(struct gui_window *g)
 	if (!g->view->LockLooper())
 		return;
 
-	float x_max = content_get_width(g->bw->current_content) * g->bw->scale /* - 1*/;
-	float y_max = content_get_height(g->bw->current_content) * g->bw->scale /* - 1*/;
+	float x_max = content_get_width(g->bw->current_content) * g->scale /* - 1*/;
+	float y_max = content_get_height(g->bw->current_content) * g->scale /* - 1*/;
 	float x_prop = g->view->Bounds().Width() / x_max;
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
@@ -1331,8 +1330,8 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	}
 
 	if (scaled) {
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		*width /= g->scale;
+		*height /= g->scale;
 	}
 }
 
