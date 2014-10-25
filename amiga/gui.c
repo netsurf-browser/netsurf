@@ -3514,7 +3514,6 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, g->shared->menu,
 			WINDOW_MenuUserData, WGUD_HOOK,
-			//WINDOW_VertProp, 1,
 			WINDOW_NewPrefsHook, &newprefs_hook,
 			WINDOW_IDCMPHook, &g->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_REFRESHWINDOW |
@@ -3724,7 +3723,6 @@ gui_window_create(struct browser_window *bw,
 					IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 					IDCMP_EXTENDEDMOUSE,
 			WINDOW_HorizProp,1,
-			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&g->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
 					IDCMP_EXTENDEDMOUSE | IDCMP_REFRESHWINDOW,
