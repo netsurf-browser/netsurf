@@ -32,12 +32,6 @@ struct frame_dimension {
 	} unit;
 };
 
-typedef enum {
-  	SCROLLING_AUTO,
-  	SCROLLING_YES,
-  	SCROLLING_NO
-} frame_scrolling;
-
 /* Handy struct names */
 struct content_html_iframe;
 struct content_html_frames;

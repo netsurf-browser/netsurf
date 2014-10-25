@@ -483,6 +483,17 @@ bool browser_window_is_frameset(struct browser_window *bw)
 	return (bw->children != NULL);
 }
 
+
+/* exported interface, documented in desktop/browser.h */
+nserror browser_window_get_scrollbar_type(struct browser_window *bw,
+		browser_scrolling *h, browser_scrolling *v)
+{
+	*h = bw->scrolling;
+	*v = bw->scrolling;
+
+	return NSERROR_OK;
+}
+
 /**
  * Set or remove a selection.
  *
@@ -772,7 +783,7 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 
 	/* window characteristics */
 	ret->browser_window_type = BROWSER_WINDOW_NORMAL;
-	ret->scrolling = SCROLLING_YES;
+	ret->scrolling = BW_SCROLLING_YES;
 	ret->border = true;
 	ret->no_resize = true;
 	ret->last_action = wallclock();

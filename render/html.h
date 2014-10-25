@@ -32,6 +32,7 @@
 
 #include "content/content_type.h"
 #include "css/css.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
@@ -117,7 +118,7 @@ struct content_html_frames {
 	struct nsurl *url;	/** frame url */
 
 	bool no_resize;	/** frame is not resizable */
-	frame_scrolling scrolling;	/** scrolling characteristics */
+	browser_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */
 	colour border_colour;	/** frame border colour */
 
@@ -134,7 +135,7 @@ struct content_html_iframe {
 	char *name;	/** frame name (for targetting) */
 	struct nsurl *url;	/** frame url */
 
-	frame_scrolling scrolling;	/** scrolling characteristics */
+	browser_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */
 	colour border_colour;	/** frame border colour */
 

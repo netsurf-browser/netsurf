@@ -2015,7 +2015,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	/* update frameset and create default children */
 	f->cols = cols;
 	f->rows = rows;
-	f->scrolling = SCROLLING_NO;
+	f->scrolling = BW_SCROLLING_NO;
 	f->children = talloc_array(content->bctx, struct content_html_frames,
 								(rows * cols));
 
@@ -2034,7 +2034,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			frame->name = NULL;
 			frame->url = NULL;
 			frame->no_resize = false;
-			frame->scrolling = SCROLLING_AUTO;
+			frame->scrolling = BW_SCROLLING_AUTO;
 			frame->border = default_border;
 			frame->border_colour = default_border_colour;
 			frame->children = NULL;
@@ -2170,10 +2170,10 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			if (err == DOM_NO_ERR && s != NULL) {
 				if (dom_string_caseless_lwc_isequal(s,
 						corestring_lwc_yes))
-					frame->scrolling = SCROLLING_YES;
+					frame->scrolling = BW_SCROLLING_YES;
 				else if (dom_string_caseless_lwc_isequal(s,
 						corestring_lwc_no))
-					frame->scrolling = SCROLLING_NO;
+					frame->scrolling = BW_SCROLLING_NO;
 				dom_string_unref(s);
 			}
 
@@ -2293,7 +2293,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	iframe->margin_height = 0;
 	iframe->name = NULL;
 	iframe->url = url;
-	iframe->scrolling = SCROLLING_AUTO;
+	iframe->scrolling = BW_SCROLLING_AUTO;
 	iframe->border = true;
 
 	/* Add this iframe to the linked list of iframes */
@@ -2328,10 +2328,10 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	if (err == DOM_NO_ERR && s != NULL) {
 		if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc_yes))
-			iframe->scrolling = SCROLLING_YES;
+			iframe->scrolling = BW_SCROLLING_YES;
 		else if (dom_string_caseless_lwc_isequal(s,
 				corestring_lwc_no))
-			iframe->scrolling = SCROLLING_NO;
+			iframe->scrolling = BW_SCROLLING_NO;
 		dom_string_unref(s);
 	}
 

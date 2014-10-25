@@ -123,7 +123,7 @@ struct browser_window {
 
 	/** frame characteristics */
 	bool no_resize;
-	frame_scrolling scrolling;
+	browser_scrolling scrolling;
 	bool border;
 	colour border_colour;
 

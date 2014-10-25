@@ -111,10 +111,10 @@ void browser_window_handle_scrollbars(struct browser_window *bw)
 		c_height = content_get_height(h);
 	}
 
-	if (bw->scrolling == SCROLLING_YES) {
+	if (bw->scrolling == BW_SCROLLING_YES) {
 		scroll_x = true;
 		scroll_y = true;
-	} else if (bw->scrolling == SCROLLING_AUTO &&
+	} else if (bw->scrolling == BW_SCROLLING_AUTO &&
 			bw->current_content) {
 		int bw_width = bw->width;
 		int bw_height = bw->height;

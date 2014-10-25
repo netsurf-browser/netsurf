@@ -61,6 +61,12 @@ typedef enum {
 	BW_EDITOR_CAN_PASTE	= (1 << 2)	/**< Can paste, input */
 } browser_editor_flags;
 
+typedef enum {
+	BW_SCROLLING_AUTO,
+	BW_SCROLLING_YES,
+	BW_SCROLLING_NO
+} browser_scrolling;
+
 /** flags to browser_window_create */
 enum browser_window_create_flags {
 	/** No flags set */
@@ -601,6 +607,15 @@ bool browser_window_can_search(struct browser_window *bw);
  * \return true iff browser window contains a frameset
  */
 bool browser_window_is_frameset(struct browser_window *bw);
+
+/**
+ * Find out if a browser window contains a frameset
+ *
+ * \param bw	browser window to look at
+ * \return NSERROR_OK, or appropriate error otherwise
+ */
+nserror browser_window_get_scrollbar_type(struct browser_window *bw,
+		browser_scrolling *h, browser_scrolling *v);
 
 
 /**
