@@ -571,9 +571,6 @@ include javascript/Makefile
 # Image content handler sources
 include image/Makefile
 
-# PDF saving sources
-include desktop/save_pdf/Makefile
-
 # S_COMMON are sources common to all builds
 S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \
 	$(S_HTTP) $(S_DESKTOP) $(S_JAVASCRIPT)

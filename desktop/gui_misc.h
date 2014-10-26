@@ -80,6 +80,16 @@ struct gui_browser_table {
 	void (*login)(struct nsurl *url, const char *realm,
 			nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
+	/**
+	 * Warn the user of an event.
+	 */
+	void (*warning)(const char *warning, const char *detail);
+
+	/**
+	 * Prompt the user for a password for a PDF.
+	 */
+	void (*pdf_password)(char **owner_pass, char **user_pass, char *path);
+
 };
 
 #endif

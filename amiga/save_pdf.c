@@ -56,9 +56,4 @@ bool save_as_pdf(struct hlcache_handle *c, const char *path)
 	return true;
 }
 
-void PDF_Password(char **owner_pass, char **user_pass, char *path)
-{
-	/*TODO:this waits to be written, until then no PDF encryption*/
-	*owner_pass = NULL;
-}
 #endif

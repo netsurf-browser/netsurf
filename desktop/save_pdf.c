@@ -21,7 +21,32 @@
  * Target independent PDF plotting using Haru Free PDF Library.
  */
 
+/* TODO
+ * - finish all graphic primitives
+ * - allow adding raw bitmaps
+ * - make image-aware (embed the image in its native/original type if possible)
+ *
+ * - adjust content width to page width
+ * - divide output into multiple pages (not just the first one)
+ * - rearrange file structure
+ *
+ * - separate print-plotting as much as possible from window redrawing
+ * - add text-scaling (if not yet using the original font - make the default one
+ * 	have the same width)
+ * - add a save file.. dialogue
+ * - add utf support to Haru ( doable? )
+ * - wait for browser to end fetching?
+ * - analyze and deal with performance issues(huge file hangs some pdf viewers,
+ * 	for example kpdf when viewing plotted http://www.onet.pl)
+ * - deal with to wide pages - when window layouting adds a horizontal
+ * 	scrollbar, we should treat it otherwise - either print
+ * 	horizontal or scale or, better, find a new layout.
+ */
+
 #include "utils/config.h"
+
+#include "desktop/save_pdf.h"
+
 #ifdef WITH_PDF_EXPORT
 
 #include <assert.h>
@@ -35,7 +60,6 @@
 #include "desktop/plotters.h"
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "desktop/save_pdf/pdf_plotters.h"
 #include "image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -50,7 +74,7 @@ static bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
 static bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool pdf_plot_clip(const struct rect *clip);
-static bool pdf_plot_text(int x, int y, const char *text, size_t length, 
+static bool pdf_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle);
 static bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style);
 static bool pdf_plot_arc(int x, int y, int radius, int angle1, int angle2,
@@ -86,7 +110,7 @@ static void pdfw_gs_linewidth(HPDF_Page page, float lineWidth);
 static void pdfw_gs_font(HPDF_Page page, HPDF_Font font, HPDF_REAL font_size);
 static void pdfw_gs_dash(HPDF_Page page, DashPattern_e dash);
 
-/** 
+/**
  * Our PDF gstate mirror which we use to minimize gstate updates
  * in the PDF file.
  */
@@ -186,9 +210,9 @@ bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *psty
 
 		}
 
-		apply_clip_and_mode(false, 
-				    NS_TRANSPARENT, 
-				    pstyle->stroke_colour, 
+		apply_clip_and_mode(false,
+				    NS_TRANSPARENT,
+				    pstyle->stroke_colour,
 				    pstyle->stroke_width,
 				    dash);
 
@@ -218,9 +242,9 @@ bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 
 	}
 
-	apply_clip_and_mode(false, 
-			    NS_TRANSPARENT, 
-			    pstyle->stroke_colour, 
+	apply_clip_and_mode(false,
+			    NS_TRANSPARENT,
+			    pstyle->stroke_colour,
 			    pstyle->stroke_width,
 			    dash);
 
@@ -285,7 +309,7 @@ bool pdf_plot_clip(const struct rect *clip)
 	return true;
 }
 
-bool pdf_plot_text(int x, int y, const char *text, size_t length, 
+bool pdf_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 #ifdef PDF_DEBUG
@@ -298,7 +322,7 @@ bool pdf_plot_text(int x, int y, const char *text, size_t length,
 	if (length == 0)
 		return true;
 
-	apply_clip_and_mode(true, fstyle->foreground, NS_TRANSPARENT, 0., 
+	apply_clip_and_mode(true, fstyle->foreground, NS_TRANSPARENT, 0.,
 			DashPattern_eNone);
 
 	haru_nsfont_apply_style(fstyle, pdf_doc, pdf_page, &pdf_font, &size);
@@ -326,7 +350,7 @@ bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 #endif
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
 		apply_clip_and_mode(false,
-				    style->fill_colour, 
+				    style->fill_colour,
 				    NS_TRANSPARENT,
 				    1., DashPattern_eNone);
 
@@ -338,7 +362,7 @@ bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style)
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
 		/* FIXME: line width 1 is ok ? */
 		apply_clip_and_mode(false,
-				    NS_TRANSPARENT, 
+				    NS_TRANSPARENT,
 				    style->stroke_colour,
 				    1., DashPattern_eNone);
 
@@ -410,9 +434,9 @@ bool pdf_plot_bitmap_tile(int x, int y, int width, int height,
 HPDF_Image pdf_extract_image(struct bitmap *bitmap)
 {
 	HPDF_Image image = NULL;
-        hlcache_handle *content = NULL;
+	hlcache_handle *content = NULL;
 
-        /* TODO - get content from bitmap pointer */
+	/* TODO - get content from bitmap pointer */
 
 	if (content) {
 		const char *source_data;
@@ -667,11 +691,11 @@ bool pdf_begin(struct print_settings *print_settings)
 
 	settings = print_settings;
 
-	page_width = settings->page_width - 
+	page_width = settings->page_width -
 			FIXTOFLT(FSUB(settings->margins[MARGINLEFT],
 			settings->margins[MARGINRIGHT]));
 
-	page_height = settings->page_height - 
+	page_height = settings->page_height -
 			FIXTOFLT(settings->margins[MARGINTOP]);
 
 
@@ -715,7 +739,7 @@ bool pdf_next_page(void)
 	HPDF_Page_SetWidth (pdf_page, settings->page_width);
 	HPDF_Page_SetHeight(pdf_page, settings->page_height);
 
-	HPDF_Page_Concat(pdf_page, 1, 0, 0, 1, 
+	HPDF_Page_Concat(pdf_page, 1, 0, 0, 1,
 			FIXTOFLT(settings->margins[MARGINLEFT]), 0);
 
 	pdfw_gs_save(pdf_page);
@@ -751,7 +775,7 @@ void pdf_end(void)
 
 	/*Encryption on*/
 	if (option_enable_PDF_password)
-		PDF_Password(&owner_pass, &user_pass,
+		guit->browser->pdf_password(&owner_pass, &user_pass,
 				(void *)settings->output);
 	else
 		save_pdf(settings->output);
@@ -760,7 +784,7 @@ void pdf_end(void)
 #endif
 }
 
-/** saves the pdf optionally encrypting it before*/
+/** saves the pdf with optional encryption */
 void save_pdf(const char *path)
 {
 	bool success = false;
@@ -959,5 +983,8 @@ void pdfw_gs_dash(HPDF_Page page, DashPattern_e dash)
 	}
 }
 
+#else
+void save_pdf(const char *path)
+{
+}
 #endif /* WITH_PDF_EXPORT */
-

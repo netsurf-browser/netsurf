@@ -2152,13 +2152,6 @@ bool ro_gui_prequit(void)
 }
 
 
-void PDF_Password(char **owner_pass, char **user_pass, char *path)
-{
-	/** @todo this waits to be written, until then no PDF encryption */
-	*owner_pass = NULL;
-}
-
-
 /**
  * Generate a riscos path from one or more component elemnts.
  *

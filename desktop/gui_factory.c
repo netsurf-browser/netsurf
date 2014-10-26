@@ -20,6 +20,7 @@
 #include "content/backing_store.h"
 
 #include "utils/file.h"
+#include "desktop/save_pdf.h"
 #include "desktop/download.h"
 #include "desktop/searchweb.h"
 #include "desktop/gui_download.h"
@@ -259,6 +260,12 @@ static void gui_default_download_done(struct gui_download_window *dw)
 {
 }
 
+static struct gui_download_table default_download_table = {
+	.create = gui_default_download_create,
+	.data = gui_default_download_data,
+	.error = gui_default_download_error,
+	.done = gui_default_download_done,
+};
 
 /** verify download window table is valid */
 static nserror verify_download_register(struct gui_download_table *gdt)
@@ -566,12 +573,12 @@ static void gui_default_401login_open(nsurl *url, const char *realm,
 	cb(false, cbpw);
 }
 
-static struct gui_download_table default_download_table = {
-	.create = gui_default_download_create,
-	.data = gui_default_download_data,
-	.error = gui_default_download_error,
-	.done = gui_default_download_done,
-};
+static void
+gui_default_pdf_password(char **owner_pass, char **user_pass, char *path)
+{
+	*owner_pass = NULL;
+	save_pdf(path);
+}
 
 /** verify browser table is valid */
 static nserror verify_browser_register(struct gui_browser_table *gbt)
@@ -598,6 +605,9 @@ static nserror verify_browser_register(struct gui_browser_table *gbt)
 	}
 	if (gbt->login == NULL) {
 		gbt->login = gui_default_401login_open;
+	}
+	if (gbt->pdf_password == NULL) {
+		gbt->pdf_password = gui_default_pdf_password;
 	}
 	return NSERROR_OK;
 }

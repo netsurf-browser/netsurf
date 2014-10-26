@@ -54,7 +54,7 @@
 #include "content/backing_store.h"
 #include "desktop/browser.h"
 #include "desktop/save_complete.h"
-#include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"
 #include "desktop/sslcert_viewer.h"
 #include "desktop/textinput.h"
@@ -696,71 +696,45 @@ gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
 	return FALSE;
 }
 
-#ifdef WITH_PDF_EXPORT
-
-void PDF_Password(char **owner_pass, char **user_pass, char *path)
-{
-	GladeXML *x = glade_xml_new(glade_password_file_location, NULL, NULL);
-	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndPDFPassword"));
-	GtkButton *ok, *no;
-	void **data = malloc(5 * sizeof(void *));
-
-	*owner_pass = NULL;
-	*user_pass = NULL;
-
-	data[0] = owner_pass;
-	data[1] = user_pass;
-	data[2] = wnd;
-	data[3] = x;
-	data[4] = path;
-
-	ok = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFSetPassword"));
-	no = GTK_BUTTON(glade_xml_get_widget(x, "buttonPDFNoPassword"));
-
-	g_signal_connect(G_OBJECT(ok), "clicked",
-			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
-	g_signal_connect(G_OBJECT(no), "clicked",
-			 G_CALLBACK(nsgtk_PDF_no_pass), (gpointer)data);
-
-	gtk_widget_show(GTK_WIDGET(wnd));
-}
 
 static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 {
 	char **owner_pass = ((void **)data)[0];
 	char **user_pass = ((void **)data)[1];
 	GtkWindow *wnd = ((void **)data)[2];
-	GladeXML *x = ((void **)data)[3];
+	GtkBuilder *gladeFile = ((void **)data)[3];
 	char *path = ((void **)data)[4];
 
 	char *op, *op1;
 	char *up, *up1;
 
-	op = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
-			"entryPDFOwnerPassword"))));
-	op1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
-			"entryPDFOwnerPassword1"))));
-	up = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
-		    	"entryPDFUserPassword"))));
-	up1 = strdup(gtk_entry_get_text(GTK_ENTRY(glade_xml_get_widget(x,
-		     	"entryPDFUserPassword1"))));
+	op = strdup(gtk_entry_get_text(
+			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+					"entryPDFOwnerPassword"))));
+	op1 = strdup(gtk_entry_get_text(
+			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+					"entryPDFOwnerPassword1"))));
+	up = strdup(gtk_entry_get_text(
+			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+					"entryPDFUserPassword"))));
+	up1 = strdup(gtk_entry_get_text(
+			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+					"entryPDFUserPassword1"))));
 
 
 	if (op[0] == '\0') {
-		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
 				"labelInfo")),
        				"Owner password must be at least 1 character long:");
 		free(op);
 		free(up);
-	}
-	else if (!strcmp(op, up)) {
-		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+	} else if (!strcmp(op, up)) {
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
 				"labelInfo")),
        				"User and owner passwords must be different:");
 		free(op);
 		free(up);
-	}
-	else if (!strcmp(op, op1) && !strcmp(up, up1)) {
+	} else if (!strcmp(op, op1) && !strcmp(up, up1)) {
 
 		*owner_pass = op;
 		if (up[0] == '\0')
@@ -770,13 +744,13 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 
 		free(data);
 		gtk_widget_destroy(GTK_WIDGET(wnd));
-		g_object_unref(G_OBJECT(x));
+		g_object_unref(G_OBJECT(gladeFile));
 
 		save_pdf(path);
+
 		free(path);
-	}
-	else {
-		gtk_label_set_text(GTK_LABEL(glade_xml_get_widget(x,
+	} else {
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
 				"labelInfo")), "Passwords not confirmed:");
 		free(op);
 		free(up);
@@ -789,18 +763,60 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 {
 	GtkWindow *wnd = ((void **)data)[2];
-	GladeXML *x = ((void **)data)[3];
+	GtkBuilder *gladeFile = ((void **)data)[3];
 	char *path = ((void **)data)[4];
 
 	free(data);
 
 	gtk_widget_destroy(GTK_WIDGET(wnd));
-	g_object_unref(G_OBJECT(x));
+	g_object_unref(G_OBJECT(gladeFile));
 
 	save_pdf(path);
+
 	free(path);
 }
-#endif
+
+static void nsgtk_pdf_password(char **owner_pass, char **user_pass, char *path)
+{
+	GtkButton *ok, *no;
+	GtkWindow *wnd;
+	void **data;
+	GtkBuilder *gladeFile;
+	GError* error = NULL;
+
+	gladeFile = gtk_builder_new();
+	if (!gtk_builder_add_from_file(gladeFile,
+				       glade_file_location->password,
+				       &error))  {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
+		return;
+	}
+
+	wnd = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndPDFPassword"));
+
+	data = malloc(5 * sizeof(void *));
+
+	*owner_pass = NULL;
+	*user_pass = NULL;
+
+	data[0] = owner_pass;
+	data[1] = user_pass;
+	data[2] = wnd;
+	data[3] = gladeFile;
+	data[4] = path;
+
+	ok = GTK_BUTTON(gtk_builder_get_object(gladeFile, "buttonPDFSetPassword"));
+	no = GTK_BUTTON(gtk_builder_get_object(gladeFile, "buttonPDFNoPassword"));
+
+	g_signal_connect(G_OBJECT(ok), "clicked",
+			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
+	g_signal_connect(G_OBJECT(no), "clicked",
+			 G_CALLBACK(nsgtk_PDF_no_pass), (gpointer)data);
+
+	gtk_widget_show(GTK_WIDGET(wnd));
+}
+
 
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 {
@@ -1194,6 +1210,7 @@ static struct gui_browser_table nsgtk_browser_table = {
 	.launch_url = gui_launch_url,
 	.cert_verify = gui_cert_verify,
         .login = gui_401login_open,
+	.pdf_password = nsgtk_pdf_password,
 };
 
 /**

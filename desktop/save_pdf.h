@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 Adam Blokus <adamblokus@gmail.com>
- * Copyright 2009 John Tytgat <joty@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,25 +15,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
- /** \file
-  * Font handling in Haru pdf documents (interface).
-  */
- 
-#ifndef _NETSURF_RENDER_FONT_HARU_H_
-#define _NETSURF_RENDER_FONT_HARU_H_
 
-#include <hpdf.h>
+/** \file
+	PDF Plotting
+*/
 
-#include "desktop/plot_style.h"
-#include "desktop/font.h"
- 
-bool haru_nsfont_apply_style(const plot_font_style_t *fstyle,
-			      	HPDF_Doc doc, HPDF_Page page,
-	  			HPDF_Font *font, HPDF_REAL *font_size);
+#ifndef NETSURF_PDF_PLOTTERS_H
+#define NETSURF_PDF_PLOTTERS_H
 
-void haru_nsfont_set_scale(float s);
+#include "desktop/print.h"
 
-extern const struct font_functions haru_nsfont;
+extern const struct printer pdf_printer;
 
-#endif
+/**Start plotting a pdf file*/
+bool pdf_begin(struct print_settings *settings);
+
+/**Finish the current page and start a new one*/
+bool pdf_next_page(void);
+
+/**Close pdf document and save changes to file*/
+void pdf_end(void);
+
+void save_pdf(const char *path);
+
+#endif /*NETSURF_PDF_PLOTTERS_H*/

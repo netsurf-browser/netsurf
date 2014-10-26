@@ -258,6 +258,5 @@ int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2);
 
 /* Platform specific functions */
 void warn_user(const char *warning, const char *detail);
-void PDF_Password(char **owner_pass, char **user_pass, char *path);
 
 #endif

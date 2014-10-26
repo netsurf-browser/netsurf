@@ -20,9 +20,6 @@
 
 #import "utils/utils.h"
 
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
-
-
 void warn_user(const char *warning, const char *detail)
 {
 	NSRunAlertPanel( NSLocalizedString( @"Warning", @"Warning title" ), 
@@ -31,9 +28,3 @@ void warn_user(const char *warning, const char *detail)
 					warning, detail != NULL ? ": " : "",
 					detail != NULL ? detail : "" );
 }
-
-void PDF_Password(char **owner_pass, char **user_pass, char *path)
-{
-	UNIMPL();
-}
-

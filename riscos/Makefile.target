@@ -92,7 +92,7 @@ TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
-SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_RISCOS)
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
 EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 
 !NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
