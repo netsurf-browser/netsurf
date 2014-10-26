@@ -1632,7 +1632,7 @@ static void ami_gui_refresh_favicon(void *p)
 }
 
 /* Gets the size that border gadget 1 (status) needs to be.
- * Returns the height of the size gadget as a convenience.
+ * Returns the width of the size gadget as a convenience.
  */
 static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width, ULONG *height)
 {
@@ -3142,6 +3142,8 @@ static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List 
 	int i;
 	struct Node *node;
 	struct Node *nnode;
+
+	if(nsoption_bool(kiosk_mode) == true) return;
 
 	if(IsListEmpty(speed_button_list)) return;
 	node = GetHead(speed_button_list);
