@@ -66,18 +66,6 @@ bool url_host_is_ip_address(const char *host);
 
 
 /**
- * Return the scheme name from an URL.
- *
- * See RFC 3986, 3.1 for reference.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold scheme name
- * \return  NSERROR_OK on success
- */
-nserror url_scheme(const char *url, char **result);
-
-
-/**
  * Attempt to find a nice filename for a URL.
  *
  * \param  url	   an absolute URL
