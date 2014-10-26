@@ -95,7 +95,7 @@ BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 
 	if(IsMinListEmpty(list)) return FALSE;
 
-	url_scheme = nsurl_get_component(ns_url, NSURL_SCHEME);
+	url_scheme = nsurl_get_component(url, NSURL_SCHEME);
 
 	node = (struct ami_protocol *)GetHead((struct List *)list);
 
