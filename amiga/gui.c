@@ -4142,7 +4142,7 @@ static void ami_redraw_callback(void *p)
  */
 void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 {
-	int ms = 0;
+	int ms = 1;
 
 	if(full_redraw) gwin->redraw_required = true;
 	ami_schedule(ms, ami_redraw_callback, gwin);
