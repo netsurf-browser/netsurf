@@ -46,7 +46,7 @@ struct ami_protocol
 
 struct ami_protocol *ami_openurl_add_protocol(const char *url)
 {
-	nsurl *ns_url
+	nsurl *ns_url;
 	struct ami_protocol *ami_p =
 		(struct ami_protocol *)AllocVecTagList(sizeof(struct ami_protocol), NULL);
 
@@ -56,10 +56,10 @@ struct ami_protocol *ami_openurl_add_protocol(const char *url)
 	}
 
 	ami_p->protocol = nsurl_get_component(ns_url, NSURL_SCHEME);
+	nsurl_unref(ns_url);
 	if (ami_p->protocol == NULL)
 	{
 		FreeVec(ami_p);
-		nsurl_unref(ns_url);
 		return NULL;
 	}
 
