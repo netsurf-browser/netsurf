@@ -1518,7 +1518,7 @@ static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
  *
  * \param  gwin      "Shared" GUI window to check the state of
  */
-static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
+static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 {
 	int h = 1, w = 1, wh = 0, ww = 0;
 	bool rethinkv = false;
@@ -1528,8 +1528,6 @@ static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 
 	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
 
-	/* We only bother with vscroll, as the hscroller is embedded in the
-	   bottom window border with the status bar, so toggling it is pointless */
 	if(browser_window_is_frameset(gwin->bw) == true) {
 		rethinkv = ami_gui_vscroll_remove(gwin);
 		rethinkh = ami_gui_hscroll_remove(gwin);
@@ -2366,7 +2364,6 @@ static void ami_handle_msg(void)
 						struct browser_window *bw = NULL;
 
 						case AMINS_WINDOW:
-							ami_gui_vscroll_update(gwin);
 							ami_set_border_gadget_size(gwin);
 							ami_throbber_redraw_schedule(0, gwin->bw->window);
 
@@ -2827,7 +2824,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		browser_window_refresh_url_bar(gwin->bw);
 		ami_gui_update_hotlist_button(gwin);
-		ami_gui_vscroll_update(gwin);
+		ami_gui_scroller_update(gwin);
 		ami_throbber_redraw_schedule(0, gwin->bw->window);
 	}
 }
@@ -4444,7 +4441,7 @@ static void amiga_window_reformat(struct gui_window *gw)
 	if (gw != NULL) {
 		GetAttr(SPACE_AreaBox, (Object *)gw->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
-
+		ami_gui_scroller_update(gw->shared);
 		gw->shared->redraw_scroll = false;
 	}
 }
@@ -4931,7 +4928,7 @@ static void gui_window_new_content(struct gui_window *g)
 	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
-	ami_gui_vscroll_update(g->shared);
+	ami_gui_scroller_update(g->shared);
 }
 
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
