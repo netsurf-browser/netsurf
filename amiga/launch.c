@@ -86,23 +86,31 @@ void ami_openurl_free_list(struct MinList *list)
 	}while(node=nnode);
 }
 
-BOOL ami_openurl_check_list(struct MinList *list, const char *url)
+BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 {
 	struct ami_protocol *node;
 	struct ami_protocol *nnode;
+	lwc_string *url_scheme;
+	bool match;
 
 	if(IsMinListEmpty(list)) return FALSE;
+
+	url_scheme = nsurl_get_component(ns_url, NSURL_SCHEME);
+
 	node = (struct ami_protocol *)GetHead((struct List *)list);
 
 	do
 	{
 		nnode=(struct ami_protocol *)GetSucc((struct Node *)node);
 
-		if (!strncasecmp(url, lwc_string_data(node->protocol),
-				lwc_string_length(node->protocol)))
+		if (lwc_string_isequal(url_scheme, node->protocol,
+				&match) == NSERROR_OK && match == true) {
+			lwc_string_unref(url_scheme);
 			return TRUE;
+		}
 	}while(node=nnode);
 
+	lwc_string_unref(url_scheme);
 	return FALSE;
 }
 
@@ -136,7 +144,7 @@ nserror gui_launch_url(struct nsurl *url)
 	APTR procwin = SetProcWindow((APTR)-1L);
 	char *launchurl = NULL;
 
-	if(ami_openurl_check_list(&ami_unsupportedprotocols, nsurl_access(url)) == FALSE)
+	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
 	{
 		if(IOpenURL)
 		{
