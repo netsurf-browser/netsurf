@@ -195,7 +195,6 @@ static const __attribute__((used)) char *stack_cookie = "\0$STACK:98304\0";
 const char * const versvn;
 const char * const verdate;
 
-void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
@@ -1036,6 +1035,64 @@ static void gui_init2(int argc, char** argv)
 	}
 }
 
+static void ami_update_buttons(struct gui_window_2 *gwin)
+{
+	long back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
+	long storage = FALSE;
+
+	if(!browser_window_back_available(gwin->bw))
+		back=TRUE;
+
+	if(browser_window_forward_available(gwin->bw))
+		forward=FALSE;
+
+	if(!browser_window_stop_available(gwin->bw))
+		stop=TRUE;
+
+	if(!browser_window_reload_available(gwin->bw))
+		reload=TRUE;
+
+	if(nsoption_bool(kiosk_mode) == false)
+	{
+		if(gwin->tabs <= 1)
+		{
+			tabclose=TRUE;
+			OffMenu(gwin->win,AMI_MENU_CLOSETAB);
+		}
+		else
+		{
+			OnMenu(gwin->win,AMI_MENU_CLOSETAB);
+		}
+	}
+
+	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&storage);
+	if(storage != back)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
+			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
+
+	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&storage);
+	if(storage != forward)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
+			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
+
+	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&storage);
+	if(storage != reload)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
+			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
+
+	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&storage);
+	if(storage != stop)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
+			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
+
+	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
+	{
+		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&storage);
+		if(storage != tabclose)
+			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
+				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
+	}
+}
 
 void ami_gui_history(struct gui_window_2 *gwin, bool back)
 {
@@ -2913,65 +2970,6 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 		}
 		
 		nsurl_unref(nsurl);
-	}
-}
-
-void ami_update_buttons(struct gui_window_2 *gwin)
-{
-	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
-	BOOL storage = FALSE;
-
-	if(!browser_window_back_available(gwin->bw))
-		back=TRUE;
-
-	if(browser_window_forward_available(gwin->bw))
-		forward=FALSE;
-
-	if(!browser_window_stop_available(gwin->bw))
-		stop=TRUE;
-
-	if(!browser_window_reload_available(gwin->bw))
-		reload=TRUE;
-
-	if(nsoption_bool(kiosk_mode) == false)
-	{
-		if(gwin->tabs <= 1)
-		{
-			tabclose=TRUE;
-			OffMenu(gwin->win,AMI_MENU_CLOSETAB);
-		}
-		else
-		{
-			OnMenu(gwin->win,AMI_MENU_CLOSETAB);
-		}
-	}
-
-	GetAttr(GA_Disabled, gwin->objects[GID_BACK], (uint32 *)&storage);
-	if(storage != back)
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
-			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
-
-	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], (uint32 *)&storage);
-	if(storage != forward)
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
-			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
-
-	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], (uint32 *)&storage);
-	if(storage != reload)
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
-			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
-
-	GetAttr(GA_Disabled, gwin->objects[GID_STOP], (uint32 *)&storage);
-	if(storage != stop)
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
-			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
-
-	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
-	{
-		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], (uint32 *)&storage);
-		if(storage != tabclose)
-			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
-				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
 }
 
