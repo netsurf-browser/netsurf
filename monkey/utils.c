@@ -28,8 +28,3 @@ void warn_user(const char *warning, const char *detail)
   fprintf(stderr, "WARN %s %s\n", warning, detail);
 }
 
-void die(const char * const error)
-{
-  fprintf(stderr, "DIE %s\n", error);
-  exit(EXIT_FAILURE);
-}

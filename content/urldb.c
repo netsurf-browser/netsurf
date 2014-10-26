@@ -343,7 +343,7 @@ static struct bloom_filter *url_bloom;
  *
  * \param filename Name of file containing data
  */
-void urldb_load(const char *filename)
+nserror urldb_load(const char *filename)
 {
 #define MAXIMUM_URL_LENGTH 4096
 	char s[MAXIMUM_URL_LENGTH];
@@ -365,24 +365,24 @@ void urldb_load(const char *filename)
 	fp = fopen(filename, "r");
 	if (!fp) {
 		LOG(("Failed to open file '%s' for reading", filename));
-		return;
+		return NSERROR_NOT_FOUND;
 	}
 
 	if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
 		fclose(fp);
-		return;
+		return NSERROR_NEED_DATA;
 	}
 
 	version = atoi(s);
 	if (version < MIN_URL_FILE_VERSION) {
 		LOG(("Unsupported URL file version."));
 		fclose(fp);
-		return;
+		return NSERROR_INVALID;
 	}
 	if (version > URL_FILE_VERSION) {
 		LOG(("Unknown URL file version."));
 		fclose(fp);
-		return;
+		return NSERROR_INVALID;
 	}
 
 	while (fgets(host, sizeof host, fp)) {
@@ -417,7 +417,8 @@ void urldb_load(const char *filename)
 		h = urldb_add_host(host);
 		if (!h) {
 			LOG(("Failed adding host: '%s'", host));
-			die("Memory exhausted whilst loading URL file");
+			fclose(fp);
+			return NSERROR_NOMEM;
 		}
 
 		/* load the non-corrupt data */
@@ -467,8 +468,8 @@ void urldb_load(const char *filename)
 			 */
 			if (nsurl_create(url, &nsurl) != NSERROR_OK) {
 				LOG(("Failed inserting '%s'", url));
-				die("Memory exhausted whilst loading "
-						"URL file");
+				fclose(fp);
+				return NSERROR_NOMEM;
 			}
                         
 			if (url_bloom != NULL) {
@@ -480,8 +481,8 @@ void urldb_load(const char *filename)
 			if (nsurl_get(nsurl, NSURL_PATH | NSURL_QUERY,
 					&path_query, &len) != NSERROR_OK) {
 				LOG(("Failed inserting '%s'", url));
-				die("Memory exhausted whilst loading "
-						"URL file");
+				fclose(fp);
+				return NSERROR_NOMEM;
 			}
 
 			scheme_lwc = nsurl_get_component(nsurl, NSURL_SCHEME);
@@ -491,8 +492,8 @@ void urldb_load(const char *filename)
 					fragment_lwc, nsurl);
 			if (!p) {
 				LOG(("Failed inserting '%s'", url));
-				die("Memory exhausted whilst loading "
-						"URL file");
+				fclose(fp);
+				return NSERROR_NOMEM;
 			}
 			nsurl_unref(nsurl);
 			lwc_string_unref(scheme_lwc);
@@ -533,6 +534,8 @@ void urldb_load(const char *filename)
 	fclose(fp);
 	LOG(("Successfully loaded URL file"));
 #undef MAXIMUM_URL_LENGTH
+
+	return NSERROR_OK;
 }
 
 /**

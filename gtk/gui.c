@@ -106,6 +106,19 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 char **respaths; /** resource search path vector */
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+static void die(const char * const error)
+{
+	fprintf(stderr, "%s", error);
+	exit(EXIT_FAILURE);
+}
+
 /** Create an array of valid paths to search for resources.
  *
  * The idea is that all the complex path computation to find resources
@@ -584,11 +597,6 @@ void warn_user(const char *warning, const char *detail)
 	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
 }
 
-void die(const char * const error)
-{
-	fprintf(stderr, "%s", error);
-	exit(EXIT_FAILURE);
-}
 
 
 static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,

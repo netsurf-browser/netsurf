@@ -120,6 +120,15 @@ void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+void die(const char * const error) __attribute__ ((noreturn));
+
 /* in download.c */
 void ro_gui_download_init(void);
 void ro_gui_download_datasave_ack(wimp_message *message);

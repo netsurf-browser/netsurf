@@ -49,6 +49,18 @@
 
 static bool cocoa_done = false;
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+static void die(const char * const error)
+{
+	[NSException raise: @"NetsurfDie" format: @"Error: %s", error];
+}
+
 - (void) loadOptions;
 {
 	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

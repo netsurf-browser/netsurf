@@ -42,6 +42,19 @@ char **respaths; /** resource search path vector */
 
 static bool monkey_done = false;
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+static void die(const char * const error)
+{
+  fprintf(stderr, "DIE %s\n", error);
+  exit(EXIT_FAILURE);
+}
+
 /* Stolen from gtk/gui.c */
 static char **
 nsmonkey_init_resource(const char *resource_path)
@@ -174,8 +187,16 @@ main(int argc, char **argv)
   urldb_load_cookies(nsoption_charp(cookie_file));
 
   monkey_prepare_input();
-  monkey_register_handler("QUIT", quit_handler);
-  monkey_register_handler("WINDOW", monkey_window_handle_command);
+
+  ret = monkey_register_handler("QUIT", quit_handler);
+  if (ret != NSERROR_OK) {
+    die("quit handler failed to register");
+  }
+
+  ret = monkey_register_handler("WINDOW", monkey_window_handle_command);
+  if (ret != NSERROR_OK) {
+    die("window handler fialed to register");
+  }
 
   fprintf(stdout, "GENERIC STARTED\n");
 

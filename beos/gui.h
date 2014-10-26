@@ -67,3 +67,12 @@ void nsbeos_gui_view_source(struct hlcache_handle *content);
 image_id nsbeos_find_app_path(char *path);
 
 void nsbeos_update_system_ui_colors(void);
+
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+void die(const char * const error) __attribute__ ((noreturn));

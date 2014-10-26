@@ -43,6 +43,18 @@ static char **respaths; /** resource search path vector. */
 
 char *options_file_location;
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+static void die(const char *error)
+{
+	exit(1);
+}
+
 static nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];

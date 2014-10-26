@@ -66,4 +66,13 @@ const char * file_select(const char * title, const char * name);
 */
 long nkc_to_input_key(short nkc, long * ucs4_out);
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+void die(const char * const error) __attribute__ ((noreturn));
+
 #endif

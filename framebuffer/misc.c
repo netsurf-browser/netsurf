@@ -30,9 +30,4 @@ void warn_user(const char *warning, const char *detail)
 	LOG(("%s %s", warning, detail));
 }
 
-void die(const char *error)
-{
-	LOG(("%s", error));
-	exit(1);
-}
 

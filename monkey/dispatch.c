@@ -35,15 +35,18 @@ typedef struct cmdhandler {
 
 static monkey_cmdhandler_t *handler_ring = NULL;
 
-void
+nserror
 monkey_register_handler(const char *cmd, handle_command_fn fn)
 {
   monkey_cmdhandler_t *ret = calloc(sizeof(*ret), 1);
-  if (ret == NULL)
-    die("Unable to allocate handler");
+  if (ret == NULL) {
+    LOG(("Unable to allocate handler"));
+    return NSERROR_NOMEM;
+  }
   ret->cmd = strdup(cmd);
   ret->fn = fn;
   RING_INSERT(handler_ring, ret);
+  return NSERROR_OK;
 }
 
 void

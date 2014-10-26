@@ -97,6 +97,19 @@ static struct gui_drag {
 } gui_drag;
 
 
+/**
+ * Cause an abnormal program termination.
+ *
+ * \note This never returns and is intended to terminate without any cleanup.
+ *
+ * \param error The message to display to the user.
+ */
+static void die(const char *error)
+{
+	LOG(("%s", error));
+	exit(1);
+}
+
 /* queue a redraw operation, co-ordinates are relative to the window */
 static void
 fb_queue_redraw(struct fbtk_widget_s *widget, int x0, int y0, int x1, int y1)

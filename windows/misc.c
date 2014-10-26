@@ -37,8 +37,4 @@ void warn_user(const char *warning, const char *detail)
 	MessageBox(NULL, message, "Warning", MB_ICONWARNING);
 }
 
-void die(const char *error)
-{
-	exit(1);
-}
 

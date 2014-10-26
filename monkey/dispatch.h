@@ -21,7 +21,7 @@
 
 typedef void (*handle_command_fn)(int argc, char **argv);
   
-void monkey_register_handler(const char *cmd, handle_command_fn fn);
+nserror monkey_register_handler(const char *cmd, handle_command_fn fn);
 
 void monkey_process_command(void);
 

@@ -22,10 +22,6 @@
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-void die(const char * const error)
-{
-	[NSException raise: @"NetsurfDie" format: @"Error: %s", error];
-}
 
 void warn_user(const char *warning, const char *detail)
 {
