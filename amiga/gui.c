@@ -3233,8 +3233,8 @@ static void ami_gui_search_ico_refresh(void *p)
  * Count windows, and optionally tabs.
  *
  * \param  window    window to count tabs of
- * \param  tabs      if window > 0, contains the number of tabs in that window,
- *                   unchanged otherwise
+ * \param  tabs      if window > 0, will be updated to contain the number of tabs
+ *                   in that window, unchanged otherwise
  * \return number of windows currently open
  */
 int ami_gui_count_windows(int window, int *tabs)
@@ -3258,8 +3258,6 @@ int ami_gui_count_windows(int window, int *tabs)
 	}
 	return windows;
 }
-
-
 
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 {
@@ -3291,7 +3289,9 @@ gui_window_create(struct browser_window *bw,
 		gui_window_create_flags flags)
 {
 	struct gui_window *g = NULL;
-	ULONG curx=nsoption_int(window_x),cury=nsoption_int(window_y),curw=nsoption_int(window_width),curh=nsoption_int(window_height);
+	ULONG offset = 0;
+	ULONG curx = nsoption_int(window_x), cury = nsoption_int(window_y);
+	ULONG curw = nsoption_int(window_width), curh = nsoption_int(window_height);
 	char nav_west[100],nav_west_s[100],nav_west_g[100];
 	char nav_east[100],nav_east_s[100],nav_east_g[100];
 	char stop[100],stop_s[100],stop_g[100];
@@ -3310,13 +3310,22 @@ gui_window_create(struct browser_window *bw,
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
 	bw->scale = 1.0;
 
-	if(existing)
-	{
-		curx=existing->shared->win->LeftEdge;
-		cury=existing->shared->win->TopEdge;
-		curw=existing->shared->win->Width;
-		curh=existing->shared->win->Height;
+	/* Offset the new window by titlebar + 1 as per AmigaOS style guide.
+	 * If we don't have a clone window we offset by all windows open. */
+	offset = scrn->WBorTop + scrn->Font->ta_YSize + 1;
+
+	if(existing) {
+		curx = existing->shared->win->LeftEdge;
+		cury = existing->shared->win->TopEdge + offset;
+		curw = existing->shared->win->Width;
+		curh = existing->shared->win->Height;
+	} else {
+		if(nsoption_bool(kiosk_mode) == false) {
+			cury += offset * ami_gui_count_windows(0, NULL);
+		}
 	}
+
+	if(curh > (scrn->Height - cury)) curh = scrn->Height - cury;
 
 	g = AllocVecTags(sizeof(struct gui_window), AVT_ClearWithValue, 0, TAG_DONE);
 
