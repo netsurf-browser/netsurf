@@ -537,29 +537,14 @@ STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	int windows = 0, tabs = 0;
+	int window = 0;
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin;
 
+	if(cmd->ac_ArgList[0]) window = *(ULONG *)cmd->ac_ArgList[0];
 	cmd->ac_RC = 0;
 
-	if(!IsMinListEmpty(window_list))
-	{
-		node = (struct nsObject *)GetHead((struct List *)window_list);
-
-		do
-		{
-			nnode=(struct nsObject *)GetSucc((struct Node *)node);
-
-			gwin = node->objstruct;
-
-			if(node->Type == AMINS_WINDOW)
-			{
-				windows++;
-				if((cmd->ac_ArgList[0]) && (*(ULONG *)cmd->ac_ArgList[0] == windows))
-					tabs = gwin->tabs;
-			}
-		} while(node = nnode);
-	}
+	windows = ami_gui_count_windows(window, &tabs);
 
 	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tabs);
 		else sprintf(result, "%d", windows);

@@ -3229,6 +3229,38 @@ static void ami_gui_search_ico_refresh(void *p)
 	search_web_select_provider(-1);
 }
 
+/**
+ * Count windows, and optionally tabs.
+ *
+ * \param  window    window to count tabs of
+ * \param  tabs      if window > 0, contains the number of tabs in that window,
+ *                   unchanged otherwise
+ * \return number of windows currently open
+ */
+int ami_gui_count_windows(int window, int *tabs)
+{
+	int windows = 0;
+	struct nsObject *node, *nnode;
+	struct gui_window_2 *gwin;
+
+	if(!IsMinListEmpty(window_list)) {
+		node = (struct nsObject *)GetHead((struct List *)window_list);
+		do {
+			nnode=(struct nsObject *)GetSucc((struct Node *)node);
+
+			gwin = node->objstruct;
+
+			if(node->Type == AMINS_WINDOW) {
+				windows++;
+				if(window == windows) *tabs = gwin->tabs;
+			}
+		} while((node = nnode));
+	}
+	return windows;
+}
+
+
+
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 {
 	nsurl *url;
