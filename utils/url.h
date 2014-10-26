@@ -33,16 +33,6 @@
 /** File url prefix length. */
 #define FILE_SCHEME_PREFIX_LEN 8
 
-/** Split out components of a url. */
-struct url_components {
-  	const char *buffer;
-	const char *scheme;
-	const char *authority;
-	const char *path;
-	const char *query;
-	const char *fragment;
-};
-
 
 /**
  * Initialise URL routines.
