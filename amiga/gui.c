@@ -3840,7 +3840,6 @@ gui_window_create(struct browser_window *bw,
 					IDCMP_RAWKEY | IDCMP_REFRESHWINDOW |
 					IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 					IDCMP_EXTENDEDMOUSE,
-			WINDOW_HorizProp,1,
 			WINDOW_IDCMPHook,&g->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
 					IDCMP_EXTENDEDMOUSE | IDCMP_REFRESHWINDOW,
@@ -3977,12 +3976,12 @@ static void ami_set_border_gadget_balance(struct gui_window_2 *gwin)
 
 	sz = ami_get_border_gadget_balance(gwin, &size1, &size2);
 
-	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_HSCROLL],
+/*	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_HSCROLL],
 			gwin->win, NULL,
 			GA_RelRight, - size2 - sz,
 			GA_Width, size2,
 			TAG_DONE);
-
+*/
 	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_STATUS],
 			gwin->win, NULL,
 			GA_Width, size1,
@@ -4655,11 +4654,9 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
 	if(gwin->objects[GID_HSCROLL])
 	{
-		GetAttr(PGA_Top, (Object *)gwin->objects[GID_HSCROLL], xs);
-	}
-	else if(gwin->objects[OID_HSCROLL])
-	{
-		GetAttr(SCROLLER_Top, gwin->objects[OID_HSCROLL], xs);
+		GetAttr(SCROLLER_Top, (Object *)gwin->objects[GID_HSCROLL], xs);
+	} else {
+		*xs = 0;
 	}
 
 	*xs /= gwin->bw->scale;
@@ -4722,16 +4719,10 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				PGA_Top, (ULONG)(sx * g->shared->bw->scale),
-				TAG_DONE);
-		}
-		else if(g->shared->objects[OID_HSCROLL])
-		{
-			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
-				g->shared->win, NULL,
 				SCROLLER_Top, (ULONG)(sx * g->shared->bw->scale),
 				TAG_DONE);
 		}
+
 		ami_schedule_redraw(g->shared, true);
 
 		if(nsoption_bool(faster_scroll) == true) g->shared->redraw_scroll = true;
@@ -4771,14 +4762,6 @@ static void gui_window_update_extent(struct gui_window *g)
 		if(g->shared->objects[GID_HSCROLL])
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
-				g->shared->win, NULL,
-				PGA_Total, (ULONG)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale),
-				PGA_Visible, bbox->Width,
-				TAG_DONE);
-		}
-		else if(g->shared->objects[OID_HSCROLL])
-		{
-			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
 				g->shared->win, NULL,
 				SCROLLER_Total, (ULONG)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale),
 				SCROLLER_Visible, bbox->Width,
@@ -5022,7 +5005,6 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			switch( gid ) 
 			{
 				case GID_HSCROLL:
- 				case OID_HSCROLL: 
  				case GID_VSCROLL:
 					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
