@@ -42,17 +42,25 @@ struct MinList ami_unsupportedprotocols;
 struct ami_protocol
 {
 	struct MinNode node;
-	char *protocol;
+	lwc_string *protocol;
 };
 
 struct ami_protocol *ami_openurl_add_protocol(const char *url)
 {
+	nsurl *ns_url
 	struct ami_protocol *ami_p =
 		(struct ami_protocol *)AllocVecTagList(sizeof(struct ami_protocol), NULL);
 
-	if(url_scheme(url, &ami_p->protocol) != NSERROR_OK)
+	if (nsurl_create(url, &ns_url) != NSERROR_OK) {
+		FreeVec(ami_p);
+		return NULL;
+	}
+
+	ami_p->protocol = nsurl_get_component(ns_url, NSURL_SCHEME);
+	if (ami_p->protocol == NULL)
 	{
 		FreeVec(ami_p);
+		nsurl_unref(ns_url);
 		return NULL;
 	}
 
@@ -73,7 +81,7 @@ void ami_openurl_free_list(struct MinList *list)
 		nnode=(struct ami_protocol *)GetSucc((struct Node *)node);
 
 		Remove((struct Node *)node);
-		if(node->protocol) free(node->protocol);
+		if (node->protocol) lwc_string_unref(node->protocol);
 		FreeVec(node);
 		node = NULL;
 	}while(node=nnode);
@@ -91,7 +99,8 @@ BOOL ami_openurl_check_list(struct MinList *list, const char *url)
 	{
 		nnode=(struct ami_protocol *)GetSucc((struct Node *)node);
 
-		if(!strncasecmp(url, node->protocol, strlen(node->protocol)))
+		if (!strncasecmp(url, lwc_string_data(node->protocol),
+				lwc_string_length(node->protocol)))
 			return TRUE;
 	}while(node=nnode);
 
