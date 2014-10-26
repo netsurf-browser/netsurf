@@ -4131,8 +4131,6 @@ static void ami_redraw_callback(void *p)
 		gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
 		gwin->bw->window->c_y, gwin->bw->window->c_h, NULL);
 	}
-
-	gwin->redraw_scheduled = false;
 }
 
 /**
@@ -4147,10 +4145,7 @@ void ami_schedule_redraw(struct gui_window_2 *gwin, bool full_redraw)
 	int ms = 0;
 
 	if(full_redraw) gwin->redraw_required = true;
-	if(gwin->redraw_scheduled == true) return;
-
 	ami_schedule(ms, ami_redraw_callback, gwin);
-	gwin->redraw_scheduled = true;
 }
 
 static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
