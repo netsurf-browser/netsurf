@@ -288,29 +288,6 @@ static void url_destroy_components(const struct url_components *components)
 
 
 /* exported interface documented in utils/url.h */
-nserror url_path(const char *url, char **result)
-{
-	nserror status;
-	struct url_components components;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == NSERROR_OK) {
-		if (!components.path) {
-			status = NSERROR_NOT_FOUND;
-		} else {
-			*result = strdup(components.path);
-			if (!(*result))
-				status = NSERROR_NOMEM;
-		}
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-
-/* exported interface documented in utils/url.h */
 nserror url_nice(const char *url, char **result,
 		bool remove_extensions)
 {

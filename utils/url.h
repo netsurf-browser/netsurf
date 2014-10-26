@@ -95,14 +95,4 @@ nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus, const ch
  */
 nserror url_unescape(const char *str, char **result);
 
-
-/**
- * Extract path segment from an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return NSERROR_OK on success
- */
-nserror url_path(const char *url, char **result);
-
 #endif
