@@ -178,6 +178,7 @@ BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
 int screen_signal = -1;
 ULONG sz_gad_width = 0;
+ULONG sz_gad_height = 0;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
@@ -200,8 +201,6 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
-static void ami_set_border_gadget_balance(struct gui_window_2 *gwin);
-static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
@@ -1632,6 +1631,45 @@ static void ami_gui_refresh_favicon(void *p)
 	gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
 }
 
+/* Gets the size that border gadget 1 (status) needs to be.
+ * Returns the height of the size gadget as a convenience.
+ */
+static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width, ULONG *height)
+{
+	ULONG available_width;
+
+	if((sz_gad_width == 0) || (sz_gad_height == 0)) {
+		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
+		GetGUIAttrs(NULL, dri,
+			GUIA_SizeGadgetWidth, &sz_gad_width,
+			GUIA_SizeGadgetHeight, &sz_gad_height,
+		TAG_DONE);
+		FreeScreenDrawInfo(scrn, dri);
+	}
+
+	available_width = gwin->win->Width - scrn->WBorLeft - sz_gad_width;
+
+	*width = available_width;
+	*height = sz_gad_height;
+
+	return sz_gad_width;
+}
+
+static void ami_set_border_gadget_size(struct gui_window_2 *gwin)
+{
+	/* Reset gadget widths according to new calculation */
+	ULONG size1, size2, sz;
+
+	sz = ami_get_border_gadget_size(gwin, &size1, &size2);
+
+	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_STATUS],
+			gwin->win, NULL,
+			GA_Width, size1,
+			TAG_DONE);
+
+	RefreshWindowFrame(gwin->win);
+}
+
 static void ami_handle_msg(void)
 {
 	ULONG result,storage = 0,x,y,xs,ys,width=800,height=600;
@@ -2329,7 +2367,7 @@ static void ami_handle_msg(void)
 
 						case AMINS_WINDOW:
 							ami_gui_vscroll_update(gwin);
-							ami_set_border_gadget_balance(gwin);
+							ami_set_border_gadget_size(gwin);
 							ami_throbber_redraw_schedule(0, gwin->bw->window);
 
 							if(gwin->tabs)
@@ -3872,35 +3910,19 @@ gui_window_create(struct browser_window *bw,
 
 	if(nsoption_bool(kiosk_mode) == false)
 	{
-		ULONG sz, size1, size2;
+		ULONG sz, width, height;
 		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 		
-		sz = ami_get_border_gadget_balance(g->shared,
-				(ULONG *)&size1, (ULONG *)&size2);
-/*
-		g->shared->objects[GID_HSCROLL] = NewObject(
-				NULL,
-				"scrollergclass",
-				GA_ID, GID_HSCROLL,
-				PGA_Freedom, FREEHORIZ,
-				GA_RelRight, 1 - size2 - sz,
-				GA_Width, size2,
-				GA_BottomBorder, TRUE,
-				GA_Immediate, TRUE,
-				ICA_TARGET, ICTARGET_IDCMP,
-				GA_DrawInfo, dri,
-				TAG_DONE);
+		sz = ami_get_border_gadget_size(g->shared,
+				(ULONG *)&width, (ULONG *)&height);
 
-		GetAttr(GA_Height, (Object *)g->shared->objects[GID_HSCROLL],
-				(ULONG *)&sz);
-*/  /* NB: sz should now be the height of the size gadget */
 		g->shared->objects[GID_STATUS] = NewObject(
 				NULL,
 				"frbuttonclass",
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
-				GA_RelBottom, -((2 + sz + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
-				GA_Width, size1,
+				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
+				GA_Width, width,
 				GA_DrawInfo, dri,
 				GA_BottomBorder, TRUE,
 				GA_ReadOnly, TRUE,
@@ -3915,7 +3937,6 @@ gui_window_create(struct browser_window *bw,
 					IA_Screen, scrn,
 					GAUGEIA_Level, 0,
 					TAG_DONE),
-//				GA_Next, g->shared->objects[GID_HSCROLL],
 				TAG_DONE);
 
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
@@ -3925,7 +3946,7 @@ gui_window_create(struct browser_window *bw,
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_STATUS],
 			g->shared->win, NULL,
-			GA_Width, size1,
+			GA_Width, width,
 			TAG_DONE);
 
 		RefreshGadgets((APTR)g->shared->objects[GID_STATUS],
@@ -3935,17 +3956,6 @@ gui_window_create(struct browser_window *bw,
 				
 		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
 		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
-	}
-	else
-	{
-		GetAttr(WINDOW_HorizObject, g->shared->objects[OID_MAIN],
-				(ULONG *)&g->shared->objects[OID_HSCROLL]);
-
-		RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[OID_HSCROLL],
-				g->shared->win, NULL,
-				GA_ID, OID_HSCROLL,
-				ICA_TARGET, ICTARGET_IDCMP,
-				TAG_DONE);
 	}
 
 	g->shared->rmbtrapped = FALSE;
@@ -3967,52 +3977,6 @@ gui_window_create(struct browser_window *bw,
 	ScreenToFront(scrn);
 
 	return g;
-}
-
-static void ami_set_border_gadget_balance(struct gui_window_2 *gwin)
-{
-	/* Reset gadget widths according to new calculation */
-	ULONG size1, size2, sz;
-
-	sz = ami_get_border_gadget_balance(gwin, &size1, &size2);
-
-/*	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_HSCROLL],
-			gwin->win, NULL,
-			GA_RelRight, - size2 - sz,
-			GA_Width, size2,
-			TAG_DONE);
-*/
-	RefreshSetGadgetAttrs((struct Gadget *)(APTR)gwin->objects[GID_STATUS],
-			gwin->win, NULL,
-			GA_Width, size1,
-			TAG_DONE);
-
-	RefreshWindowFrame(gwin->win);
-}
-
-static ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2)
-{
-	/* Get the sizes that border gadget 1 (status) and 2 (hscroller) need to be.
-	** Returns the width of the size gadget as a convenience.
-	*/
-
-	ULONG available_width;
-	float gad1percent;
-
-	if(sz_gad_width == 0) {
-		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
-		GetGUIAttrs(NULL, dri, GUIA_SizeGadgetWidth, &sz_gad_width, TAG_DONE);
-		FreeScreenDrawInfo(scrn, dri);
-	}
-
-	available_width = gwin->win->Width - scrn->WBorLeft - sz_gad_width;
-
-	gad1percent = nsoption_int(toolbar_status_size) / 10000.0;
-
-	*size1 = (ULONG)(available_width * gad1percent);
-	*size2 = (ULONG)(available_width * (1 - gad1percent));
-
-	return sz_gad_width;
 }
 
 void ami_close_all_tabs(struct gui_window_2 *gwin)
