@@ -4441,7 +4441,6 @@ static void amiga_window_reformat(struct gui_window *gw)
 	if (gw != NULL) {
 		GetAttr(SPACE_AreaBox, (Object *)gw->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
-		ami_gui_scroller_update(gw->shared);
 		gw->shared->redraw_scroll = false;
 	}
 }
@@ -4731,6 +4730,8 @@ static void gui_window_update_extent(struct gui_window *g)
 				TAG_DONE);
 		}
 	}
+
+	ami_gui_scroller_update(g->shared);
 	g->shared->new_content = true;
 }
 
