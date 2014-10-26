@@ -1435,6 +1435,45 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	}
 }
 
+/* Add a horizontal scroller, if not already present
+ * Returns true if changed, false otherwise */
+static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
+{
+	struct TagItem attrs[2];
+
+	if(gwin->objects[GID_HSCROLL] != NULL) return false;
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
+	gwin->objects[GID_HSCROLL] = ScrollerObject,
+					GA_ID, GID_HSCROLL,
+					GA_RelVerify, TRUE,
+					SCROLLER_Orientation, SORIENT_HORIZ,
+					ICA_TARGET, ICTARGET_IDCMP,
+				ScrollerEnd;
+
+	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_ADDCHILD,
+			gwin->win, gwin->objects[GID_HSCROLL], attrs);
+
+	return true;
+}
+
+/* Remove the horizontal scroller, if present */
+static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
+{
+	if(gwin->objects[GID_HSCROLL] == NULL) return false;
+
+	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_HSCROLL]);
+
+	gwin->objects[GID_HSCROLL] = NULL;
+
+	return true;
+}
+
 /* Add a vertical scroller, if not already present
  * Returns true if changed, false otherwise */
 static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
@@ -1482,7 +1521,9 @@ static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
  */
 static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 {
-	bool rethink = false;
+	int h = 1, w = 1, wh = 0, ww = 0;
+	bool rethinkv = false;
+	bool rethinkh = false;
 	browser_scrolling hscroll = BW_SCROLLING_YES;
 	browser_scrolling vscroll = BW_SCROLLING_YES;
 
@@ -1490,21 +1531,30 @@ static void ami_gui_vscroll_update(struct gui_window_2 *gwin)
 
 	/* We only bother with vscroll, as the hscroller is embedded in the
 	   bottom window border with the status bar, so toggling it is pointless */
-
-	if((vscroll == BW_SCROLLING_NO) || browser_window_is_frameset(gwin->bw) == true) {
-		rethink = ami_gui_vscroll_remove(gwin);
+	if(browser_window_is_frameset(gwin->bw) == true) {
+		rethinkv = ami_gui_vscroll_remove(gwin);
+		rethinkh = ami_gui_hscroll_remove(gwin);
 	} else {
-		int h, w, wh, ww;
 		if((browser_window_get_extents(gwin->bw, false, &w, &h) == NSERROR_OK)) {
 			gui_window_get_dimensions(gwin->bw->window, &ww, &wh, false);
-			if (h > wh) rethink = ami_gui_vscroll_add(gwin);
-				else rethink = ami_gui_vscroll_remove(gwin);
+		}
+
+		if(vscroll == BW_SCROLLING_NO) {
+			rethinkv = ami_gui_vscroll_remove(gwin);
 		} else {
-			rethink = ami_gui_vscroll_add(gwin);
+			if (h > wh) rethinkv = ami_gui_vscroll_add(gwin);
+				else rethinkv = ami_gui_vscroll_remove(gwin);
+		}
+
+		if(hscroll == BW_SCROLLING_NO) {
+			rethinkh = ami_gui_hscroll_remove(gwin);
+		} else {
+			if (w > ww) rethinkh = ami_gui_hscroll_add(gwin);
+				else rethinkh = ami_gui_hscroll_remove(gwin);
 		}
 	}
 
-	if(rethink) {
+	if(rethinkv || rethinkh) {
 		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
@@ -3752,10 +3802,12 @@ gui_window_create(struct browser_window *bw,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = HGroupObject,
-					LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
-						GA_ID,GID_BROWSER,
-						SPACE_Transparent,TRUE,
-					SpaceEnd,
+					LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = VGroupObject,
+						LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
+							GA_ID,GID_BROWSER,
+							SPACE_Transparent,TRUE,
+						SpaceEnd,
+					EndGroup,
 				EndGroup,
 			EndGroup,
 		EndWindow;
@@ -3797,10 +3849,14 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_BuiltInScroll,TRUE,
 			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = HGroupObject,
 			LAYOUT_SpaceOuter, TRUE,
-				LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
-					GA_ID,GID_BROWSER,
-					SPACE_Transparent,TRUE,
-				SpaceEnd,
+				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = HGroupObject,
+					LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = VGroupObject,
+						LAYOUT_AddChild, g->shared->objects[GID_BROWSER] = SpaceObject,
+							GA_ID,GID_BROWSER,
+							SPACE_Transparent,TRUE,
+						SpaceEnd,
+					EndGroup,
+				EndGroup,
 			EndGroup,
 		EndWindow;
 	}
@@ -3822,7 +3878,7 @@ gui_window_create(struct browser_window *bw,
 		
 		sz = ami_get_border_gadget_balance(g->shared,
 				(ULONG *)&size1, (ULONG *)&size2);
-
+/*
 		g->shared->objects[GID_HSCROLL] = NewObject(
 				NULL,
 				"scrollergclass",
@@ -3838,7 +3894,7 @@ gui_window_create(struct browser_window *bw,
 
 		GetAttr(GA_Height, (Object *)g->shared->objects[GID_HSCROLL],
 				(ULONG *)&sz);
-
+*/  /* NB: sz should now be the height of the size gadget */
 		g->shared->objects[GID_STATUS] = NewObject(
 				NULL,
 				"frbuttonclass",
@@ -3860,7 +3916,7 @@ gui_window_create(struct browser_window *bw,
 					IA_Screen, scrn,
 					GAUGEIA_Level, 0,
 					TAG_DONE),
-				GA_Next, g->shared->objects[GID_HSCROLL],
+//				GA_Next, g->shared->objects[GID_HSCROLL],
 				TAG_DONE);
 
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
