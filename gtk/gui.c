@@ -97,10 +97,6 @@ static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
 static void nsgtk_ssl_reject(GtkWidget *w, gpointer data);
 static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event,
 		gpointer data);
-#ifdef WITH_PDF_EXPORT
-static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data);
-static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
-#endif
 
 #define THROBBER_FRAMES 9
 

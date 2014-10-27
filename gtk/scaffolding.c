@@ -38,8 +38,8 @@
 #include "desktop/print.h"
 #include "desktop/save_complete.h"
 #ifdef WITH_PDF_EXPORT
-#include "desktop/save_pdf/font_haru.h"
-#include "desktop/save_pdf/pdf_plotters.h"
+#include "desktop/font_haru.h"
+#include "desktop/save_pdf.h"
 #endif
 #include "desktop/save_text.h"
 #include "desktop/searchweb.h"
