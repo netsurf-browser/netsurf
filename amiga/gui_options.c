@@ -1767,7 +1767,11 @@ static void ami_gui_opts_use(bool save)
 	}
 
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_DLDIR],(ULONG *)&data);
-	nsoption_set_charp(download_dir, (char *)strdup((char *)data));
+	if(strcmp(data, nsoption_charp(download_dir)) != 0) {
+		nsoption_set_charp(download_dir, (char *)strdup((char *)data));
+		ami_file_req_free();
+		ami_file_req_init();
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if (data) {
