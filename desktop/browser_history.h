@@ -48,8 +48,17 @@ nserror browser_window_history_clone(const struct browser_window *existing,
  */
 nserror browser_window_history_add(struct browser_window *bw,
 		struct hlcache_handle *content, lwc_string *frag_id);
-void browser_window_history_update(struct browser_window *bw,
+
+/**
+ * Update the thumbnail for the current entry.
+ *
+ * \param bw The browser window to update the history within.
+ * \param content content for current entry
+ * \return NSERROR_OK or error code on faliure.
+ */
+nserror browser_window_history_update(struct browser_window *bw,
 		struct hlcache_handle *content);
+
 void browser_window_history_destroy(struct browser_window *bw);
 void browser_window_history_back(struct browser_window *bw, bool new_window);
 void browser_window_history_forward(struct browser_window *bw, bool new_window);

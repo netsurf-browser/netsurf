@@ -555,14 +555,8 @@ nserror browser_window_history_add(struct browser_window *bw,
 }
 
 
-/**
- * Update the thumbnail for the current entry.
- *
- * \param  history  opaque history structure, as returned by history_create()
- * \param  content  content for current entry
- */
-
-void browser_window_history_update(struct browser_window *bw,
+/* exported interface documented in desktop/browser_history.h */
+nserror browser_window_history_update(struct browser_window *bw,
 		struct hlcache_handle *content)
 {
 	struct history *history;
@@ -572,23 +566,24 @@ void browser_window_history_update(struct browser_window *bw,
 
 	history = bw->history;
 
-	if (!history || !history->current || !history->current->bitmap)
-		return;
+	if (!history || !history->current || !history->current->bitmap) {
+		return NSERROR_INVALID;
+	}
 
 	assert(history->current->page.url);
 	assert(history->current->page.title);
 
 	title = strdup(content_get_title(content));
-	if (!title) {
-		warn_user("NoMemory", 0);
-		return;
+	if (title == NULL) {
+		return NSERROR_NOMEM;
 	}
 
-	assert(title);
 	free(history->current->page.title);
 	history->current->page.title = title;
 
 	thumbnail_create(content, history->current->bitmap, NULL);
+
+	return NSERROR_OK;
 }
 
 
