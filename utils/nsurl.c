@@ -16,8 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * NetSurf URL handling (implementation).
+/**
+ * \file
+ * NetSurf URL handling implementation.
+ *
+ * This is the common implementation of all URL handling within the
+ * browser. This implemntation is based upon RFC3986 although this has
+ * been superceeded by https://url.spec.whatwg.org/ which is based on
+ * actual contemporary implementations.
  */
 
 #include <assert.h>
