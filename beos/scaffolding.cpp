@@ -2166,18 +2166,21 @@ void gui_window_set_status(struct gui_window *_g, const char *text)
 	g->top_view->UnlockLooper();
 }
 
-nserror gui_window_set_url(struct gui_window *_g, const char *url)
+nserror gui_window_set_url(struct gui_window *gw, const char *url)
 {
-	struct beos_scaffolding *g = nsbeos_get_scaffold(_g);
-	if (g->top_level != _g) return;
+	struct beos_scaffolding *g;
+
+        g = nsbeos_get_scaffold(gw);
+	if (g->top_level != gw)
+                return NSERROR_OK;
+
 	assert(g->status_bar);
 
-	if (!g->top_view->LockLooper())
-		return;
+	if (g->top_view->LockLooper()) {
+                g->url_bar->SetText(url);
 
-	g->url_bar->SetText(url);
-
-	g->top_view->UnlockLooper();
+                g->top_view->UnlockLooper();
+        }
 
         return NSERROR_OK;
 }
