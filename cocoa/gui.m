@@ -194,9 +194,10 @@ static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape
 	}
 }
 
-static void gui_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_window_set_url(struct gui_window *g, const char *url)
 {
 	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
+        return NSERROR_OK;
 }
 
 static void gui_window_start_throbber(struct gui_window *g)

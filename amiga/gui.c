@@ -4774,12 +4774,11 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 	}
 }
 
-static void gui_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_window_set_url(struct gui_window *g, const char *url)
 {
 	int cur_tab = 0;
 
 	if(!g) return;
-	if(!url) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
@@ -4791,6 +4790,8 @@ static void gui_window_set_url(struct gui_window *g, const char *url)
 	}
 
 	ami_update_buttons(g->shared);
+
+	return NSERROR_OK;
 }
 
 

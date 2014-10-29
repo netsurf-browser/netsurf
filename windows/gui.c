@@ -760,6 +760,8 @@ nsws_window_command(HWND hwnd,
 		    int identifier,
 		    HWND ctrl_window)
 {
+	nserror ret;
+
 	LOG(("notification_code %x identifier %x ctrl_window %p",
 	     notification_code, identifier,  ctrl_window));
 
@@ -781,11 +783,14 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_FILE_OPEN_WINDOW:
-		browser_window_create(BW_CREATE_NONE,
+		ret = browser_window_create(BW_CREATE_NONE,
 				      NULL,
 				      NULL,
 				      gw->bw,
 				      NULL);
+		if (ret != NSERROR_OK) {
+			warn_user(messages_get_errorcode(ret), 0);
+		}
 		break;
 
 	case IDM_FILE_CLOSE_WINDOW:
@@ -1657,11 +1662,11 @@ struct nsws_pointers *nsws_get_pointers(void)
 	return &nsws_pointer;
 }
 
-static void gui_window_set_url(struct gui_window *w, const char *url)
+static nserror gui_window_set_url(struct gui_window *w, const char *url)
 {
-	if (w == NULL)
-		return;
 	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) url);
+
+	return NSERROR_OK;
 }
 
 

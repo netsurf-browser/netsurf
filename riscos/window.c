@@ -1052,13 +1052,14 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 
 /* exported function documented in riscos/window.h */
-void gui_window_set_url(struct gui_window *g, const char *url)
+nserror gui_window_set_url(struct gui_window *g, const char *url)
 {
-	if (!g->toolbar)
-		return;
+	if (g->toolbar) {
+		ro_toolbar_set_url(g->toolbar, url, true, false);
+		ro_gui_url_complete_start(g->toolbar);
+	}
 
-	ro_toolbar_set_url(g->toolbar, url, true, false);
-	ro_gui_url_complete_start(g->toolbar);
+	return NSERROR_OK;
 }
 
 

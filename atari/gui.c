@@ -115,7 +115,7 @@ EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
-static void gui_window_set_url(struct gui_window *w, const char *url);
+static nserror gui_window_set_url(struct gui_window *w, const char *url);
 
 /**
  * Core atari event processing.
@@ -553,7 +553,7 @@ void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape)
 }
 
 
-static void gui_window_set_url(struct gui_window *w, const char *url)
+static nserror gui_window_set_url(struct gui_window *w, const char *url)
 {
     int l;
 
@@ -572,6 +572,8 @@ static void gui_window_set_url(struct gui_window *w, const char *url)
     if(input_window == w->root->active_gui_window) {
 	toolbar_set_url(w->root->toolbar, url);
     }
+
+    return NSERROR_OK;
 }
 
 char * gui_window_get_url(struct gui_window *gw)

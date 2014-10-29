@@ -769,7 +769,6 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 
 
 	if ((ret = calloc(1, sizeof(struct browser_window))) == NULL) {
-		warn_user("NoMemory", 0);
 		return NSERROR_NOMEM;
 	}
 
@@ -1784,18 +1783,18 @@ static void browser_window_destroy_internal(struct browser_window *bw)
  * \param bw	Browser window to update URL bar for.
  * \param url	URL for content displayed by bw including any fragment.
  */
-static inline void browser_window_refresh_url_bar_internal(
-		struct browser_window *bw, nsurl *url)
+static inline nserror 
+browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 {
 	assert(bw);
 	assert(url);
 
-	if (bw->parent != NULL) {
-		/* Not root window; don't set a URL in GUI URL bar */
-		return;
+	if ((bw->parent != NULL) || (bw->window == NULL)) {
+		/* Not root window or no gui window so do not set a URL */
+		return NSERROR_OK;
 	}
 
-	guit->window->set_url(bw->window, nsurl_access(url));
+	return guit->window->set_url(bw->window, nsurl_access(url));
 }
 
 
@@ -1811,39 +1810,38 @@ void browser_window_destroy(struct browser_window *bw)
 }
 
 /* exported interface, documented in desktop/browser.h */
-void browser_window_refresh_url_bar(struct browser_window *bw)
+nserror browser_window_refresh_url_bar(struct browser_window *bw)
 {
+	nserror ret;
+	nsurl *display_url;
+
 	assert(bw);
 
 	if (bw->parent != NULL) {
 		/* Not root window; don't set a URL in GUI URL bar */
-		return;
+		return NSERROR_OK;
 	}
 
 	if (bw->current_content == NULL) {
-		/* TODO: set "about:blank"? */
-		return;
-	}
-
-	if (bw->frag_id == NULL) {
-		browser_window_refresh_url_bar_internal(bw,
+		/* no content so return about:blank */
+		ret = browser_window_refresh_url_bar_internal(bw,
+				corestring_nsurl_about_blank);
+	} else if (bw->frag_id == NULL) {
+		ret = browser_window_refresh_url_bar_internal(bw,
 				hlcache_handle_get_url(bw->current_content));
 	} else {
-		nsurl *display_url;
-		nserror error;
-
 		/* Combine URL and Fragment */
-		error = nsurl_refragment(
+		ret = nsurl_refragment(
 				hlcache_handle_get_url(bw->current_content),
 				bw->frag_id, &display_url);
-		if (error != NSERROR_OK) {
-			warn_user("NoMemory", 0);
-			return;
+		if (ret == NSERROR_OK) {
+			ret = browser_window_refresh_url_bar_internal(bw,
+					display_url);
+			nsurl_unref(display_url);
 		}
-
-		browser_window_refresh_url_bar_internal(bw, display_url);
-		nsurl_unref(display_url);
 	}
+
+	return ret;
 }
 
 
@@ -1989,11 +1987,13 @@ nserror browser_window_navigate(struct browser_window *bw,
 	case NSERROR_OK:
 		bw->loading_content = c;
 		browser_window_start_throbber(bw);
-		browser_window_refresh_url_bar_internal(bw, url);
+		error = browser_window_refresh_url_bar_internal(bw, url);
 		break;
 
 	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
-		/** @todo does this always try and download even unverifiable content? */
+		/** \todo does this always try and download even
+		 * unverifiable content?
+		 */
 		error = guit->browser->launch_url(url);
 		break;
 
@@ -2098,7 +2098,8 @@ const char* browser_window_get_title(struct browser_window *bw)
 		return content_get_title(bw->current_content);
 	}
 
-	return NULL;
+	/* no content so return about:blank */
+	return nsurl_access(corestring_nsurl_about_blank);	
 }
 
 /* Exported interface, documented in browser.h */

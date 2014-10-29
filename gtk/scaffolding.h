@@ -235,7 +235,7 @@ nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
 
 /* core acessors */
 void gui_window_set_title(struct gui_window *g, const char *title);
-void gui_window_set_url(struct gui_window *g, const char *url);
+nserror gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 

@@ -42,8 +42,9 @@ static void gui_default_window_set_title(struct gui_window *g, const char *title
 {
 }
 
-static void gui_default_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_default_window_set_url(struct gui_window *g, const char *url)
 {
+	return NSERROR_OK;
 }
 
 static void gui_default_window_start_throbber(struct gui_window *g)

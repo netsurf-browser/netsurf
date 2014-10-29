@@ -1896,10 +1896,11 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	}
 }
 
-static void
+static nserror
 gui_window_set_url(struct gui_window *g, const char *url)
 {
 	fbtk_set_text(g->url, url);
+	return NSERROR_OK;
 }
 
 static void

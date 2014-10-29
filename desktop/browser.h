@@ -357,7 +357,7 @@ void browser_window_set_gadget_filename(struct browser_window *bw,
  *
  * \param bw Browser window to update URL bar for.
  */
-void browser_window_refresh_url_bar(struct browser_window *bw);
+nserror browser_window_refresh_url_bar(struct browser_window *bw);
 
 /**
  * Handle mouse clicks in a browser window.
