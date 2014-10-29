@@ -1332,7 +1332,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 				/* This is safe as we've just added the URL */
 				global_history_add(urldb_get_url(url));
 			}
-			/* TODO: Urldb / Thumbnails / Local history brokenness
+			/** \todo Urldb / Thumbnails / Local history brokenness
 			 *
 			 * We add to local history after calling urldb_add_url
 			 * rather than in the block above.  If urldb_add_url

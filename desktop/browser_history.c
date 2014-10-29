@@ -482,18 +482,8 @@ nserror browser_window_history_clone(const struct browser_window *existing,
 }
 
 
-/**
- * Insert a url into the history tree.
- *
- * \param  bw       browser window with history object
- * \param  content  content to add to history
- * \param  frag_id  fragment identifier, or NULL.
- *
- * The page is added after the current entry and becomes current.
- */
-
-
-void browser_window_history_add(struct browser_window *bw,
+/* exported interface documented in desktop/browser_history.h */
+nserror browser_window_history_add(struct browser_window *bw,
 		struct hlcache_handle *content, lwc_string *frag_id)
 {
 	struct history *history;
@@ -510,14 +500,14 @@ void browser_window_history_add(struct browser_window *bw,
 
 	/* allocate space */
 	entry = malloc(sizeof *entry);
-	if (entry == NULL)
-		return;
+	if (entry == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	title = strdup(content_get_title(content));
 	if (title == NULL) {
-		warn_user("NoMemory", 0);
 		free(entry);
-		return;
+		return NSERROR_NOMEM;
 	}
 
 	entry->page.url = nsurl_ref(nsurl);
@@ -545,16 +535,13 @@ void browser_window_history_add(struct browser_window *bw,
 	/* if we have a thumbnail, don't update until the page has finished
 	 * loading */
 	bitmap = urldb_get_thumbnail(nsurl);
-	if (!bitmap) {
+	if (bitmap == NULL) {
 		LOG(("Creating thumbnail for %s", nsurl_access(nsurl)));
 		bitmap = bitmap_create(WIDTH, HEIGHT,
 				BITMAP_NEW | BITMAP_CLEAR_MEMORY |
 				BITMAP_OPAQUE);
-		if (!bitmap) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-		if (thumbnail_create(content, bitmap, nsurl) == false) {
+		if ((bitmap != NULL) &&
+		    (thumbnail_create(content, bitmap, nsurl) == false)) {
 			/* Thumbnailing failed. Ignore it silently */
 			bitmap_destroy(bitmap);
 			bitmap = NULL;
@@ -563,6 +550,8 @@ void browser_window_history_add(struct browser_window *bw,
 	entry->bitmap = bitmap;
 
 	browser_window_history__layout(history);
+
+	return NSERROR_OK;
 }
 
 

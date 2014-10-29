@@ -36,7 +36,17 @@ struct redraw_context;
 nserror browser_window_history_create(struct browser_window *bw);
 nserror browser_window_history_clone(const struct browser_window *existing,
 		struct browser_window *clone);
-void browser_window_history_add(struct browser_window *bw,
+/**
+ * Insert a url into the history tree.
+ *
+ * \param  bw       browser window with history object
+ * \param  content  content to add to history
+ * \param  frag_id  fragment identifier, or NULL.
+ * \return NSERROR_OK or error code on faliure.
+ *
+ * The page is added after the current entry and becomes current.
+ */
+nserror browser_window_history_add(struct browser_window *bw,
 		struct hlcache_handle *content, lwc_string *frag_id);
 void browser_window_history_update(struct browser_window *bw,
 		struct hlcache_handle *content);
