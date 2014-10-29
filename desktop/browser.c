@@ -752,6 +752,7 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 {
 	gui_window_create_flags gw_flags = GW_CREATE_NONE;
 	struct browser_window *ret;
+	nserror err;
 
 	/* Check parameters */
 	if (flags & BW_CREATE_CLONE) {
@@ -778,7 +779,11 @@ nserror browser_window_create(enum browser_window_create_flags flags,
 				  NULL);
 
 	/* Initialise common parts */
-	browser_window_initialise_common(flags, ret, existing);
+	err = browser_window_initialise_common(flags, ret, existing);
+	if (err != NSERROR_OK) {
+		browser_window_destroy(ret);
+		return err;
+	}
 
 	/* window characteristics */
 	ret->browser_window_type = BROWSER_WINDOW_NORMAL;

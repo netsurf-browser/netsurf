@@ -416,9 +416,9 @@ static bool browser_window_history__enumerate_entry(
 /**
  * Create a new history tree for a browser window window.
  *
- * \param  bw	browser window to create history for.
+ * \param bw browser window to create history for.
  *
- * \return  NSERROR_OK or appropriate error otherwise
+ * \return NSERROR_OK or appropriate error otherwise
  */
 
 nserror browser_window_history_create(struct browser_window *bw)
@@ -428,10 +428,10 @@ nserror browser_window_history_create(struct browser_window *bw)
 	bw->history = NULL;
 
 	history = calloc(1, sizeof *history);
-	if (!history) {
-		warn_user("NoMemory", 0);
+	if (history == NULL) {
 		return NSERROR_NOMEM;
 	}
+
 	history->width = RIGHT_MARGIN / 2;
 	history->height = BOTTOM_MARGIN / 2;
 
@@ -473,7 +473,6 @@ nserror browser_window_history_clone(const struct browser_window *existing,
 			new_history->start);
 	if (!new_history->start) {
 		LOG(("Insufficient memory to clone history"));
-		warn_user("NoMemory", 0);
 		browser_window_history_destroy(clone);
 		clone->history = NULL;
 		return NSERROR_NOMEM;
