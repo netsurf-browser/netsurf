@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <proto/exec.h>
 
+#include "utils/errors.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 
