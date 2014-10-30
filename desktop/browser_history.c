@@ -413,14 +413,7 @@ static bool browser_window_history__enumerate_entry(
 /* -------------------------------------------------------------------------- */
 
 
-/**
- * Create a new history tree for a browser window window.
- *
- * \param bw browser window to create history for.
- *
- * \return NSERROR_OK or appropriate error otherwise
- */
-
+/* exported interface documented in desktop/browser_history.h */
 nserror browser_window_history_create(struct browser_window *bw)
 {
 	struct history *history;
@@ -440,15 +433,7 @@ nserror browser_window_history_create(struct browser_window *bw)
 }
 
 
-/**
- * Clone a bw's history tree for new bw
- *
- * \param  existing	browser window with history to clone.
- * \param  clone	browser window to make cloned history for.
- *
- * \return  NSERROR_OK or appropriate error otherwise
- */
-
+/* exported interface documented in desktop/browser_history.h */
 nserror browser_window_history_clone(const struct browser_window *existing,
 		struct browser_window *clone)
 {
@@ -587,12 +572,8 @@ nserror browser_window_history_update(struct browser_window *bw,
 }
 
 
-/**
- * Free a history structure.
- *
- * \param  history  opaque history structure, as returned by history_create()
- */
 
+/* exported interface documented in desktop/browser_history.h */
 void browser_window_history_destroy(struct browser_window *bw)
 {
 	assert(bw != NULL);
@@ -607,48 +588,34 @@ void browser_window_history_destroy(struct browser_window *bw)
 }
 
 
-/**
- * Go back in the history.
- *
- * \param  bw       browser window
- * \param  history  history of the window
- * \param  new_window  whether to open in new window
- */
 
-void browser_window_history_back(struct browser_window *bw, bool new_window)
+/* exported interface documented in desktop/browser_history.h */
+nserror browser_window_history_back(struct browser_window *bw, bool new_window)
 {
 	if (!bw || !bw->history || !bw->history->current ||
-			!bw->history->current->back)
-		return;
-	browser_window_history_go(bw, bw->history->current->back, new_window);
+	    !bw->history->current->back) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	return browser_window_history_go(bw, bw->history->current->back,
+					 new_window);
 }
 
 
-/**
- * Go forward in the history.
- *
- * \param  bw       browser window
- * \param  history  history of the window
- * \param  new_window  whether to open in new window
- */
 
-void browser_window_history_forward(struct browser_window *bw, bool new_window)
+/* exported interface documented in desktop/browser_history.h */
+nserror browser_window_history_forward(struct browser_window *bw,
+				       bool new_window)
 {
 	if (!bw || !bw->history || !bw->history->current ||
-			!bw->history->current->forward_pref)
-		return;
-	browser_window_history_go(bw, bw->history->current->forward_pref,
-			new_window);
+	    !bw->history->current->forward_pref) {
+		return NSERROR_BAD_PARAMETER;
+	}
+	return browser_window_history_go(bw, bw->history->current->forward_pref,
+					 new_window);
 }
 
 
-/**
- * Check whether it is pssible to go back in the history.
- *
- * \param  history  history of the window
- * \return true if the history can go back, false otherwise
- */
-
+/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_back_available(struct browser_window *bw)
 {
 	return (bw && bw->history && bw->history->current &&
@@ -656,13 +623,7 @@ bool browser_window_history_back_available(struct browser_window *bw)
 }
 
 
-/**
- * Check whether it is pssible to go forwards in the history.
- *
- * \param  history  history of the window
- * \return true if the history can go forwards, false otherwise
- */
-
+/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_forward_available(struct browser_window *bw)
 {
 	return (bw && bw->history && bw->history->current &&
@@ -670,8 +631,8 @@ bool browser_window_history_forward_available(struct browser_window *bw)
 }
 
 
-/* Documented in local_history.h */
-void browser_window_history_go(struct browser_window *bw,
+/* exported interface documented in desktop/browser_history.h */
+nserror browser_window_history_go(struct browser_window *bw,
 		struct history_entry *entry, bool new_window)
 {
 	struct history *history;
@@ -687,8 +648,7 @@ void browser_window_history_go(struct browser_window *bw,
 				entry->page.frag_id, &url);
 
 		if (error != NSERROR_OK) {
-			warn_user("NoMemory", 0);
-			return;
+			return error;
 		}
 	} else {
 		url = nsurl_ref(entry->page.url);
@@ -701,28 +661,19 @@ void browser_window_history_go(struct browser_window *bw,
 		error = browser_window_create(BW_CREATE_CLONE,
 				url, NULL, bw, NULL);
 		history->current = current;
-		if (error != NSERROR_OK) {
-			nsurl_unref(url);
-			return;
-		}
 	} else {
 		history->current = entry;
-		browser_window_navigate(bw, url, NULL,
+		error = browser_window_navigate(bw, url, NULL,
 				BW_NAVIGATE_NONE, NULL, NULL, NULL);
 	}
 
 	nsurl_unref(url);
+
+	return error;
 }
 
 
-/**
- * Get the dimensions of a history.
- *
- * \param  history  history to measure
- * \param  width    updated to width
- * \param  height   updated to height
- */
-
+/* exported interface documented in desktop/browser_history.h */
 void browser_window_history_size(struct browser_window *bw,
 		int *width, int *height)
 {
@@ -734,13 +685,7 @@ void browser_window_history_size(struct browser_window *bw,
 }
 
 
-/**
- * Redraw a history.
- *
- * \param history	history to render
- * \param ctx		current redraw context
- */
-
+/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_redraw(struct browser_window *bw,
 		const struct redraw_context *ctx)
 {
@@ -760,19 +705,8 @@ bool browser_window_history_redraw(struct browser_window *bw,
 			0, 0, 0, 0, 0, 0, false, ctx);
 }
 
-/**
- * Redraw part of a history.
- *
- * \param  history	history to render
- * \param  x0		left X co-ordinate of redraw area
- * \param  y0		top Y co-ordinate of redraw area
- * \param  x1		right X co-ordinate of redraw area
- * \param  y1		lower Y co-ordinate of redraw area
- * \param  x		start X co-ordinate on plot canvas
- * \param  y		start Y co-ordinate on plot canvas
- * \param ctx		current redraw context
- */
 
+/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 	int x0, int y0, int x1, int y1,
 	int x, int y, const struct redraw_context *ctx)
@@ -789,16 +723,7 @@ bool browser_window_history_redraw_rectangle(struct browser_window *bw,
 }
 
 
-/**
- * Handle a mouse click in a history.
- *
- * \param  bw          browser window containing history
- * \param  x           click coordinate
- * \param  y           click coordinate
- * \param  new_window  open a new window instead of using bw
- * \return  true if action was taken, false if click was not on an entry
- */
-
+/* exported interface documented in desktop/browser_history.h */
 bool browser_window_history_click(struct browser_window *bw,
 		int x, int y, bool new_window)
 {
@@ -820,15 +745,7 @@ bool browser_window_history_click(struct browser_window *bw,
 }
 
 
-/**
- * Determine the URL of the entry at a position.
- *
- * \param  history  history to search
- * \param  x        coordinate
- * \param  y        coordinate
- * \return  URL, or 0 if no entry at (x, y)
- */
-
+/* exported interface documented in desktop/browser_history.h */
 const char *browser_window_history_position_url(struct browser_window *bw,
 		int x, int y)
 {
@@ -845,7 +762,8 @@ const char *browser_window_history_position_url(struct browser_window *bw,
 	return nsurl_access(entry->page.url);
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 void browser_window_history_enumerate_forward(const struct browser_window *bw, 
 		browser_window_history_enumerate_cb cb, void *user_data)
 {
@@ -862,7 +780,8 @@ void browser_window_history_enumerate_forward(const struct browser_window *bw,
 	}
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 void browser_window_history_enumerate_back(const struct browser_window *bw, 
 		browser_window_history_enumerate_cb cb, void *user_data)
 {
@@ -878,7 +797,8 @@ void browser_window_history_enumerate_back(const struct browser_window *bw,
 	}
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 void browser_window_history_enumerate(const struct browser_window *bw,
 		browser_window_history_enumerate_cb cb, void *user_data)
 {
@@ -888,21 +808,24 @@ void browser_window_history_enumerate(const struct browser_window *bw,
 			bw->history->start, cb, user_data);
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 const char *browser_window_history_entry_get_url(
 		const struct history_entry *entry)
 {
 	return nsurl_access(entry->page.url);
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 const char *browser_window_history_entry_get_fragment_id(
 		const struct history_entry *entry)
 {
 	return (entry->page.frag_id) ? lwc_string_data(entry->page.frag_id) : 0;
 }
 
-/* Documented in local_history.h */
+
+/* exported interface documented in desktop/browser_history.h */
 const char *browser_window_history_entry_get_title(
 		const struct history_entry *entry)
 {
