@@ -661,10 +661,12 @@ static nserror global_history_tree_node_folder_cb(
 
 	return NSERROR_OK;
 }
-static nserror global_history_tree_node_entry_cb(
-		struct treeview_node_msg msg, void *data)
+
+static nserror
+global_history_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 {
 	struct global_history_entry *e = data;
+	nserror ret = NSERROR_OK;
 
 	switch (msg.msg) {
 	case TREE_MSG_NODE_DELETE:
@@ -678,10 +680,8 @@ static nserror global_history_tree_node_entry_cb(
 
 	case TREE_MSG_NODE_LAUNCH:
 	{
-		nserror error;
 		struct browser_window *existing = NULL;
-		enum browser_window_create_flags flags =
-				BW_CREATE_HISTORY;
+		enum browser_window_create_flags flags = BW_CREATE_HISTORY;
 
 		/* TODO: Set existing to window that new tab appears in */
 
@@ -693,16 +693,14 @@ static nserror global_history_tree_node_entry_cb(
 			/* TODO: flags ^= BW_CREATE_TAB; */
 		}
 
-		error = browser_window_create(flags, e->url, NULL,
+		ret = browser_window_create(flags, e->url, NULL,
 				existing, NULL);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		}
 	}
 		break;
 	}
-	return NSERROR_OK;
+	return ret;
 }
+
 struct treeview_callback_table gh_tree_cb_t = {
 	.folder = global_history_tree_node_folder_cb,
 	.entry = global_history_tree_node_entry_cb

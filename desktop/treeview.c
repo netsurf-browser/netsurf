@@ -2402,6 +2402,7 @@ static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
 		bool *skip_children, bool *end)
 {
 	struct treeview_launch_walk_data *lw = ctx;
+	nserror ret = NSERROR_OK;
 
 	if (n->type == TREE_NODE_FOLDER && n->flags & TV_NFLAGS_SELECTED) {
 		lw->selected_depth++;
@@ -2412,10 +2413,10 @@ static nserror treeview_node_launch_walk_fwd_cb(treeview_node *n, void *ctx,
 		struct treeview_node_msg msg;
 		msg.msg = TREE_MSG_NODE_LAUNCH;
 		msg.data.node_launch.mouse = BROWSER_MOUSE_HOVER;
-		lw->tree->callbacks->entry(msg, n->client_data);
+		ret = lw->tree->callbacks->entry(msg, n->client_data);
 	}
 
-	return NSERROR_OK;
+	return ret;
 }
 /**
  * Launch a selection.
