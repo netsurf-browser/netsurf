@@ -126,6 +126,7 @@ extern lwc_string *corestring_lwc__blank;
 extern lwc_string *corestring_lwc__parent;
 extern lwc_string *corestring_lwc__self;
 extern lwc_string *corestring_lwc__top;
+extern lwc_string *corestring_lwc_slash_; /* / */
 
 struct dom_string;
 

@@ -121,6 +121,7 @@ lwc_string *corestring_lwc__blank;
 lwc_string *corestring_lwc__parent;
 lwc_string *corestring_lwc__self;
 lwc_string *corestring_lwc__top;
+lwc_string *corestring_lwc_slash_;
 
 /* dom_string strings */
 dom_string *corestring_dom_a;
@@ -380,6 +381,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(_parent);
 	CSS_LWC_STRING_UNREF(_self);
 	CSS_LWC_STRING_UNREF(_top);
+	CSS_LWC_STRING_UNREF(slash_);
 
 #undef CSS_LWC_STRING_UNREF
 
@@ -683,6 +685,13 @@ nserror corestrings_init(void)
 	lerror = lwc_intern_string("text/css", SLEN("text/css"),
 			&corestring_lwc_text_css);
 	if ((lerror != lwc_error_ok) || (corestring_lwc_text_css == NULL)) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+	lerror = lwc_intern_string("/", SLEN("/"),
+			&corestring_lwc_slash_);
+	if ((lerror != lwc_error_ok) || (corestring_lwc_slash_ == NULL)) {
 		error = NSERROR_NOMEM;
 		goto error;
 	}
