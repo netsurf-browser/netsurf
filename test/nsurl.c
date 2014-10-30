@@ -165,6 +165,32 @@ static const struct test_pairs join_tests[] = {
 	{ NULL,			NULL }
 };
 
+static const struct test_pairs nice_tests[] = {
+	{ "www.foo.org",		"www_foo_org" },
+	{ "www.foo.org/index.html",	"www_foo_org" },
+	{ "www.foo.org/default.en",	"www_foo_org" },
+	{ "www.foo.org/about",		"about" },
+	{ "www.foo.org/about.jpg",	"about.jpg" },
+	{ "www.foo.org/moose/index.en",	"moose" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "http://www.f.org//index.en",	"www_f_org" },
+	{ NULL,				NULL }
+};
+
+static const struct test_pairs nice_strip_tests[] = {
+	{ "www.foo.org",		"www_foo_org" },
+	{ "www.foo.org/index.html",	"www_foo_org" },
+	{ "www.foo.org/default.en",	"www_foo_org" },
+	{ "www.foo.org/about",		"about" },
+	{ "www.foo.org/about.jpg",	"about" },
+	{ "www.foo.org/moose/index.en",	"moose" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "http://www.f.org//index.en",	"www_f_org" },
+	{ NULL,				NULL }
+};
+
 static const struct test_triplets replace_query_tests[] = {
 	{ "http://netsurf-browser.org/?magical=true",
 	  "?magical=true&result=win",
@@ -279,6 +305,74 @@ int main(void)
 				LOG(("\t\tExpecting %s", test->res));
 			}
 
+			nsurl_unref(base);
+		}
+		count++;
+	}
+
+	/* nice filename tests */
+	LOG(("Testing nsurl_nice (no strip)"));
+	for (test = nice_tests; test->test != NULL; test++) {
+		err = nsurl_create(test->test, &base);
+		if (err != NSERROR_OK) {
+			LOG(("Failed to create URL:\n\t\t%s.", test->test));
+		} else {
+			char *res;
+			err = nsurl_nice(base, &res, false);
+			if (err == NSERROR_OK && test->res != NULL) {
+				if (strcmp(res, test->res) == 0) {
+					LOG(("\tPASS: \"%s\"\t--> %s",
+							test->test, res));
+					passed++;
+				} else {
+					LOG(("\tFAIL: \"%s\"\t--> %s",
+							test->test, res));
+					LOG(("\t\tExpecting %s", test->res));
+				}
+				free(res);
+			} else {
+				if (test->res == NULL && err == NSERROR_OK) {
+					LOG(("\tFAIL: \"%s\"\t--> %s",
+							test->test, res));
+					LOG(("\t\tExpecting BAD_INPUT"));
+					free(res);
+				} else {
+					LOG(("\tFAIL: \"%s\"", test->test));
+				}
+			}
+			nsurl_unref(base);
+		}
+		count++;
+	}
+	LOG(("Testing nsurl_nice (strip)"));
+	for (test = nice_strip_tests; test->test != NULL; test++) {
+		err = nsurl_create(test->test, &base);
+		if (err != NSERROR_OK) {
+			LOG(("Failed to create URL:\n\t\t%s.", test->test));
+		} else {
+			char *res;
+			err = nsurl_nice(base, &res, true);
+			if (err == NSERROR_OK && test->res != NULL) {
+				if (strcmp(res, test->res) == 0) {
+					LOG(("\tPASS: \"%s\"\t--> %s",
+							test->test, res));
+					passed++;
+				} else {
+					LOG(("\tFAIL: \"%s\"\t--> %s",
+							test->test, res));
+					LOG(("\t\tExpecting %s", test->res));
+				}
+				free(res);
+			} else {
+				if (test->res == NULL && err == NSERROR_OK) {
+					LOG(("\tFAIL: \"%s\"\t--> %s",
+							test->test, res));
+					LOG(("\t\tExpecting BAD_INPUT"));
+					free(res);
+				} else {
+					LOG(("\tFAIL: \"%s\"", test->test));
+				}
+			}
 			nsurl_unref(base);
 		}
 		count++;
