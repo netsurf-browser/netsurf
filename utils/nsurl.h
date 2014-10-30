@@ -285,6 +285,19 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 
 
 /**
+ * Attempt to find a nice filename for a URL.
+ *
+ * \param url		A NetSurf URL object to create a filename from
+ * \param result	Updated to caller-owned string with filename
+ * \param remove_extensions  remove any extensions from the filename
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * Caller must ensure string result string is freed, if NSERROR_OK returned.
+ */
+nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions);
+
+
+/**
  * Create a NetSurf URL object for URL with parent location of an existing URL.
  *
  * \param url	  NetSurf URL to create new NetSurf URL from

@@ -2209,6 +2209,110 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 }
 
 
+/* exported interface documented in utils/nsurl.h */
+nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
+{
+	char *dot;
+	const char *data;
+	size_t len;
+	size_t pos;
+	bool match;
+	char *name;
+
+	*result = 0;
+
+	/* extract the last component of the path, if possible */
+	if ((url->components.path != NULL) &&
+			lwc_string_length(url->components.path) != 0 &&
+			lwc_string_isequal(url->components.path,
+			corestring_lwc_slash_, &match) == lwc_error_ok &&
+			match != true) {
+		bool first = true;
+		bool keep_looking;
+
+		/* Get hold of the string data we're examining */
+		data = lwc_string_data(url->components.path);
+		len = lwc_string_length(url->components.path);
+		pos = len;
+
+		do {
+			keep_looking = false;
+			pos--;
+
+			/* Find last '/' with stuff after it */
+			while (pos != 0) {
+				if (data[pos] == '/' && pos < len - 1) {
+					break;
+				}
+				pos--;
+			}
+
+			if (pos == 0) {
+				break;
+			}
+
+			if (first) {
+				if (strncasecmp("/default.", data + pos,
+						SLEN("/default.")) == 0) {
+					keep_looking = true;
+
+				} else if (strncasecmp("/index.",
+							data + pos,
+							6) == 0) {
+					keep_looking = true;
+
+				}
+				first = false;
+			}
+
+		} while (keep_looking);
+
+		if (data[pos] == '/')
+			pos++;
+
+		if (strncasecmp("default.", data + pos, 8) != 0 &&
+				strncasecmp("index.", data + pos, 6) != 0) {
+			size_t end = pos;
+			while (data[end] != '\0' && data[end] != '/') {
+				end++;
+			}
+			if (end - pos != 0) {
+				name = malloc(end - pos + 1);
+				if (name == NULL) {
+					return NSERROR_NOMEM;
+				}
+				memcpy(name, data + pos, end - pos);
+				name[end - pos] = '\0';
+				if (remove_extensions) {
+					/* strip any extenstion */
+					char *dot = strchr(name, '.');
+					if (dot && dot != name) {
+						*dot = '\0';
+					}
+				}
+				*result = name;
+				return NSERROR_OK;
+			}
+		}
+	}
+
+	if (url->components.host != NULL) {
+		name = strdup(lwc_string_data(url->components.host));
+
+		for (pos = 0; name[pos] != '\0'; pos++) {
+			if (name[pos] == '.') {
+				name[pos] = '_';
+			}
+		}
+
+		*result = name;
+		return NSERROR_OK;
+	}
+
+	return NSERROR_NOT_FOUND;
+}
+
+
 /* exported interface, documented in nsurl.h */
 nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 {
