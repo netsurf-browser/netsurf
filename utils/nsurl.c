@@ -2212,7 +2212,6 @@ nserror nsurl_replace_query(const nsurl *url, const char *query,
 /* exported interface documented in utils/nsurl.h */
 nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
 {
-	char *dot;
 	const char *data;
 	size_t len;
 	size_t pos;
