@@ -412,14 +412,18 @@ static nserror hotlist_tree_node_folder_cb(
 
 	return NSERROR_OK;
 }
-static nserror hotlist_tree_node_entry_cb(
-		struct treeview_node_msg msg, void *data)
+
+/**
+ * callback for hotlist treeview entry manipulation.
+ */
+static nserror
+hotlist_tree_node_entry_cb(struct treeview_node_msg msg, void *data)
 {
 	struct hotlist_entry *e = data;
 	const char *old_text;
 	nsurl *old_url;
 	nsurl *url;
-	nserror err;
+	nserror err = NSERROR_OK;
 	bool match;
 
 	switch (msg.msg) {
@@ -456,27 +460,24 @@ static nserror hotlist_tree_node_entry_cb(
 				msg.data.node_edit.text[0] != '\0') {
 			/* Requst to change the entry URL text */
 			err = nsurl_create(msg.data.node_edit.text, &url);
-			if (err != NSERROR_OK)
-				return err;
+			if (err == NSERROR_OK) {
+				old_url = e->url;
 
-			old_url = e->url;
+				e->url = url;
+				e->data[HL_URL].value = nsurl_access(url);
+				e->data[HL_URL].value_len = nsurl_length(e->url);
 
-			e->url = url;
-			e->data[HL_URL].value = nsurl_access(url);
-			e->data[HL_URL].value_len = nsurl_length(e->url);
-
-			treeview_update_node_entry(hl_ctx.tree,
-					e->entry, e->data, e);
-			nsurl_unref(old_url);
+				treeview_update_node_entry(hl_ctx.tree,
+						   e->entry, e->data, e);
+				nsurl_unref(old_url);
+			}
 		}
 		break;
 
 	case TREE_MSG_NODE_LAUNCH:
 	{
-		nserror error;
 		struct browser_window *existing = NULL;
-		enum browser_window_create_flags flags =
-				BW_CREATE_HISTORY;
+		enum browser_window_create_flags flags = BW_CREATE_HISTORY;
 
 		/* TODO: Set existing to window that new tab appears in */
 
@@ -488,16 +489,14 @@ static nserror hotlist_tree_node_entry_cb(
 			/* TODO: flags ^= BW_CREATE_TAB; */
 		}
 
-		error = browser_window_create(flags, e->url, NULL,
+		err = browser_window_create(flags, e->url, NULL,
 				existing, NULL);
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		}
 	}
 		break;
 	}
-	return NSERROR_OK;
+	return err;
 }
+
 struct treeview_callback_table hl_tree_cb_t = {
 	.folder = hotlist_tree_node_folder_cb,
 	.entry = hotlist_tree_node_entry_cb
@@ -517,8 +516,8 @@ typedef struct {
 /**
  * Parse an entry represented as a li.
  *
- * \param li		DOM node for parsed li
- * \param ctx		Our hotlist loading context.
+ * \param li DOM node for parsed li
+ * \param ctx Our hotlist loading context.
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
@@ -533,23 +532,23 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	/* The li must contain an "a" element */
 	a = libdom_find_first_element(li, corestring_lwc_a);
 	if (a == NULL) {
-		warn_user("TreeLoadError", "(Missing <a> in <li>)");
-		return NSERROR_NOMEM;
+		LOG(("Missing <a> in <li>"));
+		return NSERROR_INVALID;
 	}
 
 	derror = dom_node_get_text_content(a, &title1);
 	if (derror != DOM_NO_ERR) {
-		warn_user("TreeLoadError", "(No title)");
+		LOG(("No title"));
 		dom_node_unref(a);
-		return NSERROR_NOMEM;
+		return NSERROR_INVALID;
 	}
 
 	derror = dom_element_get_attribute(a, corestring_dom_href, &url1);
 	if (derror != DOM_NO_ERR || url1 == NULL) {
-		warn_user("TreeLoadError", "(No URL)");
+		LOG(("No URL"));
 		dom_string_unref(title1);
 		dom_node_unref(a);
-		return NSERROR_NOMEM;
+		return NSERROR_INVALID;
 	}
 	dom_node_unref(a);
 
@@ -566,10 +565,9 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	if (err != NSERROR_OK) {
 		LOG(("Failed normalising '%s'", dom_string_data(url1)));
 
-		warn_user(messages_get_errorcode(err), NULL);
-
-		if (title1 != NULL)
+		if (title1 != NULL) {
 			dom_string_unref(title1);
+		}
 
 		return err;
 	}
@@ -578,8 +576,9 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	err = hotlist_add_entry_internal(url, title, NULL, ctx->rel,
 			ctx->relshp, &ctx->rel);
 	nsurl_unref(url);
-	if (title1 != NULL)
+	if (title1 != NULL) {
 		dom_string_unref(title1);
+	}
 	ctx->relshp = TREE_REL_NEXT_SIBLING;
 
 	if (err != NSERROR_OK) {
@@ -631,7 +630,7 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 	error = dom_node_get_node_name(node, &name);
 	if (error != DOM_NO_ERR || name == NULL)
-		return NSERROR_NOMEM;
+		return NSERROR_DOM;
 
 	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_li)) {
 		/* Entry handling */
@@ -644,10 +643,9 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 		error = dom_node_get_text_content(node, &title);
 		if (error != DOM_NO_ERR || title == NULL) {
-			warn_user("TreeLoadError", "(Empty <h4> "
-					"or memory exhausted.)");
+			LOG(("Empty <h4> or memory exhausted."));
 			dom_string_unref(name);
-			return NSERROR_NOMEM;
+			return NSERROR_DOM;
 		}
 
 		if (current_ctx->title != NULL)
