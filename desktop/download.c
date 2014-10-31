@@ -28,7 +28,6 @@
 #include "content/llcache.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "desktop/download.h"
 #include "desktop/gui_download.h"

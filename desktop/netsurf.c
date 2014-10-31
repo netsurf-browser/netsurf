@@ -30,7 +30,6 @@
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
