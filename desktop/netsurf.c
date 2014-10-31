@@ -217,8 +217,6 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	if (ret != NSERROR_OK)
 		return ret;
 
-	url_init();
-
 	setlocale(LC_ALL, "C");
 
 	/* initialise the fetchers */

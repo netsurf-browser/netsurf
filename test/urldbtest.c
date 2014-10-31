@@ -163,7 +163,6 @@ int main(void)
 	char *path_query;
 
 	corestrings_init();
-	url_init();
 
 	h = urldb_add_host("127.0.0.1");
 	if (!h) {

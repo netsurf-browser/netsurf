@@ -32,35 +32,6 @@
 #include "utils/url.h"
 
 
-regex_t url_re, url_up_re;
-
-/* exported interface documented in utils/url.h */
-nserror url_init(void)
-{
-	nserror ret;
-
-	/* regex from RFC 2396 */
-	ret = regcomp_wrapper(&url_re, "^[[:space:]]*"
-#define URL_RE_SCHEME 2
-			"(([a-zA-Z][-a-zA-Z0-9+.]*):)?"
-#define URL_RE_AUTHORITY 4
-			"(//([^/?#[:space:]]*))?"
-#define URL_RE_PATH 5
-			"([^?#[:space:]]*)"
-#define URL_RE_QUERY 7
-			"(\\?([^#[:space:]]*))?"
-#define URL_RE_FRAGMENT 9
-			"(#([^[:space:]]*))?"
-			"[[:space:]]*$", REG_EXTENDED);
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
-
-	return regcomp_wrapper(&url_up_re,
-			"/([^/]?|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)"
-			"/[.][.](/|$)",
-			REG_EXTENDED);
-}
 
 /* exported interface documented in utils/url.h */
 bool url_host_is_ip_address(const char *host)

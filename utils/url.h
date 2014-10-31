@@ -35,14 +35,6 @@
 
 
 /**
- * Initialise URL routines.
- *
- * Compiles regular expressions required by the url_ functions.
- */
-nserror url_init(void);
-
-
-/**
  * Check whether a host string is an IP address.
  *
  * This call detects IPv4 addresses (all of dotted-quad or subsets,
