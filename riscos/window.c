@@ -45,7 +45,6 @@
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
-#include "utils/url.h"
 #include "utils/file.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
