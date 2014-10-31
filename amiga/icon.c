@@ -46,7 +46,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/file.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
