@@ -1580,6 +1580,99 @@ struct host_part *urldb_add_host_node(const char *part,
 	return d;
 }
 
+
+/**
+ * Check whether a host string is an IP address.
+ *
+ * This call detects IPv4 addresses (all of dotted-quad or subsets,
+ * decimal or hexadecimal notations) and IPv6 addresses (including
+ * those containing embedded IPv4 addresses.)
+ *
+ * \param host a hostname terminated by '\0'
+ * \return true if the hostname is an IP address, false otherwise
+ */
+static bool urldb__host_is_ip_address(const char *host)
+{
+	struct in_addr ipv4;
+	size_t host_len = strlen(host);
+	const char *sane_host;
+	const char *slash;
+#ifndef NO_IPV6
+	struct in6_addr ipv6;
+	char ipv6_addr[64];
+#endif
+	/** @todo FIXME Some parts of urldb.c make confusions between hosts
+	 * and "prefixes", we can sometimes be erroneously passed more than
+	 * just a host.  Sometimes we may be passed trailing slashes, or even
+	 * whole path segments.  A specific criminal in this class is
+	 * urldb_iterate_partial, which takes a prefix to search for, but
+	 * passes that prefix to functions that expect only hosts.
+	 *
+	 * For the time being, we will accept such calls; we check if there
+	 * is a / in the host parameter, and if there is, we take a copy and
+	 * replace the / with a \0.  This is not a permanent solution; we
+	 * should search through NetSurf and find all the callers that are
+	 * in error and fix them.  When doing this task, it might be wise
+	 * to replace the hideousness below with code that doesn't have to do
+	 * this, and add assert(strchr(host, '/') == NULL); somewhere.
+	 * -- rjek - 2010-11-04
+	 */
+
+	slash = strchr(host, '/');
+	if (slash == NULL) {
+		sane_host = host;
+	} else {
+		char *c = strdup(host);
+		c[slash - host] = '\0';
+		sane_host = c;
+		host_len = slash - host - 1;
+		LOG(("WARNING: called with non-host '%s'", host));
+	}
+
+	if (strspn(sane_host, "0123456789abcdefABCDEF[].:") < host_len)
+		goto out_false;
+
+	if (inet_aton(sane_host, &ipv4) != 0) {
+		/* This can only be a sane IPv4 address if it contains 3 dots.
+		 * Helpfully, inet_aton is happy to treat "a", "a.b", "a.b.c",
+		 * and "a.b.c.d" as valid IPv4 address strings where we only
+		 * support the full, dotted-quad, form.
+		 */
+		int num_dots = 0;
+		size_t index;
+
+		for (index = 0; index < host_len; index++) {
+			if (sane_host[index] == '.')
+				num_dots++;
+		}
+
+		if (num_dots == 3)
+			goto out_true;
+		else
+			goto out_false;
+	}
+
+#ifndef NO_IPV6
+	if (sane_host[0] != '[' || sane_host[host_len] != ']')
+		goto out_false;
+
+	strncpy(ipv6_addr, sane_host + 1, sizeof(ipv6_addr));
+	ipv6_addr[sizeof(ipv6_addr) - 1] = '\0';
+
+	if (inet_pton(AF_INET6, ipv6_addr, &ipv6) == 1)
+		goto out_true;
+#endif
+
+out_false:
+	if (slash != NULL) free((void *)sane_host);
+	return false;
+
+out_true:
+	if (slash != NULL) free((void *)sane_host);
+	return true;
+}
+
+
 /**
  * Add a host to the database, creating any intermediate entries
  *
@@ -1596,7 +1689,7 @@ struct host_part *urldb_add_host(const char *host)
 
 	assert(host);
 
-	if (url_host_is_ip_address(host)) {
+	if (urldb__host_is_ip_address(host)) {
 		/* Host is an IP, so simply add as TLD */
 
 		/* Check for existing entry */
@@ -2003,7 +2096,7 @@ struct path_data *urldb_match_path(const struct path_data *parent,
 struct search_node **urldb_get_search_tree_direct(const char *host) {
 	assert(host);
 
-	if (url_host_is_ip_address(host))
+	if (urldb__host_is_ip_address(host))
 		return &search_trees[ST_IP];
 	else if (isalpha(*host))
 		return &search_trees[ST_DN + tolower(*host) - 'a'];
@@ -2266,7 +2359,7 @@ int urldb_search_match_string(const struct host_part *a,
 
 	assert(a && a != &db_root && b);
 
-	if (url_host_is_ip_address(b)) {
+	if (urldb__host_is_ip_address(b)) {
 		/* IP address */
 		return strcasecmp(a->part, b);
 	}
@@ -2329,7 +2422,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 
 	assert(a && a != &db_root && b);
 
-	if (url_host_is_ip_address(b)) {
+	if (urldb__host_is_ip_address(b)) {
 		/* IP address */
 		return strncasecmp(a->part, b, strlen(b));
 	}
@@ -2769,8 +2862,8 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 			const char *rhost_data = lwc_string_data(rhost);
 
 			/* Ensure neither host nor rhost are IP addresses */
-			if (url_host_is_ip_address(host_data) ||
-					url_host_is_ip_address(rhost_data)) {
+			if (urldb__host_is_ip_address(host_data) ||
+					urldb__host_is_ip_address(rhost_data)) {
 				/* IP address, so no partial match */
 				lwc_string_unref(rhost);
 				goto error;
@@ -2886,7 +2979,7 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 			assert(c->domain[0] == '.');
 
 			/* 4.3.2:iii */
-			if (url_host_is_ip_address(lwc_string_data(host))) {
+			if (urldb__host_is_ip_address(lwc_string_data(host))) {
 				/* IP address, so no partial match */
 				urldb_free_cookie(c);
 				goto error;

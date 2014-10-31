@@ -35,19 +35,6 @@
 
 
 /**
- * Check whether a host string is an IP address.
- *
- * This call detects IPv4 addresses (all of dotted-quad or subsets,
- * decimal or hexadecimal notations) and IPv6 addresses (including
- * those containing embedded IPv4 addresses.)
- *
- * \param host a hostname terminated by '\0'
- * \return true if the hostname is an IP address, false otherwise
- */
-bool url_host_is_ip_address(const char *host);
-
-
-/**
  * Escape a string suitable for inclusion in an URL.
  *
  * \param  unescaped      the unescaped string
