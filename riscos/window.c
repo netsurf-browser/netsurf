@@ -194,7 +194,7 @@ static hlcache_handle		*current_menu_main = 0;
 /** Object under menu, or 0 if no object. */
 static hlcache_handle		*current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
-static const char		*current_menu_url = 0;
+static nsurl			*current_menu_url = 0;
 
 static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 				1.0,
@@ -1284,7 +1284,10 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 static void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
 {
-	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
+	nsurl *nurl;
+	nsurl_create(url, &nurl);
+	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, nurl, title);
+	nsurl_unref(nurl);
 	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
 }
 
@@ -2174,7 +2177,10 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 		current_menu_main = NULL;
 		current_menu_object = NULL;
-		current_menu_url = NULL;
+		if (current_menu_url != NULL) {
+			nsurl_unref(current_menu_url);
+			current_menu_url = NULL;
+		}
 
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x,
 				pointer->pos.y, &pos)) {
@@ -2183,7 +2189,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 			current_menu_main = cont.main;
 			current_menu_object = cont.object;
-			current_menu_url = cont.link_url;
+			nsurl_create(cont.link_url, &current_menu_url);
 		}
 	}
 
@@ -2444,7 +2450,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_INFO:
 		if (current_menu_object != NULL)
 			ro_gui_window_prepare_objectinfo(current_menu_object,
-					current_menu_url);
+					nsurl_access(current_menu_url));
 		break;
 
 	case BROWSER_OBJECT_SAVE:
@@ -2463,45 +2469,45 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_SAVE_URL_URI:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(h)),
+					hlcache_handle_get_url(h),
 					content_get_title(h));
 		break;
 
 	case BROWSER_SAVE_URL_URL:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(h)),
+					hlcache_handle_get_url(h),
 					content_get_title(h));
 		break;
 
 	case BROWSER_SAVE_URL_TEXT:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(h)),
+					hlcache_handle_get_url(h),
 					content_get_title(h));
 		break;
 
 	case BROWSER_OBJECT_SAVE_URL_URI:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(
-							current_menu_object)),
+					hlcache_handle_get_url(
+							current_menu_object),
 					content_get_title(current_menu_object));
 		break;
 
 	case BROWSER_OBJECT_SAVE_URL_URL:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(
-							current_menu_object)),
+					hlcache_handle_get_url(
+							current_menu_object),
 					content_get_title(current_menu_object));
 		break;
 
 	case BROWSER_OBJECT_SAVE_URL_TEXT:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL, NULL,
-					nsurl_access(hlcache_handle_get_url(
-							current_menu_object)),
+					hlcache_handle_get_url(
+							current_menu_object),
 					content_get_title(current_menu_object));
 		break;
 
@@ -2759,7 +2765,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_INFO:
 		if (current_menu_object != NULL) {
 			ro_gui_window_prepare_objectinfo(current_menu_object,
-							 current_menu_url);
+					nsurl_access(current_menu_url));
 			ro_gui_dialog_open_persistent(g->window,
 						      dialog_objinfo, false);
 		}
@@ -2799,33 +2805,25 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	case BROWSER_LINK_DOWNLOAD:
 		if (current_menu_url != NULL) {
-			error = nsurl_create(current_menu_url, &url);
-			if (error == NSERROR_OK) {
-				error = browser_window_navigate(bw,
-						url,
-						browser_window_get_url(bw),
-						BW_NAVIGATE_DOWNLOAD,
-						NULL,
-						NULL,
-						NULL);
-				nsurl_unref(url);
-			}
+			error = browser_window_navigate(bw,
+					current_menu_url,
+					browser_window_get_url(bw),
+					BW_NAVIGATE_DOWNLOAD,
+					NULL,
+					NULL,
+					NULL);
 		}
 		break;
 
 	case BROWSER_LINK_NEW_WINDOW:
 		if (current_menu_url != NULL) {
-			error = nsurl_create(current_menu_url, &url);
-			if (error == NSERROR_OK) {
-				error = browser_window_create(
-						BW_CREATE_HISTORY |
-						BW_CREATE_CLONE,
-						url,
-						browser_window_get_url(bw),
-						bw,
-						NULL);
-				nsurl_unref(url);
-			}
+			error = browser_window_create(
+					BW_CREATE_HISTORY |
+					BW_CREATE_CLONE,
+					url,
+					browser_window_get_url(bw),
+					bw,
+					NULL);
 		}
 		break;
 
@@ -3050,7 +3048,10 @@ void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu)
 {
 	if (menu == ro_gui_browser_window_menu) {
 		current_menu_object = NULL;
-		current_menu_url = NULL;
+		if (current_menu_url != NULL) {
+			nsurl_unref(current_menu_url);
+			current_menu_url = NULL;
+		}
 	} else if (menu == gui_form_select_menu) {
 		gui_form_select_control = NULL;
 	}
@@ -3579,8 +3580,7 @@ void ro_gui_window_toolbar_click(void *data,
 				save_type = GUI_SAVE_LINK_TEXT;
 
 			ro_gui_drag_save_link(save_type,
-					nsurl_access(
-						browser_window_get_url(g->bw)),
+					browser_window_get_url(g->bw),
 					browser_window_get_title(g->bw), g);
 		}
 			break;

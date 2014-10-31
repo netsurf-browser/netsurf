@@ -116,7 +116,7 @@ static void ro_gui_save_bounced(wimp_message *message);
 static bool ro_gui_save_object_native(hlcache_handle *h, char *path);
 static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
 static void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
-		const char *url, char *leaf_buf, size_t leaf_len,
+		const nsurl *url, char *leaf_buf, size_t leaf_len,
 		char *icon_buf, size_t icon_len);
 static void ro_gui_save_drag_end(wimp_dragged *drag, void *data);
 static bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name);
@@ -254,7 +254,7 @@ void ro_gui_saveas_quit(void)
  */
 
 void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
-		char *s, const char *url, const char *title)
+		char *s, const nsurl *url, const char *title)
 {
 	char name_buf[FILENAME_MAX];
 	size_t leaf_offset = 0;
@@ -271,7 +271,11 @@ void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
 		free(gui_save_selection);
 
 	gui_save_selection = s;
-	gui_save_url = url;
+	if (url != NULL) {
+		gui_save_url = nsurl_access(url);
+	} else {
+		gui_save_url = NULL;
+	}
 	gui_save_title = title;
 
 	if (save_dir) {
@@ -280,8 +284,11 @@ void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
 		name_buf[leaf_offset++] = '.';
 	}
 
-	ro_gui_save_set_state(h, save_type,
-			h ? nsurl_access(hlcache_handle_get_url(h)) : url,
+	if (h != NULL) {
+		url = hlcache_handle_get_url(h);
+	}
+
+	ro_gui_save_set_state(h, save_type, url,
 			name_buf + leaf_offset, FILENAME_MAX - leaf_offset,
 			icon_buf, sizeof(icon_buf));
 
@@ -386,7 +393,7 @@ void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
 		return;
 	}
 
-	ro_gui_save_set_state(c, save_type, nsurl_access(hlcache_handle_get_url(c)),
+	ro_gui_save_set_state(c, save_type, hlcache_handle_get_url(c),
 			save_leafname, LEAFNAME_MAX,
 			icon_buf, sizeof(icon_buf));
 
@@ -454,7 +461,7 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection)
  * \
  */
 
-void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
+void ro_gui_drag_save_link(gui_save_type save_type, const nsurl *url,
 		const char *title, struct gui_window *g)
 {
 	wimp_pointer pointer;
@@ -466,7 +473,7 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 	ro_gui_dialog_close(dialog_saveas);
 
-	gui_save_url = url;
+	gui_save_url = nsurl_access(url);
 	gui_save_title = title;
 	gui_save_sourcew = g->window;
 	saving_from_dialog = false;
@@ -479,8 +486,8 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 		return;
 	}
 
-	ro_gui_save_set_state(NULL, save_type, url, save_leafname, LEAFNAME_MAX,
-			icon_buf, sizeof(icon_buf));
+	ro_gui_save_set_state(NULL, save_type, url, save_leafname,
+			      LEAFNAME_MAX, icon_buf, sizeof(icon_buf));
 
 	ro_mouse_drag_start(ro_gui_save_drag_end, NULL, NULL, NULL);
 
@@ -1215,7 +1222,7 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format,
  */
 
 void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
-		const char *url, char *leaf_buf, size_t leaf_len,
+		const nsurl *url, char *leaf_buf, size_t leaf_len,
 		char *icon_buf, size_t icon_len)
 {
 	/* filename */
@@ -1251,8 +1258,9 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	}
 
 	/* leafname */
-	if (url && url_nice(url, &nice, nsoption_bool(strip_extensions)) ==
-			NSERROR_OK) {
+	if ((url != NULL) &&
+	    (nsurl_nice(url, &nice, nsoption_bool(strip_extensions)) ==
+	     NSERROR_OK)) {
 		size_t i;
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')

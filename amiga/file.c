@@ -220,7 +220,9 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	char *fname = AllocVecTags(1024, NULL);
 	char *initial_fname = NULL;
 
-	if(object) url_nice(nsurl_access(hlcache_handle_get_url(object)), &initial_fname, true);
+	if(object) {
+		nsurl_nice(hlcache_handle_get_url(object), &initial_fname, true);
+	}
 
 	if(AslRequestTags(savereq,
 			ASLFR_Window, gwin->win,

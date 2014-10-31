@@ -56,16 +56,6 @@ bool url_host_is_ip_address(const char *host);
 
 
 /**
- * Attempt to find a nice filename for a URL.
- *
- * \param  url	   an absolute URL
- * \param  result  pointer to pointer to buffer to hold filename
- * \param  remove_extensions  remove any extensions from the filename
- * \return  NSERROR_OK on success
- */
-nserror url_nice(const char *url, char **result, bool remove_extensions);
-
-/**
  * Escape a string suitable for inclusion in an URL.
  *
  * \param  unescaped      the unescaped string

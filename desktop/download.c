@@ -76,8 +76,9 @@ static char *download_default_filename(nsurl *url)
 {
 	char *nice;
 
-	if (url_nice(nsurl_access(url), &nice, false) == NSERROR_OK)
+	if (nsurl_nice(url, &nice, false) == NSERROR_OK) {
 		return nice;
+	}
 
 	return NULL;
 }

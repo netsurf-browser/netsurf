@@ -51,7 +51,7 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 
 	source_data = content_get_source_data(hlcontent, &source_size);
 
-	ret = url_nice(nsurl_access(browser_window_get_url(bw)), &filename, false);
+	ret = nsurl_nice(browser_window_get_url(bw), &filename, false);
 	if (ret != NSERROR_OK) {
 		filename = strdup(messages_get("SaveSource"));
 		if (filename == NULL) {

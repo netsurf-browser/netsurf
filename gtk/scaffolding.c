@@ -637,8 +637,8 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = url_nice(nsurl_access(browser_window_get_url(
-			nsgtk_get_browser_window(g->top_level))), &path, false);
+	res = nsurl_nice(browser_window_get_url(
+			nsgtk_get_browser_window(g->top_level)), &path, false);
 	if (res != NSERROR_OK) {
 		path = strdup(messages_get("SaveText"));
 		if (path == NULL) {
@@ -697,8 +697,7 @@ MULTIHANDLER(pdf)
 
 	LOG(("Print preview (generating PDF)  started."));
 
-	res = url_nice(nsurl_access(browser_window_get_url(bw)),
-			&url_name, true);
+	res = nsurl_nice(browser_window_get_url(bw), &url_name, true);
 	if (res != NSERROR_OK) {
 		warn_user(messages_get_errorcode(res), 0);
 		return TRUE;
@@ -771,8 +770,8 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	nserror res;
 
-	res = url_nice(nsurl_access(browser_window_get_url(
-			nsgtk_get_browser_window(g->top_level))),
+	res = nsurl_nice(browser_window_get_url(
+			nsgtk_get_browser_window(g->top_level)),
 			&filename, false);
 	if (res != NSERROR_OK) {
 		filename = strdup(messages_get("SaveText"));
