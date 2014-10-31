@@ -33,7 +33,6 @@
 #include "utils/nsoption.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/filepath.h"

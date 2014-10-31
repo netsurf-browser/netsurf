@@ -19,7 +19,6 @@
 #include <gtk/gtk.h>
 
 #include "utils/utils.h"
-#include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "desktop/browser.h"
