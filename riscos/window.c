@@ -2188,7 +2188,9 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 			current_menu_main = cont.main;
 			current_menu_object = cont.object;
-			nsurl_create(cont.link_url, &current_menu_url);
+			if (cont.link_url != NULL) {
+				nsurl_create(cont.link_url, &current_menu_url);
+			}
 		}
 	}
 
@@ -2819,7 +2821,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 			error = browser_window_create(
 					BW_CREATE_HISTORY |
 					BW_CREATE_CLONE,
-					url,
+					current_menu_url,
 					browser_window_get_url(bw),
 					bw,
 					NULL);
