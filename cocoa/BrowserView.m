@@ -490,7 +490,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
 	NSPoint point = [self convertMousePoint: event];
 
-	struct browser_window_features;
+	struct browser_window_features cont;
 
 	browser_window_get_features(browser, point.x, point.y, &cont);
 
