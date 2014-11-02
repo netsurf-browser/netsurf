@@ -851,12 +851,12 @@ bool ro_gui_url_bar_menu_select(struct url_bar *url_bar, wimp_i i,
 		nsurl *url;
 		nserror error;
 
-		gui_window_set_url(g, urltxt);
-
 		error = nsurl_create(urltxt, &url);
 		if (error != NSERROR_OK) {
 			warn_user(messages_get_errorcode(error), 0);
 		} else {
+			gui_window_set_url(g, url);
+
 			browser_window_navigate(g->bw,
 				url,
 				NULL,

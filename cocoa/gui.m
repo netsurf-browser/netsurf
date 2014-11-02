@@ -194,9 +194,9 @@ static void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape
 	}
 }
 
-static nserror gui_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_window_set_url(struct gui_window *g, struct nsurl *url)
 {
-	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
+  [(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: nsurl_access(url)]];
         return NSERROR_OK;
 }
 

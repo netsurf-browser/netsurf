@@ -1662,9 +1662,9 @@ struct nsws_pointers *nsws_get_pointers(void)
 	return &nsws_pointer;
 }
 
-static nserror gui_window_set_url(struct gui_window *w, const char *url)
+static nserror gui_window_set_url(struct gui_window *w, nsurl *url)
 {
-	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) url);
+	SendMessage(w->urlbar, WM_SETTEXT, 0, (LPARAM) nsurl_access(url));
 
 	return NSERROR_OK;
 }

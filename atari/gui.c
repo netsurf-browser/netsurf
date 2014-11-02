@@ -115,7 +115,7 @@ EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
-static nserror gui_window_set_url(struct gui_window *w, const char *url);
+static nserror gui_window_set_url(struct gui_window *w, nsurl *url);
 
 /**
  * Core atari event processing.
@@ -220,7 +220,7 @@ gui_window_create(struct browser_window *bw,
 	    option_window_x, option_window_y,
 	    option_window_width, option_window_height
 	};
-	gui_window_set_url(gw, "");
+	gui_window_set_url(gw, corestring_nsurl_about_blank);
 	gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
 	gui_set_input_gui_window(gw);
 	window_open(gw->root, gw, pos);
@@ -553,24 +553,24 @@ void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape)
 }
 
 
-static nserror gui_window_set_url(struct gui_window *w, const char *url)
+static nserror gui_window_set_url(struct gui_window *w, nsurl *url)
 {
     int l;
 
     if (w == NULL)
 	return;
 
-    l = strlen(url)+1;
+    l = strlen(nsurl_access(url))+1;
 
     if (w->url == NULL) {
 	w->url = malloc(l);
     } else {
 	w->url = realloc(w->url, l);
     }
-    strncpy(w->url, url, l);
+    strncpy(w->url, nsurl_access(url), l);
     w->url[l] = 0;
     if(input_window == w->root->active_gui_window) {
-	toolbar_set_url(w->root->toolbar, url);
+        toolbar_set_url(w->root->toolbar, nsurl_access(url));
     }
 
     return NSERROR_OK;

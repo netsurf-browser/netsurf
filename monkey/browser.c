@@ -252,9 +252,9 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 }
 
 static nserror
-gui_window_set_url(struct gui_window *g, const char *url)
+gui_window_set_url(struct gui_window *g, nsurl *url)
 {
-  fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
+  fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, nsurl_access(url));
   return NSERROR_OK;
 }
 

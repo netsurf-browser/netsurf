@@ -42,7 +42,7 @@ static void gui_default_window_set_title(struct gui_window *g, const char *title
 {
 }
 
-static nserror gui_default_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_default_window_set_url(struct gui_window *g, struct nsurl *url)
 {
 	return NSERROR_OK;
 }

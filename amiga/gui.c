@@ -4774,19 +4774,22 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 	}
 }
 
-static nserror gui_window_set_url(struct gui_window *g, const char *url)
+static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 {
 	int cur_tab = 0;
 
 	if(!g) return;
 
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
+	if ((g->tab_node) && (g->shared->tabs > 1)) {
+		GetAttr(CLICKTAB_Current,
+			g->shared->objects[GID_TABS],
+			(ULONG *)&cur_tab);
+	}
 
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if ((cur_tab == g->tab) || (g->shared->tabs <= 1)) {
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
-			g->shared->win, NULL, STRINGA_TextVal, url, TAG_DONE);
+				      g->shared->win, NULL, STRINGA_TextVal,
+				      nsurl_access(url), TAG_DONE);
 	}
 
 	ami_update_buttons(g->shared);

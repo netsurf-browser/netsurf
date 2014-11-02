@@ -184,7 +184,7 @@ struct gui_window_table {
 	 * \param gw window to update.
 	 * \param url The url to use as icon.
 	 */
-	nserror (*set_url)(struct gui_window *gw, const char *url);
+	nserror (*set_url)(struct gui_window *gw, struct nsurl *url);
 
 	/**
 	 * Set a favicon for a gui window.

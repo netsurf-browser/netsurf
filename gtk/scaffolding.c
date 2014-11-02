@@ -2291,13 +2291,13 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 }
 
 
-nserror gui_window_set_url(struct gui_window *gw, const char *url)
+nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 {
 	struct nsgtk_scaffolding *g;
 
 	g = nsgtk_get_scaffold(gw);
 	if (g->top_level == gw) {
-		gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
+		gtk_entry_set_text(GTK_ENTRY(g->url_bar), nsurl_access(url));
 		gtk_editable_set_position(GTK_EDITABLE(g->url_bar), -1);
 	}
 	return NSERROR_OK;

@@ -1051,10 +1051,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 
 /* exported function documented in riscos/window.h */
-nserror gui_window_set_url(struct gui_window *g, const char *url)
+nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 {
 	if (g->toolbar) {
-		ro_toolbar_set_url(g->toolbar, url, true, false);
+		ro_toolbar_set_url(g->toolbar, nsurl_access(url), true, false);
 		ro_gui_url_complete_start(g->toolbar);
 	}
 
@@ -3913,12 +3913,13 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url1)
 		return;
 
 	ro_gui_url_complete_close();
-	gui_window_set_url(g, url1);
 
 	error = nsurl_create(url1, &url);
 	if (error != NSERROR_OK) {
 		warn_user(messages_get_errorcode(error), 0);
 	} else {
+		gui_window_set_url(g, url);
+
 		browser_window_navigate(g->bw, url,
 				NULL, BW_NAVIGATE_HISTORY,
 				NULL, NULL, NULL);

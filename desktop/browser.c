@@ -1811,7 +1811,7 @@ browser_window_refresh_url_bar_internal(struct browser_window *bw, nsurl *url)
 		return NSERROR_OK;
 	}
 
-	return guit->window->set_url(bw->window, nsurl_access(url));
+	return guit->window->set_url(bw->window, url);
 }
 
 
