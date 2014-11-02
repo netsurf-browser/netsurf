@@ -26,6 +26,7 @@
 #define _NETSURF_RISCOS_WINDOW_H_
 
 struct gui_window;
+struct nsurl;
 
 extern struct gui_window_table *riscos_window_table;
 
@@ -39,7 +40,7 @@ bool ro_gui_window_check_menu(wimp_menu *menu);
  * \param g gui_window to update
  * \param url new url for address bar
  */
-nserror gui_window_set_url(struct gui_window *g, nsurl *url);
+nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
 
 #endif
 
