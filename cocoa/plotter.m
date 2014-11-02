@@ -18,14 +18,15 @@
 
 #include <Cocoa/Cocoa.h>
 
-#import "cocoa/font.h"
-#import "cocoa/plotter.h"
-#import "cocoa/bitmap.h"
-
+#import "utils/log.h"
+#import "utils/utils.h"
 #import "desktop/browser.h"
 #import "desktop/plotters.h"
 #import "desktop/plot_style.h"
-#import "utils/log.h"
+
+#import "cocoa/font.h"
+#import "cocoa/plotter.h"
+#import "cocoa/bitmap.h"
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);

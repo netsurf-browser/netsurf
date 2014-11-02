@@ -19,6 +19,7 @@
 #ifndef COCOA_COORDINATES_H
 #define COCOA_COORDINATES_H
 
+#include "utils/utils.h"
 #import "desktop/browser.h"
 #import "render/box.h"
 

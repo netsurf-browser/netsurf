@@ -18,13 +18,17 @@
 
 #ifndef AMIGA_HOTLIST_H
 #define AMIGA_HOTLIST_H
+
 #include "desktop/tree.h"
 #include "amiga/tree.h"
+
+struct nsurl;
 
 void ami_hotlist_initialise(const char *hotlist_file);
 void ami_hotlist_free(const char *hotlist_file);
 nserror ami_hotlist_scan(void *userdata, int first_item, const char *folder,
-	bool (*cb_add_item)(void *userdata, int level, int item, const char *title, nsurl *url, bool folder));
+	bool (*cb_add_item)(void *userdata, int level, int item, const char *title, struct nsurl *url, bool folder));
 
 struct treeview_window *hotlist_window;
+
 #endif
