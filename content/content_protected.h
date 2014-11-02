@@ -67,8 +67,8 @@ struct content_handler {
 	void (*close)(struct content *c);
 	void (*clear_selection)(struct content *c);
 	char * (*get_selection)(struct content *c);
-	void (*get_contextual_content)(struct content *c, int x, int y,
-			struct contextual_content *data);
+	nserror (*get_contextual_content)(struct content *c, int x, int y,
+			struct browser_window_features *data);
 	bool (*scroll_at_point)(struct content *c, int x, int y,
 			int scrx, int scry);
 	bool (*drop_file_at_point)(struct content *c, int x, int y,

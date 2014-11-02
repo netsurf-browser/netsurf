@@ -35,7 +35,6 @@
 #include "utils/errors.h"
 #include "utils/http.h"
 #include "utils/nsurl.h"
-#include "utils/types.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
 #include "desktop/search.h"
@@ -43,13 +42,13 @@
 #include "desktop/plot_style.h"
 
 struct browser_window;
+struct browser_window_features;
 struct content;
 struct llcache_handle;
 struct hlcache_handle;
 struct object_params;
 struct rect;
 struct redraw_context;
-
 
 /** Status of a content */
 typedef enum {
@@ -271,8 +270,18 @@ void content_open(struct hlcache_handle *h, struct browser_window *bw,
 void content_close(struct hlcache_handle *h);
 void content_clear_selection(struct hlcache_handle *h);
 char * content_get_selection(struct hlcache_handle *h);
-void content_get_contextual_content(struct hlcache_handle *h,
-		int x, int y, struct contextual_content *data);
+
+/**
+ * Get positional contextural information for a content.
+ *
+ * \param[in] h Handle to content to examine.
+ * \param[in] x The x coordinate to examine.
+ * \param[in] y The y coordinate to examine.
+ * \param[out] data The context structure to fill in.
+ */
+nserror content_get_contextual_content(struct hlcache_handle *h,
+		int x, int y, struct browser_window_features *data);
+
 bool content_scroll_at_point(struct hlcache_handle *h,
 		int x, int y, int scrx, int scry);
 bool content_drop_file_at_point(struct hlcache_handle *h,

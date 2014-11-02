@@ -5032,7 +5032,7 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
 	ULONG xs, ys, width, height;
-	struct contextual_content data;
+	struct browser_window_features data;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
@@ -5046,7 +5046,7 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	width=bbox->Width;
 	height=bbox->Height;
 
-	browser_window_get_contextual_content(gwin->bw, *x, *y, &data);
+	browser_window_get_features(gwin->bw, *x, *y, &data);
 
 	if (data.form_features == CTX_FORM_TEXT)
 		return true;

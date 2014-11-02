@@ -490,9 +490,9 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
 	NSPoint point = [self convertMousePoint: event];
 
-	struct contextual_content cont;
+	struct browser_window_features;
 
-	browser_window_get_contextual_content( browser, point.x, point.y, &cont);
+	browser_window_get_features(browser, point.x, point.y, &cont);
 
 	if (cont.object != NULL) {
 		NSString *imageURL = [NSString stringWithUTF8String: nsurl_access(hlcache_handle_get_url( cont.object ))];
@@ -513,8 +513,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		[popupMenu addItem: [NSMenuItem separatorItem]];
 	}
 	
-	if (cont.link_url != NULL) {
-		NSString *target = [NSString stringWithUTF8String: cont.link_url];
+	if (cont.link != NULL) {
+          NSString *target = [NSString stringWithUTF8String: nsurl_access(cont.link)];
 		
 		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new tab", @"Context menu" )
 							  action: @selector(cmOpenURLInTab:) 

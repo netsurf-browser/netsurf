@@ -143,8 +143,9 @@ static struct nsgtk_scaffolding *scaf_current;
 static struct nsgtk_scaffolding *scaf_list = NULL;
 
 /** holds the context data for what's under the pointer, when the contextual
- *  menu is opened. */
-static struct contextual_content current_menu_ctx;
+ *  menu is opened.
+ */
+static struct browser_window_features current_menu_features;
 
 
 /**
@@ -917,23 +918,23 @@ MULTIHANDLER(quit)
 
 MENUHANDLER(savelink)
 {
-	nsurl *url;
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
+	nserror err;
 
-	if (current_menu_ctx.link_url == NULL)
+	if (current_menu_features.link == NULL)
 		return FALSE;
 
-	if (nsurl_create(current_menu_ctx.link_url, &url) == NSERROR_OK) {
-		browser_window_navigate(bw,
-					url,
-					NULL,
-					BW_NAVIGATE_DOWNLOAD,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
+	err = browser_window_navigate(bw,
+				current_menu_features.link,
+				NULL,
+				BW_NAVIGATE_DOWNLOAD,
+				NULL,
+				NULL,
+				NULL);
+	if (err != NSERROR_OK) {
+		warn_user(messages_get_errorcode(err), 0);
 	}
 
 	return TRUE;
@@ -947,21 +948,15 @@ MENUHANDLER(link_openwin)
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
-	nsurl *url;
-	nserror error;
+	nserror err;
 
-	if (current_menu_ctx.link_url == NULL)
+	if (current_menu_features.link == NULL)
 		return FALSE;
 
-	error = nsurl_create(current_menu_ctx.link_url, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(
-				BW_CREATE_CLONE | BW_CREATE_HISTORY,
-				url, NULL, bw, NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	err = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
+				current_menu_features.link, NULL, bw, NULL);
+	if (err != NSERROR_OK) {
+		warn_user(messages_get_errorcode(err), 0);
 	}
 
 	return TRUE;
@@ -975,23 +970,19 @@ MENUHANDLER(link_opentab)
 	struct nsgtk_scaffolding *g = (struct nsgtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
-	nsurl *url;
-	nserror error;
+	nserror err;
 
-	if (current_menu_ctx.link_url == NULL)
+	if (current_menu_features.link == NULL)
 		return FALSE;
 
 	temp_open_background = 1;
 
-	error = nsurl_create(current_menu_ctx.link_url, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_CLONE |
-				BW_CREATE_HISTORY | BW_CREATE_TAB,
-				url, NULL, bw, NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
+	err = browser_window_create(BW_CREATE_CLONE |
+				    BW_CREATE_HISTORY |
+				    BW_CREATE_TAB,
+				    current_menu_features.link, NULL, bw, NULL);
+	if (err != NSERROR_OK) {
+		warn_user(messages_get_errorcode(err), 0);
 	}
 
 	temp_open_background = -1;
@@ -1004,20 +995,10 @@ MENUHANDLER(link_opentab)
  */
 MENUHANDLER(link_bookmark)
 {
-	nsurl *url;
-	nserror error;
-
-	if (current_menu_ctx.link_url == NULL)
+	if (current_menu_features.link == NULL)
 		return FALSE;
 
-	error = nsurl_create(current_menu_ctx.link_url, &url);
-	if (error == NSERROR_OK) {
-		hotlist_add_url(url);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+	hotlist_add_url(current_menu_features.link);
 
 	return TRUE;
 }
@@ -1029,11 +1010,13 @@ MENUHANDLER(link_copy)
 {
 	GtkClipboard *clipboard;
 
-	if (current_menu_ctx.link_url == NULL)
+	if (current_menu_features.link == NULL)
 		return FALSE;
 
 	clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
-	gtk_clipboard_set_text(clipboard, current_menu_ctx.link_url, -1);
+	gtk_clipboard_set_text(clipboard,
+			       nsurl_access(current_menu_features.link), -1);
+
 	return TRUE;
 }
 
@@ -2692,13 +2675,11 @@ void nsgtk_scaffolding_context_menu(struct nsgtk_scaffolding *g,
 {
 	GtkMenu	*gtkmenu;
 
-	/* update the global current_menu_ctx */
-	browser_window_get_contextual_content(
-			nsgtk_get_browser_window(g->top_level),
-			x, y, &current_menu_ctx);
+	/* update the global context menu features */
+	browser_window_get_features(nsgtk_get_browser_window(g->top_level),
+			x, y, &current_menu_features);
 
-
-	if (current_menu_ctx.link_url != NULL) {
+	if (current_menu_features.link != NULL) {
 		/* menu is opening over a link */
 		gtkmenu = g->link_menu->link_menu;
 	} else {

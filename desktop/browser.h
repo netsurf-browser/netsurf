@@ -117,6 +117,27 @@ enum browser_window_nav_flags {
 };
 
 /**
+ * Page features at a specific spatial location.
+ */
+struct browser_window_features {
+	/** URL of a link or NULL. */
+	struct nsurl *link;
+
+	/** Object at position or NULL. */
+	struct hlcache_handle *object;
+
+	/** handle of top level content. */
+	struct hlcache_handle *main;
+
+	/** type of form feature. */
+	enum {
+		CTX_FORM_NONE,
+		CTX_FORM_TEXT,
+		CTX_FORM_FILE
+	} form_features;
+};
+
+/**
  * Create and open a new root browser window with the given page.
  *
  * \param flags		Flags to control operation
@@ -302,17 +323,22 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 float browser_window_get_scale(struct browser_window *bw);
 
 /**
- * Get access to any content, link URLs and objects (images) currently
- * at the given (x, y) coordinates.
+ * Get access to any page features at the given coordinates.
  *
- * \param bw	browser window to look inside
- * \param x	x-coordinate of point of interest
- * \param y	y-coordinate of point of interest
- * \param data	pointer to contextual_content struct.  Its fields are updated
- *		with pointers to any relevent content, or set to NULL if none.
+ * Fetches page features like content, link URLs and objects (images)
+ * at the specified co-ordinates within the browsing context.
+ *
+ * Fields within the supplied features structure are updated with
+ * pointers to any relevent content, or set to NULL if none.
+ *
+ * \param[in] bw browser window to examine.
+ * \param[in] x x-coordinate of point of interest
+ * \param[in] y y-coordinate of point of interest
+ * \param[out] data Feature structure to update.
+ * \return NSERROR_OK or appropriate error code on faliure.
  */
-void browser_window_get_contextual_content(struct browser_window *bw,
-		int x, int y, struct contextual_content *data);
+nserror browser_window_get_features(struct browser_window *bw,
+		int x, int y, struct browser_window_features *data);
 
 /**
  * Send a scroll request to a browser window at a particular point.  The

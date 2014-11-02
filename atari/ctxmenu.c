@@ -58,7 +58,7 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy);
 
 struct s_context_info {
 	unsigned long flags;
-	struct contextual_content ccdata;
+	struct browser_window_features ccdata;
 };
 
 struct s_context_info ctxinfo;
@@ -86,14 +86,12 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 
 		ctxinfo.flags |= CNT_BROWSER;
 
-		memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
-
 		gui_window_get_scroll(gw, &sx, &sy);
 
-		browser_window_get_contextual_content( gw->browser->bw, mx+sx, my+sy,
-				(struct contextual_content*)&ctxinfo.ccdata);
+		browser_window_get_features( gw->browser->bw, mx+sx, my+sy,
+				&ctxinfo.ccdata);
 
-		if( ctxinfo.ccdata.link_url ){
+		if( ctxinfo.ccdata.link ){
 			ctxinfo.flags |= CNT_HREF;
 		}
 		if( ctxinfo.ccdata.object) {
@@ -242,23 +240,18 @@ void context_popup(struct gui_window * gw, short x, short y)
 			}
 
 		case POP_CTX_SAVE_LINK_AS:
-			if (ctx->ccdata.link_url != NULL) {
-				nsurl *url;
+			if (ctx->ccdata.link != NULL) {
 				nserror error;
 
-				error = nsurl_create(ctx->ccdata.link_url, &url);
-				if (error == NSERROR_OK) {
-					error = browser_window_navigate(
-						gw->browser->bw,
-						url,
-						browser_window_get_url(gw->browser->bw),
-						BW_NAVIGATE_DOWNLOAD,
-						NULL,
-						NULL,
-						NULL
-						);
-						nsurl_unref(url);
-				}
+				error = browser_window_navigate(
+					gw->browser->bw,
+					ctx->ccdata.link,
+					browser_window_get_url(gw->browser->bw),
+					BW_NAVIGATE_DOWNLOAD,
+					NULL,
+					NULL,
+					NULL);
+
 				if (error != NSERROR_OK) {
 					warn_user(messages_get_errorcode(error), 0);
 				}
@@ -276,27 +269,23 @@ void context_popup(struct gui_window * gw, short x, short y)
 		break;
 
 		case POP_CTX_COPY_LINK:
-			if ((ctx->flags & CNT_HREF) && ctx->ccdata.link_url != NULL) {
-				scrap_txt_write((char*)ctx->ccdata.link_url);
+			if ((ctx->flags & CNT_HREF) &&
+			    (ctx->ccdata.link != NULL)) {
+				scrap_txt_write((char*)nsurl_access(ctx->ccdata.link));
 			}
 		break;
 
 		case POP_CTX_OPEN_NEW:
-			if ((ctx->flags & CNT_HREF) && ctx->ccdata.link_url) {
-				nsurl *url;
+			if ((ctx->flags & CNT_HREF) &&
+			    (ctx->ccdata.link != NULL)) {
 				nserror error;
 
-				error = nsurl_create(ctx->ccdata.link_url, &url);
-				if (error == NSERROR_OK) {
-					error = browser_window_create(
-							BW_CREATE_HISTORY | BW_CREATE_CLONE,
-							url,
-							browser_window_get_url(gw->browser->bw),
-								      gw->browser->bw,
-								      NULL
-						);
-					nsurl_unref(url);
-				}
+				error = browser_window_create(
+					BW_CREATE_HISTORY | BW_CREATE_CLONE,
+					ctx->ccdata.link,
+					browser_window_get_url(gw->browser->bw),
+					gw->browser->bw,
+					NULL);
 				if (error != NSERROR_OK) {
 					warn_user(messages_get_errorcode(error), 0);
 				}

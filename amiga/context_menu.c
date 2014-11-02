@@ -585,7 +585,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	struct hlcache_handle *cc = gwin->bw->current_content;
 	bool no_more_menus = false;
 	bool menuhascontent = false;
-	struct contextual_content ccdata;
+	struct browser_window_features ccdata;
 
 	if(!cc) return;
 	if(ctxmenuobj) DisposeObject(ctxmenuobj);
@@ -648,7 +648,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	{
 		if(no_more_menus == false)
 		{
-			browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
+			browser_window_get_features(gwin->bw, x, y, &ccdata);
 
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_PAGE, cc);
 			menuhascontent = true;
@@ -659,9 +659,9 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				menuhascontent = true;
 			}
 
-			if(ccdata.link_url)
+			if(ccdata.link)
 			{
-				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_URL, (char *)ccdata.link_url);
+				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_URL, (char *)nsurl_access(ccdata.link));
 				menuhascontent = true;
 			}
 

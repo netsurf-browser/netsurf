@@ -795,20 +795,19 @@ char * content_get_selection(hlcache_handle *h)
 		return NULL;
 }
 
-
-void content_get_contextual_content(struct hlcache_handle *h,
-		int x, int y, struct contextual_content *data)
+/* exported interface documented in content/content.h */
+nserror content_get_contextual_content(struct hlcache_handle *h,
+		int x, int y, struct browser_window_features *data)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 
 	if (c->handler->get_contextual_content != NULL) {
-		c->handler->get_contextual_content(c, x, y, data);
-		return;
-	} else {
-		data->object = h;
-		return;
+		return c->handler->get_contextual_content(c, x, y, data);
 	}
+
+	data->object = h;
+	return NSERROR_OK;
 }
 
 

@@ -36,7 +36,6 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utf8.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -1617,17 +1616,16 @@ static char *html_get_selection(struct content *c)
  * Get access to any content, link URLs and objects (images) currently
  * at the given (x, y) coordinates.
  *
- * \param c	html content to look inside
- * \param x	x-coordinate of point of interest
- * \param y	y-coordinate of point of interest
- * \param data	pointer to contextual_content struct.  Its fields are updated
- *		with pointers to any relevent content, or set to NULL if none.
+ * \param[in] c html content to look inside
+ * \param[in] x x-coordinate of point of interest
+ * \param[in] y y-coordinate of point of interest
+ * \param[out] data Positional features struct to be updated with any
+ *             relevent content, or set to NULL if none.
+ * \return NSERROR_OK on success else appropriate error code.
  */
-static void
-html_get_contextual_content(struct content *c,
-			    int x,
-			    int y,
-			    struct contextual_content *data)
+static nserror
+html_get_contextual_content(struct content *c, int x, int y,
+			    struct browser_window_features *data)
 {
 	html_content *html = (html_content *) c;
 
@@ -1638,13 +1636,16 @@ html_get_contextual_content(struct content *c,
 	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next;
 
-		if (box->style && css_computed_visibility(box->style) ==
-				CSS_VISIBILITY_HIDDEN)
+		/* hidden boxes are ignored */
+		if ((box->style != NULL) &&
+		    css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN) {
 			continue;
+		}
 
-		if (box->iframe)
-			browser_window_get_contextual_content(box->iframe,
+		if (box->iframe) {
+			browser_window_get_features(box->iframe,
 					x - box_x, y - box_y, data);
+		}
 
 		if (box->object)
 			content_get_contextual_content(box->object,
@@ -1654,7 +1655,7 @@ html_get_contextual_content(struct content *c,
 			data->object = box->object;
 
 		if (box->href)
-			data->link_url = nsurl_access(box->href);
+			data->link = box->href;
 
 		if (box->usemap) {
 			const char *target = NULL;
@@ -1663,7 +1664,7 @@ html_get_contextual_content(struct content *c,
 			/* Box might have imagemap, but no actual link area
 			 * at point */
 			if (url != NULL)
-				data->link_url = nsurl_access(url);
+				data->link = url;
 		}
 		if (box->gadget) {
 			switch (box->gadget->type) {
@@ -1683,6 +1684,7 @@ html_get_contextual_content(struct content *c,
 			}
 		}
 	}
+	return NSERROR_OK;
 }
 
 

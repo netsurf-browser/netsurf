@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "utils/types.h"
+
 struct textarea;
 
 /* Text area flags */

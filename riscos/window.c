@@ -1868,7 +1868,7 @@ bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
 bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		bool is_toolbar)
 {
-	struct contextual_content	cont;
+	struct browser_window_features cont;
 	os_error			*ro_error;
 	wimp_pointer			pointer;
 	os_coord			pos;
@@ -1892,7 +1892,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	if (!ro_gui_window_to_window_pos(g, pointer.pos.x, pointer.pos.y, &pos))
 		return false;
 
-	browser_window_get_contextual_content(g->bw, pos.x, pos.y, &cont);
+	browser_window_get_features(g->bw, pos.x, pos.y, &cont);
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
@@ -2144,7 +2144,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	struct gui_window	*g;
 	struct browser_window	*bw;
 	struct toolbar		*toolbar;
-	struct contextual_content cont;
+	struct browser_window_features cont;
 	bool			export_sprite, export_draw, have_content;
 	os_coord		pos;
 	browser_editor_flags	editor_flags;
@@ -2176,21 +2176,15 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 		current_menu_main = NULL;
 		current_menu_object = NULL;
-		if (current_menu_url != NULL) {
-			nsurl_unref(current_menu_url);
-			current_menu_url = NULL;
-		}
+		current_menu_url = NULL;
 
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x,
 				pointer->pos.y, &pos)) {
-			browser_window_get_contextual_content(bw,
-					pos.x, pos.y, &cont);
+			browser_window_get_features(bw,	pos.x, pos.y, &cont);
 
 			current_menu_main = cont.main;
 			current_menu_object = cont.object;
-			if (cont.link_url != NULL) {
-				nsurl_create(cont.link_url, &current_menu_url);
-			}
+			current_menu_url = cont.link;
 		}
 	}
 
@@ -3049,10 +3043,7 @@ void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu)
 {
 	if (menu == ro_gui_browser_window_menu) {
 		current_menu_object = NULL;
-		if (current_menu_url != NULL) {
-			nsurl_unref(current_menu_url);
-			current_menu_url = NULL;
-		}
+		current_menu_url = NULL;
 	} else if (menu == gui_form_select_menu) {
 		gui_form_select_control = NULL;
 	}

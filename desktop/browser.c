@@ -560,18 +560,28 @@ void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 }
 
 /**
- * Internal helper for browser_window_get_contextual_content
+ * Internal helper for getting the positional features
+ *
+ * \param[in] bw browser window to examine.
+ * \param[in] x x-coordinate of point of interest
+ * \param[in] y y-coordinate of point of interest
+ * \param[out] data Feature structure to update.
+ * \return NSERROR_OK or appropriate error code on faliure.
  */
-static void browser_window__get_contextual_content(struct browser_window *bw,
-		int x, int y, struct contextual_content *data)
+static nserror
+browser_window__get_contextual_content(struct browser_window *bw,
+		int x, int y, struct browser_window_features *data)
 {
+	nserror ret = NSERROR_OK;
+
 	/* Handle (i)frame scroll offset (core-managed browser windows only) */
 	x += scrollbar_get_offset(bw->scroll_x);
 	y += scrollbar_get_offset(bw->scroll_y);
 
 	if (bw->children) {
 		/* Browser window has children, so pass request on to
-		 * appropriate child */
+		 * appropriate child.
+		 */
 		struct browser_window *bwc;
 		int cur_child;
 		int children = bw->rows * bw->cols;
@@ -582,39 +592,41 @@ static void browser_window__get_contextual_content(struct browser_window *bw,
 			bwc = &bw->children[cur_child];
 
 			/* Skip this frame if (x, y) coord lies outside */
-			if (x < bwc->x || bwc->x + bwc->width < x ||
-					y < bwc->y || bwc->y + bwc->height < y)
+			if ((x < bwc->x) ||
+			    (bwc->x + bwc->width < x) ||
+			    (y < bwc->y) ||
+			    (bwc->y + bwc->height < y)) {
 				continue;
+			}
 
 			/* Pass request into this child */
-			browser_window__get_contextual_content(bwc,
+			return browser_window__get_contextual_content(bwc,
 					(x - bwc->x), (y - bwc->y), data);
-			return;
 		}
 
 		/* Coordinate not contained by any frame */
-		return;
+
+	} else if (bw->current_content != NULL) {
+		/* Pass request to content */
+		ret = content_get_contextual_content(bw->current_content,
+						     x, y, data);
+		data->main = bw->current_content;
 	}
 
-	if (bw->current_content == NULL)
-		/* No content; nothing to set */
-		return;
-
-	/* Pass request to content */
-	content_get_contextual_content(bw->current_content, x, y, data);
-	data->main = bw->current_content;
+	return ret;
 }
 
 /* exported interface, documented in browser.h */
-void browser_window_get_contextual_content(struct browser_window *bw,
-		int x, int y, struct contextual_content *data)
+nserror browser_window_get_features(struct browser_window *bw,
+		int x, int y, struct browser_window_features *data)
 {
-	data->link_url = NULL;
+	/* clear the features structure to empty values */
+	data->link = NULL;
 	data->object = NULL;
 	data->main = NULL;
 	data->form_features = CTX_FORM_NONE;
 
-	browser_window__get_contextual_content(bw, x, y, data);
+	return browser_window__get_contextual_content(bw, x, y, data);
 }
 
 /* exported interface, documented in browser.h */
