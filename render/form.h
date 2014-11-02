@@ -36,6 +36,8 @@ struct dom_string;
 struct content;
 struct nsurl;
 struct fetch_multipart_data;
+struct redraw_context;
+
 enum browser_mouse_state;
 
 /** Form submit method. */

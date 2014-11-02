@@ -21,8 +21,5 @@
 #define ATARI_REDRAW_SLOTS_H
 
 #include <mt_gem.h>
-#include "utils/types.h"
-
-
 
 #endif

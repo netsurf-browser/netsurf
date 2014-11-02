@@ -25,7 +25,9 @@
 #include "desktop/core_window.h"
 #include "desktop/textinput.h"
 #include "utils/errors.h"
-#include "utils/nsurl.h"
+
+struct redraw_context;
+struct nsurl;
 
 enum browser_mouse_state;
 
@@ -63,7 +65,7 @@ nserror global_history_fini(void);
  * \param url		URL for node being added
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror global_history_add(nsurl *url);
+nserror global_history_add(struct nsurl *url);
 
 /*
  * Save global history to file (html)
@@ -116,7 +118,7 @@ bool global_history_has_selection(void);
  * \param title		Updated to the selected entry's title, or NULL
  * \return true iff global history has a selection
  */
-bool global_history_get_selection(nsurl **url, const char **title);
+bool global_history_get_selection(struct nsurl **url, const char **title);
 
 /**
  * Expand the treeview's nodes

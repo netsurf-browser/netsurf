@@ -35,7 +35,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/types.h"
 #include "utils/utils.h"
 
 #define JPEG_INTERNAL_OPTIONS

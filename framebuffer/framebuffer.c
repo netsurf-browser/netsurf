@@ -28,6 +28,7 @@
 #include <libnsfb_event.h>
 #include <libnsfb_cursor.h>
 
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "desktop/browser.h"
 #include "image/bitmap.h"

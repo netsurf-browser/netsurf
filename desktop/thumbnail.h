@@ -24,12 +24,11 @@
 #define _NETSURF_DESKTOP_THUMBNAIL_H_
 
 #include <stdbool.h>
-#include "utils/nsurl.h"
-#include "utils/types.h"
 
 struct hlcache_handle;
+struct redraw_context;
 struct bitmap;
-
+struct nsurl;
 
 /**
  * Redraw a content for thumbnailing
@@ -47,12 +46,12 @@ struct bitmap;
  *
  * Units for width and height are pixels.
  */
-bool thumbnail_redraw(struct hlcache_handle *content,
-		int width, int height, const struct redraw_context *ctx);
+bool thumbnail_redraw(struct hlcache_handle *content, int width, int height,
+		      const struct redraw_context *ctx);
 
 
 /* In platform specific thumbnail.c. */
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-		nsurl *url);
+		      struct nsurl *url);
 
 #endif

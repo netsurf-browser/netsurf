@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 
+#include "utils/utils.h"
 #include "desktop/plotters.h"
 
 static bool

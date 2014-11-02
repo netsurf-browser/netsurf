@@ -32,6 +32,7 @@
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
+#include "utils/utils.h"
 #include "desktop/plotters.h"
 #include "utils/nsoption.h"
 

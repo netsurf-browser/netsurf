@@ -29,7 +29,6 @@ extern "C" {
 #include "desktop/textinput.h"
 #include "desktop/font.h"
 #include "utils/log.h"
-#include "utils/types.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "desktop/mouse.h"

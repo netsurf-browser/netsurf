@@ -23,9 +23,8 @@
 #ifndef _NETSURF_DESKTOP_CORE_WINDOW_H_
 #define _NETSURF_DESKTOP_CORE_WINDOW_H_
 
-#include "utils/types.h"
-
 struct core_window;
+struct rect;
 
 typedef enum {
 	CORE_WINDOW_DRAG_NONE,

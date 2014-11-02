@@ -21,8 +21,8 @@
 #define ATARI_REDRAW_SLOTS_H
 
 #include <mt_gem.h>
-#include "utils/types.h"
 
+#include "utils/utils.h"
 
 /*
 	MAX_REDRW_SLOTS

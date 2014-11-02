@@ -36,7 +36,6 @@
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/types.h"
 #include "desktop/browser.h"
 #include "desktop/textinput.h"
 #include "desktop/browser_history.h"

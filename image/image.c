@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "utils/utils.h"
 #include "utils/errors.h"
 #include "utils/config.h"
 #include "utils/log.h"

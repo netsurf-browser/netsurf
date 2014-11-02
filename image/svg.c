@@ -26,12 +26,13 @@
 
 #include <svgtiny.h>
 
+#include "utils/messages.h"
+#include "utils/utils.h"
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "desktop/plotters.h"
+
 #include "image/svg.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
 
 typedef struct svg_content {
 	struct content base;

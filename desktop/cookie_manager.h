@@ -30,7 +30,9 @@
 #include "desktop/textinput.h"
 #include "utils/errors.h"
 
+struct redraw_context;
 struct cookie_data;
+
 enum browser_mouse_state;
 
 /**

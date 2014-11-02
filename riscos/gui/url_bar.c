@@ -38,6 +38,7 @@
 #include "content/hlcache.h"
 #include "content/content.h"
 #include "desktop/browser.h"
+#include "desktop/plotters.h"
 
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"

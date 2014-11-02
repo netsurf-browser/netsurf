@@ -29,7 +29,8 @@
 #include "desktop/mouse.h"
 #include "desktop/core_window.h"
 #include "desktop/textinput.h"
-#include "utils/types.h"
+
+struct redraw_context;
 
 typedef struct treeview treeview;
 typedef struct treeview_node treeview_node;

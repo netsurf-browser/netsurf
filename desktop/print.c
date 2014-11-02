@@ -24,19 +24,18 @@
 
 #include <assert.h>
 #include <string.h>
-
 #include <dom/dom.h>
 
+#include "utils/nsoption.h"
+#include "utils/log.h"
+#include "utils/talloc.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
-#include "utils/nsoption.h"
+#include "render/box.h"
+
 #include "desktop/print.h"
 #include "desktop/printer.h"
-#include "render/box.h"
-#include "utils/log.h"
-#include "utils/talloc.h"
-#include "utils/types.h"
 
 /* Default print settings */
 #define DEFAULT_PAGE_WIDTH 595

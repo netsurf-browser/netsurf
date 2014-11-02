@@ -27,7 +27,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "utils/types.h"
 #include "utils/errors.h"
 #include "desktop/plot_style.h"
 #include "desktop/frame_types.h"
@@ -41,6 +40,8 @@ struct selection;
 struct fetch_multipart_data;
 struct form_control;
 struct nsurl;
+struct rect;
+struct redraw_context;
 enum content_debug;
 
 typedef enum {

@@ -31,7 +31,6 @@
 #include <pencil.h>
 
 #include "utils/log.h"
-#include "utils/types.h"
 #include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"

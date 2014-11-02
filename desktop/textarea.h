@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "utils/types.h"
+#include "utils/utils.h"
 
 struct textarea;
 

@@ -91,8 +91,6 @@
 #include <stdio.h>
 
 #include "css/css.h"
-#include "utils/nsurl.h"
-#include "utils/types.h"
 
 struct content;
 struct box;
@@ -101,8 +99,9 @@ struct column;
 struct object_params;
 struct object_param;
 struct html_content;
-
+struct nsurl;
 struct dom_node;
+struct rect;
 
 #define UNKNOWN_WIDTH INT_MAX
 #define UNKNOWN_MAX_WIDTH INT_MAX
@@ -216,7 +215,7 @@ struct box {
 	/** Width of space after current text (depends on font and size). */
 	int space;
 
-	nsurl *href;   /**< Link, or 0. */
+	struct nsurl *href;   /**< Link, or 0. */
 	const char *target;  /**< Link target, or 0. */
 	const char *title;  /**< Title, or 0. */
 
@@ -289,11 +288,11 @@ struct column {
 
 /** Parameters for object element and similar elements. */
 struct object_params {
-	nsurl *data;
+	struct nsurl *data;
 	char *type;
 	char *codetype;
-	nsurl *codebase;
-	nsurl *classid;
+	struct nsurl *codebase;
+	struct nsurl *classid;
 	struct object_param *params;
 };
 
@@ -316,7 +315,7 @@ extern const char *TARGET_BLANK;
 
 
 struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, nsurl *href, const char *target, 
+		bool style_owned, struct nsurl *href, const char *target, 
 		const char *title, lwc_string *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
@@ -332,7 +331,7 @@ struct box *box_pick_text_box(struct html_content *html,
 struct box *box_find_by_id(struct box *box, lwc_string *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth, bool style);
-bool box_extract_link(const char *rel, nsurl *base, nsurl **result);
+bool box_extract_link(const char *rel, struct nsurl *base, struct nsurl **result);
 
 bool box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right);

@@ -27,7 +27,6 @@
 
 #include <stddef.h>
 
-#include "utils/types.h"
 #include "utils/errors.h"
 #include "desktop/plot_style.h"
 

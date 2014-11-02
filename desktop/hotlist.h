@@ -25,7 +25,9 @@
 #include "desktop/core_window.h"
 #include "desktop/textinput.h"
 #include "utils/errors.h"
-#include "utils/nsurl.h"
+
+struct redraw_context;
+struct nsurl;
 
 enum browser_mouse_state;
 
@@ -63,7 +65,7 @@ nserror hotlist_fini(const char *path);
  * \param url		URL for node being added
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_add_url(nsurl *url);
+nserror hotlist_add_url(struct nsurl *url);
 
 /**
  * Check whether given URL is present in hotlist
@@ -71,21 +73,21 @@ nserror hotlist_add_url(nsurl *url);
  * \param url		Address to look for in hotlist
  * \return true iff url is present in hotlist, false otherwise
  */
-bool hotlist_has_url(nsurl *url);
+bool hotlist_has_url(struct nsurl *url);
 
 /**
  * Remove any entries matching the given URL from the hotlist
  *
  * \param url		Address to look for in hotlist
  */
-void hotlist_remove_url(nsurl *url);
+void hotlist_remove_url(struct nsurl *url);
 
 /**
  * Update given URL, e.g. new visited data
  *
  * \param url		Address to update entries for
  */
-void hotlist_update_url(nsurl *url);
+void hotlist_update_url(struct nsurl *url);
 
 /**
  * Add an entry to the hotlist for given Title/URL.
@@ -96,7 +98,7 @@ void hotlist_update_url(nsurl *url);
  * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror hotlist_add_entry(nsurl *url, const char *title, bool at_y, int y);
+nserror hotlist_add_entry(struct nsurl *url, const char *title, bool at_y, int y);
 
 /**
  * Add a folder to the hotlist.
@@ -134,7 +136,7 @@ typedef nserror (*hotlist_folder_enter_cb)(void *ctx, const char *title);
  * \param title		The entry's title
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
-typedef nserror (*hotlist_address_cb)(void *ctx, nsurl *url, const char *title);
+typedef nserror (*hotlist_address_cb)(void *ctx, struct nsurl *url, const char *title);
 
 /**
  * Client callback for hotlist_iterate, reporting a hotlist folder departure
@@ -207,7 +209,7 @@ bool hotlist_has_selection(void);
  * \param title		Updated to the selected entry's title, or NULL
  * \return true iff hotlist has a selection
  */
-bool hotlist_get_selection(nsurl **url, const char **title);
+bool hotlist_get_selection(struct nsurl **url, const char **title);
 
 /**
  * Edit the first selected node

@@ -23,6 +23,7 @@
 
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
 #include "content/urldb.h"
 #include "content/content.h"

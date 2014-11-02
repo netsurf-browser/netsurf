@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/nsurl.h"
 #include "desktop/thumbnail.h"
 
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,

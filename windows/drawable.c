@@ -25,6 +25,7 @@
 
 #include "desktop/browser.h"
 #include "desktop/textinput.h"
+#include "desktop/plotters.h"
 #include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/utils.h"

@@ -24,7 +24,6 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
-#include "utils/types.h"
 #include "desktop/browser_history.h"
 #include "desktop/plotters.h"
 

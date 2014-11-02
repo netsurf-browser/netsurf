@@ -38,6 +38,12 @@
 
 #include "utils/errors.h"
 
+/* Rectangle coordinates */
+struct rect {
+	int x0, y0; /* Top left */
+	int x1, y1; /* Bottom right */
+};
+
 struct dirent;
 
 #ifndef NOF_ELEMENTS

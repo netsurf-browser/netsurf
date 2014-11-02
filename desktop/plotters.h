@@ -26,16 +26,22 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "utils/types.h"
 #include "desktop/plot_style.h"
 
 struct bitmap;
+struct rect;
 
 typedef unsigned long bitmap_flags_t;
 #define BITMAPF_NONE 0
 #define BITMAPF_REPEAT_X 1
 #define BITMAPF_REPEAT_Y 2
 
+enum path_command {
+	PLOTTER_PATH_MOVE,
+	PLOTTER_PATH_CLOSE,
+	PLOTTER_PATH_LINE,
+	PLOTTER_PATH_BEZIER,
+};
 
 /** Set of target specific plotting functions.
  *
@@ -137,12 +143,18 @@ struct plotter_table {
 	bool option_knockout;	/**< set if knockout rendering is required */
 };
 
-enum path_command {
-	PLOTTER_PATH_MOVE,
-	PLOTTER_PATH_CLOSE,
-	PLOTTER_PATH_LINE,
-	PLOTTER_PATH_BEZIER,
-};
 
+/* Redraw context */
+struct redraw_context {
+	/** Redraw to show interactive features, such as active selections
+	 *  etc.  Should be off for printing. */
+	bool interactive;
+
+	/** Render background images.  May want it off for printing. */
+	bool background_images;
+
+	/** Current plotters, must be assigned before use. */
+	const struct plotter_table *plot;
+};
 
 #endif

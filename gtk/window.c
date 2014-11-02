@@ -38,6 +38,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/gui_window.h"
+#include "desktop/plotters.h"
 #include "render/form.h"
 
 #include "gtk/compat.h"
