@@ -60,6 +60,8 @@ struct browser_window;
 struct form_control;
 struct rect;
 struct hlcache_handle;
+struct nsurl;
+
 enum gui_pointer_shape;
 
 /**

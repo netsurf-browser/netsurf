@@ -2166,7 +2166,7 @@ void gui_window_set_status(struct gui_window *_g, const char *text)
 	g->top_view->UnlockLooper();
 }
 
-nserror gui_window_set_url(struct gui_window *gw, const char *url)
+nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 {
 	struct beos_scaffolding *g;
 
@@ -2177,7 +2177,7 @@ nserror gui_window_set_url(struct gui_window *gw, const char *url)
 	assert(g->status_bar);
 
 	if (g->top_view->LockLooper()) {
-                g->url_bar->SetText(url);
+                g->url_bar->SetText(nsurl_access(url));
 
                 g->top_view->UnlockLooper();
         }

@@ -203,7 +203,7 @@ void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold);
 void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where);
 
 void gui_window_set_title(struct gui_window *_g, const char *title);
-nserror gui_window_set_url(struct gui_window *_g, const char *url);
+nserror gui_window_set_url(struct gui_window *_g, struct nsurl *url);
 void gui_window_set_icon(struct gui_window *_g, struct hlcache_handle *icon);
 void gui_window_set_status(struct gui_window *_g, const char *text);
 void gui_window_start_throbber(struct gui_window* _g);
