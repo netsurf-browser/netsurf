@@ -237,7 +237,7 @@ struct gui_window_table {
 	bool (*drag_start)(struct gui_window *g, gui_drag_type type, const struct rect *rect);
 
 	/** save link operation */
-	void (*save_link)(struct gui_window *g, const char *url, const char *title);
+	nserror (*save_link)(struct gui_window *g, nsurl *url, const char *title);
 
 	/**
 	 * Scrolls the specified area of a browser window into view.

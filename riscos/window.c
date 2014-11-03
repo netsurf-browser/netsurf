@@ -1280,14 +1280,12 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
  * \param url The url of the link
  * \param title The title of the link
  */
-static void gui_window_save_link(struct gui_window *g, const char *url,
-		const char *title)
+static nserror
+gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 {
-	nsurl *nurl;
-	nsurl_create(url, &nurl);
-	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, nurl, title);
-	nsurl_unref(nurl);
+	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
 	ro_gui_dialog_open_persistent(g->window, dialog_saveas, true);
+	return NSERROR_OK;
 }
 
 

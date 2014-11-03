@@ -306,12 +306,12 @@ gui_window_drag_start(struct gui_window *g, gui_drag_type type,
   return false;
 }
 
-static void
-gui_window_save_link(struct gui_window *g, const char *url, 
-                     const char *title)
+static nserror
+gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 {
   fprintf(stdout, "WINDOW SAVE_LINK WIN %u URL %s TITLE %s\n",
-          g->win_num, url, title);
+          g->win_num, nsurl_access(url), title);
+  return NSERROR_OK;
 }
 
 

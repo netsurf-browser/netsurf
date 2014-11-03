@@ -62,10 +62,11 @@ static bool gui_default_window_drag_start(struct gui_window *g,
 	return true;
 }
 
-static void gui_default_window_save_link(struct gui_window *g,
-					 const char *url,
+static nserror gui_default_window_save_link(struct gui_window *g,
+					 nsurl *url,
 					 const char *title)
 {
+	return NSERROR_OK;
 }
 
 static void gui_default_window_set_icon(struct gui_window *g,

@@ -164,7 +164,7 @@ union content_msg_data {
 	} dragsave;
 	/** CONTENT_MSG_SAVELINK - Save a URL */
 	struct {
-		const char *url;
+		nsurl *url;
 		const char *title;
 	} savelink;
 	/** CONTENT_MSG_POINTER - Mouse pointer to set */

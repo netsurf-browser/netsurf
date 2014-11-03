@@ -835,7 +835,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-			msg_data.savelink.url = nsurl_access(url);
+			msg_data.savelink.url = url;
 			msg_data.savelink.title = title;
 			content_broadcast(c, CONTENT_MSG_SAVELINK, msg_data);
 
