@@ -2222,10 +2222,10 @@ nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
 
 	/* extract the last component of the path, if possible */
 	if ((url->components.path != NULL) &&
-			lwc_string_length(url->components.path) != 0 &&
-			lwc_string_isequal(url->components.path,
-			corestring_lwc_slash_, &match) == lwc_error_ok &&
-			match != true) {
+	    (lwc_string_length(url->components.path) != 0) &&
+	    (lwc_string_isequal(url->components.path,
+			corestring_lwc_slash_, &match) == lwc_error_ok) &&
+	    (match == false) {
 		bool first = true;
 		bool keep_looking;
 

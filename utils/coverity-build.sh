@@ -46,7 +46,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
 
 # Coverity tools location 
-COVERITY_PREFIX=${COVERITY_PREFIX:-/opt/coverity/cov-analysis-linux64-6.6.1}
+COVERITY_PREFIX=${COVERITY_PREFIX:-/opt/coverity/cov-analysis-linux64-7.0.2}
 COVERITY_VERSION=$(git rev-parse HEAD)
 
 export PATH=${PATH}:${COVERITY_PREFIX}/bin
