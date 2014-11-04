@@ -70,11 +70,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	dheight = cairo_image_surface_get_height(dsurface);
 
 	/* Calculate size of buffer to render the content into */
-	/* We get the width from the content width, unless it exceeds 1024,
+	/* Get the width from the content width, unless it exceeds 1024,
 	 * in which case we use 1024. This means we never create excessively
 	 * large render buffers for huge contents, which would eat memory and
-	 * cripple performance. */
-	cwidth = min(content_get_width(content), 1024);
+	 * cripple performance. 
+	 */
+	cwidth = min(max(content_get_width(content), dwidth), 1024);
 
 	/* The height is set in proportion with the width, according to the
 	 * aspect ratio of the required thumbnail. */
