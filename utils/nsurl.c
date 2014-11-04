@@ -2225,7 +2225,7 @@ nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
 	    (lwc_string_length(url->components.path) != 0) &&
 	    (lwc_string_isequal(url->components.path,
 			corestring_lwc_slash_, &match) == lwc_error_ok) &&
-	    (match == false) {
+	    (match == false)) {
 		bool first = true;
 		bool keep_looking;
 
