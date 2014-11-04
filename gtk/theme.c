@@ -111,8 +111,8 @@ static bool nsgtk_theme_verify(const char *themename)
 				buf);
 			/* check every directory */
 			if (access(testfile, R_OK) == 0) {
-				stat(testfile, &sta);
-				if (S_ISDIR(sta.st_mode)) {
+				if ((stat(testfile, &sta) == 0) &&
+				    (S_ISDIR(sta.st_mode))) {
 					buf[strlen(buf)] = '\n';
 					/* "\0\0" -> "\n\0" */
 					strcat(filecontent, buf);
