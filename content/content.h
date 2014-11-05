@@ -318,7 +318,8 @@ void content_invalidate_reuse_data(struct hlcache_handle *c);
 nsurl *content_get_refresh_url(struct hlcache_handle *c);
 struct bitmap *content_get_bitmap(struct hlcache_handle *c);
 bool content_get_opaque(struct hlcache_handle *h);
-bool content_get_quirks(struct hlcache_handle *c);
+bool content_get_quirks(struct hlcache_handle *h);
+const char *content_get_encoding(struct hlcache_handle *h);
 
 bool content_is_locked(struct hlcache_handle *h);
 

@@ -2109,16 +2109,16 @@ struct box *html_get_box_tree(hlcache_handle *h)
 /**
  * Retrieve the charset of an HTML document
  *
- * \param h  Content to retrieve charset from
+ * \param c Content to retrieve charset from
  * \return Pointer to charset, or NULL
  */
-const char *html_get_encoding(hlcache_handle *h)
+static const char *html_encoding(const struct content *c)
 {
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
+	html_content *html = (html_content *) c;
 
-	assert(c != NULL);
+	assert(html != NULL);
 
-	return c->encoding;
+	return html->encoding;
 }
 
 /**
@@ -2262,6 +2262,7 @@ static const content_handler html_content_handler = {
 	.search_clear = html_search_clear,
 	.debug_dump = html_debug_dump,
 	.clone = html_clone,
+	.get_encoding = html_encoding,
 	.type = html_content_type,
 	.no_share = true,
 };

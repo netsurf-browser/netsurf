@@ -1302,6 +1302,30 @@ bool content_get_quirks(hlcache_handle *h)
 
 
 /**
+ * Retrieve the encoding of a content
+ *
+ * \param c  Content to retrieve bitmap from
+ * \return Pointer to bitmap, or NULL if none.
+ */
+const char *content_get_encoding(hlcache_handle *h)
+{
+	return content__get_encoding(hlcache_handle_get_content(h));
+}
+
+const char *content__get_encoding(struct content *c)
+{
+	const char *encoding = NULL;
+
+	if ((c != NULL) &&
+	    (c->handler != NULL) &&
+	    (c->handler->get_encoding != NULL) ) {
+		encoding = c->handler->get_encoding(c);
+	}
+
+	return encoding;
+}
+
+/**
  * Return whether a content is currently locked
  *
  * \param c  Content to test

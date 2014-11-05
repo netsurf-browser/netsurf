@@ -3824,11 +3824,11 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 		sprintf(icon_buf, "file_xxx");
 
 	if (content_get_type(h) == CONTENT_HTML) {
-		if (html_get_encoding(h)) {
+		if (content_get_encoding(h)) {
 			char enc_token[10] = "Encoding0";
 			enc_token[8] = '0' + html_get_encoding_source(h);
 			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
-					html_get_encoding(h),
+					content_get_encoding(h),
 					messages_get(enc_token));
 			enc = enc_buf;
 		} else {

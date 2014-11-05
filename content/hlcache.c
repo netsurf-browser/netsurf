@@ -718,10 +718,9 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 /* See hlcache.h for documentation */
 struct content *hlcache_handle_get_content(const hlcache_handle *handle)
 {
-	assert(handle != NULL);
-
-	if (handle->entry != NULL)
+	if ((handle != NULL) && (handle->entry != NULL)) {
 		return handle->entry->content;
+	}
 
 	return NULL;
 }

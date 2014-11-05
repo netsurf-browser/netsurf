@@ -1907,8 +1907,8 @@ nserror browser_window_navigate(struct browser_window *bw,
 		post.data.urlenc = post_urlenc;
 	}
 
+	child.charset = content_get_encoding(parent);
 	if ((parent != NULL) && (content_get_type(parent) == CONTENT_HTML)) {
-		child.charset = html_get_encoding(parent);
 		child.quirks = content_get_quirks(parent);
 	}
 

@@ -23,7 +23,6 @@
 #include "utils/messages.h"
 #include "desktop/browser.h"
 #include "content/content.h"
-#include "render/html.h"
 
 #include "gtk/viewdata.h"
 #include "gtk/viewsource.h"
@@ -62,7 +61,7 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_get_url(bw)));
 
 	ret = utf8_from_enc(source_data,
-			  html_get_encoding(hlcontent),
+			  content_get_encoding(hlcontent),
 			  source_size,
 			  &ndata,
 			  &ndata_len);
