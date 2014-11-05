@@ -179,12 +179,11 @@ static void browser_window_history__free_entry(struct history_entry *entry)
  * \param  entry    subtree to position
  * \param  x        x position for entry
  * \param  y        smallest available y
- * \param  shuffle  shuffle layout
  * \return  greatest y used by subtree
  */
 
 static int browser_window_history__layout_subtree(struct history *history,
-		struct history_entry *entry, int x, int y, bool shuffle)
+		struct history_entry *entry, int x, int y)
 {
 	struct history_entry *child;
 	int y1 = y;
@@ -195,17 +194,13 @@ static int browser_window_history__layout_subtree(struct history *history,
 	if (!entry->forward) {
 		entry->x = x;
 		entry->y = y;
-		if (shuffle) {
-			entry->x = rand() % 600;
-			entry->y = rand() % 400;
-		}
 		return y + HEIGHT;
 	}
 
 	/* layout child subtrees below each other */
 	for (child = entry->forward; child; child = child->next) {
 		y1 = browser_window_history__layout_subtree(history, child,
-				x + WIDTH + RIGHT_MARGIN, y1, shuffle);
+				x + WIDTH + RIGHT_MARGIN, y1);
 		if (child->next)
 			y1 += BOTTOM_MARGIN;
 	}
@@ -213,10 +208,6 @@ static int browser_window_history__layout_subtree(struct history *history,
 	/* place ourselves in the middle */
 	entry->x = x;
 	entry->y = (y + y1) / 2 - HEIGHT / 2;
-	if (shuffle) {
-		entry->x = rand() % 600;
-		entry->y = rand() % 400;
-	}
 
 	return y1;
 }
@@ -232,10 +223,6 @@ static int browser_window_history__layout_subtree(struct history *history,
 
 static void browser_window_history__layout(struct history *history)
 {
-	time_t t = time(0);
-	struct tm *tp = localtime(&t);
-	bool shuffle = tp->tm_mon == 3 && tp->tm_mday == 1;
-
 	if (!history)
 		return;
 
@@ -243,14 +230,10 @@ static void browser_window_history__layout(struct history *history)
 	if (history->start)
 		history->height = browser_window_history__layout_subtree(
 				history, history->start,
-				RIGHT_MARGIN / 2, BOTTOM_MARGIN / 2,
-				shuffle);
+				RIGHT_MARGIN / 2, BOTTOM_MARGIN / 2);
 	else
 		history->height = 0;
-	if (shuffle) {
-		history->width = 600 + WIDTH;
-		history->height = 400 + HEIGHT;
-	}
+
 	history->width += RIGHT_MARGIN / 2;
 	history->height += BOTTOM_MARGIN / 2;
 }
