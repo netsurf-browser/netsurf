@@ -36,6 +36,7 @@
 #include "utils/url.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
+#include "content/content.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
