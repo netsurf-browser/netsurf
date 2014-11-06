@@ -872,6 +872,22 @@ nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug
 	return c->handler->debug_dump(c, f, op);
 }
 
+/* exported interface documented in content/content.h */
+nserror content_debug(struct hlcache_handle *h, enum content_debug op)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	if (c == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (c->handler->debug == NULL) {
+		return NSERROR_NOT_IMPLEMENTED;
+	}
+
+	return c->handler->debug(c, op);
+}
+
 
 void content_add_error(struct content *c, const char *token,
 		unsigned int line)

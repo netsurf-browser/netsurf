@@ -736,11 +736,19 @@ void browser_window_set_gadget_filename(struct browser_window *bw,
 nserror browser_window_debug_dump(struct browser_window *bw,
 				  FILE *f, enum content_debug op)
 {
-	if (bw->current_content == NULL) {
-		return NSERROR_OK;
+	if (bw->current_content != NULL) {
+		return content_debug_dump(bw->current_content, f, op);
 	}
+	return NSERROR_OK;
+}
 
-	return content_debug_dump(bw->current_content, f, op);
+/* exported interface, documented in browser.h */
+nserror browser_window_debug(struct browser_window *bw, enum content_debug op)
+{
+	if (bw->current_content != NULL) {
+		return content_debug(bw->current_content, op);
+	}
+	return NSERROR_OK;
 }
 
 /** slow script handler

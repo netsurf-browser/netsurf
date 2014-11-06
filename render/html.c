@@ -1978,10 +1978,26 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 
 
 /**
+ * set debug status.
+ *
+ * \param c The content to debug
+ * \param op The debug operation type
+ */
+static nserror
+html_debug(struct content *c, enum content_debug op)
+{
+	html_redraw_debug = !html_redraw_debug;
+
+	return NSERROR_OK;
+}
+
+
+/**
  * Dump debug info concerning the html_content
  *
- * \param bw The browser window
+ * \param c The content to debug
  * \param f The file to dump to
+ * \param op The debug dump type
  */
 static nserror
 html_debug_dump(struct content *c, FILE *f, enum content_debug op)
@@ -2261,6 +2277,7 @@ static const content_handler html_content_handler = {
 	.search = html_search,
 	.search_clear = html_search_clear,
 	.debug_dump = html_debug_dump,
+	.debug = html_debug,
 	.clone = html_clone,
 	.get_encoding = html_encoding,
 	.type = html_content_type,

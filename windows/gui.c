@@ -42,7 +42,6 @@
 #include "utils/nsoption.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "render/html.h"
 #include "desktop/gui_window.h"
 #include "desktop/gui_clipboard.h"
 #include "desktop/gui_misc.h"
@@ -1013,8 +1012,8 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_VIEW_TOGGLE_DEBUG_RENDERING:
-		html_redraw_debug = !html_redraw_debug;
 		if (gw->bw != NULL) {
+			browser_window_debug(gw->bw, CONTENT_DEBUG_REDRAW);
 			/* TODO: This should only redraw, not reformat.
 			 * (Layout doesn't change, so reformat is a waste of time) */
 			browser_window_reformat(gw->bw, false, gw->width, gw->height);

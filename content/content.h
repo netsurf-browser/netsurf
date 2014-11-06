@@ -90,7 +90,8 @@ typedef enum {
 /** Debugging dump operations */
 enum content_debug {
 	CONTENT_DEBUG_RENDER, /** Debug the contents rendering. */
-	CONTENT_DEBUG_DOM     /** Debug teh contents Document Object. */
+	CONTENT_DEBUG_DOM,    /** Debug the contents Document Object. */
+	CONTENT_DEBUG_REDRAW  /** Debug redraw operations. */
 };
 
 /** RFC5988 metadata link */
@@ -299,6 +300,14 @@ void content_search_clear(struct hlcache_handle *h);
  * \param op Debug operation type.
  */
 nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug op);
+
+/**
+ * Control debug con a content.
+ *
+ * \param h content handle to debug.
+ * \param op Debug operation type.
+ */
+nserror content_debug(struct hlcache_handle *h, enum content_debug op);
 
 struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 		lwc_string *rel);

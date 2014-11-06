@@ -45,7 +45,6 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/font.h"
-#include "render/html.h"
 #include "content/hlcache.h"
 
 #include "gtk/compat.h"
@@ -1267,8 +1266,14 @@ MULTIHANDLER(savewindowsize)
 
 MULTIHANDLER(toggledebugging)
 {
-	html_redraw_debug = !html_redraw_debug;
+	struct browser_window *bw;
+
+	bw = nsgtk_get_browser_window(g->top_level);
+
+	browser_window_debug(bw, CONTENT_DEBUG_REDRAW);
+
 	nsgtk_reflow_all_windows();
+
 	return TRUE;
 }
 

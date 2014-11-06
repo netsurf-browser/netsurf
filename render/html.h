@@ -149,9 +149,6 @@ struct content_html_iframe {
 #define STYLESHEET_USER		3	/* user stylesheet */
 #define STYLESHEET_START	4	/* start of document stylesheets */
 
-/** Render padding and margin box outlines in html_redraw(). */
-extern bool html_redraw_debug;
-
 nserror html_init(void);
 
 void html_redraw_a_box(struct hlcache_handle *h, struct box *box);

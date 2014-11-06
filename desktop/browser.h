@@ -668,9 +668,19 @@ int browser_get_dpi(void);
 /**
  * Dump debug info concerning the browser window's contents to file
  *
- * \param  bw    The browser window
- * \param  f    The file to dump to
+ * \param bw The browser window.
+ * \param f The file to dump to.
+ * \param op The debug operation type to dump.
+ * \return NSERROR_OK on success or error code on faliure.
  */
 nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op);
+
+/**
+ * set debug options on a window
+ * \param bw The browser window.
+ * \param op The debug operation type.
+ * \return NSERROR_OK on success or error code on faliure.
+ */
+nserror browser_window_debug(struct browser_window *bw, enum content_debug op);
 
 #endif

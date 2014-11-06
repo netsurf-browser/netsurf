@@ -2000,7 +2000,8 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case IS_WIMP_KEY + wimp_KEY_SHIFT + wimp_KEY_F11:
 		/* Toggle display of box outlines. */
-		html_redraw_debug = !html_redraw_debug;
+		browser_window_debug(g->bw, CONTENT_DEBUG_REDRAW);
+
 		gui_window_redraw_window(g);
 		return true;
 

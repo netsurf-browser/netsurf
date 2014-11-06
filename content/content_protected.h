@@ -77,6 +77,7 @@ struct content_handler {
 		       const char *string);
 	void (*search_clear)(struct content *c);
 	nserror (*debug_dump)(struct content *c, FILE *f, enum content_debug op);
+	nserror (*debug)(struct content *c, enum content_debug op);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	const char *(*get_encoding)(const struct content *c);
