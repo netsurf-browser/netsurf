@@ -651,20 +651,6 @@ bool browser_window_is_frameset(struct browser_window *bw);
 nserror browser_window_get_scrollbar_type(struct browser_window *bw,
 		browser_scrolling *h, browser_scrolling *v);
 
-
-/**
- * Dump debug info concerning the browser window's contents to file
- *
- * \param  bw    The browser window
- * \param  f    The file to dump to
- */
-nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op);
-
-/* In platform specific theme_install.c. */
-#ifdef WITH_THEME_INSTALL
-void theme_install_start(struct hlcache_handle *c);
-#endif
-
 /**
  * Set the DPI of the browser.
  *
@@ -678,5 +664,13 @@ nserror browser_set_dpi(int dpi);
  * \return The DPI in use.
  */
 int browser_get_dpi(void);
+
+/**
+ * Dump debug info concerning the browser window's contents to file
+ *
+ * \param  bw    The browser window
+ * \param  f    The file to dump to
+ */
+nserror browser_window_debug_dump(struct browser_window *bw, FILE *f, enum content_debug op);
 
 #endif

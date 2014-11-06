@@ -29,6 +29,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "desktop/browser.h"
+#include "desktop/theme.h"
 #include "content/content.h"
 #include "content/content_type.h"
 #include "content/hlcache.h"

@@ -32,6 +32,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
+#include "desktop/theme.h"
 
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
