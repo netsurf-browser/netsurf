@@ -171,7 +171,6 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 dom_document *html_get_document(struct hlcache_handle *h);
 struct box *html_get_box_tree(struct hlcache_handle *h);
-dom_hubbub_encoding_source html_get_encoding_source(struct hlcache_handle *h);
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 struct nsurl *html_get_base_url(struct hlcache_handle *h);

@@ -3825,12 +3825,10 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 		sprintf(icon_buf, "file_xxx");
 
 	if (content_get_type(h) == CONTENT_HTML) {
-		if (content_get_encoding(h)) {
-			char enc_token[10] = "Encoding0";
-			enc_token[8] = '0' + html_get_encoding_source(h);
+		if (content_get_encoding(h, CONTENT_ENCODING_NORMAL)) {
 			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
-					content_get_encoding(h),
-					messages_get(enc_token));
+				 content_get_encoding(h, CONTENT_ENCODING_NORMAL),
+				 content_get_encoding(h, CONTENT_ENCODING_SOURCE));
 			enc = enc_buf;
 		} else {
 			enc = messages_get("EncodingUnk");

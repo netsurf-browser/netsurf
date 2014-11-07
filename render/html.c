@@ -2128,29 +2128,21 @@ struct box *html_get_box_tree(hlcache_handle *h)
  * \param c Content to retrieve charset from
  * \return Pointer to charset, or NULL
  */
-static const char *html_encoding(const struct content *c)
+static const char *html_encoding(const struct content *c, enum content_encoding_type op)
 {
 	html_content *html = (html_content *) c;
 
 	assert(html != NULL);
 
+	if (op == CONTENT_ENCODING_SOURCE) {
+		char enc_token[10] = "Encoding0";
+		enc_token[8] = '0' + html->encoding_source;
+		return messages_get(enc_token);
+	}
+
 	return html->encoding;
 }
 
-/**
- * Retrieve the charset of an HTML document
- *
- * \param h  Content to retrieve charset from
- * \return Pointer to charset, or NULL
- */
-dom_hubbub_encoding_source html_get_encoding_source(hlcache_handle *h)
-{
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
-
-	assert(c != NULL);
-
-	return c->encoding_source;
-}
 
 /**
  * Retrieve framesets used in an HTML document

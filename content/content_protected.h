@@ -80,7 +80,7 @@ struct content_handler {
 	nserror (*debug)(struct content *c, enum content_debug op);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
-	const char *(*get_encoding)(const struct content *c);
+	const char *(*get_encoding)(const struct content *c, enum content_encoding_type op);
 	content_type (*type)(void);
 
         /** handler dependant content sensitive internal data interface. */
@@ -198,7 +198,7 @@ void content__invalidate_reuse_data(struct content *c);
 nsurl *content__get_refresh_url(struct content *c);
 struct bitmap *content__get_bitmap(struct content *c);
 bool content__get_opaque(struct content *c);
-const char *content__get_encoding(struct content *c);
+const char *content__get_encoding(struct content *c, enum content_encoding_type op);
 bool content__is_locked(struct content *c);
 
 #endif

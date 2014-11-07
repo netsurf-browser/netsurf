@@ -61,10 +61,10 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_get_url(bw)));
 
 	ret = utf8_from_enc(source_data,
-			  content_get_encoding(hlcontent),
-			  source_size,
-			  &ndata,
-			  &ndata_len);
+			    content_get_encoding(hlcontent, CONTENT_ENCODING_NORMAL),
+			    source_size,
+			    &ndata,
+			    &ndata_len);
 	if (ret == NSERROR_OK) {
 		ret = nsgtk_viewdata(title, filename, ndata, ndata_len);
 	}

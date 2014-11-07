@@ -94,6 +94,12 @@ enum content_debug {
 	CONTENT_DEBUG_REDRAW  /** Debug redraw operations. */
 };
 
+/** Content encoding informstion types */
+enum content_encoding_type {
+	CONTENT_ENCODING_NORMAL, /** The content encoding */
+	CONTENT_ENCODING_SOURCE  /** The content encoding source */
+};
+
 /** RFC5988 metadata link */
 struct content_rfc5988_link {
 	struct content_rfc5988_link *next; /**< next rfc5988_link in list */
@@ -328,7 +334,7 @@ nsurl *content_get_refresh_url(struct hlcache_handle *c);
 struct bitmap *content_get_bitmap(struct hlcache_handle *c);
 bool content_get_opaque(struct hlcache_handle *h);
 bool content_get_quirks(struct hlcache_handle *h);
-const char *content_get_encoding(struct hlcache_handle *h);
+const char *content_get_encoding(struct hlcache_handle *h, enum content_encoding_type op);
 
 bool content_is_locked(struct hlcache_handle *h);
 

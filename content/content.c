@@ -1323,19 +1323,19 @@ bool content_get_quirks(hlcache_handle *h)
  * \param c  Content to retrieve bitmap from
  * \return Pointer to bitmap, or NULL if none.
  */
-const char *content_get_encoding(hlcache_handle *h)
+const char *content_get_encoding(hlcache_handle *h, enum content_encoding_type op)
 {
-	return content__get_encoding(hlcache_handle_get_content(h));
+	return content__get_encoding(hlcache_handle_get_content(h), op);
 }
 
-const char *content__get_encoding(struct content *c)
+const char *content__get_encoding(struct content *c, enum content_encoding_type op)
 {
 	const char *encoding = NULL;
 
 	if ((c != NULL) &&
 	    (c->handler != NULL) &&
 	    (c->handler->get_encoding != NULL) ) {
-		encoding = c->handler->get_encoding(c);
+		encoding = c->handler->get_encoding(c, op);
 	}
 
 	return encoding;
