@@ -64,7 +64,6 @@
 #include "desktop/tree.h"
 #include "desktop/gui_window.h"
 #include "render/form.h"
-#include "render/html.h"
 
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
