@@ -30,7 +30,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I /SDK/local/common/include/libpng12
-  LDFLAGS += -lcurl -lrtmp -lpthread -ltre -lintl -lauto -lpbl
+  LDFLAGS += -lcurl -lrtmp -lpthread -ltre -lintl -lpbl
   LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
 else
   $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
@@ -53,7 +53,7 @@ else
   ifeq ($(SUBTARGET),os3)
     LDFLAGS += -lpbl -liconv
   else
-    LDFLAGS += -lauto -lpbl -liconv
+    LDFLAGS += -lpbl -liconv
   endif
 endif
 
