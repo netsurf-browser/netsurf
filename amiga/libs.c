@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libs.h"
+#include "amiga/libs.h"
+
+#include <proto/exec.h>
 
 void ami_libs_open(void)
 {
