@@ -36,6 +36,8 @@
 	struct Library *PREFIX##Base;	\
 	struct PREFIX##IFace *I##PREFIX;
 
+#define GraphicsBase GfxBase /* graphicslibrary is a bit weird */
+
 AMINS_LIB_STRUCT(Application);
 AMINS_LIB_STRUCT(Asl);
 AMINS_LIB_STRUCT(Diskfont);
