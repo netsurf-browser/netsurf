@@ -2257,10 +2257,11 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	return g;
 }
 
-/** set the title in the window
+/**
+ * set the title in the window
  *
- * @param gw The gui window to set title on
- * @param title The title to set (may be NULL)
+ * \param gw The gui window to set title on
+ * \param title The title to set (may be NULL)
  */
 void gui_window_set_title(struct gui_window *gw, const char *title)
 {

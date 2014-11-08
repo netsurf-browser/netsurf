@@ -359,8 +359,8 @@ static void gui_window_set_title(struct gui_window *gw, const char *title)
 /**
  * Set the status bar of a browser window.
  *
- * \param  w	 gui_window to update
- * \param  text  new status text
+ * \param w    gui_window to update
+ * \param text new status text
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {

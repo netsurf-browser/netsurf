@@ -1354,9 +1354,9 @@ nserror treeview_destroy(treeview *tree)
 /**
  * Expand a treeview's nodes
  *
- * \param tree		Treeview object to expand nodes in
- * \param only_folders	Iff true, only folders are expanded.
- * \return NSERROR_OK on success, appropriate error otherwise
+ * \param tree Treeview object to expand nodes in
+ * \param node The node to expand.
+ * \return NSERROR_OK on success, appropriate error otherwise.
  */
 static nserror treeview_node_expand_internal(treeview *tree,
 		treeview_node *node)

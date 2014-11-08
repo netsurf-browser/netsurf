@@ -194,11 +194,58 @@ int content__get_width(struct content *c);
 int content__get_height(struct content *c);
 int content__get_available_width(struct content *c);
 const char *content__get_source_data(struct content *c, unsigned long *size);
+
+/**
+ * Invalidate content reuse data.
+ *
+ * causes subsequent requests for content URL to query server to
+ * determine if content can be reused. This is required behaviour for
+ * forced reloads etc.
+ *
+ * \param c Content to invalidate.
+ */
 void content__invalidate_reuse_data(struct content *c);
+
+/**
+ * Retrieve the refresh URL for a content
+ *
+ * \param c Content to retrieve refresh URL from
+ * \return Pointer to URL or NULL if none
+ */
 nsurl *content__get_refresh_url(struct content *c);
+
+/**
+ * Retrieve the bitmap contained in an image content
+ *
+ * \param c Content to retrieve opacity from
+ * \return Pointer to bitmap or NULL if none.
+ */
 struct bitmap *content__get_bitmap(struct content *c);
+
+/**
+ * Determine if a content is opaque
+ *
+ * \param c Content to retrieve opacity from
+ * \return false if the content is not opaque or information is not
+ *         known else true.
+ */
 bool content__get_opaque(struct content *c);
+
+/**
+ * Retrieve the encoding of a content
+ *
+ * \param c the content to examine the encoding of.
+ * \param op encoding operation.
+ * \return Pointer to content info or NULL if none.
+ */
 const char *content__get_encoding(struct content *c, enum content_encoding_type op);
+
+/**
+ * Return whether a content is currently locked
+ *
+ * \param c Content to test
+ * \return true iff locked, else false
+ */
 bool content__is_locked(struct content *c);
 
 #endif

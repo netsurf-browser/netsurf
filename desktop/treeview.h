@@ -226,10 +226,10 @@ nserror treeview_create_node_entry(treeview *tree,
 /**
  * Update an folder node in given treeview
  *
- * \param tree		Treeview object in which to create entry
- * \param folder	Folder node to update
- * \param fields	New field data
- * \param data		Client data for node event callbacks
+ * \param tree	 Treeview object in which to create entry
+ * \param folder Folder node to update
+ * \param field	 New field data
+ * \param data	 Client data for node event callbacks
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * Field name must match name past in treeview_create fields[N-1].
@@ -344,7 +344,7 @@ nserror treeview_contract(treeview *tree, bool all);
  *
  * \param tree		Treeview object to render
  * \param x		X coordinate to render treeview at
- * \param x		Y coordinate to render treeview at
+ * \param y		Y coordinate to render treeview at
  * \param clip		Current clip rectangle (wrt tree origin)
  * \param ctx		Current redraw context
  */

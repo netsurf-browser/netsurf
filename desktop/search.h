@@ -48,7 +48,6 @@ void browser_window_search(struct browser_window *bw, void *context, search_flag
  * Frees any memory used by the search.
  *
  * \param bw The browser window to clean up the search for.
- * \param context A context pointer passed to the callbacks.
  */
 
 void browser_window_search_clear(struct browser_window *bw);

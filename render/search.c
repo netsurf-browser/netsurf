@@ -424,6 +424,8 @@ static bool find_occurrences_text(const char *pattern, int p_len,
  *
  * \param string the string to search for
  * \param string_len length of search string
+ * \param context The search context to add the entry to.
+ * \param flags flags to control the search.
  */
 static void search_text(const char *string, int string_len,
 		struct search_context *context, search_flags_t flags)

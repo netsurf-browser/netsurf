@@ -456,11 +456,14 @@ void nsgtk_toolbar_clear_toolbar(GtkWidget *widget, gpointer data)
 }
 
 /**
- * add item to toolbar
- * \param g the scaffolding whose toolbar an item is added to
- * \param i the location in the toolbar
+ * add item to toolbar.
+ *
  * the function should be called, when multiple items are being added,
- * in ascending order
+ * in ascending order.
+ *
+ * \param g the scaffolding whose toolbar an item is added to.
+ * \param i the location in the toolbar.
+ * \param theme The theme in use.
  */
 void nsgtk_toolbar_add_item_to_toolbar(struct nsgtk_scaffolding *g, int i,
 		struct nsgtk_theme *theme)

@@ -1147,8 +1147,8 @@ int content__get_height(struct content *c)
 /**
  * Retrieve available width of content
  *
- * \param c  Content to retrieve available width of
- * \return Available width of content
+ * \param h handle to the content.
+ * \return Available width of content.
  */
 int content_get_available_width(hlcache_handle *h)
 {
@@ -1193,18 +1193,13 @@ const char *content__get_source_data(struct content *c, unsigned long *size)
 	return (const char *) data;
 }
 
-/**
- * Invalidate content reuse data: causes subsequent requests for content URL 
- * to query server to determine if content can be reused. This is required 
- * behaviour for forced reloads etc.
- *
- * \param c  Content to invalidate
- */
+/* exported interface documented in content/content.h */
 void content_invalidate_reuse_data(hlcache_handle *h)
 {
 	content__invalidate_reuse_data(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 void content__invalidate_reuse_data(struct content *c)
 {
 	if (c == NULL || c->llcache == NULL)
@@ -1214,17 +1209,13 @@ void content__invalidate_reuse_data(struct content *c)
 	llcache_handle_invalidate_cache_data(c->llcache);
 }
 
-/**
- * Retrieve the refresh URL for a content
- *
- * \param c  Content to retrieve refresh URL from
- * \return Pointer to URL, or NULL if none
- */
+/* exported interface documented in content/content.h */
 nsurl *content_get_refresh_url(hlcache_handle *h)
 {
 	return content__get_refresh_url(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 nsurl *content__get_refresh_url(struct content *c)
 {
 	if (c == NULL)
@@ -1234,17 +1225,14 @@ nsurl *content__get_refresh_url(struct content *c)
 }
 
 
-/**
- * Retrieve the bitmap contained in an image content
- *
- * \param c  Content to retrieve bitmap from
- * \return Pointer to bitmap, or NULL if none.
- */
+/* exported interface documented in content/content.h */
 struct bitmap *content_get_bitmap(hlcache_handle *h)
 {
 	return content__get_bitmap(hlcache_handle_get_content(h));
 }
 
+
+/* exported interface documented in content/content_protected.h */
 struct bitmap *content__get_bitmap(struct content *c)
 {
 	struct bitmap *bitmap = NULL;
@@ -1261,25 +1249,14 @@ struct bitmap *content__get_bitmap(struct content *c)
 }
 
 
-/**
- * Determine if a content is opaque from handle
- *
- * \param h high level cache handle to retrieve opacity from.
- * \return false if the content is not opaque or information is not
- *         known else true.
- */
+/* exported interface documented in content/content.h */
 bool content_get_opaque(hlcache_handle *h)
 {
 	return content__get_opaque(hlcache_handle_get_content(h));
 }
 
-/**
- * Determine if a content is opaque
- *
- * \param c Content to retrieve opacity from
- * \return false if the content is not opaque or information is not
- *         known else true.
- */
+
+/* exported interface documented in content/content_protected.h */
 bool content__get_opaque(struct content *c)
 {
 	bool opaque = false;
@@ -1300,12 +1277,7 @@ bool content__get_opaque(struct content *c)
 }
 
 
-/**
- * Retrieve quirkiness of a content
- *
- * \param h  Content to examine
- * \return True if content is quirky, false otherwise
- */
+/* exported interface documented in content/content.h */
 bool content_get_quirks(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -1317,17 +1289,14 @@ bool content_get_quirks(hlcache_handle *h)
 }
 
 
-/**
- * Retrieve the encoding of a content
- *
- * \param c  Content to retrieve bitmap from
- * \return Pointer to bitmap, or NULL if none.
- */
+/* exported interface documented in content/content.h */
 const char *content_get_encoding(hlcache_handle *h, enum content_encoding_type op)
 {
 	return content__get_encoding(hlcache_handle_get_content(h), op);
 }
 
+
+/* exported interface documented in content/content_protected.h */
 const char *content__get_encoding(struct content *c, enum content_encoding_type op)
 {
 	const char *encoding = NULL;
@@ -1341,18 +1310,15 @@ const char *content__get_encoding(struct content *c, enum content_encoding_type 
 	return encoding;
 }
 
-/**
- * Return whether a content is currently locked
- *
- * \param c  Content to test
- * \return true iff locked, else false
- */
 
+/* exported interface documented in content/content.h */
 bool content_is_locked(hlcache_handle *h)
 {
 	return content__is_locked(hlcache_handle_get_content(h));
 }
 
+
+/* exported interface documented in content/content_protected.h */
 bool content__is_locked(struct content *c)
 {
 	return c->locked;

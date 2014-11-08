@@ -329,13 +329,66 @@ int content_get_height(struct hlcache_handle *c);
 int content_get_available_width(struct hlcache_handle *c);
 const char *content_get_source_data(struct hlcache_handle *c, 
 		unsigned long *size);
-void content_invalidate_reuse_data(struct hlcache_handle *c);
-nsurl *content_get_refresh_url(struct hlcache_handle *c);
-struct bitmap *content_get_bitmap(struct hlcache_handle *c);
+
+/**
+ * Invalidate content reuse data.
+ *
+ * causes subsequent requests for content URL to query server to
+ * determine if content can be reused. This is required behaviour for
+ * forced reloads etc.
+ *
+ * \param h Content handle to invalidate.
+ */
+void content_invalidate_reuse_data(struct hlcache_handle *h);
+
+/**
+ * Retrieve the refresh URL for a content
+ *
+ * \param h Content to retrieve refresh URL from
+ * \return Pointer to URL, or NULL if none
+ */
+nsurl *content_get_refresh_url(struct hlcache_handle *h);
+
+/**
+ * Retrieve the bitmap contained in an image content
+ *
+ * \param h handle to the content.
+ * \return Pointer to bitmap, or NULL if none.
+ */
+struct bitmap *content_get_bitmap(struct hlcache_handle *h);
+
+/**
+ * Determine if a content is opaque from handle
+ *
+ * \param h high level cache handle to retrieve opacity from.
+ * \return false if the content is not opaque or information is not
+ *         known else true.
+ */
 bool content_get_opaque(struct hlcache_handle *h);
+
+/**
+ * Retrieve quirkiness of a content
+ *
+ * \param h Content to examine
+ * \return True if content is quirky, false otherwise
+ */
 bool content_get_quirks(struct hlcache_handle *h);
+
+/**
+ * Retrieve the encoding of a content
+ *
+ * \param h handle to the content.
+ * \param op encoding operation.
+ * \return Pointer to content info or NULL if none.
+ */
 const char *content_get_encoding(struct hlcache_handle *h, enum content_encoding_type op);
 
+/**
+ * Return whether a content is currently locked
+ *
+ * \param h handle to the content.
+ * \return true iff locked, else false
+ */
 bool content_is_locked(struct hlcache_handle *h);
 
 #endif

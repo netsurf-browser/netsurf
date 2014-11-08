@@ -77,7 +77,10 @@ static void nsgtk_tree_redraw_request(int x, int y, int width, int height, void 
 /**
  * Updates the tree owner following a tree resize
  *
- * \param tree  the tree to update the owner of
+ * \param tree the tree to update the owner of
+ * \param width The width to resize to.
+ * \param height The height to resize to.
+ * \param data The treeview resize.
  */
 static void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data)
 {
