@@ -18,10 +18,12 @@
 
 #include "amiga/libs.h"
 #include "utils/utils.h"
+#include "utils/log.h"
 
 #include <proto/exec.h>
 
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER)	\
+	LOG(("Opening %s v%d", LIB, LIBVER)); \
 	if((PREFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
 		I##PREFIX = (struct PREFIX##IFace *)GetInterface(PREFIX##Base, INTERFACE, INTVER, NULL);	\
 	} else {	\
