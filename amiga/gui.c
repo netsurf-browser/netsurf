@@ -5250,10 +5250,11 @@ int main(int argc, char** argv)
 	 */
 	nslog_init(NULL, &argc, argv);
 
+	/* Need to do this before opening any splash windows etc... */
+	ami_libs_open();
+
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
-
-	ami_libs_open();
 
 	/* Open popupmenu.library just to check the version.
 	 * Versions older than 53.11 are dangerous, so we
