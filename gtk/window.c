@@ -1307,7 +1307,7 @@ static struct gui_window_table window_table = {
 	.start_selection = gui_window_start_selection,
 
 	/* from scaffold */
-	.set_title = gui_window_set_title,
+	.set_title = nsgtk_window_set_title,
 	.set_url = gui_window_set_url,
 	.start_throbber = gui_window_start_throbber,
 	.stop_throbber = gui_window_stop_throbber,

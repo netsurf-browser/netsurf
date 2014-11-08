@@ -17,10 +17,7 @@
  */
 
 /** \file
- * Content handling (implementation).
- *
- * This implementation is based on the ::handler_map array, which maps
- * ::content_type to the functions which implement that type.
+ * Content handling implementation.
  */
 
 #include <assert.h>
@@ -894,20 +891,8 @@ void content_add_error(struct content *c, const char *token,
 {
 }
 
-bool content__set_title(struct content *c, const char *title)
-{
-	char *new_title = strdup(title);
-	if (new_title == NULL)
-		return false;
 
-	if (c->title != NULL)
-		free(c->title);
-
-	c->title = new_title;
-
-	return true;
-}
-
+/* exported interface documented in content/content.h */
 struct content_rfc5988_link *
 content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)
 {
@@ -999,40 +984,7 @@ bool content__add_rfc5988_link(struct content *c,
 	return true;
 }
 
-/**
- * Retrieve computed type of content
- *
- * \param c  Content to retrieve type of
- * \return Computed content type
- */
-content_type content_get_type(hlcache_handle *h)
-{
-	struct content *c = hlcache_handle_get_content(h);
 
-	if (c == NULL)
-		return CONTENT_NONE;
-
-	return c->handler->type();
-}
-
-/**
- * Retrieve mime-type of content
- *
- * \param c  Content to retrieve mime-type of
- * \return Pointer to referenced mime-type, or NULL if not found.
- */
-lwc_string *content_get_mime_type(hlcache_handle *h)
-{
-	return content__get_mime_type(hlcache_handle_get_content(h));
-}
-
-lwc_string *content__get_mime_type(struct content *c)
-{
-	if (c == NULL)
-		return NULL;
-
-	return lwc_string_ref(c->mime_type);
-}
 
 /**
  * Retrieve URL associated with content
@@ -1048,17 +1000,58 @@ nsurl *content_get_url(struct content *c)
 	return llcache_handle_get_url(c->llcache);
 }
 
-/**
- * Retrieve title associated with content
- *
- * \param c  Content to retrieve title from
- * \return Pointer to title, or NULL if not found.
- */
+
+/* exported interface documented in content/content.h */
+content_type content_get_type(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+
+	if (c == NULL)
+		return CONTENT_NONE;
+
+	return c->handler->type();
+}
+
+
+/* exported interface documented in content/content.h */
+lwc_string *content_get_mime_type(hlcache_handle *h)
+{
+	return content__get_mime_type(hlcache_handle_get_content(h));
+}
+
+/* exported interface documented in content/content_protected.h */
+lwc_string *content__get_mime_type(struct content *c)
+{
+	if (c == NULL)
+		return NULL;
+
+	return lwc_string_ref(c->mime_type);
+}
+
+
+/* exported interface documented in content/content_protected.h */
+bool content__set_title(struct content *c, const char *title)
+{
+	char *new_title = strdup(title);
+	if (new_title == NULL)
+		return false;
+
+	if (c->title != NULL)
+		free(c->title);
+
+	c->title = new_title;
+
+	return true;
+}
+
+
+/* exported interface documented in content/content.h */
 const char *content_get_title(hlcache_handle *h)
 {
 	return content__get_title(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 const char *content__get_title(struct content *c)
 {
 	if (c == NULL)
@@ -1068,17 +1061,14 @@ const char *content__get_title(struct content *c)
 			nsurl_access(llcache_handle_get_url(c->llcache));
 }
 
-/**
- * Retrieve status of content
- *
- * \param c  Content to retrieve status of
- * \return Content status
- */
+
+/* exported interface documented in content/content.h */
 content_status content_get_status(hlcache_handle *h)
 {
 	return content__get_status(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 content_status content__get_status(struct content *c)
 {
 	if (c == NULL)
@@ -1087,17 +1077,14 @@ content_status content__get_status(struct content *c)
 	return c->status;
 }
 
-/**
- * Retrieve status message associated with content
- *
- * \param c  Content to retrieve status message from
- * \return Pointer to status message, or NULL if not found.
- */
+
+/* exported interface documented in content/content.h */
 const char *content_get_status_message(hlcache_handle *h)
 {
 	return content__get_status_message(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 const char *content__get_status_message(struct content *c)
 {
 	if (c == NULL)
@@ -1106,17 +1093,14 @@ const char *content__get_status_message(struct content *c)
 	return c->status_message;
 }
 
-/**
- * Retrieve width of content
- *
- * \param c  Content to retrieve width of
- * \return Content width
- */
+
+/* exported interface documented in content/content.h */
 int content_get_width(hlcache_handle *h)
 {
 	return content__get_width(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 int content__get_width(struct content *c)
 {
 	if (c == NULL)
@@ -1125,17 +1109,14 @@ int content__get_width(struct content *c)
 	return c->width;
 }
 
-/**
- * Retrieve height of content
- *
- * \param c  Content to retrieve height of
- * \return Content height
- */
+
+/* exported interface documented in content/content.h */
 int content_get_height(hlcache_handle *h)
 {
 	return content__get_height(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 int content__get_height(struct content *c)
 {
 	if (c == NULL)
@@ -1144,17 +1125,14 @@ int content__get_height(struct content *c)
 	return c->height;
 }
 
-/**
- * Retrieve available width of content
- *
- * \param h handle to the content.
- * \return Available width of content.
- */
+
+/* exported interface documented in content/content.h */
 int content_get_available_width(hlcache_handle *h)
 {
 	return content__get_available_width(hlcache_handle_get_content(h));
 }
 
+/* exported interface documented in content/content_protected.h */
 int content__get_available_width(struct content *c)
 {
 	if (c == NULL)
@@ -1164,18 +1142,13 @@ int content__get_available_width(struct content *c)
 }
 
 
-/**
- * Retrieve source of content
- *
- * \param c	Content to retrieve source of
- * \param size	Pointer to location to receive byte size of source
- * \return Pointer to source data
- */
+/* exported interface documented in content/content.h */
 const char *content_get_source_data(hlcache_handle *h, unsigned long *size)
 {
 	return content__get_source_data(hlcache_handle_get_content(h), size);
 }
 
+/* exported interface documented in content/content_protected.h */
 const char *content__get_source_data(struct content *c, unsigned long *size)
 {
 	const uint8_t *data;

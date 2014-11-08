@@ -248,16 +248,15 @@ image_id nsbeos_find_app_path(char *path)
 /**
  * Locate a shared resource file by searching known places in order.
  *
+ * Search order is: ~/config/settings/NetSurf/, ~/.netsurf/, $NETSURFRES/
+ * (where NETSURFRES is an environment variable), and finally the path
+ * specified by the macro at the top of this file.
+ *
  * \param  buf      buffer to write to.  must be at least PATH_MAX chars
  * \param  filename file to look for
  * \param  def      default to return if file not found
- * \return buf
- *
- * Search order is: ~/config/settings/NetSurf/, ~/.netsurf/, $NETSURFRES/
- * (where NETSURFRES is an environment variable), and finally the path
- * specified by the #define at the top of this file.
+ * \return path to resource.
  */
-
 static char *find_resource(char *buf, const char *filename, const char *def)
 {
 	const char *cdir = NULL;

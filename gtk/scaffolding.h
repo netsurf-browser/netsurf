@@ -235,7 +235,14 @@ gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);
 nserror nsgtk_scaffolding_new_tab(struct gui_window *gw);
 
 /* core acessors */
-void gui_window_set_title(struct gui_window *g, const char *title);
+/**
+ * set the title in the window
+ *
+ * \param gw The gui window to set title on
+ * \param title The title to set which may be NULL
+ */
+void nsgtk_window_set_title(struct gui_window *gw, const char *title);
+
 nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);

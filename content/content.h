@@ -250,7 +250,6 @@ void content_remove_user(struct content *c,
 uint32_t content_count_users(struct content *c);
 bool content_matches_quirks(struct content *c, bool quirks);
 bool content_is_shareable(struct content *c);
-content_status content__get_status(struct content *c);
 
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
 nsurl *content_get_url(struct content *c);
@@ -315,19 +314,99 @@ nserror content_debug_dump(struct hlcache_handle *h, FILE *f, enum content_debug
  */
 nserror content_debug(struct hlcache_handle *h, enum content_debug op);
 
-struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
+/**
+ * find link in content that matches the rel string.
+ *
+ * \param h handle to the content to retrieve tyoe of.
+ * \param rel The string to match.
+ * \return A matching rfc5988 link or NULL if none is found.
+ *
+ */
+struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *h,
 		lwc_string *rel);
 
 /* Member accessors */
+
+/**
+ * Retrieve computed type of content
+ *
+ * \param h handle to the content to retrieve tyoe of.
+ * \return Computed content type
+ */
 content_type content_get_type(struct hlcache_handle *c);
-lwc_string *content_get_mime_type(struct hlcache_handle *c);
-const char *content_get_title(struct hlcache_handle *c);
-content_status content_get_status(struct hlcache_handle *c);
-const char *content_get_status_message(struct hlcache_handle *c);
-int content_get_width(struct hlcache_handle *c);
-int content_get_height(struct hlcache_handle *c);
-int content_get_available_width(struct hlcache_handle *c);
-const char *content_get_source_data(struct hlcache_handle *c, 
+
+/**
+ * Retrieve mime-type of content
+ *
+ * \param h handle to the content to retrieve mime type from
+ * \return Pointer to referenced mime type, or NULL if not found.
+ */
+lwc_string *content_get_mime_type(struct hlcache_handle *h);
+
+/**
+ * Retrieve title associated with content
+ *
+ * \param h handle to the content to retrieve title from
+ * \return Pointer to title, or NULL if not found.
+ */
+const char *content_get_title(struct hlcache_handle *h);
+
+/**
+ * Retrieve status of content
+ *
+ * \param h handle to the content to retrieve status from
+ * \return Content status
+ */
+content_status content_get_status(struct hlcache_handle *h);
+
+/**
+ * Retrieve status of content
+ *
+ * \param c Content to retrieve status from.
+ * \return Content status
+ */
+content_status content__get_status(struct content *c);
+
+/**
+ * Retrieve status message associated with content
+ *
+ * \param h handle to the content to retrieve status message from
+ * \return Pointer to status message, or NULL if not found.
+ */
+const char *content_get_status_message(struct hlcache_handle *h);
+
+/**
+ * Retrieve width of content
+ *
+ * \param h handle to the content to get width of.
+ * \return Content width
+ */
+int content_get_width(struct hlcache_handle *h);
+
+/**
+ * Retrieve height of content
+ *
+ * \param h handle to the content to get height of.
+ * \return Content height
+ */
+int content_get_height(struct hlcache_handle *h);
+
+/**
+ * Retrieve available width of content
+ *
+ * \param h handle to the content to get available width of.
+ * \return Available width of content.
+ */
+int content_get_available_width(struct hlcache_handle *h);
+
+/**
+ * Retrieve source of content
+ *
+ * \param h Content handle to retrieve source of
+ * \param size Pointer to location to receive byte size of source
+ * \return Pointer to source data
+ */
+const char *content_get_source_data(struct hlcache_handle *h,
 		unsigned long *size);
 
 /**

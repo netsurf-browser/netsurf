@@ -2257,13 +2257,8 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	return g;
 }
 
-/**
- * set the title in the window
- *
- * \param gw The gui window to set title on
- * \param title The title to set (may be NULL)
- */
-void gui_window_set_title(struct gui_window *gw, const char *title)
+/* exported function documented in gtk/scaffolding.h */
+void nsgtk_window_set_title(struct gui_window *gw, const char *title)
 {
 	struct nsgtk_scaffolding *gs = nsgtk_get_scaffold(gw);
 	int title_len;
@@ -2632,7 +2627,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	nsgtk_scaffolding_set_icon(gw);
 
 	/* Ensure the window's title bar is updated */
-	gui_window_set_title(gw, browser_window_get_title(bw));
+	nsgtk_window_set_title(gw, browser_window_get_title(bw));
 
 }
 

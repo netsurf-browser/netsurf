@@ -288,10 +288,9 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 /**
  * Convert a font style to a PangoFontDescription.
  *
- * \param  fstyle	style for this text
- * \return  a new Pango font description
+ * \param font Beos font object.
+ * \param fstyle style for this text
  */
-
 void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 {
 	float size;

@@ -113,8 +113,7 @@ static void hlcache_clean(void *ignored)
 		if (entry->content == NULL)
 			continue;
 
-		if (content__get_status(entry->content) ==
-				CONTENT_STATUS_LOADING)
+		if (content__get_status(entry->content) == CONTENT_STATUS_LOADING)
 			continue;
 
 		if (content_count_users(entry->content) != 0)

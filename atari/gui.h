@@ -164,6 +164,12 @@ struct gui_window *gui_get_input_window(void);
 char *gui_window_get_url(struct gui_window *gw);
 char *gui_window_get_title(struct gui_window *gw);
 
+/**
+ * Set the status bar of a browser window.
+ *
+ * \param w The gui_window to update.
+ * \param text new status text
+ */
 void gui_window_set_status(struct gui_window *w, const char *text);
 void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape);
 void gui_window_destroy(struct gui_window *w);

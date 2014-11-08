@@ -57,18 +57,23 @@ struct bitmap {
 #warning TODO: add correct locking (not strictly required)
 
 
-/** Convert to BeOS RGBA32_LITTLE (strictly BGRA) from NetSurf's favoured ABGR format.
+/**
+ * Convert to BeOS RGBA32_LITTLE (strictly BGRA) from NetSurf's favoured ABGR format.
+ *
  * Copies the converted data elsewhere.  Operation is rotate left 8 bits.
  *
- * \param pixels	Array of 32-bit values, in the form of ABGR.  This will
- *			be overwritten with new data in the form of BGRA.
- * \param width		Width of the bitmap
- * \param height	Height of the bitmap
- * \param rowstride	Number of bytes to skip after each row (this
- *			implementation requires this to be a multiple of 4.)
+ * \param src       Source 32-bit pixels arranged in ABGR order.
+ * \param dst       Output data in BGRA order.
+ * \param width	    Width of the bitmap
+ * \param height    Height of the bitmap
+ * \param rowstride Number of bytes to skip after each row (this implementation
+ *                  requires this to be a multiple of 4.)
  */
-static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int height,
-				size_t rowstride)
+static inline void nsbeos_rgba_to_bgra(void *src,
+                                       void *dst,
+                                       int width,
+                                       int height,
+                                       size_t rowstride)
 {
 	struct abgr { uint8 a, b, g, r; };
 	struct rgba { uint8 r, g, b ,a; };

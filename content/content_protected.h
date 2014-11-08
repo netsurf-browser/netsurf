@@ -185,14 +185,71 @@ void content__reformat(struct content *c, bool background,
 void content__request_redraw(struct content *c,
 		int x, int y, int width, int height);
 
+
+/**
+ * Retrieve mime-type of content
+ *
+ * \param c Content to retrieve mime-type of
+ * \return Pointer to referenced mime-type, or NULL if not found.
+ */
+lwc_string *content__get_mime_type(struct content *c);
+
+/**
+ * Set title associated with content
+ *
+ * \param c Content to set title on.
+ * \parm title The new title to set.
+ * \return true on sucess else false.
+ */
 bool content__set_title(struct content *c, const char *title);
 
-lwc_string *content__get_mime_type(struct content *c);
+/**
+ * Retrieve title associated with content
+ *
+ * \param c Content to retrieve title from
+ * \return Pointer to title, or NULL if not found.
+ */
 const char *content__get_title(struct content *c);
+
+/**
+ * Retrieve status message associated with content
+ *
+ * \param c Content to retrieve status message from
+ * \return Pointer to status message, or NULL if not found.
+ */
 const char *content__get_status_message(struct content *c);
+
+/**
+ * Retrieve width of content
+ *
+ * \param c Content to retrieve width of
+ * \return Content width
+ */
 int content__get_width(struct content *c);
+
+/**
+ * Retrieve height of content
+ *
+ * \param c Content to retrieve height of
+ * \return Content height
+ */
 int content__get_height(struct content *c);
+
+/**
+ * Retrieve available width of content
+ *
+ * \param c content to get available width of.
+ * \return Available width of content.
+ */
 int content__get_available_width(struct content *c);
+
+/**
+ * Retrieve source of content.
+ *
+ * \param c    Content to retrieve source of.
+ * \param size Pointer to location to receive byte size of source.
+ * \return Pointer to source data.
+ */
 const char *content__get_source_data(struct content *c, unsigned long *size);
 
 /**
