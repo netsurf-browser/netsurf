@@ -70,7 +70,12 @@ struct gui_browser_table {
 	nserror (*launch_url)(struct nsurl *url);
 
 	/**
-	 * verify certificate
+	 * Prompt the user to verify a certificate with issuse.
+	 *
+	 * \param url The URL being verified.
+	 * \param certs The certificate to be verified
+	 * \param num The number of certificates to be verified.
+	 * \param cb Callback upon user decision.
 	 */
 	void (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 

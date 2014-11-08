@@ -99,15 +99,13 @@ void ro_gui_cert_postinitialise(void)
 }
 
 /**
- * Open the certificate verification dialog
+ * Prompt the user to verify a certificate with issuse.
  *
- * \param  *bw			The browser window owning the certificates.
- * \param  *c			The content data corresponding to the
- *				certificates.
- * \param  *certs		The certificate details.
- * \param  num			The number of certificates included.
+ * \param url The URL being verified.
+ * \param certs The certificate to be verified
+ * \param num The number of certificates to be verified.
+ * \param cb Callback upon user decision.
  */
-
 void gui_cert_verify(nsurl *url,
 		const struct ssl_cert_info *certs, unsigned long num,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
@@ -290,7 +288,7 @@ void ro_gui_cert_accept(wimp_pointer *pointer)
 /**
  * Handle rejection of certificate via event callback.
  *
- * \param  w		The wimp pointer block.
+ * \param pointer The wimp pointer block.
  */
 
 void ro_gui_cert_reject(wimp_pointer *pointer)

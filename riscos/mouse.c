@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file mouse.c
- * Mouse dragging and tracking support (implementation).
+/** \file
+ * Mouse dragging and tracking support implementation.
  *
  * Two different functions are provided:-
  *

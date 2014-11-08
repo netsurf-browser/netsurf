@@ -166,7 +166,6 @@ bool amiga_plugin_hack_redraw(struct content *c,
  * \param  bw      browser window containing the content
  * \param  page    content of type CONTENT_HTML containing c, or 0 if not an
  *                 object within a page
- * \param  box     box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  */
 void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,

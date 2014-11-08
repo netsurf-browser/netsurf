@@ -71,9 +71,9 @@ struct hotlist_entry {
 /**
  * Set a hotlist entry's data from the url_data.
  *
- * \param e		hotlist entry to set up
- * \param url_data	Data associated with entry's URL
- * \return NSERROR_OK on success, appropriate error otherwise
+ * \param e    hotlist entry to set up.
+ * \param data Data associated with entry's URL.
+ * \return NSERROR_OK on success, appropriate error otherwise.
  */
 static nserror hotlist_create_treeview_field_visits_data(
 		struct hotlist_entry *e, const struct url_data *data)
@@ -126,9 +126,9 @@ static nserror hotlist_create_treeview_field_visits_data(
 /**
  * Set a hotlist entry's data from the url_data.
  *
- * \param e		hotlist entry to set up
- * \param title		Title for entry, or NULL if using title from data
- * \param url_data	Data associated with entry's URL
+ * \param e     hotlist entry to set up
+ * \param title Title for entry, or NULL if using title from data
+ * \param data  Data associated with entry's URL
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror hotlist_create_treeview_field_data(
@@ -320,6 +320,7 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  * \param relation	Existing node to insert as relation of, or NULL
  * \param rel		Folder's relationship to relation
  * \param folder	Updated to new hotlist folder data
+ * \param default_folder Add to teh default folder.
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_add_folder_internal(
@@ -601,8 +602,8 @@ static nserror hotlist_load_directory_cb(dom_node *node, void *ctx);
 /**
  * Parse a directory represented as a ul.
  *
- * \param  ul		DOM node for parsed ul
- * \param  directory	directory to add this directory to
+ * \param ul DOM node for parsed ul.
+ * \param ctx The hotlist context.
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_load_directory(dom_node *ul, hotlist_load_ctx *ctx)

@@ -153,7 +153,7 @@ struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 /**
  * Update GUI showing font scanning progress
  *
- * \param win       pointer to a struct ami_font_scan_window
+ * \param fsw       pointer to a struct ami_font_scan_window
  * \param font      current font being scanned
  * \param font_num  font number being scanned
  * \param glyphs    number of unique glyphs found
@@ -443,10 +443,10 @@ void ami_font_scan_fini(lwc_string **glypharray)
  * Initialise the font glyph cache.
  * Reads an existing file or, if not present, generates a new cache.
  *
- * \param  filename       cache file to attempt to read
- * \param  entries        number of entries in list
- * \param  force_scan     force re-creation of cache
- * \param  glypharray     an array of 0xffff lwc_string pointers
+ * \param  filename   cache file to attempt to read
+ * \param  force_scan force re-creation of cache
+ * \param  save       save the cache
+ * \param  glypharray an array of 0xffff lwc_string pointers
  */
 void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		lwc_string **glypharray)

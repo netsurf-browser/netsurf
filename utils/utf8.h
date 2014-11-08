@@ -34,9 +34,9 @@
  * Encoding of UCS values outside the UTF-16 plane has been removed from
  * RFC3629. This function conforms to RFC2279, however.
  *
- * \param s_in  The sequence to process
- * \param l  Length of sequence
- * \return   UCS4 character
+ * \param[in] s The sequence to process
+ * \param[in] l Length of sequence
+ * \return UCS4 character
  */
 uint32_t utf8_to_ucs4(const char *s, size_t l);
 
@@ -128,6 +128,7 @@ nserror utf8_to_enc(const char *string, const char *encname,
  * \param encname The encoding name (suitable for passing to iconv)
  * \param len     Length of input string to consider (in bytes), or 0
  * \param result  Pointer to location to store result (allocated on heap)
+ * \param result_len The length of the data placed in result.
  * \return standard nserror value
  */
 nserror utf8_from_enc(const char *string, const char *encname,

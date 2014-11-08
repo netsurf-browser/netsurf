@@ -17,7 +17,8 @@
  */
 
 /**
- * \file generic data viewer implementation.
+ * \file
+ * generic data viewer implementation.
  *
  * This viewer can be used for utf-8 encoded chunk of data. Thie data
  * might be page source or the debugging of dom or box trees. It will

@@ -405,8 +405,8 @@ void gui_drag_save_object(struct gui_window *g, hlcache_handle *c,
 /**
  * Initiates drag saving of a selection from a browser window
  *
- * \param  s  selection object
- * \param  g  gui window
+ * \param g gui window
+ * \param selection selection object
  */
 
 void gui_drag_save_selection(struct gui_window *g, const char *selection)

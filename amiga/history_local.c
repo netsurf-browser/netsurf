@@ -66,7 +66,6 @@ static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct In
  *
  * \param  bw          browser window to open history for
  * \param  history     history to open
- * \param  at_pointer  open the window at the pointer
  */
 
 void ami_history_open(struct browser_window *bw, struct history *history)

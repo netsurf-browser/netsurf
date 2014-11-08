@@ -659,13 +659,11 @@ INPUT                  = windows \
                          atari \
                          atari/plot \
                          gtk \
-                         gtk/dialogs \
                          css \
                          cocoa \
                          monkey \
                          render \
                          desktop \
-                         desktop/save_pdf \
                          amiga \
                          amiga/stringview \
                          content \

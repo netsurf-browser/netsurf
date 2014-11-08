@@ -242,12 +242,13 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 				      NULL,
 				      NULL,
 				      &bw);
-		/** \TODO Should not be accessing inside bw. */
+		/** \todo Should not be accessing inside bw. */
 		gw = bw->window;
 	}
 
-	/** \TODO Can we do this stuff in gui_window_create, which is called
-	 *        in browser_window_create ? */
+	/** \todo Can we do this stuff in gui_window_create, which is called
+	 *        in browser_window_create?
+	 */
 
 	/* Loose focus: */
 	window_set_focus(gw->root, WIDGET_NONE, NULL );

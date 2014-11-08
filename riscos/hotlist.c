@@ -323,11 +323,12 @@ void ro_gui_hotlist_toolbar_save_buttons(char *config)
 /**
  * Prepare the hotlist menu for opening
  *
- * \param  window		The window owning the menu.
- * \param  *menu		The menu about to be opened.
- * \param  *pointer		Pointer to the relevant wimp event block, or
- *				NULL for an Adjust click.
- * \return			true if the event was handled; else false.
+ * \param w       The window owning the menu.
+ * \param i       A wimp icon
+ * \param menu    The menu about to be opened.
+ * \param pointer Pointer to the relevant wimp event block, or
+ *                      NULL for an Adjust click.
+ * \return true if the event was handled; else false.
  */
 
 bool ro_gui_hotlist_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,

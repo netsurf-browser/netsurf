@@ -39,9 +39,9 @@ enum browser_mouse_state;
  *
  * This must be called before any other hotlist_* function.
  *
- * \param cw_t		Callback table for core_window containing the treeview
- * \param cw		The core_window in which the treeview is shown
- * \param path		The path to hotlist file to load
+ * \param cw_t Callback table for core_window containing the treeview
+ * \param core_window_handle The handle in which the treeview is shown
+ * \param path The path to hotlist file to load
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hotlist_init(struct core_window_callback_table *cw_t,
@@ -103,14 +103,14 @@ nserror hotlist_add_entry(struct nsurl *url, const char *title, bool at_y, int y
 /**
  * Add a folder to the hotlist.
  *
- * \param url		Title for folder being added, or NULL
- * \param at_y		Iff true, insert at y-offest
- * \param y		Y-offset in px from top of hotlist.  Ignored if (!at_y).
+ * \param title Title for folder being added, or NULL
+ * \param at_y Iff true, insert at y-offest
+ * \param y Y-offset in px from top of hotlist.  Ignored if (!at_y).
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror hotlist_add_folder(const char *title, bool at_y, int y);
 
-/*
+/**
  * Save hotlist to file
  *
  * \param path		The path to save hotlist to
