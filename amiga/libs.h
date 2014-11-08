@@ -17,12 +17,6 @@
  */
 
 #ifndef AMIGA_LIBS_H
-
-struct Library *KeymapBase;
-struct KeymapIFace *IKeymap;
-struct Library *ApplicationBase;
-struct ApplicationIFace *IApplication;
-
 void ami_libs_open(void);
 void ami_libs_close(void);
 #endif

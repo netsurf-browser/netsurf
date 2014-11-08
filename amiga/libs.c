@@ -17,30 +17,52 @@
  */
 
 #include "amiga/libs.h"
-#include "amiga/misc.h"
+#include "utils/utils.h"
 
 #include <proto/exec.h>
 
-#define AMINS_OPEN_LIB(LIB, LIBVER, SUFFIX, INTERFACE, INTVER)	\
-	if((SUFFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
-		I##SUFFIX = (struct SUFFIX##IFace *)GetInterface(SUFFIX##Base, INTERFACE, INTVER, NULL);	\
+#define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER)	\
+	if((PREFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
+		I##PREFIX = (struct PREFIX##IFace *)GetInterface(PREFIX##Base, INTERFACE, INTVER, NULL);	\
 	} else {	\
 		warn_user("CompError", LIB);	\
 	}
 
-#define AMINS_CLOSE_LIB(SUFFIX)	\
-	if(I##SUFFIX) DropInterface((struct Interface *)I##SUFFIX);	\
-	if(SUFFIX##Base) CloseLibrary(SUFFIX##Base);
+#define AMINS_LIB_CLOSE(PREFIX)	\
+	if(I##PREFIX) DropInterface((struct Interface *)I##PREFIX);	\
+	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
+
+#define AMINS_LIB_STRUCT(PREFIX)	\
+	struct Library *PREFIX##Base;	\
+	struct PREFIX##IFace *I##PREFIX;
+
+AMINS_LIB_STRUCT(Application);
+AMINS_LIB_STRUCT(Asl);
+AMINS_LIB_STRUCT(Diskfont);
+AMINS_LIB_STRUCT(Graphics);
+AMINS_LIB_STRUCT(Intuition);
+AMINS_LIB_STRUCT(Keymap);
+AMINS_LIB_STRUCT(P96);
 
 void ami_libs_open(void)
 {
-	AMINS_OPEN_LIB("keymap.library", 37, Keymap, "main", 1)
-	AMINS_OPEN_LIB("application.library", 53, Application, "application", 2)
+	AMINS_LIB_OPEN("application.library", 53, Application, "application", 2)
+	AMINS_LIB_OPEN("asl.library", 37, Asl, "main", 1)
+	AMINS_LIB_OPEN("diskfont.library", 50, Diskfont, "main", 1)
+	AMINS_LIB_OPEN("graphics.library", 50, Graphics, "main", 1)
+	AMINS_LIB_OPEN("intuition.library", 37, Intuition, "main", 1)
+	AMINS_LIB_OPEN("keymap.library", 37, Keymap, "main", 1)
+	AMINS_LIB_OPEN("Picasso96API.library", 0, P96, "main", 1)
 }
 
 void ami_libs_close(void)
 {
-	AMINS_CLOSE_LIB(Application)
-	AMINS_CLOSE_LIB(Keymap)
+	AMINS_LIB_CLOSE(Application)
+	AMINS_LIB_CLOSE(Asl)
+	AMINS_LIB_CLOSE(Diskfont)
+	AMINS_LIB_CLOSE(Intuition)
+	AMINS_LIB_CLOSE(Graphics)
+	AMINS_LIB_CLOSE(Keymap)
+	AMINS_LIB_CLOSE(P96)
 }
 
