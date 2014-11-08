@@ -167,11 +167,6 @@ struct ami_gui_tb_userdata {
 };
 
 struct MsgPort *appport;
-struct Library  *KeymapBase = NULL;
-struct KeymapIFace *IKeymap = NULL;
-struct Library *ApplicationBase=NULL;
-struct ApplicationIFace *IApplication=NULL;
-
 Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
@@ -408,16 +403,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 static void ami_open_resources(void)
 {
-	/* Allocate ports/ASL and open libraries and devices */
-
-	if((KeymapBase = OpenLibrary("keymap.library",37))) {
-		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase,"main",1,NULL);
-	}
-
-	if((ApplicationBase = OpenLibrary("application.library", 53))) {
-		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase, "application", 2, NULL);
-	}
-
 	urlStringClass = MakeStringClass();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
@@ -2985,12 +2970,6 @@ static void gui_quit(void)
 	ami_openurl_close();
 	FreeStringClass(urlStringClass);
 
-	if(IApplication) DropInterface((struct Interface *)IApplication);
-	if(ApplicationBase) CloseLibrary(ApplicationBase);
-
-	if(IKeymap) DropInterface((struct Interface *)IKeymap);
-	if(KeymapBase) CloseLibrary(KeymapBase);
-
 	LOG(("Freeing scheduler"));
 	ami_schedule_free();
 	ami_schedule_close_timer();
@@ -3001,6 +2980,8 @@ static void gui_quit(void)
 	FreeVec(current_user_dir);
 	FreeVec(current_user_faviconcache);
 	FreeVec(current_user);
+
+	ami_libs_close();
 }
 
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
@@ -5270,6 +5251,8 @@ int main(int argc, char** argv)
 
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
+
+	ami_libs_open();
 
 	/* Open popupmenu.library just to check the version.
 	 * Versions older than 53.11 are dangerous, so we
