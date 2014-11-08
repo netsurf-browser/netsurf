@@ -17,27 +17,30 @@
  */
 
 #include "amiga/libs.h"
+#include "amiga/misc.h"
 
 #include <proto/exec.h>
 
-void ami_libs_open(void)
-{
-	if((KeymapBase = OpenLibrary("keymap.library",37))) {
-		IKeymap = (struct KeymapIFace *)GetInterface(KeymapBase, "main", 1, NULL);
+#define AMINS_OPEN_LIB(LIB, LIBVER, SUFFIX, INTERFACE, INTVER)	\
+	if((SUFFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
+		I##SUFFIX = (struct SUFFIX##IFace *)GetInterface(SUFFIX##Base, INTERFACE, INTVER, NULL);	\
+	} else {	\
+		warn_user("CompError", LIB);	\
 	}
 
-	if((ApplicationBase = OpenLibrary("application.library", 53))) {
-		IApplication = (struct ApplicationIFace *)GetInterface(ApplicationBase, "application", 2, NULL);
-	}
+#define AMINS_CLOSE_LIB(SUFFIX)	\
+	if(I##SUFFIX) DropInterface((struct Interface *)I##SUFFIX);	\
+	if(SUFFIX##Base) CloseLibrary(SUFFIX##Base);
+
+void ami_libs_open(void)
+{
+	AMINS_OPEN_LIB("keymap.library", 37, Keymap, "main", 1)
+	AMINS_OPEN_LIB("application.library", 53, Application, "application", 2)
 }
 
 void ami_libs_close(void)
 {
-
-	if(IApplication) DropInterface((struct Interface *)IApplication);
-	if(ApplicationBase) CloseLibrary(ApplicationBase);
-
-	if(IKeymap) DropInterface((struct Interface *)IKeymap);
-	if(KeymapBase) CloseLibrary(KeymapBase);
+	AMINS_CLOSE_LIB(Application)
+	AMINS_CLOSE_LIB(Keymap)
 }
 

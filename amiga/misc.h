@@ -18,6 +18,7 @@
 
 #ifndef AMIGA_MISC_H
 #define AMIGA_MISC_H
+#include <exec/types.h>
 
 extern struct gui_file_table *amiga_file_table;
 
