@@ -86,7 +86,7 @@ struct gui_search_table *amiga_search_table = &search_table;
 /**
  * Change the displayed search status.
  *
- * \param found  search pattern matched in text
+ * \param gwin gui window to open search for.
  */
 void ami_search_open(struct gui_window *gwin)
 {

@@ -105,6 +105,7 @@ void ro_gui_cert_postinitialise(void)
  * \param certs The certificate to be verified
  * \param num The number of certificates to be verified.
  * \param cb Callback upon user decision.
+ * \param cbpw Context pointer passed to cb
  */
 void gui_cert_verify(nsurl *url,
 		const struct ssl_cert_info *certs, unsigned long num,

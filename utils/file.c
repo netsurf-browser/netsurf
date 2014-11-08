@@ -46,7 +46,7 @@
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
  * @param[in] nelm The number of elements.
- * @param[in] ... The elements of the path as string pointers.
+ * @param[in] ap The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.
  */

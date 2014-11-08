@@ -46,17 +46,17 @@ void dump_font_drivers(void)
 
 
 /**
- *	Create an new text plotter object
+ * Create an new text plotter object.
  *
- *	Available: "vdi", "freetype", "internal"
- *	\param vdihandle the vdi handle to act upon,
- *	\param name selector ID (string) of the font plotter.
- *	flags flags configration flags of the plotter,
- *	             available flags:
+ * Available: "vdi", "freetype", "internal"
+ *
+ * \param vdihandle the vdi handle to act upon,
+ * \param name selector ID (string) of the font plotter.
+ * \param flags configration flags of the plotter, available flags:
  *	             FONTPLOT_FLAG_MONOGLYPH - Enable 1 bit font plotting
- *	\param error set to != 0 when errors occur
+ * \param error set to != 0 when errors occur
  * \return the new font plotter instance on success, or NULL on failure.
-*/
+ */
 FONT_PLOTTER new_font_plotter(int vdihandle, char * name, unsigned long flags,
 		int * error)
 {

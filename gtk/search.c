@@ -45,7 +45,7 @@
  * activate search forwards button in gui.
  *
  * \param active activate/inactivate
- * \param p the pointer sent to search_verify_new() / search_create_context()
+ * \param gw The gui window in which to activite the search button in.
  */
 static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
 {
@@ -61,7 +61,7 @@ static void nsgtk_search_set_forward_state(bool active, struct gui_window *gw)
  * activate search back button in gui.
  *
  * \param active activate/inactivate
- * \param p the pointer sent to search_verify_new() / search_create_context()
+ * \param gw The gui window in which to activite the search button in.
  */
 static void nsgtk_search_set_back_state(bool active, struct gui_window *gw)
 {

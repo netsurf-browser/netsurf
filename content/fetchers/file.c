@@ -497,9 +497,14 @@ static char *gen_nice_title(char *path)
 }
 
 /**
- * generate an output row of the directory listing.
+ * Generate an output row of the directory listing.
  *
- * @param ent current directory entry.
+ * \param ctx The file fetching context.
+ * \param ent current directory entry.
+ * \param even is the row an even row.
+ * \param buffer The output buffer.
+ * \param buffer_len The space available in the output buffer.
+ * \return NSERROR_OK or error code on faliure.
  */
 static nserror
 process_dir_ent(struct fetch_file_context *ctx,

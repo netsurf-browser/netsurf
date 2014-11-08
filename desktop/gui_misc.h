@@ -76,6 +76,7 @@ struct gui_browser_table {
 	 * \param certs The certificate to be verified
 	 * \param num The number of certificates to be verified.
 	 * \param cb Callback upon user decision.
+	 * \param cbpw Context pointer passed to cb
 	 */
 	void (*cert_verify)(struct nsurl *url, const struct ssl_cert_info *certs, unsigned long num, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 

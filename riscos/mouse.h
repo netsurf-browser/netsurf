@@ -17,8 +17,8 @@
  */
 
 
-/** \file mouse.h
- * Mouse dragging and tracking support (interface).
+/** \file
+ * Mouse dragging and tracking support interface for RISC OS.
  */
 
 #ifndef _NETSURF_RISCOS_MOUSE_H_

@@ -268,9 +268,10 @@ static const char *find_pattern(const char *string, int s_len,
 /**
  * Add a new entry to the list of matches
  *
- * \param  start_idx  offset of match start within textual representation
- * \param  end_idx    offset of match end
- * \return pointer to added entry, NULL iff failed
+ * \param start_idx Offset of match start within textual representation
+ * \param end_idx   Offset of match end
+ * \param context   The search context to add the entry to.
+ * \return Pointer to added entry, NULL iff failed.
  */
 
 static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
@@ -310,6 +311,7 @@ static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
  * \param p_len     pattern length
  * \param cur       pointer to the current box
  * \param case_sens whether to perform a case sensitive search
+ * \param context   The search context to add the entry to.
  * \return true on success, false on memory allocation failure
  */
 static bool find_occurrences_html(const char *pattern, int p_len,
@@ -371,6 +373,7 @@ static bool find_occurrences_html(const char *pattern, int p_len,
  * \param p_len     pattern length
  * \param c         the content to be searched
  * \param case_sens wheteher to perform a case sensitive search
+ * \param context   The search context to add the entry to.
  * \return true on success, false on memory allocation failure
  */
 

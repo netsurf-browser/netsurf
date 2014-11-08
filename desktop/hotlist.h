@@ -171,7 +171,7 @@ nserror hotlist_iterate(void *ctx,
  * Redraw the hotlist.
  *
  * \param x		X coordinate to render treeview at
- * \param x		Y coordinate to render treeview at
+ * \param y		Y coordinate to render treeview at
  * \param clip		Current clip rectangle (wrt tree origin)
  * \param ctx		Current redraw context
  */

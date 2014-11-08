@@ -193,11 +193,13 @@ bool ro_gui_search_click(wimp_pointer *pointer)
 
 /**
  * add search string to recent searches list
+ *
  * front is at liberty how to implement the bare notification
  * should normally store a strdup() of the string in
  * search_global_data.recent[];
  * core gives no guarantee of the integrity of the const char *
- * \param string search pattern
+ *
+ * \param search string search pattern
  * \param p the pointer sent to search_verify_new()
  */
 
