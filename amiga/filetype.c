@@ -74,8 +74,8 @@ const char *fetch_filetype(const char *unix_path)
 	    Will fail over to default icons if the file doesn't have a real icon. */
 
 	if(!found) {
-		if(dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
-						TAG_DONE)) {
+		if((dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
+						TAG_DONE))) {
 			STRPTR ttype = NULL;
 			ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
 			if(ttype) {
@@ -90,8 +90,8 @@ const char *fetch_filetype(const char *unix_path)
 
 	if(!found) {
 		BPTR lock;
-		if (lock = Lock (unix_path, ACCESS_READ)) {
-			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL)) {
+		if ((lock = Lock(unix_path, ACCESS_READ))) {
+			if ((dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))) {
 				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL)) {
 					strcpy(mimetype, lwc_string_data(lwc_mimetype));
 					found = TRUE;
@@ -168,7 +168,7 @@ nserror ami_mime_init(const char *mimefile)
 	char buffer[256];
 	BPTR fh = 0;
 	struct RDArgs *rargs = NULL;
-	STRPTR template = "MIMETYPE/A,DT=DATATYPE/K,TYPE=DEFICON/K,CMD=PLUGINCMD/K";
+	CONST_STRPTR template = "MIMETYPE/A,DT=DATATYPE/K,TYPE=DEFICON/K,CMD=PLUGINCMD/K";
 	long rarray[] = {0,0,0,0};
 	struct nsObject *node;
 	struct ami_mime_entry *mimeentry;
@@ -179,9 +179,9 @@ nserror ami_mime_init(const char *mimefile)
 	rargs = AllocDosObjectTags(DOS_RDARGS,TAG_DONE);
 	if(rargs == NULL) return NSERROR_NOMEM;
 
-	if(fh = FOpen(mimefile, MODE_OLDFILE, 0))
+	if((fh = FOpen(mimefile, MODE_OLDFILE, 0)))
 	{
-		while(FGets(fh, (UBYTE *)&buffer, 256) != 0)
+		while((FGets(fh, (STRPTR)&buffer, 256) != 0))
 		{
 			rargs->RDA_Source.CS_Buffer = (char *)&buffer;
 			rargs->RDA_Source.CS_Length = 256;
@@ -241,6 +241,8 @@ nserror ami_mime_init(const char *mimefile)
 		FClose(fh);
 	}
 	FreeDosObject(DOS_RDARGS, rargs);
+
+	return NSERROR_OK;
 }
 
 void ami_mime_free(void)
@@ -267,7 +269,7 @@ void ami_mime_entry_free(struct ami_mime_entry *mimeentry)
  * \return entry or NULL if no match
  */
 
-struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
+static struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
 		int type, struct Node **start_node)
 {
 	struct nsObject *node;
@@ -329,7 +331,7 @@ struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
 		if((lerror == lwc_error_ok) && (ret == true))
 			break;
 
-	}while(node=nnode);
+	} while((node=nnode));
 
 	*start_node = (struct Node *)node;
 
@@ -338,7 +340,7 @@ struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
 }
 
 
-APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
+static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
 {
 	struct nsObject *node;
 	char mimetype[100];
@@ -558,7 +560,7 @@ struct Node *ami_mime_has_cmd(lwc_string **mimetype, struct Node *start_node)
  * \return node or NULL if no match
  */
 
-struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
+static struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
 		lwc_string **plugincmd, struct Node *start_node)
 {
 	struct Node *node;
@@ -627,8 +629,7 @@ void ami_mime_dump(void)
 	struct Node *node = NULL;
 	struct ami_mime_entry *mimeentry;
 
-	while(mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_MIMETYPE, &node))
-	{
+	while((mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_MIMETYPE, &node))) {
 		LOG(("%s DT=\"%s\" TYPE=\"%s\" CMD=\"%s\"",
 			mimeentry->mimetype ? lwc_string_data(mimeentry->mimetype) : "",
 			mimeentry->datatype ? lwc_string_data(mimeentry->datatype) : "",
