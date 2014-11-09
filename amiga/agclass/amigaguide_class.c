@@ -26,7 +26,6 @@ struct AmigaGuideIFace *IAmigaGuide = NULL;
 /* **********************************  function prototypes   ************************************ */
 
 static uint32 dispatchAGClass(Class *, Object *, Msg);
-BOOL          freeAGClass(Class *);
 
 // class methods
 uint32 om_new(Class *, Object *, struct opSet *);
