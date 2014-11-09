@@ -90,7 +90,7 @@ const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
  * \param fonts  number of fonts that are being scanned
  * \return pointer to a struct ami_font_scan_window
  */
-struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
+static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 {
 	struct ami_font_scan_window *fsw =
 		AllocVecTagList(sizeof(struct ami_font_scan_window), NULL);
@@ -158,7 +158,7 @@ struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
  * \param font_num  font number being scanned
  * \param glyphs    number of unique glyphs found
  */
-void ami_font_scan_gui_update(struct ami_font_scan_window *fsw, const char *font,
+static void ami_font_scan_gui_update(struct ami_font_scan_window *fsw, const char *font,
 			ULONG font_num, ULONG glyphs)
 {
 	ULONG va[2];
@@ -190,7 +190,7 @@ void ami_font_scan_gui_update(struct ami_font_scan_window *fsw, const char *font
  *
  * \param fsw pointer to a struct ami_font_scan_window
  */
-void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
+static void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
 {
 	if(fsw) {
 		DisposeObject(fsw->objects[FS_OID_MAIN]);
@@ -206,13 +206,12 @@ void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return number of new glyphs found
  */
-ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
+static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 {
 	struct OutlineFont *ofont;
 	struct MinList *widthlist;
 	struct GlyphWidthEntry *gwnode;
 	ULONG foundglyphs = 0;
-	ULONG serif = 0;
 	lwc_error lerror;
 	ULONG unicoderanges = 0;
 
@@ -237,7 +236,7 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 					if(lerror != lwc_error_ok) continue;
 					foundglyphs++;
 				}
-			} while(gwnode = (struct GlyphWidthEntry *)GetSucc((struct Node *)gwnode));
+			} while((gwnode = (struct GlyphWidthEntry *)GetSucc((struct Node *)gwnode)));
 			EReleaseInfo(&ofont->olf_EEngine,
 				OT_WidthList, widthlist,
 				TAG_END);
@@ -264,7 +263,7 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
  * \param glypharray an array of 0xffff lwc_string pointers
  * \return number of glyphs found
  */
-ULONG ami_font_scan_fonts(struct MinList *list,
+static ULONG ami_font_scan_fonts(struct MinList *list,
 		struct ami_font_scan_window *win, lwc_string **glypharray)
 {
 	ULONG found, total = 0, font_num = 0;
@@ -283,7 +282,7 @@ ULONG ami_font_scan_fonts(struct MinList *list,
 		total += found;
 		LOG(("Found %ld new glyphs (total = %ld)", found, total));
 		font_num++;
-	} while(node = nnode);
+	} while((node = nnode));
 
 	return total;
 }
@@ -294,7 +293,7 @@ ULONG ami_font_scan_fonts(struct MinList *list,
  * \param  list   list to add font names to
  * \return number of fonts found
  */
-ULONG ami_font_scan_list(struct MinList *list)
+static ULONG ami_font_scan_list(struct MinList *list)
 {
 	int afShortage, afSize = 100;
 	struct AvailFontsHeader *afh;
@@ -303,8 +302,9 @@ ULONG ami_font_scan_list(struct MinList *list)
 	struct nsObject *node;
 
 	do {
-		if(afh = (struct AvailFontsHeader *)AllocVecTagList(afSize, NULL)) {
-			if(afShortage = AvailFonts(afh, afSize, AFF_DISK | AFF_OTAG | AFF_SCALED)) {
+		if((afh = (struct AvailFontsHeader *)AllocVecTagList(afSize, NULL))) {
+			if(((afShortage = AvailFonts((STRPTR)afh, afSize,
+					AFF_DISK | AFF_OTAG | AFF_SCALED)))) {
 				FreeVec(afh);
 				afSize += afShortage;
 			}
@@ -347,14 +347,14 @@ ULONG ami_font_scan_list(struct MinList *list)
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return number of glyphs loaded
  */
-ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
+static ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
 {
 	ULONG found = 0;
 	BPTR fh = 0;
 	lwc_error lerror;
 	char buffer[256];
 	struct RDArgs *rargs = NULL;
-	STRPTR template = "CODE/A,FONT/A";
+	CONST_STRPTR template = "CODE/A,FONT/A";
 	long rarray[] = {0,0};
 
 	enum {
@@ -364,10 +364,10 @@ ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
 
 	rargs = AllocDosObjectTags(DOS_RDARGS, TAG_DONE);
 
-	if(fh = FOpen(filename, MODE_OLDFILE, 0)) {
+	if((fh = FOpen(filename, MODE_OLDFILE, 0))) {
 		LOG(("Loading font glyph cache from %s", filename));
 
-		while(FGets(fh, (UBYTE *)&buffer, 256) != 0)
+		while(FGets(fh, (STRPTR)&buffer, 256) != 0)
 		{
 			rargs->RDA_Source.CS_Buffer = (char *)&buffer;
 			rargs->RDA_Source.CS_Length = 256;
@@ -405,7 +405,7 @@ void ami_font_scan_save(const char *filename, lwc_string **glypharray)
 	ULONG i;
 	BPTR fh = 0;
 
-	if(fh = FOpen(filename, MODE_NEWFILE, 0)) {
+	if((fh = FOpen(filename, MODE_NEWFILE, 0))) {
 		LOG(("Writing font glyph cache to %s", filename));
 		FPrintf(fh, "; This file is auto-generated. To re-create the cache, delete this file.\n");
 		FPrintf(fh, "; This file is parsed using ReadArgs() with the following template:\n");
@@ -465,7 +465,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		found = ami_font_scan_load(filename, glypharray);
 
 	if(found == 0) {
-		if(list = NewObjList()) {
+		if((list = NewObjList())) {
 
 			/* add preferred fonts list */
 			if(nsoption_charp(font_unicode) &&
@@ -473,7 +473,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 			{
 				char *p;
 
-				while(p = strsep(&csv, ",")) {
+				while((p = strsep(&csv, ","))) {
 					asprintf(&unicode_font, "%s.font", p);
 					if(unicode_font != NULL) {
 						node = AddObject(list, AMINS_UNKNOWN);
