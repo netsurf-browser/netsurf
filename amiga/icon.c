@@ -319,7 +319,7 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 	ULONG *argbicon;
 	struct ColorRegister *colour;
 	struct ColorMap *cmap;
-	int i;
+	ULONG i;
 	ULONG a,r,g,b;
 
 	if (alpha==0) alpha=0xff;
