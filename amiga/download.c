@@ -63,6 +63,7 @@
 #include "amiga/drag.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/misc.h"
+#include "amiga/theme.h"
 #include "amiga/utf8.h"
 
 struct gui_download_window {
@@ -234,7 +235,6 @@ static void gui_download_window_done(struct gui_download_window *dw)
 	struct dlnode *dln,*dln2 = NULL;
 	struct browser_window *bw;
 	bool queuedl = false;
-	STRPTR sendcmd = NULL;
 
 	if(!dw) return;
 	bw = dw->bw;
@@ -251,7 +251,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	download_context_destroy(dw->ctx);
 
-	if(dln = dw->dln)
+	if((dln = dw->dln))
 	{
 		dln2 = (struct dlnode *)GetSucc((struct Node *)dln);
 		if((dln!=dln2) && (dln2)) queuedl = true;
@@ -304,7 +304,7 @@ void ami_download_window_abort(struct gui_download_window *dw)
 BOOL ami_download_window_event(struct gui_download_window *dw)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,relevent = 0;
+	ULONG result;
 	uint16 code;
 
 	while((result = RA_HandleInput(dw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
@@ -342,7 +342,7 @@ void ami_free_download_list(struct List *dllist)
 		free(node->filename);
 		Remove((struct Node *)node);
 		FreeVec((struct Node *)node);
-	}while(node=nnode);
+	}while((node=nnode));
 }
 
 nserror
@@ -371,9 +371,9 @@ gui_window_save_link(struct gui_window *g, nsurl *url, const char *title)
 		{
 			BPTR fh;
 
-			if(fh = FOpen(fname,MODE_NEWFILE,0))
+			if((fh = FOpen(fname,MODE_NEWFILE,0)))
 			{
-				/* TODO: Should be URLOpen on OS4.1 */
+				/* \todo Should be URLOpen on OS4.1 */
 				openurlstring = ASPrintf("openurl \"%s\"\n",nsurl_access(url));
 				FWrite(fh,openurlstring,1,strlen(openurlstring));
 				FClose(fh);
@@ -416,7 +416,7 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 			BPTR fh;
 			int64 oldsize = 0;
 
-			if(fh = OpenFromLock(lock)) {
+			if((fh = OpenFromLock(lock))) {
 				oldsize = GetFileSize(fh);
 				Close(fh);
 			}
