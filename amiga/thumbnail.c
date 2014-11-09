@@ -39,6 +39,7 @@
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
 
+
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsurl *url)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,23 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_MISC_H
-#define AMIGA_MISC_H
-#include <exec/types.h>
+#ifndef AMIGA_LIBS_H
+#include <stdbool.h>
 
-extern struct gui_file_table *amiga_file_table;
-
-char *translate_escape_chars(const char *s);
-int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win);
-
-/**
- * Cause an abnormal program termination.
- *
- * \note This never returns and is intended to terminate without any cleanup.
- *
- * \param error The message to display to the user.
- */
-void die(const char * const error) __attribute__ ((noreturn));
-
-
+bool ami_libs_open(void);
+void ami_libs_close(void);
 #endif
+
