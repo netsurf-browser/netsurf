@@ -63,11 +63,12 @@
 #include "desktop/searchweb.h"
 #include "desktop/gui_window.h"
 
-#include "amiga/object.h"
+#include "amiga/file.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
+#include "amiga/object.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 
@@ -1768,7 +1769,7 @@ static void ami_gui_opts_use(bool save)
 
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_DLDIR],(ULONG *)&data);
 	if((nsoption_charp(download_dir) == NULL) ||
-		(strcmp(data, nsoption_charp(download_dir)) != 0)) {
+		(strcmp((char *)data, nsoption_charp(download_dir)) != 0)) {
 		nsoption_set_charp(download_dir, (char *)strdup((char *)data));
 		ami_file_req_free();
 		ami_file_req_init();

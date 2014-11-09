@@ -19,6 +19,7 @@
 
 struct hlcache_object;
 struct selection;
+struct gui_window_2;
 
 struct FileRequester *filereq;
 struct FileRequester *savereq;
