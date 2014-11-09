@@ -152,7 +152,7 @@ struct store_state *storestate;
  * only valid until the next set_store_entry call.
  *
  * @param state The store state to use.
- * @param url The value used as the unique key to search entries for.
+ * @param ident The entry ident of the entry to store.
  * @param bse Pointer used to return value.
  * @return NSERROR_OK and bse updated on succes or NSERROR_NOT_FOUND
  *         if no entry coresponds to the url.
@@ -516,7 +516,11 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
  *
  * This creates a backing store entry in the entry table for a url.
  *
+ * @param state The store state to use.
  * @param url The value used as the unique key to search entries for.
+ * @param flags flags affecting how the entry is stored.
+ * @param data The data to store
+ * @param datalen The length of data in \a data
  * @param bse Pointer used to return value.
  * @return NSERROR_OK and \a bse updated on success or NSERROR_NOT_FOUND
  *         if no entry coresponds to the url.
@@ -600,15 +604,13 @@ set_store_entry(struct store_state *state,
 }
 
 
-
-
 /**
  * Open a file using a store ident.
  *
  * @param state The store state to use.
  * @param ident The identifier of the file to open.
  * @param flags The backing store flags.
- * @pram openflags The flags used with the open call.
+ * @param openflags The flags used with the open call.
  * @return An fd from the open call or -1 on error.
  */
 static int
@@ -1133,10 +1135,10 @@ store(nsurl *url,
 /**
  * Retrive an object from the backing store.
  *
- * @param url The url is used as the unique primary key for the data.
- * @param flags The flags to control how the object is stored.
- * @param data The objects data.
- * @param datalen The length of the \a data retrieved.
+ * @param[in] url The url is used as the unique primary key for the data.
+ * @param[in] flags The flags to control how the object is retrieved.
+ * @param[out] data_out The objects data.
+ * @param[out] datalen_out The length of the \a data retrieved.
  * @return NSERROR_OK on success or error code on faliure.
  */
 static nserror

@@ -333,7 +333,7 @@ struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *h,
  * \param h handle to the content to retrieve tyoe of.
  * \return Computed content type
  */
-content_type content_get_type(struct hlcache_handle *c);
+content_type content_get_type(struct hlcache_handle *h);
 
 /**
  * Retrieve mime-type of content

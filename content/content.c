@@ -233,7 +233,8 @@ static void content_update_status(struct content *c)
  *
  * The textual status contained in the content is updated with given string.
  *
- * \param status_message  new textual status
+ * \param c The content to set status in.
+ * \param status_message new textual status
  */
 
 void content_set_status(struct content *c, const char *status_message)
@@ -723,11 +724,11 @@ void content_broadcast_errorcode(struct content *c, nserror errorcode)
 /**
  * A window containing the content has been opened.
  *
- * \param  c	   content that has been opened
- * \param  bw	   browser window containing the content
- * \param  page	   content of type CONTENT_HTML containing c, or 0 if not an
+ * \param h	 handle to content that has been opened
+ * \param bw	 browser window containing the content
+ * \param page   content of type CONTENT_HTML containing h, or 0 if not an
  *		   object within a page
- * \param  params  object parameters, or 0 if not an object
+ * \param params object parameters, or 0 if not an object
  *
  * Calls the open function for the content.
  */
@@ -1300,7 +1301,7 @@ bool content__is_locked(struct content *c)
 /**
  * Retrieve the low-level cache handle for a content
  *
- * \param h  Content to retrieve from
+ * \param c Content to retrieve from
  * \return Low-level cache handle
  */
 const llcache_handle *content_get_llcache_handle(struct content *c)

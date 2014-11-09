@@ -917,8 +917,8 @@ static nserror llcache_object_add_to_list(llcache_object *object,
 /**
  * Determine the remaining lifetime of a cache object using the
  *
- * \param object  Object to consider
- * \return True if object is still fresh, false otherwise
+ * \param cd cache control data.
+ * \return The length of time remaining for the object or 0 if expired.
  */
 static int
 llcache_object_rfc2616_remaining_lifetime(const llcache_cache_control *cd)
@@ -2540,7 +2540,7 @@ static nserror llcache_object_notify_users(llcache_object *object)
 	 * State transitions and event emission for users.
 	 * Rows: user state. Cols: object state.
 	 *
-	 * User\Obj	INIT	HEADERS		DATA	COMPLETE
+	 * User - Obj	INIT	HEADERS		DATA	COMPLETE
 	 * INIT		 -	   T		 T*	   T*
 	 * HEADERS	 -	   -		 T	   T*
 	 * DATA		 -	   -		 M	   T

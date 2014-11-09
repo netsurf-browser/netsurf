@@ -198,7 +198,7 @@ lwc_string *content__get_mime_type(struct content *c);
  * Set title associated with content
  *
  * \param c Content to set title on.
- * \parm title The new title to set.
+ * \param title The new title to set.
  * \return true on sucess else false.
  */
 bool content__set_title(struct content *c, const char *title);

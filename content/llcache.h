@@ -227,8 +227,7 @@ struct llcache_parameters {
 /**
  * Initialise the low-level cache
  *
- * \param cb  Query handler
- * \param pw  Pointer to query handler data
+ * \param parameters cache configuration parameters.
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 nserror llcache_initialise(const struct llcache_parameters *parameters);

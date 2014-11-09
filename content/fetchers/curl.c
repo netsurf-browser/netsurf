@@ -24,8 +24,7 @@
  *
  * This implementation uses libcurl's 'multi' interface.
  *
- * The CURL handles are cached in the curl_handle_ring. There are at most
- * ::max_cached_fetch_handles in this ring.
+ * The CURL handles are cached in the curl_handle_ring.
  */
 
 #include <assert.h>
@@ -814,7 +813,8 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f)
 /**
  * Handle a completed fetch (CURLMSG_DONE from curl_multi_info_read()).
  *
- * \param  curl_handle	curl easy handle of fetch
+ * \param curl_handle curl easy handle of fetch
+ * \param result The result code of the completed fetch.
  */
 static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 {

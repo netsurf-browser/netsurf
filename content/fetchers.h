@@ -141,10 +141,10 @@ void fetcher_quit(void);
  * operation. The fallback to polled operation will only occour after
  * a timeout which introduces additional delay.
  *
- * \param read_fd_set[out] The fd set for read.
- * \param write_fd_set[out] The fd set for write.
- * \param except_fd_set[out] The fd set for exceptions.
- * \param maxfd[out] The highest fd number in the set or -1 if no fd available.
+ * \param[out] read_fd_set The fd set for read.
+ * \param[out] write_fd_set The fd set for write.
+ * \param[out] except_fd_set The fd set for exceptions.
+ * \param[out] maxfd The highest fd number in the set or -1 if no fd available.
  * \return NSERROR_OK on success or appropriate error code.
  */
 nserror fetcher_fdset(fd_set *read_fd_set, fd_set *write_fd_set, fd_set *except_fd_set, int *maxfd);
