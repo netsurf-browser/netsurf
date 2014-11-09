@@ -17,7 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Browser history tree implementation.
  */
 
@@ -84,15 +85,13 @@ struct history {
 /**
  * Clone a history entry
  *
- * \param  history  opaque history structure, as returned by history_create()
- * \param  start    entry to clone
- *
- * \return  a cloned history entry, or 0 on error
+ * \param history opaque history structure, as returned by history_create()
+ * \param entry   entry to clone
+ * \return A cloned history entry or NULL on error
  */
-
-static struct history_entry *browser_window_history__clone_entry(
-		struct history *history,
-		struct history_entry *entry)
+static struct history_entry *
+browser_window_history__clone_entry(struct history *history,
+				    struct history_entry *entry)
 {
 	struct history_entry *child;
 	struct history_entry *new_child;
@@ -241,12 +240,19 @@ static void browser_window_history__layout(struct history *history)
 /**
  * Recursively redraw a history_entry.
  *
- * \param  history        history containing the entry
- * \param  history_entry  entry to render
- * \param ctx		  current redraw context
+ * \param history history containing the entry
+ * \param entry entry to render
+ * \param x0 area top left x coordinate
+ * \param y0 area top left y coordinate
+ * \param x1 area bottom right x coordinate
+ * \param y1 area bottom right y coordinate
+ * \param x window x offset
+ * \param y window y offset
+ * \param clip clip redraw
+ * \param ctx     current redraw context
  */
-
-static bool browser_window_history__redraw_entry(struct history *history,
+static bool
+browser_window_history__redraw_entry(struct history *history,
 		struct history_entry *entry,
 		int x0, int y0, int x1, int y1,
 		int x, int y, bool clip,
