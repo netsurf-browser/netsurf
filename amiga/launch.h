@@ -20,8 +20,10 @@
  * Fetching of data from a URL (Registration).
  */
 
-#ifndef AMIGA_FETCH_MAILTO_H
-#define AMIGA_FETCH_MAILTO_H
+#ifndef AMIGA_LAUNCH_H
+#define AMIGA_LAUNCH_H
+#include "utils/errors.h"
+struct nsurl;
 
 void ami_openurl_open(void);
 void ami_openurl_close(void);

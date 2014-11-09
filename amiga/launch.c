@@ -30,6 +30,7 @@
 #include <proto/utility.h>
 #include <proto/openurl.h>
 
+#include "amiga/launch.h"
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 
@@ -44,7 +45,7 @@ struct ami_protocol
 	lwc_string *protocol;
 };
 
-struct ami_protocol *ami_openurl_add_protocol(const char *url)
+static struct ami_protocol *ami_openurl_add_protocol(const char *url)
 {
 	nsurl *ns_url;
 	struct ami_protocol *ami_p =
@@ -67,7 +68,7 @@ struct ami_protocol *ami_openurl_add_protocol(const char *url)
 	return ami_p;
 }
 
-void ami_openurl_free_list(struct MinList *list)
+static void ami_openurl_free_list(struct MinList *list)
 {
 	struct ami_protocol *node;
 	struct ami_protocol *nnode;
@@ -83,10 +84,10 @@ void ami_openurl_free_list(struct MinList *list)
 		if (node->protocol) lwc_string_unref(node->protocol);
 		FreeVec(node);
 		node = NULL;
-	}while(node=nnode);
+	}while((node=nnode));
 }
 
-BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
+static BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 {
 	struct ami_protocol *node;
 	struct ami_protocol *nnode;
@@ -108,7 +109,7 @@ BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 			lwc_string_unref(url_scheme);
 			return TRUE;
 		}
-	}while(node=nnode);
+	}while((node=nnode));
 
 	lwc_string_unref(url_scheme);
 	return FALSE;
@@ -123,15 +124,14 @@ BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 void ami_openurl_open(void)
 {
 	if(nsoption_bool(use_openurl_lib)) {
-		if(OpenURLBase = OpenLibrary("openurl.library",0))
+		if((OpenURLBase = OpenLibrary("openurl.library",0)))
 			IOpenURL = (struct OpenURLIFace *)GetInterface(OpenURLBase,"main",1,NULL);
 	}
 
 	NewMinList(&ami_unsupportedprotocols);
-	ami_openurl_add_protocol("javascript:");
 }
 
-void ami_openurl_close(const char *scheme)
+void ami_openurl_close(void)
 {
 	if(IOpenURL) DropInterface((struct Interface *)IOpenURL);
 	if(OpenURLBase) CloseLibrary(OpenURLBase);
@@ -150,7 +150,7 @@ nserror gui_launch_url(struct nsurl *url)
 		{
 			URL_OpenA((STRPTR)url,NULL);
 		} else {
-			if(launchurl = ASPrintf("URL:%s", nsurl_access(url))) {
+			if((launchurl = ASPrintf("URL:%s", nsurl_access(url)))) {
 				BPTR fptr = Open(launchurl,MODE_OLDFILE);
 				if(fptr)
 				{
