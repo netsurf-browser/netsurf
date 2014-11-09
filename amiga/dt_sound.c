@@ -68,7 +68,7 @@ static const content_handler amiga_dt_sound_content_handler = {
 };
 
 
-void amiga_dt_sound_play(Object *dto)
+static void amiga_dt_sound_play(Object *dto)
 {
 	LOG(("Playing..."));
 	IDoMethod(dto, DTM_TRIGGER, NULL, STM_PLAY, NULL);
@@ -79,9 +79,7 @@ nserror amiga_dt_sound_init(void)
 {
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
-	lwc_error lerror;
 	nserror error;
-	BPTR fh = 0;
 	struct Node *node = NULL;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,

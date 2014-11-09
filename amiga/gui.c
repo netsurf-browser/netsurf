@@ -4760,7 +4760,7 @@ static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 {
 	int cur_tab = 0;
 
-	if(!g) return;
+	if(!g) return NSERROR_OK;
 
 	if ((g->tab_node) && (g->shared->tabs > 1)) {
 		GetAttr(CLICKTAB_Current,

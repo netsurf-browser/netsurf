@@ -94,9 +94,7 @@ nserror amiga_dt_anim_init(void)
 {
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
-	lwc_error lerror;
 	nserror error;
-	BPTR fh = 0;
 	struct Node *node = NULL;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
@@ -170,15 +168,13 @@ bool amiga_dt_anim_convert(struct content *c)
 
 	data = (uint8 *)content__get_source_data(c, &size);
 
-	if(plugin->dto = NewDTObject(NULL,
+	if((plugin->dto = NewDTObject(NULL,
 					DTA_SourceType, DTST_MEMORY,
 					DTA_SourceAddress, data,
 					DTA_SourceSize, size,
 					DTA_GroupID, GID_ANIMATION,
-					TAG_DONE))
-	{
-		if(GetDTAttrs(plugin->dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
-		{
+					TAG_DONE))) {
+		if(GetDTAttrs(plugin->dto, PDTA_BitMapHeader, &bmh, TAG_DONE)) {
 			width = (int)bmh->bmh_Width;
 			height = (int)bmh->bmh_Height;
 
