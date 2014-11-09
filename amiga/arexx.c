@@ -310,9 +310,9 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 	ami_set_pointer(bw->window->shared, GUI_POINTER_WAIT, false);
 					
-	if(fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0))
+	if((fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0)))
 	{
-		if(source_data = content_get_source_data(bw->current_content, &source_size))
+		if((source_data = content_get_source_data(bw->current_content, &source_size)))
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
@@ -387,7 +387,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	{
 		if(cmd->ac_ArgList[1])
 		{
-			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((netsurf_version_minor >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
+			if((netsurf_version_major > *(int *)cmd->ac_ArgList[0]) || ((netsurf_version_minor >= *(int *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(int *)cmd->ac_ArgList[0])))
 			{
 				strcpy(result,"1");
 			}
@@ -398,7 +398,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		}
 		else if(cmd->ac_ArgList[0])
 		{
-			if((netsurf_version_major >= *(ULONG *)cmd->ac_ArgList[0]))
+			if((netsurf_version_major >= *(int *)cmd->ac_ArgList[0]))
 			{
 				strcpy(result,"1");
 			}
@@ -416,7 +416,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	{
 		if(cmd->ac_ArgList[1])
 		{
-			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((atoi(wt_revid) >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
+			if((netsurf_version_major > *(int *)cmd->ac_ArgList[0]) || ((atoi(wt_revid) >= *(int *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(int *)cmd->ac_ArgList[0])))
 			{
 				strcpy(result,"1");
 			}
@@ -427,7 +427,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		}
 		else if(cmd->ac_ArgList[0])
 		{
-			if((netsurf_version_major >= *(ULONG *)cmd->ac_ArgList[0]))
+			if((netsurf_version_major >= *(int *)cmd->ac_ArgList[0]))
 			{
 				strcpy(result,"1");
 			}
@@ -538,8 +538,6 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 {
 	int windows = 0, tabs = 0;
 	int window = 0;
-	struct nsObject *node, *nnode;
-	struct gui_window_2 *gwin;
 
 	if(cmd->ac_ArgList[0]) window = *(ULONG *)cmd->ac_ArgList[0];
 	cmd->ac_RC = 0;
@@ -581,7 +579,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 					break;
 				}
 			}
-		} while(node = nnode);
+		} while((node = nnode));
 	}
 
 	if(cmd->ac_ArgList[0])
