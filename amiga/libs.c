@@ -26,9 +26,15 @@
 	LOG(("Opening %s v%d", LIB, LIBVER)); \
 	if((PREFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
 		I##PREFIX = (struct PREFIX##IFace *)GetInterface(PREFIX##Base, INTERFACE, INTVER, NULL);	\
+		if(I##PREFIX == NULL) {	\
+			LOG(("Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB));	\
+		}	\
 	} else {	\
-		warn_user("CompError", LIB);	\
-		if(FAIL == true) return false; \
+		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
+		if(FAIL == true) {	\
+			warn_user("CompError", LIB);	\
+			return false; \
+		}	\
 	}
 
 #define AMINS_LIB_CLOSE(PREFIX)	\
