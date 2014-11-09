@@ -22,13 +22,19 @@
 #include <svgtiny.h>
 #include <proto/exec.h>
 #include <string.h>
-#include "iff_dr2d.h"
 #include <proto/dos.h>
+
+#ifndef AMIGA_DR2D_STANDALONE
+#include "amiga/iff_dr2d.h"
+#include "content/hlcache.h"
+#else
+#include "iff_dr2d.h"
+#endif
 
 struct ColorRegister cm[1000];
 ULONG numcols;
 
-ULONG findcolour(ULONG newcol)
+static ULONG findcolour(ULONG newcol)
 {
 	ULONG i;
 	ULONG colr = 0xFFFFFFFF;
@@ -47,12 +53,9 @@ ULONG findcolour(ULONG newcol)
 	return colr;
 }
 
-void addcolour(ULONG newcol)
+static void addcolour(ULONG newcol)
 {
-	ULONG colr;
-	UBYTE red,grn,blu;
-
-	colr = findcolour(newcol);
+	ULONG colr = findcolour(newcol);
 
 	if(colr == 0xFFFFFFFF)
 	{
@@ -309,10 +312,8 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 
 	if(!ami_download_check_overwrite(filename, NULL, 0)) return false;
 
-	if(iffh = AllocIFF())
-	{
-		if(iffh->iff_Stream = Open(filename,MODE_NEWFILE))
-		{
+	if((iffh = AllocIFF())) {
+		if((iffh->iff_Stream = Open(filename,MODE_NEWFILE))) {
 			InitIFFasDOS(iffh);
 		}
 		else return false;
@@ -327,6 +328,7 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
 
+	return true;
 }
 #else
 /*

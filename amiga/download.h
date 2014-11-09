@@ -25,6 +25,7 @@ extern struct gui_download_table *amiga_download_table;
 
 struct download_context;
 struct gui_download_window;
+struct gui_window;
 struct nsurl;
 
 struct dlnode
