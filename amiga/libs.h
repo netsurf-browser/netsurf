@@ -17,7 +17,9 @@
  */
 
 #ifndef AMIGA_LIBS_H
-void ami_libs_open(void);
+#include <stdbool.h>
+
+bool ami_libs_open(void);
 void ami_libs_close(void);
 #endif
 

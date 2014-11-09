@@ -5251,7 +5251,9 @@ int main(int argc, char** argv)
 	nslog_init(NULL, &argc, argv);
 
 	/* Need to do this before opening any splash windows etc... */
-	ami_libs_open();
+	if ((ami_libs_open() == false)) {
+		return 20; /* FAIL */
+	}
 
 	/* Open splash window */
 	Object *splash_window = ami_gui_splash_open();
