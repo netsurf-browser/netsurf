@@ -497,7 +497,7 @@ static bool textarea_set_caret_internal(struct textarea *ta, int caret_b)
  * \param ta		Text area
  * \param b_start	First character (inclusive) byte offset
  * \param b_end		Last character (exclusive) byte offset
- * \parm  force_redraw  Redraw whether selection changed or not
+ * \param force_redraw  Redraw whether selection changed or not
  * \return 		true on success false otherwise
  */
 static bool textarea_select(struct textarea *ta, int b_start, int b_end,

@@ -404,11 +404,11 @@ bool knockout_plot_flush(void)
 /**
  * Knockout a section of previous rendering
  *
- * \param  x0	the left edge of the removal box
- * \param  y0	the bottom edge of the removal box
- * \param  x1	the right edge of the removal box
- * \param  y1	the top edge of the removal box
- * \param  box  the parent box set to consider, or NULL for top level
+ * \param x0    The left edge of the removal box
+ * \param y0    The bottom edge of the removal box
+ * \param x1    The right edge of the removal box
+ * \param y1    The top edge of the removal box
+ * \param owner The parent box set to consider, or NULL for top level
 */
 void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *owner)
 {

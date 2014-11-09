@@ -43,8 +43,8 @@ enum browser_mouse_state;
  *
  * This must be called before any other cookie_manager_* function.
  *
- * \param cw_t		Callback table for core_window containing the treeview
- * \param cw		The core_window in which the treeview is shown
+ * \param cw_t Callback table for core_window containing the treeview
+ * \param core_window_handle The core_window in which the treeview is shown
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror cookie_manager_init(struct core_window_callback_table *cw_t,
@@ -79,10 +79,10 @@ void cookie_manager_remove(const struct cookie_data *data);
 /**
  * Redraw the cookies manager.
  *
- * \param x		X coordinate to render treeview at
- * \param x		Y coordinate to render treeview at
- * \param clip		Current clip rectangle (wrt tree origin)
- * \param ctx		Current redraw context
+ * \param x	X coordinate to render treeview at
+ * \param y     Y coordinate to render treeview at
+ * \param clip  Current clip rectangle (wrt tree origin)
+ * \param ctx	Current redraw context
  */
 void cookie_manager_redraw(int x, int y, struct rect *clip,
 		const struct redraw_context *ctx);

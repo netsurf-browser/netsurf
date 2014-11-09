@@ -55,9 +55,9 @@ nserror sslcert_viewer_create_session_data(
  *
  * This iterates through the certificates, building a treeview.
  *
- * \param cw_t		Callback table for cert viewer's core_window
- * \param cw		The core_window in which the cert viewer is shown
- * \param ssl_d		SSL certificate session data
+ * \param cw_t Callback table for cert viewer's core_window
+ * \param core_window_handle The core_window in which the cert viewer is shown
+ * \param ssl_d SSL certificate session data
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
@@ -95,7 +95,7 @@ nserror sslcert_viewer_accept(struct sslcert_session_data *ssl_d);
  *
  * \param ssl_d		SSL certificate session data
  * \param x		X coordinate to render treeview at
- * \param x		Y coordinate to render treeview at
+ * \param y		Y coordinate to render treeview at
  * \param clip		Current clip rectangle (wrt tree origin)
  * \param ctx		Current redraw context
  */

@@ -284,8 +284,8 @@ void browser_window_recalculate_iframes(struct browser_window *bw)
 /**
  * Create and open a frameset for a browser window.
  *
- * \param  bw	    The browser window to create the frameset for
- * \param  iframe   The frameset to create
+ * \param bw       The browser window to create the frameset for
+ * \param frameset The frameset to create
  */
 
 void browser_window_create_frameset(struct browser_window *bw,
@@ -638,7 +638,9 @@ void browser_window_recalculate_frameset(struct browser_window *bw)
 /**
  * Resize a browser window that is a frame.
  *
- * \param  bw	    The browser window to resize
+ * \param bw The browser window to resize
+ * \param x The new width to set.
+ * \param y The new height to set.
  */
 
 void browser_window_resize_frame(struct browser_window *bw, int x, int y)

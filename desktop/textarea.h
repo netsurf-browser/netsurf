@@ -111,10 +111,11 @@ typedef struct textarea_setup {
 typedef void(*textarea_client_callback)(void *data, struct textarea_msg *msg);
 
 /**
- * Create a text area
+ * Create a text area.
  *
+ * \param flags flags controlling the text area creation
  * \param setup	textarea settings and style
- * \param redraw_callback will be called when textarea wants to redraw
+ * \param callback will be called when textarea wants to redraw
  * \param data	user specified data which will be passed to callbacks
  * \return Opaque handle for textarea or 0 on error
  */
@@ -143,6 +144,7 @@ bool textarea_set_text(struct textarea *ta, const char *text);
  *
  * \param ta Text area
  * \param text UTF-8 text to set text area's contents to
+ * \param text_length length of text.
  * \return true on success, false on memory exhaustion or if ta lacks caret
  */
 bool textarea_drop_text(struct textarea *ta, const char *text,

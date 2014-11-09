@@ -176,11 +176,12 @@ static bool save_complete_save_buffer(save_complete_ctx *ctx,
 /**
  * Rewrite stylesheet \@import rules for save complete.
  *
- * \param  source  stylesheet source
- * \param  size    size of source
- * \param  base    url of stylesheet
- * \param  osize   updated with the size of the result
- * \return  converted source, or NULL on out of memory
+ * \param ctx Save complete context.
+ * \param source stylesheet source.
+ * \param size size of source.
+ * \param base url of stylesheet.
+ * \param osize updated with the size of the result.
+ * \return converted source, or NULL on out of memory.
  */
 
 static char *save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,

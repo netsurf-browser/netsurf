@@ -217,7 +217,7 @@ parse_providers(char *providersd,
 /**
  * create a url for a search provider and a term
  *
- * \param The provider to use.
+ * \param provider The provider to use.
  * \param term The term being searched for.
  * \param url_out The resulting url.
  * \return NSERROR_OK on sucess or appropriate error code.

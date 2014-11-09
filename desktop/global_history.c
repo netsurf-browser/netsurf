@@ -245,7 +245,7 @@ static inline nserror global_history_get_parent_treeview_node(
  * Set a global history entry's data from the url_data.
  *
  * \param e		Global history entry to set up
- * \param url_data	Data associated with entry's URL
+ * \param data	Data associated with entry's URL
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror global_history_create_treeview_field_data(
