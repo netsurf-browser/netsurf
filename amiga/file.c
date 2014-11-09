@@ -46,7 +46,7 @@
 
 static struct Hook aslhookfunc;
 
-static const ULONG ami_file_asl_mime_hook(struct Hook *mh,
+static ULONG ami_file_asl_mime_hook(struct Hook *mh,
 		struct FileRequester *fr, struct AnchorPathOld *ap)
 {
 	char fname[1024];
@@ -90,7 +90,7 @@ void ami_file_open(struct gui_window_2 *gwin)
 			ASLFR_FilterFunc, &aslhookfunc,
 			TAG_DONE))
 	{
-		if(temp = AllocVecTagList(1024, NULL))
+		if((temp = AllocVecTagList(1024, NULL)))
 		{
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
@@ -159,7 +159,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			case AMINS_SAVE_SOURCE:
 				if((source_data = content_get_source_data(object, &source_size))) {
 					BPTR fh;
-					if(fh = FOpen(fname, MODE_NEWFILE,0)) {
+					if((fh = FOpen(fname, MODE_NEWFILE,0))) {
 						FWrite(fh, source_data, 1, source_size);
 						FClose(fh);
 					}
@@ -171,7 +171,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_COMPLETE:
-				if(lock = CreateDir(fname)) {
+				if((lock = CreateDir(fname))) {
 					UnLock(lock);
 					save_complete(object, fname, ami_file_set_type);
 					amiga_icon_superimpose_favicon(fname, favicon, NULL);
@@ -199,8 +199,8 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			break;
 
 			case AMINS_SAVE_SELECTION:
-				if(source_data = browser_window_get_selection(bw)) {
-					if(fh = FOpen(fname, MODE_NEWFILE,0)) {
+				if((source_data = browser_window_get_selection(bw))) {
+					if((fh = FOpen(fname, MODE_NEWFILE,0))) {
 						FWrite(fh, source_data, 1, strlen(source_data));
 						FClose(fh);
 					}
