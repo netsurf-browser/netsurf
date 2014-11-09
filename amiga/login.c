@@ -169,7 +169,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 	lw->node->objstruct = lw;
 }
 
-void ami_401login_close(struct gui_login_window *lw)
+static void ami_401login_close(struct gui_login_window *lw)
 {
 	/* If continuation exists, then forbid refetch */
 	if (lw->cb != NULL)
@@ -181,7 +181,7 @@ void ami_401login_close(struct gui_login_window *lw)
 	DelObject(lw->node);
 }
 
-void ami_401login_login(struct gui_login_window *lw)
+static void ami_401login_login(struct gui_login_window *lw)
 {
 	ULONG *user,*pass;
 	STRPTR userpass;
@@ -205,7 +205,7 @@ void ami_401login_login(struct gui_login_window *lw)
 BOOL ami_401login_event(struct gui_login_window *lw)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,relevent = 0;
+	ULONG result;
 	uint16 code;
 
 	while((result = RA_HandleInput(lw->objects[OID_MAIN], &code)) != WMHI_LASTMSG)
@@ -230,3 +230,4 @@ BOOL ami_401login_event(struct gui_login_window *lw)
 	}
 	return FALSE;
 }
+
