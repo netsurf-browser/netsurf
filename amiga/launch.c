@@ -104,8 +104,8 @@ static BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 	{
 		nnode=(struct ami_protocol *)GetSucc((struct Node *)node);
 
-		if (lwc_string_isequal(url_scheme, node->protocol,
-				&match) == NSERROR_OK && match == true) {
+		if ((lwc_string_isequal(url_scheme, node->protocol,
+				&match) == lwc_error_ok) && (match == true)) {
 			lwc_string_unref(url_scheme);
 			return TRUE;
 		}
