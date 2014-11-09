@@ -65,8 +65,7 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 	if(nsoption_charp(pubscreen_name) == NULL) return;
 	if(strcmp(nsoption_charp(pubscreen_name), "Workbench")) return;
 
-	switch(type)
-	{
+	switch(type) {
 		case GUI_SAVE_OBJECT_ORIG: // object
 		case GUI_SAVE_SOURCE:
 			filetype = ami_mime_content_to_filetype(c);
@@ -85,6 +84,9 @@ void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
 			{
 				filetype = "ilbm";
 			}
+		break;
+
+		default:
 		break;
 	}
 
@@ -108,7 +110,6 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which = WBO_NONE, type;
 	char path[1025], dpath[1025];
-	ULONG source_size;
 
 	ami_drag_icon_close(NULL);
 	ami_autoscroll = FALSE;
@@ -155,9 +156,8 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_SOURCE:
 		{
 			struct hlcache_handle *c = drag_save_data;
-			BPTR fh = 0;
-			AddPart(path, content_get_title(c), 1024);
 
+			AddPart(path, content_get_title(c), 1024);
 			ami_file_save(AMINS_SAVE_SOURCE, path, win, c, NULL, NULL);
 		}
 		break;
@@ -171,10 +171,8 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_COMPLETE:
 		{
 			struct hlcache_handle *c = drag_save_data;
-			BPTR lock = 0;
 
 			AddPart(path, content_get_title(c), 1024);
-
 			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, drag_save_gui->favicon, NULL);
 		}
 		break;
@@ -281,7 +279,7 @@ BOOL ami_drag_in_progress(void)
 	return drag_in_progress;
 }
 
-void *ami_find_gwin_by_id(struct Window *win, int type)
+static void *ami_find_gwin_by_id(struct Window *win, uint32 type)
 {
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin;
@@ -299,7 +297,7 @@ void *ami_find_gwin_by_id(struct Window *win, int type)
 				gwin = node->objstruct;
 				if(win == gwin->win) return gwin;
 			}
-		} while(node = nnode);
+		} while((node = nnode));
 	}
 	return NULL;
 }
