@@ -53,7 +53,6 @@
 
 
 static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
-static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved);
 static bool ami_context_menu_history(const struct browser_window *bw, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
@@ -128,7 +127,7 @@ struct ami_file_input_menu_data {
 	struct browser_window *bw;
 };
 
-struct Library  *PopupMenuBase = NULL;
+struct Library *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 static char *ctxmenulab[CMID_LAST];
 static Object *ctxmenuobj = NULL;
@@ -136,8 +135,7 @@ static struct Hook ctxmenuhook;
 
 void ami_context_menu_init(void)
 {
-	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
-	{
+	if((PopupMenuBase = OpenLibrary("popupmenu.class",0))) {
 		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
 	}
 
@@ -213,7 +211,7 @@ void ami_context_menu_init(void)
 
 }
 
-void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdata)
+static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdata)
 {
 	/*
 	 * CMSUB_PAGE      - userdata = hlcache_object *
@@ -475,7 +473,6 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 
 		case CMSUB_SEL:
 			bw = userdata;
-			BOOL disabled_readonly = !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_PASTE);
 			BOOL disabled_noselection = !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_COPY);
 
 			IDoMethod(ctxmenuobj,PM_INSERT,
@@ -708,8 +705,6 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 	APTR userdata = NULL;
 	struct browser_window *bw;
 	struct hlcache_handle *object;
-	const char *source_data;
-	ULONG source_size;
 	struct bitmap *bm;
 	nsurl *url;
 	nserror error;
@@ -977,7 +972,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			{
 				char *sel;
 
-				if(sel = browser_window_get_selection(gwin->bw))
+				if((sel = browser_window_get_selection(gwin->bw)))
 				{
 					nserror ret;
 					nsurl *url;
@@ -1006,9 +1001,66 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
     return itemid;
 }
 
+#if 0
+/* \todo This is the context menu for the treeviews which needs fixing */
+static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved)
+{
+    int32 itemid = 0;
+	struct tree *tree = hook->h_Data;
+	APTR userdata = NULL;
+
+    if(GetAttrs(item,PMIA_ID, &itemid,
+					PMIA_UserData, &userdata,
+					TAG_DONE))
+    {
+		switch(itemid)
+		{
+			case CMID_TREE_LAUNCH:
+				tree_keypress(tree, KEY_CR);
+			break;
+
+			case CMID_TREE_EDITFOLDER:
+				hotlist_edit_selection();
+			break;
+
+			case CMID_TREE_EDITTITLE:
+				warn_user("TODO.", 0);
+			break;
+
+			case CMID_TREE_EDITLINK:
+				warn_user("TODO.", 0);
+			break;
+
+			case CMID_TREE_NEWFOLDER:
+				hotlist_add_folder(NULL, false, 0);
+			break;
+
+			case CMID_TREE_NEWITEM:
+				hotlist_add_entry(NULL, NULL, false, 0);
+			break;
+
+			case CMID_TREE_SETDEFAULT:
+				warn_user("TODO.", 0);
+			break;
+
+			case CMID_TREE_CLEARDEFAULT:
+				warn_user("TODO.", 0);
+			break;
+
+			case CMID_TREE_ADDHOTLIST:
+				warn_user("TODO.", 0);
+			break;
+
+			case CMID_TREE_DELETE:
+				tree_keypress(tree, KEY_DELETE_RIGHT);
+			break;
+		}
+	}
+	return itemid;
+}
+
 void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 {
-#if 0
 	struct node *root = tree_get_root(tree);
 	struct node *sel_node = tree_get_selected_node(root);
 	bool has_selection = tree_node_has_selection(root);
@@ -1183,64 +1235,8 @@ void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 
 	if(menu_content == true)
 		IDoMethod(ctxmenuobj, PM_OPEN, win);
+}
 #endif
-}
-
-static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved)
-{
-    int32 itemid = 0;
-	struct tree *tree = hook->h_Data;
-	APTR userdata = NULL;
-
-    if(GetAttrs(item,PMIA_ID, &itemid,
-					PMIA_UserData, &userdata,
-					TAG_DONE))
-    {
-		switch(itemid)
-		{
-			case CMID_TREE_LAUNCH:
-				tree_keypress(tree, KEY_CR);
-			break;
-
-			case CMID_TREE_EDITFOLDER:
-				hotlist_edit_selection();
-			break;
-
-			case CMID_TREE_EDITTITLE:
-				warn_user("TODO.", 0);
-			break;
-
-			case CMID_TREE_EDITLINK:
-				warn_user("TODO.", 0);
-			break;
-
-			case CMID_TREE_NEWFOLDER:
-				hotlist_add_folder(NULL, false, 0);
-			break;
-
-			case CMID_TREE_NEWITEM:
-				hotlist_add_entry(NULL, NULL, false, 0);
-			break;
-
-			case CMID_TREE_SETDEFAULT:
-				warn_user("TODO.", 0);
-			break;
-
-			case CMID_TREE_CLEARDEFAULT:
-				warn_user("TODO.", 0);
-			break;
-
-			case CMID_TREE_ADDHOTLIST:
-				warn_user("TODO.", 0);
-			break;
-
-			case CMID_TREE_DELETE:
-				tree_keypress(tree, KEY_DELETE_RIGHT);
-			break;
-		}
-	}
-	return itemid;
-}
 
 static bool ami_context_menu_history(const struct browser_window *bw,
 		int x0, int y0, int x1, int y1,
@@ -1264,7 +1260,7 @@ static bool ami_context_menu_history(const struct browser_window *bw,
 
 static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 {
-	int32 itemid = 0;
+	uint32 itemid = 0;
 	struct gui_window *gwin = hook->h_Data;
 
 	if(GetAttr(PMIA_ID, item, &itemid))
