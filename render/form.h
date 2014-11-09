@@ -37,6 +37,7 @@ struct content;
 struct nsurl;
 struct fetch_multipart_data;
 struct redraw_context;
+struct browser_window;
 
 enum browser_mouse_state;
 
