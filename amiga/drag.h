@@ -26,7 +26,7 @@ void *drag_save_data;
 struct gui_window *drag_save_gui;
 
 void gui_drag_save_selection(struct gui_window *g, const char *selection);
-void gui_drag_save_object(struct gui_window *g, hlcache_handle *c, gui_save_type type);
+void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, gui_save_type type);
 
 void ami_drag_save(struct Window *win);
 void ami_drag_icon_show(struct Window *win, const char *type);

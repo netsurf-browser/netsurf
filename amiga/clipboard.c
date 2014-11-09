@@ -36,6 +36,7 @@
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
+#include "amiga/drag.h"
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/iff_cset.h"
@@ -47,28 +48,13 @@
 
 struct IFFHandle *iffh = NULL;
 
-static LONG ami_clipboard_iffp_do_nothing(struct Hook *hook, void *object, LONG *cmd)
-{
-	return 0;
-}
-
-static void ami_clipboard_iffp_clear_stopchunk(struct IFFHandle *iffh, ULONG iff_type, ULONG iff_chunk)
-{
-	static struct Hook entry_hook;
-
-	entry_hook.h_Entry = (void *)ami_clipboard_iffp_do_nothing;
-	entry_hook.h_Data = 0;
-
-	EntryHandler(iffh, iff_type, iff_chunk, IFFSLI_TOP, &entry_hook, NULL);
-}
-
 static struct IFFHandle *ami_clipboard_init_internal(int unit)
 {
 	struct IFFHandle *iffhandle = NULL;
 
 	if((iffhandle = AllocIFF()))
 	{
-		if(iffhandle->iff_Stream = (ULONG)OpenClipboard(unit))
+		if((iffhandle->iff_Stream = (ULONG)OpenClipboard(unit)))
 		{
 			InitIFFasClip(iffhandle);
 		}
@@ -109,7 +95,7 @@ void gui_start_selection(struct gui_window *g)
 
 static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codeset, size_t *text_length)
 {
-	struct CollectionItem *ci_new = NULL, *ci_next, *ci_curr = ci;
+	struct CollectionItem *ci_new = NULL, *ci_next = NULL, *ci_curr = ci;
 	size_t len = 0;
 	char *text = NULL, *p;
 
@@ -153,7 +139,7 @@ static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codese
 				len += ci_next->ci_Size;
 			break;
 		}
-	} while (ci_curr = ci_curr->ci_Next);
+	} while ((ci_curr = ci_curr->ci_Next));
 
 	text = malloc(len);
 
@@ -178,7 +164,7 @@ static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codese
 			free(ci_curr->ci_Data);
 			FreeVec(ci_curr);
 		}
-	} while (ci_curr = ci_next);
+	} while ((ci_curr = ci_next));
 
 	*text_length = len;
 	return text;
@@ -200,11 +186,11 @@ static void gui_get_clipboard(char **buffer, size_t *length)
 	
 	error = ParseIFF(iffh,IFFPARSE_SCAN);
 
-	if(ci = FindCollection(iffh, ID_FTXT, ID_UTF8)) {
+	if((ci = FindCollection(iffh, ID_FTXT, ID_UTF8))) {
 		*buffer = ami_clipboard_cat_collection(ci, 106, length);
-	} else if(ci = FindCollection(iffh, ID_FTXT, ID_CHRS)) {
+	} else if((ci = FindCollection(iffh, ID_FTXT, ID_CHRS))) {
 		LONG codeset = 0;
-		if(sp = FindProp(iffh, ID_FTXT, ID_CSET)) {
+		if((sp = FindProp(iffh, ID_FTXT, ID_CSET))) {
 			cset = (struct CSet *)sp->sp_Data;
 			codeset = cset->CodeSet;
 		}
@@ -218,7 +204,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 	nsclipboard_styles styles[], int n_styles)
 {
 	char *text;
-	struct CSet cset = {0};
+	struct CSet cset = {0, {0}};
 
 	if(buffer == NULL) return;
 
@@ -313,7 +299,7 @@ void ami_drag_selection(struct gui_window *g)
 
 		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
 		{
-			if(sel = browser_window_get_selection(g->shared->bw))
+			if((sel = browser_window_get_selection(g->shared->bw)))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
@@ -324,7 +310,7 @@ void ami_drag_selection(struct gui_window *g)
 		}
 		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
 		{
-			if(sel = browser_window_get_selection(g->shared->bw))
+			if((sel = browser_window_get_selection(g->shared->bw)))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
@@ -350,7 +336,7 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 {
 	Object *dto = NULL;
 
-	if(dto = ami_datatype_object_from_bitmap(bitmap))
+	if((dto = ami_datatype_object_from_bitmap(bitmap)))
 	{
 		DoDTMethod(dto,NULL,NULL,DTM_COPY,NULL);
 		DisposeDTObject(dto);
