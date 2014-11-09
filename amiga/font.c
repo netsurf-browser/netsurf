@@ -202,11 +202,9 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	uint16 *utf16next = NULL;
-	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
-	uint32 tx=0,i=0;
-	int utf8_pos = 0;
-	uint32 co = 0;
+	int tx = 0;
+	uint32 utf8_pos = 0;
 	int utf16charlen;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
@@ -289,14 +287,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	ULONG co;
 	uint16 *utf16_str = NULL;
 	const uint16 *utf16 = NULL;
 	const uint16 *utf16next = NULL;
-	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
-	uint32 tx=0;
-	int utf8_pos = 0;
+	int tx = 0;
+	uint32 utf8_pos = 0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
@@ -363,7 +359,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 /**
  * Search for a font in the list and load from disk if not present
  */
-struct ami_font_node *ami_font_open(const char *font)
+static struct ami_font_node *ami_font_open(const char *font)
 {
 	struct nsObject *node;
 	struct ami_font_node *nodedata;
@@ -698,7 +694,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	return char_advance;
 }
 
-const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
+static const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 {
 	const uint16 *p;
 	p = &sc_table[0];
@@ -720,10 +716,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 	uint16 *utf16next = 0;
 	int utf16charlen;
 	struct OutlineFont *ofont, *ufont = NULL;
-	ULONG i,gx,gy;
-	UWORD posn;
 	uint32 x=0;
-	uint8 co = 0;
 	int32 tempx = 0;
 	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
@@ -829,7 +822,7 @@ void ami_init_fonts(void)
 	NewList(&ami_diskfontlib_list);
 
 	/* run first cleanup in ten minutes */
-	ami_schedule(600000, ami_font_cleanup, ami_font_list);
+	ami_schedule(600000, (void *)ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
@@ -870,10 +863,10 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 				node->dtz_Node.ln_Name, curtime.Seconds));
 			DelObject(node);
 		}
-	} while(node=nnode);
+	} while((node=nnode));
 
 	/* reschedule to run in five minutes */
-	ami_schedule(300000, ami_font_cleanup, ami_font_list);
+	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
 }
 
 void ami_font_setdevicedpi(int id)
@@ -887,7 +880,7 @@ void ami_font_setdevicedpi(int id)
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
 	{
-		if(dih = FindDisplayInfo(id))
+		if((dih = FindDisplayInfo(id)))
 		{
 			if(GetDisplayInfoData(dih, &dinfo, sizeof(struct DisplayInfo),
 				DTAG_DISP, 0))
