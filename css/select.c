@@ -1473,7 +1473,7 @@ node_count_siblings_check(dom_node *node,
  * Callback to count a node's siblings.
  *
  * \param pw         HTML document
- * \param node       DOM node
+ * \param n          DOM node
  * \param same_name  Only count siblings with the same name, or all
  * \param after      Count anteceding instead of preceding siblings
  * \param count      Pointer to location to receive result

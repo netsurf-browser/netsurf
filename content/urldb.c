@@ -406,7 +406,7 @@ static void urldb_count_urls(const struct path_data *root, time_t expiry,
 /**
  * Save a search (sub)tree
  *
- * \param root Root of (sub)tree to save
+ * \param parent root node of search tree to save.
  * \param fp File to write to
  */
 static void urldb_save_search_tree(struct search_node *parent, FILE *fp)
@@ -1515,7 +1515,7 @@ urldb_search_insert(struct search_node *root, const struct host_part *data)
  * \param c Cookie struct to populate
  * \param n Name component
  * \param v Value component
- * \param was_quoted Whether ::v was quoted in the input
+ * \param was_quoted Whether \a v was quoted in the input
  * \return true on success, false on memory exhaustion
  */
 static bool urldb_parse_avpair(struct cookie_internal_data *c, char *n,

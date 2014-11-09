@@ -30,7 +30,7 @@ extern css_fixed nscss_screen_dpi;
  *
  * ARGB -> (1-A)BGR
  *
- * \param color  The CSS color to convert
+ * \param c The CSS color to convert
  * \return Corresponding NetSurf colour primitive
  */
 #define nscss_color_to_ns(c) \
@@ -45,7 +45,7 @@ extern css_fixed nscss_screen_dpi;
  *
  * (1-A)BGR -> ARGB
  *
- * \param color  The NetSurf color to convert
+ * \param c The NetSurf color to convert
  * \return Corresponding CSS colour primitive
  */
 #define ns_color_to_nscss(c) \

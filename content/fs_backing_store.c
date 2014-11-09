@@ -236,6 +236,7 @@ remove_store_entry(struct store_state *state,
  *
  * @param state The store state to use.
  * @param ident The identifier to use.
+ * @param flags flags to control the filename used.
  * @return The filename string or NULL on allocation error.
  */
 static char *

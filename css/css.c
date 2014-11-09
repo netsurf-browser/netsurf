@@ -79,10 +79,6 @@ typedef struct {
 						 *   imports array */
 } nscss_import_ctx;
 
-static nserror nscss_create(const content_handler *handler, 
-		lwc_string *imime_type,	const http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
 static bool nscss_process_data(struct content *c, const char *data, 
 		unsigned int size);
 static bool nscss_convert(struct content *c);
@@ -117,14 +113,23 @@ static css_stylesheet *blank_import;
 /**
  * Initialise a CSS content
  *
- * \param c       Content to initialise
- * \param params  Content-Type parameters
- * \return true on success, false on failure
+ * \param handler content handler
+ * \param imime_type mime-type
+ * \param params Content-Type parameters
+ * \param llcache handle to content
+ * \param fallback_charset The character set to fallback to.
+ * \param quirks allow quirks
+ * \param c Content to initialise
+ * \return NSERROR_OK or error cod eon faliure
  */
-nserror nscss_create(const content_handler *handler, 
-		lwc_string *imime_type,	const http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c)
+static nserror
+nscss_create(const content_handler *handler,
+	     lwc_string *imime_type,
+	     const http_parameter *params,
+	     llcache_handle *llcache,
+	     const char *fallback_charset,
+	     bool quirks,
+	     struct content **c)
 {
 	nscss_content *result;
 	const char *charset = NULL;

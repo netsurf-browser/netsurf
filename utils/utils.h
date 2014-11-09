@@ -38,10 +38,10 @@
 
 #include "utils/errors.h"
 
-/* Rectangle coordinates */
+/** Rectangle coordinates */
 struct rect {
-	int x0, y0; /* Top left */
-	int x1, y1; /* Bottom right */
+	int x0, y0; /**< Top left */
+	int x1, y1; /**< Bottom right */
 };
 
 struct dirent;
@@ -145,7 +145,10 @@ char * squash_whitespace(const char * s);
 
 /**
  * returns a string without its underscores
+ *
+ * \param s The string to change.
  * \param replacespace true to insert a space where there was an underscore
+ * \return The altered string
  */
 char *remove_underscores(const char *s, bool replacespace);
 
@@ -183,7 +186,7 @@ nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
  * @todo This implementation is strange doe sit need
  * reconsidering?
  *
- * @param bsize The size in bytes.
+ * @param bytesize The size in bytes.
  * @return A human readable string representing the size.
  */
 char *human_friendly_bytesize(unsigned long bytesize);
@@ -222,7 +225,7 @@ unsigned int wallclock(void);
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
  * @param[in] sep The character to separete the elemnts with.
- * @param[in] nemb The number of elements up to a maximum of 16.
+ * @param[in] nelm The number of elements up to a maximum of 16.
  * @param[in] ap The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str or error
  *         code on faliure.
@@ -244,7 +247,7 @@ nserror vsnstrjoin(char **str, size_t *size, char sep, size_t nelm, va_list ap);
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
  * @param[in] sep The character to separete the elemnts with.
- * @param[in] nemb The number of elements up to a maximum of 16.
+ * @param[in] nelm The number of elements up to a maximum of 16.
  * @param[in] ... The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str or error
  *         code on faliure.
