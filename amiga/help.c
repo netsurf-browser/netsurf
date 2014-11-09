@@ -25,14 +25,14 @@ Class *AmigaGuideClass = NULL;
 Object *AmigaGuideObject = NULL;
 
 /* This array needs to match the enum in help.h */
-STRPTR context_nodes[] = {
+CONST_STRPTR context_nodes[] = {
 	"Main",
 	"GUI",
 	"Prefs",
 	NULL
 };
 
-void ami_help_init(struct Screen *screen)
+static void ami_help_init(struct Screen *screen)
 {
 	AmigaGuideClass = initAGClass();
 
