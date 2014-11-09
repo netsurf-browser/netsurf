@@ -64,9 +64,7 @@ nserror amiga_dt_picture_init(void)
 {
 	struct DataType *dt, *prevdt = NULL;
 	lwc_string *type;
-	lwc_error lerror;
 	nserror error;
-	BPTR fh = 0;
 	struct Node *node = NULL;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
@@ -123,7 +121,7 @@ nserror amiga_dt_picture_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
+static Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
 {
 	const uint8 *data;
 	ULONG size;
@@ -144,7 +142,7 @@ Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
 	return adt->dto;
 }
 
-char *amiga_dt_picture_datatype(struct content *c)
+static char *amiga_dt_picture_datatype(struct content *c)
 {
 	const uint8 *data;
 	ULONG size;
@@ -153,11 +151,11 @@ char *amiga_dt_picture_datatype(struct content *c)
 	
 	data = (uint8 *)content__get_source_data(c, &size);
 
-	if(dt = ObtainDataType(DTST_MEMORY, NULL,
+	if((dt = ObtainDataType(DTST_MEMORY, NULL,
 					DTA_SourceAddress, data,
 					DTA_SourceSize, size,
 					DTA_GroupID, GID_PICTURE,
-					TAG_DONE)) {
+					TAG_DONE))) {
 		filetype = strdup(dt->dtn_Header->dth_Name);
 		ReleaseDataType(dt);
 	}
@@ -181,7 +179,7 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 #endif
 	struct amiga_dt_picture_content *adt = (struct amiga_dt_picture_content *)c;
 
-	if(dto = amiga_dt_picture_newdtobject(adt))
+	if((dto = amiga_dt_picture_newdtobject(adt)))
 	{
 		bitmap = bitmap_create(c->width, c->height, BITMAP_NEW);
 		if (!bitmap) {
@@ -218,10 +216,8 @@ bool amiga_dt_picture_convert(struct content *c)
 	struct BitMapHeader *bmh;
 	char *filetype;
 
-	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))
-	{
-		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
-		{
+	if((dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))) {
+		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE)) {
 			width = (int)bmh->bmh_Width;
 			height = (int)bmh->bmh_Height;
 		}
@@ -234,7 +230,7 @@ bool amiga_dt_picture_convert(struct content *c)
 	c->size = width * height * 4;
 
 	/* set title text */
-	if(filetype = amiga_dt_picture_datatype(c)) {
+	if((filetype = amiga_dt_picture_datatype(c))) {
 		title = messages_get_buff("DataTypesTitle",
 			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
 			filetype, c->width, c->height);
