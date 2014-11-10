@@ -47,32 +47,44 @@
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 
-void warn_user(const char *warning, const char *detail)
+static LONG ami_misc_req(const char *message, int type)
 {
 	Object *req = NULL;
-	char *utf8warning = ami_utf8_easy(messages_get(warning));
-	STRPTR bodytext = NULL;
+	LONG ret = 0;
 
-	LOG(("%s %s", warning, detail));
-
-	bodytext = ASPrintf("\33b%s\33n\n%s",
-		utf8warning != NULL ? utf8warning : warning, detail);
+	LOG(("%s", message));
 
 	req = NewObject(REQUESTER_GetClass(), NULL,
 		REQ_Type,               REQTYPE_INFO,
 		REQ_TitleText,          messages_get("NetSurf"),
-		REQ_BodyText,           bodytext,
+		REQ_BodyText,           message,
 		REQ_GadgetText,         messages_get("OK"),
 #ifdef __amigaos4__
-		REQ_Image,				(struct Image *)REQIMAGE_WARNING,
+		REQ_Image,				(struct Image *)type,
 		/* REQ_CharSet,			106, */
 #endif
 		TAG_DONE);
 
 	if (req) {
-		IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
+		ret = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
 		DisposeObject(req);
 	}
+
+	return ret;
+}
+
+void ami_misc_fatal_error(const char *message)
+{
+	ami_misc_req(message, REQIMAGE_ERROR);
+}
+
+void warn_user(const char *warning, const char *detail)
+{
+	char *utf8warning = ami_utf8_easy(messages_get(warning));
+	STRPTR bodytext = ASPrintf("\33b%s\33n\n%s",
+		utf8warning != NULL ? utf8warning : warning, detail);
+
+	ami_misc_req(bodytext, REQIMAGE_WARNING);
 
 	if(bodytext) FreeVec(bodytext);
 	if(utf8warning) free(utf8warning);

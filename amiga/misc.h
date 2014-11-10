@@ -23,16 +23,8 @@
 extern struct gui_file_table *amiga_file_table;
 
 char *translate_escape_chars(const char *s);
-int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win);
-
-/**
- * Cause an abnormal program termination.
- *
- * \note This never returns and is intended to terminate without any cleanup.
- *
- * \param error The message to display to the user.
- */
-void die(const char * const error) __attribute__ ((noreturn));
-
-
+void ami_misc_fatal_error(const char *message);
+int32 ami_warn_user_multi(const char *body,
+	const char *opt1, const char *opt2, struct Window *win);
 #endif
+

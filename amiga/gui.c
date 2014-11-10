@@ -5218,7 +5218,7 @@ int main(int argc, char** argv)
 
 	ret = netsurf_register(&amiga_table);
 	if (ret != NSERROR_OK) {
-		warn_user("NetSurf operation table failed registration", "");
+		ami_misc_fatal_error("NetSurf operation table failed registration");
 		return RETURN_FAIL;
 	}
 
@@ -5274,20 +5274,20 @@ int main(int argc, char** argv)
 	/* user options setup */
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
-		warn_user("Options failed to initialise", "");
+		ami_misc_fatal_error("Options failed to initialise");
 		return RETURN_FAIL;
 	}
 	nsoption_read(current_user_options, NULL);
 	ami_gui_commandline(&argc, argv); /* calls nsoption_commandline */
 
 	if (ami_locate_resource(messages, "Messages") == false) {
-		warn_user("Cannot open Messages file", "");
+		ami_misc_fatal_error("Cannot open Messages file");
 		return RETURN_FAIL;
 	}
 
 	ret = netsurf_init(messages, current_user_cache);
 	if (ret != NSERROR_OK) {
-		warn_user("NetSurf failed to initialise", "");
+		ami_misc_fatal_error("NetSurf failed to initialise");
 		return RETURN_FAIL;
 	}
 
@@ -5295,7 +5295,7 @@ int main(int argc, char** argv)
 	ret = amiga_icon_init();
 
 	if (ami_open_resources() == false) { /* alloc ports/asl reqs, open libraries/devices */
-		warn_user("NoMemory", "");
+		ami_misc_fatal_error("Unable to allocate resources");
 		return RETURN_FAIL;
 	}
 
