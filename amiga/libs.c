@@ -81,7 +81,6 @@ AMINS_LIB_STRUCT(Label);
 AMINS_LIB_STRUCT(Layout);
 AMINS_LIB_STRUCT(ListBrowser);
 AMINS_LIB_STRUCT(RadioButton);
-AMINS_LIB_STRUCT(Requester);
 AMINS_LIB_STRUCT(Scroller);
 AMINS_LIB_STRUCT(Space);
 AMINS_LIB_STRUCT(SpeedBar);
@@ -126,7 +125,6 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("gadgets/layout.gadget",        50, Layout,        "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/listbrowser.gadget",   50, ListBrowser,   "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/radiobutton.gadget",   50, RadioButton,   "main", 1, true)
-	AMINS_LIB_OPEN("classes/requester.class",      50, Requester,     "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/scroller.gadget",      50, Scroller,      "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/space.gadget",         50, Space,         "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/speedbar.gadget",      50, SpeedBar,      "main", 1, true)
@@ -153,7 +151,6 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Layout)
 	AMINS_LIB_CLOSE(ListBrowser)
 	AMINS_LIB_CLOSE(RadioButton)
-	AMINS_LIB_CLOSE(Requester)
 	AMINS_LIB_CLOSE(Scroller)
 	AMINS_LIB_CLOSE(Space)
 	AMINS_LIB_CLOSE(SpeedBar)
