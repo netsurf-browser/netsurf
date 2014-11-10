@@ -2576,8 +2576,10 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 	gadget->html = content;
 	err = dom_node_get_first_child(n, &c);
-	if (err != DOM_NO_ERR)
+	if (err != DOM_NO_ERR) {
+		form_free_control(gadget);
 		return false;
+	}
 
 	while (c != NULL) {
 		dom_string *name;
@@ -2585,6 +2587,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 		err = dom_node_get_node_name(c, &name);
 		if (err != DOM_NO_ERR) {
 			dom_node_unref(c);
+			form_free_control(gadget);
 			return false;
 		}
 
@@ -2624,7 +2627,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 							c2) == false) {
 						dom_node_unref(c2);
 						dom_node_unref(c);
-						goto no_memory;
+						return false;
 					}
 				} else {
 					dom_string_unref(c2_name);
@@ -2656,6 +2659,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 	if (gadget->data.select.num_items == 0) {
 		/* no options: ignore entire select */
+		form_free_control(gadget);
 		return true;
 	}
 
