@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+
 #include <proto/exec.h>
 #include <exec/lists.h>
 #include <exec/nodes.h>
@@ -50,7 +52,7 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 	return(dtzo);
 }
 
-void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
+static void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
 	if(dtzo->Type == AMINS_FONT) ami_font_close(dtzo->objstruct);
@@ -79,11 +81,10 @@ void FreeObjList(struct MinList *objlist)
 	if(IsMinListEmpty(objlist)) return;
 	node = (struct nsObject *)GetHead((struct List *)objlist);
 
-	do
-	{
+	do {
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		DelObject(node);
-	}while(node=nnode);
+	} while((node=nnode));
 
 	FreeVec(objlist);
 }
