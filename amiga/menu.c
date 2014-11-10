@@ -192,7 +192,7 @@ static void ami_menu_alloc_item(struct gui_window_2 *gwin, int num, UBYTE type,
 	}
 }
 
-void ami_init_menulabs(struct gui_window_2 *gwin)
+static void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
@@ -556,30 +556,23 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	struct ExAllData *ead;
 	char *menu_lab;
 
-	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
-	{
-		if(buffer = AllocVecTagList(1024, NULL))
-		{
-			if(ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))
-			{
+	if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
+		if((buffer = AllocVecTagList(1024, NULL))) {
+			if((ctrl = AllocDosObject(DOS_EXALLCONTROL,NULL))) {
 				ctrl->eac_LastKey = 0;
 
-				if(ParsePatternNoCase("#?.nsrx",(char *)&matchpatt,16) != -1)
-				{
+				if(ParsePatternNoCase("#?.nsrx",(char *)&matchpatt,16) != -1) {
 					ctrl->eac_MatchString = (char *)&matchpatt;
 				}
 
-				do
-				{
+				do {
 					cont = ExAll(lock,(struct ExAllData *)buffer,1024,ED_COMMENT,ctrl);
 					if((!cont) && (IoErr() != ERROR_NO_MORE_ENTRIES)) break;
 					if(!ctrl->eac_Entries) continue;
 
-					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next)
-					{
+					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next) {
 						if(item >= AMI_MENU_AREXX_MAX) continue;
-						if(EAD_IS_FILE(ead))
-						{
+						if(EAD_IS_FILE(ead)) {
 							gwin->menu[item].nm_Type = NM_ITEM;
 							if(ead->ed_Comment[0] != '\0')
 								menu_lab = ead->ed_Comment;
@@ -592,7 +585,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 							item++;
 						}
 					}
-				}while(cont);
+				} while(cont);
 				FreeDosObject(DOS_EXALLCONTROL,ctrl);
 			}
 			FreeVec(buffer);
@@ -830,7 +823,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 	char *temp, *temp2;
 	int sel;
 	nsurl *url = NULL;
-	nserror error;
+	nserror error = NSERROR_OK;
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
@@ -896,13 +889,11 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(content_get_type(gwin->bw->current_content) <= CONTENT_CSS)
-	{
+	if(content_get_type(gwin->bw->current_content) <= CONTENT_CSS) {
 		browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
 		browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 	}
-	else if(bm = content_get_bitmap(gwin->bw->current_content))
-	{
+	else if((bm = content_get_bitmap(gwin->bw->current_content))) {
 		/** @todo It should be checked that the lifetime of
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
@@ -912,8 +903,7 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG
-	else if(ami_mime_compare(gwin->bw->current_content, "svg") == true)
-	{
+	else if(ami_mime_compare(gwin->bw->current_content, "svg") == true) {
 		ami_easy_clipboard_svg(gwin->bw->current_content);
 	}
 #endif
@@ -1130,10 +1120,8 @@ static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct I
 						ASLFR_DoSaveMode, FALSE,
 						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
 						ASLFR_InitialPattern, "#?.nsrx",
-						TAG_DONE))
-	{
-		if(temp = AllocVecTagList(1024, NULL))
-		{
+						TAG_DONE)) {
+		if((temp = AllocVecTagList(1024, NULL))) {
 			strlcpy(temp, filereq->fr_Drawer, 1024);
 			AddPart(temp, filereq->fr_File, 1024);
 			ami_arexx_execute(temp);
@@ -1149,12 +1137,10 @@ static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct I
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(script)
-	{
-		if(temp = AllocVecTagList(1024, NULL))
-		{
+	if(script) {
+		if((temp = AllocVecTagList(1024, NULL))) {
 			BPTR lock;
-			if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK)) {
+			if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
 				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
 				AddPart(temp, script, 1024);
 				ami_arexx_execute(temp);
