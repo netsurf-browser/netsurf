@@ -5300,28 +5300,23 @@ int main(int argc, char** argv)
 	}
 
 	search_web_init(nsoption_charp(search_engines_file));
-
 	ami_clipboard_init();
 	ami_openurl_open();
+	ami_amiupdate(); /* set env-vars for AmiUpdate */
+	ami_init_fonts();
+	ami_context_menu_init();
+	save_complete_init();
+	ami_theme_init();
+	ami_init_mouse_pointers();
 
 	win_destroyed = false;
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
-
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
-
-	ami_amiupdate(); /* set env-vars for AmiUpdate */
-	ami_init_fonts();
-
-	ami_context_menu_init();
 
 	window_list = NewObjList();
 
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	save_complete_init();
-	ami_theme_init();
-	ami_init_mouse_pointers();
 
 	gui_init2(argc, argv);
 
