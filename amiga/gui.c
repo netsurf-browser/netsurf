@@ -402,19 +402,21 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	return found;
 }
 
-static void ami_open_resources(void)
+static bool ami_open_resources(void)
 {
 	urlStringClass = MakeStringClass();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
-							ASO_NoTrack,FALSE,
-							TAG_DONE))) die(messages_get("NoMemory"));
+							ASO_NoTrack, FALSE,
+							TAG_DONE))) return false;
 
     if(!(sport = AllocSysObjectTags(ASOT_PORT,
-							ASO_NoTrack,FALSE,
-							TAG_DONE))) die(messages_get("NoMemory"));
+							ASO_NoTrack, FALSE,
+							TAG_DONE))) return false;
 
 	ami_file_req_init();
+
+	return true;
 }
 
 static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
@@ -656,7 +658,6 @@ static nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init(int argc, char** argv)
 {
-	ami_open_resources(); /* alloc ports/asl reqs, open libraries/devices */
 	ami_clipboard_init();
 	ami_openurl_open();
 
@@ -5242,7 +5243,8 @@ int main(int argc, char** argv)
 
 	ret = netsurf_register(&amiga_table);
 	if (ret != NSERROR_OK) {
-		die("NetSurf operation table failed registration");
+		warn_user("NetSurf operation table failed registration", "");
+		return RETURN_FAIL;
 	}
 
 	/* initialise logging. Not fatal if it fails but not much we
@@ -5252,7 +5254,7 @@ int main(int argc, char** argv)
 
 	/* Need to do this before opening any splash windows etc... */
 	if ((ami_libs_open() == false)) {
-		return 20; /* FAIL */
+		return RETURN_FAIL;
 	}
 
 	/* Open splash window */
@@ -5297,20 +5299,30 @@ int main(int argc, char** argv)
 	/* user options setup */
 	ret = nsoption_init(ami_set_options, &nsoptions, &nsoptions_default);
 	if (ret != NSERROR_OK) {
-		die("Options failed to initialise");
+		warn_user("Options failed to initialise", "");
+		return RETURN_FAIL;
 	}
 	nsoption_read(current_user_options, NULL);
 	ami_gui_commandline(&argc, argv); /* calls nsoption_commandline */
 
-	if (ami_locate_resource(messages, "Messages") == false)
-		die("Cannot open Messages file");
+	if (ami_locate_resource(messages, "Messages") == false) {
+		warn_user("Cannot open Messages file", "");
+		return RETURN_FAIL;
+	}
+
 	ret = netsurf_init(messages, current_user_cache);
 	if (ret != NSERROR_OK) {
-		die("NetSurf failed to initialise");
+		warn_user("NetSurf failed to initialise", "");
+		return RETURN_FAIL;
 	}
 
 	if(current_user_cache != NULL) FreeVec(current_user_cache);
 	ret = amiga_icon_init();
+
+	if (ami_open_resources() == false) { /* alloc ports/asl reqs, open libraries/devices */
+		warn_user("NoMemory", "");
+		return RETURN_FAIL;
+	}
 
 	search_web_init(nsoption_charp(search_engines_file));
 

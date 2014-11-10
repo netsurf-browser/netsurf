@@ -64,7 +64,6 @@ void warn_user(const char *warning, const char *detail)
 		REQ_BodyText,           bodytext,
 		REQ_GadgetText,         messages_get("OK"),
 #ifdef __amigaos4__
-		REQ_VarArgs,			
 		REQ_Image,				(struct Image *)REQIMAGE_WARNING,
 		/* REQ_CharSet,			106, */
 #endif
@@ -100,18 +99,6 @@ int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, 
 	if(utf8gadgets) FreeVec(utf8gadgets);
 	
 	return res;
-}
-
-void die(const char *error)
-{
-	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_ERROR,
-							TDR_TitleString,messages_get("NetSurf"),
-							TDR_GadgetString,messages_get("OK"),
-//							TDR_CharSet,106,
-							TDR_FormatString,"%s",
-							TDR_Arg1,error,
-							TAG_DONE);
-	exit(1);
 }
 
 /**
