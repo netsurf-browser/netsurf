@@ -353,7 +353,7 @@ uint16 code;
 
 /// myStringClass_OM_New
 
-uint32 myStringClass_OM_New( Class *cl, Object *obj, struct opSet *msg )
+static uint32 myStringClass_OM_New( Class *cl, Object *obj, struct opSet *msg )
 {
 	struct myStringClassData *data;
 	struct List *header;
@@ -446,7 +446,7 @@ bailout:
 ///
 /// myStringClass_OM_Dispose
 
-uint32 myStringClass_OM_Dispose( Class *cl, Object *obj, struct opSet *msg )
+static uint32 myStringClass_OM_Dispose( Class *cl, Object *obj, struct opSet *msg )
 {
 struct myStringClassData *data;
 
@@ -772,7 +772,7 @@ struct myStringClassData *data;
 
 /// myStringClassDispatcher
 
-uint32 myStringClassDispatcher( Class *cl, Object *obj, Msg msg )
+static uint32 myStringClassDispatcher( Class *cl, Object *obj, Msg msg )
 {
 struct myStringClassData *data;
 uint32 ret;
