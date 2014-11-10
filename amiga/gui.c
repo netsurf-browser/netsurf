@@ -656,31 +656,6 @@ static nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-static void gui_init(int argc, char** argv)
-{
-	ami_clipboard_init();
-	ami_openurl_open();
-
-	win_destroyed = false;
-	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
-
-	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
-
-	ami_amiupdate(); /* set env-vars for AmiUpdate */
-	ami_init_fonts();
-
-	ami_context_menu_init();
-
-	window_list = NewObjList();
-
-	urldb_load(nsoption_charp(url_file));
-	urldb_load_cookies(nsoption_charp(cookie_file));
-
-	save_complete_init();
-	ami_theme_init();
-	ami_init_mouse_pointers();
-}
-
 static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
 {
 	ami_set_screen_defaults(scrn);
@@ -5326,7 +5301,28 @@ int main(int argc, char** argv)
 
 	search_web_init(nsoption_charp(search_engines_file));
 
-	gui_init(argc, argv);
+	ami_clipboard_init();
+	ami_openurl_open();
+
+	win_destroyed = false;
+	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
+
+	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
+
+	ami_amiupdate(); /* set env-vars for AmiUpdate */
+	ami_init_fonts();
+
+	ami_context_menu_init();
+
+	window_list = NewObjList();
+
+	urldb_load(nsoption_charp(url_file));
+	urldb_load_cookies(nsoption_charp(cookie_file));
+
+	save_complete_init();
+	ami_theme_init();
+	ami_init_mouse_pointers();
+
 	gui_init2(argc, argv);
 
 	ami_gui_splash_close(splash_window);
