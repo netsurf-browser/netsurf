@@ -36,7 +36,6 @@
 #include "desktop/download.h"
 #include "desktop/browser.h"
 #include "desktop/gui_download.h"
-#include "render/html.h"
 
 #include "atari/gui.h"
 #include "atari/misc.h"
