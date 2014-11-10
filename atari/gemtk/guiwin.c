@@ -1260,18 +1260,6 @@ short gemtk_wm_exec_msg(GUIWIN *win, short msg_type, short a, short b, short c,
     short msg[8], retval;
 
     EVMULT_OUT event_out;
-    EVMULT_IN event_in = {
-        .emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
-        .emi_bclicks = 258,
-        .emi_bmask = 3,
-        .emi_bstate = 0,
-        .emi_m1leave = MO_ENTER,
-        .emi_m1 = {0,0,0,0},
-        .emi_m2leave = 0,
-        .emi_m2 = {0,0,0,0},
-        .emi_tlow = 0,
-        .emi_thigh = 0
-    };
 
     msg[0] = msg_type;
     msg[1] = gl_apid;

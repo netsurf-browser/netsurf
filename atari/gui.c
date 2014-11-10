@@ -554,7 +554,7 @@ static nserror gui_window_set_url(struct gui_window *w, nsurl *url)
     int l;
 
     if (w == NULL)
-	return;
+	return NSERROR_OK;
 
     l = strlen(nsurl_access(url))+1;
 
