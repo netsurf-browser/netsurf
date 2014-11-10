@@ -1759,8 +1759,8 @@
                                   <placeholder/>
                                 </child>
                                 <child>
-                                  <object class="GtkButton" id="buttonCacheMaintinance">
-                                    <property name="label" translatable="yes">preferencesCacheMaintinance</property>
+                                  <object class="GtkButton" id="buttonCacheMaintenance">
+                                    <property name="label" translatable="yes">preferencesCacheMaintenance</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>

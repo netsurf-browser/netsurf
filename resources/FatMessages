@@ -2389,7 +2389,7 @@ en.gtk.preferencesCache:<b>Cache</b>
 en.gtk.preferencesCacheMemory:Memory cache size
 en.gtk.preferencesCacheDisc:Disc cache size
 en.gtk.preferencesCacheExpire:Expire cache entries after
-en.gtk.preferencesCacheMaintinance:Maintinance
+en.gtk.preferencesCacheMaintenance:Maintenance
 en.gtk.preferencesCacheDays:days
 
 en.gtk.preferencesNetworkTabtitle:Network
