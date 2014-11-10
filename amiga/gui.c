@@ -5339,9 +5339,9 @@ int main(int argc, char** argv)
 	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
 	ami_arexx_execute(script);
 
-	netsurf_exit();
-
 	ami_mime_free();
 
-	return 0;
+	netsurf_exit();
+	return RETURN_OK;
 }
+
