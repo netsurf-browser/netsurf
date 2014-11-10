@@ -227,7 +227,7 @@ struct history * browser_window_get_history(struct browser_window *bw);
  * \param bw	  browser window
  * \param scaled  whether to apply current browser window scale
  * \param width   updated to content width extent in px
- * \param width   updated to content height extent in px
+ * \param height  updated to content height extent in px
  * \return NSERROR_OK, or appropriate error otherwise.
  */
 nserror browser_window_get_extents(struct browser_window *bw, bool scaled,
@@ -297,9 +297,10 @@ void browser_window_destroy(struct browser_window *bw);
 /**
  * Reformat a browser window contents to a new width or height.
  *
- * \param  bw      the browser window to reformat
- * \param  width   new width
- * \param  height  new height
+ * \param bw         The browser window to reformat.
+ * \param background Reformat in the background.
+ * \param width      new width
+ * \param height     new height
  */
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height);
@@ -643,9 +644,9 @@ bool browser_window_is_frameset(struct browser_window *bw);
  * e.g. if the gui toolkit style-guide says all windows must have
  * scrollbars then this API can be ignored.
  *
- * \param bw	browser window to look at
- * \param h	Updated to indicate horizontal scrollbar type
- * \param h	Updated to indicate vertical scrollbar type
+ * \param bw  browser window to look at
+ * \param h   Updated to indicate horizontal scrollbar type
+ * \param v   Updated to indicate vertical scrollbar type
  * \return NSERROR_OK, or appropriate error otherwise
  */
 nserror browser_window_get_scrollbar_type(struct browser_window *bw,

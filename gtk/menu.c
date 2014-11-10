@@ -275,8 +275,9 @@ static struct nsgtk_developer_submenu *nsgtk_menu_developer_submenu(
 
 /**
  * creates the file menu
+ *
  * \param group The gtk 'global' accelerator reference
- * \param parent The parent menu to attach to or NULL
+ * \return The new file menu or NULL on error
  */
 static struct nsgtk_file_menu *nsgtk_menu_file_submenu(GtkAccelGroup *group)
 {

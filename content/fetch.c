@@ -18,7 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Implementation of fetching of data from a URL.
  *
  * The implementation is the fetch factory and the generic operations

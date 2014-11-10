@@ -308,7 +308,7 @@ void print_update_sheets_shaded_state(bool on)
 /**
  * Send a message_PRINT_SAVE
  *
- * \param c content to print
+ * \param h handle to content to print.
  */
 
 void print_send_printsave(hlcache_handle *h)
@@ -799,7 +799,7 @@ error:
 /**
  * Declare fonts to the printer driver.
  *
- * \param  c  content being printed
+ * \param h handle to content being printed
  * \return 0 on success, error message on error
  */
 

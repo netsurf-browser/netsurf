@@ -224,7 +224,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
  * \param  y	   y coordinate
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
- * \param  style   plot style for this text
+ * \param  fstyle  plot style for this text
  * \return  true on success, false on error and error reported
  */
 
@@ -259,8 +259,8 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 /**
  * Convert a plot style to a PangoFontDescription.
  *
- * \param  style	plot style for this text
- * \return  a new Pango font description
+ * \param fstyle plot style for this text
+ * \return A new Pango font description
  */
 
 PangoFontDescription *nsfont_style_to_description(

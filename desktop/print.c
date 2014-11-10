@@ -217,6 +217,7 @@ bool print_apply_settings(hlcache_handle *content,
  *
  * \param content The original content
  * \param printer The printer interface for the printer to be used
+ * \param settings The print settings to use.
  * \return true if successful, false otherwise
  */
 bool print_cleanup(hlcache_handle *content, const struct printer *printer,
@@ -241,7 +242,7 @@ bool print_cleanup(hlcache_handle *content, const struct printer *printer,
  *
  * \param configuration the requested configuration
  * \param filename the filename or NULL
- * \param font handling functions
+ * \param font_func font handling functions
  * \return print_settings in case if successful, NULL if unknown
  *                        configuration or lack of memory.
  */

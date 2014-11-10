@@ -291,6 +291,7 @@ bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int h
  * @param x       x-coordinate of caret top
  * @param y       y-coordinate of caret top
  * @param height  height of caret
+ * @param remove_caret callback when caret is removed.
  */
 void fbtk_set_caret(fbtk_widget_t *widget, bool set, int x, int y, int height,
 		void (*remove_caret)(fbtk_widget_t *widget));
@@ -452,14 +453,18 @@ void fbtk_reposition_vscroll(fbtk_widget_t *scrollv,
  * Create a widget which is to be handled entirely by the calling application.
  *
  * @param window The window to add the user widget to.
- * @param pw The private pointer which can be read using ::fbtk_get_pw
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param pw The private pointer which can be read using ::fbtk_get_userpw
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_user(fbtk_widget_t *window, int x, int y, int width, int height, void *pw);
 
 
 /**
- * Get the private context from a widget
+ * Get the user context from a widget
  *
  * @param widget The widget to get the context from.
  * @return The context or NULL.

@@ -30,7 +30,7 @@ struct scrollbar_msg_data;
  *
  * \param bw	  The browser window to create iframes for.
  * \param iframe  The iframes to create from.
- * \param NSERROR_OK or error code on faliure.
+ * \return NSERROR_OK or error code on faliure.
  */
 nserror browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe);

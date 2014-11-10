@@ -216,9 +216,8 @@ void selection_init(struct selection *s, struct box *root)
  * Label each text box in the given box subtree with its position
  * in a textual representation of the content.
  *
- * \param  s     selection object
- * \param  node  box at root of subtree
- * \param  idx   current position within textual representation
+ * \param box The box at root of subtree
+ * \param idx current position within textual representation
  * \return updated position
  */
 
@@ -550,8 +549,9 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
  * Traverse the current selection, calling the handler function (with its
  * handle) for all boxes that lie (partially) within the given range
  *
- * \param  handler  handler function to call
- * \param  handle   handle to pass
+ * \param s       The selection context.
+ * \param handler handler function to call
+ * \param handle  handle to pass
  * \return false iff traversal abandoned part-way through
  */
 
@@ -674,10 +674,11 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 /**
  * Append text to selection string.
  *
- * \param  text        text to be added
- * \param  length      length of text in bytes
- * \param  space       indicates whether a trailing space should be appended
- * \param  sel_string  string to append to, may be resized
+ * \param text text to be added
+ * \param length length of text in bytes
+ * \param space indicates whether a trailing space should be appended
+ * \param style The font style to use.
+ * \param sel_string string to append to, may be resized
  * \return true iff successful
  */
 
@@ -959,6 +960,7 @@ void selection_set_end(struct selection *s, unsigned offset)
  *
  * \param  s          the selection object
  * \param  start      byte offset of start of text
+ * \param  end        byte offset of end of text
  * \param  start_idx  receives the start index (in bytes) of the highlighted portion
  * \param  end_idx    receives the end index (in bytes)
  * \return true iff part of the given box lies within the selection

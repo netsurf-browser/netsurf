@@ -1729,8 +1729,9 @@ static void nsgtk_attach_menu_handlers(struct nsgtk_scaffolding *g)
 /**
  * Create and connect handlers to popup menu.
  *
- * \param g scaffoliding to attach popup menu to.
- * \return menu structure on sucess or NULL on error.
+ * \param g scaffolding to attach popup menu to.
+ * \param group The accelerator group to use for the popup.
+ * \return menu structure on success or NULL on error.
  */
 static struct nsgtk_popup_menu *
 nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
@@ -1767,7 +1768,8 @@ nsgtk_new_scaffolding_popup(struct nsgtk_scaffolding *g, GtkAccelGroup *group)
 /**
  * Create and connect handlers to link popup menu.
  *
- * \param g scaffoliding to attach popup menu to.
+ * \param g scaffolding to attach popup menu to.
+ * \param group The accelerator group to use for the popup.
  * \return true on success or false on error.
  */
 static struct nsgtk_link_menu *
@@ -2418,7 +2420,7 @@ nsgtk_scaffolding_set_websearch(struct nsgtk_scaffolding *g, const char *content
  * GTK UI callback when search provider details are updated.
  *
  * \param provider_name The providers name.
- * \param ico_bitmap The icon bitmap representing the provider.
+ * \param provider_bitmap The bitmap representing the provider.
  * \return NSERROR_OK on success else error code.
  */
 static nserror
