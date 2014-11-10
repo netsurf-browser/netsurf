@@ -174,7 +174,7 @@ void ami_search_open(struct gui_window *gwin)
 	gwin->shared->searchwin = fwin;
 	
 	ActivateLayoutGadget((struct Gadget *)fwin->objects[GID_MAIN], fwin->win,
-			NULL, fwin->objects[GID_SEARCHSTRING]);
+			NULL, (ULONG)fwin->objects[GID_SEARCHSTRING]);
 }
 
 void ami_search_close(void)
@@ -189,8 +189,7 @@ void ami_search_close(void)
 BOOL ami_search_event(void)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,relevent = 0;
-	ULONG column;
+	ULONG result;
 	uint16 code;
 	search_flags_t flags;
 
