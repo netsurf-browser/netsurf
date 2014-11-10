@@ -17,10 +17,12 @@
  */
 
 #include "amiga/libs.h"
+#include "amiga/misc.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 
 #include <proto/exec.h>
+#include <proto/utility.h>
 
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
 	LOG(("Opening %s v%d", LIB, LIBVER)); \
@@ -32,8 +34,10 @@
 	} else {	\
 		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
 		if(FAIL == true) {	\
-			warn_user("CompError", LIB);	\
-			return false; \
+			STRPTR error = ASPrintf("Unable to open %s v%d", LIB, LIBVER);	\
+			ami_misc_fatal_error(error);	\
+			FreeVec(error);	\
+			return false;	\
 		}	\
 	}
 

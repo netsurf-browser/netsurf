@@ -21,6 +21,7 @@
 #include <exec/types.h>
 
 extern struct gui_file_table *amiga_file_table;
+struct Window;
 
 char *translate_escape_chars(const char *s);
 void ami_misc_fatal_error(const char *message);
