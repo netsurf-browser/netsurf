@@ -29,9 +29,6 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 
-#include <proto/requester.h>
-#include <classes/requester.h>
-
 #include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/file.h"
