@@ -998,7 +998,7 @@ static void gui_window_update_extent(struct gui_window *g)
  * \param  text  new status text
  */
 
-static void gui_window_set_status(struct gui_window *g, const char *text)
+static void riscos_window_set_status(struct gui_window *g, const char *text)
 {
 	if (g->status_bar)
 		ro_gui_status_bar_set_text(g->status_bar, text);
@@ -5024,7 +5024,7 @@ static struct gui_window_table window_table = {
 	.set_title = gui_window_set_title,
 	.set_url = gui_window_set_url,
 	.set_icon = gui_window_set_icon,
-	.set_status = gui_window_set_status,
+	.set_status = riscos_window_set_status,
 	.set_pointer = gui_window_set_pointer,
 	.place_caret = gui_window_place_caret,
 	.remove_caret = gui_window_remove_caret,

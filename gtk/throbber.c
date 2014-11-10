@@ -30,12 +30,13 @@
 struct nsgtk_throbber *nsgtk_throbber = NULL;
 
 /**
- * Creates the throbber using a PNG for each frame.  The number of frames must
- * be at least two.  The first frame is the inactive frame, others are the
- * active frames.
+ * Creates the throbber using a PNG for each frame.
+ *
+ * The number of frames must be at least two.  The first frame is the
+ * inactive frame, others are the active frames.
  *
  * \param  frames  The number of frames.  Must be at least two.
- * \param  ...     Filenames of PNGs containing frames.
+ * \param  frame_files Filenames of PNGs containing frames.
  * \return true on success.
  */
 bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files)

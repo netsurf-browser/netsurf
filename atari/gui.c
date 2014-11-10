@@ -357,7 +357,7 @@ static void gui_window_set_title(struct gui_window *gw, const char *title)
 }
 
 /* exported interface documented in atari/gui.h */
-void gui_window_set_status(struct gui_window *w, const char *text)
+void atari_window_set_status(struct gui_window *w, const char *text)
 {
     int l;
     if (w == NULL || text == NULL)
@@ -1066,7 +1066,7 @@ static struct gui_window_table atari_window_table = {
     .set_title = gui_window_set_title,
     .set_url = gui_window_set_url,
     .set_icon = gui_window_set_icon,
-    .set_status = gui_window_set_status,
+    .set_status = atari_window_set_status,
     .set_pointer = gui_window_set_pointer,
     .place_caret = gui_window_place_caret,
     .remove_caret = gui_window_remove_caret,

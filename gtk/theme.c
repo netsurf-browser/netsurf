@@ -383,8 +383,11 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 }
 
 /**
- * returns default image for buttons / menu items from gtk stock items
+ * get default image for buttons / menu items from gtk stock items.
+ *
  * \param tbbutton button reference
+ * \param iconsize The size of icons to select.
+ * \return default images.
  */
 
 static GtkImage *

@@ -82,14 +82,17 @@ bool ro_gui_throbber_get_dims(struct throbber *throbber,
 
 
 /**
- * Set or update the dimensions to be used by the throbber, in RO units.
+ * Set or update the dimensions to be used by the throbber in RO units
+ *
  * If these are greater than the minimum required, the throbber will fill
  * the extended space; if less, the call will fail.
  *
- * \param *throbber		The throbber to update.
- * \param width			The desired width.
- * \param height		The desired height.
- * \return			true if size updated; else false.
+ * \param throbber The throbber to update.
+ * \param x0       top left of bounding box x coordinate
+ * \param y0       top left of bounding box y coordinate
+ * \param x1       bottom right of bounding box x coordinate
+ * \param y1       bottom right of bounding box y coordinate
+ * \return true if size updated; else false.
  */
 
 bool ro_gui_throbber_set_extent(struct throbber *throbber,
@@ -110,13 +113,13 @@ bool ro_gui_throbber_hide(struct throbber *throbber, bool hide);
 /**
  * Translate mouse data into an interactive help message for the throbber.
  *
- * \param *throbber		The throbber to process.
- * \param i			The wimp icon under the pointer.
- * \param *mouse		The mouse position.
- * \param *state		The toolbar window state.
- * \param buttons		The mouse button state.
- * \param **suffix		Return a help token suffix, or "" for none.
- * \return			true if handled exclusively; else false.
+ * \param throbber   The throbber to process.
+ * \param i          The wimp icon under the pointer.
+ * \param screenpos  The screen position.
+ * \param state      The toolbar window state.
+ * \param buttons    The mouse button state.
+ * \param suffix     Return a help token suffix, or "" for none.
+ * \return true if handled exclusively; else false.
  */
 
 bool ro_gui_throbber_help_suffix(struct throbber *throbber, wimp_i i,

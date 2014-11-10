@@ -712,7 +712,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
  *		    updated if box is nearer than existing nearest
  * \param  nr_xd    distance to nearest text box found
  *		    updated if box is nearer than existing nearest
- * \param  ny_yd    distance to nearest text box found
+ * \param  nr_yd    distance to nearest text box found
  *		    updated if box is nearer than existing nearest
  * \return true if mouse point is inside box
  */
@@ -784,7 +784,7 @@ static bool box_nearer_text_box(struct box *box, int bx, int by,
  *		    updated if a descendant of box is nearer than old nearest
  * \param  nr_xd    distance to nearest text box found
  *		    updated if a descendant of box is nearer than old nearest
- * \param  ny_yd    distance to nearest text box found
+ * \param  nr_yd    distance to nearest text box found
  *		    updated if a descendant of box is nearer than old nearest
  * \return true if mouse point is inside text_box
  */

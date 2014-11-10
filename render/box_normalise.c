@@ -80,9 +80,9 @@ static bool box_normalise_inline_container(struct box *cont, html_content *c);
 /**
  * Ensure the box tree is correctly nested by adding and removing nodes.
  *
- * \param  block     box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
- * \param  box_pool  pool to allocate new boxes in
- * \return  true on success, false on memory exhaustion
+ * \param block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
+ * \param c      content of boxes
+ * \return true on success, false on memory exhaustion
  *
  * The tree is modified to satisfy the following:
  * \code

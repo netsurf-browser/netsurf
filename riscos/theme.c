@@ -712,8 +712,6 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list)
  * Frees any unused theme descriptors.
  *
  * \param descriptor  the theme_descriptor to free
- * \param list	      whether to open all themes in the list
- * \return whether the operation was successful
  */
 void ro_gui_theme_free(struct theme_descriptor *descriptor)
 {

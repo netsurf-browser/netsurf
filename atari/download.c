@@ -415,7 +415,7 @@ static void gui_download_window_error(struct gui_download_window *dw,
 	strncpy((char*)&dw->lbl_file, error_msg, MAX_SLEN_LBL_FILE-1);
 	dw->status = NSATARI_DOWNLOAD_ERROR;
 	gemtk_wm_exec_redraw(dw->guiwin, NULL);
-	gui_window_set_status(input_window, messages_get("Done") );
+	atari_window_set_status(input_window, messages_get("Done") );
 	// TODO: change abort to close
 }
 
@@ -443,7 +443,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 		);
 		gemtk_wm_exec_redraw(dw->guiwin, NULL);
 	}
-	gui_window_set_status(input_window, messages_get("Done") );
+	atari_window_set_status(input_window, messages_get("Done") );
 }
 
 static struct gui_download_table download_table = {

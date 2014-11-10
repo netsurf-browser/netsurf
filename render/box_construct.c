@@ -454,9 +454,9 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
  *
  * \param box      Box to attach marker to
  * \param title    Current title attribute
- * \param content  Containing content
+ * \param ctx      Box construction context
  * \param parent   Current block-level container
- * \return True on success, false on memory exhaustion
+ * \return true on success, false on memory exhaustion
  */
 static bool box_construct_marker(struct box *box, const char *title,
 		struct box_construct_ctx *ctx, struct box *parent)
@@ -1921,9 +1921,9 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 
 
 /**
- * Destructor for content_html_frames, for <frame> elements
+ * Destructor for content_html_frames, for frame elements
  *
- * \param b	The frame params being destroyed.
+ * \param f  The frame params being destroyed.
  * \return 0 to allow talloc to continue destroying the tree.
  */
 static int box_frames_talloc_destructor(struct content_html_frames *f)
