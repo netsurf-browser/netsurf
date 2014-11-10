@@ -2131,11 +2131,11 @@ struct box *html_get_box_tree(hlcache_handle *h)
 static const char *html_encoding(const struct content *c, enum content_encoding_type op)
 {
 	html_content *html = (html_content *) c;
+	static char enc_token[10] = "Encoding0";
 
 	assert(html != NULL);
 
 	if (op == CONTENT_ENCODING_SOURCE) {
-		char enc_token[10] = "Encoding0";
 		enc_token[8] = '0' + html->encoding_source;
 		return messages_get(enc_token);
 	}
