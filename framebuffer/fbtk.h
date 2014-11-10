@@ -30,12 +30,12 @@
 #define FB_COLOUR_BLACK 0xFF000000
 #define FB_COLOUR_WHITE 0xFFFFFFFF
 
-#define FBTK_WIDGET_PADDING 30 /* percentage of widget size used for padding */ 
-#define FBTK_DPI 90 /* screen DPI */
+#define FBTK_WIDGET_PADDING 30 /**< percentage of widget size used for padding */ 
+#define FBTK_DPI 90 /**< screen DPI */
 
 typedef struct fbtk_widget_s fbtk_widget_t;
 
-/* Widget Callback handling */
+/** Widget Callback type */
 typedef enum fbtk_callback_type {
 	FBTK_CBT_START = 0,
 	FBTK_CBT_SCROLLX,
@@ -52,6 +52,7 @@ typedef enum fbtk_callback_type {
 	FBTK_CBT_END,
 } fbtk_callback_type;
 
+/** widget callback information */
 typedef struct fbtk_callback_info {
 	enum fbtk_callback_type type;
 	void *context;
@@ -62,7 +63,7 @@ typedef struct fbtk_callback_info {
 	fbtk_widget_t *widget;
 } fbtk_callback_info;
 
-/* structure for framebuffer toolkit bitmaps  */
+/** framebuffer toolkit bitmaps  */
 struct fbtk_bitmap {
         int width;
         int height;
@@ -74,7 +75,7 @@ struct fbtk_bitmap {
         int hot_y;
 };
 
-/* Key modifier status */
+/** Key modifier status */
 typedef enum fbtk_modifier_type {
 	FBTK_MOD_CLEAR  = 0,
 	FBTK_MOD_LSHIFT = (1 << 0),
@@ -92,7 +93,8 @@ typedef int (*fbtk_enter_t)(void *pw, char *text);
 /************************ Core ****************************/
 
 
-/** Initialise widget toolkit.
+/**
+ * Initialise widget toolkit.
  *
  * Initialises widget toolkit against a framebuffer.
  *
@@ -101,7 +103,8 @@ typedef int (*fbtk_enter_t)(void *pw, char *text);
  */
 fbtk_widget_t *fbtk_init(nsfb_t *fb);
 
-/** Retrieve the framebuffer library handle from toolkit widget.
+/**
+ * Retrieve the framebuffer library handle from toolkit widget.
  *
  * @param widget A fbtk widget.
  * @return The underlying framebuffer.
@@ -187,9 +190,9 @@ void fbtk_input(fbtk_widget_t *widget, nsfb_event_t *event);
  * Move the pointer cursor to a given location.
  *
  * @param widget any tookit widget.
- * @parm x movement in horizontal plane.
- * @parm y movement in vertical plane.
- * @parm relative Wheter the /a x and /a y should be considered relative to
+ * @param x movement in horizontal plane.
+ * @param y movement in vertical plane.
+ * @param relative Wheter the /a x and /a y should be considered relative to
  *                current pointer position.
  */
 void fbtk_warp_pointer(fbtk_widget_t *widget, int x, int y, bool relative);
@@ -215,8 +218,8 @@ int fbtk_keycode_to_ucs4(int code, fbtk_modifier_type mods);
 /** Obtain the widget at a point on screen.
  *
  * @param widget any tookit widget.
- * @parm x location in horizontal plane.
- * @parm y location in vertical plane.
+ * @param x location in horizontal plane.
+ * @param y location in vertical plane.
  * @return widget or NULL.
  */
 fbtk_widget_t *fbtk_get_widget_at(fbtk_widget_t *widget, int x, int y);
@@ -235,21 +238,24 @@ int fbtk_get_absx(fbtk_widget_t *widget);
  */
 int fbtk_get_absy(fbtk_widget_t *widget);
 
-/** Get a widget's width.
+/**
+ * Get a widget's width.
  *
  * @param widget The widget to inspect.
  * @return The widget width.
  */
 int fbtk_get_width(fbtk_widget_t *widget);
 
-/** Get a widget's height.
+/**
+ * Get a widget's height.
  *
  * @param widget The widget to inspect.
  * @return The widget height.
  */
 int fbtk_get_height(fbtk_widget_t *widget);
 
-/** Get a widget's bounding box in absolute screen co-ordinates.
+/**
+ * Get a widget's bounding box in absolute screen co-ordinates.
  *
  * @param widget The widget to inspect.
  * @param bbox The bounding box structure to update.
@@ -257,7 +263,8 @@ int fbtk_get_height(fbtk_widget_t *widget);
  */
 bool fbtk_get_bbox(fbtk_widget_t *widget, struct nsfb_bbox_s *bbox);
 
-/** Get a widget caret pos, if it owns caret.
+/**
+ * Get a widget caret pos, if it owns caret.
  *
  * @param widget  The widget to inspect.
  * @param x       If widget has caret, returns x-coord of caret within widget
@@ -270,12 +277,14 @@ bool fbtk_get_caret(fbtk_widget_t *widget, int *x, int *y, int *height);
 
 /******************* Widget Manipulation **********************/
 
-/** Change the widget's position and size. (Doesn't redraw)
+/**
+ * Change the widget's position and size. (Doesn't redraw)
  *
  */
 bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int height);
 
-/** Set caret owner and position
+/**
+ * Set caret owner and position
  *
  * @param widget  widget to give caret to, or ensure caret is released from
  * @param set     true: caret to be set for widget, false: caret to be released
@@ -286,19 +295,23 @@ bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int h
 void fbtk_set_caret(fbtk_widget_t *widget, bool set, int x, int y, int height,
 		void (*remove_caret)(fbtk_widget_t *widget));
 
-/** Map a widget and request it is redrawn.
+/**
+ * Map a widget and request it is redrawn.
  */
 int fbtk_set_mapping(fbtk_widget_t *widget, bool mapped);
 
-/** Set the z order of a widget.
+/**
+ * Set the z order of a widget.
  */
 int fbtk_set_zorder(fbtk_widget_t *widget, int z);
 
-/** Indicate a widget should be redrawn.
+/**
+ * Indicate a widget should be redrawn.
  */
 void fbtk_request_redraw(fbtk_widget_t *widget);
 
-/** Destroy a widget and all its descendants.
+/**
+ * Destroy a widget and all its descendants.
  *
  * Removes a widget from the hierachy and frees it and all its children.
  *
@@ -331,47 +344,87 @@ fbtk_widget_t *fbtk_create_window(fbtk_widget_t *parent, int x, int y, int width
 
 
 
-/** Create a filled rectangle
+/**
+ * Create a filled rectangle
  *
  * Create a widget which is a filled rectangle, usually used for backgrounds.
  *
  * @param window The window to add the filled area widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param c widget colour
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *
 fbtk_create_fill(fbtk_widget_t *window, int x, int y, int width, int height, colour c);
 
 
-
-
-/** Create a horizontal scroll widget
+/**
+ * Create a horizontal scroll widget
  *
  * Create a horizontal scroll widget.
  *
  * @param window The window to add the filled area widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param bg background colour
+ * @param fg foreground colour
+ * @param callback Called on scroll
+ * @param context context passed to callback.
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *
 fbtk_create_hscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg, fbtk_callback callback, void *context);
 
-/** Create a vertical scroll widget
+/**
+ * Create a vertical scroll widget
  *
  * Create a vertical scroll widget.
  *
  * @param window The window to add the filled area widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param bg background colour
+ * @param fg foreground colour
+ * @param callback Called on scroll
+ * @param context context passed to callback.
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *
 fbtk_create_vscroll(fbtk_widget_t *window, int x, int y, int width, int height, colour fg, colour bg, fbtk_callback callback, void *context);
 
+/**
+ * Set scoll widget parameters
+ * 
+ * @param widget The widget to set the parameters for.
+ * @param min The minimum range value.
+ * @param max The maximum range value.
+ * @param thumb The size of the slider.
+ * @param page The amout to scroll for a page.
+ * @return true if the scroll parameter was set else false.
+ */
 bool fbtk_set_scroll_parameters(fbtk_widget_t *widget, int min, int max, int thumb, int page);
 
+/**
+ * set scroll widget position.
+ * 
+ * @param widget The widget to set the position on.
+ * @param pos The position to set
+ * @return true if the scroll parameter was set else false.
+ */
 bool fbtk_set_scroll_position(fbtk_widget_t *widget, int pos);
 
 
-/** Move and/or resize a horizontal scroll widget
+/**
+ * Move and/or resize a horizontal scroll widget
  *
- * @param vscroll  the horizontal scroll widget
+ * @param scrollh  the horizontal scroll widget
  * @param x        new x pos
  * @param y        new y pos
  * @param width    new width
@@ -380,9 +433,10 @@ bool fbtk_set_scroll_position(fbtk_widget_t *widget, int pos);
 void fbtk_reposition_hscroll(fbtk_widget_t *scrollh,
 		int x, int y, int width, int height);
 
-/** Move and/or resize a vertical scroll widget
+/**
+ * Move and/or resize a vertical scroll widget
  *
- * @param vscroll  the vertical scroll widget
+ * @param scrollv  the vertical scroll widget
  * @param x        new x pos
  * @param y        new y pos
  * @param width    new width
@@ -392,8 +446,8 @@ void fbtk_reposition_vscroll(fbtk_widget_t *scrollv,
 		int x, int y, int width, int height);
 
 
-
-/** Create a user widget.
+/**
+ * Create a user widget.
  *
  * Create a widget which is to be handled entirely by the calling application.
  *
@@ -403,69 +457,129 @@ void fbtk_reposition_vscroll(fbtk_widget_t *scrollv,
  */
 fbtk_widget_t *fbtk_create_user(fbtk_widget_t *window, int x, int y, int width, int height, void *pw);
 
+
+/**
+ * Get the private context from a widget
+ *
+ * @param widget The widget to get the context from.
+ * @return The context or NULL.
+ */
 void *fbtk_get_userpw(fbtk_widget_t *widget);
 
 
-
-/** Create a bitmap widget.
+/**
+ * Create a bitmap widget.
  *
  * Create a widget which shows a bitmap.
  *
  * @param window The window to add the bitmap widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param c background colour
+ * @param image The bitmap to put in the widget
  * @return new widget handle or NULL on error.
  */
-fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, int width, int height, colour c,struct fbtk_bitmap *image);
+fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, int width, int height, colour c, struct fbtk_bitmap *image);
 
+
+/**
+ * Change the bitmap in a widget.
+ *
+ * @param widget The widget to get the context from.
+ * @param image The bitmap to put in the widget
+ */
 void fbtk_set_bitmap(fbtk_widget_t *widget, struct fbtk_bitmap *image);
 
-/** Create a button widget.
+
+/**
+ * Create a button widget with an image.
  *
  * Helper function which creates a bitmap widget and associate a handler for
  * when it is clicked.
  *
  * @param window The window to add the button widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param c background colour
+ * @param image The bitmap to put in the widget
+ * @param click The callback upon a click
+ * @param pw The context tp pass to the callback
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, int width, int height, colour c, struct fbtk_bitmap *image, fbtk_callback click, void *pw);
 
 
-
-
-
-/** Create a text widget.
+/**
+ * Create a text widget.
  *
  * @param window The window to add the text widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param bg background colour
+ * @param fg foreground colour
+ * @param outline widget will have a border.
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_text(fbtk_widget_t *window, int x, int y, int width, int height, colour bg, colour fg, bool outline);
 
-/** Create a button with text.
+
+/**
+ * Create a button with text.
  *
  * @param window The window to add the text widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param bg background colour
+ * @param fg foreground colour
+ * @param click The callback upon a click
+ * @param pw The context tp pass to the callback
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_text_button(fbtk_widget_t *window, int x, int y, int width, int height, colour bg, colour fg, fbtk_callback click, void *pw);
 
-/** Create a writable text widget.
+
+/**
+ * Create a writable text widget.
  *
  * Helper function which creates a text widget and configures an input handler
  * to create a writable text field. This call is equivalent to calling
  * ::fbtk_create_text followed by ::fbtk_writable_text
  *
  * @param window The window to add the text widget to.
+ * @param x X coordinate of widget.
+ * @param y Y coordinate of widget.
+ * @param width Width of the widget
+ * @param height Height of the widget
+ * @param bg background colour
+ * @param fg foreground colour
+ * @param outline widget will have a border.
+ * @param enter Callback when enter is pressed in widget.
+ * @param pw Context pointer passed to entry callback.
  * @return new widget handle or NULL on error.
  */
 fbtk_widget_t *fbtk_create_writable_text(fbtk_widget_t *window, int x, int y, int width, int height, colour bg, colour fg, bool outline, fbtk_enter_t enter, void *pw);
 
-/** Alter a text widget to be writable.
+
+/**
+ * Alter a text widget to be writable.
  *
  * @param widget Text widget.
  * @param enter The routine to call when enter is pressed.
- * @param pw The context to pass to teh enter callback routine.
+ * @param pw The context to pass to the enter callback routine.
  */
 void fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw);
 
-/** Change the text of a text widget.
+
+/**
+ * Change the text of a text widget.
  *
  * @param widget Text widget.
  * @param text The new UTF-8 text to put in the widget.
@@ -473,19 +587,25 @@ void fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw);
 void fbtk_set_text(fbtk_widget_t *widget, const char *text);
 
 
-/** Give widget input focus.
+/**
+ * Give widget input focus.
  *
  * @param widget Widget to be given input focus.
  */
 void fbtk_set_focus(fbtk_widget_t *widget);
 
 
-
-
-/** enable the on screen keyboard for input */
+/**
+ * enable the on screen keyboard for input
+ *
+ * @param widget Widget to be given input focus.
+ */
 void fbtk_enable_oskb(fbtk_widget_t *widget);
 
-/** show the osk. */
+
+/**
+ * show the osk.
+ */
 void map_osk(void);
 
 #endif

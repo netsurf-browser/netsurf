@@ -904,7 +904,7 @@ bool ro_textarea_mouse_click(wimp_pointer *pointer)
  * Handle key presses in a text area
  *
  * \param key Key pressed state block
- * \param true if press handled, false otherwise
+ * \return true if press handled, false otherwise
  */
 bool ro_textarea_key_press(wimp_key *key)
 {

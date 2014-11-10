@@ -206,14 +206,7 @@ static glyph_entry * glyph_add_to_table(glyph_entry *new)
 
 
 /**
- * Add new glyph to hash table (or free, and return pointer to existing glyph)
- *
- * Note that if new glyph already exists in table, it is freed and a pointer to
- * the existing glyph is returned.  If the glyph does not exist in the table
- * it is added and its pointer is returned.
- *
- * \param new New glyph to add (may be freed)
- * \return pointer to glyph in hash table
+ * Free glyph table.
  */
 static void free_table(void)
 {

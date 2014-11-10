@@ -45,11 +45,13 @@ struct gui_search_web_table {
  * Flags which alter the behaviour of the omin search.
  */
 enum search_web_omni_flags {
-	SEARCH_WEB_OMNI_NONE = 0, /**< no changes to default operation */
-	SEARCH_WEB_OMNI_SEARCHONLY = 1, /**< The search does not attempt to
-					 * interpret the url as a url before
-					 * using it as a search term.
-					 */
+	/** no changes to default operation */
+	SEARCH_WEB_OMNI_NONE = 0,
+
+	/** The search does not attempt to interpret the url as a url
+	 * before using it as a search term.
+	 */
+	SEARCH_WEB_OMNI_SEARCHONLY = 1,
 };
 
 /**
@@ -88,7 +90,7 @@ nserror search_web_select_provider(int selection);
  * \param name Pointer to fill in with the search provider name requested.
  * \return -1 if there are no more, otherwise the iterator for the next item.
  *
- * \verb
+ * \verbatim
  *     ssize_t iter;
  *     const char *name;
  *     ...
@@ -97,7 +99,7 @@ nserror search_web_select_provider(int selection);
  *          iter = search_web_iterate_providers(iter, &name)) {
  *         do_something_with(name);
  *     }
- * \endverb
+ * \endverbatim
  */
 ssize_t search_web_iterate_providers(ssize_t from, const char **name);
 
