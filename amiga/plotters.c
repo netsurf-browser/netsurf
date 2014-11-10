@@ -194,7 +194,7 @@ void ami_clearclipreg(struct gui_globals *gg)
 static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 {
 	struct ami_plot_pen *node;
-	ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
+	LONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
 			(colr & 0x000000ff) << 24,
 			(colr & 0x0000ff00) << 16,
 			(colr & 0x00ff0000) << 8,
@@ -203,7 +203,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colr));
 
 	if(shared_pens != NULL) {
-		if(node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL)) {
+		if((node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL))) {
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
 	} else {
@@ -221,13 +221,12 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 	if(IsMinListEmpty(shared_pens)) return;
 	node = (struct ami_plot_pen *)GetHead((struct List *)shared_pens);
 
-	do
-	{
+	do {
 		nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
 		ReleasePen(scrn->ViewPort.ColorMap, node->pen);
 		Remove((struct Node *)node);
 		FreeVec(node);
-	}while(node = nnode);
+	} while((node = nnode));
 }
 
 static void ami_plot_setapen(ULONG colr)
@@ -237,7 +236,7 @@ static void ami_plot_setapen(ULONG colr)
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
+		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetAPen(glob->rp, pen);
 	}
 }
@@ -249,7 +248,7 @@ static void ami_plot_setopen(ULONG colr)
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
+		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }
@@ -340,14 +339,12 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_polygon()"));
 	#endif
 
-	ULONG cx,cy;
-
 	ami_plot_setapen(style->fill_colour);
 
 	if(AreaMove(glob->rp,p[0],p[1]) == -1)
 		LOG(("AreaMove: vector list full"));
 			
-	for(int k = 1; k < n; k++) {
+	for(uint32 k = 1; k < n; k++) {
 		if(AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1)
 			LOG(("AreaDraw: vector list full"));
 	}
@@ -424,7 +421,7 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	return true;
 }
 
-bool ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
+static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 {
 	double angle1_r = (double)(angle1) * (M_PI / 180.0);
 	double angle2_r = (double)(angle2) * (M_PI / 180.0);
@@ -521,7 +518,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
-			if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm))
+			if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
 				minterm = (ABC|ABNC|ANBC);
 		}
 
@@ -684,7 +681,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					minterm = 0xc0;
 				} else {
 					tag = BLITA_MaskPlane;
-					if(tag_data = (ULONG)bfbm->mask)
+					if((tag_data = (ULONG)bfbm->mask))
 						minterm = (ABC|ABNC|ANBC);
 				}
 		
@@ -731,7 +728,7 @@ bool ami_flush(void)
 	return true;
 }
 
-void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
+static void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
 			struct bez_point *d, double t, struct bez_point *p) {
     p->x = pow((1 - t), 3) * a->x + 3 * t * pow((1 -t), 2) * b->x + 3 * (1-t) * pow(t, 2)* c->x + pow (t, 3)* d->x;
     p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
@@ -741,12 +738,12 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
 	unsigned int i;
-	struct bez_point start_p, cur_p, p_a, p_b, p_c, p_r;
+	struct bez_point start_p = {0, 0}, cur_p = {0, 0}, p_a, p_b, p_c, p_r;
 	
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_path()"));
 	#endif
-	
+
 	if (n == 0)
 		return true;
 
