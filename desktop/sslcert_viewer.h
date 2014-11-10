@@ -29,6 +29,7 @@
 #include "utils/errors.h"
 
 struct sslcert_session_data;
+struct redraw_context;
 
 
 /**
