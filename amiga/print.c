@@ -109,7 +109,7 @@ static struct ami_printer_info ami_print_info;
 static CONST_STRPTR gadlab[PGID_LAST];
 static STRPTR printers[11];
 
-void ami_print_ui_setup(void)
+static void ami_print_ui_setup(void)
 {
 	gadlab[PGID_PRINTER] = (char *)ami_utf8_easy((char *)messages_get("Printer"));
 	gadlab[PGID_SCALE] = (char *)ami_utf8_easy((char *)messages_get("Scale"));
@@ -118,18 +118,20 @@ void ami_print_ui_setup(void)
 	gadlab[PGID_CANCEL] = (char *)ami_utf8_easy((char *)messages_get("Cancel"));
 }
 
-void ami_print_ui_free(void)
+static void ami_print_ui_free(void)
 {
 	int i;
 
-	for(i = 0; i++; i < PGID_LAST)
+	for(i = 0; i < PGID_LAST; i++) {
 		if(gadlab[i]) FreeVec((APTR)gadlab[i]);
+	}
 
-	for(i = 0; i++; i < 10)
+	for(i = 0; i < 10; i++) {
 		if(printers[i]) FreeVec(printers[i]);
+	}
 }
 
-BOOL ami_print_readunit(CONST_STRPTR filename, char name[],
+static BOOL ami_print_readunit(CONST_STRPTR filename, char name[],
 	uint32 namesize, int unitnum)
 {
 	/* This is a modified version of a function from the OS4 SDK.
@@ -318,7 +320,7 @@ void ami_print_ui(struct hlcache_handle *c)
 	pw->node->objstruct = pw;
 }
 
-void ami_print_close(struct ami_print_window *pw)
+static void ami_print_close(struct ami_print_window *pw)
 {
 	DisposeObject(pw->objects[OID_MAIN]);
 	DelObject(pw->node);
@@ -329,7 +331,7 @@ void ami_print_close(struct ami_print_window *pw)
 BOOL ami_print_event(struct ami_print_window *pw)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result;
+	ULONG result;
 	uint16 code;
 	struct hlcache_handle *c;
 	int copies;
