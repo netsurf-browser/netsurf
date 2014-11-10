@@ -2597,7 +2597,8 @@ bool box_select(BOX_SPECIAL_PARAMS)
 
 			if (box_select_add_option(gadget, c) == false) {
 				dom_node_unref(c);
-				goto no_memory;
+				form_free_control(gadget);
+				return false;
 			}
 		} else if (dom_string_caseless_lwc_isequal(name,
 				corestring_lwc_optgroup)) {
@@ -2650,6 +2651,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 		err = dom_node_get_next_sibling(c, &next);
 		if (err != DOM_NO_ERR) {
 			dom_node_unref(c);
+			form_free_control(gadget);
 			return false;
 		}
 
