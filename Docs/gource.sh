@@ -33,12 +33,12 @@ case ${TYPE} in
     QPARAM="-s 0.25 -i 600 -a 1"
     ;;
   
-    "lrg"
+    "lrg")
     # large overview
     QPARAM="-s 0.5 -i 200 -a 5"
     ;;
 
-    "sml"
+    "sml")
     # rapid overview (3mins)
     QPARAM="-s 0.04 -i 30 -a 1"
     ;;
@@ -64,7 +64,7 @@ FILEFILTER="\!NetSurf/|riscos/distribution/|gtk/res/|framebuffer/res/|amiga/reso
 #gource -stop-at-end --key 5C--title "NetSurf Development" --highlight-users --max-file-lag -1 -f -1280x720 --seconds-per-day 0.06 --hide mouse,progress,filenames --file-idle-time 20 --disable-bloom --date-format "%e %b %Y" -o - | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libx264 -preset veryslow -crf 1 -threads 0 -bf 0 gource.mp4
 
 # generate
-gource 5C--title "NetSurf Development" -${OUTPUT_SIZE} ${QPARAM} --max-files 10000 --bloom-multiplier 0.10 --bloom-intensity 0.5 --title ${TITLE} --highlight-all-users --output-framerate 25 --hide filenames --stop-at-end --date-format "%d %B %Y" --bloom-intensity 0.2 --file-filter "${FILEFILTER}" --key --camera-mode ${CMODE} --output-ppm-stream - > temp.ppm
+gource --title "NetSurf Development" -${OUTPUT_SIZE} ${QPARAM} --max-files 10000 --bloom-multiplier 0.10 --bloom-intensity 0.5 --title ${TITLE} --highlight-all-users --output-framerate 25 --hide filenames --stop-at-end --date-format "%d %B %Y" --bloom-intensity 0.2 --file-filter "${FILEFILTER}" --key --camera-mode ${CMODE} --output-ppm-stream - > temp.ppm
 
 #convert the ppm to movie
 cat temp.ppm | ffmpeg -y -b 2000K -r 25 -f image2pipe -vcodec ppm -i - -vcodec libx264 ${FILENAME}
