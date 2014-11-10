@@ -25,7 +25,14 @@
 
 struct scrollbar_msg_data;
 
-void browser_window_create_iframes(struct browser_window *bw,
+/**
+ * Create and open iframes for a browser window.
+ *
+ * \param bw	  The browser window to create iframes for.
+ * \param iframe  The iframes to create from.
+ * \param NSERROR_OK or error code on faliure.
+ */
+nserror browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe);
 void browser_window_recalculate_iframes(struct browser_window *bw);
 void browser_window_create_frameset(struct browser_window *bw,

@@ -180,14 +180,8 @@ void browser_window_handle_scrollbars(struct browser_window *bw)
 }
 
 
-/**
- * Create and open a iframes for a browser window.
- *
- * \param  bw	    The browser window to create iframes for
- * \param  iframe   The iframes to create
- */
-
-void browser_window_create_iframes(struct browser_window *bw,
+/* exported function documented in desktop/frames.h */
+nserror browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe)
 {
 	struct browser_window *window;
@@ -195,12 +189,22 @@ void browser_window_create_iframes(struct browser_window *bw,
 	struct rect rect;
 	int iframes = 0;
 	int index;
+	nserror ret = NSERROR_OK;
 
-	for (cur = iframe; cur; cur = cur->next)
+	if (iframe == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* Count iframe list and allocate enough space within the
+	 * browser window.
+	 */
+	for (cur = iframe; cur; cur = cur->next) {
 		iframes++;
+	}
 	bw->iframes = calloc(iframes, sizeof(*bw));
-	if (!bw->iframes)
-		return;
+	if (!bw->iframes) {
+		return NSERROR_NOMEM;
+	}
 	bw->iframe_count = iframes;
 
 	index = 0;
@@ -220,10 +224,14 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->margin_width = cur->margin_width;
 		window->margin_height = cur->margin_height;
 		window->scale = bw->scale;
-		if (cur->name) {
+		if (cur->name != NULL) {
 			window->name = strdup(cur->name);
-			if (!window->name)
-				warn_user("NoMemory", 0);
+			if (window->name == NULL) {
+				free(bw->iframes) ;
+				bw->iframes = 0;
+				bw->iframe_count = 0;
+				return NSERROR_NOMEM;
+			}
 		}
 
 		/* linking */
@@ -248,7 +256,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 		if (cur->url) {
 			/* fetch iframe's content */
-			browser_window_navigate(window, 
+			ret = browser_window_navigate(window,
 				cur->url,
 				hlcache_handle_get_url(bw->current_content),
 				BW_NAVIGATE_UNVERIFIABLE,
@@ -257,6 +265,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 				bw->current_content);
 		}
 	}
+
+	return ret;
 }
 
 
