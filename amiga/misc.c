@@ -32,10 +32,11 @@
 #include <proto/requester.h>
 #include <classes/requester.h>
 
-#include "utils/log.h"
 #include "utils/corestrings.h"
-#include "utils/messages.h"
+#include "utils/log.h"
 #include "utils/file.h"
+#include "utils/messages.h"
+#include "utils/url.h"
 #include "utils/utils.h"
 
 #include "desktop/cookie_manager.h"
@@ -43,6 +44,7 @@
 #include "desktop/gui_window.h"
 
 #include "amiga/gui.h"
+#include "amiga/misc.h"
 #include "amiga/utf8.h"
 
 void warn_user(const char *warning, const char *detail)
@@ -69,7 +71,7 @@ void warn_user(const char *warning, const char *detail)
 		TAG_DONE);
 
 	if (req) {
-		LONG result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
+		IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
 		DisposeObject(req);
 	}
 
@@ -198,8 +200,7 @@ static nserror amiga_path_to_nsurl(const char *path, struct nsurl **url_out)
 	BPTR lock = 0;
 	nserror ret;
 
-	if(lock = Lock(path, SHARED_LOCK))
-	{
+	if((lock = Lock(path, SHARED_LOCK))) {
 		DevNameFromLock(lock, newpath, sizeof newpath, DN_FULLPATH);
 		UnLock(lock);
 	}
@@ -210,7 +211,7 @@ static nserror amiga_path_to_nsurl(const char *path, struct nsurl **url_out)
 		return NSERROR_NOMEM;
 	}
 
-	if(colon = strchr(newpath, ':')) *colon = '/';
+	if((colon = strchr(newpath, ':'))) *colon = '/';
 
 	strcpy(r, "file:///");
 	strcat(r, newpath);
