@@ -2949,7 +2949,6 @@ static void gui_quit(void)
 
 	LOG(("Freeing scheduler"));
 	ami_schedule_free();
-	ami_schedule_close_timer();
 
 	FreeObjList(window_list);
 
@@ -5265,8 +5264,10 @@ int main(int argc, char** argv)
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
-	ami_schedule_open_timer();
-	ami_schedule_create();
+	if(ami_schedule_create() == false) {
+		ami_misc_fatal_error("Failed to initialise scheduler");
+		return RETURN_FAIL;
+	}
 
 	amiga_plugin_hack_init();
 	ret = amiga_datatypes_init();

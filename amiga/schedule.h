@@ -45,7 +45,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p);
  *
  * /return true if initialised ok or false on error.
  */
-BOOL ami_schedule_create(void);
+bool ami_schedule_create(void);
 
 /**
  * Finalise amiga scheduler
@@ -61,8 +61,5 @@ void ami_schedule_free(void);
  * immediately afterwards, if we're in a timer signalled loop.
  */
 void schedule_run(BOOL poll);
-
-void ami_schedule_open_timer(void);
-void ami_schedule_close_timer(void);
 
 #endif

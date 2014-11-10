@@ -81,7 +81,7 @@ static nserror ami_schedule_add_timer_event(struct nscallback *nscb, int t)
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
 
-	if(nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL)) {
+	if((nscb->treq = AllocVecTagList(sizeof(struct TimeRequest), NULL))) {
 		*nscb->treq = *tioreq;
 		nscb->treq->Request.io_Command=TR_ADDREQUEST;
 		nscb->treq->Time.Seconds=nscb->tv.Seconds; // secs
@@ -160,7 +160,6 @@ static nserror ami_schedule_reschedule(struct nscallback *nscb, int t)
 
 static nserror schedule_remove(void (*callback)(void *p), void *p)
 {
-	PblIterator *iterator;
 	struct nscallback *nscb;
 
 	nscb = ami_schedule_locate(callback, p, true);
@@ -214,8 +213,7 @@ void schedule_run(BOOL poll)
 
 	if(nscb == -1) return;
 
-	if(poll)
-	{
+	if(poll) {
 		/* Ensure the scheduled event time has passed (CmpTime<=0)
 		 * For timer signalled events this must *always* be true,
 		 * so we save some time by only checking if we're polling.
@@ -233,25 +231,7 @@ void schedule_run(BOOL poll)
 	callback(p);
 }
 
-/* exported function documented in amiga/schedule.h */
-BOOL ami_schedule_create(void)
-{
-	schedule_list = pblHeapNew();
-	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return false;
-
-	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
-}
-
-/* exported function documented in amiga/schedule.h */
-void ami_schedule_free(void)
-{
-	schedule_remove_all();
-	pblHeapFree(schedule_list); // this should be empty at this point
-	schedule_list = NULL;
-}
-
-/* exported function documented in amiga/schedule.h */
-void ami_schedule_open_timer(void)
+static void ami_schedule_open_timer(void)
 {
 	msgport = AllocSysObjectTags(ASOT_PORT,
 				ASO_NoTrack,FALSE,
@@ -269,13 +249,34 @@ void ami_schedule_open_timer(void)
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
 }
 
-/* exported function documented in amiga/schedule.h */
-void ami_schedule_close_timer(void)
+static void ami_schedule_close_timer(void)
 {
 	if(ITimer) DropInterface((struct Interface *)ITimer);
 	CloseDevice((struct IORequest *) tioreq);
 	FreeSysObject(ASOT_IOREQUEST,tioreq);
 	FreeSysObject(ASOT_PORT,msgport);
+}
+
+/* exported function documented in amiga/schedule.h */
+bool ami_schedule_create(void)
+{
+	ami_schedule_open_timer();
+	schedule_list = pblHeapNew();
+	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return false;
+
+	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
+
+	return true;
+}
+
+/* exported function documented in amiga/schedule.h */
+void ami_schedule_free(void)
+{
+	schedule_remove_all();
+	pblHeapFree(schedule_list); // this should be empty at this point
+	schedule_list = NULL;
+
+	ami_schedule_close_timer();
 }
 
 /* exported function documented in amiga/schedule.h */
@@ -286,7 +287,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
 	if (t < 0) return schedule_remove(callback, p);
 	
-	if (nscb = ami_schedule_locate(callback, p, false)) {
+	if ((nscb = ami_schedule_locate(callback, p, false))) {
 		return ami_schedule_reschedule(nscb, t);
 	}
 
