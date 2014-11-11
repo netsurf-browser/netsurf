@@ -4255,6 +4255,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
  *
  * \param  g   a struct gui_window 
  * \param  bw  a struct browser_window
+ * \param  busy  busy flag passed to tiled redraw.
  * \param  x0  top-left co-ordinate (in document co-ordinates)
  * \param  y0  top-left co-ordinate (in document co-ordinates)
  * \param  x1  bottom-right co-ordinate (in document co-ordinates)

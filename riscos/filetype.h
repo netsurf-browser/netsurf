@@ -88,10 +88,10 @@ char *fetch_mimetype(const char *ro_path);
 /**
  * Determine the RISC OS filetype for a content.
  *
- * \param content The content to examine.
+ * \param h The handle of the content to examine.
  * \return The RISC OS filetype corresponding to the content
  */
-int ro_content_filetype(struct hlcache_handle *c);
+int ro_content_filetype(struct hlcache_handle *h);
 
 /**
  * Determine the native RISC OS filetype to export a content as

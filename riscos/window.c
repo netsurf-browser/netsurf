@@ -4526,7 +4526,7 @@ void ro_gui_window_clone_options(
 /**
  * Makes a browser window's options the default.
  *
- * \param  bw  the browser window to read options from
+ * \param gui The riscos gui window to set default options in.
  */
 
 void ro_gui_window_default_options(struct gui_window *gui)
@@ -4564,9 +4564,9 @@ void ro_gui_window_default_options(struct gui_window *gui)
  * Prepare or reprepare a form select menu, setting up the menu handle
  * globals in the process.
  *
- * \param *bw		The browser window to contain the menu.
- * \param *control	The form control needing a menu.
- * \return		true if the menu is OK to be opened; else false.
+ * \param g        The RISC OS gui window the menu is in.
+ * \param control  The form control needing a menu.
+ * \return true if the menu is OK to be opened; else false.
  */
 
 bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,

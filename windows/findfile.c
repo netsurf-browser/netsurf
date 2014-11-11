@@ -86,14 +86,14 @@ static char *realpath(const char *path, char *resolved_path)
 /**
  * Locate a shared resource file by searching known places in order.
  *
+ * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
+ * environment variable), then the path specified in
+ * NETSURF_WINDOWS_RESPATH in the Makefile then .\\res\\ [windows paths]
+ *
  * \param  buf      buffer to write to.  must be at least PATH_MAX chars
  * \param  filename file to look for
  * \param  def      default to return if file not found
- * \return buf
- *
- * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable), then the path specified in
- * NETSURF_WINDOWS_RESPATH in the Makefile then .\res\ [windows paths]
+ * \return The passed in buffer
  */
 
 char *nsws_find_resource(char *buf, const char *filename, const char *def)

@@ -1400,7 +1400,7 @@ const char *ro_gui_default_language(void)
  * Perform the necessary operations on a path to generate a nsurl.
  *
  * @param[in] path The RISC OS pathname to convert.
- * @param[out] url pointer to recive the nsurl, The returned url must be
+ * @param[out] url_out pointer to recive the nsurl, The returned url must be
  *                 unreferenced by the caller.
  * @return NSERROR_OK and the url is placed in \a url or error code on faliure.
  */
@@ -1482,7 +1482,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 /**
  * Create a path from a nsurl using posix file handling.
  *
- * @parm[in] url The url to encode.
+ * @param[in] url The url to encode.
  * @param[out] path_out A string containing the result path which should
  *                      be freed by the caller.
  * @return NSERROR_OK and the path is written to \a path or error code
@@ -2166,7 +2166,7 @@ bool ro_gui_prequit(void)
  * @param[in,out] size The size of the space available if \a str not
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
- * @param[in] nemb The number of elements.
+ * @param[in] nelm The number of elements.
  * @param[in] ap The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.

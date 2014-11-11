@@ -1244,8 +1244,12 @@ static HWND nsws_window_create(struct gui_window *gw)
 }
 
 /**
- * create a new gui_window to contain a browser_window
+ * create a new gui_window to contain a browser_window.
+ *
  * \param bw the browser_window to connect to the new gui_window
+ * \param existing An existing window.
+ * \param flags The flags controlling the construction.
+ * \return The new win32 gui window or NULL on error.
  */
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
@@ -1498,8 +1502,10 @@ static bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 
 /**
  * scroll the window
- * \param sx the new 'absolute' scroll location
- * \param sy the new 'absolute' scroll location
+ *
+ * \param w The win32 gui window to scroll.
+ * \param sx the new 'absolute' horizontal scroll location
+ * \param sy the new 'absolute' vertical scroll location
  */
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
@@ -1832,6 +1838,8 @@ nsws_create_main_class(HINSTANCE hinstance) {
 
 /**
  * callback from core to reformat a window.
+ *
+ * \param gw The win32 gui window to reformat.
  */
 static void win32_window_reformat(struct gui_window *gw)
 {
@@ -1850,8 +1858,8 @@ static void win32_window_reformat(struct gui_window *gw)
  * @param[in,out] size The size of the space available if \a str not
  *                     NULL on input and if not NULL set to the total
  *                     output length on output.
- * @param[in] nemb The number of elements.
- * @param[in] ... The elements of the path as string pointers.
+ * @param[in] nelm The number of elements.
+ * @param[in] ap The elements of the path as string pointers.
  * @return NSERROR_OK and the complete path is written to str
  *         or error code on faliure.
  */
@@ -1905,7 +1913,7 @@ static nserror windows_basename(const char *path, char **str, size_t *size)
 /**
  * Create a path from a nsurl using windows file handling.
  *
- * @parm[in] url The url to encode.
+ * @param[in] url The url to encode.
  * @param[out] path_out A string containing the result path which should
  *                      be freed by the caller.
  * @return NSERROR_OK and the path is written to \a path or error code

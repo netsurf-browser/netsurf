@@ -273,8 +273,9 @@ static nserror download_ro_filetype(download_context *ctx, bits *ftype_out)
 /**
  * Create and open a download progress window.
  *
- * \param  ctx         Download context
- * \return  a new gui_download_window structure, or 0 on error and error
+ * \param ctx  Download context
+ * \param gui  The RISCOS gui window to download for.
+ * \return A new gui_download_window structure, or NULL on error and error
  *          reported
  */
 
@@ -829,7 +830,6 @@ static void gui_download_window_done(struct gui_download_window *dw)
 /**
  * Handle Mouse_Click events in a download window.
  *
- * \param  dw       download window
  * \param  pointer  block returned by Wimp_Poll
  */
 
@@ -883,7 +883,6 @@ bool ro_gui_download_click(wimp_pointer *pointer)
 /**
  * Handler Key_Press events in a download window.
  *
- * \param  dw       download window
  * \param  key  key press returned by Wimp_Poll
  * \return true iff key press handled
  */
