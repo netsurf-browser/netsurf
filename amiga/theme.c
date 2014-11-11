@@ -50,11 +50,11 @@
 
 struct BitMap *throbber = NULL;
 struct bitmap *throbber_nsbm = NULL;
-ULONG throbber_frames,throbber_update_interval;
+int throbber_frames, throbber_update_interval;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
 
-char *ptrs[AMI_LASTPOINTER+1] = {
+const char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_default",
 	"ptr_point",
 	"ptr_caret",
@@ -77,7 +77,7 @@ char *ptrs[AMI_LASTPOINTER+1] = {
 	"ptr_blank",
 	"ptr_drag"};
 
-char *ptrs32[AMI_LASTPOINTER+1] = {
+const char *ptrs32[AMI_LASTPOINTER+1] = {
 	"ptr32_default",
 	"ptr32_point",
 	"ptr32_caret",
@@ -287,23 +287,18 @@ void ami_init_mouse_pointers(void)
 
 	InitRastPort(&mouseptr);
 
-	for(i=0;i<=AMI_LASTPOINTER;i++)
-	{
+	for(i=0; i<=AMI_LASTPOINTER; i++) {
 		BPTR ptrfile;
 		mouseptrbm[i] = NULL;
 		mouseptrobj[i] = NULL;
 		char ptrfname[1024];
 
 #ifdef __amigaos4__
-		if(nsoption_bool(truecolour_mouse_pointers))
-		{
+		if(nsoption_bool(truecolour_mouse_pointers)) {
 			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
-			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
-			{
-				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
-				{
-					if(IDFMT_DIRECTMAPPED == format)
-					{
+			if((dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))) {
+				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE)) {
+					if(IDFMT_DIRECTMAPPED == format) {
 						int32 width = 0, height = 0;
 						uint8* data = 0;
 						IconControl(dobj,
@@ -312,19 +307,18 @@ void ami_init_mouse_pointers(void)
 							ICONCTRLA_GetImageData1, &data,
 							TAG_DONE);
 
-						if (width > 0 && width <= 64 && height > 0 && height <= 64 && data)
-						{
+						if ((width > 0) && (width <= 64) && (height > 0) && (height <= 64) && data) {
 							STRPTR tooltype;
 
-							if(tooltype = FindToolType(dobj->do_ToolTypes, "XOFFSET"))
+							if((tooltype = FindToolType(dobj->do_ToolTypes, "XOFFSET")))
 								mousexpt = atoi(tooltype);
 
-							if(tooltype = FindToolType(dobj->do_ToolTypes, "YOFFSET"))
+							if((tooltype = FindToolType(dobj->do_ToolTypes, "YOFFSET")))
 								mouseypt = atoi(tooltype);
 
-							if (mousexpt < 0 || mousexpt >= width)
+							if ((mousexpt < 0) || (mousexpt >= width))
 								mousexpt = 0;
-							if (mouseypt < 0 || mouseypt >= height)
+							if ((mouseypt < 0) || (mouseypt >= height))
 								mouseypt = 0;
 
 							static uint8 dummyPlane[64 * 64 / 8];
@@ -351,7 +345,7 @@ void ami_init_mouse_pointers(void)
 		if(!mouseptrobj[i])
 		{
 			ami_get_theme_filename(ptrfname,ptrs[i], false);
-			if(ptrfile = Open(ptrfname,MODE_OLDFILE))
+			if((ptrfile = Open(ptrfname,MODE_OLDFILE)))
 			{
 				int mx,my;
 				UBYTE *pprefsbuf = AllocVecTagList(1061, NULL);
@@ -412,7 +406,6 @@ void ami_mouse_pointers_free(void)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
-	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
 	if(!g) return;
@@ -435,7 +428,7 @@ void gui_window_start_throbber(struct gui_window *g)
 void gui_window_stop_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
@@ -467,7 +460,7 @@ static void ami_throbber_update(void *p)
 	struct gui_window *g = (struct gui_window *)p;
 	struct IBox *bbox;
 	int frame = 0;
-	ULONG cur_tab = 0;
+	int cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->objects[GID_THROBBER]) return;
