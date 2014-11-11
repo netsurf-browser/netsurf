@@ -21,7 +21,7 @@
 
 #include "desktop/browser.h"
 
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html_internal.h"
 
 /** 

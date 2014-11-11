@@ -29,7 +29,7 @@
 
 #include "render/box_textarea.h"
 #include "render/font.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 
 
 bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)

@@ -36,7 +36,7 @@
 #include "desktop/scrollbar.h"
 #include "utils/nsoption.h"
 #include "render/box.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html_internal.h"
 #include "utils/log.h"
 #include "utils/talloc.h"

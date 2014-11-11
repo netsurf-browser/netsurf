@@ -51,7 +51,7 @@
 #include "desktop/gui_internal.h"
 
 #include "render/box.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "render/layout.h"

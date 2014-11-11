@@ -54,7 +54,7 @@
 
 #include "render/box.h"
 #include "render/font.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
@@ -96,18 +96,7 @@ static void form_select_menu_clicked(struct form_control *control,
 static void form_select_menu_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 
-/**
- * Create a struct form.
- *
- * \param  node    DOM node associated with form
- * \param  action  URL to submit form to, or NULL for default
- * \param  target  Target frame of form, or NULL for default
- * \param  method  method and enctype
- * \param  charset acceptable encodings for form submission, or NULL
- * \param  doc_charset  encoding of containing document, or NULL
- * \param  html  HTML content containing form
- * \return  a new structure, or NULL on memory exhaustion
- */
+/* exported interface documented in render/form_internal.h */
 struct form *form_new(void *node, const char *action, const char *target, 
 		form_method method, const char *charset, 
 		const char *doc_charset)
@@ -186,13 +175,7 @@ void form_free(struct form *form)
 	free(form);
 }
 
-/**
- * Create a struct form_control.
- *
- * \param  node  Associated DOM node
- * \param  type  control type
- * \return  a new structure, or NULL on memory exhaustion
- */
+/* exported interface documented in render/form_internal.h */
 struct form_control *form_new_control(void *node, form_control_type type)
 {
 	struct form_control *control;
