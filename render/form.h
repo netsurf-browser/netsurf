@@ -126,6 +126,12 @@ struct form_control {
 };
 
 
-void form_select_process_selection(struct form_control *control, int item);
+/**
+ * Process a selection from a form select menu.
+ *
+ * \param  control  form control with menu
+ * \param  item	    index of item selected from the menu
+ */
+nserror form_select_process_selection(struct form_control *control, int item);
 
 #endif

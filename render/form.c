@@ -1296,23 +1296,25 @@ bool form_clip_inside_select_menu(struct form_control *control, float scale,
 /**
  * Process a selection from a form select menu.
  *
- * \param  bw	    browser window with menu
+ * \param  html The html content handle for the form
  * \param  control  form control with menu
  * \param  item	    index of item selected from the menu
+ * \return NSERROR_OK or appropriate error code.
  */
-
-static void form__select_process_selection(html_content *html,
+static nserror form__select_process_selection(html_content *html,
 		struct form_control *control, int item)
 {
 	struct box *inline_box;
 	struct form_option *o;
 	int count;
+	nserror ret = NSERROR_OK;
 
 	assert(control != NULL);
 	assert(html != NULL);
 
 	/** \todo Even though the form code is effectively part of the html
-	 *        content handler, poking around inside contents is not good */
+	 *        content handler, poking around inside contents is not good
+	 */
 
 	inline_box = control->box->children->children;
 
@@ -1323,6 +1325,7 @@ static void form__select_process_selection(html_content *html,
 			o->selected = false;
 			dom_html_option_element_set_selected(o->node, false);
 		}
+
 		if (count == item) {
 			if (control->data.select.multiple) {
 				if (o->selected) {
@@ -1342,37 +1345,45 @@ static void form__select_process_selection(html_content *html,
 				o->selected = true;
 			}
 		}
-		if (o->selected)
+
+		if (o->selected) {
 			control->data.select.current = o;
+		}
 	}
 
 	talloc_free(inline_box->text);
 	inline_box->text = 0;
-	if (control->data.select.num_selected == 0)
+
+	if (control->data.select.num_selected == 0) {
 		inline_box->text = talloc_strdup(html->bctx,
 				messages_get("Form_None"));
-	else if (control->data.select.num_selected == 1)
+	} else if (control->data.select.num_selected == 1) {
 		inline_box->text = talloc_strdup(html->bctx,
 				control->data.select.current->text);
-	else
+	} else {
 		inline_box->text = talloc_strdup(html->bctx,
 				messages_get("Form_Many"));
+	}
+
 	if (!inline_box->text) {
-		warn_user("NoMemory", 0);
+		ret = NSERROR_NOMEM;
 		inline_box->length = 0;
-	} else
+	} else {
 		inline_box->length = strlen(inline_box->text);
+	}
 	inline_box->width = control->box->width;
 
 	html__redraw_a_box(html, control->box);
+
+	return ret;
 }
 
-
-void form_select_process_selection(struct form_control *control, int item)
+/* exported interface documented in render/form.h */
+nserror form_select_process_selection(struct form_control *control, int item)
 {
 	assert(control != NULL);
 
-	form__select_process_selection(control->html, control, item);
+	return form__select_process_selection(control->html, control, item);
 }
 
 /**
