@@ -359,7 +359,7 @@ static void ami_tree_draw(struct treeview_window *twin)
  */
 static void ami_tree_scroll_visible(int y, int height, void *data)
 {
-	ULONG sy, scrollset;
+	int sy, scrollset;
 	struct IBox *bbox;
 	struct treeview_window *twin = data;
 
@@ -1041,7 +1041,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					case SELECTUP:
 						if(twin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
-							CurrentTime(&curtime.tv_sec,&curtime.tv_usec);
+							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
 							twin->mouse_state = BROWSER_MOUSE_CLICK_1;
 
@@ -1076,7 +1076,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					case MIDDLEUP:
 						if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
 						{
-							CurrentTime(&curtime.tv_sec,&curtime.tv_usec);
+							CurrentTime((ULONG *)&curtime.tv_sec, (ULONG *)&curtime.tv_usec);
 
 							twin->mouse_state = BROWSER_MOUSE_CLICK_2;
 
