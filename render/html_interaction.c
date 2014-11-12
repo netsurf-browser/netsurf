@@ -189,10 +189,11 @@ static void html_box_drag_start(struct box *box, int x, int y)
 /**
  * End overflow scroll scrollbar drags
  *
- * \param  h      html content's high level cache entry
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
+ * \param html   html content
+ * \param mouse  state of mouse buttons and modifier keys
+ * \param x	 coordinate of mouse
+ * \param y	 coordinate of mouse
+ * \param dir    Direction of drag
  */
 static size_t html_selection_drag_end(struct html_content *html,
 		browser_mouse_state mouse, int x, int y, int dir)
@@ -1196,7 +1197,7 @@ void html_overflow_scroll_callback(void *client_data,
 /**
  * End overflow scroll scrollbar drags
  *
- * \param  scroll  scrollbar widget
+ * \param  scrollbar  scrollbar widget
  * \param  mouse   state of mouse buttons and modifier keys
  * \param  x	   coordinate of mouse
  * \param  y	   coordinate of mouse

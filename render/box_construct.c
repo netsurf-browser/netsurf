@@ -2717,8 +2717,8 @@ no_memory:
 /**
  * Add an option to a form select control (helper function for box_select()).
  *
- * \param  control  select containing the option
- * \param  n	    xml element node for <option>
+ * \param  control  select containing the &lt;option&gt;
+ * \param  n	    xml element node for &lt;option&gt;
  * \return  true on success, false on memory exhaustion
  */
 

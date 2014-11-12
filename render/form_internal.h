@@ -118,8 +118,8 @@ bool form_successful_controls(struct form *form,
  *
  * See HTML 4.01 section 17.13.2.
  *
- * \param[in] _form  form to search for successful controls
- * \param[in] _submit_button  control used to submit the form, if any
+ * \param[in] form  form to search for successful controls
+ * \param[in] submit_button  control used to submit the form, if any
  * \param[out] successful_controls  updated to point to linked list of
  *                        fetch_multipart_data, 0 if no controls
  * \return  true on success, false on memory exhaustion
@@ -134,7 +134,7 @@ bool form_successful_controls_dom(struct form *form,
  *
  * \param client_data  data passed to the redraw callback
  * \param control  The select form control for which the menu is being opened
- * \param callback  The redraw callback for the select menu
+ * \param redraw_callback  The callback to redraw the select menu.
  * \param c  The content the select menu is opening for.
  * \return false on memory exhaustion, true otherwise
  */

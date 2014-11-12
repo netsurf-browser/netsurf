@@ -1317,8 +1317,8 @@ void html_redraw_a_box(hlcache_handle *h, struct box *box)
 /**
  * Redraw a box.
  *
- * \param  h	content containing the box, of type CONTENT_HTML
- * \param  box  box to redraw
+ * \param html  content containing the box, of type CONTENT_HTML
+ * \param box  box to redraw.
  */
 
 void html__redraw_a_box(struct html_content *html, struct box *box)
@@ -2126,6 +2126,7 @@ struct box *html_get_box_tree(hlcache_handle *h)
  * Retrieve the charset of an HTML document
  *
  * \param c Content to retrieve charset from
+ * \param op The content encoding operation to perform.
  * \return Pointer to charset, or NULL
  */
 static const char *html_encoding(const struct content *c, enum content_encoding_type op)

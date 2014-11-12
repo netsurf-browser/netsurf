@@ -131,18 +131,21 @@ static struct box *html_redraw_find_bg_box(struct box *box)
  * Redraw a short text string, complete with highlighting
  * (for selection/search)
  *
- * \param  utf8_text  pointer to UTF-8 text string
- * \param  utf8_len   length of string, in bytes
- * \param  offset     byte offset within textual representation
- * \param  space      width of space that follows string (0 = no space)
- * \param  fstyle     text style to use (pass text size unscaled)
- * \param  x          x ordinate at which to plot text
- * \param  y          y ordinate at which to plot text
- * \param  clip       pointer to current clip rectangle
- * \param  height     height of text string
- * \param  scale      current display scale (1.0 = 100%)
- * \param  excluded   exclude this text string from the selection
- * \param  ctx	      current redraw context
+ * \param utf8_text pointer to UTF-8 text string
+ * \param utf8_len  length of string, in bytes
+ * \param offset    byte offset within textual representation
+ * \param space     width of space that follows string (0 = no space)
+ * \param fstyle    text style to use (pass text size unscaled)
+ * \param x         x ordinate at which to plot text
+ * \param y         y ordinate at which to plot text
+ * \param clip      pointer to current clip rectangle
+ * \param height    height of text string
+ * \param scale     current display scale (1.0 = 100%)
+ * \param excluded  exclude this text string from the selection
+ * \param c         Content being redrawn.
+ * \param sel       Selection context
+ * \param search    Search context
+ * \param ctx	    current redraw context
  * \return true iff successful and redraw should proceed
  */
 

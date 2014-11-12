@@ -285,9 +285,10 @@ void imagemap_dump(html_content *c)
 /**
  * Adds an imagemap entry to the list
  *
- * \param n     The xmlNode representing the entry to add
+ * \param n  The xmlNode representing the entry to add
  * \param base_url  Base URL for resolving relative URLs
- * \param entry Pointer to list of entries
+ * \param entry  Pointer to list of entries
+ * \param tagtype  The type of tag
  * \return false on memory exhaustion, true otherwise
  */
 static bool
@@ -582,8 +583,7 @@ static bool imagemap_extract_map(dom_node *node, html_content *c,
 /**
  * Extract all imagemaps from a document tree
  *
- * \param c The content
- * \param map_str A dom_string which is "map"
+ * \param c The content to extract imagemaps from.
  * \return false on memory exhaustion, true otherwise
  */
 nserror
@@ -712,7 +712,7 @@ imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x,
 /**
  * Retrieve url associated with imagemap entry
  *
- * \param h        The containing content
+ * \param c        The containing content
  * \param key      The map name to search for
  * \param x        The left edge of the containing box
  * \param y        The top edge of the containing box
