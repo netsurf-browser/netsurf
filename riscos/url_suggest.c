@@ -53,7 +53,7 @@ wimp_menu *ro_gui_url_suggest_menu = (wimp_menu *) &url_suggest_menu_block;
  * Initialise the URL suggestion menu.  This MUST be called before anything
  * tries to use the URL menu.
  *
- * /return		true if initialisation was OK; else false.
+ * \return true if initialisation was OK; else false.
  */
 
 bool ro_gui_url_suggest_init(void)
@@ -72,10 +72,10 @@ bool ro_gui_url_suggest_init(void)
 /**
  * Check if there is a URL suggestion menu available for use.
  *
- * \TODO -- Ideally this should be able to decide if there's a menu
+ * \todo Ideally this should be able to decide if there's a menu
  *          available without actually having to build it all.
  *
- * /return		true if the menu has entries; else false.
+ * \return true if the menu has entries; else false.
  */
 
 bool ro_gui_url_suggest_get_menu_available(void)

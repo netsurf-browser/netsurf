@@ -140,10 +140,10 @@ static void layout_compute_offsets(struct box *box,
 /**
  * Calculate positions of boxes in a document.
  *
- * \param  doc	     content of type CONTENT_HTML
- * \param  width     available width
- * \param  height    available height
- * \return  true on success, false on memory exhaustion
+ * \param  content  content of type CONTENT_HTML
+ * \param  width    available width
+ * \param  height   available height
+ * \return true on success, false on memory exhaustion
  */
 
 bool layout_document(html_content *content, int width, int height)
@@ -688,7 +688,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 /**
  * Calculate minimum and maximum width of a block.
  *
- * \param  block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
+ * \param block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
+ * \param font_func font functions
  * \post  block->min_width and block->max_width filled in,
  *        0 <= block->min_width <= block->max_width
  */
@@ -775,7 +776,7 @@ void layout_minmax_block(struct box *block,
 
 		block->flags |= HAS_HEIGHT;
 	} else if (block->flags & IFRAME) {
-		/** TODO: do we need to know the min/max width of the iframe's
+		/** \todo do we need to know the min/max width of the iframe's
 		 * content? */
 		block->flags |= HAS_HEIGHT;
 	} else {
@@ -1611,9 +1612,9 @@ void layout_float_find_dimensions(int available_width,
  * \param  min_width        updated to min-width, may be NULL
  * \param  max_height       updated to max-height, may be NULL
  * \param  min_height       updated to min-height, may be NULL
- * \param  margin[4]	    filled with margins, may be NULL
- * \param  padding[4]	    filled with paddings, may be NULL
- * \param  border[4]	    filled with border widths, may be NULL
+ * \param  margin	    filled with margins, may be NULL
+ * \param  padding	    filled with paddings, may be NULL
+ * \param  border	    filled with border widths, may be NULL
  */
 
 void layout_find_dimensions(int available_width, int viewport_height,
@@ -2090,7 +2091,7 @@ void find_sides(struct box *fl, int y0, int y1,
 /**
  * Layout lines of text or inline boxes with floats.
  *
- * \param  box	  inline container
+ * \param  inline_container inline container box
  * \param  width  horizontal space available
  * \param  cont	  ancestor box which defines horizontal space, for floats
  * \param  cx	  box position relative to cont
@@ -2163,7 +2164,9 @@ bool layout_inline_container(struct box *inline_container, int width,
 /**
  * Calculate minimum and maximum width of an inline container.
  *
- * \param  inline_container  box of type INLINE_CONTAINER
+ * \param inline_container  box of type INLINE_CONTAINER
+ * \param[out] has_height set to true if container has height
+ * \param font_func Font functions.
  * \post  inline_container->min_width and inline_container->max_width filled in,
  *        0 <= inline_container->min_width <= inline_container->max_width
  */
@@ -3044,11 +3047,12 @@ bool layout_line(struct box *first, int *width, int *y,
 /**
  * Calculate minimum and maximum width of a line.
  *
- * \param  first       a box in an inline container
- * \param  line_min    updated to minimum width of line starting at first
- * \param  line_max    updated to maximum width of line starting at first
- * \param  first_line  true iff this is the first line in the inline container
- * \param  line_has_height  updated to true or false, depending on line
+ * \param first       a box in an inline container
+ * \param line_min    updated to minimum width of line starting at first
+ * \param line_max    updated to maximum width of line starting at first
+ * \param first_line  true iff this is the first line in the inline container
+ * \param line_has_height  updated to true or false, depending on line
+ * \param font_func Font functions.
  * \return  first box in next line, or 0 if no more lines
  * \post  0 <= *line_min <= *line_max
  */
@@ -3937,7 +3941,7 @@ bool layout_table(struct box *table, int available_width,
 	/* Table height is either the height of the contents, or specified
 	 * height if greater */
 	table_height = max(table_height, min_height);
-	/** \TODO distribute spare height over the row groups / rows / cells */
+	/** \todo distribute spare height over the row groups / rows / cells */
 
 	/* perform vertical alignment */
 	for (row_group = table->children; row_group;
@@ -4009,7 +4013,8 @@ bool layout_table(struct box *table, int available_width,
 /**
  * Calculate minimum and maximum width of a table.
  *
- * \param  table  box of type TABLE
+ * \param table box of type TABLE
+ * \param font_func Font functions
  * \post  table->min_width and table->max_width filled in,
  *        0 <= table->min_width <= table->max_width
  */
@@ -4202,13 +4207,13 @@ void layout_move_children(struct box *box, int x, int y)
 /**
  * Determine width of margin, borders, and padding on one side of a box.
  *
- * \param  style    style to measure
- * \param  size     side of box to measure
- * \param  margin   whether margin width is required
- * \param  border   whether border width is required
- * \param  padding  whether padding width is required
- * \param  fixed    increased by sum of fixed margin, border, and padding
- * \param  frac     increased by sum of fractional margin and padding
+ * \param style    style to measure
+ * \param side     side of box to measure
+ * \param margin   whether margin width is required
+ * \param border   whether border width is required
+ * \param padding  whether padding width is required
+ * \param fixed    increased by sum of fixed margin, border, and padding
+ * \param frac     increased by sum of fractional margin and padding
  */
 
 void calculate_mbp_width(const css_computed_style *style, unsigned int side,

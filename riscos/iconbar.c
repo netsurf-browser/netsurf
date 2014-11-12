@@ -187,11 +187,12 @@ void ro_gui_iconbar_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 /**
  * Handle selections from the iconbar menu
  *
- * \param  w			The window owning the menu.
- * \param  i			The icon owning the menu.
- * \param  *selection		The wimp menu selection data.
- * \param  action		The selected menu action.
- * \return			true if action accepted; else false.
+ * \param w          The window owning the menu.
+ * \param i          The icon owning the menu.
+ * \param menu       The wimp menu
+ * \param selection  The wimp menu selection data.
+ * \param action     The selected menu action.
+ * \return true if action accepted; else false.
  */
 
 bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,

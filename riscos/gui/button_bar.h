@@ -144,7 +144,8 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
  *
  * \param target  The target button bar.
  * \param source  The source button bar.
- * \param refresh The refresh callback
+ * \param refresh The refresh callback.
+ * \param client_data context passed to the refresh callback
  * \return  true if successful; else false.
  */
 

@@ -100,7 +100,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 /**
  * Plot an image at the given coordinates using tinct
  *
- * \param area              The sprite area containing the sprite
+ * \param header            The sprite header
  * \param x                 Left edge of sprite
  * \param y                 Top edge of sprite
  * \param req_width         The requested width of the sprite
@@ -154,7 +154,7 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
 /**
  * Plot an image at the given coordinates using os_spriteop
  *
- * \param area       The sprite area containing the sprite
+ * \param header     The sprite header
  * \param x          Left edge of sprite
  * \param y          Top edge of sprite
  * \param req_width  The requested width of the sprite

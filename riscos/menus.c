@@ -510,10 +510,8 @@ void ro_gui_menu_refresh(wimp_menu *menu)
 /**
  * Creates a wimp_menu and adds it to the list to handle actions for.
  *
- * \param  *menu		The data to create the menu with
- * \param  *callbacks		A callback table for the menu (NULL if to be
- *				handled in the 'old-fashined way' by menus.c).
- * \return			The menu created, or NULL on failure
+ * \param  menu The data to create the menu with
+ * \return The menu created, or NULL on failure
  */
 wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu)
 {
@@ -807,7 +805,7 @@ menu_action ro_gui_menu_find_action(wimp_menu *menu, wimp_menu_entry *menu_entry
  *
  * \param menu	  the menu containing the action
  * \param action  the action to tick/untick
- * \param ticked  whether to set the item as ticked
+ * \param shaded  whether to set the item as shaded
  */
 void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
 		bool shaded)

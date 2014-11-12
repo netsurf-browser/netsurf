@@ -182,7 +182,8 @@ struct active_message *ro_message_add(unsigned int message_code,
 /**
  * Attempts to route a message.
  *
- * \param message	the message to attempt to route
+ * \param event  wimp event
+ * \param message  the message to attempt to route
  * \return true if message was routed, false otherwise
  */
 bool ro_message_handle_message(wimp_event_no event, wimp_message *message)

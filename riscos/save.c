@@ -799,9 +799,9 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 /**
  * Does the actual saving
  *
- * \param  c               content to save (or NULL for other)
- * \param  path            path to save as
- * \param  force_overwrite true iff required to overwrite without prompting
+ * \param h  handle to content to save (or NULL for other)
+ * \param path  path to save as
+ * \param force_overwrite true iff required to overwrite without prompting
  * \return true on success,
  *         false on (i) error and error reported
  *               or (ii) deferred awaiting user confirmation

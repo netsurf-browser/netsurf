@@ -247,7 +247,7 @@ bool ro_gui_status_bar_get_visible(struct status_bar *sb)
 /**
  * Set the value of the progress bar
  *
- * \param  pb  the status bar to set the progress of
+ * \param  sb  the status bar to set the progress of
  * \param  value  the value to use
  */
 void ro_gui_status_bar_set_progress_value(struct status_bar *sb,

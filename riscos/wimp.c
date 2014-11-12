@@ -380,9 +380,10 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value)
 /**
  * Set the contents of an icon to a number.
  *
- * \param  w	  window handle
- * \param  i	  icon handle
- * \param  value  value
+ * \param w  window handle
+ * \param i  icon handle
+ * \param value  value to use in icon.
+ * \param decimal_places The number of decimal places to use.
  */
 void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
 {
@@ -414,9 +415,10 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places)
 /**
  * Get the contents of an icon as a number.
  *
- * \param  w	  window handle
- * \param  i	  icon handle
- * \param  value  value
+ * \param w  window handle
+ * \param i  icon handle
+ * \param decimal_places  number of places to show.
+ * \return value used.
  */
 int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places)
 {
@@ -727,7 +729,7 @@ void ro_gui_set_window_title(wimp_w w, const char *text)
 /**
  * Places the caret in the first available icon
  *
- * \w	the window to place the caret in
+ * \param w the window to place the caret in
  * \return true if the caret was placed, false otherwise
  */
 bool ro_gui_set_caret_first(wimp_w w)
