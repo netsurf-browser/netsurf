@@ -210,6 +210,7 @@ unsigned int ro_gui_status_bar_get_width(struct status_bar *sb)
  * Set the visibility status of the status bar
  *
  * \param  sb  the status bar to check the visiblity of
+ * \param visible  if teh status bar should be shown or not.
  * \return whether the status bar is visible
  */
 void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible)
@@ -263,8 +264,8 @@ void ro_gui_status_bar_set_progress_value(struct status_bar *sb,
 /**
  * Set the range of the progress bar
  *
- * \param  pb  the status bar to set the range of
- * \param  value  the value to use, or 0 to turn off the progress bar
+ * \param  sb  the status bar to set the range of
+ * \param  range  the range of the progress bar
  */
 void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 		unsigned int range)
@@ -293,7 +294,7 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 /**
  * Set the icon for the progress bar
  *
- * \param  pb  the status bar to set the icon for
+ * \param  sb  the status bar to set the icon for
  * \param  icon  the icon to use, or NULL for no icon
  */
 void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
@@ -308,6 +309,7 @@ void ro_gui_status_bar_set_progress_icon(struct status_bar *sb,
 /**
  * Set the text to display in the status bar
  *
+ * \param  sb  the status bar to set the text for
  * \param  text  the UTF8 text to display, or NULL for none
  */
 void ro_gui_status_bar_set_text(struct status_bar *sb, const char *text)

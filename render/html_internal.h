@@ -227,7 +227,7 @@ struct browser_window *html_get_browser_window(struct content *c);
 /**
  * Complete conversion of an HTML document
  *
- * \param htmlc  Content to convert
+ * \param htmlc Content to convert
  */
 void html_finish_conversion(html_content *htmlc);
 

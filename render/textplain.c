@@ -688,7 +688,7 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
  *
  * \param  c	  content of type textplain
  * \param  bw	  browser window
- * \param  click  type of mouse click
+ * \param  mouse  mouse state on action
  * \param  x	  coordinate of mouse
  * \param  y	  coordinate of mouse
  */
@@ -772,11 +772,10 @@ bool textplain_keypress(struct content *c, uint32_t key)
 /**
  * Handle search.
  *
- * \param  c			content of type text
- * \param  gui_callbacks	vtable for updating front end
- * \param  gui_data		front end private data
- * \param  flags		search flags
- * \param  string		search string
+ * \param c         content of type text
+ * \param gui_data  front end private data
+ * \param flags     search flags
+ * \param string    search string
  */
 void textplain_search(struct content *c, void *gui_data,
 		search_flags_t flags, const char *string)
@@ -1029,7 +1028,7 @@ char *textplain_get_selection(struct content *c)
 /**
  * Retrieve number of lines in content
  *
- * \param h  Content to retrieve line count from
+ * \param c  Content to retrieve line count from
  * \return Number of lines
  */
 unsigned long textplain_line_count(struct content *c)
@@ -1044,7 +1043,7 @@ unsigned long textplain_line_count(struct content *c)
 /**
  * Retrieve the size (in bytes) of text data
  *
- * \param h  Content to retrieve size of
+ * \param c Content to retrieve size of
  * \return Size, in bytes, of data
  */
 size_t textplain_size(struct content *c)
@@ -1057,12 +1056,14 @@ size_t textplain_size(struct content *c)
 }
 
 /**
- * Return byte offset within UTF8 textplain content, given the co-ordinates
- * of a point within a textplain content. 'dir' specifies the direction in
- * which to search (-1 = above-left, +1 = below-right) if the co-ordinates are not
- * contained within a line.
+
+ * Return byte offset within UTF8 textplain content.
  *
- * \param  h     content of type CONTENT_TEXTPLAIN
+ * given the co-ordinates of a point within a textplain content. 'dir'
+ * specifies the direction in which to search (-1 = above-left, +1 =
+ * below-right) if the co-ordinates are not contained within a line.
+ *
+ * \param  c     content of type CONTENT_TEXTPLAIN
  * \param  x     x ordinate of point
  * \param  y     y ordinate of point
  * \param  dir   direction of search if not within line
@@ -1216,7 +1217,7 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
  * Given a range of byte offsets within a UTF8 textplain content,
  * return a box that fully encloses the text
  *
- * \param  h      content of type CONTENT_TEXTPLAIN
+ * \param  c      content of type CONTENT_TEXTPLAIN
  * \param  start  byte offset of start of text range
  * \param  end    byte offset of end
  * \param  r      rectangle to be completed
@@ -1273,7 +1274,7 @@ void textplain_coords_from_range(struct content *c, unsigned start,
 /**
  * Return a pointer to the requested line of text.
  *
- * \param  h		    content of type CONTENT_TEXTPLAIN
+ * \param  c		    content of type CONTENT_TEXTPLAIN
  * \param  lineno	    line number
  * \param  poffset	    receives byte offset of line start within text
  * \param  plen		    receives length of returned line
@@ -1303,7 +1304,7 @@ char *textplain_get_line(struct content *c, unsigned lineno,
  * text to fit the window width. Thus only hard newlines are preserved
  * in the saved/copied text of a selection.
  *
- * \param  h		    content of type CONTENT_TEXTPLAIN
+ * \param  c		    content of type CONTENT_TEXTPLAIN
  * \param  start	    starting byte offset within UTF-8 text
  * \param  end		    ending byte offset
  * \param  plen		    receives validated length

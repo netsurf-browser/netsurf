@@ -22,6 +22,7 @@
  * or write to the Free Software Foundation, Inc.,
  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 #include <string.h>
 #include <gtk/gtk.h>
 
@@ -120,7 +121,7 @@ sexy_icon_entry_class_init(SexyIconEntryClass *klass)
 	widget_class->button_press_event = sexy_icon_entry_button_press;
 	widget_class->button_release_event = sexy_icon_entry_button_release;
 
-	/**
+	/*
 	 * SexyIconEntry::icon-pressed:
 	 * @entry: The entry on which the signal is emitted.
 	 * @icon_pos: The position of the clicked icon.
@@ -142,7 +143,7 @@ sexy_icon_entry_class_init(SexyIconEntryClass *klass)
 					 G_TYPE_INT,
 					 G_TYPE_INT);
 
-	/**
+	/*
 	 * SexyIconEntry::icon-released:
 	 * @entry: The entry on which the signal is emitted.
 	 * @icon_pos: The position of the clicked icon.
@@ -793,7 +794,7 @@ sexy_icon_entry_button_release(GtkWidget *widget, GdkEventButton *event)
 	return FALSE;
 }
 
-/**
+/*
  * sexy_icon_entry_new
  *
  * Creates a new SexyIconEntry widget.
@@ -806,7 +807,7 @@ sexy_icon_entry_new(void)
 	return GTK_WIDGET(g_object_new(SEXY_TYPE_ICON_ENTRY, NULL));
 }
 
-/**
+/*
  * sexy_icon_entry_set_icon
  * @param entry A #SexyIconEntry.
  * @param position Icon position.
@@ -867,7 +868,7 @@ sexy_icon_entry_set_icon(SexyIconEntry *entry, SexyIconEntryPosition icon_pos,
 	update_icon(NULL, NULL, entry);
 }
 
-/**
+/*
  * sexy_icon_entry_set_icon_highlight
  * @param entry A #SexyIconEntry;
  * @param position Icon position.
@@ -894,7 +895,7 @@ sexy_icon_entry_set_icon_highlight(SexyIconEntry *entry,
 	icon_info->highlight = highlight;
 }
 
-/**
+/*
  * sexy_icon_entry_get_icon
  * @param entry A #SexyIconEntry.
  * @param position Icon position.
@@ -914,7 +915,7 @@ sexy_icon_entry_get_icon(const SexyIconEntry *entry,
 	return entry->priv->icons[icon_pos].icon;
 }
 
-/**
+/*
  * sexy_icon_entry_get_icon_highlight
  * @param entry A #SexyIconEntry.
  * @param position Icon position.
@@ -945,7 +946,7 @@ clear_button_clicked_cb(SexyIconEntry *icon_entry,
 	gtk_entry_set_text(GTK_ENTRY(icon_entry), "");
 }
 
-/**
+/*
  * sexy_icon_entry_add_clear_button
  * @param icon_entry A #SexyIconEntry.
  *

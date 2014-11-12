@@ -135,14 +135,17 @@ struct button_bar *ro_gui_button_bar_create(struct theme_descriptor *theme,
 
 
 /**
- * Link two button bars together: the target being the active bar, and the
+ * Link two button bars together
+ *
+ * Join two button bars the target being the active bar, and the
  * source being the editing bar used to supply valid buttons.  The bars are
  * checked to ensure that they are not already part of an edit pair, but are
  * not checked for button-compatibility.
  *
- * \param *target		The target button bar.
- * \param *source		The source button bar.
- * \return			true if successful; else false.
+ * \param target  The target button bar.
+ * \param source  The source button bar.
+ * \param refresh The refresh callback
+ * \return  true if successful; else false.
  */
 
 bool ro_gui_button_bar_link_editor(struct button_bar *target,

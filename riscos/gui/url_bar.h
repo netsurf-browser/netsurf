@@ -269,9 +269,9 @@ bool ro_gui_url_bar_get_url_extent(struct url_bar *url_bar, os_box *extent);
 /**
  * Test a pointer click to see if it was in the URL bar's text field.
  *
- * \param *url_bar		The URL Bar to test.
- * \param *pointer		The pointer event data to test.
- * \return			true if the click was in the field; else false.
+ * \param url_bar  The URL Bar to test.
+ * \param pointer  The pointer event data to test.
+ * \return true if the click was in the field; else false.
  */
 
 bool ro_gui_url_bar_test_for_text_field_click(struct url_bar *url_bar,
@@ -281,9 +281,9 @@ bool ro_gui_url_bar_test_for_text_field_click(struct url_bar *url_bar,
 /**
  * Test a keypress to see if it was in the URL bar's text field.
  *
- * \param *url_bar		The URL Bar to test.
- * \param *pointer		The pointer event data to test.
- * \return			true if the click was in the field; else false.
+ * \param url_bar  The URL Bar to test.
+ * \param key      The key pressed
+ * \return true if the keypress was in the field; else false.
  */
 
 bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,

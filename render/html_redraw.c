@@ -329,6 +329,7 @@ static plot_style_t plot_style_fillbdr_dlight = {
  * \param  style	border line style
  * \param  thickness	border thickness
  * \param  rectangular	whether border is rectangular
+ * \param clip cliping area for redrawing border.
  * \param  ctx		current redraw context
  * \return true if successful, false otherwise
  */
@@ -690,6 +691,7 @@ static bool html_redraw_border_plot(const int side, const int *p, colour c,
  * \param  y_parent	coordinate of top padding edge of parent of box
  * \param  p_width	width of padding box
  * \param  p_height	height of padding box
+ * \param clip cliping area for redrawing border.
  * \param  scale	scale for redraw
  * \param  ctx		current redraw context
  * \return true if successful, false otherwise
@@ -923,6 +925,7 @@ static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
  *
  * \param  box	  BOX_INLINE which created the border
  * \param  b	  coordinates of border edge rectangle
+ * \param clip cliping area for redrawing border.
  * \param  scale  scale for redraw
  * \param  first  true if this is the first rectangle associated with the inline
  * \param  last	  true if this is the last rectangle associated with the inline
@@ -1796,6 +1799,7 @@ static bool html_redraw_text_decoration(struct box *box,
  * Redraw the text content of a box, possibly partially highlighted
  * because the text has been selected, or matches a search operation.
  *
+ * \param html The html content to redraw text within.
  * \param  box      box with text content
  * \param  x        x co-ord of box
  * \param  y        y co-ord of box

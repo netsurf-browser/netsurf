@@ -540,12 +540,8 @@ static bool html_process_img(html_content *c, dom_node *node)
 	return success;
 }
 
-/**
- * Complete conversion of an HTML document
- *
- * \param c  Content to convert
- */
-void html_finish_conversion(html_content *c)
+/* exported function documented in render/html_internal.h */
+void html_finish_conversion(html_content *htmlc)
 {
 	union content_msg_data msg_data;
 	dom_exception exc; /* returned by libdom functions */
@@ -553,17 +549,17 @@ void html_finish_conversion(html_content *c)
 	nserror error;
 
 	/* Bail out if we've been aborted */
-	if (c->aborted) {
-		content_broadcast_errorcode(&c->base, NSERROR_STOPPED);
-		content_set_error(&c->base);
+	if (htmlc->aborted) {
+		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
+		content_set_error(&htmlc->base);
 		return;
 	}
 
 	/* create new css selection context */
-	error = html_css_new_selection_context(c, &c->select_ctx);
+	error = html_css_new_selection_context(htmlc, &htmlc->select_ctx);
 	if (error != NSERROR_OK) {
-		content_broadcast_errorcode(&c->base, error);
-		content_set_error(&c->base);
+		content_broadcast_errorcode(&htmlc->base, error);
+		content_set_error(&htmlc->base);
 		return;
 	}
 
@@ -572,29 +568,29 @@ void html_finish_conversion(html_content *c)
 	 * object, but with its target set to the Document object (and
 	 * the currentTarget set to the Window object)
 	 */
-	js_fire_event(c->jscontext, "load", c->document, NULL);
+	js_fire_event(htmlc->jscontext, "load", htmlc->document, NULL);
 
 	/* convert dom tree to box tree */
-	LOG(("DOM to box (%p)", c));
-	content_set_status(&c->base, messages_get("Processing"));
+	LOG(("DOM to box (%p)", htmlc));
+	content_set_status(&htmlc->base, messages_get("Processing"));
 	msg_data.explicit_status_text = NULL;
-	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
+	content_broadcast(&htmlc->base, CONTENT_MSG_STATUS, msg_data);
 
-	exc = dom_document_get_document_element(c->document, (void *) &html);
+	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
-		content_broadcast_errorcode(&c->base, NSERROR_DOM);
-		content_set_error(&c->base);
+		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
+		content_set_error(&htmlc->base);
 		return;
 	}
 
-	error = dom_to_box(html, c, html_box_convert_done);
+	error = dom_to_box(html, htmlc, html_box_convert_done);
 	if (error != NSERROR_OK) {
 		LOG(("box conversion failed"));
 		dom_node_unref(html);
-		html_object_free_objects(c);
-		content_broadcast_errorcode(&c->base, error);
-		content_set_error(&c->base);
+		html_object_free_objects(htmlc);
+		content_broadcast_errorcode(&htmlc->base, error);
+		content_set_error(&htmlc->base);
 		return;
 	}
 
