@@ -64,18 +64,29 @@ typedef void(*select_menu_redraw_callback)(void *client_data,
 /**
  * Create a struct form.
  *
- * \param  node    DOM node associated with form
- * \param  action  URL to submit form to, or NULL for default
- * \param  target  Target frame of form, or NULL for default
- * \param  method  method and enctype
- * \param  charset acceptable encodings for form submission, or NULL
- * \param  doc_charset  encoding of containing document, or NULL
- * \param  html  HTML content containing form
- * \return  a new structure, or NULL on memory exhaustion
+ * \param node         DOM node associated with form
+ * \param action       URL to submit form to, or NULL for default
+ * \param target       Target frame of form, or NULL for default
+ * \param method       method and enctype
+ * \param charset      acceptable encodings for form submission, or NULL
+ * \param doc_charset  encoding of containing document, or NULL
+ * \return A new form or NULL on memory exhaustion
  */
 struct form *form_new(void *node, const char *action, const char *target,
 		form_method method, const char *charset,
 		const char *doc_charset);
+
+/**
+ * Free a form and any controls it owns.
+ *
+ * \note There may exist controls attached to box tree nodes which are not
+ * associated with any form. These will leak at present. Ideally, they will
+ * be cleaned up when the box tree is destroyed. As that currently happens
+ * via talloc, this won't happen. These controls are distinguishable, as their
+ * form field will be NULL.
+ *
+ * \param form The form to free
+ */
 void form_free(struct form *form);
 
 /**
@@ -94,20 +105,73 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
 		struct fetch_multipart_data **successful_controls);
+
+/**
+ * Identify 'successful' controls via the DOM.
+ *
+ * All text strings in the successful controls list will be in the charset most
+ * appropriate for submission. Therefore, no utf8_to_* processing should be
+ * performed upon them.
+ *
+ * \todo The chosen charset needs to be made available such that it can be
+ * included in the submission request (e.g. in the fetch's Content-Type header)
+ *
+ * See HTML 4.01 section 17.13.2.
+ *
+ * \param[in] _form  form to search for successful controls
+ * \param[in] _submit_button  control used to submit the form, if any
+ * \param[out] successful_controls  updated to point to linked list of
+ *                        fetch_multipart_data, 0 if no controls
+ * \return  true on success, false on memory exhaustion
+ */
 bool form_successful_controls_dom(struct form *form,
 		struct form_control *submit_button,
 		struct fetch_multipart_data **successful_controls);
 
+
+/**
+ * Open a select menu for a select form control, creating it if necessary.
+ *
+ * \param client_data  data passed to the redraw callback
+ * \param control  The select form control for which the menu is being opened
+ * \param callback  The redraw callback for the select menu
+ * \param c  The content the select menu is opening for.
+ * \return false on memory exhaustion, true otherwise
+ */
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback redraw_callback,
   		struct content *c);
+
+
 void form_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
+
+
+/**
+ * Destroy a select menu and free allocated memory.
+ *
+ * \param control  the select form control owning the select menu being
+ *                  destroyed.
+ */
 void form_free_select_menu(struct form_control *control);
+
+
+/**
+ * Redraw an opened select menu.
+ *
+ * \param control  the select menu being redrawn
+ * \param x        the X coordinate to draw the menu at
+ * \param y        the Y coordinate to draw the menu at
+ * \param scale    current redraw scale
+ * \param clip     clipping rectangle
+ * \param ctx      current redraw context
+ * \return         true on success, false otherwise
+ */
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		float scale, const struct rect *clip,
 		const struct redraw_context *ctx);
+
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		const struct rect *clip);
 const char *form_select_mouse_action(struct form_control *control,

@@ -20,7 +20,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Conversion of XML tree to box tree (implementation).
  */
 
@@ -1634,9 +1635,9 @@ bool box_noscript(BOX_SPECIAL_PARAMS)
 
 
 /**
- * Destructor for object_params, for <object> elements
+ * Destructor for object_params, for &lt;object&gt; elements
  *
- * \param b	The object params being destroyed.
+ * \param o  The object params being destroyed.
  * \return 0 to allow talloc to continue destroying the tree.
  */
 static int box_object_talloc_destructor(struct object_params *o)
@@ -2221,9 +2222,9 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 
 /**
- * Destructor for content_html_iframe, for <iframe> elements
+ * Destructor for content_html_iframe, for &lt;iframe&gt; elements
  *
- * \param b	The iframe params being destroyed.
+ * \param f The iframe params being destroyed.
  * \return 0 to allow talloc to continue destroying the tree.
  */
 static int box_iframes_talloc_destructor(struct content_html_iframe *f)

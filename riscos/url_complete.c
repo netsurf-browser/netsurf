@@ -733,7 +733,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		/* Do NOT make any attempt to use any of the global url
 		 * completion variables after this call to browser_window_navigate.
 		 * They will be invalidated by (at least):
-		 *   + gui_window_set_url
+		 *   + ro_gui_window_set_url
 		 *   + destruction of (i)frames within the current page
 		 * Any attempt to use them will probably result in a crash.
 		 */

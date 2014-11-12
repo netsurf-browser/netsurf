@@ -40,7 +40,7 @@ bool ro_gui_window_check_menu(wimp_menu *menu);
  * \param g gui_window to update
  * \param url new url for address bar
  */
-nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
+nserror ro_gui_window_set_url(struct gui_window *g, struct nsurl *url);
 
 #endif
 

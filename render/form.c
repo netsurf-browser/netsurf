@@ -146,17 +146,7 @@ struct form *form_new(void *node, const char *action, const char *target,
 }
 
 
-/**
- * Free a form, and any controls it owns.
- *
- * \param form  The form to free
- *
- * \note There may exist controls attached to box tree nodes which are not
- * associated with any form. These will leak at present. Ideally, they will
- * be cleaned up when the box tree is destroyed. As that currently happens
- * via talloc, this won't happen. These controls are distinguishable, as their
- * form field will be NULL.
- */
+/* exported interface documented in render/form_internal.h */
 void form_free(struct form *form)
 {
 	struct form_control *c, *d;
@@ -306,24 +296,7 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 }
 
 
-/**
- * Identify 'successful' controls via the DOM.
- *
- * All text strings in the successful controls list will be in the charset most
- * appropriate for submission. Therefore, no utf8_to_* processing should be
- * performed upon them.
- *
- * \todo The chosen charset needs to be made available such that it can be
- * included in the submission request (e.g. in the fetch's Content-Type header)
- *
- * \param  form           form to search for successful controls
- * \param  submit_button  control used to submit the form, if any
- * \param  successful_controls  updated to point to linked list of
- *                        fetch_multipart_data, 0 if no controls
- * \return  true on success, false on memory exhaustion
- *
- * See HTML 4.01 section 17.13.2.
- */
+/* exported interface documented in render/form_internal.h */
 bool form_successful_controls_dom(struct form *_form,
 				  struct form_control *_submit_button,
 				  struct fetch_multipart_data **successful_controls)
@@ -1027,17 +1000,7 @@ char *form_encode_item(const char *item, uint32_t len, const char *charset,
 	return ret;
 }
 
-/**
- * Open a select menu for a select form control, creating it if necessary.
- *
- * \param client_data	data passed to the redraw callback
- * \param control	the select form control for which the menu is being
- * 			opened
- * \param callback	redraw callback for the select menu
- * \param bw		the browser window in which the select menu is being
- * 			opened
- * \return		false on memory exhaustion, true otherwise
- */
+/* exported interface documented in render/form_internal.h */
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback callback,
@@ -1111,12 +1074,7 @@ bool form_open_select_menu(void *client_data,
 }
 
 
-/**
- * Destroy a select menu and free allocated memory.
- * 
- * \param control	the select form control owning the select menu being
- * 			destroyed
- */
+/* exported interface documented in render/form_internal.h */
 void form_free_select_menu(struct form_control *control)
 {
 	if (control->data.select.menu->scrollbar != NULL)
@@ -1125,17 +1083,8 @@ void form_free_select_menu(struct form_control *control)
 	control->data.select.menu = NULL;
 }
 
-/**
- * Redraw an opened select menu.
- * 
- * \param control	the select menu being redrawn
- * \param x		the X coordinate to draw the menu at
- * \param x		the Y coordinate to draw the menu at
- * \param scale		current redraw scale
- * \param clip		clipping rectangle
- * \param ctx		current redraw context
- * \return		true on success, false otherwise
- */
+
+/* exported interface documented in render/form_internal.h */
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		float scale, const struct rect *clip,
 		const struct redraw_context *ctx)
@@ -1262,13 +1211,10 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
  * Check whether a clipping rectangle is completely contained in the
  * select menu.
  *
- * \param control	the select menu to check the clipping rectangle for
- * \param scale		the current browser window scale
- * \param clip_x0	minimum x of clipping rectangle
- * \param clip_y0	minimum y of clipping rectangle
- * \param clip_x1	maximum x of clipping rectangle
- * \param clip_y1	maximum y of clipping rectangle
- * \return		true if inside false otherwise
+ * \param control  the select menu to check the clipping rectangle for
+ * \param scale    the current browser window scale
+ * \param clip     the clipping rectangle
+ * \return true if inside false otherwise
  */
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		const struct rect *clip)
@@ -1607,8 +1553,7 @@ void form_select_menu_callback(void *client_data,
 /**
  * Set a radio form control and clear the others in the group.
  *
- * \param  content  content containing the form, of type CONTENT_TYPE
- * \param  radio    form control of type GADGET_RADIO
+ * \param radio form control of type GADGET_RADIO
  */
 
 void form_radio_set(struct form_control *radio)

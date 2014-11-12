@@ -465,8 +465,11 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
 }
 
 /**
- * returns default image for search buttons / menu items from gtk stock items
- * \param tbbutton button reference
+ * Get default image for search buttons / menu items from gtk stock items
+ *
+ * \param tbbutton search button reference
+ * \param iconsize The size of icons to select.
+ * \return default search image.
  */
 
 static GtkImage *
