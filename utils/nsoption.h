@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Option reading and saving (interface).
  *
  * Global options are defined in desktop/options.h
@@ -172,7 +173,7 @@ typedef nserror(nsoption_set_default_t)(struct nsoption_s *defaults);
  *
  * @param set_default callback to allow the customisation of the default
  *                    options.
- * @param ppots pointer to update to get options table or NULL.
+ * @param popts pointer to update to get options table or NULL.
  * @param pdefs pointer to update to get default options table or NULL.
  * @return The error status
  */

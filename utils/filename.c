@@ -367,7 +367,7 @@ bool filename_flush_directory(const char *folder, int depth)
 /**
  * Recursively deletes the contents of a directory
  *
- * \param directory	the directory to delete
+ * \param folder the directory to delete
  * \return true on success, false otherwise
  */
 bool filename_delete_recursive(char *folder)

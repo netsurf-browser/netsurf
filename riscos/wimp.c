@@ -114,7 +114,10 @@ void ro_gui_wimp_cache_furniture_sizes(wimp_w w)
 /**
  * Reads a modes EIG factors.
  *
- * \param  mode  mode to read EIG factors for, or -1 for current
+ * \param[in] mode  mode to read EIG factors for, or -1 for current
+ * \param[out] xeig  The x eig value
+ * \param[out] yeig  The y eig value
+ * \return true on success else false. 
  */
 bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig)
 {
@@ -955,8 +958,9 @@ bool ro_gui_wimp_get_sprite_dimensions(osspriteop_area *area, char *sprite,
 /**
  * Performs simple user redraw for a window.
  *
- * \param  user_fill	whether to fill the redraw area
- * \param  user_colour  the colour to use when filling
+ * \param redraw  wimp draw 
+ * \param user_fill  whether to fill the redraw area
+ * \param user_colour  the colour to use when filling
  */
 
 void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill,

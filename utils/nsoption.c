@@ -442,7 +442,9 @@ nsoption_output_value_text(struct nsoption_s *option,
  *
  * Allocates a new option table and copies an existing one into it.
  *
- * @param src The source table to copy
+ * \param[in] src The source table to copy
+ * \param[out] pdst The output table
+ * \return NSERROR_OK on success or appropriate error code.
  */
 static nserror
 nsoption_dup(struct nsoption_s *src, struct nsoption_s **pdst)

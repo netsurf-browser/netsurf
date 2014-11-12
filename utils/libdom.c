@@ -314,9 +314,10 @@ static void ignore_dom_msg(uint32_t severity, void *ctx, const char *msg, ...)
 /**
  * Dump attribute/value for an element node
  *
- * \param node       The element node to dump attribute details for
- * \param attribute  The attribute to dump
- * \return  true on success, or false on error
+ * \param node  The element node to dump attribute details for
+ * \param f file handle to dump to.
+ * \param attribute The attribute to dump
+ * \return true on success, or false on error
  */
 static bool dump_dom_element_attribute(dom_node *node, FILE *f, const char *attribute)
 {
@@ -376,6 +377,7 @@ static bool dump_dom_element_attribute(dom_node *node, FILE *f, const char *attr
  * Print a line in a DOM structure dump for an element
  *
  * \param node   The node to dump
+ * \param f file handle to dump to.
  * \param depth  The node's depth
  * \return  true on success, or false on error
  */

@@ -160,6 +160,7 @@ void bitmap_destroy(void *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  path    pathname for file
+ * \param flags flags controlling how the bitmap is saved.
  * \return true on success, false on error and error reported
  */
 

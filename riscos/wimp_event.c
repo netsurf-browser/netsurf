@@ -433,14 +433,17 @@ bool ro_gui_wimp_event_register_help_suffix(wimp_w w,
 /**
  * Get the associated help suffix.
  *
- * \param w		The window to get the suffix for
- * \return		The associated prefix, or NULL
+ * \param w  The window to get the suffix for
+ * \param i  The icon
+ * \param pos The os coordinates
+ * \param buttons The button state.
+ * \return The associated prefix, or NULL
  */
 
 const char *ro_gui_wimp_event_get_help_suffix(wimp_w w, wimp_i i,
 		os_coord *pos, wimp_mouse_state buttons)
 {
-	struct		event_window *window;
+	struct event_window *window;
 
 	window = ro_gui_wimp_event_find_window(w);
 	if (window == NULL || window->get_help_suffix == NULL)
@@ -1157,8 +1160,8 @@ bool ro_gui_wimp_event_pointer_entering_window(wimp_entering *entering)
  * Process a Menu click in a window, by checking for a registered window
  * menu and opening it if one is found.
  *
- * \param  *p		The pointer block from the mouse click event.
- * \return		true if the click was actioned; else false.
+ * \param  pointer The pointer block from the mouse click event.
+ * \return true if the click was actioned; else false.
  */
 
 bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer)
@@ -1233,16 +1236,16 @@ bool ro_gui_wimp_event_prepare_menu(wimp_w w, wimp_i i, wimp_menu *menu)
 /**
  * Register a window menu to be (semi-)automatically handled.
  *
- * \param w			The window to attach the menu to.
- * \param *m			The menu to be attached.
- * \param menu_auto		true if the menu should be opened autimatically
- *				on Menu clicks with no task intervention; false
- *				to pass clicks to the window's Mouse Event
- *				handler and leave that to pass the menu click
- *				back to us for handling and menu opening.
- * \param bool_position_ibar	true if the menu should open in an iconbar
+ * \param w              The window to attach the menu to.
+ * \param m              The menu to be attached.
+ * \param menu_auto      true if the menu should be opened autimatically on
+ *                        Menu clicks with no task intervention; false to pass
+ *                        clicks to the window's Mouse Event handler and leave
+ *                        that to pass the menu click back to us for handling
+ *                        and menu opening.
+ * \param position_ibar	 true if the menu should open in an iconbar
  *				position; false to open at the pointer.
- * \return			true if the menu was registed ok; else false.
+ * \return true if the menu was registed ok; else false.
  */
 
 bool ro_gui_wimp_event_register_menu(wimp_w w, wimp_menu *m,

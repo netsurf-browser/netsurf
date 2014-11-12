@@ -146,8 +146,9 @@ static bool idna__contexto_rule(int32_t cp)
  * Check if a CONTEXTJ codepoint has a rule defined,
  * and conforms to that rule.
  *
- * \param string	UCS-4 string
+ * \param label UCS-4 string
  * \param index	character in the string which is CONTEXTJ
+ * \param len The length of the label
  * \return true if conforming
  */
 static bool idna__contextj_rule(int32_t *label, int index, size_t len)

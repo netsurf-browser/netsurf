@@ -68,8 +68,8 @@ int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
 /**
  * Create a bitmap.
  *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
+ * \param  w  width of image in pixels
+ * \param  h  width of image in pixels
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
@@ -284,6 +284,7 @@ void bitmap_destroy(void *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  path    pathname for file
+ * \param flags flags controlling how the bitmap is saved.
  * \return true on success, false on error and error reported
  */
 

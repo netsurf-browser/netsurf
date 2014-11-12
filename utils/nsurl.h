@@ -90,10 +90,8 @@ void nsurl_unref(nsurl *url);
  * \param url1	  First NetSurf URL
  * \param url2	  Second NetSurf URL
  * \param parts	  The URL components to be compared
- * \param match	  Returns true if url1 and url2 matched, else false
- * \return NSERROR_OK on success, appropriate error otherwise
+ * \return true on match else false
  *
- * If return value != NSERROR_OK, match will be false.
  */
 bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts);
 

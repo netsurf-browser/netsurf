@@ -341,7 +341,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 /**
  * The bitmap image has changed, so flush any persistant cache.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *vbitmap) {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;

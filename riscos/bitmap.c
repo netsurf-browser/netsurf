@@ -58,7 +58,7 @@
  * Initialise a bitmaps sprite area.
  *
  * \param  bitmap  the bitmap to initialise
- * \param  clear   whether to clear the image ready for use
+ * \return true if bitmap initialised else false.
  */
 
 static bool bitmap_initialise(struct bitmap *bitmap)
@@ -106,7 +106,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
- * \param  clear   whether to clear the image ready for use
+ * \param  state the state to create teh bitmap in.
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
@@ -220,7 +220,7 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 /**
  * Sets whether a bitmap should be plotted opaque
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
 void bitmap_set_opaque(void *vbitmap, bool opaque)
@@ -238,7 +238,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 /**
  * Tests whether a bitmap has an opaque alpha channel
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
 bool bitmap_test_opaque(void *vbitmap)
@@ -287,7 +287,7 @@ bool bitmap_test_opaque(void *vbitmap)
 /**
  * Gets whether a bitmap should be plotted opaque
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 bool bitmap_get_opaque(void *vbitmap)
 {
@@ -300,11 +300,11 @@ bool bitmap_get_opaque(void *vbitmap)
 /**
  * Return a pointer to the pixel data in a bitmap.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return pointer to the pixel buffer
- *
  * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \return pointer to the pixel buffer
  */
 
 unsigned char *bitmap_get_buffer(void *vbitmap)
@@ -329,7 +329,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 /**
  * Find the width of a pixel row in bytes.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return width of a pixel row in the bitmap
  */
 
@@ -343,7 +343,7 @@ size_t bitmap_get_rowstride(void *vbitmap)
 /**
  * Free a bitmap.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 
 void bitmap_destroy(void *vbitmap)
@@ -364,7 +364,7 @@ void bitmap_destroy(void *vbitmap)
 /**
  * Save a bitmap in the platform's native format.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \param  path	   pathname for file
  * \param  flags   modify the behaviour of the save
  * \return true on success, false on error and error reported
@@ -537,7 +537,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 /**
  * The bitmap image has changed, so flush any persistent cache.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *vbitmap) {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;

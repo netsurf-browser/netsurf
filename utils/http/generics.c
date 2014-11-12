@@ -43,7 +43,7 @@ void http___item_list_destroy(http__item *list)
  * \param input       Pointer to current input byte. Updated on exit.
  * \param itemparser  Pointer to function to parse list items
  * \param first       Pointer to first item, or NULL.
- * \param parameters  Pointer to location to receive on-heap parameter list.
+ * \param items  Pointer to location to receive on-heap parameter list.
  * \return NSERROR_OK on success,
  * 	   NSERROR_NOMEM on memory exhaustion,
  * 	   NSERROR_NOT_FOUND if no items could be parsed

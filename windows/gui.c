@@ -1452,7 +1452,9 @@ static void gui_window_destroy(struct gui_window *w)
 
 /**
  * set window title
- * \param title the [url]
+ *
+ * \param w the Windows gui window.
+ * \param title to set on window
  */
 static void gui_window_set_title(struct gui_window *w, const char *title)
 {
