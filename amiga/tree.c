@@ -69,11 +69,12 @@
 #include "amiga/filetype.h"
 #include "amiga/schedule.h"
 
-#define AMI_TREE_MENU_ITEMS 24
+#define AMI_TREE_MENU_ITEMS 26
 #define AMI_TREE_MENU_NEWDIR FULLMENUNUM(1,0,0)
 #define AMI_TREE_MENU_NEWURL FULLMENUNUM(1,1,0)
-#define AMI_TREE_MENU_DELETE FULLMENUNUM(1,3,0)
-#define AMI_TREE_MENU_CLEAR FULLMENUNUM(1,6,0)
+#define AMI_TREE_MENU_EDIT FULLMENUNUM(1,3,0)
+#define AMI_TREE_MENU_DELETE FULLMENUNUM(1,5,0)
+#define AMI_TREE_MENU_CLEAR FULLMENUNUM(1,8,0)
 
 enum {
 	GID_OPEN = GID_LAST,
@@ -606,23 +607,31 @@ static void ami_tree_menu(struct treeview_window *twin)
 		twin->menu[18].nm_Label = NM_BARLABEL;
 
 		twin->menu[19].nm_Type = NM_ITEM;
-		twin->menu_name[19] = ami_utf8_easy((char *)messages_get("TreeDelete"));
+		twin->menu_name[19] = ami_utf8_easy((char *)messages_get("EditEntry"));
 		twin->menu[19].nm_Label = twin->menu_name[19];
-		twin->menu[19].nm_CommKey = "D";
+		twin->menu[19].nm_CommKey = "E";
 
 		twin->menu[20].nm_Type = NM_ITEM;
 		twin->menu[20].nm_Label = NM_BARLABEL;
 
 		twin->menu[21].nm_Type = NM_ITEM;
-		twin->menu_name[21] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+		twin->menu_name[21] = ami_utf8_easy((char *)messages_get("TreeDelete"));
 		twin->menu[21].nm_Label = twin->menu_name[21];
-		twin->menu[21].nm_CommKey = "A";
+		twin->menu[21].nm_CommKey = "D";
 
 		twin->menu[22].nm_Type = NM_ITEM;
-		twin->menu_name[22] = ami_utf8_easy((char *)messages_get("ClearNS"));
-		twin->menu[22].nm_Label = twin->menu_name[22];
+		twin->menu[22].nm_Label = NM_BARLABEL;
 
-		twin->menu[23].nm_Type = NM_END;
+		twin->menu[23].nm_Type = NM_ITEM;
+		twin->menu_name[23] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+		twin->menu[23].nm_Label = twin->menu_name[23];
+		twin->menu[23].nm_CommKey = "A";
+
+		twin->menu[24].nm_Type = NM_ITEM;
+		twin->menu_name[24] = ami_utf8_easy((char *)messages_get("ClearNS"));
+		twin->menu[24].nm_Label = twin->menu_name[24];
+
+		twin->menu[25].nm_Type = NM_END;
 	}
 }
 
@@ -635,6 +644,12 @@ static void ami_tree_update_buttons(struct treeview_window *twin)
 		OffMenu(twin->win, AMI_TREE_MENU_NEWURL);
 	}
 	
+	if((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) {
+		OnMenu(twin->win, AMI_TREE_MENU_EDIT);
+	} else {
+		OffMenu(twin->win, AMI_TREE_MENU_EDIT);
+	}
+
 	if(((twin->type == AMI_TREE_HOTLIST) && (hotlist_has_selection())) ||
 		((twin->type == AMI_TREE_COOKIES) && (cookie_manager_has_selection())) ||
 		((twin->type == AMI_TREE_HISTORY) && (global_history_has_selection()))) {
@@ -692,6 +707,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
+			WA_SizeBRight, TRUE,
 			WA_Height, scrn->Height / 2,
 			WA_PubScreen,scrn,
 			WA_ReportMouse,TRUE,
@@ -769,6 +785,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
+			WA_SizeBRight, TRUE,
 			WA_Top, top,
 			WA_Left, left,
 			WA_Width, width,
@@ -1300,7 +1317,11 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									hotlist_add_entry(NULL, NULL, false, 0);
 								break;
 
-								case 3: // delete
+								case 3: // edit
+									hotlist_edit_selection();
+								break;
+
+								case 5: // delete
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
@@ -1316,7 +1337,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									ami_tree_update_buttons(twin);
 								break;
 
-								case 5: // select all
+								case 7: // select all
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
@@ -1332,7 +1353,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									ami_tree_update_buttons(twin);
 								break;
 
-								case 6: // clear
+								case 8: // clear
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
