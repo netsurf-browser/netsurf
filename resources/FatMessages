@@ -1153,11 +1153,11 @@ de.all.TreeClear:Clear default
 fr.all.TreeClear:Clear default
 it.all.TreeClear:Annulla predefinito
 nl.all.TreeClear:Clear default
-en.ami.TreeEdit:Edit item
-de.ami.TreeEdit:Edit item
-fr.ami.TreeEdit:Edit item
-it.ami.TreeEdit:Edit item
-nl.ami.TreeEdit:Edit item
+en.ami.TreeEdit:Edit title
+de.ami.TreeEdit:Edit title
+fr.ami.TreeEdit:Edit title
+it.ami.TreeEdit:Modifica titolo
+nl.ami.TreeEdit:Edit title
 
 # Treeview field labels
 #

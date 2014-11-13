@@ -607,7 +607,7 @@ static void ami_tree_menu(struct treeview_window *twin)
 		twin->menu[18].nm_Label = NM_BARLABEL;
 
 		twin->menu[19].nm_Type = NM_ITEM;
-		twin->menu_name[19] = ami_utf8_easy((char *)messages_get("EditEntry"));
+		twin->menu_name[19] = ami_utf8_easy((char *)messages_get("TreeEdit"));
 		twin->menu[19].nm_Label = twin->menu_name[19];
 		twin->menu[19].nm_CommKey = "E";
 
