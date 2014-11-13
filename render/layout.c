@@ -56,7 +56,7 @@
 
 #include "render/box.h"
 #include "render/font.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
 #include "render/table.h"

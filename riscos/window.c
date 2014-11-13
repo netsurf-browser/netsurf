@@ -4572,7 +4572,7 @@ void ro_gui_window_default_options(struct gui_window *gui)
 bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
-	unsigned int i, entries;
+	unsigned int item, entries;
 	char *text_convert, *temp;
 	struct form_option *option;
 	bool reopen = true;
@@ -4580,19 +4580,26 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 
 	assert(control);
 
-	for (entries = 0, option = control->data.select.items; option;
-			option = option->next)
+	/* enumerate the entries */
+	entries = 0;
+	option = form_select_get_option(control, entries);
+	while (option != NULL) {
 		entries++;
+		option = form_select_get_option(control, item);
+	}
+
 	if (entries == 0) {
+		/* no menu to display */
 		ro_gui_menu_destroy();
 		return false;
 	}
 
+	/* free riscos menu if there already is one */
 	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
-		for (i = 0; ; i++) {
-			free(gui_form_select_menu->entries[i].data.
+		for (item = 0; ; item++) {
+			free(gui_form_select_menu->entries[item].data.
 					indirected_text.text);
-			if (gui_form_select_menu->entries[i].menu_flags &
+			if (gui_form_select_menu->entries[item].menu_flags &
 					wimp_MENU_LAST)
 				break;
 		}
@@ -4601,6 +4608,7 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		gui_form_select_menu = 0;
 	}
 
+	/* allocate new riscos menu */
 	if (!gui_form_select_menu) {
 		reopen = false;
 		gui_form_select_menu = malloc(wimp_SIZEOF_MENU(entries));
@@ -4624,11 +4632,12 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 		ro_gui_menu_init_structure(gui_form_select_menu, entries);
 	}
 
-	for (i = 0, option = control->data.select.items; option;
-			i++, option = option->next) {
-		gui_form_select_menu->entries[i].menu_flags = 0;
+	/* initialise menu entries from form control */
+	for (item = 0; item < entries; item++) {
+		option = form_select_get_option(control, item);
+		gui_form_select_menu->entries[item].menu_flags = 0;
 		if (option->selected)
-			gui_form_select_menu->entries[i].menu_flags =
+			gui_form_select_menu->entries[item].menu_flags =
 					wimp_MENU_TICKED;
 		if (!reopen) {
 
@@ -4659,17 +4668,17 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 
 			free(temp);
 
-			gui_form_select_menu->entries[i].data.indirected_text.text =
+			gui_form_select_menu->entries[item].data.indirected_text.text =
 					text_convert;
-			gui_form_select_menu->entries[i].data.indirected_text.size =
-					strlen(gui_form_select_menu->entries[i].
+			gui_form_select_menu->entries[item].data.indirected_text.size =
+					strlen(gui_form_select_menu->entries[item].
 					data.indirected_text.text) + 1;
 		}
 	}
 
 	gui_form_select_menu->entries[0].menu_flags |=
 			wimp_MENU_TITLE_INDIRECTED;
-	gui_form_select_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
+	gui_form_select_menu->entries[item - 1].menu_flags |= wimp_MENU_LAST;
 
 	return true;
 }

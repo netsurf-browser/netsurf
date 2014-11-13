@@ -1332,6 +1332,26 @@ nserror form_select_process_selection(struct form_control *control, int item)
 	return form__select_process_selection(control->html, control, item);
 }
 
+/* exported interface documented in render/form.h */
+struct form_option *
+form_select_get_option(struct form_control *control, int item)
+{
+	struct form_option *opt;
+
+	opt = control->data.select.items;
+	while ((opt != NULL) && (item > 0)) {
+		opt = opt->next;
+		item--;
+	}
+	return opt;
+}
+
+/* exported interface documented in render/form.h */
+char *form_control_get_name(struct form_control *control)
+{
+	return control->name;
+}
+
 /**
  * Handle a click on the area of the currently opened select menu.
  * 

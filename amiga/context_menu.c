@@ -1280,7 +1280,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 	 */
 
 	struct gui_window *gwin = g;
-	struct form_option *opt = control->data.select.items;
+	struct form_option *opt = form_select_get_option(control, 0);
 	ULONG i = 0;
 
 	if(ctxmenuobj) DisposeObject(ctxmenuobj);
@@ -1291,7 +1291,7 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 	gwin->shared->control = control;
 
-    ctxmenuobj = PMMENU(ami_utf8_easy(control->name)),
+	ctxmenuobj = PMMENU(ami_utf8_easy(form_control_get_name(control))),
                         PMA_MenuHandler, &ctxmenuhook, End;
 
 	while(opt)

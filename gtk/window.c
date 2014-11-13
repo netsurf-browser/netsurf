@@ -1217,8 +1217,7 @@ static void gui_window_start_selection(struct gui_window *g)
 static void gui_window_create_form_select_menu(struct gui_window *g,
 		struct form_control *control)
 {
-
-	intptr_t i;
+	intptr_t item;
 	struct form_option *option;
 
 	GtkWidget *menu_item;
@@ -1228,23 +1227,29 @@ static void gui_window_create_form_select_menu(struct gui_window *g,
 	 * Yay. \o/
 	 */
 
-	if (select_menu != NULL)
+	if (select_menu != NULL) {
 		gtk_widget_destroy(select_menu);
+	}
 
 	select_menu = gtk_menu_new();
 	select_menu_control = control;
 
-	for (i = 0, option = control->data.select.items; option;
-		i++, option = option->next) {
+	item = 0;
+	option = form_select_get_option(control, item);
+	while (option != NULL) {
+		LOG(("Item %d option %p text %s", item, option, option->text));
 		menu_item = gtk_check_menu_item_new_with_label(option->text);
 		if (option->selected)
 			gtk_check_menu_item_set_active(
 				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
 
 		g_signal_connect(menu_item, "toggled",
-			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)i);
+			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)item);
 
 		gtk_menu_shell_append(GTK_MENU_SHELL(select_menu), menu_item);
+
+		item++;
+		option = form_select_get_option(control, item);
 	}
 
 	gtk_widget_show_all(select_menu);

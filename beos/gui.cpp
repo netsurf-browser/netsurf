@@ -65,7 +65,6 @@ extern "C" {
 #include "desktop/gui_search.h"
 #include "desktop/gui_fetch.h"
 #include "desktop/netsurf.h"
-#include "render/form.h"
 
 }
 
@@ -101,9 +100,6 @@ BWindow *wndWarning;
 BWindow *wndTooltip;
 //beosLabel *labelTooltip;
 BFilePanel *wndOpenFile;
-
-//static beosWidget *select_menu;
-static struct form_control *select_menu_control;
 
 static thread_id sBAppThreadID;
 

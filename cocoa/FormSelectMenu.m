@@ -48,7 +48,8 @@
 	[menu addItemWithTitle: @"" action: NULL keyEquivalent: @""];
 	
 	NSInteger currentItemIndex = 0;
-	for (struct form_option *opt = control->data.select.items; opt != NULL; opt = opt->next) {
+        struct form_option *opt;
+	for (opt = form_select_get_option(control, 0); opt != NULL; opt = opt->next) {
 		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle: [NSString stringWithUTF8String: opt->text] 
 													  action: @selector( itemSelected: ) 
 											   keyEquivalent: @""];

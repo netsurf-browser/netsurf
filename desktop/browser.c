@@ -50,7 +50,7 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "render/form.h"
+#include "render/form_internal.h"
 #include "render/html.h"
 #include "render/box.h"
 #include "curl/curl.h"

@@ -60,7 +60,6 @@ extern wimp_w current_menu_window;
 extern bool current_menu_open;
 extern wimp_menu *recent_search_menu;	/* search.c */
 extern wimp_w history_window;
-extern struct form_control *current_gadget;
 extern bool gui_redraw_debug;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
