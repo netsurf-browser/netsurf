@@ -21,7 +21,6 @@
 
 #include "utils/utils.h"
 #import "desktop/browser.h"
-#import "render/box.h"
 
 extern CGFloat cocoa_scale_factor;
 
@@ -105,11 +104,5 @@ static inline NSRect cocoa_scaled_rect( CGFloat scale, int x0, int y0, int x1, i
 	return cocoa_scaled_rect_wh( scale, x0, y0, x1 - x0, y1 - y0 );
 }
 
-static inline NSRect cocoa_rect_for_box( struct browser_window *bw, struct box *box )
-{
-	struct rect r;
-	box_bounds( box, &r );
-	return cocoa_scaled_rect(browser_window_get_scale(bw), r.x0, r.y0, r.x1, r.y1 );
-}
 
 #endif

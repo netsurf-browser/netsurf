@@ -1352,6 +1352,14 @@ char *form_control_get_name(struct form_control *control)
 	return control->name;
 }
 
+/* exported interface documented in render/form.h */
+nserror form_control_bounding_rect(struct form_control *control, struct rect *r)
+{
+	box_bounds( control->box, r );
+	return NSERROR_OK;
+}
+
+
 /**
  * Handle a click on the area of the currently opened select menu.
  * 

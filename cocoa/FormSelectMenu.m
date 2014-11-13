@@ -22,6 +22,13 @@
 #import "desktop/browser.h"
 #import "render/form.h"
 
+static inline NSRect cocoa_rect_for_control( struct browser_window *bw, struct form_control *control)
+{
+	struct rect r;
+	form_control_bounding_rect(control, &r);
+	return cocoa_scaled_rect(browser_window_get_scale(bw), r.x0, r.y0, r.x1, r.y1 );
+}
+
 @interface FormSelectMenu ()
 
 - (void) itemSelected: (id) sender;
@@ -79,8 +86,8 @@
 	
 	cell = [[NSPopUpButtonCell alloc] initTextCell: @"" pullsDown: YES];
 	[cell setMenu: menu];
-	
-	const NSRect rect = cocoa_rect_for_box( browser, control->box );
+
+	const NSRect rect = cocoa_rect_for_control(browser, control);
 								   
 	[cell attachPopUpWithFrame: rect inView: view];
 	[cell performClickWithFrame: rect inView: view];

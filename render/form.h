@@ -62,4 +62,14 @@ struct form_option *form_select_get_option(struct form_control *control, int ite
  */
 char *form_control_get_name(struct form_control *control);
 
+
+/**
+ * Get a form control bounding rectangle
+ *
+ * \param[in] control The form control
+ * \param[out] r The rectangle to place the bounds in.
+ * \return NSERROR_OK on success or error code.
+ */
+nserror form_control_bounding_rect(struct form_control *control, struct rect *r);
+
 #endif
