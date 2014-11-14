@@ -52,7 +52,7 @@ export NETSURF_GTK_MAJOR
 NS_GIT="git://git.netsurf-browser.org"
 
 # internal libraries all frontends require (order is important)
-NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp"
+NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc"
 
 # The browser itself
 NS_BROWSER="netsurf"

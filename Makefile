@@ -487,16 +487,15 @@ CWARNFLAGS := -Wstrict-prototypes -Wmissing-prototypes -Wnested-externs
 # Pull in the configuration
 include Makefile.defaults
 
-# Build flags for libjpeg as it has no pkgconfig file
+# libraries enabled by feature switch without pkgconfig file 
 $(eval $(call feature_switch,JPEG,JPEG (libjpeg),-DWITH_JPEG,-ljpeg,-UWITH_JPEG,))
-
-# Build flags for haru
 $(eval $(call feature_switch,HARU_PDF,PDF export (haru),-DWITH_PDF_EXPORT,-lhpdf -lpng,-UWITH_PDF_EXPORT,))
-
-# Build flags for iconv
 $(eval $(call feature_switch,LIBICONV_PLUG,glibc internal iconv,-DLIBICONV_PLUG,,-ULIBICONV_PLUG,-liconv))
 
-# common libraries without pkg-config support
+# Common libraries with pkgconfig
+$(eval $(call pkg_config_find_and_add,libutf8proc,UTF8PROC))
+
+# Common libraries without pkg-config support
 LDFLAGS += -lz
 
 # add top level and build directory to include search path

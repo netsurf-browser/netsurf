@@ -16,14 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * NetSurf international domain name handling (implementation).
+/**
+ * \file
+ * NetSurf international domain name handling implementation.
  */
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libutf8proc/utf8proc.h>
 
 #include "utils/errors.h"
 #include "utils/idna.h"
@@ -31,7 +33,6 @@
 #include "utils/log.h"
 #include "utils/punycode.h"
 #include "utils/utf8.h"
-#include "utils/utf8proc.h"
 #include "utils/utils.h"
 
 
