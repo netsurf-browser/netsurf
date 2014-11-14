@@ -209,7 +209,7 @@ else
       CC := gcc
       CXX := g++
       EXEEXT :=
-      PKG_CONFIG :=
+      PKG_CONFIG := pkg-config
     #endif
   else
     ifeq ($(TARGET),windows)
