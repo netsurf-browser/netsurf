@@ -1201,7 +1201,8 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
-static nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
+/* exported interface documented in amiga/gui.h */
+nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
 		*bbox = AllocVecTagList(sizeof(struct IBox), NULL);
@@ -1214,13 +1215,13 @@ static nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 	return NSERROR_OK;
 }
 
-static void ami_gui_free_space_box(struct IBox *bbox)
+/* exported interface documented in amiga/gui.h */
+void ami_gui_free_space_box(struct IBox *bbox)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
 		FreeVec(bbox);
 	}
 }
-
 
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int space_x, int space_y)

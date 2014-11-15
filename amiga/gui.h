@@ -171,6 +171,22 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail);
 int ami_gui_count_windows(int window, int *tabs);
 
+/**
+ * Compatibility function to get space.gadget render area.
+ *
+ * @param obj A space.gadget object.
+ * @param bbox A pointer to a struct IBox *.
+ * @return error status.
+ */
+nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox);
+
+/**
+ * Free any data obtained via ami_gui_get_space_box().
+ *
+ * @param bbox A pointer to a struct IBox.
+ */
+void ami_gui_free_space_box(struct IBox *bbox);
+
 struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
