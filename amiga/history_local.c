@@ -160,9 +160,12 @@ void ami_history_redraw(struct history_window *hw)
 		.plot = &amiplot
 	};
 
-	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
+	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	glob = &hw->gg;
 
@@ -179,6 +182,8 @@ void ami_history_redraw(struct history_window *hw)
 
 	BltBitMapRastPort(hw->gg.bm, 0, 0, hw->win->RPort,
 				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
+
+	ami_gui_free_space_box(bbox);
 }
 
 /**
@@ -193,7 +198,10 @@ static bool ami_history_click(struct history_window *hw,uint16 code)
 	struct IBox *bbox;
 	ULONG width,height,xs,ys;
 
-	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);	
+	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return false;
+	}
 
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
 	x = hw->win->MouseX - bbox->Left +xs;
@@ -202,6 +210,8 @@ static bool ami_history_click(struct history_window *hw,uint16 code)
 
 	width=bbox->Width;
 	height=bbox->Height;
+
+	ami_gui_free_space_box(bbox);
 
 	switch(code)
 	{
@@ -256,13 +266,19 @@ BOOL ami_history_event(struct history_window *hw)
 */
 
 			case WMHI_MOUSEMOVE:
-				GetAttr(SPACE_AreaBox, hw->objects[GID_BROWSER], (ULONG *)&bbox);
 				GetAttr(SCROLLER_Top, hw->objects[OID_HSCROLL], (ULONG *)&xs);
 				GetAttr(SCROLLER_Top, hw->objects[OID_VSCROLL], (ULONG *)&ys);
+
+				if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+					warn_user("NoMemory", "");
+					break;
+				}
 
 				url = browser_window_history_position_url(history_bw,
 					hw->win->MouseX - bbox->Left + xs,
 					hw->win->MouseY - bbox->Top + ys);
+
+				ami_gui_free_space_box(bbox);
 
 				RefreshSetGadgetAttrs((APTR)hw->objects[GID_BROWSER],
 					hw->win, NULL,
@@ -293,23 +309,26 @@ void ami_history_update_extent(struct history_window *hw)
 	int width, height;
 
 	browser_window_history_size(hw->bw, &width, &height);
-	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
+	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
-	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL],hw->win,NULL,
-		GA_ID,OID_VSCROLL,
-		SCROLLER_Total,height,
-		SCROLLER_Visible,bbox->Height,
-//		SCROLLER_Top,0,
-		ICA_TARGET,ICTARGET_IDCMP,
+	RefreshSetGadgetAttrs((APTR)hw->objects[OID_VSCROLL], hw->win, NULL,
+		GA_ID, OID_VSCROLL,
+		SCROLLER_Total, height,
+		SCROLLER_Visible, bbox->Height,
+		ICA_TARGET, ICTARGET_IDCMP,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((APTR)hw->objects[OID_HSCROLL],hw->win,NULL,
-		GA_ID,OID_HSCROLL,
-		SCROLLER_Total,width,
-		SCROLLER_Visible,bbox->Width,
-//		SCROLLER_Top,0,
-		ICA_TARGET,ICTARGET_IDCMP,
+	RefreshSetGadgetAttrs((APTR)hw->objects[OID_HSCROLL], hw->win, NULL,
+		GA_ID, OID_HSCROLL,
+		SCROLLER_Total, width,
+		SCROLLER_Visible, bbox->Width,
+		ICA_TARGET, ICTARGET_IDCMP,
 		TAG_DONE);
+
+	ami_gui_free_space_box(bbox);
 }
 
 void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
