@@ -4585,7 +4585,7 @@ bool ro_gui_window_prepare_form_select_menu(struct gui_window *g,
 	option = form_select_get_option(control, entries);
 	while (option != NULL) {
 		entries++;
-		option = form_select_get_option(control, item);
+		option = form_select_get_option(control, entries);
 	}
 
 	if (entries == 0) {
