@@ -145,7 +145,10 @@ static void ami_tree_resized(struct tree *tree, int width, int height, void *dat
 
 	if(twin->win)
 	{
-		GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+		if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+			warn_user("NoMemory", "");
+			return;
+		}
 
 		if(height == -1) {
 			SetAttrs((APTR)twin->objects[OID_MAIN],
@@ -168,6 +171,7 @@ static void ami_tree_resized(struct tree *tree, int width, int height, void *dat
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
+		ami_gui_free_space_box(bbox);
 	}
 }
 
@@ -183,10 +187,15 @@ static void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
 
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	if(width) *width = bbox->Width;
 	if(height) *height = bbox->Height;
+
+	ami_gui_free_space_box(bbox);
 }
 
 static void ami_tree_redraw_req_dr(void *p)
@@ -213,10 +222,14 @@ static void ami_tree_redraw_req_dr(void *p)
 	glob = &twin->globals;
 	temprp = glob->rp;
  	glob->rp = twin->win->RPort;
-			
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER], (ULONG *)&bbox);
+
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
+
+	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	x += bbox->Left;
 	y += bbox->Top;
@@ -239,6 +252,7 @@ static void ami_tree_redraw_req_dr(void *p)
                 atrr_data->width, atrr_data->height, &ctx);
 
 	FreeVec(atrr_data);
+	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
 	glob->rp = temprp;
@@ -268,9 +282,13 @@ static void ami_tree_redraw_req(void *p)
 
 	glob = &twin->globals;
 
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
+
+	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
 	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
@@ -313,6 +331,7 @@ static void ami_tree_redraw_req(void *p)
 	}
 
 	FreeVec(atrr_data);
+	ami_gui_free_space_box(bbox);
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	ami_clearclipreg(glob);
 	glob = &browserglob;
@@ -321,13 +340,13 @@ static void ami_tree_redraw_req(void *p)
 static void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 {
 	struct ami_tree_redraw_req *atrr_data = AllocVecTagList(sizeof(struct ami_tree_redraw_req), NULL);
-	
+
 	atrr_data->x = x;
 	atrr_data->y = y;
 	atrr_data->width = width;
 	atrr_data->height = height;
 	atrr_data->twin = (struct treeview_window *)data;
-	
+
 	/** /todo Queue these requests properly like the main browser code does
 	 **/
 
@@ -346,9 +365,15 @@ static void ami_tree_draw(struct treeview_window *twin)
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+
+	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
+
+	ami_gui_free_space_box(bbox);
 }
 
 /**
@@ -365,9 +390,15 @@ static void ami_tree_scroll_visible(int y, int height, void *data)
 	struct treeview_window *twin = data;
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&sy);
-	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
+	if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
-	if((y > sy) && ((y + height) < (sy + bbox->Height))) return;
+	if((y > sy) && ((y + height) < (sy + bbox->Height))) {
+		ami_gui_free_space_box(bbox);
+		return;
+	}
 
 	if((y <= sy) || (height > bbox->Height)) scrollset = (ULONG)y;
 		else scrollset = sy + (y + height) - (sy + bbox->Height);
@@ -376,6 +407,7 @@ static void ami_tree_scroll_visible(int y, int height, void *data)
 			SCROLLER_Top, scrollset,
 			TAG_DONE);
 
+	ami_gui_free_space_box(bbox);
 	ami_tree_draw(twin);
 }
 
@@ -931,7 +963,10 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				drag_x_move = 0;
 				drag_y_move = 0;
 
-				GetAttr(SPACE_AreaBox, twin->objects[GID_BROWSER], (ULONG *)&bbox);
+				if(ami_gui_get_space_box(twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+					warn_user("NoMemory", "");
+					break;
+				}
 
 				if((twin->win->MouseX - bbox->Left >=0) &&
 					(twin->win->MouseX - bbox->Width - bbox->Left <=0) &&
@@ -1008,12 +1043,18 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						}
 					}
 				}
+				ami_gui_free_space_box(bbox);
+
 				twin->lastclick.tv_sec = 0;
 				twin->lastclick.tv_usec = 0;
 			break;
 
 			case WMHI_MOUSEBUTTONS:
-				GetAttr(SPACE_AreaBox, twin->objects[GID_BROWSER], (ULONG *)&bbox);	
+				if(ami_gui_get_space_box((Object *)twin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+					warn_user("NoMemory", "");
+					break;
+				}
+
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
 				x = twin->win->MouseX - bbox->Left + xs;
 				GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&ys);
@@ -1052,6 +1093,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				if(y < ys) y = ys;
 				if(x >= bbox->Width + xs) x = bbox->Width + xs - 1;
 				if(y >= bbox->Height + ys) y = bbox->Height + ys - 1;
+
+				ami_gui_free_space_box(bbox);
 
 				switch(code)
 				{
