@@ -444,11 +444,15 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
-				(ULONG *)&bbox);
+		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+			warn_user("NoMemory", "");
+			return;
+		}
 
 		BltBitMapRastPort(throbber, 0, 0, g->shared->win->RPort, bbox->Left,
 			bbox->Top, throbber_width, throbber_height, 0x0C0);
+
+		ami_gui_free_space_box(bbox);
 	}
 
 	g->throbbing = false;
@@ -480,8 +484,10 @@ static void ami_throbber_update(void *p)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_THROBBER],
-				(ULONG *)&bbox);
+		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
+			warn_user("NoMemory", "");
+			return;
+		}
 
 		BltBitMapTags(BLITA_SrcX, throbber_width * frame,
 					BLITA_SrcY, 0,
@@ -495,6 +501,8 @@ static void ami_throbber_update(void *p)
 					BLITA_DestType, BLITT_RASTPORT,
 				//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
+
+		ami_gui_free_space_box(bbox);
 	}
 
 	if(frame > 0) ami_throbber_redraw_schedule(throbber_update_interval, g);
