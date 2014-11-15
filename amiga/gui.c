@@ -1201,6 +1201,27 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
+static nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
+{
+	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
+		*bbox = AllocVecTagList(sizeof(struct IBox), NULL);
+		if(*bbox == NULL) return NSERROR_NOMEM;
+		GetAttr(SPACE_RenderBox, obj, (ULONG *)*bbox);
+	} else {
+		GetAttr(SPACE_AreaBox, obj, (ULONG *)bbox);
+	}
+
+	return NSERROR_OK;
+}
+
+static void ami_gui_free_space_box(struct IBox *bbox)
+{
+	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
+		FreeVec(bbox);
+	}
+}
+
+
 static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int space_x, int space_y)
 {
@@ -1228,14 +1249,18 @@ static bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	if(mouse_x == -1) mouse_x = gwin->win->MouseX;
 	if(mouse_y == -1) mouse_y = gwin->win->MouseY;
 
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
-			(ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) == NSERROR_OK) {
+		ns_x = (ULONG)(mouse_x - bbox->Left);
+		ns_y = (ULONG)(mouse_y - bbox->Top);
 
-	ns_x = (ULONG)(mouse_x - bbox->Left);
-	ns_y = (ULONG)(mouse_y - bbox->Top);
+		if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
+			return false;
 
-	if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
+		ami_gui_free_space_box(bbox);
+	} else {
+		warn_user("NoMemory", "");
 		return false;
+	}
 
 	return ami_spacebox_to_ns_coords(gwin, x, y, ns_x, ns_y);
 }
@@ -1245,10 +1270,6 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 	struct IBox *bbox;
 	int x, y;
 
-	GetAttr(SPACE_AreaBox,
-		(Object *)gwin->objects[GID_BROWSER],
-		(ULONG *)&bbox);
-
 	if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
 	{
 		if(browser_window_scroll_at_point(gwin->bw, x, y,
@@ -1257,6 +1278,11 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 			gui_window_get_scroll(gwin->bw->window,
 				&gwin->bw->window->scrollx,
 				&gwin->bw->window->scrolly);
+
+			if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+				warn_user("NoMemory", "");
+				return;
+			}
 
 			switch(xs)
 			{
@@ -1304,6 +1330,8 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				break;
 			}
 
+			ami_gui_free_space_box(bbox);
+
 			gui_window_set_scroll(gwin->bw->window, xs, ys);
 		}
 	}
@@ -1316,7 +1344,10 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 	ibox = AllocVecTagList(sizeof(struct IBox), NULL);
 	if(ibox == NULL) return NULL;
 
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return NULL;
+	}
 
 	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->bw->scale);
 	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->bw->scale);
@@ -1332,10 +1363,12 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 		(ibox->Width < 0) || (ibox->Height < 0))
 	{
 		FreeVec(ibox);
+		ami_gui_free_space_box(bbox);
 		return NULL;
 	}
 
-	return ibox;	
+	ami_gui_free_space_box(bbox);
+	return ibox;
 }
 
 static void ami_gui_trap_mouse(struct gui_window_2 *gwin)
@@ -1384,10 +1417,15 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 	struct IBox *bbox;
 	if(!g) return;
 
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	*width = bbox->Width;
 	*height = bbox->Height;
+
+	ami_gui_free_space_box(bbox);
 
 	if(scaled)
 	{
@@ -1547,8 +1585,6 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
-
 		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
 					g->shared->win, NULL, 1);
 
@@ -1566,6 +1602,11 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				minterm = (ABC|ABNC|ANBC);
 			}
 
+			if(ami_gui_get_space_box((Object *)g->shared->objects[GID_ICON], &bbox) != NSERROR_OK) {
+				warn_user("NoMemory", "");
+				return;
+			}
+
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
 						BLITA_DestX, bbox->Left,
@@ -1579,6 +1620,8 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						BLITA_Minterm, minterm,
 						tag, tag_data,
 						TAG_DONE);
+
+			ami_gui_free_space_box(bbox);
 		}
 	}
 
@@ -1732,8 +1775,10 @@ static void ami_handle_msg(void)
 					drag_x_move = 0;
 					drag_y_move = 0;
 
-					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
-							(ULONG *)&bbox);
+					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+						warn_user("NoMemory", "");
+						break;
+					}
 
 					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
 					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
@@ -1767,6 +1812,8 @@ static void ami_handle_msg(void)
 						}
 					}
 
+					ami_gui_free_space_box(bbox);
+
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
 						ami_update_quals(gwin);
@@ -1796,8 +1843,10 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_MOUSEBUTTONS:
-					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
-								(ULONG *)&bbox);
+					if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+						warn_user("NoMemory", "");
+						return;
+					}
 
 					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
 					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
@@ -1810,6 +1859,8 @@ static void ami_handle_msg(void)
 
 					width=bbox->Width;
 					height=bbox->Height;
+
+					ami_gui_free_space_box(bbox);
 
 					ami_update_quals(gwin);
 
@@ -2756,7 +2807,11 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 				TNA_UserData, &gwin->bw,
 				TAG_DONE);
 	curbw = gwin->bw;
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
+
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	if(!gwin->bw->current_content)
 	{
@@ -2765,6 +2820,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
+
+		ami_gui_free_space_box(bbox);
 		return;
 	}
 
@@ -2789,6 +2846,8 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		ami_gui_scroller_update(gwin);
 		ami_throbber_redraw_schedule(0, gwin->bw->window);
 	}
+
+	ami_gui_free_space_box(bbox);
 }
 
 void ami_quit_netsurf(void)
@@ -4287,10 +4346,16 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	if(!((cur_tab == g->tab) || (g->shared->tabs <= 1)))
 		return;
 
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	ami_do_redraw_tiled(g->shared, busy, x0, y0,
 		(x1 - x0) * bw->scale, (y1 - y0) * bw->scale, sx, sy, bbox, &ctx);
+
+	ami_gui_free_space_box(bbox);
+
 	return;
 }
 
@@ -4397,9 +4462,13 @@ static void amiga_window_reformat(struct gui_window *gw)
 	struct IBox *bbox;
 
 	if (gw != NULL) {
-		GetAttr(SPACE_AreaBox, (Object *)gw->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+		if(ami_gui_get_space_box((Object *)gw->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+			warn_user("NoMemory", "");
+			return;
+		}
 		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
 		gw->shared->redraw_scroll = false;
+		ami_gui_free_space_box(bbox);
 	}
 }
 
@@ -4412,12 +4481,16 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 
 	if(browser_window_redraw_ready(gwin->bw) == false) return;
 
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(gwin, (ULONG *)&hcurrent);
 	ami_get_vscroll_pos(gwin, (ULONG *)&vcurrent);
 
 	gwin->bw->window->scrollx = hcurrent;
 	gwin->bw->window->scrolly = vcurrent;
+
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -4518,6 +4591,8 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	gwin->redraw_scroll = false;
 	gwin->redraw_required = false;
 	gwin->new_content = false;
+
+	ami_gui_free_space_box(bbox);
 }
 
 static void ami_refresh_window(struct gui_window_2 *gwin)
@@ -4531,8 +4606,12 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	sx = gwin->bw->window->scrollx;
 	sy = gwin->bw->window->scrolly;
 
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 	
 	BeginRefresh(gwin->win);
 
@@ -4566,7 +4645,8 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	}
 
 	EndRefresh(gwin->win, TRUE);
-	
+
+	ami_gui_free_space_box(bbox);	
 	ami_reset_pointer(gwin);
 }
 
@@ -4609,7 +4689,10 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(!g) return;
 	if(!g->shared->bw || !g->shared->bw->current_content) return;
 
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
 
 	if(sx < 0) sx=0;
 	if(sy < 0) sy=0;
@@ -4621,6 +4704,8 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 	if(content_get_width(g->shared->bw->current_content) <= bbox->Width) sx = 0;
 	if(content_get_height(g->shared->bw->current_content) <= bbox->Height) sy = 0;
+
+	ami_gui_free_space_box(bbox);
 
 	if(g->tab_node && (g->shared->tabs > 1))
 				GetAttr(CLICKTAB_Current,
@@ -4669,8 +4754,10 @@ static void gui_window_update_extent(struct gui_window *g)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
-		GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER],
-				(ULONG *)&bbox);
+		if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+			warn_user("NoMemory", "");
+			return;
+		}
 
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
@@ -4687,6 +4774,8 @@ static void gui_window_update_extent(struct gui_window *g)
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
+
+		ami_gui_free_space_box(bbox);
 	}
 
 	ami_gui_scroller_update(g->shared);
@@ -4832,24 +4921,31 @@ static void gui_window_place_caret(struct gui_window *g, int x, int y, int heigh
 
 	gui_window_remove_caret(g);
 
-	GetAttr(SPACE_AreaBox,g->shared->objects[GID_BROWSER],(ULONG *)&bbox);
 	xs = g->scrollx;
 	ys = g->scrolly;
 
 	SetAPen(g->shared->win->RPort,3);
 
+	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
+
 	if((y-ys+height) > (bbox->Height)) height = bbox->Height-y+ys;
 
-	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
+	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) {
+		ami_gui_free_space_box(bbox);
+		return;
+	}
 
 	g->c_w = 2;
 
 	SetDrMd(g->shared->win->RPort,COMPLEMENT);
-
 	RectFill(g->shared->win->RPort, x + bbox->Left - xs, y + bbox->Top - ys,
 		x + bbox->Left + g->c_w - xs, y+bbox->Top + height - ys);
-
 	SetDrMd(g->shared->win->RPort,JAM1);
+
+	ami_gui_free_space_box(bbox);
 
 	g->c_x = x;
 	g->c_y = y;
@@ -4992,11 +5088,13 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
-	ULONG xs, ys, width, height;
+	ULONG xs, ys;
 	struct browser_window_features data;
 
-	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
-				(ULONG *)&bbox);
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return false;
+	}
 
 	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 	*x = *x - (bbox->Left) +xs;
@@ -5004,8 +5102,7 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
 	*y = *y - (bbox->Top) + ys;
 
-	width=bbox->Width;
-	height=bbox->Height;
+	ami_gui_free_space_box(bbox);
 
 	browser_window_get_features(gwin->bw, *x, *y, &data);
 
