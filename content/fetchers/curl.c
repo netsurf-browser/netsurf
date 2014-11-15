@@ -979,7 +979,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	} else if (error) {
 		if (result != CURLE_SSL_CONNECT_ERROR) {
 			msg.type = FETCH_ERROR;
-			msg.data.error = fetch_error_buffer;
+			msg.data.error = curl_easy_strerror(result);
 		} else {
 			msg.type = FETCH_SSL_ERR;
 		}

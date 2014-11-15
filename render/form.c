@@ -317,8 +317,6 @@ bool form_successful_controls_dom(struct form *_form,
 	last_success = &sentinel;
 	sentinel.next = NULL;
 	
-	LOG(("XYZZY: Yay, let's look for a form"));
-	
 	/** \todo Replace this call with something DOMish */
 	charset = form_acceptable_charset(_form);
 	if (charset == NULL) {
@@ -340,7 +338,6 @@ bool form_successful_controls_dom(struct form *_form,
 		goto dom_no_memory;
 	}
 	
-	LOG(("Reffed %p", form_elements));
 	
 	err = dom_html_collection_get_length(form_elements, &element_count);
 	
@@ -351,7 +348,6 @@ bool form_successful_controls_dom(struct form *_form,
 	
 	for (index = 0; index < element_count; index++) {
 		if (form_element != NULL) {
-			LOG(("Unreffed %p", form_element));
 			dom_node_unref(form_element);
 			form_element = NULL;
 		}
@@ -381,7 +377,7 @@ bool form_successful_controls_dom(struct form *_form,
 			LOG(("Could not retrieve form element %d", index));
 			goto dom_no_memory;
 		}
-		LOG(("Reffed %p", form_element));
+
 		/* Form elements are one of:
 		 *   HTMLInputElement
 		 *   HTMLTextAreaElement
@@ -392,9 +388,7 @@ bool form_successful_controls_dom(struct form *_form,
 			LOG(("Could not get node name"));
 			goto dom_no_memory;
 		}
-		LOG(("Found a node(%p): `%*s`", nodename,
-		     dom_string_byte_length(nodename),
-		     dom_string_data(nodename)));
+
 		if (dom_string_isequal(nodename, corestring_dom_TEXTAREA)) {
 			err = dom_html_text_area_element_get_disabled(
 				(dom_html_text_area_element *)form_element,
@@ -548,15 +542,17 @@ bool form_successful_controls_dom(struct form *_form,
 			}
 			if (dom_string_caseless_isequal(
 				    inputtype, corestring_dom_submit)) {
-				LOG(("Examining submit button"));
-				if (submit_button == NULL && !had_submit)
+
+				if (submit_button == NULL && !had_submit) {
 					/* no button used, and first submit
 					 * node found, so use it
 					 */
 					had_submit = true;
-				else if ((dom_node *)submit_button !=
-					 (dom_node *)form_element)
+				} else if ((dom_node *)submit_button !=
+					   (dom_node *)form_element) {
 					continue;
+				}
+
 				err = dom_html_input_element_get_value(
 					(dom_html_input_element *)form_element,
 					&inputvalue);
@@ -570,7 +566,6 @@ bool form_successful_controls_dom(struct form *_form,
 				/* We *ONLY* use an image input if it was the
 				 * thing which activated us
 				 */
-				LOG(("Examining image button"));
 				 if ((dom_node *)submit_button !=
 				     (dom_node *)form_element)
 					 continue;
@@ -645,7 +640,6 @@ bool form_successful_controls_dom(struct form *_form,
 					   inputtype, corestring_dom_radio) ||
 				   dom_string_caseless_isequal(
 					   inputtype, corestring_dom_checkbox)) {
-				LOG(("Examining radio or checkbox"));
 				err = dom_html_input_element_get_checked(
 					(dom_html_input_element *)form_element,
 					&checked);
@@ -662,13 +656,14 @@ bool form_successful_controls_dom(struct form *_form,
 					LOG(("Could not get input element value"));
 					goto dom_no_memory;
 				}
-				if (inputvalue == NULL)
+				if (inputvalue == NULL) {
 					inputvalue = dom_string_ref(
 						corestring_dom_on);
+				}
 				/* Fall through to simple allocation */
 			} else if (dom_string_caseless_isequal(
 					   inputtype, corestring_dom_file)) {
-				LOG(("Examining file input"));
+
 				err = dom_html_input_element_get_value(
 					(dom_html_input_element *)form_element,
 					&inputvalue);
@@ -701,7 +696,6 @@ bool form_successful_controls_dom(struct form *_form,
 				continue;
 			} else {
 				/* Everything else is treated as text values */
-				LOG(("Retrieving generic input text"));
 				err = dom_html_input_element_get_value(
 					(dom_html_input_element *)form_element,
 					&inputvalue);
@@ -740,36 +734,45 @@ bool form_successful_controls_dom(struct form *_form,
 	}
 	
 	free(charset);
+
 	if (form_element != NULL) {
-		LOG(("Unreffed %p", form_element));
 		dom_node_unref(form_element);
 	}
+
 	if (form_elements != NULL) {
-		LOG(("Unreffed %p", form_elements));
 		dom_html_collection_unref(form_elements);
 	}
-	if (nodename != NULL)
+
+	if (nodename != NULL) {
 		dom_string_unref(nodename);
-	if (inputname != NULL)
+	}
+
+	if (inputname != NULL) {
 		dom_string_unref(inputname);
-	if (inputvalue != NULL)
+	}
+
+	if (inputvalue != NULL) {
 		dom_string_unref(inputvalue);
-	if (options != NULL)
+	}
+
+	if (options != NULL) {
 		dom_html_options_collection_unref(options);
-	if (option_element != NULL)
+	}
+
+	if (option_element != NULL) {
 		dom_node_unref(option_element);
-	if (inputtype != NULL)
+	}
+
+	if (inputtype != NULL) {
 		dom_string_unref(inputtype);
-	if (rawfile_temp != NULL)
+	}
+
+	if (rawfile_temp != NULL) {
 		free(rawfile_temp);
+	}
+
 	*successful_controls = sentinel.next;
 	
-	for (success_new = *successful_controls; success_new != NULL;
-	     success_new = success_new->next) {
-		LOG(("%p -> %s=%s", success_new, success_new->name, success_new->value));
-		LOG(("%p -> file=%s rawfile=%s", success_new,
-		     success_new->file ? "yes" : "no", success_new->rawfile));
-	}
 	return true;
 	
 dom_no_memory:
@@ -867,9 +870,10 @@ static char *form_url_encode(struct form *form,
 		free(value);
 	}
 
-	if (len > len_init)
+	if (len > len_init) {
 		/* Replace trailing '&' */
 		s[len - 1] = '\0';
+	}
 	return s;
 }
 
