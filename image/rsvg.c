@@ -33,7 +33,9 @@
 #include <sys/types.h>
 
 #include <librsvg/rsvg.h>
+#ifndef RSVG_CAIRO_H
 #include <librsvg/rsvg-cairo.h>
+#endif
 
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
