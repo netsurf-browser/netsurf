@@ -923,7 +923,7 @@ static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
-	gui_start_selection(gwin->gw->bw->window);
+	gui_start_selection(gwin->gw);
 }
 
 static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -955,7 +955,7 @@ static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct In
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_search_open(gwin->gw->bw->window);
+	ami_search_open(gwin->gw);
 }
 
 static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)
