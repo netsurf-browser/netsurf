@@ -964,7 +964,7 @@ static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, s
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(gwin->gw->bw && gwin->gw->bw->history)
-		ami_history_open(gwin->gw->bw, gwin->gw->bw->history);
+		ami_history_open(gwin->gw, gwin->gw->bw->history);
 }
 
 static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)

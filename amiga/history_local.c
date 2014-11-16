@@ -53,8 +53,6 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 
-static struct history_window *hwindow;
-
 void ami_history_update_extent(struct history_window *hw);
 static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg);
 
@@ -106,19 +104,19 @@ void ami_history_open(struct gui_window *gw, struct history *history)
 
 	assert(history);
 
-	if(!hwindow)
+	if(!gw->hw)
 	{
-		hwindow = AllocVecTags(sizeof(struct history_window), AVT_ClearWithValue, 0, TAG_DONE);
+		gw->hw = AllocVecTags(sizeof(struct history_window), AVT_ClearWithValue, 0, TAG_DONE);
 
-		ami_init_layers(&hwindow->gg, scrn->Width, scrn->Height);
+		ami_init_layers(&gw->hw->gg, scrn->Width, scrn->Height);
 
-		hwindow->gw = gw;
+		gw->hw->gw = gw;
 		browser_window_history_size(gw->bw, &width, &height);
 
-		hwindow->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
-		hwindow->scrollerhook.h_Data = hwindow;
+		gw->hw->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
+		gw->hw->scrollerhook.h_Data = gw->hw;
 
-		hwindow->objects[OID_MAIN] = WindowObject,
+		gw->hw->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle,nsscreentitle,
 			WA_Title,messages_get("History"),
 			WA_Activate, TRUE,
@@ -130,18 +128,18 @@ void ami_history_open(struct gui_window *gw, struct history *history)
 			WA_InnerWidth,width,
 			WA_InnerHeight,height + 10,
 			WINDOW_SharedPort,sport,
-			WINDOW_UserData,hwindow,
+			WINDOW_UserData,gw->hw,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_GadgetHelp, TRUE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
-			WINDOW_IDCMPHook,&hwindow->scrollerhook,
+			WINDOW_IDCMPHook,&gw->hw->scrollerhook,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
 //			WA_ReportMouse,TRUE,
 			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
-			WINDOW_ParentGroup, hwindow->objects[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, hwindow->objects[GID_BROWSER] = SpaceObject,
+			WINDOW_ParentGroup, gw->hw->objects[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, gw->hw->objects[GID_BROWSER] = SpaceObject,
 					GA_ID,GID_BROWSER,
 //					SPACE_MinWidth,width,
 //					SPACE_MinHeight,height,
@@ -149,30 +147,27 @@ void ami_history_open(struct gui_window *gw, struct history *history)
 			EndGroup,
 		EndWindow;
 
-		hwindow->win = (struct Window *)RA_OpenWindow(hwindow->objects[OID_MAIN]);
-//		hwindow->bw->window = hwindow;
-		hwindow->node = AddObject(window_list,AMINS_HISTORYWINDOW);
-		hwindow->node->objstruct = hwindow;
+		gw->hw->win = (struct Window *)RA_OpenWindow(gw->hw->objects[OID_MAIN]);
+		gw->hw->node = AddObject(window_list,AMINS_HISTORYWINDOW);
+		gw->hw->node->objstruct = gw->hw;
 
-		GetAttr(WINDOW_HorizObject,hwindow->objects[OID_MAIN],(ULONG *)&hwindow->objects[OID_HSCROLL]);
-		GetAttr(WINDOW_VertObject,hwindow->objects[OID_MAIN],(ULONG *)&hwindow->objects[OID_VSCROLL]);
+		GetAttr(WINDOW_HorizObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_HSCROLL]);
+		GetAttr(WINDOW_VertObject,gw->hw->objects[OID_MAIN],(ULONG *)&gw->hw->objects[OID_VSCROLL]);
 
-		RefreshSetGadgetAttrs((APTR)hwindow->objects[OID_VSCROLL],hwindow->win,NULL,
+		RefreshSetGadgetAttrs((APTR)gw->hw->objects[OID_VSCROLL],gw->hw->win,NULL,
 			GA_ID,OID_VSCROLL,
 			SCROLLER_Top,0,
 			ICA_TARGET,ICTARGET_IDCMP,
 			TAG_DONE);
 
-		RefreshSetGadgetAttrs((APTR)hwindow->objects[OID_HSCROLL],hwindow->win,NULL,
+		RefreshSetGadgetAttrs((APTR)gw->hw->objects[OID_HSCROLL],gw->hw->win,NULL,
 			GA_ID,OID_HSCROLL,
 			SCROLLER_Top,0,
 			ICA_TARGET,ICTARGET_IDCMP,
 			TAG_DONE);
 	}
 
-	hwindow->gw = gw;
-	gw->hw = hwindow;
-	ami_history_redraw(hwindow);
+	ami_history_redraw(gw->hw);
 }
 
 
@@ -226,7 +221,6 @@ void ami_history_close(struct history_window *hw)
 	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);
-	hwindow = NULL;
 }
 
 BOOL ami_history_event(struct history_window *hw)

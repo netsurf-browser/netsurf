@@ -895,7 +895,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_HISTORY:
 				if(userdata == NULL)
 				{
-					ami_history_open(gwin->gw->bw, gwin->gw->bw->history);
+					ami_history_open(gwin->gw, gwin->gw->bw->history);
 				}
 				else
 				{
