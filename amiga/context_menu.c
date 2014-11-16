@@ -218,12 +218,13 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 	 * CMSUB_FRAME     - userdata = hlcache_object *
 	 * CMSUB_URL       - userdata = char *
 	 * CMSUB_OBJECT    - userdata = hlcache_object *
-	 * CMSUB_SEL       - userdata = browser_window *
+	 * CMSUB_SEL       - userdata = gui_window *
 	 * CMSUB_NAVIGATE  - userdata = browser_window * (only for menu construction)
 	 * CMID_SELECTFILE - userdata = ami_file_input_menu_data *
 	 */
 
 	struct browser_window *bw = NULL;
+	struct gui_window *gw = NULL;
 
 	switch(cmsub)
 	{
@@ -472,8 +473,8 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 		break;
 
 		case CMSUB_SEL:
-			bw = userdata;
-			BOOL disabled_noselection = !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_COPY);
+			gw = userdata;
+			BOOL disabled_noselection = !(browser_window_get_editor_flags(gw->bw) & BW_EDITOR_CAN_COPY);
 
 			IDoMethod(ctxmenuobj,PM_INSERT,
 				NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -482,7 +483,7 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCUT],
 							PMIA_ID,CMID_SELCUT,
-							PMIA_Disabled, !(browser_window_get_editor_flags(bw) & BW_EDITOR_CAN_CUT),
+							PMIA_Disabled, !(browser_window_get_editor_flags(gw->bw) & BW_EDITOR_CAN_CUT),
 							PMIA_CommKey, "X",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -494,7 +495,7 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELPASTE],
 							PMIA_ID,CMID_SELPASTE,
-							PMIA_Disabled, (bw->window->c_h == 0),
+							PMIA_Disabled, (gw->c_h == 0),
 							PMIA_CommKey, "V",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -685,7 +686,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if(content_get_type(cc) == CONTENT_HTML ||
 				content_get_type(cc) == CONTENT_TEXTPLAIN)
 			{
-				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_SEL, gwin->gw->bw);
+				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_SEL, gwin->gw);
 				menuhascontent = true;
 			}
 		}
