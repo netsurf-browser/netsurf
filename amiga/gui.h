@@ -195,9 +195,15 @@ void ami_gui_free_space_box(struct IBox *bbox);
  */
 uint32 ami_gui_get_app_id(void);
 
+/**
+ * Get the string for NetSurf's screen titlebar.
+ *
+ * @return String to use as the screen's titlebar text.
+ */
+STRPTR ami_gui_get_screen_title(void);
+
 struct MinList *window_list;
 struct Screen *scrn;
-STRPTR nsscreentitle;
 struct MsgPort *sport;
 struct gui_window *cur_gw;
 struct gui_globals browserglob;

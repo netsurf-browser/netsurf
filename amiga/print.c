@@ -241,7 +241,7 @@ void ami_print_ui(struct hlcache_handle *c)
 	ami_print_ui_setup();
 
 	pw->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle, nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, gadlab[PGID_PRINT],
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
@@ -531,7 +531,7 @@ bool ami_print_dump(void)
 void ami_print_progress(void)
 {
 	ami_print_info.objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, messages_get("Printing"),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,

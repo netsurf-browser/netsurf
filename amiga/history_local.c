@@ -117,8 +117,8 @@ void ami_history_open(struct gui_window *gw, struct history *history)
 		gw->hw->scrollerhook.h_Data = gw->hw;
 
 		gw->hw->objects[OID_MAIN] = WindowObject,
-			WA_ScreenTitle,nsscreentitle,
-			WA_Title,messages_get("History"),
+			WA_ScreenTitle, ami_gui_get_screen_title(),
+			WA_Title, messages_get("History"),
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
 			WA_DragBar, TRUE,

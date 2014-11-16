@@ -732,7 +732,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	if(type == AMI_TREE_SSLCERT)
 	{
 		twin->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle, nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
@@ -810,7 +810,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 		}
 
 		twin->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,

@@ -529,7 +529,7 @@ void ami_gui_opts_open(void)
 		gow = AllocVecTags(sizeof(struct ami_gui_opts_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 		gow->objects[OID_MAIN] = WindowObject,
-			WA_ScreenTitle,nsscreentitle,
+			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Title, gadlab[LAB_OPTS_WINTITLE],
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,

@@ -175,6 +175,7 @@ static int screen_signal = -1;
 static ULONG sz_gad_width = 0;
 static ULONG sz_gad_height = 0;
 static bool win_destroyed;
+static STRPTR nsscreentitle;
 
 static struct MsgPort *applibport = NULL;
 static ULONG applibsig = 0;
@@ -473,6 +474,15 @@ colour_option_from_pen(UWORD pen,
 	return NSERROR_OK;
 }
 
+/* exported interface documented in amiga/gui.h */
+STRPTR ami_gui_get_screen_title(void)
+{
+	if(nsscreentitle == NULL)
+		nsscreentitle = ASPrintf("NetSurf %s", netsurf_version);
+
+	return nsscreentitle;
+}
+
 static void ami_set_screen_defaults(struct Screen *screen)
 {
 	nsoption_default_set_int(window_x, 0);
@@ -702,7 +712,7 @@ static void ami_openscreen(void)
 		LOG(("Screen signal %d", screen_signal));
 		scrn = OpenScreenTags(NULL,
 					SA_DisplayID, id,
-					SA_Title, nsscreentitle,
+					SA_Title, ami_gui_get_screen_title(),
 					SA_Type, PUBLICSCREEN,
 					SA_PubName, "NetSurf",
 					SA_PubSig, screen_signal,
@@ -2971,7 +2981,7 @@ static void gui_quit(void)
 	
 	LOG(("Closing screen"));
 	ami_gui_close_screen(scrn, locked_screen, FALSE);
-	FreeVec(nsscreentitle);
+	if(nsscreentitle) FreeVec(nsscreentitle);
 
 	LOG(("Freeing menu items"));
 	ami_context_menu_free();
@@ -3643,7 +3653,7 @@ gui_window_create(struct browser_window *bw,
 		}
 
 		g->shared->objects[OID_MAIN] = WindowObject,
-			WA_ScreenTitle,nsscreentitle,
+			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
 			WA_DragBar, TRUE,
@@ -3856,7 +3866,7 @@ gui_window_create(struct browser_window *bw,
 		g->tab_node = NULL;
 
 		g->shared->objects[OID_MAIN] = WindowObject,
-       	    WA_ScreenTitle,nsscreentitle,
+       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Activate, TRUE,
            	WA_DepthGadget, FALSE,
        	   	WA_DragBar, FALSE,
@@ -4170,7 +4180,7 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 		{
 			if(g->shared->wintitle) free(g->shared->wintitle);
 			g->shared->wintitle = strdup(utf8title);
-			SetWindowTitles(g->shared->win, g->shared->wintitle, nsscreentitle);
+			SetWindowTitles(g->shared->win, g->shared->wintitle, ami_gui_get_screen_title());
 		}
 	}
 }
@@ -5399,7 +5409,6 @@ int main(int argc, char** argv)
 	ami_init_mouse_pointers();
 
 	win_destroyed = false;
-	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
 
 	window_list = NewObjList();

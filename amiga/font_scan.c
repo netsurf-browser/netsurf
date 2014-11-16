@@ -101,7 +101,7 @@ static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 	fsw->glyphtext = ami_utf8_easy(messages_get("FontGlyphs"));
 
 	fsw->objects[FS_OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle, nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, fsw->title,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,

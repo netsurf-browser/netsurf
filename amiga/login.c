@@ -94,7 +94,7 @@ void gui_401login_open(nsurl *url, const char *realm,
 	}
 
 	lw->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, nsurl_access(lw->url),
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,

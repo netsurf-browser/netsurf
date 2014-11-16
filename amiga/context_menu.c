@@ -223,7 +223,6 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 	 * CMID_SELECTFILE - userdata = ami_file_input_menu_data *
 	 */
 
-	struct browser_window *bw = NULL;
 	struct gui_window *gw = NULL;
 
 	switch(cmsub)

@@ -106,7 +106,7 @@ void ami_search_open(struct gui_window *gwin)
 	fwin = AllocVecTags(sizeof(struct find_window), AVT_ClearWithValue, 0, TAG_DONE);
 
 	fwin->objects[OID_MAIN] = WindowObject,
-      	WA_ScreenTitle,nsscreentitle,
+      	WA_ScreenTitle, ami_gui_get_screen_title(),
        	WA_Title,messages_get("FindTextNS"),
        	WA_Activate, TRUE,
        	WA_DepthGadget, TRUE,

@@ -148,7 +148,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	}
 
 	dw->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
+      	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, dw->url,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
