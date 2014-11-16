@@ -145,14 +145,14 @@ void ami_arexx_cleanup(void)
 	if(arexx_obj) DisposeObject(arexx_obj);
 }
 
-static struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
+static struct gui_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int tab)
 {
 	int tabs = 0;
 	struct Node *ctab;
 	struct Node *ntab;
-	struct browser_window *bw;
+	struct gui_window *gw;
 
-	if((tab == 0) || (gwin->tabs == 0)) return gwin->gw->bw;
+	if((tab == 0) || (gwin->tabs == 0)) return gwin->gw;
 
 	ctab = GetHead(&gwin->tab_list);
 
@@ -161,9 +161,9 @@ static struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int t
 		tabs++;
 		ntab=GetSucc(ctab);
 		GetClickTabNodeAttrs(ctab,
-							TNA_UserData, &bw,
+							TNA_UserData, &gw,
 							TAG_DONE);
-		if(tabs == tab) return bw;
+		if(tabs == tab) return gw;
 	} while((ctab=ntab));
 
 	return NULL;
@@ -174,7 +174,7 @@ static int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 	int tabs = 0;
 	struct Node *ctab;
 	struct Node *ntab;
-	struct browser_window *tbw = NULL;
+	struct gui_window *tgw = NULL;
 
 	if((bw == NULL) || (gwin->tabs == 0)) return 1;
 
@@ -185,15 +185,15 @@ static int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 		tabs++;
 		ntab=GetSucc(ctab);
 		GetClickTabNodeAttrs(ctab,
-							TNA_UserData, &tbw,
+							TNA_UserData, &tgw,
 							TAG_DONE);
-		if(tbw == bw) return tabs;
+		if(tgw->bw == bw) return tabs;
 	} while((ctab=ntab));
 
 	return 0;
 }
 
-static struct browser_window *ami_find_tab(int window, int tab)
+static struct gui_window *ami_find_tab(int window, int tab)
 {
 	struct nsObject *node, *nnode;
 
@@ -221,13 +221,13 @@ static struct browser_window *ami_find_tab(int window, int tab)
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct dlnode *dln;
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 	nsurl *url;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[4]) && (cmd->ac_ArgList[5]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[4], *(ULONG *)cmd->ac_ArgList[5]);
 
 	if (nsurl_create((char *)cmd->ac_ArgList[0], &url) != NSERROR_OK) {
 		warn_user("NoMemory", 0);
@@ -236,15 +236,15 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 	if(cmd->ac_ArgList[3])
 	{
-		if(!bw) return;
+		if(!gw) return;
 
 		dln = AllocVecTags(sizeof(struct dlnode), AVT_ClearWithValue, 0, TAG_DONE);
 		dln->filename = strdup((char *)cmd->ac_ArgList[3]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;
-		AddTail(&bw->window->dllist, (struct Node *)dln);
-		if(!bw->download) {
-			browser_window_navigate(cur_gw->bw,
+		AddTail(&gw->dllist, (struct Node *)dln);
+		if(!gw->bw->download) {
+			browser_window_navigate(gw->bw,
 					url,
 					NULL,
 					BW_NAVIGATE_DOWNLOAD,
@@ -259,7 +259,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 				      BW_CREATE_TAB,
 				      url,
 				      NULL,
-				      bw,
+				      gw->bw,
 				      NULL);
 	}
 	else if(cmd->ac_ArgList[1])
@@ -272,9 +272,9 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	}
 	else
 	{
-		if(bw)
+		if(gw)
 		{
-			browser_window_navigate(bw,
+			browser_window_navigate(gw->bw,
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,
@@ -304,9 +304,9 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
 
-	if(!bw) return;
+	if(!gw) return;
 
 	ami_set_pointer(gw->shared, GUI_POINTER_WAIT, false);
 					
@@ -336,16 +336,16 @@ STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw && bw->current_content)
+	if(gw && gw->bw && gw->bw->current_content)
 	{
-		strcpy(result, nsurl_access(hlcache_handle_get_url(bw->current_content)));
+		strcpy(result, nsurl_access(hlcache_handle_get_url(gw->bw->current_content)));
 	}
 	else
 	{
@@ -357,19 +357,19 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw)
+	if(gw)
 	{
-		if(bw->window->shared->tabs > 1)
-			strcpy(result, bw->window->tabtitle);
+		if(gw->shared->tabs > 1)
+			strcpy(result, gw->tabtitle);
 		else
-			strcpy(result, bw->window->shared->wintitle);
+			strcpy(result, gw->shared->wintitle);
 	}
 	else
 	{
@@ -463,45 +463,45 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 
 STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw) ami_gui_history(bw->window->shared, true);
+	if(gw) ami_gui_history(gw->shared, true);
 }
 
 STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw) ami_gui_history(bw->window->shared, false);
+	if(gw) ami_gui_history(gw->shared, false);
 
 }
 
 STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 	nsurl *url;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw == NULL) return;
+	if(gw == NULL) return;
 
 	if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 	} else {
-		browser_window_navigate(bw,
+		browser_window_navigate(gw->bw,
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,
@@ -514,22 +514,22 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[1]) && (cmd->ac_ArgList[2]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[1], *(ULONG *)cmd->ac_ArgList[2]);
 
-	if(bw)
+	if(gw)
 	{
 		if(cmd->ac_ArgList[0]) /* FORCE */
 		{
-			browser_window_reload(bw, true);
+			browser_window_reload(gw->bw, true);
 		}
 		else
 		{
-			browser_window_reload(bw, false);
+			browser_window_reload(gw->bw, false);
 		}
 	}
 }
@@ -552,7 +552,7 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	int window = 0, tab = 0;
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin = NULL;
 
@@ -573,7 +573,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 			if(node->Type == AMINS_WINDOW)
 			{
 				windows++;
-				if(gwin->gw->bw == bw)
+				if(gwin->gw == gw)
 				{
 					window = windows;
 					break;
@@ -584,7 +584,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 	if(cmd->ac_ArgList[0])
 	{
-		tab = ami_find_tab_bw(gwin, bw);
+		tab = ami_find_tab_bw(gwin, gw->bw);
 	}
 
 	if(cmd->ac_ArgList[0]) sprintf(result, "%d", tab);
@@ -594,19 +594,19 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = cur_gw->bw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
-		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
+		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 	else if(cmd->ac_ArgList[0])
 	{
-		ami_close_all_tabs(bw->window->shared);
+		ami_close_all_tabs(gw->shared);
 		return;
 	}
 
-	if(bw) browser_window_destroy(bw);
+	if(gw) browser_window_destroy(gw->bw);
 }
 
 STATIC VOID rx_hotlist(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -619,3 +619,4 @@ STATIC VOID rx_hotlist(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		ami_tree_close(hotlist_window);
 	}
 }
+
