@@ -200,7 +200,7 @@ struct Screen *scrn;
 STRPTR nsscreentitle;
 struct MsgPort *sport;
 bool win_destroyed;
-struct browser_window *curbw;
+struct gui_window *cur_gw;
 struct gui_globals browserglob;
 BOOL ami_autoscroll;
 BOOL popupmenu_lib_ok;

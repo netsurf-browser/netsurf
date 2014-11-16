@@ -221,7 +221,7 @@ static struct browser_window *ami_find_tab(int window, int tab)
 STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	struct dlnode *dln;
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 	nsurl *url;
 
 	cmd->ac_RC = 0;
@@ -244,7 +244,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		dln->node.ln_Type = NT_USER;
 		AddTail(&bw->window->dllist, (struct Node *)dln);
 		if(!bw->download) {
-			browser_window_navigate(curbw,
+			browser_window_navigate(cur_gw->bw,
 					url,
 					NULL,
 					BW_NAVIGATE_DOWNLOAD,
@@ -299,7 +299,7 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	BPTR fh = 0;
 	ULONG source_size;
 	const char *source_data;
-	struct browser_window *bw = curbw;
+	struct gui_window *gw = cur_gw;
 
 	cmd->ac_RC = 0;
 
@@ -308,18 +308,18 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 	if(!bw) return;
 
-	ami_set_pointer(bw->window->shared, GUI_POINTER_WAIT, false);
+	ami_set_pointer(gw->shared, GUI_POINTER_WAIT, false);
 					
 	if((fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0)))
 	{
-		if((source_data = content_get_source_data(bw->current_content, &source_size)))
+		if((source_data = content_get_source_data(gw->bw->current_content, &source_size)))
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
-		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(hlcache_handle_get_url(bw->current_content)));
+		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(hlcache_handle_get_url(gw->bw->current_content)));
 	}
 
-	ami_reset_pointer(bw->window->shared);
+	ami_reset_pointer(gw->shared);
 }
 
 STATIC VOID rx_quit(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -336,7 +336,7 @@ STATIC VOID rx_tofront(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 
@@ -357,7 +357,7 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 
@@ -463,7 +463,7 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 
 STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 
@@ -475,7 +475,7 @@ STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 
@@ -488,7 +488,7 @@ STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 
 STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 	nsurl *url;
 
 	cmd->ac_RC = 0;
@@ -514,7 +514,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 
@@ -552,7 +552,7 @@ STATIC VOID rx_windows(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
 	int window = 0, tab = 0;
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin = NULL;
 
@@ -594,7 +594,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 
 STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
 {
-	struct browser_window *bw = curbw;
+	struct browser_window *bw = cur_gw->bw;
 
 	cmd->ac_RC = 0;
 

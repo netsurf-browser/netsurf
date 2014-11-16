@@ -2401,7 +2401,7 @@ static void ami_handle_msg(void)
 										(ULONG)gwin, gwin->win->Title, appport,
 										0, gwin->dobj, NULL);
 
-					curbw = NULL;
+					cur_gw = NULL;
 				}
 				break;
 
@@ -2411,7 +2411,7 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_ACTIVE:
-					if(gwin->gw->bw) curbw = gwin->gw->bw;
+					if(gwin->gw->bw) cur_gw = gwin->gw;
 					if(gwin->gw->c_h_temp)
 						gwin->gw->c_h = gwin->gw->c_h_temp;
 				break;
@@ -2641,11 +2641,11 @@ static void ami_handle_applib(void)
 			break;
 
 			case APPLIBMT_ToFront:
-				if(curbw)
+				if(cur_gw)
 				{
 					ScreenToFront(scrn);
-					WindowToFront(curbw->window->shared->win);
-					ActivateWindow(curbw->window->shared->win);
+					WindowToFront(cur_gw->shared->win);
+					ActivateWindow(cur_gw->shared->win);
 				}
 			break;
 
@@ -2789,7 +2789,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 	GetClickTabNodeAttrs(tabnode,
 				TNA_UserData, &gwin->gw,
 				TAG_DONE);
-	curbw = gwin->gw->bw;
+	cur_gw = gwin->gw;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -3958,7 +3958,7 @@ gui_window_create(struct browser_window *bw,
 
 	g->shared->rmbtrapped = FALSE;
 	g->shared->gw = g;
-	curbw = bw;
+	cur_gw = g;
 
 	g->shared->appwin = AddAppWindowA((ULONG)g->shared->objects[OID_MAIN],
 							(ULONG)g->shared, g->shared->win, appport, NULL);
@@ -4033,7 +4033,7 @@ static void gui_window_destroy(struct gui_window *g)
 	FreeObjList(g->deferred_rects);
 	gui_window_stop_throbber(g);
 
-	curbw = NULL;
+	cur_gw = NULL;
 
 	if(g->shared->tabs > 1)
 	{

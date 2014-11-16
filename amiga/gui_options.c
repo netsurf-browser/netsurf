@@ -1974,13 +1974,13 @@ BOOL ami_gui_opts_event(void)
 					break;
 
 					case GID_OPTS_HOMEPAGE_CURRENT:
-						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
+						if(cur_gw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
-							nsurl_access(hlcache_handle_get_url(curbw->current_content)), TAG_DONE);
+							nsurl_access(hlcache_handle_get_url(cur_gw->bw->current_content)), TAG_DONE);
 					break;
 
 					case GID_OPTS_HOMEPAGE_BLANK:
-						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
 							"about:blank", TAG_DONE);
 					break;
