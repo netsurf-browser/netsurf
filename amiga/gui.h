@@ -85,7 +85,7 @@ struct gui_window_2 {
 	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	struct browser_window *bw;
+	struct gui_window *gw; /* currently-displayed gui_window */
 	bool redraw_required;
 	int throbber_frame;
 	struct List tab_list;
@@ -151,6 +151,7 @@ struct gui_window
 	bool throbbing;
 	char *tabtitle;
 	struct MinList *deferred_rects;
+	struct browser_window *bw;
 };
 
 void ami_get_msg(void);

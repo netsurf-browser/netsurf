@@ -1997,16 +1997,15 @@ static void ami_handle_msg(void)
 							if(gwin->objects[GID_TABS] == NULL) break;
 							GetAttrs(gwin->objects[GID_TABS],
 								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
-							if(tabnode)
-							{
+							if(tabnode) {
+								struct gui_window *closedgw;
+
 								GetClickTabNodeAttrs(tabnode,
-									TNA_UserData, &closedbw,
+									TNA_UserData, &closedgw,
 									TAG_DONE);
 
-								browser_window_destroy(closedbw);
-							}
-							else
-							{
+								browser_window_destroy(closedgw->bw);
+							} else {
 								ami_switch_tab(gwin, true);
 							}
 						break;
@@ -2376,7 +2375,7 @@ static void ami_handle_msg(void)
 					switch(node->Type)
 					{
 						struct Node *tab = NULL, *ntab = NULL;
-						struct browser_window *bw = NULL;
+						struct gui_window *gw = NULL;
 
 						case AMINS_WINDOW:
 							ami_set_border_gadget_size(gwin);
@@ -2390,7 +2389,7 @@ static void ami_handle_msg(void)
 								{
 									ntab=GetSucc(tab);
 									GetClickTabNodeAttrs(tab,
-										TNA_UserData, &bw,
+										TNA_UserData, &gw,
 										TAG_DONE);
 								} while((tab=ntab));
 							}
@@ -2806,9 +2805,9 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
 				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
-				TNA_UserData, &gwin->bw,
+				TNA_UserData, &gwin->gw,
 				TAG_DONE);
-	curbw = gwin->bw;
+	curbw = gw->bw;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -3442,6 +3441,7 @@ gui_window_create(struct browser_window *bw,
 
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
+	g->bw = bw;
 
 	if((flags & GW_CREATE_TAB) && existing)
 	{
@@ -3458,18 +3458,15 @@ gui_window_create(struct browser_window *bw,
 						CLICKTAB_Labels, ~0,
 						TAG_DONE);
 
-		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-								TNA_Number,g->tab,
-								TNA_UserData,bw,
+		g->tab_node = AllocClickTabNode(TNA_Text, messages_get("NetSurf"),
+								TNA_Number, g->tab,
+								TNA_UserData, g,
 								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
-		if(nsoption_bool(new_tab_last))
-		{
+		if(nsoption_bool(new_tab_last)) {
 			AddTail(&g->shared->tab_list, g->tab_node);
-		}
-		else
-		{
+		} else {
 			struct Node *insert_after = existing->tab_node;
 
 			if(existing->last_new_tab)
@@ -3483,15 +3480,17 @@ gui_window_create(struct browser_window *bw,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
-		if(nsoption_bool(new_tab_is_active))
-		{
-			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
-							CLICKTAB_Current,g->tab,
+		if(nsoption_bool(new_tab_is_active)) {
+			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+							g->shared->win, NULL,
+							CLICKTAB_Current, g->tab,
 							TAG_DONE);
 		}
 
-		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+		if(ClickTabBase->lib_Version < 53) {
+			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
+				g->shared->win, NULL, TRUE);
+		}
 
 		g->shared->next_tab++;
 
@@ -3545,7 +3544,7 @@ gui_window_create(struct browser_window *bw,
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
 											TNA_Number, 0,
-											TNA_UserData, bw,
+											TNA_UserData, g,
 											TNA_CloseGadget, TRUE,
 											TAG_DONE);
 		AddTail(&g->shared->tab_list,g->tab_node);
@@ -3959,7 +3958,7 @@ gui_window_create(struct browser_window *bw,
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
 				(UWORD)~0, -1, NULL);
 
-	/* Apparently you can't set GA_Width on creation time for frbuttonclass */
+		/* Apparently you can't set GA_Width on creation time for frbuttonclass */
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_STATUS],
 			g->shared->win, NULL,
@@ -3976,7 +3975,7 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	g->shared->rmbtrapped = FALSE;
-	g->shared->bw = bw;
+	g->shared->gw = g;
 	curbw = bw;
 
 	g->shared->appwin = AddAppWindowA((ULONG)g->shared->objects[OID_MAIN],
@@ -4017,14 +4016,14 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 		{
 			ntab=GetSucc(tab);
 			GetClickTabNodeAttrs(tab,
-								TNA_UserData,&gwin->bw,
+								TNA_UserData,&gwin->gw,
 								TAG_DONE);
-			browser_window_destroy(gwin->bw);
+			browser_window_destroy(gwin->gw->bw);
 		} while((tab=ntab));
 	}
 	else
 	{
-			browser_window_destroy(gwin->bw);
+			browser_window_destroy(gwin->gw->bw);
 	}
 }
 
