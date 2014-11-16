@@ -1002,16 +1002,16 @@ static void ami_update_buttons(struct gui_window_2 *gwin)
 	long back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
 	long storage = FALSE;
 
-	if(!browser_window_back_available(gwin->bw))
+	if(!browser_window_back_available(gwin->gw->bw))
 		back=TRUE;
 
-	if(browser_window_forward_available(gwin->bw))
+	if(browser_window_forward_available(gwin->gw->bw))
 		forward=FALSE;
 
-	if(!browser_window_stop_available(gwin->bw))
+	if(!browser_window_stop_available(gwin->gw->bw))
 		stop=TRUE;
 
-	if(!browser_window_reload_available(gwin->bw))
+	if(!browser_window_reload_available(gwin->gw->bw))
 		reload=TRUE;
 
 	if(nsoption_bool(kiosk_mode) == false)
@@ -1060,13 +1060,13 @@ void ami_gui_history(struct gui_window_2 *gwin, bool back)
 {
 	if(back == true)
 	{
-		if(browser_window_back_available(gwin->bw))
-			browser_window_history_back(gwin->bw, false);
+		if(browser_window_back_available(gwin->gw->bw))
+			browser_window_history_back(gwin->gw->bw, false);
 	}
 	else
 	{
-		if(browser_window_forward_available(gwin->bw))
-			browser_window_history_forward(gwin->bw, false);
+		if(browser_window_forward_available(gwin->gw->bw))
+			browser_window_history_forward(gwin->gw->bw, false);
 	}
 
 	ami_update_buttons(gwin);
@@ -1230,11 +1230,11 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int ns_x = space_x;
 	int ns_y = space_y;
 
-	ns_x /= gwin->bw->scale;
-	ns_y /= gwin->bw->scale;
+	ns_x /= gwin->gw->bw->scale;
+	ns_y /= gwin->gw->bw->scale;
 
-	ns_x += gwin->bw->window->scrollx;
-	ns_y += gwin->bw->window->scrolly;
+	ns_x += gwin->gw->scrollx;
+	ns_y += gwin->gw->scrolly;
 
 	*x = ns_x;
 	*y = ns_y;
@@ -1274,12 +1274,12 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 
 	if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
 	{
-		if(browser_window_scroll_at_point(gwin->bw, x, y,
+		if(browser_window_scroll_at_point(gwin->gw->bw, x, y,
 			xs, ys) == false)
 		{
-			gui_window_get_scroll(gwin->bw->window,
-				&gwin->bw->window->scrollx,
-				&gwin->bw->window->scrolly);
+			gui_window_get_scroll(gwin->gw,
+				&gwin->gw->scrollx,
+				&gwin->gw->scrolly);
 
 			if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 				warn_user("NoMemory", "");
@@ -1289,11 +1289,11 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 			switch(xs)
 			{
 				case SCROLL_PAGE_UP:
-					xs = gwin->bw->window->scrollx - bbox->Width;
+					xs = gwin->gw->scrollx - bbox->Width;
 				break;
 
 				case SCROLL_PAGE_DOWN:
-					xs = gwin->bw->window->scrollx + bbox->Width;
+					xs = gwin->gw->scrollx + bbox->Width;
 				break;
 
 				case SCROLL_TOP:
@@ -1301,22 +1301,22 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				break;
 
 				case SCROLL_BOTTOM:
-					xs = content_get_width(gwin->bw->current_content);
+					xs = content_get_width(gwin->gw->bw->current_content);
 				break;
 
 				default:
-					xs += gwin->bw->window->scrollx;
+					xs += gwin->gw->scrollx;
 				break;
 			}
 
 			switch(ys)
 			{
 				case SCROLL_PAGE_UP:
-					ys = gwin->bw->window->scrolly - bbox->Height;
+					ys = gwin->gw->scrolly - bbox->Height;
 				break;
 
 				case SCROLL_PAGE_DOWN:
-					ys = gwin->bw->window->scrolly + bbox->Height;
+					ys = gwin->gw->scrolly + bbox->Height;
 				break;
 
 				case SCROLL_TOP:
@@ -1324,17 +1324,17 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				break;
 
 				case SCROLL_BOTTOM:
-					ys = content_get_height(gwin->bw->current_content);
+					ys = content_get_height(gwin->gw->bw->current_content);
 				break;
 
 				default:
-					ys += gwin->bw->window->scrolly;
+					ys += gwin->gw->scrolly;
 				break;
 			}
 
 			ami_gui_free_space_box(bbox);
 
-			gui_window_set_scroll(gwin->bw->window, xs, ys);
+			gui_window_set_scroll(gwin->gw, xs, ys);
 		}
 	}
 }
@@ -1351,11 +1351,11 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 		return NULL;
 	}
 
-	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->bw->scale);
-	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->bw->scale);
+	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->gw->bw->scale);
+	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->gw->bw->scale);
 
-	ibox->Width = (rect->x1 - rect->x0) * gwin->bw->scale;
-	ibox->Height = (rect->y1 - rect->y0) * gwin->bw->scale;
+	ibox->Width = (rect->x1 - rect->x0) * gwin->gw->bw->scale;
+	ibox->Height = (rect->y1 - rect->y0) * gwin->gw->bw->scale;
 
 	if(ibox->Left < bbox->Left) ibox->Left = bbox->Left;
 	if(ibox->Top < bbox->Top) ibox->Top = bbox->Top;
@@ -1431,8 +1431,8 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 
 	if(scaled)
 	{
-		*width /= g->shared->bw->scale;
-		*height /= g->shared->bw->scale;
+		*width /= g->bw->scale;
+		*height /= g->bw->scale;
 	}
 }
 
@@ -1528,14 +1528,14 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 	browser_scrolling hscroll = BW_SCROLLING_YES;
 	browser_scrolling vscroll = BW_SCROLLING_YES;
 
-	browser_window_get_scrollbar_type(gwin->bw, &hscroll, &vscroll);
+	browser_window_get_scrollbar_type(gwin->gw->bw, &hscroll, &vscroll);
 
-	if(browser_window_is_frameset(gwin->bw) == true) {
+	if(browser_window_is_frameset(gwin->gw->bw) == true) {
 		rethinkv = ami_gui_vscroll_remove(gwin);
 		rethinkh = ami_gui_hscroll_remove(gwin);
 	} else {
-		if((browser_window_get_extents(gwin->bw, false, &w, &h) == NSERROR_OK)) {
-			gui_window_get_dimensions(gwin->bw->window, &ww, &wh, false);
+		if((browser_window_get_extents(gwin->gw->bw, false, &w, &h) == NSERROR_OK)) {
+			gui_window_get_dimensions(gwin->gw, &ww, &wh, false);
 		}
 
 		if(vscroll == BW_SCROLLING_NO) {
@@ -1557,7 +1557,7 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
-		browser_window_schedule_reformat(gwin->bw);
+		browser_window_schedule_reformat(gwin->gw->bw);
 		ami_schedule_redraw(gwin, true);
 	}
 }
@@ -1633,7 +1633,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 static void ami_gui_refresh_favicon(void *p)
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)p;
-	gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+	gui_window_set_icon(gwin->gw, gwin->gw->favicon);
 }
 
 /* Gets the size that border gadget 1 (status) needs to be.
@@ -1686,7 +1686,6 @@ static void ami_handle_msg(void)
 	struct InputEvent *ie;
 	struct Node *tabnode;
 	int nskey;
-	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
 	char *utf8 = NULL;
@@ -1782,8 +1781,8 @@ static void ami_handle_msg(void)
 						break;
 					}
 
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->bw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->bw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -1823,17 +1822,17 @@ static void ami_handle_msg(void)
 
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
-							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
+							browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_1 | gwin->key_state,x,y);
 							gwin->mouse_state = BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
 						}
 						else if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
 						{
-							browser_window_mouse_track(gwin->bw,BROWSER_MOUSE_DRAG_2 | gwin->key_state,x,y);
+							browser_window_mouse_track(gwin->gw->bw,BROWSER_MOUSE_DRAG_2 | gwin->key_state,x,y);
 							gwin->mouse_state = BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
 						}
 						else
 						{
-							browser_window_mouse_track(gwin->bw,gwin->mouse_state | gwin->key_state,x,y);
+							browser_window_mouse_track(gwin->gw->bw,gwin->mouse_state | gwin->key_state,x,y);
 						}
 					}
 					else
@@ -1850,8 +1849,8 @@ static void ami_handle_msg(void)
 						return;
 					}
 
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->bw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->bw->scale);
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->bw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->bw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -1872,11 +1871,11 @@ static void ami_handle_msg(void)
 						switch(code)
 						{
 							case SELECTDOWN:
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
+								browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_1 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_1;
 							break;
 							case MIDDLEDOWN:
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
+								browser_window_mouse_click(gwin->gw->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
 							break;
 						}
@@ -1913,7 +1912,7 @@ static void ami_handle_msg(void)
 									}
 								}
 
-								browser_window_mouse_click(gwin->bw,
+								browser_window_mouse_click(gwin->gw->bw,
 									gwin->mouse_state | gwin->key_state,x,y);
 
 								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
@@ -1929,7 +1928,7 @@ static void ami_handle_msg(void)
 							}
 							else
 							{
-								browser_window_mouse_track(gwin->bw, 0, x, y);
+								browser_window_mouse_track(gwin->gw->bw, 0, x, y);
 							}
 							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
@@ -1955,7 +1954,7 @@ static void ami_handle_msg(void)
 									}
 								}
 
-								browser_window_mouse_click(gwin->bw,
+								browser_window_mouse_click(gwin->gw->bw,
 									gwin->mouse_state | gwin->key_state,x,y);
 
 								if(gwin->mouse_state & BROWSER_MOUSE_TRIPLE_CLICK)
@@ -1971,7 +1970,7 @@ static void ami_handle_msg(void)
 							}
 							else
 							{
-								browser_window_mouse_track(gwin->bw, 0, x, y);
+								browser_window_mouse_track(gwin->gw->bw, 0, x, y);
 							}
 							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
@@ -1997,22 +1996,21 @@ static void ami_handle_msg(void)
 							if(gwin->objects[GID_TABS] == NULL) break;
 							GetAttrs(gwin->objects[GID_TABS],
 								CLICKTAB_NodeClosed, &tabnode, TAG_DONE);
-							if(tabnode)
-							{
+							if(tabnode) {
+								struct gui_window *closedgw;
+
 								GetClickTabNodeAttrs(tabnode,
-									TNA_UserData, &closedbw,
+									TNA_UserData, &closedgw,
 									TAG_DONE);
 
-								browser_window_destroy(closedbw);
-							}
-							else
-							{
+								browser_window_destroy(closedgw->bw);
+							} else {
 								ami_switch_tab(gwin, true);
 							}
 						break;
 
 						case GID_CLOSETAB:
-							browser_window_destroy(gwin->bw);
+							browser_window_destroy(gwin->gw->bw);
 						break;
 
 						case GID_ADDTAB:
@@ -2031,7 +2029,7 @@ static void ami_handle_msg(void)
 							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_NONE, &url);
 							ami_utf8_free(utf8);
 							if (ret == NSERROR_OK) {
-									browser_window_navigate(gwin->bw,
+									browser_window_navigate(gwin->gw->bw,
 											url,
 											NULL,
 											BW_NAVIGATE_HISTORY,
@@ -2070,7 +2068,7 @@ static void ami_handle_msg(void)
 							ret = search_web_omni(utf8, SEARCH_WEB_OMNI_SEARCHONLY, &url);
 							ami_utf8_free(utf8);
 							if (ret == NSERROR_OK) {
-									browser_window_navigate(gwin->bw,
+									browser_window_navigate(gwin->gw->bw,
 											url,
 											NULL,
 											BW_NAVIGATE_HISTORY,
@@ -2091,7 +2089,7 @@ static void ami_handle_msg(void)
 								if (nsurl_create(nsoption_charp(homepage_url), &url) != NSERROR_OK) {
 									warn_user("NoMemory", 0);
 								} else {
-									browser_window_navigate(gwin->bw,
+									browser_window_navigate(gwin->gw->bw,
 											url,
 											NULL,
 											BW_NAVIGATE_HISTORY,
@@ -2104,22 +2102,22 @@ static void ami_handle_msg(void)
 						break;
 
 						case GID_STOP:
-							if(browser_window_stop_available(gwin->bw))
-								browser_window_stop(gwin->bw);
+							if(browser_window_stop_available(gwin->gw->bw))
+								browser_window_stop(gwin->gw->bw);
 						break;
 
 						case GID_RELOAD:
 							ami_update_quals(gwin);
 
-							if(browser_window_reload_available(gwin->bw))
+							if(browser_window_reload_available(gwin->gw->bw))
 							{
 								if(gwin->key_state & BROWSER_MOUSE_MOD_1)
 								{
-									browser_window_reload(gwin->bw,true);
+									browser_window_reload(gwin->gw->bw, true);
 								}
 								else
 								{
-									browser_window_reload(gwin->bw,false);
+									browser_window_reload(gwin->gw->bw, false);
 								}
 							}
 						break;
@@ -2182,7 +2180,7 @@ static void ami_handle_msg(void)
 										error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 													      urlns,
 													      NULL,
-													      gwin->bw,
+													      gwin->gw->bw,
 													      NULL);
 										nsurl_unref(urlns);
 									}
@@ -2204,7 +2202,7 @@ static void ami_handle_msg(void)
 													      BW_CREATE_TAB,
 													      urlns,
 													      NULL,
-													      gwin->bw,
+													      gwin->gw->bw,
 													      NULL);
 										nsurl_unref(urlns);
 									}
@@ -2217,7 +2215,7 @@ static void ami_handle_msg(void)
 
 							case 'k':
 								if((nsoption_bool(kiosk_mode) == false))
-									browser_window_destroy(gwin->bw);
+									browser_window_destroy(gwin->gw->bw);
 							break;
 
 							case 'o':
@@ -2226,11 +2224,11 @@ static void ami_handle_msg(void)
 
 							case 's':
 								ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-									gwin->bw->current_content);
+									gwin->gw->bw->current_content);
 							break;
 
 							case 'p':
-								ami_print_ui(gwin->bw->current_content);
+								ami_print_ui(gwin->gw->bw->current_content);
 							break;
 
 							case 'q':
@@ -2239,32 +2237,32 @@ static void ami_handle_msg(void)
 							break;
 
 							case 'a':
-								browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
+								browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
 							break;
 
 							case 'x':
-								browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
+								browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
 							break;
 
 							case 'c':
-								browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-								browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+								browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
+								browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 							break;
 
 							case 'v':
-								browser_window_key_press(gwin->bw, KEY_PASTE);
+								browser_window_key_press(gwin->gw->bw, KEY_PASTE);
 							break;
 
 							case 'z':
-								browser_window_key_press(gwin->bw, KEY_UNDO);
+								browser_window_key_press(gwin->gw->bw, KEY_UNDO);
 							break;
 
 							case 'y':
-								browser_window_key_press(gwin->bw, KEY_REDO);
+								browser_window_key_press(gwin->gw->bw, KEY_REDO);
 							break;
 
 							case 'f':
-								ami_search_open(gwin->bw->window);
+								ami_search_open(gwin->gw);
 							break;
 
 							case 'h':
@@ -2273,25 +2271,25 @@ static void ami_handle_msg(void)
 							break;
 
 							case '-':
-								if(browser_window_get_scale(gwin->bw) > 0.1)
-									browser_window_set_scale(gwin->bw,
-										browser_window_get_scale(gwin->bw) - 0.1, false);
+								if(browser_window_get_scale(gwin->gw->bw) > 0.1)
+									browser_window_set_scale(gwin->gw->bw,
+										browser_window_get_scale(gwin->gw->bw) - 0.1, false);
 							break;
 							
 							case '=':
-								browser_window_set_scale(gwin->bw, 1.0, false);
+								browser_window_set_scale(gwin->gw->bw, 1.0, false);
 							break;
 
 							case '+':
-								browser_window_set_scale(gwin->bw,
-									browser_window_get_scale(gwin->bw) + 0.1, false);
+								browser_window_set_scale(gwin->gw->bw,
+									browser_window_get_scale(gwin->gw->bw) + 0.1, false);
 							break;
 							
 							/* The following aren't available from the menu at the moment */
 
 							case 'r': // reload
-								if(browser_window_reload_available(gwin->bw))
-									browser_window_reload(gwin->bw,false);
+								if(browser_window_reload_available(gwin->gw->bw))
+									browser_window_reload(gwin->gw->bw, false);
 							break;
 
 							case 'u': // open url
@@ -2303,7 +2301,7 @@ static void ami_handle_msg(void)
 					}
 					else
 					{
-						if(!browser_window_key_press(gwin->bw, nskey))
+						if(!browser_window_key_press(gwin->gw->bw, nskey))
 						{
 							switch(nskey)
 							{
@@ -2360,8 +2358,8 @@ static void ami_handle_msg(void)
 								break;
 
 								case RAWKEY_F5: // reload
-									if(browser_window_reload_available(gwin->bw))
-										browser_window_reload(gwin->bw,false);
+									if(browser_window_reload_available(gwin->gw->bw))
+										browser_window_reload(gwin->gw->bw,false);
 								break;
 								
 								case RAWKEY_HELP: // help
@@ -2375,28 +2373,11 @@ static void ami_handle_msg(void)
 				case WMHI_NEWSIZE:
 					switch(node->Type)
 					{
-						struct Node *tab = NULL, *ntab = NULL;
-						struct browser_window *bw = NULL;
-
 						case AMINS_WINDOW:
 							ami_set_border_gadget_size(gwin);
-							ami_throbber_redraw_schedule(0, gwin->bw->window);
-
-							if(gwin->tabs)
-							{
-								tab = GetHead(&gwin->tab_list);
-
-								do
-								{
-									ntab=GetSucc(tab);
-									GetClickTabNodeAttrs(tab,
-										TNA_UserData, &bw,
-										TAG_DONE);
-								} while((tab=ntab));
-							}
-
+							ami_throbber_redraw_schedule(0, gwin->gw);
 							ami_schedule(0, ami_gui_refresh_favicon, gwin);
-							browser_window_schedule_reformat(gwin->bw);
+							browser_window_schedule_reformat(gwin->gw->bw);
 							ami_schedule_redraw(gwin, true);
 						break;
 					}
@@ -2410,10 +2391,10 @@ static void ami_handle_msg(void)
 				{
 					struct bitmap *bm;
 
-					bm = urldb_get_thumbnail(hlcache_handle_get_url(gwin->bw->current_content));
-					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
+					bm = urldb_get_thumbnail(hlcache_handle_get_url(gwin->gw->bw->current_content));
+					if(!bm) bm = content_get_bitmap(gwin->gw->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
-					amiga_icon_superimpose_favicon_internal(gwin->bw->window->favicon,
+					amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
 						gwin->dobj);
 					HideWindow(gwin->win);
 					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
@@ -2425,14 +2406,14 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_INACTIVE:
-					gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
-					gui_window_remove_caret(gwin->bw->window);
+					gwin->gw->c_h_temp = gwin->gw->c_h;
+					gui_window_remove_caret(gwin->gw);
 				break;
 
 				case WMHI_ACTIVE:
-					if(gwin->bw) curbw = gwin->bw;
-					if(gwin->bw->window->c_h_temp)
-						gwin->bw->window->c_h = gwin->bw->window->c_h_temp;
+					if(gwin->gw->bw) curbw = gwin->gw->bw;
+					if(gwin->gw->c_h_temp)
+						gwin->gw->c_h = gwin->gw->c_h_temp;
 				break;
 
 				case WMHI_INTUITICK:
@@ -2454,12 +2435,12 @@ static void ami_handle_msg(void)
 
 			if(drag_x_move || drag_y_move)
 			{
-				gui_window_get_scroll(gwin->bw->window,
-					&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
+				gui_window_get_scroll(gwin->gw,
+					&gwin->gw->scrollx, &gwin->gw->scrolly);
 
-				gui_window_set_scroll(gwin->bw->window,
-					gwin->bw->window->scrollx + drag_x_move,
-					gwin->bw->window->scrolly + drag_y_move);
+				gui_window_set_scroll(gwin->gw,
+					gwin->gw->scrollx + drag_x_move,
+					gwin->gw->scrolly + drag_y_move);
 			}
 
 //	ReplyMsg((struct Message *)message);
@@ -2539,7 +2520,7 @@ static void ami_handle_appmsg(void)
 							{
 								if(i == 0)
 								{
-									browser_window_navigate(gwin->bw,
+									browser_window_navigate(gwin->gw->bw,
 										url,
 										NULL,
 										BW_NAVIGATE_HISTORY,
@@ -2555,7 +2536,7 @@ static void ami_handle_appmsg(void)
 											      BW_CREATE_TAB,
 											      url,
 											      NULL,
-											      gwin->bw,
+											      gwin->gw->bw,
 											      NULL);
 								}
 								nsurl_unref(url);
@@ -2563,7 +2544,7 @@ static void ami_handle_appmsg(void)
 						}
 						else
 						{
-							if(browser_window_drop_file_at_point(gwin->bw, x, y, filename) == false)
+							if(browser_window_drop_file_at_point(gwin->gw->bw, x, y, filename) == false)
 							{
 								nsurl *url;
 
@@ -2575,7 +2556,7 @@ static void ami_handle_appmsg(void)
 
 									if(i == 0)
 									{
-										browser_window_navigate(gwin->bw,
+										browser_window_navigate(gwin->gw->bw,
 											url,
 											NULL,
 											BW_NAVIGATE_HISTORY,
@@ -2591,7 +2572,7 @@ static void ami_handle_appmsg(void)
 												      BW_CREATE_TAB,
 												      url,
 												      NULL,
-												      gwin->bw,
+												      gwin->gw->bw,
 												      NULL);
 										
 									}
@@ -2764,7 +2745,7 @@ void ami_get_msg(void)
 
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
 {
-	struct Node *tab_node = gwin->bw->window->tab_node;
+	struct Node *tab_node = gwin->gw->tab_node;
 	struct Node *ptab;
 	ULONG ptabnum = 0;
 
@@ -2790,32 +2771,32 @@ void ami_change_tab(struct gui_window_2 *gwin, int direction)
 	ami_switch_tab(gwin, true);
 }
 
-void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
+void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 {
 	struct Node *tabnode;
 	struct IBox *bbox;
 
 	/* Clear the last new tab list */
-	gwin->bw->window->last_new_tab = NULL;
+	gwin->gw->last_new_tab = NULL;
 
 	if(gwin->tabs == 0) return;
 
-	gui_window_get_scroll(gwin->bw->window,
-		&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
+	gui_window_get_scroll(gwin->gw,
+		&gwin->gw->scrollx, &gwin->gw->scrolly);
 
 	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
 				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
-				TNA_UserData, &gwin->bw,
+				TNA_UserData, &gwin->gw,
 				TAG_DONE);
-	curbw = gwin->bw;
+	curbw = gwin->gw->bw;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
 		return;
 	}
 
-	if(!gwin->bw->current_content)
+	if(!gwin->gw->bw->current_content)
 	{
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
@@ -2829,24 +2810,24 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	ami_plot_release_pens(&gwin->shared_pens);
 	ami_update_buttons(gwin);
-	ami_menu_update_disabled(gwin->bw->window, gwin->bw->current_content);
+	ami_menu_update_disabled(gwin->gw, gwin->gw->bw->current_content);
 
 	if(redraw)
 	{
-		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
 
 		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
-		browser_window_update(gwin->bw, false);
+		browser_window_update(gwin->gw->bw, false);
 
-		gui_window_set_scroll(gwin->bw->window,
-			gwin->bw->window->scrollx, gwin->bw->window->scrolly);
+		gui_window_set_scroll(gwin->gw,
+			gwin->gw->scrollx, gwin->gw->scrolly);
 		gwin->redraw_scroll = false;
 
-		browser_window_refresh_url_bar(gwin->bw);
+		browser_window_refresh_url_bar(gwin->gw->bw);
 		ami_gui_update_hotlist_button(gwin);
 		ami_gui_scroller_update(gwin);
-		ami_throbber_redraw_schedule(0, gwin->bw->window);
+		ami_throbber_redraw_schedule(0, gwin->gw);
 	}
 
 	ami_gui_free_space_box(bbox);
@@ -3065,8 +3046,8 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin)
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_RMV], TAG_DONE);
 
-			if (gwin->bw->window->favicon)
-				ami_gui_cache_favicon(nsurl, content_get_bitmap(gwin->bw->window->favicon));
+			if (gwin->gw->favicon)
+				ami_gui_cache_favicon(nsurl, content_get_bitmap(gwin->gw->favicon));
 		} else {
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FAVE], gwin->win, NULL,
 				BUTTON_RenderImage, gwin->objects[GID_FAVE_ADD], TAG_DONE);
@@ -3146,7 +3127,7 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
 		
-		if(gwin->bw) {
+		if(gwin->gw->bw) {
 			ami_schedule_redraw(gwin, true);
 		}
 	}
@@ -3299,7 +3280,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	if(gwin->bw) browser_window_update(gwin->bw, false);
+	if(gwin->gw->bw) browser_window_update(gwin->gw->bw, false);
 }
 
 void ami_gui_tabs_toggle_all(void)
@@ -3376,7 +3357,7 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 					      BW_CREATE_TAB,
 					      url,
 					      NULL,
-					      gwin->bw,
+					      gwin->gw->bw,
 					      &bw);
 		nsurl_unref(url);
 	}
@@ -3442,6 +3423,7 @@ gui_window_create(struct browser_window *bw,
 
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
+	g->bw = bw;
 
 	if((flags & GW_CREATE_TAB) && existing)
 	{
@@ -3458,18 +3440,15 @@ gui_window_create(struct browser_window *bw,
 						CLICKTAB_Labels, ~0,
 						TAG_DONE);
 
-		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-								TNA_Number,g->tab,
-								TNA_UserData,bw,
+		g->tab_node = AllocClickTabNode(TNA_Text, messages_get("NetSurf"),
+								TNA_Number, g->tab,
+								TNA_UserData, g,
 								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
-		if(nsoption_bool(new_tab_last))
-		{
+		if(nsoption_bool(new_tab_last)) {
 			AddTail(&g->shared->tab_list, g->tab_node);
-		}
-		else
-		{
+		} else {
 			struct Node *insert_after = existing->tab_node;
 
 			if(existing->last_new_tab)
@@ -3483,15 +3462,17 @@ gui_window_create(struct browser_window *bw,
 							CLICKTAB_Labels, &g->shared->tab_list,
 							TAG_DONE);
 
-		if(nsoption_bool(new_tab_is_active))
-		{
-			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
-							CLICKTAB_Current,g->tab,
+		if(nsoption_bool(new_tab_is_active)) {
+			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
+							g->shared->win, NULL,
+							CLICKTAB_Current, g->tab,
 							TAG_DONE);
 		}
 
-		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+		if(ClickTabBase->lib_Version < 53) {
+			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
+				g->shared->win, NULL, TRUE);
+		}
 
 		g->shared->next_tab++;
 
@@ -3545,7 +3526,7 @@ gui_window_create(struct browser_window *bw,
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
 											TNA_Number, 0,
-											TNA_UserData, bw,
+											TNA_UserData, g,
 											TNA_CloseGadget, TRUE,
 											TAG_DONE);
 		AddTail(&g->shared->tab_list,g->tab_node);
@@ -3959,7 +3940,7 @@ gui_window_create(struct browser_window *bw,
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
 				(UWORD)~0, -1, NULL);
 
-	/* Apparently you can't set GA_Width on creation time for frbuttonclass */
+		/* Apparently you can't set GA_Width on creation time for frbuttonclass */
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_STATUS],
 			g->shared->win, NULL,
@@ -3976,7 +3957,7 @@ gui_window_create(struct browser_window *bw,
 	}
 
 	g->shared->rmbtrapped = FALSE;
-	g->shared->bw = bw;
+	g->shared->gw = g;
 	curbw = bw;
 
 	g->shared->appwin = AddAppWindowA((ULONG)g->shared->objects[OID_MAIN],
@@ -4017,14 +3998,14 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 		{
 			ntab=GetSucc(tab);
 			GetClickTabNodeAttrs(tab,
-								TNA_UserData,&gwin->bw,
+								TNA_UserData,&gwin->gw,
 								TAG_DONE);
-			browser_window_destroy(gwin->bw);
+			browser_window_destroy(gwin->gw->bw);
 		} while((tab=ntab));
 	}
 	else
 	{
-			browser_window_destroy(gwin->bw);
+			browser_window_destroy(gwin->gw->bw);
 	}
 }
 
@@ -4201,12 +4182,12 @@ static void ami_redraw_callback(void *p)
 		ami_do_redraw(gwin);
 	}
 
-	ami_gui_window_update_box_deferred(gwin->bw->window, true);
+	ami_gui_window_update_box_deferred(gwin->gw, true);
 
-	if(gwin->bw->window->c_h)
+	if(gwin->gw->c_h)
 	{
-		gui_window_place_caret(gwin->bw->window, gwin->bw->window->c_x,
-		gwin->bw->window->c_y, gwin->bw->window->c_h, NULL);
+		gui_window_place_caret(gwin->gw, gwin->gw->c_x,
+		gwin->gw->c_y, gwin->gw->c_h, NULL);
 	}
 }
 
@@ -4236,8 +4217,8 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 {
 	int x, y;
 	struct rect clip;
-	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
-	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
+	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->bw->scale);
+	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->bw->scale);
 				
 	browserglob.shared_pens = &gwin->shared_pens;
 	
@@ -4275,17 +4256,17 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 		clip.y0 = 0;
 		clip.y1 = nsoption_int(redraw_tile_size_y);
 		if(clip.y1 > height) clip.y1 = height;
-		if((((y - sy) * gwin->bw->scale) + clip.y1) > bbox->Height)
-			clip.y1 = bbox->Height - ((y - sy) * gwin->bw->scale);
+		if((((y - sy) * gwin->gw->bw->scale) + clip.y1) > bbox->Height)
+			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->bw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
 			clip.x1 = nsoption_int(redraw_tile_size_x);
 			if(clip.x1 > width) clip.x1 = width;
-			if((((x - sx) * gwin->bw->scale) + clip.x1) > bbox->Width)
-				clip.x1 = bbox->Width - ((x - sx) * gwin->bw->scale);
+			if((((x - sx) * gwin->gw->bw->scale) + clip.x1) > bbox->Width)
+				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->bw->scale);
 
-			if(browser_window_redraw(gwin->bw,
+			if(browser_window_redraw(gwin->gw->bw,
 				clip.x0 - (int)x,
 				clip.y0 - (int)y,
 				&clip, ctx))
@@ -4298,8 +4279,8 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
 					BLITA_Dest, gwin->win->RPort,
-					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->bw->scale),
-					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->bw->scale),
+					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->bw->scale),
+					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->bw->scale),
 					BLITA_Width, (int)(clip.x1),
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
@@ -4394,7 +4375,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 	do {
 		if(draw == true) {
 			rect = (struct rect *)node->objstruct;
-			ami_do_redraw_limits(g, g->shared->bw, false,
+			ami_do_redraw_limits(g, g->bw, false,
 				rect->x0, rect->y0, rect->x1, rect->y1);
 		}
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
@@ -4468,7 +4449,7 @@ static void amiga_window_reformat(struct gui_window *gw)
 			warn_user("NoMemory", "");
 			return;
 		}
-		browser_window_reformat(gw->shared->bw, false, bbox->Width, bbox->Height);
+		browser_window_reformat(gw->bw, false, bbox->Width, bbox->Height);
 		gw->shared->redraw_scroll = false;
 		ami_gui_free_space_box(bbox);
 	}
@@ -4481,13 +4462,13 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
 	struct RastPort *temprp;
 
-	if(browser_window_redraw_ready(gwin->bw) == false) return;
+	if(browser_window_redraw_ready(gwin->gw->bw) == false) return;
 
 	ami_get_hscroll_pos(gwin, (ULONG *)&hcurrent);
 	ami_get_vscroll_pos(gwin, (ULONG *)&vcurrent);
 
-	gwin->bw->window->scrollx = hcurrent;
-	gwin->bw->window->scrolly = vcurrent;
+	gwin->gw->scrollx = hcurrent;
+	gwin->gw->scrolly = vcurrent;
 
 	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -4505,45 +4486,45 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			gwin->redraw_scroll = false;
 
  		if(gwin->new_content) gwin->redraw_scroll = false;
-//		if(gwin->bw->scale != 1.0) gwin->redraw_scroll = false;
+//		if(gwin->gw->bw->scale != 1.0) gwin->redraw_scroll = false;
 	}
 
 	if(gwin->redraw_scroll)
 	{
 		struct rect rect;
 		
-		gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
-		gui_window_remove_caret(gwin->bw->window);
+		gwin->gw->c_h_temp = gwin->gw->c_h;
+		gui_window_remove_caret(gwin->gw);
 
 		ScrollWindowRaster(gwin->win, hcurrent - oldh, vcurrent - oldv,
 				xoffset, yoffset, xoffset + width - 1, yoffset + height - 1);
 
-		gwin->bw->window->c_h = gwin->bw->window->c_h_temp;
+		gwin->gw->c_h = gwin->gw->c_h_temp;
 
 		if(vcurrent>oldv) /* Going down */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, height - (vcurrent - oldv) - 1);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
-			gui_window_update_box(gwin->bw->window, &rect);
+			gui_window_update_box(gwin->gw, &rect);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, oldv - vcurrent + 1);
-			gui_window_update_box(gwin->bw->window, &rect);
+			gui_window_update_box(gwin->gw, &rect);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, width - (hcurrent - oldh), 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, width + 1, height + 1);
-			gui_window_update_box(gwin->bw->window, &rect);
+			gui_window_update_box(gwin->gw, &rect);
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
 			ami_spacebox_to_ns_coords(gwin, &rect.x0, &rect.y0, 0, 0);
 			ami_spacebox_to_ns_coords(gwin, &rect.x1, &rect.y1, oldh - hcurrent + 1, height + 1);
-			gui_window_update_box(gwin->bw->window, &rect);
+			gui_window_update_box(gwin->gw, &rect);
 		}
 	}
 	else
@@ -4573,7 +4554,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 
 			ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
-			if(browser_window_redraw(gwin->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
+			if(browser_window_redraw(gwin->gw->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 			{
 				ami_clearclipreg(&browserglob);
 				browserglob.rp = temprp;
@@ -4582,7 +4563,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			ami_reset_pointer(gwin);
 		}
 		/* Tell NetSurf not to bother with the next queued box redraw, as we've redrawn everything. */
-		ami_gui_window_update_box_deferred(gwin->bw->window, false);
+		ami_gui_window_update_box_deferred(gwin->gw, false);
 	}
 
 	ami_update_buttons(gwin);
@@ -4605,8 +4586,8 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	int x0, x1, y0, y1, sx, sy;
 	struct RegionRectangle *regrect;
 
-	sx = gwin->bw->window->scrollx;
-	sy = gwin->bw->window->scrolly;
+	sx = gwin->gw->scrollx;
+	sy = gwin->gw->scrolly;
 
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
 
@@ -4618,32 +4599,32 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	BeginRefresh(gwin->win);
 
 	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx - 1;
+			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
 	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx + 2;
+			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
 	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy - 1;
+			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
 	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy + 2;
+			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
-	ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
+	ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
 
 	while(regrect)
 	{
 		x0 = ((regrect->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx - 1;
+			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
 		x1 = ((regrect->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->bw)) + sx + 2;
+			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
 		y0 = ((regrect->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy - 1;
+			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
 		y1 = ((regrect->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->bw)) + sy + 2;
+			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
 
 		regrect = regrect->Next;
 
-		ami_do_redraw_limits(gwin->bw->window, gwin->bw, false, x0, y0, x1, y1);
+		ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
 	}
 
 	EndRefresh(gwin->win, TRUE);
@@ -4661,7 +4642,7 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 		*xs = 0;
 	}
 
-	*xs /= gwin->bw->scale;
+	*xs /= gwin->gw->bw->scale;
 }
 
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
@@ -4672,7 +4653,7 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 		*ys = 0;
 	}
 
-	*ys /= gwin->bw->scale;
+	*ys /= gwin->gw->bw->scale;
 }
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -4689,7 +4670,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	int cur_tab = 0;
 
 	if(!g) return;
-	if(!g->shared->bw || !g->shared->bw->current_content) return;
+	if(!g->bw || !g->bw->current_content) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -4699,13 +4680,13 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx < 0) sx=0;
 	if(sy < 0) sy=0;
 
-	if(sx >= content_get_width(g->shared->bw->current_content) - bbox->Width)
-		sx = content_get_width(g->shared->bw->current_content) - bbox->Width;
-	if(sy >= (content_get_height(g->shared->bw->current_content) - bbox->Height))
-		sy = content_get_height(g->shared->bw->current_content) - bbox->Height;
+	if(sx >= content_get_width(g->bw->current_content) - bbox->Width)
+		sx = content_get_width(g->bw->current_content) - bbox->Width;
+	if(sy >= (content_get_height(g->bw->current_content) - bbox->Height))
+		sy = content_get_height(g->bw->current_content) - bbox->Height;
 
-	if(content_get_width(g->shared->bw->current_content) <= bbox->Width) sx = 0;
-	if(content_get_height(g->shared->bw->current_content) <= bbox->Height) sy = 0;
+	if(content_get_width(g->bw->current_content) <= bbox->Width) sx = 0;
+	if(content_get_height(g->bw->current_content) <= bbox->Height) sy = 0;
 
 	ami_gui_free_space_box(bbox);
 
@@ -4718,7 +4699,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sy * g->shared->bw->scale),
+				SCROLLER_Top, (ULONG)(sy * g->bw->scale),
 			TAG_DONE);
 		}
 
@@ -4726,7 +4707,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sx * g->shared->bw->scale),
+				SCROLLER_Top, (ULONG)(sx * g->bw->scale),
 				TAG_DONE);
 		}
 
@@ -4738,7 +4719,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		g->scrollx = sx;
 		g->scrolly = sy;
 
-//		history_set_current_scroll(g->shared->bw->history,g->scrollx,g->scrolly);
+//		history_set_current_scroll(g->bw->history,g->scrollx,g->scrolly);
 	}
 //	g->shared->new_content = false;
 }
@@ -4749,7 +4730,7 @@ static void gui_window_update_extent(struct gui_window *g)
 	int cur_tab = 0;
 
 	if(!g) return;
-	if(!g->shared->bw->current_content) return;
+	if(!g->bw->current_content) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
@@ -4763,7 +4744,7 @@ static void gui_window_update_extent(struct gui_window *g)
 
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
-				SCROLLER_Total, (ULONG)(content_get_height(g->shared->bw->current_content) * g->shared->bw->scale),
+				SCROLLER_Total, (ULONG)(content_get_height(g->bw->current_content) * g->bw->scale),
 				SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
 		}
@@ -4772,7 +4753,7 @@ static void gui_window_update_extent(struct gui_window *g)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Total, (ULONG)(content_get_width(g->shared->bw->current_content) * g->shared->bw->scale),
+				SCROLLER_Total, (ULONG)(content_get_width(g->bw->current_content) * g->bw->scale),
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
@@ -4909,7 +4890,7 @@ static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
 	struct gui_window_2 *gwin = hook->h_Data;
-	ami_throbber_redraw_schedule(0, gwin->bw->window);
+	ami_throbber_redraw_schedule(0, gwin->gw);
 	return 0;
 }
 
@@ -4965,7 +4946,7 @@ static void gui_window_remove_caret(struct gui_window *g)
 	if((nsoption_bool(kiosk_mode) == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
-	ami_do_redraw_limits(g, g->shared->bw, false, g->c_x, g->c_y,
+	ami_do_redraw_limits(g, g->bw, false, g->c_x, g->c_y,
 		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
 
 	g->c_h = 0;
@@ -4975,8 +4956,8 @@ static void gui_window_new_content(struct gui_window *g)
 {
 	hlcache_handle *c;
 
-	if(g && g->shared && g->shared->bw && g->shared->bw->current_content)
-		c = g->shared->bw->current_content;
+	if(g && g->shared && g->bw && g->bw->current_content)
+		c = g->bw->current_content;
 	else return;
 
 	ami_clearclipreg(&browserglob);
@@ -5044,10 +5025,10 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 							browser_window_create(BW_CREATE_TAB,
 										      url,
 										      NULL,
-										      gwin->bw,
+										      gwin->gw->bw,
 										      NULL);
 						} else {
-							browser_window_navigate(gwin->bw,
+							browser_window_navigate(gwin->gw->bw,
 									url,
 									NULL,
 									BW_NAVIGATE_HISTORY,
@@ -5106,7 +5087,7 @@ bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 
 	ami_gui_free_space_box(bbox);
 
-	browser_window_get_features(gwin->bw, *x, *y, &data);
+	browser_window_get_features(gwin->gw->bw, *x, *y, &data);
 
 	if (data.form_features == CTX_FORM_TEXT)
 		return true;
@@ -5230,7 +5211,7 @@ static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 		char fname[1024];
 		strlcpy(fname, filereq->fr_Drawer, 1024);
 		AddPart(fname, filereq->fr_File, 1024);
-		browser_window_set_gadget_filename(g->shared->bw, gadget, fname);
+		browser_window_set_gadget_filename(g->bw, gadget, fname);
 	}
 }
 

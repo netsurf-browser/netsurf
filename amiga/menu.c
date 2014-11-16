@@ -687,7 +687,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_COPY)
+		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_COPY)
 		{
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
@@ -696,12 +696,12 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 			OffMenu(win,AMI_MENU_CLEAR);	
 		}
 
-		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
+		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
 			OnMenu(win,AMI_MENU_CUT);
 		else
 			OffMenu(win,AMI_MENU_CUT);		
 		
-		if(browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_PASTE)
+		if(browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_PASTE)
 			OnMenu(win,AMI_MENU_PASTE);
 		else
 			OffMenu(win,AMI_MENU_PASTE);
@@ -788,7 +788,7 @@ static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct In
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_file_save_req(type, gwin, gwin->bw->current_content);
+	ami_file_save_req(type, gwin, gwin->gw->bw->current_content);
 }
 
 static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -796,7 +796,7 @@ static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struc
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_destroy(gwin->bw);
+	browser_window_destroy(gwin->gw->bw);
 }
 
 static void ami_menu_item_project_closewin(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -813,7 +813,7 @@ static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct I
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-	ami_print_ui(gwin->bw->current_content);
+	ami_print_ui(gwin->gw->bw->current_content);
 	ami_reset_pointer(gwin);
 }
 
@@ -880,7 +880,7 @@ static void ami_menu_item_edit_cut(struct Hook *hook, APTR window, struct IntuiM
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_CUT_SELECTION);
+	browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
 }
 
 static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -889,22 +889,22 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(content_get_type(gwin->bw->current_content) <= CONTENT_CSS) {
-		browser_window_key_press(gwin->bw, KEY_COPY_SELECTION);
-		browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+	if(content_get_type(gwin->gw->bw->current_content) <= CONTENT_CSS) {
+		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
+		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 	}
-	else if((bm = content_get_bitmap(gwin->bw->current_content))) {
+	else if((bm = content_get_bitmap(gwin->gw->bw->current_content))) {
 		/** @todo It should be checked that the lifetime of
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
 		 */
-		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->bw));
-		bm->title = (char *)browser_window_get_title(gwin->bw);
+		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->gw->bw));
+		bm->title = (char *)browser_window_get_title(gwin->gw->bw);
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG
-	else if(ami_mime_compare(gwin->bw->current_content, "svg") == true) {
-		ami_easy_clipboard_svg(gwin->bw->current_content);
+	else if(ami_mime_compare(gwin->gw->bw->current_content, "svg") == true) {
+		ami_easy_clipboard_svg(gwin->gw->bw->current_content);
 	}
 #endif
 }
@@ -914,7 +914,7 @@ static void ami_menu_item_edit_paste(struct Hook *hook, APTR window, struct Intu
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_PASTE);
+	browser_window_key_press(gwin->gw->bw, KEY_PASTE);
 }
 
 static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -922,8 +922,8 @@ static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct 
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_SELECT_ALL);
-	gui_start_selection(gwin->bw->window);
+	browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
+	gui_start_selection(gwin->gw->bw->window);
 }
 
 static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -931,7 +931,7 @@ static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct I
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
+	browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 }
 
 static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -939,7 +939,7 @@ static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct Intui
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_UNDO);
+	browser_window_key_press(gwin->gw->bw, KEY_UNDO);
 }
 
 static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -947,7 +947,7 @@ static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct Intui
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->bw, KEY_REDO);
+	browser_window_key_press(gwin->gw->bw, KEY_REDO);
 }
 
 static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -955,7 +955,7 @@ static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct In
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_search_open(gwin->bw->window);
+	ami_search_open(gwin->gw->bw->window);
 }
 
 static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -963,8 +963,8 @@ static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, s
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(gwin->bw && gwin->bw->history)
-		ami_history_open(gwin->bw, gwin->bw->history);
+	if(gwin->gw->bw && gwin->gw->bw->history)
+		ami_history_open(gwin->gw->bw, gwin->gw->bw->history);
 }
 
 static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1018,8 +1018,8 @@ static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window,
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(browser_window_get_scale(gwin->bw) > 0.1)
-		browser_window_set_scale(gwin->bw, browser_window_get_scale(gwin->bw) - 0.1, false);
+	if(browser_window_get_scale(gwin->gw->bw) > 0.1)
+		browser_window_set_scale(gwin->gw->bw, browser_window_get_scale(gwin->gw->bw) - 0.1, false);
 }
 
 static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1027,7 +1027,7 @@ static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, s
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_set_scale(gwin->bw, 1.0, false);
+	browser_window_set_scale(gwin->gw->bw, 1.0, false);
 }
 
 static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1035,7 +1035,7 @@ static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window,
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_set_scale(gwin->bw, browser_window_get_scale(gwin->bw) + 0.1, false);
+	browser_window_set_scale(gwin->gw->bw, browser_window_get_scale(gwin->gw->bw) + 0.1, false);
 }
 
 static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1053,7 +1053,7 @@ static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct Int
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	bw = gwin->bw;
+	bw = gwin->gw->bw;
 
 	if (bw == NULL || bw->current_content == NULL ||
 			nsurl_access(hlcache_handle_get_url(bw->current_content)) == NULL)
@@ -1076,7 +1076,7 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 
 	if(url == NULL) return;
 
-	browser_window_navigate(gwin->bw,
+	browser_window_navigate(gwin->gw->bw,
 					url,
 					NULL,
 					BW_NAVIGATE_HISTORY,

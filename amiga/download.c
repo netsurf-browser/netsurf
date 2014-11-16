@@ -134,7 +134,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	if(dl_filename) ami_utf8_free(dl_filename);
 	dw->size = total_size;
 	dw->downloaded = 0;
-	if(gui) dw->bw = gui->shared->bw;
+	if(gui) dw->bw = gui->bw;
 	dw->url = url;
 
 	va[0] = (APTR)dw->downloaded;
