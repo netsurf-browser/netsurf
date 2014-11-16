@@ -27,12 +27,20 @@ struct history_window {
 	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_LAST];
-	struct browser_window *bw;
+	struct gui_window *gw;
 	struct Hook scrollerhook;
 	struct gui_globals gg;
 };
 
-void ami_history_open(struct browser_window *bw, struct history *history);
+/**
+ * Open history window.
+ *
+ * \param  gw          gui_window to open history for
+ * \param  history     history to open
+ */
+void ami_history_open(struct gui_window *gw, struct history *history);
+
 void ami_history_close(struct history_window *hw);
 BOOL ami_history_event(struct history_window *hw);
 #endif
+

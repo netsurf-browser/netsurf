@@ -53,28 +53,58 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 
-
-static struct browser_window *history_bw;
 static struct history_window *hwindow;
 
 void ami_history_update_extent(struct history_window *hw);
-void ami_history_redraw(struct history_window *hw);
 static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg);
 
 /**
- * Open history window.
- *
- * \param  bw          browser window to open history for
- * \param  history     history to open
+ * Redraw history window.
  */
 
-void ami_history_open(struct browser_window *bw, struct history *history)
+static void ami_history_redraw(struct history_window *hw)
+{
+	struct IBox *bbox;
+	ULONG xs,ys;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
+	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
+	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
+
+	glob = &hw->gg;
+
+	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
+	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
+
+	browser_window_history_redraw_rectangle(hw->gw->bw, xs, ys,
+			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
+
+	glob = &browserglob;
+
+	ami_clearclipreg(&hw->gg);
+	ami_history_update_extent(hw);
+
+	BltBitMapRastPort(hw->gg.bm, 0, 0, hw->win->RPort,
+				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
+
+	ami_gui_free_space_box(bbox);
+}
+
+
+/* exported interface documented in amiga/history_local.h */
+void ami_history_open(struct gui_window *gw, struct history *history)
 {
 	int width, height;
 
 	assert(history);
-
-	history_bw = bw;
 
 	if(!hwindow)
 	{
@@ -82,8 +112,8 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 
 		ami_init_layers(&hwindow->gg, scrn->Width, scrn->Height);
 
-		hwindow->bw = bw;
-		browser_window_history_size(bw, &width, &height);
+		hwindow->gw = gw;
+		browser_window_history_size(gw->bw, &width, &height);
 
 		hwindow->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
 		hwindow->scrollerhook.h_Data = hwindow;
@@ -140,51 +170,11 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 			TAG_DONE);
 	}
 
-	hwindow->bw = bw;
-	bw->window->hw = hwindow;
+	hwindow->gw = gw;
+	gw->hw = hwindow;
 	ami_history_redraw(hwindow);
 }
 
-
-/**
- * Redraw history window.
- */
-
-void ami_history_redraw(struct history_window *hw)
-{
-	struct IBox *bbox;
-	ULONG xs,ys;
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &amiplot
-	};
-
-	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
-	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
-	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
-		return;
-	}
-
-	glob = &hw->gg;
-
-	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
-	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
-
-	browser_window_history_redraw_rectangle(history_bw, xs, ys,
-			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
-
-	glob = &browserglob;
-
-	ami_clearclipreg(&hw->gg);
-	ami_history_update_extent(hw);
-
-	BltBitMapRastPort(hw->gg.bm, 0, 0, hw->win->RPort,
-				bbox->Left, bbox->Top, bbox->Width, bbox->Height, 0x0C0);
-
-	ami_gui_free_space_box(bbox);
-}
 
 /**
  * Handle mouse clicks in the history window.
@@ -192,7 +182,7 @@ void ami_history_redraw(struct history_window *hw)
  * \return true if the event was handled, false to pass it on
  */
 
-static bool ami_history_click(struct history_window *hw,uint16 code)
+static bool ami_history_click(struct history_window *hw, uint16 code)
 {
 	int x, y;
 	struct IBox *bbox;
@@ -216,16 +206,15 @@ static bool ami_history_click(struct history_window *hw,uint16 code)
 	switch(code)
 	{
 		case SELECTUP:
-			browser_window_history_click(history_bw,x,y,false);
+			browser_window_history_click(hw->gw->bw, x, y, false);
 			ami_history_redraw(hw);
-			ami_schedule_redraw(hw->bw->window->shared, true);
+			ami_schedule_redraw(hw->gw->shared, true);
 		break;
 
 		case MIDDLEUP:
-			browser_window_history_click(history_bw,x,y,true);
+			browser_window_history_click(hw->gw->bw, x, y, true);
 			ami_history_redraw(hw);
 		break;
-
 	}
 
 	return true;
@@ -234,7 +223,7 @@ static bool ami_history_click(struct history_window *hw,uint16 code)
 void ami_history_close(struct history_window *hw)
 {
 	ami_free_layers(&hw->gg);
-	hw->bw->window->hw = NULL;
+	hw->gw->hw = NULL;
 	DisposeObject(hw->objects[OID_MAIN]);
 	DelObject(hw->node);
 	hwindow = NULL;
@@ -274,7 +263,7 @@ BOOL ami_history_event(struct history_window *hw)
 					break;
 				}
 
-				url = browser_window_history_position_url(history_bw,
+				url = browser_window_history_position_url(hw->gw->bw,
 					hw->win->MouseX - bbox->Left + xs,
 					hw->win->MouseY - bbox->Top + ys);
 
@@ -308,7 +297,7 @@ void ami_history_update_extent(struct history_window *hw)
 	struct IBox *bbox;
 	int width, height;
 
-	browser_window_history_size(hw->bw, &width, &height);
+	browser_window_history_size(hw->gw->bw, &width, &height);
 	if(ami_gui_get_space_box(hw->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
 		return;
