@@ -14,7 +14,7 @@
 
 # parameters
 if [ "x${TARGET_ABI}" = "x" ]; then
-    TARGET_ABI=$(uname -s)
+    TARGET_ABI=$(cc -dumpmachine)
 fi
 
 if [ "x${TARGET_WORKSPACE}" = "x" ]; then
@@ -34,7 +34,7 @@ if [ "x${NETSURF_GTK_MAJOR}" = "x" ]; then
 fi
 
 # The host system doing the building
-HOST_ABI=$(uname -s)
+HOST_ABI=$(cc -dumpmachine)
 
 # setup environment
 echo "HOST_ABI=${HOST_ABI}"
@@ -58,16 +58,16 @@ NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcs
 NS_BROWSER="netsurf"
 
 # add target specific libraries
-if [ "x${TARGET_ABI}" = "xHaiku" ]; then
+if [ "x${TARGET_ABI}" = "xi586-pc-haiku" ]; then
     # tools required to build the browser
     NS_TOOLS=""
     NS_FRONTEND_LIBS=""
-elif [ "x${TARGET_ABI}" = "xDarwin" ]; then
+elif [ "x${TARGET_ABI}" = "xi686-apple-darwin11" ]; then
     # tools required to build the browser
     NS_TOOLS=""
     # libraries required for the Darwin target abi
     NS_FRONTEND_LIBS="libsvgtiny libnsfb"
-elif [ "x${TARGET_ABI}" = "xriscos" ]; then
+elif [ "x${TARGET_ABI}" = "xarm-unknown-riscos" ]; then
     # tools required to build the browser
     NS_TOOLS="nsgenbind"
     # libraries required for the risc os target abi
@@ -198,7 +198,7 @@ ns-make-libs()
 {
     for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS}); do 
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
-        make -C ${TARGET_WORKSPACE}/${REPO} TARGET=${TARGET_ABI} $USE_CPUS $*
+        make -C ${TARGET_WORKSPACE}/${REPO} BUILD=${TARGET_ABI} $USE_CPUS $*
     done
 }
 
@@ -206,7 +206,7 @@ ns-make-libs()
 ns-make-libnsfb()
 {
     echo "    MAKE: make -C libnsfb $USE_CPUS $*"
-    make -C ${TARGET_WORKSPACE}/libnsfb TARGET=${TARGET_ABI} $USE_CPUS $*
+    make -C ${TARGET_WORKSPACE}/libnsfb BUILD=${TARGET_ABI} $USE_CPUS $*
 }
 
 # pulls all repos and makes and installs the libraries and tools
