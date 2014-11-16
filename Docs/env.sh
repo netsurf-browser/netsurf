@@ -58,26 +58,32 @@ NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcs
 NS_BROWSER="netsurf"
 
 # add target specific libraries
-if [ "x${TARGET_ABI}" = "xi586-pc-haiku" ]; then
-    # tools required to build the browser
-    NS_TOOLS=""
-    NS_FRONTEND_LIBS=""
-elif [ "x${TARGET_ABI}" = "xi686-apple-darwin11" ]; then
-    # tools required to build the browser
-    NS_TOOLS=""
-    # libraries required for the Darwin target abi
-    NS_FRONTEND_LIBS="libsvgtiny libnsfb"
-elif [ "x${TARGET_ABI}" = "xarm-unknown-riscos" ]; then
-    # tools required to build the browser
-    NS_TOOLS="nsgenbind"
-    # libraries required for the risc os target abi
-    NS_FRONTEND_LIBS="libsvgtiny librufl libpencil librosprite"
-else
-    # tools required to build the browser
-    NS_TOOLS="nsgenbind"
-    # internal libraries only required by some frontends
-    NS_FRONTEND_LIBS="libsvgtiny libnsfb"
-fi
+case "${TARGET_ABI}"
+    i586-pc-haiku)
+        # tools required to build the browser
+        NS_TOOLS=""
+        NS_FRONTEND_LIBS=""
+        ;;
+    *arwin*)
+        # OS X
+        # tools required to build the browser
+        NS_TOOLS=""
+        # libraries required for the Darwin target abi
+        NS_FRONTEND_LIBS="libsvgtiny libnsfb"
+        ;;
+    arm-unknown-riscos)
+        # tools required to build the browser
+        NS_TOOLS="nsgenbind"
+        # libraries required for the risc os target abi
+        NS_FRONTEND_LIBS="libsvgtiny librufl libpencil librosprite"
+        ;;
+    *)
+        # tools required to build the browser
+        NS_TOOLS="nsgenbind"
+        # internal libraries only required by some frontends
+        NS_FRONTEND_LIBS="libsvgtiny libnsfb"
+        ;;
+esac
 
 ################ OS Package installation ################
 
