@@ -4077,6 +4077,7 @@ static void gui_window_destroy(struct gui_window *g)
 
 	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_schedule_redraw_remove(g->shared);
+	ami_schedule(-1, ami_gui_refresh_favicon, g->shared);
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
