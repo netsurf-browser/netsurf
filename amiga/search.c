@@ -94,7 +94,7 @@ void ami_search_open(struct gui_window *gwin)
 
 	if(fwin)
 	{
-		browser_window_search_clear(fwin->gwin->shared->bw);
+		browser_window_search_clear(fwin->gwin->bw);
 		fwin->gwin->shared->searchwin = NULL;
 		fwin->gwin = gwin;
 		gwin->shared->searchwin = fwin;
@@ -179,7 +179,7 @@ void ami_search_open(struct gui_window *gwin)
 
 void ami_search_close(void)
 {
-	browser_window_search_clear(fwin->gwin->shared->bw);
+	browser_window_search_clear(fwin->gwin->bw);
 	fwin->gwin->shared->searchwin = NULL;
 	DisposeObject(fwin->objects[OID_MAIN]);
 	DelObject(fwin->node);
@@ -201,7 +201,7 @@ BOOL ami_search_event(void)
 		switch(result & WMHI_GADGETMASK)
 		{
 			case GID_SEARCHSTRING:
-				browser_window_search_clear(fwin->gwin->shared->bw);
+				browser_window_search_clear(fwin->gwin->bw);
 						
 				RefreshSetGadgetAttrs((struct Gadget *)fwin->objects[GID_PREV],
 					fwin->win, NULL,
@@ -220,7 +220,7 @@ BOOL ami_search_event(void)
 				flags = SEARCH_FLAG_FORWARDS |
 					ami_search_flags();
 				browser_window_search(
-						fwin->gwin->shared->bw,
+						fwin->gwin->bw,
 						NULL,
 						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
@@ -231,7 +231,7 @@ BOOL ami_search_event(void)
 				flags = ~SEARCH_FLAG_FORWARDS &
 					ami_search_flags();
 				browser_window_search(
-						fwin->gwin->shared->bw,
+						fwin->gwin->bw,
 						NULL,
 						flags, ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
