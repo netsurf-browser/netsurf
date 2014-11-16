@@ -693,7 +693,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 
 	if(!menuhascontent) return;
 
-	gui_window_set_pointer(gwin->gw->bw->window, GUI_POINTER_DEFAULT);
+	gui_window_set_pointer(gwin->gw, GUI_POINTER_DEFAULT);
 
 	IDoMethod(ctxmenuobj, PM_OPEN, gwin->win);
 }
@@ -957,7 +957,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_SELALL:
 				browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
-				gui_start_selection(gwin->gw->bw->window);
+				gui_start_selection(gwin->gw);
 			break;
 
 			case CMID_SELCLEAR:
