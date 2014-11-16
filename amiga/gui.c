@@ -167,22 +167,22 @@ struct ami_gui_tb_userdata {
 	int items;
 };
 
-struct MsgPort *appport;
-Class *urlStringClass;
+static struct MsgPort *appport;
+static Class *urlStringClass;
 
-BOOL locked_screen = FALSE;
-BOOL screen_closed = FALSE;
-int screen_signal = -1;
-ULONG sz_gad_width = 0;
-ULONG sz_gad_height = 0;
+static BOOL locked_screen = FALSE;
+static int screen_signal = -1;
+static ULONG sz_gad_width = 0;
+static ULONG sz_gad_height = 0;
+static bool win_destroyed;
 
-struct MsgPort *applibport = NULL;
-ULONG applibsig = 0;
-uint32 ami_appid = 0;
-struct Hook newprefs_hook;
+static struct MsgPort *applibport = NULL;
+static ULONG applibsig = 0;
+static uint32 ami_appid = 0;
+static struct Hook newprefs_hook;
 
-STRPTR temp_homepage_url = NULL;
-bool cli_force = false;
+static STRPTR temp_homepage_url = NULL;
+static bool cli_force = false;
 
 static char *current_user;
 static char *current_user_dir;

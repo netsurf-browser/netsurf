@@ -199,7 +199,6 @@ struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
 struct MsgPort *sport;
-bool win_destroyed;
 struct gui_window *cur_gw;
 struct gui_globals browserglob;
 BOOL ami_autoscroll;

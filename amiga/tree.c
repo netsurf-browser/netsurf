@@ -1415,7 +1415,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						break;
 					}
 
-					if(win_destroyed) break;
 					code = item->NextSelect;
 				}
 			break;
