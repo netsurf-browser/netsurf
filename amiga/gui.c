@@ -2374,26 +2374,9 @@ static void ami_handle_msg(void)
 				case WMHI_NEWSIZE:
 					switch(node->Type)
 					{
-						struct Node *tab = NULL, *ntab = NULL;
-						struct gui_window *gw = NULL;
-
 						case AMINS_WINDOW:
 							ami_set_border_gadget_size(gwin);
 							ami_throbber_redraw_schedule(0, gwin->bw->window);
-
-							if(gwin->tabs)
-							{
-								tab = GetHead(&gwin->tab_list);
-
-								do
-								{
-									ntab=GetSucc(tab);
-									GetClickTabNodeAttrs(tab,
-										TNA_UserData, &gw,
-										TAG_DONE);
-								} while((tab=ntab));
-							}
-
 							ami_schedule(0, ami_gui_refresh_favicon, gwin);
 							browser_window_schedule_reformat(gwin->bw);
 							ami_schedule_redraw(gwin, true);
