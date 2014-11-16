@@ -241,7 +241,7 @@ static void gui_download_window_done(struct gui_download_window *dw)
 
 	if((nsoption_bool(download_notify)) && (dw->result == AMINS_DLOAD_OK))
 	{
-		Notify(ami_appid, APPNOTIFY_Title, messages_get("amiDownloadComplete"),
+		Notify(ami_gui_get_app_id(), APPNOTIFY_Title, messages_get("amiDownloadComplete"),
 				APPNOTIFY_PubScreenName, "FRONT",
 				APPNOTIFY_BackMsg, dw->fname,
 				APPNOTIFY_CloseOnDC, TRUE,

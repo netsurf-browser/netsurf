@@ -178,6 +178,7 @@ ULONG sz_gad_height = 0;
 
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
+uint32 ami_appid = 0;
 struct Hook newprefs_hook;
 
 STRPTR temp_homepage_url = NULL;
@@ -5231,6 +5232,12 @@ static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl,
 		AddPart(fname, filereq->fr_File, 1024);
 		browser_window_set_gadget_filename(g->shared->bw, gadget, fname);
 	}
+}
+
+/* exported function documented in amiga/gui.h */
+uint32 ami_gui_get_app_id(void)
+{
+	return ami_appid;
 }
 
 static struct gui_window_table amiga_window_table = {

@@ -187,6 +187,13 @@ nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox);
  */
 void ami_gui_free_space_box(struct IBox *bbox);
 
+/**
+ * Get the application.library ID NetSurf is registered as.
+ *
+ * @return App ID.
+ */
+uint32 ami_gui_get_app_id(void);
+
 struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
@@ -195,7 +202,6 @@ struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
 struct gui_globals browserglob;
-uint32 ami_appid;
 BOOL ami_autoscroll;
 BOOL popupmenu_lib_ok;
 #endif
