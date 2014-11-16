@@ -489,7 +489,7 @@ static void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 			DisplayBeep(scrn);
 		} else if(url) {
 			if((gwin = ami_window_at_pointer(AMINS_WINDOW))) {
-				browser_window_navigate(gwin->bw,
+				browser_window_navigate(gwin->gw->bw,
 						url,
 						NULL,
 						BW_NAVIGATE_HISTORY,
