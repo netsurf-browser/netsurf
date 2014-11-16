@@ -28,7 +28,7 @@
 #
 
 # TARGET is set to the frontend target to build
-# label is set to the identifier of the toolchain doing the building
+# BUILD is set to the identifier of the toolchain doing the building
 # CC is the compiler (gcc or clang)
 # BUILD_JS is the javascript type (json or jsoff)
 # BUILD_NUMBER is the CI build number
@@ -56,13 +56,13 @@ MAKE=make
 #   specific parameters too
 case ${TARGET} in
     "riscos")
-	case ${label} in
+	case ${BUILD} in
 	    "arm-unknown-riscos")
 		ARTIFACT_TARGET=riscos
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -73,13 +73,13 @@ case ${TARGET} in
 	;;
 
     "haiku")
-	case ${label} in
+	case ${BUILD} in
 	    "i586-pc-haiku")
 		ARTIFACT_TARGET=Haiku
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -91,13 +91,13 @@ case ${TARGET} in
 
 
     "windows")
-	case ${label} in
+	case ${BUILD} in
 	    "i686-w64-mingw32")
 		ARTIFACT_TARGET=windows
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -109,11 +109,11 @@ case ${TARGET} in
 
 
     "cocoa")
-	case ${label} in
+	case ${BUILD} in
 	    "i686-apple-darwin10")
 		ARTIFACT_TARGET=Darwin
-		IDENTIFIER="${label}-${IDENTIFIER}"
-		OLD_IDENTIFIER="${label}-${OLD_IDENTIFIER}"
+		IDENTIFIER="${BUILD}-${IDENTIFIER}"
+		OLD_IDENTIFIER="${BUILD}-${OLD_IDENTIFIER}"
 		;;
 
 	    "powerpc-apple-darwin9")
@@ -123,7 +123,7 @@ case ${TARGET} in
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -135,13 +135,13 @@ case ${TARGET} in
 
 
     "amiga")
-	case ${label} in
+	case ${BUILD} in
 	    "ppc-amigaos")
 		ARTIFACT_TARGET=amiga
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -153,7 +153,7 @@ case ${TARGET} in
 
 
     "atari")
-	case ${label} in
+	case ${BUILD} in
 	    "m68k-atari-mint")
 		ARTIFACT_TARGET=m68k-atari-mint
 		PKG_SRC=ns020
@@ -170,7 +170,7 @@ case ${TARGET} in
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -182,7 +182,7 @@ case ${TARGET} in
 
 
     "gtk")
-	case ${label} in
+	case ${BUILD} in
 	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
 		;;
@@ -193,7 +193,7 @@ case ${TARGET} in
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label}\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD}\""
 		exit 1
 		;;
 
@@ -205,7 +205,7 @@ case ${TARGET} in
 
 
     "framebuffer")
-	case ${label} in
+	case ${BUILD} in
 	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
 		;;
@@ -220,37 +220,37 @@ case ${TARGET} in
 
 	    "arm-unknown-riscos")
 		ARTIFACT_TARGET=riscos
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "m68k-atari-mint")
 		ARTIFACT_TARGET=m68k-atari-mint
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "m5475-atari-mint")
 		ATARIARCH=v4e
 		ARTIFACT_TARGET=m5475-atari-mint
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "i686-w64-mingw32")
 		ARTIFACT_TARGET=windows
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "ppc-amigaos")
 		ARTIFACT_TARGET=amiga
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
@@ -263,7 +263,7 @@ case ${TARGET} in
 
     "monkey")
 	# monkey target can be built on most of the supported architectures
-	case ${label} in
+	case ${BUILD} in
 	    "x86_64-linux-gnu")
 		ARTIFACT_TARGET=Linux
 		;;
@@ -278,44 +278,44 @@ case ${TARGET} in
 
 	    "arm-unknown-riscos")
 		ARTIFACT_TARGET=riscos
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "m68k-atari-mint")
 		ARTIFACT_TARGET=m68k-atari-mint
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "m5475-atari-mint")
 		ATARIARCH=v4e
 		ARTIFACT_TARGET=m5475-atari-mint
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "i686-w64-mingw32")
 		ARTIFACT_TARGET=windows
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    "ppc-amigaos")
 		ARTIFACT_TARGET=amiga
-		export GCCSDK_INSTALL_ENV=/opt/netsurf/${label}/env
-		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${label}/cross/bin
+		export GCCSDK_INSTALL_ENV=/opt/netsurf/${BUILD}/env
+		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${BUILD}/cross/bin
 		;;
 
 	    *)
-		echo "Target \"${TARGET}\" cannot be built on \"${label})\""
+		echo "Target \"${TARGET}\" cannot be built on \"${BUILD})\""
 		exit 1
 		;;
 
 	esac
 
-	IDENTIFIER="${label}-${IDENTIFIER}"
-	OLD_IDENTIFIER="${label}-${OLD_IDENTIFIER}"
+	IDENTIFIER="${BUILD}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${BUILD}-${OLD_IDENTIFIER}"
 	PKG_SRC=nsmonkey
 	PKG_SFX=
 	;;
@@ -329,7 +329,7 @@ case ${TARGET} in
 esac
 
 # setup environment
-export PREFIX=${JENKINS_HOME}/artifacts-${ARTIFACT_TARGET}
+export PREFIX=${JENKINS_HOME}/artifacts-${BUILD}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
@@ -342,7 +342,7 @@ fi
 
 # convert javascript parameters
 if [ "${BUILD_JS}" = "json" ];then
-    case ${label} in
+    case ${BUILD} in
         "arm-unknown-riscos")
 	    BUILD_MOZJS=NO
 	    BUILD_JS=YES
