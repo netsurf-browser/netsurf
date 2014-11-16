@@ -194,7 +194,6 @@ void ami_gui_free_space_box(struct IBox *bbox);
  */
 uint32 ami_gui_get_app_id(void);
 
-struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
