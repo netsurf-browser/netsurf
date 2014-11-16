@@ -152,7 +152,7 @@ static struct browser_window *ami_find_tab_gwin(struct gui_window_2 *gwin, int t
 	struct Node *ntab;
 	struct browser_window *bw;
 
-	if((tab == 0) || (gwin->tabs == 0)) return gwin->bw;
+	if((tab == 0) || (gwin->tabs == 0)) return gwin->gw->bw;
 
 	ctab = GetHead(&gwin->tab_list);
 
@@ -573,7 +573,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 			if(node->Type == AMINS_WINDOW)
 			{
 				windows++;
-				if(gwin->bw == bw)
+				if(gwin->gw->bw == bw)
 				{
 					window = windows;
 					break;
