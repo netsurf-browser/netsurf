@@ -58,7 +58,7 @@ NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcs
 NS_BROWSER="netsurf"
 
 # add target specific libraries
-case "${TARGET_ABI}"
+case "${TARGET_ABI}" in
     i586-pc-haiku)
         # tools required to build the browser
         NS_TOOLS=""
@@ -202,7 +202,12 @@ ns-clone()
 # issues a make command to all libraries
 ns-make-libs()
 {
-    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS}); do 
+    for REPO in $(echo ${NS_TOOLS}); do
+	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
+	make -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
+    done
+
+    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do 
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
         make -C ${TARGET_WORKSPACE}/${REPO} BUILD=${TARGET_ABI} $USE_CPUS $*
     done
