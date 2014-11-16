@@ -89,7 +89,7 @@ void gui_start_selection(struct gui_window *g)
 	OnMenu(g->shared->win, AMI_MENU_CLEAR);
 	OnMenu(g->shared->win, AMI_MENU_COPY);
 
-	if (browser_window_get_editor_flags(g->shared->bw) & BW_EDITOR_CAN_CUT)
+	if (browser_window_get_editor_flags(g->bw) & BW_EDITOR_CAN_CUT)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
 }
 
@@ -285,9 +285,9 @@ void ami_drag_selection(struct gui_window *g)
 	{
 		iffh = ami_clipboard_init_internal(1);
 
-		browser_window_key_press(g->shared->bw, KEY_COPY_SELECTION);
-		browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
-		browser_window_key_press(gwin->bw, KEY_PASTE);
+		browser_window_key_press(g->bw, KEY_COPY_SELECTION);
+		browser_window_mouse_click(gwin->gw->bw, BROWSER_MOUSE_PRESS_1, x, y);
+		browser_window_key_press(gwin->gw->bw, KEY_PASTE);
 
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
@@ -299,7 +299,7 @@ void ami_drag_selection(struct gui_window *g)
 
 		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
 		{
-			if((sel = browser_window_get_selection(g->shared->bw)))
+			if((sel = browser_window_get_selection(g->bw)))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
@@ -310,7 +310,7 @@ void ami_drag_selection(struct gui_window *g)
 		}
 		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
 		{
-			if((sel = browser_window_get_selection(g->shared->bw)))
+			if((sel = browser_window_get_selection(g->bw)))
 			{
 				utf8text = ami_utf8_easy(sel);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
