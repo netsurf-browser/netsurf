@@ -218,8 +218,8 @@ static void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *
 	 * CMSUB_FRAME     - userdata = hlcache_object *
 	 * CMSUB_URL       - userdata = char *
 	 * CMSUB_OBJECT    - userdata = hlcache_object *
-	 * CMSUB_SEL       - userdata = gui_window *
-	 * CMSUB_NAVIGATE  - userdata = browser_window * (only for menu construction)
+	 * CMSUB_SEL       - userdata = gui_window * (only for menu construction)
+	 * CMSUB_NAVIGATE  - userdata = browser_window * 
 	 * CMID_SELECTFILE - userdata = ami_file_input_menu_data *
 	 */
 

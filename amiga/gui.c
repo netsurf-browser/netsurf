@@ -477,8 +477,11 @@ colour_option_from_pen(UWORD pen,
 /* exported interface documented in amiga/gui.h */
 STRPTR ami_gui_get_screen_title(void)
 {
-	if(nsscreentitle == NULL)
+	if(nsscreentitle == NULL) {
 		nsscreentitle = ASPrintf("NetSurf %s", netsurf_version);
+		/* If this fails it will be NULL, which means we'll get the screen's
+		 * default titlebar text instead - so no need to check for error. */
+	}
 
 	return nsscreentitle;
 }
