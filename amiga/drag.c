@@ -165,7 +165,7 @@ void ami_drag_save(struct Window *win)
 		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_selection",1024);
 			struct gui_window *g = (struct gui_window *) drag_save_data;
-			ami_file_save(AMINS_SAVE_SELECTION, path, win, NULL, NULL, g->shared->bw);
+			ami_file_save(AMINS_SAVE_SELECTION, path, win, NULL, NULL, g->bw);
 		break;
 
 		case GUI_SAVE_COMPLETE:
