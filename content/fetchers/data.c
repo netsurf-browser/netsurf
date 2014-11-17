@@ -146,7 +146,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	char *params;
 	char *comma;
 	char *unescaped;
-        int templen;
+        int unescaped_len;
 	
 	/* format of a data: URL is:
 	 *   data:[<mimetype>][;base64],<data>
@@ -198,12 +198,10 @@ static bool fetch_data_process(struct fetch_data_context *c)
 		c->base64 = false;
 	}
 	
-	/* we URL unescape the data first, just incase some insane page
+	/* URL unescape the data first, just incase some insane page
 	 * decides to nest URL and base64 encoding.  Like, say, Acid2.
 	 */
-        templen = c->datalen;
-        unescaped = curl_easy_unescape(curl, comma + 1, 0, &templen);
-        c->datalen = templen;
+        unescaped = curl_easy_unescape(curl, comma + 1, 0, &unescaped_len);
         if (unescaped == NULL) {
 		msg.type = FETCH_ERROR;
 		msg.data.error = "Unable to URL decode data: URL";
@@ -212,9 +210,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	if (c->base64) {
-		c->data = malloc(c->datalen); /* safe: always gets smaller */
-		if (base64_decode(unescaped, c->datalen, c->data,
-				&(c->datalen)) == false) {
+		base64_decode_alloc(unescaped, unescaped_len, &c->data,	&c->datalen);
+		if (c->data == NULL) {
 			msg.type = FETCH_ERROR;
 			msg.data.error = "Unable to Base64 decode data: URL";
 			fetch_data_send_callback(&msg, c);
@@ -222,7 +219,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 			return false;
 		}
 	} else {
-		c->data = malloc(c->datalen);
+		c->data = malloc(unescaped_len);
 		if (c->data == NULL) {
 			msg.type = FETCH_ERROR;
 			msg.data.error =
@@ -231,7 +228,8 @@ static bool fetch_data_process(struct fetch_data_context *c)
 			curl_free(unescaped);
 			return false;
 		}
-		memcpy(c->data, unescaped, c->datalen);
+		c->datalen = unescaped_len;
+		memcpy(c->data, unescaped, unescaped_len);
 	}
 	
 	curl_free(unescaped);
