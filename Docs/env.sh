@@ -52,7 +52,7 @@ export NETSURF_GTK_MAJOR
 NS_GIT="git://git.netsurf-browser.org"
 
 # internal libraries all frontends require (order is important)
-NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc"
+NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils"
 
 # The browser itself
 NS_BROWSER="netsurf"
@@ -60,27 +60,33 @@ NS_BROWSER="netsurf"
 # add target specific libraries
 case "${TARGET_ABI}" in
     i586-pc-haiku)
-        # tools required to build the browser
+        # tools required to build the browser for haiku (beos)
         NS_TOOLS=""
+        # libraries required for the haiku target abi
         NS_FRONTEND_LIBS=""
         ;;
     *arwin*)
-        # OS X
-        # tools required to build the browser
+        # tools required to build the browser for OS X
         NS_TOOLS=""
         # libraries required for the Darwin target abi
         NS_FRONTEND_LIBS="libsvgtiny libnsfb"
         ;;
     arm-unknown-riscos)
-        # tools required to build the browser
+        # tools required to build the browser for RISC OS
         NS_TOOLS="nsgenbind"
         # libraries required for the risc os target abi
         NS_FRONTEND_LIBS="libsvgtiny librufl libpencil librosprite"
         ;;
+    *-atari-mint)
+        # tools required to build the browser for atari
+        NS_TOOLS=""
+        # libraries required for the atari frontend
+        NS_FRONTEND_LIBS=""
+        ;;
     *)
-        # tools required to build the browser
+        # default tools required to build the browser
         NS_TOOLS="nsgenbind"
-        # internal libraries only required by some frontends
+        # default additional internal libraries
         NS_FRONTEND_LIBS="libsvgtiny libnsfb"
         ;;
 esac
