@@ -37,7 +37,7 @@ struct nscallback
 	struct TimeRequest *treq;
 };
 
-PblHeap *schedule_list;
+static PblHeap *schedule_list;
 
 /**
  * Remove timer event
@@ -202,26 +202,14 @@ static int ami_schedule_compare(const void *prev, const void *next)
 
 
 /* exported function documented in amiga/schedule.h */
-void schedule_run(BOOL poll)
+void schedule_run(void)
 {
 	struct nscallback *nscb;
 	void (*callback)(void *p);
 	void *p;
-	struct TimeVal tv;
 
 	nscb = pblHeapGetFirst(schedule_list);
-
 	if(nscb == -1) return;
-
-	if(poll) {
-		/* Ensure the scheduled event time has passed (CmpTime<=0)
-		 * For timer signalled events this must *always* be true,
-		 * so we save some time by only checking if we're polling.
-		 */
-
-		GetSysTime(&tv);
-		if(CmpTime(&tv, &nscb->tv) > 0) return;
- 	}
 
 	callback = nscb->callback;
 	p = nscb->p;

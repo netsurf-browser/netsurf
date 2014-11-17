@@ -60,6 +60,7 @@ void ami_schedule_free(void);
  * venture to later scheduled events until the next time it is called -
  * immediately afterwards, if we're in a timer signalled loop.
  */
-void schedule_run(BOOL poll);
+void schedule_run(void);
 
 #endif
+
