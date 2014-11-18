@@ -210,7 +210,7 @@ unsigned int ro_gui_status_bar_get_width(struct status_bar *sb)
  * Set the visibility status of the status bar
  *
  * \param  sb  the status bar to check the visiblity of
- * \param visible  if teh status bar should be shown or not.
+ * \param visible  if the status bar should be shown or not.
  * \return whether the status bar is visible
  */
 void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible)

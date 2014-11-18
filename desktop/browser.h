@@ -320,7 +320,7 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
  * Gets the scale of a browser window
  *
  * \param bw The browser window to get the scale of.
- * \return The scale of teh window.
+ * \return The scale of the window.
  */
 float browser_window_get_scale(struct browser_window *bw);
 

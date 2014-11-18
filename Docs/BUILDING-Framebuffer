@@ -229,7 +229,7 @@
 
   The compiled in default paths may be altered by setting values in
   the user configuration makefile Makefile.config. These values must
-  be set to teh absolute path of the relevant font file including its
+  be set to the absolute path of the relevant font file including its
   .ttf extension. The variables are:
 
   NETSURF_FB_FONT_SANS_SERIF

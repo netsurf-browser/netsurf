@@ -87,7 +87,7 @@ void browser_window_place_caret(struct browser_window *bw, int x, int y,
  * Removes the caret and callback for key process.
  *
  * \param bw The browser window from which to remove caret.
- * \param only_hide Revove teh caret but leave teh textinput editable.
+ * \param only_hide Revove the caret but leave the textinput editable.
  */
 void browser_window_remove_caret(struct browser_window *bw, bool only_hide);
 

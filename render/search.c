@@ -372,7 +372,7 @@ static bool find_occurrences_html(const char *pattern, int p_len,
  * \param pattern   the string pattern to search for
  * \param p_len     pattern length
  * \param c         the content to be searched
- * \param case_sens wheteher to perform a case sensitive search
+ * \param case_sens whether to perform a case sensitive search
  * \param context   The search context to add the entry to.
  * \return true on success, false on memory allocation failure
  */

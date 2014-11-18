@@ -42,7 +42,7 @@ struct fetch;
  * The flow of a fetch operation is:
  *   URL is checked for aceptability.
  *   setup with all applicable data.
- *   start is called before teh first poll
+ *   start is called before the first poll
  *   after completion or abort it is freed
  *
  */

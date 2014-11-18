@@ -1439,7 +1439,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 		return NSERROR_NOT_FOUND;
 	}
 
-	/* create a unix path from teh cananocal risc os one */
+	/* create a unix path from the cananocal risc os one */
 	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
 
 	if (unix_path == NULL) {

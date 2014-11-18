@@ -106,7 +106,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
- * \param  state the state to create teh bitmap in.
+ * \param  state the state to create the bitmap in.
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 

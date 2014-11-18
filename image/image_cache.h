@@ -94,7 +94,7 @@ struct bitmap *image_cache_find_bitmap(struct content *c);
  * conversion when a content is initially added to the cache. 
  *
  * @param c The content to be considered.
- * @return true if a speculative conversion is desired false otehrwise.
+ * @return true if a speculative conversion is desired false otherwise.
  */
 bool image_cache_speculate(struct content *c);
 
@@ -148,7 +148,7 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
  * r The total size of read operations which could not be sucessfully 
  *     returned. ie. not available in cache and conversion failed.
  * s The number of images which were placed in the cache but never read.
- * t The number of images that were converted on insertion into teh cache which were subsequently never used.
+ * t The number of images that were converted on insertion into the cache which were subsequently never used.
  * u The number of times an image was converted after the first
  * v The number of images that had extra conversions performed.
  * w Size of the image that was converted (read missed cache) highest number 

@@ -157,7 +157,7 @@ static void fetch_curl_finalise(lwc_string *scheme)
  * Check if this fetcher can fetch a url.
  *
  * \param url The url to check.
- * \return true if teh fetcher supports teh url else false.
+ * \return true if the fetcher supports the url else false.
  */
 static bool fetch_curl_can_fetch(const nsurl *url)
 {

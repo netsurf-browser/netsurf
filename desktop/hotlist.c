@@ -320,7 +320,7 @@ static nserror hotlist_add_entry_internal(nsurl *url, const char *title,
  * \param relation	Existing node to insert as relation of, or NULL
  * \param rel		Folder's relationship to relation
  * \param folder	Updated to new hotlist folder data
- * \param default_folder Add to teh default folder.
+ * \param default_folder Add to the default folder.
  * \return NSERROR_OK on success, or appropriate error otherwise
  */
 static nserror hotlist_add_folder_internal(

@@ -37,7 +37,7 @@
  *
  * \param root the dom node to use as the root of the tree walk
  * \param callback The function called for each element
- * \param ctx The context passed to teh callback.
+ * \param ctx The context passed to the callback.
  * \return true if all nodes were examined, false if the callback terminated
  *         the walk early.
  */

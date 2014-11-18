@@ -151,7 +151,7 @@ int fbtk_post_callback(fbtk_widget_t *widget, fbtk_callback_type cbt, ...);
  * @param widget The widget to set the handler for.
  * @param cbt The type of callback to set.
  * @param cb The callback.
- * @param pw The private pointer to pass when calling teh callback.
+ * @param pw The private pointer to pass when calling the callback.
  * @return The previous callback handler for the type or NULL.
  */
 fbtk_callback fbtk_set_handler(fbtk_widget_t *widget, fbtk_callback_type cbt, fbtk_callback cb, void *pw);
