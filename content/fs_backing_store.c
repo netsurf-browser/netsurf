@@ -44,6 +44,8 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
+#include "desktop/gui_internal.h"
+#include "desktop/gui_misc.h"
 
 #include "content/backing_store.h"
 
@@ -55,6 +57,9 @@
 
 /** Backing store file format version */
 #define CONTROL_VERSION 110
+
+/** Number of milliseconds after a update before control data maintinance is performed  */
+#define CONTROL_MAINT_TIME 10000
 
 /** Get address from ident */
 #define BS_ADDRESS(ident, state) ((ident) & ((1 << state->ident_bits) - 1))
@@ -470,6 +475,86 @@ static nserror store_evict(struct store_state *state)
 
 
 /**
+ * Write filesystem entries to file.
+ *
+ * Serialise entry index out to storage.
+ *
+ * @param state The backing store state to serialise.
+ * @return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror write_entries(struct store_state *state)
+{
+	int fd;
+	char *tname = NULL; /* temporary file name for atomic replace */
+	char *fname = NULL; /* target filename */
+	size_t entries_size;
+	size_t written;
+	nserror ret;
+
+	if (state->entries_dirty == false) {
+		/* entries have not been updated since last write */
+		return NSERROR_OK;
+	}
+
+	ret = netsurf_mkpath(&tname, NULL, 2, state->path, "t"ENTRIES_FNAME);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd == -1) {
+		free(tname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	entries_size = state->last_entry * sizeof(struct store_entry);
+
+	written = (size_t)write(fd, state->entries, entries_size);
+
+	close(fd);
+
+	/* check all data was written */
+	if (written != entries_size) {
+		unlink(tname);
+		free(tname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
+	if (ret != NSERROR_OK) {
+		unlink(tname);
+		free(tname);
+		return ret;
+	}
+
+	if (rename(tname, fname) != 0) {
+		unlink(tname);
+		free(tname);
+		free(fname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
+ * maintinance of control structures.
+ *
+ * callback scheduled when control data has been update. Currently
+ * this is for when the entries table is dirty and requires
+ * serialising.
+ *
+ * \param s store state to maintain.
+ */
+static void control_maintinance(void *s)
+{
+	struct store_state *state = s;
+
+	write_entries(state);
+}
+
+
+/**
  * Lookup a backing store entry in the entry table from a url.
  *
  * This finds the store entry associated with the given
@@ -511,6 +596,8 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 	state->entries[sei].use_count++;
 
 	state->entries_dirty = true;
+
+	guit->browser->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
 	return NSERROR_OK;
 }
@@ -602,6 +689,8 @@ set_store_entry(struct store_state *state,
 	state->total_alloc += datalen;
 
 	state->entries_dirty = true;
+
+	guit->browser->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
 	*bse = se;
 
@@ -700,68 +789,8 @@ build_entrymap(struct store_state *state)
 	return NSERROR_OK;
 }
 
-/**
- * Write filesystem entries to file.
- *
- * Serialise entry index out to storage.
- *
- * @param state The backing store state to serialise.
- * @return NSERROR_OK on sucess or error code on faliure.
- */
-static nserror write_entries(struct store_state *state)
-{
-	int fd;
-	char *tname = NULL; /* temporary file name for atomic replace */
-	char *fname = NULL; /* target filename */
-	size_t entries_size;
-	size_t written;
-	nserror ret;
 
-	if (state->entries_dirty == false) {
-		/* entries have not been updated since last write */
-		return NSERROR_OK;
-	}
 
-	ret = netsurf_mkpath(&tname, NULL, 2, state->path, "t"ENTRIES_FNAME);
-	if (ret != NSERROR_OK) {
-		return ret;
-	}
-
-	fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd == -1) {
-		free(tname);
-		return NSERROR_SAVE_FAILED;
-	}
-
-	entries_size = state->last_entry * sizeof(struct store_entry);
-
-	written = (size_t)write(fd, state->entries, entries_size);
-
-	close(fd);
-
-	/* check all data was written */
-	if (written != entries_size) {
-		unlink(tname);
-		free(tname);
-		return NSERROR_SAVE_FAILED;
-	}
-
-	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
-	if (ret != NSERROR_OK) {
-		unlink(tname);
-		free(tname);
-		return ret;
-	}
-
-	if (rename(tname, fname) != 0) {
-		unlink(tname);
-		free(tname);
-		free(fname);
-		return NSERROR_SAVE_FAILED;
-	}
-
-	return NSERROR_OK;
-}
 
 /**
  * Read description entries into memory.
@@ -1087,6 +1116,7 @@ static nserror
 finalise(void)
 {
 	if (storestate != NULL) {
+		guit->browser->schedule(-1, control_maintinance, storestate);
 		write_entries(storestate);
 
 		/* avoid division by zero */
