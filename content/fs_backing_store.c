@@ -152,7 +152,6 @@ struct store_state {
 struct store_state *storestate;
 
 
-
 /**
  * Remove a backing store entry from the entry table.
  *
@@ -255,7 +254,7 @@ store_fname(struct store_state *state,
 {
 	char *fname = NULL;
 	uint8_t b32u_i[8]; /* base32 encoded ident */
-	uint8_t b32u_d[6][2]; /* base64 ident as separate components */
+	uint8_t b32u_d[6][2]; /* base32 ident as separate components */
 	const char *dat;
 
 	/* RFC4648 base32 encoding table */
@@ -723,13 +722,14 @@ store_open(struct store_state *state,
 		return -1;
 	}
 
-	/** @todo mkdir only on write flag */
-	/* ensure path to file is usable */
-	ret = netsurf_mkdir_all(fname);
-	if (ret != NSERROR_OK) {
-		LOG(("file path \"%s\" could not be created", fname));
-		free(fname);
-		return -1;
+	/* ensure all path elements to file exist if creating file */
+	if (openflags & O_CREAT) {
+		ret = netsurf_mkdir_all(fname);
+		if (ret != NSERROR_OK) {
+			LOG(("file path \"%s\" could not be created", fname));
+			free(fname);
+			return -1;
+		}
 	}
 
 	LOG(("opening %s", fname));
@@ -1056,6 +1056,7 @@ initialise(const struct llcache_store_parameters *parameters)
 		newstate->entry_bits = parameters->entry_size;
 	}
 
+	/* read store control and create new if required */
 	ret = read_control(newstate);
 	if (ret != NSERROR_OK) {
 		LOG(("read control failed %s", messages_get_errorcode(ret)));
