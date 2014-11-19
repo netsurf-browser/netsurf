@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Low-level resource cache persistent storage implementation.
  *
  * file based backing store.
@@ -63,6 +64,9 @@
 
 /** Get store entry from ident. */
 #define BS_ENTRY(ident, state) state->entries[state->addrmap[(ident) & ((1 << state->ident_bits) - 1)]]
+
+/** Filename of serialised entries */
+#define ENTRIES_FNAME "entries"
 
 enum store_entry_flags {
 	STORE_ENTRY_FLAG_NONE = 0,
@@ -699,16 +703,18 @@ build_entrymap(struct store_state *state)
 /**
  * Write filesystem entries to file.
  *
- * @todo consider atomic replace using rename.
+ * Serialise entry index out to storage.
  *
- * @param state The backing store state to read the entries from.
+ * @param state The backing store state to serialise.
  * @return NSERROR_OK on sucess or error code on faliure.
  */
 static nserror write_entries(struct store_state *state)
 {
 	int fd;
-	char *fname = NULL;
-	ssize_t written;
+	char *tname = NULL; /* temporary file name for atomic replace */
+	char *fname = NULL; /* target filename */
+	size_t entries_size;
+	size_t written;
 	nserror ret;
 
 	if (state->entries_dirty == false) {
@@ -716,22 +722,41 @@ static nserror write_entries(struct store_state *state)
 		return NSERROR_OK;
 	}
 
-	ret = netsurf_mkpath(&fname, NULL, 2, state->path, "entries");
+	ret = netsurf_mkpath(&tname, NULL, 2, state->path, "t"ENTRIES_FNAME);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
 
-	fd = open(fname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	free(fname);
+	fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (fd == -1) {
+		free(tname);
 		return NSERROR_SAVE_FAILED;
 	}
 
-	written = write(fd, state->entries,
-			state->last_entry * sizeof(struct store_entry));
+	entries_size = state->last_entry * sizeof(struct store_entry);
+
+	written = (size_t)write(fd, state->entries, entries_size);
+
 	close(fd);
-	if (written < 0) {
-		/** @todo Delete the file? */
+
+	/* check all data was written */
+	if (written != entries_size) {
+		unlink(tname);
+		free(tname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
+	if (ret != NSERROR_OK) {
+		unlink(tname);
+		free(tname);
+		return ret;
+	}
+
+	if (rename(tname, fname) != 0) {
+		unlink(tname);
+		free(tname);
+		free(fname);
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -753,7 +778,7 @@ read_entries(struct store_state *state)
 	char *fname = NULL;
 	nserror ret;
 
-	ret = netsurf_mkpath(&fname, NULL, 2, state->path, "entries");
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
 	if (ret != NSERROR_OK) {
 		return ret;
 	}
