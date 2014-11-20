@@ -27,13 +27,12 @@
 
 /** storage control flags */
 enum backing_store_flags {
-	BACKING_STORE_NONE = 0, /**< no special processing */
-	BACKING_STORE_META = 1, /**< data is metadata */
-	BACKING_STORE_MMAP = 2, /**< when data is retrived this indicates the
-				 * returned buffer may be memory mapped,
-				 * flag must be cleared if the storage is
-				 * allocated and is not memory mapped.
-				 */
+	/** no special processing */
+	BACKING_STORE_NONE = 0,
+	/** data is metadata */
+	BACKING_STORE_META = 1,
+	/** backing store will handle allocation. */
+	BACKING_STORE_ALLOC = 2
 };
 
 /** low level cache backing store operation table
@@ -61,10 +60,18 @@ struct gui_llcache_table {
 	/**
 	 * Place an object in the backing store.
 	 *
-	 * @param url The url is used as the unique primary key for the data.
-	 * @param flags The flags to control how the obejct is stored.
-	 * @param data The objects data.
-	 * @param datalen The length of the \a data.
+	 * The object is placed in the persistent store and may be
+	 * retrieved. If the BACKING_STORE_ALLOC flag is used the
+	 * backing store will take a reference to the passed data,
+	 * subsequently the caller should explicitly release the
+	 * allocation using the release method and not free the data
+	 * itself. An additional effect of this is that the persistent
+	 * storage may not have been completely written on return.
+	 *
+	 * @param[in] url The url is used as the unique primary key for the data.
+	 * @param[in] flags The flags to control how the obejct is stored.
+	 * @param[in] data The objects data.
+	 * @param[in] datalen The length of the \a data.
 	 * @return NSERROR_OK on success or error code on faliure.
 	 */
 	nserror (*store)(struct nsurl *url, enum backing_store_flags flags,
@@ -73,10 +80,14 @@ struct gui_llcache_table {
 	/**
 	 * Retrive an object from the backing store.
 	 *
-	 * @param url The url is used as the unique primary key for the data.
-	 * @param flags The flags to control how the object is retrived.
-	 * @param data The objects data.
-	 * @param datalen The length of the \a data retrieved.
+	 * If the BACKING_STORE_ALLOC flag is set the returned memory
+	 * is managed by the backing store and should be freed by
+	 * calling the release method.
+	 *
+	 * @param[in] url The url is used as the unique primary key for the data.
+	 * @param[in] flags The flags to control how the object is retrived.
+	 * @param[in,out] data The retrived objects data.
+	 * @param[in,out] datalen The length of the \a data retrieved.
 	 * @return NSERROR_OK on success or error code on faliure.
 	 */
 	nserror (*fetch)(struct nsurl *url, enum backing_store_flags *flags,
@@ -88,10 +99,26 @@ struct gui_llcache_table {
 	 * The entry (if present in the backing store) must no longer
 	 * be returned as a result to the fetch or meta operations.
 	 *
+	 * If the entry had data allocated it will be released.
+	 *
 	 * @param url The url is used as the unique primary key to invalidate.
 	 * @return NSERROR_OK on success or error code on faliure.
 	 */
 	nserror (*invalidate)(struct nsurl *url);
+
+	/**
+	 * release a previously fetched or stored memory object.
+	 *
+	 * if the BACKING_STORE_ALLOC flag was used with the fetch or
+	 * store operation for this url the returned storage is
+	 * unreferenced. When the reference count drops to zero the
+	 * storage is released.
+	 *
+	 * @param url The url is used as the unique primary key to invalidate.
+	 * @param[in] flags The flags to control how the object data is released.
+	 * @return NSERROR_OK on success or error code on faliure.
+	 */
+	nserror (*release)(struct nsurl *url, enum backing_store_flags flags);
 };
 
 extern struct gui_llcache_table* null_llcache_table;

@@ -477,6 +477,9 @@ static nserror verify_llcache_register(struct gui_llcache_table *glt)
 	if (glt->invalidate == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}
+	if (glt->release == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 	if (glt->initialise == NULL) {
 		return NSERROR_BAD_PARAMETER;
 	}

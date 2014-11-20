@@ -57,12 +57,30 @@ static nserror invalidate(nsurl *url)
 	return NSERROR_NOT_FOUND;
 }
 
+/**
+ * release a previously fetched or stored memory object.
+ *
+ * if the BACKING_STORE_ALLOC flag was used with the fetch or
+ * store operation for this url the returned storage is
+ * unreferenced. When the reference count drops to zero the
+ * storage is released.
+ *
+ * @param url The url is used as the unique primary key to invalidate.
+ * @param[in] flags The flags to control how the object data is released.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+static nserror release(nsurl *url, enum backing_store_flags flags)
+{
+	return NSERROR_NOT_FOUND;
+}
+
 static struct gui_llcache_table llcache_table = {
 	.initialise = initialise,
 	.finalise = finalise,
 	.store = store,
 	.fetch = fetch,
 	.invalidate = invalidate,
+	.release = release,
 };
 
 struct gui_llcache_table *null_llcache_table = &llcache_table;

@@ -73,8 +73,19 @@
 /** Filename of serialised entries */
 #define ENTRIES_FNAME "entries"
 
+/**
+ * flags that indicate what additional information is contained within
+ * an entry.
+ */
 enum store_entry_flags {
+	/** entry is not managing the allocation */
 	STORE_ENTRY_FLAG_NONE = 0,
+        /** entry allocation is on heap */
+	STORE_ENTRY_FLAG_HEAP = 1,
+        /** entry allocation is mmaped */
+	STORE_ENTRY_FLAG_MMAP = 2,
+        /** entry allocation is in small object pool */
+	STORE_ENTRY_FLAG_SMALL = 4,
 };
 
 /**
@@ -1303,12 +1314,30 @@ invalidate(nsurl *url)
 }
 
 
+/**
+ * release a previously fetched or stored memory object.
+ *
+ * if the BACKING_STORE_ALLOC flag was used with the fetch or
+ * store operation for this url the returned storage is
+ * unreferenced. When the reference count drops to zero the
+ * storage is released.
+ *
+ * @param url The url is used as the unique primary key to invalidate.
+ * @param[in] flags The flags to control how the object data is released.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+static nserror release(nsurl *url, enum backing_store_flags flags)
+{
+	return NSERROR_NOT_FOUND;
+}
+
 static struct gui_llcache_table llcache_table = {
 	.initialise = initialise,
 	.finalise = finalise,
 	.store = store,
 	.fetch = fetch,
 	.invalidate = invalidate,
+	.release = release,
 };
 
 struct gui_llcache_table *filesystem_llcache_table = &llcache_table;
