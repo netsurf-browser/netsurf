@@ -59,7 +59,7 @@
 
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/searchweb.h"
 #include "desktop/gui_window.h"
 
