@@ -595,8 +595,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				PMA_MenuHandler, &ctxmenuhook,
 						TAG_DONE);
 
-	if(gwin->gw->bw && gwin->gw->bw->history &&
-		ami_gadget_hit(gwin->objects[GID_BACK],
+	if(gwin->gw->bw && ami_gadget_hit(gwin->objects[GID_BACK],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
@@ -618,8 +617,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 
 		menuhascontent = true;
 	}
-	else if(gwin->gw->bw && gwin->gw->bw->history &&
-		ami_gadget_hit(gwin->objects[GID_FORWARD],
+	else if(gwin->gw->bw && ami_gadget_hit(gwin->objects[GID_FORWARD],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		gwin->temp = 0;
@@ -894,7 +892,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_HISTORY:
 				if(userdata == NULL)
 				{
-					ami_history_open(gwin->gw, gwin->gw->bw->history);
+					ami_history_open(gwin->gw, browser_window_get_history(gwin->gw->bw));
 				}
 				else
 				{
