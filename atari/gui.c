@@ -242,6 +242,15 @@ gui_window_create(struct browser_window *bw,
 	gw->next = NULL;
     }
 
+    /* Loose focus: */
+    window_set_focus(gw->root, WIDGET_NONE, NULL );
+
+    /* trigger on-focus event (select all text): */
+    window_set_focus(gw->root, URL_WIDGET, NULL);
+
+    /* delete selection: */
+    toolbar_key_input(gw->root->toolbar, NK_DEL);
+
     return( gw );
 
 }

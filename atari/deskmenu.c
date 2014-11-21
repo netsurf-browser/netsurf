@@ -22,7 +22,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/save_complete.h"
 
 #include "atari/res/netsurf.rsh"
@@ -242,22 +242,7 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 				      NULL,
 				      NULL,
 				      &bw);
-		/** \todo Should not be accessing inside bw. */
-		gw = bw->window;
 	}
-
-	/** \todo Can we do this stuff in gui_window_create, which is called
-	 *        in browser_window_create?
-	 */
-
-	/* Loose focus: */
-	window_set_focus(gw->root, WIDGET_NONE, NULL );
-
-	/* trigger on-focus event (select all text): */
-	window_set_focus(gw->root, URL_WIDGET, NULL);
-
-	/* delete selection: */
-	toolbar_key_input(gw->root->toolbar, NK_DEL);
 }
 
 static void __CDECL menu_open_file(short item, short title, void *data)
