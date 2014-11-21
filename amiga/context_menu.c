@@ -769,7 +769,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				if (error == NSERROR_OK) {
 					error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY,
 								      url,
-								      hlcache_handle_get_url(gwin->gw->bw->current_content),
+								      browser_window_get_url(gwin->gw->bw),
 								      gwin->gw->bw,
 								      &bw);
 					nsurl_unref(url);
@@ -787,7 +787,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				if (error == NSERROR_OK) {
 					error = browser_window_create(BW_CREATE_CLONE | BW_CREATE_HISTORY | BW_CREATE_TAB,
 								      url,
-								      hlcache_handle_get_url(gwin->gw->bw->current_content),
+								      browser_window_get_url(gwin->gw->bw),
 								      gwin->gw->bw,
 								      &bw);
 					nsurl_unref(url);
@@ -807,7 +807,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				} else {
 					browser_window_navigate(gwin->gw->bw,
 						url,
-						hlcache_handle_get_url(gwin->gw->bw->current_content),
+						browser_window_get_url(gwin->gw->bw),
 						BW_NAVIGATE_DOWNLOAD,
 						NULL,
 						NULL,
@@ -821,7 +821,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_SHOWOBJ:
 				browser_window_navigate(gwin->gw->bw,
 					hlcache_handle_get_url(userdata),
-					hlcache_handle_get_url(gwin->gw->bw->current_content),
+					browser_window_get_url(gwin->gw->bw),
 					BW_NAVIGATE_HISTORY,
 					NULL,
 					NULL,
@@ -837,7 +837,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				} else {
 					browser_window_navigate(gwin->gw->bw,
 						url,
-						hlcache_handle_get_url(gwin->gw->bw->current_content),
+						browser_window_get_url(gwin->gw->bw),
 						BW_NAVIGATE_HISTORY,
 						NULL,
 						NULL,
