@@ -2689,12 +2689,11 @@ void ami_get_msg(void)
 {
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
-	ULONG schedulesig = 1L << msgport->mp_SigBit;
+	ULONG schedulesig = 1L << schedulermsgport->mp_SigBit; /* \todo create schedulermsgport */
 	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
 	uint32 signal = 0;
 	fd_set read_fd_set, write_fd_set, except_fd_set;
 	int max_fd = -1;
-	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 0;
 	ULONG helpsignal = ami_help_signal();
@@ -2742,8 +2741,8 @@ void ami_get_msg(void)
 		ami_print_cont();
 	}
 
-	if(signal & schedulesig) {
-		if((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
+	if(signal & schedulesig) { /* \todo rewrite */
+		while((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run();
 		}

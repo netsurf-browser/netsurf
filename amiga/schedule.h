@@ -18,14 +18,7 @@
 
 #ifndef AMIGA_SCHEDULE_H
 #define AMIGA_SCHEDULE_H
-#include <proto/timer.h>
 #include "amiga/os3support.h"
-
-struct Device *TimerBase;
-struct TimerIFace *ITimer;
-
-struct TimeRequest *tioreq;
-struct MsgPort *msgport;
 
 /**
  * Schedule a callback.
@@ -41,19 +34,6 @@ struct MsgPort *msgport;
 nserror ami_schedule(int t, void (*callback)(void *p), void *p);
 
 /**
- * Initialise amiga scheduler
- *
- * /return true if initialised ok or false on error.
- */
-bool ami_schedule_create(void);
-
-/**
- * Finalise amiga scheduler
- *
- */
-void ami_schedule_free(void);
-
-/**
  * Process events up to current time.
  *
  * This implementation only takes the top entry off the heap, it does not
@@ -62,5 +42,12 @@ void ami_schedule_free(void);
  */
 void schedule_run(void);
 
+/**
+ * Create a new process for the scheduler.
+ *
+ * \param nsmsgport Message port to send timer events to.
+ * \return NSERROR_OK on success or error code on faliure.
+ */
+nserror ami_scheduler_process_create(struct MsgPort *nsmsgport);
 #endif
 
