@@ -1055,11 +1055,10 @@ static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct Int
 
 	bw = gwin->gw->bw;
 
-	if (bw == NULL || bw->current_content == NULL ||
-			nsurl_access(hlcache_handle_get_url(bw->current_content)) == NULL)
+	if (bw == NULL || browser_window_has_content(bw) == false)
 		return;
 
-	hotlist_add_url(hlcache_handle_get_url(bw->current_content));
+	hotlist_add_url(browser_window_get_url(bw));
 	ami_gui_update_hotlist_button(gwin);
 }
 
