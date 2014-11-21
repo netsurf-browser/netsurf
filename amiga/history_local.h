@@ -36,9 +36,8 @@ struct history_window {
  * Open history window.
  *
  * \param  gw          gui_window to open history for
- * \param  history     history to open
  */
-void ami_history_open(struct gui_window *gw, struct history *history);
+void ami_history_open(struct gui_window *gw);
 
 void ami_history_close(struct history_window *hw);
 BOOL ami_history_event(struct history_window *hw);

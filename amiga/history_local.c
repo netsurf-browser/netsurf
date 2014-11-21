@@ -98,11 +98,17 @@ static void ami_history_redraw(struct history_window *hw)
 
 
 /* exported interface documented in amiga/history_local.h */
-void ami_history_open(struct gui_window *gw, struct history *history)
+void ami_history_open(struct gui_window *gw)
 {
+	struct history *history;
 	int width, height;
 
-	assert(history);
+	if (gw->bw == NULL)
+		return;
+
+	history = browser_window_get_history(gw->bw);
+	if (history == NULL)
+		return;
 
 	if(!gw->hw)
 	{

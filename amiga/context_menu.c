@@ -892,7 +892,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_HISTORY:
 				if(userdata == NULL)
 				{
-					ami_history_open(gwin->gw, browser_window_get_history(gwin->gw->bw));
+					ami_history_open(gwin->gw);
 				}
 				else
 				{
