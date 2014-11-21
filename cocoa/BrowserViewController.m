@@ -244,7 +244,7 @@ static inline bool compare_float( float a, float b )
 	}
 	
 	if (action == @selector( stopLoading: )) {
-		return browser_window_stop_available( browser )
+		return browser_window_stop_available( browser );
 	}
 	
 	if (action == @selector( zoomOriginal: )) {
