@@ -23,7 +23,7 @@
 #import "cocoa/LocalHistoryController.h"
 #import "cocoa/BrowserWindowController.h"
 
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
@@ -94,9 +94,11 @@ static const NSTimeInterval CaretBlinkTime = 0.8;
 
 static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
+        float bscale = browser_window_get_scale(view->browser);
+
 	NSRect caretRect = {
-		.origin = NSMakePoint( view->caretPoint.x * view->browser->scale, view->caretPoint.y * view->browser->scale ),
-		.size = NSMakeSize( CaretWidth, view->caretHeight * view->browser->scale )
+		.origin = NSMakePoint( view->caretPoint.x * bscale, view->caretPoint.y * bscale ),
+		.size = NSMakeSize( CaretWidth, view->caretHeight * bscale )
 	};
 	
 	return caretRect;
@@ -202,10 +204,11 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 - (NSPoint) convertMousePoint: (NSEvent *)event;
 {
 	NSPoint location = [self convertPoint: [event locationInWindow] fromView: nil];
-	if (NULL != browser) {
-		location.x /= browser->scale;
-		location.y /= browser->scale;
-	}
+        float bscale = browser_window_get_scale(browser);
+
+        location.x /= bscale;
+        location.y /= bscale;
+
 	location.x = cocoa_pt_to_px( location.x );
 	location.y = cocoa_pt_to_px( location.y );
 	return location;
@@ -485,8 +488,6 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) popUpContextMenuForEvent: (NSEvent *) event;
 {
-	if (content_get_type( browser->current_content ) != CONTENT_HTML) return;
-
 	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
 	NSPoint point = [self convertMousePoint: event];
 

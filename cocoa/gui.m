@@ -33,7 +33,7 @@
 #import "desktop/mouse.h"
 #import "desktop/gui_window.h"
 #import "desktop/gui_misc.h"
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "desktop/textinput.h"
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
@@ -78,8 +78,6 @@ gui_window_create(struct browser_window *bw,
 static void gui_window_destroy(struct gui_window *g)
 {
 	BrowserViewController *vc = (BrowserViewController *)g;
-
-	if ([vc browser]->parent != NULL) [[vc view] removeFromSuperview];
 	[vc release];
 }
 

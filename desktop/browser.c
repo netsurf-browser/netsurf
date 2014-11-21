@@ -2568,6 +2568,10 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all)
 /* exported interface documented in desktop/browser.h */
 float browser_window_get_scale(struct browser_window *bw)
 {
+	if (bw == NULL) {
+		return 1.0;
+	}
+
 	return bw->scale;
 }
 
