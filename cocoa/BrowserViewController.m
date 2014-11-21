@@ -96,12 +96,12 @@
 
 - (IBAction) zoomIn: (id) sender;
 {
-	browser_window_set_scale( browser, browser->scale * 1.1, true );
+	browser_window_set_scale( browser, browser_window_get_scale(browser) * 1.1, true );
 }
 
 - (IBAction) zoomOut: (id) sender;
 {
-	browser_window_set_scale( browser, browser->scale * 0.9, true );
+	browser_window_set_scale( browser, browser_window_get_scale(browser) * 0.9, true );
 }
 
 - (IBAction) zoomOriginal: (id) sender;
@@ -248,7 +248,7 @@ static inline bool compare_float( float a, float b )
 	}
 	
 	if (action == @selector( zoomOriginal: )) {
-		return !compare_float( browser->scale, (float)nsoption_int(scale) / 100.0 );
+		return !compare_float( browser_window_get_scale(browser), (float)nsoption_int(scale) / 100.0 );
 	}
 	
 	if (action == @selector( goBack: )) {
