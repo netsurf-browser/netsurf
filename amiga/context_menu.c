@@ -682,8 +682,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_NAVIGATE, gwin->gw->bw);
 			menuhascontent = true;
 
-			if(content_get_type(cc) == CONTENT_HTML ||
-				content_get_type(cc) == CONTENT_TEXTPLAIN)
+			if(browser_window_can_select(gwin->gw->bw))
 			{
 				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_SEL, gwin->gw);
 				menuhascontent = true;
