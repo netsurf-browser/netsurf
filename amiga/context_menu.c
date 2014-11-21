@@ -579,7 +579,7 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 {
-	struct hlcache_handle *cc = gwin->gw->bw->current_content;
+	struct hlcache_handle *cc = browser_window_get_content(gwin->gw->bw);
 	bool no_more_menus = false;
 	bool menuhascontent = false;
 	struct browser_window_features ccdata;
