@@ -1976,7 +1976,7 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_HOMEPAGE_CURRENT:
 						if(cur_gw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
-							nsurl_access(hlcache_handle_get_url(cur_gw->bw->current_content)), TAG_DONE);
+							nsurl_access(browser_window_get_url(cur_gw->bw)), TAG_DONE);
 					break;
 
 					case GID_OPTS_HOMEPAGE_BLANK:
