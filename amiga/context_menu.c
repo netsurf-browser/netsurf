@@ -32,7 +32,7 @@
 #include "utils/utils.h"
 #include "render/form.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/hotlist.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
