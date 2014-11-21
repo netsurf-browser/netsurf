@@ -171,7 +171,7 @@
 
 	if (browser == NULL)
 		return;
-	content = browser->current_content;
+	content = browser_window_get_content(browser);
 	if (content == NULL)
 		return;
 	source = content_get_source_data(content, &size);
