@@ -22,7 +22,7 @@
 #import "cocoa/fetch.h"
 
 #import "desktop/browser_history.h"
-#import "desktop/browser_private.h"
+#import "desktop/browser.h"
 #import "desktop/textinput.h"
 #import "utils/nsoption.h"
 
