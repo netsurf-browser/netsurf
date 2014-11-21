@@ -788,7 +788,7 @@ static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct In
 
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_file_save_req(type, gwin, gwin->gw->bw->current_content);
+	ami_file_save_req(type, gwin, browser_window_get_content(gwin->gw->bw));
 }
 
 static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -813,7 +813,7 @@ static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct I
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-	ami_print_ui(gwin->gw->bw->current_content);
+	ami_print_ui(browser_window_get_content(gwin->gw->bw));
 	ami_reset_pointer(gwin);
 }
 
@@ -893,7 +893,7 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
 		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 	}
-	else if((bm = content_get_bitmap(gwin->gw->bw->current_content))) {
+	else if((bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw)))) {
 		/** @todo It should be checked that the lifetime of
 		 * the objects containing the values returned (and the
 		 * constness cast away) is safe.
@@ -903,8 +903,8 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 		ami_easy_clipboard_bitmap(bm);
 	}
 #ifdef WITH_NS_SVG
-	else if(ami_mime_compare(gwin->gw->bw->current_content, "svg") == true) {
-		ami_easy_clipboard_svg(gwin->gw->bw->current_content);
+	else if(ami_mime_compare(browser_window_get_content(gwin->gw->bw), "svg") == true) {
+		ami_easy_clipboard_svg(browser_window_get_content(gwin->gw->bw));
 	}
 #endif
 }
