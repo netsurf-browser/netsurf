@@ -41,7 +41,7 @@
 #include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "desktop/hotlist.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 #include "desktop/textinput.h"
