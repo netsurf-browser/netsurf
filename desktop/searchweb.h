@@ -25,6 +25,7 @@
 #define _NETSURF_DESKTOP_SEARCH_WEB_H_
 
 struct bitmap;
+struct nsurl;
 
 /**
  * Graphical user interface browser web search function table.
