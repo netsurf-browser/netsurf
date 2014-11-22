@@ -432,16 +432,6 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 	while(running) {
 		signal = Wait(signalmask);
 
-		if(signal & timersig) {
-			while((timermsg = (struct TimerRequest *)GetMsg(timermsgport))) {
-				/* reply first, as we don't need the message contents and
-				 * it crashes if we reply after schedule_run has executed.
-				 */
-				ReplyMsg((struct Message *)timermsg);
-				ami_scheduler_run(nsmsgport);
-			}
-		}
-
 		if(signal & schedulesig) {
 			while((asmsg = (struct ami_schedule_message *)GetMsg(schedulermsgport))) {
 				if(asmsg->msg.mn_Node.ln_Type == NT_REPLYMSG) {
@@ -463,6 +453,17 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 					}
 					FreeSysObject(ASOT_MESSAGE, asmsg); /* don't reply, just free */
 				}
+			}
+		}
+
+		if(signal & timersig) {
+			while((timermsg = (struct TimerRequest *)GetMsg(timermsgport))) {
+				/* reply first, as we don't need the message contents and
+				 * it crashes if we reply after schedule_run has executed.
+				 */
+				ReplyMsg((struct Message *)timermsg);
+				ami_scheduler_run(nsmsgport); /* \todo check timer event doesn't relate to
+											   * something that's been deleted already */
 			}
 		}
 	}
