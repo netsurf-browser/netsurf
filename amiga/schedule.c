@@ -434,8 +434,11 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 
 		if(signal & timersig) {
 			while((timermsg = (struct TimerRequest *)GetMsg(timermsgport))) {
+				/* reply first, as we don't need the message contents and
+				 * it crashes if we reply after schedule_run has executed.
+				 */
+				ReplyMsg((struct Message *)timermsg);
 				ami_scheduler_run(nsmsgport);
-				//ReplyMsg((struct Message *)timermsg); /* \todo why does this crash? */
 			}
 		}
 
