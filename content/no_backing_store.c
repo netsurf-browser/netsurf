@@ -45,7 +45,7 @@ static nserror store(nsurl *url,
 }
 
 static nserror fetch(nsurl *url,
-		     enum backing_store_flags *flags,
+		     enum backing_store_flags flags,
 		     uint8_t **data_out,
 		     size_t *datalen_out)
 {

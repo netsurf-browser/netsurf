@@ -150,7 +150,6 @@ typedef struct {
 /** Current status of objects data */
 typedef enum {
 	LLCACHE_STATE_RAM = 0, /**< source data is stored in RAM only */
-	LLCACHE_STATE_MMAP, /**< source data is mmaped (implies on disc too) */
 	LLCACHE_STATE_DISC, /**< source data is stored on disc */
 } llcache_store_state;
 
@@ -1076,8 +1075,6 @@ llcache_object_remove_from_list(llcache_object *object, llcache_object **list)
  */
 static nserror llcache_persist_retrieve(llcache_object *object)
 {
-	enum backing_store_flags flags = BACKING_STORE_NONE;
-
 	/* ensure the source data is present if necessary */
 	if ((object->source_data != NULL) ||
 	    (object->store_state != LLCACHE_STATE_DISC)) {
@@ -1089,7 +1086,7 @@ static nserror llcache_persist_retrieve(llcache_object *object)
 
 	/* Source data for the object may be in the persiatant store */
 	return guit->llcache->fetch(object->url,
-				    &flags,
+				    BACKING_STORE_NONE,
 				    &object->source_data,
 				    &object->source_len);
 }
@@ -1246,13 +1243,12 @@ llcache_process_metadata(llcache_object *object)
 	int lnsize;
 	size_t num_headers;
 	size_t hloop;
-	enum backing_store_flags flags = BACKING_STORE_META;
 
 	LOG(("Retriving metadata"));
 
 	/* attempt to retrieve object metadata from the backing store */
 	res = guit->llcache->fetch(object->url,
-				   &flags,
+				   BACKING_STORE_META,
 				   &metadata,
 				   &metadatalen);
 	if (res != NSERROR_OK) {
@@ -1273,14 +1269,14 @@ llcache_process_metadata(llcache_object *object)
 
 	res = nsurl_create(ln, &metadataurl);
 	if (res != NSERROR_OK) {
-		free(metadata);
+		guit->llcache->release(object->url, BACKING_STORE_META);
 		return res;
 	}
 
 	if (nsurl_compare(object->url, metadataurl, NSURL_COMPLETE) != true) {
 		/* backing store returned the wrong object for the
 		 * request. This may occour if the backing store had
-		 * a collision in its stoage method. We cope with this
+		 * a collision in its storage method. We cope with this
 		 * by simply skipping caching of this object.
 		 */
 
@@ -1290,7 +1286,7 @@ llcache_process_metadata(llcache_object *object)
 
 		nsurl_unref(metadataurl);
 
-		free(metadata);
+		guit->llcache->release(object->url, BACKING_STORE_META);
 
 		return NSERROR_BAD_URL;
 	}
@@ -1349,12 +1345,12 @@ llcache_process_metadata(llcache_object *object)
 
 		res = llcache_fetch_process_header(object, (uint8_t *)ln, lnsize);
 		if (res != NSERROR_OK) {
-			free(metadata);
+			guit->llcache->release(object->url, BACKING_STORE_META);
 			return res;
 		}
 	}
 
-	free(metadata);
+	guit->llcache->release(object->url, BACKING_STORE_META);
 
 	/* object stored in backing store */
 	object->store_state = LLCACHE_STATE_DISC;
@@ -1363,7 +1359,8 @@ llcache_process_metadata(llcache_object *object)
 
 format_error:
 	LOG(("metadata error on line %d\n", line));
-	free(metadata);
+	guit->llcache->release(object->url, BACKING_STORE_META);
+
 	return NSERROR_INVALID;
 
 }
@@ -1454,7 +1451,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 	 * pull from persistant store.
 	 */
 	if (newest == NULL) {
-		LLCACHE_LOG(("No viable object found in cache"));
+		LLCACHE_LOG(("No viable object found in llcache"));
 
 		error = llcache_object_new(url, &obj);
 		if (error != NSERROR_OK)
@@ -1498,7 +1495,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 
 		/* retrival of source data from persistant store
 		 * failed, destroy cache object and fall though to
-		 * cache miss to re-retch
+		 * cache miss to re-fetch
 		 */
 		LLCACHE_LOG(("Persistant retrival failed for %p", newest));
 
@@ -2255,7 +2252,7 @@ write_backing_store(struct llcache_object *object, size_t *written_out)
 				   BACKING_STORE_META,
 				   metadata,
 				   metadatasize);
-	free(metadata);
+	guit->llcache->release(object->url, BACKING_STORE_META);
 	if (ret != NSERROR_OK) {
 		/* There has been an error putting the metadata in the
 		 * backing store. Ensure the data object is invalidated.
@@ -2903,7 +2900,7 @@ void llcache_clean(bool purge)
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false) &&
 		    (remaining_lifetime <= 0)) {
-				/* object is stale */
+			/* object is stale */
 			LLCACHE_LOG(("discarding stale cacheable object with no users or pending fetches (%p) %s", object, nsurl_access(object->url)));
 
 				llcache_object_remove_from_list(object,
@@ -2942,7 +2939,8 @@ void llcache_clean(bool purge)
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC)) {
-			free(object->source_data);
+			guit->llcache->release(object->url, BACKING_STORE_NONE);
+
 			object->source_data = NULL;
 
 			llcache_size -=	object->source_len;
@@ -2955,7 +2953,7 @@ void llcache_clean(bool purge)
 
 	/* Fresh cacheable objects with no users, no pending fetches
 	 * and pushed to persistant store while the cache exceeds
-	 * the configured size. Efectively just the object metadata.
+	 * the configured size. Efectively just the llcache object metadata.
 	 */
 	for (object = llcache->cached_objects;
 	     ((limit < llcache_size) && (object != NULL));
@@ -2983,7 +2981,7 @@ void llcache_clean(bool purge)
 	}
 
 	/* Fresh cacheable objects with no users or pending fetches
-	 * while the cache exceeds the configured size.  These are the
+	 * while the cache exceeds the configured size. These are the
 	 * most valuble objects as replacing them is a full network
 	 * fetch
 	 */

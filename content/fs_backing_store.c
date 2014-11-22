@@ -56,7 +56,7 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 110
+#define CONTROL_VERSION 120
 
 /** Number of milliseconds after a update before control data maintinance is performed  */
 #define CONTROL_MAINT_TIME 10000
@@ -74,21 +74,6 @@
 #define ENTRIES_FNAME "entries"
 
 /**
- * flags that indicate what additional information is contained within
- * an entry.
- */
-enum store_entry_flags {
-	/** entry is not managing the allocation */
-	STORE_ENTRY_FLAG_NONE = 0,
-        /** entry allocation is on heap */
-	STORE_ENTRY_FLAG_HEAP = 1,
-        /** entry allocation is mmaped */
-	STORE_ENTRY_FLAG_MMAP = 2,
-        /** entry allocation is in small object pool */
-	STORE_ENTRY_FLAG_SMALL = 4,
-};
-
-/**
  * The type used to store index values refering to store entries. Care
  * must be taken with this type as it is used to build address to
  * entry mapping so changing the size will have large impacts on
@@ -104,19 +89,69 @@ typedef uint16_t entry_index_t;
 typedef uint32_t entry_ident_t;
 
 /**
+ * Entry extension index values.
+ */
+enum store_entry_elem_idx {
+	ENTRY_ELEM_DATA = 0, /**< entry element is data */
+	ENTRY_ELEM_META = 1,  /**< entry element is metadata */
+	ENTRY_ELEM_COUNT = 2, /**< count of elements on an entry */
+};
+
+/**
+ * flags that indicate what additional information is contained within
+ * an entry element.
+ */
+enum store_entry_elem_flags {
+	/** store not managing any allocation on entry */
+	ENTRY_ELEM_FLAG_NONE = 0,
+        /** entry data allocation is on heap */
+	ENTRY_ELEM_FLAG_HEAP = 0x1,
+        /** entry data allocation is mmaped */
+	ENTRY_ELEM_FLAG_MMAP = 0x2,
+        /** entry data allocation is in small object pool */
+	ENTRY_ELEM_FLAG_SMALL = 0x4,
+};
+
+
+/**
+ * Backing store entry element.
+ *
+ * @note Order is important to avoid excessive structure packing overhead.
+ */
+struct store_entry_element {
+	uint32_t size; /**< size of entry element on disc */
+	union {
+		struct {
+			uint8_t* data; /**< data allocated on heap */
+			uint8_t ref; /**< reference count */
+		} heap;
+		struct {
+			uint8_t* data; /**< data is from an mmapping */
+			uint8_t ref; /**< reference count */
+		} map;
+		struct {
+			uint16_t block; /**< small object data block */
+		} small;
+	};
+	uint8_t flags; /* extension flags */
+};
+
+/**
  * Backing store object index entry.
  *
- * @note Order is important to avoid structure packing overhead.
+ * An entry in the backing store contains two elements for the actual
+ * data and the metadata. The two elements are treated identically for
+ * storage lifetime but as a collective whole for expiration and
+ * indexing.
+ *
+ * @note Order is important to avoid excessive structure packing overhead.
  */
 struct store_entry {
 	int64_t last_used; /**< unix time the entry was last used */
 	entry_ident_t ident; /**< entry identifier */
-	uint32_t data_alloc; /**< currently allocated size of data on disc */
-	uint32_t meta_alloc; /**< currently allocated size of metadata on disc */
 	uint16_t use_count; /**< number of times this entry has been accessed */
-	uint16_t flags; /**< entry flags (unused) */
-	uint16_t data_block; /**< small object data block entry (unused) */
-	uint16_t meta_block; /**< small object meta block entry (unused) */
+	/** Entry element (data or meta) specific information */
+	struct store_entry_element elem[ENTRY_ELEM_COUNT];
 };
 
 /**
@@ -195,6 +230,18 @@ remove_store_entry(struct store_state *state,
 		return NSERROR_NOT_FOUND;
 	}
 
+	/* check if the entry has storage already allocated */
+	if (((state->entries[sei].elem[ENTRY_ELEM_DATA].flags & 
+	     (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) ||
+	    ((state->entries[sei].elem[ENTRY_ELEM_META].flags & 
+	      (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0)) {
+		/* this entry cannot be removed as it has associated
+		 * allocation.
+		 */
+		LOG(("attempt to remove entry with in use data"));
+		return NSERROR_PERMISSION;
+	}
+
 	/* sei is entry to be removed, we swap it to the end of the
 	 * table so there are no gaps and the returned entry is held
 	 * in storage with reasonable lifetime.
@@ -204,8 +251,8 @@ remove_store_entry(struct store_state *state,
 	BS_ENTRY_INDEX(ident, state) = 0;
 
 	/* global allocation accounting  */
-	state->total_alloc -= state->entries[sei].data_alloc;
-	state->total_alloc -= state->entries[sei].meta_alloc;
+	state->total_alloc -= state->entries[sei].elem[ENTRY_ELEM_DATA].size;
+	state->total_alloc -= state->entries[sei].elem[ENTRY_ELEM_META].size;
 
 	state->last_entry--;
 
@@ -396,6 +443,26 @@ static int compar(const void *va, const void *vb)
 	const struct store_entry *a = &BS_ENTRY(*(entry_ident_t *)va, storestate);
 	const struct store_entry *b = &BS_ENTRY(*(entry_ident_t *)vb, storestate);
 
+	/* consider the allocation flags - if an entry has an
+	 * allocation it is considered more valuble as it cannot be
+	 * freed.
+	 */
+	if ((a->elem[ENTRY_ELEM_DATA].flags == ENTRY_ELEM_FLAG_NONE) &&
+	    (b->elem[ENTRY_ELEM_DATA].flags != ENTRY_ELEM_FLAG_NONE)) {
+		return -1;
+	} else if ((a->elem[ENTRY_ELEM_DATA].flags != ENTRY_ELEM_FLAG_NONE) &&
+		   (b->elem[ENTRY_ELEM_DATA].flags == ENTRY_ELEM_FLAG_NONE)) {
+		return 1;
+	}
+
+	if ((a->elem[ENTRY_ELEM_META].flags == ENTRY_ELEM_FLAG_NONE) &&
+	    (b->elem[ENTRY_ELEM_META].flags != ENTRY_ELEM_FLAG_NONE)) {
+		return -1;
+	} else if ((a->elem[ENTRY_ELEM_META].flags != ENTRY_ELEM_FLAG_NONE) &&
+		   (b->elem[ENTRY_ELEM_META].flags == ENTRY_ELEM_FLAG_NONE)) {
+		return 1;
+	}
+
 	if (a->use_count < b->use_count) {
 		return -1;
 	} else if (a->use_count > b->use_count) {
@@ -463,8 +530,8 @@ static nserror store_evict(struct store_state *state)
 	removed = 0;
 	for (ent = 0; ent < ent_count; ent++) {
 
-		removed += BS_ENTRY(elist[ent], state).data_alloc;
-		removed += BS_ENTRY(elist[ent], state).meta_alloc;
+		removed += BS_ENTRY(elist[ent], state).elem[ENTRY_ELEM_DATA].size;
+		removed += BS_ENTRY(elist[ent], state).elem[ENTRY_ELEM_META].size;
 
 		ret = unlink_ident(state, elist[ent]);
 		if (ret != NSERROR_OK) {
@@ -591,6 +658,7 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 	sei = BS_ENTRY_INDEX(ident, state);
 
 	if (sei == 0) {
+		LOG(("Failed to find ident 0x%x in index", ident));
 		return NSERROR_NOT_FOUND;
 	}
 
@@ -639,7 +707,7 @@ set_store_entry(struct store_state *state,
 	entry_index_t sei; /* store entry index */
 	struct store_entry *se;
 	nserror ret;
-	bool isrep; /* is the store repalcing an existing entry or not */
+	struct store_entry_element *elem;
 
 	LOG(("url:%s", nsurl_access(url)));
 
@@ -654,52 +722,59 @@ set_store_entry(struct store_state *state,
 	/* use the url hash as the entry identifier */
 	ident = nsurl_hash(url);
 
+	/* get the entry index from the ident */
 	sei = BS_ENTRY_INDEX(ident, state);
-
-	/** @todo Should this deal with cache eviction? */
-
 	if (sei == 0) {
 		/* allocating the next available entry */
 		sei = state->last_entry;
 		state->last_entry++;
 		BS_ENTRY_INDEX(ident, state) = sei;
-		isrep = false;
-	} else {
-		/* updating or replacing existing entry */
-		/** @todo should we be checking the entry ident
-		 * matches the url. Thats a collision in the address
-		 * mapping right? and is it important?
-		 */
-		isrep = true;
+
+		/* clear the new entry */
+		memset(&state->entries[sei], 0, sizeof(struct store_entry));
 	}
 
+	/** @todo should we be checking the entry ident matches the
+	 * url. Thats a collision in the address mapping right? and is
+	 * it important?
+	 */
+
+	/* the entry */
 	se = &state->entries[sei];
 
+	/* the entry element */
+	if ((flags & BACKING_STORE_META) != 0) {
+		elem = &se->elem[ENTRY_ELEM_META];
+	} else {
+		elem = &se->elem[ENTRY_ELEM_DATA];
+	}
+
+	/* check if the element has storage already allocated */
+	if ((elem->flags & (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) {
+		/* this entry cannot be removed as it has associated
+		 * allocation.
+		 */
+		LOG(("attempt to remove entry with in use data"));
+		return NSERROR_PERMISSION;
+	}
+
+	/* set the common entry data */
 	se->ident = ident;
-	se->flags = STORE_ENTRY_FLAG_NONE;
 	se->use_count = 1;
 	se->last_used = time(NULL);
 
-	/* account for allocation */
-	if ((flags & BACKING_STORE_META) != 0) {
-		if (isrep) {
-			state->total_alloc -= se->meta_alloc;
-		} else {
-			se->data_alloc = 0;
-		}
-		se->meta_alloc = datalen;
-	} else {
-		if (isrep) {
-			state->total_alloc -= se->data_alloc;
-		} else {
-			se->meta_alloc = 0;
-		}
-		se->data_alloc = datalen;
-	}
-	state->total_alloc += datalen;
+	/* store the data in the element */
+	elem->flags |= ENTRY_ELEM_FLAG_HEAP;
+	elem->heap.data = data;
+	elem->heap.ref = 1;
 
+	/* account for size of entry element */
+	state->total_alloc -= elem->size;
+	elem->size = datalen;
+	state->total_alloc += elem->size;
+
+	/* ensure control maintinance scheduled. */
 	state->entries_dirty = true;
-
 	guit->browser->schedule(CONTROL_MAINT_TIME, control_maintinance, state);
 
 	*bse = se;
@@ -793,8 +868,8 @@ build_entrymap(struct store_state *state)
 		BS_ENTRY_INDEX(state->entries[eloop].ident, state) = eloop;
 
 		/* account for the storage space */
-		state->total_alloc += state->entries[eloop].data_alloc +
-			state->entries[eloop].meta_alloc;
+		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_DATA].size;
+		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_META].size;
 	}
 
 	return NSERROR_OK;
@@ -1113,7 +1188,7 @@ initialise(const struct llcache_store_parameters *parameters)
 	LOG(("FS backing store init successful"));
 
 	LOG(("path:%s limit:%d hyst:%d addr:%d entries:%d", newstate->path, newstate->limit, newstate->hysteresis, newstate->ident_bits, newstate->entry_bits));
-	LOG(("Using %d/%d", newstate->total_alloc, newstate->limit));
+	LOG(("Using %lld/%lld", newstate->total_alloc, newstate->limit));
 
 	return NSERROR_OK;
 }
@@ -1150,6 +1225,8 @@ finalise(void)
 
 /**
  * Place an object in the backing store.
+ *
+ * takes ownership of the heap block passed in.
  *
  * @param url The url is used as the unique primary key for the data.
  * @param flags The flags to control how the object is stored.
@@ -1201,6 +1278,22 @@ store(nsurl *url,
 }
 
 /**
+ * release any allocation for an entry
+ */
+static nserror entry_release_alloc(struct store_entry_element *elem)
+{
+	if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
+		elem->heap.ref--;
+		if (elem->heap.ref == 0) {
+			LOG(("freeing %p", elem->heap.data));
+			free(elem->heap.data);
+			elem->flags &= ~ENTRY_ELEM_FLAG_HEAP;
+		}
+	}
+	return NSERROR_OK;
+}
+
+/**
  * Retrive an object from the backing store.
  *
  * @param[in] url The url is used as the unique primary key for the data.
@@ -1211,12 +1304,13 @@ store(nsurl *url,
  */
 static nserror
 fetch(nsurl *url,
-      enum backing_store_flags *flags,
+      enum backing_store_flags bsflags,
       uint8_t **data_out,
       size_t *datalen_out)
 {
 	nserror ret;
 	struct store_entry *bse;
+	struct store_entry_element *elem;
 	uint8_t *data;
 	size_t datalen;
 	int fd;
@@ -1237,35 +1331,52 @@ fetch(nsurl *url,
 
 	LOG(("retriving cache file for url:%s", nsurl_access(url)));
 
-	fd = store_open(storestate, bse->ident, *flags, O_RDONLY);
+	fd = store_open(storestate, bse->ident, bsflags, O_RDONLY);
 	if (fd < 0) {
 		LOG(("Open failed"));
 		/** @todo should this invalidate the entry? */
 		return NSERROR_NOT_FOUND;
 	}
 
+	/* the entry element */
+	if ((bsflags & BACKING_STORE_META) != 0) {
+		elem = &bse->elem[ENTRY_ELEM_META];
+	} else {
+		elem = &bse->elem[ENTRY_ELEM_DATA];
+	}
+
 	data = *data_out;
 	datalen = *datalen_out;
+	/** @todo should this check datalen is sufficient? */
 
 	/* need to deal with buffers */
 	if (data == NULL) {
-		if (datalen == 0) {
-			/* caller did not know the files length */
-			if (((*flags) & BACKING_STORE_META) != 0) {
-				datalen = bse->meta_alloc;
-			} else {
-				datalen = bse->data_alloc;
+		if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
+			/* a heap allocation already exists. Return
+			 * that allocation and bump our ref count.
+			 */
+			data = elem->heap.data;
+			elem->heap.ref++;
+			datalen = elem->size;
+			LOG(("Using existing heap allocation %p", elem->heap.data));
+		} else {
+			datalen = elem->size;
+			data = malloc(elem->size);
+			if (data == NULL) {
+				close(fd);
+				return NSERROR_NOMEM;
 			}
-		}
 
-		data = malloc(datalen);
-		if (data == NULL) {
-			close(fd);
-			return NSERROR_NOMEM;
+			/* store allocated buffer so track ownership */
+			elem->flags |= ENTRY_ELEM_FLAG_HEAP;
+			elem->heap.data = data;
+			elem->heap.ref = 1;
+			LOG(("Creating new heap allocation %p", elem->heap.data));
 		}
+	} else if (datalen == 0) {
+		/* caller provided a buffer but no length bad parameter */
+		return NSERROR_BAD_PARAMETER;
 	}
-
-	/** @todo should this check datalen is sufficient */
 
 	LOG(("Reading %d bytes into %p from file", datalen, data));
 
@@ -1275,7 +1386,7 @@ fetch(nsurl *url,
 		LOG(("read returned %d", rd));
 		close(fd);
 		if ((*data_out) == NULL) {
-			free(data);
+			entry_release_alloc(elem);
 		}
 		return NSERROR_NOT_FOUND;
 	}
@@ -1288,6 +1399,41 @@ fetch(nsurl *url,
 	*datalen_out = datalen;
 
 	return NSERROR_OK;
+}
+
+
+/**
+ * release a previously fetched or stored memory object.
+ *
+ * @param url The url is used as the unique primary key to invalidate.
+ * @param[in] flags The flags to control how the object data is released.
+ * @return NSERROR_OK on success or error code on faliure.
+ */
+static nserror release(nsurl *url, enum backing_store_flags bsflags)
+{
+	nserror ret;
+	struct store_entry *bse;
+	struct store_entry_element *elem;
+
+	/* check backing store is initialised */
+	if (storestate == NULL) {
+		return NSERROR_INIT_FAILED;
+	}
+
+	ret = get_store_entry(storestate, url, &bse);
+	if (ret != NSERROR_OK) {
+		LOG(("entry not found"));
+		return ret;
+	}
+
+	/* the entry element */
+	if ((bsflags & BACKING_STORE_META) != 0) {
+		elem = &bse->elem[ENTRY_ELEM_META];
+	} else {
+		elem = &bse->elem[ENTRY_ELEM_DATA];
+	}
+
+	return entry_release_alloc(elem);
 }
 
 
@@ -1313,23 +1459,6 @@ invalidate(nsurl *url)
 	return unlink_ident(storestate, nsurl_hash(url));
 }
 
-
-/**
- * release a previously fetched or stored memory object.
- *
- * if the BACKING_STORE_ALLOC flag was used with the fetch or
- * store operation for this url the returned storage is
- * unreferenced. When the reference count drops to zero the
- * storage is released.
- *
- * @param url The url is used as the unique primary key to invalidate.
- * @param[in] flags The flags to control how the object data is released.
- * @return NSERROR_OK on success or error code on faliure.
- */
-static nserror release(nsurl *url, enum backing_store_flags flags)
-{
-	return NSERROR_NOT_FOUND;
-}
 
 static struct gui_llcache_table llcache_table = {
 	.initialise = initialise,
