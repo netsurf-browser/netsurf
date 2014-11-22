@@ -889,7 +889,7 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(content_get_type(gwin->gw->bw->current_content) <= CONTENT_CSS) {
+	if(browser_window_can_select(gwin->gw->bw) {
 		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
 		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 	}
