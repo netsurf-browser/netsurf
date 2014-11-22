@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,14 +18,7 @@
 
 #ifndef AMIGA_SCHEDULE_H
 #define AMIGA_SCHEDULE_H
-#include <proto/timer.h>
 #include "amiga/os3support.h"
-
-struct Device *TimerBase;
-struct TimerIFace *ITimer;
-
-struct TimeRequest *tioreq;
-struct MsgPort *msgport;
 
 /**
  * Schedule a callback.
@@ -41,26 +34,23 @@ struct MsgPort *msgport;
 nserror ami_schedule(int t, void (*callback)(void *p), void *p);
 
 /**
- * Initialise amiga scheduler
+ * Handle a message received from the scheduler process.
  *
- * /return true if initialised ok or false on error.
+ * \param nsmsgport Message port to process.
  */
-bool ami_schedule_create(void);
+void ami_schedule_handle(struct MsgPort *nsmsgport);
 
 /**
- * Finalise amiga scheduler
+ * Create a new process for the scheduler.
  *
+ * \param nsmsgport Message port for the scheduler to send events to.
+ * \return NSERROR_OK on success or error code on failure.
  */
-void ami_schedule_free(void);
+nserror ami_scheduler_process_create(struct MsgPort *nsmsgport);
 
 /**
- * Process events up to current time.
- *
- * This implementation only takes the top entry off the heap, it does not
- * venture to later scheduled events until the next time it is called -
- * immediately afterwards, if we're in a timer signalled loop.
+ * Signal the scheduler process to exit.
  */
-void schedule_run(void);
-
+void ami_scheduler_process_delete(void);
 #endif
 

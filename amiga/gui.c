@@ -167,6 +167,7 @@ struct ami_gui_tb_userdata {
 	int items;
 };
 
+static struct MsgPort *schedulermsgport = NULL;
 static struct MsgPort *appport;
 static Class *urlStringClass;
 
@@ -416,7 +417,9 @@ static bool ami_open_resources(void)
 							ASO_NoTrack, FALSE,
 							TAG_DONE))) return false;
 
-	ami_file_req_init();
+    if(!(schedulermsgport = AllocSysObjectTags(ASOT_PORT,
+							ASO_NoTrack, FALSE,
+							TAG_DONE))) return false;
 
 	return true;
 }
@@ -2689,12 +2692,11 @@ void ami_get_msg(void)
 {
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
-	ULONG schedulesig = 1L << msgport->mp_SigBit;
+	ULONG schedulesig = 1L << schedulermsgport->mp_SigBit;
 	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
 	uint32 signal = 0;
 	fd_set read_fd_set, write_fd_set, except_fd_set;
 	int max_fd = -1;
-	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 0;
 	ULONG helpsignal = ami_help_signal();
@@ -2743,10 +2745,7 @@ void ami_get_msg(void)
 	}
 
 	if(signal & schedulesig) {
-		if((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
-			ReplyMsg((struct Message *)timermsg);
-			schedule_run();
-		}
+		ami_schedule_handle(schedulermsgport);
 	}
 
 	if(signal & helpsignal)
@@ -2994,16 +2993,16 @@ static void gui_quit(void)
 	ami_mouse_pointers_free();
 	LOG(("Freeing clipboard"));
 	ami_clipboard_free();
+	LOG(("Removing scheduler process"));
+	ami_scheduler_process_delete();
 
-	FreeSysObject(ASOT_PORT,appport);
-	FreeSysObject(ASOT_PORT,sport);
+	FreeSysObject(ASOT_PORT, appport);
+	FreeSysObject(ASOT_PORT, sport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
 
 	ami_file_req_free();
 	ami_openurl_close();
 	FreeStringClass(urlStringClass);
-
-	LOG(("Freeing scheduler"));
-	ami_schedule_free();
 
 	FreeObjList(window_list);
 
@@ -5348,6 +5347,16 @@ int main(int argc, char** argv)
 		CloseLibrary(PopupMenuBase);
 	}
 
+	if (ami_open_resources() == false) { /* alloc message ports */
+		ami_misc_fatal_error("Unable to allocate resources");
+		return RETURN_FAIL;
+	}
+
+	if(ami_scheduler_process_create(schedulermsgport) != NSERROR_OK) {
+		ami_misc_fatal_error("Failed to initialise scheduler");
+		return RETURN_FAIL;
+	}
+
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
@@ -5365,11 +5374,6 @@ int main(int argc, char** argv)
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
-	if(ami_schedule_create() == false) {
-		ami_misc_fatal_error("Failed to initialise scheduler");
-		return RETURN_FAIL;
-	}
-
 	amiga_plugin_hack_init();
 	ret = amiga_datatypes_init();
 
@@ -5396,11 +5400,6 @@ int main(int argc, char** argv)
 	if(current_user_cache != NULL) FreeVec(current_user_cache);
 	ret = amiga_icon_init();
 
-	if (ami_open_resources() == false) { /* alloc ports/asl reqs, open libraries/devices */
-		ami_misc_fatal_error("Unable to allocate resources");
-		return RETURN_FAIL;
-	}
-
 	search_web_init(nsoption_charp(search_engines_file));
 	ami_clipboard_init();
 	ami_openurl_open();
@@ -5410,6 +5409,7 @@ int main(int argc, char** argv)
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();
+	ami_file_req_init();
 
 	win_destroyed = false;
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */

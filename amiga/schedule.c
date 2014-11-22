@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,6 +18,7 @@
 
 #include "amiga/os3support.h"
 
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/timer.h>
 
@@ -26,8 +27,14 @@
 #include <pbl.h>
 
 #include "utils/errors.h"
+#include "utils/log.h"
 
 #include "amiga/schedule.h"
+
+static struct MsgPort *smsgport = NULL; /* to send messages for the scheduler to */
+static struct TimeRequest *tioreq;
+struct Device *TimerBase;
+struct TimerIFace *ITimer;
 
 struct nscallback
 {
@@ -35,6 +42,21 @@ struct nscallback
 	void *callback;
 	void *p;
 	struct TimeRequest *treq;
+};
+
+struct ami_schedule_message {
+	struct Message msg;
+	int type;
+	int t;
+	void *callback;
+	void *p;
+};
+
+enum {
+	AMI_S_SCHEDULE = 0,
+	AMI_S_RUN,
+	AMI_S_STARTUP,
+	AMI_S_EXIT
 };
 
 static PblHeap *schedule_list;
@@ -201,12 +223,34 @@ static int ami_schedule_compare(const void *prev, const void *next)
 }
 
 
-/* exported function documented in amiga/schedule.h */
-void schedule_run(void)
+/**
+ * Process events up to current time.
+ * NetSurf entry point after being signalled by the scheduler process.
+ */
+static void schedule_run(struct ami_schedule_message *asmsg)
+{
+	void (*callback)(void *p) = asmsg->callback;
+	void *p = asmsg->p;
+
+	callback(p);
+}
+
+/**
+ * Process events up to current time.
+ *
+ * This implementation only takes the top entry off the heap, it does not
+ * venture to later scheduled events until the next time it is called -
+ * immediately afterwards, if we're in a timer signalled loop.
+ */
+static void ami_scheduler_run(struct MsgPort *nsmsgport)
 {
 	struct nscallback *nscb;
 	void (*callback)(void *p);
 	void *p;
+
+	struct ami_schedule_message *asmsg = AllocSysObjectTags(ASOT_MESSAGE,
+		ASOMSG_Size, sizeof(struct ami_schedule_message),
+		TAG_END);
 
 	nscb = pblHeapGetFirst(schedule_list);
 	if(nscb == -1) return;
@@ -216,12 +260,20 @@ void schedule_run(void)
 	ami_schedule_remove_timer_event(nscb);
 	pblHeapRemoveFirst(schedule_list);
 	FreeVec(nscb);
-	callback(p);
+
+	asmsg->type = AMI_S_RUN;
+	asmsg->callback = callback;
+	asmsg->p = p;
+
+	PutMsg(nsmsgport, (struct Message *)asmsg);
+
+	return;
 }
 
-static void ami_schedule_open_timer(void)
+
+static struct MsgPort *ami_schedule_open_timer(void)
 {
-	msgport = AllocSysObjectTags(ASOT_PORT,
+	struct MsgPort *msgport = AllocSysObjectTags(ASOT_PORT,
 				ASO_NoTrack,FALSE,
 				TAG_DONE);
 
@@ -235,61 +287,239 @@ static void ami_schedule_open_timer(void)
 
 	TimerBase = (struct Device *)tioreq->Request.io_Device;
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+
+	return msgport;
 }
 
-static void ami_schedule_close_timer(void)
+static void ami_schedule_close_timer(struct MsgPort *msgport)
 {
 	if(ITimer) DropInterface((struct Interface *)ITimer);
 	CloseDevice((struct IORequest *) tioreq);
-	FreeSysObject(ASOT_IOREQUEST,tioreq);
-	FreeSysObject(ASOT_PORT,msgport);
+	FreeSysObject(ASOT_IOREQUEST, tioreq);
+	FreeSysObject(ASOT_PORT, msgport);
 }
 
-/* exported function documented in amiga/schedule.h */
-bool ami_schedule_create(void)
+/**
+ * Initialise amiga scheduler
+ *
+ * /return true if initialised ok or false on error.
+ */
+static struct MsgPort *ami_schedule_create(void)
 {
-	ami_schedule_open_timer();
+	struct MsgPort *msgport = ami_schedule_open_timer();
 	schedule_list = pblHeapNew();
-	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return false;
+	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return NULL;
 
 	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
 
-	return true;
+	return msgport;
 }
 
-/* exported function documented in amiga/schedule.h */
-void ami_schedule_free(void)
+/**
+ * Finalise amiga scheduler
+ *
+ */
+static void ami_schedule_free(struct MsgPort *msgport)
 {
 	schedule_remove_all();
 	pblHeapFree(schedule_list); // this should be empty at this point
 	schedule_list = NULL;
 
-	ami_schedule_close_timer();
+	ami_schedule_close_timer(msgport);
 }
 
 /* exported function documented in amiga/schedule.h */
 nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
+	if(smsgport == NULL) return NSERROR_INIT_FAILED;
+
+	struct ami_schedule_message *asmsg = AllocSysObjectTags(ASOT_MESSAGE,
+		ASOMSG_Size, sizeof(struct ami_schedule_message),
+		TAG_END);
+
+	asmsg->type = AMI_S_SCHEDULE;
+	asmsg->t = t;
+	asmsg->callback = callback;
+	asmsg->p = p;
+
+	PutMsg(smsgport, (struct Message *)asmsg);
+
+	return NSERROR_OK;
+}
+
+static nserror ami_scheduler_schedule(struct ami_schedule_message *asmsg)
+{
 	struct nscallback *nscb;
 
 	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
-	if (t < 0) return schedule_remove(callback, p);
-	
-	if ((nscb = ami_schedule_locate(callback, p, false))) {
-		return ami_schedule_reschedule(nscb, t);
+	if (asmsg->t < 0) return schedule_remove(asmsg->callback, asmsg->p);
+
+	if ((nscb = ami_schedule_locate(asmsg->callback, asmsg->p, false))) {
+		return ami_schedule_reschedule(nscb, asmsg->t);
 	}
 
 	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
 	if(!nscb) return NSERROR_NOMEM;
 
-	if (ami_schedule_add_timer_event(nscb, t) != NSERROR_OK)
+	if (ami_schedule_add_timer_event(nscb, asmsg->t) != NSERROR_OK)
 		return NSERROR_NOMEM;
 
-	nscb->callback = callback;
-	nscb->p = p;
+	nscb->callback = asmsg->callback;
+	nscb->p = asmsg->p;
 
 	pblHeapInsert(schedule_list, nscb);
 
 	return NSERROR_OK;
+}
+
+/* exported interface documented in amiga/schedule.h */
+void ami_schedule_handle(struct MsgPort *nsmsgport)
+{
+	/* nsmsgport is the NetSurf message port that the
+	 * scheduler task is sending messages to. */
+	struct ami_schedule_message *asmsg;
+
+	while((asmsg = (struct ami_schedule_message *)GetMsg(nsmsgport))) {
+		if(asmsg->msg.mn_Node.ln_Type == NT_REPLYMSG) {
+			/* if it's a reply, free stuff */
+			FreeSysObject(ASOT_MESSAGE, asmsg);
+		} else {
+			switch(asmsg->type) {
+				case AMI_S_STARTUP:
+					smsgport = asmsg->msg.mn_ReplyPort;
+				break;
+
+				case AMI_S_RUN:
+					schedule_run(asmsg);
+				break;
+
+				default:
+					// unknown message
+				break;
+			}
+			FreeSysObject(ASOT_MESSAGE, asmsg); /* don't reply, just free */
+		}
+	}
+}
+
+
+static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
+{
+	struct Process *proc = (struct Process *)FindTask(NULL);
+	struct MsgPort *nsmsgport = proc->pr_Task.tc_UserData;
+	struct MsgPort *schedulermsgport = AllocSysObjectTags(ASOT_PORT, TAG_END);
+	struct MsgPort *timermsgport = ami_schedule_create();
+	bool running = true;
+	struct TimerRequest *timermsg = NULL;
+	ULONG schedulesig = 1L << schedulermsgport->mp_SigBit;
+	ULONG timersig = 1L << timermsgport->mp_SigBit;
+	uint32 signalmask = schedulesig | timersig;
+	uint32 signal = 0;
+
+	/* Send a startup message to the message port we were given when we were created.
+	 * This tells NetSurf where to send scheduler events to. */
+
+	struct ami_schedule_message *asmsg = AllocSysObjectTags(ASOT_MESSAGE,
+          ASOMSG_Size, sizeof(struct ami_schedule_message),
+          ASOMSG_ReplyPort, schedulermsgport,
+          TAG_END);
+
+	asmsg->type = AMI_S_STARTUP;
+	PutMsg(nsmsgport, (struct Message *)asmsg);
+
+	/* Main loop for this process */
+
+	while(running) {
+		signal = Wait(signalmask);
+
+		if(signal & timersig) {
+			while((timermsg = (struct TimerRequest *)GetMsg(timermsgport))) {
+				ami_scheduler_run(nsmsgport);
+				//ReplyMsg((struct Message *)timermsg); /* \todo why does this crash? */
+			}
+		}
+
+		if(signal & schedulesig) {
+			while((asmsg = (struct ami_schedule_message *)GetMsg(schedulermsgport))) {
+				if(asmsg->msg.mn_Node.ln_Type == NT_REPLYMSG) {
+					/* if it's a reply, free stuff */
+					FreeSysObject(ASOT_MESSAGE, asmsg);
+				} else {
+					switch(asmsg->type) {
+						case AMI_S_SCHEDULE:
+							ami_scheduler_schedule(asmsg);
+						break;
+
+						case AMI_S_EXIT:
+							running = false;
+						break;
+
+						default:
+							// unknown message
+						break;
+					}
+					FreeSysObject(ASOT_MESSAGE, asmsg); /* don't reply, just free */
+				}
+			}
+		}
+	}
+
+	ami_schedule_free(timermsgport);
+
+	return RETURN_OK;
+}
+
+
+/**
+ * Create a new process for the scheduler.
+ *
+ * \param nsmsgport Message port to send scheduler events to.
+ * \return NSERROR_OK on success or error code on faliure.
+ */
+nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
+{
+	if(nsmsgport == NULL) return NSERROR_INIT_FAILED;
+
+	struct Process *proc = CreateNewProcTags(
+		NP_Name, "NetSurf scheduler",
+		NP_Entry, ami_scheduler_process,
+		NP_Child, TRUE,
+		NP_StackSize, 16384,
+		NP_Priority, 1,
+		NP_UserData, nsmsgport,
+		TAG_DONE);
+
+	if(proc == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	LOG(("Waiting for scheduler process to start up..."));
+
+	WaitPort(nsmsgport);
+	struct ami_schedule_message *asmsg = (struct ami_schedule_message *)GetMsg(nsmsgport);
+
+	if(asmsg->type == AMI_S_STARTUP) { /* We shouldn't get any other messages at this stage */
+		smsgport = asmsg->msg.mn_ReplyPort;
+		ReplyMsg((struct Message *)asmsg);
+	}
+
+	LOG(("Scheduler started"));
+
+	return NSERROR_OK;
+}
+
+/* exported function documented in amiga/schedule.h */
+void ami_scheduler_process_delete(void)
+{
+	if(smsgport == NULL) return;
+
+	struct ami_schedule_message *asmsg = AllocSysObjectTags(ASOT_MESSAGE,
+		ASOMSG_Size, sizeof(struct ami_schedule_message),
+		TAG_END);
+
+	asmsg->type = AMI_S_EXIT;
+	PutMsg(smsgport, (struct Message *)asmsg);
+
+	return;
 }
 
