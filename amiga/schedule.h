@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -34,20 +34,23 @@
 nserror ami_schedule(int t, void (*callback)(void *p), void *p);
 
 /**
- * Process events up to current time.
+ * Handle a message received from the scheduler process.
  *
- * This implementation only takes the top entry off the heap, it does not
- * venture to later scheduled events until the next time it is called -
- * immediately afterwards, if we're in a timer signalled loop.
+ * \param nsmsgport Message port to process.
  */
-void schedule_run(void);
+void ami_schedule_handle(struct MsgPort *nsmsgport);
 
 /**
  * Create a new process for the scheduler.
  *
- * \param nsmsgport Message port to send timer events to.
- * \return NSERROR_OK on success or error code on faliure.
+ * \param nsmsgport Message port for the scheduler to send events to.
+ * \return NSERROR_OK on success or error code on failure.
  */
 nserror ami_scheduler_process_create(struct MsgPort *nsmsgport);
+
+/**
+ * Signal the scheduler process to exit.
+ */
+void ami_scheduler_process_delete(void);
 #endif
 
