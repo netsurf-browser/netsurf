@@ -247,6 +247,7 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 	struct nscallback *nscb;
 	void (*callback)(void *p);
 	void *p;
+	struct TimeVal tv;
 
 	struct ami_schedule_message *asmsg = AllocSysObjectTags(ASOT_MESSAGE,
 		ASOMSG_Size, sizeof(struct ami_schedule_message),
@@ -254,6 +255,13 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 
 	nscb = pblHeapGetFirst(schedule_list);
 	if(nscb == -1) return;
+
+	/* Ensure the scheduled event time has passed (CmpTime<=0)
+	 * in case something been deleted between the timer
+	 * signalling us and us responding to it.
+	 */
+	GetSysTime(&tv);
+	if(CmpTime(&tv, &nscb->tv) > 0) return;
 
 	callback = nscb->callback;
 	p = nscb->p;
@@ -462,8 +470,7 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 				 * it crashes if we reply after schedule_run has executed.
 				 */
 				ReplyMsg((struct Message *)timermsg);
-				ami_scheduler_run(nsmsgport); /* \todo check timer event doesn't relate to
-											   * something that's been deleted already */
+				ami_scheduler_run(nsmsgport);
 			}
 		}
 	}
