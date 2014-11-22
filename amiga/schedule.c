@@ -487,7 +487,7 @@ nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 		NP_Name, "NetSurf scheduler",
 		NP_Entry, ami_scheduler_process,
 		NP_Child, TRUE,
-		NP_StackSize, 16384,
+		NP_StackSize, 2048,
 		NP_Priority, 1,
 		NP_UserData, nsmsgport,
 		TAG_DONE);
