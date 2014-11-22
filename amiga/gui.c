@@ -2743,9 +2743,9 @@ void ami_get_msg(void)
 	}
 
 	if(signal & schedulesig) {
-		while((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
-			schedule_run();
+		if((timermsg = (struct TimerRequest *)GetMsg(msgport))) {
 			ReplyMsg((struct Message *)timermsg);
+			schedule_run();
 		}
 	}
 
