@@ -91,6 +91,7 @@ static struct gui_llcache_table amiga_llcache_table = {
 	.store = ami_backing_store_store,
 	.fetch = fetch,
 	.invalidate = invalidate,
+	.release = release,
 };
 
 struct gui_llcache_table *amiga_filesystem_llcache_table = &amiga_llcache_table;
