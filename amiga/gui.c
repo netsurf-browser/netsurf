@@ -93,7 +93,6 @@
 #include "utils/utils.h"
 #include "utils/nsurl.h"
 #include "utils/file.h"
-#include "content/backing_store.h"
 #include "content/fetchers.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
@@ -126,6 +125,7 @@
 #include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/font.h"
+#include "amiga/fs_backing_store.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
 #include "amiga/history.h"
@@ -5310,7 +5310,7 @@ int main(int argc, char** argv)
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
 		.search_web = &amiga_search_web_table,
-		.llcache = filesystem_llcache_table,
+		.llcache = amiga_filesystem_llcache_table,
 	};
 
 	signal(SIGINT, SIG_IGN);
