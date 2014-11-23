@@ -891,8 +891,15 @@ static nserror llcache_object_destroy(llcache_object *object)
 
 	LLCACHE_LOG(("Destroying object %p", object));
 
+	if (object->source_data != NULL) {
+		if (object->store_state == LLCACHE_STATE_DISC) {
+			guit->llcache->release(object->url, BACKING_STORE_NONE);
+		} else {
+			free(object->source_data);
+		}
+	}
+
 	nsurl_unref(object->url);
-	free(object->source_data);
 
 	if (object->fetch.fetch != NULL) {
 		fetch_abort(object->fetch.fetch);

@@ -1329,7 +1329,7 @@ static nserror entry_release_alloc(struct store_entry_element *elem)
  * Retrive an object from the backing store.
  *
  * @param[in] url The url is used as the unique primary key for the data.
- * @param[in] flags The flags to control how the object is retrieved.
+ * @param[in] bsflags The flags to control how the object is retrieved.
  * @param[out] data_out The objects data.
  * @param[out] datalen_out The length of the \a data retrieved.
  * @return NSERROR_OK on success or error code on faliure.
@@ -1437,8 +1437,8 @@ fetch(nsurl *url,
 /**
  * release a previously fetched or stored memory object.
  *
- * @param url The url is used as the unique primary key to invalidate.
- * @param[in] flags The flags to control how the object data is released.
+ * @param[in] url The url is used as the unique primary key to invalidate.
+ * @param[in] bsflags The flags to control how the object data is released.
  * @return NSERROR_OK on success or error code on faliure.
  */
 static nserror release(nsurl *url, enum backing_store_flags bsflags)
