@@ -119,21 +119,21 @@ enum store_entry_elem_flags {
  * @note Order is important to avoid excessive structure packing overhead.
  */
 struct store_entry_element {
-	uint32_t size; /**< size of entry element on disc */
 	union {
 		struct {
 			uint8_t* data; /**< data allocated on heap */
 			uint8_t ref; /**< reference count */
-		} heap;
+		} __attribute__((__packed__)) heap;
 		struct {
 			uint8_t* data; /**< data is from an mmapping */
 			uint8_t ref; /**< reference count */
-		} map;
+		} __attribute__((__packed__)) map;
 		struct {
 			uint16_t block; /**< small object data block */
-		} small;
-	} u;
+		} __attribute__((__packed__)) small;
+	} u ;
 	uint8_t flags; /* extension flags */
+	uint32_t size; /**< size of entry element on disc */
 };
 
 /**
@@ -923,8 +923,10 @@ read_entries(struct store_state *state)
 
 	entries_size = (1 << state->entry_bits) * sizeof(struct store_entry);
 
-	LOG(("Allocating %d bytes for max of %d entries",
-	     entries_size, 1 << state->entry_bits));
+	LOG(("Allocating %d bytes for max of %d entries of %d length elements %d length",
+	     entries_size, 1 << state->entry_bits,
+	     sizeof(struct store_entry),
+	     sizeof(struct store_entry_element)));
 
 	state->entries = calloc(1, entries_size);
 	if (state->entries == NULL) {
