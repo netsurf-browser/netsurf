@@ -132,7 +132,7 @@ struct store_entry_element {
 		struct {
 			uint16_t block; /**< small object data block */
 		} small;
-	};
+	} u;
 	uint8_t flags; /* extension flags */
 };
 
@@ -765,8 +765,8 @@ set_store_entry(struct store_state *state,
 
 	/* store the data in the element */
 	elem->flags |= ENTRY_ELEM_FLAG_HEAP;
-	elem->heap.data = data;
-	elem->heap.ref = 1;
+	elem->u.heap.data = data;
+	elem->u.heap.ref = 1;
 
 	/* account for size of entry element */
 	state->total_alloc -= elem->size;
@@ -870,13 +870,36 @@ build_entrymap(struct store_state *state)
 		/* account for the storage space */
 		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_DATA].size;
 		state->total_alloc += state->entries[eloop].elem[ENTRY_ELEM_META].size;
+		/* ensure entry does not have any allocation state */
+		state->entries[eloop].elem[ENTRY_ELEM_DATA].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
+		state->entries[eloop].elem[ENTRY_ELEM_META].flags &= ~(ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP);
 	}
 
 	return NSERROR_OK;
 }
 
+/**
+ * Unlink entries file
+ *
+ * @param state The backing store state.
+ * @return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror
+unlink_entries(struct store_state *state)
+{
+	char *fname = NULL;
+	nserror ret;
 
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, ENTRIES_FNAME);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
 
+	unlink(fname);
+
+	free(fname);
+	return NSERROR_OK;
+}
 
 /**
  * Read description entries into memory.
@@ -1148,6 +1171,7 @@ initialise(const struct llcache_store_parameters *parameters)
 		LOG(("read control failed %s", messages_get_errorcode(ret)));
 		ret = write_control(newstate);
 		if (ret == NSERROR_OK) {
+			unlink_entries(newstate);
 			write_cache_tag(newstate);
 		}
 	}
@@ -1283,10 +1307,10 @@ store(nsurl *url,
 static nserror entry_release_alloc(struct store_entry_element *elem)
 {
 	if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
-		elem->heap.ref--;
-		if (elem->heap.ref == 0) {
-			LOG(("freeing %p", elem->heap.data));
-			free(elem->heap.data);
+		elem->u.heap.ref--;
+		if (elem->u.heap.ref == 0) {
+			LOG(("freeing %p", elem->u.heap.data));
+			free(elem->u.heap.data);
 			elem->flags &= ~ENTRY_ELEM_FLAG_HEAP;
 		}
 	}
@@ -1355,10 +1379,10 @@ fetch(nsurl *url,
 			/* a heap allocation already exists. Return
 			 * that allocation and bump our ref count.
 			 */
-			data = elem->heap.data;
-			elem->heap.ref++;
+			data = elem->u.heap.data;
+			elem->u.heap.ref++;
 			datalen = elem->size;
-			LOG(("Using existing heap allocation %p", elem->heap.data));
+			LOG(("Using existing heap allocation %p", elem->u.heap.data));
 		} else {
 			datalen = elem->size;
 			data = malloc(elem->size);
@@ -1369,9 +1393,9 @@ fetch(nsurl *url,
 
 			/* store allocated buffer so track ownership */
 			elem->flags |= ENTRY_ELEM_FLAG_HEAP;
-			elem->heap.data = data;
-			elem->heap.ref = 1;
-			LOG(("Creating new heap allocation %p", elem->heap.data));
+			elem->u.heap.data = data;
+			elem->u.heap.ref = 1;
+			LOG(("Creating new heap allocation %p", elem->u.heap.data));
 		}
 	} else if (datalen == 0) {
 		/* caller provided a buffer but no length bad parameter */
