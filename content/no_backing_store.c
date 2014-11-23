@@ -38,7 +38,7 @@ static nserror finalise(void)
 
 static nserror store(nsurl *url,
 		     enum backing_store_flags flags,
-		     const uint8_t *data,
+		     uint8_t *data,
 		     const size_t datalen)
 {
 	return NSERROR_SAVE_FAILED;

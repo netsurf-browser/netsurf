@@ -104,11 +104,11 @@ enum store_entry_elem_idx {
 enum store_entry_elem_flags {
 	/** store not managing any allocation on entry */
 	ENTRY_ELEM_FLAG_NONE = 0,
-        /** entry data allocation is on heap */
+	/** entry data allocation is on heap */
 	ENTRY_ELEM_FLAG_HEAP = 0x1,
-        /** entry data allocation is mmaped */
+	/** entry data allocation is mmaped */
 	ENTRY_ELEM_FLAG_MMAP = 0x2,
-        /** entry data allocation is in small object pool */
+	/** entry data allocation is in small object pool */
 	ENTRY_ELEM_FLAG_SMALL = 0x4,
 };
 
@@ -130,7 +130,7 @@ struct store_entry_element {
 		} __attribute__((__packed__)) map;
 		struct {
 			uint16_t block; /**< small object data block */
-		} __attribute__((__packed__)) small;
+		} __attribute__((__packed__)) sml;
 	} u ;
 	uint8_t flags; /* extension flags */
 	uint32_t size; /**< size of entry element on disc */
@@ -231,9 +231,9 @@ remove_store_entry(struct store_state *state,
 	}
 
 	/* check if the entry has storage already allocated */
-	if (((state->entries[sei].elem[ENTRY_ELEM_DATA].flags & 
+	if (((state->entries[sei].elem[ENTRY_ELEM_DATA].flags &
 	     (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) ||
-	    ((state->entries[sei].elem[ENTRY_ELEM_META].flags & 
+	    ((state->entries[sei].elem[ENTRY_ELEM_META].flags &
 	      (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0)) {
 		/* this entry cannot be removed as it has associated
 		 * allocation.
@@ -699,7 +699,7 @@ static nserror
 set_store_entry(struct store_state *state,
 		nsurl *url,
 		enum backing_store_flags flags,
-		const uint8_t *data,
+		uint8_t *data,
 		const size_t datalen,
 		struct store_entry **bse)
 {
@@ -1263,7 +1263,7 @@ finalise(void)
 static nserror
 store(nsurl *url,
       enum backing_store_flags flags,
-      const uint8_t *data,
+      uint8_t *data,
       const size_t datalen)
 {
 	nserror ret;

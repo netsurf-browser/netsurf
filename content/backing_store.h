@@ -74,7 +74,7 @@ struct gui_llcache_table {
 	 * @return NSERROR_OK on success or error code on faliure.
 	 */
 	nserror (*store)(struct nsurl *url, enum backing_store_flags flags,
-			 const uint8_t *data, const size_t datalen);
+			 uint8_t *data, const size_t datalen);
 
 	/**
 	 * Retrive an object from the backing store.
