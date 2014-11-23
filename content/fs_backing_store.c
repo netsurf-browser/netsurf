@@ -25,6 +25,12 @@
  * \todo Consider improving eviction sorting to include objects size
  *         and remaining lifetime and other cost metrics.
  *
+ * \todo Implement mmap retrieval where supported.
+ *
+ * \todo Implement static retrival for metadata objects as their heap
+ *         lifetime is typically very short, though this may be obsoleted
+ *         by a small object storage stratagy.
+ *
  * \todo make backing store have a more efficient small object storage.
  *
  */

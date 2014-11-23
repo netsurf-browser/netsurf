@@ -27,9 +27,11 @@
  *
  * \todo fix writeout conditions and ordering.
  *
- * \todo support mmaped retrieve
- *
  * \todo instrument and (auto)tune
+ *
+ * \todo Improve writeout bandwidth limiting.
+ *
+ * \todo Implement minimum writeout bandwidth limit.
  *
  */
 
@@ -65,7 +67,9 @@
 #define LLCACHE_MIN_DISC_LIFETIME 3600
 #define LLCACHE_MAX_DISC_BANDWIDTH (512*1024)
 
-/** State of a low-level cache object fetch */
+/**
+ * State of a low-level cache object fetch.
+ */
 typedef enum {
 	LLCACHE_FETCH_INIT,		/**< Initial state, before fetch */
 	LLCACHE_FETCH_HEADERS,		/**< Fetching headers */
@@ -73,10 +77,14 @@ typedef enum {
 	LLCACHE_FETCH_COMPLETE		/**< Fetch completed */
 } llcache_fetch_state;
 
-/** Type of low-level cache object */
+/**
+ * Type of low-level cache object.
+ */
 typedef struct llcache_object llcache_object;
 
-/** Handle to low-level cache object */
+/**
+ * Handle to low-level cache object.
+ */
 struct llcache_handle {
 	llcache_object *object;		/**< Pointer to associated object */
 
@@ -87,7 +95,9 @@ struct llcache_handle {
 	size_t bytes;			/**< Last reported byte count */
 };
 
-/** Low-level cache object user record */
+/**
+ * Low-level cache object user record.
+ */
 typedef struct llcache_object_user {
 	llcache_handle *handle;		/**< Handle data for client */
 
@@ -98,7 +108,9 @@ typedef struct llcache_object_user {
 	struct llcache_object_user *next;	/**< Next in list */
 } llcache_object_user;
 
-/** Low-level cache object fetch context */
+/**
+ * Low-level cache object fetch context.
+ */
 typedef struct {
 	uint32_t flags;			/**< Fetch flags */
 	nsurl *referer;			/**< Referring URL, or NULL if none */
@@ -117,14 +129,18 @@ typedef struct {
 	bool outstanding_query;		/**< Waiting for a query response */
 } llcache_fetch_ctx;
 
-/** validation control */
+/**
+ * Validation control.
+ */
 typedef enum {
 	LLCACHE_VALIDATE_FRESH,		/**< Only revalidate if not fresh */
 	LLCACHE_VALIDATE_ALWAYS,	/**< Always revalidate */
 	LLCACHE_VALIDATE_ONCE		/**< Revalidate once only */
 } llcache_validate;
 
-/** cache control value for invalid age */
+/**
+ * cache control value for invalid age.
+ */
 #define INVALID_AGE -1
 
 /** Cache control data */
@@ -153,8 +169,11 @@ typedef enum {
 	LLCACHE_STATE_DISC, /**< source data is stored on disc */
 } llcache_store_state;
 
-/** Low-level cache object */
-/** \todo Consider whether a list is a sane container */
+/**
+ * Low-level cache object
+ *
+ * \todo Consider whether a list is a sane container.
+ */
 struct llcache_object {
 	llcache_object *prev;	     /**< Previous in list */
 	llcache_object *next;	     /**< Next in list */
@@ -191,6 +210,9 @@ struct llcache_object {
 	time_t last_used; /**< time the last user was removed from the object */
 };
 
+/**
+ * Core llcache control context.
+ */
 struct llcache_s {
 	/** Handler for fetch-related queries */
 	llcache_query_callback query_cb;
@@ -235,9 +257,9 @@ static void llcache_users_not_caught_up(void);
 /**
  * Create a new object user
  *
- * \param cb	Callback routine
- * \param pw	Private data for callback
- * \param user	Pointer to location to receive result
+ * \param cb    Callback routine
+ * \param pw    Private data for callback
+ * \param user  Pointer to location to receive result
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
@@ -616,7 +638,11 @@ static nserror llcache_fetch_parse_header(llcache_object *object,
 	return NSERROR_OK;
 }
 
-/* Destroy headers */
+/**
+ * Destroy headers.
+ *
+ * \param object The object to destroy headers within.
+ */
 static inline void llcache_destroy_headers(llcache_object *object)
 {
 	while (object->num_headers > 0) {
@@ -629,7 +655,11 @@ static inline void llcache_destroy_headers(llcache_object *object)
 	object->headers = NULL;
 }
 
-/* Invalidate cache control data */
+/**
+ * Invalidate cache control data.
+ *
+ * \param object The object to invalidate cache control for.
+ */
 static inline void llcache_invalidate_cache_control_data(llcache_object *object)
 {
 	free(object->cache.etag);
@@ -654,12 +684,13 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 	char *name, *value;
 	llcache_header *temp;
 
-	/* The headers for multiple HTTP responses may be delivered to us if
-	 * the fetch layer receives a 401 response for which it has
-	 * authentication credentials. This will result in a silent re-request
-	 * after which we'll receive the actual response headers for the
-	 * object we want to fetch (assuming that the credentials were correct
-	 * of course)
+	/**
+	 * \note The headers for multiple HTTP responses may be
+	 * delivered to us if the fetch layer receives a 401 response
+	 * for which it has authentication credentials. This will
+	 * result in a silent re-request after which we'll receive the
+	 * actual response headers for the object we want to fetch
+	 * (assuming that the credentials were correct of course)
 	 *
 	 * Therefore, if the header is an HTTP response start marker, then we
 	 * must discard any headers we've read so far, reset the cache data
@@ -711,10 +742,10 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 /**
  * (Re)fetch an object
  *
+ * \pre The fetch parameters in object->fetch must be populated
+ *
  * \param object  Object to refetch
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \pre The fetch parameters in object->fetch must be populated
  */
 static nserror llcache_object_refetch(llcache_object *object)
 {
@@ -724,10 +755,11 @@ static nserror llcache_object_refetch(llcache_object *object)
 	int header_idx = 0;
 
 	if (object->fetch.post != NULL) {
-		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED)
+		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED) {
 			urlenc = object->fetch.post->data.urlenc;
-		else
+		} else {
 			multipart = object->fetch.post->data.multipart;
+		}
 	}
 
 	/* Generate cache-control headers */
@@ -750,6 +782,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 
 		header_idx++;
 	}
+
 	if (object->cache.date != 0) {
 		/* Maximum length of an RFC 1123 date is 29 bytes */
 		const size_t len = SLEN("If-Modified-Since: ") + 29 + 1;
@@ -803,17 +836,17 @@ static nserror llcache_object_refetch(llcache_object *object)
 /**
  * Kick-off a fetch for an object
  *
+ * \pre object::url must contain the URL to fetch
+ * \pre If there is a freshness validation candidate,
+ *	object::candidate and object::cache must be filled in
+ * \pre There must not be a fetch in progress for \a object
+ *
  * \param object	  Object to fetch
  * \param flags		  Fetch flags
  * \param referer	  Referring URL, or NULL for none
  * \param post		  POST data, or NULL for GET
  * \param redirect_count  Number of redirects followed so far
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \pre object::url must contain the URL to fetch
- * \pre If there is a freshness validation candidate,
- *	object::candidate and object::cache must be filled in
- * \pre There must not be a fetch in progress for \a object
  */
 static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 		nsurl *referer, const llcache_post_data *post,
@@ -845,12 +878,12 @@ static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
 /**
  * Destroy a low-level cache object
  *
- * \param object  Object to destroy
- * \return NSERROR_OK on success, appropriate error otherwise
- *
  * \pre Object is detached from cache list
  * \pre Object has no users
  * \pre Object is not a candidate (i.e. object::candidate_count == 0)
+ *
+ * \param object  Object to destroy
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror llcache_object_destroy(llcache_object *object)
 {
@@ -987,12 +1020,12 @@ static bool llcache_object_is_fresh(const llcache_object *object)
 /**
  * Clone an object's cache data
  *
+ * \post If \a deep is false, then any pointers in \a source will be set to NULL
+ *
  * \param source       Source object containing cache data to clone
  * \param destination  Destination object to clone cache data into
  * \param deep	       Whether to deep-copy the data or not
  * \return NSERROR_OK on success, appropriate error otherwise
- *
- * \post If \a deep is false, then any pointers in \a source will be set to NULL
  */
 static nserror llcache_object_clone_cache_data(llcache_object *source,
 		llcache_object *destination, bool deep)
@@ -1067,11 +1100,11 @@ llcache_object_remove_from_list(llcache_object *object, llcache_object **list)
  * Retrieve source data for an object from persistant store if necessary.
  *
  * If an objects source data has been placed in the persistant store
- * and the in memory copy freed this will attempt to retrive the
+ * and the in memory copy released this will attempt to retrive the
  * source data.
  *
- * @param object the object to operate on.
- * @return apropriate error code.
+ * \param object the object to operate on.
+ * \return apropriate error code.
  */
 static nserror llcache_persist_retrieve(llcache_object *object)
 {
@@ -1094,7 +1127,15 @@ static nserror llcache_persist_retrieve(llcache_object *object)
 /**
  * Generate a serialised version of an objects metadata
  *
- * metadata includes object headers
+ * The metadata includes object headers.
+ *
+ * \param object The cache object to serialise teh metadata of.
+ * \param data_out Where the serialised buffer will be placed.
+ * \param datasize_out The size of the serialised data.
+ * \return NSERROR_OK on success with \a data_out and \a datasize_out
+ *         updated, NSERROR_NOMEM on memory exhaustion or
+ *         NSERROR_INVALID if there was an error serialising the
+ *         stream.
  */
 static nserror
 llcache_serialise_metadata(llcache_object *object,
@@ -1228,7 +1269,15 @@ operror:
 }
 
 /**
- * un-serialise an objects metadata.
+ * Deserialisation of an objects metadata.
+ *
+ * Attempt to retrive and deserialise the metadata for an object from
+ * the backing store.
+ *
+ * \param object The object to retrieve the metadata for.
+ * \return NSERROR_OK if the metatdata was retrived and deserialised
+ *         or error code if url is not in persistant storage or in
+ *         event of deserialisation error.
  */
 static nserror
 llcache_process_metadata(llcache_object *object)
@@ -1366,7 +1415,15 @@ format_error:
 }
 
 /**
- * attempt to retrieve an object from persistant storage.
+ * Attempt to retrieve an object from persistant storage.
+ *
+ * \param object The object to populate from persistant store.
+ * \param flags Fetch flags.
+ * \param referer The referring url.
+ * \param post Post data for fetch.
+ * \param redirect_count how many times this fetch has been redirected.
+ * \return NSERROR_OK if the object was sucessfully retrived from the
+ *         cache else appropriate error code.
  */
 static nserror
 llcache_object_fetch_persistant(llcache_object *object,
@@ -1674,11 +1731,12 @@ static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	return NSERROR_OK;
 }
 
+
 /**
  * Add a user to a low-level cache object
  *
- * \param object  Object to add user to
- * \param user	  User to add
+ * \param object Object to add user to
+ * \param user User to add
  * \return NSERROR_OK.
  */
 static nserror llcache_object_add_user(llcache_object *object,
@@ -1924,7 +1982,9 @@ llcache_fetch_process_data(llcache_object *object,
 			   size_t len)
 {
 	if (object->fetch.state != LLCACHE_FETCH_DATA) {
-		/* On entry into this state, check if we need to
+		/**
+		 * \note
+		 * On entry into this state, check if we need to
 		 * invalidate the cache control data. We are guaranteed
 		 * to have received all response headers.
 		 *
@@ -2162,7 +2222,7 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
 }
 
 /**
- * construct a sorted list of objects available for writeout operation
+ * Construct a sorted list of objects available for writeout operation.
  *
  * The list contains fresh cacheable objects held in RAM with no
  * pending fetches. Any objects with a remaining lifetime less than
@@ -2171,6 +2231,10 @@ static nserror llcache_fetch_ssl_error(llcache_object *object)
  *
  * \todo calculate useful cost metrics to improve sorting.
  *
+ * \param[out] lst_out list of candidate objects.
+ * \param[out] lst_len_out Number of candidate objects in result.
+ * \return NSERROR_OK with \a lst_out and \a lst_len_out updated or
+ *         error code.
  */
 static nserror
 build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
@@ -2222,6 +2286,13 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 	return NSERROR_OK;
 }
 
+/**
+ * Write an object to the backing store.
+ *
+ * \param object The object to put in the backing store.
+ * \param written_out The amount of data written out.
+ * \return NSERROR_OK on success or appropriate error code.
+ */
 static nserror
 write_backing_store(struct llcache_object *object, size_t *written_out)
 {
@@ -2268,7 +2339,9 @@ write_backing_store(struct llcache_object *object, size_t *written_out)
 }
 
 /**
- * possibly write objects data to backing store.
+ * Possibly write objects data to backing store.
+ *
+ * \param p The context pointer passed to the callback.
  */
 static void llcache_persist(void *p)
 {
@@ -2308,8 +2381,8 @@ static void llcache_persist(void *p)
 /**
  * Handler for fetch events
  *
- * \param msg	     Fetch event
- * \param p	     Our private data
+ * \param msg  Fetch event
+ * \param p    Our private data
  */
 static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 {
@@ -2810,6 +2883,9 @@ llcache_object_snapshot(llcache_object *object,	llcache_object **snapshot)
 
 /**
  * total ram usage of object
+ *
+ * \param object The object to caclulate the total RAM usage of.
+ * \return The total RAM usage in bytes.
  */
 static inline uint32_t
 total_object_size(llcache_object *object)
@@ -3012,7 +3088,7 @@ void llcache_clean(bool purge)
 	LLCACHE_LOG(("Size: %u", llcache_size));
 }
 
-/* See llcache.h for documentation */
+/* Exported interface documented in content/llcache.h */
 nserror
 llcache_initialise(const struct llcache_parameters *prm)
 {
@@ -3034,7 +3110,8 @@ llcache_initialise(const struct llcache_parameters *prm)
 	return guit->llcache->initialise(&prm->store);
 }
 
-/* See llcache.h for documentation */
+
+/* Exported interface documented in content/llcache.h */
 void llcache_finalise(void)
 {
 	llcache_object *object, *next;
@@ -3119,7 +3196,7 @@ static void llcache_catch_up_all_users(void *ignored)
  * Ask for ::llcache_catch_up_all_users to be scheduled ASAP to pump the
  * user state machines.
  */
-static void llcache_users_not_caught_up()
+static void llcache_users_not_caught_up(void)
 {
 	if (llcache->all_caught_up) {
 		llcache->all_caught_up = false;
@@ -3128,7 +3205,7 @@ static void llcache_users_not_caught_up()
 }
 
 
-/* See llcache.h for documentation */
+/* Exported interface documented in content/llcache.h */
 nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 		nsurl *referer, const llcache_post_data *post,
 		llcache_handle_callback cb, void *pw,
@@ -3166,7 +3243,8 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 	return NSERROR_OK;
 }
 
-/* See llcache.h for documentation */
+
+/* Exported interface documented in content/llcache.h */
 nserror llcache_handle_change_callback(llcache_handle *handle,
 		llcache_handle_callback cb, void *pw)
 {
@@ -3176,7 +3254,8 @@ nserror llcache_handle_change_callback(llcache_handle *handle,
 	return NSERROR_OK;
 }
 
-/* See llcache.h for documentation */
+
+/* Exported interface documented in content/llcache.h */
 nserror llcache_handle_release(llcache_handle *handle)
 {
 	nserror error = NSERROR_OK;
@@ -3200,7 +3279,7 @@ nserror llcache_handle_release(llcache_handle *handle)
 	return error;
 }
 
-/* See llcache.h for documentation */
+/* Exported interface documented in content/llcache.h */
 nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result)
 {
 	nserror error;

@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Low-level source data cache backing store interface
+/**
+ * \file
+ * Low-level source data cache backing store interface.
  */
 
 #ifndef NETSURF_CONTENT_LLCACHE_PRIVATE_H_
@@ -33,7 +34,8 @@ enum backing_store_flags {
 	BACKING_STORE_META = 1,
 };
 
-/** low level cache backing store operation table
+/**
+ * low level cache backing store operation table
  *
  * The low level cache (source objects) has the capability to make
  * objects and their metadata (headers etc) persistant by writing to a
@@ -60,10 +62,12 @@ struct gui_llcache_table {
 	 *
 	 * The object is placed in the persistent store and may be
 	 *  retrieved with the fetch method.
+	 *
 	 * The backing store will take a reference to the
 	 *  passed data, subsequently the caller should explicitly
 	 *  release the allocation using the release method and not
 	 *  free the data itself.
+	 *
 	 * The caller may not assume that the persistent storage has
 	 *  been completely written on return.
 	 *
@@ -83,6 +87,7 @@ struct gui_llcache_table {
 	 *  length in \a datalen. Alternatively the backing store will
 	 *  allocate its own buffer if \a data is NULL, this memory is
 	 *  managed by the backing store.
+	 *
 	 * The caller must assume nothing about the backing store
 	 *  allocated buffers and the storage and *must* be freed by
 	 *  calling the release method.
