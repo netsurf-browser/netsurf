@@ -27,4 +27,4 @@ NETSURF_USE_HARU_PDF := NO
 NETSURF_USE_LIBICONV_PLUG := NO
 
 # Optimisation levels
-CFLAGS += -O2
+CFLAGS += -pipe -O2
