@@ -24,7 +24,6 @@
 #ifndef _NETSURF_DESKTOP_BROWSER_PRIVATE_H_
 #define _NETSURF_DESKTOP_BROWSER_PRIVATE_H_
 
-#include <stdbool.h>
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "desktop/browser.h"
