@@ -2301,11 +2301,16 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
  * \return NSERROR_OK on success or appropriate error code.
  */
 static nserror
-write_backing_store(struct llcache_object *object, size_t *written_out)
+write_backing_store(struct llcache_object *object, size_t *written_out, unsigned long *elapsed)
 {
 	nserror ret;
 	uint8_t *metadata;
 	size_t metadatasize;
+	struct timeval start_tv;
+	struct timeval end_tv;
+	struct timeval elapsed_tv;
+
+	gettimeofday(&start_tv, NULL);
 
 	/* put object data in backing store */
 	ret = guit->llcache->store(object->url,
@@ -2338,9 +2343,15 @@ write_backing_store(struct llcache_object *object, size_t *written_out)
 		guit->llcache->invalidate(object->url);
 		return ret;
 	}
+	gettimeofday(&end_tv, NULL);
+
+	timersub(&end_tv, &start_tv, &elapsed_tv);
+
 	object->store_state = LLCACHE_STATE_DISC;
 
 	*written_out = object->source_len + metadatasize;
+
+	*elapsed = (elapsed_tv.tv_sec * 1000) + (elapsed_tv.tv_usec / 1000);
 
 	return NSERROR_OK;
 }
@@ -2358,30 +2369,34 @@ static void llcache_persist(void *p)
 	struct llcache_object **lst;
 	int lst_count;
 	int idx;
+	unsigned long total_elapsed = 0;
+	unsigned long elapsed;
 
 	ret = build_candidate_list(&lst, &lst_count);
-	if (ret == NSERROR_OK) {
-		/* obtained a candidate list, make each object
-		 * persistant in turn
-		 */
-		for (idx = 0; idx < lst_count; idx++) {
-			ret = write_backing_store(lst[idx], &size_written);
-			if (ret != NSERROR_OK) {
-				break;
-			}
-			total_written += size_written;
-
-			if (total_written > llcache->bandwidth) {
-				/* The bandwidth limit has been reached.
-				 * Writeout scheduled for the remaining objects
-				 */
-				guit->browser->schedule(1000, llcache_persist, NULL);
-				break;
-			}
-		}
-
-		free(lst);
+	if (ret != NSERROR_OK) {
+		LOG(("Unable to construct candidate list for persisatnt writeout"));
+		return;
 	}
+
+	/* obtained a candidate list, make each object persistant in turn */
+	for (idx = 0; idx < lst_count; idx++) {
+		ret = write_backing_store(lst[idx], &size_written, &elapsed);
+		if (ret != NSERROR_OK) {
+			break;
+		}
+		total_written += size_written;
+		total_elapsed += elapsed;
+
+		if (total_written > llcache->bandwidth) {
+			/* The bandwidth limit has been reached.
+			 * Writeout scheduled for the remaining objects
+			 */
+			guit->browser->schedule(1000, llcache_persist, NULL);
+			break;
+		}
+	}
+
+	free(lst);
 }
 
 
