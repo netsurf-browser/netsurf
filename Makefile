@@ -493,7 +493,8 @@ $(eval $(call feature_switch,HARU_PDF,PDF export (haru),-DWITH_PDF_EXPORT,-lhpdf
 $(eval $(call feature_switch,LIBICONV_PLUG,glibc internal iconv,-DLIBICONV_PLUG,,-ULIBICONV_PLUG,-liconv))
 
 # Common libraries with pkgconfig
-$(eval $(call pkg_config_find_and_add,libutf8proc,UTF8PROC))
+$(eval $(call pkg_config_find_and_add,libutf8proc,utf8proc))
+$(eval $(call pkg_config_find_and_add,libnsutils,nsutils))
 
 # Common libraries without pkg-config support
 LDFLAGS += -lz

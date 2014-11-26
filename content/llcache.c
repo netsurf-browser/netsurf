@@ -36,8 +36,10 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <nsutils/time.h>
 
 #include "utils/config.h"
 
@@ -2306,11 +2308,10 @@ write_backing_store(struct llcache_object *object, size_t *written_out, unsigned
 	nserror ret;
 	uint8_t *metadata;
 	size_t metadatasize;
-	struct timeval start_tv;
-	struct timeval end_tv;
-	struct timeval elapsed_tv;
+	uint64_t startms = 0;
+	uint64_t endms = 1000;
 
-	gettimeofday(&start_tv, NULL);
+	nsu_getmonotonic_ms(&startms);
 
 	/* put object data in backing store */
 	ret = guit->llcache->store(object->url,
@@ -2343,15 +2344,16 @@ write_backing_store(struct llcache_object *object, size_t *written_out, unsigned
 		guit->llcache->invalidate(object->url);
 		return ret;
 	}
-	gettimeofday(&end_tv, NULL);
-
-	timersub(&end_tv, &start_tv, &elapsed_tv);
+	nsu_getmonotonic_ms(&endms);
 
 	object->store_state = LLCACHE_STATE_DISC;
 
 	*written_out = object->source_len + metadatasize;
 
-	*elapsed = (elapsed_tv.tv_sec * 1000) + (elapsed_tv.tv_usec / 1000);
+	/* by ignoring the overflow this assumes the writeout took
+	 * less than 5 weeks.
+	 */
+	*elapsed = endms - startms;
 
 	return NSERROR_OK;
 }
