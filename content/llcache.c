@@ -2300,10 +2300,13 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
  *
  * \param object The object to put in the backing store.
  * \param written_out The amount of data written out.
+ * \param elapsed The time in ms it took to complete the write to backing store.
  * \return NSERROR_OK on success or appropriate error code.
  */
 static nserror
-write_backing_store(struct llcache_object *object, size_t *written_out, unsigned long *elapsed)
+write_backing_store(struct llcache_object *object,
+		    size_t *written_out,
+		    unsigned long *elapsed)
 {
 	nserror ret;
 	uint8_t *metadata;
@@ -2388,6 +2391,7 @@ static void llcache_persist(void *p)
 		}
 		total_written += size_written;
 		total_elapsed += elapsed;
+		LOG(("Wrote %d bytes in %dms %s", size_written, total_elapsed, nsurl_access(lst[idx]->url) ));
 
 		if (total_written > llcache->bandwidth) {
 			/* The bandwidth limit has been reached.

@@ -119,6 +119,13 @@ enum store_entry_elem_flags {
 };
 
 
+enum store_entry_flags {
+	/** entry is normal */
+	ENTRY_FLAGS_NONE = 0,
+	/** entry has been invalidated but something still holding a reference */
+	ENTRY_FLAGS_INVALID = 1,
+};
+
 /**
  * Backing store entry element.
  *
@@ -156,6 +163,7 @@ struct store_entry {
 	int64_t last_used; /**< unix time the entry was last used */
 	entry_ident_t ident; /**< entry identifier */
 	uint16_t use_count; /**< number of times this entry has been accessed */
+	uint8_t flags; /**< entry flags */
 	/** Entry element (data or meta) specific information */
 	struct store_entry_element elem[ENTRY_ELEM_COUNT];
 };
@@ -211,50 +219,25 @@ struct store_state *storestate;
  * removes it from the table. The removed entry is returned but is
  * only valid until the next set_store_entry call.
  *
- * @param state The store state to use.
- * @param ident The entry ident of the entry to store.
- * @param bse Pointer used to return value.
- * @return NSERROR_OK and bse updated on succes or NSERROR_NOT_FOUND
+ * @param[in] state The store state to use.
+ * @param[in, out] bse Pointer to the entry to be removed.
+ * @return NSERROR_OK and \a bse updated on succes or NSERROR_NOT_FOUND
  *         if no entry coresponds to the url.
  */
 static nserror
-remove_store_entry(struct store_state *state,
-		   entry_ident_t ident,
-		   struct store_entry **bse)
+remove_store_entry(struct store_state *state, struct store_entry **bse)
 {
 	entry_index_t sei; /* store entry index */
 
-	sei = BS_ENTRY_INDEX(ident, state);
-	if (sei == 0) {
-		LOG(("ident 0x%08x not in index", ident));
-		return NSERROR_NOT_FOUND;
-	}
-
-	if (state->entries[sei].ident != ident) {
-		/* entry ident did not match */
-		LOG(("ident 0x%08x did not match entry index %d", ident, sei));
-		return NSERROR_NOT_FOUND;
-	}
-
-	/* check if the entry has storage already allocated */
-	if (((state->entries[sei].elem[ENTRY_ELEM_DATA].flags &
-	     (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) ||
-	    ((state->entries[sei].elem[ENTRY_ELEM_META].flags &
-	      (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0)) {
-		/* this entry cannot be removed as it has associated
-		 * allocation.
-		 */
-		LOG(("attempt to remove entry with in use data"));
-		return NSERROR_PERMISSION;
-	}
-
-	/* sei is entry to be removed, we swap it to the end of the
-	 * table so there are no gaps and the returned entry is held
-	 * in storage with reasonable lifetime.
+	/* sei is index to entry to be removed, we swap it to the end
+	 * of the table so there are no gaps and the returned entry is
+	 * held in storage with reasonable lifetime.
 	 */
 
+	sei = BS_ENTRY_INDEX((*bse)->ident, state);
+
 	/* remove entry from map */
-	BS_ENTRY_INDEX(ident, state) = 0;
+	BS_ENTRY_INDEX((*bse)->ident, state) = 0;
 
 	/* global allocation accounting  */
 	state->total_alloc -= state->entries[sei].elem[ENTRY_ELEM_DATA].size;
@@ -408,21 +391,34 @@ store_fname(struct store_state *state,
  * @return NSERROR_OK on sucess or error code on failure.
  */
 static nserror
-unlink_ident(struct store_state *state, entry_ident_t ident)
+invalidate_entry(struct store_state *state, struct store_entry *bse)
 {
 	char *fname;
 	nserror ret;
-	struct store_entry *bse;
 
-	/* LOG(("ident %08x", ident)); */
+	/* mark entry as invalid */
+	bse->flags |= ENTRY_FLAGS_INVALID;
 
-	/* use the url hash as the entry identifier */
-	ret = remove_store_entry(state, ident, &bse);
+	/* check if the entry has storage already allocated */
+	if (((bse->elem[ENTRY_ELEM_DATA].flags &
+	     (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) ||
+	    ((bse->elem[ENTRY_ELEM_META].flags &
+	      (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0)) {
+		/*
+		 * This entry cannot be immediately removed as it has
+		 * associated allocation so wait for allocation release.
+		 */
+		LOG(("invalidating entry with referenced allocation"));
+		return NSERROR_OK;
+	}
+
+	/* remove the entry from the index */
+	ret = remove_store_entry(state, &bse);
 	if (ret != NSERROR_OK) {
-		/* LOG(("entry not found")); */
 		return ret;
 	}
 
+	/* unlink the files from disc */
 	fname = store_fname(state, bse->ident, BACKING_STORE_META);
 	if (fname == NULL) {
 		return NSERROR_NOMEM;
@@ -535,11 +531,14 @@ static nserror store_evict(struct store_state *state)
 	/* evict entries in listed order */
 	removed = 0;
 	for (ent = 0; ent < ent_count; ent++) {
+		struct store_entry *bse;
 
-		removed += BS_ENTRY(elist[ent], state).elem[ENTRY_ELEM_DATA].size;
-		removed += BS_ENTRY(elist[ent], state).elem[ENTRY_ELEM_META].size;
+		bse = &BS_ENTRY(elist[ent], state);
 
-		ret = unlink_ident(state, elist[ent]);
+		removed += bse->elem[ENTRY_ELEM_DATA].size;
+		removed += bse->elem[ENTRY_ELEM_META].size;
+
+		ret = invalidate_entry(state, bse);
 		if (ret != NSERROR_OK) {
 			break;
 		}
@@ -760,7 +759,7 @@ set_store_entry(struct store_state *state,
 		/* this entry cannot be removed as it has associated
 		 * allocation.
 		 */
-		LOG(("attempt to remove entry with in use data"));
+		LOG(("attempt to overwrite entry with in use data"));
 		return NSERROR_PERMISSION;
 	}
 
@@ -1465,7 +1464,18 @@ static nserror release(nsurl *url, enum backing_store_flags bsflags)
 		elem = &bse->elem[ENTRY_ELEM_DATA];
 	}
 
-	return entry_release_alloc(elem);
+	ret = entry_release_alloc(elem);
+
+	/* if the entry has previously been invalidated but had
+	 * allocation it must be invalidated fully now the allocation
+	 * has been released.
+	 */
+	if ((ret == NSERROR_OK) &&
+	    ((bse->flags & ENTRY_FLAGS_INVALID) != 0)) {
+		ret = invalidate_entry(storestate, bse);
+	}
+
+	return ret;
 }
 
 
@@ -1481,14 +1491,20 @@ static nserror release(nsurl *url, enum backing_store_flags bsflags)
 static nserror
 invalidate(nsurl *url)
 {
+	nserror ret;
+	struct store_entry *bse;
+
 	/* check backing store is initialised */
 	if (storestate == NULL) {
 		return NSERROR_INIT_FAILED;
 	}
 
-	LOG(("url:%s", nsurl_access(url)));
+	ret = get_store_entry(storestate, url, &bse);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
 
-	return unlink_ident(storestate, nsurl_hash(url));
+	return invalidate_entry(storestate, bse);
 }
 
 
