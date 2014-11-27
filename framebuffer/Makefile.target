@@ -48,7 +48,7 @@ CFLAGS += -std=c99 -g -Dsmall \
 	  -D_POSIX_C_SOURCE=200112L \
 	  $(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl)
 
-LDFLAGS += -lm -lrt -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
+LDFLAGS += -lm -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
 
 ifeq ($(HOST),mint)
     # freemint does not support pkg-config for libcurl

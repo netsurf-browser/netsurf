@@ -45,7 +45,7 @@ CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
 	  $(shell $(PKG_CONFIG) --cflags libdom libcurl) \
 	  $(shell $(PKG_CONFIG) --cflags openssl)
 
-LDFLAGS += -lm -lrt $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
+LDFLAGS += -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
 
 # ---------------------------------------------------------------------------
 # Windows flag setup
