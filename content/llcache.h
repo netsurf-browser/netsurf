@@ -213,13 +213,22 @@ struct llcache_parameters {
 	size_t limit; /**< The target upper bound for the RAM cache size */
 	size_t hysteresis; /**< The hysteresis around the target size */
 
-	int minimum_lifetime; /**< The minimum lifetime to consider
-			       * sending objects to backing store.
-			       */
+	/** The minimum lifetime to consider sending objects to backing store.*/
+	int minimum_lifetime; 
 
-	size_t bandwidth; /**< The maximum bandwidth to allow the
-			   * backing store to use.
-			   */
+	/** The minimum bandwidth to allow the backing store to
+	 * use in bytes/second
+	 */
+	size_t minimum_bandwidth; 
+
+	/** The maximum bandwidth to allow the backing store to use in
+	 * bytes/second
+	 */
+	size_t maximum_bandwidth; 
+
+	/** The time quantum over which to calculate the bandwidth values
+	 */
+	unsigned long time_quantum;
 
 	struct llcache_store_parameters store;
 };

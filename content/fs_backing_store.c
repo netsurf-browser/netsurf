@@ -412,6 +412,8 @@ invalidate_entry(struct store_state *state, struct store_entry *bse)
 		return NSERROR_OK;
 	}
 
+	LOG(("Removing entry for %p", bse));
+
 	/* remove the entry from the index */
 	ret = remove_store_entry(state, &bse);
 	if (ret != NSERROR_OK) {

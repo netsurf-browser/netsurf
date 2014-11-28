@@ -72,16 +72,22 @@
 /** default time between content cache cleans. */
 #define HL_CACHE_CLEAN_TIME (2 * IMAGE_CACHE_CLEAN_TIME)
 
-/** default minimum object time before object is pushed to backing store. */
-#define LLCACHE_MIN_DISC_LIFETIME (60 * 30)
-
-/** default maximum bandwidth for backing store writeout. */
-#define LLCACHE_MAX_DISC_BANDWIDTH (128 * 1024)
-
 /** ensure there is a minimal amount of memory for source objetcs and
  * decoded bitmaps.
  */
 #define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
+
+/** default minimum object time before object is pushed to backing store. (s) */
+#define LLCACHE_STORE_MIN_LIFETIME (60 * 30)
+
+/** default minimum bandwidth for backing store writeout. (byte/s) */
+#define LLCACHE_STORE_MIN_BANDWIDTH (128 * 1024)
+
+/** default maximum bandwidth for backing store writeout. (byte/s) */
+#define LLCACHE_STORE_MAX_BANDWIDTH (1024 * 1024)
+
+/** default time quantum with which to calculate bandwidth (ms) */
+#define LLCACHE_STORE_TIME_QUANTUM (100)
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
@@ -126,8 +132,10 @@ nserror netsurf_init(const char *messages, const char *store_path)
 		.bg_clean_time = HL_CACHE_CLEAN_TIME,
 		.llcache = {
 			.cb = netsurf_llcache_query_handler,
-			.minimum_lifetime = LLCACHE_MIN_DISC_LIFETIME,
-			.bandwidth = LLCACHE_MAX_DISC_BANDWIDTH,
+			.minimum_lifetime = LLCACHE_STORE_MIN_LIFETIME,
+			.minimum_bandwidth = LLCACHE_STORE_MIN_BANDWIDTH,
+			.maximum_bandwidth = LLCACHE_STORE_MAX_BANDWIDTH,
+			.time_quantum = LLCACHE_STORE_TIME_QUANTUM,
 		}
 	}; 
 	struct image_cache_parameters image_cache_parameters = {

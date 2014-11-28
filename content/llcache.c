@@ -66,9 +66,6 @@
 #define LLCACHE_LOG(x)
 #endif
 
-#define LLCACHE_MIN_DISC_LIFETIME 3600
-#define LLCACHE_MAX_DISC_BANDWIDTH (512*1024)
-
 /**
  * State of a low-level cache object fetch.
  */
@@ -236,8 +233,20 @@ struct llcache_s {
 	 */
 	int minimum_lifetime;
 
-	/** The maximum bandwidth to allow the backing store to use. */
-	size_t bandwidth;
+	/** The time over which to apply the bandwidth calculations in ms */
+	unsigned long time_quantum;
+
+	/** The minimum bandwidth to allow the backing store to use in
+	 * bytes/second. Below this the backing store will be
+	 * disabled.
+	 */
+	size_t minimum_bandwidth;
+
+	/** The maximum bandwidth to allow the backing store to
+	 * use in bytes/second
+	 */
+	size_t maximum_bandwidth;
+
 
 	/** Whether or not our users are caught up */
 	bool all_caught_up;
@@ -2256,8 +2265,9 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 #define MAX_PERSIST_PER_RUN 512
 
 	lst = calloc(MAX_PERSIST_PER_RUN, sizeof(struct llcache_object *));
-	if (lst == NULL)
+	if (lst == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	for (object = llcache->cached_objects; object != NULL; object = next) {
 		next = object->next;
@@ -2374,7 +2384,8 @@ static void llcache_persist(void *p)
 	struct llcache_object **lst;
 	int lst_count;
 	int idx;
-	unsigned long total_elapsed = 0;
+	unsigned long write_limit; /* max number of bytes to write */
+	unsigned long total_elapsed = 1;
 	unsigned long elapsed;
 
 	ret = build_candidate_list(&lst, &lst_count);
@@ -2383,24 +2394,32 @@ static void llcache_persist(void *p)
 		return;
 	}
 
+	write_limit = (llcache->maximum_bandwidth * llcache->time_quantum) / 1000;
+
 	/* obtained a candidate list, make each object persistant in turn */
 	for (idx = 0; idx < lst_count; idx++) {
 		ret = write_backing_store(lst[idx], &size_written, &elapsed);
-		if (ret != NSERROR_OK) {
-			break;
-		}
-		total_written += size_written;
-		total_elapsed += elapsed;
-		LOG(("Wrote %d bytes in %dms %s", size_written, total_elapsed, nsurl_access(lst[idx]->url) ));
+		if (ret == NSERROR_OK) {
+			/* sucessfully wrote object to backing store */
+			total_written += size_written;
+			total_elapsed += elapsed;
+			LOG(("Wrote %d bytes in %dms %s",
+			     size_written,
+			     elapsed,
+			     nsurl_access(lst[idx]->url) ));
 
-		if (total_written > llcache->bandwidth) {
-			/* The bandwidth limit has been reached.
-			 * Writeout scheduled for the remaining objects
-			 */
-			guit->browser->schedule(1000, llcache_persist, NULL);
-			break;
+			if (total_written > write_limit) {
+				/* The bandwidth limit has been reached.
+				 * Writeout scheduled for the remaining objects
+				 */
+				guit->browser->schedule(llcache->time_quantum, llcache_persist, NULL);
+				break;
+			}
 		}
 	}
+
+	LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
+	     total_written, total_elapsed, (total_written * 1000) / total_elapsed));
 
 	free(lst);
 }
@@ -3129,7 +3148,9 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->query_cb_pw = prm->cb_ctx;
 	llcache->limit = prm->limit;
 	llcache->minimum_lifetime = prm->minimum_lifetime;
-	llcache->bandwidth = prm->bandwidth;
+	llcache->minimum_bandwidth = prm->minimum_bandwidth;
+	llcache->maximum_bandwidth = prm->maximum_bandwidth;
+	llcache->time_quantum = prm->time_quantum;
 	llcache->all_caught_up = true;
 
 	LOG(("llcache initialising with a limit of %d bytes", llcache->limit));
