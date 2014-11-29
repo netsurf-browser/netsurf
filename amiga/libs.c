@@ -105,10 +105,21 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, true)
 	AMINS_LIB_OPEN("workbench.library",    37, Workbench,   "main",        1, true)
 
+	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
+	 * The library base and interface are obtained there, rather than here, due to
+	 * the additional complexities of opening devices, which aren't important here
+	 * (as we only need the library interface), but are important for the scheduler
+	 * (as it also uses the device interface).  We trust that the scheduler has
+	 * initialised before any other code requires the timer's library interface
+	 * (this is ensured by waiting for the scheduler to start up) and that it is
+	 * OK to use a child process' timer interface, to avoid opening it twice.
+	 */
+
 	/* BOOPSI classes.
 	 * \todo These should be opened using OpenClass(), however as
 	 * the macros all use the deprecated _GetClass() functions,
-	 * we may as well just open them normally for now. */
+	 * we may as well just open them normally for now.
+	 */
 
 	AMINS_LIB_OPEN("classes/arexx.class",          50, ARexx,         "main", 1, true)
 	AMINS_LIB_OPEN("images/bevel.image",           50, Bevel,         "main", 1, true)

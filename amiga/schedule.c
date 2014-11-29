@@ -282,7 +282,7 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 static struct MsgPort *ami_schedule_open_timer(void)
 {
 	struct MsgPort *msgport = AllocSysObjectTags(ASOT_PORT,
-				ASO_NoTrack,FALSE,
+				ASO_NoTrack, FALSE,
 				TAG_DONE);
 
 	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
@@ -294,7 +294,7 @@ static struct MsgPort *ami_schedule_open_timer(void)
 	OpenDevice("timer.device", UNIT_WAITUNTIL, (struct IORequest *)tioreq, 0);
 
 	TimerBase = (struct Device *)tioreq->Request.io_Device;
-	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase, "main", 1, NULL);
 
 	return msgport;
 }
