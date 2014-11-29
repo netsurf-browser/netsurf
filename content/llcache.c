@@ -2262,7 +2262,7 @@ build_candidate_list(struct llcache_object ***lst_out, int *lst_len_out)
 	int lst_len = 0;
 	int remaining_lifetime;
 
-#define MAX_PERSIST_PER_RUN 512
+#define MAX_PERSIST_PER_RUN 128
 
 	lst = calloc(MAX_PERSIST_PER_RUN, sizeof(struct llcache_object *));
 	if (lst == NULL) {
@@ -2379,14 +2379,18 @@ write_backing_store(struct llcache_object *object,
 static void llcache_persist(void *p)
 {
 	nserror ret;
-	size_t size_written;
-	size_t total_written = 0;
-	struct llcache_object **lst;
-	int lst_count;
-	int idx;
-	unsigned long write_limit; /* max number of bytes to write */
-	unsigned long total_elapsed = 1;
-	unsigned long elapsed;
+	struct llcache_object **lst; /* candidate object list */
+	int lst_count; /* number of candidates in list */
+	int idx; /* current candidate object index in list */
+
+	unsigned long write_limit; /* max number of bytes to write in this run*/
+
+	size_t written; /* all bytes written for a single object */
+	unsigned long elapsed; /* how long writing an object took */
+
+	size_t total_written = 0; /* total bytes written in this run */
+	unsigned long total_elapsed = 1; /* total ms used to write bytes */
+	unsigned long total_bandwidth = 0; /* total bandwidth */
 
 	ret = build_candidate_list(&lst, &lst_count);
 	if (ret != NSERROR_OK) {
@@ -2398,28 +2402,68 @@ static void llcache_persist(void *p)
 
 	/* obtained a candidate list, make each object persistant in turn */
 	for (idx = 0; idx < lst_count; idx++) {
-		ret = write_backing_store(lst[idx], &size_written, &elapsed);
+		ret = write_backing_store(lst[idx], &written, &elapsed);
 		if (ret == NSERROR_OK) {
 			/* sucessfully wrote object to backing store */
-			total_written += size_written;
+			total_written += written;
 			total_elapsed += elapsed;
-			LOG(("Wrote %d bytes in %dms %s",
-			     size_written,
-			     elapsed,
+			total_bandwidth = (total_written * 1000) / total_elapsed;
+			LOG(("Wrote %d bytes in %dms bw:%d %s",
+			     written, elapsed, (written * 1000) / elapsed,
 			     nsurl_access(lst[idx]->url) ));
 
-			if (total_written > write_limit) {
-				/* The bandwidth limit has been reached.
-				 * Writeout scheduled for the remaining objects
+			/* check to for the time quantum or the size
+			 * (bandwidth) for this run being exceeded.
+			 */
+			if (total_elapsed > llcache->time_quantum) {
+				/* writeout has exhausted the available time.
+				 * Either the writeout is slow or the last
+				 * object was very large.
 				 */
-				guit->browser->schedule(llcache->time_quantum, llcache_persist, NULL);
+				if (total_bandwidth < llcache->minimum_bandwidth) {
+					LOG(("Cannot write minimum bandwidth"));
+					warn_user("Disc cache write bandwidth is too slow to be useful, disabling cache", 0);
+					guit->llcache->finalise();
+					break;
+				} else {
+					unsigned long next;
+					if (total_bandwidth > llcache->maximum_bandwidth) {
+						/* fast writeout of large file
+						 * so calculate delay as if
+						 * write happened only at max
+						 * limit
+						 */
+						next = ((total_written * llcache->time_quantum) / write_limit) - total_elapsed;
+					} else {
+						next = llcache->time_quantum;
+					}
+					LOG(("Overran our timeslot Rescheduling writeout in %dms", next));
+					guit->browser->schedule(next,
+							llcache_persist, NULL);
+					break;
+				}
+			} else if (total_written > write_limit) {
+				/* The bandwidth limit has been reached. */
+				unsigned long next;
+				if (total_bandwidth > llcache->maximum_bandwidth) {
+					/* fast writeout of large file so
+					 * calculate delay as if write
+					 * happened only at max limit
+					 */
+					next = ((total_written * llcache->time_quantum) / write_limit) - total_elapsed;
+				} else {
+					next = llcache->time_quantum - total_elapsed;
+				}
+				LOG(("Rescheduling writeout in %dms", next));
+				guit->browser->schedule(next, llcache_persist,
+							NULL);
 				break;
 			}
 		}
 	}
 
 	LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
-	     total_written, total_elapsed, (total_written * 1000) / total_elapsed));
+	     total_written, total_elapsed, total_bandwidth));
 
 	free(lst);
 }

@@ -1230,6 +1230,9 @@ initialise(const struct llcache_store_parameters *parameters)
 /**
  * Finalise the backing store.
  *
+ * \todo This will cause the backing store to leak any outstanding memory
+ * allocations. This will probably best be done by a global use count.
+ *
  * @return NSERROR_OK on success.
  */
 static nserror
