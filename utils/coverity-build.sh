@@ -30,17 +30,15 @@
 # COVERITY_TOKEN
 # COVERITY_USER
 # COVERITY_PREFIX path to tools else default is used
+# BUILD
 #
 # either PREFIX or JENKINS_HOME
 
 # build gtk, framebuffer and monkey frontend by default
 TARGETS="gtk framebuffer monkey"
 
-# We build for the Linux platform by default
-ARTIFACT_TARGET=${TARGET:-Linux}
-
 # setup build environment
-export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${ARTIFACT_TARGET}}
+export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${BUILD}}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
