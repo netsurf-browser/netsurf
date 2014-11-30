@@ -2608,6 +2608,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 			err = dom_node_get_first_child(c, &c2);
 			if (err != DOM_NO_ERR) {
 				dom_node_unref(c);
+				form_free_control(gadget);
 				return false;
 			}
 
