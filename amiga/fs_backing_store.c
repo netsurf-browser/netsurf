@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Uncomment the below to disable the async write process */
+//#define NSA_NO_ASYNC_STORE 1
+
 #include <proto/dos.h>
 #include <proto/exec.h>
 
@@ -88,7 +91,11 @@ ami_backing_store_store(nsurl *url,
 static struct gui_llcache_table amiga_llcache_table = {
 	.initialise = initialise,
 	.finalise = finalise,
+#ifdef NSA_NO_ASYNC_STORE
+	.store = store,
+#else
 	.store = ami_backing_store_store,
+#endif
 	.fetch = fetch,
 	.invalidate = invalidate,
 	.release = release,
