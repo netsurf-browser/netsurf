@@ -1411,6 +1411,7 @@ fetch(nsurl *url,
 		}
 	} else if (datalen == 0) {
 		/* caller provided a buffer but no length bad parameter */
+		close(fd);
 		return NSERROR_BAD_PARAMETER;
 	}
 
