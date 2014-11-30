@@ -2382,6 +2382,7 @@ static void llcache_persist(void *p)
 	struct llcache_object **lst; /* candidate object list */
 	int lst_count; /* number of candidates in list */
 	int idx; /* current candidate object index in list */
+	int next = -1; /* when the next run should be scheduled for */
 
 	unsigned long write_limit; /* max number of bytes to write in this run*/
 
@@ -2416,6 +2417,7 @@ static void llcache_persist(void *p)
 			 * (bandwidth) for this run being exceeded.
 			 */
 			if (total_elapsed > llcache->time_quantum) {
+				LOG(("Overran timeslot"));
 				/* writeout has exhausted the available time.
 				 * Either the writeout is slow or the last
 				 * object was very large.
@@ -2426,7 +2428,6 @@ static void llcache_persist(void *p)
 					guit->llcache->finalise();
 					break;
 				} else {
-					unsigned long next;
 					if (total_bandwidth > llcache->maximum_bandwidth) {
 						/* fast writeout of large file
 						 * so calculate delay as if
@@ -2437,14 +2438,11 @@ static void llcache_persist(void *p)
 					} else {
 						next = llcache->time_quantum;
 					}
-					LOG(("Overran our timeslot Rescheduling writeout in %dms", next));
-					guit->browser->schedule(next,
-							llcache_persist, NULL);
 					break;
 				}
 			} else if (total_written > write_limit) {
 				/* The bandwidth limit has been reached. */
-				unsigned long next;
+
 				if (total_bandwidth > llcache->maximum_bandwidth) {
 					/* fast writeout of large file so
 					 * calculate delay as if write
@@ -2454,18 +2452,22 @@ static void llcache_persist(void *p)
 				} else {
 					next = llcache->time_quantum - total_elapsed;
 				}
-				LOG(("Rescheduling writeout in %dms", next));
-				guit->browser->schedule(next, llcache_persist,
-							NULL);
 				break;
 			}
 		}
+	}
+	free(lst);
+
+	if (idx == lst_count) {
+		LOG(("Completed writeout list"));
+		next = llcache->time_quantum - total_elapsed;
 	}
 
 	LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
 	     total_written, total_elapsed, total_bandwidth));
 
-	free(lst);
+	LOG(("Rescheduling writeout in %dms", next));
+	guit->browser->schedule(next, llcache_persist, NULL);
 }
 
 
