@@ -31,7 +31,6 @@
 
 #include "amiga/schedule.h"
 
-static bool scheduler_running = false;
 static struct MsgPort *smsgport = NULL; /* to send messages for the scheduler to */
 static struct TimeRequest *tioreq;
 struct Device *TimerBase;
@@ -517,7 +516,6 @@ nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 	}
 
 	LOG(("Scheduler started"));
-	scheduler_running = true;
 
 	return NSERROR_OK;
 }
