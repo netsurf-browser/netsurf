@@ -476,6 +476,7 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 	}
 
 	ami_schedule_free(timermsgport);
+	FreeSysObject(ASOT_PORT, schedulermsgport);
 
 	return RETURN_OK;
 }
