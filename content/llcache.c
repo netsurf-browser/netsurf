@@ -2368,6 +2368,13 @@ write_backing_store(struct llcache_object *object,
 	 */
 	*elapsed = endms - startms;
 
+	/* ensure the writeout is reported to have taken at least the
+	 * minimal amount of time
+	 */
+	if (*elapsed == 0) {
+		*elapsed = 1;
+	}
+
 	return NSERROR_OK;
 }
 
