@@ -2411,63 +2411,71 @@ static void llcache_persist(void *p)
 	/* obtained a candidate list, make each object persistant in turn */
 	for (idx = 0; idx < lst_count; idx++) {
 		ret = write_backing_store(lst[idx], &written, &elapsed);
-		if (ret == NSERROR_OK) {
-			/* sucessfully wrote object to backing store */
-			total_written += written;
-			total_elapsed += elapsed;
-			total_bandwidth = (total_written * 1000) / total_elapsed;
-			LOG(("Wrote %d bytes in %dms bw:%d %s",
-			     written, elapsed, (written * 1000) / elapsed,
-			     nsurl_access(lst[idx]->url) ));
+		if (ret != NSERROR_OK) {
+			continue;
+		}
 
-			/* check to for the time quantum or the size
-			 * (bandwidth) for this run being exceeded.
+		/* sucessfully wrote object to backing store */
+		total_written += written;
+		total_elapsed += elapsed;
+		total_bandwidth = (total_written * 1000) / total_elapsed;
+		LOG(("Wrote %d bytes in %dms bw:%d %s",
+		     written, elapsed, (written * 1000) / elapsed,
+		     nsurl_access(lst[idx]->url) ));
+
+		/* check to for the time quantum or the size
+		 * (bandwidth) for this run being exceeded.
+		 */
+		if (total_elapsed > llcache->time_quantum) {
+			LOG(("Overran timeslot"));
+			/* writeout has exhausted the available time.
+			 * Either the writeout is slow or the last
+			 * object was very large.
 			 */
-			if (total_elapsed > llcache->time_quantum) {
-				LOG(("Overran timeslot"));
-				/* writeout has exhausted the available time.
-				 * Either the writeout is slow or the last
-				 * object was very large.
-				 */
-				if (total_bandwidth < llcache->minimum_bandwidth) {
-					LOG(("Cannot write minimum bandwidth"));
-					warn_user("Disc cache write bandwidth is too slow to be useful, disabling cache", 0);
-					guit->llcache->finalise();
-					break;
-				} else {
-					if (total_bandwidth > llcache->maximum_bandwidth) {
-						/* fast writeout of large file
-						 * so calculate delay as if
-						 * write happened only at max
-						 * limit
-						 */
-						next = ((total_written * llcache->time_quantum) / write_limit) - total_elapsed;
-					} else {
-						next = llcache->time_quantum;
-					}
-					break;
-				}
-			} else if (total_written > write_limit) {
-				/* The bandwidth limit has been reached. */
-
+			if (total_bandwidth < llcache->minimum_bandwidth) {
+				LOG(("Cannot write minimum bandwidth"));
+				warn_user("Disc cache write bandwidth is too slow to be useful, disabling cache", 0);
+				guit->llcache->finalise();
+				break;
+			} else {
 				if (total_bandwidth > llcache->maximum_bandwidth) {
-					/* fast writeout of large file so
-					 * calculate delay as if write
-					 * happened only at max limit
+					/* fast writeout of large file
+					 * so calculate delay as if
+					 * write happened only at max
+					 * limit
 					 */
 					next = ((total_written * llcache->time_quantum) / write_limit) - total_elapsed;
 				} else {
-					next = llcache->time_quantum - total_elapsed;
+					next = llcache->time_quantum;
 				}
 				break;
 			}
+		} else if (total_written > write_limit) {
+			/* The bandwidth limit has been reached. */
+
+			if (total_bandwidth > llcache->maximum_bandwidth) {
+				/* fast writeout of large file so
+				 * calculate delay as if write
+				 * happened only at max limit
+				 */
+				next = ((total_written * llcache->time_quantum) / write_limit) - total_elapsed;
+			} else {
+				next = llcache->time_quantum - total_elapsed;
+			}
+			break;
 		}
+
 	}
 	free(lst);
 
+	/* Completed list without running out of allowed bytes or time */
 	if (idx == lst_count) {
-		LOG(("Completed writeout list"));
-		next = llcache->time_quantum - total_elapsed;
+		/* only reschedule if writing is making any progress at all */
+		if (total_written > 0) {
+			next = llcache->time_quantum - total_elapsed;
+		} else {
+			next = -1;
+		}
 	}
 
 	LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
