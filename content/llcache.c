@@ -2434,7 +2434,7 @@ static void llcache_persist(void *p)
 			 */
 			if (total_bandwidth < llcache->minimum_bandwidth) {
 				LOG(("Cannot write minimum bandwidth"));
-				warn_user("Disc cache write bandwidth is too slow to be useful, disabling cache", 0);
+				warn_user("LowDiscWriteBandwidth", 0);
 				guit->llcache->finalise();
 				break;
 			} else {
