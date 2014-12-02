@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 #   * The above copyright notice and this permission notice shall be included in
 #     all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -39,12 +39,14 @@ use constant GETOPT_SPEC =>
   qw( output|o=s
       input|i=s
       lang|l=s
+      dlang|d=s
       plat|platform|p=s
       format|fmt|f=s
+      warning|W=s
       help|h|? );
 
 # default option values:
-my %opt = qw( plat any format messages );
+my %opt = qw( dlang en plat any format messages warning none );
 
 sub input_stream  ();
 sub output_stream ();
@@ -80,7 +82,7 @@ sub main ()
     }
 
     # double check the options are sane (and we weren't asked for the help)
-    if( !$opt_ok || $opt{help} || $opt{lang} !~ /^[a-z]{2}$/ )
+    if( !$opt_ok || $opt{help} || $opt{lang} !~ /^[a-z]{2}$/ || $opt{dlang} !~ /^[a-z]{2}$/ )
     {
         usage();
     }
@@ -88,27 +90,87 @@ sub main ()
     # we are good to go:
     print( $output $header );
 
+    my $cur_key;
+
+    my $dlang_key;
+    my $dlang_val;
+
+    my $tran_out = 1;
+    my $tran_val;
+    my $tran_key;
+
     while (<$input>)
     {
+        # skip comment and empty lines
         /^#/    && next;
         /^\s*$/ && next;
-        # only parsing thinsg that look like message lines:
+
+        # only parsing things that look like message lines:
         if( /^([a-z]{2}).([^.]+).([^:]+):(.*)/ )
         {
             my( $lang, $plat, $key, $val ) = ( $1, $2, $3, $4 );
 
-            if( $lang ne $opt{lang} ) { next };
-            if( $opt{plat} eq 'any' ||
-                $opt{plat} eq $plat ||
-                'all'      eq $plat )
+            # skip the line if it is not for our target platform
+            if( $opt{plat} ne 'any' &&
+                $opt{plat} ne $plat &&
+                'all'      ne $plat )
             {
-                print( $output $format->( $key, $val ) );
+                next;
             }
-        }
-        else
-        {
-            warn( "Malformed entry: $_" );
-        }
+
+            # On key change ensure a translation has been generated
+            if ($cur_key ne $key)
+            {
+                if ($tran_out == 0)
+                {
+		    # No translaton for previous key
+		    if ($cur_key eq $dlang_key)
+		    {
+			print( $output $format->( $dlang_key, $dlang_val ) );
+			if( $opt{warning} eq "fb" )
+			{
+			    warn( "warning: $dlang_key missing translation in $opt{lang} using $opt{dlang} instead" );
+			}
+		    }
+		    else
+		    {
+			# No translation and nothing in default language
+			warn( "warning: $dlang_key missing translation in $opt{lang} and no fallback in $opt{dlang}" );
+		    }
+		}
+		else
+		{
+		    if (($opt{dlang} ne $opt{lang} ) && ($tran_key eq $dlang_key) && ($tran_val eq $dlang_val))
+		    {
+			if( $opt{warning} eq "dup" )
+			{
+			    warn( "warning: $tran_key value in $opt{lang} is same as in default $opt{dlang}" );
+			}
+		    }
+		}
+		$cur_key = $key;
+		$tran_out = 0;
+	    }
+
+	    # capture the key/value in the default language
+	    if( $lang eq $opt{dlang} )
+	    {
+		$dlang_key = $key;
+		$dlang_val = $val;
+	    }
+
+	    # output if its the target language
+	    if( $lang eq $opt{lang} ) {
+		print( $output $format->( $key, $val ) );
+		$tran_out = 1;
+		$tran_val = $val;
+		$tran_key = $key;
+	    }
+	}
+	else
+	{
+	    warn( "Malformed entry: $_" );
+	}
     }
 
     print( $output $footer );
@@ -121,16 +183,18 @@ sub usage ()
     my @fmt = map { s/::$//; $_ } keys(%{$::{'msgfmt::'}});
     print(STDERR <<TXT );
 usage:
-     $0 -l lang-code \
-           [-o output-file] [-i input-file] [-p platform] [-f format]
+     $0 -l lang-code [-d def-lang-code] [-W warning] \
+	   [-o output-file] [-i input-file] [-p platform] [-f format]
 
      $0 -l lang-code ... [input-file [output-file]]
 
-     lang-code  : en fr ko ...  (no default)
-     platform   : any gtk ami   (default 'any')
-     format     : @fmt (default 'messages')
-     input-file : defaults to standard input
-     output-file: defaults to standard output
+     lang-code     : en fr ko ...  (no default)
+     def-lang-code : en fr ko ...  (default 'en')
+     warning       : none, all     (default 'none')
+     platform      : any gtk ami   (default 'any')
+     format        : @fmt (default 'messages')
+     input-file    : defaults to standard input
+     output-file   : defaults to standard output
 TXT
     exit(1);
 }
@@ -139,12 +203,12 @@ sub input_stream ()
 {
     if( $opt{input} )
     {
-        my $ifh;
+	my $ifh;
 
-        sysopen( $ifh, $opt{input}, O_RDONLY ) ||
-          die( "$0: Failed to open input file $opt{input}: $!\n" );
+	sysopen( $ifh, $opt{input}, O_RDONLY ) ||
+	  die( "$0: Failed to open input file $opt{input}: $!\n" );
 
-        return $ifh;
+	return $ifh;
     }
 
     return \*STDIN;
@@ -154,12 +218,12 @@ sub output_stream ()
 {
     if( $opt{output} )
     {
-        my $ofh;
+	my $ofh;
 
-        sysopen( $ofh, $opt{output}, O_CREAT|O_EXCL|O_APPEND|O_WRONLY ) ||
-          die( "$0: Failed to open output file $opt{output}: $!\n" );
+	sysopen( $ofh, $opt{output}, O_CREAT|O_EXCL|O_APPEND|O_WRONLY ) ||
+	  die( "$0: Failed to open output file $opt{output}: $!\n" );
 
-        return $ofh;
+	return $ofh;
     }
 
     return \*STDOUT;
@@ -197,8 +261,8 @@ sub static_section ($)
     sub format { return join( ":", @_ ) . "\n" }
     sub header
     {
-        my $in = $opt{input} || '-stdin-';
-        return <<TXT;
+	my $in = $opt{input} || '-stdin-';
+	return <<TXT;
 # This messages file is automatically generated from $in
 # at build-time.  Please go and edit that instead of this.\n
 TXT
@@ -232,8 +296,8 @@ TXT
     sub footer { qq|</resources>| }
     sub format
     {
-        use HTML::Entities qw(encode_entities);
-        my $escaped = encode_entities( $_[1], '<>&"' );
-        qq|  <string name="$_[0]">$escaped</string>\n|;
+	use HTML::Entities qw(encode_entities);
+	my $escaped = encode_entities( $_[1], '<>&"' );
+	qq|  <string name="$_[0]">$escaped</string>\n|;
     }
 }

@@ -14,41 +14,35 @@
 #
 # Key:Value
 #
+# Blank lines and lines starting with a # character are treated as comments and
+#  ignored.
+#
 # Contents of Key _must_ be representable in the US-ASCII character set and
-# should not be modified for translation purposes.
+#  should not be modified for translation purposes.
 #
 # Values must be UTF-8 encoded strings. When these strings are displayed in
-# NetSurf's user interface, they are converted to the system's local character
-# set. As a result of this conversion process, unrepresentable characters are
-# stripped from the displayed string.
-#
-# Blank lines and lines starting with a # character are treated as comments and
-# ignored.
+#  NetSurf's user interface, they are converted to the system's local character
+#  set. As a result of this conversion process, unrepresentable characters are
+#  stripped from the displayed string.
 #
 # This file gets processed by utils/split-messages.pl at build-time, which gets
-# told the language and the platform.  It then emits only messages that are
-# in the right language, and are either in the specific platform or 'all'.
+#  told the language and the platform.  It then emits only messages that are
+#  in the right language, and are either in the specific platform or 'all'.
+#
+# The split-messages tool requires keys for all languages to be
+#  grouped together but language order is not important. If a key for a
+#  specific language is ommited the default language value will be used
+#  instead (currently en)
 #
 # If you find something tagged 'all', but it is only relevant to a specific
-# front end, please change it.  Currently, we have 'all', 'ro', 'gtk' and
-# 'ami'.
+#  front end, please change it.  Currently, we have 'all', 'ro', 'gtk' and
+#  'ami'.
 #
 # Globals
 en.all.NetSurf:NetSurf
-de.all.NetSurf:NetSurf
-fr.all.NetSurf:NetSurf
-it.all.NetSurf:NetSurf
-nl.all.NetSurf:NetSurf
 en.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
-de.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
-fr.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
-it.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
-nl.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
 en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
-de.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
-fr.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
-nl.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
 
 # Menus
 # =====
@@ -59,9 +53,6 @@ nl.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. N
 # Iconbar menu
 #
 en.all.Info:Info
-de.all.Info:Info
-fr.all.Info:Info
-it.all.Info:Info
 nl.all.Info:Informatie
 en.ro.AppHelp:Help...  F1
 de.ro.AppHelp:Hilfe...  F1
@@ -72,7 +63,6 @@ en.all.Open:Open
 de.all.Open:Öffnen
 fr.all.Open:Ouvrir
 it.all.Open:Apri
-nl.all.Open:Open
 en.all.Choices:Choices...
 de.all.Choices:Einstellungen...
 fr.all.Choices:Préférences...
@@ -128,9 +118,6 @@ nl.ro.Help:Hulp
 # Main -> Page menu
 #
 en.ro.PageInfo:Info  ^F1
-de.ro.PageInfo:Info  ^F1
-fr.ro.PageInfo:Info  ^F1
-it.ro.PageInfo:Info  ^F1
 nl.ro.PageInfo:Informatie  ^F1
 en.ro.Save:Save  F3
 de.ro.Save:Speichern  F3
@@ -171,17 +158,8 @@ nl.ro.ViewSrc:Bekijk HTML...  F8
 # Main -> Page -> Export menu
 #
 en.ro.Draw:Draw  ⇑^F3
-de.ro.Draw:Draw  ⇑^F3
-fr.ro.Draw:Draw  ⇑^F3
-it.ro.Draw:Draw  ⇑^F3
-nl.ro.Draw:Draw  ⇑^F3
 en.all.PDF:PDF
-de.all.PDF:PDF
-fr.all.PDF:PDF
-it.all.PDF:PDF
-nl.all.PDF:PDF
 en.ro.Text:Text  ^F3
-de.ro.Text:Text  ^F3
 fr.ro.Text:Texte  ^F3
 it.ro.Text:Testo  ^F3
 nl.ro.Text:Tekst  ^F3
@@ -189,17 +167,8 @@ nl.ro.Text:Tekst  ^F3
 # Main -> Page -> Save location menu
 #
 en.ro.URI:Acorn URI
-de.ro.URI:Acorn URI
-fr.ro.URI:Acorn URI
-it.ro.URI:Acorn URI
-nl.ro.URI:Acorn URI
 en.ro.URL:ANT URL
-de.ro.URL:ANT URL
-fr.ro.URL:ANT URL
-it.ro.URL:ANT URL
-nl.ro.URL:ANT URL
 en.all.LinkText:Text
-de.all.LinkText:Text
 fr.all.LinkText:Texte
 it.all.LinkText:Testo
 nl.all.LinkText:Tekst
@@ -207,9 +176,6 @@ nl.all.LinkText:Tekst
 # Main -> Object -> Object menu
 #
 en.all.ObjInfo:Info
-de.all.ObjInfo:Info
-fr.all.ObjInfo:Info
-it.all.ObjInfo:Info
 nl.all.ObjInfo:Informatie
 en.all.ObjSave:Save
 de.all.ObjSave:Speichern
@@ -230,39 +196,23 @@ nl.all.ObjReload:Herlaad
 # Main -> Object -> Object -> Export menu
 #
 en.all.Sprite:Sprite
-de.all.Sprite:Sprite
-fr.all.Sprite:Sprite
-it.all.Sprite:Sprite
-nl.all.Sprite:Sprite
 en.all.ObjDraw:Draw
-de.all.ObjDraw:Draw
-fr.all.ObjDraw:Draw
-it.all.ObjDraw:Draw
-nl.all.ObjDraw:Draw
 
 # Main -> Object -> Link menu
 en.all.LinkSave:Save
 de.all.LinkSave:Speichern
-fr.all.LinkSave:Save
 it.all.LinkSave:Salva
-nl.all.LinkSave:Save
 en.all.LinkDload:Download target
 de.all.LinkDload:Ziel speichern
-fr.all.LinkDload:Download target
 it.all.LinkDload:Salva file in
-nl.all.LinkDload:Download target
 en.all.LinkNew:New window
 de.all.LinkNew:Neues Fenster
-fr.all.LinkNew:New window
 it.all.LinkNew:Nuova finestra
-nl.all.LinkNew:New window
 
 # Main -> Selection menu
 en.all.SelSave:Save
 de.all.SelSave:Speichern
-fr.all.SelSave:Save
 it.all.SelSave:Salva
-nl.all.SelSave:Save
 
 # Main -> Navigate menu
 #
@@ -377,20 +327,15 @@ nl.all.RenderAll:Buffer alle weergaven
 # Main -> Utilities menu
 #
 en.all.Hotlist:Hotlist
-de.all.Hotlist:Hotlist
 fr.all.Hotlist:Favoris
 it.all.Hotlist:Segnalibri
 nl.all.Hotlist:Bladwijzers
 en.all.History:History
-de.all.History:History
 fr.all.History:Historique
 it.all.History:Cronologia locale
 nl.all.History:Historie
 en.all.Cookies:Cookies
-de.all.Cookies:Cookies
-fr.all.Cookies:Cookies
 it.all.Cookies:Cookie
-nl.all.Cookies:Cookies
 en.ro.FindText:Find text  F4
 de.ro.FindText:Text suchen  F4
 fr.ro.FindText:Recherche de texte  F4
@@ -481,15 +426,10 @@ fr.ro.HelpInfo:Information utilisateur
 it.ro.HelpInfo:Informazioni utente
 nl.ro.HelpInfo:Gebruikers informatie
 en.all.HelpCredits:Credits
-de.all.HelpCredits:Credits
-fr.all.HelpCredits:Credits
 it.all.HelpCredits:Ringraziamenti
-nl.all.HelpCredits:Credits
 en.all.HelpLicence:Licence
 de.all.HelpLicence:Lizenz
-fr.all.HelpLicence:Licence
 it.all.HelpLicence:Licenza
-nl.all.HelpLicence:Licence
 en.ro.HelpInter:Interactive help
 de.ro.HelpInter:interaktive Hilfe
 fr.ro.HelpInter:Aide interactive
@@ -538,9 +478,7 @@ it.ro.Cut:Taglia dalla clipboard  ^X
 nl.ro.Cut:Cut to clipboard  ^X
 en.ro.Paste:Paste from clipboard  ^V
 de.ro.Paste:Einfügen  ^V
-fr.ro.Paste:Paste from clipboard  ^V
 it.ro.Paste:Incolla sulla clipboard  ^V
-nl.ro.Paste:Paste from clipboard  ^V
 
 # Selection Menu
 #
@@ -583,15 +521,9 @@ fr.all.Collapse:Regrouper
 it.all.Collapse:Raggruppa
 nl.all.Collapse:Inklappen
 en.all.Tree:Tree
-de.all.Tree:Tree
-fr.all.Tree:Tree
 it.all.Tree:Albero
-nl.all.Tree:Tree
 en.all.TreeExport:Export...
-de.all.TreeExport:Export...
-fr.all.TreeExport:Export...
 it.all.TreeExport:Esporta...
-nl.all.TreeExport:Export...
 
 # New hotlist entry menu
 #
@@ -5894,9 +5826,7 @@ it.all.CacheMemory:Memoria cache
 nl.all.CacheMemory:Memory cache
 en.all.CacheDisc:Disc cache
 de.all.CacheDisc:Festplatten Cache
-fr.all.CacheDisc:Disc cache
 it.all.CacheDisc:Cache su disco
-nl.all.CacheDisc:Disc cache
 en.all.Size:Size
 de.all.Size:Größe
 fr.all.Size:Size
@@ -5951,10 +5881,7 @@ nl.ami.TabAlways:Always show tabs
 #
 
 en.all.Downloads:Downloads
-de.all.Downloads:Downloads
-fr.all.Downloads:Downloads
 it.all.Downloads:Trasferimenti
-nl.all.Downloads:Downloads
 en.all.ConfirmOverwrite:Request confirmation when overwriting
 de.all.ConfirmOverwrite:vor Überschreiben nachfragen
 fr.all.ConfirmOverwrite:Request confirmation when overwriting
@@ -6012,24 +5939,16 @@ it.all.Enable:Attivi
 nl.all.Enable:Enable
 en.all.Sticky:Sticky
 de.all.Sticky:Klebrig
-fr.all.Sticky:Sticky
 it.all.Sticky:Fissi
-nl.all.Sticky:Sticky
 en.all.Behaviour:Behaviour
 de.all.Behaviour:Verhalten
-fr.all.Behaviour:Behaviour
 it.all.Behaviour:Comportamento generale
-nl.all.Behaviour:Behaviour
 en.all.OptionNoWindow:Do not open window on startup
 de.all.OptionNoWindow:Kein Fenster beim Start öffnen
-fr.all.OptionNoWindow:Do not open window on startup
 it.all.OptionNoWindow:Non aprire la finestra all'avvio (avvio da AmiDock)
-nl.all.OptionNoWindow:Do not open window on startup
 en.all.OptionNoQuit:Do not quit when last window closed
 de.all.OptionNoQuit:Nicht beenden beim Schließen des letzten Fensters
-fr.all.OptionNoQuit:Do not quit when last window closed
 it.all.OptionNoQuit:Iconifica su AmiDock alla chiusura di NetSurf
-nl.all.OptionNoQuit:Do not quit when last window closed
 
 # Export
 #
@@ -6041,54 +5960,32 @@ it.all.Margins:Margini
 nl.all.Margins:Margins
 en.all.Top:Top
 de.all.Top:Oben
-fr.all.Top:Top
 it.all.Top:Superiore
-nl.all.Top:Top
 en.all.Left:Left
 de.all.Left:Links
-fr.all.Left:Left
 it.all.Left:Sinistro
-nl.all.Left:Left
 en.all.Right:Right
 de.all.Right:Rechts
-fr.all.Right:Right
 it.all.Right:Destro
-nl.all.Right:Right
 en.all.Bottom:Bottom
 de.all.Bottom:Unten
-fr.all.Bottom:Bottom
 it.all.Bottom:Inferiore
-nl.all.Bottom:Bottom
 en.all.MM:mm
-de.all.MM:mm
-fr.all.MM:mm
-it.all.MM:mm
-nl.all.MM:mm
 en.all.Scaling:Scaling
 de.all.Scaling:Skalierung
-fr.all.Scaling:Scaling
 it.all.Scaling:Scala
-nl.all.Scaling:Scaling
 en.all.Scale:Scale
 de.all.Scale:Skalieren
-fr.all.Scale:Scale
 it.all.Scale:Scalati
-nl.all.Scale:Scale
 en.all.Appearance:Appearance
 de.all.Appearance:Aussehen
-fr.all.Appearance:Appearance
 it.all.Appearance:Aspetto
-nl.all.Appearance:Appearance
 en.all.SuppressImages:Suppress images
 de.all.SuppressImages:Bilder unterbinden
-fr.all.SuppressImages:Suppress images
 it.all.SuppressImages:Sopprimi immagini
-nl.all.SuppressImages:Suppress images
 en.all.RemoveBackground:Remove background
 de.all.RemoveBackground:Hintergrund entfernen
-fr.all.RemoveBackground:Remove background
 it.all.RemoveBackground:Rimuovi sfondo
-nl.all.RemoveBackground:Remove background
 en.all.FitPage:Fit page
 de.all.FitPage:Seite einpassen
 fr.all.FitPage:Fit page
@@ -6096,14 +5993,10 @@ it.all.FitPage:Adatta pagina
 nl.all.FitPage:Fit page
 en.all.CompressPDF:Compress PDF
 de.all.CompressPDF:PDF komprimieren
-fr.all.CompressPDF:Compress PDF
 it.all.CompressPDF:Comprimi PDF
-nl.all.CompressPDF:Compress PDF
 en.all.SetPassword:Set password
 de.all.SetPassword:Passwort festlegen
-fr.all.SetPassword:Set password
 it.all.SetPassword:Imposta Password
-nl.all.SetPassword:Set password
 
 
 # Unused tokens
@@ -6129,7 +6022,6 @@ it.all.ExportAs:Esporta come...
 nl.all.ExportAs:Exporteer als
 en.all.AnimImg:Animations
 de.all.AnimImg:Animationen
-fr.all.AnimImg:Animations
 it.all.AnimImg:Animazioni
 nl.all.AnimImg:Animatie
 en.all.DitherImg:Dither images
