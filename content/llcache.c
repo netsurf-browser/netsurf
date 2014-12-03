@@ -31,8 +31,6 @@
  *
  * \todo Improve writeout bandwidth limiting.
  *
- * \todo Implement minimum writeout bandwidth limit.
- *
  */
 
 #include <stdlib.h>
@@ -228,28 +226,47 @@ struct llcache_s {
 	/** The target upper bound for the RAM cache size */
 	uint32_t limit;
 
-	/** The minimum lifetime to consider sending objects to
-	 * backing store.
+	/** Whether or not our users are caught up */
+	bool all_caught_up;
+
+
+	/* backing store elements */
+
+
+	/**
+	 * The minimum lifetime to consider sending objects to backing
+	 * store.
 	 */
 	int minimum_lifetime;
 
-	/** The time over which to apply the bandwidth calculations in ms */
+	/**
+	 * The time over which to apply the bandwidth calculations in ms
+	 */
 	unsigned long time_quantum;
 
-	/** The minimum bandwidth to allow the backing store to use in
+	/**
+	 * The minimum bandwidth to allow the backing store to use in
 	 * bytes/second. Below this the backing store will be
 	 * disabled.
 	 */
 	size_t minimum_bandwidth;
 
-	/** The maximum bandwidth to allow the backing store to
-	 * use in bytes/second
+	/**
+	 * The maximum bandwidth to allow the backing store to use in
+	 * bytes/second
 	 */
 	size_t maximum_bandwidth;
 
+	/**
+	 * Total number of bytes written to backing store.
+	 */
+	uint64_t total_written;
 
-	/** Whether or not our users are caught up */
-	bool all_caught_up;
+	/**
+	 * Total nuber of miliseconds taken to write to backing store.
+	 */
+	uint64_t total_elapsed;
+
 };
 
 /** low level cache state */
@@ -257,6 +274,7 @@ static struct llcache_s *llcache = NULL;
 
 /* forward referenced callback function */
 static void llcache_fetch_callback(const fetch_msg *msg, void *p);
+
 /* forward referenced catch up function */
 static void llcache_users_not_caught_up(void);
 
@@ -266,11 +284,11 @@ static void llcache_users_not_caught_up(void);
  ******************************************************************************/
 
 /**
- * Create a new object user
+ * Create a new object user.
  *
- * \param cb    Callback routine
- * \param pw    Private data for callback
- * \param user  Pointer to location to receive result
+ * \param cb Callback routine.
+ * \param pw Private data for callback.
+ * \param user Pointer to location to receive result.
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
@@ -2379,6 +2397,26 @@ write_backing_store(struct llcache_object *object,
 }
 
 /**
+ * Check for overall write performance.
+ *
+ * If the overall write bandwidth has fallen below a useful level for
+ * the backing store to be effective disable it.
+ *
+ * \param p The context pointer passed to the callback.
+ */
+static void llcache_persist_slowcheck(void *p)
+{
+	unsigned long total_bandwidth; /* total bandwidth */
+	total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
+
+	if (total_bandwidth < llcache->minimum_bandwidth) {
+		LOG(("Cannot write minimum bandwidth"));
+		warn_user("LowDiscWriteBandwidth", 0);
+		guit->llcache->finalise();
+	}
+}
+
+/**
  * Possibly write objects data to backing store.
  *
  * \param p The context pointer passed to the callback.
@@ -2402,7 +2440,7 @@ static void llcache_persist(void *p)
 
 	ret = build_candidate_list(&lst, &lst_count);
 	if (ret != NSERROR_OK) {
-		LOG(("Unable to construct candidate list for persisatnt writeout"));
+		LLCACHE_LOG(("Unable to construct candidate list for persisatnt writeout"));
 		return;
 	}
 
@@ -2419,7 +2457,8 @@ static void llcache_persist(void *p)
 		total_written += written;
 		total_elapsed += elapsed;
 		total_bandwidth = (total_written * 1000) / total_elapsed;
-		LOG(("Wrote %d bytes in %dms bw:%d %s",
+
+		LLCACHE_LOG(("Wrote %d bytes in %dms bw:%d %s",
 		     written, elapsed, (written * 1000) / elapsed,
 		     nsurl_access(lst[idx]->url) ));
 
@@ -2433,9 +2472,13 @@ static void llcache_persist(void *p)
 			 * object was very large.
 			 */
 			if (total_bandwidth < llcache->minimum_bandwidth) {
-				LOG(("Cannot write minimum bandwidth"));
-				warn_user("LowDiscWriteBandwidth", 0);
-				guit->llcache->finalise();
+				/* Writeout was slow in this time quantum.
+				 *  Schedule a check in the future to see if
+				 *  overall performance is too slow to be useful.
+				 */
+				guit->browser->schedule(llcache->time_quantum * 100,
+							llcache_persist_slowcheck,
+							NULL);
 				break;
 			} else {
 				if (total_bandwidth > llcache->maximum_bandwidth) {
@@ -2478,10 +2521,13 @@ static void llcache_persist(void *p)
 		}
 	}
 
-	LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
+	llcache->total_written += total_written;
+	llcache->total_elapsed += total_elapsed;
+
+	LLCACHE_LOG(("writeout size:%d time:%d bandwidth:%dbytes/s",
 	     total_written, total_elapsed, total_bandwidth));
 
-	LOG(("Rescheduling writeout in %dms", next));
+	LLCACHE_LOG(("Rescheduling writeout in %dms", next));
 	guit->browser->schedule(next, llcache_persist, NULL);
 }
 
@@ -3225,7 +3271,9 @@ llcache_initialise(const struct llcache_parameters *prm)
 void llcache_finalise(void)
 {
 	llcache_object *object, *next;
+	unsigned long total_bandwidth; /* total bandwidth */
 
+	total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
 	/* Clean uncached objects */
 	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
@@ -3270,6 +3318,9 @@ void llcache_finalise(void)
 
 	/* backing store finalisation */
 	guit->llcache->finalise();
+
+	LOG(("Backing store average bandwidth %lu bytes/second",
+	     total_bandwidth));
 
 	free(llcache);
 	llcache = NULL;
