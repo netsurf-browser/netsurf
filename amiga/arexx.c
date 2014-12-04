@@ -243,15 +243,13 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;
 		AddTail(&gw->dllist, (struct Node *)dln);
-		if(!gw->bw->download) {
-			browser_window_navigate(gw->bw,
-					url,
-					NULL,
-					BW_NAVIGATE_DOWNLOAD,
-					NULL,
-					NULL,
-					NULL);
-		}
+		browser_window_navigate(gw->bw,
+				url,
+				NULL,
+				BW_NAVIGATE_DOWNLOAD,
+				NULL,
+				NULL,
+				NULL);
 	}
 	else if(cmd->ac_ArgList[2])
 	{
