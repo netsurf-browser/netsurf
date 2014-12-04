@@ -312,7 +312,8 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 					
 	if((fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0)))
 	{
-		if((source_data = content_get_source_data(gw->bw->current_content, &source_size)))
+		hlcache_handle *h = browser_window_get_content(gw->bw);
+		if((source_data = content_get_source_data(h, &source_size)))
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
