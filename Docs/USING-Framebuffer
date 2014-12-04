@@ -71,6 +71,14 @@ Configuring
    default surface to use. Refer to the BUILDING-Framebuffer document
    for details.
 
+  As with any NetSurf frontend run-time configuration is read from a
+   "Choices" file. This file is a simple key:value list and is located
+   in "${HOME}/.netsurf/Choices".
+
+  The standard values supported by the NetSurf core are documented in
+   the Options document. In addition to these there are a number of
+   values to control specific aspects of the framebuffer version.
+
   Toolkit Options
   ---------------
 
@@ -126,12 +134,6 @@ Configuring
   -h <height>
      Selects the surface height to pass to libnsfb instead of the
      compiled in default.
-
-  As with any NetSurf frontend run-time configuration is read from a
-   "Choices-fb" file. This file is a simple key:value list. In addition
-   to the standard values supported by the NetSurf core there are a
-   number of values to control specific aspects of the framebuffer
-   version.
 
   The libnsfb surface parameters are controlled with:
 
