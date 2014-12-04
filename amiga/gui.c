@@ -4712,7 +4712,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 	if(sx >= width - bbox->Width)
 		sx = width - bbox->Width;
-	if(sy >= height - bbox->Height))
+	if(sy >= height - bbox->Height)
 		sy = height - bbox->Height;
 
 	if(width <= bbox->Width) sx = 0;
