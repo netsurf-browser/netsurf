@@ -2405,7 +2405,7 @@ static void ami_handle_msg(void)
 				{
 					struct bitmap *bm;
 
-					bm = urldb_get_thumbnail(hlcache_handle_get_url(gwin->gw->bw->current_content));
+					bm = urldb_get_thumbnail(browser_window_get_url(gwin->gw->bw));
 					if(!bm) bm = content_get_bitmap(gwin->gw->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
