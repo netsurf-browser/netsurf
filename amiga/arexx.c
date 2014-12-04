@@ -28,7 +28,7 @@
 #include <reaction/reaction_macros.h>
 
 #include "utils/nsoption.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/gui_window.h"
 #include "desktop/version.h"
 
