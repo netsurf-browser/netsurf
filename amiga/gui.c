@@ -3420,7 +3420,6 @@ gui_window_create(struct browser_window *bw,
 
 	if (nsoption_bool(kiosk_mode)) flags &= ~GW_CREATE_TAB;
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
-	g->scale = browser_window_get_scale(bw);
 
 	/* Offset the new window by titlebar + 1 as per AmigaOS style guide.
 	 * If we don't have a clone window we offset by all windows open. */
@@ -3450,6 +3449,7 @@ gui_window_create(struct browser_window *bw,
 	NewList(&g->dllist);
 	g->deferred_rects = NewObjList();
 	g->bw = bw;
+	g->scale = browser_window_get_scale(bw);
 
 	if((flags & GW_CREATE_TAB) && existing)
 	{
