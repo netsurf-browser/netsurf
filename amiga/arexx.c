@@ -317,7 +317,7 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
-		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(hlcache_handle_get_url(gw->bw->current_content)));
+		SetComment((char *)cmd->ac_ArgList[0], nsurl_access(browser_window_get_url(gw->bw)));
 	}
 
 	ami_reset_pointer(gw->shared);
@@ -344,9 +344,9 @@ STATIC VOID rx_geturl(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		gw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(gw && gw->bw && gw->bw->current_content)
+	if(gw && gw->bw)
 	{
-		strcpy(result, nsurl_access(hlcache_handle_get_url(gw->bw->current_content)));
+		strcpy(result, nsurl_access(browser_window_get_url(gw->bw)));
 	}
 	else
 	{
