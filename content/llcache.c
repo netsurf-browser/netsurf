@@ -29,8 +29,6 @@
  *
  * \todo instrument and (auto)tune
  *
- * \todo Improve writeout bandwidth limiting.
- *
  */
 
 #include <stdlib.h>
@@ -1555,7 +1553,9 @@ llcache_object_retrieve_from_cache(nsurl *url,
 		if (error == NSERROR_OK) {
 			LLCACHE_LOG(("retrived object from persistant store"));
 
-			/* set object from persistant store as newest */
+			/* set newest object from persistant store which
+			 * will cause the normal object handling to be used.
+			 */
 			newest = obj;
 
 			/* Add new object to cached object list */
@@ -1563,7 +1563,7 @@ llcache_object_retrieve_from_cache(nsurl *url,
 
 		}
 		/* else no object found and unretrivable from cache,
-		 * fall through to start fetch
+		 * fall through with newest unset to start fetch
 		 */
 	}
 
