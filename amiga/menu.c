@@ -1017,8 +1017,8 @@ static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window,
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	if(browser_window_get_scale(gwin->gw->bw) > 0.1)
-		browser_window_set_scale(gwin->gw->bw, browser_window_get_scale(gwin->gw->bw) - 0.1, false);
+	if(gwin->gw->scale > 0.1)
+		ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
 }
 
 static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1026,7 +1026,7 @@ static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, s
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_set_scale(gwin->gw->bw, 1.0, false);
+	ami_gui_set_scale(gwin->gw, 1.0);
 }
 
 static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -1034,7 +1034,7 @@ static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window,
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_set_scale(gwin->gw->bw, browser_window_get_scale(gwin->gw->bw) + 0.1, false);
+	ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
 }
 
 static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct IntuiMessage *msg)

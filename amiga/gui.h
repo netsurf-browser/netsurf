@@ -152,6 +152,7 @@ struct gui_window
 	char *tabtitle;
 	struct MinList *deferred_rects;
 	struct browser_window *bw;
+	float scale;
 };
 
 void ami_get_msg(void);
@@ -171,6 +172,7 @@ void ami_gui_update_hotlist_button(struct gui_window_2 *gwin);
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin);
 char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail);
 int ami_gui_count_windows(int window, int *tabs);
+void ami_gui_set_scale(struct gui_window *gw, float scale);
 
 /**
  * Compatibility function to get space.gadget render area.

@@ -1246,8 +1246,8 @@ static bool ami_spacebox_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	int ns_x = space_x;
 	int ns_y = space_y;
 
-	ns_x /= gwin->gw->bw->scale;
-	ns_y /= gwin->gw->bw->scale;
+	ns_x /= gwin->gw->scale;
+	ns_y /= gwin->gw->scale;
 
 	ns_x += gwin->gw->scrollx;
 	ns_y += gwin->gw->scrolly;
@@ -1367,11 +1367,11 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 		return NULL;
 	}
 
-	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->gw->bw->scale);
-	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->gw->bw->scale);
+	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->gw->scale);
+	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->gw->scale);
 
-	ibox->Width = (rect->x1 - rect->x0) * gwin->gw->bw->scale;
-	ibox->Height = (rect->y1 - rect->y0) * gwin->gw->bw->scale;
+	ibox->Width = (rect->x1 - rect->x0) * gwin->gw->scale;
+	ibox->Height = (rect->y1 - rect->y0) * gwin->gw->scale;
 
 	if(ibox->Left < bbox->Left) ibox->Left = bbox->Left;
 	if(ibox->Top < bbox->Top) ibox->Top = bbox->Top;
@@ -1447,8 +1447,8 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 
 	if(scaled)
 	{
-		*width /= g->bw->scale;
-		*height /= g->bw->scale;
+		*width /= g->scale;
+		*height /= g->scale;
 	}
 }
 
@@ -1797,8 +1797,8 @@ static void ami_handle_msg(void)
 						break;
 					}
 
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->bw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->bw->scale);
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -1865,8 +1865,8 @@ static void ami_handle_msg(void)
 						return;
 					}
 
-					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->bw->scale);
-					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->bw->scale);
+					x = (ULONG)((gwin->win->MouseX - bbox->Left) / gwin->gw->scale);
+					y = (ULONG)((gwin->win->MouseY - bbox->Top) / gwin->gw->scale);
 
 					ami_get_hscroll_pos(gwin, (ULONG *)&xs);
 					ami_get_vscroll_pos(gwin, (ULONG *)&ys);
@@ -2287,18 +2287,16 @@ static void ami_handle_msg(void)
 							break;
 
 							case '-':
-								if(browser_window_get_scale(gwin->gw->bw) > 0.1)
-									browser_window_set_scale(gwin->gw->bw,
-										browser_window_get_scale(gwin->gw->bw) - 0.1, false);
+								if(gwin->gw->scale > 0.1)
+									ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
 							break;
 							
 							case '=':
-								browser_window_set_scale(gwin->gw->bw, 1.0, false);
+								ami_gui_set_scale(gwin->gw, 1.0);
 							break;
 
 							case '+':
-								browser_window_set_scale(gwin->gw->bw,
-									browser_window_get_scale(gwin->gw->bw) + 0.1, false);
+								ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
 							break;
 							
 							/* The following aren't available from the menu at the moment */
@@ -3357,6 +3355,18 @@ int ami_gui_count_windows(int window, int *tabs)
 	return windows;
 }
 
+/**
+ * Set the scale of a gui window
+ *
+ * \param gw	gui_window to set scale for
+ * \param scale	scale to set
+ */
+void ami_gui_set_scale(struct gui_window *gw, float scale)
+{
+	gw->scale = scale;
+	browser_window_set_scale(gw->bw, scale, true);
+}
+
 nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 {
 	nsurl *url;
@@ -3406,7 +3416,7 @@ gui_window_create(struct browser_window *bw,
 
 	if (nsoption_bool(kiosk_mode)) flags &= ~GW_CREATE_TAB;
 	if (nsoption_bool(resize_with_contents)) idcmp_sizeverify = 0;
-	bw->scale = 1.0;
+	g->scale = browser_window_get_scale(bw);
 
 	/* Offset the new window by titlebar + 1 as per AmigaOS style guide.
 	 * If we don't have a clone window we offset by all windows open. */
@@ -4230,8 +4240,8 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 {
 	int x, y;
 	struct rect clip;
-	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->bw->scale);
-	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->bw->scale);
+	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->scale);
+	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->scale);
 				
 	browserglob.shared_pens = &gwin->shared_pens;
 	
@@ -4269,15 +4279,15 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 		clip.y0 = 0;
 		clip.y1 = nsoption_int(redraw_tile_size_y);
 		if(clip.y1 > height) clip.y1 = height;
-		if((((y - sy) * gwin->gw->bw->scale) + clip.y1) > bbox->Height)
-			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->bw->scale);
+		if((((y - sy) * gwin->gw->scale) + clip.y1) > bbox->Height)
+			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
 			clip.x1 = nsoption_int(redraw_tile_size_x);
 			if(clip.x1 > width) clip.x1 = width;
-			if((((x - sx) * gwin->gw->bw->scale) + clip.x1) > bbox->Width)
-				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->bw->scale);
+			if((((x - sx) * gwin->gw->scale) + clip.x1) > bbox->Width)
+				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->scale);
 
 			if(browser_window_redraw(gwin->gw->bw,
 				clip.x0 - (int)x,
@@ -4292,8 +4302,8 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
 					BLITA_Dest, gwin->win->RPort,
-					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->bw->scale),
-					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->bw->scale),
+					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->scale),
+					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->scale),
 					BLITA_Width, (int)(clip.x1),
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
@@ -4348,7 +4358,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	}
 
 	ami_do_redraw_tiled(g->shared, busy, x0, y0,
-		(x1 - x0) * bw->scale, (y1 - y0) * bw->scale, sx, sy, bbox, &ctx);
+		(x1 - x0) * g->scale, (y1 - y0) * g->scale, sx, sy, bbox, &ctx);
 
 	ami_gui_free_space_box(bbox);
 
@@ -4499,7 +4509,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 			gwin->redraw_scroll = false;
 
  		if(gwin->new_content) gwin->redraw_scroll = false;
-//		if(gwin->gw->bw->scale != 1.0) gwin->redraw_scroll = false;
+//		if(gwin->gw->scale != 1.0) gwin->redraw_scroll = false;
 	}
 
 	if(gwin->redraw_scroll)
@@ -4655,7 +4665,7 @@ void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 		*xs = 0;
 	}
 
-	*xs /= gwin->gw->bw->scale;
+	*xs /= gwin->gw->scale;
 }
 
 void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
@@ -4666,7 +4676,7 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys)
 		*ys = 0;
 	}
 
-	*ys /= gwin->gw->bw->scale;
+	*ys /= gwin->gw->scale;
 }
 
 static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -4712,7 +4722,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sy * g->bw->scale),
+				SCROLLER_Top, (ULONG)(sy * g->scale),
 			TAG_DONE);
 		}
 
@@ -4720,7 +4730,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Top, (ULONG)(sx * g->bw->scale),
+				SCROLLER_Top, (ULONG)(sx * g->scale),
 				TAG_DONE);
 		}
 
@@ -4757,7 +4767,7 @@ static void gui_window_update_extent(struct gui_window *g)
 
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
-				SCROLLER_Total, (ULONG)(content_get_height(g->bw->current_content) * g->bw->scale),
+				SCROLLER_Total, (ULONG)(content_get_height(g->bw->current_content) * g->scale),
 				SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
 		}
@@ -4766,7 +4776,7 @@ static void gui_window_update_extent(struct gui_window *g)
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Total, (ULONG)(content_get_width(g->bw->current_content) * g->bw->scale),
+				SCROLLER_Total, (ULONG)(content_get_width(g->bw->current_content) * g->scale),
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
