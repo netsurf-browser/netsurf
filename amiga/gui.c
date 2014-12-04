@@ -2244,11 +2244,11 @@ static void ami_handle_msg(void)
 
 							case 's':
 								ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
-									gwin->gw->bw->current_content);
+									browser_window_get_content(gwin->gw->bw));
 							break;
 
 							case 'p':
-								ami_print_ui(gwin->gw->bw->current_content);
+								ami_print_ui(browser_window_get_content(gwin->gw->bw));
 							break;
 
 							case 'q':
@@ -2410,7 +2410,7 @@ static void ami_handle_msg(void)
 					struct bitmap *bm;
 
 					bm = urldb_get_thumbnail(browser_window_get_url(gwin->gw->bw));
-					if(!bm) bm = content_get_bitmap(gwin->gw->bw->current_content);
+					if(!bm) bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw));
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					amiga_icon_superimpose_favicon_internal(gwin->gw->favicon,
 						gwin->dobj);
@@ -2810,7 +2810,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		return;
 	}
 
-	if(!gwin->gw->bw->current_content)
+	if(browser_window_has_content(gwin->gw->bw) == false)
 	{
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
@@ -2824,7 +2824,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 
 	ami_plot_release_pens(&gwin->shared_pens);
 	ami_update_buttons(gwin);
-	ami_menu_update_disabled(gwin->gw, gwin->gw->bw->current_content);
+	ami_menu_update_disabled(gwin->gw, browser_window_get_content(gwin->gw->bw));
 
 	if(redraw)
 	{
@@ -4698,7 +4698,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	int width, height;
 
 	if(!g) return;
-	if(!g->bw || !g->bw->current_content) return;
+	if(!g->bw || browser_window_has_content(g->bw) == false) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -4748,8 +4748,6 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 		g->scrollx = sx;
 		g->scrolly = sy;
-
-//		history_set_current_scroll(g->bw->history,g->scrollx,g->scrolly);
 	}
 //	g->shared->new_content = false;
 }
@@ -4759,8 +4757,8 @@ static void gui_window_update_extent(struct gui_window *g)
 	struct IBox *bbox;
 	int cur_tab = 0;
 
-	if(!g) return;
-	if(!g->bw->current_content) return;
+	if(!g || !g->bw) return;
+	if(browser_window_has_content(g->bw) == false) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
@@ -4989,8 +4987,8 @@ static void gui_window_new_content(struct gui_window *g)
 {
 	hlcache_handle *c;
 
-	if(g && g->shared && g->bw && g->bw->current_content)
-		c = g->bw->current_content;
+	if(g && g->shared && g->bw && browser_window_has_content(g->bw))
+		c = browser_window_get_content(g->bw);
 	else return;
 
 	ami_clearclipreg(&browserglob);
