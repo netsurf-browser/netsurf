@@ -1293,6 +1293,8 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 		if(browser_window_scroll_at_point(gwin->gw->bw, x, y,
 			xs, ys) == false)
 		{
+			int width, height;
+
 			gui_window_get_scroll(gwin->gw,
 				&gwin->gw->scrollx,
 				&gwin->gw->scrolly);
@@ -1301,6 +1303,8 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				warn_user("NoMemory", "");
 				return;
 			}
+
+			browser_window_get_extents(gwin->gw->bw, false, &width, &height);
 
 			switch(xs)
 			{
@@ -1317,7 +1321,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				break;
 
 				case SCROLL_BOTTOM:
-					xs = content_get_width(gwin->gw->bw->current_content);
+					xs = width;
 				break;
 
 				default:
@@ -1340,7 +1344,7 @@ static void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 				break;
 
 				case SCROLL_BOTTOM:
-					ys = content_get_height(gwin->gw->bw->current_content);
+					ys = height;
 				break;
 
 				default:
@@ -4691,6 +4695,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	struct IBox *bbox;
 	int cur_tab = 0;
+	int width, height;
 
 	if(!g) return;
 	if(!g->bw || !g->bw->current_content) return;
@@ -4703,13 +4708,15 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if(sx < 0) sx=0;
 	if(sy < 0) sy=0;
 
-	if(sx >= content_get_width(g->bw->current_content) - bbox->Width)
-		sx = content_get_width(g->bw->current_content) - bbox->Width;
-	if(sy >= (content_get_height(g->bw->current_content) - bbox->Height))
-		sy = content_get_height(g->bw->current_content) - bbox->Height;
+	browser_window_get_extents(g->bw, false, &width, &height);
 
-	if(content_get_width(g->bw->current_content) <= bbox->Width) sx = 0;
-	if(content_get_height(g->bw->current_content) <= bbox->Height) sy = 0;
+	if(sx >= width - bbox->Width)
+		sx = width - bbox->Width;
+	if(sy >= height - bbox->Height))
+		sy = height - bbox->Height;
+
+	if(width <= bbox->Width) sx = 0;
+	if(height <= bbox->Height) sy = 0;
 
 	ami_gui_free_space_box(bbox);
 
@@ -4760,23 +4767,26 @@ static void gui_window_update_extent(struct gui_window *g)
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
 	{
+		int width, height;
 		if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 			warn_user("NoMemory", "");
 			return;
 		}
 
 		if(g->shared->objects[GID_VSCROLL]) {
+			browser_window_get_extents(g->bw, true, &width, &height);
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],g->shared->win,NULL,
-				SCROLLER_Total, (ULONG)(content_get_height(g->bw->current_content) * g->scale),
+				SCROLLER_Total, (ULONG)(height),
 				SCROLLER_Visible, bbox->Height,
 			TAG_DONE);
 		}
 
 		if(g->shared->objects[GID_HSCROLL])
 		{
+			browser_window_get_extents(g->bw, true, &width, &height);
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_HSCROLL],
 				g->shared->win, NULL,
-				SCROLLER_Total, (ULONG)(content_get_width(g->bw->current_content) * g->scale),
+				SCROLLER_Total, (ULONG)(width),
 				SCROLLER_Visible, bbox->Width,
 				TAG_DONE);
 		}
