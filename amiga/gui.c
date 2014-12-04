@@ -98,7 +98,7 @@
 #include "content/urldb.h"
 #include "image/ico.h"
 #include "desktop/browser_history.h"
-#include "desktop/browser_private.h"
+#include "desktop/browser.h"
 #include "desktop/hotlist.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
