@@ -3141,9 +3141,7 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
 		
-		if(gwin->gw->bw) {
-			ami_schedule_redraw(gwin, true);
-		}
+		ami_schedule_redraw(gwin, true);
 	}
 }
 
