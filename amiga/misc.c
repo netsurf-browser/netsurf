@@ -16,17 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #include <proto/dos.h>
 #include <proto/exec.h>
-#include <proto/intuition.h>
 #include <proto/utility.h>
 
 #include "utils/corestrings.h"
@@ -34,10 +27,7 @@
 #include "utils/file.h"
 #include "utils/messages.h"
 #include "utils/url.h"
-#include "utils/utils.h"
 
-#include "desktop/cookie_manager.h"
-#include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 
 #include "amiga/gui.h"
@@ -54,9 +44,8 @@ static LONG ami_misc_req(const char *message, uint32 type)
 		TDR_TitleString,  messages_get("NetSurf"),
 		TDR_FormatString, message,
 		TDR_GadgetString, messages_get("OK"),
-#ifdef __amigaos4__
 		TDR_ImageType, type,
-#endif
+		TDR_Window, cur_gw ? cur_gw->shared->win : NULL,
 		TAG_DONE);
 
 	return ret;
