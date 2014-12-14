@@ -202,7 +202,6 @@
 
 (run "c:filenote Rexx/CloseTabs.nsrx \"Close other tabs\"")
 (run "c:filenote Rexx/ViewSource.nsrx \"View source\"")
-(run "c:filenote Rexx/GetVideo.nsrx \"Get video\"")
 
 (complete 50)
 
