@@ -3292,7 +3292,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	if(gwin->gw->bw) browser_window_update(gwin->gw->bw, false);
+	if(gwin->gw && gwin->gw->bw) browser_window_update(gwin->gw->bw, false);
 }
 
 void ami_gui_tabs_toggle_all(void)
