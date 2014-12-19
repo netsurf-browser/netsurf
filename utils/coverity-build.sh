@@ -27,10 +27,10 @@
 
 # environment variables
 #
+# HOST The ABI to be compiled for
 # COVERITY_TOKEN
 # COVERITY_USER
 # COVERITY_PREFIX path to tools else default is used
-# BUILD
 #
 # either PREFIX or JENKINS_HOME
 
@@ -38,13 +38,13 @@
 TARGETS="gtk framebuffer monkey"
 
 # setup build environment
-export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${BUILD}}
+export PREFIX=${PREFIX:-${JENKINS_HOME}/artifacts-${HOST}}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
 
 # Coverity tools location 
-COVERITY_PREFIX=${COVERITY_PREFIX:-/opt/coverity/cov-analysis-linux64-7.0.2}
+COVERITY_PREFIX=${COVERITY_PREFIX:-/opt/coverity/cov-analysis-linux64-7.5.0}
 COVERITY_VERSION=$(git rev-parse HEAD)
 
 export PATH=${PATH}:${COVERITY_PREFIX}/bin
