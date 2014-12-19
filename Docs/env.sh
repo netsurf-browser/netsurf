@@ -3,7 +3,7 @@
 # NetSurf Library, tool and browser support script
 #
 # Usage: source env.sh
-# TARGET_ABI sets the target for library builds
+# TARGET_ABI / HOST sets the target for library builds
 # TARGET_WORKSPACE is the workspace directory to keep the sandboxes
 #
 # This script allows NetSurf and its libraries to be built without
@@ -13,8 +13,19 @@
 # Released under the MIT Licence
 
 # parameters
-if [ "x${TARGET_ABI}" = "x" ]; then
-    TARGET_ABI=$(cc -dumpmachine)
+
+# The system doing the building
+if [ "x${BUILD}" = "x" ]; then
+    BUILD=$(cc -dumpmachine)
+fi
+
+# Get the host build if unset
+if [ "x${HOST}" = "x" ]; then
+    if [ "x${TARGET_ABI}" = "x" ]; then
+	HOST=${BUILD}
+    else
+	HOST=${TARGET_ABI}
+    fi
 fi
 
 if [ "x${TARGET_WORKSPACE}" = "x" ]; then
@@ -33,16 +44,17 @@ if [ "x${NETSURF_GTK_MAJOR}" = "x" ]; then
     NETSURF_GTK_MAJOR=3
 fi
 
-# The host system doing the building
-HOST_ABI=$(cc -dumpmachine)
 
-# setup environment
-echo "HOST_ABI=${HOST_ABI}"
-echo "TARGET_ABI=${TARGET_ABI}"
+###############################################################################
+# Setup environment
+###############################################################################
+
+echo "BUILD=${BUILD}"
+echo "HOST=${HOST}"
 echo "TARGET_WORKSPACE=${TARGET_WORKSPACE}"
 echo "USE_CPUS=${USE_CPUS}"
 
-export PREFIX=${TARGET_WORKSPACE}/inst-${TARGET_ABI}
+export PREFIX=${TARGET_WORKSPACE}/inst-${HOST}
 export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}::
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
@@ -58,7 +70,7 @@ NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcs
 NS_BROWSER="netsurf"
 
 # add target specific libraries
-case "${TARGET_ABI}" in
+case "${HOST}" in
     i586-pc-haiku)
         # tools required to build the browser for haiku (beos)
         NS_TOOLS=""
@@ -82,6 +94,12 @@ case "${TARGET_ABI}" in
         NS_TOOLS=""
         # libraries required for the atari frontend
         NS_FRONTEND_LIBS=""
+        ;;
+    ppc-amigaos)
+        # default tools required to build the browser
+        NS_TOOLS="nsgenbind"
+        # default additional internal libraries
+        NS_FRONTEND_LIBS="libsvgtiny"
         ;;
     *)
         # default tools required to build the browser
@@ -211,11 +229,17 @@ ns-make-libs()
     for REPO in $(echo ${NS_TOOLS}); do
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
 	make -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
+	if [ $? -ne 0]; then
+	    exit $?
+	fi
     done
 
     for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do 
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
-        make -C ${TARGET_WORKSPACE}/${REPO} BUILD=${TARGET_ABI} $USE_CPUS $*
+        make -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
+	if [ $? -ne 0]; then
+	    exit $?
+	fi
     done
 }
 
@@ -223,7 +247,7 @@ ns-make-libs()
 ns-make-libnsfb()
 {
     echo "    MAKE: make -C libnsfb $USE_CPUS $*"
-    make -C ${TARGET_WORKSPACE}/libnsfb BUILD=${TARGET_ABI} $USE_CPUS $*
+    make -C ${TARGET_WORKSPACE}/libnsfb HOST=${HOST} $USE_CPUS $*
 }
 
 # pulls all repos and makes and installs the libraries and tools
