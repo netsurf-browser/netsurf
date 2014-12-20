@@ -26,6 +26,8 @@
 #ifndef __amigaos4__
 
 #include <stdint.h>
+#include <proto/exec.h>
+#include <proto/dos.h>
 
 /* Include prototypes for amigalib */
 #include <clib/alib_protos.h>
@@ -34,9 +36,17 @@
 #include <exec/memory.h>
 #endif
 
+/* Library bases */
+struct Library *SysBase;
+struct Library *DOSBase;
+struct Library *IFFParseBase;
+
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
 #define MEMF_SHARED	MEMF_ANY
+
+/* Easy wrapper for AllocVecTagList with no tags */
+#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
 
 /* Integral type definitions */
 typedef int8_t int8;
@@ -45,6 +55,8 @@ typedef int16_t int16;
 typedef uint16_t uint16;
 typedef int32_t int32;
 typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
 
 /* TimeVal */
 struct TimeVal {
@@ -79,6 +91,8 @@ struct TimeVal {
 #define IDFMT_PALETTEMAPPED (1)  /* Palette mapped icon (chunky, V44+) */
 #define IDFMT_DIRECTMAPPED  (2)  /* Direct mapped icon (truecolor 0xAARRGGBB, V51+) */ 
 
+/* Functions */
+int64 GetFileSize(BPTR fh);
 #endif
 
 #endif

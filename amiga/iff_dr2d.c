@@ -19,15 +19,18 @@
 #ifdef WITH_NS_SVG
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <svgtiny.h>
 #include <proto/exec.h>
 #include <string.h>
 #include <proto/dos.h>
 
 #ifndef AMIGA_DR2D_STANDALONE
+#include "amiga/os3support.h"
 #include "amiga/iff_dr2d.h"
 #include "content/hlcache.h"
 #else
+#include "os3support.h"
 #include "iff_dr2d.h"
 #endif
 
@@ -68,7 +71,7 @@ static void addcolour(ULONG newcol)
 }
 
 bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
-		uint32 size, const char *url)
+		uint32_t size, const char *url)
 {
 	struct svgtiny_diagram *diagram;
 	svgtiny_code code;
@@ -334,17 +337,19 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 /*
  * This code can be compiled as a standalone program for testing etc.
  * Use something like the following line:
- * gcc -o svg2dr2d iff_dr2d.c -lauto -lsvgtiny -lpthread -lz -use-dynld
- * -DWITH_NS_SVG -DAMIGA_DR2D_STANDALONE -D__USE_INLINE__
+ * gcc -o svg2dr2d iff_dr2d.c -lauto -lsvgtiny -lpthread -lsvgtiny
+ * -ldom -lwapcaplet -lexpat -lparserutils
+ * -DWITH_NS_SVG -DAMIGA_DR2D_STANDALONE -D__USE_INLINE__ -D__NOLIBBASE__
  */
-const char USED ver[] = "\0$VER: svg2dr2d 1.1 (18.05.2009)\0";
+
+const char __attribute__((used)) ver[] = "\0$VER: svg2dr2d 1.1 (18.05.2009)\0";
 
 int main(int argc, char **argv)
 {
 	BPTR fh = 0;
 	char *buffer;
 	struct IFFHandle *iffh = NULL;
-	int64 size;
+	int64_t size;
 	LONG rarray[] = {0,0};
 	struct RDArgs *args;
 	STRPTR template = "SVG=INPUT/A,DR2D=OUTPUT/A";
@@ -353,6 +358,14 @@ int main(int argc, char **argv)
 		A_SVG,
 		A_DR2D
 	};
+
+#ifndef __amigaos4__
+	DOSBase = OpenLibrary("dos.library", 37);
+	if(!DOSBase) return RETURN_FAIL;
+
+	IFFParseBase = OpenLibrary("iffparse.library", 37);
+	if(!IFFParseBase) return RETURN_FAIL;
+#endif
 
 	args = ReadArgs(template,rarray,NULL);
 
@@ -366,9 +379,9 @@ int main(int argc, char **argv)
 	{
 		size = GetFileSize(fh);	
 
-		buffer = AllocVecTagList((uint32)size, NULL);
+		buffer = AllocVecTagList((uint32_t)size, NULL);
 
-		Read(fh,buffer,(uint32)size);
+		Read(fh,buffer,(uint32_t)size);
 		Close(fh);
 	}
 	else
@@ -395,7 +408,13 @@ int main(int argc, char **argv)
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);
 	if(iffh) FreeIFF(iffh);
 	FreeArgs(args);
+
+#ifndef __amigaos4__
+	if(DOSBase) CloseLibrary(DOSBase);
+	if(IFFParseBase) CloseLibrary(IFFParseBase);
+#endif
 }
 
 #endif // AMIGA_DR2D_STANDALONE
 #endif // WITH_NS_SVG
+

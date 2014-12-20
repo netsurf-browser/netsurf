@@ -66,7 +66,7 @@ struct stxt_struct {
     float	CharW, CharH,  	/* W/H of an individual char */
 	BaseX, BaseY,  	/* Start of baseline */
 	Rotation;      	/* Angle of text (in degrees) */
-    uint16	NumChars;
+    uint16_t	NumChars;
     //char	TextChars[NumChars];
 };
 
@@ -99,7 +99,7 @@ struct dash_struct {
 };
 
 bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
-		uint32 size, const char *url);
+		uint32_t size, const char *url);
 #ifndef AMIGA_DR2D_STANDALONE
 bool ami_save_svg(struct hlcache_handle *c, char *filename);
 #endif

@@ -72,7 +72,7 @@ S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c file.c		\
 	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c libs.c	\
 	datatypes.c dt_picture.c dt_anim.c dt_sound.c plugin_hack.c	\
 	stringview/stringview.c stringview/urlhistory.c			\
-	agclass/amigaguide_class.c fs_backing_store.c
+	agclass/amigaguide_class.c fs_backing_store.c os3support.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
 # This is the final source build list
