@@ -60,6 +60,9 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PREFIX}/lib
 export PATH=${PATH}:${PREFIX}/bin
 export NETSURF_GTK_MAJOR
 
+# make tool
+MAKE=make
+
 # NetSurf GIT repositories
 NS_GIT="git://git.netsurf-browser.org"
 
@@ -68,6 +71,7 @@ NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcs
 
 # The browser itself
 NS_BROWSER="netsurf"
+
 
 # add target specific libraries
 case "${HOST}" in
@@ -101,6 +105,14 @@ case "${HOST}" in
         # default additional internal libraries
         NS_FRONTEND_LIBS="libsvgtiny"
         ;;
+    *-unknown-freebsd*)
+        # tools required to build the browser for freebsd
+        NS_TOOLS=""
+        # libraries required for the freebsd frontend
+        NS_FRONTEND_LIBS=""
+	# select gnu make
+	MAKE=gmake
+        ;;
     *)
         # default tools required to build the browser
         NS_TOOLS="nsgenbind"
@@ -108,6 +120,8 @@ case "${HOST}" in
         NS_FRONTEND_LIBS="libsvgtiny libnsfb"
         ;;
 esac
+
+export MAKE
 
 ################ OS Package installation ################
 
@@ -228,7 +242,7 @@ ns-make-libs()
 {
     for REPO in $(echo ${NS_TOOLS}); do
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
-	make -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
+	${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
 	if [ $? -ne 0]; then
 	    exit $?
 	fi
@@ -236,7 +250,7 @@ ns-make-libs()
 
     for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do 
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
-        make -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
+        ${MAKE} -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
 	if [ $? -ne 0]; then
 	    exit $?
 	fi
@@ -247,7 +261,7 @@ ns-make-libs()
 ns-make-libnsfb()
 {
     echo "    MAKE: make -C libnsfb $USE_CPUS $*"
-    make -C ${TARGET_WORKSPACE}/libnsfb HOST=${HOST} $USE_CPUS $*
+    ${MAKE} -C ${TARGET_WORKSPACE}/libnsfb HOST=${HOST} $USE_CPUS $*
 }
 
 # pulls all repos and makes and installs the libraries and tools
@@ -261,6 +275,6 @@ ns-pull-install()
 # Passes appropriate flags to make
 ns-make()
 {
-    make $USE_CPUS "$@"
+    ${MAKE} $USE_CPUS "$@"
 }
 
