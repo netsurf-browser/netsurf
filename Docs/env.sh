@@ -255,7 +255,7 @@ ns-make-libs()
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
 	${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
 	if [ $? -ne 0 ]; then
-	    exit $?
+	    return $?
 	fi
     done
 
@@ -263,7 +263,7 @@ ns-make-libs()
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
         ${MAKE} -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
 	if [ $? -ne 0 ]; then
-	    exit $?
+	    return $?
 	fi
     done
 }
