@@ -42,6 +42,7 @@ HOST := $(shell uname -s)
 # TODO: Ideally, we want the equivalent of s/[^A-Za-z0-9]/_/g here
 HOST := $(subst .,_,$(subst -,_,$(subst /,_,$(HOST))))
 
+
 ifeq ($(HOST),)
   HOST := riscos
   $(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
@@ -51,21 +52,21 @@ else
     HOST := riscos
   endif
 endif
-
 ifeq ($(HOST),riscos)
   # Build happening on RO platform, default target is RO backend
   ifeq ($(TARGET),)
     TARGET := riscos
   endif
-else
-  ifeq ($(HOST),BeOS)
-    HOST := beos
-  endif
-  ifeq ($(HOST),Haiku)
-    # Haiku implements the BeOS API
-    HOST := beos
-  endif
-  ifeq ($(HOST),beos)
+endif
+
+ifeq ($(HOST),BeOS)
+  HOST := beos
+endif
+ifeq ($(HOST),Haiku)
+  # Haiku implements the BeOS API
+  HOST := beos
+endif
+ifeq ($(HOST),beos)
     # Build happening on BeOS platform, default target is BeOS backend
     ifeq ($(TARGET),)
       TARGET := beos
@@ -73,44 +74,46 @@ else
     ifeq ($(TARGET),haiku)
       TARGET := beos
     endif
-  else
-    ifeq ($(HOST),AmigaOS)
-      HOST := amiga
-      ifeq ($(TARGET),)
-        TARGET := amiga
-      endif
-    else
-      ifeq ($(HOST),Darwin)
-        HOST := macosx
-        ifeq ($(TARGET),)
-          TARGET := cocoa
-        endif
-      endif  
-      ifeq ($(HOST),FreeMiNT)
-        HOST := mint
-      endif
-      ifeq ($(HOST),mint)
-        ifeq ($(TARGET),)
-          TARGET := atari
-        endif
-      endif
-      ifeq ($(findstring MINGW,$(HOST)),MINGW)
-        # MSYS' uname reports the likes of "MINGW32_NT-6.0"
-        HOST := windows
-      endif
-      ifeq ($(HOST),windows)
-        ifeq ($(TARGET),)
-          TARGET := windows
-        endif
-      endif
+endif
 
-      # Default target is GTK backend
-      ifeq ($(TARGET),)
-        TARGET := gtk
-      endif
-    endif
+ifeq ($(HOST),AmigaOS)
+  HOST := amiga
+  ifeq ($(TARGET),)
+    TARGET := amiga
   endif
 endif
+
+ifeq ($(HOST),Darwin)
+  HOST := macosx
+  ifeq ($(TARGET),)
+    TARGET := cocoa
+  endif
+endif
+
+ifeq ($(HOST),FreeMiNT)
+  HOST := mint
+endif
+ifeq ($(HOST),mint)
+  ifeq ($(TARGET),)
+    TARGET := atari
+  endif
+endif
+
+ifeq ($(findstring MINGW,$(HOST)),MINGW)
+  # MSYS' uname reports the likes of "MINGW32_NT-6.0"
+  HOST := windows
+endif
+ifeq ($(HOST),windows)
+  ifeq ($(TARGET),)
+    TARGET := windows
+  endif
+endif
+
+# Default target is GTK backend
+ifeq ($(TARGET),)
+  TARGET := gtk
+endif
+
 SUBTARGET =
 RESOURCES =
 

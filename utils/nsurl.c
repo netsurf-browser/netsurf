@@ -31,6 +31,7 @@
 #include <libwapcaplet/libwapcaplet.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "utils/corestrings.h"
 #include "utils/errors.h"
