@@ -168,6 +168,22 @@ ns-pkgman-install()
     pkgman install $(echo ${NS_DEV_HPKG})
 }
 
+# MAC OS X
+NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
+
+ns-macport-install()
+{
+    PATH=/opt/local/bin:/opt/local/sbin:$PATH sudo /opt/local/bin/port install $(echo ${NS_DEV_MACPORT})
+}
+
+NS_DEV_FREEBSDPKG="gmake curl"
+
+# FreeBSD package install
+ns-freebsdpkg-install()
+{
+    pkg install $(echo ${NS_DEV_FREEBSDPKG})
+}
+
 # generic for help text
 NS_DEV_GEN="git, gcc, pkgconfig, expat library, openssl library, spidermonkey-1.8.5 library, libcurl, perl, perl MD5 digest, libjpeg library, libpng library"
 NS_TOOL_GEN="flex tool, bison tool"
@@ -176,13 +192,6 @@ if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
 else
     NS_GTK_GEN="gtk+ 2 toolkit library, librsvg2 library"
 fi
-
-NS_DEV_MACPORT="git expat openssl curl libjpeg-turbo libpng"
-
-ns-macport-install()
-{
-    PATH=/opt/local/bin:/opt/local/sbin:$PATH sudo /opt/local/bin/port install $(echo ${NS_DEV_MACPORT})
-}
 
 # Genertic OS package install
 #  looks for package managers and tries to use them if present
@@ -196,6 +205,8 @@ ns-package-install()
 	ns-pkgman-install
     elif [ -x "/opt/local/bin/port" ]; then
 	ns-macport-install
+    elif [ -x "/usr/sbin/pkg" ]; then
+	ns-freebsdpkg-install
     else
         echo "Unable to determine OS packaging system in use."
 	echo "Please ensure development packages are installed for:"
@@ -210,7 +221,7 @@ ns-pull()
 {
     for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
 	echo -n "     GIT: Pulling ${REPO}: "
-	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
+	if [ -f "${TARGET_WORKSPACE}/${REPO}/.git/config" ]; then
 	    (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
 	else
 	    echo "Repository not present"	    
@@ -232,7 +243,7 @@ ns-clone()
     done
 
     # put current env.sh in place in workspace
-    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ];then
+    if [ ! -f "${TARGET_WORKSPACE}/env.sh" -a -f ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ]; then
 	cp ${TARGET_WORKSPACE}/${NS_BROWSER}/Docs/env.sh ${TARGET_WORKSPACE}/env.sh
     fi
 }
@@ -243,7 +254,7 @@ ns-make-libs()
     for REPO in $(echo ${NS_TOOLS}); do
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
 	${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
-	if [ $? -ne 0]; then
+	if [ $? -ne 0 ]; then
 	    exit $?
 	fi
     done
@@ -251,7 +262,7 @@ ns-make-libs()
     for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS}); do 
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
         ${MAKE} -C ${TARGET_WORKSPACE}/${REPO} HOST=${HOST} $USE_CPUS $*
-	if [ $? -ne 0]; then
+	if [ $? -ne 0 ]; then
 	    exit $?
 	fi
     done
