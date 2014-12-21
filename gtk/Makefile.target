@@ -88,7 +88,11 @@ define convert_image
 S_PIXBUF += $(2)
 
 $(2): $(1)
+ifeq ($(HOST),FreeBSD)
+	$(Q)echo "#include <gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixdata.h>" > $(2)
+else
 	$(Q)echo "#include <gdk-pixbuf/gdk-pixdata.h>" > $(2)
+endif
 	$(Q)gdk-pixbuf-csource --extern --struct --name=$(3) $(1) >> $(2) || \
 	( rm -f $(2) && false )
 
