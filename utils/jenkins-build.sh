@@ -187,8 +187,13 @@ case ${TARGET} in
 		ARTIFACT_TARGET=Linux
 		;;
 
-	    "amd64-unknown-openbsd5.4")
+	    "amd64-unknown-openbsd*")
 		ARTIFACT_TARGET=OpenBSD
+		MAKE=gmake
+		;;
+
+	    "x86_64-unknown-freebsd*")
+		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
 
@@ -216,6 +221,16 @@ case ${TARGET} in
 
 	    "powerpc-apple-darwin9")
 		ARTIFACT_TARGET=powerpc-apple-darwin9
+		;;
+
+	    "amd64-unknown-openbsd*")
+		ARTIFACT_TARGET=OpenBSD
+		MAKE=gmake
+		;;
+
+	    "x86_64-unknown-freebsd*")
+		ARTIFACT_TARGET=FreeBSD
+		MAKE=gmake
 		;;
 
 	    "arm-unknown-riscos")
@@ -274,6 +289,16 @@ case ${TARGET} in
 
 	    "powerpc-apple-darwin9")
 		ARTIFACT_TARGET=powerpc-apple-darwin9
+		;;
+
+	    "amd64-unknown-openbsd*")
+		ARTIFACT_TARGET=OpenBSD
+		MAKE=gmake
+		;;
+
+	    "x86_64-unknown-freebsd*")
+		ARTIFACT_TARGET=FreeBSD
+		MAKE=gmake
 		;;
 
 	    "arm-unknown-riscos")
