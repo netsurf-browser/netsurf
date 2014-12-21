@@ -100,10 +100,39 @@ CXXFLAGS :=
 # Default installation/execution prefix
 PREFIX ?= /usr/local
 
-# Incude defaults specific to a TARGET
+
+# ----------------------------------------------------------------------------
+# Option overrides determined by HOST relating to all versions of NetSurf
+# ----------------------------------------------------------------------------
+
+# Configuration overrides for Mac OS X
+ifeq ($(HOST),macosx)
+    NETSURF_USE_LIBICONV_PLUG := NO
+    NETSURF_USE_HARU_PDF := NO
+endif
+
+# Configuration overrides for OpenBSD
+ifeq ($(HOST),OpenBSD)
+    NETSURF_USE_LIBICONV_PLUG := NO
+    NETSURF_USE_HARU_PDF := NO
+endif
+
+# Configuration overrides for FreeBSD
+ifeq ($(HOST),FreeBSD)
+    NETSURF_USE_LIBICONV_PLUG := NO
+    NETSURF_USE_HARU_PDF := NO
+endif
+
+
+# ----------------------------------------------------------------------------
+# Option overrides determined by specific TARGET
+# ----------------------------------------------------------------------------
 -include $(TARGET)/Makefile.defaults
 
+
+# ----------------------------------------------------------------------------
 # Include any local configuration
+# ----------------------------------------------------------------------------
 ifneq ($(MAKEFILE_DEFAULTS_FINISHED),)
 $(error Makefile.defaults has been double-included.  If you did something utterly brain-dead such as copying Makefile.defaults to Makefile.config then you deserve all the pain you can imagine.  Do NOT do that.  Why not read the comments at the top of Makefile.defaults.  They are there to help you, you numpty)
 endif
