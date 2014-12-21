@@ -36,6 +36,12 @@ ifeq ($(HOST),OpenBSD)
     NETSURF_USE_HARU_PDF := NO
 endif
 
+# Configuration overrides for FreeBSD
+ifeq ($(HOST),FreeBSD)
+    NETSURF_USE_LIBICONV_PLUG := NO
+    NETSURF_USE_HARU_PDF := NO
+endif
+
 # Set default GTK version to build for (2 or 3)
 NETSURF_GTK_MAJOR := 2
 
