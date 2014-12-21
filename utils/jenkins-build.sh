@@ -187,12 +187,12 @@ case ${TARGET} in
 		ARTIFACT_TARGET=Linux
 		;;
 
-	    "amd64-unknown-openbsd*")
+	    amd64-unknown-openbsd*)
 		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
-	    "x86_64-unknown-freebsd*")
+	    x86_64-unknown-freebsd*)
 		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
@@ -223,12 +223,12 @@ case ${TARGET} in
 		ARTIFACT_TARGET=powerpc-apple-darwin9
 		;;
 
-	    "amd64-unknown-openbsd*")
+	    amd64-unknown-openbsd*)
 		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
-	    "x86_64-unknown-freebsd*")
+	    x86_64-unknown-freebsd*)
 		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
@@ -291,12 +291,12 @@ case ${TARGET} in
 		ARTIFACT_TARGET=powerpc-apple-darwin9
 		;;
 
-	    "amd64-unknown-openbsd*")
+	    amd64-unknown-openbsd*)
 		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
-	    "x86_64-unknown-freebsd*")
+	    x86_64-unknown-freebsd*)
 		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
