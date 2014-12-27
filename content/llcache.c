@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <curl/curl.h>
 #include <nsutils/time.h>
 

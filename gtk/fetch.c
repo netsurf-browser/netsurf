@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 
 #include "utils/hashtable.h"
 #include "utils/log.h"

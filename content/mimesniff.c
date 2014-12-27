@@ -22,7 +22,8 @@
  * Spec version: 2011-11-27
  */
 
-#include<string.h>
+#include <string.h>
+#include <strings.h>
 
 #include "content/content_factory.h"
 #include "content/llcache.h"
