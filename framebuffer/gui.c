@@ -22,6 +22,7 @@
 #include <sys/ioctl.h>
 #include <limits.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
@@ -451,6 +452,10 @@ static bool
 process_cmdline(int argc, char** argv)
 {
 	int opt;
+	int option_index;
+	static struct option long_options[] = {
+		{0, 0, 0,  0 }
+	}; /* no long options */
 
 	LOG(("argc %d, argv %p", argc, argv));
 
@@ -473,7 +478,8 @@ process_cmdline(int argc, char** argv)
 		feurl = NETSURF_HOMEPAGE;
 	}
 
-	while((opt = getopt(argc, argv, "f:b:w:h:")) != -1) {
+	while((opt = getopt_long(argc, argv, "f:b:w:h:",
+				 long_options, &option_index)) != -1) {
 		switch (opt) {
 		case 'f':
 			fename = optarg;
