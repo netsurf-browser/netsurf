@@ -96,18 +96,22 @@ Configuring
     The layout of the toolbar, layout uses a string to define buttons
     type and position each character adds an element to the toolbar:
 
-    b - back
-    l - local history
-    f - forward
-    s - stop 
-    r - refresh
+    b - Move back in history
+    l - Display the local history
+    f - Move forward in history
+    s - stop fetching content
+    r - refresh content
     u - url bar expands to fit remaining space
     t - throbber/activity indicator
     c - close the current window
+    q - Disable The toolbar altogether
+
+    If the option contains only the q specifier the toolbar is
+    disabled altogether (this was previously the empty string but that
+    was difficult to configure correctly).
 
     The default layout is "blfsrutc" there should be no more than a
-    single url bar entry. If the option is set to the empty string (no
-    spaces permitted) the toolbar is disabled altogether.
+    single url bar entry.
 
   fb_osk
     Whether the on screen keyboard should be enabled for input.

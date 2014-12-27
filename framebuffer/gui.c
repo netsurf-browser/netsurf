@@ -1188,7 +1188,8 @@ create_toolbar(struct gui_window *gw,
 
 	itmtype = toolbar_layout;
 
-	if (*itmtype == 0) {
+	/* check for the toolbar being disabled */
+	if ((*itmtype == 0) || (*itmtype == 'q')) {
 		return NULL;
 	}
 
