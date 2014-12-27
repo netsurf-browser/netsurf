@@ -25,30 +25,20 @@
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
-#include <glib.h>
 
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/file.h"
 #include "utils/nsoption.h"
-#include "content/content.h"
-#include "content/fetch.h"
 #include "content/fetchers.h"
-#include "content/fetchers/curl.h"
-#include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "content/backing_store.h"
@@ -57,7 +47,6 @@
 #include "desktop/save_pdf.h"
 #include "desktop/searchweb.h"
 #include "desktop/sslcert_viewer.h"
-#include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
