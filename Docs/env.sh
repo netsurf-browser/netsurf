@@ -66,8 +66,11 @@ MAKE=make
 # NetSurf GIT repositories
 NS_GIT="git://git.netsurf-browser.org"
 
+# Buildsystem: everything depends on this
+NS_BUILDSYSTEM="buildsystem"
+
 # internal libraries all frontends require (order is important)
-NS_INTERNAL_LIBS="buildsystem libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils"
+NS_INTERNAL_LIBS="libwapcaplet libparserutils libhubbub libdom libcss libnsgif libnsbmp libutf8proc libnsutils"
 
 # The browser itself
 NS_BROWSER="netsurf"
@@ -219,7 +222,7 @@ ns-package-install()
 # git pull in all repos parameters are passed to git pull
 ns-pull()
 {
-    for REPO in ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
+    for REPO in ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_TOOLS} ${NS_BROWSER} ; do 
 	echo -n "     GIT: Pulling ${REPO}: "
 	if [ -f "${TARGET_WORKSPACE}/${REPO}/.git/config" ]; then
 	    (cd ${TARGET_WORKSPACE}/${REPO} && git pull $*; )
@@ -233,7 +236,7 @@ ns-pull()
 ns-clone()
 {
     mkdir -p ${TARGET_WORKSPACE}
-    for REPO in $(echo ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
+    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_INTERNAL_LIBS} ${NS_FRONTEND_LIBS} ${NS_RISCOS_LIBS} ${NS_TOOLS} ${NS_BROWSER}) ; do 
 	echo -n "     GIT: Cloning ${REPO}: "
 	if [ -f ${TARGET_WORKSPACE}/${REPO}/.git/config ]; then
 	    echo "Repository already present"
@@ -251,7 +254,7 @@ ns-clone()
 # issues a make command to all libraries
 ns-make-libs()
 {
-    for REPO in $(echo ${NS_TOOLS}); do
+    for REPO in $(echo ${NS_BUILDSYSTEM} ${NS_TOOLS}); do
 	echo "    MAKE: make -C ${REPO} $USE_CPUS $*"
 	${MAKE} -C ${TARGET_WORKSPACE}/${REPO} $USE_CPUS $*
 	if [ $? -ne 0 ]; then
