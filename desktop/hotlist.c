@@ -784,13 +784,14 @@ static nserror hotlist_load(const char *path, bool *loaded)
 
 	/* Load hotlist file */
 	err = libdom_parse_file(path, "iso-8859-1", &document);
-	free(temp_path);
 	if (err != NSERROR_OK) {
 		err = libdom_parse_file(temp_path, "iso-8859-1", &document);
 		if (err != NSERROR_OK) {
+			free(temp_path);
 			return err;
 		}
 	}
+	free(temp_path);
 
 	/* Find HTML element */
 	html = libdom_find_first_element((dom_node *) document,
