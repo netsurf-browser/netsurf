@@ -1589,15 +1589,10 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
-	int cur_tab = 0;
 	struct bitmap *icon_bitmap = NULL;
 
 	if(nsoption_bool(kiosk_mode) == true) return;
 	if(!g) return;
-
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-						g->shared->objects[GID_TABS],
-						(ULONG *)&cur_tab);
 
 	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
 	{
@@ -1605,8 +1600,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 					g->shared->win->RPort->BitMap);
 	}
 
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
 					g->shared->win, NULL, 1);
 
@@ -4148,7 +4142,6 @@ static void gui_window_destroy(struct gui_window *g)
 static void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	struct Node *node;
-	int cur_tab = 0;
 	char *utf8title;
 
 	if(!g) return;
@@ -4183,13 +4176,9 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 				RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
 					g->shared->win, NULL, TRUE);
 		}
-
-		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-				(ULONG *)&cur_tab);
 	}
 
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		if((g->shared->wintitle == NULL) || (strcmp(utf8title, g->shared->wintitle)))
 		{
 			if(g->shared->wintitle) free(g->shared->wintitle);
@@ -4333,7 +4322,6 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 		int x0, int y0, int x1, int y1)
 {
 	struct IBox *bbox;
-	int cur_tab = 0;
 	ULONG sx, sy;
 
 	struct redraw_context ctx = {
@@ -4348,11 +4336,7 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 	sx = g->scrollx;
 	sy = g->scrolly;
 
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
-
-	if(!((cur_tab == g->tab) || (g->shared->tabs <= 1)))
-		return;
+	if(g != g->shared->gw) return;
 
 	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 		warn_user("NoMemory", "");
@@ -4369,14 +4353,9 @@ static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw
 
 static void gui_window_redraw_window(struct gui_window *g)
 {
-	int cur_tab = 0;
-
 	if(!g) return;
 
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
+	if(g == g->shared->gw)
 		ami_schedule_redraw(g->shared, true);
 }
 
@@ -4692,7 +4671,6 @@ static bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 	struct IBox *bbox;
-	int cur_tab = 0;
 	int width, height;
 
 	if(!g) return;
@@ -4718,12 +4696,7 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 	ami_gui_free_space_box(bbox);
 
-	if(g->tab_node && (g->shared->tabs > 1))
-				GetAttr(CLICKTAB_Current,
-					g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		if(g->shared->objects[GID_VSCROLL]) {
 			RefreshSetGadgetAttrs((struct Gadget *)(APTR)g->shared->objects[GID_VSCROLL],
 				g->shared->win, NULL,
@@ -4747,22 +4720,16 @@ static void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		g->scrollx = sx;
 		g->scrolly = sy;
 	}
-//	g->shared->new_content = false;
 }
 
 static void gui_window_update_extent(struct gui_window *g)
 {
 	struct IBox *bbox;
-	int cur_tab = 0;
 
 	if(!g || !g->bw) return;
 	if(browser_window_has_content(g->bw) == false) return;
 
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		int width, height;
 		if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
 			warn_user("NoMemory", "");
@@ -4796,7 +4763,6 @@ static void gui_window_update_extent(struct gui_window *g)
 
 static void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	int cur_tab = 0;
 	char *utf8text;
 	ULONG size;
 	UWORD chars;
@@ -4806,11 +4772,7 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 	if(!text) return;
 	if(!g->shared->objects[GID_STATUS]) return;
 
-	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
-			g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		utf8text = ami_utf8_easy((char *)text);
 		if(utf8text == NULL) return;
 
@@ -4835,17 +4797,9 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 
 static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 {
-	int cur_tab = 0;
-
 	if(!g) return NSERROR_OK;
 
-	if ((g->tab_node) && (g->shared->tabs > 1)) {
-		GetAttr(CLICKTAB_Current,
-			g->shared->objects[GID_TABS],
-			(ULONG *)&cur_tab);
-	}
-
-	if ((cur_tab == g->tab) || (g->shared->tabs <= 1)) {
+	if (g == g->shared->gw) {
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
 				      g->shared->win, NULL, STRINGA_TextVal,
 				      nsurl_access(url), TAG_DONE);

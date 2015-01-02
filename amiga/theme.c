@@ -405,15 +405,11 @@ void ami_mouse_pointers_free(void)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
-	ULONG cur_tab = 0;
-
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
-		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-				(ULONG *)&cur_tab);
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, TRUE, TAG_DONE);
 		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
@@ -427,22 +423,18 @@ void gui_window_start_throbber(struct gui_window *g)
 void gui_window_stop_throbber(struct gui_window *g)
 {
 	struct IBox *bbox;
-	int cur_tab = 0;
 
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
-		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-			(ULONG *)&cur_tab);
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, FALSE, TAG_DONE);
 		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
 	}
 
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g == g->shared->gw) {
 		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			warn_user("NoMemory", "");
 			return;
@@ -463,7 +455,6 @@ static void ami_throbber_update(void *p)
 	struct gui_window *g = (struct gui_window *)p;
 	struct IBox *bbox;
 	int frame = 0;
-	int cur_tab = 0;
 
 	if(!g) return;
 	if(!g->shared->objects[GID_THROBBER]) return;
@@ -475,14 +466,7 @@ static void ami_throbber_update(void *p)
 			g->shared->throbber_frame=1;
 	}
 
-	if(g->tab_node && (g->shared->tabs > 1))
-	{
-		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-			(ULONG *)&cur_tab);
-	}
-
-	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
-	{
+	if(g->shared->gw == g) {
 		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
 			warn_user("NoMemory", "");
 			return;
