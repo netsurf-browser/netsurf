@@ -1,12 +1,6 @@
 #
 # Messages for NetSurf
 #
-# ==============================================================================
-# Reference version.
-# When updating this file, ensure you keep the translations in sync by adding
-# the other languages next to your addition.
-# ==============================================================================
-#
 # Description
 # -----------
 #
@@ -42,6 +36,7 @@
 en.all.NetSurf:NetSurf
 en.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
 en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
 it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
 
 # Menus
@@ -53,6 +48,7 @@ it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un
 # Iconbar menu
 #
 en.all.Info:Info
+fr.all.Info:Information
 nl.all.Info:Informatie
 en.ro.AppHelp:Help...  F1
 de.ro.AppHelp:Hilfe...  F1
@@ -118,6 +114,7 @@ nl.ro.Help:Hulp
 # Main -> Page menu
 #
 en.ro.PageInfo:Info  ^F1
+fr.ro.PageInfo:Information  ^F1
 nl.ro.PageInfo:Informatie  ^F1
 en.ro.Save:Save  F3
 de.ro.Save:Speichern  F3
@@ -158,7 +155,9 @@ nl.ro.ViewSrc:Bekijk HTML...  F8
 # Main -> Page -> Export menu
 #
 en.ro.Draw:Draw  ⇑^F3
+fr.ro.Draw:Dessiner  ⇑^F3
 en.all.PDF:PDF
+fr.all.PDF:PDF
 en.ro.Text:Text  ^F3
 fr.ro.Text:Texte  ^F3
 it.ro.Text:Testo  ^F3
@@ -167,7 +166,9 @@ nl.ro.Text:Tekst  ^F3
 # Main -> Page -> Save location menu
 #
 en.ro.URI:Acorn URI
+fr.ro.URI:Acorn URI
 en.ro.URL:ANT URL
+fr.ro.URL:ANT URL
 en.all.LinkText:Text
 fr.all.LinkText:Texte
 it.all.LinkText:Testo
@@ -176,6 +177,7 @@ nl.all.LinkText:Tekst
 # Main -> Object -> Object menu
 #
 en.all.ObjInfo:Info
+fr.all.ObjInfo:Information
 nl.all.ObjInfo:Informatie
 en.all.ObjSave:Save
 de.all.ObjSave:Speichern
@@ -201,16 +203,20 @@ en.all.ObjDraw:Draw
 # Main -> Object -> Link menu
 en.all.LinkSave:Save
 de.all.LinkSave:Speichern
+fr.all.LinkSave:Enregistrer
 it.all.LinkSave:Salva
 en.all.LinkDload:Download target
 de.all.LinkDload:Ziel speichern
+fr.all.LinkDload:Téléchargement cible
 it.all.LinkDload:Salva file in
 en.all.LinkNew:New window
 de.all.LinkNew:Neues Fenster
+fr.all.LinkNew:Nouvelle fenêtre
 it.all.LinkNew:Nuova finestra
 
 # Main -> Selection menu
 en.all.SelSave:Save
+fr.all.SelSave:Enregistrer
 de.all.SelSave:Speichern
 it.all.SelSave:Salva
 
@@ -426,6 +432,7 @@ fr.ro.HelpInfo:Information utilisateur
 it.ro.HelpInfo:Informazioni utente
 nl.ro.HelpInfo:Gebruikers informatie
 en.all.HelpCredits:Credits
+fr.all.HelpCredits:Crédits
 it.all.HelpCredits:Ringraziamenti
 en.all.HelpLicence:Licence
 de.all.HelpLicence:Lizenz
@@ -445,7 +452,7 @@ it.all.Toolbar:Barra strumenti
 nl.all.Toolbar:Werkbalk
 en.all.EditToolbar:Edit toolbar
 de.all.EditToolbar:Symbolleiste bearbeiten
-fr.all.EditToolbar:Barre de configuration
+fr.all.EditToolbar:Éditer la barre d'outils
 it.all.EditToolbar:Modifica barra strumenti
 nl.all.EditToolbar:Werkbalk aanpassen
 
@@ -473,11 +480,12 @@ it.ro.Copy:Copia nella clipboard  ^C
 nl.ro.Copy:Copieer naar prikbord  ^C
 en.ro.Cut:Cut to clipboard  ^X
 de.ro.Cut:Ausschneiden  ^X
-fr.ro.Cut:Cut to clipboard  ^X
+fr.ro.Cut:Couper vers le presse-papier  ^X
 it.ro.Cut:Taglia dalla clipboard  ^X
 nl.ro.Cut:Cut to clipboard  ^X
 en.ro.Paste:Paste from clipboard  ^V
 de.ro.Paste:Einfügen  ^V
+fr.ro.Paste:Coller depuis le presse-papier ^V
 it.ro.Paste:Incolla sulla clipboard  ^V
 
 # Selection Menu
@@ -521,8 +529,10 @@ fr.all.Collapse:Regrouper
 it.all.Collapse:Raggruppa
 nl.all.Collapse:Inklappen
 en.all.Tree:Tree
+fr.all.Tree:Arbre
 it.all.Tree:Albero
 en.all.TreeExport:Export...
+fr.all.TreeExport:Exporter...
 it.all.TreeExport:Esporta...
 
 # New hotlist entry menu
@@ -534,7 +544,7 @@ it.all.Folder:Cartella
 nl.all.Folder:Map
 en.all.Link:Address
 de.all.Link:Verweis
-fr.all.Link:Link
+fr.all.Link:Lien
 it.all.Link:Link
 nl.all.Link:Link
 
@@ -557,7 +567,7 @@ it.all.Links:Indirizzi
 nl.all.Links:Adressen
 en.all.Domains:Domains
 de.all.Domains:Domains
-fr.all.Domains:Domains
+fr.all.Domains:Domaines
 it.all.Domains:Domini
 nl.all.Domains:Domains
 
@@ -653,32 +663,32 @@ nl.all.ImgStyle3:Fout-spreiding
 #
 en.ami.Project:Project
 de.ami.Project:Projekt
-fr.ami.Project:Project
+fr.ami.Project:Projet
 it.ami.Project:Progetto
 nl.ami.Project:Project
 en.all.NewWindowNS:New window
 de.all.NewWindowNS:Neues Fenster
-fr.all.NewWindowNS:New window
+fr.all.NewWindowNS:Nouvelle fenêtre
 it.all.NewWindowNS:Nuova finestra
 nl.all.NewWindowNS:New window
 en.all.NewTab:New tab
 de.all.NewTab:Neuer Tab
-fr.all.NewTab:New tab
+fr.all.NewTab:Nouvel onglet
 it.all.NewTab:Nuova scheda
 nl.all.NewTab:New tab
 en.all.CloseTab:Close tab
 de.all.CloseTab:Schließe Tab
-fr.all.CloseTab:Close tab
+fr.all.CloseTab:Fermer l'onglet
 it.all.CloseTab:Chiudi scheda
 nl.all.CloseTab:Close tab
 en.all.CloseWindow:Close window
 de.all.CloseWindow:Schließe Fenster
-fr.all.CloseWindow:Close window
+fr.all.CloseWindow:Fermer la fenêtre
 it.all.CloseWindow:Chiudi finestra
 nl.all.CloseWindow:Close window
 en.all.SaveAsNS:Save as
 de.all.SaveAsNS:Speichern als
-fr.all.SaveAsNS:Save as
+fr.all.SaveAsNS:Enregistrer sous
 it.all.SaveAsNS:Salva come
 nl.all.SaveAsNS:Save as
 en.all.Source:Source...
@@ -688,12 +698,12 @@ it.all.Source:Sorgente...
 nl.all.Source:Source...
 en.all.TextNS:Text...
 de.all.TextNS:Text...
-fr.all.TextNS:Text...
+fr.all.TextNS:Texte...
 it.all.TextNS:Testo...
 nl.all.TextNS:Text...
 en.all.SaveCompNS:Complete...
 de.all.SaveCompNS:Komplett...
-fr.all.SaveCompNS:Complete...
+fr.all.SaveCompNS:Complète ...
 it.all.SaveCompNS:Cartella...
 nl.all.SaveCompNS:Complete...
 en.all.PDFNS:PDF...
@@ -708,17 +718,17 @@ it.ami.IFF:IFF...
 nl.ami.IFF:IFF...
 en.all.OpenFile:Open local file...
 de.all.OpenFile:Öffne lokale Datei...
-fr.all.OpenFile:Open local file...
+fr.all.OpenFile:Ouvrir un fichier local ...
 it.all.OpenFile:Apri file locale...
 nl.all.OpenFile:Open local file...
 en.all.About:About
 de.all.About:Über
-fr.all.About:About
+fr.all.About:À propos
 it.all.About:Informazioni
 nl.all.About:About
 en.all.PrintNS:Print...
 de.all.PrintNS:Drucken...
-fr.all.PrintNS:Print...
+fr.all.PrintNS:Imprimer...
 it.all.PrintNS:Stampa...
 nl.all.PrintNS:Print...
 
@@ -726,37 +736,37 @@ nl.all.PrintNS:Print...
 #
 en.all.CutNS:Cut
 de.all.CutNS:Ausschneiden
-fr.all.CutNS:Cut
+fr.all.CutNS:Couper
 it.all.CutNS:Taglia
 nl.all.CutNS:Cut
 en.all.CopyNS:Copy
 de.all.CopyNS:Kopieren
-fr.all.CopyNS:Copy
+fr.all.CopyNS:Copier
 it.all.CopyNS:Copia
 nl.all.CopyNS:Copy
 en.all.PasteNS:Paste
 de.all.PasteNS:Einfügen
-fr.all.PasteNS:Paste
+fr.all.PasteNS:Coller
 it.all.PasteNS:Incolla
 nl.all.PasteNS:Paste
 en.all.SelectAllNS:Select all
 de.all.SelectAllNS:Alles auswählen
-fr.all.SelectAllNS:Select all
+fr.all.SelectAllNS:Sélectionner tout
 it.all.SelectAllNS:Seleziona Tutto
 nl.all.SelectAllNS:Select all
 en.all.ClearNS:Clear selection
 de.all.ClearNS:Auswahl rückgängig
-fr.all.ClearNS:Clear selection
+fr.all.ClearNS:Effacer la sélection
 it.all.ClearNS:Annulla selezione
 nl.all.ClearNS:Clear selection
 en.ami.Undo:Undo
 de.ami.Undo:Undo
-fr.ami.Undo:Undo
+fr.ami.Undo:Annuler
 it.ami.Undo:Annulla
 nl.ami.Undo:Undo
 en.ami.Redo:Redo
 de.ami.Redo:Redo
-fr.ami.Redo:Redo
+fr.ami.Redo:Rétablir
 it.ami.Redo:Ripristina
 nl.ami.Redo:Redo
 
@@ -764,17 +774,17 @@ nl.ami.Redo:Redo
 #
 en.all.Browser:Browser
 de.all.Browser:Browser
-fr.all.Browser:Browser
+fr.all.Browser:Navigateur
 it.all.Browser:Strumenti
 nl.all.Browser:Browser
 en.all.HistGlobalNS:Show global history
 de.all.HistGlobalNS:Zeige globale History
-fr.all.HistGlobalNS:Show global history
+fr.all.HistGlobalNS:Afficher l'historique global
 it.all.HistGlobalNS:Mostra cronologia globale
 nl.all.HistGlobalNS:Show global history
 en.all.HistLocalNS:Show local history
 de.all.HistLocalNS:Zeige lokale History
-fr.all.HistLocalNS:Show local history
+fr.all.HistLocalNS:Afficher l'historique local
 it.all.HistLocalNS:Mostra cronologia locale
 nl.all.HistLocalNS:Show local history
 en.ami.ShowCookiesNS:Show cookies
@@ -784,27 +794,27 @@ it.ami.ShowCookiesNS:Mostra cookie
 nl.ami.ShowCookiesNS:Toon cookies
 en.all.FindTextNS:Find text...
 de.all.FindTextNS:Suchen...
-fr.all.FindTextNS:Find text...
+fr.all.FindTextNS:Recherche de texte...
 it.all.FindTextNS:Trova testo...
 nl.all.FindTextNS:Find text...
 en.all.Redraw:Redraw page
 de.all.Redraw:Seite neu aufbauen
-fr.all.Redraw:Redraw page
+fr.all.Redraw:Redessiner la page
 it.all.Redraw:Ridisegna pagina
 nl.all.Redraw:Redraw page
 en.all.ScaleNS:Scale
 de.all.ScaleNS:Skalieren
-fr.all.ScaleNS:Scale
+fr.all.ScaleNS:Zoom
 it.all.ScaleNS:Scala di zoom
 nl.all.ScaleNS:Scale
 en.all.ScaleInc:Increase
 de.all.ScaleInc:Vergrößern
-fr.all.ScaleInc:Increase
+fr.all.ScaleInc:Augmenter (Zoom +)
 it.all.ScaleInc:Aumenta
 nl.all.ScaleInc:Increase
 en.all.ScaleDec:Decrease
 de.all.ScaleDec:Verkleinern
-fr.all.ScaleDec:Decrease
+fr.all.ScaleDec:Diminuer (Zoom -)
 it.all.ScaleDec:Diminuisci
 nl.all.ScaleDec:Decrease
 en.all.ScaleNorm:Normal
@@ -817,7 +827,7 @@ nl.all.ScaleNorm:Normal
 #
 en.all.HotlistShowNS:Show hotlist
 de.all.HotlistShowNS:Zeige Hotlist
-fr.all.HotlistShowNS:Show hotlist
+fr.all.HotlistShowNS:Afficher les favoris
 it.all.HotlistShowNS:Mostra
 nl.all.HotlistShowNS:Show hotlist
 
@@ -825,22 +835,22 @@ nl.all.HotlistShowNS:Show hotlist
 #
 en.all.SettingsEdit:Edit preferences
 de.all.SettingsEdit:Voreinstellungen
-fr.all.SettingsEdit:Edit preferences
+fr.all.SettingsEdit:Modifier les préférences
 it.all.SettingsEdit:Modifica
 nl.all.SettingsEdit:Edit preferences
 en.all.Settings:Settings
 de.all.Settings:Einstellungen
-fr.all.Settings:Settings
+fr.all.Settings:Paramètres
 it.all.Settings:Preferenze
 nl.all.Settings:Settings
 en.all.SnapshotWindow:Snapshot window
 de.all.SnapshotWindow:Schnappschuß
-fr.all.SnapshotWindow:Snapshot window
+fr.all.SnapshotWindow:Capture instantanée de la fenêtre
 it.all.SnapshotWindow:Fissa finestra
 nl.all.SnapshotWindow:Snapshot window
 en.all.SettingsSave:Save settings
 de.all.SettingsSave:Einstellungen speichern
-fr.all.SettingsSave:Save settings
+fr.all.SettingsSave:Enregistrer les paramètres
 it.all.SettingsSave:Salva
 nl.all.SettingsSave:Save settings
 
@@ -853,7 +863,7 @@ it.ami.ARexx:ARexx
 nl.ami.ARexx:ARexx
 en.ami.ARexxExecute:Execute script...
 de.ami.ARexxExecute:Script ausführen...
-fr.ami.ARexxExecute:Execute script...
+fr.ami.ARexxExecute:Executer script...
 it.ami.ARexxExecute:Esegui script...
 nl.ami.ARexxExecute:Execute script...
 
@@ -861,52 +871,52 @@ nl.ami.ARexxExecute:Execute script...
 #
 en.all.Link:Link
 de.all.Link:Link
-fr.all.Link:Link
+fr.all.Link:Lien
 it.all.Link:Link
 nl.all.Link:Link
 en.all.LinkNewTab:Open in new tab
 de.all.LinkNewTab:Öffnen in Tab
-fr.all.LinkNewTab:Open in new tab
+fr.all.LinkNewTab:Ouvrir dans un nouvel onglet
 it.all.LinkNewTab:Apri in una nuova scheda
 nl.all.LinkNewTab:Open in new tab
 en.all.LinkNewWin:Open in new window
 de.all.LinkNewWin:Öffnen in Fenster
-fr.all.LinkNewWin:Open in new window
+fr.all.LinkNewWin:Ouvrir dans une nouvelle fenêtre
 it.all.LinkNewWin:Apri in una nuova finestra
 nl.all.LinkNewWin:Open in new window
 en.all.CopyURL:Copy URL to clipboard
 de.all.CopyURL:URL ins Clipboard
-fr.all.CopyURL:Copy URL to clipboard
+fr.all.CopyURL:Copy URL dans le presse papier
 it.all.CopyURL:Copia URL nella clipboard
 nl.all.CopyURL:Copy URL to clipboard
 en.all.CopyClip:Copy to clipboard
 de.all.CopyClip:Inhalt ins Clipboard
-fr.all.CopyClip:Copy to clipboard
+fr.all.CopyClip:Copier vers le presse-papiers
 it.all.CopyClip:Copia nella clipboard
 nl.all.CopyClip:Copy to clipboard
 en.all.SaveAs:Save as...
 de.all.SaveAs:Speichern als...
-fr.all.SaveAs:Save as...
+fr.all.SaveAs:Enregistrer sous...
 it.all.SaveAs:Salva come...
 nl.all.SaveAs:Save as...
 en.ami.SaveIFF:Save as IFF...
 de.ami.SaveIFF:Speichern als IFF...
-fr.ami.SaveIFF:Save as IFF...
+fr.ami.SaveIFF:Enregistrer sous IFF...
 it.ami.SaveIFF:Salva come IFF...
 nl.ami.SaveIFF:Save as IFF...
 en.all.SaveComplete:Save complete...
 de.all.SaveComplete:Speichern abgeschlossen...
-fr.all.SaveComplete:Save complete...
+fr.all.SaveComplete:Enregistrement terminé...
 it.all.SaveComplete:Salva Tutto...
 nl.all.SaveComplete:Save complete...
 en.all.Close:Close
 de.all.Close:Schließen
-fr.all.Close:Close
+fr.all.Close:Fermer
 it.all.Close:Chiudi
 nl.all.Close:Close
 en.all.ObjShow:Show object
 de.all.ObjShow:Zeige Objekt
-fr.all.ObjShow:Show object
+fr.all.ObjShow:Afficher l'objet
 it.all.ObjShow:Mostra
 nl.all.ObjShow:Show object
 en.all.Frame:Frame
@@ -916,28 +926,28 @@ it.all.Frame:Frame
 nl.all.Frame:Frame
 en.all.FrameNewWin:Show in new window
 de.all.FrameNewWin:In neuem Fenster anzeigen
-fr.all.FrameNewWin:Show in new window
+fr.all.FrameNewWin:Afficher dans une nouvelle fenêtre
 it.all.FrameNewWin:Apri frame in nuova finestra
 nl.all.FrameNewWin:Show in new window
 en.all.FrameNewTab:Show in new tab
 de.all.FrameNewTab:In neuem Tab anzeigen
-fr.all.FrameNewTab:Show in new tab
+fr.all.FrameNewTab:Afficher dans un nouvel onglet
 it.all.FrameNewTab:Apri frame in nuova scheda
 nl.all.FrameNewTab:Show in new tab
 en.all.FrameOnly:Show only this frame
 de.all.FrameOnly:Nur diesen Frame anzeigen
-fr.all.FrameOnly:Show only this frame
+fr.all.FrameOnly:N'afficher que ce cadre
 it.all.FrameOnly:Apri frame in questa finestra
 nl.all.FrameOnly:Show only this frame
 
 en.all.SelectFile:Select file...
 de.all.SelectFile:Datei auswählen...
-fr.all.SelectFile:Select file...
+fr.all.SelectFile:Sélectionnez le fichier...
 it.all.SelectFile:Seleziona file...
 nl.all.SelectFile:Select file...
 en.all.ExternalApp:Open in external application
 de.all.ExternalApp:In externer Anwendung öffnen
-fr.all.ExternalApp:Open in external application
+fr.all.ExternalApp:Ouvrir dans une application externe
 it.all.ExternalApp:Apri con applicazione esterna
 nl.all.ExternalApp:Open in external application
 
@@ -952,72 +962,72 @@ nl.all.ExternalApp:Open in external application
 #
 en.all.TreeAdded:Added: %s
 de.all.TreeAdded:eingetragen am: %s
-fr.all.TreeAdded:Ajoutée: %s
+fr.all.TreeAdded:Ajoutée : %s
 it.all.TreeAdded:Aggiunto: %s
 nl.all.TreeAdded:Toegevoegd: %s
 en.all.TreeLast:Last visited: %s
 de.all.TreeLast:letzter Besuch: %s
-fr.all.TreeLast:Dernière visitée: %s
+fr.all.TreeLast:Dernière visitée : %s
 it.all.TreeLast:Ultima visita: %s
 nl.all.TreeLast:Laatst bezocht: %s
 en.all.TreeVisited:Visited: %s
 de.all.TreeVisited:gesehen am: %s
-fr.all.TreeVisited:Visitées: %s
+fr.all.TreeVisited:Visitées : %s
 it.all.TreeVisited:Visitato: %s
 nl.all.TreeVisited:Bezocht: %s
 en.all.TreeVisits:Visits: %i
 de.all.TreeVisits:Besuche gesamt: %i
-fr.all.TreeVisits:Visites: %i
+fr.all.TreeVisits:Visites : %i
 it.all.TreeVisits:Visite totali: %i
 nl.all.TreeVisits:Bezichtigd: %i keer
 en.all.TreeUnknown:Unknown
 de.all.TreeUnknown:Unbekannt
-fr.all.TreeUnknown:Inconnu
+fr.all.TreeUnknown:Inconnue
 it.all.TreeUnknown:Sconosciuta/o
 nl.all.TreeUnknown:Onbekend
 en.all.TreeValue:Value: %s
 de.all.TreeValue:Eintrag: %s
-fr.all.TreeValue:Valeur: %s
+fr.all.TreeValue:Valeur : %s
 it.all.TreeValue:Valore: %s
 nl.all.TreeValue:Waarde: %s
 en.all.TreeComment:Comment: %s
 de.all.TreeComment:Kommentar: %s
-fr.all.TreeComment:Commentaire: %s
+fr.all.TreeComment:Commentaire : %s
 it.all.TreeComment:Commento: %s
 nl.all.TreeComment:Commentaar: %s
 en.all.TreeDomain:Domain: %s%s
 de.all.TreeDomain:Domain: %s%s
-fr.all.TreeDomain:Domaine: %s%s
+fr.all.TreeDomain:Domaine : %s%s
 it.all.TreeDomain:Dominio: %s%s
 nl.all.TreeDomain:Domein: %s%s
 en.all.TreePath:Path: %s%s
 de.all.TreePath:Pfad: %s%s
-fr.all.TreePath:Chemin: %s%s
+fr.all.TreePath:Chemin : %s%s
 it.all.TreePath:Percorso: %s%s
 nl.all.TreePath:Pad: %s%s
 en.all.TreeExpires:Expires: %s
 de.all.TreeExpires:Verfällt: %s
-fr.all.TreeExpires:Expire: %s
+fr.all.TreeExpires:Expire : %s
 it.all.TreeExpires:Scadenza: %s
 nl.all.TreeExpires:Verloopt: %s
 en.all.TreeLastUsed:Last used: %s
 de.all.TreeLastUsed:Zuletzt genutzt: %s
-fr.all.TreeLastUsed:Dernière utilisation: %s
+fr.all.TreeLastUsed:Dernière utilisation : %s
 it.all.TreeLastUsed:Ultimo utilizzo: %s
 nl.all.TreeLastUsed:Laatst gebruikt: %s
 en.all.TreeSecure:Secure hosts only: %s
 de.all.TreeSecure:Nur sichere Hosts: %s
-fr.all.TreeSecure:Uniquement des sites sécurisés: %s
+fr.all.TreeSecure:Uniquement des sites sécurisés : %s
 it.all.TreeSecure:Solo host sicuri: %s
 nl.all.TreeSecure:Alleen secure sites: %s
 en.all.TreeVersion:Version: %s
 de.all.TreeVersion:Version: %s
-fr.all.TreeVersion:Version: %s
+fr.all.TreeVersion:Version : %s
 it.all.TreeVersion:Versione: %s
 nl.all.TreeVersion:Versie: %s
 en.all.TreePersistent:Persistent: %s
 de.all.TreePersistent:Persistent: %s
-fr.all.TreePersistent:Persistent: %s
+fr.all.TreePersistent:Persistant : %s
 it.all.TreePersistent:Persistenza: %s
 nl.all.TreePersistent:Persistent: %s
 en.all.TreeHeaders: (from headers)
@@ -1057,7 +1067,7 @@ it.all.TreeImport:URL importati
 nl.all.TreeImport:Ge-importeerde URL
 en.all.TreeNewLink:New address
 de.all.TreeNewLink:New address
-fr.all.TreeNewLink:New address
+fr.all.TreeNewLink:Nouvelle adresse
 it.all.TreeNewLink:Nuovo indirizzo
 nl.all.TreeNewLink:New address
 en.all.TreeNewFolder:New directory
@@ -1067,27 +1077,27 @@ it.all.TreeNewFolder:Nuova cartella
 nl.all.TreeNewFolder:Nieuwe map
 en.all.TreeLaunch:Visit URL
 de.all.TreeLaunch:URL ansehen
-fr.all.TreeLaunch:Visit URL
+fr.all.TreeLaunch:Visiter l'URL
 it.all.TreeLaunch:Visita URL
 nl.all.TreeLaunch:Visit URL
 en.all.TreeDelete:Delete
 de.all.TreeDelete:Löschen
-fr.all.TreeDelete:Delete
+fr.all.TreeDelete:Effacer
 it.all.TreeDelete:Elimina
 nl.all.TreeDelete:Delete
 en.all.TreeDefault:Set as default
 de.all.TreeDefault:Set as default
-fr.all.TreeDefault:Set as default
+fr.all.TreeDefault:Définir par défaut
 it.all.TreeDefault:Imposta come predefinito
 nl.all.TreeDefault:Set as default
 en.all.TreeClear:Clear default
 de.all.TreeClear:Clear default
-fr.all.TreeClear:Clear default
+fr.all.TreeClear:Effacer défaut
 it.all.TreeClear:Annulla predefinito
 nl.all.TreeClear:Clear default
 en.ami.TreeEdit:Edit title
 de.ami.TreeEdit:Edit title
-fr.ami.TreeEdit:Edit title
+fr.ami.TreeEdit:Modifier le titre
 it.ami.TreeEdit:Modifica titolo
 nl.ami.TreeEdit:Edit title
 
@@ -1095,7 +1105,7 @@ nl.ami.TreeEdit:Edit title
 #
 en.all.TreeviewLabelTitle:Title
 de.all.TreeviewLabelTitle:Title
-fr.all.TreeviewLabelTitle:Title
+fr.all.TreeviewLabelTitle:Titre
 it.all.TreeviewLabelTitle:Titolo
 nl.all.TreeviewLabelTitle:Title
 en.all.TreeviewLabelURL:URL
@@ -1105,48 +1115,48 @@ it.all.TreeviewLabelURL:URL
 nl.all.TreeviewLabelURL:URL
 en.all.TreeviewLabelLastVisit:Last visit
 de.all.TreeviewLabelLastVisit:Last visit
-fr.all.TreeviewLabelLastVisit:Last visit
+fr.all.TreeviewLabelLastVisit:Dernière visite
 it.all.TreeviewLabelLastVisit:Ultima visita
 nl.all.TreeviewLabelLastVisit:Last visit
 en.all.TreeviewLabelVisits:Visits
 de.all.TreeviewLabelVisits:Visits
-fr.all.TreeviewLabelVisits:Visits
+fr.all.TreeviewLabelVisits:Visites
 it.all.TreeviewLabelVisits:Visite
 nl.all.TreeviewLabelVisits:Visits
 en.all.TreeviewLabelPeriod:Period
 de.all.TreeviewLabelPeriod:Period
-fr.all.TreeviewLabelPeriod:Period
+fr.all.TreeviewLabelPeriod:Période
 it.all.TreeviewLabelPeriod:Periodo
 nl.all.TreeviewLabelPeriod:Period
 
 en.all.TreeviewLabelName:Name
 de.all.TreeviewLabelName:Name
-fr.all.TreeviewLabelName:Name
+fr.all.TreeviewLabelName:Nom
 it.all.TreeviewLabelName:Nome
 nl.all.TreeviewLabelName:Name
 en.all.TreeviewLabelContent:Content
 de.all.TreeviewLabelContent:Content
-fr.all.TreeviewLabelContent:Content
+fr.all.TreeviewLabelContent:Contenu
 it.all.TreeviewLabelContent:Contenuto
 nl.all.TreeviewLabelContent:Content
 en.all.TreeviewLabelDomain:Domain
 de.all.TreeviewLabelDomain:Domain
-fr.all.TreeviewLabelDomain:Domain
+fr.all.TreeviewLabelDomain:Domaine
 it.all.TreeviewLabelDomain:Dominio
 nl.all.TreeviewLabelDomain:Domain
 en.all.TreeviewLabelPath:Path
 de.all.TreeviewLabelPath:Path
-fr.all.TreeviewLabelPath:Path
+fr.all.TreeviewLabelPath:Chemin
 it.all.TreeviewLabelPath:Percorso
 nl.all.TreeviewLabelPath:Path
 en.all.TreeviewLabelExpires:Expires
 de.all.TreeviewLabelExpires:Expires
-fr.all.TreeviewLabelExpires:Expires
+fr.all.TreeviewLabelExpires:Expire
 it.all.TreeviewLabelExpires:Scadenza
 nl.all.TreeviewLabelExpires:Expires
 en.all.TreeviewLabelLastUsed:Last used
 de.all.TreeviewLabelLastUsed:Last used
-fr.all.TreeviewLabelLastUsed:Last used
+fr.all.TreeviewLabelLastUsed:Les dernières utilisées
 it.all.TreeviewLabelLastUsed:Ultimo utilizzo
 nl.all.TreeviewLabelLastUsed:Last used
 en.all.TreeviewLabelRestrictions:Restrictions
@@ -1161,18 +1171,18 @@ it.all.TreeviewLabelVersion:Versione
 nl.all.TreeviewLabelVersion:Version
 en.all.TreeviewLabelPersistent:Persistent
 de.all.TreeviewLabelPersistent:Persistent
-fr.all.TreeviewLabelPersistent:Persistent
+fr.all.TreeviewLabelPersistent:Persistant
 it.all.TreeviewLabelPersistent:Persistenza
 nl.all.TreeviewLabelPersistent:Persistent
 en.all.TreeviewLabelDomainFolder:Domain folder
 de.all.TreeviewLabelDomainFolder:Domain folder
-fr.all.TreeviewLabelDomainFolder:Domain folder
+fr.all.TreeviewLabelDomainFolder:Dossier de domaine
 it.all.TreeviewLabelDomainFolder:Cartella dominio
 nl.all.TreeviewLabelDomainFolder:Domain folder
 
 en.all.TreeviewLabelSerial:Serial
 de.all.TreeviewLabelSerial:Serial
-fr.all.TreeviewLabelSerial:Serial
+fr.all.TreeviewLabelSerial:Série
 it.all.TreeviewLabelSerial:Seriale
 nl.all.TreeviewLabelSerial:Serial
 en.all.TreeviewLabelType:Type
@@ -1182,23 +1192,23 @@ it.all.TreeviewLabelType:Tipo
 nl.all.TreeviewLabelType:Type
 en.all.TreeviewLabelValidUntil:Valid until
 de.all.TreeviewLabelValidUntil:Valid until
-fr.all.TreeviewLabelValidUntil:Valid until
+fr.all.TreeviewLabelValidUntil:Valable jusqu'au
 it.all.TreeviewLabelValidUntil:Valido fino a
 nl.all.TreeviewLabelValidUntil:Valid until
 en.all.TreeviewLabelValidFrom:Valid from
 de.all.TreeviewLabelValidFrom:Valid from
-fr.all.TreeviewLabelValidFrom:Valid from
+fr.all.TreeviewLabelValidFrom:Valable à partir du
 it.all.TreeviewLabelValidFrom:Valido da
 nl.all.TreeviewLabelValidFrom:Valid from
 en.all.TreeviewLabelIssuer:Issuer
 de.all.TreeviewLabelIssuer:Issuer
-fr.all.TreeviewLabelIssuer:Issuer
+fr.all.TreeviewLabelIssuer:Émetteur
 it.all.TreeviewLabelIssuer:Emittente
 nl.all.TreeviewLabelIssuer:Issuer
 
 en.all.TreeviewLabelFolder:Folder
 de.all.TreeviewLabelFolder:Folder
-fr.all.TreeviewLabelFolder:Folder
+fr.all.TreeviewLabelFolder:Dossier
 it.all.TreeviewLabelFolder:Cartella
 nl.all.TreeviewLabelFolder:Folder
 
@@ -1207,17 +1217,17 @@ nl.all.TreeviewLabelFolder:Folder
 #
 en.all.CookieManagerHTTPS:Secure hosts via https only
 de.all.CookieManagerHTTPS:Secure hosts via https only
-fr.all.CookieManagerHTTPS:Secure hosts via https only
+fr.all.CookieManagerHTTPS:Hôtes sécurisés via https uniquement
 it.all.CookieManagerHTTPS:Solo host sicuri via https
 nl.all.CookieManagerHTTPS:Secure hosts via https only
 en.all.CookieManagerSecure:Secure hosts only
 de.all.CookieManagerSecure:Secure hosts only
-fr.all.CookieManagerSecure:Secure hosts only
+fr.all.CookieManagerSecure:Hôtes sécurisés uniquement
 it.all.CookieManagerSecure:Solo host sicuri
 nl.all.CookieManagerSecure:Secure hosts only
 en.all.CookieManagerHTTP:HTTP connections only
 de.all.CookieManagerHTTP:HTTP connections only
-fr.all.CookieManagerHTTP:HTTP connections only
+fr.all.CookieManagerHTTP:Connexions HTTP uniquement
 it.all.CookieManagerHTTP:Solo connessioni HTTP
 nl.all.CookieManagerHTTP:HTTP connections only
 
@@ -1226,7 +1236,7 @@ nl.all.CookieManagerHTTP:HTTP connections only
 #
 en.all.HotlistDefaultFolderName:Unsorted entries
 de.all.HotlistDefaultFolderName:Unsorted entries
-fr.all.HotlistDefaultFolderName:Unsorted entries
+fr.all.HotlistDefaultFolderName:Entrées non triées
 it.all.HotlistDefaultFolderName:Voci non ordinate
 nl.all.HotlistDefaultFolderName:Unsorted entries
 
@@ -1235,7 +1245,7 @@ nl.all.HotlistDefaultFolderName:Unsorted entries
 #
 en.all.NewFolderName:New folder
 de.all.NewFolderName:New folder
-fr.all.NewFolderName:New folder
+fr.all.NewFolderName:Nouveau dossier
 it.all.NewFolderName:Nuova cartella
 nl.all.NewFolderName:New folder
 
@@ -1244,7 +1254,7 @@ nl.all.NewFolderName:New folder
 #
 en.all.NoTitle:<No title>
 de.all.NoTitle:<No title>
-fr.all.NoTitle:<No title>
+fr.all.NoTitle:<Sans titre>
 it.all.NoTitle:<Nessun titolo>
 nl.all.NoTitle:<No title>
 
@@ -1280,7 +1290,7 @@ it.all.NewFolder:Crea nuova cartella
 nl.all.NewFolder:Nieuwe map aanmaken
 en.all.EditTitle:Edit title
 de.all.EditTitle:Edit title
-fr.all.EditTitle:Edit title
+fr.all.EditTitle:Éditer le titre
 it.all.EditTitle:Modifica titolo
 nl.all.EditTitle:Edit title
 en.all.EditLink:Edit address
@@ -1290,7 +1300,7 @@ it.all.EditLink:Modifica indirizzo
 nl.all.EditLink:Bewerk adres
 en.all.EditFolder:Rename directory
 de.all.EditFolder:Verzeichnis umbenennen
-fr.all.EditFolder:Éditer le dossier
+fr.all.EditFolder:Renommer le dossier
 it.all.EditFolder:Rinomina cartella
 nl.all.EditFolder:Map hernoemen
 
@@ -1308,12 +1318,12 @@ it.all.HotlistDocumentation:Documentazione
 nl.all.HotlistDocumentation:Documentatie
 en.all.HotlistContact:Contact the NetSurf developers
 de.all.HotlistContact:Contact the NetSurf developers
-fr.all.HotlistContact:Contact the NetSurf developers
+fr.all.HotlistContact:Contacter les développeurs de NetSurf
 it.all.HotlistContact:Contatta gli sviluppatori di NetSurf
 nl.all.HotlistContact:Contact the NetSurf developers
 en.all.HotlistDownloads:Download the latest version
 de.all.HotlistDownloads:Download the latest version
-fr.all.HotlistDownloads:Download the latest version
+fr.all.HotlistDownloads:Télécharger la dernière version
 it.all.HotlistDownloads:Scarica l'ultima versione
 nl.all.HotlistDownloads:Download the latest version
 
@@ -1340,12 +1350,12 @@ nl.ami.HotlistToolbar:Hotlist toolbar
 
 en.all.GlobalHistory:Global history
 de.all.GlobalHistory:History (global)
-fr.all.GlobalHistory:Historique globale
+fr.all.GlobalHistory:Historique global
 it.all.GlobalHistory:Cronologia globale
 nl.all.GlobalHistory:Historie (globaal)
 en.all.DomainAll:(All domains)
 de.all.DomainAll:(All domains)
-fr.all.DomainAll:(All domains)
+fr.all.DomainAll:(Tous les domaines)
 it.all.DomainAll:(Tutti i domini)
 nl.all.DomainAll:(All domains)
 en.all.DateToday:Today
@@ -1360,32 +1370,32 @@ it.all.DateYesterday:Ieri
 nl.all.DateYesterday:gisteren
 en.all.Date2Days:Two days ago
 de.all.Date2Days:2 days ago
-fr.all.Date2Days:2 days ago
+fr.all.Date2Days:Il y a deux jours
 it.all.Date2Days:2 giorni fa
 nl.all.Date2Days:2 days ago
 en.all.Date3Days:Three days ago
 de.all.Date3Days:3 days ago
-fr.all.Date3Days:3 days ago
+fr.all.Date3Days:Il y a trois jours
 it.all.Date3Days:3 giorni fa
 nl.all.Date3Days:3 days ago
 en.all.Date4Days:Four days ago
 de.all.Date4Days:4 days ago
-fr.all.Date4Days:4 days ago
+fr.all.Date4Days:Il y a quatre jours
 it.all.Date4Days:4 giorni fa
 nl.all.Date4Days:4 days ago
 en.all.Date5Days:Five days ago
 de.all.Date5Days:5 days ago
-fr.all.Date5Days:5 days ago
+fr.all.Date5Days:Il y a cinq jours
 it.all.Date5Days:5 giorni fa
 nl.all.Date5Days:5 days ago
 en.all.Date6Days:Six days ago
 de.all.Date6Days:6 days ago
-fr.all.Date6Days:6 days ago
+fr.all.Date6Days:Il y a six jours
 it.all.Date6Days:6 giorni fa
 nl.all.Date6Days:6 days ago
 en.all.Date1Week:A week ago
 de.all.Date1Week:A week ago
-fr.all.Date1Week:A week ago
+fr.all.Date1Week:Il y a une semaine
 it.all.Date1Week:1 settimana fa
 nl.all.Date1Week:A week ago
 en.all.Date2Week:Two weeks ago
@@ -1400,37 +1410,37 @@ it.all.Date3Week:3 settimane fa
 nl.all.Date3Week:3 weken geleden
 en.all.Sunday:Sunday
 de.all.Sunday:Sonntag
-fr.all.Sunday:Sunday
+fr.all.Sunday:Dimanche
 it.all.Sunday:Domenica
 nl.all.Sunday:Sunday
 en.all.Monday:Monday
 de.all.Monday:Montag
-fr.all.Monday:Monday
+fr.all.Monday:Lundi
 it.all.Monday:Lunedi
 nl.all.Monday:Monday
 en.all.Tuesday:Tuesday
 de.all.Tuesday:Dienstag
-fr.all.Tuesday:Tuesday
+fr.all.Tuesday:Mardi
 it.all.Tuesday:Martedi
 nl.all.Tuesday:Tuesday
 en.all.Wednesday:Wednesday
 de.all.Wednesday:Mittwoch
-fr.all.Wednesday:Wednesday
+fr.all.Wednesday:Mercredi
 it.all.Wednesday:Mercoledi
 nl.all.Wednesday:Wednesday
 en.all.Thursday:Thursday
 de.all.Thursday:Donnerstag
-fr.all.Thursday:Thursday
+fr.all.Thursday:Jeudi
 it.all.Thursday:Giovedi
 nl.all.Thursday:Thursday
 en.all.Friday:Friday
 de.all.Friday:Freitag
-fr.all.Friday:Friday
+fr.all.Friday:Vendredi
 it.all.Friday:Venerdi
 nl.all.Friday:Friday
 en.all.Saturday:Saturday
 de.all.Saturday:Samstag
-fr.all.Saturday:Saturday
+fr.all.Saturday:Samedi
 it.all.Saturday:Sabato
 nl.all.Saturday:Saturday
 
@@ -1463,7 +1473,7 @@ it.all.Unwritten:Scrittura dei dati sul file fallita.
 nl.all.Unwritten:Data naar bestand schrijven ging fout.
 en.all.Abort:Abort
 de.all.Abort:Abgebrochen
-fr.all.Abort:Abort
+fr.all.Abort:Interrompre
 it.all.Abort:Annulla
 nl.all.Abort:Abort
 
@@ -1519,12 +1529,12 @@ it.gtk.gtkProgressBar:%. di %% su %u file
 nl.gtk.gtkProgressBar:%.0f%% of %u files
 en.gtk.gtkProgressBarPulse:Downloading %u files
 de.gtk.gtkProgressBarPulse:Lade %u Dateien herunter
-fr.gtk.gtkProgressBarPulse:Tèlèchargement %u fichiers
+fr.gtk.gtkProgressBarPulse:Tèlèchargement des fichiers %u
 it.gtk.gtkProgressBarPulse:Scaricamento dei file %u
 nl.gtk.gtkProgressBarPulse:Downloading %u files
 en.gtk.gtkProgressBarPulseSingle:Downloading %u file
 de.gtk.gtkProgressBarPulseSingle:Lade %u Datei
-fr.gtk.gtkProgressBarPulseSingle:Téléchargement %u fichier
+fr.gtk.gtkProgressBarPulseSingle:Téléchargement du fichier %u
 it.gtk.gtkProgressBarPulseSingle:Scaricamento del file %u
 nl.gtk.gtkProgressBarPulseSingle:Downloading %u file
 
@@ -1547,7 +1557,7 @@ it.gtk.gtkSpeed:Velocità
 nl.gtk.gtkSpeed:Speed
 en.gtk.gtkRemaining:Remaining
 de.gtk.gtkRemaining:Übrig
-fr.gtk.gtkRemaining:Reste
+fr.gtk.gtkRemaining:Temps restant
 it.gtk.gtkRemaining:Al termine
 nl.gtk.gtkRemaining:Remaining
 
@@ -1580,12 +1590,12 @@ nl.gtk.gtkWorking: Working
 #
 en.gtk.gtkQuit:Quit NetSurf?
 de.gtk.gtkQuit:NetSurf beenden?
-fr.gtk.gtkQuit:Quitter NetSurf?
+fr.gtk.gtkQuit:Quitter NetSurf ?
 it.gtk.gtkQuit:Sei sicuro di voler uscire da NetSurf?
 nl.gtk.gtkQuit:Quit NetSurf?
 en.gtk.gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
 de.gtk.gtkDownloadsRunning:Es sind noch Downloads aktiv, beim Beenden werden sie abgebrochen und die Dateien gelöscht.
-fr.gtk.gtkDownloadsRunning:Il ya encore des téléchargements en cours, si vous quittez maintenant ceux-ci seront annulés et les fichiers supprimés.
+fr.gtk.gtkDownloadsRunning:Il y a encore des téléchargements en cours, si vous quittez maintenant ceux-ci seront annulés et les fichiers supprimés.
 it.gtk.gtkDownloadsRunning:Sono presenti alcuni file in download in attesa di essere completati, chiudendo questa sessione tutti i file incompleti verranno cancellati.
 nl.gtk.gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
 en.gtk.gtkStartDownload:Download file?
@@ -1600,7 +1610,7 @@ it.gtk.gtkOverwrite:Il file "%s" è già esistente.  Si desidera sovrascriverlo?
 nl.gtk.gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
 en.gtk.gtkOverwriteTitle:File exists
 de.gtk.gtkOverwriteTitle:File exists
-fr.gtk.gtkOverwriteTitle:File exists
+fr.gtk.gtkOverwriteTitle:Le fichier existe
 it.gtk.gtkOverwriteTitle:File già esistente
 nl.gtk.gtkOverwriteTitle:File exists
 en.gtk.gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
@@ -1610,17 +1620,17 @@ it.gtk.gtkOverwriteInfo:Il file è già esistente in "%s".  Sostituirlo comporte
 nl.gtk.gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
 en.gtk.gtkFailed:Download failed
 de.gtk.gtkFailed:Download fehlgeschlagen
-fr.gtk.gtkFailed:Echec du téléchargement
+fr.gtk.gtkFailed:Échec du téléchargement
 it.gtk.gtkFailed:Scaricamento fallito
 nl.gtk.gtkFailed:Download failed
 en.gtk.gtkFileError:File error: %s
 de.gtk.gtkFileError:Dateifehler: %s
-fr.gtk.gtkFileError:Erreur de fichier: %s
+fr.gtk.gtkFileError:Erreur de fichier : %s
 it.gtk.gtkFileError:Errore file: %s
 nl.gtk.gtkFileError:File error: %s
 en.gtk.gtkInfo:%s from %s is %s in size
 de.gtk.gtkInfo:%s von %s ist %s in size
-fr.gtk.gtkInfo:La taille de %s de %s est de %s
+fr.gtk.gtkInfo:%s de %s est de taille %s
 it.gtk.gtkInfo:%s da %s è %s come dimensione
 nl.gtk.gtkInfo:%s from %s is %s in size
 en.gtk.gtkSave:Save file as…
@@ -1640,22 +1650,22 @@ it.gtk.gtkSourceTabError:Errore di modifica sul sorgente
 nl.gtk.gtkSourceTabError:Error handling source data 
 en.gtk.gtkplainSave:Save plain text
 de.gtk.gtkplainSave:Als Text speichern
-fr.gtk.gtkplainSave:Enregistrer comme texte
+fr.gtk.gtkplainSave:Enregistrer sans mise en forme
 it.gtk.gtkplainSave:Salva come testo
 nl.gtk.gtkplainSave:Save as text
 en.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 de.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
-fr.gtk.gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide 
+fr.gtk.gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide
 it.gtk.gtkcompleteSave:Salva l'intera pagina web - seleziona una directory vuota
 nl.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 en.gtk.gtkSaveConfirm:File saved
 de.gtk.gtkSaveConfirm:File saved
-fr.gtk.gtkSaveConfirm:File saved
+fr.gtk.gtkSaveConfirm:Fichier enregistré
 it.gtk.gtkSaveConfirm:File salvato
 nl.gtk.gtkSaveConfirm:File saved
 en.gtk.gtkSaveCancelled:File not saved
 de.gtk.gtkSaveCancelled:File not saved
-fr.gtk.gtkSaveCancelled:File not saved
+fr.gtk.gtkSaveCancelled:Fichier pas enregistré
 it.gtk.gtkSaveCancelled:File non salvato
 nl.gtk.gtkSaveCancelled:File not saved
 en.gtk.gtkUnknownHost:an unknown host
@@ -1670,7 +1680,7 @@ it.gtk.gtkUnknownFile:
 nl.gtk.gtkUnknownFile:
 en.gtk.gtkUnknownSize:unknown
 de.gtk.gtkUnknownSize:unbekannt
-fr.gtk.gtkUnknownSize:inconnu
+fr.gtk.gtkUnknownSize:inconnue
 it.gtk.gtkUnknownSize:sconosciuto
 nl.gtk.gtkUnknownSize:unknown
 
@@ -1679,32 +1689,32 @@ nl.gtk.gtkUnknownSize:unknown
 
 en.gtk.gtkFile:_File
 de.gtk.gtkFile:_Datei
-fr.gtk.gtkFile:_File
+fr.gtk.gtkFile:_Fichier
 it.gtk.gtkFile:_File
 nl.gtk.gtkFile:_File
 en.gtk.gtkEdit:_Edit
 de.gtk.gtkEdit:_Bearbeiten
-fr.gtk.gtkEdit:_Edit
+fr.gtk.gtkEdit:Édit_er
 it.gtk.gtkEdit:Mo_difica
 nl.gtk.gtkEdit:_Edit
 en.gtk.gtkView:_View
 de.gtk.gtkView:_Ansicht
-fr.gtk.gtkView:_View
+fr.gtk.gtkView:_Affichage
 it.gtk.gtkView:_Mostra
 nl.gtk.gtkView:_View
 en.gtk.gtkNavigate:_Navigate
-de.gtk.gtkNavigate:_Navigation
-fr.gtk.gtkNavigate:_Navigate
+de.gtk.gtkNavigate:_Navigieren
+fr.gtk.gtkNavigate:_Navigation
 it.gtk.gtkNavigate:_Visualizza
 nl.gtk.gtkNavigate:_Navigate
 en.gtk.gtkTools:_Tools
 de.gtk.gtkTools:_Tools
-fr.gtk.gtkTools:_Tools
+fr.gtk.gtkTools:Ou_tils
 it.gtk.gtkTools:_Tools
 nl.gtk.gtkTools:_Tools
 en.gtk.gtkHelp:_Help
 de.gtk.gtkHelp:_Hilfe
-fr.gtk.gtkHelp:_Help
+fr.gtk.gtkHelp:_Aide
 it.gtk.gtkHelp:_Aiuto
 nl.gtk.gtkHelp:_Help
 
@@ -1745,12 +1755,12 @@ it.gtk.gtkCloseWindow:_Chiudi finestra
 nl.gtk.gtkCloseWindow:_Close Window
 en.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 de.gtk.gtkCloseWindowAccel:<ctrl><shift>w
-fr.gtk.gtkCloseWindowAccel:<ctrl><shift>w
+fr.gtk.gtkCloseWindowAccel:<ctrl><maj>w
 it.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 nl.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 en.gtk.gtkSavePage:Save Page…
 de.gtk.gtkSavePage:Seite speichern..
-fr.gtk.gtkSavePage:Enregistrer la Page..
+fr.gtk.gtkSavePage:Enregistrer la Page...
 it.gtk.gtkSavePage:Salva pagina...
 nl.gtk.gtkSavePage:Save Page..
 en.gtk.gtkSavePageAccel:<ctrl>s
@@ -1765,37 +1775,37 @@ it.gtk.gtkExport:Esporta
 nl.gtk.gtkExport:Export
 en.gtk.gtkPlainText:Plain Text…
 de.gtk.gtkPlainText:Reiner Text..
-fr.gtk.gtkPlainText:Texte..
+fr.gtk.gtkPlainText:Texte...
 it.gtk.gtkPlainText:Testo normale...
 nl.gtk.gtkPlainText:Plain Text..
 en.gtk.gtkDrawFile:Drawfile…
 de.gtk.gtkDrawFile:Drawfile..
-fr.gtk.gtkDrawFile:Dessin..
+fr.gtk.gtkDrawFile:Fichier dessin...
 it.gtk.gtkDrawFile:File Draw...
 nl.gtk.gtkDrawFile:Drawfile..
 en.gtk.gtkPostScript:PostScript…
 de.gtk.gtkPostScript:PostScript..
-fr.gtk.gtkPostScript:PostScript..
+fr.gtk.gtkPostScript:PostScript...
 it.gtk.gtkPostScript:PostScript...
 nl.gtk.gtkPostScript:PostScript..
 en.gtk.gtkPDF:PDF…
 de.gtk.gtkPDF:PDF..
-fr.gtk.gtkPDF:PDF..
+fr.gtk.gtkPDF:PDF...
 it.gtk.gtkPDF:PDF...
 nl.gtk.gtkPDF:PDF..
 en.gtk.gtkPrintPreview:Print Preview…
 de.gtk.gtkPrintPreview:Druckvorschau...
-fr.gtk.gtkPrintPreview:Aperçu avant impression..
+fr.gtk.gtkPrintPreview:Aperçu avant impression...
 it.gtk.gtkPrintPreview:Anteprima di stampa...
 nl.gtk.gtkPrintPreview:Print Preview..
 en.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 de.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
-fr.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
+fr.gtk.gtkPrintPreviewAccel:<ctrl><maj>p
 it.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 nl.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 en.gtk.gtkPrint:Print…
 de.gtk.gtkPrint:Drucken...
-fr.gtk.gtkPrint:Imprimer..
+fr.gtk.gtkPrint:Imprimer...
 it.gtk.gtkPrint:Stampa...
 nl.gtk.gtkPrint:Print..
 en.gtk.gtkPrintAccel:<ctrl>p
@@ -1836,7 +1846,7 @@ it.gtk.gtkCopyAccel:<ctrl>c
 nl.gtk.gtkCopyAccel:<ctrl>c
 en.gtk.gtkPaste:_Paste
 de.gtk.gtkPaste:Einfügen
-fr.gtk.gtkPaste:_Coller
+fr.gtk.gtkPaste:C_oller
 it.gtk.gtkPaste:_Incolla
 nl.gtk.gtkPaste:_Paste
 en.gtk.gtkPasteAccel:<ctrl>v
@@ -1861,7 +1871,7 @@ it.gtk.gtkSelectAllAccel:<ctrl>a
 nl.gtk.gtkSelectAllAccel:<ctrl>a
 en.gtk.gtkFind:_Find…
 de.gtk.gtkFind:_Finden..
-fr.gtk.gtkFind:_Rechercher..
+fr.gtk.gtkFind:_Rechercher...
 it.gtk.gtkFind:_Trova...
 nl.gtk.gtkFind:_Find..
 en.gtk.gtkFindAccel:<ctrl>f
@@ -1877,17 +1887,17 @@ nl.gtk.gtkPreferences:P_references
 
 en.gtk.gtkStop:_Stop
 de.gtk.gtkStop:_Stop
-fr.gtk.gtkStop:_Stop
+fr.gtk.gtkStop:_Arrêter
 it.gtk.gtkStop:_Stoppa
 nl.gtk.gtkStop:_Stop
 en.gtk.gtkStopAccel:Escape
 de.gtk.gtkStopAccel:Escape
-fr.gtk.gtkStopAccel:Escape
+fr.gtk.gtkStopAccel:Échap
 it.gtk.gtkStopAccel:Escape
 nl.gtk.gtkStopAccel:Escape
 en.gtk.gtkReload:_Reload
 de.gtk.gtkReload:Neu laden
-fr.gtk.gtkReload:_Recharger
+fr.gtk.gtkReload:_Actualiser
 it.gtk.gtkReload:_Ricarica
 nl.gtk.gtkReload:_Reload
 en.gtk.gtkReloadAccel:F5
@@ -1902,22 +1912,22 @@ it.gtk.gtkScaleView:_Scala
 nl.gtk.gtkScaleView:_Scale View
 en.gtk.gtkZoomPlus:Zoom _in
 de.gtk.gtkZoomPlus:Here_inzoomen
-fr.gtk.gtkZoomPlus:Zoom _+
+fr.gtk.gtkZoomPlus:Zoom _avant
 it.gtk.gtkZoomPlus:_Incrementa zoom
 nl.gtk.gtkZoomPlus:Zoom _in
 en.gtk.gtkZoomPlusAccel:<ctrl>plus
 de.gtk.gtkZoomPlusAccel:<ctrl>plus
-fr.gtk.gtkZoomPlusAccel:<ctrl>plus
+fr.gtk.gtkZoomPlusAccel:<ctrl>+
 it.gtk.gtkZoomPlusAccel:<ctrl>più
 nl.gtk.gtkZoomPlusAccel:<ctrl>plus
 en.gtk.gtkZoomMinus:Zoom _out
 de.gtk.gtkZoomMinus:Herausz_oomen
-fr.gtk.gtkZoomMinus:Zoom _-
+fr.gtk.gtkZoomMinus:Z_oom arrière
 it.gtk.gtkZoomMinus:_Diminuisci zoom
 nl.gtk.gtkZoomMinus:Zoom _out
 en.gtk.gtkZoomMinusAccel:<ctrl>minus
 de.gtk.gtkZoomMinusAccel:<ctrl>minus
-fr.gtk.gtkZoomMinusAccel:<ctrl>minus
+fr.gtk.gtkZoomMinusAccel:<ctrl>-
 it.gtk.gtkZoomMinusAccel:<ctrl>meno
 nl.gtk.gtkZoomMinusAccel:<ctrl>minus
 en.gtk.gtkZoomNormal:_Normal size
@@ -1942,7 +1952,7 @@ it.gtk.gtkFullScreenAccel:F11
 nl.gtk.gtkFullScreenAccel:F11
 en.gtk.gtkPageSource:Page S_ource
 de.gtk.gtkPageSource: Q_uelltext Anzeigen
-fr.gtk.gtkPageSource:Voir la S_ource
+fr.gtk.gtkPageSource:Code s_ource de la page
 it.gtk.gtkPageSource:Mostra s_orgente
 nl.gtk.gtkPageSource:Page S_ource
 en.gtk.gtkPageSourceAccel:<ctrl>U
@@ -1967,17 +1977,17 @@ it.gtk.gtkBackgroundImages:In _sottofondo
 nl.gtk.gtkBackgroundImages:_Background Images
 en.gtk.gtkToolbars:_Toolbars
 de.gtk.gtkToolbars:_Werkzeugleisten
-fr.gtk.gtkToolbars:_Barre d'outils
+fr.gtk.gtkToolbars:Barre d'ou_tils
 it.gtk.gtkToolbars:_Barre strumenti
 nl.gtk.gtkToolbars:_Toolbars
 en.gtk.gtkTabs:_Tabs
 de.gtk.gtkTabs:_Tabs
-fr.gtk.gtkTabs:_Tabs
+fr.gtk.gtkTabs:Ongle_ts
 it.gtk.gtkTabs:_Schede
 nl.gtk.gtkTabs:_Tabs
 en.gtk.gtkMenuBar:_Menu Bar
 de.gtk.gtkMenuBar:_Menüleiste
-fr.gtk.gtkMenuBar:_Barre de menu
+fr.gtk.gtkMenuBar:Barre de _menu
 it.gtk.gtkMenuBar:Barra _menu
 nl.gtk.gtkMenuBar:_Menu Bar
 en.gtk.gtkToolBar:_Button Bar
@@ -1987,7 +1997,7 @@ it.gtk.gtkToolBar:Barra p_ulsanti
 nl.gtk.gtkToolBar:_Button Bar
 en.gtk.gtkStatusBar:_Status Bar
 de.gtk.gtkStatusBar:_Statusleiste
-fr.gtk.gtkStatusBar:_Bar de statut
+fr.gtk.gtkStatusBar:Ba_rre d'état
 it.gtk.gtkStatusBar:Barra di s_tato
 nl.gtk.gtkStatusBar:_Status Bar
 en.gtk.gtkDownloads:_Downloads...
@@ -2007,22 +2017,22 @@ it.gtk.gtkSaveWindowSize:S_alva dimensione finestra
 nl.gtk.gtkSaveWindowSize:S_ave Window Size
 en.gtk.gtkDeveloper:De_veloper
 de.gtk.gtkDeveloper:De_veloper
-fr.gtk.gtkDeveloper:D_ébogage
+fr.gtk.gtkDeveloper:Dé_veloppeur
 it.gtk.gtkDeveloper:De_veloper
 nl.gtk.gtkDeveloper:De_veloper
 en.gtk.gtkToggleDebugging:T_oggle debug rendering
 de.gtk.gtkToggleDebugging:T_oggle debug rendering
-fr.gtk.gtkToggleDebugging:Activer le débogage
+fr.gtk.gtkToggleDebugging:Basculer déb_ogage de rendu
 it.gtk.gtkToggleDebugging:In_verti debug del rendering
 nl.gtk.gtkToggleDebugging:T_oggle debug rendering
 en.gtk.gtkDebugBoxTree:Debug _box tree
 de.gtk.gtkDebugBoxTree:Debug _box tree
-fr.gtk.gtkDebugBoxTree:Debug _box tree
+fr.gtk.gtkDebugBoxTree:Déboguer arbre _box
 it.gtk.gtkDebugBoxTree:Debug _box tree
 nl.gtk.gtkDebugBoxTree:Debug _box tree
 en.gtk.gtkDebugDomTree:Debug _DOM tree
 de.gtk.gtkDebugDomTree:Debug _DOM tree
-fr.gtk.gtkDebugDomTree:Debug _DOM tree
+fr.gtk.gtkDebugDomTree:Déboguer arbre _DOM
 it.gtk.gtkDebugDomTree:Debug albero _DOM
 nl.gtk.gtkDebugDomTree:Debug _DOM tree
 
@@ -2033,7 +2043,7 @@ it.gtk.gtkBack:_Indietro
 nl.gtk.gtkBack:_Back
 en.gtk.gtkBackAccel:<alt>Left
 de.gtk.gtkBackAccel:<alt>Left
-fr.gtk.gtkBackAccel:<alt>Left
+fr.gtk.gtkBackAccel:<alt>Gauche
 it.gtk.gtkBackAccel:<alt>Sinistra
 nl.gtk.gtkBackAccel:<alt>Left
 en.gtk.gtkForward:_Forward
@@ -2043,7 +2053,7 @@ it.gtk.gtkForward:_Avanti
 nl.gtk.gtkForward:_Forward
 en.gtk.gtkForwardAccel:<alt>Right
 de.gtk.gtkForwardAccel:<alt>Right
-fr.gtk.gtkForwardAccel:<alt>Right
+fr.gtk.gtkForwardAccel:<alt>Droit
 it.gtk.gtkForwardAccel:<alt>Destra
 nl.gtk.gtkForwardAccel:<alt>Right
 en.gtk.gtkHome:_Home
@@ -2053,12 +2063,12 @@ it.gtk.gtkHome:_Home
 nl.gtk.gtkHome:_Home
 en.gtk.gtkHomeAccel:<alt>Down
 de.gtk.gtkHomeAccel:<alt>Down
-fr.gtk.gtkHomeAccel:<alt>Down
+fr.gtk.gtkHomeAccel:<alt>Bas
 it.gtk.gtkHomeAccel:<alt>Giù
 nl.gtk.gtkHomeAccel:<alt>Down
 en.gtk.gtkLocalHistory:_Local History…
 de.gtk.gtkLocalHistory:_Lokaler Verlauf
-fr.gtk.gtkLocalHistory:_Historique local
+fr.gtk.gtkLocalHistory:Historique _local
 it.gtk.gtkLocalHistory:Cronologia _locale
 nl.gtk.gtkLocalHistory:_Local History
 en.gtk.gtkLocalHistoryAccel:<ctrl>h
@@ -2068,12 +2078,12 @@ it.gtk.gtkLocalHistoryAccel:<ctrl>h
 nl.gtk.gtkLocalHistoryAccel:<ctrl>h
 en.gtk.gtkGlobalHistory:_Global History…
 de.gtk.gtkGlobalHistory:_Globaler Verlauf
-fr.gtk.gtkGlobalHistory:_Historique global
+fr.gtk.gtkGlobalHistory:Historique _global
 it.gtk.gtkGlobalHistory:Cronologia _globale
 nl.gtk.gtkGlobalHistory:_Global History
 en.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 de.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
-fr.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
+fr.gtk.gtkGlobalHistoryAccel:<ctrl><maj>h
 it.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 nl.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 en.gtk.gtkAddBookMarks:_Add to Bookmarks…
@@ -2083,7 +2093,7 @@ it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
 nl.gtk.gtkAddBookMarks:_Add to Bookmarks..
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
-fr.gtk.gtkShowBookMarks:_Montrer les marques-pages..
+fr.gtk.gtkShowBookMarks:_Montrer les marques-pages...
 it.gtk.gtkShowBookMarks:_Mostra segnalibri...
 nl.gtk.gtkShowBookMarks:_Show Bookmarks..
 en.gtk.gtkShowBookMarksAccel:F6
@@ -2093,7 +2103,7 @@ it.gtk.gtkShowBookMarksAccel:F6
 nl.gtk.gtkShowBookMarksAccel:F6
 en.gtk.gtkShowCookies:Show _Cookies…
 de.gtk.gtkShowCookies:Show _Cookies..
-fr.gtk.gtkShowCookies:Show _Cookies…
+fr.gtk.gtkShowCookies:Afficher _cookies...
 it.gtk.gtkShowCookies:Mostra _cookie...
 nl.gtk.gtkShowCookies:Show _Cookies…
 en.gtk.gtkShowCookiesAccel:F9
@@ -2114,22 +2124,22 @@ nl.gtk.gtkOpenLocationAccel:<ctrl>l
 
 en.gtk.gtkNextTab:_Next tab
 de.gtk.gtkNextTab:_Nächster Tab
-fr.gtk.gtkNextTab:_Onglet précédent
+fr.gtk.gtkNextTab:O_nglet suivant
 it.gtk.gtkNextTab:Scheda _successiva
 nl.gtk.gtkNextTab:_Next tab
 en.gtk.gtkNextTabAccel:<ctrl>Right
 de.gtk.gtkNextTabAccel:<ctrl>Right
-fr.gtk.gtkNextTabAccel:<ctrl>Right
+fr.gtk.gtkNextTabAccel:<ctrl>Droit
 it.gtk.gtkNextTabAccel:<ctrl>Destra
 nl.gtk.gtkNextTabAccel:<ctrl>Right
 en.gtk.gtkPrevTab:_Previous tab
 de.gtk.gtkPrevTab:_Vorheriger tab
-fr.gtk.gtkPrevTab:_Onglet suvant
+fr.gtk.gtkPrevTab:Onglet _précédent
 it.gtk.gtkPrevTab:Scheda _precedente
 nl.gtk.gtkPrevTab:_Previous tab
 en.gtk.gtkPrevTabAccel:<ctrl>Left
 de.gtk.gtkPrevTabAccel:<ctrl>Left
-fr.gtk.gtkPrevTabAccel:<ctrl>Left
+fr.gtk.gtkPrevTabAccel:<ctrl>Gauche
 it.gtk.gtkPrevTabAccel:<ctrl>Sinistra
 nl.gtk.gtkPrevTabAccel:<ctrl>Left
 en.gtk.gtkCloseTab:_Close tab
@@ -2150,12 +2160,12 @@ it.gtk.gtkContents:_Contenuti
 nl.gtk.gtkContents:_Contents
 en.gtk.gtkGuide:User _guide…
 de.gtk.gtkGuide:H_andbuch
-fr.gtk.gtkGuide:Guide _Utilisateur
+fr.gtk.gtkGuide:_Guide utilisateur
 it.gtk.gtkGuide:_Guida in linea
 nl.gtk.gtkGuide:User _guide
 en.gtk.gtkUserInformation:User _information…
 de.gtk.gtkUserInformation:Benutzer_information
-fr.gtk.gtkUserInformation:_Information Utilisateur
+fr.gtk.gtkUserInformation:_Information utilisateur
 it.gtk.gtkUserInformation:Informazioni _utente
 nl.gtk.gtkUserInformation:User _information
 en.gtk.gtkAbout:_About…
@@ -2167,7 +2177,7 @@ nl.gtk.gtkAbout:_About
 
 en.gtk.gtkCustomize:Customise…
 de.gtk.gtkCustomize:Customise..
-fr.gtk.gtkCustomize:Customise…
+fr.gtk.gtkCustomize:Personnaliser...
 it.gtk.gtkCustomize:Personalizza...
 nl.gtk.gtkCustomize:Customise…
 en.gtk.gtkOpentab:Open Link in New _Tab
@@ -2182,17 +2192,17 @@ it.gtk.gtkOpenwin:Apri in una nuova _finestra
 nl.gtk.gtkOpenwin:Open Link in New _Window
 en.gtk.gtkSavelink:Save Lin_k
 de.gtk.gtkSavelink:Lin_k speichern..
-fr.gtk.gtkSavelink:Save Lin_k
+fr.gtk.gtkSavelink:Enregistrer li_en
 it.gtk.gtkSavelink:Salva Lin_k
 nl.gtk.gtkSavelink:Save Lin_k
 en.gtk.gtkBookmarklink:Bookmark _Link
 de.gtk.gtkBookmarklink:Bookmark _Link
-fr.gtk.gtkBookmarklink:Bookmark _Link
+fr.gtk.gtkBookmarklink:Marquer _Lien
 it.gtk.gtkBookmarklink:Bookmark _Link
 nl.gtk.gtkBookmarklink:Bookmark _Link
 en.gtk.gtkCopylink:Copy link loc_ation
 de.gtk.gtkCopylink:Copy link loc_ation
-fr.gtk.gtkCopylink:Copy link loc_ation
+fr.gtk.gtkCopylink:_Copier le lien
 it.gtk.gtkCopylink:Copy link loc_ation
 nl.gtk.gtkCopylink:Copy link loc_ation
 
@@ -2232,141 +2242,263 @@ nl.gtk.gtkThemeAdd:Theme added successfully
 # GTK preferences dialog
 
 en.gtk.preferencesTitle:Netsurf Preferences
+fr.gtk.preferencesTitle:Préférences de Netsurf
 
 # Main tab
 en.gtk.preferencesMainTabtitle:Main
+fr.gtk.preferencesMainTabtitle:Accueil/Principal
 en.gtk.preferencesStartup:<b>Startup</b>
+fr.gtk.preferencesStartup:<b>Démarrage</b>
 en.gtk.preferencesStartupPage:Page:
+fr.gtk.preferencesStartupPage:Page:
 en.gtk.preferencesStartupPageTooltip:The default startup page
+fr.gtk.preferencesStartupPageTooltip:La page de démarrage par défaut
 en.gtk.preferencesStartupPageDefault:Use Default Page
+fr.gtk.preferencesStartupPageDefault:Utiliser la page par défaut
 en.gtk.preferencesStartupPageCurrent:Use Current Page
+fr.gtk.preferencesStartupPageCurrent:Utiliser la page en cours
 en.gtk.preferencesSearch:<b>Search</b>
+fr.gtk.preferencesSearch:<b>Recherche</b>
 en.gtk.preferencesSearchURLBar:Search from URL bar
+fr.gtk.preferencesSearchURLBar:Recherche depuis la barre d'URL
 en.gtk.preferencesSearchProvider:Provider:
+fr.gtk.preferencesSearchProvider:Fournisseur :
 en.gtk.preferencesSearchProviderTooltip:The default web search provider
+fr.gtk.preferencesSearchProviderTooltip:Le fournisseur de recherche sur le web par défaut
 en.gtk.preferencesDownloads:<b>Downloads</b>
+fr.gtk.preferencesDownloads:<b>Téléchargements</b>
 en.gtk.preferencesDownloadsRemove:Remove download from list when complete
+fr.gtk.preferencesDownloadsRemove:Retirer le téléchargement de la liste une fois terminé
 en.gtk.preferencesDownloadsConfirm:Confirm before overwriting files
+fr.gtk.preferencesDownloadsConfirm:Confirmer avant d'écraser des fichiers
 en.gtk.preferencesDownloadsLocation:Location:
+fr.gtk.preferencesDownloadsLocation:Emplacement :
 en.gtk.preferencesDownloadsLocationTooltip:The default location downloaded files are put
+fr.gtk.preferencesDownloadsLocationTooltip:L'emplacement par défaut des fichiers téléchargés sont mis
 
 # Appearance tab
 en.gtk.preferencesAppearanceTabtitle:Appearance
+fr.gtk.preferencesAppearanceTabtitle:Apparence
 en.gtk.preferencesThemes:<b>Themes</b>
+fr.gtk.preferencesThemes:<b>Thèmes</b>
 en.gtk.preferencesThemesAdd:Add Theme...
+fr.gtk.preferencesThemesAdd:Ajouter thème...
 en.gtk.preferencesTabs:<b>Tabs</b>
+fr.gtk.preferencesTabs:<b>Onglets</b>
 en.gtk.preferencesTabsAlways:Always show tab bar
+fr.gtk.preferencesTabsAlways:Toujours afficher la barre d'onglet
 en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
+fr.gtk.preferencesTabsSwitch:Passer à l'onglet nouvellement ouvert immédiatement
 en.gtk.preferencesTabsNewly:Newly opened tabs are blank
+fr.gtk.preferencesTabsNewly:Onglet récemment ouvert est vièrge
 en.gtk.preferencesTabsPosition:Position:
+fr.gtk.preferencesTabsPosition:Position :
 en.gtk.preferencesTools:<b>Tools</b>
+fr.gtk.preferencesTools:<b>Outils</b>
 en.gtk.preferencesDeveloperView:Open developer views in a
+fr.gtk.preferencesDeveloperView:Vues de développement s'ouvrent dans
 en.gtk.preferencesDeveloperViewWindow:Window
+fr.gtk.preferencesDeveloperViewWindow:un fenêtre
 en.gtk.preferencesDeveloperViewTab:Tab
+fr.gtk.preferencesDeveloperViewTab:un onglet
 en.gtk.preferencesDeveloperViewEditor:Editor
+fr.gtk.preferencesDeveloperViewEditor:Éditeur
 en.gtk.preferencesURLbar:<b>URLbar</b>
+fr.gtk.preferencesURLbar:<b>Barre URL</b>
 en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
+fr.gtk.preferencesURLbarDisplay:Afficher les URL visités récemment lorsque vous tapez
 en.gtk.preferencesToolbar:<b>Toolbar</b>
+fr.gtk.preferencesToolbar:<b>Barre d'outils</b>
 en.gtk.preferencesToolbarButtons:Buttons:
+fr.gtk.preferencesToolbarButtons:Boutons :
 # Theme list
 en.gtk.preferencesThemeTypeDefault:Default
+fr.gtk.preferencesThemeTypeDefault:Défaut
 # Tab position list
 en.gtk.preferencesTabLocTop:Top
+fr.gtk.preferencesTabLocTop:Haut
 en.gtk.preferencesTabLocLeft:Left
+fr.gtk.preferencesTabLocLeft:Gauche
 en.gtk.preferencesTabLocBottom:Bottom
+fr.gtk.preferencesTabLocBottom:Bas
 en.gtk.preferencesTabLocRight:Right
+fr.gtk.preferencesTabLocRight:Droite
 # button list
 en.gtk.preferencesButtonTypeSmall:Small Icons
+fr.gtk.preferencesButtonTypeSmall:Petites icônes
 en.gtk.preferencesButtonTypeLarge:Large Icons
+fr.gtk.preferencesButtonTypeLarge:Grandes icônes
 en.gtk.preferencesButtonTypeLargeText:Large Icons and Text
+fr.gtk.preferencesButtonTypeLargeText:Grandes icônes et texte
 en.gtk.preferencesButtonTypeText:Text only
+fr.gtk.preferencesButtonTypeText:Texte uniquement
 
 # content tab
 en.gtk.preferencesContentTabtitle:Content
+fr.gtk.preferencesContentTabtitle:Contenu
 en.gtk.preferencesControl:<b>Control</b>
+fr.gtk.preferencesControl:<b>Contrôle</b>
 en.gtk.preferencesControlPrevent:Prevent pop-up windows
+fr.gtk.preferencesControlPrevent:Empêcher fenêtres pop-up
 en.gtk.preferencesControlHide:Hide Adverts
+fr.gtk.preferencesControlHide:Cacher les publicités
 en.gtk.preferencesControlEnable:Enable JavaScript
+fr.gtk.preferencesControlEnable:Activer JavaScript
 en.gtk.preferencesControlDisable:Disable plug-ins
+fr.gtk.preferencesControlDisable:Désactiver modules externes
 en.gtk.preferencesControlHigh:High quality image scaling
+fr.gtk.preferencesControlHigh:Haute qualité d'image redimensionnée
 en.gtk.preferencesControlLoad:Load and display
+fr.gtk.preferencesControlLoad:Charger et visualiser
 en.gtk.preferencesAnimation:<b>Animation</b>
+fr.gtk.preferencesAnimation:<b>Animation</b>
 en.gtk.preferencesAnimationEnable:Enable
+fr.gtk.preferencesAnimationEnable:Activer
 en.gtk.preferencesAnimationMinimum:Minimum time between frames:
+fr.gtk.preferencesAnimationMinimum:Temps minimal entre cadres/frames/images/photo :
 en.gtk.preferencesAnimationMinimumTooltip:Do not update animations any more often than this.
+fr.gtk.preferencesAnimationMinimumTooltip:Ne pas mettre à jour les animations plus souvent que cela.
 en.gtk.preferencesFonts:<b>Fonts</b>
+fr.gtk.preferencesFonts:<b>Fontes/Polices</b>
 en.gtk.preferencesFontsDefault:Default
+fr.gtk.preferencesFontsDefault:Défaut
 en.gtk.preferencesFontsSize:Size
+fr.gtk.preferencesFontsSize:Taille
 en.gtk.preferencesFontsSizeTooltip:The base-line font size to use.
+fr.gtk.preferencesFontsSizeTooltip:La taille de la fonte/police de base à utiliser.
 en.gtk.preferencesFontsPreview:_Preview
+fr.gtk.preferencesFontsPreview:A_perçu
 en.gtk.preferencesLanguage:<b>Language</b>
+fr.gtk.preferencesLanguage:<b>Langue</b>
 en.gtk.preferencesLanguagePreferred:Preferred language:
+fr.gtk.preferencesLanguagePreferred:Langue préférée :
 en.gtk.preferencesLanguagePreferredTooltip:The preferred language for web pages
+fr.gtk.preferencesLanguagePreferredTooltip:La langue préférée pour les pages Web
 # Image loading list
 en.gtk.preferencesImageLoadBoth:foreground and background images
+fr.gtk.preferencesImageLoadBoth:Images d'avant-plan et d'arrière-plan
 en.gtk.preferencesImageLoadFore:foreground images
+fr.gtk.preferencesImageLoadFore:Images d'avant-plan
 en.gtk.preferencesImageLoadBack:background images
+fr.gtk.preferencesImageLoadBack:Images d'arrière-plan
 en.gtk.preferencesImageLoadNone:no images
+fr.gtk.preferencesImageLoadNone:pas d'images
 # font type list
 en.gtk.preferencesFonttypeSans:Sans-serif
+fr.gtk.preferencesFonttypeSans:Sans-serif
 en.gtk.preferencesFonttypeSerif:Serif
+fr.gtk.preferencesFonttypeSerif:Serif
 en.gtk.preferencesFonttypeMonospace:Monospace
+fr.gtk.preferencesFonttypeMonospace:Monospace
 en.gtk.preferencesFonttypeCursive:Cursive
+fr.gtk.preferencesFonttypeCursive:Cursive
 en.gtk.preferencesFonttypeFantasy:Fantasy
+fr.gtk.preferencesFonttypeFantasy:Fantasy
 
 en.gtk.preferencesPrivacyTabtitle:Privacy
+fr.gtk.preferencesPrivacyTabtitle:Confidentialité
 en.gtk.preferencesGeneral:<b>General</b>
+fr.gtk.preferencesGeneral:<b>Général</b>
 en.gtk.preferencesGeneralReferral:Enable referral submission
+fr.gtk.preferencesGeneralReferral:Permettre l'envoi du referer en entête
 en.gtk.preferencesGeneralDNT:Enable sending "Do Not Track" request
+fr.gtk.preferencesGeneralDNT:Activer l'envoi d'une requête "Ne pas suivre à la trace"
 en.gtk.preferencesHistory:<b>History</b>
+fr.gtk.preferencesHistory:<b>Historque</b>
 en.gtk.preferencesHistoryShow:Local history shows URL in tooltip
+fr.gtk.preferencesHistoryShow:Historique local dans une infobulle
 en.gtk.preferencesHistoryRemember:Remember browsing history for up to
+fr.gtk.preferencesHistoryRemember:Conserver l'historique de navigation pendant
 en.gtk.preferencesHistoryDays:days
+fr.gtk.preferencesHistoryDays:jours
 en.gtk.preferencesCache:<b>Cache</b>
+fr.gtk.preferencesCache:<b>Cache</b>
 en.gtk.preferencesCacheMemory:Memory cache size
+fr.gtk.preferencesCacheMemory:Taille du cache mémoire
 en.gtk.preferencesCacheDisc:Disc cache size
+fr.gtk.preferencesCacheDisc:Taille du cache disque
 en.gtk.preferencesCacheExpire:Expire cache entries after
+fr.gtk.preferencesCacheExpire:Les entrées du cache expirent après un délai de
 en.gtk.preferencesCacheMaintenance:Maintenance
+fr.gtk.preferencesCacheMaintenance:Maintenance
 en.gtk.preferencesCacheDays:days
+fr.gtk.preferencesCacheDays:jours
 
 en.gtk.preferencesNetworkTabtitle:Network
+fr.gtk.preferencesNetworkTabtitle:Réseau
 en.gtk.preferencesProxy:<b>HTTP Proxy</b>
+fr.gtk.preferencesProxy:<b>Proxy HTTP</b>
 en.gtk.preferencesProxyType:Proxy type
+fr.gtk.preferencesProxyType:Type de Proxy
 en.gtk.preferencesProxyHost:Host
+fr.gtk.preferencesProxyHost:Hôte
 en.gtk.preferencesProxyUsername:Username
+fr.gtk.preferencesProxyUsername:Nom d'utilisateur
 en.gtk.preferencesProxyPassword:Password
+fr.gtk.preferencesProxyPassword:Mot de passe
 en.gtk.preferencesProxyNoproxy:No Proxy For
+fr.gtk.preferencesProxyNoproxy:Pas de proxy pour
 en.gtk.preferencesProxyTypeTooltip:The type of HTTP proxy server.
+fr.gtk.preferencesProxyTypeTooltip:Le type de serveur proxy HTTP.
 en.gtk.preferencesProxyHostTooltip:Host name of your proxy server.
+fr.gtk.preferencesProxyHostTooltip:Nom d'hôte du serveur proxy.
 en.gtk.preferencesProxyPortTooltip:Port number to connect to on proxy server.
+fr.gtk.preferencesProxyPortTooltip:Le numéro de port pour se connecter au serveur proxy.
 en.gtk.preferencesProxyUsernameTooltip:Username to access the proxy.
-en.gtk.preferencesProxyPasswordTooltip:Password to access the proxy.
+fr.gtk.preferencesProxyUsernameTooltip:Nom d'utilisateur pour accéder au proxy.
 en.gtk.preferencesProxyNoproxyTooltip:Comma separated list of host names that should not be proxied.
+fr.gtk.preferencesProxyNoproxyTooltip:Liste des noms d'hôtes séparés par des virgules qui ne devraient pas être traitées par le proxy.
+
 en.gtk.preferencesFetching:<b>Fetching</b>
+fr.gtk.preferencesFetching:<b>Connexions</b>
 en.gtk.preferencesFetchingMax:Maximum fetchers
+fr.gtk.preferencesFetchingMax:Nombre maximum de connexions
 en.gtk.preferencesFetchingPerhost:Fetches per host
+fr.gtk.preferencesFetchingPerhost:Nombre de connexions par hôte
 en.gtk.preferencesFetchingCached:Cached connections
+fr.gtk.preferencesFetchingCached:Connexions en cache
 en.gtk.preferencesFetchingMaxTooltip:Maximum number of concurrent items to fetch at once.
+fr.gtk.preferencesFetchingMaxTooltip:Nombre maximum d'éléments simultanés à récupérer
 en.gtk.preferencesFetchingPerhostTooltip:Maximum number of item fetches per web server.
+fr.gtk.preferencesFetchingPerhostTooltip:Nombre maximum d'élément à extrair pour chaque serveur Web.
 en.gtk.preferencesFetchingCachedTooltip:Number of connections to keep in case they are needed again.
+fr.gtk.preferencesFetchingCachedTooltip:Nombre de connexions à maintenir dans le cas où elles seront nécessaires à nouveau.
+
 # Proxy type list
 en.gtk.preferencesProxyTypeDirect:Direct connection
+fr.gtk.preferencesProxyTypeDirect:Connexion directe
 en.gtk.preferencesProxyTypeManual:Manual with no authentication
+fr.gtk.preferencesProxyTypeManual:Manuel sans authentification
 en.gtk.preferencesProxyTypeBasic:Manual with basic authentication
+fr.gtk.preferencesProxyTypeBasic:Manuel avec authentification basique
 en.gtk.preferencesProxyTypeNLTM:Manual with NTLM authentication
+fr.gtk.preferencesProxyTypeNLTM:Manuel avec l'authentification NTLM
 en.gtk.preferencesProxyTypeSystem:System settings
+fr.gtk.preferencesProxyTypeSystem:Paramètres du système
 
 en.gtk.preferencesPDFTabtitle:PDF
+fr.gtk.preferencesPDFTabtitle:PDF
 en.gtk.preferencesAppearance:<b>Appearance</b>
+fr.gtk.preferencesAppearance:<b>Apparence</b>
+
 en.gtk.preferencesAppearanceImages:No images in output
+fr.gtk.preferencesAppearanceImages:Aucune image de rendu/restituée
 en.gtk.preferencesAppearanceBackground:No background images in output
+fr.gtk.preferencesAppearanceBackground:Aucune image d'arrière-plan de rendu/restituée
 en.gtk.preferencesAppearanceScalefit:Scale output to fit page
+fr.gtk.preferencesAppearanceScalefit:Adapter à la page
 en.gtk.preferencesAppearanceScale:Scale output
+fr.gtk.preferencesAppearanceScale:Adapter
 en.gtk.preferencesMargins:<b>Margins</b>
+fr.gtk.preferencesMargins:<b>Marges</b>
 en.gtk.preferencesMarginsMeasurements:measurements in mm
+fr.gtk.preferencesMarginsMeasurements:Mesures en mm
 en.gtk.preferencesGeneration:<b>Generation</b>
+fr.gtk.preferencesGeneration:<b>Generation</b>
 en.gtk.preferencesGenerationCompressed:Output is compressed
+fr.gtk.preferencesGenerationCompressed:La restitution est compressée
 en.gtk.preferencesGenerationPassword:Output has a password
+fr.gtk.preferencesGenerationPassword:La restitution possède un mot de passe
 
 
 
@@ -2389,7 +2521,7 @@ it.all.PrintSheetsFilled:I fogli stampati sono pieni
 nl.all.PrintSheetsFilled:pagina's
 en.all.Printer:Printer
 de.all.Printer:Drucker
-fr.all.Printer:Printer
+fr.all.Printer:Imprimante
 it.all.Printer:Stampante
 nl.all.Printer:Printer
 en.all.Copies:Copies
@@ -2399,7 +2531,7 @@ it.all.Copies:Copie
 nl.all.Copies:Copies
 en.all.Printing:Printing page
 de.all.Printing:Drucke Seite
-fr.all.Printing:Printing page
+fr.all.Printing:Page impression
 it.all.Printing:Stampa della pagina
 nl.all.Printing:Printing page
 
@@ -2417,22 +2549,22 @@ it.all.NotFound:Non trovato
 nl.all.NotFound:Niet gevonden
 en.all.Next:Next
 de.all.Next:Nächster
-fr.all.Next:Next
+fr.all.Next:Suivant
 it.all.Next:Successivo
 nl.all.Next:Next
 en.all.Prev:Previous
 de.all.Prev:Vorheriger
-fr.all.Prev:Previous
+fr.all.Prev:Précédent
 it.all.Prev:Precedente
 nl.all.Prev:Previous
 en.all.ShowAll:Show All
 de.all.ShowAll:Alle zeigen
-fr.all.ShowAll:Show All
+fr.all.ShowAll:Tout afficher
 it.all.ShowAll:Mostra Tutto
 nl.all.ShowAll:Show All
 en.all.CaseSens:Case Sensitive
 de.all.CaseSens:Groß-/Kleinschreibung
-fr.all.CaseSens:Case Sensitive
+fr.all.CaseSens:Sensible à la casse
 it.all.CaseSens:Maiuscole/Minuscole
 nl.all.CaseSens:Case Sensitive
 
@@ -2445,32 +2577,32 @@ nl.all.CaseSens:Case Sensitive
 #
 en.all.Host:Host
 de.all.Host:Host
-fr.all.Host:Host
+fr.all.Host:Hôte
 it.all.Host:Host
 nl.all.Host:Host
 en.all.Realm:Realm
 de.all.Realm:Realm
-fr.all.Realm:Realm
+fr.all.Realm:Domaine
 it.all.Realm:Tipo
 nl.all.Realm:Realm
 en.all.Username:Username
 de.all.Username:Benutzername
-fr.all.Username:Username
+fr.all.Username:Nom d'utilisateur
 it.all.Username:Nome Utente
 nl.all.Username:Username
 en.all.Password:Password
 de.all.Password:Passwort
-fr.all.Password:Password
+fr.all.Password:Mot de passe
 it.all.Password:Password
 nl.all.Password:Password
 en.all.Login:Login
 de.all.Login:Login
-fr.all.Login:Login
+fr.all.Login:Connexion
 it.all.Login:Login
 nl.all.Login:Login
 en.all.Cancel:Cancel
 de.all.Cancel:Abbruch
-fr.all.Cancel:Cancel
+fr.all.Cancel:Annuler
 it.all.Cancel:Annulla
 nl.all.Cancel:Cancel
 
@@ -2483,57 +2615,57 @@ nl.all.Cancel:Cancel
 #
 en.all.SSLCerts:SSL certificates
 de.all.SSLCerts:SSL Zertifikat
-fr.all.SSLCerts:SSL certificates
+fr.all.SSLCerts:Certificats SSL
 it.all.SSLCerts:Certificati SSL
 nl.all.SSLCerts:SSL certificates
 en.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 de.all.SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
-fr.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
+fr.all.SSLError:NetSurf a échoué dans la vérification de l'authenticité d'un certificat SSL. Vérifier les détails présentés ci-dessous.
 it.all.SSLError:NetSurf non è stato in grado di verificare l'autenticità di questo certificato SSL, per favore verifica i dettagli presenti di seguito
 nl.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
 en.all.SSL_Certificate_Subject:Subject: %s
 de.all.SSL_Certificate_Subject:Subject: %s
-fr.all.SSL_Certificate_Subject:Subject: %s
+fr.all.SSL_Certificate_Subject:Objet : %s
 it.all.SSL_Certificate_Subject:Soggetto: %s
 nl.all.SSL_Certificate_Subject:Subject: %s
 en.all.SSL_Certificate_Issuer:Issuer: %s
 de.all.SSL_Certificate_Issuer:Issuer: %s
-fr.all.SSL_Certificate_Issuer:Issuer: %s
+fr.all.SSL_Certificate_Issuer:Émetteur : %s
 it.all.SSL_Certificate_Issuer:Emittente: %s
 nl.all.SSL_Certificate_Issuer:Issuer: %s
 en.all.SSL_Certificate_Version:Version: %ld
 de.all.SSL_Certificate_Version:Version: %ld
-fr.all.SSL_Certificate_Version:Version: %ld
+fr.all.SSL_Certificate_Version:Version : %ld
 it.all.SSL_Certificate_Version:Versione: %ld
 nl.all.SSL_Certificate_Version:Version: %ld
 en.all.SSL_Certificate_ValidFrom:Valid from: %s
 de.all.SSL_Certificate_ValidFrom:Valid from: %s
-fr.all.SSL_Certificate_ValidFrom:Valid from: %s
+fr.all.SSL_Certificate_ValidFrom:Valide à compter du : %s
 it.all.SSL_Certificate_ValidFrom:Valido da: %s
 nl.all.SSL_Certificate_ValidFrom:Valid from: %s
 en.all.SSL_Certificate_ValidTo:Valid until: %s
 de.all.SSL_Certificate_ValidTo:Valid until: %s
-fr.all.SSL_Certificate_ValidTo:Valid until: %s
+fr.all.SSL_Certificate_ValidTo:Valable jusqu'au : %s
 it.all.SSL_Certificate_ValidTo:Valido fino a: %s
 nl.all.SSL_Certificate_ValidTo:Valid until: %s
 en.all.SSL_Certificate_Type:Type: %i
 de.all.SSL_Certificate_Type:Type: %i
-fr.all.SSL_Certificate_Type:Type: %i
+fr.all.SSL_Certificate_Type:Type : %i
 it.all.SSL_Certificate_Type:Tipo: %i
 nl.all.SSL_Certificate_Type:Type: %i
 en.all.SSL_Certificate_Serial:Serial: %ld
 de.all.SSL_Certificate_Serial:Serial: %ld
-fr.all.SSL_Certificate_Serial:Serial: %ld
+fr.all.SSL_Certificate_Serial:Série : %ld
 it.all.SSL_Certificate_Serial:Seriale: %ld
 nl.all.SSL_Certificate_Serial:Serial: %ld
 en.all.SSL_Certificate_Accept:Accept
 de.all.SSL_Certificate_Accept:Accept
-fr.all.SSL_Certificate_Accept:Accept
+fr.all.SSL_Certificate_Accept:Accepter
 it.all.SSL_Certificate_Accept:Accetta
 nl.all.SSL_Certificate_Accept:Accept
 en.all.SSL_Certificate_Reject:Reject
 de.all.SSL_Certificate_Reject:Reject
-fr.all.SSL_Certificate_Reject:Reject
+fr.all.SSL_Certificate_Reject:Rejeter
 it.all.SSL_Certificate_Reject:Rifiuta
 nl.all.SSL_Certificate_Reject:Reject
 
@@ -2567,11 +2699,17 @@ fr.all.Form_Many:(Plusieurs)
 it.all.Form_Many:(Molti)
 nl.all.Form_Many:(Veel)
 en.gtk.Form_Drop:Click to select file
+fr.gtk.Form_Drop:Cliquer pour sélectionner fichier
 en.ro.Form_Drop:Drop file here
+fr.ro.Form_Drop:Déposer fichier ici
 en.ami.Form_Drop:Click or drop file here
+fr.ami.Form_Drop:Cliquer ou déposer fichier ici
 en.beos.Form_Drop:Drop file here
+fr.beos.Form_Drop:Drop file here
 en.fb.Form_Drop:Click to select file
+fr.fb.Form_Drop:Cliquer pour sélectionner fichier
 en.osx.Form_Drop:Click to select file
+fr.osx.Form_Drop:Cliquer pour sélectionner fichier
 de.all.Form_Drop:Datei hier hinziehen
 fr.all.Form_Drop:Déposer les fichiers ici
 it.all.Form_Drop:Inserisci un file qui
@@ -2598,12 +2736,12 @@ it.all.FormSubmit:Invia il risultato del modulo a: %s
 nl.all.FormSubmit:Verstuur data naar %s
 en.all.FormBadSubmit:Warning: form can not be submitted
 de.all.FormBadSubmit:Achtung: Daten können nicht gesendet werden
-fr.all.FormBadSubmit:Alerte: le formulaire n'a pas pu être envoyé
+fr.all.FormBadSubmit:Alerte : le formulaire n'a pas pu être envoyé
 it.all.FormBadSubmit:Attenzione: Il modulo non può essere inviato
 nl.all.FormBadSubmit:Waarschuwing: data kan niet verzonden worden
 en.all.FormButton:Warning: button can not be activated
 de.all.FormButton:Achtung: Schaltknopf kann nicht aktiviert werden
-fr.all.FormButton:Warning: button can not be activated
+fr.all.FormButton:Warning: Bouton ne peut être activé
 it.all.FormButton:Attenzione: il pulsante non può essere attivato
 nl.all.FormButton:Warning: button can not be activated
 en.all.FormTextarea:Click to edit the text
@@ -2618,17 +2756,17 @@ it.all.FormTextbox:Clicca per editare il campo di testo
 nl.all.FormTextbox:Klikken om dit veld te bewerken
 en.all.FormReset:Reset form (not implemented)
 de.all.FormReset:Zurücksetzen (nicht implementiert)
-fr.all.FormReset:RAZ du formulaire (non implémenté)
+fr.all.FormReset:Effacer le formulaire (non implémenté)
 it.all.FormReset:Resetta il modulo
 nl.all.FormReset:Reset form (not implemented)
 en.all.FormFile:Drop a file here to upload it
 de.all.FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
-fr.all.FormFile:Déposer un fichier ici pour le télésauver
+fr.all.FormFile:Déposer un fichier ici pour le téléverser #Need review
 it.all.FormFile:Inserisci un file da inviare qui
 nl.all.FormFile:Plaats het bestand hier voor uploaden
 en.all.SelectMenu:Select
 de.all.SelectMenu:Auswahl
-fr.all.SelectMenu:Sélection
+fr.all.SelectMenu:Sélectionner
 it.all.SelectMenu:Seleziona
 nl.all.SelectMenu:Select
 
@@ -2699,7 +2837,7 @@ nl.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
 #
 en.all.Encoding0:from HTTP headers
 de.all.Encoding0:aus HTTP Kopfzeilen
-fr.all.Encoding0:dans les entêtes HTTP
+fr.all.Encoding0:dans les en-têtes HTTP
 it.all.Encoding0:da intestazioni HTTP
 nl.all.Encoding0:from HTTP headers
 en.all.Encoding1:detected
@@ -2722,27 +2860,27 @@ nl.all.EncodingUnk:Unknown
 #
 en.all.FileIndex:Index of %s
 de.all.FileIndex:Inhalt von %s
-fr.all.FileIndex:Index of %s
+fr.all.FileIndex:Index de %s
 it.all.FileIndex:Indice di %s
 nl.all.FileIndex:Index of %s
 en.all.FileParent:^ Up to parent directory
 de.all.FileParent:^ Eine Ebene höher
-fr.all.FileParent:^ Up to parent directory
+fr.all.FileParent:^ Répertoire parent
 it.all.FileParent:^ Livello superiore
 nl.all.FileParent:^ Up to parent directory
 en.all.FileDirectory:Directory
 de.all.FileDirectory:Verzeichnis
-fr.all.FileDirectory:Directory
+fr.all.FileDirectory:Répertoire
 it.all.FileDirectory:Directory
 nl.all.FileDirectory:Directory
 en.all.FileName:Name
 de.all.FileName:Name
-fr.all.FileName:Name
+fr.all.FileName:Nom
 it.all.FileName:Nome
 nl.all.FileName:Name
 en.all.FileSize:Size
 de.all.FileSize:Größe
-fr.all.FileSize:Size
+fr.all.FileSize:Taille
 it.all.FileSize:Dimensione
 nl.all.FileSize:Size
 en.all.FileDate:Date
@@ -2958,20 +3096,21 @@ it.ro.AWNotSeen:Per favore fornisci l'applicativo AWViewer e riprova nuovamente.
 nl.ro.AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
 en.all.EncNotRec:Encoding type not recognised.
 de.all.EncNotRec:Encodierung nicht erkannt.
-fr.all.EncNotRec:Encoding type not recognised.
+fr.all.EncNotRec:Type de codage non reconnu.
 it.all.EncNotRec:Tipo di codifica sconosciuta.
 nl.all.EncNotRec:Encoding type not recognised.
 en.all.FileOpenError:could not open file '%s'
 de.all.FileOpenError:Datei ist nicht zu öffnen: '%s'
-fr.all.FileOpenError:could not open file '%s'
+fr.all.FileOpenError:ne parvient pas à ouvrir le fichier '%s'
 it.all.FileOpenError:impossibile aprire il file '%s'
 nl.all.FileOpenError:could not open file '%s'
 en.all.DirectoryError:directory '%s' already exists
 de.all.DirectoryError:Verzeichnis '%s' existiert bereits.
-fr.all.DirectoryError:directory '%s' already exists
+fr.all.DirectoryError:répertoire '%s' existe déjà
 it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:directory '%s' already exists
 en.all.LowDiscWriteBandwidth:Disc cache write bandwidth is too low: the cache will be disabled. If this occurs frequently the cache should be disabled by setting the configured size to 0.
+fr.all.LowDiscWriteBandwidth:La bande passante en écriture de la mémoire cache est trop faible : le cache sera désactivé. Si cela se produit fréquemment le cache doit être désactivé en définissant la taille configurée à 0.
 
 # Error messages for Amiga version only
 en.ami.CompError:Unable to open
@@ -3019,7 +3158,7 @@ it.all.OverwriteFile:Un file con questo nome è già esistente, continuare compo
 nl.all.OverwriteFile:Een bestand met deze naam bestaat al en zal verloren gaan.
 en.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
 de.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
-fr.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
+fr.all.RemoveHotlist:Êtes-vous sûr de vouloir supprimer l'adresse de la liste critique?
 it.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
 nl.all.RemoveHotlist:Are you sure you wish to remove this address from the hotlist?
 
@@ -3059,12 +3198,12 @@ it.all.Redirecting:redirezione in corso...
 nl.all.Redirecting:doorverwijzen...
 en.all.Loading:Loading
 de.all.Loading:Loading
-fr.all.Loading:Loading
+fr.all.Loading:Chargement
 it.all.Loading:Caricamento della pagina...
 nl.all.Loading:Loading
 en.all.Fetching:Fetching data
 de.all.Fetching:Ladevorgänge
-fr.all.Fetching:Fetching
+fr.all.Fetching:Récupération des données
 it.all.Fetching:Ricezione
 nl.all.Fetching:Fetching
 en.all.Processing:Processing
@@ -3084,7 +3223,7 @@ it.all.Done:Completato
 nl.all.Done:klaar
 en.all.Stopped:Stopped
 de.all.Stopped:Stopped
-fr.all.Stopped:Stopped
+fr.all.Stopped:Arrêté
 it.all.Stopped:Interrotto
 nl.all.Stopped:Stopped
 
@@ -3126,7 +3265,9 @@ fr.all.ParsingFail:L'analyse syntaxique du document a échoué.
 it.all.ParsingFail:Analisi del documento fallita.
 nl.all.ParsingFail:fout bij ontleden van dit document.
 en.all.CSSGeneric:Error processing CSS
+fr.all.CSSGeneric:Erreur lors du traitement CSS
 en.all.CSSBase:Base stylesheet failed to load
+fr.all.CSSBase:Échec de chargement de la feuille de style de base
 en.all.BadGIF:Reading GIF failed.
 de.all.BadGIF:Lesen einer GIF Datei fehlgeschlagen.
 fr.all.BadGIF:Erreur de lecture de GIF.
@@ -3327,7 +3468,7 @@ it.all.HTTP417:Previsione fallita
 nl.all.HTTP417:Expectation failed
 en.all.HTTP500:Internal server error
 de.all.HTTP500:Internal server error
-fr.all.HTTP500:Erreur de serveur interne
+fr.all.HTTP500:Erreur interne du serveur
 it.all.HTTP500:Errore interno del server
 nl.all.HTTP500:Internal server error
 en.all.HTTP501:Not implemented
@@ -3347,12 +3488,12 @@ it.all.HTTP503:Servizio non disponibile
 nl.all.HTTP503:Service unavailable
 en.all.HTTP504:Gateway timeout
 de.all.HTTP504:Gateway timeout
-fr.all.HTTP504:Délai de passerelle trop long
+fr.all.HTTP504:Délai passerelle expiré
 it.all.HTTP504:TimeOut Gateway
 nl.all.HTTP504:Gateway timeout
 en.all.HTTP505:HTTP version not supported
 de.all.HTTP505:HTTP version not supported
-fr.all.HTTP505:version d'HTTP non supportée
+fr.all.HTTP505:version HTTP non supportée
 it.all.HTTP505:Versione HTTP non supportata
 nl.all.HTTP505:HTTP version not supported
 
@@ -3367,12 +3508,12 @@ nl.all.HTTP505:HTTP version not supported
 #
 en.all.ScrollUp:Click the arrow to scroll up
 de.all.ScrollUp:Pfeil anklicken zum Hochscrollen
-fr.all.ScrollUp:Cliquez sur la flèche pour faire défiler vers le haut
+fr.all.ScrollUp:Cliquer sur la flèche pour faire défiler vers le haut
 it.all.ScrollUp:Clicca sulla freccia per scrollare in alto
 nl.all.ScrollUp:Click the arrow to scroll up
 en.all.ScrollPUp:Click to scroll up one page
 de.all.ScrollPUp:Anklicken scrollt eine Seite hoch
-fr.all.ScrollPUp:Cliquez pour faire défiler d'une page vers le haut
+fr.all.ScrollPUp:Cliquer pour faire défiler d'une page vers le haut
 it.all.ScrollPUp:Clicca per scrollare in alto di una pagina
 nl.all.ScrollPUp:Click to scroll up one page
 en.all.ScrollV:Drag the bar to scroll vertically
@@ -3382,22 +3523,22 @@ it.all.ScrollV:Trascina la barra per scrollare verticalmente
 nl.all.ScrollV:Drag the bar to scroll vertically
 en.all.ScrollPDown:Click to scroll down one page
 de.all.ScrollPDown:Anklicken scrollt eine Seite nach unten
-fr.all.ScrollPDown:Cliquez pour faire défiler d'une page vers le bas
+fr.all.ScrollPDown:Cliquer pour faire défiler d'une page vers le bas
 it.all.ScrollPDown:Clicca per scrollare in basso di una pagina
 nl.all.ScrollPDown:Click to scroll down one page
 en.all.ScrollDown:Click the arrow to scroll down
 de.all.ScrollDown:Pfeil anklicken zum Herunterscrollen
-fr.all.ScrollDown:Cliquez sur la flèche pour faire défiler vers le bas
+fr.all.ScrollDown:Cliquer sur la flèche pour faire défiler vers le bas
 it.all.ScrollDown:Clicca sulla freccia per scrollare in basso
 nl.all.ScrollDown:Click the arrow to scroll down
 en.all.ScrollLeft:Click the arrow to scroll left
 de.all.ScrollLeft:Pfeil anklicken scrollt links
-fr.all.ScrollLeft:Cliquez sur la flèche pour faire défiler vers la gauche
+fr.all.ScrollLeft:Cliquer sur la flèche pour faire défiler vers la gauche
 it.all.ScrollLeft:Clicca sulla freccia per scrollare a sinistra
 nl.all.ScrollLeft:Click the arrow to scroll left
 en.all.ScrollPLeft:Click to scroll left one page
 de.all.ScrollPLeft:Anklicken scrollt eine Seite nach links
-fr.all.ScrollPLeft:Cliquez pour faire défiler d'une page vers la gauche
+fr.all.ScrollPLeft:Cliquer pour faire défiler d'une page vers la gauche
 it.all.ScrollPLeft:Clicca per scrollare a sinistra di una pagina
 nl.all.ScrollPLeft:Click to scroll left one page
 en.all.ScrollH:Drag the bar to scroll horizontally
@@ -3407,17 +3548,17 @@ it.all.ScrollH:Trascina la barra per scrollare orizzontalmente
 nl.all.ScrollH:Drag the bar to scroll horizontally
 en.all.ScrollPRight:Click to scroll right one page
 de.all.ScrollPRight:Anklicken scrollt eine Seite nach rechts
-fr.all.ScrollPRight:Cliquez pour faire défiler d'une page vers la droite
+fr.all.ScrollPRight:Cliquer pour faire défiler d'une page vers la droite
 it.all.ScrollPRight:Clicca per scrollare a destra di una pagina
 nl.all.ScrollPRight:Click to scroll right one page
 en.all.ScrollRight:Click the arrow to scroll right
 de.all.ScrollRight:Pfeil anklicken scrollt rechts
-fr.all.ScrollRight:Cliquez sur la flèche pour faire défiler vers la droite
+fr.all.ScrollRight:Cliquer sur la flèche pour faire défiler vers la droite
 it.all.ScrollRight:Clicca sulla freccia per scrollare a destra
 nl.all.ScrollRight:Click the arrow to scroll right
 en.all.ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
 de.all.ScrollBoth:Bewege die Maus bei gedrückten Mausknopf zum Scrollen des Inhalts
-fr.all.ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
+fr.all.ScrollBoth:Déplacer la souris tout en maintenant le bouton enfoncé pour faire défiler le contenu
 it.all.ScrollBoth:Sposta il mouse tenendo premuto il tasto sinistro per scrollare il contenuto della pagina
 nl.all.ScrollBoth:Move your mouse while keeping the button pressed to scroll the content
 
@@ -3425,17 +3566,17 @@ nl.all.ScrollBoth:Move your mouse while keeping the button pressed to scroll the
 #
 en.all.SelectClick:Click on entry to select it
 de.all.SelectClick:Anklicken um auszuwählen
-fr.all.SelectClick:Click on entry to select it
+fr.all.SelectClick:Cliquer sur l'entrée pour la sélectionner
 it.all.SelectClick:Clicca sull'elemento per selezionarlo
 nl.all.SelectClick:Click on entry to select it
 en.all.SelectMClick:Click on entry to select it, multiple options can be selected
 de.all.SelectMClick:Anklicken um auszuwählen, auch mehrere Optionen sind auswählbar
-fr.all.SelectMClick:Click on entry to select it, multiple options can be selected
+fr.all.SelectMClick:Cliquer sur l'entrée pour la sélectionner, plusieurs options peuvent être sélectionnées
 it.all.SelectMClick:Clicca sull'elemento per selezionarlo, sono supportate le scelte multiple
 nl.all.SelectMClick:Click on entry to select it, multiple options can be selected
 en.all.SelectClose:Click to close the select menu
 de.all.SelectClose:Anklicken zum Schließen des Menus
-fr.all.SelectClose:Click to close the select menu
+fr.all.SelectClose:Cliquer pour fermer le menu de sélection
 it.all.SelectClose:Clicca per chiudere l'elemento selezionato
 nl.all.SelectClose:Click to close the select menu
 
@@ -3522,22 +3663,22 @@ nl.all.ThemeApplyErr:An error occurred whilst trying to apply the downloaded the
 
 en.all.Bytes: B
 de.all.Bytes: B
-fr.all.Bytes: O
+fr.all.Bytes: octets
 it.all.Bytes: Byte
 nl.all.Bytes: B
 en.all.kBytes: kB
 de.all.kBytes: kB
-fr.all.kBytes: KO
+fr.all.kBytes: Ko
 it.all.kBytes: KB
 nl.all.kBytes: kB
 en.all.MBytes: MB
 de.all.MBytes: MB
-fr.all.MBytes: MO
+fr.all.MBytes: Mo
 it.all.MBytes: MB
 nl.all.MBytes: MB
 en.all.GBytes: GB
 de.all.GBytes: GB
-fr.all.GBytes: GO
+fr.all.GBytes: Go
 it.all.GBytes: GB
 nl.all.GBytes: GB
 
@@ -3563,12 +3704,12 @@ it.all.DontReplace:Non sostituire
 nl.all.DontReplace:Bestand niet vervangen
 en.all.Remove:Remove address
 de.all.Remove:Remove address
-rf.all.Remove:Remove address
+fr.all.Remove:Enlever/retirer une adresse
 it.all.Remove:Remove address
 nl.all.Remove:Remove address
 en.all.DontRemove:Don't remove
 de.all.DontRemove:Don't remove
-rf.all.DontRemove:Don't remove
+fr.all.DontRemove:Ne pas enlever/retirer
 it.all.DontRemove:Don't remove
 nl.all.DontRemove:Don't remove
 en.all.obj:object
@@ -5412,7 +5553,7 @@ it.all.con_content:Contenuto
 nl.all.con_content:Inhoud
 en.all.con_fonts:Fonts
 de.all.con_fonts:Schriftarten
-fr.all.con_fonts:Fontes
+fr.all.con_fonts:Polices de caractères
 it.all.con_fonts:Font
 nl.all.con_fonts:Lettertypen
 en.all.con_home:Home page
@@ -5452,7 +5593,7 @@ it.all.con_theme:Temi
 nl.all.con_theme:Thema's
 en.all.con_general:General
 de.all.con_general:Allgemeines
-fr.all.con_general:General
+fr.all.con_general:Général
 it.all.con_general:Generale
 nl.all.con_general:General
 en.all.con_rendering:Rendering
@@ -5471,12 +5612,12 @@ nl.all.con_advanced:Advanced
 
 en.all.Preferences:Preferences
 de.all.Preferences:Einstellungen
-fr.all.Preferences:Preferences
+fr.all.Preferences:Préférences
 it.all.Preferences:Preferenze di NetSurf
 nl.all.Preferences:Preferences
 en.all.Use:Use
 de.all.Use:Benutzen
-fr.all.Use:Use
+fr.all.Use:Utiliser
 it.all.Use:Usa
 nl.all.Use:Use
 
@@ -5487,17 +5628,17 @@ it.all.HomePageURL:URL
 nl.all.HomePageURL:URL
 en.all.HomePageDefault:Use default page
 de.all.HomePageDefault:Standardseite
-fr.all.HomePageDefault:Use default page
+fr.all.HomePageDefault:Utiliser la page par défaut
 it.all.HomePageDefault:Usa pagina predefinita
 nl.all.HomePageDefault:Use default page
 en.all.HomePageCurrent:Use current page
 de.all.HomePageCurrent:Aktuelle Seite
-fr.all.HomePageCurrent:Use current page
+fr.all.HomePageCurrent:Utiliser la page courante
 it.all.HomePageCurrent:Usa pagina corrente
 nl.all.HomePageCurrent:Use current page
 en.all.HomePageBlank:Use blank page
 de.all.HomePageBlank:Use blank page
-fr.all.HomePageBlank:Use blank page
+fr.all.HomePageBlank:Utiliser une page vierge
 it.all.HomePageBlank:Usa pagina vuota
 nl.all.HomePageBlank:Use blank page
 en.all.ContentBlocking:Content blocking
@@ -5507,12 +5648,12 @@ it.all.ContentBlocking:Blocca contenuti (AdBlock)
 nl.all.ContentBlocking:Content blocking
 en.all.BlockAds:Hide advertisements
 de.all.BlockAds:Werbung unterdrücken
-fr.all.BlockAds:Hide advertisements
+fr.all.BlockAds:Cacher la publicité
 it.all.BlockAds:Nascondi messaggi/banner
 nl.all.BlockAds:Hide advertisements
 en.all.ContentLanguage:Content language
 de.all.ContentLanguage:Sprache
-fr.all.ContentLanguage:Content language
+fr.all.ContentLanguage:Langue du contenu
 it.all.ContentLanguage:Lingua contenuti
 nl.all.ContentLanguage:Content language
 en.ami.LocaleLang:Get from Locale prefs
@@ -5522,47 +5663,47 @@ it.ami.LocaleLang:Ottieni da preferenze localizzazione
 nl.ami.LocaleLang:Get from Locale prefs
 en.all.HistoryAge:Keep history for
 de.all.HistoryAge:History behalten für
-fr.all.HistoryAge:Keep history for
+fr.all.HistoryAge:Conserver l'historique de navigation pendant
 it.all.HistoryAge:Conserva cronologia per
 nl.all.HistoryAge:Keep history for
 en.all.Days:days
 de.all.Days:Tage
-fr.all.Days:days
+fr.all.Days:jours
 it.all.Days:giorni
 nl.all.Days:days
 en.all.Scripting:Scripting
 de.all.Scripting:Scripting
-fr.all.Scripting:Scripting
+fr.all.Scripting:Scripts
 it.all.Scripting:Scripting
 nl.all.Scripting:Scripting
 en.all.EnableJS:Enable JavaScript
 de.all.EnableJS:Enable JavaScript
-fr.all.EnableJS:Enable JavaScript
+fr.all.EnableJS:Activer le JavaScript
 it.all.EnableJS:Attiva JavaScript
 nl.all.EnableJS:Enable JavaScript
 en.all.Miscellaneous:Miscellaneous
 de.all.Miscellaneous:Verschiedenes
-fr.all.Miscellaneous:Miscellaneous
+fr.all.Miscellaneous:Autres
 it.all.Miscellaneous:Impostazioni varie
 nl.all.Miscellaneous:Miscellaneous
 en.ami.Privacy:Privacy
 de.ami.Privacy:Privacy
-fr.ami.Privacy:Privacy
+fr.ami.Privacy:Confidentialité
 it.ami.Privacy:Privacy
 nl.ami.Privacy:Privacy
 en.all.SendReferer:Send site referral information
 de.all.SendReferer:Seitenreferenzen senden
-fr.all.SendReferer:Send site referral information
+fr.all.SendReferer:Permettre l'envoi du referer en entête
 it.all.SendReferer:Invia informazioni sul referral del sito
 nl.all.SendReferer:Send site referral information
 en.ami.DoNotTrack:Send header to tell websites not to track
 de.ami.DoNotTrack:Send header to tell websites not to track
-fr.ami.DoNotTrack:Send header to tell websites not to track
+fr.ami.DoNotTrack:Activer l'envoi d'une requête "Ne pas suivre à la trace"
 it.ami.DoNotTrack:Invia header al sito per la richiesta di non tracciamento
 nl.ami.DoNotTrack:Send header to tell websites not to track
 en.all.FastScrolling:Fast scrolling
 de.all.FastScrolling:Schnelles Scrollen
-fr.all.FastScrolling:Fast scrolling
+fr.all.FastScrolling:Défilement rapide
 it.all.FastScrolling:Scrolling veloce
 nl.all.FastScrolling:Fast scrolling
 
@@ -5571,7 +5712,7 @@ nl.all.FastScrolling:Fast scrolling
 
 en.all.Screen:Screen
 de.all.Screen:Ausgabe
-fr.all.Screen:Screen
+fr.all.Screen:Écran
 it.all.Screen:Gestione schermi
 nl.all.Screen:Screen
 en.all.ScreenOwn:Own screen
@@ -5581,42 +5722,42 @@ it.all.ScreenOwn:Schermo proprietario
 nl.all.ScreenOwn:Own screen
 en.ami.ScreenWB:Workbench
 de.ami.ScreenWB:Workbench
-fr.ami.ScreenWB:Workbench
+fr.ami.ScreenWB:Plan de travail
 it.ami.ScreenWB:Schermo Workbench
 nl.ami.ScreenWB:Workbench
 en.ami.ScreenPublic:Public screen
 de.ami.ScreenPublic:Public Screen
-fr.ami.ScreenPublic:Public screen
+fr.ami.ScreenPublic:Écran public
 it.ami.ScreenPublic:Schermo pubblico
 nl.ami.ScreenPublic:Public screen
 en.ami.SimpleRefresh:Simple refresh
 de.ami.SimpleRefresh:Simple refresh
-fr.ami.SimpleRefresh:Simple refresh
+fr.ami.SimpleRefresh:Rafraîchissement simple
 it.ami.SimpleRefresh:Refresh semplice
 nl.ami.SimpleRefresh:Simple refresh
 en.all.Theme:Theme
 de.all.Theme:Thema
-fr.all.Theme:Theme
+fr.all.Theme:Thème
 it.all.Theme:Tema grafico
 nl.all.Theme:Theme
 en.all.MousePointers:Mouse pointers
 de.all.MousePointers:Mauszeiger
-fr.all.MousePointers:Mouse pointers
+fr.all.MousePointers:Pointeurs de souris
 it.all.MousePointers:Puntatori del mouse
 nl.all.MousePointers:Mouse pointers
 en.all.TrueColour:True colour
 de.all.TrueColour:TrueColour
-fr.all.TrueColour:True colour
+fr.all.TrueColour:Couleur vraie
 it.all.TrueColour:True color
 nl.all.TrueColour:True colour
 en.all.OSPointers:Use OS mouse pointers when possible
 de.all.OSPointers:Mauszeiger vom OS nutzen, wenn möglich
-fr.all.OSPointers:Use OS mouse pointers when possible
+fr.all.OSPointers:Utiliser les pointeurs de souris du système d'exploitation lorsque cela est possible
 it.all.OSPointers:Se possibile usa i puntatori del mouse di sistema
 nl.all.OSPointers:Use OS mouse pointers when possible
 en.all.NeedRestart:These options will not take effect until the next time NetSurf is started
 de.all.NeedRestart:Diese Optionen werden erst nach einem Neustart von NetSurf aktiviert.
-fr.all.NeedRestart:These options will not take effect until the next time NetSurf is started
+fr.all.NeedRestart:Ces options ne prendront effet qu'au prochain démarrage de NetSurf
 it.all.NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf
 nl.all.NeedRestart:These options will not take effect until the next time NetSurf is started
 
@@ -5625,32 +5766,32 @@ nl.all.NeedRestart:These options will not take effect until the next time NetSur
 
 en.all.Proxy:HTTP proxy
 de.all.Proxy:HTTP Proxy
-fr.all.Proxy:HTTP Proxy
+fr.all.Proxy:Proxy HTTP
 it.all.Proxy:Proxy HTTP
 nl.all.Proxy:HTTP Proxy
 en.ami.ProxyBypass:Bypass proxy for
 de.ami.ProxyBypass:Bypass proxy for
-fr.ami.ProxyBypass:Bypass proxy for
+fr.ami.ProxyBypass:Contournement du proxy pour
 it.ami.ProxyBypass:Bypassa proxy per
 nl.ami.ProxyBypass:Bypass proxy for
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
-fr.all.Fetching:Fetching
+fr.all.Fetching:Connexion
 it.all.Fetching:Ricezione
 nl.all.Fetching:Fetching
 en.all.FetchesMax:Maximum fetches
 de.all.FetchesMax:Maximale Anzahl an Ladevorgängen
-fr.all.FetchesMax:Maximum fetches
+fr.all.FetchesMax:Maximum de connexions
 it.all.FetchesMax:Massima
 nl.all.FetchesMax:Maximum fetches
-en.all.FetchesHost:Fetches per host
+en.all.FetchesHost:Connexions par hôte
 de.all.FetchesHost:Ladevorgänge pro Host
 fr.all.FetchesHost:Fetches per host
 it.all.FetchesHost:Per host
 nl.all.FetchesHost:Fetches per host
 en.all.FetchesCached:Cached connections
 de.all.FetchesCached:Gehaltene Verbindungen
-fr.all.FetchesCached:Cached connections
+fr.all.FetchesCached:Connexions en cache
 it.all.FetchesCached:Su cache
 nl.all.FetchesCached:Cached connections
 
@@ -5659,58 +5800,58 @@ nl.all.FetchesCached:Cached connections
 
 en.all.CacheNative:Cache native versions
 de.all.CacheNative:Originale zwischenspeichern
-fr.all.CacheNative:Cache native versions
+fr.all.CacheNative:Versions natives du cache
 it.all.CacheNative:Versioni cache native
 nl.all.CacheNative:Cache native versions
 en.all.ScaleQuality:Higher quality scaling
 de.all.ScaleQuality:Skalieren hoher Qualität
-fr.all.ScaleQuality:Higher quality scaling
+fr.all.ScaleQuality:Graduation de qualité supérieur
 it.all.ScaleQuality:Massima qualità di visualizzazione
 nl.all.ScaleQuality:Higher quality scaling
 en.ami.DitherQuality:Dither quality
 de.ami.DitherQuality:Dither quality
-fr.ami.DitherQuality:Dither quality
+fr.ami.DitherQuality:Qualité de tramage
 it.ami.DitherQuality:Qualità dither
 nl.ami.DitherQuality:Dither quality
 en.ami.Low:Low
 de.ami.Low:Low
-fr.ami.Low:Low
+fr.ami.Low:Faible
 it.ami.Low:Bassa
 nl.ami.Low:Low
 en.ami.Medium:Medium
 de.ami.Medium:Medium
-fr.ami.Medium:Medium
+fr.ami.Medium:Moyenne
 it.ami.Medium:Media
 nl.ami.Medium:Medium
 en.ami.High:High
 de.ami.High:High
-fr.ami.High:High
+fr.ami.High:Élevée
 it.ami.High:Alta
 nl.ami.High:High
 en.all.Animations:Animations
 de.all.Animations:Animationen
-fr.all.Animations:Animations
+fr.all.Animations:Animations et effets
 it.all.Animations:Animazioni
 nl.all.Animations:Animations
 en.all.AnimSpeedLimit:Limit speed to
 de.all.AnimSpeedLimit:Geschwindigkeit begrenzen
-fr.all.AnimSpeedLimit:Limit speed to
+fr.all.AnimSpeedLimit:Limiter la vitesse à
 it.all.AnimSpeedLimit:Limita velocità a
 nl.all.AnimSpeedLimit:Limit speed to
 en.all.AnimSpeedFrames:seconds between frames
 de.all.AnimSpeedFrames:Bildintervall (Sekunden)
-fr.all.AnimSpeedFrames:seconds between frames
+fr.all.AnimSpeedFrames:secondes entre les images
 it.all.AnimSpeedFrames:fotogrammi al secondo
 nl.all.AnimSpeedFrames:seconds between frames
 en.all.AnimDisable:Disable animations
 de.all.AnimDisable:Animationen abschalten
-fr.all.AnimDisable:Disable animations
+fr.all.AnimDisable:Désactiver les animations
 it.all.AnimDisable:Disattiva animazioni
 nl.all.AnimDisable:Disable animations
 
 en.all.None:None
 de.all.None:Keine
-fr.all.None:None
+fr.all.None:Aucun
 it.all.None:Nessuna
 nl.all.None:None
 en.all.Scaled:Scaled
@@ -5721,22 +5862,22 @@ nl.all.Scaled:Scaled
 
 en.all.Resolution:Resolution
 de.all.Resolution:Auflösung
-fr.all.Resolution:Resolution
+fr.all.Resolution:Résolution
 it.all.Resolution:Risoluzione
 nl.all.Resolution:Resolution
 en.all.ResolutionY:Vertical resolution
 de.all.ResolutionY:Vertikale Auflösung
-fr.all.ResolutionY:Vertical resolution
+fr.all.ResolutionY:Résolution verticale
 it.all.ResolutionY:Verticale
 nl.all.ResolutionY:Vertical resolution
 en.all.ResolutionX:Horizontal resolution
 de.all.ResolutionX:Horizontale Auflösung
-fr.all.ResolutionX:Horizontal resolution
+fr.all.ResolutionX:Résolution horizontale
 it.all.ResolutionX:Orizzontale
 nl.all.ResolutionX:Horizontal resolution
 en.all.DPI:DPI
 de.all.DPI:DPI
-fr.all.DPI:DPI
+fr.all.DPI:PPP
 it.all.DPI:DPI
 nl.all.DPI:DPI
 
@@ -5745,7 +5886,7 @@ nl.all.DPI:DPI
 
 en.all.FontFamilies:Font families
 de.all.FontFamilies:Schriftfamilien
-fr.all.FontFamilies:Font families
+fr.all.FontFamilies:Familles de police de caractères
 it.all.FontFamilies:Famiglia Font
 nl.all.FontFamilies:Font families
 en.all.FontSans:Sans-serif
@@ -5760,7 +5901,7 @@ it.all.FontSerif:Serif
 nl.all.FontSerif:Serif
 en.all.FontMono:Monospaced
 de.all.FontMono:Monospace
-fr.all.FontMono:Monospaced
+fr.all.FontMono:Monospace
 it.all.FontMono:Monospaziato
 nl.all.FontMono:Monospaced
 en.all.FontCursive:Cursive
@@ -5770,22 +5911,22 @@ it.all.FontCursive:Corsivo
 nl.all.FontCursive:Cursive
 en.all.FontFantasy:Fantasy
 de.all.FontFantasy:Fantasy
-fr.all.FontFantasy:Fantasy
+fr.all.FontFantasy:Fantaisie
 it.all.FontFantasy:Fantasia
 nl.all.FontFantasy:Fantasy
 en.ami.FontFallback:Preferred fallback
 de.ami.FontFallback:Preferred fallback
-fr.ami.FontFallback:Preferred fallback
+fr.ami.FontFallback:Police de caractères de secour préférée
 it.ami.FontFallback:Fallback preferito
 nl.ami.FontFallback:Preferred fallback
 en.all.Default:Default
 de.all.Default:Standard
-fr.all.Default:Default
+fr.all.Default:Défaut
 it.all.Default:Predefinito
 nl.all.Default:Default
 en.all.FontSize:Font size
 de.all.FontSize:Schriftgröße
-fr.all.FontSize:Font size
+fr.all.FontSize:Taille de police de caractères
 it.all.FontSize:Dimensione Font
 nl.all.FontSize:Font size
 en.all.Minimum:Minimum
@@ -5800,19 +5941,19 @@ it.all.Pt:pt
 nl.all.Pt:pt
 en.ami.FontAntialiasing:Use anti-aliasing (when possible)
 de.ami.FontAntialiasing:Use anti-aliasing (when possible)
-fr.ami.FontAntialiasing:Use anti-aliasing (when possible)
+fr.ami.FontAntialiasing:Utiliser l'anticrénelage (si possible)
 it.ami.FontAntialiasing:Usa anti-aliasing (quando possibile)
 nl.ami.FontAntialiasing:Use anti-aliasing (when possible)
 
 # Font scanning
 en.ami.FontScanning:Scanning fonts...
 de.ami.FontScanning:Scanning fonts...
-fr.ami.FontScanning:Scanning fonts...
+fr.ami.FontScanning:Balayage de polices de caractères...
 it.ami.FontScanning:Scansione dei font in corso...
 nl.ami.FontScanning:Scanning fonts...
 en.ami.FontGlyphs:%ld unique glyphs found
 de.ami.FontGlyphs:%ld unique glyphs found
-fr.ami.FontGlyphs:%ld unique glyphs found
+fr.ami.FontGlyphs:%ld glyphe(s) unique(s) trouvé
 it.ami.FontGlyphs:%ld glifi unici trovati
 nl.ami.FontGlyphs:%ld unique glyphs found
 
@@ -5821,20 +5962,21 @@ nl.ami.FontGlyphs:%ld unique glyphs found
 
 en.all.CacheMemory:Memory cache
 de.all.CacheMemory:Arbeitsspeicher Cache
-fr.all.CacheMemory:Memory cache
+fr.all.CacheMemory:Mémoire cache
 it.all.CacheMemory:Memoria cache
 nl.all.CacheMemory:Memory cache
 en.all.CacheDisc:Disc cache
 de.all.CacheDisc:Festplatten Cache
+fr.all.CacheDisc:Cache du disque
 it.all.CacheDisc:Cache su disco
 en.all.Size:Size
 de.all.Size:Größe
-fr.all.Size:Size
+fr.all.Size:Taille
 it.all.Size:Dimensione
 nl.all.Size:Size
 en.all.Duration:Duration
 de.all.Duration:Dauer
-fr.all.Duration:Duration
+fr.all.Duration:Durée
 it.all.Duration:Durata
 nl.all.Duration:Duration
 
@@ -5843,37 +5985,37 @@ nl.all.Duration:Duration
 
 en.ami.Tabs:Tabs
 de.ami.Tabs:Tabs
-fr.ami.Tabs:Tabs
+fr.ami.Tabs:Onglets
 it.ami.Tabs:Schede
 nl.ami.Tabs:Tabs
 en.all.TabbedBrowsing:Tabbed browsing
 de.all.TabbedBrowsing:Registernavigation (Tabs)
-fr.all.TabbedBrowsing:Tabbed browsing
+fr.all.TabbedBrowsing:Navigation par onglets
 it.all.TabbedBrowsing:Navigazione a schede
 nl.all.TabbedBrowsing:Tabbed browsing
 en.all.TabActive:Open new tabs in background
 de.all.TabActive:Neuen Tab im Hintergrund öffnen
-fr.all.TabActive:Open new tabs in background
+fr.all.TabActive:Ouvrir de nouveaux onglets en arrière-plan
 it.all.TabActive:Apri le nuove schede in sottofondo
 nl.all.TabActive:Open new tabs in background
 en.all.TabMiddle:Middle mouse button opens tabs
 de.all.TabMiddle:Mittlere Maustaste öffnet Tab
-fr.all.TabMiddle:Middle mouse button opens tabs
+fr.all.TabMiddle:Bouton du milieu de la souris ouvre un onglet
 it.all.TabMiddle:Usa tasto centrale del mouse per aprire le schede
 nl.all.TabMiddle:Middle mouse button opens tabs
 en.all.TabLast:Open new tabs after all existing tabs
 de.all.TabLast:Open new tabs after all existing tabs
-fr.all.TabLast:Open new tabs after all existing tabs
+fr.all.TabLast:Ouvrir de nouveaux onglets après tous les onglets existants
 it.all.TabLast:Apri le nuove schede dopo quella corrente
 nl.all.TabLast:Open new tabs after all existing tabs
 en.ami.TabClose:Warn when closing multiple tabs
 de.ami.TabClose:Warn when closing multiple tabs
-fr.ami.TabClose:Warn when closing multiple tabs
+fr.ami.TabClose:Avertir lors de la fermeture de plusieurs onglets
 it.ami.TabClose:Avvisa quando si chiudono più schede
 nl.ami.TabClose:Warn when closing multiple tabs
 en.ami.TabAlways:Always show tabs
 de.ami.TabAlways:Always show tabs
-fr.ami.TabAlways:Always show tabs
+fr.ami.TabAlways:Toujours afficher les onglets
 it.ami.TabAlways:Mostra sempre la barra delle schede
 nl.ami.TabAlways:Always show tabs
 
@@ -5884,70 +6026,74 @@ en.all.Downloads:Downloads
 it.all.Downloads:Trasferimenti
 en.all.ConfirmOverwrite:Request confirmation when overwriting
 de.all.ConfirmOverwrite:vor Überschreiben nachfragen
-fr.all.ConfirmOverwrite:Request confirmation when overwriting
+fr.all.ConfirmOverwrite:Demande de confirmation lors de l'écrasement
 it.all.ConfirmOverwrite:Richiedi conferma prima di sovrascrivere
 nl.all.ConfirmOverwrite:Request confirmation when overwriting
 en.all.DownloadDir:Initial download location
 de.all.DownloadDir:Downloadverzeichnis
-fr.all.DownloadDir:Initial download location
+fr.all.DownloadDir:Emplacement initial de téléchargement
 it.all.DownloadDir:Percorso predefinito
 nl.all.DownloadDir:Initial download location
 en.all.DownloadNotify:Notify on completion
 de.all.DownloadNotify:Downloadende melden
-fr.all.DownloadNotify:Notify on completion
+fr.all.DownloadNotify:Notifier sur complétion
 it.all.DownloadNotify:Notifica al completamento (Ringhio)
 nl.all.DownloadNotify:Notify on completion
 en.all.SearchWeb:Web search
 de.all.SearchWeb:Websuche
-fr.all.SearchWeb:Web search
+fr.all.SearchWeb:Recherche Web
 it.all.SearchWeb:Ricerca nel Web
 nl.all.SearchWeb:Web search
 en.all.SearchURL:Search from URL bar
 de.all.SearchURL:Suche über URL Leiste
-fr.all.SearchURL:Search from URL bar
+fr.all.SearchURL:Recherche depuis la barre URL
 it.all.SearchURL:Ricerca da barra URL
 nl.all.SearchURL:Search from URL bar
 en.all.SearchProvider:Search provider
 de.all.SearchProvider:Suchmaschine
-fr.all.SearchProvider:Search provider
+fr.all.SearchProvider:Fournisseur de recherche
 it.all.SearchProvider:Ricerca su provider
 nl.all.SearchProvider:Search provider
 en.ami.OptionDocky:Show in AmiDock
 de.ami.OptionDocky:In AmiDock zeigen
-fr.ami.OptionDocky:Show in AmiDock
+fr.ami.OptionDocky:Afficher dans AmiDock
 it.ami.OptionDocky:Mostra icona di NetSurf su AmiDock
 nl.ami.OptionDocky:Show in AmiDock
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
-fr.all.Clipboard:Clipboard
+fr.all.Clipboard:Presse-papiers
 it.all.Clipboard:Clipboard
 nl.all.Clipboard:Clipboard
 en.all.ClipboardUTF8:Write text as UTF-8
 de.all.ClipboardUTF8:Text als UTF-8
-fr.all.ClipboardUTF8:Write text as UTF-8
+fr.all.ClipboardUTF8:Écrire du texte en UTF-8
 it.all.ClipboardUTF8:Scrivi testo come UTF-8
 nl.all.ClipboardUTF8:Write text as UTF-8
 en.all.ContextMenu:Context menu
 de.all.ContextMenu:Kontextmenu
-fr.all.ContextMenu:Context menu
+fr.all.ContextMenu:Menu contextuel
 it.all.ContextMenu:Menu contestuali
 nl.all.ContextMenu:Context menu
 en.all.Enable:Enable
 de.all.Enable:Erlauben
-fr.all.Enable:Enable
+fr.all.Enable:Activer
 it.all.Enable:Attivi
 nl.all.Enable:Enable
 en.all.Sticky:Sticky
 de.all.Sticky:Klebrig
+fr.all.Sticky:Collant
 it.all.Sticky:Fissi
 en.all.Behaviour:Behaviour
 de.all.Behaviour:Verhalten
+fr.all.Behaviour:Comportement général
 it.all.Behaviour:Comportamento generale
 en.all.OptionNoWindow:Do not open window on startup
 de.all.OptionNoWindow:Kein Fenster beim Start öffnen
+fr.all.OptionNoWindow:Ne pas ouvrir de fenêtre au démarrage
 it.all.OptionNoWindow:Non aprire la finestra all'avvio (avvio da AmiDock)
 en.all.OptionNoQuit:Do not quit when last window closed
 de.all.OptionNoQuit:Nicht beenden beim Schließen des letzten Fensters
+fr.all.OptionNoQuit:Ne pas quitter lorsque la dernière fenêtre se trouve fermée
 it.all.OptionNoQuit:Iconifica su AmiDock alla chiusura di NetSurf
 
 # Export
@@ -5955,47 +6101,59 @@ it.all.OptionNoQuit:Iconifica su AmiDock alla chiusura di NetSurf
 
 en.all.Margins:Margins
 de.all.Margins:Ränder
-fr.all.Margins:Margins
+fr.all.Margins:Marges
 it.all.Margins:Margini
 nl.all.Margins:Margins
 en.all.Top:Top
 de.all.Top:Oben
+fr.all.Top:Haut/Supérieur
 it.all.Top:Superiore
 en.all.Left:Left
 de.all.Left:Links
+fr.all.Left:Gauche
 it.all.Left:Sinistro
 en.all.Right:Right
 de.all.Right:Rechts
+fr.all.Right:Droite
 it.all.Right:Destro
 en.all.Bottom:Bottom
 de.all.Bottom:Unten
+fr.all.Bottom:Bas/inférieur
 it.all.Bottom:Inferiore
 en.all.MM:mm
+fr.all.MM:mm
 en.all.Scaling:Scaling
 de.all.Scaling:Skalierung
+fr.all.Scaling:Mise à l'échelle
 it.all.Scaling:Scala
 en.all.Scale:Scale
 de.all.Scale:Skalieren
+fr.all.Scale:Échelle (proportion)
 it.all.Scale:Scalati
 en.all.Appearance:Appearance
 de.all.Appearance:Aussehen
+fr.all.Appearance:Apparence
 it.all.Appearance:Aspetto
 en.all.SuppressImages:Suppress images
 de.all.SuppressImages:Bilder unterbinden
+fr.all.SuppressImages:Supprimer les images
 it.all.SuppressImages:Sopprimi immagini
 en.all.RemoveBackground:Remove background
 de.all.RemoveBackground:Hintergrund entfernen
+fr.all.RemoveBackground:Retirer l'arrière-plan
 it.all.RemoveBackground:Rimuovi sfondo
 en.all.FitPage:Fit page
 de.all.FitPage:Seite einpassen
-fr.all.FitPage:Fit page
+fr.all.FitPage:Adapter la page
 it.all.FitPage:Adatta pagina
 nl.all.FitPage:Fit page
 en.all.CompressPDF:Compress PDF
 de.all.CompressPDF:PDF komprimieren
+fr.all.CompressPDF:Compresser le PDF
 it.all.CompressPDF:Comprimi PDF
 en.all.SetPassword:Set password
 de.all.SetPassword:Passwort festlegen
+fr.all.SetPassword:Définir un mot de passe
 it.all.SetPassword:Imposta Password
 
 
@@ -6022,6 +6180,7 @@ it.all.ExportAs:Esporta come...
 nl.all.ExportAs:Exporteer als
 en.all.AnimImg:Animations
 de.all.AnimImg:Animationen
+fr.all.AnimImg:Animations et effets
 it.all.AnimImg:Animazioni
 nl.all.AnimImg:Animatie
 en.all.DitherImg:Dither images
@@ -6036,6 +6195,6 @@ it.all.FilterImg:Immagini Smooth
 nl.all.FilterImg:Smooth afbeelding
 en.all.RenderText:Blend text to background
 de.all.RenderText:Text/Hintergrund Übergang weich
-fr.all.RenderText:Panachage du texte sur le fond
+fr.all.RenderText:Fondre le texte sur l'arrière-plan
 it.all.RenderText:Sfuma testo di sfondo
 nl.all.RenderText:Tekst met achtergrond mengen
