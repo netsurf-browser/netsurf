@@ -732,7 +732,7 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
  */
 static nserror hotlist_get_temp_path(const char *path, char **temp_path)
 {
-	const char *extension = ".bk";
+	const char *extension = "-bk";
 	char *joined;
 	int len;
 
