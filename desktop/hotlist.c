@@ -937,8 +937,14 @@ static nserror hotlist_save(const char *path)
 	}
 
 	/* Remove old hotlist file, and replace */
-	remove(path);
-	rename(temp_path, path);
+	if (remove(path) != 0) {
+		res = NSERROR_SAVE_FAILED;
+		goto cleanup;
+	}
+	if (rename(temp_path, path) != 0) {
+		res = NSERROR_SAVE_FAILED;
+		goto cleanup;
+	}
 
 cleanup:
 	free(temp_path);
