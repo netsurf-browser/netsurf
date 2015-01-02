@@ -724,6 +724,36 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 
 /*
+ * Get path for writing hotlist to
+ *
+ * \param path		The final path of the hotlist
+ * \param loaded	Updated to the path to write the holist to
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_get_temp_path(const char *path, char **temp_path)
+{
+	const char *extension = ".bk";
+	char *joined;
+	int len;
+
+	len = strlen(path) + strlen(extension);
+
+	joined = malloc(len + 1);
+	if (joined == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	if (snprintf(joined, len + 1, "%s%s", path, extension) != len) {
+		free(joined);
+		return NSERROR_UNKNOWN;
+	}
+
+	*temp_path = joined;
+	return NSERROR_OK;
+}
+
+
+/*
  * Load the hotlist data from file
  *
  * \param path		The path to load the hotlist file from, or NULL
@@ -735,6 +765,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 	dom_document *document;
 	dom_node *html, *body, *ul;
 	hotlist_load_ctx ctx;
+	char *temp_path;
 	nserror err;
 
 	*loaded = false;
@@ -745,10 +776,20 @@ static nserror hotlist_load(const char *path, bool *loaded)
 		return NSERROR_OK;
 	}
 
-	/* Load hotlist file */
-	err = libdom_parse_file(path, "iso-8859-1", &document);
+	/* Get temp hotlist write path */
+	err = hotlist_get_temp_path(path, &temp_path);
 	if (err != NSERROR_OK) {
 		return err;
+	}
+
+	/* Load hotlist file */
+	err = libdom_parse_file(path, "iso-8859-1", &document);
+	free(temp_path);
+	if (err != NSERROR_OK) {
+		err = libdom_parse_file(temp_path, "iso-8859-1", &document);
+		if (err != NSERROR_OK) {
+			return err;
+		}
 	}
 
 	/* Find HTML element */
@@ -871,9 +912,44 @@ static nserror hotlist_generate(void)
 }
 
 
+
+/* Save the hotlist to to a file at the given path
+ *
+ * \param path  Path to save hostlist file to.
+ * \return NSERROR_OK on success, or appropriate error otherwise
+ */
+static nserror hotlist_save(const char *path)
+{
+	nserror res = NSERROR_OK;
+	char *temp_path;
+
+	/* Get path to export to */
+	res = hotlist_get_temp_path(path, &temp_path);
+	if (res != NSERROR_OK) {
+		return res;
+	}
+
+	/* Export to temp path */
+	res = hotlist_export(temp_path, NULL);
+	if (res != NSERROR_OK) {
+		goto cleanup;
+	}
+
+	/* Remove old hotlist file, and replace */
+	remove(path);
+	rename(temp_path, path);
+
+cleanup:
+	free(temp_path);
+
+	return res;
+}
+
+
 struct treeview_export_walk_ctx {
 	FILE *fp;
 };
+
 /** Callback for treeview_walk node entering */
 static nserror hotlist_export_enter_cb(void *ctx, void *node_data,
 		enum treeview_node_type type, bool *abort)
@@ -1196,7 +1272,7 @@ nserror hotlist_fini(const char *path)
 	LOG(("Finalising hotlist"));
 
 	/* Save the hotlist */
-	err = hotlist_export(path, NULL);
+	err = hotlist_save(path);
 	if (err != NSERROR_OK) {
 		warn_user("Couldn't save the hotlist.", 0);
 	}
