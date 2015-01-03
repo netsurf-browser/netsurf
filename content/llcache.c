@@ -3272,9 +3272,13 @@ llcache_initialise(const struct llcache_parameters *prm)
 void llcache_finalise(void)
 {
 	llcache_object *object, *next;
-	unsigned long total_bandwidth; /* total bandwidth */
+	unsigned long total_bandwidth = 0; /* total bandwidth */
 
-	total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
+	if (llcache->total_elapsed > 0) {
+		total_bandwidth = (llcache->total_written * 1000) /
+			llcache->total_elapsed;
+	}
+
 	/* Clean uncached objects */
 	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
