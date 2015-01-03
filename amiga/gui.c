@@ -1184,13 +1184,37 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 			nskey = keycode;
 		break;
 		default:
-			if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
-			{
+			if((chars = MapRawKey(ie,buffer,20,NULL)) > 0) {
 				utf8_from_local_encoding(buffer, chars, &utf8);
 				nskey = utf8_to_ucs4(utf8, utf8_char_byte_length(utf8));
+
+				if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) {
+					switch(nskey) {
+						case 'a':
+							nskey = KEY_SELECT_ALL;
+						break;
+						case 'c':
+							nskey = KEY_COPY_SELECTION;
+							/**\todo this should also send KEY_CLEAR_SELECTION */
+						break;
+						case 'v':
+							nskey = KEY_PASTE;
+						break;
+						case 'x':
+							nskey = KEY_CUT_SELECTION;
+						break;
+						case 'y':
+							nskey = KEY_REDO;
+						break;
+						case 'z':
+							nskey = KEY_UNDO;
+						break;
+					}
+				}
 			}
 		break;
 	}
+
 	return nskey;
 }
 
@@ -2176,12 +2200,16 @@ static void ami_handle_msg(void)
 
 					nskey = ami_key_to_nskey(storage, ie);
 
-					if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND)
-					{
-/* We are duplicating the menu shortcuts here, as if RMBTRAP is active
- * (ie. when context menus are enabled and the mouse is over the browser
- * rendering area), Intuition also does not catch the menu shortcut
- * key presses.  Context menus need to be changed to use MENUVERIFY not RMBTRAP */
+					if((ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) &&
+						((31 < nskey) && (nskey < 127))) {
+					/* We are duplicating the menu shortcuts here, as if RMBTRAP is
+					 * active (ie. when context menus are enabled and the mouse is over
+					 * the browser rendering area), Intuition also does not catch the
+					 * menu shortcut key presses.  Context menus possibly need to be
+					 * changed to use MENUVERIFY not RMBTRAP.
+					 * NB: Some keypresses are converted to generic keypresses above
+					 * rather than being "menu-emulated" here.
+					 */
 						switch(nskey)
 						{
 							case 'n':
@@ -2248,31 +2276,6 @@ static void ami_handle_msg(void)
 							case 'q':
 								if((nsoption_bool(kiosk_mode) == false))
 									ami_quit_netsurf();
-							break;
-
-							case 'a':
-								browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
-							break;
-
-							case 'x':
-								browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
-							break;
-
-							case 'c':
-								browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
-								browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
-							break;
-
-							case 'v':
-								browser_window_key_press(gwin->gw->bw, KEY_PASTE);
-							break;
-
-							case 'z':
-								browser_window_key_press(gwin->gw->bw, KEY_UNDO);
-							break;
-
-							case 'y':
-								browser_window_key_press(gwin->gw->bw, KEY_REDO);
 							break;
 
 							case 'f':
