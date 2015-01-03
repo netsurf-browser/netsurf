@@ -33,6 +33,8 @@
 #include "desktop/textarea.h"
 #include "desktop/treeview.h"
 #include "desktop/font.h"
+#include "desktop/gui_clipboard.h"
+#include "desktop/gui_internal.h"
 
 /** @todo get rid of REDRAW_MAX -- need to be able to know window size */
 #define REDRAW_MAX 8000
@@ -210,6 +212,29 @@ static struct treeview_resource treeview_res[TREE_RES_LAST] = {
 	{ "resource:icons/directory2.png", NULL, 0, false },
 	{ "resource:icons/search.png", NULL, 0, false }
 }; /**< Treeview content resources */
+
+
+/* Helper function to access the given field of a node
+ *
+ * \param tree		Treeview that node belongs to
+ * \param n		Node to get field from
+ * \param i		Index of field of interest
+ * \return text entry for field or NULL.
+ */
+static inline struct treeview_text * treeview_get_text_for_field(
+		treeview *tree, treeview_node *n, int i)
+{
+	if (i == 0) {
+		return &n->text;
+
+	} else if (i < tree->n_fields && n->type == TREE_NODE_ENTRY) {
+		struct treeview_node_entry *e = (struct treeview_node_entry *)n;
+		return &e->fields[i - 1].value;
+	}
+
+	assert(0 && "Bad field index for node");
+	return NULL;
+}
 
 
 /* Find the next node in depth first tree order
@@ -1919,7 +1944,8 @@ struct treeview_selection_walk_data {
 		TREEVIEW_WALK_COMMIT_SELECT_DRAG,
 		TREEVIEW_WALK_DELETE_SELECTION,
 		TREEVIEW_WALK_PROPAGATE_SELECTION,
-		TREEVIEW_WALK_YANK_SELECTION
+		TREEVIEW_WALK_YANK_SELECTION,
+		TREEVIEW_WALK_COPY_SELECTION
 	} purpose;
 	union {
 		bool has_selection;
@@ -1937,6 +1963,10 @@ struct treeview_selection_walk_data {
 		struct {
 			treeview_node *n;
 		} first;
+		struct {
+			char *text;
+			uint32_t len;
+		} copy;
 	} data;
 	int current_y;
 	treeview *tree;
@@ -2040,6 +2070,47 @@ static nserror treeview_node_selection_walk_cb(treeview_node *n,
 			sw->data.yank.prev = n;
 
 			*skip_children = true;
+		}
+		break;
+
+	case TREEVIEW_WALK_COPY_SELECTION:
+		if (n->flags & TV_NFLAGS_SELECTED &&
+				n->type == TREE_NODE_ENTRY) {
+			int i;
+			char *temp;
+			uint32_t len;
+			const char *text;
+			struct treeview_field *ef;
+			struct treeview_text *val;
+
+			for (i = 0; i < sw->tree->n_fields; i++) {
+				ef = &(sw->tree->fields[i]);
+
+				if (!(ef->flags & TREE_FLAG_COPY_TEXT)) {
+					continue;
+				}
+				val = treeview_get_text_for_field(sw->tree,
+						n, i);
+				text = val->data;
+				len  = val->len;
+
+				temp = realloc(sw->data.copy.text,
+						sw->data.copy.len + len + 1);
+				if (temp == NULL) {
+					free(sw->data.copy.text);
+					sw->data.copy.text = NULL;
+					sw->data.copy.len = 0;
+					return NSERROR_NOMEM;
+				}
+
+				if (sw->data.copy.len != 0) {
+					temp[sw->data.copy.len - 1] = '\n';
+				}
+				memcpy(temp + sw->data.copy.len, text, len);
+				temp[sw->data.copy.len + len] = '\0';
+				sw->data.copy.len += len + 1;
+				sw->data.copy.text = temp;
+			}
 		}
 		break;
 	}
@@ -2210,6 +2281,35 @@ static void treeview_move_yank_selection(treeview *tree)
 
 	treeview_walk_internal(tree->root, false, NULL,
 			treeview_node_selection_walk_cb, &sw);
+}
+
+
+/**
+ * Copy a selection to the clipboard.
+ *
+ * \param tree		Treeview object to yank selection from
+ */
+static void treeview_copy_selection(treeview *tree)
+{
+	struct treeview_selection_walk_data sw;
+	nserror err;
+
+	sw.purpose = TREEVIEW_WALK_COPY_SELECTION;
+	sw.data.copy.text = NULL;
+	sw.data.copy.len = 0;
+	sw.tree = tree;
+
+	err = treeview_walk_internal(tree->root, false, NULL,
+			treeview_node_selection_walk_cb, &sw);
+	if (err != NSERROR_OK) {
+		return;
+	}
+
+	if (sw.data.copy.text != NULL) {
+		guit->clipboard->set(sw.data.copy.text,
+				sw.data.copy.len - 1, NULL, 0);
+		free(sw.data.copy.text);
+	}
 }
 
 
@@ -2663,7 +2763,7 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 		redraw = treeview_select_all(tree, &r);
 		break;
 	case KEY_COPY_SELECTION:
-		/* TODO: Copy selection as text */
+		treeview_copy_selection(tree);
 		break;
 	case KEY_DELETE_LEFT:
 	case KEY_DELETE_RIGHT:

@@ -87,8 +87,8 @@ enum treeview_field_flags {
 	TREE_FLAG_NONE		= 0,		/**< No flags set */
 	TREE_FLAG_ALLOW_EDIT	= (1 << 0),	/**< Whether allow edit field */
 	TREE_FLAG_DEFAULT	= (1 << 1),	/**< Whether field is default */
-	TREE_FLAG_SHOW_NAME	= (1 << 2)	/**< Whether field name shown */
-
+	TREE_FLAG_SHOW_NAME	= (1 << 2),	/**< Whether field name shown */
+	TREE_FLAG_COPY_TEXT	= (1 << 3)	/**< Whether to copy to clipb */
 };
 struct treeview_field_desc {
 	lwc_string *field;			/**< A treeview field name */
