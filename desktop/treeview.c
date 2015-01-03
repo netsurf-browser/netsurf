@@ -56,7 +56,7 @@ enum treeview_node_part {
 
 struct treeview_text {
 	const char *data;	/**< Text string */
-	uint32_t len;		/**< Lenfth of string in bytes */
+	uint32_t len;		/**< Length of string in bytes */
 	int width;		/**< Width of text in px */
 };
 
