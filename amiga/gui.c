@@ -773,7 +773,7 @@ static void ami_openscreenfirst(void)
 
 static void ami_gui_commandline(int *argc, char **argv)
 {
-	int new_argc = 0;
+	int new_argc = 1;
 	struct RDArgs *args;
 	CONST_STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
 	long rarray[] = {0,0,0};
@@ -809,13 +809,25 @@ static void ami_gui_commandline(int *argc, char **argv)
 		 * then ReadArgs cannot fetch the arguments.
 		 */
 			char **p = (char **)rarray[A_NSOPTS];
+
 			do {
 				LOG(("Arg [%d] assigned to NSOPTS/M by ReadArgs: %s", new_argc, *p));
 				new_argc++;
 				p++;
 			} while(*p != NULL);
 
-			nsoption_commandline(&new_argc, (char **)rarray[A_NSOPTS], NULL);
+			char *new_argv = malloc(sizeof(char *) * new_argc);
+			char **new_argvp = &new_argv;
+			*new_argvp = messages_get("NetSurf");
+			p = (char **)rarray[A_NSOPTS];
+
+			do {
+				new_argvp++;
+				*new_argvp = *p;
+				p++;
+			} while(*p != NULL);
+
+			nsoption_commandline(&new_argc, (char **)&new_argv, NULL);
 		}
 
 		FreeArgs(args);
