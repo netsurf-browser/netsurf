@@ -342,7 +342,7 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
  * -DWITH_NS_SVG -DAMIGA_DR2D_STANDALONE -D__USE_INLINE__ -D__NOLIBBASE__
  */
 
-const char __attribute__((used)) ver[] = "\0$VER: svg2dr2d 1.1 (18.05.2009)\0";
+const char __attribute__((used)) ver[] = "\0$VER: svg2dr2d 1.2 (05.01.2015)\0";
 
 int main(int argc, char **argv)
 {

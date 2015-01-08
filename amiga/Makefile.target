@@ -6,6 +6,8 @@ CFLAGS += -std=c99 -Dnsamiga
 
 ifneq ($(SUBTARGET),os3)
   CFLAGS += -U__STRICT_ANSI__ -D__USE_INLINE__ -D__USE_BASETYPE__
+else
+  CFLAGS += -DPATH_MAX=1024
 endif
 
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
@@ -92,17 +94,10 @@ install-amiga:
 
 package-amiga: netsurf.lha
 
-AMIGA_LANGUAGES_MESSAGES := de en it
-AMIGA_LANGUAGES := $(AMIGA_LANGUAGES_MESSAGES) ja
+AMIGA_LANGUAGES := de en it ja
 AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
 AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle Icons
 AMIGA_RESOURCES := $(addprefix amiga/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
-AMIGA_LIBRARIES := parserutils.library nsgif.library nsbmp.library iconv.library hubbub.library
-AMIGA_LIBS := $(addprefix /Libs/,$(AMIGA_LIBRARIES))
-AMIGA_SHARED_OBJS := libjpeg.so.12 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0	\
-	libssl.so.1.0.0 libcrypto.so.1.0.0 libcss.so.0 libwapcaplet.so.0 libpng12.so 	\
-	libdom.so.0 libhubbub.so.0 libtre.so.5 libintl.so libparserutils.so.0
-AMIGA_SOBJS := $(addprefix /SObjs/,$(AMIGA_SHARED_OBJS))
 AMIGA_DISTRIBUTION_FILES := amiga/dist/*
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
 
@@ -122,12 +117,6 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp amiga/pkg/fitr $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
-    ifeq ($(HOST),amiga)
-#		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
-#		$(Q)cp $(AMIGA_LIBS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
-#		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
-#		$(Q)cp --preserve=timestamps $(AMIGA_SOBJS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/SObjs
-    endif
 	$(call split_install_messages, ami, $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/)
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
