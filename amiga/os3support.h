@@ -36,17 +36,20 @@
 #include <exec/memory.h>
 #endif
 
-/* Library bases */
-struct Library *SysBase;
-struct Library *DOSBase;
-struct Library *IFFParseBase;
-
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
 #define MEMF_SHARED	MEMF_ANY
 
+/* Ignore tags that aren't supported */
+#define PDTA_PromoteMask	TAG_IGNORE
+
 /* Easy wrapper for AllocVecTagList with no tags */
 #define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
+
+#define Notify(...) (void)0;
+
+#define FOpen(A,B,C) Open(A,B);
+#define FClose(A) Close(A);
 
 /* Integral type definitions */
 typedef int8_t int8;
@@ -92,7 +95,14 @@ struct TimeVal {
 #define IDFMT_DIRECTMAPPED  (2)  /* Direct mapped icon (truecolor 0xAARRGGBB, V51+) */ 
 
 /* Functions */
+/* DOS */
 int64 GetFileSize(BPTR fh);
+
+/* Exec */
+struct Node *GetHead(struct List *list);
+
+/* Utility */
+char *ASPrintf(const char *fmt, ...);
 #endif
 
 #endif

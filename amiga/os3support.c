@@ -23,6 +23,7 @@
 #ifndef __amigaos4__
 #include "os3support.h"
 
+/* DOS */
 int64 GetFileSize(BPTR fh)
 {
 	int32 size = 0;
@@ -34,6 +35,129 @@ int64 GetFileSize(BPTR fh)
 
 	FreeVec(fib);
 	return (int64)size;
+}
+
+/* Exec */
+struct Node *GetHead(struct List *list)
+{
+	struct Node *res = NULL;
+
+	if ((NULL != list) && (NULL != list->lh_Head->ln_Succ))
+	{
+		res = list->lh_Head;
+	}
+	return res;
+}
+
+/* Utility */
+struct FormatContext
+{
+	STRPTR	Index;
+	LONG	Size;
+	BOOL	Overflow;
+};
+
+STATIC VOID ASM
+StuffChar(
+	REG(a3, struct FormatContext *	Context),
+	REG(d0, UBYTE Char))
+{
+	/* Is there still room? */
+	if(Context->Size > 0)
+	{
+		(*Context->Index) = Char;
+
+		Context->Index++;
+		Context->Size--;
+
+		/* Is there only a single character left? */
+		if(Context->Size == 1)
+		{
+			/* Provide null-termination. */
+			(*Context->Index) = '\0';
+
+			/* Don't store any further characters. */
+			Context->Size = 0;
+		}
+	}
+	else
+	{
+		Context->Overflow = TRUE;
+	}
+}
+
+BOOL
+VSPrintfN(
+	LONG			MaxLen,
+	STRPTR			Buffer,
+	const STRPTR	FormatString,
+	const va_list	VarArgs)
+{
+	BOOL result = FAILURE;
+
+	/* format a text, but place only up to MaxLen
+	 * characters in the output buffer (including
+	 * the terminating NUL)
+	 */
+
+	if (Buffer == NULL || FormatString == NULL) return(result);
+
+	if(MaxLen > 1)
+	{
+		struct FormatContext Context;
+
+		Context.Index		= Buffer;
+		Context.Size		= MaxLen;
+		Context.Overflow	= FALSE;
+
+		RawDoFmt(FormatString,(APTR)VarArgs,(VOID (*)())StuffChar,(APTR)&Context);
+
+		if(NO Context.Overflow)
+			result = SUCCESS;
+	}
+
+	return(result);
+}
+
+BOOL
+SPrintfN(
+	LONG			MaxLen,
+	STRPTR			Buffer,
+	const STRPTR	FormatString,
+					...)
+{
+	va_list VarArgs;
+	BOOL result = FAILURE;
+
+	/* format a text, varargs version */
+
+	if (Buffer == NULL && FormatString == NULL) return result;
+
+	va_start(VarArgs,FormatString);
+	result = VSPrintfN(MaxLen,Buffer,FormatString,VarArgs);
+	va_end(VarArgs);
+
+	return(result);
+}
+
+char *ASPrintf(const char *fmt, ...)
+{
+  int r;
+  va_list ap;
+  static char buffer[2048];
+  char *rbuf;
+  
+  va_start(ap, fmt);
+  r = VSPrintfN(2048, buffer, (const STRPTR)fmt, ap);
+  va_end(ap);
+
+	r = strlen(buffer);
+	rbuf = AllocVec(r+1, MEMF_CLEAR);
+	if (rbuf != NULL)
+	{
+		strncpy(rbuf, buffer, r);
+	}
+	return rbuf;
 }
 
 #endif
