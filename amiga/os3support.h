@@ -47,6 +47,7 @@
 #define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
 
 #define Notify(...) (void)0;
+#define GetSucc(N) (N)->ln_Succ;
 
 #define FOpen(A,B,C) Open(A,B);
 #define FClose(A) Close(A);
