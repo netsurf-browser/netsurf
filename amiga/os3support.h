@@ -43,14 +43,25 @@
 /* Ignore tags that aren't supported */
 #define PDTA_PromoteMask	TAG_IGNORE
 
-/* Easy wrapper for AllocVecTagList with no tags */
-#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
-
+/* Easy compat macros */
+/* application */
 #define Notify(...) (void)0;
+
+/* Exec */
+/* AllocVecTagList with no tags */
+#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
 #define GetSucc(N) (N)->ln_Succ;
 
+/* diskfont */
+/* Only used in one place we haven't ifdeffed, where it returns the charset name */
+#define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
+
+/* DOS */
 #define FOpen(A,B,C) Open(A,B);
 #define FClose(A) Close(A);
+
+/* Intuition */
+#define IDoMethod DoMethod
 
 /* Integral type definitions */
 typedef int8_t int8;
