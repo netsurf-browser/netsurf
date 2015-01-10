@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#ifdef __amigaos4__
 #include <string.h>
 
 #include <proto/wb.h>
@@ -26,9 +26,7 @@
 #include <proto/icon.h>
 #include <proto/layers.h>
 
-#ifdef __amigaos4__
 #include <graphics/blitattr.h>
-#endif
 #include <workbench/icon.h>
 
 #include "utils/errors.h"
@@ -36,10 +34,8 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/nsoption.h"
-#include "desktop/browser.h"
 #include "content/hlcache.h"
 #include "desktop/mouse.h"
-#include "desktop/gui_window.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
@@ -315,3 +311,43 @@ void *ami_window_at_pointer(int type)
 	if(layer) return ami_find_gwin_by_id(layer->Window, type);
 		else return NULL;
 }
+
+#else
+#include "amiga/drag.h"
+
+void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c,
+		gui_save_type type)
+{
+}
+
+void gui_drag_save_selection(struct gui_window *g, const char *selection)
+{
+}
+
+void ami_drag_save(struct Window *win)
+{
+}
+
+void ami_drag_icon_show(struct Window *win, const char *type)
+{
+}
+
+void ami_drag_icon_close(struct Window *win)
+{
+}
+
+void ami_drag_icon_move(void)
+{
+}
+
+BOOL ami_drag_in_progress(void)
+{
+	return FALSE;
+}
+
+void *ami_window_at_pointer(int type)
+{
+	return NULL;
+}
+#endif
+
