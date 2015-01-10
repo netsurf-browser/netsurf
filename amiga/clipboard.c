@@ -42,6 +42,7 @@
 #include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
+#include "amiga/misc.h"
 #include "amiga/utf8.h"
 
 #define ID_UTF8  MAKE_ID('U','T','F','8')
@@ -110,10 +111,10 @@ static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codese
 			
 			case 0:
 				if(ci_new) {
-					ci_next->ci_Next = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
+					ci_next->ci_Next = ami_misc_allocvec_clear(sizeof(struct CollectionItem), 0);
 					ci_next = ci_next->ci_Next;
 				} else {
-					ci_new = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
+					ci_new = ami_misc_allocvec_clear(sizeof(struct CollectionItem), 0);
 					ci_next = ci_new;
 				}
 				
@@ -124,10 +125,10 @@ static char *ami_clipboard_cat_collection(struct CollectionItem *ci, LONG codese
 
 			default:
 				if(ci_new) {
-					ci_next->ci_Next = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
+					ci_next->ci_Next = ami_misc_allocvec_clear(sizeof(struct CollectionItem), 0);
 					ci_next = ci_next->ci_Next;
 				} else {
-					ci_new = AllocVecTags(sizeof(struct CollectionItem), AVT_ClearWithValue, 0, TAG_DONE);
+					ci_new = ami_misc_allocvec_clear(sizeof(struct CollectionItem), 0);
 					ci_next = ci_new;
 				}
 				

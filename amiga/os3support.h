@@ -36,6 +36,9 @@
 #include <exec/memory.h>
 #endif
 
+/* Macros */
+#define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
+
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
 #define MEMF_SHARED	MEMF_ANY
@@ -57,8 +60,8 @@
 #define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
 
 /* DOS */
-#define FOpen(A,B,C) Open(A,B);
-#define FClose(A) Close(A);
+#define FOpen(A,B,C) Open(A,B)
+#define FClose(A) Close(A)
 
 /* Intuition */
 #define IDoMethod DoMethod
