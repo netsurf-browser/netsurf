@@ -62,6 +62,7 @@
 
 /* Intuition */
 #define IDoMethod DoMethod
+#define IDoSuperMethodA DoSuperMethodA
 
 /* Integral type definitions */
 typedef int8_t int8;

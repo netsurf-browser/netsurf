@@ -4,8 +4,7 @@
  *   by Daniel "Trixie" Jedlicka
  */
 
-#undef __USE_INLINE__
-
+#include "amiga/os3support.h"
 #include "amigaguide_class.h"
 
 
@@ -46,18 +45,22 @@ Class *initAGClass(void)
 
 
  // Open amigaguide.library and its interface.
- if ( (AmigaGuideBase = IExec->OpenLibrary("amigaguide.library", 52)) )
+ if ( (AmigaGuideBase = OpenLibrary("amigaguide.library", 52)) )
   {
-   if ( (IAmigaGuide  = (struct AmigaGuideIFace *)IExec->GetInterface(AmigaGuideBase, "main", 1L, NULL)) )
+#ifdef __amigaos4__
+   if ( (IAmigaGuide  = (struct AmigaGuideIFace *)GetInterface(AmigaGuideBase, "main", 1L, NULL)) )
     {
-     if ( (cl = IIntuition->MakeClass(NULL, "rootclass", NULL, sizeof(struct localObjectData), 0)) )
+#endif
+     if ( (cl = MakeClass(NULL, "rootclass", NULL, sizeof(struct localObjectData), 0)) )
       {
        cl->cl_Dispatcher.h_Entry = (HOOKFUNC)dispatchAGClass;
-       IIntuition->AddClass(cl);
+       AddClass(cl);
       }
      else freeAGClass(NULL);
+#ifdef __amigaos4__
     }
    else freeAGClass(NULL);
+#endif
   }
 
  return cl;
@@ -72,9 +75,11 @@ BOOL freeAGClass(Class *cl)
 
 
  // Close amigaguide.library and free the class.
- if (IAmigaGuide)    IExec->DropInterface((struct Interface *)IAmigaGuide);
- if (AmigaGuideBase) IExec->CloseLibrary(AmigaGuideBase);
- if (cl)             retVal = IIntuition->FreeClass(cl);
+#ifdef __amigaos4__
+ if (IAmigaGuide)    DropInterface((struct Interface *)IAmigaGuide);
+#endif
+ if (AmigaGuideBase) CloseLibrary(AmigaGuideBase);
+ if (cl)             retVal = FreeClass(cl);
 
  return retVal;
 }
@@ -112,7 +117,7 @@ static uint32 dispatchAGClass(Class *cl, Object *o, Msg msg)
      return agm_process(cl, o, msg);
 
    default:
-     return IIntuition->IDoSuperMethodA(cl, o, msg);
+     return IDoSuperMethodA(cl, o, msg);
   }
 
 }
@@ -126,7 +131,7 @@ uint32 om_new(Class *cl, Object *o, struct opSet *msg)
  uint32 retVal = 0L;
 
 
- if ( (retVal = IIntuition->IDoSuperMethodA(cl, o, (Msg)msg)) )
+ if ( (retVal = IDoSuperMethodA(cl, o, (Msg)msg)) )
   {
    // Obtain pointer to our object's local instance data.
    if ( (lod = (struct localObjectData *)INST_DATA(cl, retVal)) )
@@ -161,7 +166,7 @@ uint32 om_dispose(Class *cl, Object *o, Msg msg)
  agm_close(cl, o, msg);
 
  // Let superclass dispose of the object.
- return IIntuition->IDoSuperMethodA(cl, o, msg);
+ return IDoSuperMethodA(cl, o, msg);
 
 }
 
@@ -176,7 +181,7 @@ uint32 om_set(Class *cl, Object *o, struct opSet *msg)
  uint32 retVal = 0L;
  
 
- while ((ti = IUtility->NextTagItem (&tags)))
+ while ((ti = NextTagItem (&tags)))
   {
    switch (ti->ti_Tag)
     {
@@ -267,7 +272,7 @@ uint32 om_get(Class *cl, Object *o, struct opGet *msg)
    break;
 
    default:
-     retVal = IIntuition->IDoSuperMethodA(cl, o, (Msg)msg);
+     retVal = IDoSuperMethodA(cl, o, (Msg)msg);
   }
 
  return retVal;
@@ -289,15 +294,15 @@ uint32 agm_open(Class *cl, Object *o, Msg msg)
  if ( lod->agHandle ) agm_close(cl, o, msg);
 
    // (Re)establish the AmigaGuide context and open the database asynchronously.
-   if ( (lod->agHandle = IAmigaGuide->OpenAmigaGuideAsync(&(lod->nag), NULL)) )
+   if ( (lod->agHandle = OpenAmigaGuideAsync(&(lod->nag), NULL)) )
     {
-     if ( (lod->agSignal = IAmigaGuide->AmigaGuideSignal(lod->agHandle)) )
+     if ( (lod->agSignal = AmigaGuideSignal(lod->agHandle)) )
       {
        // Wait until the database is displayed and ready.
-       IExec->Wait(lod->agSignal);
+       Wait(lod->agSignal);
        while ( agActive == FALSE )
         {
-         while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) )
+         while ( (lod->agm = GetAmigaGuideMsg(lod->agHandle)) )
           {
            // The AmigaGuide process started OK.
            if ( lod->agm->agm_Type == ActiveToolID ) agActive = TRUE;
@@ -305,19 +310,19 @@ uint32 agm_open(Class *cl, Object *o, Msg msg)
            // Opening the guide file failed for some reason, continue as usual.
            if ( lod->agm->agm_Type == ToolStatusID && lod->agm->agm_Pri_Ret ) agActive = TRUE;
 
-           IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
+           ReplyAmigaGuideMsg(lod->agm);
           }
         }
        if ( lod->nag.nag_Context )
         {
          // A context node array is provided = open the current context node.
-         IAmigaGuide->SetAmigaGuideContext(lod->agHandle, lod->agContextID, NULL);
-         retVal = IAmigaGuide->SendAmigaGuideContext(lod->agHandle, NULL);
+         SetAmigaGuideContext(lod->agHandle, lod->agContextID, NULL);
+         retVal = SendAmigaGuideContext(lod->agHandle, NULL);
         }
        else
         {
          // No context array is provided = open the main node.
-         retVal = IAmigaGuide->SendAmigaGuideCmd(lod->agHandle, "LINK MAIN", TAG_DONE);
+         retVal = SendAmigaGuideCmd(lod->agHandle, "LINK MAIN", TAG_DONE);
         }
       }
     }
@@ -338,7 +343,7 @@ uint32 agm_close(Class *cl, Object *o, Msg msg)
 
  if ( lod->agHandle )
   {
-   IAmigaGuide->CloseAmigaGuide(lod->agHandle);
+   CloseAmigaGuide(lod->agHandle);
    lod->agHandle = NULL;
    lod->agSignal = 0;
    retVal = 1L;
@@ -361,7 +366,7 @@ uint32 agm_process(Class *cl, Object *o, Msg msg)
 
  if (lod->agHandle)
   {
-   while ( (lod->agm = IAmigaGuide->GetAmigaGuideMsg(lod->agHandle)) )
+   while ( (lod->agm = GetAmigaGuideMsg(lod->agHandle)) )
     {
      switch (lod->agm->agm_Type)
       {
@@ -374,7 +379,7 @@ uint32 agm_process(Class *cl, Object *o, Msg msg)
          //printf("%d\n", lod->agm->agm_Type);
        break;
       }
-     IAmigaGuide->ReplyAmigaGuideMsg(lod->agm);
+     ReplyAmigaGuideMsg(lod->agm);
     }
   }
 
