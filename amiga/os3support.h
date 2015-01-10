@@ -65,6 +65,7 @@
 
 /* Intuition */
 #define IDoMethod DoMethod
+#define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
 
 /* Integral type definitions */

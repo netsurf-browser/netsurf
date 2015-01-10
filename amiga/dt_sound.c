@@ -21,6 +21,8 @@
 */
 
 #ifdef WITH_AMIGA_DATATYPES
+#include "amiga/os3support.h"
+
 #include "amiga/filetype.h"
 #include "amiga/datatypes.h"
 #include "content/content_protected.h"
