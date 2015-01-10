@@ -46,14 +46,17 @@
 /* Ignore tags that aren't supported */
 #define PDTA_PromoteMask	TAG_IGNORE
 
+/* Renamed structures */
+#define AnchorPathOld AnchorPath
+
 /* Easy compat macros */
 /* application */
 #define Notify(...) (void)0;
 
 /* Exec */
 /* AllocVecTagList with no tags */
-#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
-#define GetSucc(N) (N)->ln_Succ;
+#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY)
+#define GetSucc(N) (N)->ln_Succ
 
 /* diskfont */
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */
