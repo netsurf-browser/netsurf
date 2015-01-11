@@ -36,6 +36,9 @@
 #include <exec/memory.h>
 #endif
 
+/* Macros */
+#define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
+
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
 #define MEMF_SHARED	MEMF_ANY
@@ -43,25 +46,33 @@
 /* Ignore tags that aren't supported */
 #define PDTA_PromoteMask	TAG_IGNORE
 
+/* Renamed structures */
+#define AnchorPathOld AnchorPath
+
 /* Easy compat macros */
 /* application */
 #define Notify(...) (void)0;
 
 /* Exec */
 /* AllocVecTagList with no tags */
-#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY);
-#define GetSucc(N) (N)->ln_Succ;
+#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY)
+#define GetSucc(N) (N)->ln_Succ
 
 /* diskfont */
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */
 #define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
 
 /* DOS */
-#define FOpen(A,B,C) Open(A,B);
-#define FClose(A) Close(A);
+#define FOpen(A,B,C) Open(A,B)
+#define FClose(A) Close(A)
 
 /* Intuition */
 #define IDoMethod DoMethod
+#define IDoMethodA DoMethodA
+#define IDoSuperMethodA DoSuperMethodA
+#define RefreshSetGadgetAttrs SetGadgetAttrs /*\todo This isn't quite right */
+/* Utility */
+#define SetMem memset
 
 /* Integral type definitions */
 typedef int8_t int8;
@@ -115,6 +126,9 @@ struct Node *GetHead(struct List *list);
 
 /* Utility */
 char *ASPrintf(const char *fmt, ...);
+
+/* C */
+char *strlwr(char *str);
+#endif
 #endif
 
-#endif

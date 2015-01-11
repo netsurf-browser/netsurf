@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -32,11 +34,11 @@
 #include "desktop/gui_window.h"
 #include "desktop/version.h"
 
-#include "amiga/os3support.h"
 #include "amiga/arexx.h"
 #include "amiga/download.h"
 #include "amiga/gui.h"
 #include "amiga/hotlist.h"
+#include "amiga/misc.h"
 #include "amiga/theme.h"
 
 extern const char * const verarexx;
@@ -238,7 +240,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	{
 		if(!gw) return;
 
-		dln = AllocVecTags(sizeof(struct dlnode), AVT_ClearWithValue, 0, TAG_DONE);
+		dln = ami_misc_allocvec_clear(sizeof(struct dlnode), 0);
 		dln->filename = strdup((char *)cmd->ac_ArgList[3]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;

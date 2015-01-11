@@ -160,4 +160,16 @@ char *ASPrintf(const char *fmt, ...)
 	return rbuf;
 }
 
+/* C */
+char *strlwr(char *str)
+{
+  size_t i;
+  size_t len = strlen(str);
+
+  for(i=0; i<len; i++)
+  str[i] = tolower((unsigned char)str[i]);
+
+  return str;
+}
 #endif
+

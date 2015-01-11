@@ -40,6 +40,7 @@
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/download.h"
+#include "amiga/misc.h"
 
 /**
  * Create a bitmap.
@@ -54,13 +55,10 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	
-	bitmap = AllocVecTags(sizeof(struct bitmap), AVT_ClearWithValue, 0, TAG_DONE);
+	bitmap = ami_misc_allocvec_clear(sizeof(struct bitmap), 0);
 	if(bitmap)
 	{
-		bitmap->pixdata = AllocVecTags(width*height*4,
-							AVT_Type,MEMF_PRIVATE,
-							AVT_ClearWithValue,0xff,
-							TAG_DONE);
+		bitmap->pixdata = ami_misc_allocvec_clear(width*height*4, 0xff);
 		bitmap->width = width;
 		bitmap->height = height;
 
@@ -378,7 +376,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 				bm_format, bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
 #ifndef __amigaos4__
-				ami_bitmap_argb_to_rgba(bitmap);
+				ami_bitmap_argb_to_rgba(bm);
 #endif				
 			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}

@@ -21,8 +21,11 @@
 */
 
 #ifdef WITH_AMIGA_DATATYPES
+#include "amiga/os3support.h"
+
 #include "amiga/filetype.h"
 #include "amiga/datatypes.h"
+#include "amiga/misc.h"
 #include "amiga/plotters.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
@@ -36,7 +39,9 @@
 #include <proto/intuition.h>
 #include <datatypes/animationclass.h>
 #include <datatypes/pictureclass.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 #include <intuition/classusr.h>
 
 typedef struct amiga_dt_anim_content {
@@ -192,7 +197,7 @@ bool amiga_dt_anim_convert(struct content *c)
 			IDoMethodA(plugin->dto, (Msg)&adt_frame);
 
 			clut = ami_colormap_to_clut(adt_frame.alf_CMap);
-
+#ifdef __amigaos4__
 			BltBitMapTags(
 				BLITA_Width, width,
 				BLITA_Height, height,
@@ -203,7 +208,9 @@ bool amiga_dt_anim_convert(struct content *c)
 				BLITA_DestBytesPerRow, width,
 				BLITA_CLUT, clut,
 				TAG_DONE);
-
+#else
+#warning FIXME: Need to use a different blitter function for OS3!
+#endif
 				FreeVec(clut);
 
 				adt_frame.MethodID = ADTM_UNLOADFRAME;
@@ -332,7 +339,7 @@ content_type amiga_dt_anim_content_type(void)
 APTR ami_colormap_to_clut(struct ColorMap *cmap)
 {
 	int i;
-	UBYTE *clut = AllocVecTags(256 * 4, AVT_ClearWithValue, 0, TAG_DONE); /* NB: Was not MEMF_PRIVATE */
+	UBYTE *clut = ami_misc_allocvec_clear(256 * 4, 0); /* NB: Was not MEMF_PRIVATE */
 	ULONG colr[256 * 4];
 
 	if(!clut) return NULL;

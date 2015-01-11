@@ -34,6 +34,19 @@
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 
+void *ami_misc_allocvec_clear(int size, UBYTE value)
+{
+#ifdef __amigaos4__
+	return AllocVecTags(size, AVT_ClearWithValue, value, TAG_DONE);
+#else
+	void *mem = AllocVec(size, MEMF_CLEAR);
+	if (mem && (value != 0)) {
+		memset(mem, value, size);
+	}
+	return mem;
+#endif
+}
+
 static LONG ami_misc_req(const char *message, uint32 type)
 {
 	LONG ret = 0;

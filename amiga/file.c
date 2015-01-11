@@ -217,7 +217,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 void ami_file_save_req(int type, struct gui_window_2 *gwin,
 		struct hlcache_handle *object)
 {
-	char *fname = AllocVecTags(1024, NULL);
+	char *fname = AllocVecTagList(1024, NULL);
 	char *initial_fname = NULL;
 
 	if(object) {

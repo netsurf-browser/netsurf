@@ -1313,6 +1313,9 @@ void gui_create_form_select_menu(struct gui_window *g,
 
 #else
 
+#include <proto/dos.h>
+#include "amiga/context_menu.h"
+
 void ami_context_menu_init(void)
 {
 }
@@ -1330,8 +1333,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y)
 {
 }
 
-void gui_create_form_select_menu(struct gui_window *g,
-		struct form_control *control)
+void gui_create_form_select_menu(struct gui_window *g, struct form_control *control)
 {
 }
 #endif
+

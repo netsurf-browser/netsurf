@@ -98,7 +98,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 	char *dl_filename = ami_utf8_easy(download_context_get_filename(ctx));
 	APTR va[3];
 
-	dw = AllocVecTags(sizeof(struct gui_download_window), AVT_ClearWithValue, 0, TAG_DONE);
+	dw = ami_misc_allocvec_clear(sizeof(struct gui_download_window), 0);
 
 	if(gui && (!IsListEmpty(&gui->dllist)) && (dw->dln = (struct dlnode *)FindName(&gui->dllist,url)))
 	{

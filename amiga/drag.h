@@ -18,8 +18,14 @@
 
 #ifndef AMIGA_DRAG_H
 #define AMIGA_DRAG_H
+#include <exec/types.h>
+#include "desktop/browser.h"
+#include "desktop/gui_window.h"
 
 #define AMI_DRAG_THRESHOLD 10
+
+struct hlcache_handle;
+struct Window;
 
 int drag_save;
 void *drag_save_data;
@@ -36,3 +42,4 @@ BOOL ami_drag_in_progress(void);
 
 void *ami_window_at_pointer(int type);
 #endif
+
