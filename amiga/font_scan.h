@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_FONT_SCAN_H
 #define AMIGA_FONT_SCAN_H
-
+#include "amiga/os3support.h"
 #include <libwapcaplet/libwapcaplet.h>
 
 void ami_font_scan_init(const char *filename, bool force_scan, bool save,

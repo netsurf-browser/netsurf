@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -32,11 +34,11 @@
 #include "desktop/gui_window.h"
 #include "desktop/version.h"
 
-#include "amiga/os3support.h"
 #include "amiga/arexx.h"
 #include "amiga/download.h"
 #include "amiga/gui.h"
 #include "amiga/hotlist.h"
+#include "amiga/misc.h"
 #include "amiga/theme.h"
 
 extern const char * const verarexx;

@@ -16,9 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include "amiga/filetype.h"
+#include "amiga/misc.h"
 #include "amiga/object.h"
 #include "content/fetch.h"
 #include "content/content.h"
@@ -201,7 +204,7 @@ nserror ami_mime_init(const char *mimefile)
 			if(ReadArgs(template, rarray, rargs))
 			{
 				node = AddObject(ami_mime_list, AMINS_MIME);
-				mimeentry = AllocVecTags(sizeof(struct ami_mime_entry), AVT_ClearWithValue, 0, TAG_DONE);
+				mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
 				node->objstruct = mimeentry;
 
 				if(rarray[AMI_MIME_MIMETYPE])
@@ -351,7 +354,7 @@ static APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mi
 	char *p;
 
 	node = AddObject(ami_mime_list, AMINS_MIME);
-	mimeentry = AllocVecTags(sizeof(struct ami_mime_entry), AVT_ClearWithValue, 0, TAG_DONE);
+	mimeentry = ami_misc_allocvec_clear(sizeof(struct ami_mime_entry), 0);
 	node->objstruct = mimeentry;
 
 	lerror = lwc_intern_string(dth->dth_Name, strlen(dth->dth_Name), &mimeentry->datatype);

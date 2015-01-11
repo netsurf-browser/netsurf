@@ -70,6 +70,9 @@
 #define IDoMethod DoMethod
 #define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
+#define RefreshSetGadgetAttrs SetGadgetAttrs /*\todo This isn't quite right */
+/* Utility */
+#define SetMem memset
 
 /* Integral type definitions */
 typedef int8_t int8;
@@ -123,6 +126,9 @@ struct Node *GetHead(struct List *list);
 
 /* Utility */
 char *ASPrintf(const char *fmt, ...);
+
+/* C */
+char *strlwr(char *str);
+#endif
 #endif
 
-#endif
