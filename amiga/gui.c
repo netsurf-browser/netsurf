@@ -5141,7 +5141,7 @@ Object *ami_gui_splash_open(void)
 				IA_Left, &left,
 				TAG_DONE);
 
-	SetRPAttrs(win->RPort, RPTAG_APenColor, 0x003F6DFE, TAG_DONE);
+	SetRPAttrs(win->RPort, RPTAG_APenColor, 0xFF3F6DFE, TAG_DONE);
 	SetDrMd(win->RPort, JAM1);
 
 	tattr.ta_Name = "DejaVu Serif Italic.font";
