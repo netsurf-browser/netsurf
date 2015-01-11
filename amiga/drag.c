@@ -41,13 +41,13 @@
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 
-#include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
+#include "amiga/gui.h"
 #include "amiga/theme.h"
 
 
