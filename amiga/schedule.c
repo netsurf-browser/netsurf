@@ -31,11 +31,14 @@
 
 #include "amiga/schedule.h"
 
+#ifndef NSA_NO_ASYNC
 static struct MsgPort *smsgport = NULL; /* to send messages for the scheduler to */
+#endif
 static struct TimeRequest *tioreq;
 struct Device *TimerBase;
 #ifdef __amigaos4__
 struct TimerIFace *ITimer;
+#endif
 
 struct nscallback
 {
@@ -353,6 +356,31 @@ static void ami_schedule_free(struct MsgPort *msgport)
 	ami_schedule_close_timer(msgport);
 }
 
+static nserror ami_scheduler_schedule(struct ami_schedule_message *asmsg)
+{
+	struct nscallback *nscb;
+
+	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
+	if (asmsg->t < 0) return schedule_remove(asmsg->callback, asmsg->p);
+
+	if ((nscb = ami_schedule_locate(asmsg->callback, asmsg->p, false))) {
+		return ami_schedule_reschedule(nscb, asmsg->t);
+	}
+
+	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
+	if(!nscb) return NSERROR_NOMEM;
+
+	if (ami_schedule_add_timer_event(nscb, asmsg->t) != NSERROR_OK)
+		return NSERROR_NOMEM;
+
+	nscb->callback = asmsg->callback;
+	nscb->p = asmsg->p;
+
+	pblHeapInsert(schedule_list, nscb);
+
+	return NSERROR_OK;
+}
+
 /* exported function documented in amiga/schedule.h */
 nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
@@ -381,31 +409,6 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	return NSERROR_OK;
 }
 
-static nserror ami_scheduler_schedule(struct ami_schedule_message *asmsg)
-{
-	struct nscallback *nscb;
-
-	if(schedule_list == NULL) return NSERROR_INIT_FAILED;
-	if (asmsg->t < 0) return schedule_remove(asmsg->callback, asmsg->p);
-
-	if ((nscb = ami_schedule_locate(asmsg->callback, asmsg->p, false))) {
-		return ami_schedule_reschedule(nscb, asmsg->t);
-	}
-
-	nscb = AllocVecTagList(sizeof(struct nscallback), NULL);
-	if(!nscb) return NSERROR_NOMEM;
-
-	if (ami_schedule_add_timer_event(nscb, asmsg->t) != NSERROR_OK)
-		return NSERROR_NOMEM;
-
-	nscb->callback = asmsg->callback;
-	nscb->p = asmsg->p;
-
-	pblHeapInsert(schedule_list, nscb);
-
-	return NSERROR_OK;
-}
-
 /* exported interface documented in amiga/schedule.h */
 void ami_schedule_handle(struct MsgPort *nsmsgport)
 {
@@ -421,7 +424,6 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 			 */
 			ReplyMsg((struct Message *)timermsg);
 			ami_scheduler_run(NULL);
-		}
 	}
 #else
 	struct ami_schedule_message *asmsg;
