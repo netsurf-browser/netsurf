@@ -51,7 +51,7 @@
 
 /* Easy compat macros */
 /* application */
-#define Notify(...) (void)0;
+#define Notify(...) (void)0
 
 /* Exec */
 /* AllocVecTagList with no tags */

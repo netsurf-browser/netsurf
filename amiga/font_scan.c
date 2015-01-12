@@ -20,6 +20,8 @@
  * Font glyph scanner for Unicode substitutions.
 */
 
+#include "amiga/os3support.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,6 +67,8 @@ struct ami_font_scan_window {
 	char *title;
 	char *glyphtext;
 };
+
+#ifdef __amigaos4__
 
 /**
  * Lookup a font that contains a UTF-16 codepoint
@@ -502,5 +506,24 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 
 	LOG(("Initialised with %ld glyphs", found));
 }
+#else
+#warning FIXME: font_scan.c needs fixing for OS3
+void ami_font_scan_init(const char *filename, bool force_scan, bool save,
+		lwc_string **glypharray)
+{
+}
+
+void ami_font_scan_fini(lwc_string **glypharray)
+{
+}
+
+void ami_font_scan_save(const char *filename, lwc_string **glypharray)
+{
+}
+
+const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
+{
+}
+#endif
 
 

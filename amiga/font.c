@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <assert.h>
 
 #include <proto/diskfont.h>
@@ -173,6 +175,7 @@ const struct font_functions nsfont = {
 	nsfont_split
 };
 
+#ifdef __amigaos4__
 bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
@@ -868,6 +871,66 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	/* reschedule to run in five minutes */
 	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
 }
+#else
+#warning FIXME: font.c needs fixing properly for OS3, currently bodged to get it to build
+bool nsfont_width(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int *width)
+{
+	*width == length;
+	return true;
+}
+
+bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	*actual_x = x;
+	*char_offset = x / 10;
+	return true;
+}
+
+bool nsfont_split(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	*actual_x = x;
+	*char_offset = x / 10;
+	return true;
+}
+
+ULONG ami_unicode_text(struct RastPort *rp, const char *string,
+	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa)
+{
+	/* So we get some sort of text on screen */
+	Move(rp, x, y);
+	Text(rp, string, length);
+}
+
+void ami_init_fonts(void)
+{
+}
+
+void ami_close_fonts(void)
+{
+}
+
+void ami_font_close(struct ami_font_node *node)
+{
+}
+
+void ami_font_initscanner(bool force, bool save)
+{
+}
+
+void ami_font_finiscanner(void)
+{
+}
+
+void ami_font_savescanner(void)
+{
+}
+#endif
 
 void ami_font_setdevicedpi(int id)
 {
