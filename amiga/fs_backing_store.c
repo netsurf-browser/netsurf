@@ -16,14 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Uncomment the below to disable the async write process */
-//#define NSA_NO_ASYNC_STORE 1
-
 #include <proto/dos.h>
 #include <proto/exec.h>
 
 #include "content/fs_backing_store.c"
 
+#ifndef NSA_NO_ASYNC
 struct ami_bsm_store {
 	nsurl *url;
 	enum backing_store_flags flags;
@@ -371,9 +369,10 @@ ami_backing_store_initialise(const struct llcache_store_parameters *parameters)
 
 	return error;
 }
+#endif
 
 static struct gui_llcache_table amiga_llcache_table = {
-#ifdef NSA_NO_ASYNC_STORE
+#ifdef NSA_NO_ASYNC
 	.initialise = initialise,
 	.finalise = finalise,
 	.store = store,
