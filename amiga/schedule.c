@@ -31,7 +31,7 @@
 
 #include "amiga/schedule.h"
 
-#ifndef NSA_NO_ASYNC
+#ifdef AMIGA_NS_ASYNC
 static struct MsgPort *smsgport = NULL; /* to send messages for the scheduler to */
 #endif
 static struct TimeRequest *tioreq;
@@ -254,7 +254,7 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 	struct TimeVal tv;
 	struct ami_schedule_message *asmsg;
 
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	asmsg = AllocVecTagList(sizeof(struct ami_schedule_message), NULL);
 #else
 	asmsg = AllocSysObjectTags(ASOT_MESSAGE,
@@ -281,7 +281,7 @@ static void ami_scheduler_run(struct MsgPort *nsmsgport)
 	asmsg->callback = callback;
 	asmsg->p = p;
 
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	schedule_run(asmsg);
 	FreeVec(asmsg);
 #else
@@ -386,7 +386,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct ami_schedule_message *asmsg;
 
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	asmsg = AllocVecTagList(sizeof(struct ami_schedule_message), NULL);
 #else
 	if(smsgport == NULL) return NSERROR_INIT_FAILED;
@@ -400,7 +400,7 @@ nserror ami_schedule(int t, void (*callback)(void *p), void *p)
 	asmsg->callback = callback;
 	asmsg->p = p;
 
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	ami_scheduler_schedule(asmsg);
 	FreeVec(asmsg);
 #else
@@ -415,7 +415,7 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 	/* nsmsgport is the NetSurf message port that the scheduler task
 	 * (or timer.device in no-async mode) is sending messages to. */
 
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	struct TimerRequest *timermsg;
 
 	while((timermsg = (struct TimerRequest *)GetMsg(nsmsgport))) {
@@ -532,7 +532,7 @@ static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
  */
 nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 {
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	ami_schedule_create(nsmsgport);
 #else
 	if(nsmsgport == NULL) return NSERROR_INIT_FAILED;
@@ -568,7 +568,7 @@ nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 /* exported function documented in amiga/schedule.h */
 void ami_scheduler_process_delete(void)
 {
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	ami_schedule_free(NULL);
 #else
 	if(smsgport == NULL) return;

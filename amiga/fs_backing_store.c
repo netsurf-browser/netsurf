@@ -21,7 +21,7 @@
 
 #include "content/fs_backing_store.c"
 
-#ifndef NSA_NO_ASYNC
+#ifdef AMIGA_NS_ASYNC
 struct ami_bsm_store {
 	nsurl *url;
 	enum backing_store_flags flags;
@@ -372,7 +372,7 @@ ami_backing_store_initialise(const struct llcache_store_parameters *parameters)
 #endif
 
 static struct gui_llcache_table amiga_llcache_table = {
-#ifdef NSA_NO_ASYNC
+#ifndef AMIGA_NS_ASYNC
 	.initialise = initialise,
 	.finalise = finalise,
 	.store = store,
