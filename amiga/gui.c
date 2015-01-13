@@ -2819,8 +2819,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		return;
 	}
 
-	if(browser_window_has_content(gwin->gw->bw) == false)
-	{
+	if((gwin->gw->bw == NULL) || (browser_window_has_content(gwin->gw->bw)) == false) {
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
 
