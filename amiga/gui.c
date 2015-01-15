@@ -2769,8 +2769,7 @@ void ami_get_msg(void)
 void ami_change_tab(struct gui_window_2 *gwin, int direction)
 {
 	struct Node *tab_node = gwin->gw->tab_node;
-	struct Node *ptab;
-	ULONG ptabnum = 0;
+	struct Node *ptab = NULL;
 
 	if(gwin->tabs <= 1) return;
 
