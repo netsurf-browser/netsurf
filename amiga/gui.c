@@ -4043,8 +4043,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 
 static void gui_window_destroy(struct gui_window *g)
 {
-	struct Node *ptab;
-	int ptabnum = 0;
+	struct Node *ptab = NULL;
 	int gid;
 
 	if(!g) return;
@@ -4073,26 +4072,23 @@ static void gui_window_destroy(struct gui_window *g)
 						CLICKTAB_Labels,~0,
 						TAG_DONE);
 
-		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-				(ULONG *)&ptabnum);
+		GetAttr(CLICKTAB_CurrentNode, g->shared->objects[GID_TABS], (ULONG *)&ptab);
 
-		if(ptabnum == g->tab)
-		{
+		if(ptab == g->tab_node) {
 			ptab = GetSucc(g->tab_node);
 			if(!ptab) ptab = GetPred(g->tab_node);
-
-			GetClickTabNodeAttrs(ptab,TNA_Number,(ULONG *)&ptabnum,TAG_DONE);
 		}
 
 		Remove(g->tab_node);
 		FreeClickTabNode(g->tab_node);
-		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],g->shared->win,NULL,
-						CLICKTAB_Labels,&g->shared->tab_list,
-						CLICKTAB_Current,ptabnum,
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS], g->shared->win, NULL,
+						CLICKTAB_Labels, &g->shared->tab_list,
+						CLICKTAB_CurrentNode, ptab,
 						TAG_DONE);
 
 		if(ClickTabBase->lib_Version < 53)
-			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],g->shared->win,NULL,TRUE);
+			RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
+				g->shared->win, NULL, TRUE);
 
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
