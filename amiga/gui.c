@@ -2774,21 +2774,16 @@ void ami_change_tab(struct gui_window_2 *gwin, int direction)
 
 	if(gwin->tabs <= 1) return;
 
-	if(direction > 0)
-	{
+	if(direction > 0) {
 		ptab = GetSucc(tab_node);
-	}
-	else
-	{
+	} else {
 		ptab = GetPred(tab_node);
 	}
 
 	if(!ptab) return;
 
-	GetClickTabNodeAttrs(ptab, TNA_Number, (ULONG *)&ptabnum, TAG_DONE);
-
 	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_TABS], gwin->win, NULL,
-						CLICKTAB_Current, ptabnum,
+						CLICKTAB_CurrentNode, ptab,
 						TAG_DONE);
 
 	ami_switch_tab(gwin, true);
