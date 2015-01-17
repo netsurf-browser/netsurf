@@ -13,38 +13,38 @@
 	)
 )
 
-; The below procedure is part of "fitr", see
-; http://www.unsatisfactorysoftware.co.uk/fitr
-(procedure p_fitr #filename #text #comment #flags
-	(set #comstring "")
-	(if #comment (set #comstring (cat "COMMENT=\"" #comment "\"")))
-	(set #comment "")
-	(set #switches "")
-	(if #flags (set #switches (cat " " #flags)))
-	(set #flags "")
+(procedure p_append #filename #text
+	(set #file-path (tackon "ENVARC:launch-handler/URL" #protocol))
+	(set #def-file-path (tackon "ENVARC:launch-handler/URL/defaults" #protocol))
 
-	(if #text
+	(if (exists #file-path)
 		(
-			(transcript "Adding " @app-name " section to " #filename)
-
-			(textfile
-				(dest "t:fitr-installer.tmp")
-				(append #text)
-			)
-
-			(run (cat "fitr \"" #filename "\" \"" @app-name "\" t:fitr-installer.tmp " #comstring #switches))
-			(delete "t:fitr-installer.tmp")
+			(set #inc #file-path)
 		)
-;else
+		;else
 		(
-			(transcript "Removing " @app-name " section from " #filename)
-			(run (cat "fitr \"" #filename "\" \"" @app-name "\" " #comstring #switches))
+			(set #inc #def-file-path)
 		)
+	)
+
+	(textfile
+		(dest #file-path)
+		(include #inc)
+		(append #text)
 	)
 )
 
 (procedure p_chk_launch-handler #protocol
-	(run "C:Search >T:NS_Install.tmp " (tackon "ENVARC:launch-handler/URL" #protocol) " NetSurf" (safe))
+	(if (exists (tackon "ENVARC:launch-handler/URL" #protocol))
+		(
+			(run "C:Search >T:NS_Install.tmp " (tackon "ENVARC:launch-handler/URL" #protocol) " NetSurf" (safe))
+		)
+		;else
+		(
+			(run "C:Search >T:NS_Install.tmp " (tackon "ENVARC:launch-handler/URL/defaults" #protocol) " NetSurf" (safe))
+		)
+	)
+
 	(set #has_entry (getsize "T:NS_Install.tmp"))
 )
 
@@ -142,14 +142,22 @@
 
 (if (>= osver 53)
 	(
-		(set #addlaunchhandler
-			(askbool
-				(prompt "Add NetSurf to launch-handler? (recommended)")
-				(help "launch-handler is part of OS4.1 which opens URLs "
-					" by launching a web browser.\n\n"
-					"The installation will update the configuration of "
-					"OS4.1 to allow URLs to be opened by NetSurf.")
-				(default 1)
+		(if (= #AutoInstall 1)
+			(
+				(set #addlaunchhandler 0)
+			)
+			;else
+			(
+				(set #addlaunchhandler
+					(askbool
+						(prompt "Add NetSurf to launch-handler? (recommended)")
+						(help "launch-handler is part of OS4.1 which opens URLs "
+							" by launching a web browser.\n\n"
+							"The installation will update the configuration of "
+							"OS4.1 to allow URLs to be opened by NetSurf.")
+						(default 1)
+					)
+				)
 			)
 		)
 	)
@@ -360,30 +368,25 @@
 
 (if (= #addlaunchhandler 1)
 	(
-; We use fitr here so that the sections are only added once.
-; We also check for string "NetSurf" within the files as saving
-; the config will overwrite fitr's tags.
-; This probably needs rewriting to not use fitr as it isn't really necessary now.
-
 		(working "Adding NetSurf to launch-handler config")
 		(if (= (p_chk_launch-handler "FILE.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"file:///%s*\"\"")
+			(p_append "FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"file:///%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "HTTP.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://%s*\"\"")
+			(p_append "HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "HTTPS.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"https://%s*\"\"")
+			(p_append "HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"https://%s*\"\"")
 		)
 
 		(if (= (p_chk_launch-handler "WWW.LH") 0)
-			(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://www.%s*\"\"")
+			(p_append "WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"http://www.%s*\"\"")
 		)
 
 ;		(if (= (p_chk_launch-handler "FTP.LH") 0)
-;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"ftp://%s*\"\"")
+;			(p_append "FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"Rexx:NetSurf\"   CMDFORMAT=\"*\"ftp://%s*\"\"")
 ;		)
 	)
 )
