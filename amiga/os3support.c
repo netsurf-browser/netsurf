@@ -37,6 +37,16 @@ int64 GetFileSize(BPTR fh)
 	return (int64)size;
 }
 
+void FreeSysObject(ULONG type, APTR obj)
+{
+	switch(type) {
+		case ASOT_PORT:
+			DeleteMsgPort(obj);
+		break;
+	}
+}
+
+
 /* Exec */
 struct Node *GetHead(struct List *list)
 {
@@ -47,6 +57,23 @@ struct Node *GetHead(struct List *list)
 		res = list->lh_Head;
 	}
 	return res;
+}
+
+/* Intuition */
+uint32 GetAttrs(Object *obj, Tag tag1, ...)
+{
+	va_list ap;
+	Tag tag = tag1;
+	ULONG data = 0;
+
+	va_start(ap, tag1);
+
+	while(tag != TAG_DONE) {
+		data = va_arg(ap, ULONG);
+		GetAttr(tag, obj, (void *)data);
+		tag = va_arg(ap, Tag);
+	}
+	va_end(ap);
 }
 
 /* Utility */

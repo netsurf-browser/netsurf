@@ -1,5 +1,6 @@
 /*
  * Copyright 2010 John-Mark Bell <jmb@netsurf-browser.org>
+ * Copyright 2014 Chris Young <chris@unsatisfactorsysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -39,12 +40,54 @@
 /* Macros */
 #define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
 
+#define LIB_IS_AT_LEAST(B,V,R) ((B)->lib_Version>(V)) || \
+	((B)->lib_Version==(V) && (B)->lib_Revision>=(R))
+
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
 #define MEMF_SHARED	MEMF_ANY
 
-/* Ignore tags that aren't supported */
+/* Ignore unsupported tags */
+#define BITMAP_DisabledSourceFile	TAG_IGNORE
+#define CLICKTAB_CloseImage		TAG_IGNORE
+#define CLICKTAB_FlagImage		TAG_IGNORE
+#define CLICKTAB_LabelTruncate	TAG_IGNORE
+#define CLICKTAB_NodeClosed		TAG_IGNORE
 #define PDTA_PromoteMask	TAG_IGNORE
+#define RPTAG_APenColor		TAG_IGNORE
+#define GA_HintInfo			TAG_IGNORE
+#define GAUGEIA_Level		TAG_IGNORE
+#define IA_InBorder			TAG_IGNORE
+#define IA_Label			TAG_IGNORE
+#define SA_Compositing		TAG_IGNORE
+#define SBNA_Text			TAG_IGNORE
+#define TNA_CloseGadget		TAG_IGNORE
+#define TNA_HintInfo		TAG_IGNORE
+#define WA_ToolBox			TAG_IGNORE
+#define WINDOW_BuiltInScroll	TAG_IGNORE
+#define WINDOW_NewMenu		TAG_IGNORE
+#define WINDOW_NewPrefsHook	TAG_IGNORE
+
+/* raw keycodes */
+#define RAWKEY_BACKSPACE	0x41
+#define RAWKEY_TAB	0x42
+#define RAWKEY_ESC	0x45
+#define RAWKEY_DEL	0x46
+#define RAWKEY_PAGEUP	0x48
+#define RAWKEY_PAGEDOWN	0x49
+#define RAWKEY_CRSRUP	0x4C
+#define RAWKEY_CRSRDOWN	0x4D
+#define RAWKEY_CRSRRIGHT	0x4E
+#define RAWKEY_CRSRLEFT	0x4F
+#define RAWKEY_F5	0x54
+#define RAWKEY_HELP	0x5F
+#define RAWKEY_HOME	0x70
+#define RAWKEY_END	0x71
+
+/* Other constants */
+#define IDCMP_EXTENDEDMOUSE 0
+#define WINDOW_BACKMOST 0
+#define DN_FULLPATH 0
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
@@ -53,11 +96,6 @@
 /* application */
 #define Notify(...) (void)0
 
-/* Exec */
-/* AllocVecTagList with no tags */
-#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY)
-#define GetSucc(N) (N)->ln_Succ
-
 /* diskfont */
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */
 #define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
@@ -65,12 +103,24 @@
 /* DOS */
 #define FOpen(A,B,C) Open(A,B)
 #define FClose(A) Close(A)
+#define CreateDirTree(D) CreateDir(D) /*\todo This isn't quite right */
+#define DevNameFromLock(A,B,C,D) NameFromLock(A,B,C)
+
+/* Exec */
+#define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY) /* AllocVecTagList with no tags */
+#define GetPred(N) (N)->ln_Pred
+#define GetSucc(N) (N)->ln_Succ
+
+/* Gfx */
+#define SetRPAttrs(...) (void)0 /*\todo Probably need to emulate this */
 
 /* Intuition */
 #define IDoMethod DoMethod
 #define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
 #define RefreshSetGadgetAttrs SetGadgetAttrs /*\todo This isn't quite right */
+#define ShowWindow(...) (void)0
+
 /* Utility */
 #define SetMem memset
 
@@ -117,12 +167,21 @@ struct TimeVal {
 #define IDFMT_PALETTEMAPPED (1)  /* Palette mapped icon (chunky, V44+) */
 #define IDFMT_DIRECTMAPPED  (2)  /* Direct mapped icon (truecolor 0xAARRGGBB, V51+) */ 
 
+/* Object types */
+enum {
+	ASOT_PORT = 1
+};
+
 /* Functions */
 /* DOS */
 int64 GetFileSize(BPTR fh);
+void FreeSysObject(ULONG type, APTR obj);
 
 /* Exec */
 struct Node *GetHead(struct List *list);
+
+/* Intuition */
+uint32 GetAttrs(Object *obj, Tag tag1, ...);
 
 /* Utility */
 char *ASPrintf(const char *fmt, ...);
