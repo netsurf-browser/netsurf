@@ -1207,7 +1207,6 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 						break;
 						case 'c':
 							nskey = KEY_COPY_SELECTION;
-							/**\todo this should also send KEY_CLEAR_SELECTION */
 						break;
 						case 'v':
 							nskey = KEY_PASTE;
@@ -2393,6 +2392,9 @@ static void ami_handle_msg(void)
 									ami_help_open(AMI_HELP_GUI, scrn);
 								break;
 							}
+						} else if(nskey == KEY_COPY_SELECTION) {
+							/* if we've copied a selection we need to clear it - style guide rules */
+							browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 						}
 					}
 				break;

@@ -1183,6 +1183,10 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				GetAttr(WINDOW_InputEvent,twin->objects[OID_MAIN],(ULONG *)&ie);
 				nskey = ami_key_to_nskey(storage, ie);
 				tree_keypress(twin->tree, nskey);
+				if(nskey == KEY_COPY_SELECTION) {
+					/* if we've copied a selection we need to clear it - style guide rules */
+					tree_keypress(twin->tree, KEY_CLEAR_SELECTION);
+				}
 			break;
 
 			case WMHI_MENUPICK:
