@@ -212,5 +212,19 @@ char *strlwr(char *str)
 
   return str;
 }
+
+int scandir(const char *dir, struct dirent ***namelist,
+  int (*filter)(const struct dirent *),
+  int (*compar)(const struct dirent **, const struct dirent **))
+{
+	/*\todo stub function, needs writing, preferably into clib2 */
+	return 0;
+}
+
+long long int strtoll(const char *nptr, char **endptr, int base)
+{
+	return (long long int)strtol(nptr, endptr, base);
+}
+
 #endif
 

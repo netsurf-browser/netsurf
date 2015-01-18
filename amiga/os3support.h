@@ -27,6 +27,7 @@
 #ifndef __amigaos4__
 
 #include <stdint.h>
+
 #include <proto/exec.h>
 #include <proto/dos.h>
 
@@ -37,6 +38,7 @@
 #include <exec/memory.h>
 #endif
 
+/* C macros */
 #ifndef ASM
 #define ASM
 #endif
@@ -44,6 +46,8 @@
 #ifndef REG
 #define REG(reg,arg) arg __asm(#reg)
 #endif
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
 
 /* Macros */
 #define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
@@ -115,6 +119,9 @@
 /* Easy compat macros */
 /* application */
 #define Notify(...) (void)0
+
+/* DataTypes */
+#define SaveDTObjectA(O,W,R,F,M,I,A) DoDTMethod(O,W,R,DTM_WRITE,F,M,NULL)
 
 /* diskfont */
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 #include <intuition/intuition.h>
