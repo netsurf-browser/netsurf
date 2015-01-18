@@ -491,8 +491,9 @@ void ami_gui_opts_open(void)
 		scaledisabled = TRUE;
 		scaleselected = FALSE;
 	}
-
+#ifdef __amigaos4__
 	if(ApplicationBase->lib_Version < 53)
+#endif
 	{
 		download_notify_disabled = TRUE;
 		nsoption_set_bool(download_notify, FALSE);
@@ -526,7 +527,7 @@ void ami_gui_opts_open(void)
 	{
 		ami_gui_opts_setup();
 
-		gow = AllocVecTags(sizeof(struct ami_gui_opts_window), AVT_ClearWithValue, 0, TAG_DONE);
+		gow = ami_misc_allocvec_clear(sizeof(struct ami_gui_opts_window), 0);
 
 		gow->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle, ami_gui_get_screen_title(),

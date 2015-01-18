@@ -56,6 +56,8 @@
 #define CLICKTAB_FlagImage		TAG_IGNORE
 #define CLICKTAB_LabelTruncate	TAG_IGNORE
 #define CLICKTAB_NodeClosed		TAG_IGNORE
+#define GETFONT_OTagOnly		TAG_IGNORE
+#define GETFONT_ScalableOnly	TAG_IGNORE
 #define PDTA_PromoteMask	TAG_IGNORE
 #define RPTAG_APenColor		TAG_IGNORE
 #define GA_HintInfo			TAG_IGNORE
@@ -94,6 +96,11 @@
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
+
+/* ReAction (ClassAct) macros */
+#define GetFileEnd End
+#define GetFontEnd End
+#define GetScreenModeEnd End
 
 /* Easy compat macros */
 /* application */
