@@ -48,7 +48,10 @@
 #define MEMF_SHARED	MEMF_ANY
 
 /* Ignore unsupported tags */
+#define ASO_NoTrack				TAG_IGNORE
 #define BITMAP_DisabledSourceFile	TAG_IGNORE
+#define BLITA_UseSrcAlpha		TAG_IGNORE
+#define BLITA_MaskPlane			TAG_IGNORE
 #define CLICKTAB_CloseImage		TAG_IGNORE
 #define CLICKTAB_FlagImage		TAG_IGNORE
 #define CLICKTAB_LabelTruncate	TAG_IGNORE
@@ -101,6 +104,7 @@
 #define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
 
 /* DOS */
+#define AllocSysObjectTags(A,B,C,D) CreateMsgPort() /* Assume ASOT_PORT for now */
 #define FOpen(A,B,C) Open(A,B)
 #define FClose(A) Close(A)
 #define CreateDirTree(D) CreateDir(D) /*\todo This isn't quite right */

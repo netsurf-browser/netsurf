@@ -1676,7 +1676,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				warn_user("NoMemory", "");
 				return;
 			}
-
+#ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
 						BLITA_DestX, bbox->Left,
@@ -1690,7 +1690,11 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						BLITA_Minterm, minterm,
 						tag, tag_data,
 						TAG_DONE);
-
+#else
+			/*\todo we are assuming we are always masking here, which might not be true */
+			BltMaskBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
+						bbox->Left, bbox->Top, 16, 16, tag_data, minterm);
+#endif
 			ami_gui_free_space_box(bbox);
 		}
 	}
@@ -4319,7 +4323,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 				&clip, ctx))
 			{
 				ami_clearclipreg(&browserglob);
-
+#ifdef __amigaos4__
 				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
 					BLITA_Source, browserglob.bm,
 					BLITA_SrcX, 0,
@@ -4331,6 +4335,12 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_Width, (int)(clip.x1),
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
+#else
+				BltBitMapRastPort(browserglob.bm, 0, 0, gwin->win->RPort,
+					bbox->Left + (int)((x - sx) * gwin->gw->scale),
+					bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					(int)(clip.x1), (int)(clip.y1), 0xC0);
+#endif
 			}
 		}
 	}
