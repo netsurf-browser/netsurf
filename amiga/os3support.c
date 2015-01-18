@@ -54,6 +54,9 @@ void FreeSysObject(ULONG type, APTR obj)
 		case ASOT_PORT:
 			DeleteMsgPort(obj);
 		break;
+		case ASOT_IOREQUEST:
+			DeleteIORequest(obj);
+		break;
 	}
 }
 

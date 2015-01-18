@@ -33,6 +33,12 @@
 
 static struct List PageList;
 
+#ifdef __amigaos4__
+#define ALLOCVEC_SHARED(N) AllocVecTags((N), AVT_Type, MEMF_SHARED, TAG_DONE);
+#else
+#define ALLOCVEC_SHARED(N) AllocVec((N), MEMF_SHARED);
+#endif
+
 void URLHistory_Init( void )
 {
 	// Initialise page list
@@ -79,17 +85,11 @@ static bool URLHistoryFound(nsurl *url, const struct url_data *data)
 	/* skip this URL if it is already in the list */
 	if(URLHistory_FindPage(nsurl_access(url))) return true;
 
-	node = AllocVecTags(sizeof(struct Node),
-				AVT_Type, MEMF_SHARED,
-				//AVT_ClearWithValue, 0,
-				TAG_DONE);
+	node = ALLOCVEC_SHARED(sizeof(struct Node));
 
 	if ( node )
 	{
-		STRPTR urladd = (STRPTR) AllocVecTags( strlen ( nsurl_access(url) ) + 1,
-				AVT_Type, MEMF_SHARED,
-				//AVT_ClearWithValue, 0,
-				TAG_DONE);
+		STRPTR urladd = (STRPTR) ALLOCVEC_SHARED( strlen ( nsurl_access(url) ) + 1);
 
 		if ( urladd )
 		{

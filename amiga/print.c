@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <proto/utility.h>
 #include <proto/iffparse.h>
 #include <proto/dos.h>
@@ -53,6 +55,7 @@
 
 #include "amiga/plotters.h"
 #include "amiga/gui.h"
+#include "amiga/misc.h"
 #include "amiga/print.h"
 #include "amiga/utf8.h"
 
@@ -217,11 +220,11 @@ void ami_print_ui(struct hlcache_handle *c)
 	char filename[30];
 	int i;
 
-	struct ami_print_window *pw = AllocVecTags(sizeof(struct ami_print_window), AVT_ClearWithValue, 0, TAG_DONE);
+	struct ami_print_window *pw = ami_misc_allocvec_clear(sizeof(struct ami_print_window), 0);
 
 	pw->c = c;
 
-	printers[0] = AllocVecTags(50, AVT_ClearWithValue, 0, TAG_DONE);
+	printers[0] = ami_misc_allocvec_clear(50, 0);
 	ami_print_readunit("ENV:Sys/printer.prefs", printers[0], 50, 0);
 
 	strcpy(filename,"ENV:Sys/printerN.prefs");
@@ -385,13 +388,18 @@ void ami_print(struct hlcache_handle *c, int copies)
 
 	if(ami_print_info.msgport == NULL)
 		ami_print_init();
-
+#ifdef __amigaos4__
 	if(!(ami_print_info.PReq =
 			(struct IODRPTagsReq *)AllocSysObjectTags(ASOT_IOREQUEST,
 				ASOIOR_Size, sizeof(struct IODRPTagsReq),
 				ASOIOR_ReplyPort, ami_print_info.msgport,
 				ASO_NoTrack, FALSE,
 				TAG_DONE))) return;
+#else
+	if(!(ami_print_info.PReq =
+			(struct IODRPTagsReq *)CreateIORequest(ami_print_info.msgport,
+				sizeof(struct IODRPTagsReq)))) return;
+#endif
 
 	if(OpenDevice("printer.device", nsoption_int(printer_unit),
 			(struct IORequest *)ami_print_info.PReq, 0))
@@ -467,7 +475,7 @@ struct MsgPort *ami_print_get_msgport(void)
 
 bool ami_print_begin(struct print_settings *ps)
 {
-	ami_print_info.gg = AllocVecTags(sizeof(struct gui_globals), AVT_ClearWithValue, 0, TAG_DONE);
+	ami_print_info.gg = ami_misc_allocvec_clear(sizeof(struct gui_globals), 0);
 	if(!ami_print_info.gg) return false;
 
 	ami_init_layers(ami_print_info.gg,

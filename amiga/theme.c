@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <string.h>
 
 #include <proto/clicktab.h>
@@ -99,6 +101,7 @@ const char *ptrs32[AMI_LASTPOINTER+1] = {
 	"ptr32_blank",
 	"ptr32_drag"};
 
+#ifdef __amigaos4__
 /* Mapping from NetSurf to AmigaOS mouse pointers */
 int osmouseptr[AMI_LASTPOINTER+1] = {
 	POINTERTYPE_NORMAL, 
@@ -122,7 +125,7 @@ int osmouseptr[AMI_LASTPOINTER+1] = {
 	POINTERTYPE_PROGRESS,
 	POINTERTYPE_NONE,
 	POINTERTYPE_DRAGANDDROP};
-
+#endif
 
 void ami_theme_init(void)
 {
@@ -218,13 +221,15 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 	if(drag_save_data) return;
 
 	if(LIB_IS_AT_LEAST((struct Library *)IntuitionBase, 53, 42)) {
+#ifdef __amigaos4__
 		BOOL ptr_delay = FALSE;
 		if(shape == GUI_POINTER_WAIT) ptr_delay = TRUE;
 
 		SetWindowPointer(win,
 					WA_PointerType, osmouseptr[shape],
 					WA_PointerDelay, ptr_delay,
-					TAG_DONE);					
+					TAG_DONE);
+#endif
 	} else {
 		if(nsoption_bool(os_mouse_pointers))
 		{
@@ -408,12 +413,14 @@ void gui_window_start_throbber(struct gui_window *g)
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
 
+#ifdef __amigaos4__
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, TRUE, TAG_DONE);
 		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
 	}
+#endif
 
 	g->throbbing = true;
 	if(g->shared->throbber_frame == 0) g->shared->throbber_frame = 1;
@@ -427,12 +434,14 @@ void gui_window_stop_throbber(struct gui_window *g)
 	if(!g) return;
 	if(nsoption_bool(kiosk_mode)) return;
 
+#ifdef __amigaos4__
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		SetClickTabNodeAttrs(g->tab_node, TNA_Flagged, FALSE, TAG_DONE);
 		RefreshGadgets((APTR)g->shared->objects[GID_TABS],
 			g->shared->win, NULL);
 	}
+#endif
 
 	if(g == g->shared->gw) {
 		if(ami_gui_get_space_box(g->shared->objects[GID_THROBBER], &bbox) != NSERROR_OK) {
@@ -471,7 +480,7 @@ static void ami_throbber_update(void *p)
 			warn_user("NoMemory", "");
 			return;
 		}
-
+#ifdef __amigaos4__
 		BltBitMapTags(BLITA_SrcX, throbber_width * frame,
 					BLITA_SrcY, 0,
 					BLITA_DestX, bbox->Left,
@@ -484,7 +493,10 @@ static void ami_throbber_update(void *p)
 					BLITA_DestType, BLITT_RASTPORT,
 				//	BLITA_UseSrcAlpha, TRUE,
 					TAG_DONE);
-
+#else
+		BltBitMapRastPort(throbber, throbber_width * frame, 0, g->shared->win->RPort,
+			bbox->Left, bbox->Top, throbber_width, throbber_height, 0xC0);
+#endif
 		ami_gui_free_space_box(bbox);
 	}
 

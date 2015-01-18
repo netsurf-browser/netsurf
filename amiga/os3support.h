@@ -98,6 +98,7 @@
 #define RAWKEY_END	0x71
 
 /* Other constants */
+#define BVS_DISPLAY BVS_NONE
 #define IDCMP_EXTENDEDMOUSE 0
 #define WINDOW_BACKMOST 0
 #define DN_FULLPATH 0
@@ -143,6 +144,7 @@
 
 /* Utility */
 #define SetMem memset
+#define SNPrintf snprintf
 
 /* Integral type definitions */
 typedef int8_t int8;
@@ -158,6 +160,12 @@ typedef uint64_t uint64;
 struct TimeVal {
 	uint32 Seconds;
 	uint32 Microseconds;
+};
+
+/* TimeRequest */
+struct TimeRequest {
+	struct IORequest Request;
+	struct TimeVal Time;
 };
 
 /* Compositing */
@@ -189,7 +197,8 @@ struct TimeVal {
 
 /* Object types */
 enum {
-	ASOT_PORT = 1
+	ASOT_PORT = 1,
+	ASOT_IOREQUEST
 };
 
 /* Requester types */
