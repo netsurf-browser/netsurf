@@ -53,7 +53,7 @@ else
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
   ifeq ($(SUBTARGET),os3)
-    LDFLAGS += -lpbl -liconv
+    LDFLAGS += -lpbl -liconv -lamiga
   else
     LDFLAGS += -lpbl -liconv
   endif

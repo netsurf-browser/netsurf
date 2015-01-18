@@ -74,7 +74,11 @@
 
 #define GraphicsBase GfxBase /* graphics.library is a bit weird */
 
+#ifdef __amigaos4__
 AMINS_LIB_STRUCT(Application);
+#else
+struct UtilityBase *UtilityBase; /* AMINS_LIB_STRUCT(Utility) */
+#endif
 AMINS_LIB_STRUCT(Asl);
 AMINS_LIB_STRUCT(DataTypes);
 AMINS_LIB_STRUCT(Diskfont);
@@ -113,7 +117,14 @@ AMINS_LIB_STRUCT(Window);
 
 bool ami_libs_open(void)
 {
+#ifdef __amigaos4__
+	/* Libraries only needed on OS4 */
 	AMINS_LIB_OPEN("application.library",  53, Application, "application", 2, false)
+#else
+	/* Libraries we get automatically on OS4 but not OS3 */
+	AMINS_LIB_OPEN("utility.library",      37, Utility,     "main",        1, true)
+#endif
+	/* Standard libraries for both versions */
 	AMINS_LIB_OPEN("asl.library",          37, Asl,         "main",        1, true)
 	AMINS_LIB_OPEN("datatypes.library",    37, DataTypes,   "main",        1, true)
 	AMINS_LIB_OPEN("diskfont.library",     40, Diskfont,    "main",        1, true)
@@ -191,7 +202,6 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(String)
 	AMINS_LIB_CLOSE(Window)
 
-	AMINS_LIB_CLOSE(Application)
 	AMINS_LIB_CLOSE(Asl)
 	AMINS_LIB_CLOSE(DataTypes)
 	AMINS_LIB_CLOSE(Diskfont)
@@ -205,5 +215,10 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Locale)
 	AMINS_LIB_CLOSE(P96)
 	AMINS_LIB_CLOSE(Workbench)
+#ifdef __amigaos4__
+	AMINS_LIB_CLOSE(Application)
+#else
+	AMINS_LIB_CLOSE(Utility)
+#endif
 }
 

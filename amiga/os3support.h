@@ -47,9 +47,9 @@
 
 /* Macros */
 #define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
-
 #define LIB_IS_AT_LEAST(B,V,R) ((B)->lib_Version>(V)) || \
 	((B)->lib_Version==(V) && (B)->lib_Revision>=(R))
+#define EAD_IS_FILE(E) ((E)->ed_Type<0)
 
 /* Define extra memory type flags */
 #define MEMF_PRIVATE	MEMF_ANY
@@ -136,6 +136,7 @@
 #define SetRPAttrs(...) (void)0 /*\todo Probably need to emulate this */
 
 /* Intuition */
+#define ICoerceMethod CoerceMethod
 #define IDoMethod DoMethod
 #define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
