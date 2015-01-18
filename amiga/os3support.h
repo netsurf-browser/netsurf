@@ -37,6 +37,14 @@
 #include <exec/memory.h>
 #endif
 
+#ifndef ASM
+#define ASM
+#endif
+
+#ifndef REG
+#define REG(reg,arg) arg __asm(#reg)
+#endif
+
 /* Macros */
 #define IsMinListEmpty(L) (L)->mlh_Head->mln_Succ == 0
 
@@ -93,6 +101,7 @@
 #define IDCMP_EXTENDEDMOUSE 0
 #define WINDOW_BACKMOST 0
 #define DN_FULLPATH 0
+#define BGBACKFILL JAM1
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
@@ -181,6 +190,12 @@ struct TimeVal {
 /* Object types */
 enum {
 	ASOT_PORT = 1
+};
+
+/* Requester types */
+enum {
+	TDRIMAGE_ERROR = 1,
+	TDRIMAGE_WARNING
 };
 
 /* Functions */

@@ -52,7 +52,7 @@ static LONG ami_misc_req(const char *message, uint32 type)
 	LONG ret = 0;
 
 	LOG(("%s", message));
-
+#ifdef __amigaos4__
 	ret = TimedDosRequesterTags(
 		TDR_TitleString,  messages_get("NetSurf"),
 		TDR_FormatString, message,
@@ -60,7 +60,9 @@ static LONG ami_misc_req(const char *message, uint32 type)
 		TDR_ImageType, type,
 		TDR_Window, cur_gw ? cur_gw->shared->win : NULL,
 		TAG_DONE);
-
+#else
+	printf("%s\n", message);
+#endif
 	return ret;
 }
 
@@ -84,6 +86,7 @@ void warn_user(const char *warning, const char *detail)
 int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
 {
 	int res = 0;
+#ifdef __amigaos4__
 	char *utf8text = ami_utf8_easy(body);
 	char *utf8gadget1 = ami_utf8_easy(messages_get(opt1));
 	char *utf8gadget2 = ami_utf8_easy(messages_get(opt2));
@@ -100,7 +103,9 @@ int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, 
 
 	if(utf8text) free(utf8text);
 	if(utf8gadgets) FreeVec(utf8gadgets);
-	
+#else
+#warning write this for os3
+#endif	
 	return res;
 }
 

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <proto/Picasso96API.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -46,7 +48,9 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 
+#ifdef __amigaos4__
 static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
+#endif
 
 struct bfbitmap {
 	struct BitMap *bm;
@@ -138,7 +142,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	InitRastPort(gg->rp);
 	gg->rp->BitMap = gg->bm;
 
-	/* Is all this safe to do to an existing window RastPort? */
 	SetDrMd(gg->rp,BGBACKFILL);
 
 	gg->rp->Layer = CreateUpfrontLayer(gg->layerinfo,gg->rp->BitMap,0,0,
@@ -232,9 +235,11 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 static void ami_plot_setapen(ULONG colr)
 {
 	if(palette_mapped == false) {
+#ifdef __amigaos4__
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
+#endif
 	} else {
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetAPen(glob->rp, pen);
@@ -244,9 +249,11 @@ static void ami_plot_setapen(ULONG colr)
 static void ami_plot_setopen(ULONG colr)
 {
 	if(palette_mapped == false) {
+#ifdef __amigaos4__
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
+#endif
 	} else {
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetOPen(glob->rp, pen);
@@ -521,7 +528,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 			if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
 				minterm = (ABC|ABNC|ANBC);
 		}
-
+#ifdef __amigaos4__
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
@@ -533,6 +540,10 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 						BLITA_Minterm, minterm,
 						tag, tag_data,
 						TAG_DONE);
+#else
+		/* Assume mask is always required */
+		BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, tag_data, minterm);
+#endif
 	}
 
 	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
@@ -562,7 +573,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
-
+#ifdef __amigaos4__
 	/* If it is a one pixel transparent image, we are wasting our time */
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
@@ -641,10 +652,13 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	{
 		p96FreeBitMap(tbm);
 	}
-
+#else
+#warning FIXME: bitmap tiling uses backfill hooks
+#endif
 	return true;
 }
 
+#ifdef __amigaos4__
 static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg)
 {
 	int xf,yf;
@@ -700,6 +714,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 		}
 	}
 }
+#endif
 
 bool ami_group_start(const char *name)
 {

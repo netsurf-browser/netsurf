@@ -23,6 +23,17 @@
 #ifndef __amigaos4__
 #include "os3support.h"
 
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/dos.h>
+
+#define SUCCESS (TRUE)
+#define FAILURE (FALSE)
+#define NO      !
+
 /* DOS */
 int64 GetFileSize(BPTR fh)
 {

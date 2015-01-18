@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "utils/utils.h"
@@ -24,6 +26,7 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
+#ifdef __amigaos4__
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
 	LOG(("Opening %s v%d", LIB, LIBVER)); \
 	if((PREFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
@@ -48,6 +51,26 @@
 #define AMINS_LIB_STRUCT(PREFIX)	\
 	struct Library *PREFIX##Base;	\
 	struct PREFIX##IFace *I##PREFIX;
+#else
+#define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
+	LOG(("Opening %s v%d", LIB, LIBVER)); \
+	if((PREFIX##Base = OpenLibrary(LIB, LIBVER))) {	\
+	} else {	\
+		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
+		if(FAIL == true) {	\
+			STRPTR error = ASPrintf("Unable to open %s v%d", LIB, LIBVER);	\
+			ami_misc_fatal_error(error);	\
+			FreeVec(error);	\
+			return false;	\
+		}	\
+	}
+
+#define AMINS_LIB_CLOSE(PREFIX)	\
+	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
+
+#define AMINS_LIB_STRUCT(PREFIX)	\
+	struct Library *PREFIX##Base;
+#endif
 
 #define GraphicsBase GfxBase /* graphics.library is a bit weird */
 
