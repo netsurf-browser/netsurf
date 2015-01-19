@@ -118,7 +118,9 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	} else {
 		palette_mapped = false;
 	}
-
+#ifndef __amigaos4__
+	palette_mapped = true; /* only supporting palette mapped screens on OS3 for now */
+#endif
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 

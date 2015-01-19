@@ -3704,6 +3704,10 @@ gui_window_create(struct browser_window *bw,
 		LOG(("Creating window object"));
 
 		g->shared->objects[OID_MAIN] = WindowObject,
+#ifndef __amigaos4__
+			WA_Width, 100,
+			WA_Height, 100,
+#endif
 			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
@@ -5155,8 +5159,13 @@ Object *ami_gui_splash_open(void)
 	struct TextFont *tfont;
 
 	win_obj = WindowObject,
-				WA_Borderless, TRUE,
+#ifdef __amigaos4__
 				WA_ToolBox, TRUE,
+#else
+				WA_Width, 100,
+				WA_Height, 100,
+#endif
+				WA_Borderless, TRUE,
 				WA_BusyPointer, TRUE,
 				WINDOW_Position, WPOS_CENTERSCREEN,
 				WINDOW_LockWidth, TRUE,
@@ -5381,6 +5390,7 @@ int main(int argc, char** argv)
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	LOG(("User: %s", current_user));
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
 
 	if((lock = CreateDirTree(current_user_dir)))
