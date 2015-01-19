@@ -5155,7 +5155,7 @@ Object *ami_gui_splash_open(void)
 				WINDOW_Position, WPOS_CENTERSCREEN,
 				WINDOW_LockWidth, TRUE,
 				WINDOW_LockHeight, TRUE,
-				WINDOW_ParentGroup, LayoutObject,
+				WINDOW_ParentGroup, VGroupObject,
 					LAYOUT_AddImage, bm_obj = BitMapObject,
 						BITMAP_SourceFile, "PROGDIR:Resources/splash.png",
 						BITMAP_Screen, wbscreen,

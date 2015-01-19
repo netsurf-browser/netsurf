@@ -79,15 +79,18 @@ uint32 GetAttrs(Object *obj, Tag tag1, ...)
 	va_list ap;
 	Tag tag = tag1;
 	ULONG data = 0;
+	int i = 0;
 
 	va_start(ap, tag1);
 
 	while(tag != TAG_DONE) {
 		data = va_arg(ap, ULONG);
-		GetAttr(tag, obj, (void *)data);
+		i += GetAttr(tag, obj, (void *)data);
 		tag = va_arg(ap, Tag);
 	}
 	va_end(ap);
+
+	return i;
 }
 
 /* Utility */
