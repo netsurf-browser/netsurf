@@ -42,6 +42,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
+
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"

@@ -3701,6 +3701,8 @@ gui_window_create(struct browser_window *bw,
 					BitMapEnd;
 		}
 
+		LOG(("Creating window object"));
+
 		g->shared->objects[OID_MAIN] = WindowObject,
 			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Activate, TRUE,
@@ -3955,7 +3957,11 @@ gui_window_create(struct browser_window *bw,
 		EndWindow;
 	}
 
+	LOG(("Opening window"));
+
 	g->shared->win = (struct Window *)RA_OpenWindow(g->shared->objects[OID_MAIN]);
+
+	LOG(("Window opened, adding border gadgets"));
 
 	if(!g->shared->win)
 	{
@@ -5390,7 +5396,10 @@ int main(int argc, char** argv)
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
+
+#ifdef __amigaos4__
 	amiga_plugin_hack_init();
+#endif
 	ret = amiga_datatypes_init();
 
 	/* user options setup */

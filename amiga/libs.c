@@ -120,6 +120,7 @@ bool ami_libs_open(void)
 #ifdef __amigaos4__
 	/* Libraries only needed on OS4 */
 	AMINS_LIB_OPEN("application.library",  53, Application, "application", 2, false)
+	AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, true)
 #else
 	/* Libraries we get automatically on OS4 but not OS3 */
 	AMINS_LIB_OPEN("utility.library",      37, Utility,     "main",        1, true)
@@ -136,7 +137,6 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("keymap.library",       37, Keymap,      "main",        1, true)
 	AMINS_LIB_OPEN("layers.library",       37, Layers,      "main",        1, true)
 	AMINS_LIB_OPEN("locale.library",       37, Locale,      "main",        1, true)
-	AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, true)
 	AMINS_LIB_OPEN("workbench.library",    37, Workbench,   "main",        1, true)
 
 	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
