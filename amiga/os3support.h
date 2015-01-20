@@ -149,6 +149,11 @@
 #define IDoSuperMethodA DoSuperMethodA
 #define ShowWindow(...) (void)0
 
+/* P96 */
+#define p96FreeBitMap(B) FreeBitMap(B)
+#define p96AllocBitMap(W,H,D,FL,FR,FM) AllocBitMap(W,H,D,FL,FR)
+#define p96RectFill(RP,X,Y,XW,YH,C) RectFill(RP,X,Y,XW,YH) /* Needs pen */
+
 /* Utility */
 #define SetMem memset
 #define SNPrintf snprintf

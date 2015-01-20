@@ -18,7 +18,9 @@
 
 #include "amiga/os3support.h"
 
+#ifdef __amigaos4__
 #include <proto/Picasso96API.h>
+#endif
 #include <proto/exec.h>
 #include <proto/intuition.h>
 

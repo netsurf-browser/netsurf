@@ -76,6 +76,7 @@
 
 #ifdef __amigaos4__
 AMINS_LIB_STRUCT(Application);
+AMINS_LIB_STRUCT(P96);
 #else
 struct UtilityBase *UtilityBase; /* AMINS_LIB_STRUCT(Utility) */
 #endif
@@ -90,7 +91,6 @@ AMINS_LIB_STRUCT(Intuition);
 AMINS_LIB_STRUCT(Keymap);
 AMINS_LIB_STRUCT(Layers);
 AMINS_LIB_STRUCT(Locale);
-AMINS_LIB_STRUCT(P96);
 AMINS_LIB_STRUCT(Workbench);
 
 AMINS_LIB_STRUCT(ARexx);
@@ -213,10 +213,10 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Keymap)
 	AMINS_LIB_CLOSE(Layers)
 	AMINS_LIB_CLOSE(Locale)
-	AMINS_LIB_CLOSE(P96)
 	AMINS_LIB_CLOSE(Workbench)
 #ifdef __amigaos4__
 	AMINS_LIB_CLOSE(Application)
+	AMINS_LIB_CLOSE(P96)
 #else
 	AMINS_LIB_CLOSE(Utility)
 #endif

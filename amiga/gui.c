@@ -34,8 +34,8 @@
 #include <proto/intuition.h>
 #include <proto/keymap.h>
 #include <proto/locale.h>
-#include <proto/Picasso96API.h>
 #ifdef __amigaos4__
+#include <proto/Picasso96API.h>
 #include <proto/popupmenu.h>
 #endif
 #include <proto/utility.h>
@@ -5174,6 +5174,11 @@ Object *ami_gui_splash_open(void)
 					LAYOUT_AddImage, bm_obj = BitMapObject,
 						BITMAP_SourceFile, "PROGDIR:Resources/splash.png",
 						BITMAP_Screen, wbscreen,
+						BITMAP_Precision, PRECISION_IMAGE,
+#ifndef __amigaos4__
+						BITMAP_Width, 400,
+						BITMAP_Height, 250,
+#endif
 					BitMapEnd,
 				LayoutEnd,
 			EndWindow;

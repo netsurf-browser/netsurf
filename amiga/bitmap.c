@@ -19,8 +19,8 @@
 #include "amiga/os3support.h"
 
 #include <proto/exec.h>
-#include <proto/Picasso96API.h>
 #ifdef __amigaos4__
+#include <proto/Picasso96API.h>
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
 #endif
@@ -388,6 +388,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 
 static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
+#ifdef __amigaos4__
 	struct RenderInfo ri;
 	struct BitMap *tbm = NULL;
 	struct RastPort trp;
@@ -495,6 +496,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 	}
 
 	return tbm;
+#endif
 }
 
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
@@ -581,3 +583,4 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);
 	}
 }
+
