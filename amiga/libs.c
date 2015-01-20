@@ -37,7 +37,7 @@
 	} else {	\
 		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
 		if(FAIL == true) {	\
-			STRPTR error = ASPrintf("Unable to open %s v%d", LIB, LIBVER);	\
+			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
 			FreeVec(error);	\
 			return false;	\
@@ -58,7 +58,7 @@
 	} else {	\
 		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
 		if(FAIL == true) {	\
-			STRPTR error = ASPrintf("Unable to open %s v%d", LIB, LIBVER);	\
+			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
 			FreeVec(error);	\
 			return false;	\
@@ -76,7 +76,6 @@
 
 #ifdef __amigaos4__
 AMINS_LIB_STRUCT(Application);
-AMINS_LIB_STRUCT(P96);
 #else
 struct UtilityBase *UtilityBase; /* AMINS_LIB_STRUCT(Utility) */
 #endif
@@ -91,6 +90,7 @@ AMINS_LIB_STRUCT(Intuition);
 AMINS_LIB_STRUCT(Keymap);
 AMINS_LIB_STRUCT(Layers);
 AMINS_LIB_STRUCT(Locale);
+AMINS_LIB_STRUCT(P96);
 AMINS_LIB_STRUCT(Workbench);
 
 AMINS_LIB_STRUCT(ARexx);
@@ -120,7 +120,6 @@ bool ami_libs_open(void)
 #ifdef __amigaos4__
 	/* Libraries only needed on OS4 */
 	AMINS_LIB_OPEN("application.library",  53, Application, "application", 2, false)
-	AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, true)
 #else
 	/* Libraries we get automatically on OS4 but not OS3 */
 	AMINS_LIB_OPEN("utility.library",      37, Utility,     "main",        1, true)
@@ -138,6 +137,11 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("layers.library",       37, Layers,      "main",        1, true)
 	AMINS_LIB_OPEN("locale.library",       37, Locale,      "main",        1, true)
 	AMINS_LIB_OPEN("workbench.library",    37, Workbench,   "main",        1, true)
+
+	/*\todo This is down here as we need to check the graphics.library version
+	 * before opening.  If it is sufficiently new enough we can avoid using P96
+	 */
+	AMINS_LIB_OPEN("Picasso96API.library",  0, P96,         "main",        1, false)
 
 	/* NB: timer.device is opened in schedule.c (ultimately by the scheduler process).
 	 * The library base and interface are obtained there, rather than here, due to
@@ -213,10 +217,10 @@ void ami_libs_close(void)
 	AMINS_LIB_CLOSE(Keymap)
 	AMINS_LIB_CLOSE(Layers)
 	AMINS_LIB_CLOSE(Locale)
+	AMINS_LIB_CLOSE(P96)
 	AMINS_LIB_CLOSE(Workbench)
 #ifdef __amigaos4__
 	AMINS_LIB_CLOSE(Application)
-	AMINS_LIB_CLOSE(P96)
 #else
 	AMINS_LIB_CLOSE(Utility)
 #endif

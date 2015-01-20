@@ -18,9 +18,6 @@
 
 #include "amiga/os3support.h"
 
-#ifdef __amigaos4__
-#include <proto/Picasso96API.h>
-#endif
 #include <proto/exec.h>
 #include <proto/intuition.h>
 
@@ -134,10 +131,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 		gg->bm = AllocBitMap(width, height, depth,
 					BMF_INTERLEAVED | BMF_DISPLAYABLE, friend);
 	} else {
-		gg->bm = p96AllocBitMap(width, height, 32,
+		gg->bm = ami_rtg_allocbitmap(width, height, 32,
 					BMF_INTERLEAVED | BMF_DISPLAYABLE, friend, RGBFB_A8R8G8B8);
 	}
-	
+
 	if(!gg->bm) warn_user("NoMemory","");
 
 	gg->rp = AllocVecTagList(sizeof(struct RastPort), NULL);
@@ -167,8 +164,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 void ami_free_layers(struct gui_globals *gg)
 {
-	if(gg->rp)
-	{
+	if(gg->rp) {
 		DeleteLayer(0,gg->rp->Layer);
 		FreeVec(gg->rp->TmpRas);
 		FreeVec(gg->rp->AreaInfo);
@@ -179,7 +175,7 @@ void ami_free_layers(struct gui_globals *gg)
 	FreeVec(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
 	if(palette_mapped == false) {
-		p96FreeBitMap(gg->bm);
+		ami_rtg_freebitmap(gg->bm);
 	} else {
 		FreeBitMap(gg->bm);
 	}
@@ -550,9 +546,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 #endif
 	}
 
-	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
-	{
-		p96FreeBitMap(tbm);
+	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm)) {
+		ami_rtg_freebitmap(tbm);
 	}
 
 	return true;
@@ -654,7 +649,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
 	{
-		p96FreeBitMap(tbm);
+		ami_rtg_freebitmap(tbm);
 	}
 #else
 #warning FIXME: bitmap tiling uses backfill hooks

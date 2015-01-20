@@ -35,7 +35,6 @@
 #include <proto/keymap.h>
 #include <proto/locale.h>
 #ifdef __amigaos4__
-#include <proto/Picasso96API.h>
 #include <proto/popupmenu.h>
 #endif
 #include <proto/utility.h>
@@ -142,6 +141,7 @@
 #include "amiga/plotters.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/print.h"
+#include "amiga/rtg.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
@@ -2844,7 +2844,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
 
-		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
+		ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 
 		ami_gui_free_space_box(bbox);
@@ -2859,7 +2859,7 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 	{
 		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
 
-		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
+		ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 		browser_window_update(gwin->gw->bw, false);
 

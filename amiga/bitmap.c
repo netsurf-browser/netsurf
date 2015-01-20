@@ -41,6 +41,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/download.h"
 #include "amiga/misc.h"
+#include "amiga/rtg.h"
 
 /**
  * Create a bitmap.
@@ -122,7 +123,7 @@ void bitmap_destroy(void *bitmap)
 	if(bm)
 	{
 		if((bm->nativebm) && (bm->dto == NULL)) {
-			p96FreeBitMap(bm->nativebm);
+			ami_rtg_freebitmap(bm->nativebm);
 		}
 		
 		if(bm->dto) {
@@ -180,7 +181,7 @@ void bitmap_modified(void *bitmap) {
 	struct bitmap *bm = bitmap;
 
 	if((bm->nativebm) && (bm->dto == NULL))
-		p96FreeBitMap(bm->nativebm);
+		ami_rtg_freebitmap(bm->nativebm);
 		
 	if(bm->dto) DisposeDTObject(bm->dto);
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
@@ -408,7 +409,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		}
 		else
 		{
-			if(bitmap->nativebm) p96FreeBitMap(bitmap->nativebm);
+			if(bitmap->nativebm) ami_rtg_freebitmap(bitmap->nativebm);
 			bitmap->nativebm = NULL;
 		}
 	}
@@ -419,10 +420,11 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		ri.BytesPerRow = bitmap->width * 4;
 		ri.RGBFormat = AMI_BITMAP_FORMAT;
 
-		if((tbm = p96AllocBitMap(bitmap->width, bitmap->height, 32, 0,
+		if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
 								friendbm, AMI_BITMAP_FORMAT))) {
 			InitRastPort(&trp);
 			trp.BitMap = tbm;
+			/*\todo abstract p96WritePixelArray */
 			p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0,
 								bitmap->width, bitmap->height);
 		}
@@ -440,7 +442,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		struct BitMap *scaledbm;
 		struct BitScaleArgs bsa;
 
-		scaledbm = p96AllocBitMap(width, height, 32, BMF_DISPLAYABLE,
+		scaledbm = ami_rtg_allocbitmap(width, height, 32, BMF_DISPLAYABLE,
 									friendbm, AMI_BITMAP_FORMAT);
 
 		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
@@ -482,8 +484,8 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 			BitMapScale(&bsa);
 		}
 
-		if(bitmap->nativebm != tbm) p96FreeBitMap(bitmap->nativebm);
-		p96FreeBitMap(tbm);
+		if(bitmap->nativebm != tbm) ami_rtg_freebitmap(bitmap->nativebm);
+		ami_rtg_freebitmap(tbm);
 		tbm = scaledbm;
 		bitmap->nativebm = NULL;
 
