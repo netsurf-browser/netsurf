@@ -20,7 +20,6 @@
 
 #include <proto/exec.h>
 #ifdef __amigaos4__
-#include <proto/Picasso96API.h>
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
 #endif
@@ -390,9 +389,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
 #ifdef __amigaos4__
-	struct RenderInfo ri;
 	struct BitMap *tbm = NULL;
-	struct RastPort trp;
 
 	if(!bitmap) return NULL;
 
@@ -416,17 +413,10 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 
 	if(!tbm)
 	{
-		ri.Memory = bitmap->pixdata;
-		ri.BytesPerRow = bitmap->width * 4;
-		ri.RGBFormat = AMI_BITMAP_FORMAT;
-
 		if((tbm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32, 0,
 								friendbm, AMI_BITMAP_FORMAT))) {
-			InitRastPort(&trp);
-			trp.BitMap = tbm;
-			/*\todo abstract p96WritePixelArray */
-			p96WritePixelArray((struct RenderInfo *)&ri, 0, 0, &trp, 0, 0,
-								bitmap->width, bitmap->height);
+			ami_rtg_writepixelarray(bitmap->pixdata, tbm, bitmap->width, bitmap->height,
+				bitmap->width * 4, AMI_BITMAP_FORMAT);
 		}
 
 		if(nsoption_int(cache_bitmaps) == 2)

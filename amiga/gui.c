@@ -1565,9 +1565,10 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 					ICA_TARGET, ICTARGET_IDCMP,
 				ScrollerEnd;
 #ifdef __amigaos4__
-#warning FIXME for OS3
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
+#else
+#warning FIXME for OS3
 #endif
 	return true;
 }
