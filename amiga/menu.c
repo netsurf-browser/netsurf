@@ -62,6 +62,7 @@
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
 #include "amiga/menu.h"
+#include "amiga/misc.h"
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"

@@ -22,6 +22,8 @@
  * There is only one history window, not one per browser window.
  */
 
+#include "amiga/os3support.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +50,7 @@
 #include "desktop/gui_window.h"
 #include "graphics/rpattr.h"
 
-#include "amiga/os3support.h"
+#include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/gui.h"
 #include "amiga/history_local.h"

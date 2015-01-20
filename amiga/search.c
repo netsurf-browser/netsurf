@@ -22,6 +22,8 @@
  * Free text search (implementation)
  */
 
+#include "amiga/os3support.h"
+
 #include "utils/config.h"
 #include <ctype.h>
 #include <string.h>
@@ -52,7 +54,7 @@
 #include "desktop/gui_window.h"
 #include "desktop/gui_search.h"
 
-#include "amiga/os3support.h"
+#include "amiga/misc.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
 #include "amiga/theme.h"

@@ -16,10 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
+#include <assert.h>
+
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
-#include <assert.h>
 
 #include <proto/window.h>
 #include <proto/layout.h>
@@ -39,8 +42,8 @@
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
 
-#include "amiga/os3support.h"
 #include "amiga/gui.h"
+#include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/login.h"
 

@@ -68,6 +68,7 @@
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "amiga/help.h"
+#include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
