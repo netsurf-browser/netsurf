@@ -155,7 +155,7 @@ bool ami_libs_open(void)
 	 * we may as well just open them normally for now.
 	 */
 
-	AMINS_LIB_OPEN("classes/arexx.class",          44, ARexx,         "main", 1, true)
+	AMINS_LIB_OPEN("arexx.class",                  44, ARexx,         "main", 1, true)
 	AMINS_LIB_OPEN("images/bevel.image",           44, Bevel,         "main", 1, true)
 	AMINS_LIB_OPEN("images/bitmap.image",          44, BitMap,        "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/checkbox.gadget",      44, CheckBox,      "main", 1, true)
@@ -174,7 +174,7 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("gadgets/space.gadget",         44, Space,         "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      "main", 1, true)
 	AMINS_LIB_OPEN("gadgets/string.gadget",        44, String,        "main", 1, true)
-	AMINS_LIB_OPEN("classes/window.class",         44, Window,        "main", 1, true)
+	AMINS_LIB_OPEN("window.class",                 44, Window,        "main", 1, true)
 
 	return true;
 }
