@@ -149,9 +149,6 @@
 #define IDoSuperMethodA DoSuperMethodA
 #define ShowWindow(...) (void)0
 
-/* P96 */
-#define p96WritePixelArray (void)0 /* TODO - see rtg.c */
-
 /* Utility */
 #define SetMem memset
 #define SNPrintf snprintf

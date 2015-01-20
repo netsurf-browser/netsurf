@@ -19,9 +19,6 @@
 #include "amiga/os3support.h"
 
 #include <proto/graphics.h>
-#ifdef __amigaos4__
-#include <proto/Picasso96API.h>
-#endif
 #include <intuition/intuition.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
@@ -42,7 +39,7 @@
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
-
+#include "amiga/rtg.h"
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsurl *url)
@@ -64,7 +61,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
-	bitmap->nativebm = p96AllocBitMap(bitmap->width, bitmap->height, 32,
+	bitmap->nativebm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32,
 							BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
 							browserglob.bm, RGBFB_A8R8G8B8);
 
