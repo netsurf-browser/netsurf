@@ -297,18 +297,22 @@ static struct MsgPort *ami_schedule_open_timer(struct MsgPort *msgport)
 				ASO_NoTrack, FALSE,
 				TAG_DONE);
 	}
-
+#ifdef __amigaos4__
 	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
 				ASOIOR_Size,sizeof(struct TimeRequest),
 				ASOIOR_ReplyPort,msgport,
 				ASO_NoTrack,FALSE,
 				TAG_DONE);
+#else
+	tioreq = (struct TimeRequest *)CreateIORequest(msgport, sizeof(struct TimeRequest));
+#endif
 
 	OpenDevice("timer.device", UNIT_WAITUNTIL, (struct IORequest *)tioreq, 0);
 
 	TimerBase = (struct Device *)tioreq->Request.io_Device;
+#ifdef __amigaos4__
 	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase, "main", 1, NULL);
-
+#endif
 	return msgport;
 }
 

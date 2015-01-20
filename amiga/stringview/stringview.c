@@ -667,7 +667,7 @@ static uint32 myStringClass_GM_HandleInput( Class *cl, Object *obj, struct gpInp
 			myStringHandleListview( cl, obj );
 	        break;
 	    }
-
+#ifdef __amigaos4__
 		case IECLASS_MOUSEWHEEL:
 		{
 			struct InputEvent *ie = msg->gpi_IEvent;
@@ -686,7 +686,7 @@ static uint32 myStringClass_GM_HandleInput( Class *cl, Object *obj, struct gpInp
 			retval = GMR_MEACTIVE;
 			break;
 		}
-
+#endif
 	    default:
 	    {
 			retval = IDoSuperMethodA( cl, obj, (APTR)msg );

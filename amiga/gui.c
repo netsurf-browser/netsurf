@@ -34,25 +34,27 @@
 #include <proto/intuition.h>
 #include <proto/keymap.h>
 #include <proto/locale.h>
+#ifdef __amigaos4__
 #include <proto/Picasso96API.h>
 #include <proto/popupmenu.h>
+#endif
 #include <proto/utility.h>
 #include <proto/wb.h>
 
 /* Other OS includes */
 #include <datatypes/textclass.h>
 #include <devices/inputevent.h>
+#include <graphics/rpattr.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#include <intuition/gui.h>
 #include <libraries/application.h>
 #include <libraries/keymap.h>
 #endif
-#include <libraries/gadtools.h>
 #include <intuition/icclass.h>
-#include <graphics/rpattr.h>
-#include <workbench/workbench.h>
-#include <intuition/gui.h>
 #include <intuition/screens.h>
+#include <libraries/gadtools.h>
+#include <workbench/workbench.h>
 
 /* ReAction libraries */
 #include <proto/bevel.h>
@@ -427,11 +429,15 @@ static bool ami_open_resources(void)
 static UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
 {
 	LONG scrollerfillpen = FALSE;
-
+#ifdef __amigaos4__
 	GetGUIAttrs(NULL, drinfo, GUIA_PropKnobColor, &scrollerfillpen, TAG_DONE);
 
 	if(scrollerfillpen) return FILLPEN;
 		else return FOREGROUNDPEN;
+#else
+	return FILLPEN;
+#endif
+
 }
 
 /**
@@ -498,7 +504,7 @@ static void ami_set_screen_defaults(struct Screen *screen)
 
 	nsoption_default_set_int(redraw_tile_size_x, screen->Width);
 	nsoption_default_set_int(redraw_tile_size_y, screen->Height);
-
+#ifdef __amigaos4__
 	/* set system colours for amiga ui */
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveBorder, screen, 0x00000000);
 	colour_option_from_pen(FILLPEN, NSOPTION_sys_colour_ActiveCaption, screen, 0x00dddddd);
@@ -528,6 +534,7 @@ static void ami_set_screen_defaults(struct Screen *screen)
 	colour_option_from_pen(BACKGROUNDPEN, NSOPTION_sys_colour_Window, screen, 0x00aaaaaa);
 	colour_option_from_pen(INACTIVEFILLPEN, NSOPTION_sys_colour_WindowFrame, screen, 0x00000000);
 	colour_option_from_pen(TEXTPEN, NSOPTION_sys_colour_WindowText, screen, 0x00000000);
+#endif
 }
 
 
@@ -971,7 +978,7 @@ static void gui_init2(int argc, char** argv)
 		ami_quit=true;
 		return;
 	}
-
+#ifdef __amigaos4__
 	if(IApplication)
 	{
 		if(argc == 0)
@@ -1008,7 +1015,7 @@ static void gui_init2(int argc, char** argv)
 		GetApplicationAttrs(ami_appid, APPATTR_Port, (ULONG)&applibport, TAG_DONE);
 		if(applibport) applibsig = (1L << applibport->mp_SigBit);
 	}
-
+#endif
 	if(!bw && (nsoption_bool(startup_no_window) == false)) {
 		error = nsurl_create(nsoption_charp(homepage_url), &url);
 		if (error == NSERROR_OK) {
@@ -1232,9 +1239,11 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 static void ami_update_quals(struct gui_window_2 *gwin)
 {
 	uint32 quals = 0;
-
+#ifdef __amigaos4__
 	GetAttr(WINDOW_Qualifier,gwin->objects[OID_MAIN],(uint32 *)&quals);
-
+#else
+#warning qualifier needs fixing for OS3
+#endif
 	gwin->key_state = 0;
 
 	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
@@ -1257,9 +1266,11 @@ static void ami_update_quals(struct gui_window_2 *gwin)
 nserror ami_gui_get_space_box(Object *obj, struct IBox **bbox)
 {
 	if(LIB_IS_AT_LEAST((struct Library *)SpaceBase, 53, 6)) {
+#ifdef __amigaos4__
 		*bbox = AllocVecTagList(sizeof(struct IBox), NULL);
 		if(*bbox == NULL) return NSERROR_NOMEM;
 		GetAttr(SPACE_RenderBox, obj, (ULONG *)*bbox);
+#endif
 	} else {
 		GetAttr(SPACE_AreaBox, obj, (ULONG *)bbox);
 	}
@@ -1430,6 +1441,7 @@ static struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct 
 
 static void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	switch(gwin->drag_op)
 	{
 		case GDRAGGING_NONE:
@@ -1445,6 +1457,7 @@ static void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 			}
 		break;
 	}
+#endif
 }
 
 static void ami_gui_menu_update_all(void)
@@ -1510,23 +1523,26 @@ static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
 					SCROLLER_Orientation, SORIENT_HORIZ,
 					ICA_TARGET, ICTARGET_IDCMP,
 				ScrollerEnd;
-
+#ifdef __amigaos4__
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_HSCROLL], attrs);
-
+#else
+#warning FIXME for OS3 - logically we should just permanently enable
+#endif
 	return true;
 }
 
 /* Remove the horizontal scroller, if present */
 static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	if(gwin->objects[GID_HSCROLL] == NULL) return false;
 
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HSCROLL]);
 
 	gwin->objects[GID_HSCROLL] = NULL;
-
+#endif
 	return true;
 }
 
@@ -1548,23 +1564,25 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 					GA_RelVerify, TRUE,
 					ICA_TARGET, ICTARGET_IDCMP,
 				ScrollerEnd;
-
+#ifdef __amigaos4__
+#warning FIXME for OS3
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
-
+#endif
 	return true;
 }
 
 /* Remove the vertical scroller, if present */
 static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	if(gwin->objects[GID_VSCROLL] == NULL) return false;
 
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
 
 	gwin->objects[GID_VSCROLL] = NULL;
-
+#endif
 	return true;
 }
 
@@ -1657,7 +1675,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				warn_user("NoMemory", "");
 				return;
 			}
-
+#ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
 						BLITA_DestX, bbox->Left,
@@ -1671,7 +1689,11 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						BLITA_Minterm, minterm,
 						tag, tag_data,
 						TAG_DONE);
-
+#else
+			/*\todo we are assuming we are always masking here, which might not be true */
+			BltMaskBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
+						bbox->Left, bbox->Top, 16, 16, tag_data, minterm);
+#endif
 			ami_gui_free_space_box(bbox);
 		}
 	}
@@ -1691,7 +1713,7 @@ static void ami_gui_refresh_favicon(void *p)
 static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width, ULONG *height)
 {
 	ULONG available_width;
-
+#ifdef __amigaos4__
 	if((sz_gad_width == 0) || (sz_gad_height == 0)) {
 		struct DrawInfo *dri = GetScreenDrawInfo(scrn);
 		GetGUIAttrs(NULL, dri,
@@ -1700,7 +1722,7 @@ static ULONG ami_get_border_gadget_size(struct gui_window_2 *gwin, ULONG *width,
 		TAG_DONE);
 		FreeScreenDrawInfo(scrn, dri);
 	}
-
+#endif
 	available_width = gwin->win->Width - scrn->WBorLeft - sz_gad_width;
 
 	*width = available_width;
@@ -2024,7 +2046,7 @@ static void ami_handle_msg(void)
 							gwin->prev_mouse_state = gwin->mouse_state;
 							gwin->mouse_state=0;
 						break;
-
+#ifdef __amigaos4__
 						case SIDEUP:
 							ami_gui_history(gwin, true);
 						break;
@@ -2032,6 +2054,7 @@ static void ami_handle_msg(void)
 						case EXTRAUP:
 							ami_gui_history(gwin, false);
 						break;
+#endif
 					}
 
 					if(drag_save_data && !gwin->mouse_state)
@@ -2415,7 +2438,7 @@ static void ami_handle_msg(void)
 				case WMHI_CLOSEWINDOW:
 					ami_close_all_tabs(gwin);
 		        break;
-
+#ifdef __amigaos4__
 				case WMHI_ICONIFY:
 				{
 					struct bitmap *bm;
@@ -2433,7 +2456,7 @@ static void ami_handle_msg(void)
 					cur_gw = NULL;
 				}
 				break;
-
+#endif
 				case WMHI_INACTIVE:
 					gwin->gw->c_h_temp = gwin->gw->c_h;
 					gui_window_remove_caret(gwin->gw);
@@ -2620,6 +2643,7 @@ static void ami_handle_appmsg(void)
 
 static void ami_handle_applib(void)
 {
+#ifdef __amigaos4__
 	struct ApplicationMsg *applibmsg;
 	struct browser_window *bw;
 	nsurl *url;
@@ -2699,6 +2723,7 @@ static void ami_handle_applib(void)
 		}
 		ReplyMsg((struct Message *)applibmsg);
 	}
+#endif
 }
 
 void ami_get_msg(void)
@@ -2976,10 +3001,10 @@ static void gui_quit(void)
 	ami_hotlist_free(nsoption_charp(hotlist_file));
 	ami_cookies_free();
 	ami_global_history_free();
-
+#ifdef __amigaos4__
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);
-
+#endif
 	ami_arexx_cleanup();
 
 	ami_free_layers(&browserglob);
@@ -3110,6 +3135,7 @@ static int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_lis
 
 static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	struct TagItem attrs[2];
 
 	attrs[0].ti_Tag = CHILD_MinWidth;
@@ -3147,6 +3173,9 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 		
 		ami_schedule_redraw(gwin, true);
 	}
+#else
+#warning FIXME for OS3
+#endif
 }
 
 static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
@@ -3176,6 +3205,7 @@ static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List 
 
 static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 {
+#ifdef __amigaos4__
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLIST]);
 
@@ -3188,6 +3218,7 @@ static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 			gwin->win, NULL, TRUE);
 
 	ami_schedule_redraw(gwin, true);
+#endif
 }
 
 static void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
@@ -3244,6 +3275,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 {
 	if(ClickTabBase->lib_Version < 53) return;
 
+#ifdef __amigaos4__
 	if(show)
 	{
 		struct TagItem attrs[3];
@@ -3297,6 +3329,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 			gwin->win, NULL, TRUE);
 
 	if(gwin->gw && gwin->gw->bw) browser_window_update(gwin->gw->bw, false);
+#endif
 }
 
 void ami_gui_tabs_toggle_all(void)
@@ -3440,7 +3473,7 @@ gui_window_create(struct browser_window *bw,
 
 	if(curh > (scrn->Height - cury)) curh = scrn->Height - cury;
 
-	g = AllocVecTags(sizeof(struct gui_window), AVT_ClearWithValue, 0, TAG_DONE);
+	g = ami_misc_allocvec_clear(sizeof(struct gui_window), 0);
 
 	if(!g)
 	{
@@ -3512,7 +3545,7 @@ gui_window_create(struct browser_window *bw,
 		return g;
 	}
 
-	g->shared = AllocVecTags(sizeof(struct gui_window_2), AVT_ClearWithValue, 0, TAG_DONE);
+	g->shared = ami_misc_allocvec_clear(sizeof(struct gui_window_2), 0);
 
 	if(!g->shared)
 	{
@@ -3565,7 +3598,7 @@ gui_window_create(struct browser_window *bw,
 		g->shared->tabs=1;
 		g->shared->next_tab=1;
 
-		g->shared->svbuffer = AllocVecTags(2000, AVT_ClearWithValue, 0, TAG_DONE);
+		g->shared->svbuffer = ami_misc_allocvec_clear(2000, 0);
 
 		g->shared->helphints[GID_BACK] =
 			translate_escape_chars(messages_get("HelpToolbarBack"));
@@ -3670,7 +3703,13 @@ gui_window_create(struct browser_window *bw,
 					BitMapEnd;
 		}
 
+		LOG(("Creating window object"));
+
 		g->shared->objects[OID_MAIN] = WindowObject,
+#ifndef __amigaos4__
+			WA_Width, 100,
+			WA_Height, 100,
+#endif
 			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
@@ -3924,7 +3963,11 @@ gui_window_create(struct browser_window *bw,
 		EndWindow;
 	}
 
+	LOG(("Opening window"));
+
 	g->shared->win = (struct Window *)RA_OpenWindow(g->shared->objects[OID_MAIN]);
+
+	LOG(("Window opened, adding border gadgets"));
 
 	if(!g->shared->win)
 	{
@@ -4292,7 +4335,7 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 				&clip, ctx))
 			{
 				ami_clearclipreg(&browserglob);
-
+#ifdef __amigaos4__
 				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
 					BLITA_Source, browserglob.bm,
 					BLITA_SrcX, 0,
@@ -4304,6 +4347,12 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 					BLITA_Width, (int)(clip.x1),
 					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
+#else
+				BltBitMapRastPort(browserglob.bm, 0, 0, gwin->win->RPort,
+					bbox->Left + (int)((x - sx) * gwin->gw->scale),
+					bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					(int)(clip.x1), (int)(clip.y1), 0xC0);
+#endif
 			}
 		}
 	}
@@ -4965,6 +5014,7 @@ static void gui_window_new_content(struct gui_window *g)
 static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
+#ifdef __amigaos4__
 	g->shared->drag_op = type;
 	if(rect) g->shared->ptr_lock = ami_ns_rect_to_ibox(g->shared, rect);
 
@@ -4979,7 +5029,7 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 			g->shared->ptr_lock = NULL;
 		}
 	}
-
+#endif
 	return true;
 }
 
@@ -5030,7 +5080,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				break;
 			} 
 		break;
-
+#ifdef __amigaos4__
 		case IDCMP_EXTENDEDMOUSE:
 			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
 			{
@@ -5039,7 +5089,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				ami_gui_scroll_internal(gwin, wheel->WheelX * 50, wheel->WheelY * 50);
 			}
 		break;
-
+#endif
 		case IDCMP_SIZEVERIFY:
 		break;
 
@@ -5111,16 +5161,26 @@ Object *ami_gui_splash_open(void)
 	struct TextFont *tfont;
 
 	win_obj = WindowObject,
-				WA_Borderless, TRUE,
+#ifdef __amigaos4__
 				WA_ToolBox, TRUE,
+#else
+				WA_Width, 100,
+				WA_Height, 100,
+#endif
+				WA_Borderless, TRUE,
 				WA_BusyPointer, TRUE,
 				WINDOW_Position, WPOS_CENTERSCREEN,
 				WINDOW_LockWidth, TRUE,
 				WINDOW_LockHeight, TRUE,
-				WINDOW_ParentGroup, LayoutObject,
+				WINDOW_ParentGroup, VGroupObject,
 					LAYOUT_AddImage, bm_obj = BitMapObject,
 						BITMAP_SourceFile, "PROGDIR:Resources/splash.png",
 						BITMAP_Screen, wbscreen,
+						BITMAP_Precision, PRECISION_IMAGE,
+#ifndef __amigaos4__
+						BITMAP_Width, 400,
+						BITMAP_Height, 250,
+#endif
 					BitMapEnd,
 				LayoutEnd,
 			EndWindow;
@@ -5289,8 +5349,9 @@ int main(int argc, char** argv)
 		.llcache = amiga_filesystem_llcache_table,
 	};
 
+#ifdef __amigaos4__
 	signal(SIGINT, SIG_IGN);
-
+#endif
 	ret = netsurf_register(&amiga_table);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf operation table failed registration");
@@ -5315,6 +5376,7 @@ int main(int argc, char** argv)
 	 * forcibly disable context menus if these are in use.
 	 */
 	popupmenu_lib_ok = FALSE;
+#ifdef __amigaos4__
 	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
 		LOG(("popupmenu.library v%d.%d",
 			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
@@ -5322,7 +5384,7 @@ int main(int argc, char** argv)
 			popupmenu_lib_ok = TRUE;
 		CloseLibrary(PopupMenuBase);
 	}
-
+#endif
 	if (ami_open_resources() == false) { /* alloc message ports */
 		ami_misc_fatal_error("Unable to allocate resources");
 		return RETURN_FAIL;
@@ -5335,6 +5397,7 @@ int main(int argc, char** argv)
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
+	LOG(("User: %s", current_user));
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
 
 	if((lock = CreateDirTree(current_user_dir)))
@@ -5350,7 +5413,10 @@ int main(int argc, char** argv)
 	ami_mime_init("PROGDIR:Resources/mimetypes");
 	sprintf(temp, "%s/mimetypes.user", current_user_dir);
 	ami_mime_init(temp);
+
+#ifdef __amigaos4__
 	amiga_plugin_hack_init();
+#endif
 	ret = amiga_datatypes_init();
 
 	/* user options setup */

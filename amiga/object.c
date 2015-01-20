@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <stdlib.h>
 
 #include <proto/exec.h>
@@ -24,6 +26,7 @@
 
 #include "amiga/filetype.h"
 #include "amiga/font.h"
+#include "amiga/misc.h"
 #include "amiga/object.h"
 
 struct MinList *NewObjList(void)
@@ -43,7 +46,7 @@ struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
-	dtzo = (struct nsObject *)AllocVecTags(sizeof(struct nsObject), AVT_ClearWithValue, 0, TAG_DONE);
+	dtzo = (struct nsObject *)ami_misc_allocvec_clear(sizeof(struct nsObject), 0);
 
 	AddTail((struct List *)objlist,(struct Node *)dtzo);
 

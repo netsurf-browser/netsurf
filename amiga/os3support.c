@@ -23,6 +23,21 @@
 #ifndef __amigaos4__
 #include "os3support.h"
 
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/dos.h>
+#include <proto/utility.h>
+
+#include <intuition/gadgetclass.h>
+
+#define SUCCESS (TRUE)
+#define FAILURE (FALSE)
+#define NO      !
+
 /* DOS */
 int64 GetFileSize(BPTR fh)
 {
@@ -37,6 +52,19 @@ int64 GetFileSize(BPTR fh)
 	return (int64)size;
 }
 
+void FreeSysObject(ULONG type, APTR obj)
+{
+	switch(type) {
+		case ASOT_PORT:
+			DeleteMsgPort(obj);
+		break;
+		case ASOT_IOREQUEST:
+			DeleteIORequest(obj);
+		break;
+	}
+}
+
+
 /* Exec */
 struct Node *GetHead(struct List *list)
 {
@@ -48,6 +76,52 @@ struct Node *GetHead(struct List *list)
 	}
 	return res;
 }
+
+/* Intuition */
+uint32 GetAttrs(Object *obj, Tag tag1, ...)
+{
+	va_list ap;
+	Tag tag = tag1;
+	ULONG data = 0;
+	int i = 0;
+
+	va_start(ap, tag1);
+
+	while(tag != TAG_DONE) {
+		data = va_arg(ap, ULONG);
+		i += GetAttr(tag, obj, (void *)data);
+		tag = va_arg(ap, Tag);
+	}
+	va_end(ap);
+
+	return i;
+}
+
+ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags)
+{
+	ULONG retval;
+	BOOL changedisabled = FALSE;
+	BOOL disabled;
+
+	if (w) {
+		if (FindTagItem(GA_Disabled,tags)) {
+			changedisabled = TRUE;
+ 			disabled = g->Flags & GFLG_DISABLED;
+ 		}
+ 	}
+	retval = SetGadgetAttrsA(g,w,r,tags);
+	if (w && (retval || (changedisabled && disabled != (g->Flags & GFLG_DISABLED)))) {
+		RefreshGList(g,w,r,1);
+		retval = 1;
+	}
+	return retval;
+}
+
+ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...)
+{
+	return RefreshSetGadgetAttrsA(g,w,r,(struct TagItem *) &tag1);
+}
+
 
 /* Utility */
 struct FormatContext
@@ -171,5 +245,19 @@ char *strlwr(char *str)
 
   return str;
 }
+
+int scandir(const char *dir, struct dirent ***namelist,
+  int (*filter)(const struct dirent *),
+  int (*compar)(const struct dirent **, const struct dirent **))
+{
+	/*\todo stub function, needs writing, preferably into clib2 */
+	return 0;
+}
+
+long long int strtoll(const char *nptr, char **endptr, int base)
+{
+	return (long long int)strtol(nptr, endptr, base);
+}
+
 #endif
 

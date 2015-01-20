@@ -42,7 +42,9 @@
 #include <gadgets/scroller.h>
 #include <reaction/reaction_macros.h>
 #include <intuition/icclass.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 
 #include <assert.h>
 #include <string.h>
@@ -62,6 +64,7 @@
 #include "amiga/gui.h"
 #include "amiga/tree.h"
 #include "amiga/file.h"
+#include "amiga/misc.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
 #include "amiga/drag.h" /* drag icon stuff */
@@ -315,7 +318,7 @@ static void ami_tree_redraw_req(void *p)
 
 			tree_draw(twin->tree, - tile_x, - tile_y,
 				tile_x, tile_y, tile_w, tile_h, &ctx);
-
+#ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
 					BLITA_Source, twin->globals.bm,
 					BLITA_SrcX, 0,
@@ -327,6 +330,11 @@ static void ami_tree_redraw_req(void *p)
 					BLITA_Width, tile_w,
 					BLITA_Height, tile_h,
 					TAG_DONE);
+#else
+			BltBitMapRastPort(twin->globals.bm, 0, 0,
+					twin->win->RPort, bbox->Left + tile_x - pos_x, bbox->Top + tile_y - pos_y,
+					tile_w, tile_h, 0xC0);
+#endif
 		}
 	}
 
@@ -534,7 +542,7 @@ static void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct Intui
  				break; 
 			} 
 		break;
-
+#ifdef __amigaos4__
 		case IDCMP_EXTENDEDMOUSE:
 			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
 			{
@@ -543,6 +551,7 @@ static void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct Intui
 				ami_tree_scroll(twin, (wheel->WheelX * 20), (wheel->WheelY * 20));
 			}
 		break;
+#endif
 	}
 } 
 
@@ -550,9 +559,7 @@ static void ami_tree_menu(struct treeview_window *twin)
 {
 	if(twin->menu) return;
 
-	if((twin->menu = AllocVecTags(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS,
-				      AVT_ClearWithValue, 0, TAG_DONE)))
-	{
+	if((twin->menu = ami_misc_allocvec_clear(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS, 0))) {
 		twin->menu[0].nm_Type = NM_TITLE;
 		twin->menu_name[0] = ami_utf8_easy((char *)messages_get("Tree"));
 		twin->menu[0].nm_Label = twin->menu_name[0];
@@ -902,9 +909,11 @@ void ami_tree_close(struct treeview_window *twin)
 static void ami_tree_update_quals(struct treeview_window *twin)
 {
 	uint32 quals = 0;
-
+#ifdef __amigaos4__
 	GetAttr(WINDOW_Qualifier, twin->objects[OID_MAIN], (uint32 *)&quals);
-
+#else
+#warning FIXME not reading qualifiers on OS3
+#endif
 	twin->key_state = 0;
 
 	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
@@ -976,7 +985,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					if((twin->type != AMI_TREE_SSLCERT) &&
 						(twin->rmbtrapped == FALSE))
 					{
+#ifdef __amigaos4__
 						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)TRUE, sizeof(BOOL));
+#endif
 						twin->rmbtrapped = TRUE;
 					}
 				}
@@ -984,7 +995,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				{
 					if(twin->rmbtrapped == TRUE)
 					{
+#ifdef __amigaos4__
 						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)FALSE, sizeof(BOOL));
+#endif
 						twin->rmbtrapped = FALSE;
 					}
 				}
@@ -1459,7 +1472,7 @@ struct treeview_window *ami_tree_create(int flags,
 {
 	struct treeview_window *twin;
 
-	twin = AllocVecTags(sizeof(struct treeview_window), AVT_ClearWithValue, 0, TAG_DONE);
+	twin = ami_misc_allocvec_clear(sizeof(struct treeview_window), 0);
 
 	if(!twin)
 	{

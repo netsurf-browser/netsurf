@@ -112,7 +112,7 @@ void ami_history_open(struct gui_window *gw)
 
 	if(!gw->hw)
 	{
-		gw->hw = AllocVecTags(sizeof(struct history_window), AVT_ClearWithValue, 0, TAG_DONE);
+		gw->hw = ami_misc_allocvec_clear(sizeof(struct history_window), 0);
 
 		ami_init_layers(&gw->hw->gg, scrn->Width, scrn->Height);
 

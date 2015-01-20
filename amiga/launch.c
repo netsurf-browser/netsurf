@@ -124,8 +124,11 @@ static BOOL ami_openurl_check_list(struct MinList *list, nsurl *url)
 void ami_openurl_open(void)
 {
 	if(nsoption_bool(use_openurl_lib)) {
-		if((OpenURLBase = OpenLibrary("openurl.library",0)))
+		if((OpenURLBase = OpenLibrary("openurl.library",0))) {
+#ifdef __amigaos4__
 			IOpenURL = (struct OpenURLIFace *)GetInterface(OpenURLBase,"main",1,NULL);
+#endif
+		}
 	}
 
 	NewMinList(&ami_unsupportedprotocols);
@@ -133,7 +136,9 @@ void ami_openurl_open(void)
 
 void ami_openurl_close(void)
 {
+#ifdef __amigaos4__
 	if(IOpenURL) DropInterface((struct Interface *)IOpenURL);
+#endif
 	if(OpenURLBase) CloseLibrary(OpenURLBase);
 
 	ami_openurl_free_list(&ami_unsupportedprotocols);
@@ -141,7 +146,9 @@ void ami_openurl_close(void)
 
 nserror gui_launch_url(struct nsurl *url)
 {
+#ifdef __amigaos4__
 	APTR procwin = SetProcWindow((APTR)-1L);
+#endif
 	char *launchurl = NULL;
 
 	if(ami_openurl_check_list(&ami_unsupportedprotocols, url) == FALSE)
@@ -162,8 +169,8 @@ nserror gui_launch_url(struct nsurl *url)
 			}
 		}
 	}
-
+#ifdef __amigaos4__
 	SetProcWindow(procwin);
-
+#endif
 	return NSERROR_OK;
 }

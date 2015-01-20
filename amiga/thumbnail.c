@@ -16,8 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <proto/graphics.h>
+#ifdef __amigaos4__
 #include <proto/Picasso96API.h>
+#endif
 #include <intuition/intuition.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>

@@ -376,43 +376,41 @@ void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct
                   TAG_DONE);
 
 	if(format != IDFMT_DIRECTMAPPED) return;
-	{
-		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
-		{
-			bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, NULL);
-		}
-
-		if(bm)
-		{
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata1,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata2,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-		}
+#ifdef __amigaos4__
+	if ((icon != NULL) && (content_get_bitmap(icon) != NULL)) {
+		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16, NULL);
 	}
+
+	if(bm) {
+		BltBitMapTags(BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestX, width - 16,
+					BLITA_DestY, height - 16,
+					BLITA_Width, 16,
+					BLITA_Height, 16,
+					BLITA_Source, bm,
+					BLITA_Dest, icondata1,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_ARGB32,
+					BLITA_DestBytesPerRow, width * 4,
+					BLITA_UseSrcAlpha, TRUE,
+					TAG_DONE);
+
+		BltBitMapTags(BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestX, width - 16,
+					BLITA_DestY, height - 16,
+					BLITA_Width, 16,
+					BLITA_Height, 16,
+					BLITA_Source, bm,
+					BLITA_Dest, icondata2,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_ARGB32,
+					BLITA_DestBytesPerRow, width * 4,
+					BLITA_UseSrcAlpha, TRUE,
+					TAG_DONE);
+	}
+#endif
 }
 
 void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
@@ -496,7 +494,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 {
 	struct DiskObject *dobj;
 	struct BitMap *bitmap;
-
+#ifdef __amigaos4__
 	if(bm)
 	{
 		bitmap = ami_bitmap_get_native(bm, THUMBNAIL_WIDTH,
@@ -512,11 +510,11 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 					BLITA_Dest, bm->icondata,
 					TAG_DONE);
 	}
-
+#endif
 	dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT,
 						ICONGETA_GetDefaultName, "iconify",
 						TAG_DONE);
-
+#ifdef __amigaos4__
 	if(bm)
 	{
 		IconControl(dobj,
@@ -527,7 +525,7 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 			ICONCTRLA_SetImageData2, NULL,
 			TAG_DONE);
 	}
-
+#endif
 	dobj->do_Gadget.UserData = bm;
 
 	LayoutIconA(dobj, (struct Screen *)~0UL, NULL);

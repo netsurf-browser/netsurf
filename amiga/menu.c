@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <string.h>
 
 #include <proto/dos.h>
@@ -40,6 +42,7 @@
 
 #include "utils/nsoption.h"
 #include "utils/messages.h"
+
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
@@ -196,7 +199,7 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	gwin->menutype = AllocVecTags(AMI_MENU_AREXX_MAX + 1, AVT_ClearWithValue, 0, TAG_DONE);
+	gwin->menutype = ami_misc_allocvec_clear(AMI_MENU_AREXX_MAX + 1, 0);
 
 	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
 	{
@@ -333,6 +336,7 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 
 static void ami_menu_load_glyphs(struct DrawInfo *dri)
 {
+#ifdef __amigaos4__
 	for(int i = 0; i < NSA_GLYPH_MAX; i++)
 		menu_glyph[i] = NULL;
 
@@ -350,10 +354,12 @@ static void ami_menu_load_glyphs(struct DrawInfo *dri)
 		(ULONG *)&menu_glyph_width[NSA_GLYPH_AMIGAKEY]);
 	
 	menu_glyphs_loaded = true;
+#endif
 }
 
 void ami_menu_free_glyphs(void)
 {
+#ifdef __amigaos4__
 	int i;
 	if(menu_glyphs_loaded == false) return;
 	
@@ -363,6 +369,7 @@ void ami_menu_free_glyphs(void)
 	};
 	
 	menu_glyphs_loaded = false;
+#endif
 }
 
 static int ami_menu_calc_item_width(struct gui_window_2 *gwin, int j, struct RastPort *rp)
@@ -413,7 +420,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				j++;
 			} while((gwin->menutype[j] != NM_TITLE) && (gwin->menutype[j] != 0));
 		}
-
+#ifdef __amigaos4__
 		if(LIB_IS_AT_LEAST((struct Library *)GadToolsBase, 53, 6)) {
 			/* GadTools 53.6+ only. For now we will only create the menu
 				using label.image if there's a bitmap associated with the item. */
@@ -495,7 +502,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				if(gwin->menuobj[i]) gwin->menutype[i] |= MENU_IMAGE;
 			}
 		}
-
+#endif
 		gwin->menu[i].nm_Type = gwin->menutype[i];
 		
 		if(gwin->menuobj[i])
@@ -520,8 +527,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
-	gwin->menu = AllocVecTags(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1),
-					AVT_ClearWithValue, 0, TAG_DONE);
+	gwin->menu = ami_misc_allocvec_clear(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), 0);
 	ami_init_menulabs(gwin);
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), gwin);
 	ami_menu_arexx_scan(gwin);
@@ -835,7 +841,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 	temp2 = ami_utf8_easy(temp);
 	FreeVec(temp);
-
+#ifdef __amigaos4__
 	sel = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_INFO,
 				TDR_TitleString, messages_get("NetSurf"),
 				TDR_Window, gwin->win,
@@ -844,7 +850,12 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 				TDR_Arg1,netsurf_version,
 				TDR_Arg2,verdate,
 				TAG_DONE);
-
+#else
+	/*\todo proper requester for OS3
+	 * at the moment menus are disabled so won't get here anyway */
+	printf("NetSurf %s\nBuild date %s\n", netsurf_version, verdate);
+	sel = 0;
+#endif
 	free(temp2);
 
 	if(sel == 2) {

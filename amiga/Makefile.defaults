@@ -4,7 +4,11 @@
 
 # Force using glibc internal iconv implementation instead of external libiconv
 # Valid options: YES, NO
-NETSURF_USE_LIBICONV_PLUG := YES
+ifneq ($(SUBTARGET),os3)
+  NETSURF_USE_LIBICONV_PLUG := YES
+else
+  NETSURF_USE_LIBICONV_PLUG := NO
+endif
 
 # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
 # Valid options: YES, NO, AUTO

@@ -17,8 +17,10 @@
  */
 
 /** \file
- * DataTypes picture handler (implementation)
+ * Plugin=>external program handler (implementation)
 */
+
+#include "amiga/os3support.h"
 
 #include "amiga/filetype.h"
 #include "amiga/plugin_hack.h"
@@ -250,6 +252,7 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 
 	if(full_cmd)
 	{
+#ifdef __amigaos4__
 		LOG(("Attempting to execute %s", full_cmd));
 
 		in = Open("NIL:", MODE_OLDFILE);
@@ -264,5 +267,6 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 				TAG_DONE);
 
 		FreeVec(full_cmd);
+#endif
 	}
 }
