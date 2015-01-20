@@ -147,7 +147,6 @@
 #define IDoMethod DoMethod
 #define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
-#define RefreshSetGadgetAttrs SetGadgetAttrs /*\todo This isn't quite right */
 #define ShowWindow(...) (void)0
 
 /* Utility */
@@ -225,6 +224,8 @@ struct Node *GetHead(struct List *list);
 
 /* Intuition */
 uint32 GetAttrs(Object *obj, Tag tag1, ...);
+ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...);
+ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags);
 
 /* Utility */
 char *ASPrintf(const char *fmt, ...);

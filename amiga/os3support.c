@@ -26,9 +26,13 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
+
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/dos.h>
+#include <proto/utility.h>
+
+#include <intuition/gadgetclass.h>
 
 #define SUCCESS (TRUE)
 #define FAILURE (FALSE)
@@ -92,6 +96,32 @@ uint32 GetAttrs(Object *obj, Tag tag1, ...)
 
 	return i;
 }
+
+ULONG RefreshSetGadgetAttrsA(struct Gadget *g, struct Window *w, struct Requester *r, struct TagItem *tags)
+{
+	ULONG retval;
+	BOOL changedisabled = FALSE;
+	BOOL disabled;
+
+	if (w) {
+		if (FindTagItem(GA_Disabled,tags)) {
+			changedisabled = TRUE;
+ 			disabled = g->Flags & GFLG_DISABLED;
+ 		}
+ 	}
+	retval = SetGadgetAttrsA(g,w,r,tags);
+	if (w && (retval || (changedisabled && disabled != (g->Flags & GFLG_DISABLED)))) {
+		RefreshGList(g,w,r,1);
+		retval = 1;
+	}
+	return retval;
+}
+
+ULONG RefreshSetGadgetAttrs(struct Gadget *g, struct Window *w, struct Requester *r, Tag tag1, ...)
+{
+	return RefreshSetGadgetAttrsA(g,w,r,(struct TagItem *) &tag1);
+}
+
 
 /* Utility */
 struct FormatContext
