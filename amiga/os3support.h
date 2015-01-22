@@ -1,6 +1,6 @@
 /*
  * Copyright 2010 John-Mark Bell <jmb@netsurf-browser.org>
- * Copyright 2014 Chris Young <chris@unsatisfactorsysoftware.co.uk>
+ * Copyright 2014 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
