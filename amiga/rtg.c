@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Chris Young <chris@unsatisfactorsysoftware.co.uk>
+ * Copyright 2015 Chris Young <chris@unsatisfactorsysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
