@@ -936,18 +936,10 @@ static nserror hotlist_save(const char *path)
 		goto cleanup;
 	}
 
-	/* Remove old hotlist file, and replace */
-	if (remove(path) != 0) {
-		if (errno == ENOENT) {
-			/* There was no original file to remove. */
-		} else {
-			res = NSERROR_SAVE_FAILED;
-			LOG(("Error: %s.", strerror(errno)));
-			goto cleanup;
-		}
-	}
+	/* Replace any old hotlist file with the one we just saved */
 	if (rename(temp_path, path) != 0) {
 		res = NSERROR_SAVE_FAILED;
+		LOG(("Error renaming hotlist: %s.", strerror(errno)));
 		goto cleanup;
 	}
 
@@ -1287,7 +1279,7 @@ nserror hotlist_fini(const char *path)
 	/* Save the hotlist */
 	err = hotlist_save(path);
 	if (err != NSERROR_OK) {
-		warn_user("Couldn't save the hotlist.", 0);
+		LOG(("Problem saving the hotlist.", 0));
 	}
 
 	/* Destroy the hotlist treeview */
