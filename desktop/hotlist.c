@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -913,7 +914,6 @@ static nserror hotlist_generate(void)
 }
 
 
-
 /* Save the hotlist to to a file at the given path
  *
  * \param path  Path to save hostlist file to.
@@ -938,8 +938,13 @@ static nserror hotlist_save(const char *path)
 
 	/* Remove old hotlist file, and replace */
 	if (remove(path) != 0) {
-		res = NSERROR_SAVE_FAILED;
-		goto cleanup;
+		if (errno == ENOENT) {
+			/* There was no original file to remove. */
+		} else {
+			res = NSERROR_SAVE_FAILED;
+			LOG(("Error: %s.", strerror(errno)));
+			goto cleanup;
+		}
 	}
 	if (rename(temp_path, path) != 0) {
 		res = NSERROR_SAVE_FAILED;
