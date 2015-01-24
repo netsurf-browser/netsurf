@@ -150,55 +150,8 @@ bool box_normalise_block(struct box *block, html_content *c)
 		case BOX_TABLE_ROW_GROUP:
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
-			/* insert implied table */
-			assert(block->style != NULL);
-
-			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
-			ctx.base_url = c->base_url;
-			ctx.universal = c->universal;
-
-			style = nscss_get_blank_style(&ctx, block->style);
-			if (style == NULL)
-				return false;
-
-			table = box_create(NULL, style, true, block->href,
-					block->target, NULL, NULL, c->bctx);
-			if (table == NULL) {
-				css_computed_style_destroy(style);
-				return false;
-			}
-			table->type = BOX_TABLE;
-
-			if (child->prev == NULL)
-				block->children = table;
-			else
-				child->prev->next = table;
-
-			table->prev = child->prev;
-
-			while (child != NULL && (
-					child->type == BOX_TABLE_ROW_GROUP ||
-					child->type == BOX_TABLE_ROW ||
-					child->type == BOX_TABLE_CELL)) {
-				box_add_child(table, child);
-
-				next_child = child->next;
-				child->next = NULL;
-				child = next_child;
-			}
-
-			table->last->next = NULL;
-			table->next = next_child = child;
-			if (table->next != NULL)
-				table->next->prev = table;
-			else
-				block->last = table;
-			table->parent = block;
-
-			if (box_normalise_table(table, c) == false)
-				return false;
-			break;
+			/* DOM should not have these outside a table. */
+			assert(0);
 		default:
 			assert(0);
 		}
