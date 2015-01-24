@@ -102,9 +102,6 @@ bool box_normalise_block(struct box *block, html_content *c)
 {
 	struct box *child;
 	struct box *next_child;
-	struct box *table;
-	css_computed_style *style;
-	nscss_select_ctx ctx;
 
 	assert(block != NULL);
 
