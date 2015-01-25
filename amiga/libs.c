@@ -27,6 +27,30 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 
+#ifndef __amigaos4__
+/* OS3 needs these for the XXXX_GetClass() functions */
+#include <proto/arexx.h>
+#include <proto/bevel.h>
+#include <proto/bitmap.h>
+#include <proto/chooser.h>
+#include <proto/checkbox.h>
+#include <proto/clicktab.h>
+#include <proto/fuelgauge.h>
+#include <proto/getfile.h>
+#include <proto/getfont.h>
+#include <proto/getscreenmode.h>
+#include <proto/integer.h>
+#include <proto/label.h>
+#include <proto/layout.h>
+#include <proto/listbrowser.h>
+#include <proto/radiobutton.h>
+#include <proto/scroller.h>
+#include <proto/space.h>
+#include <proto/speedbar.h>
+#include <proto/string.h>
+#include <proto/window.h>
+#endif
+
 #ifdef __amigaos4__
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
 	LOG(("Opening %s v%d", LIB, LIBVER)); \
@@ -93,14 +117,14 @@
 	}
 
 #define AMINS_LIB_CLOSE(PREFIX)	\
-	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
+	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
 
 #define AMINS_LIB_STRUCT(PREFIX)	\
 	struct PREFIX##Base *PREFIX##Base;
 
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
 	LOG(("Opening %s v%d", CLASS, CLASSVER)); \
-	if((PREFIX##Base = (struct PREFIX##Base *)OpenLibrary(CLASS, CLASSVER))) {	\
+	if((PREFIX##Base = OpenLibrary(CLASS, CLASSVER))) {	\
 		PREFIX##Class = CLASSGET##_GetClass();	\
 	} else {	\
 		STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", CLASS, CLASSVER);	\
@@ -110,10 +134,10 @@
 	}
 
 #define AMINS_CLASS_CLOSE(PREFIX)	\
-	if(PREFIX##Base) CloseLibrary((struct Library *)PREFIX##Base);
+	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
 
 #define AMINS_CLASS_STRUCT(PREFIX)	\
-	struct PREFIX##Base *PREFIX##Base;	\
+	struct Library *PREFIX##Base;	\
 	Class *PREFIX##Class;
 
 #endif

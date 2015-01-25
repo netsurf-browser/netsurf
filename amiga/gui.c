@@ -5186,6 +5186,11 @@ Object *ami_gui_splash_open(void)
 				LayoutEnd,
 			EndWindow;
 
+	LOG(("WindowBase = %p", WindowBase));
+	LOG(("WindowObject = %p", win_obj));
+	LOG(("BitMapBase = %p", BitMapBase));
+	LOG(("BitMapObject = %p", bm_obj));
+
 	LOG(("Attempting to open splash window..."));
 	win = RA_OpenWindow(win_obj);
 
