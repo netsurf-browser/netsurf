@@ -86,7 +86,8 @@
 				LOG(("Failed to get main interface v1 of %s", CLASS));	\
 			}	\
 		}	\
-	} else {	\
+	}	\
+	if(PREFIX##Class == NULL) {	\
 		STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", CLASS, CLASSVER);	\
 		ami_misc_fatal_error(error);	\
 		FreeVec(error);	\
@@ -126,7 +127,8 @@
 	LOG(("Opening %s v%d", CLASS, CLASSVER)); \
 	if((PREFIX##Base = OpenLibrary(CLASS, CLASSVER))) {	\
 		PREFIX##Class = CLASSGET##_GetClass();	\
-	} else {	\
+	}	\
+	if(PREFIX##Class == NULL) {	\
 		STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", CLASS, CLASSVER);	\
 		ami_misc_fatal_error(error);	\
 		FreeVec(error);	\
@@ -137,8 +139,8 @@
 	if(PREFIX##Base) CloseLibrary(PREFIX##Base);
 
 #define AMINS_CLASS_STRUCT(PREFIX)	\
-	struct Library *PREFIX##Base;	\
-	Class *PREFIX##Class;
+	struct Library *PREFIX##Base = NULL;	\
+	Class *PREFIX##Class = NULL;
 
 #endif
 
