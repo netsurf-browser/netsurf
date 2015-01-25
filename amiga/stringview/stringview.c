@@ -33,6 +33,7 @@
 #include <gadgets/listbrowser.h>
 
 #include "amiga/os3support.h"
+#include "amiga/libs.h"
 
 #include "stringview.h"
 #include "urlhistory.h"
@@ -411,13 +412,13 @@ static uint32 myStringClass_OM_New( Class *cl, Object *obj, struct opSet *msg )
 
 		InitSemaphore( &data->Semaphore );
 
-		data->WindowObject = NewObject( WINDOW_GetClass(), NULL,
+		data->WindowObject = NewObject( WindowClass, NULL,
 			WA_Activate,						FALSE,
 			WA_Borderless,						TRUE,
 			WINDOW_ParentGroup,					NewObject( LAYOUT_GetClass(), NULL,
 				LAYOUT_SpaceInner,				FALSE,
 				LAYOUT_SpaceOuter,				FALSE,
-				LAYOUT_AddChild,	    		data->ListviewObject = NewObject( LISTBROWSER_GetClass(), NULL,
+				LAYOUT_AddChild,	    		data->ListviewObject = NewObject( ListBrowserClass, NULL,
 					LISTBROWSER_Labels,			&data->ListviewHeader,
 					LISTBROWSER_MakeVisible,	TRUE,
 					LISTBROWSER_ShowSelected,	TRUE,

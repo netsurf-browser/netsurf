@@ -18,7 +18,21 @@
 
 #ifndef AMIGA_LIBS_H
 #include <stdbool.h>
+#include <intuition/classes.h>
 
+/* BOOPSI classes */
+extern Class *BitMapClass;
+extern Class *LayoutClass;
+extern Class *ListBrowserClass;
+extern Class *WindowClass;
+
+/* New improved ReAction macros! */
+#define BitMapObj	NewObject(BitMapClass, NULL
+#define LayoutHObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
+#define LayoutVObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
+#define WindowObj	NewObject(WindowClass, NULL
+
+/* Functions */
 bool ami_libs_open(void);
 void ami_libs_close(void);
 #endif
