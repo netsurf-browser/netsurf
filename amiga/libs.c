@@ -81,6 +81,7 @@
 	LOG(("Opening %s v%d", CLASS, CLASSVER)); \
 	if((PREFIX##Base = OpenClass(CLASS, CLASSVER, &PREFIX##Class))) {	\
 		if(NEEDINTERFACE == true) {	\
+			LOG(("        + interface"));	\
 			I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, "main", 1, NULL);	\
 			if(I##PREFIX == NULL) {	\
 				LOG(("Failed to get main interface v1 of %s", CLASS));	\
@@ -99,9 +100,9 @@
 	if(PREFIX##Base) CloseClass(PREFIX##Base);
 
 #define AMINS_CLASS_STRUCT(PREFIX)	\
-	struct ClassLibrary *PREFIX##Base;	\
-	struct PREFIX##IFace *I##PREFIX;	\
-	Class *PREFIX##Class;
+	struct ClassLibrary *PREFIX##Base = NULL;	\
+	struct PREFIX##IFace *I##PREFIX = NULL;	\
+	Class *PREFIX##Class = NULL;
 
 #else
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
@@ -168,6 +169,7 @@ AMINS_LIB_STRUCT(Workbench);
 AMINS_CLASS_STRUCT(ARexx);
 AMINS_CLASS_STRUCT(Bevel);
 AMINS_CLASS_STRUCT(BitMap);
+AMINS_CLASS_STRUCT(Button);
 AMINS_CLASS_STRUCT(Chooser);
 AMINS_CLASS_STRUCT(CheckBox);
 AMINS_CLASS_STRUCT(ClickTab);
@@ -230,11 +232,13 @@ bool ami_libs_open(void)
 	 * We get the class pointer once and used our stored copy.
 	 * NB: the last argument needs to be "true" whilst we still have old macros
 	 * lying around, and then "false" unless the class also has library functions.
+	 * On OS4 these must be opened *after* intuition.library.
 	 */
 
 	AMINS_CLASS_OPEN("arexx.class",                  44, ARexx,         AREXX,			true)
 	AMINS_CLASS_OPEN("images/bevel.image",           44, Bevel,         BEVEL,			true)
 	AMINS_CLASS_OPEN("images/bitmap.image",          44, BitMap,        BITMAP,			true)
+	AMINS_CLASS_OPEN("gadgets/button.gadget",        44, Button,        BUTTON,			true)
 	AMINS_CLASS_OPEN("gadgets/checkbox.gadget",      44, CheckBox,      CHECKBOX,		true)
 	AMINS_CLASS_OPEN("gadgets/chooser.gadget",       44, Chooser,       CHOOSER,		true)
 	AMINS_CLASS_OPEN("gadgets/clicktab.gadget",      44, ClickTab,      CLICKTAB,		true)
@@ -258,9 +262,13 @@ bool ami_libs_open(void)
 
 void ami_libs_close(void)
 {
+	/* BOOPSI Classes.
+	 * On OS4 these must be closed *before* intuition.library
+	 */
 	AMINS_CLASS_CLOSE(ARexx)
 	AMINS_CLASS_CLOSE(Bevel)
 	AMINS_CLASS_CLOSE(BitMap)
+	AMINS_CLASS_CLOSE(Button)
 	AMINS_CLASS_CLOSE(CheckBox)
 	AMINS_CLASS_CLOSE(Chooser)
 	AMINS_CLASS_CLOSE(ClickTab)
@@ -279,6 +287,7 @@ void ami_libs_close(void)
 	AMINS_CLASS_CLOSE(String)
 	AMINS_CLASS_CLOSE(Window)
 
+	/* Libraries */
 	AMINS_LIB_CLOSE(Asl)
 	AMINS_LIB_CLOSE(DataTypes)
 	AMINS_LIB_CLOSE(Diskfont)

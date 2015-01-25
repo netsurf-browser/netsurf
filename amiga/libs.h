@@ -21,15 +21,31 @@
 #include <intuition/classes.h>
 
 /* BOOPSI classes */
+extern Class *BevelClass;
 extern Class *BitMapClass;
+extern Class *ButtonClass;
+extern Class *ChooserClass;
+extern Class *ClickTabClass;
 extern Class *LayoutClass;
 extern Class *ListBrowserClass;
+extern Class *ScrollerClass;
+extern Class *SpaceClass;
+extern Class *SpeedBarClass;
+extern Class *StringClass;
 extern Class *WindowClass;
 
 /* New improved ReAction macros! */
+#define BevelObj	NewObject(BevelClass, NULL
 #define BitMapObj	NewObject(BitMapClass, NULL
+#define ButtonObj	NewObject(ButtonClass, NULL
+#define ChooserObj	NewObject(ChooserClass, NULL
+#define ClickTabObj	NewObject(ClickTabClass, NULL
 #define LayoutHObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
 #define LayoutVObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
+#define ScrollerObj	NewObject(ScrollerClass, NULL
+#define SpaceObj	NewObject(SpaceClass, NULL
+#define SpeedBarObj	NewObject(ScrollerClass, NULL
+#define StringObj	NewObject(StringClass, NULL
 #define WindowObj	NewObject(WindowClass, NULL
 
 /* Functions */
