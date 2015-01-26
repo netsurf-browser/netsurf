@@ -32,6 +32,7 @@
 #include <proto/arexx.h>
 #include <proto/bevel.h>
 #include <proto/bitmap.h>
+#include <proto/button.h>
 #include <proto/chooser.h>
 #include <proto/checkbox.h>
 #include <proto/clicktab.h>
