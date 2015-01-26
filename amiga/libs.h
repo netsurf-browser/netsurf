@@ -53,7 +53,7 @@ extern Class *WindowClass;
 #define ClickTabObj			NewObject(ClickTabClass, NULL
 #define FuelGaugeObj		NewObject(FuelGaugeClass, NULL
 #define GetFileObj			NewObject(GetFileClass, NULL
-#define GetFontObj			NewObject(GetFileClass, NULL
+#define GetFontObj			NewObject(GetFontClass, NULL
 #define GetScreenModeObj	NewObject(GetScreenModeClass, NULL
 #define IntegerObj			NewObject(IntegerClass, NULL
 #define LabelObj			NewObject(LabelClass, NULL
