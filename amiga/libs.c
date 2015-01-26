@@ -230,32 +230,32 @@ bool ami_libs_open(void)
 	/* BOOPSI classes.
 	 * Opened using class functions rather than the old-fashioned method.
 	 * We get the class pointer once and used our stored copy.
-	 * NB: the last argument needs to be "true" whilst we still have old macros
-	 * lying around, and then "false" unless the class also has library functions.
 	 * On OS4 these must be opened *after* intuition.library.
+	 * NB: the last argument should be "true" only if the class also has
+	 * library functions we use.
 	 */
 
-	AMINS_CLASS_OPEN("arexx.class",                  44, ARexx,         AREXX,			true)
-	AMINS_CLASS_OPEN("images/bevel.image",           44, Bevel,         BEVEL,			true)
-	AMINS_CLASS_OPEN("images/bitmap.image",          44, BitMap,        BITMAP,			true)
-	AMINS_CLASS_OPEN("gadgets/button.gadget",        44, Button,        BUTTON,			true)
-	AMINS_CLASS_OPEN("gadgets/checkbox.gadget",      44, CheckBox,      CHECKBOX,		true)
-	AMINS_CLASS_OPEN("gadgets/chooser.gadget",       44, Chooser,       CHOOSER,		true)
-	AMINS_CLASS_OPEN("gadgets/clicktab.gadget",      44, ClickTab,      CLICKTAB,		true)
-	AMINS_CLASS_OPEN("gadgets/fuelgauge.gadget",     44, FuelGauge,     FUELGAUGE,		true)
-	AMINS_CLASS_OPEN("gadgets/getfile.gadget",       44, GetFile,       GETFILE,		true)
-	AMINS_CLASS_OPEN("gadgets/getfont.gadget",       44, GetFont,       GETFONT,		true)
-	AMINS_CLASS_OPEN("gadgets/getscreenmode.gadget", 44, GetScreenMode, GETSCREENMODE,	true)
-	AMINS_CLASS_OPEN("gadgets/integer.gadget",       44, Integer,       INTEGER,		true)
-	AMINS_CLASS_OPEN("images/label.image",           44, Label,         LABEL,			true)
-	AMINS_CLASS_OPEN("gadgets/layout.gadget",        44, Layout,        LAYOUT,			true)
-	AMINS_CLASS_OPEN("gadgets/listbrowser.gadget",   44, ListBrowser,   LISTBROWSER,	false)
-	AMINS_CLASS_OPEN("gadgets/radiobutton.gadget",   44, RadioButton,   RADIOBUTTON,	true)
-	AMINS_CLASS_OPEN("gadgets/scroller.gadget",      44, Scroller,      SCROLLER,		true)
-	AMINS_CLASS_OPEN("gadgets/space.gadget",         44, Space,         SPACE,			true)
-	AMINS_CLASS_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      SPEEDBAR,		true)
-	AMINS_CLASS_OPEN("gadgets/string.gadget",        44, String,        STRING,			true)
-	AMINS_CLASS_OPEN("window.class",                 44, Window,        WINDOW,			true)
+	AMINS_CLASS_OPEN("arexx.class",                  44, ARexx,         AREXX,         false)
+	AMINS_CLASS_OPEN("images/bevel.image",           44, Bevel,         BEVEL,         false)
+	AMINS_CLASS_OPEN("images/bitmap.image",          44, BitMap,        BITMAP,        false)
+	AMINS_CLASS_OPEN("gadgets/button.gadget",        44, Button,        BUTTON,        false)
+	AMINS_CLASS_OPEN("gadgets/checkbox.gadget",      44, CheckBox,      CHECKBOX,      false)
+	AMINS_CLASS_OPEN("gadgets/chooser.gadget",       44, Chooser,       CHOOSER,       true)
+	AMINS_CLASS_OPEN("gadgets/clicktab.gadget",      44, ClickTab,      CLICKTAB,      true)
+	AMINS_CLASS_OPEN("gadgets/fuelgauge.gadget",     44, FuelGauge,     FUELGAUGE,     false)
+	AMINS_CLASS_OPEN("gadgets/getfile.gadget",       44, GetFile,       GETFILE,       false)
+	AMINS_CLASS_OPEN("gadgets/getfont.gadget",       44, GetFont,       GETFONT,       false)
+	AMINS_CLASS_OPEN("gadgets/getscreenmode.gadget", 44, GetScreenMode, GETSCREENMODE, false)
+	AMINS_CLASS_OPEN("gadgets/integer.gadget",       44, Integer,       INTEGER,       false)
+	AMINS_CLASS_OPEN("images/label.image",           44, Label,         LABEL,         false)
+	AMINS_CLASS_OPEN("gadgets/layout.gadget",        44, Layout,        LAYOUT,        true)
+	AMINS_CLASS_OPEN("gadgets/listbrowser.gadget",   44, ListBrowser,   LISTBROWSER,   false)
+	AMINS_CLASS_OPEN("gadgets/radiobutton.gadget",   44, RadioButton,   RADIOBUTTON,   false)
+	AMINS_CLASS_OPEN("gadgets/scroller.gadget",      44, Scroller,      SCROLLER,      false)
+	AMINS_CLASS_OPEN("gadgets/space.gadget",         44, Space,         SPACE,         false)
+	AMINS_CLASS_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      SPEEDBAR,      false)
+	AMINS_CLASS_OPEN("gadgets/string.gadget",        44, String,        STRING,        false)
+	AMINS_CLASS_OPEN("window.class",                 44, Window,        WINDOW,        false)
 
 	return true;
 }

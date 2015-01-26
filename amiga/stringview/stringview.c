@@ -415,7 +415,7 @@ static uint32 myStringClass_OM_New( Class *cl, Object *obj, struct opSet *msg )
 		data->WindowObject = NewObject( WindowClass, NULL,
 			WA_Activate,						FALSE,
 			WA_Borderless,						TRUE,
-			WINDOW_ParentGroup,					NewObject( LAYOUT_GetClass(), NULL,
+			WINDOW_ParentGroup,					NewObject( LayoutClass, NULL,
 				LAYOUT_SpaceInner,				FALSE,
 				LAYOUT_SpaceOuter,				FALSE,
 				LAYOUT_AddChild,	    		data->ListviewObject = NewObject( ListBrowserClass, NULL,
@@ -844,7 +844,7 @@ uint32 ret;
 Class *MakeStringClass( void )
 {
     Class *cl;
-	cl = MakeClass( NULL, NULL, STRING_GetClass(), sizeof(struct myStringClassData), 0 );
+	cl = MakeClass( NULL, NULL, StringClass, sizeof(struct myStringClassData), 0 );
 
 	if ( cl )
 	{

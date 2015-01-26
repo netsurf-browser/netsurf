@@ -61,6 +61,7 @@
 #include "amiga/history.h"
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
+#include "amiga/libs.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
 #include "amiga/print.h"
@@ -429,7 +430,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				int icon_width = 0;
 				Object *blank_space = NULL;
 				Object *submenuarrow = NULL;
-				Object *icon = 	BitMapObject,
+				Object *icon = 	BitMapObj,
 						BITMAP_Screen, scrn,
 						BITMAP_SourceFile, gwin->menuicon[i],
 						BITMAP_Masking, TRUE,
@@ -487,7 +488,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 									TAG_DONE);
 				}
 				
-				gwin->menuobj[i] = LabelObject,
+				gwin->menuobj[i] = LabelObj,
 					LABEL_MenuMode, TRUE,
 					LABEL_DrawInfo, dri,
 					LABEL_DisposeImage, TRUE,

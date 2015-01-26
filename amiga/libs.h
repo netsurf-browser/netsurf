@@ -21,13 +21,22 @@
 #include <intuition/classes.h>
 
 /* BOOPSI classes */
+extern Class *ARexxClass;
 extern Class *BevelClass;
 extern Class *BitMapClass;
 extern Class *ButtonClass;
+extern Class *CheckBoxClass;
 extern Class *ChooserClass;
 extern Class *ClickTabClass;
+extern Class *FuelGaugeClass;
+extern Class *GetFileClass;
+extern Class *GetFontClass;
+extern Class *GetScreenModeClass;
+extern Class *IntegerClass;
+extern Class *LabelClass;
 extern Class *LayoutClass;
 extern Class *ListBrowserClass;
+extern Class *RadioButtonClass;
 extern Class *ScrollerClass;
 extern Class *SpaceClass;
 extern Class *SpeedBarClass;
@@ -35,18 +44,28 @@ extern Class *StringClass;
 extern Class *WindowClass;
 
 /* New improved ReAction macros! */
-#define BevelObj	NewObject(BevelClass, NULL
-#define BitMapObj	NewObject(BitMapClass, NULL
-#define ButtonObj	NewObject(ButtonClass, NULL
-#define ChooserObj	NewObject(ChooserClass, NULL
-#define ClickTabObj	NewObject(ClickTabClass, NULL
-#define LayoutHObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
-#define LayoutVObj	NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
-#define ScrollerObj	NewObject(ScrollerClass, NULL
-#define SpaceObj	NewObject(SpaceClass, NULL
-#define SpeedBarObj	NewObject(ScrollerClass, NULL
-#define StringObj	NewObject(StringClass, NULL
-#define WindowObj	NewObject(WindowClass, NULL
+#define ARexxObj			NewObject(ARexxClass, NULL
+#define BevelObj			NewObject(BevelClass, NULL
+#define BitMapObj			NewObject(BitMapClass, NULL
+#define ButtonObj			NewObject(ButtonClass, NULL
+#define CheckBoxObj			NewObject(CheckBoxClass, NULL
+#define ChooserObj			NewObject(ChooserClass, NULL
+#define ClickTabObj			NewObject(ClickTabClass, NULL
+#define FuelGaugeObj		NewObject(FuelGaugeClass, NULL
+#define GetFileObj			NewObject(GetFileClass, NULL
+#define GetFontObj			NewObject(GetFileClass, NULL
+#define GetScreenModeObj	NewObject(GetScreenModeClass, NULL
+#define IntegerObj			NewObject(IntegerClass, NULL
+#define LabelObj			NewObject(LabelClass, NULL
+#define LayoutHObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ
+#define LayoutVObj			NewObject(LayoutClass, NULL, LAYOUT_Orientation, LAYOUT_ORIENT_VERT
+#define PageObj				NewObject(NULL, "page.gadget"
+#define RadioButtonObj		NewObject(RadioButtonClass, NULL
+#define ScrollerObj			NewObject(ScrollerClass, NULL
+#define SpaceObj			NewObject(SpaceClass, NULL
+#define SpeedBarObj			NewObject(ScrollerClass, NULL
+#define StringObj			NewObject(StringClass, NULL
+#define WindowObj			NewObject(WindowClass, NULL
 
 /* Functions */
 bool ami_libs_open(void);

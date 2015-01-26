@@ -54,6 +54,7 @@
 #include "desktop/gui_window.h"
 #include "desktop/gui_search.h"
 
+#include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
@@ -107,7 +108,7 @@ void ami_search_open(struct gui_window *gwin)
 
 	fwin = ami_misc_allocvec_clear(sizeof(struct find_window), 0);
 
-	fwin->objects[OID_MAIN] = WindowObject,
+	fwin->objects[OID_MAIN] = WindowObj,
       	WA_ScreenTitle, ami_gui_get_screen_title(),
        	WA_Title,messages_get("FindTextNS"),
        	WA_Activate, TRUE,
@@ -121,26 +122,21 @@ void ami_search_open(struct gui_window *gwin)
 		WINDOW_IconifyGadget, FALSE,
 		WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, fwin->objects[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, fwin->objects[GID_SEARCHSTRING] = StringObject,
+           	WINDOW_ParentGroup, fwin->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, fwin->objects[GID_SEARCHSTRING] = StringObj,
 					GA_ID,GID_SEARCHSTRING,
 					GA_TabCycle,TRUE,
 					GA_RelVerify,TRUE,
 				StringEnd,
-/*
-				CHILD_Label, LabelObject,
-					LABEL_Text,messages_get("searchstring"),
-				LabelEnd,
-*/
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, fwin->objects[GID_CASE] = CheckBoxObject,
+				LAYOUT_AddChild, fwin->objects[GID_CASE] = CheckBoxObj,
 					GA_ID,GID_CASE,
 					GA_Text,messages_get("CaseSens"),
 					GA_Selected,FALSE,
 					GA_TabCycle,TRUE,
 					GA_RelVerify,TRUE,
 				CheckBoxEnd,
-				LAYOUT_AddChild, fwin->objects[GID_SHOWALL] = CheckBoxObject,
+				LAYOUT_AddChild, fwin->objects[GID_SHOWALL] = CheckBoxObj,
 					GA_ID,GID_SHOWALL,
 					GA_Text,messages_get("ShowAll"),
 					GA_Selected,FALSE,
@@ -148,8 +144,8 @@ void ami_search_open(struct gui_window *gwin)
 					GA_RelVerify,TRUE,
 				CheckBoxEnd,
 
-				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, fwin->objects[GID_PREV] = ButtonObject,
+				LAYOUT_AddChild, LayoutHObj,
+					LAYOUT_AddChild, fwin->objects[GID_PREV] = ButtonObj,
 						GA_ID,GID_PREV,
 						GA_RelVerify,TRUE,
 						GA_Text,messages_get("Prev"),
@@ -157,7 +153,7 @@ void ami_search_open(struct gui_window *gwin)
 						GA_Disabled,TRUE,
 					ButtonEnd,
 					CHILD_WeightedHeight,0,
-					LAYOUT_AddChild, fwin->objects[GID_NEXT] = ButtonObject,
+					LAYOUT_AddChild, fwin->objects[GID_NEXT] = ButtonObj,
 						GA_ID,GID_NEXT,
 						GA_RelVerify,TRUE,
 						GA_Text,messages_get("Next"),

@@ -50,6 +50,7 @@
 #include "desktop/gui_window.h"
 #include "graphics/rpattr.h"
 
+#include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/object.h"
 #include "amiga/gui.h"
@@ -124,7 +125,7 @@ void ami_history_open(struct gui_window *gw)
 		gw->hw->scrollerhook.h_Entry = (void *)ami_history_scroller_hook;
 		gw->hw->scrollerhook.h_Data = gw->hw;
 
-		gw->hw->objects[OID_MAIN] = WindowObject,
+		gw->hw->objects[OID_MAIN] = WindowObj,
 			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Title, messages_get("History"),
 			WA_Activate, TRUE,
@@ -146,8 +147,8 @@ void ami_history_open(struct gui_window *gw)
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE,
 //			WA_ReportMouse,TRUE,
 			WA_IDCMP,IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE, // | IDCMP_MOUSEMOVE,
-			WINDOW_ParentGroup, gw->hw->objects[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, gw->hw->objects[GID_BROWSER] = SpaceObject,
+			WINDOW_ParentGroup, gw->hw->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, gw->hw->objects[GID_BROWSER] = SpaceObj,
 					GA_ID,GID_BROWSER,
 //					SPACE_MinWidth,width,
 //					SPACE_MinHeight,height,

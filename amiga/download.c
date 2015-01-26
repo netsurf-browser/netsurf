@@ -62,6 +62,7 @@
 #include "amiga/file.h"
 #include "amiga/drag.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
@@ -147,7 +148,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 		return NULL;
 	}
 
-	dw->objects[OID_MAIN] = WindowObject,
+	dw->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, dw->url,
            	WA_Activate, TRUE,
@@ -161,8 +162,8 @@ static struct gui_download_window *gui_download_window_create(download_context *
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_LockHeight,TRUE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
-           	WINDOW_ParentGroup, dw->objects[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, dw->objects[GID_STATUS] = FuelGaugeObject,
+           	WINDOW_ParentGroup, dw->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, dw->objects[GID_STATUS] = FuelGaugeObj,
 					GA_ID,GID_STATUS,
 					GA_Text,messages_get("amiDownload"),
 					FUELGAUGE_Min,0,
@@ -176,7 +177,7 @@ static struct gui_download_window *gui_download_window_create(download_context *
 				FuelGaugeEnd,
 				CHILD_NominalSize,TRUE,
 				CHILD_WeightedHeight,0,
-				LAYOUT_AddChild, dw->objects[GID_CANCEL] = ButtonObject,
+				LAYOUT_AddChild, dw->objects[GID_CANCEL] = ButtonObj,
 					GA_ID,GID_CANCEL,
 					GA_RelVerify,TRUE,
 					GA_Text,messages_get("Abort"),

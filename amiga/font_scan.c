@@ -50,6 +50,7 @@
 
 #include "amiga/font_scan.h"
 #include "amiga/gui.h"
+#include "amiga/libs.h"
 #include "amiga/object.h"
 #include "amiga/utf8.h"
 
@@ -104,7 +105,7 @@ static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 	fsw->title = ami_utf8_easy(messages_get("FontScanning"));
 	fsw->glyphtext = ami_utf8_easy(messages_get("FontGlyphs"));
 
-	fsw->objects[FS_OID_MAIN] = WindowObject,
+	fsw->objects[FS_OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, fsw->title,
            	WA_Activate, TRUE,
@@ -119,8 +120,8 @@ static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 			WINDOW_IconifyGadget, FALSE,
          	WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_LockHeight, TRUE,
-           	WINDOW_ParentGroup, fsw->objects[FS_GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, fsw->objects[FS_GID_FONTS] = FuelGaugeObject,
+           	WINDOW_ParentGroup, fsw->objects[FS_GID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, fsw->objects[FS_GID_FONTS] = FuelGaugeObj,
 					GA_ID, FS_GID_FONTS,
 					GA_Text, fsw->title,
 					FUELGAUGE_Min, 0,
@@ -133,7 +134,7 @@ static struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 				FuelGaugeEnd,
 				CHILD_NominalSize, TRUE,
 				CHILD_WeightedHeight, 0,
-				LAYOUT_AddChild, fsw->objects[FS_GID_GLYPHS] = FuelGaugeObject,
+				LAYOUT_AddChild, fsw->objects[FS_GID_GLYPHS] = FuelGaugeObj,
 					GA_ID, FS_GID_GLYPHS,
 					//GA_Text, "Glyphs",
 					FUELGAUGE_Min, 0x0000,

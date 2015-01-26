@@ -64,6 +64,7 @@
 #include "amiga/gui.h"
 #include "amiga/tree.h"
 #include "amiga/file.h"
+#include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/utf8.h"
 #include "amiga/sslcert.h"
@@ -738,7 +739,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 
 	if(type == AMI_TREE_SSLCERT)
 	{
-		twin->objects[OID_MAIN] = WindowObject,
+		twin->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
@@ -762,22 +763,22 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_ParentGroup, twin->objects[GID_MAIN] = VGroupObject,
+			WINDOW_ParentGroup, twin->objects[GID_MAIN] = LayoutVObj,
 				LAYOUT_AddImage, LabelObject,
 					LABEL_Text, twin->sslerr,
 				LabelEnd,
-				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObject,
+				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObj,
 					GA_ID, GID_BROWSER,
 					SPACE_Transparent,TRUE,
 					SPACE_BevelStyle, BVS_DISPLAY,
        			SpaceEnd,
 				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObj,
 						GA_ID,GID_OPEN,
 						GA_Text, twin->sslaccept,
 						GA_RelVerify,TRUE,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->objects[GID_CANCEL] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_CANCEL] = ButtonObj,
 						GA_ID,GID_CANCEL,
 						GA_Text, twin->sslreject,
 						GA_RelVerify,TRUE,
@@ -816,7 +817,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			height = nsoption_int(cookies_window_ysize);
 		}
 
-		twin->objects[OID_MAIN] = WindowObject,
+		twin->objects[OID_MAIN] = WindowObj,
       	    WA_ScreenTitle, ami_gui_get_screen_title(),
            	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
@@ -843,8 +844,8 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WINDOW_NewMenu, twin->menu,
 			WINDOW_IconifyGadget, FALSE,
 //			WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_ParentGroup, twin->objects[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObject,
+			WINDOW_ParentGroup, twin->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObj,
 					GA_ID, GID_BROWSER,
 					SPACE_Transparent,TRUE,
 					SPACE_BevelStyle, BVS_DISPLAY,
@@ -1488,3 +1489,4 @@ struct treeview_window *ami_tree_create(int flags,
 	
 	return twin;
 }
+

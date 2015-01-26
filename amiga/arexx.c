@@ -38,6 +38,7 @@
 #include "amiga/download.h"
 #include "amiga/gui.h"
 #include "amiga/hotlist.h"
+#include "amiga/libs.h"
 #include "amiga/misc.h"
 #include "amiga/theme.h"
 
@@ -106,7 +107,7 @@ STATIC struct ARexxCmd Commands[] =
 
 BOOL ami_arexx_init(void)
 {
-	if((arexx_obj = ARexxObject,
+	if((arexx_obj = ARexxObj,
 			AREXX_HostName,"NETSURF",
 			AREXX_Commands,Commands,
 			AREXX_NoSlot,TRUE,
@@ -121,7 +122,7 @@ BOOL ami_arexx_init(void)
 	{
 /* Create a temporary ARexx port so we can send commands to the NetSurf which
  * is already running */
-		arexx_obj = ARexxObject,
+		arexx_obj = ARexxObj,
 			AREXX_HostName,"NETSURF",
 			AREXX_Commands,Commands,
 			AREXX_NoSlot,FALSE,

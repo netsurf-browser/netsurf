@@ -45,7 +45,7 @@ Class *initAGClass(void)
 
 
  // Open amigaguide.library and its interface.
- if ( (AmigaGuideBase = OpenLibrary("amigaguide.library", 52)) )
+ if ( (AmigaGuideBase = OpenLibrary("amigaguide.library", 40)) )
   {
 #ifdef __amigaos4__
    if ( (IAmigaGuide  = (struct AmigaGuideIFace *)GetInterface(AmigaGuideBase, "main", 1L, NULL)) )
