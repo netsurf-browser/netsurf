@@ -3830,16 +3830,21 @@ gui_window_create(struct browser_window *bw,
 						CHILD_WeightedWidth, 0,
 						CHILD_WeightedHeight, 0,
 						LAYOUT_AddChild, g->shared->objects[GID_URL] =
+#ifdef __amigaos4__
 							NewObject(urlStringClass, NULL,
+#else
+							StringObj,
+#endif
 									STRINGA_MaxChars, 2000,
 									GA_ID, GID_URL,
 									GA_RelVerify, TRUE,
 									GA_HintInfo, g->shared->helphints[GID_URL],
 									GA_TabCycle, TRUE,
 									STRINGA_Buffer, g->shared->svbuffer,
+#ifdef __amigaos4__
 									STRINGVIEW_Header, URLHistory_GetList(),
+#endif
 							TAG_DONE),
-
 						LAYOUT_AddChild, g->shared->objects[GID_FAVE] = ButtonObj,
 							GA_ID, GID_FAVE,
 							GA_RelVerify, TRUE,
@@ -3996,6 +4001,7 @@ gui_window_create(struct browser_window *bw,
 				GA_DrawInfo, dri,
 				GA_BottomBorder, TRUE,
 				GA_ReadOnly, TRUE,
+#ifdef __amigaos4__
 				GA_Image, (struct Image *)NewObject(
 					NULL,
 					"gaugeiclass",
@@ -4007,6 +4013,7 @@ gui_window_create(struct browser_window *bw,
 					IA_Screen, scrn,
 					GAUGEIA_Level, 0,
 					TAG_DONE),
+#endif
 				TAG_DONE);
 
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
@@ -5164,9 +5171,6 @@ Object *ami_gui_splash_open(void)
 	win_obj = WindowObj,
 #ifdef __amigaos4__
 				WA_ToolBox, TRUE,
-#else
-				WA_Width, 100,
-				WA_Height, 100,
 #endif
 				WA_Borderless, TRUE,
 				WA_BusyPointer, TRUE,
@@ -5178,18 +5182,9 @@ Object *ami_gui_splash_open(void)
 						BITMAP_SourceFile, "PROGDIR:Resources/splash.png",
 						BITMAP_Screen, wbscreen,
 						BITMAP_Precision, PRECISION_IMAGE,
-#ifndef __amigaos4__
-						BITMAP_Width, 400,
-						BITMAP_Height, 250,
-#endif
 					BitMapEnd,
 				LayoutEnd,
 			EndWindow;
-
-	LOG(("WindowBase = %p", WindowBase));
-	LOG(("WindowObject = %p", win_obj));
-	LOG(("BitMapClass = %p", BitMapClass));
-	LOG(("BitMapObject = %p", bm_obj));
 
 	LOG(("Attempting to open splash window..."));
 	win = RA_OpenWindow(win_obj);
