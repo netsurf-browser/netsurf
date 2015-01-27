@@ -37,5 +37,5 @@ NETSURF_USE_NSSVG := YES
 NETSURF_USE_JS := NO
 
 # Optimisation levels
-CFLAGS += -O2 -gstabs
+CFLAGS += -gstabs
 
