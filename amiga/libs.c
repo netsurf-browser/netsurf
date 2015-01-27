@@ -201,7 +201,7 @@ bool ami_libs_open(void)
 #endif
 	/* Standard libraries for both versions */
 	AMINS_LIB_OPEN("asl.library",          37, Asl,         "main",        1, true)
-	AMINS_LIB_OPEN("datatypes.library",    37, DataTypes,   "main",        1, true)
+	AMINS_LIB_OPEN("datatypes.library",    40, DataTypes,   "main",        1, true)
 	AMINS_LIB_OPEN("diskfont.library",     40, Diskfont,    "main",        1, true)
 	AMINS_LIB_OPEN("gadtools.library",     37, GadTools,    "main",        1, true)
 	AMINS_LIB_OPEN("graphics.library",     40, Graphics,    "main",        1, true)
@@ -210,7 +210,7 @@ bool ami_libs_open(void)
 	AMINS_LIB_OPEN("intuition.library",    40, Intuition,   "main",        1, true)
 	AMINS_LIB_OPEN("keymap.library",       37, Keymap,      "main",        1, true)
 	AMINS_LIB_OPEN("layers.library",       37, Layers,      "main",        1, true)
-	AMINS_LIB_OPEN("locale.library",       37, Locale,      "main",        1, true)
+	AMINS_LIB_OPEN("locale.library",       38, Locale,      "main",        1, true)
 	AMINS_LIB_OPEN("workbench.library",    37, Workbench,   "main",        1, true)
 
 	/*\todo This is down here as we need to check the graphics.library version
