@@ -87,7 +87,9 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	}
 
 	/* Relocate all the OT_Indirect tags */
-	while (ti = NextTagItem(&buffer)) {
+	struct TagItem *tstate = buffer;
+
+	while (ti = NextTagItem(&tstate)) {
 		if(ti->ti_Tag & OT_Indirect) {
 			ti->ti_Data += buffer;
 		}
