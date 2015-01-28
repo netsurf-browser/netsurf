@@ -244,11 +244,16 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 
 void ami_file_req_init(void)
 {
+	const char *initial_dir = nsoption_charp(download_dir);
+	Tag initial_dir_tag = ASLFR_InitialDrawer;
+
+	if(initial_dir == NULL) initial_dir_tag = TAG_IGNORE;
+
 	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest, NULL);
 	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
 							ASLFR_DoSaveMode, TRUE,
 							ASLFR_RejectIcons, TRUE,
-							ASLFR_InitialDrawer, nsoption_charp(download_dir),
+							initial_dir_tag, initial_dir,
 							TAG_DONE);
 
 	aslhookfunc.h_Entry = (void *)&ami_file_asl_mime_hook;
@@ -261,3 +266,4 @@ void ami_file_req_free(void)
 	FreeAslRequest(filereq);
 	FreeAslRequest(savereq);
 }
+
