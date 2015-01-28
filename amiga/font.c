@@ -20,6 +20,9 @@
 
 #include <assert.h>
 
+#ifndef __amigaos4__
+#include <proto/bullet.h>
+#endif
 #include <proto/diskfont.h>
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -175,7 +178,7 @@ const struct font_functions nsfont = {
 	nsfont_split
 };
 
-#ifdef __amigaos4__
+
 bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
@@ -367,6 +370,7 @@ static struct ami_font_node *ami_font_open(const char *font)
 	struct nsObject *node;
 	struct ami_font_node *nodedata;
 
+#ifdef __amigaos4__
 	node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
 	if(node)
 	{
@@ -374,6 +378,9 @@ static struct ami_font_node *ami_font_open(const char *font)
 		GetSysTime(&nodedata->lastused);
 		return nodedata;
 	}
+#else
+#warning FIXME: font cache won't work on OS3
+#endif
 
 	LOG(("Font cache miss: %s", font));
 
@@ -547,6 +554,9 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	ofont = node->font;
+#ifndef __amigaos4__
+	struct BulletBase *BulletBase = ofont->BulletBase;
+#endif
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,   ami_devicedpi,
@@ -568,8 +578,11 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	UBYTE *glyphbm;
 	int32 char_advance = 0;
 	FIXED kern = 0;
-	ULONG glyphmaptag = OT_GlyphMap8Bit;
-	ULONG template_type = BLITT_ALPHATEMPLATE;
+	ULONG glyphmaptag;
+	ULONG template_type;
+#ifndef __amigaos4__
+	struct BulletBase *BulletBase = ofont->BulletBase;
+#endif
 
 	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
@@ -580,10 +593,17 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		/* Don't attempt to kern a UTF-16 surrogate */
 		*char2 = 0;
 	}
-	
-	if(aa == false) {
+
+	if(aa == true) {
+#ifdef __amigaos4__
+		glyphmaptag = OT_GlyphMap8Bit;
+		template_type = BLITT_ALPHATEMPLATE;
+#endif
+	} else {
 		glyphmaptag = OT_GlyphMap;
+#ifdef __amigaos4__
 		template_type = BLITT_TEMPLATE;
+#endif
 	}
  
 	if(ESetInfo(&ofont->olf_EEngine,
@@ -600,6 +620,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 
 			if(rp)
 			{
+#ifdef __amigaos4__
 				BltBitMapTags(BLITA_SrcX, glyph->glm_BlackLeft,
 					BLITA_SrcY, glyph->glm_BlackTop,
 					BLITA_DestX, x - glyph->glm_X0 + glyph->glm_BlackLeft,
@@ -612,6 +633,12 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 					BLITA_DestType, BLITT_RASTPORT,
 					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
 					TAG_DONE);
+#else
+#warning OS3 needs this as a BltBitMapTemplate
+	/* So we get some sort of text on screen */
+	Move(rp, x, y);
+	Text(rp, &char1, 1);
+#endif
 			}
 
 			kern = 0;
@@ -644,6 +671,9 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	FIXED char1w = 0;
 	struct GlyphWidthEntry *gwnode;
 	bool skip_c2 = false;
+#ifndef __amigaos4__
+	struct BulletBase *BulletBase = ofont->BulletBase;
+#endif
 
 	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
@@ -871,7 +901,8 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	/* reschedule to run in five minutes */
 	ami_schedule(300000, (void *)ami_font_cleanup, ami_font_list);
 }
-#else
+
+#if 0
 #warning FIXME: font.c needs fixing properly for OS3, currently bodged to get it to build
 bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

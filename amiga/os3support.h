@@ -107,6 +107,7 @@
 #define WINDOW_BACKMOST 0
 #define DN_FULLPATH 0
 #define BGBACKFILL JAM1
+#define OFF_OPEN 0
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
@@ -124,6 +125,10 @@
 #define SaveDTObjectA(O,W,R,F,M,I,A) DoDTMethod(O,W,R,DTM_WRITE,F,M,NULL)
 
 /* diskfont */
+#define EReleaseInfo ReleaseInfo
+#define EObtainInfo ObtainInfo
+#define ESetInfo SetInfo
+
 /* Only used in one place we haven't ifdeffed, where it returns the charset name */
 #define ObtainCharsetInfo(A,B,C) (const char *)"ISO-8859-1"
 
@@ -175,6 +180,14 @@ struct TimeRequest {
 	struct TimeVal Time;
 };
 
+/* OutlineFont */
+struct OutlineFont {
+	struct BulletBase *BulletBase;
+	struct GlyphEngine *olf_EEngine;
+	STRPTR OTagPath;
+	struct TagItem *olf_OTagList;
+};
+
 /* Compositing */
 #define COMPFLAG_IgnoreDestAlpha 0
 #define COMPFLAG_SrcAlphaOverride 0
@@ -215,6 +228,10 @@ enum {
 };
 
 /* Functions */
+/* Diskfont */
+void CloseOutlineFont(struct OutlineFont *of, struct List *list);
+struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG flags);
+
 /* DOS */
 int64 GetFileSize(BPTR fh);
 void FreeSysObject(ULONG type, APTR obj);
