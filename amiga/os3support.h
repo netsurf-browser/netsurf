@@ -153,6 +153,9 @@
 #define IDoMethodA DoMethodA
 #define IDoSuperMethodA DoSuperMethodA
 #define ShowWindow(...) (void)0
+/* OnMenu/OffMenu need re-enabling when we get the menus attached */
+#define OnMenu(...) (void)0
+#define OffMenu(...) (void)0
 
 /* Utility */
 #define SetMem memset
