@@ -1309,6 +1309,9 @@ operror:
  * Attempt to retrive and deserialise the metadata for an object from
  * the backing store.
  *
+ * This must only update object if it is sucessful otherwise difficult
+ * to debug crashes happen later by using bad leftover object state.
+ *
  * \param object The object to retrieve the metadata for.
  * \return NSERROR_OK if the metatdata was retrived and deserialised
  *         or error code if url is not in persistant storage or in
@@ -1325,6 +1328,11 @@ llcache_process_metadata(llcache_object *object)
 	uint8_t *end;
 	char *ln;
 	int lnsize;
+
+	size_t source_length;
+	time_t request_time;
+	time_t reponse_time;
+	time_t completion_time;
 	size_t num_headers;
 	size_t hloop;
 
@@ -1348,14 +1356,14 @@ llcache_process_metadata(llcache_object *object)
 	ln = (char *)metadata;
 	lnsize = strlen(ln);
 
-	if (lnsize < 7)
+	if (lnsize < 7) {
+		res = NSERROR_INVALID;
 		goto format_error;
+	}
 
 	res = nsurl_create(ln, &metadataurl);
-	if (res != NSERROR_OK) {
-		guit->llcache->release(object->url, BACKING_STORE_META);
-		return res;
-	}
+	if (res != NSERROR_OK)
+		goto format_error;
 
 	if (nsurl_compare(object->url, metadataurl, NSURL_COMPLETE) != true) {
 		/* backing store returned the wrong object for the
@@ -1382,44 +1390,51 @@ llcache_process_metadata(llcache_object *object)
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) ||
-	    (sscanf(ln, "%zu", &object->source_len) != 1))
+	if ((lnsize < 1) || (sscanf(ln, "%zu", &source_length) != 1)) {
+		res = NSERROR_INVALID;
 		goto format_error;
-	object->source_alloc = metadatalen;
+	}
+
 
 	/* metadata line 3 is the time of request */
 	line = 3;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if (nsc_snptimet(ln, lnsize, &object->cache.req_time) != NSERROR_OK)
+	res = nsc_snptimet(ln, lnsize, &request_time);
+	if (res != NSERROR_OK)
 		goto format_error;
+
 
 	/* metadata line 4 is the time of response */
 	line = 4;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if (nsc_snptimet(ln, lnsize, &object->cache.res_time) != NSERROR_OK)
+	res = nsc_snptimet(ln, lnsize, &reponse_time);
+	if (res != NSERROR_OK)
 		goto format_error;
+
 
 	/* metadata line 5 is the time of request completion */
 	line = 5;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if (nsc_snptimet(ln, lnsize, &object->cache.fin_time) != NSERROR_OK)
+	res = nsc_snptimet(ln, lnsize, &completion_time);
+	if (res != NSERROR_OK)
 		goto format_error;
+
 
 	/* metadata line 6 is the number of headers */
 	line = 6;
 	ln += lnsize + 1;
 	lnsize = strlen(ln);
 
-	if ((lnsize < 1) ||
-	    (sscanf(ln, "%zu", &num_headers) != 1))
+	if ((lnsize < 1) || (sscanf(ln, "%zu", &num_headers) != 1)) {
+		res = NSERROR_INVALID;
 		goto format_error;
-
+	}
 
 	/* read headers */
 	for (hloop = 0 ; hloop < num_headers; hloop++) {
@@ -1427,14 +1442,24 @@ llcache_process_metadata(llcache_object *object)
 		ln += lnsize + 1;
 		lnsize = strlen(ln);
 
-		res = llcache_fetch_process_header(object, (uint8_t *)ln, lnsize);
-		if (res != NSERROR_OK) {
-			guit->llcache->release(object->url, BACKING_STORE_META);
-			return res;
-		}
+		res = llcache_fetch_process_header(object,
+						   (uint8_t *)ln,
+						   lnsize);
+		if (res != NSERROR_OK)
+			goto format_error;
 	}
 
 	guit->llcache->release(object->url, BACKING_STORE_META);
+
+	/* update object on successful parse of metadata  */
+	object->source_len = source_length;
+
+	/** \todo really not sure this is right, nothing is allocated here? */
+	object->source_alloc = metadatalen;
+
+	object->cache.req_time = request_time;
+	object->cache.res_time = reponse_time;
+	object->cache.fin_time = completion_time;
 
 	/* object stored in backing store */
 	object->store_state = LLCACHE_STATE_DISC;
@@ -1442,11 +1467,10 @@ llcache_process_metadata(llcache_object *object)
 	return NSERROR_OK;
 
 format_error:
-	LOG(("metadata error on line %d\n", line));
+	LOG(("metadata error on line %d error code %d\n", line, res));
 	guit->llcache->release(object->url, BACKING_STORE_META);
 
-	return NSERROR_INVALID;
-
+	return res;
 }
 
 /**
