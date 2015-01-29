@@ -98,16 +98,28 @@ EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 !NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
+
+!NetSurf/!Help$(RUNEXT): riscos/scripts/Help
+	$(VQ)echo "      CP: $@"
+	$(Q)cp $< $@
+
 $(DEPROOT)/squeeze.d: $(EXETARGET)
 	$(VQ)echo " SQUEEZE: $<"
 	$(Q)$(SQUEEZE) -f -v $(EXETARGET)
 	$(Q)$(TOUCH) $@
-POSTEXES += !NetSurf/!Run$(RUNEXT) $(DEPROOT)/squeeze.d
+
+POSTEXES += !NetSurf/!Run$(RUNEXT) !NetSurf/!Help$(RUNEXT) $(DEPROOT)/squeeze.d
+
 
 clean-run:
 	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"
 	$(Q) $(RM) !NetSurf/!Run$(RUNEXT)
-CLEANS += clean-run
+
+clean-help:
+	$(VQ)echo "   CLEAN: !NetSurf/!Help$(RUNEXT)"
+	$(Q) $(RM) !NetSurf/!Help$(RUNEXT)
+
+CLEANS += clean-run clean-help
 
 split-messages:
 	$(call split_install_messages, ro, !NetSurf/Resources/)
