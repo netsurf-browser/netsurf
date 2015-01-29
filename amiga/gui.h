@@ -131,7 +131,7 @@ struct gui_window_2 {
 	struct MinList shared_pens;
 	gui_pointer_shape mouse_pointer;
 #ifndef __amigaos4__
-	struct NewMenu *menu;
+	struct NewMenu *menu_os3;
 	struct VisualInfo *vi;
 #endif
 };

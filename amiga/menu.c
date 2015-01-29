@@ -338,7 +338,7 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 	ami_free_menulabs(gwin);
 	ami_create_menu(gwin);
 #ifndef __amigaos4__
-	gwin->menu_os3 = ami_menu_create_os3(gwin->menu);
+	gwin->menu_os3 = ami_menu_create_os3(gwin, gwin->menu);
 #endif
 
 	SetAttrs(gwin->objects[OID_MAIN],
@@ -552,7 +552,7 @@ struct Menu *ami_menu_create_os3(struct gui_window_2 *gwin, struct NewMenu *newm
 {
 	gwin->vi = GetVisualInfo(scrn, TAG_DONE);
 	gwin->menu_os3 = CreateMenus(newmenu, TAG_DONE);
-	LayoutMenus(menu, vi, TAG_DONE);
+	LayoutMenus(gwin->menu_os3, gwin->vi, TAG_DONE);
 	return gwin->menu_os3;
 }
 #endif

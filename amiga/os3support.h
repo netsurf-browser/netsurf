@@ -141,6 +141,7 @@
 
 /* Exec */
 #define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY) /* AllocVecTagList with no tags */
+#define FindIName FindName
 #define GetPred(N) (N)->ln_Pred
 #define GetSucc(N) (N)->ln_Succ
 

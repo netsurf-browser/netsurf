@@ -370,7 +370,6 @@ static struct ami_font_node *ami_font_open(const char *font)
 	struct nsObject *node;
 	struct ami_font_node *nodedata;
 
-#ifdef __amigaos4__
 	node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
 	if(node)
 	{
@@ -378,9 +377,6 @@ static struct ami_font_node *ami_font_open(const char *font)
 		GetSysTime(&nodedata->lastused);
 		return nodedata;
 	}
-#else
-#warning FIXME: font cache won't work on OS3
-#endif
 
 	LOG(("Font cache miss: %s", font));
 

@@ -3589,7 +3589,7 @@ gui_window_create(struct browser_window *bw,
 				iconifygadget = TRUE;
 		ami_create_menu(g->shared);
 #ifndef __amigaos4__
-		struct Menu *menu = ami_menu_create_os3(g->shared->menu);
+		struct Menu *menu = ami_menu_create_os3(g->shared, g->shared->menu);
 #endif
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
