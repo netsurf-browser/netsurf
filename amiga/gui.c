@@ -1527,7 +1527,7 @@ static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_HSCROLL], attrs);
 #else
-#warning FIXME for OS3 - logically we should just permanently enable
+	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_AddChild, gwin->objects[GID_HSCROLL]);
 #endif
 	return true;
 }
@@ -1535,14 +1535,17 @@ static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
 /* Remove the horizontal scroller, if present */
 static bool ami_gui_hscroll_remove(struct gui_window_2 *gwin)
 {
-#ifdef __amigaos4__
 	if(gwin->objects[GID_HSCROLL] == NULL) return false;
 
+#ifdef __amigaos4__
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HSCROLL]);
+#else
+	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HSCROLL]);
+#endif
 
 	gwin->objects[GID_HSCROLL] = NULL;
-#endif
+
 	return true;
 }
 
@@ -1568,7 +1571,7 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
 #else
-#warning FIXME for OS3
+	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_AddChild, gwin->objects[GID_VSCROLL]);
 #endif
 	return true;
 }
@@ -1576,14 +1579,17 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 /* Remove the vertical scroller, if present */
 static bool ami_gui_vscroll_remove(struct gui_window_2 *gwin)
 {
-#ifdef __amigaos4__
 	if(gwin->objects[GID_VSCROLL] == NULL) return false;
 
+#ifdef __amigaos4__
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_VSCROLL]);
+#else
+	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_VSCROLL]);
+#endif
 
 	gwin->objects[GID_VSCROLL] = NULL;
-#endif
+
 	return true;
 }
 
@@ -1632,7 +1638,6 @@ static void ami_gui_scroller_update(struct gui_window_2 *gwin)
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
 		browser_window_schedule_reformat(gwin->gw->bw);
-		ami_schedule_redraw(gwin, true);
 	}
 }
 
@@ -2431,7 +2436,6 @@ static void ami_handle_msg(void)
 							ami_throbber_redraw_schedule(0, gwin->gw);
 							ami_schedule(0, ami_gui_refresh_favicon, gwin);
 							browser_window_schedule_reformat(gwin->gw->bw);
-							ami_schedule_redraw(gwin, true);
 						break;
 					}
 				break;
@@ -3584,7 +3588,9 @@ gui_window_create(struct browser_window *bw,
 		    (strcmp(nsoption_charp(pubscreen_name), "Workbench") == 0))
 				iconifygadget = TRUE;
 		ami_create_menu(g->shared);
-
+#ifndef __amigaos4__
+		struct Menu *menu = ami_menu_create_os3(g->shared->menu);
+#endif
 		NewList(&g->shared->tab_list);
 		g->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
 											TNA_Number, 0,
@@ -3707,10 +3713,6 @@ gui_window_create(struct browser_window *bw,
 		LOG(("Creating window object"));
 
 		g->shared->objects[OID_MAIN] = WindowObj,
-#ifndef __amigaos4__
-			WA_Width, 100,
-			WA_Height, 100,
-#endif
 			WA_ScreenTitle, ami_gui_get_screen_title(),
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
@@ -3732,7 +3734,11 @@ gui_window_create(struct browser_window *bw,
 				IDCMP_REFRESHWINDOW |
 				IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
+#ifdef __amigaos4__
 			WINDOW_NewMenu, g->shared->menu,
+#else
+			WINDOW_MenuStrip, menu,
+#endif
 			WINDOW_MenuUserData, WGUD_HOOK,
 			WINDOW_NewPrefsHook, &newprefs_hook,
 			WINDOW_IDCMPHook, &g->shared->scrollerhook,
@@ -4172,6 +4178,9 @@ static void gui_window_destroy(struct gui_window *g)
 	if(g->shared->search_bm) DisposeObject(g->shared->search_bm);
 
 	ami_free_menulabs(g->shared);
+#ifndef __amigaos4__
+	ami_menu_free_os3(g->shared);
+#endif
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);

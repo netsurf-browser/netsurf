@@ -325,14 +325,28 @@ static void ami_init_menulabs(struct gui_window_2 *gwin)
 void ami_menu_refresh(struct gui_window_2 *gwin)
 {
 	SetAttrs(gwin->objects[OID_MAIN],
+#ifdef __amigaos4__
 			WINDOW_NewMenu, NULL,
+#else
+			WINDOW_MenuStrip, NULL,
+#endif
 			TAG_DONE);
 
+#ifndef __amigaos4__
+	ami_menu_free_os3(gwin->menu_os3);
+#endif
 	ami_free_menulabs(gwin);
 	ami_create_menu(gwin);
+#ifndef __amigaos4__
+	gwin->menu_os3 = ami_menu_create_os3(gwin->menu);
+#endif
 
 	SetAttrs(gwin->objects[OID_MAIN],
+#ifdef __amigaos4__
 			WINDOW_NewMenu, gwin->menu,
+#else
+			WINDOW_MenuStrip, gwin->menu_os3,
+#endif
 			TAG_DONE);
 }
 
@@ -527,6 +541,22 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 	return gwin;
 }
 
+#ifndef __amigaos4__
+void ami_menu_free_os3(struct gui_window_2 *gwin)
+{
+	FreeMenus(gwin->menu_os3);
+	FreeVisualInfo(gwin->vi);
+}
+
+struct Menu *ami_menu_create_os3(struct gui_window_2 *gwin, struct NewMenu *newmenu)
+{
+	gwin->vi = GetVisualInfo(scrn, TAG_DONE);
+	gwin->menu_os3 = CreateMenus(newmenu, TAG_DONE);
+	LayoutMenus(menu, vi, TAG_DONE);
+	return gwin->menu_os3;
+}
+#endif
+
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
 	gwin->menu = ami_misc_allocvec_clear(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), 0);
@@ -621,7 +651,8 @@ static bool ami_menu_hotlist_add(void *userdata, int level, int item, const char
 			type = NM_SUB;
 		break;
 		default:
-			/* entries not at level 1 or 2 are not able to be added */
+			/* entries not at level 1 or 2 are not able to be added
+			 * \todo apparently this is possible with 4.1FE, need SDK! */
 			return false;
 		break;
 	}

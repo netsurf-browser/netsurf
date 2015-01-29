@@ -144,4 +144,10 @@ void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
 void ami_menu_free_glyphs(void);
+
+#ifndef __amigaos4__
+void ami_menu_free_os3(struct gui_window_2 *gwin);
+struct Menu *ami_menu_create_os3(struct gui_window_2 *gwin, struct NewMenu *newmenu);
+#endif
+
 #endif

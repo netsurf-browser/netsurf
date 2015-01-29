@@ -130,6 +130,10 @@ struct gui_window_2 {
 	struct AppWindow *appwin;
 	struct MinList shared_pens;
 	gui_pointer_shape mouse_pointer;
+#ifndef __amigaos4__
+	struct NewMenu *menu;
+	struct VisualInfo *vi;
+#endif
 };
 
 struct gui_window
