@@ -633,7 +633,8 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
 					TAG_DONE);
 #else
-				BltTemplate(glyphbm, glyph->glm_BlackLeft, glyph->glm_BMModulo, rp,
+				BltTemplate(glyphbm + (glyph->glm_BMModulo * glyph->glm_BlackTop),
+					glyph->glm_BlackLeft, glyph->glm_BMModulo, rp,
 					x - glyph->glm_X0 + glyph->glm_BlackLeft,
 					y - glyph->glm_Y0 + glyph->glm_BlackTop,
 					glyph->glm_BlackWidth, glyph->glm_BlackHeight);
