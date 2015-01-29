@@ -618,8 +618,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 			glyphbm = glyph->glm_BitMap;
 			if(!glyphbm) return 0;
 
-			if(rp)
-			{
+			if(rp) {
 #ifdef __amigaos4__
 				BltBitMapTags(BLITA_SrcX, glyph->glm_BlackLeft,
 					BLITA_SrcY, glyph->glm_BlackTop,
@@ -634,10 +633,10 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
 					TAG_DONE);
 #else
-#warning OS3 needs this as a BltBitMapTemplate
-	/* So we get some sort of text on screen */
-	Move(rp, x, y);
-	Text(rp, &char1, 1);
+				BltTemplate(glyphbm, glyph->glm_BlackLeft, glyph->glm_BMModulo, rp,
+					x - glyph->glm_X0 + glyph->glm_BlackLeft,
+					y - glyph->glm_Y0 + glyph->glm_BlackTop,
+					glyph->glm_BlackWidth, glyph->glm_BlackHeight);
 #endif
 			}
 
