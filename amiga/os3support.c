@@ -47,7 +47,8 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 {
 	BPTR fh = 0;
 	int64 size = 0;
-	struct TagItem *buffer, *ti;
+	struct TagItem *ti;
+	UBYTE *buffer;
 	STRPTR fname, otagpath;
 	struct BulletBase *BulletBase;
 	struct OutlineFont *of = NULL;
@@ -78,7 +79,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	Close(fh);
 
 	/* The first tag is supposed to be OT_FileIdent and should equal 'size' */
-	struct TagItem *tag = buffer;
+	struct TagItem *tag = (struct TagItem *)buffer;
 	if((tag->ti_Tag != OT_FileIdent) || (tag->ti_Data != (ULONG)size)) {
 		LOG(("Invalid OTAG file"));
 		FreeVec(buffer);
@@ -87,9 +88,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	}
 
 	/* Relocate all the OT_Indirect tags */
-	struct TagItem *tstate = buffer;
-
-	while (ti = NextTagItem(&tstate)) {
+	while (ti = NextTagItem(&tag)) {
 		if(ti->ti_Tag & OT_Indirect) {
 			ti->ti_Data += buffer;
 		}
@@ -131,6 +130,8 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	of->olf_EEngine = eengine;
 	of->OTagPath = otagpath;
 	of->olf_OTagList = buffer;
+
+	return of;
 }
 
 void CloseOutlineFont(struct OutlineFont *of, struct List *list)
