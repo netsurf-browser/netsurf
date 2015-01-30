@@ -554,7 +554,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
-	if(ESetInfo(&ofont->olf_EEngine,
+	if(ESetInfo(AMI_OFONT_ENGINE,
 			OT_DeviceDPI,   ami_devicedpi,
 			OT_PointHeight, ysize,
 			OT_EmboldenX,   emboldenx,
@@ -602,12 +602,12 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 #endif
 	}
  
-	if(ESetInfo(&ofont->olf_EEngine,
+	if(ESetInfo(AMI_OFONT_ENGINE,
 			OT_GlyphCode, *char1,
 			OT_GlyphCode2, *char2,
 			TAG_END) == OTERR_Success)
 	{
-		if(EObtainInfo(&ofont->olf_EEngine,
+		if(EObtainInfo(AMI_OFONT_ENGINE,
 			glyphmaptag, &glyph,
 			TAG_END) == 0)
 		{
@@ -639,17 +639,17 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 
 			kern = 0;
 
-			if(*char2) EObtainInfo(&ofont->olf_EEngine,
+			if(*char2) EObtainInfo(AMI_OFONT_ENGINE,
 								OT_TextKernPair, &kern,
 								TAG_END);
 
 			char_advance = (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
 
-			EReleaseInfo(&ofont->olf_EEngine,
+			EReleaseInfo(AMI_OFONT_ENGINE,
 				glyphmaptag, glyph,
 				TAG_END);
 				
-			if(*char2) EReleaseInfo(&ofont->olf_EEngine,
+			if(*char2) EReleaseInfo(AMI_OFONT_ENGINE,
 				OT_TextKernPair, kern,
 				TAG_END);
 		}
@@ -683,12 +683,12 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 
 	if (*char2 < 0x0020) skip_c2 = true;
 
-	if(ESetInfo(&ofont->olf_EEngine,
+	if(ESetInfo(AMI_OFONT_ENGINE,
 			OT_GlyphCode, *char1,
 			OT_GlyphCode2, *char1,
 			TAG_END) == OTERR_Success)
 	{
-		if(EObtainInfo(&ofont->olf_EEngine,
+		if(EObtainInfo(AMI_OFONT_ENGINE,
 			OT_WidthList, &gwlist,
 			TAG_END) == 0)
 		{
@@ -698,23 +698,23 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			kern = 0;
 
 			if(!skip_c2) {
-				if(ESetInfo(&ofont->olf_EEngine,
+				if(ESetInfo(AMI_OFONT_ENGINE,
 						OT_GlyphCode, *char1,
 						OT_GlyphCode2, *char2,
 						TAG_END) == OTERR_Success)
 				{
-					EObtainInfo(&ofont->olf_EEngine,
+					EObtainInfo(AMI_OFONT_ENGINE,
 								OT_TextKernPair, &kern,
 								TAG_END);
 				}
 			}
 			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 			
-			if(!skip_c2) EReleaseInfo(&ofont->olf_EEngine,
+			if(!skip_c2) EReleaseInfo(AMI_OFONT_ENGINE,
 				OT_TextKernPair, kern,
 				TAG_END);
 				
-			EReleaseInfo(&ofont->olf_EEngine,
+			EReleaseInfo(AMI_OFONT_ENGINE,
 				OT_WidthList, gwlist,
 				TAG_END);
 		}

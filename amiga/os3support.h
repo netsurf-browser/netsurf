@@ -184,7 +184,7 @@ struct TimeRequest {
 /* OutlineFont */
 struct OutlineFont {
 	struct BulletBase *BulletBase;
-	struct GlyphEngine *olf_EEngine;
+	struct GlyphEngine *GEngine;
 	STRPTR OTagPath;
 	struct TagItem *olf_OTagList;
 };

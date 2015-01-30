@@ -52,7 +52,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	STRPTR fname, otagpath;
 	struct BulletBase *BulletBase;
 	struct OutlineFont *of = NULL;
-	struct GlyphEngine *eengine;
+	struct GlyphEngine *gengine;
 	
 	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
 	fh = Open(otagpath, MODE_OLDFILE);
@@ -116,9 +116,9 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 
 	FreeVec(fname);
 
-	eengine = OpenEngine();
+	gengine = OpenEngine();
 	
-	SetInfo(eengine,
+	SetInfo(gengine,
 		OT_OTagPath, otagpath,
 		OT_OTagList, buffer,
 		TAG_DONE);
@@ -127,7 +127,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	if(of == NULL) return NULL;
 
 	of->BulletBase = BulletBase;
-	of->olf_EEngine = eengine;
+	of->GEngine = gengine;
 	of->OTagPath = otagpath;
 	of->olf_OTagList = buffer;
 
@@ -138,7 +138,7 @@ void CloseOutlineFont(struct OutlineFont *of, struct List *list)
 {
 	struct BulletBase *BulletBase = of->BulletBase;
 	
-	CloseEngine(of->olf_EEngine);
+	CloseEngine(of->GEngine);
 	CloseLibrary(BulletBase);
 	
 	FreeVec(of->OTagPath);
