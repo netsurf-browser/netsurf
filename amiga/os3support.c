@@ -192,6 +192,13 @@ struct Node *GetHead(struct List *list)
 	return res;
 }
 
+struct Node *GetSucc(struct Node *node)
+{
+	if (node->ln_Succ->ln_Succ == NULL) return NULL;
+	return node->ln_Succ;
+}
+
+
 /* Intuition */
 uint32 GetAttrs(Object *obj, Tag tag1, ...)
 {
