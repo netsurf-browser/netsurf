@@ -297,6 +297,7 @@ static struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
 	{
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		mimeentry = node->objstruct;
+		if(mimeentry == NULL) continue;
 
 		lerror = lwc_error_ok;
 

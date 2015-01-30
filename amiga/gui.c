@@ -3,6 +3,7 @@
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
+ * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
  *
@@ -1534,8 +1535,7 @@ static bool ami_gui_hscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_HSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_HSCROLL], attrs);
 #else
-	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT],
-			LAYOUT_AddChild, gwin->objects[GID_HSCROLL], TAG_MORE, &attrs);
+	SetAttrs(gwin->objects[GID_HSCROLLLAYOUT], LAYOUT_AddChild, gwin->objects[GID_HSCROLL]);
 #endif
 	return true;
 }
@@ -1579,8 +1579,7 @@ static bool ami_gui_vscroll_add(struct gui_window_2 *gwin)
 	IDoMethod(gwin->objects[GID_VSCROLLLAYOUT], LM_ADDCHILD,
 			gwin->win, gwin->objects[GID_VSCROLL], attrs);
 #else
-	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT],
-			LAYOUT_AddChild, gwin->objects[GID_VSCROLL], TAG_MORE, &attrs);
+	SetAttrs(gwin->objects[GID_VSCROLLLAYOUT], LAYOUT_AddChild, gwin->objects[GID_VSCROLL]);
 #endif
 	return true;
 }
@@ -1851,6 +1850,8 @@ static void ami_handle_msg(void)
 			}
 		}
 
+		if(gwin->objects[OID_MAIN] == NULL) continue;
+		
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
 //printf("%ld: %ld (switch)\n",code, result & WMHI_CLASSMASK);
@@ -3173,19 +3174,12 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				BevelObj,
 					BEVEL_Style, BVS_SBAR_VERT,
 				BevelEnd;
-#ifdef __amigaos4__
+
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_HOTLIST], attrs);
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDIMAGE,
 				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
-
-#else
-		SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
-			LAYOUT_AddChild, gwin->objects[GID_HOTLIST], TAG_MORE, &attrs);
-		SetAttrs(gwin->objects[GID_HOTLISTLAYOUT],
-			LAYOUT_AddChild, gwin->objects[GID_HOTLISTSEPBAR], TAG_DONE);
-#endif
 
 		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 
@@ -3232,16 +3226,14 @@ static void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 
 	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
 			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
-#else
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLIST]);
-	SetAttrs(gwin->objects[GID_HOTLISTLAYOUT], LAYOUT_RemoveChild, gwin->objects[GID_HOTLISTSEPBAR]);
-#endif
+
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
 	ami_schedule_redraw(gwin, true);
+#endif
 }
 
 static void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
@@ -3298,7 +3290,9 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 {
 	if(ClickTabBase->lib_Version < 53) return;
 
-	if(show) {
+#ifdef __amigaos4__
+	if(show)
+	{
 		struct TagItem attrs[3];
 
 		attrs[0].ti_Tag = CHILD_WeightedWidth;
@@ -3325,31 +3319,20 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 					GA_Text, "+",
 					BUTTON_RenderImage, gwin->objects[GID_ADDTAB_BM],
 					ButtonEnd;
-#ifdef __amigaos4__
+
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_TABS], NULL);
 
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_ADDTAB], attrs);
-#else
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
-				LAYOUT_AddChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
-				LAYOUT_AddChild, gwin->objects[GID_ADDTAB], TAG_MORE, &attrs);
-#endif
-	} else {
-#ifdef __amigaos4__
+	}
+	else
+	{
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_TABS]);
 
 		IDoMethod(gwin->objects[GID_TABLAYOUT], LM_REMOVECHILD,
 				gwin->win, gwin->objects[GID_ADDTAB]);
-#else
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
-				LAYOUT_RemoveChild, gwin->objects[GID_TABS], TAG_DONE);
-		SetAttrs(gwin->objects[GID_TABLAYOUT],
-				LAYOUT_RemoveChild, gwin->objects[GID_ADDTAB], TAG_DONE);
-#endif
 
 		gwin->objects[GID_TABS] = NULL;
 		gwin->objects[GID_ADDTAB] = NULL;
@@ -3361,6 +3344,7 @@ static void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 			gwin->win, NULL, TRUE);
 
 	if(gwin->gw && gwin->gw->bw) browser_window_update(gwin->gw->bw, false);
+#endif
 }
 
 void ami_gui_tabs_toggle_all(void)
@@ -4938,8 +4922,6 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, NULL);
 	}
 
-	if(bm == NULL) return NSERROR_BAD_PARAMETER;
-
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
 	do {
@@ -5235,7 +5217,7 @@ Object *ami_gui_splash_open(void)
 	SetRPAttrs(win->RPort, RPTAG_APenColor, 0xFF3F6DFE, TAG_DONE);
 	tattr.ta_Name = "DejaVu Serif Italic.font";
 #else
-	SetAPen(win->RPort, 3); /* Pen 3 is usually blue */
+	SetAPen(win->RPort, 3);
 	tattr.ta_Name = "CGTriumvirate.font";
 #endif
 	tattr.ta_YSize = 24;
