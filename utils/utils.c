@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <regex.h>
 #include <time.h>
+#include <errno.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
