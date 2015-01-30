@@ -595,14 +595,17 @@ nserror nsc_snptimet(char *str, size_t size, time_t *timep)
 	time_t time_out;
 
 #ifndef HAVE_STRPTIME
+	char *rstr;
 
 	if (size < 1) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	time_out = (time_t)strtoll(str, NULL, 10);
+	errno = 0;
+	time_out = (time_t)strtoll(str, &rstr, 10);
 
-	if (time_out == 0) {
+	/* The conversion may have a range faliure or no digits were found */
+	if ((errno != 0) || (rstr == str)) {
 		return NSERROR_BAD_PARAMETER;
 	}
 
