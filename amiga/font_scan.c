@@ -26,6 +26,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef __amigaos4__
+#include <proto/bullet.h>
+#endif
 #include <proto/diskfont.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -68,8 +71,6 @@ struct ami_font_scan_window {
 	char *title;
 	char *glyphtext;
 };
-
-#ifdef __amigaos4__
 
 /**
  * Lookup a font that contains a UTF-16 codepoint
@@ -224,13 +225,17 @@ static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 
 	if(!ofont) return 0;
 
-	if(ESetInfo(&ofont->olf_EEngine,
+#ifndef __amigaos4__
+	struct BulletBase *BulletBase = ofont->BulletBase;
+#endif
+
+	if(ESetInfo(AMI_OFONT_ENGINE,
 		OT_PointHeight, 10 * (1 << 16),
 		OT_GlyphCode, 0x0000,
 		OT_GlyphCode2, 0xffff,
 		TAG_END) == OTERR_Success)
 	{
-		if(EObtainInfo(&ofont->olf_EEngine,
+		if(EObtainInfo(AMI_OFONT_ENGINE,
 			OT_WidthList, &widthlist,
 			TAG_END) == 0)
 		{
@@ -242,19 +247,19 @@ static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 					foundglyphs++;
 				}
 			} while((gwnode = (struct GlyphWidthEntry *)GetSucc((struct Node *)gwnode)));
-			EReleaseInfo(&ofont->olf_EEngine,
+			EReleaseInfo(AMI_OFONT_ENGINE,
 				OT_WidthList, widthlist,
 				TAG_END);
 		}
 	}
-
-	if(EObtainInfo(&ofont->olf_EEngine, OT_UnicodeRanges, &unicoderanges, TAG_END) == 0) {
+#ifdef __amigaos4__
+	if(EObtainInfo(AMI_OFONT_ENGINE, OT_UnicodeRanges, &unicoderanges, TAG_END) == 0) {
 		if(unicoderanges & UCR_SURROGATES) LOG(("%s supports UTF-16 surrogates", fontname));
-		EReleaseInfo(&ofont->olf_EEngine,
+		EReleaseInfo(AMI_OFONT_ENGINE,
 			OT_UnicodeRanges, unicoderanges,
 			TAG_END);
 	}
-		
+#endif
 	CloseOutlineFont(ofont, NULL);
 
 	return foundglyphs;
@@ -507,7 +512,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 
 	LOG(("Initialised with %ld glyphs", found));
 }
-#else
+#if 0
 #warning FIXME: font_scan.c needs fixing for OS3
 void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		lwc_string **glypharray)

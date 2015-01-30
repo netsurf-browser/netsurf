@@ -53,7 +53,11 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	struct BulletBase *BulletBase;
 	struct OutlineFont *of = NULL;
 	struct GlyphEngine *gengine;
-	
+	char *p;
+
+	if(p = strrchr(fileName, '.'))
+		*p = '\0';
+
 	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
 	fh = Open(otagpath, MODE_OLDFILE);
 	
@@ -353,6 +357,19 @@ char *strlwr(char *str)
   str[i] = tolower((unsigned char)str[i]);
 
   return str;
+}
+
+char *strsep(char **s1, const char *s2)
+{
+	char *const p1 = *s1;
+
+	if (p1 != NULL) {
+		*s1 = strpbrk(p1, s2);
+		if (*s1 != NULL) {
+			*(*s1)++ = '\0';
+		}
+	}
+	return p1;
 }
 
 int scandir(const char *dir, struct dirent ***namelist,

@@ -108,6 +108,7 @@
 #define DN_FULLPATH 0
 #define BGBACKFILL JAM1
 #define OFF_OPEN 0
+#define AFF_OTAG 0
 
 /* Renamed structures */
 #define AnchorPathOld AnchorPath
