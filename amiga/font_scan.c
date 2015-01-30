@@ -331,7 +331,7 @@ static ULONG ami_font_scan_list(struct MinList *list)
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
 				if(af[i].af_Attr.ta_Name != NULL) {
 					char *p = 0;
-					if(p = strrchr(af[i].af_Attr.ta_Name, '.')) *p = '\0';
+					if((p = strrchr(af[i].af_Attr.ta_Name, '.'))) *p = '\0';
 					node = (struct nsObject *)FindIName((struct List *)list,
 								af[i].af_Attr.ta_Name);
 					if(node == NULL) {
@@ -466,7 +466,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 	ULONG i, found = 0, entries = 0;
 	struct MinList *list;
 	struct nsObject *node;
-	char *unicode_font, *csv;
+	char *csv;
 	struct ami_font_scan_window *win = NULL;
 
 	/* Ensure array zeroed */
@@ -488,7 +488,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 				while((p = strsep(&csv, ","))) {
 					if(p != NULL) {
 						node = AddObject(list, AMINS_UNKNOWN);
-						if(node) node->dtz_Node.ln_Name = p;
+						if(node) node->dtz_Node.ln_Name = strdup(p);
 						entries++;
 					}
 				}
