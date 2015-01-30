@@ -82,7 +82,7 @@ struct ami_font_scan_window {
 const char *ami_font_scan_lookup(const uint16 *code, lwc_string **glypharray)
 {
 	if(*code >= 0xd800 && *code <= 0xdbff) {
-		/* This is a multi-byte character, we don't support falback for these yet. */
+		/* This is a multi-byte character, we don't support fallback for these yet. */
 		return NULL;
 	}
 
@@ -242,7 +242,7 @@ static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 			gwnode = (struct GlyphWidthEntry *)GetHead((struct List *)widthlist);
 			do {
 				if(gwnode && (glypharray[gwnode->gwe_Code] == NULL)) {
-					lerror = lwc_intern_string(fontname, strlen(fontname) - 5, &glypharray[gwnode->gwe_Code]);
+					lerror = lwc_intern_string(fontname, strlen(fontname), &glypharray[gwnode->gwe_Code]);
 					if(lerror != lwc_error_ok) continue;
 					foundglyphs++;
 				}
@@ -330,6 +330,8 @@ static ULONG ami_font_scan_list(struct MinList *list)
 		for(int i = 0; i < afh->afh_NumEntries; i++) {
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
 				if(af[i].af_Attr.ta_Name != NULL) {
+					char *p = 0;
+					if(p = strrchr(af[i].af_Attr.ta_Name, '.')) *p = '\0';
 					node = (struct nsObject *)FindIName((struct List *)list,
 								af[i].af_Attr.ta_Name);
 					if(node == NULL) {
@@ -484,10 +486,9 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 				char *p;
 
 				while((p = strsep(&csv, ","))) {
-					asprintf(&unicode_font, "%s.font", p);
-					if(unicode_font != NULL) {
+					if(p != NULL) {
 						node = AddObject(list, AMINS_UNKNOWN);
-						if(node) node->dtz_Node.ln_Name = unicode_font;
+						if(node) node->dtz_Node.ln_Name = p;
 						entries++;
 					}
 				}

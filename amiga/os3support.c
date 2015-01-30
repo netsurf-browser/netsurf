@@ -53,14 +53,16 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	struct BulletBase *BulletBase;
 	struct OutlineFont *of = NULL;
 	struct GlyphEngine *gengine;
-	char *p;
+	char *p = 0;
 
 	if(p = strrchr(fileName, '.'))
 		*p = '\0';
 
 	otagpath = (STRPTR)ASPrintf("FONTS:%s.otag", fileName);
 	fh = Open(otagpath, MODE_OLDFILE);
-	
+
+	if(p) *p = '.';
+
 	if(fh == 0) {
 		/*\todo we should be opening the .font file too and checking
 		 * for the magic bytes to indicate this is an outline font.
