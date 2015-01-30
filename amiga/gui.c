@@ -3,7 +3,6 @@
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
- * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; version 2 of the License.
  *
@@ -588,11 +587,19 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 			       (char *)strdup(temp));
 
 	/* font defaults */
+#ifdef __amigaos4__
 	nsoption_setnull_charp(font_sans, (char *)strdup("DejaVu Sans"));
 	nsoption_setnull_charp(font_serif, (char *)strdup("DejaVu Serif"));
 	nsoption_setnull_charp(font_mono, (char *)strdup("DejaVu Sans Mono"));
 	nsoption_setnull_charp(font_cursive, (char *)strdup("DejaVu Sans"));
 	nsoption_setnull_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
+#else
+	nsoption_setnull_charp(font_sans, (char *)strdup("CGTriumvirate"));
+	nsoption_setnull_charp(font_serif, (char *)strdup("CGTimes"));
+	nsoption_setnull_charp(font_mono, (char *)strdup("LetterGothic"));
+	nsoption_setnull_charp(font_cursive, (char *)strdup("CGTriumvirate"));
+	nsoption_setnull_charp(font_fantasy, (char *)strdup("CGTimes"));
+#endif
 
 	if (nsoption_charp(font_unicode) == NULL)
 	{
@@ -5202,10 +5209,14 @@ Object *ami_gui_splash_open(void)
 				IA_Left, &left,
 				TAG_DONE);
 
-	SetRPAttrs(win->RPort, RPTAG_APenColor, 0xFF3F6DFE, TAG_DONE);
 	SetDrMd(win->RPort, JAM1);
-
+#ifdef __amigaos4__
+	SetRPAttrs(win->RPort, RPTAG_APenColor, 0xFF3F6DFE, TAG_DONE);
 	tattr.ta_Name = "DejaVu Serif Italic.font";
+#else
+	SetAPen(win->RPort, 3);
+	tattr.ta_Name = "CGTriumvirate.font";
+#endif
 	tattr.ta_YSize = 24;
 	tattr.ta_Style = 0;
 	tattr.ta_Flags = 0;
@@ -5226,7 +5237,11 @@ Object *ami_gui_splash_open(void)
 
 	if(tfont) ami_font_close_disk_font(tfont);
 
+#ifdef __amigaos4__
 	tattr.ta_Name = "DejaVu Sans.font";
+#else
+	tattr.ta_Name = "CGTriumvirate.font";
+#endif
 	tattr.ta_YSize = 16;
 	tattr.ta_Style = 0;
 	tattr.ta_Flags = 0;

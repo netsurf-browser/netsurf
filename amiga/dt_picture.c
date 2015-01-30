@@ -75,7 +75,7 @@ nserror amiga_dt_picture_init(void)
 			DTA_GroupID, GID_PICTURE, // we only support images for now
 			TAG_DONE)) != NULL)
 	{
-		ReleaseDataType(prevdt);
+		if(prevdt) ReleaseDataType(prevdt);
 		prevdt = dt;
 
 		do {
