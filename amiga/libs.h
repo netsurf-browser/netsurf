@@ -63,7 +63,7 @@ extern Class *WindowClass;
 #define RadioButtonObj		NewObject(RadioButtonClass, NULL
 #define ScrollerObj			NewObject(ScrollerClass, NULL
 #define SpaceObj			NewObject(SpaceClass, NULL
-#define SpeedBarObj			NewObject(ScrollerClass, NULL
+#define SpeedBarObj			NewObject(SpeedBarClass, NULL
 #define StringObj			NewObject(StringClass, NULL
 #define WindowObj			NewObject(WindowClass, NULL
 
