@@ -3158,7 +3158,6 @@ static int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_lis
 
 static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 {
-#ifdef __amigaos4__
 	struct TagItem attrs[2];
 
 	attrs[0].ti_Tag = CHILD_MinWidth;
@@ -3203,9 +3202,6 @@ static void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 		
 		ami_schedule_redraw(gwin, true);
 	}
-#else
-#warning FIXME for OS3
-#endif
 }
 
 static void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
