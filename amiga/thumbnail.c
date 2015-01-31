@@ -62,8 +62,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 			bitmap->width;
 
 	bitmap->nativebm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32,
-							BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-							browserglob.bm, RGBFB_A8R8G8B8);
+							BMF_CLEAR, browserglob.bm, RGBFB_A8R8G8B8);
 
 	bitmap->nativebmwidth = bitmap->width;
 	bitmap->nativebmheight = bitmap->height;

@@ -425,7 +425,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 		struct BitMap *scaledbm;
 		struct BitScaleArgs bsa;
 
-		scaledbm = ami_rtg_allocbitmap(width, height, 32, BMF_DISPLAYABLE,
+		scaledbm = ami_rtg_allocbitmap(width, height, 32, 0,
 									friendbm, AMI_BITMAP_FORMAT);
 
 		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
