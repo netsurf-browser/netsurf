@@ -117,3 +117,4 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	return true;
 }
+

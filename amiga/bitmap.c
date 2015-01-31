@@ -381,8 +381,8 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 
 static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
-#ifdef __amigaos4__
 	struct BitMap *tbm = NULL;
+#ifdef __amigaos4__
 
 	if(!bitmap) return NULL;
 
@@ -479,9 +479,8 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 			bitmap->nativebmheight = height;
 		}
 	}
-
-	return tbm;
 #endif
+	return tbm;
 }
 
 PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
