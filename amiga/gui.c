@@ -1852,9 +1852,11 @@ static void ami_handle_msg(void)
 		}
 
 		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
-LOG(("while..."));
+
+		LOG(("RA_HandleInput(%p,%p) (gwin=%p)", gwin->objects[OID_MAIN], &code, gwin));
+
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
-LOG(("%d: %d (switch)",code, result & WMHI_CLASSMASK));
+			LOG(("%d: %d (switch)",code, result & WMHI_CLASSMASK));
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
@@ -5129,7 +5131,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		break;
 
 		default:
-			printf("UNHANDLED EVENT %ld\n",msg->Class);
+			LOG(("IDCMP hook unhandled event: %d\n", msg->Class));
 		break;
 	}
 //	ReplyMsg((struct Message *)msg);
