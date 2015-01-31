@@ -62,6 +62,7 @@
 /* Ignore unsupported tags */
 #define ASO_NoTrack				TAG_IGNORE
 #define BITMAP_DisabledSourceFile	TAG_IGNORE
+#define BITMAP_HasAlpha			TAG_IGNORE
 #define BLITA_UseSrcAlpha		TAG_IGNORE
 #define BLITA_MaskPlane			TAG_IGNORE
 #define CLICKTAB_CloseImage		TAG_IGNORE

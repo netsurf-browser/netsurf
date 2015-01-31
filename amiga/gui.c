@@ -43,6 +43,7 @@
 /* Other OS includes */
 #include <datatypes/textclass.h>
 #include <devices/inputevent.h>
+#include <graphics/gfxbase.h>
 #include <graphics/rpattr.h>
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
@@ -4965,11 +4966,20 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 			if(gwin->search_bm != NULL)
 				DisposeObject(gwin->search_bm);
 
+			ULONG bm_masking_tag = TAG_IGNORE;
+
+			if(GfxBase->LibNode.lib_Version >= 54) {	/* chooser 53.21, but check gfx.lib
+													 *                is FE as it's easier */
+				bm_masking_tag = BITMAP_Masking;
+			}
+
 			gwin->search_bm = BitMapObj,
 						BITMAP_Screen, scrn,
 						BITMAP_Width, 16,
 						BITMAP_Height, 16,
 						BITMAP_BitMap, bm,
+						BITMAP_HasAlpha, TRUE,
+						bm_masking_tag, TRUE,
 					BitMapEnd;
 
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCH_ICON],
