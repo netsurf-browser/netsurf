@@ -3134,6 +3134,8 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 	if(item > AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
 
+	tb_userdata->gw->hotlist_toolbar_lab[item] = ami_utf8_easy(title);
+
 	speed_button_node = AllocSpeedButtonNode(item,
 					SBNA_Text, tb_userdata->gw->hotlist_toolbar_lab[item],
 					SBNA_UserData, (void *)url,
