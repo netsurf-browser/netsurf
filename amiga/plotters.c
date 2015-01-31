@@ -211,6 +211,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 
 	if(shared_pens != NULL) {
 		if((node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL))) {
+			node->pen = pen;
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
 	} else {
