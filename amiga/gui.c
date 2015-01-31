@@ -1713,7 +1713,7 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 #else
 			/*\todo we are assuming we are always masking here, which might not be true */
 			BltMaskBitMapRastPort(bm, 0, 0, g->shared->win->RPort,
-						bbox->Left, bbox->Top, 16, 16, tag_data, minterm);
+						bbox->Left, bbox->Top, 16, 16, minterm, tag_data);
 #endif
 			ami_gui_free_space_box(bbox);
 		}
