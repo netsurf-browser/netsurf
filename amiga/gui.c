@@ -1790,6 +1790,7 @@ static void ami_handle_msg(void)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		gwin = node->objstruct;
+		LOG(("Type %d", node->Type));
 
 		if(node->Type == AMINS_TVWINDOW) {
 			if(ami_tree_event((struct treeview_window *)gwin)) {
@@ -1850,11 +1851,10 @@ static void ami_handle_msg(void)
 			}
 		}
 
-		if(gwin->objects[OID_MAIN] == NULL) continue;
-		
-		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
-		{
-//printf("%ld: %ld (switch)\n",code, result & WMHI_CLASSMASK);
+		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
+LOG(("while..."));
+		while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
+LOG(("%d: %d (switch)",code, result & WMHI_CLASSMASK));
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
@@ -3123,8 +3123,12 @@ static bool ami_gui_hotlist_add(void *userdata, int level, int item, const char 
 	if(level != 1) return false;
 	if(item > AMI_GUI_TOOLBAR_MAX) return false;
 	if(is_folder == true) return false;
-	
-	tb_userdata->gw->hotlist_toolbar_lab[item] = ami_utf8_easy(title);
+
+	if(title) {
+		tb_userdata->gw->hotlist_toolbar_lab[item] = ami_utf8_easy(title);
+	} else {
+		tb_userdata->gw->hotlist_toolbar_lab[item] = strdup("(untitled)");
+	}
 
 	speed_button_node = AllocSpeedButtonNode(item,
 					SBNA_Text, tb_userdata->gw->hotlist_toolbar_lab[item],
