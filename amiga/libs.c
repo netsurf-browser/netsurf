@@ -254,7 +254,7 @@ bool ami_libs_open(void)
 	AMINS_CLASS_OPEN("gadgets/radiobutton.gadget",   44, RadioButton,   RADIOBUTTON,   false)
 	AMINS_CLASS_OPEN("gadgets/scroller.gadget",      44, Scroller,      SCROLLER,      false)
 	AMINS_CLASS_OPEN("gadgets/space.gadget",         44, Space,         SPACE,         false)
-	AMINS_CLASS_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      SPEEDBAR,      false)
+	AMINS_CLASS_OPEN("gadgets/speedbar.gadget",      44, SpeedBar,      SPEEDBAR,      true)
 	AMINS_CLASS_OPEN("gadgets/string.gadget",        44, String,        STRING,        false)
 	AMINS_CLASS_OPEN("window.class",                 44, Window,        WINDOW,        false)
 
