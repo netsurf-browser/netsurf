@@ -2877,8 +2877,6 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 
 	if(redraw)
 	{
-		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
-
 		ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
 			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 		browser_window_update(gwin->gw->bw, false);
@@ -2891,6 +2889,8 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		ami_gui_update_hotlist_button(gwin);
 		ami_gui_scroller_update(gwin);
 		ami_throbber_redraw_schedule(0, gwin->gw);
+
+		gui_window_set_icon(gwin->gw, gwin->gw->favicon);
 	}
 
 	ami_gui_free_space_box(bbox);
@@ -3866,7 +3866,7 @@ gui_window_create(struct browser_window *bw,
 							GA_ID, GID_ICON,
 							SPACE_MinWidth, 16,
 							SPACE_MinHeight, 16,
-							SPACE_Transparent, FALSE,
+							SPACE_Transparent, TRUE,
 						//	SPACE_RenderHook, &g->shared->favicon_hook,
 						SpaceEnd,
 						CHILD_WeightedWidth, 0,
