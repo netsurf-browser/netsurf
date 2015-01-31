@@ -342,9 +342,9 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 					PDTA_SourceMode,PMODE_V43,
 					TAG_DONE);
 
-		IDoMethod(dto,PDTM_WRITEPIXELARRAY,bitmap_get_buffer(bitmap),
-					PBPAFMT_RGBA,bitmap_get_rowstride(bitmap),0,0,
-					bitmap_get_width(bitmap),bitmap_get_height(bitmap));
+		IDoMethod(dto, PDTM_WRITEPIXELARRAY, bitmap_get_buffer(bitmap),
+					PBPAFMT_RGBA, bitmap_get_rowstride(bitmap), 0, 0,
+					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
 	}
 
 	return dto;
@@ -355,11 +355,6 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 {
 	Object *dto;
 	struct bitmap *bm = NULL;
-#ifdef __amigaos4__
-	int bm_format = PBPAFMT_RGBA;
-#else
-	int bm_format = PBPAFMT_ARGB;
-#endif
 
 	if((dto = NewDTObject(filename,
 					DTA_GroupID, GID_PICTURE,
@@ -373,11 +368,9 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 			bm = bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
 
 			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
-				bm_format, bitmap_get_rowstride(bm), 0, 0,
+				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
-#ifndef __amigaos4__
-				ami_bitmap_argb_to_rgba(bm);
-#endif				
+
 			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
@@ -562,7 +555,6 @@ static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
 
-	ami_bitmap_get_mask(bitmap, width, height, dtbm);
 	return dtbm;
 }
 
