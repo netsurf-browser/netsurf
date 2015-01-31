@@ -1691,6 +1691,10 @@ static void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				warn_user("NoMemory", "");
 				return;
 			}
+
+			EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
+						bbox->Left + 16, bbox->Top + 16);
+
 #ifdef __amigaos4__
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
