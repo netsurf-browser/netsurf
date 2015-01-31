@@ -113,14 +113,17 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
+#ifdef __amigaos4__
 	if(depth < 16) {
 		palette_mapped = true;
 	} else {
 		palette_mapped = false;
 	}
-#ifndef __amigaos4__
+#else
 	palette_mapped = true; /* only supporting palette mapped screens on OS3 for now */
+	if(depth > 8) depth = 8;
 #endif
+
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
