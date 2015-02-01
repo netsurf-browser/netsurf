@@ -5077,8 +5077,6 @@ static void gui_window_new_content(struct gui_window *g)
 	g->shared->oldv = 0;
 	g->favicon = NULL;
 	ami_plot_release_pens(&g->shared->shared_pens);
-	ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
-		bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
 	ami_gui_scroller_update(g->shared);
