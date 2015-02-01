@@ -552,7 +552,9 @@ struct Menu *ami_menu_create_os3(struct gui_window_2 *gwin, struct NewMenu *newm
 {
 	gwin->vi = GetVisualInfo(scrn, TAG_DONE);
 	gwin->menu_os3 = CreateMenus(newmenu, TAG_DONE);
-	LayoutMenus(gwin->menu_os3, gwin->vi, TAG_DONE);
+	LayoutMenus(gwin->menu_os3, gwin->vi,
+		GTMN_NewLookMenus, TRUE, TAG_DONE);
+
 	return gwin->menu_os3;
 }
 #endif
