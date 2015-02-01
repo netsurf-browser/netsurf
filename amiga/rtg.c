@@ -50,6 +50,7 @@ void ami_rtg_rectfill(struct RastPort *rp, UWORD min_x, UWORD min_y,
 	UWORD max_x, UWORD max_y, ULONG colour)
 {
 	if(P96Base == NULL) {
+		SetAPen(rp, 2); /* white */
 		return RectFill(rp, min_x, min_y, max_x, max_y);
 	} else {
 		return p96RectFill(rp, min_x, min_y, max_x, max_y, colour);
