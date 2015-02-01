@@ -545,8 +545,11 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 						tag, tag_data,
 						TAG_DONE);
 #else
-		/* Assume mask is always required */
-		BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
+		if(tag_data) {
+			BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
+		} else {
+			BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, 0xc0);
+		}
 #endif
 	}
 
