@@ -3716,6 +3716,7 @@ gui_window_create(struct browser_window *bw,
 
 		if(ClickTabBase->lib_Version < 53)
 		{
+#ifdef __amigaos4__
 			addtabclosegadget = LAYOUT_AddChild;
 			g->shared->objects[GID_CLOSETAB] = ButtonObj,
 					GA_ID, GID_CLOSETAB,
@@ -3737,6 +3738,9 @@ gui_window_create(struct browser_window *bw,
 					GA_Text, "+",
 					BUTTON_RenderImage, g->shared->objects[GID_ADDTAB_BM],
 					ButtonEnd;
+#else
+#warning OS3 tab bar permanently disabled!
+#endif
 		}
 		else
 		{
