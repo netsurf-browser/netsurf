@@ -4267,17 +4267,17 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 							CLICKTAB_Labels, ~0,
 							TAG_DONE);
 
-			SetClickTabNodeAttrs(node, TNA_Text, utf8title,
-							TNA_HintInfo, utf8title,
+			if(g->tabtitle) ami_utf8_free(g->tabtitle);
+			g->tabtitle = strdup(utf8title);
+
+			SetClickTabNodeAttrs(node, TNA_Text, g->tabtitle,
+							TNA_HintInfo, g->tabtitle,
 							TAG_DONE);
 
 			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
 								g->shared->win, NULL,
 								CLICKTAB_Labels, &g->shared->tab_list,
 								TAG_DONE);
-
-			if(g->tabtitle) ami_utf8_free(g->tabtitle);
-			g->tabtitle = utf8title;
 
 			if(ClickTabBase->lib_Version < 53)
 				RethinkLayout((struct Gadget *)g->shared->objects[GID_TABLAYOUT],
@@ -4293,6 +4293,8 @@ static void gui_window_set_title(struct gui_window *g, const char *title)
 			SetWindowTitles(g->shared->win, g->shared->wintitle, ami_gui_get_screen_title());
 		}
 	}
+
+	ami_utf8_free(utf8title);
 }
 
 static void ami_redraw_callback(void *p)
