@@ -282,28 +282,6 @@ size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
-#ifndef __amigaos4__
-void ami_bitmap_argb_to_rgba(struct bitmap *bm)
-{
-	if(bm == NULL) return;
-	
-	ULONG *data = (ULONG *)bitmap_get_buffer(bm);
-	for(int i = 0; i < ((bitmap_get_rowstride(bm) / sizeof(ULONG)) * bitmap_get_height(bm)); i++) { 
-		data[i] = (data[i] << 8) | (data[i] >> 24);
-	}
-}
-
-void ami_bitmap_rgba_to_argb(struct bitmap *bm)
-{
-	if(bm == NULL) return;
-	
-	ULONG *data = (ULONG *)bitmap_get_buffer(bm);
-	for(int i = 0; i < ((bitmap_get_rowstride(bm) / sizeof(ULONG)) * bitmap_get_height(bm)); i++) { 
-		data[i] = (data[i] >> 8) | (data[i] << 24);
-	}
-}
-#endif
-
 #ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
 {

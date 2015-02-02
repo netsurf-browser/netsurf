@@ -175,11 +175,6 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	UBYTE *bm_buffer;
 	Object *dto;
 	struct bitmap *bitmap;
-#ifdef __amigaos4__
-	int bm_format = PBPAFMT_RGBA;
-#else
-	int bm_format = PBPAFMT_ARGB;
-#endif
 	struct amiga_dt_picture_content *adt = (struct amiga_dt_picture_content *)c;
 
 	if((dto = amiga_dt_picture_newdtobject(adt)))
@@ -194,11 +189,9 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 		bm_buffer = bitmap_get_buffer(bitmap);
 
 		IDoMethod(dto, PDTM_READPIXELARRAY,
-			bm_buffer, bm_format, bitmap_get_rowstride(bitmap),
+			bm_buffer, PBPAFMT_RGBA, bitmap_get_rowstride(bitmap),
 			0, 0, c->width, c->height);
-#ifndef __amigaos4__
-		ami_bitmap_argb_to_rgba(bitmap);
-#endif
+
 		bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
 		
 		DisposeDTObject(dto);
