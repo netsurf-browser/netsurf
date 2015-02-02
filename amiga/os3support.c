@@ -192,6 +192,12 @@ struct Node *GetHead(struct List *list)
 	return res;
 }
 
+struct Node *GetPred(struct Node *node)
+{
+	if (node->ln_Pred->ln_Pred == NULL) return NULL;
+	return node->ln_Pred;
+}
+
 struct Node *GetSucc(struct Node *node)
 {
 	if (node->ln_Succ->ln_Succ == NULL) return NULL;
