@@ -113,6 +113,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
+	LOG(("Screen depth = %d", depth));
+
 #ifdef __amigaos4__
 	if(depth < 16) {
 		palette_mapped = true;
@@ -131,7 +133,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
 	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
 
-	if(palette_mapped == true) { 
+	if(palette_mapped == true) {
+#ifndef __amigaos4__
+		friend = scrn->RastPort.BitMap;
+#endif
 		gg->bm = AllocBitMap(width, height, depth, 0, friend);
 	} else {
 		if(depth == 32) friend = scrn->RastPort.BitMap;

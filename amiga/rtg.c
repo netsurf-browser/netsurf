@@ -22,8 +22,6 @@
 
 #include "amiga/rtg.h"
 
-/**\todo p96WritePixelArray */
-
 struct BitMap *ami_rtg_allocbitmap(ULONG width, ULONG height, ULONG depth,
 	ULONG flags, struct BitMap *friend, RGBFTYPE format)
 {
