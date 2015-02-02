@@ -144,7 +144,6 @@
 /* Exec */
 #define AllocVecTagList(SZ,TAG) AllocVec(SZ,MEMF_ANY) /* AllocVecTagList with no tags */
 #define FindIName FindName
-#define GetPred(N) N ? (N)->ln_Pred : NULL
 
 /* Gfx */
 #define SetRPAttrs(...) (void)0 /*\todo Probably need to emulate this */
@@ -240,6 +239,7 @@ void FreeSysObject(ULONG type, APTR obj);
 
 /* Exec */
 struct Node *GetHead(struct List *list);
+struct Node *GetPred(struct Node *node);
 struct Node *GetSucc(struct Node *node);
 
 /* Intuition */
