@@ -142,7 +142,6 @@
 #include "amiga/plotters.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/print.h"
-#include "amiga/rtg.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
@@ -2873,21 +2872,18 @@ void ami_switch_tab(struct gui_window_2 *gwin, bool redraw)
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
 			gwin->win, NULL, STRINGA_TextVal, "", TAG_DONE);
 
-		ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
-			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
-
+		ami_plot_clear_bbox(gwin->win->RPort, bbox);
 		ami_gui_free_space_box(bbox);
 		return;
 	}
 
-	ami_plot_release_pens(&gwin->shared_pens);
+	ami_plot_release_pens(&browserglob.shared_pens);
 	ami_update_buttons(gwin);
 	ami_menu_update_disabled(gwin->gw, browser_window_get_content(gwin->gw->bw));
 
 	if(redraw)
 	{
-		ami_rtg_rectfill(gwin->win->RPort, bbox->Left, bbox->Top,
-			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
+		ami_plot_clear_bbox(gwin->win->RPort, bbox);
 		browser_window_update(gwin->gw->bw, false);
 
 		gui_window_set_scroll(gwin->gw,
@@ -4197,7 +4193,7 @@ static void gui_window_destroy(struct gui_window *g)
 		return;
 	}
 
-	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_plot_release_pens(&browserglob.shared_pens);
 	ami_schedule_redraw_remove(g->shared);
 	ami_schedule(-1, ami_gui_refresh_favicon, g->shared);
 
@@ -5076,7 +5072,7 @@ static void gui_window_new_content(struct gui_window *g)
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
 	g->favicon = NULL;
-	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_plot_release_pens(&browserglob.shared_pens);
 	ami_menu_update_disabled(g, c);
 	ami_gui_update_hotlist_button(g->shared);
 	ami_gui_scroller_update(g->shared);

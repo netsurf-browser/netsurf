@@ -44,17 +44,6 @@ void ami_rtg_freebitmap(struct BitMap *bm)
 	}
 }
 
-void ami_rtg_rectfill(struct RastPort *rp, UWORD min_x, UWORD min_y,
-	UWORD max_x, UWORD max_y, ULONG colour)
-{
-	if(P96Base == NULL) {
-		SetAPen(rp, 2); /* white */
-		return RectFill(rp, min_x, min_y, max_x, max_y);
-	} else {
-		return p96RectFill(rp, min_x, min_y, max_x, max_y, colour);
-	}
-}
-
 void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,
 	ULONG width, ULONG height, ULONG bpr, ULONG format)
 {

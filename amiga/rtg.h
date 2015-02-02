@@ -25,12 +25,10 @@
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 
-/* Wrappers for Alloc/FreeBitMap and RectFill */
+/* Wrappers for Alloc/FreeBitMap */
 struct BitMap *ami_rtg_allocbitmap(ULONG width, ULONG height, ULONG depth,
 	ULONG flags, struct BitMap *friend, RGBFTYPE format);
 void ami_rtg_freebitmap(struct BitMap *bm);
-void ami_rtg_rectfill(struct RastPort *rp, UWORD min_x, UWORD min_y,
-	UWORD max_x, UWORD max_y, ULONG colour);
 
 /* WritePixelArray wrapper.  This isn't entirely (at all) equivalent to p96WPA */
 void ami_rtg_writepixelarray(UBYTE *pixdata, struct BitMap *bm,

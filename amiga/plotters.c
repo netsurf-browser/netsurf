@@ -89,20 +89,6 @@ bool palette_mapped = false;
 /* Define the below to get additional debug */
 #undef AMI_PLOTTER_DEBUG
 
-struct plotter_table plot;
-const struct plotter_table amiplot = {
-	.rectangle = ami_rectangle,
-	.line = ami_line,
-	.polygon = ami_polygon,
-	.clip = ami_clip,
-	.text = ami_text,
-	.disc = ami_disc,
-	.arc = ami_arc,
-	.bitmap = ami_bitmap_tile,
-	.path = ami_path,
-	.option_knockout = true,
-};
-
 void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 {
 	/* init shared bitmaps                                               *
@@ -243,13 +229,14 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 
 static void ami_plot_setapen(ULONG colr)
 {
-	if(palette_mapped == false) {
 #ifdef __amigaos4__
+	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
+	} else
 #endif
-	} else {
+	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetAPen(glob->rp, pen);
 	}
@@ -257,17 +244,26 @@ static void ami_plot_setapen(ULONG colr)
 
 static void ami_plot_setopen(ULONG colr)
 {
-	if(palette_mapped == false) {
 #ifdef __amigaos4__
+	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
+	} else
 #endif
-	} else {
+	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
 		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }
+
+void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
+{
+	ami_plot_setapen(0xffffffff);
+	RectFill(rp, bbox->Left, bbox->Top,
+		bbox->Width+bbox->Left, bbox->Height+bbox->Top);
+}
+
 
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
@@ -863,4 +859,18 @@ bool ami_plot_screen_is_palettemapped(void)
 {
 	return palette_mapped;
 }
+
+struct plotter_table plot;
+const struct plotter_table amiplot = {
+	.rectangle = ami_rectangle,
+	.line = ami_line,
+	.polygon = ami_polygon,
+	.clip = ami_clip,
+	.text = ami_text,
+	.disc = ami_disc,
+	.arc = ami_arc,
+	.bitmap = ami_bitmap_tile,
+	.path = ami_path,
+	.option_knockout = true,
+};
 
