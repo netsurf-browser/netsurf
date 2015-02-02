@@ -228,39 +228,39 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 	} while((node = nnode));
 }
 
-static void ami_plot_setapen(ULONG colr)
+static void ami_plot_setapen(struct RastPort *rp, ULONG colr)
 {
 #ifdef __amigaos4__
 	if(palette_mapped == false) {
-		SetRPAttrs(glob->rp, RPTAG_APenColor,
+		SetRPAttrs(rp, RPTAG_APenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else
 #endif
 	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
-		if(pen != -1) SetAPen(glob->rp, pen);
+		if(pen != -1) SetAPen(rp, pen);
 	}
 }
 
-static void ami_plot_setopen(ULONG colr)
+static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
 {
 #ifdef __amigaos4__
 	if(palette_mapped == false) {
-		SetRPAttrs(glob->rp, RPTAG_OPenColor,
+		SetRPAttrs(rp, RPTAG_OPenColor,
 			ns_color_to_nscss(colr),
 			TAG_DONE);
 	} else
 #endif
 	{
 		LONG pen = ami_plot_obtain_pen(glob->shared_pens, colr);
-		if(pen != -1) SetOPen(glob->rp, pen);
+		if(pen != -1) SetOPen(rp, pen);
 	}
 }
 
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 {
-	ami_plot_setapen(0xffffffff);
+	ami_plot_setapen(rp, 0xffffffff);
 	RectFill(rp, bbox->Left, bbox->Top,
 		bbox->Width+bbox->Left, bbox->Height+bbox->Top);
 }
@@ -273,7 +273,7 @@ static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *st
 	#endif
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
-		ami_plot_setapen(style->fill_colour);
+		ami_plot_setapen(glob->rp, style->fill_colour);
 		RectFill(glob->rp, x0, y0, x1-1, y1-1);
 	}
 
@@ -296,7 +296,7 @@ static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *st
 			break;
  		}
 
-		ami_plot_setapen(style->stroke_colour);
+		ami_plot_setapen(glob->rp, style->stroke_colour);
 		Move(glob->rp, x0,y0);
 		Draw(glob->rp, x1, y0);
 		Draw(glob->rp, x1, y1);
@@ -335,7 +335,7 @@ static bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		break;
 	}
 
-	ami_plot_setapen(style->stroke_colour);
+	ami_plot_setapen(glob->rp, style->stroke_colour);
 	Move(glob->rp,x0,y0);
 	Draw(glob->rp,x1,y1);
 
@@ -352,7 +352,7 @@ static bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_polygon()"));
 	#endif
 
-	ami_plot_setapen(style->fill_colour);
+	ami_plot_setapen(glob->rp, style->fill_colour);
 
 	if(AreaMove(glob->rp,p[0],p[1]) == -1)
 		LOG(("AreaMove: vector list full"));
@@ -408,7 +408,7 @@ static bool ami_text(int x, int y, const char *text, size_t length,
 	if((nsoption_bool(font_antialiasing) == false) || (palette_mapped == true))
 		aa = false;
 	
-	ami_plot_setapen(fstyle->foreground);
+	ami_plot_setapen(glob->rp, fstyle->foreground);
 	ami_unicode_text(glob->rp, text, length, fstyle, x, y, aa);
 	
 	return true;
@@ -421,13 +421,13 @@ static bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	#endif
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(style->fill_colour);
+		ami_plot_setapen(glob->rp, style->fill_colour);
 		AreaCircle(glob->rp,x,y,radius);
 		AreaEnd(glob->rp);
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		ami_plot_setapen(style->stroke_colour);
+		ami_plot_setapen(glob->rp, style->stroke_colour);
 		DrawEllipse(glob->rp,x,y,radius,radius);
 	}
 
@@ -467,7 +467,7 @@ static bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot
 
 	if (angle2 < angle1) angle2 += 360;
 		
-	ami_plot_setapen(style->fill_colour);
+	ami_plot_setapen(glob->rp, style->fill_colour);
 	ami_arc_gfxlib(x, y, radius, angle1, angle2);
 	
 	return true;
@@ -749,12 +749,12 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 	}
 
 	if (fill != NS_TRANSPARENT) {
-		ami_plot_setapen(fill);
+		ami_plot_setapen(glob->rp, fill);
 		if (c != NS_TRANSPARENT)
-			ami_plot_setopen(c);
+			ami_plot_setopen(glob->rp, c);
 	} else {
 		if (c != NS_TRANSPARENT) {
-			ami_plot_setapen(c);
+			ami_plot_setapen(glob->rp, c);
 		} else {
 			return true; /* wholly transparent */
 		}
