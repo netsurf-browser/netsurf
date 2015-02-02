@@ -355,14 +355,6 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 		IDoMethod(dto, PDTM_WRITEPIXELARRAY, bitmap_get_buffer(bitmap),
 					PBPAFMT_RGBA, bitmap_get_rowstride(bitmap), 0, 0,
 					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
-#if 0
-		ami_bitmap_rgba_to_argb(bitmap);
-		IDoMethod(dto, PDTM_WRITEPIXELARRAY, bitmap_get_buffer(bitmap),
-					PBPAFMT_ARGB, bitmap_get_rowstride(bitmap), 0, 0,
-					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
-		ami_bitmap_argb_to_rgb(bitmap);
-#endif
-
 	}
 
 	return dto;
@@ -400,7 +392,6 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
 	struct BitMap *tbm = NULL;
-#ifdef __amigaos4__
 
 	if(!bitmap) return NULL;
 
@@ -497,7 +488,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 			bitmap->nativebmheight = height;
 		}
 	}
-#endif
+
 	return tbm;
 }
 
