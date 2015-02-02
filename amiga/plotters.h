@@ -22,6 +22,8 @@
 #include <proto/layers.h>
 #include <proto/graphics.h>
 
+struct IBox;
+
 struct gui_globals
 {
 	struct BitMap *bm;
@@ -30,7 +32,7 @@ struct gui_globals
 	APTR areabuf;
 	APTR tmprasbuf;
 	struct Rectangle rect;
-	struct MinList *shared_pens; /**\todo move this to gui_window_2 */
+	struct MinList *shared_pens;
 };
 
 extern const struct plotter_table amiplot;

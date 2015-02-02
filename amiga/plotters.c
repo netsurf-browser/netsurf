@@ -216,6 +216,7 @@ void ami_plot_release_pens(struct MinList *shared_pens)
 	struct ami_plot_pen *node;
 	struct ami_plot_pen *nnode;
 
+	if(shared_pens == NULL) return;
 	if(IsMinListEmpty(shared_pens)) return;
 	node = (struct ami_plot_pen *)GetHead((struct List *)shared_pens);
 
@@ -265,7 +266,7 @@ void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 }
 
 
-bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
+static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_rectangle()"));
@@ -310,7 +311,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	return true;
 }
 
-bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+static bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_line()"));
@@ -345,7 +346,7 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	return true;
 }
 
-bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
+static bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_polygon()"));
@@ -368,7 +369,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 }
 
 
-bool ami_clip(const struct rect *clip)
+static bool ami_clip(const struct rect *clip)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_clip()"));
@@ -395,7 +396,7 @@ bool ami_clip(const struct rect *clip)
 	return true;
 }
 
-bool ami_text(int x, int y, const char *text, size_t length,
+static bool ami_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -413,7 +414,7 @@ bool ami_text(int x, int y, const char *text, size_t length,
 	return true;
 }
 
-bool ami_disc(int x, int y, int radius, const plot_style_t *style)
+static bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_disc()"));
@@ -458,7 +459,7 @@ static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 	}
 }
 
-bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
+static bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_arc()"));
@@ -561,7 +562,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	return true;
 }
 
-bool ami_bitmap_tile(int x, int y, int width, int height,
+static bool ami_bitmap_tile(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bitmap_flags_t flags)
 {
@@ -723,40 +724,13 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 }
 #endif
 
-bool ami_group_start(const char *name)
-{
-	/** optional */
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_group_start()"));
-	#endif
-
-	return false;
-}
-
-bool ami_group_end(void)
-{
-	/** optional */
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_group_end()"));
-	#endif
-	return false;
-}
-
-bool ami_flush(void)
-{
-	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_flush()"));
-	#endif
-	return true;
-}
-
 static void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
 			struct bez_point *d, double t, struct bez_point *p) {
     p->x = pow((1 - t), 3) * a->x + 3 * t * pow((1 -t), 2) * b->x + 3 * (1-t) * pow(t, 2)* c->x + pow (t, 3)* d->x;
     p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
 }
 
-bool ami_path(const float *p, unsigned int n, colour fill, float width,
+static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
 	unsigned int i;
