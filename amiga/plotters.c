@@ -118,13 +118,16 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
 	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
 
-	if(palette_mapped == true) {
 #ifndef __amigaos4__
-		friend = scrn->RastPort.BitMap;
+	friend = scrn->RastPort.BitMap;
 #endif
+
+	if(palette_mapped == true) {
 		gg->bm = AllocBitMap(width, height, depth, 0, friend);
 	} else {
+#ifdef __amigaos4__
 		if(depth == 32) friend = scrn->RastPort.BitMap;
+#endif
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
 	}
 
