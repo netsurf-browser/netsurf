@@ -583,14 +583,14 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
-#ifdef __amigaos4__
+
 	/* If it is a one pixel transparent image, we are wasting our time */
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
 
 	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
 	if(!tbm) return true;
-
+#ifdef __amigaos4__
 	ox = x;
 	oy = y;
 
@@ -657,14 +657,44 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
 	if(bitmap->opaque) DeleteBackFillHook(bfh);
 		else FreeVec(bfh);
+#else
+	/* get left most tile position */
+	if (repeat_x)
+		for (; x > glob->rect.MinX; x -= width)
+			;
+
+	/* get top most tile position */
+	if (repeat_y)
+		for (; y > glob->rect.MinY; y -= height)
+			;
+
+	/* tile down and across to extents */
+	for (xf = x; xf < glob->rect.MaxX; xf += width) {
+		for (yf = y; yf < glob->rect.MaxY; yf += height) {
+
+			ULONG tag, tag_data = NULL, minterm = 0xc0;
+		
+			if(bitmap->opaque) {
+				minterm = 0xc0;
+			} else {
+				if((tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm)))
+					minterm = (ABC|ABNC|ANBC);
+			}
+
+			if(tag_data) {
+				BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, minterm, tag_data);
+			} else {
+				BltBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, 0xc0);
+			}
+		}
+	}
+#endif
 
 	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
 	{
 		ami_rtg_freebitmap(tbm);
 	}
-#else
-#warning FIXME: bitmap tiling uses backfill hooks
-#endif
+
 	return true;
 }
 
