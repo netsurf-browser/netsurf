@@ -160,26 +160,8 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
-static bool nsfont_width(const plot_font_style_t *fstyle,
-	  const char *string, size_t length,
-    int *width);
-       
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
-	       const char *string, size_t length,
-	  int x, size_t *char_offset, int *actual_x);
-       
-static bool nsfont_split(const plot_font_style_t *fstyle,
-	  const char *string, size_t length,
-    int x, size_t *char_offset, int *actual_x);
 
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
-};
-
-
-bool nsfont_width(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -202,7 +184,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -289,7 +271,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-bool nsfont_split(const plot_font_style_t *fstyle,
+static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -752,6 +734,10 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
+	if(nsoption_bool(use_diskfont) == true) {
+		return ami_font_bm_text(rp, string, length, fstyle, dx, dy);
+	}
+
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
@@ -949,3 +935,47 @@ void ami_font_close_disk_font(struct TextFont *tfont)
 {
 	CloseFont(tfont);
 }
+
+
+/* Stub entry points */
+static bool nsfont_width(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int *width)
+{
+	if(nsoption_bool(use_diskfont) == false) {
+		return amiga_nsfont_width(fstyle, string, length, width);
+	} else {
+		return amiga_bm_nsfont_width(fstyle, string, length, width);
+	}
+}
+
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	if(nsoption_bool(use_diskfont) == false) {
+		return amiga_nsfont_position_in_string(fstyle, string, length, x,
+				char_offset, actual_x);
+	} else {
+		return amiga_bm_nsfont_position_in_string(fstyle, string, length, x,
+				char_offset, actual_x);
+	}
+}
+
+static bool nsfont_split(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	if(nsoption_bool(use_diskfont) == false) {
+		return amiga_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
+	} else {
+		return amiga_bm_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
+	}
+}
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
+
