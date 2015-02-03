@@ -31,16 +31,9 @@
 
 struct MinList *NewObjList(void)
 {
-
-	struct MinList *objlist;
-
-	objlist = (struct MinList *)AllocVecTagList(sizeof(struct MinList)    + 10, NULL);
-#warning List structure allocation is larger than necessary for debugging ^^^^
-
+	struct MinList *objlist = (struct MinList *)AllocVecTagList(sizeof(struct MinList), NULL);
 	NewMinList(objlist);
-
 	return(objlist);
-
 }
 
 struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
