@@ -611,6 +611,8 @@ static nserror write_entries(struct store_state *state)
 		return ret;
 	}
 
+	/* remove() call is to handle non-POSIX rename() implementations */
+	(void)remove(fname);
 	if (rename(tname, fname) != 0) {
 		unlink(tname);
 		free(tname);
