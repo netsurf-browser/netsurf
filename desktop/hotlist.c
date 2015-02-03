@@ -936,6 +936,9 @@ static nserror hotlist_save(const char *path)
 		goto cleanup;
 	}
 
+	/* Remove old hotlist to handle non-POSIX rename() implementations. */
+	(void)remove(path);
+
 	/* Replace any old hotlist file with the one we just saved */
 	if (rename(temp_path, path) != 0) {
 		res = NSERROR_SAVE_FAILED;
