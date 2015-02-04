@@ -4041,22 +4041,27 @@ gui_window_create(struct browser_window *bw,
 				GA_Left, scrn->WBorLeft + 2,
 				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
 				GA_Width, width,
+				GA_Height, height - scrn->WBorBottom,
 				GA_DrawInfo, dri,
 				GA_BottomBorder, TRUE,
 				GA_ReadOnly, TRUE,
-#ifdef __amigaos4__
+				GA_Disabled, TRUE,
 				GA_Image, (struct Image *)NewObject(
 					NULL,
+#ifdef __amigaos4__
 					"gaugeiclass",
+					GAUGEIA_Level, 0,
+#else
+					"frameiclass",
+					IA_Recessed, TRUE,
+#endif
 					IA_Top, 2 - (scrn->RastPort.TxHeight),
 					IA_Left, -4,
-					IA_Height, 4 + scrn->RastPort.TxHeight, 
-					IA_InBorder, TRUE,
+					IA_Height, height - scrn->WBorBottom, 
 					IA_Label, NULL,
+					IA_InBorder, TRUE,
 					IA_Screen, scrn,
-					GAUGEIA_Level, 0,
 					TAG_DONE),
-#endif
 				TAG_DONE);
 
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
