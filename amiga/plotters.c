@@ -106,8 +106,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	} else {
 		palette_mapped = false;
 	}
-#if 0
-	palette_mapped = true; /* only supporting palette mapped screens on OS3 for now */
+
+#ifndef __amigaos4__
+#warning OS3 locked to palette-mapped modes
+	palette_mapped = true;
 	if(depth > 8) depth = 8;
 #endif
 
