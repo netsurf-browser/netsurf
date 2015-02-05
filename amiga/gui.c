@@ -4662,7 +4662,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		{
 #ifndef __amigaos4__
 			/* Try to avoid some overprinting - might need glob->rp clearing instead */
-			ami_plot_clear_box(gwin->win->RPort, bbox);
+			ami_plot_clear_bbox(gwin->win->RPort, bbox);
 #endif
 			ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
