@@ -5267,7 +5267,7 @@ Object *ami_gui_splash_open(void)
 	tattr.ta_Name = "DejaVu Serif Italic.font";
 #else
 	SetAPen(win->RPort, 3); /* Pen 3 is usually blue */
-	tattr.ta_Name = "CGTriumvirate.font";
+	tattr.ta_Name = "ruby.font";
 #endif
 	tattr.ta_YSize = 24;
 	tattr.ta_Style = 0;
@@ -5292,7 +5292,7 @@ Object *ami_gui_splash_open(void)
 #ifdef __amigaos4__
 	tattr.ta_Name = "DejaVu Sans.font";
 #else
-	tattr.ta_Name = "CGTriumvirate.font";
+	tattr.ta_Name = "helvetica.font";
 #endif
 	tattr.ta_YSize = 16;
 	tattr.ta_Style = 0;
