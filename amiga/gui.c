@@ -4036,7 +4036,7 @@ gui_window_create(struct browser_window *bw,
 
 		g->shared->objects[GID_STATUS] = NewObject(
 				NULL,
-				"frbuttonclass",
+				"frbuttonclass", /**\todo find appropriate class which works on OS3 */
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
 				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
@@ -4662,7 +4662,7 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 		{
 #ifndef __amigaos4__
 			/* Try to avoid some overprinting - might need glob->rp clearing instead */
-			ami_plot_clear_bbox(gwin->win->RPort, bbox);
+			ami_plot_clear_bbox(&browserglob.rp, bbox);
 #endif
 			ami_do_redraw_tiled(gwin, true, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
