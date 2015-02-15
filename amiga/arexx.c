@@ -29,10 +29,12 @@
 #include <gadgets/clicktab.h>
 #include <reaction/reaction_macros.h>
 
-#include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "desktop/gui_window.h"
 #include "desktop/version.h"
+
+#include "utils/log.h"
+#include "utils/nsoption.h"
 
 #include "amiga/arexx.h"
 #include "amiga/download.h"
@@ -140,6 +142,7 @@ void ami_arexx_handle(void)
 
 void ami_arexx_execute(char *script)
 {
+	LOG(("Executing script: %s", script));
 	IDoMethod(arexx_obj, AM_EXECUTE, script, NULL, NULL, NULL, NULL, NULL);
 }
 
