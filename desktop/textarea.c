@@ -934,10 +934,9 @@ static bool textarea_reflow_multiline(struct textarea *ta,
 	assert(ta->flags & TEXTAREA_MULTILINE);
 
 	if (ta->lines == NULL) {
-		ta->lines =
-			malloc(LINE_CHUNK_SIZE * sizeof(struct line_info));
+		ta->lines = calloc(sizeof(struct line_info), LINE_CHUNK_SIZE);
 		if (ta->lines == NULL) {
-			LOG(("malloc failed"));
+			LOG(("Failed to allocate memory for textarea lines"));
 			return false;
 		}
 		ta->lines_alloc_size = LINE_CHUNK_SIZE;
