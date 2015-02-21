@@ -580,12 +580,12 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(url_file,
 			       (char *)strdup(temp));
 
-	nsoption_setnull_charp(ca_bundle,
-			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
-
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
 	nsoption_setnull_charp(font_unicode_file,
 			       (char *)strdup(temp));
+
+	nsoption_setnull_charp(ca_bundle,
+			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
 	/* font defaults */
 #ifdef __amigaos4__
