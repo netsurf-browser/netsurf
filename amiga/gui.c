@@ -1800,7 +1800,6 @@ static void ami_handle_msg(void)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		gwin = node->objstruct;
-		LOG(("Type %d", node->Type));
 
 		if(node->Type == AMINS_TVWINDOW) {
 			if(ami_tree_event((struct treeview_window *)gwin)) {
@@ -1863,11 +1862,7 @@ static void ami_handle_msg(void)
 
 		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
 
-		LOG(("RA_HandleInput(%p,%p) (gwin=%p)", gwin->objects[OID_MAIN], &code, gwin));
-
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
-			LOG(("%d: %d (switch)",code, result & WMHI_CLASSMASK));
-
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:

@@ -176,6 +176,8 @@ nserror ami_mime_init(const char *mimefile)
 	struct nsObject *node;
 	struct ami_mime_entry *mimeentry;
 
+	LOG(("mimetypes file: %s", mimefile));
+
 	if(ami_mime_list == NULL)
 		ami_mime_list = NewObjList();
 
