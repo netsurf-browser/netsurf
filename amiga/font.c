@@ -891,6 +891,11 @@ void ami_font_setdevicedpi(int id)
 	ULONG ydpi = nsoption_int(screen_ydpi);
 	ULONG xdpi = nsoption_int(screen_ydpi);
 
+	if(nsoption_bool(use_diskfont) == true) {
+		LOG(("WARNING: Using diskfont.library for text. Forcing DPI to 72."));
+		nsoption_int(screen_ydpi) = 72;
+	}
+
 	browser_set_dpi(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))

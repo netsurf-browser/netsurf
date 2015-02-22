@@ -44,7 +44,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 {
 	struct TextFont *bmfont = NULL;
 	struct TextAttr tattr;
-	char *fontname, font;
+	char *fontname, *font;
 
 	if(rp == NULL) return NULL;
 
@@ -84,7 +84,7 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	if(font = ASPrintf("%s.font", fontname)) {
 		tattr.ta_Name = font;
 		tattr.ta_YSize = fstyle->size / FONT_SIZE_SCALE;
-
+LOG(("font: %s/%d", tattr.ta_Name, tattr.ta_YSize));
 		if(bmfont = OpenDiskFont(&tattr)) {
 			SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
 		}
@@ -103,7 +103,14 @@ bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
+	*width = length;
+
+	if((glob == NULL) || (glob->rp == NULL)) return false;
+
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
+
+	if(bmfont == NULL) return false;
+
 // convert to local charset
 	*width = TextLength(glob->rp, string, length);
 	ami_font_bm_close(bmfont);
@@ -130,7 +137,11 @@ bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	struct TextFont *bmfont;
 
+	if((glob == NULL) || (glob->rp == NULL)) return false;
+
 	bmfont = ami_font_bm_open(glob->rp, fstyle);
+
+	if(bmfont == NULL) return false;
 
 	// convert to local charset
 	*char_offset = TextFit(glob->rp, string, length,
@@ -174,7 +185,12 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	ULONG co;
 	char *charp;
+
+	if((glob == NULL) || (glob->rp == NULL)) return false;
+
 	struct TextFont *bmfont = ami_font_bm_open(glob->rp, fstyle);
+
+	if(bmfont == NULL) return false;
 
 	co = TextFit(glob->rp, string, length,
 				&extent, NULL, 1, x, 32767);
