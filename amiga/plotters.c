@@ -264,9 +264,10 @@ static void ami_plot_setopen(struct RastPort *rp, ULONG colr)
 
 void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 {
-	ami_plot_setapen(rp, 0xffffffff);
-	RectFill(rp, bbox->Left, bbox->Top,
-		bbox->Width+bbox->Left, bbox->Height+bbox->Top);
+	if((bbox == NULL) || (rp == NULL)) return;
+
+	EraseRect(rp, bbox->Left, bbox->Top,
+		bbox->Width + bbox->Left, bbox->Height + bbox->Top);
 }
 
 

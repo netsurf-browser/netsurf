@@ -580,12 +580,12 @@ static nserror ami_set_options(struct nsoption_s *defaults)
 	nsoption_setnull_charp(url_file,
 			       (char *)strdup(temp));
 
-	nsoption_setnull_charp(ca_bundle,
-			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
-
 	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
 	nsoption_setnull_charp(font_unicode_file,
 			       (char *)strdup(temp));
+
+	nsoption_setnull_charp(ca_bundle,
+			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
 	/* font defaults */
 #ifdef __amigaos4__
@@ -1800,7 +1800,6 @@ static void ami_handle_msg(void)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
 		gwin = node->objstruct;
-		LOG(("Type %d", node->Type));
 
 		if(node->Type == AMINS_TVWINDOW) {
 			if(ami_tree_event((struct treeview_window *)gwin)) {
@@ -1863,11 +1862,7 @@ static void ami_handle_msg(void)
 
 		if((gwin == NULL) || (gwin->objects[OID_MAIN] == NULL)) continue;
 
-		LOG(("RA_HandleInput(%p,%p) (gwin=%p)", gwin->objects[OID_MAIN], &code, gwin));
-
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN], &code)) != WMHI_LASTMSG) {
-			LOG(("%d: %d (switch)",code, result & WMHI_CLASSMASK));
-
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
@@ -4036,27 +4031,32 @@ gui_window_create(struct browser_window *bw,
 
 		g->shared->objects[GID_STATUS] = NewObject(
 				NULL,
-				"frbuttonclass",
+				"frbuttonclass", /**\todo find appropriate class which works on OS3 */
 				GA_ID, GID_STATUS,
 				GA_Left, scrn->WBorLeft + 2,
 				GA_RelBottom, -((2 + height + scrn->WBorBottom - scrn->RastPort.TxHeight)/2),
 				GA_Width, width,
+				GA_Height, 1 + height - scrn->WBorBottom,
 				GA_DrawInfo, dri,
 				GA_BottomBorder, TRUE,
 				GA_ReadOnly, TRUE,
-#ifdef __amigaos4__
+				GA_Disabled, TRUE,
 				GA_Image, (struct Image *)NewObject(
 					NULL,
+#ifdef __amigaos4__
 					"gaugeiclass",
+					GAUGEIA_Level, 0,
+#else
+					"frameiclass",
+					IA_Recessed, TRUE,
+#endif
 					IA_Top, 2 - (scrn->RastPort.TxHeight),
 					IA_Left, -4,
-					IA_Height, 4 + scrn->RastPort.TxHeight, 
-					IA_InBorder, TRUE,
+					IA_Height, 1 + height - scrn->WBorBottom, 
 					IA_Label, NULL,
+					IA_InBorder, TRUE,
 					IA_Screen, scrn,
-					GAUGEIA_Level, 0,
 					TAG_DONE),
-#endif
 				TAG_DONE);
 
 		AddGList(g->shared->win, (struct Gadget *)g->shared->objects[GID_STATUS],
@@ -5258,7 +5258,7 @@ Object *ami_gui_splash_open(void)
 	tattr.ta_Name = "DejaVu Serif Italic.font";
 #else
 	SetAPen(win->RPort, 3); /* Pen 3 is usually blue */
-	tattr.ta_Name = "CGTriumvirate.font";
+	tattr.ta_Name = "ruby.font";
 #endif
 	tattr.ta_YSize = 24;
 	tattr.ta_Style = 0;
@@ -5283,7 +5283,7 @@ Object *ami_gui_splash_open(void)
 #ifdef __amigaos4__
 	tattr.ta_Name = "DejaVu Sans.font";
 #else
-	tattr.ta_Name = "CGTriumvirate.font";
+	tattr.ta_Name = "helvetica.font";
 #endif
 	tattr.ta_YSize = 16;
 	tattr.ta_Style = 0;
