@@ -197,7 +197,6 @@ static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
 const char * const versvn;
 const char * const verdate;
 
-void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
@@ -2447,15 +2446,10 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_NEWSIZE:
-					switch(node->Type)
-					{
-						case AMINS_WINDOW:
-							ami_set_border_gadget_size(gwin);
-							ami_throbber_redraw_schedule(0, gwin->gw);
-							ami_schedule(0, ami_gui_refresh_favicon, gwin);
-							browser_window_schedule_reformat(gwin->gw->bw);
-						break;
-					}
+					ami_set_border_gadget_size(gwin);
+					ami_throbber_redraw_schedule(0, gwin->gw);
+					ami_schedule(0, ami_gui_refresh_favicon, gwin);
+					browser_window_schedule_reformat(gwin->gw->bw);
 				break;
 
 				case WMHI_CLOSEWINDOW:
@@ -3463,6 +3457,268 @@ nserror ami_gui_new_blank_tab(struct gui_window_2 *gwin)
 	return NSERROR_OK;
 }
 
+static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
+	int left, int top, int width, int height,
+	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
+{
+	int x, y;
+	struct rect clip;
+	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->scale);
+	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->scale);
+				
+	browserglob.shared_pens = &gwin->shared_pens;
+	
+	if(top < 0) {
+		height += top;
+		top = 0;
+	}
+
+	if(left < 0) {
+		width += left;
+		left = 0;
+	}
+
+	if(top < sy) {
+		height += (top - sy);
+		top = sy;
+	}
+	if(left < sx) {
+		width += (left - sx);
+		left = sx;
+	}
+
+	if(((top - sy) + height) > bbox->Height)
+		height = bbox->Height - (top - sy);
+
+	if(((left - sx) + width) > bbox->Width)
+		width = bbox->Width - (left - sx);
+
+	if(width <= 0) return;
+	if(height <= 0) return;
+
+	if(busy) ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+
+	for(y = top; y < (top + height); y += tile_y_scale) {
+		clip.y0 = 0;
+		clip.y1 = nsoption_int(redraw_tile_size_y);
+		if(clip.y1 > height) clip.y1 = height;
+		if((((y - sy) * gwin->gw->scale) + clip.y1) > bbox->Height)
+			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->scale);
+
+		for(x = left; x < (left + width); x += tile_x_scale) {
+			clip.x0 = 0;
+			clip.x1 = nsoption_int(redraw_tile_size_x);
+			if(clip.x1 > width) clip.x1 = width;
+			if((((x - sx) * gwin->gw->scale) + clip.x1) > bbox->Width)
+				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->scale);
+
+			if(browser_window_redraw(gwin->gw->bw,
+				clip.x0 - (int)x,
+				clip.y0 - (int)y,
+				&clip, ctx))
+			{
+				ami_clearclipreg(&browserglob);
+#ifdef __amigaos4__
+				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, browserglob.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, gwin->win->RPort,
+					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->scale),
+					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					BLITA_Width, (int)(clip.x1),
+					BLITA_Height, (int)(clip.y1),
+					TAG_DONE);
+#else
+				BltBitMapRastPort(browserglob.bm, 0, 0, gwin->win->RPort,
+					bbox->Left + (int)((x - sx) * gwin->gw->scale),
+					bbox->Top + (int)((y - sy) * gwin->gw->scale),
+					(int)(clip.x1), (int)(clip.y1), 0xC0);
+#endif
+			}
+		}
+	}
+	
+	if(busy) ami_reset_pointer(gwin);
+}
+
+
+/**
+ * Redraw an area of the browser window - Amiga-specific function
+ *
+ * \param  g   a struct gui_window 
+ * \param  bw  a struct browser_window
+ * \param  busy  busy flag passed to tiled redraw.
+ * \param  x0  top-left co-ordinate (in document co-ordinates)
+ * \param  y0  top-left co-ordinate (in document co-ordinates)
+ * \param  x1  bottom-right co-ordinate (in document co-ordinates)
+ * \param  y1  bottom-right co-ordinate (in document co-ordinates)
+ */
+
+static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
+		int x0, int y0, int x1, int y1)
+{
+	struct IBox *bbox;
+	ULONG sx, sy;
+
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(!g) return;
+	if(browser_window_redraw_ready(bw) == false) return;
+
+	sx = g->scrollx;
+	sy = g->scrolly;
+
+	if(g != g->shared->gw) return;
+
+	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
+
+	ami_do_redraw_tiled(g->shared, busy, x0, y0,
+		(x1 - x0) * g->scale, (y1 - y0) * g->scale, sx, sy, bbox, &ctx);
+
+	ami_gui_free_space_box(bbox);
+
+	return;
+}
+
+static void ami_refresh_window(struct gui_window_2 *gwin)
+{
+	/* simplerefresh only */
+
+	struct IBox *bbox;
+	int x0, x1, y0, y1, sx, sy;
+	struct RegionRectangle *regrect;
+
+	sx = gwin->gw->scrollx;
+	sy = gwin->gw->scrolly;
+
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+
+	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
+		warn_user("NoMemory", "");
+		return;
+	}
+	
+	BeginRefresh(gwin->win);
+
+	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
+			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
+	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
+			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
+	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
+			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
+	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
+			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
+
+	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
+
+	ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
+
+	while(regrect)
+	{
+		x0 = ((regrect->bounds.MinX - bbox->Left) /
+			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
+		x1 = ((regrect->bounds.MaxX - bbox->Left) /
+			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
+		y0 = ((regrect->bounds.MinY - bbox->Top) /
+			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
+		y1 = ((regrect->bounds.MaxY - bbox->Top) /
+			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
+
+		regrect = regrect->Next;
+
+		ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
+	}
+
+	EndRefresh(gwin->win, TRUE);
+
+	ami_gui_free_space_box(bbox);	
+	ami_reset_pointer(gwin);
+}
+
+#ifdef __amigaos4__
+static void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg)
+#else
+static ASM void ami_scroller_hook(REG(a0, struct Hook *hook),REG(a2, Object *object), REG(a1, struct IntuiMessage *msg))
+#endif
+{
+	ULONG gid;
+	struct gui_window_2 *gwin = hook->h_Data;
+	struct IntuiWheelData *wheel;
+	struct Node *node = NULL;
+	nsurl *url;
+
+	switch(msg->Class)
+	{
+		case IDCMP_IDCMPUPDATE:
+			gid = GetTagData( GA_ID, 0, msg->IAddress );
+
+			switch( gid ) 
+			{
+				case GID_HSCROLL:
+ 				case GID_VSCROLL:
+					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
+						else gwin->redraw_scroll = false;
+
+					ami_schedule_redraw(gwin, true);
+ 				break;
+				
+				case GID_HOTLIST:
+					if((node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress))) {
+						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
+
+						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
+							browser_window_create(BW_CREATE_TAB,
+										      url,
+										      NULL,
+										      gwin->gw->bw,
+										      NULL);
+						} else {
+							browser_window_navigate(gwin->gw->bw,
+									url,
+									NULL,
+									BW_NAVIGATE_HISTORY,
+									NULL,
+									NULL,
+									NULL);
+
+						}
+					}
+				break;
+			} 
+		break;
+#ifdef __amigaos4__
+		case IDCMP_EXTENDEDMOUSE:
+			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
+			{
+				wheel = (struct IntuiWheelData *)msg->IAddress;
+
+				ami_gui_scroll_internal(gwin, wheel->WheelX * 50, wheel->WheelY * 50);
+			}
+		break;
+#endif
+		case IDCMP_SIZEVERIFY:
+		break;
+
+		case IDCMP_REFRESHWINDOW:
+			ami_refresh_window(gwin);
+		break;
+
+		default:
+			LOG(("IDCMP hook unhandled event: %d\n", msg->Class));
+		break;
+	}
+//	ReplyMsg((struct Message *)msg);
+} 
+
 static struct gui_window *
 gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
@@ -3482,6 +3738,7 @@ gui_window_create(struct browser_window *bw,
 	char fave[100], unfave[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
+	ULONG defer_layout = TRUE;
 	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
 
 	if (!scrn) ami_openscreenfirst();
@@ -3602,8 +3859,11 @@ gui_window_create(struct browser_window *bw,
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
+		defer_layout = FALSE; /* testing reveals this does work with SimpleRefresh,
+								but the docs say it doesn't so err on the side of caution. */
 	} else {
 		refresh_mode = WA_SmartRefresh;
+		defer_layout = TRUE;
 	}
 
 	if(!nsoption_bool(kiosk_mode))
@@ -3781,6 +4041,7 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_GadgetHelp, TRUE,
 			WINDOW_UserData, g->shared,
   			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_DeferLayout, defer_layout,
 				LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_TOOLBARLAYOUT] = LayoutHObj,
 					LAYOUT_VertAlignment, LALIGN_CENTER,
@@ -3994,6 +4255,7 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_UserData,g->shared,
 			WINDOW_BuiltInScroll,TRUE,
 			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = LayoutHObj,
+			LAYOUT_DeferLayout, defer_layout,
 			LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = LayoutHObj,
 					LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = LayoutVObj,
@@ -4330,138 +4592,6 @@ static void ami_schedule_redraw_remove(struct gui_window_2 *gwin)
 	ami_schedule(-1, ami_redraw_callback, gwin);
 }
 
-static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
-	int left, int top, int width, int height,
-	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
-{
-	int x, y;
-	struct rect clip;
-	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->scale);
-	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->scale);
-				
-	browserglob.shared_pens = &gwin->shared_pens;
-	
-	if(top < 0) {
-		height += top;
-		top = 0;
-	}
-
-	if(left < 0) {
-		width += left;
-		left = 0;
-	}
-
-	if(top < sy) {
-		height += (top - sy);
-		top = sy;
-	}
-	if(left < sx) {
-		width += (left - sx);
-		left = sx;
-	}
-
-	if(((top - sy) + height) > bbox->Height)
-		height = bbox->Height - (top - sy);
-
-	if(((left - sx) + width) > bbox->Width)
-		width = bbox->Width - (left - sx);
-
-	if(width <= 0) return;
-	if(height <= 0) return;
-
-	if(busy) ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-
-	for(y = top; y < (top + height); y += tile_y_scale) {
-		clip.y0 = 0;
-		clip.y1 = nsoption_int(redraw_tile_size_y);
-		if(clip.y1 > height) clip.y1 = height;
-		if((((y - sy) * gwin->gw->scale) + clip.y1) > bbox->Height)
-			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->scale);
-
-		for(x = left; x < (left + width); x += tile_x_scale) {
-			clip.x0 = 0;
-			clip.x1 = nsoption_int(redraw_tile_size_x);
-			if(clip.x1 > width) clip.x1 = width;
-			if((((x - sx) * gwin->gw->scale) + clip.x1) > bbox->Width)
-				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->scale);
-
-			if(browser_window_redraw(gwin->gw->bw,
-				clip.x0 - (int)x,
-				clip.y0 - (int)y,
-				&clip, ctx))
-			{
-				ami_clearclipreg(&browserglob);
-#ifdef __amigaos4__
-				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-					BLITA_Source, browserglob.bm,
-					BLITA_SrcX, 0,
-					BLITA_SrcY, 0,
-					BLITA_DestType, BLITT_RASTPORT, 
-					BLITA_Dest, gwin->win->RPort,
-					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->gw->scale),
-					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->gw->scale),
-					BLITA_Width, (int)(clip.x1),
-					BLITA_Height, (int)(clip.y1),
-					TAG_DONE);
-#else
-				BltBitMapRastPort(browserglob.bm, 0, 0, gwin->win->RPort,
-					bbox->Left + (int)((x - sx) * gwin->gw->scale),
-					bbox->Top + (int)((y - sy) * gwin->gw->scale),
-					(int)(clip.x1), (int)(clip.y1), 0xC0);
-#endif
-			}
-		}
-	}
-	
-	if(busy) ami_reset_pointer(gwin);
-}
-
-
-/**
- * Redraw an area of the browser window - Amiga-specific function
- *
- * \param  g   a struct gui_window 
- * \param  bw  a struct browser_window
- * \param  busy  busy flag passed to tiled redraw.
- * \param  x0  top-left co-ordinate (in document co-ordinates)
- * \param  y0  top-left co-ordinate (in document co-ordinates)
- * \param  x1  bottom-right co-ordinate (in document co-ordinates)
- * \param  y1  bottom-right co-ordinate (in document co-ordinates)
- */
-
-static void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw, bool busy,
-		int x0, int y0, int x1, int y1)
-{
-	struct IBox *bbox;
-	ULONG sx, sy;
-
-	struct redraw_context ctx = {
-		.interactive = true,
-		.background_images = true,
-		.plot = &amiplot
-	};
-
-	if(!g) return;
-	if(browser_window_redraw_ready(bw) == false) return;
-
-	sx = g->scrollx;
-	sy = g->scrolly;
-
-	if(g != g->shared->gw) return;
-
-	if(ami_gui_get_space_box((Object *)g->shared->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
-		return;
-	}
-
-	ami_do_redraw_tiled(g->shared, busy, x0, y0,
-		(x1 - x0) * g->scale, (y1 - y0) * g->scale, sx, sy, bbox, &ctx);
-
-	ami_gui_free_space_box(bbox);
-
-	return;
-}
-
 static void gui_window_redraw_window(struct gui_window *g)
 {
 	if(!g) return;
@@ -4691,61 +4821,6 @@ static void ami_do_redraw(struct gui_window_2 *gwin)
 	gwin->new_content = false;
 
 	ami_gui_free_space_box(bbox);
-}
-
-static void ami_refresh_window(struct gui_window_2 *gwin)
-{
-	/* simplerefresh only */
-
-	struct IBox *bbox;
-	int x0, x1, y0, y1, sx, sy;
-	struct RegionRectangle *regrect;
-
-	sx = gwin->gw->scrollx;
-	sy = gwin->gw->scrolly;
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-
-	if(ami_gui_get_space_box((Object *)gwin->objects[GID_BROWSER], &bbox) != NSERROR_OK) {
-		warn_user("NoMemory", "");
-		return;
-	}
-	
-	BeginRefresh(gwin->win);
-
-	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
-
-	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
-
-	ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
-
-	while(regrect)
-	{
-		x0 = ((regrect->bounds.MinX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx - 1;
-		x1 = ((regrect->bounds.MaxX - bbox->Left) /
-			browser_window_get_scale(gwin->gw->bw)) + sx + 2;
-		y0 = ((regrect->bounds.MinY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy - 1;
-		y1 = ((regrect->bounds.MaxY - bbox->Top) /
-			browser_window_get_scale(gwin->gw->bw)) + sy + 2;
-
-		regrect = regrect->Next;
-
-		ami_do_redraw_limits(gwin->gw, gwin->gw->bw, false, x0, y0, x1, y1);
-	}
-
-	EndRefresh(gwin->win, TRUE);
-
-	ami_gui_free_space_box(bbox);	
-	ami_reset_pointer(gwin);
 }
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
@@ -5099,77 +5174,6 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 #endif
 	return true;
 }
-
-void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
-{
-	ULONG gid;
-	struct gui_window_2 *gwin = hook->h_Data;
-	struct IntuiWheelData *wheel;
-	struct Node *node = NULL;
-	nsurl *url;
-
-	switch(msg->Class)
-	{
-		case IDCMP_IDCMPUPDATE:
-			gid = GetTagData( GA_ID, 0, msg->IAddress );
-
-			switch( gid ) 
-			{
-				case GID_HSCROLL:
- 				case GID_VSCROLL:
-					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
-						else gwin->redraw_scroll = false;
-
-					ami_schedule_redraw(gwin, true);
- 				break;
-				
-				case GID_HOTLIST:
-					if((node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress))) {
-						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
-
-						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
-							browser_window_create(BW_CREATE_TAB,
-										      url,
-										      NULL,
-										      gwin->gw->bw,
-										      NULL);
-						} else {
-							browser_window_navigate(gwin->gw->bw,
-									url,
-									NULL,
-									BW_NAVIGATE_HISTORY,
-									NULL,
-									NULL,
-									NULL);
-
-						}
-					}
-				break;
-			} 
-		break;
-#ifdef __amigaos4__
-		case IDCMP_EXTENDEDMOUSE:
-			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
-			{
-				wheel = (struct IntuiWheelData *)msg->IAddress;
-
-				ami_gui_scroll_internal(gwin, wheel->WheelX * 50, wheel->WheelY * 50);
-			}
-		break;
-#endif
-		case IDCMP_SIZEVERIFY:
-		break;
-
-		case IDCMP_REFRESHWINDOW:
-			ami_refresh_window(gwin);
-		break;
-
-		default:
-			LOG(("IDCMP hook unhandled event: %d\n", msg->Class));
-		break;
-	}
-//	ReplyMsg((struct Message *)msg);
-} 
 
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
