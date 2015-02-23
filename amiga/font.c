@@ -734,7 +734,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
 
-	if(nsoption_bool(use_diskfont) == true) {
+	if(__builtin_expect(nsoption_bool(use_diskfont) == true, 0)) {
 		return ami_font_bm_text(rp, string, length, fstyle, dx, dy);
 	}
 
