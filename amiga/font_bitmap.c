@@ -81,11 +81,11 @@ static struct TextFont *ami_font_bm_open(struct RastPort *rp, const plot_font_st
 	if (fstyle->weight >= 700)
 		tattr.ta_Style |= FSF_BOLD;
 
-	if(font = ASPrintf("%s.font", fontname)) {
+	if((font = ASPrintf("%s.font", fontname))) {
 		tattr.ta_Name = font;
 		tattr.ta_YSize = fstyle->size / FONT_SIZE_SCALE;
-LOG(("font: %s/%d", tattr.ta_Name, tattr.ta_YSize));
-		if(bmfont = OpenDiskFont(&tattr)) {
+		LOG(("font: %s/%d", tattr.ta_Name, tattr.ta_YSize));
+		if((bmfont = OpenDiskFont(&tattr))) {
 			SetRPAttrs(rp, RPTAG_Font, bmfont, TAG_DONE);
 		}
 		FreeVec(font);
