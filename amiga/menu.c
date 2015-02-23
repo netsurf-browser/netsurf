@@ -786,7 +786,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
  * The below functions are called automatically by window.class when menu items are selected.
  */
 
-static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
 {
 	nsurl *url;
 	nserror error;
@@ -805,7 +805,7 @@ static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct 
 	}
 }
 
-static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_newtab, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	nserror error;
@@ -814,7 +814,7 @@ static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct 
 	error = ami_gui_new_blank_tab(gwin);
 }
 
-static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_open, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -822,7 +822,7 @@ static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct In
 	ami_file_open(gwin);
 }
 
-static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_save, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	ULONG type = (ULONG)hook->h_Data;
@@ -832,7 +832,7 @@ static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct In
 	ami_file_save_req(type, gwin, browser_window_get_content(gwin->gw->bw));
 }
 
-static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -840,7 +840,7 @@ static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struc
 	browser_window_destroy(gwin->gw->bw);
 }
 
-static void ami_menu_item_project_closewin(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -848,7 +848,7 @@ static void ami_menu_item_project_closewin(struct Hook *hook, APTR window, struc
 	ami_menu_window_close = gwin;
 }
 
-static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -858,7 +858,7 @@ static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct I
 	ami_reset_pointer(gwin);
 }
 
-static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	char *temp, *temp2;
@@ -916,12 +916,12 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 	ami_reset_pointer(gwin);
 }
 
-static void ami_menu_item_project_quit(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_project_quit, APTR, window, struct IntuiMessage *)
 {
 	ami_menu_window_close = AMI_MENU_WINDOW_CLOSE_ALL;
 }
 
-static void ami_menu_item_edit_cut(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -929,7 +929,7 @@ static void ami_menu_item_edit_cut(struct Hook *hook, APTR window, struct IntuiM
 	browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
 }
 
-static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
 {
 	struct bitmap *bm;
 	struct gui_window_2 *gwin;
@@ -955,7 +955,7 @@ static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct Intui
 #endif
 }
 
-static void ami_menu_item_edit_paste(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -963,7 +963,7 @@ static void ami_menu_item_edit_paste(struct Hook *hook, APTR window, struct Intu
 	browser_window_key_press(gwin->gw->bw, KEY_PASTE);
 }
 
-static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -972,7 +972,7 @@ static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct 
 	gui_start_selection(gwin->gw);
 }
 
-static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -980,7 +980,7 @@ static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct I
 	browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
 }
 
-static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -988,7 +988,7 @@ static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct Intui
 	browser_window_key_press(gwin->gw->bw, KEY_UNDO);
 }
 
-static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -996,7 +996,7 @@ static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct Intui
 	browser_window_key_press(gwin->gw->bw, KEY_REDO);
 }
 
-static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1004,7 +1004,7 @@ static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct In
 	ami_search_open(gwin->gw);
 }
 
-static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1012,17 +1012,17 @@ static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, s
 	ami_history_open(gwin->gw);
 }
 
-static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
 {
 	ami_tree_open(global_history_window,AMI_TREE_HISTORY);
 }
 
-static void ami_menu_item_browser_cookies(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)
 {
 	ami_tree_open(cookies_window,AMI_TREE_COOKIES);
 }
 
-static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
 {
 	struct Menu *menustrip;
 	bool checked = false;
@@ -1034,7 +1034,7 @@ static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct
 	ami_menu_check_toggled = true;
 }
 
-static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
 {
 	struct Menu *menustrip;
 	bool checked = false;
@@ -1046,7 +1046,7 @@ static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct
 	ami_menu_check_toggled = true;
 }
 
-static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
 {
 	struct Menu *menustrip;
 	bool checked = false;
@@ -1058,7 +1058,7 @@ static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struc
 	ami_menu_check_toggled = true;
 }
 
-static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1067,7 +1067,7 @@ static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window,
 		ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
 }
 
-static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1075,7 +1075,7 @@ static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, s
 	ami_gui_set_scale(gwin->gw, 1.0);
 }
 
-static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1083,7 +1083,7 @@ static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window,
 	ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
 }
 
-static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1092,7 +1092,7 @@ static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct 
 	gwin->new_content = true;
 }
 
-static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
 {
 	struct browser_window *bw;
 	struct gui_window_2 *gwin;
@@ -1107,12 +1107,12 @@ static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct Int
 	ami_gui_update_hotlist_button(gwin);
 }
 
-static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_hotlist_show, APTR, window, struct IntuiMessage *)
 {
 	ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 }
 
-static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
 {
 	nsurl *url = hook->h_Data;
 	struct gui_window_2 *gwin;
@@ -1129,12 +1129,12 @@ static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct
 					NULL);
 }
 
-static void ami_menu_item_settings_edit(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_settings_edit, APTR, window, struct IntuiMessage *)
 {
 	ami_gui_opts_open();
 }
 
-static void ami_menu_item_settings_snapshot(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *)
 {
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
@@ -1145,12 +1145,12 @@ static void ami_menu_item_settings_snapshot(struct Hook *hook, APTR window, stru
 	nsoption_set_int(window_height, gwin->win->Height);
 }
 
-static void ami_menu_item_settings_save(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
 {
 	nsoption_write(current_user_options, NULL, NULL);
 }
 
-static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
 {
 	char *temp;
 	struct gui_window_2 *gwin;
@@ -1174,7 +1174,7 @@ static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct I
 	}
 }
 
-static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
 {
 	char *script = hook->h_Data;
 	char *temp;
