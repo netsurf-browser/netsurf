@@ -152,16 +152,16 @@ lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
-int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
-int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth);
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
 
-static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
@@ -184,7 +184,7 @@ static bool amiga_nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -271,7 +271,7 @@ static bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-static bool amiga_nsfont_split(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -410,7 +410,7 @@ static struct ami_font_node *ami_font_open(const char *font)
  * \param codepoint open a default font instead of the one specified by fstyle
  * \return outline font or NULL on error
  */
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint)
 {
 	struct ami_font_node *node;
@@ -549,7 +549,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 	return NULL;
 }
 
-int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
@@ -640,7 +640,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	return char_advance;
 }
 
-int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
@@ -947,7 +947,7 @@ static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	if(nsoption_bool(use_diskfont) == false) {
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
 		return amiga_nsfont_width(fstyle, string, length, width);
 	} else {
 		return amiga_bm_nsfont_width(fstyle, string, length, width);
@@ -958,7 +958,7 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	if(nsoption_bool(use_diskfont) == false) {
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
 		return amiga_nsfont_position_in_string(fstyle, string, length, x,
 				char_offset, actual_x);
 	} else {
@@ -971,7 +971,7 @@ static bool nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	if(nsoption_bool(use_diskfont) == false) {
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
 		return amiga_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
 	} else {
 		return amiga_bm_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
