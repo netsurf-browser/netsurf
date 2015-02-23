@@ -197,7 +197,7 @@ static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
 const char * const versvn;
 const char * const verdate;
 
-void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
+static void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
@@ -5101,7 +5101,7 @@ static bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 	return true;
 }
 
-void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+static void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid;
 	struct gui_window_2 *gwin = hook->h_Data;
