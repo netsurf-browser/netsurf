@@ -2447,15 +2447,10 @@ static void ami_handle_msg(void)
 				break;
 
 				case WMHI_NEWSIZE:
-					switch(node->Type)
-					{
-						case AMINS_WINDOW:
-							ami_set_border_gadget_size(gwin);
-							ami_throbber_redraw_schedule(0, gwin->gw);
-							ami_schedule(0, ami_gui_refresh_favicon, gwin);
-							browser_window_schedule_reformat(gwin->gw->bw);
-						break;
-					}
+					ami_set_border_gadget_size(gwin);
+					ami_throbber_redraw_schedule(0, gwin->gw);
+					ami_schedule(0, ami_gui_refresh_favicon, gwin);
+					browser_window_schedule_reformat(gwin->gw->bw);
 				break;
 
 				case WMHI_CLOSEWINDOW:
@@ -3482,6 +3477,7 @@ gui_window_create(struct browser_window *bw,
 	char fave[100], unfave[100];
 	char tabthrobber[100];
 	ULONG refresh_mode = WA_SmartRefresh;
+	ULONG defer_layout = TRUE;
 	ULONG idcmp_sizeverify = IDCMP_SIZEVERIFY;
 
 	if (!scrn) ami_openscreenfirst();
@@ -3602,8 +3598,11 @@ gui_window_create(struct browser_window *bw,
 
 	if(nsoption_bool(window_simple_refresh) == true) {
 		refresh_mode = WA_SimpleRefresh;
+		defer_layout = FALSE; /* testing reveals this does work with SimpleRefresh,
+								but the docs say it doesn't so err on the side of caution. */
 	} else {
 		refresh_mode = WA_SmartRefresh;
+		defer_layout = TRUE;
 	}
 
 	if(!nsoption_bool(kiosk_mode))
@@ -3781,6 +3780,7 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_GadgetHelp, TRUE,
 			WINDOW_UserData, g->shared,
   			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = LayoutVObj,
+				LAYOUT_DeferLayout, defer_layout,
 				LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_TOOLBARLAYOUT] = LayoutHObj,
 					LAYOUT_VertAlignment, LALIGN_CENTER,
@@ -3994,6 +3994,7 @@ gui_window_create(struct browser_window *bw,
 			WINDOW_UserData,g->shared,
 			WINDOW_BuiltInScroll,TRUE,
 			WINDOW_ParentGroup, g->shared->objects[GID_MAIN] = LayoutHObj,
+			LAYOUT_DeferLayout, defer_layout,
 			LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, g->shared->objects[GID_VSCROLLLAYOUT] = LayoutHObj,
 					LAYOUT_AddChild, g->shared->objects[GID_HSCROLLLAYOUT] = LayoutVObj,
