@@ -78,8 +78,6 @@ static void monkey_quit(void)
 {
   urldb_save_cookies(nsoption_charp(cookie_jar));
   urldb_save(nsoption_charp(url_file));
-  free(nsoption_charp(cookie_file));
-  free(nsoption_charp(cookie_jar));
   monkey_fetch_filetype_fin();
 }
 
