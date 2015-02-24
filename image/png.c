@@ -431,10 +431,10 @@ png_cache_convert(struct content *c)
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_infop end_info_ptr;
-	volatile struct bitmap *bitmap = NULL;
+	volatile struct bitmap * volatile bitmap = NULL;
 	struct png_cache_read_data_s png_cache_read_data;
 	png_uint_32 width, height;
-	volatile png_bytep *row_pointers = NULL;
+	volatile png_bytep * volatile row_pointers = NULL;
 
 	png_cache_read_data.data = 
 		content__get_source_data(c, &png_cache_read_data.size);
