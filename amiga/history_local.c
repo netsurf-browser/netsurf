@@ -57,7 +57,7 @@
 #include "amiga/history_local.h"
 
 void ami_history_update_extent(struct history_window *hw);
-static void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg);
+HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *);
 
 /**
  * Redraw history window.
@@ -323,7 +323,7 @@ void ami_history_update_extent(struct history_window *hw)
 	ami_gui_free_space_box(bbox);
 }
 
-void ami_history_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+HOOKF(void, ami_history_scroller_hook, Object *, object, struct IntuiMessage *)
 {
 	ULONG gid;
 	struct history_window *hw = hook->h_Data;

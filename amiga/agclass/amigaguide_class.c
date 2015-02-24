@@ -7,7 +7,11 @@
 #include "amiga/os3support.h"
 #include "amigaguide_class.h"
 
-
+#ifdef __amigaos4__
+#define DISPATCHHOOK(func) static uint32 func(Class *cl, Object *o, Msg msg)
+#else
+#define DISPATCHHOOK(func) static ASM uint32 func(REG(a0, Class *cl),REG(a2, Object *o), REG(a1, Msg msg))
+#endif
 
 struct localObjectData
 {
@@ -24,7 +28,8 @@ struct AmigaGuideIFace *IAmigaGuide = NULL;
 
 /* **********************************  function prototypes   ************************************ */
 
-static uint32 dispatchAGClass(Class *, Object *, Msg);
+DISPATCHHOOK(dispatchAGClass);
+
 
 // class methods
 uint32 om_new(Class *, Object *, struct opSet *);
@@ -89,7 +94,7 @@ BOOL freeAGClass(Class *cl)
 /* **************************************  class dispatcher  ************************************ */
 
 
-static uint32 dispatchAGClass(Class *cl, Object *o, Msg msg)
+DISPATCHHOOK(dispatchAGClass)
 {
 
  switch (msg->MethodID)
