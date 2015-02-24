@@ -96,43 +96,421 @@ bool menu_glyphs_loaded = false;
 static nserror ami_menu_scan(struct tree *tree, struct gui_window_2 *gwin);
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
 
-/* Functions for menu selections */
-static void ami_menu_item_project_newwin(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_newtab(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_open(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_save(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_closetab(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_closewin(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_project_quit(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_cut(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_copy(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_paste(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_selectall(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_clearsel(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_undo(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_edit_redo(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_cookies(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_browser_redraw(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_hotlist_add(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_hotlist_show(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_hotlist_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_settings_edit(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_settings_snapshot(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_settings_save(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_arexx_execute(struct Hook *hook, APTR window, struct IntuiMessage *msg);
-static void ami_menu_item_arexx_entries(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+/*
+ * The below functions are called automatically by window.class when menu items are selected.
+ */
 
+HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
+{
+	nsurl *url;
+	nserror error;
+
+	error = nsurl_create(nsoption_charp(homepage_url), &url);
+	if (error == NSERROR_OK) {
+		error = browser_window_create(BW_CREATE_HISTORY,
+					      url,
+					      NULL,
+					      NULL,
+					      NULL);
+		nsurl_unref(url);
+	}
+	if (error != NSERROR_OK) {
+		warn_user(messages_get_errorcode(error), 0);
+	}
+}
+
+HOOKF(void, ami_menu_item_project_newtab, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	nserror error;
+
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+	error = ami_gui_new_blank_tab(gwin);
+}
+
+HOOKF(void, ami_menu_item_project_open, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_file_open(gwin);
+}
+
+HOOKF(void, ami_menu_item_project_save, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	ULONG type = (ULONG)hook->h_Data;
+
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_file_save_req(type, gwin, browser_window_get_content(gwin->gw->bw));
+}
+
+HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_destroy(gwin->gw->bw);
+}
+
+HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_menu_window_close = gwin;
+}
+
+HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+	ami_print_ui(browser_window_get_content(gwin->gw->bw));
+	ami_reset_pointer(gwin);
+}
+
+HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	char *temp, *temp2;
+	int sel;
+	nsurl *url = NULL;
+	nserror error = NSERROR_OK;
+
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
+
+	temp = ASPrintf("%s|%s|%s", messages_get("OK"),
+								messages_get("HelpCredits"),
+								messages_get("HelpLicence"));
+
+	temp2 = ami_utf8_easy(temp);
+	FreeVec(temp);
+#ifdef __amigaos4__
+	sel = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_INFO,
+				TDR_TitleString, messages_get("NetSurf"),
+				TDR_Window, gwin->win,
+				TDR_GadgetString, temp2,
+				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
+				TDR_Arg1,netsurf_version,
+				TDR_Arg2,verdate,
+				TAG_DONE);
+#else
+	/*\todo proper requester for OS3
+	 * at the moment menus are disabled so won't get here anyway */
+	printf("NetSurf %s\nBuild date %s\n", netsurf_version, verdate);
+	sel = 0;
+#endif
+	free(temp2);
+
+	if(sel == 2) {
+		error = nsurl_create("about:credits", &url);
+	} else if(sel == 0) {
+		error = nsurl_create("about:licence", &url);
+	}
+
+	if(url) {
+		if (error == NSERROR_OK) {
+			error = browser_window_create(BW_CREATE_HISTORY,
+							  url,
+							  NULL,
+							  NULL,
+							  NULL);
+			nsurl_unref(url);
+		}
+		if (error != NSERROR_OK) {
+			warn_user(messages_get_errorcode(error), 0);
+		}
+	}
+
+	ami_reset_pointer(gwin);
+}
+
+HOOKF(void, ami_menu_item_project_quit, APTR, window, struct IntuiMessage *)
+{
+	ami_menu_window_close = AMI_MENU_WINDOW_CLOSE_ALL;
+}
+
+HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
+}
+
+HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
+{
+	struct bitmap *bm;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	if(browser_window_can_select(gwin->gw->bw)) {
+		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
+		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+	}
+	else if((bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw)))) {
+		/** @todo It should be checked that the lifetime of
+		 * the objects containing the values returned (and the
+		 * constness cast away) is safe.
+		 */
+		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->gw->bw));
+		bm->title = (char *)browser_window_get_title(gwin->gw->bw);
+		ami_easy_clipboard_bitmap(bm);
+	}
+#ifdef WITH_NS_SVG
+	else if(ami_mime_compare(browser_window_get_content(gwin->gw->bw), "svg") == true) {
+		ami_easy_clipboard_svg(browser_window_get_content(gwin->gw->bw));
+	}
+#endif
+}
+
+HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_PASTE);
+}
+
+HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
+	gui_start_selection(gwin->gw);
+}
+
+HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+}
+
+HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_UNDO);
+}
+
+HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	browser_window_key_press(gwin->gw->bw, KEY_REDO);
+}
+
+HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_search_open(gwin->gw);
+}
+
+HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_history_open(gwin->gw);
+}
+
+HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
+{
+	ami_tree_open(global_history_window,AMI_TREE_HISTORY);
+}
+
+HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)
+{
+	ami_tree_open(cookies_window,AMI_TREE_COOKIES);
+}
+
+HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
+{
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(foreground_images, checked);
+	ami_menu_check_toggled = true;
+}
+
+HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
+{
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(background_images, checked);
+	ami_menu_check_toggled = true;
+}
+
+HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
+{
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(enable_javascript, checked);
+	ami_menu_check_toggled = true;
+}
+
+HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	if(gwin->gw->scale > 0.1)
+		ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
+}
+
+HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_gui_set_scale(gwin->gw, 1.0);
+}
+
+HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
+}
+
+HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	ami_schedule_redraw(gwin, true);
+	gwin->new_content = true;
+}
+
+HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
+{
+	struct browser_window *bw;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	bw = gwin->gw->bw;
+
+	if (bw == NULL || browser_window_has_content(bw) == false)
+		return;
+
+	hotlist_add_url(browser_window_get_url(bw));
+	ami_gui_update_hotlist_button(gwin);
+}
+
+HOOKF(void, ami_menu_item_hotlist_show, APTR, window, struct IntuiMessage *)
+{
+	ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
+}
+
+HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
+{
+	nsurl *url = hook->h_Data;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	if(url == NULL) return;
+
+	browser_window_navigate(gwin->gw->bw,
+					url,
+					NULL,
+					BW_NAVIGATE_HISTORY,
+					NULL,
+					NULL,
+					NULL);
+}
+
+HOOKF(void, ami_menu_item_settings_edit, APTR, window, struct IntuiMessage *)
+{
+	ami_gui_opts_open();
+}
+
+HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *)
+{
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	nsoption_set_int(window_x, gwin->win->LeftEdge);
+	nsoption_set_int(window_y, gwin->win->TopEdge);
+	nsoption_set_int(window_width, gwin->win->Width);
+	nsoption_set_int(window_height, gwin->win->Height);
+}
+
+HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
+{
+	nsoption_write(current_user_options, NULL, NULL);
+}
+
+HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
+{
+	char *temp;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	if(AslRequestTags(filereq,
+						ASLFR_Window, gwin->win,
+						ASLFR_SleepWindow, TRUE,
+						ASLFR_TitleText, messages_get("NetSurf"),
+						ASLFR_Screen, scrn,
+						ASLFR_DoSaveMode, FALSE,
+						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
+						ASLFR_InitialPattern, "#?.nsrx",
+						TAG_DONE)) {
+		if((temp = AllocVecTagList(1024, NULL))) {
+			strlcpy(temp, filereq->fr_Drawer, 1024);
+			AddPart(temp, filereq->fr_File, 1024);
+			ami_arexx_execute(temp);
+			FreeVec(temp);
+		}
+	}
+}
+
+HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
+{
+	char *script = hook->h_Data;
+	char *temp;
+	struct gui_window_2 *gwin;
+	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
+
+	if(script) {
+		if((temp = AllocVecTagList(1024, NULL))) {
+			BPTR lock;
+			if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
+				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
+				AddPart(temp, script, 1024);
+				ami_arexx_execute(temp);
+				FreeVec(temp);
+				UnLock(lock);
+			}
+		}
+	}
+}
+
+
+/* menu creation code */
 
 void ami_free_menulabs(struct gui_window_2 *gwin)
 {
@@ -778,419 +1156,6 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 		{
 			OffMenu(win,AMI_MENU_COPY);
 			OffMenu(win,AMI_MENU_SAVEAS_IFF);
-		}
-	}
-}
-
-/*
- * The below functions are called automatically by window.class when menu items are selected.
- */
-
-HOOKF(void, ami_menu_item_project_newwin, APTR, window, struct IntuiMessage *)
-{
-	nsurl *url;
-	nserror error;
-
-	error = nsurl_create(nsoption_charp(homepage_url), &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
-}
-
-HOOKF(void, ami_menu_item_project_newtab, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	nserror error;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-	error = ami_gui_new_blank_tab(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_open, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_file_open(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_save, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	ULONG type = (ULONG)hook->h_Data;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_file_save_req(type, gwin, browser_window_get_content(gwin->gw->bw));
-}
-
-HOOKF(void, ami_menu_item_project_closetab, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_destroy(gwin->gw->bw);
-}
-
-HOOKF(void, ami_menu_item_project_closewin, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_menu_window_close = gwin;
-}
-
-HOOKF(void, ami_menu_item_project_print, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-	ami_print_ui(browser_window_get_content(gwin->gw->bw));
-	ami_reset_pointer(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_about, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	char *temp, *temp2;
-	int sel;
-	nsurl *url = NULL;
-	nserror error = NSERROR_OK;
-
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_set_pointer(gwin, GUI_POINTER_WAIT, false);
-
-	temp = ASPrintf("%s|%s|%s", messages_get("OK"),
-								messages_get("HelpCredits"),
-								messages_get("HelpLicence"));
-
-	temp2 = ami_utf8_easy(temp);
-	FreeVec(temp);
-#ifdef __amigaos4__
-	sel = TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_INFO,
-				TDR_TitleString, messages_get("NetSurf"),
-				TDR_Window, gwin->win,
-				TDR_GadgetString, temp2,
-				TDR_FormatString,"NetSurf %s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
-				TDR_Arg1,netsurf_version,
-				TDR_Arg2,verdate,
-				TAG_DONE);
-#else
-	/*\todo proper requester for OS3
-	 * at the moment menus are disabled so won't get here anyway */
-	printf("NetSurf %s\nBuild date %s\n", netsurf_version, verdate);
-	sel = 0;
-#endif
-	free(temp2);
-
-	if(sel == 2) {
-		error = nsurl_create("about:credits", &url);
-	} else if(sel == 0) {
-		error = nsurl_create("about:licence", &url);
-	}
-
-	if(url) {
-		if (error == NSERROR_OK) {
-			error = browser_window_create(BW_CREATE_HISTORY,
-							  url,
-							  NULL,
-							  NULL,
-							  NULL);
-			nsurl_unref(url);
-		}
-		if (error != NSERROR_OK) {
-			warn_user(messages_get_errorcode(error), 0);
-		}
-	}
-
-	ami_reset_pointer(gwin);
-}
-
-HOOKF(void, ami_menu_item_project_quit, APTR, window, struct IntuiMessage *)
-{
-	ami_menu_window_close = AMI_MENU_WINDOW_CLOSE_ALL;
-}
-
-HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
-}
-
-HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
-{
-	struct bitmap *bm;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(browser_window_can_select(gwin->gw->bw)) {
-		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
-		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
-	}
-	else if((bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw)))) {
-		/** @todo It should be checked that the lifetime of
-		 * the objects containing the values returned (and the
-		 * constness cast away) is safe.
-		 */
-		bm->url = (char *)nsurl_access(browser_window_get_url(gwin->gw->bw));
-		bm->title = (char *)browser_window_get_title(gwin->gw->bw);
-		ami_easy_clipboard_bitmap(bm);
-	}
-#ifdef WITH_NS_SVG
-	else if(ami_mime_compare(browser_window_get_content(gwin->gw->bw), "svg") == true) {
-		ami_easy_clipboard_svg(browser_window_get_content(gwin->gw->bw));
-	}
-#endif
-}
-
-HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_PASTE);
-}
-
-HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
-	gui_start_selection(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
-}
-
-HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_UNDO);
-}
-
-HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	browser_window_key_press(gwin->gw->bw, KEY_REDO);
-}
-
-HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_search_open(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_browser_localhistory, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_history_open(gwin->gw);
-}
-
-HOOKF(void, ami_menu_item_browser_globalhistory, APTR, window, struct IntuiMessage *)
-{
-	ami_tree_open(global_history_window,AMI_TREE_HISTORY);
-}
-
-HOOKF(void, ami_menu_item_browser_cookies, APTR, window, struct IntuiMessage *)
-{
-	ami_tree_open(cookies_window,AMI_TREE_COOKIES);
-}
-
-HOOKF(void, ami_menu_item_browser_foreimg, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(foreground_images, checked);
-	ami_menu_check_toggled = true;
-}
-
-HOOKF(void, ami_menu_item_browser_backimg, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(background_images, checked);
-	ami_menu_check_toggled = true;
-}
-
-HOOKF(void, ami_menu_item_browser_enablejs, APTR, window, struct IntuiMessage *)
-{
-	struct Menu *menustrip;
-	bool checked = false;
-
-	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
-	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
-	
-	nsoption_set_bool(enable_javascript, checked);
-	ami_menu_check_toggled = true;
-}
-
-HOOKF(void, ami_menu_item_browser_scale_decrease, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(gwin->gw->scale > 0.1)
-		ami_gui_set_scale(gwin->gw, gwin->gw->scale - 0.1);
-}
-
-HOOKF(void, ami_menu_item_browser_scale_normal, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_gui_set_scale(gwin->gw, 1.0);
-}
-
-HOOKF(void, ami_menu_item_browser_scale_increase, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_gui_set_scale(gwin->gw, gwin->gw->scale + 0.1);
-}
-
-HOOKF(void, ami_menu_item_browser_redraw, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	ami_schedule_redraw(gwin, true);
-	gwin->new_content = true;
-}
-
-HOOKF(void, ami_menu_item_hotlist_add, APTR, window, struct IntuiMessage *)
-{
-	struct browser_window *bw;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	bw = gwin->gw->bw;
-
-	if (bw == NULL || browser_window_has_content(bw) == false)
-		return;
-
-	hotlist_add_url(browser_window_get_url(bw));
-	ami_gui_update_hotlist_button(gwin);
-}
-
-HOOKF(void, ami_menu_item_hotlist_show, APTR, window, struct IntuiMessage *)
-{
-	ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
-}
-
-HOOKF(void, ami_menu_item_hotlist_entries, APTR, window, struct IntuiMessage *)
-{
-	nsurl *url = hook->h_Data;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(url == NULL) return;
-
-	browser_window_navigate(gwin->gw->bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-}
-
-HOOKF(void, ami_menu_item_settings_edit, APTR, window, struct IntuiMessage *)
-{
-	ami_gui_opts_open();
-}
-
-HOOKF(void, ami_menu_item_settings_snapshot, APTR, window, struct IntuiMessage *)
-{
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	nsoption_set_int(window_x, gwin->win->LeftEdge);
-	nsoption_set_int(window_y, gwin->win->TopEdge);
-	nsoption_set_int(window_width, gwin->win->Width);
-	nsoption_set_int(window_height, gwin->win->Height);
-}
-
-HOOKF(void, ami_menu_item_settings_save, APTR, window, struct IntuiMessage *)
-{
-	nsoption_write(current_user_options, NULL, NULL);
-}
-
-HOOKF(void, ami_menu_item_arexx_execute, APTR, window, struct IntuiMessage *)
-{
-	char *temp;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(AslRequestTags(filereq,
-						ASLFR_Window, gwin->win,
-						ASLFR_SleepWindow, TRUE,
-						ASLFR_TitleText, messages_get("NetSurf"),
-						ASLFR_Screen, scrn,
-						ASLFR_DoSaveMode, FALSE,
-						ASLFR_InitialDrawer, nsoption_charp(arexx_dir),
-						ASLFR_InitialPattern, "#?.nsrx",
-						TAG_DONE)) {
-		if((temp = AllocVecTagList(1024, NULL))) {
-			strlcpy(temp, filereq->fr_Drawer, 1024);
-			AddPart(temp, filereq->fr_File, 1024);
-			ami_arexx_execute(temp);
-			FreeVec(temp);
-		}
-	}
-}
-
-HOOKF(void, ami_menu_item_arexx_entries, APTR, window, struct IntuiMessage *)
-{
-	char *script = hook->h_Data;
-	char *temp;
-	struct gui_window_2 *gwin;
-	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
-
-	if(script) {
-		if((temp = AllocVecTagList(1024, NULL))) {
-			BPTR lock;
-			if((lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))) {
-				DevNameFromLock(lock, temp, 1024, DN_FULLPATH);
-				AddPart(temp, script, 1024);
-				ami_arexx_execute(temp);
-				FreeVec(temp);
-				UnLock(lock);
-			}
 		}
 	}
 }
