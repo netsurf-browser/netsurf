@@ -25,7 +25,7 @@ NETSURF_USE_ROSPRITE := AUTO
 NETSURF_FS_BACKING_STORE := YES
 
 # Set default GTK version to build for (2 or 3)
-NETSURF_GTK_MAJOR := 2
+NETSURF_GTK_MAJOR ?= 2
 
 # Optimisation levels
 CFLAGS += -O2

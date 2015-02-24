@@ -41,7 +41,7 @@ fi
 
 # The GTK version to build for (either 2 or 3 currently)
 if [ "x${NETSURF_GTK_MAJOR}" = "x" ]; then
-    NETSURF_GTK_MAJOR=3
+    NETSURF_GTK_MAJOR=2
 fi
 
 
@@ -129,7 +129,7 @@ export MAKE
 ################ OS Package installation ################
 
 # deb packages for dpkg based systems
-NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libpng-dev libjpeg-dev libmozjs185-dev"
+NS_DEV_DEB="build-essential pkg-config git gperf libcurl3-dev libssl-dev libpng-dev libjpeg-dev libmozjs185-dev"
 NS_TOOL_DEB="flex bison libhtml-parser-perl"
 if [ "x${NETSURF_GTK_MAJOR}" = "x3" ]; then
     NS_GTK_DEB="libgtk-3-dev librsvg2-dev"
