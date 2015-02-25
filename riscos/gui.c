@@ -438,7 +438,7 @@ static void ro_gui_signal(int sig)
 #else
 	/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
 	 * defines a coredump directory.  */
-	_kernel_oserror *err = __unixlib_write_coredump (NULL);
+	const _kernel_oserror *err = __unixlib_write_coredump (NULL);
 	if (err != NULL)
 		LOG(("Coredump failed: %s", err->errmess));
 #endif
