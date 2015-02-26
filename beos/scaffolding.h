@@ -28,6 +28,7 @@ extern "C" {
 #include "desktop/plotters.h"
 
 struct hlcache_handle;
+struct nsurl;
 
 }
 
