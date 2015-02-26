@@ -27,6 +27,7 @@
 #include "oslib/wimp.h"
 
 enum gui_save_type;
+struct nsurl;
 
 void gui_drag_save_object(struct gui_window *g, struct hlcache_handle *c, enum gui_save_type save_type);
 void gui_drag_save_selection(struct gui_window *g, const char *selection);
@@ -34,10 +35,10 @@ void gui_drag_save_selection(struct gui_window *g, const char *selection);
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);
 void ro_gui_save_prepare(enum gui_save_type save_type, struct hlcache_handle *h,
-			char *s, const nsurl *url,
+			char *s, const struct nsurl *url,
 			const char *title);
 void ro_gui_save_start_drag(wimp_pointer *pointer);
-void ro_gui_drag_save_link(enum gui_save_type save_type, const nsurl *url,
+void ro_gui_drag_save_link(enum gui_save_type save_type, const struct nsurl *url,
 			const char *title, struct gui_window *g);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_drag_box_cancel(void);
