@@ -24,9 +24,9 @@
 #include <dom/dom.h>
 
 #include "css/css.h"
-#include "utils/nsurl.h"
 
 struct content;
+struct nsurl;
 
 /**
  * Selection context
@@ -35,7 +35,7 @@ typedef struct nscss_select_ctx
 {
 	css_select_ctx *ctx;
 	bool quirks;
-	nsurl *base_url;
+	struct nsurl *base_url;
 	lwc_string *universal;
 	const css_computed_style *parent_style;
 } nscss_select_ctx;
