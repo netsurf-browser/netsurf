@@ -24,7 +24,6 @@
 #define NETSURF_UTILS_CORESTRINGS_H_
 
 #include <libwapcaplet/libwapcaplet.h>
-#include "utils/nsurl.h"
 #include "utils/errors.h"
 
 /** File url prefix. */
@@ -289,6 +288,6 @@ extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 extern struct dom_string *corestring_dom___ns_key_image_coords_node_data;
 
 /* URLs */
-extern nsurl *corestring_nsurl_about_blank;
+extern struct nsurl *corestring_nsurl_about_blank;
 
 #endif
