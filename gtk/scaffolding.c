@@ -27,7 +27,7 @@
 
 #include "utils/filepath.h"
 #include "utils/messages.h"
-#include "utils/url.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsoption.h"
 #include "utils/file.h"

@@ -28,6 +28,7 @@
 #include "utils/nsurl.h"
 #include "utils/schedule.h"
 #include "utils/url.h"
+#include "utils/corestrings.h"
 #include "utils/utils.h"
 
 /******************************************************************************

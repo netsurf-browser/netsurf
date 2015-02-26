@@ -27,6 +27,12 @@
 #include "utils/nsurl.h"
 #include "utils/errors.h"
 
+/** File url prefix. */
+#define FILE_SCHEME_PREFIX "file:///"
+
+/** File url prefix length. */
+#define FILE_SCHEME_PREFIX_LEN 8
+
 nserror corestrings_init(void);
 void corestrings_fini(void);
 
