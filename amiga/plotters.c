@@ -414,7 +414,7 @@ static bool ami_text(int x, int y, const char *text, size_t length,
 		aa = false;
 	
 	ami_plot_setapen(glob->rp, fstyle->foreground);
-	ami_unicode_text(glob->rp, text, length, fstyle, x, y, aa);
+	ami_font_unicode_text(glob->rp, text, length, fstyle, x, y, aa);
 	
 	return true;
 }

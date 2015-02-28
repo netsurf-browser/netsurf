@@ -152,20 +152,21 @@ lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
-static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
-static int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth);
 static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
-
+static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
+		const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 
 static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	*width = ami_unicode_text(NULL, string, length, fstyle, 0, 0, false);
+	*width = ami_font_unicode_width(string, length, fstyle, 0, 0, false);
 
 	if(*width <= 0) *width == length; // fudge
 
@@ -719,7 +720,7 @@ static const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 	return utf16char;
 }
 
-ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
+ULONG ami_font_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
@@ -733,6 +734,7 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
+	if(rp == NULL) return 0;
 
 	if(__builtin_expect(nsoption_bool(use_diskfont) == true, 0)) {
 		return ami_font_bm_text(rp, string, length, fstyle, dx, dy);
@@ -756,22 +758,77 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 			utf16charsc = (uint16 *)ami_font_translate_smallcaps(utf16);
 			utf16nextsc = (uint16 *)ami_font_translate_smallcaps(utf16next);
 
-			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
+			tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
 								dx + x, dy, emwidth, aa);
-			} else {
-				tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
-			}
 		}
 		else tempx = 0;
 
 		if(tempx == 0) {
-			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
+			tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
 								dx + x, dy, emwidth, aa);
-			} else {
-				tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
+		}
+
+		if(tempx == 0)
+		{
+			if(ufont == NULL)
+			{
+				ufont = ami_open_outline_font(fstyle, utf16);
 			}
+
+			if(ufont) {
+				tempx = ami_font_plot_glyph(ufont, rp, utf16, utf16next,
+											dx + x, dy, emwidth, aa);
+			}
+		}
+
+		x += tempx;
+
+		utf16 += utf16charlen;
+	}
+
+	free(outf16);
+	return x;
+}
+
+static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
+			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
+{
+	uint16 *utf16 = NULL, *outf16 = NULL;
+	uint16 *utf16charsc = 0, *utf16nextsc = 0;
+	uint16 *utf16next = 0;
+	int utf16charlen;
+	struct OutlineFont *ofont, *ufont = NULL;
+	uint32 x=0;
+	int32 tempx = 0;
+	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
+
+	if(!string || string[0]=='\0') return 0;
+	if(!length) return 0;
+
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
+	outf16 = utf16;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
+
+	while(*utf16 != 0)
+	{
+		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
+			utf16charlen = 1;
+		else
+			utf16charlen = 2;
+
+		utf16next = &utf16[utf16charlen];
+
+		if(fstyle->flags & FONTF_SMALLCAPS)
+		{
+			utf16charsc = (uint16 *)ami_font_translate_smallcaps(utf16);
+			utf16nextsc = (uint16 *)ami_font_translate_smallcaps(utf16next);
+
+			tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
+		}
+		else tempx = 0;
+
+		if(tempx == 0) {
+			tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 		}
 
 		if(tempx == 0)
@@ -783,24 +840,8 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 
 			if(ufont)
 			{
-				if(rp) {
-					tempx = ami_font_plot_glyph(ufont, rp, utf16, utf16next,
-												dx + x, dy, emwidth, aa);
-				} else {
-					tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
-				}
+				tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
 			}
-/*
-			if(tempx == 0)
-			{
-				if(rp) {
-					tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
-												dx + x, dy, emwidth, aa);
-				} else {
-					tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
-				}
-			}
-*/
 		}
 
 		x += tempx;
