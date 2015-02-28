@@ -152,38 +152,21 @@ lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
-int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
-int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth);
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
+static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
+		const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 
-static bool nsfont_width(const plot_font_style_t *fstyle,
-	  const char *string, size_t length,
-    int *width);
-       
-static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
-	       const char *string, size_t length,
-	  int x, size_t *char_offset, int *actual_x);
-       
-static bool nsfont_split(const plot_font_style_t *fstyle,
-	  const char *string, size_t length,
-    int x, size_t *char_offset, int *actual_x);
-
-const struct font_functions nsfont = {
-	nsfont_width,
-	nsfont_position_in_string,
-	nsfont_split
-};
-
-
-bool nsfont_width(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	*width = ami_unicode_text(NULL, string, length, fstyle, 0, 0, false);
+	*width = ami_font_unicode_width(string, length, fstyle, 0, 0, false);
 
 	if(*width <= 0) *width == length; // fudge
 
@@ -202,7 +185,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
  * \return  true on success, false on error and error reported
  */
 
-bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -289,7 +272,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
  * Returning char_offset == length means no split possible
  */
 
-bool nsfont_split(const plot_font_style_t *fstyle,
+static inline bool amiga_nsfont_split(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -428,7 +411,7 @@ static struct ami_font_node *ami_font_open(const char *font)
  * \param codepoint open a default font instead of the one specified by fstyle
  * \return outline font or NULL on error
  */
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		const uint16 *codepoint)
 {
 	struct ami_font_node *node;
@@ -567,7 +550,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 	return NULL;
 }
 
-int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
@@ -580,12 +563,12 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
-	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
 	}
 	
-	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+	if (__builtin_expect(((*char2 >= 0xD800) && (*char2 <= 0xDBFF)), 0)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
 		*char2 = 0;
 	}
@@ -658,7 +641,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	return char_advance;
 }
 
-int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
@@ -671,12 +654,12 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
-	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
 	}
-
-	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+	
+	if (__builtin_expect(((*char2 >= 0xD800) && (*char2 <= 0xDBFF)), 0)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
 		skip_c2 = true;
 	}
@@ -737,7 +720,77 @@ static const uint16 *ami_font_translate_smallcaps(uint16 *utf16char)
 	return utf16char;
 }
 
-ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
+ULONG ami_font_unicode_text(struct RastPort *rp, const char *string, ULONG length,
+			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
+{
+	uint16 *utf16 = NULL, *outf16 = NULL;
+	uint16 *utf16charsc = 0, *utf16nextsc = 0;
+	uint16 *utf16next = 0;
+	int utf16charlen;
+	struct OutlineFont *ofont, *ufont = NULL;
+	uint32 x=0;
+	int32 tempx = 0;
+	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
+
+	if(!string || string[0]=='\0') return 0;
+	if(!length) return 0;
+	if(rp == NULL) return 0;
+
+	if(__builtin_expect(nsoption_bool(use_diskfont) == true, 0)) {
+		return ami_font_bm_text(rp, string, length, fstyle, dx, dy);
+	}
+
+	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != NSERROR_OK) return 0;
+	outf16 = utf16;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
+
+	while(*utf16 != 0)
+	{
+		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
+			utf16charlen = 1;
+		else
+			utf16charlen = 2;
+
+		utf16next = &utf16[utf16charlen];
+
+		if(fstyle->flags & FONTF_SMALLCAPS)
+		{
+			utf16charsc = (uint16 *)ami_font_translate_smallcaps(utf16);
+			utf16nextsc = (uint16 *)ami_font_translate_smallcaps(utf16next);
+
+			tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
+								dx + x, dy, emwidth, aa);
+		}
+		else tempx = 0;
+
+		if(tempx == 0) {
+			tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
+								dx + x, dy, emwidth, aa);
+		}
+
+		if(tempx == 0)
+		{
+			if(ufont == NULL)
+			{
+				ufont = ami_open_outline_font(fstyle, utf16);
+			}
+
+			if(ufont) {
+				tempx = ami_font_plot_glyph(ufont, rp, utf16, utf16next,
+											dx + x, dy, emwidth, aa);
+			}
+		}
+
+		x += tempx;
+
+		utf16 += utf16charlen;
+	}
+
+	free(outf16);
+	return x;
+}
+
+static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
@@ -770,22 +823,12 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 			utf16charsc = (uint16 *)ami_font_translate_smallcaps(utf16);
 			utf16nextsc = (uint16 *)ami_font_translate_smallcaps(utf16next);
 
-			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
-								dx + x, dy, emwidth, aa);
-			} else {
-				tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
-			}
+			tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
 		}
 		else tempx = 0;
 
 		if(tempx == 0) {
-			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, utf16, utf16next,
-								dx + x, dy, emwidth, aa);
-			} else {
-				tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
-			}
+			tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
 		}
 
 		if(tempx == 0)
@@ -797,24 +840,8 @@ ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
 
 			if(ufont)
 			{
-				if(rp) {
-					tempx = ami_font_plot_glyph(ufont, rp, utf16, utf16next,
-												dx + x, dy, emwidth, aa);
-				} else {
-					tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
-				}
+				tempx = ami_font_width_glyph(ufont, utf16, utf16next, emwidth);
 			}
-/*
-			if(tempx == 0)
-			{
-				if(rp) {
-					tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
-												dx + x, dy, emwidth, aa);
-				} else {
-					tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
-				}
-			}
-*/
 		}
 
 		x += tempx;
@@ -905,6 +932,11 @@ void ami_font_setdevicedpi(int id)
 	ULONG ydpi = nsoption_int(screen_ydpi);
 	ULONG xdpi = nsoption_int(screen_ydpi);
 
+	if(nsoption_bool(use_diskfont) == true) {
+		LOG(("WARNING: Using diskfont.library for text. Forcing DPI to 72."));
+		nsoption_int(screen_ydpi) = 72;
+	}
+
 	browser_set_dpi(nsoption_int(screen_ydpi));
 
 	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
@@ -949,3 +981,47 @@ void ami_font_close_disk_font(struct TextFont *tfont)
 {
 	CloseFont(tfont);
 }
+
+
+/* Stub entry points */
+static bool nsfont_width(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int *width)
+{
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
+		return amiga_nsfont_width(fstyle, string, length, width);
+	} else {
+		return amiga_bm_nsfont_width(fstyle, string, length, width);
+	}
+}
+
+static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
+		return amiga_nsfont_position_in_string(fstyle, string, length, x,
+				char_offset, actual_x);
+	} else {
+		return amiga_bm_nsfont_position_in_string(fstyle, string, length, x,
+				char_offset, actual_x);
+	}
+}
+
+static bool nsfont_split(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x)
+{
+	if(__builtin_expect(nsoption_bool(use_diskfont) == false, 1)) {
+		return amiga_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
+	} else {
+		return amiga_bm_nsfont_split(fstyle, string, length, x, char_offset, actual_x);
+	}
+}
+
+const struct font_functions nsfont = {
+	nsfont_width,
+	nsfont_position_in_string,
+	nsfont_split
+};
+

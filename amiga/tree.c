@@ -524,7 +524,7 @@ static void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	}
 }
 
-static void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+HOOKF(void, ami_tree_scroller_hook, Object *, object, struct IntuiMessage *) 
 {
 	ULONG gid;
 	struct treeview_window *twin = hook->h_Data;

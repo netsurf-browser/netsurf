@@ -204,10 +204,8 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
-static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg);
-static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg);
+HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *);
+HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *);
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
 static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw);
@@ -687,7 +685,7 @@ static nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
-static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
+HOOKF(void, ami_gui_newprefs_hook, APTR, window, APTR)
 {
 	ami_set_screen_defaults(scrn);
 }
@@ -3644,11 +3642,7 @@ static void ami_refresh_window(struct gui_window_2 *gwin)
 	ami_reset_pointer(gwin);
 }
 
-#ifdef __amigaos4__
-static void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg)
-#else
-static ASM void ami_scroller_hook(REG(a0, struct Hook *hook),REG(a2, Object *object), REG(a1, struct IntuiMessage *msg))
-#endif
+HOOKF(void, ami_scroller_hook, Object *, object, struct IntuiMessage *)
 {
 	ULONG gid;
 	struct gui_window_2 *gwin = hook->h_Data;
@@ -4996,9 +4990,7 @@ static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 	return NSERROR_OK;
 }
 
-
-static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg)
+HOOKF(uint32, ami_set_favicon_render_hook, APTR, space, struct gpRender *)
 {
 	ami_schedule(0, ami_gui_refresh_favicon, hook->h_Data);
 	return 0;
@@ -5066,8 +5058,7 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 	return NSERROR_OK;
 }
 
-static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
-	struct gpRender *msg)
+HOOKF(uint32, ami_set_throbber_render_hook, APTR, space, struct gpRender *)
 {
 	struct gui_window_2 *gwin = hook->h_Data;
 	ami_throbber_redraw_schedule(0, gwin->gw);

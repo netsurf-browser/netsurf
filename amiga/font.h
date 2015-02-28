@@ -25,7 +25,7 @@
 
 struct ami_font_node;
 
-ULONG ami_unicode_text(struct RastPort *rp, const char *string,
+ULONG ami_font_unicode_text(struct RastPort *rp, const char *string,
 	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
@@ -40,4 +40,18 @@ void ami_font_savescanner(void);
 /* Simple diskfont functions for graphics.library use (not page rendering) */
 struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr);
 void ami_font_close_disk_font(struct TextFont *tfont);
+
+/* In font_bitmap.c */
+bool amiga_bm_nsfont_width(const plot_font_style_t *fstyle,
+		const char *string, size_t length, int *width);
+bool amiga_bm_nsfont_position_in_string(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
+		const char *string, size_t length,
+		int x, size_t *char_offset, int *actual_x);
+ULONG ami_font_bm_text(struct RastPort *rp, const char *string, ULONG length,
+			const plot_font_style_t *fstyle, ULONG dx, ULONG dy);
+
 #endif
+

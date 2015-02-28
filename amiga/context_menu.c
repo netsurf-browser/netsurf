@@ -52,11 +52,11 @@
 #include "amiga/context_menu.h"
 
 
-static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
+HOOKF(uint32, ami_context_menu_hook, Object *, item, APTR);
+HOOKF(uint32, ami_popup_hook, Object *, item, APTR);
+
 static bool ami_context_menu_history(const struct browser_window *bw, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
-
-static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 
 enum {
 	CMID_SELECTFILE,
@@ -695,7 +695,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	IDoMethod(ctxmenuobj, PM_OPEN, gwin->win);
 }
 
-static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
+HOOKF(uint32, ami_context_menu_hook, Object *, item, APTR)
 {
 	int32 itemid = 0;
 	struct gui_window_2 *gwin = hook->h_Data;
@@ -1255,7 +1255,7 @@ static bool ami_context_menu_history(const struct browser_window *bw,
 	return true;
 }
 
-static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
+HOOKF(uint32, ami_popup_hook, Object *, item, APTR)
 {
 	uint32 itemid = 0;
 	struct gui_window *gwin = hook->h_Data;
