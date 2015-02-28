@@ -64,6 +64,7 @@ extern "C" {
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "desktop/gui_clipboard.h"
 }
 #include "beos/about.h"

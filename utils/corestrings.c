@@ -23,6 +23,7 @@
 #include <dom/dom.h>
 
 #include "utils/corestrings.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /* lwc_string strings */

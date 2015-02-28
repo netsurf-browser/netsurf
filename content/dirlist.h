@@ -33,15 +33,17 @@
 #define DIRLIST_NO_DATE_COLUMN 1 << 3
 #define DIRLIST_NO_TIME_COLUMN 1 << 4
 
+struct nsurl;
+
 bool dirlist_generate_top(char *buffer, int buffer_length);
 bool dirlist_generate_hide_columns(int flags, char *buffer, int buffer_length);
 bool dirlist_generate_title(const char *title, char *buffer, int buffer_length);
 bool dirlist_generate_parent_link(const char *parent, char *buffer,
 		int buffer_length);
 bool dirlist_generate_headings(char *buffer, int buffer_length);
-bool dirlist_generate_row(bool even, bool directory, nsurl *url, char *name,
-		const char *mimetype, long long size, char *date, char *time,
-		char *buffer, int buffer_length);
+bool dirlist_generate_row(bool even, bool directory, struct nsurl *url,
+		char *name, const char *mimetype, long long size, char *date,
+		char *time, char *buffer, int buffer_length);
 bool dirlist_generate_bottom(char *buffer, int buffer_length);
 
 #endif

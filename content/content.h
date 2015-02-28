@@ -34,7 +34,6 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/http.h"
-#include "utils/nsurl.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
 #include "desktop/search.h"
@@ -105,7 +104,7 @@ struct content_rfc5988_link {
 	struct content_rfc5988_link *next; /**< next rfc5988_link in list */
 
 	lwc_string *rel; /**< the link relationship - must be present */
-	nsurl *href; /**< the link href - must be present */
+	struct nsurl *href; /**< the link href - must be present */
 	lwc_string *hreflang;
 	lwc_string *type;
 	lwc_string *media;
@@ -120,8 +119,8 @@ union content_msg_data {
 	nserror errorcode;
         /** CONTENT_MSG_REDIRECT - Redirect info */
 	struct {
-		nsurl *from;	/**< Redirect origin */
-		nsurl *to;	/**< Redirect target */
+		struct nsurl *from;	/**< Redirect origin */
+		struct nsurl *to;	/**< Redirect target */
 	} redirect;		/**< Fetch URL redirect occured */
 	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
@@ -171,7 +170,7 @@ union content_msg_data {
 	} dragsave;
 	/** CONTENT_MSG_SAVELINK - Save a URL */
 	struct {
-		nsurl *url;
+		struct nsurl *url;
 		const char *title;
 	} savelink;
 	/** CONTENT_MSG_POINTER - Mouse pointer to set */
@@ -252,7 +251,7 @@ bool content_matches_quirks(struct content *c, bool quirks);
 bool content_is_shareable(struct content *c);
 
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
-nsurl *content_get_url(struct content *c);
+struct nsurl *content_get_url(struct content *c);
 
 struct content *content_clone(struct content *c);
 
@@ -426,7 +425,7 @@ void content_invalidate_reuse_data(struct hlcache_handle *h);
  * \param h Content to retrieve refresh URL from
  * \return Pointer to URL, or NULL if none
  */
-nsurl *content_get_refresh_url(struct hlcache_handle *h);
+struct nsurl *content_get_refresh_url(struct hlcache_handle *h);
 
 /**
  * Retrieve the bitmap contained in an image content

@@ -4878,9 +4878,10 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 
 		/* Need to consider what we have and decide whether to fire
 		 * triple click instead */
-		switch (state) {
-		case BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1:
-		case BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2:
+		if ((state == (BROWSER_MOUSE_PRESS_1 |
+				BROWSER_MOUSE_CLICK_1)) ||
+		    (state == (BROWSER_MOUSE_PRESS_2 |
+				BROWSER_MOUSE_CLICK_2))) {
 			/* WIMP told us single click, but maybe we want to call
 			 * it a triple click */
 
@@ -4899,12 +4900,12 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 				/* Single click */
 				last_click.type = CLICK_SINGLE;
 			}
-			break;
-
-		case BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
-				BROWSER_MOUSE_DOUBLE_CLICK:
-		case BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2 |
-				BROWSER_MOUSE_DOUBLE_CLICK:
+		} else if ((state == (BROWSER_MOUSE_PRESS_1 |
+					BROWSER_MOUSE_CLICK_1 |
+					BROWSER_MOUSE_DOUBLE_CLICK)) ||
+			   (state == (BROWSER_MOUSE_PRESS_2 |
+					BROWSER_MOUSE_CLICK_2 |
+					BROWSER_MOUSE_DOUBLE_CLICK))) {
 			/* Wimp told us double click, but we may want to
 			 * call it single click */
 
@@ -4915,11 +4916,8 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 				last_click.type = CLICK_DOUBLE;
 				last_click.time = wallclock();
 			}
-			break;
-
-		default:
+		} else {
 			last_click.type = CLICK_SINGLE;
-			break;
 		}
 		break;
 	}

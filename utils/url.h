@@ -27,12 +27,6 @@
 
 #include "utils/errors.h"
 
-/** File url prefix. */
-#define FILE_SCHEME_PREFIX "file:///"
-
-/** File url prefix length. */
-#define FILE_SCHEME_PREFIX_LEN 8
-
 
 /**
  * Escape a string suitable for inclusion in an URL.
@@ -44,7 +38,8 @@
  * \param  result         pointer to pointer to buffer to hold escaped string
  * \return  NSERROR_OK on success
  */
-nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus, const char *escexceptions, char **result);
+nserror url_escape(const char *unescaped, size_t toskip, bool sptoplus,
+		const char *escexceptions, char **result);
 
 
 /**

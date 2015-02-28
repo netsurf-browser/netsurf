@@ -20,6 +20,7 @@
 
 #include "utils/utils.h"
 #include "utils/utf8.h"
+#include "utils/nsurl.h"
 #include "utils/messages.h"
 #include "desktop/browser.h"
 #include "content/content.h"

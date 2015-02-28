@@ -24,8 +24,13 @@
 #define NETSURF_UTILS_CORESTRINGS_H_
 
 #include <libwapcaplet/libwapcaplet.h>
-#include "utils/nsurl.h"
 #include "utils/errors.h"
+
+/** File url prefix. */
+#define FILE_SCHEME_PREFIX "file:///"
+
+/** File url prefix length. */
+#define FILE_SCHEME_PREFIX_LEN 8
 
 nserror corestrings_init(void);
 void corestrings_fini(void);
@@ -283,6 +288,6 @@ extern struct dom_string *corestring_dom___ns_key_file_name_node_data;
 extern struct dom_string *corestring_dom___ns_key_image_coords_node_data;
 
 /* URLs */
-extern nsurl *corestring_nsurl_about_blank;
+extern struct nsurl *corestring_nsurl_about_blank;
 
 #endif
