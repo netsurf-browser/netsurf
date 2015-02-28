@@ -202,11 +202,12 @@ bool amiga_bm_nsfont_split(const plot_font_style_t *fstyle,
 		co--;
 	}
 
-	*char_offset = co;
-	if(string && co) {
+	if(co > 0) {
 		*actual_x = TextLength(glob->rp, string, co);
+		*char_offset = co;
 	} else {
-		*actual_x = 0;
+		*actual_x = x;
+		*char_offset = length;
 	}
 
 	ami_font_bm_close(bmfont);

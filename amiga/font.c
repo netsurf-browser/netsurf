@@ -549,7 +549,7 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 	return NULL;
 }
 
-static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
+static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 *char1, uint16 *char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
@@ -562,12 +562,12 @@ static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
-	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
 	}
 	
-	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+	if (__builtin_expect(((*char2 >= 0xD800) && (*char2 <= 0xDBFF)), 0)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
 		*char2 = 0;
 	}
@@ -640,7 +640,7 @@ static int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	return char_advance;
 }
 
-static int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+static inline int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		const uint16 *char1, const uint16 *char2, uint32 emwidth)
 {
 	int32 char_advance = 0;
@@ -653,12 +653,12 @@ static int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
-	if ((*char1 >= 0xD800) && (*char1 <= 0xDBFF)) {
+	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
 	}
-
-	if ((*char2 >= 0xD800) && (*char2 <= 0xDBFF)) {
+	
+	if (__builtin_expect(((*char2 >= 0xD800) && (*char2 <= 0xDBFF)), 0)) {
 		/* Don't attempt to kern a UTF-16 surrogate */
 		skip_c2 = true;
 	}
