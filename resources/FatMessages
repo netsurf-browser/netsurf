@@ -287,7 +287,7 @@ en.all.Toolbars:Toolbars
 de.all.Toolbars:Anzeigen und Leisten
 fr.all.Toolbars:Barre d'outils
 it.all.Toolbars:Barre strumenti
-nl.all.Toolbars:Toon werkbalken
+nl.all.Toolbars:Toon gereedschapbalken
 en.all.Render:Render
 de.all.Render:Rendern
 fr.all.Render:Rendu
@@ -473,7 +473,7 @@ en.all.Toolbar:Toolbar
 de.all.Toolbar:Symbolleiste
 fr.all.Toolbar:Barre d'outils
 it.all.Toolbar:Barra strumenti
-nl.all.Toolbar:Werkbalk
+nl.all.Toolbar:Gereedschapbalk
 en.all.EditToolbar:Edit toolbar
 de.all.EditToolbar:Symbolleiste bearbeiten
 fr.all.EditToolbar:Éditer la barre d'outils
@@ -1150,7 +1150,7 @@ en.all.TreeviewLabelVisits:Visits
 de.all.TreeviewLabelVisits:Visits
 fr.all.TreeviewLabelVisits:Visites
 it.all.TreeviewLabelVisits:Visite
-nl.all.TreeviewLabelVisits:Bezichtigd:
+nl.all.TreeviewLabelVisits:Bezocht:
 en.all.TreeviewLabelPeriod:Period
 de.all.TreeviewLabelPeriod:Period
 fr.all.TreeviewLabelPeriod:Période
@@ -4173,12 +4173,12 @@ en.ro.HelpBrowserMenu4-2:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpBrowserMenu4-2:Optionen zur Anzeige von Kontroll- und Steuerelementen.
 fr.ro.HelpBrowserMenu4-2:\Rcontroler l'affichage des barres d'outils de NetSurf.
 it.ro.HelpBrowserMenu4-2:\Rcontrolla la visualizzazione delle barre strumenti di NetSurf.
-nl.ro.HelpBrowserMenu4-2:Verplaats de muispijl naar rechts om de werkbalken aan te passen.
+nl.ro.HelpBrowserMenu4-2:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpBrowserMenu4-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
 de.ro.HelpBrowserMenu4-2-0:Schaltet die Schaltknöpfe am oberen Fensterrand ein/aus.|MDie Länge der Adressleiste wird angepaßt.
 fr.ro.HelpBrowserMenu4-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barre d'URL utilise l'espace restant.
 it.ro.HelpBrowserMenu4-2-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.|MLa barra URL coprirà lo spazio eccedente.
-nl.ro.HelpBrowserMenu4-2-0:Klik met KIES om het tonen van de werkbalkknoppen aan of uit te zetten.|MDe adresbalk gebruikt de overblijvende vrijkomende ruimte.
+nl.ro.HelpBrowserMenu4-2-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.|MDe adresbalk gebruikt de overblijvende vrijkomende ruimte.
 en.ro.HelpBrowserMenu4-2-1:\Stoggle the display of the address (URL) bar.
 de.ro.HelpBrowserMenu4-2-1:Schaltet die Adressleiste am oberen Fensterrand ein/aus.
 fr.ro.HelpBrowserMenu4-2-1:\Safficher ou pas la barre d'adresse (URL).
@@ -4193,7 +4193,7 @@ en.ro.HelpBrowserMenu4-2-3:\Stoggle the display of the status bar.|MHorizontal s
 de.ro.HelpBrowserMenu4-2-3:Schaltet die Statusanzeige am unteren Fensterrand ein/aus.|MDie Länge des horizontalen Schiebebalkens wird angepaßt.
 fr.ro.HelpBrowserMenu4-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
 it.ro.HelpBrowserMenu4-2-3:\Salterna la visualizzazione della barra di stato.|MLa barra di scrolling orizzontale coprirà la larghezza eccedente.
-nl.ro.HelpBrowserMenu4-2-3:Klik met KIES om de werkbalkaanpasmodus in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de werkbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om de werkbalk aan te passen.
+nl.ro.HelpBrowserMenu4-2-3:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpBrowserMenu4-2-4:\Stoggle toolbar edit mode.
 de.ro.HelpBrowserMenu4-2-4:Schaltet in den Modus zur Bearbeitung der Iconleiste am oberen Fensterrand.
 fr.ro.HelpBrowserMenu4-2-4:\Schanger le mode d'édition de barre d'outils.
@@ -4602,17 +4602,17 @@ en.ro.HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpHotlistMenu0-4:Knopfleisteneinstellungen vornehmen.
 fr.ro.HelpHotlistMenu0-4:\Rcontroler l'affichage des barres d'outils de Netsurf.
 it.ro.HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
-nl.ro.HelpHotlistMenu0-4:Verplaats de muispijl naar rechts om de werkbalken aan te passen.
+nl.ro.HelpHotlistMenu0-4:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpHotlistMenu0-4-0:Anklicken um die Knopfleiste ein- bzw. auszuschalten.
 fr.ro.HelpHotlistMenu0-4-0:\Sbasculer l'affichage des boutons de la barre d'outils.
 it.ro.HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
-nl.ro.HelpHotlistMenu0-4-0:Klik met KIES om het tonen van de werkbalkknoppen aan of uit te zetten.
+nl.ro.HelpHotlistMenu0-4-0:Klik met KIES om het tonen van de knoppen van de gereedschapbalk aan of uit te zetten.
 en.ro.HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
 de.ro.HelpHotlistMenu0-4-1:Anklicken zum Bearbeiten der Knopfleiste.
 fr.ro.HelpHotlistMenu0-4-1:\Sbasculer le mode d'édition de barre d'outils.
 it.ro.HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
-nl.ro.HelpHotlistMenu0-4-1:Klik met KIES om de werkbalkaanpasmodus in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de werkbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om de werkbalk aan te passen.
+nl.ro.HelpHotlistMenu0-4-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpHotlistMenu1:\Roperate on the current selection.
 de.ro.HelpHotlistMenu1:Untermenü Auswahl. Bearbeiten der markierten Hotlist Elemente.
 fr.ro.HelpHotlistMenu1:\Ragir sur la sélection en cours.
@@ -4729,17 +4729,17 @@ en.ro.HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpGHistoryMenu0-3:Die Iconleiste der globalen History verändern.
 fr.ro.HelpGHistoryMenu0-3:\Rcontroler l'affichage des barre d'outils de NetSurf.
 it.ro.HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
-nl.ro.HelpGHistoryMenu0-3:Verplaats de muispijl naar rechts om de werkbalken aan te passen.
+nl.ro.HelpGHistoryMenu0-3:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpGHistoryMenu0-3-0:Iconleiste an- oder abschalten.
 fr.ro.HelpGHistoryMenu0-3-0:\Sbasculer l'affichage des boutons de la barre d'outils.
 it.ro.HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
-nl.ro.HelpGHistoryMenu0-3-0:Klik met KIES om het tonen van de werkbalkknoppen aan of uit te zetten.
+nl.ro.HelpGHistoryMenu0-3-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.
 en.ro.HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
 de.ro.HelpGHistoryMenu0-3-1:Iconleiste bearbeiten.
 fr.ro.HelpGHistoryMenu0-3-1:\Sbasculer le mode d'édition de la barre d'outils.
 it.ro.HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
-nl.ro.HelpGHistoryMenu0-3-1:Klik met KIES om de werkbalkaanpasmodus in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de werkbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om de werkbalk aan te passen.
+nl.ro.HelpGHistoryMenu0-3-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpGHistoryMenu1:\Roperate on the current selection.
 de.ro.HelpGHistoryMenu1:Die aktuelle Auswahl bearbeiten.
 fr.ro.HelpGHistoryMenu1:\Reffectuer une opération sur la sélection courante.
@@ -4841,17 +4841,17 @@ en.ro.HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
 de.ro.HelpCookiesMenu0-2:Die Iconleiste verändern.
 fr.ro.HelpCookiesMenu0-2:\Rcontroler l'affichage des barres d'outils de Netsurf.
 it.ro.HelpCookiesMenu0-2:\Rcontrol the display of NetSurf's toolbars.
-nl.ro.HelpCookiesMenu0-2:Verplaats de muispijl naar rechts om de werkbalken aan te passen.
+nl.ro.HelpCookiesMenu0-2:Verplaats de muispijl naar rechts om de gereedschapbalken aan te passen.
 en.ro.HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
 de.ro.HelpCookiesMenu0-2-0:Klicken mit AUSWAHL um die Iconleiste an- oder abzuschalten.
 fr.ro.HelpCookiesMenu0-2-0:\Sbasculer l'affichage des boutons de la barre d'outils.
 it.ro.HelpCookiesMenu0-2-0:\Stoggle the display of the toolbar buttons.
-nl.ro.HelpCookiesMenu0-2-0:Klik met KIES om het tonen van de werkbalkknoppen aan of uit te zetten.
+nl.ro.HelpCookiesMenu0-2-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.
 en.ro.HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
 de.ro.HelpCookiesMenu0-2-1:Klicken mit AUSWAHL um die Iconleiste zu bearbeiten.
 fr.ro.HelpCookiesMenu0-2-1:\Sbasculer le mode d'édition de la barre d'outils.
 it.ro.HelpCookiesMenu0-2-1:\Stoggle toolbar edit mode.
-nl.ro.HelpCookiesMenu0-2-1:Klik met KIES om de werkbalkaanpasmodus in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de werkbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om de werkbalk aan te passen.
+nl.ro.HelpCookiesMenu0-2-1:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
 en.ro.HelpCookiesMenu1:\Roperate on the current selection.
 de.ro.HelpCookiesMenu1:Die ausgewählten Einträge bearbeiten.
 fr.ro.HelpCookiesMenu1:\Rfaire une opération sur la sélection courante.
