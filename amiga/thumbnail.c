@@ -70,8 +70,9 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	thumbnail_redraw(content, plot_width, plot_height, &ctx);
 
-	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
-	{
+#ifdef __amigaos4__
+	if(__builtin_expect(GfxBase->LibNode.lib_Version >= 53, 1)) {
+	/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1) */
 		float resample_scale = bitmap->width / (float)plot_width;
 		uint32 flags = COMPFLAG_IgnoreDestAlpha;
 		if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
@@ -90,8 +91,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 					COMPTAG_OffsetY,0,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
-	}
-	else
+	} else
+#endif
 	{
 		bsa.bsa_SrcX = 0;
 		bsa.bsa_SrcY = 0;

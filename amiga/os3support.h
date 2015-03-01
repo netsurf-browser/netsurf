@@ -189,25 +189,6 @@ struct OutlineFont {
 	struct TagItem *olf_OTagList;
 };
 
-/* Compositing */
-#define COMPFLAG_IgnoreDestAlpha 0
-#define COMPFLAG_SrcAlphaOverride 0
-#define COMPFLAG_SrcFilter 0
-
-#define COMPOSITE_Src 0
-
-#define COMPTAG_ScaleX 0
-#define COMPTAG_ScaleY 0
-#define COMPTAG_DestX 0
-#define COMPTAG_DestY 0
-#define COMPTAG_DestWidth 0
-#define COMPTAG_DestHeight 0
-#define COMPTAG_OffsetX 0
-#define COMPTAG_OffsetY 0
-
-#define CompositeTags(a, ...) ((void) (a))
-#define COMP_FLOAT_TO_FIX(f) (f)
-
 /* icon.library v51 (ie. AfA_OS version) */
 #define ICONCTRLA_SetImageDataFormat        (ICONA_Dummy + 0x67) /*103*/
 #define ICONCTRLA_GetImageDataFormat        (ICONA_Dummy + 0x68) /*104*/

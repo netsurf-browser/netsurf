@@ -5034,7 +5034,7 @@ static nserror gui_search_web_provider_update(const char *provider_name,
 			ULONG bm_masking_tag = TAG_IGNORE;
 
 			if(GfxBase->LibNode.lib_Version >= 54) {	/* chooser 53.21, but check gfx.lib
-													 *                is FE as it's easier */
+														 * is FE as it's easier */
 				bm_masking_tag = BITMAP_Masking;
 			}
 

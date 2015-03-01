@@ -367,7 +367,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	return bm;
 }
 
-static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
+static inline struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
 	struct BitMap *tbm = NULL;
 
@@ -414,10 +414,9 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 
 		scaledbm = ami_rtg_allocbitmap(width, height, 32, 0,
 									friendbm, AMI_BITMAP_FORMAT);
-
-		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
-		{
 #ifdef __amigaos4__
+		if(__builtin_expect(GfxBase->LibNode.lib_Version >= 53, 1)) {
+		/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1) */
 			uint32 flags = 0;
 			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 			
@@ -433,9 +432,8 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 						COMPTAG_OffsetY,0,
 						COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 						TAG_DONE);
+		} else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
 #endif
-		}
-		else /* Do it the old-fashioned way.  This is pretty slow, even on OS4.1 */
 		{
 			bsa.bsa_SrcX = 0;
 			bsa.bsa_SrcY = 0;
@@ -500,7 +498,7 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 	return bitmap->native_mask;
 }
 
-static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
+static inline struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 					int width, int height)
 {
 	struct BitMap *dtbm;
@@ -547,7 +545,7 @@ static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm)
 {
-	if(ami_plot_screen_is_palettemapped() == true) {
+	if(__builtin_expect(ami_plot_screen_is_palettemapped() == true, 0)) {
 		return ami_bitmap_get_palettemapped(bitmap, width, height);
 	} else {
 		return ami_bitmap_get_truecolour(bitmap, width, height, friendbm);

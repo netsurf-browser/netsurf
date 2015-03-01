@@ -501,10 +501,9 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
 	#endif
 
-	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false) &&
-		(nsoption_bool(direct_render) == false))
-	{
 #ifdef __amigaos4__
+	if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false) &&
+		(nsoption_bool(direct_render) == false), 1)) {
 		uint32 comptype = COMPOSITE_Src_Over_Dest;
 		uint32 compflags = COMPFLAG_IgnoreDestAlpha;
 		if(bitmap_get_opaque(bitmap)) {
@@ -524,9 +523,9 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 					COMPTAG_OffsetY,y,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
-#endif
 	}
 	else
+#endif
 	{
 		ULONG tag, tag_data, minterm = 0xc0;
 		
@@ -710,10 +709,9 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 	/* tile down and across to extents  (bfmsg->Bounds.MinX)*/
 	for (xf = -bfbm->offsetx; xf < bfmsg->Bounds.MaxX; xf += bfbm->width) {
 		for (yf = -bfbm->offsety; yf < bfmsg->Bounds.MaxY; yf += bfbm->height) {
-
-			if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
-			{
 #ifdef __amigaos4__
+			if(__builtin_expect((GfxBase->LibNode.lib_Version >= 53) &&
+				(palette_mapped == false), 1)) {
 				CompositeTags(COMPOSITE_Src_Over_Dest, bfbm->bm, rp->BitMap,
 					COMPTAG_Flags, COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX,bfmsg->Bounds.MinX,
@@ -726,9 +724,9 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					COMPTAG_OffsetY,yf,
 					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
 					TAG_DONE);
-#endif
 			}
 			else
+#endif
 			{
 				ULONG tag, tag_data, minterm = 0xc0;
 		
