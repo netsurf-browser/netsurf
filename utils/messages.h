@@ -34,7 +34,6 @@
 #define _NETSURF_UTILS_MESSAGES_H_
 
 #include "utils/errors.h"
-#include "utils/hashtable.h"
 
 /**
  * Read keys and values from messages file into the standard Messages hash.
