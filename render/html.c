@@ -1538,8 +1538,16 @@ static void html_close(struct content *c)
 	if (html->search != NULL)
 		search_destroy_context(html->search);
 
+	/* clear the html content reference to the browser window */
 	html->bw = NULL;
 
+	/* clear the html content reference to the javascript context
+	 * as it is about to become invalid and must not be used any
+	 * more.
+	 */
+	html->jscontext = NULL;
+
+	/* remove all object references from teh html content */
 	html_object_close_objects(html);
 }
 
