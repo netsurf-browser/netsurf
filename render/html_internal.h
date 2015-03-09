@@ -264,9 +264,34 @@ void html_search_clear(struct content *c);
 
 
 /* in render/html_script.c */
-dom_hubbub_error  html_process_script(void *ctx, dom_node *node);
-void html_free_scripts(html_content *html);
-bool html_scripts_exec(html_content *c);
+dom_hubbub_error html_process_script(void *ctx, dom_node *node);
+
+/**
+ * Attempt script execution for defer and async scripts
+ *
+ * execute scripts using algorithm found in:
+ * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
+ *
+ * \param htmlc html content.
+ * \return NSERROR_OK error code.
+ */
+nserror html_script_exec(html_content *htmlc);
+
+/**
+ * Free all script resources and references for a html content.
+ *
+ * \param htmlc html content.
+ * \return NSERROR_OK or error code.
+ */
+nserror html_script_free(html_content *htmlc);
+
+/**
+ * Ensure the html content javascript context is invalidated.
+ *
+ * \param htmlc html content.
+ * \return NSERROR_OK or error code.
+ */
+nserror html_script_invalidate_ctx(html_content *htmlc);
 
 /* in render/html_forms.c */
 struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);

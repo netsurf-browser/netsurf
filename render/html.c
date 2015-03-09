@@ -1106,7 +1106,7 @@ html_begin_conversion(html_content *htmlc)
 	}
 
 	/* complete script execution */
-	html_scripts_exec(htmlc);
+	html_script_exec(htmlc);
 
 	/* fire a simple event that bubbles named DOMContentLoaded at
 	 * the Document.
@@ -1213,11 +1213,20 @@ html_begin_conversion(html_content *htmlc)
 
 /**
  * Stop loading a CONTENT_HTML.
+ *
+ * called when the content is aborted. This must clean up any state
+ * created during the fetch.
  */
 
 static void html_stop(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
+
+	/* invalidate the html content reference to the javascript context
+	 * as it is about to become invalid and must not be used any
+	 * more.
+	 */
+	html_script_invalidate_ctx(htmlc);
 
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
@@ -1466,7 +1475,7 @@ static void html_destroy(struct content *c)
 	html_css_free_stylesheets(html);
 
 	/* Free scripts */
-	html_free_scripts(html);
+	html_script_free(html);
 
 	/* Free objects */
 	html_object_free_objects(html);
@@ -1531,24 +1540,25 @@ html_open(struct content *c,
 
 static void html_close(struct content *c)
 {
-	html_content *html = (html_content *) c;
+	html_content *htmlc = (html_content *) c;
 
-	selection_clear(&html->sel, false);
+	selection_clear(&htmlc->sel, false);
 
-	if (html->search != NULL)
-		search_destroy_context(html->search);
+	if (htmlc->search != NULL) {
+		search_destroy_context(htmlc->search);
+	}
 
 	/* clear the html content reference to the browser window */
-	html->bw = NULL;
+	htmlc->bw = NULL;
 
-	/* clear the html content reference to the javascript context
+	/* invalidate the html content reference to the javascript context
 	 * as it is about to become invalid and must not be used any
 	 * more.
 	 */
-	html->jscontext = NULL;
+	html_script_invalidate_ctx(htmlc);
 
-	/* remove all object references from teh html content */
-	html_object_close_objects(html);
+	/* remove all object references from the html content */
+	html_object_close_objects(htmlc);
 }
 
 

@@ -50,20 +50,16 @@ static script_handler_t *select_script_handler(content_type ctype)
 }
 
 
-/* attempt defer and async script execution
- *
- * execute scripts using algorithm found in:
- * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
- *
- */
-bool html_scripts_exec(html_content *c)
+/* exported internal interface documented in render/html_internal.h */
+nserror html_script_exec(html_content *c)
 {
 	unsigned int i;
 	struct html_script *s;
 	script_handler_t *script_handler;
 
-	if (c->jscontext == NULL)
-		return false;
+	if (c->jscontext == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
 
 	for (i = 0, s = c->scripts; i != c->scripts_count; i++, s++) {
 		if (s->already_started) {
@@ -102,7 +98,7 @@ bool html_scripts_exec(html_content *c)
 		}
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
 /* create new html script entry */
@@ -555,7 +551,8 @@ html_process_script(void *ctx, dom_node *node)
 	return err;
 }
 
-void html_free_scripts(html_content *html)
+/* exported internal interface documented in render/html_internal.h */
+nserror html_script_free(html_content *html)
 {
 	unsigned int i;
 
@@ -577,4 +574,13 @@ void html_free_scripts(html_content *html)
 		}
 	}
 	free(html->scripts);
+
+	return NSERROR_OK;
+}
+
+/* exported internal interface documented in render/html_internal.h */
+nserror html_script_invalidate_ctx(html_content *htmlc)
+{
+	htmlc->jscontext = NULL;
+	return NSERROR_OK;
 }
