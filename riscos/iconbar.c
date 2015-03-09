@@ -72,11 +72,11 @@ void ro_gui_iconbar_initialise(void)
 	static const struct ns_menu iconbar_definition = {
 		"NetSurf", {
 			{ "Info", NO_ACTION, &dialog_info },
-			{ "AppHelp", HELP_OPEN_CONTENTS, 0 },
+			{ "AppHelpNoShortcut", HELP_OPEN_CONTENTS, 0 },
 			{ "Open", BROWSER_NAVIGATE_URL, 0 },
 			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, &dialog_openurl },
-			{ "Open.HotlistShow", HOTLIST_SHOW, 0 },
-			{ "Open.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
+			{ "Open.HotlistShowNoShortcut", HOTLIST_SHOW, 0 },
+			{ "Open.HistGlobalNoShortcut", HISTORY_SHOW_GLOBAL, 0 },
 			{ "Open.ShowCookies", COOKIES_SHOW, 0 },
 			{ "Choices", CHOICES_SHOW, 0 },
 			{ "Quit", APPLICATION_QUIT, 0 },
