@@ -379,6 +379,7 @@ bool form_successful_controls_dom(struct form *_form,
 		}
 
 		/* Form elements are one of:
+		 *   HTMLButtonElement
 		 *   HTMLInputElement
 		 *   HTMLTextAreaElement
 		 *   HTMLSelectElement
@@ -435,8 +436,20 @@ bool form_successful_controls_dom(struct form *_form,
 				goto dom_no_memory;
 			}
 		} else if (dom_string_isequal(nodename, corestring_dom_BUTTON)) {
-			/* It was a button, no fair */
-			continue;
+			err = dom_html_button_element_get_disabled(
+				(dom_html_button_element *)form_element,
+				&element_disabled);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get button disabled property"));
+				goto dom_no_memory;
+			}
+			err = dom_html_button_element_get_name(
+				(dom_html_button_element *)form_element,
+				&inputname);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get button name property"));
+				goto dom_no_memory;
+			}
 		} else {
 			/* Unknown element type came through! */
 			LOG(("Unknown element type: %*s",
@@ -527,6 +540,38 @@ bool form_successful_controls_dom(struct form *_form,
 				}
 			}
 			continue;
+		} else if (dom_string_isequal(nodename, corestring_dom_BUTTON)) {
+			err = dom_html_button_element_get_type(
+				(dom_html_button_element *) form_element,
+				&inputtype);
+			if (err != DOM_NO_ERR) {
+				LOG(("Could not get button element type"));
+				goto dom_no_memory;
+			}
+			if (dom_string_caseless_isequal(
+				    inputtype, corestring_dom_submit)) {
+
+				if (submit_button == NULL && !had_submit) {
+					/* no button used, and first submit
+					 * node found, so use it
+					 */
+					had_submit = true;
+				} else if ((dom_node *)submit_button !=
+					   (dom_node *)form_element) {
+					continue;
+				}
+
+				err = dom_html_button_element_get_value(
+					(dom_html_button_element *)form_element,
+					&inputvalue);
+				if (err != DOM_NO_ERR) {
+					LOG(("Could not get submit button value"));
+					goto dom_no_memory;
+				}
+				/* Drop through to report successful button */
+			} else {
+				continue;
+			}
 		} else if (dom_string_isequal(nodename, corestring_dom_INPUT)) {
 			/* Things to consider here */
 			/* Buttons -- only if the successful control */
