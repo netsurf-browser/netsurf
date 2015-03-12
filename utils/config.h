@@ -64,7 +64,9 @@ char *strchrnul(const char *s, int c);
 #undef HAVE_INETATON
 #undef HAVE_SYS_SELECT
 #include <winsock2.h>
+#ifndef EAFNOSUPPORT
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
+#endif
 int inet_aton(const char *cp, struct in_addr *inp);
 #else
 #include <netinet/in.h>

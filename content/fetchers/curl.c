@@ -27,6 +27,8 @@
  * The CURL handles are cached in the curl_handle_ring.
  */
 
+#include "utils/config.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -39,7 +41,6 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
 #include "utils/corestrings.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"

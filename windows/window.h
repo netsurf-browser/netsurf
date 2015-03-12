@@ -79,5 +79,10 @@ struct gui_window {
  */
 struct gui_window *nsws_get_gui_window(HWND hwnd);
 
+void win32_window_set_scroll(struct gui_window *w, int sx, int sy);
+
+nserror nsws_create_main_class(HINSTANCE hinstance);
+
+extern struct gui_window_table *win32_window_table;
 
 #endif /* _NETSURF_WINDOWS_WINDOW_H_ */

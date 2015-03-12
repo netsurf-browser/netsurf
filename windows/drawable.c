@@ -38,8 +38,6 @@
 
 static const char windowclassname_drawable[] = "nswsdrawablewindow";
 
-void gui_window_set_scroll(struct gui_window *w, int sx, int sy);
-
 /**
  * Handle wheel scroll messages.
  */
@@ -132,7 +130,7 @@ nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
 	GetScrollInfo(hwnd, SB_VERT, &si);
 	if (si.nPos != mem) {
-		gui_window_set_scroll(gw, gw->scrollx, gw->scrolly +
+		win32_window_set_scroll(gw, gw->scrollx, gw->scrolly +
 				      gw->requestscrolly + si.nPos - mem);
 	}
 
@@ -196,7 +194,7 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
 	GetScrollInfo(hwnd, SB_HORZ, &si);
 	if (si.nPos != mem) {
-		gui_window_set_scroll(gw,
+		win32_window_set_scroll(gw,
 				gw->scrollx + gw->requestscrollx + si.nPos - mem,
 				gw->scrolly);
 	}

@@ -37,6 +37,7 @@
 #include "windows/drawable.h"
 #include "windows/download.h"
 #include "windows/localhistory.h"
+#include "windows/window.h"
 #include "windows/gui.h"
 
 static char **respaths; /** resource search path vector. */

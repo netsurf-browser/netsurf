@@ -20,12 +20,12 @@
 #ifndef _NETSURF_WINDOWS_GUI_H_
 #define _NETSURF_WINDOWS_GUI_H_
 
+struct gui_window;
 struct gui_file_table *win32_file_table;
-extern struct gui_window_table *win32_window_table;
-extern struct gui_clipboard_table *win32_clipboard_table;
-extern struct gui_fetch_table *win32_fetch_table;
-extern struct gui_browser_table *win32_browser_table;
-extern struct gui_utf8_table *win32_utf8_table;
+struct gui_clipboard_table *win32_clipboard_table;
+struct gui_fetch_table *win32_fetch_table;
+struct gui_browser_table *win32_browser_table;
+struct gui_utf8_table *win32_utf8_table;
 
 extern HINSTANCE hInstance;
 
@@ -54,35 +54,15 @@ struct nsws_pointers {
 };
 
 
-extern struct gui_window *window_list;
 extern char *options_file_location;
 
 
 HWND gui_window_main_window(struct gui_window *);
-HWND gui_window_toolbar(struct gui_window *);
-HWND gui_window_urlbar(struct gui_window *);
-HWND gui_window_statusbar(struct gui_window *);
-HWND gui_window_drawingarea(struct gui_window *);
 struct nsws_localhistory *gui_window_localhistory(struct gui_window *);
-void gui_window_set_localhistory(struct gui_window *,
-		struct nsws_localhistory *);
-
-RECT *gui_window_redraw_rect(struct gui_window *);
-
-int gui_window_voffset(struct gui_window *);
-int gui_window_width(struct gui_window *);
-int gui_window_height(struct gui_window *);
-int gui_window_scrollingx(struct gui_window *w);
-int gui_window_scrollingy(struct gui_window *w);
-
-struct gui_window *gui_window_iterate(struct gui_window *);
-struct browser_window *gui_window_browser_window(struct gui_window *);
-
-struct nsws_pointers *nsws_get_pointers(void);
 
 void nsws_window_init_pointers(HINSTANCE hinstance);
+struct nsws_pointers *nsws_get_pointers(void);
 
-nserror nsws_create_main_class(HINSTANCE hinstance);
 
 /**
  * Cause a browser window to navigate to a url
@@ -96,5 +76,8 @@ bool nsws_window_go(HWND hwnd, const char *url);
  * Run the win32 message loop with scheduling
  */
 void win32_run(void);
+
+/** cause the main message loop to exit */
+void win32_set_quit(bool q);
 
 #endif 
