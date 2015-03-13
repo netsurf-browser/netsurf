@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * The interface to the win32 font and utf8 handling.
+ */
+
 #ifndef _NETSURF_WINDOWS_FONT_H_
 #define _NETSURF_WINDOWS_FONT_H_
 
@@ -28,11 +33,19 @@ struct font_desc {
     const char *encoding;
 };
 
+struct gui_utf8_table *win32_utf8_table;
+
 extern nserror utf8_to_font_encoding(const struct font_desc* font,
 				       const char *string, 
 				       size_t len,
 				       char **result);
 
+/**
+ * generate a win32 font handle from a generic font style
+ *
+ * \param style The font style.
+ * \return The win32 font handle
+ */
 HFONT get_font(const plot_font_style_t *style);
 
 #endif /* NETSURF_WINDOWS_FONT_H */

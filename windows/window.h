@@ -19,6 +19,9 @@
 #ifndef _NETSURF_WINDOWS_WINDOW_H_
 #define _NETSURF_WINDOWS_WINDOW_H_
 
+/** The window operation function table for win32 */
+extern struct gui_window_table *win32_window_table;
+
 #include "desktop/mouse.h"
 
 struct browser_mouse {
@@ -79,10 +82,28 @@ struct gui_window {
  */
 struct gui_window *nsws_get_gui_window(HWND hwnd);
 
+/**
+ * Cause a browser window to navigate to a url
+ *
+ * \param hwnd The win32 handle to the browser window or one of its decendants.
+ * \param url The URL to navigate to.
+ */
+bool nsws_window_go(HWND hwnd, const char *urltxt);
+
 void win32_window_set_scroll(struct gui_window *w, int sx, int sy);
 
 nserror nsws_create_main_class(HINSTANCE hinstance);
 
-extern struct gui_window_table *win32_window_table;
+/**
+ * Get the main win32 window handle from a gui window
+ */
+HWND gui_window_main_window(struct gui_window *);
+
+
+/**
+ * Get the localhistory win32 window handle from a gui window
+ */
+struct nsws_localhistory *gui_window_localhistory(struct gui_window *);
+
 
 #endif /* _NETSURF_WINDOWS_WINDOW_H_ */

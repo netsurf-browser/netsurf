@@ -17,36 +17,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_GUI_H_
-#define _NETSURF_WINDOWS_GUI_H_
+/**
+ * \file
+ * Windows mouse cursor interface.
+ */
 
-struct gui_window;
-struct gui_file_table *win32_file_table;
-struct gui_clipboard_table *win32_clipboard_table;
-
-extern HINSTANCE hInstance;
-
-/* bounding box */
-typedef struct bbox_s {
-        int x0;
-        int y0;
-        int x1;
-        int y1;
-} bbox_t;
-
-
-
-extern char *options_file_location;
-
-
+#ifndef _NETSURF_WINDOWS_POINTERS_H_
+#define _NETSURF_WINDOWS_POINTERS_H_
 
 
 /**
- * Run the win32 message loop with scheduling
+ * initialise the list of mouse cursors
  */
-void win32_run(void);
+void nsws_window_init_pointers(HINSTANCE hinstance);
 
-/** cause the main message loop to exit */
-void win32_set_quit(bool q);
+/**
+ * get a win32 cursor handle for a pointer shape
+ */
+HCURSOR nsws_get_pointer(gui_pointer_shape shape);
+
 
 #endif 

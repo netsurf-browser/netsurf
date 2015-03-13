@@ -107,24 +107,6 @@ static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window 
 }
 
 
-/*
-  void history_gui_set_pointer(gui_pointer_shape shape, void *p)
-  {
-  struct nsws_pointers *pointers = nsws_get_pointers();
-  if (pointers == NULL)
-  return;
-  switch(shape) {
-  case GUI_POINTER_POINT:
-  SetCursor(pointers->hand);
-  break;
-  default:
-  SetCursor(pointers->arrow);
-  break;
-  }
-  }
-*/
-
-
 void nsws_localhistory_close(struct gui_window *w)
 {
 	struct nsws_localhistory *l = gui_window_localhistory(w);

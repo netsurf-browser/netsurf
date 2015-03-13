@@ -34,6 +34,7 @@
 #include "desktop/download.h"
 
 #include "windows/download.h"
+#include "windows/window.h"
 #include "windows/gui.h"
 #include "windows/resourceid.h"
 #include "windows/schedule.h"
@@ -41,12 +42,23 @@
 static bool downloading = false;
 static struct gui_download_window *download1;
 
-static bool nsws_download_window_up(struct gui_download_window *w);
 BOOL CALLBACK nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		LPARAM lparam);
 static void nsws_download_update_label(void *p);
 static void nsws_download_update_progress(void *p);
 static void nsws_download_clear_data(struct gui_download_window *w);
+
+static bool nsws_download_window_up(struct gui_download_window *w)
+{
+	 w->hwnd = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
+			gui_window_main_window(w->window),
+			nsws_download_event_callback);
+	if (w->hwnd == NULL) {
+		return false;
+	}
+	ShowWindow(w->hwnd, SW_SHOW);
+	return true;
+}
 
 static struct gui_download_window *
 gui_download_window_create(download_context *ctx, struct gui_window *gui)
@@ -142,22 +154,19 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 	}
 	download1 = w;
 
-	nsws_download_window_up(w);
+	if (nsws_download_window_up(w) == false) {
+		warn_user(messages_get("NoMemory"), 0);
+		free(destination);
+		free(domain);
+		free(filename);
+		free(w->total_size);
+		free(w->time_left);
+		free(w);
+		return NULL;
+	}
 	return w;
 }
 
-bool nsws_download_window_up(struct gui_download_window *w)
-{
-	 w->hwnd = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
-			gui_window_main_window(w->window),
-			nsws_download_event_callback);
-	if (w->hwnd == NULL) {
-		warn_user(messages_get("NoMemory"), 0);
-		return false;
-	}
-	ShowWindow(w->hwnd, SW_SHOW);
-	return true;
-}
 
 BOOL CALLBACK nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 		LPARAM lparam)

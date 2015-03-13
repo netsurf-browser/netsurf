@@ -36,6 +36,7 @@
 #include "desktop/textinput.h"
 
 #include "windows/gui.h"
+#include "windows/pointers.h"
 #include "windows/about.h"
 #include "windows/resourceid.h"
 #include "windows/findfile.h"
@@ -57,7 +58,6 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 /** Number of open windows */
 static int open_windows = 0;
-
 
 
 /**
@@ -1512,74 +1512,10 @@ static void win32_window_set_status(struct gui_window *w, const char *text)
 /**
  * set the pointer shape
  */
-static void win32_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
+static void win32_window_set_pointer(struct gui_window *w,
+				     gui_pointer_shape shape)
 {
-	struct nsws_pointers *pointers;
-
-	if (w == NULL)
-		return;
-
-	pointers = nsws_get_pointers();
-
-	switch (shape) {
-	case GUI_POINTER_POINT: /* link */
-	case GUI_POINTER_MENU:
-		SetCursor(pointers->hand);
-		break;
-
-	case GUI_POINTER_CARET: /* input */
-		SetCursor(pointers->ibeam);
-		break;
-
-	case GUI_POINTER_CROSS:
-		SetCursor(pointers->cross);
-		break;
-
-	case GUI_POINTER_MOVE:
-		SetCursor(pointers->sizeall);
-		break;
-
-	case GUI_POINTER_RIGHT:
-	case GUI_POINTER_LEFT:
-		SetCursor(pointers->sizewe);
-		break;
-
-	case GUI_POINTER_UP:
-	case GUI_POINTER_DOWN:
-		SetCursor(pointers->sizens);
-		break;
-
-	case GUI_POINTER_RU:
-	case GUI_POINTER_LD:
-		SetCursor(pointers->sizenesw);
-		break;
-
-	case GUI_POINTER_RD:
-	case GUI_POINTER_LU:
-		SetCursor(pointers->sizenwse);
-		break;
-
-	case GUI_POINTER_WAIT:
-		SetCursor(pointers->wait);
-		break;
-
-	case GUI_POINTER_PROGRESS:
-		SetCursor(pointers->appstarting);
-		break;
-
-	case GUI_POINTER_NO_DROP:
-	case GUI_POINTER_NOT_ALLOWED:
-		SetCursor(pointers->no);
-		break;
-
-	case GUI_POINTER_HELP:
-		SetCursor(pointers->help);
-		break;
-
-	default:
-		SetCursor(pointers->arrow);
-		break;
-	}
+	SetCursor(nsws_get_pointer(shape));
 }
 
 
@@ -1715,4 +1651,49 @@ struct gui_window *nsws_get_gui_window(HWND hwnd)
 	}
 
 	return gw;
+}
+
+
+/* exported interface documented in windows/window.h */
+bool nsws_window_go(HWND hwnd, const char *urltxt)
+{
+	struct gui_window *gw;
+	nsurl *url;
+
+	gw = nsws_get_gui_window(hwnd);
+	if (gw == NULL)
+		return false;
+
+	if (nsurl_create(urltxt, &url) != NSERROR_OK) {
+		warn_user("NoMemory", 0);
+	} else {
+		browser_window_navigate(gw->bw,
+					url,
+					NULL,
+					BW_NAVIGATE_HISTORY,
+					NULL,
+					NULL,
+					NULL);
+		nsurl_unref(url);
+	}
+
+	return true;
+}
+
+
+/* exported interface documented in windows/window.h */
+HWND gui_window_main_window(struct gui_window *w)
+{
+	if (w == NULL)
+		return NULL;
+	return w->main;
+}
+
+
+/* exported interface documented in windows/window.h */
+struct nsws_localhistory *gui_window_localhistory(struct gui_window *w)
+{
+	if (w == NULL)
+		return NULL;
+	return w->localhistory;
 }

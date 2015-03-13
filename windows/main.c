@@ -31,6 +31,7 @@
 #include "utils/nsoption.h"
 #include "desktop/browser.h"
 #include "desktop/gui_fetch.h"
+#include "desktop/gui_misc.h"
 #include "desktop/netsurf.h"
 
 #include "windows/findfile.h"
@@ -38,6 +39,10 @@
 #include "windows/download.h"
 #include "windows/localhistory.h"
 #include "windows/window.h"
+#include "windows/schedule.h"
+#include "windows/font.h"
+#include "windows/filetype.h"
+#include "windows/pointers.h"
 #include "windows/gui.h"
 
 static char **respaths; /** resource search path vector. */
@@ -98,6 +103,10 @@ static nserror set_defaults(struct nsoption_s *defaults)
 }
 
 
+static struct gui_browser_table win32_browser_table = {
+	.schedule = win32_schedule,
+};
+
 
 /**
  * Entry point from operating system
@@ -114,7 +123,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	const char *addr;
 	nsurl *url;
 	struct netsurf_table win32_table = {
-		.browser = win32_browser_table,
+		.browser = &win32_browser_table,
 		.window = win32_window_table,
 		.clipboard = win32_clipboard_table,
 		.download = win32_download_table,

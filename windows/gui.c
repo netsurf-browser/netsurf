@@ -32,8 +32,6 @@
 #include "utils/file.h"
 #include "desktop/browser.h"
 #include "desktop/gui_clipboard.h"
-#include "desktop/gui_fetch.h"
-#include "desktop/gui_misc.h"
 
 #include "windows/schedule.h"
 #include "windows/window.h"
@@ -44,8 +42,6 @@ static bool win32_quit = false;
 
 HINSTANCE hInstance; /** win32 application instance handle. */
 
-/** current pointer */
-static struct nsws_pointers nsws_pointer;
 
 void win32_set_quit(bool q)
 {
@@ -92,74 +88,8 @@ void win32_run(void)
 }
 
 
-bool
-nsws_window_go(HWND hwnd, const char *urltxt)
-{
-	struct gui_window *gw;
-	nsurl *url;
-
-	gw = nsws_get_gui_window(hwnd);
-	if (gw == NULL)
-		return false;
-
-	if (nsurl_create(urltxt, &url) != NSERROR_OK) {
-		warn_user("NoMemory", 0);
-	} else {
-		browser_window_navigate(gw->bw,
-					url,
-					NULL,
-					BW_NAVIGATE_HISTORY,
-					NULL,
-					NULL,
-					NULL);
-		nsurl_unref(url);
-	}
-
-	return true;
-}
 
 
-/**
- * cache pointers for quick swapping
- */
-void nsws_window_init_pointers(HINSTANCE hinstance)
-{
-	nsws_pointer.hand = LoadCursor(NULL, IDC_HAND);
-	nsws_pointer.ibeam = LoadCursor(NULL, IDC_IBEAM);
-	nsws_pointer.cross = LoadCursor(NULL, IDC_CROSS);
-	nsws_pointer.sizeall = LoadCursor(NULL, IDC_SIZEALL);
-	nsws_pointer.sizewe = LoadCursor(NULL, IDC_SIZEWE);
-	nsws_pointer.sizens = LoadCursor(NULL, IDC_SIZENS);
-	nsws_pointer.sizenesw = LoadCursor(NULL, IDC_SIZENESW);
-	nsws_pointer.sizenwse = LoadCursor(NULL, IDC_SIZENWSE);
-	nsws_pointer.wait = LoadCursor(NULL, IDC_WAIT);
-	nsws_pointer.appstarting = LoadCursor(NULL, IDC_APPSTARTING);
-	nsws_pointer.no = LoadCursor(NULL, IDC_NO);
-	nsws_pointer.help = LoadCursor(NULL, IDC_HELP);
-	nsws_pointer.arrow = LoadCursor(NULL, IDC_ARROW);
-}
-
-
-HWND gui_window_main_window(struct gui_window *w)
-{
-	if (w == NULL)
-		return NULL;
-	return w->main;
-}
-
-
-struct nsws_localhistory *gui_window_localhistory(struct gui_window *w)
-{
-	if (w == NULL)
-		return NULL;
-	return w->localhistory;
-}
-
-
-struct nsws_pointers *nsws_get_pointers(void)
-{
-	return &nsws_pointer;
-}
 
 
 /**
@@ -488,14 +418,3 @@ static struct gui_clipboard_table clipboard_table = {
 struct gui_clipboard_table *win32_clipboard_table = &clipboard_table;
 
 
-static struct gui_fetch_table fetch_table = {
-	.filetype = fetch_filetype,
-};
-struct gui_fetch_table *win32_fetch_table = &fetch_table;
-
-
-static struct gui_browser_table browser_table = {
-	.schedule = win32_schedule,
-};
-
-struct gui_browser_table *win32_browser_table = &browser_table;

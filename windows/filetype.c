@@ -18,17 +18,18 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "content/fetch.h"
+
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "content/fetch.h"
+#include "desktop/gui_fetch.h"
 
 #include "windows/filetype.h"
 
 /**
  * filetype -- determine the MIME type of a local file
  */
-
-const char *fetch_filetype(const char *unix_path)
+static const char *fetch_filetype(const char *unix_path)
 {
 	int l;
 	LOG(("unix path %s", unix_path));
@@ -51,3 +52,9 @@ const char *fetch_filetype(const char *unix_path)
 		return "image/x-ms-bmp";
 	return "text/html";
 }
+
+static struct gui_fetch_table fetch_table = {
+	.filetype = fetch_filetype,
+};
+
+struct gui_fetch_table *win32_fetch_table = &fetch_table;

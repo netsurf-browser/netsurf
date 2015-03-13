@@ -16,6 +16,11 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * \file
+ * This is The win32 API about dialog implementation.
+ */
+
 #include <stdio.h>
 
 #include "utils/config.h"
@@ -27,7 +32,7 @@
 #include "desktop/version.h"
 #include "utils/log.h"
 
-#include "windows/gui.h"
+#include "windows/window.h"
 #include "windows/about.h"
 #include "windows/resourceid.h"
 

@@ -19,6 +19,6 @@
 #ifndef _NETSURF_WINDOWS_FILETYPE_H_
 #define _NETSURF_WINDOWS_FILETYPE_H_
 
-const char *fetch_filetype(const char *unix_path);
+struct gui_fetch_table *win32_fetch_table;
 
 #endif
