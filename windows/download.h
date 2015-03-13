@@ -19,9 +19,6 @@
 #ifndef _NETSURF_WINDOWS_DOWNLOAD_H_
 #define _NETSURF_WINDOWS_DOWNLOAD_H_
 
-#include <time.h>
-#include <windows.h>
-
 extern struct gui_download_table *win32_download_table;
 
 typedef enum {
@@ -32,33 +29,9 @@ typedef enum {
        DOWNLOAD_CANCELED
 } download_status;
 
-typedef enum {
-       DOWNLOAD_PAUSE  = 1 << 0,
-       DOWNLOAD_RESUME = 1 << 1,
-       DOWNLOAD_CANCEL = 1 << 2,
-       DOWNLOAD_CLEAR  = 1 << 3
-} download_actions;
-
-struct gui_download_window {
-	HWND			hwnd;
-	char			*title;
-	char			*filename;
-	char			*domain;
-	char			*time_left;
-	char			*total_size;
-	char			*original_total_size;
-	int			size;
-	int			downloaded;
-	unsigned int 		progress;
-	int			time_remaining;
-	struct timeval		start_time;
-	int			speed;
-	int			error;
-	struct gui_window 	*window;
-	FILE			*file;
-	download_status 	status;
-};
-
+/**
+ * Initialise the win32 window class for the download window
+ */
 void nsws_download_window_init(struct gui_window *);
 
 #endif

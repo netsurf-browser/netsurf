@@ -39,6 +39,26 @@
 #include "windows/resourceid.h"
 #include "windows/schedule.h"
 
+struct gui_download_window {
+	HWND			hwnd;
+	char			*title;
+	char			*filename;
+	char			*domain;
+	char			*time_left;
+	char			*total_size;
+	char			*original_total_size;
+	int			size;
+	int			downloaded;
+	unsigned int 		progress;
+	int			time_remaining;
+	struct timeval		start_time;
+	int			speed;
+	int			error;
+	struct gui_window 	*window;
+	FILE			*file;
+	download_status 	status;
+};
+
 static bool downloading = false;
 static struct gui_download_window *download1;
 
