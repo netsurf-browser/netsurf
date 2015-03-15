@@ -1370,7 +1370,7 @@ bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name)
 		LOG(("Thumbnail initialisation failed."));
 		return false;
 	}
-	thumbnail_create(h, bitmap, NULL);
+	thumbnail_create(h, bitmap);
 	area = thumbnail_convert_8bpp(bitmap);
 	bitmap_destroy(bitmap);
 	if (!area) {

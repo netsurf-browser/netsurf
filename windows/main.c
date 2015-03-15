@@ -109,7 +109,7 @@ static struct gui_browser_table win32_browser_table = {
 
 
 /**
- * Entry point from operating system
+ * Entry point from windows
  **/
 int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)

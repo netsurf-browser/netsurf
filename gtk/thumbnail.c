@@ -32,7 +32,6 @@
 #include "utils/utils.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
 #include "desktop/thumbnail.h"
@@ -49,8 +48,7 @@
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumnail belongs to, or NULL
  */
-bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		nsurl *url)
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
 	cairo_surface_t *dsurface = bitmap->surface;
 	cairo_surface_t *surface;
@@ -119,10 +117,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	cairo_destroy(cr);
 
 	cairo_surface_destroy(surface);
-
-	/* register the thumbnail with the URL */
-	if (url)
-		urldb_set_thumbnail(url, bitmap);
 
 	return true;
 }

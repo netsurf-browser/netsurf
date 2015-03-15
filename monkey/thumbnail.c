@@ -23,9 +23,8 @@
 
 #include "monkey/browser.h"
 
-bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		nsurl *url)
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
-  fprintf(stdout, "GENERIC THUMBNAIL URL %s\n", nsurl_access(url));
+  fprintf(stdout, "GENERIC THUMBNAIL\n");
   return false;
 }

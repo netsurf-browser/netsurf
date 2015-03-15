@@ -56,6 +56,8 @@ void win32_run(void)
 	int timeout; /* timeout in miliseconds */
 	UINT timer_id = 0;
 
+	LOG(("Starting messgae dispatcher"));
+
 	while (!win32_quit) {
 		/* run the scheduler and discover how long to wait for
 		 * the next event.

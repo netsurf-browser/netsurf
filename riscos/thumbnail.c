@@ -36,7 +36,6 @@
 #include "utils/log.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
 #include "image/bitmap.h"
@@ -79,8 +78,7 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumbnail belongs to, or NULL
  */
-bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		nsurl *url)
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;
@@ -150,9 +148,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 			return false;
 	}
 
-	/* register the thumbnail with the URL */
-	if (url)
-		urldb_set_thumbnail(url, bitmap);
 	bitmap_modified(bitmap);
 	return true;
 }

@@ -41,8 +41,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/rtg.h"
 
-bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-	nsurl *url)
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
 	struct BitScaleArgs bsa;
 	int plot_width;
@@ -112,8 +111,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 		BitMapScale(&bsa);
 	}
-
-	if (url) urldb_set_thumbnail(url, bitmap);
 
 	return true;
 }

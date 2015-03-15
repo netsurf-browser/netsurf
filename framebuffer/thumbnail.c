@@ -34,8 +34,7 @@
 
 bool
 thumbnail_create(struct hlcache_handle *content,
-		 struct bitmap *bitmap,
-		 nsurl *url)
+		 struct bitmap *bitmap)
 {
 	nsfb_t *tbm = (nsfb_t *)bitmap; /* target bitmap */
 	nsfb_t *bm; /* temporary bitmap */
@@ -93,10 +92,6 @@ thumbnail_create(struct hlcache_handle *content,
 	nsfb_plot_copy(bm, NULL, tbm, &loc);
 
 	nsfb_free(bm);
-
-	/* register the thumbnail with the URL */
-	if (url != NULL)
-		urldb_set_thumbnail(url, bitmap);
 
 	return true;
 }

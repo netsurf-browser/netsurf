@@ -512,13 +512,21 @@ nserror browser_window_history_add(struct browser_window *bw,
 	if (bitmap == NULL) {
 		LOG(("Creating thumbnail for %s", nsurl_access(nsurl)));
 		bitmap = bitmap_create(WIDTH, HEIGHT,
-				BITMAP_NEW | BITMAP_CLEAR_MEMORY |
-				BITMAP_OPAQUE);
-		if ((bitmap != NULL) &&
-		    (thumbnail_create(content, bitmap, nsurl) == false)) {
-			/* Thumbnailing failed. Ignore it silently */
-			bitmap_destroy(bitmap);
-			bitmap = NULL;
+				       BITMAP_NEW | BITMAP_CLEAR_MEMORY |
+				       BITMAP_OPAQUE);
+		if (bitmap != NULL) {
+			if (thumbnail_create(content, bitmap)) {
+				/* Successful thumbnail so register it
+				 * with the url.
+				 */
+				urldb_set_thumbnail(nsurl, bitmap);
+			} else {
+				/* Thumbnailing failed. Ignore it
+				 * silently but clean up bitmap.
+				 */
+				bitmap_destroy(bitmap);
+				bitmap = NULL;
+			}
 		}
 	}
 	entry->bitmap = bitmap;
@@ -555,7 +563,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 	free(history->current->page.title);
 	history->current->page.title = title;
 
-	thumbnail_create(content, history->current->bitmap, NULL);
+	thumbnail_create(content, history->current->bitmap);
 
 	return NSERROR_OK;
 }

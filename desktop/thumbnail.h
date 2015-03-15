@@ -28,7 +28,6 @@
 struct hlcache_handle;
 struct redraw_context;
 struct bitmap;
-struct nsurl;
 
 /**
  * Redraw a content for thumbnailing
@@ -51,7 +50,6 @@ bool thumbnail_redraw(struct hlcache_handle *content, int width, int height,
 
 
 /* In platform specific thumbnail.c. */
-bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-		      struct nsurl *url);
+bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap);
 
 #endif

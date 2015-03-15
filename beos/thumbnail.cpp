@@ -56,8 +56,7 @@ extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
  * \param  bitmap   the bitmap to draw to
  * \param  url      the URL the thumnail belongs to, or NULL
  */
-bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		nsurl *url)
+bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
 	BBitmap *thumbnail;
 	BBitmap *small;
@@ -149,10 +148,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	thumbnail->UnlockBits();
 	small->UnlockBits();
-
-	/* register the thumbnail with the URL */
-	if (url)
-	  urldb_set_thumbnail(url, bitmap);
 
 	bitmap_modified(bitmap);
 

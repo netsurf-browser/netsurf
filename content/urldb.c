@@ -3061,13 +3061,15 @@ void urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
 	assert(url);
 
 	p = urldb_find_url(url);
-	if (!p)
-		return;
+	if (p != NULL) {
 
-	if (p->thumb && p->thumb != bitmap)
-		bitmap_destroy(p->thumb);
+		LOG(("Setting bitmap on %s", nsurl_access(url)));
 
-	p->thumb = bitmap;
+		if (p->thumb && p->thumb != bitmap)
+			bitmap_destroy(p->thumb);
+
+		p->thumb = bitmap;
+	}
 }
 
 

@@ -26,7 +26,7 @@
 #import "image/bitmap.h"
 
 /* In platform specific thumbnail.c. */
-bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap, nsurl *url)
+bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap)
 {
 	int bwidth = bitmap_get_width( bitmap );
 	int bheight = bitmap_get_height( bitmap );
@@ -59,8 +59,6 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap, nsu
 	CGContextRelease( bitmapContext );
 
 	bitmap_modified( bitmap );
-
-	if (NULL != url) urldb_set_thumbnail( url, bitmap );
 
 	return true;
 }

@@ -3417,9 +3417,10 @@ void ro_gui_window_iconise(struct gui_window *g,
 		LOG(("Thumbnail initialisation failed."));
 		return;
 	}
-	thumbnail_create(h, bitmap, NULL);
-	if (overlay)
+	thumbnail_create(h, bitmap);
+	if (overlay) {
 		bitmap_overlay_sprite(bitmap, overlay);
+	}
 	area = thumbnail_convert_8bpp(bitmap);
 	bitmap_destroy(bitmap);
 	if (!area) {

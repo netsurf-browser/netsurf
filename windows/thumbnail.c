@@ -20,10 +20,9 @@
 
 #include <windows.h>
 
-#include "content/urldb.h"
+#include "utils/log.h"
 #include "desktop/browser.h"
 #include "desktop/thumbnail.h"
-#include "utils/log.h"
 #include "image/bitmap.h"
 
 #include "windows/bitmap.h"
@@ -34,26 +33,24 @@
 
 bool 
 thumbnail_create(hlcache_handle *content, 
-		 struct bitmap *bitmap,
-		 nsurl *url)
+		 struct bitmap *bitmap)
 {
 	int width;
 	int height;
 	HDC hdc, bufferdc, minidc;
+	struct bitmap *fsbitmap;
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
 		.plot = &win_plotters
 	};
 
-	struct bitmap *fsbitmap;
-
 	width = min(content_get_width(content), 1024);
 	height = ((width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
-	LOG(("bitmap %p for url %s content %p width %d, height %d", 
-	     bitmap, nsurl_access(url), content, width, height));
+	LOG(("bitmap %p for content %p width %d, height %d",
+	     bitmap, content, width, height));
 
 	/* create two memory device contexts to put the bitmaps in */
 	bufferdc = CreateCompatibleDC(NULL);
@@ -87,9 +84,6 @@ thumbnail_create(hlcache_handle *content,
 	DeleteDC(bufferdc);
 	DeleteDC(minidc);
 	bitmap_destroy(fsbitmap);
-
-	if (url)
-		urldb_set_thumbnail(url, bitmap);
 			
 	return true;
 }
