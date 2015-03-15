@@ -723,7 +723,7 @@ void ro_gui_send_datasave(gui_save_type save_type,
 {
 	/* Close the save window because otherwise we need two contexts
 	*/
-	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+
 	ro_gui_dialog_close(dialog_saveas);
 
 	if (ro_message_send_message(wimp_USER_MESSAGE_RECORDED, (wimp_message*)message,
