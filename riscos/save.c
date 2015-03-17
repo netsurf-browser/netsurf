@@ -1029,10 +1029,6 @@ static void ro_gui_save_set_file_type(const char *path, lwc_string *mime_type)
  * \return  true on success, false on error and error reported
  */
 
-#define WIDTH 64
-#define HEIGHT 64
-#define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
-
 bool ro_gui_save_complete(hlcache_handle *h, char *path)
 {
 	void *spr = ((byte *) saveas_area) + saveas_area->first;
