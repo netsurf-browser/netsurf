@@ -1069,6 +1069,15 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 		return false;
 	}
 
+	/* create an empty !Runimage so the date gets correctly set */
+	snprintf(buf, sizeof buf, "%s.!RunImage", path);
+	fp = fopen(buf, "w");
+	if (!fp) {
+		LOG(("Creating !RunImage failed: errno = %i", errno));
+	} else {
+		fclose(fp);
+	}
+
 	/* Make sure the sprite name matches the directory name, because
 	   the user may have renamed the directory since we created the
 	   thumbnail sprite */
