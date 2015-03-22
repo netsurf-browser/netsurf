@@ -62,7 +62,7 @@
 #define DEFAULT_ENTRY_SIZE 16
 
 /** Backing store file format version */
-#define CONTROL_VERSION 120
+#define CONTROL_VERSION 130
 
 /** Number of milliseconds after a update before control data maintinance is performed  */
 #define CONTROL_MAINT_TIME 10000
@@ -129,24 +129,20 @@ enum store_entry_flags {
 /**
  * Backing store entry element.
  *
+ * An element keeps data about:
+ *  - the current memory allocation
+ *  - the number of outstanding references to the memory
+ *  - the size of the element data
+ *  - flags controlling how the memory and element are handled
+ *
  * @note Order is important to avoid excessive structure packing overhead.
  */
 struct store_entry_element {
-	union {
-		struct {
-			uint8_t* data; /**< data allocated on heap */
-			uint8_t ref; /**< reference count */
-		} __attribute__((__packed__)) heap;
-		struct {
-			uint8_t* data; /**< data is from an mmapping */
-			uint8_t ref; /**< reference count */
-		} __attribute__((__packed__)) map;
-		struct {
-			uint16_t block; /**< small object data block */
-		} __attribute__((__packed__)) sml;
-	} u ;
-	uint8_t flags; /* extension flags */
+	uint8_t* data; /**< data allocated */
 	uint32_t size; /**< size of entry element on disc */
+	uint16_t block; /**< small object data block */
+	uint8_t ref; /**< element data reference count */
+	uint8_t flags; /**< entry flags */
 };
 
 /**
@@ -739,17 +735,28 @@ set_store_entry(struct store_state *state,
 		state->last_entry++;
 		BS_ENTRY_INDEX(ident, state) = sei;
 
+		/* the entry */
+		se = &state->entries[sei];
+
 		/* clear the new entry */
-		memset(&state->entries[sei], 0, sizeof(struct store_entry));
+		memset(se, 0, sizeof(struct store_entry));
+	} else {
+		/* index found existing entry */
+
+		/* the entry */
+		se = &state->entries[sei];
+
+		if (se->ident != ident) {
+			/** @todo Is there a better heuristic than
+			 * first come, first served? Should we check
+			 * to see if the old entry is in use and if
+			 * not prefer the newly stored entry instead?
+			 */
+			LOG(("Entry index collision trying to replace %x with %x",
+			     se->ident, ident));
+			return NSERROR_PERMISSION;
+		}
 	}
-
-	/** @todo should we be checking the entry ident matches the
-	 * url. Thats a collision in the address mapping right? and is
-	 * it important?
-	 */
-
-	/* the entry */
-	se = &state->entries[sei];
 
 	/* the entry element */
 	if ((flags & BACKING_STORE_META) != 0) {
@@ -774,8 +781,8 @@ set_store_entry(struct store_state *state,
 
 	/* store the data in the element */
 	elem->flags |= ENTRY_ELEM_FLAG_HEAP;
-	elem->u.heap.data = data;
-	elem->u.heap.ref = 1;
+	elem->data = data;
+	elem->ref = 1;
 
 	/* account for size of entry element */
 	state->total_alloc -= elem->size;
@@ -1222,7 +1229,9 @@ initialise(const struct llcache_store_parameters *parameters)
 
 	LOG(("FS backing store init successful"));
 
-	LOG(("path:%s limit:%d hyst:%d addr:%d entries:%d", newstate->path, newstate->limit, newstate->hysteresis, newstate->ident_bits, newstate->entry_bits));
+	LOG(("path:%s limit:%d hyst:%d addr:%d entries:%d",
+	     newstate->path, newstate->limit, newstate->hysteresis,
+	     newstate->ident_bits, newstate->entry_bits));
 	LOG(("Using %lld/%lld", newstate->total_alloc, newstate->limit));
 
 	return NSERROR_OK;
@@ -1321,10 +1330,10 @@ store(nsurl *url,
 static nserror entry_release_alloc(struct store_entry_element *elem)
 {
 	if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
-		elem->u.heap.ref--;
-		if (elem->u.heap.ref == 0) {
-			LOG(("freeing %p", elem->u.heap.data));
-			free(elem->u.heap.data);
+		elem->ref--;
+		if (elem->ref == 0) {
+			LOG(("freeing %p", elem->data));
+			free(elem->data);
 			elem->flags &= ~ENTRY_ELEM_FLAG_HEAP;
 		}
 	}
@@ -1393,10 +1402,10 @@ fetch(nsurl *url,
 			/* a heap allocation already exists. Return
 			 * that allocation and bump our ref count.
 			 */
-			data = elem->u.heap.data;
-			elem->u.heap.ref++;
+			data = elem->data;
+			elem->ref++;
 			datalen = elem->size;
-			LOG(("Using existing heap allocation %p", elem->u.heap.data));
+			LOG(("Using existing heap allocation %p", elem->data));
 		} else {
 			datalen = elem->size;
 			data = malloc(elem->size);
@@ -1407,9 +1416,9 @@ fetch(nsurl *url,
 
 			/* store allocated buffer so track ownership */
 			elem->flags |= ENTRY_ELEM_FLAG_HEAP;
-			elem->u.heap.data = data;
-			elem->u.heap.ref = 1;
-			LOG(("Creating new heap allocation %p", elem->u.heap.data));
+			elem->data = data;
+			elem->ref = 1;
+			LOG(("Creating new heap allocation %p", elem->data));
 		}
 	} else if (datalen == 0) {
 		/* caller provided a buffer but no length bad parameter */
