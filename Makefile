@@ -140,7 +140,7 @@ endif
 PERL=perl
 MKDIR=mkdir
 TOUCH=touch
-STRIP=strip
+STRIP?=strip
 SPLIT_MESSAGES=$(PERL) utils/split-messages.pl
 
 # build verbosity
