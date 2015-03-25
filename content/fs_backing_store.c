@@ -95,7 +95,7 @@ typedef uint16_t entry_index_t;
 typedef uint32_t entry_ident_t;
 
 /**
- * Entry extension index values.
+ * Entry element index values.
  */
 enum store_entry_elem_idx {
 	ENTRY_ELEM_DATA = 0, /**< entry element is data */
@@ -287,13 +287,13 @@ remove_store_entry(struct store_state *state, struct store_entry **bse)
  *
  * @param state The store state to use.
  * @param ident The identifier to use.
- * @param flags flags to control the filename used.
+ * @param elem_idx The element index.
  * @return The filename string or NULL on allocation error.
  */
 static char *
 store_fname(struct store_state *state,
 	    entry_ident_t ident,
-	    enum backing_store_flags flags)
+	    int elem_idx)
 {
 	char *fname = NULL;
 	uint8_t b32u_i[8]; /* base32 encoded ident */
@@ -320,7 +320,7 @@ store_fname(struct store_state *state,
 	b32u_i[7] = b32u_d[0][1] = b32u_d[1][1] = b32u_d[2][1] =
 		b32u_d[3][1] = b32u_d[4][1] = b32u_d[5][1] = 0;
 
-	if ((flags & BACKING_STORE_META) != 0) {
+	if (elem_idx == ENTRY_ELEM_META) {
 		dat = "m"; /* metadata */
 	} else {
 		dat = "d"; /* data */
@@ -417,14 +417,14 @@ invalidate_entry(struct store_state *state, struct store_entry *bse)
 	}
 
 	/* unlink the files from disc */
-	fname = store_fname(state, bse->ident, BACKING_STORE_META);
+	fname = store_fname(state, bse->ident, ENTRY_ELEM_META);
 	if (fname == NULL) {
 		return NSERROR_NOMEM;
 	}
 	unlink(fname);
 	free(fname);
 
-	fname = store_fname(state, bse->ident, BACKING_STORE_NONE);
+	fname = store_fname(state, bse->ident, ENTRY_ELEM_DATA);
 	if (fname == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -693,7 +693,7 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
  *
  * @param state The store state to use.
  * @param url The value used as the unique key to search entries for.
- * @param flags flags affecting how the entry is stored.
+ * @param elem_idx The index of the entry element to use.
  * @param data The data to store
  * @param datalen The length of data in \a data
  * @param bse Pointer used to return value.
@@ -703,7 +703,7 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 static nserror
 set_store_entry(struct store_state *state,
 		nsurl *url,
-		enum backing_store_flags flags,
+		int elem_idx,
 		uint8_t *data,
 		const size_t datalen,
 		struct store_entry **bse)
@@ -759,11 +759,7 @@ set_store_entry(struct store_state *state,
 	}
 
 	/* the entry element */
-	if ((flags & BACKING_STORE_META) != 0) {
-		elem = &se->elem[ENTRY_ELEM_META];
-	} else {
-		elem = &se->elem[ENTRY_ELEM_DATA];
-	}
+	elem = &se->elem[elem_idx];
 
 	/* check if the element has storage already allocated */
 	if ((elem->flags & (ENTRY_ELEM_FLAG_HEAP | ENTRY_ELEM_FLAG_MMAP)) != 0) {
@@ -803,22 +799,22 @@ set_store_entry(struct store_state *state,
  * Open a file using a store ident.
  *
  * @param state The store state to use.
- * @param ident The identifier of the file to open.
- * @param flags The backing store flags.
+ * @param bse The store entry of the file to open.
+ * @param elem_idx The element within the store entry to open.
  * @param openflags The flags used with the open call.
  * @return An fd from the open call or -1 on error.
  */
 static int
 store_open(struct store_state *state,
-	   uint32_t ident,
-	   enum backing_store_flags flags,
+	   struct store_entry *bse,
+	   int elem_idx,
 	   int openflags)
 {
 	char *fname;
 	nserror ret;
 	int fd;
 
-	fname = store_fname(state, ident, flags);
+	fname = store_fname(state, bse->ident, elem_idx);
 	if (fname == NULL) {
 		LOG(("filename error"));
 		return -1;
@@ -1271,6 +1267,57 @@ finalise(void)
 
 
 /**
+ * Write an element of an entry to backing storage in a small block file.
+ *
+ * \param state The backing store state to use.
+ * \param bse The entry to store
+ * \param elem_idx The element index within the entry.
+ * \return NSERROR_OK on success or error code.
+ */
+static nserror store_write_block(struct store_state *state,
+			 struct store_entry *bse,
+			 int elem_idx)
+{
+	return NSERROR_SAVE_FAILED;
+}
+
+/**
+ * Write an element of an entry to backing storage as an individual file.
+ *
+ * \param state The backing store state to use.
+ * \param bse The entry to store
+ * \param elem_idx The element index within the entry.
+ * \return NSERROR_OK on success or error code.
+ */
+static nserror store_write_file(struct store_state *state,
+			 struct store_entry *bse,
+			 int elem_idx)
+{
+	ssize_t written;
+	int fd;
+
+	fd = store_open(state, bse, elem_idx, O_CREAT | O_WRONLY);
+	if (fd < 0) {
+		perror("");
+		LOG(("Open failed %d", fd));
+		return NSERROR_SAVE_FAILED;
+	}
+
+	written = write(fd, bse->elem[elem_idx].data, bse->elem[elem_idx].size);
+
+	LOG(("Wrote %d of %d bytes from %p",
+	     written, bse->elem[elem_idx].size, bse->elem[elem_idx].data));
+
+	close(fd);
+	if (written < 0 || (size_t) written < bse->elem[elem_idx].size) {
+		/** @todo Delete the file? */
+		return NSERROR_SAVE_FAILED;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
  * Place an object in the backing store.
  *
  * takes ownership of the heap block passed in.
@@ -1283,45 +1330,42 @@ finalise(void)
  */
 static nserror
 store(nsurl *url,
-      enum backing_store_flags flags,
+      enum backing_store_flags bsflags,
       uint8_t *data,
       const size_t datalen)
 {
 	nserror ret;
 	struct store_entry *bse;
-	ssize_t written;
-	int fd;
+	int elem_idx;
 
 	/* check backing store is initialised */
 	if (storestate == NULL) {
 		return NSERROR_INIT_FAILED;
 	}
 
+	/* calculate the entry element index */
+	if ((bsflags & BACKING_STORE_META) != 0) {
+		elem_idx = ENTRY_ELEM_META;
+	} else {
+		elem_idx = ENTRY_ELEM_DATA;
+	}
+
 	/* set the store entry up */
-	ret = set_store_entry(storestate, url, flags, data, datalen, &bse);
+	ret = set_store_entry(storestate, url, elem_idx, data, datalen, &bse);
 	if (ret != NSERROR_OK) {
 		LOG(("store entry setting failed"));
 		return ret;
 	}
 
-	fd = store_open(storestate, bse->ident, flags, O_CREAT | O_WRONLY);
-	if (fd < 0) {
-		perror("");
-		LOG(("Open failed %d",fd));
-		return NSERROR_SAVE_FAILED;
+	if (bse->elem[elem_idx].block != 0) {
+		/* small block storage */
+		ret = store_write_block(storestate, bse, elem_idx);
+	} else {
+		/* separate file in backing store */
+		ret = store_write_file(storestate, bse, elem_idx);
 	}
 
-
-	LOG(("Writing %d bytes from %p", datalen, data));
-	written = write(fd, data, datalen);
-
-	close(fd);
-	if (written < 0 || (size_t) written < datalen) {
-		/** @todo Delete the file? */
-		return NSERROR_SAVE_FAILED;
-	}
-
-	return NSERROR_OK;
+	return ret;
 }
 
 /**
@@ -1362,12 +1406,14 @@ fetch(nsurl *url,
 	size_t datalen;
 	int fd;
 	ssize_t rd;
+	int elem_idx;
 
 	/* check backing store is initialised */
 	if (storestate == NULL) {
 		return NSERROR_INIT_FAILED;
 	}
 
+	/* fetch store entry */
 	ret = get_store_entry(storestate, url, &bse);
 	if (ret != NSERROR_OK) {
 		LOG(("entry not found"));
@@ -1378,19 +1424,27 @@ fetch(nsurl *url,
 
 	LOG(("retriving cache file for url:%s", nsurl_access(url)));
 
-	fd = store_open(storestate, bse->ident, bsflags, O_RDONLY);
-	if (fd < 0) {
-		LOG(("Open failed"));
-		/** @todo should this invalidate the entry? */
-		return NSERROR_NOT_FOUND;
+	/* calculate the entry element index */
+	if ((bsflags & BACKING_STORE_META) != 0) {
+		elem_idx = ENTRY_ELEM_META;
+	} else {
+		elem_idx = ENTRY_ELEM_DATA;
+	}
+	/* the entry element */
+	elem = &bse->elem[elem_idx];
+
+	if (elem->block != 0) {
+		/* small block storage */
+	} else {
+		/* separate file in backing store */
+		fd = store_open(storestate, bse, elem_idx, O_RDONLY);
+		if (fd < 0) {
+			LOG(("Open failed"));
+			/** @todo should this invalidate the entry? */
+			return NSERROR_NOT_FOUND;
+		}
 	}
 
-	/* the entry element */
-	if ((bsflags & BACKING_STORE_META) != 0) {
-		elem = &bse->elem[ENTRY_ELEM_META];
-	} else {
-		elem = &bse->elem[ENTRY_ELEM_DATA];
-	}
 
 	data = *data_out;
 	datalen = *datalen_out;
@@ -1426,20 +1480,23 @@ fetch(nsurl *url,
 		return NSERROR_BAD_PARAMETER;
 	}
 
-	LOG(("Reading %d bytes into %p from file", datalen, data));
+	if (elem->block != 0) {
+	} else {
+		LOG(("Reading %d bytes into %p from file", datalen, data));
 
-	/** @todo this read should be an a loop */
-	rd = read(fd, data, datalen);
-	if (rd <= 0) {
-		LOG(("read returned %d", rd));
-		close(fd);
-		if ((*data_out) == NULL) {
-			entry_release_alloc(elem);
+		/** @todo this read should be an a loop */
+		rd = read(fd, data, datalen);
+		if (rd <= 0) {
+			LOG(("read returned %d", rd));
+			close(fd);
+			if ((*data_out) == NULL) {
+				entry_release_alloc(elem);
+			}
+			return NSERROR_NOT_FOUND;
 		}
-		return NSERROR_NOT_FOUND;
-	}
 
-	close(fd);
+		close(fd);
+	}
 
 	storestate->hit_size += datalen;
 
