@@ -297,19 +297,19 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 	else if( (nkc & NKF_CTRL) == NKF_CTRL ) {
 		switch ( ascii ) {
 			case 'A':
-				ik = KEY_SELECT_ALL;
+				ik = NS_KEY_SELECT_ALL;
 			break;
 
 			case 'C':
-				ik = KEY_COPY_SELECTION;
+				ik = NS_KEY_COPY_SELECTION;
 			break;
 
 			case 'X':
-				ik = KEY_CUT_SELECTION;
+				ik = NS_KEY_CUT_SELECTION;
 			break;
 
 			case 'V':
-				ik = KEY_PASTE;
+				ik = NS_KEY_PASTE;
 			break;
 
 			default:
@@ -320,23 +320,23 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 	else if( (nkc & NKF_SHIFT) != 0 ) {
 		switch( ascii ) {
 			case NK_TAB:
-				ik = KEY_SHIFT_TAB;
+				ik = NS_KEY_SHIFT_TAB;
 			break;
 
 			case NK_LEFT:
-				ik = KEY_LINE_START;
+				ik = NS_KEY_LINE_START;
 			break;
 
 			case NK_RIGHT:
-				ik = KEY_LINE_END;
+				ik = NS_KEY_LINE_END;
 			break;
 
 			case NK_UP:
-				ik = KEY_PAGE_UP;
+				ik = NS_KEY_PAGE_UP;
 			break;
 
 			case NK_DOWN:
-				ik = KEY_PAGE_DOWN;
+				ik = NS_KEY_PAGE_DOWN;
 			break;
 
 			default:
@@ -348,64 +348,64 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 		switch( ascii ) {
 
 			case NK_INS:
-				ik = KEY_PASTE;
+				ik = NS_KEY_PASTE;
 				break;
 
 			case NK_BS:
-				ik = KEY_DELETE_LEFT;
+				ik = NS_KEY_DELETE_LEFT;
 			break;
 
 			case NK_DEL:
-				ik = KEY_DELETE_RIGHT;
+				ik = NS_KEY_DELETE_RIGHT;
 			break;
 
 			case NK_TAB:
-				ik = KEY_TAB;
+				ik = NS_KEY_TAB;
 			break;
 
 
 			case NK_ENTER:
-				ik = KEY_NL;
+				ik = NS_KEY_NL;
 			break;
 
 			case NK_RET:
-				ik = KEY_CR;
+				ik = NS_KEY_CR;
 			break;
 
 			case NK_ESC:
-				ik = KEY_ESCAPE;
+				ik = NS_KEY_ESCAPE;
 			break;
 
 			case NK_CLRHOME:
-				ik = KEY_TEXT_START;
+				ik = NS_KEY_TEXT_START;
 			break;
 
 			case NK_RIGHT:
-				ik = KEY_RIGHT;
+				ik = NS_KEY_RIGHT;
 			break;
 
 			case NK_LEFT:
-				ik = KEY_LEFT;
+				ik = NS_KEY_LEFT;
 			break;
 
 			case NK_UP:
-				ik = KEY_UP;
+				ik = NS_KEY_UP;
 			break;
 
 			case NK_UNDO:
-				ik = KEY_UNDO;
+				ik = NS_KEY_UNDO;
 			break;
 
 			case NK_DOWN:
-				ik = KEY_DOWN;
+				ik = NS_KEY_DOWN;
 			break;
 
 			case NK_M_PGUP:
-				ik = KEY_PAGE_UP;
+				ik = NS_KEY_PAGE_UP;
 			break;
 
 			case NK_M_PGDOWN:
-				ik = KEY_PAGE_DOWN;
+				ik = NS_KEY_PAGE_DOWN;
 			break;
 
 			default:

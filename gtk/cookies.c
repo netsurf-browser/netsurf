@@ -161,26 +161,26 @@ void nsgtk_cookies_destroy(void)
 /* edit menu */
 MENUHANDLER(delete_selected)
 {
-	cookie_manager_keypress(KEY_DELETE_LEFT);
+	cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(delete_all)
 {
-	cookie_manager_keypress(KEY_SELECT_ALL);
-	cookie_manager_keypress(KEY_DELETE_LEFT);
+	cookie_manager_keypress(NS_KEY_SELECT_ALL);
+	cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	cookie_manager_keypress(KEY_SELECT_ALL);
+	cookie_manager_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	cookie_manager_keypress(KEY_CLEAR_SELECTION);
+	cookie_manager_keypress(NS_KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 

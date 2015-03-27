@@ -314,27 +314,27 @@ fbtk_keycode_to_ucs4(int code, fbtk_modifier_type mods)
 	} else if (mods & FBTK_MOD_LCTRL || mods & FBTK_MOD_RCTRL) {
 		switch (code) {
 		case NSFB_KEY_a:
-			ucs4 = KEY_SELECT_ALL;
+			ucs4 = NS_KEY_SELECT_ALL;
 			break;
 
 		case NSFB_KEY_c:
-			ucs4 = KEY_COPY_SELECTION;
+			ucs4 = NS_KEY_COPY_SELECTION;
 			break;
 
 		case NSFB_KEY_u:
-			ucs4 = KEY_DELETE_LINE;
+			ucs4 = NS_KEY_DELETE_LINE;
 			break;
 
 		case NSFB_KEY_v:
-			ucs4 = KEY_PASTE;
+			ucs4 = NS_KEY_PASTE;
 			break;
 
 		case NSFB_KEY_x:
-			ucs4 = KEY_CUT_SELECTION;
+			ucs4 = NS_KEY_CUT_SELECTION;
 			break;
 
 		case NSFB_KEY_z:
-			ucs4 = KEY_CLEAR_SELECTION;
+			ucs4 = NS_KEY_CLEAR_SELECTION;
 			break;
 		default:
 			break;

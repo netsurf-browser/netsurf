@@ -772,24 +772,24 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 			nskey = (uint32_t)byte;
 		else {
 			switch (byte) {
-				case B_BACKSPACE:	nskey = KEY_DELETE_LEFT; break;
-				case B_TAB:	nskey = KEY_TAB; break;
+				case B_BACKSPACE:	nskey = NS_KEY_DELETE_LEFT; break;
+				case B_TAB:	nskey = NS_KEY_TAB; break;
 				/*case XK_Linefeed:	return QKlinefeed;*/
 				case B_ENTER:	nskey = (uint32_t)10; break;
 				case B_ESCAPE:	nskey = (uint32_t)'\033'; break;
 				case B_SPACE:	nskey = (uint32_t)' '; break;
-				case B_DELETE:	nskey = KEY_DELETE_RIGHT; break;
+				case B_DELETE:	nskey = NS_KEY_DELETE_RIGHT; break;
 				/*
-				case B_INSERT:	nskey = KEYSYM("insert"); break;
+				case B_INSERT:	nskey = NS_KEYSYM("insert"); break;
 				*/
-				case B_HOME:	nskey = KEY_LINE_START; break; // XXX ?
-				case B_END:	nskey = KEY_LINE_END; break; // XXX ?
-				case B_PAGE_UP:	nskey = KEY_PAGE_UP; break;
-				case B_PAGE_DOWN:	nskey = KEY_PAGE_DOWN; break;
-				case B_LEFT_ARROW:	nskey = KEY_LEFT; break;
-				case B_RIGHT_ARROW:	nskey = KEY_RIGHT; break;
-				case B_UP_ARROW:	nskey = KEY_UP; break;
-				case B_DOWN_ARROW:	nskey = KEY_DOWN; break;
+				case B_HOME:	nskey = NS_KEY_LINE_START; break; // XXX ?
+				case B_END:	nskey = NS_KEY_LINE_END; break; // XXX ?
+				case B_PAGE_UP:	nskey = NS_KEY_PAGE_UP; break;
+				case B_PAGE_DOWN:	nskey = NS_KEY_PAGE_DOWN; break;
+				case B_LEFT_ARROW:	nskey = NS_KEY_LEFT; break;
+				case B_RIGHT_ARROW:	nskey = NS_KEY_RIGHT; break;
+				case B_UP_ARROW:	nskey = NS_KEY_UP; break;
+				case B_DOWN_ARROW:	nskey = NS_KEY_DOWN; break;
 				/*
 				case B_FUNCTION_KEY:
 					switch (scancode) {

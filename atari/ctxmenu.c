@@ -209,19 +209,19 @@ void context_popup(struct gui_window * gw, short x, short y)
 
 	switch( choice ){
 		case POP_CTX_COPY_SEL:
-			browser_window_key_press(gw->browser->bw, KEY_COPY_SELECTION);
+			browser_window_key_press(gw->browser->bw, NS_KEY_COPY_SELECTION);
 		break;
 
 		case POP_CTX_CUT_SEL:
-			browser_window_key_press(gw->browser->bw, KEY_CUT_SELECTION);
+			browser_window_key_press(gw->browser->bw, NS_KEY_CUT_SELECTION);
 		break;
 
 		case POP_CTX_PASTE_SEL:
-			browser_window_key_press(gw->browser->bw, KEY_PASTE);
+			browser_window_key_press(gw->browser->bw, NS_KEY_PASTE);
 		break;
 
 		case POP_CTX_SELECT_ALL:
-			browser_window_key_press(gw->browser->bw, KEY_SELECT_ALL);
+			browser_window_key_press(gw->browser->bw, NS_KEY_SELECT_ALL);
 		break;
 
 		case POP_CTX_SAVE_AS:

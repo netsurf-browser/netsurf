@@ -199,7 +199,7 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		global_history_keypress(KEY_DELETE_LEFT);
+		global_history_keypress(NS_KEY_DELETE_LEFT);
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -219,7 +219,7 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		global_history_keypress(KEY_CR);
+		global_history_keypress(NS_KEY_CR);
 		break;
 
 	default:
@@ -356,16 +356,16 @@ bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		global_history_contract(false);
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		global_history_keypress(KEY_CR);
+		global_history_keypress(NS_KEY_CR);
 		return true;
 	case TREE_SELECTION_DELETE:
-		global_history_keypress(KEY_DELETE_LEFT);
+		global_history_keypress(NS_KEY_DELETE_LEFT);
 		return true;
 	case TREE_SELECT_ALL:
-		global_history_keypress(KEY_SELECT_ALL);
+		global_history_keypress(NS_KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		global_history_keypress(KEY_CLEAR_SELECTION);
+		global_history_keypress(NS_KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(global_history_window.toolbar,

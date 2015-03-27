@@ -821,19 +821,19 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		switch (cbi->event->value.keycode) {
 
 		case NSFB_KEY_DELETE:
-			browser_window_key_press(gw->bw, KEY_DELETE_RIGHT);
+			browser_window_key_press(gw->bw, NS_KEY_DELETE_RIGHT);
 			break;
 
 		case NSFB_KEY_PAGEUP:
 			if (browser_window_key_press(gw->bw,
-					KEY_PAGE_UP) == false)
+					NS_KEY_PAGE_UP) == false)
 				widget_scroll_y(gw, -fbtk_get_height(
 						gw->browser), false);
 			break;
 
 		case NSFB_KEY_PAGEDOWN:
 			if (browser_window_key_press(gw->bw,
-					KEY_PAGE_DOWN) == false)
+					NS_KEY_PAGE_DOWN) == false)
 				widget_scroll_y(gw, fbtk_get_height(
 						gw->browser), false);
 			break;
@@ -843,21 +843,21 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 					modifier & FBTK_MOD_LCTRL) {
 				/* CTRL held */
 				if (browser_window_key_press(gw->bw,
-						KEY_LINE_END) == false)
+						NS_KEY_LINE_END) == false)
 					widget_scroll_x(gw, INT_MAX, true);
 
 			} else if (modifier & FBTK_MOD_RSHIFT ||
 					modifier & FBTK_MOD_LSHIFT) {
 				/* SHIFT held */
 				if (browser_window_key_press(gw->bw,
-						KEY_WORD_RIGHT) == false)
+						NS_KEY_WORD_RIGHT) == false)
 					widget_scroll_x(gw, fbtk_get_width(
 						gw->browser), false);
 
 			} else {
 				/* no modifier */
 				if (browser_window_key_press(gw->bw,
-						KEY_RIGHT) == false)
+						NS_KEY_RIGHT) == false)
 					widget_scroll_x(gw, 100, false);
 			}
 			break;
@@ -867,34 +867,34 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 					modifier & FBTK_MOD_LCTRL) {
 				/* CTRL held */
 				if (browser_window_key_press(gw->bw,
-						KEY_LINE_START) == false)
+						NS_KEY_LINE_START) == false)
 					widget_scroll_x(gw, 0, true);
 
 			} else if (modifier & FBTK_MOD_RSHIFT ||
 					modifier & FBTK_MOD_LSHIFT) {
 				/* SHIFT held */
 				if (browser_window_key_press(gw->bw,
-						KEY_WORD_LEFT) == false)
+						NS_KEY_WORD_LEFT) == false)
 					widget_scroll_x(gw, -fbtk_get_width(
 						gw->browser), false);
 
 			} else {
 				/* no modifier */
 				if (browser_window_key_press(gw->bw,
-						KEY_LEFT) == false)
+						NS_KEY_LEFT) == false)
 					widget_scroll_x(gw, -100, false);
 			}
 			break;
 
 		case NSFB_KEY_UP:
 			if (browser_window_key_press(gw->bw,
-					KEY_UP) == false)
+					NS_KEY_UP) == false)
 				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_DOWN:
 			if (browser_window_key_press(gw->bw,
-					KEY_DOWN) == false)
+					NS_KEY_DOWN) == false)
 				widget_scroll_y(gw, 100, false);
 			break;
 
@@ -922,21 +922,21 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 					(modifier & FBTK_MOD_RSHIFT ||
 					 modifier & FBTK_MOD_LSHIFT)) {
 				/* Z pressed with CTRL and SHIFT held */
-				browser_window_key_press(gw->bw, KEY_REDO);
+				browser_window_key_press(gw->bw, NS_KEY_REDO);
 				break;
 
 			} else if (cbi->event->value.keycode == NSFB_KEY_z &&
 					(modifier & FBTK_MOD_RCTRL ||
 					 modifier & FBTK_MOD_LCTRL)) {
 				/* Z pressed with CTRL held */
-				browser_window_key_press(gw->bw, KEY_UNDO);
+				browser_window_key_press(gw->bw, NS_KEY_UNDO);
 				break;
 
 			} else if (cbi->event->value.keycode == NSFB_KEY_y &&
 					(modifier & FBTK_MOD_RCTRL ||
 					 modifier & FBTK_MOD_LCTRL)) {
 				/* Y pressed with CTRL held */
-				browser_window_key_press(gw->bw, KEY_REDO);
+				browser_window_key_press(gw->bw, NS_KEY_REDO);
 				break;
 			}
 			/* Z or Y pressed but not undo or redo;

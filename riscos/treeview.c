@@ -1127,35 +1127,35 @@ static bool ro_treeview_keypress(wimp_key *key)
 		/* cursor movement keys */
 		case wimp_KEY_HOME:
 		case wimp_KEY_CONTROL | wimp_KEY_LEFT:
-			c = KEY_LINE_START;
+			c = NS_KEY_LINE_START;
 			break;
 		case wimp_KEY_END:
 			if (os_version >= RISCOS5)
-				c = KEY_LINE_END;
+				c = NS_KEY_LINE_END;
 			else
-				c = KEY_DELETE_RIGHT;
+				c = NS_KEY_DELETE_RIGHT;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = KEY_LINE_END;   break;
-		case wimp_KEY_CONTROL | wimp_KEY_UP:	c = KEY_TEXT_START; break;
-		case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = KEY_TEXT_END;   break;
-		case wimp_KEY_SHIFT | wimp_KEY_LEFT:	c = KEY_WORD_LEFT ; break;
-		case wimp_KEY_SHIFT | wimp_KEY_RIGHT:	c = KEY_WORD_RIGHT; break;
-		case wimp_KEY_SHIFT | wimp_KEY_UP:	c = KEY_PAGE_UP;    break;
-		case wimp_KEY_SHIFT | wimp_KEY_DOWN:	c = KEY_PAGE_DOWN;  break;
-		case wimp_KEY_LEFT:  c = KEY_LEFT; break;
-		case wimp_KEY_RIGHT: c = KEY_RIGHT; break;
-		case wimp_KEY_UP:    c = KEY_UP; break;
-		case wimp_KEY_DOWN:  c = KEY_DOWN; break;
+		case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = NS_KEY_LINE_END;   break;
+		case wimp_KEY_CONTROL | wimp_KEY_UP:	c = NS_KEY_TEXT_START; break;
+		case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = NS_KEY_TEXT_END;   break;
+		case wimp_KEY_SHIFT | wimp_KEY_LEFT:	c = NS_KEY_WORD_LEFT ; break;
+		case wimp_KEY_SHIFT | wimp_KEY_RIGHT:	c = NS_KEY_WORD_RIGHT; break;
+		case wimp_KEY_SHIFT | wimp_KEY_UP:	c = NS_KEY_PAGE_UP;    break;
+		case wimp_KEY_SHIFT | wimp_KEY_DOWN:	c = NS_KEY_PAGE_DOWN;  break;
+		case wimp_KEY_LEFT:  c = NS_KEY_LEFT; break;
+		case wimp_KEY_RIGHT: c = NS_KEY_RIGHT; break;
+		case wimp_KEY_UP:    c = NS_KEY_UP; break;
+		case wimp_KEY_DOWN:  c = NS_KEY_DOWN; break;
 
 		/* editing */
 		case wimp_KEY_CONTROL | wimp_KEY_END:
-			c = KEY_DELETE_LINE_END;
+			c = NS_KEY_DELETE_LINE_END;
 			break;
 		case wimp_KEY_DELETE:
 			if (ro_gui_ctrl_pressed())
-				c = KEY_DELETE_LINE_START;
+				c = NS_KEY_DELETE_LINE_START;
 			else if (os_version < RISCOS5)
-				c = KEY_DELETE_LEFT;
+				c = NS_KEY_DELETE_LEFT;
 			break;
 
 		default:

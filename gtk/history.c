@@ -197,26 +197,26 @@ MENUHANDLER(export)
 /* edit menu */
 MENUHANDLER(delete_selected)
 {
-	global_history_keypress(KEY_DELETE_LEFT);
+	global_history_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(delete_all)
 {
-	global_history_keypress(KEY_SELECT_ALL);
-	global_history_keypress(KEY_DELETE_LEFT);
+	global_history_keypress(NS_KEY_SELECT_ALL);
+	global_history_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	global_history_keypress(KEY_SELECT_ALL);
+	global_history_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	global_history_keypress(KEY_CLEAR_SELECTION);
+	global_history_keypress(NS_KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 
@@ -259,6 +259,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	global_history_keypress(KEY_CR);
+	global_history_keypress(NS_KEY_CR);
 	return TRUE;
 }

@@ -257,7 +257,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		hotlist_keypress(KEY_DELETE_LEFT);
+		hotlist_keypress(NS_KEY_DELETE_LEFT);
 		ro_toolbar_update_all_hotlists();
 		break;
 
@@ -278,7 +278,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		hotlist_keypress(KEY_CR);
+		hotlist_keypress(NS_KEY_CR);
 		break;
 
 	case TOOLBAR_BUTTON_CREATE:
@@ -425,17 +425,17 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		hotlist_edit_selection();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		hotlist_keypress(KEY_CR);
+		hotlist_keypress(NS_KEY_CR);
 		return true;
 	case TREE_SELECTION_DELETE:
-		hotlist_keypress(KEY_DELETE_LEFT);
+		hotlist_keypress(NS_KEY_DELETE_LEFT);
 		ro_toolbar_update_all_hotlists();
 		return true;
 	case TREE_SELECT_ALL:
-		hotlist_keypress(KEY_SELECT_ALL);
+		hotlist_keypress(NS_KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		hotlist_keypress(KEY_CLEAR_SELECTION);
+		hotlist_keypress(NS_KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(hotlist_window.toolbar,

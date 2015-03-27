@@ -2663,7 +2663,7 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 	redraw = treeview_clear_selection(tree, rect);
 
 	switch (key) {
-	case KEY_LEFT:
+	case NS_KEY_LEFT:
 		if (ns.curr != NULL &&
 				ns.curr->parent != NULL &&
 				ns.curr->parent->type != TREE_NODE_ROOT) {
@@ -2676,7 +2676,7 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		}
 		break;
 
-	case KEY_RIGHT:
+	case NS_KEY_RIGHT:
 		if (ns.curr != NULL) {
 			if (!(ns.curr->flags & TV_NFLAGS_EXPANDED)) {
 				/* Toggle node to expanded */
@@ -2702,14 +2702,14 @@ static bool treeview_keyboard_navigation(treeview *tree, uint32_t key,
 		}
 		break;
 
-	case KEY_UP:
+	case NS_KEY_UP:
 		if (ns.prev != NULL) {
 			/* Step to previous node */
 			ns.prev->flags |= TV_NFLAGS_SELECTED;
 		}
 		break;
 
-	case KEY_DOWN:
+	case NS_KEY_DOWN:
 		if (ns.next != NULL) {
 			/* Step to next node */
 			ns.next->flags |= TV_NFLAGS_SELECTED;
@@ -2745,11 +2745,11 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 	/* Pass to textarea, if editing in progress */
 	if (tree->edit.textarea != NULL) {
 		switch (key) {
-		case KEY_ESCAPE:
+		case NS_KEY_ESCAPE:
 			treeview_edit_cancel(tree, true);
 			return true;
-		case KEY_NL:
-		case KEY_CR:
+		case NS_KEY_NL:
+		case NS_KEY_CR:
 			treeview_edit_done(tree);
 			return true;
 		default:
@@ -2759,14 +2759,14 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 
 	/* Keypress to be handled by treeview */
 	switch (key) {
-	case KEY_SELECT_ALL:
+	case NS_KEY_SELECT_ALL:
 		redraw = treeview_select_all(tree, &r);
 		break;
-	case KEY_COPY_SELECTION:
+	case NS_KEY_COPY_SELECTION:
 		treeview_copy_selection(tree);
 		break;
-	case KEY_DELETE_LEFT:
-	case KEY_DELETE_RIGHT:
+	case NS_KEY_DELETE_LEFT:
+	case NS_KEY_DELETE_RIGHT:
 		redraw = treeview_delete_selection(tree, &r);
 
 		if (tree->flags & TREEVIEW_DEL_EMPTY_DIRS) {
@@ -2782,18 +2782,18 @@ bool treeview_keypress(treeview *tree, uint32_t key)
 			}
 		}
 		break;
-	case KEY_CR:
-	case KEY_NL:
+	case NS_KEY_CR:
+	case NS_KEY_NL:
 		treeview_launch_selection(tree);
 		break;
-	case KEY_ESCAPE:
-	case KEY_CLEAR_SELECTION:
+	case NS_KEY_ESCAPE:
+	case NS_KEY_CLEAR_SELECTION:
 		redraw = treeview_clear_selection(tree, &r);
 		break;
-	case KEY_LEFT:
-	case KEY_RIGHT:
-	case KEY_UP:
-	case KEY_DOWN:
+	case NS_KEY_LEFT:
+	case NS_KEY_RIGHT:
+	case NS_KEY_UP:
+	case NS_KEY_DOWN:
 		redraw = treeview_keyboard_navigation(tree, key, &r);
 		break;
 	default:

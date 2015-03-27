@@ -940,25 +940,25 @@ HOOKF(uint32, ami_context_menu_hook, Object *, item, APTR)
 			break;
 
 			case CMID_SELCUT:
-				browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_CUT_SELECTION);
 			break;
 
 			case CMID_SELCOPY:
-				browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
-				browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
 			break;
 
 			case CMID_SELPASTE:
-				browser_window_key_press(gwin->gw->bw, KEY_PASTE);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_PASTE);
 			break;
 
 			case CMID_SELALL:
-				browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_SELECT_ALL);
 				gui_start_selection(gwin->gw);
 			break;
 
 			case CMID_SELCLEAR:
-				browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+				browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
 			break;
 
 			case CMID_SELSAVE:
@@ -1013,7 +1013,7 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 		switch(itemid)
 		{
 			case CMID_TREE_LAUNCH:
-				tree_keypress(tree, KEY_CR);
+				tree_keypress(tree, NS_KEY_CR);
 			break;
 
 			case CMID_TREE_EDITFOLDER:
@@ -1049,7 +1049,7 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 			break;
 
 			case CMID_TREE_DELETE:
-				tree_keypress(tree, KEY_DELETE_RIGHT);
+				tree_keypress(tree, NS_KEY_DELETE_RIGHT);
 			break;
 		}
 	}

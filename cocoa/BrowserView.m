@@ -311,80 +311,80 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) moveLeft: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_LEFT )) return;
+	if (browser_window_key_press( browser, NS_KEY_LEFT )) return;
 	[self scrollHorizontal: -[[self enclosingScrollView] horizontalLineScroll]];
 }
 
 - (void) moveRight: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_RIGHT )) return;
+	if (browser_window_key_press( browser, NS_KEY_RIGHT )) return;
 	[self scrollHorizontal: [[self enclosingScrollView] horizontalLineScroll]];
 }
 
 - (void) moveUp: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_UP )) return;
+	if (browser_window_key_press( browser, NS_KEY_UP )) return;
 	[self scrollVertical: -[[self enclosingScrollView] lineScroll]];
 }
 
 - (void) moveDown: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_DOWN )) return;
+	if (browser_window_key_press( browser, NS_KEY_DOWN )) return;
 	[self scrollVertical: [[self enclosingScrollView] lineScroll]];
 }
 
 - (void) deleteBackward: (id)sender;
 {
-	if (!browser_window_key_press( browser, KEY_DELETE_LEFT )) {
+	if (!browser_window_key_press( browser, NS_KEY_DELETE_LEFT )) {
 		[NSApp sendAction: @selector( goBack: ) to: nil from: self];
 	}
 }
 
 - (void) deleteForward: (id)sender;
 {
-	browser_window_key_press( browser, KEY_DELETE_RIGHT );
+	browser_window_key_press( browser, NS_KEY_DELETE_RIGHT );
 }
 
 - (void) cancelOperation: (id)sender;
 {
-	browser_window_key_press( browser, KEY_ESCAPE );
+	browser_window_key_press( browser, NS_KEY_ESCAPE );
 }
 
 - (void) scrollPageUp: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_PAGE_UP )) return;
+	if (browser_window_key_press( browser, NS_KEY_PAGE_UP )) return;
 	[self scrollVertical: -[self pageScroll]];
 }
 
 - (void) scrollPageDown: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_PAGE_DOWN )) return;
+	if (browser_window_key_press( browser, NS_KEY_PAGE_DOWN )) return;
 	[self scrollVertical: [self pageScroll]];
 }
 
 - (void) insertTab: (id)sender;
 {
-	browser_window_key_press( browser, KEY_TAB );
+	browser_window_key_press( browser, NS_KEY_TAB );
 }
 
 - (void) insertBacktab: (id)sender;
 {
-	browser_window_key_press( browser, KEY_SHIFT_TAB );
+	browser_window_key_press( browser, NS_KEY_SHIFT_TAB );
 }
 
 - (void) moveToBeginningOfLine: (id)sender;
 {
-	browser_window_key_press( browser, KEY_LINE_START );
+	browser_window_key_press( browser, NS_KEY_LINE_START );
 }
 
 - (void) moveToEndOfLine: (id)sender;
 {
-	browser_window_key_press( browser, KEY_LINE_END );
+	browser_window_key_press( browser, NS_KEY_LINE_END );
 }
 
 - (void) moveToBeginningOfDocument: (id)sender;
 {
-	if (browser_window_key_press( browser, KEY_TEXT_START )) return;
+	if (browser_window_key_press( browser, NS_KEY_TEXT_START )) return;
 }
 
 - (void) scrollToBeginningOfDocument: (id) sender;
@@ -396,7 +396,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) moveToEndOfDocument: (id)sender;
 {
-	browser_window_key_press( browser, KEY_TEXT_END );
+	browser_window_key_press( browser, NS_KEY_TEXT_END );
 }
 
 - (void) scrollToEndOfDocument: (id) sender;
@@ -408,27 +408,27 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) insertNewline: (id)sender;
 {
-	browser_window_key_press( browser, KEY_NL );
+	browser_window_key_press( browser, NS_KEY_NL );
 }
 
 - (void) selectAll: (id)sender;
 {
-	browser_window_key_press( browser, KEY_SELECT_ALL );
+	browser_window_key_press( browser, NS_KEY_SELECT_ALL );
 }
 
 - (void) copy: (id) sender;
 {
-	browser_window_key_press( browser, KEY_COPY_SELECTION );
+	browser_window_key_press( browser, NS_KEY_COPY_SELECTION );
 }
 
 - (void) cut: (id) sender;
 {
-	browser_window_key_press( browser, KEY_CUT_SELECTION );
+	browser_window_key_press( browser, NS_KEY_CUT_SELECTION );
 }
 
 - (void) paste: (id) sender;
 {
-	browser_window_key_press( browser, KEY_PASTE );
+	browser_window_key_press( browser, NS_KEY_PASTE );
 }
 
 - (BOOL) acceptsFirstResponder;

@@ -190,7 +190,7 @@ void ro_gui_cookies_toolbar_click(button_bar_action action)
 {
 	switch (action) {
 	case TOOLBAR_BUTTON_DELETE:
-		cookie_manager_keypress(KEY_DELETE_LEFT);
+		cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 		break;
 
 	case TOOLBAR_BUTTON_EXPAND:
@@ -329,13 +329,13 @@ bool ro_gui_cookies_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		cookie_manager_contract(false);
 		return true;
 	case TREE_SELECTION_DELETE:
-		cookie_manager_keypress(KEY_DELETE_LEFT);
+		cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 		return true;
 	case TREE_SELECT_ALL:
-		cookie_manager_keypress(KEY_SELECT_ALL);
+		cookie_manager_keypress(NS_KEY_SELECT_ALL);
 		return true;
 	case TREE_CLEAR_SELECTION:
-		cookie_manager_keypress(KEY_CLEAR_SELECTION);
+		cookie_manager_keypress(NS_KEY_CLEAR_SELECTION);
 		return true;
 	case TOOLBAR_BUTTONS:
 		ro_toolbar_set_display_buttons(cookies_window.toolbar,

@@ -961,17 +961,17 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		}
 		case B_COPY:
-			browser_window_key_press(bw, KEY_COPY_SELECTION);
+			browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
 			break;
 		case B_CUT:
-			browser_window_key_press(bw, KEY_CUT_SELECTION);
+			browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
 			break;
 		case B_PASTE:
-			browser_window_key_press(bw, KEY_PASTE);
+			browser_window_key_press(bw, NS_KEY_PASTE);
 			break;
 		case B_SELECT_ALL:
 			LOG(("Selecting all text"));
-			browser_window_key_press(bw, KEY_SELECT_ALL);
+			browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 			break;
 		case B_NETPOSITIVE_BACK:
 		case BROWSER_NAVIGATE_BACK:

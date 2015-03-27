@@ -2448,10 +2448,10 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 		caret += byte_delta;
 
 	} else switch (key) {
-		case KEY_SELECT_ALL:
+		case NS_KEY_SELECT_ALL:
 			textarea_select(ta, 0, ta->show->len - 1, true);
 			return true;
-		case KEY_COPY_SELECTION:
+		case NS_KEY_COPY_SELECTION:
 			if (ta->sel_start != -1) {
 				if (!textarea_replace_text(ta,
 						ta->sel_start, ta->sel_end,
@@ -2459,7 +2459,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					return false;
 			}
 			break;
-		case KEY_DELETE_LEFT:
+		case NS_KEY_DELETE_LEFT:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2480,7 +2480,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_DELETE_RIGHT:
+		case NS_KEY_DELETE_RIGHT:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2503,8 +2503,8 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_CR:
-		case KEY_NL:
+		case NS_KEY_CR:
+		case NS_KEY_NL:
 			if (readonly)
 				break;
 
@@ -2527,7 +2527,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_PASTE:
+		case NS_KEY_PASTE:
 		{
 			char *clipboard = NULL;
 			size_t clipboard_length;
@@ -2562,7 +2562,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			free(clipboard);
 		}
 			break;
-		case KEY_CUT_SELECTION:
+		case NS_KEY_CUT_SELECTION:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2577,11 +2577,11 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_reset_selection(ta);
 			}
 			break;
-		case KEY_ESCAPE:
-			/* Fall through to KEY_CLEAR_SELECTION */
-		case KEY_CLEAR_SELECTION:
+		case NS_KEY_ESCAPE:
+			/* Fall through to NS_KEY_CLEAR_SELECTION */
+		case NS_KEY_CLEAR_SELECTION:
 			return textarea_clear_selection(ta);
-		case KEY_LEFT:
+		case NS_KEY_LEFT:
 			if (readonly)
 				break;
 			if (caret > 0)
@@ -2590,7 +2590,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_RIGHT:
+		case NS_KEY_RIGHT:
 			if (readonly)
 				break;
 			if (caret < ta->show->len - 1)
@@ -2600,7 +2600,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_UP:
+		case NS_KEY_UP:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2620,7 +2620,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			textarea_set_caret_xy(ta, x, y, false);
 
 			return true;
-		case KEY_DOWN:
+		case NS_KEY_DOWN:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2640,7 +2640,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			textarea_set_caret_xy(ta, x, y, false);
 
 			return true;
-		case KEY_PAGE_UP:
+		case NS_KEY_PAGE_UP:
 			if (!(ta->flags & TEXTAREA_MULTILINE))
 				break;
 			y = ta->vis_height - 2 * ta->border_width -
@@ -2648,7 +2648,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					ta->line_height;
 			textarea_scroll(ta, 0, -y);
 			return true;
-		case KEY_PAGE_DOWN:
+		case NS_KEY_PAGE_DOWN:
 			if (!(ta->flags & TEXTAREA_MULTILINE))
 				break;
 			y = ta->vis_height - 2 * ta->border_width -
@@ -2656,7 +2656,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 					ta->line_height;
 			textarea_scroll(ta, 0, y);
 			return true;
-		case KEY_LINE_START:
+		case NS_KEY_LINE_START:
 			if (readonly)
 				break;
 			caret -= ta->caret_pos.byte_off;
@@ -2664,7 +2664,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_LINE_END:
+		case NS_KEY_LINE_END:
 			if (readonly)
 				break;
 
@@ -2679,7 +2679,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_TEXT_START:
+		case NS_KEY_TEXT_START:
 			if (readonly)
 				break;
 			caret = 0;
@@ -2687,7 +2687,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_TEXT_END:
+		case NS_KEY_TEXT_END:
 			if (readonly)
 				break;
 			caret = ta->show->len - 1;
@@ -2695,7 +2695,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_WORD_LEFT:
+		case NS_KEY_WORD_LEFT:
 			if (readonly)
 				break;
 			if (caret == 0)
@@ -2715,7 +2715,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_WORD_RIGHT:
+		case NS_KEY_WORD_RIGHT:
 			if (readonly)
 				break;
 			if (strchr(sep, ta->show->data[caret]) != NULL &&
@@ -2738,7 +2738,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 				textarea_clear_selection(ta);
 			}
 			break;
-		case KEY_DELETE_LINE:
+		case NS_KEY_DELETE_LINE:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2771,7 +2771,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_DELETE_LINE_END:
+		case NS_KEY_DELETE_LINE_END:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2793,7 +2793,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_DELETE_LINE_START:
+		case NS_KEY_DELETE_LINE_START:
 			if (readonly)
 				break;
 			if (ta->sel_start != -1) {
@@ -2814,7 +2814,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			caret += byte_delta;
 			break;
-		case KEY_UNDO:
+		case NS_KEY_UNDO:
 			if (!textarea_undo(ta, false, &caret, &r)) {
 				/* We consume the UNDO, even if we can't act
 				 * on it. */
@@ -2825,7 +2825,7 @@ bool textarea_keypress(struct textarea *ta, uint32_t key)
 			}
 			redraw = true;
 			break;
-		case KEY_REDO:
+		case NS_KEY_REDO:
 			if (!textarea_undo(ta, true, &caret, &r)) {
 				/* We consume the REDO, even if we can't act
 				 * on it. */

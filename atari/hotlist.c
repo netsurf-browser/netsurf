@@ -159,7 +159,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 						break;
 
 					case TOOLBAR_HOTLIST_DELETE:
-						hotlist_keypress(KEY_DELETE_LEFT);
+						hotlist_keypress(NS_KEY_DELETE_LEFT);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:

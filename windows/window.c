@@ -911,7 +911,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_CUT, 0, 0);
 		} else if (gw->bw != NULL) {
-			browser_window_key_press(gw->bw, KEY_CUT_SELECTION);
+			browser_window_key_press(gw->bw, NS_KEY_CUT_SELECTION);
 		}
 		break;
 
@@ -922,7 +922,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_COPY, 0, 0);
 		} else if (gw->bw != NULL) {
-			browser_window_key_press(gw->bw, KEY_COPY_SELECTION);
+			browser_window_key_press(gw->bw, NS_KEY_COPY_SELECTION);
 		}
 		break;
 
@@ -938,7 +938,7 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, WM_PASTE, 0, 0);
 		else
-			browser_window_key_press(gw->bw, KEY_PASTE);
+			browser_window_key_press(gw->bw, NS_KEY_PASTE);
 		break;
 	}
 
@@ -946,14 +946,14 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, WM_CUT, 0, 0);
 		else
-			browser_window_key_press(gw->bw, KEY_DELETE_RIGHT);
+			browser_window_key_press(gw->bw, NS_KEY_DELETE_RIGHT);
 		break;
 
 	case IDM_EDIT_SELECT_ALL:
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, EM_SETSEL, 0, -1);
 		else
-			browser_window_key_press(gw->bw, KEY_SELECT_ALL);
+			browser_window_key_press(gw->bw, NS_KEY_SELECT_ALL);
 		break;
 
 	case IDM_EDIT_SEARCH:

@@ -222,19 +222,19 @@ MENUHANDLER(edit_selected)
 
 MENUHANDLER(delete_selected)
 {
-	hotlist_keypress(KEY_DELETE_LEFT);
+	hotlist_keypress(NS_KEY_DELETE_LEFT);
 	return TRUE;
 }
 
 MENUHANDLER(select_all)
 {
-	hotlist_keypress(KEY_SELECT_ALL);
+	hotlist_keypress(NS_KEY_SELECT_ALL);
 	return TRUE;
 }
 
 MENUHANDLER(clear_selection)
 {
-	hotlist_keypress(KEY_CLEAR_SELECTION);
+	hotlist_keypress(NS_KEY_CLEAR_SELECTION);
 	return TRUE;
 }
 
@@ -277,6 +277,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	hotlist_keypress(KEY_CR);
+	hotlist_keypress(NS_KEY_CR);
 	return TRUE;
 }

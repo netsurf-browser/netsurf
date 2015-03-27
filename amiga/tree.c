@@ -1197,9 +1197,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				GetAttr(WINDOW_InputEvent,twin->objects[OID_MAIN],(ULONG *)&ie);
 				nskey = ami_key_to_nskey(storage, ie);
 				tree_keypress(twin->tree, nskey);
-				if(nskey == KEY_COPY_SELECTION) {
+				if(nskey == NS_KEY_COPY_SELECTION) {
 					/* if we've copied a selection we need to clear it - style guide rules */
-					tree_keypress(twin->tree, KEY_CLEAR_SELECTION);
+					tree_keypress(twin->tree, NS_KEY_CLEAR_SELECTION);
 				}
 			break;
 
@@ -1386,13 +1386,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											global_history_keypress(KEY_DELETE_LEFT);
+											global_history_keypress(NS_KEY_DELETE_LEFT);
 										break;
 										case AMI_TREE_COOKIES:
-											cookie_manager_keypress(KEY_DELETE_LEFT);
+											cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_keypress(KEY_DELETE_LEFT);
+											hotlist_keypress(NS_KEY_DELETE_LEFT);
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1402,13 +1402,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											global_history_keypress(KEY_SELECT_ALL);
+											global_history_keypress(NS_KEY_SELECT_ALL);
 										break;
 										case AMI_TREE_COOKIES:
-											cookie_manager_keypress(KEY_SELECT_ALL);
+											cookie_manager_keypress(NS_KEY_SELECT_ALL);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_keypress(KEY_SELECT_ALL);
+											hotlist_keypress(NS_KEY_SELECT_ALL);
 										break;
 									}
 									ami_tree_update_buttons(twin);
@@ -1418,13 +1418,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											global_history_keypress(KEY_CLEAR_SELECTION);
+											global_history_keypress(NS_KEY_CLEAR_SELECTION);
 										break;
 										case AMI_TREE_COOKIES:
-											cookie_manager_keypress(KEY_CLEAR_SELECTION);
+											cookie_manager_keypress(NS_KEY_CLEAR_SELECTION);
 										break;
 										case AMI_TREE_HOTLIST:
-											hotlist_keypress(KEY_CLEAR_SELECTION);
+											hotlist_keypress(NS_KEY_CLEAR_SELECTION);
 										break;
 									}
 									ami_tree_update_buttons(twin);

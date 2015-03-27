@@ -696,7 +696,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			ret = textarea_keypress(tb->url.textarea, ucs4);
 		}
 	}
-	else if (ik == KEY_CR || ik == KEY_NL) {
+	else if (ik == NS_KEY_CR || ik == NS_KEY_NL) {
 		nsurl *url;
 		char tmp_url[PATH_MAX];
 		if ( textarea_get_text( tb->url.textarea, tmp_url, PATH_MAX) > 0 ) {
@@ -713,7 +713,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			ret = true;
 		}
 	}
-	else if (ik == KEY_COPY_SELECTION) {
+	else if (ik == NS_KEY_COPY_SELECTION) {
 		// copy whole text
 		char * text;
 		int len;
@@ -725,7 +725,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			free( text );
 		}
 	}
-	else if ( ik == KEY_PASTE) {
+	else if ( ik == NS_KEY_PASTE) {
 		char * clip = scrap_txt_read();
 		if ( clip != NULL ){
 			int clip_length = strlen( clip );
@@ -744,9 +744,9 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 			free( clip );
 		}
 	}
-	else if (ik == KEY_ESCAPE) {
-		textarea_keypress( tb->url.textarea, KEY_SELECT_ALL );
-		textarea_keypress( tb->url.textarea, KEY_DELETE_LEFT );
+	else if (ik == NS_KEY_ESCAPE) {
+		textarea_keypress( tb->url.textarea, NS_KEY_SELECT_ALL );
+		textarea_keypress( tb->url.textarea, NS_KEY_DELETE_LEFT );
 	}
 	else {
 		ret = textarea_keypress( tb->url.textarea, ik );

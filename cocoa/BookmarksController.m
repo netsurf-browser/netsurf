@@ -202,7 +202,7 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) deleteSelected: (id) sender;
 {
-	hotlist_keypress(KEY_DELETE_LEFT);
+	hotlist_keypress(NS_KEY_DELETE_LEFT);
 }
 
 - (IBAction) addFolder: (id) sender;

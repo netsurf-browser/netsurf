@@ -1779,42 +1779,42 @@ bool ro_gui_window_keypress(wimp_key *key)
 		/* cursor movement keys */
 		case wimp_KEY_HOME:
 		case wimp_KEY_CONTROL | wimp_KEY_LEFT:
-			c = KEY_LINE_START;
+			c = NS_KEY_LINE_START;
 			break;
 		case wimp_KEY_END:
 			if (os_version >= RISCOS5)
-				c = KEY_LINE_END;
+				c = NS_KEY_LINE_END;
 			else
-				c = KEY_DELETE_RIGHT;
+				c = NS_KEY_DELETE_RIGHT;
 			break;
-		case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = KEY_LINE_END;   break;
-		case wimp_KEY_CONTROL | wimp_KEY_UP:	c = KEY_TEXT_START; break;
-		case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = KEY_TEXT_END;   break;
-		case wimp_KEY_SHIFT | wimp_KEY_LEFT:	c = KEY_WORD_LEFT ; break;
-		case wimp_KEY_SHIFT | wimp_KEY_RIGHT:	c = KEY_WORD_RIGHT; break;
-		case wimp_KEY_SHIFT | wimp_KEY_UP:	c = KEY_PAGE_UP;    break;
-		case wimp_KEY_SHIFT | wimp_KEY_DOWN:	c = KEY_PAGE_DOWN;  break;
-		case wimp_KEY_LEFT:  c = KEY_LEFT; break;
-		case wimp_KEY_RIGHT: c = KEY_RIGHT; break;
-		case wimp_KEY_UP:    c = KEY_UP; break;
-		case wimp_KEY_DOWN:  c = KEY_DOWN; break;
+		case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = NS_KEY_LINE_END;   break;
+		case wimp_KEY_CONTROL | wimp_KEY_UP:	c = NS_KEY_TEXT_START; break;
+		case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = NS_KEY_TEXT_END;   break;
+		case wimp_KEY_SHIFT | wimp_KEY_LEFT:	c = NS_KEY_WORD_LEFT ; break;
+		case wimp_KEY_SHIFT | wimp_KEY_RIGHT:	c = NS_KEY_WORD_RIGHT; break;
+		case wimp_KEY_SHIFT | wimp_KEY_UP:	c = NS_KEY_PAGE_UP;    break;
+		case wimp_KEY_SHIFT | wimp_KEY_DOWN:	c = NS_KEY_PAGE_DOWN;  break;
+		case wimp_KEY_LEFT:  c = NS_KEY_LEFT; break;
+		case wimp_KEY_RIGHT: c = NS_KEY_RIGHT; break;
+		case wimp_KEY_UP:    c = NS_KEY_UP; break;
+		case wimp_KEY_DOWN:  c = NS_KEY_DOWN; break;
 
 		/* editing */
 		case wimp_KEY_CONTROL | wimp_KEY_END:
-			c = KEY_DELETE_LINE_END;
+			c = NS_KEY_DELETE_LINE_END;
 			break;
 		case wimp_KEY_DELETE:
 			if (ro_gui_ctrl_pressed())
-				c = KEY_DELETE_LINE_START;
+				c = NS_KEY_DELETE_LINE_START;
 			else if (os_version < RISCOS5)
-				c = KEY_DELETE_LEFT;
+				c = NS_KEY_DELETE_LEFT;
 			break;
 
 		case wimp_KEY_F8:
-			c = KEY_UNDO;
+			c = NS_KEY_UNDO;
 			break;
 		case wimp_KEY_F9:
-			c = KEY_REDO;
+			c = NS_KEY_REDO;
 			break;
 
 		default:
@@ -2593,7 +2593,7 @@ static void ro_gui_window_paste_cb(void *pw)
 {
 	struct browser_window *bw = pw;
 
-	browser_window_key_press(bw, KEY_PASTE);
+	browser_window_key_press(bw, NS_KEY_PASTE);
 }
 
 
@@ -2732,8 +2732,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case COOKIES_DELETE:
-		cookie_manager_keypress(KEY_SELECT_ALL);
-		cookie_manager_keypress(KEY_DELETE_LEFT);
+		cookie_manager_keypress(NS_KEY_SELECT_ALL);
+		cookie_manager_keypress(NS_KEY_DELETE_LEFT);
 		break;
 
 		/* page actions */
@@ -2882,19 +2882,19 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		}
 		break;
 	case BROWSER_SELECTION_COPY:
-		browser_window_key_press(bw, KEY_COPY_SELECTION);
+		browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
 		break;
 	case BROWSER_SELECTION_CUT:
-		browser_window_key_press(bw, KEY_CUT_SELECTION);
+		browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
 		break;
 	case BROWSER_SELECTION_PASTE:
 		ro_gui_selection_prepare_paste(w, ro_gui_window_paste_cb, bw);
 		break;
 	case BROWSER_SELECTION_ALL:
-		browser_window_key_press(bw, KEY_SELECT_ALL);
+		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 		break;
 	case BROWSER_SELECTION_CLEAR:
-		browser_window_key_press(bw, KEY_CLEAR_SELECTION);
+		browser_window_key_press(bw, NS_KEY_CLEAR_SELECTION);
 		break;
 
 		/* navigation actions */

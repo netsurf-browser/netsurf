@@ -512,7 +512,7 @@ void window_set_focus(struct s_gui_win_root *rootwin,
 /*
 			ta = toolbar_get_textarea(rootwin->toolbar,
 										URL_INPUT_TEXT_AREA);
-			textarea_keypress(ta, KEY_SELECT_ALL);
+			textarea_keypress(ta, NS_KEY_SELECT_ALL);
 			*/
 			break;
 
@@ -1287,51 +1287,51 @@ static bool on_content_keypress(struct gui_window *gw, unsigned short nkc)
             struct gemtk_wm_scroll_info_s *slid = gemtk_wm_get_scroll_info(w);
 
             switch( ik ) {
-            case KEY_LINE_START:
+            case NS_KEY_LINE_START:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -(g.g_w/slid->x_unit_px),
                               false);
 				r = true;
                 break;
 
-            case KEY_LINE_END:
+            case NS_KEY_LINE_END:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, (g.g_w/slid->x_unit_px),
                               false);
 				r = true;
                 break;
 
-            case KEY_PAGE_UP:
+            case NS_KEY_PAGE_UP:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, -(g.g_h/slid->y_unit_px),
                               false);
 				r = true;
                 break;
 
-            case KEY_PAGE_DOWN:
+            case NS_KEY_PAGE_DOWN:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, (g.g_h/slid->y_unit_px),
                               false);
 				r = true;
                 break;
 
-            case KEY_RIGHT:
+            case NS_KEY_RIGHT:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, -1, false);
 				r = true;
                 break;
 
-            case KEY_LEFT:
+            case NS_KEY_LEFT:
                 gemtk_wm_scroll(w, GEMTK_WM_HSLIDER, 1, false);
 				r = true;
                 break;
 
-            case KEY_UP:
+            case NS_KEY_UP:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, -1, false);
 				r = true;
                 break;
 
-            case KEY_DOWN:
+            case NS_KEY_DOWN:
                 gemtk_wm_scroll(w, GEMTK_WM_VSLIDER, 1, false);
                 r = true;
                 break;
 
-			case KEY_TEXT_START:
+			case NS_KEY_TEXT_START:
 				window_scroll_by(gw->root, 0, 0);
 				r = true;
 				break;

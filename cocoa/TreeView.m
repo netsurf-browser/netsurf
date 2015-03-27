@@ -121,102 +121,102 @@
 
 - (void) moveLeft: (id)sender;
 {
-	[tree keyPress: KEY_LEFT];
+	[tree keyPress: NS_KEY_LEFT];
 }
 
 - (void) moveRight: (id)sender;
 {
-	[tree keyPress: KEY_RIGHT];
+	[tree keyPress: NS_KEY_RIGHT];
 }
 
 - (void) moveUp: (id)sender;
 {
-	[tree keyPress: KEY_UP];
+	[tree keyPress: NS_KEY_UP];
 }
 
 - (void) moveDown: (id)sender;
 {
-	[tree keyPress: KEY_DOWN];
+	[tree keyPress: NS_KEY_DOWN];
 }
 
 - (void) deleteBackward: (id)sender;
 {
-	[tree keyPress: KEY_DELETE_LEFT];
+	[tree keyPress: NS_KEY_DELETE_LEFT];
 }
 
 - (void) deleteForward: (id)sender;
 {
-	[tree keyPress: KEY_DELETE_RIGHT];
+	[tree keyPress: NS_KEY_DELETE_RIGHT];
 }
 
 - (void) cancelOperation: (id)sender;
 {
-	[tree keyPress: KEY_ESCAPE];
+	[tree keyPress: NS_KEY_ESCAPE];
 }
 
 - (void) scrollPageUp: (id)sender;
 {
-	[tree keyPress: KEY_PAGE_UP];
+	[tree keyPress: NS_KEY_PAGE_UP];
 }
 
 - (void) scrollPageDown: (id)sender;
 {
-	[tree keyPress: KEY_PAGE_DOWN];
+	[tree keyPress: NS_KEY_PAGE_DOWN];
 }
 
 - (void) insertTab: (id)sender;
 {
-	[tree keyPress: KEY_TAB];
+	[tree keyPress: NS_KEY_TAB];
 }
 
 - (void) insertBacktab: (id)sender;
 {
-	[tree keyPress: KEY_SHIFT_TAB];
+	[tree keyPress: NS_KEY_SHIFT_TAB];
 }
 
 - (void) moveToBeginningOfLine: (id)sender;
 {
-	[tree keyPress: KEY_LINE_START];
+	[tree keyPress: NS_KEY_LINE_START];
 }
 
 - (void) moveToEndOfLine: (id)sender;
 {
-	[tree keyPress: KEY_LINE_END];
+	[tree keyPress: NS_KEY_LINE_END];
 }
 
 - (void) moveToBeginningOfDocument: (id)sender;
 {
-	[tree keyPress: KEY_TEXT_START];
+	[tree keyPress: NS_KEY_TEXT_START];
 }
 
 - (void) moveToEndOfDocument: (id)sender;
 {
-	[tree keyPress: KEY_TEXT_END];
+	[tree keyPress: NS_KEY_TEXT_END];
 }
 
 - (void) insertNewline: (id)sender;
 {
-	[tree keyPress: KEY_NL];
+	[tree keyPress: NS_KEY_NL];
 }
 
 - (void) selectAll: (id)sender;
 {
-	[tree keyPress: KEY_SELECT_ALL];
+	[tree keyPress: NS_KEY_SELECT_ALL];
 }
 
 - (void) copy: (id) sender;
 {
-	[tree keyPress: KEY_COPY_SELECTION];
+	[tree keyPress: NS_KEY_COPY_SELECTION];
 }
 
 - (void) cut: (id) sender;
 {
-	[tree keyPress: KEY_CUT_SELECTION];
+	[tree keyPress: NS_KEY_CUT_SELECTION];
 }
 
 - (void) paste: (id) sender;
 {
-	[tree keyPress: KEY_PASTE];
+	[tree keyPress: NS_KEY_PASTE];
 }
 
 //MARK: -

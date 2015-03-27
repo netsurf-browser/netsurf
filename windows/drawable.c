@@ -227,49 +227,49 @@ nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	switch(wparam) {
 	case VK_LEFT:
-		i = KEY_LEFT;
+		i = NS_KEY_LEFT;
 		if (shift)
 			SendMessage(hwnd, WM_HSCROLL,
 				    MAKELONG(SB_LINELEFT, 0), 0);
 		break;
 
 	case VK_RIGHT:
-		i = KEY_RIGHT;
+		i = NS_KEY_RIGHT;
 		if (shift)
 			SendMessage(hwnd, WM_HSCROLL,
 				    MAKELONG(SB_LINERIGHT, 0), 0);
 		break;
 
 	case VK_UP:
-		i = KEY_UP;
+		i = NS_KEY_UP;
 		if (shift)
 			SendMessage(hwnd, WM_VSCROLL,
 				    MAKELONG(SB_LINEUP, 0), 0);
 		break;
 
 	case VK_DOWN:
-		i = KEY_DOWN;
+		i = NS_KEY_DOWN;
 		if (shift)
 			SendMessage(hwnd, WM_VSCROLL,
 				    MAKELONG(SB_LINEDOWN, 0), 0);
 		break;
 
 	case VK_HOME:
-		i = KEY_LINE_START;
+		i = NS_KEY_LINE_START;
 		if (shift)
 			SendMessage(hwnd, WM_HSCROLL,
 				    MAKELONG(SB_PAGELEFT, 0), 0);
 		break;
 
 	case VK_END:
-		i = KEY_LINE_END;
+		i = NS_KEY_LINE_END;
 		if (shift)
 			SendMessage(hwnd, WM_HSCROLL,
 				    MAKELONG(SB_PAGERIGHT, 0), 0);
 		break;
 
 	case VK_DELETE:
-		i = KEY_DELETE_RIGHT;
+		i = NS_KEY_DELETE_RIGHT;
 		break;
 
 	case VK_NEXT:

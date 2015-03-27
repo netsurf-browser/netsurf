@@ -323,21 +323,21 @@ static void __CDECL menu_quit(short item, short title, void *data)
 static void __CDECL menu_cut(short item, short title, void *data)
 {
 	if( input_window != NULL )
-		browser_window_key_press( input_window->browser->bw, KEY_CUT_SELECTION);
+		browser_window_key_press( input_window->browser->bw, NS_KEY_CUT_SELECTION);
 }
 
 static void __CDECL menu_copy(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
 	if( input_window != NULL )
-		browser_window_key_press( input_window->browser->bw, KEY_COPY_SELECTION);
+		browser_window_key_press( input_window->browser->bw, NS_KEY_COPY_SELECTION);
 }
 
 static void __CDECL menu_paste(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
 	if( input_window != NULL )
-		browser_window_key_press( input_window->browser->bw, KEY_PASTE);
+		browser_window_key_press( input_window->browser->bw, NS_KEY_PASTE);
 }
 
 static void __CDECL menu_find(short item, short title, void *data)

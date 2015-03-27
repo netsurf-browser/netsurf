@@ -43,14 +43,14 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 
 	if (gadget->type != GADGET_TEXTAREA) {
 		switch (key) {
-		case KEY_NL:
-		case KEY_CR:
+		case NS_KEY_NL:
+		case NS_KEY_CR:
 			if (form)
 				form_submit(content_get_url(c), html->bw,
 						form, 0);
 			return true;
 
-		case KEY_TAB:
+		case NS_KEY_TAB:
 		{
 			struct form_control *next_input;
 			/* Find next text entry field that is actually
@@ -71,7 +71,7 @@ bool box_textarea_keypress(html_content *html, struct box *box, uint32_t key)
 		}
 			return true;
 
-		case KEY_SHIFT_TAB:
+		case NS_KEY_SHIFT_TAB:
 		{
 			struct form_control *prev_input;
 			/* Find previous text entry field that is actually

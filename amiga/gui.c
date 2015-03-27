@@ -1125,82 +1125,82 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 		case RAWKEY_CRSRUP:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_PAGE_UP;
+				nskey = NS_KEY_PAGE_UP;
 			}
 			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
 			{
-				nskey = KEY_TEXT_START;
+				nskey = NS_KEY_TEXT_START;
 			}
-			else nskey = KEY_UP;
+			else nskey = NS_KEY_UP;
 		break;
 		case RAWKEY_CRSRDOWN:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_PAGE_DOWN;
+				nskey = NS_KEY_PAGE_DOWN;
 			}
 			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
 			{
-				nskey = KEY_TEXT_END;
+				nskey = NS_KEY_TEXT_END;
 			}
-			else nskey = KEY_DOWN;
+			else nskey = NS_KEY_DOWN;
 		break;
 		case RAWKEY_CRSRLEFT:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_LINE_START;
+				nskey = NS_KEY_LINE_START;
 			}
 			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
 			{
-				nskey = KEY_WORD_LEFT;
+				nskey = NS_KEY_WORD_LEFT;
 			}
-			else nskey = KEY_LEFT;
+			else nskey = NS_KEY_LEFT;
 		break;
 		case RAWKEY_CRSRRIGHT:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_LINE_END;
+				nskey = NS_KEY_LINE_END;
 			}
 			else if(ie->ie_Qualifier & IEQUALIFIER_RALT)
 			{
-				nskey = KEY_WORD_RIGHT;
+				nskey = NS_KEY_WORD_RIGHT;
 			}
-			else nskey = KEY_RIGHT;
+			else nskey = NS_KEY_RIGHT;
 		break;
 		case RAWKEY_ESC:
-			nskey = KEY_ESCAPE;
+			nskey = NS_KEY_ESCAPE;
 		break;
 		case RAWKEY_PAGEUP:
-			nskey = KEY_PAGE_UP;
+			nskey = NS_KEY_PAGE_UP;
 		break;
 		case RAWKEY_PAGEDOWN:
-			nskey = KEY_PAGE_DOWN;
+			nskey = NS_KEY_PAGE_DOWN;
 		break;
 		case RAWKEY_HOME:
-			nskey = KEY_TEXT_START;
+			nskey = NS_KEY_TEXT_START;
 		break;
 		case RAWKEY_END:
-			nskey = KEY_TEXT_END;
+			nskey = NS_KEY_TEXT_END;
 		break;
 		case RAWKEY_BACKSPACE:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_DELETE_LINE_START;
+				nskey = NS_KEY_DELETE_LINE_START;
 			}
-			else nskey = KEY_DELETE_LEFT;
+			else nskey = NS_KEY_DELETE_LEFT;
 		break;
 		case RAWKEY_DEL:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_DELETE_LINE_END;
+				nskey = NS_KEY_DELETE_LINE_END;
 			}
-			else nskey = KEY_DELETE_RIGHT;
+			else nskey = NS_KEY_DELETE_RIGHT;
 		break;
 		case RAWKEY_TAB:
 			if(ie->ie_Qualifier & IEQUALIFIER_RSHIFT)
 			{
-				nskey = KEY_SHIFT_TAB;
+				nskey = NS_KEY_SHIFT_TAB;
 			}
-			else nskey = KEY_TAB;
+			else nskey = NS_KEY_TAB;
 		break;
 		case RAWKEY_F5:
 		case RAWKEY_HELP:
@@ -1215,22 +1215,22 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 				if(ie->ie_Qualifier & IEQUALIFIER_RCOMMAND) {
 					switch(nskey) {
 						case 'a':
-							nskey = KEY_SELECT_ALL;
+							nskey = NS_KEY_SELECT_ALL;
 						break;
 						case 'c':
-							nskey = KEY_COPY_SELECTION;
+							nskey = NS_KEY_COPY_SELECTION;
 						break;
 						case 'v':
-							nskey = KEY_PASTE;
+							nskey = NS_KEY_PASTE;
 						break;
 						case 'x':
-							nskey = KEY_CUT_SELECTION;
+							nskey = NS_KEY_CUT_SELECTION;
 						break;
 						case 'y':
-							nskey = KEY_REDO;
+							nskey = NS_KEY_REDO;
 						break;
 						case 'z':
-							nskey = KEY_UNDO;
+							nskey = NS_KEY_UNDO;
 						break;
 					}
 				}
@@ -2375,55 +2375,55 @@ static void ami_handle_msg(void)
 						{
 							switch(nskey)
 							{
-								case KEY_UP:
+								case NS_KEY_UP:
 									ami_gui_scroll_internal(gwin, 0, -NSA_KBD_SCROLL_PX);
 								break;
 
-								case KEY_DOWN:
+								case NS_KEY_DOWN:
 									ami_gui_scroll_internal(gwin, 0, +NSA_KBD_SCROLL_PX);
 								break;
 
-								case KEY_LEFT:
+								case NS_KEY_LEFT:
 									ami_gui_scroll_internal(gwin, -NSA_KBD_SCROLL_PX, 0);
 								break;
 
-								case KEY_RIGHT:
+								case NS_KEY_RIGHT:
 									ami_gui_scroll_internal(gwin, +NSA_KBD_SCROLL_PX, 0);
 								break;
 
-								case KEY_PAGE_UP:
+								case NS_KEY_PAGE_UP:
 									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_UP);
 								break;
 
-								case KEY_PAGE_DOWN:
+								case NS_KEY_PAGE_DOWN:
 									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_DOWN);
 								break;
 
-								case KEY_LINE_START: // page left
+								case NS_KEY_LINE_START: // page left
 									ami_gui_scroll_internal(gwin, SCROLL_PAGE_UP, 0);
 								break;
 
-								case KEY_LINE_END: // page right
+								case NS_KEY_LINE_END: // page right
 									ami_gui_scroll_internal(gwin, SCROLL_PAGE_DOWN, 0);
 								break;
 
-								case KEY_TEXT_START: // home
+								case NS_KEY_TEXT_START: // home
 									ami_gui_scroll_internal(gwin, SCROLL_TOP, SCROLL_TOP);
 								break;
 
-								case KEY_TEXT_END: // end
+								case NS_KEY_TEXT_END: // end
 									ami_gui_scroll_internal(gwin, SCROLL_BOTTOM, SCROLL_BOTTOM);
 								break;
 
-								case KEY_WORD_RIGHT: // alt+right
+								case NS_KEY_WORD_RIGHT: // alt+right
 									ami_change_tab(gwin, 1);
 								break;
 
-								case KEY_WORD_LEFT: // alt+left
+								case NS_KEY_WORD_LEFT: // alt+left
 									ami_change_tab(gwin, -1);
 								break;
 
-								case KEY_DELETE_LEFT: // backspace
+								case NS_KEY_DELETE_LEFT: // backspace
 									ami_gui_history(gwin, true);
 								break;
 
@@ -2436,9 +2436,9 @@ static void ami_handle_msg(void)
 									ami_help_open(AMI_HELP_GUI, scrn);
 								break;
 							}
-						} else if(nskey == KEY_COPY_SELECTION) {
+						} else if(nskey == NS_KEY_COPY_SELECTION) {
 							/* if we've copied a selection we need to clear it - style guide rules */
-							browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+							browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
 						}
 					}
 				break;

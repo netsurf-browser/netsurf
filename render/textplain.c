@@ -743,19 +743,19 @@ bool textplain_keypress(struct content *c, uint32_t key)
 	struct selection *sel = &text->sel;
 
 	switch (key) {
-	case KEY_COPY_SELECTION:
+	case NS_KEY_COPY_SELECTION:
 		selection_copy_to_clipboard(sel);
 		return true;
 
-	case KEY_CLEAR_SELECTION:
+	case NS_KEY_CLEAR_SELECTION:
 		selection_clear(sel, true);
 		return true;
 
-	case KEY_SELECT_ALL:
+	case NS_KEY_SELECT_ALL:
 		selection_select_all(sel);
 		return true;
 
-	case KEY_ESCAPE:
+	case NS_KEY_ESCAPE:
 		if (selection_defined(sel)) {
 			selection_clear(sel, true);
 			return true;

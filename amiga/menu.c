@@ -240,7 +240,7 @@ HOOKF(void, ami_menu_item_edit_cut, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_CUT_SELECTION);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_CUT_SELECTION);
 }
 
 HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
@@ -250,8 +250,8 @@ HOOKF(void, ami_menu_item_edit_copy, APTR, window, struct IntuiMessage *)
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
 	if(browser_window_can_select(gwin->gw->bw)) {
-		browser_window_key_press(gwin->gw->bw, KEY_COPY_SELECTION);
-		browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+		browser_window_key_press(gwin->gw->bw, NS_KEY_COPY_SELECTION);
+		browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
 	}
 	else if((bm = content_get_bitmap(browser_window_get_content(gwin->gw->bw)))) {
 		/** @todo It should be checked that the lifetime of
@@ -274,7 +274,7 @@ HOOKF(void, ami_menu_item_edit_paste, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_PASTE);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_PASTE);
 }
 
 HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
@@ -282,7 +282,7 @@ HOOKF(void, ami_menu_item_edit_selectall, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_SELECT_ALL);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_SELECT_ALL);
 	gui_start_selection(gwin->gw);
 }
 
@@ -291,7 +291,7 @@ HOOKF(void, ami_menu_item_edit_clearsel, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_CLEAR_SELECTION);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_CLEAR_SELECTION);
 }
 
 HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
@@ -299,7 +299,7 @@ HOOKF(void, ami_menu_item_edit_undo, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_UNDO);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_UNDO);
 }
 
 HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
@@ -307,7 +307,7 @@ HOOKF(void, ami_menu_item_edit_redo, APTR, window, struct IntuiMessage *)
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	browser_window_key_press(gwin->gw->bw, KEY_REDO);
+	browser_window_key_press(gwin->gw->bw, NS_KEY_REDO);
 }
 
 HOOKF(void, ami_menu_item_browser_find, APTR, window, struct IntuiMessage *)

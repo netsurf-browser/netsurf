@@ -1029,7 +1029,7 @@ MULTIHANDLER(cut)
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_cut_clipboard (GTK_EDITABLE(g->url_bar));
 	else
-		browser_window_key_press(bw, KEY_CUT_SELECTION);
+		browser_window_key_press(bw, NS_KEY_CUT_SELECTION);
 
 	return TRUE;
 }
@@ -1043,7 +1043,7 @@ MULTIHANDLER(copy)
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_copy_clipboard(GTK_EDITABLE(g->url_bar));
 	else
-		browser_window_key_press(bw, KEY_COPY_SELECTION);
+		browser_window_key_press(bw, NS_KEY_COPY_SELECTION);
 
 	return TRUE;
 }
@@ -1057,7 +1057,7 @@ MULTIHANDLER(paste)
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_paste_clipboard (GTK_EDITABLE (focused));
 	else
-		browser_window_key_press(bw, KEY_PASTE);
+		browser_window_key_press(bw, NS_KEY_PASTE);
 
 	return TRUE;
 }
@@ -1083,7 +1083,7 @@ MULTIHANDLER(selectall)
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
 		LOG(("Selecting all document text"));
-		browser_window_key_press(bw, KEY_SELECT_ALL);
+		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 	}
 
 	return TRUE;
