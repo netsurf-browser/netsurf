@@ -215,6 +215,9 @@ void form_add_control(struct form *form, struct form_control *control)
  */
 void form_free_control(struct form_control *control)
 {
+	assert(control != NULL);
+
+	LOG(("Control:%p name:%p value:%p initial:%p", control, control->name, control->value, control->initial_value));
 	free(control->name);
 	free(control->value);
 	free(control->initial_value);
@@ -225,23 +228,27 @@ void form_free_control(struct form_control *control)
 		for (option = control->data.select.items; option;
 				option = next) {
 			next = option->next;
+			LOG(("select option:%p text:%p value:%p", option, option->text, option->value));
 			free(option->text);
 			free(option->value);
 			free(option);
 		}
-		if (control->data.select.menu != NULL)
+		if (control->data.select.menu != NULL) {
 			form_free_select_menu(control);
+		}
 	}
 
 	if (control->type == GADGET_TEXTAREA ||
 			control->type == GADGET_TEXTBOX ||
 			control->type == GADGET_PASSWORD) {
 
-		if (control->data.text.initial != NULL)
+		if (control->data.text.initial != NULL) {
 			dom_string_unref(control->data.text.initial);
+		}
 
-		if (control->data.text.ta != NULL)
+		if (control->data.text.ta != NULL) {
 			textarea_destroy(control->data.text.ta);
+		}
 	}
 
 	free(control);
