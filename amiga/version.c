@@ -22,13 +22,13 @@
  * incremental (v1.20 is higher than v1.3 and not the same as v1.2).
  * Consequently, this version pair may not match the user-facing one in
  * desktop/version.c.  Release revisions are prepended with 6000 to ensure
- * they are higher than CI builds, and make this less confusing.
+ * they are higher than CI builds, and make this (slightly) less confusing.
  */
 #define NETSURF_VERSION_MAJOR "3"
 #if defined(CI_BUILD)
 #define NETSURF_VERSION_MINOR CI_BUILD
 #else
-#define NETSURF_VERSION_MINOR "6000" "3"
+#define NETSURF_VERSION_MINOR "6000" "4"
 #endif
 
 static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
