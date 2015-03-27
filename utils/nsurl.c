@@ -1268,9 +1268,6 @@ static void nsurl_calc_hash(nsurl *url)
 	if (url->components.query)
 		hash ^= lwc_string_hash_value(url->components.query);
 
-	if (url->components.fragment)
-		hash ^= lwc_string_hash_value(url->components.fragment);
-
 	url->hash = hash;
 }
 
