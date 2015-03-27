@@ -92,12 +92,16 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 	assert(content);
 	assert(bitmap);
 
+	LOG(("content %p in bitmap %p", content, bitmap));
+
 	/* check if we have access to 32bpp sprites natively */
-	if (thumbnail_32bpp_available == -1)
+	if (thumbnail_32bpp_available == -1) {
 		thumbnail_test();
+	}
 
 	/* if we don't support 32bpp sprites then we redirect to an 8bpp
-	 * image and then convert back. */
+	 * image and then convert back.
+	 */
 	if (thumbnail_32bpp_available != 1) {
 		sprite_area = thumbnail_create_8bpp(bitmap);
 		if (!sprite_area)

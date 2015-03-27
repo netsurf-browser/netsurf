@@ -67,8 +67,11 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 
 	assert(content);
 
-	if (ctx->plot->option_knockout)
+	LOG(("Content %p %dx%d ctx:%p", content, width, height, ctx));
+
+	if (ctx->plot->option_knockout) {
 		knockout_plot_start(ctx, &new_ctx);
+	}
 
 	/* Set clip rectangle to required thumbnail size */
 	clip.x0 = 0;
@@ -99,8 +102,9 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	/* Render the content */
 	plot_ok &= content_redraw(content, &data, &clip, &new_ctx);
 	
-	if (ctx->plot->option_knockout)
+	if (ctx->plot->option_knockout) {
 		knockout_plot_end();
+	}
 
 	return plot_ok;
 }

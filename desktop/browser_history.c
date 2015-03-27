@@ -524,6 +524,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 				/* Thumbnailing failed. Ignore it
 				 * silently but clean up bitmap.
 				 */
+				LOG(("Thumbnail bitmap creation failed"));
 				bitmap_destroy(bitmap);
 				bitmap = NULL;
 			}
