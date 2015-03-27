@@ -1384,6 +1384,67 @@ static nserror entry_release_alloc(struct store_entry_element *elem)
 	return NSERROR_OK;
 }
 
+
+/**
+ * Read an element of an entry from a small block file in the backing storage.
+ *
+ * \param state The backing store state to use.
+ * \param bse The entry to read.
+ * \param elem_idx The element index within the entry.
+ * \return NSERROR_OK on success or error code.
+ */
+static nserror store_read_block(struct store_state *state,
+			 struct store_entry *bse,
+			 int elem_idx)
+{
+	return NSERROR_NOT_FOUND;
+}
+
+/**
+ * Read an element of an entry from an individual file in the backing storage.
+ *
+ * \param state The backing store state to use.
+ * \param bse The entry to read.
+ * \param elem_idx The element index within the entry.
+ * \return NSERROR_OK on success or error code.
+ */
+static nserror store_read_file(struct store_state *state,
+			 struct store_entry *bse,
+			 int elem_idx)
+{
+	int fd;
+	ssize_t rd; /* return from read */
+	int ret = NSERROR_OK;
+	size_t tot = 0; /* total size */
+
+	/* separate file in backing store */
+	fd = store_open(storestate, bse, elem_idx, O_RDONLY);
+	if (fd < 0) {
+		LOG(("Open failed"));
+		/** @todo should this invalidate the entry? */
+		return NSERROR_NOT_FOUND;
+	}
+
+	LOG(("Reading %d bytes into %p from file",
+	     bse->elem[elem_idx].size, bse->elem[elem_idx].data));
+
+	while (tot < bse->elem[elem_idx].size) {
+		rd = read(fd,
+			  bse->elem[elem_idx].data + tot,
+			  bse->elem[elem_idx].size - tot);
+		if (rd <= 0) {
+			LOG(("read error returned %d", rd));
+			ret = NSERROR_NOT_FOUND;
+			break;
+		}
+		tot += rd;
+	}
+
+	close(fd);
+
+	return ret;
+}
+
 /**
  * Retrive an object from the backing store.
  *
@@ -1402,10 +1463,6 @@ fetch(nsurl *url,
 	nserror ret;
 	struct store_entry *bse;
 	struct store_entry_element *elem;
-	uint8_t *data;
-	size_t datalen;
-	int fd;
-	ssize_t rd;
 	int elem_idx;
 
 	/* check backing store is initialised */
@@ -1422,7 +1479,7 @@ fetch(nsurl *url,
 	}
 	storestate->hit_count++;
 
-	LOG(("retriving cache file for url:%s", nsurl_access(url)));
+	LOG(("retriving cache data for url:%s", nsurl_access(url)));
 
 	/* calculate the entry element index */
 	if ((bsflags & BACKING_STORE_META) != 0) {
@@ -1430,80 +1487,49 @@ fetch(nsurl *url,
 	} else {
 		elem_idx = ENTRY_ELEM_DATA;
 	}
-	/* the entry element */
 	elem = &bse->elem[elem_idx];
 
-	if (elem->block != 0) {
-		/* small block storage */
+	/* if an allocation already exists return it */
+	if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
+		/* use the existing allocation and bump the ref count. */
+		elem->ref++;
+
+		LOG(("Using existing entry (%p) allocation %p refs:%d",
+		     bse, elem->data, elem->ref));
+
 	} else {
-		/* separate file in backing store */
-		fd = store_open(storestate, bse, elem_idx, O_RDONLY);
-		if (fd < 0) {
-			LOG(("Open failed"));
-			/** @todo should this invalidate the entry? */
-			return NSERROR_NOT_FOUND;
+		/* allocate from the heap */
+		elem->data = malloc(elem->size);
+		if (elem->data == NULL) {
+			LOG(("Failed to create new heap allocation"));
+			return NSERROR_NOMEM;
 		}
-	}
+		LOG(("Created new heap allocation %p", elem->data));
 
+		/* mark the entry as having a valid heap allocation */
+		elem->flags |= ENTRY_ELEM_FLAG_HEAP;
+		elem->ref = 1;
 
-	data = *data_out;
-	datalen = *datalen_out;
-	/** @todo should this check datalen is sufficient? */
-
-	/* need to deal with buffers */
-	if (data == NULL) {
-		if ((elem->flags & ENTRY_ELEM_FLAG_HEAP) != 0) {
-			/* a heap allocation already exists. Return
-			 * that allocation and bump our ref count.
-			 */
-			data = elem->data;
-			elem->ref++;
-			datalen = elem->size;
-			LOG(("Using existing heap allocation %p", elem->data));
+		/* fill the new block */
+		if (elem->block != 0) {
+			ret = store_read_block(storestate, bse, elem_idx);
 		} else {
-			datalen = elem->size;
-			data = malloc(elem->size);
-			if (data == NULL) {
-				close(fd);
-				return NSERROR_NOMEM;
-			}
-
-			/* store allocated buffer so track ownership */
-			elem->flags |= ENTRY_ELEM_FLAG_HEAP;
-			elem->data = data;
-			elem->ref = 1;
-			LOG(("Creating new heap allocation %p", elem->data));
+			ret = store_read_file(storestate, bse, elem_idx);
 		}
-	} else if (datalen == 0) {
-		/* caller provided a buffer but no length bad parameter */
-		close(fd);
-		return NSERROR_BAD_PARAMETER;
 	}
 
-	if (elem->block != 0) {
+	/* free the allocation if there is a read error */
+	if (ret != NSERROR_OK) {
+		entry_release_alloc(elem);
 	} else {
-		LOG(("Reading %d bytes into %p from file", datalen, data));
+		/* update stats and setup return pointers */
+		storestate->hit_size += elem->size;
 
-		/** @todo this read should be an a loop */
-		rd = read(fd, data, datalen);
-		if (rd <= 0) {
-			LOG(("read returned %d", rd));
-			close(fd);
-			if ((*data_out) == NULL) {
-				entry_release_alloc(elem);
-			}
-			return NSERROR_NOT_FOUND;
-		}
-
-		close(fd);
+		*data_out = elem->data;
+		*datalen_out = elem->size;
 	}
 
-	storestate->hit_size += datalen;
-
-	*data_out = data;
-	*datalen_out = datalen;
-
-	return NSERROR_OK;
+	return ret;
 }
 
 

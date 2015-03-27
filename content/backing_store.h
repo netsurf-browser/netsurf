@@ -83,10 +83,8 @@ struct gui_llcache_table {
 	/**
 	 * Retrive an object from the backing store.
 	 *
-	 * The caller may provide a buffer in \a data and a buffer
-	 *  length in \a datalen. Alternatively the backing store will
-	 *  allocate its own buffer if \a data is NULL, this memory is
-	 *  managed by the backing store.
+	 * The backing store will manage its own memory and the
+	 * allocations returned in \a data *must* not be altered.
 	 *
 	 * The caller must assume nothing about the backing store
 	 *  allocated buffers and the storage and *must* be freed by
@@ -94,8 +92,8 @@ struct gui_llcache_table {
 	 *
 	 * @param[in] url The url is used as the unique primary key for the data.
 	 * @param[in] flags The flags to control how the object is retrived.
-	 * @param[in,out] data The retrived objects data.
-	 * @param[in,out] datalen The length of the \a data retrieved.
+	 * @param[out] data The retrived objects data.
+	 * @param[out] datalen The length of the \a data retrieved.
 	 * @return NSERROR_OK on success or error code on faliure.
 	 */
 	nserror (*fetch)(struct nsurl *url, enum backing_store_flags flags,
