@@ -157,8 +157,6 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 
 	assert(bm != NULL);
 
-        LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
-
 	if (opaque) {
 		nsfb_set_geometry(bm, 0, 0, NSFB_FMT_XBGR8888);
 	} else {
