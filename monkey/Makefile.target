@@ -37,6 +37,7 @@ CWARNFLAGS += -Werror
 
 CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
 	  -D_BSD_SOURCE \
+	  -D_DEFAULT_SOURCE \
 	  -D_XOPEN_SOURCE=600 \
 	  -D_POSIX_C_SOURCE=200112L \
 	  -D_NETBSD_SOURCE \
