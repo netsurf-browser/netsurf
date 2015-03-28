@@ -79,6 +79,21 @@
 /** Filename of serialised entries */
 #define ENTRIES_FNAME "entries"
 
+/** log2 block data address length (64k) */
+#define BLOCK_ADDR_LEN 16
+
+/** log2 size of data blocks (8k) */
+#define BLOCK_DATA_SIZE 13
+
+/** log2 size of metadata blocks (1k) */
+#define BLOCK_META_SIZE 10
+
+/** log2 number of data block files */
+#define BLOCK_DATA_COUNT (BLOCK_ADDR_LEN - BLOCK_DATA_SIZE)
+
+/** log2 number of metadata block files */
+#define BLOCK_METADATA_COUNT (BLOCK_ADDR_LEN - BLOCK_METADATA_SIZE)
+
 /**
  * The type used to store index values refering to store entries. Care
  * must be taken with this type as it is used to build address to
@@ -168,12 +183,15 @@ struct store_entry {
  * Parameters controlling the backing store.
  */
 struct store_state {
+	/* store config */
 	char *path; /**< The path to the backing store */
 	size_t limit; /**< The backing store upper bound target size */
 	size_t hysteresis; /**< The hysteresis around the target size */
 
 	unsigned int ident_bits; /**< log2 number of bits to use for address. */
 
+
+	/* cache entry management */
 	struct store_entry *entries; /**< store entries. */
 	unsigned int entry_bits; /**< log2 number of bits in entry index. */
 	unsigned int last_entry; /**< index of last usable entry. */
@@ -191,6 +209,8 @@ struct store_state {
 	 */
 	entry_index_t *addrmap;
 
+
+	/* stats */
 	uint64_t total_alloc; /**< total size of all allocated storage. */
 
 	size_t hit_count; /**< number of cache hits */
