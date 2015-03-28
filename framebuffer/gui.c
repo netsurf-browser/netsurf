@@ -345,12 +345,6 @@ fb_redraw(fbtk_widget_t *widget,
 	nsfb_t *nsfb = fbtk_get_nsfb(widget);
 	float scale = browser_window_get_scale(bw);
 
-	LOG(("%d,%d to %d,%d",
-	     bwidget->redraw_box.x0,
-	     bwidget->redraw_box.y0,
-	     bwidget->redraw_box.x1,
-	     bwidget->redraw_box.y1));
-
 	x = fbtk_get_absx(widget);
 	y = fbtk_get_absy(widget);
 
