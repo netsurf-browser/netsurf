@@ -54,7 +54,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 
 	if (nsfb_init(bm) == -1) {
 		nsfb_free(bm);
-		return NULL;		
+		return NULL;
 	}
 
         LOG(("bitmap %p", bm));
@@ -152,7 +152,7 @@ void bitmap_modified(void *bitmap) {
  * \param  opaque  whether the bitmap should be plotted opaque
  */
 void bitmap_set_opaque(void *bitmap, bool opaque)
-{	
+{
 	nsfb_t *bm = bitmap;
 
 	assert(bm != NULL);
@@ -192,8 +192,8 @@ bool bitmap_test_opaque(void *bitmap)
         while (tst-- > 0) {
                 if (bmpptr[(tst << 2) + 3] != 0xff) {
                         LOG(("bitmap %p has transparency",bm));
-                        return false;                     
-                }   
+                        return false;
+                }
         }
         LOG(("bitmap %p is opaque", bm));
 	return true;
