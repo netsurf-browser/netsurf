@@ -126,7 +126,7 @@ static bool ro_gui_window_content_export_types(hlcache_handle *h,
 		bool *export_draw, bool *export_sprite);
 static void ro_gui_window_prepare_pageinfo(struct gui_window *g);
 static void ro_gui_window_prepare_objectinfo(hlcache_handle *object,
-		const char *href);
+		nsurl *target_url);
 
 static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
 static void ro_gui_window_action_home(struct gui_window *g);
@@ -2443,7 +2443,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_INFO:
 		if (current_menu_object != NULL)
 			ro_gui_window_prepare_objectinfo(current_menu_object,
-					nsurl_access(current_menu_url));
+					current_menu_url);
 		break;
 
 	case BROWSER_OBJECT_SAVE:
@@ -2758,7 +2758,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_INFO:
 		if (current_menu_object != NULL) {
 			ro_gui_window_prepare_objectinfo(current_menu_object,
-					nsurl_access(current_menu_url));
+					current_menu_url);
 			ro_gui_dialog_open_persistent(g->window,
 						      dialog_objinfo, false);
 		}
@@ -3854,28 +3854,30 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
  * Prepare the object info window for use
  *
  * \param *object	the object for which information is to be displayed
- * \param *href		corresponding href, if any
+ * \param *target_url	corresponding url, if any
  */
 
-void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
+void ro_gui_window_prepare_objectinfo(hlcache_handle *object, nsurl *target_url)
 {
 	char icon_buf[20] = "file_xxx";
 	const char *url;
 	lwc_string *mime;
 	const char *target = "-";
 
-	sprintf(icon_buf, "file_%.3x",
-			ro_content_filetype(object));
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
+	sprintf(icon_buf, "file_%.3x",ro_content_filetype(object));
+	if (!ro_gui_wimp_sprite_exists(icon_buf)) {
 		sprintf(icon_buf, "file_xxx");
+	}
 
 	url = nsurl_access(hlcache_handle_get_url(object));
-	if (url == NULL)
+	if (url == NULL) {
 		url = "-";
+	}
 	mime = content_get_mime_type(object);
 
-	if (href)
-		target = href;
+	if (target_url != NULL) {
+		target = nsurl_access(target_url);
+	}
 
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON,
 			icon_buf, true);
