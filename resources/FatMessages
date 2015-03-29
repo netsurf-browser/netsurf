@@ -5826,9 +5826,9 @@ de.all.FetchesMax:Maximale Anzahl an Ladevorgängen
 fr.all.FetchesMax:Maximum de connexions
 it.all.FetchesMax:Massima
 nl.all.FetchesMax:Maximaal aantal keer ophalen
-en.all.FetchesHost:Connexions par hôte
+en.all.FetchesHost:Fetches per host
 de.all.FetchesHost:Ladevorgänge pro Host
-fr.all.FetchesHost:Fetches per host
+fr.all.FetchesHost:Connexions par hôte
 it.all.FetchesHost:Per host
 nl.all.FetchesHost:Fetches per host
 en.all.FetchesCached:Cached connections
