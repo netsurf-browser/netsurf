@@ -121,6 +121,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->tmprasbuf = AllocVecTagList(width * height, NULL);
 
 #ifndef __amigaos4__
+	/* If you're wondering why this is #ifdeffed, see the note about OS4 friend bitmaps below */
 	friend = scrn->RastPort.BitMap;
 #endif
 
@@ -128,7 +129,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 		gg->bm = AllocBitMap(width, height, depth, 0, friend);
 	} else {
 #ifdef __amigaos4__
-		if(depth == 32) friend = scrn->RastPort.BitMap;
+		/* Screen depth is reported as 24 even when it's actually 32-bit.
+		 * We get freezes and other problems on OS4 if we befriend at any
+		 * other depths, hence this check. */
+		if(depth >= 24) friend = scrn->RastPort.BitMap;
 #endif
 		gg->bm = ami_rtg_allocbitmap(width, height, 32, 0, friend, RGBFB_A8R8G8B8);
 	}
