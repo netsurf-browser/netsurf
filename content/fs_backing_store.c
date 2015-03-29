@@ -117,6 +117,14 @@ typedef uint16_t entry_index_t;
 typedef uint32_t entry_ident_t;
 
 /**
+ * The type used to store block file index values. If this is changed
+ * it will affect the entry storage/alignment and BLOCK_ADDR_LEN must
+ * also be updated.
+ */
+typedef uint16_t block_index_t;
+
+
+/**
  * Entry element index values.
  */
 enum store_entry_elem_idx {
@@ -162,7 +170,7 @@ enum store_entry_flags {
 struct store_entry_element {
 	uint8_t* data; /**< data allocated */
 	uint32_t size; /**< size of entry element on disc */
-	uint16_t block; /**< small object data block */
+	block_index_t block; /**< small object data block */
 	uint8_t ref; /**< element data reference count */
 	uint8_t flags; /**< entry flags */
 };
@@ -319,6 +327,7 @@ remove_store_entry(struct store_state *state, struct store_entry **bse)
  *  - path elements no longer than 8 characters
  *  - acceptable characters are A-Z, 0-9
  *  - short total path lengths (255 or less)
+ *  - no more than 77 entries per directory (6bits worth)
  *
  * The short total path lengths mean the encoding must represent as
  * much data as possible in the least number of characters.
@@ -361,63 +370,75 @@ store_fname(struct store_state *state,
 	b32u_i[4] = b32u_d[4][0] = encoding_table[(ident >> 20) & 0x1f];
 	b32u_i[5] = b32u_d[5][0] = encoding_table[(ident >> 25) & 0x1f];
 	b32u_i[6] = encoding_table[(ident >> 30) & 0x1f];
+
 	/* null terminate strings */
 	b32u_i[7] = b32u_d[0][1] = b32u_d[1][1] = b32u_d[2][1] =
 		b32u_d[3][1] = b32u_d[4][1] = b32u_d[5][1] = 0;
 
-	if (elem_idx == ENTRY_ELEM_META) {
-		dat = "m"; /* metadata */
+	if (elem_idx == (ENTRY_ELEM_COUNT + ENTRY_ELEM_META)) {
+		netsurf_mkpath(&fname, NULL, 3, state->path, "mblk", b32u_d[0]);
+
+	} else if (elem_idx == (ENTRY_ELEM_COUNT + ENTRY_ELEM_DATA)) {
+		netsurf_mkpath(&fname, NULL, 3, state->path, "dblk", b32u_d[0]);
+
 	} else {
-		dat = "d"; /* data */
-	}
+		/* Normal file in the backing store */
 
-	/* number of chars with usefully encoded data in base 32 */
-	switch(((state->ident_bits + 4) / 5)) {
-	case 1:
-		netsurf_mkpath(&fname, NULL, 3, state->path, dat,
-			       b32u_i);
-		break;
+		if (elem_idx == ENTRY_ELEM_META) {
+			dat = "m"; /* metadata */
+		} else {
+			dat = "d"; /* data */
+		}
 
-	case 2:
-		netsurf_mkpath(&fname, NULL, 4, state->path, dat,
-			       b32u_d[0],
-			       b32u_i);
-		break;
+		/* number of chars with usefully encoded data in base 32 */
+		switch(((state->ident_bits + 4) / 5)) {
+		case 1:
+			netsurf_mkpath(&fname, NULL, 3, state->path, dat,
+				       b32u_i);
+			break;
 
-	case 3:
-		netsurf_mkpath(&fname, NULL, 5, state->path, dat,
-			       b32u_d[0], b32u_d[1],
-			       b32u_i);
-		break;
+		case 2:
+			netsurf_mkpath(&fname, NULL, 4, state->path, dat,
+				       b32u_d[0],
+				       b32u_i);
+			break;
 
-	case 4:
-		netsurf_mkpath(&fname, NULL, 6, state->path, dat,
-			       b32u_d[0], b32u_d[1], b32u_d[2],
-			       b32u_i);
-		break;
+		case 3:
+			netsurf_mkpath(&fname, NULL, 5, state->path, dat,
+				       b32u_d[0], b32u_d[1],
+				       b32u_i);
+			break;
 
-	case 5:
-		netsurf_mkpath(&fname, NULL, 7, state->path, dat,
-			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
-			       b32u_i);
-		break;
+		case 4:
+			netsurf_mkpath(&fname, NULL, 6, state->path, dat,
+				       b32u_d[0], b32u_d[1], b32u_d[2],
+				       b32u_i);
+			break;
 
-	case 6:
-		netsurf_mkpath(&fname, NULL, 8, state->path, dat,
-			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
-			       b32u_d[4],
-			       b32u_i);
-		break;
+		case 5:
+			netsurf_mkpath(&fname, NULL, 7, state->path, dat,
+				       b32u_d[0], b32u_d[1], b32u_d[2],
+				       b32u_d[3],
+				       b32u_i);
+			break;
 
-	case 7:
-		netsurf_mkpath(&fname, NULL, 9, state->path, dat,
-			       b32u_d[0], b32u_d[1], b32u_d[2], b32u_d[3],
-			       b32u_d[4], b32u_d[5],
-			       b32u_i);
-		break;
+		case 6:
+			netsurf_mkpath(&fname, NULL, 8, state->path, dat,
+				       b32u_d[0], b32u_d[1], b32u_d[2],
+				       b32u_d[3], b32u_d[4],
+				       b32u_i);
+			break;
 
-	default:
-		assert("Invalid path depth in store_fname()" == NULL);
+		case 7:
+			netsurf_mkpath(&fname, NULL, 9, state->path, dat,
+				       b32u_d[0], b32u_d[1], b32u_d[2],
+				       b32u_d[3], b32u_d[4], b32u_d[5],
+				       b32u_i);
+			break;
+
+		default:
+			assert("Invalid path depth in store_fname()" == NULL);
+		}
 	}
 
 	return fname;
@@ -924,14 +945,18 @@ set_store_entry(struct store_state *state,
  * Open a file using a store ident.
  *
  * @param state The store state to use.
- * @param bse The store entry of the file to open.
- * @param elem_idx The element within the store entry to open.
+ * @param ident The identifier to open file for.
+ * @param elem_idx The element within the store entry to open. The
+ *                 value should be be one of the values in the
+ *                 store_entry_elem_idx enum. Additionally it may have
+ *                 ENTRY_ELEM_COUNT added to it to indicate block file
+ *                 names.
  * @param openflags The flags used with the open call.
  * @return An fd from the open call or -1 on error.
  */
 static int
 store_open(struct store_state *state,
-	   struct store_entry *bse,
+	   entry_ident_t ident,
 	   int elem_idx,
 	   int openflags)
 {
@@ -939,7 +964,7 @@ store_open(struct store_state *state,
 	nserror ret;
 	int fd;
 
-	fname = store_fname(state, bse->ident, elem_idx);
+	fname = store_fname(state, ident, elem_idx);
 	if (fname == NULL) {
 		LOG(("filename error"));
 		return -1;
@@ -1467,12 +1492,37 @@ static nserror store_write_block(struct store_state *state,
 			 struct store_entry *bse,
 			 int elem_idx)
 {
-	int bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
+	block_index_t bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
 		((1 << BLOCK_FILE_COUNT) - 1); /* block file block resides in */
+	block_index_t bi = bse->elem[elem_idx].block & ((1 << BLOCK_ENTRY_COUNT) -1); /* block index in file */
+	ssize_t wr;
+	off_t offst;
 
+	/* ensure the block file fd is good */
+	if (state->blocks[elem_idx][bf].fd == -1) {
+		state->blocks[elem_idx][bf].fd = store_open(state, bf,
+				elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
+	}
+	if (state->blocks[elem_idx][bf].fd == -1) {
+		return NSERROR_SAVE_FAILED;
+	}
 
+	if (elem_idx == ENTRY_ELEM_META) {
+		offst = bi << BLOCK_META_SIZE;
+	} else {
+		offst = bi << BLOCK_DATA_SIZE;
+	}
 
-	return NSERROR_SAVE_FAILED;
+	wr = pwrite(state->blocks[elem_idx][bf].fd,
+		    bse->elem[elem_idx].data,
+		    bse->elem[elem_idx].size,
+		    offst);
+
+	if (wr != bse->elem[elem_idx].size) {
+		return NSERROR_SAVE_FAILED;
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1490,7 +1540,7 @@ static nserror store_write_file(struct store_state *state,
 	ssize_t written;
 	int fd;
 
-	fd = store_open(state, bse, elem_idx, O_CREAT | O_WRONLY);
+	fd = store_open(state, bse->ident, elem_idx, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		perror("");
 		LOG(("Open failed %d", fd));
@@ -1591,7 +1641,36 @@ static nserror store_read_block(struct store_state *state,
 			 struct store_entry *bse,
 			 int elem_idx)
 {
-	return NSERROR_NOT_FOUND;
+	block_index_t bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
+		((1 << BLOCK_FILE_COUNT) - 1); /* block file block resides in */
+	block_index_t bi = bse->elem[elem_idx].block & ((1 << BLOCK_ENTRY_COUNT) -1); /* block index in file */
+	ssize_t rd;
+	off_t offst;
+
+	/* ensure the block file fd is good */
+	if (state->blocks[elem_idx][bf].fd == -1) {
+		state->blocks[elem_idx][bf].fd = store_open(state, bf, elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
+	}
+	if (state->blocks[elem_idx][bf].fd == -1) {
+		return NSERROR_SAVE_FAILED;
+	}
+
+	if (elem_idx == ENTRY_ELEM_META) {
+		offst = bi << BLOCK_META_SIZE;
+	} else {
+		offst = bi << BLOCK_DATA_SIZE;
+	}
+
+	rd = pread(state->blocks[elem_idx][bf].fd,
+		   bse->elem[elem_idx].data,
+		   bse->elem[elem_idx].size,
+		   offst);
+
+	if (rd != bse->elem[elem_idx].size) {
+		return NSERROR_SAVE_FAILED;
+	}
+
+	return NSERROR_OK;
 }
 
 /**
@@ -1612,7 +1691,7 @@ static nserror store_read_file(struct store_state *state,
 	size_t tot = 0; /* total size */
 
 	/* separate file in backing store */
-	fd = store_open(storestate, bse, elem_idx, O_RDONLY);
+	fd = store_open(storestate, bse->ident, elem_idx, O_RDONLY);
 	if (fd < 0) {
 		LOG(("Open failed"));
 		/** @todo should this invalidate the entry? */
