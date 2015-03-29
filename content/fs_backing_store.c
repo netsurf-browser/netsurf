@@ -79,8 +79,17 @@
 /** Filename of serialised entries */
 #define ENTRIES_FNAME "entries"
 
+/** Filename of block file index */
+#define BLOCKS_FNAME "blocks"
+
 /** log2 block data address length (64k) */
 #define BLOCK_ADDR_LEN 16
+
+/** log2 number of entries per block file(4k) */
+#define BLOCK_ENTRY_COUNT 12
+
+/** log2 number of data block files */
+#define BLOCK_FILE_COUNT (BLOCK_ADDR_LEN - BLOCK_ENTRY_COUNT)
 
 /** log2 size of data blocks (8k) */
 #define BLOCK_DATA_SIZE 13
@@ -88,11 +97,9 @@
 /** log2 size of metadata blocks (1k) */
 #define BLOCK_META_SIZE 10
 
-/** log2 number of data block files */
-#define BLOCK_DATA_COUNT (BLOCK_ADDR_LEN - BLOCK_DATA_SIZE)
+/** length in bytes of a block files use map */
+#define BLOCK_USE_MAP_SIZE (1 << (BLOCK_ENTRY_COUNT - 3))
 
-/** log2 number of metadata block files */
-#define BLOCK_METADATA_COUNT (BLOCK_ADDR_LEN - BLOCK_METADATA_SIZE)
 
 /**
  * The type used to store index values refering to store entries. Care
@@ -180,6 +187,16 @@ struct store_entry {
 };
 
 /**
+ * Small block file.
+ */
+struct block_file {
+	/** file descriptor of the block file */
+	int fd;
+	/** map of used and unused entries within the block file */
+	uint8_t use_map[BLOCK_USE_MAP_SIZE];
+};
+
+/**
  * Parameters controlling the backing store.
  */
 struct store_state {
@@ -208,6 +225,14 @@ struct store_state {
 	 * url to an entry.
 	 */
 	entry_index_t *addrmap;
+
+	/* small block managemet */
+	struct block_file blocks[ENTRY_ELEM_COUNT][BLOCK_FILE_COUNT];
+
+	/** flag indicating if the block file use maps have been made
+	 * persistant since they were last changed.
+	 */
+	bool blocks_dirty;
 
 
 	/* stats */
@@ -640,6 +665,85 @@ static nserror write_entries(struct store_state *state)
 }
 
 /**
+ * Write block file use map to file.
+ *
+ * Serialise block file use map out to storage.
+ *
+ * @param state The backing store state to serialise.
+ * @return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror write_blocks(struct store_state *state)
+{
+	int fd;
+	char *tname = NULL; /* temporary file name for atomic replace */
+	char *fname = NULL; /* target filename */
+	size_t blocks_size;
+	size_t written = 0;
+	size_t wr;
+	nserror ret;
+	int bfidx; /* block file index */
+	int elem_idx;
+
+	if (state->blocks_dirty == false) {
+		/* blocks use maps have not been updated since last write */
+		return NSERROR_OK;
+	}
+
+	ret = netsurf_mkpath(&tname, NULL, 2, state->path, "t"BLOCKS_FNAME);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	fd = open(tname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd == -1) {
+		free(tname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	blocks_size = (BLOCK_FILE_COUNT * ENTRY_ELEM_COUNT) * BLOCK_USE_MAP_SIZE;
+
+	for (elem_idx = 0; elem_idx < ENTRY_ELEM_COUNT; elem_idx++) {
+		for (bfidx = 0; bfidx < BLOCK_FILE_COUNT; bfidx++) {
+			wr = write(fd,
+				   &state->blocks[elem_idx][bfidx].use_map[0],
+				   BLOCK_USE_MAP_SIZE);
+			if (wr != BLOCK_USE_MAP_SIZE) {
+				LOG(("writing block file %d use index on file number %d failed", elem_idx, bfidx));
+				goto wr_err;
+			}
+			written += wr;
+		}
+	}
+wr_err:
+	close(fd);
+
+	/* check all data was written */
+	if (written != blocks_size) {
+		unlink(tname);
+		free(tname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, BLOCKS_FNAME);
+	if (ret != NSERROR_OK) {
+		unlink(tname);
+		free(tname);
+		return ret;
+	}
+
+	/* remove() call is to handle non-POSIX rename() implementations */
+	(void)remove(fname);
+	if (rename(tname, fname) != 0) {
+		unlink(tname);
+		free(tname);
+		free(fname);
+		return NSERROR_SAVE_FAILED;
+	}
+
+	return NSERROR_OK;
+}
+
+/**
  * maintinance of control structures.
  *
  * callback scheduled when control data has been update. Currently
@@ -653,6 +757,7 @@ static void control_maintinance(void *s)
 	struct store_state *state = s;
 
 	write_entries(state);
+	write_blocks(state);
 }
 
 
@@ -982,6 +1087,61 @@ read_entries(struct store_state *state)
 	return NSERROR_OK;
 }
 
+
+/**
+ * Read block file usage bitmaps.
+ *
+ * @param state The backing store state to put the loaded entries in.
+ * @return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror
+read_blocks(struct store_state *state)
+{
+	int bfidx; /* block file index */
+	int elem_idx;
+	int fd;
+	ssize_t rd;
+	char *fname = NULL;
+	nserror ret;
+
+	ret = netsurf_mkpath(&fname, NULL, 2, state->path, BLOCKS_FNAME);
+	if (ret != NSERROR_OK) {
+		return ret;
+	}
+
+	fd = open(fname, O_RDWR);
+	free(fname);
+	if (fd != -1) {
+		/* initialise block file use array */
+		for (elem_idx = 0; elem_idx < ENTRY_ELEM_COUNT; elem_idx++) {
+			for (bfidx = 0; bfidx < BLOCK_FILE_COUNT; bfidx++) {
+				rd = read(fd,
+					  &state->blocks[elem_idx][bfidx].use_map[0],
+					  BLOCK_USE_MAP_SIZE);
+				if (rd <= 0) {
+					LOG(("reading block file %d use index on file number %d failed", elem_idx, bfidx));
+					goto rd_err;
+				}
+			}
+		}
+	rd_err:
+		close(fd);
+
+	} else {
+		/* ensure block 0 (invalid sentinal) is skipped */
+		state->blocks[ENTRY_ELEM_DATA][0].use_map[0] = 1;
+		state->blocks[ENTRY_ELEM_META][0].use_map[0] = 1;
+	}
+
+	/* initialise block file file descriptors */
+	for (bfidx = 0; bfidx < BLOCK_FILE_COUNT; bfidx++) {
+		state->blocks[ENTRY_ELEM_DATA][bfidx].fd = -1;
+		state->blocks[ENTRY_ELEM_META][bfidx].fd = -1;
+	}
+
+	return NSERROR_OK;
+}
+
 /**
  * Write the cache tag file.
  *
@@ -1235,7 +1395,15 @@ initialise(const struct llcache_store_parameters *parameters)
 	/* build entry hash map */
 	ret = build_entrymap(newstate);
 	if (ret != NSERROR_OK) {
-		/* that obviously went well  */
+		/* that obviously went well */
+		free(newstate->path);
+		free(newstate);
+		return ret;
+	}
+
+	ret = read_blocks(newstate);
+	if (ret != NSERROR_OK) {
+		/* oh dear */
 		free(newstate->path);
 		free(newstate);
 		return ret;
@@ -1268,6 +1436,7 @@ finalise(void)
 	if (storestate != NULL) {
 		guit->browser->schedule(-1, control_maintinance, storestate);
 		write_entries(storestate);
+		write_blocks(storestate);
 
 		/* avoid division by zero */
 		if (storestate->miss_count == 0) {
@@ -1298,6 +1467,11 @@ static nserror store_write_block(struct store_state *state,
 			 struct store_entry *bse,
 			 int elem_idx)
 {
+	int bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
+		((1 << BLOCK_FILE_COUNT) - 1); /* block file block resides in */
+
+
+
 	return NSERROR_SAVE_FAILED;
 }
 
