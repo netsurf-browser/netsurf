@@ -1506,7 +1506,7 @@ wimp_window {
 
 wimp_window {
   template_name:"info"
-  visible:752,324,1412,700
+  visible:752,332,1412,700
   xscroll:0
   yscroll:0
   next:wimp_TOP
@@ -1519,7 +1519,7 @@ wimp_window {
   scroll_inner:wimp_COLOUR_ORANGE
   highlight_bg:wimp_COLOUR_LIGHT_GREY
   extra_flags:
-  extent:0,-376,660,0
+  extent:0,-368,660,0
   title_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED
   work_flags:wimp_BUTTON_CLICK
   sprite_area:&1
@@ -1567,7 +1567,7 @@ wimp_window {
     text.validation:"R2"
   }
   wimp_icon {
-    extent:168,-368,652,-316
+    extent:168,-360,652,-308
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK_DRAG
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -1601,7 +1601,7 @@ wimp_window {
     text_only:"Auteurs"
   }
   wimp_icon {
-    extent:40,-364,164,-320
+    extent:40,-356,164,-312
     icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_RJUSTIFIED
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -1609,24 +1609,42 @@ wimp_window {
     text_only:"Versie"
   }
   wimp_icon {
-    extent:168,-308,652,-188
+    extent:168,-300,652,-248
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK_DRAG
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text.text:"G. van Katwijk & D. Tanis g.vankatwijk@freeler.nl"
+    text.text:"g.vankatwijk@freeler.nl"
     text.size:50
-    text.validation:"R2;L"
+    text.validation:"R2"
   }
   wimp_icon {
-    extent:0,-304,164,-192
+    extent:8,-296,164,-252
     icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_ICON_RJUSTIFIED
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text.text:"Vertaling & contact"
+    text.text:"Contact"
     text.size:20
-    text.validation:"L"
+    text.validation:""
+  }
+  wimp_icon {
+    extent:168,-240,652,-188
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK_DRAG
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text.text:"NetSurf-vertalers"
+    text.size:40
+    text.validation:"R2"
+  }
+  wimp_icon {
+    extent:4,-236,164,-192
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_RJUSTIFIED
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text_only:"Vertaling"
   }
 }
 
@@ -2091,8 +2109,8 @@ wimp_window {
   sprite_area:&1
   xmin:792
   ymin:248
-  text.text:"Documentinfo"
-  text.size:13
+  text.text:"Documentinformatie"
+  text.size:19
   text.validation:""
   wimp_icon {
     extent:208,-60,784,-8

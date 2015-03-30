@@ -911,7 +911,7 @@ en.all.Link:Link
 de.all.Link:Link
 fr.all.Link:Lien
 it.all.Link:Link
-nl.all.Link:Link
+nl.all.Link:Koppeling
 en.all.LinkNewTab:Open in new tab
 de.all.LinkNewTab:Öffnen in Tab
 fr.all.LinkNewTab:Ouvrir dans un nouvel onglet
@@ -4118,6 +4118,16 @@ de.ro.HelpBrowserMenu2-3:Text aus dem Clipboard einfügen.
 fr.ro.HelpBrowserMenu2-3:\Spaste text from the clipboard.
 it.ro.HelpBrowserMenu2-3:\Sincolla il testo dalla clipboard
 nl.ro.HelpBrowserMenu2-3:Klik met KIES om de tekst van het klembord hier in te voegen.
+en.ro.HelpBrowserMenu2-4:\Sdeselect the current selection.
+de.ro.HelpBrowserMenu2-4:\Sdeselect the current selection.
+fr.ro.HelpBrowserMenu2-4:\Sdeselect the current selection.
+it.ro.HelpBrowserMenu2-4:\Sdeselect the current selection.
+nl.ro.HelpBrowserMenu2-4:Klik met KIES om de gekozen selectie te deselecteren.
+en.ro.HelpBrowserMenu2-5:\Sselect all text on the current page, without the contents of text input fields.|MWhen the carret is at a text input field, all text in that field is selected.
+de.ro.HelpBrowserMenu2-5:\Sselect all text on the current page, without the contents of text input fields.|MWhen the carret is at a text input field, all text in that field is selected.
+fr.ro.HelpBrowserMenu2-5:\Sselect all text on the current page, without the contents of text input fields.|MWhen the carret is at a text input field, all text in that field is selected.
+it.ro.HelpBrowserMenu2-5:\Sselect all text on the current page, without the contents of text input fields.|MWhen the carret is at a text input field, all text in that field is selected.
+nl.ro.HelpBrowserMenu2-5:Klik met KIES om alle tekst op de pagina, uitgezonderd de invoervelden te selecteren.|MWanneer het inlasteken in een invoerveld staat, wordt alle tekst in het veld geselecteerd.
 en.ro.HelpBrowserMenu3:\Rsee the navigation options.
 de.ro.HelpBrowserMenu3:Untermenü Navigieren.
 fr.ro.HelpBrowserMenu3:\Rvoir les options de navigation.
@@ -4168,7 +4178,11 @@ de.ro.HelpBrowserMenu4-1:Optionen zur Anzeige von Bildern.
 fr.ro.HelpBrowserMenu4-1:\Rdéfinir les options d'images locales.
 it.ro.HelpBrowserMenu4-1:\Rimposta le opzioni relative alle immagini locali.
 nl.ro.HelpBrowserMenu4-1:Verplaats de muispijl naar rechts om de afbeeldingsmogelijkheden van dit browservenster aan te passen.
-#HelpBrowserMen43-1-0:\Stoggle the display of foreground images.
+en.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
+de.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
+fr.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
+it.ro.HelpBrowserMenu4-1-0:\Stoggle the display of foreground images.
+nl.ro.HelpBrowserMenu4-1-0:Klik met KIES om het tonen van voorgrondafbeeldingen aan of uit te zetten.
 en.ro.HelpBrowserMenu4-1-1:\Stoggle the display of background images.
 de.ro.HelpBrowserMenu4-1-1:Schaltet Hintergrundbilder ein/aus.
 fr.ro.HelpBrowserMenu4-1-1:\Safficher ou pas des images de fond.
@@ -4199,16 +4213,11 @@ de.ro.HelpBrowserMenu4-2-2:Schaltet die Ladeaktivitätsanzeige am oberen Fenster
 fr.ro.HelpBrowserMenu4-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
 it.ro.HelpBrowserMenu4-2-2:\Salterna la visualizzazione del throbber.|MLa barra URL coprirà lo spazio eccedente.
 nl.ro.HelpBrowserMenu4-2-2:Klik met KIES om het tonen van de (laad)Activiteitsindicator aan of uit te zetten.|MDe adresbalk gebruikt de overblijvende vrijkomende ruimte.
-en.ro.HelpBrowserMenu4-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-de.ro.HelpBrowserMenu4-2-3:Schaltet die Statusanzeige am unteren Fensterrand ein/aus.|MDie Länge des horizontalen Schiebebalkens wird angepaßt.
-fr.ro.HelpBrowserMenu4-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
-it.ro.HelpBrowserMenu4-2-3:\Salterna la visualizzazione della barra di stato.|MLa barra di scrolling orizzontale coprirà la larghezza eccedente.
+en.ro.HelpBrowserMenu4-2-3:\Stoggle toolbar edit mode.
+de.ro.HelpBrowserMenu4-2-3:Schaltet in den Modus zur Bearbeitung der Iconleiste am oberen Fensterrand.
+fr.ro.HelpBrowserMenu4-2-3:\Schanger le mode d'édition de barre d'outils.
+it.ro.HelpBrowserMenu4-2-3:\Salterna la modalità di modifica della barra strumenti.
 nl.ro.HelpBrowserMenu4-2-3:Klik met KIES om de aanpasmodus van de gereedschapbalk in of uit te schakelen. Wanneer ingeschakelt, verschijnt er een balk onder de gereedschapbalk met extra knoppen die van en naar deze balk gesleept kunnen worden om deze aan te passen.
-en.ro.HelpBrowserMenu4-2-4:\Stoggle toolbar edit mode.
-de.ro.HelpBrowserMenu4-2-4:Schaltet in den Modus zur Bearbeitung der Iconleiste am oberen Fensterrand.
-fr.ro.HelpBrowserMenu4-2-4:\Schanger le mode d'édition de barre d'outils.
-it.ro.HelpBrowserMenu4-2-4:\Salterna la modalità di modifica della barra strumenti.
-nl.ro.HelpBrowserMenu4-2-4:\Stoggle toolbar edit mode.
 en.ro.HelpBrowserMenu4-3:\Scontrol the manner in which the display is rendered.
 de.ro.HelpBrowserMenu4-3:Einstellungen zur Berechnung der Seitendarstellung.
 fr.ro.HelpBrowserMenu4-3:\Scontroler la façon d'afficher.
@@ -4299,6 +4308,11 @@ de.ro.HelpBrowserMenu5-2-0:Anklicken um die gespeicherten Cookies anzusehen und 
 fr.ro.HelpBrowserMenu5-2-0:\Souvrir la fenêtre de gestion des cookies.
 it.ro.HelpBrowserMenu5-2-0:\Sapri la finestra del gestore dei cookie
 nl.ro.HelpBrowserMenu5-2-0:Klik met KIES om het cookiesbeheervenster te openen.
+en.ro.HelpBrowserMenu5-2-1:\Sdelete all stored cookies.
+de.ro.HelpBrowserMenu5-2-1:\Sdelete all stored cookies.
+fr.ro.HelpBrowserMenu5-2-1:\Sdelete all stored cookies.
+it.ro.HelpBrowserMenu5-2-1:\Sdelete all stored cookies.
+nl.ro.HelpBrowserMenu5-2-1:Klik met KIES om alle opgeslagen cookies te verwijderen.
 en.ro.HelpBrowserMenu6:\Rsee the help resources available.
 de.ro.HelpBrowserMenu6:Untermenü Hilfe.|MZeigt Informationen zu und über NetSurf.
 fr.ro.HelpBrowserMenu6:\Rvoir l'aide disponible.
@@ -4345,7 +4359,7 @@ en.ro.HelpIconbar:\TNetSurf icon.|M\Sopen a new browser \w.|M\Aopen the hotlist 
 de.ro.HelpIconbar:Das ist das NetSurf Icon.|MKlicken mit AUSWAHL öffnet ein neues Browserfenster.|MKlicken mit SPEZIAL öffnet die Hotlist.
 fr.ro.HelpIconbar:\Tl'icône de NetSurf.|M\Souvrir une nouvelle \w de navigateur.|M\Aouvrir la fenêtre de gestion des favoris.
 it.ro.HelpIconbar:\TIcona di NetSurf.|M\Sapri una nuova finestra|M\Aapri la finestra del gestore dei segnalibri
-nl.ro.HelpIconbar:Dit is het NetSurf-symbool.|MKlik met KIES om een nieuw browservenster te openen.|MKlik met PASAAN om de favorietenlijst te openen.
+nl.ro.HelpIconbar:Dit is het symbool van het programma NetSurf.|MKlik met KIES om een nieuw browservenster te openen.|MKlik met PASAAN om de favorietenlijst te openen.
 en.ro.HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
 de.ro.HelpHistory:Die History zeigt alle in dieser Sitzung besuchten Seiten.|MKlicken mit AUSWAHL auf eine Symbolgrafik kehrt zurück zur jeweiligen Seite.
 fr.ro.HelpHistory:Utiliser cette \w pour naviguer dans l'historique arborescent local.|M\Ssur une vignette pour revenir à cette page.
@@ -4399,37 +4413,21 @@ de.ro.HelpScaleView3:Klicken mit AUSWAHL um die Skalierung um 10% zu erhöhen.
 fr.ro.HelpScaleView3:\Saugmenter l'échelle, par pas de 10%.
 it.ro.HelpScaleView3:\Sincrementa la scala di un 10% alla volta.
 nl.ro.HelpScaleView3:Klik met KIES om de schaal met 10% per keer te vergroten.
-en.ro.HelpScaleView5:\Sautomatically choose a scale of 75%.
-de.ro.HelpScaleView5:Stellt einen Skalierungswert von 75% ein.
-fr.ro.HelpScaleView5:\Sdirectement choisir une échelle de 75%.
-it.ro.HelpScaleView5:\Sscegli una scala automatica del 75%.
+en.ro.HelpScaleView5:Choose whether all frames will also be scaled.
+de.ro.HelpScaleView5:Choose whether all frames will also be scaled.
+fr.ro.HelpScaleView5:Choose whether all frames will also be scaled.
+it.ro.HelpScaleView5:Choose whether all frames will also be scaled.
 nl.ro.HelpScaleView5:Selecteer de optie optie om ook de bijbehorende frames mee te schalen.
-en.ro.HelpScaleView6:\Sautomatically choose a scale of 100%.
-de.ro.HelpScaleView6:Stellt einen Skalierungswert von 100% ein.
-fr.ro.HelpScaleView6:\Sdirectement choisir une échelle de 100%.
-it.ro.HelpScaleView6:\Sscegli una scala automatica del 100%.
-nl.ro.HelpScaleView6:\Sautomatically choose a scale of 100%.
-en.ro.HelpScaleView7:\Sautomatically choose a scale of 150%.
-de.ro.HelpScaleView7:Stellt einen Skalierungswert von 150% ein.
-fr.ro.HelpScaleView7:\Sdirectement choisir une échelle de 150%.
-it.ro.HelpScaleView7:\Sscegli una scala automatica del 150%.
+en.ro.HelpScaleView7:\Scancel changes.|MThe current scale will not be changed.
+de.ro.HelpScaleView7:Klicken mit AUSWAHL um die Skalierung nicht durchzuführen.|MDas Dialogfenster wird geschlossen.|MDie Darstellung der Seite wird unverändert beibehalten.
+fr.ro.HelpScaleView7:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
+it.ro.HelpScaleView7:\Sannulla tutte le modifiche.|MLa corrente scala non verrà modificata.
 nl.ro.HelpScaleView7:Klik met KIES om dit venster te sluiten zonder dat de gemaakte wijzigingen worden ingesteld.|MDeze schaal wordt niet gewijzigd.
-en.ro.HelpScaleView8:\Sautomatically choose a scale of 200%.
-de.ro.HelpScaleView8:Stellt einen Skalierungswert von 200% ein.
-fr.ro.HelpScaleView8:\Sdirectement choisir une échelle de 200%.
-it.ro.HelpScaleView8:\Sscegli una scala automatica del 200%.
+en.ro.HelpScaleView8:\Schange the view to the scale you have chosen.
+de.ro.HelpScaleView8:Klicken mit AUSWAHL um die Seite skaliert darzustellen.|MDie Seite wird in der gewählten Vergrößerung angezeigt.
+fr.ro.HelpScaleView8:\Svalider le changement d'échelle.
+it.ro.HelpScaleView8:\Smodifica la visualizzazione della scala prescelta.
 nl.ro.HelpScaleView8:Klik met KIES om de gekozen schaal in te stellen op deze weergave en het venster sluiten.
-en.ro.HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
-de.ro.HelpScaleView9:Klicken mit AUSWAHL um die Skalierung nicht durchzuführen.|MDas Dialogfenster wird geschlossen.|MDie Darstellung der Seite wird unverändert beibehalten.
-fr.ro.HelpScaleView9:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
-it.ro.HelpScaleView9:\Sannulla tutte le modifiche.|MLa corrente scala non verrà modificata.
-nl.ro.HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
-en.ro.HelpScaleView10:\Schange the view to the scale you have chosen.
-de.ro.HelpScaleView10:Klicken mit AUSWAHL um die Seite skaliert darzustellen.|MDie Seite wird in der gewählten Vergrößerung angezeigt.
-fr.ro.HelpScaleView10:\Svalider le changement d'échelle.
-it.ro.HelpScaleView10:\Smodifica la visualizzazione della scala prescelta.
-nl.ro.HelpScaleView10:\Schange the view to the scale you have chosen.
-
 en.ro.HelpSearch:Use this \w to search for text within the page.
 de.ro.HelpSearch:Dialogfenster zum Suchen von Text innerhalb der dargestellten Seite.
 fr.ro.HelpSearch:Utiliser cette fenêtre pour faire une recherche textuelle sur cette page.
@@ -5127,7 +5125,7 @@ en.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug
 de.ro.HelpContentConfig4:Stellt ein, ob externe Pluginroutinen genutzt werden dürfen, um Zusatzinhalte darzustellen (z.B. Flash).
 fr.ro.HelpContentConfig4:Ceci indique si Netsurf doit autoriser les plug-ins externes à manipuler des types de contenu supplémentaires, comme le Flash.
 it.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
-nl.ro.HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
+nl.ro.HelpContentConfig4:Deze optie geeft aan of NetSurf externe plug-ins, voor aanvullende soorten inhoud zoals Flash toestaat.
 en.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
 de.ro.HelpContentConfig7:Stellt ein, ob NetSurf erlaubt, daß Links beim Aufruf neue Browserfenster öffnen dürfen.
 fr.ro.HelpContentConfig7:This indicates whether NetSurf will allow links to open in new windows.
@@ -5148,7 +5146,11 @@ de.ro.HelpContentConfig10:Klicken mit AUSWAHL speichert die Einstellungen und sc
 fr.ro.HelpContentConfig10:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 it.ro.HelpContentConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 nl.ro.HelpContentConfig10:Klik met KIES om de gemaakte wijzigingen te bewaren en dit venster te sluiten.|MKlikken met PASAAN heeft hetzelfde effect, alleen wordt het huidige venster dan niet gesloten.
-
+en.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
+de.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
+fr.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
+it.ro.HelpContentConfig11:This indicates whether NetSurf will disable executing JavaScript.
+nl.ro.HelpContentConfig11:Deze optie geeft aan of het uitvoeren van JavaScript-scripts is uitgeschakeld.
 en.ro.HelpFontConfig:\Tfont configuration \w
 de.ro.HelpFontConfig:Konfigurationsfenster zur Einstellung der verwendeten Schriftarten
 fr.ro.HelpFontConfig:\Tla fenêtre de configuration de Fontes
@@ -5820,7 +5822,7 @@ en.all.Fetching:Fetching
 de.all.Fetching:Fetching
 fr.all.Fetching:Connexion
 it.all.Fetching:Ricezione
-nl.all.Fetching:Fetching
+nl.all.Fetching:ophalen
 en.all.FetchesMax:Maximum fetches
 de.all.FetchesMax:Maximale Anzahl an Ladevorgängen
 fr.all.FetchesMax:Maximum de connexions
