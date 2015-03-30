@@ -100,7 +100,6 @@
 /** length in bytes of a block files use map */
 #define BLOCK_USE_MAP_SIZE (1 << (BLOCK_ENTRY_COUNT - 3))
 
-
 /**
  * The type used to store index values refering to store entries. Care
  * must be taken with this type as it is used to build address to
@@ -202,6 +201,11 @@ struct block_file {
 	int fd;
 	/** map of used and unused entries within the block file */
 	uint8_t use_map[BLOCK_USE_MAP_SIZE];
+};
+
+static const unsigned int log2_block_size[] = {
+	BLOCK_DATA_SIZE,
+	BLOCK_META_SIZE
 };
 
 /**
@@ -831,6 +835,36 @@ get_store_entry(struct store_state *state, nsurl *url, struct store_entry **bse)
 	return NSERROR_OK;
 }
 
+/**
+ * Find next available small block.
+ */
+static block_index_t alloc_block(struct store_state *state, int elem_idx)
+{
+	int bf;
+	int idx;
+	int bit;
+	uint8_t *map;
+
+	for (bf = 0; bf < BLOCK_FILE_COUNT; bf++) {
+		map = &state->blocks[elem_idx][bf].use_map[0];
+
+		for (idx = 0; idx < BLOCK_USE_MAP_SIZE; idx++) {
+			if (*(map + idx) != 0xff) {
+				/* located an unused block */
+				for (bit = 0; bit < 8;bit++) {
+					if (((*(map + idx)) & (1U << bit)) == 0) {
+						/* mark block as used */
+						*(map + idx) |= 1U << bit;
+						state->blocks_dirty = true;
+						return (((bf * BLOCK_USE_MAP_SIZE) + idx) * 8) + bit; 
+					}
+				}
+			}
+		}
+	}
+
+	return 0;
+}
 
 /**
  * Set a backing store entry in the entry table from a url.
@@ -930,6 +964,12 @@ set_store_entry(struct store_state *state,
 	state->total_alloc -= elem->size;
 	elem->size = datalen;
 	state->total_alloc += elem->size;
+
+	/* if the elemnt will fit in a small block attempt to allocate one */
+	if (elem->size <= (1U << log2_block_size[elem_idx])) {
+		elem->block = alloc_block(state, elem_idx);
+		LOG(("Using block %d", elem->block));
+	}
 
 	/* ensure control maintinance scheduled. */
 	state->entries_dirty = true;
@@ -1134,6 +1174,8 @@ read_blocks(struct store_state *state)
 		return ret;
 	}
 
+	LOG(("Initialising block use map from %s", fname));
+
 	fd = open(fname, O_RDWR);
 	free(fname);
 	if (fd != -1) {
@@ -1153,6 +1195,7 @@ read_blocks(struct store_state *state)
 		close(fd);
 
 	} else {
+		LOG(("Initialising block use map to defaults"));
 		/* ensure block 0 (invalid sentinal) is skipped */
 		state->blocks[ENTRY_ELEM_DATA][0].use_map[0] = 1;
 		state->blocks[ENTRY_ELEM_META][0].use_map[0] = 1;
@@ -1458,10 +1501,22 @@ initialise(const struct llcache_store_parameters *parameters)
 static nserror
 finalise(void)
 {
+	int bf; /* block file index */
+
 	if (storestate != NULL) {
 		guit->browser->schedule(-1, control_maintinance, storestate);
 		write_entries(storestate);
 		write_blocks(storestate);
+
+		/* ensure all block files are closed */
+		for (bf = 0; bf < BLOCK_FILE_COUNT; bf++) {
+			if (storestate->blocks[ENTRY_ELEM_DATA][bf].fd != -1) {
+				close(storestate->blocks[ENTRY_ELEM_DATA][bf].fd);
+			}
+			if (storestate->blocks[ENTRY_ELEM_META][bf].fd != -1) {
+				close(storestate->blocks[ENTRY_ELEM_META][bf].fd);
+			}
+		}
 
 		/* avoid division by zero */
 		if (storestate->miss_count == 0) {
@@ -1494,7 +1549,7 @@ static nserror store_write_block(struct store_state *state,
 {
 	block_index_t bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
 		((1 << BLOCK_FILE_COUNT) - 1); /* block file block resides in */
-	block_index_t bi = bse->elem[elem_idx].block & ((1 << BLOCK_ENTRY_COUNT) -1); /* block index in file */
+	block_index_t bi = bse->elem[elem_idx].block & ((1U << BLOCK_ENTRY_COUNT) -1); /* block index in file */
 	ssize_t wr;
 	off_t offst;
 
@@ -1517,6 +1572,10 @@ static nserror store_write_block(struct store_state *state,
 		    bse->elem[elem_idx].data,
 		    bse->elem[elem_idx].size,
 		    offst);
+
+	LOG(("Wrote %d of %d bytes from %p at %x block %d",
+	     wr, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
+	     offst, bse->elem[elem_idx].block));
 
 	if (wr != bse->elem[elem_idx].size) {
 		return NSERROR_SAVE_FAILED;
