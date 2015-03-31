@@ -39,7 +39,7 @@ char *strcasestr(const char *haystack, const char *needle);
 #endif
 
 /* Although these platforms might have strftime or strptime they
- * appear not to support the time_t seconds format specifier.
+ *  appear not to support the time_t seconds format specifier.
  */
 #if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
 #undef HAVE_STRPTIME
@@ -49,13 +49,27 @@ char *strcasestr(const char *haystack, const char *needle);
 #define HAVE_STRFTIME
 #endif
 
-/* For some reason, UnixLib defines this unconditionally. 
- * Assume we're using UnixLib if building for RISC OS. */
+/* For some reason, UnixLib defines this unconditionally. Assume we're using
+ *  UnixLib if building for RISC OS.
+ */
 #if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) || defined(riscos))
 #define HAVE_STRCHRNUL
 #else
 #undef HAVE_STRCHRNUL
 char *strchrnul(const char *s, int c);
+#endif
+
+/* Although these are in POSIX and implemented most places, RISC OS is
+ *  missing them.
+ */
+#if (defined(riscos))
+#undef HAVE_PREAD
+#undef HAVE_PWRITE
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+#else
+#define HAVE_PREAD
+#define HAVE_PWRITE
 #endif
 
 #define HAVE_SYS_SELECT

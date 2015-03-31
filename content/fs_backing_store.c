@@ -35,6 +35,8 @@
  *
  */
 
+#include "utils/config.h"
+
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -1606,7 +1608,7 @@ static nserror store_write_block(struct store_state *state,
 	     wr, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
 	     offst, bse->elem[elem_idx].block));
 
-	if (wr != bse->elem[elem_idx].size) {
+	if (wr != (ssize_t)bse->elem[elem_idx].size) {
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -1754,7 +1756,7 @@ static nserror store_read_block(struct store_state *state,
 	     rd, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
 	     offst, bse->elem[elem_idx].block));
 
-	if (rd != bse->elem[elem_idx].size) {
+	if (rd != (ssize_t)bse->elem[elem_idx].size) {
 		return NSERROR_SAVE_FAILED;
 	}
 
