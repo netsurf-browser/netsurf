@@ -448,18 +448,57 @@ store_fname(struct store_state *state,
 	return fname;
 }
 
+/**
+ * invalidate an element of an entry
+ *
+ * @param state The store state to use.
+ * @param bse The entry to invalidate.
+ * @param elem_idx The element index to invalidate.
+ * @return NSERROR_OK on sucess or error code on failure.
+ */
+static nserror
+invalidate_element(struct store_state *state,
+		   struct store_entry *bse,
+		   int elem_idx)
+{
+	if (bse->elem[elem_idx].block != 0) {
+		block_index_t bf;
+		block_index_t bi;
+
+		/* block file block resides in */
+		bf = (bse->elem[elem_idx].block >> BLOCK_ENTRY_COUNT) &
+			((1 << BLOCK_FILE_COUNT) - 1);
+
+		/* block index in file */
+		bi = bse->elem[elem_idx].block & ((1U << BLOCK_ENTRY_COUNT) -1);
+
+		/* clear bit in use map */
+		state->blocks[elem_idx][bf].use_map[bi >> 3] &= ~(1U << (bi & 7));
+	} else {
+		char *fname;
+
+		/* unlink the file from disc */
+		fname = store_fname(state, bse->ident, elem_idx);
+		if (fname == NULL) {
+			return NSERROR_NOMEM;
+		}
+		unlink(fname);
+		free(fname);
+	}
+
+	return NSERROR_OK;
+}
 
 /**
  * Remove the entry and files associated with an identifier.
  *
  * @param state The store state to use.
- * @param ident The identifier to use.
+ * @param bse The entry to invalidate.
  * @return NSERROR_OK on sucess or error code on failure.
  */
 static nserror
 invalidate_entry(struct store_state *state, struct store_entry *bse)
 {
-	char *fname;
 	nserror ret;
 
 	/* mark entry as invalid */
@@ -486,20 +525,15 @@ invalidate_entry(struct store_state *state, struct store_entry *bse)
 		return ret;
 	}
 
-	/* unlink the files from disc */
-	fname = store_fname(state, bse->ident, ENTRY_ELEM_META);
-	if (fname == NULL) {
-		return NSERROR_NOMEM;
+	ret = invalidate_element(state, bse, ENTRY_ELEM_META);
+	if (ret != NSERROR_OK) {
+		LOG(("Error invalidating metadata element"));
 	}
-	unlink(fname);
-	free(fname);
 
-	fname = store_fname(state, bse->ident, ENTRY_ELEM_DATA);
-	if (fname == NULL) {
-		return NSERROR_NOMEM;
+	ret = invalidate_element(state, bse, ENTRY_ELEM_DATA);
+	if (ret != NSERROR_OK) {
+		LOG(("Error invalidating data element"));
 	}
-	unlink(fname);
-	free(fname);
 
 	return NSERROR_OK;
 }
