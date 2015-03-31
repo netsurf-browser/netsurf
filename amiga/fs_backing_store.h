@@ -19,5 +19,6 @@
 #ifndef AMIGA_FS_BACKING_STORE_H
 #define AMIGA_FS_BACKING_STORE_H
 extern struct gui_llcache_table *amiga_filesystem_llcache_table;
+extern struct gui_llcache_table *filesystem_llcache_table;
 #endif
 

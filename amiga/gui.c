@@ -5409,7 +5409,7 @@ int main(int argc, char** argv)
 		.utf8 = amiga_utf8_table,
 		.search = amiga_search_table,
 		.search_web = &amiga_search_web_table,
-		.llcache = amiga_filesystem_llcache_table,
+		.llcache = filesystem_llcache_table,
 	};
 
 #ifdef __amigaos4__

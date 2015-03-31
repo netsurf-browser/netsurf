@@ -36,6 +36,11 @@ NETSURF_USE_NSSVG := YES
 # Valid options: NO
 NETSURF_USE_JS := NO
 
+# Enable building the source object cache filesystem based backing store.
+# implementation.
+# Valid options: YES, NO
+NETSURF_FS_BACKING_STORE := YES
+
 # Optimisation levels
 CFLAGS += -fomit-frame-pointer -gstabs
 
