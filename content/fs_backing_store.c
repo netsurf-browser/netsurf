@@ -339,12 +339,19 @@ remove_store_entry(struct store_state *state, struct store_entry **bse)
  * The short total path lengths mean the encoding must represent as
  * much data as possible in the least number of characters.
  *
- * To achieve all these goals we use RFC4648 base32 encoding which packs
- * 5bits into each character of the filename.
+ * To achieve all these goals we use RFC4648 base32 encoding which
+ * packs 5bits into each character of the filename. To represent a 32
+ * bit ident this requires a total path length of between 17 and 22
+ * bytes (including directory separators) BA/BB/BC/BD/BE/ABCDEFG
  *
  * @note Version 1.00 of the cache implementation used base64 to
  * encode this, however that did not meet the requirement for only
  * using uppercase characters.
+ *
+ * @note Versions prior to 1.30 only packed 5 bits per directory level
+ * A/B/C/D/E/F/ABCDEFG which only required 19 characters to represent
+ * but resulted in requiring an extra level of directory which is less
+ * desirable than the three extra characters using six bits.
  *
  * @param state The store state to use.
  * @param ident The identifier to use.
@@ -358,94 +365,84 @@ store_fname(struct store_state *state,
 {
 	char *fname = NULL;
 	uint8_t b32u_i[8]; /* base32 encoded ident */
-	uint8_t b32u_d[6][2]; /* base32 ident as separate components */
-	const char *dat;
+	const uint8_t *b32u_d[6]; /* base32 ident as separate components */
 
-	/* RFC4648 base32 encoding table */
-	static const uint8_t encoding_table[] = {
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-		'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-		'Y', 'Z', '2', '3', '4', '5', '6', '7'
+	/* directories used to separate elements */
+	const char *base_dir_table[] = {
+		"d", "m", "dblk", "mblk"
+	};
+
+	/* RFC4648 base32 encoding table (six bits) */
+	const uint8_t encoding_table[64][3] = {
+		{ 'A',   0, 0 }, { 'B',   0, 0 }, /*  0 */
+		{ 'C',   0, 0 }, { 'D',   0, 0 }, /*  2 */
+		{ 'E',   0, 0 }, { 'F',   0, 0 }, /*  4 */
+		{ 'G',   0, 0 }, { 'H',   0, 0 }, /*  6 */
+		{ 'I',   0, 0 }, { 'J',   0, 0 }, /*  8 */
+		{ 'K',   0, 0 }, { 'L',   0, 0 }, /* 10 */
+		{ 'M',   0, 0 }, { 'N',   0, 0 }, /* 12 */
+		{ 'O',   0, 0 }, { 'P',   0, 0 }, /* 14 */
+		{ 'Q',   0, 0 }, { 'R',   0, 0 }, /* 16 */
+		{ 'S',   0, 0 }, { 'T',   0, 0 }, /* 18 */
+		{ 'U',   0, 0 }, { 'V',   0, 0 }, /* 20 */
+		{ 'W',   0, 0 }, { 'X',   0, 0 }, /* 22 */
+		{ 'Y',   0, 0 }, { 'Z',   0, 0 }, /* 24 */
+		{ '2',   0, 0 }, { '3',   0, 0 }, /* 26 */
+		{ '4',   0, 0 }, { '5',   0, 0 }, /* 28 */
+		{ '6',   0, 0 }, { '7',   0, 0 }, /* 30 */
+		{ 'B', 'A', 0 }, { 'B', 'B', 0 }, /* 32 */
+		{ 'B', 'C', 0 }, { 'B', 'D', 0 }, /* 34 */
+		{ 'B', 'E', 0 }, { 'B', 'F', 0 }, /* 36 */
+		{ 'B', 'G', 0 }, { 'B', 'H', 0 }, /* 38 */
+		{ 'B', 'I', 0 }, { 'B', 'J', 0 }, /* 40 */
+		{ 'B', 'K', 0 }, { 'B', 'L', 0 }, /* 42 */
+		{ 'B', 'M', 0 }, { 'B', 'N', 0 }, /* 44 */
+		{ 'B', 'O', 0 }, { 'B', 'P', 0 }, /* 46 */
+		{ 'B', 'Q', 0 }, { 'B', 'R', 0 }, /* 48 */
+		{ 'B', 'S', 0 }, { 'B', 'T', 0 }, /* 50 */
+		{ 'B', 'U', 0 }, { 'B', 'V', 0 }, /* 52 */
+		{ 'B', 'W', 0 }, { 'B', 'X', 0 }, /* 54 */
+		{ 'B', 'Y', 0 }, { 'B', 'Z', 0 }, /* 56 */
+		{ 'B', '2', 0 }, { 'B', '3', 0 }, /* 58 */
+		{ 'B', '4', 0 }, { 'B', '5', 0 }, /* 60 */
+		{ 'B', '6', 0 }, { 'B', '7', 0 }  /* 62 */
 	};
 
 	/* base32 encode ident */
-	b32u_i[0] = b32u_d[0][0] = encoding_table[(ident      ) & 0x1f];
-	b32u_i[1] = b32u_d[1][0] = encoding_table[(ident >>  5) & 0x1f];
-	b32u_i[2] = b32u_d[2][0] = encoding_table[(ident >> 10) & 0x1f];
-	b32u_i[3] = b32u_d[3][0] = encoding_table[(ident >> 15) & 0x1f];
-	b32u_i[4] = b32u_d[4][0] = encoding_table[(ident >> 20) & 0x1f];
-	b32u_i[5] = b32u_d[5][0] = encoding_table[(ident >> 25) & 0x1f];
-	b32u_i[6] = encoding_table[(ident >> 30) & 0x1f];
+	b32u_i[0] = encoding_table[(ident      ) & 0x1f][0];
+	b32u_i[1] = encoding_table[(ident >>  5) & 0x1f][0];
+	b32u_i[2] = encoding_table[(ident >> 10) & 0x1f][0];
+	b32u_i[3] = encoding_table[(ident >> 15) & 0x1f][0];
+	b32u_i[4] = encoding_table[(ident >> 20) & 0x1f][0];
+	b32u_i[5] = encoding_table[(ident >> 25) & 0x1f][0];
+	b32u_i[6] = encoding_table[(ident >> 30) & 0x1f][0];
+	b32u_i[7] = 0; /* null terminate ident string */
 
-	/* null terminate strings */
-	b32u_i[7] = b32u_d[0][1] = b32u_d[1][1] = b32u_d[2][1] =
-		b32u_d[3][1] = b32u_d[4][1] = b32u_d[5][1] = 0;
+	/* base32 encode directory separators */
+	b32u_d[0] = (uint8_t*)base_dir_table[elem_idx];
+	b32u_d[1] = &encoding_table[(ident      ) & 0x3f][0];
+	b32u_d[2] = &encoding_table[(ident >>  6) & 0x3f][0];
+	b32u_d[3] = &encoding_table[(ident >> 12) & 0x3f][0];
+	b32u_d[4] = &encoding_table[(ident >> 18) & 0x3f][0];
+	b32u_d[5] = &encoding_table[(ident >> 24) & 0x3f][0];
 
-	if (elem_idx == (ENTRY_ELEM_COUNT + ENTRY_ELEM_META)) {
-		netsurf_mkpath(&fname, NULL, 3, state->path, "mblk", b32u_d[0]);
+	switch (elem_idx) {
+	case ENTRY_ELEM_DATA:
+	case ENTRY_ELEM_META:
+		netsurf_mkpath(&fname, NULL, 8,
+			       state->path, b32u_d[0], b32u_d[1], b32u_d[2],
+			       b32u_d[3], b32u_d[4], b32u_d[5], b32u_i);
+		break;
 
-	} else if (elem_idx == (ENTRY_ELEM_COUNT + ENTRY_ELEM_DATA)) {
-		netsurf_mkpath(&fname, NULL, 3, state->path, "dblk", b32u_d[0]);
+	case (ENTRY_ELEM_COUNT + ENTRY_ELEM_META):
+	case (ENTRY_ELEM_COUNT + ENTRY_ELEM_DATA):
+		netsurf_mkpath(&fname, NULL, 3,
+			       state->path, b32u_d[0], b32u_d[1]);
+		break;
 
-	} else {
-		/* Normal file in the backing store */
-
-		if (elem_idx == ENTRY_ELEM_META) {
-			dat = "m"; /* metadata */
-		} else {
-			dat = "d"; /* data */
-		}
-
-		/* number of chars with usefully encoded data in base 32 */
-		switch(((state->ident_bits + 4) / 5)) {
-		case 1:
-			netsurf_mkpath(&fname, NULL, 3, state->path, dat,
-				       b32u_i);
-			break;
-
-		case 2:
-			netsurf_mkpath(&fname, NULL, 4, state->path, dat,
-				       b32u_d[0],
-				       b32u_i);
-			break;
-
-		case 3:
-			netsurf_mkpath(&fname, NULL, 5, state->path, dat,
-				       b32u_d[0], b32u_d[1],
-				       b32u_i);
-			break;
-
-		case 4:
-			netsurf_mkpath(&fname, NULL, 6, state->path, dat,
-				       b32u_d[0], b32u_d[1], b32u_d[2],
-				       b32u_i);
-			break;
-
-		case 5:
-			netsurf_mkpath(&fname, NULL, 7, state->path, dat,
-				       b32u_d[0], b32u_d[1], b32u_d[2],
-				       b32u_d[3],
-				       b32u_i);
-			break;
-
-		case 6:
-			netsurf_mkpath(&fname, NULL, 8, state->path, dat,
-				       b32u_d[0], b32u_d[1], b32u_d[2],
-				       b32u_d[3], b32u_d[4],
-				       b32u_i);
-			break;
-
-		case 7:
-			netsurf_mkpath(&fname, NULL, 9, state->path, dat,
-				       b32u_d[0], b32u_d[1], b32u_d[2],
-				       b32u_d[3], b32u_d[4], b32u_d[5],
-				       b32u_i);
-			break;
-
-		default:
-			assert("Invalid path depth in store_fname()" == NULL);
-		}
+	default:
+		assert("bad element index" == NULL);
+		break;
 	}
 
 	return fname;
