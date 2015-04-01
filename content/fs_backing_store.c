@@ -1603,14 +1603,16 @@ static nserror store_write_block(struct store_state *state,
 		    bse->elem[elem_idx].data,
 		    bse->elem[elem_idx].size,
 		    offst);
-
-	LOG(("Wrote %d of %d bytes from %p at 0x%x block %d",
-	     wr, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
-	     offst, bse->elem[elem_idx].block));
-
 	if (wr != (ssize_t)bse->elem[elem_idx].size) {
+		LOG(("Write failed %d of %d bytes from %p at 0x%x block %d errno %d",
+		     wr, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
+		     offst, bse->elem[elem_idx].block, errno));
 		return NSERROR_SAVE_FAILED;
 	}
+
+	LOG(("Wrote %d bytes from %p at 0x%x block %d",
+	     wr, bse->elem[elem_idx].data,
+	     offst, bse->elem[elem_idx].block));
 
 	return NSERROR_OK;
 }
@@ -1627,26 +1629,31 @@ static nserror store_write_file(struct store_state *state,
 			 struct store_entry *bse,
 			 int elem_idx)
 {
-	ssize_t written;
+	ssize_t wr;
 	int fd;
+	int err;
 
 	fd = store_open(state, bse->ident, elem_idx, O_CREAT | O_WRONLY);
 	if (fd < 0) {
 		perror("");
-		LOG(("Open failed %d", fd));
+		LOG(("Open failed %d errno %d", fd, errno));
 		return NSERROR_SAVE_FAILED;
 	}
 
-	written = write(fd, bse->elem[elem_idx].data, bse->elem[elem_idx].size);
-
-	LOG(("Wrote %d of %d bytes from %p",
-	     written, bse->elem[elem_idx].size, bse->elem[elem_idx].data));
+	wr = write(fd, bse->elem[elem_idx].data, bse->elem[elem_idx].size);
+	err = errno; /* close can change errno */
 
 	close(fd);
-	if (written < 0 || (size_t) written < bse->elem[elem_idx].size) {
+	if (wr != (ssize_t)bse->elem[elem_idx].size) {
+		LOG(("Write failed %d of %d bytes from %p errno %d",
+		     wr, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
+		     err));
+
 		/** @todo Delete the file? */
 		return NSERROR_SAVE_FAILED;
 	}
+
+	LOG(("Wrote %d bytes from %p", wr, bse->elem[elem_idx].data));
 
 	return NSERROR_OK;
 }
@@ -1742,6 +1749,7 @@ static nserror store_read_block(struct store_state *state,
 		state->blocks[elem_idx][bf].fd = store_open(state, bf, elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
 	}
 	if (state->blocks[elem_idx][bf].fd == -1) {
+		LOG(("Open failed errno %d", errno));
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -1751,14 +1759,16 @@ static nserror store_read_block(struct store_state *state,
 		   bse->elem[elem_idx].data,
 		   bse->elem[elem_idx].size,
 		   offst);
-
-	LOG(("Read %d of %d bytes into %p from 0x%x block %d",
-	     rd, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
-	     offst, bse->elem[elem_idx].block));
-
 	if (rd != (ssize_t)bse->elem[elem_idx].size) {
+		LOG(("Failed reading %d of %d bytes into %p from 0x%x block %d errno %d",
+		     rd, bse->elem[elem_idx].size, bse->elem[elem_idx].data,
+		     offst, bse->elem[elem_idx].block, errno));
 		return NSERROR_SAVE_FAILED;
 	}
+
+	LOG(("Read %d bytes into %p from 0x%x block %d",
+	     rd, bse->elem[elem_idx].data,
+	     offst, bse->elem[elem_idx].block));
 
 	return NSERROR_OK;
 }
@@ -1783,20 +1793,17 @@ static nserror store_read_file(struct store_state *state,
 	/* separate file in backing store */
 	fd = store_open(storestate, bse->ident, elem_idx, O_RDONLY);
 	if (fd < 0) {
-		LOG(("Open failed"));
+		LOG(("Open failed %d errno %d", fd, errno));
 		/** @todo should this invalidate the entry? */
 		return NSERROR_NOT_FOUND;
 	}
-
-	LOG(("Reading %d bytes into %p from file",
-	     bse->elem[elem_idx].size, bse->elem[elem_idx].data));
 
 	while (tot < bse->elem[elem_idx].size) {
 		rd = read(fd,
 			  bse->elem[elem_idx].data + tot,
 			  bse->elem[elem_idx].size - tot);
 		if (rd <= 0) {
-			LOG(("read error returned %d", rd));
+			LOG(("read error returned %d errno %d", rd, errno));
 			ret = NSERROR_NOT_FOUND;
 			break;
 		}
@@ -1804,6 +1811,8 @@ static nserror store_read_file(struct store_state *state,
 	}
 
 	close(fd);
+
+	LOG(("Read %d bytes into %p", tot, bse->elem[elem_idx].data));
 
 	return ret;
 }
