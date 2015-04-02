@@ -1663,7 +1663,7 @@ static nserror store_write_file(struct store_state *state,
  * takes ownership of the heap block passed in.
  *
  * @param url The url is used as the unique primary key for the data.
- * @param flags The flags to control how the object is stored.
+ * @param bsflags The flags to control how the object is stored.
  * @param data The objects source data.
  * @param datalen The length of the \a data.
  * @return NSERROR_OK on success or error code on faliure.

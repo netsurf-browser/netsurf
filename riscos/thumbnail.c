@@ -76,7 +76,7 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  *
  * \param  content  content structure to thumbnail
  * \param  bitmap   the bitmap to draw to
- * \param  url      the URL the thumbnail belongs to, or NULL
+ * \return true on success and bitmap updated else false
  */
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {

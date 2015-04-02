@@ -86,7 +86,7 @@ struct gui_window *nsws_get_gui_window(HWND hwnd);
  * Cause a browser window to navigate to a url
  *
  * \param hwnd The win32 handle to the browser window or one of its decendants.
- * \param url The URL to navigate to.
+ * \param urltxt The URL to navigate to.
  */
 bool nsws_window_go(HWND hwnd, const char *urltxt);
 

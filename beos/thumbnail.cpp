@@ -54,7 +54,7 @@ extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
  *
  * \param  content  content structure to thumbnail
  * \param  bitmap   the bitmap to draw to
- * \param  url      the URL the thumnail belongs to, or NULL
+ * \return true on success and bitmap updated else false
  */
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 {
