@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <time.h>
 #include <stdlib.h>
+#include <nsutils/unistd.h>
 
 #include "utils/filepath.h"
 #include "utils/file.h"
@@ -1597,7 +1598,7 @@ static nserror store_write_block(struct store_state *state,
 
 	offst = bi << log2_block_size[elem_idx];
 
-	wr = pwrite(state->blocks[elem_idx][bf].fd,
+	wr = nsu_pwrite(state->blocks[elem_idx][bf].fd,
 		    bse->elem[elem_idx].data,
 		    bse->elem[elem_idx].size,
 		    offst);
@@ -1753,7 +1754,7 @@ static nserror store_read_block(struct store_state *state,
 
 	offst = bi << log2_block_size[elem_idx];
 
-	rd = pread(state->blocks[elem_idx][bf].fd,
+	rd = nsu_pread(state->blocks[elem_idx][bf].fd,
 		   bse->elem[elem_idx].data,
 		   bse->elem[elem_idx].size,
 		   offst);
