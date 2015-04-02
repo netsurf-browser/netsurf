@@ -59,19 +59,6 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strchrnul(const char *s, int c);
 #endif
 
-/* Although these are in POSIX and implemented most places, RISC OS is
- *  missing them.
- */
-#if (defined(riscos))
-#undef HAVE_PREAD
-#undef HAVE_PWRITE
-ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-#else
-#define HAVE_PREAD
-#define HAVE_PWRITE
-#endif
-
 #define HAVE_SYS_SELECT
 #define HAVE_INETATON
 #if (defined(_WIN32))
