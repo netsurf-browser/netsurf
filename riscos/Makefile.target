@@ -20,22 +20,18 @@ $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,Drawfile rendering))
 $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,Sprite rendering))
 $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
 $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
-ifeq ($(HOST),riscos)
-  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-else
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
-  NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
-  $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
-  $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
-  $(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
-  $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
-endif
+
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
+NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
+
 
 TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
 		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
@@ -85,14 +81,12 @@ S_RISCOS := 401login.c assert.c bitmap.c buffer.c cookies.c configure.c	\
 	con_fonts.c con_home.c con_image.c con_inter.c con_language.c	\
 	con_secure.c con_theme.c)
 S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
-TPL_RISCOS := de en fr nl # TODO: It'd be nice to auto-detect these
-TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
-
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
+
 EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 
 !NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
@@ -124,6 +118,33 @@ CLEANS += clean-run clean-help
 split-messages:
 	$(call split_install_messages, ro, !NetSurf/Resources/)
 .PHONY: split-messages
+
+# ----------------------------------------------------------------------------
+# Template targets
+# ----------------------------------------------------------------------------
+
+# Template objects
+TPL_RISCOS := de en fr nl # TODO: It'd be nice to auto-detect these
+TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
+
+define compile_template
+!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
+	$$(VQ)echo "TEMPLATE: $(2)"
+	$$(Q)mkdir -p !NetSurf/Resources/$(1)
+	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) | $$(CCRES) - $$@
+
+CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
+
+endef
+
+$(eval $(foreach TPL,$(TPL_RISCOS), \
+	$(call compile_template,$(notdir $(TPL)),$(TPL))))
+
+clean-templates:
+	$(VQ)echo "   CLEAN: $(CLEAN_TEMPLATES)"
+	$(Q)$(RM) $(CLEAN_TEMPLATES)
+CLEANS += clean-templates
+
 
 # ----------------------------------------------------------------------------
 # Install target

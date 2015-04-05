@@ -633,39 +633,6 @@ $(RSRC_BEOS): $(RDEF_BEOS) $(RDEF_IMP_BEOS)
 	$(Q)$(BEOS_RC) -I beos -o $@ $^
 endif
 
-ifeq ($(TARGET),riscos)
-  # Native RO build is different as 1) it can't do piping and 2) ccres on
-  # RO does not understand Unix filespec
-  ifeq ($(HOST),riscos)
-    define compile_template
-!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
-	$$(VQ)echo "TEMPLATE: $(2)"
-	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) -o processed_template $(2)
-	$$(Q)$$(CCRES) processed_template $$(subst /,.,$$@)
-	$$(Q)$(RM) processed_template
-CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
-
-    endef
-  else
-    define compile_template
-!NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
-	$$(VQ)echo "TEMPLATE: $(2)"
-	$$(Q)mkdir -p !NetSurf/Resources/$(1)
-	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) | $$(CCRES) - $$@
-CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
-
-    endef
-  endif
-
-clean-templates:
-	$(VQ)echo "   CLEAN: $(CLEAN_TEMPLATES)"
-	$(Q)$(RM) $(CLEAN_TEMPLATES)
-CLEANS += clean-templates
-
-$(eval $(foreach TPL,$(TPL_RISCOS), \
-	$(call compile_template,$(notdir $(TPL)),$(TPL))))
-endif
-
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
 	$(Q)$(RM) $(EXETARGET)
