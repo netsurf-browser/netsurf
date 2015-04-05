@@ -114,28 +114,16 @@ ifeq ($(TARGET),)
   TARGET := gtk
 endif
 
+# valid values for the TARGET
+VLDTARGET := riscos gtk beos amiga amigaos3 framebuffer windows atari cocoa monkey
+
+# Check for valid TARGET
+ifeq ($(filter $(VLDTARGET),$(TARGET)),)
+  $(error Unknown TARGET "$(TARGET)", Must be one of $(VLDTARGET))
+endif
+
 SUBTARGET =
 RESOURCES =
-
-ifneq ($(TARGET),riscos)
-  ifneq ($(TARGET),gtk)
-    ifneq ($(TARGET),beos)
-      ifneq ($(findstring amiga,$(TARGET)),amiga)
-        ifneq ($(TARGET),framebuffer)
-          ifneq ($(TARGET),windows)
-            ifneq ($(TARGET),atari)
-              ifneq ($(TARGET),cocoa)
-                ifneq ($(TARGET),monkey)
-                  $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows", "atari" or "cocoa" or "monkey")
-                endif
-              endif
-            endif
-          endif
-        endif
-      endif
-    endif
-  endif
-endif
 
 PERL=perl
 MKDIR=mkdir
