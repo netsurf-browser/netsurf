@@ -36,7 +36,7 @@ $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
 		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
 
-RESOURCES = $(TPD_RISCOS) split-messages
+RESOURCES = $(TPD_RISCOS)
 
 CFLAGS += -Driscos -std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE \
 	    -mpoke-function-name -fno-strict-aliasing
@@ -89,6 +89,9 @@ SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RISCOS)
 
 EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 
+# The filter and target for split messages
+MESSAGES_FILTER=ro
+
 !NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
@@ -115,10 +118,6 @@ clean-help:
 
 CLEANS += clean-run clean-help
 
-split-messages:
-	$(call split_install_messages, ro, !NetSurf/Resources/)
-.PHONY: split-messages
-
 # ----------------------------------------------------------------------------
 # Template targets
 # ----------------------------------------------------------------------------
@@ -127,6 +126,7 @@ split-messages:
 TPL_RISCOS := de en fr nl # TODO: It'd be nice to auto-detect these
 TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
 
+# Template target creation macro
 define compile_template
 !NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
 	$$(VQ)echo "TEMPLATE: $(2)"
