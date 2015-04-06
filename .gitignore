@@ -13,6 +13,11 @@ windows/res/preferences
 \!NetSurf/Resources/nl/Templates,fec
 \!NetSurf/Resources/nl/Messages
 \!NetSurf/Resources/it/Messages
+gtk/res/en/Messages
+gtk/res/fr/Messages
+gtk/res/de/Messages
+gtk/res/nl/Messages
+gtk/res/it/Messages
 test/nsoption
 test/nsurl
 test/urldbtest

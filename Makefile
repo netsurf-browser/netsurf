@@ -122,9 +122,23 @@ ifeq ($(filter $(VLDTARGET),$(TARGET)),)
   $(error Unknown TARGET "$(TARGET)", Must be one of $(VLDTARGET))
 endif
 
-SUBTARGET =
-RESOURCES =
+# ensure empty values for base variables
 
+# Sub target for build
+SUBTARGET=
+# Resources executable target depends upon
+RESOURCES=
+# Messages executable target depends on
+MESSAGES:=
+
+# The filter applied to the fat (full) messages to generate split messages
+MESSAGES_FILTER=any
+# The languages in the fat messages to convert
+MESSAGES_LANGUAGES=de en fr it nl
+# The target directory for the split messages
+MESSAGES_TARGET=!NetSurf/Resources
+
+# Defaults for tools
 PERL=perl
 MKDIR=mkdir
 TOUCH=touch
@@ -521,8 +535,7 @@ $(TOOLROOT)/created: $(OBJROOT)/created
 	$(Q)$(MKDIR) $(TOOLROOT)
 	$(Q)$(TOUCH) $(TOOLROOT)/created
 
-CLEANS := clean-target clean-testament
-
+CLEANS :=
 POSTEXES :=
 
 # ----------------------------------------------------------------------------
@@ -568,6 +581,39 @@ S_COMMON := $(S_CONTENT) $(S_FETCHERS) $(S_CSS)	$(S_RENDER) $(S_UTILS) \
 
 
 # ----------------------------------------------------------------------------
+# Message targets
+# ----------------------------------------------------------------------------
+
+# Message splitting rule generation macro
+# 1 = Language
+define split_messages
+.INTERMEDIATE:$$(MESSAGES_TARGET)/$(1)/Messages.tmp
+
+$$(MESSAGES_TARGET)/$(1)/Messages.tmp: resources/FatMessages
+	$$(VQ)echo "MSGSPLIT: Language: $(1) Filter: $$(MESSAGES_FILTER)"
+	$$(Q)mkdir -p $$(MESSAGES_TARGET)/$(1)
+	$$(Q)$$(SPLIT_MESSAGES) -l $(1) -p $$(MESSAGES_FILTER) -f messages -o $$@ $$<
+
+$$(MESSAGES_TARGET)/$(1)/Messages: $$(MESSAGES_TARGET)/$(1)/Messages.tmp
+	$$(VQ)echo "COMPRESS: $$@"
+	$$(Q)gzip -9n < $$< > $$@
+
+CLEAN_MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
+MESSAGES += $$(MESSAGES_TARGET)/$(1)/Messages
+
+endef
+
+# geenrate the message file rules
+$(eval $(foreach LANG,$(MESSAGES_LANGUAGES), \
+	$(call split_messages,$(LANG))))
+
+clean-messages:
+	$(VQ)echo "   CLEAN: $(CLEAN_MESSAGES)"
+	$(Q)$(RM) $(CLEAN_MESSAGES)
+CLEANS += clean-messages
+
+
+# ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
 
@@ -580,7 +626,7 @@ endif
 
 OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.m,%.o,$(patsubst %.s,%.o,$(SOURCES))))))))
 
-$(EXETARGET): $(OBJECTS) $(RESOURCES)
+$(EXETARGET): $(OBJECTS) $(RESOURCES) $(MESSAGES)
 	$(VQ)echo "    LINK: $(EXETARGET)"
 ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
@@ -615,11 +661,12 @@ endif
 clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
 	$(Q)$(RM) $(EXETARGET)
-	$(call clean_install_messages, !NetSurf/Resources)
+CLEANS += clean-target
 
 clean-testament:
 	$(VQ)echo "   CLEAN: testament.h"
 	$(Q)$(RM) $(OBJROOT)/testament.h
+CLEANS += clean-testament
 
 clean-builddir:
 	$(VQ)echo "   CLEAN: $(OBJROOT)"
@@ -627,15 +674,12 @@ clean-builddir:
 CLEANS += clean-builddir
 
 
-.PHONY: all-program all-messages testament
+.PHONY: all-program testament
 
 testament $(OBJROOT)/testament.h:
 	$(Q)$(PERL) utils/git-testament.pl $(CURDIR) $(OBJROOT)/testament.h
 
-all-messages:
-	$(call split_install_messages, any, !NetSurf/Resources)
-
-all-program: all-messages $(EXETARGET) $(POSTEXES)
+all-program: $(EXETARGET) $(POSTEXES)
 
 .SUFFIXES:
 
@@ -758,25 +802,6 @@ clean: $(CLEANS)
 # Target builds a distribution package
 package: all-program package-$(TARGET)
 
-FAT_LANGUAGES=de en fr it nl
-# 1 = front end name (gtk, ro, ami, etc)
-# 2 = Destination directory (where resources being installed, creates en/Messages etc)
-# 3 = suffix after language name 
-define split_install_messages
-	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
-		$(Q)mkdir -p $(2)/$(LANG)$(3)
-		$(Q)$(SPLIT_MESSAGES) -l $(LANG) -p $(1) -f messages resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
-	)
-endef
-
-# Clean Message target
-# 1 = Destination directory (where resources being installed, creates en/Messages etc)
-# 2 = suffix after language name
-define clean_install_messages
-	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGCLEAN: $(LANG) in $(1)
-		$(Q)$(RM) -f $(1)$(2)/$(LANG)/Messages
-	)
-endef
 
 .PHONY: messages-split-tfx messages-fetch-tfx messages-import-tfx
 

@@ -121,7 +121,13 @@ S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PIXBUF) $(S_GTK)
+
+# The gtk binary target
 EXETARGET := nsgtk
+
+# The filter and target for split messages
+MESSAGES_FILTER=gtk
+MESSAGES_TARGET=gtk/res
 
 # ----------------------------------------------------------------------------
 # Install target
@@ -150,7 +156,6 @@ install-gtk:
 	$(Q)install -m 0644 gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
 	$(Q)tar -c -h -C gtk/res -f - themes | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(Q)tar -c -h -C gtk/res -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
-	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
 	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
 # ----------------------------------------------------------------------------
