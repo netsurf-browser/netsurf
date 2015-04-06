@@ -61,6 +61,9 @@ endif
 
 EXETARGET := NetSurf
 
+# The filter and target for split messages
+MESSAGES_FILTER=ami
+
 # ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
@@ -116,7 +119,6 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/netsurf.png,b60 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/netsurf.png
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
-	$(call split_install_messages, ami, $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/)
 	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
 	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
 
