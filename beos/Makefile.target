@@ -121,6 +121,9 @@ RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_BEOS)
 EXETARGET := NetSurf
 
+# The filter and target for split messages
+MESSAGES_FILTER=beos
+
 # ----------------------------------------------------------------------------
 # Resources
 # ----------------------------------------------------------------------------
@@ -153,7 +156,6 @@ install-beos:
 	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 #	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
-	$(call split_install_messages, beos, $(DESTDIR)$(NETSURF_BEOS_RESOURCES))
 
 # ----------------------------------------------------------------------------
 # Package target
