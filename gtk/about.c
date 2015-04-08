@@ -122,7 +122,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent)
 	nsgtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
 
 	/* Add the OK button */
-	gtk_dialog_add_button(GTK_DIALOG(dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);
+	gtk_dialog_add_button(GTK_DIALOG(dialog), NSGTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);
 	gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_CLOSE);
 
 	/* Add the credits button */

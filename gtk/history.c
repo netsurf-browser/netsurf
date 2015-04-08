@@ -18,17 +18,19 @@
  */
 
 
+#include "utils/log.h"
+#include "utils/utils.h"
 #include "desktop/global_history.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
+
 #include "gtk/gui.h"
 #include "gtk/history.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
-#include "utils/log.h"
-#include "utils/utils.h"
+#include "gtk/compat.h"
 
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
 		GtkMenuItem *widget, gpointer g)
@@ -171,8 +173,8 @@ MENUHANDLER(export)
 	save_dialog = gtk_file_chooser_dialog_new("Save File",
 			wndHistory,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),

@@ -1269,8 +1269,8 @@ gui_window_file_gadget_open(struct gui_window *g,
 	dialog = gtk_file_chooser_dialog_new("Select File",
 			nsgtk_scaffolding_window(g->scaffold),
 			GTK_FILE_CHOOSER_ACTION_OPEN,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 			NULL);
 
 	LOG(("*** open dialog: %p", dialog));

@@ -590,7 +590,7 @@ MULTIHANDLER(openfile)
 	scaf_current = g;
 	GtkWidget *dlgOpen = gtk_file_chooser_dialog_new("Open File",
 			scaf_current->window, GTK_FILE_CHOOSER_ACTION_OPEN,
-			GTK_STOCK_CANCEL, -6, GTK_STOCK_OPEN, -5, NULL);
+			NSGTK_STOCK_CANCEL, -6, NSGTK_STOCK_OPEN, -5, NULL);
 
 	gint response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
 	if (response == GTK_RESPONSE_OK) {
@@ -624,8 +624,8 @@ MULTIHANDLER(savepage)
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
 			messages_get("gtkcompleteSave"), g->window,
 			GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	DIR *d;
 	char *path;
@@ -720,8 +720,8 @@ MULTIHANDLER(pdf)
 
 	save_dialog = gtk_file_chooser_dialog_new("Export to PDF", g->window,
 		GTK_FILE_CHOOSER_ACTION_SAVE,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+		NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 		NULL);
 
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
@@ -764,8 +764,8 @@ MULTIHANDLER(plaintext)
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
 			messages_get("gtkplainSave"), g->window,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	char *filename;
 	nserror res;
@@ -2457,7 +2457,7 @@ gui_search_web_provider_update(const char *provider_name,
 		} else {
 			nsgtk_entry_set_icon_from_stock(current->webSearchEntry,
 							 GTK_ENTRY_ICON_PRIMARY,
-							 "gtk-find");
+							 NSGTK_STOCK_FIND);
 		}
 
 		/* set search entry text */

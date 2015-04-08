@@ -164,8 +164,10 @@ static void nsgtk_viewdata_file_save(GtkWindow *parent, const char *filename,
 	/* inform user of faliure */
 	notif = gtk_dialog_new_with_buttons(messages_get("gtkSaveFailedTitle"),
 					    parent,
-					    GTK_DIALOG_MODAL, GTK_STOCK_OK,
-					    GTK_RESPONSE_NONE, NULL);
+					    GTK_DIALOG_MODAL,
+					    NSGTK_STOCK_OK,
+					    GTK_RESPONSE_NONE,
+					    NULL);
 
 	g_signal_connect_swapped(notif, "response",
 				 G_CALLBACK(gtk_widget_destroy), notif);
@@ -185,9 +187,9 @@ gboolean nsgtk_on_viewdata_save_as_activate(GtkMenuItem *widget, gpointer g)
 	fc = gtk_file_chooser_dialog_new(messages_get("gtkSaveFile"),
 					 nsg->window,
 					 GTK_FILE_CHOOSER_ACTION_SAVE,
-					 GTK_STOCK_CANCEL,
+					 NSGTK_STOCK_CANCEL,
 					 GTK_RESPONSE_CANCEL,
-					 GTK_STOCK_SAVE,
+					 NSGTK_STOCK_SAVE,
 					 GTK_RESPONSE_ACCEPT,
 					 NULL);
 

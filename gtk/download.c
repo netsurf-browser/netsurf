@@ -595,9 +595,9 @@ static gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *do
 						    "\n\n<small>%s</small>",
 						    message, info);
 
-	gtk_dialog_add_buttons(GTK_DIALOG(dialog), GTK_STOCK_SAVE,
-			       GTK_RESPONSE_DOWNLOAD, GTK_STOCK_CANCEL,
-			       GTK_RESPONSE_CANCEL, GTK_STOCK_SAVE_AS,
+	gtk_dialog_add_buttons(GTK_DIALOG(dialog), NSGTK_STOCK_SAVE,
+			       GTK_RESPONSE_DOWNLOAD, NSGTK_STOCK_CANCEL,
+			       GTK_RESPONSE_CANCEL, NSGTK_STOCK_SAVE_AS,
 			       GTK_RESPONSE_SAVE_AS, NULL);
 
 	gint result = gtk_dialog_run(GTK_DIALOG(dialog));
@@ -611,8 +611,8 @@ static gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *do
 			(messages_get("gtkSave"),
 			 nsgtk_download_parent,
 			 GTK_FILE_CHOOSER_ACTION_SAVE,
-			 GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			 GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			 NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			 NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			 NULL);
 		gtk_file_chooser_set_current_name
 			(GTK_FILE_CHOOSER(dialog), filename);
@@ -664,12 +664,11 @@ static gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *do
 				"_Replace",
 				GTK_RESPONSE_DOWNLOAD);
 			gtk_button_set_image(GTK_BUTTON(button),
-					     gtk_image_new_from_stock(
-						     "gtk-save",
+					     nsgtk_image_new_from_stock(
+						     NSGTK_STOCK_SAVE,
 						     GTK_ICON_SIZE_BUTTON));
 
-			gint result = gtk_dialog_run(GTK_DIALOG(
-							     dialog));
+			gint result = gtk_dialog_run(GTK_DIALOG(dialog));
 			if (result == GTK_RESPONSE_CANCEL)
 				destination = NULL;
 

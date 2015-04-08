@@ -961,18 +961,19 @@ sexy_icon_entry_add_clear_button(SexyIconEntry *icon_entry)
 	g_return_if_fail(icon_entry != NULL);
 	g_return_if_fail(SEXY_IS_ICON_ENTRY(icon_entry));
 
-	icon = gtk_image_new_from_stock(GTK_STOCK_CLEAR, GTK_ICON_SIZE_MENU);
+	icon = nsgtk_image_new_from_stock(NSGTK_STOCK_CLEAR,
+					  GTK_ICON_SIZE_MENU);
 	gtk_widget_show(icon);
 	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(icon_entry),
-							 SEXY_ICON_ENTRY_SECONDARY,
-							 GTK_IMAGE(icon));
+				 SEXY_ICON_ENTRY_SECONDARY,
+				 GTK_IMAGE(icon));
 	sexy_icon_entry_set_icon_highlight(SEXY_ICON_ENTRY(icon_entry),
-									   SEXY_ICON_ENTRY_SECONDARY, TRUE);
+					   SEXY_ICON_ENTRY_SECONDARY, TRUE);
 
 	if (icon_entry->priv->icon_released_id != 0)
 	{
 		g_signal_handler_disconnect(icon_entry,
-									icon_entry->priv->icon_released_id);
+					    icon_entry->priv->icon_released_id);
 	}
 
 	icon_entry->priv->icon_released_id =

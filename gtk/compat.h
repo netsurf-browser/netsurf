@@ -27,6 +27,41 @@
 
 #include <gtk/gtk.h>
 
+/* gtk 3.10 depricated the use of stock names */
+#if GTK_CHECK_VERSION(3,10,0)
+#define NSGTK_STOCK_ADD "list-add"
+#define NSGTK_STOCK_CANCEL "gtk-cancel"
+#define NSGTK_STOCK_CLEAR "edit-clear"
+#define NSGTK_STOCK_CLOSE "window-close"
+#define NSGTK_STOCK_FIND "edit-find"
+#define NSGTK_STOCK_GO_BACK "go-previous"
+#define NSGTK_STOCK_GO_FORWARD "go-next"
+#define NSGTK_STOCK_HOME "go-home"
+#define NSGTK_STOCK_INFO "dialog-information"
+#define NSGTK_STOCK_REFRESH "view-refresh"
+#define NSGTK_STOCK_SAVE "document-save"
+#define NSGTK_STOCK_SAVE_AS "document-save-as"
+#define NSGTK_STOCK_STOP "process-stop"
+#define NSGTK_STOCK_OK "gtk-ok"
+#define NSGTK_STOCK_OPEN "document-open"
+#else
+#define NSGTK_STOCK_ADD GTK_STOCK_ADD
+#define NSGTK_STOCK_CANCEL GTK_STOCK_CANCEL
+#define NSGTK_STOCK_CLEAR GTK_STOCK_CLEAR
+#define NSGTK_STOCK_CLOSE GTK_STOCK_CLOSE
+#define NSGTK_STOCK_FIND GTK_STOCK_FIND
+#define NSGTK_STOCK_GO_BACK GTK_STOCK_GO_BACK
+#define NSGTK_STOCK_GO_FORWARD GTK_STOCK_GO_FORWARD
+#define NSGTK_STOCK_HOME GTK_STOCK_HOME
+#define NSGTK_STOCK_INFO GTK_STOCK_INFO
+#define NSGTK_STOCK_REFRESH GTK_STOCK_REFRESH
+#define NSGTK_STOCK_SAVE GTK_STOCK_SAVE
+#define NSGTK_STOCK_SAVE_AS GTK_STOCK_SAVE_AS
+#define NSGTK_STOCK_STOP GTK_STOCK_STOP
+#define NSGTK_STOCK_OK GTK_STOCK_OK
+#define NSGTK_STOCK_OPEN GTK_STOCK_OPEN
+#endif
+
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus);
 gboolean nsgtk_widget_has_focus(GtkWidget *widget);
 gboolean nsgtk_widget_get_visible(GtkWidget *widget);
@@ -74,6 +109,14 @@ enum {
 GtkWidget *nsgtk_entry_new(void);
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
+
+/**
+ * Creates a GtkImage displaying a stock icon.
+ *
+ * Compatability interface for interface deprecated in 3.10
+ */
+GtkWidget *nsgtk_image_new_from_stock(const gchar *stock_id, GtkIconSize size);
+
 void nsgtk_widget_override_background_color(GtkWidget *widget, GtkStateFlags state, uint16_t a, uint16_t r, uint16_t g, uint16_t b);
 GtkWidget* nsgtk_hbox_new(gboolean homogeneous, gint spacing);
 GtkWidget* nsgtk_vbox_new(gboolean homogeneous, gint spacing);

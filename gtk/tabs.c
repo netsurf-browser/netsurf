@@ -82,7 +82,8 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 
 	button = gtk_button_new();
 
-	close = gtk_image_new_from_stock("gtk-close", GTK_ICON_SIZE_MENU);
+	close = nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
+					   GTK_ICON_SIZE_MENU);
 	gtk_container_add(GTK_CONTAINER(button), close);
 	gtk_button_set_focus_on_click(GTK_BUTTON(button), FALSE);
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
@@ -218,7 +219,7 @@ nsgtk_tab_add_newtab(GtkNotebook *notebook)
 	tablabel = nsgtk_hbox_new(FALSE, 1);
 	tabcontents = nsgtk_hbox_new(FALSE, 1);
 
-	add = gtk_image_new_from_stock("gtk-add", GTK_ICON_SIZE_MENU);
+	add = nsgtk_image_new_from_stock(NSGTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
 
 	gtk_box_pack_start(GTK_BOX(tablabel), add, FALSE, FALSE, 0);
 

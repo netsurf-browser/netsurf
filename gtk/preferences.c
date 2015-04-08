@@ -712,9 +712,9 @@ nsgtk_preferences_buttonAddTheme_clicked(GtkButton *button, struct ppref *priv)
 	fc  = gtk_file_chooser_dialog_new(messages_get("gtkAddThemeTitle"),
 					  GTK_WINDOW(priv->dialog),
 					  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-					  GTK_STOCK_OK,
+					  NSGTK_STOCK_OK,
 					  GTK_RESPONSE_ACCEPT,
-					  GTK_STOCK_CANCEL,
+					  NSGTK_STOCK_CANCEL,
 					  GTK_RESPONSE_CANCEL,
 					  NULL);
 	len = SLEN("themes") + strlen(res_dir_location) + 1;

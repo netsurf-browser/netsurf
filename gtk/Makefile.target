@@ -36,7 +36,6 @@ $(eval $(call pkg_config_find_and_add_enabled,VIDEO,gstreamer-0.10,Video))
 GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \
 		-DG_DISABLE_DEPRECATED \
 	       	-DGTK_DISABLE_SINGLE_INCLUDES \
-	       	-DGTK_DISABLE_DEPRECATED \
 		-DGTK_MULTIHEAD_SAFE \
 		-DPANGO_DISABLE_DEPRECATED
 
@@ -45,6 +44,12 @@ GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \
 
 # libsexy currently means we cannot enable this
 #		-DGDK_DISABLE_DEPRECATED 
+
+# gtk3 is depricating interfaces we use a lot
+ifeq ($(NETSURF_GTK_MAJOR),2)
+GTKDEPFLAGS += -DGTK_DISABLE_DEPRECATED
+endif
+
 
 GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk -g \
 		$(GTKDEPFLAGS) \

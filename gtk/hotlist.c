@@ -29,6 +29,7 @@
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
+#include "gtk/compat.h"
 
 #define GLADE_NAME "hotlist.glade"
 
@@ -178,8 +179,8 @@ MENUHANDLER(export)
 	save_dialog = gtk_file_chooser_dialog_new("Save File",
 			wndHotlist,
 			GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),

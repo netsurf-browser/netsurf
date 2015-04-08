@@ -687,7 +687,7 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 #define MAKE_STOCKBUTTON(p, q) case p##_BUTTON: {\
 		GtkStockItem item;\
 		char *label = NULL;\
-		gtk_stock_lookup(#q, &item);\
+		gtk_stock_lookup(q, &item);\
 		if (item.label != NULL)\
 			label = remove_underscores(item.label, false);\
 		GtkWidget *w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(\
@@ -699,11 +699,11 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		return w;\
 	}
 
-	MAKE_STOCKBUTTON(HOME, gtk-home)
-	MAKE_STOCKBUTTON(BACK, gtk-go-back)
-	MAKE_STOCKBUTTON(FORWARD, gtk-go-forward)
-	MAKE_STOCKBUTTON(STOP, gtk-stop)
-	MAKE_STOCKBUTTON(RELOAD, gtk-refresh)
+	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
+	MAKE_STOCKBUTTON(BACK, NSGTK_STOCK_GO_BACK)
+	MAKE_STOCKBUTTON(FORWARD, NSGTK_STOCK_GO_FORWARD)
+	MAKE_STOCKBUTTON(STOP, NSGTK_STOCK_STOP)
+	MAKE_STOCKBUTTON(RELOAD, NSGTK_STOCK_REFRESH)
 #undef MAKE_STOCKBUTTON
 	case HISTORY_BUTTON:
 		return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
@@ -752,7 +752,7 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 	case WEBSEARCH_ITEM: {
 		if (edit_mode)
 			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-					gtk_image_new_from_stock("gtk-find",
+					nsgtk_image_new_from_stock(NSGTK_STOCK_FIND,
 					GTK_ICON_SIZE_LARGE_TOOLBAR)),
 					"[websearch]"));
 
@@ -767,7 +767,8 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 
 		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
 
-		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY, "gtk-info");
+		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY,
+						NSGTK_STOCK_INFO);
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		return w;

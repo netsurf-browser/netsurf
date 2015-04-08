@@ -260,7 +260,7 @@ void nsgtk_theme_add(const char *themename)
 
 	/* notification that theme was added successfully */
 	notification = gtk_dialog_new_with_buttons(messages_get("gtkThemeAdd"),
-			NULL, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_STOCK_OK,
+			NULL, GTK_DIALOG_DESTROY_WITH_PARENT, NSGTK_STOCK_OK,
 			GTK_RESPONSE_NONE, NULL);
 	if (notification == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
@@ -401,37 +401,37 @@ nsgtk_theme_image_default(nsgtk_toolbar_button tbbutton, GtkIconSize iconsize)
 
 #define BUTTON_IMAGE(p, q)					\
 	case p##_BUTTON:					\
-		image = GTK_IMAGE(gtk_image_new_from_stock(#q, iconsize)); \
+		image = GTK_IMAGE(nsgtk_image_new_from_stock(q, iconsize)); \
 		break
 
-		BUTTON_IMAGE(BACK, gtk-go-back);
-		BUTTON_IMAGE(FORWARD, gtk-go-forward);
-		BUTTON_IMAGE(STOP, gtk-stop);
-		BUTTON_IMAGE(RELOAD, gtk-refresh);
-		BUTTON_IMAGE(HOME, gtk-home);
-		BUTTON_IMAGE(NEWWINDOW, gtk-new);
-		BUTTON_IMAGE(NEWTAB, gtk-new);
-		BUTTON_IMAGE(OPENFILE, gtk-open);
-		BUTTON_IMAGE(CLOSETAB, gtk-close);
-		BUTTON_IMAGE(CLOSEWINDOW, gtk-close);
-		BUTTON_IMAGE(SAVEPAGE, gtk-save-as);
-		BUTTON_IMAGE(PRINTPREVIEW, gtk-print-preview);
-		BUTTON_IMAGE(PRINT, gtk-print);
-		BUTTON_IMAGE(QUIT, gtk-quit);
-		BUTTON_IMAGE(CUT, gtk-cut);
-		BUTTON_IMAGE(COPY, gtk-copy);
-		BUTTON_IMAGE(PASTE, gtk-paste);
-		BUTTON_IMAGE(DELETE, gtk-delete);
-		BUTTON_IMAGE(SELECTALL, gtk-select-all);
-		BUTTON_IMAGE(FIND, gtk-find);
-		BUTTON_IMAGE(PREFERENCES, gtk-preferences);
-		BUTTON_IMAGE(ZOOMPLUS, gtk-zoom-in);
-		BUTTON_IMAGE(ZOOMMINUS, gtk-zoom-out);
-		BUTTON_IMAGE(ZOOMNORMAL, gtk-zoom-100);
-		BUTTON_IMAGE(FULLSCREEN, gtk-fullscreen);
-		BUTTON_IMAGE(VIEWSOURCE, gtk-index);
-		BUTTON_IMAGE(CONTENTS, gtk-help);
-		BUTTON_IMAGE(ABOUT, gtk-about);
+		BUTTON_IMAGE(BACK, NSGTK_STOCK_GO_BACK);
+		BUTTON_IMAGE(FORWARD, NSGTK_STOCK_GO_FORWARD);
+		BUTTON_IMAGE(STOP, NSGTK_STOCK_STOP);
+		BUTTON_IMAGE(RELOAD, NSGTK_STOCK_REFRESH);
+		BUTTON_IMAGE(HOME, NSGTK_STOCK_HOME);
+		BUTTON_IMAGE(NEWWINDOW, "gtk-new");
+		BUTTON_IMAGE(NEWTAB, "gtk-new");
+		BUTTON_IMAGE(OPENFILE, NSGTK_STOCK_OPEN);
+		BUTTON_IMAGE(CLOSETAB, NSGTK_STOCK_CLOSE);
+		BUTTON_IMAGE(CLOSEWINDOW, NSGTK_STOCK_CLOSE);
+		BUTTON_IMAGE(SAVEPAGE, NSGTK_STOCK_SAVE_AS);
+		BUTTON_IMAGE(PRINTPREVIEW, "gtk-print-preview");
+		BUTTON_IMAGE(PRINT, "gtk-print");
+		BUTTON_IMAGE(QUIT, "gtk-quit");
+		BUTTON_IMAGE(CUT, "gtk-cut");
+		BUTTON_IMAGE(COPY, "gtk-copy");
+		BUTTON_IMAGE(PASTE, "gtk-paste");
+		BUTTON_IMAGE(DELETE, "gtk-delete");
+		BUTTON_IMAGE(SELECTALL, "gtk-select-all");
+		BUTTON_IMAGE(FIND, NSGTK_STOCK_FIND);
+		BUTTON_IMAGE(PREFERENCES, "gtk-preferences");
+		BUTTON_IMAGE(ZOOMPLUS, "gtk-zoom-in");
+		BUTTON_IMAGE(ZOOMMINUS, "gtk-zoom-out");
+		BUTTON_IMAGE(ZOOMNORMAL, "gtk-zoom-100");
+		BUTTON_IMAGE(FULLSCREEN, "gtk-fullscreen");
+		BUTTON_IMAGE(VIEWSOURCE, "gtk-index");
+		BUTTON_IMAGE(CONTENTS, "gtk-help");
+		BUTTON_IMAGE(ABOUT, "gtk-about");
 #undef BUTTON_IMAGE
 
 	case HISTORY_BUTTON:
@@ -481,12 +481,14 @@ nsgtk_theme_searchimage_default(nsgtk_search_buttons tbbutton,
 	switch(tbbutton) {
 
 	case (SEARCH_BACK_BUTTON):
-		return GTK_IMAGE(gtk_image_new_from_stock("gtk-go-back", iconsize));
+		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_BACK,
+							    iconsize));
 	case (SEARCH_FORWARD_BUTTON):
-		return GTK_IMAGE(gtk_image_new_from_stock("gtk-go-forward",
-							  iconsize));
+		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_GO_FORWARD,
+							    iconsize));
 	case (SEARCH_CLOSE_BUTTON):
-		return GTK_IMAGE(gtk_image_new_from_stock("gtk-close", iconsize));
+		return GTK_IMAGE(nsgtk_image_new_from_stock(NSGTK_STOCK_CLOSE,
+							    iconsize));
 	default: {
 		size_t len = SLEN("themes/Alpha.png") +
 			strlen(res_dir_location) + 1;
