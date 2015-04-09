@@ -87,18 +87,10 @@ void nsgtk_about_dialog_init(GtkWindow *parent)
 
 	pixbufs = gtk_window_get_default_icon_list();
 	if (pixbufs != NULL) {
-		GtkIconSet *icon_set;
 		GtkWidget *image;
 
-		icon_set = gtk_icon_set_new_from_pixbuf(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)));
-
-		image = gtk_image_new();
-
-		gtk_image_set_from_icon_set(GTK_IMAGE(image),
-					    icon_set,
-					    GTK_ICON_SIZE_DIALOG);
-
-		gtk_icon_set_unref(icon_set);
+		image = nsgtk_image_new_from_pixbuf_icon(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)),
+							 GTK_ICON_SIZE_DIALOG);
 		g_list_free(pixbufs);
 
 		gtk_box_pack_start(GTK_BOX(vbox), image, FALSE, FALSE, 0);
@@ -131,14 +123,14 @@ void nsgtk_about_dialog_init(GtkWindow *parent)
 	gtk_dialog_set_default_response(GTK_DIALOG(dialog), GTK_RESPONSE_CLOSE);
 
 	/* Add the credits button */
-	button = gtk_button_new_from_stock ("Credits");
+	button = nsgtk_button_new_from_stock("Credits");
 	gtk_box_pack_end(GTK_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))),
 			 button, FALSE, TRUE, 0);
 	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);
 	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_info), (gpointer)"about:credits");
 
 	/* Add the Licence button */
-	button = gtk_button_new_from_stock ("Licence");
+	button = nsgtk_button_new_from_stock("Licence");
 	gtk_box_pack_end(GTK_BOX (nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))),
 			 button, FALSE, TRUE, 0);
 	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(nsgtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);

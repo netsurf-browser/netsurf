@@ -73,6 +73,14 @@ GtkWidget *nsgtk_combo_box_text_new(void);
 void nsgtk_combo_box_text_append_text(GtkWidget *combo_box, const gchar *text);
 gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box);
 
+/**
+ * creates a new image widget of an appropriate icon size from a pixbuf.
+ *
+ * \param pixbuf The pixbuf to use as a source.
+ * \param size The size of icon to create
+ * \return An image widget.
+ */
+GtkWidget *nsgtk_image_new_from_pixbuf_icon(GdkPixbuf *pixbuf, GtkIconSize size);
 
 /* GTK prior to 2.16 needs the sexy interface for icons */
 #if !GTK_CHECK_VERSION(2,16,0)
@@ -111,22 +119,38 @@ enum {
 
 #endif
 
-GtkWidget *nsgtk_entry_new(void);
-void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
 
 /**
- * Sets the icon shown in the entry at the specified position from a stock image.
+ * Sets the icon shown in the entry at the specified position from a
+ * stock image.
  *
- * Compatability interface for interface deprecated in 3.10
+ * Compatability interface for original deprecated in GTK 3.10
+ *
+ * \param stock_id the name of the stock item
  */
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 
 /**
  * Creates a GtkImage displaying a stock icon.
  *
- * Compatability interface for interface deprecated in 3.10
+ * Compatability interface for original deprecated in GTK 3.10
+ *
+ * \param stock_id the name of the stock item
  */
 GtkWidget *nsgtk_image_new_from_stock(const gchar *stock_id, GtkIconSize size);
+
+/**
+ * Creates a new GtkButton containing the image and text from a stock item.
+ *
+ * Compatability interface for original deprecated in GTK 3.10
+ *
+ * \param stock_id the name of the stock item
+ */
+GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id);
+
+GtkWidget *nsgtk_entry_new(void);
+
+void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
 
 void nsgtk_widget_override_background_color(GtkWidget *widget, GtkStateFlags state, uint16_t a, uint16_t r, uint16_t g, uint16_t b);
 GtkWidget* nsgtk_hbox_new(gboolean homogeneous, gint spacing);

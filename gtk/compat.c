@@ -316,7 +316,7 @@ const PangoFontDescription* nsgtk_style_context_get_font(GtkStyleContext *style,
 							 GtkStateFlags state)
 {
 #if GTK_CHECK_VERSION(3,8,0)
-	const PangoFontDescription* fontdesc;
+	const PangoFontDescription* fontdesc = NULL;
 	gtk_style_context_get(style, state, GTK_STYLE_PROPERTY_FONT, &fontdesc, NULL);
 	return fontdesc;
 #else
@@ -452,5 +452,34 @@ void nsgtk_widget_get_allocation(GtkWidget *widget, GtkAllocation *allocation)
 	allocation->y = widget->allocation.y;
 	allocation->width = widget->allocation.width;
 	allocation->height = widget->allocation.height;
+#endif
+}
+
+/* exported interface documented in gtk/compat.h */
+GtkWidget *nsgtk_image_new_from_pixbuf_icon(GdkPixbuf *pixbuf, GtkIconSize size)
+{
+#if GTK_CHECK_VERSION(3,10,0)
+	return gtk_image_new_from_pixbuf(pixbuf);
+#else
+	GtkIconSet *icon_set;
+	GtkWidget *image;
+
+	icon_set = gtk_icon_set_new_from_pixbuf(pixbuf);
+
+	image = gtk_image_new_from_icon_set(icon_set, size);
+
+	gtk_icon_set_unref(icon_set);
+
+	return image;
+#endif
+}
+
+/* exported interface documented in gtk/compat.h */
+GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id)
+{
+#if GTK_CHECK_VERSION(3,10,0)
+	return gtk_button_new_with_label(stock_id);
+#else
+	return nsgtk_button_new_from_stock(stock_id);
 #endif
 }
