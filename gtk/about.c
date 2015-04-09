@@ -68,9 +68,9 @@ nsgtk_about_dialog_info(GtkWidget *button, gpointer data)
 
 void nsgtk_about_dialog_init(GtkWindow *parent)
 {
-	GtkWidget *dialog, *vbox, *button, *image, *label;
+	GtkWidget *dialog, *vbox, *button, *label;
 	gchar *name_string;
-	GList *pixbufs = gtk_window_get_default_icon_list();
+	GList *pixbufs;
 
 	name_string = g_markup_printf_escaped ("<span size=\"xx-large\" weight=\"bold\">NetSurf %s</span>", netsurf_version);
 
@@ -79,24 +79,29 @@ void nsgtk_about_dialog_init(GtkWindow *parent)
 	dialog = gtk_dialog_new_with_buttons("About NetSurf",
 					     parent,
 					     GTK_DIALOG_DESTROY_WITH_PARENT,
-					     NULL);
+					     NULL, NULL);
 
 	vbox = nsgtk_vbox_new(FALSE, 8);
 
 	gtk_box_pack_start(GTK_BOX(nsgtk_dialog_get_content_area(GTK_DIALOG(dialog))), vbox, TRUE, TRUE, 0);
 
+	pixbufs = gtk_window_get_default_icon_list();
 	if (pixbufs != NULL) {
-		GtkIconSet *icon_set = gtk_icon_set_new_from_pixbuf(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)));
+		GtkIconSet *icon_set;
+		GtkWidget *image;
+
+		icon_set = gtk_icon_set_new_from_pixbuf(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)));
 
 		image = gtk_image_new();
 
-		gtk_image_set_from_icon_set (GTK_IMAGE (image),
-					     icon_set, GTK_ICON_SIZE_DIALOG);
+		gtk_image_set_from_icon_set(GTK_IMAGE(image),
+					    icon_set,
+					    GTK_ICON_SIZE_DIALOG);
 
-		gtk_icon_set_unref (icon_set);
-		g_list_free (pixbufs);
+		gtk_icon_set_unref(icon_set);
+		g_list_free(pixbufs);
 
-		gtk_box_pack_start(GTK_BOX (vbox), image, FALSE, FALSE, 0);
+		gtk_box_pack_start(GTK_BOX(vbox), image, FALSE, FALSE, 0);
 	}
 
 
