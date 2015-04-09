@@ -1456,7 +1456,7 @@ MULTIHANDLER(localhistory)
 			-1, -1);
 	gtk_window_resize(g->history_window->window, width, height);
 	gtk_window_set_transient_for(g->history_window->window, g->window);
-	gtk_window_set_opacity(g->history_window->window, 0.9);
+	nsgtk_window_set_opacity(g->history_window->window, 0.9);
 	gtk_widget_show(GTK_WIDGET(g->history_window->window));
 	gtk_window_move(g->history_window->window, x + g->historybase, y +
 			g->toolbarbase);
@@ -2160,7 +2160,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_widget_override_background_color(GTK_WIDGET(g->history_window->drawing_area),
 			GTK_STATE_NORMAL,
 			0, 0xffff, 0xffff, 0xffff);
-	gtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
+	nsgtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
 			GTK_WIDGET(g->history_window->drawing_area));
 	gtk_widget_show(GTK_WIDGET(g->history_window->drawing_area));
 

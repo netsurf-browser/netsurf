@@ -493,3 +493,24 @@ gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item)
 	return gtk_stock_lookup(stock_id, item);
 #endif
 }
+
+/* exported interface documented in gtk/compat.h */
+void nsgtk_window_set_opacity(GtkWindow *window, gdouble opacity)
+{
+#if GTK_CHECK_VERSION(3,8,0)
+	gtk_widget_set_opacity(GTK_WIDGET(window), opacity);
+#else
+	gtk_window_set_opacity(window, opacity);
+#endif
+}
+
+/* exported interface documented in gtk/compat.h */
+void nsgtk_scrolled_window_add_with_viewport(GtkScrolledWindow *window,
+		GtkWidget *child)
+{
+#if GTK_CHECK_VERSION(3,8,0)
+	gtk_container_add(GTK_CONTAINER(window), child);
+#else
+	gtk_scrolled_window_add_with_viewport(window, child);
+#endif
+}

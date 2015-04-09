@@ -159,6 +159,10 @@ GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id);
  */
 gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item);
 
+void nsgtk_window_set_opacity(GtkWindow *window, gdouble opacity);
+
+void nsgtk_scrolled_window_add_with_viewport(GtkScrolledWindow *window, GtkWidget *child);
+
 GtkWidget *nsgtk_entry_new(void);
 
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
