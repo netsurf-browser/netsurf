@@ -148,6 +148,17 @@ GtkWidget *nsgtk_image_new_from_stock(const gchar *stock_id, GtkIconSize size);
  */
 GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id);
 
+/**
+
+ * Fills item with the registered values for stock_id.
+ *
+ * Compatability interface for original deprecated in GTK 3.10
+ *
+ * \param stock_id the name of the stock item
+ * \return TRUE if stock_id was known.
+ */
+gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item);
+
 GtkWidget *nsgtk_entry_new(void);
 
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);

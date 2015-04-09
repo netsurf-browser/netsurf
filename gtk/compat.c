@@ -483,3 +483,13 @@ GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id)
 	return nsgtk_button_new_from_stock(stock_id);
 #endif
 }
+
+/* exported interface documented in gtk/compat.h */
+gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item)
+{
+#if GTK_CHECK_VERSION(3,10,0)
+	return false;
+#else
+	return gtk_stock_lookup(stock_id, item);
+#endif
+}

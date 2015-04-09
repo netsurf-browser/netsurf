@@ -684,19 +684,23 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 	switch(i) {
 
 /* gtk_tool_button_new() accepts NULL args */
-#define MAKE_STOCKBUTTON(p, q) case p##_BUTTON: {\
-		GtkStockItem item;\
-		char *label = NULL;\
-		gtk_stock_lookup(q, &item);\
-		if (item.label != NULL)\
-			label = remove_underscores(item.label, false);\
-		GtkWidget *w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(\
-				theme->image[p##_BUTTON]), label));\
-		if (label != NULL) {\
-			free(label);\
-			label = NULL;\
-		}\
-		return w;\
+#define MAKE_STOCKBUTTON(p, q) \
+	case p##_BUTTON: {					\
+		GtkStockItem item;					\
+		GtkWidget *w;						\
+		if (nsgtk_stock_lookup(q, &item) &&			\
+		    (item.label != NULL)) {				\
+			char *label = NULL;			\
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), label)); \
+			label = remove_underscores(item.label, false);	\
+			free(label);					\
+			label = NULL;					\
+		} else {						\
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), q)); \
+		}							\
+		return w;						\
 	}
 
 	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
