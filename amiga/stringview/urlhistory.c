@@ -79,8 +79,9 @@ static bool URLHistoryFound(nsurl *url, const struct url_data *data)
 {
 	struct Node *node;
 
-	/* skip non-visited pages */
+	/* skip non-visited pages - disabled for testing
 	if(data->visits <= 0) return true;
+	*/
 
 	/* skip this URL if it is already in the list */
 	if(URLHistory_FindPage(nsurl_access(url))) return true;
