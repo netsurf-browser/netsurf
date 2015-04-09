@@ -113,6 +113,12 @@ enum {
 
 GtkWidget *nsgtk_entry_new(void);
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
+
+/**
+ * Sets the icon shown in the entry at the specified position from a stock image.
+ *
+ * Compatability interface for interface deprecated in 3.10
+ */
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 
 /**

@@ -173,7 +173,7 @@ void nsgtk_entry_set_icon_from_stock(GtkWidget *entry,
 				     const gchar *id)
 {
 #if GTK_CHECK_VERSION(3,10,0)
-	gtk_entry_set_icon_from_icon_name(entry, icon_pos, id);
+	gtk_entry_set_icon_from_icon_name(GTK_ENTRY(entry), icon_pos, id);
 #else
 #if GTK_CHECK_VERSION(2,16,0)
 	gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), icon_pos, id);
@@ -315,10 +315,16 @@ GtkStyleContext *nsgtk_widget_get_style_context(GtkWidget *widget)
 const PangoFontDescription* nsgtk_style_context_get_font(GtkStyleContext *style,
 							 GtkStateFlags state)
 {
+#if GTK_CHECK_VERSION(3,8,0)
+	const PangoFontDescription* fontdesc;
+	gtk_style_context_get(style, state, GTK_STYLE_PROPERTY_FONT, &fontdesc, NULL);
+	return fontdesc;
+#else
 #if GTK_CHECK_VERSION(3,0,0)
 	return gtk_style_context_get_font(style, state);
 #else
 	return style->font_desc;
+#endif
 #endif
 }
 
