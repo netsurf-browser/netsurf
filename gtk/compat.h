@@ -68,19 +68,24 @@ gboolean nsgtk_widget_get_visible(GtkWidget *widget);
 gboolean nsgtk_widget_get_realized(GtkWidget *widget);
 gboolean nsgtk_widget_get_mapped(GtkWidget *widget);
 gboolean nsgtk_widget_is_drawable(GtkWidget *widget);
-GtkStateType nsgtk_widget_get_state(GtkWidget *widget);
 void nsgtk_dialog_set_has_separator(GtkDialog *dialog, gboolean setting);
 GtkWidget *nsgtk_combo_box_text_new(void);
 void nsgtk_combo_box_text_append_text(GtkWidget *combo_box, const gchar *text);
 gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box);
 
+
+/* GTK prior to 2.16 needs the sexy interface for icons */
 #if !GTK_CHECK_VERSION(2,16,0)
+
 #include "gtk/sexy_icon_entry.h"
 
 typedef enum {
   GTK_ENTRY_ICON_PRIMARY = SEXY_ICON_ENTRY_PRIMARY,
   GTK_ENTRY_ICON_SECONDARY = SEXY_ICON_ENTRY_SECONDARY
 } GtkEntryIconPosition;
+
+GtkStateType nsgtk_widget_get_state(GtkWidget *widget);
+
 #endif
 
 #if GTK_CHECK_VERSION (2, 90, 7)

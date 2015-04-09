@@ -25,8 +25,24 @@
 
 #include "gtk/compat.h"
 
-#if !GTK_CHECK_VERSION(2,16,0)
+#ifdef _SEXY_ICON_ENTRY_H_
 #include "gtk/sexy_icon_entry.c"
+
+/*
+ * exported interface documented in gtk/compat.h
+ *
+ * Only required for the lib sexy interface before 2.16
+ */
+GtkStateType nsgtk_widget_get_state(GtkWidget *widget)
+{
+#if GTK_CHECK_VERSION(2,18,0)
+	return gtk_widget_get_state(widget);
+#else
+	return GTK_WIDGET_STATE(widget);
+#endif
+}
+
+
 #endif
 
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus)
@@ -83,15 +99,6 @@ gboolean nsgtk_widget_is_drawable(GtkWidget *widget)
 	return gtk_widget_is_drawable(widget);
 #else
 	return GTK_WIDGET_DRAWABLE(widget);
-#endif
-}
-
-GtkStateType nsgtk_widget_get_state(GtkWidget *widget)
-{
-#if GTK_CHECK_VERSION(2,18,0)
-	return gtk_widget_get_state(widget);
-#else
-	return GTK_WIDGET_STATE(widget);
 #endif
 }
 
