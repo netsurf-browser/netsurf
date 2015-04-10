@@ -587,17 +587,23 @@ MULTIHANDLER(newtab)
 
 MULTIHANDLER(openfile)
 {
+	GtkWidget *dlgOpen;
+	gint response;
+
 	scaf_current = g;
-	GtkWidget *dlgOpen = gtk_file_chooser_dialog_new("Open File",
-			scaf_current->window, GTK_FILE_CHOOSER_ACTION_OPEN,
-			NSGTK_STOCK_CANCEL, -6, NSGTK_STOCK_OPEN, -5, NULL);
+	dlgOpen = gtk_file_chooser_dialog_new("Open File",
+			scaf_current->window,
+			GTK_FILE_CHOOSER_ACTION_OPEN,
+			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			NSGTK_STOCK_OPEN, GTK_RESPONSE_OK,
+			NULL, NULL);
 
-	gint response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
+	response = gtk_dialog_run(GTK_DIALOG(dlgOpen));
 	if (response == GTK_RESPONSE_OK) {
-		gchar *filename = gtk_file_chooser_get_filename(
-				GTK_FILE_CHOOSER(dlgOpen));
+		gchar *filename;
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dlgOpen));
 
-		nsgtk_openfile_open((const char *) filename);
+		nsgtk_openfile_open((const char *)filename);
 
 		g_free(filename);
 	}
@@ -2750,7 +2756,3 @@ void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 	g->toolbarmem = alloc->x;
 	gtk_widget_size_allocate(widget, alloc);
 }
-
-
-
-

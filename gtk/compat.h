@@ -29,8 +29,15 @@
 
 /* gtk 3.10 depricated the use of stock names */
 #if GTK_CHECK_VERSION(3,10,0)
+#define NSGTK_USE_ICON_NAME
+#else
+#undef NSGTK_USE_ICON_NAME
+#endif
+
+/* icon names instead of stock */
+#ifdef NSGTK_USE_ICON_NAME
 #define NSGTK_STOCK_ADD "list-add"
-#define NSGTK_STOCK_CANCEL "gtk-cancel"
+#define NSGTK_STOCK_CANCEL "_Cancel"
 #define NSGTK_STOCK_CLEAR "edit-clear"
 #define NSGTK_STOCK_CLOSE "window-close"
 #define NSGTK_STOCK_FIND "edit-find"
@@ -42,8 +49,8 @@
 #define NSGTK_STOCK_SAVE "document-save"
 #define NSGTK_STOCK_SAVE_AS "document-save-as"
 #define NSGTK_STOCK_STOP "process-stop"
-#define NSGTK_STOCK_OK "gtk-ok"
-#define NSGTK_STOCK_OPEN "document-open"
+#define NSGTK_STOCK_OK "_OK"
+#define NSGTK_STOCK_OPEN "_Open"
 #else
 #define NSGTK_STOCK_ADD GTK_STOCK_ADD
 #define NSGTK_STOCK_CANCEL GTK_STOCK_CANCEL

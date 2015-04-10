@@ -168,11 +168,13 @@ void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry,
 #endif
 }
 
+
+/* exported interface documented in gtk/compat.h */
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry,
 				     GtkEntryIconPosition icon_pos,
 				     const gchar *id)
 {
-#if GTK_CHECK_VERSION(3,10,0)
+#ifdef NSGTK_USE_ICON_NAME
 	gtk_entry_set_icon_from_icon_name(GTK_ENTRY(entry), icon_pos, id);
 #else
 #if GTK_CHECK_VERSION(2,16,0)
@@ -191,14 +193,38 @@ void nsgtk_entry_set_icon_from_stock(GtkWidget *entry,
 #endif
 }
 
+
+/* exported interface documented in gtk/compat.h */
 GtkWidget *nsgtk_image_new_from_stock(const gchar *id, GtkIconSize size)
 {
-#if GTK_CHECK_VERSION(3,10,0)
+#ifdef NSGTK_USE_ICON_NAME
 	return gtk_image_new_from_icon_name(id, size);
 #else
 	return gtk_image_new_from_stock(id, size);
 #endif
 }
+
+
+/* exported interface documented in gtk/compat.h */
+GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id)
+{
+#ifdef NSGTK_USE_ICON_NAME
+	return gtk_button_new_with_label(stock_id);
+#else
+	return gtk_button_new_from_stock(stock_id);
+#endif
+}
+
+/* exported interface documented in gtk/compat.h */
+gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item)
+{
+#ifdef NSGTK_USE_ICON_NAME
+	return FALSE;
+#else
+	return gtk_stock_lookup(stock_id, item);
+#endif
+}
+
 
 void nsgtk_widget_override_background_color(GtkWidget *widget,
 					    GtkStateFlags state,
@@ -465,25 +491,6 @@ GtkWidget *nsgtk_image_new_from_pixbuf_icon(GdkPixbuf *pixbuf, GtkIconSize size)
 #endif
 }
 
-/* exported interface documented in gtk/compat.h */
-GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id)
-{
-#if GTK_CHECK_VERSION(3,10,0)
-	return gtk_button_new_with_label(stock_id);
-#else
-	return gtk_button_new_from_stock(stock_id);
-#endif
-}
-
-/* exported interface documented in gtk/compat.h */
-gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item)
-{
-#if GTK_CHECK_VERSION(3,10,0)
-	return FALSE;
-#else
-	return gtk_stock_lookup(stock_id, item);
-#endif
-}
 
 /* exported interface documented in gtk/compat.h */
 void nsgtk_window_set_opacity(GtkWindow *window, gdouble opacity)
