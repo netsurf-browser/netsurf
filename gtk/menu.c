@@ -21,35 +21,46 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 
-#include "gtk/menu.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
+#include "gtk/compat.h"
+#include "gtk/menu.h"
+
 /**
- * adds image menu item to specified menu
+ * Adds image menu item to a menu.
+ *
  * \param menu the menu to add the item to
- * \param item a pointer to the item's location in the menu struct
+ * \param item_out a pointer to the item's location in the menu struct
  * \param message the menu item I18n lookup value
  * \param messageAccel the menu item accelerator I18n lookup value
  * \param group the 'global' in a gtk sense accelerator group
+ * \return true if sucessful and \a item_out updated else false.
  */
 
 static bool nsgtk_menu_add_image_item(GtkMenu *menu,
-		GtkImageMenuItem **item, const char *message,
+		GtkWidget **item_out, const char *message,
 		const char *messageAccel, GtkAccelGroup *group)
 {
 	unsigned int key;
 	GdkModifierType mod;
-	*item = GTK_IMAGE_MENU_ITEM(gtk_image_menu_item_new_with_mnemonic(
-			messages_get(message)));
-	if (*item == NULL)
+	GtkWidget *item;
+
+	item = nsgtk_image_menu_item_new_with_mnemonic(messages_get(message));
+	if (item == NULL) {
 		return false;
+	}
+
 	gtk_accelerator_parse(messages_get(messageAccel), &key, &mod);
-	if (key > 0)
-		gtk_widget_add_accelerator(GTK_WIDGET(*item), "activate",
-				group, key, mod, GTK_ACCEL_VISIBLE);
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), GTK_WIDGET(*item));
-	gtk_widget_show(GTK_WIDGET(*item));
+	if (key > 0) {
+		gtk_widget_add_accelerator(item, "activate", group, key, mod,
+					   GTK_ACCEL_VISIBLE);
+	}
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+	gtk_widget_show(item);
+
+	*item_out = item;
+
 	return true;
 }
 

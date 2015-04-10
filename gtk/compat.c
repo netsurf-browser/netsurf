@@ -505,3 +505,19 @@ void nsgtk_scrolled_window_add_with_viewport(GtkScrolledWindow *window,
 	gtk_scrolled_window_add_with_viewport(window, child);
 #endif
 }
+
+GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label)
+{
+#if GTK_CHECK_VERSION(3,10,0)
+	return gtk_menu_item_new_with_mnemonic(label);
+#else
+	return gtk_image_menu_item_new_with_mnemonic(label);
+#endif
+}
+
+void nsgtk_image_menu_item_set_image(GtkWidget *image_menu_item, GtkWidget *image)
+{
+#if !GTK_CHECK_VERSION(3,10,0)
+	gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(image_menu_item), image);
+#endif
+}

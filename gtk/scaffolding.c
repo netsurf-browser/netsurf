@@ -1846,8 +1846,7 @@ static void nsgtk_scaffolding_toolbar_init(struct nsgtk_scaffolding *g)
 			nsgtk_toolbar_##q##_toolbar_button_data
 
 #define ITEM_POP(p, q)					\
-	g->buttons[p##_BUTTON]->popup = GTK_IMAGE_MENU_ITEM(\
-			g->menu_popup->q##_menuitem)
+	g->buttons[p##_BUTTON]->popup = g->menu_popup->q##_menuitem
 
 #define SENSITIVITY(q)				\
 	g->buttons[q##_BUTTON]->sensitivity = false

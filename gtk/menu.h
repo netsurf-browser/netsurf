@@ -23,100 +23,100 @@
 struct nsgtk_file_menu {
 	GtkMenuItem                     *file; /* File menu item on menubar */
 	GtkMenu				*file_menu;
-	GtkImageMenuItem		*newwindow_menuitem;
-	GtkImageMenuItem		*newtab_menuitem;
-	GtkImageMenuItem		*openfile_menuitem;
-	GtkImageMenuItem		*closewindow_menuitem;
-	GtkImageMenuItem		*savepage_menuitem;
-	GtkImageMenuItem		*export_menuitem;
+	GtkWidget		*newwindow_menuitem;
+	GtkWidget		*newtab_menuitem;
+	GtkWidget		*openfile_menuitem;
+	GtkWidget		*closewindow_menuitem;
+	GtkWidget		*savepage_menuitem;
+	GtkWidget		*export_menuitem;
 	struct nsgtk_export_submenu	*export_submenu;
-	GtkImageMenuItem		*printpreview_menuitem;
-	GtkImageMenuItem		*print_menuitem;
-	GtkImageMenuItem		*quit_menuitem;
+	GtkWidget		*printpreview_menuitem;
+	GtkWidget		*print_menuitem;
+	GtkWidget		*quit_menuitem;
 };
 
 struct nsgtk_edit_menu {
 	GtkMenuItem             *edit; /* Edit menu item on menubar */
 	GtkMenu			*edit_menu;
-	GtkImageMenuItem	*cut_menuitem;
-	GtkImageMenuItem	*copy_menuitem;
-	GtkImageMenuItem	*paste_menuitem;
-	GtkImageMenuItem	*delete_menuitem;
-	GtkImageMenuItem	*selectall_menuitem;
-	GtkImageMenuItem	*find_menuitem;
-	GtkImageMenuItem	*preferences_menuitem;
+	GtkWidget	*cut_menuitem;
+	GtkWidget	*copy_menuitem;
+	GtkWidget	*paste_menuitem;
+	GtkWidget	*delete_menuitem;
+	GtkWidget	*selectall_menuitem;
+	GtkWidget	*find_menuitem;
+	GtkWidget	*preferences_menuitem;
 };
 
 struct nsgtk_view_menu {
 	GtkMenuItem             *view; /* View menu item on menubar */
 	GtkMenu			*view_menu; /* gtk menu attached to menu item */
-	GtkImageMenuItem		*stop_menuitem;
-	GtkImageMenuItem		*reload_menuitem;
-	GtkImageMenuItem		*scaleview_menuitem;
+	GtkWidget		*stop_menuitem;
+	GtkWidget		*reload_menuitem;
+	GtkWidget		*scaleview_menuitem;
 	struct nsgtk_scaleview_submenu	*scaleview_submenu;
-	GtkImageMenuItem		*fullscreen_menuitem;
-	GtkImageMenuItem		*images_menuitem;
+	GtkWidget		*fullscreen_menuitem;
+	GtkWidget		*images_menuitem;
 	struct nsgtk_images_submenu	*images_submenu;
-	GtkImageMenuItem		*toolbars_menuitem;
+	GtkWidget		*toolbars_menuitem;
 	struct nsgtk_toolbars_submenu	*toolbars_submenu;
-	GtkImageMenuItem		*tabs_menuitem;
+	GtkWidget		*tabs_menuitem;
 	struct nsgtk_tabs_submenu	*tabs_submenu;
-	GtkImageMenuItem		*savewindowsize_menuitem;
+	GtkWidget		*savewindowsize_menuitem;
 };
 
 struct nsgtk_nav_menu {
 	GtkMenuItem             *nav; /* Nav menu item on menubar */
 	GtkMenu			*nav_menu;
-	GtkImageMenuItem	*back_menuitem;
-	GtkImageMenuItem	*forward_menuitem;
-	GtkImageMenuItem	*home_menuitem;
-	GtkImageMenuItem	*localhistory_menuitem;
-	GtkImageMenuItem	*globalhistory_menuitem;
-	GtkImageMenuItem	*addbookmarks_menuitem;
-	GtkImageMenuItem	*showbookmarks_menuitem;
-	GtkImageMenuItem	*openlocation_menuitem;
+	GtkWidget	*back_menuitem;
+	GtkWidget	*forward_menuitem;
+	GtkWidget	*home_menuitem;
+	GtkWidget	*localhistory_menuitem;
+	GtkWidget	*globalhistory_menuitem;
+	GtkWidget	*addbookmarks_menuitem;
+	GtkWidget	*showbookmarks_menuitem;
+	GtkWidget	*openlocation_menuitem;
 };
 
 struct nsgtk_tools_menu {
 	GtkMenuItem  *tools; /* Tools menu item on menubar */
 	GtkMenu	*tools_menu;
 
-	GtkImageMenuItem *showcookies_menuitem;
-	GtkImageMenuItem *downloads_menuitem;
-	GtkImageMenuItem *developer_menuitem;
+	GtkWidget *showcookies_menuitem;
+	GtkWidget *downloads_menuitem;
+	GtkWidget *developer_menuitem;
 	struct nsgtk_developer_submenu *developer_submenu;
 };
 
 struct nsgtk_help_menu {
 	GtkMenuItem             *help; /* Help menu item on menubar */
 	GtkMenu			*help_menu;
-	GtkImageMenuItem	*contents_menuitem;
-	GtkImageMenuItem	*guide_menuitem;
-	GtkImageMenuItem	*info_menuitem;
-	GtkImageMenuItem	*about_menuitem;
+	GtkWidget	*contents_menuitem;
+	GtkWidget	*guide_menuitem;
+	GtkWidget	*info_menuitem;
+	GtkWidget	*about_menuitem;
 };
 
 
 struct nsgtk_export_submenu {
 	GtkMenu			*export_menu;
-	GtkImageMenuItem	*plaintext_menuitem;
-	GtkImageMenuItem	*drawfile_menuitem;
-	GtkImageMenuItem	*postscript_menuitem;
-	GtkImageMenuItem	*pdf_menuitem;
+	GtkWidget	*plaintext_menuitem;
+	GtkWidget	*drawfile_menuitem;
+	GtkWidget	*postscript_menuitem;
+	GtkWidget	*pdf_menuitem;
 };
 
 struct nsgtk_scaleview_submenu {
 	GtkMenu			*scaleview_menu;
-	GtkImageMenuItem	*zoomplus_menuitem;
-	GtkImageMenuItem	*zoomminus_menuitem;
-	GtkImageMenuItem	*zoomnormal_menuitem;
+	GtkWidget	*zoomplus_menuitem;
+	GtkWidget	*zoomminus_menuitem;
+	GtkWidget	*zoomnormal_menuitem;
 };
 
 struct nsgtk_tabs_submenu {
 	GtkMenu			*tabs_menu;
-	GtkImageMenuItem	*nexttab_menuitem;
-	GtkImageMenuItem	*prevtab_menuitem;
-	GtkImageMenuItem	*closetab_menuitem;
+	GtkWidget	*nexttab_menuitem;
+	GtkWidget	*prevtab_menuitem;
+	GtkWidget	*closetab_menuitem;
 };
 
 struct nsgtk_images_submenu {
@@ -132,12 +132,12 @@ struct nsgtk_toolbars_submenu {
 };
 
 struct nsgtk_developer_submenu {
-	GtkMenu			*developer_menu;
+	GtkMenu   *developer_menu;
 
-	GtkImageMenuItem *viewsource_menuitem;
-	GtkImageMenuItem	*toggledebugging_menuitem;
-	GtkImageMenuItem	*debugboxtree_menuitem;
-	GtkImageMenuItem	*debugdomtree_menuitem;
+	GtkWidget *viewsource_menuitem;
+	GtkWidget *toggledebugging_menuitem;
+	GtkWidget *debugboxtree_menuitem;
+	GtkWidget *debugdomtree_menuitem;
 };
 
 
@@ -155,55 +155,55 @@ struct nsgtk_bar_submenu {
 struct nsgtk_popup_menu {
 	GtkMenu	*popup_menu;
 
-	GtkImageMenuItem *file_menuitem;
+	GtkWidget *file_menuitem;
 	struct nsgtk_file_menu *file_submenu;
 
-	GtkImageMenuItem *edit_menuitem;
+	GtkWidget *edit_menuitem;
 	struct nsgtk_edit_menu *edit_submenu;
 
-	GtkImageMenuItem *view_menuitem;
+	GtkWidget *view_menuitem;
 	struct nsgtk_view_menu *view_submenu;
 
-	GtkImageMenuItem *nav_menuitem;
+	GtkWidget *nav_menuitem;
 	struct nsgtk_nav_menu *nav_submenu;
 
-	GtkImageMenuItem *tabs_menuitem;
+	GtkWidget *tabs_menuitem;
 	struct nsgtk_tabs_submenu *tabs_submenu;
 
-	GtkImageMenuItem *tools_menuitem;
+	GtkWidget *tools_menuitem;
 	struct nsgtk_tools_menu *tools_submenu;
 
-	GtkImageMenuItem *help_menuitem;
+	GtkWidget *help_menuitem;
 	struct nsgtk_help_menu *help_submenu;
 
 	GtkWidget *first_separator;
 
 	/* navigation entries */
-	GtkImageMenuItem *back_menuitem;
-	GtkImageMenuItem *forward_menuitem;
+	GtkWidget *back_menuitem;
+	GtkWidget *forward_menuitem;
 
 	GtkWidget *third_separator;
 
 	/* view entries */
-	GtkImageMenuItem *stop_menuitem;
-	GtkImageMenuItem *reload_menuitem;
+	GtkWidget *stop_menuitem;
+	GtkWidget *reload_menuitem;
 
-	GtkImageMenuItem *cut_menuitem;
-	GtkImageMenuItem *copy_menuitem;
-	GtkImageMenuItem *paste_menuitem;
-	GtkImageMenuItem *customize_menuitem;
+	GtkWidget *cut_menuitem;
+	GtkWidget *copy_menuitem;
+	GtkWidget *paste_menuitem;
+	GtkWidget *customize_menuitem;
 
 };
 
 struct nsgtk_link_menu {
 	GtkMenu	*link_menu;
 
-	GtkImageMenuItem *opentab_menuitem;
-	GtkImageMenuItem *openwin_menuitem;
+	GtkWidget *opentab_menuitem;
+	GtkWidget *openwin_menuitem;
 
-	GtkImageMenuItem *save_menuitem;
-	GtkImageMenuItem *bookmark_menuitem;
-	GtkImageMenuItem *copy_menuitem;
+	GtkWidget *save_menuitem;
+	GtkWidget *bookmark_menuitem;
+	GtkWidget *copy_menuitem;
 };
 
 /**

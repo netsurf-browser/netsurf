@@ -319,7 +319,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 		/* gtk_image_menu_item_set_image accepts NULL image */
 		if ((button->main != NULL) &&
 		    (theme[IMAGE_SET_MAIN_MENU] != NULL)) {
-			gtk_image_menu_item_set_image(button->main,
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->main),
 						      GTK_WIDGET(
 							      theme[IMAGE_SET_MAIN_MENU]->
 							      image[i]));
@@ -327,7 +327,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 		}
 		if ((button->rclick != NULL)  &&
 		    (theme[IMAGE_SET_RCLICK_MENU] != NULL)) {
-			gtk_image_menu_item_set_image(button->rclick,
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->rclick),
 						      GTK_WIDGET(
 							      theme[IMAGE_SET_RCLICK_MENU]->
 							      image[i]));
@@ -335,7 +335,7 @@ void nsgtk_theme_implement(struct nsgtk_scaffolding *g)
 		}
 		if ((button->popup != NULL) &&
 		    (theme[IMAGE_SET_POPUP_MENU] != NULL)) {
-			gtk_image_menu_item_set_image(button->popup,
+			nsgtk_image_menu_item_set_image(GTK_WIDGET(button->popup),
 						      GTK_WIDGET(
 							      theme[IMAGE_SET_POPUP_MENU]->
 							      image[i]));

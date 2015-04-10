@@ -101,16 +101,16 @@ struct gtk_search {
 };
 
 struct nsgtk_button_connect {
-	GtkToolItem			*button;
-	int				location; /* in toolbar */
-	bool				sensitivity;
-	GtkImageMenuItem		*main;
-	GtkImageMenuItem		*rclick;
-	GtkImageMenuItem		*popup;
-	void				*mhandler; /* menu item clicked */
-	void				*bhandler; /* button clicked */
-	void				*dataplus; /* customization -> toolbar */
-	void				*dataminus; /* customization -> store */
+	GtkToolItem *button;
+	int         location; /* in toolbar */
+	bool        sensitivity;
+	GtkWidget   *main; /* left click menu entry */
+	GtkWidget   *rclick; /* right click menu */
+	GtkWidget   *popup; /* popup menu entry */
+	void        *mhandler; /* menu item clicked */
+	void        *bhandler; /* button clicked */
+	void        *dataplus; /* customization -> toolbar */
+	void        *dataminus; /* customization -> store */
 };
 
 /**

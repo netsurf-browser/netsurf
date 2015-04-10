@@ -191,5 +191,29 @@ gdouble nsgtk_adjustment_get_upper(GtkAdjustment *adjustment);
 gdouble nsgtk_adjustment_get_lower(GtkAdjustment *adjustment);
 gdouble nsgtk_adjustment_get_page_increment(GtkAdjustment *adjustment);
 
+/* menu compatability */
+
+/**
+ * Creates a new GtkImageMenuItem containing a label.
+ *
+ * Compatability interface for original deprecated in GTK 3.10.
+ * @note post 3.10 this creates a GtkMenuItem.
+ *
+ * \param label The text of the button, with an underscore in front of
+ *        the mnemonic character.
+ * \return a new GtkMenuItem
+ */
+GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label);
+
+/**
+ * Sets the image of image_menu_item to the given widget.
+ *
+ * Compatability interface for original deprecated in GTK 3.10.
+ * @note post 3.10 this is empty as menu creation generates GtkMenuItem.
+ *
+ * \param image_menu_item The image menu entry item.
+ * \param image The image to set.
+ */
+void nsgtk_image_menu_item_set_image(GtkWidget *image_menu_item, GtkWidget *image);
 
 #endif /* NETSURF_GTK_COMPAT_H */
