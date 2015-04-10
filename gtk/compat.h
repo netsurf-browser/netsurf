@@ -182,6 +182,8 @@ gboolean nsgtk_show_uri(GdkScreen *screen, const gchar *uri, guint32 timestamp, 
 GdkWindow *nsgtk_layout_get_bin_window(GtkLayout *layout);
 void nsgtk_widget_get_allocation(GtkWidget *widget, GtkAllocation *allocation);
 
+gboolean nsgtk_icon_size_lookup_for_settings (GtkSettings *settings, GtkIconSize size, gint *width, gint *height);
+
 GtkAdjustment *nsgtk_layout_get_vadjustment(GtkLayout *layout);
 GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout);
 void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj); 

@@ -506,6 +506,7 @@ void nsgtk_scrolled_window_add_with_viewport(GtkScrolledWindow *window,
 #endif
 }
 
+/* exported interface documented in gtk/compat.h */
 GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label)
 {
 #if GTK_CHECK_VERSION(3,10,0)
@@ -515,9 +516,23 @@ GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label)
 #endif
 }
 
+/* exported interface documented in gtk/compat.h */
 void nsgtk_image_menu_item_set_image(GtkWidget *image_menu_item, GtkWidget *image)
 {
 #if !GTK_CHECK_VERSION(3,10,0)
 	gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(image_menu_item), image);
+#endif
+}
+
+/* exported interface documented in gtk/compat.h */
+gboolean nsgtk_icon_size_lookup_for_settings(GtkSettings *settings,
+					     GtkIconSize size,
+					     gint *width,
+					     gint *height)
+{
+#if GTK_CHECK_VERSION(3,10,0)
+	return gtk_icon_size_lookup(size, width, height);
+#else
+	return gtk_icon_size_lookup_for_settings(settings, size, width, height);
 #endif
 }

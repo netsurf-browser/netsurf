@@ -53,7 +53,7 @@ static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 	char_width = pango_font_metrics_get_approximate_digit_width(metrics);
 	pango_font_metrics_unref(metrics);
 
-	gtk_icon_size_lookup_for_settings(gtk_widget_get_settings (hbox),
+	nsgtk_icon_size_lookup_for_settings(gtk_widget_get_settings (hbox),
 			GTK_ICON_SIZE_MENU, &w, &h);
 
 	gtk_widget_set_size_request(hbox,
