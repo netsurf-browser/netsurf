@@ -29,16 +29,16 @@
 #  instead (currently en)
 #
 # If you find something tagged 'all', but it is only relevant to a specific
-#  front end, please change it.  Currently, we have 'all', 'ro', 'gtk' and
-#  'ami'.
+#  front end, please change it.  Currently, we have:
+#   'all', 'ro', 'gtk', 'ami', 'beos'
 #
+
 # Globals
 en.all.NetSurf:NetSurf
-en.all.NetSurfCopyright:Copyright © 2003 - 2014 The NetSurf Developers
-nl.all.NetSurfCopyright:Auteursrecht © 2003 - 2015 De NetSurf-ontwikkelaars
-en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
-fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
-it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
+
+en.all.NetSurfCopyright:© 2003-2015 The NetSurf Developers
+nl.all.NetSurfCopyright:© 2003-2015 De NetSurf-ontwikkelaars
+
 
 # Menus
 # =====
@@ -1305,6 +1305,19 @@ fr.all.TreeHotlist:Favoris de NetSurf
 it.all.TreeHotlist:Segnalibri di NetSurf
 nl.all.TreeHotlist:NetSurf-favorieten
 
+
+# About user interface tokens
+# ===========================
+#
+# This secion is for tokens that have user information about the browser
+
+en.ami.NetSurfDesc:Small as a mouse, fast as a cheetah and available for free. NetSurf is a multi-platform web browser.
+fr.ami.NetSurfDesc:Petit comme une souris, rapide comme un guépard. NetSurf est un navigateur Web multi-plate-forme libre.
+it.ami.NetSurfDesc:Piccolo come un mouse, veloce come un ghepardo. NetSurf è un browser web opensource e multi-piattaforma.
+
+en.gtk.AboutDesc:NetSurf is a small and fast web browser.
+fr.gtk.AboutDesc:NetSurf est un navigateur Web multi-plate-forme libre.
+it.gtk.AboutDesc:NetSurf è un browser web opensource e multi-piattaforma.
 
 # Hotlist user interface tokens
 # =============================
