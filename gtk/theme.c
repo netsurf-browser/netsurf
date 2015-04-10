@@ -260,16 +260,21 @@ void nsgtk_theme_add(const char *themename)
 
 	/* notification that theme was added successfully */
 	notification = gtk_dialog_new_with_buttons(messages_get("gtkThemeAdd"),
-			NULL, GTK_DIALOG_DESTROY_WITH_PARENT, NSGTK_STOCK_OK,
-			GTK_RESPONSE_NONE, NULL);
+					NULL,
+					GTK_DIALOG_DESTROY_WITH_PARENT,
+					NSGTK_STOCK_OK, GTK_RESPONSE_NONE,
+					NULL, NULL);
 	if (notification == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return;
 	}
+
 	len = SLEN("\t\t\t\t\t\t") + strlen(messages_get("gtkThemeAdd")) + 1;
+
 	char labelcontent[len];
 	snprintf(labelcontent, len, "\t\t\t%s\t\t\t",
 		 messages_get("gtkThemeAdd"));
+
 	label = gtk_label_new(labelcontent);
 	if (label == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
@@ -277,7 +282,9 @@ void nsgtk_theme_add(const char *themename)
 	}
 	g_signal_connect_swapped(notification, "response",
 				 G_CALLBACK(gtk_widget_destroy), notification);
-	gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_action_area(GTK_DIALOG(notification))), label);
+
+	gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_content_area(GTK_DIALOG(notification))), label);
+
 	gtk_widget_show_all(notification);
 
 	/* update combo */

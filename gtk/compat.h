@@ -177,7 +177,6 @@ gulong nsgtk_connect_draw_event(GtkWidget *widget, GCallback callback, gpointer 
 void nsgdk_cursor_unref(GdkCursor *cursor);
 void nsgtk_widget_modify_font(GtkWidget *widget, PangoFontDescription *font_desc);
 GdkWindow *nsgtk_widget_get_window(GtkWidget *widget);
-GtkWidget *nsgtk_dialog_get_action_area(GtkDialog *dialog);
 GtkWidget *nsgtk_dialog_get_content_area(GtkDialog *dialog);
 gboolean nsgtk_show_uri(GdkScreen *screen, const gchar *uri, guint32 timestamp, GError **error);
 GdkWindow *nsgtk_layout_get_bin_window(GtkLayout *layout);

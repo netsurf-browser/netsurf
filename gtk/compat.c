@@ -377,15 +377,6 @@ GtkWidget *nsgtk_dialog_get_content_area(GtkDialog *dialog)
 #endif
 }
 
-GtkWidget *nsgtk_dialog_get_action_area(GtkDialog *dialog)
-{
-#if GTK_CHECK_VERSION(2,14,0)
-	return gtk_dialog_get_action_area(dialog);
-#else
-	return dialog->action_area;
-#endif
-}
-
 gboolean nsgtk_show_uri(GdkScreen *screen,
 			const gchar *uri,
 			guint32 timestamp,
