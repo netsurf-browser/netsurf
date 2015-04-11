@@ -94,6 +94,20 @@ typedef enum  {
  */
 void nsgtk_widget_set_alignment(GtkWidget *widget, GtkAlign halign, GtkAlign valign);
 
+/**
+ * Set the margins of a widget
+ *
+ * Sets the margin all round a widget.
+ *
+ * @note this type of margin was not available prior to GTK 3.0 so
+ * we emulate it using gtk_misc_set_padding.
+ *
+ * \param widget The widget to set alignent on.
+ * \param hmargin The horizontal margin.
+ * \param vmargin The vertical margin.
+ */
+void nsgtk_widget_set_margins(GtkWidget *widget, gint hmargin, gint vmargin);
+
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus);
 gboolean nsgtk_widget_has_focus(GtkWidget *widget);
 gboolean nsgtk_widget_get_visible(GtkWidget *widget);

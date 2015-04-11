@@ -583,3 +583,16 @@ void nsgtk_widget_set_alignment(GtkWidget *widget, GtkAlign halign, GtkAlign val
 	gtk_misc_set_alignment(GTK_MISC(widget), x, y);
 #endif
 }
+
+/* exported interface documented in gtk/compat.h */
+void nsgtk_widget_set_margins(GtkWidget *widget, gint hmargin, gint vmargin)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_widget_set_margin_left(widget, hmargin);
+	gtk_widget_set_margin_right(widget, hmargin);
+	gtk_widget_set_margin_top(widget, vmargin);
+	gtk_widget_set_margin_bottom(widget, vmargin);
+#else
+	gtk_misc_set_padding(GTK_MISC(widget), hmargin, vmargin);
+#endif
+}
