@@ -50,9 +50,6 @@
 #include "gtk/bitmap.h"
 #include "gtk/gdk.h"
 
-/* helper macro to conenct signals to callbacks */
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 extern const GdkPixdata menu_cursor_pixdata;
 
@@ -812,8 +809,13 @@ gui_window_create(struct browser_window *bw,
 					       GTK_STATE_NORMAL,
 					       0, 0xffff, 0xffff, 0xffff);
 
-	nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
-				 G_CALLBACK(nsgtk_window_draw_event), g);
+	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] =
+		nsgtk_connect_draw_event(GTK_WIDGET(g->layout),
+				G_CALLBACK(nsgtk_window_draw_event), g);
+
+	/* helper macro to conect signals to callbacks */
+#define CONNECT(obj, sig, callback, ptr)				\
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* layout signals */
 	CONNECT(g->layout, "motion-notify-event",

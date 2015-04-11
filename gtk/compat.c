@@ -588,8 +588,13 @@ void nsgtk_widget_set_alignment(GtkWidget *widget, GtkAlign halign, GtkAlign val
 void nsgtk_widget_set_margins(GtkWidget *widget, gint hmargin, gint vmargin)
 {
 #if GTK_CHECK_VERSION(3,0,0)
+#if GTK_CHECK_VERSION(3,12,0)
+	gtk_widget_set_margin_start(widget, hmargin);
+	gtk_widget_set_margin_end(widget, hmargin);
+#else
 	gtk_widget_set_margin_left(widget, hmargin);
 	gtk_widget_set_margin_right(widget, hmargin);
+#endif
 	gtk_widget_set_margin_top(widget, vmargin);
 	gtk_widget_set_margin_bottom(widget, vmargin);
 #else

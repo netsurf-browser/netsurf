@@ -573,21 +573,22 @@ gboolean nsgtk_toolbar_data(GtkWidget *widget, GdkDragContext *gdc, gint x,
 	nsgtk_scaffolding_button(g, window->currentbutton)->location = ind;
 
 	/* complete action */
-	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g),
-			nsgtk_scaffolding_button(g,
-			window->currentbutton)->button, ind);
-	gtk_tool_item_set_use_drag_window(GTK_TOOL_ITEM(
-			nsgtk_scaffolding_button(g,
-			window->currentbutton)->button), TRUE);
-	gtk_drag_source_set(GTK_WIDGET(
-			nsgtk_scaffolding_button(g,
-			window->currentbutton)->button),
-			GDK_BUTTON1_MASK, &entry, 1, GDK_ACTION_COPY);
+	GtkToolItem *current_button;
+
+	current_button = GTK_TOOL_ITEM(nsgtk_scaffolding_button(g, window->currentbutton)->button);
+
+	gtk_toolbar_insert(nsgtk_scaffolding_toolbar(g), current_button, ind);
+
+	gtk_tool_item_set_use_drag_window(current_button, TRUE);
+	gtk_drag_source_set(GTK_WIDGET(current_button),
+			    GDK_BUTTON1_MASK, &entry, 1,
+			    GDK_ACTION_COPY);
 	nsgtk_toolbar_temp_connect(g, window->currentbutton);
-	gtk_widget_show_all(GTK_WIDGET(
-			nsgtk_scaffolding_button(g,
-			window->currentbutton)->button));
+	gtk_widget_show_all(GTK_WIDGET(current_button));
+
+
 	window->currentbutton = -1;
+
 	return TRUE;
 }
 
@@ -681,13 +682,14 @@ void nsgtk_toolbar_clear(GtkWidget *widget, GdkDragContext *gdc, guint time,
 GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 		nsgtk_toolbar_button i,	struct nsgtk_theme *theme)
 {
+	GtkWidget *w = NULL;
+
 	switch(i) {
 
 /* gtk_tool_button_new() accepts NULL args */
-#define MAKE_STOCKBUTTON(p, q) \
+#define MAKE_STOCKBUTTON(p, q)					\
 	case p##_BUTTON: {					\
 		GtkStockItem item;					\
-		GtkWidget *w;						\
 		if (nsgtk_stock_lookup(q, &item) &&			\
 		    (item.label != NULL)) {				\
 			char *label = NULL;			\
@@ -700,7 +702,7 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
 					   theme->image[p##_BUTTON]), q)); \
 		}							\
-		return w;						\
+		break;							\
 	}
 
 	MAKE_STOCKBUTTON(HOME, NSGTK_STOCK_HOME)
@@ -709,12 +711,15 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 	MAKE_STOCKBUTTON(STOP, NSGTK_STOCK_STOP)
 	MAKE_STOCKBUTTON(RELOAD, NSGTK_STOCK_REFRESH)
 #undef MAKE_STOCKBUTTON
+
 	case HISTORY_BUTTON:
-		return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
+		w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
 				theme->image[HISTORY_BUTTON]), ""));
+		break;
+
 	case URL_BAR_ITEM: {
 		GtkWidget *entry = nsgtk_entry_new();
-		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
+		w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
 			warn_user(messages_get("NoMemory"), 0);
@@ -727,32 +732,39 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
-		return w;
+		break;
 	}
+
 	case THROBBER_ITEM: {
-		if (edit_mode)
-			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
-					gtk_image_new_from_pixbuf(
-					nsgtk_throbber->framedata[0])),
-					"[throbber]"));
-		if ((nsgtk_throbber == NULL) || (nsgtk_throbber->framedata ==
-				NULL) || (nsgtk_throbber->framedata[0] ==
-				NULL))
-			return NULL;
-		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_pixbuf(
-				nsgtk_throbber->framedata[0]));
-		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
-		GtkWidget *al = GTK_WIDGET(gtk_alignment_new(0.5, 0.5, 1, 1));
-		if ((w == NULL) || (al == NULL)) {
-			warn_user(messages_get("NoMemory"), 0);
+		if ((nsgtk_throbber == NULL) ||
+		    (nsgtk_throbber->framedata == NULL) ||
+		    (nsgtk_throbber->framedata[0] == NULL)) {
 			return NULL;
 		}
-		gtk_alignment_set_padding(GTK_ALIGNMENT(al), 0, 0, 3, 3);
-		if (image != NULL)
-			gtk_container_add(GTK_CONTAINER(al), image);
-		gtk_container_add(GTK_CONTAINER(w), al);
-		return w;
+
+		if (edit_mode) {
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
+					gtk_image_new_from_pixbuf(
+					nsgtk_throbber->framedata[0])),
+							   "[throbber]"));
+		} else {
+			GtkWidget *image;
+
+			w = GTK_WIDGET(gtk_tool_item_new());
+
+			image = gtk_image_new_from_pixbuf(nsgtk_throbber->framedata[0]);
+			if (image != NULL) {
+				nsgtk_widget_set_alignment(image,
+							   GTK_ALIGN_CENTER,
+							   GTK_ALIGN_CENTER);
+				nsgtk_widget_set_margins(image, 3, 0);
+
+				gtk_container_add(GTK_CONTAINER(w), image);
+			}
+		}
+		break;
 	}
+
 	case WEBSEARCH_ITEM: {
 		if (edit_mode)
 			return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
@@ -762,7 +774,7 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 
 		GtkWidget *entry = nsgtk_entry_new();
 
-		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
+		w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
 			warn_user(messages_get("NoMemory"), 0);
@@ -775,18 +787,19 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 						NSGTK_STOCK_INFO);
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
-		return w;
+		break;
 	}
 
 /* gtk_tool_button_new accepts NULL args */
-#define MAKE_MENUBUTTON(p, q) case p##_BUTTON: {\
-		char *label = NULL;\
-		label = remove_underscores(messages_get(#q), false);\
-		GtkWidget *w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(\
-				theme->image[p##_BUTTON]), label));\
-		if (label != NULL)\
-			free(label);\
-		return w;\
+#define MAKE_MENUBUTTON(p, q)						\
+		case p##_BUTTON: {					\
+			char *label = NULL;				\
+			label = remove_underscores(messages_get(#q), false); \
+			w = GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(	\
+					   theme->image[p##_BUTTON]), label)); \
+			if (label != NULL)				\
+				free(label);				\
+			break;						\
 	}
 
 	MAKE_MENUBUTTON(NEWWINDOW, gtkNewWindow)
@@ -831,10 +844,13 @@ GtkWidget *nsgtk_toolbar_make_widget(struct nsgtk_scaffolding *g,
 	MAKE_MENUBUTTON(PREVTAB, gtkPrevTab)
 	MAKE_MENUBUTTON(GUIDE, gtkGuide)
 	MAKE_MENUBUTTON(INFO, gtkUserInformation)
-	default:
-		return NULL;
 #undef MAKE_MENUBUTTON
+
+	default:
+		break;
+
 	}
+	return w;
 }
 
 /**

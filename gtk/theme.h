@@ -30,8 +30,8 @@ typedef enum search_buttons {
 } nsgtk_search_buttons;
 
 struct nsgtk_theme {
-	GtkImage	*image[PLACEHOLDER_BUTTON];
-	GtkImage	*searchimage[SEARCH_BUTTONS_COUNT];
+	GtkImage *image[PLACEHOLDER_BUTTON];
+	GtkImage *searchimage[SEARCH_BUTTONS_COUNT];
 	/* apng throbber element */
 };
 

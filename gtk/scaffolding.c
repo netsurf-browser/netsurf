@@ -2572,8 +2572,8 @@ void nsgtk_scaffolding_update_url_bar_ref(struct nsgtk_scaffolding *g)
 /* exported interface documented in gtk/scaffolding.h */
 void nsgtk_scaffolding_update_throbber_ref(struct nsgtk_scaffolding *g)
 {
-	g->throbber = GTK_IMAGE(gtk_bin_get_child(GTK_BIN(gtk_bin_get_child(
-			GTK_BIN(g->buttons[THROBBER_ITEM]->button)))));
+	g->throbber = GTK_IMAGE(gtk_bin_get_child(
+			GTK_BIN(g->buttons[THROBBER_ITEM]->button)));
 }
 
 /* exported interface documented in gtk/scaffolding.h */
