@@ -19,14 +19,16 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "utils/nsoption.h"
+#include "utils/utils.h"
+#include "utils/messages.h"
+#include "desktop/browser.h"
+#include "content/content.h"
+#include "desktop/search.h"
+
 #include "gtk/compat.h"
 #include "gtk/window.h"
 #include "gtk/gui.h"
-#include "desktop/browser.h"
-#include "content/content.h"
-#include "utils/nsoption.h"
-#include "desktop/search.h"
-#include "utils/utils.h"
 #include "gtk/search.h"
 #include "gtk/tabs.h"
 
@@ -70,13 +72,10 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 
 	hbox = nsgtk_hbox_new(FALSE, 2);
 
-	if (nsoption_bool(new_blank) == true)
-		label = gtk_label_new("New Tab");
-	else
-		label = gtk_label_new("Loading...");
+	label = gtk_label_new(messages_get("NewTab"));
 	gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
 	gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
-	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.5);
+	nsgtk_widget_set_alignment(label, GTK_ALIGN_START, GTK_ALIGN_CENTER);
 	gtk_misc_set_padding(GTK_MISC(label), 0, 0);
 	gtk_widget_show(label);
 

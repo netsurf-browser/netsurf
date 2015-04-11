@@ -543,3 +543,43 @@ gboolean nsgtk_icon_size_lookup_for_settings(GtkSettings *settings,
 	return gtk_icon_size_lookup_for_settings(settings, size, width, height);
 #endif
 }
+
+/* exported interface documented in gtk/compat.h */
+void nsgtk_widget_set_alignment(GtkWidget *widget, GtkAlign halign, GtkAlign valign)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_widget_set_halign(widget, halign);
+	gtk_widget_set_valign(widget, valign);
+#else
+	gfloat x, y;
+	switch(halign) {
+	case GTK_ALIGN_START:
+		x = 0.0;
+		break;
+
+	case GTK_ALIGN_END:
+		x = 1.0;
+		break;
+
+	default:
+		x = 0.5;
+		break;
+	}
+
+	switch(valign) {
+	case GTK_ALIGN_START:
+		y = 0.0;
+		break;
+
+	case GTK_ALIGN_END:
+		y = 1.0;
+		break;
+
+	default:
+		y = 0.5;
+		break;
+	}
+
+	gtk_misc_set_alignment(GTK_MISC(widget), x, y);
+#endif
+}

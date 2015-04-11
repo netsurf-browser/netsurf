@@ -69,6 +69,31 @@
 #define NSGTK_STOCK_OPEN GTK_STOCK_OPEN
 #endif
 
+/* widget alignment only available since 3.0 */
+#if !GTK_CHECK_VERSION(3,0,0)
+typedef enum  {
+  GTK_ALIGN_FILL,
+  GTK_ALIGN_START,
+  GTK_ALIGN_END,
+  GTK_ALIGN_CENTER,
+  GTK_ALIGN_BASELINE
+} GtkAlign;
+#endif
+
+/**
+ * Set the alignment of a widget.
+ *
+ * sets both the horizontal and vertical alignement of a widget
+ *
+ * @note this type of alignemnt was not available prior to GTK 3.0 so
+ * we emulate it using gtk_misc_set_alignment.
+ *
+ * \param widget The widget to set alignent on.
+ * \param halign The horizontal alignment to set.
+ * \param valign The vertical alignment to set
+ */
+void nsgtk_widget_set_alignment(GtkWidget *widget, GtkAlign halign, GtkAlign valign);
+
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus);
 gboolean nsgtk_widget_has_focus(GtkWidget *widget);
 gboolean nsgtk_widget_get_visible(GtkWidget *widget);
