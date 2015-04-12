@@ -172,7 +172,9 @@ enum {
  *
  * Compatability interface for original deprecated in GTK 3.10
  *
- * \param stock_id the name of the stock item
+ * \param entry The entry widget to set the icon on.
+ * \param icon_pos The position of the icon.
+ * \param stock_id the name of the stock item.
  */
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 
@@ -181,7 +183,9 @@ void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon
  *
  * Compatability interface for original deprecated in GTK 3.10
  *
- * \param stock_id the name of the stock item
+ * \param stock_id the name of the stock item.
+ * \param size The size of icon to create.
+ * \return The created image widget or NULL on error
  */
 GtkWidget *nsgtk_image_new_from_stock(const gchar *stock_id, GtkIconSize size);
 
@@ -195,12 +199,12 @@ GtkWidget *nsgtk_image_new_from_stock(const gchar *stock_id, GtkIconSize size);
 GtkWidget *nsgtk_button_new_from_stock(const gchar *stock_id);
 
 /**
-
  * Fills item with the registered values for stock_id.
  *
  * Compatability interface for original deprecated in GTK 3.10
  *
- * \param stock_id the name of the stock item
+ * \param stock_id the name of the stock item.
+ * \param item The structure to update if the stock_id was known.
  * \return TRUE if stock_id was known.
  */
 gboolean nsgtk_stock_lookup(const gchar *stock_id, GtkStockItem *item);

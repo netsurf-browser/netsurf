@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Implementation of gtk windowing.
+ */
+
 #include <inttypes.h>
 #include <string.h>
 #include <limits.h>
@@ -60,7 +65,8 @@ static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data);
 
 struct gui_window {
-	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
+	/**
+	 * The gtk scaffold object containing menu, buttons, url bar, [tabs],
 	 * drawing area, etc that may contain one or more gui_windows.
 	 */
 	struct nsgtk_scaffolding *scaffold;
@@ -118,7 +124,10 @@ struct gui_window {
 	struct gui_window *next, *prev;
 };
 
-struct gui_window *window_list = NULL;	/**< first entry in win list*/
+/**< first entry in window list */
+struct gui_window *window_list = NULL;
+
+/** flag controlling opening of tabs in teh background */
 int temp_open_background = -1;
 
 struct nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
