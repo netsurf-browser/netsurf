@@ -84,7 +84,11 @@ void *bitmap_create(int width, int height, unsigned int state)
 	bitmap->windib = windib;
 	bitmap->pbmi = pbmi;
 	bitmap->pixdata = pixdata;
-	bitmap->opaque = false;
+	if ((state & BITMAP_OPAQUE) != 0) {
+		bitmap->opaque = true;
+	} else {
+		bitmap->opaque = false;
+	}
 
 	LOG(("bitmap %p", bitmap));
 
