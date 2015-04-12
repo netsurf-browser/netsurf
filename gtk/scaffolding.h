@@ -128,7 +128,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *gw);
  */
 struct nsgtk_scaffolding *nsgtk_current_scaffolding(void);
 
-/* acessors for gtk elements withing a scaffold */
+/* acessors for gtk elements within a scaffold */
 
 /**
  * Get the gtk window for a scaffolding.

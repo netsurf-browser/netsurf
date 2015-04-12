@@ -21,16 +21,13 @@
 #ifndef _NETSURF_DESKTOP_SSLCERT_VIEWER_H_
 #define _NETSURF_DESKTOP_SSLCERT_VIEWER_H_
 
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "desktop/core_window.h"
-#include "desktop/textinput.h"
-#include "utils/errors.h"
+#include "content/llcache.h"
+#include "desktop/mouse.h"
 
 struct sslcert_session_data;
 struct redraw_context;
-
+struct core_window_callback_table;
+struct rect;
 
 /**
  * Create ssl certificate viewer session data.
