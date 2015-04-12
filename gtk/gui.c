@@ -82,11 +82,6 @@ struct glade_file_location_s *glade_file_location;
 static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
 
-static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
-static void nsgtk_ssl_reject(GtkWidget *w, gpointer data);
-static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event,
-		gpointer data);
-
 #define THROBBER_FRAMES 9
 
 char **respaths; /** resource search path vector */
@@ -583,6 +578,39 @@ void warn_user(const char *warning, const char *detail)
 }
 
 
+static void nsgtk_ssl_accept(GtkButton *w, gpointer data)
+{
+	void **session = data;
+	GtkBuilder *x = session[0];
+	struct nsgtk_treeview *wnd = session[1];
+	struct sslcert_session_data *ssl_data = session[2];
+
+	sslcert_viewer_accept(ssl_data);
+
+	nsgtk_treeview_destroy(wnd);
+	g_object_unref(G_OBJECT(x));
+	free(session);
+}
+
+static void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
+{
+	void **session = data;
+	GtkBuilder *x = session[0];
+	struct nsgtk_treeview *wnd = session[1];
+	struct sslcert_session_data *ssl_data = session[2];
+
+	sslcert_viewer_reject(ssl_data);
+
+	nsgtk_treeview_destroy(wnd);
+	g_object_unref(G_OBJECT(x));
+	free(session);
+}
+
+static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
+{
+	nsgtk_ssl_reject(w, data);
+	return FALSE;
+}
 
 static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
@@ -592,19 +620,20 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	struct sslcert_session_data *data;
 	GtkButton *accept, *reject;
 	void **session;
-	GtkWindow *window;
+	GtkDialog *dlg;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
-	GError* error = NULL;
-	GtkBuilder* builder;
+	GError *error = NULL;
+	GtkBuilder *builder;
+	GtkWindow *gtk_parent;
 
-	/* state while window is open */
+	/* state while dlg is open */
 	session = calloc(sizeof(void *), 3);
 	if (session == NULL) {
 		return;
 	}
 
-	builder = gtk_builder_new ();
+	builder = gtk_builder_new();
 	if (!gtk_builder_add_from_file(builder, glade_file_location->ssl, &error)) {
 		g_warning("Couldn't load builder file: %s", error->message);
 		g_error_free(error);
@@ -616,16 +645,22 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs, &data);
 	ssl_current_session = data;
 
-	window = GTK_WINDOW(gtk_builder_get_object(builder, "wndSSLProblem"));
+	dlg = GTK_DIALOG(gtk_builder_get_object(builder, "wndSSLProblem"));
+
+	/* set parent for transient dialog */
+	gtk_parent = nsgtk_scaffolding_window(nsgtk_current_scaffolding());
+	gtk_window_set_transient_for(GTK_WINDOW(dlg), gtk_parent);
+
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
 
-	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, window, scrolled,
+	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, GTK_WINDOW(dlg), scrolled,
 			drawing_area);
 
 	if (ssl_window == NULL) {
 		free(session);
+		g_object_unref(G_OBJECT(dlg));
 		return;
 	}
 
@@ -641,44 +676,10 @@ static void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 
 	CONNECT(accept, "clicked", nsgtk_ssl_accept, session);
 	CONNECT(reject, "clicked", nsgtk_ssl_reject, session);
- 	CONNECT(window, "delete_event", G_CALLBACK(nsgtk_ssl_delete_event),
+ 	CONNECT(dlg, "delete_event", G_CALLBACK(nsgtk_ssl_delete_event),
 			(gpointer)session);
 
-	gtk_widget_show(GTK_WIDGET(window));
-}
-
-void nsgtk_ssl_accept(GtkButton *w, gpointer data)
-{
-	void **session = data;
-	GtkBuilder *x = session[0];
-	struct nsgtk_treeview *wnd = session[1];
-	struct sslcert_session_data *ssl_data = session[2];
-
-	sslcert_viewer_accept(ssl_data);
-
-	nsgtk_treeview_destroy(wnd);
-	g_object_unref(G_OBJECT(x));
-	free(session);
-}
-
-void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
-{
-	void **session = data;
-	GtkBuilder *x = session[0];
-	struct nsgtk_treeview *wnd = session[1];
-	struct sslcert_session_data *ssl_data = session[2];
-
-	sslcert_viewer_reject(ssl_data);
-
-	nsgtk_treeview_destroy(wnd);
-	g_object_unref(G_OBJECT(x));
-	free(session);
-}
-
-gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
-{
-	nsgtk_ssl_reject(w, data);
-	return FALSE;
+	gtk_widget_show(GTK_WIDGET(dlg));
 }
 
 
