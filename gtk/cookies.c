@@ -20,13 +20,14 @@
  * Cookies (implementation).
  */
 
+#include <gtk/gtk.h>
 
+#include "utils/log.h"
 #include "desktop/cookie_manager.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
-#include "utils/log.h"
-#include "gtk/gui.h"
+
 #include "gtk/cookies.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"

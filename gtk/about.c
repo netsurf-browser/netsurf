@@ -27,11 +27,11 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/nsoption.h"
+#include "utils/nsurl.h"
 #include "desktop/browser.h"
 #include "desktop/version.h"
 
 #include "gtk/compat.h"
-#include "gtk/gui.h"
 #include "gtk/about.h"
 
 #define ABOUT_RESPONSE_ID_LICENCE 1

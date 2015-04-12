@@ -31,7 +31,6 @@
 #include "desktop/download.h"
 #include "desktop/gui_download.h"
 
-#include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/download.h"
 #include "gtk/window.h"

@@ -24,11 +24,13 @@
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
+#include <gtk/gtk.h>
 
 #include "utils/hashtable.h"
 #include "utils/log.h"
 #include "utils/filepath.h"
 #include "utils/file.h"
+#include "utils/nsurl.h"
 #include "desktop/gui_fetch.h"
 
 #include "gtk/gui.h"

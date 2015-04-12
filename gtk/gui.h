@@ -19,11 +19,7 @@
 #ifndef GTK_GUI_H
 #define GTK_GUI_H
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <gtk/gtk.h>
-
-#include "utils/nsurl.h"
+struct nsurl;
 
 /** glade file paths. */
 struct glade_file_location_s {
@@ -70,7 +66,7 @@ extern char **respaths;
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *eventkey);
 
 /** login window request. */
-extern void gui_401login_open(nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
+extern void gui_401login_open(struct nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /** set when no windows remain open. */
 extern bool nsgtk_complete;

@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <gtk/gtk.h>
 
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -25,7 +26,6 @@
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
 
-#include "gtk/gui.h"
 #include "gtk/history.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"

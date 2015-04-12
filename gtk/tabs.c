@@ -28,7 +28,6 @@
 
 #include "gtk/compat.h"
 #include "gtk/window.h"
-#include "gtk/gui.h"
 #include "gtk/search.h"
 #include "gtk/tabs.h"
 

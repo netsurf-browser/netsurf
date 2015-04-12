@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <gtk/gtk.h>
 
 #include "utils/log.h"
 #include "utils/nsoption.h"
@@ -24,7 +25,6 @@
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 
-#include "gtk/gui.h"
 #include "gtk/hotlist.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"

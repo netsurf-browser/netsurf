@@ -25,6 +25,7 @@
 #include "utils/nsoption.h"
 #include "utils/file.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "desktop/browser.h"
 #include "desktop/searchweb.h"
 
