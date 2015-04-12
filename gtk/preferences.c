@@ -861,39 +861,9 @@ nsgtk_preferences_comboButtonType_changed(GtkComboBox *widget,
 	current = nsgtk_scaffolding_iterate(NULL);
 	while (current != NULL)	{
 		nsgtk_scaffolding_reset_offset(current);
-		switch(nsoption_int(button_type)) {
-			/* value of 0 is reserved for 'unset' */
-		case 1:
-			gtk_toolbar_set_style(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_TOOLBAR_ICONS);
-			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_ICON_SIZE_SMALL_TOOLBAR);
-			break;
-		case 2:
-			gtk_toolbar_set_style(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_TOOLBAR_ICONS);
-			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_ICON_SIZE_LARGE_TOOLBAR);
-			break;
-		case 3:
-			gtk_toolbar_set_style(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_TOOLBAR_BOTH);
-			gtk_toolbar_set_icon_size(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_ICON_SIZE_LARGE_TOOLBAR);
-			break;
-		case 4:
-			gtk_toolbar_set_style(
-				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
-				GTK_TOOLBAR_TEXT);
-		default:
-			break;
-		}
+
+		nsgtk_scaffolding_toolbars(current, nsoption_int(button_type));
+
 		current = nsgtk_scaffolding_iterate(current);
 	}
 }

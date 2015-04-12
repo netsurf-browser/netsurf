@@ -1969,6 +1969,61 @@ static void nsgtk_scaffolding_initial_sensitivity(struct nsgtk_scaffolding *g)
 	gtk_widget_set_sensitive(GTK_WIDGET(g->menu_bar->view_submenu->images_menuitem), FALSE);
 }
 
+
+void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g, int tbi)
+{
+	switch (tbi) {
+		/* case 0 is 'unset' [from fresh install / clearing options]
+		 * see above */
+
+	case 1: /* Small icons */
+		/* main toolbar */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
+					  GTK_ICON_SIZE_SMALL_TOOLBAR);
+		/* search toolbar */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+					  GTK_ICON_SIZE_SMALL_TOOLBAR);
+		break;
+
+	case 2: /* Large icons */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		/* search toolbar */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
+				      GTK_TOOLBAR_ICONS);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		break;
+
+	case 3: /* Large icons with text */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_BOTH);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		/* search toolbar */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
+				      GTK_TOOLBAR_BOTH);
+		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->search->bar),
+					  GTK_ICON_SIZE_LARGE_TOOLBAR);
+		break;
+
+	case 4: /* Text icons only */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
+				      GTK_TOOLBAR_TEXT);
+		/* search toolbar */
+		gtk_toolbar_set_style(GTK_TOOLBAR(g->search->bar),
+				      GTK_TOOLBAR_TEXT);
+	default:
+		break;
+	}
+}
+
 /* exported interface documented in gtk/scaffolding.h */
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
@@ -2104,34 +2159,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		}
 	}
 
-	switch (nsoption_int(button_type)) {
-	/* case 0 is 'unset' [from fresh install / clearing options]
-	 * see above */
-
-	case 1: /* Small icons */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_SMALL_TOOLBAR);
-		break;
-	case 2: /* Large icons */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
-				      GTK_TOOLBAR_ICONS);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		break;
-	case 3: /* Large icons with text */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
-				      GTK_TOOLBAR_BOTH);
-		gtk_toolbar_set_icon_size(GTK_TOOLBAR(g->tool_bar),
-					  GTK_ICON_SIZE_LARGE_TOOLBAR);
-		break;
-	case 4: /* Text icons only */
-		gtk_toolbar_set_style(GTK_TOOLBAR(g->tool_bar),
-				      GTK_TOOLBAR_TEXT);
-	default:
-		break;
-	}
+	nsgtk_scaffolding_toolbars(g, nsoption_int(button_type));
 
 	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
 	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));

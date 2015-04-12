@@ -247,5 +247,6 @@ nserror gui_window_set_url(struct gui_window *g, struct nsurl *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 
+void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g, int tbi);
 
 #endif /* NETSURF_GTK_SCAFFOLDING_H */
