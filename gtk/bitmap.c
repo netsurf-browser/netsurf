@@ -45,8 +45,7 @@
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-
-void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *gbitmap;
 
@@ -75,7 +74,7 @@ void *bitmap_create(int width, int height, unsigned int state)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque   whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(void *vbitmap, bool opaque)
+static void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	cairo_format_t fmt;
@@ -127,7 +126,7 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(void *vbitmap)
+static bool bitmap_test_opaque(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	unsigned char *pixels;
@@ -156,7 +155,7 @@ bool bitmap_test_opaque(void *vbitmap)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(void *vbitmap)
+static bool bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	cairo_format_t fmt;
@@ -181,8 +180,7 @@ bool bitmap_get_opaque(void *vbitmap)
  * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
-
-unsigned char *bitmap_get_buffer(void *vbitmap)
+static unsigned char *bitmap_get_buffer(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	int pixel_loop;
@@ -272,8 +270,7 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return width of a pixel row in the bitmap
  */
-
-size_t bitmap_get_rowstride(void *vbitmap)
+static size_t bitmap_get_rowstride(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
@@ -288,8 +285,7 @@ size_t bitmap_get_rowstride(void *vbitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixel
  */
-
-size_t bitmap_get_bpp(void *vbitmap)
+static size_t bitmap_get_bpp(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
@@ -304,8 +300,7 @@ size_t bitmap_get_bpp(void *vbitmap)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-
-void bitmap_destroy(void *vbitmap)
+static void bitmap_destroy(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
@@ -328,8 +323,7 @@ void bitmap_destroy(void *vbitmap)
  * \param  flags    modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
-
-bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
+static bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
@@ -343,7 +337,8 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(void *vbitmap) {
+static void bitmap_modified(void *vbitmap)
+{
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	int pixel_loop;
 	int pixel_count; 
@@ -422,18 +417,37 @@ void bitmap_modified(void *vbitmap) {
 	gbitmap->converted = true;
 }
 
-int bitmap_get_width(void *vbitmap){
+/* exported interface documented in gtk/bitmap.h */
+int nsgtk_bitmap_get_width(void *vbitmap)
+{
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
 
 	return cairo_image_surface_get_width(gbitmap->surface);
 }
 
-int bitmap_get_height(void *vbitmap){
+/* exported interface documented in gtk/bitmap.h */
+int nsgtk_bitmap_get_height(void *vbitmap)
+{
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);
 
 	return cairo_image_surface_get_height(gbitmap->surface);
 }
 
+static struct gui_bitmap_table bitmap_table = {
+	.create = bitmap_create,
+	.destroy = bitmap_destroy,
+	.set_opaque = bitmap_set_opaque,
+	.get_opaque = bitmap_get_opaque,
+	.test_opaque = bitmap_test_opaque,
+	.get_buffer = bitmap_get_buffer,
+	.get_rowstride = bitmap_get_rowstride,
+	.get_width = nsgtk_bitmap_get_width,
+	.get_height = nsgtk_bitmap_get_height,
+	.get_bpp = bitmap_get_bpp,
+	.save = bitmap_save,
+	.modified = bitmap_modified,
+};
 
+struct gui_bitmap_table *nsgtk_bitmap_table = &bitmap_table;

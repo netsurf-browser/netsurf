@@ -66,6 +66,7 @@
 #include "gtk/selection.h"
 #include "gtk/search.h"
 #include "gtk/ssl_cert.h"
+#include "gtk/bitmap.h"
 
 bool nsgtk_complete = false;
 
@@ -1112,6 +1113,7 @@ int main(int argc, char** argv)
 		.llcache = filesystem_llcache_table,
 		.search = nsgtk_search_table,
 		.search_web = nsgtk_search_web_table,
+		.bitmap = nsgtk_bitmap_table,
 	};
 
         ret = netsurf_register(&nsgtk_table);

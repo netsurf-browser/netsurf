@@ -462,8 +462,8 @@ static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 		return nsgtk_print_plot_pixbuf(x, y, width, height, bitmap, bg);
 	}
 
-	width = bitmap_get_width(bitmap);
-	height = bitmap_get_height(bitmap);
+	width = nsgtk_bitmap_get_width(bitmap);
+	height = nsgtk_bitmap_get_height(bitmap);
 
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
