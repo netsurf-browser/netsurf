@@ -95,19 +95,20 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-
 #include <curl/curl.h>
 
-#include "image/bitmap.h"
-#include "content/content.h"
-#include "content/urldb.h"
-#include "desktop/cookie_manager.h"
 #include "utils/nsoption.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/bloom.h"
+#include "image/bitmap.h"
+#include "desktop/cookie_manager.h"
+#include "desktop/gui_internal.h"
+
+#include "content/content.h"
+#include "content/urldb.h"
 
 struct cookie_internal_data {
 	char *name;		/**< Cookie name */
@@ -2330,8 +2331,9 @@ static void urldb_destroy_path_node_content(struct path_data *node)
 		free(node->fragment[i]);
 	free(node->fragment);
 
-	if (node->thumb)
-		bitmap_destroy(node->thumb);
+	if (node->thumb) {
+		guit->bitmap->destroy(node->thumb);
+	}
 
 	free(node->urld.title);
 
@@ -3065,8 +3067,9 @@ void urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
 
 		LOG(("Setting bitmap on %s", nsurl_access(url)));
 
-		if (p->thumb && p->thumb != bitmap)
-			bitmap_destroy(p->thumb);
+		if (p->thumb && p->thumb != bitmap) {
+			guit->bitmap->destroy(p->thumb);
+		}
 
 		p->thumb = bitmap;
 	}

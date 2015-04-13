@@ -53,31 +53,72 @@
 #ifndef _NETSURF_IMAGE_BITMAP_H_
 #define _NETSURF_IMAGE_BITMAP_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
-
 #define BITMAP_NEW		0
 #define BITMAP_OPAQUE		(1 << 0)	/** image is opaque */
 #define BITMAP_MODIFIED		(1 << 1)	/** buffer has been modified */
 #define BITMAP_CLEAR_MEMORY	(1 << 2)	/** memory should be wiped */
 
 struct content;
-
-/** An opaque image. */
 struct bitmap;
 
-void *bitmap_create(int width, int height, unsigned int state);
-void bitmap_set_opaque(void *bitmap, bool opaque);
-bool bitmap_test_opaque(void *bitmap);
-bool bitmap_get_opaque(void *bitmap);
-unsigned char *bitmap_get_buffer(void *bitmap);
-size_t bitmap_get_rowstride(void *bitmap);
-size_t bitmap_get_bpp(void *bitmap);
-void bitmap_destroy(void *bitmap);
-bool bitmap_save(void *bitmap, const char *path, unsigned flags);
-void bitmap_modified(void *bitmap);
+/**
+ * Bitmap operations.
+ */
+struct gui_bitmap_table {
+	/* Mandantory entries */
 
-int bitmap_get_width(void *bitmap);
-int bitmap_get_height(void *bitmap);
+	/**
+	 * Create a new bitmap
+	 */
+	void *(*create)(int width, int height, unsigned int state);
+
+	/**
+	 * Destroy a bitmap
+	 */
+	void (*destroy)(void *bitmap);
+
+	/**
+	 * Set the opacity of a bitmap
+	 */
+	void (*set_opaque)(void *bitmap, bool opaque);
+
+	/**
+	 * Get the opacity of a bitmap
+	 */
+	bool (*get_opaque)(void *bitmap);
+
+	/**
+	 */
+	bool (*test_opaque)(void *bitmap);
+
+	/**
+	 */
+	unsigned char *(*get_buffer)(void *bitmap);
+
+	/**
+	 */
+	size_t (*get_rowstride)(void *bitmap);
+
+	/**
+	 */
+	int (*get_width)(void *bitmap);
+
+	/**
+	 */
+	int (*get_height)(void *bitmap);
+
+	/**
+	 */
+	size_t (*get_bpp)(void *bitmap);
+
+	/**
+	 */
+	bool (*save)(void *bitmap, const char *path, unsigned flags);
+
+	/**
+	 * Marks a bitmap as modified.
+	 */
+	void (*modified)(void *bitmap);
+};
 
 #endif

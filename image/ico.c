@@ -20,22 +20,18 @@
  * Content for image/ico (implementation)
  */
 
-#include <assert.h>
-#include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libnsbmp.h>
-#include "utils/config.h"
-#include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "image/bmp.h"
-#include "image/ico.h"
-#include "image/image.h"
+
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
+
+#include "image/image.h"
+#include "image/bitmap.h"
+#include "image/ico.h"
 
 typedef struct nsico_content {
 	struct content base;
@@ -44,10 +40,36 @@ typedef struct nsico_content {
 
 } nsico_content;
 
+/**
+ * Callback for libnsbmp; forwards the call to bitmap_create()
+ *
+ * \param  width   width of image in pixels
+ * \param  height  width of image in pixels
+ * \param  state   a flag word indicating the initial state
+ * \return an opaque struct bitmap, or NULL on memory exhaustion
+ */
+static void *nsico_bitmap_create(int width, int height, unsigned int bmp_state)
+{
+	unsigned int bitmap_state = BITMAP_NEW;
+
+	/* set bitmap state based on bmp state */
+	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
+	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
+			BITMAP_CLEAR_MEMORY : 0;
+
+	/* return the created bitmap */
+	return guit->bitmap->create(width, height, bitmap_state);
+}
 
 static nserror nsico_create_ico_data(nsico_content *c)
 {
 	union content_msg_data msg_data;
+	bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
+		.bitmap_create = nsico_bitmap_create,
+		.bitmap_destroy = guit->bitmap->destroy,
+		.bitmap_get_buffer = guit->bitmap->get_buffer,
+		.bitmap_get_bpp = guit->bitmap->get_bpp
+	};
 
 	c->ico = calloc(sizeof(ico_collection), 1);
 	if (c->ico == NULL) {
@@ -173,7 +195,7 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 			return false;
 		} else {
 			LOG(("Decoding bitmap"));
-			bitmap_modified(bmp->bitmap);
+			guit->bitmap->modified(bmp->bitmap);
 		}
 
 	}
@@ -243,7 +265,7 @@ static void *nsico_get_internal(const struct content *c, void *context)
 		if (bmp_decode(bmp) != BMP_OK) {
 			return NULL;
 		} else {
-			bitmap_modified(bmp->bitmap);
+			guit->bitmap->modified(bmp->bitmap);
 		}
 	}
 

@@ -36,14 +36,9 @@
 #include <stdlib.h>
 #include <libnsgif.h>
 
-#include "utils/config.h"
-#include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
 #include "utils/nsoption.h"
 #include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "desktop/plotters.h"
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
@@ -68,24 +63,21 @@ typedef struct nsgif_content {
  */
 static void *nsgif_bitmap_create(int width, int height)
 {
-	return bitmap_create(width, height, BITMAP_NEW);
+	return guit->bitmap->create(width, height, BITMAP_NEW);
 }
 
-/* The Bitmap callbacks function table;
- * necessary for interaction with nsgiflib.
- */
-static gif_bitmap_callback_vt gif_bitmap_callbacks = {
-	.bitmap_create = nsgif_bitmap_create,
-	.bitmap_destroy = bitmap_destroy,
-	.bitmap_get_buffer = bitmap_get_buffer,
-	.bitmap_set_opaque = bitmap_set_opaque,
-	.bitmap_test_opaque = bitmap_test_opaque,
-	.bitmap_modified = bitmap_modified
-};
 
 static nserror nsgif_create_gif_data(nsgif_content *c)
 {
 	union content_msg_data msg_data;
+	gif_bitmap_callback_vt gif_bitmap_callbacks = {
+		.bitmap_create = nsgif_bitmap_create,
+		.bitmap_destroy = guit->bitmap->destroy,
+		.bitmap_get_buffer = guit->bitmap->get_buffer,
+		.bitmap_set_opaque = guit->bitmap->set_opaque,
+		.bitmap_test_opaque = guit->bitmap->test_opaque,
+		.bitmap_modified = guit->bitmap->modified
+	};
 
 	/* Initialise our data structure */
 	c->gif = calloc(sizeof(gif_animation), 1);

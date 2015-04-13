@@ -17,23 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Content for image/bmp (implementation)
+/**
+ * \file
+ * implementation of content handler for BMP images.
  */
 
-#include <assert.h>
-#include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libnsbmp.h>
 
-#include "utils/config.h"
-#include "content/content_protected.h"
-#include "content/hlcache.h"
-#include "desktop/plotters.h"
-#include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
+#include "desktop/plotters.h"
 
 #include "image/bitmap.h"
 #include "image/bmp.h"
@@ -46,9 +42,36 @@ typedef struct nsbmp_content {
 	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsbmp_content;
 
+/**
+ * Callback for libnsbmp; forwards the call to bitmap_create()
+ *
+ * \param  width   width of image in pixels
+ * \param  height  width of image in pixels
+ * \param  state   a flag word indicating the initial state
+ * \return an opaque struct bitmap, or NULL on memory exhaustion
+ */
+static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
+{
+	unsigned int bitmap_state = BITMAP_NEW;
+
+	/* set bitmap state based on bmp state */
+	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
+	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
+			BITMAP_CLEAR_MEMORY : 0;
+
+	/* return the created bitmap */
+	return guit->bitmap->create(width, height, bitmap_state);
+}
+
 static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 {	
 	union content_msg_data msg_data;
+	bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
+		.bitmap_create = nsbmp_bitmap_create,
+		.bitmap_destroy = guit->bitmap->destroy,
+		.bitmap_get_buffer = guit->bitmap->get_buffer,
+		.bitmap_get_bpp = guit->bitmap->get_bpp
+	};
 
 	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
 	if (bmp->bmp == NULL) {
@@ -61,7 +84,6 @@ static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 
 	return NSERROR_OK;
 }
-
 
 static nserror nsbmp_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
@@ -92,37 +114,6 @@ static nserror nsbmp_create(const content_handler *handler,
 
 	return NSERROR_OK;
 }
-
-/**
- * Callback for libnsbmp; forwards the call to bitmap_create()
- *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
- * \return an opaque struct bitmap, or NULL on memory exhaustion
- */
-static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
-{
-	unsigned int bitmap_state = BITMAP_NEW;
-
-	/* set bitmap state based on bmp state */
-	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
-	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
-			BITMAP_CLEAR_MEMORY : 0;
-
-	/* return the created bitmap */
-	return bitmap_create(width, height, bitmap_state);
-}
-
-/* The Bitmap callbacks function table;
- * necessary for interaction with nsbmplib.
- */
-bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
-	.bitmap_create = nsbmp_bitmap_create,
-	.bitmap_destroy = bitmap_destroy,
-	.bitmap_get_buffer = bitmap_get_buffer,
-	.bitmap_get_bpp = bitmap_get_bpp
-};
 
 static bool nsbmp_convert(struct content *c)
 {
@@ -171,7 +162,7 @@ static bool nsbmp_convert(struct content *c)
 
 	/* exit as a success */
 	bmp->bitmap = bmp->bmp->bitmap;
-	bitmap_modified(bmp->bitmap);
+	guit->bitmap->modified(bmp->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);

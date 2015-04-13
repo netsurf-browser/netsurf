@@ -3698,12 +3698,12 @@ static struct bitmap * treeview_generate_triangle_bitmap(
 	colour colour4 = fg;
 
 	/* Create the bitmap */
-	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 
-	rpos = bitmap_get_buffer(b);
-	stride = bitmap_get_rowstride(b);
+	rpos = guit->bitmap->get_buffer(b);
+	stride = guit->bitmap->get_rowstride(b);
 
 	/* Draw the triangle */
 	for (y = 0; y < size; y++) {
@@ -3770,7 +3770,7 @@ static struct bitmap * treeview_generate_triangle_bitmap(
 		rpos += stride;
 	}
 
-	bitmap_modified(b);
+	guit->bitmap->modified(b);
 
 	return b;
 }
@@ -3793,29 +3793,29 @@ static struct bitmap * treeview_generate_copy_bitmap(
 	if (orig == NULL)
 		return NULL;
 
-	assert(size == bitmap_get_width(orig));
-	assert(size == bitmap_get_height(orig));
+	assert(size == guit->bitmap->get_width(orig));
+	assert(size == guit->bitmap->get_height(orig));
 
 	/* Create the bitmap */
-	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 
-	stride = bitmap_get_rowstride(b);
-	assert(stride == bitmap_get_rowstride(orig));
+	stride = guit->bitmap->get_rowstride(b);
+	assert(stride == guit->bitmap->get_rowstride(orig));
 
-	data = bitmap_get_buffer(b);
-	orig_data = bitmap_get_buffer(orig);
+	data = guit->bitmap->get_buffer(b);
+	orig_data = guit->bitmap->get_buffer(orig);
 
 	/* Copy the bitmap */
 	memcpy(data, orig_data, stride * size);
 
-	bitmap_modified(b);
+	guit->bitmap->modified(b);
 
 	/* We've not modified the original image, but we called
 	 * bitmap_get_buffer(), so we need to pair that with a
 	 * bitmap_modified() call to appease certain front ends. */
-	bitmap_modified(orig);
+	guit->bitmap->modified(orig);
 
 	return b;
 }
@@ -3841,19 +3841,19 @@ static struct bitmap * treeview_generate_rotate_bitmap(
 	if (orig == NULL)
 		return NULL;
 
-	assert(size == bitmap_get_width(orig));
-	assert(size == bitmap_get_height(orig));
+	assert(size == guit->bitmap->get_width(orig));
+	assert(size == guit->bitmap->get_height(orig));
 
 	/* Create the bitmap */
-	b = bitmap_create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
+	b = guit->bitmap->create(size, size, BITMAP_NEW | BITMAP_OPAQUE);
 	if (b == NULL)
 		return NULL;
 
-	stride = bitmap_get_rowstride(b);
-	assert(stride == bitmap_get_rowstride(orig));
+	stride = guit->bitmap->get_rowstride(b);
+	assert(stride == guit->bitmap->get_rowstride(orig));
 
-	rpos = bitmap_get_buffer(b);
-	orig_data = bitmap_get_buffer(orig);
+	rpos = guit->bitmap->get_buffer(b);
+	orig_data = guit->bitmap->get_buffer(orig);
 
 	/* Copy the rotated bitmap */
 	for (y = 0; y < size; y++) {
@@ -3871,12 +3871,13 @@ static struct bitmap * treeview_generate_rotate_bitmap(
 		rpos += stride;
 	}
 
-	bitmap_modified(b);
+	guit->bitmap->modified(b);
 
 	/* We've not modified the original image, but we called
 	 * bitmap_get_buffer(), so we need to pair that with a
-	 * bitmap_modified() call to appease certain front ends. */
-	bitmap_modified(orig);
+	 * bitmap_modified() call to appease certain front ends.
+	 */
+	guit->bitmap->modified(orig);
 
 	return b;
 }
@@ -3988,14 +3989,14 @@ nserror treeview_fini(void)
 		hlcache_handle_release(treeview_res[i].c);
 	}
 
-	bitmap_destroy(plot_style_odd.furn[TREE_FURN_EXPAND].bmp);
-	bitmap_destroy(plot_style_odd.furn[TREE_FURN_EXPAND].sel);
-	bitmap_destroy(plot_style_even.furn[TREE_FURN_EXPAND].bmp);
-	bitmap_destroy(plot_style_even.furn[TREE_FURN_EXPAND].sel);
-	bitmap_destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].bmp);
-	bitmap_destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].sel);
-	bitmap_destroy(plot_style_even.furn[TREE_FURN_CONTRACT].bmp);
-	bitmap_destroy(plot_style_even.furn[TREE_FURN_CONTRACT].sel);
+	guit->bitmap->destroy(plot_style_odd.furn[TREE_FURN_EXPAND].bmp);
+	guit->bitmap->destroy(plot_style_odd.furn[TREE_FURN_EXPAND].sel);
+	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_EXPAND].bmp);
+	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_EXPAND].sel);
+	guit->bitmap->destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].bmp);
+	guit->bitmap->destroy(plot_style_odd.furn[TREE_FURN_CONTRACT].sel);
+	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_CONTRACT].bmp);
+	guit->bitmap->destroy(plot_style_even.furn[TREE_FURN_CONTRACT].sel);
 
 	tree_g.initialised = false;
 

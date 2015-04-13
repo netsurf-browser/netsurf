@@ -16,19 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
+#include <stdlib.h>
 
-#include "utils/utils.h"
-#include "utils/errors.h"
-#include "utils/config.h"
 #include "utils/log.h"
-#include "desktop/plotters.h"
+#include "utils/messages.h"
 #include "content/content.h"
-#include "image/bitmap.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_internal.h"
 
+#include "image/bitmap.h"
 #include "image/bmp.h"
 #include "image/gif.h"
 #include "image/ico.h"
@@ -38,7 +35,6 @@
 #include "image/rsvg.h"
 #include "image/svg.h"
 #include "image/webp.h"
-
 #include "image/image.h"
 
 /**
@@ -109,7 +105,7 @@ nserror image_init(void)
 
 
 bool image_bitmap_plot(struct bitmap *bitmap,
-		       struct content_redraw_data *data, 
+		       struct content_redraw_data *data,
 		       const struct rect *clip,
 		       const struct redraw_context *ctx)
 {
@@ -121,15 +117,15 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 	plot_style_t fill_style;
 	struct rect area;
 
-	width = bitmap_get_width(bitmap);
+	width = guit->bitmap->get_width(bitmap);
 	if (width == 1) {
-		height = bitmap_get_height(bitmap);
+		height = guit->bitmap->get_height(bitmap);
 		if (height == 1) {
 			/* optimise 1x1 bitmap plot */
-			pixel = bitmap_get_buffer(bitmap);
+			pixel = guit->bitmap->get_buffer(bitmap);
 			fill_style.fill_colour = pixel_to_colour(pixel);
 
-			if (bitmap_get_opaque(bitmap) || 
+			if (guit->bitmap->get_opaque(bitmap) ||
 			    ((fill_style.fill_colour & 0xff000000) == 0xff000000)) {
 
 				area = *clip;
@@ -147,8 +143,8 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 				fill_style.stroke_type = PLOT_OP_TYPE_NONE;
 				fill_style.fill_type = PLOT_OP_TYPE_SOLID;
 
-				return ctx->plot->rectangle(area.x0, area.y0, 
-							    area.x1, area.y1,  
+				return ctx->plot->rectangle(area.x0, area.y0,
+							    area.x1, area.y1,
 							    &fill_style);
 
 			} else if ((fill_style.fill_colour & 0xff000000) == 0) {
@@ -157,7 +153,7 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 			}
 		}
 	}
- 
+
 	/* do the plot */
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -166,6 +162,4 @@ bool image_bitmap_plot(struct bitmap *bitmap,
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
 				 bitmap, data->background_colour, flags);
-	
-
 }

@@ -37,6 +37,7 @@ struct gui_utf8_table;
 struct gui_search_table;
 struct gui_search_web_table;
 struct gui_llcache_table;
+struct gui_bitmap_table;
 
 /**
  * NetSurf operation function table
@@ -119,6 +120,15 @@ struct netsurf_table {
 	 * uses the default implementation.
 	 */
 	struct gui_llcache_table *llcache;
+
+	/**
+	 * Bitmap table.
+	 *
+	 * Used by the image convertors as a generic interface to
+	 * native platform-specific image formats. The table
+	 * is mandantory and must be provided.
+	 */
+	struct gui_bitmap_table *bitmap;
 };
 
 #endif

@@ -34,6 +34,7 @@
 #include "content/hlcache.h"
 #include "image/bitmap.h"
 #include "desktop/browser.h"
+#include "desktop/gui_internal.h"
 #include "utils/nsoption.h"
 
 #include "utils/http.h"
@@ -1243,7 +1244,7 @@ bool content__get_opaque(struct content *c)
 		struct bitmap *bitmap = NULL;
 		bitmap = c->handler->get_internal(c, NULL);
 		if (bitmap != NULL) { 
-			opaque = bitmap_get_opaque(bitmap);
+			opaque = guit->bitmap->get_opaque(bitmap);
 		}
 	}
 

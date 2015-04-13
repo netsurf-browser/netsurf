@@ -66,9 +66,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "image/bitmap.h"
 #include "utils/log.h"
+#include "utils/errors.h"
+#include "image/bitmap.h"
 #include "content/content.h"
+
+#include "desktop/gui_internal.h"
 #include "desktop/knockout.h"
 #include "desktop/plotters.h"
 
@@ -772,8 +775,9 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	}
 
 	/* tiled bitmaps both knock out and get knocked out */
-	if (bitmap_get_opaque(bitmap))
+	if (guit->bitmap->get_opaque(bitmap)) {
 		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
+	}
 	knockout_boxes[knockout_box_cur].bbox.x0 = kx0;
 	knockout_boxes[knockout_box_cur].bbox.y0 = ky0;
 	knockout_boxes[knockout_box_cur].bbox.x1 = kx1;

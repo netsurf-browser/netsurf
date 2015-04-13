@@ -23,19 +23,17 @@
  * This implementation uses the IJG JPEG library.
  */
 
-#include <assert.h>
-#include <setjmp.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
-
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "image/image_cache.h"
+#include <setjmp.h>
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
+
+#include "image/image_cache.h"
+#include "image/bitmap.h"
 
 #define JPEG_INTERNAL_OPTIONS
 #include "jpeglib.h"
@@ -224,23 +222,23 @@ jpeg_cache_convert(struct content *c)
 	height = cinfo.output_height;
 
 	/* create opaque bitmap (jpegs cannot be transparent) */
-	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
+	bitmap = guit->bitmap->create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
 	if (bitmap == NULL) {
 		/* empty bitmap could not be created */
 		jpeg_destroy_decompress(&cinfo);
 		return NULL;
 	}
 
-	pixels = bitmap_get_buffer(bitmap);
+	pixels = guit->bitmap->get_buffer(bitmap);
 	if (pixels == NULL) {
 		/* bitmap with no buffer available */
-		bitmap_destroy(bitmap);
+		guit->bitmap->destroy(bitmap);
 		jpeg_destroy_decompress(&cinfo);
 		return NULL;
 	}
 
 	/* Convert scanlines from jpeg into bitmap */
-	rowstride = bitmap_get_rowstride(bitmap);
+	rowstride = guit->bitmap->get_rowstride(bitmap);
 	do {
 		JSAMPROW scanlines[1];
 
@@ -265,7 +263,7 @@ jpeg_cache_convert(struct content *c)
 }
 #endif
 	} while (cinfo.output_scanline != cinfo.output_height);
-	bitmap_modified(bitmap);
+	guit->bitmap->modified(bitmap);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

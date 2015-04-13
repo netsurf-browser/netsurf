@@ -37,6 +37,7 @@
 #include "css/css.h"
 #include "image/bitmap.h"
 
+#include "desktop/gui_internal.h"
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
@@ -511,9 +512,9 @@ nserror browser_window_history_add(struct browser_window *bw,
 	bitmap = urldb_get_thumbnail(nsurl);
 	if (bitmap == NULL) {
 		LOG(("Creating thumbnail for %s", nsurl_access(nsurl)));
-		bitmap = bitmap_create(WIDTH, HEIGHT,
-				       BITMAP_NEW | BITMAP_CLEAR_MEMORY |
-				       BITMAP_OPAQUE);
+		bitmap = guit->bitmap->create(WIDTH, HEIGHT,
+					      BITMAP_NEW | BITMAP_CLEAR_MEMORY |
+					      BITMAP_OPAQUE);
 		if (bitmap != NULL) {
 			if (thumbnail_create(content, bitmap)) {
 				/* Successful thumbnail so register it
@@ -525,7 +526,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 				 * silently but clean up bitmap.
 				 */
 				LOG(("Thumbnail bitmap creation failed"));
-				bitmap_destroy(bitmap);
+				guit->bitmap->destroy(bitmap);
 				bitmap = NULL;
 			}
 		}

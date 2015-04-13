@@ -229,7 +229,7 @@ static void image_cache__free_bitmap(struct image_cache_entry_s *centry)
 		     image_cache->current_age - centry->bitmap_age,
 		     centry->redraw_count));
 #endif
-		bitmap_destroy(centry->bitmap);
+		guit->bitmap->destroy(centry->bitmap);
 		centry->bitmap = NULL;
 		image_cache->total_bitmap_size -= centry->bitmap_size;
 		image_cache->bitmap_count--;
@@ -484,7 +484,7 @@ nserror image_cache_add(struct content *content,
 	/* set bitmap entry if one is passed, free extant one if present */
 	if (bitmap != NULL) {
 		if (centry->bitmap != NULL) {
-			bitmap_destroy(centry->bitmap);
+			guit->bitmap->destroy(centry->bitmap);
 		} else {
 			image_cache_stats_bitmap_add(centry);
 		}

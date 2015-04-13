@@ -16,10 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "utils/errors.h"
+#include "utils/file.h"
+#include "image/bitmap.h"
 #include "content/hlcache.h"
 #include "content/backing_store.h"
 
-#include "utils/file.h"
 #include "desktop/save_pdf.h"
 #include "desktop/download.h"
 #include "desktop/searchweb.h"
@@ -552,6 +558,71 @@ static nserror verify_file_register(struct gui_file_table *gft)
 	return NSERROR_OK;
 }
 
+/**
+ * verify bitmap table is valid
+ *
+ * \param gbt The bitmap table to verify.
+ * \return NSERROR_OK if teh table is valid else NSERROR_BAD_PARAMETER.
+ */
+static nserror verify_bitmap_register(struct gui_bitmap_table *gbt)
+{
+	/* check table is present */
+	if (gbt == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	/* check the mandantory fields are set */
+	if (gbt->create == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->destroy == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->set_opaque == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_opaque == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->test_opaque == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_buffer == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_rowstride == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_width == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_height == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->get_bpp == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->save == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	if (gbt->modified == NULL) {
+		return NSERROR_BAD_PARAMETER;
+	}
+
+	return NSERROR_OK;
+}
+
 static void gui_default_quit(void)
 {
 }
@@ -647,6 +718,12 @@ nserror netsurf_register(struct netsurf_table *gt)
 
 	/* fetch table */
 	err = verify_fetch_register(gt->fetch);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	/* bitmap table */
+	err = verify_bitmap_register(gt->bitmap);
 	if (err != NSERROR_OK) {
 		return err;
 	}
