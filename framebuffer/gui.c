@@ -54,6 +54,7 @@
 #include "framebuffer/font.h"
 #include "framebuffer/clipboard.h"
 #include "framebuffer/fetch.h"
+#include "framebuffer/bitmap.h"
 
 #include "content/urldb.h"
 #include "content/fetch.h"
@@ -106,7 +107,7 @@ static struct gui_drag {
  */
 static void die(const char *error)
 {
-	LOG(("%s", error));
+	fprintf(stderr, "%s\n", error);
 	exit(1);
 }
 
@@ -2081,6 +2082,7 @@ main(int argc, char** argv)
 		.clipboard = framebuffer_clipboard_table,
 		.fetch = framebuffer_fetch_table,
 		.utf8 = framebuffer_utf8_table,
+		.bitmap = framebuffer_bitmap_table,
 	};
 
         ret = netsurf_register(&framebuffer_table);

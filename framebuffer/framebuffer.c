@@ -37,6 +37,7 @@
 #include "framebuffer/fbtk.h"
 #include "framebuffer/framebuffer.h"
 #include "framebuffer/font.h"
+#include "framebuffer/bitmap.h"
 
 /* netsurf framebuffer library handle */
 static nsfb_t *nsfb;
@@ -215,7 +216,7 @@ framebuffer_plot_bitmap(int x, int y,
 	 * a flat fill of the area.  Can only be done when image is fully
 	 * opaque. */
 	if ((width == 1) && (height == 1)) {
-		if (bitmap_get_opaque(bm)) {
+		if (framebuffer_bitmap_get_opaque(bm)) {
 			/** TODO: Currently using top left pixel. Maybe centre
 			 *        pixel or average value would be better. */
 			return nsfb_plot_rectangle_fill(nsfb, &clipbox,

@@ -16,7 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
+/**
+ * \file
  * Generic bitmap handling (GDK / GTK+ implementation).
  *
  * This implements the interface given by desktop/bitmap.h using GdkPixbufs.

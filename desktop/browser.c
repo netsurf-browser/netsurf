@@ -2518,7 +2518,7 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 }
 
 /**
- * Set bowser window scale.
+ * Set browser window scale.
  *
  * \param bw Browser window.
  * \param scale value.
