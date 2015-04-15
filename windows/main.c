@@ -43,6 +43,7 @@
 #include "windows/font.h"
 #include "windows/filetype.h"
 #include "windows/pointers.h"
+#include "windows/bitmap.h"
 #include "windows/gui.h"
 
 static char **respaths; /** resource search path vector. */
@@ -130,6 +131,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		.fetch = win32_fetch_table,
 		.file = win32_file_table,
 		.utf8 = win32_utf8_table,
+		.bitmap = win32_bitmap_table,
 	};
 	win32_fetch_table->get_resource_url = gui_get_resource_url;
 

@@ -22,6 +22,8 @@
 
 #include "desktop/plotters.h"
 
+struct gui_bitmap_table *win32_bitmap_table;
+
 struct bitmap {
 	HBITMAP windib;
 	BITMAPV5HEADER *pbmi;
@@ -34,5 +36,8 @@ struct bitmap {
 struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height);
 struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
 		bitmap_flags_t flags);
+
+void *win32_bitmap_create(int width, int height, unsigned int state);
+void win32_bitmap_destroy(void *bitmap);
 
 #endif

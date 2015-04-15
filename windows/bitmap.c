@@ -17,18 +17,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+
 #include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
-
-#include "utils/config.h"
-
 #include <windows.h>
 
-#include "image/bitmap.h"
-#include "windows/bitmap.h"
-
 #include "utils/log.h"
+#include "image/bitmap.h"
+
+#include "windows/bitmap.h"
 
 /**
  * Create a bitmap.
@@ -38,8 +37,7 @@
  * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-
-void *bitmap_create(int width, int height, unsigned int state)
+void *win32_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	BITMAPV5HEADER *pbmi;
@@ -99,14 +97,13 @@ void *bitmap_create(int width, int height, unsigned int state)
 /**
  * Return a pointer to the pixel data in a bitmap.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return pointer to the pixel buffer
- *
  * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return pointer to the pixel buffer
  */
-
-unsigned char *bitmap_get_buffer(void *bitmap)
+static unsigned char *bitmap_get_buffer(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	if (bitmap == NULL) {
@@ -124,8 +121,7 @@ unsigned char *bitmap_get_buffer(void *bitmap)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return width of a pixel row in the bitmap
  */
-
-size_t bitmap_get_rowstride(void *bitmap)
+static size_t bitmap_get_rowstride(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -143,8 +139,7 @@ size_t bitmap_get_rowstride(void *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-
-void bitmap_destroy(void *bitmap)
+void win32_bitmap_destroy(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -167,8 +162,7 @@ void bitmap_destroy(void *bitmap)
  * \param flags flags controlling how the bitmap is saved.
  * \return true on success, false on error and error reported
  */
-
-bool bitmap_save(void *bitmap, const char *path, unsigned flags)
+static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	return true;
 }
@@ -179,7 +173,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(void *bitmap) {
+static void bitmap_modified(void *bitmap) {
 }
 
 /**
@@ -188,7 +182,7 @@ void bitmap_modified(void *bitmap) {
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(void *bitmap, bool opaque)
+static void bitmap_set_opaque(void *bitmap, bool opaque)
 {	
 	struct bitmap *bm = bitmap;
 
@@ -208,7 +202,7 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(void *bitmap)
+static bool bitmap_test_opaque(void *bitmap)
 {
 	int tst;
 	struct bitmap *bm = bitmap;
@@ -236,7 +230,7 @@ bool bitmap_test_opaque(void *bitmap)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(void *bitmap)
+static bool bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -248,7 +242,7 @@ bool bitmap_get_opaque(void *bitmap)
 	return bm->opaque;
 }
 
-int bitmap_get_width(void *bitmap)
+static int bitmap_get_width(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -260,7 +254,7 @@ int bitmap_get_width(void *bitmap)
 	return(bm->width);
 }
 
-int bitmap_get_height(void *bitmap)
+static int bitmap_get_height(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -272,7 +266,7 @@ int bitmap_get_height(void *bitmap)
 	return(bm->height);
 }
 
-size_t bitmap_get_bpp(void *bitmap)
+static size_t bitmap_get_bpp(void *bitmap)
 {
 	return 4;
 }
@@ -350,3 +344,20 @@ struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
 	ret->height = height;
 	return ret;
 }
+
+static struct gui_bitmap_table bitmap_table = {
+	.create = win32_bitmap_create,
+	.destroy = win32_bitmap_destroy,
+	.set_opaque = bitmap_set_opaque,
+	.get_opaque = bitmap_get_opaque,
+	.test_opaque = bitmap_test_opaque,
+	.get_buffer = bitmap_get_buffer,
+	.get_rowstride = bitmap_get_rowstride,
+	.get_width = bitmap_get_width,
+	.get_height = bitmap_get_height,
+	.get_bpp = bitmap_get_bpp,
+	.save = bitmap_save,
+	.modified = bitmap_modified,
+};
+
+struct gui_bitmap_table *win32_bitmap_table = &bitmap_table;

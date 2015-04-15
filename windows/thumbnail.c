@@ -65,7 +65,7 @@ thumbnail_create(hlcache_handle *content,
 	}
 
 	/* create a full size bitmap and plot into it */
-	fsbitmap = bitmap_create(width, height,	BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
+	fsbitmap = win32_bitmap_create(width, height, BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
 
 	SelectObject(bufferdc, fsbitmap->windib);
 
@@ -83,7 +83,7 @@ thumbnail_create(hlcache_handle *content,
 	
 	DeleteDC(bufferdc);
 	DeleteDC(minidc);
-	bitmap_destroy(fsbitmap);
+	win32_bitmap_destroy(fsbitmap);
 			
 	return true;
 }
