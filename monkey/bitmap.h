@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NS_MONKEY_FETCH_H
-#define NS_MONKEY_FETCH_H
+#ifndef NS_MONKEY_BITMAP_H
+#define NS_MONKEY_BITMAP_H
 
-struct gui_fetch_table *monkey_fetch_table;
+extern struct gui_bitmap_table *monkey_bitmap_table;
 
-#endif /* NS_MONKEY_FETCH_H */
+#endif /* NS_MONKEY_BITMAP_H */

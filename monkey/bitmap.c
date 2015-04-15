@@ -18,8 +18,11 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "image/bitmap.h"
+
+#include "monkey/bitmap.h"
 
 struct bitmap {
   void *ptr;
@@ -29,7 +32,7 @@ struct bitmap {
   unsigned int state;
 };
 
-void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, unsigned int state)
 {
   struct bitmap *ret = calloc(sizeof(*ret), 1);
   if (ret == NULL)
@@ -49,14 +52,14 @@ void *bitmap_create(int width, int height, unsigned int state)
   return ret;
 }
 
-void bitmap_destroy(void *bitmap)
+static void bitmap_destroy(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   free(bmap->ptr);
   free(bmap);
 }
 
-void bitmap_set_opaque(void *bitmap, bool opaque)
+static void bitmap_set_opaque(void *bitmap, bool opaque)
 {
   struct bitmap *bmap = bitmap;
   
@@ -66,56 +69,73 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
     bmap->state &= ~(BITMAP_OPAQUE);
 }
 
-bool bitmap_test_opaque(void *bitmap)
+static bool bitmap_test_opaque(void *bitmap)
 {
   return false;
 }
 
-bool bitmap_get_opaque(void *bitmap)
+static bool bitmap_get_opaque(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   
   return (bmap->state & BITMAP_OPAQUE) == BITMAP_OPAQUE;
 }
 
-unsigned char *bitmap_get_buffer(void *bitmap)
+static unsigned char *bitmap_get_buffer(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   
   return (unsigned char *)(bmap->ptr);
 }
 
-size_t bitmap_get_rowstride(void *bitmap)
+static size_t bitmap_get_rowstride(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   return bmap->width * 4;
 }
 
-size_t bitmap_get_bpp(void *bitmap)
+static size_t bitmap_get_bpp(void *bitmap)
 {
   /* OMG?! */
   return 4;
 }
 
-bool bitmap_save(void *bitmap, const char *path, unsigned flags)
+static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
   return true;
 }
 
-void bitmap_modified(void *bitmap)
+static void bitmap_modified(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   bmap->state |= BITMAP_MODIFIED;
 }
 
-int bitmap_get_width(void *bitmap)
+static int bitmap_get_width(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   return bmap->width;
 }
 
-int bitmap_get_height(void *bitmap)
+static int bitmap_get_height(void *bitmap)
 {
   struct bitmap *bmap = bitmap;
   return bmap->height;
 }
+
+static struct gui_bitmap_table bitmap_table = {
+  .create = bitmap_create,
+  .destroy = bitmap_destroy,
+  .set_opaque = bitmap_set_opaque,
+  .get_opaque = bitmap_get_opaque,
+  .test_opaque = bitmap_test_opaque,
+  .get_buffer = bitmap_get_buffer,
+  .get_rowstride = bitmap_get_rowstride,
+  .get_width = bitmap_get_width,
+  .get_height = bitmap_get_height,
+  .get_bpp = bitmap_get_bpp,
+  .save = bitmap_save,
+  .modified = bitmap_modified,
+};
+
+struct gui_bitmap_table *monkey_bitmap_table = &bitmap_table;

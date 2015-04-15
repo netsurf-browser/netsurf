@@ -37,6 +37,7 @@
 #include "monkey/filetype.h"
 #include "monkey/fetch.h"
 #include "monkey/schedule.h"
+#include "monkey/bitmap.h"
 
 char **respaths; /** resource search path vector */
 
@@ -140,6 +141,7 @@ main(int argc, char **argv)
     .window = monkey_window_table,
     .download = monkey_download_table,
     .fetch = monkey_fetch_table,
+    .bitmap = monkey_bitmap_table,
   };
 
   ret = netsurf_register(&monkey_table);
