@@ -108,7 +108,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 			return false;
 		sprite_header = (osspriteop_header *)(sprite_area + 1);
 	} else {
-		const uint8_t *pixbufp = bitmap_get_buffer(bitmap);
+		const uint8_t *pixbufp = riscos_bitmap_get_buffer(bitmap);
 		if (!pixbufp || !bitmap->sprite_area)
 			return false;
 		sprite_area = bitmap->sprite_area;
@@ -137,7 +137,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 
 	/* if we changed to 8bpp then go back to 32bpp */
 	if (thumbnail_32bpp_available != 1) {
-		const uint8_t *pixbufp = bitmap_get_buffer(bitmap);
+		const uint8_t *pixbufp = riscos_bitmap_get_buffer(bitmap);
 		_kernel_oserror *error;
 
 		if (!pixbufp || !bitmap->sprite_area) {
@@ -152,7 +152,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap)
 			return false;
 	}
 
-	bitmap_modified(bitmap);
+	riscos_bitmap_modified(bitmap);
 	return true;
 }
 
@@ -190,13 +190,13 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 
 	if (sprite_header->image != sprite_header->mask) {
 		/* build the sprite mask from the alpha channel */
-		void *buf = bitmap_get_buffer(bitmap);
+		void *buf = riscos_bitmap_get_buffer(bitmap);
 		unsigned *dp = (unsigned *) buf;
 		if (!dp)
 			return sprite_area;
-		int w = bitmap_get_width(bitmap);
-		int h = bitmap_get_height(bitmap);
-		int dp_offset = bitmap_get_rowstride(bitmap) / 4 - w;
+		int w = riscos_bitmap_get_width(bitmap);
+		int h = riscos_bitmap_get_height(bitmap);
+		int dp_offset = riscos_bitmap_get_rowstride(bitmap) / 4 - w;
 		int mp_offset = ((sprite_header->width + 1) * 4) - w;
 		byte *mp = (byte*)sprite_header + sprite_header->mask;
 		bool alpha = ((unsigned)sprite_header->mode & 0x80000000U) != 0;
@@ -228,7 +228,7 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap)
 {
 	unsigned image_size = ((bitmap->width + 3) & ~3) * bitmap->height;
-	bool opaque = bitmap_get_opaque(bitmap);
+	bool opaque = riscos_bitmap_get_opaque(bitmap);
 	osspriteop_header *sprite_header = NULL;
 	osspriteop_area *sprite_area = NULL;
 	unsigned area_size;

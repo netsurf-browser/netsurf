@@ -30,22 +30,24 @@
 #include <string.h>
 #include <swis.h>
 #include <unixlib/local.h>
-#include "oslib/osfile.h"
-#include "oslib/osfind.h"
-#include "oslib/osgbpb.h"
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
-#include "content/content.h"
-#include "image/bitmap.h"
-#include "riscos/bitmap.h"
-#include "riscos/image.h"
+#include <oslib/osfile.h>
+#include <oslib/osfind.h>
+#include <oslib/osgbpb.h>
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+
 #include "utils/nsoption.h"
-#include "riscos/palettes.h"
-#include "riscos/content-handlers/sprite.h"
-#include "riscos/tinct.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "content/content.h"
+#include "image/bitmap.h"
+
+#include "riscos/image.h"
+#include "riscos/palettes.h"
+#include "riscos/content-handlers/sprite.h"
+#include "riscos/tinct.h"
+#include "riscos/bitmap.h"
 
 /** Colour in the overlay sprite that allows the bitmap to show through */
 #define OVERLAY_INDEX 0xfe
@@ -109,8 +111,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
  * \param  state the state to create the bitmap in.
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
-
-void *bitmap_create(int width, int height, unsigned int state)
+void *riscos_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
@@ -129,91 +130,30 @@ void *bitmap_create(int width, int height, unsigned int state)
 
 
 /**
- * Overlay a sprite onto the given bitmap
+ * Return a pointer to the pixel data in a bitmap.
  *
- * \param  bitmap  bitmap object
- * \param  s       8bpp sprite to be overlayed onto bitmap
+ * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
+ * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \return pointer to the pixel buffer
  */
-
-void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
+unsigned char *riscos_bitmap_get_buffer(void *vbitmap)
 {
-	const os_colour *palette;
-	const byte *sp, *mp;
-	bool masked = false;
-	bool alpha = false;
-	os_error *error;
-	int dp_offset;
-	int sp_offset;
-	unsigned *dp;
-	int x, y;
-	int w, h;
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
+	assert(bitmap);
 
-	assert(sprite_bpp(s) == 8);
-
-	if ((unsigned)s->mode & 0x80000000U)
-		alpha = true;
-
-	error = xosspriteop_read_sprite_info(osspriteop_PTR,
-			(osspriteop_area *)0x100,
-			(osspriteop_id)s,
-			&w, &h, NULL, NULL);
-	if (error) {
-		LOG(("xosspriteop_read_sprite_info: 0x%x:%s",
-				error->errnum, error->errmess));
-		return;
-	}
-	sp_offset = ((s->width + 1) * 4) - w;
-
-	if (w > bitmap->width)
-		w = bitmap->width;
-	if (h > bitmap->height)
-		h = bitmap->height;
-
-	dp_offset = bitmap_get_rowstride(bitmap) / 4;
-
-	dp = (void*)bitmap_get_buffer(bitmap);
-	if (!dp)
-		return;
-	sp = (byte*)s + s->image;
-	mp = (byte*)s + s->mask;
-
-	sp += s->left_bit / 8;
-	mp += s->left_bit / 8;
-
-	if (s->image > (int)sizeof(*s))
-		palette = (os_colour*)(s + 1);
-	else
-		palette = default_palette8;
-
-	if (s->mask != s->image) {
-		masked = true;
-		bitmap_set_opaque(bitmap, false);
+	/* dynamically create the buffer */
+	if (bitmap->sprite_area == NULL) {
+		if (!bitmap_initialise(bitmap))
+			return NULL;
 	}
 
-	/* (partially-)transparent pixels in the overlayed sprite retain
-	 * their transparency in the output bitmap; opaque sprite pixels
-	 * are also propagated to the bitmap, except those which are the
-	 * OVERLAY_INDEX colour which allow the original bitmap contents to
-	 * show through */
-	for (y = 0; y < h; y++) {
-		unsigned *sdp = dp;
-		for(x = 0; x < w; x++) {
-			os_colour d = ((unsigned)palette[(*sp) << 1]) >> 8;
-			if (*sp++ == OVERLAY_INDEX)
-				d = *dp;
-			if (masked) {
-				if (alpha)
-					d |= ((*mp << 24) ^ 0xff000000U);
-				else if (*mp)
-					d |= 0xff000000U;
-			}
-			*dp++ = d;
-			mp++;
-		}
-		dp = sdp + dp_offset;
-		sp += sp_offset;
-		mp += sp_offset;
-	}
+	/* image data area should exist */
+	if (bitmap->sprite_area)
+		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
+
+	return NULL;
 }
 
 
@@ -223,7 +163,7 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
-void bitmap_set_opaque(void *vbitmap, bool opaque)
+static void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
@@ -236,12 +176,25 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
 
 
 /**
+ * Find the width of a pixel row in bytes.
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \return width of a pixel row in the bitmap
+ */
+size_t riscos_bitmap_get_rowstride(void *vbitmap)
+{
+	struct bitmap *bitmap = (struct bitmap *) vbitmap;
+	return bitmap->width * 4;
+}
+
+
+/**
  * Tests whether a bitmap has an opaque alpha channel
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return whether the bitmap is opaque
  */
-bool bitmap_test_opaque(void *vbitmap)
+static bool bitmap_test_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	unsigned char *sprite;
@@ -251,11 +204,11 @@ bool bitmap_test_opaque(void *vbitmap)
 
 	assert(bitmap);
 
-	sprite = bitmap_get_buffer(bitmap);
+	sprite = riscos_bitmap_get_buffer(bitmap);
 	if (!sprite)
 		return false;
 
-	width = bitmap_get_rowstride(bitmap);
+	width = riscos_bitmap_get_rowstride(bitmap);
 
 	sprite_header = (osspriteop_header *) (bitmap->sprite_area + 1);
 
@@ -289,7 +242,7 @@ bool bitmap_test_opaque(void *vbitmap)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-bool bitmap_get_opaque(void *vbitmap)
+bool riscos_bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	assert(bitmap);
@@ -298,55 +251,11 @@ bool bitmap_get_opaque(void *vbitmap)
 
 
 /**
- * Return a pointer to the pixel data in a bitmap.
- *
- * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
- * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return pointer to the pixel buffer
- */
-
-unsigned char *bitmap_get_buffer(void *vbitmap)
-{
-	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-	assert(bitmap);
-
-	/* dynamically create the buffer */
-	if (bitmap->sprite_area == NULL) {
-		if (!bitmap_initialise(bitmap))
-			return NULL;
-	}
-
-	/* image data area should exist */
-	if (bitmap->sprite_area)
-		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
-
-	return NULL;
-}
-
-
-/**
- * Find the width of a pixel row in bytes.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return width of a pixel row in the bitmap
- */
-
-size_t bitmap_get_rowstride(void *vbitmap)
-{
-	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-	return bitmap->width * 4;
-}
-
-
-/**
  * Free a bitmap.
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-
-void bitmap_destroy(void *vbitmap)
+void riscos_bitmap_destroy(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 
@@ -369,18 +278,18 @@ void bitmap_destroy(void *vbitmap)
  * \param  flags   modify the behaviour of the save
  * \return true on success, false on error and error reported
  */
-
-bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
+bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	os_error *error;
 
-	if (!bitmap->sprite_area)
-		bitmap_get_buffer(bitmap);
+	if (!bitmap->sprite_area) {
+		riscos_bitmap_get_buffer(bitmap);
+	}
 	if (!bitmap->sprite_area)
 		return false;
 
-	if (bitmap_get_opaque(bitmap)) {
+	if (riscos_bitmap_get_opaque(bitmap)) {
 		error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
 				(bitmap->sprite_area), path);
 		if (error) {
@@ -539,20 +448,21 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(void *vbitmap) {
+void riscos_bitmap_modified(void *vbitmap)
+{
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	bitmap->state |= BITMAP_MODIFIED;
 }
 
 
-int bitmap_get_width(void *vbitmap)
+int riscos_bitmap_get_width(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	return bitmap->width;
 }
 
 
-int bitmap_get_height(void *vbitmap)
+int riscos_bitmap_get_height(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
 	return bitmap->height;
@@ -565,11 +475,113 @@ int bitmap_get_height(void *vbitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixel
  */
-
-size_t bitmap_get_bpp(void *vbitmap)
+static size_t bitmap_get_bpp(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
 	return 4;
 }
 
+/**
+ * Overlay a sprite onto the given bitmap
+ *
+ * \param  bitmap  bitmap object
+ * \param  s       8bpp sprite to be overlayed onto bitmap
+ */
+void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
+{
+	const os_colour *palette;
+	const byte *sp, *mp;
+	bool masked = false;
+	bool alpha = false;
+	os_error *error;
+	int dp_offset;
+	int sp_offset;
+	unsigned *dp;
+	int x, y;
+	int w, h;
+
+	assert(sprite_bpp(s) == 8);
+
+	if ((unsigned)s->mode & 0x80000000U)
+		alpha = true;
+
+	error = xosspriteop_read_sprite_info(osspriteop_PTR,
+			(osspriteop_area *)0x100,
+			(osspriteop_id)s,
+			&w, &h, NULL, NULL);
+	if (error) {
+		LOG(("xosspriteop_read_sprite_info: 0x%x:%s",
+				error->errnum, error->errmess));
+		return;
+	}
+	sp_offset = ((s->width + 1) * 4) - w;
+
+	if (w > bitmap->width)
+		w = bitmap->width;
+	if (h > bitmap->height)
+		h = bitmap->height;
+
+	dp_offset = riscos_bitmap_get_rowstride(bitmap) / 4;
+
+	dp = (void*)riscos_bitmap_get_buffer(bitmap);
+	if (!dp)
+		return;
+	sp = (byte*)s + s->image;
+	mp = (byte*)s + s->mask;
+
+	sp += s->left_bit / 8;
+	mp += s->left_bit / 8;
+
+	if (s->image > (int)sizeof(*s))
+		palette = (os_colour*)(s + 1);
+	else
+		palette = default_palette8;
+
+	if (s->mask != s->image) {
+		masked = true;
+		bitmap_set_opaque(bitmap, false);
+	}
+
+	/* (partially-)transparent pixels in the overlayed sprite retain
+	 * their transparency in the output bitmap; opaque sprite pixels
+	 * are also propagated to the bitmap, except those which are the
+	 * OVERLAY_INDEX colour which allow the original bitmap contents to
+	 * show through */
+	for (y = 0; y < h; y++) {
+		unsigned *sdp = dp;
+		for(x = 0; x < w; x++) {
+			os_colour d = ((unsigned)palette[(*sp) << 1]) >> 8;
+			if (*sp++ == OVERLAY_INDEX)
+				d = *dp;
+			if (masked) {
+				if (alpha)
+					d |= ((*mp << 24) ^ 0xff000000U);
+				else if (*mp)
+					d |= 0xff000000U;
+			}
+			*dp++ = d;
+			mp++;
+		}
+		dp = sdp + dp_offset;
+		sp += sp_offset;
+		mp += sp_offset;
+	}
+}
+
+static struct gui_bitmap_table bitmap_table = {
+	.create = riscos_bitmap_create,
+	.destroy = riscos_bitmap_destroy,
+	.set_opaque = bitmap_set_opaque,
+	.get_opaque = riscos_bitmap_get_opaque,
+	.test_opaque = bitmap_test_opaque,
+	.get_buffer = riscos_bitmap_get_buffer,
+	.get_rowstride = riscos_bitmap_get_rowstride,
+	.get_width = riscos_bitmap_get_width,
+	.get_height = riscos_bitmap_get_height,
+	.get_bpp = bitmap_get_bpp,
+	.save = riscos_bitmap_save,
+	.modified = riscos_bitmap_modified,
+};
+
+struct gui_bitmap_table *riscos_bitmap_table = &bitmap_table;

@@ -400,7 +400,7 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 	pencil_code code;
 	const uint8_t *buffer;
 
-	buffer = bitmap_get_buffer(bitmap);
+	buffer = riscos_bitmap_get_buffer(bitmap);
 	if (!buffer) {
 		warn_user("NoMemory", 0);
 		return false;

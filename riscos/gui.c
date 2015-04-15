@@ -58,6 +58,7 @@
 #include "content/backing_store.h"
 
 #include "riscos/gui.h"
+#include "riscos/bitmap.h"
 #include "riscos/wimputils.h"
 #include "riscos/hotlist.h"
 #include "riscos/buffer.h"
@@ -2446,6 +2447,7 @@ int main(int argc, char** argv)
 		.utf8 = riscos_utf8_table,
 		.search = riscos_search_table,
 		.llcache = filesystem_llcache_table,
+		.bitmap = riscos_bitmap_table,
 	};
 
 	ret = netsurf_register(&riscos_table);

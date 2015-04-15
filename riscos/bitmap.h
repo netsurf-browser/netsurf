@@ -19,11 +19,15 @@
 #ifndef _NETSURF_RISCOS_BITMAP_H_
 #define _NETSURF_RISCOS_BITMAP_H_
 
+/** bitmap operations table */
+struct gui_bitmap_table *riscos_bitmap_table;
+
 #include <stdbool.h>
 #include "oslib/osspriteop.h"
 #include "image/bitmap.h"
 
-#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
+/** save with full alpha channel (if not opaque) */
+#define BITMAP_SAVE_FULL_ALPHA	(1 << 0) 
 
 struct osspriteop_area;
 
@@ -36,6 +40,15 @@ struct bitmap {
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
 };
 
-void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
+void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
+void riscos_bitmap_destroy(void *vbitmap);
+void *riscos_bitmap_create(int width, int height, unsigned int state);
+unsigned char *riscos_bitmap_get_buffer(void *vbitmap);
+void riscos_bitmap_modified(void *vbitmap);
+int riscos_bitmap_get_width(void *vbitmap);
+int riscos_bitmap_get_height(void *vbitmap);
+size_t riscos_bitmap_get_rowstride(void *vbitmap);
+bool riscos_bitmap_get_opaque(void *vbitmap);
+bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags);
 
 #endif

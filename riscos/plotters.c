@@ -519,7 +519,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 {
 	const uint8_t *buffer;
 
-	buffer = bitmap_get_buffer(bitmap);
+	buffer = riscos_bitmap_get_buffer(bitmap);
 	if (!buffer) {
 		LOG(("bitmap_get_buffer failed"));
 		return false;
@@ -534,6 +534,6 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 			bg,
 			flags & BITMAPF_REPEAT_X, flags & BITMAPF_REPEAT_Y,
 			flags & BITMAPF_REPEAT_X || flags & BITMAPF_REPEAT_Y,
-			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
+			riscos_bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
 }

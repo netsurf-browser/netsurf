@@ -3411,7 +3411,7 @@ void ro_gui_window_iconise(struct gui_window *g,
 	}
 
 	/* create the thumbnail sprite */
-	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE |
+	bitmap = riscos_bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE |
 			BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
 		LOG(("Thumbnail initialisation failed."));
@@ -3419,10 +3419,10 @@ void ro_gui_window_iconise(struct gui_window *g,
 	}
 	thumbnail_create(h, bitmap);
 	if (overlay) {
-		bitmap_overlay_sprite(bitmap, overlay);
+		riscos_bitmap_overlay_sprite(bitmap, overlay);
 	}
 	area = thumbnail_convert_8bpp(bitmap);
-	bitmap_destroy(bitmap);
+	riscos_bitmap_destroy(bitmap);
 	if (!area) {
 		LOG(("Thumbnail conversion failed."));
 		return;

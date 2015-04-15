@@ -1144,7 +1144,7 @@ bool ro_gui_save_object_native(hlcache_handle *h, char *path)
 		{
 			unsigned flags = (os_version == 0xA9) ?
 					BITMAP_SAVE_FULL_ALPHA : 0;
-			bitmap_save(content_get_bitmap(h), path, flags);
+			riscos_bitmap_save(content_get_bitmap(h), path, flags);
 		}
 			break;
 		case osfile_TYPE_DRAW:
@@ -1370,14 +1370,14 @@ bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name)
 	struct bitmap *bitmap;
 	osspriteop_area *area;
 
-	bitmap = bitmap_create(34, 34, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
+	bitmap = riscos_bitmap_create(34, 34, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
 		LOG(("Thumbnail initialisation failed."));
 		return false;
 	}
 	thumbnail_create(h, bitmap);
 	area = thumbnail_convert_8bpp(bitmap);
-	bitmap_destroy(bitmap);
+	riscos_bitmap_destroy(bitmap);
 	if (!area) {
 		LOG(("Thumbnail conversion failed."));
 		return false;
