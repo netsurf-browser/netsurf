@@ -37,13 +37,14 @@
 #include <librsvg/rsvg-cairo.h>
 #endif
 
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
+#include "content/content_protected.h"
+#include "desktop/plotters.h"
+#include "desktop/gui_internal.h"
 
+#include "image/bitmap.h"
 #include "image/rsvg.h"
 
 typedef struct rsvg_content {
@@ -177,7 +178,7 @@ static bool rsvg_convert(struct content *c)
 	c->width = rsvgsize.width;
 	c->height = rsvgsize.height;
 
-	if ((d->bitmap = bitmap_create(c->width, c->height,
+	if ((d->bitmap = guit->bitmap->create(c->width, c->height,
 			BITMAP_NEW)) == NULL) {
 		LOG(("Failed to create bitmap for rsvg render."));
 		msg_data.error = messages_get("NoMemory");
@@ -186,10 +187,10 @@ static bool rsvg_convert(struct content *c)
 	}
 
 	if ((d->cs = cairo_image_surface_create_for_data(
-			(unsigned char *)bitmap_get_buffer(d->bitmap),
+			(unsigned char *)guit->bitmap->get_buffer(d->bitmap),
 			CAIRO_FORMAT_ARGB32,
 			c->width, c->height,
-			bitmap_get_rowstride(d->bitmap))) == NULL) {
+			guit->bitmap->get_rowstride(d->bitmap))) == NULL) {
 		LOG(("Failed to create Cairo image surface for rsvg render."));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -204,11 +205,11 @@ static bool rsvg_convert(struct content *c)
 	}
 
 	rsvg_handle_render_cairo(d->rsvgh, d->ct);
-	rsvg_argb_to_abgr(bitmap_get_buffer(d->bitmap),
+	rsvg_argb_to_abgr(guit->bitmap->get_buffer(d->bitmap),
 				c->width, c->height,
-				bitmap_get_rowstride(d->bitmap));
+				guit->bitmap->get_rowstride(d->bitmap));
 
-	bitmap_modified(d->bitmap);
+	guit->bitmap->modified(d->bitmap);
 	content_set_ready(c);
 	content_set_done(c);
 	/* Done: update status bar */
@@ -238,7 +239,7 @@ static void rsvg_destroy(struct content *c)
 {
 	rsvg_content *d = (rsvg_content *) c;
 
-	if (d->bitmap != NULL) bitmap_destroy(d->bitmap);
+	if (d->bitmap != NULL) guit->bitmap->destroy(d->bitmap);
 	if (d->rsvgh != NULL) g_object_unref(d->rsvgh);
 	if (d->ct != NULL) cairo_destroy(d->ct);
 	if (d->cs != NULL) cairo_surface_destroy(d->cs);
