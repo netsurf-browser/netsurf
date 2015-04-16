@@ -29,6 +29,6 @@ BBitmap *nsbeos_bitmap_get_pretile_x(struct bitmap*);
 BBitmap *nsbeos_bitmap_get_pretile_y(struct bitmap*);
 BBitmap *nsbeos_bitmap_get_pretile_xy(struct bitmap*);
 
-struct gui_bitmap_table *beos_bitmap_table;
+extern struct gui_bitmap_table *beos_bitmap_table;
 
 #endif /* NS_BEOS_BITMAP_H */
