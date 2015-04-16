@@ -94,6 +94,27 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 	[bmp setOpaque: opaque ? YES : NO];
 }
 
+unsigned char *bitmap_get_buffer(void *bitmap)
+{
+	NSCParameterAssert( NULL != bitmap );
+	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
+	return [bmp bitmapData];
+}
+
+size_t bitmap_get_rowstride(void *bitmap)
+{
+	NSCParameterAssert( NULL != bitmap );
+	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
+	return [bmp bytesPerRow];
+}
+
+size_t bitmap_get_bpp(void *bitmap)
+{
+	NSCParameterAssert( NULL != bitmap );
+	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
+	return [bmp bitsPerPixel] / 8;
+}
+
 bool bitmap_test_opaque(void *bitmap)
 {
 	NSCParameterAssert( bitmap_get_bpp( bitmap ) == BYTES_PER_PIXEL );
@@ -114,27 +135,6 @@ bool bitmap_test_opaque(void *bitmap)
 	}
 	
 	return true;
-}
-
-unsigned char *bitmap_get_buffer(void *bitmap)
-{
-	NSCParameterAssert( NULL != bitmap );
-	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	return [bmp bitmapData];
-}
-
-size_t bitmap_get_rowstride(void *bitmap)
-{
-	NSCParameterAssert( NULL != bitmap );
-	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	return [bmp bytesPerRow];
-}
-
-size_t bitmap_get_bpp(void *bitmap)
-{
-	NSCParameterAssert( NULL != bitmap );
-	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	return [bmp bitsPerPixel] / 8;
 }
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)
