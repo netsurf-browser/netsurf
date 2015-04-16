@@ -79,6 +79,7 @@ extern "C" {
 #include "beos/schedule.h"
 #include "beos/fetch_rsrc.h"
 #include "beos/scaffolding.h"
+#include "beos/bitmap.h"
 
 static void *myrealloc(void *ptr, size_t len, void *pw);
 
@@ -995,7 +996,13 @@ int main(int argc, char** argv)
 		beos_window_table,
 		beos_download_table,
 		&beos_clipboard_table,
-                &beos_fetch_table
+                &beos_fetch_table,
+                NULL, /* use POSIX file */
+                NULL, /* default utf8 */
+                NULL, /* default search */
+                NULL, /* default web search */
+                NULL, /* default low level cache persistant storage */
+                beos_bitmap_table
 	};
 
         ret = netsurf_register(&beos_table);
@@ -1055,6 +1062,12 @@ int gui_init_replicant(int argc, char** argv)
 		beos_download_table,
 		&beos_clipboard_table,
                 &beos_fetch_table
+                NULL, /* use POSIX file */
+                NULL, /* default utf8 */
+                NULL, /* default search */
+                NULL, /* default web search */
+                NULL, /* default low level cache persistant storage */
+                beos_bitmap_table
 	};
 
         ret = netsurf_register(&beos_table);
