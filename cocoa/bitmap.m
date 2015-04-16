@@ -215,3 +215,19 @@ static CGImageRef cocoa_prepare_bitmap( void *bitmap )
 	return result;
 }
 
+static struct gui_bitmap_table bitmap_table = {
+	.create = bitmap_create,
+	.destroy = bitmap_destroy,
+	.set_opaque = bitmap_set_opaque,
+	.get_opaque = bitmap_get_opaque,
+	.test_opaque = bitmap_test_opaque,
+	.get_buffer = bitmap_get_buffer,
+	.get_rowstride = bitmap_get_rowstride,
+	.get_width = bitmap_get_width,
+	.get_height = bitmap_get_height,
+	.get_bpp = bitmap_get_bpp,
+	.save = bitmap_save,
+	.modified = bitmap_modified,
+};
+
+struct gui_bitmap_table *cocoa_bitmap_table = &bitmap_table;

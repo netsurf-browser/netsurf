@@ -24,6 +24,7 @@
 #import "cocoa/SearchWindowController.h"
 #import "cocoa/selection.h"
 #import "cocoa/fetch.h"
+#import "cocoa/bitmap.h"
 
 #import "utils/filename.h"
 #import "utils/log.h"
@@ -220,7 +221,8 @@ int main( int argc, char **argv )
 		.clipboard = cocoa_clipboard_table,
 		.download = cocoa_download_table,
 		.fetch = cocoa_fetch_table,
-        .search = cocoa_search_table,
+		.search = cocoa_search_table,
+                .bitmap = cocoa_bitmap_table,
 	};
 
 	cocoa_autorelease();
