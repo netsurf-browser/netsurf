@@ -21,18 +21,18 @@
  *
  */
 
-#include <assert.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <librosprite.h>
-#include "utils/config.h"
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "image/nssprite.h"
+
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/utils.h"
+#include "content/content_protected.h"
+#include "desktop/gui_internal.h"
+#include "desktop/plotters.h"
+
+#include "image/bitmap.h"
+#include "image/nssprite.h"
 
 typedef struct nssprite_content {
 	struct content base;
@@ -113,13 +113,13 @@ static bool nssprite_convert(struct content *c)
 
 	struct rosprite* sprite = sprite_area->sprites[0];
 
-	nssprite->bitmap = bitmap_create(sprite->width, sprite->height, BITMAP_NEW);
+	nssprite->bitmap = guit->bitmap->create(sprite->width, sprite->height, BITMAP_NEW);
 	if (!nssprite->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	uint32_t* imagebuf = (uint32_t *)bitmap_get_buffer(nssprite->bitmap);
+	uint32_t* imagebuf = (uint32_t *)guit->bitmap->get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -153,7 +153,7 @@ static bool nssprite_convert(struct content *c)
 		free(title);
 	}
 
-	bitmap_modified(nssprite->bitmap);
+	guit->bitmap->modified(nssprite->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -174,7 +174,7 @@ static void nssprite_destroy(struct content *c)
 	if (nssprite->sprite_area != NULL)
 		rosprite_destroy_sprite_area(nssprite->sprite_area);
 	if (nssprite->bitmap != NULL)
-		bitmap_destroy(nssprite->bitmap);
+		guit->bitmap->destroy(nssprite->bitmap);
 }
 
 
