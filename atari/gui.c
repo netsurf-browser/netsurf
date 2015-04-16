@@ -77,6 +77,7 @@
 #include "atari/download.h"
 #include "atari/file.h"
 #include "atari/filetype.h"
+#include "atari/bitmap.h"
 #include "cflib.h"
 
 static bool atari_quit = false;
@@ -1130,7 +1131,8 @@ int main(int argc, char** argv)
 	.file = atari_file_table,
 	.utf8 = atari_utf8_table,
 	.search = atari_search_table,
-	.llcache = filesystem_llcache_table
+	.llcache = filesystem_llcache_table,
+	.bitmap = atari_bitmap_table
     };
 
     ret = netsurf_register(&atari_table);

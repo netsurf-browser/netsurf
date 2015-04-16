@@ -95,7 +95,7 @@ int ctor_font_plotter_internal( FONT_PLOTTER self )
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
 	if( !init ) {
 		vdih = self->vdi_handle;
-		fontbmp = bitmap_create(48, 48, 0);
+		fontbmp = atari_bitmap_create(48, 48, 0);
 		fontbmp->opaque = false;
 	}
 	init = true;
@@ -164,8 +164,8 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitc
 	uint32_t * linebuf;
 	GRECT loc = *inloc;
 
-	fontbmp = bitmap_realloc( loc.g_w, loc.g_h, fontbmp->bpp, loc.g_w * fontbmp->bpp, BITMAP_GROW, fontbmp );
-	bmpstride = bitmap_get_rowstride(fontbmp);
+	fontbmp = atari_bitmap_realloc( loc.g_w, loc.g_h, fontbmp->bpp, loc.g_w * fontbmp->bpp, BITMAP_GROW, fontbmp );
+	bmpstride = atari_bitmap_get_rowstride(fontbmp);
 	for( yloop = 0; yloop < loc.g_h; yloop++) {
 		uint32_t pixmask = 1 ;
 		linebuf = (uint32_t *)(fontbmp->pixdata + (bmpstride * yloop));

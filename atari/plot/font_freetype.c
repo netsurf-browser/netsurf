@@ -608,10 +608,10 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #ifdef WITH_8BPP_SUPPORT
 		if( app.nplanes > 8 ){
 #endif
-			RGB1000 out;
+			RGB1000 out; /* struct with RGB shorts */
 			rgb_to_vdi1000( (unsigned char*)&c, &out);
 			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR,
-						(unsigned short*)&out);
+						(short*)&out);
 #ifdef WITH_8BPP_SUPPORT
 		} else {
 			c = RGB_TO_VDI(c);
@@ -625,10 +625,10 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	clip.g_w = (clipping.x1 - clipping.x0)+1;
 	clip.g_h = (clipping.y1 - clipping.y0)+1;
 
-	fontbmp = bitmap_realloc( clip.g_w, clip.g_h,
+	fontbmp = atari_bitmap_realloc( clip.g_w, clip.g_h,
 				4, clip.g_w << 2,
 				BITMAP_GROW, fontbmp );
-	fontbmp_stride = bitmap_get_rowstride(fontbmp);
+	fontbmp_stride = atari_bitmap_get_rowstride(fontbmp);
 	fontbmp_allocated_height = clip.g_h;
 	fontbmp_allocated_width = clip.g_w;
 
@@ -684,7 +684,7 @@ int ctor_font_plotter_freetype( FONT_PLOTTER self )
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
 	if( !init ) {
 		ft_font_init();
-		fontbmp = bitmap_create(48, 48, 0);
+		fontbmp = atari_bitmap_create(48, 48, 0);
 		fontbmp->opaque = false;
 		init = true;
 	}
@@ -696,7 +696,7 @@ static int dtor( FONT_PLOTTER self )
 {
 	ft_font_finalise();
 	if( fontbmp != NULL ) {
-		bitmap_destroy( fontbmp );
+		atari_bitmap_destroy( fontbmp );
         fontbmp = NULL;
     }
 	if( tmp.fd_addr != NULL ){

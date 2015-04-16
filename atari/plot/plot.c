@@ -164,11 +164,11 @@ struct s_vdi_sysinfo vdi_sysinfo;
 static int atari_plot_bpp_virt;
 static struct s_view view;
 
-static HermesHandle hermes_pal_h; /* hermes palette handle */
+//static HermesHandle hermes_pal_h; /* hermes palette handle */
 static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
 
-static short prev_vdi_clip[4];
+//static short prev_vdi_clip[4];
 static struct bitmap snapshot;
 
 VdiHdl atari_plot_vdi_handle = -1;
@@ -195,10 +195,9 @@ inline static void vsl_rgbcolor(short vdih, colour cin)
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 	#endif
-		//unsigned short c[4];
-		RGB1000 c;
+		RGB1000 c; /* a struct with three (RGB) shorts */
 		rgb_to_vdi1000( (unsigned char*)&cin, &c);
-		vs_color(vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c);
+		vs_color(vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
 		vsl_color(vdih, OFFSET_CUSTOM_COLOR);
 	#ifdef WITH_8BPP_SUPPORT
 	} else {
@@ -222,9 +221,9 @@ inline static void vsf_rgbcolor(short vdih, colour cin)
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 	#endif
-		RGB1000 c;
+		RGB1000 c; /* a struct with three (RGB) shorts */
 		rgb_to_vdi1000( (unsigned char*)&cin, &c);
-		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c);
+		vs_color( vdih, OFFSET_CUSTOM_COLOR, (short *)&c);
 		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
 	#ifdef WITH_8BPP_SUPPORT
 	} else {
@@ -383,15 +382,17 @@ bool plot_copy_rect(GRECT src, GRECT dst)
 /**
  * Fill the screen info structure.
  *
+ * \param vdhi The handle
+ * \param[out] info The infor structure to fill.
  */
-static struct s_vdi_sysinfo * read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
+static void read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
 
-    unsigned long cookie_EdDI=0;
+    unsigned long cookie_EdDI=0; /** \todo this long is being cast to a pointer */
     short out[300];
     memset( info, 0, sizeof(struct s_vdi_sysinfo) );
 
     info->vdi_handle = vdih;
-    if ( tos_getcookie(C_EdDI, &cookie_EdDI) == C_NOTFOUND ) {
+    if ( tos_getcookie(C_EdDI, (long *)&cookie_EdDI) == C_NOTFOUND ) {
         info->EdDiVersion = 0;
     } else {
         info->EdDiVersion = EdDI_version( (void *)cookie_EdDI );
@@ -668,20 +669,20 @@ static void dump_vdi_info(short vdih)
     printf("	short scr_h: %d\n", temp.scr_h);
     printf("	short scr_bpp: %d\n", temp.scr_bpp);
     printf("	int colors: %d\n", temp.colors);
-    printf("	ulong hicolors: %d\n", temp.hicolors);
+    printf("	ulong hicolors: %lu\n", temp.hicolors);
     printf("	short pixelsize: %d\n", temp.pixelsize);
     printf("	unsigned short pitch: %d\n", temp.pitch);
     printf("	unsigned short vdiformat: %d\n", temp.vdiformat);
     printf("	unsigned short clut: %d\n", temp.clut);
     printf("	void * screen: 0x0%p\n", temp.screen);
-    printf("	unsigned long  screensize: %d\n", temp.screensize);
-    printf("	unsigned long  mask_r: 0x0%08x\n", temp.mask_r);
-    printf("	unsigned long  mask_g: 0x0%08x\n", temp.mask_g);
-    printf("	unsigned long  mask_b: 0x0%08x\n", temp.mask_b);
-    printf("	unsigned long  mask_a: 0x0%08x\n", temp.mask_a);
+    printf("	unsigned long  screensize: %lu\n", temp.screensize);
+    printf("	unsigned long  mask_r: 0x0%08lx\n", temp.mask_r);
+    printf("	unsigned long  mask_g: 0x0%08lx\n", temp.mask_g);
+    printf("	unsigned long  mask_b: 0x0%08lx\n", temp.mask_b);
+    printf("	unsigned long  mask_a: 0x0%08lx\n", temp.mask_a);
     printf("	short maxintin: %d\n", temp.maxintin);
     printf("	short maxpolycoords: %d\n", temp.maxpolycoords);
-    printf("	unsigned long EdDiVersion: 0x0%03x\n", temp.EdDiVersion);
+    printf("	unsigned long EdDiVersion: 0x0%03lx\n", temp.EdDiVersion);
     printf("	unsigned short rasterscale: 0x%2x\n", temp.rasterscale);
     printf("};\n");
 }
@@ -800,9 +801,9 @@ static struct bitmap * snapshot_create(int x, int y, int w, int h)
 
 	/* allocate buffer for result bitmap: */
 	if(buf_scr_compat == NULL ) {
-		buf_scr_compat = bitmap_create(w, h, 0);
+		buf_scr_compat = atari_bitmap_create(w, h, 0);
 	} else {
-		buf_scr_compat = bitmap_realloc( w, h,
+		buf_scr_compat = atari_bitmap_realloc( w, h,
 			buf_scr_compat->bpp,
 			w *buf_scr_compat->bpp,
 			BITMAP_GROW,
@@ -825,7 +826,7 @@ static struct bitmap * snapshot_create(int x, int y, int w, int h)
 		0,			/* x dst coord of top left in pixel coords */
 		0,			/* y dst coord of top left in pixel coords */
 		w, h,
-		bitmap_get_rowstride(buf_scr_compat) /* stride as bytes */
+		atari_bitmap_get_rowstride(buf_scr_compat) /* stride as bytes */
 	);
 	assert( err != 0 );
 	return( (struct bitmap * )buf_scr_compat );
@@ -879,13 +880,13 @@ static void snapshot_suspend(void)
 #endif
 
 	if(buf_scr_compat != NULL ) {
-		size_t bs = bitmap_buffer_size(buf_scr_compat );
+		size_t bs = atari_bitmap_buffer_size(buf_scr_compat );
 		if( bs > CONV_KEEP_LIMIT ) {
 			int w = 0;
 			int h = 1;
 			w = (CONV_KEEP_LIMIT /buf_scr_compat->bpp);
 			assert( CONV_KEEP_LIMIT == w*buf_scr_compat->bpp );
-			buf_scr_compat = bitmap_realloc( w, h,
+			buf_scr_compat = atari_bitmap_realloc( w, h,
 				buf_scr_compat->bpp,
 				CONV_KEEP_LIMIT, BITMAP_SHRINK,buf_scr_compat
 			);
@@ -901,7 +902,7 @@ static void snapshot_destroy(void)
 
 	free(buf_scr.fd_addr);
 	if( buf_scr_compat != NULL) {
-		bitmap_destroy(buf_scr_compat);
+		atari_bitmap_destroy(buf_scr_compat);
 	}
 
 	buf_scr.fd_addr = NULL;
@@ -938,7 +939,7 @@ inline static bool ablend_pixel(struct bitmap * img, uint32_t bg, GRECT * clip)
 	uint32_t * imgrow;
 	int img_x, img_y, img_stride;
 
-	img_stride= bitmap_get_rowstride(img);
+	img_stride= atari_bitmap_get_rowstride(img);
 
 	for( img_y = 0; img_y < clip->g_h; img_y++) {
 		imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
@@ -963,8 +964,8 @@ inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
 	int img_x, img_y, bg_x, bg_y, img_stride, bg_stride;
 
 	bg_clip = bg_clip;
-	img_stride= bitmap_get_rowstride(img);
-	bg_stride = bitmap_get_rowstride(bg);
+	img_stride = atari_bitmap_get_rowstride(img);
+	bg_stride = atari_bitmap_get_rowstride(bg);
 
 	for( img_y = img_clip->g_y, bg_y = 0; bg_y < img_clip->g_h; bg_y++, img_y++) {
 		imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
@@ -1018,7 +1019,7 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	int bw, bh;
 	struct bitmap * scrbuf = NULL;
 	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
-	bool opaque = bitmap_get_opaque( img );
+	bool opaque = atari_bitmap_get_opaque( img );
 
 	if( opaque == false ){
 		if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
@@ -1031,8 +1032,8 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
-	bw = bitmap_get_width( img );
-	bh = bitmap_get_height( img );
+	bw = atari_bitmap_get_width( img );
+	bh = atari_bitmap_get_height( img );
 
 	// The converted bitmap can be saved for subsequent blits, when
 	// the bitmap is fully opaque
@@ -1080,7 +1081,7 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 		native.fd_addr = (void*)malloc( dstsize );
 		if (native.fd_addr == NULL){
 			if (scrbuf != NULL)
-				bitmap_destroy(scrbuf);
+				atari_bitmap_destroy(scrbuf);
 			return( 0-ERR_NO_MEM );
 		}
 	}
@@ -1119,7 +1120,7 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 	stdform.fd_nplanes = (short)atari_plot_bpp_virt;
 	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
 
-	int img_stride = bitmap_get_rowstride(img);
+	int img_stride = atari_bitmap_get_rowstride(img);
 	uint32_t prev_pixel = 0x12345678; //TODO: check for collision in first pixel
 	unsigned long col = 0;
 	unsigned char val = 0;
@@ -1233,7 +1234,7 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 	struct bitmap * scrbuf = NULL;
 	struct bitmap * source = NULL;
 	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
-	bool opaque = bitmap_get_opaque( img );
+	bool opaque = atari_bitmap_get_opaque( img );
 
 	if( opaque == false ){
 		if( ( (atari_plot_flags & PLOT_FLAG_TRANS) == 0)
@@ -1247,8 +1248,8 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
-	bw = bitmap_get_width( img );
-	bh = bitmap_get_height( img );
+	bw = atari_bitmap_get_width( img );
+	bh = atari_bitmap_get_height( img );
 
 	// The converted bitmap can be saved for subsequent blits, WHEN:
 	// A.) the bitmap is fully opaque OR
@@ -1319,7 +1320,7 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 			assert( buf_packed );
 			if( buf_packed == NULL ) {
 				if( scrbuf != NULL )
-					bitmap_destroy( scrbuf );
+					atari_bitmap_destroy( scrbuf );
 				return( 0-ERR_NO_MEM );
 			}
 			size_buf_packed = blocks * CONV_BLOCK_SIZE;
@@ -1330,7 +1331,7 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 		out->fd_addr = (void*)malloc( dstsize );
 		if( out->fd_addr == NULL ){
 			if( scrbuf != NULL )
-				bitmap_destroy( scrbuf );
+				atari_bitmap_destroy( scrbuf );
 			return( 0-ERR_NO_MEM );
 		}
 	}
@@ -1456,8 +1457,8 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, short fgcolor,
 						uint32_t flags)
 {
-
-	MFDB screen, tran;
+	MFDB screen;
+//	MFDB tran;
 	MFDB * src;
 	short pxy[8];
 	short c[2] = {fgcolor, 0};
@@ -1674,6 +1675,8 @@ int plot_finalise( void )
 	free(buf_packed );
 	free(buf_planar);
 	snapshot_destroy();
+
+	return 0;
 }
 
 bool plot_lock(void)
@@ -2146,8 +2149,8 @@ static bool plot_bitmap(int x, int y, int width, int height,
     int bmpw,bmph;
     struct rect clip = {0,0,0,0};
 
-    bmpw = bitmap_get_width(bitmap);
-    bmph = bitmap_get_height(bitmap);
+    bmpw = atari_bitmap_get_width(bitmap);
+    bmph = atari_bitmap_get_height(bitmap);
 
     if(view.scale != 1.0){
         width = (int)(((float)width)*view.scale);
@@ -2167,7 +2170,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
     }
 
     if(  width != bmpw || height != bmph ) {
-        bitmap_resize(bitmap, hermes_res_h, &nsfmt, width, height );
+        atari_bitmap_resize(bitmap, hermes_res_h, &nsfmt, width, height );
         if( bitmap->resized )
             bm = bitmap->resized;
         else
