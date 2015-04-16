@@ -35,6 +35,7 @@
 #include "utils/messages.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
+#include "image/bitmap.h"
 
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
@@ -42,16 +43,8 @@
 #include "amiga/misc.h"
 #include "amiga/rtg.h"
 
-/**
- * Create a bitmap.
- *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
- * \return an opaque struct bitmap, or NULL on memory exhaustion
- */
-
-void *bitmap_create(int width, int height, unsigned int state)
+/* exported function documented in amiga/bitmap.h */
+void *amiga_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	
@@ -70,31 +63,15 @@ void *bitmap_create(int width, int height, unsigned int state)
 }
 
 
-/**
- * Return a pointer to the pixel data in a bitmap.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return pointer to the pixel buffer
- *
- * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
- * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
- */
-
-unsigned char *bitmap_get_buffer(void *bitmap)
+/* exported function documented in amiga/bitmap.h */
+unsigned char *amiga_bitmap_get_buffer(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	return bm->pixdata;
 }
 
-
-/**
- * Find the width of a pixel row in bytes.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return width of a pixel row in the bitmap
- */
-
-size_t bitmap_get_rowstride(void *bitmap)
+/* exported function documented in amiga/bitmap.h */
+size_t amiga_bitmap_get_rowstride(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -109,13 +86,8 @@ size_t bitmap_get_rowstride(void *bitmap)
 }
 
 
-/**
- * Free a bitmap.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-
-void bitmap_destroy(void *bitmap)
+/* exported function documented in amiga/bitmap.h */
+void amiga_bitmap_destroy(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -142,16 +114,8 @@ void bitmap_destroy(void *bitmap)
 }
 
 
-/**
- * Save a bitmap in the platform's native format.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  path    pathname for file
- * \param flags flags controlling how the bitmap is saved.
- * \return true on success, false on error and error reported
- */
-
-bool bitmap_save(void *bitmap, const char *path, unsigned flags)
+/* exported function documented in amiga/bitmap.h */
+bool amiga_bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	int err = 0;
 	Object *dto = NULL;
@@ -171,12 +135,9 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 }
 
 
-/**
- * The bitmap image has changed, so flush any persistant cache.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-void bitmap_modified(void *bitmap) {
+/* exported function documented in amiga/bitmap.h */
+void amiga_bitmap_modified(void *bitmap)
+{
 	struct bitmap *bm = bitmap;
 
 	if((bm->nativebm) && (bm->dto == NULL))
@@ -189,13 +150,9 @@ void bitmap_modified(void *bitmap) {
 	bm->native_mask = NULL;
 }
 
-/**
- * Sets whether a bitmap should be plotted opaque
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  opaque  whether the bitmap should be plotted opaque
- */
-void bitmap_set_opaque(void *bitmap, bool opaque)
+
+/* exported function documented in amiga/bitmap.h */
+void amiga_bitmap_set_opaque(void *bitmap, bool opaque)
 {
 	struct bitmap *bm = bitmap;
 	assert(bitmap);
@@ -203,13 +160,8 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 }
 
 
-/**
- * Tests whether a bitmap has an opaque alpha channel
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \return whether the bitmap is opaque
- */
-bool bitmap_test_opaque(void *bitmap)
+/* exported function documented in amiga/bitmap.h */
+bool amiga_bitmap_test_opaque(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	uint32 p = bm->width * bm->height;
@@ -227,19 +179,18 @@ bool bitmap_test_opaque(void *bitmap)
 }
 
 
-/**
- * Gets whether a bitmap should be plotted opaque
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-bool bitmap_get_opaque(void *bitmap)
+/* exported function documented in amiga/bitmap.h */
+bool amiga_bitmap_get_opaque(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	assert(bitmap);
 	return bm->opaque;
 }
 
-int bitmap_get_width(void *bitmap)
+/**
+ * get width of a bitmap.
+ */
+static int bitmap_get_width(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -253,7 +204,10 @@ int bitmap_get_width(void *bitmap)
 	}
 }
 
-int bitmap_get_height(void *bitmap)
+/**
+ * get height of a bitmap.
+ */
+static int bitmap_get_height(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -274,8 +228,7 @@ int bitmap_get_height(void *bitmap)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  * \return bytes per pixel
  */
-
-size_t bitmap_get_bpp(void *vbitmap)
+static size_t bitmap_get_bpp(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	assert(bitmap);
@@ -318,7 +271,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 			bmhd->bmh_Width = (UWORD)bitmap_get_width(bitmap);
 			bmhd->bmh_Height = (UWORD)bitmap_get_height(bitmap);
 			bmhd->bmh_Depth = (UBYTE)bitmap_get_bpp(bitmap) * 8;
-			if(!bitmap_get_opaque(bitmap)) bmhd->bmh_Masking = mskHasAlpha;
+			if(!amiga_bitmap_get_opaque(bitmap)) bmhd->bmh_Masking = mskHasAlpha;
 		}
 
 		SetDTAttrs(dto,NULL,NULL,
@@ -330,8 +283,8 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 					PDTA_SourceMode,PMODE_V43,
 					TAG_DONE);
 
-		IDoMethod(dto, PDTM_WRITEPIXELARRAY, bitmap_get_buffer(bitmap),
-					PBPAFMT_RGBA, bitmap_get_rowstride(bitmap), 0, 0,
+		IDoMethod(dto, PDTM_WRITEPIXELARRAY, amiga_bitmap_get_buffer(bitmap),
+					PBPAFMT_RGBA, amiga_bitmap_get_rowstride(bitmap), 0, 0,
 					bitmap_get_width(bitmap), bitmap_get_height(bitmap));
 	}
 
@@ -353,13 +306,13 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 
 		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
 		{
-			bm = bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
+			bm = amiga_bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
 
-			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
-				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
+			IDoMethod(dto, PDTM_READPIXELARRAY, amiga_bitmap_get_buffer(bm),
+				PBPAFMT_RGBA, amiga_bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
 
-			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
+			amiga_bitmap_set_opaque(bm, amiga_bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
 	}
@@ -477,7 +430,7 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
 	int y, x, bpr;
 
 	if((height != bitmap->height) || (width != bitmap->width)) return NULL;
-	if(bitmap_get_opaque(bitmap) == true) return NULL;
+	if(amiga_bitmap_get_opaque(bitmap) == true) return NULL;
 	if(bitmap->native_mask) return bitmap->native_mask;
 
 	bm_width = GetBitMapAttr(n_bm, BMA_WIDTH);
@@ -552,3 +505,19 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 	}
 }
 
+static struct gui_bitmap_table bitmap_table = {
+	.create = amiga_bitmap_create,
+	.destroy = amiga_bitmap_destroy,
+	.set_opaque = amiga_bitmap_set_opaque,
+	.get_opaque = amiga_bitmap_get_opaque,
+	.test_opaque = amiga_bitmap_test_opaque,
+	.get_buffer = amiga_bitmap_get_buffer,
+	.get_rowstride = amiga_bitmap_get_rowstride,
+	.get_width = bitmap_get_width,
+	.get_height = bitmap_get_height,
+	.get_bpp = bitmap_get_bpp,
+	.save = amiga_bitmap_save,
+	.modified = amiga_bitmap_modified,
+};
+
+struct gui_bitmap_table *amiga_bitmap_table = &bitmap_table;

@@ -23,16 +23,6 @@
 #ifdef WITH_AMIGA_DATATYPES
 #include "amiga/os3support.h"
 
-#include "amiga/filetype.h"
-#include "amiga/datatypes.h"
-#include "amiga/misc.h"
-#include "amiga/plotters.h"
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-
 #include <proto/datatypes.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -43,6 +33,18 @@
 #include <graphics/blitattr.h>
 #endif
 #include <intuition/classusr.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "content/content_protected.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+
+#include "amiga/bitmap.h"
+#include "amiga/filetype.h"
+#include "amiga/datatypes.h"
+#include "amiga/misc.h"
+#include "amiga/plotters.h"
 
 typedef struct amiga_dt_anim_content {
 	struct content base;
@@ -183,14 +185,14 @@ bool amiga_dt_anim_convert(struct content *c)
 			width = (int)bmh->bmh_Width;
 			height = (int)bmh->bmh_Height;
 
-			plugin->bitmap = bitmap_create(width, height, bm_flags);
+			plugin->bitmap = amiga_bitmap_create(width, height, bm_flags);
 			if (!plugin->bitmap) {
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 				return false;
 			}
 
-			bm_buffer = bitmap_get_buffer(plugin->bitmap);
+			bm_buffer = amiga_bitmap_get_buffer(plugin->bitmap);
 
 			adt_frame.MethodID = ADTM_LOADFRAME;
 			adt_frame.alf_TimeStamp = 0;
@@ -229,7 +231,7 @@ bool amiga_dt_anim_convert(struct content *c)
 	content__set_title(c, title);
 */
 
-	bitmap_modified(plugin->bitmap);
+	amiga_bitmap_modified(plugin->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -245,7 +247,7 @@ void amiga_dt_anim_destroy(struct content *c)
 	LOG(("amiga_dt_anim_destroy"));
 
 	if (plugin->bitmap != NULL)
-		bitmap_destroy(plugin->bitmap);
+		amiga_bitmap_destroy(plugin->bitmap);
 
 	DisposeDTObject(plugin->dto);
 

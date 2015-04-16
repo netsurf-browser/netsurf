@@ -176,7 +176,7 @@ void ami_theme_throbber_setup(void)
 
 void ami_theme_throbber_free(void)
 {
-	bitmap_destroy(throbber_nsbm);
+	amiga_bitmap_destroy(throbber_nsbm);
 	throbber = NULL;
 }
 

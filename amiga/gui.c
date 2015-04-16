@@ -828,8 +828,8 @@ static void ami_gui_commandline(int *argc, char **argv)
 				p++;
 			} while(*p != NULL);
 
-			char *new_argv = malloc(sizeof(char *) * new_argc);
-			char **new_argvp = &new_argv;
+			const char *new_argv = malloc(sizeof(char *) * new_argc);
+			const char **new_argvp = &new_argv;
 			*new_argvp = messages_get("NetSurf");
 			p = (char **)rarray[A_NSOPTS];
 
@@ -3082,7 +3082,7 @@ static void ami_gui_cache_favicon(nsurl *url, struct bitmap *favicon)
 	STRPTR filename = NULL;
 
 	if ((filename = ami_gui_get_cache_favicon_name(url, false))) {
-		if(favicon) bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
+		if(favicon) amiga_bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
 		FreeVec(filename);
 	}
 }
@@ -5410,6 +5410,7 @@ int main(int argc, char** argv)
 		.search = amiga_search_table,
 		.search_web = &amiga_search_web_table,
 		.llcache = filesystem_llcache_table,
+		.bitmap = amiga_bitmap_table,
 	};
 
 #ifdef __amigaos4__

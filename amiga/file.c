@@ -188,7 +188,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 				if((bm = content_get_bitmap(object))) {
 					bm->url = (char *)nsurl_access(hlcache_handle_get_url(object));
 					bm->title = (char *)content_get_title(object);
-					bitmap_save(bm, fname, 0);
+					amiga_bitmap_save(bm, fname, 0);
 				}
 #ifdef WITH_NS_SVG
 				else if(ami_mime_compare(object, "svg") == true) {

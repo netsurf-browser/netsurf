@@ -23,21 +23,24 @@
 #ifdef WITH_AMIGA_DATATYPES
 #include "amiga/os3support.h"
 
-#include "amiga/bitmap.h"
-#include "amiga/filetype.h"
-#include "amiga/datatypes.h"
-#include "content/content_protected.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "image/image_cache.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-
+#include <stdbool.h>
 #include <proto/datatypes.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <datatypes/pictureclass.h>
 #include <intuition/classusr.h>
+
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "content/content_protected.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "image/image_cache.h"
+
+#include "amiga/bitmap.h"
+#include "amiga/filetype.h"
+#include "amiga/datatypes.h"
+
 
 static nserror amiga_dt_picture_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
@@ -179,20 +182,21 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 
 	if((dto = amiga_dt_picture_newdtobject(adt)))
 	{
-		bitmap = bitmap_create(c->width, c->height, BITMAP_NEW);
+		bitmap = amiga_bitmap_create(c->width, c->height, BITMAP_NEW);
 		if (!bitmap) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return NULL;
 		}
 
-		bm_buffer = bitmap_get_buffer(bitmap);
+		bm_buffer = amiga_bitmap_get_buffer(bitmap);
 
 		IDoMethod(dto, PDTM_READPIXELARRAY,
-			bm_buffer, PBPAFMT_RGBA, bitmap_get_rowstride(bitmap),
+			bm_buffer, PBPAFMT_RGBA,
+			amiga_bitmap_get_rowstride(bitmap),
 			0, 0, c->width, c->height);
 
-		bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
+		amiga_bitmap_set_opaque(bitmap, amiga_bitmap_test_opaque(bitmap));
 		
 		DisposeDTObject(dto);
 		adt->dto = NULL;

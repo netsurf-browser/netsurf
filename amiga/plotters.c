@@ -510,7 +510,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		(nsoption_bool(direct_render) == false), 1)) {
 		uint32 comptype = COMPOSITE_Src_Over_Dest;
 		uint32 compflags = COMPFLAG_IgnoreDestAlpha;
-		if(bitmap_get_opaque(bitmap)) {
+		if(amiga_bitmap_get_opaque(bitmap)) {
 			compflags |= COMPFLAG_SrcAlphaOverride;
 			comptype = COMPOSITE_Src;
 		}

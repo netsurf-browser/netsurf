@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <proto/exec.h>
 #include <proto/icon.h>
@@ -36,10 +37,6 @@
 #endif
 #include <workbench/icon.h>
 
-#include "amiga/os3support.h"
-#include "amiga/bitmap.h"
-#include "amiga/icon.h"
-#include "amiga/misc.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "content/content_protected.h"
@@ -47,6 +44,11 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/file.h"
+
+#include "amiga/os3support.h"
+#include "amiga/bitmap.h"
+#include "amiga/icon.h"
+#include "amiga/misc.h"
 
 #define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
 #define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */
@@ -182,14 +184,14 @@ bool amiga_icon_convert(struct content *c)
 		return false;
 	}
 
-	icon_c->bitmap = bitmap_create(width, height, BITMAP_NEW);
+	icon_c->bitmap = amiga_bitmap_create(width, height, BITMAP_NEW);
 	if (!icon_c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		if(dobj) FreeDiskObject(dobj);
 		return false;
 	}
-	imagebuf = (ULONG *) bitmap_get_buffer(icon_c->bitmap);
+	imagebuf = (ULONG *) amiga_bitmap_get_buffer(icon_c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -229,7 +231,7 @@ bool amiga_icon_convert(struct content *c)
 	c->width = width;
 	c->height = height;
 
-	bitmap_modified(icon_c->bitmap);
+	amiga_bitmap_modified(icon_c->bitmap);
 	content_set_ready(c);
 	content_set_done(c);
 	content_set_status(c, "");
@@ -252,7 +254,7 @@ void amiga_icon_destroy(struct content *c)
 	amiga_icon_content *icon_c = (amiga_icon_content *)c;	
 
 	if (icon_c->bitmap != NULL)
-		bitmap_destroy(icon_c->bitmap);
+		amiga_bitmap_destroy(icon_c->bitmap);
 }
 
 
