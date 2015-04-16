@@ -281,7 +281,8 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  *
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(void *vbitmap) {
+void bitmap_modified(void *vbitmap)
+{
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	// convert the shadow (ABGR) to into the primary bitmap
 	nsbeos_rgba_to_bgra(bitmap->shadow->Bits(), bitmap->primary->Bits(),
@@ -291,12 +292,14 @@ void bitmap_modified(void *vbitmap) {
 	nsbeos_bitmap_free_pretiles(bitmap);
 }
 
-int bitmap_get_width(void *vbitmap){
+int bitmap_get_width(void *vbitmap)
+{
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	return bitmap->primary->Bounds().Width() + 1;
 }
 
-int bitmap_get_height(void *vbitmap){
+int bitmap_get_height(void *vbitmap)
+{
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	return bitmap->primary->Bounds().Height() + 1;
 }

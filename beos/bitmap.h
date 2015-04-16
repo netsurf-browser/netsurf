@@ -24,11 +24,13 @@ extern "C" {
 #include "image/bitmap.h"
 }
 
+extern struct gui_bitmap_table *beos_bitmap_table;
+
 BBitmap *nsbeos_bitmap_get_primary(struct bitmap*);
 BBitmap *nsbeos_bitmap_get_pretile_x(struct bitmap*);
 BBitmap *nsbeos_bitmap_get_pretile_y(struct bitmap*);
 BBitmap *nsbeos_bitmap_get_pretile_xy(struct bitmap*);
 
-extern struct gui_bitmap_table *beos_bitmap_table;
+void bitmap_modified(void *vbitmap);
 
 #endif /* NS_BEOS_BITMAP_H */
