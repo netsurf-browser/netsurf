@@ -19,7 +19,7 @@
 #ifndef _NETSURF_GTK_VIEWSOURCE_H_
 #define _NETSURF_GTK_VIEWSOURCE_H_
 
-void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw);
+nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw);
 
 #endif
 

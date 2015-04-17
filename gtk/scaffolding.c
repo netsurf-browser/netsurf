@@ -1158,7 +1158,13 @@ MULTIHANDLER(fullscreen)
 
 MULTIHANDLER(viewsource)
 {
-	nsgtk_viewsource(g->window, nsgtk_get_browser_window(g->top_level));
+	nserror ret;
+
+	ret = nsgtk_viewsource(g->window, nsgtk_get_browser_window(g->top_level));
+	if (ret != NSERROR_OK) {
+		warn_user(messages_get_errorcode(ret), 0);
+	}
+
 	return TRUE;
 }
 

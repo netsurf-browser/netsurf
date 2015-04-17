@@ -28,7 +28,7 @@
 #include "gtk/viewdata.h"
 #include "gtk/viewsource.h"
 
-void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
+nserror nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 {
 	nserror ret;
 	struct hlcache_handle *hlcontent;
@@ -41,11 +41,11 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 
 	hlcontent = browser_window_get_content(bw);
 	if (hlcontent == NULL) {
-		return;
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	if (content_get_type(hlcontent) != CONTENT_HTML) {
-		return;
+		return NSERROR_BAD_CONTENT;
 	}
 
 	source_data = content_get_source_data(hlcontent, &source_size);
@@ -54,11 +54,15 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 	if (ret != NSERROR_OK) {
 		filename = strdup(messages_get("SaveSource"));
 		if (filename == NULL) {
-			return;
+			return NSERROR_NOMEM;
 		}
 	}
 
 	title = malloc(strlen(nsurl_access(browser_window_get_url(bw))) + SLEN("Source of  - NetSurf") + 1);
+	if (title == NULL) {
+		free(filename);
+		return NSERROR_NOMEM;
+	}
 	sprintf(title, "Source of %s - NetSurf", nsurl_access(browser_window_get_url(bw)));
 
 	ret = utf8_from_enc(source_data,
@@ -72,4 +76,6 @@ void nsgtk_viewsource(GtkWindow *parent, struct browser_window *bw)
 
 	free(filename);
 	free(title);
+
+	return ret;
 }
