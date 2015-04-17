@@ -827,7 +827,8 @@ editor_init_fname(const char *title,
 {
 	char **xdg_data_vec;
 	int veci;
-	char *def_app_desktop; /* desktop file of default app for mimetype */
+	/* desktop file of default app for mimetype */
+	char *def_app_desktop = NULL;
 	char *exec_cmd;
 	char **argv;
 
