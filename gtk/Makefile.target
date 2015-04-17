@@ -61,9 +61,6 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk -g \
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\"
 
 # non optional pkg-configed libs
-$(eval $(call pkg_config_find_and_add,libcss,CSS))
-$(eval $(call pkg_config_find_and_add,libdom,DOM))
-$(eval $(call pkg_config_find_and_add,libhubbub,Hubbub))
 $(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
 $(eval $(call pkg_config_find_and_add,libcurl,Curl ))
 $(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_GTK_MAJOR)))

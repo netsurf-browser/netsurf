@@ -12,7 +12,6 @@ ifeq ($(HOST),riscos)
   LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
 else
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libcares libcurl openssl)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libdom libcss)
 endif
 
 $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))

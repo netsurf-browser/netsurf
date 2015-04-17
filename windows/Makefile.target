@@ -21,13 +21,8 @@ ifneq ($(PKG_CONFIG),)
   $(eval $(call pkg_config_find_and_add,zlib,ZLib))
   $(eval $(call pkg_config_find_and_add,libcurl,Curl))
   $(eval $(call pkg_config_find_and_add,libcares,Cares))
-  $(eval $(call pkg_config_find_and_add,libwapcaplet,Wapcaplet))
-  $(eval $(call pkg_config_find_and_add,libparserutils,Parserutils))
-  $(eval $(call pkg_config_find_and_add,libhubbub,Hubbub))
-  $(eval $(call pkg_config_find_and_add,libdom,DOM))
-  $(eval $(call pkg_config_find_and_add,libcss,CSS))
 else
-  LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
+  LDFLAGS += -lcurl -lz
 endif
 
 LDFLAGS += -lssl -lcrypto -lregex -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows

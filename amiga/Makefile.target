@@ -46,10 +46,10 @@ else
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
   CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl openssl)
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags tre libdom libcss)
+  CFLAGS += $(shell $(PKG_CONFIG) --cflags tre)
 
   LDFLAGS += $(shell $(PKG_CONFIG) --static --libs libcurl openssl)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs tre libdom libcss)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs tre)
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
   ifeq ($(SUBTARGET),os3)

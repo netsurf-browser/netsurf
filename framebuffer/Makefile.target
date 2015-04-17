@@ -47,7 +47,7 @@ CFLAGS += -std=c99 -g -Dsmall \
 	  -D_DEFAULT_SOURCE \
 	  -D_XOPEN_SOURCE=600 \
 	  -D_POSIX_C_SOURCE=200112L \
-	  $(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl)
+	  $(shell $(PKG_CONFIG) --cflags libnsfb openssl)
 
 LDFLAGS += -lm -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
 
@@ -56,14 +56,13 @@ ifeq ($(HOST),mint)
     CFLAGS += $(shell curl-config --cflags)
 
     LDFLAGS += $(shell curl-config --libs)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub openssl libcss)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
     LDFLAGS += -L/usr/lib/ -lz -liconv 
     LDFLAGS += -lm
 else
     CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
 
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl libdom openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl openssl)
 endif
 
 
