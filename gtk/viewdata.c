@@ -489,7 +489,11 @@ window_init_fname(const char *title,
 	
 	fclose(f);
 
+	/* window init takes ownership of the ndata if there is no error */
 	ret = window_init(title, leafname, ndata, ndata_len);
+	if (ret != NSERROR_OK) {
+		free(ndata);
+	}
 
 	return ret;
 }
