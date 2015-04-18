@@ -797,8 +797,27 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 		return;
 	}
 
-	w->requestscrollx = sx - w->scrollx;
-	w->requestscrolly = sy - w->scrolly;
+	/*LOG(("scroll sx,sy:%d,%d x,y:%d,%d w.h:%d,%d",sx,sy,w->scrollx,w->scrolly, width,height));*/
+
+	/* The resulting gui window scroll must remain withn the
+	 * windows bounding box.
+	 */
+	if (sx < 0) {
+		w->requestscrollx = -w->scrollx;
+	} else if (sx > (width - w->width)) {
+		w->requestscrollx = (width - w->width) - w->scrollx;
+	} else {
+		w->requestscrollx = sx - w->scrollx;
+	}
+	if (sy < 0) {
+		w->requestscrolly = -w->scrolly;
+	} else if (sy > (height - w->height)) {
+		w->requestscrolly = (height - w->height) - w->scrolly;
+	} else {
+		w->requestscrolly = sy - w->scrolly;
+	}
+
+	/*LOG(("requestscroll x,y:%d,%d", w->requestscrollx, w->requestscrolly));*/
 
 	/* set the vertical scroll offset */
 	si.cbSize = sizeof(si);
@@ -809,7 +828,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nPos = max(w->scrolly + w->requestscrolly, 0);
 	si.nPos = min(si.nPos, height - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
-	LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
+	/*LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));*/
 
 	/* set the horizontal scroll offset */
 	si.cbSize = sizeof(si);
@@ -820,7 +839,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nPos = max(w->scrollx + w->requestscrollx, 0);
 	si.nPos = min(si.nPos, width - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
-	LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
+	/*LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));*/
 
 	/* Set caret position */
 	GetCaretPos(&p);
@@ -834,6 +853,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	r.left = 0;
 	r.right = w->width + 1;
 	ScrollWindowEx(w->drawingarea, - w->requestscrollx, - w->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
+	/*LOG(("ScrollWindowEx %d, %d", - w->requestscrollx, - w->requestscrolly));*/
 	w->scrolly += w->requestscrolly;
 	w->scrollx += w->requestscrollx;
 	w->requestscrollx = 0;
