@@ -63,6 +63,7 @@
 #include "desktop/thumbnail.h"
 #include "desktop/tree.h"
 #include "desktop/gui_window.h"
+#include "image/bitmap.h"
 #include "render/form.h"
 
 #include "riscos/bitmap.h"

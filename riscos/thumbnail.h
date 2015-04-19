@@ -17,11 +17,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Page thumbnail creation (interface).
+/**
+ * \file
+ * Page thumbnail creation interface.
  */
 
-#include "oslib/osspriteop.h"
-#include "image/bitmap.h"
+#ifndef _NETSURF_RISCOS_THUMBNAIL_H_
+#define _NETSURF_RISCOS_THUMBNAIL_H_
 
-osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap);
+struct osspriteop_area;
+
+struct osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap);
+
+#endif
