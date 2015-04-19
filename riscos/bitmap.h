@@ -19,36 +19,113 @@
 #ifndef _NETSURF_RISCOS_BITMAP_H_
 #define _NETSURF_RISCOS_BITMAP_H_
 
+struct osspriteop_area;
+struct osspriteop_header;
+
 /** bitmap operations table */
 struct gui_bitmap_table *riscos_bitmap_table;
 
-#include <stdbool.h>
-#include "oslib/osspriteop.h"
-#include "image/bitmap.h"
-
 /** save with full alpha channel (if not opaque) */
-#define BITMAP_SAVE_FULL_ALPHA	(1 << 0) 
+#define BITMAP_SAVE_FULL_ALPHA	(1 << 0)
 
-struct osspriteop_area;
-
+/**
+ * RISC OS wimp toolkit bitmap.
+ */
 struct bitmap {
-	int width;
-	int height;
+	int width; /**< width of bitmap */
+	int height; /**< height of bitmap */
 
-	unsigned int state;
+	unsigned int state; /**< The bitmap attributes (opaque/dirty etc.) */
 
-	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
+	struct osspriteop_area *sprite_area; /**< Uncompressed data, or NULL */
 };
 
-void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
-void riscos_bitmap_destroy(void *vbitmap);
+
+/**
+ * Overlay a sprite onto the given bitmap
+ *
+ * \param bitmap  bitmap object
+ * \param s       8bpp sprite to be overlayed onto bitmap
+ */
+void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const struct osspriteop_header *s);
+
+
+/**
+ * Create a bitmap.
+ *
+ * \param  width   width of image in pixels
+ * \param  height  width of image in pixels
+ * \param  state the state to create the bitmap in.
+ * \return an opaque struct bitmap, or NULL on memory exhaustion
+ */
 void *riscos_bitmap_create(int width, int height, unsigned int state);
+
+
+/**
+ * Free a bitmap.
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ */
+void riscos_bitmap_destroy(void *vbitmap);
+
+/**
+ * Return a pointer to the pixel data in a bitmap.
+ *
+ * The pixel data is packed as BITMAP_FORMAT, possibly with padding at
+ * the end of rows. The width of a row in bytes is given by
+ * riscos_bitmap_get_rowstride().
+ *
+ * \param vbitmap A bitmap as returned by riscos_bitmap_create()
+ * \return pointer to the pixel buffer
+ */
 unsigned char *riscos_bitmap_get_buffer(void *vbitmap);
+
+/**
+ * The bitmap image has changed, so flush any persistent cache.
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ */
 void riscos_bitmap_modified(void *vbitmap);
+
+/**
+ * Get the width of a bitmap.
+ *
+ * \param vbitmap A bitmap, as returned by bitmap_create()
+ * \return The bitmaps width in pixels.
+ */
 int riscos_bitmap_get_width(void *vbitmap);
+
+/**
+ * Get the height of a bitmap.
+ *
+ * \param vbitmap A bitmap, as returned by bitmap_create()
+ * \return The bitmaps height in pixels.
+ */
 int riscos_bitmap_get_height(void *vbitmap);
+
+/**
+ * Find the width of a pixel row in bytes.
+ *
+ * \param vbitmap A bitmap, as returned by riscos_bitmap_create()
+ * \return width of a pixel row in the bitmap
+ */
 size_t riscos_bitmap_get_rowstride(void *vbitmap);
+
+/**
+ * Gets whether a bitmap should be plotted opaque
+ *
+ * \param vbitmap A bitmap, as returned by riscos_bitmap_create()
+ */
 bool riscos_bitmap_get_opaque(void *vbitmap);
+
+/**
+ * Save a bitmap in the platform's native format.
+ *
+ * \param  vbitmap  a bitmap, as returned by bitmap_create()
+ * \param  path	   pathname for file
+ * \param  flags   modify the behaviour of the save
+ * \return true on success, false on error and error reported
+ */
 bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags);
 
 #endif

@@ -103,14 +103,7 @@ static bool bitmap_initialise(struct bitmap *bitmap)
 }
 
 
-/**
- * Create a bitmap.
- *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state the state to create the bitmap in.
- * \return an opaque struct bitmap, or NULL on memory exhaustion
- */
+/* exported interface documented in riscos/bitmap.h */
 void *riscos_bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
@@ -129,15 +122,7 @@ void *riscos_bitmap_create(int width, int height, unsigned int state)
 }
 
 
-/**
- * Return a pointer to the pixel data in a bitmap.
- *
- * The pixel data is packed as BITMAP_FORMAT, possibly with padding at the end
- * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return pointer to the pixel buffer
- */
+/* exported interface documented in riscos/bitmap.h */
 unsigned char *riscos_bitmap_get_buffer(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -175,12 +160,7 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 }
 
 
-/**
- * Find the width of a pixel row in bytes.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \return width of a pixel row in the bitmap
- */
+/* exported interface documented in riscos/bitmap.h */
 size_t riscos_bitmap_get_rowstride(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -237,11 +217,7 @@ static bool bitmap_test_opaque(void *vbitmap)
 }
 
 
-/**
- * Gets whether a bitmap should be plotted opaque
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- */
+/* exported interface documented in riscos/bitmap.h */
 bool riscos_bitmap_get_opaque(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -250,11 +226,7 @@ bool riscos_bitmap_get_opaque(void *vbitmap)
 }
 
 
-/**
- * Free a bitmap.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- */
+/* exported interface documented in riscos/bitmap.h */
 void riscos_bitmap_destroy(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -270,14 +242,7 @@ void riscos_bitmap_destroy(void *vbitmap)
 }
 
 
-/**
- * Save a bitmap in the platform's native format.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- * \param  path	   pathname for file
- * \param  flags   modify the behaviour of the save
- * \return true on success, false on error and error reported
- */
+/* exported interface documented in riscos/bitmap.h */
 bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -443,11 +408,7 @@ bool riscos_bitmap_save(void *vbitmap, const char *path, unsigned flags)
 }
 
 
-/**
- * The bitmap image has changed, so flush any persistent cache.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- */
+/* exported interface documented in riscos/bitmap.h */
 void riscos_bitmap_modified(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -455,6 +416,7 @@ void riscos_bitmap_modified(void *vbitmap)
 }
 
 
+/* exported interface documented in riscos/bitmap.h */
 int riscos_bitmap_get_width(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -462,6 +424,7 @@ int riscos_bitmap_get_width(void *vbitmap)
 }
 
 
+/* exported interface documented in riscos/bitmap.h */
 int riscos_bitmap_get_height(void *vbitmap)
 {
 	struct bitmap *bitmap = (struct bitmap *) vbitmap;
@@ -482,13 +445,10 @@ static size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
-/**
- * Overlay a sprite onto the given bitmap
- *
- * \param  bitmap  bitmap object
- * \param  s       8bpp sprite to be overlayed onto bitmap
- */
-void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
+
+/* exported interface documented in riscos/bitmap.h */
+void riscos_bitmap_overlay_sprite(struct bitmap *bitmap,
+				  const osspriteop_header *s)
 {
 	const os_colour *palette;
 	const byte *sp, *mp;
