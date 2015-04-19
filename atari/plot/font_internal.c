@@ -24,7 +24,10 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 #include "desktop/mouse.h"
+#include "desktop/plot_style.h"
 
+#include "atari/gui.h"
+#include "atari/bitmap.h"
 #include "atari/plot/plot.h"
 #include "atari/plot/fontplot.h"
 #include "atari/plot/font_internal.h"

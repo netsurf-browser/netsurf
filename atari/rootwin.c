@@ -60,6 +60,7 @@
 #include "atari/redrawslots.h"
 #include "atari/toolbar.h"
 #include "atari/findfile.h"
+#include "atari/bitmap.h"
 
 extern struct gui_window *input_window;
 extern EVMULT_OUT aes_event_out;

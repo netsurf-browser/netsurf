@@ -25,6 +25,10 @@
 #include "atari/redrawslots.h"
 #include "atari/gemtk/gemtk.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+
 #define CARET_STATE_VISIBLE		0x01
 #define CARET_STATE_ENABLED		0x02
 

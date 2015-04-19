@@ -1,22 +1,6 @@
 #ifndef FONT_PLOT_H
 #define FONT_PLOT_H
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-
-#include "desktop/plot_style.h"
-#include "image/bitmap.h"
-#include "utils/log.h"
-#include "atari/bitmap.h"
-#include "atari/plot/eddi.h"
-#include "atari/gui.h"
-#include "atari/misc.h"
-#include "atari/osspec.h"
-
 typedef struct s_font_plotter * FONT_PLOTTER;
 
 struct s_font_driver_table_entry

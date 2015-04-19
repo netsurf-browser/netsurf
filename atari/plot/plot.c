@@ -22,8 +22,8 @@
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
-
 #include <mt_gem.h>
+#include <mint/osbind.h>
 
 #include "image/bitmap.h"
 #include "utils/log.h"
@@ -32,9 +32,12 @@
 #include "desktop/plotters.h"
 #include "desktop/mouse.h"
 
+#include "atari/osspec.h"
 #include "atari/misc.h"
 #include "atari/bitmap.h"
 #include "utils/nsoption.h"
+#include "atari/plot/eddi.h"
+#include "atari/plot/fontplot.h"
 #include "atari/plot/plot.h"
 
 void vq_scrninfo(VdiHdl handle, short *work_out);

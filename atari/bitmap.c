@@ -19,7 +19,8 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
-#include "assert.h"
+#include <assert.h>
+#include <stdlib.h>
 
 #include "utils/nsoption.h"
 #include "utils/log.h"

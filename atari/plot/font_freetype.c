@@ -18,16 +18,22 @@
  */
 
 #ifdef WITH_FREETYPE_FONT_DRIVER
-
+#include <assert.h>
 #include <ft2build.h>
 #include FT_CACHE_H
 
+#include "utils/log.h"
 #include "utils/nsoption.h"
 #include "desktop/mouse.h"
+#include "desktop/plot_style.h"
 
+#include "atari/gui.h"
+#include "atari/bitmap.h"
 #include "atari/plot/plot.h"
+#include "atari/plot/fontplot.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"
+#include "atari/gemtk/gemtk.h"
 
 /* -------------------------------------------------------------------------- */
 /*  Font Loading & Mapping scheme                                             */

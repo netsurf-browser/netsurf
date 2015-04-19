@@ -46,11 +46,10 @@
 #include "desktop/plotters.h"
 
 #include "atari/gui.h"
-#include "atari/font.h"
+#include "atari/plot/fontplot.h"
 #include "atari/plot/plot.h"
 #include "atari/findfile.h"
-#include "atari/gui.h"
-#include "atari/plot/plot.h"
+#include "atari/font.h"
 
 extern FONT_PLOTTER fplotter;
 
