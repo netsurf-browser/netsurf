@@ -20,9 +20,6 @@
 #define NS_BEOS_BITMAP_H
 
 #include <Bitmap.h>
-extern "C" {
-#include "image/bitmap.h"
-}
 
 extern struct gui_bitmap_table *beos_bitmap_table;
 
