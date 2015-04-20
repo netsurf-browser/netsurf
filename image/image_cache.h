@@ -38,10 +38,9 @@
 #define NETSURF_IMAGE_IMAGE_CACHE_H_
 
 #include "utils/errors.h"
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
 
 struct content_redraw_data;
+struct redraw_context;
 
 typedef struct bitmap * (image_cache_convert_fn) (struct content *content);
 

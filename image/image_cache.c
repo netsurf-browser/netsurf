@@ -27,6 +27,7 @@
 #include "desktop/gui_misc.h"
 #include "desktop/gui_internal.h"
 
+#include "image/bitmap.h"
 #include "image/image_cache.h"
 #include "image/image.h"
 

@@ -35,7 +35,6 @@
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
 #include "desktop/thumbnail.h"
-#include "image/bitmap.h"
 
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"
