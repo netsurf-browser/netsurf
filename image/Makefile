@@ -10,7 +10,6 @@ S_IMAGE_$(NETSURF_USE_ROSPRITE) += nssprite.c
 S_IMAGE_$(NETSURF_USE_PNG) += png.c
 S_IMAGE_$(NETSURF_USE_NSSVG) += svg.c
 S_IMAGE_$(NETSURF_USE_RSVG) += rsvg.c
-S_IMAGE_$(NETSURF_USE_WEBP) += webp.c
 S_IMAGE_$(NETSURF_USE_VIDEO) += video.c
 
 S_IMAGE := $(addprefix image/,$(S_IMAGE_YES))

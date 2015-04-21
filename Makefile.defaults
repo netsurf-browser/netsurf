@@ -47,10 +47,6 @@ NETSURF_USE_JPEG := YES
 # Valid options: YES, NO	                          (highly recommended)
 NETSURF_USE_PNG := YES
 
-# Enable NetSurf's use of libwebp for displaying WebPs
-# Valid options: YES, NO
-NETSURF_USE_WEBP := NO
-
 # Enable NetSurf's use of gstreamer for displaying videos
 # Valid options: YES, NO
 NETSURF_USE_VIDEO := NO

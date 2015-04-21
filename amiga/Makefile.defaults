@@ -14,10 +14,6 @@ endif
 # Valid options: YES, NO, AUTO
 NETSURF_USE_ROSPRITE := NO
 
-# Enable NetSurf's use of libwebp for displaying WebPs
-# Valid options: YES, NO
-NETSURF_USE_WEBP := NO
-
 # Enable NetSurf to display Amiga icons
 # Valid options: YES, NO                 (recommended)
 NETSURF_USE_AMIGA_ICON := YES

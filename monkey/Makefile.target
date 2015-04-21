@@ -17,7 +17,6 @@ NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
 NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
 NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
@@ -29,9 +28,6 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
 $(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
 $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
-
-# no pkg-config for this library
-$(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
 CWARNFLAGS += -Werror
 

@@ -34,7 +34,6 @@
 #include "image/png.h"
 #include "image/rsvg.h"
 #include "image/svg.h"
-#include "image/webp.h"
 #include "image/image.h"
 
 /**
@@ -93,12 +92,6 @@ nserror image_init(void)
 	if (error != NSERROR_OK)
 		return error;
 #endif
-
-#ifdef WITH_WEBP
-	error = webp_init();
-	if (error != NSERROR_OK)
-		return error;
-#endif /* WITH_WEBP */
 
 	return NSERROR_OK;
 }

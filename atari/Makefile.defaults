@@ -10,10 +10,6 @@ NETSURF_USE_LIBICONV_PLUG := NO
 # Valid options: YES, NO, AUTO
 NETSURF_USE_ROSPRITE := NO
 
-# Enable NetSurf's use of libwebp for displaying WebPs
-# Valid options: YES, NO
-NETSURF_USE_WEBP := NO
-
 # Enable NetSurf's use of librsvg in conjunction with Cairo to display SVGs
 # Valid options: YES, NO, AUTO
 NETSURF_USE_RSVG := AUTO

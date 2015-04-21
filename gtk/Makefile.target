@@ -14,7 +14,6 @@ NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
 NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
 NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
@@ -27,7 +26,6 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,RSVG,librsvg-2.0,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
-$(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
 $(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
 $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 $(eval $(call pkg_config_find_and_add_enabled,VIDEO,gstreamer-0.10,Video))
