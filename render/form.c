@@ -215,6 +215,7 @@ void form_add_control(struct form *form, struct form_control *control)
  */
 void form_free_control(struct form_control *control)
 {
+	struct form_control *c;
 	assert(control != NULL);
 
 	LOG(("Control:%p name:%p value:%p initial:%p", control, control->name, control->value, control->initial_value));
@@ -248,6 +249,24 @@ void form_free_control(struct form_control *control)
 
 		if (control->data.text.ta != NULL) {
 			textarea_destroy(control->data.text.ta);
+		}
+	}
+
+	/* unlink the control from the form */
+	for (c = control->form->controls; c != NULL; c = c->next) {
+		if (c->next == control) {
+			c->next = control->next;
+			if (control->form->last_control == control)
+				control->form->last_control = c;
+			break;
+		}
+		if (c == control) {
+			/* can only happen if control was first control */
+			control->form->controls = control->next;
+			if (control->form->last_control == control)
+				control->form->controls =
+					control->form->last_control = NULL;
+			break;
 		}
 	}
 
