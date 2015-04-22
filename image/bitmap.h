@@ -28,27 +28,27 @@
  * For example, an opaque 1x1 pixel image would yield the following bitmap
  * data:
  *
- * Red  : 0xff 0x00 0x00 0x00
- * Green: 0x00 0xff 0x00 0x00
- * Blue : 0x00 0x00 0xff 0x00
+ * > Red  : 0xff 0x00 0x00 0x00
+ * > Green: 0x00 0xff 0x00 0x00
+ * > Blue : 0x00 0x00 0xff 0x00
  *
  * Any attempt to read pixels by casting bitmap data to uint32_t or similar
  * will need to cater for the order of bytes in a word being different on
  * big and little endian systems. To avoid confusion, it is recommended
  * that pixel data is loaded as follows:
  *
- * uint32_t read_pixel(const uint8_t *bmp)
- * {
- *     //     red      green           blue              alpha
- *     return bmp[0] | (bmp[1] << 8) | (bmp[2] << 16) | (bmp[3] << 24);
- * }
+ *   uint32_t read_pixel(const uint8_t *bmp)
+ *   {
+ *        //     red      green           blue              alpha
+ *        return bmp[0] | (bmp[1] << 8) | (bmp[2] << 16) | (bmp[3] << 24);
+ *    }
  *
  * and *not* as follows:
  *
- * uint32_t read_pixel(const uint8_t *bmp)
- * {
- *     return *((uint32_t *) bmp);
- * }
+ *    uint32_t read_pixel(const uint8_t *bmp)
+ *    {
+ *        return *((uint32_t *) bmp);
+ *    }
  */
 
 #ifndef _NETSURF_IMAGE_BITMAP_H_
@@ -61,6 +61,7 @@
 
 struct content;
 struct bitmap;
+struct hlcache_handle;
 
 /**
  * Bitmap operations.
@@ -163,6 +164,14 @@ struct gui_bitmap_table {
 	 * \param bitmap The bitmap set as modified.
 	 */
 	void (*modified)(void *bitmap);
+
+	/**
+	 * Render content into a bitmap.
+	 *
+	 * \param bitmap The bitmap to render into.
+	 * \param content The content to render.
+	 */
+	nserror (*render)(struct bitmap *bitmap, struct hlcache_handle *content);
 };
 
 #endif
