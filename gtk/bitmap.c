@@ -33,7 +33,6 @@
 #include "content/content.h"
 #include "image/bitmap.h"
 #include "desktop/plotters.h"
-#include "desktop/thumbnail.h"
 
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"
@@ -441,8 +440,8 @@ int nsgtk_bitmap_get_height(void *vbitmap)
 /**
  * Render content into a bitmap.
  *
- * \param  content  content structure to thumbnail
- * \param  bitmap   the bitmap to draw to
+ * \param  bitmap The bitmap to draw to
+ * \param  content The content to render
  * \return true on success and bitmap updated else false
  */
 static nserror
@@ -489,7 +488,7 @@ bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
 	current_cr = cairo_create(surface);
 
 	/* render the content */
-	thumbnail_redraw(content, cwidth, cheight, &ctx);
+	content_scaled_redraw(content, cwidth, cheight, &ctx);
 
 	cairo_destroy(current_cr);
 	current_cr = old_cr;
