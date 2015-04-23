@@ -270,6 +270,27 @@ void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 bool content_keypress(struct hlcache_handle *h, uint32_t key);
 bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
+
+
+/**
+ * Redraw a content with scale set for horizontal fit.
+ *
+ * Redraws the content at a specified width and height with the
+ * content drawing scaled to fit within the area.
+ *
+ * \param content The content to redraw
+ * \param width The target width
+ * \param height The target height
+ * \param ctx current redraw context
+ * \return true if successful, false otherwise
+ *
+ * The thumbnail is guaranteed to be filled to its width/height extents, so
+ * there is no need to render a solid background first.
+ *
+ * Units for width and height are pixels.
+ */
+bool content_scaled_redraw(struct hlcache_handle *content, int width, int height, const struct redraw_context *ctx);
+
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct object_params *params);
 void content_close(struct hlcache_handle *h);
