@@ -4493,14 +4493,14 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 
 	assert(left == -right);
 
-	if (top == AUTO && bottom == AUTO)
+	if (top == AUTO && bottom == AUTO) {
 		top = bottom = 0;
-	else if (top == AUTO)
+	} else if (top == AUTO) {
 		top = -bottom;
-	else if (bottom == AUTO)
+	} else {
+		/* bottom is AUTO, or neither are AUTO */
 		bottom = -top;
-	else
-		bottom = -top;
+	}
 
 #ifdef LAYOUT_DEBUG
 	LOG(("left %i, right %i, top %i, bottom %i", left, right, top, bottom));
