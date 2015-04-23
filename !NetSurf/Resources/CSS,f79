@@ -149,3 +149,8 @@ noembed, script, style, title { display: none; }
 article, aside, figcaption, figure, footer, header, main, nav, section {
 	display: block;
 }
+
+mark {
+	background: yellow;
+	color: black;
+}
