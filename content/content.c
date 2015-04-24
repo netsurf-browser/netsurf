@@ -33,7 +33,9 @@
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "image/bitmap.h"
+#include "desktop/knockout.h"
 #include "desktop/browser.h"
+#include "desktop/plotters.h"
 #include "desktop/gui_internal.h"
 #include "utils/nsoption.h"
 
@@ -551,8 +553,7 @@ void content__request_redraw(struct content *c,
 /**
  * Display content on screen with optional tiling.
  *
- * Calls the redraw_tile function for the content, or emulates it with the
- * redraw function if it doesn't exist.
+ * Calls the redraw function for the content.
  */
 
 bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
@@ -575,6 +576,74 @@ bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
 	return c->handler->redraw(c, data, clip, ctx);
 }
 
+
+/* exported interface, documented in content/content.h */
+bool content_scaled_redraw(struct hlcache_handle *h,
+		int width, int height, const struct redraw_context *ctx)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	struct redraw_context new_ctx = *ctx;
+	struct rect clip;
+	struct content_redraw_data data;
+	bool plot_ok = true;
+
+	assert(c != NULL);
+
+	/* ensure it is safe to attempt redraw */
+	if (c->locked) {
+		return true;
+	}
+
+	/* ensure we have a redrawable content */
+	if (c->handler->redraw == NULL) {
+		return true;
+	}
+
+	LOG(("Content %p %dx%d ctx:%p", c, width, height, ctx));
+
+	if (ctx->plot->option_knockout) {
+		knockout_plot_start(ctx, &new_ctx);
+	}
+
+	/* Set clip rectangle to required thumbnail size */
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = width;
+	clip.y1 = height;
+
+	new_ctx.plot->clip(&clip);
+
+	/* Plot white background */
+	plot_ok &= new_ctx.plot->rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+			plot_style_fill_white);
+
+
+	/* Set up content redraw data */
+	data.x = 0;
+	data.y = 0;
+	data.width = width;
+	data.height = height;
+
+	data.background_colour = 0xFFFFFF;
+	data.repeat_x = false;
+	data.repeat_y = false;
+
+	/* Find the scale factor to use if the content has a width */
+	if (c->width) {
+		data.scale = (float)width / (float)c->width;
+	} else {
+		data.scale = 1.0;
+	}
+
+	/* Render the content */
+	plot_ok &= c->handler->redraw(c, &data, &clip, &new_ctx);
+
+	if (ctx->plot->option_knockout) {
+		knockout_plot_end();
+	}
+
+	return plot_ok;
+}
 
 /**
  * Register a user for callbacks.

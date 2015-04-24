@@ -25,10 +25,10 @@
 #include <mt_gem.h>
 #include <mint/osbind.h>
 
-#include "image/bitmap.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+#include "image/bitmap.h"
 #include "desktop/plotters.h"
 #include "desktop/mouse.h"
 

@@ -26,10 +26,17 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <libnsfb.h>
+#include <libnsfb_plot.h>
 
-#include "image/bitmap.h"
 #include "utils/log.h"
+#include "utils/utils.h"
+#include "image/bitmap.h"
+#include "desktop/plotters.h"
+#include "content/content.h"
 
+#include "framebuffer/gui.h"
+#include "framebuffer/fbtk.h"
+#include "framebuffer/framebuffer.h"
 #include "framebuffer/bitmap.h"
 
 /**
@@ -249,6 +256,76 @@ static size_t bitmap_get_bpp(void *bitmap)
 	return 4;
 }
 
+/**
+ * Render content into a bitmap.
+ *
+ * \param bitmap the bitmap to draw to
+ * \param content content structure to render
+ * \return true on success and bitmap updated else false
+ */
+static nserror
+bitmap_render(struct bitmap *bitmap,
+	      struct hlcache_handle *content)
+{
+	nsfb_t *tbm = (nsfb_t *)bitmap; /* target bitmap */
+	nsfb_t *bm; /* temporary bitmap */
+	nsfb_t *current; /* current main fb */
+	int width, height; /* target bitmap width height */
+	int cwidth, cheight;/* content width /height */
+	nsfb_bbox_t loc;
+
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &fb_plotters
+	};
+
+	nsfb_get_geometry(tbm, &width, &height, NULL);
+
+	LOG(("width %d, height %d", width, height));
+
+	/* Calculate size of buffer to render the content into */
+	/* We get the width from the content width, unless it exceeds 1024,
+	 * in which case we use 1024. This means we never create excessively
+	 * large render buffers for huge contents, which would eat memory and
+	 * cripple performance. */
+	cwidth = min(content_get_width(content), 1024);
+	/* The height is set in proportion with the width, according to the
+	 * aspect ratio of the required thumbnail. */
+	cheight = ((cwidth * height) + (width / 2)) / width;
+
+	/* create temporary surface */
+	bm = nsfb_new(NSFB_SURFACE_RAM);
+	if (bm == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	nsfb_set_geometry(bm, cwidth, cheight, NSFB_FMT_XBGR8888);
+
+	if (nsfb_init(bm) == -1) {
+		nsfb_free(bm);
+		return NSERROR_NOMEM;
+	}
+
+	current = framebuffer_set_surface(bm);
+
+	/* render the content into temporary surface */
+	content_scaled_redraw(content, cwidth, cheight, &ctx);
+
+	framebuffer_set_surface(current);
+
+	loc.x0 = 0;
+	loc.y0 = 0;
+	loc.x1 = width;
+	loc.y1 = height;
+
+	nsfb_plot_copy(bm, NULL, tbm, &loc);
+
+	nsfb_free(bm);
+
+	return NSERROR_OK;
+}
+
 static struct gui_bitmap_table bitmap_table = {
 	.create = bitmap_create,
 	.destroy = bitmap_destroy,
@@ -262,6 +339,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *framebuffer_bitmap_table = &bitmap_table;

@@ -41,7 +41,6 @@
 #include "desktop/browser_history.h"
 #include "desktop/browser_private.h"
 #include "desktop/plotters.h"
-#include "desktop/thumbnail.h"
 #include "desktop/font.h"
 
 #define WIDTH 100
@@ -281,13 +280,18 @@ browser_window_history__redraw_entry(struct history *history,
 		rect.y0 = y0 + yoffset;
 		rect.x1 = x1 + xoffset;
 		rect.y1 = y1 + yoffset;
-		if(!plot->clip(&rect))
+		if (!plot->clip(&rect)) {
 			return false;
+		}
 	}
 
-	if (!plot->bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
-			entry->bitmap, 0xffffff, 0))
-		return false;
+	/* Only attempt to plot bitmap if it is present */
+	if (entry->bitmap != NULL) {
+		plot->bitmap(entry->x + xoffset,
+			     entry->y + yoffset,
+			     WIDTH, HEIGHT,
+			     entry->bitmap, 0xffffff, 0);
+	}
 	if (!plot->rectangle(entry->x - 1 + xoffset, 
                             entry->y - 1 + yoffset,
                             entry->x + xoffset + WIDTH, 
@@ -466,6 +470,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 	nsurl *nsurl = hlcache_handle_get_url(content);
 	char *title;
 	struct bitmap *bitmap;
+	nserror ret;
 
 	assert(bw);
 	assert(bw->history);
@@ -516,7 +521,8 @@ nserror browser_window_history_add(struct browser_window *bw,
 					      BITMAP_NEW | BITMAP_CLEAR_MEMORY |
 					      BITMAP_OPAQUE);
 		if (bitmap != NULL) {
-			if (thumbnail_create(content, bitmap)) {
+			ret = guit->bitmap->render(bitmap, content);
+			if (ret == NSERROR_OK) {
 				/* Successful thumbnail so register it
 				 * with the url.
 				 */
@@ -525,7 +531,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 				/* Thumbnailing failed. Ignore it
 				 * silently but clean up bitmap.
 				 */
-				LOG(("Thumbnail bitmap creation failed"));
+				LOG(("Thumbnail renderfailed"));
 				guit->bitmap->destroy(bitmap);
 				bitmap = NULL;
 			}
@@ -565,7 +571,7 @@ nserror browser_window_history_update(struct browser_window *bw,
 	free(history->current->page.title);
 	history->current->page.title = title;
 
-	thumbnail_create(content, history->current->bitmap);
+	guit->bitmap->render(history->current->bitmap, content);
 
 	return NSERROR_OK;
 }

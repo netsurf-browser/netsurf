@@ -32,8 +32,10 @@
 #include "utils/log.h"
 #include "content/content.h"
 #include "image/bitmap.h"
+#include "desktop/plotters.h"
 
 #include "gtk/scaffolding.h"
+#include "gtk/plotters.h"
 #include "gtk/bitmap.h"
 
 
@@ -86,17 +88,17 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 	if (fmt == CAIRO_FORMAT_RGB24) {
 		if (opaque == false) {
 			/* opaque to transparent */
-			nsurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 
-					cairo_image_surface_get_width(gbitmap->surface), 
+			nsurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+					cairo_image_surface_get_width(gbitmap->surface),
 					cairo_image_surface_get_height(gbitmap->surface));
 
 		}
-		
+
 	} else {
 		if (opaque == true) {
 			/* transparent to opaque */
-			nsurface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 
-					cairo_image_surface_get_width(gbitmap->surface), 
+			nsurface = cairo_image_surface_create(CAIRO_FORMAT_RGB24,
+					cairo_image_surface_get_width(gbitmap->surface),
 					cairo_image_surface_get_height(gbitmap->surface));
 
 		}
@@ -106,8 +108,8 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 		if (cairo_surface_status(nsurface) != CAIRO_STATUS_SUCCESS) {
 			cairo_surface_destroy(nsurface);
 		} else {
-			memcpy(cairo_image_surface_get_data(nsurface), 
-			       cairo_image_surface_get_data(gbitmap->surface), 
+			memcpy(cairo_image_surface_get_data(nsurface),
+			       cairo_image_surface_get_data(gbitmap->surface),
 			       cairo_image_surface_get_stride(gbitmap->surface) * cairo_image_surface_get_height(gbitmap->surface));
 			cairo_surface_destroy(gbitmap->surface);
 			gbitmap->surface = nsurface;
@@ -116,7 +118,7 @@ static void bitmap_set_opaque(void *vbitmap, bool opaque)
 
 		}
 
-	}	
+	}
 }
 
 
@@ -137,13 +139,13 @@ static bool bitmap_test_opaque(void *vbitmap)
 
 	pixels = cairo_image_surface_get_data(gbitmap->surface);
 
-	pcount = cairo_image_surface_get_stride(gbitmap->surface) * 
+	pcount = cairo_image_surface_get_stride(gbitmap->surface) *
 		cairo_image_surface_get_height(gbitmap->surface);
 
 	for (ploop = 3; ploop < pcount; ploop += 4) {
 		if (pixels[ploop] != 0xff) {
 			return false;
-		}		
+		}
 	}
 
 	return true;
@@ -190,7 +192,7 @@ static unsigned char *bitmap_get_buffer(void *vbitmap)
 	cairo_format_t fmt;
 
 	assert(gbitmap);
-	
+
 	cairo_surface_flush(gbitmap->surface);
 	pixels = cairo_image_surface_get_data(gbitmap->surface);
 
@@ -259,7 +261,7 @@ static unsigned char *bitmap_get_buffer(void *vbitmap)
 	}
 
 	gbitmap->converted = false;
-	
+
 	return (unsigned char *) pixels;
 }
 
@@ -341,7 +343,7 @@ static void bitmap_modified(void *vbitmap)
 {
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	int pixel_loop;
-	int pixel_count; 
+	int pixel_count;
 	uint8_t *pixels;
 	uint32_t t, r, g, b;
 	cairo_format_t fmt;
@@ -350,7 +352,7 @@ static void bitmap_modified(void *vbitmap)
 
 	fmt = cairo_image_surface_get_format(gbitmap->surface);
 
-	pixel_count = cairo_image_surface_get_width(gbitmap->surface) * 
+	pixel_count = cairo_image_surface_get_width(gbitmap->surface) *
 		cairo_image_surface_get_height(gbitmap->surface);
 	pixels = cairo_image_surface_get_data(gbitmap->surface);
 
@@ -411,7 +413,7 @@ static void bitmap_modified(void *vbitmap)
 #endif
 		}
 	}
-	
+
 	cairo_surface_mark_dirty(gbitmap->surface);
 
 	gbitmap->converted = true;
@@ -435,6 +437,88 @@ int nsgtk_bitmap_get_height(void *vbitmap)
 	return cairo_image_surface_get_height(gbitmap->surface);
 }
 
+/**
+ * Render content into a bitmap.
+ *
+ * \param  bitmap The bitmap to draw to
+ * \param  content The content to render
+ * \return true on success and bitmap updated else false
+ */
+static nserror
+bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
+{
+	cairo_surface_t *dsurface = bitmap->surface;
+	cairo_surface_t *surface;
+	cairo_t *old_cr;
+	gint dwidth, dheight;
+	int cwidth, cheight;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &nsgtk_plotters
+	};
+
+	assert(content);
+	assert(bitmap);
+
+	dwidth = cairo_image_surface_get_width(dsurface);
+	dheight = cairo_image_surface_get_height(dsurface);
+
+	/* Calculate size of buffer to render the content into */
+	/* Get the width from the content width, unless it exceeds 1024,
+	 * in which case we use 1024. This means we never create excessively
+	 * large render buffers for huge contents, which would eat memory and
+	 * cripple performance.
+	 */
+	cwidth = min(max(content_get_width(content), dwidth), 1024);
+
+	/* The height is set in proportion with the width, according to the
+	 * aspect ratio of the required thumbnail. */
+	cheight = ((cwidth * dheight) + (dwidth / 2)) / dwidth;
+
+	/*  Create surface to render into */
+	surface = cairo_surface_create_similar(dsurface, CAIRO_CONTENT_COLOR_ALPHA, cwidth, cheight);
+
+	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+		cairo_surface_destroy(surface);
+		return false;
+	}
+
+	old_cr = current_cr;
+	current_cr = cairo_create(surface);
+
+	/* render the content */
+	content_scaled_redraw(content, cwidth, cheight, &ctx);
+
+	cairo_destroy(current_cr);
+	current_cr = old_cr;
+
+	cairo_t *cr = cairo_create(dsurface);
+
+	/* Scale *before* setting the source surface (1) */
+	cairo_scale (cr, (double)dwidth / cwidth, (double)dheight / cheight);
+	cairo_set_source_surface (cr, surface, 0, 0);
+
+	/* To avoid getting the edge pixels blended with 0 alpha,
+	 * which would occur with the default EXTEND_NONE. Use
+	 * EXTEND_PAD for 1.2 or newer (2)
+	 */
+	cairo_pattern_set_extend(cairo_get_source(cr), CAIRO_EXTEND_REFLECT);
+
+	/* Replace the destination with the source instead of overlaying */
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+
+	/* Do the actual drawing */
+	cairo_paint(cr);
+
+	cairo_destroy(cr);
+
+	cairo_surface_destroy(surface);
+
+	return NSERROR_OK;
+}
+
+
 static struct gui_bitmap_table bitmap_table = {
 	.create = bitmap_create,
 	.destroy = bitmap_destroy,
@@ -448,6 +532,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *nsgtk_bitmap_table = &bitmap_table;

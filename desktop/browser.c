@@ -1363,7 +1363,7 @@ static nserror browser_window_callback(hlcache_handle *c,
 			 * explode or overwrite the node for the previous URL.
 			 *
 			 * We call it after, rather than before urldb_add_url
-			 * because history_add calls thumbnail_create, which
+			 * because history_add calls bitmap render, which
 			 * tries to register the thumbnail with urldb.  That
 			 * thumbnail registration fails if the url doesn't
 			 * exist in urldb already, and only urldb-registered

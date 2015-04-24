@@ -17,6 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * win32 implementation of the bitmap operations.
+ */
+
 #include "utils/config.h"
 
 #include <inttypes.h>
@@ -26,7 +31,9 @@
 
 #include "utils/log.h"
 #include "image/bitmap.h"
+#include "content/content.h"
 
+#include "windows/plot.h"
 #include "windows/bitmap.h"
 
 /**
@@ -50,10 +57,10 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 	if (pbmi == NULL) {
 		return NULL;
 	}
-	pbmi->bV5Size = sizeof(BITMAPV5HEADER); 
-	pbmi->bV5Width = width; 
-	pbmi->bV5Height = -height; 
-	pbmi->bV5Planes = 1; 
+	pbmi->bV5Size = sizeof(BITMAPV5HEADER);
+	pbmi->bV5Width = width;
+	pbmi->bV5Height = -height;
+	pbmi->bV5Planes = 1;
 	pbmi->bV5BitCount = 32;
 	pbmi->bV5Compression = BI_BITFIELDS;
 
@@ -110,7 +117,7 @@ static unsigned char *bitmap_get_buffer(void *bitmap)
 		LOG(("NULL bitmap!"));
 		return NULL;
 	}
-		
+
 	return bm->pixdata;
 }
 
@@ -157,8 +164,8 @@ void win32_bitmap_destroy(void *bitmap)
 /**
  * Save a bitmap in the platform's native format.
  *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- * \param  path    pathname for file
+ * \param bitmap a bitmap, as returned by bitmap_create()
+ * \param path pathname for file
  * \param flags flags controlling how the bitmap is saved.
  * \return true on success, false on error and error reported
  */
@@ -183,7 +190,7 @@ static void bitmap_modified(void *bitmap) {
  * \param  opaque  whether the bitmap should be plotted opaque
  */
 static void bitmap_set_opaque(void *bitmap, bool opaque)
-{	
+{
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
@@ -217,8 +224,8 @@ static bool bitmap_test_opaque(void *bitmap)
 	while (tst-- > 0) {
 		if (bm->pixdata[(tst << 2) + 3] != 0xff) {
 			LOG(("bitmap %p has transparency",bm));
-			return false;		     
-		}   
+			return false;
+		}
 	}
 	LOG(("bitmap %p is opaque", bm));
 	return true;
@@ -293,24 +300,24 @@ struct bitmap *bitmap_scale(struct bitmap *prescale, int width, int height)
 		vv = (int)((i * prescale->height) / height) * prescale->width;
 		for (ii = 0; ii < width; ii++) {
 			retpixdata[v + ii] = inpixdata[vv + (int)
-					((ii * prescale->width) / width)];
+						       ((ii * prescale->width) / width)];
 		}
 	}
 	return ret;
-	
+
 }
 
 struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
-		bitmap_flags_t flags)
+			      bitmap_flags_t flags)
 {
 	struct bitmap *ret = malloc(sizeof(struct bitmap));
 	if (ret == NULL)
 		return NULL;
 	int i, hrepeat, vrepeat, repeat;
-	vrepeat = ((flags & BITMAPF_REPEAT_Y) != 0) ? 
-			((height + untiled->height - 1) / untiled->height) : 1;
-	hrepeat = ((flags & BITMAPF_REPEAT_X) != 0) ? 
-			((width + untiled->width - 1) / untiled->width) : 1;
+	vrepeat = ((flags & BITMAPF_REPEAT_Y) != 0) ?
+		((height + untiled->height - 1) / untiled->height) : 1;
+	hrepeat = ((flags & BITMAPF_REPEAT_X) != 0) ?
+		((width + untiled->width - 1) / untiled->width) : 1;
 	width = untiled->width * hrepeat;
 	height = untiled->height * vrepeat;
 	uint8_t *indata = untiled->pixdata;
@@ -330,7 +337,7 @@ struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
 		}
 		indata += stride;
 	}
-	
+
 	/* vertical tiling */
 	stride = untiled->height * width * 4;
 	newdata = ret->pixdata + stride;
@@ -338,11 +345,67 @@ struct bitmap *bitmap_pretile(struct bitmap *untiled, int width, int height,
 
 	for (repeat = 1; repeat < vrepeat; repeat++) {
 		memcpy(newdata, indata, stride);
-		newdata += stride;		
+		newdata += stride;
 	}
 	ret->width = width;
 	ret->height = height;
 	return ret;
+}
+
+static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
+{
+	int width;
+	int height;
+	HDC hdc, bufferdc, minidc;
+	struct bitmap *fsbitmap;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &win_plotters
+	};
+
+	width = min(content_get_width(content), 1024);
+	height = ((width * bitmap->height) + (bitmap->width / 2)) /
+		bitmap->width;
+
+	LOG(("bitmap %p for content %p width %d, height %d",
+	     bitmap, content, width, height));
+
+	/* create two memory device contexts to put the bitmaps in */
+	bufferdc = CreateCompatibleDC(NULL);
+	if ((bufferdc == NULL)) {
+		return NSERROR_NOMEM;
+	}
+
+	minidc = CreateCompatibleDC(NULL);
+	if ((minidc == NULL)) {
+		DeleteDC(bufferdc);
+		return NSERROR_NOMEM;
+	}
+
+	/* create a full size bitmap and plot into it */
+	fsbitmap = win32_bitmap_create(width, height, BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE);
+
+	SelectObject(bufferdc, fsbitmap->windib);
+
+	hdc = plot_hdc;
+	plot_hdc = bufferdc;
+	/* render the content  */
+	content_scaled_redraw(content, width, height, &ctx);
+	plot_hdc = hdc;
+
+	/* scale bitmap bufferbm into minibm */
+	SelectObject(minidc, bitmap->windib);
+
+	bitmap->opaque = true;
+
+	StretchBlt(minidc, 0, 0, bitmap->width, bitmap->height, bufferdc, 0, 0, width, height, SRCCOPY);
+
+	DeleteDC(bufferdc);
+	DeleteDC(minidc);
+	win32_bitmap_destroy(fsbitmap);
+
+	return NSERROR_OK;
 }
 
 static struct gui_bitmap_table bitmap_table = {
@@ -358,6 +421,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *win32_bitmap_table = &bitmap_table;

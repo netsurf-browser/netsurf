@@ -100,7 +100,6 @@ S_ATARI := \
 	statusbar.c \
 	settings.c \
 	toolbar.c \
-	thumbnail.c \
 	treeview.c \
 	plot/plot.c \
 	plot/fontplot.c \
