@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils/errors.h"
 #include "image/bitmap.h"
 
 #include "monkey/bitmap.h"
@@ -123,6 +124,13 @@ static int bitmap_get_height(void *bitmap)
   return bmap->height;
 }
 
+static nserror bitmap_render(struct bitmap *bitmap,
+			     struct hlcache_handle *content)
+{
+  fprintf(stdout, "GENERIC BITMAP RENDER\n");
+  return NSERROR_OK;
+}
+
 static struct gui_bitmap_table bitmap_table = {
   .create = bitmap_create,
   .destroy = bitmap_destroy,
@@ -136,6 +144,7 @@ static struct gui_bitmap_table bitmap_table = {
   .get_bpp = bitmap_get_bpp,
   .save = bitmap_save,
   .modified = bitmap_modified,
+  .render = bitmap_render,
 };
 
 struct gui_bitmap_table *monkey_bitmap_table = &bitmap_table;
