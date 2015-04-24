@@ -426,6 +426,11 @@ bool atari_bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
 	return(true);
 }
 
+static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
+{
+	return NSERROR_NOT_IMPLEMENTED;
+}
+
 static struct gui_bitmap_table bitmap_table = {
 	.create = atari_bitmap_create,
 	.destroy = atari_bitmap_destroy,
@@ -439,6 +444,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *atari_bitmap_table = &bitmap_table;
