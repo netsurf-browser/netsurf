@@ -16,11 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Cocoa implementation of bitmap operations.
+ */
+
 #import <Cocoa/Cocoa.h>
 
-#import "cocoa/bitmap.h"
-
+#import "desktop/browser.h"
+#import "desktop/plotters.h"
 #import "image/bitmap.h"
+#import "content/urldb.h"
+#import "content/content.h"
+
+#import "cocoa/plotter.h"
+#import "cocoa/bitmap.h"
 
 #define BITS_PER_SAMPLE (8)
 #define SAMPLES_PER_PIXEL (4)
@@ -65,24 +75,25 @@ void bitmap_destroy(void *bitmap)
 		CGImageRelease( image );
 		NSMapRemove( cache, bitmap );
 	}
-	
+
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	[bmp release];
 }
 
 void *bitmap_create(int width, int height, unsigned int state)
 {
-	NSBitmapImageRep *bmp = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL 
-																	 pixelsWide: width 
-																	 pixelsHigh: height
-																  bitsPerSample: BITS_PER_SAMPLE
-																samplesPerPixel: SAMPLES_PER_PIXEL
-																	   hasAlpha: YES
-																	   isPlanar: NO
-																 colorSpaceName: NSDeviceRGBColorSpace 
-																   bitmapFormat: NSAlphaNonpremultipliedBitmapFormat 
-																	bytesPerRow: BYTES_PER_PIXEL * width 
-																   bitsPerPixel: BITS_PER_PIXEL];
+	NSBitmapImageRep *bmp = [[NSBitmapImageRep alloc]
+					initWithBitmapDataPlanes: NULL
+						      pixelsWide: width
+						      pixelsHigh: height
+						   bitsPerSample: BITS_PER_SAMPLE
+						 samplesPerPixel: SAMPLES_PER_PIXEL
+							hasAlpha: YES
+							isPlanar: NO
+						  colorSpaceName: NSDeviceRGBColorSpace
+						    bitmapFormat: NSAlphaNonpremultipliedBitmapFormat
+						     bytesPerRow: BYTES_PER_PIXEL * width
+						    bitsPerPixel: BITS_PER_PIXEL];
 
 	return bmp;
 }
@@ -118,12 +129,12 @@ size_t bitmap_get_bpp(void *bitmap)
 bool bitmap_test_opaque(void *bitmap)
 {
 	NSCParameterAssert( bitmap_get_bpp( bitmap ) == BYTES_PER_PIXEL );
-	
+
 	unsigned char *buf = bitmap_get_buffer( bitmap );
-	
+
 	const size_t height = bitmap_get_height( bitmap );
 	const size_t width = bitmap_get_width( bitmap );
-	
+
 	const size_t line_step = bitmap_get_rowstride( bitmap ) - BYTES_PER_PIXEL * width;
 
 	for (size_t y = 0; y < height; y++) {
@@ -133,7 +144,7 @@ bool bitmap_test_opaque(void *bitmap)
 		}
 		buf += line_step;
 	}
-	
+
 	return true;
 }
 
@@ -141,7 +152,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	
+
 	NSData *tiff = [bmp TIFFRepresentation];
 	return [tiff writeToFile: [NSString stringWithUTF8String: path] atomically: YES];
 }
@@ -165,7 +176,7 @@ CGImageRef cocoa_get_cgimage( void *bitmap )
 		result = cocoa_prepare_bitmap( bitmap );
 		NSMapInsertKnownAbsent( cache, bitmap, result );
 	}
-	
+
 	return result;
 }
 
@@ -181,38 +192,75 @@ static inline NSMapTable *cocoa_get_bitmap_cache( void )
 static CGImageRef cocoa_prepare_bitmap( void *bitmap )
 {
 	NSCParameterAssert( NULL != bitmap );
-	
+
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	
+
 	size_t w = [bmp pixelsWide];
 	size_t h = [bmp pixelsHigh];
-	
+
 	CGImageRef original = [bmp CGImage];
-	
+
 	if (h <= 1) return CGImageRetain( original );
-	
+
 	void *data = malloc( 4 * w * h );
-	
+
 	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-	CGContextRef context = CGBitmapContextCreate( data, w, h, BITS_PER_SAMPLE, 
-												 BYTES_PER_PIXEL * w, colorSpace, 
-												 [bmp isOpaque] ? kCGImageAlphaNoneSkipLast 
-																: kCGImageAlphaPremultipliedLast );
+	CGContextRef context = CGBitmapContextCreate( data, w, h, BITS_PER_SAMPLE,
+						      BYTES_PER_PIXEL * w, colorSpace,
+						      [bmp isOpaque] ? kCGImageAlphaNoneSkipLast
+						      : kCGImageAlphaPremultipliedLast );
 	CGColorSpaceRelease( colorSpace );
-	
+
 	CGContextTranslateCTM( context, 0.0, h );
 	CGContextScaleCTM( context, 1.0, -1.0 );
-	
+
 	CGRect rect = CGRectMake( 0, 0, w, h );
 	CGContextClearRect( context, rect );
 	CGContextDrawImage( context, rect, original );
-	
+
 	CGImageRef result = CGBitmapContextCreateImage( context );
-	
+
 	CGContextRelease( context );
 	free( data );
-	
+
 	return result;
+}
+
+static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content)
+{
+	int bwidth = bitmap_get_width( bitmap );
+	int bheight = bitmap_get_height( bitmap );
+
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &cocoa_plotters
+	};
+
+	CGColorSpaceRef cspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
+	CGContextRef bitmapContext = CGBitmapContextCreate( bitmap_get_buffer( bitmap ),
+							    bwidth, bheight,
+							    bitmap_get_bpp( bitmap ) * 8 / 4,
+							    bitmap_get_rowstride( bitmap ),
+							    cspace, kCGImageAlphaNoneSkipLast );
+	CGColorSpaceRelease( cspace );
+
+	size_t width = MIN( content_get_width( content ), 1024 );
+	size_t height = ((width * bheight) + bwidth / 2) / bwidth;
+
+	CGContextTranslateCTM( bitmapContext, 0, bheight );
+	CGContextScaleCTM( bitmapContext, (CGFloat)bwidth / width, -(CGFloat)bheight / height );
+
+	[NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithGraphicsPort: bitmapContext flipped: YES]];
+
+	content_scaled_redraw( content, width, height, &ctx );
+
+	[NSGraphicsContext setCurrentContext: nil];
+	CGContextRelease( bitmapContext );
+
+	bitmap_modified( bitmap );
+
+	return true;
 }
 
 static struct gui_bitmap_table bitmap_table = {
@@ -228,6 +276,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
 	.modified = bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *cocoa_bitmap_table = &bitmap_table;

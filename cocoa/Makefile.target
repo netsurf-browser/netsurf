@@ -87,7 +87,6 @@ S_COCOA := \
 	plotter.m \
 	schedule.m \
 	selection.m \
-	thumbnail.m \
 	utils.m \
 	ArrowBox.m \
 	ArrowWindow.m \
