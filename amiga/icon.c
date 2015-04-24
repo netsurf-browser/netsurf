@@ -37,13 +37,13 @@
 #endif
 #include <workbench/icon.h>
 
-#include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/file.h"
+#include "desktop/plotters.h"
+#include "image/bitmap.h"
+#include "content/content_protected.h"
 
 #include "amiga/os3support.h"
 #include "amiga/bitmap.h"

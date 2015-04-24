@@ -24,14 +24,15 @@
 #include <graphics/composite.h>
 #endif
 #include <graphics/gfxbase.h>
-#include "utils/nsoption.h"
 #include <proto/datatypes.h>
 #include <datatypes/pictureclass.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <sys/param.h>
 #include "assert.h"
 
+#include "utils/nsoption.h"
 #include "utils/messages.h"
 #include "desktop/mouse.h"
 #include "desktop/gui_window.h"
@@ -505,6 +506,80 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 	}
 }
 
+static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
+{
+	struct BitScaleArgs bsa;
+	int plot_width;
+	int plot_height;
+	int redraw_tile_size = nsoption_int(redraw_tile_size_x);
+	struct redraw_context ctx = {
+		.interactive = false,
+		.background_images = true,
+		.plot = &amiplot
+	};
+
+	if(nsoption_int(redraw_tile_size_y) < nsoption_int(redraw_tile_size_x))
+		redraw_tile_size = nsoption_int(redraw_tile_size_y);
+
+	plot_width = MIN(content_get_width(content), redraw_tile_size);
+	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
+			bitmap->width;
+
+	bitmap->nativebm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32,
+							BMF_CLEAR, browserglob.bm, RGBFB_A8R8G8B8);
+
+	bitmap->nativebmwidth = bitmap->width;
+	bitmap->nativebmheight = bitmap->height;
+	ami_clearclipreg(&browserglob);
+
+	content_scaled_redraw(content, plot_width, plot_height, &ctx);
+
+#ifdef __amigaos4__
+	if(__builtin_expect(GfxBase->LibNode.lib_Version >= 53, 1)) {
+	/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1) */
+		float resample_scale = bitmap->width / (float)plot_width;
+		uint32 flags = COMPFLAG_IgnoreDestAlpha;
+		if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
+
+		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
+					COMPTAG_ScaleX,
+					COMP_FLOAT_TO_FIX(resample_scale),
+					COMPTAG_ScaleY,
+					COMP_FLOAT_TO_FIX(resample_scale),
+					COMPTAG_Flags,flags,
+					COMPTAG_DestX,0,
+					COMPTAG_DestY,0,
+					COMPTAG_DestWidth,bitmap->width,
+					COMPTAG_DestHeight,bitmap->height,
+					COMPTAG_OffsetX,0,
+					COMPTAG_OffsetY,0,
+					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
+					TAG_DONE);
+	} else
+#endif
+	{
+		bsa.bsa_SrcX = 0;
+		bsa.bsa_SrcY = 0;
+		bsa.bsa_SrcWidth = plot_width;
+		bsa.bsa_SrcHeight = plot_height;
+		bsa.bsa_DestX = 0;
+		bsa.bsa_DestY = 0;
+	//	bsa.bsa_DestWidth = width;
+	//	bsa.bsa_DestHeight = height;
+		bsa.bsa_XSrcFactor = plot_width;
+		bsa.bsa_XDestFactor = bitmap->width;
+		bsa.bsa_YSrcFactor = plot_height;
+		bsa.bsa_YDestFactor = bitmap->height;
+		bsa.bsa_SrcBitMap = browserglob.bm;
+		bsa.bsa_DestBitMap = bitmap->nativebm;
+		bsa.bsa_Flags = 0;
+
+		BitMapScale(&bsa);
+	}
+
+	return true;
+}
+
 static struct gui_bitmap_table bitmap_table = {
 	.create = amiga_bitmap_create,
 	.destroy = amiga_bitmap_destroy,
@@ -518,6 +593,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_bpp = bitmap_get_bpp,
 	.save = amiga_bitmap_save,
 	.modified = amiga_bitmap_modified,
+	.render = bitmap_render,
 };
 
 struct gui_bitmap_table *amiga_bitmap_table = &bitmap_table;
