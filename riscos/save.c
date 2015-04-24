@@ -49,7 +49,6 @@
 #include "desktop/version.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
-#include "desktop/thumbnail.h"
 #include "desktop/gui_window.h"
 #include "image/bitmap.h"
 #include "render/form.h"
@@ -66,7 +65,6 @@
 #include "riscos/save_draw.h"
 #include "riscos/save_pdf.h"
 #include "riscos/textselection.h"
-#include "riscos/thumbnail.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/ucstables.h"
@@ -1375,8 +1373,8 @@ bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name)
 		LOG(("Thumbnail initialisation failed."));
 		return false;
 	}
-	thumbnail_create(h, bitmap);
-	area = thumbnail_convert_8bpp(bitmap);
+	riscos_bitmap_render(bitmap, h);
+	area = riscos_bitmap_convert_8bpp(bitmap);
 	riscos_bitmap_destroy(bitmap);
 	if (!area) {
 		LOG(("Thumbnail conversion failed."));

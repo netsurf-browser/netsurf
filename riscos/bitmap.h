@@ -21,6 +21,8 @@
 
 struct osspriteop_area;
 struct osspriteop_header;
+struct hlcache_handle;
+struct bitmap;
 
 /** bitmap operations table */
 struct gui_bitmap_table *riscos_bitmap_table;
@@ -40,6 +42,22 @@ struct bitmap {
 	struct osspriteop_area *sprite_area; /**< Uncompressed data, or NULL */
 };
 
+/**
+ * Convert bitmap to 8bpp sprite.
+ *
+ * \param bitmap the bitmap to convert.
+ * \return The converted sprite.
+ */
+struct osspriteop_area *riscos_bitmap_convert_8bpp(struct bitmap *bitmap);
+
+/**
+ * Render content into bitmap.
+ *
+ * \param bitmap the bitmap to draw to
+ * \param content content structure to render
+ * \return true on success and bitmap updated else false
+ */
+nserror riscos_bitmap_render(struct bitmap *bitmap, struct hlcache_handle *content);
 
 /**
  * Overlay a sprite onto the given bitmap
@@ -48,7 +66,6 @@ struct bitmap {
  * \param s       8bpp sprite to be overlayed onto bitmap
  */
 void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const struct osspriteop_header *s);
-
 
 /**
  * Create a bitmap.
@@ -59,7 +76,6 @@ void riscos_bitmap_overlay_sprite(struct bitmap *bitmap, const struct osspriteop
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 void *riscos_bitmap_create(int width, int height, unsigned int state);
-
 
 /**
  * Free a bitmap.
@@ -79,37 +95,6 @@ void riscos_bitmap_destroy(void *vbitmap);
  * \return pointer to the pixel buffer
  */
 unsigned char *riscos_bitmap_get_buffer(void *vbitmap);
-
-/**
- * The bitmap image has changed, so flush any persistent cache.
- *
- * \param  vbitmap  a bitmap, as returned by bitmap_create()
- */
-void riscos_bitmap_modified(void *vbitmap);
-
-/**
- * Get the width of a bitmap.
- *
- * \param vbitmap A bitmap, as returned by bitmap_create()
- * \return The bitmaps width in pixels.
- */
-int riscos_bitmap_get_width(void *vbitmap);
-
-/**
- * Get the height of a bitmap.
- *
- * \param vbitmap A bitmap, as returned by bitmap_create()
- * \return The bitmaps height in pixels.
- */
-int riscos_bitmap_get_height(void *vbitmap);
-
-/**
- * Find the width of a pixel row in bytes.
- *
- * \param vbitmap A bitmap, as returned by riscos_bitmap_create()
- * \return width of a pixel row in the bitmap
- */
-size_t riscos_bitmap_get_rowstride(void *vbitmap);
 
 /**
  * Gets whether a bitmap should be plotted opaque

@@ -60,7 +60,6 @@
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
-#include "desktop/thumbnail.h"
 #include "desktop/tree.h"
 #include "desktop/gui_window.h"
 #include "image/bitmap.h"
@@ -82,7 +81,6 @@
 #include "riscos/content-handlers/sprite.h"
 #include "riscos/textselection.h"
 #include "riscos/toolbar.h"
-#include "riscos/thumbnail.h"
 #include "riscos/url_complete.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
@@ -3418,11 +3416,11 @@ void ro_gui_window_iconise(struct gui_window *g,
 		LOG(("Thumbnail initialisation failed."));
 		return;
 	}
-	thumbnail_create(h, bitmap);
+	riscos_bitmap_render(bitmap, h);
 	if (overlay) {
 		riscos_bitmap_overlay_sprite(bitmap, overlay);
 	}
-	area = thumbnail_convert_8bpp(bitmap);
+	area = riscos_bitmap_convert_8bpp(bitmap);
 	riscos_bitmap_destroy(bitmap);
 	if (!area) {
 		LOG(("Thumbnail conversion failed."));
