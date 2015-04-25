@@ -543,7 +543,6 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	content_scaled_redraw(content, plot_width, plot_height, &ctx);
 
 #ifdef __amigaos4__
-	/* Create a RGBA32 version in case we lose the native BitMap for some reason */
 	BltBitMapTags(	BLITA_SrcX, 0,
 					BLITA_SrcY, 0,
 					BLITA_Width, bitmap->width,
@@ -558,7 +557,6 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 					TAG_DONE);
 
 	ami_bitmap_argb_to_rgba(bitmap);
-
 #else
 #warning FIXME for OS3
 #endif
