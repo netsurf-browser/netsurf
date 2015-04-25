@@ -236,6 +236,16 @@ static size_t bitmap_get_bpp(void *vbitmap)
 	return 4;
 }
 
+static void ami_bitmap_argb_to_rgba(struct bitmap *bm)
+{
+	if(bm == NULL) return;
+	
+	ULONG *data = (ULONG *)amiga_bitmap_get_buffer(bm);
+	for(int i = 0; i < ((amiga_bitmap_get_rowstride(bm) / sizeof(ULONG)) * bm->height); i++) { 
+		data[i] = (data[i] << 8) | (data[i] >> 24);
+	}
+}
+
 #ifdef BITMAP_DUMP
 void bitmap_dump(struct bitmap *bitmap)
 {
@@ -508,76 +518,59 @@ struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 
 static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 {
-	struct BitScaleArgs bsa;
 	int plot_width;
 	int plot_height;
-	int redraw_tile_size = nsoption_int(redraw_tile_size_x);
+	struct MinList shared_pens;
+	struct gui_globals bm_globals;
+
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
 		.plot = &amiplot
 	};
 
-	if(nsoption_int(redraw_tile_size_y) < nsoption_int(redraw_tile_size_x))
-		redraw_tile_size = nsoption_int(redraw_tile_size_y);
-
-	plot_width = MIN(content_get_width(content), redraw_tile_size);
+	plot_width = MIN(content_get_width(content), bitmap->width);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
-	bitmap->nativebm = ami_rtg_allocbitmap(bitmap->width, bitmap->height, 32,
-							BMF_CLEAR, browserglob.bm, RGBFB_A8R8G8B8);
+	ami_init_layers(&bm_globals, bitmap->width, bitmap->height);
+	NewMinList(&shared_pens);
+	bm_globals.shared_pens = &shared_pens;
 
-	bitmap->nativebmwidth = bitmap->width;
-	bitmap->nativebmheight = bitmap->height;
-	ami_clearclipreg(&browserglob);
+	glob = &bm_globals;
+	ami_clearclipreg(&bm_globals);
 
 	content_scaled_redraw(content, plot_width, plot_height, &ctx);
 
 #ifdef __amigaos4__
-	if(__builtin_expect(GfxBase->LibNode.lib_Version >= 53, 1)) {
-	/* AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1) */
-		float resample_scale = bitmap->width / (float)plot_width;
-		uint32 flags = COMPFLAG_IgnoreDestAlpha;
-		if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
-
-		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
-					COMPTAG_ScaleX,
-					COMP_FLOAT_TO_FIX(resample_scale),
-					COMPTAG_ScaleY,
-					COMP_FLOAT_TO_FIX(resample_scale),
-					COMPTAG_Flags,flags,
-					COMPTAG_DestX,0,
-					COMPTAG_DestY,0,
-					COMPTAG_DestWidth,bitmap->width,
-					COMPTAG_DestHeight,bitmap->height,
-					COMPTAG_OffsetX,0,
-					COMPTAG_OffsetY,0,
-					COMPTAG_FriendBitMap, scrn->RastPort.BitMap,
+	/* Create a RGBA32 version in case we lose the native BitMap for some reason */
+	BltBitMapTags(	BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_Width, bitmap->width,
+					BLITA_Height, bitmap->height,
+					BLITA_Source, bm_globals.bm,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_Dest, bitmap->pixdata,
+					BLITA_DestType, BLITT_ARGB32,
+					BLITA_DestBytesPerRow, 4 * bitmap->width,
+					BLITA_DestX, 0,
+					BLITA_DestY, 0,
 					TAG_DONE);
-	} else
+
+	ami_bitmap_argb_to_rgba(bitmap);
+
+#else
+#warning FIXME for OS3
 #endif
-	{
-		bsa.bsa_SrcX = 0;
-		bsa.bsa_SrcY = 0;
-		bsa.bsa_SrcWidth = plot_width;
-		bsa.bsa_SrcHeight = plot_height;
-		bsa.bsa_DestX = 0;
-		bsa.bsa_DestY = 0;
-	//	bsa.bsa_DestWidth = width;
-	//	bsa.bsa_DestHeight = height;
-		bsa.bsa_XSrcFactor = plot_width;
-		bsa.bsa_XDestFactor = bitmap->width;
-		bsa.bsa_YSrcFactor = plot_height;
-		bsa.bsa_YDestFactor = bitmap->height;
-		bsa.bsa_SrcBitMap = browserglob.bm;
-		bsa.bsa_DestBitMap = bitmap->nativebm;
-		bsa.bsa_Flags = 0;
 
-		BitMapScale(&bsa);
-	}
+	/**\todo In theory we should be able to move the bitmap to our native area
+		to try to avoid re-conversion */
 
-	return true;
+	ami_free_layers(&bm_globals);
+	ami_plot_release_pens(&shared_pens);
+	amiga_bitmap_set_opaque(bitmap, true);
+
+	return NSERROR_OK;
 }
 
 static struct gui_bitmap_table bitmap_table = {

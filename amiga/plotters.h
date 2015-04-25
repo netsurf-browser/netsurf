@@ -33,6 +33,8 @@ struct gui_globals
 	APTR tmprasbuf;
 	struct Rectangle rect;
 	struct MinList *shared_pens;
+	int width;  /* size of bm and    */
+	int height; /* associated memory */
 };
 
 extern const struct plotter_table amiplot;

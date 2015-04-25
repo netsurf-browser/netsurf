@@ -115,6 +115,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 	if(!width) width = nsoption_int(redraw_tile_size_x);
 	if(!height) height = nsoption_int(redraw_tile_size_y);
+	gg->width = width;
+	gg->height = height;
 
 	gg->layerinfo = NewLayerInfo();
 	gg->areabuf = AllocVecTagList(AREA_SIZE, NULL);
@@ -177,9 +179,9 @@ void ami_free_layers(struct gui_globals *gg)
 	FreeVec(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
 	if(palette_mapped == false) {
-		ami_rtg_freebitmap(gg->bm);
+		if(gg->bm) ami_rtg_freebitmap(gg->bm);
 	} else {
-		FreeBitMap(gg->bm);
+		if(gg->bm) FreeBitMap(gg->bm);
 	}
 }
 
