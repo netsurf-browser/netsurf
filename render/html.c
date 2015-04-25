@@ -1934,6 +1934,12 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		file_len = ftell(fp);
 		fseek(fp, 0, SEEK_SET);
 
+		if ((long)file_len == -1) {
+			/* unable to get file length, but drop was for us */
+			fclose(fp);
+			return true;
+		}
+
 		/* Allocate buffer for file data */
 		buffer = malloc(file_len + 1);
 		if (buffer == NULL) {
