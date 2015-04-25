@@ -3461,10 +3461,13 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 {
 	int x, y;
 	struct rect clip;
-	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->gw->scale);
-	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->gw->scale);
-				
-	browserglob.shared_pens = &gwin->shared_pens;
+	int tile_size_x = glob->width;
+	int tile_size_y = glob->height;
+
+	int tile_x_scale = (int)(tile_size_x / gwin->gw->scale);
+	int tile_y_scale = (int)(tile_size_y / gwin->gw->scale);
+
+	browserglob.shared_pens = &gwin->shared_pens; /* do we need this?? */
 	
 	if(top < 0) {
 		height += top;
@@ -3498,14 +3501,14 @@ static void ami_do_redraw_tiled(struct gui_window_2 *gwin, bool busy,
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
-		clip.y1 = nsoption_int(redraw_tile_size_y);
+		clip.y1 = tile_size_y;
 		if(clip.y1 > height) clip.y1 = height;
 		if((((y - sy) * gwin->gw->scale) + clip.y1) > bbox->Height)
 			clip.y1 = bbox->Height - ((y - sy) * gwin->gw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
-			clip.x1 = nsoption_int(redraw_tile_size_x);
+			clip.x1 = tile_size_x;
 			if(clip.x1 > width) clip.x1 = width;
 			if((((x - sx) * gwin->gw->scale) + clip.x1) > bbox->Width)
 				clip.x1 = bbox->Width - ((x - sx) * gwin->gw->scale);
