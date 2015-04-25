@@ -388,6 +388,8 @@ static bool ami_clip(const struct rect *clip)
 
 	struct Region *reg = NULL;
 
+	if(!glob || !glob->rp || !glob->rp->Layer) return true;
+
 	if(glob->rp->Layer)
 	{
 		reg = NewRegion();
