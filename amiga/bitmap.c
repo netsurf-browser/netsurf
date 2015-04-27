@@ -522,6 +522,7 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 	int plot_height;
 	struct MinList shared_pens;
 	struct gui_globals bm_globals;
+	struct gui_globals *temp_gg = glob;
 
 	struct redraw_context ctx = {
 		.interactive = false,
@@ -562,11 +563,17 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 #endif
 
 	/**\todo In theory we should be able to move the bitmap to our native area
-		to try to avoid re-conversion */
+		to try to avoid re-conversion (at the expense of memory) */
 
 	ami_free_layers(&bm_globals);
 	ami_plot_release_pens(&shared_pens);
 	amiga_bitmap_set_opaque(bitmap, true);
+
+	/* Restore previous render area.  This is set when plotting starts,
+	 * but if bitmap_render is called *during* a browser render then
+	 * having an invalid pointer here causes NetSurf to crash.
+	 */
+	glob = temp_gg;
 
 	return NSERROR_OK;
 }
