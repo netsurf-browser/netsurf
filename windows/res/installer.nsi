@@ -58,8 +58,6 @@ section "install"
 	# Files added here should be removed by the uninstaller (see section "uninstall")
 	file "NetSurf.exe" 
 	file /oname=NetSurf.ico "windows\res\NetSurf.ico"
-	file /oname=libcares-2.dll "/opt/netsurf/i686-w64-mingw32/env/bin/libcares-2.dll"
-	file /oname=libgnurx-0.dll "/opt/netsurf/i686-w64-mingw32/env/bin/libgnurx-0.dll"
 	file /oname=default.css "windows\res\default.css"
 	file /oname=welcome.html "windows\res\welcome.html"
 	file /oname=netsurf.png "windows\res\netsurf.png"
