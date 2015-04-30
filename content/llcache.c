@@ -2427,17 +2427,26 @@ write_backing_store(struct llcache_object *object,
  * If the overall write bandwidth has fallen below a useful level for
  * the backing store to be effective disable it.
  *
+ * It is important to ensure a useful amount of data has been written
+ * before calculating bandwidths otherwise tiny files taking a
+ * disproportionately long time to write might trigger this erroneously.
+ *
  * \param p The context pointer passed to the callback.
  */
 static void llcache_persist_slowcheck(void *p)
 {
-	unsigned long total_bandwidth; /* total bandwidth */
-	total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
+	uint64_t total_bandwidth; /* total bandwidth */
 
-	if (total_bandwidth < llcache->minimum_bandwidth) {
-		LOG(("Cannot write minimum bandwidth"));
-		warn_user("LowDiscWriteBandwidth", 0);
-		guit->llcache->finalise();
+	if (llcache->total_written > (2 * llcache->minimum_bandwidth)) {
+
+		total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
+
+		if (total_bandwidth < llcache->minimum_bandwidth) {
+			LOG(("Current bandwidth %llu less than minimum %llu",
+			     total_bandwidth, llcache->minimum_bandwidth));
+			warn_user("LowDiscWriteBandwidth", 0);
+			guit->llcache->finalise();
+		}
 	}
 }
 
