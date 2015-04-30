@@ -31,8 +31,6 @@
  *         lifetime is typically very short, though this may be obsoleted
  *         by a small object storage stratagy.
  *
- * \todo make backing store have a more efficient small object storage.
- *
  */
 
 #include <unistd.h>
@@ -1591,9 +1589,14 @@ static nserror store_write_block(struct store_state *state,
 	if (state->blocks[elem_idx][bf].fd == -1) {
 		state->blocks[elem_idx][bf].fd = store_open(state, bf,
 				elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
-	}
-	if (state->blocks[elem_idx][bf].fd == -1) {
-		return NSERROR_SAVE_FAILED;
+		if (state->blocks[elem_idx][bf].fd == -1) {
+			LOG(("Open failed errno %d", errno));
+			return NSERROR_SAVE_FAILED;
+		}
+
+		/* ensure block file is correct length at open */
+		ftruncate(state->blocks[elem_idx][bf].fd,
+			  1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
 	}
 
 	offst = bi << log2_block_size[elem_idx];
@@ -1745,11 +1748,16 @@ static nserror store_read_block(struct store_state *state,
 
 	/* ensure the block file fd is good */
 	if (state->blocks[elem_idx][bf].fd == -1) {
-		state->blocks[elem_idx][bf].fd = store_open(state, bf, elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
-	}
-	if (state->blocks[elem_idx][bf].fd == -1) {
-		LOG(("Open failed errno %d", errno));
-		return NSERROR_SAVE_FAILED;
+		state->blocks[elem_idx][bf].fd = store_open(state, bf,
+				elem_idx + ENTRY_ELEM_COUNT, O_CREAT | O_RDWR);
+		if (state->blocks[elem_idx][bf].fd == -1) {
+			LOG(("Open failed errno %d", errno));
+			return NSERROR_SAVE_FAILED;
+		}
+
+		/* ensure block file is correct length at open */
+		ftruncate(state->blocks[elem_idx][bf].fd,
+			  1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
 	}
 
 	offst = bi << log2_block_size[elem_idx];
