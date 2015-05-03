@@ -130,25 +130,29 @@ static void box_textarea_callback(void *data, struct textarea_msg *msg)
 				.x1 = INT_MAX,
 				.y1 = INT_MAX
 			};
-			html_drag_type drag_type;
 			union html_drag_owner drag_owner;
 			drag_owner.textarea = box;
 
 			switch (msg->data.drag) {
 			case TEXTAREA_DRAG_SCROLLBAR:
-				drag_type = HTML_DRAG_TEXTAREA_SCROLLBAR;
+				html_set_drag_type(html,
+						   HTML_DRAG_TEXTAREA_SCROLLBAR,
+						   drag_owner,
+						   &rect);
 				break;
+
 			case TEXTAREA_DRAG_SELECTION:
-				drag_type = HTML_DRAG_TEXTAREA_SELECTION;
+				html_set_drag_type(html,
+						   HTML_DRAG_TEXTAREA_SELECTION,
+						   drag_owner,
+						   &rect);
 				break;
+
 			default:
-				LOG(("Drag type not handled."));
-				assert(0);
+				LOG(("Drag type %d not handled.",
+				     msg->data.drag));
 				break;
 			}
-
-			html_set_drag_type(html, drag_type, drag_owner,
-					&rect);
 		}
 		break;
 
