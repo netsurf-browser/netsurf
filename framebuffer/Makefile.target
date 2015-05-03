@@ -112,7 +112,7 @@ FB_IMAGE_throbber8 := framebuffer/res/throbber/throbber8.png
 # local compiler flags
 ifeq ($(HOST),OpenBSD)
     HOST_CFLAGS += $(shell $(PKG_CONFIG) --cflags libpng)
-    HOST_LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
+    HOST_LDFLAGS += $(shell $(PKG_CONFIG) --libs libpng)
 else
     HOST_CFLAGS +=
     HOST_LDFLAGS += -lpng
