@@ -356,7 +356,7 @@ char *strndup(const char *s, size_t n)
 #endif
 
 
-/* Exported interface, documented in utils.c */
+/* Exported interface, documented in utils.h */
 int dir_sort_alpha(const struct dirent **d1, const struct dirent **d2)
 {
 	const char *s1 = (*d1)->d_name;
