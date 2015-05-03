@@ -49,9 +49,9 @@ css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 		const css_computed_style *parent);
 
-css_error nscss_compute_font_size(void *pw, const css_hint *parent, 
-		css_hint *size);
 
-bool nscss_parse_colour(const char *data, css_color *result);
+css_error named_ancestor_node(void *pw, void *node,
+		const css_qname *qname, void **ancestor);
+css_error node_is_visited(void *pw, void *node, bool *match);
 
 #endif
