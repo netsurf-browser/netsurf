@@ -481,15 +481,18 @@ enum box_walk_dir {
 static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
 		int *x, int *y)
 {
+	struct box *rb = NULL;
+
 	switch (dir) {
 	case BOX_WALK_CHILDREN:
 		b = b->children;
 		if (b == NULL)
-			return NULL;
+			break;
 		*x += b->x;
 		*y += b->y;
 		if (!box_is_float(b)) {
-			return b;
+			rb = b;
+			break;
 		}
 		/* Fall through */
 
@@ -503,39 +506,46 @@ static inline struct box *box_move_xy(struct box *b, enum box_walk_dir dir,
 			*x += b->x;
 			*y += b->y;
 		} while (box_is_float(b));
-		return b;
+		rb = b;
+		break;
 
 	case BOX_WALK_PARENT:
 		*x -= b->x;
 		*y -= b->y;
-		return b->parent;
+		rb = b->parent;
+		break;
 
 	case BOX_WALK_FLOAT_CHILDREN:
 		b = b->float_children;
 		if (b == NULL)
-			return NULL;
+			break;
 		*x += b->x;
 		*y += b->y;
-		return b;
+		rb = b;
+		break;
 
 	case BOX_WALK_NEXT_FLOAT_SIBLING:
 		*x -= b->x;
 		*y -= b->y;
 		b = b->next_float;
 		if (b == NULL)
-			return NULL;
+			break;
 		*x += b->x;
 		*y += b->y;
-		return b;
+		rb = b;
+		break;
 
 	case BOX_WALK_FLOAT_CONTAINER:
 		*x -= b->x;
 		*y -= b->y;
-		return b->float_container;
+		rb = b->float_container;
+		break;
 
 	default:
 		assert(0 && "Bad box walk type.");
 	}
+
+	return rb;
 }
 
 
