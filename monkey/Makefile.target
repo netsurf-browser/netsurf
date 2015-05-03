@@ -8,9 +8,6 @@
 # ----------------------------------------------------------------------------
 
 
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
-
 # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
@@ -20,7 +17,25 @@ NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
-# add a line similar to below for each optional pkg-configed lib here
+
+CWARNFLAGS += -Werror
+
+CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
+	  -D_BSD_SOURCE \
+	  -D_DEFAULT_SOURCE \
+	  -D_XOPEN_SOURCE=700 \
+	  -D_POSIX_C_SOURCE=200809L \
+	  -D_NETBSD_SOURCE \
+	  -DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\"
+
+LDFLAGS += -lm
+
+# non optional pkg-configed libs
+$(eval $(call pkg_config_find_and_add,libcurl,Curl ))
+$(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
+$(eval $(call pkg_config_find_and_add,glib-2.0,GLib2))
+
+# optional pkg-config configured libraries
 $(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
 $(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
@@ -28,21 +43,6 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
 $(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
 $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
-
-CWARNFLAGS += -Werror
-
-CFLAGS += -std=c99 -Dmonkey -Dnsmonkey -g \
-	  -D_BSD_SOURCE \
-	  -D_DEFAULT_SOURCE \
-	  -D_XOPEN_SOURCE=600 \
-	  -D_POSIX_C_SOURCE=200809L \
-	  -D_NETBSD_SOURCE \
-	  -DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
-	  $(shell $(PKG_CONFIG) --cflags glib-2.0) \
-	  $(shell $(PKG_CONFIG) --cflags libcurl) \
-	  $(shell $(PKG_CONFIG) --cflags openssl)
-
-LDFLAGS += -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0)
 
 # ---------------------------------------------------------------------------
 # Windows flag setup
