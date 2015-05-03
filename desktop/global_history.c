@@ -135,36 +135,45 @@ static nserror global_history_create_dir(enum global_history_folders f)
 	case GH_TODAY:
 		label = "DateToday";
 		break;
+
 	case GH_YESTERDAY:
 		label = "DateYesterday";
 		break;
+
 	case GH_2_DAYS_AGO:
 		label = "Date2Days";
 		break;
+
 	case GH_3_DAYS_AGO:
 		label = "Date3Days";
 		break;
+
 	case GH_4_DAYS_AGO:
 		label = "Date4Days";
 		break;
+
 	case GH_5_DAYS_AGO:
 		label = "Date5Days";
 		break;
+
 	case GH_6_DAYS_AGO:
 		label = "Date6Days";
 		break;
+
 	case GH_LAST_WEEK:
 		label = "Date1Week";
 		break;
+
 	case GH_2_WEEKS_AGO:
 		label = "Date2Week";
 		break;
+
 	case GH_3_WEEKS_AGO:
 		label = "Date3Week";
 		break;
+
 	default:
-		assert(0);
-		break;
+		return NSERROR_BAD_PARAMETER;
 	}
 
 	label = messages_get(label);
