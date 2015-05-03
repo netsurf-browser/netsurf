@@ -33,8 +33,6 @@
 #include "css/select.h"
 #include "css/utils.h"
 
-#undef PRINT_NODE_BLOOM_DETAILS
-
 static css_error node_name(void *pw, void *node, css_qname *qname);
 static css_error node_classes(void *pw, void *node,
 		lwc_string ***classes, uint32_t *n_classes);
