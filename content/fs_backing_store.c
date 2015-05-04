@@ -232,7 +232,8 @@ struct store_state {
 	 */
 	bool entries_dirty;
 
-	/** URL identifier to entry index mapping.
+	/**
+	 * URL identifier to entry index mapping.
 	 *
 	 * This is an open coded index on the entries url field and
 	 * provides a computationaly inexpensive way to go from the
@@ -240,13 +241,19 @@ struct store_state {
 	 */
 	entry_index_t *addrmap;
 
-	/* small block managemet */
+
+	/** small block indexes */
 	struct block_file blocks[ENTRY_ELEM_COUNT][BLOCK_FILE_COUNT];
 
 	/** flag indicating if the block file use maps have been made
 	 * persistant since they were last changed.
 	 */
 	bool blocks_dirty;
+
+	/** flag indicating if a block file has been opened for update
+	 * since maintinance was previously done.
+	 */
+	bool blocks_opened;
 
 
 	/* stats */
@@ -727,8 +734,8 @@ static nserror write_entries(struct store_state *state)
  *
  * Serialise block file use map out to storage.
  *
- * @param state The backing store state to serialise.
- * @return NSERROR_OK on sucess or error code on faliure.
+ * \param state The backing store state to serialise.
+ * \return NSERROR_OK on sucess or error code on faliure.
  */
 static nserror write_blocks(struct store_state *state)
 {
@@ -802,6 +809,46 @@ wr_err:
 }
 
 /**
+ * Ensures block files are of the correct extent
+ *
+ * block files have their extent set to their maximum size to ensure
+ * subsequent reads and writes do not need to extend teh file and are
+ * therefore faster.
+ *
+ * \param state The backing store state to set block extent for.
+ * \return NSERROR_OK on sucess or error code on faliure.
+ */
+static nserror set_block_extents(struct store_state *state)
+{
+	int bfidx; /* block file index */
+	int elem_idx;
+	int ftr;
+
+	if (state->blocks_opened == false) {
+		/* no blocks have been opened since last write */
+		return NSERROR_OK;
+	}
+
+	LOG(("Starting"));
+	for (elem_idx = 0; elem_idx < ENTRY_ELEM_COUNT; elem_idx++) {
+		for (bfidx = 0; bfidx < BLOCK_FILE_COUNT; bfidx++) {
+			if (state->blocks[elem_idx][bfidx].fd != -1) {
+				/* ensure block file is correct extent */
+				ftr = ftruncate(state->blocks[elem_idx][bfidx].fd, 1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
+				if (ftr == -1) {
+					LOG(("Truncate failed errno:%d", errno));
+				}
+			}
+		}
+	}
+	LOG(("Complete"));
+
+	state->blocks_opened = false;
+
+	return NSERROR_OK;
+}
+
+/**
  * maintinance of control structures.
  *
  * callback scheduled when control data has been update. Currently
@@ -816,6 +863,7 @@ static void control_maintinance(void *s)
 
 	write_entries(state);
 	write_blocks(state);
+	set_block_extents(state);
 }
 
 
@@ -1534,6 +1582,7 @@ static nserror
 finalise(void)
 {
 	int bf; /* block file index */
+	unsigned int op_count;
 
 	if (storestate != NULL) {
 		guit->browser->schedule(-1, control_maintinance, storestate);
@@ -1550,14 +1599,19 @@ finalise(void)
 			}
 		}
 
+		op_count = storestate->hit_count + storestate->miss_count;
+
 		/* avoid division by zero */
-		if (storestate->miss_count == 0) {
-			storestate->miss_count = 1;
+		if (op_count > 0) {
+			LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)",
+			     op_count,
+			     storestate->hit_count,
+			     storestate->miss_count,
+			     0,
+			     (storestate->hit_count * 100) / op_count,
+			     (storestate->miss_count * 100) / op_count,
+			     0));
 		}
-		LOG(("hits:%d misses:%d hit ratio:%d returned:%d bytes",
-		     storestate->hit_count, storestate->miss_count,
-		     storestate->hit_count / storestate->miss_count,
-		     storestate->hit_size));
 
 		free(storestate->path);
 		free(storestate);
@@ -1594,9 +1648,8 @@ static nserror store_write_block(struct store_state *state,
 			return NSERROR_SAVE_FAILED;
 		}
 
-		/* ensure block file is correct length at open */
-		ftruncate(state->blocks[elem_idx][bf].fd,
-			  1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
+		/* flag that a block file has been opened */
+		state->blocks_opened = true;
 	}
 
 	offst = bi << log2_block_size[elem_idx];
@@ -1755,9 +1808,8 @@ static nserror store_read_block(struct store_state *state,
 			return NSERROR_SAVE_FAILED;
 		}
 
-		/* ensure block file is correct length at open */
-		ftruncate(state->blocks[elem_idx][bf].fd,
-			  1U << (log2_block_size[elem_idx] + BLOCK_ENTRY_COUNT));
+		/* flag that a block file has been opened */
+		state->blocks_opened = true;
 	}
 
 	offst = bi << log2_block_size[elem_idx];
