@@ -3307,11 +3307,6 @@ void llcache_finalise(void)
 	llcache_object *object, *next;
 	unsigned long total_bandwidth = 0; /* total bandwidth */
 
-	if (llcache->total_elapsed > 0) {
-		total_bandwidth = (llcache->total_written * 1000) /
-			llcache->total_elapsed;
-	}
-
 	/* Clean uncached objects */
 	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
@@ -3357,8 +3352,13 @@ void llcache_finalise(void)
 	/* backing store finalisation */
 	guit->llcache->finalise();
 
-	LOG(("Backing store average bandwidth %lu bytes/second",
-	     total_bandwidth));
+	if (llcache->total_elapsed > 0) {
+		total_bandwidth = (llcache->total_written * 1000) /
+			llcache->total_elapsed;
+	}
+
+	LOG(("Backing store wrote %lu bytes in %lu ms average %lu bytes/second",
+	     llcache->total_written, llcache->total_elapsed, total_bandwidth));
 
 	free(llcache);
 	llcache = NULL;
