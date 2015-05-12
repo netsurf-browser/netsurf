@@ -404,6 +404,13 @@ static png_bytep *calc_row_pointers(struct bitmap *bitmap)
 	png_bytep *row_ptrs;
 	int hloop;
 
+	/* The buffer allocation may occour when the buffer is aquired
+	 * and therefore may fail.
+	 */
+	if (buffer == NULL) {
+		return NULL;
+	}
+
 	row_ptrs = malloc(sizeof(png_bytep) * height);
 
 	if (row_ptrs != NULL) {
@@ -485,6 +492,9 @@ png_cache_convert(struct content *c)
 
 	if (row_pointers != NULL) {
 		png_read_image(png_ptr, (png_bytep *) row_pointers);
+	} else {
+		guit->bitmap->destroy((struct bitmap *)bitmap);
+		bitmap = NULL;
 	}
 
 png_cache_convert_error:
@@ -492,7 +502,9 @@ png_cache_convert_error:
 	/* cleanup png read */
 	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info_ptr);
 
-	free((png_bytep *) row_pointers);
+	if (row_pointers != NULL) {
+		free((png_bytep *) row_pointers);
+	}
 
 	if (bitmap != NULL) {
 		guit->bitmap->modified((struct bitmap *)bitmap);
