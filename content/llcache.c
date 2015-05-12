@@ -35,6 +35,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
+#include <inttypes.h>
+
 #include <curl/curl.h>
 #include <nsutils/time.h>
 
@@ -3305,7 +3307,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 void llcache_finalise(void)
 {
 	llcache_object *object, *next;
-	unsigned long total_bandwidth = 0; /* total bandwidth */
+	uint64_t total_bandwidth = 0; /* total bandwidth */
 
 	/* Clean uncached objects */
 	for (object = llcache->uncached_objects; object != NULL; object = next) {
@@ -3357,8 +3359,10 @@ void llcache_finalise(void)
 			llcache->total_elapsed;
 	}
 
-	LOG(("Backing store wrote %lu bytes in %lu ms average %lu bytes/second",
-	     llcache->total_written, llcache->total_elapsed, total_bandwidth));
+	LOG(("Backing store wrote %"PRIu64" bytes in %"PRIu64" ms "
+			"(average %"PRIu64" bytes/second)",
+			llcache->total_written, llcache->total_elapsed,
+			total_bandwidth));
 
 	free(llcache);
 	llcache = NULL;
