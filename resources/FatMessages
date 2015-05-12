@@ -3159,9 +3159,6 @@ de.all.DirectoryError:Verzeichnis '%s' existiert bereits.
 fr.all.DirectoryError:répertoire '%s' existe déjà
 it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:map '%s' bestaat reeds
-en.all.LowDiscWriteBandwidth:Disc cache write bandwidth is too low: the cache will be disabled. If this occurs frequently the cache should be disabled by setting the configured size to 0.
-fr.all.LowDiscWriteBandwidth:La bande passante en écriture de la mémoire cache est trop faible : le cache sera désactivé. Si cela se produit fréquemment le cache doit être désactivé en définissant la taille configurée à 0.
-nl.all.LowDiscWriteBandwidth:Bandbreedte te laag voor schijfbuffer; buffer wordt uitgeschakeld. Zet schijfbuffergrootte op 0 wanneer dit regelmatig voorkomt.
 
 # Error messages for Amiga version only
 en.ami.CompError:Unable to open

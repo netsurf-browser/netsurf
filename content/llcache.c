@@ -2444,7 +2444,7 @@ static void llcache_persist_slowcheck(void *p)
 		if (total_bandwidth < llcache->minimum_bandwidth) {
 			LOG(("Current bandwidth %llu less than minimum %llu",
 			     total_bandwidth, llcache->minimum_bandwidth));
-			warn_user("LowDiscWriteBandwidth", 0);
+			LOG(("Disabling disc cache; too slow"));
 			guit->llcache->finalise();
 		}
 	}
