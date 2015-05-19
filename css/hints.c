@@ -832,7 +832,6 @@ static css_error node_presentational_hint_padding_trbl(
 {
 	dom_string *name;
 	dom_exception exc;
-	dom_string *cellpadding = NULL;
 	css_error result = CSS_PROPERTY_NOT_SET;
 	
 	exc = dom_node_get_node_name(node, &name);
@@ -843,6 +842,8 @@ static css_error node_presentational_hint_padding_trbl(
 	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		css_qname qs;
 		dom_node *tablenode = NULL;
+		dom_string *cellpadding = NULL;
+
 		qs.ns = NULL;
 		qs.name = lwc_string_ref(corestring_lwc_table);
 		if (named_ancestor_node(ctx, node, &qs, 
@@ -866,20 +867,20 @@ static css_error node_presentational_hint_padding_trbl(
 		/* No need to unref tablenode, named_ancestor_node does not
 		 * return a reffed node to the CSS
 		 */
+
+		if (cellpadding != NULL) {
+			if (parse_dimension(dom_string_data(cellpadding), false,
+					    &hint->data.length.value,
+					    &hint->data.length.unit)) {
+				hint->status = CSS_PADDING_SET;
+				result = CSS_OK;
+			}
+			dom_string_unref(cellpadding);
+		}
 	}
 	
 	dom_string_unref(name);
 
-	if (cellpadding != NULL) {
-		if (parse_dimension(dom_string_data(cellpadding), false,
-				    &hint->data.length.value,
-				    &hint->data.length.unit)) {
-			hint->status = CSS_PADDING_SET;
-			result = CSS_OK;
-		}
-		dom_string_unref(cellpadding);
-	}
-	
 	return result;
 }
 
