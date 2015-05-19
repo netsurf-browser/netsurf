@@ -1578,14 +1578,6 @@ static css_error node_presentational_hint_color(
 				return CSS_PROPERTY_NOT_SET;
 			}
 		}
-	} else if (dom_string_caseless_lwc_isequal(node_name,
-			corestring_lwc_body)) {
-		err = dom_element_get_attribute(node,
-				corestring_dom_text, &color);
-		if ((err != DOM_NO_ERR) || (color == NULL)) {
-			dom_string_unref(node_name);
-			return CSS_PROPERTY_NOT_SET;
-		}
 	} else {
 		err = dom_element_get_attribute(node,
 				corestring_dom_color, &color);
