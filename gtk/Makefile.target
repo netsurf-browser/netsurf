@@ -92,7 +92,7 @@ S_PIXBUF += $(2)
 
 $(2): $(1)
 	$(Q)echo "#include <gdk-pixbuf/gdk-pixdata.h>" > $(2)
-	$(Q)gdk-pixbuf-csource --extern --struct --name=$(3) $(1) >> $(2) || \
+	$(Q)gdk-pixbuf-csource --extern --raw --name=$(3) $(1) >> $(2) || \
 	( rm -f $(2) && false )
 
 endef

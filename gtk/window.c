@@ -56,7 +56,7 @@
 #include "gtk/gdk.h"
 
 
-extern const GdkPixdata menu_cursor_pixdata;
+extern const guint8 *menu_cursor_pixdata;
 
 static GtkWidget *select_menu;
 static struct form_control *select_menu_control;
@@ -1080,7 +1080,7 @@ static GdkCursor *nsgtk_create_menu_cursor(void)
 {
 	GdkCursor *cursor = NULL;
 	GdkPixbuf *pixbuf;
-	pixbuf = gdk_pixbuf_from_pixdata(&menu_cursor_pixdata, FALSE, NULL);
+	pixbuf = gdk_pixbuf_new_from_inline(-1, menu_cursor_pixdata, FALSE, NULL);
 	cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf, 0, 3);
 	g_object_unref (pixbuf);
 
