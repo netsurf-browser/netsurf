@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <math.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -330,14 +331,16 @@ nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 	if (tw->mouse_pressed == false)
 		return TRUE;
 
-	if ((abs(event->x - tw->last_x) < 5) &&
-			(abs(event->y - tw->last_y) < 5)) {
-		/* Mouse hasn't moved far enough from press coordinate for this
-		 * to be considered a drag. */
+	if ((fabs(event->x - tw->last_x) < 5.0) &&
+	    (fabs(event->y - tw->last_y) < 5.0)) {
+		/* Mouse hasn't moved far enough from press coordinate
+		 * for this to be considered a drag.
+		 */
 		return FALSE;
 	} else {
-		/* This is a drag, ensure it's always treated as such, even if
-		 * we drag back over the press location */
+		/* This is a drag, ensure it's always treated as such,
+		 * even if we drag back over the press location.
+		 */
 		tw->last_x = INT_MIN;
 		tw->last_y = INT_MIN;
 	}

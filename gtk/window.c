@@ -26,7 +26,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-
+#include <math.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <gdk-pixbuf/gdk-pixdata.h>
@@ -290,14 +290,16 @@ static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
 
-	if ((abs(event->x - g->last_x) < 5) &&
-	    (abs(event->y - g->last_y) < 5)) {
-		/* Mouse hasn't moved far enough from press coordinate for this
-		 * to be considered a drag. */
+	if ((fabs(event->x - g->last_x) < 5.0) &&
+	    (fabs(event->y - g->last_y) < 5.0)) {
+		/* Mouse hasn't moved far enough from press coordinate
+		 * for this to be considered a drag.
+		 */
 		return FALSE;
 	} else {
-		/* This is a drag, ensure it's always treated as such, even if
-		 * we drag back over the press location */
+		/* This is a drag, ensure it's always treated as such,
+		 * even if we drag back over the press location.
+		 */
 		g->last_x = INT_MIN;
 		g->last_y = INT_MIN;
 	}
