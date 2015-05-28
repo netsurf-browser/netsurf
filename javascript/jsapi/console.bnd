@@ -42,6 +42,6 @@ operation log %{
 		jsstr = JS_ValueToString(cx, argv[argloop]);
 
 		JSString_to_char(jsstr, txt, jsstrlen);
-		LOG(("%s", txt));
+		LOG("%s", txt);
 	}
 %}

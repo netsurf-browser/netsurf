@@ -269,7 +269,7 @@ api new %{
 		return NULL;
 	}
 
-	LOG(("Created new window object %p", newobject));
+	LOG("Created new window object %p", newobject);
 %}
 
 getter document %{
