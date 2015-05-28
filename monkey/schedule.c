@@ -29,7 +29,7 @@
 #ifdef DEBUG_MONKEY_SCHEDULE
 #include "utils/log.h"
 #else
-#define LOG(X)
+#define LOG(fmt, args...) ((void) 0)
 #endif
 
 /** Killable callback closure embodiment. */
@@ -52,10 +52,10 @@ nsgtk_schedule_generic_callback(gpointer data)
         _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(data);
         if (cb->callback_killed) {
                 /* This callback instance has been killed. */
-                LOG(("CB at %p already dead.", cb));
+                LOG("CB at %p already dead.", cb);
         }
         queued_callbacks = g_list_remove(queued_callbacks, cb);
-        LOG(("CB %p(%p) now pending run", cb->callback, cb->context));
+        LOG("CB %p(%p) now pending run", cb->callback, cb->context);
         pending_callbacks = g_list_append(pending_callbacks, cb);
         return FALSE;
 }
@@ -67,8 +67,7 @@ nsgtk_schedule_kill_callback(void *_target, void *_match)
         _nsgtk_callback_t *match = (_nsgtk_callback_t *)_match;
         if ((target->callback == match->callback) &&
             (target->context == match->context)) {
-                LOG(("Found match for %p(%p), killing.",
-                     target->callback, target->context));
+                LOG("Found match for %p(%p), killing.", target->callback, target->context);
                 target->callback = NULL;
                 target->context = NULL;
                 target->callback_killed = true;
@@ -106,7 +105,7 @@ nserror monkey_schedule(int t, void (*callback)(void *p), void *p)
         cb->context = p;
         cb->callback_killed = false;
         /* Prepend is faster right now. */
-        LOG(("queued a callback to %p(%p) for %d msecs time", callback, p, t));
+        LOG("queued a callback to %p(%p) for %d msecs time", callback, p, t);
         queued_callbacks = g_list_prepend(queued_callbacks, cb);
         g_timeout_add(t, nsgtk_schedule_generic_callback, cb);
 
@@ -126,17 +125,17 @@ schedule_run(void)
         /* Clear the pending list. */
         pending_callbacks = NULL;
 
-        LOG(("Captured a run of %d callbacks to fire.", g_list_length(this_run)));
+        LOG("Captured a run of %d callbacks to fire.", g_list_length(this_run));
 
         /* Run all the callbacks which made it this far. */
         while (this_run != NULL) {
                 _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(this_run->data);
                 this_run = g_list_remove(this_run, this_run->data);
                 if (!cb->callback_killed) {
-                  LOG(("CB DO %p(%p)", cb->callback, cb->context));
+                  LOG("CB DO %p(%p)", cb->callback, cb->context);
                   cb->callback(cb->context);
                 } else {
-                  LOG(("CB %p(%p) already dead, dropping", cb->callback, cb->context));
+                  LOG("CB %p(%p) already dead, dropping", cb->callback, cb->context);
                 }
                 free(cb);
         }

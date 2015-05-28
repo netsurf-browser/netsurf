@@ -450,7 +450,7 @@ static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float w
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("Path does not start with move"));
+		LOG("Path does not start with move");
 		return false;
 	}
 
@@ -489,7 +489,7 @@ static bool nsgtk_plot_path(const float *p, unsigned int n, colour fill, float w
 				       p[i+5], p[i+6]);
 			i += 7;
 		} else {
-			LOG(("bad path command %f", p[i]));
+			LOG("bad path command %f", p[i]);
 			/* Reset matrix for safety */
 			cairo_set_matrix(current_cr, &old_ctm);
 			return false;

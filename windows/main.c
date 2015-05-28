@@ -189,7 +189,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	free(messages);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);
-		LOG(("NetSurf failed to initialise"));
+		LOG("NetSurf failed to initialise");
 		return 1;
 	}
 
@@ -210,7 +210,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		addr = NETSURF_HOMEPAGE;
 	}
 
-	LOG(("calling browser_window_create"));
+	LOG("calling browser_window_create");
 
 	ret = nsurl_create(addr, &url);
 	if (ret == NSERROR_OK) {

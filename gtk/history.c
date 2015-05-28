@@ -146,7 +146,7 @@ void nsgtk_history_init_menu(void)
 	while (event->widget != NULL) {
 		w = GTK_WIDGET(gtk_builder_get_object(gladeFile, event->widget));
 		if (w == NULL) {
-			LOG(("Unable to connect menu widget ""%s""", event->widget));
+			LOG("Unable to connect menu widget ""%s""", event->widget);
 		} else {
 			g_signal_connect(G_OBJECT(w), "activate", event->handler, global_history_window);
 		}

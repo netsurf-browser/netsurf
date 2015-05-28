@@ -99,7 +99,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	struct BitMap *friend = NULL;
 
 	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
-	LOG(("Screen depth = %d", depth));
+	LOG("Screen depth = %d", depth);
 
 	if(depth < 16) {
 		palette_mapped = true;
@@ -207,7 +207,7 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colr)
 			(colr & 0x00ff0000) << 8,
 			NULL);
 	
-	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colr));
+	if(pen == -1) LOG("WARNING: Cannot allocate pen for ABGR:%lx", colr);
 
 	if(shared_pens != NULL) {
 		if((node = (struct ami_plot_pen *)AllocVecTagList(sizeof(struct ami_plot_pen), NULL))) {
@@ -280,7 +280,7 @@ void ami_plot_clear_bbox(struct RastPort *rp, struct IBox *bbox)
 static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_rectangle()"));
+	LOG("[ami_plotter] Entered ami_rectangle()");
 	#endif
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
@@ -325,7 +325,7 @@ static bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *st
 static bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_line()"));
+	LOG("[ami_plotter] Entered ami_line()");
 	#endif
 
 	glob->rp->PenWidth = style->stroke_width;
@@ -360,21 +360,21 @@ static bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 static bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_polygon()"));
+	LOG("[ami_plotter] Entered ami_polygon()");
 	#endif
 
 	ami_plot_setapen(glob->rp, style->fill_colour);
 
 	if(AreaMove(glob->rp,p[0],p[1]) == -1)
-		LOG(("AreaMove: vector list full"));
+		LOG("AreaMove: vector list full");
 			
 	for(uint32 k = 1; k < n; k++) {
 		if(AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1)
-			LOG(("AreaDraw: vector list full"));
+			LOG("AreaDraw: vector list full");
 	}
 
 	if(AreaEnd(glob->rp) == -1)
-		LOG(("AreaEnd: error"));
+		LOG("AreaEnd: error");
 
 	return true;
 }
@@ -383,7 +383,7 @@ static bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 static bool ami_clip(const struct rect *clip)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_clip()"));
+	LOG("[ami_plotter] Entered ami_clip()");
 	#endif
 
 	struct Region *reg = NULL;
@@ -411,7 +411,7 @@ static bool ami_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_text()"));
+	LOG("[ami_plotter] Entered ami_text()");
 	#endif
 
 	bool aa = true;
@@ -428,7 +428,7 @@ static bool ami_text(int x, int y, const char *text, size_t length,
 static bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_disc()"));
+	LOG("[ami_plotter] Entered ami_disc()");
 	#endif
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {
@@ -473,7 +473,7 @@ static void ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
 static bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_arc()"));
+	LOG("[ami_plotter] Entered ami_arc()");
 	#endif
 
 	if (angle2 < angle1) angle2 += 360;
@@ -487,7 +487,7 @@ static bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot
 static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitmap)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_bitmap()"));
+	LOG("[ami_plotter] Entered ami_bitmap()");
 	#endif
 
 	struct BitMap *tbm;
@@ -504,7 +504,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	if(!tbm) return true;
 
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
+	LOG("[ami_plotter] ami_bitmap() got native bitmap");
 	#endif
 
 #ifdef __amigaos4__
@@ -577,7 +577,7 @@ static bool ami_bitmap_tile(int x, int y, int width, int height,
 			bitmap_flags_t flags)
 {
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_bitmap_tile()"));
+	LOG("[ami_plotter] Entered ami_bitmap_tile()");
 	#endif
 
 	int xf,yf,xm,ym,oy,ox;
@@ -776,14 +776,14 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 	struct bez_point start_p = {0, 0}, cur_p = {0, 0}, p_a, p_b, p_c, p_r;
 	
 	#ifdef AMI_PLOTTER_DEBUG
-	LOG(("[ami_plotter] Entered ami_path()"));
+	LOG("[ami_plotter] Entered ami_path()");
 	#endif
 
 	if (n == 0)
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("Path does not start with move"));
+		LOG("Path does not start with move");
 		return false;
 	}
 
@@ -804,7 +804,7 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 		if (p[i] == PLOTTER_PATH_MOVE) {
 			if (fill != NS_TRANSPARENT) {
 				if(AreaMove(glob->rp, p[i+1], p[i+2]) == -1)
-					LOG(("AreaMove: vector list full"));
+					LOG("AreaMove: vector list full");
 			} else {
 				Move(glob->rp, p[i+1], p[i+2]);
 			}
@@ -817,7 +817,7 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 		} else if (p[i] == PLOTTER_PATH_CLOSE) {
 			if (fill != NS_TRANSPARENT) {
 				if(AreaEnd(glob->rp) == -1)
-					LOG(("AreaEnd: error"));
+					LOG("AreaEnd: error");
 			} else {
 				Draw(glob->rp, start_p.x, start_p.y);
 			}
@@ -825,7 +825,7 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 		} else if (p[i] == PLOTTER_PATH_LINE) {
 			if (fill != NS_TRANSPARENT) {
 				if(AreaDraw(glob->rp, p[i+1], p[i+2]) == -1)
-					LOG(("AreaDraw: vector list full"));
+					LOG("AreaDraw: vector list full");
 			} else {
 				Draw(glob->rp, p[i+1], p[i+2]);
 			}
@@ -844,7 +844,7 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 				ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
 				if (fill != NS_TRANSPARENT) {
 					if(AreaDraw(glob->rp, p_r.x, p_r.y) == -1)
-						LOG(("AreaDraw: vector list full"));
+						LOG("AreaDraw: vector list full");
 				} else {
 					Draw(glob->rp, p_r.x, p_r.y);
 				}
@@ -853,7 +853,7 @@ static bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			cur_p.y = p_c.y;
 			i += 7;
 		} else {
-			LOG(("bad path command %f", p[i]));
+			LOG("bad path command %f", p[i]);
 			/* End path for safety if using Area commands */
 			if (fill != NS_TRANSPARENT) {
 				AreaEnd(glob->rp);

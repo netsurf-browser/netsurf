@@ -82,7 +82,7 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 
 	scrollbar = malloc(sizeof(struct scrollbar));
 	if (scrollbar == NULL) {
-		LOG(("malloc failed"));
+		LOG("malloc failed");
 		warn_user("NoMemory", 0);
 		*s = NULL;
 		return false;

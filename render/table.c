@@ -220,10 +220,13 @@ bool table_calculate_column_types(struct box *table)
 
 #ifdef TABLE_DEBUG
 	for (i = 0; i != table->columns; i++)
-		LOG(("table %p, column %u: type %s, width %i", table, i,
-				((const char *[]) {"UNKNOWN", "FIXED", "AUTO",
-				"PERCENT", "RELATIVE"})[col[i].type],
-				col[i].width));
+		LOG("table %p, column %u: type %s, width %i", table, i, ((const char *[]){
+			"UNKNOWN",
+			"FIXED",
+			"AUTO",
+			"PERCENT",
+			"RELATIVE"		
+		})[col[i].type], col[i].width);
 #endif
 
 	return true;

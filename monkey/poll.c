@@ -29,7 +29,7 @@
 #ifdef DEBUG_POLL_LOOP
 #include "utils/log.h"
 #else
-#define LOG(X)
+#define LOG(fmt, args...) ((void) 0)
 #endif
 
 
@@ -103,7 +103,7 @@ void monkey_poll(void)
       fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
       g_main_context_add_poll(0, fd, 0);
       fd_list[fd_count++] = fd;
-      LOG(("Want to read %d", i));
+      LOG("Want to read %d", i);
     }
     if (FD_ISSET(i, &write_fd_set)) {
       GPollFD *fd = malloc(sizeof *fd);
@@ -111,7 +111,7 @@ void monkey_poll(void)
       fd->events = G_IO_OUT | G_IO_ERR;
       g_main_context_add_poll(0, fd, 0);
       fd_list[fd_count++] = fd;
-      LOG(("Want to write %d", i));
+      LOG("Want to write %d", i);
     }
     if (FD_ISSET(i, &exc_fd_set)) {
       GPollFD *fd = malloc(sizeof *fd);
@@ -119,13 +119,13 @@ void monkey_poll(void)
       fd->events = G_IO_ERR;
       g_main_context_add_poll(0, fd, 0);
       fd_list[fd_count++] = fd;
-      LOG(("Want to check %d", i));
+      LOG("Want to check %d", i);
     }
   }
 
   schedule_run();
 
-  LOG(("Iterate %sblocking", block?"":"non-"));
+  LOG("Iterate %sblocking", block ? "" : "non-");
   if (block) {
     fprintf(stdout, "GENERIC POLL BLOCKING\n");
   }

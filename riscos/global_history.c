@@ -116,7 +116,7 @@ void ro_gui_global_history_postinitialise(void)
 			&ro_global_history_treeview_callbacks,
 			TREE_HISTORY);
 	if (global_history_window.tv == NULL) {
-		LOG(("Failed to allocate treeview"));
+		LOG("Failed to allocate treeview");
 		return;
 	}
 

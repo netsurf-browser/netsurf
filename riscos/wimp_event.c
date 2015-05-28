@@ -157,7 +157,7 @@ bool ro_gui_wimp_event_memorise(wimp_w w)
 					ro_gui_get_icon_string(window->w, event->i));
 				if (!event->previous_value.textual) {
 					error = true;
-					LOG(("Unable to store state for icon %i", event->i));
+					LOG("Unable to store state for icon %i", event->i);
 				}
 				break;
 			case EVENT_CHECKBOX:
@@ -268,8 +268,7 @@ bool ro_gui_wimp_event_transfer(wimp_w from, wimp_w to)
 	struct event_window	*window;
 	int			h;
 
-	LOG(("Transferring all events from window 0x%x to window 0x%x",
-			(unsigned int) from, (unsigned int) to));
+	LOG("Transferring all events from window 0x%x to window 0x%x", (unsigned int)from, (unsigned int)to);
 
 	window = ro_gui_wimp_event_remove_window(from);
 	if (window == NULL || window->w != from)
@@ -295,7 +294,7 @@ void ro_gui_wimp_event_finalise(wimp_w w)
 	struct event_window *window;
 	struct icon_event *event;
 
-	LOG(("Removing all events for window 0x%x", (unsigned int)w));
+	LOG("Removing all events for window 0x%x", (unsigned int)w);
 	window = ro_gui_wimp_event_remove_window(w);
 	if (!window)
 		return;
@@ -332,8 +331,7 @@ void ro_gui_wimp_event_deregister(wimp_w w, wimp_i i)
 	struct event_window	*window;
 	struct icon_event	*event, *parent, *child;
 
-	LOG(("Removing all events for window 0x%x, icon %d",
-			(unsigned int)w, (int)i));
+	LOG("Removing all events for window 0x%x, icon %d", (unsigned int)w, (int)i);
 	window = ro_gui_wimp_event_get_window(w);
 	if (!window)
 		return;
@@ -347,7 +345,7 @@ void ro_gui_wimp_event_deregister(wimp_w w, wimp_i i)
 		child = event->next;
 
 		if (event->i == i) {
-			LOG(("Removing event 0x%x", (unsigned int) event));
+			LOG("Removing event 0x%x", (unsigned int)event);
 
 			if (parent == NULL)
 				window->first = child;
@@ -579,8 +577,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	ic.i = event->data.menu_gright.field;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -590,8 +587,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		return prepared;
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
@@ -599,8 +595,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		error = xwimp_set_caret_position(window->w, event->data.menu_gright.field,
 				-1, -1, -1, strlen(menu_entry->data.indirected_text.text));
 		if (error) {
-			LOG(("xwimp_set_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -672,7 +667,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 			for (search = window->first; search; search = search->next)
 				if (search->i == event->data.linked_icon) break;
 			if (!search) {
-				LOG(("Incorrect reference."));
+				LOG("Incorrect reference.");
 				return false;
 			}
 			stepping = search->data.numeric_field.stepping;
@@ -709,15 +704,13 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				open.w = pointer->w;
 				error = xwimp_get_window_state(&open);
 				if (error) {
-					LOG(("xwimp_get_window_state: 0x%x: %s",
-							error->errnum, error->errmess));
+					LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 					warn_user("WimpError", error->errmess);
 					return false;
 				}
 				error = xwimp_get_caret_position(&caret);
 				if (error) {
-					LOG(("xwimp_get_caret_position: 0x%x: %s",
-							error->errnum, error->errmess));
+					LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
 					warn_user("WimpError", error->errmess);
 					return false;
 				}
@@ -726,8 +719,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				ro_gui_menu_destroy();
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
-					LOG(("xwimp_open_window: 0x%x: %s",
-							error->errnum, error->errmess));
+					LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
 					warn_user("WimpError", error->errmess);
 					return false;
 				}
@@ -737,8 +729,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 							caret.pos.x, caret.pos.y,
 							-1, caret.index);
 					if (error) {
-						LOG(("xwimp_set_caret_position: 0x%x: %s",
-								error->errnum, error->errmess));
+						LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
 						warn_user("WimpError", error->errmess);
 					}
 				}
@@ -806,8 +797,7 @@ void ro_gui_wimp_event_prepare_gright_menu(wimp_w w, struct icon_event *event)
 	ic.i = event->data.menu_gright.field;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -914,8 +904,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 	 */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &t_alphabet);
 	if (error) {
-		LOG(("failed reading alphabet: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("failed reading alphabet: 0x%x: %s", error->errnum, error->errmess);
 		/* prevent any corruption of ucstable */
 		t_alphabet = alphabet;
 	}
@@ -929,8 +918,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 		error = xserviceinternational_get_ucs_conversion_table(
 						alphabet, &unclaimed, &ostable);
 		if (error != NULL) {
-			LOG(("failed reading UCS conversion table: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("failed reading UCS conversion table: 0x%x: %s", error->errnum, error->errmess);
 			/* Try using our own table instead */
 			ucstable = ucstable_from_alphabet(alphabet);
 		} else if (unclaimed) {
@@ -987,9 +975,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 					/* If this ever happens,
 					 * RISC OS' UTF8 keyboard
 					 * drivers are broken */
-					LOG(("unexpected UTF8 start"
-					     " byte %x (ignoring)",
-					     c));
+					LOG("unexpected UTF8 start"" byte %x (ignoring)", c);
 					return true;
 				}
 				/* Anything else is ASCII, so just
@@ -1000,8 +986,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 					/* If this ever happens,
 					 * RISC OS' UTF8 keyboard
 					 * drivers are broken */
-					LOG(("unexpected keycode: "
-					     "%x (ignoring)", c));
+					LOG("unexpected keycode: ""%x (ignoring)", c);
 					return true;
 				}
 
@@ -1090,7 +1075,7 @@ bool ro_gui_wimp_event_close_window(wimp_w w)
 {
 	struct event_window *window;
 
-	LOG(("Close event received for window 0x%x", (unsigned int)w));
+	LOG("Close event received for window 0x%x", (unsigned int)w);
 	if (w == ro_gui_wimp_event_submenu)
 		ro_gui_wimp_event_submenu = 0;
 	window = ro_gui_wimp_event_find_window(w);
@@ -1631,7 +1616,7 @@ struct event_window *ro_gui_wimp_event_get_window(wimp_w w)
 	if (window)
 		return window;
 
-	LOG(("Creating structure for window 0x%x", (unsigned int)w));
+	LOG("Creating structure for window 0x%x", (unsigned int)w);
 	window = calloc(1, sizeof(struct event_window));
 	if (!window)
 		return NULL;

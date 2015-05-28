@@ -148,7 +148,7 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 		if ((srcpagenum != -1) &&
 		    (srcpagenum != (gint)selpagenum)) {
 			/* ensure the add tab is not actually selected */
-			LOG(("src %d sel %d",srcpagenum,selpagenum ));
+			LOG("src %d sel %d", srcpagenum, selpagenum);
 			srcpage = gtk_notebook_get_nth_page(notebook, srcpagenum);
 			gw = g_object_get_data(G_OBJECT(srcpage), "gui_window");
 			if ((gw != NULL) && (nsgtk_get_scaffold(gw) != NULL)) {
@@ -156,7 +156,7 @@ nsgtk_tab_switch_page_after(GtkNotebook *notebook,
 			}
 		}
 	} else {
-		LOG(("sel %d", selpagenum ));
+		LOG("sel %d", selpagenum);
 		/* tab with page in it */
 		gw = g_object_get_data(G_OBJECT(selpage), "gui_window");
 		if (gw != NULL) {

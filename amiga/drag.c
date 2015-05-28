@@ -183,7 +183,7 @@ void ami_drag_save(struct Window *win)
 		break;
 
 		default:
-			LOG(("Unsupported drag save operation %ld",drag_save));
+			LOG("Unsupported drag save operation %ld", drag_save);
 		break;
 	}
 

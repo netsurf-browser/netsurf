@@ -205,9 +205,7 @@ bool print_apply_settings(hlcache_handle *content,
 	
 	content_reformat(content, false, page_content_width, 0);
 
-	LOG(("New layout applied.New height = %d ; New width = %d ",
-			content_get_height(content), 
-			content_get_width(content)));
+	LOG("New layout applied.New height = %d ; New width = %d ", content_get_height(content), content_get_width(content));
 	
 	return true;
 }

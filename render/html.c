@@ -83,7 +83,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	dom_exception exc; /* returned by libdom functions */
 	dom_node *html;
 
-	LOG(("Done XML to box (%p)", c));
+	LOG("Done XML to box (%p)", c);
 
 	/* Clean up and report error if unsuccessful or aborted */
 	if ((success == false) || (c->aborted)) {
@@ -113,7 +113,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		/** @todo should this call html_object_free_objects(c);
 		 * like the other error paths 
 		 */
-		LOG(("error retrieving html element from dom"));
+		LOG("error retrieving html element from dom");
 		content_broadcast_errorcode(&c->base, NSERROR_DOM);
 		content_set_error(&c->base);
 		return;
@@ -122,7 +122,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	/* extract image maps - can't do this sensibly in dom_to_box */
 	err = imagemap_extract(c);
 	if (err != NSERROR_OK) {
-		LOG(("imagemap extraction failed"));
+		LOG("imagemap extraction failed");
 		html_object_free_objects(c);
 		content_broadcast_errorcode(&c->base, err);
 		content_set_error(&c->base);
@@ -571,14 +571,14 @@ void html_finish_conversion(html_content *htmlc)
 	js_fire_event(htmlc->jscontext, "load", htmlc->document, NULL);
 
 	/* convert dom tree to box tree */
-	LOG(("DOM to box (%p)", htmlc));
+	LOG("DOM to box (%p)", htmlc);
 	content_set_status(&htmlc->base, messages_get("Processing"));
 	msg_data.explicit_status_text = NULL;
 	content_broadcast(&htmlc->base, CONTENT_MSG_STATUS, msg_data);
 
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		LOG(("error retrieving html element from dom"));
+		LOG("error retrieving html element from dom");
 		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
 		content_set_error(&htmlc->base);
 		return;
@@ -586,7 +586,7 @@ void html_finish_conversion(html_content *htmlc)
 
 	error = dom_to_box(html, htmlc, html_box_convert_done);
 	if (error != NSERROR_OK) {
-		LOG(("box conversion failed"));
+		LOG("box conversion failed");
 		dom_node_unref(html);
 		html_object_free_objects(htmlc);
 		content_broadcast_errorcode(&htmlc->base, error);
@@ -1023,11 +1023,11 @@ static bool html_convert(struct content *c)
 	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
 	if (exc == DOM_NO_ERR) {
 		html_css_quirks_stylesheets(htmlc);
-		LOG(("quirks set to %d", htmlc->quirks));
+		LOG("quirks set to %d", htmlc->quirks);
 	}
 
 	htmlc->base.active--; /* the html fetch is no longer active */
-	LOG(("%d fetches active", htmlc->base.active));
+	LOG("%d fetches active", htmlc->base.active);
 
 	/* The parse cannot be completed here because it may be paused
 	 * untill all the resources being fetched have completed.
@@ -1080,11 +1080,11 @@ html_begin_conversion(html_content *htmlc)
 	 * complete to avoid repeating the completion pointlessly.
 	 */
 	if (htmlc->parse_completed == false) {
-		LOG(("Completing parse"));
+		LOG("Completing parse");
 		/* complete parsing */
 		error = dom_hubbub_parser_completed(htmlc->parser);
 		if (error != DOM_HUBBUB_OK) {
-			LOG(("Parsing failed"));
+			LOG("Parsing failed");
 	
 			content_broadcast_errorcode(&htmlc->base, 
 						    libdom_hubbub_error_to_nserror(error));
@@ -1135,7 +1135,7 @@ html_begin_conversion(html_content *htmlc)
 	/* locate root element and ensure it is html */
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		LOG(("error retrieving html element from dom"));
+		LOG("error retrieving html element from dom");
 		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
 		return false;
 	}
@@ -1145,7 +1145,7 @@ html_begin_conversion(html_content *htmlc)
 	    (node_name == NULL) ||
 	    (!dom_string_caseless_lwc_isequal(node_name,
 	    		corestring_lwc_html))) {
-		LOG(("root element not html"));
+		LOG("root element not html");
 		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
 		dom_node_unref(html);
 		return false;
@@ -1252,7 +1252,7 @@ static void html_stop(struct content *c)
 		break;
 
 	default:
-		LOG(("Unexpected status %d", c->status));
+		LOG("Unexpected status %d", c->status);
 		assert(0);
 	}
 }
@@ -1403,7 +1403,7 @@ static void html_destroy(struct content *c)
 	html_content *html = (html_content *) c;
 	struct form *f, *g;
 
-	LOG(("content %p", c));
+	LOG("content %p", c);
 
 	/* Destroy forms */
 	for (f = html->forms; f != NULL; f = g) {
@@ -1801,7 +1801,7 @@ static void html__dom_user_data_handler(dom_node_operation operation,
 		free(data);
 		break;
 	default:
-		LOG(("User data operation not handled."));
+		LOG("User data operation not handled.");
 		assert(0);
 	}
 }
@@ -1817,7 +1817,7 @@ static void html__set_file_gadget_filename(struct content *c,
 	ret = guit->utf8->local_to_utf8(fn, 0, &utf8_fn);
 	if (ret != NSERROR_OK) {
 		assert(ret != NSERROR_BAD_ENCODING);
-		LOG(("utf8 to local encoding conversion failed"));
+		LOG("utf8 to local encoding conversion failed");
 		/* Load was for us - just no memory */
 		return;		
 	}
@@ -1969,7 +1969,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		if (ret != NSERROR_OK) {
 			/* bad encoding shouldn't happen */
 			assert(ret != NSERROR_BAD_ENCODING);
-			LOG(("local to utf8 encoding failed"));
+			LOG("local to utf8 encoding failed");
 			free(buffer);
 			warn_user("NoMemory", NULL);
 			return true;
@@ -2035,19 +2035,19 @@ html_debug_dump(struct content *c, FILE *f, enum content_debug op)
 		ret = NSERROR_OK;
 	} else {
 		if (htmlc->document == NULL) {
-			LOG(("No document to dump"));
+			LOG("No document to dump");
 			return NSERROR_DOM;
 		}
 
 		exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 		if ((exc != DOM_NO_ERR) || (html == NULL)) {
-			LOG(("Unable to obtain root node"));
+			LOG("Unable to obtain root node");
 			return NSERROR_DOM;
 		}
 
 		ret = libdom_dump_structure(html, f, 0);
 
-		LOG(("DOM structure dump returning %d", ret));
+		LOG("DOM structure dump returning %d", ret);
 
 		dom_node_unref(html);
 	}

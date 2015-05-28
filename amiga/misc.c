@@ -51,7 +51,7 @@ static LONG ami_misc_req(const char *message, uint32 type)
 {
 	LONG ret = 0;
 
-	LOG(("%s", message));
+	LOG("%s", message);
 #ifdef __amigaos4__
 	ret = TimedDosRequesterTags(
 		TDR_TitleString,  messages_get("NetSurf"),

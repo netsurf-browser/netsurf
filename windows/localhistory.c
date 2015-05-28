@@ -86,7 +86,7 @@ static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window 
 		.plot = &win_plotters
 	};
 
-	LOG(("gui window %p", gw));
+	LOG("gui window %p", gw);
 
 	l->vscroll = 0;
 	l->hscroll = 0;
@@ -125,7 +125,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL) {
-		LOG(("Unable to find gui window structure for hwnd %p", hwnd));
+		LOG("Unable to find gui window structure for hwnd %p", hwnd);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
@@ -305,7 +305,7 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 	int margin = 50;
 	RECT r;
 
-	LOG(("gui window %p", gw));
+	LOG("gui window %p", gw);
 
 	/* if we already have a window, just update and re-show it */
 	if (gw->localhistory != NULL) {
@@ -348,7 +348,7 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 	InitCommonControlsEx(&icc);
 
 
-	LOG(("creating local history window for hInstance %p", hInstance));
+	LOG("creating local history window for hInstance %p", hInstance);
 	localhistory->hwnd = CreateWindow(windowclassname_localhistory,
 					 "NetSurf History",
 					 WS_THICKFRAME | WS_HSCROLL |
@@ -363,9 +363,7 @@ struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
 	/* set the gui window associated with this browser */
 	SetProp(localhistory->hwnd, TEXT("GuiWnd"), (HANDLE)gw);
 
-	LOG(("gui_window %p width %d height %d hwnd %p", gw,
-	     localhistory->guiwidth, localhistory->guiheight,
-	     localhistory->hwnd));
+	LOG("gui_window %p width %d height %d hwnd %p", gw, localhistory->guiwidth, localhistory->guiheight, localhistory->hwnd);
 
 	nsws_localhistory_up(localhistory, gw);
 	UpdateWindow(localhistory->hwnd);

@@ -577,14 +577,14 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 	while (i > 2) {
 		if ((strncmp("  ", &str[i], 2) == 0) && (strlen(&str[i]) > 2)) {
 			// "Standard" Keyboard Shortcut Element found:
-			LOG(("Standard Keyboard Shortcut: \"%s\"\n", &str[i]));
+			LOG("Standard Keyboard Shortcut: \"%s\"\n", &str[i]);
 			x = i+2;
 			is_std_shortcut = true;
 			break;
 		}
 
 		if( str[i] == '['){
-			LOG(("Keyboard Shortcut: \"%s\"\n", &str[i]));
+			LOG("Keyboard Shortcut: \"%s\"\n", &str[i]);
 			// "Custom" Keyboard Shortcut Element found (identified by [):
 			x = i;
 			break;
@@ -659,9 +659,7 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 			}
 		}
 
-		LOG(("Registered keyboard shortcut for \"%s\" => mod: %d, "
-		     "keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode,
-		     accel->ascii));
+		LOG("Registered keyboard shortcut for \"%s\" => mod: %d, ""keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode, accel->ascii);
 	}
 }
 

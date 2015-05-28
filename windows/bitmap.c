@@ -51,7 +51,7 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 	HBITMAP windib;
 	uint8_t *pixdata;
 
-	LOG(("width %d, height %d, state %u",width,height,state));
+	LOG("width %d, height %d, state %u", width, height, state);
 
 	pbmi = calloc(1, sizeof(BITMAPV5HEADER));
 	if (pbmi == NULL) {
@@ -95,7 +95,7 @@ void *win32_bitmap_create(int width, int height, unsigned int state)
 		bitmap->opaque = false;
 	}
 
-	LOG(("bitmap %p", bitmap));
+	LOG("bitmap %p", bitmap);
 
 	return bitmap;
 }
@@ -114,7 +114,7 @@ static unsigned char *bitmap_get_buffer(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return NULL;
 	}
 
@@ -133,7 +133,7 @@ static size_t bitmap_get_rowstride(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 
@@ -151,7 +151,7 @@ void win32_bitmap_destroy(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return;
 	}
 
@@ -194,11 +194,11 @@ static void bitmap_set_opaque(void *bitmap, bool opaque)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return;
 	}
 
-	LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
+	LOG("setting bitmap %p to %s", bm, opaque ? "opaque" : "transparent");
 	bm->opaque = opaque;
 }
 
@@ -215,7 +215,7 @@ static bool bitmap_test_opaque(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return false;
 	}
 
@@ -223,11 +223,11 @@ static bool bitmap_test_opaque(void *bitmap)
 
 	while (tst-- > 0) {
 		if (bm->pixdata[(tst << 2) + 3] != 0xff) {
-			LOG(("bitmap %p has transparency",bm));
+			LOG("bitmap %p has transparency", bm);
 			return false;
 		}
 	}
-	LOG(("bitmap %p is opaque", bm));
+	LOG("bitmap %p is opaque", bm);
 	return true;
 }
 
@@ -242,7 +242,7 @@ static bool bitmap_get_opaque(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return false;
 	}
 
@@ -254,7 +254,7 @@ static int bitmap_get_width(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 
@@ -266,7 +266,7 @@ static int bitmap_get_height(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 
@@ -368,8 +368,7 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 	height = ((width * bitmap->height) + (bitmap->width / 2)) /
 		bitmap->width;
 
-	LOG(("bitmap %p for content %p width %d, height %d",
-	     bitmap, content, width, height));
+	LOG("bitmap %p for content %p width %d, height %d", bitmap, content, width, height);
 
 	/* create two memory device contexts to put the bitmaps in */
 	bufferdc = CreateCompatibleDC(NULL);

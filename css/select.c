@@ -190,20 +190,20 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 
 	error = css_stylesheet_create(&params, &sheet);
 	if (error != CSS_OK) {
-		LOG(("Failed creating sheet: %d", error));
+		LOG("Failed creating sheet: %d", error);
 		return NULL;
 	}
 
 	error = css_stylesheet_append_data(sheet, data, len);
 	if (error != CSS_OK && error != CSS_NEEDDATA) {
-		LOG(("failed appending data: %d", error));
+		LOG("failed appending data: %d", error);
 		css_stylesheet_destroy(sheet);
 		return NULL;
 	}
 
 	error = css_stylesheet_data_done(sheet);
 	if (error != CSS_OK) {
-		LOG(("failed completing parse: %d", error));
+		LOG("failed completing parse: %d", error);
 		css_stylesheet_destroy(sheet);
 		return NULL;
 	}
@@ -229,7 +229,7 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 				CSS_NODE_CLONED,
 				NULL, src, dst, data);
 		if (error != CSS_OK)
-			LOG(("Failed to clone libcss_node_data."));
+			LOG("Failed to clone libcss_node_data.");
 		break;
 
 	case DOM_NODE_RENAMED:
@@ -237,7 +237,7 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 				CSS_NODE_MODIFIED,
 				NULL, src, NULL, data);
 		if (error != CSS_OK)
-			LOG(("Failed to update libcss_node_data."));
+			LOG("Failed to update libcss_node_data.");
 		break;
 
 	case DOM_NODE_IMPORTED:
@@ -247,11 +247,11 @@ static void nscss_dom_user_data_handler(dom_node_operation operation,
 				CSS_NODE_DELETED,
 				NULL, src, NULL, data);
 		if (error != CSS_OK)
-			LOG(("Failed to delete libcss_node_data."));
+			LOG("Failed to delete libcss_node_data.");
 		break;
 
 	default:
-		LOG(("User data operation not handled."));
+		LOG("User data operation not handled.");
 		assert(0);
 	}
 }

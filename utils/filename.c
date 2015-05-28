@@ -85,7 +85,7 @@ const char *filename_request(void)
 		/* no available slots - create a new directory */
 		dir = filename_create_directory(NULL);
 		if (dir == NULL) {
-			LOG(("Failed to create a new directory."));
+			LOG("Failed to create a new directory.");
 			return NULL;
 		}
 		i = 63;
@@ -183,11 +183,10 @@ bool filename_initialise(void)
 	for (start = directory; *start != '\0'; start++) {
 		if (*start == '/') {
 			*start = '\0';
-			LOG(("Creating \"%s\"", directory));
+			LOG("Creating \"%s\"", directory);
 			ret = nsmkdir(directory, S_IRWXU);
 			if (ret != 0 && errno != EEXIST) {
-				LOG(("Failed to create directory \"%s\"",
-						directory));
+				LOG("Failed to create directory \"%s\"", directory);
 				free(directory);
 				return false;
 			}
@@ -196,7 +195,7 @@ bool filename_initialise(void)
 		}
 	}
 
-	LOG(("Temporary directory location: %s", directory));
+	LOG("Temporary directory location: %s", directory);
 	ret = nsmkdir(directory, S_IRWXU);
 
 	free(directory);
@@ -282,7 +281,7 @@ bool filename_flush_directory(const char *folder, int depth)
 		child[sizeof(child) - 1] = '\0';
 
 		if (stat(child, &statbuf) == -1) {
-			LOG(("Unable to stat %s: %s", child, strerror(errno)));
+			LOG("Unable to stat %s: %s", child, strerror(errno));
 			continue;
 		}
 
@@ -350,7 +349,7 @@ bool filename_flush_directory(const char *folder, int depth)
 				filename_delete_recursive(child);
 
 			if (remove(child))
-				LOG(("Failed to remove '%s'", child));
+				LOG("Failed to remove '%s'", child);
 			else
 				changed = true;
 		} else {
@@ -389,7 +388,7 @@ bool filename_delete_recursive(char *folder)
 		child[sizeof(child) - 1] = '\0';
 
 		if (stat(child, &statbuf) == -1) {
-                        LOG(("Unable to stat %s: %s", child, strerror(errno)));
+                        LOG("Unable to stat %s: %s", child, strerror(errno));
 			continue;
 		}
 
@@ -401,7 +400,7 @@ bool filename_delete_recursive(char *folder)
 		}
 
 		if (remove(child)) {
-			LOG(("Failed to remove '%s'", child));
+			LOG("Failed to remove '%s'", child);
 			closedir(parent);
 			return false;
 		}
@@ -467,7 +466,7 @@ static struct directory *filename_create_directory(const char *prefix)
 	/* allocate a new directory */
 	new_dir = malloc(sizeof(struct directory));
 	if (new_dir == NULL) {
-		LOG(("No memory for malloc()"));
+		LOG("No memory for malloc()");
 		return NULL;
 	}
 
@@ -501,8 +500,7 @@ static struct directory *filename_create_directory(const char *prefix)
 			 * whilst we are running if there is an error, so we
 			 * don't report this yet and try to create the
 			 * structure normally. */
-			LOG(("Failed to create optimised structure '%s'",
-					filename_directory));
+			LOG("Failed to create optimised structure '%s'", filename_directory);
 		}
 	}
 
@@ -522,8 +520,7 @@ static struct directory *filename_create_directory(const char *prefix)
 
 			if (!is_dir(filename_directory)) {
 				if (nsmkdir(filename_directory, S_IRWXU)) {
-					LOG(("Failed to create directory '%s'",
-							filename_directory));
+					LOG("Failed to create directory '%s'", filename_directory);
 					return NULL;
 				}
 			}

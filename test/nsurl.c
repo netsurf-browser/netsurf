@@ -40,8 +40,7 @@ struct test_triplets {
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str),
-			lwc_string_data(str)));
+	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
 }
 
 static const struct test_pairs create_tests[] = {
@@ -239,32 +238,27 @@ int main(void)
 	}
 
 	if (nsurl_get(base, NSURL_WITH_FRAGMENT, &string, &len) != NSERROR_OK) {
-		LOG(("Failed to get string"));
+		LOG("Failed to get string");
 	} else {
-		LOG(("Testing nsurl_join with base %s", string));
+		LOG("Testing nsurl_join with base %s", string);
 		free(string);
 	}
 
 	for (test = join_tests; test->test != NULL; test++) {
 		if (nsurl_join(base, test->test, &joined) != NSERROR_OK) {
-			LOG(("Failed to join test URL."));
+			LOG("Failed to join test URL.");
 		} else {
 			if (nsurl_get(joined, NSURL_WITH_FRAGMENT,
 					&string, &len) !=
 					NSERROR_OK) {
-				LOG(("Failed to get string"));
+				LOG("Failed to get string");
 			} else {
 				if (strcmp(test->res, string) == 0) {
-					LOG(("\tPASS: \"%s\"\t--> %s",
-						test->test,
-						string));
+					LOG("\tPASS: \"%s\"\t--> %s", test->test, string);
 					passed++;
 				} else {
-					LOG(("\tFAIL: \"%s\"\t--> %s",
-						test->test,
-						string));
-					LOG(("\t\tExpecting: %s",
-						test->res));
+					LOG("\tFAIL: \"%s\"\t--> %s", test->test, string);
+					LOG("\t\tExpecting: %s", test->res);
 				}
 				free(string);
 			}
@@ -276,33 +270,28 @@ int main(void)
 	nsurl_unref(base);
 
 	/* Create tests */
-	LOG(("Testing nsurl_create"));
+	LOG("Testing nsurl_create");
 	for (test = create_tests; test->test != NULL; test++) {
 		err = nsurl_create(test->test, &base);
 		if (err != NSERROR_OK || test->res == NULL) {
 			if (test->res == NULL && err != NSERROR_OK) {
-				LOG(("\tPASS: \"%s\"\t--> BAD INPUT",
-						test->test));
+				LOG("\tPASS: \"%s\"\t--> BAD INPUT", test->test);
 				passed++;
 			} else if (test->res != NULL && err != NSERROR_OK) {
-				LOG(("Failed to create URL:\n\t\t%s.",
-						test->test));
+				LOG("Failed to create URL:\n\t\t%s.", test->test);
 			} else {
-				LOG(("\tFAIL: \"%s\"\t--> %s",
-					test->test, nsurl_access(base)));
-				LOG(("\t\tExpecting BAD INPUT"));
+				LOG("\tFAIL: \"%s\"\t--> %s", test->test, nsurl_access(base));
+				LOG("\t\tExpecting BAD INPUT");
 			}
 			if (err == NSERROR_OK)
 				nsurl_unref(base);
 		} else {
 			if (strcmp(nsurl_access(base), test->res) == 0) {
-				LOG(("\tPASS: \"%s\"\t--> %s",
-					test->test, nsurl_access(base)));
+				LOG("\tPASS: \"%s\"\t--> %s", test->test, nsurl_access(base));
 				passed++;
 			} else {
-				LOG(("\tFAIL: \"%s\"\t--> %s",
-					test->test, nsurl_access(base)));
-				LOG(("\t\tExpecting %s", test->res));
+				LOG("\tFAIL: \"%s\"\t--> %s", test->test, nsurl_access(base));
+				LOG("\t\tExpecting %s", test->res);
 			}
 
 			nsurl_unref(base);
@@ -311,66 +300,60 @@ int main(void)
 	}
 
 	/* nice filename tests */
-	LOG(("Testing nsurl_nice (no strip)"));
+	LOG("Testing nsurl_nice (no strip)");
 	for (test = nice_tests; test->test != NULL; test++) {
 		err = nsurl_create(test->test, &base);
 		if (err != NSERROR_OK) {
-			LOG(("Failed to create URL:\n\t\t%s.", test->test));
+			LOG("Failed to create URL:\n\t\t%s.", test->test);
 		} else {
 			char *res;
 			err = nsurl_nice(base, &res, false);
 			if (err == NSERROR_OK && test->res != NULL) {
 				if (strcmp(res, test->res) == 0) {
-					LOG(("\tPASS: \"%s\"\t--> %s",
-							test->test, res));
+					LOG("\tPASS: \"%s\"\t--> %s", test->test, res);
 					passed++;
 				} else {
-					LOG(("\tFAIL: \"%s\"\t--> %s",
-							test->test, res));
-					LOG(("\t\tExpecting %s", test->res));
+					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
+					LOG("\t\tExpecting %s", test->res);
 				}
 				free(res);
 			} else {
 				if (test->res == NULL && err == NSERROR_OK) {
-					LOG(("\tFAIL: \"%s\"\t--> %s",
-							test->test, res));
-					LOG(("\t\tExpecting BAD_INPUT"));
+					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
+					LOG("\t\tExpecting BAD_INPUT");
 					free(res);
 				} else {
-					LOG(("\tFAIL: \"%s\"", test->test));
+					LOG("\tFAIL: \"%s\"", test->test);
 				}
 			}
 			nsurl_unref(base);
 		}
 		count++;
 	}
-	LOG(("Testing nsurl_nice (strip)"));
+	LOG("Testing nsurl_nice (strip)");
 	for (test = nice_strip_tests; test->test != NULL; test++) {
 		err = nsurl_create(test->test, &base);
 		if (err != NSERROR_OK) {
-			LOG(("Failed to create URL:\n\t\t%s.", test->test));
+			LOG("Failed to create URL:\n\t\t%s.", test->test);
 		} else {
 			char *res;
 			err = nsurl_nice(base, &res, true);
 			if (err == NSERROR_OK && test->res != NULL) {
 				if (strcmp(res, test->res) == 0) {
-					LOG(("\tPASS: \"%s\"\t--> %s",
-							test->test, res));
+					LOG("\tPASS: \"%s\"\t--> %s", test->test, res);
 					passed++;
 				} else {
-					LOG(("\tFAIL: \"%s\"\t--> %s",
-							test->test, res));
-					LOG(("\t\tExpecting %s", test->res));
+					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
+					LOG("\t\tExpecting %s", test->res);
 				}
 				free(res);
 			} else {
 				if (test->res == NULL && err == NSERROR_OK) {
-					LOG(("\tFAIL: \"%s\"\t--> %s",
-							test->test, res));
-					LOG(("\t\tExpecting BAD_INPUT"));
+					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
+					LOG("\t\tExpecting BAD_INPUT");
 					free(res);
 				} else {
-					LOG(("\tFAIL: \"%s\"", test->test));
+					LOG("\tFAIL: \"%s\"", test->test);
 				}
 			}
 			nsurl_unref(base);
@@ -379,28 +362,23 @@ int main(void)
 	}
 
 	/* Replace query tests */
-	LOG(("Testing nsurl_replace_query"));
+	LOG("Testing nsurl_replace_query");
 	for (ttest = replace_query_tests; ttest->test1 != NULL; ttest++) {
 		if (nsurl_create(ttest->test1, &base) != NSERROR_OK) {
-			LOG(("Failed to create URL:\n\t\t%s.", ttest->test1));
+			LOG("Failed to create URL:\n\t\t%s.", ttest->test1);
 		} else {
 			if (nsurl_replace_query(base, ttest->test2, &joined) !=
 					NSERROR_OK) {
-				LOG(("Failed to make test URL"));
+				LOG("Failed to make test URL");
 			} else {
 				if (strcmp(nsurl_access(joined),
 						ttest->res) == 0) {
-					LOG(("\tPASS: \"%s\" + %s",
-						ttest->test1,
-						ttest->test2));
+					LOG("\tPASS: \"%s\" + %s", ttest->test1, ttest->test2);
 					passed++;
 				} else {
-					LOG(("\tFAIL: \"%s\" + %s",
-						ttest->test1,
-						ttest->test2));
-					LOG(("\t\tExpecting %s", ttest->res));
-					LOG(("\t\tGot %s",
-							nsurl_access(joined)));
+					LOG("\tFAIL: \"%s\" + %s", ttest->test1, ttest->test2);
+					LOG("\t\tExpecting %s", ttest->res);
+					LOG("\t\tGot %s", nsurl_access(joined));
 				}
 
 				nsurl_unref(joined);
@@ -412,15 +390,15 @@ int main(void)
 	}
 
 	if (passed == count) {
-		LOG(("Testing complete: SUCCESS"));
+		LOG("Testing complete: SUCCESS");
 	} else {
-		LOG(("Testing complete: FAILURE"));
-		LOG(("Failed %d out of %d", count - passed, count));
+		LOG("Testing complete: FAILURE");
+		LOG("Failed %d out of %d", count - passed, count);
 	}
 
 	corestrings_fini();
 
-	LOG(("Remaining lwc strings:"));
+	LOG("Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
 	return 0;

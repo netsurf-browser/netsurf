@@ -212,8 +212,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 				y + configure_icon_height -
 						CONFIGURE_ICON_PADDING_V);
 			if (error) {
-				LOG(("xwimp_resize_icon: 0x%x: %s",
-						error->errnum, error->errmess));
+				LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
 			}
 			x += configure_icon_width;
 			l++;
@@ -226,8 +225,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 		error = xwimp_force_redraw(configure_window,
 				0, -16384, 16384, 0);
 		if (error) {
-			LOG(("xwimp_force_redraw: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_force_redraw: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -250,8 +248,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 		extent.y0 = -max_height;
 		error = xwimp_set_extent(open->w, &extent);
 		if (error) {
-			LOG(("xwimp_set_extent: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -262,8 +259,7 @@ void ro_gui_configure_open_window(wimp_open *open)
 	/* open the window */
 	error = xwimp_open_window(open);
 	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -280,7 +276,7 @@ void ro_gui_configure_register(const char *window,
 	/* create our tool */
 	tool = calloc(sizeof(struct configure_tool), 1);
 	if (!tool) {
-		LOG(("Insufficient memory for calloc()"));
+		LOG("Insufficient memory for calloc()");
 		die("Insufficient memory");
 		return; /* For the benefit of scan-build */
 	}
@@ -288,7 +284,7 @@ void ro_gui_configure_register(const char *window,
 	tool->translated[0] = '\0';
 	tool->validation = malloc(strlen(window) + 2);
 	if (!tool->validation) {
-		LOG(("Insufficient memory for malloc()"));
+		LOG("Insufficient memory for malloc()");
 		die("Insufficient memory");
 	}
 	sprintf(tool->validation, "S%s", window);
@@ -315,8 +311,7 @@ void ro_gui_configure_register(const char *window,
 			CONFIGURE_TOOL_TRANSLATED_SIZE;
 	error = xwimp_create_icon(&new_icon, &tool->i);
 	if (error) {
-		LOG(("xwimp_create_icon: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
 		die(error->errmess);
 	}
 
@@ -365,8 +360,7 @@ bool ro_gui_configure_translate(void)
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0,
 			&alphabet);
 	if (error) {
-		LOG(("failed reading alphabet: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("failed reading alphabet: 0x%x: %s", error->errnum, error->errmess);
 		/* assume Latin1 */
 		alphabet = territory_ALPHABET_LATIN1;
 	}
@@ -387,8 +381,7 @@ bool ro_gui_configure_translate(void)
 		error = xwimptextop_string_width(tool->translated,
 				strlen(tool->translated), &icon_width);
 		if (error) {
-			LOG(("xwimptextop_string_width: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimptextop_string_width: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 		icon_width += CONFIGURE_ICON_PADDING_H;
@@ -402,8 +395,7 @@ bool ro_gui_configure_translate(void)
 				configure_icon_width,
 				0);
 		if (error) {
-			LOG(("xwimp_resize_icon: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
 		}
 	}
 

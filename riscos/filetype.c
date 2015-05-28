@@ -72,26 +72,25 @@ const char *fetch_filetype(const char *unix_path)
 	int objtype;
 
 	if (!path) {
-		LOG(("Insufficient memory for calloc"));
+		LOG("Insufficient memory for calloc");
 		warn_user("NoMemory", 0);
 		return "application/riscos";
 	}
-	LOG(("unix_path = '%s'", unix_path));
+	LOG("unix_path = '%s'", unix_path);
 
 	/* convert path to RISC OS format and read file type */
 	r = __riscosify(unix_path, 0, __RISCOSIFY_NO_SUFFIX, path, len, 0);
 	if (r == 0) {
-		LOG(("__riscosify failed"));
+		LOG("__riscosify failed");
 		free(path);
 		return "application/riscos";
 	}
-	LOG(("riscos path '%s'", path));
+	LOG("riscos path '%s'", path);
 
 	error = xosfile_read_stamped_no_path(path, &objtype, 0, 0, 0, 0,
 			&file_type);
 	if (error) {
-		LOG(("xosfile_read_stamped_no_path failed: %s",
-				error->errmess));
+		LOG("xosfile_read_stamped_no_path failed: %s", error->errmess);
 		free(path);
 		return "application/riscos";
 	}
@@ -110,9 +109,7 @@ const char *fetch_filetype(const char *unix_path)
 					slash+1, &temp);
 			if (error)
 				/* ignore error and leave file_type alone */
-				LOG(("xmimemaptranslate_extension_to_filetype: "
-						"0x%x %s",
-						error->errnum, error->errmess));
+				LOG("xmimemaptranslate_extension_to_filetype: ""0x%x %s", error->errnum, error->errmess);
 			else
 				file_type = temp;
 		}
@@ -130,7 +127,7 @@ const char *fetch_filetype(const char *unix_path)
 	/* not in internal table, so ask MimeMap */
 	error = xmimemaptranslate_filetype_to_mime_type(file_type, type_buf);
 	if (error) {
-		LOG(("0x%x %s", error->errnum, error->errmess));
+		LOG("0x%x %s", error->errnum, error->errmess);
 		free(path);
 		return "application/riscos";
 	}
@@ -143,7 +140,7 @@ const char *fetch_filetype(const char *unix_path)
 
 	free(path);
 
-	LOG(("mime type '%s'", type_buf));
+	LOG("mime type '%s'", type_buf);
 	return (const char *)type_buf;
 
 }
@@ -159,15 +156,14 @@ char *fetch_mimetype(const char *ro_path)
 	struct type_entry *t;
 
 	if (!mime) {
-		LOG(("Insufficient memory for calloc"));
+		LOG("Insufficient memory for calloc");
 		warn_user("NoMemory", 0);
 		return 0;
 	}
 
 	e = xosfile_read_no_path(ro_path, &objtype, &load, 0, 0, 0);
 	if (e) {
-		LOG(("xosfile_read_no_path: 0x%x: %s",
-				e->errnum, e->errmess));
+		LOG("xosfile_read_no_path: 0x%x: %s", e->errnum, e->errmess);
 		free(mime);
 		return 0;
 	}
@@ -193,7 +189,7 @@ char *fetch_mimetype(const char *ro_path)
 		if (e)
 			/* if we get an error here, simply ignore it and
 			 * leave filetype unchanged */
-			LOG(("0x%x %s", e->errnum, e->errmess));
+			LOG("0x%x %s", e->errnum, e->errmess);
 		else
 			filetype = load;
 	}
@@ -210,8 +206,7 @@ char *fetch_mimetype(const char *ro_path)
 	/* not in internal table, so ask MimeMap */
 	e = xmimemaptranslate_filetype_to_mime_type(filetype, mime);
 	if (e) {
-		LOG(("xmimemaptranslate_filetype_to_mime_type: 0x%x: %s",
-				e->errnum, e->errmess));
+		LOG("xmimemaptranslate_filetype_to_mime_type: 0x%x: %s", e->errnum, e->errmess);
 		free(mime);
 		return 0;
 	}
@@ -328,7 +323,7 @@ bits ro_filetype_from_unix_path(const char *unix_path)
 	bits file_type;
 
 	if (!path) {
-		LOG(("Insufficient memory for calloc"));
+		LOG("Insufficient memory for calloc");
 		warn_user("NoMemory", 0);
 		return osfile_TYPE_DATA;
 	}
@@ -336,7 +331,7 @@ bits ro_filetype_from_unix_path(const char *unix_path)
 	/* convert path to RISC OS format and read file type */
 	r = __riscosify(unix_path, 0, __RISCOSIFY_NO_SUFFIX, path, len, 0);
 	if (r == 0) {
-		LOG(("__riscosify failed"));
+		LOG("__riscosify failed");
 		free(path);
 		return osfile_TYPE_DATA;
 	}
@@ -344,8 +339,7 @@ bits ro_filetype_from_unix_path(const char *unix_path)
 	error = xosfile_read_stamped_no_path(path, 0, 0, 0, 0, 0,
 			&file_type);
 	if (error) {
-		LOG(("xosfile_read_stamped_no_path failed: %s",
-				error->errmess));
+		LOG("xosfile_read_stamped_no_path failed: %s", error->errmess);
 		free(path);
 		return osfile_TYPE_DATA;
 	}

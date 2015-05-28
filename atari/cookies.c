@@ -74,13 +74,13 @@ static struct atari_treeview_callbacks atari_cookie_manager_treeview_callbacks =
 static nserror atari_cookie_manager_init_phase2(struct core_window *cw,
 								struct core_window_callback_table *cb_t)
 {
-	LOG((""));
+	LOG("");
 	return(cookie_manager_init(cb_t, cw));
 }
 
 static void atari_cookie_manager_finish(struct core_window *cw)
 {
-	LOG((""));
+	LOG("");
 	cookie_manager_fini();
 }
 
@@ -93,7 +93,7 @@ static void atari_cookie_manager_draw(struct core_window *cw, int x,
 
 static void atari_cookie_manager_keypress(struct core_window *cw, uint32_t ucs4)
 {
-	LOG(("ucs4: %lu\n", ucs4));
+	LOG("ucs4: %lu\n", ucs4);
 	cookie_manager_keypress(ucs4);
 }
 
@@ -110,13 +110,13 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	short retval = 0;
 
-	LOG((""));
+	LOG("");
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
 
 			case WM_TOOLBAR:
-				LOG(("WM_TOOLBAR"));
+				LOG("WM_TOOLBAR");
 			break;
 
 			case WM_CLOSED:
@@ -160,7 +160,7 @@ void atari_cookie_manager_init(void)
 
 			if (atari_cookie_manager.tv == NULL) {
 				/* handle it properly, clean up previous allocs */
-				LOG(("Failed to allocate treeview"));
+				LOG("Failed to allocate treeview");
 				return;
 			}
 
@@ -211,7 +211,7 @@ void atari_cookie_manager_destroy(void)
 		atari_treeview_delete(atari_cookie_manager.tv);
 		atari_cookie_manager.init = false;
 	}
-	LOG(("done"));
+	LOG("done");
 
 }
 

@@ -326,8 +326,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         on_keybd_event(cw, ev_out, msg);
     }
     if( (ev_out->emo_events & MU_BUTTON) != 0 ) {
-        LOG(("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
-             ev_out->emo_mouse.p_y));
+        LOG("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
         on_mbutton_event(cw, ev_out, msg);
     }
 
@@ -528,7 +527,7 @@ atari_treeview_create(GUIWIN *win, struct atari_treeview_callbacks * callbacks,
 
 	tv = calloc(1, sizeof(struct atari_treeview_window));
 	if (tv == NULL) {
-		LOG(("calloc failed"));
+		LOG("calloc failed");
 		warn_user(messages_get_errorcode(NSERROR_NOMEM), 0);
 		return NULL;
 	}

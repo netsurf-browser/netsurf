@@ -112,7 +112,7 @@ static void cocoa_register_download( DownloadWindowController *download );
 			(NSString *)kLSQuarantineTypeWebDownload, (NSString *)kLSQuarantineTypeKey,
 			nil];
 		LSSetItemAttribute( &ref, kLSRolesAll, kLSItemQuarantineProperties, (CFDictionaryRef)attributes );
-		LOG(("Set quarantine attributes on file %s", [path UTF8String]));
+		LOG("Set quarantine attributes on file %s", [path UTF8String]);
 	}
 	
 	[self setOutputFile: [NSFileHandle fileHandleForWritingAtPath: path]];

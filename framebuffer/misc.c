@@ -27,7 +27,7 @@
 
 void warn_user(const char *warning, const char *detail)
 {
-	LOG(("%s %s", warning, detail));
+	LOG("%s %s", warning, detail);
 }
 
 

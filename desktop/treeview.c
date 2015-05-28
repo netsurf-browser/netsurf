@@ -1396,7 +1396,7 @@ static nserror treeview_node_expand_internal(treeview *tree,
 
 	if (node->flags & TV_NFLAGS_EXPANDED) {
 		/* What madness is this? */
-		LOG(("Tried to expand an expanded node."));
+		LOG("Tried to expand an expanded node.");
 		return NSERROR_OK;
 	}
 
@@ -1540,7 +1540,7 @@ static nserror treeview_node_contract_internal(treeview *tree,
 
 	if ((node->flags & TV_NFLAGS_EXPANDED) == false) {
 		/* What madness is this? */
-		LOG(("Tried to contract a contracted node."));
+		LOG("Tried to contract a contracted node.");
 		return NSERROR_OK;
 	}
 
@@ -2434,7 +2434,7 @@ static nserror treeview_move_selection(treeview *tree, struct rect *rect)
 		break;
 
 	default:
-		LOG(("Bad drop target for move."));
+		LOG("Bad drop target for move.");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -3950,7 +3950,7 @@ nserror treeview_init(int font_pt_size)
 	if (tree_g.initialised == true)
 		return NSERROR_OK;
 
-	LOG(("Initialising treeview module"));
+	LOG("Initialising treeview module");
 
 	if (font_pt_size <= 0)
 		font_pt_size = 11;
@@ -3972,7 +3972,7 @@ nserror treeview_init(int font_pt_size)
 
 	tree_g.initialised = true;
 
-	LOG(("Initialised treeview module"));
+	LOG("Initialised treeview module");
 
 	return NSERROR_OK;
 }
@@ -3983,7 +3983,7 @@ nserror treeview_fini(void)
 {
 	int i;
 
-	LOG(("Finalising treeview module"));
+	LOG("Finalising treeview module");
 
 	for (i = 0; i < TREE_RES_LAST; i++) {
 		hlcache_handle_release(treeview_res[i].c);
@@ -4000,7 +4000,7 @@ nserror treeview_fini(void)
 
 	tree_g.initialised = false;
 
-	LOG(("Finalised treeview module"));
+	LOG("Finalised treeview module");
 
 	return NSERROR_OK;
 }

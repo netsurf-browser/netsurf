@@ -1542,7 +1542,7 @@ int plot_init(char * fdrvrname)
         short work_out[57];
         atari_plot_vdi_handle=graf_handle(&dummy, &dummy, &dummy, &dummy);
         v_opnvwk(work_in, &atari_plot_vdi_handle, work_out);
-        LOG(("Plot VDI handle: %d", atari_plot_vdi_handle));
+        LOG("Plot VDI handle: %d", atari_plot_vdi_handle);
     }
 	read_vdi_sysinfo(atari_plot_vdi_handle, &vdi_sysinfo);
     if(verbose_log) {

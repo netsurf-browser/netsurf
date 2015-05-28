@@ -62,7 +62,7 @@ static CURL *curl;
 
 static bool fetch_data_initialise(lwc_string *scheme)
 {
-	LOG(("fetch_data_initialise called for %s", lwc_string_data(scheme)));
+	LOG("fetch_data_initialise called for %s", lwc_string_data(scheme));
 	if ( (curl = curl_easy_init()) == NULL)
 		return false;
 	else
@@ -71,7 +71,7 @@ static bool fetch_data_initialise(lwc_string *scheme)
 
 static void fetch_data_finalise(lwc_string *scheme)
 {
-	LOG(("fetch_data_finalise called for %s", lwc_string_data(scheme)));
+	LOG("fetch_data_finalise called for %s", lwc_string_data(scheme));
 	curl_easy_cleanup(curl);
 }
 
@@ -154,7 +154,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 * data must still be there.
 	 */
 	
-	LOG(("url: %.140s", c->url));
+	LOG("url: %.140s", c->url);
 	
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
@@ -263,8 +263,7 @@ static void fetch_data_poll(lwc_string *scheme)
 			char header[64];
 
 			fetch_set_http_code(c->parent_fetch, 200);
-			LOG(("setting data: MIME type to %s, length to %zd",
-					c->mimetype, c->datalen));
+			LOG("setting data: MIME type to %s, length to %zd", c->mimetype, c->datalen);
 			/* Any callback can result in the fetch being aborted.
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_data_send_callback().
@@ -300,7 +299,7 @@ static void fetch_data_poll(lwc_string *scheme)
 				fetch_data_send_callback(&msg, c);
 			}
 		} else {
-			LOG(("Processing of %s failed!", c->url));
+			LOG("Processing of %s failed!", c->url);
 
 			/* Ensure that we're unlocked here. If we aren't, 
 			 * then fetch_data_process() is broken.

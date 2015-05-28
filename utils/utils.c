@@ -216,7 +216,7 @@ nserror regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 	if (r) {
 		char errbuf[200];
 		regerror(r, preg, errbuf, sizeof errbuf);
-		LOG(("Failed to compile regexp '%s': %s\n", regex, errbuf));
+		LOG("Failed to compile regexp '%s': %s\n", regex, errbuf);
 		return NSERROR_INIT_FAILED;
 	}
 	return NSERROR_OK;

@@ -463,7 +463,7 @@ nsgtk_window_scroll_event(GtkWidget *widget,
 		break;
 #endif
 	default:
-		LOG(("Unhandled mouse scroll direction"));
+		LOG("Unhandled mouse scroll direction");
 		return TRUE;
 	}
 
@@ -760,7 +760,7 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-	LOG(("Creating gui window %p for browser window %p", g, bw));
+	LOG("Creating gui window %p for browser window %p", g, bw);
 
 	g->bw = bw;
 	g->mouse.state = 0;
@@ -920,10 +920,10 @@ void nsgtk_window_destroy_browser(struct gui_window *gw)
 
 static void gui_window_destroy(struct gui_window *g)
 {
-	LOG(("gui_window: %p", g));
+	LOG("gui_window: %p", g);
 	assert(g != NULL);
 	assert(g->bw != NULL);
-	LOG(("scaffolding: %p", g->scaffold));
+	LOG("scaffolding: %p", g->scaffold);
 
 	if (g->prev) {
 		g->prev->next = g->next;
@@ -935,7 +935,7 @@ static void gui_window_destroy(struct gui_window *g)
 		g->next->prev = g->prev;
 	}
 
-	LOG(("window list head: %p", window_list));
+	LOG("window list head: %p", window_list);
 }
 
 /**
@@ -954,13 +954,13 @@ static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 	if (icon != NULL) {
 		icon_bitmap = content_get_bitmap(icon);
 		if (icon_bitmap != NULL) {
-			LOG(("Using %p bitmap", icon_bitmap));
+			LOG("Using %p bitmap", icon_bitmap);
 			gw->icon = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
 		}
 	}
 
 	if (gw->icon == NULL) {
-		LOG(("Using default favicon"));
+		LOG("Using default favicon");
 		g_object_ref(favicon_pixbuf);
 		gw->icon = favicon_pixbuf;
 	}
@@ -1218,8 +1218,8 @@ static void gui_window_get_dimensions(struct gui_window *g, int *width, int *hei
 		*width /= scale;
 		*height /= scale;
 	}
-	LOG(("width: %i", *width));
-	LOG(("height: %i", *height));
+	LOG("width: %i", *width);
+	LOG("height: %i", *height);
 }
 
 static void gui_window_start_selection(struct gui_window *g)
@@ -1250,12 +1250,20 @@ static void gui_window_create_form_select_menu(struct gui_window *g,
 	item = 0;
 	option = form_select_get_option(control, item);
 	while (option != NULL) {
-		LOG(("Item %d option %p text %s", item, option, option->text));
+		LOG("Item %"PRIdPTR" option %p text %s",
+		    item, option, option->text);
 		menu_item = gtk_check_menu_item_new_with_label(option->text);
-		if (option->selected)
+		if (option->selected) {
 			gtk_check_menu_item_set_active(
 				GTK_CHECK_MENU_ITEM(menu_item), TRUE);
+		}
 
+		/*
+		 * This casts the item index integer into an integer
+		 * the size of a pointer. This allows the callback
+		 * parameter to be passed avoiding allocating memory
+		 * for a context with a single integer in it.
+		 */
 		g_signal_connect(menu_item, "toggled",
 			G_CALLBACK(nsgtk_select_menu_clicked), (gpointer)item);
 
@@ -1286,10 +1294,10 @@ gui_window_file_gadget_open(struct gui_window *g,
 			NSGTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 			NULL);
 
-	LOG(("*** open dialog: %p", dialog));
+	LOG("*** open dialog: %p", dialog);
 			
 	int ret = gtk_dialog_run(GTK_DIALOG(dialog));
-	LOG(("*** return value: %d", ret));
+	LOG("*** return value: %d", ret);
 	if (ret == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 

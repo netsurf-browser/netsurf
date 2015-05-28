@@ -376,7 +376,7 @@ window_init(const char *title,
 	if (!gtk_builder_add_from_file(newctx->builder,
 				       glade_file_location->viewdata,
 				       &error)) {
-		LOG(("Couldn't load builder file: %s", error->message));
+		LOG("Couldn't load builder file: %s", error->message);
 		g_error_free(error);
 		free(newctx);
 		return NSERROR_INIT_FAILED;
@@ -386,7 +386,7 @@ window_init(const char *title,
 	window = GTK_WINDOW(gtk_builder_get_object(newctx->builder, "ViewDataWindow"));
 
 	if (window == NULL) {
-		LOG(("Unable to find window in builder "));
+		LOG("Unable to find window in builder ");
 
 		/* free the builder */
 		g_object_unref(G_OBJECT(newctx->builder));
@@ -621,7 +621,7 @@ static char** xdg_data_strvec(void)
 			 xdg_data_home, xdg_data_dirs);
 	}
 
-	LOG(("%s", xdg_data_path));
+	LOG("%s", xdg_data_path);
 
 	svec = filepath_path_to_strvec(xdg_data_path);
 	free(xdg_data_path);
@@ -656,7 +656,7 @@ static char *xdg_get_default_app(const char *path, const char *mimetype)
 	fname = malloc(fname_len);
 	snprintf(fname, fname_len, "%s/applications/defaults.list", path);
 
-	LOG(("Checking %s", fname));
+	LOG("Checking %s", fname);
 
 	fp = fopen(fname, "r");
 	free(fname);
@@ -679,8 +679,8 @@ static char *xdg_get_default_app(const char *path, const char *mimetype)
 
 			ret = strdup(line + mimetype_len + 1);
 
-			LOG(("Found line match for %s length %zu\n", mimetype, rd));
-			LOG(("Result %s", ret));
+			LOG("Found line match for %s length %zu\n", mimetype, rd);
+			LOG("Result %s", ret);
 
 			break;
 		}
@@ -719,7 +719,7 @@ static char *xdg_get_exec_cmd(const char *path, const char *desktop)
 	fname = malloc(fname_len);
 	snprintf(fname, fname_len, "%s/applications/%s", path, desktop);
 
-	LOG(("Checking %s", fname));
+	LOG("Checking %s", fname);
 
 	fp = fopen(fname, "r");
 	free(fname);
@@ -740,8 +740,8 @@ static char *xdg_get_exec_cmd(const char *path, const char *desktop)
 
 			ret = strdup(line + SLEN("Exec="));
 
-			LOG(("Found Exec length %zu", rd));
-			LOG(("Result %s", ret));
+			LOG("Found Exec length %zu", rd);
+			LOG("Result %s", ret);
 
 			break;
 		}
@@ -806,7 +806,7 @@ static char **build_exec_argv(const char *fname, const char *exec_cmd)
 
 		argv[aidx] = exec_arg(start, cur - start, fname);
 		if (argv[aidx] != NULL) {
-			LOG(("adding \"%s\"", argv[aidx]));
+			LOG("adding \"%s\"", argv[aidx]);
 			aidx++;
 		}
 	}

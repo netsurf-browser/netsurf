@@ -272,7 +272,7 @@ static void html__image_coords_dom_user_data_handler(dom_node_operation operatio
 		free(coords);
 		break;
 	default:
-		LOG(("User data operation not handled."));
+		LOG("User data operation not handled.");
 		assert(0);
 	}
 }

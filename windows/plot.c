@@ -69,7 +69,7 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -124,7 +124,7 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -191,7 +191,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -262,7 +262,7 @@ static bool text(int x, int y, const char *text, size_t length,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -321,7 +321,7 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -392,7 +392,7 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -505,7 +505,7 @@ plot_block(COLORREF col, int x, int y, int width, int height)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -690,7 +690,7 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
-		LOG(("HDC not set on call to plotters"));
+		LOG("HDC not set on call to plotters");
 		return false;
 	}
 
@@ -758,7 +758,7 @@ windows_plot_bitmap(int x, int y,
 	PLOT_LOG(("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height));
 
 	if (bitmap == NULL) {
-		LOG(("Passed null bitmap!"));
+		LOG("Passed null bitmap!");
 		return true;
 	}
 

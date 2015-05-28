@@ -72,13 +72,13 @@ static struct atari_treeview_callbacks atari_hotlist_treeview_callbacks = {
 static nserror atari_hotlist_init_phase2(struct core_window *cw,
 					 struct core_window_callback_table *cb_t)
 {
-	LOG((""));
+	LOG("");
 	return(hotlist_init(cb_t, cw, hl.path));
 }
 
 static void atari_hotlist_finish(struct core_window *cw)
 {
-	LOG((""));
+	LOG("");
 	hotlist_fini(hl.path);
 }
 
@@ -93,7 +93,7 @@ static void atari_hotlist_keypress(struct core_window *cw, uint32_t ucs4)
 {
 	GUIWIN *gemtk_win;
 	GRECT area;
-	LOG(("ucs4: %lu\n", ucs4));
+	LOG("ucs4: %lu\n", ucs4);
 	hotlist_keypress(ucs4);
 	gemtk_win = atari_treeview_get_gemtk_window(cw);
 	atari_treeview_get_grect(cw, TREEVIEW_AREA_CONTENT, &area);
@@ -104,7 +104,7 @@ static void atari_hotlist_mouse_action(struct core_window *cw,
 				       browser_mouse_state mouse,
 				       int x, int y)
 {
-	LOG(("x:  %d, y: %d\n", x, y));
+	LOG("x:  %d, y: %d\n", x, y);
 
 	hotlist_mouse_action(mouse, x, y);
 }
@@ -123,7 +123,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	GRECT tb_area;
 	GUIWIN * gemtk_win;
 
-	LOG((""));
+	LOG("");
 
 	tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
 	cw = (struct core_window *)tv;
@@ -132,7 +132,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		switch (msg[0]) {
 
 		case WM_TOOLBAR:
-			LOG(("WM_TOOLBAR"));
+			LOG("WM_TOOLBAR");
 
 			toolbar = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
 
@@ -198,7 +198,7 @@ void atari_hotlist_init(void)
 			strncpy( (char*)&hl.path, nsoption_charp(hotlist_file), PATH_MAX-1 );
 		}
 
-		LOG(("Hotlist: %s",  (char*)&hl.path ));
+		LOG("Hotlist: %s", (char *)&hl.path);
 
 		if( hl.window == NULL ){
 			int flags = ATARI_TREEVIEW_WIDGETS;
@@ -223,7 +223,7 @@ void atari_hotlist_init(void)
 
 			if (hl.tv == NULL) {
 				/* handle it properly, clean up previous allocs */
-				LOG(("Failed to allocate treeview"));
+				LOG("Failed to allocate treeview");
 				return;
 			}
 
@@ -275,7 +275,7 @@ void atari_hotlist_destroy(void)
 		atari_treeview_delete(hl.tv);
 		hl.init = false;
 	}
-	LOG(("done"));
+	LOG("done");
 }
 
 void atari_hotlist_redraw(void)
@@ -298,7 +298,7 @@ void atari_hotlist_add_page( const char * url, const char * title )
 		return;
 
 	if (hotlist_has_url(nsurl)) {
-		LOG(("URL already added as Bookmark"));
+		LOG("URL already added as Bookmark");
 		nsurl_unref(nsurl);
 		return;
 	}

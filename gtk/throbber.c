@@ -48,9 +48,8 @@ bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files)
 	
 	if (frames < 2) {
 		/* we need at least two frames - one for idle, one for active */
-		LOG(("Insufficent number of frames in throbber animation!"));
-		LOG(("(called with %d frames, where 2 is a minimum.)",
-			frames));
+		LOG("Insufficent number of frames in throbber animation!");
+		LOG("(called with %d frames, where 2 is a minimum.)", frames);
 		return false;
 	}
 	
@@ -68,8 +67,7 @@ bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files)
 	for (frame_loop = 0; frame_loop < frames; frame_loop++) {
 		throb->framedata[frame_loop] = gdk_pixbuf_new_from_file(frame_files[frame_loop], &err);
 		if (err != NULL) {
-			LOG(("Error when loading %s: %s (%d)",
-				frame_files[frame_loop], err->message, err->code));
+			LOG("Error when loading %s: %s (%d)", frame_files[frame_loop], err->message, err->code);
 			throb->framedata[frame_loop] = NULL;
 			errors_when_loading = true;
 		}

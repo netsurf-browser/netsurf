@@ -61,13 +61,13 @@ static html_css_fetcher_context *ring = NULL;
 
 static bool html_css_fetcher_initialise(lwc_string *scheme)
 {
-	LOG(("html_css_fetcher_initialise called for %s", lwc_string_data(scheme)));
+	LOG("html_css_fetcher_initialise called for %s", lwc_string_data(scheme));
 	return true;
 }
 
 static void html_css_fetcher_finalise(lwc_string *scheme)
 {
-	LOG(("html_css_fetcher_finalise called for %s", lwc_string_data(scheme)));
+	LOG("html_css_fetcher_finalise called for %s", lwc_string_data(scheme));
 }
 
 static bool html_css_fetcher_can_fetch(const nsurl *url)
@@ -251,8 +251,7 @@ static void html_css_fetcher_poll(lwc_string *scheme)
 				html_css_fetcher_send_callback(&msg, c);
 			}
 		} else {
-			LOG(("Processing of %s failed!",
-					nsurl_access(c->url)));
+			LOG("Processing of %s failed!", nsurl_access(c->url));
 
 			/* Ensure that we're unlocked here. If we aren't, 
 			 * then html_css_fetcher_process() is broken.
@@ -291,7 +290,7 @@ nserror html_css_fetcher_register(void)
 
 	if (lwc_intern_string("x-ns-css", SLEN("x-ns-css"),
 			      &scheme) != lwc_error_ok) {
-		LOG(("could not intern \"x-ns-css\"."));
+		LOG("could not intern \"x-ns-css\".");
 		return NSERROR_INIT_FAILED;
 	}
 

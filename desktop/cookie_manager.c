@@ -695,8 +695,7 @@ static void cookie_manager_delete_entry(struct cookie_manager_entry *e)
 			
 			urldb_delete_cookie(domain, path, name);
 		} else {
-			LOG(("Delete cookie fail: "
-					"need domain, path, and name."));
+			LOG("Delete cookie fail: ""need domain, path, and name.");
 		}
 	}
 
@@ -757,7 +756,7 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
-	LOG(("Generating cookie manager data"));
+	LOG("Generating cookie manager data");
 
 	/* Init. cookie manager treeview entry fields */
 	err = cookie_manager_init_entry_fields();
@@ -794,7 +793,7 @@ nserror cookie_manager_init(struct core_window_callback_table *cw_t,
 	/* Inform client of window height */
 	treeview_get_height(cm_ctx.tree);
 
-	LOG(("Generated cookie manager data"));
+	LOG("Generated cookie manager data");
 
 	return NSERROR_OK;
 }
@@ -806,7 +805,7 @@ nserror cookie_manager_fini(void)
 	int i;
 	nserror err;
 
-	LOG(("Finalising cookie manager"));
+	LOG("Finalising cookie manager");
 
 	cm_ctx.built = false;
 
@@ -823,7 +822,7 @@ nserror cookie_manager_fini(void)
 		if (cm_ctx.values[i].value != NULL)
 			free((void *) cm_ctx.values[i].value);
 
-	LOG(("Finalised cookie manager"));
+	LOG("Finalised cookie manager");
 
 	return err;
 }

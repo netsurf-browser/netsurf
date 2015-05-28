@@ -85,26 +85,26 @@ inline static size_t container_filelen(FILE *fd)
 
 	o = ftell(fd);
 	if (o == -1) {
-		LOG(("Could not get current stream position"));
+		LOG("Could not get current stream position");
 		return 0;
 	}
 
 	if (fseek(fd, 0, SEEK_END) != 0) {
-		LOG(("Could not get seek to end of file"));
+		LOG("Could not get seek to end of file");
 		return 0;
 	}
 	a = ftell(fd);
 
 	if (fseek(fd, o, SEEK_SET) != 0) {
-		LOG(("Could not reset seek position in file"));
+		LOG("Could not reset seek position in file");
 		return 0;
 	}
 	if (a == -1) {
-		LOG(("could not ascertain size of file in theme container; omitting"));
+		LOG("could not ascertain size of file in theme container; omitting");
 		return 0;
 	}
 	if (((unsigned long) a) > SIZE_MAX) {
-		LOG(("overlarge file in theme container; possible truncation"));
+		LOG("overlarge file in theme container; possible truncation");
 		return SIZE_MAX;
 	}
 	return (size_t) a;
@@ -155,24 +155,24 @@ struct container_ctx *container_open(const char *filename)
 
 	val = fread(&ctx->header.magic, 4, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read magic"));
+		LOG("empty read magic");
 	ctx->header.magic = ntohl(ctx->header.magic);
 
 	val = fread(&ctx->header.parser, 4, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read parser"));	
+		LOG("empty read parser");	
 	ctx->header.parser = ntohl(ctx->header.parser);
 
 	val = fread(ctx->header.name, 32, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read name"));
+		LOG("empty read name");
 	val = fread(ctx->header.author, 64, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read author"));
+		LOG("empty read author");
 
 	val = fread(&ctx->header.diroffset, 4, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read diroffset"));
+		LOG("empty read diroffset");
 	ctx->header.diroffset = ntohl(ctx->header.diroffset);
 
 	if (ctx->header.magic != 0x4e53544d || ctx->header.parser != 3) {
@@ -200,7 +200,7 @@ static void container_process(struct container_ctx *ctx)
 	}
 	val = fread(ctx->data, ctx->header.diroffset, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty read diroffset"));
+		LOG("empty read diroffset");
 #endif
 	if (fseek(ctx->fh, ctx->header.diroffset, SEEK_SET) != 0) {
 		return;
@@ -212,7 +212,7 @@ static void container_process(struct container_ctx *ctx)
 	do {
 		val = fread(filename, 64, 1, ctx->fh);
 		if (val == 0)
-			LOG(("empty read filename"));
+			LOG("empty read filename");
 		BEREAD(start);
 		BEREAD(len);
 		BEREAD(flags1);
@@ -300,7 +300,7 @@ static void container_write_dir(struct container_ctx *ctx)
 		struct container_dirent *e = ctx->directory + i - 1;
 		val = fwrite(e->filename, 64, 1, ctx->fh);
 		if (val == 0)
-			LOG(("empty write filename"));
+			LOG("empty write filename");
 		BEWRITE(e->startoffset);
 		BEWRITE(e->len);
 		BEWRITE(e->flags1);
@@ -311,7 +311,7 @@ static void container_write_dir(struct container_ctx *ctx)
 	tmp = 0;
 	val = fwrite(&tmp, 4, 8, ctx->fh);
 	if (val == 0)
-		LOG(("empty write end"));
+		LOG("empty write end");
 }
 
 struct container_ctx *container_create(const char *filename,
@@ -343,16 +343,16 @@ struct container_ctx *container_create(const char *filename,
 
 	val = fwrite("NSTM", 4, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty write NSTM"));
+		LOG("empty write NSTM");
 	val = fwrite(&ctx->header.parser, 4, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty write parser"));
+		LOG("empty write parser");
 	val = fwrite(ctx->header.name, 32, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty write name"));
+		LOG("empty write name");
 	val = fwrite(ctx->header.author, 64, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty write author"));
+		LOG("empty write author");
 
 	ctx->header.diroffset = 108;
 
@@ -361,7 +361,7 @@ struct container_ctx *container_create(const char *filename,
 	 */
 
 	if (fseek(ctx->fh, 108, SEEK_SET) == -1) {
-		LOG(("directory offset seek failed"));
+		LOG("directory offset seek failed");
 		free(ctx);
 		return NULL;
 	}
@@ -377,7 +377,7 @@ void container_add(struct container_ctx *ctx, const unsigned char *entryname,
 	container_add_to_dir(ctx, entryname, ftell(ctx->fh), datalen);
 	val = fwrite(data, datalen, 1, ctx->fh);
 	if (val == 0)
-		LOG(("empty write add file"));
+		LOG("empty write add file");
 }
 
 void container_close(struct container_ctx *ctx)
@@ -394,7 +394,7 @@ void container_close(struct container_ctx *ctx)
 			nflen = htonl(flen);
 			val = fwrite(&nflen, 4, 1, ctx->fh);
 			if (val == 0)
-				LOG(("empty write directory location"));
+				LOG("empty write directory location");
 
 			/* seek to where the directory will be, and write it */
 			if (fseek(ctx->fh, flen, SEEK_SET) == 0) {
@@ -448,8 +448,8 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 		container_close(cctx);
 		return NULL;
 	}
-	LOG(("theme name: %s", themename));
-	LOG(("theme author: %s", container_get_author(cctx)));
+	LOG("theme name: %s", themename);
+	LOG("theme author: %s", container_get_author(cctx));
 	
 	dirname = malloc(strlen(dirbasename) + strlen(themename) + 2);
 	if (dirname == NULL) {
@@ -478,7 +478,7 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 
 	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
 			e = container_iterate(cctx, &state), i++) {
-		LOG(("extracting %s", e));
+		LOG("extracting %s", e);
 		snprintf(path, PATH_MAX, "%s/%s", dirname, e);
 		fh = fopen(path, "wb");
 		if (fh == NULL) {
@@ -487,11 +487,11 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 			d = container_get(cctx, e, &flen);
 			val = fwrite(d, flen, 1, fh);
 			if (val == 0)
-				LOG(("empty write"));
+				LOG("empty write");
 			fclose(fh);
 		}
 	}
-	LOG(("theme container unpacked"));
+	LOG("theme container unpacked");
 	container_close(cctx);
 	free(dirname);
 	return themename;

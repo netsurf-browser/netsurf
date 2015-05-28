@@ -353,7 +353,7 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 
 	assert(ssl_d != NULL);
 
-	LOG(("Building certificate viewer"));
+	LOG("Building certificate viewer");
 
 	/* Init. certificate chain treeview entry fields */
 	err = sslcert_init_entry_fields(ssl_d);
@@ -379,7 +379,7 @@ nserror sslcert_viewer_init(struct core_window_callback_table *cw_t,
 		}
 	}
 
-	LOG(("Built certificate viewer"));
+	LOG("Built certificate viewer");
 
 	return NSERROR_OK;
 }
@@ -414,7 +414,7 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 	int i;
 	nserror err;
 
-	LOG(("Finalising ssl certificate viewer"));
+	LOG("Finalising ssl certificate viewer");
 
 	/* Destroy the treeview */
 	err = treeview_destroy(ssl_d->tree);
@@ -427,7 +427,7 @@ nserror sslcert_viewer_fini(struct sslcert_session_data *ssl_d)
 	/* Destroy the sslcert_session_data */
 	sslcert_cleanup_session(ssl_d);
 
-	LOG(("Finalised ssl certificate viewer"));
+	LOG("Finalised ssl certificate viewer");
 
 	return err;
 }

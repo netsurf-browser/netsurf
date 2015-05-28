@@ -122,7 +122,7 @@ void gui_cert_verify(nsurl *url,
 
 	sslcert_window = malloc(sizeof(struct ro_sslcert));
 	if (sslcert_window == NULL) {
-		LOG(("Failed to allocate memory for SSL Cert Dialog"));
+		LOG("Failed to allocate memory for SSL Cert Dialog");
 		return;
 	}
 
@@ -131,8 +131,7 @@ void gui_cert_verify(nsurl *url,
 	error = xwimp_create_window(ro_gui_cert_dialog_template,
 			&(sslcert_window->window));
 	if (error) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		free(sslcert_window);
 		return;
 	}
@@ -140,8 +139,7 @@ void gui_cert_verify(nsurl *url,
 	error = xwimp_create_window(ro_gui_cert_tree_template,
 			&(sslcert_window->pane));
 	if (error) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		free(sslcert_window);
 		return;
 	}
@@ -154,7 +152,7 @@ void gui_cert_verify(nsurl *url,
 	sslcert_window->tv = ro_treeview_create(sslcert_window->pane,
 			NULL, NULL, TREE_SSLCERT);
 	if (sslcert_window->tv == NULL) {
-		LOG(("Failed to allocate treeview"));
+		LOG("Failed to allocate treeview");
 		free(sslcert_window);
 		return;
 	}
@@ -189,8 +187,7 @@ void gui_cert_verify(nsurl *url,
 	error = xwimp_get_window_info_header_only(&info);
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
-		LOG(("xwimp_get_window_info: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_info: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 
@@ -198,8 +195,7 @@ void gui_cert_verify(nsurl *url,
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 
@@ -208,8 +204,7 @@ void gui_cert_verify(nsurl *url,
 	error = xwimp_get_icon_state(&istate);
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_icon_state: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 
@@ -240,8 +235,7 @@ void gui_cert_verify(nsurl *url,
 		error = xwimp_set_extent(sslcert_window->pane, &(info.extent));
 		if (error) {
 			ro_gui_cert_release_window(sslcert_window);
-			LOG(("xwimp_set_extent: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
 			return;
 		}
 	}
@@ -258,8 +252,7 @@ void gui_cert_verify(nsurl *url,
 					<< wimp_CHILD_RS_EDGE_SHIFT);
 	if (error) {
 		ro_gui_cert_release_window(sslcert_window);
-		LOG(("xwimp_open_window_nested: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
 		ro_gui_cert_release_window(sslcert_window);
 		return;
 	}
@@ -335,21 +328,19 @@ void ro_gui_cert_release_window(struct ro_sslcert *s)
 	if (s == NULL)
 		return;
 
-	LOG(("Releasing SSL data: 0x%x", (unsigned) s));
+	LOG("Releasing SSL data: 0x%x", (unsigned)s);
 
 	ro_gui_wimp_event_finalise(s->window);
 	ro_treeview_destroy(s->tv);
 
 	error = xwimp_delete_window(s->window);
 	if (error) {
-		LOG(("xwimp_delete_window: 0x%x:%s",
-		     error->errnum, error->errmess));
+		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 	error = xwimp_delete_window(s->pane);
 	if (error) {
-		LOG(("xwimp_delete_window: 0x%x:%s",
-		     error->errnum, error->errmess));
+		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 

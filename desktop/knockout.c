@@ -291,10 +291,7 @@ bool knockout_plot_flush(void)
 
 	/* debugging information */
 #ifdef KNOCKOUT_DEBUG
-	LOG(("Entries are %i/%i, %i/%i, %i/%i",
-			knockout_entry_cur, KNOCKOUT_ENTRIES,
-			knockout_box_cur, KNOCKOUT_BOXES,
-			knockout_polygon_cur, KNOCKOUT_POLYGONS));
+	LOG("Entries are %i/%i, %i/%i, %i/%i", knockout_entry_cur, KNOCKOUT_ENTRIES, knockout_box_cur, KNOCKOUT_BOXES, knockout_polygon_cur, KNOCKOUT_POLYGONS);
 #endif
 
 	for (i = 0; i < knockout_entry_cur; i++) {
@@ -686,8 +683,7 @@ bool knockout_plot_clip(const struct rect *clip)
 {
 	if (clip->x1 < clip->x0 || clip->y0 > clip->y1) {
 #ifdef KNOCKOUT_DEBUG
-		LOG(("bad clip rectangle %i %i %i %i",
-				clip->x0, clip->y0, clip->x1, clip->y1));
+		LOG("bad clip rectangle %i %i %i %i", clip->x0, clip->y0, clip->x1, clip->y1);
 #endif
 		return false;
 	}

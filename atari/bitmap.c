@@ -81,8 +81,7 @@ static void *atari_bitmap_create_ex( int w, int h, short bpp, int rowstride, uns
 {
     struct bitmap * bitmap;
 
-    LOG(("width %d (rowstride: %d, bpp: %d), height %d, state %u",w, rowstride,
-		bpp, h, state ));
+    LOG("width %d (rowstride: %d, bpp: %d), height %d, state %u", w, rowstride, bpp, h, state);
 
 	if( rowstride == 0) {
 		rowstride = bpp * w;
@@ -108,10 +107,10 @@ static void *atari_bitmap_create_ex( int w, int h, short bpp, int rowstride, uns
         } else {
 			free(bitmap);
 			bitmap=NULL;
-			LOG(("Out of memory!"));
+			LOG("Out of memory!");
 		}
 	}
-	LOG(("bitmap %p", bitmap));
+	LOG("bitmap %p", bitmap);
 	return bitmap;
 }
 
@@ -195,7 +194,7 @@ static unsigned char *bitmap_get_buffer(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return NULL;
 	}
 
@@ -219,7 +218,7 @@ size_t atari_bitmap_get_rowstride(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 	return bm->rowstride;
@@ -232,7 +231,7 @@ void atari_bitmap_destroy(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return;
 	}
 
@@ -273,11 +272,11 @@ static void bitmap_set_opaque(void *bitmap, bool opaque)
 	struct bitmap *bm = bitmap;
 
     if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return;
 	}
 
-	LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
+	LOG("setting bitmap %p to %s", bm, opaque ? "opaque" : "transparent");
     bm->opaque = opaque;
 }
 
@@ -294,7 +293,7 @@ static bool bitmap_test_opaque(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return false;
 	}
 
@@ -306,11 +305,11 @@ static bool bitmap_test_opaque(void *bitmap)
 
 	while (tst-- > 0) {
 		if (bm->pixdata[(tst << 2) + 3] != 0xff) {
-				LOG(("bitmap %p has transparency",bm));
+				LOG("bitmap %p has transparency", bm);
 					return false;
 		}
 	}
-	LOG(("bitmap %p is opaque", bm));
+	LOG("bitmap %p is opaque", bm);
 	return true;
 }
 
@@ -321,7 +320,7 @@ bool atari_bitmap_get_opaque(void *bitmap)
 	struct bitmap *bm = bitmap;
 
         if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
+                LOG("NULL bitmap!");
                 return false;
         }
 
@@ -335,7 +334,7 @@ int atari_bitmap_get_width(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 
@@ -349,7 +348,7 @@ int atari_bitmap_get_height(void *bitmap)
 	struct bitmap *bm = bitmap;
 
 	if (bitmap == NULL) {
-		LOG(("NULL bitmap!"));
+		LOG("NULL bitmap!");
 		return 0;
 	}
 	return(bm->height);

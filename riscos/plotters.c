@@ -85,8 +85,7 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 						colourtrans_USE_ECFS_GCOL,
 						os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-			     error->errnum, error->errmess));
+			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 
@@ -94,7 +93,7 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 				 ro_plot_origin_x + x0 * 2,
 				 ro_plot_origin_y - y0 * 2 - 1);
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 
@@ -102,7 +101,7 @@ bool ro_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style
 				 ro_plot_origin_x + x1 * 2 - 1,
 				 ro_plot_origin_y - y1 * 2);
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 	}
@@ -197,16 +196,14 @@ bool ro_plot_draw_path(const draw_path * const path, int width,
 
 	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
 	error = xdraw_stroke(path, 0, 0, 0, width * 2 * 256,
 			&line_style, dash_pattern);
 	if (error) {
-		LOG(("xdraw_stroke: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xdraw_stroke: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -231,14 +228,12 @@ bool ro_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 	error = xcolourtrans_set_gcol(style->fill_colour << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 	error = xdraw_fill((draw_path *) path, 0, 0, 0);
 	if (error) {
-		LOG(("xdraw_fill: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xdraw_fill: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -261,13 +256,13 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("path doesn't start with a move"));
+		LOG("path doesn't start with a move");
 		goto error;
 	}
 
 	path = malloc(sizeof *path * (n + 10));
 	if (!path) {
-		LOG(("out of memory"));
+		LOG("out of memory");
 		goto error;
 	}
 
@@ -295,7 +290,7 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 			path[i + 6] = -p[i + 6] * 2 * 256;
 			i += 7;
 		} else {
-			LOG(("bad path command %f", p[i]));
+			LOG("bad path command %f", p[i]);
 			goto error;
 		}
 	}
@@ -313,15 +308,13 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		error = xcolourtrans_set_gcol(fill << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 			goto error;
 		}
 
 		error = xdraw_fill((draw_path *) path, 0, &trfm, 0);
 		if (error) {
-			LOG(("xdraw_stroke: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xdraw_stroke: 0x%x: %s", error->errnum, error->errmess);
 			goto error;
 		}
 	}
@@ -330,16 +323,14 @@ bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		error = xcolourtrans_set_gcol(c << 8, 0,
 				os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 			goto error;
 		}
 
 		error = xdraw_stroke((draw_path *) path, 0, &trfm, 0,
 				width * 2 * 256, &line_style, 0);
 		if (error) {
-			LOG(("xdraw_stroke: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xdraw_stroke: 0x%x: %s", error->errnum, error->errmess);
 			goto error;
 		}
 	}
@@ -366,8 +357,7 @@ bool ro_plot_clip(const struct rect *clip)
 	int clip_y1 = ro_plot_origin_y - clip->y1 * 2;
 
 	if (clip_x1 < clip_x0 || clip_y0 < clip_y1) {
-		LOG(("bad clip rectangle %i %i %i %i",
-				clip_x0, clip_y0, clip_x1, clip_y1));
+		LOG("bad clip rectangle %i %i %i %i", clip_x0, clip_y0, clip_x1, clip_y1);
 		return false;
 	}
 
@@ -383,7 +373,7 @@ bool ro_plot_clip(const struct rect *clip)
 
 	error = xos_writen(buf, 9);
 	if (error) {
-		LOG(("xos_writen: 0x%x: %s", error->errnum, error->errmess));
+		LOG("xos_writen: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -400,8 +390,7 @@ bool ro_plot_text(int x, int y, const char *text, size_t length,
 			fstyle->background << 8, fstyle->foreground << 8, 
 			14, 0, 0, 0);
 	if (error) {
-		LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_set_font_colours: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -418,20 +407,19 @@ bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style)
 		error = xcolourtrans_set_gcol(style->fill_colour << 8, 0,
 					      os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-			     error->errnum, error->errmess));
+			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 		error = xos_plot(os_MOVE_TO,
 				 ro_plot_origin_x + x * 2,
 				 ro_plot_origin_y - y * 2);
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 		error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
         }
@@ -441,22 +429,21 @@ bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style)
 		error = xcolourtrans_set_gcol(style->stroke_colour << 8, 0,
 					      os_ACTION_OVERWRITE, 0, 0);
 		if (error) {
-			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-			     error->errnum, error->errmess));
+			LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 		error = xos_plot(os_MOVE_TO,
 				 ro_plot_origin_x + x * 2,
 				 ro_plot_origin_y - y * 2);
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
 		error = xos_plot(os_PLOT_CIRCLE_OUTLINE | os_PLOT_BY,
 				 radius * 2, 0);
 
 		if (error) {
-			LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+			LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 			return false;
 		}
         }
@@ -477,8 +464,7 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_st
 	    		os_ACTION_OVERWRITE, 0, 0);
 
 	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -492,19 +478,19 @@ bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, const plot_st
 
         error = xos_plot(os_MOVE_TO, x, y);	/* move to centre */
 	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
 	error = xos_plot(os_MOVE_TO, sx, sy);	/* move to start */
 	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
 	error = xos_plot(os_PLOT_ARC | os_PLOT_TO, ex, ey);	/* arc to end */
 	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		LOG("xos_plot: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
@@ -521,7 +507,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 
 	buffer = riscos_bitmap_get_buffer(bitmap);
 	if (!buffer) {
-		LOG(("bitmap_get_buffer failed"));
+		LOG("bitmap_get_buffer failed");
 		return false;
 	}
 

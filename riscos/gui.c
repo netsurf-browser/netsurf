@@ -305,7 +305,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	if (nsoption_charp(ca_bundle) == NULL ||
 	    nsoption_charp(cookie_file) == NULL ||
 	    nsoption_charp(cookie_jar) == NULL) {
-		LOG(("Failed initialising string options"));
+		LOG("Failed initialising string options");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -417,7 +417,7 @@ static void ro_gui_signal(int sig)
 	if (used) {
 		int curr_slot;
 		xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
-		LOG(("saving WimpSlot, size 0x%x", curr_slot));
+		LOG("saving WimpSlot, size 0x%x", curr_slot);
 		xosfile_save("$.NetSurf_Slot", 0x8000, 0,
 				(byte *) 0x8000,
 				(byte *) 0x8000 + curr_slot);
@@ -427,9 +427,7 @@ static void ro_gui_signal(int sig)
 			byte *base_address;
 			xosdynamicarea_read(__dynamic_num, &size,
 					&base_address, 0, 0, 0, 0, 0);
-			LOG(("saving DA %i, base %p, size 0x%x",
-					__dynamic_num,
-					base_address, size));
+			LOG("saving DA %i, base %p, size 0x%x", __dynamic_num, base_address, size);
 			xosfile_save("$.NetSurf_DA",
 					(bits) base_address, 0,
 					base_address,
@@ -441,7 +439,7 @@ static void ro_gui_signal(int sig)
 	 * defines a coredump directory.  */
 	const _kernel_oserror *err = __unixlib_write_coredump (NULL);
 	if (err != NULL)
-		LOG(("Coredump failed: %s", err->errmess));
+		LOG("Coredump failed: %s", err->errmess);
 #endif
 
 	xhourglass_colours(old_sand, old_glass, 0, 0);
@@ -525,8 +523,7 @@ static char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 	*uri_title = NULL;
 	fp = fopen(file_name, "rb");
 	if (!fp) {
-		LOG(("fopen(\"%s\", \"rb\"): %i: %s",
-				file_name, errno, strerror(errno)));
+		LOG("fopen(\"%s\", \"rb\"): %i: %s", file_name, errno, strerror(errno));
 		warn_user("LoadError", strerror(errno));
 		return 0;
 	}
@@ -587,16 +584,14 @@ static char *ro_gui_url_file_parse(const char *file_name)
 
 	fp = fopen(file_name, "r");
 	if (!fp) {
-		LOG(("fopen(\"%s\", \"r\"): %i: %s",
-				file_name, errno, strerror(errno)));
+		LOG("fopen(\"%s\", \"r\"): %i: %s", file_name, errno, strerror(errno));
 		warn_user("LoadError", strerror(errno));
 		return 0;
 	}
 
 	if (!fgets(line, sizeof line, fp)) {
 		if (ferror(fp)) {
-			LOG(("fgets: %i: %s",
-					errno, strerror(errno)));
+			LOG("fgets: %i: %s", errno, strerror(errno));
 			warn_user("LoadError", strerror(errno));
 		} else
 			warn_user("LoadError", messages_get("EmptyError"));
@@ -633,8 +628,7 @@ static char *ro_gui_ieurl_file_parse(const char *file_name)
 
 	fp = fopen(file_name, "r");
 	if (!fp) {
-		LOG(("fopen(\"%s\", \"r\"): %i: %s",
-				file_name, errno, strerror(errno)));
+		LOG("fopen(\"%s\", \"r\"): %i: %s", file_name, errno, strerror(errno));
 		warn_user("LoadError", strerror(errno));
 		return 0;
 	}
@@ -653,8 +647,7 @@ static char *ro_gui_ieurl_file_parse(const char *file_name)
 		}
 	}
 	if (ferror(fp)) {
-		LOG(("fgets: %i: %s",
-				errno, strerror(errno)));
+		LOG("fgets: %i: %s", errno, strerror(errno));
 		warn_user("LoadError", strerror(errno));
 		fclose(fp);
 		return 0;
@@ -726,8 +719,7 @@ static void ro_msg_dataopen(wimp_message *message)
 	message->your_ref = message->my_ref;
 	oserror = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 	if (oserror) {
-		LOG(("xwimp_send_message: 0x%x: %s",
-				oserror->errnum, oserror->errmess));
+		LOG("xwimp_send_message: 0x%x: %s", oserror->errnum, oserror->errmess);
 		warn_user("WimpError", oserror->errmess);
 		return;
 	}
@@ -850,8 +842,7 @@ static void ro_msg_dataload(wimp_message *message)
 	oserror = xwimp_send_message(wimp_USER_MESSAGE, message,
 			message->sender);
 	if (oserror) {
-		LOG(("xwimp_send_message: 0x%x: %s",
-				oserror->errnum, oserror->errmess));
+		LOG("xwimp_send_message: 0x%x: %s", oserror->errnum, oserror->errmess);
 		warn_user("WimpError", oserror->errmess);
 		return;
 	}
@@ -921,7 +912,7 @@ static void ro_msg_datasave(wimp_message *message)
 
 			error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)dataxfer, message->sender);
 			if (error) {
-				LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
+				LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
 				warn_user("WimpError", error->errmess);
 			}
 		}
@@ -973,7 +964,7 @@ static void ro_msg_prequit(wimp_message *message)
 		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
 						message, message->sender);
 		if (error) {
-			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			LOG("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -999,7 +990,7 @@ static void ro_msg_save_desktop(wimp_message *message)
 	}
 
 	if (error) {
-		LOG(("xosgbpb_writew/xos_bputw: 0x%x:%s", error->errnum, error->errmess));
+		LOG("xosgbpb_writew/xos_bputw: 0x%x:%s", error->errnum, error->errmess);
 		warn_user("SaveError", error->errmess);
 
 		/* we must cancel the save by acknowledging the message */
@@ -1007,7 +998,7 @@ static void ro_msg_save_desktop(wimp_message *message)
 		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
 						message, message->sender);
 		if (error) {
-			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			LOG("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -1058,8 +1049,7 @@ static void ro_gui_get_screen_properties(void)
 
 	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 	if (error) {
-		LOG(("xos_read_vdu_variables: 0x%x: %s",
-			error->errnum, error->errmess));
+		LOG("xos_read_vdu_variables: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("MiscError", error->errmess);
 		return;
 	}
@@ -1076,9 +1066,9 @@ static void ro_gui_check_resolvers(void)
 	char *resolvers;
 	resolvers = getenv("Inet$Resolvers");
 	if (resolvers && resolvers[0]) {
-		LOG(("Inet$Resolvers '%s'", resolvers));
+		LOG("Inet$Resolvers '%s'", resolvers);
 	} else {
-		LOG(("Inet$Resolvers not set or empty"));
+		LOG("Inet$Resolvers not set or empty");
 		warn_user("Resolvers", 0);
 	}
 }
@@ -1183,8 +1173,7 @@ static nserror gui_init(int argc, char** argv)
 			PTR_WIMP_MESSAGE_LIST(&task_messages), 0,
 			&task_handle);
 	if (error) {
-		LOG(("xwimp_initialise: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_initialise: 0x%x: %s", error->errnum, error->errmess);
 		die(error->errmess);
 	}
 	/* Register message handlers */
@@ -1225,8 +1214,7 @@ static nserror gui_init(int argc, char** argv)
 		die("Failed to locate Templates resource.");
 	error = xwimp_open_template(path);
 	if (error) {
-		LOG(("xwimp_open_template failed: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_open_template failed: 0x%x: %s", error->errnum, error->errmess);
 		die(error->errmess);
 	}
 
@@ -1287,7 +1275,7 @@ static nserror gui_init(int argc, char** argv)
 
 	/* parse command-line arguments */
 	if (argc == 2) {
-		LOG(("parameters: '%s'", argv[1]));
+		LOG("parameters: '%s'", argv[1]);
 		/* this is needed for launching URI files */
 		if (strcasecmp(argv[1], "-nowin") == 0) {
 			return NSERROR_OK;
@@ -1295,7 +1283,7 @@ static nserror gui_init(int argc, char** argv)
 		ret = nsurl_create(NETSURF_HOMEPAGE, &url);
 	}
 	else if (argc == 3) {
-		LOG(("parameters: '%s' '%s'", argv[1], argv[2]));
+		LOG("parameters: '%s' '%s'", argv[1], argv[2]);
 		open_window = true;
 
 		/* HTML files */
@@ -1306,7 +1294,7 @@ static nserror gui_init(int argc, char** argv)
 		else if (strcasecmp(argv[1], "-urlf") == 0) {
 			char *urlf = ro_gui_url_file_parse(argv[2]);
 			if (!urlf) {
-				LOG(("allocation failed"));
+				LOG("allocation failed");
 				die("Insufficient memory for URL");
 			}
 			ret = nsurl_create(urlf, &url);
@@ -1318,8 +1306,7 @@ static nserror gui_init(int argc, char** argv)
 		}
 		/* Unknown => exit here. */
 		else {
-			LOG(("Unknown parameters: '%s' '%s'",
-				argv[1], argv[2]));
+			LOG("Unknown parameters: '%s' '%s'", argv[1], argv[2]);
 			return NSERROR_BAD_PARAMETER;
 		}
 	}
@@ -1367,8 +1354,7 @@ const char *ro_gui_default_language(void)
 	/* choose a language from the configured country number */
 	error = xosbyte_read(osbyte_VAR_COUNTRY_NUMBER, &country);
 	if (error) {
-		LOG(("xosbyte_read failed: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosbyte_read failed: 0x%x: %s", error->errnum, error->errmess);
 		country = 1;
 	}
 	switch (country) {
@@ -1419,8 +1405,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	/* calculate the canonical risc os path */
 	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
 	if (error) {
-		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosfscontrol_canonicalise_path failed: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("PathToURL", error->errmess);
 		return NSERROR_NOT_FOUND;
 	}
@@ -1433,8 +1418,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 
 	error = xosfscontrol_canonicalise_path(path, canonical_path, 0, 0, 1 - spare, 0);
 	if (error) {
-		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosfscontrol_canonicalise_path failed: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("PathToURL", error->errmess);
 		free(canonical_path);
 		return NSERROR_NOT_FOUND;
@@ -1444,7 +1428,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
 
 	if (unix_path == NULL) {
-		LOG(("__unixify failed: %s", canonical_path));
+		LOG("__unixify failed: %s", canonical_path);
 		free(canonical_path);
 		return NSERROR_BAD_PARAMETER;
 	}
@@ -1454,7 +1438,7 @@ static nserror ro_path_to_nsurl(const char *path, struct nsurl **url_out)
 	urllen = strlen(unix_path) + FILE_SCHEME_PREFIX_LEN + 1;
 	url = malloc(urllen);
 	if (url == NULL) {
-		LOG(("Unable to allocate url"));
+		LOG("Unable to allocate url");
 		free(unix_path);
 		return NSERROR_NOMEM;
 	}
@@ -1604,8 +1588,7 @@ static void ro_gui_keypress_cb(void *pw)
 	if (ro_gui_wimp_event_keypress(key) == false) {
 		os_error *error = xwimp_process_key(key->c);
 		if (error) {
-			LOG(("xwimp_process_key: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_process_key: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -1642,8 +1625,7 @@ static void ro_gui_keypress(wimp_key *key)
 	} else if (ro_gui_wimp_event_keypress(key) == false) {
 		os_error *error = xwimp_process_key(key->c);
 		if (error) {
-			LOG(("xwimp_process_key: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_process_key: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 	}
@@ -1915,8 +1897,7 @@ void ro_gui_open_window_request(wimp_open *open)
 
 	error = xwimp_open_window(open);
 	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -1937,8 +1918,7 @@ static void ro_gui_view_source_bounce(wimp_message *message)
 	sprintf(command, "@RunType_FFF %s", filename);
 	error = xwimp_start_task(command, 0);
 	if (error) {
-		LOG(("xwimp_start_task failed: 0x%x: %s",
-					error->errnum, error->errmess));
+		LOG("xwimp_start_task failed: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 }
@@ -2001,7 +1981,7 @@ void ro_gui_view_source(hlcache_handle *c)
 		r = __riscosify(full_name, 0, __RISCOSIFY_NO_SUFFIX,
 				message.file_name, 212, 0);
 		if (r == 0) {
-			LOG(("__riscosify failed"));
+			LOG("__riscosify failed");
 			return;
 		}
 		message.file_name[211] = '\0';
@@ -2011,8 +1991,7 @@ void ro_gui_view_source(hlcache_handle *c)
 				(byte *) source_data,
 				(byte *) source_data + source_size);
 		if (error) {
-			LOG(("xosfile_save_stamped failed: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xosfile_save_stamped failed: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("MiscError", error->errmess);
 			return;
 		}
@@ -2082,7 +2061,7 @@ static void ro_gui_choose_language(void)
  */
 void warn_user(const char *warning, const char *detail)
 {
-	LOG(("%s %s", warning, detail));
+	LOG("%s %s", warning, detail);
 
 	if (dialog_warning) {
 		char warn_buffer[300];
@@ -2125,7 +2104,7 @@ void die(const char * const error)
 {
 	os_error warn_error;
 
-	LOG(("%s", error));
+	LOG("%s", error);
 
 	warn_error.errnum = 1; /* \todo: reasonable ? */
 	strncpy(warn_error.errmess, messages_get(error),
@@ -2362,7 +2341,7 @@ void ro_gui_dump_browser_window(struct browser_window *bw)
 	/* open file for dump */
 	FILE *stream = fopen("<Wimp$ScrapDir>.WWW.NetSurf.dump", "w");
 	if (!stream) {
-		LOG(("fopen: errno %i", errno));
+		LOG("fopen: errno %i", errno);
 		warn_user("SaveError", strerror(errno));
 		return;
 	}
@@ -2375,8 +2354,7 @@ void ro_gui_dump_browser_window(struct browser_window *bw)
 	error = xwimp_start_task("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.dump",
 			0);
 	if (error) {
-		LOG(("xwimp_start_task failed: 0x%x: %s",
-					error->errnum, error->errmess));
+		LOG("xwimp_start_task failed: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 }
@@ -2415,7 +2393,7 @@ static char *get_cachepath(void)
 
 	cachedir = getenv("Cache$Dir");
 	if ((cachedir == NULL) || (cachedir[0] == 0)) {
-		LOG(("cachedir was null"));
+		LOG("cachedir was null");
 		return NULL;
 	}
 	ret = netsurf_mkpath(&cachepath, NULL, 2, cachedir, "NetSurf");

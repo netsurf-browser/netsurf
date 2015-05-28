@@ -61,8 +61,7 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 
 	fp = gzopen(path, "r");
 	if (!fp) {
-		LOG(("Unable to open messages file \"%.100s\": %s",
-		     path, strerror(errno)));
+		LOG("Unable to open messages file \"%.100s\": %s", path, strerror(errno));
 
 		return NSERROR_NOT_FOUND;
 	}
@@ -77,7 +76,7 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		nctx = *ctx;
 	}
 	if (nctx == NULL) {
-		LOG(("Unable to create hash table for messages file %s", path));
+		LOG("Unable to create hash table for messages file %s", path);
 		gzclose(fp);
 		return NSERROR_NOMEM;
 	}
@@ -96,8 +95,7 @@ static nserror messages_load_ctx(const char *path, struct hash_table **ctx)
 		value = colon + 1;
 
 		if (hash_add(nctx, s, value) == false) {
-			LOG(("Unable to add %s:%s to hash table of %s",
-				s, value, path));
+			LOG("Unable to add %s:%s to hash table of %s", s, value, path);
 			gzclose(fp);
 			if (*ctx == NULL) {
 				hash_destroy(nctx);
@@ -151,7 +149,7 @@ nserror messages_load(const char *path)
 	if (path == NULL) {
 		err = NSERROR_BAD_PARAMETER;
 	} else {
-		LOG(("Loading Messages from '%s'", path));
+		LOG("Loading Messages from '%s'", path);
 
 		err = messages_load_ctx(path, &messages_hash);
 	}
@@ -176,7 +174,7 @@ char *messages_get_buff(const char *key, ...)
 	buff = malloc(buff_len + 1);
 
 	if (buff == NULL) {
-		LOG(("malloc failed"));
+		LOG("malloc failed");
 		warn_user("NoMemory", 0);		
 	} else {
 		va_start(ap, key);

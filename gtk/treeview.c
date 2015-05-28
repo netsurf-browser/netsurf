@@ -534,7 +534,7 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 
 	tv = malloc(sizeof(struct nsgtk_treeview));
 	if (tv == NULL) {
-		LOG(("malloc failed"));
+		LOG("malloc failed");
 		warn_user("NoMemory", 0);
 		return NULL;
 	}

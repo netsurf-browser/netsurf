@@ -142,8 +142,7 @@ bool image_redraw_tinct(osspriteop_id header, int x, int y,
 	}
 
 	if (error) {
-		LOG(("xtinct_plotscaled%s: 0x%x: %s", (alpha ? "alpha" : ""),
-				error->errnum, error->errmess));
+		LOG("xtinct_plotscaled%s: 0x%x: %s", (alpha ? "alpha" : ""), error->errnum, error->errmess);
 		return false;
 	}
 
@@ -177,14 +176,13 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 			colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	if (error) {
-		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess);
 		return false;
 	}
 
 	table = calloc(size, sizeof(char));
 	if (!table) {
-		LOG(("malloc failed"));
+		LOG("malloc failed");
 		warn_user("NoMemory", 0);
 		return false;
 	}
@@ -195,8 +193,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 			colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 	if (error) {
-		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess);
 		free(table);
 		return false;
 	}
@@ -211,8 +208,7 @@ bool image_redraw_os(osspriteop_id header, int x, int y, int req_width,
 			x, (int)(y - req_height),
 			8, &f, table);
 	if (error) {
-		LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess);
 		free(table);
 		return false;
 	}

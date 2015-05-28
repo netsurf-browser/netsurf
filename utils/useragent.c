@@ -65,7 +65,7 @@ user_agent_build_string(void)
 
         core_user_agent_string = ua_string;
 
-        LOG(("Built user agent \"%s\"", core_user_agent_string));
+        LOG("Built user agent \"%s\"", core_user_agent_string);
 }
 
 /* This is a function so that later we can override it trivially */

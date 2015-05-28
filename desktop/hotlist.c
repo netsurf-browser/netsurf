@@ -534,20 +534,20 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	/* The li must contain an "a" element */
 	a = libdom_find_first_element(li, corestring_lwc_a);
 	if (a == NULL) {
-		LOG(("Missing <a> in <li>"));
+		LOG("Missing <a> in <li>");
 		return NSERROR_INVALID;
 	}
 
 	derror = dom_node_get_text_content(a, &title1);
 	if (derror != DOM_NO_ERR) {
-		LOG(("No title"));
+		LOG("No title");
 		dom_node_unref(a);
 		return NSERROR_INVALID;
 	}
 
 	derror = dom_element_get_attribute(a, corestring_dom_href, &url1);
 	if (derror != DOM_NO_ERR || url1 == NULL) {
-		LOG(("No URL"));
+		LOG("No URL");
 		dom_string_unref(title1);
 		dom_node_unref(a);
 		return NSERROR_INVALID;
@@ -565,7 +565,7 @@ static nserror hotlist_load_entry(dom_node *li, hotlist_load_ctx *ctx)
 	dom_string_unref(url1);
 
 	if (err != NSERROR_OK) {
-		LOG(("Failed normalising '%s'", dom_string_data(url1)));
+		LOG("Failed normalising '%s'", dom_string_data(url1));
 
 		if (title1 != NULL) {
 			dom_string_unref(title1);
@@ -645,7 +645,7 @@ nserror hotlist_load_directory_cb(dom_node *node, void *ctx)
 
 		error = dom_node_get_text_content(node, &title);
 		if (error != DOM_NO_ERR || title == NULL) {
-			LOG(("Empty <h4> or memory exhausted."));
+			LOG("Empty <h4> or memory exhausted.");
 			dom_string_unref(name);
 			return NSERROR_DOM;
 		}
@@ -773,7 +773,7 @@ static nserror hotlist_load(const char *path, bool *loaded)
 
 	/* Handle no path */
 	if (path == NULL) {
-		LOG(("No hotlist file path provided."));
+		LOG("No hotlist file path provided.");
 		return NSERROR_OK;
 	}
 
@@ -942,7 +942,7 @@ static nserror hotlist_save(const char *path)
 	/* Replace any old hotlist file with the one we just saved */
 	if (rename(temp_path, path) != 0) {
 		res = NSERROR_SAVE_FAILED;
-		LOG(("Error renaming hotlist: %s.", strerror(errno)));
+		LOG("Error renaming hotlist: %s.", strerror(errno));
 		goto cleanup;
 	}
 
@@ -1228,7 +1228,7 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
-	LOG(("Loading hotlist"));
+	LOG("Loading hotlist");
 
 	hl_ctx.tree = NULL;
 	hl_ctx.built = false;
@@ -1265,7 +1265,7 @@ nserror hotlist_init(struct core_window_callback_table *cw_t,
 	/* Inform client of window height */
 	treeview_get_height(hl_ctx.tree);
 
-	LOG(("Loaded hotlist"));
+	LOG("Loaded hotlist");
 
 	return NSERROR_OK;
 }
@@ -1277,12 +1277,12 @@ nserror hotlist_fini(const char *path)
 	int i;
 	nserror err;
 
-	LOG(("Finalising hotlist"));
+	LOG("Finalising hotlist");
 
 	/* Save the hotlist */
 	err = hotlist_save(path);
 	if (err != NSERROR_OK) {
-		LOG(("Problem saving the hotlist.", 0));
+		LOG("Problem saving the hotlist.");
 	}
 
 	/* Destroy the hotlist treeview */
@@ -1294,7 +1294,7 @@ nserror hotlist_fini(const char *path)
 		if (hl_ctx.fields[i].field != NULL)
 			lwc_string_unref(hl_ctx.fields[i].field);
 
-	LOG(("Finalised hotlist"));
+	LOG("Finalised hotlist");
 
 	return err;
 }

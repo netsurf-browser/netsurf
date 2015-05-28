@@ -338,14 +338,14 @@ static void check_homedir(void)
 
 	if (err < B_OK) {
 		/* we really can't continue without a home directory. */
-		LOG(("Can't find user settings directory - nowhere to store state!"));
+		LOG("Can't find user settings directory - nowhere to store state!");
 		die("NetSurf needs to find the user settings directory in order to run.\n");
 	}
 
 	path.Append("NetSurf");
 	err = create_directory(path.Path(), 0644); 
 	if (err < B_OK) {
-		LOG(("Unable to create %s", path.Path()));
+		LOG("Unable to create %s", path.Path());
 		die("NetSurf could not create its settings directory.\n");
 	}
 }
@@ -572,7 +572,7 @@ static void gui_init(int argc, char** argv)
 		die("Unable to load throbber image.\n");
 
 	find_resource(buf, "Choices", "%/Choices");
-	LOG(("Using '%s' as Preferences file", buf));
+	LOG("Using '%s' as Preferences file", buf);
 	options_file_location = strdup(buf);
 	nsoption_read(buf, NULL);
 
@@ -611,12 +611,12 @@ static void gui_init(int argc, char** argv)
 
 	if (nsoption_charp(cookie_file) == NULL) {
 		find_resource(buf, "Cookies", "%/Cookies");
-		LOG(("Using '%s' as Cookies file", buf));
+		LOG("Using '%s' as Cookies file", buf);
 		nsoption_set_charp(cookie_file, strdup(buf));
 	}
 	if (nsoption_charp(cookie_jar) == NULL) {
 		find_resource(buf, "Cookies", "%/Cookies");
-		LOG(("Using '%s' as Cookie Jar file", buf));
+		LOG("Using '%s' as Cookie Jar file", buf);
 		nsoption_set_charp(cookie_jar, strdup(buf));
 	}
 	if ((nsoption_charp(cookie_file) == NULL) || 
@@ -625,13 +625,13 @@ static void gui_init(int argc, char** argv)
 
 	if (nsoption_charp(url_file) == NULL) {
 		find_resource(buf, "URLs", "%/URLs");
-		LOG(("Using '%s' as URL file", buf));
+		LOG("Using '%s' as URL file", buf);
 		nsoption_set_charp(url_file, strdup(buf));
 	}
 
         if (nsoption_charp(ca_path) == NULL) {
                 find_resource(buf, "certs", "/etc/ssl/certs");
-                LOG(("Using '%s' as certificate path", buf));
+                LOG("Using '%s' as certificate path", buf);
                 nsoption_set_charp(ca_path, strdup(buf));
         }
 

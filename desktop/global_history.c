@@ -594,7 +594,7 @@ static nserror global_history_initialise_time(void)
 	/* get the current time */
 	t = time(NULL);
 	if (t == -1) {
-		LOG(("time info unaviable"));
+		LOG("time info unaviable");
 		return NSERROR_UNKNOWN;
 	}
 
@@ -605,7 +605,7 @@ static nserror global_history_initialise_time(void)
 	full_time->tm_hour = 0;
 	t = mktime(full_time);
 	if (t == -1) {
-		LOG(("mktime failed"));
+		LOG("mktime failed");
 		return NSERROR_UNKNOWN;
 	}
 
@@ -722,7 +722,7 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 {
 	nserror err;
 
-	LOG(("Loading global history"));
+	LOG("Loading global history");
 
 	/* Init. global history treeview time */
 	err = global_history_initialise_time();
@@ -778,7 +778,7 @@ nserror global_history_init(struct core_window_callback_table *cw_t,
 	/* Inform client of window height */
 	treeview_get_height(gh_ctx.tree);
 
-	LOG(("Loaded global history"));
+	LOG("Loaded global history");
 
 	return NSERROR_OK;
 }
@@ -790,7 +790,7 @@ nserror global_history_fini(void)
 	int i;
 	nserror err;
 
-	LOG(("Finalising global history"));
+	LOG("Finalising global history");
 
 	gh_ctx.built = false;
 
@@ -802,7 +802,7 @@ nserror global_history_fini(void)
 		if (gh_ctx.fields[i].field != NULL)
 			lwc_string_unref(gh_ctx.fields[i].field);
 
-	LOG(("Finalised global history"));
+	LOG("Finalised global history");
 
 	return err;
 }
@@ -819,7 +819,7 @@ nserror global_history_add(nsurl *url)
 
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
-		LOG(("Can't add URL to history that's not present in urldb."));
+		LOG("Can't add URL to history that's not present in urldb.");
 		return NSERROR_BAD_PARAMETER;
 	}
 

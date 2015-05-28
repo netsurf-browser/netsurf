@@ -44,7 +44,7 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 
 #ifdef NDEBUG
-#  define LOG(x) ((void) 0)
+#  define LOG(format, ...) ((void) 0)
 #else
 
 /**
@@ -53,7 +53,8 @@ extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
  * \return formatted string of the time since first log call
  */
 extern const char *nslog_gettime(void);
-extern void nslog_log(const char *format, ...);
+
+extern void nslog_log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 
 #  ifdef __GNUC__
 #    define LOG_FN __PRETTY_FUNCTION__
@@ -66,12 +67,12 @@ extern void nslog_log(const char *format, ...);
 #    define LOG_LN __LINE__
 #  endif
 
-#define LOG(x) \
+#define LOG(format, args...)						\
 	do {								\
 		if (verbose_log) {					\
 			nslog_log("%s " __FILE__ " %s %i: ",		\
 				  nslog_gettime(), LOG_FN, LOG_LN);	\
-			nslog_log x;					\
+			nslog_log(format , ##args);			\
 			nslog_log("\n");				\
 		}							\
 	} while(0)

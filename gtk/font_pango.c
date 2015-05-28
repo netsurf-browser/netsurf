@@ -59,12 +59,12 @@ static PangoLayout *nsfont_pango_layout = NULL;
 static inline void nsfont_pango_check(void)
 {
 	if (nsfont_pango_context == NULL) {
-		LOG(("Creating nsfont_pango_context."));
+		LOG("Creating nsfont_pango_context.");
 		nsfont_pango_context = gdk_pango_context_get();
 	}
 	
 	if (nsfont_pango_layout == NULL) {
-		LOG(("Creating nsfont_pango_layout."));
+		LOG("Creating nsfont_pango_layout.");
 		nsfont_pango_layout = pango_layout_new(nsfont_pango_context);
 	}
 }

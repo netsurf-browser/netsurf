@@ -201,7 +201,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 	if (n == 0) return true;
 	
 	if (*p != PLOTTER_PATH_MOVE) {
-		LOG(("Path does not start with move"));
+		LOG("Path does not start with move");
 		return false;
 	}
 	
@@ -236,7 +236,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 				break;
 				
 			default:
-				LOG(("Invalid path"));
+				LOG("Invalid path");
 				return false;
 		}
 	}

@@ -79,8 +79,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	struct content_user *user_sentinel;
 	nserror error;
 	
-	LOG(("url "URL_FMT_SPC" -> %p", 
-	     nsurl_access(llcache_handle_get_url(llcache)), c));
+	LOG("url "URL_FMT_SPC" -> %p", nsurl_access(llcache_handle_get_url(llcache)), c);
 
 	user_sentinel = calloc(1, sizeof(struct content_user));
 	if (user_sentinel == NULL) {
@@ -280,8 +279,7 @@ void content_convert(struct content *c)
 	if (c->locked == true)
 		return;
 	
-	LOG(("content "URL_FMT_SPC" (%p)",
-			nsurl_access(llcache_handle_get_url(c->llcache)), c));
+	LOG("content "URL_FMT_SPC" (%p)", nsurl_access(llcache_handle_get_url(c->llcache)), c);
 
 	if (c->handler->data_complete != NULL) {
 		c->locked = true;
@@ -360,7 +358,7 @@ void content__reformat(struct content *c, bool background,
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	assert(c->locked == false);
-	LOG(("%p %s", c, nsurl_access(llcache_handle_get_url(c->llcache))));
+	LOG("%p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
 	c->available_width = width;
 	if (c->handler->reformat != NULL) {
 
@@ -385,8 +383,7 @@ void content_destroy(struct content *c)
 	struct content_rfc5988_link *link;
 
 	assert(c);
-	LOG(("content %p %s", c,
-			nsurl_access(llcache_handle_get_url(c->llcache))));
+	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
 	assert(c->locked == false);
 
 	if (c->handler->destroy != NULL)
@@ -599,7 +596,7 @@ bool content_scaled_redraw(struct hlcache_handle *h,
 		return true;
 	}
 
-	LOG(("Content %p %dx%d ctx:%p", c, width, height, ctx));
+	LOG("Content %p %dx%d ctx:%p", c, width, height, ctx);
 
 	if (ctx->plot->option_knockout) {
 		knockout_plot_start(ctx, &new_ctx);
@@ -664,9 +661,7 @@ bool content_add_user(struct content *c,
 {
 	struct content_user *user;
 
-	LOG(("content "URL_FMT_SPC" (%p), user %p %p",
-			nsurl_access(llcache_handle_get_url(c->llcache)),
-			c, callback, pw));
+	LOG("content "URL_FMT_SPC" (%p), user %p %p", nsurl_access(llcache_handle_get_url(c->llcache)), c, callback, pw);
 	user = malloc(sizeof(struct content_user));
 	if (!user)
 		return false;
@@ -692,9 +687,7 @@ void content_remove_user(struct content *c,
 		void *pw)
 {
 	struct content_user *user, *next;
-	LOG(("content "URL_FMT_SPC" (%p), user %p %p",
-			nsurl_access(llcache_handle_get_url(c->llcache)), c,
-			callback, pw));
+	LOG("content "URL_FMT_SPC" (%p), user %p %p", nsurl_access(llcache_handle_get_url(c->llcache)), c, callback, pw);
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -702,7 +695,7 @@ void content_remove_user(struct content *c,
 				user->next->pw == pw); user = user->next)
 		;
 	if (user->next == 0) {
-		LOG(("user not found in list"));
+		LOG("user not found in list");
 		assert(0);
 		return;
 	}
@@ -808,8 +801,7 @@ void content_open(hlcache_handle *h, struct browser_window *bw,
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG(("content %p %s", c,
-			nsurl_access(llcache_handle_get_url(c->llcache))));
+	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
 	if (c->handler->open != NULL)
 		c->handler->open(c, bw, page, params);
 }
@@ -825,8 +817,7 @@ void content_close(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG(("content %p %s", c,
-			nsurl_access(llcache_handle_get_url(c->llcache))));
+	LOG("content %p %s", c, nsurl_access(llcache_handle_get_url(c->llcache)));
 	if (c->handler->close != NULL)
 		c->handler->close(c);
 }
@@ -1479,7 +1470,7 @@ nserror content__clone(const struct content *c, struct content *nc)
  */
 nserror content_abort(struct content *c)
 {
-	LOG(("Aborting %p", c));
+	LOG("Aborting %p", c);
 	
 	if (c->handler->stop != NULL)
 		c->handler->stop(c);

@@ -91,7 +91,7 @@
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str), lwc_string_data(str)));
+	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
 }
 
 /**
@@ -154,14 +154,11 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
-	LOG(("NetSurf version '%s'", netsurf_version));
+	LOG("NetSurf version '%s'", netsurf_version);
 	if (uname(&utsname) < 0)
-		LOG(("Failed to extract machine information"));
+		LOG("Failed to extract machine information");
 	else
-		LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, "
-				"machine <%s>", utsname.sysname,
-				utsname.nodename, utsname.release,
-				utsname.version, utsname.machine));
+		LOG("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, ""machine <%s>", utsname.sysname, utsname.nodename, utsname.release, utsname.version, utsname.machine);
 
 	messages_load(messages);
 
@@ -175,8 +172,7 @@ nserror netsurf_init(const char *messages, const char *store_path)
 
 	if (hlcache_parameters.llcache.limit < MINIMUM_MEMORY_CACHE_SIZE) {
 		hlcache_parameters.llcache.limit = MINIMUM_MEMORY_CACHE_SIZE;
-		LOG(("Setting minimum memory cache size %d",
-		     hlcache_parameters.llcache.limit));
+		LOG("Setting minimum memory cache size %zd", hlcache_parameters.llcache.limit);
 	} 
 
 	/* image cache is 25% of total memory cache size */
@@ -255,19 +251,19 @@ void netsurf_exit(void)
 {
 	hlcache_stop();
 	
-	LOG(("Closing GUI"));
+	LOG("Closing GUI");
 	guit->browser->quit();
 	
-	LOG(("Finalising JavaScript"));
+	LOG("Finalising JavaScript");
 	js_finalise();
 
-	LOG(("Finalising Web Search"));
+	LOG("Finalising Web Search");
 	search_web_finalise();
 
-	LOG(("Finalising high-level cache"));
+	LOG("Finalising high-level cache");
 	hlcache_finalise();
 
-	LOG(("Closing fetches"));
+	LOG("Closing fetches");
 	fetcher_quit();
 
 	mimesniff_fini();
@@ -278,18 +274,18 @@ void netsurf_exit(void)
 	/* Clean up after content handlers */
 	content_factory_fini();
 
-	LOG(("Closing utf8"));
+	LOG("Closing utf8");
 	utf8_finalise();
 
-	LOG(("Destroying URLdb"));
+	LOG("Destroying URLdb");
 	urldb_destroy();
 
-	LOG(("Destroying System colours"));
+	LOG("Destroying System colours");
 	ns_system_colour_finalize();
 
 	corestrings_fini();
-	LOG(("Remaining lwc strings:"));
+	LOG("Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
-	LOG(("Exited successfully"));
+	LOG("Exited successfully");
 }

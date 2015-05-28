@@ -142,8 +142,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 			(byte *) drawfile_buffer, 
 			(byte *) drawfile_buffer + drawfile_size);
 	if (error) {
-		LOG(("xosfile_save_stamped failed: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosfile_save_stamped failed: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("SaveError", error->errmess);
 		pencil_free(ro_save_draw_diagram);
 		return false;
@@ -271,13 +270,13 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("path doesn't start with a move"));
+		LOG("path doesn't start with a move");
 		return false;
 	}
 
 	int *path = malloc(sizeof *path * (n + 10));
 	if (!path) {
-		LOG(("out of memory"));
+		LOG("out of memory");
 		return false;
 	}
 
@@ -329,7 +328,7 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 			i += 7;
 			empty_path = false;
 		} else {
-			LOG(("bad path command %f", p[i]));
+			LOG("bad path command %f", p[i]);
 			free(path);
 			return false;
 		}
@@ -450,7 +449,7 @@ bool ro_save_draw_group_end(void)
 
 bool ro_save_draw_error(pencil_code code)
 {
-	LOG(("code %i", code));
+	LOG("code %i", code);
 
 	switch (code) {
 	case pencil_OK:

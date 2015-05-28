@@ -67,7 +67,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 		/*\todo we should be opening the .font file too and checking
 		 * for the magic bytes to indicate this is an outline font.
 		 */
-		LOG(("Unable to open %s", otagpath));
+		LOG("Unable to open %s", otagpath);
 		FreeVec(otagpath);
 		return NULL;
 	}
@@ -75,7 +75,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	size = GetFileSize(fh);
 	buffer = (struct TagItem *)AllocVec(size, MEMF_ANY);
 	if(buffer == NULL) {
-		LOG(("Unable to allocate memory"));
+		LOG("Unable to allocate memory");
 		Close(fh);
 		FreeVec(otagpath);
 		return NULL;
@@ -87,7 +87,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	/* The first tag is supposed to be OT_FileIdent and should equal 'size' */
 	struct TagItem *tag = (struct TagItem *)buffer;
 	if((tag->ti_Tag != OT_FileIdent) || (tag->ti_Data != (ULONG)size)) {
-		LOG(("Invalid OTAG file"));
+		LOG("Invalid OTAG file");
 		FreeVec(buffer);
 		FreeVec(otagpath);
 		return NULL;
@@ -102,10 +102,10 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 
 	/* Find OT_Engine and open the font engine */
 	if(ti = FindTagItem(OT_Engine, buffer)) {
-		LOG(("Using font engine %s", ti->ti_Data));
+		LOG("Using font engine %s", ti->ti_Data);
 		fname = ASPrintf("%s.library", ti->ti_Data);
 	} else {
-		LOG(("Cannot find OT_Engine tag"));
+		LOG("Cannot find OT_Engine tag");
 		FreeVec(buffer);
 		FreeVec(otagpath);
 		return NULL;
@@ -114,7 +114,7 @@ struct OutlineFont *OpenOutlineFont(STRPTR fileName, struct List *list, ULONG fl
 	BulletBase = OpenLibrary(fname, 0L);
 
 	if(BulletBase == NULL) {
-		LOG(("Unable to open %s", fname));
+		LOG("Unable to open %s", fname);
 		FreeVec(buffer);
 		FreeVec(fname);
 		FreeVec(otagpath);

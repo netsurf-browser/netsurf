@@ -1294,13 +1294,13 @@ llcache_serialise_metadata(llcache_object *object,
 
 overflow:
 	/* somehow we overflowed the buffer - hth? */
-	LOG(("Overflowed metadata buffer"));
+	LOG("Overflowed metadata buffer");
 	free(data);
 	return NSERROR_INVALID;
 
 operror:
 	/* output error */
-	LOG(("Output error"));
+	LOG("Output error");
 	free(data);
 	return NSERROR_INVALID;
 }
@@ -1338,7 +1338,7 @@ llcache_process_metadata(llcache_object *object)
 	size_t num_headers;
 	size_t hloop;
 
-	LOG(("Retriving metadata"));
+	LOG("Retriving metadata");
 
 	/* attempt to retrieve object metadata from the backing store */
 	res = guit->llcache->fetch(object->url,
@@ -1351,7 +1351,7 @@ llcache_process_metadata(llcache_object *object)
 
 	end = metadata + metadatalen;
 
-	LOG(("Processing retrived data"));
+	LOG("Processing retrived data");
 
 	/* metadata line 1 is the url the metadata referrs to */
 	line = 1;
@@ -1374,9 +1374,7 @@ llcache_process_metadata(llcache_object *object)
 		 * by simply skipping caching of this object.
 		 */
 
-		LOG(("Got metadata for %s instead of %s",
-		     nsurl_access(metadataurl),
-		     nsurl_access(object->url)));
+		LOG("Got metadata for %s instead of %s", nsurl_access(metadataurl), nsurl_access(object->url));
 
 		nsurl_unref(metadataurl);
 
@@ -1469,7 +1467,7 @@ llcache_process_metadata(llcache_object *object)
 	return NSERROR_OK;
 
 format_error:
-	LOG(("metadata error on line %d error code %d\n", line, res));
+	LOG("metadata error on line %d error code %d\n", line, res);
 	guit->llcache->release(object->url, BACKING_STORE_META);
 
 	return res;
@@ -1859,7 +1857,7 @@ static nserror llcache_fetch_redirect(llcache_object *object, const char *target
 	/* Forcibly stop redirecting if we've followed too many redirects */
 #define REDIRECT_LIMIT 10
 	if (object->fetch.redirect_count > REDIRECT_LIMIT) {
-		LOG(("Too many nested redirects"));
+		LOG("Too many nested redirects");
 
 		event.type = LLCACHE_EVENT_ERROR;
 		event.data.msg = messages_get("BadRedirect");
@@ -2444,9 +2442,8 @@ static void llcache_persist_slowcheck(void *p)
 		total_bandwidth = (llcache->total_written * 1000) / llcache->total_elapsed;
 
 		if (total_bandwidth < llcache->minimum_bandwidth) {
-			LOG(("Current bandwidth %llu less than minimum %llu",
-			     total_bandwidth, llcache->minimum_bandwidth));
-			LOG(("Disabling disc cache; too slow"));
+			LOG("Current bandwidth %"PRIu64" less than minimum %zd",
+			    total_bandwidth, llcache->minimum_bandwidth);
 			guit->llcache->finalise();
 		}
 	}
@@ -2502,7 +2499,7 @@ static void llcache_persist(void *p)
 		 * (bandwidth) for this run being exceeded.
 		 */
 		if (total_elapsed > llcache->time_quantum) {
-			LOG(("Overran timeslot"));
+			LOG("Overran timeslot");
 			/* writeout has exhausted the available time.
 			 * Either the writeout is slow or the last
 			 * object was very large.
@@ -2858,12 +2855,11 @@ static nserror llcache_object_notify_users(llcache_object *object)
 #ifdef LLCACHE_TRACE
 		if (handle->state != objstate) {
 			if (emitted_notify == false) {
-				LOG(("Notifying users of %p", object));
+				LOG("Notifying users of %p", object);
 				emitted_notify = true;
 			}
 
-			LOG(("User %p state: %d Object state: %d",
-					user, handle->state, objstate));
+			LOG("User %p state: %d Object state: %d", user, handle->state, objstate);
 		}
 #endif
 
@@ -3296,7 +3292,7 @@ llcache_initialise(const struct llcache_parameters *prm)
 	llcache->time_quantum = prm->time_quantum;
 	llcache->all_caught_up = true;
 
-	LOG(("llcache initialising with a limit of %d bytes", llcache->limit));
+	LOG("llcache initialising with a limit of %d bytes", llcache->limit);
 
 	/* backing store initialisation */
 	return guit->llcache->initialise(&prm->store);
@@ -3359,10 +3355,7 @@ void llcache_finalise(void)
 			llcache->total_elapsed;
 	}
 
-	LOG(("Backing store wrote %"PRIu64" bytes in %"PRIu64" ms "
-			"(average %"PRIu64" bytes/second)",
-			llcache->total_written, llcache->total_elapsed,
-			total_bandwidth));
+	LOG("Backing store wrote %"PRIu64" bytes in %"PRIu64" ms ""(average %"PRIu64" bytes/second)", llcache->total_written, llcache->total_elapsed, total_bandwidth);
 
 	free(llcache);
 	llcache = NULL;

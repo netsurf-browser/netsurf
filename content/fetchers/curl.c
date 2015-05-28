@@ -112,7 +112,7 @@ static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
  */
 static bool fetch_curl_initialise(lwc_string *scheme)
 {
-	LOG(("Initialise cURL fetcher for %s", lwc_string_data(scheme)));
+	LOG("Initialise cURL fetcher for %s", lwc_string_data(scheme));
 	curl_fetchers_registered++;
 	return true; /* Always succeeds */
 }
@@ -128,17 +128,17 @@ static void fetch_curl_finalise(lwc_string *scheme)
 	struct cache_handle *h;
 
 	curl_fetchers_registered--;
-	LOG(("Finalise cURL fetcher %s", lwc_string_data(scheme)));
+	LOG("Finalise cURL fetcher %s", lwc_string_data(scheme));
 	if (curl_fetchers_registered == 0) {
 		CURLMcode codem;
 		/* All the fetchers have been finalised. */
-		LOG(("All cURL fetchers finalised, closing down cURL"));
+		LOG("All cURL fetchers finalised, closing down cURL");
 
 		curl_easy_cleanup(fetch_blank_curl);
 
 		codem = curl_multi_cleanup(fetch_curl_multi);
 		if (codem != CURLM_OK)
-			LOG(("curl_multi_cleanup failed: ignoring"));
+			LOG("curl_multi_cleanup failed: ignoring");
 
 		curl_global_cleanup();
 	}
@@ -208,8 +208,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 						"application/octet-stream",
 					CURLFORM_END);
 				if (code != CURL_FORMADD_OK)
-					LOG(("curl_formadd: %d (%s)",
-						code, control->name));
+					LOG("curl_formadd: %d (%s)", code, control->name);
 			} else {
 				char *mimetype = guit->fetch->mimetype(control->value);
 				code = curl_formadd(&post, &last,
@@ -220,9 +219,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
 				if (code != CURL_FORMADD_OK)
-					LOG(("curl_formadd: %d (%s=%s)",
-						code, control->name,
-						control->value));
+					LOG("curl_formadd: %d (%s=%s)", code, control->name, control->value);
 				free(mimetype);
 			}
 			free(leafname);
@@ -233,9 +230,7 @@ fetch_curl_post_convert(const struct fetch_multipart_data *control)
 					CURLFORM_COPYCONTENTS, control->value,
 					CURLFORM_END);
 			if (code != CURL_FORMADD_OK)
-				LOG(("curl_formadd: %d (%s=%s)", code,
-						control->name,
-						control->value));
+				LOG("curl_formadd: %d (%s=%s)", code, control->name, control->value);
 		}
 	}
 
@@ -282,7 +277,7 @@ fetch_curl_setup(struct fetch *parent_fetch,
 
 	fetch->fetch_handle = parent_fetch;
 
-	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
+	LOG("fetch %p, url '%s'", fetch, nsurl_access(url));
 
 	/* construct a new fetch structure */
 	fetch->curl_handle = NULL;
@@ -681,7 +676,7 @@ static void fetch_curl_abort(void *vf)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
 	assert(f);
-	LOG(("fetch %p, url '%s'", f, nsurl_access(f->url)));
+	LOG("fetch %p, url '%s'", f, nsurl_access(f->url));
 	if (f->curl_handle) {
 		f->abort = true;
 	} else {
@@ -701,7 +696,7 @@ static void fetch_curl_stop(struct curl_fetch_info *f)
 	CURLMcode codem;
 
 	assert(f);
-	LOG(("fetch %p, url '%s'", f, nsurl_access(f->url)));
+	LOG("fetch %p, url '%s'", f, nsurl_access(f->url));
 
 	if (f->curl_handle) {
 		/* remove from curl multi handle */
@@ -769,7 +764,7 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f)
 		assert(code == CURLE_OK);
 	}
 	http_code = f->http_code;
-	LOG(("HTTP status code %li", http_code));
+	LOG("HTTP status code %li", http_code);
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
@@ -780,7 +775,7 @@ static bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
-		LOG(("FETCH_REDIRECT, '%s'", f->location));
+		LOG("FETCH_REDIRECT, '%s'", f->location);
 		msg.type = FETCH_REDIRECT;
 		msg.data.redirect = f->location;
 		fetch_send_callback(&msg, f->fetch_handle);
@@ -836,7 +831,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	assert(code == CURLE_OK);
 
 	abort_fetch = f->abort;
-	LOG(("done %s", nsurl_access(f->url)));
+	LOG("done %s", nsurl_access(f->url));
 
 	if (abort_fetch == false && (result == CURLE_OK ||
 			(result == CURLE_WRITE_ERROR && f->stopped == false))) {
@@ -874,7 +869,7 @@ static void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
 	} else {
-		LOG(("Unknown cURL response code %d", result));
+		LOG("Unknown cURL response code %d", result);
 		error = true;
 	}
 
@@ -1007,8 +1002,7 @@ static void fetch_curl_poll(lwc_string *scheme_ignored)
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
 		if (codem != CURLM_OK && codem != CURLM_CALL_MULTI_PERFORM) {
-			LOG(("curl_multi_perform: %i %s",
-					codem, curl_multi_strerror(codem)));
+			LOG("curl_multi_perform: %i %s", codem, curl_multi_strerror(codem));
 			warn_user("MiscError", curl_multi_strerror(codem));
 			return;
 		}
@@ -1169,7 +1163,7 @@ static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		free(f->location);
 		f->location = malloc(size);
 		if (!f->location) {
-			LOG(("malloc failed"));
+			LOG("malloc failed");
 			return size;
 		}
 		SKIP_ST(9);
@@ -1242,17 +1236,17 @@ nserror fetch_curl_register(void)
 		.finalise = fetch_curl_finalise
 	};
 
-	LOG(("curl_version %s", curl_version()));
+	LOG("curl_version %s", curl_version());
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
 	if (code != CURLE_OK) {
-		LOG(("curl_global_init failed."));
+		LOG("curl_global_init failed.");
 		return NSERROR_INIT_FAILED;
 	}
 
 	fetch_curl_multi = curl_multi_init();
 	if (!fetch_curl_multi) {
-		LOG(("curl_multi_init failed."));
+		LOG("curl_multi_init failed.");
 		return NSERROR_INIT_FAILED;
 	}
 
@@ -1280,7 +1274,7 @@ nserror fetch_curl_register(void)
 	*/
 	fetch_blank_curl = curl_easy_init();
 	if (!fetch_blank_curl) {
-		LOG(("curl_easy_init failed"));
+		LOG("curl_easy_init failed");
 		return NSERROR_INIT_FAILED;
 	}
 
@@ -1312,11 +1306,11 @@ nserror fetch_curl_register(void)
 
 	if (nsoption_charp(ca_bundle) &&
 	    strcmp(nsoption_charp(ca_bundle), "")) {
-		LOG(("ca_bundle: '%s'", nsoption_charp(ca_bundle)));
+		LOG("ca_bundle: '%s'", nsoption_charp(ca_bundle));
 		SETOPT(CURLOPT_CAINFO, nsoption_charp(ca_bundle));
 	}
 	if (nsoption_charp(ca_path) && strcmp(nsoption_charp(ca_path), "")) {
-		LOG(("ca_path: '%s'", nsoption_charp(ca_path)));
+		LOG("ca_path: '%s'", nsoption_charp(ca_path));
 		SETOPT(CURLOPT_CAPATH, nsoption_charp(ca_path));
 	}
 
@@ -1328,7 +1322,7 @@ nserror fetch_curl_register(void)
 		curl_with_openssl = false;
 	}
 
-	LOG(("cURL %slinked against openssl", curl_with_openssl ? "" : "not "));
+	LOG("cURL %slinked against openssl", curl_with_openssl ? "" : "not ");
 
 	/* cURL initialised okay, register the fetchers */
 
@@ -1347,20 +1341,19 @@ nserror fetch_curl_register(void)
 		}
 
 		if (fetcher_add(scheme, &fetcher_ops) != NSERROR_OK) {
-			LOG(("Unable to register cURL fetcher for %s",
-					data->protocols[i]));
+			LOG("Unable to register cURL fetcher for %s", data->protocols[i]);
 		}
 	}
 
 	return NSERROR_OK;
 
 curl_easy_setopt_failed:
-	LOG(("curl_easy_setopt failed."));
+	LOG("curl_easy_setopt failed.");
 	return NSERROR_INIT_FAILED;
 
 #if LIBCURL_VERSION_NUM >= 0x071e00
 curl_multi_setopt_failed:
-	LOG(("curl_multi_setopt failed."));
+	LOG("curl_multi_setopt failed.");
 	return NSERROR_INIT_FAILED;
 #endif
 }

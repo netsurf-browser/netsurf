@@ -99,7 +99,7 @@ bool ro_gui_options_language_ok(wimp_w w)
 			if (temp) {
 				nsoption_set_charp(language, temp);
 			} else {
-				LOG(("No memory to duplicate language code"));
+				LOG("No memory to duplicate language code");
 				warn_user("NoMemory", 0);
 			}
 		}
@@ -114,7 +114,7 @@ bool ro_gui_options_language_ok(wimp_w w)
 			if (temp) {
 				nsoption_set_charp(accept_language,temp);
 			} else {
-				LOG(("No memory to duplicate language code"));
+				LOG("No memory to duplicate language code");
 				warn_user("NoMemory", 0);
 			}
 		}

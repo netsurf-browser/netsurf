@@ -58,8 +58,7 @@ nsbeos_schedule_kill_callback(void *_target, void *_match)
 	_nsbeos_callback_t *match = (_nsbeos_callback_t *)_match;
 	if ((target->callback == match->callback) &&
 	    (target->context == match->context)) {
-		LOG(("Found match for %p(%p), killing.",
-		     target->callback, target->context));
+		LOG("Found match for %p(%p), killing.", target->callback, target->context);
 		target->callback = NULL;
 		target->context = NULL;
 		target->callback_killed = true;
@@ -70,7 +69,7 @@ nsbeos_schedule_kill_callback(void *_target, void *_match)
 static void
 schedule_remove(void (*callback)(void *p), void *p)
 {
-	LOG(("schedule_remove() for %p(%p)", cb->callback, cb->context));
+	LOG("schedule_remove() for %p(%p)", cb->callback, cb->context);
 	if (callbacks == NULL)
 		return;
 	_nsbeos_callback_t cb_match;

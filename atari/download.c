@@ -197,7 +197,7 @@ static void gui_download_window_destroy( struct gui_download_window * gdw)
 {
 
 
-	LOG((""));
+	LOG("");
 	if (gdw->status == NSATARI_DOWNLOAD_WORKING) {
 		download_context_abort(gdw->ctx);
 	}
@@ -255,7 +255,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *parent)
 	char alert[200];
 
 
-	LOG(("Creating download window for gui window: %p", parent));
+	LOG("Creating download window for gui window: %p", parent);
 
 	/* TODO: Implement real form and use messages file strings! */
 
@@ -332,9 +332,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *parent)
 	gemtk_wm_set_toolbar_redraw_func(gdw->guiwin, toolbar_redraw_cb);
 
 	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
-	LOG(("created download: %s (total size: %d)",
-		gdw->destination, gdw->size_total
-	));
+	LOG("created download: %s (total size: %d)", gdw->destination, gdw->size_total);
 
 	GRECT work, curr;
 	work.g_x = 0;
@@ -362,7 +360,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 	uint32_t tnow = clck / (CLOCKS_PER_SEC>>3);
 	uint32_t sdiff = (clck / (CLOCKS_PER_SEC)) - dw->start;
 
-	LOG((""));
+	LOG("");
 
 	if(dw->abort == true){
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
@@ -410,7 +408,7 @@ static nserror gui_download_window_data(struct gui_download_window *dw,
 static void gui_download_window_error(struct gui_download_window *dw,
                                const char *error_msg)
 {
-	LOG(("%s", error_msg));
+	LOG("%s", error_msg);
 	strncpy((char*)&dw->lbl_file, error_msg, MAX_SLEN_LBL_FILE-1);
 	dw->status = NSATARI_DOWNLOAD_ERROR;
 	gemtk_wm_exec_redraw(dw->guiwin, NULL);
@@ -420,7 +418,7 @@ static void gui_download_window_error(struct gui_download_window *dw,
 
 static void gui_download_window_done(struct gui_download_window *dw)
 {
-	LOG((""));
+	LOG("");
 
 // TODO: change abort to close
 	dw->status = NSATARI_DOWNLOAD_COMPLETE;

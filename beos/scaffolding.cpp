@@ -771,7 +771,7 @@ int32 nsbeos_replicant_main_thread(void *_arg)
 
 static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffolding *g, BMessage *event)
 {
-	LOG(("Being Destroyed = %d", g->being_destroyed));
+	LOG("Being Destroyed = %d", g->being_destroyed);
 
 	if (--open_windows == 0)
 		nsbeos_done = true;
@@ -1289,7 +1289,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 
 void nsbeos_scaffolding_destroy(nsbeos_scaffolding *scaffold)
 {
-	LOG(("Being Destroyed = %d", scaffold->being_destroyed));
+	LOG("Being Destroyed = %d", scaffold->being_destroyed);
 	if (scaffold->being_destroyed) return;
 	scaffold->being_destroyed = 1;
 	nsbeos_window_destroy_event(scaffold->window, scaffold, NULL);

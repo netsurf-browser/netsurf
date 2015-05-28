@@ -310,7 +310,7 @@ static nserror ami_backing_store_finalise(void)
 	nserror error = ami_backing_store_send_reply(AMI_BSM_FINALISE, NULL, tempmsgport);
 	if(error != NSERROR_OK) return error;
 
-	LOG(("Waiting for backing store process to exit..."));
+	LOG("Waiting for backing store process to exit...");
 
 	WaitPort(tempmsgport);
 
@@ -355,7 +355,7 @@ ami_backing_store_initialise(const struct llcache_store_parameters *parameters)
 		return NSERROR_NOMEM;
 	}
 
-	LOG(("Waiting for backing store process to start up..."));
+	LOG("Waiting for backing store process to start up...");
 
 	WaitPort(tempmsgport);
 
@@ -365,7 +365,7 @@ ami_backing_store_initialise(const struct llcache_store_parameters *parameters)
 	ReplyMsg((struct Message *)msg);
 	FreeSysObject(ASOT_PORT, tempmsgport);
 
-	LOG(("Backing store process started.  Error code: %d", error));
+	LOG("Backing store process started.  Error code: %d", error);
 
 	return error;
 }

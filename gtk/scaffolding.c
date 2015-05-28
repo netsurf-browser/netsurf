@@ -227,7 +227,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 {
 	struct nsgtk_scaffolding *gs = data;
 
-	LOG(("scaffold:%p", gs));
+	LOG("scaffold:%p", gs);
 
 	if ((gs->history_window) && (gs->history_window->window)) {
 		gtk_widget_destroy(GTK_WIDGET(gs->history_window->window));
@@ -242,7 +242,7 @@ static void scaffolding_window_destroy(GtkWidget *widget, gpointer data)
 		gs->next->prev = gs->prev;
 	}
 
-	LOG(("scaffold list head: %p", scaf_list));
+	LOG("scaffold list head: %p", scaf_list);
 
 	if (scaf_list == NULL) {
 		/* no more open windows - stop the browser */
@@ -668,8 +668,7 @@ MULTIHANDLER(savepage)
 	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
 	d = opendir(path);
 	if (d == NULL) {
- 		LOG(("Unable to open directory %s for complete save: %s", path,
-		     strerror(errno)));
+ 		LOG("Unable to open directory %s for complete save: %s", path, strerror(errno));
 		if (errno == ENOTDIR)
 			warn_user("NoDirError", path);
 		else
@@ -701,7 +700,7 @@ MULTIHANDLER(pdf)
 	char *url_name;
 	nserror res;
 
-	LOG(("Print preview (generating PDF)  started."));
+	LOG("Print preview (generating PDF)  started.");
 
 	res = nsurl_nice(browser_window_get_url(bw), &url_name, true);
 	if (res != NSERROR_OK) {
@@ -1085,10 +1084,10 @@ MULTIHANDLER(selectall)
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (nsgtk_widget_has_focus(GTK_WIDGET(g->url_bar))) {
-		LOG(("Selecting all URL bar text"));
+		LOG("Selecting all URL bar text");
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
-		LOG(("Selecting all document text"));
+		LOG("Selecting all document text");
 		browser_window_key_press(bw, NS_KEY_SELECT_ALL);
 	}
 
@@ -1704,7 +1703,7 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 	struct browser_window *bw =
 			nsgtk_get_browser_window(hw->g->top_level);
 
-	LOG(("X=%g, Y=%g", event->x, event->y));
+	LOG("X=%g, Y=%g", event->x, event->y);
 
 	browser_window_history_click(bw, event->x, event->y, false);
 
@@ -2043,7 +2042,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		return NULL;
 	}
 
-	LOG(("Constructing a scaffold of %p for gui_window %p", g, toplevel));
+	LOG("Constructing a scaffold of %p for gui_window %p", g, toplevel);
 
 	g->top_level = toplevel;
 
@@ -2293,7 +2292,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* finally, show the window. */
 	gtk_widget_show(GTK_WIDGET(g->window));
 
-	LOG(("creation complete"));
+	LOG("creation complete");
 
 	return g;
 }
@@ -2470,7 +2469,7 @@ gui_search_web_provider_update(const char *provider_name,
 	GdkPixbuf *srch_pixbuf = NULL;
 	char *searchcontent;
 
-	LOG(("name:%s bitmap %p", provider_name, provider_bitmap));
+	LOG("name:%s bitmap %p", provider_name, provider_bitmap);
 
 	if (provider_bitmap != NULL) {
 		srch_pixbuf = nsgdk_pixbuf_get_from_surface(provider_bitmap->surface, 16, 16);

@@ -137,8 +137,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 		strcat(destination, "/");
 	if (strlen(destination) + strlen(filename) < PATH_MAX - 1)
 		strcat(destination, filename);
-	LOG(("download %s [%s] from %s to %s", filename, size, domain,
-			destination));
+	LOG("download %s [%s] from %s to %s", filename, size, domain, destination);
 	w->title = filename;
 	w->domain = domain;
 	w->size = total_size;
@@ -308,7 +307,7 @@ gui_download_window_data(struct gui_download_window *w, const char *data,
 	struct timeval val;
 	res = fwrite((void *)data, 1, size, w->file);
 	if (res != size)
-		LOG(("file write error %d of %d", size - res, size));
+		LOG("file write error %d of %d", size - res, size);
 	w->downloaded += res;
 	w->progress = (unsigned int)(((long long)(w->downloaded) * 10000)
 			/ w->size);
@@ -322,7 +321,7 @@ gui_download_window_data(struct gui_download_window *w, const char *data,
 static void gui_download_window_error(struct gui_download_window *w,
 		const char *error_msg)
 {
-	LOG(("error %s", error_msg));
+	LOG("error %s", error_msg);
 }
 
 static void gui_download_window_done(struct gui_download_window *w)

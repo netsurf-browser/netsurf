@@ -511,19 +511,19 @@ static void nsurl__get_string_markers(const char * const url_s,
 	}
 
 #ifdef NSURL_DEBUG
-	LOG(("marker.start: %i", marker.start));
-	LOG(("marker.scheme_end: %i", marker.scheme_end));
-	LOG(("marker.authority: %i", marker.authority));
+	LOG("marker.start: %i", marker.start);
+	LOG("marker.scheme_end: %i", marker.scheme_end);
+	LOG("marker.authority: %i", marker.authority);
 
-	LOG(("marker.colon_first: %i", marker.colon_first));
-	LOG(("marker.at: %i", marker.at));
-	LOG(("marker.colon_last: %i", marker.colon_last));
+	LOG("marker.colon_first: %i", marker.colon_first);
+	LOG("marker.at: %i", marker.at);
+	LOG("marker.colon_last: %i", marker.colon_last);
 
-	LOG(("marker.path: %i", marker.path));
-	LOG(("marker.query: %i", marker.query));
-	LOG(("marker.fragment: %i", marker.fragment));
+	LOG("marker.path: %i", marker.path);
+	LOG("marker.query: %i", marker.query);
+	LOG("marker.fragment: %i", marker.fragment);
 
-	LOG(("marker.end: %i", marker.end));
+	LOG("marker.end: %i", marker.end);
 #endif
 
 	/* Got all the URL components pegged out now */
@@ -545,8 +545,8 @@ static size_t nsurl__remove_dot_segments(char *path, char *output)
 
 	while (*path_pos != '\0') {
 #ifdef NSURL_DEBUG
-		LOG((" in:%s", path_pos));
-		LOG(("out:%.*s", output_pos - output, output));
+		LOG(" in:%s", path_pos);
+		LOG("out:%.*s", output_pos - output, output);
 #endif
 		if (*path_pos == '.') {
 			if (*(path_pos + 1) == '.' &&
@@ -1314,31 +1314,28 @@ static void nsurl_destroy_components(struct nsurl_components *c)
 static void nsurl__dump(const nsurl *url)
 {
 	if (url->components.scheme)
-		LOG(("  Scheme: %s", lwc_string_data(url->components.scheme)));
+		LOG("  Scheme: %s", lwc_string_data(url->components.scheme));
 
 	if (url->components.username)
-		LOG(("Username: %s",
-				lwc_string_data(url->components.username)));
+		LOG("Username: %s", lwc_string_data(url->components.username));
 
 	if (url->components.password)
-		LOG(("Password: %s",
-				lwc_string_data(url->components.password)));
+		LOG("Password: %s", lwc_string_data(url->components.password));
 
 	if (url->components.host)
-		LOG(("    Host: %s", lwc_string_data(url->components.host)));
+		LOG("    Host: %s", lwc_string_data(url->components.host));
 
 	if (url->components.port)
-		LOG(("    Port: %s", lwc_string_data(url->components.port)));
+		LOG("    Port: %s", lwc_string_data(url->components.port));
 
 	if (url->components.path)
-		LOG(("    Path: %s", lwc_string_data(url->components.path)));
+		LOG("    Path: %s", lwc_string_data(url->components.path));
 
 	if (url->components.query)
-		LOG(("   Query: %s", lwc_string_data(url->components.query)));
+		LOG("   Query: %s", lwc_string_data(url->components.query));
 
 	if (url->components.fragment)
-		LOG(("Fragment: %s",
-				lwc_string_data(url->components.fragment)));
+		LOG("Fragment: %s", lwc_string_data(url->components.fragment));
 }
 #endif
 
@@ -1608,7 +1605,7 @@ lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part)
 				lwc_string_ref(url->components.fragment) : NULL;
 
 	default:
-		LOG(("Unsupported value passed to part param."));
+		LOG("Unsupported value passed to part param.");
 		assert(0);
 	}
 
@@ -1674,7 +1671,7 @@ bool nsurl_has_component(const nsurl *url, nsurl_component part)
 			return false;
 
 	default:
-		LOG(("Unsupported value passed to part param."));
+		LOG("Unsupported value passed to part param.");
 		assert(0);
 	}
 
@@ -1766,7 +1763,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	assert(rel != NULL);
 
 #ifdef NSURL_DEBUG
-	LOG(("base: \"%s\", rel: \"%s\"", nsurl_access(base), rel));
+	LOG("base: \"%s\", rel: \"%s\"", nsurl_access(base), rel);
 #endif
 
 	/* Peg out the URL sections */

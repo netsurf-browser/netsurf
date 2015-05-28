@@ -564,7 +564,7 @@ static bool urldb__host_is_ip_address(const char *host)
 		c[slash - host] = '\0';
 		sane_host = c;
 		host_len = slash - host - 1;
-		LOG(("WARNING: called with non-host '%s'", host));
+		LOG("WARNING: called with non-host '%s'", host);
 	}
 
 	if (strspn(sane_host, "0123456789abcdefABCDEF[].:") < host_len)
@@ -1152,7 +1152,7 @@ static struct path_data *urldb_match_path(const struct path_data *parent,
 	assert(parent->segment == NULL);
 
 	if (path[0] != '/') {
-		LOG(("path is %s", path));
+		LOG("path is %s", path);
 	}
 
 	assert(path[0] == '/');
@@ -1278,12 +1278,12 @@ static void urldb_dump_paths(struct path_data *parent)
 
 	do {
 		if (p->segment != NULL) {
-			LOG(("\t%s : %u", lwc_string_data(p->scheme), p->port));
+			LOG("\t%s : %u", lwc_string_data(p->scheme), p->port);
 
-			LOG(("\t\t'%s'", p->segment));
+			LOG("\t\t'%s'", p->segment);
 
 			for (i = 0; i != p->frag_cnt; i++)
-				LOG(("\t\t\t#%s", p->fragment[i]));
+				LOG("\t\t\t#%s", p->fragment[i]);
 		}
 
 		if (p->children != NULL) {
@@ -1312,10 +1312,9 @@ static void urldb_dump_hosts(struct host_part *parent)
 	struct host_part *h;
 
 	if (parent->part) {
-		LOG(("%s", parent->part));
+		LOG("%s", parent->part);
 
-		LOG(("\t%s invalid SSL certs",
-			parent->permit_invalid_certs ? "Permits" : "Denies"));
+		LOG("\t%s invalid SSL certs", parent->permit_invalid_certs ? "Permits" : "Denies");
 	}
 
 	/* Dump path data */
@@ -2493,14 +2492,14 @@ nserror urldb_load(const char *filename)
 
 	assert(filename);
 
-	LOG(("Loading URL file %s", filename));
+	LOG("Loading URL file %s", filename);
 
 	if (url_bloom == NULL)
 		url_bloom = bloom_create(BLOOM_SIZE);
 
 	fp = fopen(filename, "r");
 	if (!fp) {
-		LOG(("Failed to open file '%s' for reading", filename));
+		LOG("Failed to open file '%s' for reading", filename);
 		return NSERROR_NOT_FOUND;
 	}
 
@@ -2511,12 +2510,12 @@ nserror urldb_load(const char *filename)
 
 	version = atoi(s);
 	if (version < MIN_URL_FILE_VERSION) {
-		LOG(("Unsupported URL file version."));
+		LOG("Unsupported URL file version.");
 		fclose(fp);
 		return NSERROR_INVALID;
 	}
 	if (version > URL_FILE_VERSION) {
-		LOG(("Unknown URL file version."));
+		LOG("Unknown URL file version.");
 		fclose(fp);
 		return NSERROR_INVALID;
 	}
@@ -2546,13 +2545,13 @@ nserror urldb_load(const char *filename)
 
 		/* no URLs => try next host */
 		if (urls == 0) {
-			LOG(("No URLs for '%s'", host));
+			LOG("No URLs for '%s'", host);
 			continue;
 		}
 
 		h = urldb_add_host(host);
 		if (!h) {
-			LOG(("Failed adding host: '%s'", host));
+			LOG("Failed adding host: '%s'", host);
 			fclose(fp);
 			return NSERROR_NOMEM;
 		}
@@ -2603,7 +2602,7 @@ nserror urldb_load(const char *filename)
 			 *       Need a nsurl_save too.
 			 */
 			if (nsurl_create(url, &nsurl) != NSERROR_OK) {
-				LOG(("Failed inserting '%s'", url));
+				LOG("Failed inserting '%s'", url);
 				fclose(fp);
 				return NSERROR_NOMEM;
 			}
@@ -2616,7 +2615,7 @@ nserror urldb_load(const char *filename)
 			/* Copy and merge path/query strings */
 			if (nsurl_get(nsurl, NSURL_PATH | NSURL_QUERY,
 					&path_query, &len) != NSERROR_OK) {
-				LOG(("Failed inserting '%s'", url));
+				LOG("Failed inserting '%s'", url);
 				fclose(fp);
 				return NSERROR_NOMEM;
 			}
@@ -2627,7 +2626,7 @@ nserror urldb_load(const char *filename)
 			p = urldb_add_path(scheme_lwc, port, h, path_query,
 					fragment_lwc, nsurl);
 			if (!p) {
-				LOG(("Failed inserting '%s'", url));
+				LOG("Failed inserting '%s'", url);
 				fclose(fp);
 				return NSERROR_NOMEM;
 			}
@@ -2668,7 +2667,7 @@ nserror urldb_load(const char *filename)
 	}
 
 	fclose(fp);
-	LOG(("Successfully loaded URL file"));
+	LOG("Successfully loaded URL file");
 #undef MAXIMUM_URL_LENGTH
 
 	return NSERROR_OK;
@@ -2684,7 +2683,7 @@ nserror urldb_save(const char *filename)
 
 	fp = fopen(filename, "w");
 	if (!fp) {
-		LOG(("Failed to open file '%s' for writing", filename));
+		LOG("Failed to open file '%s' for writing", filename);
 		return NSERROR_SAVE_FAILED;
 	}
 
@@ -3065,7 +3064,7 @@ void urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap)
 	p = urldb_find_url(url);
 	if (p != NULL) {
 
-		LOG(("Setting bitmap on %s", nsurl_access(url)));
+		LOG("Setting bitmap on %s", nsurl_access(url));
 
 		if (p->thumb && p->thumb != bitmap) {
 			guit->bitmap->destroy(p->thumb);
@@ -3773,7 +3772,7 @@ void urldb_load_cookies(const char *filename)
 
 			if (loaded_cookie_file_version <
 					MIN_COOKIE_FILE_VERSION) {
-				LOG(("Unsupported Cookie file version"));
+				LOG("Unsupported Cookie file version");
 				break;
 			}
 

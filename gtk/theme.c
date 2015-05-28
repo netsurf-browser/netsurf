@@ -130,7 +130,7 @@ static bool nsgtk_theme_verify(const char *themename)
 		}
 		val = fwrite(filecontent, strlen(filecontent), 1, fp);
 		if (val == 0)
-			LOG(("empty write themelist"));
+			LOG("empty write themelist");
 		fclose(fp);
 		free(filecontent);
 		return true;

@@ -169,7 +169,7 @@ static char **read_locales(void)
         warn_user("Failed to load locales: %s",buf);
         return(NULL);
     } else {
-        LOG(("Reading locales from: %s...", buf));
+        LOG("Reading locales from: %s...", buf);
     }
 
     /* Count items: */
@@ -977,12 +977,12 @@ void open_settings(void)
 
 void close_settings(void)
 {
-    LOG((""));
+    LOG("");
     gemtk_wm_remove(settings_guiwin);
     settings_guiwin = NULL;
     wind_close(h_aes_win);
     wind_delete(h_aes_win);
     h_aes_win = 0;
-    LOG(("Done"));
+    LOG("Done");
 }
 

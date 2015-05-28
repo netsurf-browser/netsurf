@@ -79,7 +79,7 @@ nserror amiga_plugin_hack_init(void)
 
 		if(node)
 		{
-			LOG(("plugin_hack registered %s",lwc_string_data(type)));
+			LOG("plugin_hack registered %s", lwc_string_data(type));
 
 			error = content_factory_register_handler(
 				lwc_string_data(type), 
@@ -120,7 +120,7 @@ nserror amiga_plugin_hack_create(const content_handler *handler,
 
 bool amiga_plugin_hack_convert(struct content *c)
 {
-	LOG(("amiga_plugin_hack_convert"));
+	LOG("amiga_plugin_hack_convert");
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -134,7 +134,7 @@ void amiga_plugin_hack_destroy(struct content *c)
 {
 	amiga_plugin_hack_content *plugin = (amiga_plugin_hack_content *) c;
 
-	LOG(("amiga_plugin_hack_destroy %p", plugin));
+	LOG("amiga_plugin_hack_destroy %p", plugin);
 
 	return;
 }
@@ -150,7 +150,7 @@ bool amiga_plugin_hack_redraw(struct content *c,
 		.stroke_width = 1,
 	};
 
-	LOG(("amiga_plugin_hack_redraw"));
+	LOG("amiga_plugin_hack_redraw");
 
 	ctx->plot->rectangle(data->x, data->y, data->x + data->width,
 			data->y + data->height, &pstyle);
@@ -173,7 +173,7 @@ bool amiga_plugin_hack_redraw(struct content *c,
 void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct object_params *params)
 {
-	LOG(("amiga_plugin_hack_open %s", nsurl_access(content_get_url(c))));
+	LOG("amiga_plugin_hack_open %s", nsurl_access(content_get_url(c)));
 
 	if(c)
 	{
@@ -187,13 +187,13 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 
 void amiga_plugin_hack_close(struct content *c)
 {
-	LOG(("amiga_plugin_hack_close"));
+	LOG("amiga_plugin_hack_close");
 	return;
 }
 
 void amiga_plugin_hack_reformat(struct content *c, int width, int height)
 {
-	LOG(("amiga_plugin_hack_reformat"));
+	LOG("amiga_plugin_hack_reformat");
 
 	c->width = width;
 	c->height = height;
@@ -206,7 +206,7 @@ nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc
 	amiga_plugin_hack_content *plugin;
 	nserror error;
 
-	LOG(("amiga_plugin_hack_clone"));
+	LOG("amiga_plugin_hack_clone");
 
 	plugin = calloc(1, sizeof(amiga_plugin_hack_content));
 	if (plugin == NULL)
@@ -253,7 +253,7 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 	if(full_cmd)
 	{
 #ifdef __amigaos4__
-		LOG(("Attempting to execute %s", full_cmd));
+		LOG("Attempting to execute %s", full_cmd);
 
 		in = Open("NIL:", MODE_OLDFILE);
 		out = Open("NIL:", MODE_NEWFILE);

@@ -566,7 +566,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 		gtk_list_store_clear(priv->content_language);
 		active_language = -1;
 
-		LOG(("Used %s for languages", languages_file_location));
+		LOG("Used %s for languages", languages_file_location);
 		while (fgets(buf, sizeof(buf), fp)) {
 			/* Ignore blank lines */
 			if (buf[0] == '\0')
@@ -597,7 +597,7 @@ nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 
 		fclose(fp);
 	} else {
-		LOG(("Failed opening languages file"));
+		LOG("Failed opening languages file");
 	}
 
 	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), active_language);
@@ -667,7 +667,7 @@ nsgtk_preferences_comboTheme_realize(GtkWidget *widget, struct ppref *priv)
 	    ((fp = fopen(themelist_file_location, "r")) != NULL)) {
 		gtk_list_store_clear(priv->themes);
 
-		LOG(("Used %s for themelist", themelist_file_location));
+		LOG("Used %s for themelist", themelist_file_location);
 
 		while (fgets(buf, sizeof(buf), fp)) {
 			/* Ignore blank lines */
@@ -685,7 +685,7 @@ nsgtk_preferences_comboTheme_realize(GtkWidget *widget, struct ppref *priv)
 
 		fclose(fp);
 	} else {
-		LOG(("Failed opening themes file"));
+		LOG("Failed opening themes file");
 	}
 
 	/* get configured theme and sanity check value */
@@ -1065,7 +1065,7 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 	priv->dialog = gtk_builder_get_object(preferences_builder,
 					       "dialogPreferences");
 	if (priv->dialog == NULL) {
-		LOG(("Unable to get object for preferences dialog"));
+		LOG("Unable to get object for preferences dialog");
 		/* release builder as were done with it */
 		g_object_unref(G_OBJECT(preferences_builder));
 		return NULL;

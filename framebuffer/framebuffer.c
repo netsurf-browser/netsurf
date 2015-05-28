@@ -317,7 +317,7 @@ framebuffer_plot_path(const float *p,
                       colour c, 
                       const float transform[6])
 {
-	LOG(("path unimplemented"));
+	LOG("path unimplemented");
 	return true;
 }
 
@@ -375,7 +375,7 @@ static bool framebuffer_format_from_bpp(int bpp, enum nsfb_format_e *fmt)
 		break;
 
 	default:
-		LOG(("Bad bits per pixel (%d)\n", bpp));
+		LOG("Bad bits per pixel (%d)\n", bpp);
 		return false;
 	}
 
@@ -397,18 +397,18 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
 
     fbtype = nsfb_type_from_name(fename);
     if (fbtype == NSFB_SURFACE_NONE) {
-        LOG(("The %s surface is not available from libnsfb\n", fename));
+        LOG("The %s surface is not available from libnsfb\n", fename);
         return NULL;
     }
 
     nsfb = nsfb_new(fbtype);
     if (nsfb == NULL) {
-        LOG(("Unable to create %s fb surface\n", fename));
+        LOG("Unable to create %s fb surface\n", fename);
         return NULL;
     }
     
     if (nsfb_set_geometry(nsfb, width, height, fbfmt) == -1) {
-        LOG(("Unable to set surface geometry\n"));
+        LOG("Unable to set surface geometry\n");
         nsfb_free(nsfb);
         return NULL;
     }
@@ -416,7 +416,7 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
     nsfb_cursor_init(nsfb);
     
     if (nsfb_init(nsfb) == -1) {
-        LOG(("Unable to initialise nsfb surface\n"));
+        LOG("Unable to initialise nsfb surface\n");
         nsfb_free(nsfb);
         return NULL;
     }
@@ -436,7 +436,7 @@ framebuffer_resize(nsfb_t *nsfb, int width, int height, int bpp)
     }
 
     if (nsfb_set_geometry(nsfb, width, height, fbfmt) == -1) {
-        LOG(("Unable to change surface geometry\n"));
+        LOG("Unable to change surface geometry\n");
         return false;
     }
 

@@ -304,7 +304,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 	}
 
 	if(found == false) *remapped = strdup(file);
-		else LOG(("Remapped %s to %s in path %s using %s", file, *remapped, path, map));
+		else LOG("Remapped %s to %s in path %s using %s", file, *remapped, path, map);
 
 	free(mapfile);
 
@@ -321,7 +321,7 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
 	netsurf_mkpath(&fullpath, &fullpath_len, 2, fullpath, remapped);
 
-	LOG(("Checking for %s", fullpath));
+	LOG("Checking for %s", fullpath);
 	
 	lock = Lock(fullpath, ACCESS_READ);
 	if(lock)
@@ -330,7 +330,7 @@ static bool ami_gui_check_resource(char *fullpath, const char *file)
 		found = true;
 	}
 
-	if(found) LOG(("Found %s", fullpath));
+	if(found) LOG("Found %s", fullpath);
 	free(remapped);
 
 	return found;
@@ -727,7 +727,7 @@ static void ami_openscreen(void)
 		}
 
 		if(screen_signal == -1) screen_signal = AllocSignal(-1);
-		LOG(("Screen signal %d", screen_signal));
+		LOG("Screen signal %d", screen_signal);
 		scrn = OpenScreenTags(NULL,
 					SA_DisplayID, id,
 					SA_Title, ami_gui_get_screen_title(),
@@ -800,12 +800,12 @@ static void ami_gui_commandline(int *argc, char **argv)
 
 	if((args = ReadArgs(template, rarray, NULL))) {
 		if(rarray[A_URL]) {
-			LOG(("URL %s specified on command line", rarray[A_URL]));
+			LOG("URL %s specified on command line", rarray[A_URL]);
 			temp_homepage_url = ami_to_utf8_easy((char *)rarray[A_URL]);
 		}
 
 		if(rarray[A_FORCE]) {
-			LOG(("FORCE specified on command line"));
+			LOG("FORCE specified on command line");
 			cli_force = true;
 		}
 
@@ -823,7 +823,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 			char **p = (char **)rarray[A_NSOPTS];
 
 			do {
-				LOG(("Arg [%d] assigned to NSOPTS/M by ReadArgs: %s", new_argc, *p));
+				LOG("Arg [%d] assigned to NSOPTS/M by ReadArgs: %s", new_argc, *p);
 				new_argc++;
 				p++;
 			} while(*p != NULL);
@@ -844,7 +844,7 @@ static void ami_gui_commandline(int *argc, char **argv)
 
 		FreeArgs(args);
 	} else {
-		LOG(("ReadArgs failed to parse command line"));
+		LOG("ReadArgs failed to parse command line");
 	}
 }
 
@@ -2731,7 +2731,7 @@ static void ami_handle_applib(void)
 			{
 				struct ApplicationCustomMsg *applibcustmsg =
 					(struct ApplicationCustomMsg *)applibmsg;
-				LOG(("Ringhio BackMsg received: %s", applibcustmsg->customMsg));
+				LOG("Ringhio BackMsg received: %s", applibcustmsg->customMsg);
 				OpenWorkbenchObjectA(applibcustmsg->customMsg, NULL);
 			}
 			break;
@@ -2765,7 +2765,7 @@ void ami_get_msg(void)
 				NULL, (unsigned int *)&signalmask) != -1) {
 			signal = signalmask;
 		} else {
-			LOG(("waitselect() returned error"));
+			LOG("waitselect() returned error");
 			/* \todo Fix Ctrl-C handling.
 			 * WaitSelect() from bsdsocket.library returns -1 if the task was
 			 * signalled with a Ctrl-C.  waitselect() from newlib.library does not.
@@ -2975,12 +2975,12 @@ static void ami_gui_close_screen(struct Screen *scrn, BOOL locked_screen, BOOL d
 	/* If this is our own screen, wait for visitor windows to close */
 	if(screen_signal != -1) {
 		ULONG scrnsig = 1 << screen_signal;
-		LOG(("Waiting for visitor windows to close... (signal)"));
+		LOG("Waiting for visitor windows to close... (signal)");
 		Wait(scrnsig);
 	}
 
 	while (CloseScreen(scrn) == FALSE) {
-		LOG(("Waiting for visitor windows to close... (polling)"));
+		LOG("Waiting for visitor windows to close... (polling)");
 		Delay(50);
 	}
 
@@ -3024,19 +3024,19 @@ static void gui_quit(void)
 	ami_close_fonts();
 	ami_help_free();
 	
-	LOG(("Closing screen"));
+	LOG("Closing screen");
 	ami_gui_close_screen(scrn, locked_screen, FALSE);
 	if(nsscreentitle) FreeVec(nsscreentitle);
 
-	LOG(("Freeing menu items"));
+	LOG("Freeing menu items");
 	ami_context_menu_free();
 	ami_menu_free_glyphs();
 
-	LOG(("Freeing mouse pointers"));
+	LOG("Freeing mouse pointers");
 	ami_mouse_pointers_free();
-	LOG(("Freeing clipboard"));
+	LOG("Freeing clipboard");
 	ami_clipboard_free();
-	LOG(("Removing scheduler process"));
+	LOG("Removing scheduler process");
 	ami_scheduler_process_delete();
 
 	FreeSysObject(ASOT_PORT, appport);
@@ -3063,7 +3063,7 @@ char *ami_gui_get_cache_favicon_name(nsurl *url, bool only_if_avail)
 	BPTR lock = 0;
 
 	if ((filename = ASPrintf("%s/%x", current_user_faviconcache, nsurl_hash(url)))) {
-		LOG(("favicon cache location: %s", filename));
+		LOG("favicon cache location: %s", filename);
 
 		if (only_if_avail == true) {
 			if((lock = Lock(filename, ACCESS_READ))) {
@@ -3999,7 +3999,7 @@ gui_window_create(struct browser_window *bw,
 					BitMapEnd;
 		}
 
-		LOG(("Creating window object"));
+		LOG("Creating window object");
 
 		g->shared->objects[OID_MAIN] = WindowObj,
 			WA_ScreenTitle, ami_gui_get_screen_title(),
@@ -4266,11 +4266,11 @@ gui_window_create(struct browser_window *bw,
 		EndWindow;
 	}
 
-	LOG(("Opening window"));
+	LOG("Opening window");
 
 	g->shared->win = (struct Window *)RA_OpenWindow(g->shared->objects[OID_MAIN]);
 
-	LOG(("Window opened, adding border gadgets"));
+	LOG("Window opened, adding border gadgets");
 
 	if(!g->shared->win)
 	{
@@ -4609,7 +4609,7 @@ static void ami_gui_window_update_box_deferred(struct gui_window *g, bool draw)
 	if(draw == true) {
 		ami_set_pointer(g->shared, GUI_POINTER_WAIT, false);
 	} else {
-		LOG(("Ignoring deferred box redraw queue"));
+		LOG("Ignoring deferred box redraw queue");
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)g->deferred_rects);
@@ -4653,7 +4653,7 @@ struct nsObject *nnode;
 			(new_rect->y0 <= rect->y0) &&
 			(new_rect->x1 >= rect->x1) &&
 			(new_rect->y1 >= rect->y1)) {
-			LOG(("Removing queued redraw that is a subset of new box redraw"));
+			LOG("Removing queued redraw that is a subset of new box redraw");
 			DelObject(node);
 			/* Don't return - we might find more */
 		}
@@ -4674,7 +4674,7 @@ static void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 		nsobj = AddObject(g->deferred_rects, AMINS_RECT);
 		nsobj->objstruct = deferred_rect;
 	} else {
-		LOG(("Ignoring duplicate or subset of queued box redraw"));
+		LOG("Ignoring duplicate or subset of queued box redraw");
 	}
 	ami_schedule_redraw(g->shared, false);
 }
@@ -5243,7 +5243,7 @@ Object *ami_gui_splash_open(void)
 				LayoutEnd,
 			EndWindow;
 
-	LOG(("Attempting to open splash window..."));
+	LOG("Attempting to open splash window...");
 	win = RA_OpenWindow(win_obj);
 
 	GetAttrs(bm_obj, IA_Top, &top,
@@ -5307,14 +5307,14 @@ void ami_gui_splash_close(Object *win_obj)
 {
 	if(win_obj == NULL) return;
 
-	LOG(("Closing splash window"));
+	LOG("Closing splash window");
 	DisposeObject(win_obj);
 }
 
 static void gui_file_gadget_open(struct gui_window *g, hlcache_handle *hl, 
 	struct form_control *gadget)
 {
-	LOG(("File open dialog request for %p/%p", g, gadget));
+	LOG("File open dialog request for %p/%p", g, gadget);
 
 	if(AslRequestTags(filereq,
 			ASLFR_Window, g->shared->win,
@@ -5445,8 +5445,7 @@ int main(int argc, char** argv)
 	popupmenu_lib_ok = FALSE;
 #ifdef __amigaos4__
 	if((PopupMenuBase = OpenLibrary("popupmenu.library", 53))) {
-		LOG(("popupmenu.library v%d.%d",
-			PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision));
+		LOG("popupmenu.library v%d.%d", PopupMenuBase->lib_Version, PopupMenuBase->lib_Revision);
 		if(LIB_IS_AT_LEAST((struct Library *)PopupMenuBase, 53, 11))
 			popupmenu_lib_ok = TRUE;
 		CloseLibrary(PopupMenuBase);
@@ -5464,7 +5463,7 @@ int main(int argc, char** argv)
 
 	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
 	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
-	LOG(("User: %s", current_user));
+	LOG("User: %s", current_user);
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
 
 	if((lock = CreateDirTree(current_user_dir)))

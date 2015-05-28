@@ -70,13 +70,13 @@ BResources *gAppResources = NULL;
 
 static bool fetch_rsrc_initialise(lwc_string *scheme)
 {
-	LOG(("fetch_rsrc_initialise called for %s", lwc_string_data(scheme)));
+	LOG("fetch_rsrc_initialise called for %s", lwc_string_data(scheme));
 	return true;
 }
 
 static void fetch_rsrc_finalise(lwc_string *scheme)
 {
-	LOG(("fetch_rsrc_finalise called for %s", lwc_string_data(scheme)));
+	LOG("fetch_rsrc_finalise called for %s", lwc_string_data(scheme));
 }
 
 static bool fetch_rsrc_can_fetch(const nsurl *url)
@@ -277,8 +277,7 @@ static void fetch_rsrc_poll(lwc_string *scheme)
 			char header[64];
 
 			fetch_set_http_code(c->parent_fetch, 200);
-			LOG(("setting rsrc: MIME type to %s, length to %zd",
-					c->mimetype, c->datalen));
+			LOG("setting rsrc: MIME type to %s, length to %zd", c->mimetype, c->datalen);
 			/* Any callback can result in the fetch being aborted.
 			 * Therefore, we _must_ check for this after _every_
 			 * call to fetch_rsrc_send_callback().
@@ -308,7 +307,7 @@ static void fetch_rsrc_poll(lwc_string *scheme)
 				fetch_rsrc_send_callback(&msg, c);
 			}
 		} else {
-			LOG(("Processing of %s failed!", c->url));
+			LOG("Processing of %s failed!", c->url);
 
 			/* Ensure that we're unlocked here. If we aren't, 
 			 * then fetch_rsrc_process() is broken.

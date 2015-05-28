@@ -1118,7 +1118,7 @@ void nsgtk_toolbar_customization_load(struct nsgtk_scaffolding *g)
 	}
 	val = fgets(buffer, sizeof buffer, f);
 	if (val == NULL) {
-		LOG(("empty read toolbar settings"));
+		LOG("empty read toolbar settings");
 	}
 	fclose(f);
 	i = BACK_BUTTON;

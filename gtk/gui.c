@@ -192,7 +192,7 @@ nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 
 	gtk_builder_connect_signals(builder, NULL);
 
-	LOG(("Using '%s' as %s ui template file", filepath, name));
+	LOG("Using '%s' as %s ui template file", filepath, name);
 
 	if (pglade != NULL) {
 		*pglade = builder;
@@ -290,7 +290,7 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	    (nsoption_charp(hotlist_path) == NULL) ||
 	    (nsoption_charp(downloads_directory) == NULL) ||
 	    (nsoption_charp(ca_path) == NULL)) {
-		LOG(("Failed initialising default resource paths"));
+		LOG("Failed initialising default resource paths");
 		return NSERROR_BAD_PARAMETER;
 	}
 
@@ -333,7 +333,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 		themelist_file_location = NULL;
 	}
 	if (themelist_file_location == NULL) {
-		LOG(("Unable to find themelist - disabling"));
+		LOG("Unable to find themelist - disabling");
 	}
 
 	/* Obtain resources path location.
@@ -345,7 +345,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	memcpy(res_dir_location,
 	       languages_file_location,
 	       strlen(languages_file_location) - 9);
-	LOG(("Using '%s' for resource path", res_dir_location));
+	LOG("Using '%s' for resource path", res_dir_location);
 
 	/* initialise the glade templates */
 	nsgtk_init_glade(respath);
@@ -361,7 +361,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	resource_filename = filepath_find(respath, "SearchEngines");
 	search_web_init(resource_filename);
 	if (resource_filename != NULL) {
-		LOG(("Using '%s' as Search Engines file", resource_filename));
+		LOG("Using '%s' as Search Engines file", resource_filename);
 		free(resource_filename);
 	}
 
@@ -378,7 +378,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 
 	/* Toolbar inicies file */
 	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");
-	LOG(("Using '%s' as custom toolbar settings file", toolbar_indices_file_location));
+	LOG("Using '%s' as custom toolbar settings file", toolbar_indices_file_location);
 
 	/* load throbber images */
 	if (nsgtk_throbber_init(respath, THROBBER_FRAMES) == false)
@@ -400,7 +400,7 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	 * window.
 	 */
 	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
-	LOG(("Set CSS DPI to %d", browser_get_dpi()));
+	LOG("Set CSS DPI to %d", browser_get_dpi());
 
 	if (nsgtk_history_init(glade_file_location->history) == false)
 		die("Unable to initialise history window.\n");
@@ -529,7 +529,7 @@ static void nsgtk_main(void)
 
 static void gui_quit(void)
 {
-	LOG(("Quitting GUI"));
+	LOG("Quitting GUI");
 
 	/* Ensure all scaffoldings are destroyed before we go into exit */
 	nsgtk_download_destroy();
@@ -567,7 +567,7 @@ void warn_user(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
 
-  	LOG(("%s %s", warning, detail ? detail : ""));
+  	LOG("%s %s", warning, detail ? detail : "");
 	fflush(stdout);
 
 	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),
@@ -856,7 +856,7 @@ static nserror get_config_home(char **config_home_out)
 	if (home_dir != NULL) {
 		ret = check_dirname(home_dir, ".netsurf", &config_home);
 		if (ret == NSERROR_OK) {
-			LOG(("\"%s\"", config_home));
+			LOG("\"%s\"", config_home);
 			*config_home_out = config_home;
 			return ret;
 		}
@@ -896,7 +896,7 @@ static nserror get_config_home(char **config_home_out)
 		}
 	}
 
-	LOG(("\"%s\"", config_home));
+	LOG("\"%s\"", config_home);
 
 	*config_home_out = config_home;
 	return NSERROR_OK;
@@ -909,7 +909,7 @@ static nserror create_config_home(char **config_home_out)
 	char *xdg_config_dir;
 	nserror ret;
 
-	LOG(("Attempting to create configuration directory"));
+	LOG("Attempting to create configuration directory");
 
 	/* $XDG_CONFIG_HOME defines the base directory
 	 * relative to which user specific configuration files
@@ -945,7 +945,7 @@ static nserror create_config_home(char **config_home_out)
 	/* strip the trailing separator */
 	config_home[strlen(config_home) - 1] = 0;
 
-	LOG(("\"%s\"", config_home));
+	LOG("\"%s\"", config_home);
 
 	*config_home_out = config_home;
 
@@ -994,7 +994,7 @@ static nserror get_cache_home(char **cache_home_out)
 		}
 	}
 
-	LOG(("\"%s\"", cache_home));
+	LOG("\"%s\"", cache_home);
 
 	*cache_home_out = cache_home;
 	return NSERROR_OK;
@@ -1007,7 +1007,7 @@ static nserror create_cache_home(char **cache_home_out)
 	char *xdg_cache_dir;
 	nserror ret;
 
-	LOG(("Attempting to create configuration directory"));
+	LOG("Attempting to create configuration directory");
 
 	/* $XDG_CACHE_HOME defines the base directory
 	 * relative to which user specific cache files
@@ -1043,7 +1043,7 @@ static nserror create_cache_home(char **cache_home_out)
 	/* strip the trailing separator */
 	cache_home[strlen(cache_home) - 1] = 0;
 
-	LOG(("\"%s\"", cache_home));
+	LOG("\"%s\"", cache_home);
 
 	*cache_home_out = cache_home;
 
@@ -1131,7 +1131,7 @@ int main(int argc, char** argv)
 		ret = create_config_home(&nsgtk_config_home);
 	}
 	if (ret != NSERROR_OK) {
-		LOG(("Unable to locate a configuration directory."));
+		LOG("Unable to locate a configuration directory.");
 		nsgtk_config_home = NULL;
 	}
 
@@ -1161,7 +1161,7 @@ int main(int argc, char** argv)
 		ret = create_cache_home(&cache_home);
 	}
 	if (ret != NSERROR_OK) {
-		LOG(("Unable to locate a cache directory."));
+		LOG("Unable to locate a cache directory.");
 	}
 
 	/* core initialisation */

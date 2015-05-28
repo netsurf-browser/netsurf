@@ -49,7 +49,7 @@ bool verbose_log = true;
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str), lwc_string_data(str)));
+	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
 }
 
 bool cookie_manager_add(const struct cookie_data *data)
@@ -91,7 +91,7 @@ nsurl *make_url(const char *url)
 {
 	nsurl *nsurl;
 	if (nsurl_create(url, &nsurl) != NSERROR_OK) {
-		LOG(("failed creating nsurl"));
+		LOG("failed creating nsurl");
 		exit(1);
 	}
 	return nsurl;
@@ -103,7 +103,7 @@ char *make_path_query(nsurl *url)
 	char *path_query;
 	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &path_query, &len) !=
 			NSERROR_OK) {
-		LOG(("failed creating path_query"));
+		LOG("failed creating path_query");
 		exit(1);
 	}
 	return path_query;
@@ -113,7 +113,7 @@ lwc_string *make_lwc(const char *str)
 {
 	lwc_string *lwc;
 	if (lwc_intern_string(str, strlen(str), &lwc) != lwc_error_ok) {
-		LOG(("failed creating lwc_string"));
+		LOG("failed creating lwc_string");
 		exit(1);
 	}
 	return lwc;
@@ -166,13 +166,13 @@ int main(void)
 
 	h = urldb_add_host("127.0.0.1");
 	if (!h) {
-		LOG(("failed adding host"));
+		LOG("failed adding host");
 		return 1;
 	}
 
 	h = urldb_add_host("intranet");
 	if (!h) {
-		LOG(("failed adding host"));
+		LOG("failed adding host");
 		return 1;
 	}
 
@@ -180,7 +180,7 @@ int main(void)
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
 	p = urldb_add_path(scheme, 0, h, strdup("/"), NULL, url);
 	if (!p) {
-		LOG(("failed adding path"));
+		LOG("failed adding path");
 		return 1;
 	}
 	lwc_string_unref(scheme);
@@ -194,7 +194,7 @@ int main(void)
 	/* Get host entry */
 	h = urldb_add_host("netsurf.strcprstskrzkrk.co.uk");
 	if (!h) {
-		LOG(("failed adding host"));
+		LOG("failed adding host");
 		return 1;
 	}
 
@@ -205,7 +205,7 @@ int main(void)
 	fragment = make_lwc("zz");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
 	if (!p) {
-		LOG(("failed adding path"));
+		LOG("failed adding path");
 		return 1;
 	}
 	lwc_string_unref(fragment);
@@ -213,7 +213,7 @@ int main(void)
 	fragment = make_lwc("aa");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
 	if (!p) {
-		LOG(("failed adding path"));
+		LOG("failed adding path");
 		return 1;
 	}
 	lwc_string_unref(fragment);
@@ -221,7 +221,7 @@ int main(void)
 	fragment = make_lwc("yy");
 	p = urldb_add_path(scheme, 0, h, strdup(path_query), fragment, url);
 	if (!p) {
-		LOG(("failed adding path"));
+		LOG("failed adding path");
 		return 1;
 	}
 	free(path_query);
@@ -280,7 +280,7 @@ int main(void)
 	/* 1597646 */
 	url = make_url("http://foo@moose.com/");
 	if (urldb_add_url(url)) {
-		LOG(("added %s", nsurl_access(url)));
+		LOG("added %s", nsurl_access(url));
 		assert(urldb_get_url(url) != NULL);
 	}
 	nsurl_unref(url);
@@ -376,7 +376,7 @@ int main(void)
 	printf("PASS\n");
 
 	corestrings_fini();
-	LOG(("Remaining lwc strings:"));
+	LOG("Remaining lwc strings:");
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
 	return 0;

@@ -467,7 +467,7 @@ void textplain_reformat(struct content *c, int width, int height)
 	int character_width;
 	size_t line_start;
 
-	LOG(("content %p w:%d h:%d",c, width, height));
+	LOG("content %p w:%d h:%d", c, width, height);
 
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy */
@@ -557,7 +557,7 @@ void textplain_reformat(struct content *c, int width, int height)
 	return;
 
 no_memory:
-	LOG(("out of memory (line_count %lu)", line_count));
+	LOG("out of memory (line_count %lu)", line_count);
 	return;
 }
 

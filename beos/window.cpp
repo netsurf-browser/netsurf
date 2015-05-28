@@ -433,19 +433,19 @@ void nsbeos_dispatch_event(BMessage *message)
 		continue;
 
 	if (gui && gui != z) {
-		LOG(("discarding event for destroyed gui_window"));
+		LOG("discarding event for destroyed gui_window");
 		delete message;
 		return;
 	}
 	if (scaffold && (!y || scaffold != y->scaffold)) {
-		LOG(("discarding event for destroyed scaffolding"));
+		LOG("discarding event for destroyed scaffolding");
 		delete message;
 		return;
 	}
 
 	// messages for top-level
 	if (scaffold) {
-		LOG(("dispatching to top-level"));
+		LOG("dispatching to top-level");
 		nsbeos_scaffolding_dispatch_event(scaffold, message);
 		delete message;
 		return;
@@ -761,7 +761,7 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 	if (!numbytes)
 		numbytes = strlen(bytes);
 
-	LOG(("mods 0x%08lx key %ld raw %ld byte[0] %d", mods, key, raw_char, buff[0]));
+	LOG("mods 0x%08lx key %ld raw %ld byte[0] %d", mods, key, raw_char, buff[0]);
 
 	char byte;
 	if (numbytes == 1) {
@@ -1091,7 +1091,7 @@ static void gui_window_update_extent(struct gui_window *g)
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
 	y_max -= g->view->Bounds().Height() + 1;
-	LOG(("x_max = %f y_max = %f x_prop = %f y_prop = %f\n", x_max, y_max, x_prop, y_prop));
+	LOG("x_max = %f y_max = %f x_prop = %f y_prop = %f\n", x_max, y_max, x_prop, y_prop);
 	if (g->view->ScrollBar(B_HORIZONTAL)) {
 		g->view->ScrollBar(B_HORIZONTAL)->SetRange(0, x_max);
 		g->view->ScrollBar(B_HORIZONTAL)->SetProportion(x_prop);

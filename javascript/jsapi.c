@@ -208,7 +208,7 @@ static struct heartbeat *enable_heartbeat(JSContext *cx)
 		} else {
 			free(hb);
 			hb = NULL;
-			LOG(("Unable to set heartbeat"));
+			LOG("Unable to set heartbeat");
 		}
 	}
 	return hb;

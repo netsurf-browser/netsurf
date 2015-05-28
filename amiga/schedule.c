@@ -554,7 +554,7 @@ nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 		return NSERROR_NOMEM;
 	}
 
-	LOG(("Waiting for scheduler process to start up..."));
+	LOG("Waiting for scheduler process to start up...");
 
 	WaitPort(nsmsgport);
 	struct ami_schedule_message *asmsg = (struct ami_schedule_message *)GetMsg(nsmsgport);
@@ -564,7 +564,7 @@ nserror ami_scheduler_process_create(struct MsgPort *nsmsgport)
 		ReplyMsg((struct Message *)asmsg);
 	}
 #endif
-	LOG(("Scheduler started"));
+	LOG("Scheduler started");
 
 	return NSERROR_OK;
 }

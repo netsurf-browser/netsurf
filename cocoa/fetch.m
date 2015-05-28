@@ -51,13 +51,13 @@ static const char *fetch_filetype(const char *unix_path)
 
 	uti = [[NSWorkspace sharedWorkspace] typeOfFile: [NSString stringWithUTF8String: unix_path] error:&utiError];
 	if (nil != uti) {
-		LOG(("Looking for mimetype from uti \"%s\"", [uti UTF8String] ));
+		LOG("Looking for mimetype from uti \"%s\"", [uti UTF8String] );
 		mimeType = (NSString *)UTTypeCopyPreferredTagWithClass( (CFStringRef)uti, kUTTagClassMIMEType );
 	} else {
 		NSAlert *utiAlert = [NSAlert alertWithError:utiError];
 		[utiAlert runModal]; // Ignore return value.
 
-		LOG(("uti call failed"));
+		LOG("uti call failed");
 
 		strncpy(cocoafiletype, "text/html", sizeof(cocoafiletype));
 		return cocoafiletype;
@@ -69,13 +69,13 @@ static const char *fetch_filetype(const char *unix_path)
 	} else {
 		const char *extension;
 
-		LOG(("mimetype from uti failed"));
+		LOG("mimetype from uti failed");
 
 		extension = [(NSString *)UTTypeCopyPreferredTagWithClass( (CFStringRef)uti, kUTTagClassFilenameExtension) UTF8String];
 
 		if (extension == NULL) {
 			/* give up and go with default */
-			LOG(("No extension going with default type"));
+			LOG("No extension going with default type");
 			strncpy(cocoafiletype, "text/html", sizeof(cocoafiletype));		} else {
 			int eidx = 0; /* index of extension entry */
 
@@ -90,7 +90,7 @@ static const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-	LOG(( "\tMIME type for '%s' is '%s'", unix_path, cocoafiletype ));
+	LOG("\tMIME type for '%s' is '%s'", unix_path, cocoafiletype);
 
 	return cocoafiletype;
 }

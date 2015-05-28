@@ -60,17 +60,17 @@ static nserror punycode_status_to_nserror(enum punycode_status status)
 		break;
 
 	case punycode_bad_input:
-		LOG(("Bad input"));
+		LOG("Bad input");
 		ret = NSERROR_BAD_ENCODING;
 		break;
 
 	case punycode_big_output:
-		LOG(("Output too big"));
+		LOG("Output too big");
 		ret = NSERROR_BAD_SIZE;
 		break;
 
 	case punycode_overflow:
-		LOG(("Overflow"));
+		LOG("Overflow");
 		ret = NSERROR_NOSPACE;
 		break;
 
@@ -434,7 +434,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 
 	/* 2. Check characters 3 and 4 are not '--'. */
 	if ((label[2] == 0x002d) && (label[3] == 0x002d)) {
-		LOG(("Check failed: characters 2 and 3 are '--'"));
+		LOG("Check failed: characters 2 and 3 are '--'");
 		return false;
 	}
 
@@ -444,7 +444,7 @@ static bool idna__is_valid(int32_t *label, size_t len)
 	if ((unicode_props->category == UTF8PROC_CATEGORY_MN) ||
 		(unicode_props->category == UTF8PROC_CATEGORY_MC) ||
 		(unicode_props->category == UTF8PROC_CATEGORY_ME)) {
-		LOG(("Check failed: character 0 is a combining mark"));
+		LOG("Check failed: character 0 is a combining mark");
 		return false;
 	}
 
@@ -453,14 +453,14 @@ static bool idna__is_valid(int32_t *label, size_t len)
 
 		/* 4. Check characters not DISALLOWED by RFC5892 */
 		if (idna_prop == IDNA_P_DISALLOWED) {
-			LOG(("Check failed: character %d (%x) is DISALLOWED", i, label[i]));
+			LOG("Check failed: character %zd (%x) is DISALLOWED", i, label[i]);
 			return false;
 		}
 
 		/* 5. Check CONTEXTJ characters conform to defined rules */
 		if (idna_prop == IDNA_P_CONTEXTJ) {
 			if (idna__contextj_rule(label, i, len) == false) {
-				LOG(("Check failed: character %d (%x) does not conform to CONTEXTJ rule", i, label[i]));
+				LOG("Check failed: character %zd (%x) does not conform to CONTEXTJ rule", i, label[i]);
 				return false;
 			}
 		}
@@ -469,14 +469,14 @@ static bool idna__is_valid(int32_t *label, size_t len)
 		/** \todo optionally we can check conformance to this rule */
 		if (idna_prop == IDNA_P_CONTEXTO) {
 			if (idna__contexto_rule(label[i]) == false) {
-				LOG(("Check failed: character %d (%x) has no CONTEXTO rule defined", i, label[i]));
+				LOG("Check failed: character %zd (%x) has no CONTEXTO rule defined", i, label[i]);
 				return false;
 			}
 		}
 
 		/* 7. Check characters are not UNASSIGNED */
 		if (idna_prop == IDNA_P_UNASSIGNED) {
-			LOG(("Check failed: character %d (%x) is UNASSIGNED", i, label[i]));
+			LOG("Check failed: character %zd (%x) is UNASSIGNED", i, label[i]);
 			return false;
 		}
 
@@ -585,7 +585,7 @@ static bool idna__verify(const char *label, size_t len)
 		return true;
 	}
 
-	LOG(("Re-encoded ACE label %s does not match input", ace));
+	LOG("Re-encoded ACE label %s does not match input", ace);
 	free(ace);
 
 	return false;
@@ -638,7 +638,7 @@ idna_encode(const char *host, size_t len, char **ace_host, size_t *ace_len)
 			/* This is already a DNS-valid ASCII string */
 			if ((idna__is_ace(host, label_len) == true) &&
 			    (idna__verify(host, label_len) == false)) {
-				LOG(("Cannot verify ACE label %s", host));
+				LOG("Cannot verify ACE label %s", host);
 				return NSERROR_BAD_URL;
 			}
 			strncpy(fqdn_p, host, label_len);

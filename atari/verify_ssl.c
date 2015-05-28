@@ -159,7 +159,7 @@ static void do_popup( WINDOW *win, int index, int mode, void *data)
 	char * items[dp->num_certs];
 	short x, y;
 	unsigned int i;
-	LOG(("do_popup: num certs: %d", dp->num_certs));
+	LOG("do_popup: num certs: %d", dp->num_certs);
 	for( i = 0; i<dp->num_certs; i++) {
 		items[i] = malloc( 48 );
 		strncpy(items[i], (char*)&dp->cert_infos_n[i].issuer, 46 );
@@ -244,7 +244,7 @@ bool verify_ssl_form_do( const char * url, const struct ssl_cert_info * cert_inf
 				break;
 
 			case VERIFY_BT_SCROLL_R:
-					LOG(( "scroll r!" ));
+					LOG("scroll r!");
 					cont = true;
 					dp.scrollx += 1;
 					if( dp.scrollx > (dp.cols - (272 / 8 )) )

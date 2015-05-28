@@ -451,7 +451,7 @@ nserror browser_window_history_clone(const struct browser_window *existing,
 	new_history->start = browser_window_history__clone_entry(new_history,
 			new_history->start);
 	if (!new_history->start) {
-		LOG(("Insufficient memory to clone history"));
+		LOG("Insufficient memory to clone history");
 		browser_window_history_destroy(clone);
 		clone->history = NULL;
 		return NSERROR_NOMEM;
@@ -516,7 +516,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 	 * loading */
 	bitmap = urldb_get_thumbnail(nsurl);
 	if (bitmap == NULL) {
-		LOG(("Creating thumbnail for %s", nsurl_access(nsurl)));
+		LOG("Creating thumbnail for %s", nsurl_access(nsurl));
 		bitmap = guit->bitmap->create(WIDTH, HEIGHT,
 					      BITMAP_NEW | BITMAP_CLEAR_MEMORY |
 					      BITMAP_OPAQUE);
@@ -531,7 +531,7 @@ nserror browser_window_history_add(struct browser_window *bw,
 				/* Thumbnailing failed. Ignore it
 				 * silently but clean up bitmap.
 				 */
-				LOG(("Thumbnail renderfailed"));
+				LOG("Thumbnail renderfailed");
 				guit->bitmap->destroy(bitmap);
 				bitmap = NULL;
 			}
@@ -700,7 +700,7 @@ bool browser_window_history_redraw(struct browser_window *bw,
 	history = bw->history;
 
 	if (history == NULL) {
-		LOG(("Attempt to draw NULL history."));
+		LOG("Attempt to draw NULL history.");
 		return false;
 	}
 

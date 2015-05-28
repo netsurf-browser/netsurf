@@ -272,7 +272,7 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	int i;
 	struct s_toolbar *t;
 
-	LOG((""));
+	LOG("");
 
 	assert(init == true);
 
@@ -330,8 +330,7 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	t->throbber.max_index = THROBBER_MAX_INDEX;
 	t->throbber.running = false;
 
-	LOG(("created toolbar: %p, root: %p, textarea: %p, throbber: %p", t,
-	     owner, t->url.textarea, t->throbber));
+	LOG("created toolbar: %p, root: %p, textarea: %p, throbber: %p", t, owner, t->url.textarea, t->throbber);
 	return( t );
 }
 
@@ -459,7 +458,7 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 			    short button)
 {
-	LOG((""));
+	LOG("");
 
 	struct s_tb_button * bt;
 	bool enable = false;
@@ -583,7 +582,7 @@ void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
 
 void toolbar_set_url(struct s_toolbar *tb, const char * text)
 {
-	LOG((""));
+	LOG("");
 	textarea_set_text(tb->url.textarea, text);
 
 	if (tb->attached && tb->visible) {
@@ -668,7 +667,7 @@ bool toolbar_text_input(struct s_toolbar *tb, char *text)
 {
 	bool handled = true;
 
-	LOG((""));
+	LOG("");
 
 	return(handled);
 }
@@ -753,7 +752,7 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 
 void toolbar_mouse_input(struct s_toolbar *tb, short obj, short button)
 {
-	LOG((""));
+	LOG("");
 	GRECT work;
 	short mx, my, mb, kstat;
 	struct gui_window * gw;

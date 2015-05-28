@@ -131,8 +131,7 @@ bool sprite_convert(struct content *c)
 			(osspriteop_id) ((char *) area + area->first),
 			&w, &h, NULL, NULL);
 	if (error) {
-		LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosspriteop_read_sprite_info: 0x%x: %s", error->errnum, error->errmess);
 		msg_data.error = error->errmess;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;

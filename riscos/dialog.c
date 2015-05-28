@@ -216,8 +216,7 @@ wimp_w ro_gui_dialog_create(const char *template_name)
 	window->sprite_area = gui_sprites;
 	error = xwimp_create_window(window, &w);
 	if (error) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	}
@@ -256,13 +255,12 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 	error = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
 			name, 0, &window_size, &data_size, &context);
 	if (error) {
-		LOG(("xwimp_load_template: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_load_template: 0x%x: %s", error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	}
 	if (!context) {
-		LOG(("template '%s' missing", template_name));
+		LOG("template '%s' missing", template_name);
 		xwimp_close_template();
 		die("Template");
 	}
@@ -279,8 +277,7 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 	error = xwimp_load_template(window, data, data + data_size,
 			wimp_NO_FONTS, name, 0, 0, 0, 0);
 	if (error) {
-		LOG(("xwimp_load_template: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_load_template: 0x%x: %s", error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	}
@@ -308,8 +305,7 @@ void ro_gui_dialog_open(wimp_w w)
 	state.w = w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -356,8 +352,7 @@ void ro_gui_dialog_close(wimp_w close)
 	*/
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_caret_position: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	} else if (caret.w == close) {
 		/* Check if we are a persistent window */
@@ -368,9 +363,7 @@ void ro_gui_dialog_close(wimp_w close)
 					32, -1);
 			/* parent may have been closed first */
 			if ((error) && (error->errnum != 0x287)) {
-				LOG(("xwimp_set_caret_position: 0x%x: %s",
-						error->errnum,
-						error->errmess));
+				LOG("xwimp_set_caret_position: 0x%x: %s", error->errnum, error->errmess);
 				warn_user("WimpError", error->errmess);
 			}
 		}
@@ -378,8 +371,7 @@ void ro_gui_dialog_close(wimp_w close)
 
 	error = xwimp_close_window(close);
 	if (error) {
-		LOG(("xwimp_close_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 }
@@ -464,8 +456,7 @@ void ro_gui_dialog_open_at_pointer(wimp_w w)
 	/* get the pointer position */
 	error = xwimp_get_pointer_info(&ptr);
 	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -488,8 +479,7 @@ void ro_gui_dialog_open_xy(wimp_w w, int x, int y)
 	state.w = w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -504,8 +494,7 @@ void ro_gui_dialog_open_xy(wimp_w w, int x, int y)
 	 * on screen */
 	error = xwimp_close_window(w);
 	if (error) {
-		LOG(("xwimp_close_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_close_window: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -533,8 +522,7 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 		state.w = parent;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -551,8 +539,7 @@ void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
 	state.w = child;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -614,7 +601,7 @@ void ro_gui_dialog_add_persistent(wimp_w parent, wimp_w w) {
 			return;
 		}
 	}
-	LOG(("Unable to map persistent dialog to parent."));
+	LOG("Unable to map persistent dialog to parent.");
 	return;
 }
 
@@ -643,8 +630,7 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 			w = persistent_dialog[i].dialog;
 			ro_gui_dialog_close(w);
 			if (ro_gui_wimp_event_close_window(w))
-				LOG(("Persistent dialog close event: 0x%x",
-						(unsigned) w));
+				LOG("Persistent dialog close event: 0x%x", (unsigned)w);
 			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 		}
@@ -722,7 +708,7 @@ static bool ro_gui_dialog_open_url_init(void)
 
 	if ((definition->icons[ICON_OPENURL_URL].flags & wimp_ICON_INDIRECTED)
 			== 0) {
-		LOG(("open_url URL icon not indirected"));
+		LOG("open_url URL icon not indirected");
 		xwimp_close_template();
 		die("Template");
 	}
@@ -740,8 +726,7 @@ static bool ro_gui_dialog_open_url_init(void)
 
 	error = xwimp_create_window(definition, &dialog_openurl);
 	if (error != NULL) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		xwimp_close_template();
 		die(error->errmess);
 	}

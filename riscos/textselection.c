@@ -91,13 +91,12 @@ void gui_start_selection(struct gui_window *g)
 	wimp_drag drag;
 	os_error *error;
 
-	LOG(("starting text_selection drag"));
+	LOG("starting text_selection drag");
 
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_window_state 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -111,8 +110,7 @@ void gui_start_selection(struct gui_window *g)
 	error = xwimp_send_message(wimp_USER_MESSAGE,
 			(wimp_message*)&msg, wimp_BROADCAST);
 	if (error) {
-		LOG(("xwimp_send_message: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 	owns_caret_and_selection = true;
@@ -128,8 +126,7 @@ void gui_start_selection(struct gui_window *g)
 			wimp_AUTO_SCROLL_ENABLE_HORIZONTAL,
 			&scroll, 0);
 	if (error)
-		LOG(("xwimp_auto_scroll: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
 
 	ro_mouse_drag_start(ro_gui_selection_drag_end, ro_gui_window_mouse_at,
 			NULL, g);
@@ -143,8 +140,7 @@ void gui_start_selection(struct gui_window *g)
 
 	error = xwimp_drag_box(&drag);
 	if (error) {
-		LOG(("xwimp_drag_box: 0x%x : %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 	last_start_window = g;
@@ -169,20 +165,17 @@ static void ro_gui_selection_drag_end(wimp_dragged *drag, void *data)
 	scroll.w = g->window;
 	error = xwimp_auto_scroll(0, &scroll, 0);
 	if (error)
-		LOG(("xwimp_auto_scroll: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess);
 
 	error = xwimp_drag_box((wimp_drag*)-1);
 	if (error) {
-		LOG(("xwimp_drag_box: 0x%x : %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_drag_box: 0x%x : %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 	}
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
-		LOG(("xwimp_get_pointer_info 0x%x : %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_pointer_info 0x%x : %s", error->errnum, error->errmess);
 		warn_user("WimpError", error->errmess);
 		return;
 	}
@@ -223,7 +216,7 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 		wimp_full_message_claim_entity msg;
 		os_error *error;
 
-		LOG(("claiming clipboard"));
+		LOG("claiming clipboard");
 
 		msg.size = sizeof(msg);
 		msg.your_ref = 0;
@@ -233,14 +226,13 @@ static void gui_set_clipboard(const char *buffer, size_t length,
 		error = xwimp_send_message(wimp_USER_MESSAGE,
 				(wimp_message*)&msg, wimp_BROADCAST);
 		if (error) {
-			LOG(("xwimp_send_message: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess);
 			warn_user("WimpError", error->errmess);
 		}
 		owns_clipboard = true;
 	}
 
-	LOG(("clipboard now holds %zd bytes", clip_length));
+	LOG("clipboard now holds %zd bytes", clip_length);
 }
 
 
@@ -448,7 +440,7 @@ void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim)
 	/* ignore our own broadcasts! */
 	if (claim->sender != task_handle) {
 
-		LOG(("%x", claim->flags));
+		LOG("%x", claim->flags);
 
 		if (claim->flags & wimp_CLAIM_CARET_OR_SELECTION) {
 			owns_caret_and_selection = false;
@@ -531,8 +523,7 @@ bool ro_gui_save_clipboard(const char *path)
 	free(local_cb);
 
 	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("SaveError", error->errmess);
 		return false;
 	}
@@ -614,7 +605,7 @@ void ro_gui_selection_send_dragging(wimp_pointer *pointer)
 {
 	wimp_full_message_dragging dragmsg;
 
-	LOG(("sending DRAGGING to %p, %d", pointer->w, pointer->i));
+	LOG("sending DRAGGING to %p, %d", pointer->w, pointer->i);
 
 	dragmsg.size = offsetof(wimp_full_message_dragging, file_types) + 8;
 	dragmsg.your_ref = 0;

@@ -95,8 +95,7 @@ void ro_gui_iconbar_initialise(void)
 		{ "!netsurf" } } };
 	error = xwimp_create_icon(&icon, 0);
 	if (error) {
-		LOG(("xwimp_create_icon: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_icon: 0x%x: %s", error->errnum, error->errmess);
 		die(error->errmess);
 	}
 
@@ -238,7 +237,7 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		return true;
 	case APPLICATION_QUIT:
 		if (ro_gui_prequit()) {
-			LOG(("QUIT in response to user request"));
+			LOG("QUIT in response to user request");
 			riscos_done = true;
 		}
 		return true;

@@ -622,7 +622,7 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 						    off - prev_off, &temp, NULL);
 				if (err != NSERROR_OK) {
 					assert(err != NSERROR_BAD_ENCODING);
-					LOG(("utf8_from_enc failed"));
+					LOG("utf8_from_enc failed");
 					free(*result);
 					return NSERROR_NOMEM;
 				}
@@ -664,7 +664,7 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 				    &temp, NULL);
 		if (err != NSERROR_OK) {
 			assert(err != NSERROR_BAD_ENCODING);
-			LOG(("utf8_from_enc failed"));
+			LOG("utf8_from_enc failed");
 			free(*result);
 			return NSERROR_NOMEM;
 		}
@@ -679,7 +679,7 @@ nserror utf8_from_local_encoding(const char *string, size_t len, char **result)
 	/* and copy into more reasonably-sized buffer */
 	temp = realloc((*result), cur_off + 1);
 	if (!temp) {
-		LOG(("realloc failed"));
+		LOG("realloc failed");
 		free(*result);
 		return NSERROR_NOMEM;
 	}

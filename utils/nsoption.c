@@ -601,11 +601,11 @@ nsoption_read(const char *path, struct nsoption_s *opts)
 
 	fp = fopen(path, "r");
 	if (!fp) {
-		LOG(("Failed to open file '%s'", path));
+		LOG("Failed to open file '%s'", path);
 		return NSERROR_NOT_FOUND;
 	}
 
-	LOG(("Successfully opened '%s' for Options file", path));
+	LOG("Successfully opened '%s' for Options file", path);
 
 	while (fgets(s, 100, fp)) {
 		char *colon, *value;
@@ -667,7 +667,7 @@ nsoption_write(const char *path,
 
 	fp = fopen(path, "w");
 	if (!fp) {
-		LOG(("failed to open file '%s' for writing", path));
+		LOG("failed to open file '%s' for writing", path);
 		return NSERROR_NOT_FOUND;
 	}
 
@@ -737,7 +737,7 @@ nsoption_commandline(int *pargc, char **argv, struct nsoption_s *opts)
 
 		/* arg+arglen is the option to set, val is the value */
 
-		LOG(("%.*s = %s", arglen, arg, val));
+		LOG("%.*s = %s", arglen, arg, val);
 
 		for (entry_loop = 0;
 		     entry_loop < NSOPTION_LISTEND;

@@ -98,9 +98,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	*/
 	if ((clipping.x1 < clipping.x0) ||
 			(clipping.y1 < clipping.y0)) {
-		LOG(("Invalid clipping rectangle (%i, %i) to (%i,%i)",
-			clipping.x0, clipping.y0,
-			clipping.x1, clipping.y1));
+		LOG("Invalid clipping rectangle (%i, %i) to (%i,%i)", clipping.x0, clipping.y0, clipping.x1, clipping.y1);
 		return;
 	}
 
@@ -131,7 +129,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 			(word_width * sprite_size.y * 4) + palette_size;
 	buffer = (osspriteop_area *)malloc(total_size);
 	if (!buffer) {
-		LOG(("Failed to allocate memory"));
+		LOG("Failed to allocate memory");
 		ro_gui_buffer_free();
 		return;
 	}
@@ -142,7 +140,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	mode = tinct_SPRITE_MODE;
 #else
 	if ((error = xwimpreadsysinfo_wimp_mode(&mode)) != NULL) {
-		LOG(("Error reading mode '%s'", error->errmess));
+		LOG("Error reading mode '%s'", error->errmess);
 		ro_gui_buffer_free();
 		return;
 	}
@@ -164,7 +162,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 
 		error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 		if (error) {
-			LOG(("Error reading mode properties '%s'", error->errmess));
+			LOG("Error reading mode properties '%s'", error->errmess);
 			ro_gui_buffer_free();
 			return;
 		}
@@ -209,7 +207,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 			buffer, buffer_name, palette,
 			clipping.x0, clipping.y0,
 			clipping.x1, clipping.y1)) != NULL) {
-		LOG(("Grab error '%s'", error->errmess));
+		LOG("Grab error '%s'", error->errmess);
 		ro_gui_buffer_free();
 		return;
 	}
@@ -218,7 +216,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	*/
 	if ((error = xosspriteop_read_save_area_size(osspriteop_PTR,
 			buffer, (osspriteop_id)(buffer + 1), &size)) != NULL) {
-		LOG(("Save area error '%s'", error->errmess));
+		LOG("Save area error '%s'", error->errmess);
 		ro_gui_buffer_free();
 		return;
 	}
@@ -233,7 +231,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			buffer, (osspriteop_id)(buffer + 1), save_area,
 			&context0, &context1, &context2, &context3)) != NULL) {
-		LOG(("Switching error '%s'", error->errmess));
+		LOG("Switching error '%s'", error->errmess);
 		free(save_area);
 		ro_gui_buffer_free();
 		return;
@@ -249,7 +247,7 @@ void ro_gui_buffer_open(wimp_draw *redraw)
 	*/
 	if ((error = xos_set_ecf_origin(-ro_plot_origin_x,
 			-ro_plot_origin_y)) != NULL) {
-		LOG(("Invalid ECF origin: '%s'", error->errmess));
+		LOG("Invalid ECF origin: '%s'", error->errmess);
 	}
 }
 

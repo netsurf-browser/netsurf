@@ -191,7 +191,7 @@ static void hlcache_content_callback(struct content *c, content_msg msg,
 		error = handle->cb(handle, &event, handle->pw);
 
 	if (error != NSERROR_OK)
-		LOG(("Error in callback: %d", error));
+		LOG("Error in callback: %d", error);
 }
 
 /**
@@ -560,7 +560,7 @@ void hlcache_finalise(void)
 		num_contents++;
 	}
 
-	LOG(("%d contents remain before cache drain", num_contents));
+	LOG("%d contents remain before cache drain", num_contents);
 
 	/* Drain cache */
 	do {
@@ -574,17 +574,14 @@ void hlcache_finalise(void)
 		}
 	} while (num_contents > 0 && num_contents != prev_contents);
 
-	LOG(("%d contents remaining:", num_contents));
+	LOG("%d contents remaining:", num_contents);
 	for (entry = hlcache->content_list; entry != NULL; entry = entry->next) {
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 
 		if (entry->content != NULL) {
-			LOG(("	%p : %s (%d users)", entry,
-					nsurl_access(
-					hlcache_handle_get_url(&entry_handle)),
-					content_count_users(entry->content)));
+			LOG("	%p : %s (%d users)", entry, nsurl_access(hlcache_handle_get_url(&entry_handle)), content_count_users(entry->content));
 		} else {
-			LOG(("	%p", entry));
+			LOG("	%p", entry);
 		}
 	}
 
@@ -612,12 +609,12 @@ void hlcache_finalise(void)
 		hlcache->retrieval_ctx_ring = NULL;
 	}
 
-	LOG(("hit/miss %d/%d", hlcache->hit_count, hlcache->miss_count));
+	LOG("hit/miss %d/%d", hlcache->hit_count, hlcache->miss_count);
 
 	free(hlcache);
 	hlcache = NULL;
 
-	LOG(("Finalising low-level cache"));
+	LOG("Finalising low-level cache");
 	llcache_finalise();
 }
 

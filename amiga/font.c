@@ -361,14 +361,14 @@ static struct ami_font_node *ami_font_open(const char *font)
 		return nodedata;
 	}
 
-	LOG(("Font cache miss: %s", font));
+	LOG("Font cache miss: %s", font);
 
 	nodedata = AllocVecTagList(sizeof(struct ami_font_node), NULL);
 	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
 
 	if(!nodedata->font)
 	{
-		LOG(("Requested font not found: %s", font));
+		LOG("Requested font not found: %s", font);
 		warn_user("CompError", font);
 		FreeVec(nodedata);
 		return NULL;
@@ -376,21 +376,21 @@ static struct ami_font_node *ami_font_open(const char *font)
 
 	nodedata->bold = (char *)GetTagData(OT_BName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->bold)
-		LOG(("Bold font defined for %s is %s", font, nodedata->bold));
+		LOG("Bold font defined for %s is %s", font, nodedata->bold);
 	else
-		LOG(("Warning: No designed bold font defined for %s", font));
+		LOG("Warning: No designed bold font defined for %s", font);
 
 	nodedata->italic = (char *)GetTagData(OT_IName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->italic)
-		LOG(("Italic font defined for %s is %s", font, nodedata->italic));
+		LOG("Italic font defined for %s is %s", font, nodedata->italic);
 	else
-		LOG(("Warning: No designed italic font defined for %s", font));
+		LOG("Warning: No designed italic font defined for %s", font);
 
 	nodedata->bolditalic = (char *)GetTagData(OT_BIName, 0, nodedata->font->olf_OTagList);
 	if(nodedata->bolditalic)
-		LOG(("Bold-italic font defined for %s is %s", font, nodedata->bolditalic));
+		LOG("Bold-italic font defined for %s is %s", font, nodedata->bolditalic);
 	else
-		LOG(("Warning: No designed bold-italic font defined for %s", font));
+		LOG("Warning: No designed bold-italic font defined for %s", font);
 
 	GetSysTime(&nodedata->lastused);
 
@@ -883,7 +883,7 @@ void ami_init_fonts(void)
 
 void ami_close_fonts(void)
 {
-	LOG(("Cleaning up font cache"));
+	LOG("Cleaning up font cache");
 	FreeObjList(ami_font_list);
 	ami_font_list = NULL;
 	ami_font_finiscanner();
@@ -915,8 +915,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 		SubTime(&curtime, &fnode->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG(("Freeing %s not used for %d seconds",
-				node->dtz_Node.ln_Name, curtime.Seconds));
+			LOG("Freeing %s not used for %d seconds", node->dtz_Node.ln_Name, curtime.Seconds);
 			DelObject(node);
 		}
 	} while((node=nnode));
@@ -933,7 +932,7 @@ void ami_font_setdevicedpi(int id)
 	ULONG xdpi = nsoption_int(screen_ydpi);
 
 	if(nsoption_bool(use_diskfont) == true) {
-		LOG(("WARNING: Using diskfont.library for text. Forcing DPI to 72."));
+		LOG("WARNING: Using diskfont.library for text. Forcing DPI to 72.");
 		nsoption_int(screen_ydpi) = 72;
 	}
 
@@ -959,8 +958,7 @@ void ami_font_setdevicedpi(int id)
 
 				xdpi = (yres * ydpi) / xres;
 
-				LOG(("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld, corrected %ld x %ld)",
-					xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres));
+				LOG("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld, corrected %ld x %ld)", xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres);
 			}
 		}
 	}

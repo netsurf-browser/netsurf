@@ -130,8 +130,7 @@ struct status_bar *ro_gui_status_bar_create(wimp_w parent, unsigned int width)
 	error = xwimp_create_window((wimp_window *)&status_bar_definition,
 				&sb->w);
 	if (error) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_create_window: 0x%x: %s", error->errnum, error->errmess);
 		free(sb);
 		return NULL;
 	}
@@ -165,8 +164,7 @@ void ro_gui_status_bar_destroy(struct status_bar *sb)
 	ro_gui_wimp_event_finalise(sb->w);
 	error = xwimp_delete_window(sb->w);
 	if (error) {
-		LOG(("xwimp_delete_window: 0x%x:%s",
-			error->errnum, error->errmess));
+		LOG("xwimp_delete_window: 0x%x:%s", error->errnum, error->errmess);
 	}
 
 	ro_gui_progress_bar_destroy(sb->pb);
@@ -223,8 +221,7 @@ void ro_gui_status_bar_set_visible(struct status_bar *sb, bool visible)
 	} else {
 		os_error *error = xwimp_close_window(sb->w);
 		if (error) {
-			LOG(("xwimp_close_window: 0x%x:%s",
-				error->errnum, error->errmess));
+			LOG("xwimp_close_window: 0x%x:%s", error->errnum, error->errmess);
 		}
 	}
 }
@@ -277,15 +274,14 @@ void ro_gui_status_bar_set_progress_range(struct status_bar *sb,
 	old_range = ro_gui_progress_bar_get_range(sb->pb);
 	ro_gui_progress_bar_set_range(sb->pb, range);
 
-	LOG(("Ranges are %i vs %i", old_range, range));
+	LOG("Ranges are %i vs %i", old_range, range);
 	if ((old_range == 0) && (range != 0)) {
 		ro_gui_status_position_progress_bar(sb);
 	} else if ((old_range != 0) && (range == 0)) {
 		os_error *error = xwimp_close_window(
 				ro_gui_progress_bar_get_window(sb->pb));
 		if (error) {
-			LOG(("xwimp_close_window: 0x%x:%s",
-				error->errnum, error->errmess));
+			LOG("xwimp_close_window: 0x%x:%s", error->errnum, error->errmess);
 		}
 	}
 }
@@ -357,8 +353,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 	state.w = sb->parent;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-			error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 	window_width = state.visible.x1 - state.visible.x0;
@@ -381,8 +376,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 		extent.y1 = status_height - 4;
 		error = xwimp_set_extent(sb->w, &extent);
 		if (error) {
-			LOG(("xwimp_set_extent: 0x%x: %s",
-				error->errnum, error->errmess));
+			LOG("xwimp_set_extent: 0x%x: %s", error->errnum, error->errmess);
 			return;
 		}
 
@@ -410,8 +404,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_TS_EDGE_SHIFT);
 		if (error) {
-			LOG(("xwimp_open_window_nested: 0x%x: %s",
-				error->errnum, error->errmess));
+			LOG("xwimp_open_window_nested: 0x%x: %s", error->errnum, error->errmess);
 			return;
 		}
 		ro_gui_status_position_progress_bar(sb);
@@ -419,8 +412,7 @@ void ro_gui_status_bar_resize(struct status_bar *sb)
 				status_width - WIDGET_WIDTH, 0,
 				status_width, status_height - 4);
 		if (error) {
-			LOG(("xwimp_resize_icon: 0x%x: %s",
-				error->errnum, error->errmess));
+			LOG("xwimp_resize_icon: 0x%x: %s", error->errnum, error->errmess);
 			return;
 		}
 
@@ -455,8 +447,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 	/* redraw the window */
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
-		LOG(("xwimp_redraw_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_redraw_window: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 	while (more) {
@@ -465,8 +456,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 			error = xcolourtrans_set_font_colours(font_CURRENT,
 					0xeeeeee00, 0x00000000, 14, 0, 0, 0);
 			if (error) {
-				LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
-					error->errnum, error->errmess));
+				LOG("xcolourtrans_set_font_colours: 0x%x: %s", error->errnum, error->errmess);
 				return;
 			}
 			code = rufl_paint(ro_gui_desktop_font_family,
@@ -477,11 +467,9 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 					rufl_BLEND_FONT);
 			if (code != rufl_OK) {
 				if (code == rufl_FONT_MANAGER_ERROR)
-					LOG(("rufl_FONT_MANAGER_ERROR: 0x%x: %s",
-						rufl_fm_error->errnum,
-						rufl_fm_error->errmess));
+					LOG("rufl_FONT_MANAGER_ERROR: 0x%x: %s", rufl_fm_error->errnum, rufl_fm_error->errmess);
 				else
-					LOG(("rufl_paint: 0x%x", code));
+					LOG("rufl_paint: 0x%x", code);
 			}
 		}
 
@@ -494,8 +482,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
+			LOG("xwimp_get_rectangle: 0x%x: %s", error->errnum, error->errmess);
 			return;
 		}
 	}
@@ -534,8 +521,7 @@ bool ro_gui_status_bar_click(wimp_pointer *pointer)
 			drag.initial.y1 = pointer->pos.y;
 			error = xwimp_drag_box(&drag);
 			if (error) {
-				LOG(("xwimp_drag_box: 0x%x: %s",
-						error->errnum, error->errmess));
+				LOG("xwimp_drag_box: 0x%x: %s", error->errnum, error->errmess);
 			}
 			break;
 	}
@@ -560,8 +546,7 @@ void ro_gui_status_bar_open(wimp_open *open)
 	state.w = sb->parent;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-			error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 	window_width = state.visible.x1 - state.visible.x0;
@@ -600,8 +585,7 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb)
 	state.w = sb->w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-			error->errnum, error->errmess));
+		LOG("xwimp_get_window_state: 0x%x: %s", error->errnum, error->errmess);
 		return;
 	}
 
@@ -631,8 +615,7 @@ void ro_gui_status_position_progress_bar(struct status_bar *sb)
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 					<< wimp_CHILD_TS_EDGE_SHIFT);
 	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_open_window: 0x%x: %s", error->errnum, error->errmess);
 	}
 
 	/* update the progress bar display on non-standard width */

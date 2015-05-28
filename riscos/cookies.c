@@ -109,7 +109,7 @@ void ro_gui_cookies_postinitialise(void)
 			cookies_window.toolbar, &ro_cookies_treeview_callbacks,
 			TREE_COOKIES);
 	if (cookies_window.tv == NULL) {
-		LOG(("Failed to allocate treeview"));
+		LOG("Failed to allocate treeview");
 		return;
 	}
 

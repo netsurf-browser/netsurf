@@ -84,7 +84,7 @@ static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
 
 	assert(ssl_d);
 
-	LOG((""));
+	LOG("");
 
 	return(sslcert_viewer_init(cb_t, cw, ssl_d));
 }
@@ -100,7 +100,7 @@ static void atari_sslcert_viewer_finish(struct core_window *cw)
 	/* This will also free the session data: */
 	sslcert_viewer_fini(cvwin->ssl_session_data);
 
-	LOG((""));
+	LOG("");
 }
 
 static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
@@ -126,7 +126,7 @@ static void atari_sslcert_viewer_keypress(struct core_window *cw, uint32_t ucs4)
 
 	cvwin = (struct atari_sslcert_viewer_s *)atari_treeview_get_user_data(cw);
 
-	LOG(("ucs4: %lu\n", ucs4));
+	LOG("ucs4: %lu\n", ucs4);
 	sslcert_viewer_keypress(cvwin->ssl_session_data, ucs4);
 }
 
@@ -153,14 +153,14 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	short retval = 0;
 	OBJECT *toolbar;
 
-	LOG((""));
+	LOG("");
 
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
 
 		case WM_TOOLBAR:
 			toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
-			LOG(("CERTVIEWER WM_TOOLBAR"));
+			LOG("CERTVIEWER WM_TOOLBAR");
 			tv = (struct core_window*) gemtk_wm_get_user_data(win);
 			assert(tv);
 			cvwin = (struct atari_sslcert_viewer_s *)
@@ -241,7 +241,7 @@ static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
 
 	if (cvwin->tv == NULL) {
 		/* handle it properly, clean up previous allocs */
-		LOG(("Failed to allocate treeview"));
+		LOG("Failed to allocate treeview");
 		return;
 	}
 
@@ -283,7 +283,7 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin)
 	assert(cvwin->init);
 	assert(cvwin->window);
 
-	LOG((""));
+	LOG("");
 
 	if (atari_treeview_is_open(cvwin->tv))
 		atari_treeview_close(cvwin->tv);
@@ -292,5 +292,5 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin)
 	cvwin->window = NULL;
 	atari_treeview_delete(cvwin->tv);
 	free(cvwin);
-	LOG(("done"));
+	LOG("done");
 }

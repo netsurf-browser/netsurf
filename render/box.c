@@ -1144,7 +1144,7 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 		if (box->scroll_y == NULL) {
 			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
-				LOG(("malloc failed"));
+				LOG("malloc failed");
 				warn_user("NoMemory", 0);
 				return false;
 			}
@@ -1164,7 +1164,7 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 		if (box->scroll_x == NULL) {
 			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
-				LOG(("malloc failed"));
+				LOG("malloc failed");
 				warn_user("NoMemory", 0);
 				return false;
 			}

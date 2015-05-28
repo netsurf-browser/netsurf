@@ -150,7 +150,7 @@ void ro_gui_hotlist_postinitialise(void)
 			hotlist_window.toolbar, &ro_hotlist_treeview_callbacks,
 			TREE_HOTLIST);
 	if (hotlist_window.tv == NULL) {
-		LOG(("Failed to allocate treeview"));
+		LOG("Failed to allocate treeview");
 		return;
 	}
 
@@ -233,7 +233,7 @@ void ro_gui_hotlist_open(void)
 		if (error == NULL)
 			return;
 
-		LOG(("xos_cli: 0x%x: %s", error->errnum, error->errmess));
+		LOG("xos_cli: 0x%x: %s", error->errnum, error->errmess);
 		warn_user("Failed to launch external hotlist: %s",
 				error->errmess);
 	}
