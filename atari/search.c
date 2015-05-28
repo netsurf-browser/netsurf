@@ -61,53 +61,53 @@ struct gui_search_table *atari_search_table = &search_table;
 
 
 /**
-* Change the displayed search status.
-* \param found  search pattern matched in text
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
-
+ * Change the displayed search status.
+ * \param found  search pattern matched in text
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
 void nsatari_search_set_status(bool found, void *p)
 {
 	LOG(("%p set status: %d\n", p, found));
 	// TODO: maybe update GUI
 }
 
-/**
-* display hourglass while searching
-* \param active start/stop indicator
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
 
+/**
+ * display hourglass while searching
+ * \param active start/stop indicator
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
 void nsatari_search_set_hourglass(bool active, void *p)
 {
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	LOG(("active: %d, session: %p", active, p));
-	if (active)
+	if (active) {
 		gui_window_set_pointer(s->g, GUI_POINTER_PROGRESS);
-	else
+	} else {
 		gui_window_set_pointer(s->g, GUI_POINTER_DEFAULT);
+	}
 }
 
-/**
-* add search string to recent searches list
-* front is at liberty how to implement the bare notification
-* should normally store a strdup() of the string;
-* core gives no guarantee of the integrity of the const char *
-* \param string search pattern
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
 
+/**
+ * add search string to recent searches list
+ * front is at liberty how to implement the bare notification
+ * should normally store a strdup() of the string;
+ * core gives no guarantee of the integrity of the const char *
+ * \param string search pattern
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
 void nsatari_search_add_recent(const char *string, void *p)
 {
 	LOG(("%p add recent: %s\n", p, string));
 }
 
-/**
-* activate search forwards button in gui
-* \param active activate/inactivate
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
 
+/**
+ * activate search forwards button in gui
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
 void nsatari_search_set_forward_state(bool active, void *p)
 {
 	struct gui_window *gw;
@@ -120,21 +120,21 @@ void nsatari_search_set_forward_state(bool active, void *p)
 	gw = s->g;
 
 	toolbar = toolbar_get_form(gw->root->toolbar);
-	if(active)
+	if (active) {
 		toolbar[TOOLBAR_BT_SEARCH_FWD].ob_state &= ~OS_DISABLED;
-	else
+	} else {
 		toolbar[TOOLBAR_BT_SEARCH_FWD].ob_state |= OS_DISABLED;
+	}
 	window_get_grect(gw->root, BROWSER_AREA_SEARCH, &area);
 	window_schedule_redraw_grect(gw->root, &area);
-
 }
 
-/**
-* activate search back button in gui
-* \param active activate/inactivate
-* \param p the pointer sent to search_verify_new() / search_create_context()
-*/
 
+/**
+ * activate search back button in gui
+ * \param active activate/inactivate
+ * \param p the pointer sent to search_verify_new() / search_create_context()
+ */
 void nsatari_search_set_back_state(bool active, void *p)
 {
 	struct gui_window *gw;
@@ -148,10 +148,11 @@ void nsatari_search_set_back_state(bool active, void *p)
 	gw = s->g;
 
 	toolbar = toolbar_get_form(gw->root->toolbar);
-	if(active)
+	if (active) {
 		toolbar[TOOLBAR_BT_SEARCH_BACK].ob_state &= ~OS_DISABLED;
-	else
+	} else {
 		toolbar[TOOLBAR_BT_SEARCH_BACK].ob_state |= OS_DISABLED;
+	}
 	window_get_grect(gw->root, BROWSER_AREA_SEARCH, &area);
 	window_schedule_redraw_grect(gw->root, &area);
 }
@@ -165,10 +166,12 @@ static int apply_form(OBJECT *obj, struct s_search_form_state *s)
 
 	s->flags = 0;
 
-	if( (obj[TOOLBAR_CB_CASESENSE].ob_state & OS_SELECTED) != 0 )
+	if ((obj[TOOLBAR_CB_CASESENSE].ob_state & OS_SELECTED) != 0 ) {
 		s->flags |= SEARCH_FLAG_CASE_SENSITIVE;
-	if( (obj[TOOLBAR_CB_SHOWALL].ob_state & OS_SELECTED) != 0 )
+	}
+	if ((obj[TOOLBAR_CB_SHOWALL].ob_state & OS_SELECTED) != 0 ) {
 		s->flags |= SEARCH_FLAG_SHOWALL;
+	}
 
 	cstr = gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH);
 	snprintf(s->text, 32, "%s", cstr);
@@ -180,9 +183,10 @@ static void set_text(OBJECT *obj, short idx, char * text, int len)
 {
 	char spare[255];
 
-	if( len > 254 )
+	if (len > 254) {
 		len = 254;
-	if( text != NULL ){
+	}
+	if (text != NULL) {
 		strncpy(spare, text, 254);
 	} else {
 		strcpy(spare, "");
@@ -191,19 +195,18 @@ static void set_text(OBJECT *obj, short idx, char * text, int len)
 	set_string(obj, idx, spare);
 }
 
+
 void nsatari_search_restore_form( struct s_search_form_session *s, OBJECT *obj)
 {
 	if ((s->state.flags & SEARCH_FLAG_SHOWALL) != 0) {
 		obj[TOOLBAR_CB_SHOWALL].ob_state |= OS_SELECTED;
-	}
-	else {
+	} else {
 		obj[TOOLBAR_CB_SHOWALL].ob_state &= ~OS_SELECTED;
 	}
 
 	if ((s->state.flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) {
 		obj[TOOLBAR_CB_CASESENSE].ob_state |= OS_SELECTED;
-	}
-	else {
+	} else {
 		obj[TOOLBAR_CB_CASESENSE].ob_state &= ~OS_SELECTED;
 	}
 
@@ -215,8 +218,8 @@ void nsatari_search_restore_form( struct s_search_form_session *s, OBJECT *obj)
 
 	TEDINFO *t = ((TEDINFO *)get_obspec(obj, TOOLBAR_TB_SRCH));
 	set_text(obj, TOOLBAR_TB_SRCH, s->state.text, t->te_txtlen);
-
 }
+
 
 void nsatari_search_session_destroy(struct s_search_form_session *s)
 {
@@ -226,6 +229,7 @@ void nsatari_search_session_destroy(struct s_search_form_session *s)
 		free(s);
 	}
 }
+
 
 /** checks for search parameters changes */
 static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
@@ -245,7 +249,7 @@ static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 
 	char * cstr;
 	cstr = gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH);
-	if (cstr != NULL){
+	if (cstr != NULL) {
 		if (strcmp(cstr, (char*)&s->state.text) != 0) {
 			return (true);
 		}
@@ -256,34 +260,31 @@ static bool search_session_compare(struct s_search_form_session *s, OBJECT *obj)
 
 
 void nsatari_search_perform(struct s_search_form_session *s, OBJECT *obj,
-		search_flags_t f)
+			    search_flags_t f)
 {
 	assert(s!=null);
 	assert(input_window->browser->bw == s->g->browser->bw);
 
-
-	if(search_session_compare(s, obj)){
+	if (search_session_compare(s, obj)) {
 		browser_window_search_clear(s->g->browser->bw);
 		apply_form(obj, &s->state);
-	} else {
-
 	}
 
 	/* get search direction manually: */
-	if ( (f&SEARCH_FLAG_FORWARDS) != 0 )
+	if ( (f&SEARCH_FLAG_FORWARDS) != 0 ) {
 		s->state.flags |= SEARCH_FLAG_FORWARDS;
-	else
+	} else {
 		s->state.flags &= (~SEARCH_FLAG_FORWARDS);
+	}
 
 	browser_window_search(s->g->browser->bw, s,
-			s->state.flags,
-			gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
-
+			      s->state.flags,
+			      gemtk_obj_get_text(obj, TOOLBAR_TB_SRCH));
 }
 
 
 struct s_search_form_session * nsatari_search_session_create(OBJECT * obj,
-		struct gui_window *gw)
+							     struct gui_window *gw)
 {
 	struct s_search_form_session *sfs;
 

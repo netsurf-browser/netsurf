@@ -20,6 +20,5 @@
 #define NS_ATARI_FONT_H
 
 
-
 #endif /* NETSURF_FB_FONT_H */
 

@@ -32,7 +32,7 @@ typedef struct {
 	unsigned short medium_sfont_pxh;
 	unsigned short large_sfont_pxh;
 	bool sfont_monospaced;
-  short aes_max_win_title_len;
+	short aes_max_win_title_len;
 } NS_ATARI_SYSINFO;
 
 extern NS_ATARI_SYSINFO atari_sysinfo;
@@ -41,4 +41,5 @@ void init_os_info(void);
 void fix_path(char * path);
 char * gemdos_realpath(const char * path, char * rpath);
 int tos_getcookie( long tag, long * value );
+
 #endif

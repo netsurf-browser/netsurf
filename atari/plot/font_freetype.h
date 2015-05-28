@@ -48,4 +48,5 @@ struct font_desc {
 /* extern int ft_load_type; */
 
 int ctor_font_plotter_freetype( FONT_PLOTTER self );
+
 #endif

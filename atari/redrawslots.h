@@ -24,18 +24,18 @@
 
 #include "utils/utils.h"
 
-/*
-	MAX_REDRW_SLOTS
-	This is the number of redraw requests that the slotlist can store.
-	If a redraw is scheduled and all slots are used, the rectangle will
-	be merged to one of the existing slots.
+/**
+ * This is the number of redraw requests that the slotlist can store.
+ * If a redraw is scheduled and all slots are used, the rectangle will
+ *  be merged to one of the existing slots.
  */
 #define MAX_REDRW_SLOTS	32
 
-/*
-	This struct holds scheduled redraw requests.
-*/
 struct rect;
+
+/**
+ * This struct holds scheduled redraw requests.
+ */
 struct s_redrw_slots
 {
 	struct rect areas[MAX_REDRW_SLOTS];

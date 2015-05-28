@@ -21,5 +21,4 @@
 
 void atari_about_show(void);
 
-
 #endif // NS_ATARI_ABOUT_H_INCLUDED

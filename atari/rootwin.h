@@ -25,10 +25,10 @@
 #define GEMWIN_VISIBLE(win) (win->status & WS_OPEN)
 
 #define WIDGET_STATUSBAR  	0x1
-#define WIDGET_TOOLBAR    	0x2
+#define WIDGET_TOOLBAR	  	0x2
 #define WIDGET_SCROLL	  	0x4
 #define WIDGET_RESIZE	  	0x8
-#define WIN_TOP				0x100
+#define WIN_TOP			0x100
 
 enum browser_area_e {
 	BROWSER_AREA_CONTENT = 1,

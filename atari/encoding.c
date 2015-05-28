@@ -32,7 +32,7 @@ nserror utf8_to_local_encoding(const char *string,
 {
 	nserror r;
 	r = utf8_to_enc(string, "ATARIST", len, result);
-	if(r != NSERROR_OK) {
+	if (r != NSERROR_OK) {
 		r = utf8_to_enc(string, "UTF-8", len, result);
 		assert( r == NSERROR_OK );
 	}
@@ -64,10 +64,11 @@ static const uint16_t Atari_to_Unicode[] = {
 int atari_to_ucs4(unsigned char atari)
 {
 	uint32_t ucs4 = 0xfffd;
-	if ( atari >= BEG_Atari_to_Unicode && atari <= 0xFE )
+	if ( atari >= BEG_Atari_to_Unicode && atari <= 0xFE ) {
 		ucs4 = (int)Atari_to_Unicode[(short)atari - BEG_Atari_to_Unicode];
-	else
+	} else {
 		ucs4 = (int)atari;
+	}
 	return( ucs4 );
 }
 

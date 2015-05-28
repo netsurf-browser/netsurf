@@ -22,8 +22,7 @@
 #define STATUSBAR_HEIGHT 16
 #define STATUSBAR_MAX_SLEN 255
 
-struct s_statusbar
-{
+struct s_statusbar {
 #ifdef WITH_COMPONENT_STATUSBAR
 	COMPONENT * comp;
 #endif
@@ -33,9 +32,9 @@ struct s_statusbar
 	short aes_win;
 };
 
-
 CMP_STATUSBAR sb_create( struct gui_window * gw );
 void sb_destroy( CMP_STATUSBAR s );
 void sb_set_text( CMP_STATUSBAR sb , const char * text );
 void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw);
+
 #endif

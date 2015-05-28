@@ -170,6 +170,7 @@ void atari_cookie_manager_init(void)
 	}
 	atari_cookie_manager.init = true;
 }
+
 void atari_cookie_manager_open(void)
 {
 	assert(atari_cookie_manager.init);

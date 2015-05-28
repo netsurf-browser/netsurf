@@ -40,7 +40,7 @@ NS_ATARI_SYSINFO atari_sysinfo;
 void init_os_info(void)
 {
 	int16_t out[4];
-   unsigned long cookie_FSMC = 0;
+	unsigned long cookie_FSMC = 0;
 
 	atari_sysinfo.gemdos_version = Sversion();
 
@@ -97,16 +97,15 @@ int tos_getcookie(long tag, long * value)
 
 /*
 
- a fixed version of realpath() which returns valid
- paths for TOS which have no U: drive
+  a fixed version of realpath() which returns valid
+  paths for TOS which have no U: drive
 
 */
 
-char * gemdos_realpath(const char * path, char * rpath)
+char *gemdos_realpath(const char * path, char * rpath)
 {
 	char work[PATH_MAX+1];
 	char * r;
-
 
 	if (rpath == NULL) {
 		return (NULL);
@@ -124,10 +123,8 @@ char * gemdos_realpath(const char * path, char * rpath)
 		unx2dos((const char *)r, rpath);
 		LOG(("realpath out: %s\n", rpath));
 		return(rpath);
-	}
-	else {
+	} else {
 		LOG(("realpath out: NULL!\n"));
 	}
 	return (NULL);
 }
-

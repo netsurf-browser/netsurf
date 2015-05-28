@@ -112,9 +112,9 @@ int ft_load_type;
 
 /* cache manager faceID data to create freetype faceid on demand */
 typedef struct ftc_faceid_s {
-        char *fontfile; /* path to font */
-        int index; /* index of font */
-        int cidx; /* character map index for unicode */
+	char *fontfile; /* path to font */
+	int index; /* index of font */
+	int cidx; /* character map index for unicode */
 } ftc_faceid_t;
 
 static int dtor( FONT_PLOTTER self );
@@ -269,13 +269,13 @@ static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 	ft_face = (ftc_faceid_t *)srec.face_id;
 	glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, ft_face->cidx, ucs4);
 	error = FTC_ImageCache_LookupScaler(ft_image_cache,
-                                            &srec,
-                                            FT_LOAD_RENDER |
-                                            FT_LOAD_FORCE_AUTOHINT |
-                                            ft_load_type,
-                                            glyph_index,
-                                            &glyph,
-                                            NULL);
+					    &srec,
+					    FT_LOAD_RENDER |
+					    FT_LOAD_FORCE_AUTOHINT |
+					    ft_load_type,
+					    glyph_index,
+					    &glyph,
+					    NULL);
 	return glyph;
 }
 
@@ -291,8 +291,8 @@ static bool ft_font_init(void)
 	/* freetype library initialise */
 	error = FT_Init_FreeType( &library );
 	if (error) {
-                LOG(("Freetype could not initialised (code %d)\n", error));
-                return false;
+		LOG(("Freetype could not initialised (code %d)\n", error));
+		return false;
 	}
 
 	/* set the Glyph cache size up */
@@ -303,12 +303,12 @@ static bool ft_font_init(void)
 
 	/* cache manager initialise */
 	error = FTC_Manager_New(library,
-                                max_faces,
-                                0,
-                                max_cache_size,
-                                ft_face_requester,
-                                NULL,
-                                &ft_cmanager);
+				max_faces,
+				0,
+				max_cache_size,
+				ft_face_requester,
+				NULL,
+				&ft_cmanager);
 	if (error) {
 		LOG(("Freetype could not initialise cache manager (code %d)\n", error));
 		FT_Done_FreeType(library);
@@ -325,69 +325,69 @@ static bool ft_font_init(void)
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
 	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
 											nsoption_charp(font_face_sans_serif),
-                            				FONT_RESOURCE_PATH "ss.ttf",
-                            				FONT_PKG_PATH FONT_FILE_SANS
+							FONT_RESOURCE_PATH "ss.ttf",
+							FONT_PKG_PATH FONT_FILE_SANS
 										);
 	if (font_faces[FONT_FACE_SANS_SERIF] == NULL) {
-                LOG(("Could not find default font (code %d)\n", error));
-                FTC_Manager_Done(ft_cmanager);
-                FT_Done_FreeType(library);
-                return false;
+		LOG(("Could not find default font (code %d)\n", error));
+		FTC_Manager_Done(ft_cmanager);
+		FT_Done_FreeType(library);
+		return false;
 	}
 
 	/* Sans Serif Bold*/
 	font_faces[FONT_FACE_SANS_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(font_face_sans_serif_bold),
-                            FONT_RESOURCE_PATH "ssb.ttf",
-                            FONT_PKG_PATH FONT_FILE_SANS_BOLD);
+			    FONT_RESOURCE_PATH "ssb.ttf",
+			    FONT_PKG_PATH FONT_FILE_SANS_BOLD);
 
 	/* Sans Serif Italic */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC] =
 			ft_new_face(nsoption_charp(font_face_sans_serif_italic),
-                            FONT_RESOURCE_PATH "ssi.ttf",
-                            FONT_PKG_PATH FONT_FILE_SANS_OBLIQUE);
+			    FONT_RESOURCE_PATH "ssi.ttf",
+			    FONT_PKG_PATH FONT_FILE_SANS_OBLIQUE);
 
 	/* Sans Serif Italic Bold */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC_BOLD] =
 			ft_new_face(nsoption_charp(font_face_sans_serif_italic_bold),
-                            FONT_RESOURCE_PATH "ssib.ttf",
-                            FONT_PKG_PATH FONT_FILE_SANS_BOLD_OBLIQUE);
+			    FONT_RESOURCE_PATH "ssib.ttf",
+			    FONT_PKG_PATH FONT_FILE_SANS_BOLD_OBLIQUE);
 
 	/* Monospaced */
 	font_faces[FONT_FACE_MONOSPACE] =
 			ft_new_face(nsoption_charp(font_face_monospace),
-                            FONT_RESOURCE_PATH "mono.ttf",
-                            FONT_PKG_PATH FONT_FILE_MONO);
+			    FONT_RESOURCE_PATH "mono.ttf",
+			    FONT_PKG_PATH FONT_FILE_MONO);
 
 	/* Mospaced Bold */
 	font_faces[FONT_FACE_MONOSPACE_BOLD] =
 			ft_new_face(nsoption_charp(font_face_monospace_bold),
-                            FONT_RESOURCE_PATH "monob.ttf",
-                            FONT_PKG_PATH FONT_FILE_MONO_BOLD);
+			    FONT_RESOURCE_PATH "monob.ttf",
+			    FONT_PKG_PATH FONT_FILE_MONO_BOLD);
 
 	/* Serif */
 	font_faces[FONT_FACE_SERIF] =
 			ft_new_face(nsoption_charp(font_face_serif),
-                            FONT_RESOURCE_PATH "s.ttf",
-                            FONT_PKG_PATH FONT_FILE_SERIF);
+			    FONT_RESOURCE_PATH "s.ttf",
+			    FONT_PKG_PATH FONT_FILE_SERIF);
 
 	/* Serif Bold */
 	font_faces[FONT_FACE_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(font_face_serif_bold),
-                            FONT_RESOURCE_PATH "sb.ttf",
-                            FONT_PKG_PATH FONT_FILE_SERIF_BOLD);
+			    FONT_RESOURCE_PATH "sb.ttf",
+			    FONT_PKG_PATH FONT_FILE_SERIF_BOLD);
 
 	/* Cursive */
 	font_faces[FONT_FACE_CURSIVE] =
 			ft_new_face(nsoption_charp(font_face_cursive),
-                            FONT_RESOURCE_PATH "cursive.ttf",
-                            FONT_PKG_PATH FONT_FILE_OBLIQUE);
+			    FONT_RESOURCE_PATH "cursive.ttf",
+			    FONT_PKG_PATH FONT_FILE_OBLIQUE);
 
 	/* Fantasy */
 	font_faces[FONT_FACE_FANTASY] =
 			ft_new_face(nsoption_charp(font_face_fantasy),
-                            FONT_RESOURCE_PATH "fantasy.ttf",
-                            FONT_PKG_PATH FONT_FILE_FANTASY);
+			    FONT_RESOURCE_PATH "fantasy.ttf",
+			    FONT_PKG_PATH FONT_FILE_FANTASY);
 
 	for (i=1; i<FONT_FACE_COUNT; i++) {
 		if (font_faces[i] == NULL){
@@ -407,8 +407,8 @@ static bool ft_font_finalise(void)
 }
 
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle,
-                         const char *string, size_t length,
-                         int *width)
+			 const char *string, size_t length,
+			 int *width)
 {
 	uint32_t ucs4;
 	size_t nxtchr = 0;
@@ -703,7 +703,7 @@ static int dtor( FONT_PLOTTER self )
 	ft_font_finalise();
 	if( fontbmp != NULL ) {
 		atari_bitmap_destroy( fontbmp );
-        fontbmp = NULL;
+	fontbmp = NULL;
     }
 	if( tmp.fd_addr != NULL ){
 		free( tmp.fd_addr );

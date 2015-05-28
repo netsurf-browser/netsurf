@@ -24,4 +24,4 @@
 struct gui_file_table *atari_file_table;
 
 
-#endif // FILE_C_INCLUDED
+#endif /* FILE_C_INCLUDED */

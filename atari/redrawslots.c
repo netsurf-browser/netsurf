@@ -25,47 +25,47 @@
 
 void redraw_slots_init(struct s_redrw_slots * slots, short size)
 {
-    // TODO: allocate slots dynamically!
+	// TODO: allocate slots dynamically!
 	slots->size = MIN( MAX_REDRW_SLOTS , size);
 	slots->areas_used = 0;
 }
 
 void redraw_slots_free(struct s_redrw_slots * slots)
 {
-    // TOOD: free areas...
+	// TOOD: free areas...
 }
 
 
 static inline bool rect_intersect( struct rect * box1, struct rect * box2 )
 {
 	if (box2->x1 < box1->x0)
- 	       return false;
+		return false;
 
 	if (box2->y1 < box1->y0)
-        	return false;
+		return false;
 
 	if (box2->x0 > box1->x1)
-        	return false;
+		return false;
 
 	if (box2->y0 > box1->y1)
-        	return false;
+		return false;
 
 	return true;
 }
 
 
 void redraw_slot_schedule_grect(struct s_redrw_slots * slots, GRECT *area,
-                                bool force)
+				bool force)
 {
-    redraw_slot_schedule(slots, area->g_x, area->g_y,
-                         area->g_x + area->g_w, area->g_y + area->g_h, force);
+	redraw_slot_schedule(slots, area->g_x, area->g_y,
+			     area->g_x + area->g_w, area->g_y + area->g_h, force);
 }
 
 /*
-	schedule redraw coords.
+  schedule redraw coords.
 */
 void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
-                          short x1, short y1, bool force)
+			  short x1, short y1, bool force)
 {
 	int i = 0;
 	struct rect area;
@@ -75,24 +75,24 @@ void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
 	area.x1 = x1;
 	area.y1 = y1;
 
-    if (force == false) {
-        for (i=0; i<slots->areas_used; i++) {
-            if (slots->areas[i].x0 <= x0
-                && slots->areas[i].x1 >= x1
-                && slots->areas[i].y0 <= y0
-                && slots->areas[i].y1 >= y1) {
-                /* the area is already queued for redraw */
-                return;
-            } else {
-                if (rect_intersect(&slots->areas[i], &area )) {
-                    slots->areas[i].x0 = MIN(slots->areas[i].x0, x0);
-                    slots->areas[i].y0 = MIN(slots->areas[i].y0, y0);
-                    slots->areas[i].x1 = MAX(slots->areas[i].x1, x1);
-                    slots->areas[i].y1 = MAX(slots->areas[i].y1, y1);
-                    return;
-                }
-            }
-        }
+	if (force == false) {
+		for (i=0; i<slots->areas_used; i++) {
+			if (slots->areas[i].x0 <= x0
+			    && slots->areas[i].x1 >= x1
+			    && slots->areas[i].y0 <= y0
+			    && slots->areas[i].y1 >= y1) {
+				/* the area is already queued for redraw */
+				return;
+			} else {
+				if (rect_intersect(&slots->areas[i], &area )) {
+					slots->areas[i].x0 = MIN(slots->areas[i].x0, x0);
+					slots->areas[i].y0 = MIN(slots->areas[i].y0, y0);
+					slots->areas[i].x1 = MAX(slots->areas[i].x1, x1);
+					slots->areas[i].y1 = MAX(slots->areas[i].y1, y1);
+					return;
+				}
+			}
+		}
 	}
 
 	if (slots->areas_used < slots->size) {
@@ -103,8 +103,8 @@ void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
 		slots->areas_used++;
 	} else {
 		/*
-			we are out of available slots, merge box with last slot
-			this is dumb... but also a very rare case.
+		  we are out of available slots, merge box with last slot
+		  this is dumb... but also a very rare case.
 		*/
 		slots->areas[slots->size-1].x0 = MIN(slots->areas[i].x0, x0);
 		slots->areas[slots->size-1].y0 = MIN(slots->areas[i].y0, y0);
@@ -117,9 +117,9 @@ void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
 
 void redraw_slots_remove_area(struct s_redrw_slots * slots, int i)
 {
-    int x;
-    for(x = i+1; i<slots->areas_used; x++){
-        slots->areas[x-1] = slots->areas[x];
-    }
-    slots->areas_used--;
+	int x;
+	for (x = i+1; i<slots->areas_used; x++) {
+		slots->areas[x-1] = slots->areas[x];
+	}
+	slots->areas_used--;
 }

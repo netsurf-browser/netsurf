@@ -132,7 +132,7 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_EDIT, MAINMENU_M_FIND, menu_find, {0,NK_F4,0}, NULL},
 	{T_VIEW, MAINMENU_M_RELOAD, menu_reload, {0,NK_F5,0}, NULL},
 	{T_VIEW, MAINMENU_INC_SCALE, menu_inc_scale, {'+',0,K_CTRL}, NULL},
-    {T_VIEW, MAINMENU_DEC_SCALE, menu_dec_scale, {'-',0,K_CTRL}, NULL},
+	{T_VIEW, MAINMENU_DEC_SCALE, menu_dec_scale, {'-',0,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_TOOLBARS, menu_toolbars, {0,NK_F1,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_SAVEWIN, menu_savewin, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_DEBUG_RENDER, menu_debug_render, {0,0,0}, NULL},
@@ -155,46 +155,46 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 
 
 /*
-static void __CDECL evnt_menu(WINDOW * win, short buff[8])
-{
-	int title = buff[3];
-	INT16 x,y;
-	char *str;
-	struct gui_window * gw = window_list;
-	int i=0;
+  static void __CDECL evnt_menu(WINDOW * win, short buff[8])
+  {
+  int title = buff[3];
+  INT16 x,y;
+  char *str;
+  struct gui_window * gw = window_list;
+  int i=0;
 
-	deskmenu_dispatch_item(buff[3], buff[4]);
-}
+  deskmenu_dispatch_item(buff[3], buff[4]);
+  }
 */
 
 /*
-	Menu item event handlers:
+  Menu item event handlers:
 */
 
 static void __CDECL menu_about(short item, short title, void *data)
 {
 	/*
-	nsurl *url;
-	nserror error;
-	char buf[PATH_MAX];
+	  nsurl *url;
+	  nserror error;
+	  char buf[PATH_MAX];
 
-	LOG(("%s", __FUNCTION__));
-	strcpy((char*)&buf, "file://");
-	strncat((char*)&buf, (char*)"./doc/README.TXT",
-			PATH_MAX - (strlen("file://")+1) );
+	  LOG(("%s", __FUNCTION__));
+	  strcpy((char*)&buf, "file://");
+	  strncat((char*)&buf, (char*)"./doc/README.TXT",
+	  PATH_MAX - (strlen("file://")+1) );
 
-	error = nsurl_create(buf, &url);
-	if (error == NSERROR_OK) {
-		error = browser_window_create(BW_CREATE_HISTORY,
-					      url,
-					      NULL,
-					      NULL,
-					      NULL);
-		nsurl_unref(url);
-	}
-	if (error != NSERROR_OK) {
-		warn_user(messages_get_errorcode(error), 0);
-	}
+	  error = nsurl_create(buf, &url);
+	  if (error == NSERROR_OK) {
+	  error = browser_window_create(BW_CREATE_HISTORY,
+	  url,
+	  NULL,
+	  NULL,
+	  NULL);
+	  nsurl_unref(url);
+	  }
+	  if (error != NSERROR_OK) {
+	  warn_user(messages_get_errorcode(error), 0);
+	  }
 	*/
 	atari_about_show();
 }
@@ -307,7 +307,7 @@ static void __CDECL menu_save_page(short item, short title, void *data)
 
 	if( path != NULL ){
 		save_complete(browser_window_get_content(
-				input_window->browser->bw), path, NULL);
+				      input_window->browser->bw), path, NULL);
 	}
 
 }
@@ -365,7 +365,7 @@ static void __CDECL menu_stop(short item, short title, void *data)
 	if( input_window == NULL )
 		return;
 
-    assert(input_window && input_window->root);
+	assert(input_window && input_window->root);
 	toolbar_stop_click(input_window->root->toolbar);
 
 }
@@ -385,8 +385,8 @@ static void __CDECL menu_inc_scale(short item, short title, void *data)
 		return;
 
 	browser_window_set_scale(input_window->browser->bw,
-		browser_window_get_scale(input_window->browser->bw) + 0.25,
-		true);
+				 browser_window_get_scale(input_window->browser->bw) + 0.25,
+				 true);
 }
 
 
@@ -396,8 +396,8 @@ static void __CDECL menu_dec_scale(short item, short title, void *data)
 		return;
 
 	browser_window_set_scale(input_window->browser->bw,
-		browser_window_get_scale(input_window->browser->bw) - 0.25,
-		true);
+				 browser_window_get_scale(input_window->browser->bw) - 0.25,
+				 true);
 }
 
 
@@ -419,7 +419,7 @@ static void __CDECL menu_savewin(short item, short title, void *data)
 	if (input_window && input_window->browser) {
 		GRECT rect;
 		wind_get_grect(gemtk_wm_get_handle(input_window->root->win), WF_CURRXYWH,
-                 &rect);
+			       &rect);
 		option_window_width = rect.g_w;
 		option_window_height = rect.g_h;
 		option_window_x = rect.g_x;
@@ -439,13 +439,13 @@ static void __CDECL menu_debug_render(short item, short title, void *data)
 	html_redraw_debug = !html_redraw_debug;
 	if( input_window != NULL ) {
 		if ( input_window->browser != NULL
-			&& input_window->browser->bw != NULL) {
+		     && input_window->browser->bw != NULL) {
 			GRECT rect;
 			window_get_grect(input_window->root, BROWSER_AREA_CONTENT, &rect);
 			browser_window_reformat(input_window->browser->bw, false,
-									rect.g_w, rect.g_h );
+						rect.g_w, rect.g_h );
 			menu_icheck(h_gem_menu, MAINMENU_M_DEBUG_RENDER,
-						(html_redraw_debug) ? 1 : 0);
+				    (html_redraw_debug) ? 1 : 0);
 		}
 	}
 }
@@ -454,14 +454,14 @@ static void __CDECL menu_fg_images(short item, short title, void *data)
 {
 	nsoption_set_bool(foreground_images, !nsoption_bool(foreground_images));
 	menu_icheck(h_gem_menu, MAINMENU_M_FG_IMAGES,
-				(nsoption_bool(foreground_images)) ? 1 : 0);
+		    (nsoption_bool(foreground_images)) ? 1 : 0);
 }
 
 static void __CDECL menu_bg_images(short item, short title, void *data)
 {
 	nsoption_set_bool(background_images, !nsoption_bool(background_images));
 	menu_icheck(h_gem_menu, MAINMENU_M_BG_IMAGES,
-				(nsoption_bool(background_images)) ? 1 : 0);
+		    (nsoption_bool(background_images)) ? 1 : 0);
 }
 
 static void __CDECL menu_back(short item, short title, void *data)
@@ -509,7 +509,7 @@ static void __CDECL menu_add_bookmark(short item, short title, void *data)
 			atari_hotlist_add_page(
 				nsurl_access(browser_window_get_url(input_window->browser->bw)),
 				NULL
-			);
+				);
 		}
 	}
 }
@@ -539,27 +539,27 @@ static void __CDECL menu_help_content(short item, short title, void *data)
 }
 
 /*
-	Public deskmenu interface:
+  Public deskmenu interface:
 */
 
 
 /*
-	Parse encoded menu key shortcut
+  Parse encoded menu key shortcut
 
-	The format is:
+  The format is:
 
-	"[" 		-   marks start of the shortcut
-	"@,^,<" 	-   If the keyshortcut is only valid
-					with modifier keys, one of these characters must directly
-					follow the start mark.
-					Meaning:
-					@ -> Alternate
-					^ -> Control
-	"#"			-   keycode or ascii character.
-					The value is handled as keycode if the character value
-					is <= 28 ( Atari chracter table )
-					or if it is interpreted as function key string.
-					(strings: F1 - F10)
+  "[" 		-   marks start of the shortcut
+  "@,^,<" 	-   If the keyshortcut is only valid
+  with modifier keys, one of these characters must directly
+  follow the start mark.
+  Meaning:
+  @ -> Alternate
+  ^ -> Control
+  "#"			-   keycode or ascii character.
+  The value is handled as keycode if the character value
+  is <= 28 ( Atari chracter table )
+  or if it is interpreted as function key string.
+  (strings: F1 - F10)
 
 */
 static void register_menu_str( struct s_menu_item_evnt * mi )
@@ -575,17 +575,17 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 
 	i = l = strlen(str);
 	while (i > 2) {
-	    if ((strncmp("  ", &str[i], 2) == 0) && (strlen(&str[i]) > 2)) {
-            // "Standard" Keyboard Shortcut Element found:
-            LOG(("Standard Keyboard Shortcut: \"%s\"\n", &str[i]));
-            x = i+2;
-            is_std_shortcut = true;
-            break;
-	    }
+		if ((strncmp("  ", &str[i], 2) == 0) && (strlen(&str[i]) > 2)) {
+			// "Standard" Keyboard Shortcut Element found:
+			LOG(("Standard Keyboard Shortcut: \"%s\"\n", &str[i]));
+			x = i+2;
+			is_std_shortcut = true;
+			break;
+		}
 
 		if( str[i] == '['){
-		    LOG(("Keyboard Shortcut: \"%s\"\n", &str[i]));
-		    // "Custom" Keyboard Shortcut Element found (identified by [):
+			LOG(("Keyboard Shortcut: \"%s\"\n", &str[i]));
+			// "Custom" Keyboard Shortcut Element found (identified by [):
 			x = i;
 			break;
 		}
@@ -595,20 +595,20 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 	// Parse keyboard shortcut value:
 	if( x > -1 ){
 
-	    if (is_std_shortcut == false) {
-	        // create a new menu string to hide the "[" mark:
-            mi->menustr = malloc( l+1 );
-            strcpy(mi->menustr, str);
-            mi->menustr[x]=' ';
-            x++;
-	    }
+		if (is_std_shortcut == false) {
+			// create a new menu string to hide the "[" mark:
+			mi->menustr = malloc( l+1 );
+			strcpy(mi->menustr, str);
+			mi->menustr[x]=' ';
+			x++;
+		}
 
-        // find & register modifiers:
+		// find & register modifiers:
 		if (str[x] == '@') {
 			accel->mod = K_ALT;
 			if (is_std_shortcut == false) {
-			    // only modify menu items when it is malloc'd:
-                mi->menustr[x] = 0x07;
+				// only modify menu items when it is malloc'd:
+				mi->menustr[x] = 0x07;
 			}
 			x++;
 		}
@@ -617,24 +617,24 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 			x++;
 		}
 		else if (str[x] == 0x01) { // the arrow up chracter (atari-st encoding)
-            accel->mod = K_LSHIFT;
-            x++;
+			accel->mod = K_LSHIFT;
+			x++;
 		}
 
-        // find keycodes / chracters:
+		// find keycodes / chracters:
 		if( str[x] <= 28 ){
 			// parse symbol
 			switch( str[x] ){
-					case 0x03:
-					accel->keycode = NK_RIGHT;
+			case 0x03:
+				accel->keycode = NK_RIGHT;
 				break;
-					case 0x04:
-					accel->keycode = NK_LEFT;
+			case 0x04:
+				accel->keycode = NK_LEFT;
 				break;
-					case 0x1B:
-					accel->keycode = NK_ESC;
+			case 0x1B:
+				accel->keycode = NK_ESC;
 				break;
-					default:
+			default:
 				break;
 			}
 		} else {
@@ -646,13 +646,13 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 				}
 			}
 			else if (strncmp(&str[x], "Home", 4) == 0) {
-                accel->keycode = NK_CLRHOME;
+				accel->keycode = NK_CLRHOME;
 			}
 			else if (strncmp(&str[x], "Undo", 4) == 0) {
-                accel->keycode = NK_UNDO;
+				accel->keycode = NK_UNDO;
 			}
 			else if (strncmp(&str[x], "Help", 4) == 0) {
-                accel->keycode = NK_HELP;
+				accel->keycode = NK_HELP;
 			}
 			else {
 				accel->ascii = str[x];
@@ -660,14 +660,14 @@ static void register_menu_str( struct s_menu_item_evnt * mi )
 		}
 
 		LOG(("Registered keyboard shortcut for \"%s\" => mod: %d, "
-                "keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode,
-                                                accel->ascii));
+		     "keycode: %d, ascii: %c\n", str, accel->mod, accel->keycode,
+		     accel->ascii));
 	}
 }
 
 /**
-*	Setup & display an desktop menu.
-*/
+ *	Setup & display an desktop menu.
+ */
 
 void deskmenu_init(void)
 {
@@ -682,15 +682,15 @@ void deskmenu_init(void)
 	/* parse and update menu items:  */
 	i = 0;
 	while (menu_evnt_tbl[i].rid != -1) {
-	    if(menu_evnt_tbl[i].rid > 0 && menu_evnt_tbl[i].title > 0){
-            register_menu_str( &menu_evnt_tbl[i] );
-            /* Update menu string if not null: */
-            if( menu_evnt_tbl[i].menustr != NULL ){
-                menu_text(h_gem_menu, menu_evnt_tbl[i].rid,
-                            menu_evnt_tbl[i].menustr);
-            }
-	    }
-        i++;
+		if(menu_evnt_tbl[i].rid > 0 && menu_evnt_tbl[i].title > 0){
+			register_menu_str( &menu_evnt_tbl[i] );
+			/* Update menu string if not null: */
+			if( menu_evnt_tbl[i].menustr != NULL ){
+				menu_text(h_gem_menu, menu_evnt_tbl[i].rid,
+					  menu_evnt_tbl[i].menustr);
+			}
+		}
+		i++;
 	}
 	deskmenu_update();
 	/* Redraw menu: */
@@ -698,8 +698,8 @@ void deskmenu_init(void)
 }
 
 /**
-* Uninstall the desktop menu
-*/
+ * Uninstall the desktop menu
+ */
 void deskmenu_destroy(void)
 {
 	int i;
@@ -717,37 +717,37 @@ void deskmenu_destroy(void)
 }
 
 /**
-*	Return the deskmenu AES OBJECT tree
-*/
+ *	Return the deskmenu AES OBJECT tree
+ */
 OBJECT * deskmenu_get_obj_tree(void)
 {
 	return(h_gem_menu);
 }
 
 /**
-*	Handle an menu item event
-*/
+ *	Handle an menu item event
+ */
 int deskmenu_dispatch_item(short title, short item)
 {
 	int i=0;
 	int retval = 0;
 	OBJECT * menu_root = deskmenu_get_obj_tree();
 
-    menu_tnormal(menu_root, item, 1);
+	menu_tnormal(menu_root, item, 1);
 	menu_tnormal(menu_root, title, 1);
 	menu_bar(menu_root, 1);
 
 	// legacy code, is this sensible?:
 	/*
-	while( gw ) {
-		window_set_focus( gw, WIDGET_NONE, NULL  );
-		gw = gw->next;
-	}
+	  while( gw ) {
+	  window_set_focus( gw, WIDGET_NONE, NULL  );
+	  gw = gw->next;
+	  }
 	*/
 
 
 	while (menu_evnt_tbl[i].rid != -1) {
-		 if (menu_evnt_tbl[i].rid == item) {
+		if (menu_evnt_tbl[i].rid == item) {
 		 	if (menu_evnt_tbl[i].menu_func != NULL) {
 				menu_evnt_tbl[i].menu_func(item, title, NULL);
 			}
@@ -760,33 +760,33 @@ int deskmenu_dispatch_item(short title, short item)
 }
 
 /**
-*	Handle an keypress (check for accelerator)
-*/
+ *	Handle an keypress (check for accelerator)
+ */
 int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
-						unsigned short nkc)
+			       unsigned short nkc)
 {
 	char sascii;
 	bool done = 0;
 	int i = 0;
 
-    sascii = gemtk_keybd2ascii(kcode, 0);
-    if(sascii >= 'a' && sascii <= 'z'){
-        sascii = gemtk_keybd2ascii(kcode, K_LSHIFT);
-    }
+	sascii = gemtk_keybd2ascii(kcode, 0);
+	if(sascii >= 'a' && sascii <= 'z'){
+		sascii = gemtk_keybd2ascii(kcode, K_LSHIFT);
+	}
 
 	/* Iterate through the menu function table: */
 	while( menu_evnt_tbl[i].rid != -1 && done == false) {
 		if( kstate == menu_evnt_tbl[i].accel.mod
-			&& menu_evnt_tbl[i].accel.ascii != 0) {
+		    && menu_evnt_tbl[i].accel.ascii != 0) {
 			if( menu_evnt_tbl[i].accel.ascii == sascii) {
-			    if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
-                    deskmenu_dispatch_item(menu_evnt_tbl[i].title,
-									menu_evnt_tbl[i].rid);
-			    }
-			    else {
-			        /* Keyboard shortcut not displayed within menu: */
-                    menu_evnt_tbl[i].menu_func(0, 0, NULL);
-			    }
+				if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
+					deskmenu_dispatch_item(menu_evnt_tbl[i].title,
+							       menu_evnt_tbl[i].rid);
+				}
+				else {
+					/* Keyboard shortcut not displayed within menu: */
+					menu_evnt_tbl[i].menu_func(0, 0, NULL);
+				}
 				done = true;
 				break;
 			}
@@ -794,17 +794,17 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 			/* the accel code hides in the keycode: */
 			if( menu_evnt_tbl[i].accel.keycode != 0) {
 				if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) &&
-					kstate == menu_evnt_tbl[i].accel.mod) {
-						if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
-                            deskmenu_dispatch_item(menu_evnt_tbl[i].title,
-                                            menu_evnt_tbl[i].rid);
-                        }
-                        else {
-                            /* Keyboard shortcut not displayed within menu: */
-                            menu_evnt_tbl[i].menu_func(0, 0, NULL);
-                        }
-						done = true;
-						break;
+				    kstate == menu_evnt_tbl[i].accel.mod) {
+					if (menu_evnt_tbl[i].title > 0 && menu_evnt_tbl[i].rid > 0) {
+						deskmenu_dispatch_item(menu_evnt_tbl[i].title,
+								       menu_evnt_tbl[i].rid);
+					}
+					else {
+						/* Keyboard shortcut not displayed within menu: */
+						menu_evnt_tbl[i].menu_func(0, 0, NULL);
+					}
+					done = true;
+					break;
 				}
 			}
 		}
@@ -814,15 +814,14 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 }
 
 /**
-*	Refresh the desk menu, reflecting netsurf current state.
-*/
+ *	Refresh the desk menu, reflecting netsurf current state.
+ */
 void deskmenu_update(void)
 {
 	menu_icheck(h_gem_menu, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
 	menu_icheck(h_gem_menu, MAINMENU_M_FG_IMAGES,
-				(nsoption_bool(foreground_images)) ? 1 : 0);
+		    (nsoption_bool(foreground_images)) ? 1 : 0);
 	menu_icheck(h_gem_menu, MAINMENU_M_BG_IMAGES,
-				(nsoption_bool(background_images)) ? 1 : 0);
-    menu_icheck(h_gem_menu, MAINMENU_M_VLOG, ((verbose_log == true) ? 1 : 0));
+		    (nsoption_bool(background_images)) ? 1 : 0);
+	menu_icheck(h_gem_menu, MAINMENU_M_VLOG, ((verbose_log == true) ? 1 : 0));
 }
-

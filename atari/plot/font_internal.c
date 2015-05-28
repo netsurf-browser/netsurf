@@ -134,13 +134,13 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 				break;
 			(*char_offset)--;
 		}
-                if (*char_offset == 0) {
-                        *char_offset = c_off;
-                        while (*char_offset < length &&
-                                        string[*char_offset] != ' ') {
-                                (*char_offset)++;
-                        }
-                }
+		if (*char_offset == 0) {
+			*char_offset = c_off;
+			while (*char_offset < length &&
+					string[*char_offset] != ' ') {
+				(*char_offset)++;
+			}
+		}
 	}
 	*actual_x = *char_offset * fb_font->width;
 	return( 1  );
@@ -194,15 +194,15 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
     utf8_to_font_encoding(fb_font, text, length, &buffer);
     if (buffer == NULL)
-        return 1;
+	return 1;
 
-        /* y is given to the fonts baseline we need it to the fonts top */
+	/* y is given to the fonts baseline we need it to the fonts top */
 	y-=((fb_font->height * 75)/100);
 
 	/* needed? */
     y+=1;  /* the coord is the bottom-left of the pixels offset by 1 to make
-               *   it work since fb coords are the top-left of pixels
-               */
+	       *   it work since fb coords are the top-left of pixels
+	       */
     blen = strlen(buffer);
 	if ( blen < 1 ) {
 		return( 1 );
@@ -222,10 +222,10 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
     	loc.g_w = fb_font->width;
     	loc.g_h = fb_font->height;
     	for (chr = 0; chr < blen; chr++) {
-        	loc.g_x = x;
-        	chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
-        	draw_glyph1(self, &loc, (uint8_t *)chrp, 32, c);
-        	x+=fb_font->width;
+		loc.g_x = x;
+		chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
+		draw_glyph1(self, &loc, (uint8_t *)chrp, 32, c);
+		x+=fb_font->width;
     	}
 	} else {
 		/* render the whole string into an monochrom mfdb */
@@ -249,7 +249,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 		char * d;
 		uint32_t * pp;
 		for (chr = 0; chr < blen; chr++) {
-        	pp = (uint32_t*)fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
+		pp = (uint32_t*)fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
 			d = ((uint8_t*)tmp.fd_addr) + chr;
 			for( ypos=0; ypos<loc.g_h; ypos++){
 				*d = (unsigned char)*pp++;
@@ -2381,4 +2381,5 @@ const struct fb_font_desc font_regular = {
 	.encoding = "CP1252",
 	.data = fontdata_regular,
 };
+
 #endif

@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
@@ -49,16 +48,16 @@ struct atari_hotlist hl;
 
 /* Setup Atari Treeview Callbacks: */
 static nserror atari_hotlist_init_phase2(struct core_window *cw,
-				struct core_window_callback_table * default_callbacks);
+					 struct core_window_callback_table * default_callbacks);
 static void atari_hotlist_finish(struct core_window *cw);
 static void atari_hotlist_keypress(struct core_window *cw,
-												uint32_t ucs4);
+				   uint32_t ucs4);
 static void atari_hotlist_mouse_action(struct core_window *cw,
-												browser_mouse_state mouse,
-												int x, int y);
+				       browser_mouse_state mouse,
+				       int x, int y);
 static void atari_hotlist_draw(struct core_window *cw, int x,
-											int y, struct rect *clip,
-											const struct redraw_context *ctx);
+			       int y, struct rect *clip,
+			       const struct redraw_context *ctx);
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8]);
 
 static struct atari_treeview_callbacks atari_hotlist_treeview_callbacks = {
@@ -71,7 +70,7 @@ static struct atari_treeview_callbacks atari_hotlist_treeview_callbacks = {
 };
 
 static nserror atari_hotlist_init_phase2(struct core_window *cw,
-								struct core_window_callback_table *cb_t)
+					 struct core_window_callback_table *cb_t)
 {
 	LOG((""));
 	return(hotlist_init(cb_t, cw, hl.path));
@@ -84,8 +83,8 @@ static void atari_hotlist_finish(struct core_window *cw)
 }
 
 static void atari_hotlist_draw(struct core_window *cw, int x,
-											int y, struct rect *clip,
-											const struct redraw_context *ctx)
+			       int y, struct rect *clip,
+			       const struct redraw_context *ctx)
 {
 	hotlist_redraw(x, y, clip, ctx);
 }
@@ -102,8 +101,8 @@ static void atari_hotlist_keypress(struct core_window *cw, uint32_t ucs4)
 }
 
 static void atari_hotlist_mouse_action(struct core_window *cw,
-												browser_mouse_state mouse,
-												int x, int y)
+				       browser_mouse_state mouse,
+				       int x, int y)
 {
 	LOG(("x:  %d, y: %d\n", x, y));
 
@@ -129,59 +128,59 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	tv = (struct atari_treeview_window*) gemtk_wm_get_user_data(win);
 	cw = (struct core_window *)tv;
 
-	if(ev_out->emo_events & MU_MESAG){
+	if (ev_out->emo_events & MU_MESAG) {
 		switch (msg[0]) {
 
-			case WM_TOOLBAR:
-				LOG(("WM_TOOLBAR"));
+		case WM_TOOLBAR:
+			LOG(("WM_TOOLBAR"));
 
-				toolbar = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
+			toolbar = gemtk_obj_get_tree(TOOLBAR_HOTLIST);
 
-				assert(toolbar);
-				assert(tv);
+			assert(toolbar);
+			assert(tv);
 
-				switch	(msg[4]) {
-					case TOOLBAR_HOTLIST_CREATE_FOLDER:
-						hotlist_add_folder(NULL, 0, 0);
-						break;
+			switch	(msg[4]) {
+			case TOOLBAR_HOTLIST_CREATE_FOLDER:
+				hotlist_add_folder(NULL, 0, 0);
+				break;
 
-					case TOOLBAR_HOTLIST_ADD:
-						gw = gui_get_input_window();
-						if(gw && gw->browser){
-							cur_url = gui_window_get_url(gw);
-							cur_title = gui_window_get_title(gw);
-							// TODO: read language string.
-							cur_title = (cur_title ? cur_title : (char*)"New bookmark");
-						} else {
-							cur_url = (char*)"http://www";
-						}
-						atari_hotlist_add_page(cur_url, cur_title);
-						break;
-
-					case TOOLBAR_HOTLIST_DELETE:
-						hotlist_keypress(NS_KEY_DELETE_LEFT);
-						break;
-
-					case TOOLBAR_HOTLIST_EDIT:
-						hotlist_edit_selection();
-						break;
+			case TOOLBAR_HOTLIST_ADD:
+				gw = gui_get_input_window();
+				if(gw && gw->browser){
+					cur_url = gui_window_get_url(gw);
+					cur_title = gui_window_get_title(gw);
+					// TODO: read language string.
+					cur_title = (cur_title ? cur_title : (char*)"New bookmark");
+				} else {
+					cur_url = (char*)"http://www";
 				}
+				atari_hotlist_add_page(cur_url, cur_title);
+				break;
 
-				gemtk_win = atari_treeview_get_gemtk_window(cw);
-				assert(gemtk_win);
-				toolbar[msg[4]].ob_state &= ~OS_SELECTED;
-				atari_treeview_get_grect(cw, TREEVIEW_AREA_TOOLBAR, &tb_area);
-				evnt_timer(150);
-				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
-				retval = 1;
+			case TOOLBAR_HOTLIST_DELETE:
+				hotlist_keypress(NS_KEY_DELETE_LEFT);
+				break;
+
+			case TOOLBAR_HOTLIST_EDIT:
+				hotlist_edit_selection();
+				break;
+			}
+
+			gemtk_win = atari_treeview_get_gemtk_window(cw);
+			assert(gemtk_win);
+			toolbar[msg[4]].ob_state &= ~OS_SELECTED;
+			atari_treeview_get_grect(cw, TREEVIEW_AREA_TOOLBAR, &tb_area);
+			evnt_timer(150);
+			gemtk_wm_exec_redraw(gemtk_win, &tb_area);
+			retval = 1;
 			break;
 
-			case WM_CLOSED:
-				atari_hotlist_close();
-				retval = 1;
+		case WM_CLOSED:
+			atari_hotlist_close();
+			retval = 1;
 			break;
 
-			default: break;
+		default: break;
 		}
 	}
 
@@ -211,7 +210,7 @@ void atari_hotlist_init(void)
 			hl.window = gemtk_wm_add(handle, GEMTK_WM_FLAG_DEFAULTS, NULL);
 			if( hl.window == NULL ) {
 				gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT,
-									"Failed to allocate Hotlist");
+						   "Failed to allocate Hotlist");
 				return;
 			}
 			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
@@ -220,7 +219,7 @@ void atari_hotlist_init(void)
 			tree_hotlist_path = (const char*)&hl.path;
 
 			hl.tv = atari_treeview_create(hl.window, &atari_hotlist_treeview_callbacks,
-									NULL, flags);
+						      NULL, flags);
 
 			if (hl.tv == NULL) {
 				/* handle it properly, clean up previous allocs */
@@ -244,11 +243,11 @@ void atari_hotlist_open(void)
 
 	if (atari_treeview_is_open(hl.tv) == false) {
 
-	    GRECT pos;
-	    pos.g_x = desk_area.g_w - desk_area.g_w / 4;
-	    pos.g_y = desk_area.g_y;
-	    pos.g_w = desk_area.g_w / 4;
-	    pos.g_h = desk_area.g_h;
+		GRECT pos;
+		pos.g_x = desk_area.g_w - desk_area.g_w / 4;
+		pos.g_y = desk_area.g_y;
+		pos.g_w = desk_area.g_w / 4;
+		pos.g_h = desk_area.g_h;
 
 		atari_treeview_open(hl.tv, &pos);
 	} else {
@@ -298,20 +297,19 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	if (nsurl_create(url, &nsurl) != NSERROR_OK)
 		return;
 
-    if (hotlist_has_url(nsurl)) {
-        LOG(("URL already added as Bookmark"));
-        nsurl_unref(nsurl);
-        return;
-    }
+	if (hotlist_has_url(nsurl)) {
+		LOG(("URL already added as Bookmark"));
+		nsurl_unref(nsurl);
+		return;
+	}
 
 	/* doesn't look nice:
-	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
-		hotlist_add_entry( nsurl, title, true, hl.tv->click.y );
-	} else {
+	   if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
+	   hotlist_add_entry( nsurl, title, true, hl.tv->click.y );
+	   } else {
 
-	}*/
+	   }*/
 	//hotlist_add_url(nsurl);
 	hotlist_add_entry(nsurl, title, 0, 0);
 	nsurl_unref(nsurl);
 }
-

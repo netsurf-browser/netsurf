@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #ifdef WITH_VDI_FONT_DRIVER
 #ifndef FONT_PLOTTER_VDI
 #define FONT_PLOTTER_VDI

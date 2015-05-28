@@ -29,13 +29,10 @@
 #include "atari/encoding.h"
 
 
-
-
 //static char * lstr = NULL;
 
-
 static int dtor( FONT_PLOTTER self );
-static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
+static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const char * str, size_t length, int * width  );
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x );
 static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,

@@ -45,16 +45,16 @@ extern GRECT desk_area;
 
 /* Setup Atari Treeview Callbacks: */
 static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
-				struct core_window_callback_table * default_callbacks);
+						struct core_window_callback_table * default_callbacks);
 static void atari_sslcert_viewer_finish(struct core_window *cw);
 static void atari_sslcert_viewer_keypress(struct core_window *cw,
-												uint32_t ucs4);
+					  uint32_t ucs4);
 static void atari_sslcert_viewer_mouse_action(struct core_window *cw,
-												browser_mouse_state mouse,
-												int x, int y);
+					      browser_mouse_state mouse,
+					      int x, int y);
 static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
-											int y, struct rect *clip,
-											const struct redraw_context *ctx);
+				      int y, struct rect *clip,
+				      const struct redraw_context *ctx);
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8]);
 
 static struct atari_treeview_callbacks atari_sslcert_viewer_treeview_callbacks = {
@@ -71,7 +71,7 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin);
 
 
 static nserror atari_sslcert_viewer_init_phase2(struct core_window *cw,
-								struct core_window_callback_table *cb_t)
+						struct core_window_callback_table *cb_t)
 {
 	struct atari_sslcert_viewer_s *cvwin;
 	struct sslcert_session_data *ssl_d;
@@ -104,8 +104,8 @@ static void atari_sslcert_viewer_finish(struct core_window *cw)
 }
 
 static void atari_sslcert_viewer_draw(struct core_window *cw, int x,
-											int y, struct rect *clip,
-											const struct redraw_context *ctx)
+				      int y, struct rect *clip,
+				      const struct redraw_context *ctx)
 {
 	struct atari_sslcert_viewer_s *cvwin;
 
@@ -131,8 +131,8 @@ static void atari_sslcert_viewer_keypress(struct core_window *cw, uint32_t ucs4)
 }
 
 static void atari_sslcert_viewer_mouse_action(struct core_window *cw,
-												browser_mouse_state mouse,
-												int x, int y)
+					      browser_mouse_state mouse,
+					      int x, int y)
 {
 	struct atari_sslcert_viewer_s *cvwin;
 
@@ -158,52 +158,52 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
 
-			case WM_TOOLBAR:
-				toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
-				LOG(("CERTVIEWER WM_TOOLBAR"));
-				tv = (struct core_window*) gemtk_wm_get_user_data(win);
-				assert(tv);
-				cvwin = (struct atari_sslcert_viewer_s *)
-							atari_treeview_get_user_data(tv);
-				switch	(msg[4]) {
+		case WM_TOOLBAR:
+			toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
+			LOG(("CERTVIEWER WM_TOOLBAR"));
+			tv = (struct core_window*) gemtk_wm_get_user_data(win);
+			assert(tv);
+			cvwin = (struct atari_sslcert_viewer_s *)
+				atari_treeview_get_user_data(tv);
+			switch	(msg[4]) {
 
-					case TOOLBAR_SSL_CERT_TRUSTED:
+			case TOOLBAR_SSL_CERT_TRUSTED:
 
-						if (toolbar[msg[4]].ob_state & OS_SELECTED) {
+				if (toolbar[msg[4]].ob_state & OS_SELECTED) {
 
-						} else {
-
-						}
-						break;
-				}
-
-
-				gemtk_win = atari_treeview_get_gemtk_window(tv);
-				assert(gemtk_win);
-				//gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
-				atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_area);
-				evnt_timer(150);
-				gemtk_wm_exec_redraw(gemtk_win, &tb_area);
-				retval = 1;
-			break;
-
-			case WM_CLOSED:
-			// TODO set perrmissions
-				toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
-				tv = (struct core_window*) gemtk_wm_get_user_data(win);
-				assert(tv);
-				cvwin = (struct atari_sslcert_viewer_s *)
-							atari_treeview_get_user_data(tv);
-				if (toolbar[TOOLBAR_SSL_CERT_TRUSTED].ob_state & OS_SELECTED) {
-					sslcert_viewer_accept(cvwin->ssl_session_data);
 				} else {
-					sslcert_viewer_reject(cvwin->ssl_session_data);
+
 				}
-				atari_sslcert_viewer_destroy(cvwin);
-				retval = 1;
+				break;
+			}
+
+
+			gemtk_win = atari_treeview_get_gemtk_window(tv);
+			assert(gemtk_win);
+			//gemtk_obj_get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
+			atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_area);
+			evnt_timer(150);
+			gemtk_wm_exec_redraw(gemtk_win, &tb_area);
+			retval = 1;
 			break;
 
-			default: break;
+		case WM_CLOSED:
+			// TODO set perrmissions
+			toolbar = gemtk_obj_get_tree(TOOLBAR_SSL_CERT);
+			tv = (struct core_window*) gemtk_wm_get_user_data(win);
+			assert(tv);
+			cvwin = (struct atari_sslcert_viewer_s *)
+				atari_treeview_get_user_data(tv);
+			if (toolbar[TOOLBAR_SSL_CERT_TRUSTED].ob_state & OS_SELECTED) {
+				sslcert_viewer_accept(cvwin->ssl_session_data);
+			} else {
+				sslcert_viewer_reject(cvwin->ssl_session_data);
+			}
+			atari_sslcert_viewer_destroy(cvwin);
+			retval = 1;
+			break;
+
+		default: break;
 		}
 	}
 
@@ -211,7 +211,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 }
 
 static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
-									struct sslcert_session_data *ssl_d)
+				      struct sslcert_session_data *ssl_d)
 {
 	assert(cvwin->init == false);
 	assert(cvwin->window == NULL);
@@ -224,10 +224,10 @@ static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
 
 	handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
 	cvwin->window = gemtk_wm_add(handle,
-										GEMTK_WM_FLAG_DEFAULTS, NULL);
+				     GEMTK_WM_FLAG_DEFAULTS, NULL);
 	if (cvwin->window == NULL ) {
 		gemtk_msg_box_show(GEMTK_MSG_BOX_ALERT,
-							"Failed to allocate Treeview:\nCertviewer");
+				   "Failed to allocate Treeview:\nCertviewer");
 		return;
 	}
 	wind_set_str(handle, WF_NAME, (char*)"SSL Certificate");
@@ -236,8 +236,8 @@ static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
 
 	cvwin->ssl_session_data = ssl_d;
 	cvwin->tv = atari_treeview_create(cvwin->window,
-									&atari_sslcert_viewer_treeview_callbacks,
-									cvwin, flags);
+					  &atari_sslcert_viewer_treeview_callbacks,
+					  cvwin, flags);
 
 	if (cvwin->tv == NULL) {
 		/* handle it properly, clean up previous allocs */
@@ -249,8 +249,8 @@ static void atari_sslcert_viewer_init(struct atari_sslcert_viewer_s * cvwin,
 }
 
 /*
-* documented in certview.h
-*/
+ * documented in certview.h
+ */
 void atari_sslcert_viewer_open(struct sslcert_session_data *ssl_d)
 {
 	struct atari_sslcert_viewer_s * cvwin;
@@ -263,16 +263,16 @@ void atari_sslcert_viewer_open(struct sslcert_session_data *ssl_d)
 
 	if (atari_treeview_is_open(cvwin->tv) == false) {
 
-	    GRECT pos;
-	    pos.g_x = desk_area.g_w - desk_area.g_w / 4;
-	    pos.g_y = desk_area.g_y;
-	    pos.g_w = desk_area.g_w / 4;
-	    pos.g_h = desk_area.g_h;
+		GRECT pos;
+		pos.g_x = desk_area.g_w - desk_area.g_w / 4;
+		pos.g_y = desk_area.g_y;
+		pos.g_w = desk_area.g_w / 4;
+		pos.g_h = desk_area.g_h;
 
 		atari_treeview_open(cvwin->tv, &pos);
 	} else {
 		wind_set(gemtk_wm_get_handle(cvwin->window), WF_TOP, 1, 0,
-				0, 0);
+			 0, 0);
 	}
 }
 
@@ -294,4 +294,3 @@ static void atari_sslcert_viewer_destroy(struct atari_sslcert_viewer_s * cvwin)
 	free(cvwin);
 	LOG(("done"));
 }
-
