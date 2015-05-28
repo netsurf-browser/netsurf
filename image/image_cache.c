@@ -419,7 +419,7 @@ nserror image_cache_fini(void)
 		    (image_cache->hit_count * 100) / op_count,
 		    (image_cache->miss_count * 100) / op_count,
 		    (image_cache->fail_count * 100) / op_count);
-		LOG("Cache total/hit/miss/fail (size) %zd/%zd/%zd/%zd (100%%/%"PRId64"%%/%"PRId64"%%/%"PRId64"%%)",
+		LOG("Cache total/hit/miss/fail (size) %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64" (100%%/%"PRId64"%%/%"PRId64"%%/%"PRId64"%%)",
 		    op_size,
 		    image_cache->hit_size,
 		    image_cache->miss_size,

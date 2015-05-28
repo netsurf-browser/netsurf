@@ -124,7 +124,7 @@ static JSBool heartbeat_callback(JSContext *cx)
 	}
 	priv->last = now;
 
-	JSLOG("Running heatbeat at %d end %d", now , priv->end);
+	JSLOG("Running heatbeat at %ld end %ld", (long)now, (long)priv->end);
 
 	if ((priv->cb != NULL) &&
 	    (now > priv->end)) {

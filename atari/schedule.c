@@ -29,7 +29,7 @@
 #ifdef DEBUG_SCHEDULER
 #include "utils/log.h"
 #else
-#define LOG(X)
+#define LOG(x...)
 #endif
 
 #define MS_NOW() ((clock() * 1000) / CLOCKS_PER_SEC)

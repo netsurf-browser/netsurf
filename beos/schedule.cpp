@@ -31,7 +31,7 @@ extern "C" {
 #ifdef DEBUG_BEOS_SCHEDULE
 #include "utils/log.h"
 #else
-#define LOG(X)
+#define LOG(x...)
 #endif
 }
 
