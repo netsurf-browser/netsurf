@@ -29,6 +29,6 @@ void win_perror(const char *lpszFunction);
 	    ((m) != WM_MOUSEMOVE) &&			\
 	    ((m) != WM_NCHITTEST) &&			\
 	    ((m) != WM_ENTERIDLE))			\
-		LOG(("%s, hwnd %p, w 0x%x, l 0x%x", msg_num_to_name(m), h, w, l));
+		LOG("%s, hwnd %p, w 0x%x, l 0x%x", msg_num_to_name(m), h, w, l);
 
 #endif

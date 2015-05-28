@@ -38,7 +38,7 @@
  * Assumes that the element is zeroed as appropriate.
  */
 #define RING_INSERT(ring,element) \
-	/*LOG(("RING_INSERT(%s, %p(%s))", #ring, element, element->host));*/ \
+	/*LOG("RING_INSERT(%s, %p(%s))", #ring, element, element->host);*/ \
 	if (ring) { \
 		element->r_next = ring; \
 		element->r_prev = ring->r_prev; \
@@ -51,7 +51,7 @@
  * Will zero the element as needed
  */
 #define RING_REMOVE(ring, element) \
-	/*LOG(("RING_REMOVE(%s, %p(%s)", #ring, element, element->host));*/ \
+	/*LOG("RING_REMOVE(%s, %p(%s)", #ring, element, element->host);*/ \
 	if (element->r_next != element ) { \
 		/* Not the only thing in the ring */ \
 		element->r_next->r_prev = element->r_prev; \
@@ -67,7 +67,7 @@
  * provided element variable
  */
 #define RING_FINDBYHOST(ring, element, hostname) \
-	/*LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname));*/ \
+	/*LOG("RING_FINDBYHOST(%s, %s)", #ring, hostname);*/ \
 	if (ring) { \
 		bool found = false; \
 		element = ring; \
@@ -85,7 +85,7 @@
  * provided element variable
  */
 #define RING_FINDBYLWCHOST(ring, element, lwc_hostname) \
-	/*LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname));*/ \
+	/*LOG("RING_FINDBYHOST(%s, %s)", #ring, hostname);*/ \
 	if (ring) { \
 		bool found = false; \
 		element = ring; \
@@ -102,7 +102,7 @@
 
 /** Measure the size of a ring and put it in the supplied variable */
 #define RING_GETSIZE(ringtype, ring, sizevar) \
-	/*LOG(("RING_GETSIZE(%s)", #ring));*/ \
+	/*LOG("RING_GETSIZE(%s)", #ring);*/ \
 	if (ring) { \
 		ringtype *p = ring; \
 		sizevar = 0; \
@@ -114,7 +114,7 @@
 
 /** Count the number of elements in the ring which match the provided hostname */
 #define RING_COUNTBYHOST(ringtype, ring, sizevar, hostname) \
-	/*LOG(("RING_COUNTBYHOST(%s, %s)", #ring, hostname));*/ \
+	/*LOG("RING_COUNTBYHOST(%s, %s)", #ring, hostname);*/ \
 	if (ring) { \
 		ringtype *p = ring; \
 		sizevar = 0; \
@@ -127,7 +127,7 @@
 
 /** Count the number of elements in the ring which match the provided lwc_hostname */
 #define RING_COUNTBYLWCHOST(ringtype, ring, sizevar, lwc_hostname) \
-	/*LOG(("RING_COUNTBYHOST(%s, %s)", #ring, hostname));*/ \
+	/*LOG("RING_COUNTBYHOST(%s, %s)", #ring, hostname);*/ \
 	if (ring) { \
 		ringtype *p = ring; \
 		sizevar = 0; \

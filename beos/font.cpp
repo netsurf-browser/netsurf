@@ -125,7 +125,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
-	//LOG(("(, '%s', %d, %d, , )", string, length, x));
+	//LOG("(, '%s', %d, %d, , )", string, length, x);
 	//fprintf(stderr, "%s(, '%s', %d, %d, , )\n", __FUNCTION__, string, length, x);
 	int index;
 	BFont font;
@@ -183,7 +183,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
 	//fprintf(stderr, "%s(, '%s', %d, %d, , )\n", __FUNCTION__, string, length, x);
-	//LOG(("(, '%s', %d, %d, , )", string, length, x));
+	//LOG("(, '%s', %d, %d, , )", string, length, x);
 	int index = 0;
 	BFont font;
 

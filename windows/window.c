@@ -763,7 +763,7 @@ static void nsws_set_scale(struct gui_window *gw, float scale)
  */
 static void win32_window_redraw_window(struct gui_window *gw)
 {
-	/* LOG(("gw:%p", gw)); */
+	/* LOG("gw:%p", gw); */
 	if (gw != NULL) {
 		RedrawWindow(gw->drawingarea, NULL, NULL,
 			     RDW_INVALIDATE | RDW_NOERASE);
@@ -794,7 +794,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 		return;
 	}
 
-	/*LOG(("scroll sx,sy:%d,%d x,y:%d,%d w.h:%d,%d",sx,sy,w->scrollx,w->scrolly, width,height));*/
+	/*LOG("scroll sx,sy:%d,%d x,y:%d,%d w.h:%d,%d",sx,sy,w->scrollx,w->scrolly, width,height);*/
 
 	/* The resulting gui window scroll must remain withn the
 	 * windows bounding box.
@@ -814,7 +814,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 		w->requestscrolly = sy - w->scrolly;
 	}
 
-	/*LOG(("requestscroll x,y:%d,%d", w->requestscrollx, w->requestscrolly));*/
+	/*LOG("requestscroll x,y:%d,%d", w->requestscrollx, w->requestscrolly);*/
 
 	/* set the vertical scroll offset */
 	si.cbSize = sizeof(si);
@@ -825,7 +825,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nPos = max(w->scrolly + w->requestscrolly, 0);
 	si.nPos = min(si.nPos, height - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
-	/*LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));*/
+	/*LOG("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
 
 	/* set the horizontal scroll offset */
 	si.cbSize = sizeof(si);
@@ -836,7 +836,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nPos = max(w->scrollx + w->requestscrollx, 0);
 	si.nPos = min(si.nPos, width - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
-	/*LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));*/
+	/*LOG("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos);*/
 
 	/* Set caret position */
 	GetCaretPos(&p);
@@ -850,7 +850,7 @@ void win32_window_set_scroll(struct gui_window *w, int sx, int sy)
 	r.left = 0;
 	r.right = w->width + 1;
 	ScrollWindowEx(w->drawingarea, - w->requestscrollx, - w->requestscrolly, &r, NULL, NULL, &redraw, SW_INVALIDATE);
-	/*LOG(("ScrollWindowEx %d, %d", - w->requestscrollx, - w->requestscrolly));*/
+	/*LOG("ScrollWindowEx %d, %d", - w->requestscrollx, - w->requestscrolly);*/
 	w->scrolly += w->requestscrolly;
 	w->scrollx += w->requestscrollx;
 	w->requestscrollx = 0;
@@ -1430,7 +1430,7 @@ static void win32_window_destroy(struct gui_window *w)
 static void
 win32_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
-	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
+	/* LOG("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height); */
 
 	if (gw == NULL)
 		return;

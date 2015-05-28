@@ -473,7 +473,7 @@ void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 //			bits ftype = req->file_types[i];
 //			if (ftype == ~0U) break;	/* list terminator */
 //
-//			LOG(("type %x", ftype));
+//			LOG("type %x", ftype);
 //			i++;
 //		}
 

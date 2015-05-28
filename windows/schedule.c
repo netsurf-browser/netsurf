@@ -26,9 +26,9 @@
 #include "windows/schedule.h"
 
 #ifdef DEBUG_SCHEDULER
-#define SRLOG(x) LOG(x)
+#define SRLOG(x...) LOG(x)
 #else
-#define SRLOG(x)
+#define SRLOG(x...) ((void) 0)
 #endif
 
 /* linked list of scheduled callbacks */
@@ -66,7 +66,7 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
                 return NSERROR_OK;
 	}
 
-	SRLOG(("removing %p, %p", callback, p));
+	SRLOG("removing %p, %p", callback, p);
 
         cur_nscb = schedule_list;
         prev_nscb = NULL;
@@ -76,8 +76,8 @@ static nserror schedule_remove(void (*callback)(void *p), void *p)
                     (cur_nscb->p ==  p)) {
                         /* item to remove */
 
-                        SRLOG(("callback entry %p removing  %p(%p)",
-                             cur_nscb, cur_nscb->callback, cur_nscb->p));
+                        SRLOG("callback entry %p removing  %p(%p)",
+                             cur_nscb, cur_nscb->callback, cur_nscb->p);
 
                         /* remove callback */
                         unlnk_nscb = cur_nscb;
@@ -118,8 +118,8 @@ nserror win32_schedule(int ival, void (*callback)(void *p), void *p)
 		return NSERROR_NOMEM;
 	}
 
-	SRLOG(("adding callback %p for %p(%p) at %d cs",
-	       nscb, callback, p, ival));
+	SRLOG("adding callback %p for %p(%p) at %d cs",
+	       nscb, callback, p, ival);
 
 	gettimeofday(&nscb->tv, NULL);
 	timeradd(&nscb->tv, &tv, &nscb->tv);
@@ -168,8 +168,8 @@ schedule_run(void)
                                 prev_nscb->next = unlnk_nscb->next;
                         }
 
-                        SRLOG(("callback entry %p running %p(%p)",
-                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
+                        SRLOG("callback entry %p running %p(%p)",
+                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p);
                         /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
@@ -201,8 +201,8 @@ schedule_run(void)
 	/* make returned time relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-	SRLOG(("returning time to next event as %ldms",
-	     (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000)));
+	SRLOG("returning time to next event as %ldms",
+	     (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000));
 
 	/* return next event time in milliseconds (24days max wait) */
         return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);

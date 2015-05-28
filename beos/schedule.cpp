@@ -81,7 +81,7 @@ schedule_remove(void (*callback)(void *p), void *p)
 
 nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 {
-	LOG(("t:%d cb:%p p:%p", t, cb->callback, cb->context));
+	LOG("t:%d cb:%p p:%p", t, cb->callback, cb->context);
 
 	if (callbacks == NULL) {
 		callbacks = new BList;
@@ -111,7 +111,7 @@ nserror beos_schedule(int t, void (*callback)(void *p), void *p)
 bool
 schedule_run(void)
 {
-	LOG(("schedule_run()"));
+	LOG("schedule_run()");
 
 	earliest_callback_timeout = B_INFINITE_TIMEOUT;
 	if (callbacks == NULL)
@@ -120,7 +120,7 @@ schedule_run(void)
 	bigtime_t now = system_time();
 	int32 i;
 
-	LOG(("Checking %ld callbacks to for deadline.", this_run->CountItems()));
+	LOG("Checking %ld callbacks to for deadline.", this_run->CountItems());
 
 	/* Run all the callbacks which made it this far. */
 	for (i = 0; i < callbacks->CountItems(); ) {
@@ -132,7 +132,7 @@ schedule_run(void)
 			i++;
 			continue;
 		}
-		LOG(("Running callbacks %p(%p).", cb->callback, cb->context));
+		LOG("Running callbacks %p(%p).", cb->callback, cb->context);
 		if (!cb->callback_killed)
 			cb->callback(cb->context);
 		callbacks->RemoveItem(cb);

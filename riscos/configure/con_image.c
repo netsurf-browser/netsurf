@@ -151,8 +151,8 @@ void ro_gui_options_image_redraw(wimp_draw *redraw)
 	icon_state.i = IMAGE_CURRENT_DISPLAY;
 	error = xwimp_get_icon_state(&icon_state);
 	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
-				error->errnum, error->errmess));
+		LOG("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess);
 		warn_user("MenuError", error->errmess);
 		return;
 	}

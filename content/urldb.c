@@ -3733,7 +3733,7 @@ void urldb_load_cookies(const char *filename)
 		for (; *p && *p != '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
-			LOG(("Overran input"));				\
+			LOG("Overran input");				\
 			continue;					\
 		}							\
 		*p++ = '\0';						\
@@ -3743,7 +3743,7 @@ void urldb_load_cookies(const char *filename)
 		for (; *p && *p == '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
-			LOG(("Overran input"));				\
+			LOG("Overran input");				\
 			continue;					\
 		}							\
 }

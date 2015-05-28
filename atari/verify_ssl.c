@@ -81,7 +81,7 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 	if( line == NULL )
 		return;
 
-	LOG(("Cert info draw, win: %p, data: %p, scrollx: %d", win, data, dp->scrollx ));
+	LOG("Cert info draw, win: %p, data: %p, scrollx: %d", win, data, dp->scrollx );
 
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h );
 	/*using static values here, as RsrcUserDraw has mem leaks & a very small stack */

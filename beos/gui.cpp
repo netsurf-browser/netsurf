@@ -371,7 +371,7 @@ static nsurl *gui_get_resource_url(const char *path)
 		path = "favicon.png";
 
 	u << path;
-	LOG(("(%s) -> '%s'\n", path, u.String()));
+	LOG("(%s) -> '%s'\n", path, u.String());
 	nsurl_create(u.String(), &url);
 	return url;
 }
@@ -692,7 +692,7 @@ void nsbeos_pipe_message(BMessage *message, BView *_this, struct gui_window *gui
 	if (gui)
 		message->AddPointer("gui_window", gui);
 	int len = write(sEventPipe[1], &message, sizeof(void *));
-	//LOG(("nsbeos_pipe_message: %d written", len));
+	//LOG("nsbeos_pipe_message: %d written", len);
 	//printf("nsbeos_pipe_message: %d written\n", len);
 }
 
@@ -708,7 +708,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 	if (scaffold)
 		message->AddPointer("scaffolding", scaffold);
 	int len = write(sEventPipe[1], &message, sizeof(void *));
-	//LOG(("nsbeos_pipe_message: %d written", len));
+	//LOG("nsbeos_pipe_message: %d written", len);
 	//printf("nsbeos_pipe_message: %d written\n", len);
 }
 
@@ -747,17 +747,17 @@ void nsbeos_gui_poll(void)
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
-	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
+	//LOG("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule);
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
 		&timeout);
-	//LOG(("select: %d\n", fd_count));
+	//LOG("select: %d\n", fd_count);
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
 		int len = read(sEventPipe[0], &message, sizeof(void *));
-		//LOG(("gui_poll: BMessage ? %d read", len));
+		//LOG("gui_poll: BMessage ? %d read", len);
 		if (len == sizeof(void *)) {
-			//LOG(("gui_poll: BMessage.what %-4.4s\n", &(message->what)));
+			//LOG("gui_poll: BMessage.what %-4.4s\n", &(message->what));
 			nsbeos_dispatch_event(message);
 		}
 	}
@@ -921,7 +921,7 @@ static nserror gui_launch_url(struct nsurl *url)
 
 void warn_user(const char *warning, const char *detail)
 {
-	LOG(("warn_user: %s (%s)", warning, detail));
+	LOG("warn_user: %s (%s)", warning, detail);
 	BAlert *alert;
 	BString text(warning);
 	if (detail)

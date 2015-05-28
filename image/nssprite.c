@@ -45,10 +45,10 @@ typedef struct nssprite_content {
 #define ERRCHK(x) do { \
 	rosprite_error err = x; \
 	if (err == ROSPRITE_EOF) { \
-		LOG(("Got ROSPRITE_EOF when loading sprite file")); \
+		LOG("Got ROSPRITE_EOF when loading sprite file"); \
 		return false; \
 	} else if (err == ROSPRITE_BADMODE) { \
-		LOG(("Got ROSPRITE_BADMODE when loading sprite file")); \
+		LOG("Got ROSPRITE_BADMODE when loading sprite file"); \
 		return false; \
 	} else if (err == ROSPRITE_OK) { \
 	} else { \

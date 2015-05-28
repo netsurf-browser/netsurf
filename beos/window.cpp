@@ -351,7 +351,7 @@ static struct gui_window *gui_window_create(struct browser_window *bw,
 		return 0;
 	}
 
-	LOG(("Creating gui window %p for browser window %p", g, bw));
+	LOG("Creating gui window %p for browser window %p", g, bw);
 
 	g->bw = bw;
 	g->mouse.state = 0;
@@ -451,7 +451,7 @@ void nsbeos_dispatch_event(BMessage *message)
 		return;
 	}
 
-	//LOG(("processing message"));
+	//LOG("processing message");
 	switch (message->what) {
 		case B_QUIT_REQUESTED:
 			// from the BApplication
@@ -950,10 +950,10 @@ static void gui_window_destroy(struct gui_window *g)
 		g->next->prev = g->prev;
 
 
-	LOG(("Destroying gui_window %p", g));
+	LOG("Destroying gui_window %p", g);
 	assert(g != NULL);
 	assert(g->bw != NULL);
-	LOG(("     Scaffolding: %p", g->scaffold));
+	LOG("     Scaffolding: %p", g->scaffold);
 
 	if (g->view == NULL)
 		return;

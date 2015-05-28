@@ -182,8 +182,8 @@ static void ro_gui_theme_get_available_in_dir(const char *directory)
 				(osgbpb_info_list *) &info, 1, context,
 				sizeof(info), 0, &read_count, &context);
 		if (error) {
-			LOG(("xosgbpb_dir_entries_info: 0x%x: %s",
-				error->errnum, error->errmess));
+			LOG("xosgbpb_dir_entries_info: 0x%x: %s",
+				error->errnum, error->errmess);
 			if (error->errnum == 0xd6)	/* no such dir */
 				return;
 			warn_user("MiscError", error->errmess);

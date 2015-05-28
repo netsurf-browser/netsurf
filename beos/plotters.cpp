@@ -484,7 +484,7 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 		return true;
 
 	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("path doesn't start with a move"));
+		LOG("path doesn't start with a move");
 		return false;
 	}
 
@@ -511,7 +511,7 @@ bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
 			shape.BezierTo(pt);
 			i += 7;
 		} else {
-			LOG(("bad path command %f", p[i]));
+			LOG("bad path command %f", p[i]);
 			return false;
 		}
 	}

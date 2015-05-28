@@ -66,9 +66,9 @@
 
 /** Verbose fetcher logging */
 #ifdef DEBUG_FETCH_VERBOSE
-#define FETCH_LOG(x) LOG(x)
+#define FETCH_LOG(x...) LOG(x...)
 #else
-#define FETCH_LOG(x)
+#define FETCH_LOG(x...)
 #endif
 
 /** The maximum number of fetchers that can be added */
@@ -159,8 +159,8 @@ static int get_fetcher_for_scheme(lwc_string *scheme)
 static bool fetch_dispatch_job(struct fetch *fetch)
 {
 	RING_REMOVE(queue_ring, fetch);
-	FETCH_LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
-	     fetch->fetcher_handle, nsurl_access(fetch->url)));
+	FETCH_LOG("Attempting to start fetch %p, fetcher %p, url %s", fetch,
+	     fetch->fetcher_handle, nsurl_access(fetch->url));
 
 	if (!fetchers[fetch->fetcherd].ops.start(fetch->fetcher_handle)) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
@@ -245,7 +245,7 @@ static bool fetch_dispatch_jobs(void)
 	RING_GETSIZE(struct fetch, queue_ring, all_queued);
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 
-	FETCH_LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
+	FETCH_LOG("queue_ring %i, fetch_ring %i", all_queued, all_active);
 	dump_rings();
 
 	while ((all_queued != 0) &&
@@ -253,12 +253,12 @@ static bool fetch_dispatch_jobs(void)
 	       fetch_choose_and_dispatch()) {
 			all_queued--;
 			all_active++;
-			FETCH_LOG(("%d queued, %d fetching",
-				   all_queued, all_active));
+			FETCH_LOG("%d queued, %d fetching",
+				   all_queued, all_active);
 	}
 
-	FETCH_LOG(("Fetch ring is now %d elements.", all_active));
-	FETCH_LOG(("Queue ring is now %d elements.", all_queued));
+	FETCH_LOG("Fetch ring is now %d elements.", all_active);
+	FETCH_LOG("Queue ring is now %d elements.", all_queued);
 
 	return (all_active > 0);
 }
@@ -268,7 +268,7 @@ static void fetcher_poll(void *unused)
 	int fetcherd;
 
 	if (fetch_dispatch_jobs()) {
-		FETCH_LOG(("Polling fetchers"));
+		FETCH_LOG("Polling fetchers");
 		for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
 			if (fetchers[fetcherd].refcount > 0) {
 				/* fetcher present */
@@ -390,12 +390,12 @@ nserror fetcher_fdset(fd_set *read_fd_set,
 	int fetcherd; /* fetcher index */
 
 	if (!fetch_dispatch_jobs()) {
-		FETCH_LOG(("No jobs"));
+		FETCH_LOG("No jobs");
 		*maxfd_out = -1;
 		return NSERROR_OK;
 	}
 
-	FETCH_LOG(("Polling fetchers"));
+	FETCH_LOG("Polling fetchers");
 
 	for (fetcherd = 0; fetcherd < MAX_FETCHERS; fetcherd++) {
 		if (fetchers[fetcherd].refcount > 0) {
@@ -470,7 +470,7 @@ fetch_start(nsurl *url,
 		return NULL;
 	}
 
-	FETCH_LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
+	FETCH_LOG("fetch %p, url '%s'", fetch, nsurl_access(url));
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
@@ -558,7 +558,7 @@ fetch_start(nsurl *url,
 
 	/* Ask the queue to run. */
 	if (fetch_dispatch_jobs()) {
-		FETCH_LOG(("scheduling poll"));
+		FETCH_LOG("scheduling poll");
 		/* schedule active fetchers to run again in 10ms */
 		guit->browser->schedule(10, fetcher_poll, NULL);
 	}
@@ -570,15 +570,15 @@ fetch_start(nsurl *url,
 void fetch_abort(struct fetch *f)
 {
 	assert(f);
-	FETCH_LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
-	     nsurl_access(f->url)));
+	FETCH_LOG("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
+	     nsurl_access(f->url));
 	fetchers[f->fetcherd].ops.abort(f->fetcher_handle);
 }
 
 /* exported interface documented in content/fetch.h */
 void fetch_free(struct fetch *f)
 {
-	FETCH_LOG(("Freeing fetch %p, fetcher %p", f, f->fetcher_handle));
+	FETCH_LOG("Freeing fetch %p, fetcher %p", f, f->fetcher_handle);
 
 	fetchers[f->fetcherd].ops.free(f->fetcher_handle);
 
@@ -711,7 +711,7 @@ void fetch_multipart_data_destroy(struct fetch_multipart_data *list)
 		free(list->name);
 		free(list->value);
 		if (list->file) {
-			FETCH_LOG(("Freeing rawfile: %s", list->rawfile));
+			FETCH_LOG("Freeing rawfile: %s", list->rawfile);
 			free(list->rawfile);
 		}
 		free(list);
@@ -729,8 +729,8 @@ fetch_send_callback(const fetch_msg *msg, struct fetch *fetch)
 /* exported interface documented in content/fetch.h */
 void fetch_remove_from_queues(struct fetch *fetch)
 {
-	FETCH_LOG(("Fetch %p, fetcher %p can be freed",
-		   fetch, fetch->fetcher_handle));
+	FETCH_LOG("Fetch %p, fetcher %p can be freed",
+		   fetch, fetch->fetcher_handle);
 
 	/* Go ahead and free the fetch properly now */
 	if (fetch->fetch_is_active) {
@@ -756,7 +756,7 @@ void fetch_remove_from_queues(struct fetch *fetch)
 /* exported interface documented in content/fetch.h */
 void fetch_set_http_code(struct fetch *fetch, long http_code)
 {
-	FETCH_LOG(("Setting HTTP code to %ld", http_code));
+	FETCH_LOG("Setting HTTP code to %ld", http_code);
 
 	fetch->http_code = http_code;
 }

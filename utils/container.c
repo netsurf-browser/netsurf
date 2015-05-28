@@ -208,7 +208,7 @@ static void container_process(struct container_ctx *ctx)
 	/* now work through the directory structure taking it apart into
 	 * our structure */
 #define BEREAD(x) do { val = fread(&(x), 4, 1, ctx->fh); if (val == 0)\
-		LOG(("empty read"));(x) = ntohl((x)); } while (0)
+		LOG("empty read");(x) = ntohl((x)); } while (0)
 	do {
 		val = fread(filename, 64, 1, ctx->fh);
 		if (val == 0)
@@ -295,7 +295,7 @@ static void container_write_dir(struct container_ctx *ctx)
 	unsigned int i;
 	u_int32_t tmp;
 #define BEWRITE(x) do {tmp = htonl((x)); val = fwrite(&tmp, 4, 1, ctx->fh);\
-		if (val == 0) LOG(("empty write")); } while(0)
+		if (val == 0) LOG("empty write"); } while(0)
 	for (i = 1; i <= ctx->entries; i++) {
 		struct container_dirent *e = ctx->directory + i - 1;
 		val = fwrite(e->filename, 64, 1, ctx->fh);

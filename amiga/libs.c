@@ -54,14 +54,14 @@
 
 #ifdef __amigaos4__
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
-	LOG(("Opening %s v%d", LIB, LIBVER)); \
+	LOG("Opening %s v%d", LIB, LIBVER); \
 	if((PREFIX##Base = (struct PREFIX##Base *)OpenLibrary(LIB, LIBVER))) {	\
 		I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, INTERFACE, INTVER, NULL);	\
 		if(I##PREFIX == NULL) {	\
-			LOG(("Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB));	\
+			LOG("Failed to get %s interface v%d of %s", INTERFACE, INTVER, LIB);	\
 		}	\
 	} else {	\
-		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
+		LOG("Failed to open %s v%d", LIB, LIBVER);	\
 		if(FAIL == true) {	\
 			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
@@ -79,13 +79,13 @@
 	struct PREFIX##IFace *I##PREFIX;
 
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
-	LOG(("Opening %s v%d", CLASS, CLASSVER)); \
+	LOG("Opening %s v%d", CLASS, CLASSVER); \
 	if((PREFIX##Base = OpenClass(CLASS, CLASSVER, &PREFIX##Class))) {	\
 		if(NEEDINTERFACE == true) {	\
-			LOG(("        + interface"));	\
+			LOG("        + interface");	\
 			I##PREFIX = (struct PREFIX##IFace *)GetInterface((struct Library *)PREFIX##Base, "main", 1, NULL);	\
 			if(I##PREFIX == NULL) {	\
-				LOG(("Failed to get main interface v1 of %s", CLASS));	\
+				LOG("Failed to get main interface v1 of %s", CLASS);	\
 			}	\
 		}	\
 	}	\
@@ -107,10 +107,10 @@
 
 #else
 #define AMINS_LIB_OPEN(LIB, LIBVER, PREFIX, INTERFACE, INTVER, FAIL)	\
-	LOG(("Opening %s v%d", LIB, LIBVER)); \
+	LOG("Opening %s v%d", LIB, LIBVER); \
 	if((PREFIX##Base = (struct PREFIX##Base *)OpenLibrary(LIB, LIBVER))) {	\
 	} else {	\
-		LOG(("Failed to open %s v%d", LIB, LIBVER));	\
+		LOG("Failed to open %s v%d", LIB, LIBVER);	\
 		if(FAIL == true) {	\
 			STRPTR error = ASPrintf("Unable to open %s v%d (fatal error)", LIB, LIBVER);	\
 			ami_misc_fatal_error(error);	\
@@ -126,7 +126,7 @@
 	struct PREFIX##Base *PREFIX##Base;
 
 #define AMINS_CLASS_OPEN(CLASS, CLASSVER, PREFIX, CLASSGET, NEEDINTERFACE)	\
-	LOG(("Opening %s v%d", CLASS, CLASSVER)); \
+	LOG("Opening %s v%d", CLASS, CLASSVER); \
 	if((PREFIX##Base = OpenLibrary(CLASS, CLASSVER))) {	\
 		PREFIX##Class = CLASSGET##_GetClass();	\
 	}	\

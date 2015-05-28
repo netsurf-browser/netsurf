@@ -266,7 +266,7 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 
 
 	case WM_COMMAND:
-		LOG(("WM_COMMAND Identifier 0x%x",LOWORD(wparam)));
+		LOG("WM_COMMAND Identifier 0x%x",LOWORD(wparam));
 
 		switch(LOWORD(wparam)) {
 		case IDC_PREFS_PROXYTYPE:

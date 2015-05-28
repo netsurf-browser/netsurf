@@ -42,9 +42,9 @@
 /* #define NSWS_PLOT_DEBUG  */
 
 #ifdef NSWS_PLOT_DEBUG
-#define PLOT_LOG(x) LOG(x)
+#define PLOT_LOG(x...) LOG(x)
 #else
-#define PLOT_LOG(x)
+#define PLOT_LOG(x...) ((void) 0)
 #endif
 
 HDC plot_hdc;
@@ -53,7 +53,7 @@ static RECT plot_clip; /* currently set clipping rectangle */
 
 static bool clip(const struct rect *clip)
 {
-	PLOT_LOG(("clip %d,%d to %d,%d", clip->x0, clip->y0, clip->x1, clip->y1));
+	PLOT_LOG("clip %d,%d to %d,%d", clip->x0, clip->y0, clip->x1, clip->y1);
 
 	plot_clip.left = clip->x0;
 	plot_clip.top = clip->y0;
@@ -65,7 +65,7 @@ static bool clip(const struct rect *clip)
 
 static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	PLOT_LOG(("from %d,%d to %d,%d", x0, y0, x1, y1));
+	PLOT_LOG("from %d,%d to %d,%d", x0, y0, x1, y1);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -120,7 +120,7 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	PLOT_LOG(("rectangle from %d,%d to %d,%d", x0, y0, x1, y1));
+	PLOT_LOG("rectangle from %d,%d to %d,%d", x0, y0, x1, y1);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -187,7 +187,7 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
-	PLOT_LOG(("polygon %d points", n));
+	PLOT_LOG("polygon %d points", n);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -235,7 +235,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 		points[i].x = (long) p[2 * i];
 		points[i].y = (long) p[2 * i + 1];
 
-		PLOT_LOG(("%ld,%ld ", points[i].x, points[i].y));
+		PLOT_LOG("%ld,%ld ", points[i].x, points[i].y);
 	}
 
 	SelectClipRgn(plot_hdc, clipregion);
@@ -258,7 +258,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 static bool text(int x, int y, const char *text, size_t length,
 		 const plot_font_style_t *style)
 {
-	PLOT_LOG(("words %s at %d,%d", text, x, y));
+	PLOT_LOG("words %s at %d,%d", text, x, y);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -317,7 +317,7 @@ static bool text(int x, int y, const char *text, size_t length,
 
 static bool disc(int x, int y, int radius, const plot_style_t *style)
 {
-	PLOT_LOG(("disc at %d,%d radius %d", x, y, radius));
+	PLOT_LOG("disc at %d,%d radius %d", x, y, radius);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -387,8 +387,8 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 static bool arc(int x, int y, int radius, int angle1, int angle2,
 		const plot_style_t *style)
 {
-	PLOT_LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
-	     angle1, angle2));
+	PLOT_LOG("arc centre %d,%d radius %d from %d to %d", x, y, radius,
+	     angle1, angle2);
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -565,8 +565,8 @@ plot_alpha_bitmap(HDC hdc,
 	BITMAPINFO *bmi;
 	HBITMAP MemBMh;
 
-	PLOT_LOG(("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height));
-	PLOT_LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
+	PLOT_LOG("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height);
+	PLOT_LOG("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom);
 
 	Memhdc = CreateCompatibleDC(hdc);
 	if (Memhdc == NULL) {
@@ -575,8 +575,8 @@ plot_alpha_bitmap(HDC hdc,
 
 	if ((bitmap->width != width) || 
 	    (bitmap->height != height)) {
-		PLOT_LOG(("scaling from %d,%d to %d,%d", 
-		     bitmap->width, bitmap->height, width, height));
+		PLOT_LOG("scaling from %d,%d to %d,%d", 
+		     bitmap->width, bitmap->height, width, height);
 		bitmap = bitmap_scale(bitmap, width, height);
 		if (bitmap == NULL)
 			return false;
@@ -735,7 +735,7 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 		bltres = plot_alpha_bitmap(plot_hdc, bitmap, x, y, width, height);
 	}
 
-	PLOT_LOG(("bltres = %d", bltres)); 
+	PLOT_LOG("bltres = %d", bltres);
 
 	DeleteObject(clipregion);
 
@@ -755,7 +755,7 @@ windows_plot_bitmap(int x, int y,
 
 	/* Bail early if we can */
 
-	PLOT_LOG(("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height));
+	PLOT_LOG("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height);
 
 	if (bitmap == NULL) {
 		LOG("Passed null bitmap!");
@@ -812,8 +812,8 @@ windows_plot_bitmap(int x, int y,
 		}
 	}
 
-	PLOT_LOG(("Tiled plotting %d,%d by %d,%d",x,y,width,height));
-	PLOT_LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
+	PLOT_LOG("Tiled plotting %d,%d by %d,%d",x,y,width,height);
+	PLOT_LOG("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom);
 
 	/* get left most tile position */
 	if (repeat_x)
@@ -823,7 +823,7 @@ windows_plot_bitmap(int x, int y,
 	if (repeat_y)
 		for (; y > plot_clip.top; y -= height);
 
-	PLOT_LOG(("repeat from %d,%d to %ld,%ld", x, y, plot_clip.right, plot_clip.bottom));
+	PLOT_LOG("repeat from %d,%d to %ld,%ld", x, y, plot_clip.right, plot_clip.bottom);
 
 	/* tile down and across to extents */
 	for (xf = x; xf < plot_clip.right; xf += width) {
@@ -842,14 +842,14 @@ windows_plot_bitmap(int x, int y,
 
 static bool flush(void)
 {
-	PLOT_LOG(("flush unimplemented"));
+	PLOT_LOG("flush unimplemented");
 	return true;
 }
 
 static bool path(const float *p, unsigned int n, colour fill, float width,
 		 colour c, const float transform[6])
 {
-	PLOT_LOG(("path unimplemented"));
+	PLOT_LOG("path unimplemented");
 	return true;
 }
 
