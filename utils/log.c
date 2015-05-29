@@ -30,7 +30,7 @@
 bool verbose_log = false;
 
 /** The stream to which logging is sent */
-static FILE *logf;
+static FILE *logfile;
 
 nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {
@@ -43,7 +43,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 		int argcmv;
 
 		/* verbose logging to stderr */
-		logf = stderr;
+		logfile = stderr;
 
 		/* remove -v from argv list */
 		for (argcmv = 2; argcmv < (*pargc); argcmv++) {
@@ -60,7 +60,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 		int argcmv;
 
 		/* verbose logging to file */
-		logf = fopen(argv[2], "a+");
+		logfile = fopen(argv[2], "a+");
 
 		/* remove -V and filename from argv list */
 		for (argcmv = 3; argcmv < (*pargc); argcmv++) {
@@ -68,7 +68,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 		}
 		(*pargc)--;
 
-		if (logf == NULL) {
+		if (logfile == NULL) {
 			/* could not open log file for output */
 			ret = NSERROR_NOT_FOUND;
 			verbose_log = false;
@@ -82,7 +82,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 	/* ensure output file handle is correctly configured */
 	if ((verbose_log == true) &&
 	    (ensure != NULL) &&
-	    (ensure(logf) == false)) {
+	    (ensure(logfile) == false)) {
 		/* failed to ensure output configuration */
 		ret = NSERROR_INIT_FAILED;
 		verbose_log = false;
@@ -152,15 +152,15 @@ void nslog_log(const char *file, const char *func, int ln, const char *format, .
 {
 	va_list ap;
 
-	fprintf(logf, "%s %s:%i %s: ", nslog_gettime(), file, ln, func);
+	fprintf(logfile, "%s %s:%i %s: ", nslog_gettime(), file, ln, func);
 
 	va_start(ap, format);
 
-	vfprintf(logf, format, ap);
+	vfprintf(logfile, format, ap);
 
 	va_end(ap);
 
-	fputc('\n', logf);
+	fputc('\n', logfile);
 }
 
 #endif
