@@ -26,7 +26,11 @@
 
 #include "utils/log.h"
 
+/** flag to enable verbose logging */
 bool verbose_log = false;
+
+/** The stream to which logging is sent */
+static FILE *logf;
 
 nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {
@@ -37,6 +41,11 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 	    (argv[1][1] == 'v') &&
 	    (argv[1][2] == 0)) {
 		int argcmv;
+
+		/* verbose logging to stderr */
+		logf = stderr;
+
+		/* remove -v from argv list */
 		for (argcmv = 2; argcmv < (*pargc); argcmv++) {
 			argv[argcmv - 1] = argv[argcmv];
 		}
@@ -44,12 +53,36 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 
 		/* ensure we actually show logging */
 		verbose_log = true;
+	} else if (((*pargc) > 2) &&
+	    (argv[1][0] == '-') &&
+	    (argv[1][1] == 'V') &&
+	    (argv[1][2] == 0)) {
+		int argcmv;
+
+		/* verbose logging to file */
+		logf = fopen(argv[2], "a+");
+
+		/* remove -V and filename from argv list */
+		for (argcmv = 3; argcmv < (*pargc); argcmv++) {
+			argv[argcmv - 1] = argv[argcmv];
+		}
+		(*pargc)--;
+
+		if (logf == NULL) {
+			/* could not open log file for output */
+			ret = NSERROR_NOT_FOUND;
+			verbose_log = false;
+		} else {
+
+			/* ensure we actually show logging */
+			verbose_log = true;
+		}
 	}
 
 	/* ensure output file handle is correctly configured */
 	if ((verbose_log == true) &&
 	    (ensure != NULL) &&
-	    (ensure(stderr) == false)) {
+	    (ensure(logf) == false)) {
 		/* failed to ensure output configuration */
 		ret = NSERROR_INIT_FAILED;
 		verbose_log = false;
