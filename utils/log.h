@@ -47,14 +47,7 @@ extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
 #  define LOG(format, ...) ((void) 0)
 #else
 
-/**
- * Obtain a formatted string suitable for prepending to a log message
- *
- * \return formatted string of the time since first log call
- */
-extern const char *nslog_gettime(void);
-
-extern void nslog_log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+extern void nslog_log(const char *file, const char *func, int ln, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 
 #  ifdef __GNUC__
 #    define LOG_FN __PRETTY_FUNCTION__
@@ -70,10 +63,7 @@ extern void nslog_log(const char *format, ...) __attribute__ ((format (printf, 1
 #define LOG(format, args...)						\
 	do {								\
 		if (verbose_log) {					\
-			nslog_log("%s " __FILE__ " %s %i: ",		\
-				  nslog_gettime(), LOG_FN, LOG_LN);	\
-			nslog_log(format , ##args);			\
-			nslog_log("\n");				\
+			nslog_log(__FILE__, LOG_FN, LOG_LN, format , ##args); \
 		}							\
 	} while(0)
 

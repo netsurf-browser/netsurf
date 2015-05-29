@@ -95,7 +95,7 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 
 /* Subtract the `struct timeval' values X and Y,
    storing the result in RESULT.
-   Return 1 if the difference is negative, otherwise 0.  
+   Return 1 if the difference is negative, otherwise 0.
 */
 
 static int
@@ -122,37 +122,45 @@ timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
 	return x->tv_sec < y->tv_sec;
 }
 
-const char *nslog_gettime(void)
+/**
+ * Obtain a formatted string suitable for prepending to a log message
+ *
+ * \return formatted string of the time since first log call
+ */
+static const char *nslog_gettime(void)
 {
 	static struct timeval start_tv;
 	static char buff[32];
 
 	struct timeval tv;
-        struct timeval now_tv;
+	struct timeval now_tv;
 
 	if (!timerisset(&start_tv)) {
-		gettimeofday(&start_tv, NULL);		
+		gettimeofday(&start_tv, NULL);
 	}
-        gettimeofday(&now_tv, NULL);
+	gettimeofday(&now_tv, NULL);
 
 	timeval_subtract(&tv, &now_tv, &start_tv);
 
-        snprintf(buff, sizeof(buff),"(%ld.%06ld)", 
+	snprintf(buff, sizeof(buff),"(%ld.%06ld)",
 			(long)tv.tv_sec, (long)tv.tv_usec);
 
-        return buff;
+	return buff;
 }
 
-void nslog_log(const char *format, ...)
+void nslog_log(const char *file, const char *func, int ln, const char *format, ...)
 {
 	va_list ap;
 
+	fprintf(logf, "%s %s:%i %s: ", nslog_gettime(), file, ln, func);
+
 	va_start(ap, format);
 
-	vfprintf(stderr, format, ap);
+	vfprintf(logf, format, ap);
 
 	va_end(ap);
+
+	fputc('\n', logf);
 }
 
 #endif
-
