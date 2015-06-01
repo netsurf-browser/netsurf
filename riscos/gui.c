@@ -305,9 +305,14 @@ static nserror set_defaults(struct nsoption_s *defaults)
 	if (nsoption_charp(ca_bundle) == NULL ||
 	    nsoption_charp(cookie_file) == NULL ||
 	    nsoption_charp(cookie_jar) == NULL) {
-		LOG("Failed initialising string options");
+		LOG("Failed initialising default options");
 		return NSERROR_BAD_PARAMETER;
 	}
+
+	/* RISC OS platform does not generally benefit from disc cache
+	 * so the default should be off.
+	 */
+	nsoption_set_uint(disc_cache_size, 0);
 
 	/* set default system colours for riscos ui */
 	set_colour_from_wimp(defaults, wimp_COLOUR_BLACK, NSOPTION_sys_colour_ActiveBorder, 0x00000000);
