@@ -333,7 +333,7 @@ en.all.ToolAddress:Address bar
 de.all.ToolAddress:Adressleiste
 fr.all.ToolAddress:Barre d'adresse
 it.all.ToolAddress:Barra indirizzi
-nl.all.ToolAddress:Adresbalk
+nl.all.ToolAddress:Adresveld
 en.all.ToolThrob:Throbber
 de.all.ToolThrob:Ladeaktivität
 fr.all.ToolThrob:Pulseur
@@ -1571,22 +1571,22 @@ en.gtk.gtkSizeInfo:%s of %s
 de.gtk.gtkSizeInfo:%s von %s
 fr.gtk.gtkSizeInfo:%s de %s
 it.gtk.gtkSizeInfo:%s di %s
-nl.gtk.gtkSizeInfo:%s of %s
+nl.gtk.gtkSizeInfo:%s van %s
 en.gtk.gtkProgressBar:%.0f%% of %u files
 de.gtk.gtkProgressBar:%.0f%% von %u Dateien
 fr.gtk.gtkProgressBar:%.0f%% de %u fichiers
 it.gtk.gtkProgressBar:%. di %% su %u file
-nl.gtk.gtkProgressBar:%.0f%% of %u files
+nl.gtk.gtkProgressBar:%.0f%% van %u bestanden
 en.gtk.gtkProgressBarPulse:Downloading %u files
 de.gtk.gtkProgressBarPulse:Lade %u Dateien herunter
 fr.gtk.gtkProgressBarPulse:Tèlèchargement des fichiers %u
 it.gtk.gtkProgressBarPulse:Scaricamento dei file %u
-nl.gtk.gtkProgressBarPulse:Downloading %u files
+nl.gtk.gtkProgressBarPulse:%u bestanden aan het downloaden
 en.gtk.gtkProgressBarPulseSingle:Downloading %u file
 de.gtk.gtkProgressBarPulseSingle:Lade %u Datei
 fr.gtk.gtkProgressBarPulseSingle:Téléchargement du fichier %u
 it.gtk.gtkProgressBarPulseSingle:Scaricamento del file %u
-nl.gtk.gtkProgressBarPulseSingle:Downloading %u file
+nl.gtk.gtkProgressBarPulseSingle:%u bestand aan het downloaden
 
 # Column Headers
 #
@@ -1594,7 +1594,7 @@ en.gtk.gtkProgress:Progress
 de.gtk.gtkProgress:Fortschritt
 fr.gtk.gtkProgress:Progression
 it.gtk.gtkProgress:Progressi
-nl.gtk.gtkProgress:Progress
+nl.gtk.gtkProgress:Voortgang
 en.gtk.gtkDetails:Details
 de.gtk.gtkDetails:Details
 fr.gtk.gtkDetails:Détails
@@ -1604,12 +1604,12 @@ en.gtk.gtkSpeed:Speed
 de.gtk.gtkSpeed:Geschwindigkeit
 fr.gtk.gtkSpeed:Vitesse
 it.gtk.gtkSpeed:Velocità
-nl.gtk.gtkSpeed:Speed
+nl.gtk.gtkSpeed:Snelheid
 en.gtk.gtkRemaining:Remaining
 de.gtk.gtkRemaining:Übrig
 fr.gtk.gtkRemaining:Temps restant
 it.gtk.gtkRemaining:Al termine
-nl.gtk.gtkRemaining:Remaining
+nl.gtk.gtkRemaining:Overig
 
 # Status Messages
 # spaces necessary
@@ -1619,22 +1619,22 @@ en.gtk.gtkError: Error
 de.gtk.gtkError: Fehler 
 fr.gtk.gtkError: Erreur 
 it.gtk.gtkError: Errore 
-nl.gtk.gtkError: Error 
+nl.gtk.gtkError: Fout 
 en.gtk.gtkComplete: Complete 
 de.gtk.gtkComplete: Vollständig 
 fr.gtk.gtkComplete: Terniné 
 it.gtk.gtkComplete: Completo 
-nl.gtk.gtkComplete: Complete 
+nl.gtk.gtkComplete: Voltooid 
 en.gtk.gtkCanceled: Canceled 
 de.gtk.gtkCanceled: Abgebrochen 
 fr.gtk.gtkCanceled: Annulé 
 it.gtk.gtkCanceled: Annullato 
-nl.gtk.gtkCanceled: Canceled 
+nl.gtk.gtkCanceled: Afgebroken 
 en.gtk.gtkWorking: Working 
 de.gtk.gtkWorking: Arbeite 
 fr.gtk.gtkWorking: en cours 
 it.gtk.gtkWorking: In corso 
-nl.gtk.gtkWorking: Working 
+nl.gtk.gtkWorking: In bedrijf 
 
 # Dialogs
 #
@@ -1642,87 +1642,87 @@ en.gtk.gtkQuit:Quit NetSurf?
 de.gtk.gtkQuit:NetSurf beenden?
 fr.gtk.gtkQuit:Quitter NetSurf ?
 it.gtk.gtkQuit:Sei sicuro di voler uscire da NetSurf?
-nl.gtk.gtkQuit:Quit NetSurf?
+nl.gtk.gtkQuit:NetSurf afsluiten?
 en.gtk.gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
 de.gtk.gtkDownloadsRunning:Es sind noch Downloads aktiv, beim Beenden werden sie abgebrochen und die Dateien gelöscht.
 fr.gtk.gtkDownloadsRunning:Il y a encore des téléchargements en cours, si vous quittez maintenant ceux-ci seront annulés et les fichiers supprimés.
 it.gtk.gtkDownloadsRunning:Sono presenti alcuni file in download in attesa di essere completati, chiudendo questa sessione tutti i file incompleti verranno cancellati.
-nl.gtk.gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
+nl.gtk.gtkDownloadsRunning:Er zijn nog downloads bezig, bij het afsluiten worden deze afgebroken en worden de bijbehorende bestanden gewist.
 en.gtk.gtkStartDownload:Download file?
 de.gtk.gtkStartDownload:Datei herunterladen?
 fr.gtk.gtkStartDownload:Téléchargement du fichier?
 it.gtk.gtkStartDownload:Scaricare il file?
-nl.gtk.gtkStartDownload:Download file?
+nl.gtk.gtkStartDownload:Bestand downloaden?
 en.gtk.gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
 de.gtk.gtkOverwrite:Eine Datei mit dem Namen "%s" existiert bereits. Soll sie ersetzt werden?
 fr.gtk.gtkOverwrite:Un fichier nommé "%s" existe déja. Voulez-vous le remplacer ?
 it.gtk.gtkOverwrite:Il file "%s" è già esistente.  Si desidera sovrascriverlo?
-nl.gtk.gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
+nl.gtk.gtkOverwrite:Een bestand met de naam "%s" bestaat reeds. Bestand overschrijven en vervangen?
 en.gtk.gtkOverwriteTitle:File exists
 de.gtk.gtkOverwriteTitle:File exists
 fr.gtk.gtkOverwriteTitle:Le fichier existe
 it.gtk.gtkOverwriteTitle:File già esistente
-nl.gtk.gtkOverwriteTitle:File exists
+nl.gtk.gtkOverwriteTitle:Bestand bestaat reeds.
 en.gtk.gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
 de.gtk.gtkOverwriteInfo:Die Datei existiert bereits im Verzeichnis "%s".  Beim ersetzen wird ihr momentaner Inhalt überschrieben.
 fr.gtk.gtkOverwriteInfo:Le fichier existe déja dans "%s". Son remplacement réécrira son contenu.
 it.gtk.gtkOverwriteInfo:Il file è già esistente in "%s".  Sostituirlo comporterà la sovrascrittura del file.
-nl.gtk.gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
+nl.gtk.gtkOverwriteInfo:Het bestand bestaat reeds in map "%s".  Bij het vervangen zal de huidige inhoud worden overschreven.
 en.gtk.gtkFailed:Download failed
 de.gtk.gtkFailed:Download fehlgeschlagen
 fr.gtk.gtkFailed:Échec du téléchargement
 it.gtk.gtkFailed:Scaricamento fallito
-nl.gtk.gtkFailed:Download failed
+nl.gtk.gtkFailed:Download mislukt
 en.gtk.gtkFileError:File error: %s
 de.gtk.gtkFileError:Dateifehler: %s
 fr.gtk.gtkFileError:Erreur de fichier : %s
 it.gtk.gtkFileError:Errore file: %s
-nl.gtk.gtkFileError:File error: %s
+nl.gtk.gtkFileError:Bestandsfout: %s
 en.gtk.gtkInfo:%s from %s is %s in size
 de.gtk.gtkInfo:%s von %s ist %s in size
 fr.gtk.gtkInfo:%s de %s est de taille %s
 it.gtk.gtkInfo:%s da %s è %s come dimensione
-nl.gtk.gtkInfo:%s from %s is %s in size
+nl.gtk.gtkInfo:%s van %s is %s in grootte
 en.gtk.gtkSave:Save file as…
 de.gtk.gtkSave:Datei speichern unter...
 fr.gtk.gtkSave:Enregistrer le fichier sous...
 it.gtk.gtkSave:Salva file come...
-nl.gtk.gtkSave:Save file as...
+nl.gtk.gtkSave:Bestand bewaren als...
 en.gtk.gtkSourceSave:Save source
 de.gtk.gtkSourceSave:Quelltext speichern
 fr.gtk.gtkSourceSave:Enregistrer la Source
 it.gtk.gtkSourceSave:Salva sorgente
-nl.gtk.gtkSourceSave:Save Source
+nl.gtk.gtkSourceSave:Brontekst bewaren
 en.gtk.gtkSourceTabError:Error handling source data 
 de.gtk.gtkSourceTabError:Fehler beim behandeln der Quelldaten 
 fr.gtk.gtkSourceTabError:Erreur de manipulation des données source 
 it.gtk.gtkSourceTabError:Errore di modifica sul sorgente 
-nl.gtk.gtkSourceTabError:Error handling source data 
+nl.gtk.gtkSourceTabError:Fout plaatsgevonden bij afhandelen brondata
 en.gtk.gtkplainSave:Save plain text
 de.gtk.gtkplainSave:Als Text speichern
 fr.gtk.gtkplainSave:Enregistrer sans mise en forme
 it.gtk.gtkplainSave:Salva come testo
-nl.gtk.gtkplainSave:Save as text
+nl.gtk.gtkplainSave:Als tekst bewaren
 en.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 de.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 fr.gtk.gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide
 it.gtk.gtkcompleteSave:Salva l'intera pagina web - seleziona una directory vuota
-nl.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
+nl.gtk.gtkcompleteSave:Complete webpagina bewaren - selecteer een lege map
 en.gtk.gtkSaveConfirm:File saved
 de.gtk.gtkSaveConfirm:File saved
 fr.gtk.gtkSaveConfirm:Fichier enregistré
 it.gtk.gtkSaveConfirm:File salvato
-nl.gtk.gtkSaveConfirm:File saved
+nl.gtk.gtkSaveConfirm:Bestand bewaard
 en.gtk.gtkSaveCancelled:File not saved
 de.gtk.gtkSaveCancelled:File not saved
 fr.gtk.gtkSaveCancelled:Fichier pas enregistré
 it.gtk.gtkSaveCancelled:File non salvato
-nl.gtk.gtkSaveCancelled:File not saved
+nl.gtk.gtkSaveCancelled:Bestand is niet bewaard
 en.gtk.gtkUnknownHost:an unknown host
 de.gtk.gtkUnknownHost:ein unbekannter Host
 fr.gtk.gtkUnknownHost:un hôte inconnu
 it.gtk.gtkUnknownHost:un host sconosciuto
-nl.gtk.gtkUnknownHost:an unknown host
+nl.gtk.gtkUnknownHost:een onbekende host
 en.gtk.gtkUnknownFile:
 de.gtk.gtkUnknownFile:
 fr.gtk.gtkUnknownFile:
@@ -1732,7 +1732,7 @@ en.gtk.gtkUnknownSize:unknown
 de.gtk.gtkUnknownSize:unbekannt
 fr.gtk.gtkUnknownSize:inconnue
 it.gtk.gtkUnknownSize:sconosciuto
-nl.gtk.gtkUnknownSize:unknown
+nl.gtk.gtkUnknownSize:onbekend
 
 # gtk Menu / Button labels
 #
@@ -1741,38 +1741,38 @@ en.gtk.gtkFile:_File
 de.gtk.gtkFile:_Datei
 fr.gtk.gtkFile:_Fichier
 it.gtk.gtkFile:_File
-nl.gtk.gtkFile:_File
+nl.gtk.gtkFile:_Bestand
 en.gtk.gtkEdit:_Edit
 de.gtk.gtkEdit:_Bearbeiten
 fr.gtk.gtkEdit:Édit_er
 it.gtk.gtkEdit:Mo_difica
-nl.gtk.gtkEdit:_Edit
+nl.gtk.gtkEdit:Be_werken
 en.gtk.gtkView:_View
 de.gtk.gtkView:_Ansicht
 fr.gtk.gtkView:_Affichage
 it.gtk.gtkView:_Mostra
-nl.gtk.gtkView:_View
+nl.gtk.gtkView:Bee_ld
 en.gtk.gtkNavigate:_Navigate
 de.gtk.gtkNavigate:_Navigieren
 fr.gtk.gtkNavigate:_Navigation
 it.gtk.gtkNavigate:_Visualizza
-nl.gtk.gtkNavigate:_Navigate
+nl.gtk.gtkNavigate:_Ga
 en.gtk.gtkTools:_Tools
 de.gtk.gtkTools:_Tools
 fr.gtk.gtkTools:Ou_tils
 it.gtk.gtkTools:_Tools
-nl.gtk.gtkTools:_Tools
+nl.gtk.gtkTools:E_xtra
 en.gtk.gtkHelp:_Help
 de.gtk.gtkHelp:_Hilfe
 fr.gtk.gtkHelp:_Aide
 it.gtk.gtkHelp:_Aiuto
-nl.gtk.gtkHelp:_Help
+nl.gtk.gtkHelp:_Hulp
 
 en.gtk.gtkNewTab:New _Tab
 de.gtk.gtkNewTab:Neuer _Tab
 fr.gtk.gtkNewTab:Nouvel _Onglet
 it.gtk.gtkNewTab:Nuova _scheda
-nl.gtk.gtkNewTab:New _Tab
+nl.gtk.gtkNewTab:Nieuw _Tabblad
 en.gtk.gtkNewTabAccel:<ctrl>t
 de.gtk.gtkNewTabAccel:<ctrl>t
 fr.gtk.gtkNewTabAccel:<ctrl>t
@@ -1782,7 +1782,7 @@ en.gtk.gtkNewWindow:_New Window
 de.gtk.gtkNewWindow:_Neues Fenster
 fr.gtk.gtkNewWindow:_Nouvelle Fenêtre
 it.gtk.gtkNewWindow:_Nuova finestra
-nl.gtk.gtkNewWindow:_New Window
+nl.gtk.gtkNewWindow:_Nieuw venster
 en.gtk.gtkNewWindowAccel:<ctrl>n
 de.gtk.gtkNewWindowAccel:<ctrl>n
 fr.gtk.gtkNewWindowAccel:<ctrl>n
@@ -1792,7 +1792,7 @@ en.gtk.gtkOpenFile:_Open File
 de.gtk.gtkOpenFile:Datei öffnen
 fr.gtk.gtkOpenFile:_Ouvrir un fichier
 it.gtk.gtkOpenFile:_Apri file
-nl.gtk.gtkOpenFile:_Open File
+nl.gtk.gtkOpenFile:Bestand _openen
 en.gtk.gtkOpenFileAccel:<ctrl>o
 de.gtk.gtkOpenFileAccel:<ctrl>o
 fr.gtk.gtkOpenFileAccel:<ctrl>o
@@ -1802,7 +1802,7 @@ en.gtk.gtkCloseWindow:_Close Window
 de.gtk.gtkCloseWindow:Fenster schließen
 fr.gtk.gtkCloseWindow:_Fermer la fenêtre
 it.gtk.gtkCloseWindow:_Chiudi finestra
-nl.gtk.gtkCloseWindow:_Close Window
+nl.gtk.gtkCloseWindow:_Venster sluiten
 en.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 de.gtk.gtkCloseWindowAccel:<ctrl><shift>w
 fr.gtk.gtkCloseWindowAccel:<ctrl><maj>w
@@ -1812,7 +1812,7 @@ en.gtk.gtkSavePage:Save Page…
 de.gtk.gtkSavePage:Seite speichern..
 fr.gtk.gtkSavePage:Enregistrer la Page...
 it.gtk.gtkSavePage:Salva pagina...
-nl.gtk.gtkSavePage:Save Page..
+nl.gtk.gtkSavePage:Pagina bewaren...
 en.gtk.gtkSavePageAccel:<ctrl>s
 de.gtk.gtkSavePageAccel:<ctrl>s
 fr.gtk.gtkSavePageAccel:<ctrl>s
@@ -1822,32 +1822,32 @@ en.gtk.gtkExport:Export
 de.gtk.gtkExport:Exportieren
 fr.gtk.gtkExport:Exporter
 it.gtk.gtkExport:Esporta
-nl.gtk.gtkExport:Export
+nl.gtk.gtkExport:Exporteren
 en.gtk.gtkPlainText:Plain Text…
 de.gtk.gtkPlainText:Reiner Text..
 fr.gtk.gtkPlainText:Texte...
 it.gtk.gtkPlainText:Testo normale...
-nl.gtk.gtkPlainText:Plain Text..
+nl.gtk.gtkPlainText:Platte tekst...
 en.gtk.gtkDrawFile:Drawfile…
 de.gtk.gtkDrawFile:Drawfile..
 fr.gtk.gtkDrawFile:Fichier dessin...
 it.gtk.gtkDrawFile:File Draw...
-nl.gtk.gtkDrawFile:Drawfile..
+nl.gtk.gtkDrawFile:Draw-bestand...
 en.gtk.gtkPostScript:PostScript…
 de.gtk.gtkPostScript:PostScript..
 fr.gtk.gtkPostScript:PostScript...
 it.gtk.gtkPostScript:PostScript...
-nl.gtk.gtkPostScript:PostScript..
+nl.gtk.gtkPostScript:PostScript...
 en.gtk.gtkPDF:PDF…
 de.gtk.gtkPDF:PDF..
 fr.gtk.gtkPDF:PDF...
 it.gtk.gtkPDF:PDF...
-nl.gtk.gtkPDF:PDF..
+nl.gtk.gtkPDF:PDF...
 en.gtk.gtkPrintPreview:Print Preview…
 de.gtk.gtkPrintPreview:Druckvorschau...
 fr.gtk.gtkPrintPreview:Aperçu avant impression...
 it.gtk.gtkPrintPreview:Anteprima di stampa...
-nl.gtk.gtkPrintPreview:Print Preview..
+nl.gtk.gtkPrintPreview:Afdruk_voorbeeld...
 en.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 de.gtk.gtkPrintPreviewAccel:<ctrl><shift>p
 fr.gtk.gtkPrintPreviewAccel:<ctrl><maj>p
@@ -1857,7 +1857,7 @@ en.gtk.gtkPrint:Print…
 de.gtk.gtkPrint:Drucken...
 fr.gtk.gtkPrint:Imprimer...
 it.gtk.gtkPrint:Stampa...
-nl.gtk.gtkPrint:Print..
+nl.gtk.gtkPrint:Af_drukken...
 en.gtk.gtkPrintAccel:<ctrl>p
 de.gtk.gtkPrintAccel:<ctrl>p
 fr.gtk.gtkPrintAccel:<ctrl>p
@@ -1867,7 +1867,7 @@ en.gtk.gtkQuitMenu:_Quit
 de.gtk.gtkQuitMenu:Beenden
 fr.gtk.gtkQuitMenu:_Quitter
 it.gtk.gtkQuitMenu:_Esci
-nl.gtk.gtkQuitMenu:_Quit
+nl.gtk.gtkQuitMenu:A_fsluiten
 en.gtk.gtkQuitMenuAccel:<ctrl>q
 de.gtk.gtkQuitMenuAccel:<ctrl>q
 fr.gtk.gtkQuitMenuAccel:<ctrl>q
@@ -1878,7 +1878,7 @@ en.gtk.gtkCut:Cu_t
 de.gtk.gtkCut:Ausschneiden
 fr.gtk.gtkCut:Cou_per
 it.gtk.gtkCut:Ta_glia
-nl.gtk.gtkCut:Cu_t
+nl.gtk.gtkCut:K_nippen
 en.gtk.gtkCutAccel:<ctrl>x
 de.gtk.gtkCutAccel:<ctrl>x
 fr.gtk.gtkCutAccel:<ctrl>x
@@ -1888,7 +1888,7 @@ en.gtk.gtkCopy:_Copy
 de.gtk.gtkCopy:Kopieren
 fr.gtk.gtkCopy:_Copier
 it.gtk.gtkCopy:_Copia
-nl.gtk.gtkCopy:_Copy
+nl.gtk.gtkCopy:_Kopiëren
 en.gtk.gtkCopyAccel:<ctrl>c
 de.gtk.gtkCopyAccel:<ctrl>c
 fr.gtk.gtkCopyAccel:<ctrl>c
@@ -1898,7 +1898,7 @@ en.gtk.gtkPaste:_Paste
 de.gtk.gtkPaste:Einfügen
 fr.gtk.gtkPaste:C_oller
 it.gtk.gtkPaste:_Incolla
-nl.gtk.gtkPaste:_Paste
+nl.gtk.gtkPaste:_Plakken
 en.gtk.gtkPasteAccel:<ctrl>v
 de.gtk.gtkPasteAccel:<ctrl>v
 fr.gtk.gtkPasteAccel:<ctrl>v
@@ -1908,12 +1908,12 @@ en.gtk.gtkDelete:_Delete
 de.gtk.gtkDelete:Löschen
 fr.gtk.gtkDelete:_Supprimer
 it.gtk.gtkDelete:_Cancella
-nl.gtk.gtkDelete:_Delete
+nl.gtk.gtkDelete:_Verwijderen
 en.gtk.gtkSelectAll:Select _All
 de.gtk.gtkSelectAll:_Alles auswählen
 fr.gtk.gtkSelectAll:_Tout sélectionner
 it.gtk.gtkSelectAll:Seleziona _Tutto
-nl.gtk.gtkSelectAll:Select _All
+nl.gtk.gtkSelectAll:_Alles selecteren
 en.gtk.gtkSelectAllAccel:<ctrl>a
 de.gtk.gtkSelectAllAccel:<ctrl>a
 fr.gtk.gtkSelectAllAccel:<ctrl>a
@@ -1923,7 +1923,7 @@ en.gtk.gtkFind:_Find…
 de.gtk.gtkFind:_Finden..
 fr.gtk.gtkFind:_Rechercher...
 it.gtk.gtkFind:_Trova...
-nl.gtk.gtkFind:_Find..
+nl.gtk.gtkFind:_Zoeken...
 en.gtk.gtkFindAccel:<ctrl>f
 de.gtk.gtkFindAccel:<ctrl>f
 fr.gtk.gtkFindAccel:<ctrl>f
@@ -1933,13 +1933,13 @@ en.gtk.gtkPreferences:P_references
 de.gtk.gtkPreferences:Einstellungen
 fr.gtk.gtkPreferences:P_références
 it.gtk.gtkPreferences:P_referenze
-nl.gtk.gtkPreferences:P_references
+nl.gtk.gtkPreferences:V_oorkeuren
 
 en.gtk.gtkStop:_Stop
 de.gtk.gtkStop:_Stop
 fr.gtk.gtkStop:_Arrêter
 it.gtk.gtkStop:_Stoppa
-nl.gtk.gtkStop:_Stop
+nl.gtk.gtkStop:_Stoppen
 en.gtk.gtkStopAccel:Escape
 de.gtk.gtkStopAccel:Escape
 fr.gtk.gtkStopAccel:Échap
@@ -1949,7 +1949,7 @@ en.gtk.gtkReload:_Reload
 de.gtk.gtkReload:Neu laden
 fr.gtk.gtkReload:_Actualiser
 it.gtk.gtkReload:_Ricarica
-nl.gtk.gtkReload:_Reload
+nl.gtk.gtkReload:Ver_nieuwen
 en.gtk.gtkReloadAccel:F5
 de.gtk.gtkReloadAccel:F5
 fr.gtk.gtkReloadAccel:F5
@@ -1959,12 +1959,12 @@ en.gtk.gtkScaleView:_Scale View
 de.gtk.gtkScaleView:Ansicht skalieren
 fr.gtk.gtkScaleView:_Zoom
 it.gtk.gtkScaleView:_Scala
-nl.gtk.gtkScaleView:_Scale View
+nl.gtk.gtkScaleView:_Zoomen
 en.gtk.gtkZoomPlus:Zoom _in
 de.gtk.gtkZoomPlus:Here_inzoomen
 fr.gtk.gtkZoomPlus:Zoom _avant
 it.gtk.gtkZoomPlus:_Incrementa zoom
-nl.gtk.gtkZoomPlus:Zoom _in
+nl.gtk.gtkZoomPlus:_Inzoomen
 en.gtk.gtkZoomPlusAccel:<ctrl>plus
 de.gtk.gtkZoomPlusAccel:<ctrl>plus
 fr.gtk.gtkZoomPlusAccel:<ctrl>+
@@ -1974,7 +1974,7 @@ en.gtk.gtkZoomMinus:Zoom _out
 de.gtk.gtkZoomMinus:Herausz_oomen
 fr.gtk.gtkZoomMinus:Z_oom arrière
 it.gtk.gtkZoomMinus:_Diminuisci zoom
-nl.gtk.gtkZoomMinus:Zoom _out
+nl.gtk.gtkZoomMinus:_Uitzoomen
 en.gtk.gtkZoomMinusAccel:<ctrl>minus
 de.gtk.gtkZoomMinusAccel:<ctrl>minus
 fr.gtk.gtkZoomMinusAccel:<ctrl>-
@@ -1984,7 +1984,7 @@ en.gtk.gtkZoomNormal:_Normal size
 de.gtk.gtkZoomNormal:_Normalgröße
 fr.gtk.gtkZoomNormal:_Taille Normale
 it.gtk.gtkZoomNormal:Dimensione _normale
-nl.gtk.gtkZoomNormal:_Normal size
+nl.gtk.gtkZoomNormal:_Originele grootte
 en.gtk.gtkZoomNormalAccel:<ctrl>0
 de.gtk.gtkZoomNormalAccel:<ctrl>0
 fr.gtk.gtkZoomNormalAccel:<ctrl>0
@@ -1994,7 +1994,7 @@ en.gtk.gtkFullScreen:_Fullscreen
 de.gtk.gtkFullScreen:_Vollbild
 fr.gtk.gtkFullScreen:_Plein écran
 it.gtk.gtkFullScreen:_Tutto schermo
-nl.gtk.gtkFullScreen:_Fullscreen
+nl.gtk.gtkFullScreen:_Volledig scherm
 en.gtk.gtkFullScreenAccel:F11
 de.gtk.gtkFullScreenAccel:F11
 fr.gtk.gtkFullScreenAccel:F11
@@ -2004,7 +2004,7 @@ en.gtk.gtkPageSource:Page S_ource
 de.gtk.gtkPageSource: Q_uelltext Anzeigen
 fr.gtk.gtkPageSource:Code s_ource de la page
 it.gtk.gtkPageSource:Mostra s_orgente
-nl.gtk.gtkPageSource:Page S_ource
+nl.gtk.gtkPageSource:Pagina_bron
 en.gtk.gtkPageSourceAccel:<ctrl>U
 de.gtk.gtkPageSourceAccel:<ctrl>U
 fr.gtk.gtkPageSourceAccel:<ctrl>U
@@ -2014,42 +2014,42 @@ en.gtk.gtkImages:_Images
 de.gtk.gtkImages:B_ilder
 fr.gtk.gtkImages:_Images
 it.gtk.gtkImages:_Immagini
-nl.gtk.gtkImages:_Images
+nl.gtk.gtkImages:_Afbeeldingen
 en.gtk.gtkForegroundImages:_Foreground Images
 de.gtk.gtkForegroundImages:_Vordergrundbilder
 fr.gtk.gtkForegroundImages:_Images de premier plan
 it.gtk.gtkForegroundImages:In _primo piano
-nl.gtk.gtkForegroundImages:_Foreground Images
+nl.gtk.gtkForegroundImages:_Voorgrondafbeeldingen
 en.gtk.gtkBackgroundImages:_Background Images
 de.gtk.gtkBackgroundImages:_Hintergrundbilder
 fr.gtk.gtkBackgroundImages:_Images d'arrière plan
 it.gtk.gtkBackgroundImages:In _sottofondo
-nl.gtk.gtkBackgroundImages:_Background Images
+nl.gtk.gtkBackgroundImages:_Achtergrondafbeeldingen
 en.gtk.gtkToolbars:_Toolbars
 de.gtk.gtkToolbars:_Werkzeugleisten
 fr.gtk.gtkToolbars:Barre d'ou_tils
 it.gtk.gtkToolbars:_Barre strumenti
-nl.gtk.gtkToolbars:_Toolbars
+nl.gtk.gtkToolbars:_Werkbalken
 en.gtk.gtkTabs:_Tabs
 de.gtk.gtkTabs:_Tabs
 fr.gtk.gtkTabs:Ongle_ts
 it.gtk.gtkTabs:_Schede
-nl.gtk.gtkTabs:_Tabs
+nl.gtk.gtkTabs:_Tabbladen
 en.gtk.gtkMenuBar:_Menu Bar
 de.gtk.gtkMenuBar:_Menüleiste
 fr.gtk.gtkMenuBar:Barre de _menu
 it.gtk.gtkMenuBar:Barra _menu
-nl.gtk.gtkMenuBar:_Menu Bar
+nl.gtk.gtkMenuBar:_Menubalk
 en.gtk.gtkToolBar:_Button Bar
 de.gtk.gtkToolBar:_Buttonleiste
 fr.gtk.gtkToolBar:_Barre de boutons
 it.gtk.gtkToolBar:Barra p_ulsanti
-nl.gtk.gtkToolBar:_Button Bar
+nl.gtk.gtkToolBar:_Knoppenbalk
 en.gtk.gtkStatusBar:_Status Bar
 de.gtk.gtkStatusBar:_Statusleiste
 fr.gtk.gtkStatusBar:Ba_rre d'état
 it.gtk.gtkStatusBar:Barra di s_tato
-nl.gtk.gtkStatusBar:_Status Bar
+nl.gtk.gtkStatusBar:_Statusbalk
 en.gtk.gtkDownloads:_Downloads...
 de.gtk.gtkDownloads:_Downloads...
 fr.gtk.gtkDownloads:_Téléchargements...
@@ -2064,63 +2064,63 @@ en.gtk.gtkSaveWindowSize:S_ave Window Size
 de.gtk.gtkSaveWindowSize:Fenstergröße _speichern
 fr.gtk.gtkSaveWindowSize:E_nregistrer la taille de la fenêtre
 it.gtk.gtkSaveWindowSize:S_alva dimensione finestra
-nl.gtk.gtkSaveWindowSize:S_ave Window Size
+nl.gtk.gtkSaveWindowSize:Vensteromvang ops_laan
 en.gtk.gtkDeveloper:De_veloper
 de.gtk.gtkDeveloper:De_veloper
 fr.gtk.gtkDeveloper:Dé_veloppeur
 it.gtk.gtkDeveloper:De_veloper
-nl.gtk.gtkDeveloper:De_veloper
+nl.gtk.gtkDeveloper:_Internet ontwikkeling
 en.gtk.gtkToggleDebugging:T_oggle debug rendering
 de.gtk.gtkToggleDebugging:T_oggle debug rendering
 fr.gtk.gtkToggleDebugging:Basculer déb_ogage de rendu
 it.gtk.gtkToggleDebugging:In_verti debug del rendering
-nl.gtk.gtkToggleDebugging:T_oggle debug rendering
+nl.gtk.gtkToggleDebugging:Debug-weergave aan/uit
 en.gtk.gtkDebugBoxTree:Debug _box tree
 de.gtk.gtkDebugBoxTree:Debug _box tree
 fr.gtk.gtkDebugBoxTree:Déboguer arbre _box
 it.gtk.gtkDebugBoxTree:Debug _box tree
-nl.gtk.gtkDebugBoxTree:Debug _box tree
+nl.gtk.gtkDebugBoxTree:_Box-boom debuggen
 en.gtk.gtkDebugDomTree:Debug _DOM tree
 de.gtk.gtkDebugDomTree:Debug _DOM tree
 fr.gtk.gtkDebugDomTree:Déboguer arbre _DOM
 it.gtk.gtkDebugDomTree:Debug albero _DOM
-nl.gtk.gtkDebugDomTree:Debug _DOM tree
+nl.gtk.gtkDebugDomTree:_DOM-boom debuggen
 
 en.gtk.gtkBack:_Back
 de.gtk.gtkBack:_Zurück
 fr.gtk.gtkBack:_Précédent
 it.gtk.gtkBack:_Indietro
-nl.gtk.gtkBack:_Back
+nl.gtk.gtkBack:_Terug
 en.gtk.gtkBackAccel:<alt>Left
 de.gtk.gtkBackAccel:<alt>Left
 fr.gtk.gtkBackAccel:<alt>Gauche
 it.gtk.gtkBackAccel:<alt>Sinistra
-nl.gtk.gtkBackAccel:<alt>Left
+nl.gtk.gtkBackAccel:<alt>Linkerpijltoets
 en.gtk.gtkForward:_Forward
 de.gtk.gtkForward:_Vorwärts
 fr.gtk.gtkForward:_Suivant
 it.gtk.gtkForward:_Avanti
-nl.gtk.gtkForward:_Forward
+nl.gtk.gtkForward:_Vooruit
 en.gtk.gtkForwardAccel:<alt>Right
 de.gtk.gtkForwardAccel:<alt>Right
 fr.gtk.gtkForwardAccel:<alt>Droit
 it.gtk.gtkForwardAccel:<alt>Destra
-nl.gtk.gtkForwardAccel:<alt>Right
+nl.gtk.gtkForwardAccel:<alt>Rechterpijltoets
 en.gtk.gtkHome:_Home
 de.gtk.gtkHome:_Startseite
 fr.gtk.gtkHome:_Accueil
 it.gtk.gtkHome:_Home
-nl.gtk.gtkHome:_Home
+nl.gtk.gtkHome:_Beginpagina
 en.gtk.gtkHomeAccel:<alt>Down
 de.gtk.gtkHomeAccel:<alt>Down
 fr.gtk.gtkHomeAccel:<alt>Bas
 it.gtk.gtkHomeAccel:<alt>Giù
-nl.gtk.gtkHomeAccel:<alt>Down
+nl.gtk.gtkHomeAccel:<alt>Pijl omlaag
 en.gtk.gtkLocalHistory:_Local History…
 de.gtk.gtkLocalHistory:_Lokaler Verlauf
 fr.gtk.gtkLocalHistory:Historique _local
 it.gtk.gtkLocalHistory:Cronologia _locale
-nl.gtk.gtkLocalHistory:_Local History
+nl.gtk.gtkLocalHistory:Vensterge_schiedenis
 en.gtk.gtkLocalHistoryAccel:<ctrl>h
 de.gtk.gtkLocalHistoryAccel:<ctrl>h
 fr.gtk.gtkLocalHistoryAccel:<ctrl>h
@@ -2130,7 +2130,7 @@ en.gtk.gtkGlobalHistory:_Global History…
 de.gtk.gtkGlobalHistory:_Globaler Verlauf
 fr.gtk.gtkGlobalHistory:Historique _global
 it.gtk.gtkGlobalHistory:Cronologia _globale
-nl.gtk.gtkGlobalHistory:_Global History
+nl.gtk.gtkGlobalHistory:Browser_geschiedenis
 en.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 de.gtk.gtkGlobalHistoryAccel:<ctrl><shift>h
 fr.gtk.gtkGlobalHistoryAccel:<ctrl><maj>h
@@ -2140,12 +2140,12 @@ en.gtk.gtkAddBookMarks:_Add to Bookmarks…
 de.gtk.gtkAddBookMarks:_Lesezeichen hinzufügen..
 fr.gtk.gtkAddBookMarks:_Ajouter un marque-page..
 it.gtk.gtkAddBookMarks:_Aggiungi ai segnalibri...
-nl.gtk.gtkAddBookMarks:_Add to Bookmarks..
+nl.gtk.gtkAddBookMarks:_Aan bladwijzers toevoegen...
 en.gtk.gtkShowBookMarks:_Show Bookmarks…
 de.gtk.gtkShowBookMarks:Le_sezeichen anzeigen..
 fr.gtk.gtkShowBookMarks:_Montrer les marques-pages...
 it.gtk.gtkShowBookMarks:_Mostra segnalibri...
-nl.gtk.gtkShowBookMarks:_Show Bookmarks..
+nl.gtk.gtkShowBookMarks:Bladwijzers _beheren...
 en.gtk.gtkShowBookMarksAccel:F6
 de.gtk.gtkShowBookMarksAccel:F6
 fr.gtk.gtkShowBookMarksAccel:F6
@@ -2155,7 +2155,7 @@ en.gtk.gtkShowCookies:Show _Cookies…
 de.gtk.gtkShowCookies:Show _Cookies..
 fr.gtk.gtkShowCookies:Afficher _cookies...
 it.gtk.gtkShowCookies:Mostra _cookie...
-nl.gtk.gtkShowCookies:Show _Cookies…
+nl.gtk.gtkShowCookies:_Cookies beheren...
 en.gtk.gtkShowCookiesAccel:F9
 de.gtk.gtkShowCookiesAccel:F9
 fr.gtk.gtkShowCookiesAccel:F9
@@ -2165,7 +2165,7 @@ en.gtk.gtkOpenLocation:_Open Location…
 de.gtk.gtkOpenLocation:_Ort öffnen..
 fr.gtk.gtkOpenLocation:_Ouvrir un site..
 it.gtk.gtkOpenLocation:_Apri indirizzo...
-nl.gtk.gtkOpenLocation:_Open Location..
+nl.gtk.gtkOpenLocation:Locatie _openen..
 en.gtk.gtkOpenLocationAccel:<ctrl>l
 de.gtk.gtkOpenLocationAccel:<ctrl>l
 fr.gtk.gtkOpenLocationAccel:<ctrl>l
@@ -2176,27 +2176,27 @@ en.gtk.gtkNextTab:_Next tab
 de.gtk.gtkNextTab:_Nächster Tab
 fr.gtk.gtkNextTab:O_nglet suivant
 it.gtk.gtkNextTab:Scheda _successiva
-nl.gtk.gtkNextTab:_Next tab
+nl.gtk.gtkNextTab:Vol_gende tabblad
 en.gtk.gtkNextTabAccel:<ctrl>Right
 de.gtk.gtkNextTabAccel:<ctrl>Right
 fr.gtk.gtkNextTabAccel:<ctrl>Droit
 it.gtk.gtkNextTabAccel:<ctrl>Destra
-nl.gtk.gtkNextTabAccel:<ctrl>Right
+nl.gtk.gtkNextTabAccel:<ctrl>Rechterpijltoets
 en.gtk.gtkPrevTab:_Previous tab
 de.gtk.gtkPrevTab:_Vorheriger tab
 fr.gtk.gtkPrevTab:Onglet _précédent
 it.gtk.gtkPrevTab:Scheda _precedente
-nl.gtk.gtkPrevTab:_Previous tab
+nl.gtk.gtkPrevTab:Vo_rige tabblad
 en.gtk.gtkPrevTabAccel:<ctrl>Left
 de.gtk.gtkPrevTabAccel:<ctrl>Left
 fr.gtk.gtkPrevTabAccel:<ctrl>Gauche
 it.gtk.gtkPrevTabAccel:<ctrl>Sinistra
-nl.gtk.gtkPrevTabAccel:<ctrl>Left
+nl.gtk.gtkPrevTabAccel:<ctrl>Linkerpijltoets
 en.gtk.gtkCloseTab:_Close tab
 de.gtk.gtkCloseTab:Tab s_chliessen
 fr.gtk.gtkCloseTab:_Fermer l'onglet
 it.gtk.gtkCloseTab:_Chiudi scheda
-nl.gtk.gtkCloseTab:_Close tab
+nl.gtk.gtkCloseTab:Tabblad _sluiten
 en.gtk.gtkCloseTabAccel:<ctrl>w
 de.gtk.gtkCloseTabAccel:<ctrl>w
 fr.gtk.gtkCloseTabAccel:<ctrl>w
@@ -2207,181 +2207,223 @@ en.gtk.gtkContents:_Contents…
 de.gtk.gtkContents:_Inhalt
 fr.gtk.gtkContents:_Contenus
 it.gtk.gtkContents:_Contenuti
-nl.gtk.gtkContents:_Contents
+nl.gtk.gtkContents:_Inhoud
 en.gtk.gtkGuide:User _guide…
 de.gtk.gtkGuide:H_andbuch
 fr.gtk.gtkGuide:_Guide utilisateur
 it.gtk.gtkGuide:_Guida in linea
-nl.gtk.gtkGuide:User _guide
+nl.gtk.gtkGuide:Gebruiks_aanwijzing...
 en.gtk.gtkUserInformation:User _information…
 de.gtk.gtkUserInformation:Benutzer_information
 fr.gtk.gtkUserInformation:_Information utilisateur
 it.gtk.gtkUserInformation:Informazioni _utente
-nl.gtk.gtkUserInformation:User _information
+nl.gtk.gtkUserInformation:Gebruikers_informatie...
 en.gtk.gtkAbout:_About…
 de.gtk.gtkAbout:Ü_ber
 fr.gtk.gtkAbout:_A propos...
 it.gtk.gtkAbout:_Informazioni
-nl.gtk.gtkAbout:_About
+nl.gtk.gtkAbout:_Programma-informatie...
 
 
 en.gtk.gtkCustomize:Customise…
 de.gtk.gtkCustomize:Customise..
 fr.gtk.gtkCustomize:Personnaliser...
 it.gtk.gtkCustomize:Personalizza...
-nl.gtk.gtkCustomize:Customise…
+nl.gtk.gtkCustomize:Aanpassen...
 en.gtk.gtkOpentab:Open Link in New _Tab
 de.gtk.gtkOpentab:Link in neuem _Tab öffnen
 fr.gtk.gtkOpentab:Ouvrir dans un nouvel _Onglet
 it.gtk.gtkOpentab:Apri in una nuova _scheda
-nl.gtk.gtkOpentab:Open Link in New _Tab
+nl.gtk.gtkOpentab:Koppeling openen in nieuw _tabblad
 en.gtk.gtkOpenwin:Open Link in New _Window
 de.gtk.gtkOpenwin:Link in neuem _Fenster öffnen
 fr.gtk.gtkOpenwin:Ouvrir dans une nouvelle _Fenêtre
 it.gtk.gtkOpenwin:Apri in una nuova _finestra
-nl.gtk.gtkOpenwin:Open Link in New _Window
+nl.gtk.gtkOpenwin:Koppeling openen in nieuw _venster
 en.gtk.gtkSavelink:Save Lin_k
 de.gtk.gtkSavelink:Lin_k speichern..
 fr.gtk.gtkSavelink:Enregistrer li_en
 it.gtk.gtkSavelink:Salva Lin_k
-nl.gtk.gtkSavelink:Save Lin_k
+nl.gtk.gtkSavelink:_Koppeling opslaan als...
 en.gtk.gtkBookmarklink:Bookmark _Link
 de.gtk.gtkBookmarklink:Bookmark _Link
 fr.gtk.gtkBookmarklink:Marquer _Lien
 it.gtk.gtkBookmarklink:Bookmark _Link
-nl.gtk.gtkBookmarklink:Bookmark _Link
+nl.gtk.gtkBookmarklink:B_ladwijzer voor de koppeling maken
 en.gtk.gtkCopylink:Copy link loc_ation
 de.gtk.gtkCopylink:Copy link loc_ation
 fr.gtk.gtkCopylink:_Copier le lien
 it.gtk.gtkCopylink:Copy link loc_ation
-nl.gtk.gtkCopylink:Copy link loc_ation
+nl.gtk.gtkCopylink:Koppelingsloc_atie kopiëren
 
 
 en.gtk.gtkToolBarTitle:Toolbar custom button store
 de.gtk.gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
 fr.gtk.gtkToolBarTitle:Personaliser la barre d'outils
 it.gtk.gtkToolBarTitle:Pulsanti della barra strumenti
-nl.gtk.gtkToolBarTitle:Toolbar custom button store
+nl.gtk.gtkToolBarTitle:Werkbalk aanpassen
 en.gtk.gtkAddThemeTitle:Select folder containing theme images
 de.gtk.gtkAddThemeTitle:Ordner mit Themenbildern auswählen
 fr.gtk.gtkAddThemeTitle:Sélectionner le dossier contenant des images de thèmes
 it.gtk.gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema in questione
-nl.gtk.gtkAddThemeTitle:Select folder containing theme images
+nl.gtk.gtkAddThemeTitle:Map met thema-afbeeldingen selecteren
 
 en.gtk.gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
 de.gtk.gtkThemeFolderInstructions:Erstellen sie ein Verzeichnis mit korrekt benannten Bildern als Unterverzeichnis von gtk/res/themes um ein Thema zu installieren
 fr.gtk.gtkThemeFolderInstructions:Pour installer un thème, créer un dossier d'images avec un nom approprié comme sous-dossier de gtk/res/themes/
 it.gtk.gtkThemeFolderInstructions:Per installare un nuovo tema crea una directory con delle immagini appropriate ed inseriscile come sotto-directory di gtk/res/themes/
-nl.gtk.gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
+nl.gtk.gtkThemeFolderInstructions:Maak in de map gtk/res/themes/ een submap aan die afbeeldingen met de juiste namen bevatten om deze als thema te installeren.
 en.gtk.gtkThemeFolderSub:Select a subdirectory of the themes folder
 de.gtk.gtkThemeFolderSub:Unterverzeichnis mit Themenbildern wählen
 fr.gtk.gtkThemeFolderSub:Sélectionner un sous-dossier de thème
 it.gtk.gtkThemeFolderSub:Seleziona una sotto-directory della cartella temi
-nl.gtk.gtkThemeFolderSub:Select a subdirectory of the themes folder
+nl.gtk.gtkThemeFolderSub:Submap met thema-afbeeldingen selecteren
 en.gtk.gtkThemeDup:Theme is already included
 de.gtk.gtkThemeDup:Das Thema ist bereits hinzugefügt worden
 fr.gtk.gtkThemeDup:Le thème est déjà inclus
 it.gtk.gtkThemeDup:Il tema è già incluso
-nl.gtk.gtkThemeDup:Theme is already included
+nl.gtk.gtkThemeDup:Het thema is al toegevoegd
 en.gtk.gtkThemeAdd:Theme added successfully
 de.gtk.gtkThemeAdd:Thema erfolgreich hinzugefügt
 fr.gtk.gtkThemeAdd:Le thème a été ajouté avec succes
 it.gtk.gtkThemeAdd:Il tema è stato aggiunto con successo
-nl.gtk.gtkThemeAdd:Theme added successfully
+nl.gtk.gtkThemeAdd:Thema is succesvol toegevoegd
 
 # GTK preferences dialog
 
 en.gtk.preferencesTitle:Netsurf Preferences
 fr.gtk.preferencesTitle:Préférences de Netsurf
+nl.gtk.preferencesTitle:Netsurf-voorkeuren
 
 # Main tab
 en.gtk.preferencesMainTabtitle:Main
 fr.gtk.preferencesMainTabtitle:Accueil/Principal
+nl.gtk.preferencesMainTabtitle:Algemeen
 en.gtk.preferencesStartup:<b>Startup</b>
 fr.gtk.preferencesStartup:<b>Démarrage</b>
+nl.gtk.preferencesStartup:<b>Opstarten</b>
 en.gtk.preferencesStartupPage:Page:
 fr.gtk.preferencesStartupPage:Page:
+nl.gtk.preferencesStartupPage:Pagina:
 en.gtk.preferencesStartupPageTooltip:The default startup page
 fr.gtk.preferencesStartupPageTooltip:La page de démarrage par défaut
+nl.gtk.preferencesStartupPageTooltip:De standaard startpagina
 en.gtk.preferencesStartupPageDefault:Use Default Page
 fr.gtk.preferencesStartupPageDefault:Utiliser la page par défaut
+nl.gtk.preferencesStartupPageDefault:Standaard herstellen
 en.gtk.preferencesStartupPageCurrent:Use Current Page
 fr.gtk.preferencesStartupPageCurrent:Utiliser la page en cours
+nl.gtk.preferencesStartupPageCurrent:Huidige pagina gebruiken
 en.gtk.preferencesSearch:<b>Search</b>
 fr.gtk.preferencesSearch:<b>Recherche</b>
+nl.gtk.preferencesSearch:<b>Zoeken</b>
 en.gtk.preferencesSearchURLBar:Search from URL bar
 fr.gtk.preferencesSearchURLBar:Recherche depuis la barre d'URL
+nl.gtk.preferencesSearchURLBar:Standaardzoekmachine
 en.gtk.preferencesSearchProvider:Provider:
 fr.gtk.preferencesSearchProvider:Fournisseur :
+nl.gtk.preferencesSearchProvider:Zoeken met:
 en.gtk.preferencesSearchProviderTooltip:The default web search provider
 fr.gtk.preferencesSearchProviderTooltip:Le fournisseur de recherche sur le web par défaut
+nl.gtk.preferencesSearchProviderTooltip:Kies de standaardzoekmachine. NetSurf gebruikt deze in de zoekbalk.
 en.gtk.preferencesDownloads:<b>Downloads</b>
 fr.gtk.preferencesDownloads:<b>Téléchargements</b>
+nl.gtk.preferencesDownloads:<b>Downloads</b>
 en.gtk.preferencesDownloadsRemove:Remove download from list when complete
 fr.gtk.preferencesDownloadsRemove:Retirer le téléchargement de la liste une fois terminé
+nl.gtk.preferencesDownloadsRemove:Downloadvermeldingen verwijderen
 en.gtk.preferencesDownloadsConfirm:Confirm before overwriting files
 fr.gtk.preferencesDownloadsConfirm:Confirmer avant d'écraser des fichiers
+nl.gtk.preferencesDownloadsConfirm:Overschrijven van bestand bevestigen
 en.gtk.preferencesDownloadsLocation:Location:
 fr.gtk.preferencesDownloadsLocation:Emplacement :
+nl.gtk.preferencesDownloadsLocation:Bestanden opslaan in:
 en.gtk.preferencesDownloadsLocationTooltip:The default location downloaded files are put
 fr.gtk.preferencesDownloadsLocationTooltip:L'emplacement par défaut des fichiers téléchargés sont mis
+nl.gtk.preferencesDownloadsLocationTooltip:De standaardplaats waar gedownloade bestanden worden opgeslagen
 
 # Appearance tab
 en.gtk.preferencesAppearanceTabtitle:Appearance
 fr.gtk.preferencesAppearanceTabtitle:Apparence
+nl.gtk.preferencesAppearanceTabtitle:Vormgeving
 en.gtk.preferencesThemes:<b>Themes</b>
 fr.gtk.preferencesThemes:<b>Thèmes</b>
+nl.gtk.preferencesThemes:<b>Thema's</b>
 en.gtk.preferencesThemesAdd:Add Theme...
 fr.gtk.preferencesThemesAdd:Ajouter thème...
+nl.gtk.preferencesThemesAdd:Thema toevoegen...
 en.gtk.preferencesTabs:<b>Tabs</b>
 fr.gtk.preferencesTabs:<b>Onglets</b>
+nl.gtk.preferencesTabs:<b>Tabbladen</b>
 en.gtk.preferencesTabsAlways:Always show tab bar
 fr.gtk.preferencesTabsAlways:Toujours afficher la barre d'onglet
+nl.gtk.preferencesTabsAlways:De tabbladenwerkbalk verbergen wanneer slechts één tabblad is geopend
 en.gtk.preferencesTabsSwitch:Switch to newly opened tabs immediately
 fr.gtk.preferencesTabsSwitch:Passer à l'onglet nouvellement ouvert immédiatement
+nl.gtk.preferencesTabsSwitch:Naar vanuit koppeling geopende nieuwe tabbladen schakelen
 en.gtk.preferencesTabsNewly:Newly opened tabs are blank
 fr.gtk.preferencesTabsNewly:Onglet récemment ouvert est vièrge
+nl.gtk.preferencesTabsNewly:Geopende nieuwe tabbladen zijn leeg inplaats van de startpagina
 en.gtk.preferencesTabsPosition:Position:
 fr.gtk.preferencesTabsPosition:Position :
+nl.gtk.preferencesTabsPosition:Positie in venster:
 en.gtk.preferencesTools:<b>Tools</b>
 fr.gtk.preferencesTools:<b>Outils</b>
+nl.gtk.preferencesTools:<b>Ontwikkelaarshulpmiddelen</b>
 en.gtk.preferencesDeveloperView:Open developer views in a
 fr.gtk.preferencesDeveloperView:Vues de développement s'ouvrent dans
+nl.gtk.preferencesDeveloperView:Informatie voor ontwikkelaars openen in
 en.gtk.preferencesDeveloperViewWindow:Window
 fr.gtk.preferencesDeveloperViewWindow:un fenêtre
+nl.gtk.preferencesDeveloperViewWindow:Venster
 en.gtk.preferencesDeveloperViewTab:Tab
 fr.gtk.preferencesDeveloperViewTab:un onglet
+nl.gtk.preferencesDeveloperViewTab:Tabblad
 en.gtk.preferencesDeveloperViewEditor:Editor
 fr.gtk.preferencesDeveloperViewEditor:Éditeur
+nl.gtk.preferencesDeveloperViewEditor:Tekst-editor
 en.gtk.preferencesURLbar:<b>URLbar</b>
 fr.gtk.preferencesURLbar:<b>Barre URL</b>
+nl.gtk.preferencesURLbar:<b>Locatiebalk</b>
 en.gtk.preferencesURLbarDisplay:Display recently visited URLs as you type
 fr.gtk.preferencesURLbarDisplay:Afficher les URL visités récemment lorsque vous tapez
+nl.gtk.preferencesURLbarDisplay:Automatisch aanvullen vanuit de browsergeschiedenis tijdens het typen
 en.gtk.preferencesToolbar:<b>Toolbar</b>
 fr.gtk.preferencesToolbar:<b>Barre d'outils</b>
+nl.gtk.preferencesToolbar:<b>Werkbalk</b>
 en.gtk.preferencesToolbarButtons:Buttons:
 fr.gtk.preferencesToolbarButtons:Boutons :
+nl.gtk.preferencesToolbarButtons:Knoppen:
 # Theme list
 en.gtk.preferencesThemeTypeDefault:Default
 fr.gtk.preferencesThemeTypeDefault:Défaut
+nl.gtk.preferencesThemeTypeDefault:Standaard
 # Tab position list
 en.gtk.preferencesTabLocTop:Top
 fr.gtk.preferencesTabLocTop:Haut
+nl.gtk.preferencesTabLocTop:Bovenaan
 en.gtk.preferencesTabLocLeft:Left
 fr.gtk.preferencesTabLocLeft:Gauche
+nl.gtk.preferencesTabLocLeft:Links
 en.gtk.preferencesTabLocBottom:Bottom
 fr.gtk.preferencesTabLocBottom:Bas
+nl.gtk.preferencesTabLocBottom:Onderaan
 en.gtk.preferencesTabLocRight:Right
 fr.gtk.preferencesTabLocRight:Droite
+nl.gtk.preferencesTabLocRight:Rechts
 # button list
 en.gtk.preferencesButtonTypeSmall:Small Icons
 fr.gtk.preferencesButtonTypeSmall:Petites icônes
+nl.gtk.preferencesButtonTypeSmall:Kleine pictogrammen
 en.gtk.preferencesButtonTypeLarge:Large Icons
 fr.gtk.preferencesButtonTypeLarge:Grandes icônes
+nl.gtk.preferencesButtonTypeLarge:Grote pictogrammen
 en.gtk.preferencesButtonTypeLargeText:Large Icons and Text
 fr.gtk.preferencesButtonTypeLargeText:Grandes icônes et texte
+nl.gtk.preferencesButtonTypeLargeText:Grote pictogrammen en tekst
 en.gtk.preferencesButtonTypeText:Text only
 fr.gtk.preferencesButtonTypeText:Texte uniquement
+nl.gtk.preferencesButtonTypeText:Alleen tekst
 
 # content tab
 en.gtk.preferencesContentTabtitle:Content
@@ -3108,7 +3150,7 @@ en.ro.NoPathError:To save, drag the icon to a directory display
 de.ro.NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
 fr.ro.NoPathError:Pour sauver, lâcher cette icône dans une fenêtre de Filer
 it.ro.NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
-nl.ro.NoPathError:Sleep het symbool naar een geopende mapvenster om het te bewaren.
+nl.ro.NoPathError:Het symbool naar een geopende mapvenster slepen om te bewaren.
 en.all.NoNameError:Please enter a name
 de.all.NoNameError:Bitte einen Namen eingeben.
 fr.all.NoNameError:Entrez un nom SVP
@@ -4212,17 +4254,17 @@ en.ro.HelpBrowserMenu4-2-0:\Stoggle the display of the toolbar buttons.|MURL bar
 de.ro.HelpBrowserMenu4-2-0:Schaltet die Schaltknöpfe am oberen Fensterrand ein/aus.|MDie Länge der Adressleiste wird angepaßt.
 fr.ro.HelpBrowserMenu4-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barre d'URL utilise l'espace restant.
 it.ro.HelpBrowserMenu4-2-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.|MLa barra URL coprirà lo spazio eccedente.
-nl.ro.HelpBrowserMenu4-2-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.|MDe adresbalk gebruikt de overblijvende vrijkomende ruimte.
+nl.ro.HelpBrowserMenu4-2-0:Klik met KIES om het tonen van de knoppen op de gereedschapbalk aan of uit te zetten.|MHet adresveld gebruikt de overblijvende vrijkomende ruimte.
 en.ro.HelpBrowserMenu4-2-1:\Stoggle the display of the address (URL) bar.
 de.ro.HelpBrowserMenu4-2-1:Schaltet die Adressleiste am oberen Fensterrand ein/aus.
 fr.ro.HelpBrowserMenu4-2-1:\Safficher ou pas la barre d'adresse (URL).
 it.ro.HelpBrowserMenu4-2-1:\Salterna la visualizzazione della barra indirizzi (URL).
-nl.ro.HelpBrowserMenu4-2-1:Klik met KIES om het tonen van de (web)adresbalk aan of uit te zetten.
+nl.ro.HelpBrowserMenu4-2-1:Klik met KIES om het tonen van het (web)adresveld aan of uit te zetten.
 en.ro.HelpBrowserMenu4-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
 de.ro.HelpBrowserMenu4-2-2:Schaltet die Ladeaktivitätsanzeige am oberen Fensterrand ein/aus.|MDie Länge der Adressleiste wird angepaßt.
 fr.ro.HelpBrowserMenu4-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
 it.ro.HelpBrowserMenu4-2-2:\Salterna la visualizzazione del throbber.|MLa barra URL coprirà lo spazio eccedente.
-nl.ro.HelpBrowserMenu4-2-2:Klik met KIES om het tonen van de (laad)Activiteitsindicator aan of uit te zetten.|MDe adresbalk gebruikt de overblijvende vrijkomende ruimte.
+nl.ro.HelpBrowserMenu4-2-2:Klik met KIES om het tonen van de (laad)Activiteitsindicator aan of uit te zetten.|MHet adresveld gebruikt de overblijvende vrijkomende ruimte.
 en.ro.HelpBrowserMenu4-2-3:\Stoggle toolbar edit mode.
 de.ro.HelpBrowserMenu4-2-3:Schaltet in den Modus zur Bearbeitung der Iconleiste am oberen Fensterrand.
 fr.ro.HelpBrowserMenu4-2-3:\Schanger le mode d'édition de barre d'outils.
@@ -6106,7 +6148,7 @@ en.all.SearchURL:Search from URL bar
 de.all.SearchURL:Suche über URL Leiste
 fr.all.SearchURL:Recherche depuis la barre URL
 it.all.SearchURL:Ricerca da barra URL
-nl.all.SearchURL:Zoek via (web)adresbalk
+nl.all.SearchURL:Zoek via (web)adresveld
 en.all.SearchProvider:Search provider
 de.all.SearchProvider:Suchmaschine
 fr.all.SearchProvider:Fournisseur de recherche
