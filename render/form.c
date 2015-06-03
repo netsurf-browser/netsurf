@@ -253,20 +253,22 @@ void form_free_control(struct form_control *control)
 	}
 
 	/* unlink the control from the form */
-	for (c = control->form->controls; c != NULL; c = c->next) {
-		if (c->next == control) {
-			c->next = control->next;
-			if (control->form->last_control == control)
-				control->form->last_control = c;
-			break;
-		}
-		if (c == control) {
-			/* can only happen if control was first control */
-			control->form->controls = control->next;
-			if (control->form->last_control == control)
-				control->form->controls =
-					control->form->last_control = NULL;
-			break;
+	if (control->form != NULL) {
+		for (c = control->form->controls; c != NULL; c = c->next) {
+			if (c->next == control) {
+				c->next = control->next;
+				if (control->form->last_control == control)
+					control->form->last_control = c;
+				break;
+			}
+			if (c == control) {
+				/* can only happen if control was first control */
+				control->form->controls = control->next;
+				if (control->form->last_control == control)
+					control->form->controls =
+						control->form->last_control = NULL;
+				break;
+			}
 		}
 	}
 
