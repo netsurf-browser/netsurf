@@ -54,9 +54,7 @@
 #include "gtk/tabs.h"
 #include "gtk/bitmap.h"
 #include "gtk/gdk.h"
-
-
-extern const guint8 *menu_cursor_pixdata;
+#include "gtk/resources.h"
 
 static GtkWidget *select_menu;
 static struct form_control *select_menu_control;
@@ -1076,17 +1074,6 @@ static void gui_window_update_extent(struct gui_window *g)
 	if (browser_window_get_extents(g->bw, true, &w, &h) == NSERROR_OK) {
 		gtk_layout_set_size(g->layout, w, h);
 	}
-}
-
-static GdkCursor *nsgtk_create_menu_cursor(void)
-{
-	GdkCursor *cursor = NULL;
-	GdkPixbuf *pixbuf;
-	pixbuf = gdk_pixbuf_new_from_inline(-1, menu_cursor_pixdata, FALSE, NULL);
-	cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf, 0, 3);
-	g_object_unref (pixbuf);
-
-	return cursor;
 }
 
 static void gui_window_set_pointer(struct gui_window *g,
