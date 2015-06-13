@@ -25,13 +25,12 @@
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 
-#include "gtk/hotlist.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
 #include "gtk/compat.h"
-
-#define GLADE_NAME "hotlist.glade"
+#include "gtk/resources.h"
+#include "gtk/hotlist.h"
 
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
 		GtkMenuItem *widget, gpointer g)
@@ -44,7 +43,6 @@ struct menu_events {
 	GCallback handler;
 };
 
-static void nsgtk_hotlist_init_menu(void);
 
 /* file menu*/
 MENUPROTO(export);
@@ -92,74 +90,74 @@ static struct menu_events menu_events[] = {
 		  {NULL, NULL}
 };
 
-static struct nsgtk_treeview *hotlist_window;
-static GtkBuilder *gladeFile;
+static struct nsgtk_treeview *hotlist_treeview;
+static GtkBuilder *hotlist_builder;
 GtkWindow *wndHotlist;
-
-
-/* exported interface docuemnted in gtk_hotlist.h */
-bool nsgtk_hotlist_init(const char *glade_file_location)
-{
-	GtkWindow *window;
-	GtkScrolledWindow *scrolled;
-	GtkDrawingArea *drawing_area;
-
-	GError* error = NULL;
-	gladeFile = gtk_builder_new();
-	if (!gtk_builder_add_from_file(gladeFile, glade_file_location, &error)) {
-		g_warning("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
-		return false;
-	}
-	
-	gtk_builder_connect_signals(gladeFile, NULL);
-	
-	wndHotlist = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndHotlist"));
-	window = wndHotlist;
-	
-	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(gladeFile,
-			"hotlistScrolled"));
-
-	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile,
-			"hotlistDrawingArea"));
-
-	
-	tree_hotlist_path = nsoption_charp(hotlist_path);
-	hotlist_window = nsgtk_treeview_create(TREE_HOTLIST, window,
-			scrolled, drawing_area);
-	
-	if (hotlist_window == NULL)
-		return false;
-	
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
-	
-	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
-	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
-		
-	nsgtk_hotlist_init_menu();
-
-	return true;
-}
-
 
 /**
  * Connects menu events in the hotlist window.
  */
-void nsgtk_hotlist_init_menu(void)
+static void nsgtk_hotlist_init_menu(void)
 {
 	struct menu_events *event = menu_events;
 	GtkWidget *w;
 
 	while (event->widget != NULL) {
-		w = GTK_WIDGET(gtk_builder_get_object(gladeFile, event->widget));
+		w = GTK_WIDGET(gtk_builder_get_object(hotlist_builder, event->widget));
 		if (w == NULL) {
 			LOG("Unable to connect menu widget ""%s""", event->widget);		} else {
-			g_signal_connect(G_OBJECT(w), "activate", event->handler, hotlist_window);
+			g_signal_connect(G_OBJECT(w), "activate", event->handler, hotlist_treeview);
 		}
 		event++;
 	}
 }
+
+/* exported interface docuemnted in gtk/hotlist.h */
+nserror nsgtk_hotlist_init(void)
+{
+	GtkWindow *window;
+	GtkScrolledWindow *scrolled;
+	GtkDrawingArea *drawing_area;
+	nserror res;
+
+	res = nsgtk_builder_new_from_resname("hotlist", &hotlist_builder);
+	if (res != NSERROR_OK) {
+		LOG("Cookie UI builder init failed");
+		return res;
+	}
+	
+	gtk_builder_connect_signals(hotlist_builder, NULL);
+
+	wndHotlist = GTK_WINDOW(gtk_builder_get_object(hotlist_builder, "wndHotlist"));
+	window = wndHotlist;
+	
+	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(hotlist_builder,
+			"hotlistScrolled"));
+
+	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(hotlist_builder,
+			"hotlistDrawingArea"));
+
+	
+	tree_hotlist_path = nsoption_charp(hotlist_path);
+	hotlist_treeview = nsgtk_treeview_create(TREE_HOTLIST, window,
+			scrolled, drawing_area);
+	
+	if (hotlist_treeview == NULL) {
+		return NSERROR_INIT_FAILED;
+	}
+	
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
+	
+	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
+	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_treeview);
+		
+	nsgtk_hotlist_init_menu();
+
+	return NSERROR_OK;
+}
+
+
 
 
 /**
@@ -167,8 +165,8 @@ void nsgtk_hotlist_init_menu(void)
  */
 void nsgtk_hotlist_destroy(void)
 {
-	/* TODO: what about gladeFile? */
-	nsgtk_treeview_destroy(hotlist_window);
+	/** \todo what about hotlist_builder? */
+	nsgtk_treeview_destroy(hotlist_treeview);
 }
 
 

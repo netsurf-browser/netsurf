@@ -34,6 +34,7 @@
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/theme.h"
+#include "gtk/resources.h"
 #include "gtk/preferences.h"
 
 /* private prefs */
@@ -1039,9 +1040,9 @@ nsgtk_preferences_dialogPreferences_destroy(GtkDialog *dlg, struct ppref *priv)
 /* exported interface documented in gtk/preferences.h */
 GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 {
-	GError *error = NULL;
 	GtkBuilder *preferences_builder;
 	struct ppref *priv = &ppref;
+	nserror res;
 
 	priv->bw = bw; /* for setting "current" page */
 
@@ -1051,16 +1052,11 @@ GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent)
 		return GTK_WIDGET(priv->dialog);
 	}
 
-	/* populate builder object */
-	preferences_builder = gtk_builder_new();
-	if (!gtk_builder_add_from_file(preferences_builder,
-				       glade_file_location->options,
-				       &error)) {
-		g_warning("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
+	res = nsgtk_builder_new_from_resname("options", &preferences_builder);
+	if (res != NSERROR_OK) {
+		LOG("Preferences UI builder init failed");
 		return NULL;
 	}
-
 
 	priv->dialog = gtk_builder_get_object(preferences_builder,
 					       "dialogPreferences");

@@ -30,7 +30,8 @@
 #include "utils/utils.h"
 #include "desktop/browser.h"
 
-#include "gtk/gui.h"
+#include "gtk/resources.h"
+#include "gtk/login.h"
 
 struct session_401 {
 	nsurl *url;				/**< URL being fetched */
@@ -65,27 +66,27 @@ void gui_401login_open(nsurl *url, const char *realm,
 	lwc_string_unref(host);
 }
 
+/* create a new instance of the login window, and get handles to all
+ * the widgets we're interested in.
+ */
 void create_login_window(nsurl *url, lwc_string *host, const char *realm, 
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	struct session_401 *session;
-
-	/* create a new instance of the login window, and get handles to all
-	 * the widgets we're interested in.
-	 */
-
 	GtkWindow *wnd;
 	GtkLabel *lhost, *lrealm;
 	GtkEntry *euser, *epass;
 	GtkButton *bok, *bcan;
-	GError* error = NULL;
 	GtkBuilder* builder; 
+	nserror res;
 
-	builder = gtk_builder_new ();
-	if (!gtk_builder_add_from_file(builder, glade_file_location->login, &error)) {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free (error);
+	res = nsgtk_builder_new_from_resname("login", &builder);
+	if (res != NSERROR_OK) {
+		LOG("Login UI builder init failed");
+		return;
 	}
+
+	gtk_builder_connect_signals(builder, NULL);
 
 	wnd = GTK_WINDOW(gtk_builder_get_object(builder, "wndLogin"));
 	lhost = GTK_LABEL(gtk_builder_get_object(builder, "labelLoginHost"));

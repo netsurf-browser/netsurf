@@ -601,3 +601,40 @@ void nsgtk_widget_set_margins(GtkWidget *widget, gint hmargin, gint vmargin)
 	gtk_misc_set_padding(GTK_MISC(widget), hmargin, vmargin);
 #endif
 }
+
+/* exported interface documented in gtk/compat.h */
+guint
+nsgtk_builder_add_from_resource(GtkBuilder *builder,
+				const gchar *resource_path,
+				GError **error)
+{
+	guint ret;
+
+#ifdef WITH_GRESOURCE
+#if GTK_CHECK_VERSION(3,4,0)
+	ret = gtk_builder_add_from_resource(builder, resource_path, error);
+#else
+	GBytes *data;
+	const gchar *buffer;
+	gsize buffer_length;
+
+	g_assert(error && *error == NULL);
+
+	data = g_resources_lookup_data(resource_path, 0, error);
+	if (data == NULL) {
+		return 0;
+	}
+
+	buffer_length = 0;
+	buffer = g_bytes_get_data(data, &buffer_length);
+	g_assert(buffer != NULL);
+
+	ret = gtk_builder_add_from_string(builder, buffer, buffer_length, error);
+
+	g_bytes_unref(data);
+#endif
+#else
+	ret = 0; /* return an error as GResource not supported before GLIB 2.32 */
+#endif
+	return ret;
+}

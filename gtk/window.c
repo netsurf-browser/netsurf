@@ -736,25 +736,24 @@ gui_window_create(struct browser_window *bw,
 		struct gui_window *existing,
 		gui_window_create_flags flags)
 {
-	struct gui_window *g; /* what is being creating to return */
-	GError* error = NULL;
+	struct gui_window *g; /* what is being created to return */
 	bool tempback;
-	GtkBuilder* xml;
+	GtkBuilder* tab_builder;
 
-	/* open builder file first to ease error handling on faliure */
-	xml = gtk_builder_new();
-	if (!gtk_builder_add_from_file(xml,
-				       glade_file_location->tabcontents,
-				       &error)) {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
+	nserror res;
+
+	res = nsgtk_builder_new_from_resname("tabcontents", &tab_builder);
+	if (res != NSERROR_OK) {
+		LOG("Tab contents UI builder init failed");
 		return NULL;
 	}
+
+	gtk_builder_connect_signals(tab_builder, NULL);
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
 		warn_user("NoMemory", 0);
-		g_object_unref(xml);
+		g_object_unref(tab_builder);
 		return NULL;
 	}
 
@@ -778,15 +777,15 @@ gui_window_create(struct browser_window *bw,
 	if (g->scaffold == NULL) {
 		warn_user("NoMemory", 0);
 		free(g);
-		g_object_unref(xml);
+		g_object_unref(tab_builder);
 		return NULL;
 	}
 
 	/* Construct our primary elements */
-	g->container = GTK_WIDGET(gtk_builder_get_object(xml, "tabContents"));
-	g->layout = GTK_LAYOUT(gtk_builder_get_object(xml, "layout"));
-	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
-	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
+	g->container = GTK_WIDGET(gtk_builder_get_object(tab_builder, "tabContents"));
+	g->layout = GTK_LAYOUT(gtk_builder_get_object(tab_builder, "layout"));
+	g->status_bar = GTK_LABEL(gtk_builder_get_object(tab_builder, "status_bar"));
+	g->paned = GTK_PANED(gtk_builder_get_object(tab_builder, "hpaned1"));
 	g->input_method = gtk_im_multicontext_new();
 
 
@@ -876,10 +875,10 @@ gui_window_create(struct browser_window *bw,
 	}
 	nsgtk_tab_add(g, g->container, tempback);
 
-	/* safe to drop the reference to the xml as the container is
+	/* safe to drop the reference to the tab_builder as the container is
 	 * referenced by the notebook now.
 	 */
-	g_object_unref(xml);
+	g_object_unref(tab_builder);
 
 	return g;
 }

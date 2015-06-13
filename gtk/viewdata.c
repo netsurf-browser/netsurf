@@ -45,7 +45,7 @@
 #include "gtk/about.h"
 #include "gtk/fetch.h"
 #include "gtk/compat.h"
-#include "gtk/gui.h"
+#include "gtk/resources.h"
 #include "gtk/viewdata.h"
 
 struct nsgtk_viewdata_ctx {
@@ -351,7 +351,6 @@ window_init(const char *title,
 	    char *ndata,
 	    size_t ndata_len)
 {
-	GError* error = NULL;
 	GtkWindow *window;
 	GtkWidget *cutbutton;
 	GtkWidget *pastebutton;
@@ -361,30 +360,24 @@ window_init(const char *title,
 	PangoFontDescription *fontdesc;
 	GtkTextBuffer *tb;
 	struct nsgtk_viewdata_ctx *newctx;
+	nserror res;
 
 	newctx = malloc(sizeof(struct nsgtk_viewdata_ctx));
 	if (newctx == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	newctx->builder = gtk_builder_new();
-	if (newctx->builder == NULL) {
+	res = nsgtk_builder_new_from_resname("viewdata", &newctx->builder);
+	if (res != NSERROR_OK) {
+		LOG("Viewdata UI builder init failed");
 		free(newctx);
-		return NSERROR_INIT_FAILED;
+		return res;
 	}
 
-	if (!gtk_builder_add_from_file(newctx->builder,
-				       glade_file_location->viewdata,
-				       &error)) {
-		LOG("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
-		free(newctx);
-		return NSERROR_INIT_FAILED;
-	}
+	gtk_builder_connect_signals(newctx->builder, NULL);
 
-
-	window = GTK_WINDOW(gtk_builder_get_object(newctx->builder, "ViewDataWindow"));
-
+	window = GTK_WINDOW(gtk_builder_get_object(newctx->builder,
+						   "ViewDataWindow"));
 	if (window == NULL) {
 		LOG("Unable to find window in builder ");
 

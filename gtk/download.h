@@ -21,9 +21,18 @@
 
 #include <gtk/gtk.h>
 
+/**
+ * download operation table for gtk
+ */
 struct gui_download_table *nsgtk_download_table;
 
-bool nsgtk_download_init(const char *glade_file_location);
+/**
+ * Initialise download window ready for use.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror nsgtk_download_init(void);
+
 void nsgtk_download_destroy (void);
 bool nsgtk_check_for_downloads(GtkWindow *parent);
 void nsgtk_download_show(GtkWindow *parent);

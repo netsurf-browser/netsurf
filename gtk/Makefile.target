@@ -65,6 +65,7 @@ $(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_
 $(eval $(call pkg_config_find_and_add,gthread-2.0,GThread2))
 $(eval $(call pkg_config_find_and_add,gmodule-2.0,GModule2))
 
+
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += -lm
 
@@ -76,9 +77,40 @@ ifeq ($(HOST),Windows_NT)
     CFLAGS += -U__STRICT_ANSI__
 endif
 
+# ----------------------------------------------------------------------------
+# Builtin resource handling
+# ----------------------------------------------------------------------------
+
+# builtin resource sources
+S_RESOURCE :=
+
+# Glib prior to 2.32 does not have GResource handling.
+#
+# This uses pkg-config to check for the minimum required version for
+#  this feature. Note we check for gmodule-2.0 which is a specific
+#  part of glib we require.
+# It would be nice if we could check for this functionality rather
+#  than "knowing" the version but there does not appear to be a simple
+#  way to implement that.
+NETSURF_GRESOURCE_AVAILABLE := $(shell $(PKG_CONFIG) --atleast-version=2.32 gmodule-2.0 && echo yes)
+ifeq ($(NETSURF_GRESOURCE_AVAILABLE),yes)
+
+GLIB_COMPILE_RESOURCES := glib-compile-resources
+CFLAGS += -DWITH_GRESOURCE
+
+S_RESOURCE += $(OBJROOT)/netsurf_gresource.c
+
+NSGTK_RESOURCES_DIR := gtk/res
+GRESOURCE_XML := $(NSGTK_RESOURCES_DIR)/netsurf.gresource.xml
+
+# generate the gresource source file
+$(OBJROOT)/netsurf_gresource.c: $(GRESOURCE_XML) $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir $(NSGTK_RESOURCES_DIR) --generate-dependencies $(GRESOURCE_XML))
+	$(GLIB_COMPILE_RESOURCES) --generate-source --sourcedir $(NSGTK_RESOURCES_DIR) --target=$@ $<
+
+endif
 
 # ----------------------------------------------------------------------------
-# Pixbuf
+# Builtin Pixbuf resources
 # ----------------------------------------------------------------------------
 
 GTK_IMAGE_menu_cursor := gtk/res/menu_cursor.png
@@ -88,7 +120,8 @@ GTK_IMAGE_menu_cursor := gtk/res/menu_cursor.png
 # 3: bitmap name
 define convert_image
 
-S_PIXBUF += $(2)
+# add converted pixbuf to builtin resource sources
+S_RESOURCE += $(2)
 
 $(2): $(1)
 	$(Q)echo "#include <gdk-pixbuf/gdk-pixdata.h>" > $(2)
@@ -101,8 +134,6 @@ endef
 # Source file setup
 # ----------------------------------------------------------------------------
 
-#converted pixbuf sources
-S_PIXBUF :=
 
 $(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
 
@@ -120,7 +151,7 @@ S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
-SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PIXBUF) $(S_GTK)
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RESOURCE) $(S_GTK)
 
 # The gtk binary target
 EXETARGET := nsgtk

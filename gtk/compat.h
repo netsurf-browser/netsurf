@@ -268,4 +268,29 @@ GtkWidget *nsgtk_image_menu_item_new_with_mnemonic(const gchar *label);
  */
 void nsgtk_image_menu_item_set_image(GtkWidget *image_menu_item, GtkWidget *image);
 
+
+/**
+ * Parses a resource file containing a GtkBuilder UI definition and
+ * merges it with the current contents of builder.
+ *
+ * Compatability interface as this did not exist prior to GTK 3.4
+ *
+ * GTK prior to 3.4 can have the resources in a GResource but
+ * gtk_builder cannot directly instantiate from them
+ *
+ * GTK 3.4 onwards can use gtk_builder_add_from_resource() to add
+ * directly from resources. The gtk_builder_new_ type operations
+ * cannot be used because they are only available post 3.10 and handle
+ * all errors by aborting the application
+ *
+ * @note prior to GLIB 2.32 resources did not exist and this wrapper
+ *   returns the error code.
+ *
+ * \param builder a GtkBuilder
+ * \param resource_path the path of the resource file to parse
+ * \param error return location for an error, or NULL.
+ * \return A positive value on success, 0 if an error occurred.
+ */
+guint nsgtk_builder_add_from_resource(GtkBuilder *builder, const gchar *resource_path, GError **error);
+
 #endif /* NETSURF_GTK_COMPAT_H */

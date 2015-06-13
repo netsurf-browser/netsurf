@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,24 +17,15 @@
  */
 
 /** \file
- * GTK hotlist (interface).
+ * Login interfaces.
  */
 
-#ifndef __NSGTK_HOTLIST_H__
-#define __NSGTK_HOTLIST_H__
-
-#include <gtk/gtk.h>
-
-extern GtkWindow *wndHotlist;
+#ifndef __NSGTK_LOGIN_H__
+#define __NSGTK_LOGIN_H__
 
 /**
- * Initialise the gtk specific hotlist (bookmarks) display.
- *
- * \return NSERROR_OK on success else appropriate error code on faliure.
+ * login window request.
  */
-nserror nsgtk_hotlist_init(void);
+extern void gui_401login_open(struct nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
-
-void nsgtk_hotlist_destroy(void);
-
-#endif /* __NSGTK_HOTLIST_H__ */
+#endif

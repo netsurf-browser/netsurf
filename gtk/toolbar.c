@@ -25,7 +25,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-#include "gtk/toolbar.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/search.h"
@@ -33,6 +32,8 @@
 #include "gtk/throbber.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
+#include "gtk/resources.h"
+#include "gtk/toolbar.h"
 
 static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
 		GTK_TARGET_SAME_APP, 0};
@@ -45,7 +46,7 @@ struct nsgtk_toolbar_custom_store {
 	GtkWidget *widgetvbox;
 	GtkWidget *currentbar;
 	char numberh; /* current horizontal location while adding */
-	GtkBuilder *glade;			/* button widgets to store */
+	GtkBuilder *builder; /* button widgets to store */
 	int buttonlocations[PLACEHOLDER_BUTTON];
 	int currentbutton;
 	bool fromstore;
@@ -727,30 +728,29 @@ nsgtk_toolbar_store_action(GtkWidget *widget, GdkDragContext *gdc,
 static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 {
 	int x = 0, y = 0;
-	GError* error = NULL;
-	struct nsgtk_theme *theme =
-			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
+	struct nsgtk_theme *theme;
+	nserror res;
+
+	theme =	nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		return;
 	}
 
-	window->glade = gtk_builder_new();
-	if (!gtk_builder_add_from_file(window->glade,
-				       glade_file_location->toolbar,
-				       &error)) {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free (error);
+	res = nsgtk_builder_new_from_resname("toolbar", &window->builder);
+	if (res != NSERROR_OK) {
+		LOG("Toolbar UI builder init failed");
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);
 		return;
 	}
 
-	gtk_builder_connect_signals(window->glade, NULL);
+	gtk_builder_connect_signals(window->builder, NULL);
 
-	window->window = GTK_WIDGET(gtk_builder_get_object(window->glade, "toolbarwindow"));
+	window->window = GTK_WIDGET(gtk_builder_get_object(window->builder,
+							   "toolbarwindow"));
 	if (window->window == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
@@ -758,7 +758,8 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 		return;
 	}
 
-	window->widgetvbox = GTK_WIDGET(gtk_builder_get_object(window->glade, "widgetvbox"));
+	window->widgetvbox = GTK_WIDGET(gtk_builder_get_object(window->builder,
+							       "widgetvbox"));
 	if (window->widgetvbox == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
@@ -767,7 +768,7 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 	}
 
 	window->numberh = NSGTK_STORE_WIDTH; /* preset to width [in buttons] of */
-				/*  store to cause creation of a new toolbar */
+	/*  store to cause creation of a new toolbar */
 	window->currentbutton = -1;
 	/* load toolbuttons */
 	/* add toolbuttons to window */
@@ -776,44 +777,57 @@ static void nsgtk_toolbar_window_open(struct nsgtk_scaffolding *g)
 		if (i == URL_BAR_ITEM)
 			continue;
 		window->store_buttons[i] =
-				nsgtk_toolbar_make_widget(g, i, theme);
+			nsgtk_toolbar_make_widget(g, i, theme);
 		if (window->store_buttons[i] == NULL) {
 			warn_user(messages_get("NoMemory"), 0);
 			continue;
 		}
 		nsgtk_toolbar_add_store_widget(window->store_buttons[i]);
 		g_signal_connect(window->store_buttons[i], "drag-data-get",
-				G_CALLBACK(
-				nsgtk_scaffolding_button(g, i)->dataplus), g);
+				 G_CALLBACK(
+					 nsgtk_scaffolding_button(g, i)->dataplus), g);
 	}
 	free(theme);
+
 	gtk_window_set_transient_for(GTK_WINDOW(window->window),
-			nsgtk_scaffolding_window(g));
+				     nsgtk_scaffolding_window(g));
 	gtk_window_set_title(GTK_WINDOW(window->window), messages_get(
-			"gtkToolBarTitle"));
+				     "gtkToolBarTitle"));
 	gtk_window_set_accept_focus(GTK_WINDOW(window->window), FALSE);
 	gtk_drag_dest_set(GTK_WIDGET(window->window), GTK_DEST_DEFAULT_MOTION |
-			GTK_DEST_DEFAULT_DROP, &entry, 1, GDK_ACTION_COPY);
+			  GTK_DEST_DEFAULT_DROP, &entry, 1, GDK_ACTION_COPY);
 	gtk_widget_show_all(window->window);
 	gtk_window_set_position(GTK_WINDOW(window->window),
-			GTK_WIN_POS_CENTER_ON_PARENT);
+				GTK_WIN_POS_CENTER_ON_PARENT);
 	gtk_window_get_position(nsgtk_scaffolding_window(g), &x, &y);
 	gtk_window_move(GTK_WINDOW(window->window), x, y + 100);
-	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "cancelbutton")),
+
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->builder,
+							   "cancelbutton")),
 			 "clicked",
 			 G_CALLBACK(nsgtk_toolbar_cancel_clicked),
 			 g);
 
-	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "okbutton")),
-			"clicked", G_CALLBACK(nsgtk_toolbar_persist), g);
-	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "resetbutton")),
-			"clicked", G_CALLBACK(nsgtk_toolbar_reset), g);
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->builder,
+							   "okbutton")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_toolbar_persist),
+			 g);
+
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->builder,
+							   "resetbutton")),
+			 "clicked",
+			 G_CALLBACK(nsgtk_toolbar_reset),
+			 g);
+
 	g_signal_connect(window->window, "delete-event",
-			G_CALLBACK(nsgtk_toolbar_delete), g);
+			 G_CALLBACK(nsgtk_toolbar_delete), g);
+
 	g_signal_connect(window->window, "drag-drop",
-			G_CALLBACK(nsgtk_toolbar_store_return), g);
+			 G_CALLBACK(nsgtk_toolbar_store_return), g);
+
 	g_signal_connect(window->window, "drag-motion",
-			G_CALLBACK(nsgtk_toolbar_store_action), g);
+			 G_CALLBACK(nsgtk_toolbar_store_action), g);
 }
 
 /**

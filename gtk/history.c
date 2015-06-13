@@ -1,6 +1,6 @@
 /*
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
- * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -26,15 +26,16 @@
 #include "desktop/tree.h"
 #include "desktop/textinput.h"
 
-#include "gtk/history.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
 #include "gtk/compat.h"
+#include "gtk/resources.h"
+#include "gtk/history.h"
 
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
 		GtkMenuItem *widget, gpointer g)
-#define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }		
+#define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUHANDLER(x) gboolean nsgtk_on_##x##_activate(GtkMenuItem *widget, \
 		gpointer g)
 
@@ -42,8 +43,6 @@ struct menu_events {
 	const char *widget;
 	GCallback handler;
 };
-
-static void nsgtk_history_init_menu(void);
 
 /* file menu*/
 MENUPROTO(export);
@@ -57,7 +56,7 @@ MENUPROTO(clear_selection);
 /* view menu*/
 MENUPROTO(expand_all);
 MENUPROTO(expand_directories);
-MENUPROTO(expand_addresses);	  
+MENUPROTO(expand_addresses);
 MENUPROTO(collapse_all);
 MENUPROTO(collapse_directories);
 MENUPROTO(collapse_addresses);
@@ -65,94 +64,102 @@ MENUPROTO(collapse_addresses);
 MENUPROTO(launch);
 
 static struct menu_events menu_events[] = {
-	
+
 	/* file menu*/
 	MENUEVENT(export),
-	
+
 	/* edit menu */
 	MENUEVENT(delete_selected),
 	MENUEVENT(delete_all),
 	MENUEVENT(select_all),
 	MENUEVENT(clear_selection),
-	
+
 	/* view menu*/
 	MENUEVENT(expand_all),
 	MENUEVENT(expand_directories),
-	MENUEVENT(expand_addresses),		  
+	MENUEVENT(expand_addresses),
 	MENUEVENT(collapse_all),
 	MENUEVENT(collapse_directories),
 	MENUEVENT(collapse_addresses),
-		  
+
 	MENUEVENT(launch),
 		  {NULL, NULL}
 };
 
 static struct nsgtk_treeview *global_history_window;
-static GtkBuilder *gladeFile;
+static GtkBuilder *history_builder;
 GtkWindow *wndHistory;
-
-
-/* exported interface, documented in gtk_history.h */
-bool nsgtk_history_init(const char *glade_file_location)
-{
-	GtkWindow *window;
-	GtkScrolledWindow *scrolled;
-	GtkDrawingArea *drawing_area;
-	GError* error = NULL;
-
-	gladeFile = gtk_builder_new();
-	if (!gtk_builder_add_from_file(gladeFile, glade_file_location, &error))  {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free (error);
-		return false;
-	}
-
-	gtk_builder_connect_signals(gladeFile, NULL);
-	
-	wndHistory = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndHistory"));
-	
-	window = wndHistory;
-	
-	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(gladeFile, "globalHistoryScrolled"));
-
-	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile, "globalHistoryDrawingArea"));
-
-	global_history_window = nsgtk_treeview_create(
-		TREE_HISTORY, window, scrolled, drawing_area);
-	
-	if (global_history_window == NULL)
-		return false;
-	
-#define CONNECT(obj, sig, callback, ptr)				\
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
-	
-	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
-	CONNECT(window, "hide", nsgtk_tree_window_hide, global_history_window);
-	
-	nsgtk_history_init_menu();
-
-	return true;
-}
-
 
 /**
  * Connects menu events in the global history window.
  */
-void nsgtk_history_init_menu(void)
+static void nsgtk_history_init_menu(void)
 {
 	struct menu_events *event = menu_events;
 	GtkWidget *w;
 
 	while (event->widget != NULL) {
-		w = GTK_WIDGET(gtk_builder_get_object(gladeFile, event->widget));
+		w = GTK_WIDGET(gtk_builder_get_object(history_builder,
+						      event->widget));
 		if (w == NULL) {
-			LOG("Unable to connect menu widget ""%s""", event->widget);
+			LOG("Unable to connect menu widget ""%s""",
+			    event->widget);
 		} else {
-			g_signal_connect(G_OBJECT(w), "activate", event->handler, global_history_window);
+			g_signal_connect(G_OBJECT(w),
+					 "activate",
+					 event->handler,
+					 global_history_window);
 		}
 		event++;
 	}
 }
+
+/* exported interface, documented in gtk/history.h */
+nserror nsgtk_history_init(void)
+{
+	GtkWindow *window;
+	GtkScrolledWindow *scrolled;
+	GtkDrawingArea *drawing_area;
+	nserror res;
+
+	res = nsgtk_builder_new_from_resname("history", &history_builder);
+	if (res != NSERROR_OK) {
+		LOG("History UI builder init failed");
+		return res;
+	}
+	gtk_builder_connect_signals(history_builder, NULL);
+
+	wndHistory = GTK_WINDOW(gtk_builder_get_object(history_builder,
+						       "wndHistory"));
+
+	window = wndHistory;
+
+	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(history_builder,
+							      "globalHistoryScrolled"));
+
+	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(history_builder,
+							       "globalHistoryDrawingArea"));
+
+	global_history_window = nsgtk_treeview_create(TREE_HISTORY,
+						      window,
+						      scrolled,
+						      drawing_area);
+	if (global_history_window == NULL) {
+		return NSERROR_INIT_FAILED;
+	}
+
+#define CONNECT(obj, sig, callback, ptr)				\
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+
+	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
+	CONNECT(window, "hide", nsgtk_tree_window_hide, global_history_window);
+
+	nsgtk_history_init_menu();
+
+	return NSERROR_OK;
+}
+
+
 
 
 /**
@@ -161,12 +168,12 @@ void nsgtk_history_init_menu(void)
  */
 void nsgtk_history_destroy(void)
 {
-	/* TODO: what about gladeFile? */
+	/** \todo what about history_builder? */
 	nsgtk_treeview_destroy(global_history_window);
 }
 
 
-/* file menu*/
+/* file menu */
 MENUHANDLER(export)
 {
 	GtkWidget *save_dialog;
@@ -176,21 +183,21 @@ MENUHANDLER(export)
 			NSGTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			NSGTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
-	
+
 	gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(save_dialog),
 			getenv("HOME") ? getenv("HOME") : "/");
-	
+
 	gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(save_dialog),
 			"history.html");
-	
+
 	if (gtk_dialog_run(GTK_DIALOG(save_dialog)) == GTK_RESPONSE_ACCEPT) {
 		gchar *filename = gtk_file_chooser_get_filename(
 				GTK_FILE_CHOOSER(save_dialog));
-		
-		global_history_export(filename, NULL);		
+
+		global_history_export(filename, NULL);
 		g_free(filename);
 	}
-	
+
 	gtk_widget_destroy(save_dialog);
 
 	return TRUE;

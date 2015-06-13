@@ -32,9 +32,10 @@
 #include "desktop/gui_download.h"
 
 #include "gtk/scaffolding.h"
-#include "gtk/download.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
+#include "gtk/resources.h"
+#include "gtk/download.h"
 
 #define UPDATE_RATE 500 /* In milliseconds */
 
@@ -458,23 +459,25 @@ static void nsgtk_download_store_cancel_item (struct gui_download_window *dl)
 	}
 }
 
-static gboolean nsgtk_download_hide (GtkWidget *window)
+static gboolean nsgtk_download_hide(GtkWidget *window)
 {
 	gtk_widget_hide(window);
 	return TRUE;
 }
 
-bool nsgtk_download_init(const char *glade_file_location)
+/* exported interface documented in gtk/download.h */
+nserror nsgtk_download_init(void)
 {
-	GError* error = NULL;
-	GtkBuilder* builder = gtk_builder_new();
+	GtkBuilder* builder;
+	nserror res;
 
-	if (!gtk_builder_add_from_file(builder, glade_file_location, &error))
-	{
-		g_warning("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
-		return false;
+	res = nsgtk_builder_new_from_resname("downloads", &builder);
+	if (res != NSERROR_OK) {
+		LOG("Download UI builder init failed");
+		return res;
 	}
+
+	gtk_builder_connect_signals(builder, NULL);
 
 	nsgtk_download_button_pause = GTK_BUTTON(gtk_builder_get_object(builder, "buttonPause"));
 	nsgtk_download_button_clear = GTK_BUTTON(gtk_builder_get_object(builder, "buttonClear"));
@@ -538,7 +541,7 @@ bool nsgtk_download_init(const char *glade_file_location)
 	g_signal_connect(G_OBJECT(nsgtk_download_window), "delete-event",
 			 G_CALLBACK(nsgtk_download_hide), NULL);
 
-	return true;
+	return NSERROR_OK;
 }
 
 void nsgtk_download_destroy ()

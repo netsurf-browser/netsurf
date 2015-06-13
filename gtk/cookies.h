@@ -23,11 +23,14 @@
 #ifndef __NSGTK_COOKIES_H__
 #define __NSGTK_COOKIES_H__
 
-#include <gtk/gtk.h>
-
 extern GtkWindow *wndCookies;
 
-bool nsgtk_cookies_init(const char *glade_file_location);
+/**
+ * Creates the window for the cookies tree.
+ *
+ * \return NSERROR_OK on success else appropriate error code on faliure.
+ */
+nserror nsgtk_cookies_init(void);
 
 void nsgtk_cookies_destroy(void);
 

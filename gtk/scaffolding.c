@@ -71,6 +71,7 @@
 #include "gtk/tabs.h"
 #include "gtk/schedule.h"
 #include "gtk/viewdata.h"
+#include "gtk/resources.h"
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
@@ -122,7 +123,7 @@ struct nsgtk_scaffolding {
 	int				toolbarbase;
 	int				historybase;
 
-	GtkBuilder			*xml;
+	GtkBuilder			*builder;
 
 	struct gtk_history_window	*history_window;
 
@@ -2032,95 +2033,87 @@ void nsgtk_scaffolding_toolbars(struct nsgtk_scaffolding *g, int tbi)
 /* exported interface documented in gtk/scaffolding.h */
 struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 {
-	struct nsgtk_scaffolding *g;
+	struct nsgtk_scaffolding *gs;
 	int i;
 	GtkAccelGroup *group;
-	GError* error = NULL;
 
-	g = malloc(sizeof(*g));
-	if (g == NULL) {
+	gs = malloc(sizeof(*gs));
+	if (gs == NULL) {
 		return NULL;
 	}
 
-	LOG("Constructing a scaffold of %p for gui_window %p", g, toplevel);
+	LOG("Constructing a scaffold of %p for gui_window %p", gs, toplevel);
 
-	g->top_level = toplevel;
+	gs->top_level = toplevel;
 
-	/* load the window template from the glade xml file, and extract
-	 * widget references from it for later use.
-	 */
-	g->xml = gtk_builder_new();
-	if (!gtk_builder_add_from_file(g->xml, glade_file_location->netsurf, &error)) {
-		g_warning("Couldn't load builder file: \"%s\"", error->message);
-		g_error_free(error);
-		free(g);
+	/* Construct UI widgets */
+	if (nsgtk_builder_new_from_resname("netsurf", &gs->builder) != NSERROR_OK) {
+		free(gs);
 		return NULL;
 	}
 
-	gtk_builder_connect_signals(g->xml, NULL);
+	gtk_builder_connect_signals(gs->builder, NULL);
 
-/** Obtain a GTK widget handle from glade xml object */
-#define GET_WIDGET(x) GTK_WIDGET (gtk_builder_get_object(g->xml, (x)))
+/** Obtain a GTK widget handle from UI builder object */
+#define GET_WIDGET(x) GTK_WIDGET (gtk_builder_get_object(gs->builder, (x)))
 
-	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
-	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
-	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
+	gs->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
+	gs->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
+	gs->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
 
-	g->search = malloc(sizeof(struct gtk_search));
-	if (g->search == NULL) {
-		free(g);
+	gs->search = malloc(sizeof(struct gtk_search));
+	if (gs->search == NULL) {
+		free(gs);
 		return NULL;
 	}
 
-	g->search->bar = GTK_TOOLBAR(GET_WIDGET("searchbar"));
-	g->search->entry = GTK_ENTRY(GET_WIDGET("searchEntry"));
+	gs->search->bar = GTK_TOOLBAR(GET_WIDGET("searchbar"));
+	gs->search->entry = GTK_ENTRY(GET_WIDGET("searchEntry"));
 
-	g->search->buttons[0] = GTK_TOOL_BUTTON(GET_WIDGET("searchBackButton"));
-	g->search->buttons[1] = GTK_TOOL_BUTTON(GET_WIDGET(
-			"searchForwardButton"));
-	g->search->buttons[2] = GTK_TOOL_BUTTON(GET_WIDGET(
-			"closeSearchButton"));
-	g->search->checkAll = GTK_CHECK_BUTTON(GET_WIDGET("checkAllSearch"));
-	g->search->caseSens = GTK_CHECK_BUTTON(GET_WIDGET("caseSensButton"));
+	gs->search->buttons[0] = GTK_TOOL_BUTTON(GET_WIDGET("searchBackButton"));
+	gs->search->buttons[1] = GTK_TOOL_BUTTON(GET_WIDGET("searchForwardButton"));
+	gs->search->buttons[2] = GTK_TOOL_BUTTON(GET_WIDGET("closeSearchButton"));
+	gs->search->checkAll = GTK_CHECK_BUTTON(GET_WIDGET("checkAllSearch"));
+	gs->search->caseSens = GTK_CHECK_BUTTON(GET_WIDGET("caseSensButton"));
 
 #undef GET_WIDGET
 
 	/* allocate buttons */
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
-		g->buttons[i] = calloc(1, sizeof(struct nsgtk_button_connect));
-		if (g->buttons[i] == NULL) {
+		gs->buttons[i] = calloc(1, sizeof(struct nsgtk_button_connect));
+		if (gs->buttons[i] == NULL) {
 			for (i-- ; i >= BACK_BUTTON; i--) {
-				free(g->buttons[i]);
+				free(gs->buttons[i]);
 			}
-			free(g);
+			free(gs);
 			return NULL;
 		}
-		g->buttons[i]->location = -1;
-		g->buttons[i]->sensitivity = true;
+		gs->buttons[i]->location = -1;
+		gs->buttons[i]->sensitivity = true;
 	}
 
 	/* here custom toolbutton adding code */
-	g->offset = 0;
-	g->toolbarmem = 0;
-	g->toolbarbase = 0;
-	g->historybase = 0;
-	nsgtk_toolbar_customization_load(g);
-	nsgtk_toolbar_set_physical(g);
+	gs->offset = 0;
+	gs->toolbarmem = 0;
+	gs->toolbarbase = 0;
+	gs->historybase = 0;
+	nsgtk_toolbar_customization_load(gs);
+	nsgtk_toolbar_set_physical(gs);
 
 	group = gtk_accel_group_new();
-	gtk_window_add_accel_group(g->window, group);
+	gtk_window_add_accel_group(gs->window, group);
 
-	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(g->xml, "menubar")), group);
+	gs->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(gs->builder, "menubar")), group);
 
 
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */
 	if (nsoption_int(window_width) > 0) {
-		gtk_window_move(g->window,
+		gtk_window_move(gs->window,
 				nsoption_int(window_x),
 				nsoption_int(window_y));
-		gtk_window_resize(g->window,
+		gtk_window_resize(gs->window,
 				  nsoption_int(window_width),
 				  nsoption_int(window_height));
 	} else {
@@ -2128,7 +2121,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		 * 1024x768 displays, not being able to take into account
 		 * window furniture or panels.
 		 */
-		gtk_window_set_default_size(g->window, 1000, 700);
+		gtk_window_set_default_size(gs->window, 1000, 700);
 	}
 
 	/* Default toolbar button type uses system defaults */
@@ -2164,137 +2157,151 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 		}
 	}
 
-	nsgtk_scaffolding_toolbars(g, nsoption_int(button_type));
+	nsgtk_scaffolding_toolbars(gs, nsoption_int(button_type));
 
-	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
-	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));
-	nsgtk_tab_init(g);
+	gtk_toolbar_set_show_arrow(gs->tool_bar, TRUE);
+	gtk_widget_show_all(GTK_WIDGET(gs->tool_bar));
+	nsgtk_tab_init(gs);
 
 	gtk_widget_set_size_request(GTK_WIDGET(
-			g->buttons[HISTORY_BUTTON]->button), 20, -1);
+			gs->buttons[HISTORY_BUTTON]->button), 20, -1);
 
 	/* create the local history window to be associated with this browser */
-	g->history_window = malloc(sizeof(struct gtk_history_window));
-	g->history_window->g = g;
-	g->history_window->window =
+	gs->history_window = malloc(sizeof(struct gtk_history_window));
+	gs->history_window->g = gs;
+	gs->history_window->window =
 			GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
-	gtk_window_set_transient_for(g->history_window->window, g->window);
-	gtk_window_set_title(g->history_window->window, "NetSurf History");
-	gtk_window_set_type_hint(g->history_window->window,
+	gtk_window_set_transient_for(gs->history_window->window, gs->window);
+	gtk_window_set_title(gs->history_window->window, "NetSurf History");
+	gtk_window_set_type_hint(gs->history_window->window,
 			GDK_WINDOW_TYPE_HINT_UTILITY);
-	g->history_window->scrolled =
+	gs->history_window->scrolled =
 			GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(0, 0));
-	gtk_container_add(GTK_CONTAINER(g->history_window->window),
-			GTK_WIDGET(g->history_window->scrolled));
+	gtk_container_add(GTK_CONTAINER(gs->history_window->window),
+			GTK_WIDGET(gs->history_window->scrolled));
 
-	gtk_widget_show(GTK_WIDGET(g->history_window->scrolled));
-	g->history_window->drawing_area =
+	gtk_widget_show(GTK_WIDGET(gs->history_window->scrolled));
+	gs->history_window->drawing_area =
 			GTK_DRAWING_AREA(gtk_drawing_area_new());
 
-	gtk_widget_set_events(GTK_WIDGET(g->history_window->drawing_area),
+	gtk_widget_set_events(GTK_WIDGET(gs->history_window->drawing_area),
 			GDK_EXPOSURE_MASK |
 			GDK_POINTER_MOTION_MASK |
 			GDK_BUTTON_PRESS_MASK);
-	nsgtk_widget_override_background_color(GTK_WIDGET(g->history_window->drawing_area),
+	nsgtk_widget_override_background_color(GTK_WIDGET(gs->history_window->drawing_area),
 			GTK_STATE_NORMAL,
 			0, 0xffff, 0xffff, 0xffff);
-	nsgtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
-			GTK_WIDGET(g->history_window->drawing_area));
-	gtk_widget_show(GTK_WIDGET(g->history_window->drawing_area));
+	nsgtk_scrolled_window_add_with_viewport(gs->history_window->scrolled,
+			GTK_WIDGET(gs->history_window->drawing_area));
+	gtk_widget_show(GTK_WIDGET(gs->history_window->drawing_area));
 
 
 	/* set up URL bar completion */
-	g->url_bar_completion = gtk_entry_completion_new();
-	gtk_entry_completion_set_match_func(g->url_bar_completion,
+	gs->url_bar_completion = gtk_entry_completion_new();
+	gtk_entry_completion_set_match_func(gs->url_bar_completion,
 			nsgtk_completion_match, NULL, NULL);
-	gtk_entry_completion_set_model(g->url_bar_completion,
+	gtk_entry_completion_set_model(gs->url_bar_completion,
 			GTK_TREE_MODEL(nsgtk_completion_list));
-	gtk_entry_completion_set_text_column(g->url_bar_completion, 0);
-	gtk_entry_completion_set_minimum_key_length(g->url_bar_completion, 1);
-	gtk_entry_completion_set_popup_completion(g->url_bar_completion, TRUE);
-	g_object_set(G_OBJECT(g->url_bar_completion),
+	gtk_entry_completion_set_text_column(gs->url_bar_completion, 0);
+	gtk_entry_completion_set_minimum_key_length(gs->url_bar_completion, 1);
+	gtk_entry_completion_set_popup_completion(gs->url_bar_completion, TRUE);
+	g_object_set(G_OBJECT(gs->url_bar_completion),
 			"popup-set-width", TRUE,
 			"popup-single-match", TRUE,
 			NULL);
 
 	/* set up the throbber. */
-	g->throb_frame = 0;
+	gs->throb_frame = 0;
 
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect history window signals to their handlers */
-	nsgtk_connect_draw_event(GTK_WIDGET(g->history_window->drawing_area),
+	nsgtk_connect_draw_event(GTK_WIDGET(gs->history_window->drawing_area),
 				 G_CALLBACK(nsgtk_history_draw_event),
-				 g->history_window);
-	/*CONNECT(g->history_window->drawing_area, "motion_notify_event",
-			nsgtk_history_motion_notify_event, g->history_window);*/
-	CONNECT(g->history_window->drawing_area, "button_press_event",
-			nsgtk_history_button_press_event, g->history_window);
-	CONNECT(g->history_window->window, "delete_event",
+				 gs->history_window);
+	/*CONNECT(gs->history_window->drawing_area, "motion_notify_event",
+			nsgtk_history_motion_notify_event, gs->history_window);*/
+	CONNECT(gs->history_window->drawing_area, "button_press_event",
+			nsgtk_history_button_press_event, gs->history_window);
+	CONNECT(gs->history_window->window, "delete_event",
 			gtk_widget_hide_on_delete, NULL);
 
-	g_signal_connect_after(g->notebook, "page-added",
-			G_CALLBACK(nsgtk_window_tabs_add), g);
-	g_signal_connect_after(g->notebook, "page-removed",
-			G_CALLBACK(nsgtk_window_tabs_remove), g);
+	g_signal_connect_after(gs->notebook, "page-added",
+			G_CALLBACK(nsgtk_window_tabs_add), gs);
+	g_signal_connect_after(gs->notebook, "page-removed",
+			G_CALLBACK(nsgtk_window_tabs_remove), gs);
 
 	/* connect main window signals to their handlers. */
-	CONNECT(g->window, "delete-event", scaffolding_window_delete_event, g);
-	CONNECT(g->window, "destroy", scaffolding_window_destroy, g);
+	CONNECT(gs->window, "delete-event",
+		scaffolding_window_delete_event, gs);
+
+	CONNECT(gs->window, "destroy", scaffolding_window_destroy, gs);
 
 	/* toolbar URL bar menu bar search bar signal handlers */
-	CONNECT(g->menu_bar->edit_submenu->edit, "show", nsgtk_window_edit_menu_clicked, g);
-	CONNECT(g->menu_bar->edit_submenu->edit, "hide", nsgtk_window_edit_menu_hidden, g);
-	CONNECT(g->search->buttons[1], "clicked",
-			nsgtk_search_forward_button_clicked, g);
-	CONNECT(g->search->buttons[0], "clicked",
-			nsgtk_search_back_button_clicked, g);
-	CONNECT(g->search->entry, "changed", nsgtk_search_entry_changed, g);
-	CONNECT(g->search->entry, "activate", nsgtk_search_entry_activate, g);
-	CONNECT(g->search->entry, "key-press-event", nsgtk_search_entry_key, g);
-	CONNECT(g->search->buttons[2], "clicked",
-			nsgtk_search_close_button_clicked, g);
-	CONNECT(g->search->caseSens, "toggled", nsgtk_search_entry_changed, g);
+	CONNECT(gs->menu_bar->edit_submenu->edit, "show",
+		nsgtk_window_edit_menu_clicked, gs);
+	CONNECT(gs->menu_bar->edit_submenu->edit, "hide",
+		nsgtk_window_edit_menu_hidden, gs);
 
-	CONNECT(g->tool_bar, "popup-context-menu",
-		nsgtk_window_tool_bar_clicked, g);
+	CONNECT(gs->search->buttons[1], "clicked",
+			nsgtk_search_forward_button_clicked, gs);
+
+	CONNECT(gs->search->buttons[0], "clicked",
+			nsgtk_search_back_button_clicked, gs);
+
+	CONNECT(gs->search->entry, "changed", nsgtk_search_entry_changed, gs);
+
+	CONNECT(gs->search->entry, "activate", nsgtk_search_entry_activate, gs);
+
+	CONNECT(gs->search->entry, "key-press-event",
+		nsgtk_search_entry_key, gs);
+
+	CONNECT(gs->search->buttons[2], "clicked",
+		nsgtk_search_close_button_clicked, gs);
+
+	CONNECT(gs->search->caseSens, "toggled",
+		nsgtk_search_entry_changed, gs);
+
+	CONNECT(gs->tool_bar, "popup-context-menu",
+		nsgtk_window_tool_bar_clicked, gs);
 
 	/* create popup menu */
-	g->menu_popup = nsgtk_new_scaffolding_popup(g, group);
+	gs->menu_popup = nsgtk_new_scaffolding_popup(gs, group);
 
-	g->link_menu = nsgtk_new_scaffolding_link_popup(g, group);
+	gs->link_menu = nsgtk_new_scaffolding_link_popup(gs, group);
 
 	/* set up the menu signal handlers */
-	nsgtk_scaffolding_toolbar_init(g);
-	nsgtk_toolbar_connect_all(g);
-	nsgtk_attach_menu_handlers(g);
+	nsgtk_scaffolding_toolbar_init(gs);
+	nsgtk_toolbar_connect_all(gs);
+	nsgtk_attach_menu_handlers(gs);
 
-	nsgtk_scaffolding_initial_sensitivity(g);
+	nsgtk_scaffolding_initial_sensitivity(gs);
 
-	g->fullscreen = false;
+	gs->fullscreen = false;
 
 	/* attach to the list */
-	if (scaf_list)
-		scaf_list->prev = g;
-	g->next = scaf_list;
-	g->prev = NULL;
-	scaf_list = g;
+	if (scaf_list) {
+		scaf_list->prev = gs;
+	}
+	gs->next = scaf_list;
+	gs->prev = NULL;
+	scaf_list = gs;
 
 	/* call functions that need access from the list */
 	nsgtk_theme_init();
-	nsgtk_theme_implement(g);
+	nsgtk_theme_implement(gs);
 
 	/* set web search provider */
 	search_web_select_provider(nsoption_int(search_provider));
 
 	/* finally, show the window. */
-	gtk_widget_show(GTK_WIDGET(g->window));
+	gtk_widget_show(GTK_WIDGET(gs->window));
 
 	LOG("creation complete");
 
-	return g;
+	return gs;
 }
 
 /* exported function documented in gtk/scaffolding.h */

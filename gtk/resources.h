@@ -24,4 +24,36 @@
  */
 GdkCursor *nsgtk_create_menu_cursor(void);
 
+nserror nsgtk_init_resources(char **respath);
+
+/**
+ * Create gtk builder object for the named ui resource
+ *
+ * Creating gtk builder objects from a named resource requires the
+ * source xml resource to be parsed.
+ *
+ * This creates a gtk builder instance using an identifier name which
+ * is mapped to the ui_resource table which must be initialised with
+ * nsgtk_init_resources()
+ *
+ * \param resname The resource name to construct for
+ * \param builder_out The builder result
+ * \return NSERROR_OK and builder_out updated or appropriate error code
+ */
+nserror nsgtk_builder_new_from_resname(const char *resname, GtkBuilder **builder_out);
+
+
+/**
+ * Create gdk pixbuf for the named ui resource
+ *
+ * This creates a pixbuf using an identifier name which is mapped to
+ * the ui_resource table which must be initialised with
+ * nsgtk_init_resources()
+ *
+ * \param resname The resource name to construct for
+ * \param pixbuf_out The pixbuf result
+ * \return NSERROR_OK and pixbuf_out updated or appropriate error code
+ */
+nserror nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_out);
+
 #endif

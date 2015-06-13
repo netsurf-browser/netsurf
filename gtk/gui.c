@@ -67,6 +67,8 @@
 #include "gtk/search.h"
 #include "gtk/ssl_cert.h"
 #include "gtk/bitmap.h"
+#include "gtk/resources.h"
+#include "gtk/login.h"
 
 bool nsgtk_complete = false;
 
@@ -79,10 +81,7 @@ char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
 GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
 
-struct glade_file_location_s *glade_file_location;
-
-static GtkWindow *nsgtk_warning_window;
-GtkWidget *widWarning;
+GtkBuilder *warning_builder;
 
 #define THROBBER_FRAMES 9
 
@@ -155,87 +154,6 @@ static bool nsgtk_throbber_init(char **respath, int framec)
 
 }
 
-#define NEW_GLADE_ERROR_SIZE 128
-
-static char *
-nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
-{
-	GtkBuilder *builder;
-	GError* error = NULL;
-	char *filepath;
-	char errorstr[NEW_GLADE_ERROR_SIZE];
-	char resname[PATH_MAX];
-#if GTK_CHECK_VERSION(3,0,0)
-	int gtkv = 3;
-#else
-	int gtkv = 2;
-#endif
-
-	snprintf(resname, PATH_MAX, "%s.gtk%d.ui", name, gtkv);
-
-	filepath = filepath_find(respath, resname);
-	if (filepath == NULL) {
-		snprintf(errorstr, NEW_GLADE_ERROR_SIZE,
-			 "Unable to locate %s glade template file.\n", name);
-		die(errorstr);
-	}
-
-	builder = gtk_builder_new();
-	if (!gtk_builder_add_from_file(builder, filepath, &error))  {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free (error);
-		snprintf(errorstr, NEW_GLADE_ERROR_SIZE,
-			 "Unable to load glade %s window definitions.\n", name);
-
-		die(errorstr);
-	}
-
-	gtk_builder_connect_signals(builder, NULL);
-
-	LOG("Using '%s' as %s ui template file", filepath, name);
-
-	if (pglade != NULL) {
-		*pglade = builder;
-	} else {
-		/* release our reference to the builder if it is not
-		 * being used.
-		 */
-		g_object_unref(G_OBJECT(builder));
-	}
-
-	return filepath;
-}
-
-/**
- * Load definitions from glade files.
- */
-static void
-nsgtk_init_glade(char **respath)
-{
-	GtkBuilder *gladeWarning;
-
-	glade_file_location = calloc(1, sizeof(struct glade_file_location_s));
-	if (glade_file_location == NULL) {
-		die("Unable to allocate glade file locations");
-	}
-
-	glade_file_location->netsurf = nsgtk_new_ui(respath, "netsurf", NULL);
-	glade_file_location->tabcontents = nsgtk_new_ui(respath, "tabcontents", NULL);
-	glade_file_location->password = nsgtk_new_ui(respath, "password", NULL);
-	glade_file_location->login = nsgtk_new_ui(respath, "login", NULL);
-	glade_file_location->ssl = nsgtk_new_ui(respath, "ssl", NULL);
-	glade_file_location->toolbar = nsgtk_new_ui(respath, "toolbar", NULL);
-	glade_file_location->downloads = nsgtk_new_ui(respath, "downloads", NULL);
-	glade_file_location->history = nsgtk_new_ui(respath, "history", NULL);
-	glade_file_location->options = nsgtk_new_ui(respath, "options", NULL);
-	glade_file_location->hotlist = nsgtk_new_ui(respath, "hotlist", NULL);
-	glade_file_location->cookies = nsgtk_new_ui(respath, "cookies", NULL);
-	glade_file_location->viewdata = nsgtk_new_ui(respath, "viewdata", NULL);
-
-	glade_file_location->warning = nsgtk_new_ui(respath, "warning", &gladeWarning);
-	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(gladeWarning, "wndWarning"));
-	widWarning = GTK_WIDGET(gtk_builder_get_object(gladeWarning, "labelWarning"));
-}
 
 /**
  * Set option defaults for gtk frontend.
@@ -347,8 +265,20 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	       strlen(languages_file_location) - 9);
 	LOG("Using '%s' for resource path", res_dir_location);
 
-	/* initialise the glade templates */
-	nsgtk_init_glade(respath);
+	/* initialise the gtk resource handling */
+	error = nsgtk_init_resources(respath);
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise resources");
+		return error;
+	}
+
+	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise warning dialog");
+		return error;
+	}
+
+	gtk_builder_connect_signals(warning_builder, NULL);
 
 	/* set default icon if its available */
 	resource_filename = filepath_find(respath, "netsurf.xpm");
@@ -366,14 +296,9 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	}
 
 	/* Default favicon */
-	resource_filename = filepath_find(respath, "favicon.png");
-	if (resource_filename != NULL) {
-		favicon_pixbuf = gdk_pixbuf_new_from_file(resource_filename, NULL);
-		free(resource_filename);
-		if (favicon_pixbuf == NULL) {
-			favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 16,16);
-
-		}
+	error = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);
+	if (error != NSERROR_OK) {
+		favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 16,16);
 	}
 
 	/* Toolbar inicies file */
@@ -402,17 +327,30 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	browser_set_dpi(gdk_screen_get_resolution(gdk_screen_get_default()));
 	LOG("Set CSS DPI to %d", browser_get_dpi());
 
-	if (nsgtk_history_init(glade_file_location->history) == false)
-		die("Unable to initialise history window.\n");
+	/* Initialise top level UI elements */
+	error = nsgtk_history_init();
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise global history window.");
+		return error;
+	}
 
-	if (nsgtk_download_init(glade_file_location->downloads) == false)
-		die("Unable to initialise download window.\n");
+	error = nsgtk_download_init();
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise download window.");
+		return error;
+	}
 
-	if (nsgtk_cookies_init(glade_file_location->cookies) == false)
-		die("Unable to initialise cookies window.\n");
+	error = nsgtk_cookies_init();
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise cookies window.");
+		return error;
+	}
 
-	if (nsgtk_hotlist_init(glade_file_location->hotlist) == false)
-		die("Unable to initialise hotlist window.\n");
+	error = nsgtk_hotlist_init();
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise hotlist window.");
+		return error;
+	}
 
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {
@@ -566,15 +504,21 @@ static nserror gui_launch_url(struct nsurl *url)
 void warn_user(const char *warning, const char *detail)
 {
 	char buf[300];	/* 300 is the size the RISC OS GUI uses */
+	static GtkWindow *nsgtk_warning_window;
+	GtkLabel *WarningLabel;
 
   	LOG("%s %s", warning, detail ? detail : "");
 	fflush(stdout);
+
+	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(warning_builder, "wndWarning"));
+	WarningLabel = GTK_LABEL(gtk_builder_get_object(warning_builder,
+							"labelWarning"));
 
 	snprintf(buf, sizeof(buf), "%s %s", messages_get(warning),
 			detail ? detail : "");
 	buf[sizeof(buf) - 1] = 0;
 
-	gtk_label_set_text(GTK_LABEL(widWarning), buf);
+	gtk_label_set_text(WarningLabel, buf);
 
 	gtk_widget_show_all(GTK_WIDGET(nsgtk_warning_window));
 }
@@ -585,34 +529,34 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 	char **owner_pass = ((void **)data)[0];
 	char **user_pass = ((void **)data)[1];
 	GtkWindow *wnd = ((void **)data)[2];
-	GtkBuilder *gladeFile = ((void **)data)[3];
+	GtkBuilder *password_builder = ((void **)data)[3];
 	char *path = ((void **)data)[4];
 
 	char *op, *op1;
 	char *up, *up1;
 
 	op = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+			GTK_ENTRY(gtk_builder_get_object(password_builder,
 					"entryPDFOwnerPassword"))));
 	op1 = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+			GTK_ENTRY(gtk_builder_get_object(password_builder,
 					"entryPDFOwnerPassword1"))));
 	up = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+			GTK_ENTRY(gtk_builder_get_object(password_builder,
 					"entryPDFUserPassword"))));
 	up1 = strdup(gtk_entry_get_text(
-			GTK_ENTRY(gtk_builder_get_object(gladeFile,
+			GTK_ENTRY(gtk_builder_get_object(password_builder,
 					"entryPDFUserPassword1"))));
 
 
 	if (op[0] == '\0') {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
 				"labelInfo")),
        				"Owner password must be at least 1 character long:");
 		free(op);
 		free(up);
 	} else if (!strcmp(op, up)) {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
 				"labelInfo")),
        				"User and owner passwords must be different:");
 		free(op);
@@ -627,13 +571,13 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 
 		free(data);
 		gtk_widget_destroy(GTK_WIDGET(wnd));
-		g_object_unref(G_OBJECT(gladeFile));
+		g_object_unref(G_OBJECT(password_builder));
 
 		save_pdf(path);
 
 		free(path);
 	} else {
-		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(gladeFile,
+		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
 				"labelInfo")), "Passwords not confirmed:");
 		free(op);
 		free(up);
@@ -646,13 +590,13 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data)
 {
 	GtkWindow *wnd = ((void **)data)[2];
-	GtkBuilder *gladeFile = ((void **)data)[3];
+	GtkBuilder *password_builder = ((void **)data)[3];
 	char *path = ((void **)data)[4];
 
 	free(data);
 
 	gtk_widget_destroy(GTK_WIDGET(wnd));
-	g_object_unref(G_OBJECT(gladeFile));
+	g_object_unref(G_OBJECT(password_builder));
 
 	save_pdf(path);
 
@@ -664,19 +608,19 @@ static void nsgtk_pdf_password(char **owner_pass, char **user_pass, char *path)
 	GtkButton *ok, *no;
 	GtkWindow *wnd;
 	void **data;
-	GtkBuilder *gladeFile;
-	GError* error = NULL;
+	GtkBuilder *password_builder;
+	nserror res;
 
-	gladeFile = gtk_builder_new();
-	if (!gtk_builder_add_from_file(gladeFile,
-				       glade_file_location->password,
-				       &error))  {
-		g_warning ("Couldn't load builder file: %s", error->message);
-		g_error_free (error);
+	res = nsgtk_builder_new_from_resname("password", &password_builder);
+	if (res != NSERROR_OK) {
+		LOG("Password UI builder init failed");
 		return;
 	}
 
-	wnd = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndPDFPassword"));
+	gtk_builder_connect_signals(password_builder, NULL);
+
+	wnd = GTK_WINDOW(gtk_builder_get_object(password_builder,
+						"wndPDFPassword"));
 
 	data = malloc(5 * sizeof(void *));
 
@@ -686,11 +630,13 @@ static void nsgtk_pdf_password(char **owner_pass, char **user_pass, char *path)
 	data[0] = owner_pass;
 	data[1] = user_pass;
 	data[2] = wnd;
-	data[3] = gladeFile;
+	data[3] = password_builder;
 	data[4] = path;
 
-	ok = GTK_BUTTON(gtk_builder_get_object(gladeFile, "buttonPDFSetPassword"));
-	no = GTK_BUTTON(gtk_builder_get_object(gladeFile, "buttonPDFNoPassword"));
+	ok = GTK_BUTTON(gtk_builder_get_object(password_builder,
+					       "buttonPDFSetPassword"));
+	no = GTK_BUTTON(gtk_builder_get_object(password_builder,
+					       "buttonPDFNoPassword"));
 
 	g_signal_connect(G_OBJECT(ok), "clicked",
 			 G_CALLBACK(nsgtk_PDF_set_pass), (gpointer)data);
@@ -1177,7 +1123,7 @@ int main(int argc, char** argv)
 	/* run the browser */
 	ret = nsgtk_init(argc, argv, respaths);
 	if (ret != NSERROR_OK) {
-		fprintf(stderr, "NetSurf gtk specific initialise failed (%s)\n",
+		fprintf(stderr, "NetSurf gtk initialise failed (%s)\n",
 			messages_get_errorcode(ret));
 	} else {
 		nsgtk_main();

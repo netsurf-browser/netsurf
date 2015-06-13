@@ -19,14 +19,14 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
-#include "utils/errors.h"
+#include "utils/log.h"
 #include "utils/nsurl.h"
 #include "desktop/tree.h"
 #include "desktop/sslcert_viewer.h"
 
-#include "gtk/gui.h"
 #include "gtk/treeview.h"
 #include "gtk/scaffolding.h"
+#include "gtk/resources.h"
 #include "gtk/ssl_cert.h"
 
 
@@ -75,9 +75,9 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 	GtkDialog *dlg;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
-	GError *error = NULL;
 	GtkBuilder *builder;
 	GtkWindow *gtk_parent;
+	nserror res;
 
 	/* state while dlg is open */
 	session = calloc(sizeof(void *), 3);
@@ -85,14 +85,15 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		return;
 	}
 
-	builder = gtk_builder_new();
-	if (!gtk_builder_add_from_file(builder, glade_file_location->ssl, &error)) {
-		g_warning("Couldn't load builder file: %s", error->message);
-		g_error_free(error);
-
+	res = nsgtk_builder_new_from_resname("ssl", &builder);
+	if (res != NSERROR_OK) {
+		LOG("SSL UI builder init failed");
 		free(session);
+		cb(false, cbpw);
 		return;
 	}
+
+	gtk_builder_connect_signals(builder, NULL);
 
 	sslcert_viewer_create_session_data(num, url, cb, cbpw, certs, &data);
 	ssl_current_session = data;
@@ -105,7 +106,6 @@ void gtk_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 
 	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
 	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
-
 
 	ssl_window = nsgtk_treeview_create(TREE_SSLCERT, GTK_WINDOW(dlg), scrolled,
 			drawing_area);

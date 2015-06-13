@@ -21,26 +21,6 @@
 
 struct nsurl;
 
-/** glade file paths. */
-struct glade_file_location_s {
-	char *netsurf;
-	char *tabcontents;
-	char *password;
-	char *warning;
-	char *login;
-	char *ssl;
-	char *toolbar;
-	char *options;
-	char *downloads;
-	char *history;
-	char *hotlist;
-	char *cookies;
-	char *viewdata;
-};
-
-/** location of all glade files. */
-extern struct glade_file_location_s *glade_file_location;
-
 /** language list file path. */
 extern char *languages_file_location;
 
@@ -64,9 +44,6 @@ extern char **respaths;
 
 /** input conversion. */
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *eventkey);
-
-/** login window request. */
-extern void gui_401login_open(struct nsurl *url, const char *realm, nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 /** set when no windows remain open. */
 extern bool nsgtk_complete;
