@@ -73,6 +73,7 @@ static struct nsgtk_resource_s ui_resource[] = {
 
 static struct nsgtk_resource_s gen_resource[] = {
 	{ "favicon.png", 11, NSGTK_RESOURCE_FILE, NULL },
+	{ "netsurf.xpm", 11, NSGTK_RESOURCE_FILE, NULL },
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
 

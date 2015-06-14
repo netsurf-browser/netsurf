@@ -79,7 +79,8 @@ char *themelist_file_location;
 
 char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
 
-GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
+GdkPixbuf *favicon_pixbuf; /** favicon default pixbuf */
+GdkPixbuf *win_default_icon_pixbuf; /** default window icon pixbuf */
 
 GtkBuilder *warning_builder;
 
@@ -281,10 +282,11 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	gtk_builder_connect_signals(warning_builder, NULL);
 
 	/* set default icon if its available */
-	resource_filename = filepath_find(respath, "netsurf.xpm");
-	if (resource_filename != NULL) {
-		gtk_window_set_default_icon_from_file(resource_filename, NULL);
-		free(resource_filename);
+	error = nsgdk_pixbuf_new_from_resname("netsurf.xpm",
+					      &win_default_icon_pixbuf);
+	if (error == NSERROR_OK) {
+		LOG("Seting default window icon");
+		gtk_window_set_default_icon(win_default_icon_pixbuf);
 	}
 
 	/* Search engine sources */

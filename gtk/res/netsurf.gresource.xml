@@ -28,5 +28,6 @@
     <file>tabcontents.gtk3.ui</file>  
     <file>warning.gtk2.ui</file>
     <file>favicon.png</file>
+    <file>netsurf.xpm</file>
   </gresource>
 </gresources>
