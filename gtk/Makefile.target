@@ -95,6 +95,7 @@ S_RESOURCE :=
 NETSURF_GRESOURCE_AVAILABLE := $(shell $(PKG_CONFIG) --atleast-version=2.32 gmodule-2.0 && echo yes)
 ifeq ($(NETSURF_GRESOURCE_AVAILABLE),yes)
 
+#resource compiler tool
 GLIB_COMPILE_RESOURCES := glib-compile-resources
 CFLAGS += -DWITH_GRESOURCE
 
@@ -107,11 +108,10 @@ GRESOURCE_XML := $(NSGTK_RESOURCES_DIR)/netsurf.gresource.xml
 $(OBJROOT)/netsurf_gresource.c: $(GRESOURCE_XML) $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir $(NSGTK_RESOURCES_DIR) --generate-dependencies $(GRESOURCE_XML))
 	$(GLIB_COMPILE_RESOURCES) --generate-source --sourcedir $(NSGTK_RESOURCES_DIR) --target=$@ $<
 
-endif
+else
+# No GResource available so build pixbufs as inlines instead
 
-# ----------------------------------------------------------------------------
-# Builtin Pixbuf resources
-# ----------------------------------------------------------------------------
+CFLAGS += -DWITH_BUILTIN_PIXBUF
 
 GTK_IMAGE_menu_cursor := gtk/res/menu_cursor.png
 
@@ -130,12 +130,13 @@ $(2): $(1)
 
 endef
 
+$(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
+
+endif
+
 # ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
-
-
-$(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
 
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c bitmap.c gui.c schedule.c plotters.c	\

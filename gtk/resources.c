@@ -36,15 +36,18 @@
 #include "gtk/compat.h"
 #include "gtk/resources.h"
 
+#ifdef WITH_BUILTIN_PIXBUF
 #ifdef __GNUC__
 extern const guint8 menu_cursor_pixdata[] __attribute__ ((__aligned__ (4)));
 #else
 extern const guint8 menu_cursor_pixdata[];
 #endif
+#endif
 
 enum nsgtk_resource_type_e {
 	NSGTK_RESOURCE_FILE,
-	NSGTK_RESOURCE_BUILTIN,
+	NSGTK_RESOURCE_GLIB,
+	NSGTK_RESOURCE_INLINE,
 };
 
 struct nsgtk_resource_s {
@@ -74,6 +77,7 @@ static struct nsgtk_resource_s ui_resource[] = {
 static struct nsgtk_resource_s gen_resource[] = {
 	{ "favicon.png", 11, NSGTK_RESOURCE_FILE, NULL },
 	{ "netsurf.xpm", 11, NSGTK_RESOURCE_FILE, NULL },
+	{ "menu_cursor.png", 15, NSGTK_RESOURCE_FILE, NULL },
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
 
@@ -82,10 +86,16 @@ GdkCursor *nsgtk_create_menu_cursor(void)
 {
 	GdkCursor *cursor = NULL;
 	GdkPixbuf *pixbuf;
+	nserror res;
+	const char *resname = "menu_cursor.png";
 
-	pixbuf = gdk_pixbuf_new_from_inline(-1, menu_cursor_pixdata, FALSE, NULL);
-	cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf, 0, 3);
-	g_object_unref (pixbuf);
+
+	res = nsgdk_pixbuf_new_from_resname(resname, &pixbuf);
+	if (res == NSERROR_OK) {
+		cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(),
+						    pixbuf, 0, 3);
+		g_object_unref(pixbuf);
+	}
 
 	return cursor;
 }
@@ -110,7 +120,14 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 {
 	int resnamelen;
 	char *resname;
-
+#ifdef WITH_BUILTIN_PIXBUF
+	if (strncmp(resource->name, "menu_cursor.png", resource->len) == 0) {
+		resource->path = (char *)&menu_cursor_pixdata[0];
+		resource->type = NSGTK_RESOURCE_INLINE;
+		LOG("Found builtin for %s", resource->name);
+		return NSERROR_OK;
+	}
+#endif
 #ifdef WITH_GRESOURCE
 	gboolean present;
 
@@ -128,7 +145,7 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 	if (present == TRUE) {
 		/* found an entry in the resources */
 		resource->path = resname;
-		resource->type = NSGTK_RESOURCE_BUILTIN;
+		resource->type = NSGTK_RESOURCE_GLIB;
 		LOG("Found gresource path %s", resource->path);
 		return NSERROR_OK;
 	}
@@ -264,7 +281,7 @@ nserror
 nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_out)
 {
 	struct nsgtk_resource_s *resource;
-	GdkPixbuf *new_pixbuf;
+	GdkPixbuf *new_pixbuf = NULL;
 	GError* error = NULL;
 
 	resource = find_resource_from_name(resname, &gen_resource[0]);
@@ -272,10 +289,20 @@ nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_out)
 		return NSERROR_NOT_FOUND;
 	}
 
-	if (resource->type == NSGTK_RESOURCE_FILE) {
+	switch (resource->type) {
+	case NSGTK_RESOURCE_FILE:
 		new_pixbuf = gdk_pixbuf_new_from_file(resource->path, &error);
-	} else {
+		break;
+
+	case NSGTK_RESOURCE_GLIB:
 		new_pixbuf = gdk_pixbuf_new_from_resource(resource->path, &error);
+		break;
+
+	case NSGTK_RESOURCE_INLINE:
+#ifdef WITH_BUILTIN_PIXBUF
+		new_pixbuf = gdk_pixbuf_new_from_inline(-1, (const guint8 *)resource->path, FALSE, NULL);
+#endif
+		break;
 	}
 	if (new_pixbuf == NULL) {
 		LOG("Unable to create pixbuf from file for %s with path %s \"%s\"",
