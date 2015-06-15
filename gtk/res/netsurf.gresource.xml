@@ -27,7 +27,8 @@
     <file>password.gtk2.ui</file>  
     <file>tabcontents.gtk3.ui</file>  
     <file>warning.gtk2.ui</file>
-    <file>favicon.png</file>
-    <file>netsurf.xpm</file>
+    <file preprocess="to-pixdata">favicon.png</file>
+    <file preprocess="to-pixdata">netsurf.xpm</file>
+    <file preprocess="to-pixdata">menu_cursor.png</file>
   </gresource>
 </gresources>

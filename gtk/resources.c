@@ -118,7 +118,6 @@ GdkCursor *nsgtk_create_menu_cursor(void)
 static nserror
 init_resource(char **respath, struct nsgtk_resource_s *resource)
 {
-	int resnamelen;
 	char *resname;
 #ifdef WITH_BUILTIN_PIXBUF
 	if (strncmp(resource->name, "menu_cursor.png", resource->len) == 0) {
@@ -129,6 +128,7 @@ init_resource(char **respath, struct nsgtk_resource_s *resource)
 	}
 #endif
 #ifdef WITH_GRESOURCE
+	int resnamelen;
 	gboolean present;
 
 	resnamelen = snprintf(NULL, 0, "/org/netsurf/%s", resource->name);

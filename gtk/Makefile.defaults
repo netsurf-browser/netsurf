@@ -21,6 +21,17 @@ NETSURF_USE_NSSVG := AUTO
 # Valid options: YES, NO, AUTO
 NETSURF_USE_ROSPRITE := AUTO
 
+# Enable the use of GLib compiled in resource handling. This requires
+#  GLib 2.32 or later
+# Valid options: YES, NO, AUTO
+NETSURF_USE_GRESOURCE := AUTO
+
+# Enable the use of compiled in inline pixbuf. This is depricated
+#  since GLib 2.32. The automatic selection is disabled if GRESOURCE
+#  handling is enabled
+# Valid options: YES, NO, AUTO
+NETSURF_USE_INLINE_PIXBUF := AUTO
+
 # Enable building the source object cache filesystem based backing store.
 NETSURF_FS_BACKING_STORE := YES
 
