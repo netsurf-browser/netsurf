@@ -84,8 +84,6 @@ GdkPixbuf *win_default_icon_pixbuf; /** default window icon pixbuf */
 
 GtkBuilder *warning_builder;
 
-#define THROBBER_FRAMES 9
-
 char **respaths; /** resource search path vector */
 
 /**
@@ -123,36 +121,6 @@ nsgtk_init_resource(const char *resource_path)
 	filepath_free_strvec(pathv);
 
 	return respath;
-}
-
-/* This is an ugly hack to just get the new-style throbber going.
- * It, along with the PNG throbber loader, need making more generic.
- */
-static bool nsgtk_throbber_init(char **respath, int framec)
-{
-	char **filenames;
-	char targetname[PATH_MAX];
-	int frame_num;
-	bool ret;
-
-	filenames = calloc(framec, sizeof(char *));
-	if (filenames == NULL)
-		return false;
-
-	for (frame_num = 0; frame_num < framec; frame_num++) {
-		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
-		filenames[frame_num] = filepath_find(respath, targetname);
-	}
-
-	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
-
-	for (frame_num = 0; frame_num < framec; frame_num++) {
-		free(filenames[frame_num]);
-	}
-	free(filenames);
-
-	return ret;
-
 }
 
 
@@ -307,9 +275,12 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");
 	LOG("Using '%s' as custom toolbar settings file", toolbar_indices_file_location);
 
-	/* load throbber images */
-	if (nsgtk_throbber_init(respath, THROBBER_FRAMES) == false)
-		die("Unable to load throbber image.\n");
+	/* initialise throbber */
+	error = nsgtk_throbber_init();
+	if (error != NSERROR_OK) {
+		LOG("Unable to initialise throbber.");
+		return error;
+	}
 
 	/* Initialise completions - cannot fail */
 	nsgtk_completion_init();

@@ -78,6 +78,15 @@ static struct nsgtk_resource_s gen_resource[] = {
 	{ "favicon.png", 11, NSGTK_RESOURCE_FILE, NULL },
 	{ "netsurf.xpm", 11, NSGTK_RESOURCE_FILE, NULL },
 	{ "menu_cursor.png", 15, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber0.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber1.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber2.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber3.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber4.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber5.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber6.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber7.png", 22, NSGTK_RESOURCE_FILE, NULL },
+	{ "throbber/throbber8.png", 22, NSGTK_RESOURCE_FILE, NULL },
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
 

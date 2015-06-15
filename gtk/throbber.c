@@ -20,75 +20,60 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#ifdef WITH_GIF
-#include <libnsgif.h>
-#endif
+#include <gtk/gtk.h>
+
 #include "utils/log.h"
+
+#include "gtk/resources.h"
 #include "gtk/throbber.h"
-#include "gtk/bitmap.h"
 
 struct nsgtk_throbber *nsgtk_throbber = NULL;
 
-/**
- * Creates the throbber using a PNG for each frame.
- *
- * The number of frames must be at least two.  The first frame is the
- * inactive frame, others are the active frames.
- *
- * \param  frames  The number of frames.  Must be at least two.
- * \param  frame_files Filenames of PNGs containing frames.
- * \return true on success.
- */
-bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files)
-{
-	GError *err = NULL;
-	struct nsgtk_throbber *throb;		/**< structure we generate */
-	bool errors_when_loading = false;	/**< true if a frame failed */
-	int frame_loop;
-	
-	if (frames < 2) {
-		/* we need at least two frames - one for idle, one for active */
-		LOG("Insufficent number of frames in throbber animation!");
-		LOG("(called with %d frames, where 2 is a minimum.)", frames);
-		return false;
-	}
-	
-	throb = malloc(sizeof(*throb));
-	if (throb == NULL)
-		return false;
+#define THROBBER_FRAMES 9
+#define THROBBER_FMT "throbber/throbber%d.png"
 
-	throb->nframes = frames;
-	throb->framedata = malloc(sizeof(GdkPixbuf *) * throb->nframes);
+/* exported interface documented in gtk/throbber.h */
+nserror nsgtk_throbber_init(void)
+{
+	struct nsgtk_throbber *throb;		/**< structure we generate */
+	int frame;
+	char resname[] = THROBBER_FMT;
+	nserror res = NSERROR_OK;
+
+	throb = malloc(sizeof(*throb));
+	if (throb == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	throb->framedata = malloc(sizeof(GdkPixbuf *) * THROBBER_FRAMES);
 	if (throb->framedata == NULL) {
 		free(throb);
 		return false;
 	}
-	
-	for (frame_loop = 0; frame_loop < frames; frame_loop++) {
-		throb->framedata[frame_loop] = gdk_pixbuf_new_from_file(frame_files[frame_loop], &err);
-		if (err != NULL) {
-			LOG("Error when loading %s: %s (%d)", frame_files[frame_loop], err->message, err->code);
-			throb->framedata[frame_loop] = NULL;
-			errors_when_loading = true;
-		}
-	}
-	
-	if (errors_when_loading == true) {
-		for (frame_loop = 0; frame_loop < frames; frame_loop++) {
-			if (throb->framedata[frame_loop] != NULL)
-				g_object_unref(throb->framedata[frame_loop]);
-		}
 
-		free(throb->framedata);
-		free(throb);
-		
-		return false;		
+	for (frame = 0; frame < THROBBER_FRAMES; frame++) {
+		snprintf(resname, sizeof(resname), THROBBER_FMT, frame);
+		res = nsgdk_pixbuf_new_from_resname(resname,
+						    throb->framedata + frame);
+		if (res != NSERROR_OK) {
+			break;
+		}
+		LOG("%s",resname);
 	}
-	
+
+	if (frame < 1) {
+		/* we need at least two frames - one for idle, one for active */
+		LOG("Insufficent number of frames (%d) in throbber animation.", frame);
+		res = NSERROR_INIT_FAILED;
+	}
+
+	throb->nframes = frame;
 	nsgtk_throbber = throb;
-	
-	return true;
+	return res;
+
+
 }
+
 
 void nsgtk_throbber_finalise(void)
 {

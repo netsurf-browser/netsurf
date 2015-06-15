@@ -30,5 +30,14 @@
     <file preprocess="to-pixdata">favicon.png</file>
     <file preprocess="to-pixdata">netsurf.xpm</file>
     <file preprocess="to-pixdata">menu_cursor.png</file>
+    <file preprocess="to-pixdata">throbber/throbber0.png</file>
+    <file preprocess="to-pixdata">throbber/throbber1.png</file>
+    <file preprocess="to-pixdata">throbber/throbber2.png</file>
+    <file preprocess="to-pixdata">throbber/throbber3.png</file>
+    <file preprocess="to-pixdata">throbber/throbber4.png</file>
+    <file preprocess="to-pixdata">throbber/throbber5.png</file>
+    <file preprocess="to-pixdata">throbber/throbber6.png</file>
+    <file preprocess="to-pixdata">throbber/throbber7.png</file>
+    <file preprocess="to-pixdata">throbber/throbber8.png</file>
   </gresource>
 </gresources>

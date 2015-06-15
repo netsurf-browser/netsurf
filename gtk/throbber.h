@@ -29,7 +29,7 @@ struct nsgtk_throbber
 
 extern struct nsgtk_throbber *nsgtk_throbber;
 
-bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files);
+nserror nsgtk_throbber_init(void);
 void nsgtk_throbber_finalise(void);
 
 #endif /* __GTK_THROBBER_H__ */
