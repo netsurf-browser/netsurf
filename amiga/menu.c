@@ -788,7 +788,7 @@ static int ami_menu_calc_item_width(struct gui_window_2 *gwin, int j, struct Ras
 static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 {
 	int i, j;
-	int txtlen = 0, subtxtlen = 0;
+	int txtlen = 0;
 	int left_posn;
 	struct RastPort *rp = &scrn->RastPort;
 	struct DrawInfo *dri = GetScreenDrawInfo(scrn);
@@ -820,7 +820,6 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				using label.image if there's a bitmap associated with the item. */
 			if((gwin->menuicon[i] != NULL) && (gwin->menulab[i] != NM_BARLABEL)) {
 				int icon_width = 0;
-				Object *blank_space = NULL;
 				Object *submenuarrow = NULL;
 				Object *icon = 	BitMapObj,
 						BITMAP_Screen, scrn,
@@ -836,9 +835,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 
 				GetAttr(IA_Width, icon, (ULONG *)&icon_width);
 
-				if(gwin->menutype[i] == NM_SUB) {
-					left_posn = subtxtlen;
-				} else {
+				if(gwin->menutype[i] != NM_SUB) {
 					left_posn = txtlen;
 				}
 
@@ -854,32 +851,8 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 									SYSIA_DrawInfo, dri,
 									IA_Left, left_posn,
 									TAG_DONE);
-
-					j = i + 1;
-					subtxtlen = 0;
-					do {
-						if(gwin->menulab[j] != NM_BARLABEL) {
-							if(gwin->menutype[j] == NM_SUB) {
-								int item_size = ami_menu_calc_item_width(gwin, j, rp);
-								if(item_size > subtxtlen) {
-									subtxtlen = item_size;
-								}
-							}
-						}
-						j++;
-					} while((gwin->menutype[j] == NM_SUB));
 				}
 
-				/**TODO: Checkmark/MX images and keyboard shortcuts
-				 */
-
-				if(gwin->menutype[i] == NM_SUB) {
-					blank_space = NewObject(NULL, "fillrectclass",
-									IA_Height, 0,
-									IA_Width, left_posn + icon_width,
-									TAG_DONE);
-				}
-				
 				gwin->menuobj[i] = LabelObj,
 					LABEL_MenuMode, TRUE,
 					LABEL_DrawInfo, dri,
@@ -887,8 +860,6 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 					LABEL_Image, icon,
 					LABEL_Text, " ",
 					LABEL_Text, gwin->menulab[i],
-					LABEL_DisposeImage, TRUE,
-					LABEL_Image, blank_space,
 					LABEL_DisposeImage, TRUE,
 					LABEL_Image, submenuarrow,
 				LabelEnd;
