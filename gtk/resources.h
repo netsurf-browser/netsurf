@@ -16,18 +16,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Interface to gtk builtin resource handling.
+ *
+ * This presents a unified interface to the rest of the codebase to
+ * obtain resources. Note this is not anything to do with the resource
+ * scheme handling beyond possibly providing the underlying data.
+ *
+ */
+
 #ifndef NETSURF_GTK_RESOURCES_H
 #define NETSURF_GTK_RESOURCES_H 1
 
 /**
- * Creates a menu cursor from internal resources
+ * Initialise GTK resources handling.
+ *
+ * Must be called before attempting to retrieve any resources but
+ * after logging is initialised as it logs.
+ *
+ * \param respath A string vector of paths to search for resources.
+ * \return NSERROR_OK if all resources were located else an
+ *         appropriate error code.
  */
-GdkCursor *nsgtk_create_menu_cursor(void);
-
 nserror nsgtk_init_resources(char **respath);
 
 /**
- * Create gtk builder object for the named ui resource
+ * Creates a menu cursor from internal resources.
+ *
+ * \return Cursor object or NULL on error.
+ */
+GdkCursor *nsgtk_create_menu_cursor(void);
+
+/**
+ * Create gtk builder object for the named ui resource.
  *
  * Creating gtk builder objects from a named resource requires the
  * source xml resource to be parsed.
@@ -44,7 +66,7 @@ nserror nsgtk_builder_new_from_resname(const char *resname, GtkBuilder **builder
 
 
 /**
- * Create gdk pixbuf for the named ui resource
+ * Create gdk pixbuf for the named ui resource.
  *
  * This creates a pixbuf using an identifier name which is mapped to
  * the ui_resource table which must be initialised with
@@ -55,5 +77,21 @@ nserror nsgtk_builder_new_from_resname(const char *resname, GtkBuilder **builder
  * \return NSERROR_OK and pixbuf_out updated or appropriate error code
  */
 nserror nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_out);
+
+/**
+ * Get direct pointer to resource data.
+ *
+ * For a named resource this obtains a direct acesss pointer to the
+ * data and its length.
+ *
+ * The data is read only through this pointer and remains valid until
+ * program exit.
+ *
+ * \param resname The resource name to obtain data for.
+ * \param data_out The resulting data.
+ * \param data_size_out The resulting data size.
+ * \return NSERROR_OK and data_out updated or appropriate error code.
+ */
+nserror nsgtk_data_from_resname(const char *resname, const uint8_t **data_out, size_t *data_size_out);
 
 #endif

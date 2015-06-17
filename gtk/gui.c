@@ -99,14 +99,15 @@ static void die(const char * const error)
 	exit(EXIT_FAILURE);
 }
 
-/** Create an array of valid paths to search for resources.
+/**
+ * Create an array of valid paths to search for resources.
  *
  * The idea is that all the complex path computation to find resources
  * is performed here, once, rather than every time a resource is
  * searched for.
  */
 static char **
-nsgtk_init_resource(const char *resource_path)
+nsgtk_init_resource_path(const char *resource_path)
 {
 	const gchar * const *langv;
 	char **pathv; /* resource path string vector */
@@ -234,13 +235,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	       strlen(languages_file_location) - 9);
 	LOG("Using '%s' for resource path", res_dir_location);
 
-	/* initialise the gtk resource handling */
-	error = nsgtk_init_resources(respath);
-	if (error != NSERROR_OK) {
-		LOG("Unable to initialise resources");
-		return error;
-	}
-
 	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
 	if (error != NSERROR_OK) {
 		LOG("Unable to initialise warning dialog");
@@ -268,12 +262,15 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	/* Default favicon */
 	error = nsgdk_pixbuf_new_from_resname("favicon.png", &favicon_pixbuf);
 	if (error != NSERROR_OK) {
-		favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 16,16);
+		favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+						false, 8, 16,16);
 	}
 
 	/* Toolbar inicies file */
-	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");
-	LOG("Using '%s' as custom toolbar settings file", toolbar_indices_file_location);
+	toolbar_indices_file_location = filepath_find(respath,
+						      "toolbarIndices");
+	LOG("Using '%s' as custom toolbar settings file",
+	    toolbar_indices_file_location);
 
 	/* initialise throbber */
 	error = nsgtk_throbber_init();
@@ -1011,7 +1008,7 @@ static struct gui_browser_table nsgtk_browser_table = {
 	.quit = gui_quit,
 	.launch_url = gui_launch_url,
 	.cert_verify = gtk_cert_verify,
-        .login = gui_401login_open,
+	.login = gui_401login_open,
 	.pdf_password = nsgtk_pdf_password,
 };
 
@@ -1035,13 +1032,10 @@ int main(int argc, char** argv)
 		.bitmap = nsgtk_bitmap_table,
 	};
 
-        ret = netsurf_register(&nsgtk_table);
-        if (ret != NSERROR_OK) {
+	ret = netsurf_register(&nsgtk_table);
+	if (ret != NSERROR_OK) {
 		die("NetSurf operation table failed registration\n");
-        }
-
-	/* build the common resource path list */
-	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
+	}
 
 	/* Locate the correct user configuration directory path */
 	ret = get_config_home(&nsgtk_config_home);
@@ -1061,6 +1055,17 @@ int main(int argc, char** argv)
 	 * can do about it either.
 	 */
 	nslog_init(nslog_stream_configure, &argc, argv);
+
+	/* build the common resource path list */
+	respaths = nsgtk_init_resource_path("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
+
+	/* initialise the gtk resource handling */
+	ret = nsgtk_init_resources(respaths);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "GTK resources failed to initialise (%s)\n",
+			messages_get_errorcode(ret));
+		return 1;
+	}
 
 	/* Initialise user options */
 	ret = nsgtk_option_init(&argc, argv);

@@ -34,6 +34,7 @@
 #include "desktop/gui_fetch.h"
 
 #include "gtk/gui.h"
+#include "gtk/resources.h"
 #include "gtk/fetch.h"
 
 static struct hash_table *mime_hash = NULL;
@@ -172,13 +173,13 @@ const char *fetch_filetype(const char *unix_path)
 	const char *type;
 	int l;
 
-	if (stat(unix_path, &statbuf) != 0) {
-		/* stat failed */
-		return "text/plain";
-	}
+	/* stat the path to attempt to determine if the file is special */
+	if (stat(unix_path, &statbuf) == 0) {
+		/* stat suceeded so can check for directory */
 
-	if (S_ISDIR(statbuf.st_mode)) {
-		return "application/x-netsurf-directory";
+		if (S_ISDIR(statbuf.st_mode)) {
+			return "application/x-netsurf-directory";
+		}
 	}
 
 	l = strlen(unix_path);
@@ -230,7 +231,7 @@ const char *fetch_filetype(const char *unix_path)
 }
 
 
-static nsurl *gui_get_resource_url(const char *path)
+static nsurl *nsgtk_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
 	nsurl *url = NULL;
@@ -253,7 +254,8 @@ static nsurl *gui_get_resource_url(const char *path)
 static struct gui_fetch_table fetch_table = {
 	.filetype = fetch_filetype,
 
-	.get_resource_url = gui_get_resource_url,
+	.get_resource_url = nsgtk_get_resource_url,
+	.get_resource_data = nsgtk_data_from_resname,
 };
 
 struct gui_fetch_table *nsgtk_fetch_table = &fetch_table;

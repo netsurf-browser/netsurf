@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <gtk/gtk.h>
+#include <stdint.h>
 
 #include "utils/log.h"
 

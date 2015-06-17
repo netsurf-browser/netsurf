@@ -39,5 +39,27 @@
     <file preprocess="to-pixdata">throbber/throbber6.png</file>
     <file preprocess="to-pixdata">throbber/throbber7.png</file>
     <file preprocess="to-pixdata">throbber/throbber8.png</file>
+    <file>credits.html</file>
+    <file>it/credits.html</file>
+    <file>nl/credits.html</file>
+    <file>licence.html</file>
+    <file>it/licence.html</file>
+    <file>nl/licence.html</file>
+    <file>welcome.html</file>
+    <file>de/welcome.html</file>
+    <file>it/welcome.html</file>
+    <file>ja/welcome.html</file>
+    <file>nl/welcome.html</file>
+    <file>maps.html</file>
+    <file>internal.css</file>
+    <file>netsurf.png</file>
+    <file>default.ico</file>
+    <file>icons/arrow-l.png</file>
+    <file>icons/content.png</file>
+    <file>icons/directory2.png</file>
+    <file>icons/directory.png</file>
+    <file>icons/hotlist-add.png</file>
+    <file>icons/hotlist-rmv.png</file>
+    <file>icons/search.png</file>
   </gresource>
 </gresources>
