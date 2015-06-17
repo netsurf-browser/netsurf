@@ -47,9 +47,9 @@ struct gui_fetch_table {
 	/* Optional entries */
 
 	/**
-	 * Callback to translate resource to full url.
+	 * Translate resource to full url.
 	 *
-	 * @note used in resource fetcher
+	 * @note Only used in resource fetcher
 	 *
 	 * Transforms a resource: path into a full URL. The returned URL
 	 * is used as the target for a redirect. The caller takes ownership of
@@ -60,6 +60,33 @@ struct gui_fetch_table {
 	 *         NULL if no suitable resource can be found.
 	 */
 	struct nsurl* (*get_resource_url)(const char *path);
+
+	/**
+	 * Translate resource to source data.
+	 *
+	 * @note Only used in resource fetcher
+	 *
+	 * Obtains the data for a resource directly
+	 *
+	 * \param path The path of the resource to locate.
+	 * \param data Pointer to recive data into
+	 * \param data_len Pointer to length of returned data
+	 * \return NSERROR_OK and the data and length values updated
+	 *         else appropriate error code.
+	 */
+	nserror (*get_resource_data)(const char *path, const uint8_t **data, size_t *data_len);
+
+	/**
+	 * Releases source data.
+	 *
+	 * @note Only used in resource fetcher
+	 *
+	 * Releases source data obtained from get_resource_data()
+	 *
+	 * \param data The value returned from a previous get_resource_data call
+	 * \return NSERROR_OK on success else appropriate error code.
+	 */
+	nserror (*release_resource_data)(const uint8_t *data);
 
 	/**
 	 * Find a MIME type for a local file

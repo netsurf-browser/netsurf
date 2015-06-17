@@ -52,26 +52,7 @@
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 
-struct fetch_resource_context;
-
-typedef bool (*fetch_resource_handler)(struct fetch_resource_context *);
-
-/** Context for an resource fetch */
-struct fetch_resource_context {
-	struct fetch_resource_context *r_next, *r_prev;
-
-	struct fetch *fetchh; /**< Handle for this fetch */
-
-	bool aborted; /**< Flag indicating fetch has been aborted */
-	bool locked; /**< Flag indicating entry is already entered */
-
-	nsurl *url;
-	nsurl *redirect_url; /**< The url the fetch redirects to */
-
-	fetch_resource_handler handler;
-};
-
-static struct fetch_resource_context *ring = NULL;
+#define DIRECT_ETAG_VALUE 123456
 
 /** Valid resource paths */
 static const char *fetch_resource_paths[] = {
@@ -95,10 +76,40 @@ static const char *fetch_resource_paths[] = {
 	"icons/hotlist-rmv.png",
 	"icons/search.png"
 };
+
+/**
+ * map of resource scheme paths to redirect urls
+ */
 static struct fetch_resource_map_entry {
-	lwc_string *path;
-	nsurl *url;
+	lwc_string *path; /**< resource scheme path */
+	nsurl *redirect_url; /**< url to redirect to */
+	const uint8_t *data; /**< direct pointer to data */
+	size_t data_len; /**< length of direct data */
 } fetch_resource_map[NOF_ELEMENTS(fetch_resource_paths)];
+
+struct fetch_resource_context;
+
+typedef bool (*fetch_resource_handler)(struct fetch_resource_context *);
+
+/** Context for an resource fetch */
+struct fetch_resource_context {
+	struct fetch_resource_context *r_next, *r_prev;
+
+	struct fetch *fetchh; /**< Handle for this fetch */
+
+	bool aborted; /**< Flag indicating fetch has been aborted */
+	bool locked; /**< Flag indicating entry is already entered */
+
+	nsurl *url; /**< requested url */
+
+	struct fetch_resource_map_entry *entry; /**< resource map entry */
+
+	fetch_resource_handler handler;
+
+	int etag;
+};
+
+static struct fetch_resource_context *ring = NULL;
 
 static uint32_t fetch_resource_path_count;
 
@@ -136,7 +147,9 @@ static bool fetch_resource_send_header(struct fetch_resource_context *ctx,
 
 
 
-
+/**
+ * resource handler that results in a redirect to another url.
+ */
 static bool fetch_resource_redirect_handler(struct fetch_resource_context *ctx)
 {
 	fetch_msg msg;
@@ -145,12 +158,65 @@ static bool fetch_resource_redirect_handler(struct fetch_resource_context *ctx)
 	fetch_set_http_code(ctx->fetchh, 302);
 
 	msg.type = FETCH_REDIRECT;
-	msg.data.redirect = nsurl_access(ctx->redirect_url);
-	fetch_resource_send_callback(&msg, ctx); 
+	msg.data.redirect = nsurl_access(ctx->entry->redirect_url);
+	fetch_resource_send_callback(&msg, ctx);
 
 	return true;
 }
 
+/* resource handler that returns data directly */
+static bool fetch_resource_data_handler(struct fetch_resource_context *ctx)
+{
+	fetch_msg msg;
+
+	/* Check if we can just return not modified */
+	if (ctx->etag != 0 && ctx->etag == DIRECT_ETAG_VALUE) {
+		fetch_set_http_code(ctx->fetchh, 304);
+		msg.type = FETCH_NOTMODIFIED;
+		fetch_resource_send_callback(&msg, ctx);
+		return true;
+	}
+
+	/* fetch is going to be successful */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* Any callback can result in the fetch being aborted.
+	 * Therefore, we _must_ check for this after _every_ call to
+	 * fetch_file_send_callback().
+	 */
+
+	/* content type */
+	if (fetch_resource_send_header(ctx, "Content-Type: %s",
+			guit->fetch->filetype(lwc_string_data(ctx->entry->path))))
+		goto fetch_resource_data_aborted;
+
+	/* content length */
+	if (fetch_resource_send_header(ctx,
+				   "Content-Length: %"SSIZET_FMT,
+				   ctx->entry->data_len))
+		goto fetch_resource_data_aborted;
+
+	/* create etag */
+	if (fetch_resource_send_header(ctx,
+				   "ETag: \"%10" PRId64 "\"",
+				   (int64_t) DIRECT_ETAG_VALUE))
+		goto fetch_resource_data_aborted;
+
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) ctx->entry->data;
+	msg.data.header_or_data.len = ctx->entry->data_len;
+	fetch_resource_send_callback(&msg, ctx);
+
+	if (ctx->aborted == false) {
+		msg.type = FETCH_FINISHED;
+		fetch_resource_send_callback(&msg, ctx);
+	}
+
+fetch_resource_data_aborted:
+
+	return true;
+}
 
 static bool fetch_resource_notfound_handler(struct fetch_resource_context *ctx)
 {
@@ -195,6 +261,7 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 {
 	struct fetch_resource_map_entry *e;
 	uint32_t i;
+	nserror res;
 
 	fetch_resource_path_count = 0;
 
@@ -207,15 +274,26 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 			while (i > 0) {
 				i--;
 				lwc_string_unref(fetch_resource_map[i].path);
-				nsurl_unref(fetch_resource_map[i].url);
+				nsurl_unref(fetch_resource_map[i].redirect_url);
 			}
+			/** \todo should this exit with an error condition? */
 		}
 
-		e->url = guit->fetch->get_resource_url(fetch_resource_paths[i]);
-		if (e->url == NULL) {
-			lwc_string_unref(e->path);
-		} else {
+		e->data = NULL;
+		res = guit->fetch->get_resource_data(lwc_string_data(e->path),
+						     &e->data,
+						     &e->data_len);
+		if (res == NSERROR_OK) {
+			LOG("direct data for %s", fetch_resource_paths[i]);
 			fetch_resource_path_count++;
+		} else {
+			e->redirect_url = guit->fetch->get_resource_url(fetch_resource_paths[i]);
+			if (e->redirect_url == NULL) {
+				lwc_string_unref(e->path);
+			} else {
+				LOG("redirect url for %s", fetch_resource_paths[i]);
+				fetch_resource_path_count++;
+			}
 		}
 	}
 
@@ -229,7 +307,11 @@ static void fetch_resource_finalise(lwc_string *scheme)
 
 	for (i = 0; i < fetch_resource_path_count; i++) {
 		lwc_string_unref(fetch_resource_map[i].path);
-		nsurl_unref(fetch_resource_map[i].url);
+		if (fetch_resource_map[i].data != NULL) {
+			guit->fetch->release_resource_data(fetch_resource_map[i].data);
+		} else {
+			nsurl_unref(fetch_resource_map[i].redirect_url);
+		}
 	}
 }
 
@@ -238,38 +320,44 @@ static bool fetch_resource_can_fetch(const nsurl *url)
 	return true;
 }
 
-/** callback to set up a resource fetch context. */
+/**
+ * set up a resource fetch context.
+ */
 static void *
 fetch_resource_setup(struct fetch *fetchh,
-		 nsurl *url,
-		 bool only_2xx,
-		 bool downgrade_tls,
-		 const char *post_urlenc,
-		 const struct fetch_multipart_data *post_multipart,
-		 const char **headers)
+		     nsurl *url,
+		     bool only_2xx,
+		     bool downgrade_tls,
+		     const char *post_urlenc,
+		     const struct fetch_multipart_data *post_multipart,
+		     const char **headers)
 {
 	struct fetch_resource_context *ctx;
 	lwc_string *path;
+	uint32_t i;
 
 	ctx = calloc(1, sizeof(*ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return NULL;
+	}
 
 	ctx->handler = fetch_resource_notfound_handler;
 
 	if ((path = nsurl_get_component(url, NSURL_PATH)) != NULL) {
-		uint32_t i;
 		bool match;
 
 		/* Ensure requested path is valid */
 		for (i = 0; i < fetch_resource_path_count; i++) {
-			if (lwc_string_isequal(path, 
-					fetch_resource_map[i].path, 
+			if (lwc_string_isequal(path,
+					fetch_resource_map[i].path,
 					&match) == lwc_error_ok && match) {
-				ctx->redirect_url = 
-					nsurl_ref(fetch_resource_map[i].url);
-				ctx->handler =
-					fetch_resource_redirect_handler;
+				/* found a url match, select handler */
+				ctx->entry = &fetch_resource_map[i];
+				if (ctx->entry->data != NULL) {
+					ctx->handler = fetch_resource_data_handler;
+				} else {
+					ctx->handler = fetch_resource_redirect_handler;
+				}
 				break;
 			}
 		}
@@ -278,6 +366,23 @@ fetch_resource_setup(struct fetch *fetchh,
 	}
 
 	ctx->url = nsurl_ref(url);
+
+	/* Scan request headers looking for If-None-Match */
+	for (i = 0; headers[i] != NULL; i++) {
+		if (strncasecmp(headers[i], "If-None-Match:",
+				SLEN("If-None-Match:")) == 0) {
+			/* If-None-Match: "12345678" */
+			const char *d = headers[i] + SLEN("If-None-Match:");
+
+			/* Scan to first digit, if any */
+			while (*d != '\0' && (*d < '0' || '9' < *d))
+				d++;
+
+			/* Convert to time_t */
+			if (*d != '\0')
+				ctx->etag = atoi(d);
+		}
+	}
 
 	ctx->fetchh = fetchh;
 
@@ -290,8 +395,6 @@ fetch_resource_setup(struct fetch *fetchh,
 static void fetch_resource_free(void *ctx)
 {
 	struct fetch_resource_context *c = ctx;
-	if (c->redirect_url != NULL)
-		nsurl_unref(c->redirect_url);
 	if (c->url != NULL)
 		nsurl_unref(c->url);
 	RING_REMOVE(ring, c);

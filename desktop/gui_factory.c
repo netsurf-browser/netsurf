@@ -501,6 +501,16 @@ static nsurl *gui_default_get_resource_url(const char *path)
 	return NULL;
 }
 
+static nserror gui_default_get_resource_data(const char *path, const uint8_t **data, size_t *data_len)
+{
+	return NSERROR_NOT_FOUND;
+}
+
+static nserror gui_default_release_resource_data(const uint8_t *data)
+{
+	return NSERROR_OK;
+}
+
 static char *gui_default_mimetype(const char *path)
 {
 	return strdup(guit->fetch->filetype(path));
@@ -522,6 +532,12 @@ static nserror verify_fetch_register(struct gui_fetch_table *gft)
 	/* fill in the optional entries with defaults */
 	if (gft->get_resource_url == NULL) {
 		gft->get_resource_url = gui_default_get_resource_url;
+	}
+	if (gft->get_resource_data == NULL) {
+		gft->get_resource_data = gui_default_get_resource_data;
+	}
+	if (gft->release_resource_data == NULL) {
+		gft->release_resource_data = gui_default_release_resource_data;
 	}
 	if (gft->mimetype == NULL) {
 		gft->mimetype = gui_default_mimetype;
