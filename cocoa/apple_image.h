@@ -25,6 +25,9 @@
 
 #ifdef WITH_APPLE_IMAGE
 
+/**
+ * Initialise apple image handlers instead of generic core ones.
+ */
 nserror apple_image_init(void);
 
 #else

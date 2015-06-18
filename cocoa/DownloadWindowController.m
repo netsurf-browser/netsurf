@@ -20,6 +20,7 @@
 #import "cocoa/gui.h"
 
 #import "utils/log.h"
+#import "utils/nsurl.h"
 #import "desktop/download.h"
 #import "desktop/gui_download.h"
 

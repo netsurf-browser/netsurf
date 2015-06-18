@@ -21,6 +21,8 @@
 
 CGImageRef cocoa_get_cgimage( void *bitmap );
 
+void cocoa_bitmap_modified(void *bitmap);
+
 struct gui_bitmap_table *cocoa_bitmap_table;
 
 #endif

@@ -9,7 +9,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -44,28 +44,28 @@
 static CGImageRef cocoa_prepare_bitmap( void *bitmap );
 static NSMapTable *cocoa_get_bitmap_cache( void );
 
-int bitmap_get_width(void *bitmap)
+static int bitmap_get_width(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp pixelsWide];
 }
 
-int bitmap_get_height(void *bitmap)
+static int bitmap_get_height(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp pixelsHigh];
 }
 
-bool bitmap_get_opaque(void *bitmap)
+static bool bitmap_get_opaque(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp isOpaque];
 }
 
-void bitmap_destroy(void *bitmap)
+static void bitmap_destroy(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 
@@ -80,7 +80,7 @@ void bitmap_destroy(void *bitmap)
 	[bmp release];
 }
 
-void *bitmap_create(int width, int height, unsigned int state)
+static void *bitmap_create(int width, int height, unsigned int state)
 {
 	NSBitmapImageRep *bmp = [[NSBitmapImageRep alloc]
 					initWithBitmapDataPlanes: NULL
@@ -98,35 +98,35 @@ void *bitmap_create(int width, int height, unsigned int state)
 	return bmp;
 }
 
-void bitmap_set_opaque(void *bitmap, bool opaque)
+static void bitmap_set_opaque(void *bitmap, bool opaque)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	[bmp setOpaque: opaque ? YES : NO];
 }
 
-unsigned char *bitmap_get_buffer(void *bitmap)
+static unsigned char *bitmap_get_buffer(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp bitmapData];
 }
 
-size_t bitmap_get_rowstride(void *bitmap)
+static size_t bitmap_get_rowstride(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp bytesPerRow];
 }
 
-size_t bitmap_get_bpp(void *bitmap)
+static size_t bitmap_get_bpp(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
 	return [bmp bitsPerPixel] / 8;
 }
 
-bool bitmap_test_opaque(void *bitmap)
+static bool bitmap_test_opaque(void *bitmap)
 {
 	NSCParameterAssert( bitmap_get_bpp( bitmap ) == BYTES_PER_PIXEL );
 
@@ -148,7 +148,7 @@ bool bitmap_test_opaque(void *bitmap)
 	return true;
 }
 
-bool bitmap_save(void *bitmap, const char *path, unsigned flags)
+static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
@@ -157,7 +157,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 	return [tiff writeToFile: [NSString stringWithUTF8String: path] atomically: YES];
 }
 
-void bitmap_modified(void *bitmap)
+static void cocoa_bitmap_modified(void *bitmap)
 {
 	NSMapTable *cache = cocoa_get_bitmap_cache();
 	CGImageRef image = NSMapGet( cache, bitmap );
@@ -258,7 +258,7 @@ static nserror bitmap_render(struct bitmap *bitmap, struct hlcache_handle *conte
 	[NSGraphicsContext setCurrentContext: nil];
 	CGContextRelease( bitmapContext );
 
-	bitmap_modified( bitmap );
+	cocoa_bitmap_modified( bitmap );
 
 	return true;
 }
@@ -275,7 +275,7 @@ static struct gui_bitmap_table bitmap_table = {
 	.get_height = bitmap_get_height,
 	.get_bpp = bitmap_get_bpp,
 	.save = bitmap_save,
-	.modified = bitmap_modified,
+	.modified = cocoa_bitmap_modified,
 	.render = bitmap_render,
 };
 
