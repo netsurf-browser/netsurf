@@ -43,7 +43,7 @@
  */
 nserror image_init(void)
 {
-	nserror error;
+	nserror error = NSERROR_OK;
 
 #ifdef WITH_BMP
 	error = nsbmp_init();
@@ -93,7 +93,7 @@ nserror image_init(void)
 		return error;
 #endif
 
-	return NSERROR_OK;
+	return error;
 }
 
 
