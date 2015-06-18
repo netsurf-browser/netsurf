@@ -157,7 +157,7 @@ static bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 	return [tiff writeToFile: [NSString stringWithUTF8String: path] atomically: YES];
 }
 
-static void cocoa_bitmap_modified(void *bitmap)
+void cocoa_bitmap_modified(void *bitmap)
 {
 	NSMapTable *cache = cocoa_get_bitmap_cache();
 	CGImageRef image = NSMapGet( cache, bitmap );
