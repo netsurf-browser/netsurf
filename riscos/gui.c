@@ -2481,11 +2481,14 @@ int main(int argc, char** argv)
 		die("Failed to locate Messages resource.");
 	}
 
+	/* initialise messages */
+	messages_add_from_file(path);
+
 	/* obtain cache path */
 	cachepath = get_cachepath();
 
 	/* common initialisation */
-	ret = netsurf_init(path, cachepath);
+	ret = netsurf_init(cachepath);
 	free(cachepath);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise core");
@@ -2496,7 +2499,7 @@ int main(int argc, char** argv)
 	sprite_init();
 
 	/* Load some extra RISC OS specific Messages */
-	messages_load("NetSurf:Resources.LangNames");
+	messages_add_from_file("NetSurf:Resources.LangNames");
 
 	ret = gui_init(argc, argv);
 	if (ret != NSERROR_OK) {

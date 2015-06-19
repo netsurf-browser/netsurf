@@ -122,7 +122,7 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 }
 
 /* exported interface documented in desktop/netsurf.h */
-nserror netsurf_init(const char *messages, const char *store_path)
+nserror netsurf_init(const char *store_path)
 {
 	nserror ret;
 	struct hlcache_parameters hlcache_parameters = {
@@ -150,8 +150,6 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	 */
 	signal(SIGPIPE, SIG_IGN);
 #endif
-
-	messages_load(messages);
 
 	/* corestrings init */
 	ret = corestrings_init();

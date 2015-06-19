@@ -142,7 +142,7 @@ messages_get_ctx(const char *key, struct hash_table *ctx)
 }
 
 /* exported interface documented in messages.h */
-nserror messages_load(const char *path)
+nserror messages_add_from_file(const char *path)
 {
 	nserror err;
 
@@ -155,6 +155,12 @@ nserror messages_load(const char *path)
 	}
 
 	return err;
+}
+
+/* exported interface documented in messages.h */
+nserror messages_add_from_inline(const char *data)
+{
+	return NSERROR_OK;
 }
 
 /* exported interface documented in messages.h */

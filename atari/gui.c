@@ -1169,9 +1169,11 @@ int main(int argc, char** argv)
     nsoption_read(options, NULL);
     nsoption_commandline(&argc, argv, NULL);
 
+    ret = messages_add_from_file(messages);
+
     /* common initialisation */
     LOG("Initialising core...");
-    ret = netsurf_init(messages, store);
+    ret = netsurf_init(store);
     if (ret != NSERROR_OK) {
 	die("NetSurf failed to initialise");
     }

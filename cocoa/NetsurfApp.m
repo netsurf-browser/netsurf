@@ -248,8 +248,10 @@ int main( int argc, char **argv )
 	nsoption_read(options, NULL);
 	nsoption_commandline(&argc, argv, NULL);
 
+        error = messages_add_from_file(messages);
+
 	/* common initialisation */
-        error = netsurf_init(messages, NULL);
+        error = netsurf_init(NULL);
 	if (error != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}

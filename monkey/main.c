@@ -172,9 +172,14 @@ main(int argc, char **argv)
   free(options);
   nsoption_commandline(&argc, argv, nsoptions);
 
-  /* common initialisation */
   messages = filepath_find(respaths, "Messages");
-  ret = netsurf_init(messages, NULL);
+  ret = messages_add_from_file(messages);
+  if (ret != NSERROR_OK) {
+    LOG("Messages failed to load");
+  }
+
+  /* common initialisation */
+  ret = netsurf_init(NULL);
   free(messages);
   if (ret != NSERROR_OK) {
     die("NetSurf failed to initialise");

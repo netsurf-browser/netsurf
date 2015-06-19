@@ -38,13 +38,26 @@
 /**
  * Read keys and values from messages file into the standard Messages hash.
  *
- * The messages are merged with any previously loaded messages. Any keys which
- * are present already are replaced with the new value.
+ * The messages are merged with any previously loaded messages. Any
+ * keys which are present already are replaced with the new value. The
+ * file may be gzip compressed.
  *
  * \param path pathname of messages file.
  * \return NSERROR_OK on success or error code on faliure.
  */
-nserror messages_load(const char *path);
+nserror messages_add_from_file(const char *path);
+
+/**
+ * Read keys and values from inline message data into the standard Messages hash.
+ *
+ * The messages are merged with any previously loaded messages. Any
+ * keys which are present already are replaced with the new value. The
+ * data may be gzip compressed.
+ *
+ * \param data The inline message data.
+ * \return NSERROR_OK on success or error code on faliure.
+ */
+nserror messages_add_from_inline(const char *data);
 
 /**
  * Fast lookup of a message by key from the standard Messages hash.

@@ -152,7 +152,7 @@ void ami_theme_init(void)
 	if(lock)
 	{
 		UnLock(lock);
-		messages_load(themefile);
+		messages_add_from_file(themefile);
 	}
 }
 

@@ -5499,7 +5499,9 @@ int main(int argc, char** argv)
 		return RETURN_FAIL;
 	}
 
-	ret = netsurf_init(messages, current_user_cache);
+	ret = messages_add_from_file(messages);
+
+	ret = netsurf_init(current_user_cache);
 	if (ret != NSERROR_OK) {
 		ami_misc_fatal_error("NetSurf failed to initialise");
 		return RETURN_FAIL;

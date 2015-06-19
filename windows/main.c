@@ -183,10 +183,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	nsoption_read(options_file_location, NULL);
 	nsoption_commandline(&argc, argv, NULL);
 
-	/* common initialisation */
+	/* message init */
 	messages = filepath_find(respaths, "messages");
-	ret = netsurf_init(messages, NULL);
+	messages_add_from_file(messages);
 	free(messages);
+
+	/* common initialisation */
+	ret = netsurf_init(NULL);
 	if (ret != NSERROR_OK) {
 		free(options_file_location);
 		LOG("NetSurf failed to initialise");

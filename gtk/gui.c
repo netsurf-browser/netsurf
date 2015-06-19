@@ -508,7 +508,7 @@ void warn_user(const char *warning, const char *detail)
 	static GtkWindow *nsgtk_warning_window;
 	GtkLabel *WarningLabel;
 
-  	LOG("%s %s", warning, detail ? detail : "");
+	LOG("%s %s", warning, detail ? detail : "");
 	fflush(stdout);
 
 	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(warning_builder, "wndWarning"));
@@ -553,13 +553,13 @@ static void nsgtk_PDF_set_pass(GtkButton *w, gpointer data)
 	if (op[0] == '\0') {
 		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
 				"labelInfo")),
-       				"Owner password must be at least 1 character long:");
+				"Owner password must be at least 1 character long:");
 		free(op);
 		free(up);
 	} else if (!strcmp(op, up)) {
 		gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(password_builder,
 				"labelInfo")),
-       				"User and owner passwords must be different:");
+				"User and owner passwords must be different:");
 		free(op);
 		free(up);
 	} else if (!strcmp(op, op1) && !strcmp(up, up1)) {
@@ -1043,12 +1043,26 @@ static struct gui_browser_table nsgtk_browser_table = {
 	.pdf_password = nsgtk_pdf_password,
 };
 
+
+static nserror nsgtk_messages_init(char **respaths)
+{
+	char *messages;
+	nserror ret = NSERROR_NOT_FOUND;
+
+	/* Obtain path to messages */
+	messages = filepath_find(respaths, "Messages");
+	if (messages != NULL) {
+		ret = messages_add_from_file(messages);
+		free(messages);
+	}
+	return ret;
+}
+
 /**
  * Main entry point from OS.
  */
 int main(int argc, char** argv)
 {
-	char *messages;
 	char *cache_home = NULL;
 	nserror ret;
 	struct netsurf_table nsgtk_table = {
@@ -1110,8 +1124,14 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	/* Obtain path to messages */
-	messages = filepath_find(respaths, "Messages");
+	/* Initialise translated messages */
+	ret = nsgtk_messages_init(respaths);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Unable to load translated messages (%s)\n",
+			messages_get_errorcode(ret));
+		LOG("Unable to load translated messages");
+		/** \todo decide if message load faliure should be fatal */
+	}
 
 	/* Locate the correct user cache directory path */
 	ret = get_cache_home(&cache_home);
@@ -1124,8 +1144,7 @@ int main(int argc, char** argv)
 	}
 
 	/* core initialisation */
-	ret = netsurf_init(messages, cache_home);
-	free(messages);
+	ret = netsurf_init(cache_home);
 	free(cache_home);
 	if (ret != NSERROR_OK) {
 		fprintf(stderr, "NetSurf core failed to initialise (%s)\n",
