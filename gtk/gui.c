@@ -107,11 +107,40 @@ static void die(const char * const error)
  * searched for.
  */
 static char **
-nsgtk_init_resource_path(const char *resource_path)
+nsgtk_init_resource_path(const char *config_home)
 {
+	char *resource_path;
+	int resource_path_len;
 	const gchar * const *langv;
 	char **pathv; /* resource path string vector */
 	char **respath; /* resource paths vector */
+
+	if (config_home != NULL) {
+		resource_path_len = snprintf(NULL, 0,
+					     "%s:${NETSURFRES}:%s:./gtk/res",
+					     config_home,
+					     GTK_RESPATH);
+		resource_path = malloc(resource_path_len + 1);
+		if (resource_path == NULL) {
+			return NULL;
+		}
+		snprintf(resource_path, resource_path_len + 1,
+			 "%s:${NETSURFRES}:%s:./gtk/res",
+			 config_home,
+			 GTK_RESPATH);
+	} else {
+		resource_path_len = snprintf(NULL, 0,
+					     "${NETSURFRES}:%s:./gtk/res",
+					     GTK_RESPATH);
+		resource_path = malloc(resource_path_len + 1);
+		if (resource_path == NULL) {
+			return NULL;
+		}
+		snprintf(resource_path,
+			 resource_path_len + 1,
+			 "${NETSURFRES}:%s:./gtk/res",
+			 GTK_RESPATH);
+	}
 
 	pathv = filepath_path_to_strvec(resource_path);
 
@@ -120,6 +149,8 @@ nsgtk_init_resource_path(const char *resource_path)
 	respath = filepath_generate(pathv, langv);
 
 	filepath_free_strvec(pathv);
+
+	free(resource_path);
 
 	return respath;
 }
@@ -1057,7 +1088,11 @@ int main(int argc, char** argv)
 	nslog_init(nslog_stream_configure, &argc, argv);
 
 	/* build the common resource path list */
-	respaths = nsgtk_init_resource_path("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
+	respaths = nsgtk_init_resource_path(nsgtk_config_home);
+	if (respaths == NULL) {
+		fprintf(stderr, "Unable to locate resources\n");
+		return 1;
+	}
 
 	/* initialise the gtk resource handling */
 	ret = nsgtk_init_resources(respaths);
