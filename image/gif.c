@@ -305,7 +305,8 @@ static bool nsgif_convert(struct content *c)
 /**
  * Updates the GIF bitmap to display the current frame
  *
- * \param c  the content to update
+ * \param gif The gif context to update.
+ * \return GIF_OK on success else apropriate error code.
  */
 static gif_result nsgif_get_frame(nsgif_content *gif)
 {
@@ -317,10 +318,11 @@ static gif_result nsgif_get_frame(nsgif_content *gif)
 		current_frame = 0;
 	}
 
-	if (current_frame < gif->gif->decoded_frame)
+	if (current_frame < gif->gif->decoded_frame) {
 		previous_frame = 0;
-	else
+	} else {
 		previous_frame = gif->gif->decoded_frame + 1;
+	}
 
 	for (frame = previous_frame; frame <= current_frame; frame++) {
 		res = gif_decode_frame(gif->gif, frame);

@@ -45,7 +45,7 @@ typedef struct nsico_content {
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
+ * \param  bmp_state A flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 static void *nsico_bitmap_create(int width, int height, unsigned int bmp_state)

@@ -34,6 +34,7 @@
 #include "image/bitmap.h"
 #include "image/bmp.h"
 
+/** bmp context. */
 typedef struct nsbmp_content {
 	struct content base;
 
@@ -45,10 +46,10 @@ typedef struct nsbmp_content {
 /**
  * Callback for libnsbmp; forwards the call to bitmap_create()
  *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
- * \return an opaque struct bitmap, or NULL on memory exhaustion
+ * \param width width of image in pixels
+ * \param height width of image in pixels
+ * \param bmp_state A flag word indicating the initial state
+ * \return An opaque struct bitmap, or NULL on memory exhaustion
  */
 static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
 {
