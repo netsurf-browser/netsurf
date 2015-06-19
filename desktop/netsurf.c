@@ -26,7 +26,6 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
-#include "utils/utsname.h"
 #include "utils/nsoption.h"
 #include "utils/corestrings.h"
 #include "utils/log.h"
@@ -45,7 +44,6 @@
 #include "render/html.h"
 #include "render/textplain.h"
 
-#include "desktop/version.h"
 #include "desktop/browser.h"
 #include "desktop/system_colour.h"
 #include "desktop/searchweb.h"
@@ -127,7 +125,6 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 nserror netsurf_init(const char *messages, const char *store_path)
 {
 	nserror ret;
-	struct utsname utsname;
 	struct hlcache_parameters hlcache_parameters = {
 		.bg_clean_time = HL_CACHE_CLEAN_TIME,
 		.llcache = {
@@ -153,12 +150,6 @@ nserror netsurf_init(const char *messages, const char *store_path)
 	 */
 	signal(SIGPIPE, SIG_IGN);
 #endif
-
-	LOG("NetSurf version '%s'", netsurf_version);
-	if (uname(&utsname) < 0)
-		LOG("Failed to extract machine information");
-	else
-		LOG("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, ""machine <%s>", utsname.sysname, utsname.nodename, utsname.release, utsname.version, utsname.machine);
 
 	messages_load(messages);
 

@@ -24,6 +24,10 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+#include "utils/config.h"
+#include "utils/utsname.h"
+#include "desktop/version.h"
+
 #include "utils/log.h"
 
 /** flag to enable verbose logging */
@@ -34,6 +38,7 @@ static FILE *logfile;
 
 nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {
+	struct utsname utsname;
 	nserror ret = NSERROR_OK;
 
 	if (((*pargc) > 1) &&
@@ -86,6 +91,21 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 		/* failed to ensure output configuration */
 		ret = NSERROR_INIT_FAILED;
 		verbose_log = false;
+	}
+
+	/* sucessfull logging initialisation so log system info */
+	if (ret == NSERROR_OK) {
+		LOG("NetSurf version '%s'", netsurf_version);
+		if (uname(&utsname) < 0) {
+			LOG("Failed to extract machine information");
+		} else {
+			LOG("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, machine <%s>",
+			    utsname.sysname,
+			    utsname.nodename,
+			    utsname.release,
+			    utsname.version,
+			    utsname.machine);
+		}
 	}
 
 	return ret;
