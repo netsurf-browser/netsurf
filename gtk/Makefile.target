@@ -70,6 +70,17 @@ CFLAGS += $(GTKCFLAGS)
 LDFLAGS += -lm
 
 # ---------------------------------------------------------------------------
+# Target setup
+# ---------------------------------------------------------------------------
+
+# The gtk binary target
+EXETARGET := nsgtk
+
+# The filter and target for split messages
+MESSAGES_FILTER=gtk
+MESSAGES_TARGET=gtk/res
+
+# ---------------------------------------------------------------------------
 # Windows flag setup
 # ---------------------------------------------------------------------------
 
@@ -83,6 +94,9 @@ endif
 
 # builtin resource sources
 S_RESOURCE :=
+
+# Path to GTK resources
+NSGTK_RESOURCES_DIR := gtk/res
 
 # Glib prior to 2.32 does not have GResource handling.
 #
@@ -106,15 +120,23 @@ NETSURF_FEATURE_GRESOURCE_ENABLED := yes
 GLIB_COMPILE_RESOURCES := glib-compile-resources
 CFLAGS += -DWITH_GRESOURCE
 
-S_RESOURCE += $(OBJROOT)/netsurf_gresource.c
+NETSURF_GRESOURCE_XML := $(NSGTK_RESOURCES_DIR)/netsurf.gresource.xml
+MESSAGES_GRESOURCE_XML := $(NSGTK_RESOURCES_DIR)/messages.gresource.xml
 
-NSGTK_RESOURCES_DIR := gtk/res
-GRESOURCE_XML := $(NSGTK_RESOURCES_DIR)/netsurf.gresource.xml
-
-# generate the gresource source file
-$(OBJROOT)/netsurf_gresource.c: $(GRESOURCE_XML) $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir $(NSGTK_RESOURCES_DIR) --generate-dependencies $(GRESOURCE_XML))
+# generate the netsurf gresource source files
+$(OBJROOT)/netsurf_gresource.c: $(NETSURF_GRESOURCE_XML) $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir $(NSGTK_RESOURCES_DIR) --generate-dependencies $(NETSURF_GRESOURCE_XML))
 	$(VQ)echo "GRESORCE: $<"
 	$(Q)$(GLIB_COMPILE_RESOURCES) --generate-source --sourcedir $(NSGTK_RESOURCES_DIR) --target=$@ $<
+
+S_RESOURCE += $(OBJROOT)/netsurf_gresource.c
+
+# generate the messages gresource source file
+$(OBJROOT)/messages_gresource.c: $(MESSAGES_GRESOURCE_XML) $(addsuffix /Messages,$(addprefix $(MESSAGES_TARGET)/,$(MESSAGES_LANGUAGES)))
+	$(VQ)echo "GRESORCE: $<"
+	$(Q)$(GLIB_COMPILE_RESOURCES) --generate-source --sourcedir $(NSGTK_RESOURCES_DIR) --target=$@ $<
+
+S_RESOURCE += $(OBJROOT)/messages_gresource.c
+
 
 endif
 endif
@@ -125,7 +147,9 @@ ifneq ($(NETSURF_FEATURE_GRESOURCE_ENABLED),yes)
 
 CFLAGS += -DWITH_BUILTIN_PIXBUF
 
-GTK_IMAGE_menu_cursor := gtk/res/menu_cursor.png
+GTK_IMAGE_favicon := favicon.png
+GTK_IMAGE_netsurf := netsurf.xpm
+GTK_IMAGE_menu_cursor := menu_cursor.png
 
 # 1: input file
 # 2: output file
@@ -143,7 +167,7 @@ $(2): $(1)
 
 endef
 
-$(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
+$(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$(addprefix $(NSGTK_RESOURCES_DIR)/,$($(V))),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
 endif
 endif
 
@@ -166,13 +190,6 @@ S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_RESOURCE) $(S_GTK)
-
-# The gtk binary target
-EXETARGET := nsgtk
-
-# The filter and target for split messages
-MESSAGES_FILTER=gtk
-MESSAGES_TARGET=gtk/res
 
 # ----------------------------------------------------------------------------
 # Install target

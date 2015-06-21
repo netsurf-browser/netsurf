@@ -45,8 +45,12 @@
 #ifdef WITH_BUILTIN_PIXBUF
 #ifdef __GNUC__
 extern const guint8 menu_cursor_pixdata[] __attribute__ ((__aligned__ (4)));
+const guint8 favicon_pixdata[] __attribute__ ((__aligned__ (4)));
+const guint8 netsurf_pixdata[] __attribute__ ((__aligned__ (4)));
 #else
 extern const guint8 menu_cursor_pixdata[];
+const guint8 favicon_pixdata[];
+const guint8 netsurf_pixdata[];
 #endif
 #endif
 
@@ -119,6 +123,7 @@ static struct nsgtk_resource_s direct_resource[] = {
 	RES_ENTRY("icons/hotlist-add.png"),
 	RES_ENTRY("icons/hotlist-rmv.png"),
 	RES_ENTRY("icons/search.png"),
+	RES_ENTRY("Messages"),
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
 
@@ -129,9 +134,8 @@ GdkCursor *nsgtk_create_menu_cursor(void)
 	GdkCursor *cursor = NULL;
 	GdkPixbuf *pixbuf;
 	nserror res;
-	const char *resname = "menu_cursor.png";
 
-	res = nsgdk_pixbuf_new_from_resname(resname, &pixbuf);
+	res = nsgdk_pixbuf_new_from_resname("menu_cursor.png", &pixbuf);
 	if (res == NSERROR_OK) {
 		cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(),
 						    pixbuf, 0, 3);
@@ -280,6 +284,20 @@ init_pixbuf_resource(char **respath, struct nsgtk_resource_s *resource)
 #ifdef WITH_BUILTIN_PIXBUF
 	if (strncmp(resource->name, "menu_cursor.png", resource->len) == 0) {
 		resource->path = (char *)&menu_cursor_pixdata[0];
+		resource->type = NSGTK_RESOURCE_INLINE;
+		LOG("Found builtin for %s", resource->name);
+		return NSERROR_OK;
+	}
+
+	if (strncmp(resource->name, "netsurf.xpm", resource->len) == 0) {
+		resource->path = (char *)&netsurf_pixdata[0];
+		resource->type = NSGTK_RESOURCE_INLINE;
+		LOG("Found builtin for %s", resource->name);
+		return NSERROR_OK;
+	}
+
+	if (strncmp(resource->name, "favicon.png", resource->len) == 0) {
+		resource->path = (char *)&favicon_pixdata[0];
 		resource->type = NSGTK_RESOURCE_INLINE;
 		LOG("Found builtin for %s", resource->name);
 		return NSERROR_OK;

@@ -1047,13 +1047,22 @@ static struct gui_browser_table nsgtk_browser_table = {
 static nserror nsgtk_messages_init(char **respaths)
 {
 	char *messages;
-	nserror ret = NSERROR_NOT_FOUND;
+	nserror ret;
+	const uint8_t *data;
+	size_t data_size;
 
-	/* Obtain path to messages */
-	messages = filepath_find(respaths, "Messages");
-	if (messages != NULL) {
-		ret = messages_add_from_file(messages);
-		free(messages);
+	ret = nsgtk_data_from_resname("Messages", &data, &data_size);
+	if (ret == NSERROR_OK) {
+		ret = messages_add_from_inline(data, data_size);
+	} else {
+		/* Obtain path to messages */
+		messages = filepath_find(respaths, "Messages");
+		if (messages != NULL) {
+			ret = messages_add_from_file(messages);
+			free(messages);
+		} else {
+			ret = NSERROR_NOT_FOUND;
+		}
 	}
 	return ret;
 }

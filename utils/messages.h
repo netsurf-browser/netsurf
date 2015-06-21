@@ -33,6 +33,8 @@
 #ifndef _NETSURF_UTILS_MESSAGES_H_
 #define _NETSURF_UTILS_MESSAGES_H_
 
+#include <stdint.h>
+
 #include "utils/errors.h"
 
 /**
@@ -57,7 +59,7 @@ nserror messages_add_from_file(const char *path);
  * \param data The inline message data.
  * \return NSERROR_OK on success or error code on faliure.
  */
-nserror messages_add_from_inline(const char *data);
+nserror messages_add_from_inline(const uint8_t *data, size_t data_size);
 
 /**
  * Fast lookup of a message by key from the standard Messages hash.

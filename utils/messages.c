@@ -45,6 +45,41 @@
 static struct hash_table *messages_hash = NULL;
 
 /**
+ * process a line of input.
+ */
+static nserror
+message_process_line(struct hash_table *hash, uint8_t *ln, int lnlen)
+{
+	uint8_t *value;
+	uint8_t *colon;
+
+	/* empty or comment lines */
+	if (ln[0] == 0 || ln[0] == '#') {
+		return NSERROR_OK;
+	}
+
+	/* find first colon as key/value separator */
+	for (colon = ln; colon < (ln + lnlen); colon++) {
+		if (*colon == ':') {
+			break;
+		}
+	}
+	if (colon == (ln + lnlen)) {
+		/* no colon found */
+		return NSERROR_INVALID;
+	}
+
+	*colon = 0;  /* terminate key */
+	value = colon + 1;
+
+	if (hash_add(hash, (char *)ln, (char *)value) == false) {
+		LOG("Unable to add %s:%s to hash table", ln, value);
+		return NSERROR_INVALID;
+	}
+	return NSERROR_OK;
+}
+
+/**
  * Read keys and values from messages file.
  *
  * \param  path  pathname of messages file
@@ -147,19 +182,89 @@ nserror messages_add_from_file(const char *path)
 	nserror err;
 
 	if (path == NULL) {
-		err = NSERROR_BAD_PARAMETER;
-	} else {
-		LOG("Loading Messages from '%s'", path);
-
-		err = messages_load_ctx(path, &messages_hash);
+		return NSERROR_BAD_PARAMETER;
 	}
+
+	LOG("Loading Messages from '%s'", path);
+
+	err = messages_load_ctx(path, &messages_hash);
+
 
 	return err;
 }
 
+
 /* exported interface documented in messages.h */
-nserror messages_add_from_inline(const char *data)
+nserror messages_add_from_inline(const uint8_t *data, size_t data_size)
 {
+	z_stream strm;
+	int ret;
+	uint8_t s[512]; /* line buffer */
+	size_t used = 0; /* number of bytes in buffer in use */
+	uint8_t *nl;
+
+	/* ensure the hash table is initialised */
+	if (messages_hash == NULL) {
+		messages_hash = hash_create(HASH_SIZE);
+	}
+	if (messages_hash == NULL) {
+		LOG("Unable to create hash table");
+		return NSERROR_NOMEM;
+	}
+
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+
+	strm.next_in = (uint8_t *)data;
+	strm.avail_in = data_size;
+
+	ret = inflateInit2(&strm, 32 + MAX_WBITS);
+	if (ret != Z_OK) {
+		LOG("inflateInit returned %d", ret);
+		return NSERROR_INVALID;
+	}
+
+	do {
+		strm.next_out = s + used;
+		strm.avail_out = sizeof(s) - used;
+
+		ret = inflate(&strm, Z_NO_FLUSH);
+		if ((ret != Z_OK) && (ret != Z_STREAM_END)) {
+			break;
+		}
+
+		used = sizeof(s) - strm.avail_out;
+		while (used > 0) {
+			/* find nl */
+			for (nl = &s[0]; nl < &s[used]; nl++) {
+				if (*nl == '\n') {
+					break;
+				}
+			}
+			if (nl == &s[used]) {
+				/* no nl found */
+				break;
+			}
+			/* found newline */
+			*nl = 0; /* null terminate line */
+			message_process_line(messages_hash, &s[0], nl - &s[0]);
+			memmove(&s[0], nl + 1, used - ((nl + 1) - &s[0]) );
+			used -= ((nl +1) - &s[0]);
+		}
+		if (used == sizeof(s)) {
+			/* entire buffer used and no newline */
+			LOG("Overlength line");
+			used = 0;
+		}
+	} while (ret != Z_STREAM_END);
+
+	inflateEnd(&strm);
+
+	if (ret != Z_STREAM_END) {
+		LOG("inflate returned %d", ret);
+		return NSERROR_INVALID;
+	}
 	return NSERROR_OK;
 }
 
@@ -181,7 +286,7 @@ char *messages_get_buff(const char *key, ...)
 
 	if (buff == NULL) {
 		LOG("malloc failed");
-		warn_user("NoMemory", 0);		
+		warn_user("NoMemory", 0);
 	} else {
 		va_start(ap, key);
 		vsnprintf(buff, buff_len + 1, msg_fmt, ap);
@@ -268,7 +373,7 @@ const char *messages_get_errorcode(nserror code)
 		return messages_get_ctx("ParsingFail", messages_hash);
 
 	case NSERROR_CSS:
-                /* CSS call returned error */
+		/* CSS call returned error */
 		return messages_get_ctx("CSSGeneric", messages_hash);
 
 	case NSERROR_CSS_BASE:
