@@ -833,6 +833,7 @@ static struct gui_window_2 *ami_menu_layout(struct gui_window_2 *gwin)
 				int icon_width = 0;
 				Object *submenuarrow = NULL;
 				Object *icon = 	BitMapObj,
+						IA_Scalable, TRUE,
 						BITMAP_Screen, scrn,
 						BITMAP_SourceFile, gwin->menuicon[i],
 						BITMAP_Masking, TRUE,
@@ -979,7 +980,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 							else
 								menu_lab = ead->ed_Name;
 
-							ami_menu_alloc_item(gwin, item, NM_ITEM, menu_lab, 0, NULL,
+							ami_menu_alloc_item(gwin, item, NM_ITEM, menu_lab, 0, NSA_SPACE,
 								ami_menu_item_arexx_entries, (void *)strdup(ead->ed_Name));
 
 							item++;
