@@ -2110,10 +2110,13 @@ main(int argc, char** argv)
 	/* message init */
 	messages = filepath_find(respaths, "Messages");
         ret = messages_add_from_file(messages);
+	free(messages);
+	if (ret != NSERROR_OK) {
+		fprintf(stderr, "Message translations failed to load\n");
+	}
 
 	/* common initialisation */
 	ret = netsurf_init(NULL);
-	free(messages);
 	if (ret != NSERROR_OK) {
 		die("NetSurf failed to initialise");
 	}
