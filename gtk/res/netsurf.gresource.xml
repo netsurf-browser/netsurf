@@ -51,7 +51,10 @@
     <file>ja/welcome.html</file>
     <file>nl/welcome.html</file>
     <file>maps.html</file>
+    <file>adblock.css</file>
+    <file>default.css</file>
     <file>internal.css</file>
+    <file>quirks.css</file>
     <file>netsurf.png</file>
     <file>default.ico</file>
     <file>icons/arrow-l.png</file>
