@@ -218,9 +218,36 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 {
 	char *fname = AllocVecTagList(1024, NULL);
 	char *initial_fname = NULL;
+	char *fname_with_ext = NULL;
+	bool strip_ext = true;
 
 	if(object) {
-		nsurl_nice(hlcache_handle_get_url(object), &initial_fname, true);
+		if(type == AMINS_SAVE_SOURCE) strip_ext = false;
+		nsurl_nice(hlcache_handle_get_url(object), &initial_fname, strip_ext);
+	}
+
+	if(initial_fname != NULL) {
+		fname_with_ext = AllocVecTagList(strlen(initial_fname) + 5, NULL); /* 5 = .ext\0 */
+
+		strcpy(fname_with_ext, initial_fname);
+
+		switch(type)
+		{
+			case AMINS_SAVE_TEXT:
+			case AMINS_SAVE_SELECTION:
+				strcat(fname_with_ext, ".txt");
+			break;
+			case AMINS_SAVE_IFF:
+				strcat(fname_with_ext, ".iff");
+			break;
+			case AMINS_SAVE_PDF:
+				strcat(fname_with_ext, ".pdf");
+			break;
+			default:
+			break;
+		}
+
+		if(initial_fname) free(initial_fname);
 	}
 
 	if(AslRequestTags(savereq,
@@ -228,7 +255,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 			ASLFR_SleepWindow, TRUE,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
-			ASLFR_InitialFile, initial_fname ? initial_fname : "",
+			ASLFR_InitialFile, fname_with_ext ? fname_with_ext : "",
 			TAG_DONE))
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);
@@ -238,7 +265,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	}
 
 	if(fname) FreeVec(fname);
-	if(initial_fname) free(initial_fname);
+	if(fname_with_ext) FreeVec(fname_with_ext);
 }
 
 void ami_file_req_init(void)
