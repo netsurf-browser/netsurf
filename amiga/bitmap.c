@@ -123,6 +123,14 @@ bool amiga_bitmap_save(void *bitmap, const char *path, unsigned flags)
 
 	if((dto = ami_datatype_object_from_bitmap(bitmap)))
 	{
+		if (flags & AMI_BITMAP_SCALE_ICON) {
+			IDoMethod(dto, PDTM_SCALE, 16, 16, 0);
+		
+			if((DoDTMethod(dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) == 0) {
+				return false;
+			}
+		}
+
 		err = SaveDTObjectA(dto, NULL, NULL, path, DTWM_IFF, FALSE, NULL);
 		DisposeDTObject(dto);
 	}

@@ -3082,7 +3082,7 @@ static void ami_gui_cache_favicon(nsurl *url, struct bitmap *favicon)
 	STRPTR filename = NULL;
 
 	if ((filename = ami_gui_get_cache_favicon_name(url, false))) {
-		if(favicon) amiga_bitmap_save(favicon, filename, AMI_BITMAP_FORCE_OVERWRITE);
+		if(favicon) amiga_bitmap_save(favicon, filename, AMI_BITMAP_SCALE_ICON);
 		FreeVec(filename);
 	}
 }
