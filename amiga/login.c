@@ -19,6 +19,7 @@
 #include "amiga/os3support.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>

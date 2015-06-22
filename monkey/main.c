@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/filepath.h"
 #include "utils/nsoption.h"
 #include "content/urldb.h"

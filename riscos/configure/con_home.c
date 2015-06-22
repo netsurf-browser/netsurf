@@ -17,6 +17,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "utils/messages.h"
 #include "utils/utils.h"
