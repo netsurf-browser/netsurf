@@ -236,11 +236,6 @@ static nsurl *nsgtk_get_resource_url(const char *path)
 	char buf[PATH_MAX];
 	nsurl *url = NULL;
 
-	/* default.css -> gtkdefault.css */
-	if (strcmp(path, "default.css") == 0) {
-		path = "gtkdefault.css";
-	}
-
 	/* favicon.ico -> favicon.png */
 	if (strcmp(path, "favicon.ico") == 0) {
 		path = "favicon.png";
