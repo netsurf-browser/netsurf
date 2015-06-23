@@ -401,16 +401,15 @@ gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 	return TRUE;
 }
 
-
-gboolean nsgtk_window_url_changed(GtkWidget *widget, GdkEventKey *event,
-		gpointer data)
+/**
+ * update handler for URL entry widget
+ */
+gboolean
+nsgtk_window_url_changed(GtkWidget *widget,
+			 GdkEventKey *event,
+			 gpointer data)
 {
-	const char *prefix;
-
-	prefix = gtk_entry_get_text(GTK_ENTRY(widget));
-	nsgtk_completion_update(prefix);
-
-	return TRUE;
+	return nsgtk_completion_update(GTK_ENTRY(widget));
 }
 
 /**
@@ -2165,7 +2164,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gtk_widget_set_size_request(GTK_WIDGET(
 			gs->buttons[HISTORY_BUTTON]->button), 20, -1);
 
-	/* create the local history window to be associated with this browser */
+	/* create the local history window to be associated with this scaffold */
 	gs->history_window = malloc(sizeof(struct gtk_history_window));
 	gs->history_window->g = gs;
 	gs->history_window->window =
@@ -2196,18 +2195,7 @@ struct nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 
 	/* set up URL bar completion */
-	gs->url_bar_completion = gtk_entry_completion_new();
-	gtk_entry_completion_set_match_func(gs->url_bar_completion,
-			nsgtk_completion_match, NULL, NULL);
-	gtk_entry_completion_set_model(gs->url_bar_completion,
-			GTK_TREE_MODEL(nsgtk_completion_list));
-	gtk_entry_completion_set_text_column(gs->url_bar_completion, 0);
-	gtk_entry_completion_set_minimum_key_length(gs->url_bar_completion, 1);
-	gtk_entry_completion_set_popup_completion(gs->url_bar_completion, TRUE);
-	g_object_set(G_OBJECT(gs->url_bar_completion),
-			"popup-set-width", TRUE,
-			"popup-single-match", TRUE,
-			NULL);
+	gs->url_bar_completion = nsgtk_url_entry_completion_new(gs);
 
 	/* set up the throbber. */
 	gs->throb_frame = 0;

@@ -16,17 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Interface to url entry completion.
+ */
+
 #ifndef _NETSURF_GTK_COMPLETION_H_
 #define _NETSURF_GTK_COMPLETION_H_
 
-#include <gtk/gtk.h>
+struct nsgtk_scaffolding;
 
-extern GtkListStore *nsgtk_completion_list;
-
+/**
+ * initialise completion list store
+ */
 void nsgtk_completion_init(void);
-void nsgtk_completion_update(const char *prefix);
-gboolean nsgtk_completion_match(GtkEntryCompletion *completion,
-				const gchar *key,
-				GtkTreeIter *iter,
-				gpointer user_data);
+
+/**
+ * update completion list store.
+ */
+gboolean nsgtk_completion_update(GtkEntry *entry);
+
+/**
+ * create a new entry completion on a scaffold.
+ *
+ * \param gs The scaffoliding which the url entry is in.
+ */
+GtkEntryCompletion *nsgtk_url_entry_completion_new(struct nsgtk_scaffolding *gs);
+
 #endif
