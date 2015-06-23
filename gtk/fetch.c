@@ -238,10 +238,10 @@ static nsurl *nsgtk_get_resource_url(const char *path)
 
 	/* favicon.ico -> favicon.png */
 	if (strcmp(path, "favicon.ico") == 0) {
-		path = "favicon.png";
+		nsurl_create("resource:favicon.png", &url);
+	} else {
+		netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
 	}
-
-	netsurf_path_to_nsurl(filepath_sfind(respaths, buf, path), &url);
 
 	return url;
 }

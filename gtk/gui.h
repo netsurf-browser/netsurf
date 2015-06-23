@@ -21,9 +21,6 @@
 
 struct nsurl;
 
-/** language list file path. */
-extern char *languages_file_location;
-
 /** toolbar arrangement file path. */
 extern char *toolbar_indices_file_location;
 

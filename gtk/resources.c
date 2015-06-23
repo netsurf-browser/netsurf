@@ -45,12 +45,12 @@
 #ifdef WITH_BUILTIN_PIXBUF
 #ifdef __GNUC__
 extern const guint8 menu_cursor_pixdata[] __attribute__ ((__aligned__ (4)));
-const guint8 favicon_pixdata[] __attribute__ ((__aligned__ (4)));
-const guint8 netsurf_pixdata[] __attribute__ ((__aligned__ (4)));
+extern const guint8 favicon_pixdata[] __attribute__ ((__aligned__ (4)));
+extern const guint8 netsurf_pixdata[] __attribute__ ((__aligned__ (4)));
 #else
 extern const guint8 menu_cursor_pixdata[];
-const guint8 favicon_pixdata[];
-const guint8 netsurf_pixdata[];
+extern const guint8 favicon_pixdata[];
+extern const guint8 netsurf_pixdata[];
 #endif
 #endif
 
@@ -126,6 +126,7 @@ static struct nsgtk_resource_s direct_resource[] = {
 	RES_ENTRY("icons/hotlist-add.png"),
 	RES_ENTRY("icons/hotlist-rmv.png"),
 	RES_ENTRY("icons/search.png"),
+	RES_ENTRY("languages"),
 	RES_ENTRY("Messages"),
 	{ NULL, 0, NSGTK_RESOURCE_FILE, NULL },
 };
@@ -557,6 +558,23 @@ nsgtk_data_from_resname(const char *resname,
 
 	*data_out = (const uint8_t *)buffer;
 	*data_size_out = (size_t)buffer_length;
+
+	return NSERROR_OK;
+}
+
+/* exported interface documented in gtk/resources.h */
+nserror
+nsgtk_path_from_resname(const char *resname, const char **path_out)
+{
+	struct nsgtk_resource_s *resource;
+
+	resource = find_resource_from_name(resname, &direct_resource[0]);
+	if ((resource->name == NULL) ||
+	    (resource->type != NSGTK_RESOURCE_FILE)) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	*path_out = (const char *)resource->path;
 
 	return NSERROR_OK;
 }

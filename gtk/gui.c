@@ -74,7 +74,6 @@ bool nsgtk_complete = false;
 
 char *toolbar_indices_file_location;
 char *res_dir_location;
-char *languages_file_location;
 char *themelist_file_location;
 
 char *nsgtk_config_home; /* exported global defined in gtk/gui.h */
@@ -237,12 +236,6 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 	nsurl *url;
 	nserror error;
 
-	/* find the languages file */
-	languages_file_location = filepath_find(respath, "languages");
-	if ((languages_file_location == NULL) ||
-	    (strlen(languages_file_location) < 10)) {
-		die("Unable to find resources.\n");
-	}
 
 	/* find the theme list file */
 	themelist_file_location = filepath_find(respath, "themelist");
@@ -252,19 +245,20 @@ static nserror nsgtk_init(int argc, char** argv, char **respath)
 		themelist_file_location = NULL;
 	}
 	if (themelist_file_location == NULL) {
-		LOG("Unable to find themelist - disabling");
+		LOG("Unable to find themelist - disabling themes");
+		res_dir_location = NULL;
+	} else {
+		/* Obtain resources path location.
+		 *
+		 * Uses the directory the theme file was found in,
+		 * @todo find and slaughter all references to this!
+		 */
+		res_dir_location = calloc(1, strlen(themelist_file_location) - 8);
+		memcpy(res_dir_location,
+		       themelist_file_location,
+		       strlen(themelist_file_location) - 9);
+		LOG("Using '%s' for resource path", res_dir_location);
 	}
-
-	/* Obtain resources path location.
-	 *
-	 * Uses the directory the languages file was found in,
-	 * @todo find and slaughter all references to this!
-	 */
-	res_dir_location = calloc(1, strlen(languages_file_location) - 8);
-	memcpy(res_dir_location,
-	       languages_file_location,
-	       strlen(languages_file_location) - 9);
-	LOG("Using '%s' for resource path", res_dir_location);
 
 	error = nsgtk_builder_new_from_resname("warning", &warning_builder);
 	if (error != NSERROR_OK) {
@@ -1046,7 +1040,7 @@ static struct gui_browser_table nsgtk_browser_table = {
 
 static nserror nsgtk_messages_init(char **respaths)
 {
-	char *messages;
+	const char *messages;
 	nserror ret;
 	const uint8_t *data;
 	size_t data_size;
@@ -1056,12 +1050,9 @@ static nserror nsgtk_messages_init(char **respaths)
 		ret = messages_add_from_inline(data, data_size);
 	} else {
 		/* Obtain path to messages */
-		messages = filepath_find(respaths, "Messages");
-		if (messages != NULL) {
+		ret = nsgtk_path_from_resname("Messages", &messages);
+		if (ret == NSERROR_OK) {
 			ret = messages_add_from_file(messages);
-			free(messages);
-		} else {
-			ret = NSERROR_NOT_FOUND;
 		}
 	}
 	return ret;

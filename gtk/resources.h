@@ -94,4 +94,16 @@ nserror nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_ou
  */
 nserror nsgtk_data_from_resname(const char *resname, const uint8_t **data_out, size_t *data_size_out);
 
+/**
+ * Get path to resource data.
+ *
+ * For a named resource this obtains the on-disc path to that resource.
+ *
+ * The path is read only and remains valid untill program exit.
+ * \param resname The resource name to obtain path for.
+ * \param path_out The resulting data.
+ * \return NSERROR_OK and path_out updated or appropriate error code.
+ */
+nserror nsgtk_path_from_resname(const char *resname, const char **path_out);
+
 #endif

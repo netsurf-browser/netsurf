@@ -548,19 +548,25 @@ nsgtk_preferences_comboboxLanguage_changed(GtkComboBox *combo,
 	}
 }
 
+/**
+ * Fill content language list store.
+ */
 G_MODULE_EXPORT void
 nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 					   struct ppref *priv)
 {
-	/* Fill content language list store */
 	int active_language = 0;
 	GtkTreeIter iter;
 	FILE *fp;
 	char buf[50];
 	const char *default_accept_language = "en";
+	const char *languages_file_location;
+	nserror ret;
+
+	ret = nsgtk_path_from_resname("languages", &languages_file_location);
 
 	if ((priv->content_language != NULL) &&
-	    (languages_file_location != NULL) &&
+	    (ret == NSERROR_OK) &&
 	    ((fp = fopen(languages_file_location, "r")) != NULL)) {
 		int combo_row_count = 0;
 
