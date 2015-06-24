@@ -631,8 +631,9 @@ nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
 	assert(cb != NULL);
 
 	ctx = calloc(1, sizeof(hlcache_retrieval_ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	ctx->handle = calloc(1, sizeof(hlcache_handle));
 	if (ctx->handle == NULL) {
@@ -662,17 +663,17 @@ nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
 			hlcache_llcache_callback, ctx,
 			&ctx->llcache);
 	if (error != NSERROR_OK) {
+		/* error retriving handle so free context and return error */
 		free((char *) ctx->child.charset);
 		free(ctx->handle);
 		free(ctx);
-		return error;
+	} else {
+		/* successfuly started fetch so add new context to list */
+		RING_INSERT(hlcache->retrieval_ctx_ring, ctx);
+
+		*result = ctx->handle;
 	}
-
-	RING_INSERT(hlcache->retrieval_ctx_ring, ctx);
-
-	*result = ctx->handle;
-
-	return NSERROR_OK;
+	return error;
 }
 
 /* See hlcache.h for documentation */

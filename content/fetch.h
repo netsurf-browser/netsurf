@@ -113,13 +113,24 @@ typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
  * data contains an error message. FETCH_REDIRECT may replace the FETCH_HEADER,
  * FETCH_DATA, FETCH_FINISHED sequence if the server sends a replacement URL.
  *
+ * \param url URL to fetch
+ * \param referer
+ * \param callback
+ * \param p
+ * \param only_2xx
+ * \param post_urlenc
+ * \param post_multipart
+ * \param verifiable
+ * \param downgrade_tls
+ * \param headers
+ * \param fetch_out ponter to recive new fetch object.
+ * \return NSERROR_OK and fetch_out updated else appropriate error code
  */
-struct fetch *fetch_start(nsurl *url, nsurl *referer,
-			  fetch_callback callback,
-			  void *p, bool only_2xx, const char *post_urlenc,
-			  const struct fetch_multipart_data *post_multipart,
-			  bool verifiable, bool downgrade_tls,
-			  const char *headers[]);
+nserror fetch_start(nsurl *url, nsurl *referer, fetch_callback callback,
+		    void *p, bool only_2xx, const char *post_urlenc,
+		    const struct fetch_multipart_data *post_multipart,
+		    bool verifiable, bool downgrade_tls,
+		    const char *headers[], struct fetch **fetch_out);
 
 /**
  * Abort a fetch.

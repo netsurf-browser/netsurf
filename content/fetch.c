@@ -437,7 +437,7 @@ nserror fetcher_fdset(fd_set *read_fd_set,
 }
 
 /* exported interface documented in content/fetch.h */
-struct fetch *
+nserror
 fetch_start(nsurl *url,
 	    nsurl *referer,
 	    fetch_callback callback,
@@ -447,7 +447,8 @@ fetch_start(nsurl *url,
 	    const struct fetch_multipart_data *post_multipart,
 	    bool verifiable,
 	    bool downgrade_tls,
-	    const char *headers[])
+	    const char *headers[],
+	    struct fetch **fetch_out)
 {
 	struct fetch *fetch;
 	lwc_string *scheme;
@@ -455,7 +456,7 @@ fetch_start(nsurl *url,
 
 	fetch = malloc(sizeof (*fetch));
 	if (fetch == NULL) {
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
 	/* The URL we're fetching must have a scheme */
@@ -467,7 +468,7 @@ fetch_start(nsurl *url,
 	if (fetch->fetcherd == -1) {
 		lwc_string_unref(scheme);
 		free(fetch);
-		return NULL;
+		return NSERROR_NO_FETCH_HANDLER;
 	}
 
 	FETCH_LOG("fetch %p, url '%s'", fetch, nsurl_access(url));
@@ -547,7 +548,11 @@ fetch_start(nsurl *url,
 
 		free(fetch);
 
-		return NULL;
+
+	/** \todo The fetchers setup should return nserror and that be
+	 * passed back rather than assuming a bad url
+	 */
+		return NSERROR_BAD_URL;
 	}
 
 	/* Rah, got it, so ref the fetcher. */
@@ -563,7 +568,8 @@ fetch_start(nsurl *url,
 		guit->browser->schedule(10, fetcher_poll, NULL);
 	}
 
-	return fetch;
+	*fetch_out = fetch;
+	return NSERROR_OK;
 }
 
 /* exported interface documented in content/fetch.h */

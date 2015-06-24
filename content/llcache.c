@@ -299,8 +299,9 @@ static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 	llcache_object_user *u;
 
 	h = calloc(1, sizeof(llcache_handle));
-	if (h == NULL)
+	if (h == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	u = calloc(1, sizeof(llcache_object_user));
 	if (u == NULL) {
@@ -772,9 +773,13 @@ static nserror llcache_fetch_process_header(llcache_object *object,
 /**
  * (Re)fetch an object
  *
+ * sets up headers and attempts to start an actual fetch from the
+ * fetchers system updating the llcache object with the new fetch on
+ * sucessful start.
+ *
  * \pre The fetch parameters in object->fetch must be populated
  *
- * \param object  Object to refetch
+ * \param object Object to refetch
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 static nserror llcache_object_refetch(llcache_object *object)
@@ -783,6 +788,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 	struct fetch_multipart_data *multipart = NULL;
 	char **headers = NULL;
 	int header_idx = 0;
+	nserror res;
 
 	if (object->fetch.post != NULL) {
 		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED) {
@@ -794,8 +800,9 @@ static nserror llcache_object_refetch(llcache_object *object)
 
 	/* Generate cache-control headers */
 	headers = malloc(3 * sizeof(char *));
-	if (headers == NULL)
+	if (headers == NULL) {
 		return NSERROR_NOMEM;
+	}
 
 	if (object->cache.etag != NULL) {
 		const size_t len = SLEN("If-None-Match: ") +
@@ -843,24 +850,25 @@ static nserror llcache_object_refetch(llcache_object *object)
 	LLCACHE_LOG("Refetching %p", object);
 
 	/* Kick off fetch */
-	object->fetch.fetch = fetch_start(object->url, object->fetch.referer,
-			llcache_fetch_callback, object,
-			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
-			urlenc, multipart,
-			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
-			object->fetch.tried_with_tls_downgrade,
-			(const char **) headers);
+	res = fetch_start(object->url,
+			  object->fetch.referer,
+			  llcache_fetch_callback,
+			  object,
+			  object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
+			  urlenc,
+			  multipart,
+			  object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
+			  object->fetch.tried_with_tls_downgrade,
+			  (const char **)headers,
+			  &object->fetch.fetch);
 
 	/* Clean up cache-control headers */
-	while (--header_idx >= 0)
+	while (--header_idx >= 0) {
 		free(headers[header_idx]);
+	}
 	free(headers);
 
-	/* Did we succeed in creating a fetch? */
-	if (object->fetch.fetch == NULL)
-		return NSERROR_NOMEM;
-
-	return NSERROR_OK;
+	return res;
 }
 
 /**
@@ -1708,9 +1716,13 @@ llcache_object_retrieve_from_cache(nsurl *url,
  * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
-		nsurl *referer, const llcache_post_data *post,
-		uint32_t redirect_count, llcache_object **result)
+static nserror
+llcache_object_retrieve(nsurl *url,
+			uint32_t flags,
+			nsurl *referer,
+			const llcache_post_data *post,
+			uint32_t redirect_count,
+			llcache_object **result)
 {
 	nserror error;
 	llcache_object *obj;
@@ -2491,7 +2503,7 @@ static void llcache_persist(void *p)
 		total_elapsed += elapsed;
 		total_bandwidth = (total_written * 1000) / total_elapsed;
 
-		LLCACHE_LOG("Wrote %d bytes in %dms bw:%d %s",
+		LLCACHE_LOG("Wrote %zd bytes in %lums bw:%lu %s",
 		     written, elapsed, (written * 1000) / elapsed,
 		     nsurl_access(lst[idx]->url) );
 
@@ -2557,7 +2569,7 @@ static void llcache_persist(void *p)
 	llcache->total_written += total_written;
 	llcache->total_elapsed += total_elapsed;
 
-	LLCACHE_LOG("writeout size:%d time:%d bandwidth:%dbytes/s",
+	LLCACHE_LOG("writeout size:%zd time:%lu bandwidth:%lubytes/s",
 	     total_written, total_elapsed, total_bandwidth);
 
 	LLCACHE_LOG("Rescheduling writeout in %dms", next);
@@ -3208,7 +3220,7 @@ void llcache_clean(bool purge)
 
 			llcache_size -=	object->source_len;
 
-			LLCACHE_LOG("Freeing source data for %p len:%d",
+			LLCACHE_LOG("Freeing source data for %p len:%zd",
 				     object,
 				     object->source_len);
 		}
@@ -3228,7 +3240,7 @@ void llcache_clean(bool purge)
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_DISC) &&
 		    (object->source_data == NULL)) {
-			LLCACHE_LOG("discarding backed object len:%d age:%d (%p) %s",
+			LLCACHE_LOG("discarding backed object len:%zd age:%d (%p) %s",
 				     object->source_len,
 				     time(NULL) - object->last_used,
 				     object,
@@ -3258,7 +3270,7 @@ void llcache_clean(bool purge)
 		    (object->fetch.fetch == NULL) &&
 		    (object->fetch.outstanding_query == false) &&
 		    (object->store_state == LLCACHE_STATE_RAM)) {
-			LLCACHE_LOG("discarding fresh object len:%d age:%d (%p) %s",
+			LLCACHE_LOG("discarding fresh object len:%zd age:%d (%p) %s",
 				     object->source_len,
 				     time(NULL) - object->last_used,
 				     object,
@@ -3413,13 +3425,15 @@ nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
 	llcache_object *object;
 
 	/* Can we fetch this URL at all? */
-	if (fetch_can_fetch(url) == false)
+	if (fetch_can_fetch(url) == false) {
 		return NSERROR_NO_FETCH_HANDLER;
+	}
 
 	/* Create a new object user */
 	error = llcache_object_user_new(cb, pw, &user);
-	if (error != NSERROR_OK)
+	if (error != NSERROR_OK) {
 		return error;
+	}
 
 	/* Retrieve a suitable object from the cache,
 	 * creating a new one if needed. */
