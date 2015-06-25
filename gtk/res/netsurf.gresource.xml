@@ -64,5 +64,6 @@
     <file>icons/hotlist-add.png</file>
     <file>icons/hotlist-rmv.png</file>
     <file>icons/search.png</file>
+    <file>languages</file>
   </gresource>
 </gresources>

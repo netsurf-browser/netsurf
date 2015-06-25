@@ -549,65 +549,161 @@ nsgtk_preferences_comboboxLanguage_changed(GtkComboBox *combo,
 }
 
 /**
+ * populate language combo from data
+ */
+static nserror
+comboboxLanguage_add_from_data(GtkListStore *liststore,
+			       GtkComboBox *combobox,
+			       const char *accept_language,
+			       const uint8_t *data,
+			       size_t data_size)
+{
+	int active_language = -1;
+	GtkTreeIter iter;
+	int combo_row_count = 0;
+	const uint8_t *s;
+	const uint8_t *nl;
+	char buf[50];
+	int bufi = 0;
+
+	gtk_list_store_clear(liststore);
+	s = data;
+
+	while (s < (data + data_size)) {
+		/* find nl and copy buffer */
+		for (nl = s; nl < data + data_size; nl++) {
+			if ((*nl == '\n') || (bufi == (sizeof(buf) - 2))) {
+				buf[bufi] = 0; /* null terminate */
+				break;
+			}
+			buf[bufi++] = *nl;
+		}
+		if (bufi > 0) {
+			gtk_list_store_append(liststore, &iter);
+			gtk_list_store_set(liststore, &iter, 0, buf, -1 );
+
+			if (strcmp(buf, accept_language) == 0) {
+				active_language = combo_row_count;
+			}
+
+			combo_row_count++;
+		}
+		bufi = 0;
+		s = nl + 1; /* skip newline */
+	}
+
+	/* if configured language was not in list, add it */
+	if (active_language == -1) {
+		gtk_list_store_append(liststore, &iter);
+		gtk_list_store_set(liststore, &iter, 0, accept_language, -1);
+		active_language = combo_row_count;
+	}
+
+	gtk_combo_box_set_active(combobox, active_language);
+
+	return NSERROR_OK;
+}
+
+/**
+ * populate language combo from file
+ */
+static nserror
+comboboxLanguage_add_from_file(GtkListStore *liststore,
+			       GtkComboBox *combobox,
+			       const char *accept_language,
+			       const char *file_location)
+{
+	int active_language = -1;
+	GtkTreeIter iter;
+	int combo_row_count = 0;
+	FILE *fp;
+	char buf[50];
+
+	fp = fopen(file_location, "r");
+	if (fp == NULL) {
+		return NSERROR_NOT_FOUND;
+	}
+
+	gtk_list_store_clear(liststore);
+
+	LOG("Used %s for languages", file_location);
+	while (fgets(buf, sizeof(buf), fp)) {
+		/* Ignore blank lines */
+		if (buf[0] == '\0')
+			continue;
+
+		/* Remove trailing \n */
+		buf[strlen(buf) - 1] = '\0';
+
+		gtk_list_store_append(liststore, &iter);
+		gtk_list_store_set(liststore, &iter, 0, buf, -1 );
+
+		if (strcmp(buf, accept_language) == 0) {
+			active_language = combo_row_count;
+		}
+
+		combo_row_count++;
+	}
+
+	/* if configured language was not in list, add it */
+	if (active_language == -1) {
+		gtk_list_store_append(liststore, &iter);
+		gtk_list_store_set(liststore, &iter, 0, accept_language, -1);
+		active_language = combo_row_count;
+	}
+
+	fclose(fp);
+
+	gtk_combo_box_set_active(combobox, active_language);
+
+	return NSERROR_OK;
+}
+
+/**
  * Fill content language list store.
  */
 G_MODULE_EXPORT void
 nsgtk_preferences_comboboxLanguage_realize(GtkWidget *widget,
 					   struct ppref *priv)
 {
-	int active_language = 0;
-	GtkTreeIter iter;
-	FILE *fp;
-	char buf[50];
-	const char *default_accept_language = "en";
-	const char *languages_file_location;
-	nserror ret;
+	nserror res;
+	const uint8_t *data;
+	size_t data_size;
+	const char *languages_file;
+	const char *accept_language;
 
-	ret = nsgtk_path_from_resname("languages", &languages_file_location);
-
-	if ((priv->content_language != NULL) &&
-	    (ret == NSERROR_OK) &&
-	    ((fp = fopen(languages_file_location, "r")) != NULL)) {
-		int combo_row_count = 0;
-
-		gtk_list_store_clear(priv->content_language);
-		active_language = -1;
-
-		LOG("Used %s for languages", languages_file_location);
-		while (fgets(buf, sizeof(buf), fp)) {
-			/* Ignore blank lines */
-			if (buf[0] == '\0')
-				continue;
-
-			/* Remove trailing \n */
-			buf[strlen(buf) - 1] = '\0';
-
-			gtk_list_store_append(priv->content_language, &iter);
-			gtk_list_store_set(priv->content_language,
-					   &iter, 0, buf, -1 );
-
-			if (strcmp(buf, default_accept_language) == 0) {
-				active_language = combo_row_count;
-			}
-
-			combo_row_count++;
-		}
-
-		if (active_language == -1) {
-			/* configured language was not in list, add it */
-			gtk_list_store_append(priv->content_language, &iter);
-			gtk_list_store_set(priv->content_language,
-					   &iter,
-					   0, default_accept_language, -1 );
-			active_language = combo_row_count;
-		}
-
-		fclose(fp);
-	} else {
-		LOG("Failed opening languages file");
+	if (priv->content_language == NULL) {
+		LOG("content language list store unavailable");
+		return;
 	}
 
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), active_language);
+	/* get current accept language */
+	accept_language = nsoption_charp(accept_language);
+	if (accept_language == NULL) {
+		accept_language = "en";
+	}
+
+	/* attempt to read languages from inline resource */
+	res = nsgtk_data_from_resname("languages", &data, &data_size);
+	if (res == NSERROR_OK) {
+		res = comboboxLanguage_add_from_data(priv->content_language,
+						     GTK_COMBO_BOX(widget),
+						     accept_language,
+						     data,
+						     data_size);
+	} else {
+		/* attempt to read languages from file */
+		res = nsgtk_path_from_resname("languages", &languages_file);
+		if (res == NSERROR_OK) {
+			res = comboboxLanguage_add_from_file(priv->content_language,
+					GTK_COMBO_BOX(widget),
+					accept_language,
+					languages_file);
+		}
+	}
+	if (res != NSERROR_OK) {
+		LOG("error populatiung languages combo");
+	}
 }
 
 
