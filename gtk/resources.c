@@ -468,7 +468,9 @@ nsgdk_pixbuf_new_from_resname(const char *resname, GdkPixbuf **pixbuf_out)
 		break;
 
 	case NSGTK_RESOURCE_GLIB:
+#ifdef WITH_GRESOURCE
 		new_pixbuf = gdk_pixbuf_new_from_resource(resource->path, &error);
+#endif
 		break;
 
 	case NSGTK_RESOURCE_INLINE:
@@ -540,6 +542,7 @@ nsgtk_data_from_resname(const char *resname,
 			const uint8_t ** data_out,
 			size_t *data_size_out)
 {
+#ifdef WITH_GRESOURCE
 	struct nsgtk_resource_s *resource;
 	GBytes *data;
 	const gchar *buffer;
@@ -564,6 +567,12 @@ nsgtk_data_from_resname(const char *resname,
 	*data_size_out = (size_t)buffer_length;
 
 	return NSERROR_OK;
+#else
+	/** \todo consider adding compiled inline resources for things
+	 * other than pixbufs.
+	 */
+	return NSERROR_NOT_FOUND;
+#endif
 }
 
 /* exported interface documented in gtk/resources.h */
