@@ -256,12 +256,15 @@ static nserror
 init_direct_resource(char **respath, struct nsgtk_resource_s *resource)
 {
 	nserror res;
-	GBytes *data;
 
 	res = init_resource(respath, resource);
+
+#ifdef WITH_GRESOURCE
 	if ((res == NSERROR_OK) &&
 	    (resource->type == NSGTK_RESOURCE_GLIB)) {
 		/* found gresource we can convert */
+		GBytes *data;
+
 		data = g_resources_lookup_data(resource->path,
 					       G_RESOURCE_LOOKUP_FLAGS_NONE,
 					       NULL);
@@ -270,6 +273,7 @@ init_direct_resource(char **respath, struct nsgtk_resource_s *resource)
 			resource->path = (char *)data;
 		}
 	}
+#endif
 
 	return res;
 }
