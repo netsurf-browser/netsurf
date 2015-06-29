@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <gtk/gtk.h>
 
 #include "utils/log.h"
@@ -826,7 +827,7 @@ editor_init_fname(const char *title,
 	int veci;
 	/* desktop file of default app for mimetype */
 	char *def_app_desktop = NULL;
-	char *exec_cmd;
+	char *exec_cmd = NULL;
 	char **argv;
 
 	/* build string vector of search path */
