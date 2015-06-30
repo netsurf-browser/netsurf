@@ -765,13 +765,14 @@ gui_window_create(struct browser_window *bw,
 
 	/* attach scaffold */
 	if (flags & GW_CREATE_TAB) {
+		/* open in new tab, attach to existing scaffold */
 		if (existing != NULL) {
 			g->scaffold = existing->scaffold;
 		} else {
 			g->scaffold = nsgtk_current_scaffolding();
 		}
 	} else {
-		/* Now construct and attach a scaffold */
+		/* open in new window, create and attach to scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);
 	}
 	if (g->scaffold == NULL) {
@@ -788,6 +789,9 @@ gui_window_create(struct browser_window *bw,
 	g->paned = GTK_PANED(gtk_builder_get_object(tab_builder, "hpaned1"));
 	g->input_method = gtk_im_multicontext_new();
 
+	/* set a default favicon */
+	g_object_ref(favicon_pixbuf);
+	g->icon = favicon_pixbuf;
 
 	/* add new gui window to global list (push_top) */
 	if (window_list) {
@@ -850,13 +854,13 @@ gui_window_create(struct browser_window *bw,
 		nsgtk_paned_notify__position, g);
 
 	/* gtk container destructor */
-	CONNECT(g->container, "destroy",
-		window_destroy, g);
+	CONNECT(g->container, "destroy", window_destroy, g);
 
 	/* input method */
 	gtk_im_context_set_client_window(g->input_method,
 			nsgtk_layout_get_bin_window(g->layout));
 	gtk_im_context_set_use_preedit(g->input_method, FALSE);
+
 	/* input method signals */
 	CONNECT(g->input_method, "commit",
 		nsgtk_window_input_method_commit, g);
@@ -936,7 +940,10 @@ static void gui_window_destroy(struct gui_window *g)
 }
 
 /**
- * set favicon
+ * favicon setting for gtk gui window.
+ *
+ * \param gw gtk gui window to set favicon on.
+ * \param icon A handle to the new favicon content.
  */
 static void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
 {
