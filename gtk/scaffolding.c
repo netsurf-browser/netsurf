@@ -98,42 +98,54 @@ static gboolean nsgtk_on_##q##_activate(GtkButton *widget, gpointer data)
 
 /** Core scaffolding structure. */
 struct nsgtk_scaffolding {
-	GtkWindow			*window;
-	GtkNotebook			*notebook;
-	GtkWidget			*url_bar;
-	GtkEntryCompletion		*url_bar_completion;
+	/** global linked list of scaffoldings for gui interface adjustments */
+	struct nsgtk_scaffolding *next, *prev;
+
+	/** currently active gui browsing context */
+	struct gui_window *top_level;
+
+	/** local history window */
+	struct gtk_history_window *history_window;
+
+	/** Builder object scaffold was created from */
+	GtkBuilder *builder;
+
+	/** scaffold container window */
+	GtkWindow *window;
+	bool fullscreen; /**< flag for the scaffold window fullscreen status */
+
+	/** tab widget holding displayed pages */
+	GtkNotebook *notebook;
+
+	/** entry widget holding the url of the current displayed page */
+	GtkWidget *url_bar;
+	GtkEntryCompletion *url_bar_completion; /**< Completions for url_bar */
+
+	/** Activity throbber */
+	GtkImage *throbber;
+	int throb_frame; /**< Current frame of throbber animation */
+
+	struct gtk_search *search;
+	/** Web search widget */
+	GtkWidget *webSearchEntry;
+
+	/** controls toolbar */
+	GtkToolbar *tool_bar;
+	struct nsgtk_button_connect *buttons[PLACEHOLDER_BUTTON];
+	int offset;
+	int toolbarmem;
+	int toolbarbase;
+	int historybase;
 
 	/** menu bar hierarchy */
-	struct nsgtk_bar_submenu        *menu_bar;
+	struct nsgtk_bar_submenu *menu_bar;
 
 	/** right click popup menu hierarchy */
-	struct nsgtk_popup_menu         *menu_popup;
+	struct nsgtk_popup_menu *menu_popup;
 
 	/** link popup menu */
-	struct nsgtk_link_menu          *link_menu;
+	struct nsgtk_link_menu *link_menu;
 
-	GtkToolbar			*tool_bar;
-	struct nsgtk_button_connect	*buttons[PLACEHOLDER_BUTTON];
-	GtkImage			*throbber;
-	struct gtk_search		*search;
-	GtkWidget			*webSearchEntry;
-
-	int 				offset;
-	int				toolbarmem;
-	int				toolbarbase;
-	int				historybase;
-
-	GtkBuilder			*builder;
-
-	struct gtk_history_window	*history_window;
-
-	int				throb_frame;
-	struct gui_window		*top_level;
-
-	bool				fullscreen;
-
-	/* keep global linked list for gui interface adjustments */
-	struct nsgtk_scaffolding 		*next, *prev;
 };
 
 /** current scaffold for model dialogue use */
@@ -266,9 +278,9 @@ static gboolean scaffolding_window_delete_event(GtkWidget *widget,
 }
 
 /**
- * Update the back and forward button sensitivity.
+ * Update the scaffoling button sensitivity, url bar and local history size
  */
-static void nsgtk_window_update_back_forward(struct nsgtk_scaffolding *g)
+static void scaffolding_update_context(struct nsgtk_scaffolding *g)
 {
 	int width, height;
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
@@ -1396,7 +1408,7 @@ MULTIHANDLER(back)
 	browser_window_search_clear(bw);
 
 	browser_window_history_back(bw, false);
-	nsgtk_window_update_back_forward(g);
+	scaffolding_update_context(g);
 
 	return TRUE;
 }
@@ -1413,7 +1425,7 @@ MULTIHANDLER(forward)
 	browser_window_search_clear(bw);
 
 	browser_window_history_forward(bw, false);
-	nsgtk_window_update_back_forward(g);
+	scaffolding_update_context(g);
 
 	return TRUE;
 }
@@ -1454,10 +1466,11 @@ MULTIHANDLER(localhistory)
 	/* if entries of the same url but different frag_ids have been added
 	 * the history needs redrawing (what throbber code normally does)
 	 */
-	browser_window_history_size(bw, &width, &height);
-	nsgtk_window_update_back_forward(g);
+
+	scaffolding_update_context(g);
 	gtk_window_get_position(g->window, &x, &y);
 	gtk_window_get_size(g->window, &mainwidth, &mainheight);
+	browser_window_history_size(bw, &width, &height);
 	width = (width + g->historybase + margin > mainwidth) ?
 			mainwidth - g->historybase : width + margin;
 	height = (height + g->toolbarbase + margin > mainheight) ?
@@ -2346,7 +2359,7 @@ void gui_window_start_throbber(struct gui_window* _g)
 	g->buttons[RELOAD_BUTTON]->sensitivity = false;
 	nsgtk_scaffolding_set_sensitivity(g);
 
-	nsgtk_window_update_back_forward(g);
+	scaffolding_update_context(g);
 
 	nsgtk_schedule(100, nsgtk_throb, g);
 }
@@ -2356,7 +2369,7 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	struct nsgtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	if (g == NULL)
 		return;
-	nsgtk_window_update_back_forward(g);
+	scaffolding_update_context(g);
 	nsgtk_schedule(-1, nsgtk_throb, g);
 	if (g->buttons[STOP_BUTTON] != NULL)
 		g->buttons[STOP_BUTTON]->sensitivity = false;
@@ -2654,7 +2667,7 @@ void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 	sc->top_level = gw;
 
 	/* Synchronise the history (will also update the URL bar) */
-	nsgtk_window_update_back_forward(sc);
+	scaffolding_update_context(sc);
 
 	/* clear effects of potential searches */
 	browser_window_search_clear(bw);
