@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_WINDBG_H_
-#define _NETSURF_WINDOWS_WINDBG_H_
+/**
+ * \file
+ * Windows file operation table interface.
+ */
 
-#include "utils/log.h"
+#ifndef _NETSURF_WINDOWS_FILE_H_
+#define _NETSURF_WINDOWS_FILE_H_
 
-const char *msg_num_to_name(int msg);
-void win_perror(const char *lpszFunction);
+struct gui_file_table *win32_file_table;
 
-#define LOG_WIN_MSG(h, m, w, l)				\
-	if (((m) != WM_SETCURSOR) &&			\
-	    ((m) != WM_MOUSEMOVE) &&			\
-	    ((m) != WM_NCHITTEST) &&			\
-	    ((m) != WM_ENTERIDLE))			\
-		LOG("%s, hwnd %p, w 0x%x, l 0x%Ix", msg_num_to_name(m), h, w, l);
-
-#endif
+#endif 

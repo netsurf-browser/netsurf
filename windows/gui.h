@@ -21,7 +21,6 @@
 #define _NETSURF_WINDOWS_GUI_H_
 
 struct gui_window;
-struct gui_file_table *win32_file_table;
 struct gui_clipboard_table *win32_clipboard_table;
 
 extern HINSTANCE hInstance;

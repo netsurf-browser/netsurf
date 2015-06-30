@@ -35,6 +35,7 @@
 #include "desktop/netsurf.h"
 
 #include "windows/findfile.h"
+#include "windows/file.h"
 #include "windows/drawable.h"
 #include "windows/download.h"
 #include "windows/localhistory.h"
