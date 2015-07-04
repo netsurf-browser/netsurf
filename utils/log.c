@@ -69,9 +69,9 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 
 		/* remove -V and filename from argv list */
 		for (argcmv = 3; argcmv < (*pargc); argcmv++) {
-			argv[argcmv - 1] = argv[argcmv];
+			argv[argcmv - 2] = argv[argcmv];
 		}
-		(*pargc)--;
+		(*pargc) -= 2;
 
 		if (logfile == NULL) {
 			/* could not open log file for output */
@@ -82,6 +82,9 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 			/* ensure we actually show logging */
 			verbose_log = true;
 		}
+	} else if (verbose_log == true) {
+		/* default is logging to stderr */
+		logfile = stderr;
 	}
 
 	/* ensure output file handle is correctly configured */
