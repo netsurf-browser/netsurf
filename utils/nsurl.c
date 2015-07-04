@@ -963,7 +963,7 @@ static nserror nsurl__create_from_section(const char * const url_s,
 					flags |= NSURL_F_NO_PORT;
 				}
 
-				if (length - (colon - pegs->at + skip) <= 0) {
+				if (length <= (colon - pegs->at + skip)) {
 					/* No space for a port after the colon
 					 */
 					flags |= NSURL_F_NO_PORT;
