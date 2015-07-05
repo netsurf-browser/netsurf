@@ -456,7 +456,7 @@ void ami_schedule_handle(struct MsgPort *nsmsgport)
 #endif
 }
 
-#ifdef NSA_NO_SYNC
+#ifdef AMIGA_NS_ASYNC
 static int32 ami_scheduler_process(STRPTR args, int32 length, APTR execbase)
 {
 	struct Process *proc = (struct Process *)FindTask(NULL);
