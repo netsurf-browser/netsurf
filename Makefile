@@ -824,3 +824,8 @@ install: all-program install-$(TARGET)
 
 docs:
 	doxygen Docs/Doxyfile
+
+.PHONY:test
+
+test:
+	make -C test

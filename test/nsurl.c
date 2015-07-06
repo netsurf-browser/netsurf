@@ -213,7 +213,7 @@ static const struct test_triplets replace_query_tests[] = {
 /**
  * Test nsurl
  */
-int main(void)
+int main(int argc, char **argv)
 {
 	nsurl *base;
 	nsurl *joined;
@@ -227,6 +227,7 @@ int main(void)
 	nserror err;
 
 	verbose_log = true;
+	nslog_init(NULL, &argc, argv);
 
 	if (corestrings_init() != NSERROR_OK) {
 		assert(0 && "Failed to init corestrings.");

@@ -29,6 +29,7 @@
 
 #include <curl/curl.h>
 
+#include "utils/errors.h"
 #include "image/bitmap.h"
 #include "content/content.h"
 #include "content/urldb.h"

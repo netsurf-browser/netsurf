@@ -26,7 +26,6 @@
 #include "content/llcache.h"
 #include "utils/ring.h"
 #include "utils/nsurl.h"
-#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/corestrings.h"
 #include "utils/utils.h"

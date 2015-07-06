@@ -1,4 +1,7 @@
-CFLAGS := -std=c99 -g -O0 -D_BSD_SOURCE -D_POSIX_C_SOURCE -I.. \
+#
+# NetSurf unit tests
+
+CFLAGS := -std=c99 -g -O0 -D_BSD_SOURCE -D_POSIX_C_SOURCE -I. -I.. \
 		$(shell pkg-config --cflags libcurl)
 LDFLAGS := $(shell pkg-config --libs libcurl) -lz
 
@@ -8,30 +11,31 @@ llcache_LDFLAGS := $(shell pkg-config --libs libparserutils libwapcaplet libdom)
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		content/fetchers/about.c content/fetchers/data.c \
 		content/fetchers/resource.c content/llcache.c \
-		content/urldb.c desktop/options.c desktop/version.c \
+		content/urldb.c desktop/version.c \
 		image/image_cache.c \
 		utils/base64.c utils/corestrings.c utils/hashtable.c \
 		utils/log.c utils/nsurl.c utils/messages.c utils/url.c \
 		utils/useragent.c utils/utils.c test/llcache.c
 
 urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/log.c \
-		desktop/options.c utils/messages.c utils/hashtable.c \
+		utils/messages.c utils/hashtable.c \
 		utils/filename.c utils/nsurl.c utils/corestrings.c \
 		test/urldbtest.c
 
-urldbtest_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom) -O2
-urldbtest_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom)
+urldbtest_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom libnsutils) -O2
+urldbtest_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom libnsutils)
 
-nsurl_SRCS := utils/corestrings.c utils/log.c utils/nsurl.c utils/idna.c utils/utf8proc.c test/nsurl.c
-nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom)
-nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom)
+nsurl_SRCS := utils/corestrings.c utils/log.c utils/nsurl.c utils/idna.c desktop/version.c test/nsurl.c
+nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom libutf8proc)
+nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom libutf8proc)
 
 nsoption_SRCS := utils/log.c utils/nsoption.c test/nsoption.c
 nsoption_CFLAGS := -Dnsgtk
 
 .PHONY: all
 
-all: llcache urldbtest nsurl nsoption
+all: nsurl
+	./nsurl
 
 llcache: $(addprefix ../,$(llcache_SRCS))
 	$(CC) $(CFLAGS) $(llcache_CFLAGS) $^ -o $@ $(LDFLAGS) $(llcache_LDFLAGS)
