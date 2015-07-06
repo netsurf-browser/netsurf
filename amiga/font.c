@@ -171,6 +171,15 @@ static inline int amiga_nsfont_utf16_char_length(uint16 *char1)
 	}
 }
 
+static inline uint32 amiga_nsfont_decode_surrogate(const uint16 *char1)
+{
+	if(__builtin_expect((amiga_nsfont_utf16_char_length(char1) == 2), 0)) {
+		return ((uint32)char1[0] << 10) + char1[1] - 0x35FDC00;
+	} else {
+		return (uint32)*char1;
+	}
+}
+
 static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
@@ -564,10 +573,12 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 	FIXED kern = 0;
 	ULONG glyphmaptag;
 	ULONG template_type;
+	uint32 long_char_1 = 0, long_char_2 = 0;
 #ifndef __amigaos4__
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
+#ifndef __amigaos4__
 	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
@@ -577,6 +588,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 		/* Don't attempt to kern a UTF-16 surrogate */
 		*char2 = 0;
 	}
+#endif
 
 	if(aa == true) {
 #ifdef __amigaos4__
@@ -590,9 +602,12 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
 #endif
 	}
  
+	long_char_1 = amiga_nsfont_decode_surrogate(char1);
+	long_char_2 = amiga_nsfont_decode_surrogate(char2);
+
 	if(ESetInfo(AMI_OFONT_ENGINE,
-			OT_GlyphCode, *char1,
-			OT_GlyphCode2, *char2,
+			OT_GlyphCode, long_char_1,
+			OT_GlyphCode2, long_char_2,
 			TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(AMI_OFONT_ENGINE,
@@ -655,10 +670,12 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	FIXED char1w = 0;
 	struct GlyphWidthEntry *gwnode;
 	bool skip_c2 = false;
+	uint32 long_char_1 = 0;
 #ifndef __amigaos4__
 	struct BulletBase *BulletBase = ofont->BulletBase;
 #endif
 
+#ifndef __amigaos4__
 	if (__builtin_expect(((*char1 >= 0xD800) && (*char1 <= 0xDBFF)), 0)) {
 		/* We don't support UTF-16 surrogates yet, so just return. */
 		return 0;
@@ -668,14 +685,15 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 		/* Don't attempt to kern a UTF-16 surrogate */
 		skip_c2 = true;
 	}
-
-
+#endif
 
 	if (*char2 < 0x0020) skip_c2 = true;
 
+	long_char_1 = amiga_nsfont_decode_surrogate(char1);
+
 	if(ESetInfo(AMI_OFONT_ENGINE,
-			OT_GlyphCode, *char1,
-			OT_GlyphCode2, *char1,
+			OT_GlyphCode, long_char_1,
+			OT_GlyphCode2, long_char_1,
 			TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(AMI_OFONT_ENGINE,
