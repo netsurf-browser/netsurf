@@ -162,6 +162,15 @@ static void ami_font_cleanup(struct MinList *ami_font_list);
 static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 		const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 
+static inline int amiga_nsfont_utf16_char_length(uint16 *char1)
+{
+	if (__builtin_expect(((*char1 < 0xD800) || (0xDBFF < *char1)), 1)) {
+		return 1;
+	} else {
+		return 2;
+	}
+}
+
 static inline bool amiga_nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
@@ -206,11 +215,7 @@ static inline bool amiga_nsfont_position_in_string(const plot_font_style_t *fsty
 	*actual_x = 0;
 
 	while (utf8_pos < length) {
-		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
-			utf16charlen = 1;
-		else
-			utf16charlen = 2;
-
+		utf16charlen = amiga_nsfont_utf16_char_length(utf16);
 		utf16next = &utf16[utf16charlen];
 
 		tempx = ami_font_width_glyph(ofont, utf16, utf16next, emwidth);
@@ -664,6 +669,8 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 		skip_c2 = true;
 	}
 
+
+
 	if (*char2 < 0x0020) skip_c2 = true;
 
 	if(ESetInfo(AMI_OFONT_ENGINE,
@@ -746,11 +753,7 @@ ULONG ami_font_unicode_text(struct RastPort *rp, const char *string, ULONG lengt
 
 	while(*utf16 != 0)
 	{
-		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
-			utf16charlen = 1;
-		else
-			utf16charlen = 2;
-
+		utf16charlen = amiga_nsfont_utf16_char_length(utf16);
 		utf16next = &utf16[utf16charlen];
 
 		if(fstyle->flags & FONTF_SMALLCAPS)
@@ -811,11 +814,7 @@ static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 
 	while(*utf16 != 0)
 	{
-		if ((*utf16 < 0xD800) || (0xDBFF < *utf16))
-			utf16charlen = 1;
-		else
-			utf16charlen = 2;
-
+		utf16charlen = amiga_nsfont_utf16_char_length(utf16);
 		utf16next = &utf16[utf16charlen];
 
 		if(fstyle->flags & FONTF_SMALLCAPS)
@@ -915,7 +914,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 		SubTime(&curtime, &fnode->lastused);
 		if(curtime.Seconds > 300)
 		{
-			LOG("Freeing %s not used for %d seconds", node->dtz_Node.ln_Name, curtime.Seconds);
+			LOG("Freeing %s not used for %ld seconds", node->dtz_Node.ln_Name, curtime.Seconds);
 			DelObject(node);
 		}
 	} while((node=nnode));
@@ -958,7 +957,7 @@ void ami_font_setdevicedpi(int id)
 
 				xdpi = (yres * ydpi) / xres;
 
-				LOG("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld, corrected %ld x %ld)", xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres);
+				LOG("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %d x %d, corrected %d x %d)", xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres);
 			}
 		}
 	}
