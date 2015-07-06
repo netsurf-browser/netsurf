@@ -254,7 +254,12 @@ static ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 	}
 #ifdef __amigaos4__
 	if(EObtainInfo(AMI_OFONT_ENGINE, OT_UnicodeRanges, &unicoderanges, TAG_END) == 0) {
-		if(unicoderanges & UCR_SURROGATES) LOG("%s supports UTF-16 surrogates", fontname);
+		if(unicoderanges & UCR_SURROGATES) {
+			LOG("%s supports UTF-16 surrogates", fontname);
+			if (nsoption_charp(font_surrogate) == NULL) {
+				nsoption_set_charp(font_surrogate, (char *)strdup(fontname));
+			}
+		}
 		EReleaseInfo(AMI_OFONT_ENGINE,
 			OT_UnicodeRanges, unicoderanges,
 			TAG_END);

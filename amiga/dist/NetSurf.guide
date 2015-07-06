@@ -153,6 +153,8 @@ Additional fall-back fonts can be provided since NetSurf 3.0. These need to go i
 
 NB: Since NetSurf 3.0, NetSurf will scan the provided Unicode fonts, and the rest of the system fonts, on first startup.  Setting font_unicode_only:1 will prevent fonts not in the preferred Unicode fonts list from being scanned or used as fallback fonts.  If the system fonts or NetSurf's fallback fonts list changes, this cache will need to be re-generated.  This can be forced by deleting the font glyph cache (which defaults to Users/user/FontGlyphCache).
 
+Since NetSurf 3.4, Unicode glyphs above 0xFFFF are supported.  These are mainly used for Emoji.  The option to specify a fallback font for this range is font_surrogate - there is no scanning of system fonts.  If @{"Symbola" rxs "address netsurf 'open http://users.teilar.gr/~g1951d/'"} font is installed it will be selected automatically.
+
 @{b}Font sizes@{ub}
 
 The default and minimum font sizes can also be set.

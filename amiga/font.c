@@ -162,7 +162,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list);
 static inline ULONG ami_font_unicode_width(const char *string, ULONG length,
 		const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 
-static inline int amiga_nsfont_utf16_char_length(uint16 *char1)
+static inline int amiga_nsfont_utf16_char_length(const uint16 *char1)
 {
 	if (__builtin_expect(((*char1 < 0xD800) || (0xDBFF < *char1)), 1)) {
 		return 1;
@@ -461,7 +461,12 @@ static struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle
 		break;
 		case NSA_UNICODE_FONT:
 		default:
-			fontname = (char *)ami_font_scan_lookup(codepoint, glypharray);
+			if(__builtin_expect((amiga_nsfont_utf16_char_length(codepoint) == 2), 0)) {
+				/* Multi-byte character */
+				fontname = nsoption_charp(font_surrogate);
+			} else {
+				fontname = (char *)ami_font_scan_lookup(codepoint, glypharray);
+			}
 			if(fontname == NULL) return NULL;
 		break;
 	}
@@ -604,6 +609,7 @@ static inline int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPo
  
 	long_char_1 = amiga_nsfont_decode_surrogate(char1);
 	long_char_2 = amiga_nsfont_decode_surrogate(char2);
+	/**\todo use OT_GlyphCode_32 so we get an error for old font engines */
 
 	if(ESetInfo(AMI_OFONT_ENGINE,
 			OT_GlyphCode, long_char_1,
@@ -690,6 +696,7 @@ static inline int32 ami_font_width_glyph(struct OutlineFont *ofont,
 	if (*char2 < 0x0020) skip_c2 = true;
 
 	long_char_1 = amiga_nsfont_decode_surrogate(char1);
+	/**\todo use OT_GlyphCode_32 so we get an error for old font engines */
 
 	if(ESetInfo(AMI_OFONT_ENGINE,
 			OT_GlyphCode, long_char_1,
