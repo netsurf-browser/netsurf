@@ -46,7 +46,7 @@
 #include "utils/utils.h"
 
 int option_expire_url = 0;
-bool verbose_log = true;
+struct netsurf_table *guit = NULL;
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
@@ -162,6 +162,8 @@ int main(void)
 	nsurl *url;
 	nsurl *urlr;
 	char *path_query;
+
+	verbose_log = true;
 
 	corestrings_init();
 

@@ -22,6 +22,8 @@
 #   make docs
 #
 
+.PHONY: all
+
 all: all-program
 
 # Determine host type
@@ -778,7 +780,7 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 #$(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 #	$(call dependency_generate_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.d)),$(subst /,_,$(SOURCE:.s=.o)))))
 
-ifneq ($(MAKECMDGOALS),clean)
+ifeq ($(filter $(MAKECMDGOALS),clean test),)
 -include $(sort $(addprefix $(DEPROOT)/,$(DEPFILES)))
 -include $(D_JSAPI_BINDING)
 endif
@@ -797,13 +799,53 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
 
-.PHONY: all clean docs install package-$(TARGET) package install-$(TARGET)
+# ----------------------------------------------------------------------------
+# Test setup
+# ----------------------------------------------------------------------------
+
+include test/Makefile
+
+
+# ----------------------------------------------------------------------------
+# Clean setup
+# ----------------------------------------------------------------------------
+
+.PHONY: clean
 
 clean: $(CLEANS)
 
-# Target builds a distribution package
+
+# ----------------------------------------------------------------------------
+# build distribution package
+# ----------------------------------------------------------------------------
+
+.PHONY: package-$(TARGET) package
+
 package: all-program package-$(TARGET)
 
+
+# ----------------------------------------------------------------------------
+# local install on the host system
+# ----------------------------------------------------------------------------
+
+.PHONY: install install-$(TARGET)
+
+install: all-program install-$(TARGET)
+
+
+# ----------------------------------------------------------------------------
+# Documentation build
+# ----------------------------------------------------------------------------
+
+.PHONY: docs
+
+docs:
+	doxygen Docs/Doxyfile
+
+
+# ----------------------------------------------------------------------------
+# Transifex message processing
+# ----------------------------------------------------------------------------
 
 .PHONY: messages-split-tfx messages-fetch-tfx messages-import-tfx
 
@@ -819,13 +861,3 @@ messages-fetch-tfx:
 messages-import-tfx: messages-fetch-tfx
 	for tfxlang in $(FAT_LANGUAGES);do perl ./utils/import-messages.pl -l $${tfxlang} -p any -f transifex -o resources/FatMessages -i resources/FatMessages -I Messages.any.$${tfxlang}.tfx ; $(RM) Messages.any.$${tfxlang}.tfx; done
 
-# Target installs executable on the host system 
-install: all-program install-$(TARGET)
-
-docs:
-	doxygen Docs/Doxyfile
-
-.PHONY:test
-
-test:
-	make -C test
