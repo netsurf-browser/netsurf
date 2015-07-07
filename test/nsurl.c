@@ -16,16 +16,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * \file
+ * Test nsurl operations.
+ */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <check.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/corestrings.h"
-#include "utils/log.h"
 #include "utils/nsurl.h"
+
+#define NELEMS(x)  (sizeof(x) / sizeof((x)[0]))
 
 struct test_pairs {
 	const char* test;
@@ -40,7 +47,11 @@ struct test_triplets {
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG("[%3u] %.*s", str->refcnt, (int)lwc_string_length(str), lwc_string_data(str));
+	fprintf(stderr,
+		"[%3u] %.*s",
+		str->refcnt,
+		(int)lwc_string_length(str),
+		lwc_string_data(str));
 }
 
 static const struct test_pairs create_tests[] = {
@@ -61,25 +72,25 @@ static const struct test_pairs create_tests[] = {
 	{ "about:blank",	"about:blank" },
 
 	{ "http://www.ns-b.org:8080/",
-		"http://www.ns-b.org:8080/" },
-	{ "http://user@www.ns-b.org:8080/hello", 
-		"http://user@www.ns-b.org:8080/hello" },
-	{ "http://user:pass@www.ns-b.org:8080/hello", 
-		"http://user:pass@www.ns-b.org:8080/hello" },
+	  "http://www.ns-b.org:8080/" },
+	{ "http://user@www.ns-b.org:8080/hello",
+	  "http://user@www.ns-b.org:8080/hello" },
+	{ "http://user:pass@www.ns-b.org:8080/hello",
+	  "http://user:pass@www.ns-b.org:8080/hello" },
 
 	{ "http://www.ns-b.org:80/",
-		"http://www.ns-b.org/" },
-	{ "http://user@www.ns-b.org:80/hello", 
-		"http://user@www.ns-b.org/hello" },
-	{ "http://user:pass@www.ns-b.org:80/hello", 
-		"http://user:pass@www.ns-b.org/hello" },
+	  "http://www.ns-b.org/" },
+	{ "http://user@www.ns-b.org:80/hello",
+	  "http://user@www.ns-b.org/hello" },
+	{ "http://user:pass@www.ns-b.org:80/hello",
+	  "http://user:pass@www.ns-b.org/hello" },
 
 	{ "http://www.ns-b.org:/",
-		"http://www.ns-b.org/" },
-	{ "http://u@www.ns-b.org:/hello", 
-		"http://u@www.ns-b.org/hello" },
-	{ "http://u:p@www.ns-b.org:/hello", 
-		"http://u:p@www.ns-b.org/hello" },
+	  "http://www.ns-b.org/" },
+	{ "http://u@www.ns-b.org:/hello",
+	  "http://u@www.ns-b.org/hello" },
+	{ "http://u:p@www.ns-b.org:/hello",
+	  "http://u:p@www.ns-b.org/hello" },
 
 	{ "http:a/",		"http://a/" },
 	{ "http:/a/",		"http://a/" },
@@ -88,8 +99,32 @@ static const struct test_pairs create_tests[] = {
 
 	{ "mailto:u@a",		"mailto:u@a" },
 	{ "mailto:@a",		"mailto:a" },
+};
 
-	{ NULL,			NULL }
+static const struct test_pairs nice_tests[] = {
+	{ "about:",			NULL },
+	{ "www.foo.org",		"www_foo_org" },
+	{ "www.foo.org/index.html",	"www_foo_org" },
+	{ "www.foo.org/default.en",	"www_foo_org" },
+	{ "www.foo.org/about",		"about" },
+	{ "www.foo.org/about.jpg",	"about.jpg" },
+	{ "www.foo.org/moose/index.en",	"moose" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "http://www.f.org//index.en",	"www_f_org" },
+};
+
+static const struct test_pairs nice_strip_tests[] = {
+	{ "about:",			NULL },
+	{ "www.foo.org",		"www_foo_org" },
+	{ "www.foo.org/index.html",	"www_foo_org" },
+	{ "www.foo.org/default.en",	"www_foo_org" },
+	{ "www.foo.org/about",		"about" },
+	{ "www.foo.org/about.jpg",	"about" },
+	{ "www.foo.org/moose/index.en",	"moose" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "www.foo.org/a//index.en",	"www_foo_org" },
+	{ "http://www.f.org//index.en",	"www_f_org" },
 };
 
 static const struct test_pairs join_tests[] = {
@@ -161,34 +196,8 @@ static const struct test_pairs join_tests[] = {
 	/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
 	 *     testing normalisation in addition to joining */
 	/* [2] Using the strict parsers option */
-	{ NULL,			NULL }
 };
 
-static const struct test_pairs nice_tests[] = {
-	{ "www.foo.org",		"www_foo_org" },
-	{ "www.foo.org/index.html",	"www_foo_org" },
-	{ "www.foo.org/default.en",	"www_foo_org" },
-	{ "www.foo.org/about",		"about" },
-	{ "www.foo.org/about.jpg",	"about.jpg" },
-	{ "www.foo.org/moose/index.en",	"moose" },
-	{ "www.foo.org/a//index.en",	"www_foo_org" },
-	{ "www.foo.org/a//index.en",	"www_foo_org" },
-	{ "http://www.f.org//index.en",	"www_f_org" },
-	{ NULL,				NULL }
-};
-
-static const struct test_pairs nice_strip_tests[] = {
-	{ "www.foo.org",		"www_foo_org" },
-	{ "www.foo.org/index.html",	"www_foo_org" },
-	{ "www.foo.org/default.en",	"www_foo_org" },
-	{ "www.foo.org/about",		"about" },
-	{ "www.foo.org/about.jpg",	"about" },
-	{ "www.foo.org/moose/index.en",	"moose" },
-	{ "www.foo.org/a//index.en",	"www_foo_org" },
-	{ "www.foo.org/a//index.en",	"www_foo_org" },
-	{ "http://www.f.org//index.en",	"www_f_org" },
-	{ NULL,				NULL }
-};
 
 static const struct test_triplets replace_query_tests[] = {
 	{ "http://netsurf-browser.org/?magical=true",
@@ -207,201 +216,267 @@ static const struct test_triplets replace_query_tests[] = {
 	  "?magical=true",
 	  "http://netsurf-browser.org/path?magical=true"},
 
-	{ NULL,	NULL, NULL }
 };
 
+
+
 /**
- * Test nsurl
+ * url creation test
  */
-int main(int argc, char **argv)
+START_TEST(nsurl_create_test)
 {
-	nsurl *base;
+	nserror err;
+	nsurl *res;
+	const struct test_pairs *tst = &create_tests[_i];
+
+	err = nsurl_create(tst->test, &res);
+	if (tst->res == NULL) {
+		/* result must be invalid */
+		ck_assert(err != NSERROR_OK);
+
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res), tst->res);
+
+		nsurl_unref(res);
+	}
+}
+END_TEST
+
+/**
+ * url nice filename without stripping
+ */
+START_TEST(nsurl_nice_nostrip_test)
+{
+	nserror err;
+	nsurl *res_url;
+	char *res_str;
+	const struct test_pairs *tst = &nice_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_nice(res_url, &res_str, false);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(res_str, tst->res);
+
+		free(res_str);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+/**
+ * url nice filename with stripping
+ */
+START_TEST(nsurl_nice_strip_test)
+{
+	nserror err;
+	nsurl *res_url;
+	char *res_str;
+	const struct test_pairs *tst = &nice_strip_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_nice(res_url, &res_str, true);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(res_str, tst->res);
+
+		free(res_str);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+/**
+ * replace query
+ */
+START_TEST(nsurl_replace_query_test)
+{
+	nserror err;
+	nsurl *res_url;
+	nsurl *joined;
+	const struct test_triplets *tst = &replace_query_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_replace_query(res_url, tst->test2, &joined);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(joined), tst->res);
+
+		nsurl_unref(joined);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+/**
+ * url joining
+ */
+START_TEST(nsurl_join_test)
+{
+	nserror err;
+	nsurl *base_url;
 	nsurl *joined;
 	char *string;
 	size_t len;
-	const char *url;
-	const struct test_pairs *test;
-	const struct test_triplets *ttest;
-	int passed = 0;
-	int count = 0;
-	nserror err;
+	const struct test_pairs *tst = &join_tests[_i];
 
-	verbose_log = true;
-	nslog_init(NULL, &argc, argv);
+	/* not testing create, this should always succeed */
+	err = nsurl_create("http://a/b/c/d;p?q", &base_url);
+	ck_assert(err == NSERROR_OK);
 
-	if (corestrings_init() != NSERROR_OK) {
-		assert(0 && "Failed to init corestrings.");
-	}
-
-	/* Create base URL */
-	if (nsurl_create("http://a/b/c/d;p?q", &base) != NSERROR_OK) {
-		assert(0 && "Failed to create base URL.");
-	}
-
-	if (nsurl_get(base, NSURL_WITH_FRAGMENT, &string, &len) != NSERROR_OK) {
-		LOG("Failed to get string");
+	err = nsurl_join(base_url, tst->test, &joined);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
 	} else {
-		LOG("Testing nsurl_join with base %s", string);
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		err = nsurl_get(joined, NSURL_WITH_FRAGMENT, &string, &len);
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(string, tst->res);
+
 		free(string);
+		nsurl_unref(joined);
 	}
+	nsurl_unref(base_url);
 
-	for (test = join_tests; test->test != NULL; test++) {
-		if (nsurl_join(base, test->test, &joined) != NSERROR_OK) {
-			LOG("Failed to join test URL.");
-		} else {
-			if (nsurl_get(joined, NSURL_WITH_FRAGMENT,
-					&string, &len) !=
-					NSERROR_OK) {
-				LOG("Failed to get string");
-			} else {
-				if (strcmp(test->res, string) == 0) {
-					LOG("\tPASS: \"%s\"\t--> %s", test->test, string);
-					passed++;
-				} else {
-					LOG("\tFAIL: \"%s\"\t--> %s", test->test, string);
-					LOG("\t\tExpecting: %s", test->res);
-				}
-				free(string);
-			}
-			nsurl_unref(joined);
-		}
-		count++;
-	}
+}
+END_TEST
 
-	nsurl_unref(base);
 
-	/* Create tests */
-	LOG("Testing nsurl_create");
-	for (test = create_tests; test->test != NULL; test++) {
-		err = nsurl_create(test->test, &base);
-		if (err != NSERROR_OK || test->res == NULL) {
-			if (test->res == NULL && err != NSERROR_OK) {
-				LOG("\tPASS: \"%s\"\t--> BAD INPUT", test->test);
-				passed++;
-			} else if (test->res != NULL && err != NSERROR_OK) {
-				LOG("Failed to create URL:\n\t\t%s.", test->test);
-			} else {
-				LOG("\tFAIL: \"%s\"\t--> %s", test->test, nsurl_access(base));
-				LOG("\t\tExpecting BAD INPUT");
-			}
-			if (err == NSERROR_OK)
-				nsurl_unref(base);
-		} else {
-			if (strcmp(nsurl_access(base), test->res) == 0) {
-				LOG("\tPASS: \"%s\"\t--> %s", test->test, nsurl_access(base));
-				passed++;
-			} else {
-				LOG("\tFAIL: \"%s\"\t--> %s", test->test, nsurl_access(base));
-				LOG("\t\tExpecting %s", test->res);
-			}
-
-			nsurl_unref(base);
-		}
-		count++;
-	}
-
-	/* nice filename tests */
-	LOG("Testing nsurl_nice (no strip)");
-	for (test = nice_tests; test->test != NULL; test++) {
-		err = nsurl_create(test->test, &base);
-		if (err != NSERROR_OK) {
-			LOG("Failed to create URL:\n\t\t%s.", test->test);
-		} else {
-			char *res;
-			err = nsurl_nice(base, &res, false);
-			if (err == NSERROR_OK && test->res != NULL) {
-				if (strcmp(res, test->res) == 0) {
-					LOG("\tPASS: \"%s\"\t--> %s", test->test, res);
-					passed++;
-				} else {
-					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
-					LOG("\t\tExpecting %s", test->res);
-				}
-				free(res);
-			} else {
-				if (test->res == NULL && err == NSERROR_OK) {
-					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
-					LOG("\t\tExpecting BAD_INPUT");
-					free(res);
-				} else {
-					LOG("\tFAIL: \"%s\"", test->test);
-				}
-			}
-			nsurl_unref(base);
-		}
-		count++;
-	}
-	LOG("Testing nsurl_nice (strip)");
-	for (test = nice_strip_tests; test->test != NULL; test++) {
-		err = nsurl_create(test->test, &base);
-		if (err != NSERROR_OK) {
-			LOG("Failed to create URL:\n\t\t%s.", test->test);
-		} else {
-			char *res;
-			err = nsurl_nice(base, &res, true);
-			if (err == NSERROR_OK && test->res != NULL) {
-				if (strcmp(res, test->res) == 0) {
-					LOG("\tPASS: \"%s\"\t--> %s", test->test, res);
-					passed++;
-				} else {
-					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
-					LOG("\t\tExpecting %s", test->res);
-				}
-				free(res);
-			} else {
-				if (test->res == NULL && err == NSERROR_OK) {
-					LOG("\tFAIL: \"%s\"\t--> %s", test->test, res);
-					LOG("\t\tExpecting BAD_INPUT");
-					free(res);
-				} else {
-					LOG("\tFAIL: \"%s\"", test->test);
-				}
-			}
-			nsurl_unref(base);
-		}
-		count++;
-	}
-
-	/* Replace query tests */
-	LOG("Testing nsurl_replace_query");
-	for (ttest = replace_query_tests; ttest->test1 != NULL; ttest++) {
-		if (nsurl_create(ttest->test1, &base) != NSERROR_OK) {
-			LOG("Failed to create URL:\n\t\t%s.", ttest->test1);
-		} else {
-			if (nsurl_replace_query(base, ttest->test2, &joined) !=
-					NSERROR_OK) {
-				LOG("Failed to make test URL");
-			} else {
-				if (strcmp(nsurl_access(joined),
-						ttest->res) == 0) {
-					LOG("\tPASS: \"%s\" + %s", ttest->test1, ttest->test2);
-					passed++;
-				} else {
-					LOG("\tFAIL: \"%s\" + %s", ttest->test1, ttest->test2);
-					LOG("\t\tExpecting %s", ttest->res);
-					LOG("\t\tGot %s", nsurl_access(joined));
-				}
-
-				nsurl_unref(joined);
-			}
-
-			nsurl_unref(base);
-		}
-		count++;
-	}
-
-	if (passed == count) {
-		LOG("Testing complete: SUCCESS");
-	} else {
-		LOG("Testing complete: FAILURE");
-		LOG("Failed %d out of %d", count - passed, count);
-	}
-
-	corestrings_fini();
-
-	LOG("Remaining lwc strings:");
-	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
-
-	return 0;
+static void corestring_create(void)
+{
+	ck_assert(corestrings_init() == NSERROR_OK);
 }
 
+static void corestring_teardown(void)
+{
+	corestrings_fini();
+
+	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
+}
+
+Suite *nsurl_suite(void)
+{
+	Suite *s;
+	TCase *tc_create;
+	TCase *tc_nice_nostrip;
+	TCase *tc_nice_strip;
+	TCase *tc_replace_query;
+	TCase *tc_join;
+
+	s = suite_create("nsurl");
+
+	/* url creation */
+	tc_create = tcase_create("Create");
+
+	tcase_add_unchecked_fixture(tc_create,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_create,
+			    nsurl_create_test,
+			    0, NELEMS(create_tests));
+	suite_add_tcase(s, tc_create);
+
+	/* nice filename without strip */
+	tc_nice_nostrip = tcase_create("Nice (nostrip)");
+
+	tcase_add_unchecked_fixture(tc_nice_nostrip,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_nice_nostrip,
+			    nsurl_nice_nostrip_test,
+			    0, NELEMS(nice_tests));
+	suite_add_tcase(s, tc_nice_nostrip);
+
+
+	/* nice filename with strip */
+	tc_nice_strip = tcase_create("Nice (strip)");
+
+	tcase_add_unchecked_fixture(tc_nice_strip,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_nice_strip,
+			    nsurl_nice_strip_test,
+			    0, NELEMS(nice_strip_tests));
+	suite_add_tcase(s, tc_nice_strip);
+
+
+	/* replace query */
+	tc_replace_query = tcase_create("Replace Query");
+
+	tcase_add_unchecked_fixture(tc_replace_query,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_replace_query,
+			    nsurl_replace_query_test,
+			    0, NELEMS(replace_query_tests));
+	suite_add_tcase(s, tc_replace_query);
+
+	/* url join */
+	tc_join = tcase_create("Join");
+
+	tcase_add_unchecked_fixture(tc_join,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_join,
+			    nsurl_join_test,
+			    0, NELEMS(join_tests));
+	suite_add_tcase(s, tc_join);
+
+	return s;
+}
+
+int main(int argc, char **argv)
+{
+	int number_failed;
+	Suite *s;
+	SRunner *sr;
+
+	s = nsurl_suite();
+
+	sr = srunner_create(s);
+	srunner_run_all(sr, CK_ENV);
+
+	number_failed = srunner_ntests_failed(sr);
+	srunner_free(sr);
+
+	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}

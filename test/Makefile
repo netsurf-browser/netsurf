@@ -7,8 +7,8 @@ test_CFLAGS := -std=c99 -g -Wall \
 		-D_POSIX_C_SOURCE=200809L \
 		-D_XOPEN_SOURCE=600 \
 		-Itest -I. -I.. \
-		$(shell pkg-config --cflags libcurl)
-test_LDFLAGS := $(shell pkg-config --libs libcurl) -lz
+		$(shell pkg-config --cflags libcurl check)
+test_LDFLAGS := $(shell pkg-config --libs libcurl check) -lz
 
 # nsurl sources and flags
 nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c test/log.c test/nsurl.c

@@ -156,14 +156,12 @@ int main(void)
 	struct host_part *h;
 	struct path_data *p;
 	const struct url_data *u;
-	int i;
 	lwc_string *scheme;
 	lwc_string *fragment;
 	nsurl *url;
 	nsurl *urlr;
 	char *path_query;
 
-	verbose_log = true;
 
 	corestrings_init();
 
