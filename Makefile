@@ -780,7 +780,7 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 #$(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 #	$(call dependency_generate_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.d)),$(subst /,_,$(SOURCE:.s=.o)))))
 
-ifeq ($(filter $(MAKECMDGOALS),clean test),)
+ifeq ($(filter $(MAKECMDGOALS),clean test coverage),)
 -include $(sort $(addprefix $(DEPROOT)/,$(DEPFILES)))
 -include $(D_JSAPI_BINDING)
 endif

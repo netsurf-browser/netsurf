@@ -9,7 +9,7 @@
 #include "utils/log.h"
 #include "utils/nsoption.h"
 
-bool verbose_log = true;
+
 
 nserror gui_options_init_defaults(struct nsoption_s *defaults)
 {
@@ -70,9 +70,11 @@ int main(int argc, char**argv)
 {
 	FILE *fp;
 
+	verbose_log = false;
+
 	nsoption_init(gui_options_init_defaults, NULL, NULL);
 
-	nsoption_read("data/Choices", NULL);
+	nsoption_read("test/data/Choices", NULL);
 
 	nsoption_write("Choices-short", NULL, NULL);
 

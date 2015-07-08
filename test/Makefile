@@ -1,78 +1,111 @@
 #
 # NetSurf unit tests
 
-
-test_CFLAGS := -std=c99 -g -Wall \
-		-D_BSD_SOURCE \
-		-D_POSIX_C_SOURCE=200809L \
-		-D_XOPEN_SOURCE=600 \
-		-Itest -I. -I.. \
-		$(shell pkg-config --cflags libcurl check)
-test_LDFLAGS := $(shell pkg-config --libs libcurl check) -lz
+TESTS := nsurl urldbtest nsoption #llcache
 
 # nsurl sources and flags
-nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c test/log.c test/nsurl.c
-nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom libutf8proc) -O0
-nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom libutf8proc)
+nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
+		test/log.c test/nsurl.c
+
+# url database test sources and flags
+urldbtest_SRCS := content/urldb.c \
+		utils/url.c utils/utils.c utils/idna.c utils/messages.c \
+		utils/hashtable.c utils/bloom.c utils/nsoption.c \
+		utils/filename.c utils/nsurl.c utils/corestrings.c \
+		test/log.c test/urldbtest.c
 
 # low level cache sources and flags
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		content/fetchers/about.c content/fetchers/data.c \
 		content/fetchers/resource.c content/llcache.c \
-		content/urldb.c desktop/version.c \
+		content/urldb.c \
 		image/image_cache.c \
 		utils/base64.c utils/corestrings.c utils/hashtable.c \
-		utils/nsurl.c utils/messages.c utils/url.c \
-		utils/useragent.c utils/utils.c test/llcache.c
-llcache_CFLAGS := $(shell pkg-config --cflags libparserutils libwapcaplet libdom) -O2
-llcache_LDFLAGS := $(shell pkg-config --libs libparserutils libwapcaplet libdom)
+		utils/nsurl.c utils/messages.c utils/url.c utils/useragent.c \
+		utils/utils.c \
+		test/log.c test/llcache.c
 
-# url database test sources and flags
-urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/idna.c \
-		utils/messages.c utils/hashtable.c utils/bloom.c utils/nsoption.c \
-		utils/filename.c utils/nsurl.c utils/corestrings.c \
-		test/log.c test/urldbtest.c
-urldbtest_CFLAGS := $(shell pkg-config --cflags libwapcaplet libdom libnsutils libutf8proc) -O2
-urldbtest_LDFLAGS := $(shell pkg-config --libs libwapcaplet libdom libnsutils libutf8proc)
+# nsoption test
+nsoption_SRCS := utils/nsoption.c \
+		test/log.c test/nsoption.c
 
 
-nsoption_SRCS := utils/log.c utils/nsoption.c test/nsoption.c
-nsoption_CFLAGS := -Dnsgtk
 
-CLEANS += test-clean
+# Coverage builds need additional flags
+ifeq ($(MAKECMDGOALS),coverage)
+  COVCFLAGS ?= -fprofile-arcs -ftest-coverage -O0
+  COVCXXFLAGS ?= -fprofile-arcs -ftest-coverage -O0
+  COVLDFLAGS ?= -lgcov -fprofile-arcs
+  TESTROOT := build-$(HOST)-coverage
+else
+  COVCFLAGS ?= -O0
+  COVCXXFLAGS ?= -O0
+  TESTROOT := build-$(HOST)-test
+endif
 
-TESTS := nsurl urldbtest
+TESTCFLAGS := -std=c99 -g -Wall \
+		-D_BSD_SOURCE \
+		-D_POSIX_C_SOURCE=200809L \
+		-D_XOPEN_SOURCE=600 \
+		-Itest -I. -I.. \
+		-Dnsgtk \
+		$(shell pkg-config --cflags libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc) \
+		$(COVCFLAGS)
+TESTLDFLAGS := $(shell pkg-config --libs libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
+		$(COVLDFLAGS)
 
-TESTROOT := build-$(HOST)-test
+
+# Source files for all tests being compiled
+TESTSOURCES :=
+
+GCOV ?= gcov
+
+define gen_test_target
+$$(TESTROOT)/$(1): $$(sort $$(addprefix $$(TESTROOT)/,$$(subst /,_,$$(patsubst %.c,%.o,$$(patsubst %.cpp,%.o,$$(patsubst %.m,%.o,$$(patsubst %.s,%.o,$$($(1)_SRCS))))))))
+	$$(VQ)echo "LINKTEST: $$@"
+	$$(Q)$$(CC) $$(TESTCFLAGS) $$^ -o $$@ $$(TESTLDFLAGS)
+
+.PHONY:$(1)_test
+
+$(1)_test:$$(TESTROOT)/$(1)
+	$$(VQ)echo "RUN TEST: $(1)"
+	$$(Q)$$(TESTROOT)/$(1)
+
+TESTSOURCES += $$($(1)_SRCS)
+
+endef
+
+define compile_test_target_c
+$$(TESTROOT)/$(2): $(1) $$(TESTROOT)/created
+	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(TESTROOT)/$(2)
+	$$(Q)$$(CC) $$(TESTCFLAGS) -o $$(TESTROOT)/$(2) -c $(1)
+
+endef
+
+# Generate target for each test program and the list of objects it needs
+$(eval $(foreach TST,$(TESTS), $(call gen_test_target,$(TST))))
+
+# generate target rules for test objects
+$(eval $(foreach SOURCE,$(sort $(filter %.c,$(TESTSOURCES))), \
+	$(call compile_test_target_c,$(SOURCE),$(subst /,_,$(SOURCE:.c=.o)),$(subst /,_,$(SOURCE:.c=.d)))))
 
 
-.PHONY:test
+.PHONY:test coverage
 
-test: $(TESTROOT)/created $(addprefix $(TESTROOT)/,$(TESTS))
-	$(TESTROOT)/nsurl
-	$(TESTROOT)/urldbtest
+test: $(TESTROOT)/created $(addsuffix _test,$(TESTS))
+
+coverage: test
 
 $(TESTROOT)/created:
 	$(VQ)echo "   MKDIR: $(TESTROOT)"
 	$(Q)$(MKDIR) $(TESTROOT)
 	$(Q)$(TOUCH) $@
 
-$(TESTROOT)/nsurl: $(nsurl_SRCS)
-	$(CC) $(test_CFLAGS) $(nsurl_CFLAGS) $^ -o $@ $(test_LDFLAGS) $(nsurl_LDFLAGS)
-
-
-$(TESTROOT)/urldbtest: $(urldbtest_SRCS)
-	$(CC) $(test_CFLAGS) $(urldbtest_CFLAGS) $^ -o $@ $(test_LDFLAGS) $(urldbtest_LDFLAGS)
-
-$(TESTROOT)/llcache: $(llcache_SRCS)
-	$(CC) $(test_CFLAGS) $(llcache_CFLAGS) $^ -o $@ $(test_LDFLAGS) $(llcache_LDFLAGS)
-
-
-
-$(TESTROOT)/nsoption: $(addprefix ../,$(nsoption_SRCS))
-	$(CC) $(test_CFLAGS) $(nsoption_CFLAGS) $^ -o $@ $(test_LDFLAGS) $(nsoption_LDFLAGS)
-
 .PHONY: test-clean
 
 test-clean:
-	$(RM) $(addprefix $(TESTROOT)/,$(TESTS))
+	$(VQ)echo "   CLEAN: $(TESTROOT)"
+	$(VQ)echo "   CLEAN: build-$(HOST)-coverage"
+	$(Q)$(RM) -r $(TESTROOT) build-$(HOST)-coverage
+CLEANS += test-clean
