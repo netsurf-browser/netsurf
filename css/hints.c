@@ -28,6 +28,9 @@
 #include "css/hints.h"
 #include "css/select.h"
 
+#define LOG_STATS
+#undef LOG_STATS
+
 /******************************************************************************
  * Utility functions                                                          *
  ******************************************************************************/
@@ -1711,77 +1714,209 @@ static css_error node_presentational_hint_background_image(
 	return CSS_PROPERTY_NOT_SET;
 }
 
-/* Exported function, documeted in css/hints.h */
-css_error node_presentational_hint(void *pw, void *node,
-		uint32_t property, css_hint *hint)
+struct css_hint_ctx {
+	struct css_hint *hints;
+	uint32_t alloc;
+	uint32_t len;
+};
+
+struct css_hint_ctx hint_ctx;
+
+static void css_hint_destroy(struct css_hint_ctx *hint)
 {
+	hint->alloc = 0;
+	hint->len = 0;
+	free(hint->hints);
+}
 
-	switch (property) {
-	case CSS_PROP_BACKGROUND_IMAGE:
-		return node_presentational_hint_background_image(pw, node, hint);
+static nserror css_hint_extend(struct css_hint_ctx *hint)
+{
+	uint32_t alloc = (hint->alloc == 0) ? 32 : hint->alloc * 2;
+	struct css_hint *temp;
 
-	case CSS_PROP_BACKGROUND_COLOR:
-		return node_presentational_hint_background_color(pw, node, hint);
-	case CSS_PROP_CAPTION_SIDE:
-		return node_presentational_hint_caption_side(pw, node, hint);
+	temp = realloc(hint->hints, sizeof(struct css_hint) * alloc);
+	if (temp != NULL) {
+		hint->hints = temp;
+		hint->alloc = alloc;
 
-	case CSS_PROP_COLOR:
-		return node_presentational_hint_color(pw, node, hint);
-
-	case CSS_PROP_FLOAT:
-		return node_presentational_hint_float(pw, node, hint);
-
-	case CSS_PROP_FONT_SIZE:
-		return node_presentational_hint_font_size(pw, node, hint);
-
-	case CSS_PROP_HEIGHT:
-		return node_presentational_hint_height(pw, node, hint);
-
-	case CSS_PROP_WIDTH:
-		return node_presentational_hint_width(pw, node, hint);
-
-	case CSS_PROP_BORDER_SPACING:
-		return node_presentational_hint_border_spacing(pw, node, hint);
-
-	case CSS_PROP_BORDER_TOP_COLOR :
-	case CSS_PROP_BORDER_RIGHT_COLOR :
-	case CSS_PROP_BORDER_BOTTOM_COLOR :
-	case CSS_PROP_BORDER_LEFT_COLOR :
-		return node_presentational_hint_border_trbl_color(pw, node, hint);
-
-	case CSS_PROP_BORDER_TOP_STYLE :
-	case CSS_PROP_BORDER_RIGHT_STYLE :
-	case CSS_PROP_BORDER_BOTTOM_STYLE :
-	case CSS_PROP_BORDER_LEFT_STYLE :
-		return node_presentational_hint_border_trbl_style(pw, node, hint);
-
-	case CSS_PROP_BORDER_TOP_WIDTH :
-	case CSS_PROP_BORDER_RIGHT_WIDTH :
-	case CSS_PROP_BORDER_BOTTOM_WIDTH :
-	case CSS_PROP_BORDER_LEFT_WIDTH :
-		return node_presentational_hint_border_trbl_width(pw, node, hint);
-
-	case CSS_PROP_MARGIN_TOP :
-	case CSS_PROP_MARGIN_BOTTOM :
-		return node_presentational_hint_margin_tb(pw, node, hint);
-
-	case CSS_PROP_MARGIN_RIGHT:
-	case CSS_PROP_MARGIN_LEFT:
-		return node_presentational_hint_margin_rl(pw, node, hint, property);
-
-	case CSS_PROP_PADDING_TOP:
-	case CSS_PROP_PADDING_RIGHT :
-	case CSS_PROP_PADDING_BOTTOM :
-	case CSS_PROP_PADDING_LEFT:
-		return node_presentational_hint_padding_trbl(pw, node, hint);
-
-	case CSS_PROP_TEXT_ALIGN:
-		return node_presentational_hint_text_align(pw, node, hint);
-
-	case CSS_PROP_VERTICAL_ALIGN:
-		return node_presentational_hint_vertical_align(pw, node, hint);
+		return NSERROR_OK;
 	}
 
-	return CSS_PROPERTY_NOT_SET;
+	return NSERROR_NOMEM;
+}
+
+nserror css_hint_init(void)
+{
+	nserror err;
+
+	err = css_hint_extend(&hint_ctx);
+	if (err != NSERROR_OK) {
+		return err;
+	}
+
+	return NSERROR_OK;
+}
+
+void css_hint_fini(void)
+{
+	css_hint_destroy(&hint_ctx);
+}
+
+
+/* Exported function, documeted in css/hints.h */
+static inline css_error node_presentational_hint_internal(
+		void *pw, void *node, struct css_hint_ctx *hints)
+{
+	struct css_hint_ctx *ctx = hints;
+	uint32_t property;
+	nserror nserr;
+	css_error err;
+
+	ctx->len = 0;
+
+	for (property = 0; property < CSS_N_PROPERTIES; property++) {
+		css_hint *hint = &(ctx->hints[ctx->len]);
+
+		if (ctx->alloc == 0 || ctx->len == ctx->alloc - 1) {
+			nserr = css_hint_extend(ctx);
+			if (nserr != NSERROR_OK) {
+				return NSERROR_NOMEM;
+			}
+		}
+
+		switch (property) {
+		case CSS_PROP_BACKGROUND_IMAGE:
+			err = node_presentational_hint_background_image(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_BACKGROUND_COLOR:
+			err = node_presentational_hint_background_color(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_CAPTION_SIDE:
+			err = node_presentational_hint_caption_side(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_COLOR:
+			err = node_presentational_hint_color(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_FLOAT:
+			err = node_presentational_hint_float(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_FONT_SIZE:
+			err = node_presentational_hint_font_size(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_HEIGHT:
+			err = node_presentational_hint_height(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_WIDTH:
+			err = node_presentational_hint_width(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_BORDER_SPACING:
+			err = node_presentational_hint_border_spacing(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_BORDER_TOP_COLOR:
+		case CSS_PROP_BORDER_RIGHT_COLOR:
+		case CSS_PROP_BORDER_BOTTOM_COLOR:
+		case CSS_PROP_BORDER_LEFT_COLOR:
+			err = node_presentational_hint_border_trbl_color(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_BORDER_TOP_STYLE:
+		case CSS_PROP_BORDER_RIGHT_STYLE:
+		case CSS_PROP_BORDER_BOTTOM_STYLE:
+		case CSS_PROP_BORDER_LEFT_STYLE:
+			err = node_presentational_hint_border_trbl_style(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_BORDER_TOP_WIDTH:
+		case CSS_PROP_BORDER_RIGHT_WIDTH:
+		case CSS_PROP_BORDER_BOTTOM_WIDTH:
+		case CSS_PROP_BORDER_LEFT_WIDTH:
+			err = node_presentational_hint_border_trbl_width(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_MARGIN_TOP:
+		case CSS_PROP_MARGIN_BOTTOM:
+			err = node_presentational_hint_margin_tb(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_MARGIN_RIGHT:
+		case CSS_PROP_MARGIN_LEFT:
+			err = node_presentational_hint_margin_rl(
+					pw, node, hint, property);
+			break;
+
+		case CSS_PROP_PADDING_TOP:
+		case CSS_PROP_PADDING_RIGHT:
+		case CSS_PROP_PADDING_BOTTOM:
+		case CSS_PROP_PADDING_LEFT:
+			err = node_presentational_hint_padding_trbl(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_TEXT_ALIGN:
+			err = node_presentational_hint_text_align(
+					pw, node, hint);
+			break;
+
+		case CSS_PROP_VERTICAL_ALIGN:
+			err = node_presentational_hint_vertical_align(
+					pw, node, hint);
+			break;
+
+		default:
+			err = CSS_PROPERTY_NOT_SET;
+			break;
+		}
+
+		if (err == CSS_OK) {
+			hint->prop = property;
+			ctx->len++;
+		}
+	}
+
+	return CSS_OK;
+}
+
+
+/* Exported function, documeted in css/hints.h */
+css_error node_presentational_hint(void *pw, void *node,
+		uint32_t *nhints, css_hint **hints)
+{
+	css_error err;
+
+	err = node_presentational_hint_internal(pw, node, &hint_ctx);
+	if (err != CSS_OK) {
+		return err;
+	}
+
+#ifdef LOG_STATS
+	LOG("Properties with hints: %i", hint_ctx.len);
+#endif
+
+	*nhints = hint_ctx.len;
+	*hints = hint_ctx.hints;
+
+	return CSS_OK;
 }
 

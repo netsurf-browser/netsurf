@@ -23,7 +23,8 @@
 
 #include "css/css.h"
 
-
+nserror css_hint_init(void);
+void css_hint_fini(void);
 
 
 /**
@@ -40,8 +41,8 @@
 css_error node_presentational_hint(
 		void *pw,
 		void *node,
-		uint32_t property,
-		css_hint *hint);
+		uint32_t *nhints,
+		css_hint **hints);
 
 bool nscss_parse_colour(const char *data, css_color *result);
 
