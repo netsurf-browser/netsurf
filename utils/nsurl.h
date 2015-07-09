@@ -57,7 +57,7 @@ typedef enum nsurl_component {
  *
  * If return value != NSERROR_OK, nothing will be returned in url.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  */
 nserror nsurl_create(const char * const url_s, nsurl **url);
@@ -224,7 +224,7 @@ uint32_t nsurl_hash(const nsurl *url);
  *
  * If return value != NSERROR_OK, nothing will be returned in join.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  */
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
@@ -239,7 +239,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
  *
  * If return value != NSERROR_OK, nothing will be returned in no_frag.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  */
 nserror nsurl_defragment(const nsurl *url, nsurl **no_frag);
@@ -255,7 +255,7 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag);
  *
  * If return value != NSERROR_OK, nothing will be returned in new_url.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  *
  * Any fragment in url is replaced with frag in new_url.
@@ -273,7 +273,7 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url);
  *
  * If return value != NSERROR_OK, nothing will be returned in new_url.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  *
  * Any query component in url is replaced with query in new_url.
@@ -304,7 +304,7 @@ nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions);
  *
  * If return value != NSERROR_OK, nothing will be returned in new_url.
  *
- * It is up to the client to call nsurl_destroy when they are finished with
+ * It is up to the client to call nsurl_unref when they are finished with
  * the created object.
  *
  * As well as stripping top most path segment, query and fragments are stripped.
