@@ -1,4 +1,5 @@
 /*
+ * Copyright 2015 Vincent Sanders <vince@netsurf-browser.org>
  * Copyright 2011 John Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -109,6 +110,108 @@ static const struct test_pairs create_tests[] = {
 
 };
 
+/**
+ * url creation test
+ */
+START_TEST(nsurl_create_test)
+{
+	nserror err;
+	nsurl *res;
+	const struct test_pairs *tst = &create_tests[_i];
+
+	err = nsurl_create(tst->test, &res);
+	if (tst->res == NULL) {
+		/* result must be invalid */
+		ck_assert(err != NSERROR_OK);
+
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res), tst->res);
+
+		nsurl_unref(res);
+	}
+}
+END_TEST
+
+static const struct test_triplets access_tests[] = {
+	{ "http://www.netsurf-browser.org/a/big/tree",
+	  "http://www.netsurf-browser.org/a/big/tree",
+	  "tree" },
+
+	{ "HTTP://ci.netsurf-browser.org/jenkins/view/Unit Tests/job/coverage-netsurf/11/cobertura/utils/nsurl_c/",
+	  "http://ci.netsurf-browser.org/jenkins/view/Unit%20Tests/job/coverage-netsurf/11/cobertura/utils/nsurl_c/",
+	  "" },
+
+	{ "FILE:///",
+	  "file:///",
+	  "/" },
+};
+
+/**
+ * url access test
+ */
+START_TEST(nsurl_access_test)
+{
+	nserror err;
+	nsurl *res_url;
+	const struct test_triplets *tst = &access_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	/* The url accessed string must match the input */
+	ck_assert_str_eq(nsurl_access(res_url), tst->test2);
+
+	nsurl_unref(res_url);
+}
+END_TEST
+
+/**
+ * url access leaf test
+ */
+START_TEST(nsurl_access_leaf_test)
+{
+	nserror err;
+	nsurl *res_url;
+	const struct test_triplets *tst = &access_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	ck_assert_str_eq(nsurl_access_leaf(res_url), tst->res);
+
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+/**
+ * url length test
+ *
+ * uses access dataset and test unit
+ */
+START_TEST(nsurl_length_test)
+{
+	nserror err;
+	nsurl *res_url;
+	const struct test_triplets *tst = &access_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	ck_assert_int_eq(nsurl_length(res_url), strlen(tst->test2));
+
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+
 static const struct test_pairs nice_tests[] = {
 	{ "about:",			NULL },
 	{ "www.foo.org",		"www_foo_org" },
@@ -122,6 +225,38 @@ static const struct test_pairs nice_tests[] = {
 	{ "http://www.f.org//index.en",	"www_f_org" },
 };
 
+/**
+ * url nice filename without stripping
+ */
+START_TEST(nsurl_nice_nostrip_test)
+{
+	nserror err;
+	nsurl *res_url;
+	char *res_str;
+	const struct test_pairs *tst = &nice_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_nice(res_url, &res_str, false);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(res_str, tst->res);
+
+		free(res_str);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+
 static const struct test_pairs nice_strip_tests[] = {
 	{ "about:",			NULL },
 	{ "www.foo.org",		"www_foo_org" },
@@ -134,6 +269,38 @@ static const struct test_pairs nice_strip_tests[] = {
 	{ "www.foo.org/a//index.en",	"www_foo_org" },
 	{ "http://www.f.org//index.en",	"www_f_org" },
 };
+
+/**
+ * url nice filename with stripping
+ */
+START_TEST(nsurl_nice_strip_test)
+{
+	nserror err;
+	nsurl *res_url;
+	char *res_str;
+	const struct test_pairs *tst = &nice_strip_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_nice(res_url, &res_str, true);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(res_str, tst->res);
+
+		free(res_str);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
 
 /**
  * simple joins that all use http://a/b/c/d;p?q as a base
@@ -211,158 +378,6 @@ static const struct test_pairs join_tests[] = {
 };
 
 /**
- * more complex joins that specify a base to join to
- */
-static const struct test_triplets join_complex_tests[] = {
-	/* problematic real world urls for regression */
-	{ "http://www.bridgetmckenna.com/blog/self-editing-for-everyone-part-1-the-most-hated-writing-advice-ever",
-	  "http://The%20Old%20Organ%20Trail%20http://www.amazon.com/gp/product/B007B57MCQ/ref=as_li_tf_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B007B57MCQ&linkCode=as2&tag=brimck0f-20",
-	  "http://the old organ trail http:" },
-};
-
-/**
- * query replacement tests
- */
-static const struct test_triplets replace_query_tests[] = {
-	{ "http://netsurf-browser.org/?magical=true",
-	  "?magical=true&result=win",
-	  "http://netsurf-browser.org/?magical=true&result=win"},
-
-	{ "http://netsurf-browser.org/?magical=true#fragment",
-	  "?magical=true&result=win",
-	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
-
-	{ "http://netsurf-browser.org/#fragment",
-	  "?magical=true&result=win",
-	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
-
-	{ "http://netsurf-browser.org/path",
-	  "?magical=true",
-	  "http://netsurf-browser.org/path?magical=true"},
-
-};
-
-
-
-/**
- * url creation test
- */
-START_TEST(nsurl_create_test)
-{
-	nserror err;
-	nsurl *res;
-	const struct test_pairs *tst = &create_tests[_i];
-
-	err = nsurl_create(tst->test, &res);
-	if (tst->res == NULL) {
-		/* result must be invalid */
-		ck_assert(err != NSERROR_OK);
-
-	} else {
-		/* result must be valid */
-		ck_assert(err == NSERROR_OK);
-
-		ck_assert_str_eq(nsurl_access(res), tst->res);
-
-		nsurl_unref(res);
-	}
-}
-END_TEST
-
-/**
- * url nice filename without stripping
- */
-START_TEST(nsurl_nice_nostrip_test)
-{
-	nserror err;
-	nsurl *res_url;
-	char *res_str;
-	const struct test_pairs *tst = &nice_tests[_i];
-
-	/* not testing create, this should always succeed */
-	err = nsurl_create(tst->test, &res_url);
-	ck_assert(err == NSERROR_OK);
-
-	err = nsurl_nice(res_url, &res_str, false);
-	if (tst->res == NULL) {
-		/* result must be invalid (bad input) */
-		ck_assert(err != NSERROR_OK);
-	} else {
-		/* result must be valid */
-		ck_assert(err == NSERROR_OK);
-
-		ck_assert_str_eq(res_str, tst->res);
-
-		free(res_str);
-	}
-	nsurl_unref(res_url);
-
-}
-END_TEST
-
-/**
- * url nice filename with stripping
- */
-START_TEST(nsurl_nice_strip_test)
-{
-	nserror err;
-	nsurl *res_url;
-	char *res_str;
-	const struct test_pairs *tst = &nice_strip_tests[_i];
-
-	/* not testing create, this should always succeed */
-	err = nsurl_create(tst->test, &res_url);
-	ck_assert(err == NSERROR_OK);
-
-	err = nsurl_nice(res_url, &res_str, true);
-	if (tst->res == NULL) {
-		/* result must be invalid (bad input) */
-		ck_assert(err != NSERROR_OK);
-	} else {
-		/* result must be valid */
-		ck_assert(err == NSERROR_OK);
-
-		ck_assert_str_eq(res_str, tst->res);
-
-		free(res_str);
-	}
-	nsurl_unref(res_url);
-
-}
-END_TEST
-
-/**
- * replace query
- */
-START_TEST(nsurl_replace_query_test)
-{
-	nserror err;
-	nsurl *res_url;
-	nsurl *joined;
-	const struct test_triplets *tst = &replace_query_tests[_i];
-
-	/* not testing create, this should always succeed */
-	err = nsurl_create(tst->test1, &res_url);
-	ck_assert(err == NSERROR_OK);
-
-	err = nsurl_replace_query(res_url, tst->test2, &joined);
-	if (tst->res == NULL) {
-		/* result must be invalid (bad input) */
-		ck_assert(err != NSERROR_OK);
-	} else {
-		/* result must be valid */
-		ck_assert(err == NSERROR_OK);
-
-		ck_assert_str_eq(nsurl_access(joined), tst->res);
-
-		nsurl_unref(joined);
-	}
-	nsurl_unref(res_url);
-
-}
-END_TEST
-
-/**
  * url joining
  */
 START_TEST(nsurl_join_test)
@@ -398,6 +413,17 @@ START_TEST(nsurl_join_test)
 
 }
 END_TEST
+
+
+/**
+ * more complex joins that specify a base to join to
+ */
+static const struct test_triplets join_complex_tests[] = {
+	/* problematic real world urls for regression */
+	{ "http://www.bridgetmckenna.com/blog/self-editing-for-everyone-part-1-the-most-hated-writing-advice-ever",
+	  "http://The%20Old%20Organ%20Trail%20http://www.amazon.com/gp/product/B007B57MCQ/ref=as_li_tf_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B007B57MCQ&linkCode=as2&tag=brimck0f-20",
+	  "http://the old organ trail http:" },
+};
 
 /**
  * complex url joining
@@ -438,6 +464,60 @@ END_TEST
 
 
 /**
+ * query replacement tests
+ */
+static const struct test_triplets replace_query_tests[] = {
+	{ "http://netsurf-browser.org/?magical=true",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win"},
+
+	{ "http://netsurf-browser.org/?magical=true#fragment",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
+
+	{ "http://netsurf-browser.org/#fragment",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
+
+	{ "http://netsurf-browser.org/path",
+	  "?magical=true",
+	  "http://netsurf-browser.org/path?magical=true"},
+
+};
+
+/**
+ * replace query
+ */
+START_TEST(nsurl_replace_query_test)
+{
+	nserror err;
+	nsurl *res_url;
+	nsurl *joined;
+	const struct test_triplets *tst = &replace_query_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &res_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_replace_query(res_url, tst->test2, &joined);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(joined), tst->res);
+
+		nsurl_unref(joined);
+	}
+	nsurl_unref(res_url);
+
+}
+END_TEST
+
+
+/**
  * url reference (copy) and unreference(free)
  */
 START_TEST(nsurl_ref_test)
@@ -461,10 +541,11 @@ START_TEST(nsurl_ref_test)
 }
 END_TEST
 
+
 /**
  * check creation asserts on NULL parameter
  */
-START_TEST(nsurl_api_create_test)
+START_TEST(nsurl_api_assert_create_test)
 {
 	nserror err;
 	nsurl *res1;
@@ -477,7 +558,7 @@ END_TEST
 /**
  * check ref asserts on NULL parameter
  */
-START_TEST(nsurl_api_ref_test)
+START_TEST(nsurl_api_assert_ref_test)
 {
 	nsurl_ref(NULL);
 }
@@ -486,7 +567,7 @@ END_TEST
 /**
  * check unref asserts on NULL parameter
  */
-START_TEST(nsurl_api_unref_test)
+START_TEST(nsurl_api_assert_unref_test)
 {
 	nsurl_unref(NULL);
 }
@@ -495,7 +576,7 @@ END_TEST
 /**
  * check compare asserts on NULL parameter
  */
-START_TEST(nsurl_api_compare1_test)
+START_TEST(nsurl_api_assert_compare1_test)
 {
 	nserror err;
 	nsurl *res;
@@ -515,7 +596,7 @@ END_TEST
 /**
  * check compare asserts on NULL parameter
  */
-START_TEST(nsurl_api_compare2_test)
+START_TEST(nsurl_api_assert_compare2_test)
 {
 	nserror err;
 	nsurl *res;
@@ -533,7 +614,7 @@ END_TEST
 /**
  * check get asserts on NULL parameter
  */
-START_TEST(nsurl_api_get_test)
+START_TEST(nsurl_api_assert_get_test)
 {
 	nserror err;
 	char *url_s = NULL;
@@ -549,7 +630,7 @@ END_TEST
 /**
  * check get component asserts on NULL parameter
  */
-START_TEST(nsurl_api_get_component1_test)
+START_TEST(nsurl_api_assert_get_component1_test)
 {
 	lwc_string *lwcs;
 
@@ -561,7 +642,7 @@ END_TEST
 /**
  * check get component asserts on bad component parameter
  */
-START_TEST(nsurl_api_get_component2_test)
+START_TEST(nsurl_api_assert_get_component2_test)
 {
 	nserror err;
 	nsurl *res;
@@ -580,7 +661,7 @@ END_TEST
 /**
  * check has component asserts on NULL parameter
  */
-START_TEST(nsurl_api_has_component1_test)
+START_TEST(nsurl_api_assert_has_component1_test)
 {
 	bool has;
 
@@ -592,7 +673,7 @@ END_TEST
 /**
  * check has component asserts on bad component parameter
  */
-START_TEST(nsurl_api_has_component2_test)
+START_TEST(nsurl_api_assert_has_component2_test)
 {
 	nserror err;
 	nsurl *res;
@@ -612,7 +693,7 @@ END_TEST
 /**
  * check access asserts on NULL parameter
  */
-START_TEST(nsurl_api_access_test)
+START_TEST(nsurl_api_assert_access_test)
 {
 	const char *res_s = NULL;
 
@@ -625,7 +706,7 @@ END_TEST
 /**
  * check access asserts on NULL parameter
  */
-START_TEST(nsurl_api_access_leaf_test)
+START_TEST(nsurl_api_assert_access_leaf_test)
 {
 	const char *res_s = NULL;
 
@@ -638,7 +719,7 @@ END_TEST
 /**
  * check length asserts on NULL parameter
  */
-START_TEST(nsurl_api_length_test)
+START_TEST(nsurl_api_assert_length_test)
 {
 	size_t res = 0;
 
@@ -651,7 +732,7 @@ END_TEST
 /**
  * check hash asserts on NULL parameter
  */
-START_TEST(nsurl_api_hash_test)
+START_TEST(nsurl_api_assert_hash_test)
 {
 	uint32_t res = 0;
 
@@ -661,6 +742,168 @@ START_TEST(nsurl_api_hash_test)
 }
 END_TEST
 
+/**
+ * check join asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_join1_test)
+{
+	const char *rel = "moo";
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_join(NULL, rel, &res);
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+/**
+ * check join asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_join2_test)
+{
+	nsurl *url;
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_create(base_str, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_join(url, NULL, &res);
+	ck_assert(err != NSERROR_OK);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+/**
+ * check defragment asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_defragment_test)
+{
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_defragment(NULL, &res);
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+
+/**
+ * check refragment join asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_refragment1_test)
+{
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_refragment(NULL, corestring_lwc_http, &res);
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+/**
+ * check refragment asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_refragment2_test)
+{
+	nsurl *url;
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_create(base_str, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_refragment(url, NULL, &res);
+	ck_assert(err != NSERROR_OK);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+/**
+ * check query replacement asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_replace_query1_test)
+{
+	const char *rel = "moo";
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_replace_query(NULL, rel, &res);
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+/**
+ * check query replacement asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_replace_query2_test)
+{
+	nsurl *url;
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_create(base_str, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_replace_query(url, NULL, &res);
+	ck_assert(err != NSERROR_OK);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+/**
+ * check query replacement asserts on bad parameter
+ */
+START_TEST(nsurl_api_assert_replace_query3_test)
+{
+	nsurl *url;
+	nsurl *res;
+	nserror err;
+	const char *rel = "moo";
+
+	err = nsurl_create(base_str, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_replace_query(url, rel, &res);
+	ck_assert(err != NSERROR_OK);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+/**
+ * check nice asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_nice_test)
+{
+	char *res_s = NULL;
+	nserror err;
+
+	err = nsurl_nice(NULL, &res_s, false);
+	ck_assert(err != NSERROR_OK);
+
+	ck_assert(res_s == NULL);
+}
+END_TEST
+
+/**
+ * check parent asserts on NULL parameter
+ */
+START_TEST(nsurl_api_assert_parent_test)
+{
+	nsurl *res;
+	nserror err;
+
+	err = nsurl_parent(NULL, &res);
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+
+/* Fixtures */
 
 static void corestring_create(void)
 {
@@ -674,11 +917,14 @@ static void corestring_teardown(void)
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 }
 
+/* suite generation */
+
 Suite *nsurl_suite(void)
 {
 	Suite *s;
-	TCase *tc_api;
+	TCase *tc_api_assert;
 	TCase *tc_create;
+	TCase *tc_access;
 	TCase *tc_nice_nostrip;
 	TCase *tc_nice_strip;
 	TCase *tc_replace_query;
@@ -686,28 +932,63 @@ Suite *nsurl_suite(void)
 
 	s = suite_create("nsurl");
 
-	/* Basic API operation sanity checks e.g. passing NULL parameters */
-	tc_api = tcase_create("API");
+	/* Basic API operation assert checks */
+	tc_api_assert = tcase_create("API asserts");
 
-	tcase_add_unchecked_fixture(tc_api,
+	tcase_add_unchecked_fixture(tc_api_assert,
 				    corestring_create,
 				    corestring_teardown);
 
-	tcase_add_test_raise_signal(tc_api, nsurl_api_create_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_ref_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_unref_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_compare1_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_compare2_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_get_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_get_component1_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_get_component2_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_has_component1_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_has_component2_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_access_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_access_leaf_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_length_test, 6);
-	tcase_add_test_raise_signal(tc_api, nsurl_api_hash_test, 6);
-	suite_add_tcase(s, tc_api);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_create_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_ref_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_unref_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_compare1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_compare2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_get_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_get_component1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_get_component2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_has_component1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_has_component2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_access_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_access_leaf_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_length_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_hash_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_join1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_join2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_defragment_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_refragment1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_refragment2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_replace_query1_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_replace_query2_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_replace_query3_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_nice_test, 6);
+	tcase_add_test_raise_signal(tc_api_assert,
+				    nsurl_api_assert_parent_test, 6);
+
+	suite_add_tcase(s, tc_api_assert);
 
 	/* url creation */
 	tc_create = tcase_create("Create");
@@ -716,11 +997,28 @@ Suite *nsurl_suite(void)
 				    corestring_create,
 				    corestring_teardown);
 
-	tcase_add_test(tc_create, nsurl_ref_test);
 	tcase_add_loop_test(tc_create,
 			    nsurl_create_test,
 			    0, NELEMS(create_tests));
+	tcase_add_test(tc_create, nsurl_ref_test);
 	suite_add_tcase(s, tc_create);
+
+	/* url access and length */
+	tc_access = tcase_create("Access");
+
+	tcase_add_unchecked_fixture(tc_access,
+				    corestring_create,
+				    corestring_teardown);
+	tcase_add_loop_test(tc_access,
+			    nsurl_access_test,
+			    0, NELEMS(access_tests));
+	tcase_add_loop_test(tc_access,
+			    nsurl_access_leaf_test,
+			    0, NELEMS(access_tests));
+	tcase_add_loop_test(tc_access,
+			    nsurl_length_test,
+			    0, NELEMS(access_tests));
+	suite_add_tcase(s, tc_access);
 
 	/* nice filename without strip */
 	tc_nice_nostrip = tcase_create("Nice (nostrip)");

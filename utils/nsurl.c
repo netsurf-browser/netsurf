@@ -2004,6 +2004,8 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	size_t length;
 	char *pos;
 
+	assert(url != NULL);
+
 	/* check for source url having no fragment already */
 	if (url->components.fragment == NULL) {
 		*no_frag = (nsurl *)url;
@@ -2225,6 +2227,8 @@ nserror nsurl_nice(const nsurl *url, char **result, bool remove_extensions)
 	size_t pos;
 	bool match;
 	char *name;
+
+	assert(url != NULL);
 
 	*result = 0;
 
