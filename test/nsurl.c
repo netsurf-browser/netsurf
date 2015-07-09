@@ -54,6 +54,8 @@ static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 		lwc_string_data(str));
 }
 
+static const char *base_str = "http://a/b/c/d;p?q";
+
 static const struct test_pairs create_tests[] = {
 	{ "",			NULL },
 	{ "http:",		NULL },
@@ -99,6 +101,12 @@ static const struct test_pairs create_tests[] = {
 
 	{ "mailto:u@a",		"mailto:u@a" },
 	{ "mailto:@a",		"mailto:a" },
+
+	/* test case insensitivity */
+	{ "HTTP://a/b",		"http://a/b" },
+	{ "ftp://a/b",		"ftp://a/b" },
+	{ "FTP://a/b",		"ftp://a/b" },
+
 };
 
 static const struct test_pairs nice_tests[] = {
@@ -127,6 +135,9 @@ static const struct test_pairs nice_strip_tests[] = {
 	{ "http://www.f.org//index.en",	"www_f_org" },
 };
 
+/**
+ * simple joins that all use http://a/b/c/d;p?q as a base
+ */
 static const struct test_pairs join_tests[] = {
 	/* Normal Examples rfc3986 5.4.1 */
 	{ "g:h",		"g:h" },
@@ -196,9 +207,22 @@ static const struct test_pairs join_tests[] = {
 	/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
 	 *     testing normalisation in addition to joining */
 	/* [2] Using the strict parsers option */
+
 };
 
+/**
+ * more complex joins that specify a base to join to
+ */
+static const struct test_triplets join_complex_tests[] = {
+	/* problematic real world urls for regression */
+	{ "http://www.bridgetmckenna.com/blog/self-editing-for-everyone-part-1-the-most-hated-writing-advice-ever",
+	  "http://The%20Old%20Organ%20Trail%20http://www.amazon.com/gp/product/B007B57MCQ/ref=as_li_tf_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B007B57MCQ&linkCode=as2&tag=brimck0f-20",
+	  "http://the old organ trail http:" },
+};
 
+/**
+ * query replacement tests
+ */
 static const struct test_triplets replace_query_tests[] = {
 	{ "http://netsurf-browser.org/?magical=true",
 	  "?magical=true&result=win",
@@ -351,7 +375,7 @@ START_TEST(nsurl_join_test)
 	const struct test_pairs *tst = &join_tests[_i];
 
 	/* not testing create, this should always succeed */
-	err = nsurl_create("http://a/b/c/d;p?q", &base_url);
+	err = nsurl_create(base_str, &base_url);
 	ck_assert(err == NSERROR_OK);
 
 	err = nsurl_join(base_url, tst->test, &joined);
@@ -375,6 +399,268 @@ START_TEST(nsurl_join_test)
 }
 END_TEST
 
+/**
+ * complex url joining
+ */
+START_TEST(nsurl_join_complex_test)
+{
+	nserror err;
+	nsurl *base_url;
+	nsurl *joined;
+	char *string;
+	size_t len;
+	const struct test_triplets *tst = &join_complex_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &base_url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_join(base_url, tst->test2, &joined);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		err = nsurl_get(joined, NSURL_WITH_FRAGMENT, &string, &len);
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(string, tst->res);
+
+		free(string);
+		nsurl_unref(joined);
+	}
+	nsurl_unref(base_url);
+
+}
+END_TEST
+
+
+/**
+ * url reference (copy) and unreference(free)
+ */
+START_TEST(nsurl_ref_test)
+{
+	nserror err;
+	nsurl *res1;
+	nsurl *res2;
+
+	err = nsurl_create(base_str, &res1);
+
+	/* result must be valid */
+	ck_assert(err == NSERROR_OK);
+
+	res2 = nsurl_ref(res1);
+
+	ck_assert_str_eq(nsurl_access(res1), nsurl_access(res2));
+
+	nsurl_unref(res2);
+
+	nsurl_unref(res1);
+}
+END_TEST
+
+/**
+ * check creation asserts on NULL parameter
+ */
+START_TEST(nsurl_api_create_test)
+{
+	nserror err;
+	nsurl *res1;
+	err = nsurl_create(NULL, &res1);
+
+	ck_assert(err != NSERROR_OK);
+}
+END_TEST
+
+/**
+ * check ref asserts on NULL parameter
+ */
+START_TEST(nsurl_api_ref_test)
+{
+	nsurl_ref(NULL);
+}
+END_TEST
+
+/**
+ * check unref asserts on NULL parameter
+ */
+START_TEST(nsurl_api_unref_test)
+{
+	nsurl_unref(NULL);
+}
+END_TEST
+
+/**
+ * check compare asserts on NULL parameter
+ */
+START_TEST(nsurl_api_compare1_test)
+{
+	nserror err;
+	nsurl *res;
+	bool same;
+
+	err = nsurl_create(base_str, &res);
+	ck_assert(err == NSERROR_OK);
+
+	same = nsurl_compare(NULL, res, NSURL_PATH);
+
+	ck_assert(same == false);
+
+	nsurl_unref(res);
+}
+END_TEST
+
+/**
+ * check compare asserts on NULL parameter
+ */
+START_TEST(nsurl_api_compare2_test)
+{
+	nserror err;
+	nsurl *res;
+	bool same;
+
+	err = nsurl_create(base_str, &res);
+	ck_assert(err == NSERROR_OK);
+
+	same = nsurl_compare(res, NULL, NSURL_PATH);
+
+	ck_assert(same == false);
+}
+END_TEST
+
+/**
+ * check get asserts on NULL parameter
+ */
+START_TEST(nsurl_api_get_test)
+{
+	nserror err;
+	char *url_s = NULL;
+	size_t url_l = 0;
+
+	err = nsurl_get(NULL, NSURL_PATH, &url_s, &url_l);
+	ck_assert(err != NSERROR_OK);
+	ck_assert(url_s == NULL);
+	ck_assert(url_l == 0);
+}
+END_TEST
+
+/**
+ * check get component asserts on NULL parameter
+ */
+START_TEST(nsurl_api_get_component1_test)
+{
+	lwc_string *lwcs;
+
+	lwcs = nsurl_get_component(NULL, NSURL_PATH);
+	ck_assert(lwcs == NULL);
+}
+END_TEST
+
+/**
+ * check get component asserts on bad component parameter
+ */
+START_TEST(nsurl_api_get_component2_test)
+{
+	nserror err;
+	nsurl *res;
+	lwc_string *lwcs;
+
+	err = nsurl_create(base_str, &res);
+	ck_assert(err == NSERROR_OK);
+
+	lwcs = nsurl_get_component(res, -1);
+	ck_assert(lwcs == NULL);
+
+	nsurl_unref(res);
+}
+END_TEST
+
+/**
+ * check has component asserts on NULL parameter
+ */
+START_TEST(nsurl_api_has_component1_test)
+{
+	bool has;
+
+	has = nsurl_has_component(NULL, NSURL_PATH);
+	ck_assert(has == false);
+}
+END_TEST
+
+/**
+ * check has component asserts on bad component parameter
+ */
+START_TEST(nsurl_api_has_component2_test)
+{
+	nserror err;
+	nsurl *res;
+	bool has;
+
+	err = nsurl_create(base_str, &res);
+	ck_assert(err == NSERROR_OK);
+
+	has = nsurl_has_component(res, -1);
+	ck_assert(has == false);
+
+	nsurl_unref(res);
+}
+END_TEST
+
+
+/**
+ * check access asserts on NULL parameter
+ */
+START_TEST(nsurl_api_access_test)
+{
+	const char *res_s = NULL;
+
+	res_s = nsurl_access(NULL);
+
+	ck_assert(res_s == NULL);
+}
+END_TEST
+
+/**
+ * check access asserts on NULL parameter
+ */
+START_TEST(nsurl_api_access_leaf_test)
+{
+	const char *res_s = NULL;
+
+	res_s = nsurl_access_leaf(NULL);
+
+	ck_assert(res_s == NULL);
+}
+END_TEST
+
+/**
+ * check length asserts on NULL parameter
+ */
+START_TEST(nsurl_api_length_test)
+{
+	size_t res = 0;
+
+	res = nsurl_length(NULL);
+
+	ck_assert(res == 0);
+}
+END_TEST
+
+/**
+ * check hash asserts on NULL parameter
+ */
+START_TEST(nsurl_api_hash_test)
+{
+	uint32_t res = 0;
+
+	res = nsurl_hash(NULL);
+
+	ck_assert(res == 0);
+}
+END_TEST
+
 
 static void corestring_create(void)
 {
@@ -391,6 +677,7 @@ static void corestring_teardown(void)
 Suite *nsurl_suite(void)
 {
 	Suite *s;
+	TCase *tc_api;
 	TCase *tc_create;
 	TCase *tc_nice_nostrip;
 	TCase *tc_nice_strip;
@@ -399,6 +686,29 @@ Suite *nsurl_suite(void)
 
 	s = suite_create("nsurl");
 
+	/* Basic API operation sanity checks e.g. passing NULL parameters */
+	tc_api = tcase_create("API");
+
+	tcase_add_unchecked_fixture(tc_api,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_test_raise_signal(tc_api, nsurl_api_create_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_ref_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_unref_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_compare1_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_compare2_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_get_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_get_component1_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_get_component2_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_has_component1_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_has_component2_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_access_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_access_leaf_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_length_test, 6);
+	tcase_add_test_raise_signal(tc_api, nsurl_api_hash_test, 6);
+	suite_add_tcase(s, tc_api);
+
 	/* url creation */
 	tc_create = tcase_create("Create");
 
@@ -406,6 +716,7 @@ Suite *nsurl_suite(void)
 				    corestring_create,
 				    corestring_teardown);
 
+	tcase_add_test(tc_create, nsurl_ref_test);
 	tcase_add_loop_test(tc_create,
 			    nsurl_create_test,
 			    0, NELEMS(create_tests));
@@ -459,6 +770,11 @@ Suite *nsurl_suite(void)
 	tcase_add_loop_test(tc_join,
 			    nsurl_join_test,
 			    0, NELEMS(join_tests));
+
+	tcase_add_loop_test(tc_join,
+			    nsurl_join_complex_test,
+			    0, NELEMS(join_complex_tests));
+
 	suite_add_tcase(s, tc_join);
 
 	return s;
