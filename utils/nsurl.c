@@ -1554,6 +1554,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
 	enum nsurl_string_flags str_flags = 0;
 
+	assert(url != NULL);
+
 	/* Get the string length and find which parts of url need copied */
 	nsurl__get_string_data(&(url->components), parts, url_l,
 			&str_len, &str_flags);
@@ -1703,6 +1705,8 @@ const char *nsurl_access_leaf(const nsurl *url)
 	size_t path_len;
 	const char *path;
 	const char *leaf;
+
+	assert(url != NULL);
 
 	if (url->components.path == NULL)
 		return "";
