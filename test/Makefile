@@ -49,9 +49,9 @@ TESTCFLAGS := -std=c99 -g -Wall \
 		-D_XOPEN_SOURCE=600 \
 		-Itest -I. -I.. \
 		-Dnsgtk \
-		$(shell pkg-config --cflags libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc) \
+		$(shell pkg-config --cflags libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) \
 		$(COVCFLAGS)
-TESTLDFLAGS := $(shell pkg-config --libs libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc) -lz \
+TESTLDFLAGS := $(shell pkg-config --libs libcurl check libparserutils libwapcaplet libdom libnsutils libutf8proc libidn) -lz \
 		$(COVLDFLAGS)
 
 
