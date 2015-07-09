@@ -150,7 +150,18 @@ enum scheme_type {
 };
 
 
-/** nsurl components */
+/**
+ * nsurl components
+ *
+ * [scheme]://[username]:[password]@[host]:[port][path][?query]#[fragment]
+ *
+ * Note:
+ *   "path" string includes preceding '/', if needed for the scheme
+ *   "query" string always includes preceding '?'
+ *
+ * The other spanned punctuation is to be inserted when building URLs from
+ * components.
+ */
 struct nsurl_components {
 	lwc_string *scheme;
 	lwc_string *username;
@@ -167,8 +178,6 @@ struct nsurl_components {
 
 /**
  * NetSurf URL object
- *
- * [scheme]://[username][:password]@[host]:[port][/path][?query][#fragment]
  */
 struct nsurl {
 	struct nsurl_components components;
