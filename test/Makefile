@@ -9,9 +9,8 @@ nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
 
 # url database test sources and flags
 urldbtest_SRCS := content/urldb.c \
-		utils/url.c utils/utils.c utils/idna.c utils/messages.c \
-		utils/hashtable.c utils/bloom.c utils/nsoption.c \
-		utils/filename.c utils/nsurl.c utils/corestrings.c \
+		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
+		utils/corestrings.c \
 		test/log.c test/urldbtest.c
 
 # low level cache sources and flags
