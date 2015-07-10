@@ -46,6 +46,13 @@ struct test_triplets {
 	const char* res;
 };
 
+struct test_compare {
+	const char* test1;
+	const char* test2;
+	nsurl_component parts;
+	bool res;
+};
+
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
 	fprintf(stderr,
@@ -518,6 +525,44 @@ END_TEST
 
 
 /**
+ * url comparison tests
+ */
+static const struct test_compare compare_tests[] = {
+	{ "http://a/b/c/d;p?q",
+	  "http://a/b/c/d;p?q",
+	  NSURL_WITH_FRAGMENT,
+	  true },
+};
+
+/**
+ * compare
+ */
+START_TEST(nsurl_compare_test)
+{
+	nserror err;
+	nsurl *url1;
+	nsurl *url2;
+	const struct test_compare *tst = &compare_tests[_i];
+	bool status;
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &url1);
+	ck_assert(err == NSERROR_OK);
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test2, &url2);
+	ck_assert(err == NSERROR_OK);
+
+	status = nsurl_compare(url1, url2, tst->parts);
+	ck_assert(status == tst->res);
+
+	nsurl_unref(url1);
+	nsurl_unref(url2);
+
+}
+END_TEST
+
+/**
  * url reference (copy) and unreference(free)
  */
 START_TEST(nsurl_ref_test)
@@ -929,6 +974,7 @@ Suite *nsurl_suite(void)
 	TCase *tc_nice_strip;
 	TCase *tc_replace_query;
 	TCase *tc_join;
+	TCase *tc_compare;
 
 	s = suite_create("nsurl");
 
@@ -1074,6 +1120,20 @@ Suite *nsurl_suite(void)
 			    0, NELEMS(join_complex_tests));
 
 	suite_add_tcase(s, tc_join);
+
+
+	/* url compare */
+	tc_compare = tcase_create("Compare");
+
+	tcase_add_unchecked_fixture(tc_compare,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_compare,
+			    nsurl_compare_test,
+			    0, NELEMS(compare_tests));
+
+	suite_add_tcase(s, tc_compare);
 
 	return s;
 }
