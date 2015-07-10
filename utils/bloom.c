@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * Trivial bloom filter */
+/**
+ * \file
+ * Trivial bloom filter
+ */
 
 #include <stdlib.h>
 #include "utils/bloom.h"
@@ -106,59 +108,4 @@ uint32_t bloom_items(struct bloom_filter *b)
 {
 	return b->items;
 }
-
-#ifdef TEST_RIG
-
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-
-int main(int argc, char *arg[])
-{
-	struct bloom_filter *b = bloom_create(8192);
-	FILE *dict = fopen("/usr/share/dict/words", "r");
-	char buf[BUFSIZ];
-	int false_positives = 0, total = 0;
-	
-	for (int i = 0; i < 8192; i++) {
-		fscanf(dict, "%s", buf);
-		printf("adding %s\n", buf);
-		bloom_insert_str(b, buf, strlen(buf));
-	}
-	
-	printf("adding NetSurf\n");
-	
-	bloom_insert_str(b, "NetSurf", 7);
-	printf("checking NetSurf (should be true)\n");
-	assert(bloom_search_str(b, "NetSurf", 7));
-	
-	fseek(dict, 0, SEEK_SET);
-	
-	for (int i = 0; i < 8192; i++) {
-		fscanf(dict, "%s", buf);
-		printf("checking %s (should be true)\n", buf);
-		assert(bloom_search_str(b, buf, strlen(buf)));
-		
-		total++;
-	}
-	
-	for (int i = 0; i < 8192; i++) {
-		fscanf(dict, "%s", buf);
-		printf("checking %s (should be false)\n", buf);
-		if (bloom_search_str(b, buf, strlen(buf)) == true)
-			false_positives++;
-		total++;
-	}
-	
-	printf("false positives: %d of %d, %f%%\n",
-		false_positives, total,
-		((float)false_positives / total) * 100);
-	
-	fclose(dict);
-	bloom_destroy(b);
-	
-	return 0;
-}
-
-#endif /* TEST_RIG */
 

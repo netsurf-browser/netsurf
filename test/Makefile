@@ -1,7 +1,7 @@
 #
 # NetSurf unit tests
 
-TESTS := nsurl urldbtest nsoption #llcache
+TESTS := nsurl urldbtest nsoption bloom #llcache
 
 # nsurl sources and flags
 nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
@@ -28,7 +28,8 @@ llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 nsoption_SRCS := utils/nsoption.c \
 		test/log.c test/nsoption.c
 
-
+bloom_SRCS := utils/bloom.c \
+		test/bloom.c
 
 # Coverage builds need additional flags
 ifeq ($(MAKECMDGOALS),coverage)
