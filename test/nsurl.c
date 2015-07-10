@@ -532,6 +532,26 @@ static const struct test_compare compare_tests[] = {
 	  "http://a/b/c/d;p?q",
 	  NSURL_WITH_FRAGMENT,
 	  true },
+
+	{ "http://a.b.c/d?a",
+	  "http://a.b.c/e?a",
+	  NSURL_WITH_FRAGMENT,
+	  false },
+
+	{ "http://a.b.c/",
+	  "http://g.h.i/",
+	  NSURL_WITH_FRAGMENT,
+	  false },
+
+	{ "http://a.b.c/d?a",
+	  "http://a.b.c/d?b",
+	  NSURL_WITH_FRAGMENT,
+	  false },
+
+	{ "http://a.b.c/d?a",
+	  "https://a.b.c/d?a",
+	  NSURL_WITH_FRAGMENT,
+	  false },
 };
 
 /**
