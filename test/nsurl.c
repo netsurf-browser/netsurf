@@ -630,6 +630,120 @@ START_TEST(nsurl_has_component_test)
 }
 END_TEST
 
+static const struct test_pairs fragment_tests[] = {
+	{ "http://www.f.org/a/b/c#def", "http://www.f.org/a/b/c" },
+};
+
+/**
+ * defragment url
+ */
+START_TEST(nsurl_defragment_test)
+{
+	nserror err;
+	nsurl *url;
+	nsurl *res_url;
+	const struct test_pairs *tst = &fragment_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_defragment(url, &res_url);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res_url), tst->res);
+
+		nsurl_unref(res_url);
+	}
+	nsurl_unref(url);
+
+}
+END_TEST
+
+/**
+ * refragment url
+ */
+START_TEST(nsurl_refragment_test)
+{
+	nserror err;
+	nsurl *url;
+	nsurl *res_url;
+	const struct test_pairs *tst = &fragment_tests[_i];
+	lwc_string *frag;
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &url);
+	ck_assert(err == NSERROR_OK);
+
+	/* grab the fragment - not testing should succeed */
+	frag = nsurl_get_component(url, NSURL_FRAGMENT);
+	ck_assert(frag != NULL);
+	nsurl_unref(url);
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->res, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_refragment(url, frag, &res_url);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res_url), tst->test);
+
+		nsurl_unref(res_url);
+	}
+
+	lwc_string_unref(frag);
+
+	nsurl_unref(url);
+}
+END_TEST
+
+static const struct test_pairs parent_tests[] = {
+	{ "http://www.f.org/a/b/c", "http://www.f.org/a/b/" },
+};
+
+/**
+ * generate parent url
+ */
+START_TEST(nsurl_parent_test)
+{
+	nserror err;
+	nsurl *url;
+	nsurl *res_url;
+	const struct test_pairs *tst = &parent_tests[_i];
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test, &url);
+	ck_assert(err == NSERROR_OK);
+
+	err = nsurl_parent(url, &res_url);
+	if (tst->res == NULL) {
+		/* result must be invalid (bad input) */
+		ck_assert(err != NSERROR_OK);
+	} else {
+		/* result must be valid */
+		ck_assert(err == NSERROR_OK);
+
+		ck_assert_str_eq(nsurl_access(res_url), tst->res);
+
+		nsurl_unref(res_url);
+	}
+	nsurl_unref(url);
+
+}
+END_TEST
+
+
 /**
  * url reference (copy) and unreference(free)
  */
@@ -1043,7 +1157,9 @@ Suite *nsurl_suite(void)
 	TCase *tc_replace_query;
 	TCase *tc_join;
 	TCase *tc_compare;
+	TCase *tc_fragment;
 	TCase *tc_component;
+	TCase *tc_parent;
 
 	s = suite_create("nsurl");
 
@@ -1183,7 +1299,6 @@ Suite *nsurl_suite(void)
 	tcase_add_loop_test(tc_join,
 			    nsurl_join_test,
 			    0, NELEMS(join_tests));
-
 	tcase_add_loop_test(tc_join,
 			    nsurl_join_complex_test,
 			    0, NELEMS(join_complex_tests));
@@ -1204,6 +1319,23 @@ Suite *nsurl_suite(void)
 
 	suite_add_tcase(s, tc_compare);
 
+	/* fragment */
+	tc_fragment = tcase_create("Fragment");
+
+	tcase_add_unchecked_fixture(tc_fragment,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_fragment,
+			    nsurl_defragment_test,
+			    0, NELEMS(parent_tests));
+	tcase_add_loop_test(tc_fragment,
+			    nsurl_refragment_test,
+			    0, NELEMS(parent_tests));
+
+	suite_add_tcase(s, tc_fragment);
+
+
 	/* component */
 	tc_component = tcase_create("Component");
 
@@ -1214,12 +1346,25 @@ Suite *nsurl_suite(void)
 	tcase_add_loop_test(tc_component,
 			    nsurl_get_component_test,
 			    0, NELEMS(component_tests));
-
 	tcase_add_loop_test(tc_component,
 			    nsurl_has_component_test,
 			    0, NELEMS(component_tests));
 
 	suite_add_tcase(s, tc_component);
+
+
+	/* parent */
+	tc_parent = tcase_create("Parent");
+
+	tcase_add_unchecked_fixture(tc_parent,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_parent,
+			    nsurl_parent_test,
+			    0, NELEMS(parent_tests));
+
+	suite_add_tcase(s, tc_parent);
 
 	return s;
 }
