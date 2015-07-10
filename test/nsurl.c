@@ -562,6 +562,74 @@ START_TEST(nsurl_compare_test)
 }
 END_TEST
 
+
+/**
+ * url component tests
+ *
+ * each test1 parameter is converted to a url and
+ * nsurl[get|has]_component called on it with the given part. The
+ * result is checked against test1 and res as approprite.
+ */
+static const struct test_compare component_tests[] = {
+	{ "http://a/b/c/d;p?q",
+	  "http",
+	  NSURL_SCHEME,
+	  true },
+
+	{ "file:///",
+	  NULL,
+	  NSURL_HOST,
+	  false },
+
+};
+
+/**
+ * get component
+ */
+START_TEST(nsurl_get_component_test)
+{
+	nserror err;
+	nsurl *url1;
+	const struct test_compare *tst = &component_tests[_i];
+	lwc_string *cmpnt;
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &url1);
+	ck_assert(err == NSERROR_OK);
+
+	cmpnt = nsurl_get_component(url1, tst->parts);
+	if (cmpnt == NULL) {
+		ck_assert(tst->test2 == NULL);
+	} else {
+		ck_assert_str_eq(lwc_string_data(cmpnt), tst->test2);
+		lwc_string_unref(cmpnt);
+	}
+
+	nsurl_unref(url1);
+}
+END_TEST
+
+/**
+ * has component
+ */
+START_TEST(nsurl_has_component_test)
+{
+	nserror err;
+	nsurl *url1;
+	const struct test_compare *tst = &component_tests[_i];
+	bool status;
+
+	/* not testing create, this should always succeed */
+	err = nsurl_create(tst->test1, &url1);
+	ck_assert(err == NSERROR_OK);
+
+	status = nsurl_has_component(url1, tst->parts);
+	ck_assert(status == tst->res);
+
+	nsurl_unref(url1);
+}
+END_TEST
+
 /**
  * url reference (copy) and unreference(free)
  */
@@ -975,6 +1043,7 @@ Suite *nsurl_suite(void)
 	TCase *tc_replace_query;
 	TCase *tc_join;
 	TCase *tc_compare;
+	TCase *tc_component;
 
 	s = suite_create("nsurl");
 
@@ -1134,6 +1203,23 @@ Suite *nsurl_suite(void)
 			    0, NELEMS(compare_tests));
 
 	suite_add_tcase(s, tc_compare);
+
+	/* component */
+	tc_component = tcase_create("Component");
+
+	tcase_add_unchecked_fixture(tc_component,
+				    corestring_create,
+				    corestring_teardown);
+
+	tcase_add_loop_test(tc_component,
+			    nsurl_get_component_test,
+			    0, NELEMS(component_tests));
+
+	tcase_add_loop_test(tc_component,
+			    nsurl_has_component_test,
+			    0, NELEMS(component_tests));
+
+	suite_add_tcase(s, tc_component);
 
 	return s;
 }
