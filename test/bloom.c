@@ -77,9 +77,13 @@ START_TEST(bloom_create_test)
 {
 	struct bloom_filter *b;
 	b = bloom_create(BLOOM_SIZE);
+
 	bloom_insert_str(b, "NetSurf", 7);
 	ck_assert(bloom_search_str(b, "NetSurf", 7));
 	ck_assert(!bloom_search_str(b, "NotSurf", 7));
+
+	ck_assert(bloom_items(b) == 1);
+
 	bloom_destroy(b);
 }
 END_TEST
