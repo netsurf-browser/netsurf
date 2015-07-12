@@ -212,29 +212,3 @@ const char *monkey_fetch_filetype(const char *unix_path)
 
 	return type != NULL ? type : "text/plain";
 }
-
-#ifdef TEST_RIG
-
-int main(int argc, char *argv[])
-{
-	unsigned int c1, *c2;
-	const char *key;
-
-	gtk_fetch_filetype_init("./mime.types");
-
-	c1 = 0; c2 = 0;
-
-	while ( (key = hash_iterate(mime_hash, &c1, &c2)) != NULL) {
-		printf("%s ", key);
-	}
-
-	printf("\n");
-
-	if (argc > 1) {
-		printf("%s maps to %s\n", argv[1], fetch_filetype(argv[1]));
-	}
-
-	gtk_fetch_filetype_fin();
-}
-
-#endif

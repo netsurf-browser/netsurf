@@ -73,6 +73,13 @@ static void dict_bloom_teardown(void)
 
 /* Tests */
 
+/**
+ * Test blooom filter creation
+ *
+ * Create a bloom filter, add a single entry and test for presece and
+ * absence of that entry (single entry cannot have false positives).
+ *
+ */
 START_TEST(bloom_create_test)
 {
 	struct bloom_filter *b;
