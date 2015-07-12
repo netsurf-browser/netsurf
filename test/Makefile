@@ -1,19 +1,19 @@
 #
 # NetSurf unit tests
 
-TESTS := nsurl urldbtest nsoption bloom #llcache
+TESTS := nsurl urldbtest nsoption bloom hashtable #llcache
 
-# nsurl sources and flags
+# nsurl sources
 nsurl_SRCS := utils/corestrings.c utils/nsurl.c utils/idna.c \
 		test/log.c test/nsurl.c
 
-# url database test sources and flags
+# url database test sources
 urldbtest_SRCS := content/urldb.c \
 		utils/idna.c utils/bloom.c utils/nsoption.c utils/nsurl.c \
 		utils/corestrings.c \
 		test/log.c test/urldbtest.c
 
-# low level cache sources and flags
+# low level cache sources
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		content/fetchers/about.c content/fetchers/data.c \
 		content/fetchers/resource.c content/llcache.c \
@@ -24,12 +24,14 @@ llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		utils/utils.c \
 		test/log.c test/llcache.c
 
-# nsoption test
-nsoption_SRCS := utils/nsoption.c \
-		test/log.c test/nsoption.c
+# nsoption test sources
+nsoption_SRCS := utils/nsoption.c test/log.c test/nsoption.c
 
-bloom_SRCS := utils/bloom.c \
-		test/bloom.c
+# Bloom filter test sources
+bloom_SRCS := utils/bloom.c test/bloom.c
+
+# hash table test sources
+hashtable_SRCS := utils/hashtable.c test/log.c test/hashtable.c
 
 # Coverage builds need additional flags
 ifeq ($(MAKECMDGOALS),coverage)
