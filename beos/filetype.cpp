@@ -72,7 +72,7 @@ void beos_fetch_filetype_init(void)
 			continue;
 		}
 		// the mime db doesn't know about it yet
-		BMessage extensions(0UL);
+		BMessage extensions('exts');
 		if (default_types[i].ext1)
 			extensions.AddString("extensions", default_types[i].ext1);
 		if (default_types[i].ext2)

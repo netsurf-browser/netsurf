@@ -40,16 +40,8 @@ ifeq ($(HOST),beos)
   ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
     LDFLAGS += -lzeta
   endif
-  ifneq ($(wildcard /boot/system/develop/lib/*/libnetwork.so),)
+  ifneq ($(wildcard /boot/system/develop/lib/libnetwork.so),)
       # Haiku
-      CFLAGS += -I/boot/common/include		\
-		-I/boot/common/include/hubbub	\
-		-I/boot/common/include/libcss	\
-		-I/boot/common/include/parserutils
-      CXXFLAGS += -I/boot/common/include		\
-		-I/boot/common/include/hubbub	\
-		-I/boot/common/include/libcss	\
-		-I/boot/common/include/parserutils
       NETLDFLAGS := -lnetwork
   else
     ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)

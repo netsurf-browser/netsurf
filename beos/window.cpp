@@ -1275,7 +1275,7 @@ void gui_get_clipboard(char **buffer, size_t *length)
 		clip = be_clipboard->Data();
 		if (clip) {
 			const char *text;
-			int32 textlen;
+			ssize_t textlen;
 			if (clip->FindData("text/plain", B_MIME_TYPE, 
 				(const void **)&text, &textlen) >= B_OK) {
 				*buffer = (char *)malloc(textlen);
