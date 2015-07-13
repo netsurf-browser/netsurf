@@ -58,7 +58,6 @@ case ${TARGET} in
     "riscos")
 	case ${HOST} in
 	    "arm-unknown-riscos")
-		ARTIFACT_TARGET=riscos
 		;;
 
 	    *)
@@ -75,7 +74,6 @@ case ${TARGET} in
     "haiku")
 	case ${HOST} in
 	    "i586-pc-haiku")
-		ARTIFACT_TARGET=Haiku
 		;;
 
 	    *)
@@ -93,7 +91,6 @@ case ${TARGET} in
     "windows")
 	case ${HOST} in
 	    "i686-w64-mingw32")
-		ARTIFACT_TARGET=windows
 		;;
 
 	    *)
@@ -111,15 +108,9 @@ case ${TARGET} in
     "cocoa")
 	case ${HOST} in
 	    "i686-apple-darwin10")
-		ARTIFACT_TARGET=Darwin
-		IDENTIFIER="${HOST}-${IDENTIFIER}"
-		OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 		;;
 
 	    "powerpc-apple-darwin9")
-		ARTIFACT_TARGET=powerpc-apple-darwin9
-		IDENTIFIER="${ARTIFACT_TARGET}-${IDENTIFIER}"
-		OLD_IDENTIFIER="${ARTIFACT_TARGET}-${OLD_IDENTIFIER}"
 		;;
 
 	    *)
@@ -129,6 +120,8 @@ case ${TARGET} in
 
 	esac
 
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	PKG_SRC=NetSurf
 	PKG_SFX=.dmg
 	;;
@@ -137,7 +130,6 @@ case ${TARGET} in
     "amiga")
 	case ${HOST} in
 	    "ppc-amigaos")
-		ARTIFACT_TARGET=amiga
 		;;
 
 	    *)
@@ -155,13 +147,11 @@ case ${TARGET} in
     "atari")
 	case ${HOST} in
 	    "m68k-atari-mint")
-		ARTIFACT_TARGET=m68k-atari-mint
 		PKG_SRC=ns020
 		PKG_SFX=.zip
 		;;
 
 	    "m5475-atari-mint")
-		ARTIFACT_TARGET=m5475-atari-mint
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/m5475-atari-mint/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/m5475-atari-mint/cross/bin
 		ATARIARCH=v4e
@@ -176,24 +166,24 @@ case ${TARGET} in
 
 	esac
 
-	IDENTIFIER="${ARTIFACT_TARGET}-${IDENTIFIER}"
-	OLD_IDENTIFIER="${ARTIFACT_TARGET}-${OLD_IDENTIFIER}"
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	;;
 
 
     "gtk")
 	case ${HOST} in
 	    "x86_64-linux-gnu")
-		ARTIFACT_TARGET=Linux
+		;;
+
+	    "arm-linux-gnueabihf")
 		;;
 
 	    amd64-unknown-openbsd*)
-		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
 	    x86_64-unknown-freebsd*)
-		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
 
@@ -204,6 +194,8 @@ case ${TARGET} in
 
 	esac
 
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	PKG_SRC=nsgtk
 	PKG_SFX=
 	;;
@@ -212,54 +204,47 @@ case ${TARGET} in
     "framebuffer")
 	case ${HOST} in
 	    "x86_64-linux-gnu")
-		ARTIFACT_TARGET=Linux
+		;;
+
+	    arm-linux-gnueabihf)
 		;;
 
 	    "i686-apple-darwin10")
-		ARTIFACT_TARGET=Darwin
 		;;
 
 	    "powerpc-apple-darwin9")
-		ARTIFACT_TARGET=powerpc-apple-darwin9
 		;;
 
 	    amd64-unknown-openbsd*)
-		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
 	    x86_64-unknown-freebsd*)
-		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
 
 	    "arm-unknown-riscos")
-		ARTIFACT_TARGET=riscos
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "m68k-atari-mint")
-		ARTIFACT_TARGET=m68k-atari-mint
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "m5475-atari-mint")
 		ATARIARCH=v4e
-		ARTIFACT_TARGET=m5475-atari-mint
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "i686-w64-mingw32")
-		ARTIFACT_TARGET=windows
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "ppc-amigaos")
-		ARTIFACT_TARGET=amiga
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
@@ -271,6 +256,8 @@ case ${TARGET} in
 
 	esac
 
+	IDENTIFIER="${HOST}-${IDENTIFIER}"
+	OLD_IDENTIFIER="${HOST}-${OLD_IDENTIFIER}"
 	PKG_SRC=nsfb
 	PKG_SFX=
 	;;
@@ -280,54 +267,47 @@ case ${TARGET} in
 	# monkey target can be built on most of the supported architectures
 	case ${HOST} in
 	    "x86_64-linux-gnu")
-		ARTIFACT_TARGET=Linux
+		;;
+
+	    arm-linux-gnueabihf)
 		;;
 
 	    "i686-apple-darwin10")
-		ARTIFACT_TARGET=Darwin
 		;;
 
 	    "powerpc-apple-darwin9")
-		ARTIFACT_TARGET=powerpc-apple-darwin9
 		;;
 
 	    amd64-unknown-openbsd*)
-		ARTIFACT_TARGET=OpenBSD
 		MAKE=gmake
 		;;
 
 	    x86_64-unknown-freebsd*)
-		ARTIFACT_TARGET=FreeBSD
 		MAKE=gmake
 		;;
 
 	    "arm-unknown-riscos")
-		ARTIFACT_TARGET=riscos
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "m68k-atari-mint")
-		ARTIFACT_TARGET=m68k-atari-mint
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "m5475-atari-mint")
 		ATARIARCH=v4e
-		ARTIFACT_TARGET=m5475-atari-mint
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "i686-w64-mingw32")
-		ARTIFACT_TARGET=windows
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
 
 	    "ppc-amigaos")
-		ARTIFACT_TARGET=amiga
 		export GCCSDK_INSTALL_ENV=/opt/netsurf/${HOST}/env
 		export GCCSDK_INSTALL_CROSSBIN=/opt/netsurf/${HOST}/cross/bin
 		;;
