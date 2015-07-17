@@ -191,7 +191,7 @@ const char *nsurl_access(const nsurl *url);
  *
  * The returned string has a trailing '\0'.
  */
-const char *nsurl_access_utf8(const nsurl *url);
+char *nsurl_access_utf8(const nsurl *url);
 
 
 /**

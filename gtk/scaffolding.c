@@ -2346,7 +2346,13 @@ nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 
 	g = nsgtk_get_scaffold(gw);
 	if (g->top_level == gw) {
-		gtk_entry_set_text(GTK_ENTRY(g->url_bar), nsurl_access(url));
+		if (nsoption_bool(display_decoded_idn) == false) {
+			gtk_entry_set_text(GTK_ENTRY(g->url_bar), nsurl_access(url));
+		} else {
+			char *idn_url = nsurl_access_utf8(url);
+			gtk_entry_set_text(GTK_ENTRY(g->url_bar), idn_url);
+			free(idn_url);
+		}
 		gtk_editable_set_position(GTK_EDITABLE(g->url_bar), -1);
 	}
 	return NSERROR_OK;

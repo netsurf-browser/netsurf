@@ -1698,7 +1698,7 @@ const char *nsurl_access(const nsurl *url)
 	return url->string;
 }
 
-const char *nsurl_access_utf8(const nsurl *url)
+char *nsurl_access_utf8(const nsurl *url)
 {
 	lwc_string *host;
 	char *idna_host;
