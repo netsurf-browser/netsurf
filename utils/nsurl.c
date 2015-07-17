@@ -1713,6 +1713,11 @@ char *nsurl_access_utf8(const nsurl *url)
 	assert(url != NULL);
 
 	host = nsurl_get_component(url, NSURL_HOST);
+
+	if(host == NULL) {
+		return strdup(url->string);
+	}
+
 	if (idna_decode(lwc_string_data(host), lwc_string_length(host),
 		&idna_host, &idna_host_len) != NSERROR_OK) {
 		lwc_string_unref(host);
