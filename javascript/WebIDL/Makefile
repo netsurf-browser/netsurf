@@ -18,19 +18,23 @@ all: dom.idl html.idl
 
 
 dom-spec.html:
-	curl -s http://dom.spec.whatwg.org/ -o $@
+	curl -s https://dom.spec.whatwg.org/ -o $@
 
 html-spec.html:
-	curl -s http://www.whatwg.org/specs/web-apps/current-work/ -o $@
+	curl -s https://html.spec.whatwg.org/ -o $@
 
 %-spec.xml: %-spec.html
-	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure -o $@ -asxml $< 
+	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption -o $@ -asxml $<
 
 %-idl.html: %-spec.xml
-	hxselect pre.idl < $< > $@
+	hxselect 'pre[class="idl"]' < $< > $@
 
 %.idl: %-idl.html
-	cat $< | w3m -dump -T text/html >$@
+	@echo "// Retrived from " >$@
+	@echo "// $$(date)" >>$@
+	@echo "" >>$@
+	@echo "" >>$@
+	cat $< | w3m -dump -T text/html >>$@
 
 
 
