@@ -4895,9 +4895,21 @@ static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 	if(!g) return NSERROR_OK;
 
 	if (g == g->shared->gw) {
-		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
-				      g->shared->win, NULL, STRINGA_TextVal,
-				      nsurl_access(url), TAG_DONE);
+		if(nsoption_bool(display_decoded_idn) == false) {
+			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
+									g->shared->win, NULL,
+									STRINGA_TextVal, nsurl_access(url),
+									TAG_DONE);
+		} else {
+			char *idn_url = nsurl_access_utf8(url);
+			char *idn_url_lc = ami_utf8_easy(idn_url);
+			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
+									g->shared->win, NULL,
+									STRINGA_TextVal, idn_url_lc,
+									TAG_DONE);
+			free(idn_url);
+			ami_utf8_free(idn_url_lc);
+		}
 	}
 
 	ami_update_buttons(g->shared);
