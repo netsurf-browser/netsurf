@@ -1698,6 +1698,51 @@ const char *nsurl_access(const nsurl *url)
 	return url->string;
 }
 
+const char *nsurl_access_utf8(const nsurl *url)
+{
+	lwc_string *host;
+	char *idna_host;
+	size_t idna_host_len;
+	char *scheme;
+	size_t scheme_len;
+	char *path;
+	size_t path_len;
+	char *idna_url;
+	size_t idna_url_len;
+
+	assert(url != NULL);
+
+	host = nsurl_get_component(url, NSURL_HOST);
+	if (idna_decode(lwc_string_data(host), lwc_string_length(host),
+		&idna_host, &idna_host_len) != NSERROR_OK) {
+		lwc_string_unref(host);
+		return strdup(url->string);
+	}
+
+	lwc_string_unref(host);
+
+	if (nsurl_get(url, NSURL_SCHEME | NSURL_CREDENTIALS,
+		&scheme, &scheme_len) != NSERROR_OK) {
+		return strdup(url->string);
+	}
+
+	if (nsurl_get(url, NSURL_PORT | NSURL_PATH | NSURL_QUERY,
+		&path, &path_len) != NSERROR_OK) {
+		return strdup(url->string);
+	}
+
+	idna_url_len = scheme_len + idna_host_len + path_len + 1; /* +1 for \0 */
+	idna_url = malloc(idna_url_len); 
+
+	if (idna_url == NULL) {
+		return strdup(url->string);
+	}
+
+	snprintf(idna_url, idna_url_len, "%s%s%s", scheme, idna_host, path);
+
+	return(idna_url);
+}
+
 
 /* exported interface, documented in nsurl.h */
 const char *nsurl_access_leaf(const nsurl *url)

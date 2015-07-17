@@ -181,6 +181,20 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
+ * Access a NetSurf URL object as a UTF-8 string (for human readable IDNA)
+ *
+ * \param url	  NetSurf URL to retrieve a string pointer for.
+ * \return the required string
+ *
+ * It is up to the client to free the returned string when they have
+ * finished with it.
+ *
+ * The returned string has a trailing '\0'.
+ */
+const char *nsurl_access_utf8(const nsurl *url);
+
+
+/**
  * Access a URL's path leaf as a string
  *
  * \param url	  NetSurf URL to retrieve a string pointer for.
