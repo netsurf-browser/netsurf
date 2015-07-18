@@ -85,10 +85,11 @@ void ro_gui_url_complete_start(struct toolbar *toolbar)
 
 	ro_gui_url_complete_close();
 	url = ro_toolbar_get_url(toolbar);
-
-	url_complete_matched_string = strdup(url);
-	if (url_complete_matched_string)
-		url_complete_parent = parent;
+	if (url != NULL) {
+		url_complete_matched_string = strdup(url);
+		if (url_complete_matched_string)
+			url_complete_parent = parent;
+	}
 }
 
 

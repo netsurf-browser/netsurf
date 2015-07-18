@@ -178,7 +178,11 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 
 	url_bar->text_size = RO_GUI_MAX_URL_SIZE;
 	url_bar->text_buffer = malloc(url_bar->text_size);
-	strncpy(url_bar->text_buffer, "", url_bar->text_size);
+	if (url_bar->text_buffer == NULL) {
+		free(url_bar);
+		return NULL;
+	}
+	url_bar->text_buffer[0] = 0;
 
 	url_bar->hidden = false;
 
