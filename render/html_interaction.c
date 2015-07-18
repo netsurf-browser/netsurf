@@ -300,6 +300,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
 	const char *title = 0;
 	nsurl *url = 0;
+	char *idn_url = NULL;
 	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
@@ -814,12 +815,22 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					y - html_object_pos_y);
 		}
 	} else if (url) {
+		if (nsoption_bool(display_decoded_idn) == true) {
+			idn_url = nsurl_access_utf8(url);
+		}
+
 		if (title) {
 			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
-					nsurl_access(url), title);
-			status = status_buffer;
-		} else
-			status = nsurl_access(url);
+					idn_url ? idn_url : nsurl_access(url), title);
+		} else {
+			snprintf(status_buffer, sizeof status_buffer, "%s",
+					idn_url ? idn_url : nsurl_access(url));
+		}
+
+		status = status_buffer;
+
+		if (idn_url != NULL)
+			free(idn_url);
 
 		pointer = get_pointer_shape(url_box, imagemap);
 
