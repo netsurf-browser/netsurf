@@ -83,6 +83,7 @@ struct url_bar {
 	wimp_i			text_icon;
 	char			*text_buffer;
 	size_t			text_size;
+	char			*text_buffer_utf8;
 
 	wimp_i			suggest_icon;
 	int			suggest_x, suggest_y;
@@ -507,6 +508,9 @@ void ro_gui_url_bar_destroy(struct url_bar *url_bar)
 {
 	if (url_bar == NULL)
 		return;
+
+	if (url_bar->text_buffer_utf8 != NULL)
+		free(url_bar->text_buffer_utf8);
 
 	free(url_bar);
 }
@@ -1072,6 +1076,15 @@ const char *ro_gui_url_bar_get_url(struct url_bar *url_bar)
 {
 	if (url_bar == NULL)
 		return NULL;
+
+	if (url_bar->text_buffer_utf8 != NULL) {
+		free(url_bar->text_buffer_utf8);
+		url_bar->text_buffer_utf8 = NULL;
+	}
+
+	if (utf8_from_local_encoding(url_bar->text_buffer, 0, &url_bar->text_buffer_utf8) == NSERROR_OK) {
+		return (const char *) url_bar->text_buffer_utf8;
+	}
 
 	return (const char *) url_bar->text_buffer;
 }
