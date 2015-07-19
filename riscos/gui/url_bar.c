@@ -1086,6 +1086,9 @@ const char *ro_gui_url_bar_get_url(struct url_bar *url_bar)
 		url_bar->text_buffer_utf8 = NULL;
 	}
 
+	if (url_bar->text_buffer[0] == '\0')
+		return (const char *) url_bar->text_buffer;
+
 	if (utf8_from_local_encoding(url_bar->text_buffer, 0, &url_bar->text_buffer_utf8) == NSERROR_OK) {
 		return (const char *) url_bar->text_buffer_utf8;
 	}
