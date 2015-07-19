@@ -183,6 +183,7 @@ struct url_bar *ro_gui_url_bar_create(struct theme_descriptor *theme)
 		return NULL;
 	}
 	url_bar->text_buffer[0] = 0;
+	url_bar->text_buffer_utf8 = NULL;
 
 	url_bar->hidden = false;
 
@@ -515,6 +516,9 @@ void ro_gui_url_bar_destroy(struct url_bar *url_bar)
 
 	if (url_bar->text_buffer_utf8 != NULL)
 		free(url_bar->text_buffer_utf8);
+
+	if (url_bar->text_buffer != NULL)
+		free(url_bar->text_buffer);
 
 	free(url_bar);
 }
@@ -981,8 +985,7 @@ void ro_gui_url_bar_set_url(struct url_bar *url_bar, const char *url,
 	 */
 
 	if (strlen(local_url) >= url_bar->text_size) {
-		strncpy(url_bar->text_buffer, "", url_bar->text_size - 1);
-		url_bar->text_buffer[url_bar->text_size - 1] = '\0';
+		url_bar->text_buffer[0] = '\0';
 		warn_user("LongURL", NULL);
 		LOG("Long URL (%d chars): %s", strlen(url), url);
 	} else {
