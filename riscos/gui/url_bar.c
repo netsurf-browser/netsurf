@@ -1078,7 +1078,7 @@ static void ro_gui_url_bar_set_hotlist(struct url_bar *url_bar, bool set)
 
 const char *ro_gui_url_bar_get_url(struct url_bar *url_bar)
 {
-	if (url_bar == NULL)
+	if ((url_bar == NULL) || (url_bar->text_buffer == NULL))
 		return NULL;
 
 	if (url_bar->text_buffer_utf8 != NULL) {
