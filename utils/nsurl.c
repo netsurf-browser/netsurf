@@ -1731,7 +1731,7 @@ char *nsurl_access_utf8(const nsurl *url)
 		return strdup(url->string);
 	}
 
-	if (nsurl_get(url, NSURL_PORT | NSURL_PATH | NSURL_QUERY,
+	if (nsurl_get(url, NSURL_PORT | NSURL_PATH | NSURL_QUERY | NSURL_FRAGMENT,
 		&path, &path_len) != NSERROR_OK) {
 		return strdup(url->string);
 	}
