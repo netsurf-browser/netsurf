@@ -280,8 +280,8 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
 					fons = AllocVecTagList(sizeof(struct fons_struct), NULL);
 					if(!(PushChunk(iffh,0,ID_FONS,IFFSIZE_UNKNOWN)))
 					{
-						WriteChunkBytes(iffh,fons,sizeof(struct fons_struct));
-						WriteChunkBytes(iffh,"Topaz",5);
+						WriteChunkBytes(iffh, fons, sizeof(struct fons_struct));
+						WriteChunkBytes(iffh, "Topaz\0", 6);
 						PopChunk(iffh);
 					}
 					FreeVec(fons);
