@@ -181,17 +181,21 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
- * Access a NetSurf URL object as a UTF-8 string (for human readable IDNA)
+ * Access a NetSurf URL object as a UTF-8 string (for human readable IDNs)
  *
  * \param url	  NetSurf URL to retrieve a string pointer for.
- * \return the required string
+ * \param url_s	  Returns a url string
+ * \param url_l	  Returns length of url_s
+ * \return NSERROR_OK on success, appropriate error otherwise
  *
- * It is up to the client to free the returned string when they have
- * finished with it.
+ * If return value != NSERROR_OK, nothing will be returned in url_s or url_l.
  *
- * The returned string has a trailing '\0'.
+ * The string returned in url_s is owned by the client and it is up to them
+ * to free it.  It includes a trailing '\0'.
+ *
+ * The length returned in url_l excludes the trailing '\0'.
  */
-char *nsurl_access_utf8(const nsurl *url);
+nserror nsurl_access_utf8(const nsurl *url, char **url_s, size_t *url_l);
 
 
 /**

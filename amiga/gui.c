@@ -4892,23 +4892,27 @@ static void gui_window_set_status(struct gui_window *g, const char *text)
 
 static nserror gui_window_set_url(struct gui_window *g, nsurl *url)
 {
+	size_t idn_url_l;
+	char *idn_url_s = NULL;
+	char *url_lc = NULL;
+
 	if(!g) return NSERROR_OK;
 
 	if (g == g->shared->gw) {
-		if(nsoption_bool(display_decoded_idn) == false) {
-			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
-									g->shared->win, NULL,
-									STRINGA_TextVal, nsurl_access(url),
-									TAG_DONE);
-		} else {
-			char *idn_url = nsurl_access_utf8(url);
-			char *idn_url_lc = ami_utf8_easy(idn_url);
-			RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
-									g->shared->win, NULL,
-									STRINGA_TextVal, idn_url_lc,
-									TAG_DONE);
-			free(idn_url);
-			ami_utf8_free(idn_url_lc);
+		if(nsoption_bool(display_decoded_idn) == true) {
+			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) == NSERROR_OK) {
+				url_lc = ami_utf8_easy(idn_url_s);
+			}
+		}
+
+		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
+								g->shared->win, NULL,
+								STRINGA_TextVal, url_lc ? url_lc : nsurl_access(url),
+								TAG_DONE);
+
+		if(url_lc) {
+			ami_utf8_free(url_lc);
+			if(idn_url_s) free(idn_url_s);
 		}
 	}
 

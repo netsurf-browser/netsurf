@@ -300,7 +300,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
 	const char *title = 0;
 	nsurl *url = 0;
-	char *idn_url = NULL;
+	char *url_s = NULL;
+	size_t url_l = 0;
 	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
@@ -816,21 +817,25 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	} else if (url) {
 		if (nsoption_bool(display_decoded_idn) == true) {
-			idn_url = nsurl_access_utf8(url);
+			if (nsurl_access_utf8(url, &url_s, &url_l) != NSERROR_OK) {
+				/* Unable to obtain a decoded IDN.  This is not a fatal error.
+				 * Ensure the string pointer is NULL so we use the encoded version. */
+				url_s = NULL;
+			}
 		}
 
 		if (title) {
 			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
-					idn_url ? idn_url : nsurl_access(url), title);
+					url_s ? url_s : nsurl_access(url), title);
 		} else {
 			snprintf(status_buffer, sizeof status_buffer, "%s",
-					idn_url ? idn_url : nsurl_access(url));
+					url_s ? url_s : nsurl_access(url));
 		}
 
 		status = status_buffer;
 
-		if (idn_url != NULL)
-			free(idn_url);
+		if (url_s != NULL)
+			free(url_s);
 
 		pointer = get_pointer_shape(url_box, imagemap);
 
