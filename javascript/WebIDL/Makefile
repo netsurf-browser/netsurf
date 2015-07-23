@@ -14,8 +14,9 @@
 
 all: dom.idl html.idl uievents.idl
 
-.INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html html-spec.html html-spec.xml html-idl.html
-
+.INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html 
+.INTERMEDIATE:html-spec.html html-spec.xml html-idl.html
+.INTERMEDIATE:uievents-spec.html uievents-spec.xml uievents-idl.html
 
 dom-spec.html:
 	curl -s https://dom.spec.whatwg.org/ -o $@
@@ -24,13 +25,10 @@ html-spec.html:
 	curl -s https://html.spec.whatwg.org/ -o $@
 
 uievents-spec.html:
-	curl -s https://w3c.github.io/uievents/ -o $@
+	curl -s http://www.w3.org/TR/uievents/ -o $@
 
 %-spec.xml: %-spec.html
 	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption,section -o $@ -asxml $<
-
-uievents-idl.html: uievents-spec.xml
-	hxselect 'dl.idl' < $< | hxremove 'p' >> $@
 
 %-idl.html: %-spec.xml
 	hxselect 'pre[class="idl"]' < $< > $@
@@ -44,4 +42,4 @@ uievents-idl.html: uievents-spec.xml
 
 
 clean:
-	${RM} dom.idl html.idl dom-spec.html dom-spec.xml dom-idl.html html-spec.html html-spec.xml html-idl.html
+	${RM} dom.idl html.idl uievents.idl dom-spec.html dom-spec.xml dom-idl.html html-spec.html html-spec.xml html-idl.html uievents-spec.html uievents-spec.xml uievents-idl.html uievents-spec.xml.errors
