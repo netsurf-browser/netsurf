@@ -12,7 +12,7 @@
 
 .PHONY:all clean
 
-all: dom.idl html.idl
+all: dom.idl html.idl uievents.idl
 
 .INTERMEDIATE:dom-spec.html dom-spec.xml dom-idl.html html-spec.html html-spec.xml html-idl.html
 
@@ -23,8 +23,14 @@ dom-spec.html:
 html-spec.html:
 	curl -s https://html.spec.whatwg.org/ -o $@
 
+uievents-spec.html:
+	curl -s https://w3c.github.io/uievents/ -o $@
+
 %-spec.xml: %-spec.html
-	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption -o $@ -asxml $<
+	-tidy -q -f $@.errors --new-blocklevel-tags header,hgroup,figure,time,main,nav,svg,rect,text,image,mark,figcaption,section -o $@ -asxml $<
+
+uievents-idl.html: uievents-spec.xml
+	hxselect 'dl.idl' < $< | hxremove 'p' >> $@
 
 %-idl.html: %-spec.xml
 	hxselect 'pre[class="idl"]' < $< > $@
@@ -35,7 +41,6 @@ html-spec.html:
 	@echo "" >>$@
 	@echo "" >>$@
 	cat $< | w3m -dump -T text/html >>$@
-
 
 
 clean:
