@@ -2343,16 +2343,22 @@ void nsgtk_window_set_title(struct gui_window *gw, const char *title)
 nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 {
 	struct nsgtk_scaffolding *g;
+	size_t idn_url_l;
+	char *idn_url_s = NULL;
+	nserror err;
 
 	g = nsgtk_get_scaffold(gw);
 	if (g->top_level == gw) {
-		if (nsoption_bool(display_decoded_idn) == false) {
-			gtk_entry_set_text(GTK_ENTRY(g->url_bar), nsurl_access(url));
-		} else {
-			char *idn_url = nsurl_access_utf8(url);
-			gtk_entry_set_text(GTK_ENTRY(g->url_bar), idn_url);
-			free(idn_url);
+		if (nsoption_bool(display_decoded_idn) == true) {
+			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
+				idn_url_s = NULL;
 		}
+
+		gtk_entry_set_text(GTK_ENTRY(g->url_bar), idn_url_s ? idn_url_s : nsurl_access(url));
+
+		if(idn_url_s)
+			free(idn_url_s);
+
 		gtk_editable_set_position(GTK_EDITABLE(g->url_bar), -1);
 	}
 	return NSERROR_OK;

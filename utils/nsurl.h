@@ -183,7 +183,7 @@ const char *nsurl_access(const nsurl *url);
 /**
  * Access a NetSurf URL object as a UTF-8 string (for human readable IDNs)
  *
- * \param url	  NetSurf URL to retrieve a string pointer for.
+ * \param url	  NetSurf URL object
  * \param url_s	  Returns a url string
  * \param url_l	  Returns length of url_s
  * \return NSERROR_OK on success, appropriate error otherwise
