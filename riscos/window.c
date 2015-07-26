@@ -1038,16 +1038,20 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 /* exported function documented in riscos/window.h */
 nserror ro_gui_window_set_url(struct gui_window *g, nsurl *url)
 {
-	char *idn_url = NULL;
+	size_t idn_url_l;
+	char *idn_url_s = NULL;
 
 	if (g->toolbar) {
-		if (nsoption_bool(display_decoded_idn) == false) {
-			ro_toolbar_set_url(g->toolbar, nsurl_access(url), true, false);
-		} else {
-			idn_url = nsurl_access_utf8(url);
-			ro_toolbar_set_url(g->toolbar, idn_url, true, false);
-			free(idn_url);
+		if (nsoption_bool(display_decoded_idn) == true) {
+			if (nsurl_access_utf8(url, &idn_url_s, &idn_url_l) != NSERROR_OK)
+				idn_url_s = NULL;
 		}
+
+		ro_toolbar_set_url(g->toolbar, idn_url_s ? idn_url_s : nsurl_access(url), true, false);
+
+		if (idn_url_s)
+			free(idn_url_s);
+
 		ro_gui_url_complete_start(g->toolbar);
 	}
 

@@ -2345,7 +2345,6 @@ nserror gui_window_set_url(struct gui_window *gw, nsurl *url)
 	struct nsgtk_scaffolding *g;
 	size_t idn_url_l;
 	char *idn_url_s = NULL;
-	nserror err;
 
 	g = nsgtk_get_scaffold(gw);
 	if (g->top_level == gw) {
