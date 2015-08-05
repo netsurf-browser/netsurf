@@ -29,14 +29,25 @@
 #include "amiga/misc.h"
 #include "amiga/object.h"
 
-struct MinList *NewObjList(void)
+#include "utils/log.h"
+
+#ifdef __amigaos4__
+#define NewnsList NewMinList
+#else
+#define NewnsList NewList
+#endif
+
+struct nsList *NewObjList(void)
 {
-	struct MinList *objlist = (struct MinList *)AllocVecTagList(sizeof(struct MinList), NULL);
-	NewMinList(objlist);
+	struct nsList *objlist = (struct nsList *)AllocVecTagList(sizeof(struct nsList), NULL);
+	if(objlist == NULL) return NULL;
+
+	NewnsList(objlist);
+
 	return(objlist);
 }
 
-struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
+struct nsObject *AddObject(struct nsList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
@@ -70,12 +81,12 @@ void DelObjectNoFree(struct nsObject *dtzo)
 	DelObjectInternal(dtzo, FALSE);
 }
 
-void FreeObjList(struct MinList *objlist)
+void FreeObjList(struct nsList *objlist)
 {
 	struct nsObject *node;
 	struct nsObject *nnode;
 
-	if(IsMinListEmpty(objlist)) return;
+	if(IsMinListEmpty((struct MinList *)objlist)) return;
 	node = (struct nsObject *)GetHead((struct List *)objlist);
 
 	do {

@@ -46,10 +46,20 @@ struct nsObject
 	ULONG objstruct_size;
 };
 
-struct MinList *NewObjList(void);
-struct nsObject *AddObject(struct MinList *objlist, ULONG otype);
+struct nsList
+{
+#ifdef __amigaos4__
+	struct MinList list;
+#else
+	struct List list;
+#endif
+};
+
+struct nsList *NewObjList(void);
+struct nsObject *AddObject(struct nsList *objlist, ULONG otype);
 void DelObject(struct nsObject *dtzo);
 void DelObjectNoFree(struct nsObject *dtzo);
-void FreeObjList(struct MinList *objlist);
+void FreeObjList(struct nsList *objlist);
 
 #endif
+
