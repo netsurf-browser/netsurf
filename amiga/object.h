@@ -46,20 +46,15 @@ struct nsObject
 	ULONG objstruct_size;
 };
 
-struct nsList
-{
-#ifdef __amigaos4__
-	struct MinList list;
-#else
-	struct List list;
-#endif
-};
 
-struct nsList *NewObjList(void);
-struct nsObject *AddObject(struct nsList *objlist, ULONG otype);
+struct MinList *NewObjList(void);
+struct nsObject *AddObject(struct MinList *objlist, ULONG otype);
 void DelObject(struct nsObject *dtzo);
 void DelObjectNoFree(struct nsObject *dtzo);
-void FreeObjList(struct nsList *objlist);
+void FreeObjList(struct MinList *objlist);
 
+/** List abstraction as OS3 appears to have problems with NewMinList() **/
+struct MinList *ami_AllocMinList(void);
+void ami_NewMinList(struct MinList *list);
 #endif
 

@@ -889,7 +889,6 @@ static void gui_init2(int argc, char** argv)
 	ami_hotlist_initialise(nsoption_charp(hotlist_file));
 	ami_cookies_initialise();
 	ami_global_history_initialise();
-
 	search_web_select_provider(nsoption_int(search_provider));
 
 	if (notalreadyrunning && 
@@ -3853,7 +3852,7 @@ gui_window_create(struct browser_window *bw,
 		return NULL;
 	}
 
-	NewMinList(&g->shared->shared_pens);
+	ami_NewMinList(&g->shared->shared_pens);
 	
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;

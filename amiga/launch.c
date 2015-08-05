@@ -31,6 +31,7 @@
 #include <proto/openurl.h>
 
 #include "amiga/launch.h"
+#include "amiga/object.h" /* for list abstraction */
 #include "utils/nsoption.h"
 #include "utils/nsurl.h"
 
@@ -131,7 +132,7 @@ void ami_openurl_open(void)
 		}
 	}
 
-	NewMinList(&ami_unsupportedprotocols);
+	ami_NewMinList(&ami_unsupportedprotocols);
 }
 
 void ami_openurl_close(void)

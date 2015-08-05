@@ -539,7 +539,7 @@ static nserror bitmap_render(struct bitmap *bitmap, hlcache_handle *content)
 			bitmap->width;
 
 	ami_init_layers(&bm_globals, bitmap->width, bitmap->height);
-	NewMinList(&shared_pens);
+	ami_NewMinList(&shared_pens);
 	bm_globals.shared_pens = &shared_pens;
 
 	glob = &bm_globals;

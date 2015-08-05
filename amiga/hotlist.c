@@ -42,7 +42,6 @@ void ami_hotlist_initialise(const char *hotlist_file)
 {
 	tree_hotlist_path = hotlist_file;
 	hotlist_window = ami_tree_create(TREE_HOTLIST, NULL);
-
 	if(!hotlist_window) return;
 }
 

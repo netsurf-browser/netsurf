@@ -1484,7 +1484,7 @@ struct treeview_window *ami_tree_create(int flags,
 	twin->ssl_data = ssl_data;
 	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
 
-	NewMinList(&twin->shared_pens);
+	ami_NewMinList(&twin->shared_pens);
 	twin->globals.shared_pens = &twin->shared_pens;
 	
 	return twin;
